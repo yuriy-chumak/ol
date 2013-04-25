@@ -41,6 +41,7 @@
       type-string
       type-string-wide
       type-string-dispatch
+      type-thread-state
 
       ;; sketching types
       type-ff               ;; k v, k v l, k v l r, black node with children in order
@@ -460,6 +461,7 @@
       (define type-string            3)
       (define type-string-wide      22)
       (define type-string-dispatch  21)
+      (define type-thread-state     31)
 
       ;; transitional trees or future ffs
       (define type-ff               24)

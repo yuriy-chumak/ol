@@ -86,6 +86,7 @@ typedef uintptr_t word;
 #define IEOF                        make_immediate(4,13)
 #define IHALT                       INULL /* FIXME: adde a distinct IHALT */ 
 #define TTUPLE                      2
+#define TTHREAD                     31
 #define TFF                         24
 #define FFRIGHT                     1
 #define FFRED                       2
@@ -1069,7 +1070,7 @@ switch_thread: /* enter mcp if present */
       acc = acc + 4;
       R[acc] = (word) ob;
       allocate(acc, state);
-      *state = make_header(acc, TTUPLE);
+      *state = make_header(acc, TTHREAD);
       state[acc-1] = R[acc];
       while(pos < acc-1) {
          state[pos] = R[pos];
@@ -1422,7 +1423,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       bank = 0;
       assert(allocp(ob),ob,50);
       hdr = *ob;
-      if (imm_type(hdr) == TTUPLE) {
+      if (imm_type(hdr) == TTHREAD) {
          int pos = hdrsize(hdr) - 1;
          word code = ob[pos];
          acc = pos - 3;

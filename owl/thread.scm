@@ -289,6 +289,12 @@
                    (prof (del prof 'tc)))         ;; give just the collected data to thread
                   (tc tc (cons (tuple id (λ () (cont prof))) todo) done 
                      (del state 'prof))))
+
+            ; 22, parallel or
+            (λ (id cont opts c todo done state tc)
+               (lets
+                  ((por-state (tuple cont opts null)))
+                  (tc tc (cons (tuple id por-state) todo) done state)))
       ))
 
       ;; todo: add deadlock detection here (and other bad terminal waits)
@@ -363,19 +369,62 @@
 
       ; (enter-mcp thread-controller done state) -- no way to go here without the poll, rethink that
 
+      ;; nested thread steps cause
+      ;;    - exit and false -> forget todo & done
+      ;;    - crash -> forget 
+
+      ;; st=#(cont todo done) → finished? st'
+      ;; finished? = #f -> new state but no result yet, #t = result found and state is thunk, else error
+
+      (define (step-parallel-or st)
+         (lets ((cont todo done st))
+            (if (null? todo)
+               (if (null? done)
+                  ;; no solutions, return #false (like or)
+                  (values #true (λ () (cont #false)))
+                  ;; rewind the track
+                  (step-parallel-or (tuple cont done null)))
+               (lets ((state todo todo))
+                  (if (eq? (type state) type-tuple)
+                     (print "no nested parallel or yet")
+                     (lets ((op a b c (run state thread-quantum)))
+                        (cond
+                           ((eq? op 1) ;; out of time, a is new state
+                              (values #false 
+                                 (tuple cont todo (cons a done))))
+                           ((eq? op 2) ;; finished, return if non-false, otherwise drop subthread
+                              (if a
+                                 (values #true (λ () (cont a)))
+                                 (values #false (tuple cont todo done))))
+                           (else
+                              ;; treat all other reasons as errors
+                              (values null (tuple op a b c))))))))))
+
       (define (thread-controller self todo done state)
          (if (eq? todo null)
             (if (null? done)
-               (halt-thread-controller state)
-               (self self done null state))
+               (halt-thread-controller state)  ;; nothing left to run
+               (self self done null state))    ;; new scheduler round
             (lets 
                ((this todo todo)
-                (id st this)
-                (op a b c (run st thread-quantum)))
-               (if (eq? op 1)
-                  ; out of time, usual suspect, short path here
-                  (self self todo (cons (tuple id a) done) state)
-                  ((ref mcp-syscalls op) id a b c todo done state self)))))
+                (id st this))
+               (if (eq? (type st) type-tuple)
+                  ;; parallel or node, hunt next slice to run and proceed
+                  (lets ((fini stp (step-parallel-or st)))
+                     (cond
+                        ((not fini)
+                           ;; no result found yet but options remaining - keep on truckin
+                           (self self todo (cons (tuple id stp) done) state))
+                        ((eq? fini #true)
+                           ;; some result was found and stp is a thunk to proceed computation
+                           (self self todo (cons (tuple id stp) done) state))
+                        (else
+                           ;; TODO: something failed and stp is an error code. time to crash.
+                           "GONDOR!")))
+                  (lets ((op a b c (run st thread-quantum)))
+                     (if (eq? op 1)
+                        (self self todo (cons (tuple id a) done) state)
+                        ((ref mcp-syscalls op) id a b c todo done state self)))))))
 
       (define (start-thread-controller threads state-alist)
          (thread-controller thread-controller threads
