@@ -1,7 +1,7 @@
 (define-library (owl syscall)
 
    (export 
-      syscall error interact fork accept-mail wait-mail check-mail exit-owl release-thread catch-thread set-signal-action single-thread? kill mail fork-linked-server fork-server return-mails fork-server fork-linked fork-named exit-thread exit-owl poll-mail-from start-profiling stop-profiling running-threads)
+      syscall error interact fork accept-mail wait-mail check-mail exit-owl release-thread catch-thread set-signal-action single-thread? kill mail fork-linked-server fork-server return-mails fork-server fork-linked fork-named exit-thread exit-owl poll-mail-from start-profiling stop-profiling running-threads por* por)
 
    (import 
       (owl defmac)
@@ -59,6 +59,14 @@
          (syscall 19 value value) ;; set exit value proposal in thread scheduler
          (exit-thread value))     ;; stop self and leave the rest (io etc) running to completion
 
+      (define (por* ts)
+         (syscall 22 ts #false))
+
+      (define-syntax por
+         (syntax-rules ()
+            ((por exp ...)
+               (syscall 22 (list (λ () exp) ...) #false))))
+      
       (define (wait-mail)           (syscall 13 #false #false))
       (define (check-mail)          (syscall 13 #false #true))
 
