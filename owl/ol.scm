@@ -25,6 +25,8 @@
 
 ;; check that (owl defmac) is indeed from last generation
 
+(define build-start (time-ms))
+
 ; (import (owl defmac))
 
 (mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
@@ -40,7 +42,7 @@
 (import (owl defmac)) ;; reload default macros needed for defining libraries etc
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*vm-special-ops* *libraries* *codes* wait *args* stdin stdout stderr set-ticker run)
+,forget-all-but (*vm-special-ops* *libraries* *codes* wait *args* stdin stdout stderr set-ticker run build-start)
 
 
 ;;;
@@ -922,6 +924,8 @@ Check out http://code.google.com/p/owl-lisp for more information.")
 ;;; Step 3 - profit
 ;;;
 
+(print "boot code loaded in " (- (time-ms) build-start) "ms")
+
 (λ (args)
    (process-arguments (cdr args) command-line-rules "you lose"
       (λ (opts extra)
@@ -939,4 +943,6 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                   (choose-natives 
                      (get opts 'specialize "none")
                      heap-entry))
+               (print "image written at " (- (time-ms) build-start))
                0)))))
+

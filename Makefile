@@ -2,7 +2,6 @@ DESTDIR=
 PREFIX=/usr
 BINDIR=/bin
 INSTALL=install
-TIME=/usr/bin/time -p
 
 CFLAGS=-Wall -O2
 #CC=gcc
@@ -27,7 +26,7 @@ fasl/boot.fasl: fasl/init.fasl
 
 fasl/ol.fasl: bin/vm fasl/boot.fasl owl/*.scm scheme/*.scm
 	# selfcompile boot.fasl until a fixed point is reached
-	time bin/vm fasl/boot.fasl --run owl/ol.scm -s none -o fasl/bootp.fasl
+	bin/vm fasl/boot.fasl --run owl/ol.scm -s none -o fasl/bootp.fasl
 	ls -la fasl/bootp.fasl
 	# check that the new image passes tests
 	tests/run all bin/vm fasl/bootp.fasl
