@@ -924,7 +924,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
 ;;; Step 3 - profit
 ;;;
 
-(print "boot code loaded in " (- (time-ms) build-start) "ms")
+(print "Code loaded at " (- (time-ms) build-start) "ms.")
 
 (λ (args)
    (process-arguments (cdr args) command-line-rules "you lose"
@@ -943,6 +943,6 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                   (choose-natives 
                      (get opts 'specialize "none")
                      heap-entry))
-               (print "image written at " (- (time-ms) build-start))
+               (print "Output written at " (- (time-ms) build-start) "ms.")
                0)))))
 

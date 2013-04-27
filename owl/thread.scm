@@ -20,6 +20,7 @@
    (import
       (owl defmac)
       (owl queue)
+      (owl syscall)
       (owl ff)
       (owl function)
       (owl primop)
@@ -290,10 +291,10 @@
                   (tc tc (cons (tuple id (λ () (cont prof))) todo) done 
                      (del state 'prof))))
 
-            ; 22, parallel or
+            ; 22, nestable parallel computation
             (λ (id cont opts c todo done state tc)
                (lets
-                  ((por-state (tuple cont opts null)))
+                  ((por-state (tuple cont opts c)))
                   (tc tc (cons (tuple id por-state) todo) done state)))
       ))
 
@@ -380,9 +381,9 @@
          (lets ((cont todo done st))
             (if (null? todo)
                (if (null? done)
-                  ;; no solutions, return #false (like or)
-                  (values #true (λ () (cont #false)))
-                  ;; rewind the track
+                  ;; no options left
+                  (values #true (λ () (cont null)))
+                  ;; rewind the track and start replaying
                   (step-parallel-or (tuple cont done null)))
                (lets ((state todo todo))
                   (if (eq? (type state) type-tuple)
@@ -392,10 +393,9 @@
                            ((eq? op 1) ;; out of time, a is new state
                               (values #false 
                                  (tuple cont todo (cons a done))))
-                           ((eq? op 2) ;; finished, return if non-false, otherwise drop subthread
-                              (if a
-                                 (values #true (λ () (cont a)))
-                                 (values #false (tuple cont todo done))))
+                           ((eq? op 2) ;; finished, return value and thunk to continue computation
+                              (values #true
+                                 (λ () (cont (cons a (λ () (syscall 22 todo done)))))))
                            (else
                               ;; treat all other reasons as errors
                               (values null (tuple op a b c))))))))))
