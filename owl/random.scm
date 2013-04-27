@@ -24,7 +24,7 @@
       rand-log
       rand-elem            ;; rs obj → rs' elem (for lists and vectors)
       rand-subset
-      rand-range
+      rand-range           ;; rs lo hi → rs' n, where lo <= n < hi
 
       random-numbers      ;; rs x max x i -> rs' (n_1 .. n_i), as in rand
       reservoir-sample    ;; rs x ll x n -> lst', |lst'| <= n

@@ -376,18 +376,24 @@
 
       ;; st=#(cont todo done) → finished? st'
       ;; finished? = #f -> new state but no result yet, #t = result found and state is thunk, else error
-
-      (define (step-parallel-or st)
+      ;; TODO: downgrade to single state and prune useless such nodes from tree whenever # of options is reduced down to 1
+      (define (step-parallel st)
          (lets ((cont todo done st))
             (if (null? todo)
                (if (null? done)
                   ;; no options left
                   (values #true (λ () (cont null)))
-                  ;; rewind the track and start replaying
-                  (step-parallel-or (tuple cont done null)))
+                  ;; rewind the track, spin the record and take it back
+                  (step-parallel (tuple cont done null)))
                (lets ((state todo todo))
                   (if (eq? (type state) type-tuple)
-                     (print "no nested parallel or yet")
+                     (lets ((fini state (step-parallel state)))
+                        (if (eq? fini null)
+                           ;; crashed, propagate
+                           (values null state)
+                           ;; either par->single or single->value state change, 
+                           ;; but consumed a quantum already so handle it in next round
+                           (values #false (tuple cont todo (cons state done)))))
                      (lets ((op a b c (run state thread-quantum)))
                         (cond
                            ((eq? op 1) ;; out of time, a is new state
@@ -410,7 +416,7 @@
                 (id st this))
                (if (eq? (type st) type-tuple)
                   ;; parallel or node, hunt next slice to run and proceed
-                  (lets ((fini stp (step-parallel-or st)))
+                  (lets ((fini stp (step-parallel st)))
                      (cond
                         ((not fini)
                            ;; no result found yet but options remaining - keep on truckin
