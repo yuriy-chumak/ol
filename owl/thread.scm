@@ -402,8 +402,13 @@
                            ((eq? op 2) ;; finished, return value and thunk to continue computation
                               (values #true
                                  (λ () (cont (cons a (λ () (syscall 22 todo done)))))))
+                           ((eq? op 22) ;; start nested parallel computation
+                              (lets ((contp a) (todop b) (donep c) 
+                                     (por-state (tuple contp todop donep)))
+                                 (values #false
+                                    (tuple cont todo (cons por-state done)))))
                            (else
-                              ;; treat all other reasons as errors
+                              ;; treat all other reasons and syscalls as errors
                               (values null (tuple op a b c))))))))))
 
       (define (thread-controller self todo done state)
