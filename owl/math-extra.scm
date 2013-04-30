@@ -28,6 +28,7 @@
       (owl list-extra)
       (owl sort)
       (owl primop)
+      (only (owl syscall) por por*)
       (owl defmac)
       (owl ff)
       (only (owl syscall) error))
@@ -367,13 +368,18 @@
 
       (define (factor n)   
          (if (> n 1)
-            (let 
-               ((pows
-                  (fold atkin-try (list n)   
-                     '(2 3 5 7 11 13 17 19 23 29 31))))
-               (if (eq? (car pows) 1)
-                  (cdr pows)
-                  (atkin-factor-driver pows 32)))
+            (por
+               ;; prime check is relatively fast (for deterministic range) so try it first
+               (if (prime? n)
+                  (list (cons n 1))
+                  #false)
+               (let 
+                  ((pows
+                     (fold atkin-try (list n)   
+                        '(2 3 5 7 11 13 17 19 23 29 31))))
+                  (if (eq? (car pows) 1)
+                     (cdr pows)
+                     (atkin-factor-driver pows 32))))
             null))
       
                

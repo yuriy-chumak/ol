@@ -409,6 +409,7 @@
                                     (tuple cont todo (cons por-state done)))))
                            (else
                               ;; treat all other reasons and syscalls as errors
+                              (print "bad syscall op within par: " op)
                               (values null (tuple op a b c))))))))))
 
       (define (thread-controller self todo done state)
@@ -431,6 +432,7 @@
                            (self self todo (cons (tuple id stp) done) state))
                         (else
                            ;; TODO: something failed and stp is an error code. time to crash.
+                           (print "GONDOR!")
                            "GONDOR!")))
                   (lets ((op a b c (run st thread-quantum)))
                      (if (eq? op 1)
