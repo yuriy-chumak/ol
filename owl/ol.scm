@@ -589,15 +589,16 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
          ((finished result not used)
             result)
          ((crashed opcode a b)
-            (print-to (verbose-vm-error opcode a b) stderr)
+            (print-to stderr (verbose-vm-error opcode a b))
             fail-val)
          ((error cont reason info)
             ; note, these could easily be made resumable by storing cont
-            (write-bytes stderr
-               (foldr render '(10) (list "error: " reason info)))
+            (print-to stderr
+               (list->string
+                  (foldr render '(10) (list "error: " reason info))))
             fail-val)
          (else is bad ;; should not happen
-            (print-to (list "que? " bad) stderr)
+            (print-to stderr (list "que? " bad))
             fail-val))))
 
 (define (owl-run outcome args path profile?)
