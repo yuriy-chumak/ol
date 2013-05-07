@@ -156,11 +156,12 @@ void free(void *ptr);
 char *getenv(const char *name);
 DIR *opendir(const char *name);
 DIR *fdopendir(int fd);
-int execv(const char *path, char *const argv[]);
 pid_t fork(void);
 pid_t waitpid(pid_t pid, int *status, int options);
 int chdir(const char *path);
-
+#ifndef WIN32 
+int execv(const char *path, char *const argv[]);
+#endif
 
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
 
@@ -788,6 +789,8 @@ static word prim_sys(int op, word a, word b, word c) {
          int nargs = llen((word *)b);
          char **args = malloc((nargs+1) * sizeof(char *));
          char **argp = args;
+#ifndef WIN32 
+         
          if (args == NULL) 
             return IFALSE;
          while(nargs--) {
@@ -802,8 +805,12 @@ static word prim_sys(int op, word a, word b, word c) {
          set_blocking(0,0); /* exec failed, back to nonblocking io for owl */
          set_blocking(1,0);
          set_blocking(2,0);
+#endif
          return IFALSE; }
       case 18: { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
+#ifdef WIN32
+         return IFALSE;
+#else
          pid_t pid = fork();
          if (pid == -1) /* fork failed */
             return IFALSE;
@@ -811,11 +818,16 @@ static word prim_sys(int op, word a, word b, word c) {
             return ITRUE;
          if ((int)pid > FMAX)
             fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
-         return F(pid&FMAX); }
+         return F(pid&FMAX); 
+#endif
+         }
       case 19: { /* wait <pid> <respair> _ */
          pid_t pid = (a == IFALSE) ? -1 : fixval(a);
          int status;
          word *r = (word *) b;
+#ifdef WIN32
+         r = (word) IFALSE;
+#else
          pid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
          if (pid == -1) 
             return IFALSE; /* error */
@@ -837,6 +849,7 @@ static word prim_sys(int op, word a, word b, word c) {
             fprintf(stderr, "vm: unexpected process exit status: %d\n", status);
             r = (word *)IFALSE;
          }
+#endif
          return (word)r; }
       case 20: { /* chdir path res */
          char *path = ((char *)a) + W;
