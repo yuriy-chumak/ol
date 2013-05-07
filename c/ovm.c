@@ -53,10 +53,10 @@ typedef uintptr_t word;
 #define TPOS                        2  /* offset of type bits in header */
 #define V(ob)                       *((word *) (ob))
 #define W                           sizeof(word)
-#define NWORDS                      1024*1024*8  /* static malloc'd heap size if used as a library */
-#define FBITS                       16           /* bits in fixnum, on the way to 24 and beyond */
-#define FMAX                        0xffff       /* max fixnum (2^FBITS-1), on the way to 0xffffff */
-#define MAXOBJ                      0xffff       /* max words in tuple including header */
+#define NWORDS                      1024*1024*8    /* static malloc'd heap size if used as a library */
+#define FBITS                       16             /* bits in fixnum, on the way to 24 and beyond */
+#define FMAX                        ((1<<FBITS)-1) /* max fixnum (2^FBITS-1), on the way to 0xffffff */
+#define MAXOBJ                      0xffff         /* max words in tuple including header */
 #define RAWBIT                      2048
 #define make_immediate(value, type) (((value) << IPOS) | ((type) << TPOS) | 2)
 #define make_header(size, type)     (((size) << SPOS) | ((type) << TPOS) | 2)
@@ -1348,22 +1348,13 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       A1 = BOOL(errno == EINTR);
       NEXT(2); }
    op38: { /* fx+ a b r o, types prechecked, signs ignored */
-      /* values are (n<<IPOS)|2*/
-      /* word res = ((A0 + A1) & 0x1ffff000) | 2; <- no hacks during immediate and range transition
-      if (res & 0x10000000) {
-         A2 = res & 0xffff002;
-         A3 = ITRUE;
-      } else {
-         A2 = res;
-         A3 = IFALSE;
-      } */
       word res = fixval(A0) + fixval(A1);
       word low = res & FMAX;
       A3 = (res & (1 << FBITS)) ? ITRUE : IFALSE;
       A2 = F(low);
       NEXT(4); }
    op39: { /* fx* a b l h */
-      word res = fixval(R[*ip]) * fixval(A1); /* <- danger! won't fit word soon */
+      uint64_t res = fixval(R[*ip]) * fixval(A1);
       A2 = F(res&FMAX);
       A3 = F((res>>FBITS)&FMAX);
       NEXT(4); }
@@ -1485,12 +1476,12 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       A2 = a ^ (b & (FMAX << IPOS)); /* inherit a's type info */
       NEXT(3); }
    op58: { /* fx>> a b hi lo */
-      word r = fixval(A0) << (FBITS - fixval(A1));
+      uint64_t r = fixval(A0) << (FBITS - fixval(A1));
       A2 = F(r>>FBITS);
       A3 = F(r&FMAX);
       NEXT(4); }
    op59: { /* fx<< a b hi lo */
-      word res = fixval(R[*ip]) << fixval(A1);
+      uint64_t res = fixval(R[*ip]) << fixval(A1);
       A2 = F(res>>FBITS);
       A3 = F(res&FMAX);
       NEXT(4); }
@@ -1510,7 +1501,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
          A1 = F(seccomp_time - (secs * 1000));
          ob[1] = F(secs >> FBITS);
          ob[4] = F(secs & FMAX);
-         seccomp_time += (secs == 0xffffffff) ? 0 : 10; /* virtual 10ms passes on each call */
+         seccomp_time += ((seccomp_time + 10) > seccomp_time) ? 10 : 0; /* virtual 10ms passes */
       } else {
          gettimeofday(&tp, NULL);
          A1 = F(tp.tv_usec / 1000);

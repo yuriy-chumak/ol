@@ -12,6 +12,9 @@
 ;; wishlist: complex numbers not implemented yet
 ;; fixme: at least main base bignum functions (+ - * =) should handle the full dispatch
 
+;; write this sans big(gish) humbers in code to allow changing
+
+
 (define-library (owl math)
 
    (export 
@@ -48,7 +51,6 @@
       (owl syscall)
       (owl ff)
       )
-
    (begin
 
       ;; check how many fixnum bits the vm supports with fx<<
@@ -62,6 +64,12 @@
                   (loop f)
                   f))))
 
+      ;; biggest before highest bit is set (needed in some bignum ops)
+      (define *pre-max-fixnum*
+         (lets
+            ((f o (fx>> *max-fixnum* 1)))
+            f))
+
       ;; count the number of bits in *max-fixnum*
       (define *fixnum-bits*
          (let loop ((f *max-fixnum*) (n 0))
@@ -71,6 +79,12 @@
                   ((f _ (fx>> f 1))
                    (n _ (fx+ n 1)))
                   (loop f n)))))
+
+      (define *big-one*
+         (ncons 1 null))
+
+      (define *first-bignum*
+         (ncons 0 *big-one*))
 
       (define (zero? x) (eq? x 0))
 
@@ -263,14 +277,12 @@
       ;;; ADDITION
       ;;;
 
-      (define big-one (ncons 1 null))
-
       (define (nat-inc n)
          (let ((t (type n)))
             (cond
                ((eq? t type-fix+)
                   (if (eq? n *max-fixnum*)
-                     (ncons 0 big-one)
+                     *first-bignum*
                      (lets ((n x (fx+ n 1))) n)))
                ((eq? t type-int+)
                   (let ((lo (ncar n)))
@@ -279,7 +291,7 @@
                         (lets ((lo x (fx+ lo 1)))
                            (ncons lo (ncdr n))))))
                ((eq? n null)
-                  big-one)
+                  *big-one*)
                (else
                   (big-bad-args 'inc n n)))))
 
@@ -299,7 +311,7 @@
              (new overflow? (fx+ a b)))
             (if overflow?
                (if (eq? bs null)
-                  (ncons new big-one)
+                  (ncons new *big-one*)
                   (ncons new (add-number-big 1 bs)))
                (ncons new bs))))
 
@@ -307,7 +319,7 @@
          (cond
             ((eq? a null)
                (if (eq? b null)
-                  (if carry big-one null)
+                  (if carry *big-one* null)
                   (if carry (add-number-big 1 b) b)))
             ((eq? b null)
                (if carry (add-number-big 1 a) a))
@@ -326,7 +338,7 @@
          (syntax-rules () 
             ((add-small->positive a b)
                (lets ((r overflow? (fx+ a b)))
-                  (if overflow? (ncons r big-one) r)))))
+                  (if overflow? (ncons r *big-one*) r)))))
 
 
 
@@ -425,7 +437,7 @@
       (define (add-small->negative a b)
          (lets ((r overflow? (fx+ a b)))
             (if overflow?
-               (cast (ncons r big-one) type-int-)
+               (cast (ncons r *big-one*) type-int-)
                (cast r type-fix-))))
 
 
@@ -1110,7 +1122,7 @@
                            (if (eq? b-lead *max-fixnum*)
                               (if (eq? n 0)
                                  0
-                                 (shift-local-down (ncar a) #x7fff (subi n 1)))
+                                 (shift-local-down (ncar a) *pre-max-fixnum* (subi n 1)))
                               (let ((aa (ncar a)) (bb (add b-lead 1)))
                                  ; increment b to ensure b'000.. > b....
                                  (cond
@@ -1192,10 +1204,10 @@
                      (dr
                         (let ((d (subi d 1))) ; int- (of was -*max-fixnum*), fix- or fix+
                            (if (negative? d)
-                              (values (ncons (add d #x10000) tl) #true) ; borrow
+                              (values (ncons (add d *first-bignum*) tl) #true) ; borrow
                               (values (ncons d tl) #false))))
                      ((eq? (type d) type-fix-) ; borrow
-                        (values (ncons (add d #x10000) tl) #true))
+                        (values (ncons (add d *first-bignum*) tl) #true))
                      (else
                         (values (ncons d tl) #false)))))))
 

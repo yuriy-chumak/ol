@@ -55,6 +55,8 @@
 
 (import (owl defmac))   ;; get define, define-library, import, ... from the just loaded (owl defmac)
 
+(define *interactive* #true) ;; be verbose 
+
 (define *include-dirs* (list ".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 
 (define *owl-names* #empty)
