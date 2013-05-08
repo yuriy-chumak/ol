@@ -263,6 +263,8 @@ int adjust_heap(int cells) {
    }
    if (seccompp) /* realloc is not allowed within seccomp */
       return 0;
+   if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
+       return 0; /* don't try to adjust heap if the size_t would overflow in realloc */
    memstart = realloc(memstart, new_words*W);
    if (memstart == old) { /* whee, no heap slide \o/ */
       memend = memstart + new_words - MEMPAD; /* leave MEMPAD words alone */
@@ -270,17 +272,16 @@ int adjust_heap(int cells) {
    } else if (memstart) { /* d'oh! we need to O(n) all the pointers... */
       int delta = (word)memstart - (word)old;
       memend = memstart + new_words - MEMPAD; /* leave MEMPAD words alone */
-      fix_pointers(memstart, delta, memend); /* todo: measure time spent here */
+      fix_pointers(memstart, delta, memend);
       return delta;
    } else {
-      /* fixme: might be common in seccomp, so would be better to put this to stderr? */
       breaked |= 8; /* will be passed over to mcp at thread switch*/
       return 0;
    }
 }
 
-/* input desired allocation size and root object, 
-   return a pointer to the same object after compaction, resizing, possible heap relocation etc */
+/* input desired allocation size and (the only) pointer to root object
+   return a pointer to the same object after heap compaction, possible heap size change and relocation */
 static word *gc(int size, word *regs) {
    word *root;
    word *realend = memend;
