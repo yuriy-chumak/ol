@@ -37,7 +37,6 @@
       ;;;
       ;;; SQUARE ROOTS (stub)
       ;;;
-
       ; fixme, did not find a good integer sqrt algorithm which would
       ; work with these numerals, so i rolled my own as a quick substitute
       ; bench later
@@ -53,7 +52,7 @@
                (let ((tl (ncdr n)))
                   (if (null? tl)
                      (nbits (ncar n) f)
-                     (nbits tl (add f 16)))))))
+                     (nbits tl (add f *fixnum-bits*)))))))
 
       (define (isqrt-init n)
          (lets

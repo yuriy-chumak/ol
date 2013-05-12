@@ -1263,7 +1263,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       }
       NEXT(3); }
    op26: { /* fxqr ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums */
-      word a = (fixval(A0)<<FBITS) | fixval(A1); 
+      uint64_t a = ((uint64_t) fixval(A0)<<FBITS) | fixval(A1); 
       word b = fixval(A2);
       word q;
       /* FIXME: b=0 should be explicitly checked for at lisp side */
@@ -1348,16 +1348,16 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 #endif
       A1 = BOOL(errno == EINTR);
       NEXT(2); }
-   op38: { /* fx+ a b r o, types prechecked, signs ignored */
+   op38: { /* fx+ a b r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word */
       word res = fixval(A0) + fixval(A1);
       word low = res & FMAX;
       A3 = (res & (1 << FBITS)) ? ITRUE : IFALSE;
       A2 = F(low);
       NEXT(4); }
    op39: { /* fx* a b l h */
-      uint64_t res = fixval(R[*ip]) * fixval(A1);
-      A2 = F(res&FMAX);
-      A3 = F((res>>FBITS)&FMAX);
+      uint64_t res = ((uint64_t) ((uint64_t) fixval(R[*ip])) * ((uint64_t) fixval(A1)));
+      A2 = F(((word)(res&FMAX)));
+      A3 = F(((word)(res>>FBITS)&FMAX));
       NEXT(4); }
    op40: { /* fx- a b r u, args prechecked, signs ignored */
       word r = (fixval(A0)|(1<<FBITS)) - fixval(A1);
@@ -1477,7 +1477,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       A2 = a ^ (b & (FMAX << IPOS)); /* inherit a's type info */
       NEXT(3); }
    op58: { /* fx>> a b hi lo */
-      uint64_t r = fixval(A0) << (FBITS - fixval(A1));
+      uint64_t r = ((uint64_t) fixval(A0)) << (FBITS - fixval(A1));
       A2 = F(r>>FBITS);
       A3 = F(r&FMAX);
       NEXT(4); }

@@ -124,7 +124,11 @@
 
 (import (only (owl iff))) ;; hack, load it but don't import anything
 
+(define foo 42)
+
 (import (owl math))
+
+(define bar 42)
 
 (import (owl list-extra))
 
