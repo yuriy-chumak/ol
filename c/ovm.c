@@ -55,7 +55,7 @@ typedef uintptr_t word;
 #define W                           sizeof(word)
 #define NWORDS                      1024*1024*8    /* static malloc'd heap size if used as a library */
 #define FBITS                       16             /* bits in fixnum, on the way to 24 and beyond */
-#define FMAX                        ((1<<FBITS)-1) /* max fixnum (2^FBITS-1), on the way to 0xffffff */
+#define FMAX                        ((1<<FBITS)-1) /* maximum fixnum (and most negative fixnum) */
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #define RAWBIT                      2048
 #define make_immediate(value, type) (((value) << IPOS) | ((type) << TPOS) | 2)
@@ -1482,7 +1482,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       A3 = F(r&FMAX);
       NEXT(4); }
    op59: { /* fx<< a b hi lo */
-      uint64_t res = fixval(R[*ip]) << fixval(A1);
+      uint64_t res = (uint64_t) fixval(R[*ip]) << fixval(A1);
       A2 = F(res>>FBITS);
       A3 = F(res&FMAX);
       NEXT(4); }
