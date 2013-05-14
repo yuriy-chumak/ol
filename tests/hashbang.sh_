@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# test disabled, because the path may be longer than maximum hashbang 
+# length supported by the kernel, which is often as low as 127 bytes
+
 ME=$$
 
 (/bin/echo -n '#!';
