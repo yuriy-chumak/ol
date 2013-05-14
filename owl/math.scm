@@ -47,8 +47,7 @@
       (owl defmac)
       (owl list)
       (owl syscall)
-      (owl ff)
-      )
+      (owl ff))
 
    (begin
 
@@ -685,8 +684,7 @@
                ;; could allow negative shift left to mean a shift right, but that is 
                ;; probably more likely an accident than desired behavior, so failing here
                (big-bad-args '<< a b))))
-               
-
+             
       (define (big-band a b)
          (cond
             ((eq? a null) 0)
@@ -1397,9 +1395,7 @@
                (type-fix+ (cast q type-fix-))
                (else (cast q type-int-)))))
 
-      ; fixme, could just call quotrem -> q
-      ; should output rationals later, inputs always within int
-      ; note, now *only* used in rationalize and exported for integer math
+      ; todo, drop this and use just quotrem
       (define (div a b)
          (if (eq? b 0)
             (big-bad-args 'div a b)

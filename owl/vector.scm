@@ -337,13 +337,17 @@
 
       
       (define (list->vector l)
-         (if (null? l)
-            empty-vector
-            ;; leaves are chunked specially, so do that in a separate pass. also 
-            ;; compute length to avoid possibly forcing a computation twice.
-            (lets ((chunks len (chunk-list l null null 0 #true 0)))
-               ;; convert the list of leaf vectors to a tree
-               (merge-chunks chunks len))))
+         (cond
+            ((null? l)
+               empty-vector)
+            ((> (length l) 65535)
+               (error "very temporary implementation restriction: vectors cannot be longer than 65535 elements" (length l)))
+            (else
+               ;; leaves are chunked specially, so do that in a separate pass. also 
+               ;; compute length to avoid possibly forcing a computation twice.
+               (lets ((chunks len (chunk-list l null null 0 #true 0)))
+                  ;; convert the list of leaf vectors to a tree
+                  (merge-chunks chunks len)))))
 
       (define (vector? x) ; == raw or a variant of major type 11?
          (case (type x)

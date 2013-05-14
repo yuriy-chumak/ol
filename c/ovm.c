@@ -54,7 +54,7 @@ typedef uintptr_t word;
 #define V(ob)                       *((word *) (ob))
 #define W                           sizeof(word)
 #define NWORDS                      1024*1024*8    /* static malloc'd heap size if used as a library */
-#define FBITS                       16             /* bits in fixnum, on the way to 24 and beyond */
+#define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
 #define FMAX                        ((1<<FBITS)-1) /* maximum fixnum (and most negative fixnum) */
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #define RAWBIT                      2048
@@ -1263,13 +1263,9 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       }
       NEXT(3); }
    op26: { /* fxqr ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums */
-      uint64_t a = ((uint64_t) fixval(A0)<<FBITS) | fixval(A1); 
+      uint64_t a = (((uint64_t) fixval(A0))<<FBITS) | fixval(A1); 
       word b = fixval(A2);
-      word q;
-      /* FIXME: b=0 should be explicitly checked for at lisp side */
-      if (unlikely(b == 0)) {
-         error(26, F(a), F(b));
-      }
+      uint64_t q;
       q = a / b;
       A3 = F(q>>FBITS);
       A4 = F(q&FMAX);
