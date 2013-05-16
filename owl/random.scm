@@ -115,40 +115,43 @@
 
       (define xors (xorshift-128 123456789 362436069 521288629 88675123))
 
-      ;;; Ad-hoc old random generator. 
+      ;;; Ad-hoc old random generator - multiple cross-breeding linear generators
 
-      (define rand-modulus 15991) ; no longer a modulus
-      (define rand-multiplier 31337)
+      (define rand-acc  8388617) ; 15991 with old fixnums
+      (define rand-mult 3133337) ; was 31337
 
       (define (rand-walk acc seed out)
          (if (null? seed)
             out
             (lets
-               ((lo hi (fx* (ncar seed) rand-multiplier))
+               ((lo hi (fx* (ncar seed) rand-mult))
                 (this over (fx+ lo acc)))
                (rand-walk hi (ncdr seed) (ncons this out)))))
 
       (define (rand-succ seed)
          (cond
-            ; promote natural seeds to random states
             ((eq? (type seed) type-fix+)
-               (let ((seed (ncons 1 (ncons seed null))))
-                  (tuple #true (rand-walk rand-modulus seed null) seed)))
+               ;; promote to bignum and random state
+               (lets ((seed (* (+ seed 1) 11111111111111111111111)))
+                  (tuple #true (rand-walk rand-acc seed null) seed)))
             ((eq? (type seed) type-int+)
-               (tuple #true (rand-walk rand-modulus seed null) seed))
+               ;; promote to random state
+               (tuple #true (rand-walk rand-acc seed null) seed))
             (else
                (lets ((st a b seed))
                   (cond
                      ((= a b)
-                        (let ((ap (ncons 1 a)))
-                           ;(print "rand loop at " a)
-                           (tuple #true (rand-walk rand-modulus ap null) ap)))
+                        ;; friends meet, we're going to need a bigger track
+                        (let ((ap (ncons (if st rand-acc rand-mult)  a)))
+                           (tuple #true (rand-walk rand-acc ap null) ap)))
                      (st
+                        ;; hare and tortoise
                         (tuple #false
-                           (rand-walk rand-modulus a null)
-                           (rand-walk rand-modulus b null)))
+                           (rand-walk rand-acc a null)
+                           (rand-walk rand-acc b null)))
                      (else
-                        (tuple #true (rand-walk rand-modulus a null) b)))))))
+                        ;; just hare
+                        (tuple #true (rand-walk rand-acc a null) b)))))))
 
       ;;; Mersenne Twister (missing)
 
@@ -170,11 +173,15 @@
                   tl
                   (cons (bit d p) (loop (>> p 1)))))))
 
+      ;; note! assumes 24-bit fixnums
       (define (rands->bytes rs)
-         (lets ((digit rs (uncons rs 0)))
-            (ilist
-               (fxband digit 255)
-               (fxband (>> digit 8) 255)
+         (lets 
+            ((digit rs (uncons rs 0))
+             (lo (fxband digit #xff))
+             (digit _ (fx>> digit 8))
+             (mid (fxband digit #xff))
+             (hi _ (fx>> digit 8)))
+            (ilist lo mid hi 
                (λ () (rands->bytes rs)))))
 
       ;; eww, don't try this at home. to be fixed pretty soon. passed dieharder tests pretty well though.
@@ -217,7 +224,7 @@
       (define (bitmask num)
          (if (eq? num 0)
             1
-            (let loop ((n #xffff))
+            (let loop ((n *max-fixnum*))
                (lets ((np _ (fx>> n 1)))
                   (if (lesser? np num) ;; we lost the high bit
                      n
@@ -254,7 +261,7 @@
                      (if (< try n)
                         ;; we made 0 <= try < n
                         (values rs try)
-                        (rand-bignum rs n)))
+                        (rand-bignum rs n))) ;; *very* unlikely same top digit all others, so get another one
                   (lets ((digit rs (uncons rs #false)))
                      (loop rs left (cons digit out)))))))
 
@@ -535,3 +542,22 @@
 
 ))
 
+;; test program for dieharder stdout test 
+;;   $ bin/ol -O2 -o rand.c owl/random.scm && gcc -O2 -o rand rand.c && ./rand | dieharder -a -f 200 | tee report.txt)
+
+(import (owl random))
+
+(define blocksize 4096)
+
+(λ (args)
+   (let loop ((rs (rands->bytes (seed->rands (time-ms)))) (out null) (n 0))
+      (cond
+         ((eq? n blocksize)
+            (if (write-byte-vector stdout (list->byte-vector (reverse out))) ;; keep order
+               (loop rs null 0)))
+         (else
+            (lets 
+               ((byte rs (uncons rs 0))
+                (n _ (fx+ n 1)))
+               (loop rs (cons byte out) n))))))
+      
