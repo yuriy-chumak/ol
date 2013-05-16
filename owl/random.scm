@@ -543,7 +543,7 @@
 ))
 
 ;; test program for dieharder stdout test 
-;;   $ bin/ol -O2 -o rand.c owl/random.scm && gcc -O2 -o rand rand.c && ./rand | dieharder -a -f 200 | tee report.txt)
+;;   $ bin/ol -O2 -o rand.c owl/random.scm && gcc -O2 -o rand rand.c && ./rand | dieharder -a -g 200 | tee report.txt)
 
 (import (owl random))
 
