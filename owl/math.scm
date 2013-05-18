@@ -41,7 +41,8 @@
       remainder modulo
       truncate round
       rational complex
-      *max-fixnum* *fixnum-bits*)
+      *max-fixnum* *fixnum-bits*
+      )
 
    (import
       (owl defmac)
@@ -1281,10 +1282,10 @@
          (if (< a b)
             a
             (lets ((rb (nrev b)))
-               (if (lesser? #b0000111111111111 (ncar rb))
+               (if (lesser? #b000000111111111111111111 (ncar rb))
                   ; scale them to get a more fitting head for b
                   ; and also get rid of the special case where it is *max-fixnum*
-                  (>> (nat-rem-reverse (<< a 8) (<< b 8)) 8)
+                  (>> (nat-rem-reverse (<< a 12) (<< b 12)) 12)
                   (let ((r (rrem (nrev a) rb)))
                      (cond
                         ((null? r) 0)
@@ -1549,7 +1550,7 @@
       (define (gcd-drop n)
          (let ((s (car n)))   
             (cond
-               ((eq? s 32768)
+               ((eq? s #x800000)
                   (let ((n (cdr n)))
                      ; drop a digit or zero
                      (if (eq? (type n) type-fix+)
@@ -1567,7 +1568,7 @@
       (define gcd-shifts 
          (list->ff 
             (map (lambda (x) (cons (<< 1 x) x))
-               '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15))))
+               '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23))))
       
       (define (lazy-gcd a b n)
          (let ((av (cdr a)) (bv (cdr b)))
@@ -1590,8 +1591,8 @@
                         (lazy-gcd (cons 2 x) (cons 1 bv) n)))))))
 
       ;; why are the bit values consed to head of numbers?
-      ;(define (nat-gcd a b) (lazy-gcd (cons 1 a) (cons 1 b) 0)) ;; FIXME - does not yet work with variable fixnum size
-      (define nat-gcd gcd-euclid)
+      (define (nat-gcd a b) (lazy-gcd (cons 1 a) (cons 1 b) 0)) ;; FIXME - does not yet work with variable fixnum size
+      ;(define nat-gcd gcd-euclid)
 
       ;; signed wrapper for nat-gcd
       (define (gcd a b)
@@ -1601,6 +1602,8 @@
             ((eq? (type a) type-int-) (gcd (negate a) b))
             ((eq? (type b) type-fix-) (gcd a (negate b)))
             ((eq? (type b) type-int-) (gcd a (negate b)))
+            ((eq? (type a) type-fix+) (gcd-euclid a b))
+            ((eq? (type b) type-fix+) (gcd-euclid a b))
             ((eq? a b) a)
             (else (nat-gcd a b))))
                

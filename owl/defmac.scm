@@ -418,7 +418,7 @@
 
 
       ;;;
-      ;;; TYPE TAGS
+      ;;; DESCRIPTOR FORMAT
       ;;;
       ;
       ;                            .------------> 24-bit payload if immediate
@@ -431,12 +431,14 @@
       ;
       ; object headers are further
       ;
-      ;                         RPPP
-      ;  [ssssssss ssssssss ________ tttttt10]
-      ;   '---------------| '------| '----|
-      ;                   |        |      '-----> object type
-      ;                   |        '------------> tags notifying about special freeing needs for gc (fds), rawness, padding bytes, etc non-type info
-      ;                   '--------------------->
+      ;                                    .----> immediate
+      ;  [ssssssss ssssssss ????rppp tttttt10]
+      ;   '---------------| '--||'-| '----|
+      ;                   |    ||  |      '-----> object type
+      ;                   |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
+      ;                   |    |'---------------> rawness bit (raw objects have no decriptors in them)
+      ;                   |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
+      ;                   '---------------------> object size in words
       ;  
       ;; note - there are 6 type bits, but one is currently wasted in old header position
       ;; to the right of them, so all types must be <32 until they can be slid to right 
@@ -451,7 +453,7 @@
       (define type-pair              1)
       (define type-vector-dispatch  15)
       (define type-vector-leaf      11)
-      (define type-vector-raw       19) ;; going 171 -> 19, see also TBVEC in c/ovm.c
+      (define type-vector-raw       19) ;; see also TBVEC in c/ovm.c
       (define type-ff-black-leaf     8)
       (define type-symbol            4)
       (define type-tuple             2)
