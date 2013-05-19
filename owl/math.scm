@@ -22,7 +22,7 @@
       << < <= = >= > >>   
       band bor bxor
       div ediv rem mod quotrem mod divmod 
-      add nat-inc sub mul big-bad-args negate
+      add nat-succ sub mul big-bad-args negate
       even? odd?
       gcd gcdl lcm
       min max minl maxl
@@ -122,8 +122,10 @@
                (ncdr num)
                (ncons (ncar num) to))))
 
-      (define (nrev num)
-         (nrev-walk num null))
+      (define-syntax nrev 
+         (syntax-rules ()
+            ((nrev num)
+               (nrev-walk num null))))
 
       (define (big-bad-args op a b)
          (error "Bad math:" (list op a b)))
@@ -161,6 +163,7 @@
                      (else
                         (big-less (ncdr a) (ncdr b) #false)))))))
 
+      ;; fixnum/integer <
       (define (int< a b)
          (case (type a)
             (type-fix+
@@ -276,7 +279,7 @@
       ;;; ADDITION
       ;;;
 
-      (define (nat-inc n)
+      (define (nat-succ n)
          (let ((t (type n)))
             (cond
                ((eq? t type-fix+)
@@ -286,7 +289,7 @@
                ((eq? t type-int+)
                   (let ((lo (ncar n)))
                      (if (eq? lo *max-fixnum*)
-                        (ncons 0 (nat-inc (ncdr n)))
+                        (ncons 0 (nat-succ (ncdr n)))
                         (lets ((lo x (fx+ lo 1)))
                            (ncons lo (ncdr n))))))
                ((eq? n null)
@@ -302,7 +305,7 @@
                (let loop ((n n) (i 0))
                   (if (null? n)
                      i
-                     (loop (ncdr n) (nat-inc i)))))))
+                     (loop (ncdr n) (nat-succ i)))))))
 
       (define (add-number-big a big)
          (lets 
@@ -900,9 +903,7 @@
                (cond
                   ((null? ds) d)
                   ((eq? d 0) (fixr ds))
-                  (else (nrev n)))))
-         ;(fix (nrev n))
-         )
+                  (else (nrev n))))))
 
       ; cut numbers from the midpoint of smaller while counting length (tortoise and hare akimbo)
       (define (splice-nums ah bh at bt rat rbt s? l)
@@ -1106,7 +1107,7 @@
             (else 
                (lets ((over b (fx<< b 1)))
                   (if (eq? over 0)
-                     (shift-local-up a b (nat-inc n))
+                     (shift-local-up a b (nat-succ n))
                      (subi n 1))))))
 
       (define (div-shift a b n)
@@ -1139,7 +1140,7 @@
          (let ((next (subi a b)))
             (if (negative? next)
                (values out a)
-               (nat-quotrem-finish next b (nat-inc out)))))
+               (nat-quotrem-finish next b (nat-succ out)))))
     
       (define (nat-quotrem a b)
          (let loop ((a a) (out 0))
@@ -1536,9 +1537,7 @@
       ;;; GCD (lazy binary new)
       ;;;
 
-      ;; fixme: add a 32-vs-16-bit euclid 
-     
-      ;; euclid's gcd
+      ;; Euclid's gcd
       (define (gcd-euclid a b)
          (if (eq? b 0)
             a
@@ -1950,7 +1949,7 @@
          (if (eq? (type n) type-rational)
             (lets ((a b n))
                (if (negative? a)
-                  (negate (nat-inc (div (abs a) b)))
+                  (negate (nat-succ (div (abs a) b)))
                   (div a b)))
             n))
       
@@ -1959,7 +1958,7 @@
             (lets ((a b n))
                (if (negative? a)
                   (div a b)
-                  (nat-inc (floor n))))
+                  (nat-succ (floor n))))
             n))
 
       (define (truncate n)
@@ -1976,7 +1975,7 @@
                (if (eq? b 2)
                   (if (negative? a)
                      (>> (sub a 1) 1)
-                     (>> (nat-inc a) 1))
+                     (>> (nat-succ a) 1))
                   (div a b)))
             n))
 

@@ -47,7 +47,7 @@
             ((eq? n 0) f)
             ((eq? (type n) type-fix+)
                (lets ((hi lo (fx>> n 1)))
-                  (nbits hi (nat-inc f))))
+                  (nbits hi (nat-succ f))))
             (else
                (let ((tl (ncdr n)))
                   (if (null? tl)
