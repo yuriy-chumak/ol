@@ -857,6 +857,8 @@ static word prim_sys(int op, word a, word b, word c) {
          if (chdir(path) < 0)
             return IFALSE;
          return ITRUE; }
+      case 21: /* kill pid signal → fixnum */
+         return (kill(fixval(a), fixval(b)) < 0) ? IFALSE : ITRUE;
       default: 
          return IFALSE;
    }
