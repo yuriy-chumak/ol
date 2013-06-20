@@ -46,6 +46,13 @@ typedef unsigned long in_addr_t;
 
 typedef uintptr_t word;
 
+#ifdef _LP64
+typedef int64_t   wdiff;
+#else
+typedef int32_t   wdiff;
+#endif
+
+
 /*** Macros ***/
 
 #define IPOS                        8 /* offset of immediate payload */
@@ -232,7 +239,7 @@ static word *compact() {
    return new; 
 }
 
-void fix_pointers(word *pos, int delta, word *end) {
+void fix_pointers(word *pos, wdiff delta, word *end) {
    while(1) {
       word hdr = *pos;
       int n = hdrsize(hdr);
@@ -253,11 +260,11 @@ void fix_pointers(word *pos, int delta, word *end) {
 }
 
 /* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
-int adjust_heap(int cells) {
+wdiff adjust_heap(int cells) {
    /* add new realloc + heap fixer here later */
    word *old = memstart;
    word nwords = memend - memstart + MEMPAD; /* MEMPAD is after memend */
-   word new_words = nwords + cells;
+   word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); /* limit heap growth speed  */
    if (!usegc) { /* only run when the vm is running (temp) */
       return 0;
    }
@@ -270,7 +277,7 @@ int adjust_heap(int cells) {
       memend = memstart + new_words - MEMPAD; /* leave MEMPAD words alone */
       return 0;
    } else if (memstart) { /* d'oh! we need to O(n) all the pointers... */
-      int delta = (word)memstart - (word)old;
+      wdiff delta = (word)memstart - (word)old;
       memend = memstart + new_words - MEMPAD; /* leave MEMPAD words alone */
       fix_pointers(memstart, delta, memend);
       return delta;
