@@ -11,6 +11,8 @@
       call-with-values do define-library
       case-lambda
       define-values
+      define-record-type
+      _record-values
       not o i self
       type-complex
       type-rational
@@ -495,4 +497,33 @@
       (define (immediate? obj) (eq? #false (size obj)))
       (define allocated? size)
       (define raw?       sizeb)
+
+      (define-syntax _record-values 
+         (syntax-rules (emit find)
+            ((_record-values emit tag mk pred () fields tail)
+               (values tag mk pred . tail))
+            ((_record-values emit tag mk pred (x ... (field accessor)) fields tail)
+               ;; next must cons accessor of field to tail, so need to lookup its position
+               (_record-values find tag mk pred (x ...) fields tail field fields (2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)))
+            ((_record-values find tag mk pred left fields tail key (key . rest) (pos . poss))
+               (_record-values emit tag mk pred left fields ((λ (x) (ref x pos)) . tail))) 
+            ((_record-values find tag mk pred left fields tail key (x . rest) (pos . poss))
+               (_record-values find tag mk pred left fields tail key rest poss))
+            ((_record-values find tag mk pred left fields tail key () (pos . poss))
+               (syntax-error "Not found in record: " key)) 
+            ((_record-values find tag mk pred left fields tail key (x . rest) ())
+               (syntax-error "Implementation restriction: add more offsets to define-record-type macro" tag)))) 
+
+      (define-syntax define-record-type
+         (syntax-rules (emit)
+            ((define-record-type name (constructor fieldname ...) pred (field accessor) ...)
+               (define-values
+                  (name constructor pred accessor ...)
+                  (let ((tag (quote name))) ; <- how to get record-case?
+                     (_record-values emit 
+                        tag     
+                        (λ (fieldname ...) (tuple tag fieldname ...))
+                        (λ (ob) (eq? tag (ref ob 1))) 
+                        ((field accessor) ...) (fieldname ...) ()))))))
+
 ))
