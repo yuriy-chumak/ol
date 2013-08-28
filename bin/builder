@@ -6,6 +6,10 @@
 
 make bin/ol
 
+OL=$(pwd)/bin/ol
+
+test -x $OL || exit 1
+
 MD5=md5sum
 # it's md5 on more BSD machines
 echo "" | $MD5 | grep 68b329da9893e34099c7d8ad5cb9c940 || MD5="md5"
@@ -39,7 +43,7 @@ notify_irc() {
    NC="nc -i 5 -q 10"
    HOST=$(echo $(hostname | grep "\." || hostname -f)) # different in BSD and Linux
    uname | grep BSD && NC="nc -i 10 -w 5"
-   bin/ol -t "(print \"NICK $(hostname -s)-$$\\nUSER builder 8 x $(hostname -s) $HOST\\nJOIN #owl-lisp\\nPRIVMSG #owl-lisp :$1\\nQUIT\\n\")" | $NC irc.freenode.net 6667
+   $OL -t "(print \"NICK $(hostname -s)-$$\\nUSER builder 8 x $(hostname -s) $HOST\\nJOIN #owl-lisp\\nPRIVMSG #owl-lisp :$1\\nQUIT\\n\")" | $NC irc.freenode.net 6667
 }
 
 renice +20 $$
@@ -134,15 +138,15 @@ do
 	cd $WORK/owl-lisp
 	VERSION=$(thisgit)
 	echo " - running $TESTMINS minutes of randomized unit tests"
-   END=$(ol -e "(+ (time) (* $TESTMINS 60))")
+   END=$($OL -e "(+ (time) (* $TESTMINS 60))")
    while true
    do
-      LEFT=$(ol -e "(- $END (time))")
-      ol -t "(< $LEFT 1)" && break
+      LEFT=$($OL -e "(- $END (time))")
+      $OL -t "(< $LEFT 1)" && break
       echo " - ${LEFT}s left"
       sleep $DELAY # optional, machine-specific
 		(ulimit -S -t $TIMELIMIT; make random-test > test.log 2>&1) || {
-         cp test.log /tmp/test-fail-$(ol -e '(time-ms)').log;
+         cp test.log /tmp/test-fail-$($OL -e '(time-ms)').log;
 			notify "Owl random test failed on $(hostname)" < test.log;
          notify_irc "aoh, randomized test FAILED on $(hostname) using owl $VERSION";
 			sleep 600;
@@ -152,10 +156,10 @@ do
 
    ## THEOREM TEST ONLY 
 
-   SEED=$(echo -n $$; bin/ol -e '(time-ms)')
+   SEED=$(echo -n $$; $OL -e '(time-ms)')
 	VERSION=$(thisgit)
 	echo " - running theorem test for a while with seed $SEED"
-	bin/ol --run tests/theorem-rand.scm --seed $SEED -n $THEOREMS &> random.log || { cp random.log /tmp; notify_irc "aoh, theorem test FAILED on $(hostname) with seed $SEED, owl $VERSION"; }
+	$OL --run tests/theorem-rand.scm --seed $SEED -n $THEOREMS &> random.log || { cp random.log /tmp; notify_irc "aoh, theorem test FAILED on $(hostname) with seed $SEED, owl $VERSION"; }
 
    sleep $DELAY
 
