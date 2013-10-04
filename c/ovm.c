@@ -800,7 +800,6 @@ static word prim_sys(int op, word a, word b, word c) {
          char **args = malloc((nargs+1) * sizeof(char *));
          char **argp = args;
 #ifndef WIN32 
-         
          if (args == NULL) 
             return IFALSE;
          while(nargs--) {
@@ -817,27 +816,16 @@ static word prim_sys(int op, word a, word b, word c) {
          set_blocking(2,0);
 #endif
          return IFALSE; }
-      case 18: { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
-#ifdef WIN32
-         return IFALSE;
-#else
-         pid_t pid = fork();
-         if (pid == -1) /* fork failed */
+      case 20: { /* chdir path res */
+         char *path = ((char *)a) + W;
+         if (chdir(path) < 0)
             return IFALSE;
-         if (pid == 0) /* we're in child, return true */
-            return ITRUE;
-         if ((int)pid > FMAX)
-            fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
-         return F(pid&FMAX); 
-#endif
-         }
+         return ITRUE; }
+#ifndef WIN32
       case 19: { /* wait <pid> <respair> _ */
          pid_t pid = (a == IFALSE) ? -1 : fixval(a);
          int status;
          word *r = (word *) b;
-#ifdef WIN32
-         r = (word) IFALSE;
-#else
          pid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
          if (pid == -1) 
             return IFALSE; /* error */
@@ -859,15 +847,19 @@ static word prim_sys(int op, word a, word b, word c) {
             fprintf(stderr, "vm: unexpected process exit status: %d\n", status);
             r = (word *)IFALSE;
          }
-#endif
          return (word)r; }
-      case 20: { /* chdir path res */
-         char *path = ((char *)a) + W;
-         if (chdir(path) < 0)
+      case 18: { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
+         pid_t pid = fork();
+         if (pid == -1) /* fork failed */
             return IFALSE;
-         return ITRUE; }
+         if (pid == 0) /* we're in child, return true */
+            return ITRUE;
+         if ((int)pid > FMAX)
+            fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
+         return F(pid&FMAX); }
       case 21: /* kill pid signal → fixnum */
          return (kill(fixval(a), fixval(b)) < 0) ? IFALSE : ITRUE;
+#endif
       default: 
          return IFALSE;
    }
