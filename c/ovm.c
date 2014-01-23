@@ -671,7 +671,11 @@ static word prim_sys(int op, word a, word b, word c) {
          myaddr.sin_port = htons(port);
          myaddr.sin_addr.s_addr = INADDR_ANY;
          s = socket(AF_INET, SOCK_STREAM, 0);
+#ifndef WIN32
          if (s < 0) return IFALSE;
+#else
+	 if (s == INVALID_SOCKET) return IFALSE;
+#endif
          if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) \
              || bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) != 0 \
              || listen(s, 5) != 0) {
@@ -1537,6 +1541,20 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=syscall and call mcp */
 }
 
 int main(int nargs, char **argv) {
+#ifndef WIN32
    return boot(nargs, argv);
+#else
+   WSADATA wsaData;
+
+   // Initialize Winsock
+   int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
+   if (sock_init  != 0) {
+       printf("WSAStartup failed with error: %d\n", sock_init);
+       return 1;
+   }
+   word boot_result = boot(nargs, argv);
+   WSACleanup();
+   return boot_result;
+#endif
 }
 
