@@ -18,8 +18,9 @@
       type-rational
       type-int+
       type-int-
+      type-record
 
-      immediate? allocated? raw?
+      immediate? allocated? raw? record?
 
       type-bytecode
       type-proc
@@ -466,6 +467,7 @@
       (define type-string-wide      22)
       (define type-string-dispatch  21)
       (define type-thread-state     31)
+      (define type-record            5)
 
       ;; transitional trees or future ffs
       (define type-ff               24)
@@ -497,6 +499,7 @@
       (define (immediate? obj) (eq? #false (size obj)))
       (define allocated? size)
       (define raw?       sizeb)
+      (define (record? x) (eq? type-record (type x)))
 
       (define-syntax _record-values 
          (syntax-rules (emit find)
@@ -519,10 +522,10 @@
             ((define-record-type name (constructor fieldname ...) pred (field accessor) ...)
                (define-values
                   (name constructor pred accessor ...)
-                  (let ((tag (quote name))) ; <- how to get record-case?
+                  (let ((tag (quote name))) ; ← note, not unique after redefinition, but atm seems useful to get pattern matching
                      (_record-values emit 
                         tag     
-                        (λ (fieldname ...) (tuple tag fieldname ...))
+                        (λ (fieldname ...) (mkt type-record tag fieldname ...))
                         (λ (ob) (eq? tag (ref ob 1))) 
                         ((field accessor) ...) (fieldname ...) ()))))))
 
