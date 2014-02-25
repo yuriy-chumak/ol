@@ -946,7 +946,10 @@ word boot(int nargs, char **argv) {
    }
    max_heap_mb = (W == 4) ? 4096 : 65535; /* can be set at runtime */
    memstart = genstart = fp = (word *) realloc(NULL, (INITCELLS + FMAX + MEMPAD)*W); /* at least one argument string always fits */
-   if (!memstart) exit(3);
+   if (!memstart) {
+      fprintf(stderr, "Failed to allocate initial memory\n");
+      exit(4);
+   }
    memend = memstart + FMAX + INITCELLS - MEMPAD;
    this = nargs-1;
    usegc = 1;
