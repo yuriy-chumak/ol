@@ -8,6 +8,8 @@ CFLAGS=-Wall -g -mno-sse
 #CC=gcc
 
 owl: fasl/ol.fasl
+o2l: fasl/boot.fasl
+	toolchain/ol main.owl -o foo.fasl
 
 ## fasl (plain bytecode) image boostrap
 

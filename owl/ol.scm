@@ -863,7 +863,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                ;; the next value after evaluation will be the new repl heap
                ;; start point for the vm
                (λ (vm-args)
-                  (print "vm-args: " vm-args)
+;                 (print "vm-args: " vm-args)
                   ;; now we're running in the new repl 
                   (start-thread-controller
                      (list

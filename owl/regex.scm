@@ -808,7 +808,7 @@
                   (let-parses ;; (?!<regex>) → match if regex would not match
                      ((open (get-imm 40))
                       (skip (get-imm 63))
-                      (skip (get-imm 33))
+                      (skip (get-imm 33)) ;'!'
                       (rex (get-regex))
                       (close (get-imm 41)))
                      (lookahead-not rex))

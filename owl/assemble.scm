@@ -42,7 +42,7 @@
       (define vm-instructions
          (list->ff
             `((move . 9)      ; move a, t:      Rt = Ra
-              (refi . 1)      ; refi a, p, t:   Rt = Ra[p], p unsigned
+              (refi . 1)      ; refi a, p, t:   Rt = Ra[p], p unsigned                                       ;+
               (goto . 2)      ; jmp a, nargs    call Ra with nargs args
               (clos . 3)      ; clos lp, o, nenv, e0 ... en, t: 
               (cloc . 4)      ; cloc lp, o, nenv, e0 ... en, t: 
@@ -50,7 +50,6 @@
               (clos1 . 6)
               (cloc1 . 7)
               ; 8 = jlq 
-              (movh . 13)       ; 
               (goto-code . 18)
               (goto-proc . 19)
               (goto-clos . 21)
@@ -64,14 +63,15 @@
               (mki  . 11)     ; mki size, type, v1, ..., vn, to
               (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
               (ld   . 14)     ; ld a, t:        Rt = a, signed byte
-              ;; ldi = 13
-              (jz   . ,(+ 16 (<< 0 6)))     ; jump-imm[0], zero
-              (jn   . ,(+ 16 (<< 1 6)))     ; jump-imm[1], null
-              (jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2], true
-              (jf   . ,(+ 16 (<< 3 6)))     ; jump-imm[3], false
-              (ldn  . 77)     ; 13 + 1<<6
-              (ldf  . 205)     ; ldf t:          Rt = false
-              (ldt  . 141)     ; ldt t:          Rt = true
+              (jz   . ,(+ 16 (<< 0 6)))     ; jump-imm[0], zero                                              ;+
+              (jn   . ,(+ 16 (<< 1 6)))     ; jump-imm[1], null                                              ;+
+              (jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2], true                                              ;+
+              (jf   . ,(+ 16 (<< 3 6)))     ; jump-imm[3], false                                             ;+
+              ;; ldi = 13                                                                                    ;+
+              (movh . 13)       ;                                                                            ;+
+              (ldn  . ,(+ 13 (<< 1 6)))     ; 77                                                             ;+
+              (ldt  . ,(+ 13 (<< 2 6)))     ; 141  ldt t:          Rt = true                                 ;+
+              (ldf  . ,(+ 13 (<< 3 6)))     ; 205  ldf t:          Rt = false                                ;+
               (jeq  . 20)     ; jeq a, b, o:    ip += o if Ra == Rb      ; jump if eq?
               (ret  . 24)     ; ret a:          call R3 (usually cont) with Ra
               (jf2  . 25)     ; jf a, ol, oh
