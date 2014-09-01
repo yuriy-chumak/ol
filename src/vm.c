@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <assert.h>
 #include <errno.h>
 #include <time.h>
 #include <inttypes.h>
@@ -166,7 +167,7 @@ typedef struct VM
 	HANDLE thread;
 	void*userdata;
 
-	// memory objects
+	// структура памяти VM. распределяется еще до запуска самой машины
 	word max_heap_mb; /* max heap size in MB */
 
 	// memstart <= genstart <= memend
@@ -305,20 +306,6 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 
 static thread_local word max_heap_mb; /* max heap size in MB */
 
-// memstart <= genstart <= memend
-static thread_local word *genstart;
-static thread_local word *memstart;
-static thread_local word *memend;
-
-// allocation pointer (top of allocated heap)
-static thread_local word *fp;
-static __inline__ word* new (size_t size)
-{
-	word* object = fp;
-	fp += size;
-	return object;
-}
-
 static int breaked;      /* set in signal handler, passed over to owl in thread switch */
 
 static int seccompp;     /* are we in seccomp? */
@@ -341,6 +328,11 @@ int execv(const char *path, char *const argv[]);
 #endif
 
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
+//  memstart <= genstart <= memend
+static thread_local word *genstart;
+static thread_local word *memstart;
+static thread_local word *memend;
+
 // cont(n) = V((word)n & (~1))
 static __inline__
 void rev(word* pos) {
@@ -360,7 +352,8 @@ word *chase(word* pos) {
    return pos;
 }
 
-static void mark(word *pos, word *end) {
+static void mark(word *pos, word *end)
+{
    while (pos != end) {
       word val = *pos;
       if (allocp(val) && val >= ((word) genstart)) {
@@ -381,7 +374,8 @@ static void mark(word *pos, word *end) {
    }
 }
 
-static word *compact() {
+static word *compact()
+{
    word *newobj = genstart;
    word *old = newobj;
    word *end = memend - 1;
@@ -411,7 +405,8 @@ static word *compact() {
    return newobj;
 }
 
-void fix_pointers(word *pos, wdiff delta, word *end) {
+static void fix_pointers(word *pos, wdiff delta, word *end)
+{
    while(1) {
       word hdr = *pos;
       int n = hdrsize(hdr);
@@ -432,7 +427,7 @@ void fix_pointers(word *pos, wdiff delta, word *end) {
 }
 
 /* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
-wdiff adjust_heap(int cells) {
+static wdiff adjust_heap(int cells) {
    /* add newobj realloc + heap fixer here later */
    word *old = memstart;
    word nwords = memend - memstart + MEMPAD; /* MEMPAD is after memend */
@@ -459,15 +454,27 @@ wdiff adjust_heap(int cells) {
    }
 }
 
+
+// allocation pointer (top of allocated heap)
+static thread_local word *fp;
+static __inline__ word* new (size_t size)
+{
+	word* object = fp;
+	fp += size;
+	return object;
+}
+
 /* input desired allocation size and (the only) pointer to root object
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 static word *gc(int size, word *regs) {
    word *root;
    word *realend = memend;
    int nfree;
-   fp = regs + hdrsize(*regs);
-   root = fp+1;
+   fp = regs + hdrsize(*regs); // следущий после regs (?)
+   root = fp + 1;
+
    *root = (word) regs;
+
    memend = fp;
    mark(root, fp);
    fp = compact();
@@ -512,11 +519,11 @@ static word *gc(int size, word *regs) {
 
 
 /*** OS Interaction and Helpers ***/
-
+//static
 void set_blocking(int sock, int blockp) {
 #ifdef WIN32
    unsigned long flags = 1;
-   if (sock>3) { // stdin is read differently, out&err block
+   if (sock > 3) { // stdin is read differently, out&err block
       ioctlsocket(sock, FIONBIO, &flags);
    }
 #else
@@ -524,6 +531,7 @@ void set_blocking(int sock, int blockp) {
 #endif
 }
 
+static
 void signal_handler(int signal) {
 #ifndef WIN32
    switch(signal) {
@@ -540,7 +548,6 @@ void signal_handler(int signal) {
 /* small functions defined locally after hitting some portability issues */
 static __inline__ void bytecopy(char *from, char *to, int n) { while(n--) *to++ = *from++; }
 static __inline__ void wordcopy(word *from, word *to, int n) { while(n--) *to++ = *from++; }
-
 static __inline__
 unsigned int lenn(char *pos, unsigned int max) { /* added here, strnlen was missing in win32 compile */
    unsigned int p = 0;
@@ -548,7 +555,9 @@ unsigned int lenn(char *pos, unsigned int max) { /* added here, strnlen was miss
    return p;
 }
 
+
 /* list length, no overflow or valid termination checks */
+static
 int llen(word *ptr) {
    int len = 0;
    while (allocp(ptr) && *ptr == PAIRHDR) {
@@ -852,20 +861,6 @@ static word prim_sys(VM* vm, int op, word a, word b, word c) {
          return BOOL(errno == EAGAIN || errno == EWOULDBLOCK); }
 
 
-      case 6:
-    	  free(memstart); // free the allocated by vm heap
-#		if WIN32
-    	  ExitThread(fixval(a));
-#		else
-          EXIT(fixval(a)); /* stop the press */
-#		endif
-      case 7: /* set memory limit (in mb) */
-         max_heap_mb = fixval(a);
-         return a;
-      case 8: /* get machine word size (in bytes) */
-         return F(W);
-      case 9: /* get memory limit (in mb) */
-         return F(max_heap_mb);
       case 10: /* enter linux seccomp mode */
 #ifdef __gnu_linux__
 #ifndef NO_SECCOMP
@@ -1074,18 +1069,19 @@ runtime(void *vm) // heap top
 	max_heap_mb = ((VM*)vm)->max_heap_mb; /* max heap size in MB */
 
 	// memstart <= genstart <= memend
-	genstart = ((VM*)vm)->genstart;
 	memstart = ((VM*)vm)->memstart;
-	memend = ((VM*)vm)->memend;
+	memend   = ((VM*)vm)->memend;
+	genstart = ((VM*)vm)->genstart; // разделитель Old Generation и New Generation (?)
 
 	// allocation pointer (top of allocated heap)
-	fp = ((VM*)vm)->fp;
+	fp       = ((VM*)vm)->fp;
 
 
-	// start point is last lambda
+	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
+	// todo: может стоит искать и загружать какой-нибудь main()?
 	word* ptrs = (word*)userdata + 3;
 	int nobjs = hdrsize(ptrs[0]) - 1;
-	word* ob = (word*) ptrs[nobjs-1]; // выполним последний обeъект в списке /он должен быть (λ (args))/
+	word* ob = (word*) ptrs[nobjs-1]; // выполним последний объект в списке /он должен быть (λ (args))/
 
 	word R[NR];
 
@@ -1095,12 +1091,12 @@ runtime(void *vm) // heap top
 		R[i++] = INULL;
 	R[0] = IFALSE;
 	R[3] = IHALT;
-
 	R[4] = (word) userdata;
 
-	   unsigned char *ip;
-	   int bank = 0; /* ticks deposited at syscall */
-	   int ticker = slice; /* any initial value ok */
+	unsigned char *ip;
+
+		int bank = 0; /* ticks deposited at syscall */
+		int ticker = slice; /* any initial value ok */
 	// usegc = 1; /* enble gc (later have if always evabled) */
 
 	unsigned short acc = 2; // boot always calls with 2 args, no support for >255arg functions
@@ -1234,6 +1230,8 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 	// АЛУ
 #	define EQ    54
 
+#	define SYSCALL 63
+
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
@@ -1291,7 +1289,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 			if ((op & 0x40) && acc > needed) {
 			         word tail = INULL;  /* todo: no call overflow handling yet */
 			         while (acc > needed) {
-			            fp[0] = PAIRHDR;
+			            fp[0] = PAIRHDR;   // todo: make as function for implicitly use fp
 			            fp[1] = R[acc + 2];
 			            fp[2] = tail;
 			            tail = (word) fp;
@@ -1349,7 +1347,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 
 		// операции со списками
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
-			fp[0] = PAIRHDR;
+			fp[0] = PAIRHDR; // todo: make as function with using fp
 			fp[1] = A0, fp[2] = A1;
 			A2 = (word) fp;
 			fp += 3;
@@ -1369,7 +1367,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 
 		// то же самое, но для числовых пар (todo: проверить, можно ли заменить ncons на cons и т.д.
 		case NCONS:  /* ncons a b r */
-			fp[0] = NUMHDR;
+			fp[0] = NUMHDR; // todo: make as function with using fp
 			fp[1] = A0, fp[2] = A1;
 			A2 = (word) fp;
 			fp += 3;
@@ -1457,7 +1455,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44; case 45: goto op45;
 		case 46: goto op46; case 47: goto op47; case 48: goto op48; case 49: goto op49; case 50: goto op50;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
-		case 58: goto op58; case 59: goto op59; case 60: goto op60; case 61: goto op61; case 62: goto op62; case 63: goto op63;
+		case 58: goto op58; case 59: goto op59; case 60: goto op60; case 61: goto op61; case 62: goto op62;
 
 //		// ошибки
 		case 17: /* arity error */
@@ -1500,11 +1498,11 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 				 word *node = (word *) R[*ip];
 				 word *newobj, h;
 				 CHECK(allocp(node), node, 46);
-				 newobj = fp;
+				 newobj = fp; // todo: make as function with using fp
 				 h = *node++;
 				 A1 = (word) newobj;
 				 *newobj++ = (h^(FFRED<<TPOS));
-				 switch(hdrsize(h)) {
+				 switch (hdrsize(h)) {
 					case 5:  *newobj++ = *node++;
 					case 4:  *newobj++ = *node++;
 					default: *newobj++ = *node++;
@@ -1531,6 +1529,44 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 			  }
 			  NEXT(5); }
 
+			// этот case должен остаться тут - как последний из кейсов
+			//  todo: переименовать в компиляторе sys-prim на syscall
+			// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
+			case SYSCALL: { /* sys-prim op arg1 arg2 arg3 r1 */
+				// todo: make prim_sys inlined here!
+				word op = fixval(A0);
+				word a = A1, b = A2, c = A3;
+				word result;
+
+				switch (op) {
+				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
+				//  остальное можно спокойно оформлять отдельными функциями
+				// todo: добавить функции LoadLibrary, GetProcAddress и вызов этих функций с параметрами
+
+				case 6: // todo: переделать на другой номер
+					free(memstart); // освободим занятую память
+					#if WIN32
+						ExitThread(fixval(a));
+					#else
+						EXIT(fixval(a)); /* stop the press */
+					#endif
+
+				case 7: /* set memory limit (in mb) */ // todo: переделать на другой номер
+					 max_heap_mb = fixval(a);
+					 return a;
+				  case 8: /* get machine word size (in bytes) */ // todo: переделать на другой номер
+					 return F(W);
+				  case 9: /* get memory limit (in mb) */ // todo: переделать на другой номер
+					 return F(max_heap_mb);
+
+				default:
+					result = prim_sys((VM*)vm, op, a, b, c);
+					break;
+				}
+
+				A4 = result;
+				ip += 5; break;
+			}
 		}
 		main_dispatch: continue; // временная замена вызову "break" в свиче, пока не закончу рефакторинг
 
@@ -1703,24 +1739,8 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       A1 = F(ticker & FMAX);
       ticker = fixval(A0);
       NEXT(2);
-   op63: { /* sys-prim op arg1 arg2 arg3 r1 */
-	   // todo: make prim_sys inlined here!
-	   word a = A1, b = A2, c = A3;
-	   word op = fixval(A0);
-	   word result;
 
-	   switch (op) {
-	   // todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
-	   //  остальное можно спокойно оформлять отдельными функциями
-	   // todo: добавить функции LoadLibrary, GetProcAddress и вызов этих функций с параметрами
-	      default:
-	    	  result = prim_sys((VM*)vm, op, a, b, c);
-	         break;
-	   }
 
-	   A4 = result;
-//	   A4 = prim_sys((VM*)vm, fixval(A0), A1, A2, A3);
-      NEXT(5); }
 	} // switch(1)
 
 //super_dispatch: /* run macro instructions */
@@ -1808,7 +1828,7 @@ word *deserialize(word *ptrs, int me)
          type = *hp++;
          size = get_nat();
          *fp++ = make_header(size+1, type); /* +1 to include header in size */
-         while(size--) { fp = get_field(ptrs, me); }
+         while (size--) { fp = get_field(ptrs, me); }
          break; }
       case 2: {
          int bytes, pads;
@@ -1829,44 +1849,44 @@ word *deserialize(word *ptrs, int me)
 }
 
 // функция подсчета количества объектов в загружаемом образе
-static __inline__
-word get_nat_tmp() {
-	word result = 0;
-	word newobj, i;
-	do {
-		i = *hp++;
-		newobj = result << 7;
-		if (result != (newobj >> 7)) exit(9); // overflow kills
-		result = newobj + (i & 127);
-	}
-	while (i & 128);
-	return result;
-}
-
 static
 int count_fasl_objects(word *words, unsigned char *lang) {
+	unsigned char* hp;
+	word decode_word() {
+		word result = 0;
+		word newobj, i;
+		do {
+			i = *hp++;
+			newobj = result << 7;
+			assert (result == (newobj >> 7));
+//			if (result != (newobj >> 7)) exit(9); // overflow kills
+			result = newobj + (i & 127);
+		}
+		while (i & 128);
+		return result;
+	}
+
 	int n = 0;
 	hp = lang;
 
 	int allocated = 0;
 	while (*hp != 0) {
-		// dry run - just to count the objects
 		switch (*hp++) {
 		case 1: {
 			hp++; ++allocated;
-			int size = get_nat_tmp();
+			int size = decode_word();
 			while (size--) {
 				if (*hp == 0) {
 					hp++; ++allocated;
 					hp++;
 				}
-				get_nat_tmp();
+				decode_word(); // simply skip word
 			}
 			break;
 		}
 		case 2: {
 			hp++;
-			int size = get_nat_tmp(); // todo: make inlined and avoid of using hp (and saving original hp as orig_hp)
+			int size = decode_word();
 			hp += size;
 
 			int words = (size/W) + (((size % W) == 0) ? 1 : 2);
@@ -1886,6 +1906,9 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	return n;
 }
 
+// ----------------------------------------------------------------
+// -=( virtual machine functions )=--------------------------------
+//
 // this is NOT thread safe function!
 VM* vm_start(unsigned char* language)
 {
@@ -1963,14 +1986,14 @@ VM* vm_start(unsigned char* language)
 	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
 
 	//	vm(oargs);
-	machine->userdata = oargs;
 
-	machine->max_heap_mb = max_heap_mb; /* max heap size in MB */
 	machine->genstart = genstart;
 	machine->memstart = memstart;
 	machine->memend = memend;
+	machine->max_heap_mb = max_heap_mb; /* max heap size in MB */
 	machine->fp = fp;
 
+	machine->userdata = oargs;
 	machine->thread = CreateThread(NULL, 0, &runtime, machine, 0, NULL);
 
 	return machine;
