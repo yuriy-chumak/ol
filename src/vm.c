@@ -4,13 +4,23 @@
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
 //      http://igorkov.org/pdf/Z80-Central-Processor-Unit.pdf
 //      https://ru.wikipedia.org/wiki/Zilog_Z80
+// Всякие LISP иджеи и примеры:
+//      http://habrahabr.ru/post/204992/
+//      http://habrahabr.ru/post/211100/
+// Книга http://ilammy.github.io/lisp/
 
 #include "vm.h"
 
 // http://joeq.sourceforge.net/about/other_os_java.html
+// call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
+
+// компилятор поддерживает только несколько специальных форм:
+//	lambda, quote, rlambda, receive, _branch, _define, _case-lambda, values (смотреть env.scm)
+//	все остальное - макросами (?)
 
 #include <signal.h>
 #include <unistd.h>
+#include <stddef.h>
 #include <errno.h>
 #include <time.h>
 #include <inttypes.h>
@@ -23,12 +33,27 @@
 #include <string.h>
 #include <malloc.h>
 
-// temp
-#ifndef WIN32
-#define WIN32
-#endif//WIN32
-
-
+// thread local storage modifier for virtual machine private variables -
+// виртуальная машина у нас работает в отдельном потоке, соответственно ее
+// локальные переменные можно держать в TLS, а не в какой-то VM структуре
+#ifndef thread_local
+# if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
+#  define thread_local _Thread_local
+# elif defined _WIN32 && ( \
+       defined _MSC_VER || \
+       defined __ICL || \
+       defined __DMC__ || \
+       defined __BORLANDC__ )
+#  define thread_local __declspec(thread)
+/* note that ICC (linux) and Clang are covered by __GNUC__ */
+# elif defined __GNUC__ || \
+       defined __SUNPRO_C || \
+       defined __xlC__
+#  define thread_local __thread
+# else
+#  error "Cannot define thread_local"
+# endif
+#endif
 
 /*** Portability Issues ***/
 
@@ -80,7 +105,7 @@ struct fifo
 {
 	unsigned int putp, getp;
 	char buffer[FIFOLENGTH];
-};//fi = {0, 0}, fo = {0, 0}; // some global fifos, not sure if needed
+}  fi = {0, 0}, fo = {0, 0}; // пара глобальных fifo, пригодятся )
 
 static __inline__
 char fifo_put(struct fifo* f, char c)
@@ -108,6 +133,7 @@ char fifo_full(struct fifo* f)
 }
 
 // utility fifo functions
+static
 int fifo_puts(struct fifo* f, char *message, int n)
 {
 	char *ptr = message;
@@ -118,6 +144,7 @@ int fifo_puts(struct fifo* f, char *message, int n)
 	}
 	return ptr - message;
 }
+static
 int fifo_gets(struct fifo* f, char *message, int n)
 {
 	char *ptr = message;
@@ -133,14 +160,25 @@ int fifo_gets(struct fifo* f, char *message, int n)
 	return ptr - message;
 }
 
-
-struct VM
+typedef struct fifo fifo;
+typedef struct VM
 {
-	void*userdata;
 	HANDLE thread;
+	void*userdata;
+
+	// memory objects
+	word max_heap_mb; /* max heap size in MB */
+
+	// memstart <= genstart <= memend
+	word *genstart;
+	word *memstart;
+	word *memend;
+
+	// allocation pointer (top of allocated heap)
+	word *fp;
 
 	struct fifo fi, fo;
-};
+} VM;
 
 
 
@@ -222,7 +260,7 @@ struct VM
 #define IEOF                        make_immediate(4, TCONST)
 #define IHALT                       INULL /* FIXME: adde a distinct IHALT */
 
-static word I[]                     = { F(0), INULL, ITRUE, IFALSE };  /* for ldi and jv */
+static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ldi and jv */
 
 #define PAIRHDR                     make_header(3, TPAIR)
 #define NUMHDR                      make_header(3,40) // <- on the way to 40, see type-int+ in defmac.scm
@@ -253,43 +291,46 @@ static word I[]                     = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
 
-#define OGOTO(f,n);                 ob = (word *)R[f]; acc = n; goto apply
+#define OGOTO(f, n)                 ob = (word *)R[f]; acc = n; goto apply
 #define RET(n)                      ob = (word *)R[3]; R[3] = R[n]; acc = 1; goto apply
 #define MEMPAD                      (NR+2)*8 /* space at end of heap for starting GC */
 #define MINGEN                      1024*32  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
+#define _thread_local
 
 /*** Globals and Prototypes ***/
+// память виртуальной машины локальна по отношению к ее потоку. пусть пока побудет так - не буду
+//  ее тащить в структуру VM
 
-/* memstart <= genstart <= memend */
-static word *genstart;
-static word *memstart;
-static word *memend;
-static word max_heap_mb; /* max heap size in MB */
-static int breaked;      /* set in signal handler, passed over to owl in thread switch */
-unsigned char *hp;       /* heap pointer when loading heap */
-static int seccompp;     /* are we in seccomp? */
-static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
+static thread_local word max_heap_mb; /* max heap size in MB */
 
-// allocation pointer (top of
-static word *fp;
-#define allocate(size, to)          to = fp; fp += size;
-/*
-static __inline__
-word* new(size_t size)
+// memstart <= genstart <= memend
+static thread_local word *genstart;
+static thread_local word *memstart;
+static thread_local word *memend;
+
+// allocation pointer (top of allocated heap)
+static thread_local word *fp;
+static __inline__ word* new (size_t size)
 {
 	word* object = fp;
 	fp += size;
 	return object;
-}*/
+}
+
+static int breaked;      /* set in signal handler, passed over to owl in thread switch */
+
+static int seccompp;     /* are we in seccomp? */
+static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
+
 
 int slice;
 
-void exit(int rval);
-void *realloc(void *ptr, size_t size);
-void *malloc(size_t size);
-char *getenv(const char *name);
+//void exit(int rval);
+//void *realloc(void *ptr, size_t size);
+//void *malloc(size_t size);
+//char *getenv(const char *name);
 DIR *opendir(const char *name);
 DIR *fdopendir(int fd);
 pid_t fork(void);
@@ -301,14 +342,16 @@ int execv(const char *path, char *const argv[]);
 
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
 // cont(n) = V((word)n & (~1))
-static __inline__ void rev(word* pos) {
+static __inline__
+void rev(word* pos) {
    word val = *pos;
    word next = cont(val);
    *pos = next;
    cont(val) = (val&1)^((word)pos|1);
 }
 
-static __inline__ word *chase(word* pos) {
+static __inline__
+word *chase(word* pos) {
    word val = cont(pos);
    while (allocp(val) && flagged(val)) {
       pos = (word *) val;
@@ -495,9 +538,10 @@ void signal_handler(int signal) {
 }
 
 /* small functions defined locally after hitting some portability issues */
-static void bytecopy(char *from, char *to, int n) { while(n--) *to++ = *from++; }
-static void wordcopy(word *from, word *to, int n) { while(n--) *to++ = *from++; }
+static __inline__ void bytecopy(char *from, char *to, int n) { while(n--) *to++ = *from++; }
+static __inline__ void wordcopy(word *from, word *to, int n) { while(n--) *to++ = *from++; }
 
+static __inline__
 unsigned int lenn(char *pos, unsigned int max) { /* added here, strnlen was missing in win32 compile */
    unsigned int p = 0;
    while (p < max && *pos++) p++;
@@ -610,7 +654,7 @@ static word prim_cast(word *ob, int type) {
       word hdr = *ob++;
       int size = hdrsize(hdr);
       word *newobj, *res; /* <- could also write directly using *fp++ */
-      allocate(size, newobj);
+      newobj = new (size);
       res = newobj;
       /* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
       //*newobj++ = (hdr&(~2040))|(type<<TPOS);
@@ -658,9 +702,9 @@ static word prim_set(word wptr, word pos, word val) {
    if(immediatep(ob)) { return IFALSE; }
    hdr = *ob;
    if (rawp(hdr) || hdrsize(hdr) < pos) { return IFALSE; }
-   hdr = hdrsize(hdr);
-   allocate(hdr, newobj);
-   while(p <= hdr) {
+   word size = hdrsize(hdr);
+   newobj = new (size);
+   while(p <= size) {
       newobj[p] = (pos == p && p) ? val : ob[p];
       p++;
    }
@@ -753,7 +797,7 @@ static word prim_sys(VM* vm, int op, word a, word b, word c) {
 
          word *res;
          int n, nwords = (max/W) + 2;
-         allocate(nwords, res);
+         res = new (nwords);
 #ifndef WIN32
          n = read(fd, ((char *) res) + W, max);
 #else
@@ -961,7 +1005,7 @@ static word prim_lraw(word wptr, int type, word revp) {
    if ((word) ob != INULL) return IFALSE;
    if (len > FMAX) return IFALSE;
    nwords = (len/W) + ((len % W) ? 2 : 1);
-   allocate(nwords, raw);
+   raw = new (nwords);
    pads = (nwords-1)*W - len; /* padding byte count, usually stored to top 3 bits */
    *raw = make_raw_header(nwords, type, pads);
    ob = lst;
@@ -1008,9 +1052,9 @@ free((void *) file_heap);
 */
 
 #define OCLOSE(proctype)            \
-	{ word size = *ip++, tmp; word *ob; allocate(size, ob); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
+	{ word size = *ip++, tmp; word *ob = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
 #define CLOSE1(proctype)            \
-	{ word size = *ip++, tmp; word *ob; allocate(size, ob); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
+	{ word size = *ip++, tmp; word *ob = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
 #define NEXT(n)                     ip += n; goto main_dispatch
 #define SKIP(n)                     ip += n; break;
 #define TICKS                       10000 /* # of function calls in a thread quantum  */
@@ -1024,11 +1068,24 @@ runtime(void *vm) // heap top
 {
 	void *userdata = ((VM*)vm)->userdata;
 
+	seccompp = 0;
+	slice = TICKS; // default thread slice (n calls per slice)
+
+	max_heap_mb = ((VM*)vm)->max_heap_mb; /* max heap size in MB */
+
+	// memstart <= genstart <= memend
+	genstart = ((VM*)vm)->genstart;
+	memstart = ((VM*)vm)->memstart;
+	memend = ((VM*)vm)->memend;
+
+	// allocation pointer (top of allocated heap)
+	fp = ((VM*)vm)->fp;
+
 
 	// start point is last lambda
 	word* ptrs = (word*)userdata + 3;
 	int nobjs = hdrsize(ptrs[0]) - 1;
-	word* ob = (word*) ptrs[nobjs-1]; // entry is last object
+	word* ob = (word*) ptrs[nobjs-1]; // выполним последний обeъект в списке /он должен быть (λ (args))/
 
 	word R[NR];
 
@@ -1125,7 +1182,7 @@ switch_thread: /* enter mcp if present */
       bank = 0;
       acc = acc + 4;
       R[acc] = (word) ob;
-      allocate(acc, state);
+      state = new (acc);
       *state = make_header(acc, TTHREAD);
       state[acc-1] = R[acc];
       while(pos < acc-1) {
@@ -1160,10 +1217,13 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 #	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
 #	define MOVE   9       //
 #	define MOV2   5       //
+#	define GOTO   2       // jmp a, nargs
 #	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
 #	define LD    14
 #	define JP    16       // JZ, JN, JT, JF
 #	define JLQ    8       // jlq ?
+#	define JF2   25
+
 	// примитивы языка
 #	define CONS  51
 #	define CAR   52
@@ -1202,6 +1262,12 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 			ip += 2; break;
 
 		//
+		case GOTO:
+			ob = (word *)A0; acc = ip[1];
+			goto apply;
+//			   op2: OGOTO(ip[0], ip[1]); /* fixme, these macros are not used in cgen output anymore*/
+//			   ob = (word *)R[f]; acc = n; goto apply
+
 		case JP:    // JZ, JN, JT, JF a hi lo
 			// was: FIXME, convert this to jump-const <n> comparing to make_immediate(<n>,TCONST),
 			//  но я считаю, что надо просто добавить еще одну команду, а эти так и оставить
@@ -1214,7 +1280,8 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 				ip += (ip[3] << 8) + ip[2]; // little-endian
 			ip += 4; break;
 
-		case 25: { /* jmp-nargs(>=?) a hi lo */
+		// используется в (func ...) в primop.scm
+		case JF2: { /* jmp-nargs(>=?) a hi lo */
 			int needed = ip[0]; // arity?
 			if (acc == needed) {
 				if (op & 0x40) /* add empty extra arg list */
@@ -1380,10 +1447,10 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 
 
 
-		case 2: goto op2; case 3: goto op3; case 4: goto op4;
+		case 3: goto op3; case 4: goto op4;
 		case 6: goto op6; case 7: goto op7;
 		case 15: goto op15;
-		case 17: goto op17; case 18: goto op18; case 19: goto op19; case 20: goto op20; case 21: goto op21;
+		case 18: goto op18; case 19: goto op19; case 20: goto op20; case 21: goto op21;
 		case 22: goto op22; case 23: goto op23; case 24: goto op24; case 26: goto op26; case 27: goto op27;
 		case 28: goto op28; case 32: goto op32;
 		case 34: goto op34; case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
@@ -1393,9 +1460,9 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 		case 58: goto op58; case 59: goto op59; case 60: goto op60; case 61: goto op61; case 62: goto op62; case 63: goto op63;
 
 //		// ошибки
-//		case 17: /* arity error */
-//			ERROR(17, ob, F(acc));
-//
+		case 17: /* arity error */
+			ERROR(17, ob, F(acc));
+
 		// неиспользуемые коды (историческое наследие, при желании можно реюзать)
 		case 10: /* unused */
 			ERROR(10, IFALSE, IFALSE);
@@ -1411,8 +1478,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 		   op23: { /* mkt t s f1 .. fs r */
 			  word t = *ip++;
 			  word s = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
-			  word *ob, p = 0;
-			  allocate(s+1, ob); /* s fields + header */
+			  word *ob = new (s+1), p = 0; // s fields + header
 			  *ob = make_header(s+1, t);
 			  while (p < s) {
 				 ob[p+1] = R[ip[p]];
@@ -1468,18 +1534,16 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 		}
 		main_dispatch: continue; // временная замена вызову "break" в свиче, пока не закончу рефакторинг
 
-   op2: OGOTO(ip[0], ip[1]); /* fixme, these macros are not used in cgen output anymore*/
    op3: OCLOSE(TCLOS); NEXT(0);
    op4: OCLOSE(TPROC); NEXT(0);
    op6: CLOSE1(TCLOS); NEXT(0);
    op7: CLOSE1(TPROC); NEXT(0);
+
    op15: { /* type-byte o r <- actually sixtet */
       word x = R[*ip++];
       if (allocp(x)) x = V(x);
       R[*ip++] = F((x>>TPOS)&63);
       NEXT(0); }
-   op17: /* arity error */
-      ERROR(17, ob, F(acc));
    op20: {
       int reg, arity;
       word *lst;
@@ -1561,8 +1625,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       word type = fixval(R[*ip]);
       word size = fixval(A1);
       word *lst = (word *) A2;
-      word *ob;
-      allocate(size+1, ob);
+      word *ob = new (size+1);
       A3 = (word) ob;
       *ob++ = make_header(size+1, type);
       while(size--) {
@@ -1618,8 +1681,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       NEXT(4);
    op61: /* clock <secs> <ticks> */ { /* fixme: sys */
       struct timeval tp;
-      word *ob;
-      allocate(6, ob); /* space for 32-bit bignum - [NUM hi [NUM lo null]] */
+      word *ob = new (6); /* space for 32-bit bignum - [NUM hi [NUM lo null]] */
       ob[0] = ob[3] = NUMHDR;
       A0 = (word) (ob + 3);
       ob[2] = INULL;
@@ -1648,9 +1710,9 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 	   word result;
 
 	   switch (op) {
-	   // todo: сюда надо перенести все prim_sys операции, что зависят от hp и других глобальных переменных
-	   // остальное можно спокойно оформлять отдельными функциями
-	   // todo: добавить функции LoadLibrary, GetProcAddress и вызова этой функции с параметрами
+	   // todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
+	   //  остальное можно спокойно оформлять отдельными функциями
+	   // todo: добавить функции LoadLibrary, GetProcAddress и вызов этих функций с параметрами
 	      default:
 	    	  result = prim_sys((VM*)vm, op, a, b, c);
 	         break;
@@ -1682,10 +1744,14 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=syscall and call mcp */
 }
 
 
-
+// ======================================================================
+//       загрузчик скомпилированного образа и его десериализатор
+//
 
 // fasl decoding
 /* count number of objects and measure heap size */
+static unsigned char *hp;       /* heap pointer when loading heap */
+
 unsigned char *readfile(const char *filename)
 {
 	struct stat st;
@@ -1702,7 +1768,7 @@ unsigned char *readfile(const char *filename)
 		pos += n;
 	}
 	close(fd);
-	return ptr;
+	return (unsigned char*)ptr;
 }
 
 word get_nat() {
@@ -1732,6 +1798,7 @@ word *get_field(word *ptrs, int pos) {
    return fp;
 }
 
+static
 word *deserialize(word *ptrs, int me)
 {
    int type, size;
@@ -1762,21 +1829,24 @@ word *deserialize(word *ptrs, int me)
 }
 
 // функция подсчета количества объектов в загружаемом образе
+static __inline__
 word get_nat_tmp() {
-word result = 0;
-word newobj, i;
-do {
-   i = *hp++;
-   newobj = result << 7;
-   if (result != (newobj >> 7)) exit(9); // overflow kills
-   result = newobj + (i & 127);
-} while (i & 128);
-return result;
+	word result = 0;
+	word newobj, i;
+	do {
+		i = *hp++;
+		newobj = result << 7;
+		if (result != (newobj >> 7)) exit(9); // overflow kills
+		result = newobj + (i & 127);
+	}
+	while (i & 128);
+	return result;
 }
 
-int count_fasl_objects(word *words) {
-	unsigned char *orig_hp = hp;
+static
+int count_fasl_objects(word *words, unsigned char *lang) {
 	int n = 0;
+	hp = lang;
 
 	int allocated = 0;
 	while (*hp != 0) {
@@ -1811,26 +1881,20 @@ int count_fasl_objects(word *words) {
 
 		n++;
 	}
-	hp = orig_hp;
 
 	*words = allocated;
 	return n;
 }
 
+// this is NOT thread safe function!
 VM* vm_start(unsigned char* language)
 {
 	VM *machine = malloc(sizeof(VM));
-	memset(machine, 0, sizeof(VM));
+	memset(machine, 0x0, sizeof(VM));
 
-	hp = language;
-	seccompp = 0;
-	slice = TICKS; // default thread slice (n calls per slice)
-
-	word nwords = 0;
-	word nobjs = count_fasl_objects(&nwords);
-
+	// выделим память машине
 	max_heap_mb = (W == 4) ? 4096 : 65535; // can be set at runtime
-	memstart = genstart = (word*) realloc(NULL, (INITCELLS + FMAX + MEMPAD) * W); /* at least one argument string always fits */
+	memstart = genstart = (word*) malloc((INITCELLS + FMAX + MEMPAD) * W); /* at least one argument string always fits */
 	if (!memstart) {
 		fprintf(stderr, "Failed to allocate initial memory\n");
 		exit(4);
@@ -1838,7 +1902,7 @@ VM* vm_start(unsigned char* language)
 	memend = memstart + FMAX + INITCELLS - MEMPAD;
 
 //
-//	// create '() as root object
+//	// create '() as root object (этот закомментареный кусок кода неправильный!)
 //	{
 //		word *oargs = fp;
 //		oargs[0] = PAIRHDR; // '()
@@ -1847,7 +1911,12 @@ VM* vm_start(unsigned char* language)
 //		fp += 3;
 //	}
 //
+	// подготовим в памяти машины параметры командной строки
+
 	// create '("some string", NIL) as parameter for the start lambda
+	// todo: добавить возможность компиляции самого компилятора, для этого надо
+	//  втянуть компилятор из owl/ol.scm и запустить его с параметрами командной строки
+	//  например, "-s none -o fasl/compiled.fasl", а не так как сейчас
 	word *oargs = fp = memstart;
 	{
 		char* filename = "#";
@@ -1870,12 +1939,18 @@ VM* vm_start(unsigned char* language)
 		oargs = fp;
 	}
 
+	// а теперь поработаем со скомпилированным образом:
+	word nwords = 0;
+	word nobjs = count_fasl_objects(&nwords, language); // подсчет количества слов и объектов в образе
+
 	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
 	fp = oargs + 3; // move fp too
 
 	// deserialize heap to the objects
 	word* ptrs = fp;
 	fp += nobjs + 1;
+
+	hp = language; // десериализатор использует hp как итератор по образу
 
 	int pos;
 	for (pos = 0; pos < nobjs; pos++) {
@@ -1889,6 +1964,13 @@ VM* vm_start(unsigned char* language)
 
 	//	vm(oargs);
 	machine->userdata = oargs;
+
+	machine->max_heap_mb = max_heap_mb; /* max heap size in MB */
+	machine->genstart = genstart;
+	machine->memstart = memstart;
+	machine->memend = memend;
+	machine->fp = fp;
+
 	machine->thread = CreateThread(NULL, 0, &runtime, machine, 0, NULL);
 
 	return machine;
