@@ -1,7 +1,11 @@
-typedef struct VM VM;
+typedef struct OL OL;
 
-VM* vm_start(unsigned char* language);
-int vm_stop(VM* vm);
+OL* vm_start(unsigned char* language);
+int vm_stop(OL* vm);
 
-int vm_puts(VM* vm, char *message, int n);
-int vm_gets(VM* vm, char *message, int n);
+int vm_puts(OL* vm, char *message, int n);
+int vm_gets(OL* vm, char *message, int n);
+
+#ifdef __cplusplus
+// class OL ...
+#endif

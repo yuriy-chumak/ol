@@ -165,12 +165,12 @@ int fifo_gets(struct fifo* f, char *message, int n)
 
 //typedef struct fifo fifo;
 // виртуальная машина
-typedef struct VM
+typedef struct OL
 {
 	HANDLE thread;
 	struct
 	fifo *fi, *fo;
-} VM;
+} OL;
 
 
 
@@ -1043,7 +1043,7 @@ free((void *) file_heap);
 
 struct args
 {
-	VM *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
+	OL *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
 
 	// структура памяти VM. распределяется еще до запуска самой машины
 	word max_heap_mb; /* max heap size in MB */
@@ -1928,12 +1928,10 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // -=( virtual machine functions )=--------------------------------
 //
 // this is NOT thread safe function!
-VM* vm_start(unsigned char* language)
+OL* vm_start(unsigned char* language)
 {
-	VM *machine = malloc(sizeof(VM));
-	memset(machine, 0x0, sizeof(VM));
-//	machine->fi = malloc(sizeof(struct fifo));
-//	machine->fo = malloc(sizeof(struct fifo));
+	OL *handle = malloc(sizeof(OL));
+	memset(handle, 0x0, sizeof(OL));
 
 	// выделим память машине
 	max_heap_mb = (W == 4) ? 4096 : 65535; // can be set at runtime
@@ -2005,9 +2003,8 @@ VM* vm_start(unsigned char* language)
 	}
 	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
 
-	struct args args;
-	args.vm = machine;
-	args.userdata = oargs;
+	struct args args; // аргументы для запуска
+	args.vm = handle; // виртуальной машины OL
 
 	// а это инициализационные аргументы для памяти виртуальной машины
 	args.heap.begin = heap.begin;
@@ -2017,16 +2014,17 @@ VM* vm_start(unsigned char* language)
 	args.fp = fp;
 
 	args.ready = 0;
+	args.userdata = oargs;
 
 //	vm(oargs);
-	machine->thread =
+	handle->thread =
 	CreateThread(NULL, 0, &runtime, &args, 0, NULL);
 //	ResumeThread(machine->thread);
 //	WaitForSingleObject(machine->thread, INFINITE); // wait for init
 	while (!args.ready)
 		Sleep(1);
 
-	return machine;
+	return handle;
 }
 
 /*void eval(char* message, char* response, int length)
@@ -2039,16 +2037,16 @@ void eval2(char* message)
 	fifo_puts(&fi, message, strlen(message) + 1);
 }*/
 
-int vm_puts(VM* vm, char *message, int n)
+int vm_puts(OL* vm, char *message, int n)
 {
 	return fifo_puts(vm->fi, message, n);
 }
-int vm_gets(VM* vm, char *message, int n)
+int vm_gets(OL* vm, char *message, int n)
 {
 	return fifo_gets(vm->fo, message, n);
 }
 
-int vm_stop(VM* vm)
+int vm_stop(OL* vm)
 {
 	vm_puts(vm, "(halt 0)\n", 9);
 	// do not wait to the end (?)

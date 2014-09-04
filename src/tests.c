@@ -13,7 +13,7 @@
 #include <winsock2.h>
 #endif
 
-int test(VM* vm, char* test, char* ok)
+int test(OL* vm, char* test, char* ok)
 {
 	FILE *i = fopen(test, "r");
 	fseek(i, 0, SEEK_END);
@@ -159,7 +159,7 @@ int main(int nargs, char **argv)
 		strcpy(ok, filename);
 		strcat(ok, ".ok");
 
-		VM *lisp = vm_start(language);
+		OL *lisp = vm_start(language);
 		if (test(lisp, filename, ok))
 			printf("ok.");
 		else {
