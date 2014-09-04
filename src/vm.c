@@ -100,13 +100,15 @@ typedef int64_t   wdiff;
 typedef int32_t   wdiff;
 #endif
 
-// кольцевой буфер для общения с виртуальной машиной
+// кольцевой текстовый буфер для общения с виртуальной машиной
 #define FIFOLENGTH (1 << 12) // 4096 for now
 struct fifo
 {
 	unsigned int putp, getp;
 	char buffer[FIFOLENGTH];
-}  fi = {0, 0}, fo = {0, 0}; // пара глобальных fifo, пригодятся )
+}  static thread_local
+   fi = {0, 0}, fo = {0, 0}; // input/output
+//static thread_local *fi, *fo;
 
 static __inline__
 char fifo_put(struct fifo* f, char c)
@@ -161,24 +163,13 @@ int fifo_gets(struct fifo* f, char *message, int n)
 	return ptr - message;
 }
 
-typedef struct fifo fifo;
+//typedef struct fifo fifo;
+// виртуальная машина
 typedef struct VM
 {
 	HANDLE thread;
-	void*userdata;
-
-	// структура памяти VM. распределяется еще до запуска самой машины
-	word max_heap_mb; /* max heap size in MB */
-
-	// memstart <= genstart <= memend
-	word *genstart;
-	word *memstart;
-	word *memend;
-
-	// allocation pointer (top of allocated heap)
-	word *fp;
-
-	struct fifo fi, fo;
+	struct
+	fifo *fi, *fo;
 } VM;
 
 
@@ -311,7 +302,6 @@ static int breaked;      /* set in signal handler, passed over to owl in thread 
 static int seccompp;     /* are we in seccomp? */
 static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
-
 int slice;
 
 //void exit(int rval);
@@ -328,10 +318,15 @@ int execv(const char *path, char *const argv[]);
 #endif
 
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
-//  memstart <= genstart <= memend
-static thread_local word *genstart;
-static thread_local word *memstart;
-static thread_local word *memend;
+struct heap
+{
+	//  begin <= genstart <= end
+	word *begin;     // was: memstart
+	word *end;       // was: memend
+
+	word *genstart;  // was: genstart
+//	word *top; // fp
+} thread_local heap; // память машины, управляемая сборщиком мусора
 
 // cont(n) = V((word)n & (~1))
 static __inline__
@@ -356,7 +351,7 @@ static void mark(word *pos, word *end)
 {
    while (pos != end) {
       word val = *pos;
-      if (allocp(val) && val >= ((word) genstart)) {
+      if (allocp(val) && val >= ((word) heap.genstart)) {
          if (flagged(val)) {
             pos = ((word *) flag(chase((word *) val))) - 1;
          } else {
@@ -376,9 +371,9 @@ static void mark(word *pos, word *end)
 
 static word *compact()
 {
-   word *newobj = genstart;
+   word *newobj = heap.genstart;
    word *old = newobj;
-   word *end = memend - 1;
+   word *end = heap.end - 1;
    while (((word)old) < ((word)end)) {
       if (flagged(*old)) {
          word h;
@@ -429,8 +424,7 @@ static void fix_pointers(word *pos, wdiff delta, word *end)
 /* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
 static wdiff adjust_heap(int cells) {
    /* add newobj realloc + heap fixer here later */
-   word *old = memstart;
-   word nwords = memend - memstart + MEMPAD; /* MEMPAD is after memend */
+   word nwords = heap.end - heap.begin + MEMPAD; /* MEMPAD is after memend */
    word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); /* limit heap growth speed  */
 /*   if (!usegc) { // only run when the vm is running (temp)
       return 0;
@@ -439,14 +433,15 @@ static wdiff adjust_heap(int cells) {
       return 0;
    if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
        return 0; /* don't try to adjust heap if the size_t would overflow in realloc */
-   memstart = realloc(memstart, new_words*W);
-   if (memstart == old) { /* whee, no heap slide \o/ */
-      memend = memstart + new_words - MEMPAD; /* leave MEMPAD words alone */
+   word *old = heap.begin;
+   heap.begin = realloc(heap.begin, new_words*W);
+   if (heap.begin == old) { /* whee, no heap slide \o/ */
+      heap.end = heap.begin + new_words - MEMPAD; /* leave MEMPAD words alone */
       return 0;
-   } else if (memstart) { /* d'oh! we need to O(n) all the pointers... */
-      wdiff delta = (word)memstart - (word)old;
-      memend = memstart + new_words - MEMPAD; /* leave MEMPAD words alone */
-      fix_pointers(memstart, delta, memend);
+   } else if (heap.begin) { /* d'oh! we need to O(n) all the pointers... */
+      wdiff delta = (word)heap.begin - (word)old;
+      heap.end = heap.begin + new_words - MEMPAD; /* leave MEMPAD words alone */
+      fix_pointers(heap.begin, delta, heap.end);
       return delta;
    } else {
       breaked |= 8; /* will be passed over to mcp at thread switch*/
@@ -468,21 +463,21 @@ static __inline__ word* new (size_t size)
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 static word *gc(int size, word *regs) {
    word *root;
-   word *realend = memend;
+   word *realend = heap.end;
    int nfree;
    fp = regs + hdrsize(*regs); // следущий после regs (?)
    root = fp + 1;
 
    *root = (word) regs;
 
-   memend = fp;
+   heap.end = fp;
    mark(root, fp);
    fp = compact();
    regs = (word *) *root;
-   memend = realend;
-   nfree = (word)memend - (word)regs;
-   if (genstart == memstart) {
-      word heapsize = (word) memend - (word) memstart;
+   heap.end = realend;
+   nfree = (word)heap.end - (word)regs;
+   if (heap.genstart == heap.begin) {
+      word heapsize = (word) heap.end - (word) heap.begin;
       word nused = heapsize - nfree;
       if ((heapsize/(1024*1024)) > max_heap_mb) {
          breaked |= 8; /* will be passed over to mcp at thread switch*/
@@ -492,7 +487,7 @@ static word *gc(int size, word *regs) {
          /* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
          regs[hdrsize(*regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
          regs = (word *) ((word)regs + adjust_heap(size*W + nused/10 + 4096));
-         nfree = memend - regs;
+         nfree = heap.end - regs;
          if (nfree <= size) {
             breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
          }
@@ -503,16 +498,16 @@ static word *gc(int size, word *regs) {
          if (newobj > size*W*2 + MEMPAD) {
             regs[hdrsize(*regs)] = 0; /* as above */
             regs = (word *) ((word)regs + adjust_heap(dec+MEMPAD*W));
-            heapsize = (word) memend - (word) memstart;
-            nfree = (word) memend - (word) regs;
+            heapsize = (word) heap.end - (word) heap.begin;
+            nfree = (word) heap.end - (word) regs;
          }
       }
-      genstart = regs; /* always start newobj generation */
+      heap.genstart = regs; /* always start newobj generation */
    } else if (nfree < MINGEN || nfree < size*W*2) {
-      genstart = memstart; /* start full generation */
+      heap.genstart = heap.begin; /* start full generation */
       return gc(size, regs);
    } else {
-      genstart = regs; /* start newobj generation */
+      heap.genstart = regs; /* start newobj generation */
    }
    return regs;
 }
@@ -721,7 +716,7 @@ static word prim_set(word wptr, word pos, word val) {
 }
 
 /* system- and io primops */
-static word prim_sys(VM* vm, int op, word a, word b, word c) {
+static word prim_sys(int op, word a, word b, word c) {
    switch(op) {
       case 0: { /* 0 fsend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
          int fd = fixval(a);
@@ -733,7 +728,7 @@ static word prim_sys(VM* vm, int op, word a, word b, word c) {
          if (len > size) return IFALSE;
          // STDOUT ?
          if (fd == 1) {
-        	 wrote = fifo_puts(&vm->fo, ((char *)buff)+W, len);
+        	 wrote = fifo_puts(&fo, ((char *)buff)+W, len);
          }
          else
         	 wrote = write(fd, ((char *)buff)+W, len);
@@ -811,14 +806,14 @@ static word prim_sys(VM* vm, int op, word a, word b, word c) {
          n = read(fd, ((char *) res) + W, max);
 #else
 			if (fd == 0) { // windows stdin in special apparently
-				if (fifo_empty(&vm->fi)) {
+				if (fifo_empty(&fi)) {
 					n = -1;
 					errno = EAGAIN;
 				}
 				else {
 					char *d = ((char*) res) + W;
-					while (!fifo_empty(&vm->fi))
-						*d++ = fifo_get(&vm->fi);
+					while (!fifo_empty(&fi))
+						*d++ = fifo_get(&fi);
 					n = d - (((char*) res) + W);
 				}
 
@@ -1046,6 +1041,24 @@ int sss = hdrsize(ptrs[0]);
 free((void *) file_heap);
 */
 
+struct args
+{
+	VM *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
+
+	// структура памяти VM. распределяется еще до запуска самой машины
+	word max_heap_mb; /* max heap size in MB */
+
+	// memstart <= genstart <= memend
+	struct heap heap;
+
+	// allocation pointer (top of allocated heap)
+	word *fp;
+
+	void *userdata;
+	char ready;
+};
+
+
 #define OCLOSE(proctype)            \
 	{ word size = *ip++, tmp; word *ob = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
 #define CLOSE1(proctype)            \
@@ -1059,24 +1072,29 @@ free((void *) file_heap);
 // args + 0 = (list "arg0" "arg 1") or ("arg0 arg1" . NIL) ?
 // args + 3 = objects list
 DWORD WINAPI
-runtime(void *vm) // heap top
+runtime(void *args) // heap top
 {
-	void *userdata = ((VM*)vm)->userdata;
-
 	seccompp = 0;
 	slice = TICKS; // default thread slice (n calls per slice)
 
-	max_heap_mb = ((VM*)vm)->max_heap_mb; /* max heap size in MB */
+	//
+	max_heap_mb = ((struct args*)args)->max_heap_mb; /* max heap size in MB */
 
-	// memstart <= genstart <= memend
-	memstart = ((VM*)vm)->memstart;
-	memend   = ((VM*)vm)->memend;
-	genstart = ((VM*)vm)->genstart; // разделитель Old Generation и New Generation (?)
+	// инициализируем локальную память
+	heap.begin    = ((struct args*)args)->heap.begin;
+	heap.end      = ((struct args*)args)->heap.end;
+	heap.genstart = ((struct args*)args)->heap.genstart; // разделитель Old Generation и New Generation (?)
 
 	// allocation pointer (top of allocated heap)
-	fp       = ((VM*)vm)->fp;
+	fp       = ((struct args*)args)->fp;
+	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
+	((struct args*)args)->vm->fi = &fi;
+	((struct args*)args)->vm->fo = &fo;
 
+	// все, машина инициализирована, отсигналимся
+	((struct args*)args)->ready = 1;
 
+	void *userdata = ((struct args*)args)->userdata;
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
 	// todo: может стоит искать и загружать какой-нибудь main()?
 	word* ptrs = (word*)userdata + 3;
@@ -1198,7 +1216,7 @@ switch_thread: /* enter mcp if present */
    }
 
 invoke: /* nargs and regs ready, maybe gc and execute ob */
-	if (fp >= memend - 16*1024) { // (((word)fp) + 1024*64 >= ((word) memend))
+	if (fp >= heap.end - 16*1024) { // (((word)fp) + 1024*64 >= ((word) memend))
 		int p = 0;
 		*fp = make_header(NR+2, 50); /* hdr r_0 .. r_(NR-1) ob */
 		while (p < NR) { fp[p+1] = R[p]; p++; }
@@ -1341,9 +1359,9 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 		op47:  /* ref t o r */ /* fixme: deprecate this later */
 		      A2 = prim_ref(A0, A1);
 		      NEXT(3);
-		op48: { /* refb t o r */ /* todo: merge with ref, though 0-based  */
+		op48: /* refb t o r */ /* todo: merge with ref, though 0-based  */
 		      A2 = prim_refb(A0, fixval(A1));
-		      NEXT(3); }
+		      NEXT(3);
 
 		// операции со списками
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
@@ -1544,7 +1562,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 				// todo: добавить функции LoadLibrary, GetProcAddress и вызов этих функций с параметрами
 
 				case 6: // todo: переделать на другой номер
-					free(memstart); // освободим занятую память
+					free(heap.begin); // освободим занятую память
 					#if WIN32
 						ExitThread(fixval(a));
 					#else
@@ -1560,7 +1578,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					 return F(max_heap_mb);
 
 				default:
-					result = prim_sys((VM*)vm, op, a, b, c);
+					result = prim_sys(op, a, b, c);
 					break;
 				}
 
@@ -1914,15 +1932,17 @@ VM* vm_start(unsigned char* language)
 {
 	VM *machine = malloc(sizeof(VM));
 	memset(machine, 0x0, sizeof(VM));
+//	machine->fi = malloc(sizeof(struct fifo));
+//	machine->fo = malloc(sizeof(struct fifo));
 
 	// выделим память машине
 	max_heap_mb = (W == 4) ? 4096 : 65535; // can be set at runtime
-	memstart = genstart = (word*) malloc((INITCELLS + FMAX + MEMPAD) * W); /* at least one argument string always fits */
-	if (!memstart) {
+	heap.begin = heap.genstart = (word*) malloc((INITCELLS + FMAX + MEMPAD) * W); /* at least one argument string always fits */
+	if (!heap.begin) {
 		fprintf(stderr, "Failed to allocate initial memory\n");
 		exit(4);
 	}
-	memend = memstart + FMAX + INITCELLS - MEMPAD;
+	heap.end = heap.begin + FMAX + INITCELLS - MEMPAD;
 
 //
 //	// create '() as root object (этот закомментареный кусок кода неправильный!)
@@ -1940,7 +1960,7 @@ VM* vm_start(unsigned char* language)
 	// todo: добавить возможность компиляции самого компилятора, для этого надо
 	//  втянуть компилятор из owl/ol.scm и запустить его с параметрами командной строки
 	//  например, "-s none -o fasl/compiled.fasl", а не так как сейчас
-	word *oargs = fp = memstart;
+	word *oargs = fp = heap.begin;
 	{
 		char* filename = "#";
 		char *pos = filename;
@@ -1977,7 +1997,7 @@ VM* vm_start(unsigned char* language)
 
 	int pos;
 	for (pos = 0; pos < nobjs; pos++) {
-		if (fp >= memend) {
+		if (fp >= heap.end) {
 			puts("gc needed during heap import\n");
 			exit(1);
 		}
@@ -1985,16 +2005,26 @@ VM* vm_start(unsigned char* language)
 	}
 	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
 
-	//	vm(oargs);
+	struct args args;
+	args.vm = machine;
+	args.userdata = oargs;
 
-	machine->genstart = genstart;
-	machine->memstart = memstart;
-	machine->memend = memend;
-	machine->max_heap_mb = max_heap_mb; /* max heap size in MB */
-	machine->fp = fp;
+	// а это инициализационные аргументы для памяти виртуальной машины
+	args.heap.begin = heap.begin;
+	args.heap.end   = heap.end;
+	args.heap.genstart = heap.genstart;
+	args.max_heap_mb = max_heap_mb; // max heap size in MB
+	args.fp = fp;
 
-	machine->userdata = oargs;
-	machine->thread = CreateThread(NULL, 0, &runtime, machine, 0, NULL);
+	args.ready = 0;
+
+//	vm(oargs);
+	machine->thread =
+	CreateThread(NULL, 0, &runtime, &args, 0, NULL);
+//	ResumeThread(machine->thread);
+//	WaitForSingleObject(machine->thread, INFINITE); // wait for init
+	while (!args.ready)
+		Sleep(1);
 
 	return machine;
 }
@@ -2009,20 +2039,20 @@ void eval2(char* message)
 	fifo_puts(&fi, message, strlen(message) + 1);
 }*/
 
+int vm_puts(VM* vm, char *message, int n)
+{
+	return fifo_puts(vm->fi, message, n);
+}
+int vm_gets(VM* vm, char *message, int n)
+{
+	return fifo_gets(vm->fo, message, n);
+}
+
 int vm_stop(VM* vm)
 {
-	fifo_puts(&vm->fi, "(halt 0)\n", 9);
+	vm_puts(vm, "(halt 0)\n", 9);
 	// do not wait to the end (?)
 	WaitForSingleObject(vm->thread, INFINITE);
 
 	return 0;
-}
-
-int vm_puts(VM* vm, char *message, int n)
-{
-	return fifo_puts(&vm->fi, message, n);
-}
-int vm_gets(VM* vm, char *message, int n)
-{
-	return fifo_gets(&vm->fo, message, n);
 }
