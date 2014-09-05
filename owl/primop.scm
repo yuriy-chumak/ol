@@ -22,6 +22,7 @@
       wait
       ;; extra ops
       set-memory-limit get-word-size get-memory-limit start-seccomp
+;     dlopen
 
       apply apply-cont ;; apply post- and pre-cps
       call/cc call-with-current-continuation 
@@ -191,6 +192,11 @@
       (define (get-word-size) (sys-prim 8 #false #false #false))
       (define (get-memory-limit) (sys-prim 9 #false #false #false))
       (define (start-seccomp) (sys-prim 10 #false #false #false)) ; not enabled by defa
+
+      ;; эти операции тут, в принципе, не нужны. но оставим как ссылку на номера функций
+      ; возвращает port в качестве dll handle
+      (define (dlopen name flag) (sys-prim 11 name flag #false))
+;     (define (dlsym)  (sys-prim 12 #false #false #false)) ; not enabled by defa
 
       ;; stop the vm *immediately* without flushing input or anything else with return value n
       (define (halt n) (sys-prim 6 n n n))

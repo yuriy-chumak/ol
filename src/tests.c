@@ -8,10 +8,33 @@
 #include "vm.h"
 
 #include <stdio.h>
+#include <malloc.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #endif
+
+unsigned char *readfile(const char *filename)
+{
+	struct stat st;
+	int fd, pos = 0;
+	if (stat(filename, &st)) exit(1);
+
+	char* ptr = (char*)malloc(st.st_size);
+	if (ptr == NULL) exit(2);
+	fd = open(filename, O_RDONLY | O_BINARY);
+	if (fd < 0) exit(3);
+	while (pos < st.st_size) {
+		int n = read(fd, ptr+pos, st.st_size-pos);
+		if (n < 0) exit(4);
+		pos += n;
+	}
+	close(fd);
+	return (unsigned char*)ptr;
+}
+
 
 int test(OL* vm, char* test, char* ok)
 {
@@ -37,7 +60,8 @@ int test(OL* vm, char* test, char* ok)
 		strcat(response, "\n");
 		if (strcmp(result, response) != 0) {
 			fclose(o);
-			printf("Expected [%s] but got [%s]\n", result, response);
+
+			printf("Expected [\n%s] but got [\n%s]\n", result, response);
 			return 0;
 		}
 	}
@@ -48,6 +72,16 @@ int test(OL* vm, char* test, char* ok)
 // main
 int main(int nargs, char **argv)
 {
+/*	void *handle;
+	void (*msgbox)(int, char*, char*, int);
+
+	handle = dlopen("user32", RTLD_LAZY);
+	*(void **) (&msgbox) = dlsym(handle, "MessageBoxA");
+
+	msgbox(0, "Hallo!", "message", 0);
+
+
+*/
 #ifdef WIN32
 	WSADATA wsaData;
 	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -69,6 +103,7 @@ int main(int nargs, char **argv)
 //	if (*hp == '#') { // skip hashbang
 //		while (*hp++ != '\n');
 //	};
+
 	/*{
 		start(language);
 
@@ -96,6 +131,7 @@ int main(int nargs, char **argv)
 
 // временно добавим себе сюда запуск тестов
 	char *testfiles[] = {
+			"tests/dlopen.scm",
 			"tests/apply.scm",
 			"tests/banana.scm",
 			"tests/bingo-rand.scm",
@@ -153,7 +189,7 @@ int main(int nargs, char **argv)
 	int i = 0;
 	char *filename;
 	while (filename = testfiles[i++]) {
-		printf("Testing %s...", filename);
+		printf("Testing %s... ", filename);
 
 		char ok[128] = {0};
 		strcpy(ok, filename);

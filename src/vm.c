@@ -11,6 +11,8 @@
 
 #include "vm.h"
 
+// todo: проверить, что все работает в 64-битном коде
+
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
 
@@ -26,6 +28,7 @@
 #include <time.h>
 #include <inttypes.h>
 #include <fcntl.h>
+#include "dlfcn.h"
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -100,6 +103,7 @@ typedef int64_t   wdiff;
 typedef int32_t   wdiff;
 #endif
 
+// -=( fifo )=------------------------------------------------
 // кольцевой текстовый буфер для общения с виртуальной машиной
 #define FIFOLENGTH (1 << 12) // 4096 for now
 struct fifo
@@ -108,7 +112,7 @@ struct fifo
 	char buffer[FIFOLENGTH];
 }  static thread_local
    fi = {0, 0}, fo = {0, 0}; // input/output
-//static thread_local *fi, *fo;
+   typedef struct fifo fifo;
 
 static __inline__
 char fifo_put(struct fifo* f, char c)
@@ -168,7 +172,6 @@ int fifo_gets(struct fifo* f, char *message, int n)
 typedef struct OL
 {
 	HANDLE thread;
-	struct
 	fifo *fi, *fo;
 } OL;
 
@@ -182,6 +185,8 @@ typedef struct OL
 //  [pppppppp pppppppp pppppppp tttttti0]
 //   '-------------------------------|
 //                                   '-----> 4- or 8-byte aligned pointer if not immediate
+//      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
+//       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
 // object headers are further
 //                                    .----> immediate
@@ -197,11 +202,13 @@ typedef struct OL
 //; to the right of them, so all types must be <32 until they can be slid to right
 //; position.
 
+// Для экономии памяти
+
 #define IPOS                        8 /* offset of immediate payload */
 #define SPOS                        16 /* offset of size bits in header immediate values */
 #define TPOS                        2  /* offset of type bits in header */
 
-#define V(ob)                       *((word *) (ob))
+#define V(ob)                       *((word *) (ob)) // *ob, ob[0]
 #define W                           sizeof(word)
 
 //#define NWORDS                      1024*1024*8    /* static malloc'd heap size if used as a library */
@@ -226,6 +233,7 @@ typedef struct OL
 #define imm_val(x)                   ((x) >> IPOS)
 #define hdrsize(x)                  ((((word)x) >> SPOS) & MAXOBJ)
 #define padsize(x)                  ((((word)x) >> 8) & 7)
+#define hdrtype(x)                  ((((word)x) >> 2) & 0x3FFF) // todo: не уверен, проверить!
 
 #define immediatep(x)               (((word)x) & 2)
 #define allocp(x)                   (!immediatep(x))
@@ -260,31 +268,10 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define FFRIGHT                     1
 #define FFRED                       2
 
-#define cont(n)                     V((word)n & (~1))
-#define flagged(n)                  (n & 1)
-#define flag(n)                     (((word)n) ^ 1)
-
-#define A0                          R[ip[0]]
-#define A1                          R[ip[1]]
-#define A2                          R[ip[2]]
-#define A3                          R[ip[3]]
-#define A4                          R[ip[4]]
-#define A5                          R[ip[5]]
-#define R0                          R[0]
-#define R1                          R[1]
-#define R2                          R[2]
-#define R3                          R[3]
-#define R4                          R[4]
-#define R5                          R[5]
-#define R6                          R[6]
-#define G(ptr, n)                   ((word *)(ptr))[n]
-
 #define flagged_or_raw(hdr)         (hdr & (RAWBIT|1))
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
 
-#define OGOTO(f, n)                 ob = (word *)R[f]; acc = n; goto apply
-#define RET(n)                      ob = (word *)R[3]; R[3] = R[n]; acc = 1; goto apply
 #define MEMPAD                      (NR+2)*8 /* space at end of heap for starting GC */
 #define MINGEN                      1024*32  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
@@ -318,6 +305,8 @@ int execv(const char *path, char *const argv[]);
 #endif
 
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
+// несколько ссылок "на почитать" по теме GC:
+//   shamil.free.fr/comp/ocaml/html/book011.html
 struct heap
 {
 	//  begin <= genstart <= end
@@ -328,125 +317,141 @@ struct heap
 //	word *top; // fp
 } thread_local heap; // память машины, управляемая сборщиком мусора
 
-// cont(n) = V((word)n & (~1))
+#define cont(n)                     V((word)n & (~1)) // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
+#define flagged(n)                  (n & 1)           // is flagged ?
+#define flag(n)                     (((word)n) ^ 1)   // same value with changed flag
+
+
+// cont(n) = V((word)n & (~1)) // *n (с игнорированием флажка mark)
+
+// *pos <- **pos, **pos <- pos with !flag(*pos)
+// pos -> *pos -> **pos превращается в pos -> **pos,
+// то-есть тут мы выбрасываем промежуточный указатель?
 static __inline__
 void rev(word* pos) {
-   word val = *pos;
-   word next = cont(val);
-   *pos = next;
-   cont(val) = (val&1)^((word)pos|1);
+//	*pos can be flagged and can be not flagged
+	word ppos = *pos;
+	*pos = cont(ppos); // next
+	cont(ppos) = ((word)pos | 1) ^ (ppos & 1);
 }
 
+// возвращает последнего "flagged" в цепочке:
 static __inline__
 word *chase(word* pos) {
-   word val = cont(pos);
-   while (allocp(val) && flagged(val)) {
-      pos = (word *) val;
-      val = cont(pos);
-   }
-   return pos;
+//	assert(pos IS flagged)
+	word ppos = cont(pos);
+	while (allocp(ppos) && flagged(ppos)) {
+		pos = (word *) ppos;
+		ppos = cont(pos);
+	}
+//	assert(pos IS flagged)
+	return pos;
 }
 
 static void mark(word *pos, word *end)
 {
-   while (pos != end) {
-      word val = *pos;
-      if (allocp(val) && val >= ((word) heap.genstart)) {
-         if (flagged(val)) {
-            pos = ((word *) flag(chase((word *) val))) - 1;
-         } else {
-            word hdr = V(val);
-            rev(pos);
-            if (flagged_or_raw(hdr)) {
-               pos--;
-            } else {
-               pos = ((word *) val) + (hdrsize(hdr)-1);
-            }
-         }
-      } else {
-         pos--;
-      }
-   }
+//	assert(pos is NOT flagged)
+	while (pos != end) {
+		word val = *pos;
+		if (allocp(val) && val >= ((word) heap.genstart)) { // блядь, что такое genstart???????
+			if (flagged(val))
+				pos = ((word *) flag(chase((word *) val))) - 1; // flag in this context equal to CLEAR flag
+			else {
+				word hdr = *(word *) val;
+				rev(pos);
+				if (flagged_or_raw(hdr))
+					pos--;
+				else
+					pos = ((word *) val) + (hdrsize(hdr)-1);
+			}
+		}
+		else
+			pos--;
+	}
 }
 
 static word *compact()
 {
-   word *newobj = heap.genstart;
-   word *old = newobj;
-   word *end = heap.end - 1;
-   while (((word)old) < ((word)end)) {
-      if (flagged(*old)) {
-         word h;
-         *newobj = *old;
-         while (flagged(*newobj)) {
-            rev(newobj);
-            if (immediatep(*newobj) && flagged(*newobj)) {
-               *newobj = flag(*newobj);
-            }
-         }
-         h = hdrsize(*newobj);
-         if (old == newobj) {
-            old += h;
-            newobj += h;
-         } else {
-            while (--h) *++newobj = *++old;
-            old++;
-            newobj++;
-         }
-      } else {
-         old += hdrsize(*old);
-      }
-   }
-   return newobj;
+	word *old = heap.genstart;
+	word *end = heap.end - 1;
+
+	word *newobj = old;
+	while (old < end) {
+		if (flagged(*old)) {
+			word h;
+			*newobj = *old;
+			while (flagged(*newobj)) {
+				rev(newobj);
+				if (immediatep(*newobj) && flagged(*newobj))
+					*newobj &= (~1); // was: = flag(*newobj);
+			}
+			h = hdrsize(*newobj);
+			if (old == newobj) {
+				old += h;
+				newobj += h;
+			}
+			else {
+				while (--h) *++newobj = *++old;
+				old++;
+				newobj++;
+			}
+		}
+		else
+			old += hdrsize(*old);
+	}
+	return newobj;
 }
 
 static void fix_pointers(word *pos, wdiff delta, word *end)
 {
-   while(1) {
-      word hdr = *pos;
-      int n = hdrsize(hdr);
-      if (hdr == 0) return; /* end marker reached. only dragons beyond this point.*/
-      if (rawp(hdr)) {
-         pos += n; /* no pointers in raw objects */
-      } else {
-         pos++;
-         n--;
-         while(n--) {
-            word val = *pos;
-            if (allocp(val))
-               *pos = val + delta;
-            pos++;
-         }
-      }
-   }
+	while(1) {
+		word hdr = *pos;
+		int n = hdrsize(hdr);
+		if (hdr == 0) return; /* end marker reached. only dragons beyond this point.*/
+		if (rawp(hdr))
+			pos += n; /* no pointers in raw objects */
+		else {
+			pos++;
+			n--;
+			while(n--) {
+				word val = *pos;
+				if (allocp(val))
+					*pos = val + delta;
+				pos++;
+			}
+		}
+	}
 }
 
 /* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
-static wdiff adjust_heap(int cells) {
-   /* add newobj realloc + heap fixer here later */
-   word nwords = heap.end - heap.begin + MEMPAD; /* MEMPAD is after memend */
-   word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); /* limit heap growth speed  */
+static wdiff adjust_heap(int cells)
+{
+	if (seccompp) /* realloc is not allowed within seccomp */
+		return 0;
+
+	/* add newobj realloc + heap fixer here later */
+	word nwords = heap.end - heap.begin + MEMPAD; /* MEMPAD is after memend */
+	word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); /* limit heap growth speed  */
 /*   if (!usegc) { // only run when the vm is running (temp)
       return 0;
    }*/
-   if (seccompp) /* realloc is not allowed within seccomp */
-      return 0;
-   if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
-       return 0; /* don't try to adjust heap if the size_t would overflow in realloc */
-   word *old = heap.begin;
-   heap.begin = realloc(heap.begin, new_words*W);
-   if (heap.begin == old) { /* whee, no heap slide \o/ */
-      heap.end = heap.begin + new_words - MEMPAD; /* leave MEMPAD words alone */
-      return 0;
-   } else if (heap.begin) { /* d'oh! we need to O(n) all the pointers... */
-      wdiff delta = (word)heap.begin - (word)old;
-      heap.end = heap.begin + new_words - MEMPAD; /* leave MEMPAD words alone */
-      fix_pointers(heap.begin, delta, heap.end);
-      return delta;
-   } else {
-      breaked |= 8; /* will be passed over to mcp at thread switch*/
-      return 0;
-   }
+	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
+		return 0; /* don't try to adjust heap if the size_t would overflow in realloc */
+
+	word *old = heap.begin;
+	heap.begin = realloc(heap.begin, new_words*W);
+	if (heap.begin == old) { /* whee, no heap slide \o/ */
+		heap.end = heap.begin + new_words - MEMPAD; /* leave MEMPAD words alone */
+		return 0;
+	} else if (heap.begin) { /* d'oh! we need to O(n) all the pointers... */
+		wdiff delta = (word)heap.begin - (word)old;
+		heap.end = heap.begin + new_words - MEMPAD; /* leave MEMPAD words alone */
+		fix_pointers(heap.begin, delta, heap.end);
+		return delta;
+	} else {
+		breaked |= 8; /* will be passed over to mcp at thread switch*/
+		return 0;
+	}
 }
 
 
@@ -462,54 +467,54 @@ static __inline__ word* new (size_t size)
 /* input desired allocation size and (the only) pointer to root object
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 static word *gc(int size, word *regs) {
-   word *root;
-   word *realend = heap.end;
-   int nfree;
-   fp = regs + hdrsize(*regs); // следущий после regs (?)
-   root = fp + 1;
+	word *root;
+	word *realend = heap.end;
+	int nfree;
+	fp = regs + hdrsize(*regs); // следущий после regs (?)
+	root = fp + 1;
 
-   *root = (word) regs;
+	*root = (word) regs;
 
-   heap.end = fp;
-   mark(root, fp);
-   fp = compact();
-   regs = (word *) *root;
-   heap.end = realend;
-   nfree = (word)heap.end - (word)regs;
-   if (heap.genstart == heap.begin) {
-      word heapsize = (word) heap.end - (word) heap.begin;
-      word nused = heapsize - nfree;
-      if ((heapsize/(1024*1024)) > max_heap_mb) {
-         breaked |= 8; /* will be passed over to mcp at thread switch*/
-      }
-      nfree -= size*W + MEMPAD;   /* how much really could be snipped off */
-      if (nfree < (heapsize / 10) || nfree < 0) {
-         /* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
-         regs[hdrsize(*regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
-         regs = (word *) ((word)regs + adjust_heap(size*W + nused/10 + 4096));
-         nfree = heap.end - regs;
-         if (nfree <= size) {
-            breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
-         }
-      } else if (nfree > (heapsize/5)) {
-         /* decrease heap size if more than 20% is free by 10% of the free space */
-         int dec = -(nfree/10);
-         int newobj = nfree - dec;
-         if (newobj > size*W*2 + MEMPAD) {
-            regs[hdrsize(*regs)] = 0; /* as above */
-            regs = (word *) ((word)regs + adjust_heap(dec+MEMPAD*W));
-            heapsize = (word) heap.end - (word) heap.begin;
-            nfree = (word) heap.end - (word) regs;
-         }
-      }
-      heap.genstart = regs; /* always start newobj generation */
-   } else if (nfree < MINGEN || nfree < size*W*2) {
-      heap.genstart = heap.begin; /* start full generation */
-      return gc(size, regs);
-   } else {
-      heap.genstart = regs; /* start newobj generation */
-   }
-   return regs;
+	heap.end = fp;
+	mark(root, fp);
+	fp = compact();
+	regs = (word *) *root;
+	heap.end = realend;
+	nfree = (word)heap.end - (word)regs;
+	if (heap.genstart == heap.begin) {
+		word heapsize = (word) heap.end - (word) heap.begin;
+		word nused = heapsize - nfree;
+		if ((heapsize/(1024*1024)) > max_heap_mb)
+			breaked |= 8; /* will be passed over to mcp at thread switch*/
+
+		nfree -= size*W + MEMPAD;   /* how much really could be snipped off */
+		if (nfree < (heapsize / 10) || nfree < 0) {
+			/* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
+			regs[hdrsize(*regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
+			regs = (word *) ((word)regs + adjust_heap(size*W + nused/10 + 4096));
+			nfree = heap.end - regs;
+			if (nfree <= size)
+				breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
+		}
+		else if (nfree > (heapsize/5)) {
+			/* decrease heap size if more than 20% is free by 10% of the free space */
+			int dec = -(nfree/10);
+			int newobj = nfree - dec;
+			if (newobj > size*W*2 + MEMPAD) {
+				regs[hdrsize(*regs)] = 0; /* as above */
+				regs = (word *) ((word)regs + adjust_heap(dec+MEMPAD*W));
+				heapsize = (word) heap.end - (word) heap.begin;
+				nfree = (word) heap.end - (word) regs;
+			}
+		}
+		heap.genstart = regs; /* always start newobj generation */
+	} else if (nfree < MINGEN || nfree < size*W*2) {
+		heap.genstart = heap.begin; /* start full generation */
+		return gc(size, regs);
+	} else {
+		heap.genstart = regs; /* start newobj generation */
+	}
+	return regs;
 }
 
 
@@ -526,9 +531,9 @@ void set_blocking(int sock, int blockp) {
 #endif
 }
 
+#ifndef WIN32
 static
 void signal_handler(int signal) {
-#ifndef WIN32
    switch(signal) {
       case SIGINT:
          breaked |= 2; break;
@@ -537,8 +542,8 @@ void signal_handler(int signal) {
          // printf("vm: signal %d\n", signal);
          breaked |= 4;
    }
-#endif
 }
+#endif
 
 /* small functions defined locally after hitting some portability issues */
 static __inline__ void bytecopy(char *from, char *to, int n) { while(n--) *to++ = *from++; }
@@ -552,6 +557,7 @@ unsigned int lenn(char *pos, unsigned int max) { /* added here, strnlen was miss
 
 
 /* list length, no overflow or valid termination checks */
+#ifndef WIN32
 static
 int llen(word *ptr) {
    int len = 0;
@@ -561,6 +567,7 @@ int llen(word *ptr) {
    }
    return len;
 }
+#endif
 
 void set_signal_handler() {
 #ifndef WIN32
@@ -1041,23 +1048,8 @@ int sss = hdrsize(ptrs[0]);
 free((void *) file_heap);
 */
 
-struct args
-{
-	OL *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
-
-	// структура памяти VM. распределяется еще до запуска самой машины
-	word max_heap_mb; /* max heap size in MB */
-
-	// memstart <= genstart <= memend
-	struct heap heap;
-
-	// allocation pointer (top of allocated heap)
-	word *fp;
-
-	void *userdata;
-	char ready;
-};
-
+#define OGOTO(f, n)                 ob = (word *)R[f]; acc = n; goto apply
+#define RET(n)                      ob = (word *)R[3]; R[3] = R[n]; acc = 1; goto apply
 
 #define OCLOSE(proctype)            \
 	{ word size = *ip++, tmp; word *ob = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
@@ -1069,6 +1061,36 @@ struct args
 #define ERROR(opcode, a, b)         { R[4] = F(opcode); R[5] = (word) a; R[6] = (word) b; goto invoke_mcp; }
 #define CHECK(exp,val,code)         if (unlikely(!(exp))) ERROR(code, val, ITRUE);
 
+#define A0                          R[ip[0]]
+#define A1                          R[ip[1]]
+#define A2                          R[ip[2]]
+#define A3                          R[ip[3]]
+#define A4                          R[ip[4]]
+#define A5                          R[ip[5]]
+#define R0                          R[0]
+#define R1                          R[1]
+#define R2                          R[2]
+#define R3                          R[3]
+#define R4                          R[4]
+#define R5                          R[5]
+#define R6                          R[6]
+#define G(ptr, n)                   ((word *)(ptr))[n]
+
+
+struct args
+{
+	OL *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
+
+	// структура памяти VM. распределяется еще до запуска самой машины
+	word max_heap_mb; /* max heap size in MB */
+
+	// memstart <= genstart <= memend
+	struct heap heap;
+	word *fp; // allocation pointer (top of allocated heap)
+
+	void *userdata;
+	char ready;
+};
 // args + 0 = (list "arg0" "arg 1") or ("arg0 arg1" . NIL) ?
 // args + 3 = objects list
 DWORD WINAPI
@@ -1248,7 +1270,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 	// АЛУ
 #	define EQ    54
 
-#	define SYSCALL 63
+#	define SYSPRIM 63
 
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
@@ -1550,7 +1572,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 			// этот case должен остаться тут - как последний из кейсов
 			//  todo: переименовать в компиляторе sys-prim на syscall
 			// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
-			case SYSCALL: { /* sys-prim op arg1 arg2 arg3 r1 */
+			case SYSPRIM: { /* sys-prim op arg1 arg2 arg3 r1 */
 				// todo: make prim_sys inlined here!
 				word op = fixval(A0);
 				word a = A1, b = A2, c = A3;
@@ -1571,11 +1593,90 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 
 				case 7: /* set memory limit (in mb) */ // todo: переделать на другой номер
 					 max_heap_mb = fixval(a);
-					 return a;
+					 result = a;
+					 break;
 				  case 8: /* get machine word size (in bytes) */ // todo: переделать на другой номер
-					 return F(W);
+					  result = F(W);
+					  break;
 				  case 9: /* get memory limit (in mb) */ // todo: переделать на другой номер
-					 return F(max_heap_mb);
+					  result = F(max_heap_mb);
+					  break;
+
+
+				case 30: {
+			         word *filename = (word*)a;
+			         int mode = fixval(b);
+
+			         if (!(allocp(filename) && imm_type(*filename) == TSTRING))
+			            return IFALSE;
+
+			         void* module = (word)dlopen((char*) (filename + 1), mode);
+
+			         // Хак!!! Так как младшие 8 бит у нас все равно 0, то мы не будем возвращать
+			         // F(result), просто в следующий раз обнулим младшие биты, что пришли
+			         // ну или так: F(result >> 8)
+			         result = module;
+			         break;
+				}
+				case 31: {
+					void* module = (void*)a;
+					word* functionname = (word*)b;
+
+					void* function = dlsym(module, (char*) (functionname + 1));
+
+					result = fp; // todo: разобраться тут правильно с размерами типов
+					fp[0] = make_raw_header(2, TBVEC, 0); // sizeof(void*) % sizeof(word) as padding
+					fp[1] = function;
+					fp += 2;
+
+					break;
+				}
+				case 32: {
+					// todo: оформить отдельной функцией pinvoke
+					// todo: разобраться с конвенцией вызова функции
+					word *msgbox = (word*)a;
+					void *ptr = *(msgbox + 1);
+					int (*function)(int, char*, char*, int) = *(((word*) a) + 1);
+					int got;
+//					*(word*)&function = ((word*) a) + 1;
+
+					int as_integer(word* ptr) { }
+					int invoker0() {
+						return 1;
+					}
+					int invoker1() {
+						return 2;
+					}
+
+					word* args = (word*)c;
+
+					word* arg1 = args[1]; // car
+					args = args[2];       // cdr
+					word* arg2 = args[1]; // car
+					args = args[2];       // cdr
+					word* arg3 = args[1]; // ...
+					args = args[2];
+					word* arg4 = args[1];
+					args = args[2];
+					assert (args == INULL);
+
+					char* arg2_as_string = &arg2[1]; // todo: check the type
+					char* arg3_as_string = &arg3[1];
+					int buttons = fixval((int)arg4);
+					got = (__stdcall)function(0, arg2_as_string, arg3_as_string, buttons);
+					// а вот тут большой кусок кода, который маршалит параметры во внешние фукнции
+
+					word rtype = (word)b; // return type of function
+					switch (hdrtype(rtype)) {
+						case 0: //type-fix+
+							result = F(got);
+							break;
+						default:
+							result = INULL;
+					}
+
+					break;
+				}
 
 				default:
 					result = prim_sys(op, a, b, c);
@@ -1664,7 +1765,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
          A1 = (rawp(hdr)) ? F((hdrsize(hdr)-1)*W - padsize(hdr)) : IFALSE;
       }
       NEXT(2); }
-   op32: { /* bind tuple <n> <r0> .. <rn> */
+   op32: { /* bind tuple <n> <r0> .. <rn> */ // todo: move to sys-prim?
       word *tuple = (word *) R[*ip++];
       word hdr, pos = 1, n = *ip++;
       CHECK(allocp(tuple), tuple, 32);
@@ -1672,7 +1773,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       CHECK(!(rawp(hdr) || hdrsize(hdr)-1 != n), tuple, 32);
       while(n--) { R[*ip++] = tuple[pos++]; }
       NEXT(0); }
-   op34: { /* connect <host-ip> <port> <res> -> fd | False, via an ipv4 tcp stream */
+   op34: { /* connect <host-ip> <port> <res> -> fd | False, via an ipv4 tcp stream */ // todo: move to sys-prim?
       A2 = prim_connect((word *) A0, A1); /* fixme: remove and put to prim-sys*/
       NEXT(3); }
    op35: { /* listuple type size lst to */
@@ -1789,25 +1890,6 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=syscall and call mcp */
 // fasl decoding
 /* count number of objects and measure heap size */
 static unsigned char *hp;       /* heap pointer when loading heap */
-
-unsigned char *readfile(const char *filename)
-{
-	struct stat st;
-	int fd, pos = 0;
-	if (stat(filename, &st)) exit(1);
-
-	char* ptr = (char*)malloc(st.st_size);
-	if (ptr == NULL) exit(2);
-	fd = open(filename, O_RDONLY | O_BINARY);
-	if (fd < 0) exit(3);
-	while (pos < st.st_size) {
-		int n = read(fd, ptr+pos, st.st_size-pos);
-		if (n < 0) exit(4);
-		pos += n;
-	}
-	close(fd);
-	return (unsigned char*)ptr;
-}
 
 word get_nat() {
    word result = 0;
@@ -1952,7 +2034,7 @@ OL* vm_start(unsigned char* language)
 //		fp += 3;
 //	}
 //
-	// подготовим в памяти машины параметры командной строки
+	// подготовим в памяти машины параметры командной строки:
 
 	// create '("some string", NIL) as parameter for the start lambda
 	// todo: добавить возможность компиляции самого компилятора, для этого надо
