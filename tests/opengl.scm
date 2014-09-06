@@ -24,18 +24,15 @@
 
 
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
+; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
 (define kernel32_dll (load-library "kernel32" 0))
   (define GetModuleHandle (get-proc-address type-handle kernel32_dll "GetModuleHandleA"))
 
 (define _exe (GetModuleHandle 0))
-;(define wmain          (get-proc-address type-fix+ _exe "wmain@12")) ; test
-;(wmain 1 2 3)                                                        ; test
-;(define cmain          (get-proc-address-c type-fix+ _exe "cmain"))  ; test
-;(cmain 1 2 3)                                                        ; test
-
-
 (define CreateGLWindow (get-proc-address-c type-fix+ _exe "CreateGLWindow"))
 
+; вспомогательные константы (временно, пока не научусь работать с флоатами)
+(define FLOAT=1 #x3F800000)
          
 ; real code
 (define user32 (load-library "user32" 0))
@@ -90,6 +87,17 @@
     (define GL_COLOR_BUFFER_BIT #x00004000)
     (define GL_DEPTH_BUFFER_BIT #x00000100)
   (define glLoadIdentity    (get-proc-address type-fix+ opengl32 "glLoadIdentity"))
+  (define glViewport        (get-proc-address type-fix+ opengl32 "glViewport"))
+  (define glMatrixMode      (get-proc-address type-fix+ opengl32 "glMatrixMode"))
+    (define GL_PROJECTION #x1701)
+    (define GL_MODELVIEW  #x1700)
+
+  (define glShadeModel      (get-proc-address type-fix+ opengl32 "glShadeModel"))
+    (define GL_SMOOTH #x1D01)
+  (define glClearColor      (get-proc-address type-fix+ opengl32 "glClearColor"))
+  (define glHint            (get-proc-address type-fix+ opengl32 "glHint"))
+    (define GL_PERSPECTIVE_CORRECTION_HINT #x0C50)
+    (define GL_NICEST #x1102)
 
 
 ; проверка, что все запустилось.
@@ -108,7 +116,7 @@
 
 ;(define window 0)
 (define window (CreateWindowEx
-    (OR WS_EX_APPWINDOW WS_EX_WINDOWEDGE) "LISTBOX" "OL OpenGL Framework"
+    (OR WS_EX_APPWINDOW WS_EX_WINDOWEDGE) "#32770" "OL OpenGL Framework" ; #32770 is for system classname for DIALOG
     (OR WS_OVERLAPPEDWINDOW WS_CLIPSIBLINGS WS_CLIPCHILDREN)
     0 0 640 480 ; x y width height
     0 ; no parent window
@@ -129,7 +137,18 @@
 (SetForegroundWindow window)
 (SetFocus window)
 
-(CreateGLWindow window 16 0 hDC hRC)
+; ResizeGLScene
+(glViewport 0 0 640 480)
+
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity)
+
+(glMatrixMode GL_MODELVIEW)
+(glLoadIdentity)
+
+(glShadeModel GL_SMOOTH)
+(glClearColor 0 0 0 FLOAT=1)
+(glHint GL_PERSPECTIVE_CORRECTION_HINT GL_NICEST)
 
 ;(WinMain 0 0 0 0)
 

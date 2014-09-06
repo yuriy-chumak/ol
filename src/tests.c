@@ -22,58 +22,6 @@
 #include <gl\glu.h>			// Header File For The GLu32 Library
 //#include <gl\glaux.h>		// Header File For The Glaux Library
 
-GLvoid ReSizeGLScene(GLsizei width, GLsizei height)		// Resize And Initialize The GL Window
-{
-	if (height==0)										// Prevent A Divide By Zero By
-	{
-		height=1;										// Making Height Equal One
-	}
-
-	glViewport(0,0,width,height);						// Reset The Current Viewport
-
-	glMatrixMode(GL_PROJECTION);						// Select The Projection Matrix
-	glLoadIdentity();									// Reset The Projection Matrix
-
-	// Calculate The Aspect Ratio Of The Window
-	//gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.1f,100.0f);
-
-	glMatrixMode(GL_MODELVIEW);							// Select The Modelview Matrix
-	glLoadIdentity();									// Reset The Modelview Matrix
-}
-
-int InitGL(GLvoid)										// All Setup For OpenGL Goes Here
-{
-	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
-	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);				// Black Background
-	glClearDepth(1.0f);									// Depth Buffer Setup
-	glEnable(GL_DEPTH_TEST);							// Enables Depth Testing
-	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
-	return TRUE;										// Initialization Went OK
-}
-
-/*	This Code Creates Our OpenGL Window.  Parameters Are:					*
- *	title			- Title To Appear At The Top Of The Window				*
- *	width			- Width Of The GL Window Or Fullscreen Mode				*
- *	height			- Height Of The GL Window Or Fullscreen Mode			*
- *	bits			- Number Of Bits To Use For Color (8/16/24/32)			*
- *	fullscreenflag	- Use Fullscreen Mode (TRUE) Or Windowed Mode (FALSE)	*/
-__declspec(dllexport)
-BOOL CreateGLWindow(HANDLE somehandle, int bits, char fullscreenflag, int dc, int rc)
-{
-	RECT		WindowRect;				// Grabs Rectangle Upper Left / Lower Right Values
-
-	GetWindowRect(somehandle, &WindowRect);
-	int width = WindowRect.right - WindowRect.left;
-	int height = WindowRect.bottom - WindowRect.top;
-
-	ReSizeGLScene(width, height);					// Set Up Our Perspective GL Screen
-
-	InitGL();										// Initialize Our Newly Created GL Window
-
-	return TRUE;									// Success
-}
-
 /***************************************************
  * TESTS
  **************************************************/
