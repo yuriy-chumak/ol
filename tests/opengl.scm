@@ -10,17 +10,22 @@
    (let ((function (cons (bor type 64) (sys-prim 31 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
       (lambda args
          (sys-prim 32 (cdr function) (car function) args))))
-(define type-word 45)
+(define type-handle 45)
+
+; вспомогательный макрос для собрать в кучку все bor
+(define OR (lambda list (fold bor 0 list)))
 
 ; todo: определить константы возвращаемого типа и использовать их в описании возврата функций
 ; что-то вроде (define rt-int 1)
 
-; todo: тип для (get-proc-address) - всегда число, добавить в проверку 
+; todo: тип для (get-proc-address) - всегда число, добавить в проверку
+
+; для результата, что превышает x00FFFFFF надо использовать type-int+ (?)
 
 
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
 (define kernel32_dll (load-library "kernel32" 0))
-  (define GetModuleHandle (get-proc-address type-word kernel32_dll "GetModuleHandleA"))
+  (define GetModuleHandle (get-proc-address type-handle kernel32_dll "GetModuleHandleA"))
   
 (define _exe (GetModuleHandle 0))
 ;(define wmain          (get-proc-address type-fix+ _exe "wmain@12")) ; test
@@ -30,29 +35,38 @@
 
 
 ;(define WinMain        (get-proc-address type-fix+ _exe "WinMain@16"))
-(define CreateGLWindow (get-proc-address-c type-fix+ _exe "CreateGLWindow")) 
+(define CreateGLWindow (get-proc-address-c type-fix+ _exe "CreateGLWindow"))
 (define KillGLWindow   (get-proc-address-c type-fix+ _exe "KillGLWindow"))
 (define DrawGLScene    (get-proc-address-c type-fix+ _exe "DrawGLScene"))
 
          
 ; real code
-(define user32_dll (load-library "user32" 0))
+(define user32 (load-library "user32" 0))
   (define IDOK 1)
   (define IDCANCEL 2)
 
-  (define MessageBox (get-proc-address type-fix+ user32_dll "MessageBoxA"))
+  (define MessageBox (get-proc-address type-fix+ user32 "MessageBoxA"))
     (define MB_OK 0)
     (define MB_OKCANCEL 1)
     (define MB_ICONASTERISK 64)
-  (define PeekMessage      (get-proc-address type-fix+ user32_dll "PeekMessageA"))
+  (define PeekMessage      (get-proc-address type-fix+ user32 "PeekMessageA"))
     (define PM_REMOVE 1)
-  (define TranslateMessage (get-proc-address type-fix+ user32_dll "TranslateMessage"))
-  (define DispatchMessage  (get-proc-address type-fix+ user32_dll "DispatchMessageA"))
-  (define PostQuitMessage  (get-proc-address type-fix+ user32_dll "PostQuitMessage"))
+  (define TranslateMessage (get-proc-address type-fix+ user32 "TranslateMessage"))
+  (define DispatchMessage  (get-proc-address type-fix+ user32 "DispatchMessageA"))
+  (define PostQuitMessage  (get-proc-address type-fix+ user32 "PostQuitMessage"))
+  ;; давление юры 06/09/2014 в 13:43 - 125/ 91
+  ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
+  (define GetKeyState      (get-proc-address type-fix+ user32 "GetKeyState"))
+  (define GetAsyncKeyState (get-proc-address type-fix+ user32 "GetAsyncKeyState"))
+  (define GetKeyboardState (get-proc-address type-fix+ user32 "GetKeyboardState"))
   
-  (define GetKeyState      (get-proc-address type-fix+ user32_dll "GetKeyState"))
-  (define GetAsyncKeyState (get-proc-address type-fix+ user32_dll "GetAsyncKeyState"))
-  (define GetKeyboardState (get-proc-address type-fix+ user32_dll "GetKeyboardState"))
+  ;; функции работы с win32 окнами
+  (define CreateWindowEx   (get-proc-address type-handle user32 "CreateWindowExA")) ; ANSI version
+    (define WS_EX_APPWINDOW      #x00040000)
+    (define WS_EX_WINDOWEDGE     #x00000100)
+    (define WS_OVERLAPPEDWINDOW  (OR #x00000000 #x00C00000 #x00080000 #x00040000 #x00020000 #x00010000))
+    (define WS_CLIPSIBLINGS      #x04000000)
+    (define WS_CLIPCHILDREN      #x02000000)
   
   
 
@@ -70,7 +84,17 @@
 ; в момент импорта сделать все нужные привязки
 ; export (MessageBox)  и т.д.
 
-(CreateGLWindow "NeHe's OpenGL Framework" 640 480 16 0)
+;(define window 0)
+(define window (CreateWindowEx
+    (OR WS_EX_APPWINDOW WS_EX_WINDOWEDGE) "LISTBOX" "OL OpenGL Framework"
+    (OR WS_OVERLAPPEDWINDOW WS_CLIPSIBLINGS WS_CLIPCHILDREN)
+    0 0 640 480 ; x y width height
+    0 ; no parent window
+    0 ; no menu
+    0 ; instance
+    0)) ; don't pass anything to WM_CREATE
+    
+(CreateGLWindow window 16 0)
 ;(WinMain 0 0 0 0)
 
 (define MSG (make-vector 28 0)) ; sizeof(MSG)=28

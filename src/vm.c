@@ -311,7 +311,8 @@ typedef struct OL
 #define TCLOS                       18
 #define TSTRING                      3
 #define TSTRINGWIDE                 22
-#define TWORD                       45
+#define THANDLE                     45
+#define TINT                        40
 
 #define INULL                       make_immediate(0, TCONST)
 #define IFALSE                      make_immediate(1, TCONST)
@@ -323,7 +324,7 @@ typedef struct OL
 static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ldi and jv */
 
 #define PAIRHDR                     make_header(3, TPAIR)
-#define NUMHDR                      make_header(3,40) // <- on the way to 40, see type-int+ in defmac.scm
+#define NUMHDR                      make_header(3, TINT) // <- on the way to 40, see type-int+ in defmac.scm
 
 #define FFRIGHT                     1
 #define FFRED                       2
@@ -1680,7 +1681,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					//void* module = LoadLibrary((char*) (filename + 1));
 
 					result = (word)fp; // todo: разобраться тут правильно с размерами типов
-					fp[0] = make_raw_header(2, TBVEC, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
+					fp[0] = make_raw_header(2, THANDLE, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
 					fp[1] = (word)module;
 					fp += 2;
 					break;
@@ -1688,7 +1689,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 				case 31: { // dlsym
 					word* A = (word*)a;
 
-					assert (hdrtype(A[0]) == TBVEC);
+					assert (hdrtype(A[0]) == THANDLE);
 					void* module = (void*) A[1];
 					word* name = (word*)b;
 
@@ -1702,107 +1703,141 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 
 					// todo: в качестве оптимизации можно возвращать уже подготовленную структуру с параметрами и конвеншеном вызова
 					result = (word)fp;
-					fp[0] = make_raw_header(2, TBVEC, 0);
+					fp[0] = make_raw_header(2, THANDLE, 0);
 					fp[1] = (word)function;
 					fp += 2;
 					break;
 				}
 				case 32: {
 					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
+					int call(int convention, void* function, int args[], int count) {
+						// todo: ограничиться количеством функций поменьше
+						//	а можно сделать все в одной switch:
+						// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
+						// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
+						// todo: проанализировать частоту количества аргументов и переделать все в
+						//   бинарный if
+
+/*						__stdcall // gcc style for lambdas in pure C
+						int (*stdcall[])(char*) = {
+								({ int $(char *str){ printf("Test: %s\n", str); } $; })
+						};*/
+
+						switch (convention >> 6) {
+						case 0: // __stdcall
+							switch (count) {
+							case  0: return ((__stdcall int (*) ())
+											function) ();
+							case  1: return ((__stdcall int (*) (int)) function)
+											(args[0]);
+							case  2: return ((__stdcall int (*) (int, int)) function)
+											(args[0], args[1]);
+							case  3: return ((__stdcall int (*) (int, int, int)) function)
+											(args[0], args[1], args[2]);
+							case  4: return ((__stdcall int (*) (int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3]);
+							case  5: return ((__stdcall int (*) (int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4]);
+							case  6: return ((__stdcall int (*) (int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5]);
+							case  7: return ((__stdcall int (*) (int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+							case  8: return ((__stdcall int (*) (int, int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+							case  9: return ((__stdcall int (*) (int, int, int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+							case 10: return ((__stdcall int (*) (int, int, int, int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
+							case 11: return ((__stdcall int (*) (int, int, int, int, int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);
+							case 12: return ((__stdcall int (*) (int, int, int, int, int, int, int, int, int, int, int, int))
+											function) (args[0], args[1], args[2], args[3],
+											           args[4], args[5], args[6], args[7],
+											           args[8], args[9], args[10], args[11]);
+							default: fprintf(stderr, "Too match parameters for pinvoke function");
+								break;
+							}
+							break;
+						case 1: // __cdecl
+							switch (count) {
+							case  0: return ((__cdecl   int (*) ())
+											function) ();
+							case  1: return ((__cdecl   int (*) (int)) function)
+											(args[0]);
+							case  2: return ((__cdecl   int (*) (int, int)) function)
+											(args[0], args[1]);
+							case  3: return ((__cdecl   int (*) (int, int, int)) function)
+											(args[0], args[1], args[2]);
+							case  4: return ((__cdecl   int (*) (int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3]);
+							case  5: return ((__cdecl   int (*) (int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4]);
+							case  6: return ((__cdecl   int (*) (int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5]);
+							case  7: return ((__cdecl   int (*) (int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+							case  8: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+							case  9: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+							case 10: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
+							case 11: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int, int, int, int)) function)
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);
+							case 12: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int, int, int, int, int))
+											function) (args[0], args[1], args[2], args[3],
+											           args[4], args[5], args[6], args[7],
+											           args[8], args[9], args[10], args[11]);
+							default: fprintf(stderr, "Too match parameters for pinvoke function");
+							}
+						}
+						return 0;
+					}
 
 					// a - function address
 					// b - return type
 					// c - arguments (may be pair with req type in car and arg in cdr - not yet done)
 					word* A = (word*)a;
 
-					assert (hdrtype(A[0]) == TBVEC);
+					assert (hdrtype(A[0]) == THANDLE);
 					assert (hdrsize(A[0]) == 2); // в списке один системный ворд // это временно, а вообще надо будет использовать fix+ и собирать его по битикам
 					assert (immediatep(b));
 
 					// todo: добавить разные конвенции вызова: __ccall, __stdcall, __fastcall
-					typedef __stdcall int (*function0_t_std)();
-					typedef __stdcall int (*function1_t_std)(int);
-					typedef __stdcall int (*function2_t_std)(int, int);
-					typedef __stdcall int (*function3_t_std)(int, int, int);
-					typedef __stdcall int (*function4_t_std)(int, int, int, int);
-					typedef __stdcall int (*function5_t_std)(int, int, int, int, int);
 
-					typedef __cdecl   int (*function0_t_cdl)();
-					typedef __cdecl   int (*function1_t_cdl)(int);
-					typedef __cdecl   int (*function2_t_cdl)(int, int);
-					typedef __cdecl   int (*function3_t_cdl)(int, int, int);
-					typedef __cdecl   int (*function4_t_cdl)(int, int, int, int);
-					typedef __cdecl   int (*function5_t_cdl)(int, int, int, int, int);
-
-					int args[5]; // пока только 4 аргумента максимум
+					int args[12]; // пока только 12 аргумента максимум
 					void *function = (void*) (A[1]);
 					int returntype = imm_val(b);
 
 					int got;    // результат вызова функции
 					int i = 0;	// количество аргументов
 					word* p = (word*)c; // аргументы
-					while (1) {
-						if ((int)p == INULL) { // а может засунуть чуть ниже в общий if (immediatep()) ?
-							//	а можно сделать все в одной switch:
-							// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
-							// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
-							switch (returntype >> 6) {
-							case 0: // __stdcall
-								switch (i) {
-								case 0: got = ((function0_t_std)function)();
-									break;
-								case 1: got = ((function1_t_std)function)(args[0]);
-									break;
-								case 2: got = ((function2_t_std)function)(args[0], args[1]);
-									break;
-								case 3: got = ((function3_t_std)function)(args[0], args[1], args[2]);
-									break;
-								case 4: got = ((function4_t_std)function)(args[0], args[1], args[2], args[3]);
-									break;
-								case 5: got = ((function5_t_std)function)(args[0], args[1], args[2], args[3],
-										                              args[4]);
-									break;
-								}
-								break;
-							case 1:
-								switch (i) {
-								case 0: got = ((function0_t_cdl)function)();
-									break;
-								case 1: got = ((function1_t_cdl)function)(args[0]);
-									break;
-								case 2: got = ((function2_t_cdl)function)(args[0], args[1]);
-									break;
-								case 3: got = ((function3_t_cdl)function)(args[0], args[1], args[2]);
-									break;
-								case 4: got = ((function4_t_cdl)function)(args[0], args[1], args[2], args[3]);
-									break;
-								case 5: got = ((function5_t_cdl)function)(args[0], args[1], args[2], args[3],
-										                              args[4]);
-									break;
-								}
-								break;
-							}
-							// todo: проанализировать частоту количества аргументов и переделать все в
-							//   бинарный if
-							break;
-						}
-
+					while ((int)p != INULL) { // пока есть аргументы
 						assert (hdrtype(*p) == TPAIR);
 						word* arg = (word*)p[1]; // car
-/*						if ((word)arg == 2) { // если тут NULL, то походу конец списка и можно вызывать функцию
-						}*/
 						if (immediatep(arg))
 							args[i] = fixval((int)arg);
 						else { // allocp
 							switch (hdrtype(arg[0])) {
+							case THANDLE:
+								args[i] = (int)(arg[1]);
+								break;
 							case TBVEC:
 							case TSTRING: {
 								// in arg[0] size got size of string
 								args[i] = (int)(&arg[1]);
 								break;
 							}
-							case TTUPLE: {
+							case TTUPLE: { // ?
 								args[i] = (int)(&arg[1]);
+								break;
+							}
+							case TINT: { // type-int+ // todo: разобраться с type-int- (может это signed?)
+								// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
+								assert (immediatep(arg[1]));
+								assert (allocp(arg[2]));
+
+								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
 								break;
 							}
 							default:
@@ -1815,14 +1850,32 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 						p = (word*)p[2]; // cdr
 						i++;
 					}
+					got = call(returntype & 0x3F, function, args, i);
 
 					switch (returntype & 0x3F) {
-						case 0: //type-fix+
+						case 0: // type-fix+
 							result = F(got);
 							break;
-						case TWORD:
+						case TINT:
+							if (got > 0xFFFFFF) {
+								word* lo = fp; fp += 3; // low 24 bits
+								lo[0] = NUMHDR;
+								lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
+								lo[2] = fp;
+								word* hi = fp; fp += 3; // high 8 bits
+								hi[0] = NUMHDR;
+								hi[1] = make_immediate(got >> 24, 0); // type-fx+
+								hi[2] = INULL;
+
+								result = lo;
+								break;
+							}
+							// иначе вернем type-fx+
+							result = F(got);
+							break;
+						case THANDLE:
 							result = (word)fp;
-							fp[0] = make_raw_header(2, TBVEC, 0);
+							fp[0] = make_raw_header(2, THANDLE, 0);
 							fp[1] = got;
 							fp += 2;
 							break;
@@ -1830,7 +1883,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							result = INULL;
 					}
 
-					break;
+					break; // case 32
 				}
 
 				default:
