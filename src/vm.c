@@ -138,6 +138,11 @@ char fifo_full(struct fifo* f)
 {
 	return ((f->getp - f->putp) % FIFOLENGTH == 1);
 }
+static __inline__
+void fifo_clear(struct fifo* f)
+{
+	f->getp = f->putp = 0;
+}
 
 // utility fifo functions
 static
@@ -166,6 +171,60 @@ int fifo_gets(struct fifo* f, char *message, int n)
 	*--ptr = '\0';
 	return ptr - message;
 }
+
+
+// -=( dl )=-----------------------------------------------
+// интерфейс к динамическому связыванию системных библиотек
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+// seen at https://github.com/dlfcn-win32/dlfcn-win32/blob/master/dlfcn.c
+
+//static thread_local char *dlerrno = 0;
+
+void *dlopen(const char *filename, int mode/*unused*/)
+{
+	HMODULE hModule;
+	// Do not let Windows display the critical-error-handler message box */
+	// UINT uMode = SetErrorMode( SEM_FAILCRITICALERRORS );
+
+	if (filename == 0)
+		/* POSIX says that if the value of file is 0, a handle on a global
+		 * symbol object must be provided. That object must be able to access
+		 * all symbols from the original program file, and any objects loaded
+		 * with the RTLD_GLOBAL flag.
+		 * The return value from GetModuleHandle( ) allows us to retrieve
+		 * symbols only from the original program file. For objects loaded with
+		 * the RTLD_GLOBAL flag, we create our own list later on.
+		 */
+		hModule = GetModuleHandle(NULL);
+	else
+		/* POSIX says the search path is implementation-defined.
+		 * LOAD_WITH_ALTERED_SEARCH_PATH is used to make it behave more closely
+		 * to UNIX's search paths (start with system folders instead of current
+		 * folder).
+		 */
+		hModule = LoadLibraryEx((LPSTR)filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	return hModule;
+}
+int   dlclose(void *handle)
+{
+	return FreeLibrary((HMODULE)handle);
+}
+
+void *dlsym  (void *handle, const char *name)
+{
+	FARPROC function;
+
+	function = GetProcAddress((HANDLE)handle, name);
+	return function;
+}
+
+#else
+#include <dlfcn.h>
+#endif
+
+
 
 //typedef struct fifo fifo;
 // виртуальная машина
@@ -222,7 +281,7 @@ typedef struct OL
 // p is padding
 
 #define F(val)                      (((val) << IPOS) | 2)
-#define BOOL(cval)                  ((cval) ? ITRUE : IFALSE)
+#define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
 #define fixval(desc)                ((desc) >> IPOS)
 #define fixnump(desc)               (((desc) & 0xFF) == 2)
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
@@ -304,6 +363,10 @@ int chdir(const char *path);
 #ifndef WIN32
 int execv(const char *path, char *const argv[]);
 #endif
+
+
+
+
 
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
 // несколько ссылок "на почитать" по теме GC:
@@ -631,9 +694,9 @@ static word prim_connect(word *host, word port) {
 
 static word prim_less(word a, word b) {
    if (immediatep(a)) {
-      return immediatep(b) ? BOOL(a < b) : ITRUE;  /* imm < alloc */
+      return immediatep(b) ? TRUEFALSE(a < b) : ITRUE;  /* imm < alloc */
    } else {
-      return immediatep(b) ? IFALSE : BOOL(a < b); /* alloc > imm */
+      return immediatep(b) ? IFALSE : TRUEFALSE(a < b); /* alloc > imm */
    }
 }
 
@@ -861,7 +924,7 @@ static word prim_sys(int op, word a, word b, word c) {
             return IEOF;
 
          // EAGAIN: Resource temporarily unavailable (may be the same value as EWOULDBLOCK) (POSIX.1)
-         return BOOL(errno == EAGAIN || errno == EWOULDBLOCK); }
+         return TRUEFALSE(errno == EAGAIN || errno == EWOULDBLOCK); }
 
 
       case 10: /* enter linux seccomp mode */
@@ -1113,6 +1176,7 @@ runtime(void *args) // heap top
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
 	((struct args*)args)->vm->fi = &fi;
 	((struct args*)args)->vm->fo = &fo;
+	  fifo_clear(&fi), fifo_clear(&fo); // todo: проверить, нужен ли этот вызов
 
 	// все, машина инициализирована, отсигналимся
 	((struct args*)args)->ready = 1;
@@ -1446,7 +1510,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 		  NEXT(4); }
 
 		case EQ: // eq a b r
-			A2 = BOOL(A0 == A1);
+			A2 = TRUEFALSE(A0 == A1);
 			ip += 3; break;
 
 	   op55: { /* band a b r, prechecked */
@@ -1527,7 +1591,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 			  NEXT(s+1); }
 		   op41: { /* red? node r (has highest type bit?) */
 			  word *node = (word *) R[*ip];
-			  A1 = BOOL(allocp(node) && ((*node)&(FFRED<<TPOS)));
+			  A1 = TRUEFALSE(allocp(node) && ((*node)&(FFRED<<TPOS)));
 			  NEXT(2); }
 		   op42: /* mkblack l k v r t */
 			  A4 = prim_mkff(TFF,A0,A1,A2,A3);
@@ -1582,7 +1646,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 				switch (op) {
 				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 				//  остальное можно спокойно оформлять отдельными функциями
-				// todo: добавить функции LoadLibrary, GetProcAddress и вызов этих функций с параметрами
+				// todo: добавить функции LoadLibrary, GetProcAddress и вызов этих функций с параметрами (+)
 
 				case 6: // todo: переделать на другой номер
 					free(heap.begin); // освободим занятую память
@@ -1603,40 +1667,48 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					  result = F(max_heap_mb);
 					  break;
 
-
-				case 30: {
+				// -=( pinvoke )=-------------------------------------------------
+				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
+				case 30: { // dlopen
 					word *filename = (word*)a;
 					int mode = fixval(b);
 
-					if (!(allocp(filename) && imm_type(*filename) == TSTRING))
+					if (!(allocp(filename) && hdrtype(*filename) == TSTRING))
 			        	 return IFALSE;
 
-					void* module = LoadLibrary((char*) (filename + 1));
+					void* module = dlopen((char*) (filename + 1), mode);
+					//void* module = LoadLibrary((char*) (filename + 1));
 
-					// Хак!!! Так как младшие 8 бит у нас все равно 0, то мы не будем возвращать
-					// F(result), просто в следующий раз обнулим младшие биты, что пришли
-					// ну или так: F(result >> 8)
-					result = fp; // todo: разобраться тут правильно с размерами типов
-					fp[0] = make_raw_header(2, TBVEC, 0); // sizeof(void*) % sizeof(word) as padding
-					fp[1] = module;
+					result = (word)fp; // todo: разобраться тут правильно с размерами типов
+					fp[0] = make_raw_header(2, TBVEC, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
+					fp[1] = (word)module;
 					fp += 2;
 					break;
 				}
-				case 31: {
-					void* module = (void*) ((word *)a)[1];
-					word* functionname = (word*)b;
+				case 31: { // dlsym
+					word* A = (word*)a;
 
-					void* function = GetProcAddress(module, (char*) (functionname + 1));
+					assert (hdrtype(A[0]) == TBVEC);
+					void* module = (void*) A[1];
+					word* name = (word*)b;
 
-					// в качестве оптимизации можно возвращать уже подготовленную структуру с параметрами и конвеншеном вызова
-					result = fp; // todo: разобраться тут правильно с размерами типов
-					fp[0] = make_raw_header(2, TBVEC, 0); // sizeof(void*) % sizeof(word) as padding
-					fp[1] = function;
+					// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
+					if (!(immediatep(name) || hdrtype(*name) == TSTRING))
+						return IFALSE;
+
+					void* function = dlsym(module, immediatep(name)
+							? (LPSTR) imm_val((word)name)
+							: (LPSTR) (char*) (name + 1));
+
+					// todo: в качестве оптимизации можно возвращать уже подготовленную структуру с параметрами и конвеншеном вызова
+					result = (word)fp;
+					fp[0] = make_raw_header(2, TBVEC, 0);
+					fp[1] = (word)function;
 					fp += 2;
 					break;
 				}
 				case 32: {
-					// http://byteworm.com/2010/10/12/container/
+					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 
 					// a - function address
 					// b - return type
@@ -1723,6 +1795,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							args[i] = fixval((int)arg);
 						else { // allocp
 							switch (hdrtype(arg[0])) {
+							case TBVEC:
 							case TSTRING: {
 								// in arg[0] size got size of string
 								args[i] = (int)(&arg[1]);
@@ -1748,8 +1821,8 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							result = F(got);
 							break;
 						case TWORD:
-							result = fp; // todo: разобраться тут правильно с размерами типов
-							fp[0] = make_raw_header(2, TBVEC, 0); // sizeof(void*) % sizeof(word) as padding
+							result = (word)fp;
+							fp[0] = make_raw_header(2, TBVEC, 0);
 							fp[1] = got;
 							fp += 2;
 							break;
@@ -1882,7 +1955,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 #else
       Sleep(fixval(A0));
 #endif
-      A1 = BOOL(errno == EINTR);
+      A1 = TRUEFALSE(errno == EINTR);
       NEXT(2); }
 
    op44: /* less a b r */

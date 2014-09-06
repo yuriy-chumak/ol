@@ -12,6 +12,9 @@
          (sys-prim 32 (cdr function) (car function) args))))
 (define type-word 45)
 
+; todo: определить константы возвращаемого типа и использовать их в описании возврата функций
+; что-то вроде (define rt-int 1)
+
 ; todo: тип для (get-proc-address) - всегда число, добавить в проверку 
 
 
@@ -26,7 +29,7 @@
 ;(cmain 1 2 3)                                                        ; test
 
 
-(define WinMain        (get-proc-address type-fix+ _exe "WinMain@16"))
+;(define WinMain        (get-proc-address type-fix+ _exe "WinMain@16"))
 (define CreateGLWindow (get-proc-address-c type-fix+ _exe "CreateGLWindow")) 
 (define KillGLWindow   (get-proc-address-c type-fix+ _exe "KillGLWindow"))
 (define DrawGLScene    (get-proc-address-c type-fix+ _exe "DrawGLScene"))
@@ -45,6 +48,11 @@
     (define PM_REMOVE 1)
   (define TranslateMessage (get-proc-address type-fix+ user32_dll "TranslateMessage"))
   (define DispatchMessage  (get-proc-address type-fix+ user32_dll "DispatchMessageA"))
+  (define PostQuitMessage  (get-proc-address type-fix+ user32_dll "PostQuitMessage"))
+  
+  (define GetKeyState      (get-proc-address type-fix+ user32_dll "GetKeyState"))
+  (define GetAsyncKeyState (get-proc-address type-fix+ user32_dll "GetAsyncKeyState"))
+  (define GetKeyboardState (get-proc-address type-fix+ user32_dll "GetKeyboardState"))
   
   
 
@@ -65,15 +73,19 @@
 (CreateGLWindow "NeHe's OpenGL Framework" 640 480 16 0)
 ;(WinMain 0 0 0 0)
 
-(define MSG "1234567890123456789012345678")
-(define (cycle)   ;MSG
-  (if (= 1 (PeekMessage MSG 0 0 0 PM_REMOVE))
-    (begin  
-      (TranslateMessage MSG)
-      (DispatchMessage MSG))
-    (DrawGLScene))
-  (cycle))
-  
-(cycle)
+(define MSG (make-vector 28 0)) ; sizeof(MSG)=28
+(call/cc (lambda (return)
+  (define (cycle)   ;MSG
+    (if (not (= (GetAsyncKeyState 27) 0)) (return))
+    
+    (if (= 1 (PeekMessage MSG 0 0 0 PM_REMOVE))
+      (begin  
+        (TranslateMessage MSG)
+        (DispatchMessage MSG))
+      (DrawGLScene))
+    (cycle))
+  (cycle)))
 
+(KillGLWindow)
 (print "@")
+

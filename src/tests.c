@@ -31,7 +31,7 @@ char	keys[256];			// Array Used For The Keyboard Routine
 char	active=TRUE;		// Window Active Flag Set To TRUE By Default
 char	fullscreen=FALSE;	// Fullscreen Flag Set To Fullscreen Mode By Default
 
-LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
+//LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 
 GLvoid ReSizeGLScene(GLsizei width, GLsizei height)		// Resize And Initialize The GL Window
 {
@@ -125,7 +125,7 @@ __declspec(dllexport)
 BOOL CreateGLWindow(char* title, int width, int height, int bits, char fullscreenflag)
 {
 	GLuint		PixelFormat;			// Holds The Results After Searching For A Match
-	WNDCLASS	wc;						// Windows Class Structure
+//	WNDCLASS	wc;						// Windows Class Structure
 	DWORD		dwExStyle;				// Window Extended Style
 	DWORD		dwStyle;				// Window Style
 	RECT		WindowRect;				// Grabs Rectangle Upper Left / Lower Right Values
@@ -137,8 +137,8 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, char fullscree
 	fullscreen=fullscreenflag;			// Set The Global Fullscreen Flag
 
 	hInstance			= GetModuleHandle(NULL);				// Grab An Instance For Our Window
-	wc.style			= CS_HREDRAW | CS_VREDRAW | CS_OWNDC;	// Redraw On Size, And Own DC For Window.
-	wc.lpfnWndProc		= (WNDPROC) WndProc;					// WndProc Handles Messages
+/*	wc.style			= CS_HREDRAW | CS_VREDRAW | CS_OWNDC;	// Redraw On Size, And Own DC For Window.
+	wc.lpfnWndProc		= (WNDPROC) DefWindowProc;				// WndProc Handles Messages
 	wc.cbClsExtra		= 0;									// No Extra Window Data
 	wc.cbWndExtra		= 0;									// No Extra Window Data
 	wc.hInstance		= hInstance;							// Set The Instance
@@ -152,9 +152,9 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, char fullscree
 	{
 		MessageBox(NULL,"Failed To Register The Window Class.","ERROR",MB_OK|MB_ICONEXCLAMATION);
 		return FALSE;											// Return FALSE
-	}
+	}*/
 
-	if (fullscreen)												// Attempt Fullscreen Mode?
+/*	if (fullscreen)												// Attempt Fullscreen Mode?
 	{
 		DEVMODE dmScreenSettings;								// Device Mode
 		memset(&dmScreenSettings,0,sizeof(dmScreenSettings));	// Makes Sure Memory's Cleared
@@ -179,7 +179,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, char fullscree
 				return FALSE;									// Return FALSE
 			}
 		}
-	}
+	}*/
 
 	if (fullscreen)												// Are We Still In Fullscreen Mode?
 	{
@@ -197,7 +197,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, char fullscree
 
 	// Create The Window
 	if (!(hWnd=CreateWindowEx(	dwExStyle,							// Extended Style For The Window
-								"OpenGL",							// Class Name
+								"LISTBOX",							// Class Name
 								title,								// Window Title
 								dwStyle |							// Defined Window Style
 								WS_CLIPSIBLINGS |					// Required Window Style
@@ -288,7 +288,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, char fullscree
 	return TRUE;									// Success
 }
 
-LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
+/*LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 							UINT	uMsg,			// Message For This Window
 							WPARAM	wParam,			// Additional Message Information
 							LPARAM	lParam)			// Additional Message Information
@@ -347,7 +347,7 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 
 	// Pass All Unhandled Messages To DefWindowProc
 	return DefWindowProc(hWnd,uMsg,wParam,lParam);
-}
+}*/
 
 __declspec(dllexport)
 int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
@@ -477,6 +477,12 @@ int test(OL* vm, char* test, char* ok)
 // main
 int main(int nargs, char **argv)
 {
+/*	int state = 0;
+	while (state == 0) {
+		state = GetKeyState(27);
+	}*/
+
+
 //	void *h = GetModuleHandle(0);
 //	void *p = GetProcAddress(h, "wmain");
 
