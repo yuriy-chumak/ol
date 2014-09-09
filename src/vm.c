@@ -67,6 +67,8 @@
 #include <ws2tcpip.h>
 #include <conio.h>
 #include <windows.h>
+//#include <GL/gl.h> // temp
+//#include "glext.h"
 typedef unsigned long in_addr_t;
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #undef ERROR // due to macro redefinition
@@ -1708,6 +1710,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					fp += 2;
 					break;
 				}
+				// временный тестовый вызов
 				case 32: {
 					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 					int call(int convention, void* function, int args[], int count) {
@@ -1822,6 +1825,8 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							case THANDLE:
 								args[i] = (int)(arg[1]);
 								break;
+//							case TPAIR:
+//								break;
 							case TBVEC:
 							case TSTRING: {
 								// in arg[0] size got size of string
@@ -1829,7 +1834,31 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 								break;
 							}
 							case TTUPLE: { // ?
-								args[i] = (int)(&arg[1]);
+								// todo: сделать функцию cast или что-то такое
+								// что-бы возвращать список, какой мне нужен
+								// а это СОВСЕМ ВРЕМЕННОЕ решение для теста!!!
+
+								// todo: придумал! аллоцировать массив и сложить в него указатели
+								// на элементы tupla
+//								args[i] = fp + 1; // ссылка на массив указателей на элементы
+//								word* src =
+
+
+								word* q = (int)(&arg[1]);
+
+//								word* p = fp + 1;
+								word* r = *q;
+
+								args[i] = (word)(fp + 1);
+								fp[0] = make_raw_header(2, THANDLE, 0);
+								fp[1] = r + 1;
+								fp += 2;
+
+								char** ptr = (args[i]);
+//								printf("tuple[0] is %s\n", *(char**)(args[i]));
+//								printf("tuple[0] is %s\n", ptr[0]);
+
+//								args[i] = (int)(&arg[1]);
 								break;
 							}
 							case TINT: { // type-int+ // todo: разобраться с type-int- (может это signed?)
@@ -1840,6 +1869,15 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
 								break;
 							}
+							case 32: { // type-int-
+								// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
+								assert (immediatep(arg[1]));
+								assert (allocp(arg[2]));
+
+								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+								break;
+							}
+
 							default:
 								// notification about unknown argument type!
 								args[i] = INULL;
@@ -1852,6 +1890,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					}
 					got = call(returntype & 0x3F, function, args, i);
 
+					// todo: добавить type-void который возращает просто INULL
 					switch (returntype & 0x3F) {
 						case 0: // type-fix+
 							result = F(got);
@@ -1885,7 +1924,22 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 
 					break; // case 32
 				}
+				case 33: {
+/*					printf("opengl version: %s\n", glGetString(GL_VERSION));
+					int glVersion[2] = {-1, -1}; // Set some default values for the version
+					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
+					glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]); // Get back the OpenGL MAJOR version we are using
 
+					GLint status;*/
+//					PFNGLGETSHADERIVPROC glGetShaderiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
+//					glGetShaderiv(3, GL_COMPILE_STATUS, &status);
+
+//					PFNGLGETPROGRAMIVPROC glGetProgramiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetProgramiv");
+//					glGetProgramiv(1, GL_LINK_STATUS, &status);
+
+					result = INULL;
+					break;
+				}
 				default:
 					result = prim_sys(op, a, b, c);
 					break;

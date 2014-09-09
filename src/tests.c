@@ -82,6 +82,16 @@ int test(OL* vm, char* test, char* ok)
 // main
 int main(int nargs, char **argv)
 {
+/*	float x = 0.0f;
+	FILE* f = fopen("float", "wb");
+	fwrite(&x, sizeof(float), 1, f);
+	x = 1.0f;
+	fwrite(&x, sizeof(float), 1, f);
+	x = 2.0f;
+	fwrite(&x, sizeof(float), 1, f);
+	fclose(f);
+*/
+
 /*	int state = 0;
 	while (state == 0) {
 		state = GetKeyState(27);
@@ -126,6 +136,7 @@ int main(int nargs, char **argv)
 //		while (*language++ != '\n');
 //	};
 
+	/*
 	{
 		OL* ol = vm_start(language);
 
@@ -150,7 +161,7 @@ int main(int nargs, char **argv)
 
 		vm_stop(ol);
 	}
-	return 0;
+	return 0;//*/
 
 //	free((void *) language);
 
@@ -231,6 +242,7 @@ int main(int nargs, char **argv)
 		}
 		vm_stop(lisp);
 		printf("\n");
+//		break;
 	}
 	free(language);
 
