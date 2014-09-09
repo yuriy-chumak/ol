@@ -136,8 +136,8 @@
 ; в момент импорта сделать все нужные привязки
 ; export (MessageBox)  и т.д.
 
-(define width 640)
-(define height 480)
+(define width 1280)
+(define height 720)
 (define window (CreateWindowEx
     (OR WS_EX_APPWINDOW WS_EX_WINDOWEDGE) "#32770" "OL OpenGL Sample 0" ; #32770 is for system classname for DIALOG
     (OR WS_OVERLAPPEDWINDOW WS_CLIPSIBLINGS WS_CLIPCHILDREN)
@@ -193,34 +193,115 @@
 (glCompileShader vs)
 (glAttachShader po vs)
 
+;; полезные шейдеры:
+;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
 ;(print "fs: " fs)
 (glShaderSource fs 1 (tuple (c-string "#version 120 // OpenGL 2.1
-	// http://glslsandbox.com/e#19420.0
+	// http://glslsandbox.com/e#19291.0
 	uniform int time2;
 	
-	#define MAX_ITER 8
+/*	const int MAXITER = 80;
+	vec3 field(vec3 p) {
+		p *= 0.1;
+		float f = 0.1;
+		for (int i = 0; i < 5; i++) {
+			p = p.yzx * mat3(0.8, 0.6, 0.0,-0.6, 0.8, 0.0, 0.0, 0.0, 1.0);
+			p += vec3(0.123, 0.456, 0.789) * float(i);
+			p = abs(fract(p) - 0.5);
+			p *= 2.0;
+			f *= 2.0;
+		}
+		p *= p;
+		return sqrt(p + p.yzx) / f - 0.002;
+	}
+	
 	void main(void) {
-		vec2 viewport = vec2(640.0, 480.0);
-		vec2 position = gl_FragCoord.xy / viewport.xy;
+		vec2 viewport = vec2(800.0, 600.0);
+//		vec2 position = gl_FragCoord.xy / viewport.xy;
 		float time = time2 / 1000.0;
 	
-		vec2 sp = position;
-		vec2 p = sp*5.0 - vec2(10.0);
-		vec2 i = p;
-		float c = 1.0;
-		
-		float inten = 0.1;
-	
-		for (int n = 0; n < MAX_ITER; n++) 
-		{
-			float t = time * (1.0 - (3.0 / float(n+1)));
-			i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
-			c += 1.0/length(vec2(p.x / (sin(i.x+t)/inten),p.y / (cos(i.y+t)/inten)));
+		vec3 dir = normalize(vec3((gl_FragCoord.xy - viewport * 0.5) / viewport.x, 1.0));
+		vec3 pos = vec3(0.5, 0.0, time);
+		vec3 color = vec3(0.0);
+		for (int i = 0; i < MAXITER; i++) {
+			vec3 f2 = field(pos);
+			float f = min(min(f2.x, f2.y), f2.z);
+			
+			pos += dir * f;
+			color += float(MAXITER - i) / (f2 + 0.001);
 		}
-		c /= float(MAX_ITER);
-		c = 1.5-sqrt(c);
-		gl_FragColor = vec4(vec3(c*c*c*c), 999.0) + vec4(0.0, 0.3, 0.5, 1.0);
+		vec3 color3 = vec3(0.17 / (color * (0.09 / float (MAXITER*MAXITER))));
+		color3 *= color3;
+		gl_FragColor = 1.0 - vec4(color3.zyx, 0.0);*/
+		
+//	http://glslsandbox.com/e#19102.0
+	#define iterations 14
+	#define formuparam 0.530
+	
+	#define volsteps 18
+	#define stepsize 0.2
+	
+	#define zoom   0.800
+	#define tile   0.850
+	#define speed  0.0001
+	
+	#define brightness 0.0015
+	#define darkmatter 0.400
+	#define distfading 0.760
+	#define saturation 0.800
+
+	void main(void) {
+		vec2 viewport = vec2(1280, 720);
+		float time = time2 / 10000000.0;
+		
+		//get coords and direction
+		vec2 uv=gl_FragCoord.xy / viewport.xy - .5;
+		uv.y*=viewport.y/viewport.x;
+		vec3 dir=vec3(uv*zoom,1.);
+		
+		float a2=speed+.5;
+		float a1=0.0;
+		mat2 rot1=mat2(cos(a1),sin(a1),-sin(a1),cos(a1));
+		mat2 rot2=rot1;//mat2(cos(a2),sin(a2),-sin(a2),cos(a2));
+		dir.xz*=rot1;
+		dir.xy*=rot2;
+		
+		vec3 from=vec3(-0.05, 0.05, 0);
+		//from.x-=time; <- movement
+		
+		from.z = time;
+		
+		from.x-=0.2;//mouse.x;
+		from.y-=0.7;//mouse.y;
+		
+		from.xz*=rot1;
+		from.xy*=rot2;
+		
+		//volumetric rendering
+		float s=.4,fade=.2;
+		vec3 v=vec3(0.4);
+		for (int r=0; r<volsteps; r++) {
+			vec3 p=from+s*dir*.5;
+			p = abs(vec3(tile)-mod(p,vec3(tile*2.))); // tiling fold
+			float pa,a=pa=0.;
+			for (int i=0; i<iterations; i++) { 
+				p=abs(p)/dot(p,p)-formuparam; // the magic formula
+				a+=abs(length(p)-pa); // absolute sum of average change
+				pa=length(p);
+			}
+			float dm=max(0.,darkmatter-a*a*.001); //dark matter
+			a*=a*a*2.; // add contrast
+			if (r>3) fade*=1.-dm; // dark matter, don't render near
+			//v+=vec3(dm,dm*.5,0.);
+			v+=fade;
+			v+=vec3(s,s*s,s*s*s*s)*a*brightness*fade; // coloring based on distance
+			fade*=distfading; // distance fading
+			s+=stepsize;
+		}
+		v=mix(vec3(length(v)),v,saturation); //color adjust
+		gl_FragColor = vec4(v*.01,1.);	
+
 	}")) 0)
 (glCompileShader fs)
 (glAttachShader po fs)
@@ -280,6 +361,7 @@
 
       (glUseProgram po)
       (let* ((ss ms (clock)))
+        ;(glUniform1i time (+ ms (* 1000 (mod ss 3600))))) ; раз в час будем сбрасывать период
         (glUniform1i time (+ ms (* 1000 (mod ss 3600))))) ; раз в час будем сбрасывать период
       
       (glBegin GL_TRIANGLE_STRIP)
