@@ -1,5 +1,5 @@
 ;!
-(define (load-library name flag) (sys-prim 30 (c-string name) flag #false))
+(define (dlopen name flag) (sys-prim 30 (c-string name) flag #false))
 (define (get-proc-address  type dll name) ; todo: переименовать в get-proc-address ?
    (let ((function (cons type (sys-prim 31 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
       (lambda args
@@ -10,7 +10,10 @@
    (let ((function (cons (bor type 64) (sys-prim 31 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
       (lambda args
          (sys-prim 32 (cdr function) (car function) args))))
+; для результата, что превышает x00FFFFFF надо использовать type-handle
 (define type-handle 45)
+(define type-float 46)
+;(define type-double 47)
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
@@ -20,12 +23,11 @@
 
 ; todo: тип для (get-proc-address) - всегда число, добавить в проверку
 
-; для результата, что превышает x00FFFFFF надо использовать type-int+ (?)
-
+(sys-prim 33 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
 
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
 ; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
-(define kernel32_dll (load-library "kernel32" 0))
+(define kernel32_dll (dlopen "kernel32" 0))
   (define GetModuleHandle (get-proc-address type-handle kernel32_dll "GetModuleHandleA"))
 
 ;(define _exe (GetModuleHandle 0))
@@ -40,7 +42,7 @@
 (define FLOAT2 #x40000000)
          
 ; real code
-(define user32 (load-library "user32" 0))
+(define user32 (dlopen "user32" 0))
   (define IDOK 1)
   (define IDCANCEL 2)
 
@@ -77,13 +79,13 @@
   
   
   
-(define gdi32 (load-library "gdi32" 0))
+(define gdi32 (dlopen "gdi32" 0))
   (define ChoosePixelFormat (get-proc-address type-fix+ gdi32 "ChoosePixelFormat"))
   (define SetPixelFormat    (get-proc-address type-fix+ gdi32 "SetPixelFormat"))
   (define SwapBuffers       (get-proc-address type-fix+ gdi32 "SwapBuffers"))
 
 
-(define opengl32 (load-library "opengl32" 0))
+(define opengl32 (dlopen "opengl32" 0))
   (define wglCreateContext  (get-proc-address type-handle opengl32 "wglCreateContext"))
   (define wglMakeCurrent    (get-proc-address type-fix+   opengl32 "wglMakeCurrent"))
   (define wglDeleteContext  (get-proc-address type-fix+   opengl32 "wglDeleteContext"))
@@ -146,7 +148,7 @@
     0 ; no menu
     0 ; instance
     0)) ; don't pass anything to WM_CREATE
-    
+; переключение в полноєкранній режим - http://blogs.msdn.com/b/oldnewthing/archive/2010/04/12/9994016.aspx
 ; PIXELFORMATDESCRIPTOR
 (define pfd (list->vector '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
                                               00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))                        
@@ -157,7 +159,9 @@
 
 (wglMakeCurrent hDC hRC)
 
-;(sys-prim 33 #false #false #false)
+;(wglMakeCurrent (tuple "a" "b" "c"))
+
+;(sys-prim 33 -1 -2 -3) ;3/7
 
 ;  ; opengl 1.2 https://www.opengl.org/registry/api/GL/glext.h
   (define glCreateShader    (wgl-proc-address type-fix+ "glCreateShader"))
@@ -179,6 +183,13 @@
     (define GL_FLOAT #x1406)
   (define glDrawArrays         (wgl-proc-address type-fix+ "glDrawArrays"))
 
+(define (file->string path)
+   (bytes->string
+      (vec-iter
+         (let ((vec (file->vector path)))
+            (if vec vec
+               (error "Unable to load: " path))))))
+
 
 (define po (glCreateProgram))
 ;(print "po: " po)
@@ -186,8 +197,7 @@
 (define vs (glCreateShader GL_VERTEX_SHADER))
 ;(print "vs: " vs)
 (glShaderSource vs 1 (tuple (c-string "#version 120 // OpenGL 2.1
-	void main()
-	{
+	void main() {
 		gl_Position = gl_Vertex - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
 	}")) 0)
 (glCompileShader vs)
@@ -196,113 +206,13 @@
 ;; полезные шейдеры:
 ;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
-;(print "fs: " fs)
-(glShaderSource fs 1 (tuple (c-string "#version 120 // OpenGL 2.1
-	// http://glslsandbox.com/e#19291.0
-	uniform int time2;
-	
-/*	const int MAXITER = 80;
-	vec3 field(vec3 p) {
-		p *= 0.1;
-		float f = 0.1;
-		for (int i = 0; i < 5; i++) {
-			p = p.yzx * mat3(0.8, 0.6, 0.0,-0.6, 0.8, 0.0, 0.0, 0.0, 1.0);
-			p += vec3(0.123, 0.456, 0.789) * float(i);
-			p = abs(fract(p) - 0.5);
-			p *= 2.0;
-			f *= 2.0;
-		}
-		p *= p;
-		return sqrt(p + p.yzx) / f - 0.002;
-	}
-	
-	void main(void) {
-		vec2 viewport = vec2(800.0, 600.0);
-//		vec2 position = gl_FragCoord.xy / viewport.xy;
-		float time = time2 / 1000.0;
-	
-		vec3 dir = normalize(vec3((gl_FragCoord.xy - viewport * 0.5) / viewport.x, 1.0));
-		vec3 pos = vec3(0.5, 0.0, time);
-		vec3 color = vec3(0.0);
-		for (int i = 0; i < MAXITER; i++) {
-			vec3 f2 = field(pos);
-			float f = min(min(f2.x, f2.y), f2.z);
-			
-			pos += dir * f;
-			color += float(MAXITER - i) / (f2 + 0.001);
-		}
-		vec3 color3 = vec3(0.17 / (color * (0.09 / float (MAXITER*MAXITER))));
-		color3 *= color3;
-		gl_FragColor = 1.0 - vec4(color3.zyx, 0.0);*/
-		
-//	http://glslsandbox.com/e#19102.0
-	#define iterations 14
-	#define formuparam 0.530
-	
-	#define volsteps 18
-	#define stepsize 0.2
-	
-	#define zoom   0.800
-	#define tile   0.850
-	#define speed  0.0001
-	
-	#define brightness 0.0015
-	#define darkmatter 0.400
-	#define distfading 0.760
-	#define saturation 0.800
-
-	void main(void) {
-		vec2 viewport = vec2(1280, 720);
-		float time = time2 / 10000000.0;
-		
-		//get coords and direction
-		vec2 uv=gl_FragCoord.xy / viewport.xy - .5;
-		uv.y*=viewport.y/viewport.x;
-		vec3 dir=vec3(uv*zoom,1.);
-		
-		float a2=speed+.5;
-		float a1=0.0;
-		mat2 rot1=mat2(cos(a1),sin(a1),-sin(a1),cos(a1));
-		mat2 rot2=rot1;//mat2(cos(a2),sin(a2),-sin(a2),cos(a2));
-		dir.xz*=rot1;
-		dir.xy*=rot2;
-		
-		vec3 from=vec3(-0.05, 0.05, 0);
-		//from.x-=time; <- movement
-		
-		from.z = time;
-		
-		from.x-=0.2;//mouse.x;
-		from.y-=0.7;//mouse.y;
-		
-		from.xz*=rot1;
-		from.xy*=rot2;
-		
-		//volumetric rendering
-		float s=.4,fade=.2;
-		vec3 v=vec3(0.4);
-		for (int r=0; r<volsteps; r++) {
-			vec3 p=from+s*dir*.5;
-			p = abs(vec3(tile)-mod(p,vec3(tile*2.))); // tiling fold
-			float pa,a=pa=0.;
-			for (int i=0; i<iterations; i++) { 
-				p=abs(p)/dot(p,p)-formuparam; // the magic formula
-				a+=abs(length(p)-pa); // absolute sum of average change
-				pa=length(p);
-			}
-			float dm=max(0.,darkmatter-a*a*.001); //dark matter
-			a*=a*a*2.; // add contrast
-			if (r>3) fade*=1.-dm; // dark matter, don't render near
-			//v+=vec3(dm,dm*.5,0.);
-			v+=fade;
-			v+=vec3(s,s*s,s*s*s*s)*a*brightness*fade; // coloring based on distance
-			fade*=distfading; // distance fading
-			s+=stepsize;
-		}
-		v=mix(vec3(length(v)),v,saturation); //color adjust
-		gl_FragColor = vec4(v*.01,1.);	
-
-	}")) 0)
+(glShaderSource fs 1 (tuple (c-string (file->string
+  (case 1
+    (2 "raw/geometry.fs")
+    (3 "raw/water.fs")
+    (4 "raw/18850")
+    (5 "raw/minecraft.fs")
+    (1 "raw/itsfullofstars.fs"))))) 0)
 (glCompileShader fs)
 (glAttachShader po fs)
 

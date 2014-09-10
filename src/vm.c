@@ -8,7 +8,7 @@
 //      http://habrahabr.ru/post/204992/
 //      http://habrahabr.ru/post/211100/
 // Книга http://ilammy.github.io/lisp/
-
+// https://www.cs.utah.edu/flux/oskit/html/oskit-wwwch14.html
 #include "vm.h"
 
 // todo: проверить, что все работает в 64-битном коде
@@ -305,7 +305,7 @@ typedef struct OL
 #define TPAIR                        1
 #define TCONST                      13
 #define TTUPLE                       2
-#define TTHREAD                     31
+#define TTHREAD                     31 // type-thread-state
 #define TFF                         24
 #define TBVEC                       19
 #define TBYTECODE                   16
@@ -314,7 +314,12 @@ typedef struct OL
 #define TSTRING                      3
 #define TSTRINGWIDE                 22
 #define THANDLE                     45
-#define TINT                        40
+#define TINT                        40 // type-int+
+#define TINTN                       41 // type-int-
+#define TRATIONAL                   42
+#define TCOMPLEX                    43
+#define TFIX                         0 // type-fix+
+#define TFIXN                       32 // type-fix-
 
 #define INULL                       make_immediate(0, TCONST)
 #define IFALSE                      make_immediate(1, TCONST)
@@ -1818,63 +1823,71 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					while ((int)p != INULL) { // пока есть аргументы
 						assert (hdrtype(*p) == TPAIR);
 						word* arg = (word*)p[1]; // car
-						if (immediatep(arg))
+						if (immediatep(arg)) {
+							// type-fix+, type-fix-
 							args[i] = fixval((int)arg);
+							// этот кусок временный - потом переделать в трюк
+							if ((int)arg & 0x80)
+								args[i] *= -1;
+							// алгоритмические трюки:
+							// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
+						}
 						else { // allocp
-							switch (hdrtype(arg[0])) {
+							int type = hdrtype(arg[0]);
+							// если тип представляет собой пару значений, то
+							//	в car лежит требуемый тип, а в cdr само значение
+							if (type == TPAIR) {
+								// todo: реализовать, а то сейчас этого нету
+
+							}
+
+							switch (type) {
 							case THANDLE:
 								args[i] = (int)(arg[1]);
 								break;
-//							case TPAIR:
-//								break;
 							case TBVEC:
-							case TSTRING: {
+							case TSTRING:
 								// in arg[0] size got size of string
 								args[i] = (int)(&arg[1]);
 								break;
+
+							case TINT: { // type-int+
+								// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
+								assert (immediatep(arg[1]));
+								assert (allocp(arg[2]));
+
+								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+								break;
 							}
+							case TINTN: { // type-int-
+								assert (immediatep(arg[1]));
+								assert (allocp(arg[2]));
+
+								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+								args[i] *= -1;
+								break;
+							}
+							case TRATIONAL:
+								// тут надо разделить два числа (возможно большие) и пушнуть float
+								// если числа большие (если в car и cdr лежат ссылки), то надо это
+								// сделать в столбик. ну или добавить в компилятор числа с плавающей запятой
+								break;
+
+
 							case TTUPLE: { // ?
+								// tuple, это последовательность, а не список!
 								// todo: сделать функцию cast или что-то такое
 								// что-бы возвращать список, какой мне нужен
-								// а это СОВСЕМ ВРЕМЕННОЕ решение для теста!!!
 
-								// todo: придумал! аллоцировать массив и сложить в него указатели
-								// на элементы tupla
-//								args[i] = fp + 1; // ссылка на массив указателей на элементы
-//								word* src =
+								// аллоцировать массив и сложить в него указатели на элементы кортежа
+								int size = hdrsize(arg[0]);
+								*fp++ = make_raw_header(size, TBVEC, 0);
+								args[i] = (word)fp; // ссылка на массив указателей на элементы
 
-
-								word* q = (int)(&arg[1]);
-
-//								word* p = fp + 1;
-								word* r = *q;
-
-								args[i] = (word)(fp + 1);
-								fp[0] = make_raw_header(2, THANDLE, 0);
-								fp[1] = r + 1;
-								fp += 2;
-
-								char** ptr = (args[i]);
-//								printf("tuple[0] is %s\n", *(char**)(args[i]));
-//								printf("tuple[0] is %s\n", ptr[0]);
-
-//								args[i] = (int)(&arg[1]);
-								break;
-							}
-							case TINT: { // type-int+ // todo: разобраться с type-int- (может это signed?)
-								// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
-								assert (immediatep(arg[1]));
-								assert (allocp(arg[2]));
-
-								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
-								break;
-							}
-							case 32: { // type-int-
-								// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
-								assert (immediatep(arg[1]));
-								assert (allocp(arg[2]));
-
-								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+								word* src = &arg[1];
+								int j;
+								for (j = 1; j < size; j++)
+									*fp++ = (word)((word*)*src++ + 1);
 								break;
 							}
 
@@ -1900,13 +1913,13 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 								word* lo = fp; fp += 3; // low 24 bits
 								lo[0] = NUMHDR;
 								lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
-								lo[2] = fp;
+								lo[2] = (word)fp;
 								word* hi = fp; fp += 3; // high 8 bits
 								hi[0] = NUMHDR;
 								hi[1] = make_immediate(got >> 24, 0); // type-fx+
 								hi[2] = INULL;
 
-								result = lo;
+								result = (word)lo;
 								break;
 							}
 							// иначе вернем type-fx+
@@ -1931,7 +1944,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]); // Get back the OpenGL MAJOR version we are using
 
 					GLint status;*/
-//					PFNGLGETSHADERIVPROC glGetShaderiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
+//					PFNGLGETSHADERIVPROC  glGetShaderiv  = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
 //					glGetShaderiv(3, GL_COMPILE_STATUS, &status);
 
 //					PFNGLGETPROGRAMIVPROC glGetProgramiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetProgramiv");
