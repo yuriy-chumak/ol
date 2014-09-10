@@ -1,4 +1,8 @@
 ;!
+(define *USE_GLBEGIN* 1)
+
+
+;;
 (define (dlopen name flag) (sys-prim 30 (c-string name) flag #false))
 (define (get-proc-address  type dll name) ; todo: переименовать в get-proc-address ?
    (let ((function (cons type (sys-prim 31 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
@@ -190,13 +194,19 @@
             (if vec vec
                (error "Unable to load: " path))))))
 
+; пример как хранить скомпилированные значения
+; а можно еще попробовать их перед этим закриптовать )
+;(fasl-save (file->string "raw/geometry.fs") "raw/geometry.compiled.fs")
+;(fasl-load "raw/geometry.compiled.fs" "void main(void) { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }")
 
 (define po (glCreateProgram))
 ;(print "po: " po)
 
 (define vs (glCreateShader GL_VERTEX_SHADER))
 ;(print "vs: " vs)
-(glShaderSource vs 1 (tuple (c-string "#version 120 // OpenGL 2.1
+; пример, как можно передать в функцию массив указателей на строки:
+(glShaderSource vs 2 (tuple (c-string "#version 120 // OpenGL 2.1\n")
+                            (c-string "
 	void main() {
 		gl_Position = gl_Vertex - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
 	}")) 0)
@@ -271,7 +281,6 @@
 
       (glUseProgram po)
       (let* ((ss ms (clock)))
-        ;(glUniform1i time (+ ms (* 1000 (mod ss 3600))))) ; раз в час будем сбрасывать период
         (glUniform1i time (+ ms (* 1000 (mod ss 3600))))) ; раз в час будем сбрасывать период
       
       (glBegin GL_TRIANGLE_STRIP)

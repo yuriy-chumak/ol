@@ -18,7 +18,7 @@ vec3 field(vec3 p) {
 }
 
 void main(void) {
-	vec2 viewport = vec2(800.0, 600.0);
+	vec2 viewport = vec2(1280, 720);
 	vec2 position = gl_FragCoord.xy / viewport.xy;
 	float time = time2 / 1000.0;
 

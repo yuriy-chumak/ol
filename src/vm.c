@@ -12,6 +12,8 @@
 #include "vm.h"
 
 // todo: проверить, что все работает в 64-битном коде
+// todo: переименовать tuple в array. array же неизменяемый, все равно.
+//  а изменяемые у нас ветора
 
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
@@ -1885,9 +1887,10 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 								args[i] = (word)fp; // ссылка на массив указателей на элементы
 
 								word* src = &arg[1];
-								int j;
-								for (j = 1; j < size; j++)
+								while (--size)
 									*fp++ = (word)((word*)*src++ + 1);
+//								int j;
+//								for (j = 1; j < size; j++)
 								break;
 							}
 
