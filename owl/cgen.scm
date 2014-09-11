@@ -589,17 +589,17 @@
                (cons 60 cify-lraw)
                (cons 63 cify-sysprim)
                ;; below are lower primop + extra info (like 13=ldi<what>)
-               (cons 77 ;; ldn r
+               (cons (+ 13 (<< 1 6)) ;; ldn r
                   (λ (bs regs fail)
                      (let ((res (cadr bs)))
                         (cond
                            (else (values (list "R[" res "]=INULL;") (cddr bs) (put regs res 'null)))))))
-               (cons 141 ;; ldt r
+               (cons (+ 13 (<< 2 6)) ;; ldt r
                   (λ (bs regs fail)
                      (let ((res (cadr bs)))
                         (cond
                            (else (values (list "R[" res "]=ITRUE;") (cddr bs) (put regs res 'bool)))))))
-               (cons 205 ;; ldf r
+               (cons (+ 13 (<< 3 6)) ;; ldf r
                   (λ (bs regs fail)
                      (let ((res (cadr bs)))
                         (cond

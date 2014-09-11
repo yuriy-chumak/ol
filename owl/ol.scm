@@ -55,7 +55,7 @@
 
 (import (owl defmac))   ;; get define, define-library, import, ... from the just loaded (owl defmac)
 
-(define *interactive* #true) ;; be verbose 
+(define *interactive* #false) ;; was #true
 
 (define *include-dirs* (list ".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 
@@ -777,7 +777,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                ((env ;; be quiet automatically if any of these are set
                   (if (fold (λ (is this) (or is (get dict this #false))) #false '(quiet test evaluate run output output-format))
                      (env-set env '*interactive* #false)
-                     (env-set env '*interactive* #true)))
+                     (env-set env '*interactive* #false))) ; was #true
                 (env ;; maybe set debug causing (owl eval) to print intermediate steps
                   (if (getf dict 'debug)
                      (env-set env '*debug* #true)
@@ -861,7 +861,9 @@ Check out http://code.google.com/p/owl-lisp for more information.")
             (let ((compiler (make-compiler vm-special-ops)))
                ;; still running in the boostrapping system
                ;; the next value after evaluation will be the new repl heap
+               ;; start point for the vm
                (λ (vm-args)
+;                 (print "vm-args: " vm-args)
                   ;; now we're running in the new repl 
                   (start-thread-controller
                      (list
@@ -929,6 +931,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
 
 (print "Code loaded at " (- (time-ms) build-start) "ms.")
 
+; entry point of ol.scm
 (λ (args)
    (process-arguments (cdr args) command-line-rules "you lose"
       (λ (opts extra)
@@ -948,4 +951,3 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                      heap-entry))
                (print "Output written at " (- (time-ms) build-start) "ms.")
                0)))))
-
