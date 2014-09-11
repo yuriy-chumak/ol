@@ -22,10 +22,14 @@
 //	lambda, quote, rlambda, receive, _branch, _define, _case-lambda, values (смотреть env.scm)
 //	все остальное - макросами (?)
 
+#include <stddef.h>
+//nclude <malloc.h>
 #include <signal.h>
 #include <unistd.h>
-#include <stddef.h>
 #include <assert.h>
+#include <dirent.h>
+#include <string.h>
+
 #include <errno.h>
 #include <time.h>
 #include <inttypes.h>
@@ -35,9 +39,6 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <string.h>
-#include <malloc.h>
 
 // thread local storage modifier for virtual machine private variables -
 // виртуальная машина у нас работает в отдельном потоке, соответственно ее
@@ -286,14 +287,14 @@ typedef struct OL
 
 #define F(val)                      (((val) << IPOS) | 2)
 #define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
-#define fixval(desc)                ((desc) >> IPOS)
+#define fixval(desc)                ((desc) >> IPOS) // unsigned shift!!!
 #define fixnump(desc)               (((desc) & 0xFF) == 2)
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
 
 #define NR                          96 // was 190 /* see n-registers in register.scm */
 //#define header(x)                   *(word *x)
-#define imm_type(x)                 (((x) >> TPOS) & 0x3F)
-#define imm_val(x)                   ((x) >> IPOS)
+#define imm_type(x)                 ((((unsigned int)x) >> TPOS) & 0x3F)
+#define imm_val(x)                   (((unsigned int)x) >> IPOS)
 #define hdrsize(x)                  ((((word)x) >> SPOS) & MAXOBJ)
 #define padsize(x)                  ((((word)x) >> 8) & 7)
 #define hdrtype(x)                  ((((word)x) & 0xFF) >> 2) // 0xFF from (p) << 8) in make_raw_header
@@ -732,11 +733,12 @@ static word prim_get(word *ff, word key, word def) { /* ff assumed to be valid *
    return def;
 }
 
-static word prim_cast(word *ob, int type) {
-   if (immediatep((word)ob)) {
-      return make_immediate(imm_val((word)ob), type);
-   } else { /* make a clone of more desired type */
-      word hdr = *ob++;
+static word prim_cast(word *object, int type) {
+	if (immediatep(object))
+		return make_immediate(imm_val((word)object), type);
+	else
+	{ /* make a clone of more desired type */
+      word hdr = *object++;
       int size = hdrsize(hdr);
       word *newobj, *res; /* <- could also write directly using *fp++ */
       newobj = new (size);
@@ -744,7 +746,7 @@ static word prim_cast(word *ob, int type) {
       /* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
       //*newobj++ = (hdr&(~2040))|(type<<TPOS);
       *newobj++ = (hdr&(~252))|(type<<TPOS); /* <- hardcoded ...111100000011 */
-      wordcopy(ob,newobj,size-1);
+      wordcopy(object,newobj,size-1);
       return (word)res;
    }
 }
@@ -1827,7 +1829,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 						word* arg = (word*)p[1]; // car
 						if (immediatep(arg)) {
 							// type-fix+, type-fix-
-							args[i] = fixval((int)arg);
+							args[i] = fixval((unsigned int)arg);
 							// этот кусок временный - потом переделать в трюк
 							if ((int)arg & 0x80)
 								args[i] *= -1;
@@ -1835,14 +1837,84 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
 						}
 						else { // allocp
+							int from_fix(word* arg) {
+								int value = fixval((unsigned int)arg);
+								if ((int)arg & 0x80)
+									value = -1 * value;
+								return value;
+							}
+							int from_int(word* arg) {
+								// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
+								assert (immediatep(arg[1]));
+								assert (allocp(arg[2]));
+
+								return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+							}
+							int from_rational(word* arg) {
+								word* pa = (word*)arg[1];
+								word* pb = (word*)arg[2];
+
+								// временно огрманичимся небольшими nominator/denominator, а дальше посмотрим
+								word a, b;
+								if (immediatep(pa))
+									a = from_fix(pa);
+								else {
+									switch (hdrtype(pa[0])) {
+									case TINT:
+										a = +(float)from_int(pa);
+										break;
+									case TINTN:
+										a = -(float)from_int(pa);
+										break;
+									}
+								}
+								if (immediatep(pb))
+									b = from_fix(pb);
+								else {
+									switch (hdrtype(pb[0])) {
+									case TINT:
+										b = +(float)from_int(pb);
+										break;
+									case TINTN:
+										b = -(float)from_int(pb);
+										break;
+									}
+								}
+
+								float result = (float)a / (float)b;
+								return *(int*)&result;
+							}
+
+
 							int type = hdrtype(arg[0]);
 							// если тип представляет собой пару значений, то
 							//	в car лежит требуемый тип, а в cdr само значение
 							if (type == TPAIR) {
-								// todo: реализовать, а то сейчас этого нету
+								assert (immediatep(arg[1]));
+								int type1 = imm_val(arg[1]);
 
+								if (type1 == 46) { // FLOAT // todo: change to new switch level :)
+									arg = (word*)arg[2];
+									if (immediatep(arg))
+										// type-fix+, type-fix-;
+										*(float*)&args[i] =  (float)from_fix(arg);
+									else
+									switch (hdrtype(arg[0])) {
+									case TINT:
+										*(float*)&args[i] = +(float)from_int(arg);
+										break;
+									case TINTN:
+										*(float*)&args[i] = -(float)from_int(arg);
+										break;
+									case TRATIONAL:
+										*(float*)&args[i] =  (float)from_rational(arg);
+										break;
+									}
+								}
+								// if (type1 == 45)
+								//   make integer numbers
 							}
-
+							else
 							switch (type) {
 							case THANDLE:
 								args[i] = (int)(arg[1]);
@@ -1854,22 +1926,15 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 								break;
 
 							case TINT: { // type-int+
-								// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
-								assert (immediatep(arg[1]));
-								assert (allocp(arg[2]));
-
-								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+								args[i] = +from_int(arg);
 								break;
 							}
 							case TINTN: { // type-int-
-								assert (immediatep(arg[1]));
-								assert (allocp(arg[2]));
-
-								args[i] = (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
-								args[i] *= -1;
+								args[i] = -from_int(arg);
 								break;
 							}
 							case TRATIONAL:
+								args[i] = from_rational(arg);
 								// тут надо разделить два числа (возможно большие) и пушнуть float
 								// если числа большие (если в car и cdr лежат ссылки), то надо это
 								// сделать в столбик. ну или добавить в компилятор числа с плавающей запятой
@@ -2287,7 +2352,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
 //
-// this is NOT thread safe function!
+//  this is NOT thread safe function!
 OL* vm_start(unsigned char* language)
 {
 	OL *handle = malloc(sizeof(OL));
@@ -2295,7 +2360,7 @@ OL* vm_start(unsigned char* language)
 
 	// выделим память машине
 	max_heap_mb = (W == 4) ? 4096 : 65535; // can be set at runtime
-	heap.begin = heap.genstart = (word*) malloc((INITCELLS + FMAX + MEMPAD) * W); /* at least one argument string always fits */
+	heap.begin = heap.genstart = (word*) malloc((INITCELLS + FMAX + MEMPAD) * sizeof(word)); // at least one argument string always fits
 	if (!heap.begin) {
 		fprintf(stderr, "Failed to allocate initial memory\n");
 		exit(4);

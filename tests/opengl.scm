@@ -2,22 +2,31 @@
 (define *USE_GLBEGIN* 1)
 
 
-;;
+; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
+;  и возвращает ее уникальный handle
 (define (dlopen name flag) (sys-prim 30 (c-string name) flag #false))
+; функция get-proc-address (todo: rename to dlsym) связывает название функции с самой функцией и позволяет ее вызывать 
 (define (get-proc-address  type dll name) ; todo: переименовать в get-proc-address ?
    (let ((function (cons type (sys-prim 31 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
       (lambda args
          (sys-prim 32 (cdr function) (car function) args))))
-(define (get-proc-address-c type dll name) ; todo: переименовать в get-proc-address ?
+; get-proc-address-c - аналог get-proc-address, то с правилом вызова __cdecl         
+(define (get-proc-address-c type dll name)
 ; todo: отправлять тип функции третим параметром (sys-prim 31) и в виртуальной машине
-; возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) 
+;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ? 
    (let ((function (cons (bor type 64) (sys-prim 31 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
-      (lambda args
+      (lambda args ;  function       type          ;arguments
          (sys-prim 32 (cdr function) (car function) args))))
+
+; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?
+(define (INTEGER arg) (cons 45 arg))
+(define (FLOAT arg)   (cons 46 arg))
+;(define (DOUBLE arg)  '(47 arg))
+
 ; для результата, что превышает x00FFFFFF надо использовать type-handle
 (define type-handle 45)
-(define type-float 46)
-;(define type-double 47)
+(define type-float  46)
+;(define type-double 47) ; пока нету, но возможно будет
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
@@ -27,7 +36,7 @@
 
 ; todo: тип для (get-proc-address) - всегда число, добавить в проверку
 
-(sys-prim 33 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
+;(sys-prim 33 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
 
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
 ; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
@@ -123,6 +132,7 @@
   (define glColor3ub        (get-proc-address type-fix+ opengl32 "glColor3ub"))
   (define glVertex2i        (get-proc-address type-fix+ opengl32 "glVertex2i"))
   (define glVertex3i        (get-proc-address type-fix+ opengl32 "glVertex3i"))
+  (define glVertex2f        (get-proc-address type-fix+ opengl32 "glVertex2f"))
   (define glBegin           (get-proc-address type-fix+ opengl32 "glBegin"))
     (define GL_TRIANGLES      #x0004)
     (define GL_TRIANGLE_STRIP #x0005) ; http://www.uraldev.ru/articles/35/page/4
@@ -165,7 +175,7 @@
 
 ;(wglMakeCurrent (tuple "a" "b" "c"))
 
-;(sys-prim 33 -1 -2 -3) ;3/7
+;(sys-prim 33 (cast type-fix+ 3/7) #false #false)
 
 ;  ; opengl 1.2 https://www.opengl.org/registry/api/GL/glext.h
   (define glCreateShader    (wgl-proc-address type-fix+ "glCreateShader"))
@@ -208,7 +218,7 @@
 (glShaderSource vs 2 (tuple (c-string "#version 120 // OpenGL 2.1\n")
                             (c-string "
 	void main() {
-		gl_Position = gl_Vertex - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
+		gl_Position = gl_Vertex; // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
 	}")) 0)
 (glCompileShader vs)
 (glAttachShader po vs)
@@ -217,7 +227,7 @@
 ;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
 (glShaderSource fs 1 (tuple (c-string (file->string
-  (case 1
+  (case 2
     (2 "raw/geometry.fs")
     (3 "raw/water.fs")
     (4 "raw/18850")
@@ -253,7 +263,7 @@
 ;(glTranslatef FLOAT-1 FLOAT-1 0)
 
 (glShadeModel GL_SMOOTH)
-(glClearColor 0 0 0 FLOAT=1)
+(glClearColor 0 0 0 (FLOAT 1))
 ;(glHint GL_PERSPECTIVE_CORRECTION_HINT GL_NICEST)
 
 ;(glClearColor 0 0 FLOAT=1 0)
@@ -284,10 +294,14 @@
         (glUniform1i time (+ ms (* 1000 (mod ss 3600))))) ; раз в час будем сбрасывать период
       
       (glBegin GL_TRIANGLE_STRIP)
-        (glVertex3i 0 0 0)
-        (glVertex3i 2 0 0)
-        (glVertex3i 0 2 0)
-        (glVertex3i 2 2 0)
+;        (glVertex3i 0 0 0)
+;        (glVertex3i 2 0 0)
+;        (glVertex3i 0 2 0)
+;        (glVertex3i 2 2 0)
+        (glVertex2f (FLOAT -1) (FLOAT -1))
+        (glVertex2f (FLOAT +1) (FLOAT -1))
+        (glVertex2f (FLOAT -1) (FLOAT +1))
+        (glVertex2f (FLOAT +1) (FLOAT +1))
       (glEnd)
 
 ;      (glEnableVertexAttribArray 0)
@@ -295,7 +309,6 @@
 ;      (glDrawArrays GL_TRIANGLES 0 3)
 
       (glUseProgram 0)
-      
       (SwapBuffers hDC)))
   (if (= (GetAsyncKeyState 27) 0) (cycle)))
 (cycle)
