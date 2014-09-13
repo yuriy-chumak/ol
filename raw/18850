@@ -91,7 +91,7 @@ vec4 map( in vec3 p, in float time )
 vec3 sundir = vec3(1.0,0.7,0.0);
 
 
-vec4 raymarch( in vec3 ro, in vec3 rd )
+vec4 raymarch( in vec3 ro, in vec3 rd, in float time )
 {
 	vec4 sum = vec4(0, 0, 0, 0);
 
@@ -134,7 +134,7 @@ void main(void)
     vec3 rd = normalize( p.x*uu + p.y*vv + 1.5*ww );
 
 	// Ray march into the clouds adding up colour...
-    vec4 res = raymarch( ro, rd );
+    vec4 res = raymarch( ro, rd, time );
 	
 
 	float sun = clamp( dot(sundir,rd), 0.0, 2.0 );

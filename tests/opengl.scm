@@ -1,6 +1,8 @@
 ;!
 (define *USE_GLBEGIN* 1)
 
+;  (define isCompiled (list->byte-vector '(0 0 0 0)))
+;  (sys-prim 33 isCompiled #false #false)
 
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle
@@ -27,6 +29,7 @@
 (define type-handle 45)
 (define type-float  46)
 ;(define type-double 47) ; пока нету, но возможно будет
+(define type-void   48)
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
@@ -139,13 +142,13 @@
   (define glEnd             (get-proc-address type-fix+ opengl32 "glEnd"))
 
 ; проверка, что все запустилось.
-
-;(if (=
-;  (MessageBox 0 "Please, press OK for test pass!" (c-string "load-library test")
-;    (bor MB_OKCANCEL MB_ICONASTERISK))
-;  IDOK)
-;    (print "OK")
-;    (print "CANCEL"))
+(define (msgbox)
+(if (=
+  (MessageBox 0 "Please, press OK for test pass!" (c-string "load-library test")
+    (bor MB_OKCANCEL MB_ICONASTERISK))
+  IDOK)
+    (print "OK")
+    (print "CANCEL")))
 ; todo: вроде бы все строки и так заканчиваются на '\0' - проверить
 ;(define echo "echo server")
 
@@ -164,8 +167,8 @@
     0)) ; don't pass anything to WM_CREATE
 ; переключение в полноєкранній режим - http://blogs.msdn.com/b/oldnewthing/archive/2010/04/12/9994016.aspx
 ; PIXELFORMATDESCRIPTOR
-(define pfd (list->vector '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
-                                              00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))                        
+(define pfd (list->byte-vector '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
+                                                   00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))                        
 (define hDC (GetDC window))
 (define PixelFormat (ChoosePixelFormat hDC pfd))
 (SetPixelFormat hDC PixelFormat pfd)
@@ -188,8 +191,12 @@
   (define glDetachShader    (wgl-proc-address type-fix+ "glDetachShader"))
   (define glLinkProgram     (wgl-proc-address type-fix+ "glLinkProgram"))
   (define glUseProgram      (wgl-proc-address type-fix+ "glUseProgram"))
-  (define glGetShaderiv     (wgl-proc-address type-fix+ "glGetShaderiv"))
-    (define GL_COMPILE_STATUS #x8B81)
+  (define glGetShaderiv     (wgl-proc-address type-void "glGetShaderiv"))
+    (define GL_COMPILE_STATUS  #x8B81)
+    (define GL_LINK_STATUS     #x8B82)
+    (define GL_VALIDATE_STATUS #x8B83)
+    (define GL_INFO_LOG_LENGTH #x8B84)
+  (define glGetShaderInfoLog (wgl-proc-address type-fix+ "glGetShaderInfoLog"))
   (define glGetUniformLocation (wgl-proc-address type-fix+ "glGetUniformLocation"))
     (define glUniform1i     (wgl-proc-address type-fix+ "glUniform1i"))
   (define glEnableVertexAttribArray (wgl-proc-address type-fix+ "glEnableVertexAttribArray"))
@@ -221,19 +228,45 @@
 		gl_Position = gl_Vertex; // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
 	}")) 0)
 (glCompileShader vs)
+  (define isCompiled "word")
+  (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
+  
+  (if (= (ref isCompiled 0) 0)
+    (begin
+      (define maxLength "word")
+      (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength)
+      (define maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
+      (define errorLog (make-string maxLengthValue 0))
+      (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)
+      (print errorLog)
+      (print "@")
+      (halt 0)))
 (glAttachShader po vs)
 
 ;; полезные шейдеры:
 ;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
 (glShaderSource fs 1 (tuple (c-string (file->string
-  (case 2
+  (case 3
     (2 "raw/geometry.fs")
     (3 "raw/water.fs")
     (4 "raw/18850")
     (5 "raw/minecraft.fs")
     (1 "raw/itsfullofstars.fs"))))) 0)
 (glCompileShader fs)
+  (define isCompiled "word")
+  (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
+  
+  (if (= (ref isCompiled 0) 0)
+    (begin
+      (define maxLength "word")
+      (glGetShaderiv fs GL_INFO_LOG_LENGTH maxLength)
+      (define maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
+      (define errorLog (make-string maxLengthValue 0))
+      (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)
+      (print errorLog)
+      (print "@")
+      (halt 0)))
 (glAttachShader po fs)
 
 (glLinkProgram po)
@@ -269,7 +302,7 @@
 ;(glClearColor 0 0 FLOAT=1 0)
 
 ;(WinMain 0 0 0 0)
-(define vertexPositions (list->vector '(
+(define vertexPositions (list->byte-vector '(
 ;        (glVertex2i 2 0)
   00 00 #x00 #x40    0 0 #x00 #x00    0 0 0 0    00 00 #x80 #x3F
 ;        (glVertex2i 1 2)

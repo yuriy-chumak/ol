@@ -317,6 +317,7 @@ typedef struct OL
 #define TSTRING                      3
 #define TSTRINGWIDE                 22
 #define THANDLE                     45
+#define TVOID                       48 // type-void
 #define TINT                        40 // type-int+
 #define TINTN                       41 // type-int-
 #define TRATIONAL                   42
@@ -1720,6 +1721,24 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					break;
 				}
 				// временный тестовый вызов
+				case 33: {
+/*					printf("opengl version: %s\n", glGetString(GL_VERSION));
+					int glVersion[2] = {-1, -1}; // Set some default values for the version
+					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
+					glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]); // Get back the OpenGL MAJOR version we are using
+
+					GLint status;*/
+//					PFNGLGETSHADERIVPROC  glGetShaderiv  = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
+//					glGetShaderiv(3, GL_COMPILE_STATUS, &status);
+
+//					PFNGLGETPROGRAMIVPROC glGetProgramiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetProgramiv");
+//					glGetProgramiv(1, GL_LINK_STATUS, &status);
+
+					result = INULL;
+					break;
+				}
+
+				// вызвать библиотечную функцию
 				case 32: {
 					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 					int call(int convention, void* function, int args[], int count) {
@@ -1921,6 +1940,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 								break;
 							case TBVEC:
 							case TSTRING:
+//							case TCONST:
 								// in arg[0] size got size of string
 								args[i] = (int)(&arg[1]);
 								break;
@@ -1999,27 +2019,13 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							fp[1] = got;
 							fp += 2;
 							break;
+
+						case TVOID:
 						default:
 							result = INULL;
 					}
 
 					break; // case 32
-				}
-				case 33: {
-/*					printf("opengl version: %s\n", glGetString(GL_VERSION));
-					int glVersion[2] = {-1, -1}; // Set some default values for the version
-					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
-					glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]); // Get back the OpenGL MAJOR version we are using
-
-					GLint status;*/
-//					PFNGLGETSHADERIVPROC  glGetShaderiv  = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
-//					glGetShaderiv(3, GL_COMPILE_STATUS, &status);
-
-//					PFNGLGETPROGRAMIVPROC glGetProgramiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetProgramiv");
-//					glGetProgramiv(1, GL_LINK_STATUS, &status);
-
-					result = INULL;
-					break;
 				}
 				default:
 					result = prim_sys(op, a, b, c);
@@ -2386,6 +2392,7 @@ OL* vm_start(unsigned char* language)
 	word *oargs = fp = heap.begin;
 	{
 		char* filename = "#";
+//		char* filename = "--run owl/ol.scm -s none -o fasl/bootp.fasl";
 		char *pos = filename;
 
 		int len = 0;
