@@ -1,35 +1,11 @@
+; http://www.scheme.com/tspl4/ - The Scheme Programming Language (Fourth Edition)
 ;!
 (define *USE_GLBEGIN* 1)
 
 ;  (define isCompiled (list->byte-vector '(0 0 0 0)))
 ;  (sys-prim 33 isCompiled #false #false)
-
-; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
-;  и возвращает ее уникальный handle
-(define (dlopen name flag) (sys-prim 30 (c-string name) flag #false))
-; функция get-proc-address (todo: rename to dlsym) связывает название функции с самой функцией и позволяет ее вызывать 
-(define (get-proc-address  type dll name) ; todo: переименовать в get-proc-address ?
-   (let ((function (cons type (sys-prim 31 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
-      (lambda args
-         (sys-prim 32 (cdr function) (car function) args))))
-; get-proc-address-c - аналог get-proc-address, то с правилом вызова __cdecl         
-(define (get-proc-address-c type dll name)
-; todo: отправлять тип функции третим параметром (sys-prim 31) и в виртуальной машине
-;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ? 
-   (let ((function (cons (bor type 64) (sys-prim 31 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
-      (lambda args ;  function       type          ;arguments
-         (sys-prim 32 (cdr function) (car function) args))))
-
-; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?
-(define (INTEGER arg) (cons 45 arg))
-(define (FLOAT arg)   (cons 46 arg))
-;(define (DOUBLE arg)  '(47 arg))
-
-; для результата, что превышает x00FFFFFF надо использовать type-handle
-(define type-handle 45)
-(define type-float  46)
-;(define type-double 47) ; пока нету, но возможно будет
-(define type-void   48)
+(import (owl pinvoke))
+(import (OpenGL version-2-1))
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
@@ -37,17 +13,17 @@
 ; todo: определить константы возвращаемого типа и использовать их в описании возврата функций
 ; что-то вроде (define rt-int 1)
 
-; todo: тип для (get-proc-address) - всегда число, добавить в проверку
+; todo: тип для (dlsym) - всегда число, добавить в проверку
 
 ;(sys-prim 33 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
 
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
 ; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
 (define kernel32_dll (dlopen "kernel32" 0))
-  (define GetModuleHandle (get-proc-address type-handle kernel32_dll "GetModuleHandleA"))
+  (define GetModuleHandle (dlsym type-handle kernel32_dll "GetModuleHandleA"))
 
 ;(define _exe (GetModuleHandle 0))
-;(define CreateGLWindow (get-proc-address-c type-fix+ _exe "CreateGLWindow"))
+;(define CreateGLWindow (dlsym-c type-fix+ _exe "CreateGLWindow"))
 
 ; вспомогательные константы (временно, пока не научусь работать с флоатами)
 (define FLOAT=1 #x3F800000)
@@ -62,84 +38,83 @@
   (define IDOK 1)
   (define IDCANCEL 2)
 
-  (define MessageBox (get-proc-address type-fix+ user32 "MessageBoxA"))
+  (define MessageBox (dlsym type-fix+ user32 "MessageBoxA"))
     (define MB_OK 0)
     (define MB_OKCANCEL 1)
     (define MB_ICONASTERISK 64)
-  (define PeekMessage      (get-proc-address type-fix+ user32 "PeekMessageA"))
+  (define PeekMessage      (dlsym type-fix+ user32 "PeekMessageA"))
     (define PM_REMOVE 1)
-  (define TranslateMessage (get-proc-address type-fix+ user32 "TranslateMessage"))
-  (define DispatchMessage  (get-proc-address type-fix+ user32 "DispatchMessageA"))
-  (define PostQuitMessage  (get-proc-address type-fix+ user32 "PostQuitMessage"))
+  (define TranslateMessage (dlsym type-fix+ user32 "TranslateMessage"))
+  (define DispatchMessage  (dlsym type-fix+ user32 "DispatchMessageA"))
+  (define PostQuitMessage  (dlsym type-fix+ user32 "PostQuitMessage"))
   ;; давление юры 06/09/2014 в 13:43 - 125/ 91
   ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
-  (define GetKeyState      (get-proc-address type-fix+ user32 "GetKeyState"))
-  (define GetAsyncKeyState (get-proc-address type-fix+ user32 "GetAsyncKeyState"))
-  (define GetKeyboardState (get-proc-address type-fix+ user32 "GetKeyboardState"))
+  (define GetKeyState      (dlsym type-fix+ user32 "GetKeyState"))
+  (define GetAsyncKeyState (dlsym type-fix+ user32 "GetAsyncKeyState"))
+  (define GetKeyboardState (dlsym type-fix+ user32 "GetKeyboardState"))
   
   ;; функции работы с win32 окнами
-  (define CreateWindowEx   (get-proc-address type-handle user32 "CreateWindowExA")) ; ANSI version
+  (define CreateWindowEx   (dlsym type-handle user32 "CreateWindowExA")) ; ANSI version
     (define WS_EX_APPWINDOW      #x00040000)
     (define WS_EX_WINDOWEDGE     #x00000100)
     (define WS_OVERLAPPEDWINDOW  (OR #x00000000 #x00C00000 #x00080000 #x00040000 #x00020000 #x00010000))
     (define WS_CLIPSIBLINGS      #x04000000)
     (define WS_CLIPCHILDREN      #x02000000)
-  (define DestroyWindow    (get-proc-address type-fix+   user32 "DestroyWindow"))
+  (define DestroyWindow    (dlsym type-fix+   user32 "DestroyWindow"))
     
-  (define GetDC               (get-proc-address type-handle user32 "GetDC"))
-  (define ReleaseDC           (get-proc-address type-fix+   user32 "ReleaseDC"))
-  (define ShowWindow          (get-proc-address type-fix+   user32 "ShowWindow"))
+  (define GetDC               (dlsym type-handle user32 "GetDC"))
+  (define ReleaseDC           (dlsym type-fix+   user32 "ReleaseDC"))
+  (define ShowWindow          (dlsym type-fix+   user32 "ShowWindow"))
     (define SW_SHOW 5)
-  (define SetForegroundWindow (get-proc-address type-fix+   user32 "SetForegroundWindow"))
-  (define SetFocus            (get-proc-address type-fix+   user32 "SetFocus"))
+  (define SetForegroundWindow (dlsym type-fix+   user32 "SetForegroundWindow"))
+  (define SetFocus            (dlsym type-fix+   user32 "SetFocus"))
   
   
   
 (define gdi32 (dlopen "gdi32" 0))
-  (define ChoosePixelFormat (get-proc-address type-fix+ gdi32 "ChoosePixelFormat"))
-  (define SetPixelFormat    (get-proc-address type-fix+ gdi32 "SetPixelFormat"))
-  (define SwapBuffers       (get-proc-address type-fix+ gdi32 "SwapBuffers"))
+  (define ChoosePixelFormat (dlsym type-fix+ gdi32 "ChoosePixelFormat"))
+  (define SetPixelFormat    (dlsym type-fix+ gdi32 "SetPixelFormat"))
+  (define SwapBuffers       (dlsym type-fix+ gdi32 "SwapBuffers"))
 
 
 (define opengl32 (dlopen "opengl32" 0))
-  (define wglCreateContext  (get-proc-address type-handle opengl32 "wglCreateContext"))
-  (define wglMakeCurrent    (get-proc-address type-fix+   opengl32 "wglMakeCurrent"))
-  (define wglDeleteContext  (get-proc-address type-fix+   opengl32 "wglDeleteContext"))
-  (define wglGetProcAddress (get-proc-address type-handle opengl32 "wglGetProcAddress"))
+  (define wglCreateContext  (dlsym type-handle opengl32 "wglCreateContext"))
+  (define wglMakeCurrent    (dlsym type-fix+   opengl32 "wglMakeCurrent"))
+  (define wglDeleteContext  (dlsym type-fix+   opengl32 "wglDeleteContext"))
+  (define wglGetProcAddress (dlsym type-handle opengl32 "wglGetProcAddress"))
     (define (wgl-proc-address type name)
       (let ((function (cons type (wglGetProcAddress (c-string name)))))
         (lambda args
           (sys-prim 32 (cdr function) (car function) args))))
 
   
-  (define glClear           (get-proc-address type-fix+ opengl32 "glClear"))
+  (define glClear           (dlsym type-fix+ opengl32 "glClear"))
     (define GL_COLOR_BUFFER_BIT #x00004000)
     (define GL_DEPTH_BUFFER_BIT #x00000100)
-  (define glLoadIdentity    (get-proc-address type-fix+ opengl32 "glLoadIdentity"))
-  (define glViewport        (get-proc-address type-fix+ opengl32 "glViewport"))
-  (define glMatrixMode      (get-proc-address type-fix+ opengl32 "glMatrixMode"))
+  (define glLoadIdentity    (dlsym type-fix+ opengl32 "glLoadIdentity"))
+  (define glMatrixMode      (dlsym type-fix+ opengl32 "glMatrixMode"))
     (define GL_PROJECTION #x1701)
     (define GL_MODELVIEW  #x1700)
-  (define glTranslatef      (get-proc-address type-fix+ opengl32 "glTranslatef"))
+  (define glTranslatef      (dlsym type-fix+ opengl32 "glTranslatef"))
 
-  (define glShadeModel      (get-proc-address type-fix+ opengl32 "glShadeModel"))
+  (define glShadeModel      (dlsym type-fix+ opengl32 "glShadeModel"))
     (define GL_SMOOTH #x1D01)
-  (define glClearColor      (get-proc-address type-fix+ opengl32 "glClearColor"))
-  (define glHint            (get-proc-address type-fix+ opengl32 "glHint"))
+  (define glClearColor      (dlsym type-fix+ opengl32 "glClearColor"))
+  (define glHint            (dlsym type-fix+ opengl32 "glHint"))
     (define GL_PERSPECTIVE_CORRECTION_HINT #x0C50)
     (define GL_NICEST #x1102)
 
 
   ; https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
-  (define glColor3i         (get-proc-address type-fix+ opengl32 "glColor3i"))
-  (define glColor3ub        (get-proc-address type-fix+ opengl32 "glColor3ub"))
-  (define glVertex2i        (get-proc-address type-fix+ opengl32 "glVertex2i"))
-  (define glVertex3i        (get-proc-address type-fix+ opengl32 "glVertex3i"))
-  (define glVertex2f        (get-proc-address type-fix+ opengl32 "glVertex2f"))
-  (define glBegin           (get-proc-address type-fix+ opengl32 "glBegin"))
+  (define glColor3i         (dlsym type-fix+ opengl32 "glColor3i"))
+  (define glColor3ub        (dlsym type-fix+ opengl32 "glColor3ub"))
+  (define glVertex2i        (dlsym type-fix+ opengl32 "glVertex2i"))
+  (define glVertex3i        (dlsym type-fix+ opengl32 "glVertex3i"))
+  (define glVertex2f        (dlsym type-fix+ opengl32 "glVertex2f"))
+  (define glBegin           (dlsym type-fix+ opengl32 "glBegin"))
     (define GL_TRIANGLES      #x0004)
     (define GL_TRIANGLE_STRIP #x0005) ; http://www.uraldev.ru/articles/35/page/4
-  (define glEnd             (get-proc-address type-fix+ opengl32 "glEnd"))
+  (define glEnd             (dlsym type-fix+ opengl32 "glEnd"))
 
 ; проверка, что все запустилось.
 (define (msgbox)
@@ -212,7 +187,7 @@
                (error "Unable to load: " path))))))
 
 ; пример как хранить скомпилированные значения
-; а можно еще попробовать их перед этим закриптовать )
+; а можно еще попробовать их перед этим закриптовать
 ;(fasl-save (file->string "raw/geometry.fs") "raw/geometry.compiled.fs")
 ;(fasl-load "raw/geometry.compiled.fs" "void main(void) { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }")
 
