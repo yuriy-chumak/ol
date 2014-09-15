@@ -22,7 +22,11 @@
 ;  и возвращает ее уникальный handle
 (define (dlopen name flag) (sys-prim 30 (c-string name) flag #false))
 ; функция dlsym (todo: rename to dlsym) связывает название функции с самой функцией и позволяет ее вызывать 
-(define (dlsym  type dll name) ; todo: переименовать в dlsym ?
+(define (dlsym  type dll name . arguments)
+   ; todo: add arguments to the call of function and use as types
+   ; должно быть так: если будет явное преобразование типа в аргументе функции, то пользовать его
+   ; иначе использовать указанное в arguments; обязательно выводить предупреждение, если количество аргументов не
+   ; совпадает (возможно еще во время компиляции)
    (let ((function (cons type (sys-prim 31 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
       (lambda args
          (sys-prim 32 (cdr function) (car function) args))))

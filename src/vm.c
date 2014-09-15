@@ -1654,7 +1654,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 				// todo: make prim_sys inlined here!
 				word op = fixval(A0);
 				word a = A1, b = A2, c = A3;
-				word result;
+				word result = INULL; // default returned value is INULL
 
 				switch (op) {
 				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
@@ -1690,7 +1690,8 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 			        	 return IFALSE;
 
 					void* module = dlopen((char*) (filename + 1), mode);
-					//void* module = LoadLibrary((char*) (filename + 1));
+					if (module == (void*)0)
+						break;
 
 					result = (word)fp; // todo: разобраться тут правильно с размерами типов
 					fp[0] = make_raw_header(2, THANDLE, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
@@ -2020,6 +2021,9 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							fp += 2;
 							break;
 
+						case TSTRING:
+							// todo: please, done this.
+							break;
 						case TVOID:
 						default:
 							result = INULL;

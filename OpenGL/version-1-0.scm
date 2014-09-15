@@ -4,30 +4,67 @@
 (define-library (OpenGL version-1-0)
   (export
     GL_VERSION_1_0
+    GL_LIBRARY
+    
+    glGetProcAddress ; non standard - owl universal function to the bind opengl function
 
-    glViewport
+    glViewport ; GLint x, GLint y, GLsizei width, GLsizei height
+
   )
   
   (import
-      (owl defmac) (owl io)
+      (owl defmac) (owl io) (owl string)
       (owl pinvoke))
   (begin 
 
-(define GL_VERSION_1_0 1) ; from glcorearb.h
-  
-(define GLvoid 48) ; type-void
-;typedef void GLvoid;
-;typedef unsigned int GLenum;
-;typedef float GLfloat;
-;typedef int GLint;
-;typedef int GLsizei;
-;typedef unsigned int GLbitfield;
-;typedef double GLdouble;
-;typedef unsigned int GLuint;
-;typedef unsigned char GLboolean;
-;typedef unsigned char GLubyte;
+(import (owl os))
+(define GL_LIBRARY
+   (case *OS*
+     (1 "opengl32.dll") ; windows
+     (2 "libGL.so")     ; linux
+     (3 "GLKit")))      ; macos, https://developer.apple.com/library/mac/documentation/graphicsimaging/conceptual/OpenGL-MacProgGuide/opengl_intro/opengl_intro.html
 
-(define % (dlopen "opengl32" 0))
+(define    GL_VERSION_1_0    1) ; from glcorearb.h
+(define % (dlopen GL_LIBRARY 0))
+;(define GL_VERSION_1_0    1) ; linux version ?
+;(define % (dlopen "libGL" 0))
+;(define GL_VERSION_1_0 1) ; linux version ?
+;(define % (dlopen "GL" 0))
+
+; поддержка расширений :
+(define _glGetProcAddress_address
+   (case *OS*
+     (1 (dlsym type-handle % "wglGetProcAddress"))
+     (2 (dlsym type-handle % "glXGetProcAddress"))
+     (3 "GLKit")))
+     
+(define (glGetProcAddress type name . prototype)
+   (let ((function (cons type (_glGetProcAddress_address (c-string name)))))
+      (lambda args
+         (sys-prim 32 (cdr function) (car function) args))))
+     
+
+;//	Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
+;// Правая. x-направо, y-вверх, z-к себе
+;// В исходном состоянии OpenGL камера находится в начале мировых координат, смотрит в
+;// отрицательную сторону оси z, направляющий вектор камеры (нормаль) совпадает с осью
+;// y (камера стоит на плоскости x0z).
+;//	GL_MODELVIEW: Модельные преобразования (модельно-видовая матрица) - применяются к размещению объектов на сцене.
+;//	GL_PROJECTION: Видовые преобразования (проекционная матрица) - применяются к размещению и ориентации точки обзора (настройка камеры).
+;//	GL_TEXTURE: Текстурные преобразования (текстурная матрица) - применяются для управления текстурами заполнения объектов. (?)
+
+  
+(define GLvoid  type-void)  ; void GLvoid
+(define GLenum  type-fix+)  ; typedef unsigned int GLenum - fix+ значит, что это целое число
+(define GLfloat type-float) ; typedef float GLfloat
+(define GLint   type-fix+)  ; typedef int GLint
+(define GLsizei type-fix+)  ; typedef int GLsizei
+;(define GLbitfield type-fix+);typedef unsigned int GLbitfield;
+;typedef double GLdouble;
+;(define GLuint  type-fix+)  ;typedef unsigned int GLuint;
+;(define GLboolean  type-fix+);typedef unsigned char GLboolean;
+;(define GLubyte type-fix+)  ;typedef unsigned char GLubyte;
+(define GLubyte* type-string)
 
 ;GLAPI void APIENTRY glCullFace (GLenum mode);
 ;GLAPI void APIENTRY glFrontFace (GLenum mode);
@@ -68,7 +105,7 @@
 ;GLAPI GLenum APIENTRY glGetError (void);
 ;GLAPI void APIENTRY glGetFloatv (GLenum pname, GLfloat *data);
 ;GLAPI void APIENTRY glGetIntegerv (GLenum pname, GLint *data);
-;GLAPI const GLubyte *APIENTRY glGetString (GLenum name);
+  (define glGetString       (dlsym GLubyte* % "glGetString" GLenum))
 ;GLAPI void APIENTRY glGetTexImage (GLenum target, GLint level, GLenum format, GLenum type, void *pixels);
 ;GLAPI void APIENTRY glGetTexParameterfv (GLenum target, GLenum pname, GLfloat *params);
 ;GLAPI void APIENTRY glGetTexParameteriv (GLenum target, GLenum pname, GLint *params);
@@ -76,7 +113,7 @@
 ;GLAPI void APIENTRY glGetTexLevelParameteriv (GLenum target, GLint level, GLenum pname, GLint *params);
 ;GLAPI GLboolean APIENTRY glIsEnabled (GLenum cap);
 ;GLAPI void APIENTRY glDepthRange (GLdouble near, GLdouble far);
-;GLAPI void APIENTRY glViewport (GLint x, GLint y, GLsizei width, GLsizei height);
-  (define glViewport        (dlsym GLvoid % "glViewport"))
+  ; https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml
+  (define glViewport        (dlsym GLvoid % "glViewport" GLint GLint GLsizei GLsizei))
 
 ))

@@ -12,6 +12,9 @@
     (owl pinvoke))
   (begin
 
-(define GL_VERSION_2_0 1)
+(define    GL_VERSION_2_0    1)
+(define % (dlopen "opengl32" 0))
+
+;	using GLchar		= System.Byte;		// char
 
 ))

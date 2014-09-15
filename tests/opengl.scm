@@ -6,24 +6,16 @@
 ;  (sys-prim 33 isCompiled #false #false)
 (import (owl pinvoke))
 (import (OpenGL version-2-1))
+(import (owl windows))
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
-
-; todo: определить константы возвращаемого типа и использовать их в описании возврата функций
-; что-то вроде (define rt-int 1)
 
 ; todo: тип для (dlsym) - всегда число, добавить в проверку
 
 ;(sys-prim 33 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
 
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
-; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
-(define kernel32_dll (dlopen "kernel32" 0))
-  (define GetModuleHandle (dlsym type-handle kernel32_dll "GetModuleHandleA"))
-
-;(define _exe (GetModuleHandle 0))
-;(define CreateGLWindow (dlsym-c type-fix+ _exe "CreateGLWindow"))
 
 ; вспомогательные константы (временно, пока не научусь работать с флоатами)
 (define FLOAT=1 #x3F800000)
@@ -34,59 +26,8 @@
 (define FLOAT2 #x40000000)
          
 ; real code
-(define user32 (dlopen "user32" 0))
-  (define IDOK 1)
-  (define IDCANCEL 2)
-
-  (define MessageBox (dlsym type-fix+ user32 "MessageBoxA"))
-    (define MB_OK 0)
-    (define MB_OKCANCEL 1)
-    (define MB_ICONASTERISK 64)
-  (define PeekMessage      (dlsym type-fix+ user32 "PeekMessageA"))
-    (define PM_REMOVE 1)
-  (define TranslateMessage (dlsym type-fix+ user32 "TranslateMessage"))
-  (define DispatchMessage  (dlsym type-fix+ user32 "DispatchMessageA"))
-  (define PostQuitMessage  (dlsym type-fix+ user32 "PostQuitMessage"))
-  ;; давление юры 06/09/2014 в 13:43 - 125/ 91
-  ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
-  (define GetKeyState      (dlsym type-fix+ user32 "GetKeyState"))
-  (define GetAsyncKeyState (dlsym type-fix+ user32 "GetAsyncKeyState"))
-  (define GetKeyboardState (dlsym type-fix+ user32 "GetKeyboardState"))
-  
-  ;; функции работы с win32 окнами
-  (define CreateWindowEx   (dlsym type-handle user32 "CreateWindowExA")) ; ANSI version
-    (define WS_EX_APPWINDOW      #x00040000)
-    (define WS_EX_WINDOWEDGE     #x00000100)
-    (define WS_OVERLAPPEDWINDOW  (OR #x00000000 #x00C00000 #x00080000 #x00040000 #x00020000 #x00010000))
-    (define WS_CLIPSIBLINGS      #x04000000)
-    (define WS_CLIPCHILDREN      #x02000000)
-  (define DestroyWindow    (dlsym type-fix+   user32 "DestroyWindow"))
-    
-  (define GetDC               (dlsym type-handle user32 "GetDC"))
-  (define ReleaseDC           (dlsym type-fix+   user32 "ReleaseDC"))
-  (define ShowWindow          (dlsym type-fix+   user32 "ShowWindow"))
-    (define SW_SHOW 5)
-  (define SetForegroundWindow (dlsym type-fix+   user32 "SetForegroundWindow"))
-  (define SetFocus            (dlsym type-fix+   user32 "SetFocus"))
-  
-  
-  
-(define gdi32 (dlopen "gdi32" 0))
-  (define ChoosePixelFormat (dlsym type-fix+ gdi32 "ChoosePixelFormat"))
-  (define SetPixelFormat    (dlsym type-fix+ gdi32 "SetPixelFormat"))
-  (define SwapBuffers       (dlsym type-fix+ gdi32 "SwapBuffers"))
-
 
 (define opengl32 (dlopen "opengl32" 0))
-  (define wglCreateContext  (dlsym type-handle opengl32 "wglCreateContext"))
-  (define wglMakeCurrent    (dlsym type-fix+   opengl32 "wglMakeCurrent"))
-  (define wglDeleteContext  (dlsym type-fix+   opengl32 "wglDeleteContext"))
-  (define wglGetProcAddress (dlsym type-handle opengl32 "wglGetProcAddress"))
-    (define (wgl-proc-address type name)
-      (let ((function (cons type (wglGetProcAddress (c-string name)))))
-        (lambda args
-          (sys-prim 32 (cdr function) (car function) args))))
-
   
   (define glClear           (dlsym type-fix+ opengl32 "glClear"))
     (define GL_COLOR_BUFFER_BIT #x00004000)
@@ -156,28 +97,28 @@
 ;(sys-prim 33 (cast type-fix+ 3/7) #false #false)
 
 ;  ; opengl 1.2 https://www.opengl.org/registry/api/GL/glext.h
-  (define glCreateShader    (wgl-proc-address type-fix+ "glCreateShader"))
+  (define glCreateShader    (glGetProcAddress type-fix+ "glCreateShader"))
     (define GL_VERTEX_SHADER   #x8B31)
     (define GL_FRAGMENT_SHADER #x8B30)
-  (define glShaderSource    (wgl-proc-address type-fix+ "glShaderSource"))
-  (define glCompileShader   (wgl-proc-address type-fix+ "glCompileShader"))
-  (define glCreateProgram   (wgl-proc-address type-fix+ "glCreateProgram"))
-  (define glAttachShader    (wgl-proc-address type-fix+ "glAttachShader"))
-  (define glDetachShader    (wgl-proc-address type-fix+ "glDetachShader"))
-  (define glLinkProgram     (wgl-proc-address type-fix+ "glLinkProgram"))
-  (define glUseProgram      (wgl-proc-address type-fix+ "glUseProgram"))
-  (define glGetShaderiv     (wgl-proc-address type-void "glGetShaderiv"))
+  (define glShaderSource    (glGetProcAddress type-fix+ "glShaderSource"))
+  (define glCompileShader   (glGetProcAddress type-fix+ "glCompileShader"))
+  (define glCreateProgram   (glGetProcAddress type-fix+ "glCreateProgram"))
+  (define glAttachShader    (glGetProcAddress type-fix+ "glAttachShader"))
+  (define glDetachShader    (glGetProcAddress type-fix+ "glDetachShader"))
+  (define glLinkProgram     (glGetProcAddress type-fix+ "glLinkProgram"))
+  (define glUseProgram      (glGetProcAddress type-fix+ "glUseProgram"))
+  (define glGetShaderiv     (glGetProcAddress type-void "glGetShaderiv"))
     (define GL_COMPILE_STATUS  #x8B81)
     (define GL_LINK_STATUS     #x8B82)
     (define GL_VALIDATE_STATUS #x8B83)
     (define GL_INFO_LOG_LENGTH #x8B84)
-  (define glGetShaderInfoLog (wgl-proc-address type-fix+ "glGetShaderInfoLog"))
-  (define glGetUniformLocation (wgl-proc-address type-fix+ "glGetUniformLocation"))
-    (define glUniform1i     (wgl-proc-address type-fix+ "glUniform1i"))
-  (define glEnableVertexAttribArray (wgl-proc-address type-fix+ "glEnableVertexAttribArray"))
-  (define glVertexAttribPointer (wgl-proc-address type-fix+ "glVertexAttribPointer"))
+  (define glGetShaderInfoLog (glGetProcAddress type-fix+ "glGetShaderInfoLog"))
+  (define glGetUniformLocation (glGetProcAddress type-fix+ "glGetUniformLocation"))
+    (define glUniform1i     (glGetProcAddress type-fix+ "glUniform1i"))
+  (define glEnableVertexAttribArray (glGetProcAddress type-fix+ "glEnableVertexAttribArray"))
+  (define glVertexAttribPointer (glGetProcAddress type-fix+ "glVertexAttribPointer"))
     (define GL_FLOAT #x1406)
-  (define glDrawArrays         (wgl-proc-address type-fix+ "glDrawArrays"))
+  (define glDrawArrays         (glGetProcAddress type-fix+ "glDrawArrays"))
 
 (define (file->string path)
    (bytes->string
@@ -222,11 +163,12 @@
 ;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
 (glShaderSource fs 1 (tuple (c-string (file->string
-  (case 3
+  (case 0
     (2 "raw/geometry.fs")
     (3 "raw/water.fs")
     (4 "raw/18850")
     (5 "raw/minecraft.fs")
+    (0 "raw/black.fs")
     (1 "raw/itsfullofstars.fs"))))) 0)
 (glCompileShader fs)
   (define isCompiled "word")

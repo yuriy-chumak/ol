@@ -12,8 +12,7 @@
     (owl pinvoke))
   (begin
 
-(define GL_VERSION_2_1 1)
-
-(define opengl32 (dlopen "opengl32" 0))
+(define    GL_VERSION_2_1    1)
+(define % (dlopen "opengl32" 0))
 
 ))

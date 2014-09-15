@@ -12,10 +12,14 @@
     (owl pinvoke))
   (begin
 
-(define GL_VERSION_1_1 1)
+(define    GL_VERSION_1_1    1)
+(define % (dlopen "opengl32" 0))
 
+; 1.1
+;(define GLbyte  ?) ; typedef signed char GLbyte
+;(define GLshort ?) ; typedef short GLshort
+;(define GLushort ?); typedef unsigned short GLushort
 ;typedef float GLclampf
 ;typedef double GLclampd
-
 
 ))

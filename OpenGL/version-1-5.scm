@@ -12,6 +12,10 @@
     (owl pinvoke))
   (begin
 
-(define GL_VERSION_1_5 1)
+(define    GL_VERSION_1_5    1)
+(define % (dlopen "opengl32" 0))
+
+;	using GLintptr		= System.IntPtr;	// ptrdiff_t
+;	using GLsizeiptr	= System.IntPtr;	// ptrdiff_t
 
 ))

@@ -136,7 +136,7 @@ int main(int nargs, char **argv)
 //		while (*language++ != '\n');
 //	};
 
-	/*
+//	/*
 	{
 		OL* ol = vm_start(language);
 
@@ -242,7 +242,7 @@ int main(int nargs, char **argv)
 		}
 		vm_stop(lisp);
 		printf("\n");
-//		break;
+		break;
 	}
 	free(language);
 
