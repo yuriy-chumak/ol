@@ -1925,6 +1925,10 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							case TRATIONAL:
 								args[i] =  (int)from_rational(arg);
 								break;
+							// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
+							case TBVEC:
+								args[i] = arg[1];
+								break;
 							default:
 								args[i] = INULL; // todo: error
 							}
@@ -1955,6 +1959,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							switch (hdrtype(arg[0])) {
 							case TBVEC:
 							case TSTRING:
+//							case THANDLE:
 //							case TCONST:
 								// in arg[0] size got size of string
 								args[i] = (int)(&arg[1]);

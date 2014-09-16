@@ -1,4 +1,4 @@
-(define-library (owl windows)
+(define-library (lib windows)
   (export 
     GetModuleHandle  ; 
     
@@ -45,7 +45,7 @@
 
 (define INTEGER type-int+)
 
-; Windows Data Types http://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
+; Windows Data Types: http://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
 ; todo: please, sort this types:
 (define DWORD     INTEGER)
 (define LPCTSTR   type-string)

@@ -6,11 +6,63 @@
 ;  (define isCompiled (list->byte-vector '(0 0 0 0)))
 ;  (sys-prim 33 isCompiled #false #false)
 (import (owl pinvoke))
-(import (owl windows))
+(import (lib windows))
 (import (OpenGL version-2-1))
-
+(import (lib sqlite3))
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
+
+; todo: move this test into separate script (tests/sqlite3.scm)
+(define database (make-sqlite3))
+(print "open: "     (sqlite3_open "database.sqlite" database))
+(define (execute query)
+   (let ((statement (make-sqlite3_stmt)))
+      (if (> 0 (sqlite3_prepare_v2 database (c-string query) -1 statement null))
+         (print "error query [" query "] preparation"))
+      (sqlite3_step statement)
+      (sqlite3_finalize statement)))
+(define (select query)
+   (let ((statement (make-sqlite3_stmt)))
+      (if (> 0 (sqlite3_prepare_v2 database (c-string query) -1 statement null))
+         (print "error query [" query "] preparation"))
+      (sqlite3_step statement)
+      statement))
+(define (select2 query handler)
+   (let ((statement (make-sqlite3_stmt)))
+      (if (> 0 (sqlite3_prepare_v2 database (c-string query) -1 statement null))
+         (print "error query [" query "] preparation"))
+      (let ((result
+                (handler (if (= (sqlite3_step statement) SQLITE_ROW) statement null))))
+         (sqlite3_finalize statement)
+         result)))
+
+(define statement (make-sqlite3_stmt))
+(execute "INSERT INTO test VALUES (1)")
+(execute "INSERT INTO test VALUES (2)")
+(execute "INSERT INTO test VALUES (7)")
+;(print "prepare: "  (sqlite3_prepare_v2 database (c-string "CREATE TABLE test ( id INTEGER )") -1 statement null))
+;(print "step: " (sqlite3_step statement))
+
+;(print "1: " (sqlite3_column_count statement))
+;(print "name: " (sqlite3_column_name statement 1))
+(define query (select "SELECT COUNT(id) FROM test"))
+(print "count(id) = " (sqlite3_column_int query 0))
+(sqlite3_finalize query)
+
+(print "count(id)2 = " (select2 "SELECT COUNT(id) FROM test"
+   (lambda (statement)
+      (if (null? statement)
+         "no result"
+         (sqlite3_column_int statement 0)))))
+
+(print "finalize: " (sqlite3_finalize statement))
+(print "close: "    (sqlite3_close database))
+
+
+;(print "@")
+;(halt 0)
+
+
 
 (define width 1280)
 (define height 720)
