@@ -1766,74 +1766,53 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 								({ int $(char *str){ printf("Test: %s\n", str); } $; })
 						};*/
 
+						#define CALL(conv) \
+							switch (count) {\
+							case  0: return ((conv unsigned int (*) ())\
+											function) ();\
+							case  1: return ((conv unsigned int (*) (int)) function)\
+											(args[0]);\
+							case  2: return ((conv unsigned int (*) (int, int)) function)\
+											(args[0], args[1]);\
+							case  3: return ((conv unsigned int (*) (int, int, int)) function)\
+											(args[0], args[1], args[2]);\
+							case  4: return ((conv unsigned int (*) (int, int, int, int)) function)\
+											(args[0], args[1], args[2], args[3]);\
+							case  5: return ((conv unsigned int (*) (int, int, int, int, int)) function)\
+											(args[0], args[1], args[2], args[3], args[4]);\
+							case  6: return ((conv unsigned int (*) (int, int, int, int, int, int)) function)\
+											(args[0], args[1], args[2], args[3], args[4], args[5]);\
+							case  7: return ((conv unsigned int (*) (int, int, int, int, int, int, int)) function)\
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);\
+							case  8: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int)) function)\
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);\
+							case  9: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int)) function)\
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);\
+							case 10: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int, int)) function)\
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);\
+							case 11: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int)) function)\
+											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);\
+							case 12: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int, int))\
+											function) (args[0], args[1], args[2], args[3],   \
+													   args[4], args[5], args[6], args[7],   \
+													   args[8], args[9], args[10], args[11]);\
+							default: fprintf(stderr, "Too match parameters for pinvoke function: %d", count);\
+								break;\
+							}
+
 						switch (convention >> 6) {
-						case 0: // __stdcall
-							switch (count) {
-							case  0: return ((__stdcall int (*) ())
-											function) ();
-							case  1: return ((__stdcall int (*) (int)) function)
-											(args[0]);
-							case  2: return ((__stdcall int (*) (int, int)) function)
-											(args[0], args[1]);
-							case  3: return ((__stdcall int (*) (int, int, int)) function)
-											(args[0], args[1], args[2]);
-							case  4: return ((__stdcall int (*) (int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3]);
-							case  5: return ((__stdcall int (*) (int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4]);
-							case  6: return ((__stdcall int (*) (int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5]);
-							case  7: return ((__stdcall int (*) (int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
-							case  8: return ((__stdcall int (*) (int, int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
-							case  9: return ((__stdcall int (*) (int, int, int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
-							case 10: return ((__stdcall int (*) (int, int, int, int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
-							case 11: return ((__stdcall int (*) (int, int, int, int, int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);
-							case 12: return ((__stdcall int (*) (int, int, int, int, int, int, int, int, int, int, int, int))
-											function) (args[0], args[1], args[2], args[3],
-											           args[4], args[5], args[6], args[7],
-											           args[8], args[9], args[10], args[11]);
-							default: fprintf(stderr, "Too match parameters for pinvoke function");
-								break;
-							}
+						case 0:
+							CALL(__stdcall);
 							break;
-						case 1: // __cdecl
-							switch (count) {
-							case  0: return ((__cdecl   int (*) ())
-											function) ();
-							case  1: return ((__cdecl   int (*) (int)) function)
-											(args[0]);
-							case  2: return ((__cdecl   int (*) (int, int)) function)
-											(args[0], args[1]);
-							case  3: return ((__cdecl   int (*) (int, int, int)) function)
-											(args[0], args[1], args[2]);
-							case  4: return ((__cdecl   int (*) (int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3]);
-							case  5: return ((__cdecl   int (*) (int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4]);
-							case  6: return ((__cdecl   int (*) (int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5]);
-							case  7: return ((__cdecl   int (*) (int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
-							case  8: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
-							case  9: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
-							case 10: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
-							case 11: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int, int, int, int)) function)
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);
-							case 12: return ((__cdecl   int (*) (int, int, int, int, int, int, int, int, int, int, int, int))
-											function) (args[0], args[1], args[2], args[3],
-											           args[4], args[5], args[6], args[7],
-											           args[8], args[9], args[10], args[11]);
-							default: fprintf(stderr, "Too match parameters for pinvoke function");
-								break;
-							}
+						case 1:
+							CALL(__cdecl);
+							break;
+						case 2:
+							CALL(__fastcall);
+							break;
+						default:
+							fprintf(stderr, "Unsupported calling convention %d", convention >> 6);
+							break;
 						}
 						return 0;
 					}
@@ -2035,7 +2014,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					}
 					assert ((word)t == INULL); // количество аргументов совпало!
 
-					got = call(returntype & 0x3F, function, args, i);
+					got = call(returntype, function, args, i);
 
 					// todo: добавить type-void который возращает просто INULL
 					switch (returntype & 0x3F) {
@@ -2068,8 +2047,14 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 						// todo: TRATIONAL
 
 						case TSTRING:
-
-							// todo: please, done this.
+							if (got == 0)
+								result = INULL;
+							else {
+								int len = lenn(got, FMAX+1);
+								result = mkbvec(len, TSTRING);
+								//if (len == FMAX+1) return INULL; /* can't touch this */
+								bytecopy(got, ((char*)result)+W, len);
+							}
 							break;
 						case TVOID:
 						default:

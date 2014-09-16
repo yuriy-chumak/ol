@@ -5,11 +5,16 @@
   (export
     GL_VERSION_1_0
     GL_LIBRARY
-    
-    glGetProcAddress ; non standard - owl universal function to the bind opengl function
 
+    GL_VENDOR
+    GL_RENDERER
+    GL_VERSION
+    GL_EXTENSIONS    
+
+    glGetString
     glViewport ; GLint x, GLint y, GLsizei width, GLsizei height
 
+    glGetProcAddress ; non standard - owl internal universal function to the bind opengl function
   )
   
   (import
@@ -26,10 +31,6 @@
 
 (define    GL_VERSION_1_0    1) ; from glcorearb.h
 (define % (dlopen GL_LIBRARY 0))
-;(define GL_VERSION_1_0    1) ; linux version ?
-;(define % (dlopen "libGL" 0))
-;(define GL_VERSION_1_0 1) ; linux version ?
-;(define % (dlopen "GL" 0))
 	
 ; поддержка расширений :
 ;(define _glGetProcAddress_address
@@ -68,6 +69,14 @@
 ;(define GLboolean  type-fix+);typedef unsigned char GLboolean;
 ;(define GLubyte type-fix+)  ;typedef unsigned char GLubyte;
 (define GLubyte* type-string)
+
+
+; /* StringName */
+(define GL_VENDOR                         #x1F00)
+(define GL_RENDERER                       #x1F01)
+(define GL_VERSION                        #x1F02)
+(define GL_EXTENSIONS                     #x1F03)
+
 
 ;GLAPI void APIENTRY glCullFace (GLenum mode);
 ;GLAPI void APIENTRY glFrontFace (GLenum mode);

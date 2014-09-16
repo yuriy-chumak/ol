@@ -1,13 +1,34 @@
+; Platform Invoke library
+;
+; using example:
+;(import (owl pinvoke))
+;(define user32 (dlopen "user32" 0))
+;  (define IDOK 1)
+;  (define IDCANCEL 2)
+;
+;  (define MessageBox (dlsym user32 type-fix+ "MessageBoxA" type-int+ type-string type-string type-int+))
+;    (define MB_OK 0)
+;    (define MB_OKCANCEL 1)
+;    (define MB_ICONASTERISK 64)
+;
+;(if (=
+;  (MessageBox 0 "Please, press OK for test pass!" (c-string "PInvoke sample use")
+;    (bor MB_OKCANCEL MB_ICONASTERISK))
+;  IDOK)
+;    (print "OK")
+;    (print "CANCEL")))
+
+
 ;; todo: date handling
 
 (define-library (owl pinvoke)
 
    (export 
       dlopen
-      dlsym ;dlsym-c
+      dlsym
       
-;      INTEGER FLOAT
       type-handle type-float type-void
+      __stdcall __cdecl __fastcall
    )
 
    (import
@@ -51,6 +72,11 @@
 ;;;;;(let ((function (cons (bor type 64) (sys-prim 31 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
 ;;      (lambda args ;  function       type          ;arguments
 ;;         (sys-prim 32 (cdr function) (car function) args))))
+
+; Calling Conventions
+(define (__stdcall  arg) (+ arg   0)) ; __stdcall is default for Windows
+(define (__cdecl    arg) (+ arg  64))
+(define (__fastcall arg) (+ arg 128))
 
 ; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?
 ;(define (INTEGER arg) (cons 45 arg))

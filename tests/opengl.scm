@@ -1,4 +1,5 @@
 ; http://www.scheme.com/tspl4/ - The Scheme Programming Language (Fourth Edition)
+; http://community.schemewiki.org/?scheme-faq-standards#implementations
 ;!
 (define *USE_GLBEGIN* 1)
 
@@ -10,7 +11,6 @@
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
-
 
 (define width 1280)
 (define height 720)
@@ -37,6 +37,9 @@
 (wglMakeCurrent hDC hRC))
 
 (print "hDC = " hDC)
+(print "OpenGL version: " (glGetString GL_VERSION))
+(print "OpenGL vendor: " (glGetString GL_VENDOR)) 
+(print "OpenGL renderer: " (glGetString GL_RENDERER))
 
 
 

@@ -89,29 +89,29 @@
     (define MB_OK 0)
     (define MB_OKCANCEL 1)
     (define MB_ICONASTERISK 64)
-  (define PeekMessage      (dlsym user32 BOOL "PeekMessageA" LPMSG HWND UINT UINT UINT))
+  (define PeekMessage      (dlsym user32 (__stdcall BOOL) "PeekMessageA" LPMSG HWND UINT UINT UINT))
     (define PM_REMOVE 1)
-  (define TranslateMessage (dlsym user32 BOOL "TranslateMessage" LPMSG))
-  (define DispatchMessage  (dlsym user32 LRESULT "DispatchMessageA" LPMSG))
-  (define PostQuitMessage  (dlsym user32 VOID "PostQuitMessage" int))
+  (define TranslateMessage (dlsym user32 (__stdcall BOOL) "TranslateMessage" LPMSG))
+  (define DispatchMessage  (dlsym user32 (__stdcall LRESULT) "DispatchMessageA" LPMSG))
+  (define PostQuitMessage  (dlsym user32 (__stdcall VOID) "PostQuitMessage" int))
   ;; давление юры 06/09/2014 в 13:43 - 125/ 91
   ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
-  (define GetKeyState      (dlsym user32 SHORT "GetKeyState" int))
-  (define GetAsyncKeyState (dlsym user32 SHORT "GetAsyncKeyState" int))
-  (define GetKeyboardState (dlsym user32 BOOL "GetKeyboardState" PBYTE))
+  (define GetKeyState      (dlsym user32 (__stdcall SHORT) "GetKeyState" int))
+  (define GetAsyncKeyState (dlsym user32 (__stdcall SHORT) "GetAsyncKeyState" int))
+  (define GetKeyboardState (dlsym user32 (__stdcall BOOL) "GetKeyboardState" PBYTE))
   
   ;; функции работы с win32 окнами
-  (define CreateWindowEx   (dlsym user32 HWND "CreateWindowExA" DWORD LPCTSTR LPCTSTR DWORD int int int int HWND HMENU HINSTANCE LPVOID)) ; ANSI version
+  (define CreateWindowEx   (dlsym user32 (__stdcall HWND) "CreateWindowExA" DWORD LPCTSTR LPCTSTR DWORD int int int int HWND HMENU HINSTANCE LPVOID)) ; ANSI version
     (define WS_EX_APPWINDOW      #x00040000)
     (define WS_EX_WINDOWEDGE     #x00000100)
     (define WS_OVERLAPPEDWINDOW  (OR #x00000000 #x00C00000 #x00080000 #x00040000 #x00020000 #x00010000))
     (define WS_CLIPSIBLINGS      #x04000000)
     (define WS_CLIPCHILDREN      #x02000000)
-  (define DestroyWindow    (dlsym user32 BOOL "DestroyWindow" HWND))
+  (define DestroyWindow    (dlsym user32 (__stdcall BOOL) "DestroyWindow" HWND))
     
-  (define GetDC               (dlsym user32 HDC "GetDC" HWND))
-  (define ReleaseDC           (dlsym user32 int "ReleaseDC" HWND HDC))
-  (define ShowWindow          (dlsym user32 BOOL "ShowWindow" HWND int))
+  (define GetDC               (dlsym user32 (__stdcall HDC) "GetDC" HWND))
+  (define ReleaseDC           (dlsym user32 (__stdcall int) "ReleaseDC" HWND HDC))
+  (define ShowWindow          (dlsym user32 (__stdcall BOOL) "ShowWindow" HWND int))
     (define SW_SHOW 5)
   (define SetForegroundWindow (dlsym user32 BOOL "SetForegroundWindow" HWND))
   (define SetFocus            (dlsym user32
