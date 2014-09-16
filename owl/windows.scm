@@ -43,12 +43,39 @@
       (owl pinvoke))
   (begin
 
+(define INTEGER type-int+)
+
+; Windows Data Types http://msdn.microsoft.com/en-us/library/windows/desktop/aa383751(v=vs.85).aspx
+; todo: please, sort this types:
+(define DWORD     INTEGER)
+(define LPCTSTR   type-string)
+(define int       INTEGER)
+(define HWND      INTEGER)
+(define HMENU     INTEGER)
+(define HINSTANCE INTEGER)
+(define LPVOID    type-tuple)
+(define UINT      INTEGER)
+(define BOOL      type-fix+)
+
+(define LPMSG     type-vector-raw)
+(define LRESULT   INTEGER)
+(define VOID      type-void)
+(define SHORT     INTEGER)
+(define PBYTE     type-vector-raw)
+
+(define HDC       INTEGER) ;type-handle)
+(define HGLRC     INTEGER)
+(define PROC      type-handle)
+(define LPCSTR    type-string)
+
+
+
 ; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
 (define kernel32_dll (dlopen "kernel32" 0))
-  (define GetModuleHandle (dlsym type-handle kernel32_dll "GetModuleHandleA"))
+  (define GetModuleHandle (dlsym kernel32_dll type-handle "GetModuleHandleA" LPCTSTR))
 
 ; вспомогательный макрос для собрать в кучку все bor
-(define OR (lambda list (fold bor 0 list)))
+(define OR (lambda args (fold bor 0 args)))
 
 
 ;(define _exe (GetModuleHandle 0))
@@ -58,53 +85,61 @@
   (define IDOK 1)
   (define IDCANCEL 2)
 
-  (define MessageBox (dlsym type-fix+ user32 "MessageBoxA"))
+  (define MessageBox (dlsym user32 int "MessageBoxA" HWND LPCTSTR LPCTSTR UINT))
     (define MB_OK 0)
     (define MB_OKCANCEL 1)
     (define MB_ICONASTERISK 64)
-  (define PeekMessage      (dlsym type-fix+ user32 "PeekMessageA"))
+  (define PeekMessage      (dlsym user32 BOOL "PeekMessageA" LPMSG HWND UINT UINT UINT))
     (define PM_REMOVE 1)
-  (define TranslateMessage (dlsym type-fix+ user32 "TranslateMessage"))
-  (define DispatchMessage  (dlsym type-fix+ user32 "DispatchMessageA"))
-  (define PostQuitMessage  (dlsym type-fix+ user32 "PostQuitMessage"))
+  (define TranslateMessage (dlsym user32 BOOL "TranslateMessage" LPMSG))
+  (define DispatchMessage  (dlsym user32 LRESULT "DispatchMessageA" LPMSG))
+  (define PostQuitMessage  (dlsym user32 VOID "PostQuitMessage" int))
   ;; давление юры 06/09/2014 в 13:43 - 125/ 91
   ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
-  (define GetKeyState      (dlsym type-fix+ user32 "GetKeyState"))
-  (define GetAsyncKeyState (dlsym type-fix+ user32 "GetAsyncKeyState"))
-  (define GetKeyboardState (dlsym type-fix+ user32 "GetKeyboardState"))
+  (define GetKeyState      (dlsym user32 SHORT "GetKeyState" int))
+  (define GetAsyncKeyState (dlsym user32 SHORT "GetAsyncKeyState" int))
+  (define GetKeyboardState (dlsym user32 BOOL "GetKeyboardState" PBYTE))
   
   ;; функции работы с win32 окнами
-  (define CreateWindowEx   (dlsym type-handle user32 "CreateWindowExA")) ; ANSI version
+  (define CreateWindowEx   (dlsym user32 HWND "CreateWindowExA" DWORD LPCTSTR LPCTSTR DWORD int int int int HWND HMENU HINSTANCE LPVOID)) ; ANSI version
     (define WS_EX_APPWINDOW      #x00040000)
     (define WS_EX_WINDOWEDGE     #x00000100)
     (define WS_OVERLAPPEDWINDOW  (OR #x00000000 #x00C00000 #x00080000 #x00040000 #x00020000 #x00010000))
     (define WS_CLIPSIBLINGS      #x04000000)
     (define WS_CLIPCHILDREN      #x02000000)
-  (define DestroyWindow    (dlsym type-fix+   user32 "DestroyWindow"))
+  (define DestroyWindow    (dlsym user32 BOOL "DestroyWindow" HWND))
     
-  (define GetDC               (dlsym type-handle user32 "GetDC"))
-  (define ReleaseDC           (dlsym type-fix+   user32 "ReleaseDC"))
-  (define ShowWindow          (dlsym type-fix+   user32 "ShowWindow"))
+  (define GetDC               (dlsym user32 HDC "GetDC" HWND))
+  (define ReleaseDC           (dlsym user32 int "ReleaseDC" HWND HDC))
+  (define ShowWindow          (dlsym user32 BOOL "ShowWindow" HWND int))
     (define SW_SHOW 5)
-  (define SetForegroundWindow (dlsym type-fix+   user32 "SetForegroundWindow"))
-  (define SetFocus            (dlsym type-fix+   user32 "SetFocus"))
+  (define SetForegroundWindow (dlsym user32 BOOL "SetForegroundWindow" HWND))
+  (define SetFocus            (dlsym user32
+    HWND ; If the function succeeds, the return value is the handle to the window
+         ; that previously had the keyboard focus. If the hWnd parameter is invalid
+         ; or the window is not attached to the calling thread's message queue, the
+         ; return value is NULL. To get extended error information, call GetLastError.
+    "SetFocus"
+    HWND ;hWnd
+         ; A handle to the window that will receive the keyboard input. If this parameter is NULL, keystrokes are ignored.
+    ))
   
-  
+(define PIXELFORMATDESCRIPTOR* type-vector-raw)
   
 (define gdi32 (dlopen "gdi32" 0))
-  (define ChoosePixelFormat (dlsym type-fix+ gdi32 "ChoosePixelFormat"))
-  (define SetPixelFormat    (dlsym type-fix+ gdi32 "SetPixelFormat"))
-  (define SwapBuffers       (dlsym type-fix+ gdi32 "SwapBuffers"))
+  (define ChoosePixelFormat (dlsym gdi32 int "ChoosePixelFormat" HDC PIXELFORMATDESCRIPTOR*))
+  (define SetPixelFormat    (dlsym gdi32 BOOL "SetPixelFormat" HDC int PIXELFORMATDESCRIPTOR*))
+  (define SwapBuffers       (dlsym gdi32 BOOL "SwapBuffers" HDC))
 
 ; -=( wgl )=------------------------------------------------------------
 (define opengl32 (dlopen "opengl32" 0))
-  (define wglCreateContext  (dlsym type-handle opengl32 "wglCreateContext" ))
-  (define wglMakeCurrent    (dlsym type-fix+   opengl32 "wglMakeCurrent" ))
-  (define wglDeleteContext  (dlsym type-fix+   opengl32 "wglDeleteContext" ))
-  (define wglGetProcAddress (dlsym type-handle opengl32 "wglGetProcAddress" ))
-    (define (wgl-proc-address type name)
-      (let ((function (cons type (wglGetProcAddress (c-string name)))))
-        (lambda args
-          (sys-prim 32 (cdr function) (car function) args))))
+  (define wglCreateContext  (dlsym opengl32 HGLRC "wglCreateContext" HDC))
+  (define wglMakeCurrent    (dlsym opengl32 BOOL  "wglMakeCurrent" HDC HGLRC))
+  (define wglDeleteContext  (dlsym opengl32 BOOL  "wglDeleteContext" HGLRC))
+  (define wglGetProcAddress (dlsym opengl32 PROC  "wglGetProcAddress" LPCSTR))
+;  (define (wgl-proc-address type name)
+;    (let ((function (cons type (wglGetProcAddress (c-string name)))))
+;      (lambda args
+;        (sys-prim 32 (cdr function) (car function) args))))
 
 ))

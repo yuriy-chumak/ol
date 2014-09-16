@@ -30,19 +30,22 @@
 ;(define % (dlopen "libGL" 0))
 ;(define GL_VERSION_1_0 1) ; linux version ?
 ;(define % (dlopen "GL" 0))
-
+	
 ; поддержка расширений :
-(define _glGetProcAddress_address
-   (case *OS*
-     (1 (dlsym type-handle % "wglGetProcAddress"))
-     (2 (dlsym type-handle % "glXGetProcAddress"))
-     (3 "GLKit")))
+;(define _glGetProcAddress_address
+;   (case *OS*
+;     (1 (dlsym % type-handle "wglGetProcAddress"))
+;     (2 (dlsym % type-handle "glXGetProcAddress"))
+;     (3 "GLKit")))
+(define GetProcAddress (dlsym % type-handle "wglGetProcAddress" type-string))
      
 (define (glGetProcAddress type name . prototype)
-   (let ((function (cons type (_glGetProcAddress_address (c-string name)))))
+   (let ((rtty (cons type prototype))
+         (function (GetProcAddress (c-string name)))) ; todo: избавиться от (c-string)
       (lambda args
-         (sys-prim 32 (cdr function) (car function) args))))
-     
+;        (print "opengl pinvoke: " (c-string name))
+         (sys-prim 32 function args rtty))))
+
 
 ;//	Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
 ;// Правая. x-направо, y-вверх, z-к себе
@@ -55,10 +58,10 @@
 
   
 (define GLvoid  type-void)  ; void GLvoid
-(define GLenum  type-fix+)  ; typedef unsigned int GLenum - fix+ значит, что это целое число
+(define GLenum  type-int+)  ; typedef unsigned int GLenum - fix+ значит, что это целое число
 (define GLfloat type-float) ; typedef float GLfloat
-(define GLint   type-fix+)  ; typedef int GLint
-(define GLsizei type-fix+)  ; typedef int GLsizei
+(define GLint   type-int+)  ; typedef int GLint
+(define GLsizei type-int+)  ; typedef int GLsizei
 ;(define GLbitfield type-fix+);typedef unsigned int GLbitfield;
 ;typedef double GLdouble;
 ;(define GLuint  type-fix+)  ;typedef unsigned int GLuint;
@@ -105,7 +108,7 @@
 ;GLAPI GLenum APIENTRY glGetError (void);
 ;GLAPI void APIENTRY glGetFloatv (GLenum pname, GLfloat *data);
 ;GLAPI void APIENTRY glGetIntegerv (GLenum pname, GLint *data);
-  (define glGetString       (dlsym GLubyte* % "glGetString" GLenum))
+  (define glGetString       (dlsym % GLubyte* "glGetString" GLenum))
 ;GLAPI void APIENTRY glGetTexImage (GLenum target, GLint level, GLenum format, GLenum type, void *pixels);
 ;GLAPI void APIENTRY glGetTexParameterfv (GLenum target, GLenum pname, GLfloat *params);
 ;GLAPI void APIENTRY glGetTexParameteriv (GLenum target, GLenum pname, GLint *params);
@@ -114,6 +117,6 @@
 ;GLAPI GLboolean APIENTRY glIsEnabled (GLenum cap);
 ;GLAPI void APIENTRY glDepthRange (GLdouble near, GLdouble far);
   ; https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml
-  (define glViewport        (dlsym GLvoid % "glViewport" GLint GLint GLsizei GLsizei))
+  (define glViewport        (dlsym % GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
 ))

@@ -110,7 +110,7 @@ typedef int32_t   wdiff;
 
 // -=( fifo )=------------------------------------------------
 // кольцевой текстовый буфер для общения с виртуальной машиной
-#define FIFOLENGTH (1 << 12) // 4096 for now
+#define FIFOLENGTH (1 << 14) // 4*4096 for now
 struct fifo
 {
 	unsigned int putp, getp;
@@ -1070,7 +1070,9 @@ static word prim_lraw(word wptr, int type, word revp) {
    int nwords, len = 0, pads;
    unsigned char *pos;
    word *raw, *ob;
-   if (revp != IFALSE) { exit(1); } /* <- to be removed */
+   if (revp != IFALSE) {
+	   exit(1);
+   } /* <- to be removed */
    ob = lst;
    while (allocp(ob) && *ob == PAIRHDR) {
       len++;
@@ -1714,7 +1716,6 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							? (LPSTR) imm_val((word)name)
 							: (LPSTR) (char*) (name + 1));
 
-					// todo: в качестве оптимизации можно возвращать уже подготовленную структуру с параметрами и конвеншеном вызова
 					result = (word)fp;
 					fp[0] = make_raw_header(2, THANDLE, 0);
 					fp[1] = (word)function;
@@ -1736,13 +1737,23 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 //					glGetProgramiv(1, GL_LINK_STATUS, &status);
 
 					result = INULL;
+/*
+					word* A = a;
+					char* B = (word*)b + 1;
+					if (A[1] == 0) {
+						printf("\n\n\n\n\n\n\n\n\n\nB = %s\n\n\n", B);
+						result = F(0);
+						exit(123);
+					}
+
+*/
 					break;
 				}
 
 				// вызвать библиотечную функцию
 				case 32: {
 					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
-					int call(int convention, void* function, int args[], int count) {
+					unsigned int call(int convention, void* function, int args[], int count) {
 						// todo: ограничиться количеством функций поменьше
 						//	а можно сделать все в одной switch:
 						// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
@@ -1821,147 +1832,180 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 											           args[4], args[5], args[6], args[7],
 											           args[8], args[9], args[10], args[11]);
 							default: fprintf(stderr, "Too match parameters for pinvoke function");
+								break;
 							}
 						}
 						return 0;
 					}
+					int from_fix(word* arg) {
+						int value = fixval((unsigned int)arg);
+						// этот кусок временный - потом переделать в трюк
+						// алгоритмические трюки:
+						// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
+						if ((unsigned int)arg & 0x80)
+							return -value;
+						return value;
+					}
+					int from_int(word* arg) {
+						// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
+						assert (immediatep(arg[1]));
+						if (!allocp(arg[2])) {
+							printf("ERROR! from_int\n");
+							return 123;
+						}
+						assert (allocp(arg[2]));
+
+						return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+					}
+					float from_rational(word* arg) {
+						word* pa = (word*)arg[1];
+						word* pb = (word*)arg[2];
+
+						// временно огрманичимся небольшими nominator/denominator, а дальше посмотрим
+						word a, b;
+						if (immediatep(pa))
+							a = from_fix(pa);
+						else {
+							switch (hdrtype(pa[0])) {
+							case TINT:
+								a = +(float)from_int(pa);
+								break;
+							case TINTN:
+								a = -(float)from_int(pa);
+								break;
+							}
+						}
+						if (immediatep(pb))
+							b = from_fix(pb);
+						else {
+							switch (hdrtype(pb[0])) {
+							case TINT:
+								b = +(float)from_int(pb);
+								break;
+							case TINTN:
+								b = -(float)from_int(pb);
+								break;
+							}
+						}
+
+						float result = (float)a / (float)b;
+						return result;
+					}
+
 
 					// a - function address
-					// b - return type
-					// c - arguments (may be pair with req type in car and arg in cdr - not yet done)
+					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
+					// c - '(return-type . argument-types-list)
 					word* A = (word*)a;
+					word* B = (word*)b;
+					word* C = (word*)c;
 
-					assert (hdrtype(A[0]) == THANDLE);
-					assert (hdrsize(A[0]) == 2); // в списке один системный ворд // это временно, а вообще надо будет использовать fix+ и собирать его по битикам
-					assert (immediatep(b));
+					assert (hdrtype(A[0]) == THANDLE && hdrsize(A[0]) == 2);
+					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
+					assert ((word)C != INULL && hdrtype(C[0]) == TPAIR);
+					// C[1] = return-type
+					// C[2] = argument-types
 
 					// todo: добавить разные конвенции вызова: __ccall, __stdcall, __fastcall
 
 					int args[12]; // пока только 12 аргумента максимум
 					void *function = (void*) (A[1]);
-					int returntype = imm_val(b);
+					assert (function != 0);
+					int returntype = imm_val (C[1]);
 
-					int got;    // результат вызова функции
+					unsigned int got;    // результат вызова функции
 					int i = 0;	// количество аргументов
-					word* p = (word*)c; // аргументы
-					while ((int)p != INULL) { // пока есть аргументы
-						assert (hdrtype(*p) == TPAIR);
-						word* arg = (word*)p[1]; // car
-						if (immediatep(arg)) {
-							// type-fix+, type-fix-
-							args[i] = fixval((unsigned int)arg);
-							// этот кусок временный - потом переделать в трюк
-							if ((int)arg & 0x80)
-								args[i] *= -1;
-							// алгоритмические трюки:
-							// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
-						}
-						else { // allocp
-							int from_fix(word* arg) {
-								int value = fixval((unsigned int)arg);
-								if ((int)arg & 0x80)
-									value = -1 * value;
-								return value;
-							}
-							int from_int(word* arg) {
-								// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
-								assert (immediatep(arg[1]));
-								assert (allocp(arg[2]));
+					word* p = (word*)B; // аргументы
+					word* t = (word*)C[2];
+					while ((word)p != INULL) { // пока есть аргументы
+						assert (hdrtype(*p) == TPAIR); // assert list
+						assert (hdrtype(*t) == TPAIR); // assert list
 
-								return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
-							}
-							int from_rational(word* arg) {
-								word* pa = (word*)arg[1];
-								word* pb = (word*)arg[2];
+						int type = imm_val (t[1]);
+						word* arg = (word*) p[1]; // car
 
-								// временно огрманичимся небольшими nominator/denominator, а дальше посмотрим
-								word a, b;
-								if (immediatep(pa))
-									a = from_fix(pa);
-								else {
-									switch (hdrtype(pa[0])) {
-									case TINT:
-										a = +(float)from_int(pa);
-										break;
-									case TINTN:
-										a = -(float)from_int(pa);
-										break;
-									}
-								}
-								if (immediatep(pb))
-									b = from_fix(pb);
-								else {
-									switch (hdrtype(pb[0])) {
-									case TINT:
-										b = +(float)from_int(pb);
-										break;
-									case TINTN:
-										b = -(float)from_int(pb);
-										break;
-									}
-								}
+/*						// todo: add argument overriding as PAIR as argument value
+						if (hdrtype(p[1]) == TPAIR) {
+							type = imm_val (((word*)p[1])[1]);
+							arg = ((word*)p[1])[2];
+						}*/
 
-								float result = (float)a / (float)b;
-								return *(int*)&result;
-							}
-
-
-							int type = hdrtype(arg[0]);
-							// если тип представляет собой пару значений, то
-							//	в car лежит требуемый тип, а в cdr само значение
-							if (type == TPAIR) {
-								assert (immediatep(arg[1]));
-								int type1 = imm_val(arg[1]);
-
-								if (type1 == 46) { // FLOAT // todo: change to new switch level :)
-									arg = (word*)arg[2];
-									if (immediatep(arg))
-										// type-fix+, type-fix-;
-										*(float*)&args[i] =  (float)from_fix(arg);
-									else
-									switch (hdrtype(arg[0])) {
-									case TINT:
-										*(float*)&args[i] = +(float)from_int(arg);
-										break;
-									case TINTN:
-										*(float*)&args[i] = -(float)from_int(arg);
-										break;
-									case TRATIONAL:
-										*(float*)&args[i] =  (float)from_rational(arg);
-										break;
-									}
-								}
-								// if (type1 == 45)
-								//   make integer numbers
-							}
+						switch (type) {
+						case TFIX:
+						case TINT: // destination type
+							if (immediatep(arg))
+								args[i] = from_fix(arg);
 							else
-							switch (type) {
-							case THANDLE:
-								args[i] = (int)(arg[1]);
+							switch (hdrtype(arg[0])) {
+							case TINT: // source type
+								args[i] = +from_int(arg);
 								break;
+							case TINTN:
+								args[i] = -from_int(arg);
+								break;
+							case TRATIONAL:
+								args[i] =  (int)from_rational(arg);
+								break;
+							default:
+								args[i] = INULL; // todo: error
+							}
+							break;
+						case TRATIONAL:
+							if (immediatep(arg))
+								*(float*)&args[i] = (float)from_fix(arg);
+							else
+							switch (hdrtype(arg[0])) {
+							case TINT: // source type
+								*(float*)&args[i] = +(float)from_int(arg);
+								break;
+							case TINTN:
+								*(float*)&args[i] = -(float)from_int(arg);
+								break;
+							case TRATIONAL:
+								*(float*)&args[i] =  from_rational(arg);
+								break;
+							default:
+								args[i] = INULL; // todo: error
+							}
+							break;
+						case TBVEC:
+						case TSTRING:
+							if ((word)arg == INULL)
+								args[i] = (word) (void*)0;
+							else
+							switch (hdrtype(arg[0])) {
 							case TBVEC:
 							case TSTRING:
 //							case TCONST:
 								// in arg[0] size got size of string
 								args[i] = (int)(&arg[1]);
 								break;
-
-							case TINT: { // type-int+
-								args[i] = +from_int(arg);
-								break;
+							default:
+								args[i] = INULL; // todo: error
 							}
-							case TINTN: { // type-int-
-								args[i] = -from_int(arg);
+							break;
+						case THANDLE:
+							if ((word)arg == INULL)
+								args[i] = (word) (void*)0;
+							else
+							switch (hdrtype(arg[0])) {
+							case THANDLE:
+								args[i] = (int)(arg[1]);
 								break;
+							default:
+								args[i] = INULL; // todo: error
 							}
-							case TRATIONAL:
-								args[i] = from_rational(arg);
-								// тут надо разделить два числа (возможно большие) и пушнуть float
-								// если числа большие (если в car и cdr лежат ссылки), то надо это
-								// сделать в столбик. ну или добавить в компилятор числа с плавающей запятой
-								break;
-
-
+							break;
+						case TTUPLE:
+							if ((word)arg == INULL)
+								args[i] = (word) (void*)0;
+							else
+							switch (hdrtype(arg[0])) {
+/*							case TCONST:
+								switch ((word)arg) {
+								case INULL:
+									args[i] = (word) (void*)0;
+								}*/
 							case TTUPLE: { // ?
 								// tuple, это последовательность, а не список!
 								// todo: сделать функцию cast или что-то такое
@@ -1975,43 +2019,44 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 								word* src = &arg[1];
 								while (--size)
 									*fp++ = (word)((word*)*src++ + 1);
-//								int j;
-//								for (j = 1; j < size; j++)
+	//								int j;
+	//								for (j = 1; j < size; j++)
+								}
 								break;
-							}
-
 							default:
-								// notification about unknown argument type!
-								args[i] = INULL;
-								break;
+								args[i] = INULL; // todo: error
 							}
+							break;
 						}
 
 						p = (word*)p[2]; // cdr
+						t = (word*)t[2]; // cdr
 						i++;
 					}
+					assert ((word)t == INULL); // количество аргументов совпало!
+
 					got = call(returntype & 0x3F, function, args, i);
 
 					// todo: добавить type-void который возращает просто INULL
 					switch (returntype & 0x3F) {
-						case 0: // type-fix+
-							result = F(got);
-							break;
 						case TINT:
 							if (got > 0xFFFFFF) {
-								word* lo = fp; fp += 3; // low 24 bits
-								lo[0] = NUMHDR;
-								lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
-								lo[2] = (word)fp;
+								// прошу внимания!
+								//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 								word* hi = fp; fp += 3; // high 8 bits
 								hi[0] = NUMHDR;
 								hi[1] = make_immediate(got >> 24, 0); // type-fx+
 								hi[2] = INULL;
+								word* lo = fp; fp += 3; // low 24 bits
+								lo[0] = NUMHDR;
+								lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
+								lo[2] = (word)hi;
 
 								result = (word)lo;
 								break;
 							}
 							// иначе вернем type-fx+
+						case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF!
 							result = F(got);
 							break;
 						case THANDLE:
@@ -2020,8 +2065,10 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							fp[1] = got;
 							fp += 2;
 							break;
+						// todo: TRATIONAL
 
 						case TSTRING:
+
 							// todo: please, done this.
 							break;
 						case TVOID:
@@ -2250,7 +2297,8 @@ word get_nat() {
    do {
       i = *hp++;
       newobj = result << 7;
-      if (result != (newobj >> 7)) exit(9); // overflow kills
+      if (result != (newobj >> 7))
+    	  exit(9); // overflow kills
       result = newobj + (i & 127);
    } while (i & 128);
    return result;
@@ -2296,7 +2344,8 @@ word *deserialize(word *ptrs, int me)
          while (pads--) { *wp++ = 0; };
          fp = (word *) wp;
          break; }
-      default: puts("bad object in heap"); exit(42);
+      default: puts("bad object in heap");
+      exit(42);
    }
    return fp;
 }
@@ -2349,7 +2398,8 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		}
 
 		default:
-			puts("bad object in heap"); exit(42);
+			puts("bad object in heap");
+			exit(42);
 		}
 
 		n++;
