@@ -23,7 +23,7 @@
 //	все остальное - макросами (?)
 
 #include <stddef.h>
-//nclude <malloc.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 #include <assert.h>
@@ -64,26 +64,60 @@
 
 /*** Portability Issues ***/
 
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <conio.h>
-#include <windows.h>
-//#include <GL/gl.h> // temp
-//#include "glext.h"
-typedef unsigned long in_addr_t;
-#define EWOULDBLOCK WSAEWOULDBLOCK
-#undef ERROR // due to macro redefinition
+#ifdef _WIN32
+#	define WIN32_LEAN_AND_MEAN
+#	include <winsock2.h>
+#	include <ws2tcpip.h>
+#	include <conio.h>
+#	include <windows.h>
+	typedef unsigned long in_addr_t;
+#	define EWOULDBLOCK WSAEWOULDBLOCK
+#	undef ERROR // due to macro redefinition
 #else
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <sys/wait.h>
-#ifndef O_BINARY
-#define O_BINARY 0
+#	include <netinet/in.h>
+#	include <sys/socket.h>
+#	include <sys/wait.h>
+#	include <sys/wait.h>
+#	ifndef O_BINARY
+#		define O_BINARY 0
+#	endif
 #endif
+
+// Threading (pthread)
+//
+#ifdef _WIN32
+// todo: change to the http://mirrors.kernel.org/sourceware/pthreads-win32/
+typedef HANDLE pthread_t;
+typedef struct pthread_attr_t {} pthread_attr_t;
+static int pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
+                          void *(*function)(void *), void * argument)
+{
+	*thread = CreateThread(NULL, 0, function, argument, 0, NULL);
+}
+
+static int pthread_yield(void)
+{
+	Sleep(0);
+	return 0;
+}
+/*static unsigned sleep(unsigned seconds)
+{
+	Sleep(seconds * 1000);
+}*/
 #endif
+#ifdef __APPLE__ // __MACH__
+#	include <sched.h>
+static int pthread_yield(void)
+{
+	return sched_yield();
+}
+#endif
+#ifdef __linux__
+#	define _GNU_SOURCE
+#	include <pthread.h>
+#endif
+
+
 
 #ifdef __gnu_linux__
 #ifndef NO_SECCOMP
@@ -99,14 +133,6 @@ typedef unsigned long in_addr_t;
 #endif
 
 #define STATIC static __inline__
-
-typedef uintptr_t word;
-
-#ifdef _LP64
-typedef int64_t   wdiff;
-#else
-typedef int32_t   wdiff;
-#endif
 
 // -=( fifo )=------------------------------------------------
 // кольцевой текстовый буфер для общения с виртуальной машиной
@@ -156,7 +182,7 @@ int fifo_puts(struct fifo* f, char *message, int n)
 	char *ptr = message;
 	while (n--) {
 		while (fifo_full(f))
-			Sleep(1);
+			pthread_yield();
 		fifo_put(f, *ptr++);
 	}
 	return ptr - message;
@@ -167,7 +193,7 @@ int fifo_gets(struct fifo* f, char *message, int n)
 	char *ptr = message;
 	while (--n) {
 		while (fifo_empty(f))
-			Sleep(1);
+			pthread_yield( );
 		*ptr++ = fifo_get(f);
 
 		if (ptr[-1] == '\n')
@@ -180,13 +206,13 @@ int fifo_gets(struct fifo* f, char *message, int n)
 
 // -=( dl )=-----------------------------------------------
 // интерфейс к динамическому связыванию системных библиотек
-#ifdef WIN32
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 // seen at https://github.com/dlfcn-win32/dlfcn-win32/blob/master/dlfcn.c
 
 //static thread_local char *dlerrno = 0;
-
+static
 void *dlopen(const char *filename, int mode/*unused*/)
 {
 	HMODULE hModule;
@@ -212,11 +238,13 @@ void *dlopen(const char *filename, int mode/*unused*/)
 		hModule = LoadLibraryEx((LPSTR)filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 	return hModule;
 }
-int   dlclose(void *handle)
+static
+int dlclose(void *handle)
 {
 	return FreeLibrary((HMODULE)handle);
 }
 
+static
 void *dlsym  (void *handle, const char *name)
 {
 	FARPROC function;
@@ -230,15 +258,17 @@ void *dlsym  (void *handle, const char *name)
 #endif
 
 
-
-//typedef struct fifo fifo;
+// -=( OL )=----------------------------------------------------------------------
+// --
+//
 // виртуальная машина
 typedef struct OL
 {
-	HANDLE thread;
+	pthread_t tid;
 	fifo *fi, *fo;
 } OL;
 
+typedef uintptr_t word;
 
 
 //;; DESCRIPTOR FORMAT
@@ -268,7 +298,7 @@ typedef struct OL
 
 // Для экономии памяти
 
-#define IPOS                        8 /* offset of immediate payload */
+#define IPOS                        8  /* offset of immediate payload */
 #define SPOS                        16 /* offset of size bits in header immediate values */
 #define TPOS                        2  /* offset of type bits in header */
 
@@ -279,7 +309,7 @@ typedef struct OL
 #define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
 #define FMAX                        ((1<<FBITS)-1) /* maximum fixnum (and most negative fixnum) */
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
-#define RAWBIT                      2048
+#define RAWBIT                      (1<<11)
 #define make_immediate(value, type)    (((value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(size, type)        (( (size) << SPOS) | ((type) << TPOS)                         | 2)
 #define make_raw_header(size, type, p) (( (size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
@@ -391,12 +421,18 @@ struct heap
 
 	word *genstart;  // was: genstart
 //	word *top; // fp
-} thread_local heap; // память машины, управляемая сборщиком мусора
+}
+static thread_local heap; // память машины, управляемая сборщиком мусора
 
 #define cont(n)                     V((word)n & (~1)) // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
 #define flagged(n)                  (n & 1)           // is flagged ?
 #define flag(n)                     (((word)n) ^ 1)   // same value with changed flag
 
+#ifdef _LP64
+typedef int64_t   wdiff;
+#else
+typedef int32_t   wdiff;
+#endif
 
 // cont(n) = V((word)n & (~1)) // *n (с игнорированием флажка mark)
 
@@ -1172,7 +1208,7 @@ struct args
 };
 // args + 0 = (list "arg0" "arg 1") or ("arg0 arg1" . NIL) ?
 // args + 3 = objects list
-DWORD WINAPI
+static void*
 runtime(void *args) // heap top
 {
 	seccompp = 0;
@@ -1689,16 +1725,15 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 					int mode = fixval(b);
 
 					if (!(allocp(filename) && hdrtype(*filename) == TSTRING))
-			        	 return IFALSE;
+			        	 break;
 
 					void* module = dlopen((char*) (filename + 1), mode);
-					if (module == (void*)0)
-						break;
-
-					result = (word)fp; // todo: разобраться тут правильно с размерами типов
-					fp[0] = make_raw_header(2, THANDLE, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
-					fp[1] = (word)module;
-					fp += 2;
+					if (module) {
+						result = (word)fp; // todo: разобраться тут правильно с размерами типов
+						fp[0] = make_raw_header(2, THANDLE, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
+						fp[1] = (word)module;
+						fp += 2;
+					}
 					break;
 				}
 				case 31: { // dlsym
@@ -1710,16 +1745,17 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 
 					// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
 					if (!(immediatep(name) || hdrtype(*name) == TSTRING))
-						return IFALSE;
+						break;
 
 					void* function = dlsym(module, immediatep(name)
-							? (LPSTR) imm_val((word)name)
-							: (LPSTR) (char*) (name + 1));
-
-					result = (word)fp;
-					fp[0] = make_raw_header(2, THANDLE, 0);
-					fp[1] = (word)function;
-					fp += 2;
+							? (char*) imm_val((word)name)
+							: (char*) (name + 1));
+					if (function) {
+						result = (word)fp;
+						fp[0] = make_raw_header(2, THANDLE, 0);
+						fp[1] = (word)function;
+						fp += 2;
+					}
 					break;
 				}
 				// временный тестовый вызов
@@ -2492,13 +2528,10 @@ OL* vm_start(unsigned char* language)
 	args.ready = 0;
 	args.userdata = oargs;
 
-//	vm(oargs);
-	handle->thread =
-	CreateThread(NULL, 0, &runtime, &args, 0, NULL);
-//	ResumeThread(machine->thread);
-//	WaitForSingleObject(machine->thread, INFINITE); // wait for init
+//	runtime(args);
+	pthread_create(&handle->tid, NULL, &runtime, &args);
 	while (!args.ready)
-		Sleep(1);
+		pthread_yield();
 
 	return handle;
 }
@@ -2526,7 +2559,10 @@ int vm_stop(OL* vm)
 {
 	vm_puts(vm, "(halt 0)\n", 9);
 	// do not wait to the end (?)
-	WaitForSingleObject(vm->thread, INFINITE);
+#ifdef WIN32
+	WaitForSingleObject(vm->tid, INFINITE);
+#else
+#endif
 
 	return 0;
 }

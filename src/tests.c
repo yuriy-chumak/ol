@@ -22,6 +22,10 @@
 #include <gl\glu.h>			// Header File For The GLu32 Library
 //#include <gl\glaux.h>		// Header File For The Glaux Library
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 /***************************************************
  * TESTS
  **************************************************/
@@ -152,7 +156,7 @@ int main(int nargs, char **argv)
 
 		while (1) {
 			char response[1024];
-			vm_gets(ol, response, sizeof(response) - 1);
+			vm_gets(ol, response, sizeof(response));
 			printf(response);
 			printf("\n");
 			if (*response == '@')
@@ -168,7 +172,7 @@ int main(int nargs, char **argv)
 // временно добавим себе сюда запуск тестов
 	char *testfiles[] = {
 //			"tests/dlopen.scm", (все работает, просто дразнит выскакивающее окошко)
-			"tests/opengl.scm",
+//			"tests/opengl.scm",
 			"tests/apply.scm",
 			"tests/banana.scm",
 			"tests/bingo-rand.scm",
@@ -242,7 +246,6 @@ int main(int nargs, char **argv)
 		}
 		vm_stop(lisp);
 		printf("\n");
-		break;
 	}
 	free(language);
 

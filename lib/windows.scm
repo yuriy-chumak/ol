@@ -1,3 +1,4 @@
+;!
 (define-library (lib windows)
   (export 
     GetModuleHandle  ; 
@@ -11,6 +12,8 @@
     TranslateMessage ;
     DispatchMessage  ;
     PostQuitMessage  ;
+      WM_SIZE WM_WINDOWPOSCHANGED
+      WM_CREATE WM_LBUTTONDOWN
     
     GetKeyState      ;
     GetAsyncKeyState ;
@@ -26,6 +29,7 @@
     GetDC ReleaseDC
     ShowWindow SW_SHOW
     SetForegroundWindow SetFocus
+    GetWindowRect
     
     ; gdi32
     ChoosePixelFormat
@@ -67,6 +71,7 @@
 (define HGLRC     INTEGER)
 (define PROC      type-handle)
 (define LPCSTR    type-string)
+(define LPRECT    type-vector-raw)
 
 
 
@@ -94,6 +99,10 @@
   (define TranslateMessage (dlsym user32 (__stdcall BOOL) "TranslateMessage" LPMSG))
   (define DispatchMessage  (dlsym user32 (__stdcall LRESULT) "DispatchMessageA" LPMSG))
   (define PostQuitMessage  (dlsym user32 (__stdcall VOID) "PostQuitMessage" int))
+    (define WM_CREATE #x0001)
+    (define WM_SIZE #x0005)
+    (define WM_WINDOWPOSCHANGED #x0047)
+    (define WM_LBUTTONDOWN #x0201)
   ;; давление юры 06/09/2014 в 13:43 - 125/ 91
   ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
   (define GetKeyState      (dlsym user32 (__stdcall SHORT) "GetKeyState" int))
@@ -123,6 +132,7 @@
     HWND ;hWnd
          ; A handle to the window that will receive the keyboard input. If this parameter is NULL, keystrokes are ignored.
     ))
+  (define GetWindowRect       (dlsym user32 (__stdcall BOOL) "GetWindowRect" HWND LPRECT))
   
 (define PIXELFORMATDESCRIPTOR* type-vector-raw)
   

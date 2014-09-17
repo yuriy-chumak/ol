@@ -8,61 +8,11 @@
 (import (owl pinvoke))
 (import (lib windows))
 (import (OpenGL version-2-1))
-(import (lib sqlite3))
+
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
-
-; todo: move this test into separate script (tests/sqlite3.scm)
-(define database (make-sqlite3))
-(print "open: "     (sqlite3_open "database.sqlite" database))
-(define (execute query)
-   (let ((statement (make-sqlite3_stmt)))
-      (if (> 0 (sqlite3_prepare_v2 database (c-string query) -1 statement null))
-         (print "error query [" query "] preparation"))
-      (sqlite3_step statement)
-      (sqlite3_finalize statement)))
-(define (select query)
-   (let ((statement (make-sqlite3_stmt)))
-      (if (> 0 (sqlite3_prepare_v2 database (c-string query) -1 statement null))
-         (print "error query [" query "] preparation"))
-      (sqlite3_step statement)
-      statement))
-(define (select2 query handler)
-   (let ((statement (make-sqlite3_stmt)))
-      (if (> 0 (sqlite3_prepare_v2 database (c-string query) -1 statement null))
-         (print "error query [" query "] preparation"))
-      (let ((result
-                (handler (if (= (sqlite3_step statement) SQLITE_ROW) statement null))))
-         (sqlite3_finalize statement)
-         result)))
-
-(define statement (make-sqlite3_stmt))
-(execute "INSERT INTO test VALUES (1)")
-(execute "INSERT INTO test VALUES (2)")
-(execute "INSERT INTO test VALUES (7)")
-;(print "prepare: "  (sqlite3_prepare_v2 database (c-string "CREATE TABLE test ( id INTEGER )") -1 statement null))
-;(print "step: " (sqlite3_step statement))
-
-;(print "1: " (sqlite3_column_count statement))
-;(print "name: " (sqlite3_column_name statement 1))
-(define query (select "SELECT COUNT(id) FROM test"))
-(print "count(id) = " (sqlite3_column_int query 0))
-(sqlite3_finalize query)
-
-(print "count(id)2 = " (select2 "SELECT COUNT(id) FROM test"
-   (lambda (statement)
-      (if (null? statement)
-         "no result"
-         (sqlite3_column_int statement 0)))))
-
-(print "finalize: " (sqlite3_finalize statement))
-(print "close: "    (sqlite3_close database))
-
-
-;(print "@")
-;(halt 0)
-
-
+(define (make-byte-vector n elem)
+   (list->byte-vector (repeat elem n)))
 
 (define width 1280)
 (define height 720)
@@ -188,6 +138,7 @@
   (define glGetShaderInfoLog (glGetProcAddress void "glGetShaderInfoLog" GLuint GLsizei GLsizei* GLchar*))
   (define glGetUniformLocation (glGetProcAddress GLint "glGetUniformLocation" GLuint GLchar*))
     (define glUniform1i     (glGetProcAddress void "glUniform1i" GLint GLint))
+    (define glUniform1f     (glGetProcAddress void "glUniform1f" GLint GLfloat))
   (define glEnableVertexAttribArray (glGetProcAddress void "glEnableVertexAttribArray" GLuint))
   (define glVertexAttribPointer (glGetProcAddress void "glVertexAttribPointer" GLuint GLint GLenum GLboolean GLsizei void*))
     (define GL_FLOAT #x1406)
@@ -289,7 +240,7 @@
 (print "glHint = "
 (glHint GL_PERSPECTIVE_CORRECTION_HINT GL_NICEST))
 
-;(glClearColor 0 0 1 1)
+(glClearColor 0 0 1 1)
 
 ;(define vertexPositions (list->byte-vector '(
 ;;        (glVertex2i 2 0)
@@ -300,11 +251,28 @@
 ;  00 00 #x00 #x00    0 0 #x00 #x00    0 0 0 0    00 00 #x80 #x3F
 ;)))
 
-(define MSG (make-vector 28 0)) ; sizeof(MSG)=28
+;(define MSG (make-byte-vector 28 0)) ; sizeof(MSG)=28
+(define MSG "1234567890123456789012345678") ; sizeof(MSG)=28
 ;(call/cc (lambda (return)
 (define (cycle)   ;MSG
   (if (= 1 (PeekMessage MSG 0 0 0 PM_REMOVE))
-    (begin  
+    (begin
+      ; тут можно обработать сообщения к окну, если надо.
+      ; Например, такое:
+       (print (ref MSG 0) "." (ref MSG 1) "." (ref MSG 2) "." (ref MSG 3) "-" (ref MSG 4) "." (ref MSG 5) "." (ref MSG 6) "." (ref MSG 7))
+;       (print (+ (ref MSG 4) (* (ref MSG 5) 256)))
+       (let ((message (+ (ref MSG 4) (* (ref MSG 5) 256))))
+         (if (= message WM_LBUTTONDOWN)
+           (print "WM_LBUTTONDOWN")
+         (if (= message WM_CREATE)
+           (print "WM_CREATE")
+         (if (= message WM_SIZE)
+           (print "WM_SIZE")
+         (if (= message WM_WINDOWPOSCHANGED)
+           (print "WM_WINDOWPOSCHANGED"))))))
+;          (let ((w (+ (ref MSG 12) (* (ref MSG 13) 256)))
+;                (h (+ (ref MSG 14) (* (ref MSG 15) 256))))
+;             (print "w: " w ", h: " h))))
       (TranslateMessage MSG)
       (DispatchMessage MSG))
       

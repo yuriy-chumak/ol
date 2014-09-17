@@ -22,7 +22,6 @@
       (owl pinvoke))
   (begin 
 
-(import (owl os))
 (define GL_LIBRARY
    (case *OS*
      (1 "opengl32.dll") ; windows

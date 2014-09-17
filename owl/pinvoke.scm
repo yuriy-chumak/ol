@@ -1,4 +1,30 @@
 ; Platform Invoke library
+
+;;; Copyright (c) 2014, Yuriy Chumak
+;;; All rights reserved.
+;;;
+;;; Redistribution and use in source and binary forms, with or without
+;;; modification, are permitted provided that the following conditions are met:
+;;;
+;;; 1. Redistributions of source code must retain the above copyright
+;;;    notice, this list of conditions and the following disclaimer.
+;;; 2. Redistributions in binary form must reproduce the above copyright
+;;;    notice, this list of conditions and the following disclaimer in the
+;;;    documentation and/or other materials provided with the distribution.
+;;; 3. Use in source and binary forms are not permitted in projects under
+;;;    GNU General Public Licenses and its derivatives.
+;;;
+;;; THIS SOFTWARE IS PROVIDED BY ART OBREZAN ''AS IS'' AND ANY
+;;; EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+;;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+;;; DISCLAIMED. IN NO EVENT SHALL ART OBREZAN BE LIABLE FOR ANY
+;;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+;;; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+;;; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+;;; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+;;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 ;
 ; using example:
 ;(import (owl pinvoke))
@@ -29,6 +55,11 @@
       
       type-handle type-float type-void
       __stdcall __cdecl __fastcall
+      
+      ;*PLATFORM*
+;     *OS_WINDOWS* *OS_LINUX* *OS_ANDROID* *OS_MACOS*
+      *OS* ; todo: решить, что лучше - одна переменная или много
+           ; с одной можно сделать (case *OS* (...))
    )
 
    (import
@@ -88,5 +119,37 @@
 (define type-float  type-rational)
 ;(define type-double 47) ; пока нету, но возможно будет
 (define type-void   48)
+
+;; OS detection
+(define (null? x) (eq? x '()))
+; see also: http://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/predef/reference/boost_os_operating_system_macros.html
+(define *OS_AIX* #f)    ; http://en.wikipedia.org/wiki/AIX_operating_system
+(define *OS_AMIGAOS* #f); http://en.wikipedia.org/wiki/AmigaOS
+(define *OS_ANDROID* #f); http://en.wikipedia.org/wiki/Android_%28operating_system%29
+(define *OS_BEOS* #f)   ; http://en.wikipedia.org/wiki/BeOS
+(define *OS_BSD* #f)    ; http://en.wikipedia.org/wiki/Berkeley_Software_Distribution
+(define *OS_CYGWIN* #f) ; http://en.wikipedia.org/wiki/Cygwin
+(define *OS_HPUX* #f)   ; http://en.wikipedia.org/wiki/HP-UX
+(define *OS_IRIX* #f)   ; http://en.wikipedia.org/wiki/Irix
+(define *OS_LINUX* #f)  ; http://en.wikipedia.org/wiki/Linux
+(define *OS_MACOS* #f)  ; http://en.wikipedia.org/wiki/Mac_OS
+(define *OS_OS400* #f)  ; http://en.wikipedia.org/wiki/IBM_i
+(define *OS_QNX*   #f)  ; http://en.wikipedia.org/wiki/QNX
+(define *OS_SOLARIS* #f); http://en.wikipedia.org/wiki/Solaris_Operating_Environment
+(define *OS_UNIX* #f)   ; http://en.wikipedia.org/wiki/Unix
+(define *OS_OS_SVR4* #f); http://en.wikipedia.org/wiki/UNIX_System_V
+(define *OS_VMS* #f)    ; http://en.wikipedia.org/wiki/Vms
+(define *OS_WINDOWS*      (not (null? (dlopen "kernel32" 0))))   ; http://en.wikipedia.org/wiki/Category:Microsoft_Windows
+(define *OS_BSD_BSDI* #f); http://en.wikipedia.org/wiki/BSD/OS
+(define *OS_BSD_DRAGONFLY* #f); http://en.wikipedia.org/wiki/DragonFly_BSD
+(define *OS_BSD_FREE* #f); http://en.wikipedia.org/wiki/Freebsd
+(define *OS_BSD_NET* #f); http://en.wikipedia.org/wiki/Netbsd
+(define *OS_BSD_OPEN* #f); http://en.wikipedia.org/wiki/Openbsd
+
+(define *OS*
+  (if *OS_WINDOWS* 1
+  (if *OS_LINUX*   2
+  (if *OS_ANDROID* 3
+  (if *OS_MACOS*   4)))))
 
 ))
