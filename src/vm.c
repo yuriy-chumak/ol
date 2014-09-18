@@ -73,7 +73,15 @@
 	typedef unsigned long in_addr_t;
 #	define EWOULDBLOCK WSAEWOULDBLOCK
 #	undef ERROR // due to macro redefinition
-#else
+#endif
+#ifdef __ANDROID__
+#	include <netinet/in.h>
+#	include <sys/socket.h>
+#	include <sys/wait.h>
+#	include <sys/wait.h>
+	typedef unsigned long in_addr_t;
+#endif
+#ifdef __linux__
 #	include <netinet/in.h>
 #	include <sys/socket.h>
 #	include <sys/wait.h>
@@ -1835,7 +1843,10 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							default: fprintf(stderr, "Too match parameters for pinvoke function: %d", count);\
 								break;\
 							}
-
+#ifdef __linux__
+						// чуть-чуть ускоримся для линукса
+						CALL(__cdecl);
+#else
 						switch (convention >> 6) {
 						case 0:
 							CALL(__stdcall);
@@ -1850,6 +1861,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							fprintf(stderr, "Unsupported calling convention %d", convention >> 6);
 							break;
 						}
+#endif
 						return 0;
 					}
 					int from_fix(word* arg) {

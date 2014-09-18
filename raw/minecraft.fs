@@ -1,5 +1,5 @@
 // http://glslsandbox.com/e#15384.0
-uniform int time2;
+uniform float time;
 
 // Created by Reinder Nijhoff 2013
 //
@@ -98,8 +98,6 @@ int getMap( vec3 pos ) {
 
 vec3 renderMinecraft( vec2 uv ) {
 	vec2 resolution = vec2(1280, 720);
-	float time = time2 / 1000.0;
-
 
     float xRot = sin( time*0.5 ) * 0.4 + (3.1415 / 2.);
     float yRot = cos( time*0.5 ) * 0.4;

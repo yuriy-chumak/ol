@@ -4,7 +4,6 @@ precision mediump float;
 #endif
 
 uniform float time;
-uniform vec2 mouse;
 uniform vec2 resolution;
 
 // "Planet K" by Kali
@@ -197,7 +196,7 @@ vec3 march(in vec4 sph, in vec3 from, in vec3 dir)
 // Main code
 void main(void)
 {
-	vec2 mouse=mouse.xy/resolution.xy-vec2(.5);
+	vec2 mouse=vec2(0.0, 0.0); //mouse.xy/resolution.xy-vec2(.5);
 	mat3 camrot1;
 	mat3 camrot2;
 	float ang=time*.12;

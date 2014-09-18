@@ -9,7 +9,8 @@
   
   (import
     (owl defmac) (owl io)
-    (owl pinvoke))
+    (owl pinvoke)
+    (OpenGL version-1-1))
   (begin
 
 (define    GL_VERSION_1_2    1)

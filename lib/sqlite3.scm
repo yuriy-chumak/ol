@@ -110,21 +110,21 @@
 (define SQLITE-MISUSE 21)
 
 
-(define sqlite3-open  (dlsym % type-fix+ "sqlite3_open"  type-string sqlite3**))
-(define sqlite3-close (dlsym % type-fix+ "sqlite3_close" sqlite3*))
+(define sqlite3-open  (dlsym % (__cdecl type-fix+) "sqlite3_open"  type-string sqlite3**))
+(define sqlite3-close (dlsym % (__cdecl type-fix+) "sqlite3_close" sqlite3*))
 
-(define sqlite3-prepare-v2 (dlsym % type-fix+ "sqlite3_prepare_v2" sqlite3* type-string type-fix+ sqlite3_stmt** char**)) ; проблема с крайним параметром (char**) - надо этот результат сконвертировать снова в строку, новую
-(define sqlite3-sql      (dlsym % type-string "sqlite3_sql"      sqlite3_stmt*))
-(define sqlite3-step       (dlsym % type-fix+ "sqlite3_step"     sqlite3_stmt*))
-(define sqlite3-reset      (dlsym % type-fix+ "sqlite3_reset"    sqlite3_stmt*))
-(define sqlite3-finalize   (dlsym % type-fix+ "sqlite3_finalize" sqlite3_stmt*))
+(define sqlite3-prepare-v2 (dlsym % (__cdecl type-fix+) "sqlite3_prepare_v2" sqlite3* type-string type-fix+ sqlite3_stmt** char**)) ; проблема с крайним параметром (char**) - надо этот результат сконвертировать снова в строку, новую
+(define sqlite3-sql      (dlsym % (__cdecl type-string) "sqlite3_sql"        sqlite3_stmt*))
+(define sqlite3-step       (dlsym % (__cdecl type-fix+) "sqlite3_step"       sqlite3_stmt*))
+(define sqlite3-reset      (dlsym % (__cdecl type-fix+) "sqlite3_reset"      sqlite3_stmt*))
+(define sqlite3-finalize   (dlsym % (__cdecl type-fix+) "sqlite3_finalize"   sqlite3_stmt*))
 
-(define sqlite3-column-count (dlsym % type-fix+ "sqlite3_column_count" sqlite3_stmt*))
-(define sqlite3-column-name  (dlsym % type-string "sqlite3_column_name" sqlite3_stmt* type-fix+))
-(define sqlite3-column-int   (dlsym % type-int+ "sqlite3_column_int" sqlite3_stmt* type-fix+))
-(define sqlite3-column-bytes (dlsym % type-int+ "sqlite3_column_bytes" sqlite3_stmt* type-fix+))
+(define sqlite3-column-count (dlsym % (__cdecl type-fix+) "sqlite3_column_count" sqlite3_stmt*))
+(define sqlite3-column-name  (dlsym % (__cdecl type-string) "sqlite3_column_name" sqlite3_stmt* type-fix+))
+(define sqlite3-column-int   (dlsym % (__cdecl type-int+) "sqlite3_column_int" sqlite3_stmt* type-fix+))
+(define sqlite3-column-bytes (dlsym % (__cdecl type-int+) "sqlite3_column_bytes" sqlite3_stmt* type-fix+))
 ;sqlite3_column_double
-(define sqlite3-column-text  (dlsym % type-string "sqlite3_column_text" sqlite3_stmt* type-fix+))
-;(define sqlite3_column_blob  (dlsym % type-string "sqlite3_column_name" sqlite3_stmt* type-fix+))
+(define sqlite3-column-text  (dlsym % (__cdecl type-string) "sqlite3_column_text" sqlite3_stmt* type-fix+))
+;(define sqlite3_column_blob  (dlsym % (__cdecl type-string) "sqlite3_column_blob" sqlite3_stmt* type-fix+))
 
 ))

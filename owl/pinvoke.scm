@@ -54,6 +54,10 @@
       dlsym
       
       type-handle type-float type-void
+      
+      ; по-поводу calling convention:
+      ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
+      ;  пока что пусть остается так.
       __stdcall __cdecl __fastcall
       
       ;*PLATFORM*

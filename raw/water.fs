@@ -1,12 +1,11 @@
 #version 120 // OpenGL 2.1
 // http://glslsandbox.com/e#19420.0
-uniform int time2;
+uniform float time;
 
 #define MAX_ITER 8
 void main(void) {
 	vec2 viewport = vec2(640.0, 480.0);
 	vec2 position = gl_FragCoord.xy / viewport.xy;
-	float time = time2 / 1000.0;
 
 	vec2 sp = position;
 	vec2 p = sp*5.0 - vec2(10.0);

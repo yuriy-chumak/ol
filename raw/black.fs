@@ -1,4 +1,4 @@
-uniform int time2;
+uniform float time;
 
 void main(void)
 {

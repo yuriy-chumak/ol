@@ -139,6 +139,7 @@
   (define glGetUniformLocation (glGetProcAddress GLint "glGetUniformLocation" GLuint GLchar*))
     (define glUniform1i     (glGetProcAddress void "glUniform1i" GLint GLint))
     (define glUniform1f     (glGetProcAddress void "glUniform1f" GLint GLfloat))
+    (define glUniform2f     (glGetProcAddress void "glUniform2f" GLint GLfloat GLfloat))
   (define glEnableVertexAttribArray (glGetProcAddress void "glEnableVertexAttribArray" GLuint))
   (define glVertexAttribPointer (glGetProcAddress void "glVertexAttribPointer" GLuint GLint GLenum GLboolean GLsizei void*))
     (define GL_FLOAT #x1406)
@@ -187,11 +188,12 @@
 ;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
 (glShaderSource fs 1 (tuple (c-string (file->string
-  (case 1
+  (case 6
     (2 "raw/geometry.fs")
     (3 "raw/water.fs")
     (4 "raw/18850")
     (5 "raw/minecraft.fs")
+    (6 "raw/moon.fs")
     (0 "raw/black.fs")
     (1 "raw/itsfullofstars.fs"))))) null)
 (glCompileShader fs)
@@ -214,7 +216,8 @@
 (glDetachShader po fs)
 (glDetachShader po vs)
 
-  (define time (glGetUniformLocation po (c-string "time2")))
+  (define time (glGetUniformLocation po (c-string "time")))
+  (define resolution (glGetUniformLocation po (c-string "resolution")))
 
 ;(print "glGetUniformLocation: " (glGetUniformLocation po "color"))
 ;(sys-prim 32 (cdr function) (car function) args))))
@@ -259,20 +262,19 @@
     (begin
       ; тут можно обработать сообщения к окну, если надо.
       ; Например, такое:
-       (print (ref MSG 0) "." (ref MSG 1) "." (ref MSG 2) "." (ref MSG 3) "-" (ref MSG 4) "." (ref MSG 5) "." (ref MSG 6) "." (ref MSG 7))
-;       (print (+ (ref MSG 4) (* (ref MSG 5) 256)))
-       (let ((message (+ (ref MSG 4) (* (ref MSG 5) 256))))
-         (if (= message WM_LBUTTONDOWN)
-           (print "WM_LBUTTONDOWN")
-         (if (= message WM_CREATE)
-           (print "WM_CREATE")
-         (if (= message WM_SIZE)
-           (print "WM_SIZE")
-         (if (= message WM_WINDOWPOSCHANGED)
-           (print "WM_WINDOWPOSCHANGED"))))))
-;          (let ((w (+ (ref MSG 12) (* (ref MSG 13) 256)))
-;                (h (+ (ref MSG 14) (* (ref MSG 15) 256))))
-;             (print "w: " w ", h: " h))))
+;       (print (ref MSG 0) "." (ref MSG 1) "." (ref MSG 2) "." (ref MSG 3) "-" (ref MSG 4) "." (ref MSG 5) "." (ref MSG 6) "." (ref MSG 7))
+;       (let ((message (+ (ref MSG 4) (* (ref MSG 5) 256))))
+;         (if (= message WM_LBUTTONDOWN)
+;           (print "WM_LBUTTONDOWN")
+;         (if (= message WM_CREATE)
+;           (print "WM_CREATE")
+;         (if (= message WM_SIZE)
+;           (print "WM_SIZE")
+;         (if (= message WM_WINDOWPOSCHANGED)
+;           (print "WM_WINDOWPOSCHANGED"))))))
+;;          (let ((w (+ (ref MSG 12) (* (ref MSG 13) 256)))
+;;                (h (+ (ref MSG 14) (* (ref MSG 15) 256))))
+;;             (print "w: " w ", h: " h))))
       (TranslateMessage MSG)
       (DispatchMessage MSG))
       
@@ -282,7 +284,9 @@
        (glUseProgram po)
 
       (let* ((ss ms (clock)))
-        (glUniform1i time (+ ms (* 1000 (mod ss 3600))))) ; раз в час будем сбрасывать период
+        (glUniform1f time (+ (/ ms 1000) (mod ss 3600)))) ; раз в час будем сбрасывать период
+      (if (> resolution 0)
+        (glUniform2f resolution width height))
       
       (glBegin GL_TRIANGLE_STRIP)
 ;        (glVertex3i 0 0 0)

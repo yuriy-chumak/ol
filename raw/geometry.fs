@@ -1,6 +1,6 @@
 #version 120 // OpenGL 2.1
 // http://glslsandbox.com/e#19291.0
-uniform int time2;
+uniform float time;
 	
 const int MAXITER = 80;
 vec3 field(vec3 p) {
@@ -20,7 +20,6 @@ vec3 field(vec3 p) {
 void main(void) {
 	vec2 viewport = vec2(1280, 720);
 	vec2 position = gl_FragCoord.xy / viewport.xy;
-	float time = time2 / 1000.0;
 
 	vec3 dir = normalize(vec3((gl_FragCoord.xy - viewport * 0.5) / viewport.x, 1.0));
 	vec3 pos = vec3(0.5, 0.0, time);

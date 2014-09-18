@@ -1,6 +1,6 @@
 #version 120 // OpenGL 2.1
 //	http://glslsandbox.com/e#19102.0
-uniform int time2;
+uniform float time;
 	
 #define iterations 14
 #define formuparam 0.530
@@ -19,7 +19,6 @@ uniform int time2;
 
 void main(void) {
 	vec2 viewport = vec2(1280, 720);
-	float time = time2 / 10000000.0;
 	
 	//get coords and direction
 	vec2 uv=gl_FragCoord.xy / viewport.xy - .5;
@@ -36,7 +35,7 @@ void main(void) {
 	vec3 from=vec3(-0.05, 0.05, 0);
 	//from.x-=time; <- movement
 	
-	from.z = time;
+	from.z = time / 20000.0;
 	
 	from.x-=0.2;//mouse.x;
 	from.y-=0.7;//mouse.y;
