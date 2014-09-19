@@ -9,7 +9,7 @@
 //      http://habrahabr.ru/post/211100/
 // Книга http://ilammy.github.io/lisp/
 // https://www.cs.utah.edu/flux/oskit/html/oskit-wwwch14.html
-#include "vm.h"
+#include "olvm.h"
 
 // todo: проверить, что все работает в 64-битном коде
 // todo: переименовать tuple в array. array же неизменяемый, все равно.
@@ -43,7 +43,7 @@
 // thread local storage modifier for virtual machine private variables -
 // виртуальная машина у нас работает в отдельном потоке, соответственно ее
 // локальные переменные можно держать в TLS, а не в какой-то VM структуре
-#ifndef thread_local
+#ifndef _thread_local
 # if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
 #  define thread_local _Thread_local
 # elif defined _WIN32 && ( \
@@ -51,12 +51,12 @@
        defined __ICL || \
        defined __DMC__ || \
        defined __BORLANDC__ )
-#  define thread_local __declspec(thread)
+#  define _thread_local __declspec(thread)
 /* note that ICC (linux) and Clang are covered by __GNUC__ */
 # elif defined __GNUC__ || \
        defined __SUNPRO_C || \
        defined __xlC__
-#  define thread_local __thread
+#  define _thread_local __thread
 # else
 #  error "Cannot define thread_local"
 # endif
@@ -95,17 +95,38 @@
 //
 #ifdef _WIN32
 // todo: change to the http://mirrors.kernel.org/sourceware/pthreads-win32/
+#define PTW32_VERSION 2,9,1,0
+//#define ESRCH 3
 typedef HANDLE pthread_t;
 typedef struct pthread_attr_t {} pthread_attr_t;
-static int pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
-                          void *(*function)(void *), void * argument)
+static int
+pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
+               void *(*function)(void *), void * argument)
 {
-	*thread = CreateThread(NULL, 0, function, argument, 0, NULL);
+	*thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)function, argument, 0, NULL);
+	return (*thread != NULL);
 }
 
-static int pthread_yield(void)
+static int
+pthread_yield(void)
 {
 	Sleep(0);
+	return 0;
+}
+
+static int
+pthread_join(pthread_t thread, void **value_ptr)
+{
+	return WaitForSingleObject(thread, INFINITE);
+}
+
+static int
+pthread_kill(pthread_t thread, int sig)
+{
+	assert(sig == 0);
+	if (sig == 0)
+		return (WaitForSingleObject(thread, 0) == WAIT_OBJECT_0) ? ESRCH : 0;
+//	TerminateThread(thread, sig);
 	return 0;
 }
 /*static unsigned sleep(unsigned seconds)
@@ -126,62 +147,74 @@ static int pthread_yield(void)
 #endif
 
 
+#ifdef _WIN32
+#	define EXIT(n) ExitThread(n);
+#endif
 
 #ifdef __gnu_linux__
-#ifndef NO_SECCOMP
-#include <sys/prctl.h>
-#include <sys/syscall.h>
-/* normal exit() segfaults in seccomp */
-#define EXIT(n) syscall(__NR_exit, n); exit(n)
-#else
-#define EXIT(n) exit(n)
-#endif
-#else
-#define EXIT(n) exit(n)
+#	ifndef NO_SECCOMP
+#		include <sys/prctl.h>
+#		include <sys/syscall.h>
+		/* normal exit() segfaults in seccomp */
+#		define EXIT(n) syscall(__NR_exit, n); exit(n)
+#	else
+#		define EXIT(n) exit(n)
+#	endif
 #endif
 
 #define STATIC static __inline__
 
 // -=( fifo )=------------------------------------------------
 // кольцевой текстовый буфер для общения с виртуальной машиной
-#define FIFOLENGTH (1 << 14) // 4*4096 for now
+//#define FIFOLENGTH (1 << 14) // 4*4096 for now // was << 14
+#define FIFOLENGTH (500000) // временное решение, пока не придумаю как избавится от дедлоков на больших файлах
+                            //  в смысле, которые больше размера буфера
 struct fifo
 {
+	volatile char eof;
+	volatile
 	unsigned int putp, getp;
 	char buffer[FIFOLENGTH];
-}  static thread_local
-   fi = {0, 0}, fo = {0, 0}; // input/output
-   typedef struct fifo fifo;
+}
+static _thread_local *fi, *fo;
+//   fi = {0, 0}, fo = {0, 0}; // input/output
+typedef struct fifo fifo;
+
+// несколько основных ассертов:
+// assert (f->putp >= f->getp)
+
+static volatile __inline__
+char fifo_empty(struct fifo* f)
+{
+	return ((f->putp - f->getp) == 0); //% FIFOLENGTH == 0);
+}
+static volatile __inline__
+char fifo_full(struct fifo* f)
+{
+	return ((f->putp - f->getp) == FIFOLENGTH); //% FIFOLENGTH == 1);
+}
 
 static __inline__
 char fifo_put(struct fifo* f, char c)
 {
+	assert (! fifo_full(f));
 	f->buffer[f->putp++ % FIFOLENGTH] = c;
 	return c;
 }
 static __inline__
-char fifo_get(struct fifo* f) // use only after fido_empty
+char fifo_get(struct fifo* f)
 {
+	assert (! fifo_empty(f));
 	char
 	c = f->buffer[f->getp++ % FIFOLENGTH];
 	return c;
 }
 
-static __inline__
-char fifo_empty(struct fifo* f)
-{
-	return ((f->getp - f->putp) % FIFOLENGTH == 0);
-}
-static __inline__
-char fifo_full(struct fifo* f)
-{
-	return ((f->getp - f->putp) % FIFOLENGTH == 1);
-}
-static __inline__
+/*static __inline__ // must be called for VALID fifo
 void fifo_clear(struct fifo* f)
 {
 	f->getp = f->putp = 0;
-}
+}*/
 
 // utility fifo functions
 static
@@ -198,17 +231,28 @@ int fifo_puts(struct fifo* f, char *message, int n)
 static
 int fifo_gets(struct fifo* f, char *message, int n)
 {
+	assert (n > 0);
 	char *ptr = message;
 	while (--n) {
+		char c;
 		while (fifo_empty(f))
 			pthread_yield( );
-		*ptr++ = fifo_get(f);
+		c = fifo_get(f);
+		if (c == EOF) {
+			f->eof = 1;
+			break;
+		}
 
-		if (ptr[-1] == '\n')
+		if ((*ptr++ = c) == '\n')
 			break;
 	}
-	*--ptr = '\0';
+	*ptr = '\0'; // удалим крайний символ
 	return ptr - message;
+}
+static
+int fifo_feof(struct fifo* f)
+{
+	return f->eof;
 }
 
 
@@ -273,7 +317,8 @@ void *dlsym  (void *handle, const char *name)
 typedef struct OL
 {
 	pthread_t tid;
-	fifo *fi, *fo;
+	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
+	struct fifo o;
 } OL;
 
 typedef uintptr_t word;
@@ -386,13 +431,11 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define MINGEN                      1024*32  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
-#define _thread_local
-
 /*** Globals and Prototypes ***/
 // память виртуальной машины локальна по отношению к ее потоку. пусть пока побудет так - не буду
 //  ее тащить в структуру VM
 
-static thread_local word max_heap_mb; /* max heap size in MB */
+static _thread_local word max_heap_mb; /* max heap size in MB */
 
 static int breaked;      /* set in signal handler, passed over to owl in thread switch */
 
@@ -430,7 +473,7 @@ struct heap
 	word *genstart;  // was: genstart
 //	word *top; // fp
 }
-static thread_local heap; // память машины, управляемая сборщиком мусора
+static _thread_local heap; // память машины, управляемая сборщиком мусора
 
 #define cont(n)                     V((word)n & (~1)) // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
 #define flagged(n)                  (n & 1)           // is flagged ?
@@ -576,7 +619,7 @@ static wdiff adjust_heap(int cells)
 
 
 // allocation pointer (top of allocated heap)
-static thread_local word *fp;
+static _thread_local word *fp;
 static __inline__ word* new (size_t size)
 {
 	word* object = fp;
@@ -856,7 +899,7 @@ static word prim_sys(int op, word a, word b, word c) {
          if (len > size) return IFALSE;
          // STDOUT ?
          if (fd == 1) {
-        	 wrote = fifo_puts(&fo, ((char *)buff)+W, len);
+        	 wrote = fifo_puts(fo, ((char *)buff)+W, len);
          }
          else
         	 wrote = write(fd, ((char *)buff)+W, len);
@@ -934,14 +977,14 @@ static word prim_sys(int op, word a, word b, word c) {
          n = read(fd, ((char *) res) + W, max);
 #else
 			if (fd == 0) { // windows stdin in special apparently
-				if (fifo_empty(&fi)) {
+				if (fifo_empty(fi)) {
 					n = -1;
 					errno = EAGAIN;
 				}
 				else {
 					char *d = ((char*) res) + W;
-					while (!fifo_empty(&fi))
-						*d++ = fifo_get(&fi);
+					while (!fifo_empty(fi))
+						*d++ = fifo_get(fi);
 					n = d - (((char*) res) + W);
 				}
 
@@ -1212,7 +1255,7 @@ struct args
 	word *fp; // allocation pointer (top of allocated heap)
 
 	void *userdata;
-	char ready;
+	volatile char ready;
 };
 // args + 0 = (list "arg0" "arg 1") or ("arg0 arg1" . NIL) ?
 // args + 3 = objects list
@@ -1233,9 +1276,8 @@ runtime(void *args) // heap top
 	// allocation pointer (top of allocated heap)
 	fp       = ((struct args*)args)->fp;
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
-	((struct args*)args)->vm->fi = &fi;
-	((struct args*)args)->vm->fo = &fo;
-	  fifo_clear(&fi), fifo_clear(&fo); // todo: проверить, нужен ли этот вызов
+	fi = &((struct args*)args)->vm->o;
+	fo = &((struct args*)args)->vm->i;
 
 	// все, машина инициализирована, отсигналимся
 	((struct args*)args)->ready = 1;
@@ -1694,7 +1736,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 			  NEXT(5); }
 
 			// этот case должен остаться тут - как последний из кейсов
-			//  todo: переименовать в компиляторе sys-prim на syscall
+			//  todo: переименовать в компиляторе sys-prim на syscall (?)
 			// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
 			case SYSPRIM: { /* sys-prim op arg1 arg2 arg3 r1 */
 				// todo: make prim_sys inlined here!
@@ -1709,11 +1751,11 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 
 				case 6: // todo: переделать на другой номер
 					free(heap.begin); // освободим занятую память
-					#if WIN32
-						ExitThread(fixval(a));
-					#else
-						EXIT(fixval(a)); /* stop the press */
-					#endif
+					// подождем, пока освободится место в консоли
+					while (fifo_full(fo)) pthread_yield();
+					fifo_put(fo, EOF); // и положим туда EOF
+
+					EXIT(fixval(a)); // все, убьем поток
 
 				case 7: /* set memory limit (in mb) */ // todo: переделать на другой номер
 					 max_heap_mb = fixval(a);
@@ -2453,10 +2495,15 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 //  this is NOT thread safe function!
 OL* vm_start(unsigned char* language)
 {
+	// создадим виртуальную машину:
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
-	// выделим память машине
+	// подготовим очереди ввода/вывода:
+	//fifo_clear(&handle->i);
+	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху
+
+	// выделим память машине:
 	max_heap_mb = (W == 4) ? 4096 : 65535; // can be set at runtime
 	heap.begin = heap.genstart = (word*) malloc((INITCELLS + FMAX + MEMPAD) * sizeof(word)); // at least one argument string always fits
 	if (!heap.begin) {
@@ -2560,21 +2607,32 @@ void eval2(char* message)
 
 int vm_puts(OL* vm, char *message, int n)
 {
-	return fifo_puts(vm->fi, message, n);
+	if (!vm_alive(vm))
+		return 0; // если машина уже умерла - нет смысла ей еще что-то передавать
+	return fifo_puts(&vm->o, message, n);
 }
 int vm_gets(OL* vm, char *message, int n)
 {
-	return fifo_gets(vm->fo, message, n);
+	if (!vm_alive(vm) && fifo_empty(&vm->i)) // если там уже ничего нет, иначе заберем
+		return *message = 0;
+	return fifo_gets(&vm->i, message, n);
+}
+int vm_feof(OL* vm)
+{
+	return fifo_feof(&vm->i);
 }
 
 int vm_stop(OL* vm)
 {
-	vm_puts(vm, "(halt 0)\n", 9);
+	// todo: make real vm stop
+//	vm_puts(vm, "(sys-prim 6 0 0 0)", 18);
+	vm_puts(vm, "(halt 0)#", 8);
+	pthread_join(vm->tid, NULL);
 	// do not wait to the end (?)
-#ifdef WIN32
-	WaitForSingleObject(vm->tid, INFINITE);
-#else
-#endif
-
 	return 0;
+}
+
+int vm_alive(OL* vm)
+{
+	return (pthread_kill(vm->tid, 0) != ESRCH);
 }

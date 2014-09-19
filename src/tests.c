@@ -1,11 +1,11 @@
 /*
- * tests.c
- *
  *  Created on: 27 авг. 2014 г.
- *      Author: Юра
+ *      Author: Yuriy Chumak
+ *
+ *  Этот проект запускает на проверку тесты, список можно посмотреть ниже.
  */
 
-#include "vm.h"
+#include "olvm.h"
 
 #include <stdio.h>
 #include <malloc.h>
@@ -29,7 +29,7 @@
 /***************************************************
  * TESTS
  **************************************************/
-
+static
 unsigned char *readfile(const char *filename)
 {
 	struct stat st;
@@ -49,8 +49,8 @@ unsigned char *readfile(const char *filename)
 	return (unsigned char*)ptr;
 }
 
-
-int test(OL* vm, char* test, char* ok)
+static
+int test(OL* vm, char* test, FILE* o)
 {
 	FILE *i = fopen(test, "r");
 	fseek(i, 0, SEEK_END);
@@ -61,26 +61,29 @@ int test(OL* vm, char* test, char* ok)
 	fclose(i);
 
 	vm_puts(vm, source, len);
+	vm_stop(vm); // automatically stop after evaluation
 	free(source);
 
-	FILE *o = fopen(ok, "r");
-	while (1) {
-		char result[1024];
+	do {
+//		char request[1024];
+		char result[1024] = { '\n', '\0' };
 		char response[1024];
+
+		vm_gets(vm, response, sizeof(response)-1); // именно в такой последовательности
 		if (0 == fgets(result, sizeof(result), o))
-			break;
-		vm_gets(vm, response, sizeof(response) - 1);
+			if (*response != 0)
+				return 0;
 
 		strcat(response, "\n");
 		if (strcmp(result, response) != 0) {
-			fclose(o);
 
 			printf("Expected [\n%s] but got [\n%s]\n", result, response);
 			return 0;
 		}
 	}
-	fclose(o);
-	return 1;
+	while (!vm_feof(vm) && !feof(o)); // еще не все забрали
+
+	return vm_feof(vm); // если в буфере ничего лишнего не осталось
 }
 
 // main
@@ -140,42 +143,12 @@ int main(int nargs, char **argv)
 //		while (*language++ != '\n');
 //	};
 
-//	/*
-	{
-		OL* ol = vm_start(language);
-
-		FILE *f = fopen("tests/opengl.scm", "r");
-		fseek(f, 0, SEEK_END);
-		int len = (int)ftell(f);
-		fseek(f, 0, SEEK_SET);
-		char* source = (char*)malloc(len);
-		fread(source, 1, len, f);
-		fclose(f);
-		vm_puts(ol, source, len);
-		free(source);
-
-		while (1) {
-			char response[1024];
-			vm_gets(ol, response, sizeof(response));
-			printf(response);
-			printf("\n");
-			if (*response == '@')
-				break;
-		}
-
-		vm_stop(ol);
-	}
-	return 0;//*/
-
-//	free((void *) language);
-
-// временно добавим себе сюда запуск тестов
 	char *testfiles[] = {
 //			"tests/dlopen.scm", (все работает, просто дразнит выскакивающее окошко)
 //			"tests/opengl.scm",
 			"tests/apply.scm",
 			"tests/banana.scm",
-			"tests/bingo-rand.scm",
+			"tests/bingo-rand.scm", // failed, no "i has all" output
 			"tests/bisect-rand.scm",
 			"tests/callcc.scm",
 			"tests/case-lambda.scm",
@@ -198,7 +171,7 @@ int main(int nargs, char **argv)
 			"tests/library.scm",
 			"tests/macro-capture.scm",
 			"tests/macro-lambda.scm",
-			"tests/mail-async-rand.scm",
+			"tests/mail-async-rand.scm", // failed, no "ok 300" message
 			"tests/mail-order.scm",
 			"tests/math-rand.scm",
 			"tests/par-nested.scm",
@@ -227,32 +200,35 @@ int main(int nargs, char **argv)
 			"tests/vector-rand.scm",
 			"tests/numbers.scm",
 			0};
-	int i = 0;
+	int i = 0, result = 1;
 	char *filename;
-	while (filename = testfiles[i++]) {
+	while ((filename = testfiles[i++]) != 0) {
 		printf("Testing %s... ", filename);
 
-		char ok[128] = {0};
-		strcpy(ok, filename);
-		strcat(ok, ".ok");
+		char okname[128] = {0};
+		strcpy(okname, filename);
+		strcat(okname, ".ok");
+		FILE* ok = fopen(okname, "r");
 
 		OL *lisp = vm_start(language);
 		if (test(lisp, filename, ok))
 			printf("ok.");
 		else {
 			printf("error!");
-			vm_stop(lisp);
-			break;
+			result = 0;
 		}
 		vm_stop(lisp);
+		free(lisp);
+		fclose(ok);
+
 		printf("\n");
 	}
 	free(language);
 
-//	char response[1024];
-//	eval("(write (fold + 0 (iota 1 2 100)))(print)", response, sizeof(response));
-//	printf("[%s]\n", response);
-//	stop();
+	if (result)
+		printf("\nTests passed.\n");
+	else
+		printf("\nTests failed.\n");
 
 #ifdef WI32
 	WSACleanup();

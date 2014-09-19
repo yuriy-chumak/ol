@@ -932,7 +932,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
 (print "Code loaded at " (- (time-ms) build-start) "ms.")
 
 ; entry point of ol.scm
-(λ (args)
+((λ (args)
    (process-arguments (cdr args) command-line-rules "you lose"
       (λ (opts extra)
          (cond
@@ -951,3 +951,4 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                      heap-entry))
                (print "Output written at " (- (time-ms) build-start) "ms.")
                0)))))
+ '("ol.scm" "-s" "none" "-o" "fasl/bootp.fasl"))

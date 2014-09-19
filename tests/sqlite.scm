@@ -58,5 +58,3 @@
 (print "finalize: " (sqlite3-finalize statement))
 (print "close: "    (sqlite3-close database))
 
-
-(print "@")

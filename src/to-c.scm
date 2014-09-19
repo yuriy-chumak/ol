@@ -1,0 +1,8 @@
+(display "char *language = \"")
+(for-each (lambda (x)
+             (display "\\x")
+             (display (string (ref "0123456789abcdef" (div x 16))))
+             (display (string (ref "0123456789abcdef" (mod x 16)))))
+          (file->list "fasl/boot.fasl"))
+(display "\";")
+(halt 0)
