@@ -4,7 +4,32 @@
 (define-library (OpenGL version-1-1)
   (export
     GL_VERSION_1_1
-
+    
+    glLoadIdentity ; void
+    glMatrixMode ; GLenum mode
+       GL_PROJECTION
+       GL_MODELVIEW
+       GL_TEXTURE
+    glBegin
+       GL_POINTS
+       GL_LINES
+       GL_LINE_LOOP
+       GL_LINE_STRIP
+       GL_TRIANGLES
+       GL_TRIANGLE_STRIP
+       GL_TRIANGLE_FAN
+       GL_QUADS
+       GL_QUAD_STRIP
+       GL_POLYGON
+    glEnd
+    glShadeModel ; GLenum model
+       GL_FLAT
+       GL_SMOOTH
+    glVertex2f
+    glVertex2i
+    glVertex3f
+    glVertex3i
+    
     ; https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml
     glViewport ; GLint x, GLint y, GLsizei width, GLsizei height
   )
@@ -26,12 +51,30 @@
 ;typedef float GLclampf
 ;typedef double GLclampd
 
+;BeginMode
+(define GL_POINTS                         #x0000)
+(define GL_LINES                          #x0001)
+(define GL_LINE_LOOP                      #x0002)
+(define GL_LINE_STRIP                     #x0003)
+(define GL_TRIANGLES                      #x0004)
+(define GL_TRIANGLE_STRIP                 #x0005)
+(define GL_TRIANGLE_FAN                   #x0006)
+(define GL_QUADS                          #x0007)
+(define GL_QUAD_STRIP                     #x0008)
+(define GL_POLYGON                        #x0009)
+;MatrixMode
+(define GL_PROJECTION #x1701)
+(define GL_MODELVIEW  #x1700)
+(define GL_TEXTURE    #x1702)
+;ShadingModel
+(define GL_FLAT       #x1D00)
+(define GL_SMOOTH     #x1D01)
 
 ;WINGDIAPI void APIENTRY glAccum (GLenum op, GLfloat value);
 ;WINGDIAPI void APIENTRY glAlphaFunc (GLenum func, GLclampf ref);
 ;WINGDIAPI GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
 ;WINGDIAPI void APIENTRY glArrayElement (GLint i);
-;WINGDIAPI void APIENTRY glBegin (GLenum mode);
+(define glBegin (dlsym % GLvoid "glBegin" GLenum))
 ;WINGDIAPI void APIENTRY glBindTexture (GLenum target, GLuint texture);
 ;WINGDIAPI void APIENTRY glBitmap (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
 ;WINGDIAPI void APIENTRY glCallList (GLuint list);
@@ -88,7 +131,7 @@
 ;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag);
 ;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
-;WINGDIAPI void APIENTRY glEnd (void);
+(define glEnd (dlsym % GLvoid "glEnd"))
 ;WINGDIAPI void APIENTRY glEndList (void);
 ;WINGDIAPI void APIENTRY glEvalCoord1d (GLdouble u);
 ;WINGDIAPI void APIENTRY glEvalCoord1dv (const GLdouble *u);
@@ -154,7 +197,7 @@
 ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern);
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
-;WINGDIAPI void APIENTRY glLoadIdentity (void);
+(define glLoadIdentity (dlsym % GLvoid "glLoadIdentity"))
 ;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
 ;WINGDIAPI void APIENTRY glLoadMatrixf (const GLfloat *m);
 ;WINGDIAPI void APIENTRY glLoadName (GLuint name);
@@ -170,7 +213,7 @@
 ;WINGDIAPI void APIENTRY glMaterialfv (GLenum face, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params);
-;WINGDIAPI void APIENTRY glMatrixMode (GLenum mode);
+(define glMatrixMode (dlsym % GLvoid "glMatrixMode" GLenum))
 ;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
 ;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
 ;WINGDIAPI void APIENTRY glNewList (GLuint list, GLenum mode);
@@ -242,7 +285,7 @@
 ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
 ;WINGDIAPI void APIENTRY glScalef (GLfloat x, GLfloat y, GLfloat z);
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
-;WINGDIAPI void APIENTRY glShadeModel (GLenum mode);
+(define glShadeModel (dlsym % GLvoid "glShadeModel" GLenum))
 ;WINGDIAPI void APIENTRY glTexCoord1d (GLdouble s);
 ;WINGDIAPI void APIENTRY glTexCoord1dv (const GLdouble *v);
 ;WINGDIAPI void APIENTRY glTexCoord1f (GLfloat s);
@@ -292,17 +335,17 @@
 ;WINGDIAPI void APIENTRY glTranslatef (GLfloat x, GLfloat y, GLfloat z);
 ;WINGDIAPI void APIENTRY glVertex2d (GLdouble x, GLdouble y);
 ;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glVertex2f (GLfloat x, GLfloat y);
+(define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex2fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glVertex2i (GLint x, GLint y);
+(define glVertex2i (dlsym % GLvoid "glVertex2i" GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
 ;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v);
 ;WINGDIAPI void APIENTRY glVertex3d (GLdouble x, GLdouble y, GLdouble z);
 ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glVertex3f (GLfloat x, GLfloat y, GLfloat z);
+(define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glVertex3i (GLint x, GLint y, GLint z);
+(define glVertex3i (dlsym % GLvoid "glVertex3i" GLint GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex3s (GLshort x, GLshort y, GLshort z);
 ;WINGDIAPI void APIENTRY glVertex3sv (const GLshort *v);

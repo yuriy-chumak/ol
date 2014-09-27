@@ -38,7 +38,6 @@
 (print "wglMakeCurrent = "
 (wglMakeCurrent hDC hRC))
 
-(print "hDC = " hDC)
 (print "OpenGL version: " (glGetString GL_VERSION))
 (print "OpenGL vendor: " (glGetString GL_VENDOR)) 
 (print "OpenGL renderer: " (glGetString GL_RENDERER))
@@ -68,10 +67,6 @@
 
 (define opengl32 (dlopen "opengl32" 0))
   
-  (define glClear           (dlsym opengl32 GLvoid "glClear" GLbitfield))
-    (define GL_COLOR_BUFFER_BIT #x00004000)
-    (define GL_DEPTH_BUFFER_BIT #x00000100)
-  (define glLoadIdentity    (dlsym opengl32 GLvoid "glLoadIdentity"))
   (define glMatrixMode      (dlsym opengl32 GLvoid "glMatrixMode" GLenum))
     (define GL_PROJECTION #x1701)
     (define GL_MODELVIEW  #x1700)

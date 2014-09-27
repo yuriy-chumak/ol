@@ -1,4 +1,6 @@
 ;;; SQLite3 interface for OL
+;;; https://github.com/yuriy-chumak/OL
+;;; http://www.sqlite.org
 
 ;;; Copyright (c) 2014, Yuriy Chumak
 ;;; All rights reserved.

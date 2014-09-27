@@ -4,20 +4,22 @@
 (define-library (OpenGL version-1-0)
   (export
     GL_VERSION_1_0
-    GL_LIBRARY
+    GL_LIBRARY  ; internal variable
 
     glCullFace  ; GLenum mode
-      ;GL_FRONT ; mode
+      ;GL_FRONT ;mode
       ;GL_BACK
       ;GL_FRONT_AND_BACK
+
     glFrontFace ; GLenum direction
        GL_CW ; direction
        GL_CCW
+
     glHint      ; GLenum target, GLenum mode
        GL_DONT_CARE ; mode
        GL_FASTEST
        GL_NICEST
-      ;GL_PERSPECTIVE_CORRECTION_HINT ; target
+       GL_PERSPECTIVE_CORRECTION_HINT ; target
       ;GL_POINT_SMOOTH_HINT
       ;GL_LINE_SMOOTH_HINT
       ;GL_POLYGON_SMOOTH_HINT
@@ -26,6 +28,10 @@
 ;GLAPI void APIENTRY glLineWidth (GLfloat width);
 ;GLAPI void APIENTRY glPointSize (GLfloat size);
 ;GLAPI void APIENTRY glPolygonMode (GLenum face, GLenum mode);
+ ;/* PolygonMode */
+ ;#define GL_POINT                          0x1B00
+ ;#define GL_LINE                           0x1B01
+ ;#define GL_FILL                           0x1B02
 ;GLAPI void APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height);
 ;GLAPI void APIENTRY glTexParameterf (GLenum target, GLenum pname, GLfloat param);
 ;GLAPI void APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params);
@@ -34,8 +40,12 @@
 ;GLAPI void APIENTRY glTexImage1D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const void *pixels);
 ;GLAPI void APIENTRY glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
 ;GLAPI void APIENTRY glDrawBuffer (GLenum buf);
-;GLAPI void APIENTRY glClear (GLbitfield mask);
-;GLAPI void APIENTRY glClearColor (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+    glClear ; GLbitfield mask
+       GL_COLOR_BUFFER_BIT
+       GL_ACCUM_BUFFER_BIT
+       GL_STENCIL_BUFFER_BIT
+       GL_DEPTH_BUFFER_BIT
+    glClearColor ;GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha
 ;GLAPI void APIENTRY glClearStencil (GLint s);
 ;GLAPI void APIENTRY glClearDepth (GLdouble depth);
 ;GLAPI void APIENTRY glStencilMask (GLuint mask);
@@ -78,6 +88,7 @@
     GLfloat
     GLint
     GLsizei
+    GLbitfield
     GLubyte*
     
     ; internal
@@ -129,7 +140,7 @@
 (define GLfloat type-float) ; typedef float GLfloat
 (define GLint   type-int+)  ; typedef int GLint
 (define GLsizei type-int+)  ; typedef int GLsizei
-;(define GLbitfield type-fix+);typedef unsigned int GLbitfield;
+(define GLbitfield type-int+);typedef unsigned int GLbitfield;
 ;typedef double GLdouble;
 ;(define GLuint  type-fix+)  ;typedef unsigned int GLuint;
 ;(define GLboolean  type-fix+);typedef unsigned char GLboolean;
@@ -152,6 +163,12 @@
 ;Boolean
 (define GL_TRUE                           1)
 (define GL_FALSE                          0)
+;ClearBufferMask
+(define GL_COLOR_BUFFER_BIT               #x4000)
+(define GL_ACCUM_BUFFER_BIT               #x0200)
+(define GL_STENCIL_BUFFER_BIT             #x0400)
+(define GL_DEPTH_BUFFER_BIT               #x0100)
+
 ;FrontFace
 (define GL_CW                             #x0900)
 (define GL_CCW                            #x0901)
@@ -159,7 +176,7 @@
 (define GL_DONT_CARE                      #x1100)
 (define GL_FASTEST                        #x1101)
 (define GL_NICEST                         #x1102)
-
+(define GL_PERSPECTIVE_CORRECTION_HINT    #x0C50)
 ;#define GL_POINT                          0x1B00
 ;#define GL_LINE                           0x1B01
 ;#define GL_FILL                           0x1B02
@@ -186,8 +203,8 @@
 ;GLAPI void APIENTRY glTexImage1D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const void *pixels);
 ;GLAPI void APIENTRY glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
 ;GLAPI void APIENTRY glDrawBuffer (GLenum buf);
-;GLAPI void APIENTRY glClear (GLbitfield mask);
-;GLAPI void APIENTRY glClearColor (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+(define glClear (dlsym % GLvoid "glClear" GLbitfield))
+(define glClearColor (dlsym % GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
 ;GLAPI void APIENTRY glClearStencil (GLint s);
 ;GLAPI void APIENTRY glClearDepth (GLdouble depth);
 ;GLAPI void APIENTRY glStencilMask (GLuint mask);
