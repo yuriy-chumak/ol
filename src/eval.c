@@ -8,23 +8,19 @@
 #include "olvm.h"
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #ifdef WIN32
-//#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #endif
-
-
-#include <windows.h>
-#include <gl\gl.h>			// Header File For The OpenGL32 Library
-#include <gl\glu.h>			// Header File For The GLu32 Library
-//#include <gl\glaux.h>		// Header File For The Glaux Library
 
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
+
+OL* ol;
 
 /***************************************************
  * TESTS
@@ -33,39 +29,56 @@
 unsigned char *readfile(const char *filename)
 {
 	struct stat st;
-	int fd, pos = 0;
+	int pos = 0;
 	if (stat(filename, &st)) exit(1);
 
 	char* ptr = (char*)malloc(st.st_size);
 	if (ptr == NULL) exit(2);
-	fd = open(filename, O_RDONLY | O_BINARY);
-	if (fd < 0) exit(3);
+	FILE *fd = fopen(filename, "rb");
+	if (!fd) exit(3);
 	while (pos < st.st_size) {
-		int n = read(fd, ptr+pos, st.st_size-pos);
+		int n = fread(ptr+pos, st.st_size-pos, 1, fd);
 		if (n < 0) exit(4);
 		pos += n;
 	}
-	close(fd);
+	fclose(fd);
 	return (unsigned char*)ptr;
+}
+
+static void
+from_stdin(void *args) // heap top
+{
+	if (args == 0) { // no input, please use stdin
+		vm_puts(ol, "(define *interactive* #t)", 25);
+		int ch;
+		while ((ch = fgetc(stdin)) != EOF)
+			vm_puts(ol, &ch, 1);
+		vm_puts(ol, ",quit", 5);
+	}
+}
+static void
+from_file(void *args) // heap top
+{
+	FILE *f = fopen((char*)args, "r");
+	if (f) {
+		char source[1024];
+		int read;
+		while ((read = fread(source, 1, sizeof(source), f)) > 0)
+			vm_puts(ol, source, read);
+		fclose(f);
+	}
+	vm_puts(ol, ",quit", 5);
+}
+static void
+from_line(void *args) // heap top
+{
+	vm_puts(ol, (char*)args, strlen((char*)args));
+	vm_puts(ol, ",quit", 5);
 }
 
 // main
 int main(int argc, char* argv[])
 {
-	if (argc < 2) {
-		puts("usage: vm.exe evalscript");
-		return -1;
-	}
-/*	float x = 0.0f;
-	FILE* f = fopen("float", "wb");
-	fwrite(&x, sizeof(float), 1, f);
-	x = 1.0f;
-	fwrite(&x, sizeof(float), 1, f);
-	x = 2.0f;
-	fwrite(&x, sizeof(float), 1, f);
-	fclose(f);
-*/
-
 #ifdef WIN32
 	WSADATA wsaData;
 	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -90,47 +103,26 @@ int main(int argc, char* argv[])
 #else
 	extern unsigned char* language;
 #endif
-	OL* ol = vm_start(language);
+	ol = vm_start(language);
 
-	if (strcmp(argv[1], "-e") == 0) {
-		vm_puts(ol, argv[2], strlen(argv[2]));
-//		vm_puts(ol, "(halt 0)", 8);
+	if (argc == 1) {
+		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_stdin, 0, 0, NULL);
 	}
-	else {
-		FILE *f = fopen(argv[1], "r");
-		fseek(f, 0, SEEK_END);
-		int len = (int)ftell(f);
-		fseek(f, 0, SEEK_SET);
-		char* source = (char*)malloc(len);
-		fread(source, 1, len, f);
-		fclose(f);
-		vm_puts(ol, source, len);
+	if (argc == 2) {
+		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_file, argv[1], 0, NULL);
 	}
-	//	vm_puts(vm, "(sys-prim 6 0 0 0)", 18);
-	vm_puts(ol, "(halt 0)#", 8);
+	if (argc == 3) {
+		if (strcmp(argv[1], "-e") == 0) {
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_line, argv[2], 0, NULL);
+		}
+	}
 
-//	vm_stop(ol); // automatically stop after evaluation
-//	free(source);
-
-	char response[1024];
+	char response[24];
 	do {
 		int got =
 		vm_gets(ol, response, sizeof(response));
-		if (got == 1023) {
-			printf("%s", response);
-		}
-		else {
-			printf("%s", response);
-		}
-//		if (got == sizeof(response) - 1)
-//			printf("%d - %s", got, response);
-
-//		puts(response);
-/*		if (got == sizeof(response) - 1)
-			;
-		else
-			printf("%s\n", response);*/
-//		fflush(stdout);
+		printf("%s", response);
+		fflush(stdout);
 	}
 	while (!vm_feof(ol)); // еще не все забрали
 	free(ol);

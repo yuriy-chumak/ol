@@ -11,9 +11,17 @@
 // https://www.cs.utah.edu/flux/oskit/html/oskit-wwwch14.html
 #include "olvm.h"
 
+// На данный момент поддерживаются четыре операционные системы:
+//  Windows, Linux, Android, MacOS
+// Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
+#ifndef __GNUC__
+#	warning "This code tested only under Gnu C compiler"
+#endif
+
+
 // todo: проверить, что все работает в 64-битном коде
 // todo: переименовать tuple в array. array же неизменяемый, все равно.
-//  а изменяемые у нас ветора
+//  а изменяемые у нас вектора
 
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
@@ -34,7 +42,6 @@
 #include <time.h>
 #include <inttypes.h>
 #include <fcntl.h>
-//nclude <dlfcn.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -66,6 +73,7 @@
 
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
+#	define NOMINMAX
 #	include <winsock2.h>
 #	include <ws2tcpip.h>
 #	include <conio.h>
@@ -91,6 +99,17 @@
 #	endif
 #endif
 
+#ifdef __APPLE__
+#	include <netinet/in.h>
+#	include <sys/socket.h>
+#	include <sys/wait.h>
+#	include <sys/wait.h>
+//	typedef unsigned long in_addr_t;
+#	ifndef O_BINARY
+#		define O_BINARY 0
+#	endif
+#endif
+
 // Threading (pthread)
 //
 #ifdef _WIN32
@@ -103,14 +122,16 @@ static int
 pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
                void *(*function)(void *), void * argument)
 {
-	*thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)function, argument, 0, NULL);
-	return (*thread != NULL);
+	pthread_t th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)function, argument, 0, NULL);
+	if (thread != NULL)
+		*thread = th;
+	return (th != NULL);
 }
 
 static int
 pthread_yield(void)
 {
-	Sleep(0);
+	Sleep(1);
 	return 0;
 }
 
@@ -126,8 +147,16 @@ pthread_kill(pthread_t thread, int sig)
 	assert(sig == 0);
 	if (sig == 0)
 		return (WaitForSingleObject(thread, 0) == WAIT_OBJECT_0) ? ESRCH : 0;
+	else
+		fprintf(stderr, "Invalid pthread_kill parameter signal %d", sig);
 //	TerminateThread(thread, sig);
 	return 0;
+}
+
+static void
+pthread_exit(void *value_ptr)
+{
+	ExitThread((DWORD)value_ptr);
 }
 /*static unsigned sleep(unsigned seconds)
 {
@@ -147,36 +176,20 @@ static int pthread_yield(void)
 #endif
 
 
-#ifdef _WIN32
-#	define EXIT(n) ExitThread(n);
-#endif
-
-#ifdef __gnu_linux__
-#	ifndef NO_SECCOMP
-#		include <sys/prctl.h>
-#		include <sys/syscall.h>
-		/* normal exit() segfaults in seccomp */
-#		define EXIT(n) syscall(__NR_exit, n); exit(n)
-#	else
-#		define EXIT(n) exit(n)
-#	endif
-#endif
-
 #define STATIC static __inline__
 
 // -=( fifo )=------------------------------------------------
 // кольцевой текстовый буфер для общения с виртуальной машиной
-//#define FIFOLENGTH (1 << 14) // 4*4096 for now // was << 14
-#define FIFOLENGTH (500000) // временное решение, пока не придумаю как избавится от дедлоков на больших файлах
-                            //  в смысле, которые больше размера буфера
+#define FIFOLENGTH (1 << 14) // 4*4096 for now // was << 14
+
 struct fifo
 {
 	volatile char eof;
 	volatile
 	unsigned int putp, getp;
 	char buffer[FIFOLENGTH];
-}
-static _thread_local *fi, *fo;
+};
+//static _thread_local *fi, *fo;
 //   fi = {0, 0}, fo = {0, 0}; // input/output
 typedef struct fifo fifo;
 
@@ -186,12 +199,12 @@ typedef struct fifo fifo;
 static volatile __inline__
 char fifo_empty(struct fifo* f)
 {
-	return ((f->putp - f->getp) == 0); //% FIFOLENGTH == 0);
+	return ((f->putp - f->getp) == 0);
 }
 static volatile __inline__
 char fifo_full(struct fifo* f)
 {
-	return ((f->putp - f->getp) == FIFOLENGTH); //% FIFOLENGTH == 1);
+	return ((f->putp - f->getp) == sizeof(f->buffer));
 }
 
 static __inline__
@@ -370,6 +383,7 @@ typedef uintptr_t word;
 
 #define F(val)                      (((val) << IPOS) | 2)
 #define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
+#define ZEROFALCE(cval)             ((cval) ?  F(0) : IFALSE)
 #define fixval(desc)                ((desc) >> IPOS) // unsigned shift!!!
 #define fixnump(desc)               (((desc) & 0xFF) == 2)
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
@@ -435,7 +449,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 // память виртуальной машины локальна по отношению к ее потоку. пусть пока побудет так - не буду
 //  ее тащить в структуру VM
 
-static _thread_local word max_heap_mb; /* max heap size in MB */
+static _thread_local word max_heap_size; /* max heap size in MB */
 
 static int breaked;      /* set in signal handler, passed over to owl in thread switch */
 
@@ -647,7 +661,7 @@ static word *gc(int size, word *regs) {
 	if (heap.genstart == heap.begin) {
 		word heapsize = (word) heap.end - (word) heap.begin;
 		word nused = heapsize - nfree;
-		if ((heapsize/(1024*1024)) > max_heap_mb)
+		if ((heapsize/(1024*1024)) > max_heap_size)
 			breaked |= 8; /* will be passed over to mcp at thread switch*/
 
 		nfree -= size*W + MEMPAD;   /* how much really could be snipped off */
@@ -889,23 +903,6 @@ static word prim_set(word wptr, word pos, word val) {
 /* system- and io primops */
 static word prim_sys(int op, word a, word b, word c) {
    switch(op) {
-      case 0: { /* 0 fsend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
-         int fd = fixval(a);
-         word *buff = (word *) b;
-
-         int wrote, size, len = fixval(c);
-         if (immediatep(buff)) return IFALSE;
-         size = (hdrsize(*buff)-1)*W;
-         if (len > size) return IFALSE;
-         // STDOUT ?
-         if (fd == 1) {
-        	 wrote = fifo_puts(fo, ((char *)buff)+W, len);
-         }
-         else
-        	 wrote = write(fd, ((char *)buff)+W, len);
-         if (wrote > 0) return F(wrote);
-         if (errno == EAGAIN || errno == EWOULDBLOCK) return F(0);
-         return IFALSE; }
       case 1: { /* 1 = fopen <str> <mode> <to> */
          char *path = (char *) a;
          int mode = fixval(b);
@@ -965,66 +962,6 @@ static word prim_sys(int op, word a, word b, word c) {
          fp += 5;
          return (word)pair; }
 
-      /* FREAD */
-      case 5: { /* fread fd max -> obj | eof | F (read error) | T (would block) */
-         word fd = fixval(a);  // file descriptor
-         word max = fixval(b); // buffer capacity
-
-         word *res;
-         int n, nwords = (max/W) + 2;
-         res = new (nwords);
-#ifndef WIN32
-         n = read(fd, ((char *) res) + W, max);
-#else
-			if (fd == 0) { // windows stdin in special apparently
-				if (fifo_empty(fi)) {
-					n = -1;
-					errno = EAGAIN;
-				}
-				else {
-					char *d = ((char*) res) + W;
-					while (!fifo_empty(fi))
-						*d++ = fifo_get(fi);
-					n = d - (((char*) res) + W);
-				}
-
-/*				// read some data or return EAGAIN for continue internal threads
-				if (coni) {
-					char *s = coni;
-					char *d = ((char*) res) + W;
-					while (*d++ = *s++) ;
-
-					// n == 0 is EOF
-					n = (s-1) - coni;
-					coni = 0;
-				}
-				else {
-					n = -1;
-					errno = EAGAIN;
-				}*/
-
-				/*if(!_isatty(0) || _kbhit()) { // we don't get hit by kb in pipe
-					n = read(fd, ((char *) res) + W, max);
-				} else {
-					n = -1;
-					errno = EAGAIN;
-				}*/
-			} else
-				n = read(fd, ((char *) res) + W, max);
-#endif
-         if (n > 0) { // got some bytes
-            word read_nwords = (n/W) + ((n%W) ? 2 : 1);
-            int pads = (read_nwords-1)*W - n;
-            fp = res + read_nwords;
-            *res = make_raw_header(read_nwords, TBVEC, pads);
-            return (word)res;
-         }
-         fp = res;
-         if (n == 0)
-            return IEOF;
-
-         // EAGAIN: Resource temporarily unavailable (may be the same value as EWOULDBLOCK) (POSIX.1)
-         return TRUEFALSE(errno == EAGAIN || errno == EWOULDBLOCK); }
 
 
       case 10: /* enter linux seccomp mode */
@@ -1242,13 +1179,12 @@ free((void *) file_heap);
 #define R6                          R[6]
 #define G(ptr, n)                   ((word *)(ptr))[n]
 
-
 struct args
 {
 	OL *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
 
 	// структура памяти VM. распределяется еще до запуска самой машины
-	word max_heap_mb; /* max heap size in MB */
+	word max_heap_size; /* max heap size in MB */
 
 	// memstart <= genstart <= memend
 	struct heap heap;
@@ -1259,14 +1195,14 @@ struct args
 };
 // args + 0 = (list "arg0" "arg 1") or ("arg0 arg1" . NIL) ?
 // args + 3 = objects list
-static void*
-runtime(void *args) // heap top
+static
+void* runtime(void *args) // heap top
 {
 	seccompp = 0;
 	slice = TICKS; // default thread slice (n calls per slice)
 
 	//
-	max_heap_mb = ((struct args*)args)->max_heap_mb; /* max heap size in MB */
+	max_heap_size = ((struct args*)args)->max_heap_size; /* max heap size in MB */
 
 	// инициализируем локальную память
 	heap.begin    = ((struct args*)args)->heap.begin;
@@ -1276,8 +1212,8 @@ runtime(void *args) // heap top
 	// allocation pointer (top of allocated heap)
 	fp       = ((struct args*)args)->fp;
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
-	fi = &((struct args*)args)->vm->o;
-	fo = &((struct args*)args)->vm->i;
+	fifo *fi =&((struct args*)args)->vm->o;
+	fifo *fo =&((struct args*)args)->vm->i;
 
 	// все, машина инициализирована, отсигналимся
 	((struct args*)args)->ready = 1;
@@ -1747,25 +1683,92 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 				switch (op) {
 				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 				//  остальное можно спокойно оформлять отдельными функциями
-				// todo: добавить функции LoadLibrary, GetProcAddress и вызов этих функций с параметрами (+)
 
-				case 6: // todo: переделать на другой номер
+				// WRITE
+				case 0: { /* 0 fsend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
+					int fd = fixval(a);
+					word *buff = (word *) b;
+
+					result = IFALSE;
+
+					int wrote, size, len = fixval(c);
+					if (immediatep(buff))
+						break;
+					size = (hdrsize(*buff)-1) * W;
+					if (len > size)
+						break;
+
+					if (fd == 1) // stdout wrote to the fo
+						wrote = fifo_puts(fo, ((char *)buff)+W, len);
+					else
+						wrote = write(fd, ((char *)buff)+W, len);
+
+					if (wrote > 0)
+						result = F(wrote);
+					else
+						result = ZEROFALCE(errno == EAGAIN || errno == EWOULDBLOCK);
+					break;
+				}
+
+				// READ
+				case 5: { /* fread fd max -> obj | eof | F (read error) | T (would block) */
+					word fd = fixval(a);  // file descriptor
+					word max = fixval(b); // buffer capacity
+
+					word *res;
+					int n, nwords = (max/W) + 2;
+					res = new (nwords);
+
+					if (fd == 0) { // stdin reads from fi
+						if (fifo_empty(fi)) {
+							n = -1;
+							errno = EAGAIN;
+						}
+						else {
+							char *d = ((char*) res) + W;
+							while (!fifo_empty(fi))
+								*d++ = fifo_get(fi);
+							n = d - (((char*) res) + W);
+						}
+					}
+					else
+						n = read(fd, ((char *) res) + W, max); // from <unistd.h>
+					if (n > 0) { // got some bytes
+						word read_nwords = (n/W) + ((n%W) ? 2 : 1);
+						int pads = (read_nwords-1)*W - n;
+						fp = res + read_nwords;
+						*res = make_raw_header(read_nwords, TBVEC, pads);
+						result = (word)res;
+						break;
+					}
+					fp = res; // иначе удалим выделенную под результат переменную
+
+					if (n == 0)
+						result = IEOF;
+					else // EAGAIN: Resource temporarily unavailable (may be the same value as EWOULDBLOCK) (POSIX.1)
+						result = TRUEFALSE(errno == EAGAIN || errno == EWOULDBLOCK);
+					break;
+				}
+
+				// EXIT
+				case 6:
 					free(heap.begin); // освободим занятую память
 					// подождем, пока освободится место в консоли
 					while (fifo_full(fo)) pthread_yield();
 					fifo_put(fo, EOF); // и положим туда EOF
 
-					EXIT(fixval(a)); // все, убьем поток
+					pthread_exit((void*)fixval(a));
+					break;
 
 				case 7: /* set memory limit (in mb) */ // todo: переделать на другой номер
-					 max_heap_mb = fixval(a);
+					max_heap_size = fixval(a);
 					 result = a;
 					 break;
 				  case 8: /* get machine word size (in bytes) */ // todo: переделать на другой номер
 					  result = F(W);
 					  break;
 				  case 9: /* get memory limit (in mb) */ // todo: переделать на другой номер
-					  result = F(max_heap_mb);
+					  result = F(max_heap_size);
 					  break;
 
 				// -=( pinvoke )=-------------------------------------------------
@@ -2504,7 +2507,7 @@ OL* vm_start(unsigned char* language)
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху
 
 	// выделим память машине:
-	max_heap_mb = (W == 4) ? 4096 : 65535; // can be set at runtime
+	max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	heap.begin = heap.genstart = (word*) malloc((INITCELLS + FMAX + MEMPAD) * sizeof(word)); // at least one argument string always fits
 	if (!heap.begin) {
 		fprintf(stderr, "Failed to allocate initial memory\n");
@@ -2578,10 +2581,10 @@ OL* vm_start(unsigned char* language)
 	args.vm = handle; // виртуальной машины OL
 
 	// а это инициализационные аргументы для памяти виртуальной машины
-	args.heap.begin = heap.begin;
-	args.heap.end   = heap.end;
+	args.heap.begin    = heap.begin;
+	args.heap.end      = heap.end;
 	args.heap.genstart = heap.genstart;
-	args.max_heap_mb = max_heap_mb; // max heap size in MB
+	args.max_heap_size = max_heap_size; // max heap size in MB
 	args.fp = fp;
 
 	args.ready = 0;
