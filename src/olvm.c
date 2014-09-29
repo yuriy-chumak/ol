@@ -1055,7 +1055,7 @@ static word prim_sys(int op, word a, word b, word c) {
          if (chdir(path) < 0)
             return IFALSE;
          return ITRUE; }
-#ifndef WIN32
+#if 0 // ndef WIN32
       case 19: { /* wait <pid> <respair> _ */
          pid_t pid = (a == IFALSE) ? -1 : fixval(a);
          int status;
@@ -1255,103 +1255,105 @@ void* runtime(void *args) // heap top
 	unsigned short acc = 2; // boot always calls with 2 args, no support for >255arg functions
 
 apply: // apply something at ob to values in regs, or maybe switch context
-	if (allocp(ob)) { // если это аллоцированный объект
-		word hdr = *ob & 0x0FFF; // cut size out, take just header info
-		if (hdr == make_header(0, TPROC)) { // proc
-			R[1] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
-		}
-		else
-		if (hdr == make_header(0, TCLOS)) { // clos
-			R[1] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
-			R[2] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
-		}
-		else
-		if (((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
-			word *cont = (word *) R[3];
-			switch (acc)
-			{
-			case 2:
-				R[3] = prim_get(ob, R[4],    0);
-				if (!R[3])
-					ERROR(260, ob, R[4]);
-				break;
-			case 3:
-				R[3] = prim_get(ob, R[4], R[5]);
-				break;
-			default:
-				ERROR(259, ob, INULL);
-			}
-			ob = cont;
+	while (1) {
+		if ((word)ob == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
+			ob = (word *) R[3]; /* call cont */
+			R[3] = (acc > 2) ? R[5] : IFALSE; /* default arg or false if none */
 			acc = 1;
-			goto apply;
+			continue;
 		}
-		else
-			if (((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
-				ERROR(259, ob, INULL);
+		if ((word)ob == IHALT) {
+			/* a tread or mcp is calling the final continuation  */
+			ob = (word *) R[0];
+			if (!allocp(ob)) {
+				fprintf(stderr, "Unexpected virtual machine exit\n");
+				return (void*)fixval(R[3]);
+			}
 
-		// todo: сюда надо добавить реакцию на внешние колбеки
+			R[0] = IFALSE;
+			breaked = 0;
+			R[4] = R[3];
+			R[3] = F(2);
+			R[5] = IFALSE;
+			R[6] = IFALSE;
+			ticker = 0xffffff;
+			bank = 0;
+			acc = 4;
+			continue;
+		} /* <- add a way to call the newobj vm prim table also here? */
 
-		if (!ticker--) {
-			// время потока вышло, переключим на следующий
-			if (R[0] == IFALSE) // no mcp, ignore
-				ticker = TICKS;
-			else {
-		      /* save vm state and enter mcp cont at R0 */
-		      word *state, pos = 1;
-		      ticker = 0xffffff;
-		      bank = 0;
-		      acc = acc + 4;
-		      R[acc] = (word) ob;
-		      state = new (acc);
-		      *state = make_header(acc, TTHREAD);
-		      state[acc-1] = R[acc];
-		      while (pos < acc-1) {
-		         state[pos] = R[pos];
-		         pos++;
-		      }
-		      ob = (word *) R[0];
-		      R[0] = IFALSE; /* remove mcp cont */
-		      /* R3 marks the syscall to perform */
-		      R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); /* fixme - handle also differnet signals via one handler  */
-		      R[4] = (word) state;
-		      R[5] = F(breaked);
-		      R[6] = IFALSE;
-		      acc = 4;
-		      breaked = 0;
-		    }
-			goto apply;
+		if (allocp(ob)) { // если это аллоцированный объект
+			word hdr = *ob & 0x0FFF; // cut size out, take just header info
+			if (hdr == make_header(0, TPROC)) { // proc
+				R[1] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
+			}
+			else
+			if (hdr == make_header(0, TCLOS)) { // clos
+				R[1] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
+				R[2] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
+			}
+			else
+			if (((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
+				word *cont = (word *) R[3];
+				switch (acc)
+				{
+				case 2:
+					R[3] = prim_get(ob, R[4],    0);
+					if (!R[3])
+						ERROR(260, ob, R[4]);
+					break;
+				case 3:
+					R[3] = prim_get(ob, R[4], R[5]);
+					break;
+				default:
+					ERROR(259, ob, INULL);
+				}
+				ob = cont;
+				acc = 1;
+				continue;
+			}
+			else
+				if (((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
+					ERROR(259, ob, INULL);
+
+			// todo: сюда надо добавить реакцию на внешние колбеки
+			if (!ticker--) {
+				// время потока вышло, переключим на следующий
+				if (R[0] == IFALSE) // no mcp, ignore
+					ticker = TICKS;
+				else {
+				  /* save vm state and enter mcp cont at R0 */
+				  word *state, pos = 1;
+				  ticker = 0xffffff;
+				  bank = 0;
+				  acc = acc + 4;
+				  R[acc] = (word) ob;
+				  state = new (acc);
+				  *state = make_header(acc, TTHREAD);
+				  state[acc-1] = R[acc];
+				  while (pos < acc-1) {
+					 state[pos] = R[pos];
+					 pos++;
+				  }
+				  ob = (word *) R[0];
+				  R[0] = IFALSE; /* remove mcp cont */
+				  /* R3 marks the syscall to perform */
+				  R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); /* fixme - handle also differnet signals via one handler  */
+				  R[4] = (word) state;
+				  R[5] = F(breaked);
+				  R[6] = IFALSE;
+				  acc = 4;
+				  breaked = 0;
+				}
+				continue;
+			}
+
+			ip = (unsigned char *) &ob[1];
+			break; // goto invoke
 		}
-
-		ip = (unsigned char *) &ob[1];
-//		goto invoke;
+		// else
+		ERROR(257, ob, INULL); // not callable
 	}
-	else if ((word)ob == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
-      ob = (word *) R[3]; /* call cont */
-      R[3] = (acc > 2) ? R[5] : IFALSE; /* default arg or false if none */
-      acc = 1;
-      goto apply;
-	}
-	else if ((word)ob == IHALT) {
-      /* a tread or mcp is calling the final continuation  */
-      ob = (word *) R[0];
-      if (allocp(ob)) {
-         R[0] = IFALSE;
-         breaked = 0;
-         R[4] = R[3];
-         R[3] = F(2);
-         R[5] = IFALSE;
-         R[6] = IFALSE;
-         ticker = 0xffffff;
-         bank = 0;
-         acc = 4;
-         goto apply;
-      }
-
-      fprintf(stderr, "Unexpected virtual machine exit\n");
-      return (void*)fixval(R[3]);
-	} /* <- add a way to call the newobj vm prim table also here? */
-	else
-		ERROR(257, ob, INULL); /* not callable */
 
 invoke: // nargs and regs ready, maybe gc and execute ob
 
