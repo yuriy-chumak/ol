@@ -100,11 +100,21 @@
 #endif
 
 #ifdef __APPLE__
+#	include "TargetConditionals.h"
+#	if TARGET_IPHONE_SIMULATOR
+     // iOS Simulator
+#	elif TARGET_OS_IPHONE
+    // iOS device
+#	elif TARGET_OS_MAC
+    // Other kinds of Mac OS
+#	else
+    // Unsupported platform
+#	endif
+
 #	include <netinet/in.h>
 #	include <sys/socket.h>
 #	include <sys/wait.h>
 #	include <sys/wait.h>
-//	typedef unsigned long in_addr_t;
 #	ifndef O_BINARY
 #		define O_BINARY 0
 #	endif
@@ -1162,7 +1172,7 @@ free((void *) file_heap);
 #define SKIP(n)                     ip += n; break;
 #define TICKS                       10000 /* # of function calls in a thread quantum  */
 #define ERROR(opcode, a, b)         { R[4] = F(opcode); R[5] = (word) a; R[6] = (word) b; goto invoke_mcp; }
-#define CHECK(exp,val,code)         if (unlikely(!(exp))) ERROR(code, val, ITRUE);
+#define CHECK(exp,val,code)         if (!(exp)) ERROR(code, val, ITRUE);
 
 #define A0                          R[ip[0]]
 #define A1                          R[ip[1]]
@@ -1179,6 +1189,7 @@ free((void *) file_heap);
 #define R6                          R[6]
 #define G(ptr, n)                   ((word *)(ptr))[n]
 
+// структура с параметрами для запуска виртуальной машины
 struct args
 {
 	OL *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
@@ -1247,15 +1258,15 @@ apply: // apply something at ob to values in regs, or maybe switch context
 	if (allocp(ob)) { // если это аллоцированный объект
 		word hdr = *ob & 0x0FFF; // cut size out, take just header info
 		if (hdr == make_header(0, TPROC)) { // proc
-			R[1] = (word) ob; ob = (word *) ob[1];
+			R[1] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
 		}
 		else
 		if (hdr == make_header(0, TCLOS)) { // clos
-			R[1] = (word) ob; ob = (word *) ob[1];
-			R[2] = (word) ob; ob = (word *) ob[1];
+			R[1] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
+			R[2] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
 		}
 		else
-		if (((hdr>>TPOS)&60) == TFF) { /* low bits have special meaning */
+		if (((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
 			word *cont = (word *) R[3];
 			switch (acc)
 			{
@@ -1275,21 +1286,51 @@ apply: // apply something at ob to values in regs, or maybe switch context
 			goto apply;
 		}
 		else
-		if (((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
-			ERROR(259, ob, INULL);
+			if (((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
+				ERROR(259, ob, INULL);
 
-		// время потока вышло, переключим на следующий
-		if (unlikely(!ticker--)) goto switch_thread;
+		// todo: сюда надо добавить реакцию на внешние колбеки
+
+		if (!ticker--) {
+			// время потока вышло, переключим на следующий
+			if (R[0] == IFALSE) // no mcp, ignore
+				ticker = TICKS;
+			else {
+		      /* save vm state and enter mcp cont at R0 */
+		      word *state, pos = 1;
+		      ticker = 0xffffff;
+		      bank = 0;
+		      acc = acc + 4;
+		      R[acc] = (word) ob;
+		      state = new (acc);
+		      *state = make_header(acc, TTHREAD);
+		      state[acc-1] = R[acc];
+		      while (pos < acc-1) {
+		         state[pos] = R[pos];
+		         pos++;
+		      }
+		      ob = (word *) R[0];
+		      R[0] = IFALSE; /* remove mcp cont */
+		      /* R3 marks the syscall to perform */
+		      R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); /* fixme - handle also differnet signals via one handler  */
+		      R[4] = (word) state;
+		      R[5] = F(breaked);
+		      R[6] = IFALSE;
+		      acc = 4;
+		      breaked = 0;
+		    }
+			goto apply;
+		}
 
 		ip = (unsigned char *) &ob[1];
-		goto invoke;
-   }
+//		goto invoke;
+	}
 	else if ((word)ob == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
       ob = (word *) R[3]; /* call cont */
       R[3] = (acc > 2) ? R[5] : IFALSE; /* default arg or false if none */
       acc = 1;
       goto apply;
-   }
+	}
 	else if ((word)ob == IHALT) {
       /* a tread or mcp is calling the final continuation  */
       ob = (word *) R[0];
@@ -1305,50 +1346,27 @@ apply: // apply something at ob to values in regs, or maybe switch context
          acc = 4;
          goto apply;
       }
-      return fixval(R[3]);
-   } /* <- add a way to call the newobj vm prim table also here? */
-   ERROR(257, ob, INULL); /* not callable */
 
-switch_thread: /* enter mcp if present */
-	if (R[0] == IFALSE) { /* no mcp, ignore */
-		ticker = TICKS;
-		goto apply;
-	} else {
-      /* save vm state and enter mcp cont at R0 */
-      word *state, pos = 1;
-      ticker = 0xffffff;
-      bank = 0;
-      acc = acc + 4;
-      R[acc] = (word) ob;
-      state = new (acc);
-      *state = make_header(acc, TTHREAD);
-      state[acc-1] = R[acc];
-      while(pos < acc-1) {
-         state[pos] = R[pos];
-         pos++;
-      }
-      ob = (word *) R[0];
-      R[0] = IFALSE; /* remove mcp cont */
-      /* R3 marks the syscall to perform */
-      R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); /* fixme - handle also differnet signals via one handler  */
-      R[4] = (word) state;
-      R[5] = F(breaked);
-      R[6] = IFALSE;
-      acc = 4;
-      breaked = 0;
-      goto apply;
-   }
+      fprintf(stderr, "Unexpected virtual machine exit\n");
+      return (void*)fixval(R[3]);
+	} /* <- add a way to call the newobj vm prim table also here? */
+	else
+		ERROR(257, ob, INULL); /* not callable */
 
-invoke: /* nargs and regs ready, maybe gc and execute ob */
+invoke: // nargs and regs ready, maybe gc and execute ob
+
+	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
+	//  регистры, мы их складываем в память во временный объект-список.
 	if (fp >= heap.end - 16*1024) { // (((word)fp) + 1024*64 >= ((word) memend))
-		int p = 0;
-		*fp = make_header(NR+2, 50); /* hdr r_0 .. r_(NR-1) ob */
-		while (p < NR) { fp[p+1] = R[p]; p++; }
-		fp[p+1] = (word) ob;
-		fp = gc(16*1024 * sizeof(word), fp);
-		ob = (word *) fp[p+1];
-		while(--p >= 0) { R[p] = fp[p+1]; }
-		ip = (unsigned char *)(ob + 1);
+		int p = 0, N = NR;
+		*fp = make_header(N + 2, TTUPLE); // hdr r_0 .. r_(NR-1) ob // was: 50 as type
+		while (++p <= N) fp[p] = R[p-1];
+		fp[p] = (word) ob;
+		fp = gc(16*1024 * sizeof(word), fp); // GC, как правило занимает 0-15 ms
+		ob = (word *) fp[p];
+		while (--p >= 1) R[p-1] = fp[p];
+
+		ip = (unsigned char *) (ob + 1);
 	}
 
 	// список команд: работающий транслятор в С смотреть в cgen.scm в (translators)
@@ -2148,10 +2166,10 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
 							if (got == 0)
 								result = INULL;
 							else {
-								int len = lenn(got, FMAX+1);
-								result = mkbvec(len, TSTRING);
+								int len = lenn((char*)got, FMAX+1);
+								result = (word*)mkbvec(len, TSTRING);
 								//if (len == FMAX+1) return INULL; /* can't touch this */
-								bytecopy(got, ((char*)result)+W, len);
+								bytecopy((char*)got, ((char*)result)+W, len);
 							}
 							break;
 						case TVOID:
@@ -2298,7 +2316,7 @@ invoke: /* nargs and regs ready, maybe gc and execute ob */
       R[0] = R[3];
       ticker = bank ? bank : fixval(A1);
       bank = 0;
-      CHECK(allocp(ob),ob,50);
+      CHECK(allocp(ob), ob, 50);
       hdr = *ob;
       if (imm_type(hdr) == TTHREAD) {
          int pos = hdrsize(hdr) - 1;
