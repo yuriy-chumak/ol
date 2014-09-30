@@ -885,7 +885,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                                     (set-signal-action repl-signal-handler)
 
                                     (exit-owl 
-                                       (repl-start vm-args repl compiler
+                                       (repl-start '("#") repl compiler ; список с одним параметром вместо vm-args, в будущем могу поменять
                                           (fold 
                                              (λ (env defn)
                                                 (env-set env (car defn) (cdr defn)))

@@ -145,11 +145,11 @@ pthread_yield(void)
 	return 0;
 }
 
-static int
+/*static int
 pthread_join(pthread_t thread, void **value_ptr)
 {
 	return WaitForSingleObject(thread, INFINITE);
-}
+}*/
 
 static int
 pthread_kill(pthread_t thread, int sig)
@@ -313,11 +313,11 @@ void *dlopen(const char *filename, int mode/*unused*/)
 		hModule = LoadLibraryEx((LPSTR)filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 	return hModule;
 }
-static
+/*static
 int dlclose(void *handle)
 {
 	return FreeLibrary((HMODULE)handle);
-}
+}*/
 
 static
 void *dlsym  (void *handle, const char *name)
@@ -1745,6 +1745,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 					if (fd == 0) { // stdin reads from fi
 						if (fifo_empty(fi)) {
+							// todo: process EOF, please!
 							n = -1;
 							errno = EAGAIN;
 						}
@@ -2173,7 +2174,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								result = INULL;
 							else {
 								int len = lenn((char*)got, FMAX+1);
-								result = mkbvec(len, TSTRING);
+								result = (word)mkbvec(len, TSTRING);
 								//if (len == FMAX+1) return INULL; /* can't touch this */
 								bytecopy((char*)got, ((char*)result)+W, len);
 							}
@@ -2386,7 +2387,7 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=syscall and call mcp */
       acc = 4;
       goto apply;
    }
-   return 1; /* no mcp to handle error (fail in it?), so nonzero exit  */
+   return (void*)1; /* no mcp to handle error (fail in it?), so nonzero exit  */
 }
 
 
@@ -2396,8 +2397,10 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=syscall and call mcp */
 
 // fasl decoding
 /* count number of objects and measure heap size */
-static unsigned char *hp;       /* heap pointer when loading heap */
+static _thread_local
+unsigned char *hp;       /* heap pointer when loading heap */
 
+static
 word get_nat() {
    word result = 0;
    word newobj, i;
@@ -2411,6 +2414,7 @@ word get_nat() {
    return result;
 }
 
+static
 word *get_field(word *ptrs, int pos) {
    if (0 == *hp) {
       unsigned char type;
@@ -2430,8 +2434,8 @@ static
 word *deserialize(word *ptrs, int me)
 {
    int type, size;
-   if(ptrs != NULL) ptrs[me] = (word) fp;
-   switch(*hp++) { /* todo: adding type information here would reduce fasl and executable size */
+   if (ptrs != NULL) ptrs[me] = (word) fp;
+   switch (*hp++) { /* todo: adding type information here would reduce fasl and executable size */
       case 1: {
          type = *hp++;
          size = get_nat();
@@ -2519,8 +2523,8 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
 //
-//  this is NOT thread safe function!
-OL* vm_start(unsigned char* language)
+// this is NOT thread safe function
+OL* vm_new(unsigned char* language)
 {
 	// создадим виртуальную машину
 	OL *handle = malloc(sizeof(OL));
@@ -2533,31 +2537,24 @@ OL* vm_start(unsigned char* language)
 	// выделим память машине:
 	max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	int required_memory_size = (INITCELLS + FMAX + MEMPAD) * sizeof(word);
-	heap.begin = heap.genstart = (word*) malloc(required_memory_size); // at least one argument string always fits
+	heap.begin = (word*) malloc(required_memory_size); // at least one argument string always fits
 	if (!heap.begin) {
 		fprintf(stderr, "Failed to allocate %d bytes for vm memory\n", required_memory_size);
 		goto failed;
 	}
 	heap.end = heap.begin + FMAX + INITCELLS - MEMPAD;
+	heap.genstart = heap.begin;
 
-//
-//	// create '() as root object (этот закомментареный кусок кода неправильный!)
-//	{
-//		word *oargs = fp;
-//		oargs[0] = PAIRHDR; // '()
-//		oargs[1] =   INULL;
-//		oargs[2] =   INULL;
-//		fp += 3;
-//	}
-//
 	// подготовим в памяти машины параметры командной строки:
 
-	// create '("some string", NIL) as parameter for the start lambda
+	// create '("some string" . NIL) as parameter for the start lambda
 	// а вообще, от этого блока надо избавится.
+	//  но пока оставлю как пример того, как можно предварительно
+	//  загрузить в память аргументы перед выховом образа
+	// по совместительству, это еще и корневой объект
 	word *oargs = fp = heap.begin;
 	{
 		char* filename = "#";
-//		char* filename = "--run owl/ol.scm -s none -o fasl/bootp.fasl";
 		char *pos = filename;
 
 		int len = 0;
@@ -2577,14 +2574,14 @@ OL* vm_start(unsigned char* language)
 		oargs = fp;
 	}
 
-	// а теперь поработаем со скомпилированным образом:
+	// а теперь поработаем со сериализованным образом:
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, language); // подсчет количества слов и объектов в образе
 
 	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
 	fp = oargs + 3;
 
-	// deserialize heap to the objects
+	// Десериализация загруженного образа в объекты
 	word* ptrs = fp;
 	fp += nobjs + 1;
 
@@ -2609,16 +2606,15 @@ OL* vm_start(unsigned char* language)
 	args.heap.genstart = heap.genstart;
 	args.max_heap_size = max_heap_size; // max heap size in MB
 	args.fp = fp;
+	args.userdata      = oargs;
 
 	args.signal = 0;
-	args.userdata = oargs;
-
-//	runtime(args);
 	if (pthread_create(&handle->tid, NULL, &runtime, &args) == 0) {
 		while (!args.signal)
 			pthread_yield();
 		return handle;
 	}
+	fprintf(stderr, "Can't create thread for vm");
 
 failed:
 	free(heap.begin);
@@ -2635,6 +2631,11 @@ void eval2(char* message)
 {
 	fifo_puts(&fi, message, strlen(message) + 1);
 }*/
+int vm_alive(OL* vm)
+{
+	return (pthread_kill(vm->tid, 0) != ESRCH);
+}
+
 
 int vm_puts(OL* vm, char *message, int n)
 {
@@ -2651,19 +2652,4 @@ int vm_gets(OL* vm, char *message, int n)
 int vm_feof(OL* vm)
 {
 	return fifo_feof(&vm->i);
-}
-
-int vm_stop(OL* vm)
-{
-	// todo: make real vm stop
-//	vm_puts(vm, "(sys-prim 6 0 0 0)", 18);
-	vm_puts(vm, "(halt 0)#", 8);
-	pthread_join(vm->tid, NULL);
-	// do not wait to the end (?)
-	return 0;
-}
-
-int vm_alive(OL* vm)
-{
-	return (pthread_kill(vm->tid, 0) != ESRCH);
 }

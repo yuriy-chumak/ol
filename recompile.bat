@@ -16,4 +16,4 @@ gcc src/olvm.c src/boot.c src/repl.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_3
 :: а теперь выполним рекомпил€цию нового образа
 a.exe src/ol.scm
 :: трасформируем его в C
-::a.exe src/to-c.scm >boot.c
+a.exe src/to-c.scm >boot.c

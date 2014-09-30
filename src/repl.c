@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 #else
 	extern unsigned char* language;
 #endif
-	ol = vm_start(language);
+	ol = vm_new(language);
 
 	if (argc == 1) {
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_stdin, 0, 0, NULL);
@@ -117,9 +117,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	char response[24];
+	char response[80];
 	do {
-		int got =
 		vm_gets(ol, response, sizeof(response));
 		printf("%s", response);
 		fflush(stdout);

@@ -178,7 +178,7 @@ int main(int nargs, char **argv)
 		strcat(okname, ".ok");
 		FILE* ok = fopen(okname, "r");
 
-		vm = vm_start(language);
+		vm = vm_new(language);
 		if (test(filename, ok) == 0)
 			printf("ok.");
 		else {
@@ -186,7 +186,6 @@ int main(int nargs, char **argv)
 			result = -1;
 		}
 		fflush(stdout);
-		vm_stop(vm);
 		free(vm); vm = 0;
 		fclose(ok);
 
