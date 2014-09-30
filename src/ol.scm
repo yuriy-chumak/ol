@@ -26,6 +26,7 @@
 ;; check that (owl defmac) is indeed from last generation
 
 (define build-start (time-ms))
+(print "Loading code...")
 
 ; (import (owl defmac))
 
@@ -42,7 +43,7 @@
 (import (owl defmac)) ;; reload default macros needed for defining libraries etc
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*vm-special-ops* *libraries* *codes* wait *args* stdin stdout stderr set-ticker run build-start)
+,forget-all-but (*vm-special-ops* *libraries* *codes* wait stdin stdout stderr set-ticker run build-start)
 
 
 ;;;
@@ -862,8 +863,10 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                ;; still running in the boostrapping system
                ;; the next value after evaluation will be the new repl heap
                ;; start point for the vm
+
+               ;; entry point of the compiled image?
                (λ (vm-args)
-;                 (print "vm-args: " vm-args)
+                  ;(print "vm-args: " (null? vm-args "null" vm-args))
                   ;; now we're running in the new repl 
                   (start-thread-controller
                      (list
@@ -888,16 +891,15 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                                                 (env-set env (car defn) (cdr defn)))
                                              initial-environment
                                              (list
-                                                (cons '*owl* (directory-of (car vm-args)))
-                                                (cons '*args* vm-args)
+                                                ;(cons '*owl* (directory-of (car vm-args)))
                                                 (cons 'dump compiler)
-                                                (cons '*owl-version* *owl-version*)
-                                                ;(cons '*owl-metadata* *owl-metadata*)
-                                                (cons '*owl-names* initial-names)
                                                 (cons 'eval exported-eval)
                                                 (cons 'render render) ;; can be removed when all rendering is done via libraries
+                                                (cons '*owl-version* *owl-version*)
+                                                ;;(cons '*owl-metadata* *owl-metadata*)
+                                                (cons '*owl-names* initial-names)
                                                 (cons '*vm-special-ops* vm-special-ops)
-                                                ;(cons '*codes* (vm-special-ops->codes vm-special-ops))
+                                                ;;(cons '*codes* (vm-special-ops->codes vm-special-ops))
                                                 )))))))))
                      null)))))))
 
@@ -911,44 +913,14 @@ Check out http://code.google.com/p/owl-lisp for more information.")
 ;; note, one one could use the compiler of the currently running system, but using 
 ;; the rebuilt one here to make changes possible in 1 instead of 2 build cycles.
 ;; (this may be changed later)
-
-(define command-line-rules
-   (cl-rules
-      `((output "-o" "--output" has-arg comment "output path")
-        ;(format "-f" "--format" has-arg comment "output format (c or fasl)")
-        (specialize "-s" "--specialize" has-arg comment "vm extensions (none, some, all)"))))
-
-(define (choose-natives str all)
-   (cond
-      ((equal? str "none") null)
-      ((equal? str "some") usual-suspects)
-      ((equal? str "all") all)
-      (else (print "Bad native selection: " str))))
-
-;;;
-;;; Step 3 - profit
-;;;
-
 (print "Code loaded at " (- (time-ms) build-start) "ms.")
+(print "Compiling ...")
 
-; entry point of ol.scm
-((λ (args)
-   (process-arguments (cdr args) command-line-rules "you lose"
-      (λ (opts extra)
-         (cond
-            ((not (null? extra))
-               (print "Unknown arguments: " extra)
-               1)
-            (else
-               (compiler heap-entry "unused historical thingy"
-                  (list->ff
-                     `((output . ,(get opts 'output 'bug))
-                       (want-symbols . #true)
-                       (want-codes . #true)
-                       (want-native-ops . #true)))
-                  (choose-natives 
-                     (get opts 'specialize "none")
-                     heap-entry))
-               (print "Output written at " (- (time-ms) build-start) "ms.")
-               0)))))
- '("ol.scm" "-s" "none" "-o" "fasl/bootp.fasl"))
+(compiler heap-entry "unused historical thingy"
+   (list->ff
+     `((output . "boot.fasl")      ; output file
+       (want-symbols . #true)      ;?
+       (want-codes . #true)        ;?
+       (want-native-ops . #true))) ;?
+   null) ; "none" = null, "some" = usual-suspects, "all" = heap-entry : vm extensions (none, some, all)
+(print "Output written at " (- (time-ms) build-start) "ms.")

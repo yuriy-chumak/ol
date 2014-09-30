@@ -135,7 +135,7 @@ pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
 	pthread_t th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)function, argument, 0, NULL);
 	if (thread != NULL)
 		*thread = th;
-	return (th != NULL);
+	return (th == NULL);
 }
 
 static int
@@ -1202,10 +1202,13 @@ struct args
 	word *fp; // allocation pointer (top of allocated heap)
 
 	void *userdata;
-	volatile char ready;
+	volatile char signal;
 };
 // args + 0 = (list "arg0" "arg 1") or ("arg0 arg1" . NIL) ?
 // args + 3 = objects list
+// Несколько замечаний по этой функции:
+//  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
+//  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
 static
 void* runtime(void *args) // heap top
 {
@@ -1227,7 +1230,7 @@ void* runtime(void *args) // heap top
 	fifo *fo =&((struct args*)args)->vm->i;
 
 	// все, машина инициализирована, отсигналимся
-	((struct args*)args)->ready = 1;
+	((struct args*)args)->signal = 1;
 
 	void *userdata = ((struct args*)args)->userdata;
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
@@ -1267,6 +1270,7 @@ apply: // apply something at ob to values in regs, or maybe switch context
 			ob = (word *) R[0];
 			if (!allocp(ob)) {
 				fprintf(stderr, "Unexpected virtual machine exit\n");
+				// todo: maybe required same behaviour as "exit" call
 				return (void*)fixval(R[3]);
 			}
 
@@ -1879,8 +1883,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 							switch (count) {\
 							case  0: return ((conv unsigned int (*) ())\
 											function) ();\
-							case  1: return ((conv unsigned int (*) (int)) function)\
-											(args[0]);\
+							case  1: return ((conv unsigned int (*) (int))\
+											function) (args[0]);\
 							case  2: return ((conv unsigned int (*) (int, int)) function)\
 											(args[0], args[1]);\
 							case  3: return ((conv unsigned int (*) (int, int, int)) function)\
@@ -2169,7 +2173,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								result = INULL;
 							else {
 								int len = lenn((char*)got, FMAX+1);
-								result = (word*)mkbvec(len, TSTRING);
+								result = mkbvec(len, TSTRING);
 								//if (len == FMAX+1) return INULL; /* can't touch this */
 								bytecopy((char*)got, ((char*)result)+W, len);
 							}
@@ -2518,7 +2522,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 //  this is NOT thread safe function!
 OL* vm_start(unsigned char* language)
 {
-	// создадим виртуальную машину:
+	// создадим виртуальную машину
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
@@ -2528,10 +2532,11 @@ OL* vm_start(unsigned char* language)
 
 	// выделим память машине:
 	max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
-	heap.begin = heap.genstart = (word*) malloc((INITCELLS + FMAX + MEMPAD) * sizeof(word)); // at least one argument string always fits
+	int required_memory_size = (INITCELLS + FMAX + MEMPAD) * sizeof(word);
+	heap.begin = heap.genstart = (word*) malloc(required_memory_size); // at least one argument string always fits
 	if (!heap.begin) {
-		fprintf(stderr, "Failed to allocate initial memory\n");
-		exit(4);
+		fprintf(stderr, "Failed to allocate %d bytes for vm memory\n", required_memory_size);
+		goto failed;
 	}
 	heap.end = heap.begin + FMAX + INITCELLS - MEMPAD;
 
@@ -2548,9 +2553,7 @@ OL* vm_start(unsigned char* language)
 	// подготовим в памяти машины параметры командной строки:
 
 	// create '("some string", NIL) as parameter for the start lambda
-	// todo: добавить возможность компиляции самого компилятора, для этого надо
-	//  втянуть компилятор из owl/ol.scm и запустить его с параметрами командной строки
-	//  например, "-s none -o fasl/compiled.fasl", а не так как сейчас
+	// а вообще, от этого блока надо избавится.
 	word *oargs = fp = heap.begin;
 	{
 		char* filename = "#";
@@ -2579,7 +2582,7 @@ OL* vm_start(unsigned char* language)
 	word nobjs = count_fasl_objects(&nwords, language); // подсчет количества слов и объектов в образе
 
 	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
-	fp = oargs + 3; // move fp too
+	fp = oargs + 3;
 
 	// deserialize heap to the objects
 	word* ptrs = fp;
@@ -2590,8 +2593,8 @@ OL* vm_start(unsigned char* language)
 	int pos;
 	for (pos = 0; pos < nobjs; pos++) {
 		if (fp >= heap.end) {
-			puts("gc needed during heap import\n");
-			exit(1);
+			fprintf(stderr, "gc needed during heap import\n");
+			goto failed;
 		}
 		deserialize(ptrs, pos);
 	}
@@ -2607,15 +2610,20 @@ OL* vm_start(unsigned char* language)
 	args.max_heap_size = max_heap_size; // max heap size in MB
 	args.fp = fp;
 
-	args.ready = 0;
+	args.signal = 0;
 	args.userdata = oargs;
 
 //	runtime(args);
-	pthread_create(&handle->tid, NULL, &runtime, &args);
-	while (!args.ready)
-		pthread_yield();
+	if (pthread_create(&handle->tid, NULL, &runtime, &args) == 0) {
+		while (!args.signal)
+			pthread_yield();
+		return handle;
+	}
 
-	return handle;
+failed:
+	free(heap.begin);
+	free(handle);
+	return NULL;
 }
 
 /*void eval(char* message, char* response, int length)

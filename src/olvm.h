@@ -8,24 +8,24 @@
 //	а еще в html - тег нумерованного СПИСКА (еще одна отсылка к lisp)
 
 #ifdef __cplusplus
-#	define EXTERN extern "C"
-
 	class OL;
+	extern "C" {
 #else
-#	define EXTERN
-
 	struct OL;
+	typedef struct OL OL;
 #endif
 
+// todo: change to vm_new and vm_free or vm_delete or vm_destroy or something
 
-EXTERN struct
+
 OL* vm_start(unsigned char* language); // после того, как машина закончит работу, можно просто сделать free()
-EXTERN int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
+int vm_stop(struct OL* vm);
 
-EXTERN int vm_puts(struct OL* vm, char *message, int n);
-EXTERN int vm_stop(struct OL* vm);
-EXTERN int vm_gets(struct OL* vm, char *message, int n);
-EXTERN int vm_feof(struct OL* vm);  // все ли забрали из входящего буфера
+//int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
+
+int vm_puts(struct OL* vm, char *message, int n);
+int vm_gets(struct OL* vm, char *message, int n);
+int vm_feof(struct OL* vm);  // все ли забрали из входящего буфера
 
 #ifdef __cplusplus
 class OL
@@ -45,4 +45,7 @@ public:
 	typedef struct OL OL;
 #endif
 
+#ifdef __cplusplus
+	}
+#endif
 #endif//__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
