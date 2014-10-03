@@ -6,6 +6,8 @@
  */
 
 #include "olvm.h"
+#ifndef STANDALONE
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +54,7 @@ from_stdin(void *args) // heap top
 		vm_puts(ol, "(define *interactive* #t)", 25);
 		int ch;
 		while ((ch = fgetc(stdin)) != EOF)
-			vm_puts(ol, &ch, 1);
+			vm_puts(ol, (char*)&ch, 1);
 		vm_puts(ol, ",quit", 5);
 	}
 }
@@ -89,10 +91,10 @@ int main(int argc, char* argv[])
 	AllocConsole();
 #endif
 
-	// disable buffering
-	setvbuf(stderr, (void*)0, _IONBF, 0);
-	set_signal_handler(); // set up signal handler
-	set_blocking(2, 0);
+//	// disable buffering
+//	setvbuf(stderr, (void*)0, _IONBF, 0);
+//	set_signal_handler(); // set up signal handler
+//	set_blocking(2, 0);
 
 #if 0
 	unsigned char*
@@ -131,3 +133,5 @@ int main(int argc, char* argv[])
 #endif
 	return 0;
 }
+
+#endif//STANDALONE

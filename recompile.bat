@@ -1,3 +1,4 @@
+@echo off
 ::set PATH=%PATH%;C:\MinGW\bin;C:\MinGW\msys\1.0\bin
 ::gcc src/vm.c src/tests.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32
 ::make.exe owl
@@ -8,6 +9,7 @@
 
 erase if exist a.exe
 erase if exist boot.fasl
+erase if exist repl.exe
 
 :: соберем интерпретатор (с интегрированным образом)
 set PATH=%PATH%;C:\MinGW\bin;C:\MinGW\msys\1.0\bin
@@ -17,3 +19,4 @@ gcc src/olvm.c src/boot.c src/repl.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_3
 a.exe src/ol.scm
 :: трасформируем его в C
 a.exe src/to-c.scm >boot.c
+gcc src/olvm.c boot.c src/repl.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -Ofast -o repl.exe

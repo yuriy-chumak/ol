@@ -2,6 +2,8 @@
 #ifndef __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 #define	__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 
+#define STANDALONE
+
 // тут игра слов OL <> 0L
 //	нулевой порог вхождения
 //	сокращение от OwlLisp
@@ -10,14 +12,12 @@
 
 #ifdef __cplusplus
 	extern "C" {
-#else
-	typedef struct OL OL;
 #endif
 
 // todo: change to vm_new and vm_free or vm_delete or vm_destroy or something
 
 struct
-OL* vm_new(unsigned char* language); // после того, как машина закончит работу, можно просто сделать free()
+OL* vm_new(char* language); // после того, как машина закончит работу, можно просто сделать free()
 
 //int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
 

@@ -230,6 +230,11 @@
                   (tuple-case msg
                      ((flush) ;; clear names before boot (deprecated)
                         (interner root codes))
+                     ((defined? symbol)
+                        (if (maybe-lookup-symbol root symbol)
+                           (mail sender #t)
+                           (mail sender #f))
+                        (interner root codes))
                      (else
                         ;(print "unknown interner op: " msg)
                         (interner root codes))))
@@ -237,8 +242,13 @@
                   ;(debug "interner: info")
                   (mail sender (tuple 'interner-state root codes))
                   (interner root codes))
+               ((symbol? msg)
+                  (print "interner: " msg " -> " (maybe-lookup-symbol root "something"))
+                  (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
+                  (interner root codes))
                (else
                   ;(debug "interner: bad")
+
                   (mail sender 'bad-kitty)
                   (interner root codes)))))
 

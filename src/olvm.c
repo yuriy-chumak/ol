@@ -19,6 +19,8 @@
 #endif
 
 
+// STANDALONE - самостоятельный бинарник без потоков и т.д.
+
 // todo: проверить, что все работает в 64-битном коде
 // todo: переименовать tuple в array. array же неизменяемый, все равно.
 //  а изменяемые у нас вектора
@@ -27,8 +29,8 @@
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
 
 // компилятор поддерживает только несколько специальных форм:
-//	lambda, quote, rlambda, receive, _branch, _define, _case-lambda, values (смотреть env.scm)
-//	все остальное - макросами (?)
+//	lambda, quote, rlambda (recursive lambda), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
+//	все остальное - макросы (?)
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -50,6 +52,8 @@
 // thread local storage modifier for virtual machine private variables -
 // виртуальная машина у нас работает в отдельном потоке, соответственно ее
 // локальные переменные можно держать в TLS, а не в какой-то VM структуре
+#ifndef STANDALONE
+
 #ifndef _thread_local
 # if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
 #  define thread_local _Thread_local
@@ -69,6 +73,10 @@
 # endif
 #endif
 
+#else
+#  define _thread_local
+#endif//STANDALONE
+
 /*** Portability Issues ***/
 
 #ifdef _WIN32
@@ -81,18 +89,26 @@
 	typedef unsigned long in_addr_t;
 #	define EWOULDBLOCK WSAEWOULDBLOCK
 #	undef ERROR // due to macro redefinition
+#else
+
+#	include <netinet/in.h>
+#	include <sys/socket.h>
+#	include <sys/wait.h>
+
+#	ifndef O_BINARY
+#		define O_BINARY 0
+#	endif
+
 #endif
 #ifdef __ANDROID__
 #	include <netinet/in.h>
 #	include <sys/socket.h>
-#	include <sys/wait.h>
 #	include <sys/wait.h>
 	typedef unsigned long in_addr_t;
 #endif
 #ifdef __linux__
 #	include <netinet/in.h>
 #	include <sys/socket.h>
-#	include <sys/wait.h>
 #	include <sys/wait.h>
 #	ifndef O_BINARY
 #		define O_BINARY 0
@@ -122,6 +138,8 @@
 
 // Threading (pthread)
 //
+#ifndef STANDALONE
+
 #ifdef _WIN32
 // todo: change to the http://mirrors.kernel.org/sourceware/pthreads-win32/
 #define PTW32_VERSION 2,9,1,0
@@ -185,10 +203,11 @@ static int pthread_yield(void)
 #	include <pthread.h>
 #endif
 
-
+#endif//STANDALONE
 #define STATIC static __inline__
 
 // -=( fifo )=------------------------------------------------
+#ifndef STANDALONE
 // кольцевой текстовый буфер для общения с виртуальной машиной
 #define FIFOLENGTH (1 << 14) // 4*4096 for now // was << 14
 
@@ -278,8 +297,10 @@ int fifo_feof(struct fifo* f)
 	return f->eof;
 }
 
+#endif//STANDALONE
 
 // -=( dl )=-----------------------------------------------
+#ifndef STANDALONE
 // интерфейс к динамическому связыванию системных библиотек
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -332,16 +353,18 @@ void *dlsym  (void *handle, const char *name)
 #include <dlfcn.h>
 #endif
 
-
+#endif//STANDALONE
 // -=( OL )=----------------------------------------------------------------------
 // --
 //
 // виртуальная машина
 typedef struct OL
 {
+#ifndef STANDALONE
 	pthread_t tid;
 	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
 	struct fifo o;
+#endif//STANDALONE
 } OL;
 
 typedef uintptr_t word;
@@ -1226,8 +1249,10 @@ void* runtime(void *args) // heap top
 	// allocation pointer (top of allocated heap)
 	fp       = ((struct args*)args)->fp;
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
+#	ifndef STANDALONE
 	fifo *fi =&((struct args*)args)->vm->o;
 	fifo *fo =&((struct args*)args)->vm->i;
+#	endif//STANDALONE
 
 	// все, машина инициализирована, отсигналимся
 	((struct args*)args)->signal = 1;
@@ -1704,6 +1729,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				word a = A1, b = A2, c = A3;
 				word result = INULL; // default returned value is INULL
 
+//				printf("SYSPRIM(%d, %d, %d, %d)\n", op, a, b, c);
+
 				switch (op) {
 				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 				//  остальное можно спокойно оформлять отдельными функциями
@@ -1722,9 +1749,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					if (len > size)
 						break;
 
+#					ifndef STANDALONE
 					if (fd == 1) // stdout wrote to the fo
 						wrote = fifo_puts(fo, ((char *)buff)+W, len);
 					else
+#					endif//STANDALONE
 						wrote = write(fd, ((char *)buff)+W, len);
 
 					if (wrote > 0)
@@ -1743,6 +1772,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					int n, nwords = (max/W) + 2;
 					res = new (nwords);
 
+#					ifndef STANDALONE
 					if (fd == 0) { // stdin reads from fi
 						if (fifo_empty(fi)) {
 							// todo: process EOF, please!
@@ -1757,7 +1787,19 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						}
 					}
 					else
+#					endif//STANDALONE
+					{
+#ifdef _WIN32
+			            if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
+			               n = read(fd, ((char *) res) + W, max);
+			            } else {
+			               n = -1;
+			               errno = EAGAIN;
+			            }
+#else
 						n = read(fd, ((char *) res) + W, max); // from <unistd.h>
+#endif
+					}
 					if (n > 0) { // got some bytes
 						word read_nwords = (n/W) + ((n%W) ? 2 : 1);
 						int pads = (read_nwords-1)*W - n;
@@ -1778,11 +1820,15 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				// EXIT
 				case 6:
 					free(heap.begin); // освободим занятую память
+#					ifndef STANDALONE
 					// подождем, пока освободится место в консоли
 					while (fifo_full(fo)) pthread_yield();
 					fifo_put(fo, EOF); // и положим туда EOF
 
 					pthread_exit((void*)fixval(a));
+#					else
+					exit(fixval(a));
+#					endif//STANDALONE
 					break;
 
 				case 7: /* set memory limit (in mb) */ // todo: переделать на другой номер
@@ -1797,6 +1843,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					  break;
 
 				// -=( pinvoke )=-------------------------------------------------
+#				ifndef STANDALONE
 				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
 				case 30: { // dlopen
 					word *filename = (word*)a;
@@ -1837,7 +1884,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					break;
 				}
 				// временный тестовый вызов
-				case 33: {
+				case 33: { // temp
 /*					printf("opengl version: %s\n", glGetString(GL_VERSION));
 					int glVersion[2] = {-1, -1}; // Set some default values for the version
 					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
@@ -1865,7 +1912,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				}
 
 				// вызвать библиотечную функцию
-				case 32: {
+				case 32: { // pinvoke
 					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 					unsigned int call(int convention, void* function, int args[], int count) {
 						// todo: ограничиться количеством функций поменьше
@@ -2186,6 +2233,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 					break; // case 32
 				}
+#				endif//STANDALONE
 				default:
 					result = prim_sys(op, a, b, c);
 					break;
@@ -2463,21 +2511,26 @@ word *deserialize(word *ptrs, int me)
 
 // функция подсчета количества объектов в загружаемом образе
 static
+word decode_word(unsigned char** _hp) {
+	unsigned char* hp = *_hp;
+	word result = 0;
+	word newobj, i;
+	do {
+		i = *hp++;
+		newobj = result << 7;
+		assert (result == (newobj >> 7));
+//			if (result != (newobj >> 7)) exit(9); // overflow kills
+		result = newobj + (i & 127);
+	}
+	while (i & 128);
+	*_hp = hp;
+	return result;
+}
+
+
+static
 int count_fasl_objects(word *words, unsigned char *lang) {
 	unsigned char* hp;
-	word decode_word() {
-		word result = 0;
-		word newobj, i;
-		do {
-			i = *hp++;
-			newobj = result << 7;
-			assert (result == (newobj >> 7));
-//			if (result != (newobj >> 7)) exit(9); // overflow kills
-			result = newobj + (i & 127);
-		}
-		while (i & 128);
-		return result;
-	}
 
 	int n = 0;
 	hp = lang;
@@ -2487,19 +2540,19 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		switch (*hp++) {
 		case 1: {
 			hp++; ++allocated;
-			int size = decode_word();
+			int size = decode_word(&hp);
 			while (size--) {
 				if (*hp == 0) {
 					hp++; ++allocated;
 					hp++;
 				}
-				decode_word(); // simply skip word
+				decode_word(&hp); // simply skip word
 			}
 			break;
 		}
 		case 2: {
 			hp++;
-			int size = decode_word();
+			int size = decode_word(&hp);
 			hp += size;
 
 			int words = (size/W) + (((size % W) == 0) ? 1 : 2);
@@ -2524,7 +2577,12 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // -=( virtual machine functions )=--------------------------------
 //
 // this is NOT thread safe function
+#ifndef STANDALONE
 OL* vm_new(unsigned char* language)
+#else
+extern char* language;
+int main(int argc, char* argv[])
+#endif//STANDALONE
 {
 	// создадим виртуальную машину
 	OL *handle = malloc(sizeof(OL));
@@ -2608,6 +2666,7 @@ OL* vm_new(unsigned char* language)
 	args.fp = fp;
 	args.userdata      = oargs;
 
+#ifndef STANDALONE
 	args.signal = 0;
 	if (pthread_create(&handle->tid, NULL, &runtime, &args) == 0) {
 		while (!args.signal)
@@ -2615,12 +2674,23 @@ OL* vm_new(unsigned char* language)
 		return handle;
 	}
 	fprintf(stderr, "Can't create thread for vm");
+#else
+#	ifndef _WIN32
+	setvbuf(stderr, (void*)0, _IONBF, 0);
+//	setvbuf(stdout, (void*)0, _IONBF, 0);
+	set_blocking(1, 0);
+	set_blocking(2, 0);
+#	endif
+	runtime(&args);
+#endif//STANDALONE
 
 failed:
 	free(heap.begin);
 	free(handle);
 	return NULL;
 }
+
+#ifndef STANDALONE
 
 /*void eval(char* message, char* response, int length)
 {
@@ -2631,6 +2701,7 @@ void eval2(char* message)
 {
 	fifo_puts(&fi, message, strlen(message) + 1);
 }*/
+
 int vm_alive(OL* vm)
 {
 	return (pthread_kill(vm->tid, 0) != ESRCH);
@@ -2653,3 +2724,4 @@ int vm_feof(OL* vm)
 {
 	return fifo_feof(&vm->i);
 }
+#endif//STANDALONE
