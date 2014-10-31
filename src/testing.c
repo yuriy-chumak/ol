@@ -38,7 +38,7 @@ pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
 #define O_BINARY 0
 #endif
 
-static OL* vm;
+static struct OL* vm;
 
 /***************************************************
  * TESTS

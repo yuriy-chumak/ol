@@ -7,9 +7,9 @@
 ::Debug\vm owl/ol.scm
 ::Debug\vm src/to-c.scm >src\boot.c
 
-erase if exist a.exe
-erase if exist boot.fasl
-erase if exist repl.exe
+if exist a.exe     erase a.exe
+if exist boot.fasl erase boot.fasl
+if exist repl.exe  erase repl.exe
 
 :: соберем интерпретатор (с интегрированным образом)
 set PATH=%PATH%;C:\MinGW\bin;C:\MinGW\msys\1.0\bin

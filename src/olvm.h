@@ -2,13 +2,11 @@
 #ifndef __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 #define	__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 
-#define STANDALONE
-
 // тут игра слов OL <> 0L
 //	нулевой порог вхождения
 //	сокращение от OwlLisp
 //	а еще в html - тег нумерованного СПИСКА (еще одна отсылка к lisp)
-	struct OL;
+struct OL;
 
 #ifdef __cplusplus
 	extern "C" {
@@ -39,6 +37,8 @@ public:
 	int puts(char *message, int n) { vm_puts(vm, message, n);
 	int gets(char *message, int n) { vm_gets(vm, message, n);
 };
+#else
+typedef struct OL OL;
 #endif
 
 #ifdef __cplusplus

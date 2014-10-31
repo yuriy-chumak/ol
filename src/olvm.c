@@ -52,29 +52,25 @@
 // thread local storage modifier for virtual machine private variables -
 // виртуальная машина у нас работает в отдельном потоке, соответственно ее
 // локальные переменные можно держать в TLS, а не в какой-то VM структуре
-#ifndef STANDALONE
-
-#ifndef _thread_local
-# if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
-#  define thread_local _Thread_local
-# elif defined _WIN32 && ( \
-       defined _MSC_VER || \
-       defined __ICL || \
-       defined __DMC__ || \
-       defined __BORLANDC__ )
-#  define _thread_local __declspec(thread)
-/* note that ICC (linux) and Clang are covered by __GNUC__ */
-# elif defined __GNUC__ || \
-       defined __SUNPRO_C || \
-       defined __xlC__
-#  define _thread_local __thread
-# else
-#  error "Cannot define thread_local"
-# endif
-#endif
-
-#else
+#ifdef STANDALONE
 #  define _thread_local
+#else
+#	ifndef _thread_local
+#		if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
+#			define thread_local _Thread_local
+#		elif defined _WIN32 && ( \
+		     defined _MSC_VER || \
+		     defined __ICL || \
+		     defined __DMC__ || \
+		     defined __BORLANDC__ )
+#			define _thread_local __declspec(thread)
+/* note that ICC (linux) and Clang are covered by __GNUC__ */
+#		elif defined __GNUC__ || defined __SUNPRO_C || defined __xlC__
+#			define _thread_local __thread
+#		else
+#			error "Cannot define thread_local"
+#		endif
+#	endif
 #endif//STANDALONE
 
 /*** Portability Issues ***/
@@ -670,6 +666,20 @@ static _thread_local word *fp;
 static __inline__ word* new (size_t size)
 {
 	word* object = fp;
+	fp += size;
+	return object;
+}
+static __inline__ word* new_string (size_t length, char* string)
+{
+	word* object = fp;
+
+	int size = (length / W) + ((length % W) ? 2 : 1);
+	int pads = (size-1) * W - length;
+
+	*fp = make_raw_header(size, TSTRING, pads);
+	char* p = ((char *) fp) + W;
+	while (*string) *p++ = *string++;
+
 	fp += size;
 	return object;
 }
@@ -2578,7 +2588,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 //
 // this is NOT thread safe function
 #ifndef STANDALONE
-OL* vm_new(unsigned char* language)
+OL* vm_new(char* language)
 #else
 extern char* language;
 int main(int argc, char* argv[])
@@ -2588,9 +2598,9 @@ int main(int argc, char* argv[])
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
-	// подготовим очереди ввода/вывода:
+	// подготовим очереди в/в
 	//fifo_clear(&handle->i);
-	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху
+	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
 
 	// выделим память машине:
 	max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
@@ -2608,9 +2618,10 @@ int main(int argc, char* argv[])
 	// create '("some string" . NIL) as parameter for the start lambda
 	// а вообще, от этого блока надо избавится.
 	//  но пока оставлю как пример того, как можно предварительно
-	//  загрузить в память аргументы перед выховом образа
+	//  загрузить в память аргументы перед вызовом образа
 	// по совместительству, это еще и корневой объект
-	word *oargs = fp = heap.begin;
+	fp = heap.begin;
+	word *oargs = 0;
 	{
 		char* filename = "#";
 		char *pos = filename;
@@ -2618,6 +2629,8 @@ int main(int argc, char* argv[])
 		int len = 0;
 		while (*pos++) len++;
 
+		oargs = new_string (len, filename);
+/*
 		int size = (len / W) + ((len % W) ? 2 : 1);
 		int pads = (size-1) * W - len;
 
@@ -2625,7 +2638,7 @@ int main(int argc, char* argv[])
 		pos = ((char *) fp) + W;
 		while (*filename) *pos++ = *filename++;
 
-		fp += size;
+		fp += size;*/
 		fp[0] = PAIRHDR;
 		fp[1] = (word) oargs;
 		fp[2] = (word) INULL;
