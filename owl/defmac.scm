@@ -1,4 +1,5 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
+; todo: rename to the r5rs.scm
 (define-library (owl defmac)
 
    (export
@@ -85,6 +86,7 @@
                   (case-lambda . rest)))))
 
       ;; note, no let-values yet, so using let*-values in define-values
+      ; 4.2.3  Sequencing
       (define-syntax begin
          (syntax-rules (define define-syntax letrec define-values let*-values)
             ;((begin
@@ -197,6 +199,7 @@
                   (begin . then)
                   (case thing . clauses)))))
 
+      ; 4.1.1  Variable references
       (define-syntax define
          (syntax-rules (lambda λ)
             ((define op a b . c)
@@ -294,6 +297,7 @@
             ((list a . b)
                (cons a (list . b)))))
 
+      ; 4.2.6  Quasiquotation
       (define-syntax quasiquote
          (syntax-rules (unquote quote unquote-splicing append _work _sharp_vector list->vector)
                                                    ;          ^         ^

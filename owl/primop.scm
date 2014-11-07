@@ -70,6 +70,7 @@
                   (append lst '(17)))))) ;; fail if arity mismatch
                type-bytecode #false)))
 
+      ; todo: переделать с разименованием через define-syntax
       (define (desc name bytecode function)
          (tuple name   (nth bytecode 2)
                     (- (car bytecode) 1) 1 function)) 
@@ -117,8 +118,8 @@
       (define sys         (func '(4 27 4 5 6 7    24 7)))
       (define sizeb       (func '(2 28 4 5        24 5)))
       (define raw         (func '(4 60 4 5 6 7    24 7)))
-      (define _connect    (func '(3 34 4 5 6      24 6))) ;; <- remove and add to sys
-      (define _sleep      (func '(2 37 4 5        24 5)))   ;; <- move to sys
+      (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
+      (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys
       (define fxband      (func '(3 55 4 5 6      24 6)))
       (define fxbor       (func '(3 56 4 5 6      24 6)))
       (define fxbxor      (func '(3 57 4 5 6      24 6)))
@@ -126,7 +127,7 @@
       (define type        type-byte)
       (define size        (func '(2 36 4 5        24 5)))
       (define cast        (func '(3 22 4 5 6      24 6)))
-      (define set!        (func '(4 10 4 5 6 7    24 7)))
+;     (define set!        (func '(4 10 4 5 6 7    24 7)))
       (define ref         (func '(3 47 4 5 6      24 6))) ; op47 = ref t o r = prim_ref(A0, A1)
       (define refb        (func '(3 48 4 5 6      24 6)))
       (define ff-toggle   (func '(2 46 4 5        24 5)))
@@ -174,7 +175,7 @@
             (tuple 'type         15 1 1 type)
             (tuple 'size         36 1 1 size)  ;;  get object size (- 1)
             (tuple 'cast         22 2 1 cast)  ;; cast object type (works for immediates and allocated)
-            (tuple 'set!         10 3 1 set!)  ;; set!
+;           (tuple 'set!         10 3 1 set!)  ;; set!
             (tuple 'ref          47 2 1 ref)   ;;
             (tuple 'refb         48 2 1 refb)      ;;
             (tuple 'mkt          23 'any 1 mkt)   ;; mkt type v0 .. vn t
