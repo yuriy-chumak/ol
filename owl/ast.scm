@@ -15,6 +15,7 @@
       (owl symbol)
       (owl defmac)
       (owl equal)
+      (owl io) ; for display
       (owl env))
 
    (begin
@@ -39,7 +40,7 @@
       (define (mkcall rator rands)
          (tuple 'call rator rands))
 
-      ;;; cps adds a cont + system
+      ;;;; cps adds a cont + system
       (define (mkprim op args)
          (tuple 'prim op args))
 
@@ -210,9 +211,25 @@
       ; -> #(ok exp' env) | #(fail reason)
 
       (define (sexp->ast exp env)
+;         (if (env-get env '*interactive* #false) (begin
+;            (display "sexp->ast: ")
+;            (print exp)))
+;         (call/cc
+;            (lambda (drop)
+;               (let ((translated
+;                           (translate exp env
+;                              (lambda (reason) (drop (fail reason))))))
+;                  (if (env-get env '*interactive* #false) (begin
+;                     (display "sexp->ast result: ")
+;                     (print translated)))
+;                  (tuple 'ok
+;                     translated
+;                     env)))))
          (call/cc
             (lambda (drop)
                (tuple 'ok
-                  (translate exp env
-                     (lambda (reason) (drop (fail reason))))
-                  env))))))
+                  (translate exp env (lambda (reason) (drop (fail reason))))
+                  env))))
+
+
+))

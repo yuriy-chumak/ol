@@ -296,7 +296,7 @@ int fifo_feof(struct fifo* f)
 #endif//STANDALONE
 
 // -=( dl )=-----------------------------------------------
-#ifndef STANDALONE
+#ifndef JAVASCRIPT
 // интерфейс к динамическому связыванию системных библиотек
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -955,7 +955,7 @@ static word prim_sys(int op, word a, word b, word c) {
             return IFALSE;
          mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
          val = open(((char *) path) + W, mode,(S_IRUSR|S_IWUSR));
-         if (val < 0 || fstat(val, &sb) == -1 || sb.st_mode & S_IFDIR) {
+         if (val < 0 || fstat(val, &sb) == -1 || (sb.st_mode & S_IFDIR)) {
             close(val);
             return IFALSE;
          }
@@ -1194,15 +1194,15 @@ int sss = hdrsize(ptrs[0]);
 free((void *) file_heap);
 */
 
-#define OGOTO(f, n)                 ob = (word *)R[f]; acc = n; goto apply
-#define RET(n)                      ob = (word *)R[3]; R[3] = R[n]; acc = 1; goto apply
+//#define OGOTO(f, n)                 ob = (word *)R[f]; acc = n; goto apply
+//#define RET(n)                      ob = (word *)R[3]; R[3] = R[n]; acc = 1; goto apply
 
 #define OCLOSE(proctype)            \
 	{ word size = *ip++, tmp; word *ob = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
 #define CLOSE1(proctype)            \
 	{ word size = *ip++, tmp; word *ob = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
 #define NEXT(n)                     ip += n; goto main_dispatch
-#define SKIP(n)                     ip += n; break;
+//#define SKIP(n)                     ip += n; break;
 #define TICKS                       10000 /* # of function calls in a thread quantum  */
 #define ERROR(opcode, a, b)         { R[4] = F(opcode); R[5] = (word) a; R[6] = (word) b; goto invoke_mcp; }
 #define CHECK(exp,val,code)         if (!(exp)) ERROR(code, val, ITRUE);
@@ -1420,6 +1420,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define JP    16       // JZ, JN, JT, JF
 #	define JLQ    8       // jlq ?
 #	define JF2   25
+#	define RET   24
 
 	// примитивы языка
 #	define CONS  51
@@ -1503,8 +1504,14 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				ip += (ip[1] << 8) | ip[2];
 			ip += 3; break;
 		}
+		case RET: // return value
+			ob = (word *) R[3];
+			R[3] = R[ip[0]];
+			acc = 1;
+			goto apply;
 
-		   op18: /* goto-code p */
+
+		op18: /* goto-code p */
 		      ob = (word *) R[*ip]; /* needed in opof gc */
 		      acc = ip[1];
 		      ip = ((unsigned char *) R[*ip]) + W;
@@ -1650,7 +1657,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 6: goto op6; case 7: goto op7;
 		case 15: goto op15;
 		case 18: goto op18; case 19: goto op19; case 20: goto op20; case 21: goto op21;
-		case 22: goto op22; case 23: goto op23; case 24: goto op24; case 26: goto op26; case 27: goto op27;
+		case 22: goto op22; case 23: goto op23; case 26: goto op26; case 27: goto op27;
 		case 28: goto op28; case 32: goto op32;
 		case 34: goto op34; case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
 		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44; case 45: goto op45;
@@ -1658,19 +1665,65 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
 		case 58: goto op58; case 59: goto op59; case 60: goto op60; case 61: goto op61; case 62: goto op62;
 
-//		// ошибки
+//		// ошибки!
 		case 17: /* arity error */
 			ERROR(17, ob, F(acc));
-
-		// неиспользуемые коды (историческое наследие, при желании можно реюзать)
-		case 10: /* unused */
-			ERROR(10, IFALSE, IFALSE);
-		case 11: /* unused */
-			ERROR(11, IFALSE, IFALSE);
-		case 12: /* unused */
-			ERROR(12, IFALSE, IFALSE);
+			// неиспользуемые коды (историческое наследие, при желании можно реюзать)
 		case 33:
 			ERROR(33, IFALSE, IFALSE);
+
+
+		// мутатор
+		case 10: { // set! o t r
+			// временная команда для демонстрации возможностей
+			word *obj = (word *)A0;
+			word offset = fixval(A1);
+			word value = (word)A2;
+
+			// todo: add assertions
+			switch (hdrtype(obj[0])) {
+				case TPAIR: // list
+					while (offset--)
+						obj = (word*)obj[2];
+					obj[1] = value;
+					break;
+			}
+			A3 = A0;
+			ip += 4; break;
+		}
+		case 11: { // (set-car! pair value)
+			word *pair = (word *)A0;
+			assert (allocp(pair) && pair[0] == PAIRHDR);
+			word value = (word)A1;
+			pair[1] = value;
+
+			A2 = A0;
+			ip += 3; break;
+		}
+		case 12: { // (set-cdr! pair value)
+			word *pair = (word *)A0;
+			assert (allocp(pair) && pair[0] == PAIRHDR);
+			word value = (word)A1;
+			pair[2] = value;
+
+			A2 = A0;
+			ip += 3; break;
+		}
+
+//		   op22: { /* cast o t r */
+//		      word *ob = (word *) R[*ip];
+//		      word type = fixval(A1) & 63;
+//		      A2 = prim_cast(ob, type);
+//		      NEXT(3); }
+//
+//		   op27: /* syscall cont op arg1 arg2 */
+//		      ob = (word *) R[0];
+//		      R[0] = IFALSE;
+//		      R[3] = A1; R[4] = R[*ip]; R[5] = A2; R[6] = A3;
+//		      acc = 4;
+//		      if (ticker > 10) bank = ticker; /* deposit remaining ticks for return to thread */
+//		      goto apply;
+
 
 
 		// ff функции
@@ -1853,7 +1906,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					  break;
 
 				// -=( pinvoke )=-------------------------------------------------
-#				ifndef STANDALONE
+#				ifndef JAVASCRIPT
 				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
 				case 30: { // dlopen
 					word *filename = (word*)a;
@@ -2309,12 +2362,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       A2 = prim_cast(ob, type);
       NEXT(3); }
 
-   op24: /* ret val */
-      ob = (word *) R[3];
-      R[3] = R[*ip];
-      acc = 1;
-      goto apply;
-
    op27: /* syscall cont op arg1 arg2 */
       ob = (word *) R[0];
       R[0] = IFALSE;
@@ -2400,6 +2447,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
    op60: /* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
       A3 = prim_lraw(A0, fixval(A1), A2);
       NEXT(4);
+
    op61: /* clock <secs> <ticks> */ { /* fixme: sys */
       struct timeval tp;
       word *ob = new (6); /* space for 32-bit bignum - [NUM hi [NUM lo null]] */
@@ -2428,8 +2476,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 	} // switch(1)
 
-//super_dispatch: /* run macro instructions */
 //   // todo: add here JIT
+//super_dispatch: /* run macro instructions */
 //   switch(op) {
 ///* AUTOGENERATED INSTRUCTIONS */
 //      default:
@@ -2588,10 +2636,11 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 //
 // this is NOT thread safe function
 #ifndef STANDALONE
-OL* vm_new(char* language)
+OL*
+vm_new(unsigned char* language)
 #else
-extern char* language;
-int main(int argc, char* argv[])
+extern unsigned char* language;
+int main(int argc, char** argv)
 #endif//STANDALONE
 {
 	// создадим виртуальную машину
@@ -2700,7 +2749,12 @@ int main(int argc, char* argv[])
 failed:
 	free(heap.begin);
 	free(handle);
+
+#ifndef STANDALONE
 	return NULL;
+#else
+	return 0;
+#endif
 }
 
 #ifndef STANDALONE

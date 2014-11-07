@@ -1,4 +1,4 @@
-(display "char *language = \"")
+(display "unsigned char *language = (unsigned char*) \"")
 (for-each (lambda (x)
              (display "\\x")
              (display (string (ref "0123456789abcdef" (div x 16))))

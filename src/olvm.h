@@ -14,14 +14,17 @@ struct OL;
 
 // todo: change to vm_new and vm_free or vm_delete or vm_destroy or something
 
+#ifndef STANDALONE
 struct
-OL* vm_new(char* language); // после того, как машина закончит работу, можно просто сделать free()
+OL* vm_new(unsigned char* language); // после того, как машина закончит работу, можно просто сделать free()
 
 //int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
 
 int vm_puts(struct OL* vm, char *message, int n);
 int vm_gets(struct OL* vm, char *message, int n);
 int vm_feof(struct OL* vm);  // все ли забрали из входящего буфера
+
+#endif
 
 #ifdef __cplusplus
 struct OL

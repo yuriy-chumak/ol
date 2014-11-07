@@ -1,4 +1,4 @@
-  
+; http://www.schemers.org/Documents/Standards/R5RS/HTML/
 (define-library (owl defmac)
 
    (export

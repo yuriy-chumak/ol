@@ -41,8 +41,8 @@
 
       (define vm-instructions
          (list->ff
-            `((move . 9)      ; move a, t:      Rt = Ra
-              (refi . 1)      ; refi a, p, t:   Rt = Ra[p], p unsigned                                       ;+
+            `((move . 9)      ; move a, t:      Ra -> Rt
+              (refi . 1)      ; refi a, p, t:   Ra[p] -> Rt, p unsigned                                       ;+
               (goto . 2)      ; jmp a, nargs    call Ra with nargs args
               (clos . 3)      ; clos lp, o, nenv, e0 ... en, t: 
               (cloc . 4)      ; cloc lp, o, nenv, e0 ... en, t: 
