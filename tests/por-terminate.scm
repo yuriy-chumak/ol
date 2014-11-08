@@ -30,7 +30,7 @@
    (if (= n 0)
       r
       (begin
-         (set-ticker 0) ;; thread context switch in next function call (-)
+         (set-ticker-value 0) ;; thread context switch in next function call (-)
          (iter-ret-step (- n 1) r))))
 
 (print "Por termination order: "

@@ -270,7 +270,7 @@
                ;; note: could make this check every n rounds or ms
                (if (_sleep (* ms-per-round rounds)) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
-                  (set-ticker 0)))
+                  (set-ticker-value 0)))
             (else
                (lets
                   ((a (wait 1))

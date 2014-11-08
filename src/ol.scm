@@ -43,7 +43,7 @@
 (import (owl defmac)) ;; reload default macros needed for defining libraries etc
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*vm-special-ops* *libraries* *codes* wait stdin stdout stderr set-ticker run build-start)
+,forget-all-but (*vm-special-ops* *libraries* *codes* wait stdin stdout stderr set-ticker-value run build-start)
 
 
 ;;;
@@ -407,7 +407,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 (define (profile thunk n)
    (lets
       ((skip (start-profiling))
-       (skip (set-ticker 0))
+       (skip (set-ticker-value 0))
        (res (thunk))
        (stats (stop-profiling))
        (most-used
@@ -470,7 +470,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       fork-linked-server
       exit-owl
       single-thread?
-      set-ticker
+      set-ticker-value
       kill
       catch-thread
       release-thread

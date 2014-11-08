@@ -3,6 +3,8 @@
 ;; todo: convert tuple to variable arity
 ;; todo: convert arity checks 17 -> 25
 
+;; todo: maybe move ncar, and other "n" to the normal but with macroses on top level with type checking.
+
 (define-library (owl primop)
    (export 
       primops
@@ -10,18 +12,19 @@
       multiple-return-variable-primops
       variable-input-arity?
       special-bind-primop?
+
       ;; primop wrapper functions
-      run 
-      set-ticker
-      clock 
       sys-prim
+      clock 
       bind
       ff-bind
-		mkt
+      mkt
+      
+      run
       halt
       wait
       ;; extra ops
-      set-memory-limit get-word-size get-memory-limit start-seccomp
+      set-memory-limit get-word-size get-memory-limit start-seccomp set-ticker-value _yield
 
       apply apply-cont ;; apply post- and pre-cps
       call/cc call-with-current-continuation 
@@ -101,6 +104,8 @@
       ;                  '(arity command arguments . command arguments)
       ; арность + непосредственный байткод примитивов
       ; дело в том, что эти команды оформляются как JF2 арность байткод, JF2 проверяет (и выравнивает, если надо) арность
+      (define SYS-PRIM   '(5 63 4 5 6 7 8  24 8))
+      
       (define CONS       '(3 51 4 5 6      24 6)) ; 51 = CONS
       (define CAR        '(2 52 4 5        24 5)) ; 52 = CAR
       (define CDR        '(2 53 4 5        24 5)) ; 53 = CDR
@@ -108,21 +113,25 @@
       (define SET-CDR!   '(3 12 4 5 6      24 6))
 
 
+      (define sys-prim    (func SYS-PRIM))
+
       (define cons        (func CONS))
       (define car         (func CAR))
       (define cdr         (func CDR))
+      (define set-car!    (func SET-CAR!))
+      (define set-cdr!    (func SET-CDR!))
+
       (define run         (func '(3 50 4 5 6      24 6)))
-      (define set-ticker  (func '(2 62 4 5        24 5)))
-      (define sys-prim    (func '(5 63 4 5 6 7 8  24 8)))
       (define clock       (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
       (define sys         (func '(4 27 4 5 6 7    24 7)))
       (define sizeb       (func '(2 28 4 5        24 5)))
       (define raw         (func '(4 60 4 5 6 7    24 7)))
-      (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
       (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys
+      
       (define fxband      (func '(3 55 4 5 6      24 6)))
       (define fxbor       (func '(3 56 4 5 6      24 6)))
       (define fxbxor      (func '(3 57 4 5 6      24 6)))
+      
       (define type-byte   (func '(2 15 4 5        24 5))) ;; fetch just type information. old type will be removed later.
       (define type        type-byte)
       (define size        (func '(2 36 4 5        24 5)))
@@ -131,27 +140,7 @@
       (define ref         (func '(3 47 4 5 6      24 6))) ; op47 = ref t o r = prim_ref(A0, A1)
       (define refb        (func '(3 48 4 5 6      24 6)))
       (define ff-toggle   (func '(2 46 4 5        24 5)))
-      (define set-car!    (func SET-CAR!))
-      (define set-cdr!    (func SET-CDR!))
-
-
-      ;; make thread sleep for a few thread scheduler rounds
-      (define (wait n)
-         (if (eq? n 0)
-            n
-            (let* ((n _ (fx- n 1)))
-               (set-ticker 0)
-               (wait n))))
-
-      ;; from cps
-      (define (special-bind-primop? op)
-         (or (eq? op 32) (eq? op 49)))
-
-      ;; fixme: handle multiple return value primops sanely (now a list)
-      (define multiple-return-variable-primops
-         (list 49 26 38 39 40 58 59 37 61))
-
-      (define (variable-input-arity? op) (eq? op 23)) ;; mkt
+      (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
 
       (define primops
          (list
@@ -199,6 +188,7 @@
 
       (define primops (append primops
          (list
+            (desc 'sys-prim     SYS-PRIM sys-prim)
             (tuple 'bind         32 1 #false bind)  ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
             (tuple 'set          45 3 1 set)   ;; (set tuple pos val) -> tuple'
             (tuple 'lesser?      44 2 1 lesser?)  ;; (lesser? a b)
@@ -216,18 +206,37 @@
             (tuple 'fx-          40 2 2 fx-)   ;; (fx- a b)       ;; 2 out
             (tuple 'fx>>         58 2 2 fx>>)   ;; (fx>> a b) -> hi lo, lo are the lost bits
             (tuple 'fx<<         59 2 2 fx<<)   ;; (fx<< a b) -> hi lo, hi is the overflow
-            (tuple 'clock        61 0 2 clock) ; (clock) → posix-time x ms
-            (tuple 'set-ticker   62 1 1 set-ticker)
-            (tuple 'sys-prim     63 4 1 sys-prim))))
+            (tuple 'clock        61 0 2 clock)))) ; (clock) → posix-time x ms
 
       ;; special things exposed by the vm
-      (define (set-memory-limit n) (sys-prim 7 n n n))
-      (define (get-word-size)      (sys-prim 8 #false #false #false))
-      (define (get-memory-limit)   (sys-prim 9 #false #false #false))
+      (define (set-memory-limit n) (sys-prim  7 n n n))
+      (define (get-word-size)      (sys-prim  8 #false #false #false))
+      (define (get-memory-limit)   (sys-prim  9 #false #false #false))
       (define (start-seccomp)      (sys-prim 10 #false #false #false)) ; not enabled by defa
 
       ;; stop the vm *immediately* without flushing input or anything else with return value n
-      (define (halt n)             (sys-prim 6 n n n))
+      (define (halt n)             (sys-prim  6 n n n))
+      ;; make thread sleep for a few thread scheduler rounds
+      (define (set-ticker-value n) (sys-prim 22 n #false #false))
+      (define (_yield)             (set-ticker-value 0))
+      (define (wait n)
+         (if (eq? n 0)
+            n
+            (let* ((n (- n 1)))
+               (_yield)
+               (wait n))))
+
+
+
+      ;; from cps
+      (define (special-bind-primop? op)
+         (or (eq? op 32) (eq? op 49)))
+
+      ;; fixme: handle multiple return value primops sanely (now a list)
+      (define multiple-return-variable-primops
+         (list 49 26 38 39 40 58 59 37 61))
+
+      (define (variable-input-arity? op) (eq? op 23)) ;; mkt
 
 
       (define call/cc
@@ -266,6 +275,7 @@
                         (ref (car primops) 1))
                      (else
                         (loop (cdr primops))))))))
+
 
 ; проверку типов вынесем на уровень компилятора!
 ; можно и в отдельный файл

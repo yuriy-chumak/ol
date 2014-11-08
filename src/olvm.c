@@ -931,7 +931,7 @@ static word prim_set(word wptr, word pos, word val) {
    word *newobj;
    int p = 0;
    pos = fixval(pos);
-   if(immediatep(ob)) { return IFALSE; }
+   if (immediatep(ob)) { return IFALSE; }
    hdr = *ob;
    if (rawp(hdr) || hdrsize(hdr) < pos) { return IFALSE; }
    word size = hdrsize(hdr);
@@ -1663,7 +1663,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44; case 45: goto op45;
 		case 46: goto op46; case 47: goto op47; case 48: goto op48; case 49: goto op49; case 50: goto op50;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
-		case 58: goto op58; case 59: goto op59; case 60: goto op60; case 61: goto op61; case 62: goto op62;
+		case 58: goto op58; case 59: goto op59; case 60: goto op60; case 61: goto op61;
 
 //		// ошибки!
 		case 17: /* arity error */
@@ -1895,15 +1895,21 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					break;
 
 				case 7: /* set memory limit (in mb) */ // todo: переделать на другой номер
+					result = max_heap_size;
 					max_heap_size = fixval(a);
-					 result = a;
-					 break;
-				  case 8: /* get machine word size (in bytes) */ // todo: переделать на другой номер
+					break;
+				case 8: /* get machine word size (in bytes) */ // todo: переделать на другой номер
 					  result = F(W);
 					  break;
 				  case 9: /* get memory limit (in mb) */ // todo: переделать на другой номер
 					  result = F(max_heap_size);
 					  break;
+
+				case 22:
+					result = (ticker & FMAX);
+					ticker = fixval(a);
+					break;
+
 
 				// -=( pinvoke )=-------------------------------------------------
 #				ifndef JAVASCRIPT
@@ -2468,12 +2474,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
          ob[4] = F(tp.tv_sec & FMAX);
       }
       NEXT(2); }
-   op62: /* set-ticker <val> <to> -> old ticker value */ /* fixme: sys */
-      A1 = F(ticker & FMAX);
-      ticker = fixval(A0);
-      NEXT(2);
-
-
 	} // switch(1)
 
 //   // todo: add here JIT

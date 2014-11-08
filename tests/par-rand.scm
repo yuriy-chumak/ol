@@ -6,7 +6,7 @@
    (if (eq? n 0)
       r
       (begin
-         (set-ticker 0) ;; force thread switch
+         (set-ticker-value 0) ;; force thread switch
          (step-down r (- n 1)))))
 
 (define (stepper r n) 

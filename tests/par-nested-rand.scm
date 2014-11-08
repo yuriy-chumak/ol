@@ -17,10 +17,10 @@
           (rsp (seed->rands seed)))
          (por
             (begin
-               (set-ticker a)
+               (set-ticker-value a)
                (seek rs lo mid n))
             (begin
-               (set-ticker b)
+               (set-ticker-value b)
                (seek rsp mid hi n))))))
 
 (define seed (time-ms))
