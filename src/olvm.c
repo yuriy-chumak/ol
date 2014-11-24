@@ -683,14 +683,35 @@ static __inline__ word* new_string (size_t length, char* string)
 	fp += size;
 	return object;
 }
+static __inline__ word* new_pair (word* car, word* cdr)
+{
+	word *object = fp;
+
+	fp[0] = PAIRHDR;
+	fp[1] = (word) car;
+	fp[2] = (word) cdr;
+
+	fp += 3;
+	return object;
+}
+static __inline__ word* new_tuple (size_t length)
+{
+	word *object = fp;
+
+	fp[0] = make_header(length + 1, TTUPLE);
+
+	fp += (length + 1);
+	return object;
+}
 
 /* input desired allocation size and (the only) pointer to root object
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 static word *gc(int size, word *regs) {
 	word *root;
 	word *realend = heap.end;
+	word *heapbegin = heap.begin;
 	int nfree;
-	fp = regs + hdrsize(*regs); // следущий после regs (?)
+//	fp = regs + hdrsize(*regs); // следущий после regs (?) // fix fp!!!
 	root = fp + 1;
 
 	*root = (word) regs;
@@ -1400,13 +1421,17 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	//  регистры, мы их складываем в память во временный объект-список.
 	if (fp >= heap.end - 16*1024) { // (((word)fp) + 1024*64 >= ((word) memend))
 		int p = 0, N = NR;
-		*fp = make_header(N + 2, TTUPLE); // hdr r_0 .. r_(NR-1) ob // was: 50 as type
-		while (++p <= N) fp[p] = R[p-1];
-		fp[p] = (word) ob;
-		fp = gc(16*1024 * sizeof(word), fp); // GC, как правило занимает 0-15 ms
-		ob = (word *) fp[p];
-		while (--p >= 1) R[p-1] = fp[p];
+		// создадим в топе временный объект со значениями всех регистров
+		word *regs = new_tuple (N + 1); // hdr r_0 .. r_(NR-1) ob // was: 50 as type
+		while (++p <= N) regs[p] = R[p-1];
+		regs[p] = (word) ob;
+		// выполним сборку мусора
+		regs = gc(16*1024 * sizeof(word), regs); // GC, как правило занимает 0-15 ms
+		// и восстановим все регистры, уже скорректированные сборщиком
+		ob = (word *) regs[p];
+		while (--p >= 1) R[p-1] = regs[p];
 
+		fp = regs; // вручную сразу удалим временный объект, это оптимизация
 		ip = (unsigned char *) (ob + 1);
 	}
 
@@ -2678,28 +2703,37 @@ int main(int argc, char** argv)
 		int len = 0;
 		while (*pos++) len++;
 
-		oargs = new_string (len, filename);
+		word *args = new_string (len, filename);
+		oargs = new_pair (args, (word*)INULL);
+
 /*
-		int size = (len / W) + ((len % W) ? 2 : 1);
-		int pads = (size-1) * W - len;
+		word *a, *b;
+		new_string (4, "----");
 
-		*fp = make_raw_header(size, TSTRING, pads);
-		pos = ((char *) fp) + W;
-		while (*filename) *pos++ = *filename++;
+		a = new_string(4, "1111");
+		b = new_string(4, "2222");
 
-		fp += size;*/
-		fp[0] = PAIRHDR;
-		fp[1] = (word) oargs;
-		fp[2] = (word) INULL;
-		oargs = fp;
+		word *p = new_pair(a, b);
+//		p[1] = a;
+//		p[2] = b;
+//		oargs = new_pair(a, b);
+		new_string (4, "----");
+
+		word *q = new_pair(0, 0);
+		a = new_string(4, "3333");
+		q[1] = a;
+		q[2] = a;
+
+		new_string (4, "----");
+		oargs = new_pair(p, q);*/
 	}
 
 	// а теперь поработаем со сериализованным образом:
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, language); // подсчет количества слов и объектов в образе
 
-	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
-	fp = oargs + 3;
+//	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
+//	fp = oargs + 3;
 
 	// Десериализация загруженного образа в объекты
 	word* ptrs = fp;
