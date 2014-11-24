@@ -35,16 +35,57 @@
       (owl defmac))
 
    (begin
+      ;; changing any of the below 3 primops is tricky. they have to be recognized by the primop-of of 
+      ;; the repl which builds the one in which the new ones will be used, so any change usually takes 
+      ;; 2 rebuilds.
+
+      ; these 2 primops require special handling, mainly in cps
+      ; (похоже, они нигде не используются?)
+      (define ff-bind ;; turn to badinst soon, possibly return later 
+         ; (func '(2 49))
+         '__ff-bind__
+
+         )
+      (define bind
+         ; (func '(2 32 4 5 24 5))
+         '__bind__
+         )
+      ; this primop is the only one with variable input arity
+      (define mkt 
+         '__mkt__
+         ;(func '(4 23 3 4 5 6 7 24 7))
+         )
+   
+   
+      (define functions (list
+         (tuple 'mkt          23 'any 1 mkt)   ;; mkt type v0 .. vn t
+      ))
+      
+      
+   
+   
       ; список команд виртуальной машины
       (define JF2 25)
-      (define ARITYERROR 17)
-      (define RET 24)
 
       ; пара служебных функций:
       (define (append a b) ; append
          (if (eq? a '())
             b
             (cons (car a) (append (cdr a) b))))
+            
+      (define (append! a b)
+         (if (eq? (car a) '())
+            (set-car! a b)
+            (let loop ((a a) (b b))
+               (if (eq? (cdr a) '())
+                  (set-cdr! a (cons b '()))
+                  (loop (cdr a) b))))
+         a)
+         
+      (define (append-list! a b) ; a == list, b == list
+         (if (eq? (cdr a) '())
+            (set-cdr! a b)
+            (append-list! (cdr a) b)))
 
       (define (- a b)
          (let* ((n _ (fx- a b)))
@@ -63,57 +104,73 @@
                (let* ((p (+ n 1)))
                  (loop (cdr lst) (+ n 1))))))
 
+      ; трансформаторы кода в реальный байткод
       (define (func lst)
          (let*
             ((arity (car lst))
              (lst (cdr lst))
              (len (length lst)))
             (raw
+;               (append (list JF2 arity 0 len)
+;                       (append lst '(17)))
+            
                (cons JF2 (cons arity (cons 0 (cons len ; 25 is JF2
-                  (append lst '(17)))))) ;; fail if arity mismatch
+                  (append lst '(17)))))) ;; fail if arity mismatch (17 == ARITYERROR)
+               type-bytecode #false)))
+               
+      (define (jf2 template)
+         (let* ((arity (car template))
+             (bytecode (cdr template))
+             (len (length bytecode)))
+            (raw
+               (append (list JF2 arity 0 len)
+                       (append bytecode '(17)))
                type-bytecode #false)))
 
       ; todo: переделать с разименованием через define-syntax
       (define (desc name bytecode function)
          (tuple name   (nth bytecode 2)
                     (- (car bytecode) 1) 1 function)) 
+;      (define (description name template function)
+;         (let* ((opcode (nth template 2))
+;              (arity (- (car template) 1)))
+;         (tuple name opcode arity 1 function)))
+;;                    (- (car bytecode) 1) 1 function))
+;
+;      (define (function name template)
+;         (let* ((arity (car template))
+;             (bytecode (cdr template))
+;             (opcode (car bytecode))
+;             (len (length bytecode))
+;             (procedure (raw
+;                           (append (list JF2 arity 0 len)
+;                                   (append bytecode '(17)))
+;                           type-bytecode #false)))
+;            ;(append-list! functions (list (tuple name opcode (- arity 1) 1 procedure)))
+;            procedure))
 
-      ;; changing any of the below 3 primops is tricky. they have to be recognized by the primop-of of 
-      ;; the repl which builds the one in which the new ones will be used, so any change usually takes 
-      ;; 2 rebuilds.
 
-      ; these 2 primops require special handling, mainly in cps
-      ; похоже, они нигде не используются?
-      (define ff-bind ;; turn to badinst soon, possibly return later 
-         ; (func '(2 49))
-         '__ff-bind__
+;      (define templates (list->ff '(
+;        (sys-prim . '(4 . (63 4 5 6 7  8  24 8))))))
 
-         )
-      (define bind
-         ; (func '(2 32 4 5 24 5))
-         '__bind__
-         )
-      ; this primop is the only one with variable input arity
-      (define mkt 
-         '__mkt__
-         ;(func '(4 23 3 4 5 6 7 24 7))
-         )
 
       ;; these rest are easy
       ; 24 = RET
-      ;                  '(arity command arguments . command arguments)
+      ;                  '(arity . (command arguments . command arguments))
       ; арность + непосредственный байткод примитивов
       ; дело в том, что эти команды оформляются как JF2 арность байткод, JF2 проверяет (и выравнивает, если надо) арность
-      (define SYS-PRIM   '(5 63 4 5 6 7 8  24 8))
+      (define SYS-PRIM   '(5 . (63 4 5 6 7  8  24 8)))
       
-      (define CONS       '(3 51 4 5 6      24 6)) ; 51 = CONS
-      (define CAR        '(2 52 4 5        24 5)) ; 52 = CAR
-      (define CDR        '(2 53 4 5        24 5)) ; 53 = CDR
-      (define SET-CAR!   '(3 11 4 5 6      24 6))
-      (define SET-CDR!   '(3 12 4 5 6      24 6))
+      (define CONS       '(3 . (51 4 5      6  24 6))) ; 51 = CONS
+      (define CAR        '(2 . (52 4        5  24 5))) ; 52 = CAR
+      (define CDR        '(2 . (53 4        5  24 5))) ; 53 = CDR
+      (define SET-CAR!   '(3 . (11 4 5      6  24 6)))
+      (define SET-CDR!   '(3 . (12 4 5      6  24 6)))
 
+;      (define sys-prim    (function 'sys-prim '(5 . (63 4 5 6 7  8   24 8))))
 
       (define sys-prim    (func SYS-PRIM))
+;      (define sys-prim    (jf2 SYS-PRIM))
 
       (define cons        (func CONS))
       (define car         (func CAR))
@@ -142,6 +199,23 @@
       (define ff-toggle   (func '(2 46 4 5        24 5)))
       (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
 
+      ; 2
+      (define set      (func '(4 45 4 5 6 7 24 7)))
+      (define lesser?  (func '(3 44 4 5 6 24 6)))
+      (define listuple (func '(4 35 4 5 6 7 24 7)))
+      (define mkblack  (func '(5 42 4 5 6 7 8 24 8)))
+      (define mkred    (func '(5 43 4 5 6 7 8 24 8)))
+      (define red?     (func '(2 41 4 5 24 5)))
+      (define fxqr     (func '(4 26))) ;; <- placeholder 
+      (define fx+      (func '(4 38 4 5 6 7 24 7)))
+      (define fx-      (func '(4 40 4 5 6 7 24 7)))
+      (define fx>>     (func '(4 58 4 5 6 7 24 7)))
+      (define fx<<     (func '(4 59 4 5 6 7 24 7)))
+      
+      (define apply      (raw '(20)                type-bytecode #false)) ;; <- no arity, just call 20
+      (define apply-cont (raw (list (fxbor 20 64)) type-bytecode #false))
+
+
       (define primops
          (list
             ;;; input arity includes a continuation
@@ -167,27 +241,8 @@
 ;           (tuple 'set!         10 3 1 set!)  ;; set!
             (tuple 'ref          47 2 1 ref)   ;;
             (tuple 'refb         48 2 1 refb)      ;;
-            (tuple 'mkt          23 'any 1 mkt)   ;; mkt type v0 .. vn t
-            (tuple 'ff-toggle    46 1 1 ff-toggle)))  ;; (fftoggle node) -> node', toggle redness
-
-
-      (define set      (func '(4 45 4 5 6 7 24 7)))
-      (define lesser?  (func '(3 44 4 5 6 24 6)))
-      (define listuple (func '(4 35 4 5 6 7 24 7)))
-      (define mkblack  (func '(5 42 4 5 6 7 8 24 8)))
-      (define mkred    (func '(5 43 4 5 6 7 8 24 8)))
-      (define red?     (func '(2 41 4 5 24 5)))
-      (define fxqr     (func '(4 26))) ;; <- placeholder 
-      (define fx+      (func '(4 38 4 5 6 7 24 7)))
-      (define fx-      (func '(4 40 4 5 6 7 24 7)))
-      (define fx>>     (func '(4 58 4 5 6 7 24 7)))
-      (define fx<<     (func '(4 59 4 5 6 7 24 7)))
-      
-      (define apply      (raw '(20)                type-bytecode #false)) ;; <- no arity, just call 20
-      (define apply-cont (raw (list (fxbor 20 64)) type-bytecode #false))
-
-      (define primops (append primops
-         (list
+            (tuple 'ff-toggle    46 1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
+            ; 2
             (desc 'sys-prim     SYS-PRIM sys-prim)
             (tuple 'bind         32 1 #false bind)  ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
             (tuple 'set          45 3 1 set)   ;; (set tuple pos val) -> tuple'
@@ -206,7 +261,22 @@
             (tuple 'fx-          40 2 2 fx-)   ;; (fx- a b)       ;; 2 out
             (tuple 'fx>>         58 2 2 fx>>)   ;; (fx>> a b) -> hi lo, lo are the lost bits
             (tuple 'fx<<         59 2 2 fx<<)   ;; (fx<< a b) -> hi lo, hi is the overflow
-            (tuple 'clock        61 0 2 clock)))) ; (clock) → posix-time x ms
+            (tuple 'clock        61 0 2 clock)   ; (clock) → posix-time x ms
+            
+;            (tuple 'mkt          23 'any 1 mkt) - moved to the "functions"
+       ))
+       
+       
+;       (let app! ((a primops))
+;          (if (eq? (cdr a) '())
+;             (set-cdr! a theclock)
+;             (app! (cdr a))))
+       
+;       (append-list! primops
+;          functions
+;       )
+      (define primops (append primops functions))
+
 
       ;; special things exposed by the vm
       (define (set-memory-limit n) (sys-prim  7 n n n))
