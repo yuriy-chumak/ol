@@ -454,10 +454,11 @@
       ;; these are core data structure type tags which are fixed and some also relied on by the vm
 
       ;; ALLOCATED
+      (define type-pair              1)
+      
       (define type-bytecode         16)
       (define type-proc             17)
       (define type-clos             18)
-      (define type-pair              1)
       (define type-vector-dispatch  15)
       (define type-vector-leaf      11)
       (define type-vector-raw       19) ;; see also TBVEC in c/ovm.c

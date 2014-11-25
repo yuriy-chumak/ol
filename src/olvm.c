@@ -533,12 +533,24 @@ typedef int32_t   wdiff;
 // *pos <- **pos, **pos <- pos with !flag(*pos)
 // pos -> *pos -> **pos превращается в pos -> **pos,
 // то-есть тут мы выбрасываем промежуточный указатель?
+//	*pos can be flagged and can be not flagged
 static __inline__
 void rev(word* pos) {
-//	*pos can be flagged and can be not flagged
 	word ppos = *pos;
-	*pos = cont(ppos); // next
-	cont(ppos) = ((word)pos | 1) ^ (ppos & 1);
+	*pos = cont(ppos);// | 1; // next
+	cont(ppos) = ((word)pos | ((ppos & 1) ^ 1)); // инверсия флажка
+}
+static __inline__
+void rev0(word* pos) {
+	word ppos = *pos;
+	*pos = cont(ppos) & ~1; // next
+	cont(ppos) = ((word)pos | ((ppos & 1) ^ 1)); // инверсия флажка
+}
+static __inline__
+void rev1(word* pos) {
+	word ppos = *pos;
+	*pos = cont(ppos) | 1; // next
+	cont(ppos) = ((word)pos | ((ppos & 1) ^ 1)); // инверсия флажка
 }
 
 // возвращает последнего "flagged" в цепочке:
@@ -554,6 +566,7 @@ word *chase(word* pos) {
 	return pos;
 }
 
+// просматривает список справа налево
 static void mark(word *pos, word *end)
 {
 //	assert(pos is NOT flagged)
@@ -564,7 +577,7 @@ static void mark(word *pos, word *end)
 				pos = ((word *) flag(chase((word *) val))) - 1; // flag in this context equal to CLEAR flag
 			else {
 				word hdr = *(word *) val;
-				rev(pos);
+				rev1(pos);
 				if (flagged_or_raw(hdr))
 					pos--;
 				else
@@ -575,6 +588,7 @@ static void mark(word *pos, word *end)
 			pos--;
 	}
 }
+
 
 static word *compact()
 {
@@ -602,8 +616,10 @@ static word *compact()
 				newobj++;
 			}
 		}
-		else
+		else {
+//			newobj += hdrsize(*old); // TEMP!!!
 			old += hdrsize(*old);
+		}
 	}
 	return newobj;
 }
@@ -703,6 +719,23 @@ static __inline__ word* new_tuple (size_t length)
 	fp += (length + 1);
 	return object;
 }
+static __inline__ word* new_tuplei (size_t length, ...)
+{
+	word *object = fp;
+
+	va_list argp;
+	va_start(argp, length);
+
+	fp[0] = make_header(length + 1, TTUPLE);
+	int i = 0;
+	while (i < length)
+		fp[++i] = va_arg(argp, word);
+
+	va_end(argp);
+
+	fp += (length + 1);
+	return object;
+}
 
 /* input desired allocation size and (the only) pointer to root object
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
@@ -711,14 +744,17 @@ static word *gc(int size, word *regs) {
 	word *realend = heap.end;
 	word *heapbegin = heap.begin;
 	int nfree;
-//	fp = regs + hdrsize(*regs); // следущий после regs (?) // fix fp!!!
 	root = fp + 1;
 
 	*root = (word) regs;
 
 	heap.end = fp;
 	mark(root, fp);
+//	mark2(root, )
+
+
 	fp = compact();
+	fp[0] = '%%%%';
 	regs = (word *) *root;
 	heap.end = realend;
 	nfree = (word)heap.end - (word)regs;
@@ -2703,37 +2739,44 @@ int main(int argc, char** argv)
 		int len = 0;
 		while (*pos++) len++;
 
-		word *args = new_string (len, filename);
-		oargs = new_pair (args, (word*)INULL);
+		oargs = new_pair (new_string (len, filename), (word*)INULL);
 
 /*
 		word *a, *b;
-		new_string (4, "----");
+		new_string (28, "----------------------------");
+
+		a = new_string(28, "1111111111111111111111111111");
+
+//		b = new_string(4, "2222");
+		word *p = new_tuplei (7, 0, INULL, INULL, INULL, INULL, INULL, INULL);
+		p[1] = a;
+
+//		new_string (4, "----");
+//		new_string (4, "----");
+
+
+//		p[1] = b;
+//		p[2] = a;
+//		p[3] = b;
+
+//		new_string (4, "----");
+		word *q = new_tuplei (7, a, INULL, INULL, INULL, INULL, INULL, INULL);
+
+		oargs = new_pair(p, q);
+
+/*		word *p = new_pair(a, b);
 
 		a = new_string(4, "1111");
-		b = new_string(4, "2222");
-
-		word *p = new_pair(a, b);
-//		p[1] = a;
-//		p[2] = b;
-//		oargs = new_pair(a, b);
-		new_string (4, "----");
-
-		word *q = new_pair(0, 0);
-		a = new_string(4, "3333");
-		q[1] = a;
-		q[2] = a;
-
-		new_string (4, "----");
-		oargs = new_pair(p, q);*/
+		p[1] = a;//new_string(4, "1111");
+		p[2] = a;//new_string(4, "2222");
+		oargs = p;*/
 	}
 
 	// а теперь поработаем со сериализованным образом:
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, language); // подсчет количества слов и объектов в образе
 
-//	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
-//	fp = oargs + 3;
+	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
 
 	// Десериализация загруженного образа в объекты
 	word* ptrs = fp;
