@@ -272,10 +272,10 @@
 ;             (set-cdr! a theclock)
 ;             (app! (cdr a))))
        
-;       (append-list! primops
-;          functions
-;       )
-      (define primops (append primops functions))
+       (append-list! primops
+          functions
+       )
+;      (define primops (append primops functions))
 
 
       ;; special things exposed by the vm

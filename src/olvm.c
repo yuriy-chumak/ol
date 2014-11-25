@@ -467,6 +467,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define FFRED                       2
 
 #define flagged_or_raw(hdr)         (hdr & (RAWBIT|1))
+#define raw(hdr)                    (hdr & RAWBIT)
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
 
@@ -577,7 +578,9 @@ static void mark(word *pos, word *end)
 				pos = ((word *) flag(chase((word *) val))) - 1; // flag in this context equal to CLEAR flag
 			else {
 				word hdr = *(word *) val;
-				rev1(pos);
+				if (immediatep(hdr))
+					*(word *) val |= 1; // flag this
+				rev(pos);
 				if (flagged_or_raw(hdr))
 					pos--;
 				else
@@ -598,6 +601,35 @@ static word *compact()
 	word *newobj = old;
 	while (old < end) {
 		if (flagged(*old)) {
+			// 1. test for presence of "unmovable objects" in this object
+			// 2. find the header:
+			word* real = (word*)((word)chase(old) & (~1));
+			word hdr_value = *real;
+			int bitset = hdr_value & RAWBIT;
+			if (!raw(hdr_value)) {
+				int found = 0;
+				int i = hdrsize(*real);
+				word* p = old;
+				while (--i) {
+					word q = *++p;
+					// 1. попробуем НЕ перемещать блоки, которые хотя и с флажком, но содержат части не упорядоченных по лево->право блокам данных
+					if (flagged(q)) {
+						printf("(found: type = %d)\n", hdrtype(q));
+						found = 1;
+						break;
+					}
+				}
+				// вот тут надо по умному использовать предыдущее свободное место: записать пустой объект с размером равным свободному месту
+				// tbd.
+				//pleasefixme
+				if (found) {
+					if (newobj != old) {
+						*newobj = make_raw_header((old - newobj), TSTRING, 0);
+					}
+					newobj = old;
+				}
+			}
+
 			word h;
 			*newobj = *old;
 			while (flagged(*newobj)) {
@@ -750,7 +782,6 @@ static word *gc(int size, word *regs) {
 
 	heap.end = fp;
 	mark(root, fp);
-//	mark2(root, )
 
 
 	fp = compact();
@@ -1299,6 +1330,8 @@ struct args
 // Несколько замечаний по этой функции:
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
+_thread_local int forcegc = 0;
+
 static
 void* runtime(void *args) // heap top
 {
@@ -1455,7 +1488,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
 	//  регистры, мы их складываем в память во временный объект-список.
-	if (fp >= heap.end - 16*1024) { // (((word)fp) + 1024*64 >= ((word) memend))
+	if (forcegc || (fp >= heap.end - 16*1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
+		if (forcegc)
+			printf("(forcegc)\n");
+		forcegc = 0;
 		int p = 0, N = NR;
 		// создадим в топе временный объект со значениями всех регистров
 		word *regs = new_tuple (N + 1); // hdr r_0 .. r_(NR-1) ob // was: 50 as type
@@ -2015,6 +2051,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				}
 				// временный тестовый вызов
 				case 33: { // temp
+					forcegc = 1;
 /*					printf("opengl version: %s\n", glGetString(GL_VERSION));
 					int glVersion[2] = {-1, -1}; // Set some default values for the version
 					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
@@ -2745,10 +2782,11 @@ int main(int argc, char** argv)
 		word *a, *b;
 		new_string (28, "----------------------------");
 
-		a = new_string(28, "1111111111111111111111111111");
 
 //		b = new_string(4, "2222");
 		word *p = new_tuplei (7, 0, INULL, INULL, INULL, INULL, INULL, INULL);
+		new_string (28, "----------------------------");
+		a = new_string(28, "1111111111111111111111111111");
 		p[1] = a;
 
 //		new_string (4, "----");
