@@ -86,10 +86,12 @@
                         (template ...)))))))
             ;; note that these could now come straight from primops
             '(cons car cdr set-car! set-cdr! eq? type type-old size cast fetch ref sys-prim refb
-              pick mk mkr sys fxbor fxbxor fread _fopen fclose fsend lraw
-              raw _connect _sopen accept mkt bind set lesser? call-native
+              pick mk mkr sys fxbor fxbxor
+              fsend _connect _sopen accept
+              lraw
+              raw  mkt bind set lesser? call-native
               mkred mkblack ff-bind ff-toggle ffcar ffcdr red? listuple
-              fxband fx+ fxqr fx* fx- fx<< fx>> ncons ncar ncdr raw-mode
+              fxband fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr raw-mode
               _sleep iomux clock time sizeb getev type-byte)))
 
       (define (execute exp env)

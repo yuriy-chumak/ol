@@ -143,9 +143,6 @@
 (define (number->string n base)
    (list->string (render-number n null base)))
 
-;(define (fopen path mode)
-;   (interop 7 (c-string path) mode))
-
 (import (owl vector))
 
 (import (owl symbol))
@@ -479,7 +476,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       wait
       wait-mail accept-mail check-mail return-mails
       set-signal-action
-;      fopen
       byte-vector?
       string->symbol
       close-port flush-port

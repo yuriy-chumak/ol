@@ -3,7 +3,7 @@
 ;;;
 
 ;; todo: split this to separate libraries for fixnums, integers, rationals etc?
-;; todo: add a simple school-long-division using fxqr to get the top digit usually fairly right and see where the breakeven point is for other methods
+;; todo: add a simple school-long-division using fx/ to get the top digit usually fairly right and see where the breakeven point is for other methods
 
 ;; todo: factor this to smaller libraries
 
@@ -106,7 +106,7 @@
       ;(define-syntax fxdivmod
       ;   (syntax-rules ()
       ;      ((fxdivmod a b)
-      ;         (lets ((q1 q2 r (fxqr 0 a b)))
+      ;         (lets ((q1 q2 r (fx/ 0 a b)))
       ;            (values q2 r)))))
 
       (define-syntax define-traced 
@@ -603,7 +603,7 @@
       (define (>> a b)
          (case (type b)
             (type-fix+
-               (lets ((_ wor bits (fxqr 0 b *fixnum-bits*)))
+               (lets ((_ wor bits (fx/ 0 b *fixnum-bits*)))
                   (if (eq? wor 0) 
                      (case (type a)
                         (type-fix+ (receive (fx>> a bits) (lambda (hi lo) hi)))
@@ -651,7 +651,7 @@
          (cond
             ((eq? a 0) 0)
             ((eq? (type b) type-fix+)
-               (lets ((_ words bits (fxqr 0 b *fixnum-bits*)))
+               (lets ((_ words bits (fx/ 0 b *fixnum-bits*)))
                   (case (type a)
                      (type-fix+
                         (lets ((hi lo (fx<< a bits)))
@@ -1065,7 +1065,7 @@
                   (values out a1)))
             (lets
                ((a2 as as)
-                (q1 q2 r (fxqr a1 a2 b)))
+                (q1 q2 r (fx/ a1 a2 b)))
                (if (eq? q1 0)
                   (qr-bs-loop r as b (ncons q2 out))
                   (qr-bs-loop r as b (ncons q2 (ncons q1 out)))))))
@@ -1074,9 +1074,9 @@
          (cond
             ((eq? b 0)
                (big-bad-args 'qr-big-small a b))
-            ;((null? (ncdr (ncdr a))) ; (al ah) b -> can use fxqr primop
+            ;((null? (ncdr (ncdr a))) ; (al ah) b -> can use fx/ primop
             ;   (let ((tl (ncdr a)))
-            ;      (fxqr (ncar tl) (ncar a) b)))
+            ;      (fx/ (ncar tl) (ncar a) b)))
             (else
                (lets 
                   ((ra (nrev a))
@@ -1255,7 +1255,7 @@
             ((lesser? (ncar b) (ncar a))
                (lets
                   ((h over (fx+ (ncar b) 1))
-                   (_ f r (fxqr 0 (ncar a) h))
+                   (_ f r (fx/ 0 (ncar a) h))
                    (bp (rmul-digit b f))
                    (ap (rev-sub a bp)))
                   (if ap (rrem ap b) a)))
@@ -1264,7 +1264,7 @@
             (else
                (lets
                   ((h o (fx+ (ncar b) 1))
-                   (f r (qr-big-small (ncons (ncar (ncdr a)) (ncons (ncar a) null)) h)) ; FIXME, use fxqr instead
+                   (f r (qr-big-small (ncons (ncar (ncdr a)) (ncons (ncar a) null)) h)) ; FIXME, use fx/ instead
                    )
                   (if (eq? (type f) type-fix+) 
                      (lets
@@ -1387,7 +1387,7 @@
       ;;; continue old general division
 
       (define (div-fixnum->negative a b)
-         (lets ((_ q r (fxqr 0 a b)))
+         (lets ((_ q r (fx/ 0 a b)))
             (if (eq? q 0)
                q
                (cast q type-fix-))))
@@ -1405,7 +1405,7 @@
             (case (type a)
                (type-fix+
                   (case (type b)
-                     (type-fix+ (lets ((_ q r (fxqr 0 a b))) q))   ; +a / +b -> +c
+                     (type-fix+ (lets ((_ q r (fx/ 0 a b))) q))   ; +a / +b -> +c
                      (type-fix- (div-fixnum->negative a b))                  ; +a / -b -> -c | 0
                      (type-int+ 0)                                             ; +a / +B -> 0
                      (type-int- 0)                                             ; +a / -B -> 0
@@ -1413,7 +1413,7 @@
                (type-fix-
                   (case (type b)
                      (type-fix+ (div-fixnum->negative a b))                  ; -a / +b -> -c | 0
-                     (type-fix- (lets ((_ q r (fxqr 0 a b))) q))             ; -a / -b -> +c
+                     (type-fix- (lets ((_ q r (fx/ 0 a b))) q))             ; -a / -b -> +c
                      (type-int+ 0)                                           ; -a / +B -> 0
                      (type-int- 0)                                             ; -a / -B -> 0
                      (else (big-bad-args 'div a b))))
@@ -1436,7 +1436,7 @@
       (define-syntax fx%
          (syntax-rules ()
             ((fx% a b)
-               (lets ((q1 q2 r (fxqr 0 a b))) r))))
+               (lets ((q1 q2 r (fx/ 0 a b))) r))))
 
       (define (rem a b)
          (case (type a)
@@ -1495,9 +1495,9 @@
             (case (type a)
                (type-fix+ 
                   (case (type b)
-                     (type-fix+ (receive (fxqr 0 a b) (lambda (_ q r) (values q r))))
+                     (type-fix+ (receive (fx/ 0 a b) (lambda (_ q r) (values q r))))
                      (type-int+ (values 0 a))
-                     (type-fix- (receive (fxqr 0 a b) (lambda (_ q r) (values (negate q) r))))
+                     (type-fix- (receive (fx/ 0 a b) (lambda (_ q r) (values (negate q) r))))
                      (type-int- (values 0 a))
                      (else (big-bad-args 'quotrem a b))))
                (type-int+
@@ -1511,8 +1511,8 @@
                (type-fix- 
                   (case (type b)
                      (type-fix+ 
-                        (receive (fxqr 0 a b) (lambda (_ q r) (values (negate q) (negate r)))))
-                     (type-fix- (receive (fxqr 0 a b) (lambda (_ q r) (values q (negate r)))))
+                        (receive (fx/ 0 a b) (lambda (_ q r) (values (negate q) (negate r)))))
+                     (type-fix- (receive (fx/ 0 a b) (lambda (_ q r) (values q (negate r)))))
                      (type-int+ (values 0 a))
                      (type-int- (values 0 a))
                      (else (big-bad-args 'quotrem a b))))   
@@ -1633,7 +1633,7 @@
          (if (eq? (type b) type-fix+) ; negative (if any) always at a
             (cond
                ((eq? (type a) type-fix+)
-                  (lets ((_ q r (fxqr 0 a b)))
+                  (lets ((_ q r (fx/ 0 a b)))
                      (if (eq? r 0)
                         q
                         #false)))

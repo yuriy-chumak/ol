@@ -1801,7 +1801,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	      A2 = F(res>>FBITS);
 	      A3 = F(res&FMAX);
 	      NEXT(4); }
-	   op26: { /* fxqr ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums */
+	   op26: { /* fx/ ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums */
 	      uint64_t a = (((uint64_t) fixval(A0))<<FBITS) | fixval(A1);
 	      word b = fixval(A2);
 	      uint64_t q;

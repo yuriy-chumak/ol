@@ -20,7 +20,7 @@
                 (a _ (fx* x 214013))
                 (b _ (fx+ a 2531011))
                 (c _ (fx>> b 16))
-                (o p d (fxqr 0 c limit)))
+                (o p d (fx/ 0 c limit)))
             (set-car! *seed* c)
             d))
 ))

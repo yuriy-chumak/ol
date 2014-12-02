@@ -218,14 +218,14 @@
                (list "{uint64_t r=(uint64_t)fixval(R["a"])<<(FBITS-fixval(R["b"]));R["hi"]=F(r>>FBITS);R["lo"]=F(r&FMAX);}")
                bs (put (put regs lo 'fixnum) hi 'fixnum))))
 
-      ; fxqr ah al b qh ql rem, for (ah<<16 | al) = (qh<<16 | ql)*b + rem
+      ; fx/ ah al b qh ql rem, for (ah<<16 | al) = (qh<<16 | ql)*b + rem
       (define (cify-fxqr bs regs fail)
          (lets ((ah al b qh ql rem bs (get6 (cdr bs))))
             (values
                (list "{uint64_t a=((uint64_t)fixval(R["ah"]))<<FBITS|fixval(R["al"]);word b=fixval(R["b"]);uint64_t q=a/b;R["qh"]=F(q>>FBITS);R["ql"]=F(q&FMAX);R["rem"]=F(a-q*b);}")
                bs (put (put (put regs qh 'fixnum) ql 'fixnum) rem 'fixnum))))
 
-      ; fxqr ah al b qh ql rem, for (ah<<16 | al) = (qh<<16 | ql)*b + rem
+      ; fx/ ah al b qh ql rem, for (ah<<16 | al) = (qh<<16 | ql)*b + rem
       (define (cifyer-mkff type)
          (λ (bs regs fail)
             (lets ((l k v r to bs (get5 (cdr bs))))

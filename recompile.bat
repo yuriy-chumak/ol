@@ -22,3 +22,11 @@ repl.exe -e "(print \"Ok\")"
 :: тестирование полученного образа
 gcc src/olvm.c boot.c src/testing.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -Ofast -o tests.exe
 tests.exe
+
+:: второй образ на основе полученного
+repl.exe src/ol.scm
+echo Preparing new boot.c...
+a.exe src/to-c.scm >boot2.c
+echo Making new repl2.exe...
+gcc src/olvm.c boot2.c src/repl.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -Ofast -o repl2.exe
+repl2.exe -e "(print \"Ok\")"
