@@ -83,7 +83,7 @@
       (owl lazy)
       (owl list)
       (owl list-extra)
-      (only (owl syscall) error)
+      (owl error)
       (owl math))
 
    (begin

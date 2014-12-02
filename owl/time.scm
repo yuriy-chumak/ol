@@ -11,7 +11,8 @@
    (import
       (owl defmac)
       (owl io)
-      (owl syscall)
+      (owl error)
+      (owl interop)
       (owl math))
 
    (begin

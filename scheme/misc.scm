@@ -11,7 +11,7 @@
       (owl defmac)
       (owl equal)
       (owl list)
-      (only (owl syscall) error)
+      (owl error)
       (owl string)
       (only (owl sexp) list->number)
       (owl math))

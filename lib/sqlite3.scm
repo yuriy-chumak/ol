@@ -63,7 +63,7 @@
       (owl defmac) (owl io)
       (owl list) (owl string)
       (owl math) (owl vector)
-      (owl syscall)
+      (owl error)
       (owl pinvoke))
   (begin
 

@@ -352,11 +352,11 @@
 
 ; проверку типов вынесем на уровень компилятора!
 ; можно и в отдельный файл
-      ; from syscall.scm
-      (define (syscall op a b)
+      ; from interop.scm
+      (define (interop op a b)
          (call/cc (λ (resume) (sys resume op a b))))
       (define (error reason info)
-         (syscall 5 reason info))
+         (interop 5 reason info))
       (define (pair? x) (eq? type-pair (type x))) ; list.scm
 ;
 ;      (define (set-car! object value)

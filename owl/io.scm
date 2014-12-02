@@ -61,7 +61,8 @@
 
    (import
       (owl defmac)
-      (owl syscall)
+      (owl error)
+      (owl interop)
       (owl queue)
       (owl string)
       (owl list-extra)
@@ -228,7 +229,7 @@
 
       ;;; Sleeper thread
 
-      ;; todo: later probably sleeper thread and convert it to a syscall
+      ;; todo: later probably sleeper thread and convert it to a interop
 
       ;; run thread scheduler for n rounds between possibly calling vm sleep()
       (define sleep-check-rounds 10)

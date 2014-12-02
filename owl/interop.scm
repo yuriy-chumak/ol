@@ -1,11 +1,12 @@
-(define-library (owl syscall)
+(define-library (owl interop)
 
    (export
-      syscall error interact fork accept-mail wait-mail check-mail
+      interact fork accept-mail wait-mail check-mail
       exit-owl release-thread catch-thread set-signal-action
       single-thread? kill mail fork-linked-server fork-server
       return-mails fork-server fork-linked fork-named exit-thread exit-owl
       poll-mail-from start-profiling stop-profiling running-threads par*
+      start-nested-parallel-computation wrap-the-whole-world-to-a-thunk ; ??
       par por* por)
 
    (import 
@@ -14,60 +15,62 @@
 
    (begin
 
-      (define (syscall op a b)
+      (define (interop op a b)
          (call/cc (λ (resume) (sys resume op a b))))
 
       (define (exit-thread value)
-         (syscall 2 value value))
+         (interop 2 value value))
 
       ;; 3 = vm thrown error
       (define (fork-named name thunk)
-         (syscall 4 (list name) thunk))
+         (interop 4 (list name) thunk))
 
       (define (fork-linked name thunk)
-         (syscall 4 (list name 'link) thunk))
+         (interop 4 (list name 'link) thunk))
 
       (define (fork-server name handler)
-         (syscall 4 (list name 'mailbox) handler))
-
-      (define (error reason info)
-         (syscall 5 reason info))
+         (interop 4 (list name 'mailbox) handler))
 
       (define (return-mails rmails)
-         (syscall 6 rmails rmails))
+         (interop 6 rmails rmails))
 
       (define (fork-linked-server name handler)
-         (syscall 4 (list name 'mailbox 'link) handler))
+         (interop 4 (list name 'mailbox 'link) handler))
 
       (define (running-threads)
-         (syscall 8 #false #false))
+         (interop 8 #false #false))
 
       (define (mail id msg)
-         (syscall 9 id msg))
+         (interop 9 id msg))
 
       (define (kill id) 
-         (syscall 15 id #false))
+         (interop 15 id #false))
 
       (define (single-thread?)
-         (syscall 7 #true #true))
+         (interop 7 #true #true))
          
       (define (set-signal-action choice)
-         (syscall 12 choice #false))
+         (interop 12 choice #false))
 
       (define (catch-thread id)
-         (syscall 17 #true id))
+         (interop 17 #true id))
 
       (define (release-thread thread)
-         (syscall 17 #false thread))
+         (interop 17 #false thread))
 
       (define (exit-owl value)
-         (syscall 19 value value) ;; set exit value proposal in thread scheduler
+         (interop 19 value value) ;; set exit value proposal in thread scheduler
          (exit-thread value))     ;; stop self and leave the rest (io etc) running to completion
 
       ;; (executable ...) → (first-value . rest-ll) | (), or crash if something crashes in them
       (define (par* ts)
-         (syscall 22 ts '()))
+         (interop 22 ts '()))
 
+
+      (define (wrap-the-whole-world-to-a-thunk a b)
+         (interop 16 a b))
+      (define (start-nested-parallel-computation a b)
+         (interop 22 a b))
       ;; macro for calling from code directly
       (define-syntax par
          (syntax-rules ()
@@ -86,8 +89,8 @@
             ((por exp ...)
                (por* (list (λ () exp) ...)))))
     
-      (define (wait-mail)           (syscall 13 #false #false))
-      (define (check-mail)          (syscall 13 #false #true))
+      (define (wait-mail)           (interop 13 #false #false))
+      (define (check-mail)          (interop 13 #false #true))
 
       (define (accept-mail pred)
          (let loop ((this (wait-mail)) (rev-spam '()))
@@ -144,8 +147,8 @@
          (ref (accept-mail (λ (env) (eq? (ref env 1) whom))) 2))
 
       (define (start-profiling)
-         (syscall 20 #true #true))
+         (interop 20 #true #true))
 
       (define (stop-profiling)
-         (syscall 21 #true #true))
+         (interop 21 #true #true))
 ))

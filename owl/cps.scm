@@ -10,7 +10,7 @@
       (owl math)
       (owl gensym)
       (owl io)
-      (only (owl syscall) error)
+      (owl error)
       (only (owl env) primop? primop-of)
       (owl primop)) 
 

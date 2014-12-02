@@ -28,10 +28,10 @@
       (owl list-extra)
       (owl sort)
       (owl primop)
-      (only (owl syscall) por por*)
+      (only (owl interop) por por*)
       (owl defmac)
       (owl ff)
-      (only (owl syscall) error))
+      (owl error))
 
    (begin
       ;;;

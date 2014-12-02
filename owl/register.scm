@@ -21,7 +21,7 @@
       (owl primop)
       (owl io)
       (owl equal)
-      (only (owl syscall) error)
+      (owl error)
       (owl list)
       (scheme misc))
 

@@ -27,7 +27,7 @@
       (owl defmac)
       (owl list)
       (owl math)
-      (only (owl syscall) error)
+      (owl error)
       (owl list-extra))
 
    (begin

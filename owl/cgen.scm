@@ -29,7 +29,7 @@
       (owl primop)
       (owl render)
       (owl io)
-      (only (owl syscall) error)
+      (owl error)
       (only (owl assemble) inst->op))
 
    (begin

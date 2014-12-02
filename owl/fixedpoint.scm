@@ -12,7 +12,7 @@
       (owl list)
       (owl equal)
       (owl list-extra)
-      (only (owl syscall) error)
+      (owl error)
       (owl io)
       (owl env))
 

@@ -25,7 +25,7 @@
       (owl defmac)
       (owl list)
       (owl list-extra)
-      (only (owl syscall) error))
+      (owl error))
 
    (begin
       ;; convert an application to a thunk

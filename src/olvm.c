@@ -1439,7 +1439,7 @@ void* runtime(void *args) // heap top
 
 	unsigned char *ip;
 
-		int bank = 0; /* ticks deposited at syscall */
+		int bank = 0; /* ticks deposited at interop */
 		int ticker = slice; /* any initial value ok */
 	// usegc = 1; /* enble gc (later have if always evabled) */
 
@@ -1529,7 +1529,7 @@ apply: // apply something at ob to values in regs, or maybe switch context
 				  }
 				  ob = (word *) R[0];
 				  R[0] = IFALSE; /* remove mcp cont */
-				  /* R3 marks the syscall to perform */
+				  /* R3 marks the interop to perform */
 				  R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); /* fixme - handle also differnet signals via one handler  */
 				  R[4] = (word) state;
 				  R[5] = F(breaked);
@@ -1876,7 +1876,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //		      A2 = prim_cast(ob, type);
 //		      NEXT(3); }
 //
-//		   op27: /* syscall cont op arg1 arg2 */
+//		   op27: /* interop cont op arg1 arg2 */
 //		      ob = (word *) R[0];
 //		      R[0] = IFALSE;
 //		      R[3] = A1; R[4] = R[*ip]; R[5] = A2; R[6] = A3;
@@ -2529,7 +2529,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       A2 = prim_cast(ob, type);
       NEXT(3); }
 
-   op27: /* syscall cont op arg1 arg2 */
+   op27: /* interop cont op arg1 arg2 */
       ob = (word *) R[0];
       R[0] = IFALSE;
       R[3] = A1; R[4] = R[*ip]; R[5] = A2; R[6] = A3;
@@ -2646,7 +2646,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //   }
 //   goto apply;
 
-invoke_mcp: /* R4-R6 set, set R3=cont and R4=syscall and call mcp */
+invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
    ob = (word *) R[0];
    R[0] = IFALSE;
    R[3] = F(3);

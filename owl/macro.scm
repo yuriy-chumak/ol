@@ -9,7 +9,7 @@
       (owl defmac)
       (owl list)
       (owl function)
-      (only (owl syscall) error)
+      (owl error)
       (owl equal)
       (owl list-extra)
       (owl primop)

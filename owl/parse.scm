@@ -41,7 +41,8 @@
       (owl vector)
       (owl render)
       (only (owl primop) wait)
-      (owl syscall))
+      (owl error)
+      (owl interop))
 
    (begin
       ; (parser ll ok fail pos)
@@ -257,7 +258,7 @@
          (has? (list stdin stdout stderr) port))
 
       ; rchunks fd block? -> rchunks' end?
-      ;; bug: maybe-get-input should now use in-process mail queuing using return-mails syscall at the end if necessary 
+      ;; bug: maybe-get-input should now use in-process mail queuing using return-mails interop at the end if necessary 
       (define (maybe-get-input rchunks fd block? prompt)
          (let ((chunk (try-get-block fd 1024 #false)))
             ;; handle received input

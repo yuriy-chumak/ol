@@ -47,7 +47,8 @@
    (import
       (owl defmac)
       (owl list)
-      (owl syscall)
+      (owl error)
+      (owl interop)
       (owl ff))
 
    (begin

@@ -7,7 +7,7 @@
       (owl defmac)
       (owl symbol)
       (owl string)
-      (only (owl syscall) error)
+      (owl error)
       (owl list)
       (owl tuple)
       (owl render)

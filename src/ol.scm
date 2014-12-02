@@ -53,7 +53,6 @@
 ;; this should later be just a sequence of imports followed by a fasl dump
 
 (import (owl core))     ;; get special forms, primops and define-syntax
-
 (import (owl defmac))   ;; get define, define-library, import, ... from the just loaded (owl defmac)
 
 (define *interactive* #false) ;; was #true
@@ -62,8 +61,7 @@
 
 (define *owl-names* #empty)
 
-(import (owl syscall))
-
+(import (owl interop))
 (import (owl primop))
 
 (define *loaded* '())   ;; can be removed soon, was used by old ,load and ,require
@@ -85,7 +83,8 @@
 
    (import 
       (owl defmac)
-      (owl syscall))
+      (owl error)
+      (owl interop))
 
    (begin
       (define-syntax set!
@@ -144,8 +143,8 @@
 (define (number->string n base)
    (list->string (render-number n null base)))
 
-(define (fopen path mode)
-   (syscall 7 (c-string path) mode))
+;(define (fopen path mode)
+;   (interop 7 (c-string path) mode))
 
 (import (owl vector))
 
@@ -277,7 +276,7 @@
 (define (sleep ms)
    (lets ((end (+ ms (time-ms))))
       (let loop ()
-         ;(print (syscall 18 1 1))
+         ;(print (interop 18 1 1))
          (let ((now (time-ms)))
             (if (> now end)
                now
@@ -338,7 +337,7 @@
 
 ; path -> 'loaded | 'saved
 (define (suspend path)
-   (let ((maybe-world (syscall 16 #true #true)))
+   (let ((maybe-world (wrap-the-whole-world-to-a-thunk #true #true)))
       (if (eq? maybe-world 'resumed)
          'loaded
          (begin
@@ -443,7 +442,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 ;; todo: share the modules instead later
 (define shared-misc
    (share-bindings
-      run syscall error
+      run error
       pair?  boolean?  fixnum?  eof?  symbol?  
       tuple?  string?  function? procedure? equal? eqv? bytecode?
       not
@@ -480,7 +479,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       wait
       wait-mail accept-mail check-mail return-mails
       set-signal-action
-      fopen
+;      fopen
       byte-vector?
       string->symbol
       close-port flush-port
@@ -652,7 +651,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
       (owl thread)
       (owl list)
       (owl list-extra)
-      (owl syscall)
+      (owl interop)
       (owl vector)
       (owl sort)
       (owl equal)

@@ -19,7 +19,7 @@
       (owl list)
       (owl string)
       (owl vector)
-      (only (owl syscall) error)
+      (owl error)
       (owl lazy))
 
    (begin

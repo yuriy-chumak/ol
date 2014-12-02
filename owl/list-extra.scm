@@ -14,7 +14,8 @@
       (owl math)
       (owl list)
       (owl defmac)
-      (owl syscall))
+      (owl error)
+      (owl interop))
 
    (begin
       (define (lref lst pos)

@@ -27,7 +27,7 @@
       (owl defmac)
       (owl lazy)
       (owl math)
-      (only (owl syscall) error))
+      (owl error))
 
    (begin
       ;; UTF-8

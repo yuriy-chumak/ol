@@ -20,7 +20,8 @@
    (import
       (owl defmac)
       (owl queue)
-      (owl syscall)
+      (owl error)
+      (owl interop)
       (owl ff)
       (owl function)
       (owl primop)
@@ -34,8 +35,8 @@
 
    (begin
 
-      (define (bad-syscall id a b c todo done state)
-         (system-println "mcp: got bad syscall")
+      (define (bad-interop id a b c todo done state)
+         (system-println "mcp: got bad interop")
          (values todo done state))
 
       ; -> state x #false|waked-thread
@@ -116,18 +117,18 @@
 
             ; 1, runnig and time slice exhausted (the usual suspect, handled directly in scheduler)
             (λ (id a b c todo done state tc)
-               ; (system-println "syscall 1 - switch thread")
+               ; (system-println "interop 1 - switch thread")
                (tc tc todo (cons (tuple id a) done) state))
 
             ; 2, thread finished, drop
             (λ (id a b c todo done state tc)
-               ; (system-println "mcp: syscall 2 -- thread finished")
+               ; (system-println "mcp: interop 2 -- thread finished")
                (drop-delivering todo done state id 
                   (tuple id (tuple 'finished a b c)) tc))
 
             ; 3, vm thrown error
             (λ (id a b c todo done state tc)
-               ;(system-println "mcp: syscall 3 -- vm error")
+               ;(system-println "mcp: interop 3 -- vm error")
                ;; set crashed exit value proposal 
                (let ((state (put state return-value-tag 127)))
                   (drop-delivering todo done state id 
@@ -157,7 +158,7 @@
 
             ; 5, user thrown error
             (λ (id a b c todo done state tc)
-               ; (system-println "mcp: syscall 5 -- user poof")
+               ; (system-println "mcp: interop 5 -- user poof")
                (drop-delivering todo done state id 
                   (tuple id (tuple 'error a b c)) tc))
 
@@ -190,7 +191,7 @@
 
             ; 9, send mail
             (λ (id cont to msg todo done state tc)
-               ;(system-println "syscall 9 - mail")
+               ;(system-println "interop 9 - mail")
                (let ((todo (cons (tuple id (λ () (cont 'delivered))) todo)))
                   ; send a normal mail
                   (lets ((state waked (deliver-mail state to (tuple id msg))))
@@ -200,7 +201,7 @@
 
             ; 10, breaked - call signal handler
             (λ (id a b c todo done state thread-controller)
-               ; (system-println "syscall 10 - break")
+               ; (system-println "interop 10 - break")
                (let ((all-threads (cons (tuple id a) (append todo done))))
                   ;; tailcall signal handler and pass controller to allow resuming operation
                   ((get state signal-tag signal-halt) ; default to standard mcp 
@@ -208,7 +209,7 @@
             
             ; 11, reset mcp state (usually means exit from mcp repl)
             (λ (id cont threads state xtodo xdone xstate tc)
-               ; (system-println "syscall 11 - swapping mcp state")
+               ; (system-println "interop 11 - swapping mcp state")
                (tc tc threads null state))
 
             ; 12, set break action
@@ -232,7 +233,7 @@
             ;; todo: switch memory limit to a hard one in ovm.c
             ; 14, memory limit was exceeded 
             (λ (id a b c todo done state tc)
-               (system-println "syscall 14 - memlimit exceeded, dropping a thread")
+               (system-println "interop 14 - memlimit exceeded, dropping a thread")
                ; for now, kill the currently active thread (a bit dangerous) 
                (drop-delivering todo done state id 
                   (tuple id (tuple 'crashed 'memory-limit b c)) tc))
@@ -310,7 +311,7 @@
 
       ;; store profiling info about this call
       ;; the exec is either a thunk to be run in a thread as a result of 
-      ;; forking or a syscall being answered, or a vm-generated tuple which 
+      ;; forking or a interop being answered, or a vm-generated tuple which 
       ;; has arguments for the next function call and the function at the 
       ;; *last* slot of the tuple.
 
@@ -323,7 +324,7 @@
                 (prof (put prof bcode (+ count 1)))
                 (state (fupd state 'prof prof)))
                state)
-            ;; don't record anything for now for the rare thread starts and resumes with syscall results
+            ;; don't record anything for now for the rare thread starts and resumes with interop results
             state))
 
       (define mcp-syscalls
@@ -332,7 +333,7 @@
              (syscalls
                (set syscalls 20
                   (λ (id cont b c todo done state tc)
-                     ;; make a new thread scheduler using the other syscall set
+                     ;; make a new thread scheduler using the other interop set
                      (define (scheduler self todo done state)
                         (if (eq? todo null)
                            (if (null? done)
@@ -350,9 +351,9 @@
 
                      (scheduler scheduler (cons (tuple id (λ () (cont 'started-profiling))) todo) done 
                         (put state 'prof           ;; profiling data is stored under key 'prof
-                           (put empty 'tc tc)))))) ;; store normal scheduler there for resuming on syscall 21
+                           (put empty 'tc tc)))))) ;; store normal scheduler there for resuming on interop 21
              (syscalls
-               (set syscalls 21 ;; end-profiling syscall doesn't do anything when not profiling
+               (set syscalls 21 ;; end-profiling interop doesn't do anything when not profiling
                   (λ (id cont b c todo done state tc) 
                      (tc tc (cons (tuple id (λ () (cont 'not-profiling-you-fool))) todo) done state)))))
             syscalls))
@@ -401,7 +402,7 @@
                                  (tuple cont todo (cons a done))))
                            ((eq? op 2) ;; finished, return value and thunk to continue computation
                               (values #true
-                                 (λ () (cont (cons a (λ () (syscall 22 todo done)))))))
+                                 (λ () (cont (cons a (λ () (start-nested-parallel-computation todo done)))))))
                            ((eq? op 22) ;; start nested parallel computation
                               (lets ((contp a) (todop b) (donep c) 
                                      (por-state (tuple contp todop donep)))
@@ -409,7 +410,7 @@
                                     (tuple cont todo (cons por-state done)))))
                            (else
                               ;; treat all other reasons and syscalls as errors
-                              (print "bad syscall op within par: " op)
+                              (print "bad interop op within par: " op)
                               (values null (tuple op a b c))))))))))
 
       (define (thread-controller self todo done state)

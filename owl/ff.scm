@@ -39,7 +39,7 @@
    (import 
       (owl defmac)
       (owl list)
-      (only (owl syscall) error)
+      (owl error)
       )
 
    (begin

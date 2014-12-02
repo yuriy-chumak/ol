@@ -43,7 +43,7 @@
       (owl list)
       (owl math)
       (owl equal)
-      (only (owl syscall) error))
+      (owl error))
 
    (begin
       (define rnull? null?)

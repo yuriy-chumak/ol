@@ -23,7 +23,8 @@
    (import
       (owl defmac)
       (owl string)
-      (owl syscall)
+      (owl error)
+      (owl interop)
       (owl list)
       (owl math)
       (owl function)

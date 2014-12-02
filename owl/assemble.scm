@@ -15,7 +15,8 @@
       (owl list)
       (owl math)
       (owl list-extra)
-      (only (owl syscall) error interact)
+      (owl error)
+      (only (owl interop) interact)
       (only (owl register) allocate-registers n-registers)
       (owl primop))
 

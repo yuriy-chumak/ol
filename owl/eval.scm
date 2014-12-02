@@ -32,7 +32,8 @@
       (owl fixedpoint)
       (owl ast)
       (owl env)
-      (owl syscall)
+      (owl error)
+      (owl interop)
       (owl time) ;; for testing metadata
       (owl symbol)
       (owl io)

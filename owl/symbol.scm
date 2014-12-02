@@ -10,7 +10,7 @@
    (import
       (owl defmac)
       (owl string)
-      (only (owl syscall) error))
+      (owl error))
 
    (begin
       (define (symbol? x) (eq? (type x) type-symbol))

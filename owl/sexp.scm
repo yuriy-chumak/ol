@@ -26,7 +26,7 @@
       (owl io) ; testing
       (owl primop)
       (owl unicode)
-      (only (owl syscall) error)
+      (owl error)
       (only (owl intern) intern-symbols string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 

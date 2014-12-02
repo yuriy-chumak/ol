@@ -11,7 +11,7 @@
    (import
       (owl defmac)
       (owl list)
-      (only (owl syscall) error)
+      (owl error)
       (owl ast)
       (owl math)
       (owl tuple)

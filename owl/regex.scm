@@ -35,7 +35,7 @@
    (import
       (owl defmac)
       (owl parse)
-      (only (owl syscall) error)
+      (owl error)
       (owl ff)
       (owl list)
       (owl math)

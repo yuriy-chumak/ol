@@ -9,7 +9,7 @@
       (owl list-extra)
       (owl list) 
       (owl math) 
-      (only (owl syscall) error))
+      (owl error))
 
    (begin
       (define (tuple? x) 

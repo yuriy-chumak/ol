@@ -50,7 +50,7 @@
       )
 
    (import (owl iff))
-   (import (only (owl syscall) error))
+   (import (owl error))
    (import (owl unicode))
    (import (owl list))
    (import (owl list-extra))
