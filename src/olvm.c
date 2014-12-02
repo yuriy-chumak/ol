@@ -467,7 +467,6 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define FFRED                       2
 
 #define flagged_or_raw(hdr)         (hdr & (RAWBIT|1))
-#define raw(hdr)                    (hdr & RAWBIT)
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
 
@@ -531,6 +530,13 @@ typedef int32_t   wdiff;
 
 // cont(n) = V((word)n & (~1)) // *n (с игнорированием флажка mark)
 
+static _thread_local marked;
+static _thread_local moved;
+static _thread_local pinned;
+static _thread_local moved_bytes;
+
+
+
 // *pos <- **pos, **pos <- pos with !flag(*pos)
 // pos -> *pos -> **pos превращается в pos -> **pos,
 // то-есть тут мы выбрасываем промежуточный указатель?
@@ -573,13 +579,14 @@ static void mark(word *pos, word *end)
 //	assert(pos is NOT flagged)
 	while (pos != end) {
 		word val = *pos;
-		if (allocp(val) && val >= ((word) heap.genstart)) { // блядь, что такое genstart???????
+		if (allocp(val)) { // && val >= ((word) heap.genstart)) { // блядь, что такое genstart???????
 			if (flagged(val))
 				pos = ((word *) flag(chase((word *) val))) - 1; // flag in this context equal to CLEAR flag
 			else {
 				word hdr = *(word *) val;
-				if (immediatep(hdr))
-					*(word *) val |= 1; // flag this
+				//if (immediatep(hdr))
+					*(word *) val |= 1; // flag this (таки надо, иначе часть объектов не распознается как pinned!)
+				marked++;
 				rev(pos);
 				if (flagged_or_raw(hdr))
 					pos--;
@@ -592,10 +599,16 @@ static void mark(word *pos, word *end)
 	}
 }
 
-
+// на самом деле - compact & sweep
 static word *compact()
 {
-	word *old = heap.genstart;
+//	printf("%s\n", "compact()");
+
+	word* heapbegin = heap.begin;
+	word* heapgenstart = heap.genstart;
+
+
+	word *old = heap.begin; //genstart;
 	word *end = heap.end - 1;
 
 	word *newobj = old;
@@ -605,16 +618,16 @@ static word *compact()
 			// 2. find the header:
 			word* real = (word*)((word)chase(old) & (~1));
 			word hdr_value = *real;
-			int bitset = hdr_value & RAWBIT;
-			if (!raw(hdr_value)) {
+			if (!rawp(hdr_value)) {
 				int found = 0;
 				int i = hdrsize(*real);
 				word* p = old;
 				while (--i) {
 					word q = *++p;
-					// 1. попробуем НЕ перемещать блоки, которые хотя и с флажком, но содержат части не упорядоченных по лево->право блокам данных
+					// 1. попробуем НЕ перемещать блоки, которые с флажком (значит, содержат ссылки вперед - так как сслки назад все резолвятся во время
+					//  разворачивания заголовков - ссылок!)
 					if (flagged(q)) {
-						printf("(found: type = %d)\n", hdrtype(q));
+						//printf("(found: type = %d)\n", hdrtype(q));
 						found = 1;
 						break;
 					}
@@ -623,10 +636,15 @@ static word *compact()
 				// tbd.
 				//pleasefixme
 				if (found) {
-					if (newobj != old) {
-						*newobj = make_raw_header((old - newobj), TSTRING, 0);
+					pinned++;
+					while (old - newobj > 0x7000) { // 0xFFFF
+						*newobj = make_raw_header(0x7000, TVOID, 0); // TSTRING
+						newobj += 0x7000;
 					}
+					if (newobj != old)
+						*newobj = make_raw_header((old - newobj), TVOID, 0); // TSTRING
 					newobj = old;
+					//printf("%c", '-');
 				}
 			}
 
@@ -643,22 +661,23 @@ static word *compact()
 				newobj += h;
 			}
 			else {
+				moved++;
+				moved_bytes += h;
 				while (--h) *++newobj = *++old;
 				old++;
 				newobj++;
 			}
 		}
-		else {
-//			newobj += hdrsize(*old); // TEMP!!!
+		else
 			old += hdrsize(*old);
-		}
 	}
+//	printf(">\n");
 	return newobj;
 }
 
 static void fix_pointers(word *pos, wdiff delta, word *end)
 {
-	while(1) {
+	while (1) {
 		word hdr = *pos;
 		int n = hdrsize(hdr);
 		if (hdr == 0) return; /* end marker reached. only dragons beyond this point.*/
@@ -695,11 +714,11 @@ static wdiff adjust_heap(int cells)
 	word *old = heap.begin;
 	heap.begin = realloc(heap.begin, new_words*W);
 	if (heap.begin == old) { /* whee, no heap slide \o/ */
-		heap.end = heap.begin + new_words - MEMPAD; /* leave MEMPAD words alone */
+		heap.end = heap.begin + new_words - MEMPAD; // leave MEMPAD words alone
 		return 0;
 	} else if (heap.begin) { /* d'oh! we need to O(n) all the pointers... */
 		wdiff delta = (word)heap.begin - (word)old;
-		heap.end = heap.begin + new_words - MEMPAD; /* leave MEMPAD words alone */
+		heap.end = heap.begin + new_words - MEMPAD; // leave MEMPAD words alone
 		fix_pointers(heap.begin, delta, heap.end);
 		return delta;
 	} else {
@@ -769,6 +788,36 @@ static __inline__ word* new_tuplei (size_t length, ...)
 	return object;
 }
 
+static void check_memory_consistence(const char* text)
+{
+	return;
+	word* p = heap.begin;
+	word* e = fp;
+
+	printf("%s\n", text);
+
+	while (p < e) {
+		word header = *p;
+		word length = hdrsize(header);
+		word type = hdrtype(header);
+
+		if (type == TSTRING)
+			printf("%c", 's');
+		else if (type == TPAIR)
+			printf("%c", 'p');
+		else if (type == TVOID)
+			printf("%c", '#');
+		else if (type == TTUPLE)
+			printf("%c", 't');
+		else
+			printf("%c", 'o');
+
+		p += length;
+	}
+	printf("\n");
+}
+
+
 /* input desired allocation size and (the only) pointer to root object
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 static word *gc(int size, word *regs) {
@@ -780,12 +829,26 @@ static word *gc(int size, word *regs) {
 
 	*root = (word) regs;
 
+	marked = 0;
+	moved = 0;
+	pinned = 0;
+	moved_bytes = 0;
+
+	check_memory_consistence("old");
+
 	heap.end = fp;
 	mark(root, fp);
 
 
 	fp = compact();
-	fp[0] = '%%%%';
+//	fp[0] = '%%%%';	// DEBUG!
+	check_memory_consistence("new");
+//	printf("\n");
+
+//	if (pinned)
+//		printf("GC: marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n", marked, moved, pinned, moved_bytes);
+
+
 	regs = (word *) *root;
 	heap.end = realend;
 	nfree = (word)heap.end - (word)regs;
@@ -815,12 +878,12 @@ static word *gc(int size, word *regs) {
 				nfree = (word) heap.end - (word) regs;
 			}
 		}
-		heap.genstart = regs; /* always start newobj generation */
+		//heap.genstart = regs; /* always start newobj generation */
 	} else if (nfree < MINGEN || nfree < size*W*2) {
 		heap.genstart = heap.begin; /* start full generation */
 		return gc(size, regs);
 	} else {
-		heap.genstart = regs; /* start newobj generation */
+		//heap.genstart = regs; /* start newobj generation */
 	}
 	return regs;
 }
@@ -2781,24 +2844,20 @@ int main(int argc, char** argv)
 /*
 		word *a, *b;
 		new_string (28, "----------------------------");
+		a = new_string(28, "1111111111111111111111111111");
 
 
 //		b = new_string(4, "2222");
-		word *p = new_tuplei (7, 0, INULL, INULL, INULL, INULL, INULL, INULL);
+		word *p = new_tuplei (7,  INULL, INULL, INULL, INULL, INULL, INULL, INULL);
 		new_string (28, "----------------------------");
-		a = new_string(28, "1111111111111111111111111111");
+		b = new_string(28, "2222222222222222222222222222");
 		p[1] = a;
+		p[2] = b;
 
-//		new_string (4, "----");
-//		new_string (4, "----");
-
-
-//		p[1] = b;
-//		p[2] = a;
-//		p[3] = b;
-
-//		new_string (4, "----");
-		word *q = new_tuplei (7, a, INULL, INULL, INULL, INULL, INULL, INULL);
+		new_string (28, "----------------------------");
+		word *q = new_tuplei (7,  INULL, INULL, INULL, INULL, INULL, INULL, INULL);
+		q[1] = a;
+		q[2] = b;
 
 		oargs = new_pair(p, q);
 
@@ -2814,7 +2873,7 @@ int main(int argc, char** argv)
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, language); // подсчет количества слов и объектов в образе
 
-	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
+	//	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
 
 	// Десериализация загруженного образа в объекты
 	word* ptrs = fp;
