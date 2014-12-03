@@ -117,27 +117,18 @@
             (tuple name (car bytecode) inargs outargs primitive)))
 
 
-      ; clock - специалдьная команда, надо использовать как (let* ((s ms (clock))) ... ) // тоже переделать
+      ; clock - специалдьная команда, надо использовать как (let* ((s ms (clock))) ... )
       (define clock       (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
       
-      (define sizeb       (func '(2 28 4 5        24 5)))
       (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys
-      
-      (define refb        (func '(3 48 4 5 6      24 6)))
-      (define ff-toggle   (func '(2 46 4 5        24 5)))
       (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
 
       ; 2
-      (define listuple (func '(4 35 4 5 6 7 24 7)))
       (define mkblack  (func '(5 42 4 5 6 7 8 24 8)))
       (define mkred    (func '(5 43 4 5 6 7 8 24 8)))
       (define red?     (func '(2 41 4 5 24 5)))
-      
-      (define fxband      (func '(3 55 4 5 6     24 6)))
-      (define fxbor       (func '(3 56 4 5 6     24 6)))
-      (define fxbxor      (func '(3 57 4 5 6     24 6)))
-
-
+      (define ff-toggle   (func '(2 46 4 5        24 5)))
+      (define listuple (func '(4 35 4 5 6 7 24 7)))
 
       ; не понимаю почему, но надо оставить здесь, так как иначе "нехватает 96 регистров" ошибка. потом исправлю.
       (define CONS       '(3 . (51 4 5      6  24 6))) ; 51 = CONS
@@ -195,29 +186,30 @@
             (primop 'fx>>        '(58 4 5    6 7    24 7)  2 2)
             (primop 'fx<<        '(59 4 5    6 7    24 7)  2 2)
             
-            (tuple 'fxband       55 2 1 fxband)
-            (tuple 'fxbor        56 2 1 fxbor)
-            (tuple 'fxbxor       57 2 1 fxbxor)
+            (tuple 'ncons        29 2 1 ncons)   ;;
+            (tuple 'ncar         30 1 1 ncar)   ;;
+            (tuple 'ncdr         31 1 1 ncdr)   ;;
             
+            ;; логика
+            (primop 'fxband      '(55 4 5    6  24 6)  2 1)
+            (primop 'fxbor       '(56 4 5    6  24 6)  2 1)
+            (primop 'fxbxor      '(57 4 5    6  24 6)  2 1)
             
+            ;; строки
+            (primop 'refb        '(48 4 5  6  24 6)  2 1)
+            (primop 'sizeb       '(28 4    5  24 5)  1 1)   ;; raw-obj -> numbe of bytes (fixnum)
 
-            ;;; input arity includes a continuation
-            
-            (tuple 'sizeb        28 1 1 sizeb)   ;; raw-obj -> numbe of bytes (fixnum)
+            ; todo: move this to the sys-prim
             (tuple '_connect     34 2 1 _connect)   ;; (connect host port) -> #false | socket-fd
             (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
-;            (tuple 'ref          47 2 1 ref)   ;;
-            (tuple 'refb         48 2 1 refb)      ;;
-            (tuple 'ff-toggle    46 1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
-            ; 2
+            (tuple 'clock        61 0 2 clock)   ; (clock) → posix-time x ms
+
+            ; поддержка ff деревьев
             (tuple 'listuple     35 3 1 listuple)  ;; (listuple type size lst)
             (tuple 'mkblack      42 4 1 mkblack)   ; (mkblack l k v r)
             (tuple 'mkred        43 4 1 mkred)   ; ditto
             (tuple 'red?         41 1 #false red?)  ;; (red? node) -> bool
-            (tuple 'ncons        29 2 1 ncons)   ;;
-            (tuple 'ncar         30 1 1 ncar)   ;;
-            (tuple 'ncdr         31 1 1 ncdr)   ;;
-            (tuple 'clock        61 0 2 clock)   ; (clock) → posix-time x ms
+            (tuple 'ff-toggle    46 1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
        ))
       (define primops primitives)
 
