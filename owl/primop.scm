@@ -40,6 +40,8 @@
    (begin
       ;; Список кодов виртуальной машины:
       (define JF2 25)
+      (define APPLY 20)
+      (define RET 24)
    
    
    
@@ -103,29 +105,9 @@
       ;                  '(arity . (command arguments . command arguments))
       ; арность + непосредственный байткод примитивов
       ; дело в том, что эти команды оформляются как JF2 арность байткод, JF2 проверяет (и выравнивает, если надо) арность
-;      (define (primop name code inargs outargs)
-;         (let*
-;            ((arity     (car code))
-;             (bytecode  (cdr code))
-;             (len       (length bytecode))
-;             (primitive (raw
-;                          (append (list 25 arity 0 len) ; 25 == JF2
-;                                  (append bytecode '(17)))    ; 17 == ARITY-ERROR
-;                          type-bytecode #false)))
-;            (tuple name (car bytecode) inargs outargs primitive)))
       (define (primop name code inargs outargs)
          (let*
             ((arity     (+ inargs outargs))
-             (bytecode  code)
-             (len       (length bytecode))
-             (primitive (raw
-                          (append (list 25 arity 0 len) ; 25 == JF2
-                                  (append bytecode '(17)))    ; 17 == ARITY-ERROR
-                          type-bytecode #false)))
-            (tuple name (car bytecode) inargs outargs primitive)))
-      (define (primo2 name code arity inargs outargs)
-         (let*
-            ((arity     arity)
              (bytecode  code)
              (len       (length bytecode))
              (primitive (raw
@@ -141,10 +123,6 @@
       (define sizeb       (func '(2 28 4 5        24 5)))
       (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys
       
-      (define type        (func '(2 15 4 5        24 5))) ;; fetch just type information. old type will be removed later.
-      (define size        (func '(2 36 4 5        24 5)))
-      (define cast        (func '(3 22 4 5 6      24 6)))
-;     (define set!        (func '(4 10 4 5 6 7    24 7)))
       (define refb        (func '(3 48 4 5 6      24 6)))
       (define ff-toggle   (func '(2 46 4 5        24 5)))
       (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
@@ -156,9 +134,6 @@
       (define mkred    (func '(5 43 4 5 6 7 8 24 8)))
       (define red?     (func '(2 41 4 5 24 5)))
       
-      (define apply      (raw '(20)                type-bytecode #false)) ;; <- no arity, just call 20
-      (define apply-cont (raw (list (fxbor 20 64)) type-bytecode #false))
-
       (define fxband      (func '(3 55 4 5 6     24 6)))
       (define fxbor       (func '(3 56 4 5 6     24 6)))
       (define fxbxor      (func '(3 57 4 5 6     24 6)))
@@ -169,7 +144,6 @@
       (define CONS       '(3 . (51 4 5      6  24 6))) ; 51 = CONS
       (define cons        (func CONS))
 
-      (define RET 24)
       (define primitives
          (list
             ; пара специальных вещей. todo: разобраться, почему они тут а не в общем списке функци в/м
@@ -205,15 +179,19 @@
             
             (primop 'ref        '(47 4 5      6  24 6)  2 1) ; op47 = ref t o r = prim_ref(A0, A1)
             (primop 'set        '(45 4 5 6    7  24 7)  3 1) ; (set tuple pos val) -> tuple'
-           ;(primop 'set!       '(10 4 5 6    7  24 7)  1) ; (set tuple pos val) -> tuple'
+           ;(primop 'set!       '(10 4 5 6   7  24 7)  3 1)  ; (set! tuple pos val)
             
-            ;; Математика + логика
+            (primop 'type       '(15 4       5  24 5)  1 1)  ;; get just the type bits (new)
+            (primop 'size       '(36 4       5  24 5)  1 1)  ;; get object size (- 1)
+            (primop 'cast       '(22 4 5     6  24 6)  2 1)  ;; cast object type (works for immediates and allocated)
+
+            ;; математика
             (primop 'fx+         '(38 4 5    6 7    24 7)  2 2)
-            (primop 'fx-         '(40 4 5    6 7    24 7)  2 2)
             (primop 'fx*         '(39 4 5    6 7    24 7)  2 2)
+            (primop 'fx-         '(40 4 5    6 7    24 7)  2 2)
+            (primop 'fx/         '(26 4 5 6  7 8 9  24 7)  3 3) 
             (primop 'fx>>        '(58 4 5    6 7    24 7)  2 2)
             (primop 'fx<<        '(59 4 5    6 7    24 7)  2 2)
-            (primop 'fx/         '(26 4 5 6  7 8 9  24 7)  3 3) 
             
             (tuple 'fxband       55 2 1 fxband)
             (tuple 'fxbor        56 2 1 fxbor)
@@ -240,9 +218,6 @@
             (tuple '_connect     34 2 1 _connect)   ;; (connect host port) -> #false | socket-fd
             (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
             (tuple 'eq?          54 2 1 eq?)
-            (tuple 'type         15 1 1 type)
-            (tuple 'size         36 1 1 size)  ;;  get object size (- 1)
-            (tuple 'cast         22 2 1 cast)  ;; cast object type (works for immediates and allocated)
 ;            (tuple 'ref          47 2 1 ref)   ;;
             (tuple 'refb         48 2 1 refb)      ;;
             (tuple 'ff-toggle    46 1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
@@ -324,7 +299,7 @@
 
       ;; from cps
       (define (special-bind-primop? op)
-         (or (eq? op 32) (eq? op 49)))
+         (or (eq? op 32) (eq? op 49)))  ; __bind__ or __ff-bind__
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       (define multiple-return-variable-primops
@@ -337,6 +312,8 @@
 
       (define (variable-input-arity? op) (eq? op 23)) ;; mkt
 
+      (define apply      (raw (list APPLY)            type-bytecode #false)) ;; <- no arity, just call 20
+      (define apply-cont (raw (list (fxbor APPLY #x40)) type-bytecode #false))
 
       (define call/cc
          ('_sans_cps
