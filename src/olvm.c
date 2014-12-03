@@ -761,6 +761,18 @@ static __inline__ word* new_pair (word* car, word* cdr)
 	fp += 3;
 	return object;
 }
+static __inline__ word* new_npair (word* car, word* cdr)
+{
+	word *object = fp;
+
+	fp[0] = NUMHDR;
+	fp[1] = (word) car;
+	fp[2] = (word) cdr;
+
+	fp += 3;
+	return object;
+}
+
 static __inline__ word* new_tuple (size_t length)
 {
 	word *object = fp;
@@ -1570,6 +1582,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		ip = (unsigned char *) (ob + 1);
 	}
 
+	// управляющие команды:
+#	define APPLY 20
+#	define INTEROP 27
+#	define RUN   50
+#	define RET   24
+
 	// список команд: работающий транслятор в С смотреть в cgen.scm в (translators)
 #	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
 #	define MOVE   9       //
@@ -1580,9 +1598,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define JP    16       // JZ, JN, JT, JF
 #	define JLQ    8       // jlq ?
 #	define JF2   25
-#	define RET   24
+//	define GOTO_CODE 18
+//	define GOTO_PROC 19
+//	define GOTO_CLOS 21
 
-	// примитивы языка
+
+	// примитивы языка:
 #	define CONS  51
 #	define CAR   52
 #	define CDR   53
@@ -1591,6 +1612,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define NCDR  31
 	// АЛУ
 #	define EQ    54
+
 
 #	define SYSPRIM 63
 
@@ -1603,7 +1625,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		int op; // operation to execute
 		switch ((op = *ip++) & 0x3F) {
 		case 0:
-			op = (ip[0] << 8) | ip[1]; // big endian??
+			op = (ip[0] << 8) | ip[1]; // big endian
 			//super_dispatch: run macro instructions
 			// todo: add here JIT
 			switch (op) {
@@ -1613,6 +1635,93 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			}
 			goto apply;
 
+
+		case INTEROP: // interop cont op arg1 arg2
+			ob = (word *) R[0];
+			R[0] = IFALSE;
+			R[3] = A1; R[4] = R[*ip]; R[5] = A2; R[6] = A3;
+			acc = 4;
+			if (ticker > 10)
+				bank = ticker; // deposit remaining ticks for return to thread
+			goto apply;
+
+		case GOTO:
+			ob = (word *)A0; acc = ip[1];
+			goto apply;
+
+		case APPLY: {
+			int reg, arity;
+			word *lst;
+			if (op == APPLY) { /* normal apply: cont=r3, fn=r4, a0=r5, */
+				reg = 4; /* include cont */
+				arity = 1;
+				ob = (word *) R[reg];
+				acc -= 3; /* ignore cont, function and stop before last one (the list) */
+				while(acc--) { /* move explicitly given arguments down by one to correct positions */
+					R[reg] = R[reg+1]; /* copy args down*/
+					reg++;
+					arity++;
+				}
+				lst = (word *) R[reg+1];
+			}
+			else { // _sans_cps apply: func=r3, a0=r4,
+				reg = 3; /* include cont */
+				arity = 0;
+				ob = (word *) R[reg];
+				acc -= 2; /* ignore function and stop before last one (the list) */
+				while(acc--) { /* move explicitly given arguments down by one to correct positions */
+					R[reg] = R[reg+1]; /* copy args down*/
+					reg++;
+					arity++;
+				}
+				lst = (word *) R[reg+1];
+			}
+
+			while (allocp(lst) && *lst == PAIRHDR) { /* unwind argument list */
+				/* FIXME: unwind only up to last register and add limited rewinding to arity check */
+				if (reg > 128) { /* dummy handling for now */
+					fprintf(stderr, "TOO LARGE APPLY\n");
+					exit(3);
+				}
+				R[reg++] = lst[1];
+				lst = (word *) lst[2];
+				arity++;
+			}
+			acc = arity;
+			goto apply;
+		}
+
+		case RUN: { // run thunk quantum
+			word hdr;
+			ob = (word *) A0;
+			R[0] = R[3];
+			ticker = bank ? bank : fixval(A1);
+			bank = 0;
+			CHECK(allocp(ob), ob, 50);
+			hdr = *ob;
+			if (imm_type(hdr) != TTHREAD) {
+				// call a thunk with terminal continuation
+				R[3] = IHALT; // exit via R0 when the time comes
+				acc = 1;
+				goto apply;
+			}
+			// else TTHREAD
+			int pos = hdrsize(hdr) - 1;
+			word code = ob[pos];
+			acc = pos - 3;
+			while (--pos)
+				R[pos] = ob[pos];
+			ip = ((unsigned char *) code) + W;
+			break;
+		}
+
+		case RET: // return value
+			ob = (word *) R[3];
+			R[3] = R[ip[0]];
+			acc = 1;
+			goto apply;
+
+		/************************************************************************************/
 		// операции с данными
 		case LDI:    // 13,  -> ldi{2bit what} [to], ldn, ldt, ldf
 			A0 = I[op>>6];
@@ -1622,9 +1731,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 
 		//
-		case GOTO:
-			ob = (word *)A0; acc = ip[1];
-			goto apply;
 //			   op2: OGOTO(ip[0], ip[1]); /* fixme, these macros are not used in cgen output anymore*/
 //			   ob = (word *)R[f]; acc = n; goto apply
 
@@ -1664,11 +1770,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				ip += (ip[1] << 8) | ip[2];
 			ip += 3; break;
 		}
-		case RET: // return value
-			ob = (word *) R[3];
-			R[3] = R[ip[0]];
-			acc = 1;
-			goto apply;
 
 
 		op18: /* goto-code p */
@@ -1715,10 +1816,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		// операции со списками
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
-			fp[0] = PAIRHDR; // todo: make as function with using fp
-			fp[1] = A0, fp[2] = A1;
-			A2 = (word) fp;
-			fp += 3;
+			A2 = (word)new_pair((word*)A0, (word*)A1);
 			ip += 3; break;
 
 		case CAR:    // car a r:
@@ -1733,12 +1831,9 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			A1 = T[2];
 			ip += 2; break;
 
-		// то же самое, но для числовых пар (todo: проверить, можно ли заменить ncons на cons и т.д.
+		// то же самое, но для числовых пар
 		case NCONS:  /* ncons a b r */
-			fp[0] = NUMHDR; // todo: make as function with using fp
-			fp[1] = A0, fp[2] = A1;
-			A2 = (word) fp;
-			fp += 3;
+			A2 = (word)new_npair ((word*)A0, (word*)A1);
 			ip += 3; break;
 
 		case NCAR:   /* ncar a rd */
@@ -1816,12 +1911,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 3: goto op3; case 4: goto op4;
 		case 6: goto op6; case 7: goto op7;
 		case 15: goto op15;
-		case 18: goto op18; case 19: goto op19; case 20: goto op20; case 21: goto op21;
-		case 22: goto op22; case 23: goto op23; case 26: goto op26; case 27: goto op27;
+		case 18: goto op18; case 19: goto op19; case 21: goto op21;
+		case 22: goto op22; case 23: goto op23; case 26: goto op26;
 		case 28: goto op28; case 32: goto op32;
 		case 34: goto op34; case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
 		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44; case 45: goto op45;
-		case 46: goto op46; case 47: goto op47; case 48: goto op48; case 49: goto op49; case 50: goto op50;
+		case 46: goto op46; case 47: goto op47; case 48: goto op48; case 49: goto op49;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
 		case 58: goto op58; case 59: goto op59; case 60: goto op60; case 61: goto op61;
 
@@ -2143,6 +2238,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 				// вызвать библиотечную функцию
 				case 32: { // pinvoke
+					// #include "pinvoke.c"
 					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 					unsigned int call(int convention, void* function, int args[], int count) {
 						// todo: ограничиться количеством функций поменьше
@@ -2485,57 +2581,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       if (allocp(x)) x = V(x);
       R[*ip++] = F((x>>TPOS)&63);
       NEXT(0); }
-   op20: {
-      int reg, arity;
-      word *lst;
-      if (op == 20) { /* normal apply: cont=r3, fn=r4, a0=r5, */
-         reg = 4; /* include cont */
-         arity = 1;
-         ob = (word *) R[reg];
-         acc -= 3; /* ignore cont, function and stop before last one (the list) */
-         while(acc--) { /* move explicitly given arguments down by one to correct positions */
-            R[reg] = R[reg+1]; /* copy args down*/
-            reg++;
-            arity++;
-         }
-         lst = (word *) R[reg+1];
-      } else { /* _sans_cps apply: func=r3, a0=r4, */
-         reg = 3; /* include cont */
-         arity = 0;
-         ob = (word *) R[reg];
-         acc -= 2; /* ignore function and stop before last one (the list) */
-         while(acc--) { /* move explicitly given arguments down by one to correct positions */
-            R[reg] = R[reg+1]; /* copy args down*/
-            reg++;
-            arity++;
-         }
-         lst = (word *) R[reg+1];
-      }
-      while(allocp(lst) && *lst == PAIRHDR) { /* unwind argument list */
-         /* FIXME: unwind only up to last register and add limited rewinding to arity check */
-         if (reg > 128) { /* dummy handling for now */
-            fprintf(stderr, "TOO LARGE APPLY\n");
-            exit(3);
-         }
-         R[reg++] = lst[1];
-         lst = (word *) lst[2];
-         arity++;
-      }
-      acc = arity;
-      goto apply; }
    op22: { /* cast o t r */
       word *ob = (word *) R[*ip];
       word type = fixval(A1) & 63;
       A2 = prim_cast(ob, type);
       NEXT(3); }
 
-   op27: /* interop cont op arg1 arg2 */
-      ob = (word *) R[0];
-      R[0] = IFALSE;
-      R[3] = A1; R[4] = R[*ip]; R[5] = A2; R[6] = A3;
-      acc = 4;
-      if (ticker > 10) bank = ticker; /* deposit remaining ticks for return to thread */
-      goto apply;
    op28: { /* sizeb obj to */
       word* ob = (word*)R[*ip];
       if (immediatep(ob)) {
@@ -2589,27 +2640,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
    op45: { /* set t o v r */
       A3 = prim_set(A0, A1, A2);
       NEXT(4); }
-   op50: { /* run thunk quantum */ /* fixme: maybe move to sys */
-      word hdr;
-      ob = (word *) A0;
-      R[0] = R[3];
-      ticker = bank ? bank : fixval(A1);
-      bank = 0;
-      CHECK(allocp(ob), ob, 50);
-      hdr = *ob;
-      if (imm_type(hdr) == TTHREAD) {
-         int pos = hdrsize(hdr) - 1;
-         word code = ob[pos];
-         acc = pos - 3;
-         while(--pos) { R[pos] = ob[pos]; }
-         ip = ((unsigned char *) code) + W;
-      } else {
-         /* call a thunk with terminal continuation */
-         R[3] = IHALT; /* exit via R0 when the time comes */
-         acc = 1;
-         goto apply;
-      }
-      NEXT(0); }
 
    op60: /* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
       A3 = prim_lraw(A0, fixval(A1), A2);
