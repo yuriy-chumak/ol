@@ -92,7 +92,7 @@
               raw  mkt bind set lesser? call-native
               mkred mkblack ff-bind ff-toggle ffcar ffcdr red? listuple
               fxband fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr raw-mode
-              _sleep iomux clock time sizeb getev type-byte)))
+              _sleep iomux clock time sizeb getev)))
 
       (define (execute exp env)
          (receive (exp)

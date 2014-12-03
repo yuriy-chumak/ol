@@ -405,7 +405,7 @@
                      (lets ((n to bs (get2 (cdr bs))))
                         (cond
                            (else (values (list "R["to"]=F(" n ");") bs (put regs to 'fixnum)))))))
-               ;; 15=type-byte o r
+               ;; 15=type o r
                (cons 15
                   (λ (bs regs fail)
                      (lets ((o r bs (get2 (cdr bs))))

@@ -141,8 +141,7 @@
       (define sizeb       (func '(2 28 4 5        24 5)))
       (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys
       
-      (define type-byte   (func '(2 15 4 5        24 5))) ;; fetch just type information. old type will be removed later.
-      (define type        type-byte)
+      (define type        (func '(2 15 4 5        24 5))) ;; fetch just type information. old type will be removed later.
       (define size        (func '(2 36 4 5        24 5)))
       (define cast        (func '(3 22 4 5 6      24 6)))
 ;     (define set!        (func '(4 10 4 5 6 7    24 7)))
@@ -241,7 +240,6 @@
             (tuple '_connect     34 2 1 _connect)   ;; (connect host port) -> #false | socket-fd
             (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
             (tuple 'eq?          54 2 1 eq?)
-            (tuple 'type-byte    15 1 1 type-byte) ;; get just the type bits (new)
             (tuple 'type         15 1 1 type)
             (tuple 'size         36 1 1 size)  ;;  get object size (- 1)
             (tuple 'cast         22 2 1 cast)  ;; cast object type (works for immediates and allocated)

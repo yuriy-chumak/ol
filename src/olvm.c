@@ -2480,7 +2480,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
    op6: CLOSE1(TCLOS); NEXT(0);
    op7: CLOSE1(TPROC); NEXT(0);
 
-   op15: { /* type-byte o r <- actually sixtet */
+   op15: { /* type o r <- actually sixtet */
       word x = R[*ip++];
       if (allocp(x)) x = V(x);
       R[*ip++] = F((x>>TPOS)&63);
