@@ -128,7 +128,6 @@
       (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
 
       ; 2
-      (define lesser?  (func '(3 44 4 5 6 24 6)))
       (define listuple (func '(4 35 4 5 6 7 24 7)))
       (define mkblack  (func '(5 42 4 5 6 7 8 24 8)))
       (define mkred    (func '(5 43 4 5 6 7 8 24 8)))
@@ -185,6 +184,9 @@
             (primop 'size       '(36 4       5  24 5)  1 1)  ;; get object size (- 1)
             (primop 'cast       '(22 4 5     6  24 6)  2 1)  ;; cast object type (works for immediates and allocated)
 
+            (primop 'eq?        '(54 4 5     6  24 6)  2 1)
+            (primop 'lesser?    '(44 4 5     6  24 6)  2 1)
+            
             ;; математика
             (primop 'fx+         '(38 4 5    6 7    24 7)  2 2)
             (primop 'fx*         '(39 4 5    6 7    24 7)  2 2)
@@ -199,30 +201,15 @@
             
             
 
-;            (define fxband      (func '(3 55 4 5 6      24 6)))
-;            (define fxbor       (func '(3 56 4 5 6      24 6)))
-;            (define fxbxor      (func '(3 57 4 5 6      24 6)))
-      
-;            (tuple 'fxband       55 2 1 fxband)
-;            (tuple 'fxbor        56 2 1 fxbor)
-;            (tuple 'fxbxor       57 2 1 fxbxor)
-;            
-;      (define fxband      (func '(3 55 4 5 6      24 6)))
-;      (define fxbor       (func '(3 56 4 5 6      24 6)))
-;      (define fxbxor      (func '(3 57 4 5 6      24 6)))
-      
-            
             ;;; input arity includes a continuation
             
             (tuple 'sizeb        28 1 1 sizeb)   ;; raw-obj -> numbe of bytes (fixnum)
             (tuple '_connect     34 2 1 _connect)   ;; (connect host port) -> #false | socket-fd
             (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
-            (tuple 'eq?          54 2 1 eq?)
 ;            (tuple 'ref          47 2 1 ref)   ;;
             (tuple 'refb         48 2 1 refb)      ;;
             (tuple 'ff-toggle    46 1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
             ; 2
-            (tuple 'lesser?      44 2 1 lesser?)  ;; (lesser? a b)
             (tuple 'listuple     35 3 1 listuple)  ;; (listuple type size lst)
             (tuple 'mkblack      42 4 1 mkblack)   ; (mkblack l k v r)
             (tuple 'mkred        43 4 1 mkred)   ; ditto
