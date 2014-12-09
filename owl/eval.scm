@@ -85,14 +85,18 @@
                         (keyword literals (pattern ...) 
                         (template ...)))))))
             ;; note that these could now come straight from primops
-            '(cons car cdr set-car! set-cdr! eq? type type-old size cast fetch ref sys-prim refb
-              pick mk mkr sys fxbor fxbxor
-              fsend _connect _sopen accept
-              lraw
-              raw  mkt bind set lesser? call-native
-              mkred mkblack ff-bind ff-toggle ffcar ffcdr red? listuple
-              fxband fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr raw-mode
-              _sleep iomux clock time sizeb getev)))
+            ;(map (lambda (primop) (ref primop 1)) primops)
+            '(cons car cdr set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
+              mk mkt bind
+              sys set raw
+              _sleep
+              
+              mkred mkblack ff-bind ff-toggle red? listuple
+              fxbor fxband fxbxor fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr
+              clock)))
+;              ; pick mkr 
+;              ; mk - lraw maybe unused?
+;              ; ffcar ffcdr time - is it must be here?
 
       (define (execute exp env)
          (receive (exp)

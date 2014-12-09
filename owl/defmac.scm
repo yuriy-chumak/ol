@@ -40,8 +40,8 @@
       type-rlist-spine
       type-rlist-node
       type-port 
-      type-socket
-      type-tcp-client
+      type-socket     ; todo: remove and use (cons 'socket port)
+      type-tcp-client ; todo: remove and use (cons 'tcp-client port)
       type-string
       type-string-wide
       type-string-dispatch

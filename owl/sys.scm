@@ -50,16 +50,16 @@
       (define (open-dir path)
          (let ((cs (c-string path)))
             (if (and cs (<= (string-length cs) #xffff))
-               (sys-prim 11 cs #false #false)
+               (sys-prim 1011 cs #false #false)
                #false)))
 
       ;; unsafe-dirfd → #false | eof | bvec
       (define (read-dir obj)
-         (sys-prim 12 obj #false #false))
+         (sys-prim 1012 obj #false #false))
 
       ;; _ → #true
       (define (close-dir obj)
-         (sys-prim 13 obj #false #false))
+         (sys-prim 1013 obj #false #false))
 
       ;;; 
       ;;; Safe derived operations
@@ -86,7 +86,7 @@
       (define (chdir path)
          (let ((path (c-string path)))
             (and path
-               (sys-prim 20 path #false #false))))
+               (sys-prim 1020 path #false #false))))
 
       ;;; 
       ;;; Processes
@@ -100,15 +100,15 @@
             ((path (c-string path))
              (args (map c-string args)))
             (if (and path (all (λ (x) x) args))
-               (sys-prim 17 path args #false)
+               (sys-prim 1017 path args #false)
                (cons path args))))
 
       ;; → #false = fork failed, #true = ok, we're in child, n = ok, child pid is n
       (define (fork)
-         (sys-prim 18 #false #false #false))
+         (sys-prim 1018 #false #false #false))
 
       (define (wait pid)
-         (let ((res (sys-prim 19 pid (cons #false #false) #false)))
+         (let ((res (sys-prim 1019 pid (cons #false #false) #false)))
             (cond
                ((not res) res)
                ((eq? res #true)
@@ -132,7 +132,7 @@
 
       ;; pid signal → success?
       (define (kill pid signal)
-         (sys-prim 21 pid signal #false))
+         (sys-prim 1021 pid signal #false))
 
 
       ;;;
@@ -143,7 +143,7 @@
       (define (getenv str)
          (let ((str (c-string str)))
             (if str 
-               (let ((bvec (sys-prim 16 str #false #false)))
+               (let ((bvec (sys-prim 1016 str #false #false)))
                   (if bvec
                      (bytes->string (vec->list bvec))
                      #false))

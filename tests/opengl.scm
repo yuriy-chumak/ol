@@ -4,7 +4,7 @@
 (define *USE_GLBEGIN* 1)
 
 ;  (define isCompiled (list->byte-vector '(0 0 0 0)))
-;  (sys-prim 33 isCompiled #false #false)
+;  (sys-prim 1033 isCompiled #false #false)
 (import (owl pinvoke))
 (import (lib windows))
 (import (OpenGL version-2-1))
@@ -46,7 +46,7 @@
 
 ; todo: тип для (dlsym) - всегда число, добавить в проверку
 
-;(sys-prim 33 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
+;(sys-prim 1033 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
 
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
 
@@ -106,7 +106,7 @@
 
 ;(wglMakeCurrent (tuple "a" "b" "c"))
 
-;(sys-prim 33 (cast type-fix+ 3/7) #false #false)
+;(sys-prim 1033 (cast type-fix+ 3/7) #false #false)
 (define GLchar** type-tuple)
 (define GLint* type-vector-raw)
 (define GLsizei* type-vector-raw)
@@ -183,7 +183,7 @@
 ;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
 (glShaderSource fs 1 (tuple (c-string (file->string
-  (case 6
+  (case 2
     (2 "raw/geometry.fs")
     (3 "raw/water.fs")
     (4 "raw/18850")
@@ -215,10 +215,10 @@
   (define resolution (glGetUniformLocation po (c-string "resolution")))
 
 ;(print "glGetUniformLocation: " (glGetUniformLocation po "color"))
-;(sys-prim 32 (cdr function) (car function) args))))
+;(sys-prim 1032 (cdr function) (car function) args))))
 
   ; todo: проверить возвращаемый результат
-(sys-prim 33 #x84011117 2214662423 #false)
+(sys-prim 1033 #x84011117 2214662423 #false)
 
 
 (ShowWindow window SW_SHOW)

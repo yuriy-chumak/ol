@@ -86,7 +86,7 @@
 
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle
-(define (dlopen name flag) (sys-prim 30 (c-string name) flag #false))
+(define (dlopen name flag) (sys-prim 1030 (c-string name) flag #false))
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать 
 (define (dlsym  dll type name . prototype)
 ;  (print "dlsym: " name)
@@ -95,18 +95,18 @@
    ; иначе использовать указанное в arguments; обязательно выводить предупреждение, если количество аргументов не
    ; совпадает (возможно еще во время компиляции)
    (let ((rtty (cons type prototype))
-         (function (sys-prim 31 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+         (function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
       (lambda args
 ;        (print "pinvoke: " name)
-         (sys-prim 32 function args rtty))))
+         (sys-prim 1032 function args rtty))))
 ;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl         
 ;;(define (dlsym-c type dll name . prototype)
-;;; todo: отправлять тип функции третим параметром (sys-prim 31) и в виртуальной машине
+;;; todo: отправлять тип функции третим параметром (sys-prim 1031) и в виртуальной машине
 ;;;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ? 
-;;   (let ((function (cons '((bor type 64) . prototype) (sys-prim 31 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
-;;;;;(let ((function (cons (bor type 64) (sys-prim 31 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
+;;   (let ((function (cons '((bor type 64) . prototype) (sys-prim 1031 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
+;;;;;(let ((function (cons (bor type 64) (sys-prim 1031 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
 ;;      (lambda args ;  function       type          ;arguments
-;;         (sys-prim 32 (cdr function) (car function) args))))
+;;         (sys-prim 1032 (cdr function) (car function) args))))
 
 ; Calling Conventions
 (define (__stdcall  arg) (+ arg   0)) ; __stdcall is default for Windows

@@ -380,7 +380,7 @@
    ;; get any more memory after entering seccomp
    (if (and n-megs (> n-megs 0))
       (ensure-free-heap-space n-megs))
-   (or (sys-prim 10 #false #false #false)
+   (or (sys-prim 1010 #false #false #false)
       (begin
          (system-stderr "Failed to enter seccomp sandbox. 
 You must be on a newish Linux and have seccomp support enabled in kernel.

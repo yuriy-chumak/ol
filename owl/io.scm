@@ -87,15 +87,18 @@
       (define stdout (fd->port 1))
       (define stderr (fd->port 2))
 
+      (define (sys-read fd maxlen)         (sys-prim 0 fd maxlen #false)) ; 1005
+      (define (sys-write fd buffer length) (sys-prim 1000 fd buffer length)) ; 1
+
       ;; use type 12 for fds 
 
       (define (fclose fd)
-         (sys-prim 2 fd #false #false))
+         (sys-prim 1002 fd #false #false))
 
       (define (fopen path mode)
          (cond
             ((c-string path) => 
-               (λ (raw) (sys-prim 1 raw mode #false)))
+               (λ (raw) (sys-prim 1001 raw mode #false)))
             (else #false)))
 
       ;; use fd 65535 as the unique sleeper thread name.
@@ -112,10 +115,10 @@
       (define (try-write-block fd bvec len)
          (cond
             ;; one does not simply write() on all platforms
-            ((tcp? fd) (sys-prim 15 fd bvec len))
-            ((port? fd) (sys-prim 0 fd bvec len))
+            ((tcp? fd) (sys-prim 1015 fd bvec len))
+            ((port? fd) (sys-write fd bvec len))
             (else 
-               ;(sys-prim 0 fd bvec len)
+               ;(sys-write fd bvec len)
                #false)))
 
       ;; bvec port → bool
@@ -151,7 +154,7 @@
          *vec-leaf-size*) ;; changing from 256 breaks vector leaf things
 
       (define (try-get-block fd block-size block?)
-         (let ((res (sys-prim 5 fd block-size 0)))
+         (let ((res (sys-read fd block-size)))
             (if (eq? res #true) ;; would block
                (if block?
                   (begin
@@ -197,7 +200,7 @@
       ;; needed a bit later for stream interface
       (define (send-next-connection thread fd)
          (let loop ((rounds 0)) ;; count for temporary sleep workaround
-            (let ((res (sys-prim 4 fd #false #false)))
+            (let ((res (sys-prim 1004 fd #false #false)))
                (if res ; did get connection
                   (lets ((ip fd res))
                      (mail thread fd)
@@ -207,7 +210,7 @@
                      (loop rounds))))))
                      
       (define (open-socket port)
-         (let ((sock (sys-prim 3 port #false #false)))
+         (let ((sock (sys-prim 1003 port #false #false)))
             (if sock 
                (list 'sock (fd->port sock))
                #false)))
@@ -219,7 +222,7 @@
             ((not (eq? (type port) type-fix+))
                #false)
             ((and (eq? (type ip) type-vector-raw) (eq? 4 (sizeb ip))) ;; silly old formats
-               (let ((fd (_connect ip port)))
+               (let ((fd (sys-prim 1042 ip port #false))) ; connect
                   (if fd
                      (fd->tcp fd)
                      #false)))
@@ -354,7 +357,7 @@
 
       ;; sock → #f #f | ip client
       (define (tcp-client sock)
-         (let ((res (sys-prim 4 sock #false #false)))
+         (let ((res (sys-prim 1004 sock #false #false)))
             (if res 
                (lets ((ip fd res))
                   (values ip (fd->tcp fd)))
@@ -370,7 +373,7 @@
                null)))
 
       (define (tcp-socket port)
-         (let ((fd (sys-prim 3 port #false #false)))
+         (let ((fd (sys-prim 1003 port #false #false)))
             (if fd (fd->socket fd) fd)))
 
       ;; port → ((ip . fd) ... . null|#false), CLOSES SOCKET
@@ -382,7 +385,7 @@
 
       ;; ip port (bvec ...) → #true n-written | #false error-sym
       (define (tcp-send ip port ll)
-         (let ((fd (_connect ip port)))
+         (let ((fd (sys-prim 1042 ip port #false))) ; connect
             (if fd
                (lets ((ll n (closing-blocks->port ll fd)))
                   (if (null? ll)
@@ -453,7 +456,7 @@
 
       ;; fixme: system-X do not belong here
       (define (system-print str)
-         (sys-prim 0 1 str (sizeb str)))
+         (sys-write 1 str (sizeb str)))
 
       (define (system-println str)
          (system-print str)
@@ -461,7 +464,7 @@
       "))
 
       (define (system-stderr str) ; <- str is a raw or pre-rendered string
-         (sys-prim 0 2 str (sizeb str)))
+         (sys-write 2 str (sizeb str)))
 
       ;;; 
       ;;; Files <-> vectors

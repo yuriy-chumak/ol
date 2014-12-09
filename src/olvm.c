@@ -412,7 +412,7 @@ typedef uintptr_t word;
 
 #define F(val)                      (((val) << IPOS) | 2)
 #define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
-#define ZEROFALCE(cval)             ((cval) ?  F(0) : IFALSE)
+#define ZEROFALSE(cval)             ((cval) ?  F(0) : IFALSE)
 #define fixval(desc)                ((desc) >> IPOS) // unsigned shift!!!
 #define fixnump(desc)               (((desc) & 0xFF) == 2)
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
@@ -1106,27 +1106,22 @@ static word prim_set(word wptr, word pos, word val) {
    return (word) newobj;
 }
 
+static word syscall(word op, word a, word b, word c)
+{
+	switch (op)
+	{
+	default:
+		break;
+	}
+	return IFALSE;
+}
+
 /* system- and io primops */
+// todo: move to the parental switch
 static word prim_sys(int op, word a, word b, word c) {
-   switch(op) {
-      case 1: { /* 1 = fopen <str> <mode> <to> */
-         char *path = (char *) a;
-         int mode = fixval(b);
-         int val;
-         struct stat sb;
-         if (!(allocp(path) && imm_type(*path) == TSTRING))
-            return IFALSE;
-         mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
-         val = open(((char *) path) + W, mode,(S_IRUSR|S_IWUSR));
-         if (val < 0 || fstat(val, &sb) == -1 || (sb.st_mode & S_IFDIR)) {
-            close(val);
-            return IFALSE;
-         }
-         set_blocking(val,0);
-         return F(val); }
-      case 2:
-         return close(fixval(a)) ? IFALSE : ITRUE;
-      case 3: { /* 3 = sopen port -> False | fd  */
+	switch(op) {
+  	case 1003:
+      { /* 3 = sopen port -> False | fd  */
          int port = fixval(a);
          int s;
          int opt = 1; /* TRUE */
@@ -1148,29 +1143,11 @@ static word prim_sys(int op, word a, word b, word c) {
          }
          set_blocking(s,0);
          return F(s); }
-      case 4: { /* 4 = accept port -> rval=False|(ip . fd) */
-         int sock = fixval(a);
-         struct sockaddr_in addr;
-         socklen_t len = sizeof(addr);
-         int fd;
-         word *pair;
-         char *ipa;
-         fd = accept(sock, (struct sockaddr *)&addr, &len);
-         if (fd < 0) return IFALSE;
-         set_blocking(fd,0);
-         ipa = (char *) &addr.sin_addr;
-         *fp = make_raw_header(2, TBVEC, 4%W);
-         bytecopy(ipa, ((char *) fp) + W, 4);
-         fp[2] = PAIRHDR;
-         fp[3] = (word) fp;
-         fp[4] = F(fd);
-         pair = fp+2;
-         fp += 5;
-         return (word)pair; }
 
 
 
-      case 10: /* enter linux seccomp mode */
+  	case 1010:
+      /* enter linux seccomp mode */
 #ifdef __gnu_linux__
 #ifndef NO_SECCOMP
          if (seccompp) /* a true value, but different to signal that we're already in seccomp */
@@ -1186,12 +1163,14 @@ static word prim_sys(int op, word a, word b, word c) {
 #endif
          return IFALSE; /* seccomp not supported in current repl */
       /* dirops only to be used via exposed functions */
-      case 11: { /* sys-opendir path _ _ -> False | dirobjptr */
+  	case 1011:
+      { /* sys-opendir path _ _ -> False | dirobjptr */
          char *path = W + (char *) a; /* skip header */
          DIR *dirp = opendir(path);
          if(!dirp) return IFALSE;
          return fliptag(dirp); }
-      case 12: { /* sys-readdir dirp _ _ -> bvec | eof | False */
+  	case 1012:
+      { /* sys-readdir dirp _ _ -> bvec | eof | False */
          DIR *dirp = (DIR *)fliptag(a);
          word *res;
          unsigned int len;
@@ -1202,14 +1181,17 @@ static word prim_sys(int op, word a, word b, word c) {
          res = mkbvec(len, 3); /* make a fake raw string (OS may not use valid UTF-8) */
          bytecopy((char *)&dire->d_name, (char *) (res + 1), len); /* *no* terminating null, this is an owl bvec */
          return (word)res; }
-      case 13: /* sys-closedir dirp _ _ -> ITRUE */
+  	case 1013:
+      /* sys-closedir dirp _ _ -> ITRUE */
          closedir((DIR *)fliptag(a));
          return ITRUE;
-      case 14: { /* set-ticks n _ _ -> old */
+  	case 1014:
+      { /* set-ticks n _ _ -> old */
          word old = F(slice);
          slice = fixval(a);
          return old; }
-      case 15: { /* 0 fsocksend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
+  	case 1015:
+      { /* 0 fsocksend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
          int fd = fixval(a);
          word *buff = (word *) b;
          int wrote, size, len = fixval(c);
@@ -1220,11 +1202,13 @@ static word prim_sys(int op, word a, word b, word c) {
          if (wrote > 0) return F(wrote);
          if (errno == EAGAIN || errno == EWOULDBLOCK) return F(0);
          return IFALSE; }
-      case 16: { /* getenv <owl-raw-bvec-or-ascii-leaf-string> */
+  	case 1016:
+      { /* getenv <owl-raw-bvec-or-ascii-leaf-string> */
          char *name = (char *)a;
          if (!allocp(name)) return IFALSE;
          return strp2owl(getenv(name + W)); }
-      case 17: { /* exec[v] path argl ret */
+  	case 1017:
+      { /* exec[v] path argl ret */
 #ifndef WIN32
           char *path = ((char *) a) + W;
           int nargs = llen((word *)b);
@@ -1246,13 +1230,15 @@ static word prim_sys(int op, word a, word b, word c) {
          set_blocking(2,0);
 #endif
          return IFALSE; }
-      case 20: { /* chdir path res */
+  	case 1020:
+      { /* chdir path res */
          char *path = ((char *)a) + W;
          if (chdir(path) < 0)
             return IFALSE;
          return ITRUE; }
 #if 0 // ndef WIN32
-      case 19: { /* wait <pid> <respair> _ */
+  	case 1019:
+      { /* wait <pid> <respair> _ */
          pid_t pid = (a == IFALSE) ? -1 : fixval(a);
          int status;
          word *r = (word *) b;
@@ -1278,7 +1264,8 @@ static word prim_sys(int op, word a, word b, word c) {
             r = (word *)IFALSE;
          }
          return (word)r; }
-      case 18: { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
+  	case 1018:
+      { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
          pid_t pid = fork();
          if (pid == -1) /* fork failed */
             return IFALSE;
@@ -1287,7 +1274,7 @@ static word prim_sys(int op, word a, word b, word c) {
          if ((int)pid > FMAX)
             fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
          return F(pid&FMAX); }
-      case 21: /* kill pid signal → fixnum */
+  	case 1021: /* kill pid signal → fixnum */
          return (kill(fixval(a), fixval(b)) < 0) ? IFALSE : ITRUE;
 #endif
       default:
@@ -1614,7 +1601,9 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define EQ    54
 
 
-#	define SYSPRIM 63
+#	define SYSCALL 63
+
+	// free numbers: 34 (was _connect)
 
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
@@ -1914,7 +1903,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 18: goto op18; case 19: goto op19; case 21: goto op21;
 		case 22: goto op22; case 23: goto op23; case 26: goto op26;
 		case 28: goto op28; case 32: goto op32;
-		case 34: goto op34; case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
+		case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
 		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44; case 45: goto op45;
 		case 46: goto op46; case 47: goto op47; case 48: goto op48; case 49: goto op49;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
@@ -2041,50 +2030,24 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			// этот case должен остаться тут - как последний из кейсов
 			//  todo: переименовать в компиляторе sys-prim на syscall (?)
 			// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
-			case SYSPRIM: { /* sys-prim op arg1 arg2 arg3 r1 */
-				// todo: make prim_sys inlined here!
-				word op = fixval(A0);
-				word a = A1, b = A2, c = A3;
-				word result = INULL; // default returned value is INULL
+		case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
+			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
+			//                     http://www.x86-64.org/documentation/abi.pdf
+			word op = fixval(A0);
+			word a = A1, b = A2, c = A3;
+			word result = IFALSE; // default returned value is #false
 
-//				printf("SYSPRIM(%d, %d, %d, %d)\n", op, a, b, c);
+//			printf("SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
-				switch (op) {
-				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
-				//  остальное можно спокойно оформлять отдельными функциями
+			switch (op) {
+			// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
+			//  остальное можно спокойно оформлять отдельными функциями
 
-				// WRITE
-				case 0: { /* 0 fsend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
-					int fd = fixval(a);
-					word *buff = (word *) b;
-
-					result = IFALSE;
-
-					int wrote, size, len = fixval(c);
-					if (immediatep(buff))
-						break;
-					size = (hdrsize(*buff)-1) * W;
-					if (len > size)
-						break;
-
-#					ifndef STANDALONE
-					if (fd == 1) // stdout wrote to the fo
-						wrote = fifo_puts(fo, ((char *)buff)+W, len);
-					else
-#					endif//STANDALONE
-						wrote = write(fd, ((char *)buff)+W, len);
-
-					if (wrote > 0)
-						result = F(wrote);
-					else
-						result = ZEROFALCE(errno == EAGAIN || errno == EWOULDBLOCK);
-					break;
-				}
-
-				// READ
-				case 5: { /* fread fd max -> obj | eof | F (read error) | T (would block) */
-					word fd = fixval(a);  // file descriptor
-					word max = fixval(b); // buffer capacity
+			// READ
+			case 1005:
+			case 0: { // fread fd max -> obj | eof | F (read error) | T (would block)
+				word fd = fixval(a);  // file descriptor
+				word max = fixval(b); // buffer capacity
 
 					word *res;
 					int n, nwords = (max/W) + 2;
@@ -2135,8 +2098,238 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					break;
 				}
 
-				// EXIT
-				case 6:
+			// WRITE
+			case 1000:
+			case 1: { // fsend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write)
+				int fd = fixval(a);
+				word *buff = (word *) b;
+
+				int wrote, size, len = fixval(c);
+				if (immediatep(buff))
+					break;
+				size = (hdrsize(*buff)-1) * W;
+				if (len > size)
+					break;
+
+#ifndef STANDALONE
+				if (fd == 1) // stdout wrote to the fo
+					wrote = fifo_puts(fo, ((char *)buff)+W, len);
+				else
+#endif//STANDALONE
+					wrote = write(fd, ((char *)buff)+W, len);
+
+				if (wrote > 0)
+					result = F(wrote);
+				else if (errno == EAGAIN || errno == EWOULDBLOCK)
+					result = F(0);
+				break;
+			}
+
+			// OPEN
+			case 1001:
+			case 2: { // fopen <str> <mode> -> <to>
+		         char *path = (char *) a;
+		         int mode = fixval(b);
+		         int val;
+		         struct stat sb;
+		         if (!(allocp(path) && imm_type(*path) == TSTRING))
+		            break;
+		         mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
+		         val = open(((char *) path) + W, mode,(S_IRUSR|S_IWUSR));
+		         if (val < 0 || fstat(val, &sb) == -1 || (sb.st_mode & S_IFDIR)) {
+		            close(val);
+		            break;
+		         }
+		         set_blocking(val,0);
+		         result = F(val);
+		       break;
+		       }
+
+			// CLOSE
+			case 1002:
+			case 3: {
+				int fd = fixval(a);
+				if (close(fd) != 0)
+					break;
+
+				result = ITRUE;
+				break;
+			}
+
+
+			/* example with connect
+			   int sock;
+			   unsigned char *ip = ((unsigned char *) host) + W;
+			   unsigned long ipfull;
+			   struct sockaddr_in addr;
+			   port = fixval(port);
+			   if (!allocp(host))  // bad host type
+				  return IFALSE;
+			   if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+				  return IFALSE;
+			   addr.sin_family = AF_INET;
+			   addr.sin_port = htons(port);
+			   addr.sin_addr.s_addr = (in_addr_t) host[1];
+			   ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
+			   addr.sin_addr.s_addr = htonl(ipfull);
+			   if (connect(sock, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) < 0) {
+				  close(sock);
+				  return IFALSE;
+			   }
+			   set_blocking(sock,0);
+			   return F(sock);
+			*/
+			// SOCKET
+			case 41: { // socket (options: STREAM or DGRAM)
+				int port = fixval(b);
+				int sock = socket(PF_INET, port, 0);
+				if (sock == -1)
+					break;
+
+				result = F(sock);
+				break;
+			}
+
+			// CONNECT // todo: change this!
+			case 1042:
+			case 42: { // connect(host, port) // todo: check this
+				word* host = (word*)a;
+				if (!allocp(host))  // bad host type
+					break;
+				unsigned char *ip = ((unsigned char *) host) + W;
+
+				unsigned long ipfull;
+				struct sockaddr_in addr;
+				int port = fixval(b);
+
+				int sock;
+				if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+					break;
+				addr.sin_family = AF_INET;
+				addr.sin_port = htons(port);
+				addr.sin_addr.s_addr = (in_addr_t) host[1];
+				ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
+				addr.sin_addr.s_addr = htonl(ipfull);
+				if (connect(sock, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) < 0) {
+					close(sock);
+					break;
+				}
+				set_blocking(sock, 0);
+				result = F(sock);
+				break;
+			}
+
+			// ACCEPT
+			// http://linux.die.net/man/2/accept
+			case 43: {
+				int sockfd = fixval(a);
+
+				struct sockaddr_in addr;
+				socklen_t len = sizeof(addr);
+				int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
+				// On error, -1 is returned
+				if (sock < 0)
+					break;
+
+				result = F(sock);
+				break;
+			}
+
+			// SEND
+			// http://linux.die.net/man/2/send
+			case 44: { // fd, buf, len
+				int fd = fixval(a);
+				word *data = (word *)b;
+				int len = fixval(c);
+
+				int size = (hdrsize(*data)-1) * W;
+				if (len > size)
+					break;
+
+				int sent = sendto(fd, ((char *)data)+W, len, 0, NULL, 0);
+				if (sent == -1) // On error, -1 is returned
+					break;
+
+				result = F(sent);
+				break;
+			}
+
+			// SHUTDOWN
+			// http://linux.die.net/man/2/shutdown
+			case 48: {
+				int sd = fixval(a);
+
+				// On error, -1 is returned
+				if (shutdown(sd, 0) != 0)
+					break;
+
+				result = ITRUE;
+				break;
+			}
+
+
+			case 1004: { // accept port -> rval = False|(ip . fd)
+				int sock = fixval(a);
+				struct sockaddr_in addr;
+				socklen_t len = sizeof(addr);
+				int fd;
+				word *pair;
+				char *ipa;
+				fd = accept(sock, (struct sockaddr *)&addr, &len);
+				if (fd < 0)
+					break;
+				set_blocking(fd,0);
+				ipa = (char *) &addr.sin_addr;
+				*fp = make_raw_header(2, TBVEC, 4%W);
+				bytecopy(ipa, ((char *) fp) + W, 4);
+				fp[2] = PAIRHDR;
+				fp[3] = (word) fp;
+				fp[4] = F(fd);
+				pair = fp+2;
+				fp += 5;
+				result = (word)pair;
+
+				break;
+			}
+
+
+			// BIND (socket, port, #false) // todo: c for options
+			// http://linux.die.net/man/2/bind
+			case 49: {
+				// todo: assert on argument types
+				int sock = fixval(a);
+				int port = fixval(b);
+
+				struct sockaddr_in interface;
+				interface.sin_family = AF_INET;
+				interface.sin_port = htons(port);
+				interface.sin_addr.s_addr = INADDR_ANY;
+
+				// On success, zero is returned.
+				if (bind(sock, (struct sockaddr *) &interface, sizeof(interface)) == 0)
+					result = ITRUE;
+				break;
+			}
+
+
+			// LISTEN
+			// http://linux.die.net/man/2/listen
+			// listen() marks the socket referred to by sockfd as a passive socket, that is,
+			// as a socket that will be used to accept incoming connection requests using accept(2).
+			case 50: {
+				int sockfd = fixval(a);
+
+				// On success, zero is returned.
+				if (listen(sockfd, 1024) == 0) {
+//					set_blocking(sockfd, 0);
+					result = ITRUE;
+				}
+
+				break;
+			}
+
+		         // EXIT
+			case 1006:
 					free(heap.begin); // освободим занятую память
 #					ifndef STANDALONE
 					// подождем, пока освободится место в консоли
@@ -2149,18 +2342,21 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #					endif//STANDALONE
 					break;
 
-				case 7: /* set memory limit (in mb) */ // todo: переделать на другой номер
+				case 1007:
+				/* set memory limit (in mb) */ // todo: переделать на другой номер
 					result = max_heap_size;
 					max_heap_size = fixval(a);
 					break;
-				case 8: /* get machine word size (in bytes) */ // todo: переделать на другой номер
+				case 1008:
+				/* get machine word size (in bytes) */ // todo: переделать на другой номер
 					  result = F(W);
 					  break;
-				  case 9: /* get memory limit (in mb) */ // todo: переделать на другой номер
+				case 1009:
+				/* get memory limit (in mb) */ // todo: переделать на другой номер
 					  result = F(max_heap_size);
 					  break;
 
-				case 22:
+				case 1022:
 					result = (ticker & FMAX);
 					ticker = fixval(a);
 					break;
@@ -2169,7 +2365,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				// -=( pinvoke )=-------------------------------------------------
 #				ifndef JAVASCRIPT
 				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
-				case 30: { // dlopen
+				case 1030: { // dlopen
 					word *filename = (word*)a;
 					int mode = fixval(b);
 
@@ -2185,7 +2381,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					}
 					break;
 				}
-				case 31: { // dlsym
+				case 1031: { // dlsym
 					word* A = (word*)a;
 
 					assert (hdrtype(A[0]) == THANDLE);
@@ -2208,7 +2404,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					break;
 				}
 				// временный тестовый вызов
-				case 33: { // temp
+				case 1033: { // temp
 					forcegc = 1;
 /*					printf("opengl version: %s\n", glGetString(GL_VERSION));
 					int glVersion[2] = {-1, -1}; // Set some default values for the version
@@ -2237,7 +2433,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				}
 
 				// вызвать библиотечную функцию
-				case 32: { // pinvoke
+				case 1032: { // pinvoke
 					// #include "pinvoke.c"
 					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 					unsigned int call(int convention, void* function, int args[], int count) {
@@ -2604,9 +2800,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       CHECK(!(rawp(hdr) || hdrsize(hdr)-1 != n), tuple, 32);
       while(n--) { R[*ip++] = tuple[pos++]; }
       NEXT(0); }
-   op34: { /* connect <host-ip> <port> <res> -> fd | False, via an ipv4 tcp stream */ // todo: move to sys-prim?
-      A2 = prim_connect((word *) A0, A1); /* fixme: remove and put to prim-sys*/
-      NEXT(3); }
    op35: { /* listuple type size lst to */
       word type = fixval(R[*ip]);
       word size = fixval(A1);

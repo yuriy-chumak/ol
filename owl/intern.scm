@@ -18,7 +18,9 @@
       put-symbol                    ;; tree sym → tree'
       empty-symbol-tree 
       intern-symbols
-      start-dummy-interner)
+      start-dummy-interner
+      defined?
+      )
 
    (import
       (owl defmac)
@@ -231,8 +233,9 @@
                   (tuple-case msg
                      ((flush) ;; clear names before boot (deprecated)
                         (interner root codes))
-                     ((defined? symbol)
-                        (if (maybe-lookup-symbol root symbol)
+                     ((defined? string)
+                        ;(print "test for symbol [" string "]")
+                        (if (maybe-lookup-symbol root string)
                            (mail sender #t)
                            (mail sender #f))
                         (interner root codes))
@@ -252,6 +255,10 @@
 
                   (mail sender 'bad-kitty)
                   (interner root codes)))))
+
+      (define (defined? string)
+         (interact 'intern (tuple 'defined? string)))
+
 
       ;; a placeholder interner for programs which don't need the other services
       ;; soon to be removed

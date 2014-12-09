@@ -121,7 +121,7 @@
       (define clock       (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
       
       (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys
-      (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
+;      (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
 
       ; 2
       (define mkblack  (func '(5 42 4 5 6 7 8 24 8)))
@@ -130,23 +130,19 @@
       (define ff-toggle   (func '(2 46 4 5        24 5)))
       (define listuple (func '(4 35 4 5 6 7 24 7)))
 
-      ; не понимаю почему, но надо оставить здесь, так как иначе "нехватает 96 регистров" ошибка. потом исправлю.
-      (define CONS       '(3 . (51 4 5      6  24 6))) ; 51 = CONS
-      (define cons        (func CONS))
-
       (define primitives
          (list
             ; пара специальных вещей. todo: разобраться, почему они тут а не в общем списке функци в/м
             (tuple 'bind         32    1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
             (tuple 'ff-bind      49    1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
-            (tuple 'mkt          23 'any      1 mkt)      ;; mkt type v0 .. vn t
+            (tuple 'mkt          23   'any   1  mkt)      ;; mkt type v0 .. vn t
          
 
             ; непосредственный код
             (primop 'raw        '(60 4 5 6    7  24 7)  3 1) ;; make raw object, and *add padding byte count to type variant*
          
             (primop 'sys        '(27 4 5 6 7  8  24 8)  4 1) ; тут было что-то особенное (в смысле, что количество аргументов было 4, а не 3 написано)
-            (primop 'sys-prim   '(63 4 5 6 7  8  24 8)  4 1) ; todo: rename sys-prim to syscall, move _connect to sys-prim too
+            (primop 'sys-prim   '(63 4 5 6 7  8  24 8)  4 1) ; todo: rename sys-prim to syscall
             (primop 'run        '(50 4 5      6  24 6)  2 1)            
             
             ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
@@ -160,47 +156,50 @@
             ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
             ; names for these functions, the old terms are still in use. In particular, since the terms are used
             ; in the Emacs Lisp source code, we will use them in this introduction.
-            (primop 'cons       '(51 4 5      6  24 6)  2 1)
-            
-            (primop 'car        '(52 4        5  24 5)  1 1)
-            (primop 'cdr        '(53 4        5  24 5)  1 1)
-            (primop 'set-car!   '(11 4 5      6  24 6)  2 1)
-            (primop 'set-cdr!   '(12 4 5      6  24 6)  2 1)
-            
-            (primop 'ref        '(47 4 5      6  24 6)  2 1) ; op47 = ref t o r = prim_ref(A0, A1)
-            (primop 'set        '(45 4 5 6    7  24 7)  3 1) ; (set tuple pos val) -> tuple'
-           ;(primop 'set!       '(10 4 5 6   7  24 7)  3 1)  ; (set! tuple pos val)
-            
-            (primop 'type       '(15 4       5  24 5)  1 1)  ;; get just the type bits (new)
-            (primop 'size       '(36 4       5  24 5)  1 1)  ;; get object size (- 1)
-            (primop 'cast       '(22 4 5     6  24 6)  2 1)  ;; cast object type (works for immediates and allocated)
+            (primop 'cons       '(51 4 5  6  24 6)  2 1)
 
-            (primop 'eq?        '(54 4 5     6  24 6)  2 1)
-            (primop 'lesser?    '(44 4 5     6  24 6)  2 1)
+            (primop 'type       '(15 4    5  24 5)  1 1)  ;; get just the type bits (new)
+            (primop 'size       '(36 4    5  24 5)  1 1)  ;; get object size (- 1)
+            (primop 'cast       '(22 4 5  6  24 6)  2 1)  ;; cast object type (works for immediates and allocated)
             
-            ;; математика
-            (primop 'fx+         '(38 4 5    6 7    24 7)  2 2)
-            (primop 'fx*         '(39 4 5    6 7    24 7)  2 2)
-            (primop 'fx-         '(40 4 5    6 7    24 7)  2 2)
-            (primop 'fx/         '(26 4 5 6  7 8 9  24 7)  3 3) 
-            (primop 'fx>>        '(58 4 5    6 7    24 7)  2 2)
-            (primop 'fx<<        '(59 4 5    6 7    24 7)  2 2)
+            (primop 'car        '(52 4    5  24 5)  1 1)
+            (primop 'cdr        '(53 4    5  24 5)  1 1)
+            (primop 'ref        '(47 4 5  6  24 6)  2 1) ; op47 = ref t o r = prim_ref(A0, A1)
             
-            (tuple 'ncons        29 2 1 ncons)   ;;
-            (tuple 'ncar         30 1 1 ncar)   ;;
-            (tuple 'ncdr         31 1 1 ncdr)   ;;
+            (primop 'set        '(45 4 5 6  7  24 7)  3 1) ; (set tuple pos val) -> tuple'
+            (primop 'set-car!   '(11 4 5    6  24 6)  2 1)
+            (primop 'set-cdr!   '(12 4 5    6  24 6)  2 1)
+           ;(primop 'set!       '(10 4 5 6  7  24 7)  3 1)  ; (set! tuple pos val)
+            
+            (primop 'eq?        '(54 4 5  6  24 6)  2 1)
+            (primop 'lesser?    '(44 4 5  6  24 6)  2 1)
+            
+            ; поддержка больших чисел
+            ;; вопрос - а нахрена именно числовой набор функций? может обойдемся обычным?
+            (primop 'ncons      '(29 4 5  6  24 6)  2 1)
+            (primop 'ncar       '(30 4    5  24 5)  1 1)
+            (primop 'ncdr       '(31 4    5  24 5)  1 1)
             
             ;; логика
-            (primop 'fxband      '(55 4 5    6  24 6)  2 1)
-            (primop 'fxbor       '(56 4 5    6  24 6)  2 1)
-            (primop 'fxbxor      '(57 4 5    6  24 6)  2 1)
+            (primop 'fxband     '(55 4 5  6  24 6)  2 1)
+            (primop 'fxbor      '(56 4 5  6  24 6)  2 1)
+            (primop 'fxbxor     '(57 4 5  6  24 6)  2 1)
             
             ;; строки
-            (primop 'refb        '(48 4 5  6  24 6)  2 1)
-            (primop 'sizeb       '(28 4    5  24 5)  1 1)   ;; raw-obj -> numbe of bytes (fixnum)
+            (primop 'refb       '(48 4 5  6  24 6)  2 1)
+            (primop 'sizeb      '(28 4    5  24 5)  1 1)   ;; raw-obj -> numbe of bytes (fixnum)
+
+
+            ;; математика
+            (primop 'fx+        '(38 4 5    6 7    24 7)  2 2)
+            (primop 'fx*        '(39 4 5    6 7    24 7)  2 2)
+            (primop 'fx-        '(40 4 5    6 7    24 7)  2 2)
+            (primop 'fx/        '(26 4 5 6  7 8 9  24 7)  3 3) 
+            (primop 'fx>>       '(58 4 5    6 7    24 7)  2 2)
+            (primop 'fx<<       '(59 4 5    6 7    24 7)  2 2)
 
             ; todo: move this to the sys-prim
-            (tuple '_connect     34 2 1 _connect)   ;; (connect host port) -> #false | socket-fd
+;            (tuple '_connect     34 2 1 _connect)   ;; (connect host port) -> #false | socket-fd
             (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
             (tuple 'clock        61 0 2 clock)   ; (clock) → posix-time x ms
 
@@ -223,6 +222,11 @@
       (define run (ref (get-primitive 'run) 5))
 
 ;; Список sys-prim'ов
+; поэтапный перевод sys-prim'ов в syscall'ы
+; 1. добавить 100 к старым номерам
+; 2. завести правильные новые
+; 3. удалить старые
+
 ;      (define (__fsend) (sys-prim 0 #false #false #false))
 ;      1 __fopen
 ;      2 __close
@@ -257,15 +261,15 @@
 
 
       ;; special things exposed by the vm
-      (define (set-memory-limit n) (sys-prim  7 n n n))
-      (define (get-word-size)      (sys-prim  8 #false #false #false))
-      (define (get-memory-limit)   (sys-prim  9 #false #false #false))
-      (define (start-seccomp)      (sys-prim 10 #false #false #false)) ; not enabled by defa
+      (define (set-memory-limit n) (sys-prim 1007 n n n))
+      (define (get-word-size)      (sys-prim 1008 #false #false #false))
+      (define (get-memory-limit)   (sys-prim 1009 #false #false #false))
+      (define (start-seccomp)      (sys-prim 1010 #false #false #false)) ; not enabled by defa
 
       ;; stop the vm *immediately* without flushing input or anything else with return value n
-      (define (halt n)             (sys-prim  6 n n n))
+      (define (halt n)             (sys-prim 1006 n n n))
       ;; make thread sleep for a few thread scheduler rounds
-      (define (set-ticker-value n) (sys-prim 22 n #false #false))
+      (define (set-ticker-value n) (sys-prim 1022 n #false #false))
       (define (_yield)             (set-ticker-value 0))
       (define (wait n)
          (if (eq? n 0)
