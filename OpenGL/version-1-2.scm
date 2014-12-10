@@ -5,6 +5,10 @@
   (export
     GL_VERSION_1_2
 
+;    (if (defined? GL_VERSION_1_2_DEPRECATED)
+;        glColorTable
+;
+;    )
   )
   
   (import
