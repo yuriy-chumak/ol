@@ -11,16 +11,25 @@
     ; GL types
       GLvoid
       GLenum
-      GLfloat
+      GLboolean
+      GLbitfield
+      GLbyte
+;     GLshort
       GLint
       GLsizei
-      GLbitfield
+      GLubyte
+;     GLushort
+      GLuint
+      
+      GLfloat
+;     GLclampf
+;     GLdouble
+;     GLclampd
+
       GLubyte*
 
 ;WINGDIAPI void APIENTRY glAccum (GLenum op, GLfloat value);
 ;WINGDIAPI void APIENTRY glAlphaFunc (GLenum func, GLclampf ref);
-;WINGDIAPI GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
-;WINGDIAPI void APIENTRY glArrayElement (GLint i);
     glBegin ; void (GLenum mode)
        GL_POINTS
        GL_LINES
@@ -33,7 +42,6 @@
        GL_QUAD_STRIP
        GL_POLYGON
 
-;WINGDIAPI void APIENTRY glBindTexture (GLenum target, GLuint texture);
 ;WINGDIAPI void APIENTRY glBitmap (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
 ;WINGDIAPI void APIENTRY glBlendFunc (GLenum sfactor, GLenum dfactor);
 ;WINGDIAPI void APIENTRY glCallList (GLuint list);
@@ -44,7 +52,7 @@
        GL_STENCIL_BUFFER_BIT
        GL_DEPTH_BUFFER_BIT
 ;WINGDIAPI void APIENTRY glClearAccum (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-    glClearColor ;GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha
+    glClearColor ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 ;WINGDIAPI void APIENTRY glClearDepth (GLclampd depth);
 ;WINGDIAPI void APIENTRY glClearIndex (GLfloat c);
 ;WINGDIAPI void APIENTRY glClearStencil (GLint s);
@@ -53,13 +61,13 @@
 ;WINGDIAPI void APIENTRY glColor3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue);
 ;WINGDIAPI void APIENTRY glColor3dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glColor3f (GLfloat red, GLfloat green, GLfloat blue);
+    glColor3f ; void (GLfloat red, GLfloat green, GLfloat blue)
 ;WINGDIAPI void APIENTRY glColor3fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glColor3i (GLint red, GLint green, GLint blue);
+    glColor3i ; void (GLint red, GLint green, GLint blue)
 ;WINGDIAPI void APIENTRY glColor3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glColor3s (GLshort red, GLshort green, GLshort blue);
 ;WINGDIAPI void APIENTRY glColor3sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glColor3ub (GLubyte red, GLubyte green, GLubyte blue);
+    glColor3ub ; void (GLubyte red, GLubyte green, GLubyte blue)
 ;WINGDIAPI void APIENTRY glColor3ubv (const GLubyte *v);
 ;WINGDIAPI void APIENTRY glColor3ui (GLuint red, GLuint green, GLuint blue);
 ;WINGDIAPI void APIENTRY glColor3uiv (const GLuint *v);
@@ -83,32 +91,21 @@
 ;WINGDIAPI void APIENTRY glColor4usv (const GLushort *v);
 ;WINGDIAPI void APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 ;WINGDIAPI void APIENTRY glColorMaterial (GLenum face, GLenum mode);
-;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glCopyPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
-;WINGDIAPI void APIENTRY glCopyTexImage1D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border);
-;WINGDIAPI void APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
-;WINGDIAPI void APIENTRY glCopyTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
-;WINGDIAPI void APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
     glCullFace  ; void (GLenum mode)
        GL_FRONT ; mode
        GL_BACK
        GL_FRONT_AND_BACK
 ;WINGDIAPI void APIENTRY glDeleteLists (GLuint list, GLsizei range);
-;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
 ;WINGDIAPI void APIENTRY glDepthFunc (GLenum func);
 ;WINGDIAPI void APIENTRY glDepthMask (GLboolean flag);
 ;WINGDIAPI void APIENTRY glDepthRange (GLclampd zNear, GLclampd zFar);
 ;WINGDIAPI void APIENTRY glDisable (GLenum cap);
-;WINGDIAPI void APIENTRY glDisableClientState (GLenum array);
-;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
 ;WINGDIAPI void APIENTRY glDrawBuffer (GLenum mode);
-;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 ;WINGDIAPI void APIENTRY glDrawPixels (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glEdgeFlag (GLboolean flag);
-;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag);
 ;WINGDIAPI void APIENTRY glEnable (GLenum cap);
-;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
     glEnd ; void
 
 ;WINGDIAPI void APIENTRY glEndList (void);
@@ -137,7 +134,6 @@
 
 ;WINGDIAPI void APIENTRY glFrustum (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 ;WINGDIAPI GLuint APIENTRY glGenLists (GLsizei range);
-;WINGDIAPI void APIENTRY glGenTextures (GLsizei n, GLuint *textures);
 ;WINGDIAPI void APIENTRY glGetBooleanv (GLenum pname, GLboolean *params);
 ;WINGDIAPI void APIENTRY glGetClipPlane (GLenum plane, GLdouble *equation);
 ;WINGDIAPI void APIENTRY glGetDoublev (GLenum pname, GLdouble *params);
@@ -154,7 +150,6 @@
 ;WINGDIAPI void APIENTRY glGetPixelMapfv (GLenum map, GLfloat *values);
 ;WINGDIAPI void APIENTRY glGetPixelMapuiv (GLenum map, GLuint *values);
 ;WINGDIAPI void APIENTRY glGetPixelMapusv (GLenum map, GLushort *values);
-;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
 ;WINGDIAPI void APIENTRY glGetPolygonStipple (GLubyte *mask);
 ;WINGDIAPI const GLubyte * APIENTRY glGetString (GLenum name);
     glGetString ; GLubyte* (GLenum name)
@@ -184,7 +179,6 @@
        ; GL_PHONG_HINT (no this constant defined, maybe bug in original headers)
 
 ;WINGDIAPI void APIENTRY glIndexMask (GLuint mask);
-;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glIndexd (GLdouble c);
 ;WINGDIAPI void APIENTRY glIndexdv (const GLdouble *c);
 ;WINGDIAPI void APIENTRY glIndexf (GLfloat c);
@@ -193,13 +187,9 @@
 ;WINGDIAPI void APIENTRY glIndexiv (const GLint *c);
 ;WINGDIAPI void APIENTRY glIndexs (GLshort c);
 ;WINGDIAPI void APIENTRY glIndexsv (const GLshort *c);
-;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
-;WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
 ;WINGDIAPI void APIENTRY glInitNames (void);
-;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI GLboolean APIENTRY glIsEnabled (GLenum cap);
 ;WINGDIAPI GLboolean APIENTRY glIsList (GLuint list);
-;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
 ;WINGDIAPI void APIENTRY glLightModelf (GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glLightModelfv (GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glLightModeli (GLenum pname, GLint param);
@@ -245,7 +235,6 @@
 ;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz);
 ;WINGDIAPI void APIENTRY glNormal3sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glOrtho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token);
 ;WINGDIAPI void APIENTRY glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values);
@@ -258,15 +247,11 @@
 ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
 ;WINGDIAPI void APIENTRY glPointSize (GLfloat size);
 ;WINGDIAPI void APIENTRY glPolygonMode (GLenum face, GLenum mode);
-;WINGDIAPI void APIENTRY glPolygonOffset (GLfloat factor, GLfloat units);
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
-;WINGDIAPI void APIENTRY glPopClientAttrib (void);
 ;WINGDIAPI void APIENTRY glPopMatrix (void);
 ;WINGDIAPI void APIENTRY glPopName (void);
-;WINGDIAPI void APIENTRY glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities);
 ;WINGDIAPI void APIENTRY glPushAttrib (GLbitfield mask);
-;WINGDIAPI void APIENTRY glPushClientAttrib (GLbitfield mask);
 ;WINGDIAPI void APIENTRY glPushMatrix (void);
 ;WINGDIAPI void APIENTRY glPushName (GLuint name);
 ;WINGDIAPI void APIENTRY glRasterPos2d (GLdouble x, GLdouble y);
@@ -349,7 +334,6 @@
 ;WINGDIAPI void APIENTRY glTexCoord4iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glTexCoord4s (GLshort s, GLshort t, GLshort r, GLshort q);
 ;WINGDIAPI void APIENTRY glTexCoord4sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glTexEnvf (GLenum target, GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glTexEnvfv (GLenum target, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexEnvi (GLenum target, GLenum pname, GLint param);
@@ -366,10 +350,8 @@
 ;WINGDIAPI void APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexParameteri (GLenum target, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glTexParameteriv (GLenum target, GLenum pname, const GLint *params);
-;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
-;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
-;WINGDIAPI void APIENTRY glTranslatef (GLfloat x, GLfloat y, GLfloat z);
+    glTranslatef ; void (GLfloat x, GLfloat y, GLfloat z)
 ;WINGDIAPI void APIENTRY glVertex2d (GLdouble x, GLdouble y);
 ;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
     glVertex2f ; void (GLfloat x, GLfloat y)
@@ -394,7 +376,6 @@
 ;WINGDIAPI void APIENTRY glVertex4iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex4s (GLshort x, GLshort y, GLshort z, GLshort w);
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
     ; https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml
     glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height)
   )
@@ -440,14 +421,20 @@
 
 
 (define GLvoid  type-void)  ; void GLvoid
-(define GLenum  type-int+)  ; typedef unsigned int GLenum - fix+ значит, что это целое число
-(define GLfloat type-float) ; typedef float GLfloat
+(define GLenum  type-int+)  ; typedef unsigned int GLenum - int+ значит, что это целое число, fix+ значит, что это маленькое число
+(define GLboolean  type-fix+);typedef unsigned char GLboolean;
+(define GLbitfield type-int+);typedef unsigned int GLbitfield;
+
+(define GLbyte  type-fix+)
 (define GLint   type-int+)  ; typedef int GLint
 (define GLsizei type-int+)  ; typedef int GLsizei
-(define GLbitfield type-int+);typedef unsigned int GLbitfield;
+(define GLubyte type-fix+)
+(define GLuint  type-int+)
+
+(define GLfloat type-float) ; typedef float GLfloat
+;GLclampf
 ;typedef double GLdouble;
 ;(define GLuint  type-fix+)  ;typedef unsigned int GLuint;
-;(define GLboolean  type-fix+);typedef unsigned char GLboolean;
 ;(define GLubyte type-fix+)  ;typedef unsigned char GLubyte;
 (define GLubyte* type-string)
 
@@ -888,29 +875,26 @@
 
 ;WINGDIAPI void APIENTRY glAccum (GLenum op, GLfloat value);
 ;WINGDIAPI void APIENTRY glAlphaFunc (GLenum func, GLclampf ref);
-;WINGDIAPI GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
-;WINGDIAPI void APIENTRY glArrayElement (GLint i);
-(define glBegin (dlsym % GLvoid "glBegin" GLenum))
-;WINGDIAPI void APIENTRY glBindTexture (GLenum target, GLuint texture);
+  (define glBegin (dlsym % GLvoid "glBegin" GLenum))
 ;WINGDIAPI void APIENTRY glBitmap (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
 ;WINGDIAPI void APIENTRY glCallList (GLuint list);
 ;WINGDIAPI void APIENTRY glCallLists (GLsizei n, GLenum type, const GLvoid *lists);
-(define glClear (dlsym % GLvoid "glClear" GLbitfield))
+  (define glClear (dlsym % GLvoid "glClear" GLbitfield))
 ;WINGDIAPI void APIENTRY glClearAccum (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-(define glClearColor (dlsym % GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
+  (define glClearColor (dlsym % GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glClearIndex (GLfloat c);
 ;WINGDIAPI void APIENTRY glClipPlane (GLenum plane, const GLdouble *equation);
 ;WINGDIAPI void APIENTRY glColor3b (GLbyte red, GLbyte green, GLbyte blue);
 ;WINGDIAPI void APIENTRY glColor3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue);
 ;WINGDIAPI void APIENTRY glColor3dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glColor3f (GLfloat red, GLfloat green, GLfloat blue);
+  (define glColor3f (dlsym % GLvoid "glColor3f" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glColor3fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glColor3i (GLint red, GLint green, GLint blue);
+  (define glColor3i (dlsym % GLvoid "glColor3i" GLint GLint GLint))
 ;WINGDIAPI void APIENTRY glColor3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glColor3s (GLshort red, GLshort green, GLshort blue);
 ;WINGDIAPI void APIENTRY glColor3sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glColor3ub (GLubyte red, GLubyte green, GLubyte blue);
+  (define glColor3ub (dlsym % GLvoid "glColor3ub" GLubyte GLubyte GLubyte))
 ;WINGDIAPI void APIENTRY glColor3ubv (const GLubyte *v);
 ;WINGDIAPI void APIENTRY glColor3ui (GLuint red, GLuint green, GLuint blue);
 ;WINGDIAPI void APIENTRY glColor3uiv (const GLuint *v);
@@ -933,22 +917,13 @@
 ;WINGDIAPI void APIENTRY glColor4us (GLushort red, GLushort green, GLushort blue, GLushort alpha);
 ;WINGDIAPI void APIENTRY glColor4usv (const GLushort *v);
 ;WINGDIAPI void APIENTRY glColorMaterial (GLenum face, GLenum mode);
-;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glCopyPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
-;WINGDIAPI void APIENTRY glCopyTexImage1D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border);
-;WINGDIAPI void APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
-;WINGDIAPI void APIENTRY glCopyTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
-;WINGDIAPI void APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-(define glCullFace (dlsym % GLvoid "glCullFace" GLenum))
+  (define glCullFace (dlsym % GLvoid "glCullFace" GLenum))
 ;WINGDIAPI void APIENTRY glDeleteLists (GLuint list, GLsizei range);
-;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
-;WINGDIAPI void APIENTRY glDisableClientState (GLenum array);
 ;WINGDIAPI void APIENTRY glDrawPixels (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glEdgeFlag (GLboolean flag);
-;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag);
-;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
-(define glEnd (dlsym % GLvoid "glEnd"))
+  (define glEnd (dlsym % GLvoid "glEnd"))
 ;WINGDIAPI void APIENTRY glEndList (void);
 ;WINGDIAPI void APIENTRY glEvalCoord1d (GLdouble u);
 ;WINGDIAPI void APIENTRY glEvalCoord1dv (const GLdouble *u);
@@ -967,10 +942,9 @@
 ;WINGDIAPI void APIENTRY glFogfv (GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glFogi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glFogiv (GLenum pname, const GLint *params);
-(define glFrontFace (dlsym % GLvoid "glFrontFace" GLenum))
+  (define glFrontFace (dlsym % GLvoid "glFrontFace" GLenum))
 ;WINGDIAPI void APIENTRY glFrustum (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 ;WINGDIAPI GLuint APIENTRY glGenLists (GLsizei range);
-;WINGDIAPI void APIENTRY glGenTextures (GLsizei n, GLuint *textures);
 ;WINGDIAPI void APIENTRY glGetClipPlane (GLenum plane, GLdouble *equation);
 ;WINGDIAPI void APIENTRY glGetLightfv (GLenum light, GLenum pname, GLfloat *params);
 ;WINGDIAPI void APIENTRY glGetLightiv (GLenum light, GLenum pname, GLint *params);
@@ -982,17 +956,15 @@
 ;WINGDIAPI void APIENTRY glGetPixelMapfv (GLenum map, GLfloat *values);
 ;WINGDIAPI void APIENTRY glGetPixelMapuiv (GLenum map, GLuint *values);
 ;WINGDIAPI void APIENTRY glGetPixelMapusv (GLenum map, GLushort *values);
-;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
 ;WINGDIAPI void APIENTRY glGetPolygonStipple (GLubyte *mask);
-(define glGetString (dlsym % GLubyte* "glGetString" GLenum))
+  (define glGetString (dlsym % GLubyte* "glGetString" GLenum))
 ;WINGDIAPI void APIENTRY glGetTexEnvfv (GLenum target, GLenum pname, GLfloat *params);
 ;WINGDIAPI void APIENTRY glGetTexEnviv (GLenum target, GLenum pname, GLint *params);
 ;WINGDIAPI void APIENTRY glGetTexGendv (GLenum coord, GLenum pname, GLdouble *params);
 ;WINGDIAPI void APIENTRY glGetTexGenfv (GLenum coord, GLenum pname, GLfloat *params);
 ;WINGDIAPI void APIENTRY glGetTexGeniv (GLenum coord, GLenum pname, GLint *params);
-(define glHint (dlsym % GLvoid "glHint" GLenum GLenum))
+  (define glHint (dlsym % GLvoid "glHint" GLenum GLenum))
 ;WINGDIAPI void APIENTRY glIndexMask (GLuint mask);
-;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glIndexd (GLdouble c);
 ;WINGDIAPI void APIENTRY glIndexdv (const GLdouble *c);
 ;WINGDIAPI void APIENTRY glIndexf (GLfloat c);
@@ -1001,12 +973,8 @@
 ;WINGDIAPI void APIENTRY glIndexiv (const GLint *c);
 ;WINGDIAPI void APIENTRY glIndexs (GLshort c);
 ;WINGDIAPI void APIENTRY glIndexsv (const GLshort *c);
-;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
-;WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
 ;WINGDIAPI void APIENTRY glInitNames (void);
-;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI GLboolean APIENTRY glIsList (GLuint list);
-;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
 ;WINGDIAPI void APIENTRY glLightModelf (GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glLightModelfv (GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glLightModeli (GLenum pname, GLint param);
@@ -1017,7 +985,7 @@
 ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern);
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
-(define glLoadIdentity (dlsym % GLvoid "glLoadIdentity"))
+  (define glLoadIdentity (dlsym % GLvoid "glLoadIdentity"))
 ;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
 ;WINGDIAPI void APIENTRY glLoadMatrixf (const GLfloat *m);
 ;WINGDIAPI void APIENTRY glLoadName (GLuint name);
@@ -1033,7 +1001,7 @@
 ;WINGDIAPI void APIENTRY glMaterialfv (GLenum face, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params);
-(define glMatrixMode (dlsym % GLvoid "glMatrixMode" GLenum))
+  (define glMatrixMode (dlsym % GLvoid "glMatrixMode" GLenum))
 ;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
 ;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
 ;WINGDIAPI void APIENTRY glNewList (GLuint list, GLenum mode);
@@ -1047,7 +1015,6 @@
 ;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz);
 ;WINGDIAPI void APIENTRY glNormal3sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glOrtho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token);
 ;WINGDIAPI void APIENTRY glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values);
@@ -1056,15 +1023,11 @@
 ;WINGDIAPI void APIENTRY glPixelTransferf (GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
-;WINGDIAPI void APIENTRY glPolygonOffset (GLfloat factor, GLfloat units);
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
-;WINGDIAPI void APIENTRY glPopClientAttrib (void);
 ;WINGDIAPI void APIENTRY glPopMatrix (void);
 ;WINGDIAPI void APIENTRY glPopName (void);
-;WINGDIAPI void APIENTRY glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities);
 ;WINGDIAPI void APIENTRY glPushAttrib (GLbitfield mask);
-;WINGDIAPI void APIENTRY glPushClientAttrib (GLbitfield mask);
 ;WINGDIAPI void APIENTRY glPushMatrix (void);
 ;WINGDIAPI void APIENTRY glPushName (GLuint name);
 ;WINGDIAPI void APIENTRY glRasterPos2d (GLdouble x, GLdouble y);
@@ -1105,7 +1068,7 @@
 ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
 ;WINGDIAPI void APIENTRY glScalef (GLfloat x, GLfloat y, GLfloat z);
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
-(define glShadeModel (dlsym % GLvoid "glShadeModel" GLenum))
+  (define glShadeModel (dlsym % GLvoid "glShadeModel" GLenum))
 ;WINGDIAPI void APIENTRY glTexCoord1d (GLdouble s);
 ;WINGDIAPI void APIENTRY glTexCoord1dv (const GLdouble *v);
 ;WINGDIAPI void APIENTRY glTexCoord1f (GLfloat s);
@@ -1138,7 +1101,6 @@
 ;WINGDIAPI void APIENTRY glTexCoord4iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glTexCoord4s (GLshort s, GLshort t, GLshort r, GLshort q);
 ;WINGDIAPI void APIENTRY glTexCoord4sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glTexEnvf (GLenum target, GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glTexEnvfv (GLenum target, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexEnvi (GLenum target, GLenum pname, GLint param);
@@ -1149,23 +1111,21 @@
 ;WINGDIAPI void APIENTRY glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexGeni (GLenum coord, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
-;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
-;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
-;WINGDIAPI void APIENTRY glTranslatef (GLfloat x, GLfloat y, GLfloat z);
+  (define glTranslatef (dlsym % GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex2d (GLdouble x, GLdouble y);
 ;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
-(define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
+  (define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex2fv (const GLfloat *v);
-(define glVertex2i (dlsym % GLvoid "glVertex2i" GLint GLint))
+  (define glVertex2i (dlsym % GLvoid "glVertex2i" GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
 ;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v);
 ;WINGDIAPI void APIENTRY glVertex3d (GLdouble x, GLdouble y, GLdouble z);
 ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
-(define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
+  (define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);
-(define glVertex3i (dlsym % GLvoid "glVertex3i" GLint GLint GLint))
+  (define glVertex3i (dlsym % GLvoid "glVertex3i" GLint GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex3s (GLshort x, GLshort y, GLshort z);
 ;WINGDIAPI void APIENTRY glVertex3sv (const GLshort *v);
@@ -1177,7 +1137,6 @@
 ;WINGDIAPI void APIENTRY glVertex4iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex4s (GLshort x, GLshort y, GLshort z, GLshort w);
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-(define glViewport        (dlsym % GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+  (define glViewport (dlsym % GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
 ))
