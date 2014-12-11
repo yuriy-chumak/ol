@@ -14,29 +14,40 @@
    (lib opengl))
 
 
-(define (my-renderer x y)
+(define (my-renderer ss ms x y dx dy)
+   (print ms)
+
    (glColor3f 0 0.3 0)
    (glBegin GL_TRIANGLES)
-     (glVertex2f (- x 0.2) (- x 0.2))
-     (glVertex2f (+ x 0.2) (- x 0.2))
-     (glVertex2f (- x 0.2) (+ x 0.2))
+     (glVertex2f (- x 0.2) (- y 0.2))
+     (glVertex2f (+ x 0.2) (- y 0.2))
+     (glVertex2f (- x 0.2) (+ y 0.2))
    (glEnd)
 
+;   (print x "-" y ":" dx "-" dy)
    ; вернем модифицированные параметры
-   (list (+ x 0.001) (+ y 0.001)))
+   (let ((dx (if (< x -0.6) (- dx)
+             (if (> x  0.6) (- dx)
+              dx)))
+         (dy (if (< y -0.6) (- dy)
+             (if (> y  0.6) (- dy)
+              dy))))
+      (list
+         (+ x (/ (* dx ms) 1000))
+         (+ y (/ (* dy ms) 1000))
+         dx dy)))
+;   (list (+ x 0.001) (+ y 0.001)))
 
 
 ; возвратим модифицированные параметры функции
 ;(define window
 (mail 'opengl (tuple 'create "OL OpenGL Sample 1" 1280 720))
-(mail 'opengl (tuple 'register-renderer my-renderer '(0 0))) ; renderer, state of renderer
+(mail 'opengl (tuple 'register-renderer my-renderer '(0 0 0.7 0.3))) ; renderer, state of renderer
 
-(define (loop)
-   (if (not (= (GetAsyncKeyState 27) 0)) (halt 1)
-      (_yield))
-   (loop))
-(loop)
+;(mail 'opengl (tuple 'get-window-height))
 
+(main-game-loop (lambda ()
+   (= (GetAsyncKeyState 27) 0)))
 
 ; KillGLWindow
 ;(wglMakeCurrent 0 0)

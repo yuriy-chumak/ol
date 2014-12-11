@@ -2,7 +2,7 @@
 
 ; OpenGL core profile implementation
 (define-library (OpenGL version-1-0)
-  (export
+   (export
     GL_VERSION_1_0
     GL_LIBRARY  ; internal variable
 
@@ -380,16 +380,19 @@
     glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height)
   )
   
-  (import
+; ============================================================================
+; == implementation ==========================================================
+   (import
       (owl defmac) (owl io) (owl string)
       (owl pinvoke))
-  (begin 
+   (begin
 
+; todo: сделать определение нужной библиотеки самодостаточным, без всяких *OS*
 (define GL_LIBRARY
    (case *OS*
-     (1 "opengl32.dll") ; windows
-     (2 "libGL.so")     ; linux
-     (3 "GLKit")))      ; macos, https://developer.apple.com/library/mac/documentation/graphicsimaging/conceptual/OpenGL-MacProgGuide/opengl_intro/opengl_intro.html
+      (1 "opengl32.dll") ; windows
+      (2 "libGL.so")     ; linux
+      (3 "GLKit")))      ; macos, https://developer.apple.com/library/mac/documentation/graphicsimaging/conceptual/OpenGL-MacProgGuide/opengl_intro/opengl_intro.html
 
 (define    GL_VERSION_1_0    1)
 (define % (dlopen GL_LIBRARY 0))
@@ -422,8 +425,8 @@
 
 (define GLvoid  type-void)  ; void GLvoid
 (define GLenum  type-int+)  ; typedef unsigned int GLenum - int+ значит, что это целое число, fix+ значит, что это маленькое число
-(define GLboolean  type-fix+);typedef unsigned char GLboolean;
-(define GLbitfield type-int+);typedef unsigned int GLbitfield;
+(define GLboolean  type-fix+) ; typedef unsigned char GLboolean;
+(define GLbitfield type-int+) ; typedef unsigned int GLbitfield;
 
 (define GLbyte  type-fix+)
 (define GLint   type-int+)  ; typedef int GLint

@@ -4,6 +4,8 @@
 
 ;      create-window
 ;      delete
+
+      main-game-loop
    )
 
    (import
@@ -26,14 +28,15 @@
 ;(define (main-loop)
 (fork-server 'opengl (lambda ()
 ; внутренние переменные
-(let ((MSG "1234567890123456789012345678") ; sizeof(MSG)=28
-      )
+(let* ((MSG "1234567890123456789012345678") ; sizeof(MSG)=28
+       (ss ms (clock)))
 ;; главный оконный цикл фреймворка
-(let this ((window #f) (hDC #f) (renderer #f) (renderer-values #f))
+(let this ((window #f) (hDC #f) (renderer #f) (renderer-values #f) (ss ss) (ms ms))
    ; обработаем команды фреймворка
    (let ((mail (check-mail)))
       (if mail
          (let* ((sender message mail))
+            (print "opengl server got message " message)
             (if (tuple? message)
                (tuple-case message
                   ((create title width height) ; создать окно
@@ -66,18 +69,22 @@
                         (SetForegroundWindow window)
                         (SetFocus window)
 
-                        (this window hDC renderer renderer-values)))
+                        (this window hDC renderer renderer-values ss ms)))
                   ((register-renderer renderer renderer-values)
-                     (this window hDC renderer renderer-values))
-              ))
-;                     (print "create the window: " title " " width " " height))))
-            (print message))
-         (_yield)))
+                     (this window hDC renderer renderer-values ss ms))
+                  ((get-window-height)
+                     (print "sender: " sender))
+                  (else
+                     (print "Unknown opengl server request: " message))
+;                     (this window hDC renderer renderer-values))
+              )))))
+   ; если окно уже есть - обработаем окно
    (if window (begin
+;      (let while ()
       (if (= 1 (PeekMessage MSG 0 0 0 PM_REMOVE))
          (begin
-            ; тут можно обработать сообщения к окну, если надо.
-            ; Например, такое:
+         ; тут можно обработать сообщения к окну, если надо.
+         ; Например, такое:
             (case (+ (refb MSG 4) (* (refb MSG 5) 256))
                (WM_LBUTTONDOWN ;WM_SIZING
                   (print "Left mouse button pressed")))
@@ -93,15 +100,22 @@
             (DispatchMessage MSG))
          ; no windows system events - let's draw
          (begin
-            (glClear GL_COLOR_BUFFER_BIT)
-;            (let ((renderer-values (?? renderer renderer-values)))
-            (let ((renderer-values (if renderer (apply renderer renderer-values) renderer-values)))
-;                ((
-               (SwapBuffers hDC)
-               (this window hDC renderer renderer-values))))))
+            (let* ((ss2 ms2 (clock))
+                   (dms (mod (+ 1000 (- ms2 ms)) 1000))) ; todo: add seconds here too
+               (if (> dms 0)
+                  (begin
+                     (glClear GL_COLOR_BUFFER_BIT)
+                     (let ((renderer-values (if renderer
+                                             (apply renderer (append (list 0 dms) renderer-values)) renderer-values)))
+                        (SwapBuffers hDC)
+                        (this window hDC renderer renderer-values ss2 ms2)))
+                  (this window hDC renderer renderer-values ss ms)))))))
+
 
    ; если окна не было, то доберемся сюда
-   (this window hDC renderer renderer-values)))))
+   (_yield)
+   (let* ((ss ms (clock)))
+      (this window hDC renderer renderer-values ss ms))))))
 
 ;(fork-server 'opengl main-loop)
 
@@ -109,5 +123,12 @@
 ;(define (create-window title width height)
 ;
 ;(define (delete handle) #false)
+
+(define (main-game-loop predicate)
+   (if (predicate) (begin
+      ;(_yield)
+      (wait 5)
+      (main-game-loop predicate))))
+  
 
 ))
