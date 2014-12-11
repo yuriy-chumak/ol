@@ -14,6 +14,7 @@
     PostQuitMessage  ;
       WM_SIZE WM_WINDOWPOSCHANGED
       WM_CREATE WM_LBUTTONDOWN
+      WM_SIZING
     
     GetKeyState      ;
     GetAsyncKeyState ;
@@ -30,6 +31,7 @@
     ShowWindow SW_SHOW
     SetForegroundWindow SetFocus
     GetWindowRect
+    GetClientRect 
     
     ; gdi32
     ChoosePixelFormat
@@ -103,6 +105,7 @@
     (define WM_SIZE #x0005)
     (define WM_WINDOWPOSCHANGED #x0047)
     (define WM_LBUTTONDOWN #x0201)
+    (define WM_SIZING #x0214)
   ;; давление юры 06/09/2014 в 13:43 - 125/ 91
   ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
   (define GetKeyState      (dlsym user32 (__stdcall SHORT) "GetKeyState" int))
@@ -133,6 +136,7 @@
          ; A handle to the window that will receive the keyboard input. If this parameter is NULL, keystrokes are ignored.
     ))
   (define GetWindowRect       (dlsym user32 (__stdcall BOOL) "GetWindowRect" HWND LPRECT))
+  (define GetClientRect       (dlsym user32 (__stdcall BOOL) "GetClientRect" HWND LPRECT))
   
 (define PIXELFORMATDESCRIPTOR* type-vector-raw)
   

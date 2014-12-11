@@ -2357,7 +2357,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					  break;
 
 				case 1022:
-					result = (ticker & FMAX);
+					result = F((ticker & FMAX));
 					ticker = fixval(a);
 					break;
 
@@ -2528,7 +2528,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						word* pb = (word*)arg[2];
 
 						// временно огрманичимся небольшими nominator/denominator, а дальше посмотрим
-						word a, b;
+						signed int a, b;
 						if (immediatep(pa))
 							a = from_fix(pa);
 						else {

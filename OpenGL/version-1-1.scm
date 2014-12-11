@@ -1,17 +1,17 @@
 ; OpenGL 1.1 (1997)
 
-(import         (OpenGL version-1-0))
 (define-library (OpenGL version-1-1)
-  (export
+   (export
+      (exports (OpenGL version-1-0))
     GL_VERSION_1_1
     
 
-  )
+   )
+   (import
+     (owl defmac) (owl io)
+     (owl pinvoke)
+     (OpenGL version-1-0))
   
-  (import
-    (owl defmac) (owl io)
-    (owl pinvoke)
-    (OpenGL version-1-0))
   (begin
 ;  (import (OpenGL version-1-0))
 
