@@ -15,20 +15,21 @@
       WM_SIZE WM_WINDOWPOSCHANGED
       WM_CREATE WM_LBUTTONDOWN
       WM_SIZING
-    
+
     GetKeyState      ;
     GetAsyncKeyState ;
     GetKeyboardState ;
-    
+
     CreateWindowEx   ;
-    WS_EX_APPWINDOW
-    WS_EX_WINDOWEDGE
-    WS_OVERLAPPEDWINDOW
-    WS_CLIPSIBLINGS
-    WS_CLIPCHILDREN
+      WS_EX_APPWINDOW
+      WS_EX_WINDOWEDGE
+      WS_OVERLAPPEDWINDOW
+      WS_CLIPSIBLINGS
+      WS_CLIPCHILDREN
     DestroyWindow   ;
-    GetDC ReleaseDC
-    ShowWindow SW_SHOW
+    GetDC ReleaseDC ;
+    ShowWindow
+      SW_SHOW
     SetForegroundWindow SetFocus
     GetWindowRect
     GetClientRect 
@@ -69,7 +70,7 @@
 (define SHORT     INTEGER)
 (define PBYTE     type-vector-raw)
 
-(define HDC       INTEGER) ;type-handle)
+(define HDC       type-handle) ;type-handle)
 (define HGLRC     INTEGER)
 (define PROC      type-handle)
 (define LPCSTR    type-string)
