@@ -13,9 +13,12 @@
 ; создадим главное окно
 (define window (create-window "OL OpenGL Sample 1" 720 720))
 
-
 ; окно - рисовалка
-(define (my-renderer ms  userdata  x y dx dy)
+(define (my-renderer ms  userdata)
+;   (print "userdata: " userdata)
+   (let ((x (get userdata 'x 0))
+         (y (get userdata 'y 0)))
+         
    (glClear GL_COLOR_BUFFER_BIT)
 
    ; коробочка
@@ -44,35 +47,43 @@
      
    (glEnd)
 
-   ; вернем модифицированные параметры
-   (let ((dx (if (< x -0.7) (P dx)
-             (if (> x  0.7) (M dx)
-              dx)))
-         (dy (if (< y -0.7) (P dy)
-             (if (> y  0.7) (M dy)
-              dy))))
-      (list userdata
-         (+ x (/ (* dx ms) 3000)) ; x
-         (+ y (/ (* dy ms) 3000)) ; y
-         dx dy)))                 ; dx, dy
+   (list userdata)))
 
 
 ; запуск opengl
-(mail 'opengl (tuple 'set-main-window window))
 (mail 'opengl (tuple 'set-userdata #empty))
+;(list->ff '((x 0) (y 0)))))
 (mail 'opengl (tuple 'register-renderer my-renderer
-   '(0 0 0.71 0.3))) ; renderer, state of renderer
+   '())) ; renderer, state of renderer
    
 (mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
-   (print "userdata: " userdata)
-   (print "key: " key)
-   userdata)))
+   (let ((x (get userdata 'x 0))
+         (y (get userdata 'y 0)))
+;      (print "userdata: " userdata)
+;      (print "key: " key)
+   
+      (case key
+         (27
+            (mail 'opengl (tuple 'set-main-window #false))
+            (destroy-window window)
+            (halt 1))
+         (38 (put userdata 'y (+ y 0.1)))
+         (40 (put userdata 'y (- y 0.1)))
+         (37 (put userdata 'x (- x 0.1)))
+         (39 (put userdata 'x (+ x 0.1)))
+         
+         (else userdata))))))
 
+(mail 'opengl (tuple 'set-main-window window))
+
+(main-game-loop (lambda () #t))
+
+;(wait-mail)
 ; главный цикл работы приложения
-(main-game-loop (lambda ()
-   (= (GetAsyncKeyState 27) 0)))
+;(main-game-loop (lambda ()
+;   (= (GetAsyncKeyState 27) 0)))
 
-(mail 'opengl (tuple 'set-main-window #false))
-
-(destroy-window window)
-(halt 1)
+;(mail 'opengl (tuple 'set-main-window #false))
+;
+;(destroy-window window)
+;(halt 1)

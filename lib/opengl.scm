@@ -32,7 +32,7 @@
 (let* ((MSG "1234567890123456789012345678") ; sizeof(MSG)=28
        (ss ms (clock)))
 ;; главный оконный цикл фреймворка
-(let this ((window #f) (hDC #f) (hRC #f)  (ss ss) (ms ms)  (userdata #f) (renderer #f) (renderer-args #f))
+(let this ((window #f) (hDC #f) (hRC #f)  (ss ss) (ms ms)  (userdata #f) (renderer #f) (renderer-args #f)  (keyboard #f))
    ; обработаем команды фреймворка
    (let ((mail (check-mail)))
       (if mail
@@ -75,21 +75,23 @@
                            (SetForegroundWindow window)
                            (SetFocus window)
 
-                           (this window hDC hRC  ss ms  userdata  renderer renderer-args)))
+                           (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))
                         ; else
-                        (this #false #f #f  ss ms  userdata  renderer renderer-args)))
+                        (this #false #f #f  ss ms  userdata  renderer renderer-args  keyboard)))
                         
                   ; простые сеттеры и геттеры:
                   ; задать функцию рендерера, swap-buffers будет происходить автоматически
                   ((register-renderer renderer renderer-args)
-                     (this window hDC hRC  ss ms  userdata  renderer renderer-args))
+                     (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))
                   ; set user data
                   ((set-userdata userdata)
-                     (this window hDC hRC  ss ms  userdata  renderer renderer-args))
+                     (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))
+                  ((set-keyboard keyboard)
+                     (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))
                   ; error on invalid command
                   (else
                      (print "Unknown opengl server request: " message)
-                     (this window hDC hRC  ss ms  userdata  renderer renderer-args)))))))
+                     (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))))))
    ; если окно уже есть - обработаем окно
    (if window (begin
       (if (= 1 (PeekMessage MSG 0 0 0 PM_REMOVE))
@@ -98,15 +100,13 @@
          ; Например, такое:
             (case (+ (refb MSG 4) (* (refb MSG 5) 256))
                (WM_LBUTTONDOWN ;WM_SIZING
-                  (print "Left mouse button pressed")))
-;               (let ((rect (list->byte-vector '(0 0 0 0  0 0 0 0  0 0 0 0  0 0 0 0))))
-;                  (GetClientRect window rect)
-;                  (let ((wh (cons (+ (refb rect 8) (* (refb rect 9) 256)) (+ (refb rect 12) (* (refb rect 13) 256)))))
-;                     (print "new size: " (car wh) " x " (cdr wh))
-;                     (glViewport 0 0 (car wh) (cdr wh))))))
-;          (let ((w (+ (ref MSG 12) (* (ref MSG 13) 256)))
-;                (h (+ (ref MSG 14) (* (ref MSG 15) 256))))
-;             (print "w: " w ", h: " h))))
+                  (print "Left mouse button pressed"))
+               (WM_KEYDOWN
+                  (print "WM_KEYDOWN: " (refb MSG 8) "-" (refb MSG 9))
+                  (if keyboard
+                     (let* ((userdata (keyboard userdata (refb MSG 8))))
+                        (print "new userdata: " userdata)
+                        (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))))
             (TranslateMessage MSG)
             (DispatchMessage MSG))
          ; no windows system events - let's draw
@@ -118,18 +118,18 @@
                      (let* ((result (apply renderer (append (list dms userdata) renderer-args)))
                             (userdata (car result))
                             (renderer-args (cdr result)))   ;(apply renderer (append (list dms userdata) renderer-args))))
-                        (print "userdata: " userdata)
+;                        (print "userdata: " userdata)
 ;                        (print "renderer-args: " renderer-args)
                         (SwapBuffers hDC)
-                        (this window hDC hRC  ss2 ms2  userdata  renderer renderer-args))))
+                        (this window hDC hRC  ss2 ms2  userdata  renderer renderer-args  keyboard))))
                   ; no renderer
-               (this window hDC hRC  ss ms  userdata  renderer renderer-args))))))
+               (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))))))
 
 
    ; если окна не было, то доберемся сюда
    (_yield)
    (let* ((ss ms (clock))) ; обновим часы
-      (this window hDC hRC  ss ms  userdata  renderer renderer-args))))))
+      (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))))))
 
 ;(fork-server 'opengl main-loop)
 

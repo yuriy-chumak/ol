@@ -15,6 +15,7 @@
       WM_SIZE WM_WINDOWPOSCHANGED
       WM_CREATE WM_LBUTTONDOWN
       WM_SIZING
+      WM_KEYDOWN WM_KEYUP
 
     GetKeyState      ;
     GetAsyncKeyState ;
@@ -107,6 +108,8 @@
     (define WM_WINDOWPOSCHANGED #x0047)
     (define WM_LBUTTONDOWN #x0201)
     (define WM_SIZING #x0214)
+    (define WM_KEYDOWN 256)
+    (define WM_KEYUP 257)
   ;; давление юры 06/09/2014 в 13:43 - 125/ 91
   ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
   (define GetKeyState      (dlsym user32 (__stdcall SHORT) "GetKeyState" int))
