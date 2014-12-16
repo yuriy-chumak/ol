@@ -34,9 +34,10 @@
 ;; главный оконный цикл фреймворка
 (let this ((window #f) (hDC #f) (hRC #f)  (ss ss) (ms ms)  (userdata #f) (renderer #f) (renderer-args #f)  (keyboard #f))
    ; обработаем команды фреймворка
-   (let ((mail (check-mail)))
-      (if mail
-         (let* ((sender message mail))
+   (let ((envelope (check-mail)))
+      (if envelope
+         (let* ((sender message envelope))
+            (print "sender: " sender)
             ;(print "opengl server got message " message)
             (if (tuple? message)
                (tuple-case message
@@ -75,9 +76,12 @@
                            (SetForegroundWindow window)
                            (SetFocus window)
 
+                           (mail sender 'ok)
                            (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))
                         ; else
-                        (this #false #f #f  ss ms  userdata  renderer renderer-args  keyboard)))
+                     (begin
+                        (mail sender 'ok)
+                        (this #false #f #f  ss ms  userdata  renderer renderer-args  keyboard))))
                         
                   ; простые сеттеры и геттеры:
                   ; задать функцию рендерера, swap-buffers будет происходить автоматически
@@ -91,7 +95,8 @@
                   ; error on invalid command
                   (else
                      (print "Unknown opengl server request: " message)
-                     (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))))))
+                     (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))
+               (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))))
    ; если окно уже есть - обработаем окно
    (if window (begin
       (if (= 1 (PeekMessage MSG 0 0 0 PM_REMOVE))
@@ -101,6 +106,8 @@
             (case (+ (refb MSG 4) (* (refb MSG 5) 256))
                (WM_LBUTTONDOWN ;WM_SIZING
                   (print "Left mouse button pressed"))
+               (WM_PAINT
+                  (print "paint"))
                (WM_KEYDOWN
                   (print "WM_KEYDOWN: " (refb MSG 8) "-" (refb MSG 9))
                   (if keyboard
@@ -108,7 +115,8 @@
                         (print "new userdata: " userdata)
                         (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))))
             (TranslateMessage MSG)
-            (DispatchMessage MSG))
+            (DispatchMessage MSG)
+            (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))
          ; no windows system events - let's draw
          (begin
             (let* ((ss2 ms2 (clock))
@@ -123,13 +131,13 @@
                         (SwapBuffers hDC)
                         (this window hDC hRC  ss2 ms2  userdata  renderer renderer-args  keyboard))))
                   ; no renderer
-               (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))))))
+               (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))))
 
-
+   (begin
    ; если окна не было, то доберемся сюда
    (_yield)
    (let* ((ss ms (clock))) ; обновим часы
-      (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))))))
+      (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard)))))))))
 
 ;(fork-server 'opengl main-loop)
 

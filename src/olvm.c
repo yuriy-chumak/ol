@@ -18,7 +18,7 @@
 #	warning "This code tested only under Gnu C compiler"
 #endif
 
-
+#define GC_DISPLAY // show the GC state in the window
 // STANDALONE - самостоятельный бинарник без потоков и т.д.
 
 // todo: проверить, что все работает в 64-битном коде
@@ -350,6 +350,13 @@ void *dlsym  (void *handle, const char *name)
 #endif
 
 #endif//STANDALONE
+
+
+#ifdef	GC_DISPLAY
+_thread_local HWND window;
+#endif
+
+
 // -=( OL )=----------------------------------------------------------------------
 // --
 //
@@ -530,10 +537,10 @@ typedef int32_t   wdiff;
 
 // cont(n) = V((word)n & (~1)) // *n (с игнорированием флажка mark)
 
-static _thread_local marked;
-static _thread_local moved;
-static _thread_local pinned;
-static _thread_local moved_bytes;
+static _thread_local int marked;
+static _thread_local int moved;
+static _thread_local int pinned;
+static _thread_local int moved_bytes;
 
 
 
@@ -545,19 +552,19 @@ static __inline__
 void rev(word* pos) {
 	word ppos = *pos;
 	*pos = cont(ppos);// | 1; // next
-	cont(ppos) = ((word)pos | ((ppos & 1) ^ 1)); // инверсия флажка
+	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка
 }
 static __inline__
 void rev0(word* pos) {
 	word ppos = *pos;
 	*pos = cont(ppos) & ~1; // next
-	cont(ppos) = ((word)pos | ((ppos & 1) ^ 1)); // инверсия флажка
+	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка
 }
 static __inline__
 void rev1(word* pos) {
 	word ppos = *pos;
 	*pos = cont(ppos) | 1; // next
-	cont(ppos) = ((word)pos | ((ppos & 1) ^ 1)); // инверсия флажка
+	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка
 }
 
 // возвращает последнего "flagged" в цепочке:
@@ -584,10 +591,10 @@ static void mark(word *pos, word *end)
 				pos = ((word *) flag(chase((word *) val))) - 1; // flag in this context equal to CLEAR flag
 			else {
 				word hdr = *(word *) val;
+				rev1(pos); // was: rev(pos)?
 				//if (immediatep(hdr))
-					*(word *) val |= 1; // flag this (таки надо, иначе часть объектов не распознается как pinned!)
+				//	*(word *) val |= 1; // flag this (таки надо, иначе часть объектов не распознается как pinned!)
 				marked++;
-				rev(pos);
 				if (flagged_or_raw(hdr))
 					pos--;
 				else
@@ -1415,6 +1422,15 @@ void* runtime(void *args) // heap top
 	fifo *fi =&((struct args*)args)->vm->o;
 	fifo *fo =&((struct args*)args)->vm->i;
 #	endif//STANDALONE
+
+#	ifdef GC_DISPLAY
+//	window = CreateWindowEx(WS_EX_APPWINDOW | WS_EX_WINDOWEDGE, "#32770", "GC", WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
+//			0, 0, 640, 480,
+//			0,0,0, NULL);
+//	SetWindowLong();
+#	endif
+
+
 
 	// все, машина инициализирована, отсигналимся
 	((struct args*)args)->signal = 1;

@@ -58,7 +58,7 @@
 
 
 ; запуск opengl
-(mail 'opengl (tuple 'set-main-window window))
+(interact 'opengl (tuple 'set-main-window window))
 (mail 'opengl (tuple 'set-userdata #empty))
 (mail 'opengl (tuple 'register-renderer my-renderer
    '(0 0 0.71 0.3))) ; renderer, state of renderer
@@ -72,7 +72,6 @@
 (main-game-loop (lambda ()
    (= (GetAsyncKeyState 27) 0)))
 
-(mail 'opengl (tuple 'set-main-window #false))
+(interact 'opengl (tuple 'set-main-window #false))
 
 (destroy-window window)
-(halt 1)
