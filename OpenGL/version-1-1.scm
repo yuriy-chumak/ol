@@ -5,6 +5,37 @@
       (exports (OpenGL version-1-0))
     GL_VERSION_1_1
     
+;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
+;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
+;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
+;WINGDIAPI void APIENTRY glPolygonOffset (GLfloat factor, GLfloat units);
+;WINGDIAPI void APIENTRY glCopyTexImage1D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border);
+;WINGDIAPI void APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
+;WINGDIAPI void APIENTRY glCopyTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
+;WINGDIAPI void APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
+;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+    glBindTexture ; void (GLenum target, GLuint texture)
+;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
+;WINGDIAPI void APIENTRY glGenTextures (GLsizei n, GLuint *textures);
+    glGenTextures ; void (GLsizei n, GLuint *textures)
+;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
+;WINGDIAPI void APIENTRY glArrayElement (GLint i);
+;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glDisableClientState (GLenum array);
+;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
+;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
+;WINGDIAPI void APIENTRY glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities);
+;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
+;WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
+;WINGDIAPI void APIENTRY glPopClientAttrib (void);
+;WINGDIAPI void APIENTRY glPushClientAttrib (GLbitfield mask);
 
    )
    (import
@@ -133,9 +164,10 @@
 ;WINGDIAPI void APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
 ;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
-;WINGDIAPI void APIENTRY glBindTexture (GLenum target, GLuint texture);
+  (define glBindTexture (dlsym % GLvoid "glBindTexture" GLenum GLuint))
 ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
 ;WINGDIAPI void APIENTRY glGenTextures (GLsizei n, GLuint *textures);
+  (define glGenTextures (dlsym % GLvoid "glGenTextures" GLsizei GLuint*))
 ;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
 ;WINGDIAPI void APIENTRY glArrayElement (GLint i);
 ;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);

@@ -1,6 +1,6 @@
 ;;;; Пример использования библиотеки (lib opengl)
 (import
-   (owl defmac) (owl primop) (owl io)
+   (owl defmac) (owl primop) (owl io) (owl ff)
    (owl pinvoke)
    (lib windows)
    (lib opengl))
@@ -27,38 +27,84 @@
          (/ (* x x x x) 24)
       (- (/ (* x x x x x x) 720))))
 
+(define (L x y) (rem (floor (* 10000 (abs (cos (+ (cos x) (* y y)))))) 100))
+
+(define SIZE 20)
+(define HALF (+ 1 (floor (/ SIZE 2))))
+(define dx (/ 1.6 SIZE))
+(define dy (/ 1.6 SIZE))
+
+(define (LL x y)
+   (if (or (= x 1) (= x SIZE) (= y 1) (= y SIZE))
+      1
+      (if (> (L x y) 20) 0 1)))
 
 
+(define (line y n)
+   (map (lambda (i) (LL i y)) (iota 1 1 (+ n 1))))
 
-(define window (create-window "OL OpenGL Sample 1" 720 720))
+(define (lines n)
+   (map (lambda (j)
+      (map (lambda (i)
+         (LL i j))
+       (iota 1 1 (+ n 1))))
+    (iota 1 1 (+ n 1))))
 
-(define scheme '(
-   (1 1 1 1 1 1 1 1)
-   (1 0 1 0 0 0 0 1)
-   (1 0 1 0 1 1 1 1)
-   (1 0 0 0 0 0 0 1)
-   (1 0 1 1 1 1 0 1)
-   (1 0 1 0 0 1 0 1)
-   (1 0 1 0 0 0 0 1)
-   (1 1 1 1 1 1 1 1)))
+
+;(let loop ((l '()) (i n))
+;   (if (= i 0)
+;      l
+;      (loop (cons (line i n) l) (- i 1)))))
+
+(define scheme (lines SIZE))
+(print scheme)
+;'(
+;   (1 1 1 1 1 1 1 1)
+;   (1 0 1 0 0 0 0 1)
+;   (1 0 1 0 1 1 1 1)
+;   (1 0 0 0 0 0 0 1)
+;   (1 0 1 1 1 1 0 1)
+;   (1 0 1 0 0 1 0 1)
+;   (1 0 1 0 0 0 0 1)
+;   (1 1 1 1 1 1 1 1)))
 
 (define (at x y)
    (nth (nth scheme x) y))
+;(define (at x y)
+;   (if (> (L x y) 15) 0 1))
 
 (define (quad i j)
-   (let ((a (* (- i 5) 0.2))
-         (b (* (- j 5) 0.2)))
+   (let ((a (* (- i HALF) dx))
+         (b (* (- j HALF) dy)))
       (glVertex2f a b)
-      (glVertex2f a (+ b 0.2))
-      (glVertex2f (+ a 0.2) (+ b 0.2))
-      (glVertex2f (+ a 0.2) b)))
+      (glVertex2f a (+ b dy))
+      (glVertex2f (+ a dx) (+ b dy))
+      (glVertex2f (+ a dx) b)))
 
+(define (quadT i j)
+   (let ((a (* (- i HALF) dx))
+         (b (* (- j HALF) dy)))
+      (glTexCoord2f 0 0)
+      (glVertex2f a b)
+      (glTexCoord2f 0 1)
+      (glVertex2f a (+ b dy))
+      (glTexCoord2f 1 1)
+      (glVertex2f (+ a dx) (+ b dy))
+      (glTexCoord2f 1 0)
+      (glVertex2f (+ a dx) b)))
+
+
+(define window (create-window "OL OpenGL Sample 1" 720 720))
+(define man (load-bmp "x.bmp"))
+(define brick (load-bmp "brick.bmp"))
 
 ; окно - рисовалка
 (define (my-renderer ms  userdata)
    (let ((x (get userdata 'x 2))
          (y (get userdata 'y 2)))
+   (glClearColor 0 0 0 1)
    (glClear GL_COLOR_BUFFER_BIT)
+   (glDisable GL_TEXTURE_2D)
 
    ; коробочка
    (glColor3f 1 1 1)
@@ -69,35 +115,32 @@
       (glVertex2f +0.8 -0.8)
    (glEnd)
 
+   (glEnable GL_TEXTURE_2D)
+   (glColor3f 1 1 1)
+   (glBindTexture GL_TEXTURE_2D (get brick 'id 0))
+
    (glBegin GL_QUADS)
-;   (foreach (iota 1 1 9) (lambda (i)
-;      (for-each (iota 1 1 9) (lambda (j)
-;         (if (= (at i j) 1)
-;            (glColor3f 0 0 0.5)
-;            (glColor3f 0 0 0))
-;         (quad i j)))))
    (for-each (lambda (i)
       (for-each (lambda (j)
-         (if (= (at i j) 1)
-            (glColor3f 0 0 0.7)
-            (glColor3f 0 0 0))
-         (quad i j))
-         (iota 1 1 9)))
-      (iota 1 1 9))
-
-   ; а теперь - кубик игрока
-   (glColor3f 0 0.7 0)
-   (quad x y)
-
+         (if (= (at i j) 1) (begin
+            (quadT i j))))
+         (iota 1 1 (+ SIZE 1))))
+      (iota 1 1 (+ SIZE 1)))
    (glEnd)
 
+   ; а теперь - кубик игрока
+;   (glColor3f 1 1 1)
+;   (glEnable GL_TEXTURE_2D)
+   (glBindTexture GL_TEXTURE_2D (get man 'id 0))
+   (glBegin GL_QUADS)
+   (quadT x y)
+   (glEnd)
 
    ; вернем модифицированные параметры
    (list userdata)))
 
 
 ; запуск opengl
-(interact 'opengl (tuple 'set-main-window window))
 (mail 'opengl (tuple 'set-userdata #empty))
 (mail 'opengl (tuple 'register-renderer my-renderer
    '())) ; renderer, state of renderer
@@ -136,7 +179,5 @@
 ; главный цикл работы приложения
 (main-game-loop (lambda ()
    (= (GetAsyncKeyState 27) 0)))
-
-(interact 'opengl (tuple 'set-main-window #false))
 
 (destroy-window window)

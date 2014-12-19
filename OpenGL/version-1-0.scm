@@ -6,10 +6,14 @@
     GL_VERSION_1_0
     GL_LIBRARY  ; internal variable
 
+    ; todo: move to the right place
+    GL_RGB GL_UNSIGNED_BYTE
+
     glGetProcAddress ; non standard. OL internal universal function to the bind opengl function
 
     ; GL types
       GLvoid
+      GLvoid*
       GLenum
       GLboolean
       GLbitfield
@@ -20,6 +24,7 @@
       GLubyte
 ;     GLushort
       GLuint
+      GLuint*
       
       GLfloat
 ;     GLclampf
@@ -100,12 +105,14 @@
 ;WINGDIAPI void APIENTRY glDepthFunc (GLenum func);
 ;WINGDIAPI void APIENTRY glDepthMask (GLboolean flag);
 ;WINGDIAPI void APIENTRY glDepthRange (GLclampd zNear, GLclampd zFar);
-;WINGDIAPI void APIENTRY glDisable (GLenum cap);
+    glDisable ; void (GLenum)
+       GL_TEXTURE_1D GL_TEXTURE_2D
 ;WINGDIAPI void APIENTRY glDrawBuffer (GLenum mode);
 ;WINGDIAPI void APIENTRY glDrawPixels (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glEdgeFlag (GLboolean flag);
 ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag);
-;WINGDIAPI void APIENTRY glEnable (GLenum cap);
+    glEnable ; void (GLenum)
+       GL_TEXTURE_1D GL_TEXTURE_2D
     glEnd ; void
 
 ;WINGDIAPI void APIENTRY glEndList (void);
@@ -313,6 +320,7 @@
 ;WINGDIAPI void APIENTRY glTexCoord2d (GLdouble s, GLdouble t);
 ;WINGDIAPI void APIENTRY glTexCoord2dv (const GLdouble *v);
 ;WINGDIAPI void APIENTRY glTexCoord2f (GLfloat s, GLfloat t);
+    glTexCoord2f ; void (GLfloat GLfloat)
 ;WINGDIAPI void APIENTRY glTexCoord2fv (const GLfloat *v);
 ;WINGDIAPI void APIENTRY glTexCoord2i (GLint s, GLint t);
 ;WINGDIAPI void APIENTRY glTexCoord2iv (const GLint *v);
@@ -344,11 +352,14 @@
 ;WINGDIAPI void APIENTRY glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexGeni (GLenum coord, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
-;WINGDIAPI void APIENTRY glTexImage1D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
-;WINGDIAPI void APIENTRY glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
+; todo: maybe this must be in opengl 1.1 ?
+    glTexImage1D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
+    glTexImage2D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
 ;WINGDIAPI void APIENTRY glTexParameterf (GLenum target, GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params);
-;WINGDIAPI void APIENTRY glTexParameteri (GLenum target, GLenum pname, GLint param);
+    glTexParameteri ; void (GLenum target, GLenum pname, GLint param)
+       GL_TEXTURE_MAG_FILTER GL_TEXTURE_MIN_FILTER
+       GL_NEAREST GL_LINEAR
 ;WINGDIAPI void APIENTRY glTexParameteriv (GLenum target, GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
     glTranslatef ; void (GLfloat x, GLfloat y, GLfloat z)
@@ -428,11 +439,14 @@
 (define GLboolean  type-fix+) ; typedef unsigned char GLboolean;
 (define GLbitfield type-int+) ; typedef unsigned int GLbitfield;
 
+(define GLvoid* type-vector-raw) ;?
+
 (define GLbyte  type-fix+)
 (define GLint   type-int+)  ; typedef int GLint
 (define GLsizei type-int+)  ; typedef int GLsizei
 (define GLubyte type-fix+)
 (define GLuint  type-int+)
+(define GLuint* type-vector-raw)
 
 (define GLfloat type-float) ; typedef float GLfloat
 ;GLclampf
@@ -923,9 +937,11 @@
 ;WINGDIAPI void APIENTRY glCopyPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
   (define glCullFace (dlsym % GLvoid "glCullFace" GLenum))
 ;WINGDIAPI void APIENTRY glDeleteLists (GLuint list, GLsizei range);
+  (define glDisable (dlsym % GLvoid "glDisable" GLenum))
 ;WINGDIAPI void APIENTRY glDrawPixels (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glEdgeFlag (GLboolean flag);
 ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag);
+  (define glEnable (dlsym % GLvoid "glEnable" GLenum))
   (define glEnd (dlsym % GLvoid "glEnd"))
 ;WINGDIAPI void APIENTRY glEndList (void);
 ;WINGDIAPI void APIENTRY glEvalCoord1d (GLdouble u);
@@ -1082,7 +1098,7 @@
 ;WINGDIAPI void APIENTRY glTexCoord1sv (const GLshort *v);
 ;WINGDIAPI void APIENTRY glTexCoord2d (GLdouble s, GLdouble t);
 ;WINGDIAPI void APIENTRY glTexCoord2dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glTexCoord2f (GLfloat s, GLfloat t);
+  (define glTexCoord2f (dlsym % GLvoid "glTexCoord2f" GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glTexCoord2fv (const GLfloat *v);
 ;WINGDIAPI void APIENTRY glTexCoord2i (GLint s, GLint t);
 ;WINGDIAPI void APIENTRY glTexCoord2iv (const GLint *v);
@@ -1114,6 +1130,10 @@
 ;WINGDIAPI void APIENTRY glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexGeni (GLenum coord, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
+  (define glTexImage1D (dlsym % GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum GLvoid*))
+  (define glTexImage2D (dlsym % GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum GLvoid*))
+  (define glTexParameteri (dlsym % GLvoid "glTexParameteri" GLenum GLenum GLint))
+
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
   (define glTranslatef (dlsym % GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex2d (GLdouble x, GLdouble y);

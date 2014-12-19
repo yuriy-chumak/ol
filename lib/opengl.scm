@@ -1,21 +1,22 @@
 (define-library (lib opengl)
    (export
-      (exports (OpenGL version-1-0))
+      (exports (OpenGL version-1-2))
 
       ; todo: move to the (lib windows)
       create-window
       destroy-window
+      load-bmp
 
       main-game-loop
    )
 
    (import
      (owl defmac) (owl io) (owl primop) (owl error) (owl tuple) (owl string)
-     (owl pinvoke) (owl list) (owl math) (owl vector) (owl list-extra)
+     (owl pinvoke) (owl list) (owl math) (owl vector) (owl list-extra) (owl ff)
      (lib windows)
      (owl interop)
 
-     (OpenGL version-1-0))
+     (OpenGL version-1-2))
   
 (begin
 ; пара служебных функций
@@ -175,8 +176,43 @@
                      0 ; instance
                      null)))
 
+      (interact 'opengl (tuple 'set-main-window window))
       window))
 
 (define (destroy-window window)
+   (interact 'opengl (tuple 'set-main-window #false))
    (DestroyWindow window))
+   
+(define (load-bmp filename)
+   (let* ((in (open-input-file filename))
+          (BITMAPFILEHEADER (get-block in (+ 2 4  2 2  4)))
+          (BITMAPINFOHEADER (get-block in (+ 4  4 4  2 2  4 4  4 4 4 4)))
+          (size (- (+ (refb BITMAPFILEHEADER 2)
+                   (* (refb BITMAPFILEHEADER 3) 256))
+                 (vec-len BITMAPFILEHEADER)
+                 (vec-len BITMAPINFOHEADER)))
+          (width (+ (refb BITMAPINFOHEADER 4)
+                 (* (refb BITMAPINFOHEADER 5) 256)))
+          (height (+ (refb BITMAPINFOHEADER 8)
+                  (* (refb BITMAPINFOHEADER 9) 256)))
+          (data (get-block in size))
+          (close-port in))
+      (print "loaded " filename)
+      (print "    width: " width)
+      (print "    height: " height)
+
+   (let ((id (list->byte-vector '(0))))
+      (glGenTextures 1 id)
+      (print "id: " (refb id 0))
+
+      (glBindTexture GL_TEXTURE_2D (refb id 0))
+      (glTexImage2D GL_TEXTURE_2D 0 GL_RGB width height 0 GL_BGR GL_UNSIGNED_BYTE data)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+
+      (list->ff (list
+        (cons 'id   (refb id 0))
+        (cons 'width  width)
+        (cons 'height height))))))
+
 ))
