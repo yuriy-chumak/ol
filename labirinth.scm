@@ -129,11 +129,9 @@
    (glEnd)
 
    ; а теперь - кубик игрока
-;   (glColor3f 1 1 1)
-;   (glEnable GL_TEXTURE_2D)
    (glBindTexture GL_TEXTURE_2D (get man 'id 0))
    (glBegin GL_QUADS)
-   (quadT x y)
+      (quadT x y)
    (glEnd)
 
    ; вернем модифицированные параметры
