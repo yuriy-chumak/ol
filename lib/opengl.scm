@@ -1,6 +1,8 @@
 (define-library (lib opengl)
    (export
       (exports (OpenGL version-1-2))
+      
+      GenTextures ; byte-vector (number)
 
       ; todo: move to the (lib windows)
       create-window
@@ -24,7 +26,18 @@
 (define OR (lambda list (fold bor 0 list)))
 (define (make-byte-vector n elem)
    (list->byte-vector (repeat elem n)))
+(define (get-int16 byte-vector offset)
+   (+ (refb byte-vector offset)
+      (* (refb byte-vector (+ offset 1)) 256)))
 ;(define ?? (lambda (function arguments) (if function (apply function arguments) arguments)))
+
+
+; ==========================================================================
+(define (GenTextures count)
+   (let ((id (list->byte-vector (repeat 0 count))))
+      (glGenTextures count id)
+      id))
+
 
 
 ; главный цикл оконной работы:
@@ -104,6 +117,9 @@
          (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))
       (WM_PAINT
          (print "paint")
+         (let ((rect (list->byte-vector (list 0 0 0 0  0 0 0 0  0 0 0 0  0 0 0 0))))
+            (GetClientRect window rect)
+            (glViewport 0 0 (get-int16 rect #x8) (get-int16 rect #xC))) 
          (this window hDC hRC  ss ms  userdata  renderer renderer-args  keyboard))
       (WM_KEYDOWN
          (print "WM_KEYDOWN: " (refb MSG 8) "-" (refb MSG 9))
@@ -187,32 +203,36 @@
    (let* ((in (open-input-file filename))
           (BITMAPFILEHEADER (get-block in (+ 2 4  2 2  4)))
           (BITMAPINFOHEADER (get-block in (+ 4  4 4  2 2  4 4  4 4 4 4)))
-          (size (- (+ (refb BITMAPFILEHEADER 2)
-                   (* (refb BITMAPFILEHEADER 3) 256))
-                 (vec-len BITMAPFILEHEADER)
-                 (vec-len BITMAPINFOHEADER)))
-          (width (+ (refb BITMAPINFOHEADER 4)
-                 (* (refb BITMAPINFOHEADER 5) 256)))
-          (height (+ (refb BITMAPINFOHEADER 8)
-                  (* (refb BITMAPINFOHEADER 9) 256)))
+          (size (- (get-int16 BITMAPFILEHEADER 2)
+                   (vec-len BITMAPFILEHEADER)
+                   (vec-len BITMAPINFOHEADER)))
+          (width (get-int16 BITMAPINFOHEADER 4))
+          (height (get-int16 BITMAPINFOHEADER 8))
+          (bitcount (get-int16 BITMAPINFOHEADER 14))
           (data (get-block in size))
           (close-port in))
       (print "loaded " filename)
       (print "    width: " width)
       (print "    height: " height)
+      (print "    bitcount: " bitcount)
 
-   (let ((id (list->byte-vector '(0))))
-      (glGenTextures 1 id)
+   (let ((id (GenTextures 1)))
       (print "id: " (refb id 0))
 
       (glBindTexture GL_TEXTURE_2D (refb id 0))
-      (glTexImage2D GL_TEXTURE_2D 0 GL_RGB width height 0 GL_BGR GL_UNSIGNED_BYTE data)
-      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
-      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+      (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA width height 0
+         (case bitcount
+           (24 GL_BGR)
+           (32 GL_BGRA))
+         GL_UNSIGNED_BYTE data)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
 
       (list->ff (list
         (cons 'id   (refb id 0))
         (cons 'width  width)
         (cons 'height height))))))
+
+(define (sprite filename) #false)
 
 ))

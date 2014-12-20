@@ -7,7 +7,7 @@
     GL_LIBRARY  ; internal variable
 
     ; todo: move to the right place
-    GL_RGB GL_UNSIGNED_BYTE
+    GL_RGB GL_UNSIGNED_BYTE GL_RGBA
 
     glGetProcAddress ; non standard. OL internal universal function to the bind opengl function
 
@@ -48,7 +48,8 @@
        GL_POLYGON
 
 ;WINGDIAPI void APIENTRY glBitmap (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
-;WINGDIAPI void APIENTRY glBlendFunc (GLenum sfactor, GLenum dfactor);
+    glBlendFunc ; void (GLenum sfactor, GLenum dfactor)
+       GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 ;WINGDIAPI void APIENTRY glCallList (GLuint list);
 ;WINGDIAPI void APIENTRY glCallLists (GLsizei n, GLenum type, const GLvoid *lists);
     glClear ; GLbitfield mask
@@ -112,7 +113,7 @@
 ;WINGDIAPI void APIENTRY glEdgeFlag (GLboolean flag);
 ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag);
     glEnable ; void (GLenum)
-       GL_TEXTURE_1D GL_TEXTURE_2D
+       GL_TEXTURE_1D GL_TEXTURE_2D GL_BLEND
     glEnd ; void
 
 ;WINGDIAPI void APIENTRY glEndList (void);
@@ -894,6 +895,7 @@
 ;WINGDIAPI void APIENTRY glAlphaFunc (GLenum func, GLclampf ref);
   (define glBegin (dlsym % GLvoid "glBegin" GLenum))
 ;WINGDIAPI void APIENTRY glBitmap (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
+  (define glBlendFunc (dlsym % GLvoid "glBlendFunc" GLenum GLenum))
 ;WINGDIAPI void APIENTRY glCallList (GLuint list);
 ;WINGDIAPI void APIENTRY glCallLists (GLsizei n, GLenum type, const GLvoid *lists);
   (define glClear (dlsym % GLvoid "glClear" GLbitfield))
