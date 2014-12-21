@@ -1,4 +1,6 @@
 ;;;; Пример использования библиотеки (lib opengl)
+(define *include-dirs* (append *include-dirs* '("../..")))
+;(append *include-dirs* '("C:/Projects/OL/workspace"))
 (import
    (owl defmac) (owl primop) (owl io) (owl ff)
    (owl pinvoke)
@@ -14,6 +16,8 @@
 
 (define HW (HALF WIDTH))
 (define HH (HALF HEIGHT))
+
+(define (putt key value userdata) (put userdata key value))
 
 
 ; пара служебных функций
@@ -42,6 +46,7 @@
 (define window (create-window "OL OpenGL Sample 1" 720 720))
 (define man (load-bmp "x.bmp"))        ; ходит
 (define man2 (load-bmp "y.bmp"))       ; лазает
+(define man2r (load-bmp "yr.bmp"))     ; лазает
 (define man3 (load-bmp "z.bmp"))       ; падает
 (define brick (load-bmp "brick.bmp"))  ; 1
 (define gold (load-bmp "gold.bmp"))    ; 7
@@ -93,7 +98,9 @@
 ; окно - рисовалка
 (define (my-renderer ms  userdata)
    (let ((x (get userdata 'x 2))
-         (y (get userdata 'y 3)))
+         (y (get userdata 'y 3))
+         (oldkey (get userdata 'oldkey 3)))
+         
    (glClearColor 0 0 0 1)
    (glClear GL_COLOR_BUFFER_BIT)
    (glDisable GL_TEXTURE_2D)
@@ -127,7 +134,9 @@
    ; а теперь - кубик игрока
    (sprite x y (get
       (if (= (at x y) 4)
-         man2
+         (if (= oldkey 39)
+            man2
+            man2r)
          (if (= (at x (- y 1)) 0)
             man3
             man)) 'id 0))
@@ -144,7 +153,8 @@
 (mail 'opengl (tuple 'set-userdata #empty))
 (mail 'opengl (tuple 'register-renderer my-renderer
    '())) ; renderer, state of renderer
-   
+
+
 (mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
    (let ((x (get userdata 'x 2))
          (y (get userdata 'y 3)))
@@ -163,20 +173,22 @@
    (case key
       ; праворуч
       (39
+         (let ((userdata (put userdata 'oldkey 39)))
          (if (or 
                (= (at (+ x 1) y) 0)
                (= (at (+ x 1) y) 2)
                (= (at (+ x 1) y) 4)
                (= (at (+ x 1) y) 7))
-            (put userdata 'x (+ x 1)) userdata))
+            (put userdata 'x (+ x 1)) userdata)))
       ; налево
       (37
+         (let ((userdata (put userdata 'oldkey 37)))
          (if (or 
                (= (at (- x 1) y) 0)
                (= (at (- x 1) y) 2)
                (= (at (- x 1) y) 4)
                (= (at (- x 1) y) 7))
-            (put userdata 'x (- x 1)) userdata))
+            (put userdata 'x (- x 1)) userdata)))
       ; вверх
       (38
          (if (= (at x y) 2)
