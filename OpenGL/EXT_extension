@@ -1,0 +1,39 @@
+; рыба для библиотек расширений OpenGL
+; ===========================================================================
+; EXT_extension
+;	Some words about extension
+;
+;	https://www.opengl.org/registry/specs/EXT/extension.txt
+;
+; Version
+;	$Date: 1995/10/03 05:39:58 $ $Revision: 1.16 $
+;
+; Overview
+;	Some words
+(define-library (OpenGL EXT extension)
+
+; ---------------------------------------------------------------------------
+; Dependencies
+;	None
+   (import
+      (owl defmac) (owl io)
+      (owl pinvoke)
+      (OpenGL version-1-0))
+
+; ---------------------------------------------------------------------------
+   (export
+    EXT_vertex_array
+
+; ---------------------------------------------------------------------------
+; New Procedures and Functions
+   
+; ---------------------------------------------------------------------------
+; New Tokens
+
+)
+
+; ---------------------------------------------------------------------------
+   (begin
+   (define EXT_extension 1)
+   
+))

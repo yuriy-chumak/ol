@@ -517,7 +517,7 @@
       (owl defmac) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
-      
+
    (import (OpenGL EXT vertex_array))
    (import (OpenGL EXT polygon_offset))
    (import (OpenGL EXT blend_logic_op))
@@ -527,8 +527,8 @@
    (import (OpenGL EXT texture_object))
 
 ; ---------------------------------------------------------------------------
-(begin
-(define GL_VERSION_1_1 1)
+   (begin
+   (define GL_VERSION_1_1 1)
 
 ; 1.1
 ;(define GLbyte  ?) ; typedef signed char GLbyte
