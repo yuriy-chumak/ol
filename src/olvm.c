@@ -451,6 +451,10 @@ typedef uintptr_t word;
 #define TFIX                         0 // type-fix+
 #define TFIXN                       32 // type-fix-
 
+// special pinvoke types
+#define TFLOAT                      46
+#define TDOUBLE                     47
+
 #define INULL                       make_immediate(0, TCONST)
 #define IFALSE                      make_immediate(1, TCONST)
 #define ITRUE                       make_immediate(2, TCONST)
@@ -2521,9 +2525,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 							arg = ((word*)p[1])[2];
 						}*/
 
+						// destination type
 						switch (type) {
 						case TFIX:
-						case TINT: // destination type
+						case TINT:
 							if (immediatep(arg))
 								args[i] = from_fix(arg);
 							else
@@ -2545,7 +2550,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								args[i] = INULL; // todo: error
 							}
 							break;
-						case TRATIONAL:
+
+						case TFLOAT:
 							if (immediatep(arg))
 								*(float*)&args[i] = (float)from_fix(arg);
 							else
@@ -2557,12 +2563,32 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								*(float*)&args[i] = -(float)from_int(arg);
 								break;
 							case TRATIONAL:
-								*(float*)&args[i] =  from_rational(arg);
+								*(float*)&args[i] = (float)from_rational(arg);
 								break;
 							default:
-								args[i] = INULL; // todo: error
+								*(float*)&args[i] = (float)0.0; // todo: error, return infinity, maybe, or NaN
 							}
 							break;
+						case TDOUBLE:
+							if (immediatep(arg))
+								*(double*)&args[i++] = (double)from_fix(arg);
+							else
+							switch (hdrtype(arg[0])) {
+							case TINT: // source type
+								*(double*)&args[i++] = +(double)from_int(arg);
+								break;
+							case TINTN:
+								*(double*)&args[i++] = -(double)from_int(arg);
+								break;
+							case TRATIONAL:
+								*(double*)&args[i++] = (double)from_rational(arg);
+								break;
+							default:
+								*(double*)&args[i++] = (double)0.0; // todo: error, same as float
+							}
+							break;
+
+
 						case TBVEC:
 						case TSTRING:
 							if ((word)arg == INULL)

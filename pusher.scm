@@ -31,16 +31,16 @@
    (glBegin GL_TRIANGLE_STRIP)
    (let ((C 0.6))
      (glColor3f 0 C 0)
-     (glVertex2f (- x 0.1) (- y 0.1))
+     (glVertex2d (- x 0.1) (- y 0.1))
      
      (glColor3f 0 0 C)
-     (glVertex2f (+ x 0.1) (- y 0.1))
+     (glVertex2d (+ x 0.1) (- y 0.1))
      
      (glColor3f C 0 0)
-     (glVertex2f (- x 0.1) (+ y 0.1))
+     (glVertex2d (- x 0.1) (+ y 0.1))
      
      (glColor3f C C 0)
-     (glVertex2f (+ x 0.1) (+ y 0.1)))
+     (glVertex2d (+ x 0.1) (+ y 0.1)))
      
    (glEnd)
 

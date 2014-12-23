@@ -28,7 +28,7 @@
       
       GLfloat
 ;     GLclampf
-;     GLdouble
+      GLdouble
 ;     GLclampd
 
       GLubyte*
@@ -365,6 +365,7 @@
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
     glTranslatef ; void (GLfloat x, GLfloat y, GLfloat z)
 ;WINGDIAPI void APIENTRY glVertex2d (GLdouble x, GLdouble y);
+    glVertex2d ; void (GLdouble x, GLdouble y)
 ;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
     glVertex2f ; void (GLfloat x, GLfloat y)
 ;WINGDIAPI void APIENTRY glVertex2fv (const GLfloat *v);
@@ -440,7 +441,7 @@
 (define GLboolean  type-fix+) ; typedef unsigned char GLboolean;
 (define GLbitfield type-int+) ; typedef unsigned int GLbitfield;
 
-(define GLvoid* type-vector-raw) ;?
+(define GLvoid* type-vector-raw)
 
 (define GLbyte  type-fix+)
 (define GLint   type-int+)  ; typedef int GLint
@@ -450,8 +451,9 @@
 (define GLuint* type-vector-raw)
 
 (define GLfloat type-float) ; typedef float GLfloat
+(define GLdouble type-double) ; typedef double GLdouble;
+
 ;GLclampf
-;typedef double GLdouble;
 ;(define GLuint  type-fix+)  ;typedef unsigned int GLuint;
 ;(define GLubyte type-fix+)  ;typedef unsigned char GLubyte;
 (define GLubyte* type-string)
@@ -1138,7 +1140,7 @@
 
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
   (define glTranslatef (dlsym % GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
-;WINGDIAPI void APIENTRY glVertex2d (GLdouble x, GLdouble y);
+  (define glVertex2d (dlsym % GLvoid "glVertex2d" GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
   (define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex2fv (const GLfloat *v);
