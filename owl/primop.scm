@@ -199,7 +199,6 @@
             (primop 'fx<<       '(59 4 5    6 7    24 7)  2 2)
 
             ; todo: move this to the sys-prim
-;            (tuple '_connect     34 2 1 _connect)   ;; (connect host port) -> #false | socket-fd
             (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
             (tuple 'clock        61 0 2 clock)   ; (clock) → posix-time x ms
 
