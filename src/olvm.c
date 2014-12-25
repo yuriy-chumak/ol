@@ -137,7 +137,7 @@
 #ifndef STANDALONE
 
 #ifdef _WIN32
-// todo: change to the http://mirrors.kernel.org/sourceware/pthreads-win32/
+//	http://mirrors.kernel.org/sourceware/pthreads-win32/
 #define PTW32_VERSION 2,9,1,0
 //#define ESRCH 3
 typedef HANDLE pthread_t;
@@ -205,7 +205,7 @@ static int pthread_yield(void)
 // -=( fifo )=------------------------------------------------
 #ifndef STANDALONE
 // кольцевой текстовый буфер для общения с виртуальной машиной
-#define FIFOLENGTH (1 << 14) // 4*4096 for now // was << 14
+#define FIFOLENGTH (1 << 14) // 4 * 4096 for now // was << 14
 
 struct fifo
 {
@@ -295,6 +295,8 @@ int fifo_feof(struct fifo* f)
 
 #endif//STANDALONE
 
+
+// --------------------------------------------------------
 // -=( dl )=-----------------------------------------------
 #ifndef JAVASCRIPT
 // интерфейс к динамическому связыванию системных библиотек
@@ -1706,7 +1708,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	// АЛУ
 #	define EQ    54
 
-
+#	define CLOCK 61
 #	define SYSCALL 63
 
 	// free numbers: 34 (was _connect)
@@ -2013,7 +2015,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44; case 45: goto op45;
 		case 46: goto op46; case 47: goto op47; case 48: goto op48; case 49: goto op49;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
-		case 58: goto op58; case 59: goto op59; case 60: goto op60; case 61: goto op61;
+		case 58: goto op58; case 59: goto op59; case 60: goto op60;
 
 //		// ошибки!
 		case 17: /* arity error */
@@ -2066,14 +2068,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //		      A2 = prim_cast(ob, type);
 //		      NEXT(3); }
 //
-//		   op27: /* interop cont op arg1 arg2 */
-//		      ob = (word *) R[0];
-//		      R[0] = IFALSE;
-//		      R[3] = A1; R[4] = R[*ip]; R[5] = A2; R[6] = A3;
-//		      acc = 4;
-//		      if (ticker > 10) bank = ticker; /* deposit remaining ticks for return to thread */
-//		      goto apply;
-
 
 
 		// ff функции
@@ -2132,6 +2126,31 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					A4 = *ob;
 			  }
 			  NEXT(5); }
+
+
+		case CLOCK: { // clock <secs> <ticks>
+			word *ob = new (6); // space for 32-bit bignum - [NUM hi [NUM lo null]]
+			ob[0] = ob[3] = NUMHDR;
+			A0 = (word) (ob + 3);
+			ob[2] = INULL;
+			ob[5] = (word) ob;
+
+			if (seccompp) {
+				unsigned long secs = seccomp_time / 1000;
+				A1 = F(seccomp_time - (secs * 1000));
+				ob[1] = F(secs >> FBITS);
+				ob[4] = F(secs & FMAX);
+				seccomp_time += ((seccomp_time + 10) > seccomp_time) ? 10 : 0; /* virtual 10ms passes */
+			}
+			else {
+				struct timeval tp;
+				gettimeofday(&tp, NULL);
+				A1 = F(tp.tv_usec / 1000);
+				ob[1] = F(tp.tv_sec >> FBITS);
+				ob[4] = F(tp.tv_sec & FMAX);
+			}
+			ip += 2; break;
+		}
 
 			// этот case должен остаться тут - как последний из кейсов
 			//  todo: переименовать в компиляторе sys-prim на syscall (?)
@@ -2408,6 +2427,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 											function) (args[0], args[1], args[2], args[3],   \
 													   args[4], args[5], args[6], args[7],   \
 													   args[8], args[9], args[10], args[11]);\
+							case 18: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int))\
+											function) (args[0], args[1], args[2], args[3],   \
+													   args[4], args[5], args[6], args[7],   \
+													   args[8], args[9], args[10], args[11], \
+													   args[12], args[13], args[14], args[15], args[16], args[17]);\
 							default: fprintf(stderr, "Too match parameters for pinvoke function: %d", count);\
 								break;\
 							}
@@ -2415,6 +2439,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						// чуть-чуть ускоримся для линукса
 						CALL(__cdecl);
 #else
+//						*(char*)0 = 123;
 						switch (convention >> 6) {
 						case 0:
 							CALL(__stdcall);
@@ -2503,7 +2528,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 					// todo: добавить разные конвенции вызова: __ccall, __stdcall, __fastcall
 
-					int args[12]; // пока только 12 аргумента максимум
+					int args[18]; // пока только 12 аргумента максимум
 					void *function = (void*) (A[1]);
 					assert (function != 0);
 					int returntype = imm_val (C[1]);
@@ -2792,26 +2817,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       A3 = prim_lraw(A0, fixval(A1), A2);
       NEXT(4);
 
-   op61: /* clock <secs> <ticks> */ { /* fixme: sys */
-      struct timeval tp;
-      word *ob = new (6); /* space for 32-bit bignum - [NUM hi [NUM lo null]] */
-      ob[0] = ob[3] = NUMHDR;
-      A0 = (word) (ob + 3);
-      ob[2] = INULL;
-      ob[5] = (word) ob;
-      if (seccompp) {
-         unsigned long secs = seccomp_time / 1000;
-         A1 = F(seccomp_time - (secs * 1000));
-         ob[1] = F(secs >> FBITS);
-         ob[4] = F(secs & FMAX);
-         seccomp_time += ((seccomp_time + 10) > seccomp_time) ? 10 : 0; /* virtual 10ms passes */
-      } else {
-         gettimeofday(&tp, NULL);
-         A1 = F(tp.tv_usec / 1000);
-         ob[1] = F(tp.tv_sec >> FBITS);
-         ob[4] = F(tp.tv_sec & FMAX);
-      }
-      NEXT(2); }
 	} // switch(1)
 
 //   // todo: add here JIT
