@@ -14,6 +14,8 @@
 
 ;; write this sans big(gish) humbers in code to allow changing
 
+; todo: read this http://www.fitc.unc.edu.ar/javadev/math/previous/algorithms.html
+
 (define-library (owl math)
 
    (export 
