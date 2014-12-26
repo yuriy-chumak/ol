@@ -6,76 +6,34 @@
    (lib opengl))
 
 ; пара служебных функций
-(define (M x) (if (< x 0) x (- x)))
-(define (P x) (if (> x 0) x (- x)))
-
 (define (nth list n) ; начиная с 1
-   (if (= n 1) (car list)
+   (if (= n 0) (car list)
                (nth (cdr list) (- n 1))))
+(define (set-nth! list value n)
+   (if (= n 0) (set-car! list value)
+               (set-nth! list value n)))
 
-(define (foreach a b) (for-each b a))
+(define WIDTH 8)
+(define HEIGHT 8)
 
-(define (sin x)
-   (+ x
-      (- (/ (* x x x) 6))
-      (/ (* x x x x x) 120)
-      (- (/ (* x x x x x x x) 5040))))
-
-(define (cos x)
-   (+ 1
-      (- (/ (* x x) 2))
-         (/ (* x x x x) 24)
-      (- (/ (* x x x x x x) 720))))
-
-(define (L x y) (rem (floor (* 10000 (abs (cos (+ (cos x) (* y y)))))) 100))
-
-(define SIZE 20)
-(define HALF (+ 1 (floor (/ SIZE 2))))
-(define dx (/ 1.6 SIZE))
-(define dy (/ 1.6 SIZE))
-
-(define (LL x y)
-   (if (or (= x 1) (= x SIZE) (= y 1) (= y SIZE))
-      1
-      (if (> (L x y) 20) 0 1)))
-
-
-(define (line y n)
-   (map (lambda (i) (LL i y)) (iota 1 1 (+ n 1))))
-
-(define (lines n)
-   (map (lambda (j)
-      (map (lambda (i)
-         (LL i j))
-       (iota 1 1 (+ n 1))))
-    (iota 1 1 (+ n 1))))
-
-
-;(let loop ((l '()) (i n))
-;   (if (= i 0)
-;      l
-;      (loop (cons (line i n) l) (- i 1)))))
-
-(define scheme (lines SIZE))
-(print scheme)
-;'(
-;   (1 1 1 1 1 1 1 1)
-;   (1 0 1 0 0 0 0 1)
-;   (1 0 1 0 1 1 1 1)
-;   (1 0 0 0 0 0 0 1)
-;   (1 0 1 1 1 1 0 1)
-;   (1 0 1 0 0 1 0 1)
-;   (1 0 1 0 0 0 0 1)
-;   (1 1 1 1 1 1 1 1)))
+(define scheme '(
+   (1 1 1 1 1 1 1 1)
+   (1 0 1 0 0 0 0 1)
+   (1 0 1 0 1 1 1 1)
+   (1 0 0 0 0 0 0 1)
+   (1 0 1 1 1 1 0 1)
+   (1 0 1 0 0 1 0 1)
+   (1 0 1 0 0 0 0 1)
+   (1 1 1 1 1 1 1 1)))
 
 (define (at x y)
    (nth (nth scheme x) y))
 ;(define (at x y)
 ;   (if (> (L x y) 15) 0 1))
 
-(define (quad i j)
-   (let ((a (* (- i HALF) dx))
-         (b (* (- j HALF) dy)))
+(define (quad i j )
+   (let ((a (* (- i (/ WIDTH 2)) dx))
+         (b (* (- j (/ HEIGHT 2)) dy)))
       (glVertex2f a b)
       (glVertex2f a (+ b dy))
       (glVertex2f (+ a dx) (+ b dy))
@@ -95,11 +53,11 @@
 
 
 (define window (create-window "OL OpenGL Sample 1" 720 720))
-(define man (load-bmp "x.bmp"))
-(define brick (load-bmp "brick.bmp"))
+(define floor-texture (load-bmp "floor.bmp"))
+(define brick-texture (load-bmp "brick.bmp"))
 
 ; окно - рисовалка
-(define (my-renderer ms  userdata)
+(mail 'opengl (tuple 'register-renderer (lambda (ms  userdata)
    (let ((x (get userdata 'x 2))
          (y (get userdata 'y 2)))
    (glClearColor 0 0 0 1)
@@ -139,9 +97,6 @@
 
 
 ; запуск opengl
-(mail 'opengl (tuple 'set-userdata #empty))
-(mail 'opengl (tuple 'register-renderer my-renderer
-   '())) ; renderer, state of renderer
    
 (mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
    (let ((x (get userdata 'x 2))

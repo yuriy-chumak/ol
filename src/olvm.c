@@ -2517,8 +2517,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 							}
 						}
 
-						float result = a / b;
-						return result;
+						return (a / b);
 					}
 
 
