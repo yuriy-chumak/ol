@@ -16,6 +16,7 @@
 
 ; окно - рисовалка
 (define (my-renderer ms  userdata  x y dx dy)
+(call/cc (lambda (return)
    (glClear GL_COLOR_BUFFER_BIT)
 
    ; коробочка
@@ -51,10 +52,11 @@
          (dy (if (< y -0.7) (P dy)
              (if (> y  0.7) (M dy)
               dy))))
-      (list userdata
+      (return (list userdata
          (+ x (/ (* dx ms) 3000)) ; x
          (+ y (/ (* dy ms) 3000)) ; y
          dx dy)))                 ; dx, dy
+)))
 
 
 ; запуск opengl

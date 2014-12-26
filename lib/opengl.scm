@@ -152,7 +152,7 @@
 (let* ((MSG "1234567890123456789012345678") ; sizeof(MSG)=28
        (ss ms (clock)))
 ;; главный оконный цикл фреймворка
-(let this ((window #f) (hDC #f) (hRC #f)  (ss ss) (ms ms)  (userdata #f) (renderer #f) (renderer-args #f)  (keyboard #f))
+(let this ((window #f) (hDC #f) (hRC #f)  (ss ss) (ms ms)  (userdata #empty) (renderer #f) (renderer-args #f)  (keyboard #f))
 ; обработаем команды фреймворка
 (let ((envelope (check-mail)))
    (if envelope

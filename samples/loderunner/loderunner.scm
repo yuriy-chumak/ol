@@ -156,6 +156,7 @@
 
 
 (mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
+(call/cc (lambda (return)
    (let ((x (get userdata 'x 2))
          (y (get userdata 'y 3)))
 
@@ -168,7 +169,8 @@
             (= (at x (- y 1)) 0)
             (= (at x (- y 1)) 4))
           (not (= (at x y) 4)))
-      (put userdata 'y (- y 1))
+      (return (put userdata 'y (- y 1))))
+
    ;else
    (case key
       ; праворуч
@@ -201,8 +203,8 @@
                     (= (at x (- y 1)) 0)))
             (put userdata 'y (- y 1)) userdata))
       (else
-         userdata)))
-))))
+         userdata))
+))))))
 
 ; главный цикл работы приложения
 (main-game-loop (lambda ()

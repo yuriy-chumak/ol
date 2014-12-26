@@ -2467,31 +2467,40 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						return value;
 					}
 					int from_int(word* arg) {
-						// это большие числа. а так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит
+						// так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит (первые два члена)
 						assert (immediatep(arg[1]));
-						if (!allocp(arg[2])) {
-							printf("ERROR! from_int\n");
-							return 123;
-						}
 						assert (allocp(arg[2]));
 
 						return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+					}
+					float from_int_to_float(word* arg) {
+						// читаем длинное число в float формат
+						assert (immediatep(arg[1]));
+						float f = arg[1] >> 8;
+						float mul = 0x1000000; // 1 << 24
+						while (allocp(arg[2])) {
+							arg = (word*)arg[2];
+							f += (arg[1] >> 8) * mul;
+							mul *= 0x1000000;
+						}
+						assert (arg[2] == INULL);
+
+						return f;
 					}
 					float from_rational(word* arg) {
 						word* pa = (word*)arg[1];
 						word* pb = (word*)arg[2];
 
-						// временно огрманичимся небольшими nominator/denominator, а дальше посмотрим
-						signed int a, b;
+						float a, b;
 						if (immediatep(pa))
 							a = from_fix(pa);
 						else {
 							switch (hdrtype(pa[0])) {
 							case TINT:
-								a = +(float)from_int(pa);
+								a = +from_int_to_float(pa);
 								break;
 							case TINTN:
-								a = -(float)from_int(pa);
+								a = -from_int_to_float(pa);
 								break;
 							}
 						}
@@ -2500,15 +2509,15 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						else {
 							switch (hdrtype(pb[0])) {
 							case TINT:
-								b = +(float)from_int(pb);
+								b = +from_int_to_float(pb);
 								break;
 							case TINTN:
-								b = -(float)from_int(pb);
+								b = -from_int_to_float(pb);
 								break;
 							}
 						}
 
-						float result = (float)a / (float)b;
+						float result = a / b;
 						return result;
 					}
 
@@ -2528,14 +2537,14 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 					// todo: добавить разные конвенции вызова: __ccall, __stdcall, __fastcall
 
-					int args[18]; // пока только 12 аргумента максимум
+					int args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
 					void *function = (void*) (A[1]);
 					assert (function != 0);
 					int returntype = imm_val (C[1]);
 
-					unsigned int got;    // результат вызова функции
-					int i = 0;	// количество аргументов
-					word* p = (word*)B; // аргументы
+					unsigned int got;   // результат вызова функции
+					int i = 0;   // количество аргументов
+					word* p = (word*)B; // сами аргументы
 					word* t = (word*)C[2];
 					while ((word)p != INULL) { // пока есть аргументы
 						assert (hdrtype(*p) == TPAIR); // assert list

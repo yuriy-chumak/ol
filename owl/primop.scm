@@ -117,7 +117,7 @@
             (tuple name (car bytecode) inargs outargs primitive)))
 
 
-      ; clock - специалдьная команда, надо использовать как (let* ((s ms (clock))) ... )
+      ; clock - специальная команда, надо использовать как (let* ((s ms (clock))) ... )
       (define clock       (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
       
       (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys

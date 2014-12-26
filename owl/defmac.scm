@@ -15,6 +15,8 @@
       define-record-type
       _record-values
       not o i self
+      
+      ; список типов
       type-complex
       type-rational
       type-int+
@@ -36,7 +38,7 @@
       type-eof
       type-tuple
       type-symbol
-      type-const
+;      type-const
       type-rlist-spine
       type-rlist-node
       type-port 
@@ -491,7 +493,7 @@
       (define type-rational         42)
       (define type-complex          43) ;; 3 free below
       (define type-eof              20) ;; moved from 4, clashing with symbols
-      (define type-const            13) ;; old type-null, moved from 1, clashing with pairs
+;      (define type-const            13) ;; old type-null, moved from 1, clashing with pairs
       (define type-port             12)
       (define type-socket           44)
       (define type-tcp-client       62)
