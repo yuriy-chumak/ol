@@ -146,11 +146,10 @@
 ;   (glEnd)
 
    ; вернем модифицированные параметры
-   (list userdata)))
+   userdata))
 
 
 ; запуск opengl
-(mail 'opengl (tuple 'set-userdata #empty))
 (mail 'opengl (tuple 'register-renderer my-renderer
    '())) ; renderer, state of renderer
 

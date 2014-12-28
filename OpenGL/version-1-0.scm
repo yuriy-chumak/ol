@@ -207,7 +207,7 @@
 ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern);
-;WINGDIAPI void APIENTRY glLineWidth (GLfloat width);
+    glLineWidth ; void (GLfloat width)
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
     glLoadIdentity ; void (void);
 ;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
@@ -243,7 +243,7 @@
 ;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz);
 ;WINGDIAPI void APIENTRY glNormal3sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glOrtho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
+    glOrtho ; void (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)
 ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token);
 ;WINGDIAPI void APIENTRY glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values);
 ;WINGDIAPI void APIENTRY glPixelMapuiv (GLenum map, GLsizei mapsize, const GLuint *values);
@@ -1007,6 +1007,7 @@
 ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern);
+  (define glLineWidth (dlsym % GLvoid "glLineWidth" GLfloat))
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
   (define glLoadIdentity (dlsym % GLvoid "glLoadIdentity"))
 ;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
@@ -1039,6 +1040,7 @@
 ;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz);
 ;WINGDIAPI void APIENTRY glNormal3sv (const GLshort *v);
 ;WINGDIAPI void APIENTRY glOrtho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
+  (define glOrtho (dlsym % GLvoid "glOrtho" GLdouble GLdouble  GLdouble GLdouble  GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token);
 ;WINGDIAPI void APIENTRY glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values);
 ;WINGDIAPI void APIENTRY glPixelMapuiv (GLenum map, GLsizei mapsize, const GLuint *values);

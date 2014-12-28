@@ -35,6 +35,8 @@
     SetForegroundWindow SetFocus
     GetWindowRect
     GetClientRect 
+    GetCursorPos
+    ScreenToClient
     
     ; gdi32
     ChoosePixelFormat
@@ -77,6 +79,7 @@
 (define PROC      type-handle)
 (define LPCSTR    type-string)
 (define LPRECT    type-vector-raw)
+(define LPPOINT   type-vector-raw)
 
 
 
@@ -143,6 +146,8 @@
     ))
   (define GetWindowRect       (dlsym user32 (__stdcall BOOL) "GetWindowRect" HWND LPRECT))
   (define GetClientRect       (dlsym user32 (__stdcall BOOL) "GetClientRect" HWND LPRECT))
+  (define GetCursorPos        (dlsym user32 (__stdcall BOOL) "GetCursorPos" LPPOINT))
+  (define ScreenToClient      (dlsym user32 (__stdcall BOOL) "ScreenToClient" HWND LPPOINT))
   
 (define PIXELFORMATDESCRIPTOR* type-vector-raw)
   

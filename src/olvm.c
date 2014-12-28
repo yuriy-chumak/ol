@@ -2476,11 +2476,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					float from_int_to_float(word* arg) {
 						// читаем длинное число в float формат
 						assert (immediatep(arg[1]));
-						float f = arg[1] >> 8;
+						float f = (unsigned)arg[1] >> 8;
 						float mul = 0x1000000; // 1 << 24
 						while (allocp(arg[2])) {
 							arg = (word*)arg[2];
-							f += (arg[1] >> 8) * mul;
+							f += (unsigned)(arg[1] >> 8) * mul;
 							mul *= 0x1000000;
 						}
 						assert (arg[2] == INULL);
