@@ -253,7 +253,7 @@
 ;WINGDIAPI void APIENTRY glPixelTransferf (GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
-;WINGDIAPI void APIENTRY glPointSize (GLfloat size);
+    glPointSize ; void (GLfloat size)
 ;WINGDIAPI void APIENTRY glPolygonMode (GLenum face, GLenum mode);
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
@@ -1048,6 +1048,7 @@
 ;WINGDIAPI void APIENTRY glPixelTransferf (GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
+   (define glPointSize (dlsym % GLvoid "glPointSize" GLfloat))
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
 ;WINGDIAPI void APIENTRY glPopMatrix (void);

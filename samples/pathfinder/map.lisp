@@ -30,7 +30,6 @@
 
 ,load "bresenham1.lisp"
 
-
 ; константы
 (define WIDTH (length (car scheme)))
 (define -WIDTH (- WIDTH))
@@ -40,6 +39,22 @@
 (define +HEIGHT (+ HEIGHT))
 (print "WIDTH: " WIDTH)
 (print "HEIGHT: " HEIGHT)
+
+(define WIDTH-1 (- WIDTH 1))
+(define HEIGHT-1 (- HEIGHT 1))
+(define (is-visible x1 y1 x2 y2)
+   (if (or
+          (< x1 0)
+          (< x2 0)
+          (< y1 0)
+          (< y2 0)
+          (> x1 WIDTH-1)
+          (> x2 WIDTH-1)
+          (> y1 HEIGHT-1)
+          (> y2 HEIGHT-1))
+       #f
+       (is-point-can-see-point x1 y1 x2 y2)))
+
 
 ;(define WINDOW-WIDTH 640)
 ;(define WINDOW-HEIGHT (/ (* WINDOW-WIDTH HEIGHT) WIDTH))
@@ -93,6 +108,9 @@
    (glClear GL_COLOR_BUFFER_BIT)
    (glDisable GL_TEXTURE_2D)
 
+   (let* ((my (get-mouse-pos)) ;(my (get userdata 'mouse (cons 0 0)))
+          (x (car my))
+          (y (cdr my)))
    ; поле
    (glColor3f 1.0 1.0 1.0)
    (glEnable GL_TEXTURE_2D)
@@ -112,7 +130,13 @@
    (for-each (lambda (i)
       (for-each (lambda (j)
          (if (= (at i j) 0)
-            (quadT i j)))
+            (let ((c (+
+                        (if (is-point-can-see-point i j             x y) 0.25 0)
+                        (if (is-point-can-see-point (+ i 1) j       x y) 0.25 0)
+                        (if (is-point-can-see-point (+ i 1) (+ j 1) x y) 0.25 0)
+                        (if (is-point-can-see-point i (+ j 1)       x y) 0.25 0))))
+               (glColor3f c c c)
+               (quadT i j))))
          (iota 0 1 HEIGHT)))
       (iota 0 1 WIDTH))
    (glEnd)
@@ -129,29 +153,72 @@
        (glVertex2f WIDTH i))
       (iota 0 1 HEIGHT))
    (glEnd)
-   (glEnd)
+   (glEnd))
 
    
    
    ; нарисуем линию
+   #|
    (let ((mx (get userdata 'mouse #f)))
       (if mx (begin
          (glColor3f 0.2 0.2 0.2)
          (let ((xy (get-mouse-pos)))
             (if xy (begin
-            
-               (if (is-corner-visible-from (car mx) (cdr mx)  (car xy) (cdr xy))
-               ;(if (is-corner-visible-from (floor (car mx)) (floor (cdr mx))  (floor (car xy)) (floor (cdr xy)))
+               (glPointSize 3.0)
+               (glColor3f 1 0 0)
+               (glBegin GL_POINTS)
+               ;(if (is-point-can-see-point (car mx) (cdr mx)  (car xy) (cdr xy))
+               (if (is-point-can-see-point (floor (car mx)) (floor (cdr mx))  (floor (car xy)) (floor (cdr xy)))
                   (glColor3f 0 1 0)
                   (glColor3f 0.2 0.2 0.2))
+               (glEnd)
             
                ;(glLineWidth 3.0)
                (glBegin GL_LINES)
-                (glVertex2f (car mx) (cdr mx))
-                (glVertex2f (car xy) (cdr xy))
-                ;(glVertex2f (floor (car xy)) (floor (cdr xy)))
-               (glEnd)))))))
+                (glVertex2f (floor (car mx)) (floor (cdr mx)))
+                ;(glVertex2f (car mx) (cdr mx))
+                ;(glVertex2f (car xy) (cdr xy))
+                (glVertex2f (floor (car xy)) (floor (cdr xy)))
+               (glEnd)))))))#||#
    
+   ; осмотр себя любимого на N клеток вокруг
+   ;#|
+   (glPointSize 3.0)
+   (glBegin GL_LINES)
+   (glColor3f 0 1 0)
+   (let ((me (get-mouse-pos))
+         (N 6))
+   (let lookout ((n 0)  (x (+ (floor (car me)) 0.5)) (y (+ (floor (cdr me)) 0.5)))
+      (if (= n N)
+         #t
+      (begin
+         (let left-to-right ((x (- (floor x) n)) (y (- (floor y) n))  (i (+ n n)))
+            (if (is-visible (car me) (cdr me) x y) (begin
+               (glVertex2f x y)
+               (glVertex2f (car me) (cdr me))))
+            (if (> i 0)
+               (left-to-right (+ x 1) y (- i 1))))
+         (let top-to-bottom ((x (+ (floor x) n 1)) (y (- (floor y) n))  (i (+ n n)))
+            (if (is-visible (car me) (cdr me) x y) (begin
+               (glVertex2f x y)
+               (glVertex2f (car me) (cdr me))))
+            (if (> i 0)
+               (top-to-bottom x (+ y 1) (- i 1))))
+         (let right-to-left ((x (+ (floor x) n 1)) (y (+ (floor y) n 1))  (i (+ n n)))
+            (if (is-visible (car me) (cdr me) x y) (begin
+               (glVertex2f x y)
+               (glVertex2f (car me) (cdr me))))
+            (if (> i 0)
+               (right-to-left (- x 1) y (- i 1))))
+         (let bottom-to-top ((x (- (floor x) n)) (y (+ (floor y) n 1))  (i (+ n n)))
+            (if (is-visible (car me) (cdr me) x y) (begin
+               (glVertex2f x y)
+               (glVertex2f (car me) (cdr me))))
+            (if (> i 0)
+               (bottom-to-top x (- y 1) (- i 1))))
+         (lookout (+ n 1) x y)))))
+   (glEnd)
+   #||#
 
    ; вернем модифицированные параметры
    userdata))))
