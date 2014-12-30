@@ -2,6 +2,61 @@
 
 
 ; todo: оформить ai как fork-server
+(fork-server 'wizard2 (lambda ()
+(let this ((x 2))
+   (let* ((envelope (wait-mail))
+          (sender msg envelope))
+          
+      (print "GOT IT! " msg)
+      (mail sender "done")
+      (this x)))))
+
+
+
+
+(fork-server 'wizard (lambda ()
+(let* ((map '( 
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))))
+; x, y - положение AI
+(let this ((map map) (x 1.5) (y 1.5))
+(let* ((envelope (wait-mail))
+       (sender msg envelope))
+   (tuple-case msg
+      ((get-map)
+         (mail sender map)
+         (this map x y))
+;      ((update-map)
+      
+      (else
+         (this map x y))))))))
+
+;=   (print "AI got message: " msg)
+;=   (mail sender map)
+;=   (this map x y)))))))
+   
+   
+;      ((echo message)
+;         (mail sender message)
+;         (this map x y))
+;      ((get-map)
+;         (mail sender map)
+;         (this map x y))
+;      ((get-location)
+;         (mail sender (cons x y))
+;         (this map x y))
+;      (else
+;         (this map x y))))))))
 
 
 

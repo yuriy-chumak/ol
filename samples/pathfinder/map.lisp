@@ -44,6 +44,8 @@
 
 ,load "ai.lisp"
 
+(print (interact 'wizard (tuple 'get-map)))
+
 ;   (if (or
 ;          (< x1 0)
 ;          (< x2 0)
