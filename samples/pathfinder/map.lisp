@@ -228,11 +228,13 @@
          #t
       (begin
          (let left-to-right ((x (- (floor x) n)) (y (- (floor y) n))  (i (+ n n)))
-            (if (is-visible (car me) (cdr me) x y) (begin
-               (glVertex2f x y)
-               (glVertex2f (car me) (cdr me))))
-            (if (> i 0)
-               (left-to-right (+ x 1) y (- i 1))))
+            (if (= i 0)
+               #f
+            (begin
+               (if (is-visible (car me) (cdr me) x y) (begin
+                  (glVertex2f x y)
+                  (glVertex2f (car me) (cdr me))))
+               (left-to-right (+ x 1) y (- i 1)))))
          (let top-to-bottom ((x (+ (floor x) n 1)) (y (- (floor y) n))  (i (+ n n)))
             (if (is-visible (car me) (cdr me) x y) (begin
                (glVertex2f x y)
@@ -259,57 +261,91 @@
    ; хорошо, теперь попробуем построить список ключевых точек (вейпоинтов), про которые мы теперь знаем, что они на карте есть
    ;  
    ;  для начала - по тем, что сверху
-   
-   (glColor3f 0 0 1)
-   (glPointSize 4.0)
-   (glBegin GL_POINTS)
+   ;#|
    (let ((me (get-mouse-pos))
-         (N 4)
-         
-         (check-corner (lambda (x y)
-            (if (is-corner-rt x y) (begin
-               (glVertex2f (+ x 0.5) y)
-               (glVertex2f x (- y 0.5)))
-            (if (is-corner-lt x y) (begin
-               (glVertex2f (- x 0.5) y)
-               (glVertex2f x (- y 0.5)))
-            (if (is-corner-lb x y) (begin
-               (glVertex2f (- x 0.5) y)
-               (glVertex2f x (+ y 0.5)))
-            (if (is-corner-rb x y) (begin
-               (glVertex2f (+ x 0.5) y)
-               (glVertex2f x (+ y 0.5)))))))))
-         )
-   (let lookout ((n 0)  (x (+ (floor (car me)) 0.5)) (y (+ (floor (cdr me)) 0.5)))
-      (if (= n N)
-         #t
-      (begin
-         (let left-to-right ((x (- (floor x) n)) (y (- (floor y) n))  (i (+ n n)))
-            (if (is-visible (car me) (cdr me) x y)
-               (check-corner x y))
-            (if (> i 0)
-               (left-to-right (+ x 1) y (- i 1))))
-         (let top-to-bottom ((x (+ (floor x) n 1)) (y (- (floor y) n))  (i (+ n n)))
-            (if (is-visible (car me) (cdr me) x y)
-               (check-corner x y))
-            (if (> i 0)
-               (top-to-bottom x (+ y 1) (- i 1))))
-         (let right-to-left ((x (+ (floor x) n 1)) (y (+ (floor y) n 1))  (i (+ n n)))
-            (if (is-visible (car me) (cdr me) x y)
-               (check-corner x y))
-            (if (> i 0)
-               (right-to-left (- x 1) y (- i 1))))
-         (let bottom-to-top ((x (- (floor x) n)) (y (+ (floor y) n 1))  (i (+ n n)))
-            (if (is-visible (car me) (cdr me) x y)
-               (check-corner x y))
-            (if (> i 0)
-               (bottom-to-top x (- y 1) (- i 1))))
+         (check-corner (lambda (x y  points)
+            (if (is-corner-rt x y)
+               (cons (cons (+ x 0.5) y)
+                     (cons (cons x (- y 0.5))
+                           points))
+            (if (is-corner-lt x y)
+               (cons (cons (- x 0.5) y)
+                     (cons (cons x (- y 0.5))
+                           points))
+            (if (is-corner-lb x y)
+               (cons (cons (- x 0.5) y)
+                     (cons (cons x (+ y 0.5))
+                           points))
+            (if (is-corner-rb x y)
+               (cons (cons (+ x 0.5) y)
+                     (cons (cons x (+ y 0.5))
+                           points))
+            points))))))
+         (N 4))
+   (let ((points
+                 (let lookout ((n 0) (x (floor (car me))) (y (floor (cdr me)))  (points '()))
+                    (if (= n N)
+                       points
+                       (let left-to-right ((x x) (y y) (i (+ n n 1))  (points points))
+                          (print "left-to-right " x ", " y)
+                          (if (> i 0)
+                             (left-to-right (+ x 1) y (- i 1)  (if (is-visible (car me) (cdr me) x y) (check-corner x y  points) points))
+                       (let top-to-bottom ((x x) (y y) (i (+ n n 1))  (points points))
+                          (print "top-to-bottom " x ", " y)
+                          (if (> i 0)
+                             (top-to-bottom x (+ y 1) (- i 1)  (if (is-visible (car me) (cdr me) x y) (check-corner x y  points) points))
+                       (let right-to-left ((x x) (y y) (i (+ n n 1))  (points points))
+                          (print "right-to-left " x ", " y)
+                          (if (> i 0)
+                             (right-to-left (- x 1) y (- i 1)  (if (is-visible (car me) (cdr me) x y) (check-corner x y  points) points))
+                       (let bottom-to-top ((x x) (y y) (i (+ n n 1))  (points points))
+                          (print "bottom-to-top " x ", " y)
+                          (if (> i 0)
+                             (bottom-to-top x (- y 1) (- i 1)  (if (is-visible (car me) (cdr me) x y) (check-corner x y  points) points))
+                       (lookout (+ n 1) (- x 1) (- y 1) points)))))))))))))
 
-         (lookout (+ n 1) x y)))))
-   (glEnd)
+      (print points)
+
+      (glColor3f 0 0 1)
+      (glPointSize 4.0)
+      (glBegin GL_POINTS)
+      
+      (let draw ((p points))
+         (if (null? p)
+            #t
+            (begin
+               (glVertex2f (car (car p)) (cdr (car p)))
+               (draw (cdr p)))))
+      (glEnd))
+      
+         )
+;   (glEnd)#||#
+
+;         
+         
+         
 
    ; вернем модифицированные параметры
    userdata))))
+
+;         (let top-to-bottom ((x (+ (floor x) n 1)) (y (- (floor y) n))  (i (+ n n)))
+;            (if (is-visible (car me) (cdr me) x y)
+;               (check-corner x y))
+;            (if (> i 0)
+;               (top-to-bottom x (+ y 1) (- i 1))))
+;         (let right-to-left ((x (+ (floor x) n 1)) (y (+ (floor y) n 1))  (i (+ n n)))
+;            (if (is-visible (car me) (cdr me) x y)
+;               (check-corner x y))
+;            (if (> i 0)
+;               (right-to-left (- x 1) y (- i 1))))
+;         (let bottom-to-top ((x (- (floor x) n)) (y (+ (floor y) n 1))  (i (+ n n)))
+;            (if (is-visible (car me) (cdr me) x y)
+;               (check-corner x y))
+;            (if (> i 0)
+;               (bottom-to-top x (- y 1) (- i 1))))
+      
+
+
 
 (mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
 (call/cc (lambda (return)
