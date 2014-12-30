@@ -55,6 +55,9 @@
          (vertical-bresenham x1 y1  x2 y2  (/ dx dy))
          (vertical-bresenham x2 y2  x1 y1  (/ dx dy))))))
 
+
+
+
 ;(print
 ;(horizontal-bresenham 1 1  4.5 3))
 ;(halt 0)

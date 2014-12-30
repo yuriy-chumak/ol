@@ -27,6 +27,31 @@
  (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
 (define (at x y)
    (nth (nth scheme y) x))
+(define (is-corner-rt x y) ; левый нижний угол блока?
+   (and
+      (= (at x y) 0)
+      (> (at (- x 1) y) 0)
+      (= (at (- x 1) (- y 1)) 0)
+      (= (at x (- y 1)) 0)))
+(define (is-corner-lt x y) ; левый нижний угол блока?
+   (and
+      (> (at x y) 0)
+      (= (at (- x 1) y) 0)
+      (= (at (- x 1) (- y 1)) 0)
+      (= (at x (- y 1)) 0)))
+(define (is-corner-lb x y) ; левый нижний угол блока?
+   (and
+      (= (at x y) 0)
+      (= (at (- x 1) y) 0)
+      (= (at (- x 1) (- y 1)) 0)
+      (> (at x (- y 1)) 0)))
+(define (is-corner-rb x y) ; левый нижний угол блока?
+   (and
+      (= (at x y) 0)
+      (= (at (- x 1) y) 0)
+      (> (at (- x 1) (- y 1)) 0)
+      (= (at x (- y 1)) 0)))
+
 
 ,load "bresenham1.lisp"
 
@@ -43,17 +68,20 @@
 (define WIDTH-1 (- WIDTH 1))
 (define HEIGHT-1 (- HEIGHT 1))
 (define (is-visible x1 y1 x2 y2)
-   (if (or
-          (< x1 0)
-          (< x2 0)
-          (< y1 0)
-          (< y2 0)
-          (> x1 WIDTH-1)
-          (> x2 WIDTH-1)
-          (> y1 HEIGHT-1)
-          (> y2 HEIGHT-1))
-       #f
-       (is-point-can-see-point x1 y1 x2 y2)))
+   (and (> x1 0) (> y1 0) (< x1 WIDTH) (< y1 HEIGHT)
+        (> x2 0) (> y2 0) (< x2 WIDTH) (< y2 HEIGHT)
+        (is-point-can-see-point x1 y1 x2 y2)))
+;   (if (or
+;          (< x1 0)
+;          (< x2 0)
+;          (< y1 0)
+;          (< y2 0)
+;          (> x1 WIDTH-1)
+;          (> x2 WIDTH-1)
+;          (> y1 HEIGHT-1)
+;          (> y2 HEIGHT-1))
+;       #f
+;       (is-point-can-see-point x1 y1 x2 y2)))
 
 
 ;(define WINDOW-WIDTH 640)
@@ -180,8 +208,6 @@
                 (glVertex2f (floor (car xy)) (floor (cdr xy)))
                (glEnd)))))))#||#
    
-   ; осмотр себя любимого на N клеток вокруг
-   ;#|
    (let ((ms (get userdata 'mouse #f)))
    (if ms (begin
       (glPointSize 4.0)
@@ -190,8 +216,11 @@
       (glVertex2f (car ms) (cdr ms))
       (glEnd)
    )))
+
+   #|
+   ; осмотр себя любимого на N клеток вокруг
    (let ((me (get-mouse-pos))
-         (N 2))
+         (N 6))
    (glColor3f 0 1 0)
    (glBegin GL_LINES)
    (let lookout ((n 0)  (x (+ (floor (car me)) 0.5)) (y (+ (floor (cdr me)) 0.5)))
@@ -225,6 +254,59 @@
          (lookout (+ n 1) x y)))))
    (glEnd)
    #||#
+   
+   
+   ; хорошо, теперь попробуем построить список ключевых точек (вейпоинтов), про которые мы теперь знаем, что они на карте есть
+   ;  
+   ;  для начала - по тем, что сверху
+   
+   (glColor3f 0 0 1)
+   (glPointSize 4.0)
+   (glBegin GL_POINTS)
+   (let ((me (get-mouse-pos))
+         (N 4)
+         
+         (check-corner (lambda (x y)
+            (if (is-corner-rt x y) (begin
+               (glVertex2f (+ x 0.5) y)
+               (glVertex2f x (- y 0.5)))
+            (if (is-corner-lt x y) (begin
+               (glVertex2f (- x 0.5) y)
+               (glVertex2f x (- y 0.5)))
+            (if (is-corner-lb x y) (begin
+               (glVertex2f (- x 0.5) y)
+               (glVertex2f x (+ y 0.5)))
+            (if (is-corner-rb x y) (begin
+               (glVertex2f (+ x 0.5) y)
+               (glVertex2f x (+ y 0.5)))))))))
+         )
+   (let lookout ((n 0)  (x (+ (floor (car me)) 0.5)) (y (+ (floor (cdr me)) 0.5)))
+      (if (= n N)
+         #t
+      (begin
+         (let left-to-right ((x (- (floor x) n)) (y (- (floor y) n))  (i (+ n n)))
+            (if (is-visible (car me) (cdr me) x y)
+               (check-corner x y))
+            (if (> i 0)
+               (left-to-right (+ x 1) y (- i 1))))
+         (let top-to-bottom ((x (+ (floor x) n 1)) (y (- (floor y) n))  (i (+ n n)))
+            (if (is-visible (car me) (cdr me) x y)
+               (check-corner x y))
+            (if (> i 0)
+               (top-to-bottom x (+ y 1) (- i 1))))
+         (let right-to-left ((x (+ (floor x) n 1)) (y (+ (floor y) n 1))  (i (+ n n)))
+            (if (is-visible (car me) (cdr me) x y)
+               (check-corner x y))
+            (if (> i 0)
+               (right-to-left (- x 1) y (- i 1))))
+         (let bottom-to-top ((x (- (floor x) n)) (y (+ (floor y) n 1))  (i (+ n n)))
+            (if (is-visible (car me) (cdr me) x y)
+               (check-corner x y))
+            (if (> i 0)
+               (bottom-to-top x (- y 1) (- i 1))))
+
+         (lookout (+ n 1) x y)))))
+   (glEnd)
 
    ; вернем модифицированные параметры
    userdata))))

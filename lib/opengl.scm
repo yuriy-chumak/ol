@@ -163,7 +163,6 @@
 (let ((envelope (check-mail)))
    (if envelope
       (let* ((sender message envelope))
-         (print "sender: " sender)
          ;(print "opengl server got message " message)
          (if (tuple? message)
             (tuple-processor this sender message  window hDC hRC  ss ms  userdata  renderer  keyboard mouse)
