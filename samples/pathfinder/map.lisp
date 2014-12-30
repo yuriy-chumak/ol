@@ -108,9 +108,6 @@
    (glClear GL_COLOR_BUFFER_BIT)
    (glDisable GL_TEXTURE_2D)
 
-   (let* ((my (get-mouse-pos)) ;(my (get userdata 'mouse (cons 0 0)))
-          (x (car my))
-          (y (cdr my)))
    ; поле
    (glColor3f 1.0 1.0 1.0)
    (glEnable GL_TEXTURE_2D)
@@ -127,18 +124,21 @@
    ; пол (как травку)
    (BindTexture grass-texture)
    (glBegin GL_QUADS)
+   (let* ((my (get userdata 'mouse (cons 0 0)))
+          (x (car my))
+          (y (cdr my)))
    (for-each (lambda (i)
       (for-each (lambda (j)
          (if (= (at i j) 0)
             (let ((c (+
-                        (if (is-point-can-see-point i j             x y) 0.25 0)
-                        (if (is-point-can-see-point (+ i 1) j       x y) 0.25 0)
-                        (if (is-point-can-see-point (+ i 1) (+ j 1) x y) 0.25 0)
-                        (if (is-point-can-see-point i (+ j 1)       x y) 0.25 0))))
+                        (if (is-visible i j             x y) 0.25 0)
+                        (if (is-visible (+ i 1) j       x y) 0.25 0)
+                        (if (is-visible (+ i 1) (+ j 1) x y) 0.25 0)
+                        (if (is-visible i (+ j 1)       x y) 0.25 0))))
                (glColor3f c c c)
                (quadT i j))))
          (iota 0 1 HEIGHT)))
-      (iota 0 1 WIDTH))
+      (iota 0 1 WIDTH)))
    (glEnd)
    (glDisable GL_TEXTURE_2D)
 
@@ -153,7 +153,6 @@
        (glVertex2f WIDTH i))
       (iota 0 1 HEIGHT))
    (glEnd)
-   (glEnd))
 
    
    
@@ -183,11 +182,18 @@
    
    ; осмотр себя любимого на N клеток вокруг
    ;#|
-   (glPointSize 3.0)
-   (glBegin GL_LINES)
-   (glColor3f 0 1 0)
+   (let ((ms (get userdata 'mouse #f)))
+   (if ms (begin
+      (glPointSize 4.0)
+      (glColor3f 0 0 1)
+      (glBegin GL_POINTS)
+      (glVertex2f (car ms) (cdr ms))
+      (glEnd)
+   )))
    (let ((me (get-mouse-pos))
-         (N 6))
+         (N 2))
+   (glColor3f 0 1 0)
+   (glBegin GL_LINES)
    (let lookout ((n 0)  (x (+ (floor (car me)) 0.5)) (y (+ (floor (cdr me)) 0.5)))
       (if (= n N)
          #t
