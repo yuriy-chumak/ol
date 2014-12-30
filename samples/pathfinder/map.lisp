@@ -27,33 +27,7 @@
  (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
 (define (at x y)
    (nth (nth scheme y) x))
-(define (is-corner-rt x y) ; левый нижний угол блока?
-   (and
-      (= (at x y) 0)
-      (> (at (- x 1) y) 0)
-      (= (at (- x 1) (- y 1)) 0)
-      (= (at x (- y 1)) 0)))
-(define (is-corner-lt x y) ; левый нижний угол блока?
-   (and
-      (> (at x y) 0)
-      (= (at (- x 1) y) 0)
-      (= (at (- x 1) (- y 1)) 0)
-      (= (at x (- y 1)) 0)))
-(define (is-corner-lb x y) ; левый нижний угол блока?
-   (and
-      (= (at x y) 0)
-      (= (at (- x 1) y) 0)
-      (= (at (- x 1) (- y 1)) 0)
-      (> (at x (- y 1)) 0)))
-(define (is-corner-rb x y) ; левый нижний угол блока?
-   (and
-      (= (at x y) 0)
-      (= (at (- x 1) y) 0)
-      (> (at (- x 1) (- y 1)) 0)
-      (= (at x (- y 1)) 0)))
 
-
-,load "bresenham1.lisp"
 
 ; константы
 (define WIDTH (length (car scheme)))
@@ -67,10 +41,9 @@
 
 (define WIDTH-1 (- WIDTH 1))
 (define HEIGHT-1 (- HEIGHT 1))
-(define (is-visible x1 y1 x2 y2)
-   (and (> x1 0) (> y1 0) (< x1 WIDTH) (< y1 HEIGHT)
-        (> x2 0) (> y2 0) (< x2 WIDTH) (< y2 HEIGHT)
-        (is-point-can-see-point x1 y1 x2 y2)))
+
+,load "ai.lisp"
+
 ;   (if (or
 ;          (< x1 0)
 ;          (< x2 0)
@@ -262,49 +235,9 @@
    ;  
    ;  для начала - по тем, что сверху
    ;#|
-   (let ((me (get-mouse-pos))
-         (check-corner (lambda (x y  points)
-            (if (is-corner-rt x y)
-               (cons (cons (+ x 0.5) y)
-                     (cons (cons x (- y 0.5))
-                           points))
-            (if (is-corner-lt x y)
-               (cons (cons (- x 0.5) y)
-                     (cons (cons x (- y 0.5))
-                           points))
-            (if (is-corner-lb x y)
-               (cons (cons (- x 0.5) y)
-                     (cons (cons x (+ y 0.5))
-                           points))
-            (if (is-corner-rb x y)
-               (cons (cons (+ x 0.5) y)
-                     (cons (cons x (+ y 0.5))
-                           points))
-            points))))))
-         (N 4))
-   (let ((points
-                 (let lookout ((n 0) (x (floor (car me))) (y (floor (cdr me)))  (points '()))
-                    (if (= n N)
-                       points
-                       (let left-to-right ((x x) (y y) (i (+ n n 1))  (points points))
-                          (print "left-to-right " x ", " y)
-                          (if (> i 0)
-                             (left-to-right (+ x 1) y (- i 1)  (if (is-visible (car me) (cdr me) x y) (check-corner x y  points) points))
-                       (let top-to-bottom ((x x) (y y) (i (+ n n 1))  (points points))
-                          (print "top-to-bottom " x ", " y)
-                          (if (> i 0)
-                             (top-to-bottom x (+ y 1) (- i 1)  (if (is-visible (car me) (cdr me) x y) (check-corner x y  points) points))
-                       (let right-to-left ((x x) (y y) (i (+ n n 1))  (points points))
-                          (print "right-to-left " x ", " y)
-                          (if (> i 0)
-                             (right-to-left (- x 1) y (- i 1)  (if (is-visible (car me) (cdr me) x y) (check-corner x y  points) points))
-                       (let bottom-to-top ((x x) (y y) (i (+ n n 1))  (points points))
-                          (print "bottom-to-top " x ", " y)
-                          (if (> i 0)
-                             (bottom-to-top x (- y 1) (- i 1)  (if (is-visible (car me) (cdr me) x y) (check-corner x y  points) points))
-                       (lookout (+ n 1) (- x 1) (- y 1) points)))))))))))))
-
-      (print points)
+   (let* ((me (get-mouse-pos))
+         (points (get-waypoints me 4)))
+;      (print points)
 
       (glColor3f 0 0 1)
       (glPointSize 4.0)
@@ -317,13 +250,8 @@
                (glVertex2f (car (car p)) (cdr (car p)))
                (draw (cdr p)))))
       (glEnd))
-      
-         )
-;   (glEnd)#||#
 
-;         
-         
-         
+
 
    ; вернем модифицированные параметры
    userdata))))
