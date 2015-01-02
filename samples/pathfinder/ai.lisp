@@ -1,63 +1,32 @@
 ; алгоритм проверки виден ли угол из центра некоторого кубика
+; todo: оформить библиотекой
 
-
-; todo: оформить ai как fork-server
-(fork-server 'wizard2 (lambda ()
-(let this ((x 2))
-   (let* ((envelope (wait-mail))
-          (sender msg envelope))
-          
-      (print "GOT IT! " msg)
-      (mail sender "done")
-      (this x)))))
-
-
-
-
-(fork-server 'wizard (lambda ()
-(let* ((map '( 
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-   (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))))
-; x, y - положение AI
-(let this ((map map) (x 1.5) (y 1.5))
+; can be organized as set-car!
+(fork-server 'IDs (lambda ()
+(let this ((id 1))
 (let* ((envelope (wait-mail))
        (sender msg envelope))
-   (tuple-case msg
-      ((get-map)
-         (mail sender map)
-         (this map x y))
-;      ((update-map)
-      
-      (else
-         (this map x y))))))))
+   (mail sender id)
+   (this (+ id 1))))))
+(define (generate-unique-id)
+   (interact 'IDs 0))
+   
 
-;=   (print "AI got message: " msg)
-;=   (mail sender map)
-;=   (this map x y)))))))
-   
-   
-;      ((echo message)
-;         (mail sender message)
-;         (this map x y))
-;      ((get-map)
-;         (mail sender map)
-;         (this map x y))
-;      ((get-location)
-;         (mail sender (cons x y))
-;         (this map x y))
+;(fork-server 'creatures (lambda ()
+;(let this ((all #empty))
+;(let* ((envelope (wait-mail))
+;       (sender msg envelope))
+;   (tuple-case msg
+;      ((add creature)
+;         (let ((id (interact 'ids))))
+;            (mail sender id)
+;            (this (put all id creature)))
+;      ((get id)
+;         (mail sender (get all id #false))
+;         (this all))
+;      ((die id)
 ;      (else
-;         (this map x y))))))))
-
+;         (this all)))))))
 
 
 
@@ -180,6 +149,7 @@
 (define (get-waypoints me N)
 ; fixme: вейпоинты в списке могут дублироваться
 
+; Осмотреться. Возвращает список вейпоинтов. 
 (let lookout ((n 0) (x (floor (car me))) (y (floor (cdr me)))  (points '()))
    (if (= n N)
       points
@@ -198,6 +168,118 @@
       (lookout (+ n 1) (- x 1) (- y 1) points))))))))))))
 
 
+;(let ((x 1.5)
+;      (y 1.5))
+;   (map (lambda (p)
+;
+;(define (fn x y element  me-x me-y)
+;   (print 1)
+;   (+ element 1))
+;
+;(let ((for-x (lambda (x y old)
+;   (if (null? old)
+;      null
+;      (let* ((head tail map)
+;             (head (fn head))) ;; compute head first
+;         (cons head (for-x (+ x 1) tail)))))
+;)
+
+(define fov (repeat (repeat 0 WIDTH) HEIGHT))
+
+(print fov)
+
+(print
+(let ((X 1.5) (Y 1.5))
+(let for-y ((y 0) (lines fov))
+   (if (null? lines)
+      null
+      (cons
+         (let for-x ((x 0) (cells (car lines)))
+            (if (null? cells)
+               null
+               (cons 
+                  (let ((cell (car cells)))
+                     (if (and
+                           (or
+                              (is-point-can-see-point X Y x y)
+                              (is-point-can-see-point X Y (+ x 1) y)
+                              (is-point-can-see-point X Y (+ x 1) (+ y 1))
+                              (is-point-can-see-point X Y x (+ y 1)))
+                           (> (at x y) 0))
+                        (+ cell 1)
+                        cell))
+                  (for-x (+ x 1) (cdr cells)))))
+         (for-y (+ y 1) (cdr lines)))))
+))
+;(halt 12)
+
+
+
+;   (if (= y HEIGHT)
+;      new
+;      (for-x (+ y 1) (cdr map) (
+
+
+
 ;(print
 ;(horizontal-bresenham 1 1  4.5 3))
 ;(halt 0)
+
+
+
+
+(define (new-creature x y)
+(let* ((id (generate-unique-id))
+       (creature (fork-server id (lambda ()
+; x, y - положение AI
+(let this ((fov (repeat (repeat 0 WIDTH) HEIGHT))
+           (x 1.5)
+           (y 1.5))
+(let* ((envelope (wait-mail))
+       (sender msg envelope))
+   (tuple-case msg
+      ((die)
+         #false)
+
+      ((set-location location)
+         (print "creature: 'set-location " location)
+         (this fov (car location) (cdr location)))
+      ; создать существо
+
+      ((get-fov)
+         (mail sender fov)
+         (this fov x y))
+      ((get-location)
+         (mail sender (cons x y))
+         (this fov x y))
+      ((update-fov map)
+         (print "creature: 'update-fov requested")
+         (let ((fov
+         (let ((X x) (Y y))
+         (let for-y ((y 0) (lines fov) (map-lines map))
+            (if (null? lines)
+               null
+               (cons
+                  (let for-x ((x 0) (cells (car lines)) (map-cells (car map-lines)))
+                     (if (null? cells)
+                        null
+                        (cons 
+                           (let ((cell (car cells)))
+;                              (print "creature: test for " x " " y " " X " " Y)
+;                              (print "creature: test for " x " " y " " X " " Y " " (cdr map-cells))
+                              (if (or
+                                    (is-point-can-see-point X Y x y)
+                                    (is-point-can-see-point X Y (+ x 1) y)
+                                    (is-point-can-see-point X Y (+ x 1) (+ y 1))
+                                    (is-point-can-see-point X Y x (+ y 1)))
+                                 (car map-cells)
+                                 (if (> cell 0) (+ cell 1) 0)))
+                           (for-x (+ x 1) (cdr cells) (cdr map-cells)))))
+                  (for-y (+ y 1) (cdr lines) (cdr map-lines))))))))
+         (this fov x y)))
+      
+      (else
+         (print "'ai error: unknown command " msg)
+         (this fov x y)))))))))
+   (print "new creature " id " spawned.")      
+   id))

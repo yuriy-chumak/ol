@@ -27,7 +27,8 @@
  (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
 (define (at x y)
    (nth (nth scheme y) x))
-
+(define (at2 x y scheme)
+   (nth (nth scheme y) x))
 
 ; константы
 (define WIDTH (length (car scheme)))
@@ -44,7 +45,12 @@
 
 ,load "ai.lisp"
 
-(print (interact 'wizard (tuple 'get-map)))
+(define me (new-creature 1.5 1.5))
+
+
+;(print (interact 'wizard (tuple 'get-map)))
+;(print (interact 'wizard (tuple 'update-fov scheme)))
+
 
 ;   (if (or
 ;          (< x1 0)
@@ -62,8 +68,8 @@
 ;(define WINDOW-WIDTH 640)
 ;(define WINDOW-HEIGHT (/ (* WINDOW-WIDTH HEIGHT) WIDTH))
 (define window (create-window "Pathfinder sample" 640 (/ (* 640 HEIGHT) WIDTH)))
-(define floor-texture (load-bmp "stone-floor-texture.bmp"))
-(define roof1-texture (load-bmp "roof1.bmp"))
+;(define floor-texture (load-bmp "stone-floor-texture.bmp"))
+;(define roof1-texture (load-bmp "roof1.bmp"))
 (define water-texture (load-bmp "water-floor-texture.bmp"))
 (define grass-texture (load-bmp "grass-floor-texture.bmp"))
 
@@ -111,39 +117,41 @@
    (glClear GL_COLOR_BUFFER_BIT)
    (glDisable GL_TEXTURE_2D)
 
-   ; поле
-   (glColor3f 1.0 1.0 1.0)
-   (glEnable GL_TEXTURE_2D)
-   ; стены (как воду)
-   (BindTexture water-texture)
-   (glBegin GL_QUADS)
-   (for-each (lambda (i)
-      (for-each (lambda (j)
-         (if (> (at i j) 0)
-            (quadT i j)))
-         (iota 0 1 HEIGHT)))
-      (iota 0 1 WIDTH))
-   (glEnd)
+   (let ((map (interact me (tuple 'get-fov))))
+      ; поле
+      (glEnable GL_TEXTURE_2D)
+      ; стены (как воду)
+      (BindTexture water-texture)
+      (glBegin GL_QUADS)
+      (for-each (lambda (i)
+         (for-each (lambda (j)
+            (if (> (at2 i j map) 0)
+               (let ((age (at2 i j map)))
+                  (glColor3f (/ 1.0 age) (/ 1.0 age) (/ 1.0 age))
+                  (quadT i j))))
+            (iota 0 1 HEIGHT)))
+         (iota 0 1 WIDTH))
+      (glEnd))
    ; пол (как травку)
-   (BindTexture grass-texture)
-   (glBegin GL_QUADS)
-   (let* ((my (get userdata 'mouse (cons 0 0)))
-          (x (car my))
-          (y (cdr my)))
-   (for-each (lambda (i)
-      (for-each (lambda (j)
-         (if (= (at i j) 0)
-            (let ((c (+
-                        (if (is-visible i j             x y) 0.25 0)
-                        (if (is-visible (+ i 1) j       x y) 0.25 0)
-                        (if (is-visible (+ i 1) (+ j 1) x y) 0.25 0)
-                        (if (is-visible i (+ j 1)       x y) 0.25 0))))
-               (glColor3f c c c)
-               (quadT i j))))
-         (iota 0 1 HEIGHT)))
-      (iota 0 1 WIDTH)))
-   (glEnd)
-   (glDisable GL_TEXTURE_2D)
+;   (BindTexture grass-texture)
+;   (glBegin GL_QUADS)
+;   (let* ((my (get userdata 'mouse (cons 0 0)))
+;          (x (car my))
+;          (y (cdr my)))
+;   (for-each (lambda (i)
+;      (for-each (lambda (j)
+;         (if (= (at i j) 0)
+;            (let ((c (+
+;                        (if (is-visible i j             x y) 0.25 0)
+;                        (if (is-visible (+ i 1) j       x y) 0.25 0)
+;                        (if (is-visible (+ i 1) (+ j 1) x y) 0.25 0)
+;                        (if (is-visible i (+ j 1)       x y) 0.25 0))))
+;               (glColor3f c c c)
+;               (quadT i j))))
+;         (iota 0 1 HEIGHT)))
+;      (iota 0 1 WIDTH)))
+;   (glEnd)
+;   (glDisable GL_TEXTURE_2D)
 
    (glColor3f 0 0 0)
    (glBegin GL_LINES)
@@ -238,8 +246,7 @@
    ;  для начала - по тем, что сверху
    ;#|
    (let* ((me (get-mouse-pos))
-         (points (get-waypoints me 4)))
-;      (print points)
+          (points (get-waypoints me 7)))
 
       (glColor3f 0 0 1)
       (glPointSize 4.0)
@@ -297,9 +304,9 @@
 (mail 'opengl (tuple 'set-mouse (lambda (userdata  lbutton rbutton x y)
 (call/cc (lambda (return)
    (if lbutton (begin
-      (print "left: " x)
+      (mail me (tuple 'set-location (to-map-from-screen (cons x y))))
+      (mail me (tuple 'update-fov scheme))
       (return (put userdata 'mouse (to-map-from-screen (cons x y))))))
-      
    userdata)))))
    
    
