@@ -110,8 +110,8 @@
 ; окно - рисовалка
 ; ---------------------------------------------------------------------------
 (mail 'opengl (tuple 'register-renderer (lambda (ms userdata)
-(let ((x (get userdata 'x 2))
-      (y (get userdata 'y 3)))
+(let ((x (get userdata 'x 1.5))
+      (y (get userdata 'y 1.5)))
          
    (glClearColor 0.2 0.2 0.2 1)
    (glClear GL_COLOR_BUFFER_BIT)
@@ -132,6 +132,14 @@
             (iota 0 1 HEIGHT)))
          (iota 0 1 WIDTH))
       (glEnd))
+      
+   (let ((xy (interact me (tuple 'get-location))))
+    (glPointSize 9.0)
+    (glColor3f 1 1 1)
+    (glBegin GL_POINTS)
+    (glVertex2f (car xy) (cdr xy))
+    (glEnd))
+      
    ; пол (как травку)
 ;   (BindTexture grass-texture)
 ;   (glBegin GL_QUADS)
@@ -286,20 +294,28 @@
 
 (mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
 (call/cc (lambda (return)
-   (let ((x (get userdata 'x 2))
-         (y (get userdata 'y 3)))
-
    ;else
    (case key
+      (32
+         (mail me (tuple 'update-fov scheme)))
+         
+      (39
+         (mail me (tuple 'move +1 0))
+         (mail me (tuple 'update-fov scheme)))
+      (37
+         (mail me (tuple 'move -1 0))
+         (mail me (tuple 'update-fov scheme)))
+
       ; вверх
       (38
-         (put userdata 'y (+ y 1)) userdata)
+         (mail me (tuple 'move 0 -1))
+         (mail me (tuple 'update-fov scheme)))
       ; вниз
       (40
-         (put userdata 'y (- y 1)) userdata)
-      (else
-         userdata))
-))))))
+         (mail me (tuple 'move 0 +1))
+         (mail me (tuple 'update-fov scheme))))
+         
+   userdata)))))
 
 (mail 'opengl (tuple 'set-mouse (lambda (userdata  lbutton rbutton x y)
 (call/cc (lambda (return)

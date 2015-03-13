@@ -69,7 +69,8 @@
 
 ;; shared parameters, librarize later or remove if possible
 
-(define *owl-version* "0.1.7f")
+;; http://semver.org/lang/ru/
+(define *owl-version* "1.0.0")
 (define exit-seccomp-failed 2)    ;; --seccomp given but cannot do it
 (define max-object-size #xffff)
 
@@ -79,7 +80,7 @@
 ;; throw an error if some familiar but unsupported Scheme functions are called
 (define-library (owl unsupported)
 
-   (export set! set-car! set-cdr! string-set! vector-set!)
+   (export string-set! vector-set!) ; set! set-car! set-cdr! 
 
    (import 
       (owl defmac)
@@ -87,15 +88,15 @@
       (owl interop))
 
    (begin
-      (define-syntax set!
-         (syntax-rules () 
-            ((set! var val) (error "set! is not supported: " '(set! var val)))))
-  
+;      (define-syntax set!
+;         (syntax-rules () 
+;            ((set! var val) (error "set! is not supported: " '(set! var val)))))
+;  
       (define (unsupported name)
          (error "Mutator not supported: " name))
 
-      (define (set-car! pair val) (unsupported "set-car!"))
-      (define (set-cdr! pair val) (unsupported "set-cdr!"))
+;      (define (set-car! pair val) (unsupported "set-car!"))
+;      (define (set-cdr! pair val) (unsupported "set-cdr!"))
       (define (vector-set! vec pos val) (unsupported "vector-set!"))
       (define (string-set! str pos val) (unsupported "string-set!"))))
 

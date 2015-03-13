@@ -9,6 +9,11 @@
 //      http://habrahabr.ru/post/211100/
 // Книга http://ilammy.github.io/lisp/
 // https://www.cs.utah.edu/flux/oskit/html/oskit-wwwch14.html
+//
+// GC в чикенлиспе: http://en.wikipedia.org/wiki/Cheney%27s_algorithm
+//
+// кастомные типы: https://www.gnu.org/software/guile/manual/html_node/Describing-a-New-Type.html#Describing-a-New-Type
+
 #include "olvm.h"
 
 // На данный момент поддерживаются четыре операционные системы:
@@ -846,7 +851,7 @@ static word *gc(int size, word *regs) {
 	// непосредственно сам GC
 	mark(root, fp);
 	fp = compact();
-	fp[0] = '----';	// DEBUG!
+//	fp[0] = '----';	// DEBUG!
 
 //	if (pinned)
 //		printf("GC: marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n", marked, moved, pinned, moved_bytes);
@@ -1705,6 +1710,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define NCONS 29
 #	define NCAR  30
 #	define NCDR  31
+
+	//
+#	define SET   45
+
 	// АЛУ
 #	define EQ    54
 
@@ -1946,6 +1955,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 
 
+		case SET: // set t o v r
+			A3 = prim_set(A0, A1, A2);
+			ip += 4; break;
+
+
 		// АЛУ (арифметическо-логическое устройство)
 	   op38: { /* fx+ a b r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word */
 		  word res = fixval(A0) + fixval(A1);
@@ -2012,7 +2026,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 22: goto op22; case 23: goto op23; case 26: goto op26;
 		case 28: goto op28; case 32: goto op32;
 		case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
-		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44; case 45: goto op45;
+		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44;
 		case 46: goto op46; case 47: goto op47; case 48: goto op48; case 49: goto op49;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
 		case 58: goto op58; case 59: goto op59; case 60: goto op60;
@@ -2027,20 +2041,27 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		// мутатор
 		case 10: { // set! o t r
-			// временная команда для демонстрации возможностей
-			word *obj = (word *)A0;
-			word offset = fixval(A1);
-			word value = (word)A2;
+			word T = IFALSE;
+			if (allocp(A0) && immediatep(A1) && immediatep(A2)) {
+				word *obj = (word *)A0;
+				word offset = fixval(A1);
+				word value = fixval(A2);
 
-			// todo: add assertions
-			switch (hdrtype(obj[0])) {
-				case TPAIR: // list
-					while (offset--)
+				switch (hdrtype(obj[0]))
+				{
+				case TPAIR:
+					while (offset-- && (obj != INULL))
 						obj = (word*)obj[2];
-					obj[1] = value;
+					if (offset == -1)
+						obj[1] = T = value;
 					break;
+				case TTUPLE:
+					if (offset < hdrsize(*obj))
+						obj[offset+1] = T = value;
+					break;
+				}
 			}
-			A3 = A0;
+			A3 = T;
 			ip += 4; break;
 		}
 		case 11: { // (set-car! pair value)
@@ -2817,9 +2838,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
    op44: /* less a b r */
       A2 = prim_less(A0, A1);
       NEXT(3);
-   op45: { /* set t o v r */
-      A3 = prim_set(A0, A1, A2);
-      NEXT(4); }
 
    op60: /* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
       A3 = prim_lraw(A0, fixval(A1), A2);

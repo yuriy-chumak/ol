@@ -164,12 +164,12 @@
             
             (primop 'car        '(52 4    5  24 5)  1 1)
             (primop 'cdr        '(53 4    5  24 5)  1 1)
-            (primop 'ref        '(47 4 5  6  24 6)  2 1) ; op47 = ref t o r = prim_ref(A0, A1)
+            (primop 'ref        '(47 4 5  6  24 6)  2 1)   ; op47 = ref t o r = prim_ref(A0, A1)
             
             (primop 'set        '(45 4 5 6  7  24 7)  3 1) ; (set tuple pos val) -> tuple'
             (primop 'set-car!   '(11 4 5    6  24 6)  2 1)
             (primop 'set-cdr!   '(12 4 5    6  24 6)  2 1)
-           ;(primop 'set!       '(10 4 5 6  7  24 7)  3 1)  ; (set! tuple pos val)
+            (primop 'set!       '(10 4 5 6  7  24 7)  3 1) ; (set! tuple pos val)
             
             (primop 'eq?        '(54 4 5  6  24 6)  2 1)
             (primop 'lesser?    '(44 4 5  6  24 6)  2 1)
@@ -343,6 +343,14 @@
       (define (error reason info)
          (interop 5 reason info))
       (define (pair? x) (eq? type-pair (type x))) ; list.scm
+      (define (fixnum? x) 
+         (let ((t (type x)))
+            (or 
+               (eq? t type-fix+)
+               (eq? t type-fix-)
+               )))
+
+
 
       (define (set-car! object value)
          (if (and (pair? object) (fixnum? value))

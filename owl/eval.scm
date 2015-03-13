@@ -86,7 +86,7 @@
                         (template ...)))))))
             ;; note that these could now come straight from primops
             ;(map (lambda (primop) (ref primop 1)) primops)
-            '(cons car cdr set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
+            '(cons car cdr set! set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
               mk mkt bind
               sys set raw
               _sleep

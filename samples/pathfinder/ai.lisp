@@ -252,6 +252,8 @@
       ((get-location)
          (mail sender (cons x y))
          (this fov x y))
+         
+      ; обновить "свою" карту мира
       ((update-fov map)
          (print "creature: 'update-fov requested")
          (let ((fov
@@ -272,11 +274,19 @@
                                     (is-point-can-see-point X Y (+ x 1) y)
                                     (is-point-can-see-point X Y (+ x 1) (+ y 1))
                                     (is-point-can-see-point X Y x (+ y 1)))
-                                 (car map-cells)
+                                 (begin
+                                    ;; вот тут надо бы проапдейтить вейпоинты, которые зависят от этого блока
+                                    (car map-cells))
                                  (if (> cell 0) (+ cell 1) 0)))
                            (for-x (+ x 1) (cdr cells) (cdr map-cells)))))
                   (for-y (+ y 1) (cdr lines) (cdr map-lines))))))))
          (this fov x y)))
+      
+      ; двигаться
+      ((move dx dy)
+         (if (= (at2 (floor (+ x dx)) (floor (+ y dy)) fov) 0)
+            (this fov (+ x dx) (+ y dy))
+            (this fov x y)))
       
       (else
          (print "'ai error: unknown command " msg)
