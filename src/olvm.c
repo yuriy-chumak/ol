@@ -3111,7 +3111,6 @@ int main(int argc, char** argv)
 #endif
 	}
 
-#ifdef STANDALONE
 #ifdef NOLANGUAGE
 	unsigned char* language;
 
@@ -3139,7 +3138,6 @@ int main(int argc, char** argv)
 
 		language = (unsigned char*) ptr;
 	}
-#endif
 #endif
 
 	// а теперь поработаем со сериализованным образом:
