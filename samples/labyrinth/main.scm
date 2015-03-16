@@ -108,7 +108,7 @@
       (y (get userdata 'y 2))
       (i (get userdata 'angle 2)))
 
-   (print i)
+;   (print i)
 
    (glClearColor 0 0 0 1)
    (glClear GL_COLOR_BUFFER_BIT)

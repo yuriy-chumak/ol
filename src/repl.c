@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 #else
 	extern unsigned char* language;
 #endif
-	ol = vm_new(language);
+	ol = vm_new(language, 0);
 
 	if (argc == 1) {
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_stdin, 0, 0, NULL);

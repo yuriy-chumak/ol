@@ -16,7 +16,8 @@ struct OL;
 
 #ifndef STANDALONE
 struct
-OL* vm_new(unsigned char* language); // после того, как машина закончит работу, можно просто сделать free()
+//OL* vm_new(unsigned char* language); // после того, как машина закончит работу, можно просто сделать free()
+OL* vm_new(unsigned char* language, void (*release)(unsigned char*));
 
 //int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
 

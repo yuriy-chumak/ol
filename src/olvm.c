@@ -27,7 +27,7 @@
 // STANDALONE - самостоятельный бинарник без потоков и т.д.
 
 // todo: проверить, что все работает в 64-битном коде
-// todo: переименовать tuple в array. array же неизменяемый, все равно.
+// todo: переименовать tuple в array. array же неизменяемый, все равно. (???)
 //  а изменяемые у нас вектора
 
 // http://joeq.sourceforge.net/about/other_os_java.html
@@ -78,6 +78,13 @@
 #	endif
 #endif//STANDALONE
 
+// TEMP: disable __tlocal__ to check system resources consuption
+#undef __tlocal__
+#define __tlocal__
+
+
+
+//********************************************************************
 /*** Portability Issues ***/
 
 #ifdef _WIN32
@@ -138,7 +145,6 @@
 #endif
 
 // Threading (pthread)
-//
 #ifndef STANDALONE
 
 #ifdef _WIN32
@@ -211,6 +217,12 @@ static int pthread_yield(void)
 #ifndef STANDALONE
 // кольцевой текстовый буфер для общения с виртуальной машиной
 #define FIFOLENGTH (1 << 14) // 4 * 4096 for now // was << 14
+
+
+// todo: (?) когда приходит запрос на "после конца" входного буфера даных,
+//	значит, машина сделала все, что надо было и теперь ждет новых даных.
+//	похоже, пора возвращать сигнал "я все сделала"
+
 
 struct fifo
 {
@@ -385,8 +397,7 @@ typedef uintptr_t word;
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
 // object headers are further
-//                                    .----> immediate
-//  [ssssssss ssssssss ????rppp tttttt10]
+//  [ssssssss ssssssss ????rppp tttttt10] // bit "immediate" у заголовкой всегда! выставлен в 1
 //   '---------------| '--||'-| '----|
 //                   |    ||  |      '-----> object type
 //                   |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
@@ -397,6 +408,11 @@ typedef uintptr_t word;
 //; note - there are 6 type bits, but one is currently wasted in old header position
 //; to the right of them, so all types must be <32 until they can be slid to right
 //; position.
+
+// todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
+//	и ptr на функцию, что делает финализацию.
+
+
 
 // Для экономии памяти
 
@@ -436,6 +452,8 @@ typedef uintptr_t word;
 #define allocp(x)                   (!immediatep(x))
 #define rawp(hdr)                   ((hdr) & RAWBIT)
 #define pairp(ob)                   (allocp(ob) && V(ob)==PAIRHDR)
+
+#define is_pointer(x)               (!immediatep(x))
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 #define TPAIR                        1
@@ -529,9 +547,9 @@ struct heap
 }
 static __tlocal__ heap; // память машины, управляемая сборщиком мусора
 
-#define cont(n)                     V((word)n & (~1)) // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
-#define flagged(n)                  (n & 1)           // is flagged ?
-#define flag(n)                     (((word)n) ^ 1)   // same value with changed flag
+#define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
+#define flagged(n)                  (n & 1)          // is flagged ?
+#define flag(n)                     (((word)n) ^ 1)  // same value with changed flag
 
 #ifdef _LP64
 typedef int64_t   wdiff;
@@ -549,18 +567,12 @@ static __inline__
 void rev(word* pos) {
 	word ppos = *pos;
 	*pos = cont(ppos);
-	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка
+	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка - проверить! и заменить на rev0
 }
 /*static __inline__
 void rev0(word* pos) {
 	word ppos = *pos;
 	*pos = cont(ppos) & ~1; // next
-	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка
-}
-static __inline__
-void rev1(word* pos) {
-	word ppos = *pos;
-	*pos = cont(ppos) | 1; // next
 	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка
 }*/
 
@@ -568,30 +580,39 @@ void rev1(word* pos) {
 static __inline__
 word *chase(word* pos) {
 //	assert(pos IS flagged)
-	word ppos = cont(pos);
-	while (allocp(ppos) && flagged(ppos)) {
-		pos = (word *) ppos;
-		ppos = cont(pos);
+//	word xpos = *(word*) ((word)pos & ~1);
+	word ppos = cont(pos);                       // ppos = *pos;
+	while (is_pointer(ppos) && flagged(ppos)) {  // ? ppos & 0x3 == 0x1
+		pos = (word *) ppos;                     // pos = ppos
+		ppos = cont(pos);                        // ppos = *pos;
 	}
 //	assert(pos IS flagged)
-	return pos;
+	return (word*)((word)pos & ~1);
 }
 
+static int marked;
 // просматривает список справа налево
 static void mark(word *pos, word *end)
 {
+	marked = 0;
 //	assert(pos is NOT flagged)
 	while (pos != end) {
-		word val = *pos;
-		if (allocp(val) && val >= ((word) heap.genstart)) { // блядь, что такое genstart???????
-			if (flagged(val))
-				pos = ((word *) flag(chase((word *) val))) - 1; // flag in this context equal to CLEAR flag
+		word val = pos[0]; // pos header
+		if (is_pointer(val) && val >= ((word) heap.genstart)) { // genstart - начало молодой генерации
+			if (flagged(val)) {
+				pos = chase((word*) val);
+				pos--;
+			}
 			else {
 				word hdr = *(word *) val;
 //				//if (immediatep(hdr))
 //					*(word *) val |= 1; // flag this (таки надо, иначе часть объектов не распознается как pinned!)
-//				marked++;
-				rev(pos);
+				marked++;
+//				rev1(pos):
+				word* ptr = (word*)val;
+				*pos = *ptr;
+				*ptr = ((word)pos | 1);
+
 				if (flagged_or_raw(hdr))
 					pos--;
 				else
@@ -620,7 +641,7 @@ static word *compact()
 		if (flagged(*old)) {
 			// 1. test for presence of "unmovable objects" in this object
 			// 2. find the header:
-			word* real = (word*)((word)chase(old) & (~1));
+			word* real = chase(old);
 			word hdr_value = *real;
 			/*if (!rawp(hdr_value)) {
 				int found = 0;
@@ -748,7 +769,7 @@ static __inline__ word* new_string (size_t length, char* string)
 
 	*fp = make_raw_header(size, TSTRING, pads);
 	char* p = ((char *) fp) + W;
-	while (*string) *p++ = *string++;
+	while (length--) *p++ = *string++;
 
 	fp += size;
 	return object;
@@ -842,19 +863,21 @@ static word *gc(int size, word *regs) {
 	word *realend = heap.end;
 	word *heapbegin = heap.begin;
 	int nfree;
-	root = fp + 1;
-
-	*root = (word) regs;
 
 	heap.end = fp;
-	
+
+	*fp = make_header(2, TTUPLE); // (в *fp можно оставить мусор)
+//	root = &fp[1]; // skip header
+	root = fp + 1; // skip header
+
 	// непосредственно сам GC
-	mark(root, fp);
+	root[0] = regs;
+	mark(root, fp); // assert (root == fp + 1)
 	fp = compact();
 //	fp[0] = '----';	// DEBUG!
 
 //	if (pinned)
-//		printf("GC: marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n", marked, moved, pinned, moved_bytes);
+		printf("GC (use: %8d): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n", fp - heap.begin, marked, -1, -1, -1);
 
 	regs = (word *) *root;
 	heap.end = realend;
@@ -2050,7 +2073,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				switch (hdrtype(obj[0]))
 				{
 				case TPAIR:
-					while (offset-- && (obj != INULL))
+					while (offset-- && ((word)obj != INULL))
 						obj = (word*)obj[2];
 					if (offset == -1)
 						obj[1] = T = value;
@@ -3006,7 +3029,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // this is NOT thread safe function
 #ifndef STANDALONE
 OL*
-vm_new(unsigned char* language)
+vm_new(unsigned char* language, void (*release)(unsigned char*))
 #else
 extern unsigned char* language;
 int main(int argc, char** argv)
@@ -3047,35 +3070,25 @@ int main(int argc, char** argv)
 		int len = 0;
 		while (*pos++) len++;
 
+#ifndef _TEST_GC
 		oargs = new_pair (new_string (len, filename), (word*)INULL);
+#else
+		word *a, *b, *c, *d, *e;
 
-/*
-		word *a, *b;
-		new_string (28, "----------------------------");
-		a = new_string(28, "1111111111111111111111111111");
+		a = new_string(28, "aaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+		b = new_pair(a, INULL);
+			new_string(16, "bbbbbbbbbbbbbbbb");
+		c = new_pair(a, INULL);
+			new_string(16, "cccccccccccccccc");
+		d = new_pair(b, c);
+			new_string(16, "dddddddddddddddd");
+		e = new_pair(d, c);
+			new_string(16, "eeeeeeeeeeeeeeee");
 
-
-//		b = new_string(4, "2222");
-		word *p = new_tuplei (7,  INULL, INULL, INULL, INULL, INULL, INULL, INULL);
-		new_string (28, "----------------------------");
-		b = new_string(28, "2222222222222222222222222222");
-		p[1] = a;
-		p[2] = b;
-
-		new_string (28, "----------------------------");
-		word *q = new_tuplei (7,  INULL, INULL, INULL, INULL, INULL, INULL, INULL);
-		q[1] = a;
-		q[2] = b;
-
-		oargs = new_pair(p, q);
-
-/*		word *p = new_pair(a, b);
-
-		a = new_string(4, "1111");
-		p[1] = a;//new_string(4, "1111");
-		p[2] = a;//new_string(4, "2222");
-		oargs = p;*/
+		gc(0, e);
+#endif
 	}
+
 
 	// а теперь поработаем со сериализованным образом:
 	word nwords = 0;
@@ -3098,6 +3111,11 @@ int main(int argc, char** argv)
 		deserialize(ptrs, pos);
 	}
 	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
+
+	// все, программа в памяти, можно освобождать исходник
+	if (release)
+		release(language);
+
 
 	struct args args; // аргументы для запуска
 	args.vm = handle; // виртуальной машины OL

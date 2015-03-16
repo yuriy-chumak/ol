@@ -77,7 +77,7 @@ int test(char* test, FILE* o)
 		if (strcmp(result, response) != 0) {
 
 			printf("Expected [\n%s] but got [\n%s]\n", result, response);
-			return -1;
+			exit(-1);
 		}
 	}
 	while (!vm_feof(vm) && !feof(o)); // еще не все забрали
@@ -178,7 +178,7 @@ int main(int nargs, char **argv)
 		strcat(okname, ".ok");
 		FILE* ok = fopen(okname, "r");
 
-		vm = vm_new(language);
+		vm = vm_new(language, 0);
 		if (test(filename, ok) == 0)
 			printf("ok.");
 		else {
