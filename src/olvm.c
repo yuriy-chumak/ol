@@ -14,6 +14,9 @@
 //
 // кастомные типы: https://www.gnu.org/software/guile/manual/html_node/Describing-a-New-Type.html#Describing-a-New-Type
 
+// pinned objects - если это будут просто какие-то равки, то можно из размещать ДО основной памяти,
+//	при этом основную память при переполнении pinned размера можно сдвигать вверх.
+
 #include "olvm.h"
 
 // На данный момент поддерживаются четыре операционные системы:
@@ -412,6 +415,17 @@ typedef uintptr_t word;
 // todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
 //	и ptr на функцию, что делает финализацию.
 
+typedef struct object
+{
+	word header;
+	word data[];
+} object;
+typedef struct pair
+{
+	word header;
+	word *car;
+	word *cdr;
+} pair;
 
 
 // Для экономии памяти
@@ -454,27 +468,31 @@ typedef uintptr_t word;
 #define pairp(ob)                   (allocp(ob) && V(ob)==PAIRHDR)
 
 #define is_pointer(x)               (!immediatep(x))
+#define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
+#define TFIX                         (0)      // type-fix+
+#define TFIXN                        (0 + 32) // type-fix-
 #define TPAIR                        1
-#define TCONST                      13
 #define TTUPLE                       2
-#define TTHREAD                     31 // type-thread-state
+#define TSTRING                      3
+
+#define TCONST                      13
 #define TFF                         24
 #define TBVEC                       19
 #define TBYTECODE                   16
 #define TPROC                       17
 #define TCLOS                       18
-#define TSTRING                      3
 #define TSTRINGWIDE                 22
+
+#define TTHREAD                     31 // type-thread-state
+
 #define THANDLE                     45
 #define TVOID                       48 // type-void
 #define TINT                        40 // type-int+
 #define TINTN                       41 // type-int-
 #define TRATIONAL                   42
 #define TCOMPLEX                    43
-#define TFIX                         0 // type-fix+
-#define TFIXN                       32 // type-fix-
 
 // special pinvoke types
 #define TFLOAT                      46
@@ -547,213 +565,8 @@ struct heap
 }
 static __tlocal__ heap; // память машины, управляемая сборщиком мусора
 
-#define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
-#define flagged(n)                  (n & 1)          // is flagged ?
-#define flag(n)                     (((word)n) ^ 1)  // same value with changed flag
-
-#ifdef _LP64
-typedef int64_t   wdiff;
-#else
-typedef int32_t   wdiff;
-#endif
-
-// cont(n) = V((word)n & (~1)) // *n (с игнорированием флажка mark)
-
-// *pos <- **pos, **pos <- pos with !flag(*pos)
-// pos -> *pos -> **pos превращается в pos -> **pos,
-// то-есть тут мы выбрасываем промежуточный указатель?
-//	*pos can be flagged and can be not flagged
-static __inline__
-void rev(word* pos) {
-	word ppos = *pos;
-	*pos = cont(ppos);
-	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка - проверить! и заменить на rev0
-}
-/*static __inline__
-void rev0(word* pos) {
-	word ppos = *pos;
-	*pos = cont(ppos) & ~1; // next
-	cont(ppos) = ((word)pos | 1) ^ (ppos & 1); // инверсия флажка
-}*/
-
-// возвращает последнего "flagged" в цепочке:
-static __inline__
-word *chase(word* pos) {
-//	assert(pos IS flagged)
-//	word xpos = *(word*) ((word)pos & ~1);
-	word ppos = cont(pos);                       // ppos = *pos;
-	while (is_pointer(ppos) && flagged(ppos)) {  // ? ppos & 0x3 == 0x1
-		pos = (word *) ppos;                     // pos = ppos
-		ppos = cont(pos);                        // ppos = *pos;
-	}
-//	assert(pos IS flagged)
-	return (word*)((word)pos & ~1);
-}
-
-static int marked;
-// просматривает список справа налево
-static void mark(word *pos, word *end)
-{
-	marked = 0;
-//	assert(pos is NOT flagged)
-	while (pos != end) {
-		word val = pos[0]; // pos header
-		if (is_pointer(val) && val >= ((word) heap.genstart)) { // genstart - начало молодой генерации
-			if (flagged(val)) {
-				pos = chase((word*) val);
-				pos--;
-			}
-			else {
-				word hdr = *(word *) val;
-//				//if (immediatep(hdr))
-//					*(word *) val |= 1; // flag this (таки надо, иначе часть объектов не распознается как pinned!)
-				marked++;
-//				rev1(pos):
-				word* ptr = (word*)val;
-				*pos = *ptr;
-				*ptr = ((word)pos | 1);
-
-				if (flagged_or_raw(hdr))
-					pos--;
-				else
-					pos = ((word *) val) + (hdrsize(hdr)-1);
-			}
-		}
-		else
-			pos--;
-	}
-}
-
-// на самом деле - compact & sweep
-static word *compact()
-{
-//	printf("%s\n", "compact()");
-
-	word* heapbegin = heap.begin;
-	word* heapgenstart = heap.genstart;
-
-
-	word *old = heap.genstart;
-	word *end = heap.end - 1;
-
-	word *newobj = old;
-	while (old < end) {
-		if (flagged(*old)) {
-			// 1. test for presence of "unmovable objects" in this object
-			// 2. find the header:
-			word* real = chase(old);
-			word hdr_value = *real;
-			/*if (!rawp(hdr_value)) {
-				int found = 0;
-				int i = hdrsize(*real);
-				word* p = old;
-				while (--i) {
-					word q = *++p;
-					// 1. попробуем НЕ перемещать блоки, которые с флажком (значит, содержат ссылки вперед - так как сслки назад все резолвятся во время
-					//  разворачивания заголовков - ссылок!)
-					if (flagged(q)) {
-						//printf("(found: type = %d)\n", hdrtype(q));
-						found = 1;
-						break;
-					}
-				}
-				// вот тут надо по умному использовать предыдущее свободное место: записать пустой объект с размером равным свободному месту
-				// tbd.
-				//pleasefixme
-				if (found) {
-					pinned++;
-					while (old - newobj > 0x7000) { // 0xFFFF
-						*newobj = make_raw_header(0x7000, TVOID, 0); // TSTRING
-						newobj += 0x7000;
-					}
-					if (newobj != old)
-						*newobj = make_raw_header((old - newobj), TVOID, 0); // TSTRING
-					newobj = old;
-					//printf("%c", '-');
-				}
-			}*/
-
-			word h;
-			*newobj = *old;
-			while (flagged(*newobj)) {
-				rev(newobj);
-				if (immediatep(*newobj) && flagged(*newobj))
-					*newobj &= (~1); // was: = flag(*newobj);
-			}
-			h = hdrsize(*newobj);
-			if (old == newobj) {
-				old += h;
-				newobj += h;
-			}
-			else {
-				while (--h) *++newobj = *++old;
-				old++;
-				newobj++;
-			}
-		}
-		else
-			old += hdrsize(*old);
-	}
-//	printf(">\n");
-	return newobj;
-}
-
-static void fix_pointers(word *pos, wdiff delta, word *end)
-{
-	while (1) {
-		word hdr = *pos;
-		int n = hdrsize(hdr);
-		if (hdr == 0) return; /* end marker reached. only dragons beyond this point.*/
-		if (rawp(hdr))
-			pos += n; /* no pointers in raw objects */
-		else {
-			pos++;
-			n--;
-			while (n--) {
-				word val = *pos;
-				if (allocp(val))
-					*pos = val + delta;
-				pos++;
-			}
-		}
-	}
-}
-
-/* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
-static wdiff adjust_heap(int cells)
-{
-	if (seccompp) /* realloc is not allowed within seccomp */
-		return 0;
-
-	/* add newobj realloc + heap fixer here later */
-	word nwords = heap.end - heap.begin + MEMPAD; /* MEMPAD is after memend */
-	word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); /* limit heap growth speed  */
-/*   if (!usegc) { // only run when the vm is running (temp)
-      return 0;
-   }*/
-	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
-		return 0; /* don't try to adjust heap if the size_t would overflow in realloc */
-
-	word *old = heap.begin;
-	heap.begin = realloc(heap.begin, new_words*W);
-	if (heap.begin == old) { /* whee, no heap slide \o/ */
-		heap.end = heap.begin + new_words - MEMPAD; // leave MEMPAD words alone
-		return 0;
-	} else if (heap.begin) { /* d'oh! we need to O(n) all the pointers... */
-		wdiff delta = (word)heap.begin - (word)old;
-		heap.end = heap.begin + new_words - MEMPAD; // leave MEMPAD words alone
-		fix_pointers(heap.begin, delta, heap.end);
-		return delta;
-	} else {
-		breaked |= 8; /* will be passed over to mcp at thread switch*/
-		return 0;
-	}
-}
-
-
 // allocation pointer (top of allocated heap)
 static __tlocal__ word *fp;
-
 static __inline__ word* new (size_t size)
 {
 	word* object = fp;
@@ -824,6 +637,198 @@ static __inline__ word* new_tuplei (size_t length, ...)
 	return object;
 }
 
+
+
+#define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
+
+#ifdef _LP64
+typedef int64_t   wdiff;
+#else
+typedef int32_t   wdiff;
+#endif
+
+// возвращается по цепочке "flagged" указателей назад
+static __inline__
+word *chase(word* pos) {
+//	assert(pos IS flagged)
+//	word xpos = *(word*) ((word)pos & ~1);
+	word ppos = cont(pos);                       // ppos = *pos;
+	while (is_pointer(ppos) && is_flagged(ppos)) {  // ? ppos & 0x3 == 0x1
+		pos = (word *) ppos;                     // pos = ppos
+		ppos = cont(pos);                        // ppos = *pos;
+	}
+//	assert(pos IS flagged)
+	return (word*)((word)pos & ~1);
+}
+
+static int marked;
+// просматривает список справа налево
+static void mark(word *pos, word *end)
+{
+	marked = 0;
+//	assert(pos is NOT flagged)
+	while (pos != end) {
+		word val = pos[0]; // pos header
+		if (is_pointer(val) && val >= ((word) heap.genstart)) { // genstart - начало молодой генерации
+			if (is_flagged(val)) {
+				pos = chase((word*) val);
+				pos--;
+			}
+			else {
+				word hdr = *(word *) val;
+//				//if (immediatep(hdr))
+//					*(word *) val |= 1; // flag this (таки надо, иначе часть объектов не распознается как pinned!)
+				marked++;
+
+				word* ptr = (word*)val;
+				*pos = *ptr;
+				*ptr = ((word)pos | 1);
+
+				if (flagged_or_raw(hdr))
+					pos--;
+				else
+					pos = ((word *) val) + (hdrsize(hdr)-1);
+			}
+		}
+		else
+			pos--;
+	}
+}
+
+// на самом деле - compact & sweep
+static word *compact()
+{
+//	printf("%s\n", "compact()");
+
+	word* heapbegin = heap.begin;
+	word* heapgenstart = heap.genstart;
+
+
+	word *old = heap.genstart;
+	word *end = heap.end - 1;
+
+	word *newobject = old;
+	while (old < end) {
+		if (is_flagged(*old)) {
+			// 1. test for presence of "unmovable objects" in this object
+			// 2. find the header:
+//			word* real = chase(old);
+//			word hdr_value = *real;
+
+			/*if (!rawp(hdr_value)) {
+				int found = 0;
+				int i = hdrsize(*real);
+				word* p = old;
+				while (--i) {
+					word q = *++p;
+					// 1. попробуем НЕ перемещать блоки, которые с флажком (значит, содержат ссылки вперед - так как сслки назад все резолвятся во время
+					//  разворачивания заголовков - ссылок!)
+					if (flagged(q)) {
+						//printf("(found: type = %d)\n", hdrtype(q));
+						found = 1;
+						break;
+					}
+				}
+				// вот тут надо по умному использовать предыдущее свободное место: записать пустой объект с размером равным свободному месту
+				// tbd.
+				//pleasefixme
+				if (found) {
+					pinned++;
+					while (old - newobj > 0x7000) { // 0xFFFF
+						*newobj = make_raw_header(0x7000, TVOID, 0); // TSTRING
+						newobj += 0x7000;
+					}
+					if (newobj != old)
+						*newobj = make_raw_header((old - newobj), TVOID, 0); // TSTRING
+					newobj = old;
+					//printf("%c", '-');
+				}
+			}*/
+
+			word val = *newobject = *old;
+			while (is_flagged(val)) {
+				val &= ~1; //clear flag
+
+				word* ptr = (word*)val;
+				*newobject = *ptr;
+				*ptr = (word)newobject;
+
+
+//				if (immediatep(*newobj) && flagged(*newobj))
+//					*newobj &= (~1); // was: = flag(*newobj);
+				val = *newobject;
+			}
+			word h = hdrsize(val);
+			if (old == newobject) {
+				old += h;
+				newobject += h;
+			}
+			else {
+				while (--h) *++newobject = *++old;
+				old++;
+				newobject++;
+			}
+		}
+		else
+			old += hdrsize(*old);
+	}
+//	printf(">\n");
+	return newobject;
+}
+
+static void fix_pointers(word *pos, wdiff delta, word *end)
+{
+	while (1) {
+		word hdr = *pos;
+		int n = hdrsize(hdr);
+		if (hdr == 0) return; /* end marker reached. only dragons beyond this point.*/
+		if (rawp(hdr))
+			pos += n; /* no pointers in raw objects */
+		else {
+			pos++;
+			n--;
+			while (n--) {
+				word val = *pos;
+				if (allocp(val))
+					*pos = val + delta;
+				pos++;
+			}
+		}
+	}
+}
+
+/* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
+static wdiff adjust_heap(int cells)
+{
+	if (seccompp) /* realloc is not allowed within seccomp */
+		return 0;
+
+	/* add newobj realloc + heap fixer here later */
+	word nwords = heap.end - heap.begin + MEMPAD; /* MEMPAD is after memend */
+	word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); /* limit heap growth speed  */
+/*   if (!usegc) { // only run when the vm is running (temp)
+      return 0;
+   }*/
+	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
+		return 0; /* don't try to adjust heap if the size_t would overflow in realloc */
+
+	word *old = heap.begin;
+	heap.begin = realloc(heap.begin, new_words*W);
+	if (heap.begin == old) { /* whee, no heap slide \o/ */
+		heap.end = heap.begin + new_words - MEMPAD; // leave MEMPAD words alone
+		return 0;
+	} else if (heap.begin) { /* d'oh! we need to O(n) all the pointers... */
+		wdiff delta = (word)heap.begin - (word)old;
+		heap.end = heap.begin + new_words - MEMPAD; // leave MEMPAD words alone
+		fix_pointers(heap.begin, delta, heap.end);
+		return delta;
+	} else {
+		breaked |= 8; /* will be passed over to mcp at thread switch*/
+		return 0;
+	}
+}
+
+
 static void check_memory_consistence(const char* text)
 {
 	return;
@@ -877,7 +882,7 @@ static word *gc(int size, word *regs) {
 //	fp[0] = '----';	// DEBUG!
 
 //	if (pinned)
-		printf("GC (use: %8d): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n", fp - heap.begin, marked, -1, -1, -1);
+		fprintf(stderr, "GC (use: %8d): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n", fp - heap.begin, marked, -1, -1, -1);
 
 	regs = (word *) *root;
 	heap.end = realend;
