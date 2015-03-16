@@ -27,7 +27,7 @@
 #endif
 
 
-// STANDALONE - самостоятельный бинарник без потоков и т.д.
+// STANDALONE - самостоятельный бинарник без потоков (виртуальная машина, короче) и т.д.
 
 // todo: проверить, что все работает в 64-битном коде
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (???)
@@ -567,12 +567,14 @@ static __tlocal__ heap; // память машины, управляемая с�
 
 // allocation pointer (top of allocated heap)
 static __tlocal__ word *fp;
-static __inline__ word* new (size_t size)
-{
-	word* object = fp;
-	fp += size;
-	return object;
-}
+
+// выделить блок памяти
+#define new(size) ({\
+	word* object = fp;\
+	fp += size;\
+	/*return*/ object;\
+})
+
 static __inline__ word* new_string (size_t length, char* string)
 {
 	word* object = fp;
@@ -640,12 +642,6 @@ static __inline__ word* new_tuplei (size_t length, ...)
 
 
 #define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
-
-#ifdef _LP64
-typedef int64_t   wdiff;
-#else
-typedef int32_t   wdiff;
-#endif
 
 // возвращается по цепочке "flagged" указателей назад
 static __inline__
@@ -776,14 +772,21 @@ static word *compact()
 	return newobject;
 }
 
+
+#ifdef _LP64
+typedef int64_t   wdiff;
+#else
+typedef int32_t   wdiff;
+#endif
+
 static void fix_pointers(word *pos, wdiff delta, word *end)
 {
 	while (1) {
 		word hdr = *pos;
 		int n = hdrsize(hdr);
-		if (hdr == 0) return; /* end marker reached. only dragons beyond this point.*/
+		if (hdr == 0) return; // end marker reached. only dragons beyond this point.
 		if (rawp(hdr))
-			pos += n; /* no pointers in raw objects */
+			pos += n; // no pointers in raw objects
 		else {
 			pos++;
 			n--;
@@ -806,9 +809,6 @@ static wdiff adjust_heap(int cells)
 	/* add newobj realloc + heap fixer here later */
 	word nwords = heap.end - heap.begin + MEMPAD; /* MEMPAD is after memend */
 	word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); /* limit heap growth speed  */
-/*   if (!usegc) { // only run when the vm is running (temp)
-      return 0;
-   }*/
 	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
 		return 0; /* don't try to adjust heap if the size_t would overflow in realloc */
 
@@ -829,7 +829,7 @@ static wdiff adjust_heap(int cells)
 }
 
 
-static void check_memory_consistence(const char* text)
+/*static void check_memory_consistence(const char* text)
 {
 	return;
 	word* p = heap.begin;
@@ -856,7 +856,7 @@ static void check_memory_consistence(const char* text)
 		p += length;
 	}
 	printf("\n");
-}
+}*/
 
 
 /* input desired allocation size and (the only) pointer to root object
@@ -1488,10 +1488,14 @@ free((void *) file_heap);
 //#define OGOTO(f, n)                 ob = (word *)R[f]; acc = n; goto apply
 //#define RET(n)                      ob = (word *)R[3]; R[3] = R[n]; acc = 1; goto apply
 
-#define OCLOSE(proctype)            \
-	{ word size = *ip++, tmp; word *ob = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
-#define CLOSE1(proctype)            \
-	{ word size = *ip++, tmp; word *ob = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; *ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; while(tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
+#define OCLOSE(proctype)            { \
+	word size = *ip++, tmp; word *ob = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; \
+	*ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; \
+	while (tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
+#define CLOSE1(proctype)            { \
+	word size = *ip++, tmp; word *ob = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; \
+	*ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; \
+	while (tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
 #define NEXT(n)                     ip += n; goto main_dispatch
 //#define SKIP(n)                     ip += n; break;
 #define TICKS                       10000 /* # of function calls in a thread quantum  */
@@ -1550,7 +1554,7 @@ void* runtime(void *args) // heap top
 	heap.genstart = ((struct args*)args)->heap.genstart; // разделитель Old Generation и New Generation (?)
 
 	// allocation pointer (top of allocated heap)
-	fp       = ((struct args*)args)->fp;
+	fp            = ((struct args*)args)->fp;
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
 #	ifndef STANDALONE
 	fifo *fi =&((struct args*)args)->vm->o;
@@ -1567,9 +1571,10 @@ void* runtime(void *args) // heap top
 	int nobjs = hdrsize(ptrs[0]) - 1;
 	word* ob = (word*) ptrs[nobjs-1]; // выполним последний объект в списке /он должен быть (λ (args))/
 
+
+	// регистры
 	word R[NR];
 
-	// clear blank regs
 	int i = 0;
 	while (i < NR)
 		R[i++] = INULL;
@@ -1577,6 +1582,7 @@ void* runtime(void *args) // heap top
 	R[3] = IHALT;
 	R[4] = (word) userdata;
 
+	// Instruction Pointer
 	unsigned char *ip;
 
 		int bank = 0; /* ticks deposited at interop */
@@ -1721,10 +1727,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define MOVE   9       //
 #	define MOV2   5       //
 #	define GOTO   2       // jmp a, nargs
-#	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
-#	define LD    14
 #	define JP    16       // JZ, JN, JT, JF
 #	define JLQ    8       // jlq ?
+
+#	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
+#	define LD    14
+
 #	define JF2   25
 //	define GOTO_CODE 18
 //	define GOTO_PROC 19
@@ -1857,10 +1865,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		/************************************************************************************/
 		// операции с данными
-		case LDI:    // 13,  -> ldi{2bit what} [to], ldn, ldt, ldf
+		case LDI:    // 13,  -> ldi(ldn, ldt, ldf){2bit what} [to]
 			A0 = I[op>>6];
 			ip += 1; break;
-		case LD:     // некоторая нелогичность - в LDI первым идет приемник, а в LD - он вторым (?), или все ок?
+		case LD:
 			A1 = F(ip[0]);
 			ip += 2; break;
 
@@ -3036,7 +3044,9 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 OL*
 vm_new(unsigned char* language, void (*release)(unsigned char*))
 #else
+#ifndef NOLANGUAGE
 extern unsigned char* language;
+#endif
 int main(int argc, char** argv)
 #endif//STANDALONE
 {
@@ -3069,14 +3079,21 @@ int main(int argc, char** argv)
 	fp = heap.begin;
 	word *oargs = 0;
 	{
+#ifndef _TEST_GC2
+
+#ifndef STANDALONE
 		char* filename = "#";
 		char *pos = filename;
 
 		int len = 0;
 		while (*pos++) len++;
 
-#ifndef _TEST_GC
 		oargs = new_pair (new_string (len, filename), (word*)INULL);
+#else
+		oargs = (word*)INULL;
+		for (int i = argc - 1; i > 0; i--)
+			oargs = new_pair(new_string(strlen(argv[i]), argv[i]), oargs);
+#endif
 #else
 		word *a, *b, *c, *d, *e;
 
@@ -3094,6 +3111,35 @@ int main(int argc, char** argv)
 #endif
 	}
 
+#ifdef STANDALONE
+#ifdef NOLANGUAGE
+	unsigned char* language;
+#endif
+	// загрузим образ из файла
+	if (argc < 2) {
+		printf("usage: olvm binary_image\n");
+		exit(1);
+	}
+	else
+	{
+		struct stat st;
+		int pos = 0;
+		if (stat(argv[1], &st)) exit(1);
+
+		char* ptr = (char*)malloc(st.st_size);
+		if (ptr == NULL) exit(2);
+		FILE *fd = fopen(argv[1], "rb");
+		if (!fd) exit(3);
+		while (pos < st.st_size) {
+			int n = fread(ptr+pos, 1, st.st_size-pos, fd);
+			if (n < 0) exit(4);
+			pos += n;
+		}
+		fclose(fd);
+
+		language = (unsigned char*) ptr;
+	}
+#endif
 
 	// а теперь поработаем со сериализованным образом:
 	word nwords = 0;
@@ -3118,8 +3164,12 @@ int main(int argc, char** argv)
 	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
 
 	// все, программа в памяти, можно освобождать исходник
+#ifndef STANDALONE
 	if (release)
 		release(language);
+#else
+	free(language);
+#endif
 
 
 	struct args args; // аргументы для запуска

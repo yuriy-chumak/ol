@@ -39,7 +39,7 @@ unsigned char *readfile(const char *filename)
 	FILE *fd = fopen(filename, "rb");
 	if (!fd) exit(3);
 	while (pos < st.st_size) {
-		int n = fread(ptr+pos, st.st_size-pos, 1, fd);
+		int n = fread(ptr+pos, 1, st.st_size-pos, fd);
 		if (n < 0) exit(4);
 		pos += n;
 	}
@@ -96,27 +96,44 @@ int main(int argc, char* argv[])
 //	set_signal_handler(); // set up signal handler
 //	set_blocking(2, 0);
 
-#if 0
-	unsigned char*
-	language = readfile("fasl/boot.fasl");
-//	if (*language == '#') { // skip hashbang
-//		while (*language++ != '\n');
-//	};
-#else
-	extern unsigned char* language;
-#endif
-	ol = vm_new(language, 0);
+	if (strcmp(argv[1], "-l") == 0) {
+		unsigned char* language = readfile(argv[2]);
+		ol = vm_new(language, free);
 
-	if (argc == 1) {
-		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_stdin, 0, 0, NULL);
+		argc -= 2;
+		argv += 2;
 	}
-	if (argc == 2) {
-		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_file, argv[1], 0, NULL);
+
+	if (ol == 0) {
+#if 0
+		unsigned char*
+		language = readfile("fasl/boot.fasl");
+		//	if (*language == '#') { // skip hashbang
+		//		while (*language++ != '\n');
+		//	};
+#else
+		extern unsigned char* language;
+#endif
+		ol = vm_new(language, 0);
 	}
-	if (argc == 3) {
-		if (strcmp(argv[1], "-e") == 0) {
-			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_line, argv[2], 0, NULL);
+
+	while (1) {
+		if (argc == 1) {
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_stdin, 0, 0, NULL);
+			break;
 		}
+		if (argc == 2) {
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_file, argv[1], 0, NULL);
+			break;
+		}
+		if (argc == 3) {
+			if (strcmp(argv[1], "-e") == 0) {
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)from_line, argv[2], 0, NULL);
+				break;
+			}
+		}
+		printf("error in command line\n");
+		exit(1);
 	}
 
 	char response[80];
