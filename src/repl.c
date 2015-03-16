@@ -6,14 +6,14 @@
  */
 
 #include "olvm.h"
-#ifndef STANDALONE
+//#ifndef STANDALONE
 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifdef WIN32
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #endif
@@ -81,7 +81,7 @@ from_line(void *args) // heap top
 // main
 int main(int argc, char* argv[])
 {
-#ifdef WIN32
+#ifdef _WIN32
 	WSADATA wsaData;
 	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
 	if (sock_init  != 0) {
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 //	set_signal_handler(); // set up signal handler
 //	set_blocking(2, 0);
 
-	if (strcmp(argv[1], "-l") == 0) {
+	if (argc > 2 && strcmp(argv[1], "-l") == 0) {
 		unsigned char* language = readfile(argv[2]);
 		ol = vm_new(language, free);
 
@@ -145,10 +145,10 @@ int main(int argc, char* argv[])
 	while (!vm_feof(ol)); // еще не все забрали
 	free(ol);
 
-#ifdef WI32
+#ifdef _WIN32
 	WSACleanup();
 #endif
 	return 0;
 }
 
-#endif//STANDALONE
+//#endif//STANDALONE

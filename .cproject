@@ -27,7 +27,6 @@
 								<option id="gnu.c.compiler.option.misc.other.2047212405" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -fmessage-length=0" valueType="string"/>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1458947562" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="_TEST_GC"/>
-									<listOptionValue builtIn="false" value="STANDALONE"/>
 								</option>
 								<option id="gnu.c.compiler.option.debugging.prof.225420639" name="Generate prof information (-p)" superClass="gnu.c.compiler.option.debugging.prof" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.123751326" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>

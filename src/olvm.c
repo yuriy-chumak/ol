@@ -543,7 +543,7 @@ DIR *fdopendir(int fd);
 pid_t fork(void);
 pid_t waitpid(pid_t pid, int *status, int options);
 int chdir(const char *path);
-#ifndef WIN32
+#ifndef _WIN32
 int execv(const char *path, char *const argv[]);
 #endif
 
@@ -927,7 +927,7 @@ static word *gc(int size, word *regs) {
 /*** OS Interaction and Helpers ***/
 //static
 void set_blocking(int sock, int blockp) {
-#ifdef WIN32
+#ifdef _WIN32
    unsigned long flags = 1;
    if (sock > 3) { // stdin is read differently, out&err block
       ioctlsocket(sock, FIONBIO, &flags);
@@ -937,7 +937,7 @@ void set_blocking(int sock, int blockp) {
 #endif
 }
 
-#ifndef WIN32
+#ifndef _WIN32
 static
 void signal_handler(int signal) {
    switch(signal) {
@@ -963,7 +963,7 @@ unsigned int lenn(char *pos, unsigned int max) { /* added here, strnlen was miss
 
 
 /* list length, no overflow or valid termination checks */
-#ifndef WIN32
+#ifndef _WIN32
 static
 int llen(word *ptr) {
    int len = 0;
@@ -976,7 +976,7 @@ int llen(word *ptr) {
 #endif
 
 void set_signal_handler() {
-#ifndef WIN32
+#ifndef _WIN32
    struct sigaction sa;
    sa.sa_handler = signal_handler;
    sigemptyset(&sa.sa_mask);
@@ -1263,7 +1263,7 @@ static word prim_sys(int op, word a, word b, word c) {
          myaddr.sin_port = htons(port);
          myaddr.sin_addr.s_addr = INADDR_ANY;
          s = socket(AF_INET, SOCK_STREAM, 0);
-#ifndef WIN32
+#ifndef _WIN32
          if (s < 0) return IFALSE;
 #else
 	 if (s == INVALID_SOCKET) return IFALSE;
@@ -1353,7 +1353,7 @@ static word prim_sys(int op, word a, word b, word c) {
          if (!allocp(name)) return IFALSE;
          return strp2owl(getenv(name + W)); }
       case 1017: { /* exec[v] path argl ret */
-#ifndef WIN32
+#ifndef _WIN32
           char *path = ((char *) a) + W;
           int nargs = llen((word *)b);
          char **args = malloc((nargs+1) * sizeof(char *)); // potential memory leak
@@ -1379,7 +1379,7 @@ static word prim_sys(int op, word a, word b, word c) {
          if (chdir(path) < 0)
             return IFALSE;
          return ITRUE; }
-#if 0 // ndef WIN32
+#if 0 // ndef _WIN32
       case 1019: { /* wait <pid> <respair> _ */
          pid_t pid = (a == IFALSE) ? -1 : fixval(a);
          int status;
@@ -2862,7 +2862,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       R[ip[1]] = (immediatep(ob)) ? IFALSE : F(hdrsize(*ob)-1);
       NEXT(2); }
    op37: { /* ms r */
-#ifndef WIN32
+#ifndef _WIN32
       if (!seccompp)
          usleep(fixval(A0)*1000);
 #else
@@ -3079,7 +3079,8 @@ int main(int argc, char** argv)
 	fp = heap.begin;
 	word *oargs = 0;
 	{
-#ifndef _TEST_GC2
+		oargs = (word*)INULL;
+#ifndef TEST_GC2
 
 #ifndef STANDALONE
 		char* filename = "#";
@@ -3088,9 +3089,8 @@ int main(int argc, char** argv)
 		int len = 0;
 		while (*pos++) len++;
 
-		oargs = new_pair (new_string (len, filename), (word*)INULL);
+		oargs = new_pair (new_string (len, filename), oargs);
 #else
-		oargs = (word*)INULL;
 		for (int i = argc - 1; i > 0; i--)
 			oargs = new_pair(new_string(strlen(argv[i]), argv[i]), oargs);
 #endif
@@ -3114,7 +3114,7 @@ int main(int argc, char** argv)
 #ifdef STANDALONE
 #ifdef NOLANGUAGE
 	unsigned char* language;
-#endif
+
 	// загрузим образ из файла
 	if (argc < 2) {
 		printf("usage: olvm binary_image\n");
@@ -3139,6 +3139,7 @@ int main(int argc, char** argv)
 
 		language = (unsigned char*) ptr;
 	}
+#endif
 #endif
 
 	// а теперь поработаем со сериализованным образом:
@@ -3168,7 +3169,9 @@ int main(int argc, char** argv)
 	if (release)
 		release(language);
 #else
+#ifdef NOLANGUAGE
 	free(language);
+#endif
 #endif
 
 
