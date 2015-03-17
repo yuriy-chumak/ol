@@ -22,11 +22,8 @@
 #define O_BINARY 0
 #endif
 
-OL* ol;
 
-/***************************************************
- * TESTS
- **************************************************/
+static OL* ol;
 
 unsigned char *readfile(const char *filename)
 {
@@ -34,7 +31,7 @@ unsigned char *readfile(const char *filename)
 	int pos = 0;
 	if (stat(filename, &st)) exit(1);
 
-	char* ptr = (char*)malloc(st.st_size);
+	char* ptr = (char*)malloc(st.st_size + 1);
 	if (ptr == NULL) exit(2);
 	FILE *fd = fopen(filename, "rb");
 	if (!fd) exit(3);
@@ -43,43 +40,29 @@ unsigned char *readfile(const char *filename)
 		if (n < 0) exit(4);
 		pos += n;
 	}
+	ptr[pos] = 0;
 	fclose(fd);
 	return (unsigned char*)ptr;
 }
 
 static void
-from_stdin(void *args) // heap top
+console(void *args) // heap top
 {
-	if (args == 0) { // no input, please use stdin
-		vm_puts(ol, "(define *interactive* #t)", 25);
+	if (args == 0) {
+		if (_isatty(_fileno(stdin))) // is character device (not redirected) (interactive session)
+			vm_puts(ol, "(define *interactive* #t)", 25);
 		int ch;
 		while ((ch = fgetc(stdin)) != EOF)
 			vm_puts(ol, (char*)&ch, 1);
-		vm_puts(ol, ",quit", 5);
 	}
-}
-static void
-from_file(void *args) // heap top
-{
-	FILE *f = fopen((char*)args, "r");
-	if (f) {
-		char source[1024];
-		int read;
-		while ((read = fread(source, 1, sizeof(source), f)) > 0)
-			vm_puts(ol, source, read);
-		fclose(f);
-	}
-	vm_puts(ol, ",quit", 5);
-}
-static void
-from_line(void *args) // heap top
-{
-	vm_puts(ol, (char*)args, strlen((char*)args));
+	else
+		vm_puts(ol, (char*)args, strlen((char*)args));
 	vm_puts(ol, ",quit", 5);
 }
 
 // main
-int main(int argc, char* argv[])
+extern unsigned char* language;
+int main(int argc, char** argv)
 {
 #ifdef _WIN32
 	WSADATA wsaData;
@@ -91,19 +74,48 @@ int main(int argc, char* argv[])
 	AllocConsole();
 #endif
 
+	while (1) {
+		if (argc == 1) { // без аргументов - настоящий REPL
+			ol = vm_new(language, 0);
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)console, NULL, 0, NULL);
+			break;
+		}
+		if (argc == 2) {
+			unsigned char* file = readfile(argv[1]);
+			if (*file < ' ') {
+				ol = vm_new(file, free);
+				break;
+			}
+			ol = vm_new(language, 0);
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)console, file, 0, NULL);
+
+			break;
+		}
+		if (argc == 3 && strcmp(argv[1], "-e") == 0) {
+			ol = vm_new(language, 0);
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)console, argv[2], 0, NULL);
+			break;
+		}
+
+		printf("usage: repl [script]\n");
+		exit(1);
+	}
+
+
+
 //	// disable buffering
 //	setvbuf(stderr, (void*)0, _IONBF, 0);
 //	set_signal_handler(); // set up signal handler
 //	set_blocking(2, 0);
 
-	if (argc > 2 && strcmp(argv[1], "-l") == 0) {
+/*	if (argc > 2 && strcmp(argv[1], "-l") == 0) {
 		unsigned char* language = readfile(argv[2]);
 		ol = vm_new(language, free);
 
 		argc -= 2;
 		argv += 2;
-	}
-
+	}*/
+/*
 	if (ol == 0) {
 #if 0
 		unsigned char*
@@ -135,7 +147,7 @@ int main(int argc, char* argv[])
 		printf("error in command line\n");
 		exit(1);
 	}
-
+*/
 	char response[80];
 	do {
 		vm_gets(ol, response, sizeof(response));

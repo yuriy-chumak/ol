@@ -1,4 +1,4 @@
-// максимальное число для элементарной математики: 16777215
+// максимальное число для элементарной математики: 16777215 (24 бита, 0xFFFFFF)
 // считать так: (receive (fx+ 16777214 1) (lambda (hi lo) (list hi lo)))
 // при превышении выдает мусор
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
@@ -28,6 +28,8 @@
 
 
 // STANDALONE - самостоятельный бинарник без потоков (виртуальная машина, короче) и т.д.
+
+// PORT: либо равка, с типом type-port; либо raw-объект со словом port и размером 2
 
 // todo: проверить, что все работает в 64-битном коде
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (???)
@@ -477,6 +479,7 @@ typedef struct pair
 #define TTUPLE                       2
 #define TSTRING                      3
 
+#define TPORT                       12
 #define TCONST                      13
 #define TFF                         24
 #define TBVEC                       19
@@ -487,7 +490,6 @@ typedef struct pair
 
 #define TTHREAD                     31 // type-thread-state
 
-#define THANDLE                     45
 #define TVOID                       48 // type-void
 #define TINT                        40 // type-int+
 #define TINTN                       41 // type-int-
@@ -575,6 +577,25 @@ static __tlocal__ word *fp;
 	/*return*/ object;\
 })
 
+// создать новый порт
+#define new_port(value) ({\
+	word *object = new(2);\
+	object[0] = make_raw_header(2, TPORT, 0);\
+	object[1] = value;\
+	/*return*/ object;\
+})
+/*static __inline__ word* new_port (word value)
+{
+	word *object = fp;
+
+	fp[0] = make_raw_header(2, TPORT, 0);
+	fp[1] = value;
+
+	fp += 2;
+	return object;
+}*/
+
+
 static __inline__ word* new_string (size_t length, char* string)
 {
 	word* object = fp;
@@ -600,6 +621,7 @@ static __inline__ word* new_pair (word* car, word* cdr)
 	fp += 3;
 	return object;
 }
+
 static __inline__ word* new_npair (word* car, word* cdr)
 {
 	word *object = fp;
@@ -1071,7 +1093,7 @@ static word prim_cast(word *object, int type) {
 	{ /* make a clone of more desired type */
 
 		// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
-		// єто лучше сделать тут, наверное, а не отдельной командой
+		// это лучше сделать тут, наверное, а не отдельной командой
 
       word hdr = *object++;
       int size = hdrsize(hdr);
@@ -2379,18 +2401,22 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			        	 break;
 
 					void* module = dlopen((char*) (filename + 1), mode);
-					if (module) {
-						result = (word)fp; // todo: разобраться тут правильно с размерами типов
-						fp[0] = make_raw_header(2, THANDLE, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
-						fp[1] = (word)module;
-						fp += 2;
-					}
+					if (module) // тут сразу создаем длинный port, так как адреса скорее всего более 24 бит
+						result = (word)new_port((word)module);
+					//						if (function <= 0xFFFFFF)
+					//							result = make_immediate(function, TPORT);
+//					if (module) {
+//						result = (word)fp; // todo: разобраться тут правильно с размерами типов
+//						fp[0] = make_raw_header(2, THANDLE, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
+//						fp[1] = (word)module;
+//						fp += 2;
+//					}
 					break;
 				}
 				case 1031: { // dlsym
 					word* A = (word*)a;
 
-					assert (hdrtype(A[0]) == THANDLE);
+					assert (hdrtype(A[0]) == TPORT);
 					void* module = (void*) A[1];
 					word* name = (word*)b;
 
@@ -2398,15 +2424,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					if (!(immediatep(name) || hdrtype(*name) == TSTRING))
 						break;
 
-					void* function = dlsym(module, immediatep(name)
+					word function = (word)dlsym(module, immediatep(name)
 							? (char*) imm_val((word)name)
 							: (char*) (name + 1));
-					if (function) {
-						result = (word)fp;
-						fp[0] = make_raw_header(2, THANDLE, 0);
-						fp[1] = (word)function;
-						fp += 2;
-					}
+					if (function) // тут сразу создаем длинный port, так как адреса скорее всего более 24 бит
+						result = (word)new_port(function);
 					break;
 				}
 				// временный тестовый вызов
@@ -2585,7 +2607,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					word* B = (word*)b;
 					word* C = (word*)c;
 
-					assert (hdrtype(A[0]) == THANDLE && hdrsize(A[0]) == 2);
+					assert (/*hdrtype(a) == TPORT || */hdrtype(A[0]) == TPORT);
 					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
 					assert ((word)C != INULL && hdrtype(C[0]) == TPAIR);
 					// C[1] = return-type
@@ -2696,12 +2718,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								args[i] = INULL; // todo: error
 							}
 							break;
-						case THANDLE:
+						case TPORT:
 							if ((word)arg == INULL)
 								args[i] = (word) (void*)0;
 							else
 							switch (hdrtype(arg[0])) {
-							case THANDLE:
+							case TPORT:
 								args[i] = (int)(arg[1]);
 								break;
 							default:
@@ -2771,11 +2793,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF!
 							result = F(got);
 							break;
-						case THANDLE:
-							result = (word)fp;
-							fp[0] = make_raw_header(2, THANDLE, 0);
-							fp[1] = got;
-							fp += 2;
+						case TPORT:
+							// todo: uncomment this
+//							if (got > 0xFFFFFF)
+								result = new_port(got);
+//							else
+//								result = make_immediate(got, TPORT);
 							break;
 						// todo: TRATIONAL
 

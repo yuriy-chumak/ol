@@ -53,7 +53,7 @@
       dlopen
       dlsym
       
-      type-handle type-float type-double type-void
+      type-float type-double type-void
       
       ; по-поводу calling convention:
       ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
@@ -120,7 +120,7 @@
 
 ; для результата, что превышает x00FFFFFF надо использовать type-handle
 ; 44 - is socket but will be free
-(define type-handle 45)
+;(define type-handle 45)
 (define type-float  46) ;was: type-rational)
 (define type-double 47) ; пока нету, но возможно будет
 (define type-void   48)

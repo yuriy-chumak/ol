@@ -1,3 +1,6 @@
+(define SHADER_NUM 1)
+
+
 ; http://www.scheme.com/tspl4/ - The Scheme Programming Language (Fourth Edition)
 ; http://community.schemewiki.org/?scheme-faq-standards#implementations
 ;!
@@ -63,19 +66,6 @@
 (define GLubyte* type-string)
 (define GLclampf type-float)
 
-(define opengl32 (dlopen "opengl32" 0))
-  
-  ; https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
-  (define glColor3i         (dlsym opengl32 GLvoid "glColor3i" GLint GLint GLint))
-  (define glColor3ub        (dlsym opengl32 GLvoid "glColor3ub" GLubyte GLubyte GLubyte))
-  (define glVertex2i        (dlsym opengl32 GLvoid "glVertex2i" GLint GLint))
-  (define glVertex3i        (dlsym opengl32 GLvoid "glVertex3i" GLint GLint GLint))
-  (define glVertex2f        (dlsym opengl32 GLvoid "glVertex2f" GLfloat GLfloat))
-  (define glBegin           (dlsym opengl32 GLvoid "glBegin" GLenum))
-    (define GL_TRIANGLES      #x0004)
-    (define GL_TRIANGLE_STRIP #x0005) ; http://www.uraldev.ru/articles/35/page/4
-  (define glEnd             (dlsym opengl32 GLvoid "glEnd"))
-
 ; проверка, что все запустилось.
 (define (msgbox)
 (if (=
@@ -139,10 +129,10 @@
 ;(fasl-load "raw/geometry.compiled.fs" "void main(void) { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }")
 
 (define po (glCreateProgram))
-;(print "po: " po)
+(print "po: " po)
 
 (define vs (glCreateShader GL_VERTEX_SHADER))
-;(print "vs: " vs)
+(print "vs: " vs)
 ; пример, как можно передать в функцию массив указателей на строки:
 (glShaderSource vs 2 (tuple (c-string "#version 120 // OpenGL 2.1\n")
                             (c-string "
@@ -169,7 +159,7 @@
 ;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
 (glShaderSource fs 1 (tuple (c-string (file->string
-  (case 2
+  (case SHADER_NUM
     (2 "raw/geometry.fs")
     (3 "raw/water.fs")
     (4 "raw/18850")
@@ -203,9 +193,6 @@
 ;(print "glGetUniformLocation: " (glGetUniformLocation po "color"))
 ;(sys-prim 1032 (cdr function) (car function) args))))
 
-  ; todo: проверить возвращаемый результат
-(sys-prim 1033 #x84011117 2214662423 #false)
-
 
 (ShowWindow window SW_SHOW)
 (SetForegroundWindow window)
@@ -221,9 +208,6 @@
 (glLoadIdentity)
 
 (glShadeModel GL_SMOOTH)
-(print "glHint = "
-(glHint GL_PERSPECTIVE_CORRECTION_HINT GL_NICEST))
-
 (glClearColor 0 0 1 1)
 
 ;(define vertexPositions (list->byte-vector '(
@@ -238,24 +222,9 @@
 ;(define MSG (make-byte-vector 28 0)) ; sizeof(MSG)=28
 (define MSG "1234567890123456789012345678") ; sizeof(MSG)=28
 ;(call/cc (lambda (return)
-(define (cycle)   ;MSG
+(let cycle ()   ;MSG
   (if (= 1 (PeekMessage MSG 0 0 0 PM_REMOVE))
     (begin
-      ; тут можно обработать сообщения к окну, если надо.
-      ; Например, такое:
-;       (print (ref MSG 0) "." (ref MSG 1) "." (ref MSG 2) "." (ref MSG 3) "-" (ref MSG 4) "." (ref MSG 5) "." (ref MSG 6) "." (ref MSG 7))
-;       (let ((message (+ (ref MSG 4) (* (ref MSG 5) 256))))
-;         (if (= message WM_LBUTTONDOWN)
-;           (print "WM_LBUTTONDOWN")
-;         (if (= message WM_CREATE)
-;           (print "WM_CREATE")
-;         (if (= message WM_SIZE)
-;           (print "WM_SIZE")
-;         (if (= message WM_WINDOWPOSCHANGED)
-;           (print "WM_WINDOWPOSCHANGED"))))))
-;;          (let ((w (+ (ref MSG 12) (* (ref MSG 13) 256)))
-;;                (h (+ (ref MSG 14) (* (ref MSG 15) 256))))
-;;             (print "w: " w ", h: " h))))
       (TranslateMessage MSG)
       (DispatchMessage MSG))
       
@@ -287,10 +256,9 @@
        (glUseProgram 0)
        (SwapBuffers hDC)))
   (if (= (GetAsyncKeyState 27) 0) (cycle)))
-(cycle)
 
 ; KillGLWindow
-(wglMakeCurrent 0 0)
+; (wglMakeCurrent 0 0)
 (wglDeleteContext hRC)
 (ReleaseDC window hDC)
 (DestroyWindow window)

@@ -26,7 +26,7 @@
       (owl math)
       (owl render)
       (owl lazy)
-      (owl cgen)
+;      (owl cgen)
       (owl error)
       (only (owl interop) mail exit-owl)
       (only (owl env) signal-halt signal-tag)
@@ -196,12 +196,13 @@
                         ;; could be added as (+ (<< 1 6) 0) -> read 4 bytes
                         (error "too many native opcodes." 
                            "report this as an issue if this happens for a real program."))
-                     ((compile-to-c (car obs) extras) =>
-                        (λ (src)
-                           (lets 
-                              ((wrapper (raw (list 0 (>> code 8) (band code 255)) type-bytecode #false)))
-                              (loop (+ code 1) (cdr obs)
-                                 (cons (cons (car obs) (tuple code wrapper src)) out)))))
+                     ; отключил за ненадобностью, но! оставим на будущее, еще может пригодиться
+                     ;((compile-to-c (car obs) extras) =>
+                     ;   (λ (src)
+                     ;      (lets 
+                     ;         ((wrapper (raw (list 0 (>> code 8) (band code 255)) type-bytecode #false)))
+                     ;         (loop (+ code 1) (cdr obs)
+                     ;            (cons (cons (car obs) (tuple code wrapper src)) out)))))
                      (else
                         (loop code (cdr obs) out)))))))
 

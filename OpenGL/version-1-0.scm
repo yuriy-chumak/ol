@@ -373,7 +373,7 @@
 ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
 ;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glVertex3d (GLdouble x, GLdouble y, GLdouble z);
+    glVertex3d ; void (GLdouble x, GLdouble y, GLdouble z)
 ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
     glVertex3f ; void (GLfloat x, GLfloat y, GLfloat z)
 ;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);
@@ -416,14 +416,14 @@
 ;     (1 (dlsym % type-handle "wglGetProcAddress"))
 ;     (2 (dlsym % type-handle "glXGetProcAddress"))
 ;     (3 "GLKit")))
-(define GetProcAddress (dlsym % type-handle "wglGetProcAddress" type-string))
+(define GetProcAddress (dlsym % type-port "wglGetProcAddress" type-string))
      
 (define (glGetProcAddress type name . prototype)
    (let ((rtty (cons type prototype))
          (function (GetProcAddress (c-string name)))) ; todo: избавиться от (c-string)
       (lambda args
 ;        (print "opengl pinvoke: " (c-string name))
-         (sys-prim 32 function args rtty))))
+         (sys-prim 1032 function args rtty))))
 
 
 ;//	Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
@@ -1151,7 +1151,7 @@
 ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
 ;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glVertex3d (GLdouble x, GLdouble y, GLdouble z);
+  (define glVertex3d (dlsym % GLvoid "glVertex3d" GLdouble GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
   (define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);

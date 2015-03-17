@@ -74,9 +74,9 @@
 (define SHORT     INTEGER)
 (define PBYTE     type-vector-raw)
 
-(define HDC       type-handle) ;type-handle)
+(define HDC       type-port)
 (define HGLRC     INTEGER)
-(define PROC      type-handle)
+(define PROC      type-port)
 (define LPCSTR    type-string)
 (define LPRECT    type-vector-raw)
 (define LPPOINT   type-vector-raw)
@@ -85,7 +85,7 @@
 
 ; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
 (define kernel32_dll (dlopen "kernel32" 0))
-  (define GetModuleHandle (dlsym kernel32_dll type-handle "GetModuleHandleA" LPCTSTR))
+  (define GetModuleHandle (dlsym kernel32_dll type-port "GetModuleHandleA" LPCTSTR))
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda args (fold bor 0 args)))
