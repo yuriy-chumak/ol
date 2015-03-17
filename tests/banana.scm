@@ -1,3 +1,4 @@
+(import (etc suffix))
 (define str "banana")
 
 (for-each

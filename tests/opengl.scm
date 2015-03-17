@@ -42,8 +42,6 @@
 (print "OpenGL vendor: " (glGetString GL_VENDOR)) 
 (print "OpenGL renderer: " (glGetString GL_RENDERER))
 
-
-
 ; todo: тип для (dlsym) - всегда число, добавить в проверку
 
 ;(sys-prim 1033 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
@@ -67,18 +65,6 @@
 
 (define opengl32 (dlopen "opengl32" 0))
   
-  (define glMatrixMode      (dlsym opengl32 GLvoid "glMatrixMode" GLenum))
-    (define GL_PROJECTION #x1701)
-    (define GL_MODELVIEW  #x1700)
-  (define glTranslatef      (dlsym opengl32 GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
-
-  (define glShadeModel      (dlsym opengl32 GLvoid "glShadeModel" GLenum))
-    (define GL_SMOOTH #x1D01)
-  (define glClearColor      (dlsym opengl32 GLvoid "glClearColor" GLclampf GLclampf GLclampf GLclampf))
-  (define glHint            (dlsym opengl32 GLvoid "glHint" GLenum GLenum))
-    (define GL_PERSPECTIVE_CORRECTION_HINT #x0C50)
-    (define GL_NICEST #x1102)
-
   ; https://www.opengl.org/sdk/docs/man2/xhtml/glColor.xml
   (define glColor3i         (dlsym opengl32 GLvoid "glColor3i" GLint GLint GLint))
   (define glColor3ub        (dlsym opengl32 GLvoid "glColor3ub" GLubyte GLubyte GLubyte))

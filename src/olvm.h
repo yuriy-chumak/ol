@@ -15,9 +15,8 @@ struct OL;
 // todo: change to vm_new and vm_free or vm_delete or vm_destroy or something
 
 #ifndef STANDALONE
-struct
-//OL* vm_new(unsigned char* language); // после того, как машина закончит работу, можно просто сделать free()
-OL* vm_new(unsigned char* language, void (*release)(unsigned char*));
+struct OL*
+vm_new(unsigned char* language, void (*release)(void*));
 
 //int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
 

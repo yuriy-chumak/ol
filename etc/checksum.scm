@@ -5,7 +5,7 @@
 ; rle + crosspollination
 ;;
 
-(define-library (owl checksum)
+(define-library (etc checksum)
    (export 
       checksum            ; ll -> nat, default checksum
       adler-32

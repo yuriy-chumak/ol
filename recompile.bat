@@ -9,12 +9,12 @@ if exist tests.exe erase tests.exe
 gcc src/olvm.c src/boot.c src/repl.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -Ofast -o repl.exe
 
 :: а теперь выполним рекомпиляцию нового образа
-repl.exe src/ol.scm
-repl.exe src/to-c.scm >boot.c
+repl.exe src/ol.scm 2>NUL
+repl.exe src/to-c.scm >boot.c 2>NUL
 
 :: тестирование полученного образа
 gcc src/olvm.c boot.c src/testing.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -Ofast -o tests.exe
-tests.exe
+tests.exe 2>NUL
 
 
 :: трасформируем его в C
@@ -23,8 +23,8 @@ gcc src/olvm.c boot.c src/repl.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -O
 
 :: второй образ на основе полученного
 echo Preparing new boot.c...
-repl2.exe src/ol.scm
-repl2.exe src/to-c.scm >boot2.c
+repl2.exe src/ol.scm 2>NUL
+repl2.exe src/to-c.scm >boot2.c 2>NUL
 echo Comparing old and new boot files
 fc boot.c boot2.c /B >NUL
 if errorlevel 1 (

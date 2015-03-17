@@ -2,7 +2,7 @@
 ;;; Suffix array and tree construction
 ;;; 
 
-(define-library (owl suffix)
+(define-library (etc suffix)
 
    (export 
       suffix-array      ;; iter -> suffix array (not here yet)

@@ -195,8 +195,6 @@
 
 (import (owl gensym))
 
-(import (owl bisect))
-
 
 ;; does not belong here, but needed in macros for now 
 
@@ -259,8 +257,6 @@
 (import (owl closure))
 
 (import (owl compile))
-
-(import (owl suffix))
 
 (define error-tag "err")
 
@@ -341,8 +337,6 @@
          (begin
             (dump-fasl maybe-world path)
             'saved))))
-
-(import (owl checksum))
 
 (import (owl sys))
 
@@ -484,7 +478,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       set-memory-limit 
       get-word-size
       get-memory-limit
-      checksum
       string->sexp
       profile
       *features*
@@ -641,10 +634,8 @@ Check out http://code.google.com/p/owl-lisp for more information.")
 
    (import
       (owl defmac)
-      (owl suffix)
       (owl math)
       (owl random)
-      (owl bisect)
       (owl thread)
       (owl list)
       (owl list-extra)

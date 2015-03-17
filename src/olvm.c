@@ -3042,7 +3042,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // this is NOT thread safe function
 #ifndef STANDALONE
 OL*
-vm_new(unsigned char* language, void (*release)(unsigned char*))
+vm_new(unsigned char* language, void (*release)(void*))
 #else
 #ifndef NOLANGUAGE
 extern unsigned char* language;

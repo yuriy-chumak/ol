@@ -1,4 +1,5 @@
 ;; test a suffix array
+(import (etc suffix))
 
 ; note: end = minimum 
 

@@ -4,7 +4,7 @@
 
 ;; todo: convert bisect range end to be denoted by returning the end instead of #false
 
-(define-library (owl bisect)
+(define-library (etc bisect)
 
    (export 
       bisect             bisect-unsorted

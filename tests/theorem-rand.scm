@@ -17,6 +17,8 @@
 ;       | ∀ var ... ∊ set Term <- -||-
 ; 
 
+(import (etc bisect))
+
 ;; Params
 
 (define elem-ip 20) ;; inverse probability of stopping element addition for linear random data structures
