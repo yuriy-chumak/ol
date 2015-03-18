@@ -26,6 +26,8 @@
 #	warning "This code tested only under Gnu C compiler"
 #endif
 
+// posix or not: http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
+
 
 // STANDALONE - самостоятельный бинарник без потоков (виртуальная машина, короче) и т.д.
 
@@ -45,7 +47,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <unistd.h>
+#include <unistd.h> // posix
 #include <assert.h>
 #include <dirent.h>
 #include <string.h>
@@ -387,6 +389,9 @@ typedef struct OL
 #endif//STANDALONE
 } OL;
 
+// основной тип даных, зависит от разрядности машины
+// based on C99 standard, <stdint.h>:
+// unsigned int that is capable of storing a pointer
 typedef uintptr_t word;
 
 
@@ -417,17 +422,20 @@ typedef uintptr_t word;
 // todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
 //	и ptr на функцию, что делает финализацию.
 
+//#pragma pack(push, sizeof(word))
 typedef struct object
 {
 	word header;
 	word data[];
-} object;
-typedef struct pair
+} __attribute__ ((aligned(sizeof(word)), packed)) object;
+//#pragma pack(pop)
+
+/*typedef struct pair
 {
 	word header;
 	word *car;
 	word *cdr;
-} pair;
+} pair;*/
 
 
 // Для экономии памяти
@@ -444,6 +452,7 @@ typedef struct pair
 #define FMAX                        ((1<<FBITS)-1) /* maximum fixnum (and most negative fixnum) */
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #define RAWBIT                      (1<<11)
+#define RAW(t)                      (t | (RAWBIT >> TPOS))
 #define make_immediate(value, type)    (((value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(size, type)        (( (size) << SPOS) | ((type) << TPOS)                         | 2)
 #define make_raw_header(size, type, p) (( (size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
@@ -479,7 +488,8 @@ typedef struct pair
 #define TTUPLE                       2
 #define TSTRING                      3
 
-#define TPORT                       12
+#define TPORT                       (12)
+#define TRAWPORT                    RAW(TPORT)
 #define TCONST                      13
 #define TFF                         24
 #define TBVEC                       19
@@ -556,45 +566,75 @@ int execv(const char *path, char *const argv[]);
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
 // несколько ссылок "на почитать" по теме GC:
 //   shamil.free.fr/comp/ocaml/html/book011.html
-struct heap
-{
-	//  begin <= genstart <= end
-	word *begin;     // was: memstart
-	word *end;       // was: memend
-
-	word *genstart;  // was: genstart
-//	word *top; // fp
-}
-static __tlocal__ heap; // память машины, управляемая сборщиком мусора
 
 // allocation pointer (top of allocated heap)
 static __tlocal__ word *fp;
 
-// выделить блок памяти
+// выделить сырой блок памяти
 #define new(size) ({\
-	word* object = fp;\
+	word* addr = fp;\
 	fp += size;\
-	/*return*/ object;\
+	/*return*/ addr;\
+})
+
+// аллоцировать новый объект
+#define new_object(size,type) ({\
+	object* p = (object*)new (size);\
+	p->header = make_header(size, type);\
+	/*return*/ p;\
 })
 
 // создать новый порт
-#define new_port(value) ({\
-	word *object = new(2);\
-	object[0] = make_raw_header(2, TPORT, 0);\
-	object[1] = value;\
-	/*return*/ object;\
+#define new_port_p(a_value) ({\
+	word value = a_value;\
+	word *addr = new (2);\
+	addr[0] = make_header(2, TRAWPORT);\
+	addr[1] = value;\
+	/*return*/ addr;\
 })
-/*static __inline__ word* new_port (word value)
+
+// или в структурно ориентированном стиле:
+#define new_port(a) ({\
+	word value = (word) a;\
+	object *p = new_object (2, TRAWPORT);\
+	p->data[0] = value;\
+	/*return*/ p;\
+})
+
+// car, cdr надо предвычислить перед тем, как выделим память,
+//	так как в параметрах могут быть аллоцируемые объекты.
+#define new_pair_p(a, b) ({\
+	word car = (word) a;\
+	word cdr = (word) b;\
+	object *p = new_object (3, TPAIR);\
+	p->data[0] = car;\
+	p->data[1] = cdr;\
+	/*return*/ p;\
+})
+
+// эту функцию уже нельзя делать макросом, так как в параметрах могут быть аллоцируемые объекты
+static __inline__
+word* new_pair_impl (word* car, word* cdr)
+{
+	object *p = new_object (3, TPAIR);
+	p->data[0] = (word) car;
+	p->data[1] = (word) cdr;
+	return p;
+}
+#define new_pair(car,cdr) new_pair_impl((word*)car, (word*)cdr)
+
+/* old function:
+static __inline__ word* new_pair (word* car, word* cdr)
 {
 	word *object = fp;
 
-	fp[0] = make_raw_header(2, TPORT, 0);
-	fp[1] = value;
+	fp[0] = PAIRHDR;
+	fp[1] = (word) car;
+	fp[2] = (word) cdr;
 
-	fp += 2;
+	fp += 3;
 	return object;
 }*/
-
 
 static __inline__ word* new_string (size_t length, char* string)
 {
@@ -608,17 +648,6 @@ static __inline__ word* new_string (size_t length, char* string)
 	while (length--) *p++ = *string++;
 
 	fp += size;
-	return object;
-}
-static __inline__ word* new_pair (word* car, word* cdr)
-{
-	word *object = fp;
-
-	fp[0] = PAIRHDR;
-	fp[1] = (word) car;
-	fp[2] = (word) cdr;
-
-	fp += 3;
 	return object;
 }
 
@@ -661,6 +690,17 @@ static __inline__ word* new_tuplei (size_t length, ...)
 	return object;
 }
 
+
+struct heap
+{
+	//  begin <= genstart <= end
+	word *begin;     // was: memstart
+	word *end;       // was: memend
+
+	word *genstart;  // was: genstart
+//	word *top; // fp
+}
+static __tlocal__ heap; // память машины, управляемая сборщиком мусора
 
 
 #define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
@@ -1980,7 +2020,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		// операции со списками
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
-			A2 = (word)new_pair((word*)A0, (word*)A1);
+			A2 = (word)new_pair(A0, A1);
 			ip += 3; break;
 
 		case CAR:    // car a r:
