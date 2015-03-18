@@ -142,11 +142,11 @@
 
       (define (open-input-file path) 
          (let ((fd (fopen path 0)))
-            (if fd (fd->port fd) fd)))
+            (if fd (fd->port fd) #f)))
 
       (define (open-output-file path)
          (let ((fd (fopen path 1)))
-            (if fd (fd->port fd) fd)))
+            (if fd (fd->port fd) #f)))
 
       ;;; Reading
 

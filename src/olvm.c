@@ -13,6 +13,7 @@
 // GC в чикенлиспе: http://en.wikipedia.org/wiki/Cheney%27s_algorithm
 //
 // кастомные типы: https://www.gnu.org/software/guile/manual/html_node/Describing-a-New-Type.html#Describing-a-New-Type
+// список функций: http://jscheme.sourceforge.net/jscheme/doc/R4RSprimitives.html
 
 // pinned objects - если это будут просто какие-то равки, то можно из размещать ДО основной памяти,
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
@@ -426,8 +427,9 @@ typedef uintptr_t word;
 typedef struct object
 {
 	word header;
-	word data[];
-} __attribute__ ((aligned(sizeof(word)), packed)) object;
+	word ref[];
+} __attribute__ ((aligned(sizeof(word)), packed))
+	object;
 //#pragma pack(pop)
 
 /*typedef struct pair
@@ -578,15 +580,15 @@ static __tlocal__ word *fp;
 })
 
 // аллоцировать новый объект
-#define new_object(size,type) ({\
-	object* p = (object*)new (size);\
-	p->header = make_header(size, type);\
-	/*return*/ p;\
+#define new_object(size, type) ({\
+	word* p = new (size);\
+	*p = make_header(size, type);\
+	/*return*/(object*)p;\
 })
 
 // создать новый порт
-#define new_port_p(a_value) ({\
-	word value = a_value;\
+#define new_port_old(a) ({\
+	word value = (word)a;\
 	word *addr = new (2);\
 	addr[0] = make_header(2, TRAWPORT);\
 	addr[1] = value;\
@@ -596,35 +598,25 @@ static __tlocal__ word *fp;
 // или в структурно ориентированном стиле:
 #define new_port(a) ({\
 	word value = (word) a;\
-	object *p = new_object (2, TRAWPORT);\
-	p->data[0] = value;\
-	/*return*/ p;\
+	object *me = new_object (2, TRAWPORT);\
+	me->ref[0] = value;\
+	/*return*/ me;\
 })
+
 
 // car, cdr надо предвычислить перед тем, как выделим память,
 //	так как в параметрах могут быть аллоцируемые объекты.
-#define new_pair_p(a, b) ({\
-	word car = (word) a;\
-	word cdr = (word) b;\
-	object *p = new_object (3, TPAIR);\
-	p->data[0] = car;\
-	p->data[1] = cdr;\
-	/*return*/ p;\
+#define new_pair(a1, a2) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	/* точка следования */ \
+	object *me = new_object(3, TPAIR);\
+	me->ref[0] = data1;\
+	me->ref[1] = data2;\
+	/*return*/ me;\
 })
-
-// эту функцию уже нельзя делать макросом, так как в параметрах могут быть аллоцируемые объекты
-static __inline__
-word* new_pair_impl (word* car, word* cdr)
-{
-	object *p = new_object (3, TPAIR);
-	p->data[0] = (word) car;
-	p->data[1] = (word) cdr;
-	return p;
-}
-#define new_pair(car,cdr) new_pair_impl((word*)car, (word*)cdr)
-
-/* old function:
-static __inline__ word* new_pair (word* car, word* cdr)
+// а по факту эта функция сводится к простому
+static __inline__ word* new_pair_old (word* car, word* cdr)
 {
 	word *object = fp;
 
@@ -634,7 +626,7 @@ static __inline__ word* new_pair (word* car, word* cdr)
 
 	fp += 3;
 	return object;
-}*/
+}
 
 static __inline__ word* new_string (size_t length, char* string)
 {
@@ -805,7 +797,7 @@ static word *compact()
 
 			word val = *newobject = *old;
 			while (is_flagged(val)) {
-				val &= ~1; //clear flag
+				val &= ~1; //clear mark
 
 				word* ptr = (word*)val;
 				*newobject = *ptr;
@@ -816,6 +808,7 @@ static word *compact()
 //					*newobj &= (~1); // was: = flag(*newobj);
 				val = *newobject;
 			}
+
 			word h = hdrsize(val);
 			if (old == newobject) {
 				old += h;
@@ -926,27 +919,32 @@ static wdiff adjust_heap(int cells)
 
 // todo: ввести третий generation
 static word *gc(int size, word *regs) {
+	clock_t uptime;
 	word *root;
-	word *realend = heap.end;
-	word *heapbegin = heap.begin;
 	int nfree;
+
+	word *realend = heap.end;
 
 	heap.end = fp;
 
-	*fp = make_header(2, TTUPLE); // (в *fp можно оставить мусор)
-//	root = &fp[1]; // skip header
+	*fp = make_header(2, TTUPLE); // (в *fp спокойно можно оставить мусор)
 	root = fp + 1; // skip header
+//	root = &fp[1]; // same
 
 	// непосредственно сам GC
+	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
 	root[0] = regs;
-	mark(root, fp); // assert (root == fp + 1)
+	mark(root, fp); // assert (root > fp)
 	fp = compact();
-//	fp[0] = '----';	// DEBUG!
+	regs = root[0];
+	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
 //	if (pinned)
-		fprintf(stderr, "GC (use: %8d): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n", fp - heap.begin, marked, -1, -1, -1);
+		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+				uptime,
+				sizeof(word) * (fp - heap.begin), marked, -1, -1, -1);
 
-	regs = (word *) *root;
+//	regs = (word *) *root;
 	heap.end = realend;
 	nfree = (word)heap.end - (word)regs;
 	if (heap.genstart == heap.begin) {
@@ -1961,11 +1959,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			if ((op & 0x40) && acc > needed) {
 			         word tail = INULL;  /* todo: no call overflow handling yet */
 			         while (acc > needed) {
-			            fp[0] = PAIRHDR;   // todo: make as function for implicitly use fp
-			            fp[1] = R[acc + 2];
-			            fp[2] = tail;
-			            tail = (word) fp;
-			            fp += 3;
+			        	 tail = (word)new_pair (R[acc + 2], tail);
+//			            fp[0] = PAIRHDR;   // todo: make as function for implicitly use fp
+//			            fp[1] = R[acc + 2];
+//			            fp[2] = tail;
+//			            tail = (word) fp;
+//			            fp += 3;
 			            acc--;
 			         }
 			         R[acc + 3] = tail;
@@ -2020,7 +2019,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		// операции со списками
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
-			A2 = (word)new_pair(A0, A1);
+			A2 = (word)new_pair(A0, A1); // видимо, вызывается очень часто, так как замена на макрос дает +10% к скорости
 			ip += 3; break;
 
 		case CAR:    // car a r:
@@ -3140,7 +3139,7 @@ int main(int argc, char** argv)
 	//  загрузить в память аргументы перед вызовом образа
 	// по совместительству, это еще и корневой объект
 	fp = heap.begin;
-	word *oargs = 0;
+	word oargs;
 	{
 		oargs = (word*)INULL;
 #ifndef TEST_GC2
@@ -3245,7 +3244,7 @@ int main(int argc, char** argv)
 	args.heap.genstart = heap.genstart;
 	args.max_heap_size = max_heap_size; // max heap size in MB
 	args.fp = fp;
-	args.userdata      = oargs;
+	args.userdata      = (word*) oargs;
 
 #ifndef STANDALONE
 	args.signal = 0;
