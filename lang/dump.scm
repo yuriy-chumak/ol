@@ -3,7 +3,7 @@
 ;;; Heap dumper (for ovm) <- to be renamed to lib-compile later, as this is starting to become more like a compiler entry point
 ;;;
 
-(define-library (owl dump)
+(define-library (lang dump)
 
    (export 
       make-compiler    ; ((make-compiler extra-insts) entry path opts native) 
@@ -26,12 +26,12 @@
       (owl math)
       (owl render)
       (owl lazy)
-;      (owl cgen)
+;      (lang cgen)
       (owl error)
       (only (owl interop) mail exit-owl)
-      (only (owl env) signal-halt signal-tag)
+      (only (lang env) signal-halt signal-tag)
       (only (owl unicode) utf8-decode)
-      (only (owl thread) start-thread-controller)
+      (only (lang thread) start-thread-controller)
       (only (owl queue) qnull))
 
    (begin

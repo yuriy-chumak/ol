@@ -4,14 +4,14 @@
 
 ; convert all variables to fresh symbols. makes compilation easier.
 
-(define-library (owl alpha)
+(define-library (lang alpha)
 
 	(export alpha-convert)
 
    (import
       (owl defmac)
       (owl gensym)
-      (owl ast)
+      (lang ast)
       (owl math)
       (owl list)
       (owl list-extra)

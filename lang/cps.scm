@@ -1,17 +1,20 @@
-(define-library (owl cps)
+; http://en.wikipedia.org/wiki/Continuation-passing_style
+; http://c2.com/cgi/wiki?ContinuationPassingStyle
+; http://matt.might.net/articles/by-example-continuation-passing-style/
+(define-library (lang cps)
 
    (export cps)
 
    (import
       (owl defmac)
-      (owl ast)
+      (lang ast)
       (owl list)
       (owl list-extra)
       (owl math)
       (owl gensym)
       (owl io)
       (owl error)
-      (only (owl env) primop? primop-of)
+      (only (lang env) primop? primop-of)
       (owl primop)) 
 
    (begin

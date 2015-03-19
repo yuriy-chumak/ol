@@ -11,7 +11,7 @@
 ;; todo: support variable arity functions
 ;; todo: keep all fixnum variables in registers unboxed with a special type, and add guards to saves and calls to tag them lazily. this would remove a lot of payload shifting from math code.
 
-(define-library (owl cgen)
+(define-library (lang cgen)
 	(export 
 		compile-to-c            ;; obj extras → #false | c-code-string
 		code->bytes             ;; obj extras → #false | (byte ...)
@@ -30,7 +30,7 @@
       (owl render)
       (owl io)
       (owl error)
-      (only (owl assemble) inst->op))
+      (only (lang assemble) inst->op))
 
    (begin
 

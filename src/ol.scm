@@ -191,7 +191,7 @@
 
 (import (scheme misc))
 
-(import (owl env))
+(import (lang env))
 
 (import (owl gensym))
 
@@ -231,15 +231,12 @@
 
       (define primitive? primop-of)
 
-(import (owl macro))
+(import (lang macro))
 
-(import (owl ast))
-
-(import (owl fixedpoint))
-
-(import (owl cps))
-
-(import (owl alpha))
+(import (lang ast))
+(import (lang fixedpoint))
+(import (lang cps))
+(import (lang alpha))
 
 ; a value that can be created by an instruction
 
@@ -250,13 +247,10 @@
       (eq? val #false)
       (eq? val null)))
 
-(import (owl thread))
-
-(import (owl assemble))
-
-(import (owl closure))
-
-(import (owl compile))
+(import (lang thread))
+;import (lang assemble))
+(import (lang closure))
+(import (lang compile))
 
 (define error-tag "err")
 
@@ -321,9 +315,9 @@
 
 (import (owl args))
 
-(import (owl cgen))
+;(import (lang cgen))
 
-(import (only (owl dump) make-compiler dump-fasl load-fasl))
+(import (only (lang dump) make-compiler dump-fasl load-fasl))
 
 
 (define compiler ; <- to compile things out of the currently running repl using the freshly loaded compiler
@@ -421,7 +415,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       ;;          ^
       ;;          '-- to be a fairly large subset of at least, so adding this
 
-(import (owl eval))
+(import (lang eval))
 
 (import (owl base))
 
@@ -636,7 +630,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
       (owl defmac)
       (owl math)
       (owl random)
-      (owl thread)
+      (lang thread)
       (owl list)
       (owl list-extra)
       (owl interop)

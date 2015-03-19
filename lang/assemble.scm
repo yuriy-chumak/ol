@@ -2,11 +2,12 @@
 ;;; Bytecode assembly
 ;;;
 
-(define-library (owl assemble)
+; user only in compile.scm
+(define-library (lang assemble)
 
    (export 
       assemble-code 
-      bytes->bytecode
+;      bytes->bytecode
       inst->op)
 
    (import

@@ -1,20 +1,20 @@
 
 ;; todo: vararg lambdas cannot get self as last parameter!
 
-(define-library (owl fixedpoint)
+(define-library (lang fixedpoint)
 
    (export fix-points)
 
    (import
       (owl defmac)
-      (owl ast)
+      (lang ast)
       (owl math)
       (owl list)
       (owl equal)
       (owl list-extra)
       (owl error)
       (owl io)
-      (owl env))
+      (lang env))
 
    (begin
 

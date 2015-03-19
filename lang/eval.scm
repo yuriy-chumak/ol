@@ -3,7 +3,8 @@
 ;; todo: add lib-http and allow including remote resources
 ;; todo:  ^ would need a way to sign libraries and/or SSL etc
 
-(define-library (owl eval)
+; used only in ol.scm
+(define-library (lang eval)
 
 	(export 
 		repl-file 
@@ -23,15 +24,15 @@
       (owl defmac)
       (owl list)
       (owl primop)
-      (owl compile)
-      (owl closure)
-      (owl cps)
-      (owl alpha)
+      (lang compile)
+      (lang closure)
+      (lang cps)
+      (lang alpha)
       (owl ff)
       (owl sort)
-      (owl fixedpoint)
-      (owl ast)
-      (owl env)
+      (lang fixedpoint)
+      (lang ast)
+      (lang env)
       (owl error)
       (owl interop)
       (owl time) ;; for testing metadata
@@ -47,7 +48,7 @@
       (owl equal)
       (scheme misc)
       (owl lazy)
-      (owl macro)
+      (lang macro)
       (owl intern)
       (owl eof)
       (only (owl regex) string->regex))

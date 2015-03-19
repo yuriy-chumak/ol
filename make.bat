@@ -1,6 +1,8 @@
 @echo off
 set PATH=%PATH%;C:\MinGW\bin;C:\MinGW\msys\1.0\bin
 
+if exist boot.fasl move /Y boot.fasl boot.fasl.bak
+
 :: соберем интерпретатор (с интегрированным протестированным рабочим образом из транка)
 echo Compiling ol virtual machine:
 gcc src/olvm.c -DSTANDALONE src/boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -O3 -std=c11
@@ -8,22 +10,21 @@ if ERRORLEVEL 1 exit
 
 :: а теперь выполним компиляцию нового образа
 echo.
-echo Compiling new ol system image:
-a.exe src/ol.scm  2>gc.log
+echo Compiling new oL system image:
+a.exe src/ol.scm
 if ERRORLEVEL 1 exit
 
 :: тестирование полученного образа
 echo.
-echo Testing the new system image:
 call :TEST-ALL
 
 :: трасформируем его в C и соберем все вместе
 echo.
 echo echo | set /p test=Preparing new interpreter... 
 a.exe src/to-c.scm >bootstrap
-gcc src/olvm.c -x c bootstrap -DSTANDALONE -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -O3 -std=c11 -o ol.exe
+gcc src/olvm.c -x c bootstrap -DSTANDALONE -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -O3 -std=c11 -g0 -o ol.exe
 if not ERRORLEVEL 0 exit
-echo (display "Ok.") |ol
+echo (display "Ok!") |ol
 exit
 
 ::recompile
@@ -68,6 +69,7 @@ exit
 GOTO:EOF
 
 :TEST-ALL
+echo Testing tests:
 for %%f in (
 	apply.scm
 	banana.scm

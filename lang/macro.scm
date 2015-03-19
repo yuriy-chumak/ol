@@ -1,6 +1,6 @@
 ; already loaded when booting.
 
-(define-library (owl macro)
+(define-library (lang macro)
    
    ; remove make-transformer when it is no longer referred 
    (export macro-expand match make-transformer)
@@ -18,7 +18,7 @@
       (owl sort)
       (owl gensym)
       (owl symbol)
-      (owl env))
+      (lang env))
 
    (begin
       ;;; Misc

@@ -2,7 +2,7 @@
 ;;; Converting S-exps to a more compact and checked AST
 ;;;
 
-(define-library (owl ast)
+(define-library (lang ast)
 
 	(export call? var? value-of sexp->ast mkcall mklambda mkvarlambda mkvar mkval)
 
@@ -16,7 +16,7 @@
       (owl defmac)
       (owl equal)
       (owl io) ; for display
-      (owl env))
+      (lang env))
 
    (begin
       (define (ok exp env) (tuple 'ok exp env))

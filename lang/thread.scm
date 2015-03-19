@@ -10,7 +10,7 @@
 
 ;; todo: make it a bug to send mail to a thread having no inbox.
 
-(define-library (owl thread)
+(define-library (lang thread)
 
    (export 
       start-thread-controller
@@ -30,7 +30,7 @@
       (owl tuple)
       (owl string)
       (owl render)
-      (owl env)
+      (lang env)
       (owl io))
 
    (begin

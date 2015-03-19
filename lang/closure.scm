@@ -2,7 +2,7 @@
 ;;; Convert lambdas to closures where necessary
 ;;;
 
-(define-library (owl closure)
+(define-library (lang closure)
 
 	(export 
       build-closures 
@@ -12,13 +12,12 @@
       (owl defmac)
       (owl list)
       (owl error)
-      (owl ast)
+      (lang ast)
       (owl math)
       (owl tuple)
       (owl list-extra)
-      (owl env)
-      (only (owl io) print)
-      (owl assemble))
+      (lang env)
+      (only (owl io) print))
 
    (begin
       (define (ok exp env) (tuple 'ok exp env))

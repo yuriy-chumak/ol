@@ -10,7 +10,7 @@
 ;  + case-lambda nodes separately 
 ;     o 
 
-(define-library (owl compile)
+(define-library (lang compile)
 
    (export 
       compile
@@ -25,14 +25,14 @@
       (owl function)
       (owl symbol)
       (owl list-extra)
-      (owl ast)
+      (lang ast)
       (owl lazy)
       (owl sort)
       (owl primop)
       (owl io)
-      (only (owl env) primop-of prim-opcodes)
-      (owl assemble)
-      (owl closure))
+      (only (lang env) primop-of prim-opcodes)
+      (lang assemble)
+      (lang closure))
 
    (begin
 
