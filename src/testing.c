@@ -201,5 +201,5 @@ int main(int nargs, char **argv)
 #ifdef WI32
 	WSACleanup();
 #endif
-	return 0;
+	return result;
 }

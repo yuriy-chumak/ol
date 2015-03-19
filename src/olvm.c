@@ -4,7 +4,7 @@
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
 //      http://igorkov.org/pdf/Z80-Central-Processor-Unit.pdf
 //      https://ru.wikipedia.org/wiki/Zilog_Z80
-// Всякие LISP иджеи и примеры:
+// Всякие LISP идеи и примеры:
 //      http://habrahabr.ru/post/204992/
 //      http://habrahabr.ru/post/211100/
 // Книга http://ilammy.github.io/lisp/
@@ -918,18 +918,16 @@ static wdiff adjust_heap(int cells)
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 
 // todo: ввести третий generation
-static word *gc(int size, word *regs) {
-	clock_t uptime;
-	word *root;
-	int nfree;
-
+static word gc(int size, word regs) {
 	word *realend = heap.end;
 
 	heap.end = fp;
 
 	*fp = make_header(2, TTUPLE); // (в *fp спокойно можно оставить мусор)
-	root = fp + 1; // skip header
-//	root = &fp[1]; // same
+	word *root = fp + 1; // skip header
+//	word *root = &fp[1]; // same
+
+	clock_t uptime;
 
 	// непосредственно сам GC
 	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
@@ -939,14 +937,15 @@ static word *gc(int size, word *regs) {
 	regs = root[0];
 	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
-//	if (pinned)
+	#if DEBUG_GC
 		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
 				uptime,
 				sizeof(word) * (fp - heap.begin), marked, -1, -1, -1);
+	#endif
 
 //	regs = (word *) *root;
 	heap.end = realend;
-	nfree = (word)heap.end - (word)regs;
+	int nfree = (word)heap.end - (word)regs;
 	if (heap.genstart == heap.begin) {
 		word heapsize = (word) heap.end - (word) heap.begin;
 		word nused = heapsize - nfree;
@@ -956,9 +955,9 @@ static word *gc(int size, word *regs) {
 		nfree -= size*W + MEMPAD;   /* how much really could be snipped off */
 		if (nfree < (heapsize / 10) || nfree < 0) {
 			/* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
-			regs[hdrsize(*regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
-			regs = (word *) ((word)regs + adjust_heap(size*W + nused/10 + 4096));
-			nfree = heap.end - regs;
+			((word*)regs)[hdrsize(*(word*)regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
+			regs += adjust_heap(size*W + nused/10 + 4096);
+			nfree = (word)heap.end - (word)regs;
 			if (nfree <= size)
 				breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
 		}
@@ -967,10 +966,11 @@ static word *gc(int size, word *regs) {
 			int dec = -(nfree/10);
 			int newobj = nfree - dec;
 			if (newobj > size*W*2 + MEMPAD) {
-				regs[hdrsize(*regs)] = 0; /* as above */
-				regs = (word *) ((word)regs + adjust_heap(dec+MEMPAD*W));
+				//regs[hdrsize(*regs)] = 0; /* as above */
+				((word*)regs)[hdrsize(*(word*)regs)] = 0;
+				regs += adjust_heap(dec + MEMPAD*W);
 				heapsize = (word) heap.end - (word) heap.begin;
-				nfree = (word) heap.end - (word) regs;
+				nfree = (word) heap.end - regs;
 			}
 		}
 		heap.genstart = regs; /* always start newobj generation */
