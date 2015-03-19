@@ -4,9 +4,9 @@
  *
  *  Этот проект запускает скрипт, переданный в командной строке, построчно
  */
+#ifndef STANDALONE
 
 #include "olvm.h"
-//#ifndef STANDALONE
 
 
 #include <stdio.h>
@@ -163,4 +163,4 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-//#endif//STANDALONE
+#endif//STANDALONE

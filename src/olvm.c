@@ -973,12 +973,12 @@ static word gc(int size, word regs) {
 				nfree = (word) heap.end - regs;
 			}
 		}
-		heap.genstart = regs; /* always start newobj generation */
+		heap.genstart = (word*)regs; /* always start newobj generation */
 	} else if (nfree < MINGEN || nfree < size*W*2) {
 		heap.genstart = heap.begin; /* start full generation */
 		return gc(size, regs);
 	} else {
-		heap.genstart = regs; /* start newobj generation */
+		heap.genstart = (word*)regs; /* start newobj generation */
 	}
 	return regs;
 }
@@ -1663,8 +1663,12 @@ apply: // apply something at ob to values in regs, or maybe switch context
 			/* a tread or mcp is calling the final continuation  */
 			ob = (word *) R[0];
 			if (!allocp(ob)) {
-				fprintf(stderr, "Unexpected virtual machine exit\n");
-				// todo: maybe required same behaviour as "exit" call
+				// fprintf(stderr, "Unexpected virtual machine exit\n");
+#				ifndef STANDALONE
+				// подождем, пока освободится место в консоли
+				while (fifo_full(fo)) pthread_yield();
+				fifo_put(fo, EOF); // и положим туда EOF
+#				endif//STANDALONE
 				return (void*)fixval(R[3]);
 			}
 
@@ -1767,7 +1771,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		while (++p <= N) regs[p] = R[p-1];
 		regs[p] = (word) ob;
 		// выполним сборку мусора
-		regs = gc(16*1024 * sizeof(word), regs); // GC, как правило занимает 0-15 ms
+		regs = (word*)gc(16*1024 * sizeof(word), (word)regs); // GC, как правило занимает 0-15 ms
 		// и восстановим все регистры, уже скорректированные сборщиком
 		ob = (word *) regs[p];
 		while (--p >= 1) R[p-1] = regs[p];
@@ -2835,7 +2839,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						case TPORT:
 							// todo: uncomment this
 //							if (got > 0xFFFFFF)
-								result = new_port(got);
+								result = (word)new_port(got);
 //							else
 //								result = make_immediate(got, TPORT);
 							break;
@@ -3105,13 +3109,66 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 #ifndef STANDALONE
 OL*
 vm_new(unsigned char* language, void (*release)(void*))
+{
+	unsigned char* bootstrap = language;
+
 #else
 #ifndef NOLANGUAGE
 extern unsigned char* language;
+#else
+unsigned char* language = NULL;
 #endif
 int main(int argc, char** argv)
-#endif//STANDALONE
 {
+	unsigned char* bootstrap = language;
+
+	// обработка аргументов:
+	//	первый из них (если есть) - название исполняемого скрипта
+	//	                            или "-", если это будет stdin
+	if (argc > 1 && strcmp(argv[1], "-") != 0) {
+		struct stat st;
+		if (stat(argv[1], &st) || st.st_size == 0)
+			exit(2);	// не найден файл или он пустой
+
+		char bom;
+		FILE *bin = fopen(argv[1], "rb");
+		if (!bin)
+			exit(4);	// не смогли файл открыть
+
+		int pos = fread(&bom, 1, 1, bin); // прочитаем один байт
+		if (pos < 1)
+			exit(5);	// не смогли файл прочитать
+
+		if (bom > 3) {	// текстовая программа (script)
+			fclose(bin);
+			freopen(argv[1], "r", stdin);
+		}
+		else {
+			// иначе загрузим его
+			unsigned char* ptr = (unsigned char*)malloc(st.st_size);
+			if (ptr == NULL)
+				exit(3);	// не смогли выделить память
+
+			ptr[0] = bom;
+			while (pos < st.st_size) {
+				int n = fread(&ptr[pos], 1, st.st_size - pos, bin);
+				if (n < 0) exit(5); // не смогли прочитать
+				pos += n;
+			}
+			fclose(bin);
+
+			bootstrap = ptr;
+		}
+	}
+
+	// если отсутствует базовый образ:
+	if (bootstrap == 0) {
+		printf("no system image found\n");
+		exit(1);
+	}
+
+#endif//STANDALONE
+
 	// создадим виртуальную машину
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
@@ -3126,7 +3183,7 @@ int main(int argc, char** argv)
 	heap.begin = (word*) malloc(required_memory_size); // at least one argument string always fits
 	if (!heap.begin) {
 		fprintf(stderr, "Failed to allocate %d bytes for vm memory\n", required_memory_size);
-		goto failed;
+		goto done;
 	}
 	heap.end = heap.begin + FMAX + INITCELLS - MEMPAD;
 	heap.genstart = heap.begin;
@@ -3140,12 +3197,13 @@ int main(int argc, char** argv)
 	// по совместительству, это еще и корневой объект
 	fp = heap.begin;
 	word oargs;
+	// подготовим аргументы
 	{
-		oargs = (word*)INULL;
+		oargs = INULL;
 #ifndef TEST_GC2
 
 #ifndef STANDALONE
-		char* filename = "#";
+		char* filename = "-";
 		char *pos = filename;
 
 		int len = 0;
@@ -3153,9 +3211,14 @@ int main(int argc, char** argv)
 
 		oargs = new_pair (new_string (len, filename), oargs);
 #else
+		// аргументы
 		for (int i = argc - 1; i > 0; i--)
-			oargs = new_pair(new_string(strlen(argv[i]), argv[i]), oargs);
+			oargs = (word)new_pair (new_string (strlen(argv[i]), argv[i]), oargs);
+		// и название скрипта
+		if (argc == 1)
+			oargs = (word)new_pair (new_string (1, "-"), INULL); // или IFALSE ?
 #endif
+
 #else
 		word *a, *b, *c, *d, *e;
 
@@ -3173,38 +3236,10 @@ int main(int argc, char** argv)
 #endif
 	}
 
-#ifdef NOLANGUAGE
-	unsigned char* language;
-
-	// загрузим образ из файла
-	if (argc < 2) {
-		printf("usage: olvm binary_image\n");
-		exit(1);
-	}
-	else
-	{
-		struct stat st;
-		int pos = 0;
-		if (stat(argv[1], &st)) exit(1);
-
-		char* ptr = (char*)malloc(st.st_size);
-		if (ptr == NULL) exit(2);
-		FILE *fd = fopen(argv[1], "rb");
-		if (!fd) exit(3);
-		while (pos < st.st_size) {
-			int n = fread(ptr+pos, 1, st.st_size-pos, fd);
-			if (n < 0) exit(4);
-			pos += n;
-		}
-		fclose(fd);
-
-		language = (unsigned char*) ptr;
-	}
-#endif
 
 	// а теперь поработаем со сериализованным образом:
 	word nwords = 0;
-	word nobjs = count_fasl_objects(&nwords, language); // подсчет количества слов и объектов в образе
+	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 
 	//	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
 
@@ -3212,13 +3247,13 @@ int main(int argc, char** argv)
 	word* ptrs = fp;
 	fp += nobjs + 1;
 
-	hp = language; // десериализатор использует hp как итератор по образу
+	hp = bootstrap; // десериализатор использует hp как итератор по образу
 
 	int pos;
 	for (pos = 0; pos < nobjs; pos++) {
 		if (fp >= heap.end) {
 			fprintf(stderr, "gc needed during heap import\n");
-			goto failed;
+			goto done;
 		}
 		deserialize(ptrs, pos);
 	}
@@ -3229,9 +3264,8 @@ int main(int argc, char** argv)
 	if (release)
 		release(language);
 #else
-#ifdef NOLANGUAGE
-	free(language);
-#endif
+	if (bootstrap != language)
+		free(bootstrap);
 #endif
 
 
@@ -3245,6 +3279,8 @@ int main(int argc, char** argv)
 	args.max_heap_size = max_heap_size; // max heap size in MB
 	args.fp = fp;
 	args.userdata      = (word*) oargs;
+
+	void* result = 0; // результат выполнения.
 
 #ifndef STANDALONE
 	args.signal = 0;
@@ -3261,17 +3297,17 @@ int main(int argc, char** argv)
 	set_blocking(1, 0);
 	set_blocking(2, 0);
 #	endif
-	runtime(&args);
+	result = runtime(&args);
 #endif//STANDALONE
 
-failed:
+done:
 	free(heap.begin);
 	free(handle);
 
 #ifndef STANDALONE
 	return NULL;
 #else
-	return 0;
+	return (int)result;
 #endif
 }
 

@@ -871,8 +871,8 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                                     ;; if a repl eval thread is running
                                     (set-signal-action repl-signal-handler)
 
-                                    (exit-owl 
-                                       (repl-start '("#") repl compiler ; список с одним параметром вместо vm-args, в будущем могу поменять
+                                    (exit-owl
+                                       (repl-start '("-") repl compiler ; список с одним параметром вместо vm-args, в будущем могу поменять
                                           (fold 
                                              (λ (env defn)
                                                 (env-set env (car defn) (cdr defn)))
@@ -885,6 +885,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                                                 (cons '*owl-version* *owl-version*)
                                                 ;;(cons '*owl-metadata* *owl-metadata*)
                                                 (cons '*owl-names* initial-names)
+                                                (cons '*vm-args* vm-args)
                                                 (cons '*vm-special-ops* vm-special-ops)
                                                 ;;(cons '*codes* (vm-special-ops->codes vm-special-ops))
                                                 )))))))))
