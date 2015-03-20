@@ -4,9 +4,10 @@ set PATH=%PATH%;C:\MinGW\bin;C:\MinGW\msys\1.0\bin
 if exist boot.fasl move /Y boot.fasl boot.fasl.bak
 
 :: соберем интерпретатор (с интегрированным протестированным рабочим образом из транка)
-echo Compiling ol virtual machine:
+echo echo | set /p test=Compiling ol virtual machine... 
 gcc src/olvm.c -DSTANDALONE src/boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -O3 -std=c11
 if ERRORLEVEL 1 exit
+echo Ok.
 
 :: а теперь выполним компиляцию нового образа
 echo.

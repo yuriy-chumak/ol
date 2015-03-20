@@ -572,7 +572,7 @@ int execv(const char *path, char *const argv[]);
 //   shamil.free.fr/comp/ocaml/html/book011.html
 
 // allocation pointer (top of allocated heap)
-static __tlocal__ word *fp;
+//static __tlocal__ word *fp;
 
 // выделить сырой блок памяти
 #define new(size) ({\
@@ -587,6 +587,30 @@ static __tlocal__ word *fp;
 	*p = make_header(size, type);\
 	/*return*/(object*)p;\
 })
+
+#define new_tuple(length) new_object ((length)+1, TTUPLE)
+
+/* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
+#define new_bvec(size, type) ({\
+	int len = size;\
+	\
+	int nwords = (len/W) + ((len % W) ? 2 : 1);\
+	int pads = (nwords-1)*W - len;\
+	\
+	word* p = new (nwords);\
+	*p = make_raw_header(nwords, type,pads);\
+	/*return*/ p;\
+})
+
+/*static word *mkbvec(int len, int type) {
+   int nwords = (len/W) + ((len % W) ? 2 : 1);
+   int pads = (nwords-1)*W - len;
+   word *ob = fp;
+   fp += nwords;
+   *ob = make_raw_header(nwords, type, pads);
+   return ob;
+}*/
+
 
 // создать новый порт
 #define new_port_old(a) ({\
@@ -618,7 +642,7 @@ static __tlocal__ word *fp;
 	/*return*/ me;\
 })
 // а по факту эта функция сводится к простому
-static __inline__ word* new_pair_old (word* car, word* cdr)
+/*static __inline__ word* new_pair_old (word* car, word* cdr)
 {
 	word *object = fp;
 
@@ -628,24 +652,19 @@ static __inline__ word* new_pair_old (word* car, word* cdr)
 
 	fp += 3;
 	return object;
-}
+}*/
 
-static __inline__ word* new_string (size_t length, char* string)
-{
-	word* object = fp;
+#define new_npair(a1, a2) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	/* точка следования */ \
+	object *me = new_object(3, TINT);\
+	me->ref[0] = data1;\
+	me->ref[1] = data2;\
+	/*return*/ me;\
+})
 
-	int size = (length / W) + ((length % W) ? 2 : 1);
-	int pads = (size-1) * W - length;
-
-	*fp = make_raw_header(size, TSTRING, pads);
-	char* p = ((char *) fp) + W;
-	while (length--) *p++ = *string++;
-
-	fp += size;
-	return object;
-}
-
-static __inline__ word* new_npair (word* car, word* cdr)
+/*static __inline__ word* new_npair (word* car, word* cdr)
 {
 	word *object = fp;
 
@@ -655,9 +674,9 @@ static __inline__ word* new_npair (word* car, word* cdr)
 
 	fp += 3;
 	return object;
-}
+}*/
 
-static __inline__ word* new_tuple (size_t length)
+/*static __inline__ word* new_tuple (size_t length)
 {
 	word *object = fp;
 
@@ -665,8 +684,8 @@ static __inline__ word* new_tuple (size_t length)
 
 	fp += (length + 1);
 	return object;
-}
-static __inline__ word* new_tuplei (size_t length, ...)
+}*/
+/*static __inline__ word* new_tuplei (size_t length, ...)
 {
 	word *object = fp;
 
@@ -682,7 +701,7 @@ static __inline__ word* new_tuplei (size_t length, ...)
 
 	fp += (length + 1);
 	return object;
-}
+}*/
 
 
 struct heap
@@ -920,9 +939,10 @@ static wdiff adjust_heap(int cells)
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 
 // todo: ввести третий generation
-static word gc(int size, word regs) {
+static word gc(int size, word regs, word** P) {
 	word *realend = heap.end;
 
+	word* fp = *P;
 	heap.end = fp;
 
 	*fp = make_header(2, TTUPLE); // (в *fp спокойно можно оставить мусор)
@@ -938,6 +958,8 @@ static word gc(int size, word regs) {
 	fp = compact();
 	regs = root[0];
 	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
+
+	*P = (word*)fp;
 
 	#if DEBUG_GC
 		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
@@ -978,7 +1000,7 @@ static word gc(int size, word regs) {
 		heap.genstart = (word*)regs; /* always start newobj generation */
 	} else if (nfree < MINGEN || nfree < size*W*2) {
 		heap.genstart = heap.begin; /* start full generation */
-		return gc(size, regs);
+		return gc(size, regs, P);
 	} else {
 		heap.genstart = (word*)regs; /* start newobj generation */
 	}
@@ -1048,38 +1070,15 @@ void set_signal_handler() {
 #endif
 }
 
-/* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
-static word *mkbvec(int len, int type) {
-   int nwords = (len/W) + ((len % W) ? 2 : 1);
-   int pads = (nwords-1)*W - len;
-   word *ob = fp;
-   fp += nwords;
-   *ob = make_raw_header(nwords, type, pads);
-   return ob;
-}
-
-/* map a null or C-string to False, Null or owl-string, false being null or too large string */
-word strp2owl(char *sp) {
-   int len;
-   word *res;
-   if (!sp) return IFALSE;
-   len = lenn(sp, FMAX+1);
-   if (len == FMAX+1) return INULL; /* can't touch this */
-   res = mkbvec(len, TBVEC); /* make a bvec instead of a string since we don't know the encoding */
-   bytecopy(sp, ((char *)res)+W, len);
-   return (word)res;
-}
-
-
 /*** Primops called from VM and generated C-code ***/
 
-static word prim_connect(word *host, word port) {
+/*static word prim_connect(word *host, word port) {
    int sock;
    unsigned char *ip = ((unsigned char *) host) + W;
    unsigned long ipfull;
    struct sockaddr_in addr;
    port = fixval(port);
-   if (!allocp(host))  /* bad host type */
+   if (!allocp(host))  // bad host type
       return IFALSE;
    if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1)
       return IFALSE;
@@ -1094,84 +1093,12 @@ static word prim_connect(word *host, word port) {
    }
    set_blocking(sock,0);
    return F(sock);
-}
+}*/
 
-static word prim_less(word a, word b) {
-   if (immediatep(a)) {
-      return immediatep(b) ? TRUEFALSE(a < b) : ITRUE;  /* imm < alloc */
-   } else {
-      return immediatep(b) ? IFALSE : TRUEFALSE(a < b); /* alloc > imm */
-   }
-}
 
-static word prim_get(word *ff, word key, word def) { /* ff assumed to be valid */
-   while((word) ff != IEMPTY) { /* ff = [header key value [maybe left] [maybe right]] */
-      word this = ff[1], hdr;
-      if (this == key)
-         return ff[2];
-      hdr = *ff;
-      switch(hdrsize(hdr)) {
-         case 3: return def;
-         case 4:
-            if (key < this) {
-               ff = (word *) ((hdr & (1 << TPOS)) ? IEMPTY : ff[3]);
-            } else {
-               ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
-            }
-            break;
-         default:
-            ff = (word *) ((key < this) ? ff[3] : ff[4]);
-      }
-   }
-   return def;
-}
 
-static int prim_refb(word pword, int pos) {
-   word *ob = (word *) pword;
-   word hdr, hsize;
-   if (immediatep(ob))
-      return -1; // todo: return IFALSE
-   hdr = *ob;
-   hsize = ((hdrsize(hdr)-1)*W) - padsize(hdr); /* bytes - pads */
-   if (pos >= hsize)
-      return IFALSE;
-   return F(((unsigned char *) ob)[pos+W]);
-}
 
-static word prim_ref(word pword, word pos)  {
-   word *ob = (word *) pword;
-   word hdr, size;
-   pos = fixval(pos);
-   if(immediatep(ob)) { return IFALSE; }
-   hdr = *ob;
-   if (rawp(hdr)) { /* raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}] */
-      size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
-      if (pos >= size) { return IFALSE; }
-      return F(((unsigned char *) ob)[pos+W]);
-   }
-   size = hdrsize(hdr);
-   if (!pos || size <= pos) /* tuples are indexed from 1 (probably later 0-255)*/
-      return IFALSE;
-   return ob[pos];
-}
 
-static word prim_set(word wptr, word pos, word val) {
-   word *ob = (word *) wptr;
-   word hdr;
-   word *newobj;
-   int p = 0;
-   pos = fixval(pos);
-   if (immediatep(ob)) { return IFALSE; }
-   hdr = *ob;
-   if (rawp(hdr) || hdrsize(hdr) < pos) { return IFALSE; }
-   word size = hdrsize(hdr);
-   newobj = new (size);
-   while(p <= size) {
-      newobj[p] = (pos == p && p) ? val : ob[p];
-      p++;
-   }
-   return (word) newobj;
-}
 
 static word syscall(word op, word a, word b, word c)
 {
@@ -1275,222 +1202,7 @@ static word syscall(word op, word a, word b, word c)
 
 /* system- and io primops */
 // todo: move to the parental switch
-static word prim_sys(int op, word a, word b, word c) {
-   switch(op) {
-      case 1001: { /* 1 = fopen <str> <mode> <to> */
-         char *path = (char *) a;
-         int mode = fixval(b);
-         int val;
-         struct stat sb;
-         if (!(allocp(path) && imm_type(*path) == TSTRING))
-            return IFALSE;
-         mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
-         val = open(((char *) path) + W, mode,(S_IRUSR|S_IWUSR));
-         if (val < 0 || fstat(val, &sb) == -1 || (sb.st_mode & S_IFDIR)) {
-            close(val);
-            return IFALSE;
-         }
-         set_blocking(val,0);
-         return F(val); }
-      case 1002:
-         return close(fixval(a)) ? IFALSE : ITRUE;
-      case 1003: { /* 3 = sopen port -> False | fd  */
-         int port = fixval(a);
-         int s;
-         int opt = 1; /* TRUE */
-         struct sockaddr_in myaddr;
-         myaddr.sin_family = AF_INET;
-         myaddr.sin_port = htons(port);
-         myaddr.sin_addr.s_addr = INADDR_ANY;
-         s = socket(AF_INET, SOCK_STREAM, 0);
-#ifndef _WIN32
-         if (s < 0) return IFALSE;
-#else
-	 if (s == INVALID_SOCKET) return IFALSE;
-#endif
-         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) \
-             || bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) != 0 \
-             || listen(s, 5) != 0) {
-            close(s);
-            return IFALSE;
-         }
-         set_blocking(s,0);
-         return F(s); }
-      case 1004: { /* 4 = accept port -> rval=False|(ip . fd) */
-         int sock = fixval(a);
-         struct sockaddr_in addr;
-         socklen_t len = sizeof(addr);
-         int fd;
-         word *pair;
-         char *ipa;
-         fd = accept(sock, (struct sockaddr *)&addr, &len);
-         if (fd < 0) return IFALSE;
-         set_blocking(fd,0);
-         ipa = (char *) &addr.sin_addr;
-         *fp = make_raw_header(2, TBVEC, 4%W);
-         bytecopy(ipa, ((char *) fp) + W, 4);
-         fp[2] = PAIRHDR;
-         fp[3] = (word) fp;
-         fp[4] = F(fd);
-         pair = fp+2;
-         fp += 5;
-         return (word)pair; }
 
-
-
-      case 1010: /* enter linux seccomp mode */
-#ifdef __gnu_linux__
-#ifndef NO_SECCOMP
-         if (seccompp) /* a true value, but different to signal that we're already in seccomp */
-            return INULL;
-         seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
-#ifdef PR_SET_SECCOMP
-         if (prctl(PR_SET_SECCOMP,1) != -1) { /* true if no problem going seccomp */
-            seccompp = 1;
-            return ITRUE;
-         }
-#endif
-#endif
-#endif
-         return IFALSE; /* seccomp not supported in current repl */
-      /* dirops only to be used via exposed functions */
-      case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
-         char *path = W + (char *) a; /* skip header */
-         DIR *dirp = opendir(path);
-         if(!dirp) return IFALSE;
-         return fliptag(dirp); }
-      case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
-         DIR *dirp = (DIR *)fliptag(a);
-         word *res;
-         unsigned int len;
-         struct dirent *dire = readdir(dirp);
-         if (!dire) return IEOF; /* eof at end of dir stream */
-         len = lenn(dire->d_name, FMAX+1);
-         if (len == FMAX+1) return IFALSE; /* false for errors, like too long file names */
-         res = mkbvec(len, 3); /* make a fake raw string (OS may not use valid UTF-8) */
-         bytecopy((char *)&dire->d_name, (char *) (res + 1), len); /* *no* terminating null, this is an owl bvec */
-         return (word)res; }
-      case 1013: /* sys-closedir dirp _ _ -> ITRUE */
-         closedir((DIR *)fliptag(a));
-         return ITRUE;
-      case 1014: { /* set-ticks n _ _ -> old */
-         word old = F(slice);
-         slice = fixval(a);
-         return old; }
-      case 1015: { /* 0 fsocksend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
-         int fd = fixval(a);
-         word *buff = (word *) b;
-         int wrote, size, len = fixval(c);
-         if (immediatep(buff)) return IFALSE;
-         size = (hdrsize(*buff)-1)*W;
-         if (len > size) return IFALSE;
-         wrote = send(fd, ((char *)buff)+W, len, 0); /* <- no MSG_DONTWAIT in win32 */
-         if (wrote > 0) return F(wrote);
-         if (errno == EAGAIN || errno == EWOULDBLOCK) return F(0);
-         return IFALSE; }
-      case 1016: { /* getenv <owl-raw-bvec-or-ascii-leaf-string> */
-         char *name = (char *)a;
-         if (!allocp(name)) return IFALSE;
-         return strp2owl(getenv(name + W)); }
-      case 1017: { /* exec[v] path argl ret */
-#ifndef _WIN32
-          char *path = ((char *) a) + W;
-          int nargs = llen((word *)b);
-         char **args = malloc((nargs+1) * sizeof(char *)); // potential memory leak
-         char **argp = args;
-         if (args == NULL)
-            return IFALSE;
-         while(nargs--) {
-            *argp++ = ((char *) ((word *) b)[1]) + W;
-            b = ((word *) b)[2];
-         }
-         *argp = NULL;
-         set_blocking(0,1); /* try to return stdio to blocking mode */
-         set_blocking(1,1); /* warning, other file descriptors will stay in nonblocking mode */
-         set_blocking(2,1);
-         execv(path, args); /* may return -1 and set errno */
-         set_blocking(0,0); /* exec failed, back to nonblocking io for owl */
-         set_blocking(1,0);
-         set_blocking(2,0);
-#endif
-         return IFALSE; }
-      case 1020: { /* chdir path res */
-         char *path = ((char *)a) + W;
-         if (chdir(path) < 0)
-            return IFALSE;
-         return ITRUE; }
-#if 0 // ndef _WIN32
-      case 1019: { /* wait <pid> <respair> _ */
-         pid_t pid = (a == IFALSE) ? -1 : fixval(a);
-         int status;
-         word *r = (word *) b;
-         pid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
-         if (pid == -1)
-            return IFALSE; /* error */
-         if (pid == 0)
-            return ITRUE; /* no changes, would block */
-         if (WIFEXITED(status)) {
-            r[1] = F(1);
-            r[2] = F(WEXITSTATUS(status));
-         } else if (WIFSIGNALED(status)) {
-            r[1] = F(2);
-            r[2] = F(WTERMSIG(status));
-         } else if (WIFSTOPPED(status)) {
-            r[1] = F(3);
-            r[2] = F(WSTOPSIG(status));
-         } else if (WIFCONTINUED(status)) {
-            r[1] = F(4);
-            r[2] = F(1);
-         } else {
-            fprintf(stderr, "vm: unexpected process exit status: %d\n", status);
-            r = (word *)IFALSE;
-         }
-         return (word)r; }
-      case 1018: { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
-         pid_t pid = fork();
-         if (pid == -1) /* fork failed */
-            return IFALSE;
-         if (pid == 0) /* we're in child, return true */
-            return ITRUE;
-         if ((int)pid > FMAX)
-            fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
-         return F(pid&FMAX); }
-      case 1021: /* kill pid signal → fixnum */
-         return (kill(fixval(a), fixval(b)) < 0) ? IFALSE : ITRUE;
-#endif
-      default:
-         return IFALSE;
-   }
-}
-
-static word prim_lraw(word wptr, int type, word revp) {
-   word *lst = (word *) wptr;
-   int nwords, len = 0, pads;
-   unsigned char *pos;
-   word *raw, *ob;
-   if (revp != IFALSE) {
-	   exit(1);
-   } /* <- to be removed */
-   ob = lst;
-   while (allocp(ob) && *ob == PAIRHDR) {
-      len++;
-      ob = (word *) ob[2];
-   }
-   if ((word) ob != INULL) return IFALSE;
-   if (len > FMAX) return IFALSE;
-   nwords = (len/W) + ((len % W) ? 2 : 1);
-   raw = new (nwords);
-   pads = (nwords-1)*W - len; /* padding byte count, usually stored to top 3 bits */
-   *raw = make_raw_header(nwords, type, pads);
-   ob = lst;
-   pos = ((unsigned char *) raw) + W;
-   while ((word) ob != INULL) {
-      *pos++ = fixval(ob[1])&255;
-      ob = (word *) ob[2];
-   }
-   while(pads--) { *pos++ = 0; } /* clear the padding bytes */
-   return (word)raw;
-}
 
 
 
@@ -1557,6 +1269,9 @@ __tlocal__ int forcegc = 0;
 static
 void* runtime(void *args) // heap top
 {
+	register word *fp; // memory allocation pointer
+
+
 	seccompp = 0;
 	slice = TICKS; // default thread slice (n calls per slice)
 
@@ -1651,6 +1366,27 @@ apply: // apply something at ob to values in regs, or maybe switch context
 			}
 			else
 			if (((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
+				word prim_get(word *ff, word key, word def) { // ff assumed to be valid
+					while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
+						word this = ff[1], hdr;
+						if (this == key)
+							return ff[2];
+						hdr = *ff;
+						switch (hdrsize(hdr)) {
+						case 3: return def;
+						case 4:
+							if (key < this)
+								ff = (word *) ((hdr & (1 << TPOS)) ? IEMPTY : ff[3]);
+							else
+								ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
+							break;
+						default:
+							ff = (word *) ((key < this) ? ff[3] : ff[4]);
+						}
+					}
+					return def;
+				}
+
 				word *cont = (word *) R[3];
 				switch (acc)
 				{
@@ -1717,16 +1453,19 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
 	//  регистры, мы их складываем в память во временный объект-список.
 	if (forcegc || (fp >= heap.end - 16*1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
+		word *ffp; // для передачи fp в gc, так как сам fp - register
 		if (forcegc)
 			printf("(forcegc)\n");
 		forcegc = 0;
 		int p = 0, N = NR;
 		// создадим в топе временный объект со значениями всех регистров
-		word *regs = new_tuple (N + 1); // hdr r_0 .. r_(NR-1) ob // was: 50 as type
+		word *regs = (word*) new_tuple (N + 1); // hdr r_0 .. r_(NR-1) ob // was: 50 as type
 		while (++p <= N) regs[p] = R[p-1];
 		regs[p] = (word) ob;
 		// выполним сборку мусора
-		regs = (word*)gc(16*1024 * sizeof(word), (word)regs); // GC, как правило занимает 0-15 ms
+		ffp = fp; // корректировка топа
+		regs = (word*)gc(16*1024 * sizeof(word), (word)regs, &ffp); // GC, как правило занимает 0-15 ms
+		fp = ffp;
 		// и восстановим все регистры, уже скорректированные сборщиком
 		ob = (word *) regs[p];
 		while (--p >= 1) R[p-1] = regs[p];
@@ -1782,6 +1521,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 #	define CAST  22
 #	define MKT   23   // make tuple
+
+#	define MKRED    43
+#	define MKBLACK  42
+#	define FFTOGGLE 46
+#	define FFBIND   49
+#	define FFREDQ   41
 
 	// free numbers: 34 (was _connect)
 
@@ -1970,12 +1715,43 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			A3 = A2;
 			ip += 4; break;
 //
-		op47:  /* ref t o r */ /* fixme: deprecate this later */
+		op47: {  /* ref t o r */ /* fixme: deprecate this later */
+			word prim_ref(word pword, word pos)  {
+			   word *ob = (word *) pword;
+			   word hdr, size;
+			   pos = fixval(pos);
+			   if(immediatep(ob)) { return IFALSE; }
+			   hdr = *ob;
+			   if (rawp(hdr)) { /* raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}] */
+			      size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
+			      if (pos >= size) { return IFALSE; }
+			      return F(((unsigned char *) ob)[pos+W]);
+			   }
+			   size = hdrsize(hdr);
+			   if (!pos || size <= pos) /* tuples are indexed from 1 (probably later 0-255)*/
+			      return IFALSE;
+			   return ob[pos];
+			}
+
 		      A2 = prim_ref(A0, A1);
 		      NEXT(3);
-		op48: /* refb t o r */ /* todo: merge with ref, though 0-based  */
+		}
+		op48: { /* refb t o r */ /* todo: merge with ref, though 0-based  */
+			int prim_refb(word pword, int pos) {
+			   word *ob = (word *) pword;
+			   word hdr, hsize;
+			   if (immediatep(ob))
+			      return -1; // todo: return IFALSE
+			   hdr = *ob;
+			   hsize = ((hdrsize(hdr)-1)*W) - padsize(hdr); /* bytes - pads */
+			   if (pos >= hsize)
+			      return IFALSE;
+			   return F(((unsigned char *) ob)[pos+W]);
+			}
+
 		      A2 = prim_refb(A0, fixval(A1));
 		      NEXT(3);
+		}
 
 		// операции со списками
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
@@ -2012,10 +1788,32 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 
 
-		case SET: // set t o v r
+		case SET: { // set t o v r
+			word prim_set(word wptr, word pos, word val) {
+			   word *ob = (word *) wptr;
+			   word hdr;
+			   word *newobj;
+			   int p = 0;
+			   pos = fixval(pos);
+			   if (immediatep(ob)) { return IFALSE; }
+			   hdr = *ob;
+			   if (rawp(hdr) || hdrsize(hdr) < pos) { return IFALSE; }
+			   word size = hdrsize(hdr);
+			   newobj = new (size);
+			   while(p <= size) {
+			      newobj[p] = (pos == p && p) ? val : ob[p];
+			      p++;
+			   }
+			   return (word) newobj;
+			}
+
 			A3 = prim_set(A0, A1, A2);
 			ip += 4; break;
+		}
 
+		case EQ: // eq a b r
+			A2 = TRUEFALSE(A0 == A1);
+			ip += 3; break;
 
 		// АЛУ (арифметическо-логическое устройство)
 	   op38: { /* fx+ a b r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word */
@@ -2035,9 +1833,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		  A2 = F(r&FMAX);
 		  NEXT(4); }
 
-		case EQ: // eq a b r
-			A2 = TRUEFALSE(A0 == A1);
-			ip += 3; break;
 
 	   op55: { /* band a b r, prechecked */
 	      word a = R[*ip];
@@ -2142,8 +1937,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		/** ff's ---------------------------------------------------
 		 *
 		 */
-		case 42:   // mkblack l k v r t
-		case 43: { // mkred l k v r t
+		case MKBLACK:   // mkblack l k v r t
+		case MKRED: { // mkred l k v r t
 			word prim_mkff(word t, word l, word k, word v, word r) {
 			   word *ob = fp;
 			   ob[1] = k;
@@ -2173,7 +1968,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			NEXT(5);
 		}
 
-		case 46: { // fftoggle - toggle node color
+		case FFTOGGLE: { // fftoggle - toggle node color
 				 word *node = (word *) R[*ip];
 				 word *newobj, h;
 				 CHECK(allocp(node), node, 46);
@@ -2190,7 +1985,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				 NEXT(2);
 		}
 
-		case 49: { // withff node l k v r */ // bindff - bind node left key val right, filling in #false when implicit
+		case FFBIND: { // withff node l k v r */ // bindff - bind node left key val right, filling in #false when implicit
 			  word hdr, *ob = (word *) R[*ip];
 			  hdr = *ob++;
 			  A2 = *ob++; /* key */
@@ -2211,7 +2006,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			  NEXT(5);
 		}
 
-		case 41: { // red? node r (has highest type bit?) */
+		case FFREDQ: { // red? node r (has highest type bit?) */
 			  word *node = (word *) R[*ip];
 			  A1 = TRUEFALSE(allocp(node) && ((*node)&(FFRED<<TPOS)));
 			  NEXT(2);
@@ -2353,7 +2148,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						result = TRUEFALSE(errno == EAGAIN || errno == EWOULDBLOCK);
 					break;
 				}
-				
+
 				// WRITE
 				case 1000: { /* 0 fsend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
 					int fd = fixval(a);
@@ -2860,7 +2655,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								result = INULL;
 							else {
 								int len = lenn((char*)got, FMAX+1);
-								result = (word)mkbvec(len, TSTRING);
+								result = (word)new_bvec(len, TSTRING);
 								//if (len == FMAX+1) return INULL; /* can't touch this */
 								bytecopy((char*)got, ((char*)result)+W, len);
 							}
@@ -2874,8 +2669,209 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				}
 #				endif//STANDALONE
 				default:
-					if (op >= 1000)
+					if (op >= 1000) {
+						word prim_sys(int op, word a, word b, word c) {
+						   switch(op) {
+						      case 1001: { /* 1 = fopen <str> <mode> <to> */
+						         char *path = (char *) a;
+						         int mode = fixval(b);
+						         int val;
+						         struct stat sb;
+						         if (!(allocp(path) && imm_type(*path) == TSTRING))
+						            return IFALSE;
+						         mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
+						         val = open(((char *) path) + W, mode,(S_IRUSR|S_IWUSR));
+						         if (val < 0 || fstat(val, &sb) == -1 || (sb.st_mode & S_IFDIR)) {
+						            close(val);
+						            return IFALSE;
+						         }
+						         set_blocking(val,0);
+						         return F(val); }
+						      case 1002:
+						         return close(fixval(a)) ? IFALSE : ITRUE;
+						      case 1003: { /* 3 = sopen port -> False | fd  */
+						         int port = fixval(a);
+						         int s;
+						         int opt = 1; /* TRUE */
+						         struct sockaddr_in myaddr;
+						         myaddr.sin_family = AF_INET;
+						         myaddr.sin_port = htons(port);
+						         myaddr.sin_addr.s_addr = INADDR_ANY;
+						         s = socket(AF_INET, SOCK_STREAM, 0);
+						#ifndef _WIN32
+						         if (s < 0) return IFALSE;
+						#else
+							 if (s == INVALID_SOCKET) return IFALSE;
+						#endif
+						         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) \
+						             || bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) != 0 \
+						             || listen(s, 5) != 0) {
+						            close(s);
+						            return IFALSE;
+						         }
+						         set_blocking(s,0);
+						         return F(s); }
+						      case 1004: { /* 4 = accept port -> rval=False|(ip . fd) */
+						         int sock = fixval(a);
+						         struct sockaddr_in addr;
+						         socklen_t len = sizeof(addr);
+						         int fd;
+						         word *pair;
+						         char *ipa;
+						         fd = accept(sock, (struct sockaddr *)&addr, &len);
+						         if (fd < 0) return IFALSE;
+						         set_blocking(fd,0);
+						         ipa = (char *) &addr.sin_addr;
+						         *fp = make_raw_header(2, TBVEC, 4%W);
+						         bytecopy(ipa, ((char *) fp) + W, 4);
+						         fp[2] = PAIRHDR;
+						         fp[3] = (word) fp;
+						         fp[4] = F(fd);
+						         pair = fp+2;
+						         fp += 5;
+						         return (word)pair; }
+
+
+
+						      case 1010: /* enter linux seccomp mode */
+						#ifdef __gnu_linux__
+						#ifndef NO_SECCOMP
+						         if (seccompp) /* a true value, but different to signal that we're already in seccomp */
+						            return INULL;
+						         seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
+						#ifdef PR_SET_SECCOMP
+						         if (prctl(PR_SET_SECCOMP,1) != -1) { /* true if no problem going seccomp */
+						            seccompp = 1;
+						            return ITRUE;
+						         }
+						#endif
+						#endif
+						#endif
+						         return IFALSE; /* seccomp not supported in current repl */
+						      /* dirops only to be used via exposed functions */
+						      case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
+						         char *path = W + (char *) a; /* skip header */
+						         DIR *dirp = opendir(path);
+						         if(!dirp) return IFALSE;
+						         return fliptag(dirp); }
+						      case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
+						         DIR *dirp = (DIR *)fliptag(a);
+						         word *res;
+						         unsigned int len;
+						         struct dirent *dire = readdir(dirp);
+						         if (!dire) return IEOF; /* eof at end of dir stream */
+						         len = lenn(dire->d_name, FMAX+1);
+						         if (len == FMAX+1) return IFALSE; /* false for errors, like too long file names */
+						         res = new_bvec(len, 3); /* make a fake raw string (OS may not use valid UTF-8) */
+						         bytecopy((char *)&dire->d_name, (char *) (res + 1), len); /* *no* terminating null, this is an owl bvec */
+						         return (word)res; }
+						      case 1013: /* sys-closedir dirp _ _ -> ITRUE */
+						         closedir((DIR *)fliptag(a));
+						         return ITRUE;
+						      case 1014: { /* set-ticks n _ _ -> old */
+						         word old = F(slice);
+						         slice = fixval(a);
+						         return old; }
+						      case 1015: { /* 0 fsocksend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
+						         int fd = fixval(a);
+						         word *buff = (word *) b;
+						         int wrote, size, len = fixval(c);
+						         if (immediatep(buff)) return IFALSE;
+						         size = (hdrsize(*buff)-1)*W;
+						         if (len > size) return IFALSE;
+						         wrote = send(fd, ((char *)buff)+W, len, 0); /* <- no MSG_DONTWAIT in win32 */
+						         if (wrote > 0) return F(wrote);
+						         if (errno == EAGAIN || errno == EWOULDBLOCK) return F(0);
+						         return IFALSE; }
+						      case 1016: { /* getenv <owl-raw-bvec-or-ascii-leaf-string> */
+						    	  /* map a null or C-string to False, Null or owl-string, false being null or too large string */
+						    	  word strp2owl(char *sp) {
+						    	     int len;
+						    	     word *res;
+						    	     if (!sp) return IFALSE;
+						    	     len = lenn(sp, FMAX+1);
+						    	     if (len == FMAX+1) return INULL; /* can't touch this */
+						    	     res = new_bvec(len, TBVEC); /* make a bvec instead of a string since we don't know the encoding */
+						    	     bytecopy(sp, ((char *)res)+W, len);
+						    	     return (word)res;
+						    	  }
+
+						         char *name = (char *)a;
+						         if (!allocp(name)) return IFALSE;
+						         return strp2owl(getenv(name + W)); }
+						      case 1017: { /* exec[v] path argl ret */
+						#ifndef _WIN32
+						          char *path = ((char *) a) + W;
+						          int nargs = llen((word *)b);
+						         char **args = malloc((nargs+1) * sizeof(char *)); // potential memory leak
+						         char **argp = args;
+						         if (args == NULL)
+						            return IFALSE;
+						         while(nargs--) {
+						            *argp++ = ((char *) ((word *) b)[1]) + W;
+						            b = ((word *) b)[2];
+						         }
+						         *argp = NULL;
+						         set_blocking(0,1); /* try to return stdio to blocking mode */
+						         set_blocking(1,1); /* warning, other file descriptors will stay in nonblocking mode */
+						         set_blocking(2,1);
+						         execv(path, args); /* may return -1 and set errno */
+						         set_blocking(0,0); /* exec failed, back to nonblocking io for owl */
+						         set_blocking(1,0);
+						         set_blocking(2,0);
+						#endif
+						         return IFALSE; }
+						      case 1020: { /* chdir path res */
+						         char *path = ((char *)a) + W;
+						         if (chdir(path) < 0)
+						            return IFALSE;
+						         return ITRUE; }
+						#if 0 // ndef _WIN32
+						      case 1019: { /* wait <pid> <respair> _ */
+						         pid_t pid = (a == IFALSE) ? -1 : fixval(a);
+						         int status;
+						         word *r = (word *) b;
+						         pid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
+						         if (pid == -1)
+						            return IFALSE; /* error */
+						         if (pid == 0)
+						            return ITRUE; /* no changes, would block */
+						         if (WIFEXITED(status)) {
+						            r[1] = F(1);
+						            r[2] = F(WEXITSTATUS(status));
+						         } else if (WIFSIGNALED(status)) {
+						            r[1] = F(2);
+						            r[2] = F(WTERMSIG(status));
+						         } else if (WIFSTOPPED(status)) {
+						            r[1] = F(3);
+						            r[2] = F(WSTOPSIG(status));
+						         } else if (WIFCONTINUED(status)) {
+						            r[1] = F(4);
+						            r[2] = F(1);
+						         } else {
+						            fprintf(stderr, "vm: unexpected process exit status: %d\n", status);
+						            r = (word *)IFALSE;
+						         }
+						         return (word)r; }
+						      case 1018: { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
+						         pid_t pid = fork();
+						         if (pid == -1) /* fork failed */
+						            return IFALSE;
+						         if (pid == 0) /* we're in child, return true */
+						            return ITRUE;
+						         if ((int)pid > FMAX)
+						            fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
+						         return F(pid&FMAX); }
+						      case 1021: /* kill pid signal → fixnum */
+						         return (kill(fixval(a), fixval(b)) < 0) ? IFALSE : ITRUE;
+						#endif
+						      default:
+						         return IFALSE;
+						   }
+						}
+
 						result = prim_sys(op, a, b, c);
+					}
 					else
 						result = syscall(op, a, b, c);
 					break;
@@ -2942,15 +2938,52 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       A1 = TRUEFALSE(errno == EINTR);
       NEXT(2); }
 
-   op44: /* less a b r */
+   op44: {/* less a b r */
+   word prim_less(word a, word b) {
+      if (immediatep(a)) {
+         return immediatep(b) ? TRUEFALSE(a < b) : ITRUE;  /* imm < alloc */
+      } else {
+         return immediatep(b) ? IFALSE : TRUEFALSE(a < b); /* alloc > imm */
+      }
+   }
       A2 = prim_less(A0, A1);
       NEXT(3);
+   }
 
-   op60: /* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
+   op60: {/* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
+   word prim_lraw(word wptr, int type, word revp) {
+      word *lst = (word *) wptr;
+      int nwords, len = 0, pads;
+      unsigned char *pos;
+      word *raw, *ob;
+      if (revp != IFALSE) {
+   	   exit(1);
+      } /* <- to be removed */
+      ob = lst;
+      while (allocp(ob) && *ob == PAIRHDR) {
+         len++;
+         ob = (word *) ob[2];
+      }
+      if ((word) ob != INULL) return IFALSE;
+      if (len > FMAX) return IFALSE;
+      nwords = (len/W) + ((len % W) ? 2 : 1);
+      raw = new (nwords);
+      pads = (nwords-1)*W - len; /* padding byte count, usually stored to top 3 bits */
+      *raw = make_raw_header(nwords, type, pads);
+      ob = lst;
+      pos = ((unsigned char *) raw) + W;
+      while ((word) ob != INULL) {
+         *pos++ = fixval(ob[1])&255;
+         ob = (word *) ob[2];
+      }
+      while(pads--) { *pos++ = 0; } /* clear the padding bytes */
+      return (word)raw;
+   }
       A3 = prim_lraw(A0, fixval(A1), A2);
       NEXT(4);
-
-	} // switch(1)
+   }
+	// while(1)
+	}
 
 //   // todo: add here JIT
 //super_dispatch: /* run macro instructions */
@@ -2981,6 +3014,7 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
 /* count number of objects and measure heap size */
 static __tlocal__
 unsigned char *hp;       /* heap pointer when loading heap */
+static __tlocal__ word *fp;
 
 static
 word get_nat() {
@@ -3105,6 +3139,21 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 
 	*words = allocated;
 	return n;
+}
+
+static word* new_string (size_t length, char* string)
+{
+	word* object = fp;
+
+	int size = (length / W) + ((length % W) ? 2 : 1);
+	int pads = (size-1) * W - length;
+
+	*fp = make_raw_header(size, TSTRING, pads);
+	char* p = ((char *) fp) + W;
+	while (length--) *p++ = *string++;
+
+	fp += size;
+	return object;
 }
 
 // ----------------------------------------------------------------
@@ -3237,7 +3286,7 @@ int main(int argc, char** argv)
 		e = new_pair(d, c);
 			new_string(16, "eeeeeeeeeeeeeeee");
 
-		gc(0, e);
+		gc(0, e, &fp);
 #endif
 	}
 
@@ -3246,7 +3295,7 @@ int main(int argc, char** argv)
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 
-	//	oargs = gc(nwords + (128*1024), oargs); // get enough space to load the heap without triggering gc
+	//	oargs = gc(nwords + (128*1024), oargs, &fp); // get enough space to load the heap without triggering gc
 
 	// Десериализация загруженного образа в объекты
 	word* ptrs = fp;
