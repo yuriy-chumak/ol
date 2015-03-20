@@ -1745,7 +1745,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
 #	define MOVE   9       //
 #	define MOV2   5       //
+
 #	define GOTO   2       // jmp a, nargs
+#	define GOTO_CODE 18   //
+#	define GOTO_PROC 19   //
+#	define GOTO_CLOS 21   //
 
 #	define JEQ    8       // jeq
 #	define JP    16       // JZ, JN, JT, JF
@@ -1814,6 +1818,25 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ob = (word *)A0; acc = ip[1];
 			goto apply;
 
+		case GOTO_CODE:
+			ob = (word *)A0; acc = ip[1];
+			ip = (unsigned char*) &ob[1];
+			goto invoke;
+		case GOTO_PROC:
+			ob = (word *)A0; acc = ip[1];
+			R1 = (word) ob;
+			ob = (word *) ob[1];
+			ip = (unsigned char*) &ob[1];
+			goto invoke;
+		case GOTO_CLOS:
+			ob = (word *)A0; acc = ip[1];
+			R1 = (word) ob;
+			ob = (word *) ob[1];
+			R2 = (word) ob;
+			ob = (word *) ob[1];
+			ip = (unsigned char*) &ob[1];
+			goto invoke;
+
 		case APPLY: {
 			int reg, arity;
 			word *lst;
@@ -1843,7 +1866,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			}
 
 			while (allocp(lst) && *lst == PAIRHDR) { /* unwind argument list */
-				/* FIXME: unwind only up to last register and add limited rewinding to arity check */
+				// FIXME: unwind only up to last register and add limited rewinding to arity check
 				if (reg > 128) { /* dummy handling for now */
 					fprintf(stderr, "TOO LARGE APPLY\n");
 					exit(3);
@@ -1899,6 +1922,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //			   op2: OGOTO(ip[0], ip[1]); /* fixme, these macros are not used in cgen output anymore*/
 //			   ob = (word *)R[f]; acc = n; goto apply
 
+		case JEQ: /* jeq a b o, extended jump  */
+			if (A0 == A1)
+				ip += (ip[3] << 8) + ip[2]; // little-endian
+			ip += 4; break;
+
 		case JP:    // JZ, JN, JT, JF a hi lo
 			// was: FIXME, convert this to jump-const <n> comparing to make_immediate(<n>,TCONST),
 			//  но я считаю, что надо просто добавить еще одну команду, а эти так и оставить
@@ -1906,31 +1934,21 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				ip += (ip[2] << 8) + ip[1]; // little-endian
 			ip += 3; break;
 
-		case JEQ: /* jeq a b o, extended jump  */
-			if (A0 == A1)
-				ip += (ip[3] << 8) + ip[2]; // little-endian
-			ip += 4; break;
-
 		// используется в (func ...) в primop.scm
-		case JF2: { /* jmp-nargs(>=?) a hi lo */
-			int needed = ip[0]; // arity?
+		case JF2: { // jmp-nargs(>=?) a hi lo
+			int needed = ip[0]; // arity
 			if (acc == needed) {
-				if (op & 0x40) /* add empty extra arg list */
+				if (op & 0x40) // add empty extra arg list
 					R[acc + 3] = INULL;
 			}
 			else
 			if ((op & 0x40) && acc > needed) {
-			         word tail = INULL;  /* todo: no call overflow handling yet */
-			         while (acc > needed) {
-			        	 tail = (word)new_pair (R[acc + 2], tail);
-//			            fp[0] = PAIRHDR;   // todo: make as function for implicitly use fp
-//			            fp[1] = R[acc + 2];
-//			            fp[2] = tail;
-//			            tail = (word) fp;
-//			            fp += 3;
-			            acc--;
-			         }
-			         R[acc + 3] = tail;
+				word tail = INULL;  // todo: no call overflow handling yet
+				while (acc > needed) {
+					tail = (word)new_pair (R[acc + 2], tail);
+					acc--;
+				}
+				R[acc + 3] = tail;
 			}
 			else
 				ip += (ip[1] << 8) | ip[2];
@@ -1938,27 +1956,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 
-		op18: /* goto-code p */
-		      ob = (word *) R[*ip]; /* needed in opof gc */
-		      acc = ip[1];
-		      ip = ((unsigned char *) R[*ip]) + W;
-		      goto invoke;
-		   op19: { /* goto-proc p */
-		      word *this = (word *) R[*ip];
-		      R[1] = (word) this;
-		      acc = ip[1];
-		      ob = (word *) this[1];
-		      ip = ((unsigned char *) ob) + W;
-		      goto invoke; }
-		   op21: { /* goto-clos p */
-		      word *this = (word *) R[*ip];
-		      R[1] = (word) this;
-		      acc = ip[1];
-		      this = (word *) this[1];
-		      R[2] = (word) this;
-		      ob = (word *) this[1];
-		      ip = ((unsigned char *) ob) + W;
-		      goto invoke; }
 
 
 		case REFI: { //  1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
@@ -2082,7 +2079,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 3: goto op3; case 4: goto op4;
 		case 6: goto op6; case 7: goto op7;
 		case 15: goto op15;
-		case 18: goto op18; case 19: goto op19; case 21: goto op21;
 		case 26: goto op26;
 		case 28: goto op28; case 32: goto op32;
 		case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
