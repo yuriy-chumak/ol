@@ -18,7 +18,7 @@
       (owl list-extra)
       (owl error)
       (only (owl interop) interact)
-      (only (owl register) allocate-registers n-registers)
+      (lang register)
       (owl primop))
 
    (begin
@@ -51,7 +51,15 @@
               (move2 . 5)     ; two moves, 4 args
               (clos1 . 6)
               (cloc1 . 7)
-              ; 8 = jlq 
+
+              ;conditional jumps
+              (jeq  . 8)      ; jeq a b o1 o2
+              (jz   . ,(+ 16 (<< 0 6)))     ; jump-imm[0] if zero                                            ;+
+              (jn   . ,(+ 16 (<< 1 6)))     ; jump-imm[1] if null                                            ;+
+              (jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2] if true                                            ;+
+              (jf   . ,(+ 16 (<< 3 6)))     ; jump-imm[3] if false                                           ;+
+              (jf2  . 25)     ; jf2 a, ol, oh        ; jump if arity failed
+              
               (goto-code . 18)
               (goto-proc . 19)
               (goto-clos . 21)
@@ -60,23 +68,16 @@
               (car  . 52)     ; car a, t:       Rt = car(a);
               (cdr  . 53)     ; cdr a, t:       Rt = cdr(a);
               (eq   . 54)     ; eq a, b, t:     Rt = (Ra == Rb) ? true : false;
-              (jlq  . 8)      ; jlq a b o1 o2
               (mk   . 9)      ; mk n, a0, ..., an, t, size up to 256
               (mki  . 11)     ; mki size, type, v1, ..., vn, to
               (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
               (ld   . 14)     ; ld a, t:        Rt = a, signed byte
-              (jz   . ,(+ 16 (<< 0 6)))     ; jump-imm[0], zero                                              ;+
-              (jn   . ,(+ 16 (<< 1 6)))     ; jump-imm[1], null                                              ;+
-              (jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2], true                                              ;+
-              (jf   . ,(+ 16 (<< 3 6)))     ; jump-imm[3], false                                             ;+
               ;; ldi = 13                                                                                    ;+
               (movh . 13)       ;                                                                            ;+
               (ldn  . ,(+ 13 (<< 1 6)))     ; 77                                                             ;+
               (ldt  . ,(+ 13 (<< 2 6)))     ; 141  ldt t:          Rt = true                                 ;+
               (ldf  . ,(+ 13 (<< 3 6)))     ; 205  ldf t:          Rt = false                                ;+
-              (jeq  . 20)     ; jeq a, b, o:    ip += o if Ra == Rb      ; jump if eq?
               (ret  . 24)     ; ret a:          call R3 (usually cont) with Ra
-              (jf2  . 25)     ; jf a, ol, oh
               (set . 25)     ; set a, p, b     Ra[Rp] = Rb
               (jbf . 26)     ; jump-binding tuple n f offset ... r1 ... rn
               )))
@@ -234,7 +235,7 @@
                    (else (assemble else fail))
                    (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist (inst->op 'jlq) (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (ilist (inst->op 'jeq) (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             ((jz a then else)
                (lets

@@ -130,7 +130,7 @@
 ;                   (len (length else)))
 ;                  (cond
 ;                     ((< len #xffff)
-;                        (ilist (inst->op 'jlq) (reg a) (reg b)
+;                        (ilist (inst->op 'jeq) (reg a) (reg b)
 ;                           (band len #xff) (>> len 8) (append else then)))
 ;                     (else
 ;                        (error "need a bigger jump instruction: length is " len)))))

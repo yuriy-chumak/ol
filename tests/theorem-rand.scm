@@ -17,7 +17,9 @@
 ;       | ∀ var ... ∊ set Term <- -||-
 ; 
 
-(import (etc bisect))
+(import
+   (etc bisect)
+   (scheme misc))
 
 ;; Params
 

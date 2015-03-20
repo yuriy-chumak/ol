@@ -475,6 +475,8 @@ typedef struct object
 #define padsize(x)                  ((((word)x) >> 8) & 7)
 #define hdrtype(x)                  ((((word)x) & 0xFF) >> 2) // 0xFF from (p) << 8) in make_raw_header
 
+#define typeof(x) hdrtype(x)
+
 #define immediatep(x)               (((word)x) & 2)
 #define allocp(x)                   (!immediatep(x))
 #define rawp(hdr)                   ((hdr) & RAWBIT)
@@ -1124,28 +1126,6 @@ static word prim_get(word *ff, word key, word def) { /* ff assumed to be valid *
    return def;
 }
 
-static word prim_cast(word *object, int type) {
-	if (immediatep(object))
-		return make_immediate(imm_val((word)object), type);
-	else
-	{ /* make a clone of more desired type */
-
-		// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
-		// это лучше сделать тут, наверное, а не отдельной командой
-
-      word hdr = *object++;
-      int size = hdrsize(hdr);
-      word *newobj, *res; /* <- could also write directly using *fp++ */
-      newobj = new (size);
-      res = newobj;
-      /* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
-      //*newobj++ = (hdr&(~2040))|(type<<TPOS);
-      *newobj++ = (hdr&(~252))|(type<<TPOS); /* <- hardcoded ...111100000011 */
-      wordcopy(object,newobj,size-1);
-      return (word)res;
-   }
-}
-
 static int prim_refb(word pword, int pos) {
    word *ob = (word *) pword;
    word hdr, hsize;
@@ -1513,31 +1493,6 @@ static word prim_lraw(word wptr, int type, word revp) {
 }
 
 
-static word prim_mkff(word t, word l, word k, word v, word r) {
-   word *ob = fp;
-   ob[1] = k;
-   ob[2] = v;
-   if (l == IEMPTY) {
-      if (r == IEMPTY) {
-         *ob = make_header(3, t);
-         fp += 3;
-      } else {
-         *ob = make_header(4, t|FFRIGHT);
-         ob[3] = r;
-         fp += 4;
-      }
-   } else if (r == IEMPTY) {
-      *ob = make_header(4, t);
-      ob[3] = l;
-      fp += 4;
-   } else {
-      *ob = make_header(5, t);
-      ob[3] = l;
-      ob[4] = r;
-      fp += 5;
-   }
-   return (word) ob;
-}
 
 /*
 ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
@@ -1791,13 +1746,14 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define MOVE   9       //
 #	define MOV2   5       //
 #	define GOTO   2       // jmp a, nargs
+
+#	define JEQ    8       // jeq
 #	define JP    16       // JZ, JN, JT, JF
-#	define JLQ    8       // jlq ?
+#	define JF2   25       // jf2
 
 #	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
 #	define LD    14
 
-#	define JF2   25
 //	define GOTO_CODE 18
 //	define GOTO_PROC 19
 //	define GOTO_CLOS 21
@@ -1819,6 +1775,9 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 #	define CLOCK 61
 #	define SYSCALL 63
+
+#	define CAST  22
+#	define MKT   23   // make tuple
 
 	// free numbers: 34 (was _connect)
 
@@ -1947,7 +1906,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				ip += (ip[2] << 8) + ip[1]; // little-endian
 			ip += 3; break;
 
-		case JLQ: /* jlq a b o, extended jump  */
+		case JEQ: /* jeq a b o, extended jump  */
 			if (A0 == A1)
 				ip += (ip[3] << 8) + ip[2]; // little-endian
 			ip += 4; break;
@@ -2124,11 +2083,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case 6: goto op6; case 7: goto op7;
 		case 15: goto op15;
 		case 18: goto op18; case 19: goto op19; case 21: goto op21;
-		case 22: goto op22; case 23: goto op23; case 26: goto op26;
+		case 26: goto op26;
 		case 28: goto op28; case 32: goto op32;
 		case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
-		case 40: goto op40; case 41: goto op41; case 42: goto op42; case 43: goto op43; case 44: goto op44;
-		case 46: goto op46; case 47: goto op47; case 48: goto op48; case 49: goto op49;
+		case 40: goto op40; case 44: goto op44;
+		case 47: goto op47; case 48: goto op48;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
 		case 58: goto op58; case 59: goto op59; case 60: goto op60;
 
@@ -2184,37 +2143,41 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 3; break;
 		}
 
-//		   op22: { /* cast o t r */
-//		      word *ob = (word *) R[*ip];
-//		      word type = fixval(A1) & 63;
-//		      A2 = prim_cast(ob, type);
-//		      NEXT(3); }
-//
+		/** ff's ---------------------------------------------------
+		 *
+		 */
+		case 42:   // mkblack l k v r t
+		case 43: { // mkred l k v r t
+			word prim_mkff(word t, word l, word k, word v, word r) {
+			   word *ob = fp;
+			   ob[1] = k;
+			   ob[2] = v;
+			   if (l == IEMPTY) {
+			      if (r == IEMPTY) {
+			         *ob = make_header(3, t);
+			         fp += 3;
+			      } else {
+			         *ob = make_header(4, t|FFRIGHT);
+			         ob[3] = r;
+			         fp += 4;
+			      }
+			   } else if (r == IEMPTY) {
+			      *ob = make_header(4, t);
+			      ob[3] = l;
+			      fp += 4;
+			   } else {
+			      *ob = make_header(5, t);
+			      ob[3] = l;
+			      ob[4] = r;
+			      fp += 5;
+			   }
+			   return (word) ob;
+			}
+		    A4 = prim_mkff(op == 42 ? TFF : TFF|FFRED, A0,A1,A2,A3);
+			NEXT(5);
+		}
 
-
-		// ff функции
-		   op23: { /* mkt t s f1 .. fs r */
-			  word t = *ip++;
-			  word s = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
-			  word *ob = new (s+1), p = 0; // s fields + header
-			  *ob = make_header(s+1, t);
-			  while (p < s) {
-				 ob[p+1] = R[ip[p]];
-				 p++;
-			  }
-			  R[ip[p]] = (word) ob;
-			  NEXT(s+1); }
-		   op41: { /* red? node r (has highest type bit?) */
-			  word *node = (word *) R[*ip];
-			  A1 = TRUEFALSE(allocp(node) && ((*node)&(FFRED<<TPOS)));
-			  NEXT(2); }
-		   op42: /* mkblack l k v r t */
-			  A4 = prim_mkff(TFF,A0,A1,A2,A3);
-			  NEXT(5);
-		   op43: /* mkred l k v r t */
-			  A4 = prim_mkff(TFF|FFRED,A0,A1,A2,A3);
-			  NEXT(5);
-		   op46: { /* fftoggle - toggle node color */
+		case 46: { // fftoggle - toggle node color
 				 word *node = (word *) R[*ip];
 				 word *newobj, h;
 				 CHECK(allocp(node), node, 46);
@@ -2228,8 +2191,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					default: *newobj++ = *node++;
 							 *newobj++ = *node++; }
 				 fp = newobj;
-				 NEXT(2); }
-		   op49: { /* withff node l k v r */
+				 NEXT(2);
+		}
+
+		case 49: { // withff node l k v r */ // bindff - bind node left key val right, filling in #false when implicit
 			  word hdr, *ob = (word *) R[*ip];
 			  hdr = *ob++;
 			  A2 = *ob++; /* key */
@@ -2247,7 +2212,56 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					A1 = *ob++;
 					A4 = *ob;
 			  }
-			  NEXT(5); }
+			  NEXT(5);
+		}
+
+		case 41: { // red? node r (has highest type bit?) */
+			  word *node = (word *) R[*ip];
+			  A1 = TRUEFALSE(allocp(node) && ((*node)&(FFRED<<TPOS)));
+			  NEXT(2);
+		}
+
+
+	   //types
+
+		case CAST: { // cast o t r
+			word *ob = (word *) R[*ip];
+			word type = fixval(A1) & 63;
+
+			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
+			// это лучше сделать тут, наверное, а не отдельной командой
+			if (immediatep(ob))
+				A2 = make_immediate(imm_val((word)ob), type);
+			else { // make a clone of more desired type
+				word hdr = *ob++;
+				int size = hdrsize(hdr);
+				word *newobj = new (size);
+				word *res = newobj;
+				/* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
+				//*newobj++ = (hdr&(~2040))|(type<<TPOS);
+				*newobj++ = (hdr & (~252)) | (type << TPOS); /* <- hardcoded ...111100000011 */
+				wordcopy(ob, newobj, size-1);
+				A2 = (word)res;
+			}
+
+			ip += 3; break;
+		}
+
+		case MKT: { // mkt t s f1 .. fs r
+			word t = *ip++;
+			word s = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
+			word *ob = new (s+1), p = 0; // s fields + header
+			*ob = make_header(s+1, t);
+			while (p < s) {
+				ob[p+1] = R[ip[p]];
+				p++;
+			}
+			R[ip[p]] = (word) ob;
+
+			NEXT(s+1);
+		}
+
+
 
 
 		case CLOCK: { // clock <secs> <ticks>
@@ -2274,9 +2288,9 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 		}
 
-			// этот case должен остаться тут - как последний из кейсов
-			//  todo: переименовать в компиляторе sys-prim на syscall (?)
-			// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
+		// этот case должен остаться тут - как последний из кейсов
+		//  todo: переименовать в компиляторе sys-prim на syscall (?)
+		// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
 		case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
@@ -2887,11 +2901,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       if (allocp(x)) x = V(x);
       R[*ip++] = F((x>>TPOS)&63);
       NEXT(0); }
-   op22: { /* cast o t r */
-      word *ob = (word *) R[*ip];
-      word type = fixval(A1) & 63;
-      A2 = prim_cast(ob, type);
-      NEXT(3); }
 
    op28: { /* sizeb obj to */
       word* ob = (word*)R[*ip];

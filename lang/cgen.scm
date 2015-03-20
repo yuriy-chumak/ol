@@ -29,8 +29,8 @@
       (owl primop)
       (owl render)
       (owl io)
-      (owl error)
-      (only (lang assemble) inst->op))
+      (owl error))
+;      (only (lang assemble) inst->op))
 
    (begin
 

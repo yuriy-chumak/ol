@@ -7,9 +7,9 @@
 ; number available in VM, while also trying to retarget operations 
 ; to more sensible registers.
 
-(define-library (owl register)
+(define-library (lang register)
 
-   (export 
+   (export
       allocate-registers 
       n-registers)
 

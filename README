@@ -1,6 +1,12 @@
 Related:
 	http://groups.csail.mit.edu/mac/projects/scheme/
 
+Register interpreter in the windows:
+assoc .ol=oLisp.File
+ftype oLisp.File=ol "%1" %*
+
+
+
 
 Owl Lisp -- yet another pet lisp 
 Copyright (c) 2012 Aki Helin

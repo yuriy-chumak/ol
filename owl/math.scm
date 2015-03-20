@@ -18,12 +18,12 @@
 
 (define-library (owl math)
 
-   (export 
+   (export
       number? fixnum? integer?
-      + - * = / 
-      << < <= = >= > >>   
+      + - * = /
+      << < <= = >= > >>
       band bor bxor
-      div ediv rem mod quotrem mod divmod 
+      div ediv rem mod quotrem mod divmod
       add nat-succ sub mul big-bad-args negate
       even? odd?
       gcd gcdl lcm

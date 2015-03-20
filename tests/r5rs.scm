@@ -1,6 +1,7 @@
 ;;;
 ;;; Testing the intersection of R5RS and Owl
 ;;;
+(import (scheme misc))
 
 (define (print thing)
    ;; silly R5RS & Owl version

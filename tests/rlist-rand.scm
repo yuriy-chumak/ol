@@ -1,6 +1,7 @@
 ;;;
 ;;; a bit of testing
 ;;;
+(import (scheme misc))
 
 ; lset could be on toplevel
 

@@ -895,7 +895,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
 ;; note, one one could use the compiler of the currently running system, but using 
 ;; the rebuilt one here to make changes possible in 1 instead of 2 build cycles.
 ;; (this may be changed later)
-(print "Code loaded at " (- (time-ms) build-start) "ms.")
+(print "Code loaded at " (- (time-ms) build-start) " ms.")
 (print "Compiling ...")
 
 (compiler heap-entry "unused historical thingy"
@@ -905,4 +905,4 @@ Check out http://code.google.com/p/owl-lisp for more information.")
        (want-codes . #true)        ;?
        (want-native-ops . #true))) ;?
    null) ; "none" = null, "some" = usual-suspects, "all" = heap-entry : vm extensions (none, some, all)
-(print "Output written at " (- (time-ms) build-start) "ms.")
+(print "Output written at " (- (time-ms) build-start) " ms.")
