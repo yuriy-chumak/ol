@@ -141,10 +141,10 @@
 
             ; непосредственный код
             (primop 'raw        '(60 4 5 6    7  24 7)  3 1) ;; make raw object, and *add padding byte count to type variant*
-         
             (primop 'sys        '(27 4 5 6 7  8  24 8)  4 1) ; тут было что-то особенное (в смысле, что количество аргументов было 4, а не 3 написано)
-            (primop 'sys-prim   '(63 4 5 6 7  8  24 8)  4 1) ; todo: rename sys-prim to syscall
             (primop 'run        '(50 4 5      6  24 6)  2 1)            
+
+            (primop 'sys-prim   '(63 4 5 6 7  8  24 8)  4 1) ; todo: rename sys-prim to syscall
             
             ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
             ; Strange Names

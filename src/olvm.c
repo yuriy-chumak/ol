@@ -1476,7 +1476,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 	// управляющие команды:
 #	define APPLY 20
-#	define INTEROP 27
+#	define SYS 27
 #	define RUN   50
 #	define RET   24
 
@@ -1513,9 +1513,13 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 #	define CAR   52
 #	define CDR   53
+#	define REF   47
+
 #	define NCONS 29
 #	define NCAR  30
 #	define NCDR  31
+
+#	define REFB  48
 
 	//
 #	define SET   45
@@ -1557,15 +1561,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			}
 			goto apply;
 
-
-		case INTEROP: // interop cont op arg1 arg2
-			ob = (word *) R[0];
-			R[0] = IFALSE;
-			R[3] = A1; R[4] = R[*ip]; R[5] = A2; R[6] = A3;
-			acc = 4;
-			if (ticker > 10)
-				bank = ticker; // deposit remaining ticks for return to thread
-			goto apply;
 
 		case GOTO:
 			ob = (word *)A0; acc = ip[1];
@@ -1634,32 +1629,40 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		case RET: // return value
 			ob = (word *) R[3];
-			R[3] = R[ip[0]];
+			R[3] = A0;
 			acc = 1;
 			goto apply;
 
+		case SYS: // sys continuation op arg1 arg2
+			ob = (word *) R[0];
+			R[0] = IFALSE;
+			R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
+			acc = 4;
+			if (ticker > 10)
+				bank = ticker; // deposit remaining ticks for return to thread
+			goto apply;
+
 		case RUN: { // run thunk quantum
-			word hdr;
 			ob = (word *) A0;
 			R[0] = R[3];
 			ticker = bank ? bank : fixval(A1);
 			bank = 0;
 			CHECK(allocp(ob), ob, 50);
-			hdr = *ob;
-			if (imm_type(hdr) != TTHREAD) {
-				// call a thunk with terminal continuation
-				R[3] = IHALT; // exit via R0 when the time comes
-				acc = 1;
-				goto apply;
+
+			word hdr = *ob;
+			if (imm_type(hdr) == TTHREAD) {
+				int pos = hdrsize(hdr) - 1;
+				word code = ob[pos];
+				acc = pos - 3;
+				while (--pos)
+					R[pos] = ob[pos];
+				ip = ((unsigned char *) code) + W;
+				continue; // no apply, continue
 			}
-			// else TTHREAD
-			int pos = hdrsize(hdr) - 1;
-			word code = ob[pos];
-			acc = pos - 3;
-			while (--pos)
-				R[pos] = ob[pos];
-			ip = ((unsigned char *) code) + W;
-			break;
+			// else call a thunk with terminal continuation:
+			R[3] = IHALT; // exit via R0 when the time comes
+			acc = 1;
+			goto apply;
 		}
 
 
@@ -1701,15 +1704,15 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		// используется в (func ...) в primop.scm
 		case JF2: { // jmp-nargs(>=?) a hi lo
-			int needed = ip[0]; // arity
-			if (acc == needed) {
+			int arity = ip[0];
+			if (acc == arity) {
 				if (op & 0x40) // add empty extra arg list
 					R[acc + 3] = INULL;
 			}
 			else
-			if ((op & 0x40) && acc > needed) {
+			if (acc > arity && (op & 0x40)) {
 				word tail = INULL;  // todo: no call overflow handling yet
-				while (acc > needed) {
+				while (acc > arity) {
 					tail = (word)new_pair (R[acc + 2], tail);
 					acc--;
 				}
@@ -1762,53 +1765,15 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 4; break;
 		}
 
-			//
-		case 47: {  /* ref t o r */ /* fixme: deprecate this later */
-			word prim_ref(word pword, word pos)  {
-			   word *ob = (word *) pword;
-			   word hdr, size;
-			   pos = fixval(pos);
-			   if(immediatep(ob)) { return IFALSE; }
-			   hdr = *ob;
-			   if (rawp(hdr)) { /* raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}] */
-			      size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
-			      if (pos >= size) { return IFALSE; }
-			      return F(((unsigned char *) ob)[pos+W]);
-			   }
-			   size = hdrsize(hdr);
-			   if (!pos || size <= pos) /* tuples are indexed from 1 (probably later 0-255)*/
-			      return IFALSE;
-			   return ob[pos];
-			}
 
-		      A2 = prim_ref(A0, A1);
-		      NEXT(3);
-		}
-		case 48: { /* refb t o r */ /* todo: merge with ref, though 0-based  */
-			int prim_refb(word pword, int pos) {
-			   word *ob = (word *) pword;
-			   word hdr, hsize;
-			   if (immediatep(ob))
-			      return -1; // todo: return IFALSE
-			   hdr = *ob;
-			   hsize = ((hdrsize(hdr)-1)*W) - padsize(hdr); /* bytes - pads */
-			   if (pos >= hsize)
-			      return IFALSE;
-			   return F(((unsigned char *) ob)[pos+W]);
-			}
-
-		      A2 = prim_refb(A0, fixval(A1));
-		      NEXT(3);
-		}
-
-		// операции со списками
+		// операции посложнее
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
-			A2 = (word)new_pair(A0, A1); // видимо, вызывается очень часто, так как замена на макрос дает +10% к скорости
+			A2 = (word) new_pair(A0, A1); // видимо, вызывается очень часто, так как замена на макрос дает +10% к скорости
 			ip += 3; break;
 
 
 		case TYPE: { // type o r <- actually sixtet
-			T = A0;
+			word T = A0;
 			if (is_pointer(T))
 				T = V(T);
 			A1 = F(typeof (T)); // was: F((T >> TPOS) & 63);
@@ -1816,13 +1781,13 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 		case SIZE: { // size o r
-			T = A0;
+			word T = A0;
 			A1 = (immediatep(T)) ? IFALSE : F(hdrsize(*(word*)T) - 1);
 			ip += 2; break;
 		}
 
 		case CAST: { // cast o t r
-			T = A0;
+			word T = A0;
 			word type = fixval(A1) & 63;
 
 			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
@@ -1845,6 +1810,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 3; break;
 		}
 
+
 		case CAR:    // car a r:
 			T = A0;
 			CHECK(pairp(T), T, CAR);
@@ -1856,6 +1822,33 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			CHECK(pairp(T), T, CDR); // bug? was 52 instead of CDR(53)
 			A1 = ((word*)T)[2];
 			ip += 2; break;
+
+		case REF: {  /* ref t o r */ /* fixme: deprecate this later */
+			word *p = (word *) A0;
+			if (immediatep(p))
+				A2 = IFALSE;
+			else {
+				word hdr = *p;
+				if (rawp(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
+					word pos = fixval(A1);
+					word size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
+					if (pos >= size)
+						A2 = IFALSE;
+					else
+						A2 = F(((unsigned char *) p)[pos+W]);
+				}
+				else {
+					word pos = fixval(A1);
+					word size = hdrsize(hdr);
+					if (!pos || size <= pos) // tuples are indexed from 1
+						A2 = IFALSE;
+					else
+						A2 = p[pos];
+				}
+			}
+			ip += 3; break;
+		}
+
 
 		// то же самое, но для числовых пар
 		case NCONS:  /* ncons a b r */
@@ -1956,6 +1949,21 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	      A5 = F(a - q*b);
 	      NEXT(6); }
 
+		case REFB: { /* refb t o r */ /* todo: merge with ref, though 0-based  */
+			word *p = (word *) A0;
+			if (immediatep(p))
+				A2 = F(-1); // todo: return IFALSE
+			else {
+				word hdr = *p;
+				word hsize = ((hdrsize(hdr)-1)*W) - padsize(hdr); /* bytes - pads */
+				int pos = fixval(A1);
+				if (pos >= hsize)
+					A2 = IFALSE;
+				else
+					A2 = F(((unsigned char *) p)[pos+W]);
+			}
+			ip += 3; break;
+		}
 
 
 		case 3: goto op3; case 4: goto op4;

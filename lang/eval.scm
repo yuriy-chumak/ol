@@ -89,7 +89,7 @@
             ;(map (lambda (primop) (ref primop 1)) primops)
             '(cons car cdr set! set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
               mk mkt bind
-              sys set raw
+              raw sys set
               _sleep
               
               mkred mkblack ff-bind ff-toggle red? listuple
