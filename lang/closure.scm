@@ -4,7 +4,7 @@
 
 (define-library (lang closure)
 
-	(export 
+   (export 
       build-closures 
       uncompiled-closure?)
 

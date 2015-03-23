@@ -137,6 +137,7 @@
             (tuple 'ff-bind      49    1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
             (tuple 'mkt          23   'any   1  mkt)      ;; mkt type v0 .. vn t
          
+            ; apply
 
             ; непосредственный код
             (primop 'raw        '(60 4 5 6    7  24 7)  3 1) ;; make raw object, and *add padding byte count to type variant*
@@ -169,7 +170,7 @@
             (primop 'set        '(45 4 5 6  7  24 7)  3 1) ; (set tuple pos val) -> tuple'
             (primop 'set-car!   '(11 4 5    6  24 6)  2 1)
             (primop 'set-cdr!   '(12 4 5    6  24 6)  2 1)
-            (primop 'set!       '(10 4 5 6  7  24 7)  3 1) ; (set! tuple pos val)
+;           (primop 'set!       '(10 4 5 6  7  24 7)  3 1) ; (set! tuple pos val)
             
             (primop 'eq?        '(54 4 5  6  24 6)  2 1)
             (primop 'lesser?    '(44 4 5  6  24 6)  2 1)
@@ -294,10 +295,11 @@
 
       (define (variable-input-arity? op) (eq? op 23)) ;; mkt
 
-      (define apply      (raw (list APPLY)            type-bytecode #false)) ;; <- no arity, just call 20
+      (define apply      (raw (list APPLY)              type-bytecode #false)) ;; <- no arity, just call 20
       (define apply-cont (raw (list (fxbor APPLY #x40)) type-bytecode #false))
 
-      (define call/cc
+      ; call/cc
+      (define call-with-current-continuation
          ('_sans_cps
             (λ (k f)
                (f k
@@ -305,8 +307,8 @@
                      ((c a) (k a))
                      ((c a b) (k a b))
                      ((c . x) (apply-cont k x)))))))
+      (define call/cc call-with-current-continuation)
 
-      (define call-with-current-continuation call/cc)
 
       (define-syntax lets/cc 
          (syntax-rules (call/cc)

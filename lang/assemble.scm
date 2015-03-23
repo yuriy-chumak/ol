@@ -4,11 +4,10 @@
 
 ; user only in compile.scm
 (define-library (lang assemble)
-
-   (export 
-      assemble-code 
+   (export
+      assemble-code)
 ;      bytes->bytecode
-      inst->op)
+;      inst->op)
 
    (import
       (owl defmac)
@@ -45,7 +44,6 @@
          (list->ff
             `((move . 9)      ; move a, t:      Ra -> Rt
               (refi . 1)      ; refi a, p, t:   Ra[p] -> Rt, p unsigned                                       ;+
-              (goto . 2)      ; jmp a, nargs    call Ra with nargs args
               (clos . 3)      ; clos lp, o, nenv, e0 ... en, t: 
               (cloc . 4)      ; cloc lp, o, nenv, e0 ... en, t: 
               (move2 . 5)     ; two moves, 4 args
@@ -56,30 +54,39 @@
               (jeq  . 8)      ; jeq a b o1 o2
               (jz   . ,(+ 16 (<< 0 6)))     ; jump-imm[0] if zero                                            ;+
               (jn   . ,(+ 16 (<< 1 6)))     ; jump-imm[1] if null                                            ;+
-              (jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2] if true                                            ;+
+;              (jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2] if true                                            ;+
               (jf   . ,(+ 16 (<< 3 6)))     ; jump-imm[3] if false                                           ;+
-              (jf2  . 25)     ; jf2 a, ol, oh        ; jump if arity failed
+;              (jf2  . 25)     ; jf2 a, ol, oh        ; jump if arity failed
               
+              ; executions
+              (goto . 2)      ; jmp a, nargs    call Ra with nargs args
               (goto-code . 18)
               (goto-proc . 19)
               (goto-clos . 21)
-              (igoto . 26)   ; indirect goto
-              (cons . 51)     ; cons a, b, t:   Rt = mkpair(a, b)
-              (car  . 52)     ; car a, t:       Rt = car(a);
-              (cdr  . 53)     ; cdr a, t:       Rt = cdr(a);
-              (eq   . 54)     ; eq a, b, t:     Rt = (Ra == Rb) ? true : false;
-              (mk   . 9)      ; mk n, a0, ..., an, t, size up to 256
-              (mki  . 11)     ; mki size, type, v1, ..., vn, to
-              (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
+              (ret  . 24)     ; ret a:          call R3 (usually cont) with Ra
+              
+              ; ld
               (ld   . 14)     ; ld a, t:        Rt = a, signed byte
-              ;; ldi = 13                                                                                    ;+
-              (movh . 13)       ;                                                                            ;+
               (ldn  . ,(+ 13 (<< 1 6)))     ; 77                                                             ;+
               (ldt  . ,(+ 13 (<< 2 6)))     ; 141  ldt t:          Rt = true                                 ;+
               (ldf  . ,(+ 13 (<< 3 6)))     ; 205  ldf t:          Rt = false                                ;+
-              (ret  . 24)     ; ret a:          call R3 (usually cont) with Ra
-              (set . 25)     ; set a, p, b     Ra[Rp] = Rb
-              (jbf . 26)     ; jump-binding tuple n f offset ... r1 ... rn
+              
+;              (igoto . 26)   ; indirect goto
+;              (cons . 51)     ; cons a, b, t:   Rt = mkpair(a, b)
+;              (car  . 52)     ; car a, t:       Rt = car(a);
+;              (cdr  . 53)     ; cdr a, t:       Rt = cdr(a);
+;              (eq   . 54)     ; eq a, b, t:     Rt = (Ra == Rb) ? true : false;
+;              (mk   . 9)      ; mk n, a0, ..., an, t, size up to 256
+;              (mki  . 11)     ; mki size, type, v1, ..., vn, to
+;              (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
+              
+              
+;              (set . 25)     ; set a, p, b     Ra[Rp] = Rb
+;              (jbf . 26)     ; jump-binding tuple n f offset ... r1 ... rn
+              
+              ;; ldi = 13                                                                                    ;+
+;              (movh . 13)       ;                                                                            ;+
+              
               )))
 
       (define (inst->op name)

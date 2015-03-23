@@ -5,8 +5,7 @@
 ; convert all variables to fresh symbols. makes compilation easier.
 
 (define-library (lang alpha)
-
-	(export alpha-convert)
+   (export alpha-convert)
 
    (import
       (owl defmac)

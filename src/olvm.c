@@ -454,7 +454,7 @@ typedef struct object
 #define FMAX                        ((1<<FBITS)-1) /* maximum fixnum (and most negative fixnum) */
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #define RAWBIT                      (1<<11)
-#define RAW(t)                      (t | (RAWBIT >> TPOS))
+#define RAWH(t)                     (t | (RAWBIT >> TPOS))
 #define make_immediate(value, type)    (((value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(size, type)        (( (size) << SPOS) | ((type) << TPOS)                         | 2)
 #define make_raw_header(size, type, p) (( (size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
@@ -493,7 +493,7 @@ typedef struct object
 #define TSTRING                      3
 
 #define TPORT                       (12)
-#define TRAWPORT                    RAW(TPORT)
+#define TRAWPORT                    RAWH(TPORT)
 #define TCONST                      13
 #define TFF                         24
 #define TBVEC                       19
@@ -1480,30 +1480,37 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define RUN   50
 #	define RET   24
 
-	// список команд: работающий транслятор в С смотреть в cgen.scm в (translators)
-#	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
-#	define MOVE   9       //
-#	define MOV2   5       //
-
 #	define GOTO   2       // jmp a, nargs
 #	define GOTO_CODE 18   //
 #	define GOTO_PROC 19   //
 #	define GOTO_CLOS 21   //
 
+
+	// список команд
+	// смотреть в assembly.scm
+#	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
+#	define LD    14
+
+#	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
+#	define MOVE   9       //
+#	define MOV2   5       //
+
 #	define JEQ    8       // jeq
 #	define JP    16       // JZ, JN, JT, JF
 #	define JF2   25       // jf2
 
-#	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
-#	define LD    14
-
-//	define GOTO_CODE 18
-//	define GOTO_PROC 19
-//	define GOTO_CLOS 21
-
-
 	// примитивы языка:
+#	define RAW 60
+//sys 27
+//sys-prim 63
+//run 50
+
 #	define CONS  51
+
+#	define TYPE  15
+#	define SIZE  36
+#	define CAST  22
+
 #	define CAR   52
 #	define CDR   53
 #	define NCONS 29
@@ -1519,7 +1526,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define CLOCK 61
 #	define SYSCALL 63
 
-#	define CAST  22
+
+
 #	define MKT   23   // make tuple
 
 #	define MKRED    43
@@ -1534,7 +1542,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	// Rn - регистр машины (R[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
-	word *T; // временный регистр, валидный только атомарно в обработчике операции
+	word T; // временный регистр, валидный только атомарно в обработчике операции
 	while (1) { // todo: добавить условие выхода из цикла
 		int op; // operation to execute
 		switch ((op = *ip++) & 0x3F) {
@@ -1624,6 +1632,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			goto apply;
 		}
 
+		case RET: // return value
+			ob = (word *) R[3];
+			R[3] = R[ip[0]];
+			acc = 1;
+			goto apply;
+
 		case RUN: { // run thunk quantum
 			word hdr;
 			ob = (word *) A0;
@@ -1648,14 +1662,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			break;
 		}
 
-		case RET: // return value
-			ob = (word *) R[3];
-			R[3] = R[ip[0]];
-			acc = 1;
-			goto apply;
 
 		/************************************************************************************/
 		// операции с данными
+		//	смотреть "vm-instructions" в "lang/assembly.scm"
 		case LDI:    // 13,  -> ldi(ldn, ldt, ldf){2bit what} [to]
 			A0 = I[op>>6];
 			ip += 1; break;
@@ -1663,9 +1673,19 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			A1 = F(ip[0]);
 			ip += 2; break;
 
-		//
-//			   op2: OGOTO(ip[0], ip[1]); /* fixme, these macros are not used in cgen output anymore*/
-//			   ob = (word *)R[f]; acc = n; goto apply
+
+		case REFI: { //  1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
+			word* Ra = (word*)A0; A2 = Ra[ip[1]];
+			ip += 3; break;
+		}
+		case MOVE: // move a, t:      Rt = Ra
+			A1 = A0;
+			ip += 2; break;
+		case MOV2: // mov2 from1 to1 from2 to2
+			A1 = A0;
+			A3 = A2;
+			ip += 4; break;
+
 
 		case JEQ: /* jeq a b o, extended jump  */
 			if (A0 == A1)
@@ -1701,21 +1721,49 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 
+		/************************************************************************************/
+		// более высокоуровневые конструкции
+		//	смотреть "owl/primop.scm" и "lang/assemble.scm"
+		case RAW: {/* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
+			word wptr = A0;
+			int type = fixval(A1);
+			word revp = A2;
+			if (revp != IFALSE)
+				exit(1);
 
+			word *lst = (word *) wptr;
+			int nwords, len = 0, pads;
+			unsigned char *pos;
+			/* <- to be removed */
 
-		case REFI: { //  1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
-			word* Ra = (word*)A0; A2 = Ra[ip[1]];
-			ip += 3; break;
-		}
-		case MOVE: // move a, t:      Rt = Ra
-			A1 = A0;
-			ip += 2; break;
-		case MOV2: // mov2 from1 to1 from2 to2
-			A1 = A0;
-			A3 = A2;
+			word* p = lst;
+			while (allocp(p) && *p == PAIRHDR) {
+				len++;
+				p = (word *) p[2];
+			}
+			if ((word) p == INULL && len <= FMAX) {
+				nwords = (len/W) + ((len%W) ? 2 : 1);
+				word *raw = new (nwords);
+				pads = (nwords-1)*W - len; /* padding byte count, usually stored to top 3 bits */
+				*raw = make_raw_header(nwords, type, pads);
+
+				p = lst;
+				pos = ((unsigned char *) raw) + W;
+				while ((word) p != INULL) {
+					*pos++ = fixval(p[1]) & 255;
+					p = (word *) p[2];
+				}
+				while (pads--) *pos++ = 0; // clear the padding bytes
+				A3 = (word)raw;
+			}
+			else
+				A3 = IFALSE;
+
 			ip += 4; break;
-//
-		op47: {  /* ref t o r */ /* fixme: deprecate this later */
+		}
+
+			//
+		case 47: {  /* ref t o r */ /* fixme: deprecate this later */
 			word prim_ref(word pword, word pos)  {
 			   word *ob = (word *) pword;
 			   word hdr, size;
@@ -1736,7 +1784,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		      A2 = prim_ref(A0, A1);
 		      NEXT(3);
 		}
-		op48: { /* refb t o r */ /* todo: merge with ref, though 0-based  */
+		case 48: { /* refb t o r */ /* todo: merge with ref, though 0-based  */
 			int prim_refb(word pword, int pos) {
 			   word *ob = (word *) pword;
 			   word hdr, hsize;
@@ -1758,16 +1806,55 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			A2 = (word)new_pair(A0, A1); // видимо, вызывается очень часто, так как замена на макрос дает +10% к скорости
 			ip += 3; break;
 
+
+		case TYPE: { // type o r <- actually sixtet
+			T = A0;
+			if (is_pointer(T))
+				T = V(T);
+			A1 = F(typeof (T)); // was: F((T >> TPOS) & 63);
+			ip += 2; break;
+		}
+
+		case SIZE: { // size o r
+			T = A0;
+			A1 = (immediatep(T)) ? IFALSE : F(hdrsize(*(word*)T) - 1);
+			ip += 2; break;
+		}
+
+		case CAST: { // cast o t r
+			T = A0;
+			word type = fixval(A1) & 63;
+
+			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
+			// это лучше сделать тут, наверное, а не отдельной командой
+			if (immediatep(T))
+				A2 = make_immediate(imm_val(T), type);
+			else { // make a clone of more desired type
+				word* ob = (word*)T;
+				word hdr = *ob++;
+				int size = hdrsize(hdr);
+				word *newobj = new (size);
+				word *res = newobj;
+				/* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
+				//*newobj++ = (hdr&(~2040))|(type<<TPOS);
+				*newobj++ = (hdr & (~252)) | (type << TPOS); /* <- hardcoded ...111100000011 */
+				wordcopy(ob, newobj, size-1);
+				A2 = (word)res;
+			}
+
+			ip += 3; break;
+		}
+
 		case CAR:    // car a r:
-			T = (word *) A0;
+			T = A0;
 			CHECK(pairp(T), T, CAR);
-			A1 = T[1];
+			A1 = ((word*)T)[1];
 			ip += 2; break;
 
 		case CDR:    // car a r:
-			T = (word *) A0;
+			T = A0;
 			CHECK(pairp(T), T, CDR); // bug? was 52 instead of CDR(53)
-			A1 = T[2];
+			A1 = ((word*)T)[2];
 			ip += 2; break;
 
 		// то же самое, но для числовых пар
@@ -1776,15 +1863,15 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 3; break;
 
 		case NCAR:   /* ncar a rd */
-			T = (word*) A0;
+			T = A0;
 			CHECK(allocp(T), T, NCAR);
-			A1 = T[1];
+			A1 = ((word*)T)[1];
 			ip += 2; break;
 
 		case NCDR:   /* ncdr a r */
-			T = (word*) A0;
+			T = A0;
 			CHECK(allocp(T), T, NCDR);
-			A1 = T[2];
+			A1 = ((word*)T)[2];
 			ip += 2; break;
 
 
@@ -1873,14 +1960,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		case 3: goto op3; case 4: goto op4;
 		case 6: goto op6; case 7: goto op7;
-		case 15: goto op15;
 		case 26: goto op26;
 		case 28: goto op28; case 32: goto op32;
-		case 35: goto op35; case 36: goto op36; case 37: goto op37; case 38: goto op38; case 39: goto op39;
+		case 35: goto op35; case 37: goto op37; case 38: goto op38; case 39: goto op39;
 		case 40: goto op40; case 44: goto op44;
-		case 47: goto op47; case 48: goto op48;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
-		case 58: goto op58; case 59: goto op59; case 60: goto op60;
+		case 58: goto op58; case 59: goto op59;
 
 //		// ошибки!
 		case 17: /* arity error */
@@ -2013,30 +2098,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 
-	   //types
-
-		case CAST: { // cast o t r
-			word *ob = (word *) R[*ip];
-			word type = fixval(A1) & 63;
-
-			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
-			// это лучше сделать тут, наверное, а не отдельной командой
-			if (immediatep(ob))
-				A2 = make_immediate(imm_val((word)ob), type);
-			else { // make a clone of more desired type
-				word hdr = *ob++;
-				int size = hdrsize(hdr);
-				word *newobj = new (size);
-				word *res = newobj;
-				/* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
-				//*newobj++ = (hdr&(~2040))|(type<<TPOS);
-				*newobj++ = (hdr & (~252)) | (type << TPOS); /* <- hardcoded ...111100000011 */
-				wordcopy(ob, newobj, size-1);
-				A2 = (word)res;
-			}
-
-			ip += 3; break;
-		}
 
 		case MKT: { // mkt t s f1 .. fs r
 			word t = *ip++;
@@ -2882,17 +2943,13 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			}
 		}
 		main_dispatch: continue; // временная замена вызову "break" в свиче, пока не закончу рефакторинг
+	}
+	// while(1);
 
    op3: OCLOSE(TCLOS); NEXT(0);
    op4: OCLOSE(TPROC); NEXT(0);
    op6: CLOSE1(TCLOS); NEXT(0);
    op7: CLOSE1(TPROC); NEXT(0);
-
-   op15: { /* type o r <- actually sixtet */
-      word x = R[*ip++];
-      if (allocp(x)) x = V(x);
-      R[*ip++] = F((x>>TPOS)&63);
-      NEXT(0); }
 
    op28: { /* sizeb obj to */
       word* ob = (word*)R[*ip];
@@ -2924,10 +2981,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
          lst = (word *) lst[2];
       }
       NEXT(4); }
-   op36: { /* size o r */
-      word *ob = (word *) R[ip[0]];
-      R[ip[1]] = (immediatep(ob)) ? IFALSE : F(hdrsize(*ob)-1);
-      NEXT(2); }
    op37: { /* ms r */
 #ifndef _WIN32
       if (!seccompp)
@@ -2949,41 +3002,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
       A2 = prim_less(A0, A1);
       NEXT(3);
    }
-
-   op60: {/* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
-   word prim_lraw(word wptr, int type, word revp) {
-      word *lst = (word *) wptr;
-      int nwords, len = 0, pads;
-      unsigned char *pos;
-      word *raw, *ob;
-      if (revp != IFALSE) {
-   	   exit(1);
-      } /* <- to be removed */
-      ob = lst;
-      while (allocp(ob) && *ob == PAIRHDR) {
-         len++;
-         ob = (word *) ob[2];
-      }
-      if ((word) ob != INULL) return IFALSE;
-      if (len > FMAX) return IFALSE;
-      nwords = (len/W) + ((len % W) ? 2 : 1);
-      raw = new (nwords);
-      pads = (nwords-1)*W - len; /* padding byte count, usually stored to top 3 bits */
-      *raw = make_raw_header(nwords, type, pads);
-      ob = lst;
-      pos = ((unsigned char *) raw) + W;
-      while ((word) ob != INULL) {
-         *pos++ = fixval(ob[1])&255;
-         ob = (word *) ob[2];
-      }
-      while(pads--) { *pos++ = 0; } /* clear the padding bytes */
-      return (word)raw;
-   }
-      A3 = prim_lraw(A0, fixval(A1), A2);
-      NEXT(4);
-   }
-	// while(1)
-	}
 
 //   // todo: add here JIT
 //super_dispatch: /* run macro instructions */
@@ -3263,7 +3281,7 @@ int main(int argc, char** argv)
 		int len = 0;
 		while (*pos++) len++;
 
-		oargs = new_pair (new_string (len, filename), oargs);
+		oargs = (word)new_pair (new_string (len, filename), oargs);
 #else
 		// аргументы
 		for (int i = argc - 1; i > 0; i--)
