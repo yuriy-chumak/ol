@@ -44,9 +44,10 @@
          (list->ff
             `((move . 9)      ; move a, t:      Ra -> Rt
               (refi . 1)      ; refi a, p, t:   Ra[p] -> Rt, p unsigned                                       ;+
-              (clos . 3)      ; clos lp, o, nenv, e0 ... en, t: 
-              (cloc . 4)      ; cloc lp, o, nenv, e0 ... en, t: 
               (move2 . 5)     ; two moves, 4 args
+
+              (clos0 . 3)      ; clos lp, o, nenv, e0 ... en, t: 
+              (cloc0 . 4)      ; cloc lp, o, nenv, e0 ... en, t: 
               (clos1 . 6)
               (cloc1 . 7)
 
@@ -177,7 +178,7 @@
                            (append (map reg env)
                               (cons (reg to)
                                  (assemble more fail))))))
-                  (cons (inst->op 'clos)
+                  (cons (inst->op 'clos0)
                      (cons (+ 2 (length env))      
                         ;; size of object (hdr code e0 ... en) 
                         (cons (reg lpos)
@@ -194,7 +195,7 @@
                            (append (map reg env)
                               (cons (reg to)
                                  (assemble more fail))))))
-                  (cons (inst->op 'cloc)
+                  (cons (inst->op 'cloc0)
                      (cons (+ 2 (length env))   
                         ;; size of object (hdr code e0 ... en) 
                         (cons (reg lpos)

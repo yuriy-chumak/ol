@@ -10,9 +10,6 @@
 
    (begin
 
-      (define (interop op a b)
-         (call/cc (λ (resume) (sys resume op a b))))
-
       (define (error reason info)
-         (interop 5 reason info))
+         (call/cc (λ (resume) (sys resume 5 reason info))))
 ))

@@ -769,12 +769,6 @@ static void mark(word *pos, word *end)
 // на самом деле - compact & sweep
 static word *compact()
 {
-//	printf("%s\n", "compact()");
-
-	word* heapbegin = heap.begin;
-	word* heapgenstart = heap.genstart;
-
-
 	word *old = heap.genstart;
 	word *end = heap.end - 1;
 
@@ -1100,129 +1094,17 @@ void set_signal_handler() {
 
 
 
-static word syscall(word op, word a, word b, word c)
-{
-	switch (op)
-	{
-		// SOCKET
-		case 41: { // socket (options: STREAM or DGRAM)
-			int port = fixval(b);
-			int sock = socket(PF_INET, port, 0);
-			if (sock == -1)
-				break;
-
-			return F(sock);
-		}
-
-		// ACCEPT
-		// http://linux.die.net/man/2/accept
-		case 43: {
-			int sockfd = fixval(a);
-
-			struct sockaddr_in addr;
-			socklen_t len = sizeof(addr);
-			int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
-			// On error, -1 is returned
-			if (sock < 0)
-				break;
-
-			return F(sock);
-		}
-
-		// SEND
-		// http://linux.die.net/man/2/send
-		case 44: { // fd, buf, len
-			int fd = fixval(a);
-			word *data = (word *)b;
-			int len = fixval(c);
-
-			int size = (hdrsize(*data)-1) * W;
-			if (len > size)
-				break;
-
-			int sent = sendto(fd, ((char *)data)+W, len, 0, NULL, 0);
-			if (sent == -1) // On error, -1 is returned
-				break;
-
-			return F(sent);
-		}
-
-		// SHUTDOWN
-		// http://linux.die.net/man/2/shutdown
-		case 48: {
-			int sd = fixval(a);
-
-			// On error, -1 is returned
-			if (shutdown(sd, 0) != 0)
-				break;
-
-			return ITRUE;
-		}
-
-		// BIND (socket, port, #false) // todo: c for options
-		// http://linux.die.net/man/2/bind
-		case 49: {
-			// todo: assert on argument types
-			int sock = fixval(a);
-			int port = fixval(b);
-
-			struct sockaddr_in interface;
-			interface.sin_family = AF_INET;
-			interface.sin_port = htons(port);
-			interface.sin_addr.s_addr = INADDR_ANY;
-
-			// On success, zero is returned.
-			if (bind(sock, (struct sockaddr *) &interface, sizeof(interface)) == 0)
-				return ITRUE;
-			break;
-		}
-
-
-		// LISTEN
-		// http://linux.die.net/man/2/listen
-		// listen() marks the socket referred to by sockfd as a passive socket, that is,
-		// as a socket that will be used to accept incoming connection requests using accept(2).
-		case 50: {
-			int sockfd = fixval(a);
-
-			// On success, zero is returned.
-			if (listen(sockfd, 1024) == 0) {
-	//					set_blocking(sockfd, 0);
-				return ITRUE;
-			}
-
-			break;
-		}
-		default:
-			break;
-	}
-
-	return IFALSE;
-}
-
-/* system- and io primops */
-// todo: move to the parental switch
-
-
-
-
-/*
-ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
-int sss = hdrsize(ptrs[0]);
-free((void *) file_heap);
-*/
-
 //#define OGOTO(f, n)                 ob = (word *)R[f]; acc = n; goto apply
 //#define RET(n)                      ob = (word *)R[3]; R[3] = R[n]; acc = 1; goto apply
 
 #define OCLOSE(proctype)            { \
-	word size = *ip++, tmp; word *ob = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; \
-	*ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; \
-	while (tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
+	word size = *ip++, tmp; word *T = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; \
+	*T = make_header(size, proctype); T[1] = tmp; tmp = 2; \
+	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 #define CLOSE1(proctype)            { \
-	word size = *ip++, tmp; word *ob = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; \
-	*ob = make_header(size, proctype); ob[1] = tmp; tmp = 2; \
-	while (tmp != size) { ob[tmp++] = R[*ip++]; } R[*ip++] = (word) ob; }
+	word size = *ip++, tmp; word *T = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; \
+	*T = make_header(size, proctype); T[1] = tmp; tmp = 2; \
+	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 #define NEXT(n)                     ip += n; goto main_dispatch
 //#define SKIP(n)                     ip += n; break;
 #define TICKS                       10000 /* # of function calls in a thread quantum  */
@@ -1476,7 +1358,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 	// управляющие команды:
 #	define APPLY 20
-#	define SYS 27
+#	define SYS   27
 #	define RUN   50
 #	define RET   24
 
@@ -1484,7 +1366,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define GOTO_CODE 18   //
 #	define GOTO_PROC 19   //
 #	define GOTO_CLOS 21   //
-
 
 	// список команд
 	// смотреть в assembly.scm
@@ -1519,6 +1400,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define NCAR  30
 #	define NCDR  31
 
+#	define SIZEB 28
 #	define REFB  48
 
 	//
@@ -1529,15 +1411,18 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 #	define CLOCK 61
 #	define SYSCALL 63
+#	define SLEEP 37
 
 
 
-#	define MKT   23   // make tuple
+#	define MKT      23   // make tuple
+#	define BIND     32
+#	define LISTUPLE 35
+#	define FFBIND   49
 
 #	define MKRED    43
 #	define MKBLACK  42
 #	define FFTOGGLE 46
-#	define FFBIND   49
 #	define FFREDQ   41
 
 	// free numbers: 34 (was _connect)
@@ -1724,6 +1609,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 
+		case 3: OCLOSE(TCLOS); continue;
+		case 4: OCLOSE(TPROC); continue;
+		case 6: CLOSE1(TCLOS); continue;
+		case 7: CLOSE1(TPROC); continue;
+
 		/************************************************************************************/
 		// более высокоуровневые конструкции
 		//	смотреть "owl/primop.scm" и "lang/assemble.scm"
@@ -1811,17 +1701,19 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 
-		case CAR:    // car a r:
-			T = A0;
+		case CAR: {  // car a r:
+			word T = A0;
 			CHECK(pairp(T), T, CAR);
 			A1 = ((word*)T)[1];
 			ip += 2; break;
+		}
 
-		case CDR:    // car a r:
-			T = A0;
+		case CDR: {  // car a r:
+			word T = A0;
 			CHECK(pairp(T), T, CDR); // bug? was 52 instead of CDR(53)
 			A1 = ((word*)T)[2];
 			ip += 2; break;
+		}
 
 		case REF: {  /* ref t o r */ /* fixme: deprecate this later */
 			word *p = (word *) A0;
@@ -1852,42 +1744,42 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		// то же самое, но для числовых пар
 		case NCONS:  /* ncons a b r */
-			A2 = (word)new_npair ((word*)A0, (word*)A1);
+			A2 = (word)new_npair (A0, A1);
 			ip += 3; break;
 
-		case NCAR:   /* ncar a rd */
-			T = A0;
+		case NCAR: {  // ncar a r
+			word T = A0;
 			CHECK(allocp(T), T, NCAR);
 			A1 = ((word*)T)[1];
 			ip += 2; break;
+		}
 
-		case NCDR:   /* ncdr a r */
-			T = A0;
+		case NCDR: {  // ncdr a r
+			word T = A0;
 			CHECK(allocp(T), T, NCDR);
 			A1 = ((word*)T)[2];
 			ip += 2; break;
+		}
 
 
 		case SET: { // set t o v r
-			word prim_set(word wptr, word pos, word val) {
-			   word *ob = (word *) wptr;
-			   word hdr;
-			   word *newobj;
-			   int p = 0;
-			   pos = fixval(pos);
-			   if (immediatep(ob)) { return IFALSE; }
-			   hdr = *ob;
-			   if (rawp(hdr) || hdrsize(hdr) < pos) { return IFALSE; }
-			   word size = hdrsize(hdr);
-			   newobj = new (size);
-			   while(p <= size) {
-			      newobj[p] = (pos == p && p) ? val : ob[p];
-			      p++;
-			   }
-			   return (word) newobj;
+			word *p = (word *)A0;
+			if (immediatep(p))
+				A3 = IFALSE;
+			else {
+				word hdr = *p;
+				word pos = fixval(A1);
+				if (rawp(hdr) || hdrsize(hdr) < pos)
+					A3 = IFALSE;
+				else {
+					word size = hdrsize(hdr);
+					word *newobj = new (size);
+					word val = A2;
+					for (int i = 0; i <= size; i++)
+						newobj[i] = (pos == i && i) ? val : p[i];
+					A3 = (word) newobj;
+				}
 			}
-
-			A3 = prim_set(A0, A1, A2);
 			ip += 4; break;
 		}
 
@@ -1903,7 +1795,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		  A2 = F(low);
 		  NEXT(4); }
 	   op39: { /* fx* a b l h */
-		  uint64_t res = ((uint64_t) ((uint64_t) fixval(R[*ip])) * ((uint64_t) fixval(A1)));
+		  uint64_t res = ((uint64_t) ((uint64_t) fixval(A0)) * ((uint64_t) fixval(A1)));
 		  A2 = F(((word)(res&FMAX)));
 		  A3 = F(((word)(res>>FBITS)&FMAX));
 		  NEXT(4); }
@@ -1965,12 +1857,24 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 3; break;
 		}
 
+		case SIZEB: { // sizeb obj to
+			word* T = (word*) A0;
+			if (immediatep(ob))
+				A1 = IFALSE;
+			else {
+				word hdr = *T;
+				if (rawp(hdr))
+					A1 = F((hdrsize(hdr)-1)*W - padsize(hdr));
+				else
+					A1 = IFALSE;
+			}
+			ip += 2; break;
+		}
 
-		case 3: goto op3; case 4: goto op4;
-		case 6: goto op6; case 7: goto op7;
+
+		// тут осталась не разобрана одна математика:
 		case 26: goto op26;
-		case 28: goto op28; case 32: goto op32;
-		case 35: goto op35; case 37: goto op37; case 38: goto op38; case 39: goto op39;
+		case 38: goto op38; case 39: goto op39;
 		case 40: goto op40; case 44: goto op44;
 		case 55: goto op55; case 56: goto op56; case 57: goto op57;
 		case 58: goto op58; case 59: goto op59;
@@ -2010,7 +1914,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 		case 11: { // (set-car! pair value)
 			word *pair = (word *)A0;
-			assert (allocp(pair) && pair[0] == PAIRHDR);
+			assert (is_pointer(pair) && pair[0] == PAIRHDR);
 			word value = (word)A1;
 			pair[1] = value;
 
@@ -2019,7 +1923,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 		case 12: { // (set-cdr! pair value)
 			word *pair = (word *)A0;
-			assert (allocp(pair) && pair[0] == PAIRHDR);
+			assert (is_pointer(pair) && pair[0] == PAIRHDR);
 			word value = (word)A1;
 			pair[2] = value;
 
@@ -2027,9 +1931,70 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 3; break;
 		}
 
+
+		case MKT: { // mkt t s f1 .. fs r
+			word t = *ip++;
+			word s = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
+			word *p = new (s+1), i = 0; // s fields + header
+			*p = make_header(s+1, t);
+			while (i < s) {
+				p[i+1] = R[ip[i]];
+				i++;
+			}
+			R[ip[i]] = (word) p;
+
+			NEXT(s+1);
+		}
+
+		case BIND: { /* bind tuple <n> <r0> .. <rn> */ // todo: move to sys-prim?
+			word *tuple = (word *) R[*ip++];
+			word hdr, pos = 1, n = *ip++;
+			CHECK(allocp(tuple), tuple, 32);
+			hdr = *tuple;
+			CHECK(!(rawp(hdr) || hdrsize(hdr)-1 != n), tuple, 32);
+			while(n--) { R[*ip++] = tuple[pos++]; }
+			break;
+		}
+
+		case FFBIND: { // withff node l k v r */ // bindff - bind node left key val right, filling in #false when implicit
+			word *T = (word *) A0;
+			word hdr = *T++;
+			A2 = *T++; /* key */
+			A3 = *T++; /* value */
+			switch (hdrsize(hdr)) {
+			case 3: A1 = A4 = IEMPTY; break;
+			case 4:
+				if (hdr & (1 << TPOS)) // has right?
+					A1 = IEMPTY, A4 = *T;
+				else
+					A1 = *T, A4 = IEMPTY;
+				break;
+			default:
+				A1 = *T++;
+				A4 = *T;
+			}
+			ip += 5; break;
+		}
+
+		case LISTUPLE: { // listuple type size lst to
+			word type = fixval(A0);
+			word size = fixval(A1);
+			word *lst = (word *)A2;
+			word *p = new (size+1);
+			A3 = (word) p;
+			*p++ = make_header(size+1, type);
+			while (size--) {
+				CHECK((allocp(lst) && *lst == PAIRHDR), lst, 35);
+				*p++ = lst[1];
+				lst = (word *) lst[2];
+			}
+			ip += 4; break;
+		}
+
 		/** ff's ---------------------------------------------------
 		 *
 		 */
+
 		case MKBLACK:   // mkblack l k v r t
 		case MKRED: { // mkred l k v r t
 			word prim_mkff(word t, word l, word k, word v, word r) {
@@ -2057,7 +2022,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			   }
 			   return (word) ob;
 			}
-		    A4 = prim_mkff(op == 42 ? TFF : TFF|FFRED, A0,A1,A2,A3);
+		    A4 = prim_mkff(op == MKBLACK ? TFF : TFF|FFRED, A0,A1,A2,A3);
 			NEXT(5);
 		}
 
@@ -2078,49 +2043,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				 NEXT(2);
 		}
 
-		case FFBIND: { // withff node l k v r */ // bindff - bind node left key val right, filling in #false when implicit
-			  word hdr, *ob = (word *) R[*ip];
-			  hdr = *ob++;
-			  A2 = *ob++; /* key */
-			  A3 = *ob++; /* value */
-			  switch(hdrsize(hdr)) {
-				 case 3: A1 = A4 = IEMPTY; break;
-				 case 4:
-					if (hdr & (1 << TPOS)) { /* has right? */
-					   A1 = IEMPTY; A4 = *ob;
-					} else {
-					   A1 = *ob; A4 = IEMPTY;
-					}
-					break;
-				 default:
-					A1 = *ob++;
-					A4 = *ob;
-			  }
-			  NEXT(5);
-		}
-
 		case FFREDQ: { // red? node r (has highest type bit?) */
 			  word *node = (word *) R[*ip];
 			  A1 = TRUEFALSE(allocp(node) && ((*node)&(FFRED<<TPOS)));
 			  NEXT(2);
 		}
-
-
-
-		case MKT: { // mkt t s f1 .. fs r
-			word t = *ip++;
-			word s = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
-			word *ob = new (s+1), p = 0; // s fields + header
-			*ob = make_header(s+1, t);
-			while (p < s) {
-				ob[p+1] = R[ip[p]];
-				p++;
-			}
-			R[ip[p]] = (word) ob;
-
-			NEXT(s+1);
-		}
-
 
 
 
@@ -2147,6 +2074,20 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			}
 			ip += 2; break;
 		}
+
+		case SLEEP: { // system_sleep ms
+#ifdef _WIN32
+			Sleep(fixval(A0));
+			A1 = ITRUE;
+#else
+			if (!seccompp)
+				usleep(fixval(A0)*1000);
+			A1 = TRUEFALSE(errno == EINTR);
+#endif
+			ip += 2; break;
+		}
+
+
 
 		// этот case должен остаться тут - как последний из кейсов
 		//  todo: переименовать в компиляторе sys-prim на syscall (?)
@@ -2941,8 +2882,109 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 						result = prim_sys(op, a, b, c);
 					}
-					else
+					else {
+						word syscall(word op, word a, word b, word c)
+						{
+							switch (op)
+							{
+								// SOCKET
+								case 41: { // socket (options: STREAM or DGRAM)
+									int port = fixval(b);
+									int sock = socket(PF_INET, port, 0);
+									if (sock == -1)
+										break;
+
+									return F(sock);
+								}
+
+								// ACCEPT
+								// http://linux.die.net/man/2/accept
+								case 43: {
+									int sockfd = fixval(a);
+
+									struct sockaddr_in addr;
+									socklen_t len = sizeof(addr);
+									int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
+									// On error, -1 is returned
+									if (sock < 0)
+										break;
+
+									return F(sock);
+								}
+
+								// SEND
+								// http://linux.die.net/man/2/send
+								case 44: { // fd, buf, len
+									int fd = fixval(a);
+									word *data = (word *)b;
+									int len = fixval(c);
+
+									int size = (hdrsize(*data)-1) * W;
+									if (len > size)
+										break;
+
+									int sent = sendto(fd, ((char *)data)+W, len, 0, NULL, 0);
+									if (sent == -1) // On error, -1 is returned
+										break;
+
+									return F(sent);
+								}
+
+								// SHUTDOWN
+								// http://linux.die.net/man/2/shutdown
+								case 48: {
+									int sd = fixval(a);
+
+									// On error, -1 is returned
+									if (shutdown(sd, 0) != 0)
+										break;
+
+									return ITRUE;
+								}
+
+								// BIND (socket, port, #false) // todo: c for options
+								// http://linux.die.net/man/2/bind
+								case 49: {
+									// todo: assert on argument types
+									int sock = fixval(a);
+									int port = fixval(b);
+
+									struct sockaddr_in interface;
+									interface.sin_family = AF_INET;
+									interface.sin_port = htons(port);
+									interface.sin_addr.s_addr = INADDR_ANY;
+
+									// On success, zero is returned.
+									if (bind(sock, (struct sockaddr *) &interface, sizeof(interface)) == 0)
+										return ITRUE;
+									break;
+								}
+
+
+								// LISTEN
+								// http://linux.die.net/man/2/listen
+								// listen() marks the socket referred to by sockfd as a passive socket, that is,
+								// as a socket that will be used to accept incoming connection requests using accept(2).
+								case 50: {
+									int sockfd = fixval(a);
+
+									// On success, zero is returned.
+									if (listen(sockfd, 1024) == 0) {
+							//					set_blocking(sockfd, 0);
+										return ITRUE;
+									}
+
+									break;
+								}
+								default:
+									break;
+							}
+
+							return IFALSE;
+						}
+
 						result = syscall(op, a, b, c);
+					}
 					break;
 				}
 
@@ -2953,51 +2995,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		main_dispatch: continue; // временная замена вызову "break" в свиче, пока не закончу рефакторинг
 	}
 	// while(1);
-
-   op3: OCLOSE(TCLOS); NEXT(0);
-   op4: OCLOSE(TPROC); NEXT(0);
-   op6: CLOSE1(TCLOS); NEXT(0);
-   op7: CLOSE1(TPROC); NEXT(0);
-
-   op28: { /* sizeb obj to */
-      word* ob = (word*)R[*ip];
-      if (immediatep(ob)) {
-         A1 = IFALSE;
-      } else {
-         word hdr = *ob;
-         A1 = (rawp(hdr)) ? F((hdrsize(hdr)-1)*W - padsize(hdr)) : IFALSE;
-      }
-      NEXT(2); }
-   op32: { /* bind tuple <n> <r0> .. <rn> */ // todo: move to sys-prim?
-      word *tuple = (word *) R[*ip++];
-      word hdr, pos = 1, n = *ip++;
-      CHECK(allocp(tuple), tuple, 32);
-      hdr = *tuple;
-      CHECK(!(rawp(hdr) || hdrsize(hdr)-1 != n), tuple, 32);
-      while(n--) { R[*ip++] = tuple[pos++]; }
-      NEXT(0); }
-   op35: { /* listuple type size lst to */
-      word type = fixval(R[*ip]);
-      word size = fixval(A1);
-      word *lst = (word *) A2;
-      word *ob = new (size+1);
-      A3 = (word) ob;
-      *ob++ = make_header(size+1, type);
-      while(size--) {
-         CHECK((allocp(lst) && *lst == PAIRHDR), lst, 35);
-         *ob++ = lst[1];
-         lst = (word *) lst[2];
-      }
-      NEXT(4); }
-   op37: { /* ms r */
-#ifndef _WIN32
-      if (!seccompp)
-         usleep(fixval(A0)*1000);
-#else
-      Sleep(fixval(A0));
-#endif
-      A1 = TRUEFALSE(errno == EINTR);
-      NEXT(2); }
 
    op44: {/* less a b r */
    word prim_less(word a, word b) {
@@ -3361,6 +3358,8 @@ int main(int argc, char** argv)
 	args.userdata      = (word*) oargs;
 
 	void* result = 0; // результат выполнения.
+//	if (_isatty(_fileno(stdin))) // is character device (not redirected) (interactive session)
+//		fputs("(define *interactive* #t)\n", stdin);
 
 #ifndef STANDALONE
 	args.signal = 0;
