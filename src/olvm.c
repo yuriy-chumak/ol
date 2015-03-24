@@ -68,7 +68,7 @@
 //#ifdef STANDALONE
 //#  define __tlocal__
 //#else
-#	ifndef __tlocal__
+/*#	ifndef __tlocal__
 #		if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
 #			define thread_local _Thread_local
 #		elif defined _WIN32 && ( \
@@ -77,7 +77,7 @@
 		     defined __DMC__ || \
 		     defined __BORLANDC__ )
 #			define __tlocal__ __declspec(thread)
-/* note that ICC (linux) and Clang are covered by __GNUC__ */
+// note that ICC (linux) and Clang are covered by __GNUC__
 #		elif defined __GNUC__ || defined __SUNPRO_C || defined __xlC__
 #			define __tlocal__ __thread
 #		else
@@ -89,7 +89,7 @@
 // TEMP: disable __tlocal__ to check system resources consuption
 //#undef __tlocal__
 #define __tlocal__ __thread
-
+*/
 
 
 //********************************************************************
@@ -438,8 +438,7 @@ typedef struct object
 		word header;
 		word ref[1];
 	};
-} __attribute__ ((aligned(sizeof(word)), packed))
-	object;
+} object; // __attribute__ ((aligned(sizeof(word)), packed))
 //#pragma pack(pop)
 
 /*typedef struct pair
@@ -553,10 +552,9 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 
 //static __tlocal__ word max_heap_size; /* max heap size in MB */
 
-static int breaked;      /* set in signal handler, passed over to owl in thread switch */
-
-static int seccompp;     /* are we in seccomp? */
-static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
+//static int breaked;      /* set in signal handler, passed over to owl in thread switch */
+//static int seccompp;     /* are we in seccomp? */
+//static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
 //int slice;
 
@@ -780,8 +778,8 @@ void fix_pointers(word *pos, wdiff delta, word *end)
 static __inline__
 wdiff adjust_heap(heap_t *heap, int cells)
 {
-	if (seccompp) /* realloc is not allowed within seccomp */
-		return 0;
+//	if (seccompp) /* realloc is not allowed within seccomp */
+//		return 0;
 
 	// add newobj realloc + heap fixer here later
 	word nwords = heap->end - heap->begin + MEMPAD; // MEMPAD is after memend
@@ -800,47 +798,19 @@ wdiff adjust_heap(heap_t *heap, int cells)
 		fix_pointers(heap->begin, delta, heap->end);
 		return delta;
 	} else {
-		breaked |= 8; // will be passed over to mcp at thread switch
+		printf("adjust_heap failed.\n");
+		//breaked |= 8; // will be passed over to mcp at thread switch
 		return 0;
 	}
 }
-
-
-/*static void check_memory_consistence(const char* text)
-{
-	return;
-	word* p = heap.begin;
-	word* e = fp;
-
-	printf("%s\n", text);
-
-	while (p < e) {
-		word header = *p;
-		word length = hdrsize(header);
-		word type = hdrtype(header);
-
-		if (type == TSTRING)
-			printf("%c", 's');
-		else if (type == TPAIR)
-			printf("%c", 'p');
-		else if (type == TVOID)
-			printf("%c", '#');
-		else if (type == TTUPLE)
-			printf("%c", 't');
-		else
-			printf("%c", 'o');
-
-		p += length;
-	}
-	printf("\n");
-}*/
-
 
 /* input desired allocation size and (the only) pointer to root object
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 
 // todo: ввести третий generation
+//__attribute__ ((aligned(sizeof(int))))
 static word gc(heap_t *heap, int size, word regs) {
+
 	//static int marked;
 	// просматривает список справа налево
 	void mark(word *pos, word *end)
@@ -876,10 +846,10 @@ static word gc(heap_t *heap, int size, word regs) {
 	}
 
 	// на самом деле - compact & sweep
-	word *compact()
+	word *sweep(word* end)
 	{
 		word *old = heap->genstart;
-		word *end = heap->end - 1;
+//		word *end = heap->end - 1;
 
 		word *newobject = old;
 		while (old < end) {
@@ -967,7 +937,7 @@ static word gc(heap_t *heap, int size, word regs) {
 	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
 	root[0] = regs;
 	mark(root, fp);        // assert (root > fp)
-	fp = compact();
+	fp = sweep(fp);
 	regs = root[0];
 	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
@@ -994,8 +964,8 @@ static word gc(heap_t *heap, int size, word regs) {
 			((word*)regs)[hdrsize(*(word*)regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
 			regs += adjust_heap(heap, size*W + nused/10 + 4096);
 			nfree = (word)heap->end - (word)regs;
-			if (nfree <= size)
-				breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
+//			if (nfree <= size)
+//				breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
 		}
 		else if (nfree > (heapsize/5)) {
 			/* decrease heap size if more than 20% is free by 10% of the free space */
@@ -1164,15 +1134,16 @@ struct args
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
 //int forcegc = 0;
 
-static
+static //__attribute__((aligned(8)))
 void* runtime(void *args) // heap top
 {
-	register word *fp; // memory allocation pointer
 	heap_t heap;
-
-
-	seccompp = 0;
+	register word *fp; // memory allocation pointer
 	int slice = TICKS; // default thread slice (n calls per slice)
+
+	int breaked = 0;
+
+//	seccompp = 0;
 
 	//
 //	max_heap_size = ((struct args*)args)->max_heap_size; /* max heap size in MB */
@@ -2068,20 +2039,20 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ob[2] = INULL;
 			ob[5] = (word) ob;
 
-			if (seccompp) {
-				unsigned long secs = seccomp_time / 1000;
-				A1 = F(seccomp_time - (secs * 1000));
-				ob[1] = F(secs >> FBITS);
-				ob[4] = F(secs & FMAX);
-				seccomp_time += ((seccomp_time + 10) > seccomp_time) ? 10 : 0; /* virtual 10ms passes */
-			}
-			else {
+//			if (seccompp) {
+//				unsigned long secs = seccomp_time / 1000;
+//				A1 = F(seccomp_time - (secs * 1000));
+//				ob[1] = F(secs >> FBITS);
+//				ob[4] = F(secs & FMAX);
+//				seccomp_time += ((seccomp_time + 10) > seccomp_time) ? 10 : 0; // virtual 10ms passes
+//			}
+//			else {
 				struct timeval tp;
 				gettimeofday(&tp, NULL);
 				A1 = F(tp.tv_usec / 1000);
 				ob[1] = F(tp.tv_sec >> FBITS);
 				ob[4] = F(tp.tv_sec & FMAX);
-			}
+//			}
 			ip += 2; break;
 		}
 
@@ -3044,70 +3015,75 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
 //
 
 // fasl decoding
-/* count number of objects and measure heap size */
-static __tlocal__
-unsigned char *hp;       /* heap pointer when loading heap */
-static __tlocal__ word *fp;
-
-static
-word get_nat() {
-   word result = 0;
-   word newobj, i;
-   do {
-      i = *hp++;
-      newobj = result << 7;
-      if (result != (newobj >> 7))
-    	  exit(9); // overflow kills
-      result = newobj + (i & 127);
-   } while (i & 128);
-   return result;
-}
-
-static
-word *get_field(word *ptrs, int pos) {
-   if (0 == *hp) {
-      unsigned char type;
-      word val;
-      hp++;
-      type = *hp++;
-      val = make_immediate(get_nat(), type);
-      *fp++ = val;
-   } else {
-      word diff = get_nat();
-      *fp++ = ptrs[pos-diff];
-   }
-   return fp;
-}
-
-static
-word *deserialize(word *ptrs, int me)
+// возвращает новый топ стека
+static __inline__
+word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
-   int type, size;
-   if (ptrs != NULL) ptrs[me] = (word) fp;
-   switch (*hp++) { /* todo: adding type information here would reduce fasl and executable size */
-      case 1: {
-         type = *hp++;
-         size = get_nat();
-         *fp++ = make_header(size+1, type); /* +1 to include header in size */
-         while (size--) { fp = get_field(ptrs, me); }
-         break; }
-      case 2: {
-         int bytes, pads;
-         unsigned char *wp;
-         type = *hp++ & 31; /* low 5 bits, the others are pads */
-         bytes = get_nat();
-         size = ((bytes % W) == 0) ? (bytes/W)+1 : (bytes/W) + 2;
-         pads = (size-1)*W - bytes;
-         *fp++ = make_raw_header(size, type, pads);
-         wp = (unsigned char *) fp;
-         while (bytes--) { *wp++ = *hp++; };
-         while (pads--) { *wp++ = 0; };
-         fp = (word *) wp;
-         break; }
-      default: puts("bad object in heap");
-      exit(42);
-   }
-   return fp;
+	register
+	unsigned char* hp = bootstrap;
+
+	// tbd: comment
+	word get_nat() {
+		word result = 0;
+		word newobj, i;
+		do {
+			i = *hp++;
+			newobj = result << 7;
+			if (result != (newobj >> 7))
+				exit(9); // overflow kills
+			result = newobj + (i & 127);
+		} while (i & 128);
+		return result;
+	}
+
+	// tbd: comment
+	word *get_field(word *ptrs, int pos) {
+		if (*hp == 0) { // fixnum
+			hp++;
+			unsigned char type = *hp++;
+			word val = make_immediate(get_nat(), type);
+			*fp++ = val;
+		} else {
+			word diff = get_nat();
+			*fp++ = ptrs[pos-diff];
+		}
+		return fp;
+	}
+
+	// deserialize bootstrap
+	for (int me = 0; me < nobjs; me++) {
+		ptrs[me] = (word) fp;
+
+		switch (*hp++) { // todo: adding type information here would reduce fasl and executable size
+		case 1: {
+			int type = *hp++;
+			int size = get_nat();
+			*fp++ = make_header(size+1, type); // +1 to include header in size
+			while (size--)
+				get_field(ptrs, me);
+			break;
+		}
+		case 2: {
+			int type = *hp++ & 31; /* low 5 bits, the others are pads */
+			int bytes = get_nat();
+			int size = ((bytes % W) == 0) ? (bytes/W)+1 : (bytes/W) + 2;
+			int pads = (size-1)*W - bytes;
+
+			*fp++ = make_raw_header(size, type, pads);
+			unsigned char *wp = (unsigned char *) fp;
+			while (bytes--)
+				*wp++ = *hp++;
+			while (pads--)
+				*wp++ = 0;
+			fp = (word *) wp;
+			break;
+		}
+		default:
+			puts("bad object in heap");
+			exit(42);
+		}
+	}
+	return fp;
 }
 
 static
@@ -3129,7 +3105,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		return result;
 	}
 
-
+	// count:
 	int n = 0;
 	hp = lang;
 
@@ -3171,7 +3147,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	return n;
 }
 
-static word* new_string (size_t length, char* string)
+/*static word* new_string2 (size_t length, char* string)
 {
 	word* object = fp;
 
@@ -3184,7 +3160,21 @@ static word* new_string (size_t length, char* string)
 
 	fp += size;
 	return object;
-}
+}*/
+
+#define new_string(length, string) ({\
+	int len = length;\
+	char* data = string;\
+	\
+	int size = (len / W) + ((len % W) ? 2 : 1);\
+	int pads = (size-1) * W - len;\
+	\
+	object* p = new_raw_object (size, TSTRING, pads);\
+	char* ptr = (char*)&p->ref[1];\
+	while (len--) *ptr++ = *data++;\
+	/*return*/ p;\
+})
+
 
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
@@ -3275,6 +3265,8 @@ int main(int argc, char** argv)
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
 
 	heap_t heap;
+//	static //__tlocal__
+	word *fp;
 
 	// выделим память машине:
 //	max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
@@ -3340,23 +3332,23 @@ int main(int argc, char** argv)
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 
-	//	oargs = gc(nwords + (128*1024), oargs, &fp); // get enough space to load the heap without triggering gc
+	//heap.fp = fp;
+	//oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
+	//fp = heap.fp;
 
 	// Десериализация загруженного образа в объекты
 	word* ptrs = fp;
 	fp += nobjs + 1;
 
-	hp = bootstrap; // десериализатор использует hp как итератор по образу
 
-	int pos;
-	for (pos = 0; pos < nobjs; pos++) {
-		if (fp >= heap.end) {
-			fprintf(stderr, "gc needed during heap import\n");
-			goto done;
-		}
-		deserialize(ptrs, pos);
-	}
-	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
+//	hp = bootstrap; // десериализатор использует hp как итератор по образу
+
+//	int pos;
+//	assert (fp < heap.end);	// "gc needed during heap import"
+
+	// у нас пропадает первый объект. todo: выяснить почему и можно ли (надо ли) это исправить
+	fp = deserialize(ptrs, nobjs, bootstrap, fp);
+	ptrs[0] = make_raw_header(nobjs + 1, 0x0, 0);
 
 	// все, программа в памяти, можно освобождать исходник
 #ifndef STANDALONE
