@@ -88,11 +88,11 @@
             ;; note that these could now come straight from primops
             ;(map (lambda (primop) (ref primop 1)) primops)
             '(cons car cdr set! set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
-              mk mkt bind
+              mk mkt bind listuple
               raw sys set
               _sleep
               
-              mkred mkblack ff-bind ff-toggle red? listuple
+              mkred mkblack ff-bind ff-toggle red?
               fxbor fxband fxbxor fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr
               clock)))
 ;              ; pick mkr 

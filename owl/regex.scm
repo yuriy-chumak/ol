@@ -813,10 +813,10 @@
                       (close (get-imm 41)))
                      (lookahead-not rex))
                   (let-parses ;; (?<=<regex>) → match if regex matches on the left of current position
-                     ((open (get-imm 40))
-                      (skip (get-imm 63))
-                      (skip (get-imm 60))
-                      (skip (get-imm 61))
+                     ((open (get-imm 40)) ; #\(
+                      (skip (get-imm 63)) ; #\?
+                      (skip (get-imm 60)) ; #\<
+                      (skip (get-imm 61)) ; #\=
                       (rex (get-regex))
                       (close (get-imm 41)))
                      (lookback rex))

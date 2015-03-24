@@ -55,7 +55,8 @@
 (import (owl core))     ;; get special forms, primops and define-syntax
 (import (owl defmac))   ;; get define, define-library, import, ... from the just loaded (owl defmac)
 
-(define *interactive* #false) ;; was #true
+;(define *interactive* (sys-prim 500 stdin #f #f)) ;; was #true
+(define *interactive* #f)
 
 (define *include-dirs* (list ".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 

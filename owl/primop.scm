@@ -130,6 +130,8 @@
       (define ff-toggle   (func '(2 46 4 5        24 5)))
       (define listuple (func '(4 35 4 5 6 7 24 7)))
 
+;      (define cons     (func '(3 51 4 5  6  24 6)))
+
       (define primitives
          (list
             ; пара специальных вещей. todo: разобраться, почему они тут а не в общем списке функци в/м
@@ -192,6 +194,12 @@
 
 
             ;; математика
+;            (primop 'fx+        '(38 4 5    6 7    24 7)  2 2)
+;            (primop 'fx*        '(39 4 5    6 7    24 7)  2 2)
+;            (primop 'fx-        '(40 4 5    6 7    24 7)  2 2)
+;            (primop 'fx/        '(26 4 5 6  7 8 9  24 7)  3 3) 
+;            (primop 'fx>>       '(58 4 5    6 7    24 7)  2 2)
+;            (primop 'fx<<       '(59 4 5    6 7    24 7)  2 2)
             (primop 'fx+        '(38 4 5    6 7    24 7)  2 2)
             (primop 'fx*        '(39 4 5    6 7    24 7)  2 2)
             (primop 'fx-        '(40 4 5    6 7    24 7)  2 2)
@@ -202,6 +210,8 @@
             ; todo: move this to the sys-prim
             (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
             (tuple 'clock        61 0 2 clock)   ; (clock) → posix-time x ms
+;              (define clock     (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
+;             (primop 'clock    '(9 3 5        61 3 4 2 5 2)  0 2)
 
             ; поддержка ff деревьев
             (tuple 'listuple     35 3 1 listuple)  ;; (listuple type size lst)
