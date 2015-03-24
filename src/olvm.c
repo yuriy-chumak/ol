@@ -65,9 +65,9 @@
 // thread local storage modifier for virtual machine private variables -
 // виртуальная машина у нас работает в отдельном потоке, соответственно ее
 // локальные переменные можно держать в TLS, а не в какой-то VM структуре
-#ifdef STANDALONE
-#  define __tlocal__
-#else
+//#ifdef STANDALONE
+//#  define __tlocal__
+//#else
 #	ifndef __tlocal__
 #		if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
 #			define thread_local _Thread_local
@@ -84,17 +84,23 @@
 #			error "Cannot define thread_local"
 #		endif
 #	endif
-#endif//STANDALONE
+//#endif//STANDALONE
 
 // TEMP: disable __tlocal__ to check system resources consuption
-#undef __tlocal__
-#define __tlocal__
+//#undef __tlocal__
+#define __tlocal__ __thread
 
 
 
 //********************************************************************
 /*** Portability Issues ***/
 
+// ========================================
+//  HAS_SOCKETS 1
+//
+#if HAS_SOCKETS
+
+// headers
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	define NOMINMAX
@@ -150,6 +156,8 @@
 #	ifndef O_BINARY
 #		define O_BINARY 0
 #	endif
+#endif
+
 #endif
 
 // Threading (pthread)
@@ -426,8 +434,10 @@ typedef uintptr_t word;
 //#pragma pack(push, sizeof(word))
 typedef struct object
 {
-	word header;
-	word ref[];
+	union {
+		word header;
+		word ref[1];
+	};
 } __attribute__ ((aligned(sizeof(word)), packed))
 	object;
 //#pragma pack(pop)
@@ -541,14 +551,14 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 // память виртуальной машины локальна по отношению к ее потоку. пусть пока побудет так - не буду
 //  ее тащить в структуру VM
 
-static __tlocal__ word max_heap_size; /* max heap size in MB */
+//static __tlocal__ word max_heap_size; /* max heap size in MB */
 
 static int breaked;      /* set in signal handler, passed over to owl in thread switch */
 
 static int seccompp;     /* are we in seccomp? */
 static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
-int slice;
+//int slice;
 
 //void exit(int rval);
 //void *realloc(void *ptr, size_t size);
@@ -571,8 +581,20 @@ int execv(const char *path, char *const argv[]);
 // несколько ссылок "на почитать" по теме GC:
 //   shamil.free.fr/comp/ocaml/html/book011.html
 
+// память машины, управляемая сборщиком мусора
+typedef struct heap_t
+{
+	//  begin <= genstart <= end
+	word *begin;     // was: memstart
+	word *end;       // was: memend
+
+	word *genstart;  // was: genstart
+
+	word *fp;        // allocation pointer
+} heap_t;
+
 // allocation pointer (top of allocated heap)
-//static __tlocal__ word *fp;
+//static __thread word *fp;
 
 // выделить сырой блок памяти
 #define new(size) ({\
@@ -585,6 +607,12 @@ int execv(const char *path, char *const argv[]);
 #define new_object(size, type) ({\
 	word* p = new (size);\
 	*p = make_header(size, type);\
+	/*return*/(object*)p;\
+})
+
+#define new_raw_object(size, type, pads) ({\
+	word* p = new (size);\
+	*p = make_raw_header(size, type, pads);\
 	/*return*/(object*)p;\
 })
 
@@ -625,7 +653,7 @@ int execv(const char *path, char *const argv[]);
 #define new_port(a) ({\
 	word value = (word) a;\
 	object *me = new_object (2, TRAWPORT);\
-	me->ref[0] = value;\
+	me->ref[1] = value;\
 	/*return*/ me;\
 })
 
@@ -637,8 +665,8 @@ int execv(const char *path, char *const argv[]);
 	word data2 = (word) a2;\
 	/* точка следования */ \
 	object *me = new_object(3, TPAIR);\
-	me->ref[0] = data1;\
-	me->ref[1] = data2;\
+	me->ref[1] = data1;\
+	me->ref[2] = data2;\
 	/*return*/ me;\
 })
 // а по факту эта функция сводится к простому
@@ -659,8 +687,8 @@ int execv(const char *path, char *const argv[]);
 	word data2 = (word) a2;\
 	/* точка следования */ \
 	object *me = new_object(3, TINT);\
-	me->ref[0] = data1;\
-	me->ref[1] = data2;\
+	me->ref[1] = data1;\
+	me->ref[2] = data2;\
 	/*return*/ me;\
 })
 
@@ -703,19 +731,6 @@ int execv(const char *path, char *const argv[]);
 	return object;
 }*/
 
-
-struct heap
-{
-	//  begin <= genstart <= end
-	word *begin;     // was: memstart
-	word *end;       // was: memend
-
-	word *genstart;  // was: genstart
-//	word *top; // fp
-}
-static __tlocal__ heap; // память машины, управляемая сборщиком мусора
-
-
 #define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
 
 // возвращается по цепочке "flagged" указателей назад
@@ -732,116 +747,6 @@ word *chase(word* pos) {
 	return (word*)((word)pos & ~1);
 }
 
-static int marked;
-// просматривает список справа налево
-static void mark(word *pos, word *end)
-{
-	marked = 0;
-//	assert(pos is NOT flagged)
-	while (pos != end) {
-		word val = pos[0]; // pos header
-		if (is_pointer(val) && val >= ((word) heap.genstart)) { // genstart - начало молодой генерации
-			if (is_flagged(val)) {
-				pos = chase((word*) val);
-				pos--;
-			}
-			else {
-				word hdr = *(word *) val;
-//				//if (immediatep(hdr))
-//					*(word *) val |= 1; // flag this (таки надо, иначе часть объектов не распознается как pinned!)
-				marked++;
-
-				word* ptr = (word*)val;
-				*pos = *ptr;
-				*ptr = ((word)pos | 1);
-
-				if (flagged_or_raw(hdr))
-					pos--;
-				else
-					pos = ((word *) val) + (hdrsize(hdr)-1);
-			}
-		}
-		else
-			pos--;
-	}
-}
-
-// на самом деле - compact & sweep
-static word *compact()
-{
-	word *old = heap.genstart;
-	word *end = heap.end - 1;
-
-	word *newobject = old;
-	while (old < end) {
-		if (is_flagged(*old)) {
-			// 1. test for presence of "unmovable objects" in this object
-			// 2. find the header:
-//			word* real = chase(old);
-//			word hdr_value = *real;
-
-			/*if (!rawp(hdr_value)) {
-				int found = 0;
-				int i = hdrsize(*real);
-				word* p = old;
-				while (--i) {
-					word q = *++p;
-					// 1. попробуем НЕ перемещать блоки, которые с флажком (значит, содержат ссылки вперед - так как сслки назад все резолвятся во время
-					//  разворачивания заголовков - ссылок!)
-					if (flagged(q)) {
-						//printf("(found: type = %d)\n", hdrtype(q));
-						found = 1;
-						break;
-					}
-				}
-				// вот тут надо по умному использовать предыдущее свободное место: записать пустой объект с размером равным свободному месту
-				// tbd.
-				//pleasefixme
-				if (found) {
-					pinned++;
-					while (old - newobj > 0x7000) { // 0xFFFF
-						*newobj = make_raw_header(0x7000, TVOID, 0); // TSTRING
-						newobj += 0x7000;
-					}
-					if (newobj != old)
-						*newobj = make_raw_header((old - newobj), TVOID, 0); // TSTRING
-					newobj = old;
-					//printf("%c", '-');
-				}
-			}*/
-
-			word val = *newobject = *old;
-			while (is_flagged(val)) {
-				val &= ~1; //clear mark
-
-				word* ptr = (word*)val;
-				*newobject = *ptr;
-				*ptr = (word)newobject;
-
-
-//				if (immediatep(*newobj) && flagged(*newobj))
-//					*newobj &= (~1); // was: = flag(*newobj);
-				val = *newobject;
-			}
-
-			word h = hdrsize(val);
-			if (old == newobject) {
-				old += h;
-				newobject += h;
-			}
-			else {
-				while (--h) *++newobject = *++old;
-				old++;
-				newobject++;
-			}
-		}
-		else
-			old += hdrsize(*old);
-	}
-//	printf(">\n");
-	return newobject;
-}
-
 
 #ifdef _LP64
 typedef int64_t   wdiff;
@@ -849,7 +754,8 @@ typedef int64_t   wdiff;
 typedef int32_t   wdiff;
 #endif
 
-static void fix_pointers(word *pos, wdiff delta, word *end)
+static __inline__
+void fix_pointers(word *pos, wdiff delta, word *end)
 {
 	while (1) {
 		word hdr = *pos;
@@ -871,29 +777,30 @@ static void fix_pointers(word *pos, wdiff delta, word *end)
 }
 
 /* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
-static wdiff adjust_heap(int cells)
+static __inline__
+wdiff adjust_heap(heap_t *heap, int cells)
 {
 	if (seccompp) /* realloc is not allowed within seccomp */
 		return 0;
 
-	/* add newobj realloc + heap fixer here later */
-	word nwords = heap.end - heap.begin + MEMPAD; /* MEMPAD is after memend */
-	word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); /* limit heap growth speed  */
+	// add newobj realloc + heap fixer here later
+	word nwords = heap->end - heap->begin + MEMPAD; // MEMPAD is after memend
+	word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); // limit heap growth speed
 	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
-		return 0; /* don't try to adjust heap if the size_t would overflow in realloc */
+		return 0; // don't try to adjust heap if the size_t would overflow in realloc
 
-	word *old = heap.begin;
-	heap.begin = realloc(heap.begin, new_words*W);
-	if (heap.begin == old) { /* whee, no heap slide \o/ */
-		heap.end = heap.begin + new_words - MEMPAD; // leave MEMPAD words alone
+	word *old = heap->begin;
+	heap->begin = realloc(heap->begin, new_words*W);
+	if (heap->begin == old) { // whee, no heap slide \o/
+		heap->end = heap->begin + new_words - MEMPAD; // leave MEMPAD words alone
 		return 0;
-	} else if (heap.begin) { /* d'oh! we need to O(n) all the pointers... */
-		wdiff delta = (word)heap.begin - (word)old;
-		heap.end = heap.begin + new_words - MEMPAD; // leave MEMPAD words alone
-		fix_pointers(heap.begin, delta, heap.end);
+	} else if (heap->begin) { // d'oh! we need to O(n) all the pointers...
+		wdiff delta = (word)heap->begin - (word)old;
+		heap->end = heap->begin + new_words - MEMPAD; // leave MEMPAD words alone
+		fix_pointers(heap->begin, delta, heap->end);
 		return delta;
 	} else {
-		breaked |= 8; /* will be passed over to mcp at thread switch*/
+		breaked |= 8; // will be passed over to mcp at thread switch
 		return 0;
 	}
 }
@@ -933,11 +840,122 @@ static wdiff adjust_heap(int cells)
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 
 // todo: ввести третий generation
-static word gc(int size, word regs, word** P) {
-	word *realend = heap.end;
+static word gc(heap_t *heap, int size, word regs) {
+	//static int marked;
+	// просматривает список справа налево
+	void mark(word *pos, word *end)
+	{
+	//	marked = 0;
+	//	assert(pos is NOT flagged)
+		while (pos != end) {
+			word val = pos[0]; // pos header
+			if (is_pointer(val) && val >= ((word) heap->genstart)) { // genstart - начало молодой генерации
+				if (is_flagged(val)) {
+					pos = chase((word*) val);
+					pos--;
+				}
+				else {
+					word hdr = *(word *) val;
+	//				//if (immediatep(hdr))
+	//					*(word *) val |= 1; // flag this ? (таки надо, иначе часть объектов не распознается как pinned!)
+	//				marked++;
 
-	word* fp = *P;
-	heap.end = fp;
+					word* ptr = (word*)val;
+					*pos = *ptr;
+					*ptr = ((word)pos | 1);
+
+					if (flagged_or_raw(hdr))
+						pos--;
+					else
+						pos = ((word *) val) + (hdrsize(hdr)-1);
+				}
+			}
+			else
+				pos--;
+		}
+	}
+
+	// на самом деле - compact & sweep
+	word *compact()
+	{
+		word *old = heap->genstart;
+		word *end = heap->end - 1;
+
+		word *newobject = old;
+		while (old < end) {
+			if (is_flagged(*old)) {
+				// 1. test for presence of "unmovable objects" in this object
+				// 2. find the header:
+	//			word* real = chase(old);
+	//			word hdr_value = *real;
+
+				/*if (!rawp(hdr_value)) {
+					int found = 0;
+					int i = hdrsize(*real);
+					word* p = old;
+					while (--i) {
+						word q = *++p;
+						// 1. попробуем НЕ перемещать блоки, которые с флажком (значит, содержат ссылки вперед - так как сслки назад все резолвятся во время
+						//  разворачивания заголовков - ссылок!)
+						if (flagged(q)) {
+							//printf("(found: type = %d)\n", hdrtype(q));
+							found = 1;
+							break;
+						}
+					}
+					// вот тут надо по умному использовать предыдущее свободное место: записать пустой объект с размером равным свободному месту
+					// tbd.
+					//pleasefixme
+					if (found) {
+						pinned++;
+						while (old - newobj > 0x7000) { // 0xFFFF
+							*newobj = make_raw_header(0x7000, TVOID, 0); // TSTRING
+							newobj += 0x7000;
+						}
+						if (newobj != old)
+							*newobj = make_raw_header((old - newobj), TVOID, 0); // TSTRING
+						newobj = old;
+						//printf("%c", '-');
+					}
+				}*/
+
+				word val = *newobject = *old;
+				while (is_flagged(val)) {
+					val &= ~1; //clear mark
+
+					word* ptr = (word*)val;
+					*newobject = *ptr;
+					*ptr = (word)newobject;
+
+
+	//				if (immediatep(*newobj) && flagged(*newobj))
+	//					*newobj &= (~1); // was: = flag(*newobj);
+					val = *newobject;
+				}
+
+				word h = hdrsize(val);
+				if (old == newobject) {
+					old += h;
+					newobject += h;
+				}
+				else {
+					while (--h) *++newobject = *++old;
+					old++;
+					newobject++;
+				}
+			}
+			else
+				old += hdrsize(*old);
+		}
+	//	printf(">\n");
+		return newobject;
+	}
+
+	// gc:
+	word *realend = heap->end;
+
+	word *fp = heap->fp;
+	heap->end = fp;
 
 	*fp = make_header(2, TTUPLE); // (в *fp спокойно можно оставить мусор)
 	word *root = fp + 1; // skip header
@@ -948,34 +966,34 @@ static word gc(int size, word regs, word** P) {
 	// непосредственно сам GC
 	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
 	root[0] = regs;
-	mark(root, fp); // assert (root > fp)
+	mark(root, fp);        // assert (root > fp)
 	fp = compact();
 	regs = root[0];
 	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
-	*P = (word*)fp;
+	heap->fp = (word*) fp;
 
+	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
 	#if DEBUG_GC
 		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
 				uptime,
-				sizeof(word) * (fp - heap.begin), marked, -1, -1, -1);
+				sizeof(word) * (fp - heap->begin), marked, -1, -1, -1);
 	#endif
 
-//	regs = (word *) *root;
-	heap.end = realend;
-	int nfree = (word)heap.end - (word)regs;
-	if (heap.genstart == heap.begin) {
-		word heapsize = (word) heap.end - (word) heap.begin;
+	heap->end = realend;
+	int nfree = (word)heap->end - (word)regs;
+	if (heap->genstart == heap->begin) {
+		word heapsize = (word) heap->end - (word) heap->begin;
 		word nused = heapsize - nfree;
-		if ((heapsize/(1024*1024)) > max_heap_size)
-			breaked |= 8; /* will be passed over to mcp at thread switch*/
+//		if ((heapsize/(1024*1024)) > max_heap_size)
+//			breaked |= 8; /* will be passed over to mcp at thread switch*/
 
 		nfree -= size*W + MEMPAD;   /* how much really could be snipped off */
 		if (nfree < (heapsize / 10) || nfree < 0) {
 			/* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
 			((word*)regs)[hdrsize(*(word*)regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
-			regs += adjust_heap(size*W + nused/10 + 4096);
-			nfree = (word)heap.end - (word)regs;
+			regs += adjust_heap(heap, size*W + nused/10 + 4096);
+			nfree = (word)heap->end - (word)regs;
 			if (nfree <= size)
 				breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
 		}
@@ -986,17 +1004,17 @@ static word gc(int size, word regs, word** P) {
 			if (newobj > size*W*2 + MEMPAD) {
 				//regs[hdrsize(*regs)] = 0; /* as above */
 				((word*)regs)[hdrsize(*(word*)regs)] = 0;
-				regs += adjust_heap(dec + MEMPAD*W);
-				heapsize = (word) heap.end - (word) heap.begin;
-				nfree = (word) heap.end - regs;
+				regs += adjust_heap(heap, dec + MEMPAD*W);
+				heapsize = (word) heap->end - (word) heap->begin;
+				nfree = (word) heap->end - regs;
 			}
 		}
-		heap.genstart = (word*)regs; /* always start newobj generation */
+		heap->genstart = (word*)regs; /* always start newobj generation */
 	} else if (nfree < MINGEN || nfree < size*W*2) {
-		heap.genstart = heap.begin; /* start full generation */
-		return gc(size, regs, P);
+		heap->genstart = heap->begin; /* start full generation */
+		return gc(heap, size, regs);
 	} else {
-		heap.genstart = (word*)regs; /* start newobj generation */
+		heap->genstart = (word*)regs; /* start newobj generation */
 	}
 	return regs;
 }
@@ -1041,8 +1059,7 @@ unsigned int lenn(char *pos, unsigned int max) { /* added here, strnlen was miss
 
 
 /* list length, no overflow or valid termination checks */
-#ifndef _WIN32
-static
+static __inline__
 int llen(word *ptr) {
    int len = 0;
    while (allocp(ptr) && *ptr == PAIRHDR) {
@@ -1051,7 +1068,6 @@ int llen(word *ptr) {
    }
    return len;
 }
-#endif
 
 void set_signal_handler() {
 #ifndef _WIN32
@@ -1135,7 +1151,7 @@ struct args
 	word max_heap_size; /* max heap size in MB */
 
 	// memstart <= genstart <= memend
-	struct heap heap;
+	struct heap_t heap;
 	word *fp; // allocation pointer (top of allocated heap)
 
 	void *userdata;
@@ -1146,24 +1162,25 @@ struct args
 // Несколько замечаний по этой функции:
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
-__tlocal__ int forcegc = 0;
+//int forcegc = 0;
 
 static
 void* runtime(void *args) // heap top
 {
 	register word *fp; // memory allocation pointer
+	heap_t heap;
 
 
 	seccompp = 0;
-	slice = TICKS; // default thread slice (n calls per slice)
+	int slice = TICKS; // default thread slice (n calls per slice)
 
 	//
-	max_heap_size = ((struct args*)args)->max_heap_size; /* max heap size in MB */
+//	max_heap_size = ((struct args*)args)->max_heap_size; /* max heap size in MB */
 
 	// инициализируем локальную память
 	heap.begin    = ((struct args*)args)->heap.begin;
 	heap.end      = ((struct args*)args)->heap.end;
-	heap.genstart = ((struct args*)args)->heap.genstart; // разделитель Old Generation и New Generation (?)
+	heap.genstart = ((struct args*)args)->heap.genstart; // разделитель Old Generation и New Generation
 
 	// allocation pointer (top of allocated heap)
 	fp            = ((struct args*)args)->fp;
@@ -1333,42 +1350,41 @@ apply: // apply something at ob to values in regs, or maybe switch context
 invoke: // nargs and regs ready, maybe gc and execute ob
 
 	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
-	//  регистры, мы их складываем в память во временный объект-список.
-	if (forcegc || (fp >= heap.end - 16*1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
-		word *ffp; // для передачи fp в gc, так как сам fp - register
-		if (forcegc)
-			printf("(forcegc)\n");
-		forcegc = 0;
+	//  регистры, мы их складываем в память во временный кортеж.
+	if (/*forcegc || */(fp >= heap.end - 16*1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
+		//if (forcegc)
+		//	printf("(forcegc)\n");
+		//forcegc = 0;
 		int p = 0, N = NR;
 		// создадим в топе временный объект со значениями всех регистров
-		word *regs = (word*) new_tuple (N + 1); // hdr r_0 .. r_(NR-1) ob // was: 50 as type
+		word *regs = (word*) new_tuple (N + 1);
 		while (++p <= N) regs[p] = R[p-1];
 		regs[p] = (word) ob;
 		// выполним сборку мусора
-		ffp = fp; // корректировка топа
-		regs = (word*)gc(16*1024 * sizeof(word), (word)regs, &ffp); // GC, как правило занимает 0-15 ms
-		fp = ffp;
-		// и восстановим все регистры, уже скорректированные сборщиком
+		heap.fp = fp;
+		regs = (word*)gc(&heap, 16*1024 * sizeof(word), (word)regs); // GC занимает 0-15 ms
+		fp = heap.fp;
+		// и восстановим все регистры, уже скорректированные (если перемещались) сборщиком
 		ob = (word *) regs[p];
 		while (--p >= 1) R[p-1] = regs[p];
 
+		// закончили, почистим за собой:
 		fp = regs; // вручную сразу удалим временный объект, это оптимизация
 		ip = (unsigned char *) (ob + 1);
 	}
 
 	// управляющие команды:
 #	define APPLY 20
+#	define RET   24
 #	define SYS   27
 #	define RUN   50
-#	define RET   24
-
+	// безусловные переходы
 #	define GOTO   2       // jmp a, nargs
 #	define GOTO_CODE 18   //
 #	define GOTO_PROC 19   //
 #	define GOTO_CLOS 21   //
 
-	// список команд
-	// смотреть в assembly.scm
+	// список команд смотреть в assembly.scm
 #	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
 #	define LD    14
 
@@ -1381,10 +1397,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define JF2   25       // jf2
 
 	// примитивы языка:
-#	define RAW 60
-//sys 27
+#	define RAW   60
 //sys-prim 63
-//run 50
 
 #	define CONS  51
 
@@ -1414,7 +1428,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define SLEEP 37
 
 
-
+	// tuples, trees
 #	define MKT      23   // make tuple
 #	define BIND     32
 #	define LISTUPLE 35
@@ -1431,7 +1445,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	// Rn - регистр машины (R[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
-	word T; // временный регистр, валидный только атомарно в обработчике операции
 	while (1) { // todo: добавить условие выхода из цикла
 		int op; // operation to execute
 		switch ((op = *ip++) & 0x3F) {
@@ -1618,15 +1631,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		// более высокоуровневые конструкции
 		//	смотреть "owl/primop.scm" и "lang/assemble.scm"
 		case RAW: {/* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
-			word wptr = A0;
-			int type = fixval(A1);
 			word revp = A2;
 			if (revp != IFALSE)
 				exit(1);
 
-			word *lst = (word *) wptr;
-			int nwords, len = 0, pads;
-			unsigned char *pos;
+			word *lst = (word *) A0;
+			int len = 0;
 			/* <- to be removed */
 
 			word* p = lst;
@@ -1635,12 +1645,14 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				p = (word *) p[2];
 			}
 			if ((word) p == INULL && len <= FMAX) {
-				nwords = (len/W) + ((len%W) ? 2 : 1);
-				word *raw = new (nwords);
-				pads = (nwords-1)*W - len; /* padding byte count, usually stored to top 3 bits */
-				*raw = make_raw_header(nwords, type, pads);
+				int nwords = (len/W) + ((len%W) ? 2 : 1);
+				int type = fixval (A1);
+				int pads = (nwords-1)*W - len; // padding byte count, usually stored to top 3 bits
+
+				word *raw = (word*) new_raw_object(nwords, type, pads);
 
 				p = lst;
+				unsigned char *pos;
 				pos = ((unsigned char *) raw) + W;
 				while ((word) p != INULL) {
 					*pos++ = fixval(p[1]) & 255;
@@ -1997,33 +2009,31 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		case MKBLACK:   // mkblack l k v r t
 		case MKRED: { // mkred l k v r t
-			word prim_mkff(word t, word l, word k, word v, word r) {
-			   word *ob = fp;
-			   ob[1] = k;
-			   ob[2] = v;
-			   if (l == IEMPTY) {
-			      if (r == IEMPTY) {
-			         *ob = make_header(3, t);
-			         fp += 3;
-			      } else {
-			         *ob = make_header(4, t|FFRIGHT);
-			         ob[3] = r;
-			         fp += 4;
-			      }
-			   } else if (r == IEMPTY) {
-			      *ob = make_header(4, t);
-			      ob[3] = l;
-			      fp += 4;
-			   } else {
-			      *ob = make_header(5, t);
-			      ob[3] = l;
-			      ob[4] = r;
-			      fp += 5;
-			   }
-			   return (word) ob;
+			word t = op == MKBLACK ? TFF : TFF|FFRED;
+			word l = A0;
+			word r = A3;
+
+			object *ob;
+			if (l == IEMPTY) {
+				if (r == IEMPTY) {
+					ob = new_object (3, t);
+				} else {
+					ob = new_object (4, t|FFRIGHT);
+					ob->ref[3] = r;
+				}
+			} else if (r == IEMPTY) {
+				ob = new_object (4, t);
+				ob->ref[3] = l;
+			} else {
+				ob = new_object (5, t);
+				ob->ref[3] = l;
+				ob->ref[4] = r;
 			}
-		    A4 = prim_mkff(op == MKBLACK ? TFF : TFF|FFRED, A0,A1,A2,A3);
-			NEXT(5);
+			ob->ref[1] = (word) A1; // k
+			ob->ref[2] = (word) A2; // v
+
+		    A4 = (word) ob;
+		    ip += 5; break;
 		}
 
 		case FFTOGGLE: { // fftoggle - toggle node color
@@ -2232,14 +2242,14 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					break;
 
 				case 1007: /* set memory limit (in mb) */ // todo: переделать на другой номер
-					result = max_heap_size;
-					max_heap_size = fixval(a);
+					result = IFALSE; //max_heap_size;
+					//max_heap_size = fixval(a);
 					break;
 				case 1008: /* get machine word size (in bytes) */ // todo: переделать на другой номер
 					  result = F(W);
 					  break;
 				case 1009: /* get memory limit (in mb) */ // todo: переделать на другой номер
-					  result = F(max_heap_size);
+					  result = IFALSE; //F(max_heap_size);
 					  break;
 
 				case 1022:
@@ -2291,7 +2301,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				}
 				// временный тестовый вызов
 				case 1033: { // temp
-					forcegc = 1;
+					//forcegc = 1;
 /*					printf("opengl version: %s\n", glGetString(GL_VERSION));
 					int glVersion[2] = {-1, -1}; // Set some default values for the version
 					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
@@ -3100,28 +3110,25 @@ word *deserialize(word *ptrs, int me)
    return fp;
 }
 
-// функция подсчета количества объектов в загружаемом образе
-static
-word decode_word(unsigned char** _hp) {
-	unsigned char* hp = *_hp;
-	word result = 0;
-	word newobj, i;
-	do {
-		i = *hp++;
-		newobj = result << 7;
-		assert (result == (newobj >> 7));
-//			if (result != (newobj >> 7)) exit(9); // overflow kills
-		result = newobj + (i & 127);
-	}
-	while (i & 128);
-	*_hp = hp;
-	return result;
-}
-
-
 static
 int count_fasl_objects(word *words, unsigned char *lang) {
 	unsigned char* hp;
+
+	// функция подсчета количества объектов в загружаемом образе
+	word decode_word() {
+		word result = 0;
+		word newobj, i;
+		do {
+			i = *hp++;
+			newobj = result << 7;
+			assert (result == (newobj >> 7));
+	//			if (result != (newobj >> 7)) exit(9); // overflow kills
+			result = newobj + (i & 127);
+		}
+		while (i & 128);
+		return result;
+	}
+
 
 	int n = 0;
 	hp = lang;
@@ -3131,7 +3138,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		switch (*hp++) {
 		case 1: {
 			hp++; ++allocated;
-			int size = decode_word(&hp);
+			int size = decode_word();
 			while (size--) {
 				if (*hp == 0) {
 					hp++; ++allocated;
@@ -3143,7 +3150,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		}
 		case 2: {
 			hp++;
-			int size = decode_word(&hp);
+			int size = decode_word();
 			hp += size;
 
 			int words = (size/W) + (((size % W) == 0) ? 1 : 2);
@@ -3244,8 +3251,21 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
+#if	HAS_SOCKETS
+#ifdef _WIN32
+	WSADATA wsaData;
+	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
+	if (sock_init  != 0) {
+		printf("WSAStartup failed with error: %d\n", sock_init);
+		return 1;
+	}
+//	AllocConsole();
+#endif//win32
+#endif
+
 #endif//STANDALONE
 
+	// ===============================================================
 	// создадим виртуальную машину
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
@@ -3254,8 +3274,10 @@ int main(int argc, char** argv)
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
 
+	heap_t heap;
+
 	// выделим память машине:
-	max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
+//	max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	int required_memory_size = (INITCELLS + FMAX + MEMPAD) * sizeof(word);
 	heap.begin = (word*) malloc(required_memory_size); // at least one argument string always fits
 	if (!heap.begin) {
@@ -3345,6 +3367,7 @@ int main(int argc, char** argv)
 		free(bootstrap);
 #endif
 
+	// ===============================================================
 
 	struct args args; // аргументы для запуска
 	args.vm = handle; // виртуальной машины OL
@@ -3353,7 +3376,7 @@ int main(int argc, char** argv)
 	args.heap.begin    = heap.begin;
 	args.heap.end      = heap.end;
 	args.heap.genstart = heap.genstart;
-	args.max_heap_size = max_heap_size; // max heap size in MB
+//	args.max_heap_size = max_heap_size; // max heap size in MB
 	args.fp = fp;
 	args.userdata      = (word*) oargs;
 
@@ -3379,9 +3402,18 @@ int main(int argc, char** argv)
 	result = runtime(&args);
 #endif//STANDALONE
 
+	// ===============================================================
+
 done:
 	free(heap.begin);
 	free(handle);
+
+#if	HAS_SOCKETS
+#ifdef _WIN32
+	WSACleanup();
+#endif//win32
+#endif
+
 
 #ifndef STANDALONE
 	return NULL;

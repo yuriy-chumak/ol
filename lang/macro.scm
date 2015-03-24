@@ -299,10 +299,11 @@
                            (case thing
                               ((quote) (values exp free))
                               ((_define)
-                                 ; (print " - expanding define body " (caddr exp))
+                                 ;(print " - expanding (" exp ") define body " (caddr exp))
                                  (lets
                                     ((value free 
                                        (expand (caddr exp) env free abort)))
+                                    ;(print "  : " (list '_define (cadr exp) value free))
                                     (values
                                        (list '_define (cadr exp) value)
                                        free)))

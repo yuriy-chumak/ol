@@ -2,11 +2,16 @@
 #ifndef __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 #define	__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 
+// common options, can change
+#define HAS_SOCKETS 1
+
+
 // тут игра слов OL <> 0L
 //	нулевой порог вхождения
 //	сокращение от OwlLisp
 //	а еще в html - тег нумерованного СПИСКА (еще одна отсылка к lisp)
 struct OL;
+
 
 #ifdef __cplusplus
 	extern "C" {
@@ -47,4 +52,12 @@ typedef struct OL OL;
 #ifdef __cplusplus
 	}
 #endif
+
+
+// defaults. please don't change.
+#ifndef HAS_SOCKETS
+#define HAS_SOCKETS 0
+#endif
+
+
 #endif//__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__

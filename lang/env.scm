@@ -118,7 +118,7 @@
             val))
 
       (define (handle-symbol exp env fail)
-         ;(print (list 'handle-symbol exp 'being (lookup env exp)))
+         ; (print (list 'handle-symbol exp 'being (lookup env exp)))
          (tuple-case (lookup env exp)
             ((bound) exp)
             ((defined defn)

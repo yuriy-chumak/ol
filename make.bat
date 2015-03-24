@@ -70,7 +70,13 @@ exit
 GOTO:EOF
 
 :TEST-ALL
-echo Testing tests:
+	setlocal EnableDelayedExpansion
+	for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do (
+		set "DEL=%%a"
+	)
+	<nul > X set /p ".=."
+
+	echo Testing tests:
 for %%f in (
 	apply.scm
 	banana.scm
@@ -129,5 +135,14 @@ for %%f in (
 ::	regex.scm (hangs)
 GOTO:EOF
 
+:color
+	set "param=^%~2" !
+	set "param=!param:"=\"!"
+	findstr /p /A:%1 "." "!param!\..\X" nul
+	<nul set /p ".=%DEL%%DEL%%DEL%%DEL%%DEL%%DEL%%DEL%"
+	exit /b
+
 :failed
-	echo Failed.
+	call :color 0c "Failed."
+	echo(
+	goto :eof

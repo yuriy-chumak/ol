@@ -22,12 +22,17 @@
     GetAsyncKeyState ;
     GetKeyboardState ;
 
+    GetSystemMetrics ;
+      SM_CXSCREEN
+      SM_CYSCREEN
+
     CreateWindowEx   ;
       WS_EX_APPWINDOW
       WS_EX_WINDOWEDGE
       WS_OVERLAPPEDWINDOW
       WS_CLIPSIBLINGS
       WS_CLIPCHILDREN
+      WS_POPUP
     DestroyWindow   ;
     GetDC ReleaseDC ;
     ShowWindow
@@ -120,6 +125,10 @@
   (define GetKeyState      (dlsym user32 (__stdcall SHORT) "GetKeyState" int))
   (define GetAsyncKeyState (dlsym user32 (__stdcall SHORT) "GetAsyncKeyState" int))
   (define GetKeyboardState (dlsym user32 (__stdcall BOOL) "GetKeyboardState" PBYTE))
+
+  (define GetSystemMetrics (dlsym user32 (__stdcall int) "GetSystemMetrics" int))
+    (define SM_CXSCREEN 0)
+    (define SM_CYSCREEN 1)
   
   ;; функции работы с win32 окнами
   (define CreateWindowEx   (dlsym user32 (__stdcall HWND) "CreateWindowExA" DWORD LPCTSTR LPCTSTR DWORD int int int int HWND HMENU HINSTANCE LPVOID)) ; ANSI version
@@ -128,6 +137,7 @@
     (define WS_OVERLAPPEDWINDOW  (OR #x00000000 #x00C00000 #x00080000 #x00040000 #x00020000 #x00010000))
     (define WS_CLIPSIBLINGS      #x04000000)
     (define WS_CLIPCHILDREN      #x02000000)
+    (define WS_POPUP             #x80000000)
   (define DestroyWindow    (dlsym user32 (__stdcall BOOL) "DestroyWindow" HWND))
     
   (define GetDC               (dlsym user32 (__stdcall HDC) "GetDC" HWND))

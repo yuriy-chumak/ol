@@ -902,6 +902,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
    (list->ff
      `((output . "boot.fasl")      ; output file
        (want-symbols . #true)      ;?
+;       (want-threads . #true)
        (want-codes . #true)        ;?
        (want-native-ops . #true))) ;?
    null) ; "none" = null, "some" = usual-suspects, "all" = heap-entry : vm extensions (none, some, all)
