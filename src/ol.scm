@@ -43,7 +43,7 @@
 (import (owl defmac)) ;; reload default macros needed for defining libraries etc
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*vm-special-ops* *libraries* *codes* wait stdin stdout stderr set-ticker-value run build-start)
+,forget-all-but (*vm-special-ops* *libraries* *codes* wait stdin stdout stderr set-ticker-value build-start)
 
 
 ;;;
@@ -407,7 +407,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 ;; todo: share the modules instead later
 (define shared-misc
    (share-bindings
-      run error
+      error
       pair?  boolean?  fixnum?  eof?  symbol?  
       tuple?  string?  function? procedure? equal? eqv? bytecode?
       not
@@ -492,7 +492,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
        (evaluate "-e" "--eval"     has-arg comment "evaluate given expression and print result")
        (test     "-t" "--test"     has-arg comment "evaluate given expression exit with 0 unless the result is #false")
        (quiet    "-q" "--quiet"    comment "be quiet (default in non-interactive mode)")
-       (run      "-r" "--run"      has-arg comment "run the last value of the given foo.scm with given arguments" terminal)
+;       (run      "-r" "--run"      has-arg comment "run the last value of the given foo.scm with given arguments" terminal)
        (load     "-l" "--load"     has-arg  comment "resume execution of a saved program state (fasl)")
        (output   "-o" "--output"   has-arg  comment "where to put compiler output (default auto)")
        (seccomp  "-S" "--seccomp"  comment "enter seccomp at startup or exit if it failed")
@@ -736,7 +736,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
          (λ (dict others)
             (lets 
                ((env ;; be quiet automatically if any of these are set
-                  (if (fold (λ (is this) (or is (get dict this #false))) #false '(quiet test evaluate run output output-format))
+                  (if (fold (λ (is this) (or is (get dict this #false))) #false '(quiet test evaluate output output-format))
                      (env-set env '*interactive* #false)
                      (env-set env '*interactive* #false))) ; was #true
                 (env ;; maybe set debug causing (owl eval) to print intermediate steps
@@ -767,10 +767,10 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                         (begin
                            (print "compile just one file for now please: " others)
                            1)))
-                  ((getf dict 'run) =>
-                     (λ (path)
-                        (owl-run (try (λ () (repl-file env path)) #false) (cons "ol" others) path
-                           (get dict 'profile #false))))
+;                  ((getf dict 'run) =>
+;                     (λ (path)
+;                        (owl-run (try (λ () (repl-file env path)) #false) (cons "ol" others) path
+;                           (get dict 'profile #false))))
                   ((getf dict 'evaluate) => 
                      (λ (str)
                         (try-repl-string env str))) ;; fixme, no error reporting

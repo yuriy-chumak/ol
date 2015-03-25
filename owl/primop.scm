@@ -14,9 +14,9 @@
       special-bind-primop?
 
       ;; primop wrapper functions
-      bind
-      ff-bind
-      mkt
+;      bind
+;      ff-bind
+;      mkt
 
       ; todo: оформить как-то в особом модуле, что ли...      
       run
@@ -108,7 +108,9 @@
       ; вот тут мы заменяем команды
       (define apply      (raw (list 20)              type-bytecode #false)) ;; <- no arity, just call 20
       (define apply-cont (raw (list (fxbor 20 #x40)) type-bytecode #false))
-      (define run      (raw (list JF2 3 0 6  50 4 5 6  RET 6  ARITY-ERROR) type-bytecode #false))
+;      (define run        (raw (list JF2 6  0 3  50 4 5  ARITY-ERROR) type-bytecode #false))
+      ;(define run      (raw (list JF2 6 0 9  50 4 5  6 7 8 9  24 6 ARITY-ERROR) type-bytecode #false))
+      (define run      (raw (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR) type-bytecode #false))
 
       (define primitive-operations
          (list
@@ -144,7 +146,7 @@
             ; непосредственный код
             (tuple 'raw        60  3 1 raw)
             (tuple 'sys        27  4 1 sys)
-            (tuple 'run        50  2 1 run)   ; '(50 4 5      6  24 6)
+            (tuple 'run        50  2 1 run)   ; '(JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)
 
             (tuple 'sys-prim   63  4 1 sys-prim) ; todo: rename sys-prim to syscall
             
@@ -222,10 +224,6 @@
                 (car p)
                 (loop (cdr p)))))
 
-      ; не понимаю, зачем run экспортить. А, да, еще она не была включена в primops
-      (define run (ref (get-primitive 'run) 5))
-
-                
 ;; Список sys-prim'ов
 ; поэтапный перевод sys-prim'ов в syscall'ы
 ; 1. добавить 100 к старым номерам
@@ -294,6 +292,8 @@
          (list
             49 ; (ref (get-primitive 'ff-bind) 2) ; 49
             26 ; (ref (get-primitive 'fxqr) 2) ; 26
+
+;            50
             
             38 39 40 58 59 61 ; 37
             ))
