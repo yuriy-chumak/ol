@@ -44,7 +44,6 @@
       (define RET 24)
    
    
-   
       ;; changing any of the below 3 primops is tricky. they have to be recognized by the primop-of of 
       ;; the repl which builds the one in which the new ones will be used, so any change usually takes 
       ;; 2 rebuilds.
@@ -105,21 +104,30 @@
       ;                  '(arity . (command arguments . command arguments))
       ; арность + непосредственный байткод примитивов
       ; дело в том, что эти команды оформляются как JF2 арность байткод, JF2 проверяет (и выравнивает, если надо) арность
+;      (define (primop name code inargs outargs)
+;         (let*
+;            ((arity     (+ inargs outargs))
+;             (bytecode  code)
+;             (len       (length bytecode))
+;             (primitive (raw
+;                          (append (list 25 arity 0 len) ; 25 == JF2
+;                                  (append bytecode '(17)))    ; 17 == ARITY-ERROR
+;                          type-bytecode #false)))
+;            (tuple name (car bytecode) inargs outargs primitive)))
       (define (primop name code inargs outargs)
          (let*
             ((arity     (+ inargs outargs))
              (bytecode  code)
              (len       (length bytecode))
              (primitive (raw
-                          (append (list 25 arity 0 len) ; 25 == JF2
-                                  (append bytecode '(17)))    ; 17 == ARITY-ERROR
+                          (append (list JF2 arity 0 len) ; 25 == JF2
+                                  bytecode)    ; 17 == ARITY-ERROR == добавляется автоматически в (assemble-code)
                           type-bytecode #false)))
             (tuple name (car bytecode) inargs outargs primitive)))
 
 
+
       ; clock - специальная команда, надо использовать как (let* ((s ms (clock))) ... )
-      (define clock       (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
-      
       (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys
 ;      (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
 
@@ -131,14 +139,38 @@
       (define listuple (func '(4 35 4 5 6 7 24 7)))
 
 ;      (define cons     (func '(3 51 4 5  6  24 6)))
+;      (define clock       (func '(1  61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
+;      (define clock       (raw (list JF2 1 0 6   61 3 4 2 5 2 17) type-bytecode #false))
 
+
+      ; выглядит так, что байткод не особо то и нужен - он для
+      ; 1) вычисления длины команды (для jf2)
+      ; 2) ознакомительных целей
       (define primitives
          (list
             ; пара специальных вещей. todo: разобраться, почему они тут а не в общем списке функци в/м
             (tuple 'bind         32    1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
             (tuple 'ff-bind      49    1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
             (tuple 'mkt          23   'any   1  mkt)      ;; mkt type v0 .. vn t
-         
+
+
+;            (primop 'cons       '(51 4 5  6  24 6)  2 1)
+
+            (tuple 'cons        51 2 1 (raw (list JF2 3 0 6  51 4 5 6  24 6  17) type-bytecode #false))              ;; must add 61 to the multiple-return-variable-primops list
+
+            ; tmp
+;            (primop 'sys-prim2  '(61 4 24 4)  'any 1) ; todo: rename sys-prim to syscall
+
+            ; последний элемент используется в primop-arities
+            (tuple 'clock       61 0 2 '())              ;; must add 61 to the multiple-return-variable-primops list
+;                (raw '() type-bytecode #false))
+                ;clock)   ; (clock) → posix-time x ms
+;             (define clock     (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
+;            (primop 'clock      '(62                 )  0 2)
+
+            ;                                   arity     len
+;            (tuple 'clock 62 0 2 (raw (list JF2 2      0  1   62) type-bytecode #false))
+            
             ; apply
 
             ; непосредственный код
@@ -159,7 +191,7 @@
             ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
             ; names for these functions, the old terms are still in use. In particular, since the terms are used
             ; in the Emacs Lisp source code, we will use them in this introduction.
-            (primop 'cons       '(51 4 5  6  24 6)  2 1)
+;            (primop 'cons       '(51 4 5  6  24 6)  2 1)
 
             (primop 'type       '(15 4    5  24 5)  1 1)  ;; get just the type bits (new)
             (primop 'size       '(36 4    5  24 5)  1 1)  ;; get object size (- 1)
@@ -209,9 +241,6 @@
 
             ; todo: move this to the sys-prim
             (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
-            (tuple 'clock        61 0 2 clock)   ; (clock) → posix-time x ms
-;              (define clock     (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
-;             (primop 'clock    '(9 3 5        61 3 4 2 5 2)  0 2)
 
             ; поддержка ff деревьев
             (tuple 'listuple     35 3 1 listuple)  ;; (listuple type size lst)
@@ -220,6 +249,7 @@
             (tuple 'red?         41 1 #false red?)  ;; (red? node) -> bool
             (tuple 'ff-toggle    46 1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
        ))
+
       (define primops primitives)
 
       (define (get-primitive name)

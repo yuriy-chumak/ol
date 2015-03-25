@@ -4,7 +4,8 @@
       lookup env-bind 
       empty-env
       apply-env env-fold
-      verbose-vm-error prim-opcodes opcode->wrapper primop-of primitive?
+      verbose-vm-error prim-opcodes primop-of primitive?
+      ; opcode->wrapper
       poll-tag name-tag link-tag buffer-tag signal-tag signal-halt thread-quantum meta-tag
       current-library-key
       env-set-macro *tabula-rasa* env-del 
@@ -211,17 +212,15 @@
             `(function ,a got did not want ,(- b 1) arguments) 
             `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
 
-      ;; ff of wrapper-fn → opcode
-      (define prim-opcodes
+      ;; ff of opcode → wrapper
+      (define prim-opcodes ;; ff of wrapper-fn → opcode
          (for empty primops
             (λ (ff node)
                (put ff (ref node 5) (ref node 2)))))
-
-      ;; ff of opcode → wrapper
-      (define opcode->wrapper
-         (for empty primops
-            (λ (ff node)
-               (put ff (ref node 2) (ref node 5)))))
+;      (define opcode->wrapper
+;         (for empty primops
+;            (λ (ff node)
+;               (put ff (ref node 2) (ref node 5)))))
 
       ;; later check type, get first opcode and compare to primop wrapper
       (define (primop-of val)

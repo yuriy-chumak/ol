@@ -1981,7 +1981,14 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 
+		// ...
+//		case SYSCALL2: {
+//			break;
+//		}
 
+		case 62: {
+			int xxx = 1;
+		}
 		case CLOCK: { // clock <secs> <ticks>
 			word *ob = new (6); // space for 32-bit bignum - [NUM hi [NUM lo null]]
 			ob[0] = ob[3] = NUMHDR;
@@ -2016,11 +2023,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			A1 = TRUEFALSE(errno == EINTR);
 #endif
 			ip += 2; break;
-		}
-
-		// ...
-		case SYSCALL2: {
-			break;
 		}
 
 		// этот case должен остаться тут - как последний из кейсов

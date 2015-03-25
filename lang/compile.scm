@@ -13,9 +13,7 @@
 (define-library (lang compile)
 
    (export 
-      compile
-      primops 
-      prim-opcodes)
+      compile)
 
    (import
       (owl defmac)
@@ -30,7 +28,7 @@
       (owl sort)
       (owl primop)
       (owl io)
-      (only (lang env) primop-of prim-opcodes)
+      (only (lang env) primitive?)
       (lang assemble)
       (lang closure))
 
@@ -525,7 +523,7 @@
                      (error "rtl-any: unknown branch type: " kind))))
             ((call rator rands)
                ;; compile as primop call, bind if rator is lambda or a generic call
-               (let ((op (and (eq? (ref rator 1) 'value) (primop-of (ref rator 2)))))
+               (let ((op (and (eq? (ref rator 1) 'value) (primitive? (ref rator 2)))))
                   (if op
                      (tuple-case (car rands)
                         ((lambda formals body)
