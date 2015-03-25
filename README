@@ -2,8 +2,10 @@ Related:
 	http://groups.csail.mit.edu/mac/projects/scheme/
 
 Register interpreter in the windows:
-assoc .ol=oLisp.File
-ftype oLisp.File=ol "%1" %*
+assoc .ol=OLisp.File
+ftype OLisp.File=ol "%1" %*
+assoc .bl=OLisp.Binary.File
+ftype OLisp.Binary.File=ol "%1" %*
 
 
 

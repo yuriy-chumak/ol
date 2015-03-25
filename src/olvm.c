@@ -546,17 +546,9 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define MINGEN                      1024*32  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
-/*** Globals and Prototypes ***/
-// память виртуальной машины локальна по отношению к ее потоку. пусть пока побудет так - не буду
-//  ее тащить в структуру VM
-
-//static __tlocal__ word max_heap_size; /* max heap size in MB */
-
 //static int breaked;      /* set in signal handler, passed over to owl in thread switch */
 //static int seccompp;     /* are we in seccomp? */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
-
-//int slice;
 
 //void exit(int rval);
 //void *realloc(void *ptr, size_t size);
@@ -848,47 +840,11 @@ static word gc(heap_t *heap, int size, word regs) {
 	// на самом деле - compact & sweep
 	word *sweep(word* end)
 	{
-		word *old = heap->genstart;
-//		word *end = heap->end - 1;
+		word *old, *newobject;
 
-		word *newobject = old;
+		newobject = old = heap->genstart;
 		while (old < end) {
 			if (is_flagged(*old)) {
-				// 1. test for presence of "unmovable objects" in this object
-				// 2. find the header:
-	//			word* real = chase(old);
-	//			word hdr_value = *real;
-
-				/*if (!rawp(hdr_value)) {
-					int found = 0;
-					int i = hdrsize(*real);
-					word* p = old;
-					while (--i) {
-						word q = *++p;
-						// 1. попробуем НЕ перемещать блоки, которые с флажком (значит, содержат ссылки вперед - так как сслки назад все резолвятся во время
-						//  разворачивания заголовков - ссылок!)
-						if (flagged(q)) {
-							//printf("(found: type = %d)\n", hdrtype(q));
-							found = 1;
-							break;
-						}
-					}
-					// вот тут надо по умному использовать предыдущее свободное место: записать пустой объект с размером равным свободному месту
-					// tbd.
-					//pleasefixme
-					if (found) {
-						pinned++;
-						while (old - newobj > 0x7000) { // 0xFFFF
-							*newobj = make_raw_header(0x7000, TVOID, 0); // TSTRING
-							newobj += 0x7000;
-						}
-						if (newobj != old)
-							*newobj = make_raw_header((old - newobj), TVOID, 0); // TSTRING
-						newobj = old;
-						//printf("%c", '-');
-					}
-				}*/
-
 				word val = *newobject = *old;
 				while (is_flagged(val)) {
 					val &= ~1; //clear mark
@@ -897,9 +853,6 @@ static word gc(heap_t *heap, int size, word regs) {
 					*newobject = *ptr;
 					*ptr = (word)newobject;
 
-
-	//				if (immediatep(*newobj) && flagged(*newobj))
-	//					*newobj &= (~1); // was: = flag(*newobj);
 					val = *newobject;
 				}
 
@@ -917,46 +870,38 @@ static word gc(heap_t *heap, int size, word regs) {
 			else
 				old += hdrsize(*old);
 		}
-	//	printf(">\n");
 		return newobject;
 	}
 
 	// gc:
-	word *realend = heap->end;
-
 	word *fp = heap->fp;
-	heap->end = fp;
 
 	*fp = make_header(2, TTUPLE); // (в *fp спокойно можно оставить мусор)
 	word *root = fp + 1; // skip header
 //	word *root = &fp[1]; // same
 
-	clock_t uptime;
-
 	// непосредственно сам GC
-	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
+//	clock_t uptime;
+//	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
 	root[0] = regs;
 	mark(root, fp);        // assert (root > fp)
 	fp = sweep(fp);
 	regs = root[0];
-	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
+//	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
 	heap->fp = (word*) fp;
 
-	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
 	#if DEBUG_GC
 		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
 				uptime,
 				sizeof(word) * (fp - heap->begin), marked, -1, -1, -1);
 	#endif
 
-	heap->end = realend;
+	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
 	int nfree = (word)heap->end - (word)regs;
 	if (heap->genstart == heap->begin) {
 		word heapsize = (word) heap->end - (word) heap->begin;
 		word nused = heapsize - nfree;
-//		if ((heapsize/(1024*1024)) > max_heap_size)
-//			breaked |= 8; /* will be passed over to mcp at thread switch*/
 
 		nfree -= size*W + MEMPAD;   /* how much really could be snipped off */
 		if (nfree < (heapsize / 10) || nfree < 0) {
@@ -1118,21 +1063,18 @@ struct args
 	OL *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
 
 	// структура памяти VM. распределяется еще до запуска самой машины
-	word max_heap_size; /* max heap size in MB */
-
-	// memstart <= genstart <= memend
+	word max_heap_size; // max heap size in MB
 	struct heap_t heap;
 	word *fp; // allocation pointer (top of allocated heap)
 
 	void *userdata;
 	volatile char signal;
 };
-// args + 0 = (list "arg0" "arg 1") or ("arg0 arg1" . NIL) ?
+// args + 0 = (list "arg0" "arg 1")
 // args + 3 = objects list
 // Несколько замечаний по этой функции:
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
-//int forcegc = 0;
 
 static //__attribute__((aligned(8)))
 void* runtime(void *args) // heap top
@@ -1141,22 +1083,26 @@ void* runtime(void *args) // heap top
 	register word *fp; // memory allocation pointer
 	int slice = TICKS; // default thread slice (n calls per slice)
 
+	int max_heap_size;
+
+	// регистры виртуальной машины
+	word R[NR];
 	int breaked = 0;
 
-//	seccompp = 0;
-
-	//
-//	max_heap_size = ((struct args*)args)->max_heap_size; /* max heap size in MB */
+//	int seccompp = 0;
 
 	// инициализируем локальную память
 	heap.begin    = ((struct args*)args)->heap.begin;
 	heap.end      = ((struct args*)args)->heap.end;
 	heap.genstart = ((struct args*)args)->heap.genstart; // разделитель Old Generation и New Generation
 
+	max_heap_size = ((struct args*)args)->max_heap_size; // max heap size in MB
+
 	// allocation pointer (top of allocated heap)
 	fp            = ((struct args*)args)->fp;
-	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
+
 #	ifndef STANDALONE
+	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
 	fifo *fi =&((struct args*)args)->vm->o;
 	fifo *fo =&((struct args*)args)->vm->i;
 #	endif//STANDALONE
@@ -1169,11 +1115,8 @@ void* runtime(void *args) // heap top
 	// todo: может стоит искать и загружать какой-нибудь main()?
 	word* ptrs = (word*)userdata + 3;
 	int nobjs = hdrsize(ptrs[0]) - 1;
-	word* ob = (word*) ptrs[nobjs-1]; // выполним последний объект в списке /он должен быть (λ (args))/
 
-
-	// регистры
-	word R[NR];
+	word* ob = (word*) ptrs[nobjs]; // выполним последний объект в списке /он должен быть (λ (args))/
 
 	int i = 0;
 	while (i < NR)
@@ -1342,6 +1285,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		// закончили, почистим за собой:
 		fp = regs; // вручную сразу удалим временный объект, это оптимизация
 		ip = (unsigned char *) (ob + 1);
+
+		// проверим, не слишком ли мы зажрались
+		word heapsize = (word) heap.end - (word) heap.begin;
+		if ((heapsize / (1024*1024)) > max_heap_size)
+			breaked |= 8; // will be passed over to mcp at thread switch
+
 	}
 
 	// управляющие команды:
@@ -1395,6 +1344,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define EQ    54
 
 #	define CLOCK 61
+#	define SYSCALL2 62
 #	define SYSCALL 63
 #	define SLEEP 37
 
@@ -1620,7 +1570,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				int type = fixval (A1);
 				int pads = (nwords-1)*W - len; // padding byte count, usually stored to top 3 bits
 
-				word *raw = (word*) new_raw_object(nwords, type, pads);
+				word *raw = (word*) new_raw_object (nwords, type, pads);
 
 				p = lst;
 				unsigned char *pos;
@@ -2068,11 +2018,15 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 		}
 
-
+		// ...
+		case SYSCALL2: {
+			break;
+		}
 
 		// этот case должен остаться тут - как последний из кейсов
 		//  todo: переименовать в компиляторе sys-prim на syscall (?)
 		// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
+		//  list: https://filippo.io/linux-syscall-table/
 		case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
@@ -2085,6 +2039,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			switch (op) {
 				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 				//  остальное можно спокойно оформлять отдельными функциями
+
+				// isatty()
+				case 500: {
+					result = TRUEFALSE( isatty(fixval(a)) );
+					break;
+				}
 
 				// READ
 				case 1005: { /* fread fd max -> obj | eof | F (read error) | T (would block) */
@@ -2113,7 +2073,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #					endif//STANDALONE
 					{
 #ifdef _WIN32
-			            if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
+						if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
 			               n = read(fd, ((char *) res) + W, max);
 			            } else {
 			               n = -1;
@@ -2136,7 +2096,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					if (n == 0)
 						result = IEOF;
 					else // EAGAIN: Resource temporarily unavailable (may be the same value as EWOULDBLOCK) (POSIX.1)
-						result = TRUEFALSE(errno == EAGAIN || errno == EWOULDBLOCK);
+						result = TRUEFALSE (errno == EAGAIN || errno == EWOULDBLOCK);
 					break;
 				}
 
@@ -2212,15 +2172,16 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #					endif//STANDALONE
 					break;
 
-				case 1007: /* set memory limit (in mb) */ // todo: переделать на другой номер
-					result = IFALSE; //max_heap_size;
-					//max_heap_size = fixval(a);
+				case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
+					result = F(max_heap_size);
+					max_heap_size = fixval(a);
 					break;
+				case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
+					result = F(max_heap_size);
+					break;
+
 				case 1008: /* get machine word size (in bytes) */ // todo: переделать на другой номер
 					  result = F(W);
-					  break;
-				case 1009: /* get memory limit (in mb) */ // todo: переделать на другой номер
-					  result = IFALSE; //F(max_heap_size);
 					  break;
 
 				case 1022:
@@ -3269,7 +3230,7 @@ int main(int argc, char** argv)
 	word *fp;
 
 	// выделим память машине:
-//	max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
+	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	int required_memory_size = (INITCELLS + FMAX + MEMPAD) * sizeof(word);
 	heap.begin = (word*) malloc(required_memory_size); // at least one argument string always fits
 	if (!heap.begin) {
@@ -3337,18 +3298,14 @@ int main(int argc, char** argv)
 	//fp = heap.fp;
 
 	// Десериализация загруженного образа в объекты
-	word* ptrs = fp;
-	fp += nobjs + 1;
+//	word* ptrs = fp;
+//	fp += nobjs + 1;
 
+//	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
+	object * ptrs = new_raw_object (nobjs + 1, TCONST, 0);
 
-//	hp = bootstrap; // десериализатор использует hp как итератор по образу
-
-//	int pos;
-//	assert (fp < heap.end);	// "gc needed during heap import"
-
-	// у нас пропадает первый объект. todo: выяснить почему и можно ли (надо ли) это исправить
-	fp = deserialize(ptrs, nobjs, bootstrap, fp);
-	ptrs[0] = make_raw_header(nobjs + 1, 0x0, 0);
+	fp = deserialize(&ptrs->ref[1], nobjs, bootstrap, fp);
+//	assert (fp < heap.end);// gc needed during heap import
 
 	// все, программа в памяти, можно освобождать исходник
 #ifndef STANDALONE
@@ -3368,7 +3325,7 @@ int main(int argc, char** argv)
 	args.heap.begin    = heap.begin;
 	args.heap.end      = heap.end;
 	args.heap.genstart = heap.genstart;
-//	args.max_heap_size = max_heap_size; // max heap size in MB
+	args.max_heap_size = max_heap_size; // max heap size in MB
 	args.fp = fp;
 	args.userdata      = (word*) oargs;
 
