@@ -40,8 +40,8 @@
    (begin
       ;; Список кодов виртуальной машины:
       (define JF2 25)
-      (define APPLY 20)
       (define RET 24)
+      (define ARITY-ERROR 17)
    
    
       ;; changing any of the below 3 primops is tricky. they have to be recognized by the primop-of of 
@@ -93,92 +93,60 @@
                type-bytecode #false)))
                
 
-      ; todo: переделать с разименованием через define-syntax
-      (define (desc name bytecode function)
-         (tuple name   (nth bytecode 1)
-                    (- (nth bytecode 0) 1) 1 function))
-
-
-      ;; these rest are easy
-      ; 24 = RET
-      ;                  '(arity . (command arguments . command arguments))
-      ; арность + непосредственный байткод примитивов
-      ; дело в том, что эти команды оформляются как JF2 арность байткод, JF2 проверяет (и выравнивает, если надо) арность
 ;      (define (primop name code inargs outargs)
 ;         (let*
 ;            ((arity     (+ inargs outargs))
 ;             (bytecode  code)
 ;             (len       (length bytecode))
 ;             (primitive (raw
-;                          (append (list 25 arity 0 len) ; 25 == JF2
-;                                  (append bytecode '(17)))    ; 17 == ARITY-ERROR
+;                          (append (list JF2 arity 0 len) ; 25 == JF2
+;                                  bytecode)    ; 17 == ARITY-ERROR == добавляется автоматически в (assemble-code)
 ;                          type-bytecode #false)))
 ;            (tuple name (car bytecode) inargs outargs primitive)))
-      (define (primop name code inargs outargs)
-         (let*
-            ((arity     (+ inargs outargs))
-             (bytecode  code)
-             (len       (length bytecode))
-             (primitive (raw
-                          (append (list JF2 arity 0 len) ; 25 == JF2
-                                  bytecode)    ; 17 == ARITY-ERROR == добавляется автоматически в (assemble-code)
-                          type-bytecode #false)))
-            (tuple name (car bytecode) inargs outargs primitive)))
 
 
+      ; вот тут мы заменяем команды
+      (define apply      (raw (list 20)              type-bytecode #false)) ;; <- no arity, just call 20
+      (define apply-cont (raw (list (fxbor 20 #x40)) type-bytecode #false))
+      (define run      (raw (list JF2 3 0 6  50 4 5 6  RET 6  ARITY-ERROR) type-bytecode #false))
 
-      ; clock - специальная команда, надо использовать как (let* ((s ms (clock))) ... )
-      (define _sleep      (func '(2 37 4 5        24 5)))   ;; todo: <- move to sys
-;      (define _connect    (func '(3 34 4 5 6      24 6)))   ;; todo: <- move to sys
-
-      ; 2
-      (define mkblack  (func '(5 42 4 5 6 7 8 24 8)))
-      (define mkred    (func '(5 43 4 5 6 7 8 24 8)))
-      (define red?     (func '(2 41 4 5 24 5)))
-      (define ff-toggle   (func '(2 46 4 5        24 5)))
-      (define listuple (func '(4 35 4 5 6 7 24 7)))
-
-;      (define cons     (func '(3 51 4 5  6  24 6)))
-;      (define clock       (func '(1  61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
-;      (define clock       (raw (list JF2 1 0 6   61 3 4 2 5 2 17) type-bytecode #false))
-
-
-      ; выглядит так, что байткод не особо то и нужен - он для
-      ; 1) вычисления длины команды (для jf2)
-      ; 2) ознакомительных целей
-      (define primitives
+      (define primitive-operations
          (list
+;           пример добавления новой функции:
+;           параметры: код функции, in параметров, out параметров, непосредственно код
+;             код предваряется опкодом JF2 для проверки арности и (если не входит в список multiple-return-variable-primops)
+;             возвратом результата и выводом ошибки при неправильной арности
+;            (tuple 'cons       51  2 1 (raw (list JF2 3 0 6  51 4 5 6  RET 6  17) type-bytecode #false))  ;; 17 == ARITY-ERROR
+;           вот еще несколько примеров
+;            (tuple 'clock      61  0 2 (raw (list JF2 2 0 3  61 4 5           17) type-bytecode #false))  ;; must add 61 to the multiple-return-variable-primops list
+;            (primop 'raw       '(60 4 5 6    7  24 7)  3 1)
+;            (primop 'sys       '(27 4 5 6 7  8  24 8)  4 1)
+;
+;           пример выполнение raw-кода прямо в интерпретаторе:
+;            (define *interactive* #t)
+;            ;; Defined *interactive*
+;            > (define x (raw (list 51 4 5 6 24 6) type-bytecode #false))
+;            ;; Defined x
+;            > (x 1 2)
+;            '(1 . 2)
+;            >
+
             ; пара специальных вещей. todo: разобраться, почему они тут а не в общем списке функци в/м
-            (tuple 'bind         32    1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
-            (tuple 'ff-bind      49    1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
-            (tuple 'mkt          23   'any   1  mkt)      ;; mkt type v0 .. vn t
-
-
-;            (primop 'cons       '(51 4 5  6  24 6)  2 1)
-
-            (tuple 'cons        51 2 1 (raw (list JF2 3 0 6  51 4 5 6  24 6  17) type-bytecode #false))              ;; must add 61 to the multiple-return-variable-primops list
-
-            ; tmp
-;            (primop 'sys-prim2  '(61 4 24 4)  'any 1) ; todo: rename sys-prim to syscall
+            (tuple 'bind       32  1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
+            (tuple 'ff-bind    49  1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
+            (tuple 'mkt        23  'any   1 mkt)      ;; mkt type v0 .. vn t
 
             ; последний элемент используется в primop-arities
-            (tuple 'clock       61 0 2 '())              ;; must add 61 to the multiple-return-variable-primops list
-;                (raw '() type-bytecode #false))
-                ;clock)   ; (clock) → posix-time x ms
-;             (define clock     (func '(1  9 3 5        61 3 4 2 5 2))) ; 9 = MOVE, 61 = CLOCK
-;            (primop 'clock      '(62                 )  0 2)
-
-            ;                                   arity     len
-;            (tuple 'clock 62 0 2 (raw (list JF2 2      0  1   62) type-bytecode #false))
+            (tuple 'clock      61  0 2 clock)              ;; must add 61 to the multiple-return-variable-primops list
             
             ; apply
 
             ; непосредственный код
-            (primop 'raw        '(60 4 5 6    7  24 7)  3 1) ;; make raw object, and *add padding byte count to type variant*
-            (primop 'sys        '(27 4 5 6 7  8  24 8)  4 1) ; тут было что-то особенное (в смысле, что количество аргументов было 4, а не 3 написано)
-            (primop 'run        '(50 4 5      6  24 6)  2 1)            
+            (tuple 'raw        60  3 1 raw)
+            (tuple 'sys        27  4 1 sys)
+            (tuple 'run        50  2 1 run)   ; '(50 4 5      6  24 6)
 
-            (primop 'sys-prim   '(63 4 5 6 7  8  24 8)  4 1) ; todo: rename sys-prim to syscall
+            (tuple 'sys-prim   63  4 1 sys-prim) ; todo: rename sys-prim to syscall
             
             ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
             ; Strange Names
@@ -191,76 +159,73 @@
             ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
             ; names for these functions, the old terms are still in use. In particular, since the terms are used
             ; in the Emacs Lisp source code, we will use them in this introduction.
-;            (primop 'cons       '(51 4 5  6  24 6)  2 1)
+            (tuple 'cons       51  2 1 cons) ; 
 
-            (primop 'type       '(15 4    5  24 5)  1 1)  ;; get just the type bits (new)
-            (primop 'size       '(36 4    5  24 5)  1 1)  ;; get object size (- 1)
-            (primop 'cast       '(22 4 5  6  24 6)  2 1)  ;; cast object type (works for immediates and allocated)
+            (tuple 'type       15  1 1 type)  ;; get just the type bits (new)
+            (tuple 'size       36  1 1 size)  ;; get object size (- 1)
+            (tuple 'cast       22  2 1 cast)  ;; cast object type (works for immediates and allocated)
             
-            (primop 'car        '(52 4    5  24 5)  1 1)
-            (primop 'cdr        '(53 4    5  24 5)  1 1)
-            (primop 'ref        '(47 4 5  6  24 6)  2 1)   ; op47 = ref t o r = prim_ref(A0, A1)
+            (tuple 'car        52  1 1 car)
+            (tuple 'cdr        53  1 1 cdr)
+            (tuple 'ref        47  2 1 ref)   ; op47 = ref t o r = prim_ref(A0, A1)
             
-            (primop 'set        '(45 4 5 6  7  24 7)  3 1) ; (set tuple pos val) -> tuple'
-            (primop 'set-car!   '(11 4 5    6  24 6)  2 1)
-            (primop 'set-cdr!   '(12 4 5    6  24 6)  2 1)
+            (tuple 'set        45  3 1 set) ; (set tuple pos val) -> tuple'
+            (tuple 'set-car!   11  2 1 set-car!)
+            (tuple 'set-cdr!   12  2 1 set-cdr!)
 ;           (primop 'set!       '(10 4 5 6  7  24 7)  3 1) ; (set! tuple pos val)
             
-            (primop 'eq?        '(54 4 5  6  24 6)  2 1)
-            (primop 'lesser?    '(44 4 5  6  24 6)  2 1)
-            
+            (tuple 'eq?        54  2 1 eq?)
+            (tuple 'lesser?    44  2 1 lesser?)
+           ))
+      (define primitive-operations (append primitive-operations (list
+                       
             ; поддержка больших чисел
             ;; вопрос - а нахрена именно числовой набор функций? может обойдемся обычным?
-            (primop 'ncons      '(29 4 5  6  24 6)  2 1)
-            (primop 'ncar       '(30 4    5  24 5)  1 1)
-            (primop 'ncdr       '(31 4    5  24 5)  1 1)
+            (tuple 'ncons      29  2 1 ncons)
+            (tuple 'ncar       30  1 1 ncar)
+            (tuple 'ncdr       31  1 1 ncdr)
             
             ;; логика
-            (primop 'fxband     '(55 4 5  6  24 6)  2 1)
-            (primop 'fxbor      '(56 4 5  6  24 6)  2 1)
-            (primop 'fxbxor     '(57 4 5  6  24 6)  2 1)
+            (tuple 'fxband     55  2 1 fxband)
+            (tuple 'fxbor      56  2 1 fxbor)
+            (tuple 'fxbxor     57  2 1 fxbxor)
             
             ;; строки
-            (primop 'refb       '(48 4 5  6  24 6)  2 1)
-            (primop 'sizeb      '(28 4    5  24 5)  1 1)   ;; raw-obj -> numbe of bytes (fixnum)
+            (tuple 'refb       48  2 1 refb)
+            (tuple 'sizeb      28  1 1 sizeb)
 
 
             ;; математика
-;            (primop 'fx+        '(38 4 5    6 7    24 7)  2 2)
-;            (primop 'fx*        '(39 4 5    6 7    24 7)  2 2)
-;            (primop 'fx-        '(40 4 5    6 7    24 7)  2 2)
-;            (primop 'fx/        '(26 4 5 6  7 8 9  24 7)  3 3) 
-;            (primop 'fx>>       '(58 4 5    6 7    24 7)  2 2)
-;            (primop 'fx<<       '(59 4 5    6 7    24 7)  2 2)
-            (primop 'fx+        '(38 4 5    6 7    24 7)  2 2)
-            (primop 'fx*        '(39 4 5    6 7    24 7)  2 2)
-            (primop 'fx-        '(40 4 5    6 7    24 7)  2 2)
-            (primop 'fx/        '(26 4 5 6  7 8 9  24 7)  3 3) 
-            (primop 'fx>>       '(58 4 5    6 7    24 7)  2 2)
-            (primop 'fx<<       '(59 4 5    6 7    24 7)  2 2)
+            (tuple 'fx+       38  2 2 fx+)     ;'(38 4 5    6 7    24 7)
+            (tuple 'fx*       39  2 2 fx*)     ;'(39 4 5    6 7    24 7)
+            (tuple 'fx-       40  2 2 fx-)     ;'(40 4 5    6 7    24 7)
+            (tuple 'fx/       26  3 3 fx/)     ;'(26 4 5 6  7 8 9  24 7)
+            (tuple 'fx>>      58  2 2 fx>>)    ;'(58 4 5    6 7    24 7)
+            (tuple 'fx<<      59  2 2 fx<<)    ;'(59 4 5    6 7    24 7)
 
             ; todo: move this to the sys-prim
-            (tuple '_sleep       37 1 1 _sleep)   ;; (_sleep nms) -> #true
+            (tuple '_sleep     37  1 1 _sleep)   ;; (_sleep nms) -> #true
 
             ; поддержка ff деревьев
-            (tuple 'listuple     35 3 1 listuple)  ;; (listuple type size lst)
-            (tuple 'mkblack      42 4 1 mkblack)   ; (mkblack l k v r)
-            (tuple 'mkred        43 4 1 mkred)   ; ditto
-            (tuple 'red?         41 1 #false red?)  ;; (red? node) -> bool
-            (tuple 'ff-toggle    46 1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
-       ))
+            (tuple 'listuple   35  3 1 listuple)  ;; (listuple type size lst)
+            (tuple 'mkblack    42  4 1 mkblack)   ; (mkblack l k v r)
+            (tuple 'mkred      43  4 1 mkred)   ; ditto
+            (tuple 'red?       41  1 #false red?)  ;; (red? node) -> bool
+            (tuple 'ff-toggle  46  1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
+       )))
 
-      (define primops primitives)
+      (define primops primitive-operations)
 
       (define (get-primitive name)
          (let loop ((p primops))
             (if (eq? (ref (car p) 1) name)
                 (car p)
                 (loop (cdr p)))))
-                
+
       ; не понимаю, зачем run экспортить. А, да, еще она не была включена в primops
       (define run (ref (get-primitive 'run) 5))
 
+                
 ;; Список sys-prim'ов
 ; поэтапный перевод sys-prim'ов в syscall'ы
 ; 1. добавить 100 к старым номерам
@@ -330,13 +295,21 @@
             49 ; (ref (get-primitive 'ff-bind) 2) ; 49
             26 ; (ref (get-primitive 'fxqr) 2) ; 26
             
-            38 39 40 58 59 37 61
+            38 39 40 58 59 61 ; 37
             ))
 
-      (define (variable-input-arity? op) (eq? op 23)) ;; mkt
 
-      (define apply      (raw (list APPLY)              type-bytecode #false)) ;; <- no arity, just call 20
-      (define apply-cont (raw (list (fxbor APPLY #x40)) type-bytecode #false))
+;      (define multiple-return-variable-primops
+;         (let loop ((r '()) (p primops))
+;            (if (null? p)
+;               r
+;               (let* ((op (car p))
+;                      (oa (ref op 4)))
+;                  (loop
+;                     (if (eq? oa 1) r (cons (ref op 2) r))
+;                     (cdr p))))))
+
+      (define (variable-input-arity? op) (eq? op 23)) ;; mkt
 
       ; call/cc
       (define call-with-current-continuation

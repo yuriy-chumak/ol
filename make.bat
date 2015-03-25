@@ -83,8 +83,6 @@ for %%f in (
 	bisect-rand.scm
 	callcc.scm
 	case-lambda.scm
-	circle.scm
-	dir.scm
 	echo.scm
 	ellipsis.scm
 	eval.scm
@@ -126,6 +124,8 @@ for %%f in (
 	vector-rand.scm
 	numbers.scm
 ) do call :TEST %%f
+::	circle.scm
+::	dir.scm
 ::	opengl.scm
 ::	bingo-rand.scm // failed, no "i has all" output
 ::	circular.scm (сообщение об ошибке ушло в stderr а не на проверку)
