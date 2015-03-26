@@ -14,6 +14,7 @@ echo.
 echo Compiling new oL system image:
 a.exe src/ol.scm
 if ERRORLEVEL 1 exit
+if not exist boot.fasl exit
 
 :: тестирование полученного образа
 echo.

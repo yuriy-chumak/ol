@@ -1552,23 +1552,18 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		/************************************************************************************/
 		// более высокоуровневые конструкции
 		//	смотреть "owl/primop.scm" и "lang/assemble.scm"
-		case RAW: {/* lraw lst type dir r (fixme, alloc amount testing compiler pass not in place yet!) */
-			word revp = A2;
-			if (revp != IFALSE)
-				exit(1);
-
-			word *lst = (word *) A0;
+		case RAW: { // raw type lst r (fixme, alloc amount testing compiler pass not in place yet!)
+			word *lst = (word *) A1;
 			int len = 0;
-			/* <- to be removed */
-
 			word* p = lst;
 			while (allocp(p) && *p == PAIRHDR) {
 				len++;
 				p = (word *) p[2];
 			}
+
 			if ((word) p == INULL && len <= FMAX) {
 				int nwords = (len/W) + ((len%W) ? 2 : 1);
-				int type = fixval (A1);
+				int type = fixval (A0);
 				int pads = (nwords-1)*W - len; // padding byte count, usually stored to top 3 bits
 
 				word *raw = (word*) new_raw_object (nwords, type, pads);
@@ -1581,14 +1576,13 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					p = (word *) p[2];
 				}
 				while (pads--) *pos++ = 0; // clear the padding bytes
-				A3 = (word)raw;
+				A2 = (word)raw;
 			}
 			else
-				A3 = IFALSE;
+				A2 = IFALSE;
 
-			ip += 4; break;
+			ip += 3; break;
 		}
-
 
 		// операции посложнее
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
@@ -1997,9 +1991,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //			break;
 //		}
 
-		case 62: {
-			int xxx = 1;
-		}
 		case CLOCK: { // clock <secs> <ticks>
 			word *ob = new (6); // space for 32-bit bignum - [NUM hi [NUM lo null]]
 			ob[0] = ob[3] = NUMHDR;

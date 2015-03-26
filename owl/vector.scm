@@ -216,10 +216,10 @@
       ; note, a blank vector must use a raw one, since there are no such things as 0-tuples
 
       (define empty-vector 
-         (raw null type-vector-raw #false))
+         (raw type-vector-raw null))
 
       (define (list->byte-vector bs)
-         (raw bs type-vector-raw #false))
+         (raw type-vector-raw bs))
 
       (define (make-leaf rvals n raw?)
          (if raw?

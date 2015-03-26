@@ -98,7 +98,7 @@
       (define (fopen path mode)
          (cond
             ((c-string path) => 
-               (λ (raw) (sys-prim 1001 raw mode #false)))
+               (λ (path) (sys-prim 1001 path mode #false)))
             (else #false)))
 
       ;; use fd 65535 as the unique sleeper thread name.
@@ -110,7 +110,7 @@
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
       (define (bvec-tail bvec n)
-         (raw (map (lambda (p) (refb bvec p)) (iota n 1 (sizeb bvec))) type-vector-raw #false))
+         (raw type-vector-raw (map (lambda (p) (refb bvec p)) (iota n 1 (sizeb bvec)))))
 
       (define (try-write-block fd bvec len)
          (cond
@@ -403,10 +403,10 @@
          (cond
             ((eq? len output-buffer-size)
                (and 
-                  (write-really (raw (reverse out) type-vector-raw #false) fd)
+                  (write-really (raw type-vector-raw (reverse out)) fd)
                   (printer lst 0 null fd)))
             ((null? lst)
-               (write-really (raw (reverse out) type-vector-raw #false) fd))
+               (write-really (raw type-vector-raw (reverse out)) fd))
             (else
                ;; avoid dependency on generic math in IO
                (lets ((len _ (fx+ len 1)))
