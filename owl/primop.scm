@@ -37,18 +37,6 @@
       (define RET 24)
       (define ARITY-ERROR 17)
    
-      ;; changing any of the below 3 primops is tricky. they have to be recognized by the primop-of of 
-      ;; the repl which builds the one in which the new ones will be used, so any change usually takes 
-      ;; 2 rebuilds.
-
-      ; these 2 primops require special handling, mainly in cps
-
-      ;; turn to badinst soon, possibly return later
-;      (define ff-bind '__ff-bind__)  ; (func '(2 49))
-      (define bind    '__bind__)     ; (func '(2 32 4 5  24 5))
-      ; this primop is the only one with variable input arity
-      (define mkt     '__mkt__)      ; (func '(4 23 3 4 5 6 7  24 7))
-
       ; пара служебных функций:
       (define (append a b) ; append
          (if (eq? a '())
@@ -99,7 +87,7 @@
 
             ; пара специальных вещей. todo: разобраться, почему они тут а не в общем списке функци в/м
             (tuple 'bind       32  1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
-            (tuple 'ff-bind    49  4 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
+            (tuple 'ff-bind    49  1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
             (tuple 'mkt        23  'any   1 mkt)      ;; mkt type v0 .. vn t
 
             ; последний элемент используется в primop-arities
@@ -255,13 +243,14 @@
 
 
       ;; from cps
-      (define (special-bind-primop? op)
-         (or (eq? op 32) (eq? op 49)))  ; __bind__ or __ff-bind__
+      (define (special-bind-primop? op) ; bind ar ff-bind
+         (or (eq? op (ref (get-primitive 'bind) 2))
+             (eq? op (ref (get-primitive 'ff-bind) 2))))
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       (define multiple-return-variable-primops
          (list
-            49 ; (ref (get-primitive 'ff-bind) 2) ; 49
+            (ref (get-primitive 'ff-bind) 2) ; 49
             26 ; (ref (get-primitive 'fxqr) 2) ; 26
 
 ;            50
@@ -280,7 +269,8 @@
 ;                     (if (eq? oa 1) r (cons (ref op 2) r))
 ;                     (cdr p))))))
 
-      (define (variable-input-arity? op) (eq? op 23)) ;; mkt
+      (define (variable-input-arity? op)
+         (eq? op (ref (get-primitive 'mkt) 2))) ;; mkt
 
       ; call/cc
       (define call-with-current-continuation

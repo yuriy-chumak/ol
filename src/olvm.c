@@ -1870,6 +1870,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 
+		// make-tuple
 		case MKT: { // mkt t s f1 .. fs r
 			word t = *ip++;
 			word s = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
@@ -1884,17 +1885,22 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			NEXT(s+1);
 		}
 
-		case BIND: { /* bind tuple <n> <r0> .. <rn> */ // todo: move to sys-prim?
+		// bind tuple to registers
+		case BIND: { /* bind <tuple > <n> <r0> .. <rn> */ // todo: move to sys-prim?
 			word *tuple = (word *) R[*ip++];
-			word hdr, pos = 1, n = *ip++;
 			CHECK(allocp(tuple), tuple, 32);
-			hdr = *tuple;
+
+			word pos = 1, n = *ip++;
+			word hdr = *tuple;
 			CHECK(!(rawp(hdr) || hdrsize(hdr)-1 != n), tuple, 32);
-			while(n--) { R[*ip++] = tuple[pos++]; }
+			while (n--)
+				R[*ip++] = tuple[pos++];
+
 			break;
 		}
 
-		case FFBIND: { // withff node l k v r */ // bindff - bind node left key val right, filling in #false when implicit
+		// bind ff to registers
+		case FFBIND: { // with-ff <node >l k v r */ // bindff - bind node left key val right, filling in #false when implicit
 			word *T = (word *) A0;
 			word hdr = *T++;
 			A2 = *T++; /* key */
@@ -1914,6 +1920,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 5; break;
 		}
 
+		// make tuple from list
 		case LISTUPLE: { // listuple type size lst to
 			word type = fixval(A0);
 			word size = fixval(A1);
@@ -1933,7 +1940,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		 *
 		 */
 
-		case MKBLACK:   // mkblack l k v r t
+		case MKBLACK: // mkblack l k v r t
 		case MKRED: { // mkred l k v r t
 			word t = op == MKBLACK ? TFF : TFF|FFRED;
 			word l = A0;
@@ -1941,16 +1948,19 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 			object *ob;
 			if (l == IEMPTY) {
-				if (r == IEMPTY) {
+				if (r == IEMPTY)
 					ob = new_object (3, t);
-				} else {
+				else {
 					ob = new_object (4, t|FFRIGHT);
 					ob->ref[3] = r;
 				}
-			} else if (r == IEMPTY) {
+			}
+			else
+			if (r == IEMPTY) {
 				ob = new_object (4, t);
 				ob->ref[3] = l;
-			} else {
+			}
+			else {
 				ob = new_object (5, t);
 				ob->ref[3] = l;
 				ob->ref[4] = r;
