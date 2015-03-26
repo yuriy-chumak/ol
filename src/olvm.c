@@ -1107,45 +1107,45 @@ void* runtime(void *args) // heap top
 	fifo *fo =&((struct args*)args)->vm->i;
 #	endif//STANDALONE
 
+	void *userdata = ((struct args*)args)->userdata; // command line
+
 	// все, машина инициализирована, отсигналимся
 	((struct args*)args)->signal = 1;
 
-	void *userdata = ((struct args*)args)->userdata;
-	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
+
 	// todo: может стоит искать и загружать какой-нибудь main()?
 	word* ptrs = (word*)userdata + 3;
 	int nobjs = hdrsize(ptrs[0]) - 1;
 
-	word* ob = (word*) ptrs[nobjs]; // выполним последний объект в списке /он должен быть (λ (args))/
+	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
+	word* this = (word*) ptrs[nobjs];
 
-	int i = 0;
-	while (i < NR)
-		R[i++] = INULL;
-	R[0] = IFALSE;
-	R[3] = IHALT;
-	R[4] = (word) userdata;
+	// почистим регистры. обязательно! иначе gc() сбойнет, пытаясь работать с мусорными объектами
+	for (int i = i; i < NR; i++)
+		R[i] = INULL;
+	R[0] = IFALSE; // no yet mcp
+	R[3] = IHALT;  // continuation
+	R[4] = (word) userdata; // command line as '(script arg0 arg1 arg2 ...)
+	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
 
-	// Instruction Pointer
+	int bank = 0; // ticks deposited at interop
+	int ticker = slice; // any initial value ok
+
+	// instruction pointer
 	unsigned char *ip;
 
-		int bank = 0; /* ticks deposited at interop */
-		int ticker = slice; /* any initial value ok */
-	// usegc = 1; /* enble gc (later have if always evabled) */
-
-	unsigned short acc = 2; // boot always calls with 2 args, no support for >255arg functions
-
-apply: // apply something at ob to values in regs, or maybe switch context
+apply: // apply something at "this" to values in regs, or maybe switch context
 	while (1) {
-		if ((word)ob == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
-			ob = (word *) R[3]; /* call cont */
+		if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
+			this = (word *) R[3]; /* call cont */
 			R[3] = (acc > 2) ? R[5] : IFALSE; /* default arg or false if none */
 			acc = 1;
 			continue;
 		}
-		if ((word)ob == IHALT) {
-			/* a tread or mcp is calling the final continuation  */
-			ob = (word *) R[0];
-			if (!allocp(ob)) {
+		if ((word)this == IHALT) {
+			// a tread or mcp is calling the final continuation
+			this = (word *) R[0];
+			if (!allocp(this)) {
 				// fprintf(stderr, "Unexpected virtual machine exit\n");
 #				ifndef STANDALONE
 				// подождем, пока освободится место в консоли
@@ -1155,30 +1155,31 @@ apply: // apply something at ob to values in regs, or maybe switch context
 				return (void*)fixval(R[3]);
 			}
 
-			R[0] = IFALSE;
-			breaked = 0;
+			R[0] = IFALSE; // set no mcp
 			R[4] = R[3];
-			R[3] = F(2);
+			R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
 			R[5] = IFALSE;
 			R[6] = IFALSE;
+			breaked = 0;
 			ticker = 0xffffff;
 			bank = 0;
 			acc = 4;
 			continue;
 		} /* <- add a way to call the newobj vm prim table also here? */
 
-		if (allocp(ob)) { // если это аллоцированный объект
-			word hdr = *ob & 0x0FFF; // cut size out, take just header info
+		if (allocp(this)) { // если это аллоцированный объект
+			word hdr = *this & 0x0FFF; // cut size out, take just header info
 			if (hdr == make_header(0, TPROC)) { // proc
-				R[1] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
+				R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			}
 			else
 			if (hdr == make_header(0, TCLOS)) { // clos
-				R[1] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
-				R[2] = (word) ob; ob = (word *) ob[1]; // ob = car(ob)
+				R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
+				R[2] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			}
 			else
 			if (((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
+
 				word prim_get(word *ff, word key, word def) { // ff assumed to be valid
 					while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
 						word this = ff[1], hdr;
@@ -1204,23 +1205,23 @@ apply: // apply something at ob to values in regs, or maybe switch context
 				switch (acc)
 				{
 				case 2:
-					R[3] = prim_get(ob, R[4],    0);
+					R[3] = prim_get(this, R[4],    0);
 					if (!R[3])
-						ERROR(260, ob, R[4]);
+						ERROR(260, this, R[4]);
 					break;
 				case 3:
-					R[3] = prim_get(ob, R[4], R[5]);
+					R[3] = prim_get(this, R[4], R[5]);
 					break;
 				default:
-					ERROR(259, ob, INULL);
+					ERROR(259, this, INULL);
 				}
-				ob = cont;
+				this = cont;
 				acc = 1;
 				continue;
 			}
 			else
 				if (((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
-					ERROR(259, ob, INULL);
+					ERROR(259, this, INULL);
 
 			// todo: сюда надо добавить реакцию на внешние колбеки
 			if (!ticker--) {
@@ -1228,37 +1229,43 @@ apply: // apply something at ob to values in regs, or maybe switch context
 				if (R[0] == IFALSE) // no mcp, ignore
 					ticker = TICKS;
 				else {
-				  /* save vm state and enter mcp cont at R0 */
-				  word *state, pos = 1;
-				  ticker = 0xffffff;
-				  bank = 0;
-				  acc = acc + 4;
-				  R[acc] = (word) ob;
-				  state = new (acc);
-				  *state = make_header(acc, TTHREAD);
-				  state[acc-1] = R[acc];
-				  while (pos < acc-1) {
-					 state[pos] = R[pos];
-					 pos++;
-				  }
-				  ob = (word *) R[0];
-				  R[0] = IFALSE; /* remove mcp cont */
-				  /* R3 marks the interop to perform */
-				  R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); /* fixme - handle also differnet signals via one handler  */
-				  R[4] = (word) state;
-				  R[5] = F(breaked);
-				  R[6] = IFALSE;
-				  acc = 4;
-				  breaked = 0;
+					// save vm state and enter mcp cont at R0
+					ticker = 0xffffff; // what the magic?
+					bank = 0;
+					acc += 4; //
+					R[acc] = (word) this;
+
+					word *state;
+					state = (word*) new_object (acc, TTHREAD);
+					state[acc-1] = R[acc];
+					for (int pos = 1; pos < acc-1; pos++)
+						state[pos] = R[pos];
+//					while (pos < acc-1) {
+//						state[pos] = R[pos];
+//						pos++;
+//					}
+					this = (word *) R[0]; // mcp
+
+					R[0] = IFALSE; // remove mcp cont
+					// R3 marks the interop to perform
+					// 1 - runnig and time slice exhausted
+					// 10: breaked - call signal handler
+					// 14: memory limit was exceeded
+					R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); // fixme - handle also different signals via one handler
+					R[4] = (word) state;
+					R[5] = F(breaked);
+					R[6] = IFALSE;
+					acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
+					breaked = 0;
 				}
 				continue;
 			}
 
-			ip = (unsigned char *) &ob[1];
+			ip = (unsigned char *) &this[1];
 			break; // goto invoke
 		}
 		// else
-		ERROR(257, ob, INULL); // not callable
+		ERROR(257, this, INULL); // not callable
 	}
 
 invoke: // nargs and regs ready, maybe gc and execute ob
@@ -1273,18 +1280,18 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		// создадим в топе временный объект со значениями всех регистров
 		word *regs = (word*) new_tuple (N + 1);
 		while (++p <= N) regs[p] = R[p-1];
-		regs[p] = (word) ob;
+		regs[p] = (word) this;
 		// выполним сборку мусора
 		heap.fp = fp;
 		regs = (word*)gc(&heap, 16*1024 * sizeof(word), (word)regs); // GC занимает 0-15 ms
 		fp = heap.fp;
 		// и восстановим все регистры, уже скорректированные (если перемещались) сборщиком
-		ob = (word *) regs[p];
+		this = (word *) regs[p];
 		while (--p >= 1) R[p-1] = regs[p];
 
 		// закончили, почистим за собой:
 		fp = regs; // вручную сразу удалим временный объект, это оптимизация
-		ip = (unsigned char *) (ob + 1);
+		ip = (unsigned char *) &this[1];
 
 		// проверим, не слишком ли мы зажрались
 		word heapsize = (word) heap.end - (word) heap.begin;
@@ -1371,8 +1378,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		switch ((op = *ip++) & 0x3F) {
 		case 0:
 			op = (ip[0] << 8) | ip[1]; // big endian
-			//super_dispatch: run macro instructions
-			// todo: add here JIT
+			// super_dispatch: run user instructions
 			switch (op) {
 			/* AUTOGENERATED INSTRUCTIONS */
 			default:
@@ -1382,59 +1388,54 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 
 		case GOTO:
-			ob = (word *)A0; acc = ip[1];
+			this = (word *)A0; acc = ip[1];
 			goto apply;
 
 		case GOTO_CODE:
-			ob = (word *)A0; acc = ip[1];
-			ip = (unsigned char*) &ob[1];
+			this = (word *)A0; acc = ip[1];
+			ip = (unsigned char*) &this[1];
 			goto invoke;
 		case GOTO_PROC:
-			ob = (word *)A0; acc = ip[1];
-			R1 = (word) ob;
-			ob = (word *) ob[1];
-			ip = (unsigned char*) &ob[1];
+			this = (word *)A0; acc = ip[1];
+			R1 = (word) this;
+			this = (word *) this[1];
+			ip = (unsigned char*) &this[1];
 			goto invoke;
 		case GOTO_CLOS:
-			ob = (word *)A0; acc = ip[1];
-			R1 = (word) ob;
-			ob = (word *) ob[1];
-			R2 = (word) ob;
-			ob = (word *) ob[1];
-			ip = (unsigned char*) &ob[1];
+			this = (word *)A0; acc = ip[1];
+			R1 = (word) this;
+			this = (word *) this[1];
+			R2 = (word) this;
+			this = (word *) this[1];
+			ip = (unsigned char*) &this[1];
 			goto invoke;
 
+		//
 		case APPLY: {
 			int reg, arity;
-			word *lst;
 			if (op == APPLY) { /* normal apply: cont=r3, fn=r4, a0=r5, */
-				reg = 4; /* include cont */
+				reg = 4; // include cont
 				arity = 1;
-				ob = (word *) R[reg];
+				this = (word *) R[reg];
 				acc -= 3; /* ignore cont, function and stop before last one (the list) */
-				while(acc--) { /* move explicitly given arguments down by one to correct positions */
-					R[reg] = R[reg+1]; /* copy args down*/
-					reg++;
-					arity++;
-				}
-				lst = (word *) R[reg+1];
 			}
-			else { // _sans_cps apply: func=r3, a0=r4,
-				reg = 3; /* include cont */
+			else { // apply-cont (_sans_cps apply): func=r3, a0=r4,
+				reg = 3; // include cont
 				arity = 0;
-				ob = (word *) R[reg];
+				this = (word *) R[reg];
 				acc -= 2; /* ignore function and stop before last one (the list) */
-				while(acc--) { /* move explicitly given arguments down by one to correct positions */
-					R[reg] = R[reg+1]; /* copy args down*/
-					reg++;
-					arity++;
-				}
-				lst = (word *) R[reg+1];
 			}
 
-			while (allocp(lst) && *lst == PAIRHDR) { /* unwind argument list */
+			while (acc--) { /* move explicitly given arguments down by one to correct positions */
+				R[reg] = R[reg+1]; /* copy args down*/
+				reg++;
+				arity++;
+			}
+			word *lst = (word *) R[reg+1];
+
+			while (allocp(lst) && *lst == PAIRHDR) { // unwind argument list
 				// FIXME: unwind only up to last register and add limited rewinding to arity check
-				if (reg > 128) { /* dummy handling for now */
+				if (reg > NR) { // dummy handling for now
 					fprintf(stderr, "TOO LARGE APPLY\n");
 					exit(3);
 				}
@@ -1447,13 +1448,13 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 		case RET: // return value
-			ob = (word *) R[3];
+			this = (word *) R[3];
 			R[3] = A0;
 			acc = 1;
 			goto apply;
 
 		case SYS: // sys continuation op arg1 arg2
-			ob = (word *) R[0];
+			this = (word *) R[0];
 			R[0] = IFALSE;
 			R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
 			acc = 4;
@@ -1462,19 +1463,19 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			goto apply;
 
 		case RUN: { // run thunk quantum
-			ob = (word *) A0;
+			this = (word *) A0;
 			R[0] = R[3];
 			ticker = bank ? bank : fixval(A1);
 			bank = 0;
-			CHECK(allocp(ob), ob, 50);
+			CHECK(allocp(this), this, 50);
 
-			word hdr = *ob;
+			word hdr = *this;
 			if (imm_type(hdr) == TTHREAD) {
 				int pos = hdrsize(hdr) - 1;
-				word code = ob[pos];
+				word code = this[pos];
 				acc = pos - 3;
 				while (--pos)
-					R[pos] = ob[pos];
+					R[pos] = this[pos];
 				ip = ((unsigned char *) code) + W;
 				continue; // no apply, continue
 			}
@@ -1738,6 +1739,16 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		  A2 = F(r&FMAX);
 		  NEXT(4); }
 
+	   op44: {/* less a b r */
+		   word a = A0;
+		   word b = A1;
+		   if (immediatep(a))
+			   A2 = immediatep(b) ? TRUEFALSE(a < b) : ITRUE;  /* imm < alloc */
+		   else
+			   A2 = immediatep(b) ? IFALSE : TRUEFALSE(a < b); /* alloc > imm */
+		   NEXT(3);
+	   }
+
 
 	   op55: { /* band a b r, prechecked */
 	      word a = R[*ip];
@@ -1792,7 +1803,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		case SIZEB: { // sizeb obj to
 			word* T = (word*) A0;
-			if (immediatep(ob))
+			if (immediatep(T))
 				A1 = IFALSE;
 			else {
 				word hdr = *T;
@@ -1814,7 +1825,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 //		// ошибки!
 		case 17: /* arity error */
-			ERROR(17, ob, F(acc));
+			ERROR(17, this, F(acc));
 			// неиспользуемые коды (историческое наследие, при желании можно реюзать)
 		case 33:
 			ERROR(33, IFALSE, IFALSE);
@@ -2940,36 +2951,15 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	}
 	// while(1);
 
-   op44: {/* less a b r */
-   word prim_less(word a, word b) {
-      if (immediatep(a)) {
-         return immediatep(b) ? TRUEFALSE(a < b) : ITRUE;  /* imm < alloc */
-      } else {
-         return immediatep(b) ? IFALSE : TRUEFALSE(a < b); /* alloc > imm */
-      }
-   }
-      A2 = prim_less(A0, A1);
-      NEXT(3);
-   }
-
-//   // todo: add here JIT
-//super_dispatch: /* run macro instructions */
-//   switch(op) {
-///* AUTOGENERATED INSTRUCTIONS */
-//      default:
-//         ERROR(258, F(op), ITRUE);
-//   }
-//   goto apply;
-
 invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
-   ob = (word *) R[0];
-   R[0] = IFALSE;
-   R[3] = F(3);
-   if (allocp(ob)) {
-      acc = 4;
-      goto apply;
-   }
-   return (void*)1; /* no mcp to handle error (fail in it?), so nonzero exit  */
+	this = (word *) R[0];
+	R[0] = IFALSE;
+	R[3] = F(3);
+	if (allocp(this)) {
+		acc = 4;
+		goto apply;
+	}
+	return (void*) 1; /* no mcp to handle error (fail in it?), so nonzero exit  */
 }
 
 

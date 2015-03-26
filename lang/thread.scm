@@ -344,6 +344,7 @@
                                (id st this)
                                (state (update-state state st))
                                (op a b c (run st 0)))
+                              ;(print "run returns: ")
                               (if (eq? op 1)
                                  ; out of time, usual suspect, short path here
                                  (self self todo (cons (tuple id a) done) state)
@@ -396,6 +397,7 @@
                            ;; but consumed a quantum already so handle it in next round
                            (values #false (tuple cont todo (cons state done)))))
                      (lets ((op a b c (run state thread-quantum)))
+                        ;(print (list "run returns: " op a b c))
                         (cond
                            ((eq? op 1) ;; out of time, a is new state
                               (values #false 

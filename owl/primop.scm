@@ -13,13 +13,6 @@
       variable-input-arity?
       special-bind-primop?
 
-      ;; primop wrapper functions
-;      bind
-;      ff-bind
-;      mkt
-
-      ; todo: оформить как-то в особом модуле, что ли...      
-      run
       halt
       wait
       
@@ -29,7 +22,8 @@
       ;; extra ops
       set-memory-limit get-word-size get-memory-limit start-seccomp
 
-      apply apply-cont ;; apply post- and pre-cps
+      ;; не входят в primops
+      run apply apply-cont ;; apply post- and pre-cps
       
       call/cc call-with-current-continuation 
       lets/cc)
@@ -42,7 +36,6 @@
       (define JF2 25)
       (define RET 24)
       (define ARITY-ERROR 17)
-   
    
       ;; changing any of the below 3 primops is tricky. they have to be recognized by the primop-of of 
       ;; the repl which builds the one in which the new ones will be used, so any change usually takes 
@@ -62,8 +55,6 @@
             b
             (cons (car a) (append (cdr a) b))))
             
-
-      ; то, что я добавил - надо еще тестировать
       (define (- a b)
          (let* ((n _ (fx- a b)))
             n))
@@ -89,7 +80,7 @@
              (len (length lst)))
             (raw
                (append (list JF2 arity 0 len)
-                       (append lst '(17)))   ; fail if arity mismatch (17 == arity-error)
+                       (append lst (list ARITY-ERROR)))   ; fail if arity mismatch (17 == arity-error)
                type-bytecode #false)))
                
 
@@ -104,13 +95,8 @@
 ;                          type-bytecode #false)))
 ;            (tuple name (car bytecode) inargs outargs primitive)))
 
-
-      ; вот тут мы заменяем команды
-      (define apply      (raw (list 20)              type-bytecode #false)) ;; <- no arity, just call 20
-      (define apply-cont (raw (list (fxbor 20 #x40)) type-bytecode #false))
-;      (define run        (raw (list JF2 6  0 3  50 4 5  ARITY-ERROR) type-bytecode #false))
-      ;(define run      (raw (list JF2 6 0 9  50 4 5  6 7 8 9  24 6 ARITY-ERROR) type-bytecode #false))
-      (define run      (raw (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR) type-bytecode #false))
+      ; вот тут мы заменяем команды (если очень хотим)
+;     (define cons       (raw (list JF2 3 0 6  51 4 5 6  RET 6  ARITY-ERROR) type-bytecode #false))  ;; 17 == ARITY-ERROR
 
       (define primitive-operations
          (list
@@ -141,12 +127,10 @@
             ; последний элемент используется в primop-arities
             (tuple 'clock      61  0 2 clock)              ;; must add 61 to the multiple-return-variable-primops list
             
-            ; apply
-
             ; непосредственный код
             (tuple 'raw        60  3 1 raw)
             (tuple 'sys        27  4 1 sys)
-            (tuple 'run        50  2 1 run)   ; '(JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)
+;            (tuple 'run        50  2 1 run)   ; '(JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)
 
             (tuple 'sys-prim   63  4 1 sys-prim) ; todo: rename sys-prim to syscall
             
@@ -223,6 +207,13 @@
             (if (eq? (ref (car p) 1) name)
                 (car p)
                 (loop (cdr p)))))
+
+;; run, apply, apply-cont
+      (define ARITY-ERROR 17)
+      (define apply      (raw (list 20)              type-bytecode #false)) ;; <- no arity, just call 20
+      (define apply-cont (raw (list (fxbor 20 #x40)) type-bytecode #false))
+      (define run      (raw (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR) type-bytecode #false))
+
 
 ;; Список sys-prim'ов
 ; поэтапный перевод sys-prim'ов в syscall'ы
@@ -335,7 +326,6 @@
          (cond
             ((eq? op 17) 'arity-error)
             ((eq? op 32) 'bind)
-;            ((eq? op 50) 'run)
             (else #false)))
          
       (define (primop-name pop)

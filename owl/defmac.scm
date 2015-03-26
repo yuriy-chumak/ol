@@ -271,7 +271,6 @@
                
       ; i hate special characters, especially in such common operations.
       ; lets (let sequence) is way prettier and a bit more descriptive 
-
       (define-syntax let*
          (syntax-rules ()
             ((let* . stuff) (lets . stuff))))

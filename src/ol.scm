@@ -250,7 +250,6 @@
                (begin (interact sleeper-id 50) (loop)))))))
 
 ; -> mcp gets <cont> 5 reason info
-
 ; (run <mcp-cont> thunk quantum) -> result
 
 (define input-chunk-size  1024)
