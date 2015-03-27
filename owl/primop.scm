@@ -44,8 +44,21 @@
             (cons (car a) (append (cdr a) b))))
             
       (define (- a b)
-         (let* ((n _ (fx- a b)))
-            n))
+         (let* ((n _ (fx- a b))) n))
+      (define (+ a b)
+         (let* ((n _ (fx+ a b))) n))
+
+      (define (primop1 name code inargs)
+         (let*
+            ((arity     (+ inargs 1))
+             (primitive (raw type-bytecode
+                (case inargs
+                   (0 (list JF2 arity 0 4  code 4         RET 4  ARITY-ERROR))
+                   (1 (list JF2 arity 0 5  code 4 5       RET 5  ARITY-ERROR))
+                   (2 (list JF2 arity 0 6  code 4 5 6     RET 6  ARITY-ERROR))
+                   (3 (list JF2 arity 0 7  code 4 5 6 7   RET 7  ARITY-ERROR))
+                   (4 (list JF2 arity 0 8  code 4 5 6 7 8 RET 8  ARITY-ERROR))))))
+            (tuple name code inargs 1 primitive)))
 
       ; вот тут мы заменяем команды (если очень хотим)
 ;     (define cons       (raw (list JF2 3 0 6  51 4 5 6  RET 6  ARITY-ERROR) type-bytecode #false))  ;; 17 == ARITY-ERROR
@@ -64,8 +77,6 @@
 ;          9. пересобираем boot два раза
 ;          A. добавляем старую команду как новую, пересобираем, меняем raw2 на raw, пересобираем, удаляем raw2 полностью
 
-      (define primitive-operations
-         (list
 ;           пример добавления новой функции:
 ;           параметры: код функции, in параметров, out параметров, непосредственно код
 ;             код предваряется опкодом JF2 для проверки арности и (если не входит в список multiple-return-variable-primops)
@@ -85,23 +96,16 @@
 ;            '(1 . 2)
 ;            >
 
-            ; пара специальных вещей. todo: разобраться, почему они тут а не в общем списке функци в/м
+      (define primitive-operations (list
+            ; пара специальных вещей
             (tuple 'bind       32  1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
             (tuple 'ff-bind    49  1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
             (tuple 'mkt        23  'any   1 mkt)      ;; mkt type v0 .. vn t
 
-            ; последний элемент используется в primop-arities
-            (tuple 'clock      61  0 2 clock)              ;; must add 61 to the multiple-return-variable-primops list
-            
-            ; непосредственный код
-            ;(tuple 'raw        60  2 1 raw)
-            (tuple 'raw        60  2 1 (raw type-bytecode (list JF2 2 0 6  60 4 5 6  24 6  17)))
-            (tuple 'sys        27  4 1 sys)
+            (primop1 'raw      60 2)
+;            (tuple 'raw        60  2 1 (raw type-bytecode (list JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
 
-            (tuple 'sys-prim   63  4 1 sys-prim) ; todo: rename sys-prim to syscall
-            
             ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
-            ; Strange Names
             ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
             ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
             ; the phrase `Contents of the Address part of the Register'; and cdr (pronounced `could-er') is an
@@ -109,9 +113,8 @@
             ; specific pieces of hardware on the very early computer on which the original Lisp was developed.
             ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
             ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
-            ; names for these functions, the old terms are still in use. In particular, since the terms are used
-            ; in the Emacs Lisp source code, we will use them in this introduction.
-            (tuple 'cons       51  2 1 cons) ; 
+            ; names for these functions, the old terms are still in use.
+            (tuple 'cons       51  2 1 cons)  ; 
 
             (tuple 'type       15  1 1 type)  ;; get just the type bits (new)
             (tuple 'size       36  1 1 size)  ;; get object size (- 1)
@@ -125,12 +128,16 @@
             (tuple 'set-car!   11  2 1 set-car!)
             (tuple 'set-cdr!   12  2 1 set-cdr!)
 ;           (primop 'set!       '(10 4 5 6  7  24 7)  3 1) ; (set! tuple pos val)
+
+            ; непосредственный код
+            (tuple 'sys        27  4 1 sys)
+
+            (tuple 'sys-prim   63  4 1 sys-prim) ; todo: rename sys-prim to syscall
+            
             
             (tuple 'eq?        54  2 1 eq?)
             (tuple 'lesser?    44  2 1 lesser?)
-           ))
-      (define primitive-operations (append primitive-operations (list
-                       
+
             ; поддержка больших чисел
             ;; вопрос - а нахрена именно числовой набор функций? может обойдемся обычным?
             (tuple 'ncons      29  2 1 ncons)
@@ -146,25 +153,25 @@
             (tuple 'refb       48  2 1 refb)
             (tuple 'sizeb      28  1 1 sizeb)
 
-
             ;; математика
             (tuple 'fx+       38  2 2 fx+)     ;'(38 4 5    6 7    24 7)
             (tuple 'fx*       39  2 2 fx*)     ;'(39 4 5    6 7    24 7)
             (tuple 'fx-       40  2 2 fx-)     ;'(40 4 5    6 7    24 7)
             (tuple 'fx/       26  3 3 fx/)     ;'(26 4 5 6  7 8 9  24 7)
             (tuple 'fx>>      58  2 2 fx>>)    ;'(58 4 5    6 7    24 7)
-            (tuple 'fx<<      59  2 2 fx<<)    ;'(59 4 5    6 7    24 7)
+            (tuple 'fx<<      59  2 2 fx<<) ;'(59 4 5    6 7    24 7)
 
             ; todo: move this to the sys-prim
             (tuple '_sleep     37  1 1 _sleep)   ;; (_sleep nms) -> #true
+            (tuple 'clock      61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
 
             ; поддержка ff деревьев
             (tuple 'listuple   35  3 1 listuple)  ;; (listuple type size lst)
             (tuple 'mkblack    42  4 1 mkblack)   ; (mkblack l k v r)
             (tuple 'mkred      43  4 1 mkred)   ; ditto
-            (tuple 'red?       41  1 #false red?)  ;; (red? node) -> bool
-            (tuple 'ff-toggle  46  1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
-       )))
+;            (tuple 'red?       41  1 #false red?)  ;; (red? node) -> bool
+            (tuple 'red?       41  1 1 red?)  ;; (red? node) -> bool
+            (tuple 'ff-toggle  46  1 1 ff-toggle)))  ;; (fftoggle node) -> node', toggle redness
 
       (define primops primitive-operations)
 
@@ -182,6 +189,16 @@
       (define apply-cont (raw type-bytecode (list (fxbor 20 #x40))))
       (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
 
+
+      ;; fixme: handle multiple return value primops sanely (now a list)
+      (define multiple-return-variable-primops
+         (list
+; почему нет?            (ref (get-primitive 'bind) 2) ; 32 (?)
+            (ref (get-primitive 'ff-bind) 2) ; 49
+
+            38 39 40 26 58 59 ; fx+, fx*, fx-, fx/, fx>>, fx<<
+            61 ; (clock)
+            ))
 
 ;; Список sys-prim'ов
 ; поэтапный перевод sys-prim'ов в syscall'ы
@@ -246,18 +263,6 @@
       (define (special-bind-primop? op) ; bind ar ff-bind
          (or (eq? op (ref (get-primitive 'bind) 2))
              (eq? op (ref (get-primitive 'ff-bind) 2))))
-
-      ;; fixme: handle multiple return value primops sanely (now a list)
-      (define multiple-return-variable-primops
-         (list
-            (ref (get-primitive 'ff-bind) 2) ; 49
-            26 ; (ref (get-primitive 'fxqr) 2) ; 26
-
-;            50
-            
-            38 39 40 58 59 61 ; 37
-            ))
-
 
 ;      (define multiple-return-variable-primops
 ;         (let loop ((r '()) (p primops))

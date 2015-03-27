@@ -456,7 +456,7 @@ typedef struct object
 #define TPOS                        2  /* offset of type bits in header */
 
 #define V(ob)                       *((word *) (ob)) // *ob, ob[0]
-#define W                           sizeof(word)
+#define W                           sizeof (word)
 
 //#define NWORDS                      1024*1024*8    /* static malloc'd heap size if used as a library */
 #define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
@@ -476,7 +476,7 @@ typedef struct object
 #define fixnump(desc)               (((desc) & 0xFF) == 2)
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
 
-#define NR                          96 // was 190 /* see n-registers in register.scm */
+#define NR                          128 // see n-registers in register.scm
 //#define header(x)                   *(word *x)
 #define imm_type(x)                 ((((unsigned int)x) >> TPOS) & 0x3F)
 #define imm_val(x)                   (((unsigned int)x) >> IPOS)
@@ -542,7 +542,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
 
-#define MEMPAD                      (NR+2)*8 /* space at end of heap for starting GC */
+#define MEMPAD                      (NR+2) * W /* space at end of heap for starting GC */
 #define MINGEN                      1024*32  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
@@ -1417,13 +1417,13 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				reg = 4; // include cont
 				arity = 1;
 				this = (word *) R[reg];
-				acc -= 3; /* ignore cont, function and stop before last one (the list) */
+				acc -= 3; // ignore cont, function and stop before last one (the list)
 			}
 			else { // apply-cont (_sans_cps apply): func=r3, a0=r4,
 				reg = 3; // include cont
 				arity = 0;
 				this = (word *) R[reg];
-				acc -= 2; /* ignore function and stop before last one (the list) */
+				acc -= 2; // ignore function and stop before last one (the list)
 			}
 
 			while (acc--) { /* move explicitly given arguments down by one to correct positions */
@@ -1990,9 +1990,9 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 
 		case FFREDQ: { // red? node r (has highest type bit?) */
-			  word *node = (word *) R[*ip];
-			  A1 = TRUEFALSE(allocp(node) && ((*node)&(FFRED<<TPOS)));
-			  NEXT(2);
+			word *node = (word *) A0;
+			A1 = TRUEFALSE(allocp(node) && ((*node) & (FFRED << TPOS)));
+			ip += 2; break;
 		}
 
 
