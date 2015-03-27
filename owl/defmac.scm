@@ -512,13 +512,13 @@
 
 
 
-      ; ====================================================
+      ; ========================================================================================================
       ; Scheme
       ;
       ; Revised(3) Report on the Algorithmic Language Scheme
       ;                  Dedicated to the Memory of ALGOL 60
       ;
-      ; ====================================================
+      ; ========================================================================================================
       ; 1. Overview of Scheme
       ;   ... можно скопипастить стандарт?
 
@@ -574,7 +574,6 @@
       (define apply-cont (raw type-bytecode '(#x54)))  ;; -< just call 20|64 (same as 20 but with extra flag)
 
       (define call-with-current-continuation
-;         (let ((apply-cont (raw #|type-bytecode|# 16 '(#x54))))
          ('_sans_cps
             (λ (k f)
                (f k

@@ -35,7 +35,10 @@
 
    (begin
 
-      (define run (raw type-bytecode (list 25 3 0 6  50 4 5 6  24 6  17)))
+      ; this function require two arguments!
+      (define run (raw type-bytecode '(50 4 5))) ; run requires two registers!
+      ; and safe version of this function (but a bit more slower)
+;     (define run (raw type-bytecode '(25 3 0 3  50 4 5  17)))
 
       (define (bad-interop id a b c todo done state)
          (system-println "mcp: got bad interop")
@@ -345,7 +348,7 @@
                               ((this todo todo)
                                (id st this)
                                (state (update-state state st))
-                               (op a b c (run st 0)))
+                               (op a b c (run st 0))) ; looks like never called?
                               ;(print "run returns: ")
                               (if (eq? op 1)
                                  ; out of time, usual suspect, short path here

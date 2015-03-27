@@ -1300,6 +1300,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 	}
 
+	// todo: add "NOP" function (may be 0x0 ?)
+
 	// управляющие команды:
 #	define APPLY 20 // apply-cont = 20+64
 #	define RET   24
@@ -1408,10 +1410,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip = (unsigned char*) &this[1];
 			goto invoke;
 
-		//
+		// apply
 		case APPLY: {
 			int reg, arity;
-			if (op == APPLY) { /* normal apply: cont=r3, fn=r4, a0=r5, */
+			if (op == APPLY) { // normal apply: cont=r3, fn=r4, a0=r5,
 				reg = 4; // include cont
 				arity = 1;
 				this = (word *) R[reg];
@@ -1424,8 +1426,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				acc -= 2; // ignore function and stop before last one (the list)
 			}
 
-			while (acc--) { /* move explicitly given arguments down by one to correct positions */
-				R[reg] = R[reg+1]; /* copy args down*/
+			while (acc--) { // move explicitly given arguments down by one to correct positions
+				R[reg] = R[reg+1]; // copy args down
 				reg++;
 				arity++;
 			}
@@ -1461,6 +1463,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			goto apply;
 
 		case RUN: { // run thunk quantum
+//			if (ip[0] != 4 || ip[1] != 5)
+//				fprintf(stderr, "run R[%d], R[%d]\n", ip[0], ip[1]);
 			this = (word *) A0;
 			R[0] = R[3];
 			ticker = bank ? bank : fixval(A1);
