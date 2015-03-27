@@ -1,0 +1,218 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.57 from /home/jaffer/scheme/r4rs.txi on December, 22  2007 -->
+
+<TITLE>Revised(4) Scheme - Notes</TITLE>
+</HEAD>
+<BODY >
+ [<A HREF="r4rs_toc.html">Contents</A>] &#160; [<A HREF="r4rs_9.html">Back</A>] &#160; [<A HREF="r4rs_9.html">Prev</A>] &#160; [<A>Up</A>] &#160; [<A HREF="r4rs_11.html">Next</A>] &#160; [<A HREF="r4rs_11.html">Forward</A>] &#160;<BR><HR><BR>
+
+
+<H1><A NAME="SEC74">Notes</A></H1>
+
+<P>
+<A NAME="IDX605"></A>
+
+
+
+
+<H2><A NAME="SEC75">Language changes</A></H2>
+
+<P>
+<A NAME="IDX606"></A>
+
+
+<P>
+This section enumerates the changes that have been made to Scheme since
+the "Revised^3 report" <A HREF="r4rs_13.html#BIB68">[R3RS]</A> was published.
+
+
+
+<UL>
+
+<LI>
+
+Although implementations may extend Scheme, they must offer
+a syntactic mode that adds no reserved words and preempts no lexical conventions
+of Scheme.
+
+<LI>
+
+Implementations may report violations of
+implementation restrictions.
+
+<LI>
+
+It is no longer specified whether the empty list counts as true
+or as false in conditional expressions.  It should be noted that the
+IEEE standard for Scheme requires the empty list to count as true
+<A HREF="r4rs_13.html#BIB50">[IEEEScheme]</A>.
+
+<LI>
+
+The sets defined by <CODE>boolean?</CODE>, <CODE>pair?</CODE>, <CODE>symbol?</CODE>,
+<CODE>number?</CODE>, <CODE>char?</CODE>, <CODE>string?</CODE>, <CODE>vector?</CODE>, and <CODE>procedure?</CODE>
+are required to be disjoint.
+
+<LI>
+
+The variables bound by a <CODE>lambda</CODE>, <CODE>let</CODE>, <CODE>letrec</CODE>,
+and <CODE>do</CODE> must not contain duplicates.
+
+<LI>
+
+Nested <CODE>begin</CODE> expressions containing definitions are treated
+as a sequence of definitions.
+
+<LI>
+
+The <CODE>eqv?</CODE> procedure is no longer required to be true of any
+two empty strings or two empty vectors.
+
+<LI>
+
+The syntax of numerical constants has been changed, and the exactness
+implied by each syntax has been specified.
+
+<LI>
+
+The semantics of many numerical procedures have been clarified.
+
+<LI>
+
+<CODE>Rationalize</CODE> has been restricted to two arguments and its
+specification clarified.
+
+<LI>
+
+The <CODE>number-&#62;string</CODE> and <CODE>string-&#62;number</CODE> procedures
+have been changed.
+
+<LI>
+
+<CODE>Integer-&#62;char</CODE> now requires an exact integer argument.
+
+<LI>
+
+The specification of the <CODE>force</CODE> procedure has been
+weakened.  The previous specification was unimplementable.
+
+<LI>
+
+Variables removed: <CODE>t</CODE>, <CODE>nil</CODE>.
+
+<LI>
+
+Procedures removed: <CODE>approximate</CODE>, <CODE>last-pair</CODE>.
+
+<LI>
+
+Procedures added: <CODE>list?</CODE>, <CODE>peek-char</CODE>.
+
+<LI>
+
+Syntaxes made essential: <CODE>case</CODE>, <CODE>and</CODE>, <CODE>or</CODE>,
+<CODE>quasiquote</CODE>.
+
+<LI>
+
+Procedures made essential:
+
+</UL>
+
+<P>
+                     
+
+
+<P>
+<A NAME="IDX607"></A>
+<A NAME="IDX608"></A>
+<A NAME="IDX609"></A>
+<A NAME="IDX610"></A>
+<A NAME="IDX611"></A>
+<A NAME="IDX612"></A>
+<A NAME="IDX613"></A>
+<A NAME="IDX614"></A>
+<A NAME="IDX615"></A>
+<A NAME="IDX616"></A>
+<A NAME="IDX617"></A>
+<A NAME="IDX618"></A>
+<A NAME="IDX619"></A>
+<A NAME="IDX620"></A>
+<A NAME="IDX621"></A>
+<A NAME="IDX622"></A>
+<A NAME="IDX623"></A>
+<A NAME="IDX624"></A>
+<A NAME="IDX625"></A>
+<A NAME="IDX626"></A>
+<A NAME="IDX627"></A>
+<A NAME="IDX628"></A>
+<A NAME="IDX629"></A>
+<A NAME="IDX630"></A>
+<A NAME="IDX631"></A>
+<A NAME="IDX632"></A>
+<A NAME="IDX633"></A>
+<A NAME="IDX634"></A>
+<A NAME="IDX635"></A>
+
+
+
+<PRE>
+
+reverse        char-ci=?        make-string
+max            char-ci&#60;?        string-set!
+min            char-ci&#62;?        string-ci=?
+modulo         char-ci&#60;=?       string-ci&#60;?
+gcd            char-ci&#62;=?       string-ci&#62;?
+lcm            char-alphabetic? string-ci&#60;=?
+floor          char-numeric?    string-ci&#62;=?
+ceiling        char-whitespace? string-append
+truncate       char-lower-case? open-input-file
+round          char-upper-case? open-output-file
+number-&#62;string char-upcase      close-input-port
+string-&#62;number char-downcase    close-output-port
+
+</PRE>
+
+
+<UL>
+                   
+<LI>
+
+Procedures required to accept more general numbers of arguments:
+<CODE>append</CODE>, <CODE>+</CODE>, <CODE>*</CODE>, <CODE>-</CODE> (one argument), <CODE>/</CODE> (one
+argument), <CODE>=</CODE>, <CODE>&#60;</CODE>, <CODE>&#62;</CODE>, <CODE>&#60;=</CODE>, <CODE>&#62;=</CODE>, <CODE>map</CODE>,
+<CODE>for-each</CODE>.
+
+<LI>
+
+A macro facility has been added as an appendix to this report.
+
+</UL>
+
+<P>
+<A NAME="IDX636"></A>
+<A NAME="IDX637"></A>
+<A NAME="IDX638"></A>
+<A NAME="IDX639"></A>
+<A NAME="IDX640"></A>
+<A NAME="IDX641"></A>
+<A NAME="IDX642"></A>
+<A NAME="IDX643"></A>
+<A NAME="IDX644"></A>
+<A NAME="IDX645"></A>
+<A NAME="IDX646"></A>
+<A NAME="IDX647"></A>
+<A NAME="IDX648"></A>
+<A NAME="IDX649"></A>
+
+
+<P>
+         
+
+
+<P></P><HR>
+ [<A HREF="r4rs_toc.html">Contents</A>] &#160; [<A HREF="r4rs_9.html">Back</A>] &#160; [<A HREF="r4rs_9.html">Prev</A>] &#160; [<A>Up</A>] &#160; [<A HREF="r4rs_11.html">Next</A>] &#160; [<A HREF="r4rs_11.html">Forward</A>] &#160;
+
+</BODY>
+</HTML>

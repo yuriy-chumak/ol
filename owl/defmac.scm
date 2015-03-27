@@ -14,7 +14,7 @@
       define-values
       define-record-type
       _record-values
-      not o i self
+      not
       
       ; список типов
       type-complex
@@ -59,6 +59,7 @@
       ;; k v r, k v l r+    -- type-ff-right
       ;; k v l, k v l+ r    -- type-ff-leftc
 
+      call-with-current-continuation call/cc lets/cc
    )
 
    (begin
@@ -265,7 +266,7 @@
          (syntax-rules ()
             ((let*-values (((var ...) gen) . rest) . body)
                (receive gen
-                  (λ (var ...) (let*-values rest . body))))
+                  (lambda (var ...) (let*-values rest . body))))
             ((let*-values () . rest)
                (begin . rest))))
                
@@ -413,44 +414,17 @@
       (define (not x)
          (if x #false #true))
 
-      (define o (λ (f g) (λ (x) (f (g x)))))
+;      (define o (λ (f g) (λ (x) (f (g x)))))
+;
+;      (define i (λ (x) x))
+;
+;      (define self i)
+;
+;      ; (define call/cc  ('_sans_cps (λ (k f) (f k (λ (r a) (k a))))))
+;
+;      (define (i x) x)
+;      (define (k x y) x)
 
-      (define i (λ (x) x))
-
-      (define self i)
-
-      ; (define call/cc  ('_sans_cps (λ (k f) (f k (λ (r a) (k a))))))
-
-      (define (i x) x)
-      (define (k x y) x)
-
-
-      ;;;
-      ;;; DESCRIPTOR FORMAT
-      ;;;
-      ;
-      ;                            .------------> 24-bit payload if immediate
-      ;                            |      .-----> type tag if immediate
-      ;                            |      |.----> immediateness
-      ;   .------------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
-      ;  [pppppppp pppppppp pppppppp tttttti0]
-      ;   '-------------------------------|
-      ;                                   '-----> 4- or 8-byte aligned pointer if not immediate
-      ;
-      ; object headers are further
-      ;
-      ;                                    .----> immediate
-      ;  [ssssssss ssssssss ????rppp tttttt10]
-      ;   '---------------| '--||'-| '----|
-      ;                   |    ||  |      '-----> object type
-      ;                   |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
-      ;                   |    |'---------------> rawness bit (raw objects have no decriptors in them)
-      ;                   |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
-      ;                   '---------------------> object size in words
-      ;  
-      ;; note - there are 6 type bits, but one is currently wasted in old header position
-      ;; to the right of them, so all types must be <32 until they can be slid to right 
-      ;; position.
 
       ;; these are core data structure type tags which are fixed and some also relied on by the vm
 
@@ -534,5 +508,82 @@
                         (λ (fieldname ...) (mkt type-record tag fieldname ...))
                         (λ (ob) (eq? tag (ref ob 1))) 
                         ((field accessor) ...) (fieldname ...) ()))))))
+
+
+
+      ; ====================================================
+      ; Scheme
+      ;
+      ; Revised(3) Report on the Algorithmic Language Scheme
+      ;                  Dedicated to the Memory of ALGOL 60
+      ;
+      ; ====================================================
+      ; 1. Overview of Scheme
+      ;   ... можно скопипастить стандарт?
+
+      ; 2. Lexical conventions
+      ;   ... можно скопипастить стандарт?
+
+      ; 3. Basic concepts
+      ;   ... можно скопипастить стандарт?
+
+      ; 4. Expressions
+      ; 4.1 Primitive expression types
+      ; 4.1.1 Variable references
+
+      ; 4.1.1  Variable references
+;      (define-syntax define
+;         (syntax-rules (lambda λ)
+;            ((define op a b . c)
+;               (define op (begin a b . c)))
+;            ((define ((op . args) . more) . body)
+;               (define (op . args) (lambda more . body)))
+;            ((define (op . args) body)
+;               (define op
+;                  (letrec ((op (lambda args body))) op)))
+;            ((define name (lambda (var ...) . body))
+;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+;;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
+;;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+;            ((define op val)
+;               (_define op val))))
+
+      ; 4.1.2 Literal expressions
+      ; ...
+
+      ; 4.1.4 lambda expressions
+      (define-syntax λ
+         (syntax-rules () 
+            ((λ . x) (lambda . x))))
+
+
+
+      ; 6. Standard procedures
+      ; 6.9 Control features
+
+      ;; essential procedure: call-with-current-continuation proc
+      (define apply-cont (raw #|type-bytecode|# 16 '(#x54)))
+
+      (define call-with-current-continuation
+;         (let ((apply-cont (raw #|type-bytecode|# 16 '(#x54))))
+         ('_sans_cps
+            (λ (k f)
+               (f k
+                  (case-lambda
+                     ((c a) (k a))
+                     ((c a b) (k a b))
+                     ((c . x) (apply-cont k x))))))) ; (apply-cont k x)
+      (define call/cc call-with-current-continuation)
+
+      ; non standard, owl extension
+      (define-syntax lets/cc
+         (syntax-rules (call/cc)
+            ((lets/cc (om . nom) . fail) 
+               (syntax-error "let/cc: continuation name cannot be " (quote (om . nom)))) 
+            ((lets/cc var . body) 
+               (call/cc (λ (var) (lets . body))))))
+
+
+      ; Continuation - http://en.wikipedia.org/wiki/Continuation
 
 ))

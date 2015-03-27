@@ -17,16 +17,14 @@
       wait
       
       set-ticker-value
-      _yield
       
       ;; extra ops
       set-memory-limit get-word-size get-memory-limit start-seccomp
 
       ;; не входят в primops
-      run apply apply-cont ;; apply post- and pre-cps
-      
-      call/cc call-with-current-continuation 
-      lets/cc)
+      ;; apply post- and pre-cps
+      apply ; apply-cont (pre-cps apply) moved to defmac (r5rs) ; run
+      )
 
    (import
       (owl defmac))
@@ -161,8 +159,6 @@
             (tuple 'fx>>      58  2 2 fx>>)    ;'(58 4 5    6 7    24 7)
             (tuple 'fx<<      59  2 2 fx<<) ;'(59 4 5    6 7    24 7)
 
-            ; todo: move this to the sys-prim
-            (tuple '_sleep     37  1 1 _sleep)   ;; (_sleep nms) -> #true
             (tuple 'clock      61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
 
             ; поддержка ff деревьев
@@ -186,14 +182,15 @@
 ;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40))))
 ;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
       (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40))))
-      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
+;     (define apply-cont (raw type-bytecode (list (fxbor 20 #x40)))) - used in (owl defmac) in call-with-current-continuation
+;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
 
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       (define multiple-return-variable-primops
          (list
-; почему нет?            (ref (get-primitive 'bind) 2) ; 32 (?)
+            ; почему bind не multiple-return?            (ref (get-primitive 'bind) 2) ; 32 (?)
+
             (ref (get-primitive 'ff-bind) 2) ; 49
 
             38 39 40 26 58 59 ; fx+, fx*, fx-, fx/, fx>>, fx<<
@@ -249,12 +246,11 @@
       (define (halt n)             (sys-prim 1006 n n n))
       ;; make thread sleep for a few thread scheduler rounds
       (define (set-ticker-value n) (sys-prim 1022 n #false #false))
-      (define (_yield)             (set-ticker-value 0))
       (define (wait n)
          (if (eq? n 0)
             n
             (let* ((n (- n 1)))
-               (_yield)
+               (set-ticker-value 0)
                (wait n))))
 
 
@@ -276,25 +272,6 @@
 
       (define (variable-input-arity? op)
          (eq? op (ref (get-primitive 'mkt) 2))) ;; mkt
-
-      ; call/cc
-      (define call-with-current-continuation
-         ('_sans_cps
-            (λ (k f)
-               (f k
-                  (case-lambda
-                     ((c a) (k a))
-                     ((c a b) (k a b))
-                     ((c . x) (apply-cont k x)))))))
-      (define call/cc call-with-current-continuation)
-
-
-      (define-syntax lets/cc 
-         (syntax-rules (call/cc)
-            ((lets/cc (om . nom) . fail) 
-               (syntax-error "let/cc: continuation name cannot be " (quote (om . nom)))) 
-            ((lets/cc var . body) 
-               (call/cc (λ (var) (lets . body))))))
 
       ;; non-primop instructions that can report errors
       (define (instruction-name op)

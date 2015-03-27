@@ -1,0 +1,244 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.57 from /home/jaffer/scheme/r4rs.txi on December, 22  2007 -->
+
+<TITLE>Revised(4) Scheme - 5. Program structure</TITLE>
+</HEAD>
+<BODY >
+ [<A HREF="r4rs_toc.html">Contents</A>] &#160; [<A HREF="r4rs_6.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r4rs_8.html">Forward</A>] &#160;<BR><HR><BR>
+
+
+<H1><A NAME="SEC39">5. Program structure</A></H1>
+
+<P>
+<A NAME="IDX168"></A>
+
+
+
+
+<H2><A NAME="SEC40">5.1 Programs</A></H2>
+
+<P>
+<A NAME="IDX169"></A>
+
+
+<P>
+A Scheme program consists of a sequence of expressions and definitions.
+Expressions are described in chapter section <A HREF="r4rs_6.html#SEC24">4. Expressions</A>;
+definitions are the subject of the rest of the present chapter.
+
+
+<P>
+Programs are typically stored in files or entered interactively to a
+running Scheme system, although other paradigms are possible;
+questions of user interface lie outside the scope of this report.
+(Indeed, Scheme would still be useful as a notation for expressing
+computational methods even in the absence of a mechanical
+implementation.)
+
+
+<P>
+Definitions occurring at the top level of a program can be interpreted
+declaratively.  They cause bindings to be created in the top level
+environment.  Expressions occurring at the top level of a program are
+interpreted imperatively; they are executed in order when the program is
+invoked or loaded, and typically perform some kind of initialization.
+
+
+
+
+<H2><A NAME="SEC41">5.2 Definitions</A></H2>
+
+<P>
+<A NAME="IDX170"></A>
+
+
+<P>
+Definitions are valid in some, but not all, contexts where expressions
+are allowed.  They are valid only at the top level of a &#60;program&#62;
+and, in some implementations, at the beginning of a &#60;body&#62;.
+
+
+<P>
+<A NAME="IDX171"></A>
+
+
+<P>
+A definition should have one of the following forms:
+<A NAME="IDX172"></A>
+
+
+
+<UL>
+
+<LI>
+
+<TT>(define &#60;variable&#62; &#60;expression&#62;)</TT>
+
+This syntax is essential.
+
+<LI><TT>(define (&#60;variable&#62; &#60;formals&#62;) &#60;body&#62;)</TT>
+
+This syntax is not essential.  &#60;Formals&#62; should be either a
+sequence of zero or more variables, or a sequence of one or more
+variables followed by a space-delimited period and another variable (as
+in a lambda expression).  This form is equivalent to
+
+
+<PRE>
+
+(define &#60;variable&#62;
+  (lambda (&#60;formals&#62;) &#60;body&#62;)).
+
+</PRE>
+
+<LI><TT>(define (&#60;variable&#62; . &#60;formal&#62;) &#60;body&#62;)</TT>
+
+This syntax is not essential.  &#60;Formal&#62; should be a single
+variable.  This form is equivalent to
+
+
+<PRE>
+
+(define &#60;variable&#62;
+  (lambda &#60;formal&#62; &#60;body&#62;)).
+
+</PRE>
+
+<LI>
+
+<TT>(begin &#60;definition1&#62; ...)</TT>
+
+This syntax is essential.  This form is equivalent to the set of
+definitions that form the body of the <CODE>begin</CODE>.
+
+</UL>
+
+<P>
+<A NAME="IDX173"></A>
+
+
+
+
+<H3><A NAME="SEC42">5.2.1 Top level definitions</A></H3>
+
+<P>
+<A NAME="IDX174"></A>
+
+
+<P>
+At the top level of a program, a definition
+
+
+
+<PRE>
+
+(define &#60;variable&#62; &#60;expression&#62;)
+
+</PRE>
+
+<P>
+has essentially the same effect as the assignment expression
+
+
+
+<PRE>
+
+(set! &#60;variable&#62; &#60;expression&#62;)
+
+</PRE>
+
+<P>
+if &#60;variable&#62; is bound.  If &#60;variable&#62; is not bound,
+however, then the definition will bind &#60;variable&#62; to a new
+location before performing the assignment, whereas it would be an error
+to perform a <CODE>set!</CODE> on an unbound variable.
+<A NAME="IDX175"></A>
+<A NAME="IDX176"></A>
+
+
+
+<PRE>
+
+(define add3
+  (lambda (x) (+ x 3)))
+(add3 3)                               ==&#62;  6
+(define first car)
+(first '(1 2))                         ==&#62;  1
+
+</PRE>
+
+<P>
+All Scheme implementations must support top level definitions.
+
+
+<P>
+Some implementations of Scheme use an initial environment in
+which all possible variables are bound to locations, most of
+which contain undefined values.  Top level definitions in
+such an implementation are truly equivalent to assignments.
+
+
+
+
+<H3><A NAME="SEC43">5.2.2 Internal definitions</A></H3>
+
+<P>
+<A NAME="IDX177"></A>
+
+
+<P>
+Some implementations of Scheme permit definitions to occur at the
+beginning of a &#60;body&#62; (that is, the body of a <CODE>lambda</CODE>,
+<A NAME="IDX178"></A>
+<CODE>let</CODE>, <CODE>let*</CODE>, <CODE>letrec</CODE>, or <CODE>define</CODE> expression).  Such
+<A NAME="IDX179"></A>
+<A NAME="IDX180"></A>
+<A NAME="IDX181"></A>
+<A NAME="IDX182"></A>
+definitions are known as <EM>internal definitions</EM>  as opposed to the top level definitions described above.
+<A NAME="IDX183"></A>
+The variable defined by an internal definition is local to the
+&#60;body&#62;.  That is, &#60;variable&#62; is bound rather than assigned,
+and the region of the binding is the entire &#60;body&#62;.  For example,
+
+
+
+<PRE>
+
+(let ((x 5))
+  (define foo (lambda (y) (bar x y)))
+  (define bar (lambda (a b) (+ (* a b) a)))
+  (foo (+ x 3)))                       ==&#62;  45
+
+</PRE>
+
+<P>
+A &#60;body&#62; containing internal definitions can always be converted
+into a completely equivalent <CODE>letrec</CODE> expression.  For example, the
+<CODE>let</CODE> expression in the above example is equivalent to
+
+
+
+<PRE>
+
+(let ((x 5))
+  (letrec ((foo (lambda (y) (bar x y)))
+           (bar (lambda (a b) (+ (* a b) a))))
+    (foo (+ x 3))))
+
+</PRE>
+
+<P>
+Just as for the equivalent <CODE>letrec</CODE> expression, it must be
+possible to evaluate each &#60;expression&#62; of every internal
+definition in a &#60;body&#62; without assigning or referring to
+the value of any &#60;variable&#62; being defined.
+       
+
+
+<P></P><HR>
+ [<A HREF="r4rs_toc.html">Contents</A>] &#160; [<A HREF="r4rs_6.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r4rs_8.html">Forward</A>] &#160;
+
+</BODY>
+</HTML>

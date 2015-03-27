@@ -361,6 +361,8 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       (owl defmac)
       (owl math))
    (begin
+      (define self (λ (x) x))
+
       (define char? number?)
       (define char->integer self)
       (define integer->char self)))
@@ -411,7 +413,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       tuple?  string?  function? procedure? equal? eqv? bytecode?
       not
       null?  null 
-      o
       time
       time-ms
       halt

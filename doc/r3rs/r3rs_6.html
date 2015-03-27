@@ -1,0 +1,1122 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.57 from /home/jaffer/scheme/r3rs.txi on December, 22  2007 -->
+
+<TITLE>Revised(3) Scheme - 4. Expressions</TITLE>
+</HEAD>
+<BODY >
+ [<A HREF="r3rs_toc.html">Contents</A>] &#160; [<A HREF="r3rs_5.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r3rs_7.html">Forward</A>] &#160;<BR><HR><BR>
+
+
+<H1><A NAME="SEC21">4. Expressions</A></H1>
+
+<P>
+<A NAME="IDX61"></A>
+
+
+<P>
+A Scheme expression is a construct that returns a value, such as a
+variable reference, literal, procedure call, or conditional.
+
+
+<P>
+Expression types are categorized as <EM>primitive</EM> or <EM>derived</EM>.
+Primitive expression types include variables and procedure calls.
+Derived expression types are not semantically primitive, but can instead
+be explained in terms of the primitive constructs as in
+section <A HREF="r3rs_9.html#SEC71">7.3 Derived expression types</A>.  They are redundant in the strict sense of
+the word, but they capture common patterns of usage, and are therefore
+provided as convenient abbreviations.
+
+
+
+
+<H2><A NAME="SEC22">4.1 Primitive expression types</A></H2>
+
+<P>
+<A NAME="IDX62"></A>
+
+
+
+
+<H3><A NAME="SEC23">4.1.1 Variable references</A></H3>
+
+<P>
+<A NAME="IDX63"></A>
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>&#60;variable&#62;</B>
+<DD><A NAME="IDX64"></A>
+
+
+<P>
+An expression consisting of a variable
+<A NAME="IDX65"></A>
+(section see section <A HREF="r3rs_5.html#SEC18">3.1 Variables and regions</A>) is a variable reference.  The value of
+the variable reference is the value stored in the location to which the
+variable is bound.  It is an error to reference an
+unbound variable.
+<A NAME="IDX66"></A>
+
+
+
+<PRE>
+<TT>(define x 28)
+x                                      ==&#62;  28
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H3><A NAME="SEC24">4.1.2 Literal expressions</A></H3>
+
+<P>
+<A NAME="IDX67"></A>
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>quote</B> <I>&#60;datum&#62;</I>
+<DD><A NAME="IDX68"></A>
+
+
+<P>
+<DT><U>essential syntax:</U> <B><TT>'</TT>&#60;datum&#62;</B>
+<DD><A NAME="IDX69"></A>
+
+
+<P>
+<DT><U>essential syntax:</U> <B>&#60;constant&#62;</B>
+<DD><A NAME="IDX70"></A>
+
+
+<P>
+<SAMP>`(quote &#60;datum&#62;)'</SAMP> evaluates to &#60;datum&#62;.
+<A NAME="IDX71"></A>
+&#60;Datum&#62;
+may be any external representation of a Scheme object (see
+section see section <A HREF="r3rs_5.html#SEC20">3.3 External representations</A>).  This notation is used to include literal
+constants in Scheme code.
+
+
+
+<PRE>
+<TT>
+(quote a)                              ==&#62;  a
+(quote #(a b c))                       ==&#62;  #(a b c)
+(quote (+ 1 2))                        ==&#62;  (+ 1 2)
+</TT>
+</PRE>
+
+<P>
+<SAMP>`(quote &#60;datum&#62;)'</SAMP> may be abbreviated as
+<TT>'</TT>&#60;datum&#62;.  The two notations are equivalent in all
+respects.
+
+
+
+<PRE>
+<TT>'a                                     ==&#62;  a
+'#(a b c)                              ==&#62;  #(a b c)
+'(+ 1 2)                               ==&#62;  (+ 1 2)
+'(quote a)                             ==&#62;  (quote a)
+''a                                    ==&#62;  (quote a)
+</TT>
+</PRE>
+
+<P>
+Numeric constants, string constants, character constants, and boolean
+constants evaluate "to themselves"; they need not be quoted.
+
+
+
+<PRE>
+<TT>'"abc"                                 ==&#62;  "abc"
+"abc"                                  ==&#62;  "abc"
+'145932                                ==&#62;  145932
+145932                                 ==&#62;  145932
+'#t                                    ==&#62;  #t
+#t                                     ==&#62;  #t
+</TT>
+</PRE>
+
+<P>
+It is an error to alter a constant (i.e. the value of a literal
+expression) using a mutation procedure like <CODE>set-car!</CODE> or
+<A NAME="IDX72"></A>
+<CODE>string-set!</CODE>.
+<A NAME="IDX73"></A>
+
+
+</DL>
+
+
+
+<H3><A NAME="SEC25">4.1.3 Procedure calls</A></H3>
+
+<P>
+<A NAME="IDX74"></A>
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>(&#60;operator&#62;</B> <I>&#60;operand1&#62; ...)</I>
+<DD><A NAME="IDX75"></A>
+
+
+<P>
+A procedure call is written by simply enclosing in parentheses
+expressions for the procedure to be called and the arguments to be
+passed to it.  The operator and operand expressions are evaluated (in an
+indeterminate order) and the resulting procedure is passed the resulting
+arguments.
+<A NAME="IDX76"></A>
+<A NAME="IDX77"></A>
+
+
+
+<PRE>
+<TT>
+(+ 3 4)                                ==&#62;  7
+((if #f + *) 3 4)                      ==&#62;  12
+</TT>
+</PRE>
+
+<P>
+A number of procedures are available as the values of variables in the
+initial environment; for example, the addition and multiplication
+procedures in the above examples are the values of the variables <CODE>+</CODE>
+<A NAME="IDX78"></A>
+and <CODE>*</CODE>.  New procedures are created by evaluating lambda expressions
+<A NAME="IDX79"></A>
+(see section see section <A HREF="r3rs_6.html#SEC26">4.1.4 lambda expressions</A>).
+
+
+<P>
+Procedure calls are also called <EM>combinations</EM>.
+
+
+<P>
+<A NAME="IDX80"></A>
+
+
+
+<BLOCKQUOTE>
+<P>
+<EM>Note:</EM> In contrast to other dialects of Lisp, the order of
+evaluation is unspecified, and the operator expression and the operand
+expressions are always evaluated with the same evaluation rules.
+
+
+</BLOCKQUOTE>
+
+
+<BLOCKQUOTE>
+<P>
+<EM>Note:</EM> In many dialects of Lisp, the empty combination, <TT>()</TT>, is a legitimate expression.  In Scheme, combinations must have at
+least one subexpression, so <TT>()</TT> is not a syntactically valid
+expression.  
+
+
+</BLOCKQUOTE>
+
+</DL>
+
+
+
+<H3><A NAME="SEC26">4.1.4 lambda expressions</A></H3>
+
+<P>
+<A NAME="IDX81"></A>
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>lambda</B> <I>&#60;formals&#62; &#60;body&#62;</I>
+<DD><A NAME="IDX82"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+&#60;Formals&#62; should be a formal arguments list as described below,
+and &#60;body&#62; should be a sequence of one or more expressions.
+
+
+<P>
+<EM>Semantics:</EM>
+A lambda expression evaluates to a procedure.  The environment in
+effect when the lambda expression was evaluated is remembered as part of the
+procedure.  When the procedure is later called with some actual
+arguments, the environment in which the lambda expression was evaluated will
+be extended by binding the variables in the formal argument list to
+fresh locations, the corresponding actual argument values will be stored
+in those locations, and the expressions in the body of the lambda expression
+will be evaluated sequentially in the extended environment.  The result
+of the last expression in the body will be returned as the result of
+the procedure call.
+
+
+
+<PRE>
+<TT>(lambda (x) (+ x x))                   ==&#62;  <EM></TT>a procedure
+((lambda (x) (+ x x)) 4)               ==&#62;  8
+
+(define reverse-subtract
+  (lambda (x y) (- y x)))
+(reverse-subtract 7 10)                ==&#62;  3
+
+(define foo
+  (let ((x 4))
+    (lambda (y) (+ x y))))
+(foo 6)                                ==&#62;  10
+</EM>
+</PRE>
+
+<P>
+&#60;Formals&#62; should have one of the following forms:
+
+
+
+<UL>
+
+<LI>
+
+<TT>(&#60;variable1&#62; ...)</TT>:
+The procedure takes a fixed number of arguments; when the procedure is
+called, the arguments will be stored in the bindings of the
+corresponding variables.
+
+<LI>
+
+&#60;variable&#62;:
+The procedure takes any number of arguments; when the procedure is
+called, the sequence of actual arguments is converted into a newly
+allocated list, and the list is stored in the binding of the
+&#60;variable&#62;.
+
+<LI>
+
+<TT>(&#60;variable1&#62; ... &#60;variable_n-1&#62; <B>.</B> &#60;variable_n&#62;)</TT>:
+If a space-delimited period precedes the last variable, then
+the value stored in the binding of the last variable will be a
+newly allocated
+list of the actual arguments left over after all the other actual
+arguments have been matched up against the other formal arguments.
+
+</UL>
+
+
+<PRE>
+<TT>((lambda x x) 3 4 5 6)                 ==&#62;  (3 4 5 6)
+((lambda (x y . z) z)
+ 3 4 5 6)                              ==&#62;  (5 6)
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H3><A NAME="SEC27">4.1.5 Conditionals</A></H3>
+
+<P>
+<A NAME="IDX83"></A>
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>if</B> <I>&#60;test&#62; &#60;consequent&#62; &#60;alternate&#62;</I>
+<DD><A NAME="IDX84"></A>
+<DT><U>syntax:</U> <B>if</B> <I>&#60;test&#62; &#60;consequent&#62;</I>
+<DD><A NAME="IDX85"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+&#60;Test&#62;, &#60;consequent&#62;, and &#60;alternate&#62; may be arbitrary
+expressions.
+
+
+<P>
+<EM>Semantics:</EM>
+An <CODE>if</CODE> expression is evaluated as follows: first,
+<A NAME="IDX86"></A>
+&#60;test&#62; is evaluated.  If it yields a true value (see
+<A NAME="IDX87"></A>
+section see section <A HREF="r3rs_8.html#SEC42">6.1 Booleans</A>), then &#60;consequent&#62; is evaluated and
+its value is returned.  Otherwise &#60;alternate&#62; is evaluated and its
+value is returned.  If &#60;test&#62; yields a false value and no
+&#60;alternate&#62; is specified, then the result of the expression is
+unspecified.
+
+
+
+<PRE>
+<TT>(if (&#62; 3 2) 'yes 'no)                  ==&#62;  yes
+(if (&#62; 2 3) 'yes 'no)                  ==&#62;  no
+(if (&#62; 3 2)
+    (- 3 2)
+    (+ 3 2))                           ==&#62;  1
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H3><A NAME="SEC28">4.1.6 Assignments</A></H3>
+
+<P>
+<A NAME="IDX88"></A>
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>set!</B> <I>&#60;variable&#62; &#60;expression&#62;</I>
+<DD><A NAME="IDX89"></A>
+
+
+<P>
+&#60;Expression&#62; is evaluated, and the resulting value is stored in
+the location to which &#60;variable&#62; is bound.  &#60;Variable&#62; must
+be bound either in some region enclosing the <CODE>set!</CODE> expression
+<A NAME="IDX90"></A>
+<A NAME="IDX91"></A>
+or at top level.  The result of the <CODE>set!</CODE> expression is
+unspecified.
+
+
+
+<PRE>
+<TT>(define x 2)
+(+ x 1)                                ==&#62;  3
+(set! x 4)                             ==&#62;  <EM>unspecified</EM>
+(+ x 1)                                ==&#62;  5
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H2><A NAME="SEC29">4.2 Derived expression types</A></H2>
+
+<P>
+<A NAME="IDX92"></A>
+
+
+<P>
+For reference purposes, section <A HREF="r3rs_9.html#SEC71">7.3 Derived expression types</A> gives rewrite rules
+that will convert constructs described in this section into the
+primitive constructs described in the previous section.
+
+
+
+
+<H3><A NAME="SEC30">4.2.1 Conditionals</A></H3>
+
+<P>
+<A NAME="IDX93"></A>
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>cond</B> <I>&#60;clause1&#62; &#60;clause2&#62; ...</I>
+<DD><A NAME="IDX94"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+Each &#60;clause&#62; should be of the form
+
+
+
+<PRE>
+<TT>(&#60;test&#62; &#60;expression&#62; ...)
+</TT>
+</PRE>
+
+<P>
+where &#60;test&#62; is any expression.  The last &#60;clause&#62; may be
+an "else clause," which has the form
+
+
+
+<PRE>
+<TT>(else &#60;expression1&#62; &#60;expression2&#62; ...).
+</TT>
+</PRE>
+
+<P>
+<A NAME="IDX95"></A>
+
+
+<P>
+<A NAME="IDX96"></A>
+
+
+<P>
+<EM>Semantics:</EM>
+A <CODE>cond</CODE> expression is evaluated by evaluating the &#60;test&#62;
+<A NAME="IDX97"></A>
+expressions of successive &#60;clause&#62;s in order until one of them
+evaluates to a true value (see
+<A NAME="IDX98"></A>
+section see section <A HREF="r3rs_8.html#SEC42">6.1 Booleans</A>).  When a &#60;test&#62; evaluates to a true
+value, then the remaining &#60;expression&#62;s in its &#60;clause&#62; are
+evaluated in order, and the result of the last &#60;expression&#62; in the
+&#60;clause&#62; is returned as the result of the entire <CODE>cond</CODE>
+expression.  If the selected &#60;clause&#62; contains only the
+&#60;test&#62; and no &#60;expression&#62;s, then the value of the
+&#60;test&#62; is returned as the result.  If all &#60;test&#62;s evaluate
+to false values, and there is no else clause, then the result of
+the conditional expression is unspecified; if there is an else
+clause, then its &#60;expression&#62;s are evaluated, and the value of
+the last one is returned.
+
+
+
+<PRE>
+<TT>(cond ((&#62; 3 2) 'greater)
+      ((&#60; 3 2) 'less))                 ==&#62;  greater
+
+(cond ((&#62; 3 3) 'greater)
+      ((&#60; 3 3) 'less)
+      (else 'equal))                   ==&#62;  equal
+</TT>
+</PRE>
+
+<P>
+Some implementations support an alternative &#60;clause&#62; syntax,
+<TT>(&#60;test&#62; =&#62; &#60;recipient&#62;)</TT>, where &#60;recipient&#62; is an
+expression.  If &#60;test&#62; evaluates to a true value, then
+&#60;recipient&#62; is evaluated.  Its value must be a procedure of one
+argument; this procedure is then invoked on the value of the
+&#60;test&#62;.
+
+
+
+<PRE>
+<TT>(cond ((assv 'b '((a 1) (b 2))) =&#62; cadr)
+      (else #f))                       ==&#62;  2
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>case</B> <I>&#60;key&#62; &#60;clause1&#62; &#60;clause2&#62; ...</I>
+<DD><A NAME="IDX99"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+&#60;Key&#62; may be any expression.  Each &#60;clause&#62; should have
+the form
+
+
+
+<PRE>
+<TT>((&#60;datum1&#62; ...) &#60;expression1&#62; &#60;expression2&#62; ...),
+</TT>
+</PRE>
+
+<P>
+where each &#60;datum&#62; is an external representation of some object.
+All the &#60;datum&#62;s must be distinct.
+The last &#60;clause&#62; may be an "else clause," which has the form
+
+
+
+<PRE>
+<TT>(else &#60;expression1&#62; &#60;expression2&#62; ...).
+</TT>
+</PRE>
+
+<P>
+<A NAME="IDX100"></A>
+
+
+<P>
+<EM>Semantics:</EM>
+A <CODE>case</CODE> expression is evaluated as follows.  &#60;Key&#62; is
+<A NAME="IDX101"></A>
+evaluated and its result is compared against each &#60;datum&#62;.  If the
+result of evaluating &#60;key&#62; is equivalent (in the sense of
+<CODE>eqv?</CODE>; see section see section <A HREF="r3rs_8.html#SEC43">6.2 Equivalence predicates</A>) to a &#60;datum&#62;, then the
+<A NAME="IDX102"></A>
+expressions in the corresponding &#60;clause&#62; are evaluated from left
+to right and the result of the last expression in the &#60;clause&#62; is
+returned as the result of the <CODE>case</CODE> expression.  If the result of
+evaluating &#60;key&#62; is different from every &#60;datum&#62;, then if
+there is an else clause its expressions are evaluated and the
+result of the last is the result of the <CODE>case</CODE> expression; otherwise
+the result of the <CODE>case</CODE> expression is unspecified.
+
+
+
+<PRE>
+<TT>(case (* 2 3)
+  ((2 3 5 7) 'prime)
+  ((1 4 6 8 9) 'composite))            ==&#62;  composite
+(case (car '(c d))
+  ((a) 'a)
+  ((b) 'b))                            ==&#62;  <EM>unspecified</EM>
+(case (car '(c d))
+  ((a e i o u) 'vowel)
+  ((w y) 'semivowel)
+  (else 'consonant))                   ==&#62;  consonant
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>and</B> <I>&#60;test1&#62; ...</I>
+<DD><A NAME="IDX103"></A>
+
+
+<P>
+The &#60;test&#62; expressions are evaluated from left to right, and the
+value of the first expression that evaluates to a false value (see
+section see section <A HREF="r3rs_8.html#SEC42">6.1 Booleans</A>) is returned.  Any remaining expressions
+are not evaluated.  If all the expressions evaluate to true values, the
+value of the last expression is returned.  If there are no expressions
+then <TT>#t</TT> is returned.
+
+
+
+<PRE>
+<TT>(and (= 2 2) (&#62; 2 1))                  ==&#62;  #t
+(and (= 2 2) (&#60; 2 1))                  ==&#62;  #f
+(and 1 2 'c '(f g))                    ==&#62;  (f g)
+(and)                                  ==&#62;  #t
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>or</B> <I>&#60;test1&#62; ...</I>
+<DD><A NAME="IDX104"></A>
+
+
+<P>
+The &#60;test&#62; expressions are evaluated from left to right, and the value of the
+first expression that evaluates to a true value (see
+section see section <A HREF="r3rs_8.html#SEC42">6.1 Booleans</A>) is returned.  Any remaining expressions
+are not evaluated.  If all expressions evaluate to false values, the
+value of the last expression is returned.  If there are no
+expressions then <TT>#f</TT> is returned.
+
+
+
+<PRE>
+<TT>(or (= 2 2) (&#62; 2 1))                   ==&#62;  #t
+(or (= 2 2) (&#60; 2 1))                   ==&#62;  #t
+(or #f #f #f)                          ==&#62;  #f
+(or (memq 'b '(a b c)) 
+    (/ 3 0))                           ==&#62;  (b c)
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H3><A NAME="SEC31">4.2.2 Binding constructs</A></H3>
+
+<P>
+<A NAME="IDX105"></A>
+
+
+<P>
+The three binding constructs <CODE>let</CODE>, <CODE>let*</CODE>, and <CODE>letrec</CODE>
+<A NAME="IDX106"></A>
+<A NAME="IDX107"></A>
+<A NAME="IDX108"></A>
+give Scheme a block structure, like Algol 60.  The syntax of the three
+constructs is identical, but they differ in the regions they establish
+<A NAME="IDX109"></A>
+for their variable bindings.  In a <CODE>let</CODE> expression, the initial
+values are computed before any of the variables become bound; in a
+<CODE>let*</CODE> expression, the bindings and evaluations are performed
+sequentially; while in a <CODE>letrec</CODE> expression, the bindings are in
+effect while their initial values are being computed, thus allowing
+mutually recursive definitions.
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>let</B> <I>&#60;bindings&#62; &#60;body&#62;</I>
+<DD><A NAME="IDX110"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+&#60;Bindings&#62; should have the form
+
+
+
+<PRE>
+<TT>((&#60;variable1&#62; &#60;init1&#62;) ...),
+</TT>
+</PRE>
+
+<P>
+where each &#60;init&#62; is an expression, and &#60;body&#62; should be a
+sequence of one or more expressions.
+
+
+<P>
+<EM>Semantics:</EM>
+The &#60;init&#62;s are evaluated in the current environment (in some
+unspecified order), the &#60;variable&#62;s are bound to fresh locations
+holding the results, the &#60;body&#62; is evaluated in the extended
+environment, and the value of the last expression of &#60;body&#62; is
+returned.  Each binding of a &#60;variable&#62; has &#60;body&#62; as its
+region.
+
+
+
+<PRE>
+<TT>(let ((x 2) (y 3))
+  (* x y))                             ==&#62;  6
+
+(let ((x 2) (y 3))
+  (let ((foo (lambda (z) (+ x y z)))
+        (x 7))
+    (foo 4)))                          ==&#62;  9
+</TT>
+</PRE>
+
+<P>
+See also named <CODE>let</CODE>, section <A HREF="r3rs_6.html#SEC33">4.2.4 Iteration</A>.
+
+
+</DL>
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>let*</B> <I>&#60;bindings&#62; &#60;body&#62;</I>
+<DD><A NAME="IDX111"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+&#60;Bindings&#62; should have the form
+
+
+
+<PRE>
+<TT>((&#60;variable1&#62; &#60;init1&#62;) ...),
+</TT>
+</PRE>
+
+<P>
+and &#60;body&#62; should be a sequence of one or more expressions.
+
+
+<P>
+<EM>Semantics:</EM>
+<CODE>Let*</CODE> is similar to <CODE>let</CODE>, but the bindings are performed
+sequentially from left to right, and the region of a binding indicated
+by <SAMP>`(&#60;variable&#62; &#60;init&#62;)'</SAMP> is that part of the <CODE>let*</CODE>
+expression to the right of the binding.  Thus the second binding is done
+in an environment in which the first binding is visible, and so on.
+
+
+
+<PRE>
+<TT>(let* ((x 1) (y (+ x 1)))
+  y)                                   ==&#62;  2
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>letrec</B> <I>&#60;bindings&#62; &#60;body&#62;</I>
+<DD><A NAME="IDX112"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+&#60;Bindings&#62; should have the form
+
+
+
+<PRE>
+<TT>((&#60;variable1&#62; &#60;init1&#62;) ...),
+</TT>
+</PRE>
+
+<P>
+and &#60;body&#62; should be a sequence of one or more expressions.
+
+
+<P>
+<EM>Semantics:</EM>
+The &#60;variable&#62;s are bound to fresh locations holding undefined
+values, the &#60;init&#62;s are evaluated in the resulting environment (in
+some unspecified order), each &#60;variable&#62; is assigned to the result
+of the corresponding &#60;init&#62;, the &#60;body&#62; is evaluated in the
+resulting environment, and the value of the last expression in
+&#60;body&#62; is returned.  Each binding of a &#60;variable&#62; has the
+entire <CODE>letrec</CODE> expression as its region, making it possible to
+define mutually recursive procedures.
+
+
+
+<PRE>
+<TT>
+
+(letrec ((even?
+          (lambda (n)
+            (if (zero? n)
+                #t
+                (odd? (- n 1)))))
+         (odd?
+          (lambda (n)
+            (if (zero? n)
+                #f
+                (even? (- n 1))))))
+  (even? 88))   
+                                       ==&#62;  #t
+</TT>
+</PRE>
+
+<P>
+One restriction on <CODE>letrec</CODE> is very important: it must be possible
+to evaluate each &#60;init&#62; without referring to the value of any
+&#60;variable&#62;.  If this restriction is violated, then the effect is
+undefined, and an error may be signalled during evaluation of the
+&#60;init&#62;s.  The restriction is necessary because Scheme passes
+arguments by value rather than by name.  In the most common uses of
+<CODE>letrec</CODE>, all the &#60;init&#62;s are lambda expressions and the
+restriction is satisfied automatically.
+
+
+</DL>
+
+
+
+<H3><A NAME="SEC32">4.2.3 Sequencing</A></H3>
+
+<P>
+<A NAME="IDX113"></A>
+
+
+<P>
+<DL>
+<DT><U>essential syntax:</U> <B>begin</B> <I>&#60;expression1&#62; &#60;expression2&#62; ...</I>
+<DD><A NAME="IDX114"></A>
+
+
+<P>
+The &#60;expression&#62;s are evaluated sequentially from left to right,
+and the value of the last &#60;expression&#62; is returned.  This
+expression type is used to sequence side effects such as input and
+output.
+
+
+
+<PRE>
+<TT>(begin (set! x 5)
+       (+ x 1))                        ==&#62;  6
+
+(begin (display "4 plus 1 equals ")
+       (display (+ 4 1)))              ==&#62;  <EM>unspecified</EM>
+          <EM>and prints</EM>  4 plus 1 equals 5
+</TT>
+</PRE>
+
+
+<BLOCKQUOTE>
+<P>
+<EM>Note:</EM>
+<A HREF="r3rs_12.html#BIB1">[SICP]</A> uses the keyword <CODE>sequence</CODE> instead of <CODE>begin</CODE>.
+<A NAME="IDX115"></A>
+<A NAME="IDX116"></A>
+</BLOCKQUOTE>
+
+</DL>
+
+
+
+<H3><A NAME="SEC33">4.2.4 Iteration</A></H3>
+
+<P>
+<A NAME="IDX117"></A>
+
+
+<P>
+
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>(do</B> <I>((&#60;variable1&#62; &#60;init1&#62; &#60;step1&#62;)</I>
+<DD><A NAME="IDX118"></A>
+
+
+<P>
+<TT> ...) (&#60;test&#62; &#60;expression&#62; ...) &#60;command&#62; ...)</TT>
+<A NAME="IDX119"></A>
+
+
+<P>
+<CODE>Do</CODE> is an iteration construct.  It specifies a set of variables to
+<A NAME="IDX120"></A>
+be bound, how they are to be initialized at the start, and how they are
+to be updated on each iteration.  When a termination condition is met,
+the loop exits with a specified result value.
+
+
+<P>
+<CODE>Do</CODE> expressions are evaluated as follows:
+The &#60;init&#62; expressions are evaluated (in some unspecified order),
+the &#60;variable&#62;s are bound to fresh locations, the results of the
+&#60;init&#62; expressions are stored in the bindings of the
+&#60;variable&#62;s, and then the iteration phase begins.
+
+
+<P>
+Each iteration begins by evaluating &#60;test&#62;; if the result is
+false (see section see section <A HREF="r3rs_8.html#SEC42">6.1 Booleans</A>), then the &#60;command&#62;
+expressions are evaluated in order for effect, the &#60;step&#62;
+expressions are evaluated in some unspecified order, the
+&#60;variable&#62;s are bound to fresh locations, the results of the
+&#60;step&#62;s are stored in the bindings of the
+&#60;variable&#62;s, and the next iteration begins.
+
+
+<P>
+If &#60;test&#62; evaluates to a true value, then the
+&#60;expression&#62;s are evaluated from left to right and the value of
+the last &#60;expression&#62; is returned as the value of the <CODE>do</CODE>
+expression.  If no &#60;expression&#62;s are present, then the value of
+the <CODE>do</CODE> expression is unspecified.
+
+
+<P>
+The region of the binding of a &#60;variable&#62;
+<A NAME="IDX121"></A>
+consists of the entire <CODE>do</CODE> expression except for the &#60;init&#62;s.
+
+
+<P>
+A &#60;step&#62; may be omitted, in which case the effect is the
+same as if <SAMP>`(&#60;variable&#62; &#60;init&#62; &#60;variable&#62;)'</SAMP> had
+been written instead of <SAMP>`(&#60;variable&#62; &#60;init&#62;)'</SAMP>.
+
+
+
+<PRE>
+<TT>(do ((vec (make-vector 5))
+     (i 0 (+ i 1)))
+    ((= i 5) vec)
+  (vector-set! vec i i))               ==&#62;  #(0 1 2 3 4)
+
+(let ((x '(1 3 5 7 9)))
+  (do ((x x (cdr x))
+       (sum 0 (+ sum (car x))))
+      ((null? x) sum)))                ==&#62;  25
+</TT>
+</PRE>
+
+<P>
+<DT><U>syntax:</U> <B>let</B> <I>&#60;variable&#62; &#60;bindings&#62; &#60;body&#62;</I>
+<DD><A NAME="IDX122"></A>
+
+
+<P>
+Some implementations of Scheme permit a variant on the syntax of
+<CODE>let</CODE> called "named <CODE>let</CODE>" which provides a more general
+<A NAME="IDX123"></A>
+looping construct than <CODE>do</CODE>, and may also be used to express
+recursions.
+
+
+<P>
+Named <CODE>let</CODE> has the same syntax and semantics as ordinary <CODE>let</CODE>
+except that &#60;variable&#62; is bound within &#60;body&#62; to a procedure
+whose formal arguments are the bound variables and whose body is
+&#60;body&#62;.  Thus the execution of &#60;body&#62; may be repeated by
+invoking the procedure named by &#60;variable&#62;.
+
+
+
+<PRE>
+<TT>(let loop ((numbers '(3 -2 1 6 -5))
+           (nonneg '())
+           (neg '()))
+  (cond ((null? numbers) (list nonneg neg))
+        ((&#62;= (car numbers) 0)
+         (loop (cdr numbers)
+               (cons (car numbers) nonneg)
+               neg))
+        ((&#60; (car numbers) 0)
+         (loop (cdr numbers)
+               nonneg
+               (cons (car numbers) neg)))))   
+          ==&#62;  ((6 1 3) (-5 -2))
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H3><A NAME="SEC34">4.2.5 Delayed evaluation</A></H3>
+
+<P>
+<A NAME="IDX124"></A>
+
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>delay</B> <I>&#60;expression&#62;</I>
+<DD><A NAME="IDX125"></A>
+
+
+<P>
+The <CODE>delay</CODE> construct is used together with the procedure <CODE>force</CODE> to
+<A NAME="IDX126"></A>
+<A NAME="IDX127"></A>
+implement <EM>lazy evaluation</EM> or <EM>call by need</EM>.
+<A NAME="IDX128"></A>
+<A NAME="IDX129"></A>
+<TT>(delay &#60;expression&#62;)</TT> returns an object called a
+<EM>promise</EM> which at some point in the future may be asked (by
+<A NAME="IDX130"></A>
+the <CODE>force</CODE> procedure) 
+ to evaluate
+&#60;expression&#62; and deliver the resulting value.
+
+
+<P>
+See the description of <CODE>force</CODE> (section see section <A HREF="r3rs_8.html#SEC57">6.9 Control features</A>) for a
+complete description of <CODE>delay</CODE>.
+
+
+</DL>
+
+
+
+<H3><A NAME="SEC35">4.2.6 Quasiquotation</A></H3>
+
+<P>
+<A NAME="IDX131"></A>
+
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>quasiquote</B> <I>&#60;template&#62;</I>
+<DD><A NAME="IDX132"></A>
+
+
+<P>
+<DT><U>syntax:</U> <B><TT>`</TT>&#60;template&#62;</B>
+<DD><A NAME="IDX133"></A>
+
+
+<P>
+"Backquote" or "quasiquote" expressions are useful
+<A NAME="IDX134"></A>
+for constructing a list or vector structure when most but not all of the
+desired structure is known in advance.  If no commas
+<A NAME="IDX135"></A>
+appear within the &#60;template&#62;, the result of evaluating
+<TT>`</TT>&#60;template&#62; is equivalent to the result of evaluating
+<TT>'</TT>&#60;template&#62;.  If a comma appears within the
+<A NAME="IDX136"></A>
+&#60;template&#62;, however, the expression following the comma is
+evaluated ("unquoted") and its result is inserted into the structure
+instead of the comma and the expression.  If a comma appears followed
+immediately by an at-sign (@), then the following
+<A NAME="IDX137"></A>
+expression must evaluate to a list; the opening and closing parentheses
+of the list are then "stripped away" and the elements of the list are
+inserted in place of the comma at-sign expression sequence.
+
+
+
+<PRE>
+<TT>`(list ,(+ 1 2) 4)                     ==&#62;  (list 3 4)
+(let ((name 'a)) `(list ,name ',name))           
+          ==&#62;  (list a (quote a))
+`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)           
+          ==&#62;  (a 3 4 5 6 b)
+`((foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons)))           
+          ==&#62;  ((foo 7) . cons)
+`#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8)           
+          ==&#62;  #(10 5 2 4 3 8)
+</TT>
+</PRE>
+
+<P>
+Quasiquote forms may be nested.  Substitutions are made only for
+unquoted components appearing at the same nesting level
+as the outermost backquote.  The nesting level increases by one inside
+each successive quasiquotation, and decreases by one inside each
+unquotation.
+
+
+
+<PRE>
+<TT>`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)           
+          ==&#62;  (a `(b ,(+ 1 2) ,(foo 4 d) e) f)
+(let ((name1 'x)
+      (name2 'y))
+  `(a `(b ,,name1 ,',name2 d) e))           
+          ==&#62;  (a `(b ,x ,'y d) e)
+</TT>
+</PRE>
+
+<P>
+The notations
+ <TT>`</TT>&#60;template&#62; and <TT>(quasiquote &#60;template&#62;)</TT>
+ are identical in all respects.
+ <SAMP>`,&#60;expression&#62;'</SAMP> is identical to <SAMP>`(unquote &#60;expression&#62;)'</SAMP>,
+ and
+ <SAMP>`,@&#60;expression&#62;'</SAMP> is identical to <SAMP>`(unquote-splicing &#60;expression&#62;)'</SAMP>.
+The external syntax generated by <CODE>write</CODE> for two-element lists whose
+<A NAME="IDX138"></A>
+car is one of these symbols may vary between implementations.
+
+
+
+<PRE>
+<TT>(quasiquote (list (unquote (+ 1 2)) 4))           
+          ==&#62;  (list 3 4)
+'(quasiquote (list (unquote (+ 1 2)) 4))           
+          ==&#62;  `(list ,(+ 1 2) 4)
+     <EM></TT>i.e., (quasiquote (list (unquote (+ 1 2)) 4))
+</EM>
+</PRE>
+
+<P>
+Unpredictable behavior can result if any of the symbols
+<CODE>quasiquote</CODE>, <CODE>unquote</CODE>, or <CODE>unquote-splicing</CODE> appear in
+<A NAME="IDX139"></A>
+<A NAME="IDX140"></A>
+<A NAME="IDX141"></A>
+positions within a &#60;template&#62; otherwise than as described above.
+
+
+</DL>
+<P>
+       
+<P></P><HR>
+ [<A HREF="r3rs_toc.html">Contents</A>] &#160; [<A HREF="r3rs_5.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r3rs_7.html">Forward</A>] &#160;
+
+</BODY>
+</HTML>

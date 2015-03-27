@@ -1351,9 +1351,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define EQ    54
 
 #	define CLOCK 61
-#	define SYSCALL2 62
 #	define SYSCALL 63
-#	define SLEEP 37
 
 
 	// tuples, trees
@@ -1367,7 +1365,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #	define FFTOGGLE 46
 #	define FFREDQ   41
 
-	// free numbers: 34 (was _connect)
+	// free numbers: 34, 37, 62 (was _connect)
 
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
@@ -2025,18 +2023,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 		}
 
-		case SLEEP: { // system_sleep ms
-#ifdef _WIN32
-			Sleep(fixval(A0));
-			A1 = ITRUE;
-#else
-			if (!seccompp)
-				usleep(fixval(A0)*1000);
-			A1 = TRUEFALSE(errno == EINTR);
-#endif
-			ip += 2; break;
-		}
-
 		// этот case должен остаться тут - как последний из кейсов
 		//  todo: переименовать в компиляторе sys-prim на syscall (?)
 		// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
@@ -2051,6 +2037,18 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //			printf("SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
 			switch (op) {
+			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
+			case 35: // currently sleep, will be nanosleep
+				Sleep(fixval(a));
+//				for Linux:
+//				if (!seccompp)
+//					usleep(fixval(A0)*1000);
+//				A1 = TRUEFALSE(errno == EINTR);
+				result = ITRUE;
+				break;
+
+			// other commands
+
 				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 				//  остальное можно спокойно оформлять отдельными функциями
 

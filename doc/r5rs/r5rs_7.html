@@ -1,0 +1,313 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.57 from /home/jaffer/scheme/r5rs.txi on December, 22  2007 -->
+
+<TITLE>Revised(5) Scheme - 5. Program structure</TITLE>
+</HEAD>
+<BODY >
+ [<A HREF="r5rs_toc.html">Contents</A>] &#160; [<A HREF="r5rs_6.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r5rs_8.html">Forward</A>] &#160;<BR><HR><BR>
+
+
+<H1><A NAME="SEC42">5. Program structure</A></H1>
+
+<P>
+<A NAME="IDX168"></A>
+
+
+
+
+<H2><A NAME="SEC43">5.1 Programs</A></H2>
+
+<P>
+<A NAME="IDX169"></A>
+
+
+<P>
+A Scheme program consists of a sequence of expressions, definitions,
+and syntax definitions.
+Expressions are described in chapter section <A HREF="r5rs_6.html#SEC24">4. Expressions</A>;
+definitions and syntax definitions are the subject of the rest of the
+present chapter.
+
+
+<P>
+Programs are typically stored in files or entered interactively to a
+running Scheme system, although other paradigms are possible;
+questions of user interface lie outside the scope of this report.
+(Indeed, Scheme would still be useful as a notation for expressing
+computational methods even in the absence of a mechanical
+implementation.)
+
+
+<P>
+Definitions and syntax definitions occurring at the top level of a program
+can be interpreted
+declaratively.
+They cause bindings to be created in the top level
+environment or modify the value of existing top-level bindings.
+Expressions occurring at the top level of a program are
+interpreted imperatively; they are executed in order when the program is
+invoked or loaded, and typically perform some kind of initialization.
+
+
+<P>
+At the top level of a program <TT>(begin &#60;form1&#62; ...)</TT> is
+equivalent to the sequence of expressions, definitions, and syntax definitions
+that form the body of the <CODE>begin</CODE>.
+<A NAME="IDX170"></A>
+
+
+
+
+<H2><A NAME="SEC44">5.2 Definitions</A></H2>
+
+<P>
+<A NAME="IDX171"></A>
+
+
+<P>
+Definitions are valid in some, but not all, contexts where expressions
+are allowed.  They are valid only at the top level of a &#60;program&#62;
+and at the beginning of a &#60;body&#62;.
+
+
+<P>
+<A NAME="IDX172"></A>
+
+
+<P>
+A definition should have one of the following forms:
+<A NAME="IDX173"></A>
+
+
+
+<UL>
+
+<LI><TT>(define &#60;variable&#62; &#60;expression&#62;)</TT>
+
+<LI><TT>(define (&#60;variable&#62; &#60;formals&#62;) &#60;body&#62;)</TT>
+
+&#60;Formals&#62; should be either a
+sequence of zero or more variables, or a sequence of one or more
+variables followed by a space-delimited period and another variable (as
+in a lambda expression).  This form is equivalent to
+
+
+<PRE>
+
+(define &#60;variable&#62;
+  (lambda (&#60;formals&#62;) &#60;body&#62;)).
+
+</PRE>
+
+<LI><TT>(define (&#60;variable&#62; . &#60;formal&#62;) &#60;body&#62;)</TT>
+
+&#60;Formal&#62; should be a single
+variable.  This form is equivalent to
+
+
+<PRE>
+
+(define &#60;variable&#62;
+  (lambda &#60;formal&#62; &#60;body&#62;)).
+
+</PRE>
+
+</UL>
+
+
+
+<H3><A NAME="SEC45">5.2.1 Top level definitions</A></H3>
+
+<P>
+<A NAME="IDX174"></A>
+
+
+<P>
+At the top level of a program, a definition
+
+
+
+<PRE>
+
+(define &#60;variable&#62; &#60;expression&#62;)
+
+</PRE>
+
+<P>
+has essentially the same effect as the assignment expression
+
+
+
+<PRE>
+
+(set! &#60;variable&#62; &#60;expression&#62;)
+
+</PRE>
+
+<P>
+if &#60;variable&#62; is bound.  If &#60;variable&#62; is not bound,
+however, then the definition will bind &#60;variable&#62; to a new
+location before performing the assignment, whereas it would be an error
+to perform a <SAMP>`set!'</SAMP> on an unbound variable.
+<A NAME="IDX175"></A>
+
+
+
+<PRE>
+
+(define add3
+  (lambda (x) (+ x 3)))
+(add3 3)                               ==&#62;  6
+(define first car)
+(first '(1 2))                         ==&#62;  1
+
+</PRE>
+
+<P>
+Some implementations of Scheme use an initial environment in
+which all possible variables are bound to locations, most of
+which contain undefined values.  Top level definitions in
+such an implementation are truly equivalent to assignments.
+
+
+
+
+<H3><A NAME="SEC46">5.2.2 Internal definitions</A></H3>
+
+<P>
+<A NAME="IDX176"></A>
+
+
+<P>
+Definitions may occur at the
+beginning of a &#60;body&#62; (that is, the body of a <CODE>lambda</CODE>,
+<A NAME="IDX177"></A>
+<CODE>let</CODE>, <CODE>let*</CODE>, <CODE>letrec</CODE>, <CODE>let-syntax</CODE>, or <CODE>letrec-syntax</CODE>
+<A NAME="IDX178"></A>
+<A NAME="IDX179"></A>
+<A NAME="IDX180"></A>
+<A NAME="IDX181"></A>
+<A NAME="IDX182"></A>
+expression or that of a definition of an appropriate form).
+Such definitions are known as <EM>internal definitions</EM>  as opposed to the top level definitions described above.
+<A NAME="IDX183"></A>
+The variable defined by an internal definition is local to the
+&#60;body&#62;.  That is, &#60;variable&#62; is bound rather than assigned,
+and the region of the binding is the entire &#60;body&#62;.  For example,
+
+
+
+<PRE>
+
+(let ((x 5))
+  (define foo (lambda (y) (bar x y)))
+  (define bar (lambda (a b) (+ (* a b) a)))
+  (foo (+ x 3)))                       ==&#62;  45
+
+</PRE>
+
+<P>
+A &#60;body&#62; containing internal definitions can always be converted
+into a completely equivalent <SAMP>`letrec'</SAMP> expression.  For example, the
+<SAMP>`let'</SAMP> expression in the above example is equivalent to
+
+
+
+<PRE>
+
+(let ((x 5))
+  (letrec ((foo (lambda (y) (bar x y)))
+           (bar (lambda (a b) (+ (* a b) a))))
+    (foo (+ x 3))))
+
+</PRE>
+
+<P>
+Just as for the equivalent <SAMP>`letrec'</SAMP> expression, it must be
+possible to evaluate each &#60;expression&#62; of every internal
+definition in a &#60;body&#62; without assigning or referring to
+the value of any &#60;variable&#62; being defined.
+
+
+<P>
+Wherever an internal definition may occur
+<TT>(begin &#60;definition1&#62; ...)</TT>
+is equivalent to the sequence of definitions
+that form the body of the <CODE>begin</CODE>.
+<A NAME="IDX184"></A>
+
+
+
+
+<H2><A NAME="SEC47">5.3 Syntax definitions</A></H2>
+
+<P>
+<A NAME="IDX185"></A>
+
+
+<P>
+Syntax definitions are valid only at the top level of a &#60;program&#62;.
+
+
+<P>
+<A NAME="IDX186"></A>
+They have the following form:
+<A NAME="IDX187"></A>
+
+
+<P>
+<TT>(define-syntax &#60;keyword&#62; &#60;transformer spec&#62;)</TT>
+
+
+<P>
+&#60;Keyword&#62; is an identifier, and
+the &#60;transformer spec&#62; should be an instance of <CODE>syntax-rules</CODE>.
+<A NAME="IDX188"></A>
+The top-level syntactic environment is extended by binding the
+&#60;keyword&#62; to the specified transformer.
+
+
+<P>
+There is no <SAMP>`define-syntax'</SAMP> analogue of internal definitions.
+
+
+<P>
+Although macros may expand into definitions and syntax definitions in
+any context that permits them, it is an error for a definition or syntax
+definition to shadow a syntactic keyword whose meaning is needed to
+determine whether some form in the group of forms that contains the
+shadowing definition is in fact a definition, or, for internal definitions,
+is needed to determine the boundary between the group and the expressions
+that follow the group.  For example, the following are errors:
+
+
+
+<PRE>
+
+(define define 3)
+
+(begin (define begin list))
+
+(let-syntax
+  ((foo (syntax-rules ()
+          ((foo (proc args ...) body ...)
+           (define proc
+             (lambda (args ...)
+               body ...))))))
+  (let ((x 3))
+    (foo (plus x y) (+ x y))
+    (define foo x)
+    (plus foo x)))
+
+</PRE>
+
+<P>
+       
+
+
+<P></P><HR>
+ [<A HREF="r5rs_toc.html">Contents</A>] &#160; [<A HREF="r5rs_6.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r5rs_8.html">Forward</A>] &#160;
+
+</BODY>
+</HTML>

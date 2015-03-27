@@ -1,0 +1,147 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.57 from /home/jaffer/scheme/r5rs.txi on December, 22  2007 -->
+
+<TITLE>Revised(5) Scheme - Introduction</TITLE>
+</HEAD>
+<BODY >
+ [<A HREF="r5rs_toc.html">Contents</A>] &#160; [<A HREF="r5rs_1.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A HREF="r5rs_3.html">Next</A>] &#160; [<A HREF="r5rs_3.html">Forward</A>] &#160;<BR><HR><BR>
+
+
+<H1><A NAME="SEC2">Introduction</A></H1>
+
+<P>
+<A NAME="IDX2"></A>
+
+
+<P>
+Programming languages should be designed not by piling feature on top of
+feature, but by removing the weaknesses and restrictions that make additional
+features appear necessary.  Scheme demonstrates that a very small number
+of rules for forming expressions, with no restrictions on how they are
+composed, suffice to form a practical and efficient programming language
+that is flexible enough to support most of the major programming
+paradigms in use today.
+
+
+<P>
+Scheme
+was one of the first programming languages to incorporate first class
+procedures as in the lambda calculus, thereby proving the usefulness of
+static scope rules and block structure in a dynamically typed language.
+Scheme was the first major dialect of Lisp to distinguish procedures
+from lambda expressions and symbols, to use a single lexical
+environment for all variables, and to evaluate the operator position
+of a procedure call in the same way as an operand position.  By relying
+entirely on procedure calls to express iteration, Scheme emphasized the
+fact that tail-recursive procedure calls are essentially goto's that
+pass arguments.  Scheme was the first widely used programming language to
+embrace first class escape procedures, from which all previously known
+sequential control structures can be synthesized.  A subsequent
+version of Scheme introduced the concept of exact and inexact numbers,
+an extension of Common Lisp's generic arithmetic.
+More recently, Scheme became the first programming language to support
+hygienic macros, which permit the syntax of a block-structured language
+to be extended in a consistent and reliable manner.
+
+
+
+
+<H2><A NAME="SEC3">Background</A></H2>
+
+<P>
+<A NAME="IDX3"></A>
+
+
+<P>
+The first description of Scheme was written in
+1975 <A HREF="r5rs_13.html#BIB28">[Scheme75]</A>.  A revised report <A HREF="r5rs_13.html#BIB25">[Scheme78]</A>
+ appeared in 1978, which described the evolution
+of the language as its MIT implementation was upgraded to support an
+innovative compiler <A HREF="r5rs_13.html#BIB26">[Rabbit]</A>.  Three distinct projects began in
+1981 and 1982 to use variants of Scheme for courses at MIT, Yale, and
+Indiana University <A HREF="r5rs_13.html#BIB21">[Rees82]</A>, <A HREF="r5rs_13.html#BIB17">[MITScheme]</A>, <A HREF="r5rs_13.html#BIB10">[Scheme311]</A>.  An introductory
+computer science textbook using Scheme was published in
+1984 <A HREF="r5rs_13.html#BIB1">[SICP]</A>.
+
+
+<P>
+As Scheme became more widespread,
+local dialects began to diverge until students and researchers
+occasionally found it difficult to understand code written at other
+sites.
+Fifteen representatives of the major implementations of Scheme therefore
+met in October 1984 to work toward a better and more widely accepted
+standard for Scheme.
+
+
+<P>
+Their report <A HREF="r5rs_13.html#BIB4">[RRRS]</A>
+was published at MIT and Indiana University in the summer of 1985.
+Further revision took place in the spring of 1986 <A HREF="r5rs_13.html#BIB23">[R3RS]</A>,
+and in the spring of 1988 <A HREF="r5rs_13.html#BIB6">[R4RS]</A>.
+The present report reflects further revisions agreed upon in a meeting
+at Xerox PARC in June 1992.
+
+
+<P>
+We intend this report to belong to the entire Scheme community, and so
+we grant permission to copy it in whole or in part without fee.  In
+particular, we encourage implementors of Scheme to use this report as
+a starting point for manuals and other documentation, modifying it as
+necessary.
+
+
+
+
+<H2><A NAME="SEC4">Acknowledgements</A></H2>
+
+<P>
+<A NAME="IDX4"></A>
+
+
+<P>
+We would like to thank the following people for their help: Alan Bawden, Michael
+Blair, George Carrette, Andy Cromarty, Pavel Curtis, Jeff Dalton, Olivier Danvy,
+Ken Dickey, Bruce Duba, Marc Feeley,
+Andy Freeman, Richard Gabriel, Yekta G"ursel, Ken Haase, Robert
+Hieb, Paul Hudak, Morry Katz, Chris Lindblad, Mark Meyer, Jim Miller, Jim Philbin,
+John Ramsdell, Mike Shaff, Jonathan Shapiro, Julie Sussman,
+Perry Wagle, Daniel Weise, Henry Wu, and Ozan Yigit.
+We thank Carol Fessenden, Daniel
+Friedman, and Christopher Haynes for permission to use text from the Scheme 311
+version 4 reference manual.  We thank Texas Instruments, Inc. for permission to
+use text from the <EM>TI Scheme Language Reference Manual</EM><A HREF="r5rs_13.html#BIB30">[TImanual85]</A>.
+We gladly acknowledge the influence of manuals for MIT Scheme<A HREF="r5rs_13.html#BIB17">[MITScheme]</A>,
+T<A HREF="r5rs_13.html#BIB22">[Rees84]</A>, Scheme 84<A HREF="r5rs_13.html#BIB11">[Scheme84]</A>,Common Lisp<A HREF="r5rs_13.html#BIB27">[CLtL]</A>,
+and Algol 60<A HREF="r5rs_13.html#BIB18">[Naur63]</A>.
+
+
+<P>
+We also thank Betty Dexter for the extreme effort she put into
+setting this report in TeX, and Donald Knuth for designing the program
+that caused her troubles.
+
+
+<P>
+The Artificial Intelligence Laboratory of the
+Massachusetts Institute of Technology, the Computer Science
+Department of Indiana University, the Computer and Information
+Sciences Department of the University of Oregon, and the NEC Research
+Institute supported the preparation of this report.  Support for the MIT
+work was provided in part by
+the Advanced Research Projects Agency of the Department of Defense under Office
+of Naval Research contract N00014-80-C-0505.  Support for the Indiana
+University work was provided by NSF grants NCS 83-04567 and NCS
+83-03325.
+
+
+<P>
+   
+
+
+<P></P><HR>
+ [<A HREF="r5rs_toc.html">Contents</A>] &#160; [<A HREF="r5rs_1.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A HREF="r5rs_3.html">Next</A>] &#160; [<A HREF="r5rs_3.html">Forward</A>] &#160;
+
+</BODY>
+</HTML>

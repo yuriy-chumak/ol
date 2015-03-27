@@ -35,6 +35,8 @@
 
    (begin
 
+      (define run (raw type-bytecode (list 25 3 0 6  50 4 5 6  24 6  17)))
+
       (define (bad-interop id a b c todo done state)
          (system-println "mcp: got bad interop")
          (values todo done state))

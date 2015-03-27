@@ -61,6 +61,7 @@
    (include "owl/unicode-char-folds.scm")
 
    (begin
+      (define o (λ (f g) (λ (x) (f (g x)))))
 
       (define (string? x)
          (case (type x)

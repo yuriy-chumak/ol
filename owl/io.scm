@@ -272,7 +272,7 @@
                rounds)
             ((single-thread?)
                ;; note: could make this check every n rounds or ms
-               (if (_sleep (* ms-per-round rounds)) ;; sleep really for a while
+               (if (sys-prim 35 (* ms-per-round rounds) #f #f) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
                   (set-ticker-value 0)))
             (else

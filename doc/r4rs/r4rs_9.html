@@ -1,0 +1,600 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.57 from /home/jaffer/scheme/r4rs.txi on December, 22  2007 -->
+
+<TITLE>Revised(4) Scheme - 7. Formal syntax and semantics</TITLE>
+</HEAD>
+<BODY >
+ [<A HREF="r4rs_toc.html">Contents</A>] &#160; [<A HREF="r4rs_8.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r4rs_10.html">Forward</A>] &#160;<BR><HR><BR>
+
+
+<H1><A NAME="SEC65">7. Formal syntax and semantics</A></H1>
+
+<P>
+<A NAME="IDX576"></A>
+
+
+<P>
+This chapter provides formal descriptions of what has already been
+described informally in previous chapters of this report.
+
+
+
+
+<H2><A NAME="SEC66">7.1 Formal syntax</A></H2>
+
+<P>
+<A NAME="IDX577"></A>
+
+
+<P>
+This section provides a formal syntax for Scheme written in an extended
+BNF.  The syntax for the entire language, including features which are
+not essential, is given here.
+
+
+<P>
+All spaces in the grammar are for legibility.  Case is insignificant;
+for example, <SAMP>`#x1A'</SAMP> and <SAMP>`#X1a'</SAMP> are equivalent.  &#60;empty&#62;
+stands for the empty string.
+
+
+<P>
+The following extensions to BNF are used to make the description more
+concise:  &#60;thing&#62;* means zero or more occurrences of
+&#60;thing&#62;; and &#60;thing&#62;+ means at least one
+&#60;thing&#62;.
+
+
+
+
+<H3><A NAME="SEC67">7.1.1 Lexical structure</A></H3>
+
+<P>
+<A NAME="IDX578"></A>
+
+
+<P>
+This section describes how individual tokens (identifiers,
+<A NAME="IDX579"></A>
+numbers, etc.) are formed from sequences of characters.  The following
+sections describe how expressions and programs are formed from sequences
+of tokens.
+
+
+<P>
+&#60;Intertoken space&#62; may occur on either side of any token, but not
+within a token.
+
+
+<P>
+Tokens which require implicit termination (identifiers, numbers,
+characters, and dot) may be terminated by any &#60;delimiter&#62;, but not
+necessarily by anything else.
+
+
+
+<PRE>
+<TT>&#60;token&#62; --&#62; &#60;identifier&#62; | &#60;boolean&#62; | &#60;number&#62;
+<A NAME="IDX580"></A>     | &#60;character&#62; | &#60;string&#62;
+     | ( | ) | #( | <TT>'</TT> | <TT>`</TT> | , | ,@ | <B>.</B>
+&#60;delimiter&#62; --&#62; &#60;whitespace&#62; | ( | ) | " | ;
+&#60;whitespace&#62; --&#62; &#60;space or newline&#62;
+&#60;comment&#62; --&#62; ;  &#60;all subsequent characters up to a
+                 line break&#62;
+<A NAME="IDX581"></A>&#60;atmosphere&#62; --&#62; &#60;whitespace&#62; | &#60;comment&#62;
+&#60;intertoken space&#62; --&#62; &#60;atmosphere&#62;*</TT>
+
+</PRE>
+
+
+<PRE>
+<TT>&#60;identifier&#62; --&#62; &#60;initial&#62; &#60;subsequent&#62;*
+     | &#60;peculiar identifier&#62;
+&#60;initial&#62; --&#62; &#60;letter&#62; | &#60;special initial&#62;
+&#60;letter&#62; --&#62; a | b | c | ... | z
+&#60;special initial&#62; --&#62; ! | $ | % | &#38; | * | / | : | &#60; | =
+     | &#62; | ? | ~ | _ | ^
+&#60;subsequent&#62; --&#62; &#60;initial&#62; | &#60;digit&#62;
+     | &#60;special subsequent&#62;
+&#60;digit&#62; --&#62; 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+&#60;special subsequent&#62; --&#62; . | + | -
+&#60;peculiar identifier&#62; --&#62; + | - | ...
+&#60;syntactic keyword&#62; --&#62; &#60;expression keyword&#62;
+<A NAME="IDX582"></A><A NAME="IDX583"></A>     | else | =&#62; | define 
+     | unquote | unquote-splicing
+&#60;expression keyword&#62; --&#62; quote | lambda | if
+     | set! | begin | cond | and | or | case
+     | let | let* | letrec | do | delay
+     | quasiquote
+
+<SAMP>`&#60;variable&#62; => &#60;'</SAMP>any &#60;identifier&#62; that isn't
+<A NAME="IDX584"></A>                also a &#60;syntactic keyword&#62;&#62;
+
+&#60;boolean&#62; --&#62; #t | #f
+&#60;character&#62; --&#62; #\ &#60;any character&#62;
+     | #\ &#60;character name&#62;
+&#60;character name&#62; --&#62; space | newline
+
+&#60;string&#62; --&#62; " &#60;string element&#62;* "
+&#60;string element&#62; --&#62; &#60;any character other than " or \&#62;
+     | \" | \\ </TT>
+
+</PRE>
+
+
+<PRE>
+<TT>&#60;number&#62; --&#62; &#60;num 2&#62;| &#60;num 8&#62;
+     | &#60;num 10&#62;| &#60;num 16&#62;
+</TT>
+
+</PRE>
+
+<P>
+The following rules for &#60;num R&#62;, &#60;complex R&#62;, &#60;real
+R&#62;, &#60;ureal R&#62;, &#60;uinteger R&#62;, and &#60;prefix R&#62;
+should be replicated for R = 2, 8, 10,
+and 16.  There are no rules for &#60;decimal 2&#62;, &#60;decimal
+8&#62;, and &#60;decimal 16&#62;, which means that numbers containing
+decimal points or exponents must be in decimal radix.
+
+
+
+<PRE>
+<TT>&#60;num R&#62; --&#62; &#60;prefix R&#62; &#60;complex R&#62;
+&#60;complex R&#62; --&#62; &#60;real R&#62; | &#60;real R&#62; @ &#60;real R&#62;
+    | &#60;real R&#62; + &#60;ureal R&#62; i | &#60;real R&#62; - &#60;ureal R&#62; i
+    | &#60;real R&#62; + i | &#60;real R&#62; - i
+    | + &#60;ureal R&#62; i | - &#60;ureal R&#62; i | + i | - i
+&#60;real R&#62; --&#62; &#60;sign&#62; &#60;ureal R&#62;
+&#60;ureal R&#62; --&#62; &#60;uinteger R&#62;
+    | &#60;uinteger R&#62; / &#60;uinteger R&#62;
+    | &#60;decimal R&#62;
+&#60;decimal 10&#62; --&#62; &#60;uinteger 10&#62; &#60;suffix&#62;
+    | . &#60;digit 10&#62;+ #* &#60;suffix&#62;
+    | &#60;digit 10&#62;+ . &#60;digit 10&#62;* #* &#60;suffix&#62;
+    | &#60;digit 10&#62;+ #+ . #* &#60;suffix&#62;
+&#60;uinteger R&#62; --&#62; &#60;digit R&#62;+ #*
+&#60;prefix R&#62; --&#62; &#60;radix R&#62; &#60;exactness&#62;
+    | &#60;exactness&#62; &#60;radix R&#62;
+</TT>
+
+</PRE>
+
+
+<PRE>
+<TT>&#60;suffix&#62; --&#62; &#60;empty&#62; 
+    | &#60;exponent marker&#62; &#60;sign&#62; &#60;digit 10&#62;+
+&#60;exponent marker&#62; --&#62; e | s | f | d | l
+&#60;sign&#62; --&#62; &#60;empty&#62;  | + |  -
+&#60;exactness&#62; --&#62; &#60;empty&#62; | #i | #e
+<A NAME="IDX585"></A><A NAME="IDX586"></A>&#60;radix 2&#62; --&#62; #b
+<A NAME="IDX587"></A>&#60;radix 8&#62; --&#62; #o
+<A NAME="IDX588"></A>&#60;radix 10&#62; --&#62; &#60;empty&#62; | #d
+&#60;radix 16&#62; --&#62; #x
+<A NAME="IDX589"></A>&#60;digit 2&#62; --&#62; 0 | 1
+&#60;digit 8&#62; --&#62; 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+&#60;digit 10&#62; --&#62; &#60;digit&#62;
+&#60;digit 16&#62; --&#62; &#60;digit 10&#62; | a | b | c | d | e | f </TT>
+
+</PRE>
+
+
+
+<H3><A NAME="SEC68">7.1.2 External representations</A></H3>
+
+<P>
+<A NAME="IDX590"></A>
+
+
+<P>
+&#60;Datum&#62; is what the <CODE>read</CODE> procedure (section see section <A HREF="r4rs_8.html#SEC62">6.10.2 Input</A>)
+<A NAME="IDX591"></A>
+successfully parses.  Note that any string that parses as an
+&#60;expression&#62; will also parse as a &#60;datum&#62;.  
+
+
+
+<PRE>
+<TT>&#60;datum&#62; --&#62; &#60;simple datum&#62; | &#60;compound datum&#62;
+&#60;simple datum&#62; --&#62; &#60;boolean&#62; | &#60;number&#62;
+     | &#60;character&#62; | &#60;string&#62; |  &#60;symbol&#62;
+&#60;symbol&#62; --&#62; &#60;identifier&#62;
+&#60;compound datum&#62; --&#62; &#60;list&#62; | &#60;vector&#62;
+&#60;list&#62; --&#62; (&#60;datum&#62;*) | (&#60;datum&#62;+ . &#60;datum&#62;)
+       | &#60;abbreviation&#62;
+&#60;abbreviation&#62; --&#62; &#60;abbrev prefix&#62; &#60;datum&#62;
+&#60;abbrev prefix&#62; --&#62; ' | ` | , | ,@
+&#60;vector&#62; --&#62; #(&#60;datum&#62;*) </TT>
+
+</PRE>
+
+
+
+<H3><A NAME="SEC69">7.1.3 Expressions</A></H3>
+
+<P>
+<A NAME="IDX592"></A>
+
+
+
+<PRE>
+<TT>&#60;expression&#62; --&#62; &#60;variable&#62;
+     | &#60;literal&#62;
+     | &#60;procedure call&#62;
+     | &#60;lambda expression&#62;
+     | &#60;conditional&#62;
+     | &#60;assignment&#62;
+     | &#60;derived expression&#62;
+
+&#60;literal&#62; --&#62; &#60;quotation&#62; | &#60;self-evaluating&#62;
+&#60;self-evaluating&#62; --&#62; &#60;boolean&#62; | &#60;number&#62;
+     | &#60;character&#62; | &#60;string&#62;
+&#60;quotation&#62; --&#62; '&#60;datum&#62; | (quote &#60;datum&#62;)
+&#60;procedure call&#62; --&#62; (&#60;operator&#62; &#60;operand&#62;*)
+&#60;operator&#62; --&#62; &#60;expression&#62;
+&#60;operand&#62; --&#62; &#60;expression&#62;
+
+&#60;lambda expression&#62; --&#62; (lambda &#60;formals&#62; &#60;body&#62;)
+&#60;formals&#62; --&#62; (&#60;variable&#62;*) | &#60;variable&#62;
+     | (&#60;variable&#62;+ . &#60;variable&#62;)
+&#60;body&#62; --&#62; &#60;definition&#62;* &#60;sequence&#62;
+&#60;sequence&#62; --&#62; &#60;command&#62;* &#60;expression&#62;
+&#60;command&#62; --&#62; &#60;expression&#62;
+
+&#60;conditional&#62; --&#62; (if &#60;test&#62; &#60;consequent&#62; &#60;alternate&#62;)
+&#60;test&#62; --&#62; &#60;expression&#62;
+&#60;consequent&#62; --&#62; &#60;expression&#62;
+&#60;alternate&#62; --&#62; &#60;expression&#62; | &#60;empty&#62;
+
+&#60;assignment&#62; --&#62; (set! &#60;variable&#62; &#60;expression&#62;)
+
+&#60;derived expression&#62; --&#62;
+       (cond &#60;cond clause&#62;+)
+     | (cond &#60;cond clause&#62;* (else &#60;sequence&#62;))
+     | (case &#60;expression&#62;
+         &#60;case clause&#62;+)
+     | (case &#60;expression&#62;
+         &#60;case clause&#62;*
+         (else &#60;sequence&#62;))
+     | (and &#60;test&#62;*)
+     | (or &#60;test&#62;*)
+     | (let (&#60;binding spec&#62;*) &#60;body&#62;)
+     | (let &#60;variable&#62; (&#60;binding spec&#62;*) &#60;body&#62;)
+     | (let* (&#60;binding spec&#62;*) &#60;body&#62;)
+     | (letrec (&#60;binding spec&#62;*) &#60;body&#62;)
+     | (begin &#60;sequence&#62;)
+     | (do (&#60;iteration spec&#62;*)
+           (&#60;test&#62; &#60;sequence&#62;)
+         &#60;command&#62;*)
+     | (delay &#60;expression&#62;)
+     | &#60;quasiquotation&#62;
+
+&#60;cond clause&#62; --&#62; (&#60;test&#62; &#60;sequence&#62;)
+      | (&#60;test&#62;)
+      | (&#60;test&#62; =&#62; &#60;recipient&#62;)
+&#60;recipient&#62; --&#62; &#60;expression&#62;
+&#60;case clause&#62; --&#62; ((&#60;datum&#62;*) &#60;sequence&#62;)
+
+&#60;binding spec&#62; --&#62; (&#60;variable&#62; &#60;expression&#62;)
+&#60;iteration spec&#62; --&#62; (&#60;variable&#62; &#60;init&#62; &#60;step&#62;)
+    | (&#60;variable&#62; &#60;init&#62;)
+&#60;init&#62; --&#62; &#60;expression&#62;
+&#60;step&#62; --&#62; &#60;expression&#62; </TT>
+
+</PRE>
+
+
+
+<H3><A NAME="SEC70">7.1.4 Quasiquotations</A></H3>
+
+<P>
+<A NAME="IDX593"></A>
+
+
+<P>
+The following grammar for quasiquote expressions is not context-free.
+It is presented as a recipe for generating an infinite number of
+production rules.  Imagine a copy of the following rules for D = 1, 2,3, ....  D keeps track of the nesting depth.
+
+
+
+<PRE>
+<TT>&#60;quasiquotation&#62; --&#62; &#60;quasiquotation 1&#62;
+&#60;template 0&#62; --&#62; &#60;expression&#62;
+&#60;quasiquotation D&#62; --&#62; `&#60;template D&#62;
+       | (quasiquote &#60;template D&#62;)
+&#60;template D&#62; --&#62; &#60;simple datum&#62;
+       | &#60;list template D&#62;
+       | &#60;vector template D&#62;
+       | &#60;unquotation D&#62;
+&#60;list template D&#62; --&#62; (&#60;template or splice D&#62;*)
+       | (&#60;template or splice D&#62;+ . &#60;template D&#62;)
+       | '&#60;template D&#62;
+       | &#60;quasiquotation D+1&#62;
+&#60;vector template D&#62; --&#62; #(&#60;template or splice D&#62;*)
+&#60;unquotation D&#62; --&#62; ,&#60;template D-1&#62;
+       | (unquote &#60;template D-1&#62;)
+&#60;template or splice D&#62; --&#62; &#60;template D&#62;
+       | &#60;splicing unquotation D&#62;
+&#60;splicing unquotation D&#62; --&#62; ,@&#60;template D-1&#62;
+       | (unquote-splicing &#60;template D-1&#62;) </TT>
+
+</PRE>
+
+<P>
+In &#60;quasiquotation&#62;s, a &#60;list template D&#62; can sometimes
+be confused with either an &#60;unquotation D&#62; or a &#60;splicing
+unquotation D&#62;.  The interpretation as an
+&#60;unquotation&#62; or &#60;splicing
+unquotation D&#62; takes precedence.
+
+
+
+
+<H3><A NAME="SEC71">7.1.5 Programs and definitions</A></H3>
+
+<P>
+<A NAME="IDX594"></A>
+
+
+
+<PRE>
+<TT>&#60;program&#62; --&#62; &#60;command or definition&#62;*
+&#60;command or definition&#62; --&#62; &#60;command&#62; | &#60;definition&#62;
+&#60;definition&#62; --&#62; (define &#60;variable&#62; &#60;expression&#62;)
+      | (define (&#60;variable&#62; &#60;def formals&#62;) &#60;body&#62;)
+      | (begin &#60;definition&#62;*)
+&#60;def formals&#62; --&#62; &#60;variable&#62;*
+      | &#60;variable&#62;+ . &#60;variable&#62; </TT>
+
+</PRE>
+
+<P>
+       
+
+
+<H2><A NAME="SEC72">7.2 Formal semantics</A></H2>
+
+<P>
+<A NAME="IDX595"></A>
+
+
+<P>
+This section provides a formal denotational semantics for the primitive
+expressions of Scheme and selected built-in procedures.  The concepts
+and notation used here are described in [STOY77].
+
+
+
+<BLOCKQUOTE>
+<P>
+<EM>Note:</EM> The formal semantics section was written in LaTeX which
+is incompatible with TeXinfo.  See the Formal semantics section: 
+<A HREF="http://swissnet.ai.mit.edu/~jaffer/r4rs-formal.pdf">http://swissnet.ai.mit.edu/~jaffer/r4rs-formal.pdf</A>
+</BLOCKQUOTE>
+
+<P>
+        
+
+
+<H2><A NAME="SEC73">7.3 Derived expression types</A></H2>
+
+<P>
+<A NAME="IDX596"></A>
+
+
+<P>
+This section gives rewrite rules for the derived expression types.  By
+the application of these rules, any expression can be reduced to a
+semantically equivalent expression in which only the primitive
+expression types (literal, variable, call, <CODE>lambda</CODE>, <CODE>if</CODE>,
+<A NAME="IDX597"></A>
+<A NAME="IDX598"></A>
+<CODE>set!</CODE>) occur.
+<A NAME="IDX599"></A>
+
+
+
+<PRE>
+
+(cond (&#60;test&#62; &#60;sequence&#62;)
+      &#60;clause2&#62; ...)
+ ==   (if &#60;test&#62;
+          (begin &#60;sequence&#62;)
+          (cond &#60;clause2&#62; ...))
+
+(cond (&#60;test&#62;)
+      &#60;clause2&#62; ...)
+ ==   (or &#60;test&#62; (cond &#60;clause2&#62; ...))
+
+(cond (&#60;test&#62; =&#62; &#60;recipient&#62;)
+      &#60;clause2&#62; ...)
+ ==   (let ((test-result &#60;test&#62;)
+            (thunk2 (lambda () &#60;recipient&#62;))
+            (thunk3 (lambda () (cond &#60;clause2&#62; ...))))
+        (if test-result
+            ((thunk2) test-result)
+            (thunk3)))
+
+(cond (else &#60;sequence&#62;))
+ ==   (begin &#60;sequence&#62;)
+
+(cond)
+ ==   &#60;some expression returning an unspecified value&#62;
+
+(case &#60;key&#62; 
+  ((d1 ...) &#60;sequence&#62;)
+  ...)
+ ==   (let ((key &#60;key&#62;)
+            (thunk1 (lambda () &#60;sequence&#62;))
+            ...)
+        (cond ((&#60;memv&#62; key '(d1 ...)) (thunk1))
+               ...))
+
+(case &#60;key&#62; 
+  ((d1 ...) &#60;sequence&#62;)
+  ...
+  (else f1 f2 ...))
+ ==   (let ((key &#60;key&#62;)
+            (thunk1 (lambda () &#60;sequence&#62;))
+            ...
+            (elsethunk (lambda () f1 f2 ...)))
+        (cond ((&#60;memv&#62; key '(d1 ...)) (thunk1))
+               ...
+              (else (elsethunk))))
+
+</PRE>
+
+<P>
+where &#60;memv&#62; is an expression evaluating to the <CODE>memv</CODE> procedure.
+<A NAME="IDX600"></A>
+
+
+
+<PRE>
+
+(and)          ==   #t
+(and &#60;test&#62;)   ==   &#60;test&#62;
+(and &#60;test1&#62; &#60;test2&#62; ...)
+ ==   (let ((x &#60;test1&#62;)
+            (thunk (lambda () (and &#60;test2&#62; ...))))
+        (if x (thunk) x))
+
+(or)           ==   #f
+(or &#60;test&#62;)    ==   &#60;test&#62;
+(or &#60;test1&#62; &#60;test2&#62; ...)
+ ==   (let ((x &#60;test1&#62;)
+            (thunk (lambda () (or &#60;test2&#62; ...))))
+        (if x x (thunk)))
+
+(let ((&#60;variable1&#62; &#60;init1&#62;) ...)
+  &#60;body&#62;)
+ ==   ((lambda (&#60;variable1&#62; ...) &#60;body&#62;) &#60;init1&#62; ...)
+
+(let* () &#60;body&#62;)
+ ==   ((lambda () &#60;body&#62;))
+(let* ((&#60;variable1&#62; &#60;init1&#62;)
+       (&#60;variable2&#62; &#60;init2&#62;)
+       ...)
+  &#60;body&#62;)
+ ==   (let ((&#60;variable1&#62; &#60;init1&#62;)) 
+        (let* ((&#60;variable2&#62; &#60;init2&#62;)
+               ...)
+          &#60;body&#62;))
+
+(letrec ((&#60;variable1&#62; &#60;init1&#62;)
+         ...)
+  &#60;body&#62;)
+ ==   (let ((&#60;variable1&#62; &#60;undefined&#62;)
+            ...)
+         (let ((&#60;temp1&#62; &#60;init1&#62;)
+               ...)
+           (set! &#60;variable1&#62; &#60;temp1&#62;)
+           ...)
+         &#60;body&#62;)
+
+</PRE>
+
+<P>
+where &#60;temp1&#62;, &#60;temp2&#62;, ... are variables, distinct
+from &#60;variable1&#62;, ..., that do not free occur in the
+original &#60;init&#62; expressions, and &#60;undefined&#62; is an expression
+which returns something that when stored in a location makes it an
+error to try to obtain the value stored in the location.  (No such
+expression is defined, but one is assumed to exist for the purposes of this
+rewrite rule.)  The second <CODE>let</CODE> expression in the expansion is not
+<A NAME="IDX601"></A>
+strictly necessary, but it serves to preserve the property that the
+&#60;init&#62; expressions are evaluated in an arbitrary order.
+
+
+
+<PRE>
+
+(begin &#60;sequence&#62;)
+ ==   ((lambda () &#60;sequence&#62;))
+
+</PRE>
+
+<P>
+The following alternative expansion for <CODE>begin</CODE> does not make use of
+<A NAME="IDX602"></A>
+the ability to write more than one expression in the body of a lambda
+expression.  In any case, note that these rules apply only if
+&#60;sequence&#62; contains no definitions.
+
+
+
+<PRE>
+
+(begin &#60;expression&#62;) ==   &#60;expression&#62;
+(begin &#60;command&#62; &#60;sequence&#62;)
+ ==   ((lambda (ignore thunk) (thunk))
+       &#60;command&#62;
+       (lambda () (begin &#60;sequence&#62;)))
+
+</PRE>
+
+<P>
+The following expansion for <CODE>do</CODE> is simplified by the assumption
+<A NAME="IDX603"></A>
+that no &#60;step&#62; is omitted.  Any <CODE>do</CODE> expression in which a
+&#60;step&#62; is omitted can be replaced by an equivalent <CODE>do</CODE>
+expression in which the corresponding &#60;variable&#62; appears as
+the &#60;step&#62;. 
+
+
+
+<PRE>
+
+(do ((&#60;variable1&#62; &#60;init1&#62; &#60;step1&#62;) 
+     ...)
+    (&#60;test&#62; &#60;sequence&#62;)
+  &#60;command1&#62; ...)
+ ==   (letrec ((&#60;loop&#62;
+                (lambda (&#60;variable1&#62; ...)
+                  (if &#60;test&#62;
+                      (begin &#60;sequence&#62;)
+                      (begin &#60;command1&#62;
+                             ...
+                             (&#60;loop&#62; &#60;step1&#62; ...))))))
+        (&#60;loop&#62; &#60;init1&#62; ...))
+
+</PRE>
+
+<P>
+where &#60;loop&#62; is any variable which is distinct from
+&#60;variable1&#62;, ..., and which does not occur free in the <CODE>do</CODE>
+expression.
+
+
+
+<PRE>
+
+(let &#60;variable_0&#62; ((&#60;variable1&#62; &#60;init1&#62;) ...)
+  &#60;body&#62;)
+ ==   ((letrec ((&#60;variable_0&#62; (lambda (&#60;variable1&#62; ...)
+                             &#60;body&#62;)))
+          &#60;variable_0&#62;)
+       &#60;init1&#62; ...)
+
+(delay &#60;expression&#62;)
+ ==   (&#60;make-promise&#62; (lambda () &#60;expression&#62;))
+
+</PRE>
+
+<P>
+where &#60;make-promise&#62; is an expression evaluating to some procedure
+which behaves appropriately with respect to the <CODE>force</CODE> procedure;
+<A NAME="IDX604"></A>
+see section <A HREF="r4rs_8.html#SEC59">6.9 Control features</A>.
+
+
+<P>
+         
+<P></P><HR>
+ [<A HREF="r4rs_toc.html">Contents</A>] &#160; [<A HREF="r4rs_8.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r4rs_10.html">Forward</A>] &#160;
+
+</BODY>
+</HTML>

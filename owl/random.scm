@@ -185,6 +185,7 @@
                (λ () (rands->bytes rs)))))
 
       ;; eww, don't try this at home. to be fixed pretty soon. passed dieharder tests pretty well though.
+      (define o (λ (f g) (λ (x) (f (g x)))))
       (define seed->rands adhoc-seed->rands)
 
       (define seed->bits 

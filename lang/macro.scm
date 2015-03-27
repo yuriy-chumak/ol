@@ -168,6 +168,7 @@
       ;; rewrite should be done. owl uses minimum repetition of length more than one, so that 
       ;; single matches can be used along with ellipsis matches.
 
+      (define o (λ (f g) (λ (x) (f (g x)))))
       (define (repetition-length dict)
          (let loop ((opts (sort < (map (o length cdr) dict))) (best 0))
             (cond

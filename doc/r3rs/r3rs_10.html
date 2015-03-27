@@ -1,0 +1,223 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.57 from /home/jaffer/scheme/r3rs.txi on December, 22  2007 -->
+
+<TITLE>Revised(3) Scheme - Notes</TITLE>
+</HEAD>
+<BODY >
+ [<A HREF="r3rs_toc.html">Contents</A>] &#160; [<A HREF="r3rs_9.html">Back</A>] &#160; [<A HREF="r3rs_9.html">Prev</A>] &#160; [<A>Up</A>] &#160; [<A HREF="r3rs_11.html">Next</A>] &#160; [<A HREF="r3rs_11.html">Forward</A>] &#160;<BR><HR><BR>
+
+
+<H1><A NAME="SEC72">Notes</A></H1>
+
+<P>
+<A NAME="IDX577"></A>
+
+
+
+
+<H2><A NAME="SEC73">Language changes</A></H2>
+
+<P>
+<A NAME="IDX578"></A>
+
+
+<P>
+This section enumerates the changes that have been made to Scheme since
+the "Revised revised report" <A HREF="r3rs_12.html#BIB4">[RRRS]</A> was published.
+
+
+
+<UL>
+
+<LI>
+
+The character <TT>^</TT> (circumflex) is now an extended
+alphabetic character
+
+<LI>
+
+The objects returned by literal expressions are permitted to be
+immutable
+
+<LI>
+
+The list to which a rest-argument becomes bound must be newly allocated
+
+<LI>
+
+<CODE>Do</CODE> variables are updated by rebinding rather than by
+assignment
+
+<LI>
+
+New expression type: <CODE>delay</CODE>
+
+<LI>
+
+Quasiquote (backquote) has been improved in several ways:
+vectors are allowed; nesting is allowed; and an external syntax for
+quasiquote expressions (analogous to that for <CODE>quote</CODE>) has been
+defined
+
+<LI>
+
+The semantics of definitions of the form
+<TT>(define (&#60;variable&#62; &#60;formals&#62;) &#60;body&#62;)</TT>
+no longer involves an implicit <TT>rec</TT> or <TT>letrec</TT>
+
+<LI>
+
+The "curried" definition syntax has been removed
+
+<LI>
+
+The boolean constants are now written <TT>#t</TT> and <TT>#f</TT>
+instead of <TT>#!true</TT> and <TT>#!false</TT>
+
+<LI>
+
+The syntax <TT>#!null</TT> (for the empty list) has
+been removed
+
+<LI>
+
+New procedures: <CODE>boolean?</CODE>, <CODE>procedure?</CODE>, and <CODE>force</CODE>
+
+<LI>
+
+The value of <CODE>eq?</CODE> on numbers and characters is now unspecified
+
+<LI>
+
+<CODE>Eq?</CODE> and <CODE>eqv?</CODE> now explicitly permit operationally equivalent
+procedures to be identified
+
+<LI>
+
+<CODE>Eqv?</CODE> distinguishes exact numbers from inexact ones, even if they
+are equal according to <CODE>=</CODE>
+
+<LI>
+
+List, string, and vector indexes must be <EM>exact</EM> integers
+
+<LI>
+
+<CODE>Atan</CODE> now admits either one or two arguments
+
+<LI>
+
+Expression types removed: <TT>named-lambda</TT>, <TT>rec</TT>, <TT>sequence</TT>
+
+<LI>
+
+Procedures removed: <TT>append!</TT>, <TT>string-null?</TT>, <TT>substring-fill!</TT>, <TT>substring-move-left!</TT>, <TT>substring-move-right!</TT>, <TT>object-hash</TT>, <TT>object-unhash</TT>, <TT>1+</TT>, <TT>-1+</TT>
+
+<LI>
+
+Redundant procedure names removed: <TT>&#60;?</TT>, <TT>&#60;=?</TT>, <TT>=?</TT>,
+<TT>&#62;?</TT>, and <TT>&#62;=?</TT>
+
+</UL>
+
+<P>
+<A NAME="IDX579"></A>
+<A NAME="IDX580"></A>
+<A NAME="IDX581"></A>
+<A NAME="IDX582"></A>
+<A NAME="IDX583"></A>
+<A NAME="IDX584"></A>
+<A NAME="IDX585"></A>
+<A NAME="IDX586"></A>
+<A NAME="IDX587"></A>
+<A NAME="IDX588"></A>
+<A NAME="IDX589"></A>
+<A NAME="IDX590"></A>
+<A NAME="IDX591"></A>
+
+
+
+
+<H2><A NAME="SEC74">Keywords as variable names</A></H2>
+
+<P>
+<A NAME="IDX592"></A>
+
+
+<P>
+Some implementations allow arbitrary syntactic
+keywords to be used as variable
+<A NAME="IDX593"></A>
+<A NAME="IDX594"></A>
+names, instead of reserving them, as this report would have
+it. But this creates ambiguities in the interpretation
+<A NAME="IDX595"></A>
+of expressions: for example, in the following, it's not clear whether
+the expression <TT>(if 1 2 3)</TT> should be treated as a procedure call or
+as a conditional.
+
+
+
+<PRE>
+
+(define if list)
+(if 1 2 3)                             ==&#62;  2 <EM></EM>or (1 2 3)
+
+</PRE>
+
+<P>
+These ambiguities are usually resolved in some consistent way within any
+given implementation, but no particular treatment stands out as being
+clearly superior to any other, so these situations were excluded for the
+purposes of this report.
+
+
+
+
+<H2><A NAME="SEC75">Macros</A></H2>
+
+<P>
+<A NAME="IDX596"></A>
+
+
+<P>
+Scheme does not have any standard facility for defining new kinds of
+expressions.
+
+
+<P>
+The ability to alter the syntax of the language creates
+numerous problems.  All current implementations of Scheme have macro
+facilities that solve those problems to one degree or another, but the
+solutions are quite different and it isn't clear at this time which
+solution is best, or indeed whether any of the solutions are truly
+adequate.  Rather than standardize, we are encouraging implementations
+to continue to experiment with different solutions.
+
+
+<P>
+The main problems with traditional macros are: They must be
+defined to the system before any code using them is loaded; this is a
+common source of obscure bugs.  They are usually global; macros can be
+made to follow lexical scope rules 
+, but many people find the resulting scope rules
+confusing.  Unless they are written very carefully, macros are
+vulnerable to inadvertant capture of free variables; to get around this,
+for example, macros may have to generate code in which procedure values
+appear as quoted constants.  There is a similar problem with syntactic
+keywords if the keywords of special forms are not reserved.  If keywords
+are reserved, then either macros introduce new reserved words,
+invalidating old code, or else special forms defined by the programmer
+do not have the same status as special forms defined by the system.
+
+
+<P>
+         
+
+
+<P></P><HR>
+ [<A HREF="r3rs_toc.html">Contents</A>] &#160; [<A HREF="r3rs_9.html">Back</A>] &#160; [<A HREF="r3rs_9.html">Prev</A>] &#160; [<A>Up</A>] &#160; [<A HREF="r3rs_11.html">Next</A>] &#160; [<A HREF="r3rs_11.html">Forward</A>] &#160;
+
+</BODY>
+</HTML>

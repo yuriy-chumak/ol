@@ -54,6 +54,7 @@
       (owl ff))
 
    (begin
+      (define o (λ (f g) (λ (x) (f (g x)))))
 
       ;; check how many fixnum bits the vm supports with fx<<
       ;; idea is to allow the vm to be compiled with different ranges, initially fixed to 24

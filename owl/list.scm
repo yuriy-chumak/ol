@@ -46,6 +46,7 @@
       (owl boolean))
 
    (begin
+      (define o (λ (f g) (λ (x) (f (g x))))) ; wtf???
 
       ;; constants are always inlined, so you pay just one byte of source for readability
 

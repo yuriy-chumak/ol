@@ -1,0 +1,1204 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.57 from /home/jaffer/scheme/r4rs.txi on December, 22  2007 -->
+
+<TITLE>Revised(4) Scheme - Appendix: Macros</TITLE>
+</HEAD>
+<BODY >
+ [<A HREF="r4rs_toc.html">Contents</A>] &#160; [<A HREF="r4rs_11.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r4rs_13.html">Forward</A>] &#160;<BR><HR><BR>
+
+
+<H1><A NAME="SEC77">Appendix: Macros</A></H1>
+
+<P>
+<A NAME="IDX655"></A>
+
+
+<P>
+This appendix describes an extension to Scheme that allows programs
+to define and use new derived expression types.
+A derived expression type that has been defined using this extension
+is called a <EM>macro</EM>.
+<A NAME="IDX656"></A>
+
+
+<P>
+Derived expression types introduced using this extension have
+the syntax
+
+
+
+<PRE>
+
+(&#60;keyword&#62; &#60;datum&#62;*)
+
+</PRE>
+
+<P>
+where &#60;keyword&#62; is an identifier that uniquely determines the
+expression type.  This identifier is called the <EM>syntactic
+keyword</EM>, or simply <EM>keyword</EM>, of the macro.  The
+<A NAME="IDX657"></A>
+<A NAME="IDX658"></A>
+<A NAME="IDX659"></A>
+number of the &#60;datum&#62;s, and their syntax, depends on the
+expression type.
+
+
+<P>
+Each instance of a macro is called a <EM>use</EM>
+<A NAME="IDX660"></A>
+of the macro.
+The set of rules, or more generally the procedure, that specifies
+how a use of a macro is transcribed into a more primitive expression
+is called the <EM>transformer</EM>
+<A NAME="IDX661"></A>
+of the macro.
+
+
+<P>
+The extension described here consists of three parts:
+
+
+
+<UL>
+
+<LI>
+
+A set of expressions used to establish that certain identifiers
+are macro keywords, associate them with macro transformers, and control
+the scope within which a macro is defined,
+
+<LI>
+
+a convenient pattern language that makes it easy to write
+transformers for most macros, and
+
+<LI>
+
+a compatible low-level macro facility for writing macro
+transformers that cannot be expressed by the pattern language.
+
+</UL>
+
+<P>
+With this extension, there are no reserved identifiers.  The syntactic
+keyword of a macro may shadow variable bindings, and local variable
+bindings may shadow keyword bindings.   All macros
+defined using the pattern language are "hygienic" and
+"referentially transparent":
+<A NAME="IDX662"></A>
+
+
+<P>
+<A NAME="IDX663"></A>
+
+
+
+<UL>
+
+<LI>
+
+If a macro transformer inserts a binding for an identifier
+(variable or keyword), the identifier will in effect be renamed
+throughout its scope to avoid conflicts with other identifiers.
+
+<LI>
+
+If a macro transformer inserts a free reference to an
+identifier, the reference refers to the binding that was visible
+where the transformer was specified, regardless of any local
+bindings that may surround the use of the macro.
+
+</UL>
+
+<P>
+This appendix is divided into three major sections.  The first
+section describes the expressions and definitions used to
+introduce macros, i.e. to bind identifiers to macro
+transformers.
+
+
+<P>
+The second section describes the pattern language.  This pattern
+language is sufficient to specify most macro transformers, including
+those for all the derived expression types from
+section <A HREF="r4rs_6.html#SEC32">4.2 Derived expression types</A>.  The primary limitation of the pattern
+language is that it is thoroughly hygienic, and thus cannot express
+macros that bind identifiers implicitly.
+
+
+<P>
+The third section describes a low-level macro facility that could be
+used to implement the pattern language described in the second
+section.  This low-level facility is also capable of expressing
+non-hygienic macros and other macros whose transformers cannot be
+described by the pattern language, and is important as an example of a
+more powerful facility that can co-exist with the high-level pattern
+language.
+
+
+<P>
+The particular low-level facility described in the third
+section is but one of several low-level facilities that have been
+designed and implemented to complement the pattern language described
+in the second section.  The design of such low-level macro facilities
+remains an active area of research, and descriptions of alternative
+low-level facilities will be published in subsequent documents.
+
+
+
+
+<H2><A NAME="SEC78">Binding syntactic keywords</A></H2>
+
+<P>
+<A NAME="IDX664"></A>
+
+
+<P>
+<SAMP>`Define-syntax'</SAMP>, <SAMP>`let-syntax'</SAMP>, and <SAMP>`letrec-syntax'</SAMP> are
+analogous to <SAMP>`define'</SAMP>, <SAMP>`let'</SAMP>, and <SAMP>`letrec'</SAMP>, but they bind
+syntactic keywords to macro transformers instead of binding variables
+to locations that contain values.  Furthermore, there is no <SAMP>`define-syntax'</SAMP> analogue of the internal definitions described in
+section <A HREF="r4rs_7.html#SEC43">5.2.2 Internal definitions</A>.
+
+
+
+<BLOCKQUOTE>
+<P>
+<EM>Rationale:</EM>
+As discussed below, the syntax and scope rules for definitions
+give rise to syntactic ambiguities when syntactic keywords are
+not reserved.
+Further ambiguities would arise if <SAMP>`define-syntax'</SAMP>
+were permitted at the beginning of a &#60;body&#62;, with scope
+rules analogous to those for internal definitions.
+</BLOCKQUOTE>
+
+<P>
+These new expression types and the pattern language described in
+section <A HREF="r4rs_12.html#SEC79">Pattern language</A> are added to Scheme by augmenting the
+BNF in section <A HREF="r4rs_9.html#SEC66">7.1 Formal syntax</A> with the following new productions.  Note
+that the identifier <SAMP>`...'</SAMP> used in some of these productions is not
+a metasymbol.
+
+
+
+<PRE>
+<TT>&#60;expression&#62; --&#62; &#60;macro use&#62;
+     | &#60;macro block&#62;
+
+&#60;macro use&#62; --&#62; (&#60;keyword&#62; &#60;datum&#62;*)
+&#60;keyword&#62; --&#62; &#60;identifier&#62;
+
+&#60;macro block&#62; --&#62;
+       (let-syntax (&#60;syntax spec&#62;*) &#60;body&#62;)
+     | (letrec-syntax (&#60;syntax spec&#62;*) &#60;body&#62;)
+&#60;syntax spec&#62; --&#62; (&#60;keyword&#62; &#60;transformer spec&#62;)
+&#60;transformer spec&#62; --&#62;
+       (syntax-rules (&#60;identifier&#62;*) &#60;syntax rule&#62;*)
+&#60;syntax rule&#62; --&#62; (&#60;pattern&#62; &#60;template&#62;)
+&#60;pattern&#62; --&#62; &#60;pattern identifier&#62;
+     | (&#60;pattern&#62;*)
+     | (&#60;pattern&#62;+ . &#60;pattern&#62;)
+     | (&#60;pattern&#62;* &#60;pattern&#62; &#60;ellipsis&#62;)
+     | &#60;pattern datum&#62;
+&#60;pattern datum&#62; --&#62; &#60;vector&#62;
+     | &#60;string&#62;
+     | &#60;character&#62;
+     | &#60;boolean&#62;
+     | &#60;number&#62;
+&#60;template&#62; --&#62; &#60;pattern identifier&#62;
+     | (&#60;template element&#62;*)
+     | (&#60;template element&#62;+ . &#60;template&#62;)
+     | &#60;template datum&#62;
+&#60;template element&#62; --&#62; &#60;template&#62;
+     | &#60;template&#62; &#60;ellipsis&#62;
+&#60;template datum&#62; --&#62; &#60;pattern datum&#62;
+&#60;pattern identifier&#62; --&#62; &#60;any identifier except <SAMP>`...'</SAMP>&#62;
+&#60;ellipsis&#62; --&#62; &#60;the identifier <SAMP>`...'</SAMP>&#62;
+
+&#60;command or definition&#62; --&#62; &#60;syntax definition&#62;
+&#60;syntax definition&#62; --&#62;
+       (define-syntax &#60;keyword&#62; &#60;transformer spec&#62;)
+     | (begin &#60;syntax definition&#62;*)</TT>
+
+</PRE>
+
+<P>
+Although macros may expand into definitions in any context that permits
+definitions, it is an error for a definition to shadow a syntactic
+keyword whose meaning is needed to determine whether some definition in
+the group of top-level or internal definitions that contains the
+shadowing definition is in fact a definition, or is needed to determine
+the boundary between the group and the expressions that follow the
+group.  For example, the following are errors:
+
+
+
+<PRE>
+
+(define define 3)
+
+(begin (define begin list))
+
+(let-syntax
+  ((foo (syntax-rules ()
+          ((foo (proc args ...) body ...)
+           (define proc
+             (lambda (args ...)
+               body ...))))))
+  (let ((x 3))
+    (foo (plus x y) (+ x y))
+    (define foo x)
+    (plus foo x)))
+
+</PRE>
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>let-syntax</B> <I>&#60;bindings&#62; &#60;body&#62;</I>
+<DD><A NAME="IDX665"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+&#60;Bindings&#62; should have the form
+
+
+
+<PRE>
+<TT>((&#60;keyword&#62; &#60;transformer spec&#62;) ...)
+</TT>
+</PRE>
+
+<P>
+Each &#60;keyword&#62; is an identifier,
+each &#60;transformer spec&#62; is an instance of <SAMP>`syntax-rules'</SAMP>, and
+&#60;body&#62; should be a sequence of one or more expressions.  It is an error
+for a &#60;keyword&#62; to appear more than once in the list of keywords
+being bound.
+
+
+<P>
+<EM>Semantics:</EM>
+The &#60;body&#62; is expanded in the syntactic environment
+obtained by extending the syntactic environment of the
+<SAMP>`let-syntax'</SAMP> expression with macros whose keywords are
+the &#60;keyword&#62;s, bound to the specified transformers.
+Each binding of a &#60;keyword&#62; has &#60;body&#62; as its region.
+
+
+
+<PRE>
+<TT>(let-syntax ((when (syntax-rules ()
+                     ((when test stmt1 stmt2 ...)
+                      (if test
+                          (begin stmt1
+                                 stmt2 ...))))))
+  (let ((if #t))
+    (when if (set! if 'now))
+    if))                               ==&#62;  now
+
+(let ((x 'outer))
+  (let-syntax ((m (syntax-rules () ((m) x))))
+    (let ((x 'inner))
+      (m))))                           ==&#62;  outer
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>letrec-syntax</B> <I>&#60;bindings&#62; &#60;body&#62;</I>
+<DD><A NAME="IDX666"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+Same as for <SAMP>`let-syntax'</SAMP>.
+
+
+<P>
+<EM>Semantics:</EM>
+ The &#60;body&#62; is expanded in the syntactic environment obtained by
+extending the syntactic environment of the <SAMP>`letrec-syntax'</SAMP>
+expression with macros whose keywords are the
+&#60;keyword&#62;s, bound to the specified transformers.
+Each binding of a &#60;keyword&#62; has the &#60;bindings&#62;
+as well as the &#60;body&#62; within its region,
+so the transformers can
+transcribe expressions into uses of the macros
+introduced by the <SAMP>`letrec-syntax'</SAMP> expression.
+
+
+
+<PRE>
+<TT>(letrec-syntax
+  ((or (syntax-rules ()
+         ((or) #f)
+         ((or e) e)
+         ((or e1 e2 ...)
+          (let ((temp e1))
+            (if temp
+                temp
+                (or e2 ...)))))))
+  (let ((x #f)
+        (y 7)
+        (temp 8)
+        (let odd?)
+        (if even?))
+    (or x
+        (let temp)
+        (if y)
+        y)))                           ==&#62;  7
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>define-syntax</B> <I>&#60;keyword&#62; &#60;transformer spec&#62;</I>
+<DD><A NAME="IDX667"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+The &#60;keyword&#62; is an identifier, and the &#60;transformer
+spec&#62; should be an instance of <SAMP>`syntax-rules'</SAMP>.
+
+
+<P>
+<EM>Semantics:</EM>
+The top-level syntactic environment is extended by binding the
+&#60;keyword&#62; to the specified transformer.
+
+
+
+<PRE>
+<TT>(define-syntax let*
+  (syntax-rules ()
+    ((let* () body1 body2 ...)
+     (let () body1 body2 ...))
+    ((let* ((name1 val1) (name2 val2) ...)
+       body1 body2 ...)
+     (let ((name1 val1))
+       (let* ((name2 val2) ...)
+         body1 body2 ...)))))
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H2><A NAME="SEC79">Pattern language</A></H2>
+
+<P>
+<A NAME="IDX668"></A>
+
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>syntax-rules</B> <I>&#60;literals&#62; &#60;syntax rule&#62; ...</I>
+<DD><A NAME="IDX669"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+&#60;Literals&#62; is a list of identifiers, and each &#60;syntax rule&#62;
+should be of the form
+
+
+
+<PRE>
+<TT>(&#60;pattern&#62; &#60;template&#62;)
+</TT>
+</PRE>
+
+<P>
+where the &#60;pattern&#62; and &#60;template&#62; are as in the grammar
+above.
+
+
+<P>
+<EM>Semantics:</EM> An instance of <SAMP>`syntax-rules'</SAMP> produces a new macro
+transformer by specifying a sequence of hygienic rewrite rules.  A use
+of a macro whose keyword is associated with a transformer specified by
+<SAMP>`syntax-rules'</SAMP> is matched against the patterns contained in the
+&#60;syntax rule&#62;s, beginning with the leftmost &#60;syntax rule&#62;.
+When a match is found, the macro use is transcribed hygienically
+according to the template.
+
+
+<P>
+Each pattern begins with the keyword for the macro.  This keyword
+is not involved in the matching and is not considered a pattern
+variable or literal identifier.
+
+
+
+<BLOCKQUOTE>
+<P>
+<EM>Rationale:</EM>
+The scope of the keyword is determined by the expression or syntax
+definition that binds it to the associated macro transformer.
+If the keyword were a pattern variable or literal identifier, then
+the template that follows the pattern would be within its scope
+regardless of whether the keyword were bound by <SAMP>`let-syntax'</SAMP>
+or by <SAMP>`letrec-syntax'</SAMP>.
+</BLOCKQUOTE>
+
+<P>
+An identifier that appears in the pattern of a &#60;syntax rule&#62; is
+a pattern variable, unless it is the keyword that begins the pattern,
+is listed in &#60;literals&#62;, or is the identifier "<SAMP>`...'</SAMP>".
+Pattern variables match arbitrary input elements and
+are used to refer to elements of the input in the template.  It is an
+error for the same pattern variable to appear more than once in a
+&#60;pattern&#62;.
+
+
+<P>
+Identifiers that appear in &#60;literals&#62; are interpreted as literal
+identifiers to be matched against corresponding subforms of the input.
+A subform
+in the input matches a literal identifier if and only if it is an
+identifier
+and either both its occurrence in the macro expression and its
+occurrence in the macro definition have the same lexical binding, or
+the two identifiers are equal and both have no lexical binding.
+
+
+<P>
+A subpattern followed by <SAMP>`...'</SAMP> can match zero or more elements of the
+input.  It is an error for <SAMP>`...'</SAMP> to appear in &#60;literals&#62;.
+Within a pattern the identifier <SAMP>`...'</SAMP> must follow the last element of
+a nonempty sequence of subpatterns.
+
+
+<P>
+More formally, an input form F matches a pattern P if and only if:
+
+
+
+<UL>
+
+<LI>
+
+P is a pattern variable; or
+
+<LI>
+
+P is a literal identifier and F is an identifier with the same
+binding; or
+
+<LI>
+
+P is a pattern list <SAMP>`(P_1 ... P_n)'</SAMP> and F is a
+list of n
+forms that match P_1 through P_n, respectively; or
+
+<LI>
+
+P is an improper pattern list
+<SAMP>`(P_1 P_2 ... P_n . P_n+1)'</SAMP>
+and F is a list or
+improper list of n or more forms that match P_1 through P_n,
+respectively, and whose nth "cdr" matches P_n+1; or
+
+<LI>
+
+P is 
+      of the form
+<SAMP>`(P_1 ... P_n P_n+1 &#60;ellipsis&#62;)'</SAMP>
+where &#60;ellipsis&#62; is the identifier <SAMP>`...'</SAMP>
+and F is
+a proper list of at least n elements, the first n of which match
+P_1 through P_n, respectively, and each remaining element of F
+matches P_n+1; or
+
+<LI>
+
+P is a pattern datum and F is equal to P in the sense of
+the <SAMP>`equal?'</SAMP> procedure.
+
+</UL>
+
+<P>
+It is an error to use a macro keyword, within the scope of its
+binding, in an expression that does not match any of the patterns.
+
+
+<P>
+When a macro use is transcribed according to the template of the
+matching &#60;syntax rule&#62;, pattern variables that occur in the
+template are replaced by the subforms they match in the input.
+Pattern variables that occur in subpatterns followed by one or more
+instances of the identifier
+<SAMP>`...'</SAMP> are allowed only in subtemplates that are
+followed by as many instances of <SAMP>`...'</SAMP>.
+They are replaced in the
+output by all of the subforms they match in the input, distributed as
+indicated.  It is an error if the output cannot be built up as
+specified.
+
+
+<P>
+Identifiers that appear in the template but are not pattern variables
+or the identifier
+<SAMP>`...'</SAMP> are inserted into the output as literal identifiers.  If a
+literal identifier is inserted as a free identifier then it refers to the
+binding of that identifier within whose scope the instance of
+<SAMP>`syntax-rules'</SAMP> appears.
+If a literal identifier is inserted as a bound identifier then it is
+in effect renamed to prevent inadvertent captures of free identifiers.
+
+
+
+<PRE>
+<TT>(define-syntax let
+  (syntax-rules ()
+    ((let ((name val) ...) body1 body2 ...)
+     ((lambda (name ...) body1 body2 ...)
+      val ...))
+    ((let tag ((name val) ...) body1 body2 ...)
+     ((letrec ((tag (lambda (name ...)
+                      body1 body2 ...)))
+        tag)
+      val ...))))
+
+(define-syntax cond
+  (syntax-rules (else =&#62;)
+    ((cond (else result1 result2 ...))
+     (begin result1 result2 ...))
+    ((cond (test =&#62; result))
+     (let ((temp test))
+       (if temp (result temp))))
+    ((cond (test =&#62; result) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+           (result temp)
+           (cond clause1 clause2 ...))))
+    ((cond (test)) test)
+    ((cond (test) clause1 clause2 ...)
+     (or test (cond clause1 clause2 ...)))
+    ((cond (test result1 result2 ...))
+     (if test (begin result1 result2 ...)))
+    ((cond (test result1 result2 ...)
+           clause1 clause2 ...)
+     (if test
+         (begin result1 result2 ...)
+         (cond clause1 clause2 ...)))))
+
+(let ((=&#62; #f))
+  (cond (#t =&#62; 'ok)))                  ==&#62; ok
+</TT>
+</PRE>
+
+<P>
+The last example is not an error because the local variable <SAMP>`=&#62;'</SAMP>
+is renamed in effect, so that its use is distinct from uses of the top
+level identifier <SAMP>`=&#62;'</SAMP> that the transformer for <SAMP>`cond'</SAMP> looks
+for.  Thus, rather than expanding into
+
+
+
+<PRE>
+<TT>(let ((=&#62; #f))
+  (let ((temp #t))
+    (if temp ('ok temp))))
+</TT>
+</PRE>
+
+<P>
+which would result in an invalid procedure call, it expands instead
+into
+
+
+
+<PRE>
+<TT>(let ((=&#62; #f))
+  (if #t (begin =&#62; 'ok)))
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H2><A NAME="SEC80">A compatible low-level macro facility</A></H2>
+
+<P>
+<A NAME="IDX670"></A>
+
+
+<P>
+Although the pattern language provided by <SAMP>`syntax-rules'</SAMP> is the
+preferred way to specify macro transformers, other low-level
+facilities may be provided to specify more complex macro transformers.
+In fact, <SAMP>`syntax-rules'</SAMP> can itself be defined as a macro using the
+low-level facilities described in this section.
+
+
+<P>
+The low-level macro facility described here introduces <SAMP>`syntax'</SAMP>
+as a new syntactic keyword analogous to <SAMP>`quote'</SAMP>, and allows a
+&#60;transformer spec&#62; to be any expression.  This is accomplished by
+adding the following two productions to the productions in
+section <A HREF="r4rs_9.html#SEC66">7.1 Formal syntax</A> and in section <A HREF="r4rs_12.html#SEC78">Binding syntactic keywords</A> above.
+
+
+
+<PRE>
+<TT>&#60;expression&#62; --&#62; (syntax &#60;datum&#62;)
+&#60;transformer spec&#62; --&#62; &#60;expression&#62;</TT>
+
+</PRE>
+
+<P>
+The low-level macro system also adds the following procedures:
+
+
+
+<PRE>
+
+unwrap-syntax          identifier-&#62;symbol
+identifier?            generate-identifier
+free-identifier=?      construct-identifier
+bound-identifier=?
+
+</PRE>
+
+<P>
+Evaluation of a program proceeds in two logical steps.  First the
+program is converted into an intermediate language via macro-expansion,
+and then the result of macro expansion is evaluated.  When it is
+necessary to distinguish the second stage of this process from the
+full evaluation process, it is referred to as "execution."
+
+
+<P>
+Syntax definitions, either lexical or global, cause an identifier to
+be treated as a keyword within the scope of the binding.  The keyword
+is associated with a transformer, which may be created implicitly
+using the pattern language of <SAMP>`syntax-rules'</SAMP> or explicitly using
+the low-level facilities described below.
+
+
+<P>
+Since a transformer spec must be fully evaluated during the
+course of expansion, it is necessary to specify the environment in
+which this evaluation takes place.  A transformer spec is
+expanded in the same environment as that in which the program is being
+expanded, but is executed in an environment that is distinct from the
+environment in which the program is executed.  This execution
+environment distinction is important only for the resolution of global
+variable references and assignments.  In what follows, the environment
+in which transformers are executed is called the standard transformer
+environment and is assumed to be a standard Scheme environment.
+
+
+<P>
+Since part of the task of hygienic macro expansion is to resolve
+identifier references, the fact that transformers are expanded in the
+same environment as the program means that identifier bindings in the
+program can shadow identifier uses within transformers.  Since
+variable bindings in the program are not available at the time the
+transformer is executed, it is an error for a transformer to reference
+or assign them.  However, since keyword bindings are available during
+expansion, lexically visible keyword bindings from the program may be
+used in macro uses in a transformer.
+
+
+<P>
+When a macro use is encountered, the macro transformer associated with
+the macro keyword is applied to a representation of the macro
+expression.  The result returned by the macro transformer replaces the
+original expression and is expanded once again.  Thus macro expansions
+may themselves be or contain macro uses.
+
+
+<P>
+The syntactic representation passed to a macro transformer
+encapsulates information about the structure of the represented form
+and the bindings of the identifiers it contains.  These syntax objects
+can be traversed and examined using the procedures described below.
+The output of a transformer may be built up using the usual Scheme
+list constructors, combining pieces of the input with new syntactic
+structures.
+
+
+<P>
+<DL>
+<DT><U>syntax:</U> <B>syntax</B> <I>&#60;datum&#62;</I>
+<DD><A NAME="IDX671"></A>
+
+
+<P>
+<EM>Syntax:</EM>
+The &#60;datum&#62; may be any external representation of a Scheme
+object.
+
+
+<P>
+<EM>Semantics:</EM>
+<SAMP>`Syntax'</SAMP> is the syntactic analogue of <SAMP>`quote'</SAMP>.  It creates a
+syntactic representation of &#60;datum&#62; that, like an argument to a
+transformer, contains information about the bindings for identifiers
+contained in &#60;datum&#62;.  The binding for an identifier introduced
+by <SAMP>`syntax'</SAMP> is the closest lexically visible binding.  All
+variables and keywords introduced by transformers must be created by
+<SAMP>`syntax'</SAMP>.  It is an error to insert a symbol in the output of a
+transformation procedure unless it is to be part of a quoted datum.
+
+
+
+<PRE>
+<TT>(symbol? (syntax x))                               ==&#62; #f
+
+(let-syntax ((car (lambda (x) (syntax car))))
+  ((car) '(0)))                                    ==&#62; 0
+
+(let-syntax
+  ((quote-quote
+    (lambda (x) (list (syntax quote) 'quote))))
+  (quote-quote))                                   ==&#62; quote
+
+(let-syntax
+  ((quote-quote
+    (lambda (x) (list 'quote 'quote))))
+  (quote-quote))                                   ==&#62; <EM>error</EM>
+</TT>
+</PRE>
+
+<P>
+The second <SAMP>`quote-quote'</SAMP> example results in an error because two raw
+symbols are being inserted in the output.  The quoted <SAMP>`quote'</SAMP> in the
+first <SAMP>`quote-quote'</SAMP> example does not cause an error because it will
+be a quoted datum.
+
+
+
+<PRE>
+<TT>(let-syntax ((quote-me
+              (lambda (x)
+                (list (syntax quote) x))))
+  (quote-me please))                              ==&#62; (quote-me please)
+
+(let ((x 0))
+  (let-syntax ((alpha (lambda (e) (syntax x))))
+    (alpha)))                                     ==&#62; 0
+
+(let ((x 0))
+  (let-syntax ((alpha (lambda (x) (syntax x))))
+    (alpha)))                                     ==&#62; <EM>error</EM>
+
+(let-syntax ((alpha
+              (let-syntax ((beta
+                            (syntax-rules ()
+                              ((beta) 0))))
+                (lambda (x) (syntax (beta))))))
+  (alpha))                                        ==&#62; <EM>error</EM>
+</TT>
+</PRE>
+
+<P>
+The last two examples are errors because in both cases a lexically
+bound identifier is placed outside of the scope of its binding.
+In the first case, the variable <SAMP>`x'</SAMP> is placed outside its scope.
+In the second case, the keyword <SAMP>`beta'</SAMP> is placed outside its
+scope.
+
+
+
+<PRE>
+<TT>(let-syntax ((alpha (syntax-rules ()
+                      ((alpha) 0))))
+  (let-syntax ((beta (lambda (x) (alpha))))
+    (beta)))                                      ==&#62; 0
+
+(let ((list 0))
+  (let-syntax ((alpha (lambda (x) (list 0))))
+    (alpha)))                                     ==&#62; <EM>error</EM>
+</TT>
+</PRE>
+
+<P>
+The last example is an error because the reference to <SAMP>`list'</SAMP> in the
+transformer is shadowed by the lexical binding for <SAMP>`list'</SAMP>.  Since the
+expansion process is distinct from the execution of the program,
+transformers cannot reference program variables.  On the other hand,
+the previous example is not an error because definitions for keywords
+in the program do exist at expansion time.
+
+
+
+<BLOCKQUOTE>
+<P>
+<EM>Note:</EM>
+It has been suggested that <SAMP>`#'&#60;datum&#62;'</SAMP> and
+<SAMP>`#`&#60;datum&#62;'</SAMP> would be
+felicitous abbreviations for <SAMP>`(syntax &#60;datum&#62;)'</SAMP>
+and <SAMP>`(quasisyntax &#60;datum&#62;)'</SAMP>, respectively,
+where <SAMP>`quasisyntax'</SAMP>, which is not described in this
+appendix, would bear the same relationship to <SAMP>`syntax'</SAMP>
+that <SAMP>`quasiquote'</SAMP> bears to <SAMP>`quote'</SAMP>.
+</BLOCKQUOTE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>procedure:</U> <B>identifier?</B> <I>syntax-object</I>
+<DD><A NAME="IDX672"></A>
+
+
+<P>
+Returns <TT>#t</TT> if <VAR>syntax-object</VAR> represents an identifier,
+otherwise returns <TT>#f</TT>.
+
+
+
+<PRE>
+<TT>(identifier? (syntax x))               ==&#62; #t
+(identifier? (quote x))                ==&#62; #f
+(identifier? 3)                        ==&#62; #f
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>procedure:</U> <B>unwrap-syntax</B> <I>syntax-object</I>
+<DD><A NAME="IDX673"></A>
+
+
+<P>
+If <VAR>syntax-object</VAR> is an identifier, then it is returned unchanged.
+Otherwise <SAMP>`unwrap-syntax'</SAMP> converts the outermost structure of
+<VAR>syntax-object</VAR> into a
+data object whose external representation is the same as that of
+<VAR>syntax-object</VAR>.  The result is either an identifier, a pair whose
+car
+and cdr are syntax objects, a vector whose elements are syntax
+objects, an empty list, a string, a boolean, a character, or a number.
+
+
+
+<PRE>
+<TT>(identifier? (unwrap-syntax (syntax x)))
+                                       ==&#62; #t
+(identifier? (car (unwrap-syntax (syntax (x)))))
+                                       ==&#62; #t
+(unwrap-syntax (cdr (unwrap-syntax (syntax (x)))))
+                                       ==&#62; ()
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>procedure:</U> <B>free-identifier=?</B> <I>id1 id2</I>
+<DD><A NAME="IDX674"></A>
+
+
+<P>
+Returns <TT>#t</TT> if the original occurrences of <VAR>id1</VAR>
+and <VAR>id2</VAR> have
+the same binding, otherwise returns <TT>#f</TT>.
+<SAMP>`free-identifier=?'</SAMP>
+is used to look for a literal identifier in the argument to a
+transformer, such as <SAMP>`else'</SAMP> in a <SAMP>`cond'</SAMP> clause.
+A macro
+definition for <SAMP>`syntax-rules'</SAMP> would use <SAMP>`free-identifier=?'</SAMP>
+to look for literals in the input.
+
+
+
+<PRE>
+<TT>(free-identifier=? (syntax x) (syntax x))
+                                       ==&#62; #t
+(free-identifier=? (syntax x) (syntax y))
+                                       ==&#62; #f
+
+(let ((x (syntax x)))
+  (free-identifier=? x (syntax x)))
+                                       ==&#62; #f
+
+(let-syntax
+  ((alpha
+    (lambda (x)
+      (free-identifier=? (car (unwrap-syntax x))
+                         (syntax alpha)))))
+  (alpha))                                        ==&#62; #f
+
+(letrec-syntax
+  ((alpha
+    (lambda (x)
+      (free-identifier=? (car (unwrap-syntax x))
+                         (syntax alpha)))))
+  (alpha))                                        ==&#62; #t
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>procedure:</U> <B>bound-identifier=?</B> <I>id1 id2</I>
+<DD><A NAME="IDX675"></A>
+
+
+<P>
+Returns <TT>#t</TT> if a binding for one of the two identifiers
+<VAR>id1</VAR> and <VAR>id2</VAR> would shadow free references to the other,
+otherwise returns <TT>#f</TT>.
+Two identifiers can be <SAMP>`free-identifier=?'</SAMP> without being
+<SAMP>`bound-identifier=?'</SAMP>  if they were introduced at different
+stages in the
+expansion process.
+<SAMP>`Bound-identifier=?'</SAMP> can be used, for example, to
+detect duplicate identifiers in bound-variable lists.  A macro
+definition of <SAMP>`syntax-rules'</SAMP> would use <SAMP>`bound-identifier=?'</SAMP>
+to look for
+pattern variables from the input pattern in the output template.
+
+
+
+<PRE>
+<TT>(bound-identifier=? (syntax x) (syntax x))
+                                       ==&#62; #t
+
+(letrec-syntax
+  ((alpha
+    (lambda (x)
+      (bound-identifier=? (car (unwrap-syntax x))
+                          (syntax alpha)))))
+  (alpha))                                         ==&#62; #f
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>procedure:</U> <B>identifier-&#62;symbol</B> <I><VAR>id</VAR></I>
+<DD><A NAME="IDX676"></A>
+
+
+<P>
+Returns a symbol representing the original name of <VAR>id</VAR>.
+<SAMP>`Identifier-&#62;symbol'</SAMP> is used to examine identifiers that appear in
+literal contexts, i.e., identifiers that will appear in quoted
+structures.
+
+
+
+<PRE>
+<TT>(symbol? (identifier-&#62;symbol (syntax x)))
+                                       ==&#62; #t
+(identifier-&#62;symbol (syntax x))          
+                                       ==&#62; x
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>procedure:</U> <B>generate-identifier</B>
+<DD><A NAME="IDX677"></A>
+<DT><U>procedure:</U> <B>generate-identifier</B> <I><VAR>symbol</VAR></I>
+<DD><A NAME="IDX678"></A>
+
+
+<P>
+Returns a new identifier.
+The optional argument to <SAMP>`generate-identifier'</SAMP> specifies the
+symbolic name of the resulting identifier.  If no argument is
+supplied the name is unspecified.
+
+
+<P>
+<SAMP>`Generate-identifier'</SAMP> is used to
+introduce bound identifiers into the output of a transformer.  Since
+introduced bound identifiers are automatically renamed, <SAMP>`generate-identifier'</SAMP> is necessary only for distinguishing introduced
+identifiers when an indefinite number of them must be generated by a
+macro.
+
+
+<P>
+The optional argument to <SAMP>`generate-identifier'</SAMP> specifies the
+symbolic name of the resulting identifier.  If no argument is
+supplied the name is unspecified.  The procedure <SAMP>`identifier-&#62;symbol'</SAMP> reveals the symbolic name of an identifier.
+
+
+
+<PRE>
+<TT>(identifier-&#62;symbol (generate-identifier 'x))
+                                       ==&#62; x
+
+(bound-identifier=? (generate-identifier 'x)
+                    (generate-identifier 'x))
+                                       ==&#62; #f
+
+(define-syntax set*!
+  ; (set*! (&#60;identifier&#62; &#60;expression&#62;) ...)
+  (lambda (x)
+    (letrec
+      ((unwrap-exp
+        (lambda (x)
+          (let ((x (unwrap-syntax x)))
+            (if (pair? x)
+                (cons (car x)
+                      (unwrap-exp (cdr x)))
+                x)))))
+      (let ((sets (map unwrap-exp
+                       (cdr (unwrap-exp x)))))
+        (let ((ids (map car sets))
+              (vals (map cadr sets))
+              (temps (map (lambda (x)
+                            (generate-identifier))
+                          sets)))
+          `(,(syntax let) ,(map list temps vals)
+            ,@(map (lambda (id temp)
+                     `(,(syntax set!) ,id ,temp))
+                   ids
+                   temps)
+            #f))))))
+</TT>
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>procedure:</U> <B>construct-identifier</B> <I><VAR>id</VAR> <VAR>symbol</VAR></I>
+<DD><A NAME="IDX679"></A>
+
+
+<P>
+Creates and returns an identifier named by <VAR>symbol</VAR> that behaves
+as if it had been introduced where the identifier <VAR>id</VAR> was
+introduced.
+
+
+<P>
+<SAMP>`Construct-identifier'</SAMP> is used to circumvent hygiene by
+creating an identifier that behaves as though it had been
+implicitly present in some expression.  For example, the
+transformer for a structure
+definition macro might construct the name of a field accessor
+that does not explicitly appear in a use of the macro,
+but can be
+constructed from the names of the structure and the field.
+If a binding for the field accessor were introduced
+by a hygienic transformer, then it would be renamed automatically,
+so that the introduced binding would fail to capture any
+references to the field accessor that were present in the
+input and were intended to be
+within the scope of the introduced binding.
+
+
+<P>
+Another example is a macro that implicitly binds <SAMP>`exit'</SAMP>:
+
+
+
+<PRE>
+<TT>(define-syntax loop-until-exit
+  (lambda (x)
+    (let ((exit (construct-identifier
+                 (car (unwrap-syntax x))
+                 'exit))
+          (body (car (unwrap-syntax
+                      (cdr (unwrap-syntax x))))))
+      `(,(syntax call-with-current-continuation)
+        (,(syntax lambda)
+         (,exit)
+         (,(syntax letrec)
+          ((,(syntax loop)
+            (,(syntax lambda) ()
+               ,body
+               (,(syntax loop)))))
+          (,(syntax loop))))))))
+
+(let ((x 0) (y 1000))
+  (loop-until-exit
+   (if (positive? y)
+       (begin (set! x (+ x 3))
+              (set! y (- y 1)))
+       (exit x)))) => 3000
+</TT>
+</PRE>
+
+</DL>
+
+
+
+<H2><A NAME="SEC81">Acknowledgements</A></H2>
+
+<P>
+<A NAME="IDX680"></A>
+
+
+<P>
+The extension described in this appendix is the most
+sophisticated macro facility that has ever been proposed
+for a block-structured programming language.  The main ideas
+come from
+Eugene Kohlbecker's PhD thesis on hygienic macro expansion
+<A HREF="r4rs_13.html#BIB51">[Kohlbecker86]</A>, written under the direction of Dan
+Friedman <A HREF="r4rs_13.html#BIB52">[hygienic]</A>, and from the work by Alan Bawden
+and Jonathan Rees on syntactic closures <A HREF="r4rs_13.html#BIB6">[Bawden88]</A>.
+Pattern-directed macro facilities were popularized by Kent
+Dybvig's non-hygienic implementation of <SAMP>`extend-syntax'</SAMP>
+<A HREF="r4rs_13.html#BIB15">[Dybvig87]</A>.
+
+
+<P>
+At the 1988 meeting of this report's authors at Snowbird,
+a macro committee consisting of Bawden, Rees, Dybvig,
+and Bob Hieb was charged with developing a hygienic macro
+facility akin to <SAMP>`extend-syntax'</SAMP> but based on syntactic closures.
+Chris Hanson implemented a prototype and wrote a paper on his
+experience, pointing out that an implementation based on
+syntactic closures must determine the syntactic roles of some
+identifiers before macro expansion based on textual pattern
+matching can make those roles apparent.  William Clinger
+observed that Kohlbecker's algorithm amounts to a technique
+for delaying this determination, and proposed a more efficient
+version of Kohlbecker's algorithm.  Pavel Curtis spoke up for
+referentially transparent local macros.  Rees merged syntactic
+environments with the modified Kohlbecker's algorithm and
+implemented it all, twice <A HREF="r4rs_13.html#BIB13">[macrosthatwork]</A>.
+
+
+<P>
+Dybvig and Hieb designed and implemented the low-level
+macro facility described above.
+Recently Hanson and Bawden have extended syntactic closures
+to obtain an alternative low-level macro facility.
+The macro committee has not endorsed any particular
+low-level facility, but does endorse the general concept of
+a low-level facility that is compatible with the
+high-level pattern language described in this appendix.
+
+
+<P>
+Several other people have contributed by working on macros
+over the years.  Hal Abelson contributed by holding this
+report hostage to the appendix on macros.
+  
+
+
+<P></P><HR>
+ [<A HREF="r4rs_toc.html">Contents</A>] &#160; [<A HREF="r4rs_11.html">Back</A>] &#160; [<A>Prev</A>] &#160; [<A>Up</A>] &#160; [<A>Next</A>] &#160; [<A HREF="r4rs_13.html">Forward</A>] &#160;
+
+</BODY>
+</HTML>

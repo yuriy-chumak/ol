@@ -91,8 +91,7 @@
             (append '()
             '(cons car cdr set! set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
               mk mkt bind listuple
-              run sys set raw
-              _sleep
+              sys set raw
               
               mkred mkblack ff-bind ff-toggle red?
               fxbor fxband fxbxor fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr
