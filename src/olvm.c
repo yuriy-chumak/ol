@@ -1301,7 +1301,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	}
 
 	// управляющие команды:
-#	define APPLY 20
+#	define APPLY 20 // apply-cont = 20+64
 #	define RET   24
 #	define SYS   27
 #	define RUN   50

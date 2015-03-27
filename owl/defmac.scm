@@ -59,6 +59,7 @@
       ;; k v r, k v l r+    -- type-ff-right
       ;; k v l, k v l+ r    -- type-ff-leftc
 
+      apply
       call-with-current-continuation call/cc lets/cc
    )
 
@@ -561,8 +562,16 @@
       ; 6. Standard procedures
       ; 6.9 Control features
 
+      ;; essential procedure: procedure? obj
+
+      ;; essential procedure: apply proc args
+      ;; procedure: apply proc arg1 ... args
+      (define apply      (raw type-bytecode '(#x14)))  ;; <- no arity, just call 20
+
+      ;; ...
+
       ;; essential procedure: call-with-current-continuation proc
-      (define apply-cont (raw #|type-bytecode|# 16 '(#x54)))
+      (define apply-cont (raw type-bytecode '(#x54)))  ;; -< just call 20|64 (same as 20 but with extra flag)
 
       (define call-with-current-continuation
 ;         (let ((apply-cont (raw #|type-bytecode|# 16 '(#x54))))

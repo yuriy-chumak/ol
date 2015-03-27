@@ -20,10 +20,6 @@
       
       ;; extra ops
       set-memory-limit get-word-size get-memory-limit start-seccomp
-
-      ;; не входят в primops
-      ;; apply post- and pre-cps
-      apply ; apply-cont (pre-cps apply) moved to defmac (r5rs) ; run
       )
 
    (import
@@ -177,15 +173,6 @@
                 (car p)
                 (loop (cdr p)))))
 
-;; run, apply, apply-cont
-;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40))))
-;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
-      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-;     (define apply-cont (raw type-bytecode (list (fxbor 20 #x40)))) - used in (owl defmac) in call-with-current-continuation
-;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
-
-
       ;; fixme: handle multiple return value primops sanely (now a list)
       (define multiple-return-variable-primops
          (list
@@ -196,6 +183,42 @@
             38 39 40 26 58 59 ; fx+, fx*, fx-, fx/, fx>>, fx<<
             61 ; (clock)
             ))
+
+      ;; from cps
+      (define (special-bind-primop? op) ; bind ar ff-bind
+         (or (eq? op (ref (get-primitive 'bind) 2))
+             (eq? op (ref (get-primitive 'ff-bind) 2))))
+
+      (define (variable-input-arity? op)
+         (eq? op (ref (get-primitive 'mkt) 2))) ;; mkt
+
+      ;; non-primop instructions that can report errors
+      (define (instruction-name op)
+         (cond
+            ((eq? op 17) 'arity-error)
+            ((eq? op 32) 'bind)
+            (else #false)))
+         
+      (define (primop-name pop)
+         (let ((pop (fxband pop 63))) ; ignore top bits which sometimes have further data
+            (or (instruction-name pop)
+               (let loop ((primops primops))
+                  (cond
+                     ((null? primops) pop)
+                     ((eq? pop (ref (car primops) 2))
+                        (ref (car primops) 1))
+                     (else
+                        (loop (cdr primops))))))))
+
+
+;; run, apply, apply-cont - moved to the right places (defmac ie r5rs, lang/thread)
+;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
+;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40))))
+;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
+;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
+;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40)))) - used in (owl defmac) in call-with-current-continuation
+;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
+
 
 ;; Список sys-prim'ов
 ; поэтапный перевод sys-prim'ов в syscall'ы
@@ -252,44 +275,6 @@
             (let* ((n (- n 1)))
                (set-ticker-value 0)
                (wait n))))
-
-
-
-      ;; from cps
-      (define (special-bind-primop? op) ; bind ar ff-bind
-         (or (eq? op (ref (get-primitive 'bind) 2))
-             (eq? op (ref (get-primitive 'ff-bind) 2))))
-
-;      (define multiple-return-variable-primops
-;         (let loop ((r '()) (p primops))
-;            (if (null? p)
-;               r
-;               (let* ((op (car p))
-;                      (oa (ref op 4)))
-;                  (loop
-;                     (if (eq? oa 1) r (cons (ref op 2) r))
-;                     (cdr p))))))
-
-      (define (variable-input-arity? op)
-         (eq? op (ref (get-primitive 'mkt) 2))) ;; mkt
-
-      ;; non-primop instructions that can report errors
-      (define (instruction-name op)
-         (cond
-            ((eq? op 17) 'arity-error)
-            ((eq? op 32) 'bind)
-            (else #false)))
-         
-      (define (primop-name pop)
-         (let ((pop (fxband pop 63))) ; ignore top bits which sometimes have further data
-            (or (instruction-name pop)
-               (let loop ((primops primops))
-                  (cond
-                     ((null? primops) pop)
-                     ((eq? pop (ref (car primops) 2))
-                        (ref (car primops) 1))
-                     (else
-                        (loop (cdr primops))))))))
 
 
 ; проверку типов вынесем на уровень компилятора!
