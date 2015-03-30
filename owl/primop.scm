@@ -26,7 +26,12 @@
       (owl defmac))
 
    (begin
-   
+
+      (define (append a b) ; append
+         (if (null? a)
+            b
+            (cons (car a) (append (cdr a) b))))
+
 ;      ; эта функция создает primop, но для экономии памяти мы ее использовать не будем
 ;      (define (primop name code) ; code is list
 ;         (letrec ((nil '())
@@ -98,50 +103,90 @@
       (define JF2 25)
       (define RET 24)
       (define ARITY-ERROR 17)
-
-      (define BIND 32)
-
+      (define primops '())
 
 
-      (define ref (raw type-bytecode '(47 4 5 6  24 6)))
+      (define bind (raw type-bytecode  '(32 4)))
+;      (define po   (cons (tuple 'ff-bind 32 1 #false bind) po))
+      ;ff-bind
+;      (define mkt  (raw type-bytecode '(23)))
 
-      (define primops1 (list
+
+;      (define raw  (raw type-bytecode '(60 4 5 6  24 6)))
+
+      (define ref  (raw type-bytecode '(47 4 5 6  24 6)))
+
+      (define primops (append primops (list
             ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
             (tuple 'bind       32  1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
+            (tuple 'mkt        23  'any   1 '())      ;; mkt type v0 .. vn t
             (tuple 'ff-bind    49  1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
-            (tuple 'mkt        23  'any   1 mkt)      ;; mkt type v0 .. vn t
 
-;            (define-primop 'raw '(60 2))
             (tuple 'raw        60  2 1 (raw type-bytecode '(60 4 5 6  24 6)))
+
             ;tuple 'raw        60  2 1 (raw type-bytecode (list JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
-      ))
-      (define primops2 (list
-            ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
-            ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
-            ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
-            ; the phrase `Contents of the Address part of the Register'; and cdr (pronounced `could-er') is an
-            ; acronym from the phrase `Contents of the Decrement part of the Register'. These phrases refer to
-            ; specific pieces of hardware on the very early computer on which the original Lisp was developed.
-            ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
-            ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
-            ; names for these functions, the old terms are still in use.
-            (tuple 'cons      51  2 1 (raw type-bytecode '(51 4 5 6  24 6)))
+      )))
+
+;      (define-syntax append-primitive
+;         (syntax-rules ()
+;            ((append-primitive name input-arity output-arity)
+;               (define p (append p '(12))))))
+;
+;      (define-syntax define-primitive
+;         (syntax-rules (begin)
+;            ((define-primitive name bytecode input-arity output-arity)
+;;               (begin
+;               (define name (raw type-bytecode bytecode)))))
+;;               (append-primitive name input-arity output-arity)))))
+
+      ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
+      ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
+      ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
+      ; the phrase `Contents of the Address part of the Register'; and cdr (pronounced `could-er') is an
+      ; acronym from the phrase `Contents of the Decrement part of the Register'. These phrases refer to
+      ; specific pieces of hardware on the very early computer on which the original Lisp was developed.
+      ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
+      ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
+      ; names for these functions, the old terms are still in use.
+;      (define cons     (raw type-bytecode '(51 4 5 6  24 6)))
+;         (define primo (cons (tuple 'cons   51 2 1)
+;                              primo))
+
+;      (define-primitive cons '(51 4 5 6  24 6) 2 1)
+;         (define primops2 (append primops2 (tuple 51 2 1 cons)))
+
+;      (define type      (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
+;      (define size      (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
+;      (define cast      (raw type-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+;
+;      (define car       (raw type-bytecode '(52 4 5    24 5)))
+;      (define cdr       (raw type-bytecode '(53 4 5    24 5)))
+;      (define ref       (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
+;      
+;      (define set       (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
+;      (define set-car!  (raw type-bytecode '(11 4 5 6  24 6)))
+;      (define set-cdr!  (raw type-bytecode '(12 4 5 6  24 6)))
+;        (define p (append p (tuple 'set-car! 12 2 1)))
+
+      (define primops (append primops (list
+            (tuple 'cons      51  2 1 cons) ;(raw type-bytecode '(51 4 5 6  24 6)))
 
 
             (tuple 'type      15  1 1 (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
             (tuple 'size      36  1 1 (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
             (tuple 'cast      22  2 1 (raw type-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
 
-            (tuple 'car       52  1 1 (raw type-bytecode '(52 4 5    24 5)))
-            (tuple 'cdr       53  1 1 (raw type-bytecode '(53 4 5    24 5)))
-            (tuple 'ref       47  2 1 (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
+            (tuple 'car       52  1 1 car) ;(raw type-bytecode '(52 4 5    24 5)))
+            (tuple 'cdr       53  1 1 cdr) ;(raw type-bytecode '(53 4 5    24 5)))
+            (tuple 'ref       47  2 1 ref) ;(raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
             
-            (tuple 'set       45  3 1 (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
-            (tuple 'set-car!  11  2 1 (raw type-bytecode '(11 4 5 6  24 6)))
-            (tuple 'set-cdr!  12  2 1 (raw type-bytecode '(12 4 5 6  24 6)))
+            (tuple 'set       45  3 1 set) ;(raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
+            (tuple 'set-car!  11  2 1 set-car!) ;(raw type-bytecode '(11 4 5 6  24 6)))
+            (tuple 'set-cdr!  12  2 1 set-cdr!) ;(raw type-bytecode '(12 4 5 6  24 6)))
 ;           (primop 'set!       '(10 4 5 6  7  24 7)  3 1) ; (set! tuple pos val)
-      ))
-      (define primops3 (list
+      )))
+
+      (define primops (append primops (list
             ; непосредственный код
             (tuple 'sys       27  4 1 (raw type-bytecode '(27 4 5 6 7 8  24 8)))
             (tuple 'sys-prim  63  4 1 (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
@@ -163,20 +208,20 @@
             ;; строки
             (tuple 'refb      48  2 1 (raw type-bytecode '(48 4 5 6  24 6)))
             (tuple 'sizeb     28  1 1 (raw type-bytecode '(28 4 5    24 5)))
-      ))
+      )))
 
       ;; арифметические операции, возвращают пару(тройку) значений, использовать через let*/receive
-      (define primops4 (list
+      (define primops (append primops (list
             (tuple 'fx+       38  2 2 (raw type-bytecode '(38 4 5    6 7)))     ;'(38 4 5    6 7  )
             (tuple 'fx*       39  2 2 (raw type-bytecode '(39 4 5    6 7)))
             (tuple 'fx-       40  2 2 (raw type-bytecode '(40 4 5    6 7)))
             (tuple 'fx/       26  3 3 (raw type-bytecode '(26 4 5 6  7 8 9)))
             (tuple 'fx>>      58  2 2 (raw type-bytecode '(58 4 5    6 7)))
             (tuple 'fx<<      59  2 2 (raw type-bytecode '(59 4 5    6 7)))
-      ))
+      )))
 
       ;; 
-      (define primops5 (list
+      (define primops (append primops (list
 ;           (tuple 'clock     61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
             (tuple 'clock     61  0 2 (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
@@ -192,25 +237,15 @@
             (tuple 'mkred      43  4 1 (raw type-bytecode '(43 4 5 6 7 8  24 8)))
             (tuple 'red?       41  1 1 (raw type-bytecode '(41 4 5  24 5)))
             (tuple 'ff-toggle  46  1 1 (raw type-bytecode '(46 4 5  24 5)))
-      ))
+      )))
 
-
-      (define (append a b) ; append
-         (if (eq? a '())
-            b
-            (cons (car a) (append (cdr a) b))))
-      
-      (define primops (append primops1
-                      (append primops2
-                      (append primops3
-                      (append primops4
-                      (append primops5 '()))))))
 
       (define (get-primitive name)
          (let loop ((p primops))
             (if (eq? (ref (car p) 1) name)
                 (car p)
                 (loop (cdr p)))))
+
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       (define multiple-return-variable-primops
@@ -241,7 +276,8 @@
       ; используется в выводе сообщений "инструкция такая-то сфейлила"
       (define (primop-name pop)
          (let ((pop (fxband pop 63))) ; ignore top bits which sometimes have further data
-            (or (instruction-name pop)
+            (or
+               (instruction-name pop)
                (let loop ((primops primops))
                   (cond
                      ((null? primops) pop)
@@ -249,7 +285,6 @@
                         (ref (car primops) 1))
                      (else
                         (loop (cdr primops))))))))
-
 
 ;; run, apply, apply-cont - moved to the right places (defmac ie r5rs, lang/thread)
 ;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
@@ -342,5 +377,7 @@
          (if (and (pair? object) (fixnum? value))
             (set-cdr! object value)
             (error "set-car! first argument is not a pair")))
+
+
 
 ))

@@ -310,16 +310,25 @@
 
       ; O(nm), but irrelevant for current use
       (define (replace-all lst pat val)
-         (define rval (reverse val))
-         (define (walk rout in)
+         (letrec ((rval (lambda (val) (reverse val)))
+                  (walk (lambda (rout in)
             (cond
                ((null? in)
                   (reverse rout))
                ((grab in pat) =>
                   (λ (in) (walk (append rval rout) in)))
                (else
-                  (walk (cons (car in) rout) (cdr in)))))
-         (walk null lst))
+                  (walk (cons (car in) rout) (cdr in)))))))
+;         (define rval (reverse val))
+;         (define (walk rout in)
+;            (cond
+;               ((null? in)
+;                  (reverse rout))
+;               ((grab in pat) =>
+;                  (λ (in) (walk (append rval rout) in)))
+;               (else
+;                  (walk (cons (car in) rout) (cdr in)))))
+         (walk null lst)))
       
       (define (str-replace str pat val)
          (runes->string

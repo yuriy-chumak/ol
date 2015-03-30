@@ -3,7 +3,9 @@
 (define-library (owl defmac)
 
    (export
-      λ syntax-error begin 
+      λ syntax-error ;assert
+
+      begin 
       quasiquote letrec let if 
       letrec* let*-values
       cond case define define*
@@ -59,6 +61,7 @@
       ;; k v r, k v l r+    -- type-ff-right
       ;; k v l, k v l+ r    -- type-ff-leftc
 
+
       apply
       call-with-current-continuation call/cc lets/cc
 
@@ -73,6 +76,13 @@
       (define-syntax λ 
          (syntax-rules () 
             ((λ . x) (lambda . x))))
+
+      (define-syntax assert
+         (syntax-rules (if sys eq?)
+            ((assert result expression . stuff)
+               (if (eq? expression result) #t
+                  (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
+;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
 
       (define-syntax syntax-error
          (syntax-rules (error)
@@ -97,13 +107,19 @@
       ;; note, no let-values yet, so using let*-values in define-values
       ; 4.2.3  Sequencing
       (define-syntax begin
-         (syntax-rules (define define-syntax letrec define-values let*-values)
+         (syntax-rules (define define-syntax letrec define-values let*-values) ; ===>
             ;((begin
             ;   (define-syntax key1 rules1)
             ;   (define-syntax key2 rules2) ... . rest)
             ;   (letrec-syntax ((key1 rules1) (key2 rules2) ...)
             ;      (begin . rest)))
             ((begin exp) exp)
+;            ((begin expression ===> wanted . rest)  ;; inlined assertions
+;               (begin
+;               (let ((val expression))
+;                  (if (eq? val (quote wanted)) #t
+;                     (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons wanted '()))))))
+;               (begin . rest)))
             ((begin (define . a) (define . b) ... . rest)
                (begin 42 () (define . a) (define . b) ... . rest))
             ((begin (define-values (val ...) . body) . rest)
@@ -208,6 +224,7 @@
                   (begin . then)
                   (case thing . clauses)))))
 
+
       ; 4.1.1  Variable references
       (define-syntax define
          (syntax-rules (lambda λ)
@@ -239,33 +256,33 @@
             ((define* name (lambda (arg ...) . body))
                (define* (name arg ...) . body))))
 
-      (define-syntax lets
+      (define-syntax let*
          (syntax-rules (<=)
-            ((lets (((var ...) gen) . rest) . body)
-               (receive gen (lambda (var ...) (lets rest . body))))
-            ((lets ((var val) . rest-bindings) exp . rest-exps)
-               ((lambda (var) (lets rest-bindings exp . rest-exps)) val))
-            ((lets ((var ... (op . args)) . rest-bindings) exp . rest-exps)
+            ((let* (((var ...) gen) . rest) . body)
+               (receive gen (lambda (var ...) (let* rest . body))))
+            ((let* ((var val) . rest-bindings) exp . rest-exps)
+               ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
+            ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
                (receive (op . args)
                   (lambda (var ...) 
-                     (lets rest-bindings exp . rest-exps))))
-            ((lets ((var ... node) . rest-bindings) exp . rest-exps)
+                     (let* rest-bindings exp . rest-exps))))
+            ((let* ((var ... node) . rest-bindings) exp . rest-exps)
                (bind node
                   (lambda (var ...) 
-                     (lets rest-bindings exp . rest-exps))))
-            ((lets (((name ...) <= value) . rest) . code)
+                     (let* rest-bindings exp . rest-exps))))
+            ((let* (((name ...) <= value) . rest) . code)
                (bind value
                   (lambda (name ...)
-                     (lets rest . code))))
-            ((lets ()) exp)
-            ((lets () exp . rest) (begin exp . rest))))
+                     (let* rest . code))))
+            ((let* ()) exp)
+            ((let* () exp . rest) (begin exp . rest))))
 
       ;; the internal one is handled by begin. this is just for toplevel.
       (define-syntax define-values
          (syntax-rules (list)
             ((define-values (val ...) . body)
                (_define (val ...)
-                  (lets ((val ... (begin . body)))
+                  (let* ((val ... (begin . body)))
                      (list val ...))))))
 
       (define-syntax let*-values
@@ -277,10 +294,10 @@
                (begin . rest))))
                
       ; i hate special characters, especially in such common operations.
-      ; lets (let sequence) is way prettier and a bit more descriptive 
-      (define-syntax let*
+      ; let* (let sequence) is way prettier and a bit more descriptive 
+      (define-syntax lets
          (syntax-rules ()
-            ((let* . stuff) (lets . stuff))))
+            ((lets . stuff) (let* . stuff))))
 
       (define-syntax or
          (syntax-rules ()
@@ -546,45 +563,6 @@
 
       ; 3.2. Disjointness of types
       ; No object satisfies more than one of the following predicates:
-
-      (define (boolean? o)
-         (cond
-            ((eq? o #true) #true)
-            ((eq? o #false) #true)
-            (else #false)))
-
-      (define (pair? o)
-         (eq? (type o) type-pair))
-
-      (define (symbol? o)
-         (eq? (type o) type-symbol))
-
-      (define (number? o)
-         (case (type o)
-            (type-fix+ #true)
-            (type-fix- #true)
-            (type-int+ #true)
-            (type-int- #true)
-            (type-rational #true)
-            (type-complex #true)
-            (else #false)))
-
-      (define (char? o) (number? o))
-
-      (define (string? o)
-         (case (type o)
-            (type-string #true)
-            (type-string-wide #true)
-            (type-string-dispatch #true)
-            (else #false)))
-
-      (define (vector? o) ; == raw or a variant of major type 11?
-         (case (type o)
-            (type-vector-raw #true)
-            (type-vector-leaf #true)
-            (type-vector-dispatch #true)
-            (else #false)))
-
       (define (port? o)
          (eq? (type o) type-port))
 
@@ -602,9 +580,6 @@
          (or (eq? o #empty)
              (eq? 24 (fxband (type o) #b1111100))))
 
-      (define (procedure? o)
-         (or (function? o)
-             (ff? o)))
 
       ; 4. Expressions
       ; 4.1 Primitive expression types
@@ -638,9 +613,81 @@
 
 
       ; 6. Standard procedures
-      ; 6.9 Control features
 
-      ;; essential procedure: procedure? obj
+      ; 6.2.5. Numerical operations
+      ;; (number? obj) procedure
+      (define (number? o)
+         (case (type o)
+            (type-fix+ #true)
+            (type-fix- #true)
+            (type-int+ #true)
+            (type-int- #true)
+            (type-rational #true)
+            (type-complex #true)
+            (else #false)))
+
+      ;; (complex? obj ) procedure
+      ;; (real? obj ) procedure
+      ;; (rational? obj ) procedure
+      ;; (integer? obj ) procedure
+
+
+      ; 6.3. Other data types
+      ; 6.3.1. Booleans
+      ;; (not obj) library procedure
+      ;; (boolean? obj) library procedure
+      (define (boolean? o)
+         (cond
+            ((eq? o #true) #true)
+            ((eq? o #false) #true)
+            (else #false)))
+
+      ; 6.3.2. Pairs and lists
+      ;; (pair? obj) procedure
+      (define (pair? o)
+         (eq? (type o) type-pair))
+
+      ; 6.3.3. Symbols
+      ;; (symbol? obj) procedure
+      (define (symbol? o)
+         (eq? (type o) type-symbol))
+
+      ; 6.3.4. Characters
+      ; (char? obj) procedure
+      (define (char? o) (number? o))
+
+      ; 6.3.5. Strings
+      ;; (string? obj) procedure
+      (define (string? o)
+         (case (type o)
+            (type-string #true)
+            (type-string-wide #true)
+            (type-string-dispatch #true)
+            (else #false)))
+
+
+      ; 6.3.6. Vectors
+      ;; (vector? obj) procedure
+      (define (vector? o) ; == raw or a variant of major type 11?
+         (case (type o)
+            (type-vector-raw #true)
+            (type-vector-leaf #true)
+            (type-vector-dispatch #true)
+            (else #false)))
+
+      ; 
+      ; 
+
+      ; 6.4 Control features
+
+      ;; (procedure? obj) procedure
+      (define (procedure? o)
+         (or (function? o) (ff? o)))
+
+      ;(assert #t (procedure? car))
+      ;(assert #f (procedure? 'car))
+      ;(assert #t (procedure? (lambda (x) x)))
+      
 
       ;; essential procedure: apply proc args
       ;; procedure: apply proc arg1 ... args
@@ -648,17 +695,18 @@
 
       ;; ...
 
-      ;; essential procedure: call-with-current-continuation proc
-      (define apply-cont (raw type-bytecode '(#x54)))  ;; -< just call 20|64 (same as 20 but with extra flag)
+      ;; procedure: call-with-current-continuation proc
+      ; Continuation - http://en.wikipedia.org/wiki/Continuation
+      (define apply-cont (raw type-bytecode '(#x54)))  ;; не экспортим, внутренняя
 
       (define call-with-current-continuation
          ('_sans_cps
             (λ (k f)
-               (f k
-                  (case-lambda
-                     ((c a) (k a))
-                     ((c a b) (k a b))
-                     ((c . x) (apply-cont k x))))))) ; (apply-cont k x)
+               (f k (case-lambda
+                       ((c a) (k a))
+                       ((c a b) (k a b))
+                       ((c . x) (apply-cont k x))))))) ; (apply-cont k x)
+
       (define call/cc call-with-current-continuation)
 
       ; non standard, owl extension
@@ -668,8 +716,5 @@
                (syntax-error "let/cc: continuation name cannot be " (quote (om . nom)))) 
             ((lets/cc var . body) 
                (call/cc (λ (var) (lets . body))))))
-
-
-      ; Continuation - http://en.wikipedia.org/wiki/Continuation
 
 ))
