@@ -7,13 +7,16 @@
       return-mails fork-server fork-linked fork-named exit-thread exit-owl
       poll-mail-from start-profiling stop-profiling running-threads par*
       start-nested-parallel-computation wrap-the-whole-world-to-a-thunk ; ??
-      par por* por)
+      par por* por interop)
 
    (import 
       (owl defmac)
       (owl primop))
 
    (begin
+      ;; спецоперация для общения с менеджером внутренних потоков (todo: переименовать)
+      (define sys (raw type-bytecode '(27 4 5 6 7 8  24 8)))
+
 
       (define (interop op a b)
          (call/cc (λ (resume) (sys resume op a b))))

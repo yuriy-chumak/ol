@@ -77,12 +77,12 @@
          (syntax-rules () 
             ((λ . x) (lambda . x))))
 
-      (define-syntax assert
-         (syntax-rules (if sys eq?)
-            ((assert result expression . stuff)
-               (if (eq? expression result) #t
-                  (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
-;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
+;      (define-syntax assert
+;         (syntax-rules (if sys eq?)
+;            ((assert result expression . stuff)
+;               (if (eq? expression result) #t
+;                  (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
+;;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
 
       (define-syntax syntax-error
          (syntax-rules (error)

@@ -2,14 +2,12 @@
    (export error)
 
    (import
-      ;(owl r5rs) or
-      ;(owl scheme) or
-      ;(owl language)
       (owl defmac)
-      (owl primop))
+      (owl primop)
+      (owl interop))
 
    (begin
 
       (define (error reason info)
-         (call/cc (λ (resume) (sys resume 5 reason info))))
+         (interop 5 reason info))
 ))

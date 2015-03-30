@@ -87,9 +87,10 @@
             ;; note that these could now come straight from primops
             ;?or (map (lambda (primop) (ref primop 1)) primops)
             ;?or (foldr (lambda (op state) (cons (ref op 1) state)) '() primops)
-            '(cons car cdr set! set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
+            '(
+              cons car cdr set! set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
               mk mkt bind listuple
-              sys set raw
+              set raw
               
               mkred mkblack ff-bind ff-toggle red?
               fxbor fxband fxbxor fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr
