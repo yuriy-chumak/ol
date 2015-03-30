@@ -9,16 +9,16 @@
    (export 
       primops
       primop-name ;; primop → symbol | primop
+
       multiple-return-variable-primops
       variable-input-arity?
       special-bind-primop?
 
-      halt
-      wait
+
+      ;; extra ops
+      halt wait
       
       set-ticker-value
-      
-      ;; extra ops
       set-memory-limit get-word-size get-memory-limit start-seccomp
       )
 
@@ -31,28 +31,42 @@
       (define RET 24)
       (define ARITY-ERROR 17)
    
-      ; пара служебных функций:
-      (define (append a b) ; append
-         (if (eq? a '())
-            b
-            (cons (car a) (append (cdr a) b))))
-            
-      (define (- a b)
-         (let* ((n _ (fx- a b))) n))
-      (define (+ a b)
-         (let* ((n _ (fx+ a b))) n))
-
-      (define (primop1 name code inargs)
-         (let*
-            ((arity     (+ inargs 1))
-             (primitive (raw type-bytecode
-                (case inargs
-                   (0 (list JF2 arity 0 4  code 4         RET 4  ARITY-ERROR))
-                   (1 (list JF2 arity 0 5  code 4 5       RET 5  ARITY-ERROR))
-                   (2 (list JF2 arity 0 6  code 4 5 6     RET 6  ARITY-ERROR))
-                   (3 (list JF2 arity 0 7  code 4 5 6 7   RET 7  ARITY-ERROR))
-                   (4 (list JF2 arity 0 8  code 4 5 6 7 8 RET 8  ARITY-ERROR))))))
-            (tuple name code inargs 1 primitive)))
+;      ; пара служебных функций:
+;      (define (append a b) ; append
+;         (if (eq? a '())
+;            b
+;            (cons (car a) (append (cdr a) b))))
+;            
+;      (define (- a b)
+;         (let* ((n _ (fx- a b))) n))
+;      (define (+ a b)
+;         (let* ((n _ (fx+ a b))) n))
+;
+;      (define (primop1 name code inargs)
+;         (let*
+;            ((arity _ (fx+ inargs 1))
+;             (primitive (raw type-bytecode
+;                (case inargs
+;                   (0 (list JF2 arity 0 4  code 4         RET 4  ARITY-ERROR))
+;                   (1 (list JF2 arity 0 5  code 4 5       RET 5  ARITY-ERROR))
+;                   (2 (list JF2 arity 0 6  code 4 5 6     RET 6  ARITY-ERROR))
+;                   (3 (list JF2 arity 0 7  code 4 5 6 7   RET 7  ARITY-ERROR))
+;                   (4 (list JF2 arity 0 8  code 4 5 6 7 8 RET 8  ARITY-ERROR))))))
+;            (tuple name code inargs 1 primitive)))
+;
+;      (define (define-primop name code) ; code is list
+;         (let*
+;            ((command (car code))
+;             (i (car (cdr code)))
+;             ;(arity _ (fx+ i 1))
+;             (primitive (raw type-bytecode
+;                (case i
+;                   (0 (list command 4         RET 4))
+;                   (1 (list command 4 5       RET 5))
+;                   (2 (list command 4 5 6     RET 6))
+;                   (3 (list command 4 5 6 7   RET 7))
+;                   (4 (list command 4 5 6 7 8 RET 8))))))
+;            (tuple name code i 1 primitive)))
 
       ; вот тут мы заменяем команды (если очень хотим)
 ;     (define cons       (raw (list JF2 3 0 6  51 4 5 6  RET 6  ARITY-ERROR) type-bytecode #false))  ;; 17 == ARITY-ERROR
@@ -90,15 +104,17 @@
 ;            '(1 . 2)
 ;            >
 
-      (define primitive-operations (list
-            ; пара специальных вещей
+      (define primops1 (list
+            ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
             (tuple 'bind       32  1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
             (tuple 'ff-bind    49  1 #false ff-bind)  ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
             (tuple 'mkt        23  'any   1 mkt)      ;; mkt type v0 .. vn t
 
-            (primop1 'raw      60 2)
-;            (tuple 'raw        60  2 1 (raw type-bytecode (list JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
-
+;            (define-primop 'raw '(60 2))
+            (tuple 'raw        60  2 1 (raw type-bytecode '(60 4 5 6  24 6)))
+            ;tuple 'raw        60  2 1 (raw type-bytecode (list JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
+      ))
+      (define primops2 (list
             ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
             ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
             ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
@@ -108,64 +124,85 @@
             ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
             ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
             ; names for these functions, the old terms are still in use.
-            (tuple 'cons       51  2 1 cons)  ; 
+            (tuple 'cons      51  2 1 (raw type-bytecode '(51 4 5 6  24 6)))
 
-            (tuple 'type       15  1 1 type)  ;; get just the type bits (new)
-            (tuple 'size       36  1 1 size)  ;; get object size (- 1)
-            (tuple 'cast       22  2 1 cast)  ;; cast object type (works for immediates and allocated)
+            (tuple 'type      15  1 1 (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
+            (tuple 'size      36  1 1 (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
+            (tuple 'cast      22  2 1 (raw type-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+
+            (tuple 'car       52  1 1 (raw type-bytecode '(52 4 5    24 5)))
+            (tuple 'cdr       53  1 1 (raw type-bytecode '(53 4 5    24 5)))
+            (tuple 'ref       47  2 1 (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
             
-            (tuple 'car        52  1 1 car)
-            (tuple 'cdr        53  1 1 cdr)
-            (tuple 'ref        47  2 1 ref)   ; op47 = ref t o r = prim_ref(A0, A1)
-            
-            (tuple 'set        45  3 1 set) ; (set tuple pos val) -> tuple'
-            (tuple 'set-car!   11  2 1 set-car!)
-            (tuple 'set-cdr!   12  2 1 set-cdr!)
+            (tuple 'set       45  3 1 (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
+            (tuple 'set-car!  11  2 1 (raw type-bytecode '(11 4 5 6  24 6)))
+            (tuple 'set-cdr!  12  2 1 (raw type-bytecode '(12 4 5 6  24 6)))
 ;           (primop 'set!       '(10 4 5 6  7  24 7)  3 1) ; (set! tuple pos val)
-
+      ))
+      (define primops3 (list
             ; непосредственный код
-            (tuple 'sys        27  4 1 sys)
-
-            (tuple 'sys-prim   63  4 1 sys-prim) ; todo: rename sys-prim to syscall
+            (tuple 'sys       27  4 1 (raw type-bytecode '(27 4 5 6 7 8  24 8)))
+            (tuple 'sys-prim  63  4 1 (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
             
-            
-            (tuple 'eq?        54  2 1 eq?)
-            (tuple 'lesser?    44  2 1 lesser?)
+            (tuple 'eq?       54  2 1 (raw type-bytecode '(54 4 5 6  24 6)))
+            (tuple 'lesser?   44  2 1 (raw type-bytecode '(44 4 5 6  24 6)))
 
             ; поддержка больших чисел
             ;; вопрос - а нахрена именно числовой набор функций? может обойдемся обычным?
-            (tuple 'ncons      29  2 1 ncons)
-            (tuple 'ncar       30  1 1 ncar)
-            (tuple 'ncdr       31  1 1 ncdr)
+            (tuple 'ncons     29  2 1 (raw type-bytecode '(29 4 5 6  24 6)))
+            (tuple 'ncar      30  1 1 (raw type-bytecode '(30 4 5    24 5)))
+            (tuple 'ncdr      31  1 1 (raw type-bytecode '(31 4 5    24 5)))
             
             ;; логика
-            (tuple 'fxband     55  2 1 fxband)
-            (tuple 'fxbor      56  2 1 fxbor)
-            (tuple 'fxbxor     57  2 1 fxbxor)
+            (tuple 'fxband    55  2 1 (raw type-bytecode '(55 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+            (tuple 'fxbor     56  2 1 (raw type-bytecode '(56 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+            (tuple 'fxbxor    57  2 1 (raw type-bytecode '(57 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
             
             ;; строки
-            (tuple 'refb       48  2 1 refb)
-            (tuple 'sizeb      28  1 1 sizeb)
+            (tuple 'refb      48  2 1 (raw type-bytecode '(48 4 5 6  24 6)))
+            (tuple 'sizeb     28  1 1 (raw type-bytecode '(28 4 5    24 5)))
+      ))
 
-            ;; математика
-            (tuple 'fx+       38  2 2 fx+)     ;'(38 4 5    6 7    24 7)
-            (tuple 'fx*       39  2 2 fx*)     ;'(39 4 5    6 7    24 7)
-            (tuple 'fx-       40  2 2 fx-)     ;'(40 4 5    6 7    24 7)
-            (tuple 'fx/       26  3 3 fx/)     ;'(26 4 5 6  7 8 9  24 7)
-            (tuple 'fx>>      58  2 2 fx>>)    ;'(58 4 5    6 7    24 7)
-            (tuple 'fx<<      59  2 2 fx<<) ;'(59 4 5    6 7    24 7)
+      ;; арифметические операции, возвращают пару(тройку) значений, использовать через let*/receive
+      (define primops4 (list
+            (tuple 'fx+       38  2 2 (raw type-bytecode '(38 4 5    6 7)))     ;'(38 4 5    6 7  )
+            (tuple 'fx*       39  2 2 (raw type-bytecode '(39 4 5    6 7)))
+            (tuple 'fx-       40  2 2 (raw type-bytecode '(40 4 5    6 7)))
+            (tuple 'fx/       26  3 3 (raw type-bytecode '(26 4 5 6  7 8 9)))
+            (tuple 'fx>>      58  2 2 (raw type-bytecode '(58 4 5    6 7)))
+            (tuple 'fx<<      59  2 2 (raw type-bytecode '(59 4 5    6 7)))
+      ))
 
-            (tuple 'clock      61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
+      ;; 
+      (define primops5 (list
+;           (tuple 'clock     61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
+            (tuple 'clock     61  0 2 (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
             ; поддержка ff деревьев
-            (tuple 'listuple   35  3 1 listuple)  ;; (listuple type size lst)
-            (tuple 'mkblack    42  4 1 mkblack)   ; (mkblack l k v r)
-            (tuple 'mkred      43  4 1 mkred)   ; ditto
-;            (tuple 'red?       41  1 #false red?)  ;; (red? node) -> bool
-            (tuple 'red?       41  1 1 red?)  ;; (red? node) -> bool
-            (tuple 'ff-toggle  46  1 1 ff-toggle)))  ;; (fftoggle node) -> node', toggle redness
+;            (tuple 'listuple   35  3 1 listuple)  ;; (listuple type size lst)
+;            (tuple 'mkblack    42  4 1 mkblack)   ; (mkblack l k v r)
+;            (tuple 'mkred      43  4 1 mkred)   ; ditto
+;            (tuple 'red?       41  1 1 red?)  ;; (red? node) -> bool
+;            (tuple 'ff-toggle  46  1 1 ff-toggle)  ;; (fftoggle node) -> node', toggle redness
+;
+            (tuple 'listuple   35  3 1 (raw type-bytecode '(35 4 5 6 7  24 7)))
+            (tuple 'mkblack    42  4 1 (raw type-bytecode '(42 4 5 6 7 8  24 8)))
+            (tuple 'mkred      43  4 1 (raw type-bytecode '(43 4 5 6 7 8  24 8)))
+            (tuple 'red?       41  1 1 (raw type-bytecode '(41 4 5  24 5)))
+            (tuple 'ff-toggle  46  1 1 (raw type-bytecode '(46 4 5  24 5)))
+      ))
 
-      (define primops primitive-operations)
+
+      (define (append a b) ; append
+         (if (eq? a '())
+            b
+            (cons (car a) (append (cdr a) b))))
+      
+      (define primops (append primops1
+                      (append primops2
+                      (append primops3
+                      (append primops4
+                      (append primops5 '()))))))
 
       (define (get-primitive name)
          (let loop ((p primops))
@@ -199,6 +236,7 @@
             ((eq? op 32) 'bind)
             (else #false)))
          
+      ; используется в выводе сообщений "инструкция такая-то сфейлила"
       (define (primop-name pop)
          (let ((pop (fxband pop 63))) ; ignore top bits which sometimes have further data
             (or (instruction-name pop)
@@ -272,7 +310,7 @@
       (define (wait n)
          (if (eq? n 0)
             n
-            (let* ((n (- n 1)))
+            (let* ((n _ (fx- n 1)))
                (set-ticker-value 0)
                (wait n))))
 

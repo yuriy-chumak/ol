@@ -52,12 +52,12 @@
               (cloc1 . 7)
 
               ;conditional jumps
-              (jeq  . 8)      ; jeq a b o1 o2
+              (jeq  . 8)   ; jeq a b o1 o2
               (jz   . ,(+ 16 (<< 0 6)))     ; jump-imm[0] if zero                                            ;+
               (jn   . ,(+ 16 (<< 1 6)))     ; jump-imm[1] if null                                            ;+
-;              (jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2] if true                                            ;+
+              ;jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2] if true                                            ;+
               (jf   . ,(+ 16 (<< 3 6)))     ; jump-imm[3] if false                                           ;+
-;              (jf2  . 25)     ; jf2 a, ol, oh        ; jump if arity failed
+              ;jf2  . 25)  ; jf2 a, ol, oh  ; jump if arity failed
               
               ; executions
               (goto . 2)      ; jmp a, nargs    call Ra with nargs args
@@ -285,7 +285,7 @@
             ((code arity insts)
                (assemble-code (tuple 'code-var #true arity insts) tail))
             ((code-var fixed? arity insts)
-               (lets ((insts (allocate-registers insts)))
+               (let* ((insts (allocate-registers insts)))
                   (if (not insts)
                      (error "failed to allocate registers" "")
                      (lets/cc ret
@@ -296,14 +296,17 @@
                            (error "too much bytecode: " len))
                         (bytes->bytecode
                            (if fixed?
-                              (ilist 25 arity 
+                              ; вот тут можно забрать проверку на арность (-)
+                              ; без проверки на арность проваливается тест "case-lambda"
+                              ; todo: оставить проверку для lambda, забрать для всего остального
+                              (ilist 25 arity             ;; 25 = JF2
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes
                                     (if (null? tail)
-                                       (list 17)
+                                       (list 17)          ;; 17 == ARITY-ERROR
                                        tail)))
-                              (ilist 89 (if fixed? arity (- arity 1))       ;; last is the optional one
+                              (ilist 89 (if fixed? arity (- arity 1))       ;; last is the optional one (25 + 64)
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes 

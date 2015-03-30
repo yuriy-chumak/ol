@@ -1525,7 +1525,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			ip += 3; break;
 
 		// используется в (func ...) в primop.scm
-		case JF2: { // jmp-nargs(>=?) a hi lo
+		case JF2: { // jmp-nargs (>=) a hi lo
 			int arity = ip[0];
 			if (acc == arity) {
 				if (op & 0x40) // add empty extra arg list
