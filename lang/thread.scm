@@ -23,7 +23,6 @@
       (owl error)
       (owl interop)
       (owl ff)
-      (owl function)
       (owl primop)
       (owl list)
       (owl math)

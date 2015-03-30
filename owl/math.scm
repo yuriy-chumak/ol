@@ -19,7 +19,7 @@
 (define-library (owl math)
 
    (export
-      number? fixnum? integer?
+      fixnum? integer?
       + - * = /
       << < <= = >= > >>
       band bor bxor
@@ -235,16 +235,6 @@
                (big-bad-args '= a b))))
 
       ; later just, is major type X
-
-      (define (number? a)
-         (case (type a)
-            (type-fix+ #true)
-            (type-fix- #true)
-            (type-int+ #true)
-            (type-int- #true)
-            (type-rational #true)
-            (type-complex #true)
-            (else #false)))
 
       (define (integer? a)
          (case (type a)

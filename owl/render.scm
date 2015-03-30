@@ -12,7 +12,6 @@
       (owl symbol)
       (owl ff)
       (owl tuple)
-      (owl function)
       (owl rlist)
       (owl error)
       (owl interop)

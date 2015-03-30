@@ -8,7 +8,6 @@
    (import
       (owl defmac)
       (owl list)
-      (owl function)
       (owl error)
       (owl equal)
       (owl list-extra)

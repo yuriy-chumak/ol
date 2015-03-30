@@ -44,7 +44,6 @@
       (owl string)
       (owl sexp)
       (owl parse)
-      (owl function)
       (owl equal)
       (scheme misc)
       (owl lazy)

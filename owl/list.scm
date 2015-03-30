@@ -1,7 +1,7 @@
 (define-library (owl list)
 
    (export 
-      null pair? null?
+      null null?
       caar cadr cdar cddr
       caaar caadr cadar caddr 
       cdaar cdadr cddar cdddr
@@ -51,8 +51,6 @@
       ;; constants are always inlined, so you pay just one byte of source for readability
 
       (define null '())
-
-      (define (pair? x) (eq? type-pair (type x)))
 
       (define (null? x) (eq? x null))
 

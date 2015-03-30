@@ -45,7 +45,6 @@
 
    (export
       vector              ; v0, .., vn → vector
-      vector?             ; x → bool
       byte-vector?
       vec-len             ; v → n
       vec-ref             ; v x p → v[p] | error
@@ -353,13 +352,6 @@
                (lets ((chunks len (chunk-list l null null 0 #true 0)))
                   ;; convert the list of leaf vectors to a tree
                   (merge-chunks chunks len)))))
-
-      (define (vector? x) ; == raw or a variant of major type 11?
-         (case (type x)
-            (type-vector-raw #true)
-            (type-vector-leaf #true)
-            (type-vector-dispatch #true)
-            (else #false)))
 
       ;; a separate function for listifying byte vectors, which may not be valid vectos (can be > leaf node size)
 

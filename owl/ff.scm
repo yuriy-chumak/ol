@@ -24,7 +24,6 @@
       ff-fold ff-foldr ; like list folds but (op st key val) -> st'
       ff-map      ; like list map but (op key val) -> val'
 		ff-iter     ; ff -> ((key . value) ...) stream (in order)
-      ff?
       ff-singleton? ; ff → bool (has just one key?)
       list->ff ff->list 
       ff->sexp
@@ -156,11 +155,6 @@
                #false)
             (else 
                #true)))
-
-      (define (ff? obj)
-         (if (eq? obj #empty)
-            #true
-            (eq? 24 (fxband (type obj) #b1111100))))
 
       ;; bytecode above, vm primitive below
       (define-syntax with-ff

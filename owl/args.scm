@@ -15,7 +15,6 @@
       (owl symbol)
       (owl list-extra)
       (owl lazy)
-      (owl function)
       (owl math)
       (owl error)
       (owl interop)

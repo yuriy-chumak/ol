@@ -5,7 +5,6 @@
 (define-library (owl string)
 
    (export
-      string?
       string-length
       runes->string      ; code point list (ints) -> string
       bytes->string      ; UTF-8 encoded byte list -> string
@@ -62,13 +61,6 @@
 
    (begin
       (define o (λ (f g) (λ (x) (f (g x)))))
-
-      (define (string? x)
-         (case (type x)
-            (type-string #true)
-            (type-string-wide #true)
-            (type-string-dispatch #true)
-            (else #false)))
 
       (define (string-length str)
          (case (type str)

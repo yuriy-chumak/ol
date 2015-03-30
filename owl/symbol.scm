@@ -5,7 +5,7 @@
 
 (define-library (owl symbol)
 
-   (export symbol? symbol->string)
+   (export symbol->string)
 
    (import
       (owl defmac)
@@ -13,8 +13,6 @@
       (owl error))
 
    (begin
-      (define (symbol? x) (eq? (type x) type-symbol))
-
       (define (symbol->string x) 
          (if (eq? (type x) type-symbol)
             (let ((str (ref x 1)))

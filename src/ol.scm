@@ -112,7 +112,7 @@
       (owl unsupported))
 
    (begin
-      (define (boolean? x) 
+      (define (boolean? x)
          (cond
             ((eq? x #true) #true)
             ((eq? x #false) #true)
@@ -150,8 +150,6 @@
 (import (owl symbol))
 
 (import (owl tuple))
-
-(import (owl function))
 
 (import (owl equal))
 
@@ -356,14 +354,13 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 
 
 (define-library (owl char)
-   (export char? char->integer integer->char)
+   (export char->integer integer->char)
    (import
       (owl defmac)
       (owl math))
    (begin
       (define self (λ (x) x))
 
-      (define char? number?)
       (define char->integer self)
       (define integer->char self)))
 

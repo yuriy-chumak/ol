@@ -1,6 +1,5 @@
 (define-library (owl port)
    (export 
-      port?
       socket? 
       tcp?
 
@@ -15,7 +14,6 @@
 
    (begin
 
-      (define (port? x)       (eq? (type x) type-port))
       (define (socket? x)     (eq? (type x) type-socket))
       (define (tcp? x)        (eq? (type x) type-tcp-client))
 

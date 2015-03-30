@@ -61,6 +61,11 @@
 
       apply
       call-with-current-continuation call/cc lets/cc
+
+      ; 3.2.
+      boolean? pair? symbol? number? char? string? vector? port? procedure?
+      ; ol extension:
+      bytecode? function? ff?
    )
 
    (begin
@@ -524,9 +529,82 @@
 
       ; 2. Lexical conventions
       ;   ... можно скопипастить стандарт?
+      ; 2.1. Identifiers
+
+      ;lambda        q
+      ;list->vector  soup
+      ;+             V17a
+      ;<=?           a34kTMNs
+      ;the-word-recursion-has-many-meanings
+      ;
+      ; ! $ % & * + - . / : < = > ? @ ^ _ ~
+
+
 
       ; 3. Basic concepts
       ;   ... можно скопипастить стандарт?
+
+      ; 3.2. Disjointness of types
+      ; No object satisfies more than one of the following predicates:
+
+      (define (boolean? o)
+         (cond
+            ((eq? o #true) #true)
+            ((eq? o #false) #true)
+            (else #false)))
+
+      (define (pair? o)
+         (eq? (type o) type-pair))
+
+      (define (symbol? o)
+         (eq? (type o) type-symbol))
+
+      (define (number? o)
+         (case (type o)
+            (type-fix+ #true)
+            (type-fix- #true)
+            (type-int+ #true)
+            (type-int- #true)
+            (type-rational #true)
+            (type-complex #true)
+            (else #false)))
+
+      (define (char? o) (number? o))
+
+      (define (string? o)
+         (case (type o)
+            (type-string #true)
+            (type-string-wide #true)
+            (type-string-dispatch #true)
+            (else #false)))
+
+      (define (vector? o) ; == raw or a variant of major type 11?
+         (case (type o)
+            (type-vector-raw #true)
+            (type-vector-leaf #true)
+            (type-vector-dispatch #true)
+            (else #false)))
+
+      (define (port? o)
+         (eq? (type o) type-port))
+
+      (define (bytecode? o)  ; OL extension
+         (eq? (type o) type-bytecode))
+
+      (define (function? o)  ; OL extension
+         (case (type o)
+            (type-proc #true)
+            (type-clos #true)
+            (type-bytecode #true)
+            (else #false)))
+
+      (define (ff? o)        ; OL extension
+         (or (eq? o #empty)
+             (eq? 24 (fxband (type o) #b1111100))))
+
+      (define (procedure? o)
+         (or (function? o)
+             (ff? o)))
 
       ; 4. Expressions
       ; 4.1 Primitive expression types

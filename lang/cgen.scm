@@ -22,7 +22,6 @@
       (owl defmac)
       (owl list-extra)
       (owl math)
-      (owl function)
       (owl ff)
       (owl vector)
       (owl string)

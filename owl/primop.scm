@@ -26,51 +26,41 @@
       (owl defmac))
 
    (begin
-      ;; Список кодов виртуальной машины:
-      (define JF2 25)
-      (define RET 24)
-      (define ARITY-ERROR 17)
    
-;      ; пара служебных функций:
-;      (define (append a b) ; append
-;         (if (eq? a '())
-;            b
-;            (cons (car a) (append (cdr a) b))))
-;            
-;      (define (- a b)
-;         (let* ((n _ (fx- a b))) n))
-;      (define (+ a b)
-;         (let* ((n _ (fx+ a b))) n))
-;
-;      (define (primop1 name code inargs)
-;         (let*
-;            ((arity _ (fx+ inargs 1))
-;             (primitive (raw type-bytecode
-;                (case inargs
-;                   (0 (list JF2 arity 0 4  code 4         RET 4  ARITY-ERROR))
-;                   (1 (list JF2 arity 0 5  code 4 5       RET 5  ARITY-ERROR))
-;                   (2 (list JF2 arity 0 6  code 4 5 6     RET 6  ARITY-ERROR))
-;                   (3 (list JF2 arity 0 7  code 4 5 6 7   RET 7  ARITY-ERROR))
-;                   (4 (list JF2 arity 0 8  code 4 5 6 7 8 RET 8  ARITY-ERROR))))))
-;            (tuple name code inargs 1 primitive)))
-;
-;      (define (define-primop name code) ; code is list
-;         (let*
-;            ((command (car code))
-;             (i (car (cdr code)))
-;             ;(arity _ (fx+ i 1))
-;             (primitive (raw type-bytecode
-;                (case i
-;                   (0 (list command 4         RET 4))
-;                   (1 (list command 4 5       RET 5))
-;                   (2 (list command 4 5 6     RET 6))
-;                   (3 (list command 4 5 6 7   RET 7))
-;                   (4 (list command 4 5 6 7 8 RET 8))))))
-;            (tuple name code i 1 primitive)))
+;      ; эта функция создает primop, но для экономии памяти мы ее использовать не будем
+;      (define (primop name code) ; code is list
+;         (letrec ((nil '())
+;                  (nth (lambda (list n)
+;                     (if (eq? n 1)
+;                        (car list)
+;                        (receive (fx- n 1) (lambda (n _) (nth (cdr list) n))))))
+;                  (append (lambda (a b)
+;                     (if (eq? a nil)
+;                        b
+;                        (cons (car a) (append (cdr a) b)))))
+;                  (args (lambda (from n)
+;                     (if (eq? n 0)
+;                        nil
+;                        (cons from
+;                           (let* ((from _ (fx+ from 1))
+;                                  (n _ (fx- n 1)))
+;                              (args from n)))))))
+;         (let* ((command (car code))
+;                (i (nth code 2))
+;                (o (nth code 3))
+;                (arity _ (fx+ i o))
+;                (bytecode (raw type-bytecode
+;                   (append
+;                      (ilist command (args 4 arity))
+;                      (if (eq? o 1)
+;                         (list 24 (receive (fx+ 3 arity) (lambda (a _) a)))
+;                         nil)))))
+;            (tuple name command i o bytecode))))
 
       ; вот тут мы заменяем команды (если очень хотим)
 ;     (define cons       (raw (list JF2 3 0 6  51 4 5 6  RET 6  ARITY-ERROR) type-bytecode #false))  ;; 17 == ARITY-ERROR
 
+;      (define x (ilist 1 1 5))
 
 ;          итак, процесс замены кода операции на другой:
 ;          1. заводим новую операцию (например, как я сделал с raw)
@@ -104,6 +94,17 @@
 ;            '(1 . 2)
 ;            >
 
+      ;; Список кодов виртуальной машины:
+      (define JF2 25)
+      (define RET 24)
+      (define ARITY-ERROR 17)
+
+      (define BIND 32)
+
+
+
+      (define ref (raw type-bytecode '(47 4 5 6  24 6)))
+
       (define primops1 (list
             ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
             (tuple 'bind       32  1 #false bind)     ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
@@ -125,6 +126,7 @@
             ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
             ; names for these functions, the old terms are still in use.
             (tuple 'cons      51  2 1 (raw type-bytecode '(51 4 5 6  24 6)))
+
 
             (tuple 'type      15  1 1 (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
             (tuple 'size      36  1 1 (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)

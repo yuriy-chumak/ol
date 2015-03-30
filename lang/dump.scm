@@ -19,7 +19,6 @@
       (owl symbol)
       (owl vector)
       (owl equal)
-      (owl function)
       (owl list-extra)
       (owl string)
       (owl io)

@@ -20,7 +20,6 @@
       (owl math)
       (owl list)
       (owl error)
-      (owl function)
       (owl symbol)
       (owl list-extra)
       (lang ast)
