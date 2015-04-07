@@ -2,22 +2,26 @@
 #ifndef __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 #define	__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 
-// common options, can change
-#define HAS_SOCKETS 1
-
-
 // тут игра слов OL <> 0L
-//	нулевой порог вхождения
-//	сокращение от OwlLisp
-//	а еще в html - тег нумерованного СПИСКА (еще одна отсылка к lisp)
+//	нулевой порог вхождения (Lisp - очень простой язык)
+//	сокращение от Owl-Lisp
+//	тег нумерованного списка в html - (еще одна отсылка к lisp)
 struct OL;
 
+//-- common options, can change
+#define HAS_SOCKETS 1
+#define HAS_DLOPEN 1
 
+#define NO_SECCOMP
+
+//-- end of options
+
+//-- common header
 #ifdef __cplusplus
 	extern "C" {
 #endif
 
-// todo: change to vm_new and vm_free or vm_delete or vm_destroy or something
+// todo: add vm_free or vm_delete or vm_destroy or something
 
 #ifndef STANDALONE
 struct OL*
@@ -29,15 +33,13 @@ int vm_puts(struct OL* vm, char *message, int n);
 int vm_gets(struct OL* vm, char *message, int n);
 int vm_feof(struct OL* vm);  // все ли забрали из входящего буфера
 
-#endif
-
 #ifdef __cplusplus
 struct OL
 {
 private:
 	OL* vm;
 public:
-	OLvm(unsigned char* language) { vm = vm_start(language); }
+	OLvm(unsigned char* language) { vm = vm_new(language); }
 	virtual ~OLvm() { free(vm); }
 
 	int stop() { puts(vm, ",quit", 5); }
@@ -49,6 +51,9 @@ public:
 typedef struct OL OL;
 #endif
 
+#endif
+
+//-- end of header
 #ifdef __cplusplus
 	}
 #endif

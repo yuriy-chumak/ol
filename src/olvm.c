@@ -1,5 +1,6 @@
 // максимальное число для элементарной математики: 16777215 (24 бита, 0xFFFFFF)
 // считать так: (receive (fx+ 16777214 1) (lambda (hi lo) (list hi lo)))
+//  либо так: (let* ((hi lo (fx+ 16777214 1))) (...))
 // при превышении выдает мусор
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
 //      http://igorkov.org/pdf/Z80-Central-Processor-Unit.pdf
@@ -15,26 +16,37 @@
 // кастомные типы: https://www.gnu.org/software/guile/manual/html_node/Describing-a-New-Type.html#Describing-a-New-Type
 // список функций: http://jscheme.sourceforge.net/jscheme/doc/R4RSprimitives.html
 
-// pinned objects - если это будут просто какие-то равки, то можно из размещать ДО основной памяти,
+// pinned objects - если это будут просто какие-то равки, то можно их размещать ДО основной памяти,
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
 
 #include "olvm.h"
 
-// На данный момент поддерживаются четыре операционные системы:
-//  Windows, Linux, Android, MacOS
+// На данный момент поддерживаются две операционные системы:
+//  Windows, Linux
 // Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
+
+// https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
 #ifndef __GNUC__
 #	warning "This code tested only under Gnu C compiler"
+#else
+#	define GCC_VERSION (__GNUC__ * 10000 \
+	                  + __GNUC_MINOR__ * 100 \
+	                  + __GNUC_PATCHLEVEL__)
+#	if GCC_VERSION < 30200
+#		warning "Code require gcc version > 3.2 (with nested functions support)"
+#	endif
 #endif
+
+// check this for nested functions:
+//	https://github.com/Leushenko/C99-Lambda
 
 // posix or not: http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
 
 // STANDALONE - самостоятельный бинарник без потоков (виртуальная машина, короче) и т.д.
 
-// PORT: либо равка, с типом type-port; либо raw-объект со словом port и размером 2
-
-// todo: проверить, что все работает в 64-битном коде
+// PORT: равка, с типом type-port и размером 2 (либо type-fix+/type-int+ immediate value)
+// todo: проверить, что все работает в 64-битном коде (fuck! оно таки работает!!!)
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (???)
 //  а изменяемые у нас вектора
 
@@ -45,19 +57,19 @@
 //	lambda, quote, rlambda (recursive lambda), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
 //	все остальное - макросы (?)
 
+#include <assert.h>
+#include <unistd.h> // posix
 #include <stddef.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <unistd.h> // posix
-#include <assert.h>
 #include <dirent.h>
 #include <string.h>
 
 #include <errno.h>
+#include <stdio.h>
 #include <time.h>
 #include <inttypes.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -97,7 +109,6 @@
 
 // ========================================
 //  HAS_SOCKETS 1
-//
 #if HAS_SOCKETS
 
 // headers
@@ -115,7 +126,6 @@
 
 #	include <netinet/in.h>
 #	include <sys/socket.h>
-#	include <sys/wait.h>
 
 #	ifndef O_BINARY
 #		define O_BINARY 0
@@ -123,18 +133,7 @@
 
 #endif
 #ifdef __ANDROID__
-#	include <netinet/in.h>
-#	include <sys/socket.h>
-#	include <sys/wait.h>
 	typedef unsigned long in_addr_t;
-#endif
-#ifdef __linux__
-#	include <netinet/in.h>
-#	include <sys/socket.h>
-#	include <sys/wait.h>
-#	ifndef O_BINARY
-#		define O_BINARY 0
-#	endif
 #endif
 
 #ifdef __APPLE__
@@ -147,14 +146,6 @@
     // Other kinds of Mac OS
 #	else
     // Unsupported platform
-#	endif
-
-#	include <netinet/in.h>
-#	include <sys/socket.h>
-#	include <sys/wait.h>
-#	include <sys/wait.h>
-#	ifndef O_BINARY
-#		define O_BINARY 0
 #	endif
 #endif
 
@@ -227,7 +218,6 @@ static int pthread_yield(void)
 #endif
 
 #endif//STANDALONE
-#define STATIC static __inline__
 
 // -=( fifo )=------------------------------------------------
 #ifndef STANDALONE
@@ -331,7 +321,7 @@ int fifo_feof(struct fifo* f)
 
 // --------------------------------------------------------
 // -=( dl )=-----------------------------------------------
-#ifndef JAVASCRIPT
+#ifdef HAS_DLOPEN
 // интерфейс к динамическому связыванию системных библиотек
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -385,6 +375,8 @@ void *dlsym  (void *handle, const char *name)
 #endif
 
 #endif//STANDALONE
+
+// ----------
 // -=( OL )=----------------------------------------------------------------------
 // --
 //
@@ -398,9 +390,9 @@ typedef struct OL
 #endif//STANDALONE
 } OL;
 
-// основной тип даных, зависит от разрядности машины
-// based on C99 standard, <stdint.h>:
 // unsigned int that is capable of storing a pointer
+// основной тип даных, зависит от разрядности машины
+// based on C99 standard, <stdint.h>
 typedef uintptr_t word;
 
 
@@ -416,11 +408,11 @@ typedef uintptr_t word;
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
 // object headers are further
-//  [ssssssss ssssssss ????rppp tttttt10] // bit "immediate" у заголовкой всегда! выставлен в 1
+//  [ssssssss ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда! выставлен в 1
 //   '---------------| '--||'-| '----|
 //                   |    ||  |      '-----> object type
 //                   |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
-//                   |    |'---------------> rawness bit (raw objects have no decriptors in them)
+//                   |    |'---------------> rawness bit (raw objects have no decriptors(pointers) in them)
 //                   |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
 //                   '---------------------> object size in words
 //
@@ -430,16 +422,17 @@ typedef uintptr_t word;
 
 // todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
 //	и ptr на функцию, что делает финализацию.
+// todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
 
-//#pragma pack(push, sizeof(word))
+#pragma pack(push, 0)
 typedef struct object
 {
 	union {
 		word header;
 		word ref[1];
 	};
-} object; // __attribute__ ((aligned(sizeof(word)), packed))
-//#pragma pack(pop)
+} __attribute__ ((aligned(sizeof(word)), packed)) object; // or  ?
+#pragma pack(pop)
 
 /*typedef struct pair
 {
@@ -449,11 +442,9 @@ typedef struct object
 } pair;*/
 
 
-// Для экономии памяти
-
-#define IPOS                        8  /* offset of immediate payload */
-#define SPOS                        16 /* offset of size bits in header immediate values */
-#define TPOS                        2  /* offset of type bits in header */
+#define IPOS                        8  // offset of immediate payload
+#define SPOS                        16 // offset of size bits in header immediate values
+#define TPOS                        2  // offset of type bits in header
 
 #define V(ob)                       *((word *) (ob)) // *ob, ob[0]
 #define W                           sizeof (word)
@@ -481,18 +472,18 @@ typedef struct object
 #define imm_type(x)                 ((((unsigned int)x) >> TPOS) & 0x3F)
 #define imm_val(x)                   (((unsigned int)x) >> IPOS)
 #define hdrsize(x)                  ((((word)x) >> SPOS) & MAXOBJ)
-#define padsize(x)                  ((((word)x) >> 8) & 7)
-#define hdrtype(x)                  ((((word)x) & 0xFF) >> 2) // 0xFF from (p) << 8) in make_raw_header
+#define padsize(x)                  ((((word)x) >> IPOS) & 7)
+#define hdrtype(x)                  ((((word)x) >> TPOS) & 0x3F) // 0xFF from (p) << 8) in make_raw_header
 
 #define typeof(x) hdrtype(x)
 
 #define immediatep(x)               (((word)x) & 2)
 #define allocp(x)                   (!immediatep(x))
 #define rawp(hdr)                   ((hdr) & RAWBIT)
-#define pairp(ob)                   (allocp(ob) && V(ob)==PAIRHDR)
 
 #define is_pointer(x)               (!immediatep(x))
 #define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
+#define is_pair(ob)                 (is_pointer(ob) && V(ob)==PAIRHDR)
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 #define TFIX                         (0)      // type-fix+
@@ -948,19 +939,19 @@ void set_blocking(int sock, int blockp) {
 #endif
 }
 
-#ifndef _WIN32
+/*#ifndef _WIN32
 static
 void signal_handler(int signal) {
    switch(signal) {
       case SIGINT:
          breaked |= 2; break;
-      case SIGPIPE: break; /* can cause loop when reporting errors */
+      case SIGPIPE: break; // can cause loop when reporting errors
       default:
          // printf("vm: signal %d\n", signal);
          breaked |= 4;
    }
 }
-#endif
+#endif*/
 
 /* small functions defined locally after hitting some portability issues */
 static __inline__ void bytecopy(char *from, char *to, int n) { while(n--) *to++ = *from++; }
@@ -985,6 +976,7 @@ int llen(word *ptr) {
 }
 
 void set_signal_handler() {
+/*
 #ifndef _WIN32
    struct sigaction sa;
    sa.sa_handler = signal_handler;
@@ -993,6 +985,7 @@ void set_signal_handler() {
    sigaction(SIGINT, &sa, NULL);
    sigaction(SIGPIPE, &sa, NULL);
 #endif
+*/
 }
 
 /*** Primops called from VM and generated C-code ***/
@@ -1633,14 +1626,14 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		case CAR: {  // car a r:
 			word T = A0;
-			CHECK(pairp(T), T, CAR);
+			CHECK(is_pair(T), T, CAR);
 			A1 = ((word*)T)[1];
 			ip += 2; break;
 		}
 
 		case CDR: {  // car a r:
 			word T = A0;
-			CHECK(pairp(T), T, CDR); // bug? was 52 instead of CDR(53)
+			CHECK(is_pair(T), T, CDR); // bug? was 52 instead of CDR(53)
 			A1 = ((word*)T)[2];
 			ip += 2; break;
 		}
@@ -1874,27 +1867,26 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		// make-tuple
 		case MKT: { // mkt t s f1 .. fs r
-			word t = *ip++;
-			word s = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
-			word *p = new (s+1), i = 0; // s fields + header
-			*p = make_header(s+1, t);
-			while (i < s) {
+			word type = *ip++;
+			word size = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
+			word *p = new (size+1), i = 0; // s fields + header
+			*p = make_header(size+1, type);
+			while (i < size) {
 				p[i+1] = R[ip[i]];
 				i++;
 			}
 			R[ip[i]] = (word) p;
-
-			NEXT(s+1);
+			ip += size+1; break;
 		}
 
 		// bind tuple to registers
 		case BIND: { /* bind <tuple > <n> <r0> .. <rn> */ // todo: move to sys-prim?
 			word *tuple = (word *) R[*ip++];
-			CHECK(allocp(tuple), tuple, 32);
+			CHECK(is_pointer(tuple), tuple, BIND);
 
 			word pos = 1, n = *ip++;
 			word hdr = *tuple;
-			CHECK(!(rawp(hdr) || hdrsize(hdr)-1 != n), tuple, 32);
+			CHECK(!(rawp(hdr) || hdrsize(hdr)-1 != n), tuple, BIND);
 			while (n--)
 				R[*ip++] = tuple[pos++];
 
@@ -1905,8 +1897,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case FFBIND: { // with-ff <node >l k v r */ // bindff - bind node left key val right, filling in #false when implicit
 			word *T = (word *) A0;
 			word hdr = *T++;
-			A2 = *T++; /* key */
-			A3 = *T++; /* value */
+			A2 = *T++; // key
+			A3 = *T++; // value
 			switch (hdrsize(hdr)) {
 			case 3: A1 = A4 = IEMPTY; break;
 			case 4:
@@ -1931,7 +1923,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			A3 = (word) p;
 			*p++ = make_header(size+1, type);
 			while (size--) {
-				CHECK((allocp(lst) && *lst == PAIRHDR), lst, 35);
+				CHECK((is_pointer(lst) && lst[0] == PAIRHDR), lst, LISTUPLE);
 				*p++ = lst[1];
 				lst = (word *) lst[2];
 			}
@@ -1977,11 +1969,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		case FFTOGGLE: { // fftoggle - toggle node color
 				 word *node = (word *) R[*ip];
 				 word *newobj, h;
-				 CHECK(allocp(node), node, 46);
+				 CHECK(is_pointer(node), node, FFTOGGLE);
 				 newobj = fp; // todo: make as function with using fp
 				 h = *node++;
 				 A1 = (word) newobj;
-				 *newobj++ = (h^(FFRED<<TPOS));
+				 *newobj++ = (h ^ (FFRED<<TPOS));
 				 switch (hdrsize(h)) {
 					case 5:  *newobj++ = *node++;
 					case 4:  *newobj++ = *node++;
@@ -1993,10 +1985,9 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 		case FFREDQ: { // red? node r (has highest type bit?) */
 			word *node = (word *) A0;
-			A1 = TRUEFALSE(allocp(node) && ((*node) & (FFRED << TPOS)));
+			A1 = TRUEFALSE(is_pointer(node) && ((node[0]) & (FFRED << TPOS)));
 			ip += 2; break;
 		}
-
 
 		// ...
 //		case SYSCALL2: {
@@ -2043,11 +2034,14 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			switch (op) {
 			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
 			case 35: // currently sleep, will be nanosleep
+#ifdef _WIN32
 				Sleep(fixval(a));
+#else
 //				for Linux:
 //				if (!seccompp)
-//					usleep(fixval(A0)*1000);
+					usleep(fixval(a)*1000);
 //				A1 = TRUEFALSE(errno == EINTR);
+#endif
 				result = ITRUE;
 				break;
 
@@ -2292,37 +2286,38 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								({ int $(char *str){ printf("Test: %s\n", str); } $; })
 						};*/
 
-						#define CALL(conv) \
+#ifdef __linux__
+						#define CALL() \
 							switch (count) {\
-							case  0: return ((conv unsigned int (*) ())\
+							case  0: return ((unsigned int (*) ())\
 											function) ();\
-							case  1: return ((conv unsigned int (*) (int))\
+							case  1: return ((unsigned int (*) (int))\
 											function) (args[0]);\
-							case  2: return ((conv unsigned int (*) (int, int)) function)\
+							case  2: return ((unsigned int (*) (int, int)) function)\
 											(args[0], args[1]);\
-							case  3: return ((conv unsigned int (*) (int, int, int)) function)\
+							case  3: return ((unsigned int (*) (int, int, int)) function)\
 											(args[0], args[1], args[2]);\
-							case  4: return ((conv unsigned int (*) (int, int, int, int)) function)\
+							case  4: return ((unsigned int (*) (int, int, int, int)) function)\
 											(args[0], args[1], args[2], args[3]);\
-							case  5: return ((conv unsigned int (*) (int, int, int, int, int)) function)\
+							case  5: return ((unsigned int (*) (int, int, int, int, int)) function)\
 											(args[0], args[1], args[2], args[3], args[4]);\
-							case  6: return ((conv unsigned int (*) (int, int, int, int, int, int)) function)\
+							case  6: return ((unsigned int (*) (int, int, int, int, int, int)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5]);\
-							case  7: return ((conv unsigned int (*) (int, int, int, int, int, int, int)) function)\
+							case  7: return ((unsigned int (*) (int, int, int, int, int, int, int)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);\
-							case  8: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int)) function)\
+							case  8: return ((unsigned int (*) (int, int, int, int, int, int, int, int)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);\
-							case  9: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int)) function)\
+							case  9: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);\
-							case 10: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int, int)) function)\
+							case 10: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int, int)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);\
-							case 11: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int)) function)\
+							case 11: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);\
-							case 12: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int, int))\
+							case 12: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int, int))\
 											function) (args[0], args[1], args[2], args[3],   \
 													   args[4], args[5], args[6], args[7],   \
 													   args[8], args[9], args[10], args[11]);\
-							case 18: return ((conv unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int))\
+							case 18: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int))\
 											function) (args[0], args[1], args[2], args[3],   \
 													   args[4], args[5], args[6], args[7],   \
 													   args[8], args[9], args[10], args[11], \
@@ -2330,9 +2325,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 							default: fprintf(stderr, "Too match parameters for pinvoke function: %d", count);\
 								break;\
 							}
-#ifdef __linux__
 						// чуть-чуть ускоримся для линукса
-						CALL(__cdecl);
+						CALL();
 #else
 //						*(char*)0 = 123;
 						switch (convention >> 6) {
@@ -2649,7 +2643,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						            return IFALSE;
 						         mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
 						         val = open(((char *) path) + W, mode,(S_IRUSR|S_IWUSR));
-						         if (val < 0 || fstat(val, &sb) == -1 || (sb.st_mode & S_IFDIR)) {
+						         if (val < 0 || fstat(val, &sb) == -1 || (S_ISDIR(sb.st_mode))) {
 						            close(val);
 						            return IFALSE;
 						         }
@@ -2767,8 +2761,12 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						         char *name = (char *)a;
 						         if (!allocp(name)) return IFALSE;
 						         return strp2owl(getenv(name + W)); }
-						      case 1017: { /* exec[v] path argl ret */
-						#ifndef _WIN32
+						      case 1017: { // system (char*)
+						    	  int result = system((char*)a + W);
+						    	  return F(result);
+						      }
+
+/*						#ifndef _WIN32
 						          char *path = ((char *) a) + W;
 						          int nargs = llen((word *)b);
 						         char **args = malloc((nargs+1) * sizeof(char *)); // potential memory leak
@@ -2780,15 +2778,15 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						            b = ((word *) b)[2];
 						         }
 						         *argp = NULL;
-						         set_blocking(0,1); /* try to return stdio to blocking mode */
-						         set_blocking(1,1); /* warning, other file descriptors will stay in nonblocking mode */
+						         set_blocking(0,1); // try to return stdio to blocking mode
+						         set_blocking(1,1); // warning, other file descriptors will stay in nonblocking mode
 						         set_blocking(2,1);
-						         execv(path, args); /* may return -1 and set errno */
-						         set_blocking(0,0); /* exec failed, back to nonblocking io for owl */
+						         execv(path, args); // may return -1 and set errno
+						         set_blocking(0,0); // exec failed, back to nonblocking io for owl
 						         set_blocking(1,0);
 						         set_blocking(2,0);
 						#endif
-						         return IFALSE; }
+						         return IFALSE; }*/
 						      case 1020: { /* chdir path res */
 						         char *path = ((char *)a) + W;
 						         if (chdir(path) < 0)
@@ -3007,6 +3005,9 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	}
 
 	// deserialize bootstrap
+//	if (*hp == '#')
+//		while (*hp++ != '\n') continue;
+
 	for (int me = 0; me < nobjs; me++) {
 		ptrs[me] = (word) fp;
 
@@ -3064,6 +3065,9 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	// count:
 	int n = 0;
 	hp = lang;
+
+//	if (*hp == '#')
+//		while (*hp++ != '\n') continue;
 
 	int allocated = 0;
 	while (*hp != 0) {
@@ -3168,6 +3172,12 @@ int main(int argc, char** argv)
 		int pos = fread(&bom, 1, 1, bin); // прочитаем один байт
 		if (pos < 1)
 			exit(5);	// не смогли файл прочитать
+
+		// переделать
+/*		if (bom == '#') { // skip possible hashbang
+			while (fread(&bom, 1, 1, bin) == 1 && bom != '\n') continue;
+			fread(&bom, 1, 1, bin);
+		}*/
 
 		if (bom > 3) {	// текстовая программа (script)
 			fclose(bin);

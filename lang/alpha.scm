@@ -3,6 +3,8 @@
 ;;;
 
 ; convert all variables to fresh symbols. makes compilation easier.
+; '(lambda (x) (lambda (x) x)) => (lambda (x:0) (lambda (x:1) x:1))
+
 
 (define-library (lang alpha)
    (export alpha-convert)
