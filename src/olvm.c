@@ -588,6 +588,7 @@ word*p = new (size);\
 })
 
 // хитрый макрос перегружающий макрос аллокатор памяти
+//	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
 #define GET_MACRO(_1, _2, NAME, ...) NAME
 #define new(...) GET_MACRO(__VA_ARGS__, NEW_OBJECT, NEW)(__VA_ARGS__)
 
@@ -984,8 +985,9 @@ struct args
 	word *fp; // allocation pointer (top of allocated heap)
 
 	void *userdata;
-	volatile char signal;
+	volatile char signal;// сигнал, что машина запустилась
 };
+
 // args + 0 = (list "arg0" "arg 1")
 // args + 3 = objects list
 // Несколько замечаний по этой функции:
@@ -1036,10 +1038,10 @@ void* runtime(void *args) // heap top
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
 	word* this = (word*) ptrs[nobjs];
 
-	// почистим регистры. обязательно! иначе gc() сбойнет, пытаясь работать с мусорными объектами
+	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусорными объектами
 	for (int i = i; i < NR; i++)
 		R[i] = INULL;
-	R[0] = IFALSE; // no yet mcp
+	R[0] = IFALSE; // mcp (no yet)
 	R[3] = IHALT;  // continuation
 	R[4] = (word) userdata; // command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
@@ -1048,7 +1050,7 @@ void* runtime(void *args) // heap top
 	int ticker = slice; // any initial value ok
 
 	// instruction pointer
-	unsigned char *ip;
+	unsigned char *ip = 0;
 
 apply: // apply something at "this" to values in regs, or maybe switch context
 	while (1) {
@@ -1084,19 +1086,20 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 		} /* <- add a way to call the newobj vm prim table also here? */
 
 		if (allocp(this)) { // если это аллоцированный объект
-			word hdr = *this & 0x0FFF; // cut size out, take just header info
-			if (hdr == make_header(0, TPROC)) { // proc
+			//word hdr = *this & 0x0FFF; // cut size out, take just header info
+			word type = hdrtype(*this);
+			if (type == TPROC) { //hdr == make_header(0, TPROC)) { // proc
 				R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			}
 			else
-			if (hdr == make_header(0, TCLOS)) { // clos
+			if (type == TCLOS) { //hdr == make_header(0, TCLOS)) { // clos
 				R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 				R[2] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			}
 			else
-			if (((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
+			if ((type & 60) == TFF) { //((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
 
-				word prim_get(word *ff, word key, word def) { // ff assumed to be valid
+				word get(word *ff, word key, word def) { // ff assumed to be valid
 					while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
 						word this = ff[1], hdr;
 						if (this == key)
@@ -1121,12 +1124,12 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 				switch (acc)
 				{
 				case 2:
-					R[3] = prim_get(this, R[4],    0);
+					R[3] = get(this, R[4],    0);
 					if (!R[3])
 						ERROR(260, this, R[4]);
 					break;
 				case 3:
-					R[3] = prim_get(this, R[4], R[5]);
+					R[3] = get(this, R[4], R[5]);
 					break;
 				default:
 					ERROR(259, this, INULL);
@@ -1136,7 +1139,7 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 				continue;
 			}
 			else
-				if (((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
+				if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
 					ERROR(259, this, INULL);
 
 			// todo: сюда надо добавить реакцию на внешние колбеки
@@ -1470,7 +1473,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		/************************************************************************************/
 		// более высокоуровневые конструкции
 		//	смотреть "owl/primop.scm" и "lang/assemble.scm"
-		case RAW: { // raw type lst r (fixme, alloc amount testing compiler pass not in place yet!)
+		case RAW: { // raw type lst (fixme, alloc amount testing compiler pass not in place yet!) (?)
 			word *lst = (word *) A1;
 			int len = 0;
 			word* p = lst;
@@ -1905,7 +1908,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			default: *p++ = *node++;
 			         *p++ = *node++;
 			}
-			fp = (word*) p;
+			// fp = (word*) p; bug?
 			ip += 2; break;
 		}
 
