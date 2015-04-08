@@ -35,27 +35,32 @@
 #	if GCC_VERSION < 30200
 #		warning "Code require gcc version > 3.2 (with nested functions support)"
 #	endif
+
+#	if __STDC_VERSION__ < 199901L
+#		warning "Code require c99 enabled (-std=c99)"
+#	endif
 #endif
 
 // check this for nested functions:
 //	https://github.com/Leushenko/C99-Lambda
 
-// posix or not: http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
+// posix or not:
+//	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
 
-// STANDALONE - самостоятельный бинарник без потоков (виртуальная машина, короче) и т.д.
+// STANDALONE - самостоятельный бинарник без потоков
 
-// PORT: равка, с типом type-port и размером 2 (либо type-fix+/type-int+ immediate value)
-// todo: проверить, что все работает в 64-битном коде (fuck! оно таки работает!!!)
-// todo: переименовать tuple в array. array же неизменяемый, все равно. (???)
+// PORT: равка, с типом type-port и размером 2 (либо type-fix+/type-int+ for immediate value)
+// todo: проверить, что все работает в 64-битном коде (fck! оно таки работает!!!)
+// todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
 //  а изменяемые у нас вектора
 
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
 
-// компилятор поддерживает только несколько специальных форм:
+// компилятор lisp поддерживает только несколько специальных форм:
 //	lambda, quote, rlambda (recursive lambda), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
-//	все остальное - макросы (?)
+//	все остальное - макросы
 
 #include <assert.h>
 #include <unistd.h> // posix
@@ -67,41 +72,13 @@
 
 #include <errno.h>
 #include <stdio.h>
-#include <time.h>
 #include <inttypes.h>
 #include <fcntl.h>
+
+#include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-// thread local storage modifier for virtual machine private variables -
-// виртуальная машина у нас работает в отдельном потоке, соответственно ее
-// локальные переменные можно держать в TLS, а не в какой-то VM структуре
-//#ifdef STANDALONE
-//#  define __tlocal__
-//#else
-/*#	ifndef __tlocal__
-#		if __STDC_VERSION__ >= 201112 && !defined __STDC_NO_THREADS__
-#			define thread_local _Thread_local
-#		elif defined _WIN32 && ( \
-		     defined _MSC_VER || \
-		     defined __ICL || \
-		     defined __DMC__ || \
-		     defined __BORLANDC__ )
-#			define __tlocal__ __declspec(thread)
-// note that ICC (linux) and Clang are covered by __GNUC__
-#		elif defined __GNUC__ || defined __SUNPRO_C || defined __xlC__
-#			define __tlocal__ __thread
-#		else
-#			error "Cannot define thread_local"
-#		endif
-#	endif
-//#endif//STANDALONE
-
-// TEMP: disable __tlocal__ to check system resources consuption
-//#undef __tlocal__
-#define __tlocal__ __thread
-*/
 
 
 //********************************************************************
@@ -151,7 +128,8 @@
 
 #endif
 
-// Threading (pthread)
+// -----------------------------
+// Threading (pthread for win32)
 #ifndef STANDALONE
 
 #ifdef _WIN32
@@ -219,16 +197,17 @@ static int pthread_yield(void)
 
 #endif//STANDALONE
 
+// -----------------------------------------------------------
 // -=( fifo )=------------------------------------------------
 #ifndef STANDALONE
 // кольцевой текстовый буфер для общения с виртуальной машиной
+
 #define FIFOLENGTH (1 << 14) // 4 * 4096 for now // was << 14
 
 
 // todo: (?) когда приходит запрос на "после конца" входного буфера даных,
 //	значит, машина сделала все, что надо было и теперь ждет новых даных.
 //	похоже, пора возвращать сигнал "я все сделала"
-
 
 struct fifo
 {
@@ -323,6 +302,7 @@ int fifo_feof(struct fifo* f)
 // -=( dl )=-----------------------------------------------
 #ifdef HAS_DLOPEN
 // интерфейс к динамическому связыванию системных библиотек
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -376,6 +356,7 @@ void *dlsym  (void *handle, const char *name)
 
 #endif//STANDALONE
 
+
 // ----------
 // -=( OL )=----------------------------------------------------------------------
 // --
@@ -396,7 +377,8 @@ typedef struct OL
 typedef uintptr_t word;
 
 
-//;; DESCRIPTOR FORMAT
+//;; descriptor format:
+// это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
 //                            .------------> 24-bit payload if immediate
 //                            |      .-----> type tag if immediate
 //                            |      |.----> immediateness
@@ -407,6 +389,7 @@ typedef uintptr_t word;
 //      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
+// а вот это заголовок объекта, то, что лежит у него в ob[0] (*ob)
 // object headers are further
 //  [ssssssss ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда! выставлен в 1
 //   '---------------| '--||'-| '----|
@@ -415,6 +398,8 @@ typedef uintptr_t word;
 //                   |    |'---------------> rawness bit (raw objects have no decriptors(pointers) in them)
 //                   |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
 //                   '---------------------> object size in words
+//  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
+//	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
 //
 //; note - there are 6 type bits, but one is currently wasted in old header position
 //; to the right of them, so all types must be <32 until they can be slid to right
@@ -424,6 +409,8 @@ typedef uintptr_t word;
 //	и ptr на функцию, что делает финализацию.
 // todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
 
+// удалю я пока эту высокоуровневую хрень :)
+/*
 #pragma pack(push, 0)
 typedef struct object
 {
@@ -432,7 +419,7 @@ typedef struct object
 		word ref[1];
 	};
 } __attribute__ ((aligned(sizeof(word)), packed)) object; // or  ?
-#pragma pack(pop)
+#pragma pack(pop)*/
 
 /*typedef struct pair
 {
@@ -443,17 +430,19 @@ typedef struct object
 
 
 #define IPOS                        8  // offset of immediate payload
-#define SPOS                        16 // offset of size bits in header immediate values
+#define SPOS                        16 // offset of size bits in header
 #define TPOS                        2  // offset of type bits in header
+#define RPOS                        11 // offset of RAW bit in header (IPOS+3)
 
 #define V(ob)                       *((word *) (ob)) // *ob, ob[0]
 #define W                           sizeof (word)
 
-//#define NWORDS                      1024*1024*8    /* static malloc'd heap size if used as a library */
+//#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
 #define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
 #define FMAX                        ((1<<FBITS)-1) /* maximum fixnum (and most negative fixnum) */
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
-#define RAWBIT                      (1<<11)
+
+#define RAWBIT                      ((1<<RPOS))
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
 #define make_immediate(value, type)    (((value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(size, type)        (( (size) << SPOS) | ((type) << TPOS)                         | 2)
@@ -462,12 +451,10 @@ typedef struct object
 
 #define F(val)                      (((val) << IPOS) | 2)
 #define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
-#define ZEROFALSE(cval)             ((cval) ?  F(0) : IFALSE)
 #define fixval(desc)                ((desc) >> IPOS) // unsigned shift!!!
-#define fixnump(desc)               (((desc) & 0xFF) == 2)
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
+// fliptag used in dir sys-prims
 
-#define NR                          128 // see n-registers in register.scm
 //#define header(x)                   *(word *x)
 #define imm_type(x)                 ((((unsigned int)x) >> TPOS) & 0x3F)
 #define imm_val(x)                   (((unsigned int)x) >> IPOS)
@@ -479,11 +466,11 @@ typedef struct object
 
 #define immediatep(x)               (((word)x) & 2)
 #define allocp(x)                   (!immediatep(x))
-#define rawp(hdr)                   ((hdr) & RAWBIT)
+#define is_raw(hdr)                 ((hdr) & RAWBIT)
 
 #define is_pointer(x)               (!immediatep(x))
 #define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
-#define is_pair(ob)                 (is_pointer(ob) && V(ob)==PAIRHDR)
+#define is_pair(ob)                 (is_pointer(ob) && V(ob)==HPAIR)
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 #define TFIX                         (0)      // type-fix+
@@ -523,8 +510,8 @@ typedef struct object
 
 static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ldi and jv */
 
-#define PAIRHDR                     make_header(3, TPAIR)
-#define NUMHDR                      make_header(3, TINT) // <- on the way to 40, see type-int+ in defmac.scm
+#define HPAIR                       make_header(3, TPAIR)
+#define HINT                        make_header(3, TINT) // <- on the way to 40, see type-int+ in defmac.scm
 
 #define FFRIGHT                     1
 #define FFRED                       2
@@ -532,6 +519,8 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define flagged_or_raw(hdr)         (hdr & (RAWBIT|1))
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
+
+#define NR                          128 // see n-registers in register.scm
 
 #define MEMPAD                      (NR+2) * W /* space at end of heap for starting GC */
 #define MINGEN                      1024*32  /* minimum generation size before doing full GC  */
@@ -556,7 +545,8 @@ int execv(const char *path, char *const argv[]);
 
 
 
-
+// --------------------------------------------------------
+// -=( gc )=-----------------------------------------------
 
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
 // несколько ссылок "на почитать" по теме GC:
@@ -578,63 +568,49 @@ typedef struct heap_t
 //static __thread word *fp;
 
 // выделить сырой блок памяти
-#define new(size) ({\
+#define NEW(size) ({\
 	word* addr = fp;\
 	fp += size;\
 	/*return*/ addr;\
 })
 
-// аллоцировать новый объект
-#define new_object(size, type) ({\
-	word* p = new (size);\
+// аллоцировать новый объект (указанного типа)
+#define NEW_OBJECT(size, type) ({\
+word*p = NEW (size);\
 	*p = make_header(size, type);\
-	/*return*/(object*)p;\
+	/*return*/p;\
 })
 
 #define new_raw_object(size, type, pads) ({\
-	word* p = new (size);\
+word*p = new (size);\
 	*p = make_raw_header(size, type, pads);\
-	/*return*/(object*)p;\
+	/*return*/p;\
 })
 
-#define new_tuple(length) new_object ((length)+1, TTUPLE)
+// хитрый макрос перегружающий макрос аллокатор памяти
+#define GET_MACRO(_1, _2, NAME, ...) NAME
+#define new(...) GET_MACRO(__VA_ARGS__, NEW_OBJECT, NEW)(__VA_ARGS__)
+
+
+// остальные аллокаторы
+#define new_tuple(length)  new ((length)+1, TTUPLE)
 
 /* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
-#define new_bvec(size, type) ({\
-	int len = size;\
+#define new_byte_vector(size, type) ({\
+int len = size;\
 	\
-	int nwords = (len/W) + ((len % W) ? 2 : 1);\
-	int pads = (nwords-1)*W - len;\
+	int nwords = (len/W) + ((len%W) ? 2 : 1);\
+	int pads = (nwords - 1) * W - len;\
 	\
-	word* p = new (nwords);\
-	*p = make_raw_header(nwords, type,pads);\
-	/*return*/ p;\
+	/*return*/\
+	new_raw_object (nwords, type, pads);\
 })
-
-/*static word *mkbvec(int len, int type) {
-   int nwords = (len/W) + ((len % W) ? 2 : 1);
-   int pads = (nwords-1)*W - len;
-   word *ob = fp;
-   fp += nwords;
-   *ob = make_raw_header(nwords, type, pads);
-   return ob;
-}*/
-
 
 // создать новый порт
-#define new_port_old(a) ({\
-	word value = (word)a;\
-	word *addr = new (2);\
-	addr[0] = make_header(2, TRAWPORT);\
-	addr[1] = value;\
-	/*return*/ addr;\
-})
-
-// или в структурно ориентированном стиле:
 #define new_port(a) ({\
-	word value = (word) a;\
-	object *me = new_object (2, TRAWPORT);\
-	me->ref[1] = value;\
+word value = (word) a;\
+	word *me = new (2, RAWH(TPORT));\
+	me[1] = value;\
 	/*return*/ me;\
 })
 
@@ -645,13 +621,13 @@ typedef struct heap_t
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
-	object *me = new_object(3, TPAIR);\
-	me->ref[1] = data1;\
-	me->ref[2] = data2;\
+	word *me = new (3, TPAIR);\
+	me[1] = data1;\
+	me[2] = data2;\
 	/*return*/ me;\
 })
 // а по факту эта функция сводится к простому
-/*static __inline__ word* new_pair_old (word* car, word* cdr)
+/*static __inline__ word* new_pair (word* car, word* cdr)
 {
 	word *object = fp;
 
@@ -667,50 +643,12 @@ typedef struct heap_t
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
-	object *me = new_object(3, TINT);\
-	me->ref[1] = data1;\
-	me->ref[2] = data2;\
+	word *me = new (3, TINT);\
+	me[1] = data1;\
+	me[2] = data2;\
 	/*return*/ me;\
 })
 
-/*static __inline__ word* new_npair (word* car, word* cdr)
-{
-	word *object = fp;
-
-	fp[0] = NUMHDR;
-	fp[1] = (word) car;
-	fp[2] = (word) cdr;
-
-	fp += 3;
-	return object;
-}*/
-
-/*static __inline__ word* new_tuple (size_t length)
-{
-	word *object = fp;
-
-	fp[0] = make_header(length + 1, TTUPLE);
-
-	fp += (length + 1);
-	return object;
-}*/
-/*static __inline__ word* new_tuplei (size_t length, ...)
-{
-	word *object = fp;
-
-	va_list argp;
-	va_start(argp, length);
-
-	fp[0] = make_header(length + 1, TTUPLE);
-	int i = 0;
-	while (i < length)
-		fp[++i] = va_arg(argp, word);
-
-	va_end(argp);
-
-	fp += (length + 1);
-	return object;
-}*/
 
 #define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
 
@@ -742,7 +680,7 @@ void fix_pointers(word *pos, wdiff delta, word *end)
 		word hdr = *pos;
 		int n = hdrsize(hdr);
 		if (hdr == 0) return; // end marker reached. only dragons beyond this point.
-		if (rawp(hdr))
+		if (is_raw(hdr))
 			pos += n; // no pointers in raw objects
 		else {
 			pos++;
@@ -867,9 +805,9 @@ static word gc(heap_t *heap, int size, word regs) {
 	// gc:
 	word *fp = heap->fp;
 
-	*fp = make_header(2, TTUPLE); // (в *fp спокойно можно оставить мусор)
-	word *root = fp + 1; // skip header
-//	word *root = &fp[1]; // same
+	*fp = make_header(2, TTUPLE); // fyi: в *fp спокойно можно оставить мусор
+	word *root = &fp[1]; // skip header
+//	word *root = fp + 1; // same
 
 	// непосредственно сам GC
 //	clock_t uptime;
@@ -880,7 +818,7 @@ static word gc(heap_t *heap, int size, word regs) {
 	regs = root[0];
 //	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
-	heap->fp = (word*) fp;
+	heap->fp = fp;
 
 	#if DEBUG_GC
 		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
@@ -963,18 +901,6 @@ unsigned int lenn(char *pos, unsigned int max) { /* added here, strnlen was miss
    return p;
 }
 
-
-/* list length, no overflow or valid termination checks */
-static __inline__
-int llen(word *ptr) {
-   int len = 0;
-   while (allocp(ptr) && *ptr == PAIRHDR) {
-      len++;
-      ptr = (word *) ptr[2];
-   }
-   return len;
-}
-
 void set_signal_handler() {
 /*
 #ifndef _WIN32
@@ -1017,9 +943,6 @@ void set_signal_handler() {
 
 
 
-
-//#define OGOTO(f, n)                 ob = (word *)R[f]; acc = n; goto apply
-//#define RET(n)                      ob = (word *)R[3]; R[3] = R[n]; acc = 1; goto apply
 
 #define OCLOSE(proctype)            { \
 	word size = *ip++, tmp; word *T = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; \
@@ -1229,7 +1152,7 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 					R[acc] = (word) this;
 
 					word *state;
-					state = (word*) new_object (acc, TTHREAD);
+					state = (word*) new (acc, TTHREAD);
 					state[acc-1] = R[acc];
 					for (int pos = 1; pos < acc-1; pos++)
 						state[pos] = R[pos];
@@ -1426,7 +1349,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			}
 			word *lst = (word *) R[reg+1];
 
-			while (allocp(lst) && *lst == PAIRHDR) { // unwind argument list
+			while (allocp(lst) && *lst == HPAIR) { // unwind argument list
 				// FIXME: unwind only up to last register and add limited rewinding to arity check
 				if (reg > NR) { // dummy handling for now
 					fprintf(stderr, "TOO LARGE APPLY\n");
@@ -1551,7 +1474,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			word *lst = (word *) A1;
 			int len = 0;
 			word* p = lst;
-			while (allocp(p) && *p == PAIRHDR) {
+			while (allocp(p) && *p == HPAIR) {
 				len++;
 				p = (word *) p[2];
 			}
@@ -1644,7 +1567,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				A2 = IFALSE;
 			else {
 				word hdr = *p;
-				if (rawp(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
+				if (is_raw(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
 					word pos = fixval(A1);
 					word size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
 					if (pos >= size)
@@ -1692,7 +1615,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			else {
 				word hdr = *p;
 				word pos = fixval(A1);
-				if (rawp(hdr) || hdrsize(hdr) < pos)
+				if (is_raw(hdr) || hdrsize(hdr) < pos)
 					A3 = IFALSE;
 				else {
 					word size = hdrsize(hdr);
@@ -1796,7 +1719,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				A1 = IFALSE;
 			else {
 				word hdr = *T;
-				if (rawp(hdr))
+				if (is_raw(hdr))
 					A1 = F((hdrsize(hdr)-1)*W - padsize(hdr));
 				else
 					A1 = IFALSE;
@@ -1847,7 +1770,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 		case 11: { // (set-car! pair value)
 			word *pair = (word *)A0;
-			assert (is_pointer(pair) && pair[0] == PAIRHDR);
+			assert (is_pointer(pair) && pair[0] == HPAIR);
 			word value = (word)A1;
 			pair[1] = value;
 
@@ -1856,7 +1779,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		}
 		case 12: { // (set-cdr! pair value)
 			word *pair = (word *)A0;
-			assert (is_pointer(pair) && pair[0] == PAIRHDR);
+			assert (is_pointer(pair) && pair[0] == HPAIR);
 			word value = (word)A1;
 			pair[2] = value;
 
@@ -1886,7 +1809,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 			word pos = 1, n = *ip++;
 			word hdr = *tuple;
-			CHECK(!(rawp(hdr) || hdrsize(hdr)-1 != n), tuple, BIND);
+			CHECK(!(is_raw(hdr) || hdrsize(hdr)-1 != n), tuple, BIND);
 			while (n--)
 				R[*ip++] = tuple[pos++];
 
@@ -1923,7 +1846,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			A3 = (word) p;
 			*p++ = make_header(size+1, type);
 			while (size--) {
-				CHECK((is_pointer(lst) && lst[0] == PAIRHDR), lst, LISTUPLE);
+				CHECK((is_pointer(lst) && lst[0] == HPAIR), lst, LISTUPLE);
 				*p++ = lst[1];
 				lst = (word *) lst[2];
 			}
@@ -1933,59 +1856,65 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		/** ff's ---------------------------------------------------
 		 *
 		 */
-
+		// create red/black node
 		case MKBLACK: // mkblack l k v r t
 		case MKRED: { // mkred l k v r t
 			word t = op == MKBLACK ? TFF : TFF|FFRED;
 			word l = A0;
 			word r = A3;
 
-			object *ob;
+			word *me;
 			if (l == IEMPTY) {
 				if (r == IEMPTY)
-					ob = new_object (3, t);
+					me = new (3, t);
 				else {
-					ob = new_object (4, t|FFRIGHT);
-					ob->ref[3] = r;
+					me = new (4, t|FFRIGHT);
+					me[3] = r;
 				}
 			}
 			else
 			if (r == IEMPTY) {
-				ob = new_object (4, t);
-				ob->ref[3] = l;
+				me = new (4, t);
+				me[3] = l;
 			}
 			else {
-				ob = new_object (5, t);
-				ob->ref[3] = l;
-				ob->ref[4] = r;
+				me = new (5, t);
+				me[3] = l;
+				me[4] = r;
 			}
-			ob->ref[1] = (word) A1; // k
-			ob->ref[2] = (word) A2; // v
+			me[1] = (word) A1; // k
+			me[2] = (word) A2; // v
 
-		    A4 = (word) ob;
+		    A4 = (word) me;
 		    ip += 5; break;
 		}
 
-		case FFTOGGLE: { // fftoggle - toggle node color
-				 word *node = (word *) R[*ip];
-				 word *newobj, h;
-				 CHECK(is_pointer(node), node, FFTOGGLE);
-				 newobj = fp; // todo: make as function with using fp
-				 h = *node++;
-				 A1 = (word) newobj;
-				 *newobj++ = (h ^ (FFRED<<TPOS));
-				 switch (hdrsize(h)) {
-					case 5:  *newobj++ = *node++;
-					case 4:  *newobj++ = *node++;
-					default: *newobj++ = *node++;
-							 *newobj++ = *node++; }
-				 fp = newobj;
-				 NEXT(2);
+		// fftoggle - toggle node color
+		case FFTOGGLE: {
+			word *node = (word *) A0;
+			CHECK(is_pointer(node), node, FFTOGGLE);
+
+			word *p = fp;
+			A1 = (word) p;
+
+			word h = *node++;
+			*p++ = (h ^ (FFRED<<TPOS));
+			switch (hdrsize(h)) {
+			case 5:  *p++ = *node++;
+			case 4:  *p++ = *node++;
+			default: *p++ = *node++;
+			         *p++ = *node++;
+			}
+			fp = (word*) p;
+			ip += 2; break;
 		}
 
 		case FFREDQ: { // red? node r (has highest type bit?) */
 			word *node = (word *) A0;
-			A1 = TRUEFALSE(is_pointer(node) && ((node[0]) & (FFRED << TPOS)));
+			if (is_pointer(node) && ((node[0]) & (FFRED << TPOS)))
+				A1 = ITRUE;
+			else
+				A1 = IFALSE;
 			ip += 2; break;
 		}
 
@@ -1995,11 +1924,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //		}
 
 		case CLOCK: { // clock <secs> <ticks>
-			word *ob = new (6); // space for 32-bit bignum - [NUM hi [NUM lo null]]
-			ob[0] = ob[3] = NUMHDR;
-			A0 = (word) (ob + 3);
-			ob[2] = INULL;
-			ob[5] = (word) ob;
+			word *me = new (6); // space for 32-bit bignum - [NUM hi [NUM lo NULL]]
+			me[0] = me[3] = HINT;
+			A0 = (word) (me + 3);
+			me[2] = INULL;
+			me[5] = (word) me;
 
 //			if (seccompp) {
 //				unsigned long secs = seccomp_time / 1000;
@@ -2012,8 +1941,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				struct timeval tp;
 				gettimeofday(&tp, NULL);
 				A1 = F(tp.tv_usec / 1000);
-				ob[1] = F(tp.tv_sec >> FBITS);
-				ob[4] = F(tp.tv_sec & FMAX);
+				me[1] = F(tp.tv_sec >> FBITS);
+				me[4] = F(tp.tv_sec & FMAX);
 //			}
 			ip += 2; break;
 		}
@@ -2034,15 +1963,24 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			switch (op) {
 			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
 			case 35: // currently sleep, will be nanosleep
+				CHECK(immediatep(a), a, 35);
 #ifdef _WIN32
 				Sleep(fixval(a));
 #else
 //				for Linux:
 //				if (!seccompp)
-					usleep(fixval(a)*1000);
-//				A1 = TRUEFALSE(errno == EINTR);
+#	if _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(). use nanosleep instead
+				if (usleep(fixval(a)*1000) == 0)
+					result = ITRUE;
+#	else
+				struct timespec ts = {fixval(a) / 1000, (fixval(a) % 1000) * 1000000};
+				struct timespec rem;
+				if (nanosleep(&ts, &rem) == 0)
+					result = ITRUE;
+				else
+					result = F(rem.tv_sec * 1000 + rem.tv_nsec / 1000000);
+#	endif
 #endif
-				result = ITRUE;
 				break;
 
 			// other commands
@@ -2133,8 +2071,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 					if (wrote > 0)
 						result = F(wrote);
-					else
-						result = ZEROFALSE(errno == EAGAIN || errno == EWOULDBLOCK);
+					else if (errno == EAGAIN || errno == EWOULDBLOCK)
+						result = F(0);
+//					else
+//						result = IFALSE;
 					break;
 				}
 
@@ -2588,11 +2528,11 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								// прошу внимания!
 								//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 								word* hi = fp; fp += 3; // high 8 bits
-								hi[0] = NUMHDR;
+								hi[0] = HINT;
 								hi[1] = make_immediate(got >> 24, 0); // type-fx+
 								hi[2] = INULL;
 								word* lo = fp; fp += 3; // low 24 bits
-								lo[0] = NUMHDR;
+								lo[0] = HINT;
 								lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
 								lo[2] = (word)hi;
 
@@ -2600,7 +2540,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								break;
 							}
 							// иначе вернем type-fx+
-						case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF!
+						case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 							result = F(got);
 							break;
 						case TPORT:
@@ -2617,7 +2557,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								result = INULL;
 							else {
 								int len = lenn((char*)got, FMAX+1);
-								result = (word)new_bvec(len, TSTRING);
+								result = (word)new_byte_vector(len, TSTRING);
 								//if (len == FMAX+1) return INULL; /* can't touch this */
 								bytecopy((char*)got, ((char*)result)+W, len);
 							}
@@ -2686,7 +2626,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						         ipa = (char *) &addr.sin_addr;
 						         *fp = make_raw_header(2, TBVEC, 4%W);
 						         bytecopy(ipa, ((char *) fp) + W, 4);
-						         fp[2] = PAIRHDR;
+						         fp[2] = HPAIR;
 						         fp[3] = (word) fp;
 						         fp[4] = F(fd);
 						         pair = fp+2;
@@ -2724,7 +2664,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						         if (!dire) return IEOF; /* eof at end of dir stream */
 						         len = lenn(dire->d_name, FMAX+1);
 						         if (len == FMAX+1) return IFALSE; /* false for errors, like too long file names */
-						         res = new_bvec(len, 3); /* make a fake raw string (OS may not use valid UTF-8) */
+						         res = new_byte_vector(len, 3); /* make a fake raw string (OS may not use valid UTF-8) */
 						         bytecopy((char *)&dire->d_name, (char *) (res + 1), len); /* *no* terminating null, this is an owl bvec */
 						         return (word)res; }
 						      case 1013: /* sys-closedir dirp _ _ -> ITRUE */
@@ -2753,7 +2693,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						    	     if (!sp) return IFALSE;
 						    	     len = lenn(sp, FMAX+1);
 						    	     if (len == FMAX+1) return INULL; /* can't touch this */
-						    	     res = new_bvec(len, TBVEC); /* make a bvec instead of a string since we don't know the encoding */
+						    	     res = new_byte_vector(len, TBVEC); /* make a bvec instead of a string since we don't know the encoding */
 						    	     bytecopy(sp, ((char *)res)+W, len);
 						    	     return (word)res;
 						    	  }
@@ -3129,8 +3069,8 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	int size = (len / W) + ((len % W) ? 2 : 1);\
 	int pads = (size-1) * W - len;\
 	\
-	object* p = new_raw_object (size, TSTRING, pads);\
-	char* ptr = (char*)&p->ref[1];\
+	word* p = new_raw_object (size, TSTRING, pads);\
+	char* ptr = (char*)&p[1];\
 	while (len--) *ptr++ = *data++;\
 	/*return*/ p;\
 })
@@ -3307,9 +3247,8 @@ int main(int argc, char** argv)
 //	fp += nobjs + 1;
 
 //	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
-	object * ptrs = new_raw_object (nobjs + 1, TCONST, 0);
-
-	fp = deserialize(&ptrs->ref[1], nobjs, bootstrap, fp);
+	word *ptrs = new_raw_object (nobjs+1, TCONST, 0);
+	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
 //	assert (fp < heap.end);// gc needed during heap import
 
 	// все, программа в памяти, можно освобождать исходник
