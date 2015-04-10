@@ -114,6 +114,7 @@ for %%f in (
 	rlist-rand.scm
 	seven.scm
 	share.scm
+	sqlite.scm
 	stable-rand.scm
 	str-quote.scm
 	string.scm

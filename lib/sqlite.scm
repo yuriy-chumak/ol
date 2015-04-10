@@ -68,12 +68,16 @@
       (owl pinvoke))
   (begin
 
-(define % (dlopen '() RTLD_LAZY))
+;temp:
+;(define (port) (cast "*" type-port))
+(define (port) (raw type-port '(0)))
 
-;(define % (or
-;  (dlopen "sqlite3" RTLD_LAZY)
-;  (dlopen "libsqlite3.so" RTLD_LAZY)))
-(define % (dlopen "libsqlite3.so" RTLD_LAZY))
+
+(define % (dlopen '() RTLD_LAZY)) ; dummy - how to get own handle
+
+(define % (or
+   (dlopen "sqlite3" RTLD_LAZY)
+   (dlopen "libsqlite3.so" RTLD_LAZY)))
    
 (if (null? %)
    (begin
@@ -84,19 +88,17 @@
       (exit-owl 1)))
 
 ; служебные 
-;(define (make-sqlite3)      (list->byte-vector '(0 0 0 0)))
-(define (make-sqlite3)      "") ;like port (raw type-vector-raw '(0)))
-(define (make-sqlite3-stmt) (list->byte-vector '(0 0 0 0)))
+(define (make-sqlite3)      (port)) ;like port (raw type-vector-raw '(0)))
+(define (make-sqlite3-stmt) (port)) ;(list->byte-vector '(0 0 0 0)))
 
 ; todo: завести под это дело отдельный тип - что-то вроде type-int+-ref и т.д.
-(define sqlite3*  type-int+)
-(define sqlite3** type-vector-raw)
-(define sqlite3_stmt*  type-int+)
-(define sqlite3_stmt** type-vector-raw)
-(define char** type-vector-raw) ; тут проблема!!!
+(define sqlite3*  type-port)
+(define sqlite3** type-vector-raw) ;ptr to port
+(define sqlite3_stmt*  type-port)
+(define sqlite3_stmt** type-vector-raw) ;ptr to port
+(define char** type-vector-raw) ; тут проблема!!! (?)
 
 (define sqlite3_value type-fix+)
-(define sqlite3_stmt  type-int+)
 (define sqlite3_int64 type-vector-raw)
 
 (define SQLITE-OK 0)

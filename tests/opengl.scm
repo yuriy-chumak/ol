@@ -23,9 +23,9 @@
     (OR WS_EX_APPWINDOW WS_EX_WINDOWEDGE) "#32770" "OL OpenGL Sample 0" ; #32770 is for system classname for DIALOG
     (OR WS_OVERLAPPEDWINDOW WS_CLIPSIBLINGS WS_CLIPCHILDREN)
     0 0 width height ; x y width height
-    0 ; no parent window
-    0 ; no menu
-    0 ; instance
+    null ; no parent window
+    null ; no menu
+    null ; instance
     null)) ; todo: override as '(INTEGER . 0)
 ; переключение в полноєкранній режим - http://blogs.msdn.com/b/oldnewthing/archive/2010/04/12/9994016.aspx
 ; PIXELFORMATDESCRIPTOR
@@ -42,7 +42,7 @@
 (wglMakeCurrent hDC hRC))
 
 (print "OpenGL version: " (glGetString GL_VERSION))
-(print "OpenGL vendor: " (glGetString GL_VENDOR)) 
+(print "OpenGL vendor: " (glGetString GL_VENDOR))
 (print "OpenGL renderer: " (glGetString GL_RENDERER))
 
 ; todo: тип для (dlsym) - всегда число, добавить в проверку
@@ -133,6 +133,8 @@
 
 (define vs (glCreateShader GL_VERTEX_SHADER))
 (print "vs: " vs)
+
+
 ; пример, как можно передать в функцию массив указателей на строки:
 (glShaderSource vs 2 (tuple (c-string "#version 120 // OpenGL 2.1\n")
                             (c-string "
@@ -210,6 +212,7 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0 0 1 1)
 
+
 ;(define vertexPositions (list->byte-vector '(
 ;;        (glVertex2i 2 0)
 ;  00 00 #x00 #x40    0 0 #x00 #x00    0 0 0 0    00 00 #x80 #x3F
@@ -223,7 +226,7 @@
 (define MSG "1234567890123456789012345678") ; sizeof(MSG)=28
 ;(call/cc (lambda (return)
 (let cycle ()   ;MSG
-  (if (= 1 (PeekMessage MSG 0 0 0 PM_REMOVE))
+  (if (= 1 (PeekMessage MSG null 0 0 PM_REMOVE))
     (begin
       (TranslateMessage MSG)
       (DispatchMessage MSG))
@@ -262,5 +265,3 @@
 (wglDeleteContext hRC)
 (ReleaseDC window hDC)
 (DestroyWindow window)
-
-(print "@")

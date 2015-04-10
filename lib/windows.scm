@@ -66,10 +66,10 @@
 (define DWORD     INTEGER)
 (define LPCTSTR   type-string)
 (define int       INTEGER)
-(define HWND      INTEGER)
-(define HMENU     INTEGER)
-(define HINSTANCE INTEGER)
-(define LPVOID    type-tuple)
+(define HWND      type-port)
+(define HMENU     type-port)
+(define HINSTANCE type-port)
+(define LPVOID    type-vector-raw)
 (define UINT      INTEGER)
 (define BOOL      type-fix+)
 
@@ -80,7 +80,7 @@
 (define PBYTE     type-vector-raw)
 
 (define HDC       type-port)
-(define HGLRC     INTEGER)
+(define HGLRC     type-port)
 (define PROC      type-port)
 (define LPCSTR    type-string)
 (define LPRECT    type-vector-raw)
@@ -99,7 +99,7 @@
 ;(define _exe (GetModuleHandle 0))
 ;(define CreateGLWindow (dlsym-c type-fix+ _exe "CreateGLWindow"))
 
-(define user32 (dlopen "user32" 0))
+(define user32 (dlopen (c-string "user32") 0))
   (define IDOK 1)
   (define IDCANCEL 2)
 

@@ -1,5 +1,7 @@
 (define-library (owl port)
    (export 
+      make-port
+
       socket? 
       tcp?
 
@@ -13,6 +15,7 @@
       (owl defmac))
 
    (begin
+      (define (make-port)     (raw type-port '(0)))
 
       (define (socket? x)     (eq? (type x) type-socket))
       (define (tcp? x)        (eq? (type x) type-tcp-client))
@@ -22,5 +25,6 @@
       (define (fd->tcp fd)    (cast fd type-tcp-client))
 
       (define (port->fd port) (cast port type-fix+))
+
 
 ))

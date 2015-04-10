@@ -402,10 +402,11 @@
 
 ; todo: сделать определение нужной библиотеки самодостаточным, без всяких *OS*
 (define GL_LIBRARY
-   (case *OS*
-      (1 "opengl32.dll") ; windows
-      (2 "libGL.so")     ; linux
-      (3 "GLKit")))      ; macos, https://developer.apple.com/library/mac/documentation/graphicsimaging/conceptual/OpenGL-MacProgGuide/opengl_intro/opengl_intro.html
+   "opengl32")
+;   (case *OS*
+;      (1 "opengl32.dll") ; windows
+;      (2 "libGL.so")     ; linux
+;      (3 "GLKit")))      ; macos, https://developer.apple.com/library/mac/documentation/graphicsimaging/conceptual/OpenGL-MacProgGuide/opengl_intro/opengl_intro.html
 
 (define    GL_VERSION_1_0    1)
 (define % (dlopen GL_LIBRARY 0))

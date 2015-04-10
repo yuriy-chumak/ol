@@ -9,7 +9,7 @@
 
    (export   
       ;; prngs
-      lcg-rands           ;; seed (int32) → rands
+;      lcg-rands           ;; seed (int32) → rands
       
       ;; stream construction
       seed->rands         ;; seed → ll of (digit ...) ;; only the default one, later also merseinne twister, blum blum shub etc alternatives

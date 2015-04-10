@@ -95,7 +95,7 @@
 
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle
-(define (dlopen name flag) (sys-prim 1030 name flag #false))
+(define (dlopen name flag) (sys-prim 1030 (if (string? name) (c-string name) name) flag #false))
 
 ; The MODE argument to `dlopen' contains one of the following:
 (define RTLD_LAZY	#x00001)	; Lazy function call binding.

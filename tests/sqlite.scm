@@ -11,9 +11,9 @@
 
 ; todo: move this test into separate script (tests/sqlite3.scm)
 (define database (make-sqlite3))
-(print "open: "     (sqlite3-open ":memory:" database))
+(print "open: "     (sqlite3-open (c-string ":memory:") database))
 (print "close: "    (sqlite3-close database))
-(print "open: "     (sqlite3-open ":memory:" database))
+(print "open: "     (sqlite3-open (c-string ":memory:") database))
 
 
 
@@ -37,6 +37,10 @@
                 (handler (if (= (sqlite3-step statement) SQLITE-ROW) statement null))))
          (sqlite3-finalize statement)
          result)))
+(define (with-sql-query string processor)
+   (define query (select string))
+   (processor query)
+   (sqlite3-finalize query))
 
 (define statement (make-sqlite3-stmt))
 
