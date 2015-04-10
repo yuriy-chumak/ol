@@ -11,6 +11,7 @@ struct OL;
 //-- common options, can change
 #define HAS_SOCKETS 1
 #define HAS_DLOPEN 1
+#define HAS_PINVOKE 1
 
 #define NO_SECCOMP
 

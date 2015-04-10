@@ -1,72 +1,79 @@
-
+FAILED := $(shell mktemp)
 CFLAGS := -std=c99 -O3
 
-all: ol
+all: ol tests
 
-ol: src/olvm.c src/boot.c Makefile tests
+ol: src/olvm.c src/boot.c Makefile
 	$(CC) $(CFLAGS) src/olvm.c src/boot.c -DSTANDALONE -ldl -o ol
+	
+boot.fasl: src/ol.scm ol
+	ol src/ol.scm
+	
+newboot.c: boot.fasl
+	ol src/to-c.scm > newboot.c
+	
+newol: src/olvm.c newboot.c
+	$(CC) $(CFLAGS) src/olvm.c newboot.c -DSTANDALONE -ldl -o newol
 
 #vm: src/olvm.c
 
 tests: \
     tests/apply.scm\
     tests/banana.scm\
-    tests/numbers.scm\
-    tests/callcc.scm
-#<------>bisect-rand.scm
-#<------>callcc.scm
-#<------>case-lambda.scm
-#<------>echo.scm
-#<------>ellipsis.scm
-#<------>eval.scm
-#<------>factor-rand.scm
-#<------>factorial.scm
-#<------>fasl.scm
-#<------>ff-call.scm
-#<------>ff-del-rand.scm
-#<------>ff-rand.scm
-#<------>fib-rand.scm
-#<------>hashbang.scm
-#<------>iff-rand.scm
-#<------>library.scm
-#<------>macro-capture.scm
-#<------>macro-lambda.scm
-#<------>mail-order.scm
-#<------>math-rand.scm
-#<------>par-nested.scm
-#<------>par-nested-rand.scm
-#<------>par-rand.scm
-#<------>perm-rand.scm
-#<------>por-prime-rand.scm
-#<------>por-terminate.scm
-#<------>queue-rand.scm
-#<------>r5rs.scm
-#<------>r7rs.scm
-#<------>record.scm
-#<------>rlist-rand.scm
-#<------>seven.scm
-#<------>share.scm
-#<------>stable-rand.scm
-#<------>str-quote.scm
-#<------>string.scm
-#<------>suffix-rand.scm
-#<------>theorem-rand.scm
-#<------>toplevel-persist.scm
-#<------>utf-8-rand.scm
-#<------>vararg.scm
-#<------>vector-rand.scm
-#<------>numbers.scm
-	@rm -f /tmp/failed.$$$$
-	@for F in $^ ; do \
+    tests/bisect-rand.scm\
+    tests/callcc.scm\
+    tests/case-lambda.scm\
+    tests/echo.scm\
+    tests/ellipsis.scm\
+    tests/eval.scm\
+    tests/factor-rand.scm\
+    tests/factorial.scm\
+    tests/fasl.scm\
+    tests/ff-call.scm\
+    tests/ff-del-rand.scm\
+    tests/ff-rand.scm\
+    tests/fib-rand.scm\
+    tests/hashbang.scm\
+    tests/iff-rand.scm\
+    tests/library.scm\
+    tests/macro-capture.scm\
+    tests/macro-lambda.scm\
+    tests/mail-order.scm\
+    tests/math-rand.scm\
+    tests/par-nested.scm\
+    tests/par-nested-rand.scm\
+    tests/par-rand.scm\
+    tests/perm-rand.scm\
+    tests/por-prime-rand.scm\
+    tests/por-terminate.scm\
+    tests/queue-rand.scm\
+    tests/r5rs.scm\
+    tests/r7rs.scm\
+    tests/record.scm\
+    tests/rlist-rand.scm\
+    tests/seven.scm\
+    tests/share.scm\
+    tests/stable-rand.scm\
+    tests/str-quote.scm\
+    tests/string.scm\
+    tests/suffix-rand.scm\
+    tests/theorem-rand.scm\
+    tests/toplevel-persist.scm\
+    tests/utf-8-rand.scm\
+    tests/vararg.scm\
+    tests/vector-rand.scm\
+    tests/numbers.scm
+	@rm -f $(FAILED)
+	@for F in $^ ;do \
 	    echo -n "Testing $$F ... " ;\
-	    if ol $$F | diff - $$F.ok >/dev/null ; then\
+	    if ol $$F | diff - $$F.ok >/dev/null ;then\
 	        echo "Ok." ;\
-	    else\
+	    else \
 	        echo "\033[0;31mFailed!\033[0m" ;\
-	        $(eval TMP := 1) \
-	    fi;\
+	        touch $(FAILED) ;\
+	    fi ;\
 	done
-	@if [ "$(TMP)" = "1" ]; then exit 1; fi
-	echo "Tests passed!"
+	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
+	@echo "passed!"
 
 .PHONY: tests

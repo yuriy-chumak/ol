@@ -27,7 +27,7 @@
 ;;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(define-library (lib sqlite3)
+(define-library (lib sqlite)
   (export
   ; types
     ;sqlite3* sqlite3_value sqlite3_stmt
@@ -64,21 +64,28 @@
       (owl list) (owl string)
       (owl math) (owl vector)
       (owl error)
+      (owl interop)
       (owl pinvoke))
   (begin
 
-(define % (dlopen "sqlite3" 0))
+(define % (dlopen '() RTLD_LAZY))
+
+;(define % (or
+;  (dlopen "sqlite3" RTLD_LAZY)
+;  (dlopen "libsqlite3.so" RTLD_LAZY)))
+(define % (dlopen "libsqlite3.so" RTLD_LAZY))
+   
 (if (null? %)
    (begin
       (print "Can't load sqlite3 library. Will halt")
 ;      (case *OS*
 ;         (0 (print "Download dll from http://www.sqlite.org/download.html"))
-;         (1 (print "apt-get install sqlite3"))) 
-      (print "@")
+;         (1 (print "sudo apt-get install sqlite3"))) 
       (exit-owl 1)))
 
 ; служебные 
-(define (make-sqlite3)      (list->byte-vector '(0 0 0 0)))
+;(define (make-sqlite3)      (list->byte-vector '(0 0 0 0)))
+(define (make-sqlite3)      "") ;like port (raw type-vector-raw '(0)))
 (define (make-sqlite3-stmt) (list->byte-vector '(0 0 0 0)))
 
 ; todo: завести под это дело отдельный тип - что-то вроде type-int+-ref и т.д.
@@ -112,6 +119,8 @@
 (define SQLITE-MISUSE 21)
 
 
+; https://www.sqlite.org/c3ref/open.html
+; ex: file:data.db?mode=ro&cache=private 
 (define sqlite3-open  (dlsym % (__cdecl type-fix+) "sqlite3_open"  type-string sqlite3**))
 (define sqlite3-close (dlsym % (__cdecl type-fix+) "sqlite3_close" sqlite3*))
 

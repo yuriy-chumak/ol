@@ -438,26 +438,27 @@ typedef struct object
 #define W                           sizeof (word)
 
 //#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
-#define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
-#define FMAX                        ((1<<FBITS)-1) /* maximum fixnum (and most negative fixnum) */
+//#define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
+#define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in fixnum
+#define FMAX                        (((long)1<<FBITS)-1) // maximum fixnum (and most negative fixnum)
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 
 #define RAWBIT                      ((1<<RPOS))
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
-#define make_immediate(value, type)    (((value) << IPOS) | ((type) << TPOS)                         | 2)
-#define make_header(size, type)        (( (size) << SPOS) | ((type) << TPOS)                         | 2)
-#define make_raw_header(size, type, p) (( (size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
+#define make_immediate(value, type)    ((((long)value) << IPOS) | ((type) << TPOS)                         | 2)
+#define make_header(size, type)        (( (long)(size) << SPOS) | ((type) << TPOS)                         | 2)
+#define make_raw_header(size, type, p) (( (long)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
 // p is padding
 
-#define F(val)                      (((val) << IPOS) | 2)
+#define F(val)                      (((long)(val) << IPOS) | 2)
 #define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
 #define fixval(desc)                ((desc) >> IPOS) // unsigned shift!!!
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
 // fliptag used in dir sys-prims
 
 //#define header(x)                   *(word *x)
-#define imm_type(x)                 ((((unsigned int)x) >> TPOS) & 0x3F)
-#define imm_val(x)                   (((unsigned int)x) >> IPOS)
+#define imm_type(x)                 ((((word)x) >> TPOS) & 0x3F)
+#define imm_val(x)                   (((word)x) >> IPOS)
 #define hdrsize(x)                  ((((word)x) >> SPOS) & MAXOBJ)
 #define padsize(x)                  ((((word)x) >> IPOS) & 7)
 #define hdrtype(x)                  ((((word)x) >> TPOS) & 0x3F) // 0xFF from (p) << 8) in make_raw_header
@@ -1388,7 +1389,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 			R[0] = R[3];
 			ticker = bank ? bank : fixval(A1);
 			bank = 0;
-			CHECK(allocp(this), this, 50);
+			CHECK(allocp(this), this, RUN);
 
 			word hdr = *this;
 			if (imm_type(hdr) == TTHREAD) {
@@ -1482,7 +1483,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				p = (word *) p[2];
 			}
 
-			if ((word) p == INULL && len <= FMAX) {
+			if ((word) p == INULL && len <= MAXOBJ) {
 				int nwords = (len/W) + ((len%W) ? 2 : 1);
 				int type = fixval (A0);
 				int pads = (nwords-1)*W - len; // padding byte count, usually stored to top 3 bits
@@ -1640,7 +1641,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 	   op38: { /* fx+ a b r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word */
 		  word res = fixval(A0) + fixval(A1);
 		  word low = res & FMAX;
-		  A3 = (res & (1 << FBITS)) ? ITRUE : IFALSE;
+		  A3 = (res & ((long)1 << FBITS)) ? ITRUE : IFALSE;
 		  A2 = F(low);
 		  NEXT(4); }
 	   op39: { /* fx* a b l h */
@@ -1649,8 +1650,8 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		  A3 = F(((word)(res>>FBITS)&FMAX));
 		  NEXT(4); }
 	   op40: { /* fx- a b r u, args prechecked, signs ignored */
-		  word r = (fixval(A0)|(1<<FBITS)) - fixval(A1);
-		  A3 = (r & (1<<FBITS)) ? IFALSE : ITRUE;
+		  word r = (fixval(A0)|((long)1<<FBITS)) - fixval(A1);
+		  A3 = (r & ((long)1<<FBITS)) ? IFALSE : ITRUE;
 		  A2 = F(r&FMAX);
 		  NEXT(4); }
 
@@ -2144,48 +2145,48 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 
 				// -=( pinvoke )=-------------------------------------------------
-#				ifndef JAVASCRIPT
+#				if HAS_PINVOKE
 				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
-				case 1030: { // dlopen
+				case 1030: { // (dlopen filename mode)
 					word *filename = (word*)a;
-					int mode = fixval(b);
+					int mode = (int)fixval(b);
 
-					if (!(allocp(filename) && hdrtype(*filename) == TSTRING))
-			        	 break;
+					void* module;
+					if (is_pointer(filename) && hdrtype(*filename) == TSTRING)
+						module = dlopen((char*) &filename[1], mode);
+					else if (filename == INULL)
+						module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
+					else
+						break; // invalid filename
 
-					void* module = dlopen((char*) (filename + 1), mode);
-					if (module) // тут сразу создаем длинный port, так как адреса скорее всего более 24 бит
-						result = (word)new_port((word)module);
-					//						if (function <= 0xFFFFFF)
-					//							result = make_immediate(function, TPORT);
-//					if (module) {
-//						result = (word)fp; // todo: разобраться тут правильно с размерами типов
-//						fp[0] = make_raw_header(2, THANDLE, 0); //was: sizeof(void*) % sizeof(word)); // sizeof(void*) % sizeof(word) as padding
-//						fp[1] = (word)module;
-//						fp += 2;
-//					}
+					if (module)
+						result = (word)new_port(module);
+					else
+						fprintf(stderr, "dlopen failed: %s\n", dlerror());
 					break;
 				}
-				case 1031: { // dlsym
+				case 1031: { // (dlsym module function)
 					word* A = (word*)a;
 
-					assert (hdrtype(A[0]) == TPORT);
+					CHECK(hdrtype(A[0]) == TPORT, A, 1031);
 					void* module = (void*) A[1];
-					word* name = (word*)b;
 
+					word* symbol = (word*)b;
 					// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
-					if (!(immediatep(name) || hdrtype(*name) == TSTRING))
+					if (!(immediatep(symbol) || hdrtype(*symbol) == TSTRING))
 						break;
 
-					word function = (word)dlsym(module, immediatep(name)
-							? (char*) imm_val((word)name)
-							: (char*) (name + 1));
+					word function = (word)dlsym(module, immediatep(symbol)
+							? (char*) imm_val((word)symbol)
+							: (char*) &symbol[1]);
 					if (function) // тут сразу создаем длинный port, так как адреса скорее всего более 24 бит
 						result = (word)new_port(function);
+					else
+						fprintf(stderr, "dlsym failed: %s\n", dlerror());
 					break;
 				}
 				// временный тестовый вызов
-				case 1033: { // temp
+				case 1033: { // temp, todo: (dlclose module)
 					//forcegc = 1;
 /*					printf("opengl version: %s\n", glGetString(GL_VERSION));
 					int glVersion[2] = {-1, -1}; // Set some default values for the version
@@ -2199,7 +2200,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //					PFNGLGETPROGRAMIVPROC glGetProgramiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetProgramiv");
 //					glGetProgramiv(1, GL_LINK_STATUS, &status);
 
-					result = INULL;
+					result = IFALSE;
 /*
 					word* A = a;
 					char* B = (word*)b + 1;
@@ -2216,7 +2217,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				// вызвать библиотечную функцию
 				case 1032: { // pinvoke
 					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
-					unsigned int call(int convention, void* function, int args[], int count) {
+					word call(int convention, void* function, word args[], int count) {
 						// todo: ограничиться количеством функций поменьше
 						//	а можно сделать все в одной switch:
 						// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
@@ -2228,51 +2229,56 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						int (*stdcall[])(char*) = {
 								({ int $(char *str){ printf("Test: %s\n", str); } $; })
 						};*/
-
 #ifdef __linux__
 						#define CALL() \
 							switch (count) {\
-							case  0: return ((unsigned int (*) ())\
+							case  0: return ((word (*) ())\
 											function) ();\
-							case  1: return ((unsigned int (*) (int))\
+							case  1: return ((word (*) (word))\
 											function) (args[0]);\
-							case  2: return ((unsigned int (*) (int, int)) function)\
+							case  2: return ((word (*) (word, word)) function)\
 											(args[0], args[1]);\
-							case  3: return ((unsigned int (*) (int, int, int)) function)\
+							case  3: return ((word (*) (word, word, word)) function)\
 											(args[0], args[1], args[2]);\
-							case  4: return ((unsigned int (*) (int, int, int, int)) function)\
+							case  4: return ((word (*) (word, word, word, word)) function)\
 											(args[0], args[1], args[2], args[3]);\
-							case  5: return ((unsigned int (*) (int, int, int, int, int)) function)\
-											(args[0], args[1], args[2], args[3], args[4]);\
-							case  6: return ((unsigned int (*) (int, int, int, int, int, int)) function)\
+							case  5: return ((word (*) (word, word, word, word,\
+							                            word))\
+		                                     function) (args[0], args[1], args[2], args[3],\
+		                                                args[4]);\
+							case  6: return ((word (*) (word, word, word, word, word, word)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5]);\
-							case  7: return ((unsigned int (*) (int, int, int, int, int, int, int)) function)\
+							case  7: return ((word (*) (word, word, word, word, word, word, word)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);\
-							case  8: return ((unsigned int (*) (int, int, int, int, int, int, int, int)) function)\
+							case  8: return ((word (*) (word, word, word, word, word, word, word, word)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);\
-							case  9: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int)) function)\
+							case  9: return ((word (*) (word, word, word, word, word, word, word, word, word)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);\
-							case 10: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int, int)) function)\
+							case 10: return ((word (*) (word, word, word, word, word, word, word, word, word, word)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);\
-							case 11: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int)) function)\
+							case 11: return ((word (*) (word, word, word, word, word, word, word, word, word, word, word)) function)\
 											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);\
-							case 12: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int, int))\
-											function) (args[0], args[1], args[2], args[3],   \
-													   args[4], args[5], args[6], args[7],   \
-													   args[8], args[9], args[10], args[11]);\
-							case 18: return ((unsigned int (*) (int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int))\
-											function) (args[0], args[1], args[2], args[3],   \
-													   args[4], args[5], args[6], args[7],   \
-													   args[8], args[9], args[10], args[11], \
-													   args[12], args[13], args[14], args[15], args[16], args[17]);\
-							default: fprintf(stderr, "Too match parameters for pinvoke function: %d", count);\
+							case 12: return ((word (*) (word, word, word, word, word, word, word, word,\
+							                            word, word, word, word))\
+											function) (args[ 0], args[ 1], args[ 2], args[ 3], \
+													   args[ 4], args[ 5], args[ 6], args[ 7], \
+													   args[ 8], args[ 9], args[10], args[11]);\
+							case 18: return ((word (*) (word, word, word, word, word, word, word, word,\
+							                            word, word, word, word, word, word, word, word,\
+														word, word))\
+											function) (args[ 0], args[ 1], args[ 2], args[ 3], \
+													   args[ 4], args[ 5], args[ 6], args[ 7], \
+													   args[ 8], args[ 9], args[10], args[11], \
+													   args[12], args[13], args[14], args[15], \
+													   args[16], args[17]);\
+							default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", count);\
 								break;\
 							}
 						// чуть-чуть ускоримся для линукса
 						CALL();
 #else
 //						*(char*)0 = 123;
-						switch (convention >> 6) {
+						switch (convention) {
 						case 0:
 							CALL(__stdcall);
 							break;
@@ -2289,30 +2295,30 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 #endif
 						return 0;
 					}
-					int from_fix(word* arg) {
-						int value = fixval((unsigned int)arg);
+					long from_fix(word* arg) {
+						long value = fixval((unsigned long)arg);
 						// этот кусок временный - потом переделать в трюк
 						// алгоритмические трюки:
 						// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
-						if ((unsigned int)arg & 0x80)
+						if ((unsigned long)arg & 0x80)
 							return -value;
 						return value;
 					}
-					int from_int(word* arg) {
+					long from_int(word* arg) {
 						// так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит (первые два члена)
 						assert (immediatep(arg[1]));
 						assert (allocp(arg[2]));
 
-						return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << 24);
+						return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << (sizeof(word) - 8));
 					}
 					float from_int_to_float(word* arg) {
 						// читаем длинное число в float формат
 						assert (immediatep(arg[1]));
-						float f = (unsigned)arg[1] >> 8;
+						float f = (unsigned long)arg[1] >> 8;
 						float mul = 0x1000000; // 1 << 24
 						while (allocp(arg[2])) {
 							arg = (word*)arg[2];
-							f += (unsigned)(arg[1] >> 8) * mul;
+							f += (unsigned long)(arg[1] >> 8) * mul;
 							mul *= 0x1000000;
 						}
 						assert (arg[2] == INULL);
@@ -2360,22 +2366,19 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					word* B = (word*)b;
 					word* C = (word*)c;
 
-					assert (/*hdrtype(a) == TPORT || */hdrtype(A[0]) == TPORT);
+					CHECK(hdrtype(A[0]) == TPORT, A, 1032);
 					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
 					assert ((word)C != INULL && hdrtype(C[0]) == TPAIR);
 					// C[1] = return-type
 					// C[2] = argument-types
 
-					// todo: добавить разные конвенции вызова: __ccall, __stdcall, __fastcall
-
-					int args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
-					void *function = (void*) (A[1]);
-					assert (function != 0);
+					word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
+					void *function = (void*) (A[1]);  assert (function);
 					int returntype = imm_val (C[1]);
 
-					unsigned int got;   // результат вызова функции
-					int i = 0;   // количество аргументов
-					word* p = (word*)B; // сами аргументы
+					long got;   // результат вызова функции
+					int i = 0;     // количество аргументов
+					word* p = (word*)B;   // сами аргументы
 					word* t = (word*)C[2];
 					while ((word)p != INULL) { // пока есть аргументы
 						assert (hdrtype(*p) == TPAIR); // assert list
@@ -2458,6 +2461,9 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						case TSTRING:
 							if ((word)arg == INULL)
 								args[i] = (word) (void*)0;
+//#if sizeof(void*) = 8
+//								args[++i] = (word) (void*)0;
+//#endif
 							else
 							switch (hdrtype(arg[0])) {
 							case TBVEC:
@@ -2465,7 +2471,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //							case THANDLE:
 //							case TCONST:
 								// in arg[0] size got size of string
-								args[i] = (int)(&arg[1]);
+								args[i] = (word)(&arg[1]);
 								break;
 							default:
 								args[i] = INULL; // todo: error
@@ -2516,13 +2522,13 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 							break;
 						}
 
-						p = (word*)p[2]; // cdr
-						t = (word*)t[2]; // cdr
+						p = (word*)p[2]; // (cdr p)
+						t = (word*)t[2]; // (cdr t)
 						i++;
 					}
 					assert ((word)t == INULL); // количество аргументов совпало!
 
-					got = call(returntype, function, args, i);
+					got = call(returntype >> 6, function, args, i);
 
 					// todo: добавить type-void который возращает просто INULL
 					switch (returntype & 0x3F) {
@@ -2542,23 +2548,17 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								result = (word)lo;
 								break;
 							}
-							// иначе вернем type-fx+
+							// else goto case 0 (иначе вернем type-fx+)
 						case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-							result = F(got);
+							result = got < 0 ? (F(-got) | 0x80) : F(got);
 							break;
 						case TPORT:
-							// todo: uncomment this
-//							if (got > 0xFFFFFF)
-								result = (word)new_port(got);
-//							else
-//								result = make_immediate(got, TPORT);
+							result = (word)new_port(got);
 							break;
 						// todo: TRATIONAL
 
 						case TSTRING:
-							if (got == 0)
-								result = INULL;
-							else {
+							if (got != 0) {
 								int len = lenn((char*)got, FMAX+1);
 								result = (word)new_byte_vector(len, TSTRING);
 								//if (len == FMAX+1) return INULL; /* can't touch this */
@@ -2566,8 +2566,10 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 							}
 							break;
 						case TVOID:
-						default:
-							result = INULL;
+							result = IFALSE;
+							break;
+//						default:
+//							result = IFALSE;
 					}
 
 					break; // case 32
@@ -3179,13 +3181,13 @@ int main(int argc, char** argv)
 
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
-	int required_memory_size = (INITCELLS + FMAX + MEMPAD) * sizeof(word);
-	heap.begin = (word*) malloc(required_memory_size); // at least one argument string always fits
+	int required_memory_size = (INITCELLS + MEMPAD + 1024*1024); // ?
+	heap.begin = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
 	if (!heap.begin) {
-		fprintf(stderr, "Failed to allocate %d bytes for vm memory\n", required_memory_size);
+		fprintf(stderr, "Failed to allocate %d words for vm memory\n", required_memory_size);
 		goto done;
 	}
-	heap.end = heap.begin + FMAX + INITCELLS - MEMPAD;
+	heap.end = heap.begin + required_memory_size;
 	heap.genstart = heap.begin;
 
 	// подготовим в памяти машины параметры командной строки:

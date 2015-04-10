@@ -4,14 +4,19 @@
 
 ;  (define isCompiled (list->byte-vector '(0 0 0 0)))
 ;  (sys-prim 1033 isCompiled #false #false)
-(import (lib sqlite3))
+(import (lib sqlite))
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
 
 ; todo: move this test into separate script (tests/sqlite3.scm)
 (define database (make-sqlite3))
-(print "open: "     (sqlite3-open "database.sqlite" database))
+(print "open: "     (sqlite3-open ":memory:" database))
+(print "close: "    (sqlite3-close database))
+(print "open: "     (sqlite3-open ":memory:" database))
+
+
+
 (define (execute query)
    (let ((statement (make-sqlite3-stmt)))
       (if (> 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))

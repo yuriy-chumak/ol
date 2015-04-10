@@ -52,6 +52,15 @@
    (export 
       dlopen
       dlsym
+
+      RTLD_LAZY
+      RTLD_NOW
+      RTLD_BINDING_MASK
+      RTLD_NOLOAD
+      RTLD_DEEPBIND
+      RTLD_GLOBAL
+      RTLD_LOCAL
+      RTLD_NODELETE
       
       type-float type-double type-void
       
@@ -86,7 +95,29 @@
 
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle
-(define (dlopen name flag) (sys-prim 1030 (c-string name) flag #false))
+(define (dlopen name flag) (sys-prim 1030 name flag #false))
+
+; The MODE argument to `dlopen' contains one of the following:
+(define RTLD_LAZY	#x00001)	; Lazy function call binding.
+(define RTLD_NOW	#x00002)	; Immediate function call binding.
+(define	RTLD_BINDING_MASK   #x3)	; Mask of binding time value.
+(define RTLD_NOLOAD	#x00004)	; Do not load the object.
+(define RTLD_DEEPBIND	#x00008)	; Use deep binding.
+
+; If the following bit is set in the MODE argument to `dlopen',
+; the symbols of the loaded object and its dependencies are made
+; visible as if the object were linked directly into the program.
+(define RTLD_GLOBAL	#x00100)
+
+; Unix98 demands the following flag which is the inverse to RTLD_GLOBAL.
+; The implementation does this by default and so we can define the
+; value to zero.
+(define RTLD_LOCAL	0)
+
+; Do not delete object when closed.
+(define RTLD_NODELETE	#x01000)
+
+
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать 
 (define (dlsym  dll type name . prototype)
 ;  (print "dlsym: " name)
@@ -144,7 +175,7 @@
 (define *OS_UNIX* #f)   ; http://en.wikipedia.org/wiki/Unix
 (define *OS_OS_SVR4* #f); http://en.wikipedia.org/wiki/UNIX_System_V
 (define *OS_VMS* #f)    ; http://en.wikipedia.org/wiki/Vms
-(define *OS_WINDOWS*      (not (null? (dlopen "kernel32" 0))))   ; http://en.wikipedia.org/wiki/Category:Microsoft_Windows
+(define *OS_WINDOWS* #f);     (not (null? (dlopen (c-string "kernel32") 0))))   ; http://en.wikipedia.org/wiki/Category:Microsoft_Windows
 (define *OS_BSD_BSDI* #f); http://en.wikipedia.org/wiki/BSD/OS
 (define *OS_BSD_DRAGONFLY* #f); http://en.wikipedia.org/wiki/DragonFly_BSD
 (define *OS_BSD_FREE* #f); http://en.wikipedia.org/wiki/Freebsd
