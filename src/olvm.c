@@ -482,7 +482,6 @@ typedef struct object
 
 #define is_pointer(x)               (!immediatep(x))
 #define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
-#define is_pair(ob)                 (is_pointer(ob) && V(ob)==HPAIR)
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 #define TFIX                         (0)      // type-fix+
@@ -524,6 +523,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 
 #define HPAIR                       make_header(3, TPAIR)
 #define HINT                        make_header(3, TINT) // <- on the way to 40, see type-int+ in defmac.scm
+#define HPORT                       make_header(2, RAWH(TPORT))
 
 #define FFRIGHT                     1
 #define FFRED                       2
@@ -531,6 +531,14 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define flagged_or_raw(hdr)         (hdr & (RAWBIT|1))
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
+
+#define is_pair(ob)                 (is_pointer(ob) && V(ob) == HPAIR)
+#define is_string(ob)               (is_pointer(ob) && imm_type(*ob) == TSTRING)
+#define is_port(ob)                 (is_pointer(ob) && V(ob) == HPORT)
+
+#define car(ob)                     (((word*)ob)[1])
+#define cdr(ob)                     (((word*)ob)[2])
+
 
 #define NR                          128 // see n-registers in register.scm
 
@@ -1995,6 +2003,124 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //			printf("SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
 			switch (op) {
+
+			// SOCKET
+			case 41: { // socket (todo: options: STREAM or DGRAM)
+//				int port = fixval(a);
+				int sock = socket(PF_INET, fixval(a), 0);
+				if (sock != -1)
+					result = (word) new_port (sock);
+				break;
+			}
+
+			// ACCEPT
+			// http://linux.die.net/man/2/accept
+			case 43: {
+				CHECK(is_port(a), a, SYSCALL);
+				int sockfd = car (a);
+
+				struct sockaddr_in addr;
+				socklen_t len = sizeof(addr);
+				int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
+				// On error, -1 is returned
+				if (sock >= 0)
+					result = (word) new_port (sock);
+				break;
+			}
+
+			// SEND
+			// http://linux.die.net/man/2/send
+			case 44: { // fd, buf, len
+				CHECK(is_port(a), a, SYSCALL);
+				int socket = car (a);
+
+				word *data = (word *)b;
+				int size = (hdrsize(*data) - 1) * W - padsize(*data);
+
+				int sent = send(socket, (char *)&data[1], size, 0);//, NULL, 0);
+				if (sent == -1) // On error, -1 is returned
+					break;
+
+				result = F(sent);
+				break;
+			}
+
+			// RECV
+			case 45: {
+				CHECK(is_port(a), a, SYSCALL);
+				int socket = car (a);
+				word *data = fp;
+
+				int size = (heap.end - fp - 256) * W; // 4к на всякий случай оставим
+
+				int got = recv(socket, (char*)&fp[1], size, 0);
+				if (got >= 0) {
+					// todo: обработать когда приняли не все,
+					//	вызвать gc() и допринять. и т.д.
+					word read_nwords = (got/W) + ((got%W) ? 2 : 1);
+					int pads = (read_nwords-1)*W - got;
+					*fp = make_raw_header(read_nwords, TSTRING, pads);
+					fp += read_nwords;
+
+					result = (word)data;
+				}
+				break;
+			}
+
+			// SHUTDOWN
+			// http://linux.die.net/man/2/shutdown
+			case 48: {
+				CHECK(is_port(a), a, SYSCALL);
+				int socket = car (a);
+
+				// On error, -1 is returned
+				if (shutdown(socket, 2) != 0) // both
+					break;
+
+				result = ITRUE;
+				break;
+			}
+
+			// BIND (socket, port, #false) // todo: c for options
+			// http://linux.die.net/man/2/bind
+			case 49: {
+				CHECK(is_port(a), a, 49);
+				// todo: assert on argument types
+
+				int sockfd = car (a);
+				int port = fixval(b);
+
+				struct sockaddr_in interface;
+				interface.sin_family = AF_INET;
+				interface.sin_port = htons(port);
+				interface.sin_addr.s_addr = INADDR_ANY;
+
+				// On success, zero is returned.
+				if (bind(sockfd, (struct sockaddr *) &interface, sizeof(interface)) == 0)
+					result = ITRUE;
+				break;
+			}
+
+
+			// LISTEN
+			// http://linux.die.net/man/2/listen
+			// listen() marks the socket referred to by sockfd as a passive socket, that is,
+			// as a socket that will be used to accept incoming connection requests using accept(2).
+			case 50: {
+				CHECK(is_port(a), a, 49);
+				int sockfd = car (a);
+
+				// On success, zero is returned.
+				if (listen(sockfd, 1024) == 0) {
+		//					set_blocking(sockfd, 0);
+					result = ITRUE;
+				}
+
+				break;
+			}
+
+
+
 			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
 			case 35: // currently sleep, will be nanosleep
 				CHECK(immediatep(a), a, 35);
@@ -2520,7 +2646,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 							case TBVEC:
 							case TSTRING:
 							case TPORT:
-//							case THANDLE:
 //							case TCONST:
 								// in arg[0] size got size of string
 								args[i] = (word)(&arg[1]);
@@ -2570,7 +2695,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 
 					got = call(returntype >> 6, function, args, i);
 
-					// todo: добавить type-void который возращает просто INULL
 					switch (returntype & 0x3F) {
 						case TINT:
 							// todo: переделать!
@@ -2603,7 +2727,7 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 								result = (word) new_string (lenn((char*)got, FMAX+1), (char*)got);
 							break;
 						case TVOID:
-							result = ITRUE;
+							result = INULL;
 							break;
 //						default:
 //							result = IFALSE;
@@ -2612,27 +2736,42 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 					break; // case 32
 				}
 #				endif//STANDALONE
+
+				case 1001: { // 1 = fopen <str> <mode> <to>
+					word *path = (word *) a;
+					struct stat sb;
+					if (is_string(path)) {
+						int mode = fixval(b);
+						mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
+						int val = open((char *) &path[1], mode, (S_IRUSR | S_IWUSR));
+						if (val < 0 || fstat(val, &sb) == -1 || (S_ISDIR(sb.st_mode))) {
+							close(val);
+							break;
+						}
+						set_blocking(val, 0);
+						result = F(val);
+					}
+					break;
+				}
+				case 1002:
+					if (close(fixval(a)) == 0)
+						result = ITRUE;
+					break;
+
+				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
+					word *name = (word *)a;
+					if (is_string(name)) {
+						char* value = getenv((char*)&name[1]);
+						if (value)
+							result = (word) new_string(lenn(value, FMAX), value);
+					}
+					break;
+				}
+
 				default:
 					if (op >= 1000) {
 						word prim_sys(int op, word a, word b, word c) {
 						   switch(op) {
-						      case 1001: { /* 1 = fopen <str> <mode> <to> */
-						         char *path = (char *) a;
-						         int mode = fixval(b);
-						         int val;
-						         struct stat sb;
-						         if (!(allocp(path) && imm_type(*path) == TSTRING))
-						            return IFALSE;
-						         mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
-						         val = open(((char *) path) + W, mode,(S_IRUSR|S_IWUSR));
-						         if (val < 0 || fstat(val, &sb) == -1 || (S_ISDIR(sb.st_mode))) {
-						            close(val);
-						            return IFALSE;
-						         }
-						         set_blocking(val,0);
-						         return F(val); }
-						      case 1002:
-						         return close(fixval(a)) ? IFALSE : ITRUE;
 						      case 1003: { /* 3 = sopen port -> False | fd  */
 						         int port = fixval(a);
 						         int s;
@@ -2727,22 +2866,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						         if (wrote > 0) return F(wrote);
 						         if (errno == EAGAIN || errno == EWOULDBLOCK) return F(0);
 						         return IFALSE; }
-						      case 1016: { /* getenv <owl-raw-bvec-or-ascii-leaf-string> */
-						    	  /* map a null or C-string to False, Null or owl-string, false being null or too large string */
-						    	  word strp2owl(char *sp) {
-						    	     int len;
-						    	     word *res;
-						    	     if (!sp) return IFALSE;
-						    	     len = lenn(sp, FMAX+1);
-						    	     if (len == FMAX+1) return INULL; /* can't touch this */
-						    	     res = new_byte_vector(len, TBVEC); /* make a bvec instead of a string since we don't know the encoding */
-						    	     bytecopy(sp, ((char *)res)+W, len);
-						    	     return (word)res;
-						    	  }
-
-						         char *name = (char *)a;
-						         if (!allocp(name)) return IFALSE;
-						         return strp2owl(getenv(name + W)); }
 						      case 1017: { // system (char*)
 						    	  int result = system((char*)a + W);
 						    	  return F(result);
@@ -2825,95 +2948,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 						{
 							switch (op)
 							{
-								// SOCKET
-								case 41: { // socket (options: STREAM or DGRAM)
-									int port = fixval(b);
-									int sock = socket(PF_INET, port, 0);
-									if (sock == -1)
-										break;
-
-									return F(sock);
-								}
-
-								// ACCEPT
-								// http://linux.die.net/man/2/accept
-								case 43: {
-									int sockfd = fixval(a);
-
-									struct sockaddr_in addr;
-									socklen_t len = sizeof(addr);
-									int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
-									// On error, -1 is returned
-									if (sock < 0)
-										break;
-
-									return F(sock);
-								}
-
-								// SEND
-								// http://linux.die.net/man/2/send
-								case 44: { // fd, buf, len
-									int fd = fixval(a);
-									word *data = (word *)b;
-									int len = fixval(c);
-
-									int size = (hdrsize(*data)-1) * W;
-									if (len > size)
-										break;
-
-									int sent = sendto(fd, ((char *)data)+W, len, 0, NULL, 0);
-									if (sent == -1) // On error, -1 is returned
-										break;
-
-									return F(sent);
-								}
-
-								// SHUTDOWN
-								// http://linux.die.net/man/2/shutdown
-								case 48: {
-									int sd = fixval(a);
-
-									// On error, -1 is returned
-									if (shutdown(sd, 0) != 0)
-										break;
-
-									return ITRUE;
-								}
-
-								// BIND (socket, port, #false) // todo: c for options
-								// http://linux.die.net/man/2/bind
-								case 49: {
-									// todo: assert on argument types
-									int sock = fixval(a);
-									int port = fixval(b);
-
-									struct sockaddr_in interface;
-									interface.sin_family = AF_INET;
-									interface.sin_port = htons(port);
-									interface.sin_addr.s_addr = INADDR_ANY;
-
-									// On success, zero is returned.
-									if (bind(sock, (struct sockaddr *) &interface, sizeof(interface)) == 0)
-										return ITRUE;
-									break;
-								}
-
-
-								// LISTEN
-								// http://linux.die.net/man/2/listen
-								// listen() marks the socket referred to by sockfd as a passive socket, that is,
-								// as a socket that will be used to accept incoming connection requests using accept(2).
-								case 50: {
-									int sockfd = fixval(a);
-
-									// On success, zero is returned.
-									if (listen(sockfd, 1024) == 0) {
-							//					set_blocking(sockfd, 0);
-										return ITRUE;
-									}
-
-									break;
-								}
 								default:
 									break;
 							}
