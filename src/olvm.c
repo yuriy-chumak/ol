@@ -90,18 +90,18 @@
 // headers
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
-#	define NOMINMAX
+#	define VC_EXTRALEAN
+#	include <windows.h>
 #	include <winsock2.h>
 #	include <ws2tcpip.h>
 #	include <conio.h>
-#	include <windows.h>
 	typedef unsigned long in_addr_t;
 #	define EWOULDBLOCK WSAEWOULDBLOCK
 #	undef ERROR // due to macro redefinition
 #else
 
-#	include <netinet/in.h>
 #	include <sys/socket.h>
+#	include <netinet/in.h>
 
 #	ifndef O_BINARY
 #		define O_BINARY 0
@@ -486,9 +486,9 @@ typedef struct object
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 #define TFIX                         (0)      // type-fix+
 #define TFIXN                        (0 + 32) // type-fix-
-#define TPAIR                        1
-#define TTUPLE                       2
-#define TSTRING                      3
+#define TPAIR                        (1)
+#define TTUPLE                       (2)
+#define TSTRING                      (3)
 
 #define TPORT                       (12)
 #define TRAWPORT                    RAWH(TPORT)
@@ -534,11 +534,17 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 
 #define is_pair(ob)                 (is_pointer(ob) && V(ob) == HPAIR)
 #define is_string(ob)               (is_pointer(ob) && imm_type(*ob) == TSTRING)
-#define is_port(ob)                 (is_pointer(ob) && V(ob) == HPORT)
+#define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)ob) == TPORT) // todo: maybe need to check port rawness?
 
 #define car(ob)                     (((word*)ob)[1])
 #define cdr(ob)                     (((word*)ob)[2])
 
+// todo: потом переделать в трюк
+// алгоритмические трюки:
+// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
+// signed fix to int
+#define uftoi(fix) ({ ((word)fix >> IPOS); })
+#define sftoi(fix) ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
 
 #define NR                          128 // see n-registers in register.scm
 
@@ -1222,14 +1228,9 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 		ERROR(257, this, INULL); // not callable
 	}
 
-invoke: // nargs and regs ready, maybe gc and execute ob
-
-	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
-	//  регистры, мы их складываем в память во временный кортеж.
-	if (/*forcegc || */(fp >= heap.end - 16*1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
-		//if (forcegc)
-		//	printf("(forcegc)\n");
-		//forcegc = 0;
+invoke:; // nargs and regs ready, maybe gc and execute ob
+	void dogc(int size)
+	{
 		int p = 0, N = NR;
 		// создадим в топе временный объект со значениями всех регистров
 		word *regs = (word*) new_tuple (N + 1);
@@ -1237,14 +1238,19 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 		regs[p] = (word) this;
 		// выполним сборку мусора
 		heap.fp = fp;
-		regs = (word*)gc(&heap, 16*1024 * sizeof(word), (word)regs); // GC занимает 0-15 ms
+		regs = (word*)gc(&heap, size, (word)regs); // GC занимает 0-15 ms
 		fp = heap.fp;
-		// и восстановим все регистры, уже скорректированные (если перемещались) сборщиком
+		// и восстановим все регистры, уже подкорректированные сборщиком
 		this = (word *) regs[p];
 		while (--p >= 1) R[p-1] = regs[p];
 
 		// закончили, почистим за собой:
-		fp = regs; // вручную сразу удалим временный объект, это оптимизация
+		fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
+	}
+	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
+	//  регистры, мы их складываем в память во временный кортеж.
+	if (/*forcegc || */(fp >= heap.end - 16*1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
+		dogc(16*1024 * sizeof(word));
 		ip = (unsigned char *) &this[1];
 
 		// проверим, не слишком ли мы зажрались
@@ -2003,6 +2009,98 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 //			printf("SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
 			switch (op) {
+			// (READ fd count) -> buf
+			// http://linux.die.net/man/2/read
+			case 0: {
+				if (is_port(a)) { // else case 1005, this is temporary up to refactoring!
+
+				CHECK(is_port(a), a, SYSCALL);
+				int portfd = car (a);
+				int size = sftoi (b);
+
+				if (size < 0)
+					size = (heap.end - fp - 256) * W;
+				else
+				if (size < (heap.end - fp - 256) * W)
+					dogc(size);
+				// todo: add case for _WIN32
+				int got = read(portfd, (char*)&fp[1], size);
+				if (got > 0) {
+					// todo: обработать когда приняли не все,
+					//	вызвать gc() и допринять. и т.д.
+					word read_nwords = (got / W) + ((got % W) ? 2 : 1);
+					int pads = (read_nwords - 1) * W - got;
+					*fp = make_raw_header(read_nwords, TSTRING, pads);
+					result = (word)fp;
+					fp += read_nwords;
+				}
+				else
+				if (got == 0)
+					result = IEOF;
+				else
+				if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
+					result = ITRUE;
+				break;}
+			}
+			case 1005: { // read fd max -> obj | eof | F (read error) | T (would block)
+				word fd = fixval(a);  // file descriptor
+				word max = fixval(b); // buffer capacity
+
+				if (is_port(a)) // temp workaround while
+					fd = car (a);
+
+				word *res;
+				int n, nwords = (max/W) + 2;
+				res = new (nwords);
+
+#					ifndef STANDALONE
+				if (fd == 0) { // stdin reads from fi
+					if (fifo_empty(fi)) {
+						// todo: process EOF, please!
+						n = -1;
+						errno = EAGAIN;
+					}
+					else {
+						char *d = ((char*) res) + W;
+						while (!fifo_empty(fi))
+							*d++ = fifo_get(fi);
+						n = d - (((char*) res) + W);
+					}
+				}
+				else
+#					endif//STANDALONE
+				{
+#ifdef _WIN32
+					if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
+					   n = read(fd, ((char *) res) + W, max);
+					} else {
+					   n = -1;
+					   errno = EAGAIN;
+					}
+#else
+					n = read(fd, ((char *) res) + W, max); // from <unistd.h>
+#endif
+				}
+				if (n > 0) { // got some bytes
+					word read_nwords = (n/W) + ((n%W) ? 2 : 1);
+					int pads = (read_nwords-1)*W - n;
+					fp = res + read_nwords;
+					*res = make_raw_header(read_nwords, TBVEC, pads);
+					result = (word)res;
+					break;
+				}
+				fp = res; // иначе удалим выделенную под результат переменную
+
+				if (n == 0)
+					result = IEOF;
+				else // EAGAIN: Resource temporarily unavailable (may be the same value as EWOULDBLOCK) (POSIX.1)
+#ifdef _WIN32
+					result = TRUEFALSE (errno == EAGAIN);
+#else
+					result = TRUEFALSE (errno == EAGAIN || errno == EWOULDBLOCK);
+#endif
+				break;
+			}
 
 			// SOCKET
 			case 41: { // socket (todo: options: STREAM or DGRAM)
@@ -2151,64 +2249,6 @@ invoke: // nargs and regs ready, maybe gc and execute ob
 				// isatty()
 				case 500: {
 					result = TRUEFALSE( isatty(fixval(a)) );
-					break;
-				}
-
-				// READ
-				case 1005: { /* fread fd max -> obj | eof | F (read error) | T (would block) */
-					word fd = fixval(a);  // file descriptor
-					word max = fixval(b); // buffer capacity
-
-					word *res;
-					int n, nwords = (max/W) + 2;
-					res = new (nwords);
-
-#					ifndef STANDALONE
-					if (fd == 0) { // stdin reads from fi
-						if (fifo_empty(fi)) {
-							// todo: process EOF, please!
-							n = -1;
-							errno = EAGAIN;
-						}
-						else {
-							char *d = ((char*) res) + W;
-							while (!fifo_empty(fi))
-								*d++ = fifo_get(fi);
-							n = d - (((char*) res) + W);
-						}
-					}
-					else
-#					endif//STANDALONE
-					{
-#ifdef _WIN32
-						if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
-			               n = read(fd, ((char *) res) + W, max);
-			            } else {
-			               n = -1;
-			               errno = EAGAIN;
-			            }
-#else
-						n = read(fd, ((char *) res) + W, max); // from <unistd.h>
-#endif
-					}
-					if (n > 0) { // got some bytes
-						word read_nwords = (n/W) + ((n%W) ? 2 : 1);
-						int pads = (read_nwords-1)*W - n;
-						fp = res + read_nwords;
-						*res = make_raw_header(read_nwords, TBVEC, pads);
-						result = (word)res;
-						break;
-					}
-					fp = res; // иначе удалим выделенную под результат переменную
-
-					if (n == 0)
-						result = IEOF;
-					else // EAGAIN: Resource temporarily unavailable (may be the same value as EWOULDBLOCK) (POSIX.1)
-#ifdef _WIN32
-						result = TRUEFALSE (errno == EAGAIN);
-#else
-						result = TRUEFALSE (errno == EAGAIN || errno == EWOULDBLOCK);
-#endif
 					break;
 				}
 
