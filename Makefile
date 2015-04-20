@@ -1,17 +1,36 @@
-FAILED := $(shell mktemp)
+FAILED := $(shell mktemp -u)
 CFLAGS := -std=c99 -O3
+boot.c := bootstrap~
 
 all: ol tests
+boot: bootstrap
 
-ol: src/olvm.c src/boot.c Makefile
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -DSTANDALONE -ldl -O3 -o ol
+install:
+	cp -b bootstrap src/boot.c
 	
-boot.fasl: src/ol.scm ol
+clean:
+	rm -f bootstrap
+	rm -f $(boot.c)
+
+
+ol: src/olvm.c $(boot.c)
+	$(CC) $(CFLAGS) src/olvm.c -x c $(boot.c) -DSTANDALONE -ldl -O3 -o ol
+	
+$(boot.c): src/boot.c
+	cp src/boot.c $(boot.c)
+
+boot.fasl: src/ol.scm ol lang/*.scm owl/*.scm
 	ol src/ol.scm
-	
+
 bootstrap: boot.fasl
-	ol src/to-c.scm > bootstrap
-	
+	@ol src/to-c.scm > bootstrap
+	@if diff bootstrap bootstrap~ >/dev/null ;then\
+	    echo "Ok." ;\
+	else \
+	    cp bootstrap $(boot.c) ;\
+	    make boot ;\
+	fi
+
 newol: src/olvm.c bootstrap
 	$(CC) $(CFLAGS) src/olvm.c -x c bootstrap -DSTANDALONE -ldl -O3 -o newol
 

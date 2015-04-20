@@ -1328,6 +1328,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #	define FFTOGGLE 46
 #	define FFREDQ   41
 
+#	define DIVISION 26
+#	define MILTIPLICATION
+
 	// free numbers: 34, 37, 62 (was _connect)
 
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
@@ -1733,9 +1736,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
-		case 26: { /* fx/ ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums */
-			bigm_t a = (((bigm_t) fixval(A0)) << FBITS) | fixval(A1);
-			word b = fixval(A2);
+		case DIVISION: { // fx/ ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums
+			bigm_t a = (((bigm_t) uftoi(A0)) << FBITS) | uftoi(A1);
+			word b = uftoi(A2);
 			bigm_t q = a / b;
 			A3 = F(q>>FBITS);
 			A4 = F(q & FMAX);
@@ -2019,18 +2022,47 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				int size = sftoi (b);
 
 				if (size < 0)
-					size = (heap.end - fp - 256) * W;
+					size = (heap.end - fp) * W - MEMPAD;
 				else
-				if (size < (heap.end - fp - 256) * W)
+				if (size > (heap.end - fp) * W - MEMPAD)
 					dogc(size);
-				// todo: add case for _WIN32
-				int got = read(portfd, (char*)&fp[1], size);
+
+				int got;
+#ifndef STANDALONE
+				if (fd == 0) { // stdin reads from fi
+					if (fifo_empty(fi)) {
+						// todo: process EOF, please!
+						n = -1;
+						errno = EAGAIN;
+					}
+					else {
+						char *d = ((char*) res) + W;
+						while (!fifo_empty(fi))
+							*d++ = fifo_get(fi);
+						n = d - (((char*) res) + W);
+					}
+				}
+				else
+#endif//STANDALONE
+				{
+#ifdef _WIN32
+					if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
+					   n = read(fd, ((char *) res) + W, max);
+					} else {
+					   n = -1;
+					   errno = EAGAIN;
+					}
+#else
+					got = read(portfd, (char*)&fp[1], size);
+#endif
+				}
+
 				if (got > 0) {
 					// todo: обработать когда приняли не все,
 					//	вызвать gc() и допринять. и т.д.
 					word read_nwords = (got / W) + ((got % W) ? 2 : 1);
 					int pads = (read_nwords - 1) * W - got;
-					*fp = make_raw_header(read_nwords, TSTRING, pads);
+					*fp = make_raw_header(read_nwords, TBVEC, pads);
 					result = (word)fp;
 					fp += read_nwords;
 				}
@@ -2053,7 +2085,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				int n, nwords = (max/W) + 2;
 				res = new (nwords);
 
-#					ifndef STANDALONE
+#				ifndef STANDALONE
 				if (fd == 0) { // stdin reads from fi
 					if (fifo_empty(fi)) {
 						// todo: process EOF, please!
