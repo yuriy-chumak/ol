@@ -13,23 +13,24 @@ clean:
 	rm -f $(boot.c)
 
 
-ol: src/olvm.c $(boot.c)
-	$(CC) $(CFLAGS) src/olvm.c -x c $(boot.c) -DSTANDALONE -ldl -O3 -o ol
-	
+ol: src/olvm.c src/boot.c
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -DSTANDALONE -ldl -O3 -o ol
+
 $(boot.c): src/boot.c
 	cp src/boot.c $(boot.c)
 
-boot.fasl: src/ol.scm ol lang/*.scm owl/*.scm
+boot.fasl: src/ol.scm ol $(boot.c) lang/*.scm owl/*.scm
 	ol src/ol.scm
 
 bootstrap: boot.fasl
-	@ol src/to-c.scm > bootstrap
-	@if diff bootstrap bootstrap~ >/dev/null ;then\
-	    echo "Ok." ;\
+	ol src/to-c.scm > bootstrap
+	if diff bootstrap bootstrap~ >/dev/null ;then\
+	    echo "\033[1;32mOk.\033[0m" ;\
 	else \
 	    cp bootstrap $(boot.c) ;\
 	    make boot ;\
 	fi
+
 
 newol: src/olvm.c bootstrap
 	$(CC) $(CFLAGS) src/olvm.c -x c bootstrap -DSTANDALONE -ldl -O3 -o newol

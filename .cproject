@@ -28,6 +28,7 @@
 								<option id="gnu.c.compiler.option.dialect.std.247679204" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.c99" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1416926901" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="STANDALONE"/>
+									<listOptionValue builtIn="false" value="HAS_DLOPEN"/>
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.1176707031" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1106465048" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>

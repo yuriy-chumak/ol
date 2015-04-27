@@ -445,7 +445,7 @@ typedef struct object
 //#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
 //#define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
 #define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in fixnum
-#define FMAX                        (((long)1<<FBITS)-1) // maximum fixnum (and most negative fixnum)
+#define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #if __amd64__
 #define bigm_t                      __int128
@@ -453,7 +453,7 @@ typedef struct object
 #define bigm_t                      __int64
 #endif
 
-#define RAWBIT                      ((1<<RPOS))
+#define RAWBIT                      ((1 << RPOS))
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
 #define make_immediate(value, type)    ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(size, type)        (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
@@ -548,8 +548,8 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 
 #define NR                          128 // see n-registers in register.scm
 
-#define MEMPAD                      (NR+2) * W /* space at end of heap for starting GC */
-#define MINGEN                      1024*32  /* minimum generation size before doing full GC  */
+#define MEMPAD                      ((NR + 2) * W) /* space at end of heap for starting GC */
+#define MINGEN                      (1024 * 32)  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
 //static int breaked;      /* set in signal handler, passed over to owl in thread switch */
@@ -613,7 +613,7 @@ word*p = new (size);\
 	/*return*/p;\
 })
 
-// хитрый макрос перегружающий макрос аллокатор памяти
+// хитрый макрос перегружающий макрос - аллокатор памяти
 //	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
 #define GET_MACRO(_1, _2, NAME, ...) NAME
 #define new(...) GET_MACRO(__VA_ARGS__, NEW_OBJECT, NEW)(__VA_ARGS__)
@@ -1249,8 +1249,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 	}
 	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
 	//  регистры, мы их складываем в память во временный кортеж.
-	if (/*forcegc || */(fp >= heap.end - 16*1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
-		dogc(16*1024 * sizeof(word));
+	if (/*forcegc || */(fp >= heap.end - 16 * 1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
+		dogc (16 * 1024 * sizeof(word));
 		ip = (unsigned char *) &this[1];
 
 		// проверим, не слишком ли мы зажрались
@@ -1736,9 +1736,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
-		case DIVISION: { // fx/ ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums
-			bigm_t a = (((bigm_t) uftoi(A0)) << FBITS) | uftoi(A1);
-			word b = uftoi(A2);
+		case 26: { /* fx/ ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums */
+			bigm_t a = (((bigm_t) fixval(A0)) << FBITS) | (bigm_t)fixval(A1);
+			word b = fixval(A2);
 			bigm_t q = a / b;
 			A3 = F(q>>FBITS);
 			A4 = F(q & FMAX);
@@ -2015,7 +2015,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// (READ fd count) -> buf
 			// http://linux.die.net/man/2/read
 			case 0: {
-				if (is_port(a)) { // else case 1005, this is temporary up to refactoring!
+				if (!is_port(a)) {
+					a = new_port(fixval(a));
+				}
 
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
@@ -2072,7 +2074,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				else
 				if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
 					result = ITRUE;
-				break;}
+				break;
 			}
 			case 1005: { // read fd max -> obj | eof | F (read error) | T (would block)
 				word fd = fixval(a);  // file descriptor
