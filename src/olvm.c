@@ -448,9 +448,9 @@ typedef struct object
 #define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #if __amd64__
-#define bigm_t                      __int128
+#define bign_t                      __int128
 #else
-#define bigm_t                      __int64
+#define bign_t                      __int64
 #endif
 
 #define RAWBIT                      ((1 << RPOS))
@@ -1333,8 +1333,10 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #	define FFTOGGLE 46
 #	define FFREDQ   41
 
+#	define ADDITION 38
 #	define DIVISION 26
-#	define MILTIPLICATION
+#	define MULTIPLICATION 39
+#	define SUBTRACTION 40
 
 	// free numbers: 34, 37, 62 (was _connect)
 
@@ -1687,23 +1689,37 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			ip += 3; break;
 
 		// АЛУ (арифметическо-логическое устройство)
-		case 38: { /* fx+ a b r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word */
+		case ADDITION: { // fx+ a b r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
 			word r = fixval(A0) + fixval(A1);
 			word low = r & FMAX;
 			A3 = (r & ((long)1 << FBITS)) ? ITRUE : IFALSE;
 			A2 = F(low);
 			ip += 4; break; }
-		case 39: { /* fx* a b l h */
+		case MULTIPLICATION: { // fx* a b l h
 //		  uint64_t res = ((uint64_t) ((uint64_t) fixval(A0)) * ((uint64_t) fixval(A1)));
-			bigm_t r = (bigm_t) fixval(A0) * (bigm_t) fixval(A1);
+			bign_t r = (bign_t) fixval(A0) * (bign_t) fixval(A1);
 			A2 = F(r & FMAX);
 			A3 = F((r >>FBITS)&FMAX);
 			ip += 4; break; }
-		case 40: { /* fx- a b r u, args prechecked, signs ignored */
+		case SUBTRACTION: { /* fx- a b r u, args prechecked, signs ignored */
 			word r = (fixval(A0) | ((long)1<<FBITS)) - fixval(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & ((long)1<<FBITS)) ? IFALSE : ITRUE;
 			ip += 4; break; }
+		case DIVISION: { // fx/ ah al b qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
+//			CHECK();
+
+
+			bign_t a = (((bign_t) fixval(A0)) << FBITS) | (bign_t)fixval(A1);
+			word b = fixval(A2);
+			bign_t q = a / b;
+			A3 = F(q>>FBITS);
+			A4 = F(q & FMAX);
+			A5 = F(a - q * b);
+
+			ip += 6; break;
+		}
+
 
 		case 44: {/* less a b r */
 			word a = A0;
@@ -1732,26 +1748,15 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 	      NEXT(3); }
 
 		case 58: { /* fx>> a b hi lo */
-			bigm_t r = ((bigm_t) fixval(A0)) << (FBITS - fixval(A1));
+			bign_t r = ((bign_t) fixval(A0)) << (FBITS - fixval(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
 		case 59: { /* fx<< a b hi lo */
-			bigm_t r = ((bigm_t) fixval(A0)) << (fixval(A1));
+			bign_t r = ((bign_t) fixval(A0)) << (fixval(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
-		case 26: { /* fx/ ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums */
-//			CHECK();
-
-
-			bigm_t a = (((bigm_t) fixval(A0)) << FBITS) | (bigm_t)fixval(A1);
-			word b = fixval(A2);
-			bigm_t q = a / b;
-			A3 = F(q>>FBITS);
-			A4 = F(q & FMAX);
-			A5 = F(a - q*b);
-			ip += 6; break; }
 
 
 		case REFB: { /* refb t o r */ /* todo: merge with ref, though 0-based  */
@@ -1788,12 +1793,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		// ошибки!
 		case 17: /* arity error */
 			ERROR(17, this, F(acc));
-			// неиспользуемые коды (историческое наследие, при желании можно реюзать)
+			break;
+
+		// неиспользуемые коды (историческое наследие, при желании можно реюзать)
 		case 33:
 			ERROR(33, IFALSE, IFALSE);
+			break;
 
-
-		// мутатор
+		// мутатор (нерабочий !)
 		case 10: { // set! o t r
 			word T = IFALSE;
 			if (allocp(A0) && immediatep(A1) && immediatep(A2)) {
@@ -1820,18 +1827,18 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		}
 		case 11: { // (set-car! pair value)
 			word *pair = (word *)A0;
-			assert (is_pointer(pair) && pair[0] == HPAIR);
-			word value = (word)A1;
-			pair[1] = value;
+			CHECK(is_pointer(pair) && pair[0] == HPAIR, pair, 11);
+
+			car(pair) = (word) A1;
 
 			A2 = A0;
 			ip += 3; break;
 		}
 		case 12: { // (set-cdr! pair value)
 			word *pair = (word *)A0;
-			assert (is_pointer(pair) && pair[0] == HPAIR);
-			word value = (word)A1;
-			pair[2] = value;
+			CHECK(is_pointer(pair) && pair[0] == HPAIR, pair, 12);
+
+			cdr(pair) = (word) A1;
 
 			A2 = A0;
 			ip += 3; break;
@@ -2126,8 +2133,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 			// SOCKET
 			case 41: { // socket (todo: options: STREAM or DGRAM)
-//				int port = fixval(a);
-				int sock = socket(PF_INET, fixval(a), 0);
+				int sock = socket(PF_INET, SOCK_STREAM, 0);
 				if (sock != -1)
 					result = (word) new_port (sock);
 				break;
@@ -2204,12 +2210,11 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// BIND (socket, port, #false) // todo: c for options
 			// http://linux.die.net/man/2/bind
 			case 49: {
-				CHECK(is_port(a), a, 49);
-				// todo: assert on argument types
-
+				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
 				int port = fixval(b);
 
+				// todo: assert on argument types
 				struct sockaddr_in interface;
 				interface.sin_family = AF_INET;
 				interface.sin_port = htons(port);
@@ -2227,11 +2232,11 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// listen() marks the socket referred to by sockfd as a passive socket, that is,
 			// as a socket that will be used to accept incoming connection requests using accept(2).
 			case 50: {
-				CHECK(is_port(a), a, 49);
+				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
 
 				// On success, zero is returned.
-				if (listen(sockfd, 1024) == 0) {
+				if (listen(sockfd, 42) == 0) {
 		//					set_blocking(sockfd, 0);
 					result = ITRUE;
 				}

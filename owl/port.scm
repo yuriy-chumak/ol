@@ -20,7 +20,7 @@
       (define (socket? x)     (eq? (type x) type-socket))
       (define (tcp? x)        (eq? (type x) type-tcp-client))
 
-      (define (fd->port fd)   (cast fd type-port))
+      (define (fd->port fd)   (raw type-port (list fd)))
       (define (fd->socket fd) (cast fd type-socket))
       (define (fd->tcp fd)    (cast fd type-tcp-client))
 
