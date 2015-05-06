@@ -84,12 +84,13 @@
 
       ;; standard io ports
       (define stdin  (raw type-port '(0))) ;fd->port 0))
-      (define stdout (fd->port 1))
-      (define stderr (fd->port 2))
+      (define stdout (raw type-port '(1))) ;fd->port 1))
+      (define stderr (raw type-port '(2))) ;fd->port 2))
+;      (define stdout (fd->port 1))
+;      (define stderr (fd->port 2))
 
-;     (define (sys-read fd maxlen)         (sys-prim 1005 fd maxlen #false)) ; 1005
       (define (sys-read fd maxlen)         (sys-prim 0 fd maxlen #false)) ; 1005
-      (define (sys-write fd buffer length) (sys-prim 1000 fd buffer length)) ; 1
+      (define (sys-write fd buffer length) (sys-prim 1 fd buffer length)) ; 1000
 
       ;; use type 12 for fds 
 

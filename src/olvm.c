@@ -604,43 +604,64 @@ typedef struct heap_t
 #define NEW_OBJECT(size, type) ({\
 word*p = NEW (size);\
 	*p = make_header(size, type);\
-	/*return*/p;\
+	/*return*/ p;\
 })
 
-#define new_raw_object(size, type, pads) ({\
-word*p = new (size);\
-	*p = make_raw_header(size, type, pads);\
-	/*return*/p;\
+#define NEW_PAIR(type, a1, a2) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	/* точка следования */ \
+word*p = NEW_OBJECT (3, type);\
+	p[1] = data1;\
+	p[2] = data2;\
+	/*return*/ p;\
 })
 
-// хитрый макрос перегружающий макрос - аллокатор памяти
+// хитрый макрос перегружающий макросы - аллокаторы памяти
 //	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
-#define GET_MACRO(_1, _2, NAME, ...) NAME
-#define new(...) GET_MACRO(__VA_ARGS__, NEW_OBJECT, NEW)(__VA_ARGS__)
+#define GET_MACRO(_1, _2, _3, NAME, ...) NAME
+#define new(...) GET_MACRO(__VA_ARGS__, NEW_PAIR, NEW_OBJECT, NEW)(__VA_ARGS__)
+
+#define new_list2(type, a1, a2) \
+	new (type, a1, a2)
+#define new_list3(type, a1, a2, a3) \
+	new (type, a1,\
+	           new (TPAIR, a2, a3))
+#define new_list4(type, a1, a2, a3, a4) \
+	new (type, a1,\
+	           new (TPAIR, a2,\
+	                       new (TPAIR, a3, a4)))
+
+#define NEW_LIST(_1, _2, _3, _4, _5, NAME, ...) NAME
+#define new_list(...) NEW_LIST(__VA_ARGS__, new_list4, new_list3, new_list2, NOTHING, NOTHING)(__VA_ARGS__)
 
 
 // остальные аллокаторы
+#define new_raw_object(size, type, pads) ({\
+word*p = new (size);\
+	*p = make_raw_header(size, type, pads);\
+	/*return*/ p;\
+})
+
 #define new_tuple(length)  new ((length)+1, TTUPLE)
 
 /* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
-#define new_byte_vector(size, type) ({\
-int len = size;\
-	\
-	int nwords = (len/W) + ((len%W) ? 2 : 1);\
-	int pads = (nwords - 1) * W - len;\
-	\
+#define new_bytevector(size, type) ({\
+	int len = size;\
+	int words = (len / W) + ((len % W) ? 2 : 1);\
+	int pads = (words - 1) * W - len;\
 	/*return*/\
-	new_raw_object (nwords, type, pads);\
+	new_raw_object (words, type, pads);\
 })
 
 #define new_string(length, string) ({\
-int len = length;\
+	int len = length;\
 	char* data = string;\
 	\
-	int size = (len / W) + ((len % W) ? 2 : 1);\
-	int pads = (size-1) * W - len;\
+	int words = (len / W) + ((len % W) ? 2 : 1);\
+	int pads = (words - 1) * W - len;\
 	\
-	word* p = new_raw_object (size, TSTRING, pads);\
+	word* p = new_raw_object (words, TSTRING, pads);\
 	char* ptr = (char*)&p[1];\
 	while (len--) *ptr++ = *data++;\
 	*ptr = '\0'; \
@@ -659,16 +680,8 @@ word value = (word) a;\
 
 // car, cdr надо предвычислить перед тем, как выделим память,
 //	так как в параметрах могут быть аллоцируемые объекты.
-#define new_pair(a1, a2) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	/* точка следования */ \
-	word *me = new (3, TPAIR);\
-	me[1] = data1;\
-	me[2] = data2;\
-	/*return*/ me;\
-})
-// а по факту эта функция сводится к простому
+#define new_pair(a1, a2) new (TPAIR, a1, a2)
+// по факту эта функция сводится к простому
 /*static __inline__ word* new_pair (word* car, word* cdr)
 {
 	word *object = fp;
@@ -681,15 +694,7 @@ word value = (word) a;\
 	return object;
 }*/
 
-#define new_npair(a1, a2) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	/* точка следования */ \
-	word *me = new (3, TINT);\
-	me[1] = data1;\
-	me[2] = data2;\
-	/*return*/ me;\
-})
+#define new_npair(a1, a2) new (TINT, a1, a2)
 
 
 #define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
@@ -1644,14 +1649,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		case NCAR: {  // ncar a r
 			word T = A0;
 			CHECK(allocp(T), T, NCAR);
-			A1 = ((word*)T)[1];
+			A1 = car(T);
 			ip += 2; break;
 		}
 
 		case NCDR: {  // ncdr a r
 			word T = A0;
 			CHECK(allocp(T), T, NCDR);
-			A1 = ((word*)T)[2];
+			A1 = cdr(T);
 			ip += 2; break;
 		}
 
@@ -1737,6 +1742,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			A3 = F(r & FMAX);
 			ip += 4; break; }
 		case 26: { /* fx/ ah al b qh ql r, b != 0, int32 / int16 -> int32, as fixnums */
+//			CHECK();
+
+
 			bigm_t a = (((bigm_t) fixval(A0)) << FBITS) | (bigm_t)fixval(A1);
 			word b = fixval(A2);
 			bigm_t q = a / b;
@@ -1834,8 +1842,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		case MKT: { // mkt t s f1 .. fs r
 			word type = *ip++;
 			word size = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
-			word *p = new (size+1), i = 0; // s fields + header
-			*p = make_header(size+1, type);
+			word *p = new (size+1, type), i = 0; // s fields + header
 			while (i < size) {
 				p[i+1] = R[ip[i]];
 				i++;
@@ -1983,7 +1990,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					A0 = F(tp.tv_sec);
 				else {
 //					fprintf(stderr, "bignum\n");
-					word *me = new (6); // space for bignum - [NUM hi [NUM lo NULL]]
+					A0 = (word) new_list (TINT, F(tp.tv_sec & FMAX), F(tp.tv_sec >> FBITS), INULL);
+
+//					A0 = (word) new (TINT, F(tp.tv_sec & FMAX),
+//					                       new (TPAIR, F(tp.tv_sec >> FBITS), INULL));
+
+/*					word *me = new (6); // space for bignum - [NUM hi [NUM lo NULL]]
 					me[0] = HINT;
 					me[1] = F(tp.tv_sec >> FBITS);
 					me[2] = INULL;
@@ -1992,7 +2004,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					me[4] = F(tp.tv_sec & FMAX);
 					me[5] = (word) me;
 
-					A0 = (word) (me + 3);
+					A0 = (word) (me + 3);*/
 				}
 //			}
 			ip += 2; break;
@@ -2000,23 +2012,24 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 		// этот case должен остаться тут - как последний из кейсов
 		//  todo: переименовать в компиляторе sys-prim на syscall (?)
-		// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
-		//  list: https://filippo.io/linux-syscall-table/
+		// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
+		// https://filippo.io/linux-syscall-table/
 		case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
 			word op = fixval(A0);
 			word a = A1, b = A2, c = A3;
-			word result = IFALSE; // default returned value is #false
+			word result = IFALSE;  // default returned value is #false
 
-//			printf("SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
+//			fprintf(stderr, "SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
 			switch (op) {
 			// (READ fd count) -> buf
 			// http://linux.die.net/man/2/read
+			// count<0 means read all
 			case 0: {
-				if (!is_port(a)) {
-					a = new_port(fixval(a));
+				if (!is_port(a)) { // temp
+					a = (word) new_port(fixval(a));
 				}
 
 				CHECK(is_port(a), a, SYSCALL);
@@ -2055,86 +2068,61 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					   errno = EAGAIN;
 					}
 #else
-					got = read(portfd, (char*)&fp[1], size);
+					got = read(portfd, (char*) &fp[1], size);
 #endif
 				}
 
 				if (got > 0) {
 					// todo: обработать когда приняли не все,
-					//	вызвать gc() и допринять. и т.д.
-					word read_nwords = (got / W) + ((got % W) ? 2 : 1);
-					int pads = (read_nwords - 1) * W - got;
-					*fp = make_raw_header(read_nwords, TBVEC, pads);
-					result = (word)fp;
-					fp += read_nwords;
+					//	     вызвать gc() и допринять. и т.д.
+					result = (word) new_bytevector (got, TBVEC);
 				}
-				else
-				if (got == 0)
+				else if (got == 0)
 					result = IEOF;
-				else
-				if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
+				else if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
 					result = ITRUE;
+
 				break;
 			}
-			case 1005: { // read fd max -> obj | eof | F (read error) | T (would block)
-				word fd = fixval(a);  // file descriptor
-				word max = fixval(b); // buffer capacity
 
-				if (is_port(a)) // temp workaround while
-					fd = car (a);
+			// (WRITE fd buffer size) -> wrote
+			// http://linux.die.net/man/2/write
+			// size<0 means write all
+			// n if wrote, 0 if busy, #false if error (argument or write)
+			case 1: {
+				if (!is_port(a)) { // temp
+					a = (word) new_port(fixval(a));
+				}
 
-				word *res;
-				int n, nwords = (max/W) + 2;
-				res = new (nwords);
+				CHECK(is_port(a), a, SYSCALL);
+				int portfd = car (a);
+				int size = sftoi (c);
+
+				word *buff = (word *) b;
+				if (immediatep(buff))
+					break;
+
+				int length = (hdrsize(*buff) - 1) * sizeof(word);
+				if (length < size)
+					break; // rly?
+
+				int wrote;
 
 #				ifndef STANDALONE
-				if (fd == 0) { // stdin reads from fi
-					if (fifo_empty(fi)) {
-						// todo: process EOF, please!
-						n = -1;
-						errno = EAGAIN;
-					}
-					else {
-						char *d = ((char*) res) + W;
-						while (!fifo_empty(fi))
-							*d++ = fifo_get(fi);
-						n = d - (((char*) res) + W);
-					}
-				}
+				if (fd == 1) // stdout wrote to the fo
+					wrote = fifo_puts(fo, ((char *)buff)+W, len);
 				else
-#					endif//STANDALONE
-				{
-#ifdef _WIN32
-					if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
-					   n = read(fd, ((char *) res) + W, max);
-					} else {
-					   n = -1;
-					   errno = EAGAIN;
-					}
-#else
-					n = read(fd, ((char *) res) + W, max); // from <unistd.h>
-#endif
-				}
-				if (n > 0) { // got some bytes
-					word read_nwords = (n/W) + ((n%W) ? 2 : 1);
-					int pads = (read_nwords-1)*W - n;
-					fp = res + read_nwords;
-					*res = make_raw_header(read_nwords, TBVEC, pads);
-					result = (word)res;
-					break;
-				}
-				fp = res; // иначе удалим выделенную под результат переменную
+#				endif//STANDALONE
+					wrote = write(portfd, (char*)&buff[1], size);
 
-				if (n == 0)
-					result = IEOF;
-				else // EAGAIN: Resource temporarily unavailable (may be the same value as EWOULDBLOCK) (POSIX.1)
-#ifdef _WIN32
-					result = TRUEFALSE (errno == EAGAIN);
-#else
-					result = TRUEFALSE (errno == EAGAIN || errno == EWOULDBLOCK);
-#endif
+				if (wrote > 0)
+					result = F(wrote);
+				else if (errno == EAGAIN || errno == EWOULDBLOCK)
+					result = F(0);
+
 				break;
 			}
+
 
 			// SOCKET
 			case 41: { // socket (todo: options: STREAM or DGRAM)
@@ -2285,37 +2273,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					result = TRUEFALSE( isatty(fixval(a)) );
 					break;
 				}
-
-				// WRITE
-				case 1000: { /* 0 fsend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
-					int fd = fixval(a);
-					word *buff = (word *) b;
-
-					result = IFALSE;
-
-					int wrote, size, len = fixval(c);
-					if (immediatep(buff))
-						break;
-					size = (hdrsize(*buff)-1) * W;
-					if (len > size)
-						break;
-
-#					ifndef STANDALONE
-					if (fd == 1) // stdout wrote to the fo
-						wrote = fifo_puts(fo, ((char *)buff)+W, len);
-					else
-#					endif//STANDALONE
-						wrote = write(fd, ((char *)buff)+W, len);
-
-					if (wrote > 0)
-						result = F(wrote);
-					else if (errno == EAGAIN || errno == EWOULDBLOCK)
-						result = F(0);
-//					else
-//						result = IFALSE;
-					break;
-				}
-
 
 			// CONNECT // todo: change this!
 			case 1042: { // connect(host, port) // todo: check this
@@ -2919,7 +2876,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						         if (!dire) return IEOF; /* eof at end of dir stream */
 						         len = lenn(dire->d_name, FMAX+1);
 						         if (len == FMAX+1) return IFALSE; /* false for errors, like too long file names */
-						         res = new_byte_vector(len, 3); /* make a fake raw string (OS may not use valid UTF-8) */
+						         res = new_bytevector(len, TSTRING); /* make a fake raw string (OS may not use valid UTF-8) */
 						         bytecopy((char *)&dire->d_name, (char *) (res + 1), len); /* *no* terminating null, this is an owl bvec */
 						         return (word)res; }
 						      case 1013: /* sys-closedir dirp _ _ -> ITRUE */
