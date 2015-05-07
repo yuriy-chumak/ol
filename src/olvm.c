@@ -102,6 +102,8 @@
 
 #	include <sys/socket.h>
 #	include <netinet/in.h>
+#	include <netdb.h>     // for gethostbyname()
+#	include <arpa/inet.h> // for inet_addr()
 
 #	ifndef O_BINARY
 #		define O_BINARY 0
@@ -960,35 +962,6 @@ void set_signal_handler() {
 #endif
 */
 }
-
-/*** Primops called from VM and generated C-code ***/
-
-/*static word prim_connect(word *host, word port) {
-   int sock;
-   unsigned char *ip = ((unsigned char *) host) + W;
-   unsigned long ipfull;
-   struct sockaddr_in addr;
-   port = fixval(port);
-   if (!allocp(host))  // bad host type
-      return IFALSE;
-   if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1)
-      return IFALSE;
-   addr.sin_family = AF_INET;
-   addr.sin_port = htons(port);
-   addr.sin_addr.s_addr = (in_addr_t) host[1];
-   ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
-   addr.sin_addr.s_addr = htonl(ipfull);
-   if (connect(sock, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) < 0) {
-      close(sock);
-      return IFALSE;
-   }
-   set_blocking(sock,0);
-   return F(sock);
-}*/
-
-
-
-
 
 
 #define OCLOSE(proctype)            { \
@@ -2110,8 +2083,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 
 				int length = (hdrsize(*buff) - 1) * sizeof(word);
-				if (length < size)
-					break; // rly?
+				if (size > length || size == -1)
+					size = length;
 
 				int wrote;
 
@@ -2130,6 +2103,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			// ==================================================
+			//  network part:
 
 			// SOCKET
 			case 41: { // socket (todo: options: STREAM or DGRAM)
@@ -2139,9 +2114,35 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			// CONNECT
+			case 42: { // (connect sockfd host port)
+				CHECK(is_port(a), a, SYSCALL);
+				int sockfd = car (a);
+				word* host = (word*) b; // todo: check for string type
+				int port = fixval(c);
+
+				struct sockaddr_in addr;
+				addr.sin_family = AF_INET;
+				addr.sin_addr.s_addr = inet_addr((char *) &host[1]);
+				addr.sin_port = htons(port);
+
+				if (addr.sin_addr.s_addr == INADDR_NONE) {
+					struct hostent *he = gethostbyname((char *) &host[1]);
+					if (he != NULL)
+						memcpy(&addr.sin_addr, he->h_addr_list[0], sizeof(addr.sin_addr));
+				}
+
+//				ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
+//				addr.sin_addr.s_addr = htonl(ipfull);
+				if (connect(sockfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) >= 0)
+					result = ITRUE;
+//				set_blocking(sock, 0);
+				break;
+			}
+
 			// ACCEPT
 			// http://linux.die.net/man/2/accept
-			case 43: {
+			case 43: { // (accept host)
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
 
@@ -2151,45 +2152,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				// On error, -1 is returned
 				if (sock >= 0)
 					result = (word) new_port (sock);
-				break;
-			}
-
-			// SEND
-			// http://linux.die.net/man/2/send
-			case 44: { // fd, buf, len
-				CHECK(is_port(a), a, SYSCALL);
-				int socket = car (a);
-
-				word *data = (word *)b;
-				int size = (hdrsize(*data) - 1) * W - padsize(*data);
-
-				int sent = send(socket, (char *)&data[1], size, 0);//, NULL, 0);
-				if (sent == -1) // On error, -1 is returned
-					break;
-
-				result = F(sent);
-				break;
-			}
-
-			// RECV
-			case 45: {
-				CHECK(is_port(a), a, SYSCALL);
-				int socket = car (a);
-				word *data = fp;
-
-				int size = (heap.end - fp - 256) * W; // 4к на всякий случай оставим
-
-				int got = recv(socket, (char*)&fp[1], size, 0);
-				if (got >= 0) {
-					// todo: обработать когда приняли не все,
-					//	вызвать gc() и допринять. и т.д.
-					word read_nwords = (got/W) + ((got%W) ? 2 : 1);
-					int pads = (read_nwords-1)*W - got;
-					*fp = make_raw_header(read_nwords, TSTRING, pads);
-					fp += read_nwords;
-
-					result = (word)data;
-				}
 				break;
 			}
 
@@ -2226,7 +2188,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
-
 			// LISTEN
 			// http://linux.die.net/man/2/listen
 			// listen() marks the socket referred to by sockfd as a passive socket, that is,
@@ -2244,6 +2205,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			// ==================================================
 
 
 			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
@@ -2278,35 +2240,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					result = TRUEFALSE( isatty(fixval(a)) );
 					break;
 				}
-
-			// CONNECT // todo: change this!
-			case 1042: { // connect(host, port) // todo: check this
-				word* host = (word*)a;
-				if (!allocp(host))  // bad host type
-					break;
-				unsigned char *ip = ((unsigned char *) host) + W;
-
-				unsigned long ipfull;
-				struct sockaddr_in addr;
-				int port = fixval(b);
-
-				int sock;
-				if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1)
-					break;
-				addr.sin_family = AF_INET;
-				addr.sin_port = htons(port);
-				addr.sin_addr.s_addr = (in_addr_t) host[1];
-				ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
-				addr.sin_addr.s_addr = htonl(ipfull);
-				if (connect(sock, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) < 0) {
-					close(sock);
-					break;
-				}
-				set_blocking(sock, 0);
-				result = F(sock);
-				break;
-			}
-
 
 				// EXIT
 				case 1006:

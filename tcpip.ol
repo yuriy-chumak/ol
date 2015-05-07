@@ -18,25 +18,26 @@
 (define (listen sock) (sys-prim 50 sock #f #f))
 (define (accept sock) (sys-prim 43 sock #f #f))
 
+(define (connect sock host port) (sys-prim 42 sock host port))
 (define (shutdown sock) (sys-prim 48 sock #f #f))
 
-(define (send sock . d) (sys-prim 44 sock (raw type-vector-raw (foldr render '() d)) #f))
-(define (recv sock max) (cast (sys-prim 0 sock max #false) type-string))
+(define (send sock . d) (sys-prim 1 sock (raw type-string (foldr render '() d)) -1))
+(define (recv sock max) (sys-prim 0 sock max #false))
 ;(define (sendnl sock . d) (sys-prim 44 sock (raw type-vector-raw (foldr render '(13 10) d)) #f))
 
 
+
 (define s (socket))
-(print (bind s 8822))
-(print (listen s))
+(print (connect s "google.com" 80))
+(print (send s "GET / HTTP/1.1\r\n\r\n"))
+(print (cast (recv s 2048) type-string))
 
-(define (loop)
-   (define l (accept s))
-   (print (recv l 4096))
-   (send l "HTTP/1.x 200 OK\r\n\r\n")
-   (let* ((ss ms (clock)))
-      (send l "now: " ss "s " ms "ms"))
-   (shutdown l)
-   (loop))
-(loop)
+(define rcode (s/
+
+
+
+
+
+
+
 (shutdown s)
-

@@ -31,6 +31,7 @@
       ("m/./" "" #false) ;; ??
       ("m/./" "ax" #true)
       ("m/aa/" "aaxx" #true)
+      
       ;; fixme: character classes and strings do handle \t and pals at all. also check if it is ok to support \xff and \uffff in both.
       ("m/\\t/" "	" #true) ;; todo: not entirely sure if this kind of quotations are allowed
       ("m/(a)\\1/" "aax" #true)
@@ -89,6 +90,7 @@
       ("m/(.*)( \\1){2} tapong/" "eki eki tapongx" #false)
       ("m/^(.*)( \\1){2} tapong$/" "eki eki eki tapong" #true)
       ("m/^(.*)( \\1){2} tapong$/" "eki eki eki eki tapong" #false)
+      
       ;; primality testing (minor changes to a regexp taken from the internets)
       ("m/^(11+?)\\1+$/" "111" #false) ;; 3 prime
       ("m/^(11+?)\\1+$/" "1111" #true) ;; 4 composite
