@@ -535,7 +535,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define unlikely(x)                 __builtin_expect((x), 0)
 
 #define is_pair(ob)                 (is_pointer(ob) && V(ob) == HPAIR)
-#define is_string(ob)               (is_pointer(ob) && imm_type(*ob) == TSTRING)
+#define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)ob) == TSTRING)
 #define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)ob) == TPORT) // todo: maybe need to check port rawness?
 
 #define car(ob)                     (((word*)ob)[1])
@@ -1558,7 +1558,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// это лучше сделать тут, наверное, а не отдельной командой
 			if (immediatep(T))
 				A2 = make_immediate(imm_val(T), type);
-			else { // make a clone of more desired type
+			else
+			{ // make a clone of more desired type
 				word* ob = (word*)T;
 				word hdr = *ob++;
 				int size = hdrsize(hdr);
@@ -2000,18 +2001,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			word op = fixval(A0);
 			word a = A1, b = A2, c = A3;
 			word result = IFALSE;  // default returned value is #false
-
 //			fprintf(stderr, "SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
 			switch (op) {
+
 			// (READ fd count) -> buf
 			// http://linux.die.net/man/2/read
 			// count<0 means read all
 			case 0: {
-				if (!is_port(a)) { // temp
-					a = (word) new_port(fixval(a));
-				}
-
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
 				int size = sftoi (b);
@@ -2070,10 +2067,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// size<0 means write all
 			// n if wrote, 0 if busy, #false if error (argument or write)
 			case 1: {
-				if (!is_port(a)) { // temp
-					a = (word) new_port(fixval(a));
-				}
-
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
 				int size = sftoi (c);
@@ -2099,6 +2092,36 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					result = F(wrote);
 				else if (errno == EAGAIN || errno == EWOULDBLOCK)
 					result = F(0);
+
+				break;
+			}
+
+			// OPEN
+			case 2: {
+				CHECK(is_string(a), a, SYSCALL);
+				word* path = (word*) a; // todo: check for string type
+				int mode = fixval(b);
+				mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
+				int file = open((char *) &path[1], mode, (S_IRUSR | S_IWUSR));
+
+				struct stat sb;
+				if (file < 0 || fstat(file, &sb) == -1 || (S_ISDIR(sb.st_mode))) {
+					close(file);
+					break;
+				}
+				set_blocking(file, 0);
+				result = new_port(file);
+
+				break;
+			}
+
+			// CLOSE
+			case 3: {
+				CHECK(is_port(a), a, SYSCALL);
+				int portfd = car (a);
+
+				if (close(portfd) == 0)
+					result = ITRUE;
 
 				break;
 			}
@@ -2705,27 +2728,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break; // case 32
 				}
 #				endif//STANDALONE
-
-				case 1001: { // 1 = fopen <str> <mode> <to>
-					word *path = (word *) a;
-					struct stat sb;
-					if (is_string(path)) {
-						int mode = fixval(b);
-						mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
-						int val = open((char *) &path[1], mode, (S_IRUSR | S_IWUSR));
-						if (val < 0 || fstat(val, &sb) == -1 || (S_ISDIR(sb.st_mode))) {
-							close(val);
-							break;
-						}
-						set_blocking(val, 0);
-						result = F(val);
-					}
-					break;
-				}
-				case 1002:
-					if (close(fixval(a)) == 0)
-						result = ITRUE;
-					break;
 
 				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
 					word *name = (word *)a;

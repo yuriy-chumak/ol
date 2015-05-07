@@ -18,7 +18,6 @@
       (owl lazy)
       (owl eof)
       (owl math)
-      (owl port)
       (only (owl fasl) sub-objects)
       (only (owl vector) byte-vector? vector? vector->list)
       (only (owl math) render-number number?)
@@ -35,6 +34,10 @@
 
       (define lp #\()
       (define rp #\))
+      
+      ;; temp hack for port->fd
+      (define (port->fd port)
+         (cast (refb port 1) type-int+))
 
       ;; this could be removed?
       (define (make-renderer meta)
@@ -108,16 +111,15 @@
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
                   (cons #\# (render (ff->list obj) tl)))
-             
-               ((tuple? obj)
-                  (ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
-
-               ;; port = socket | tcp | fd
-               ((socket? obj) (ilist #\# #\[ #\s #\o #\c #\k #\e #\t #\space (render (port->fd obj) (cons #\] tl))))
-               ((tcp? obj) (ilist #\# #\[ #\t #\c #\p #\space (render (port->fd obj) (cons #\] tl))))
-               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (port->fd obj) (cons #\] tl))))
-               ((eof? obj) (ilist #\# #\e #\o #\f tl))
                ((eq? obj #empty) (ilist #\# #\e #\m #\p #\t #\y tl))
+
+; unused?             
+;               ((tuple? obj)
+;                  (ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
+
+               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (port->fd obj) (cons #\] tl))))
+
+               ((eof? obj) (ilist #\# #\e #\o #\f tl))
 
                (else 
                   (append (string->list "#<WTF>") tl)))) ;; What This Format?
@@ -240,8 +242,6 @@
                      (ser sh (tuple->list obj)
                         (λ (sh) (pair #\] (k sh))))))
 
-               ((socket? obj) (render obj (λ () (k sh))))
-               ((tcp? obj)    (render obj (λ () (k sh))))
                ((port? obj)   (render obj (λ () (k sh))))
                ((eof? obj)    (render obj (λ () (k sh))))
                ((eq? obj #empty)    (render obj (λ () (k sh))))
@@ -254,7 +254,8 @@
          (or 
             ;; note, all immediates are
             (number? val) (string? val) (boolean? val) (function? val) 
-            (port? val) (tcp? val) (socket? val) (null? val) (rlist? val)
+            (port? val)
+            (null? val) (rlist? val)
             (eq? val #empty)))
 
       ;; could drop val earlier to possibly gc it while rendering 
@@ -265,7 +266,7 @@
 
       ;; a value worth checking for sharing in datum labeler
       (define (shareable? x)
-         (not (or (function? x) (symbol? x) (port? x) (tcp? x) (socket? x))))
+         (not (or (function? x) (symbol? x) (port? x))))
 
       ;; val → ff of (ob → node-id)
       (define (label-shared-objects val)

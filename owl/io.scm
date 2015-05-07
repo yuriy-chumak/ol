@@ -4,14 +4,12 @@
 
 (define-library (owl io)
 
-  (export 
+  (export
+      fopen fclose
+
       ;; thread-oriented non-blocking io
       open-output-file        ;; path → fd | #false
       open-input-file         ;; path → fd | #false
-      open-socket             ;; port → thread-id | #false
-      open-connection         ;; ip port → thread-id | #false
-      port->fd                ;; port → fixnum
-      fd->port                ;; fixnum → port
       port?                   ;; _ → bool
       flush-port              ;; fd → _
       close-port              ;; fd → _
@@ -23,19 +21,12 @@
       ;; stream-oriented blocking (for the writing thread) io
       blocks->port            ;; ll fd → ll' n-bytes-written, don't close fd
       closing-blocks->port    ;; ll fd → ll' n-bytes-written, close fd
-      tcp-socket              ;; port-num → socket | #false
-      tcp-client              ;; port → ip tcp-fd | #f #f
-      tcp-clients             ;; port → ((ip . fd) ... . X), X = null → ok, #false → error
-      tcp-send                ;; ip port (bvec ...) → (ok|write-error|connect-error) n-bytes-written
    
       file->vector            ;; vector io, may be moved elsewhere later
       file->list              ;; list io, may be moved elsewhere later
       vector->file
       write-vector            ;; vec port
       port->byte-stream       ;; fd → (byte ...) | thunk 
-
-      ;; temporary exports
-      fclose                 ;; fd → _
 
       stdin stdout stderr
       display-to        ;; port val → bool
@@ -75,7 +66,6 @@
       (owl fasl)
       (owl tuple)
       (owl primop)
-      (owl port)
       (owl eof)
       (owl lazy)
       (only (owl vector) merge-chunks vec-leaves))
@@ -83,29 +73,26 @@
    (begin
 
       ;; standard io ports
-      (define stdin  (raw type-port '(0))) ;fd->port 0))
-      (define stdout (raw type-port '(1))) ;fd->port 1))
-      (define stderr (raw type-port '(2))) ;fd->port 2))
-;      (define stdout (fd->port 1))
-;      (define stderr (fd->port 2))
+      (define stdin  (raw type-port '(0)))
+      (define stdout (raw type-port '(1)))
+      (define stderr (raw type-port '(2)))
 
-      (define (sys-read fd maxlen)         (sys-prim 0 fd maxlen #false)) ; 1005
-      (define (sys-write fd buffer length) (sys-prim 1 fd buffer length)) ; 1000
+      (define (sys-read fd maxlen)         (sys-prim 0 fd maxlen #false))
+      (define (sys-write fd buffer length) (sys-prim 1 fd buffer length))
 
       ;; use type 12 for fds 
-
-      (define (fclose fd)
-         (sys-prim 1002 fd #false #false))
 
       (define (fopen path mode)
          (cond
             ((c-string path) => 
-               (λ (path) (sys-prim 1001 path mode #false)))
+               (λ (path) (sys-prim 2 path mode #false)))
             (else #false)))
 
-      ;; use fd 65535 as the unique sleeper thread name.
-      (define sid (fd->port 65535))
+      (define (fclose fd)
+         (sys-prim 3 fd #false #false)) ; 1002
 
+      ;; use fd 65535 as the unique sleeper thread name.
+      (define sid (raw type-port '(255 255)))
       (define sleeper-id sid)
 
       ;;; Writing
@@ -115,13 +102,7 @@
          (raw type-vector-raw (map (lambda (p) (refb bvec p)) (iota n 1 (sizeb bvec)))))
 
       (define (try-write-block fd bvec len)
-         (cond
-            ;; one does not simply write() on all platforms
-            ((tcp? fd) (sys-prim 1015 fd bvec len))
-            ((port? fd) (sys-write fd bvec len))
-            (else 
-               ;(sys-write fd bvec len)
-               #false)))
+         (if (port? fd) (sys-write fd bvec len) #false))
 
       ;; bvec port → bool
       (define (write-really bvec fd)
@@ -142,13 +123,8 @@
       ;; how many bytes (max) to add to output buffer before flushing it to the fd
       (define output-buffer-size 4096)
 
-      (define (open-input-file path) 
-         (let ((fd (fopen path 0)))
-            (if fd (fd->port fd) #f)))
-
-      (define (open-output-file path)
-         (let ((fd (fopen path 1)))
-            (if fd (fd->port fd) #f)))
+      (define (open-input-file path) (fopen path 0)) 
+      (define (open-output-file path) (fopen path 1))
 
       ;;; Reading
 
@@ -197,41 +173,7 @@
                                  (values eof-seen?
                                     (bvec-append this tail)))))))))))
 
-      ;;; TCP sockets
-
-      ;; needed a bit later for stream interface
-      (define (send-next-connection thread fd)
-         (let loop ((rounds 0)) ;; count for temporary sleep workaround
-            (let ((res (sys-prim 1004 fd #false #false)))
-               (if res ; did get connection
-                  (lets ((ip fd res))
-                     (mail thread fd)
-                     #true)
-                  (begin
-                     (interact sid 5) ;; delay rounds
-                     (loop rounds))))))
-                     
-      (define (open-socket port)
-         (let ((sock (sys-prim 1003 port #false #false)))
-            (if sock 
-               (list 'sock (fd->port sock))
-               #false)))
-
       ;;; TCP connections
-
-      (define (open-connection ip port)
-         (cond
-            ((not (eq? (type port) type-fix+))
-               #false)
-            ((and (eq? (type ip) type-vector-raw) (eq? 4 (sizeb ip))) ;; silly old formats
-               (let ((fd (sys-prim 1042 ip port #false))) ; connect
-                  (if fd
-                     (fd->tcp fd)
-                     #false)))
-            (else 
-               ;; note: could try to autoconvert formats to be a bit more user friendly
-               #false)))
-
       ;;; Sleeper thread
 
       ;; todo: later probably sleeper thread and convert it to a interop
@@ -356,45 +298,6 @@
          (lets ((r n (blocks->port ll fd)))
             (fclose fd)
             (values r n)))
-
-      ;; sock → #f #f | ip client
-      (define (tcp-client sock)
-         (let ((res (sys-prim 1004 sock #false #false)))
-            (if res 
-               (lets ((ip fd res))
-                  (values ip (fd->tcp fd)))
-               (begin
-                  (interact sid socket-read-delay)
-                  (tcp-client sock)))))
-
-      ;; port → ((ip . fd) ... . null|#false), CLOSES SOCKET
-      (define (socket-clients sock)
-         (lets ((ip cli (tcp-client sock)))
-            (if ip
-               (pair (cons ip cli) (socket-clients sock))
-               null)))
-
-      (define (tcp-socket port)
-         (let ((fd (sys-prim 1003 port #false #false)))
-            (if fd (fd->socket fd) fd)))
-
-      ;; port → ((ip . fd) ... . null|#false), CLOSES SOCKET
-      (define (tcp-clients port)
-         (let ((sock (tcp-socket port)))
-            (if sock
-               (λ () (socket-clients sock))
-               #false)))
-
-      ;; ip port (bvec ...) → #true n-written | #false error-sym
-      (define (tcp-send ip port ll)
-         (let ((fd (sys-prim 1042 ip port #false))) ; connect
-            (if fd
-               (lets ((ll n (closing-blocks->port ll fd)))
-                  (if (null? ll)
-                     (values 'ok n)
-                     (values 'error n)))
-               (values 'connect-error 0))))
-
 
       ;;;
       ;;; Rendering and sending
