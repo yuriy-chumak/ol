@@ -1,7 +1,10 @@
-// максимальное число для элементарной математики: 16777215 (24 бита, 0xFFFFFF)
-// считать так: (receive (fx+ 16777214 1) (lambda (hi lo) (list hi lo)))
-//  либо так: (let* ((hi lo (fx+ 16777214 1))) (...))
+// максимальные атомарные числа для элементарной математики:
+//	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
+//  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
+// математику считать так: (receive (fx+ 16777214 1) (lambda (hi lo) (list hi lo)))
+//                   либо: (let* ((hi lo (fx+ 16777214 1))) (...))
 // при превышении выдает мусор
+//
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
 //      http://igorkov.org/pdf/Z80-Central-Processor-Unit.pdf
 //      https://ru.wikipedia.org/wiki/Zilog_Z80
@@ -33,11 +36,11 @@
 	                  + __GNUC_MINOR__ * 100 \
 	                  + __GNUC_PATCHLEVEL__)
 #	if GCC_VERSION < 30200
-#		warning "Code require gcc version > 3.2 (with nested functions support)"
+#		error "Code require gcc version > 3.2 (with nested functions support)"
 #	endif
 
 #	if __STDC_VERSION__ < 199901L
-#		warning "Code require c99 enabled (-std=c99)"
+#		error "Code require c99 enabled (-std=c99)"
 #	endif
 #endif
 
@@ -47,9 +50,7 @@
 // posix or not:
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
-
-// STANDALONE - самостоятельный бинарник без потоков
-
+//
 // PORT: равка, с типом type-port и размером 2 (либо type-fix+/type-int+ for immediate value)
 // todo: проверить, что все работает в 64-битном коде (fck! оно таки работает!!!)
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
@@ -83,6 +84,10 @@
 #define __USE_POSIX199309 // for nanosleep
 #include <time.h>
 
+#	ifndef O_BINARY
+#		define O_BINARY 0
+#	endif
+
 // ========================================
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
@@ -104,10 +109,6 @@
 #	include <netinet/in.h>
 #	include <netdb.h>     // for gethostbyname()
 #	include <arpa/inet.h> // for inet_addr()
-
-#	ifndef O_BINARY
-#		define O_BINARY 0
-#	endif
 
 #endif
 #ifdef __ANDROID__
@@ -609,6 +610,8 @@ word*p = NEW (size);\
 	/*return*/ p;\
 })
 
+// a1 и a2 надо предвычислить перед тем, как выделим память,
+// так как они в свою очередь могут быть аллоцируемыми объектами.
 #define NEW_PAIR(type, a1, a2) ({\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
@@ -619,23 +622,29 @@ word*p = NEW_OBJECT (3, type);\
 	/*return*/ p;\
 })
 
-// хитрый макрос перегружающий макросы - аллокаторы памяти
+// хитрый макрос агрегирующий макросы-аллокаторы памяти
 //	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
-#define GET_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new(...) GET_MACRO(__VA_ARGS__, NEW_PAIR, NEW_OBJECT, NEW)(__VA_ARGS__)
+#define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_PAIR, NEW_OBJECT, NEW)(__VA_ARGS__)
 
+// аллокаторы списоков (todo: что ставить в качестве типа частей, вместо TPAIR?)
+#define new_list1(type, a1) \
+	new (type, a1, INULL)
 #define new_list2(type, a1, a2) \
-	new (type, a1, a2)
+	new (type, a1,\
+	           new (TPAIR, a2, INULL))
 #define new_list3(type, a1, a2, a3) \
 	new (type, a1,\
-	           new (TPAIR, a2, a3))
+	           new (TPAIR, a2,\
+	                       new (TPAIR, a3, INULL)))
 #define new_list4(type, a1, a2, a3, a4) \
 	new (type, a1,\
 	           new (TPAIR, a2,\
-	                       new (TPAIR, a3, a4)))
+	                       new (TPAIR, a3,\
+	                                   new (TPAIR, a4, INULL))))
 
 #define NEW_LIST(_1, _2, _3, _4, _5, NAME, ...) NAME
-#define new_list(...) NEW_LIST(__VA_ARGS__, new_list4, new_list3, new_list2, NOTHING, NOTHING)(__VA_ARGS__)
+#define new_list(...) NEW_LIST(__VA_ARGS__, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
 
 
 // остальные аллокаторы
@@ -680,17 +689,15 @@ word value = (word) a;\
 })
 
 
-// car, cdr надо предвычислить перед тем, как выделим память,
-//	так как в параметрах могут быть аллоцируемые объекты.
 #define new_pair(a1, a2) new (TPAIR, a1, a2)
-// по факту эта функция сводится к простому
-/*static __inline__ word* new_pair (word* car, word* cdr)
+// по факту эта функция сводится к простому:
+/*static __inline__ word* new_pair (word* a1, word* a2)
 {
 	word *object = fp;
 
 	fp[0] = PAIRHDR;
-	fp[1] = (word) car;
-	fp[2] = (word) cdr;
+	fp[1] = (word) a1;
+	fp[2] = (word) a2;
 
 	fp += 3;
 	return object;
@@ -1969,30 +1976,13 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				if (tp.tv_sec < FMAX) // mainly for x64
 					A0 = F(tp.tv_sec);
-				else {
-//					fprintf(stderr, "bignum\n");
-					A0 = (word) new_list (TINT, F(tp.tv_sec & FMAX), F(tp.tv_sec >> FBITS), INULL);
-
-//					A0 = (word) new (TINT, F(tp.tv_sec & FMAX),
-//					                       new (TPAIR, F(tp.tv_sec >> FBITS), INULL));
-
-/*					word *me = new (6); // space for bignum - [NUM hi [NUM lo NULL]]
-					me[0] = HINT;
-					me[1] = F(tp.tv_sec >> FBITS);
-					me[2] = INULL;
-
-					me[3] = HINT;
-					me[4] = F(tp.tv_sec & FMAX);
-					me[5] = (word) me;
-
-					A0 = (word) (me + 3);*/
-				}
+				else
+					A0 = (word) new_list (TINT, F(tp.tv_sec & FMAX), F(tp.tv_sec >> FBITS));
 //			}
 			ip += 2; break;
 		}
 
 		// этот case должен остаться тут - как последний из кейсов
-		//  todo: переименовать в компиляторе sys-prim на syscall (?)
 		// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
 		// https://filippo.io/linux-syscall-table/
 		case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
@@ -2180,7 +2170,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 			// SHUTDOWN
 			// http://linux.die.net/man/2/shutdown
-			case 48: {
+			case 48: { // (shutdown socket #f #f)
 				CHECK(is_port(a), a, SYSCALL);
 				int socket = car (a);
 
@@ -2192,9 +2182,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
-			// BIND (socket, port, #false) // todo: c for options
+			// BIND
 			// http://linux.die.net/man/2/bind
-			case 49: {
+			case 49: { //  (socket, port, #false) // todo: c for options
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
 				int port = fixval(b);
@@ -2211,7 +2201,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
-			// LISTEN
+			// LISTEN (socket)
 			// http://linux.die.net/man/2/listen
 			// listen() marks the socket referred to by sockfd as a passive socket, that is,
 			// as a socket that will be used to accept incoming connection requests using accept(2).
@@ -2232,7 +2222,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 
 			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
-			case 35: // currently sleep, will be nanosleep
+			case 35: {
 				CHECK(immediatep(a), a, 35);
 #ifdef _WIN32
 				Sleep(fixval(a));
@@ -2252,31 +2242,40 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #	endif
 #endif
 				break;
+			}
+
+			// EXIT
+			// http://linux.die.net/man/2/exit
+			// exit - cause normal process termination, function does not return.
+			case 1006:
+			case 60: {
+				free(heap.begin); // освободим занятую память
+#				ifndef STANDALONE
+				// подождем, пока освободится место в консоли
+				while (fifo_full(fo)) pthread_yield();
+				fifo_put(fo, EOF); // и положим туда EOF
+
+				pthread_exit((void*)fixval(a));
+#				else
+					exit(sftoi(a));
+#				endif//STANDALONE
+				break; // сюда мы уже не должны попасть.
+			}
+
+			// EXEC
+			// http://linux.die.net/man/3/exec
+			//
 
 			// other commands
 
-				// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
-				//  остальное можно спокойно оформлять отдельными функциями
+			// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
+			//  остальное можно спокойно оформлять отдельными функциями
 
 				// isatty()
 				case 500: {
 					result = TRUEFALSE( isatty(fixval(a)) );
 					break;
 				}
-
-				// EXIT
-				case 1006:
-					free(heap.begin); // освободим занятую память
-#					ifndef STANDALONE
-					// подождем, пока освободится место в консоли
-					while (fifo_full(fo)) pthread_yield();
-					fifo_put(fo, EOF); // и положим туда EOF
-
-					pthread_exit((void*)fixval(a));
-#					else
-					exit(fixval(a));
-#					endif//STANDALONE
-					break;
 
 				case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 					result = F(max_heap_size);

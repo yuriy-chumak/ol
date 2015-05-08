@@ -8,12 +8,22 @@
 //	тег нумерованного списка в html - (еще одна отсылка к lisp)
 struct OL;
 
-//-- common options, can change
-#define HAS_SOCKETS 1
-#define HAS_DLOPEN 1
-#define HAS_PINVOKE 1
+// defaults. please don't change. use -DOPTIONSYMBOL commandline option instead
+#ifndef HAS_SOCKETS
+#define HAS_SOCKETS 1 // system sockets support
+#endif
 
+#ifndef HAS_DLOPEN
+#define HAS_DLOPEN 1  // dlopen/dlsym support
+#endif
+
+#ifndef HAS_PINVOKE
+#define HAS_PINVOKE 1 // pinvoke (for dlopen/dlsym) support
+#endif
+
+// internal option
 #define NO_SECCOMP
+//efine STANDALONE // самостоятельный бинарник без потоков
 
 //-- end of options
 
@@ -58,12 +68,5 @@ typedef struct OL OL;
 #ifdef __cplusplus
 	}
 #endif
-
-
-// defaults. please don't change.
-#ifndef HAS_SOCKETS
-#define HAS_SOCKETS 0
-#endif
-
 
 #endif//__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__

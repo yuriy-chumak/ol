@@ -94,7 +94,7 @@
               
               mkred mkblack ff-bind ff-toggle red?
               fxbor fxband fxbxor fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr
-              clock)))
+              clock syscall)))
 ;              ; pick mkr 
 ;              ; mk - lraw maybe unused?
 ;              ; ffcar ffcdr time - is it must be here?

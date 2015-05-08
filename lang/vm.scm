@@ -88,19 +88,19 @@
       ;(define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
       ;(define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
 
-      ;(define eq?      (raw type-bytecode '(54 4 5 6  24 6)))
-      ;(define lesser?  (raw type-bytecode '(44 4 5 6  24 6)))
+      ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
+      ;(define lesser? (raw type-bytecode '(44 4 5 6  24 6)))
 
-      ;(define ncons    (raw type-bytecode '(29 4 5 6  24 6)))
-      ;(define ncar     (raw type-bytecode '(30 4 5    24 5)))
-      ;(define ncdr     (raw type-bytecode '(31 4 5    24 5)))
+      ;(define ncons   (raw type-bytecode '(29 4 5 6  24 6)))
+      ;(define ncar    (raw type-bytecode '(30 4 5    24 5)))
+      ;(define ncdr    (raw type-bytecode '(31 4 5    24 5)))
 
-      ;(define fxband   (raw type-bytecode '(55 4 5 6  24 6)))
-      ;(define fxbor    (raw type-bytecode '(56 4 5 6  24 6)))
-      ;(define fxbxor   (raw type-bytecode '(57 4 5 6  24 6)))
+      ;(define fxband  (raw type-bytecode '(55 4 5 6  24 6)))
+      ;(define fxbor   (raw type-bytecode '(56 4 5 6  24 6)))
+      ;(define fxbxor  (raw type-bytecode '(57 4 5 6  24 6)))
       
-      ;(define refb     (raw type-bytecode '(48 4 5 6  24 6)))
-      ;(define sizeb    (raw type-bytecode '(28 4 5    24 5)))
+      ;(define refb    (raw type-bytecode '(48 4 5 6  24 6)))
+      ;(define sizeb   (raw type-bytecode '(28 4 5    24 5)))
 
       ; арифметические операции, возвращают пару(тройку) значений, использовать через let*/receive
       ;(define fx+   (raw type-bytecode '(38 4 5    6 7)))     ;'(38 4 5    6 7  )
@@ -111,15 +111,16 @@
       ;(define fx<<  (raw type-bytecode '(59 4 5    6 7)))
 
       ; 
-      ;(define clock     (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
+      ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
-      ;(define listuple   (raw type-bytecode '(35 4 5 6 7  24 7)))
-      ;(define mkblack    (raw type-bytecode '(42 4 5 6 7 8  24 8)))
-      ;(define mkred      (raw type-bytecode '(43 4 5 6 7 8  24 8)))
-      ;(define red?       (raw type-bytecode '(41 4 5  24 5)))
-      ;(define ff-toggle  (raw type-bytecode '(46 4 5  24 5)))
+      ;(define listuple  (raw type-bytecode '(35 4 5 6 7  24 7)))
+      ;(define mkblack   (raw type-bytecode '(42 4 5 6 7 8  24 8)))
+      ;(define mkred     (raw type-bytecode '(43 4 5 6 7 8  24 8)))
+      ;(define red?      (raw type-bytecode '(41 4 5  24 5)))
+      ;(define ff-toggle (raw type-bytecode '(46 4 5  24 5)))
 
       ;(define sys-prim (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
+      (define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
 
       (define primops (list
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
@@ -177,6 +178,7 @@
 
          ; syscall интерфейс
          (tuple 'sys-prim 63  4 1 sys-prim)
+         (tuple 'syscall  63  4 1 syscall)
 
          ; поддержка ff деревьев
          (tuple 'listuple  35  3 1 listuple)
