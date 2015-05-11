@@ -453,7 +453,7 @@ typedef struct object
 #if __amd64__
 #define bign_t                      __int128
 #else
-#define bign_t                      __int64
+#define bign_t                      long long //__int64
 #endif
 
 #define RAWBIT                      ((1 << RPOS))
@@ -2961,11 +2961,15 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
 	register
 	unsigned char* hp = bootstrap;
+//	if (*hp == '#') // этот код не нужен, так как сюда приходит уже без шабанга
+//		while (*hp++ != '\n') continue;
 
 	// tbd: comment
+	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность 0x7FFFFFFFFFFFFFFF (самое большое число)
+	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 	word get_nat() {
-		word result = 0;
-		word newobj, i;
+		long long result = 0;// word
+		long long newobj, i; // word
 		do {
 			i = *hp++;
 			newobj = result << 7;
@@ -2973,7 +2977,11 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 				exit(9); // overflow kills
 			result = newobj + (i & 127);
 		} while (i & 128);
+#if __amd64__
 		return result;
+#else
+		return result == 0x7FFFFFFFFFFFFFFF ? 0x7FFFFFFF : (word)result;
+#endif
 	}
 
 	// tbd: comment
@@ -2990,10 +2998,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		return fp;
 	}
 
-	// deserialize bootstrap
-//	if (*hp == '#')
-//		while (*hp++ != '\n') continue;
-
+	// function entry:
 	for (int me = 0; me < nobjs; me++) {
 		ptrs[me] = (word) fp;
 
@@ -3040,7 +3045,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		do {
 			i = *hp++;
 			newobj = result << 7;
-			assert (result == (newobj >> 7));
+			//assert (result == (newobj >> 7)); // temp
 	//			if (result != (newobj >> 7)) exit(9); // overflow kills
 			result = newobj + (i & 127);
 		}
@@ -3051,9 +3056,6 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	// count:
 	int n = 0;
 	hp = lang;
-
-//	if (*hp == '#')
-//		while (*hp++ != '\n') continue;
 
 	int allocated = 0;
 	while (*hp != 0) {
@@ -3146,20 +3148,28 @@ int main(int argc, char** argv)
 			exit(5);	// не смогли файл прочитать
 
 		// переделать
-/*		if (bom == '#') { // skip possible hashbang
-			while (fread(&bom, 1, 1, bin) == 1 && bom != '\n') continue;
+		if (bom == '#') { // skip possible hashbang
+			while (fread(&bom, 1, 1, bin) == 1 && bom != '\n')
+				st.st_size--;
+			st.st_size--;
 			fread(&bom, 1, 1, bin);
-		}*/
+			st.st_size--;
+		}
 
-		if (bom > 3) {	// текстовая программа (script)
+		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
+			// а значит что? что файл надо замапить вместо stdin
 			fclose(bin);
+#ifndef NOLANGUAGE
 			freopen(argv[1], "r", stdin);
+#else
+			exit(6); // некому проинтерпретировать скрипт
+#endif
 		}
 		else {
 			// иначе загрузим его
 			unsigned char* ptr = (unsigned char*)malloc(st.st_size);
 			if (ptr == NULL)
-				exit(3);	// не смогли выделить память
+				exit(3);	// опа, не смогли выделить память...
 
 			ptr[0] = bom;
 			while (pos < st.st_size) {
