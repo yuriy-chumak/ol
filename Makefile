@@ -14,7 +14,10 @@ clean:
 
 
 ol: src/olvm.c src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -DSTANDALONE -ldl -O3 -o ol
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol
+	
+vm: src/olvm.c
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -O3 -o vm
 
 $(boot.c): src/boot.c
 	cp src/boot.c $(boot.c)
@@ -31,11 +34,6 @@ bootstrap: boot.fasl
 	    make boot ;\
 	fi
 
-
-newol: src/olvm.c bootstrap
-	$(CC) $(CFLAGS) src/olvm.c -x c bootstrap -DSTANDALONE -ldl -O3 -o newol
-
-#vm: src/olvm.c
 
 tests: \
     tests/apply.scm\

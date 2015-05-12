@@ -27,7 +27,6 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.1189045074" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.dialect.std.247679204" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.c99" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1416926901" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="STANDALONE"/>
 									<listOptionValue builtIn="false" value="HAS_DLOPEN"/>
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.1176707031" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0" valueType="string"/>
@@ -124,4 +123,5 @@
 			<resource resourceType="PROJECT" workspacePath="/src"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>

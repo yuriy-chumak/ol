@@ -132,7 +132,7 @@
 
 // -----------------------------
 // Threading (pthread for win32)
-#ifndef STANDALONE
+#if EMBEDDED_VM
 
 #ifdef _WIN32
 //	http://mirrors.kernel.org/sourceware/pthreads-win32/
@@ -197,11 +197,11 @@ static int pthread_yield(void)
 #	include <pthread.h>
 #endif
 
-#endif//STANDALONE
+#endif
 
 // -----------------------------------------------------------
 // -=( fifo )=------------------------------------------------
-#ifndef STANDALONE
+#if EMBEDDED_VM
 // кольцевой текстовый буфер для общения с виртуальной машиной
 
 #define FIFOLENGTH (1 << 14) // 4 * 4096 for now // was << 14
@@ -297,7 +297,7 @@ int fifo_feof(struct fifo* f)
 	return f->eof;
 }
 
-#endif//STANDALONE
+#endif//EMBEDDED_VM
 
 
 // --------------------------------------------------------
@@ -362,7 +362,7 @@ char* dlerror() {
 #include <dlfcn.h>
 #endif
 
-#endif//STANDALONE
+#endif//EMBEDDED_VM
 
 
 // ----------
@@ -372,11 +372,11 @@ char* dlerror() {
 // виртуальная машина
 typedef struct OL
 {
-#ifndef STANDALONE
+#if EMBEDDED_VM
 	pthread_t tid;
 	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
 	struct fifo o;
-#endif//STANDALONE
+#endif
 } OL;
 
 // unsigned int that is capable of storing a pointer
@@ -1045,11 +1045,11 @@ void* runtime(void *args) // heap top
 	// allocation pointer (top of allocated heap)
 	fp            = ((struct args*)args)->fp;
 
-#	ifndef STANDALONE
+#	if EMBEDDED_VM
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
 	fifo *fi =&((struct args*)args)->vm->o;
 	fifo *fo =&((struct args*)args)->vm->i;
-#	endif//STANDALONE
+#	endif
 
 	void *userdata = ((struct args*)args)->userdata; // command line
 
@@ -1091,11 +1091,11 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 			this = (word *) R[0];
 			if (!allocp(this)) {
 				// fprintf(stderr, "Unexpected virtual machine exit\n");
-#				ifndef STANDALONE
+#				if EMBEDDED_VM
 				// подождем, пока освободится место в консоли
 				while (fifo_full(fo)) pthread_yield();
 				fifo_put(fo, EOF); // и положим туда EOF
-#				endif//STANDALONE
+#				endif
 				return (void*)fixval(R[3]);
 			}
 
@@ -2010,7 +2010,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					dogc(size);
 
 				int got;
-#ifndef STANDALONE
+#if EMBEDDED_VM
 				if (fd == 0) { // stdin reads from fi
 					if (fifo_empty(fi)) {
 						// todo: process EOF, please!
@@ -2025,7 +2025,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					}
 				}
 				else
-#endif//STANDALONE
+#endif
 				{
 #ifdef _WIN32
 					if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
@@ -2071,11 +2071,11 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				int wrote;
 
-#				ifndef STANDALONE
+#if EMBEDDED_VM
 				if (fd == 1) // stdout wrote to the fo
 					wrote = fifo_puts(fo, ((char *)buff)+W, len);
 				else
-#				endif//STANDALONE
+#endif
 					wrote = write(portfd, (char*)&buff[1], size);
 
 				if (wrote > 0)
@@ -2100,7 +2100,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 				}
 				set_blocking(file, 0);
-				result = new_port(file);
+				result = (word) new_port(file);
 
 				break;
 			}
@@ -2119,6 +2119,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// ==================================================
 			//  network part:
 
+#if HAS_SOCKETS
 			// SOCKET
 			case 41: { // socket (todo: options: STREAM or DGRAM)
 				int sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -2217,7 +2218,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
-
+#endif
 			// ==================================================
 
 
@@ -2250,15 +2251,15 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			case 1006:
 			case 60: {
 				free(heap.begin); // освободим занятую память
-#				ifndef STANDALONE
+#if EMBEDDED_VM
 				// подождем, пока освободится место в консоли
 				while (fifo_full(fo)) pthread_yield();
 				fifo_put(fo, EOF); // и положим туда EOF
 
 				pthread_exit((void*)fixval(a));
-#				else
+#else
 					exit(sftoi(a));
-#				endif//STANDALONE
+#endif
 				break; // сюда мы уже не должны попасть.
 			}
 
@@ -2296,7 +2297,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 
 				// -=( pinvoke )=-------------------------------------------------
-#				if HAS_PINVOKE
+#if HAS_PINVOKE
 				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
 				case 1030: { // (dlopen filename mode)
 					word *filename = (word*)a;
@@ -2726,7 +2727,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 					break; // case 32
 				}
-#				endif//STANDALONE
+#endif//HAS_PINVOKE
 
 				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
 					word *name = (word *)a;
@@ -2742,50 +2743,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					if (op >= 1000) {
 						word prim_sys(int op, word a, word b, word c) {
 						   switch(op) {
-						      case 1003: { /* 3 = sopen port -> False | fd  */
-						         int port = fixval(a);
-						         int s;
-						         int opt = 1; /* TRUE */
-						         struct sockaddr_in myaddr;
-						         myaddr.sin_family = AF_INET;
-						         myaddr.sin_port = htons(port);
-						         myaddr.sin_addr.s_addr = INADDR_ANY;
-						         s = socket(AF_INET, SOCK_STREAM, 0);
-						#ifndef _WIN32
-						         if (s < 0) return IFALSE;
-						#else
-							 if (s == INVALID_SOCKET) return IFALSE;
-						#endif
-						         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) \
-						             || bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) != 0 \
-						             || listen(s, 5) != 0) {
-						            close(s);
-						            return IFALSE;
-						         }
-						         set_blocking(s,0);
-						         return F(s); }
-						      case 1004: { /* 4 = accept port -> rval=False|(ip . fd) */
-						         int sock = fixval(a);
-						         struct sockaddr_in addr;
-						         socklen_t len = sizeof(addr);
-						         int fd;
-						         word *pair;
-						         char *ipa;
-						         fd = accept(sock, (struct sockaddr *)&addr, &len);
-						         if (fd < 0) return IFALSE;
-						         set_blocking(fd,0);
-						         ipa = (char *) &addr.sin_addr;
-						         *fp = make_raw_header(2, TBVEC, 4%W);
-						         bytecopy(ipa, ((char *) fp) + W, 4);
-						         fp[2] = HPAIR;
-						         fp[3] = (word) fp;
-						         fp[4] = F(fd);
-						         pair = fp+2;
-						         fp += 5;
-						         return (word)pair; }
-
-
-
 						      case 1010: /* enter linux seccomp mode */
 						#ifdef __gnu_linux__
 						#ifndef NO_SECCOMP
@@ -2825,17 +2782,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						         word old = F(slice);
 						         slice = fixval(a);
 						         return old; }
-						      case 1015: { /* 0 fsocksend fd buff len r → n if wrote n, 0 if busy, False if error (argument or write) */
-						         int fd = fixval(a);
-						         word *buff = (word *) b;
-						         int wrote, size, len = fixval(c);
-						         if (immediatep(buff)) return IFALSE;
-						         size = (hdrsize(*buff)-1)*W;
-						         if (len > size) return IFALSE;
-						         wrote = send(fd, ((char *)buff)+W, len, 0); /* <- no MSG_DONTWAIT in win32 */
-						         if (wrote > 0) return F(wrote);
-						         if (errno == EAGAIN || errno == EWOULDBLOCK) return F(0);
-						         return IFALSE; }
 						      case 1017: { // system (char*)
 						    	  int result = system((char*)a + W);
 						    	  return F(result);
@@ -3114,14 +3060,14 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // -=( virtual machine functions )=--------------------------------
 //
 // this is NOT thread safe function
-#ifndef STANDALONE
+#if EMBEDDED_VM
 OL*
 vm_new(unsigned char* language, void (*release)(void*))
 {
 	unsigned char* bootstrap = language;
 
 #else
-#ifndef NOLANGUAGE
+#ifndef NAKED_VM
 extern unsigned char* language;
 #else
 unsigned char* language = NULL;
@@ -3152,14 +3098,15 @@ int main(int argc, char** argv)
 			while (fread(&bom, 1, 1, bin) == 1 && bom != '\n')
 				st.st_size--;
 			st.st_size--;
-			fread(&bom, 1, 1, bin);
+			if (fread(&bom, 1, 1, bin) < 0)
+				exit(5);
 			st.st_size--;
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
 			// а значит что? что файл надо замапить вместо stdin
 			fclose(bin);
-#ifndef NOLANGUAGE
+#ifndef NAKED_VM
 			freopen(argv[1], "r", stdin);
 #else
 			exit(6); // некому проинтерпретировать скрипт
@@ -3201,7 +3148,7 @@ int main(int argc, char** argv)
 #endif//win32
 #endif
 
-#endif//STANDALONE
+#endif//EMBEDDED_VM
 
 	// ===============================================================
 	// создадим виртуальную машину
@@ -3241,7 +3188,7 @@ int main(int argc, char** argv)
 		oargs = INULL;
 #ifndef TEST_GC2
 
-#ifndef STANDALONE
+#if EMBEDDED_VM
 		char* filename = "-";
 		char *pos = filename;
 
@@ -3294,7 +3241,7 @@ int main(int argc, char** argv)
 //	assert (fp < heap.end);// gc needed during heap import
 
 	// все, программа в памяти, можно освобождать исходник
-#ifndef STANDALONE
+#if EMBEDDED_VM
 	if (release)
 		release(language);
 #else
@@ -3319,7 +3266,7 @@ int main(int argc, char** argv)
 //	if (_isatty(_fileno(stdin))) // is character device (not redirected) (interactive session)
 //		fputs("(define *interactive* #t)\n", stdin);
 
-#ifndef STANDALONE
+#if EMBEDDED_VM
 	args.signal = 0;
 	if (pthread_create(&handle->tid, NULL, &runtime, &args) == 0) {
 		while (!args.signal)
@@ -3335,7 +3282,7 @@ int main(int argc, char** argv)
 	set_blocking(2, 0);
 #	endif
 	result = runtime(&args);
-#endif//STANDALONE
+#endif
 
 	// ===============================================================
 
@@ -3350,14 +3297,14 @@ done:
 #endif
 
 
-#ifndef STANDALONE
+#if EMBEDDED_VM
 	return NULL;
 #else
 	return (int)(long)result;
 #endif
 }
 
-#ifndef STANDALONE
+#if EMBEDDED_VM
 
 /*void eval(char* message, char* response, int length)
 {
@@ -3391,4 +3338,4 @@ int vm_feof(OL* vm)
 {
 	return fifo_feof(&vm->i);
 }
-#endif//STANDALONE
+#endif//EMBEDDED_VM

@@ -1,99 +1,256 @@
-***  Sry, this text deprecated. Will be fixed soon.  ***
+OL - Owl Lisp -- yet another pet lisp
+   Copyright (c) 2012-14 Aki Helin
+   Copyright (c) 2015 Yuriy Chumak
 
 Related:
-	http://people.csail.mit.edu/jaffer/Scheme
+	http://people.csail.mit.edu/jaffer/Scheme (r5rs)
 	http://groups.csail.mit.edu/mac/projects/scheme/
+	
+Original Owl Lisp project can be found at
+	https://code.google.com/p/owl-lisp/
+	https://github.com/aoh/owl-lisp
 
-Register interpreter in the windows:
-assoc .ol=OLisp.File
-ftype OLisp.File=ol "%1" %*
-assoc .bl=OLisp.Binary.File
-ftype OLisp.Binary.File=ol "%1" %*
-
-
-
-
-Owl Lisp -- yet another pet lisp 
-Copyright (c) 2012 Aki Helin
 
 OVERVIEW
 ~~~~~~~~
 
-Owl Lisp is a simple purely functional Lisp.
+OL (Owl Lisp) is a simple purely functional Lisp. Mostly purely.
 
 
 REQUIREMENTS
 ~~~~~~~~~~~~
 
-You should have make and gcc or clang installed. 
+For linux you should have gcc installed.
+For linux you maybe want make installed too.
+For windows you should have MinGW installed.
+
+Minimal appropriate gcc version is 3.2 due to nested functions usage.
+
+
+BUILD
+~~~~~
+
+SIMPLE WAY
+   $ make ol
+
+
+MORE INTERESTING WAY
+
+To build OL for linux x86 platform
+   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m32  -o ol
+
+To build OL for linux x86-64 platform
+   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m64  -o ol
+   
+To build only OL vm (virtual machine) for linux x86 platform,
+that can execute only compiled (binary) lisp scripts
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m32  -o ol
+
+Same for x86-64 linux platform
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m64  -o ol
+   
+OL vm can execute only precompiled OL scripts (see BINARY SCRIPTS section)
+and is very small (about 25KB for x86-64 executable).
+Full OL with interpreter that can execute text lisp scripts more fat
+(about 400KB executable).
+
+Windows way
+   > set PATH=%PATH%;C:\MinGW\bin
+   > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O3  -o ol
+Same for only vm
+   > set PATH=%PATH%;C:\MinGW\bin
+   > gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O3  -o ol
+
+   
+Android way
+   tbd.
+   
+MacOS/iOS way
+   tbd.
+   
+openWebOS way
+   tbd.
+
+
+VERY INTERESTING WAY
+
+You can change OL scheme language (yes, you can) by editing sources in
+lang/ and owl/ subfolders.
+For building OL language (not OL virtual machine)
+   $ make boot
+This will create new (in successfull way) src/boot.c that contains ol interpreter code
+   
+Few words about OL can be found (will be) in the documentation.
+   
+
+ADDITIONAL OL VM FEATURES
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To build OL with sockets (linux and windows) support
+   add -DHAS_SOCKETS to gcc command line
+    or set appropriate define in src/olvm.h to 1
+   add -lws2_32 for Windows
+    
+To build OL with dlopen/dlsym (LoadLibrary/GetProcAddress for windows) support
+   add -DHAS_DLOPEN and -ldl to gcc command line
+    or set appropriate define in src/olvm.h to 1
+    
+   please note, that opengl/sqlite/other libs requires this define enabled to 1
+   
+To build OL with pinvoke (Platform Invoke mechanism) support
+   add -DHAS_PINVOKE to gcc command line
+    or set appropriate define in src/olvm.h to 1
+
+   please note, that opengl/sqlite/other libs requires this define enabled to 1
+   
+To build OL as embedded in your project interpreter
+   add -DEMBEDDED_VM to gcc command line
+   
+   more information about embedded OL can be found in EMBEDDED OL section.
+
 
 
 INSTALLATION
 ~~~~~~~~~~~~
 
-To install system-wide to /usr
-   $ make
-   $ sudo make install
+No automatic installation still yet, you must manually copy 'ol' executable
+to any appropriate place, for example
+   $ cp ol /usr/bin
+   or
+   > copy ol.exe C:\WINDOWS\COMMAND
+   
 
-Alternatively you can try it out with 
-   $ make
-   $ cp bin/ol /somewhere/convenient
-   $ /somewhere/convenient/ol
-   You see a prompt
-   > 
+RUNNING
+~~~~~~~
+
+There are few ways to execute ol
+
+Interactive mode
+   $ol
+   (define *interactive* #t)        # yes, you must enter this manually
+   ;; Defined *interactive*
+   > (+ 1 2 3)                      # now you in REPL and can play with in
+   6
+   > ,quit                          # this ends interactive session
+   bye bye _o/~
+
+Unattended mode
+   $ol scriptname.ol                # text script
+   $ol scriptname.bl                # binary (compiled) script
+   $echo '(print (+ 1 2 3))' | ol
+
+
+BINARY SCRIPTS
+~~~~~~~~~~~~~~
+
+OL can execute precompiled scripts.
+You can compile your script by using this code
+--- cut ---
+(define (main)
+   ; anything you want to compile
+)
+(vector->file (list->vector (fasl-encode (lambda (args)
+   (main)))) "out.bl")
+--- cut ---
+where "out.bl" your output file name
+
+Now you can execute this code by OL as full OL or as "naked" OL (vm)
+   $ol out.bl
 
 
 FILES
 ~~~~~~
 
-   bin/ol      - the owl interpreter/compiler
-   c/ovm.c     - the virtual machine / shared owl lisp runtime
-   owl/*.scm   - implementation of owl repl and compiler
-   bench/*.scm - some benchmarks
-   fasl/*.fasl - bytecode images for bin/vm used during boot
-   bin/vm      - plain VM used during boot
+   src/olvm.h  - the OL virtual machine header
+   src/olvm.c  - the OL vm
+   src/boot.c  - the OL interpreter/compiler
+   lang/*.scm  - implementation of OL repl and compiler
+   owl/*.scm   - implementation ol OL libraries
+   tests/*.scm - some automated tests
+
+
+TRICKS
+~~~~~~
+
+Register interpreter in the ms windows:
+assoc .ol=OLisp.File
+ftype OLisp.File=ol "%1" %*
+assoc .bl=OLisp.Binary.File
+ftype OLisp.Binary.File=ol "%1" %*
+
+Register interpreter in the linux:
+#!ol
 
 
 USAGE
 ~~~~~
 
-Owl can be used either interactively, or to interpret code from files,
-or compile programs to fasl-images or c-files. The difference between
-an owl program and a plain script is that the program should just have
+OL (Owl Lisp) can be used either interactively, or to interpret code
+from files, or compile programs to fasl-images. The difference between
+an ol program and a plain script is that the program should just have
 a function of one argument as the last value, which will be called with
 the command line argument list when the program is executed.
 
-In addition to being a regular interpreter, owl also tries to make it 
-easy to compile programs for different platforms. Owl programs can be 
-compiled with ol to C-files, which can be compiled to standalone binaries
-without needing any owl-specific support files or libraries. The C files 
-also work on 32- and 64-bit systems, and compile as such at least on 
-Linux, OpenBSD, OSX and can be crosscompiled to Windows executables with 
-MinGW.
 
-For example, to build a hello world program:
-  $ echo '(lambda (args) (print "Hello, world!"))' > hello.scm
-  $ ol -o hello.c hello.scm
-  $ gcc -o hello hello.c
-  $ ./hello
-  Hello, world!
+EMBEDDED OL
+~~~~~~~~~~~
+OL can be embedded in your project. More info can be found in docs
+(not yet written).
+This is usage sample:
+--- cut ---
+extern
+    unsigned char*
+    language; /* language implemented in src/boot.c */
+    /* you can use your own compiled bytecode, sure */
+    
+static
+    struct OL* vm;
+    vm = vm_new(language, 0); /* create new OL interpreter */
+    vm_puts(vm, "(+ 1 2)", 7); /* let's calculate something */
+                   /* 7 is length of input string "(+ 1 2)" */
+    
+char response[99];
+    vm_gets(vm, response, sizeof(response)-1);
+    printf("got: %s\n", response); /* will print 3 */
+--- cut ---
 
-Or simply:
-  $ echo '(λ (args) (print "Hello, world!"))' \
-     | ol -x c | gcc -x c -o hello - && ./hello
+You can call your own functions from OL code.
+Currently this is more complecated. You need:
+   a) compile OL with -DHAS_DLOPEN and -DHAS_PINVOKE options
+      (don't forget for -DEMBEDDED_VM)
+   b) send to vm (via vm_puts) "(import (owl pinvoke))"
+      (owl/pinvoke.scm must be accessible from your executable)
+   c) send to vm (via vm_pust) "(define me (dload 0 0))"
+      where "me" is some appropriate variable name or
+      you can use "let, let*" or any other construction you like
+   c) declare you function for OL (via vm_puts, sure) like this
+      '(define myFuction (dlsym me type-int+ "functionname" type-string type-int+))'
+      in this code
+      *) myFunction - any appropriate variable name for your function
+         internal OL script name. This variable will associated with
+         lambda that can be called in further code.
+      *) second argument in (dlsym) is return type of native function
+         available types you can check in owl/pinvoke.scm
+      *) third (dlsym) arg is function name string. you must export this
+         function from your code to make it accessible from OL
+      *) other (dlsym) args is argument types for native function, pinvoke
+         will try to convert arguments of myFunction lambda to this type.
+         available types can be checked in owl/pinvoke.scm too.
+         
+         Small comment for this: if you want to get number - let use type-int+,
+         if you expect SMALL number - let use type-fix+. No differences between
+         types with + and with - are present.
+   d) well, now you can freely use your native function like this for example
+      '(print (myFunction "str1" 123))'
 
-Parts of the compiled programs can be translated to C, instead of being 
-simply fasl-encoded, to increase speed. Using the --native flag compiles 
-most of the bytecode to C, and --usual-suspects compiles typically used 
-functions. To make programs run faster, one can use for example:
+More information about pinvoke you can get in source files
+   lib/sqlite.scm
+   lib/opengl.scm and OpenGL/version-1-0.scm (works under Windows for now)
+   lib/Windows.scm
 
-  $ ol -O2 -o test.c test.scm && gcc -O2 -o test test.c
-
+All embedded OL api in progress and can be changed in feature.
 
 DOCUMENTATION
 ~~~~~~~~~~~~~
 
-For further documentation, see:
-
-  http://code.google.com/p/owl-lisp/wiki/OwlManual 
-
+Not yet provided, check the source codes

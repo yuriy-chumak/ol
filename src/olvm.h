@@ -10,15 +10,19 @@ struct OL;
 
 // defaults. please don't change. use -DOPTIONSYMBOL commandline option instead
 #ifndef HAS_SOCKETS
-#define HAS_SOCKETS 1 // system sockets support
+#define HAS_SOCKETS 0 // system sockets support
 #endif
 
 #ifndef HAS_DLOPEN
-#define HAS_DLOPEN 1  // dlopen/dlsym support
+#define HAS_DLOPEN 0  // dlopen/dlsym support
 #endif
 
 #ifndef HAS_PINVOKE
-#define HAS_PINVOKE 1 // pinvoke (for dlopen/dlsym) support
+#define HAS_PINVOKE 0 // pinvoke (for dlopen/dlsym) support
+#endif
+
+#ifndef EMBEDDED_VM   // use as embedded vm in project
+#define EMBEDDED_VM 0
 #endif
 
 // internal option
@@ -34,7 +38,7 @@ struct OL;
 
 // todo: add vm_free or vm_delete or vm_destroy or something
 
-#ifndef STANDALONE
+#ifdef EMBEDDED_VM
 struct OL*
 vm_new(unsigned char* language, void (*release)(void*));
 
