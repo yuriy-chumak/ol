@@ -1,6 +1,8 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
 (define-library (r5rs base)
    (begin
+
+
    
       ; ========================================================================================================
       ; Scheme
@@ -9,6 +11,9 @@
       ;                  Dedicated to the Memory of ALGOL 60
       ;
       ; ========================================================================================================
+      ; There are some standard chapters sequence changed, due to more cleaner code:
+      ;  chapters 4.2.2 (let, let*, letrec) and 4.2.3 (begin) goes before 4.1.5 due
+      ;  to usings of this constructions in following definitins.
    
       ;;; Chapter 1
       ;;; Overview of Scheme
@@ -66,34 +71,67 @@
          (syntax-rules () 
             ((λ . x) (lambda . x))))
 
-      ; 4.1.5  Conditionals
-      ; Temporary hack: if inlines some predicates.
-      (define-syntax if
-         (syntax-rules 
-            (not eq? and null? pair? empty? type =)
-            ((if test exp) (if test exp #false))
-            ((if (not test) then else) (if test else then))
-            ((if (null? test) then else) (if (eq? test '()) then else))
-            ((if (empty? test) then else) (if (eq? test #empty) then else)) ;; FIXME - handle with partial eval later
-            ((if (eq? a b) then else) (_branch 0 a b then else))            
-            ((if (a . b) then else) ((lambda (x) (if x then else)) (a . b))) ; was: (let ((x (a . b))) (if x then else))
-            ((if #false then else) else)
-            ((if #true then else) then)
-            ((if test then else) (_branch 0 test #false else then))))
-      
-      ; 4.1.6  Assignments
-      ;; 4.2  Derived expression types
-      ; 4.2.1  Conditionals
-      ; (cond)
-      ; (case)
-      ; (and)
-      ; (or)
+
       ; 4.2.2  Binding constructs
-      ; (let)
-      ; (let*)
-      ; ...
       
+      ; The three binding constructs let, let*, and letrec give Scheme a block structure, like Algol 60.
+      ; The syntax of the three constructs is identical, but they differ in the regions they establish
+      ; for their variable bindings. In a let expression, the initial values are computed before any of
+      ; the variables become bound; in a let* expression, the bindings and evaluations are performed
+      ; sequentially; while in a letrec expression, all the bindings are in effect while their initial
+      ; values are being computed, thus allowing mutually recursive definitions.
+      
+      ; (letrec <bindings> <body>)
+      (define-syntax letrec
+         (syntax-rules (rlambda)
+            ((letrec ((?var ?val) ...) ?body) (rlambda (?var ...) (?val ...) ?body))
+            ((letrec vars body ...) (letrec vars (begin body ...)))))
+
+      ; - ol extension
+      (define-syntax letrec*
+         (syntax-rules ()
+            ((letrec () . body)
+               (begin . body))
+            ((letrec* ((var val) . rest) . body)
+               (letrec ((var val))
+                  (letrec* rest . body)))))
+
+      ; library syntax:  (let <bindings> <body>)
+      ;                  (let keyword <bindings> <body>) named let, from 4.2.4 Iteration
+      (define-syntax let
+            (syntax-rules ()
+               ((let ((var val) ...) exp . rest) 
+                  ((lambda (var ...) exp . rest) val ...))
+               ((let keyword ((var init) ...) exp . rest) 
+                  (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
+
+      ; library syntax:  (let* <bindings> <body>)
+      (define-syntax let*
+         (syntax-rules (<=)
+            ((let* (((var ...) gen) . rest) . body)
+               (receive gen (lambda (var ...) (let* rest . body))))
+            ((let* ((var val) . rest-bindings) exp . rest-exps)
+               ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
+            ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
+               (receive (op . args)
+                  (lambda (var ...) 
+                     (let* rest-bindings exp . rest-exps))))
+            ((let* ((var ... node) . rest-bindings) exp . rest-exps)
+               (bind node
+                  (lambda (var ...) 
+                     (let* rest-bindings exp . rest-exps))))
+            ((let* (((name ...) <= value) . rest) . code)
+               (bind value
+                  (lambda (name ...)
+                     (let* rest . code))))
+            ((let* ()) exp)
+            ((let* () exp . rest)
+               ((lambda () exp . rest)))))
+
+
       ; 4.2.3  Sequencing
+
+      ; library syntax:  (begin <expression1> <expression2> ...)
       (define-syntax begin
          (syntax-rules (define define-syntax letrec define-values let*-values) ; ===>
             ;((begin
@@ -130,67 +168,51 @@
                ((lambda (free)
                   (begin . rest))
                   first))))
-      ; 4.2.4  Iteration
-      ; 4.2.5  Delayed evaluation
-      ; 4.2.6  Quasiquotation
-      ; 4.3  Macros
-      ; 4.3.1  Binding constructs for syntactic keywords
-      ; 4.3.2  Pattern language
-      
-      
-      ;;; Chapter 5
-      ;;; Program structure
-      ;; 5.1  Programs
-      ;; 5.2  Definitions
-      ; 5.2.1  Top level definitions
-      ; 5.2.2  Internal definitions
-      ; 5.3  Syntax definitions
-      
-      
-      ;;; Chapter 6
-      ;;; Standard procedures
-      ;; ....................
-      
-      
-
-;      (define-syntax λ 
-;         (syntax-rules () 
-;            ((λ . x) (lambda . x))))
-
-;      (define-syntax assert
-;         (syntax-rules (if sys eq?)
-;            ((assert result expression . stuff)
-;               (if (eq? expression result) #t
-;                  (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
-;;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
 
 
-      ;; note, no let-values yet, so using let*-values in define-values
-
-      (define-syntax letrec
-         (syntax-rules (rlambda)
-            ((letrec ((?var ?val) ...) ?body) (rlambda (?var ...) (?val ...) ?body))
-            ((letrec vars body ...) (letrec vars (begin body ...)))))
-
-      (define-syntax letrec*
+      ; 4.1.5  Conditionals
+      ; Temporary hack: if inlines some predicates.
+      (define-syntax if
+         (syntax-rules 
+            (not eq? and null? pair? empty? type =)
+            ((if test exp) (if test exp #false))
+            ((if (not test) then else) (if test else then))
+            ((if (null? test) then else) (if (eq? test '()) then else))
+            ((if (empty? test) then else) (if (eq? test #empty) then else)) ;; FIXME - handle with partial eval later
+            ((if (eq? a b) then else) (_branch 0 a b then else))            
+            ((if (a . b) then else) (let ((x (a . b))) (if x then else)))   ; or ((lambda (x) (if x then else)) (a . b)))
+            ((if #false then else) else)
+            ((if #true then else) then)
+            ((if test then else) (_branch 0 test #false else then))))
+      
+      ; 4.1.6  Assignments
+      
+      ;; 4.2  Derived expression types
+      ; The constructs in this section are hygienic, as discussed in section 4.3. For reference purposes,
+      ; section 7.3 gives macro definitions that will convert most of the constructs described in this
+      ; section into the primitive constructs described in the previous section.
+      
+      ; 4.2.1  Conditionals
+      
+      ; library syntax:  (or <test1> ...)
+      (define-syntax or
          (syntax-rules ()
-            ((letrec () . body)
-               (begin . body))
-            ((letrec* ((var val) . rest) . body)
-               (letrec ((var val))
-                  (letrec* rest . body)))))
+            ((or) #false)
+            ((or (a . b) . c)
+               (let ((x (a . b)))
+                  (or x . c)))
+            ((or a . b)
+               (if a a (or . b)))))
 
-      (define-syntax let
-            (syntax-rules ()
-               ((let ((var val) ...) exp . rest) 
-                  ((lambda (var ...) exp . rest) val ...))
-               ((let keyword ((var init) ...) exp . rest) 
-                  (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
-
-
-
-
-
+      ; library syntax:  (and <test1> ...)
+      (define-syntax and
+         (syntax-rules ()
+            ((and) #true)
+            ((and a) a)
+            ((and a . b)
+               (if a (and . b) #false))))
+      
+      ; library syntax:  (cond <clause1> <clause2> ...)
       (define-syntax cond
          (syntax-rules (else =>)
             ((cond) #false)
@@ -206,6 +228,7 @@
                   (begin exp . rest-exps)
                   (cond . rest)))))
 
+      ; library syntax:  (case <key> <clause1> <clause2> ...)
       (define-syntax case
          (syntax-rules (else eqv? memv =>)
             ((case (op . args) . clauses)
@@ -236,6 +259,66 @@
                (if (eq? thing atom)
                   (begin . then)
                   (case thing . clauses)))))
+
+
+      ; 4.2.4  Iteration
+      
+      (define-syntax do
+        (syntax-rules ()
+          ((do 
+            ((var init step) ...)
+            (test expr ...)
+            command ...)
+           (let loop ((var init) ...)
+            (if test 
+               (begin expr ...)
+               (loop step ...))))))
+      
+      ; 4.2.5  Delayed evaluation
+      ; 4.2.6  Quasiquotation
+      ; 4.3  Macros
+      ; 4.3.1  Binding constructs for syntactic keywords
+      ; 4.3.2  Pattern language
+      
+      
+      ;;; Chapter 5
+      ;;; Program structure
+      ;; 5.1  Programs
+      ;; 5.2  Definitions
+      ; 5.2.1  Top level definitions
+      ; 5.2.2  Internal definitions
+      ; 5.3  Syntax definitions
+      
+      
+      ;;; Chapter 6
+      ;;; Standard procedures
+      ;; ....................
+      
+      ;; 6.1  Equivalence predicates
+
+;      (define-syntax λ 
+;         (syntax-rules () 
+;            ((λ . x) (lambda . x))))
+
+;      (define-syntax assert
+;         (syntax-rules (if sys eq?)
+;            ((assert result expression . stuff)
+;               (if (eq? expression result) #t
+;                  (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
+;;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
+
+
+      ;; note, no let-values yet, so using let*-values in define-values
+; .......................
+; .......................
+; .......................
+; .......................
+
+
+
+
+
+
 
 
 
@@ -273,26 +356,6 @@
             ((define* name (lambda (arg ...) . body))
                (define* (name arg ...) . body))))
 
-      (define-syntax let*
-         (syntax-rules (<=)
-            ((let* (((var ...) gen) . rest) . body)
-               (receive gen (lambda (var ...) (let* rest . body))))
-            ((let* ((var val) . rest-bindings) exp . rest-exps)
-               ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
-            ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
-               (receive (op . args)
-                  (lambda (var ...) 
-                     (let* rest-bindings exp . rest-exps))))
-            ((let* ((var ... node) . rest-bindings) exp . rest-exps)
-               (bind node
-                  (lambda (var ...) 
-                     (let* rest-bindings exp . rest-exps))))
-            ((let* (((name ...) <= value) . rest) . code)
-               (bind value
-                  (lambda (name ...)
-                     (let* rest . code))))
-            ((let* ()) exp)
-            ((let* () exp . rest) (begin exp . rest))))
 
       ;; the internal one is handled by begin. this is just for toplevel.
       (define-syntax define-values
@@ -316,21 +379,6 @@
          (syntax-rules ()
             ((lets . stuff) (let* . stuff))))
 
-      (define-syntax or
-         (syntax-rules ()
-            ((or) #false)
-            ((or (a . b) . c)
-               (let ((x (a . b)))
-                  (or x . c)))
-            ((or a . b)
-               (if a a (or . b)))))
-
-      (define-syntax and
-         (syntax-rules ()
-            ((and) #true)
-            ((and a) a)
-            ((and a . b)
-               (if a (and . b) #false))))
 
       ;; now a function
       (define-syntax list
@@ -414,16 +462,6 @@
             ((call-with-values thunk (lambda (arg ...) body))
                (receive (thunk) (lambda (arg ...) body)))))
 
-      (define-syntax do
-        (syntax-rules ()
-          ((do 
-            ((var init step) ...)
-            (test expr ...)
-            command ...)
-           (let loop ((var init) ...)
-            (if test 
-               (begin expr ...)
-               (loop step ...))))))
 
 
       (define-syntax define
