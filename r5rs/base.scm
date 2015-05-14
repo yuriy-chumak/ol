@@ -1,39 +1,98 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
 (define-library (r5rs base)
    (begin
-
-;      (define-syntax λ 
-;         (syntax-rules () 
-;            ((λ . x) (lambda . x))))
-
-;      (define-syntax assert
-;         (syntax-rules (if sys eq?)
-;            ((assert result expression . stuff)
-;               (if (eq? expression result) #t
-;                  (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
-;;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
-
+   
+      ; ========================================================================================================
+      ; Scheme
+      ;
+      ; Revised(3) Report on the Algorithmic Language Scheme
+      ;                  Dedicated to the Memory of ALGOL 60
+      ;
+      ; ========================================================================================================
+   
+      ;;; Chapter 1
+      ;;; Overview of Scheme
+      ;; 1.1  Semantics
+      ;; 1.2  Syntax
+      ;; 1.3  Notation and terminology
+      ; 1.3.1  Primitive, library, and optional features
+      ; 1.3.2  Error situations and unspecified behavior
       (define-syntax syntax-error
          (syntax-rules (error)
             ((syntax-error . stuff)
                (error "Syntax error: " (quote stuff)))))
+               
+      ; 1.3.3  Entry format
+      ; 1.3.4  Evaluation examples
+      ; 1.3.5  Naming conventions
+      
+      
+      ;;; Chapter 2
+      ;;; Lexical conventions
+      ;; 2.1  Identifiers
+      ;lambda        q
+      ;list->vector  soup
+      ;+             V17a
+      ;<=?           a34kTMNs
+      ;the-word-recursion-has-many-meanings
+      ;
+      ; ! $ % & * + - . / : < = > ? @ ^ _ ~
+      
+      ;; 2.2  Whitespace and comments
+      ;; 2.3  Other notations
+      
+      
+      ;;; Chapter 3
+      ;;; Basic concepts
+      ;; 3.1  Variables, syntactic keywords, and regions
+      ;; 3.2  Disjointness of types
+      ;; 3.3  External representations
+      ;; 3.4  Storage model
+      ;; 3.5  Proper tail recursion
+      
+      
+      ;;; Chapter 4
+      ;;; Expressions
+      ;; 4.1  Primitive expression types
+      ; 4.1.1  Variable references
+      ; syntax:  <variable>
+      
+      
+      ; 4.1.2  Literal expressions
+      ; 4.1.3  Procedure calls
+      ; 4.1.4  Procedures
+      ; syntax:  (lambda <formals> <body>) 
+      (define-syntax λ
+         (syntax-rules () 
+            ((λ . x) (lambda . x))))
 
-      ;; expand case-lambda syntax to to (_case-lambda <lambda> (_case-lambda ... (_case-lambda <lambda> <lambda)))
-      (define-syntax case-lambda
-         (syntax-rules (lambda _case-lambda)
-            ((case-lambda) #false) 
-            ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
-            ((case-lambda (formals . body))
-               ;; downgrade to a run-of-the-mill lambda
-               (lambda formals . body))
-            ((case-lambda (formals . body) . rest)
-               ;; make a list of options to be compiled to a chain of code bodies w/ jumps
-               ;; note, could also merge to a jump table + sequence of codes, but it doesn't really matter
-               ;; because speed-sensitive stuff will be compiled to C where this won't matter
-               (_case-lambda (lambda formals . body)
-                  (case-lambda . rest)))))
-
-      ;; note, no let-values yet, so using let*-values in define-values
+      ; 4.1.5  Conditionals
+      ; Temporary hack: if inlines some predicates.
+      (define-syntax if
+         (syntax-rules 
+            (not eq? and null? pair? empty? type =)
+            ((if test exp) (if test exp #false))
+            ((if (not test) then else) (if test else then))
+            ((if (null? test) then else) (if (eq? test '()) then else))
+            ((if (empty? test) then else) (if (eq? test #empty) then else)) ;; FIXME - handle with partial eval later
+            ((if (eq? a b) then else) (_branch 0 a b then else))            
+            ((if (a . b) then else) ((lambda (x) (if x then else)) (a . b))) ; was: (let ((x (a . b))) (if x then else))
+            ((if #false then else) else)
+            ((if #true then else) then)
+            ((if test then else) (_branch 0 test #false else then))))
+      
+      ; 4.1.6  Assignments
+      ;; 4.2  Derived expression types
+      ; 4.2.1  Conditionals
+      ; (cond)
+      ; (case)
+      ; (and)
+      ; (or)
+      ; 4.2.2  Binding constructs
+      ; (let)
+      ; (let*)
+      ; ...
+      
       ; 4.2.3  Sequencing
       (define-syntax begin
          (syntax-rules (define define-syntax letrec define-values let*-values) ; ===>
@@ -43,12 +102,12 @@
             ;   (letrec-syntax ((key1 rules1) (key2 rules2) ...)
             ;      (begin . rest)))
             ((begin exp) exp)
-;            ((begin expression ===> wanted . rest)  ;; inlined assertions
-;               (begin
-;               (let ((val expression))
-;                  (if (eq? val (quote wanted)) #t
-;                     (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons wanted '()))))))
-;               (begin . rest)))
+            ;((begin expression ===> wanted . rest)  ;; inlined assertions
+            ;   (begin
+            ;   (let ((val expression))
+            ;      (if (eq? val (quote wanted)) #t
+            ;         (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons wanted '()))))))
+            ;   (begin . rest)))
             ((begin (define . a) (define . b) ... . rest)
                (begin 42 () (define . a) (define . b) ... . rest))
             ((begin (define-values (val ...) . body) . rest)
@@ -71,6 +130,42 @@
                ((lambda (free)
                   (begin . rest))
                   first))))
+      ; 4.2.4  Iteration
+      ; 4.2.5  Delayed evaluation
+      ; 4.2.6  Quasiquotation
+      ; 4.3  Macros
+      ; 4.3.1  Binding constructs for syntactic keywords
+      ; 4.3.2  Pattern language
+      
+      
+      ;;; Chapter 5
+      ;;; Program structure
+      ;; 5.1  Programs
+      ;; 5.2  Definitions
+      ; 5.2.1  Top level definitions
+      ; 5.2.2  Internal definitions
+      ; 5.3  Syntax definitions
+      
+      
+      ;;; Chapter 6
+      ;;; Standard procedures
+      ;; ....................
+      
+      
+
+;      (define-syntax λ 
+;         (syntax-rules () 
+;            ((λ . x) (lambda . x))))
+
+;      (define-syntax assert
+;         (syntax-rules (if sys eq?)
+;            ((assert result expression . stuff)
+;               (if (eq? expression result) #t
+;                  (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
+;;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
+
+
+      ;; note, no let-values yet, so using let*-values in define-values
 
       (define-syntax letrec
          (syntax-rules (rlambda)
@@ -92,20 +187,9 @@
                ((let keyword ((var init) ...) exp . rest) 
                   (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
 
-      ; Temporary hack: if inlines some predicates.
 
-      (define-syntax if
-         (syntax-rules 
-            (not eq? and null? pair? empty? type =)
-            ((if test exp) (if test exp #false))
-            ((if (not test) then else) (if test else then))
-            ((if (null? test) then else) (if (eq? test '()) then else))
-            ((if (empty? test) then else) (if (eq? test #empty) then else)) ;; FIXME - handle with partial eval later
-            ((if (eq? a b) then else) (_branch 0 a b then else))            
-            ((if (a . b) then else) (let ((x (a . b))) (if x then else)))
-            ((if #false then else) else)
-            ((if #true then else) then)
-            ((if test then else) (_branch 0 test #false else then))))
+
+
 
       (define-syntax cond
          (syntax-rules (else =>)
@@ -154,22 +238,26 @@
                   (case thing . clauses)))))
 
 
+
+      ;; expand case-lambda syntax to to (_case-lambda <lambda> (_case-lambda ... (_case-lambda <lambda> <lambda)))
+      (define-syntax case-lambda
+         (syntax-rules (lambda _case-lambda)
+            ((case-lambda) #false) 
+            ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
+            ((case-lambda (formals . body))
+               ;; downgrade to a run-of-the-mill lambda
+               (lambda formals . body))
+            ((case-lambda (formals . body) . rest)
+               ;; make a list of options to be compiled to a chain of code bodies w/ jumps
+               ;; note, could also merge to a jump table + sequence of codes, but it doesn't really matter
+               ;; because speed-sensitive stuff will be compiled to C where this won't matter
+               (_case-lambda (lambda formals . body)
+                  (case-lambda . rest)))))
+
+
+
+
       ; 4.1.1  Variable references
-      (define-syntax define
-         (syntax-rules (lambda) ;λ
-            ((define op a b . c)
-               (define op (begin a b . c)))
-            ((define ((op . args) . more) . body)
-               (define (op . args) (lambda more . body)))
-            ((define (op . args) body)
-               (define op
-                  (letrec ((op (lambda args body))) op)))
-            ((define name (lambda (var ...) . body))
-               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
-;            ((define name (λ (var ...) . body))
-;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
-            ((define op val)
-               (_define op val))))
 
       ;; not defining directly because rlambda doesn't yet do variable arity
       ;(define list ((lambda (x) x) (lambda x x)))
@@ -337,6 +425,25 @@
                (begin expr ...)
                (loop step ...))))))
 
+
+      (define-syntax define
+         (syntax-rules (lambda) ;λ
+            ((define op a b . c)
+               (define op (begin a b . c)))
+            ((define ((op . args) . more) . body)
+               (define (op . args) (lambda more . body)))
+            ((define (op . args) body)
+               (define op
+                  (letrec ((op (lambda args body))) op)))
+            ((define name (lambda (var ...) . body))
+               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+;            ((define name (λ (var ...) . body))
+;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+            ((define op val)
+               (_define op val))))
+
+
+
       (define-syntax define-library
          (syntax-rules (export import begin _define-library define-library)
             ;; push export to the end (should syntax-error on multiple exports before this)
@@ -463,35 +570,21 @@
 
 
 
-      ; ========================================================================================================
-      ; Scheme
-      ;
-      ; Revised(3) Report on the Algorithmic Language Scheme
-      ;                  Dedicated to the Memory of ALGOL 60
-      ;
-      ; ========================================================================================================
-      ; 1. Overview of Scheme
-      ;   ... можно скопипастить стандарт?
-
-      ; 2. Lexical conventions
-      ;   ... можно скопипастить стандарт?
-      ; 2.1. Identifiers
-
-      ;lambda        q
-      ;list->vector  soup
-      ;+             V17a
-      ;<=?           a34kTMNs
-      ;the-word-recursion-has-many-meanings
-      ;
-      ; ! $ % & * + - . / : < = > ? @ ^ _ ~
 
 
-
-      ; 3. Basic concepts
-      ;   ... можно скопипастить стандарт?
 
       ; 3.2. Disjointness of types
       ; No object satisfies more than one of the following predicates:
+      ;
+      ; boolean?          pair?
+      ; symbol?           number?
+      ; char?             string?
+      ; vector?           port?
+      ; procedure?
+      ;
+      ; These predicates define the types boolean, pair, symbol, number, char (or character), string, vector, port, and procedure. The empty list is a special object of its own type; it satisfies none of the above predicates.
+      ;
+      ; Although there is a separate boolean type, any Scheme value can be used as a boolean value for the purpose of a conditional test. As explained in section 6.3.1, all values count as true in such a test except for #f. This report uses the word ``true'' to refer to any Scheme value except #f, and the word ``false'' to refer to #f. 
       (define (port? o)
          (eq? (type o) type-port))
 
@@ -534,10 +627,6 @@
       ; 4.1.2 Literal expressions
       ; ...
 
-      ; 4.1.4 lambda expressions
-      (define-syntax λ
-         (syntax-rules () 
-            ((λ . x) (lambda . x))))
 
 
 

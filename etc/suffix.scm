@@ -10,7 +10,7 @@
    )
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl math)
       (owl list)
       (owl sort)

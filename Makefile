@@ -22,7 +22,7 @@ vm: src/olvm.c
 $(boot.c): src/boot.c
 	@cp src/boot.c $(boot.c)
 
-boot.fasl: src/ol.scm ol $(boot.c) lang/*.scm owl/*.scm
+boot.fasl: src/ol.scm ol $(boot.c) r5rs/*.scm lang/*.scm owl/*.scm
 	@ol src/ol.scm
 
 bootstrap: boot.fasl
