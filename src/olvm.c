@@ -1056,8 +1056,7 @@ void* runtime(void *args) // heap top
 	// все, машина инициализирована, отсигналимся
 	((struct args*)args)->signal = 1;
 
-
-	// todo: может стоит искать и загружать какой-нибудь main()?
+	// thinkme: может стоит искать и загружать какой-нибудь main() ?
 	word* ptrs = (word*)userdata + 3;
 	int nobjs = hdrsize(ptrs[0]) - 1;
 
