@@ -22,6 +22,7 @@
       )
 
    (import 
+      (r5rs base)
       (owl math)
       (owl iff) 
       (owl list)
@@ -29,7 +30,6 @@
       (owl sort)
       (owl primop)
       (only (owl interop) por por*)
-      (owl defmac)
       (owl ff)
       (owl error))
 

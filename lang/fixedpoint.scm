@@ -6,13 +6,13 @@
    (export fix-points)
 
    (import
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (lang ast)
       (owl math)
       (owl list)
       (owl equal)
       (owl list-extra)
-      (owl error)
       (owl io)
       (lang env))
 

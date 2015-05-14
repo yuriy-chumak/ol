@@ -2,7 +2,7 @@
    (export error)
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl primop)
       (owl interop))
 

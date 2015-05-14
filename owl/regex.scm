@@ -33,7 +33,7 @@
       )
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl parse)
       (owl error)
       (owl ff)

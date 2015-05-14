@@ -18,8 +18,9 @@
 	)
 
    (import
+      (r5rs base)
+      (owl error)
       (owl list)
-      (owl defmac)
       (owl list-extra)
       (owl math)
       (owl ff)
@@ -27,8 +28,7 @@
       (owl string)
       (owl primop)
       (owl render)
-      (owl io)
-      (owl error))
+      (owl io))
 ;      (only (lang assemble) inst->op))
 
    (begin

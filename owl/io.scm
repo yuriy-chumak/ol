@@ -51,7 +51,7 @@
    )
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl error)
       (owl interop)
       (owl queue)

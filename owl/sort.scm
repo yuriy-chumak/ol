@@ -6,9 +6,9 @@
    (export sort isort quicksort mergesort)
 
    (import 
+      (r5rs base)
       (owl math)
-      (owl list)
-      (owl defmac))
+      (owl list))
 
    (begin
       ;;;

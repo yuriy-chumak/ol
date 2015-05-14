@@ -20,15 +20,19 @@ vm: src/olvm.c
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -O3 -o vm
 
 $(boot.c): src/boot.c
-	cp src/boot.c $(boot.c)
+	@cp src/boot.c $(boot.c)
 
 boot.fasl: src/ol.scm ol $(boot.c) lang/*.scm owl/*.scm
-	ol src/ol.scm
+	@ol src/ol.scm
 
 bootstrap: boot.fasl
-	ol src/to-c.scm > bootstrap
-	if diff bootstrap bootstrap~ >/dev/null ;then\
-	    echo "\033[1;32mOk.\033[0m" ;\
+	@ol src/to-c.scm > bootstrap
+	@if diff bootstrap bootstrap~ >/dev/null ;then\
+	    echo '\033[1;32m  `___`  \033[0m' ;\
+	    echo '\033[1;32m  (o,o)  \033[0m' ;\
+	    echo '\033[1;32m  \)  )  \033[0m' ;\
+	    echo '\033[1;32m___"_"___\033[0m' ;\
+	    echo '\033[1;32mBuild Ok.\033[0m' ;\
 	else \
 	    cp bootstrap $(boot.c) ;\
 	    make boot ;\

@@ -4,7 +4,7 @@
    (export gensym fresh)
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl symbol)
       (owl string)
       (owl error)

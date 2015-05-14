@@ -12,8 +12,8 @@
       list->sexps)
 
    (import
+      (r5rs base)
       (owl parse)
-      (owl defmac)
       (owl math)
       (owl string)
       (owl list)

@@ -1,81 +1,10 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
-; todo: rename to the r5rs.scm
-(define-library (owl defmac)
-
-   (export
-      λ syntax-error ;assert
-
-      begin 
-      quasiquote letrec let if 
-      letrec* let*-values
-      cond case define define*
-      lets let* or and list
-      ilist tuple tuple-case 
-      call-with-values do define-library
-      case-lambda
-      define-values
-      define-record-type
-      _record-values
-      not
-      
-      ; список типов
-      type-complex
-      type-rational
-      type-int+
-      type-int-
-      type-record
-
-      immediate? allocated? raw? record?
-
-      type-bytecode
-      type-proc
-      type-clos
-      type-fix+
-      type-fix-
-      type-pair
-      type-vector-dispatch
-      type-vector-leaf
-      type-vector-raw
-      type-ff-black-leaf
-      type-eof
-      type-tuple
-      type-symbol
-;      type-const
-      type-rlist-spine
-      type-rlist-node
-      type-port 
-      type-socket     ; todo: remove and use (cons 'socket port)
-      type-tcp-client ; todo: remove and use (cons 'tcp-client port)
-      type-string
-      type-string-wide
-      type-string-dispatch
-      type-thread-state
-
-      ;; sketching types
-      type-ff               ;; k v, k v l, k v l r, black node with children in order
-      type-ff-r             ;; k v r, black node, only right black child
-      type-ff-red           ;; k v, k v l, k v l r, red node with (black) children in order
-      type-ff-red-r         ;; k v r, red node, only right (black) child
-
-      ;; k v, l k v r       -- type-ff
-      ;; k v r, k v l r+    -- type-ff-right
-      ;; k v l, k v l+ r    -- type-ff-leftc
-
-
-      apply
-      call-with-current-continuation call/cc lets/cc
-
-      ; 3.2.
-      boolean? pair? symbol? number? char? string? vector? port? procedure?
-      ; ol extension:
-      bytecode? function? ff?
-   )
-
+(define-library (r5rs base)
    (begin
 
-      (define-syntax λ 
-         (syntax-rules () 
-            ((λ . x) (lambda . x))))
+;      (define-syntax λ 
+;         (syntax-rules () 
+;            ((λ . x) (lambda . x))))
 
 ;      (define-syntax assert
 ;         (syntax-rules (if sys eq?)
@@ -227,7 +156,7 @@
 
       ; 4.1.1  Variable references
       (define-syntax define
-         (syntax-rules (lambda λ)
+         (syntax-rules (lambda) ;λ
             ((define op a b . c)
                (define op (begin a b . c)))
             ((define ((op . args) . more) . body)
@@ -237,8 +166,8 @@
                   (letrec ((op (lambda args body))) op)))
             ((define name (lambda (var ...) . body))
                (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
-            ((define name (λ (var ...) . body))
-               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+;            ((define name (λ (var ...) . body))
+;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
             ((define op val)
                (_define op val))))
 
@@ -512,7 +441,7 @@
                ;; next must cons accessor of field to tail, so need to lookup its position
                (_record-values find tag mk pred (x ...) fields tail field fields (2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)))
             ((_record-values find tag mk pred left fields tail key (key . rest) (pos . poss))
-               (_record-values emit tag mk pred left fields ((λ (x) (ref x pos)) . tail))) 
+               (_record-values emit tag mk pred left fields ((lambda (x) (ref x pos)) . tail))) 
             ((_record-values find tag mk pred left fields tail key (x . rest) (pos . poss))
                (_record-values find tag mk pred left fields tail key rest poss))
             ((_record-values find tag mk pred left fields tail key () (pos . poss))
@@ -528,8 +457,8 @@
                   (let ((tag (quote name))) ; ← note, not unique after redefinition, but atm seems useful to get pattern matching
                      (_record-values emit 
                         tag     
-                        (λ (fieldname ...) (mkt type-record tag fieldname ...))
-                        (λ (ob) (eq? tag (ref ob 1))) 
+                        (lambda (fieldname ...) (mkt type-record tag fieldname ...))
+                        (lambda (ob) (eq? tag (ref ob 1))) 
                         ((field accessor) ...) (fieldname ...) ()))))))
 
 
@@ -717,4 +646,75 @@
             ((lets/cc var . body) 
                (call/cc (λ (var) (lets . body))))))
 
-))
+)
+; ---------------------------
+   (export
+      λ syntax-error ;assert
+
+      begin 
+      quasiquote letrec let if 
+      letrec* let*-values
+      cond case define define*
+      lets let* or and list
+      ilist tuple tuple-case 
+      call-with-values do define-library
+      case-lambda
+      define-values
+      define-record-type
+      _record-values
+      not
+      
+      ; список типов
+      type-complex
+      type-rational
+      type-int+
+      type-int-
+      type-record
+
+      immediate? allocated? raw? record?
+
+      type-bytecode
+      type-proc
+      type-clos
+      type-fix+
+      type-fix-
+      type-pair
+      type-vector-dispatch
+      type-vector-leaf
+      type-vector-raw
+      type-ff-black-leaf
+      type-eof
+      type-tuple
+      type-symbol
+;      type-const
+      type-rlist-spine
+      type-rlist-node
+      type-port 
+      type-socket     ; todo: remove and use (cons 'socket port)
+      type-tcp-client ; todo: remove and use (cons 'tcp-client port)
+      type-string
+      type-string-wide
+      type-string-dispatch
+      type-thread-state
+
+      ;; sketching types
+      type-ff               ;; k v, k v l, k v l r, black node with children in order
+      type-ff-r             ;; k v r, black node, only right black child
+      type-ff-red           ;; k v, k v l, k v l r, red node with (black) children in order
+      type-ff-red-r         ;; k v r, red node, only right (black) child
+
+      ;; k v, l k v r       -- type-ff
+      ;; k v r, k v l r+    -- type-ff-right
+      ;; k v l, k v l+ r    -- type-ff-leftc
+
+
+      apply
+      call-with-current-continuation call/cc lets/cc
+
+      ; 3.2.
+      boolean? pair? symbol? number? char? string? vector? port? procedure?
+      ; ol extension:
+      bytecode? function? ff?
+   )
+
+)

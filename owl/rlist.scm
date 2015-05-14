@@ -4,7 +4,7 @@
 
 ;; todo: the owl version seems nicer and iirc doesn't have the drawback of not being able contain internal nodes as values. switch to it later.
 
-;; todo: use types from (owl defmac)
+;; todo: use types from (r5rs base)
 ;; todo: rins, rdel
 
 (define-library (owl rlist)
@@ -39,7 +39,7 @@
 	; major abstraction violation anyway).
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl list)
       (owl math)
       (owl equal)

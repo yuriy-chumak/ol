@@ -10,15 +10,14 @@
    (export alpha-convert)
 
    (import
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (owl gensym)
       (lang ast)
       (owl math)
       (owl list)
       (owl list-extra)
-      (owl error)
-      (owl ff)
-      )
+      (owl ff))
 
    (begin
       (define (ok exp env) (tuple 'ok exp env))

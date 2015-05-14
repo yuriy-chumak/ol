@@ -5,9 +5,9 @@
       srand rand)
 
    (import
+      (r5rs base)
       (owl math)
-      (owl time)
-      (owl defmac))
+      (owl time))
 
    (begin
       (define *seed* 

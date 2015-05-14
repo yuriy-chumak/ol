@@ -16,7 +16,7 @@
       set-memory-limit get-word-size get-memory-limit start-seccomp)
 
    (import
-      (owl defmac)
+      (r5rs base)
       (lang vm))
 
    (begin

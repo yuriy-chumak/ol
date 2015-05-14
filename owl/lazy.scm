@@ -21,8 +21,8 @@
       )
 
    (import
+      (r5rs base)
       (owl math)
-      (owl defmac)
       (owl list)
       (owl list-extra)
       (owl error))

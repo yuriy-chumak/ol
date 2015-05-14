@@ -21,7 +21,9 @@
 		)
 
    (import 
-      (owl defmac)
+      (r5rs base)
+      (owl error)
+      
       (owl list)
       (owl primop)
       (lang compile)
@@ -33,7 +35,6 @@
       (lang fixedpoint)
       (lang ast)
       (lang env)
-      (owl error)
       (owl interop)
       (owl time) ;; for testing metadata
       (owl symbol)
@@ -71,34 +72,21 @@
       (define *owl-core*
          (fold
             (λ (env thing)
-               (env-set env thing (name->func thing)))
+               (env-set env (ref thing 1) (ref thing 5))) ; add primitives to the end of list
             (env-set-macro
-               *tabula-rasa* ;; from (owl env), env with only special form tags, no primops
+               *special-forms* ;; from (owl env), env with only special form tags, no primops
                'define-syntax
                (make-transformer
                   '(define-syntax syntax-rules add quote)
                   '(
                      ((define-syntax keyword 
                         (syntax-rules literals (pattern template) ...))
-                  ()
-                  (quote syntax-operation add #false 
+                      ()
+                      (quote syntax-operation add #false 
                         (keyword literals (pattern ...) 
-                        (template ...)))))))
-            ;; note that these could now come straight from primops
-            ;?or (map (lambda (primop) (ref primop 1)) primops)
-            ;?or (foldr (lambda (op state) (cons (ref op 1) state)) '() primops)
-            '(
-              cons car cdr set! set-car! set-cdr! eq? lesser? type size cast ref sys-prim refb sizeb
-              mk mkt bind listuple
-              set raw
-              
-              mkred mkblack ff-bind ff-toggle red?
-              fxbor fxband fxbxor fx+ fx* fx- fx/ fx<< fx>> ncons ncar ncdr
-              clock syscall)))
-;              ; pick mkr 
-;              ; mk - lraw maybe unused?
-;              ; ffcar ffcdr time - is it must be here?
-
+                        (template ...)))) )))
+            *primitives*))
+            
       (define (execute exp env)
          (receive (exp)
             (lambda vals

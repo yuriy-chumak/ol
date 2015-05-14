@@ -76,7 +76,7 @@
    )
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl io)
       (owl math)
       (owl string))

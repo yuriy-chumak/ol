@@ -254,3 +254,10 @@ DOCUMENTATION
 ~~~~~~~~~~~~~
 
 Not yet provided, check the source codes
+
+
+SOME NOTES
+~~~~~~~~~~
+env *special-forms* list of all special forms
+vm *primitives* list of all primitives
+lang *owl-core* basic OL language elements

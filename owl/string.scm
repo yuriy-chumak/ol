@@ -47,13 +47,14 @@
       char=?             ; cp cp → bool (temp)
       char-ci=?          ; cp cp → bool (temp)
       )
+      
+   (import (r5rs base))
 
    (import (owl iff))
    (import (owl error))
    (import (owl unicode))
    (import (owl list))
    (import (owl list-extra))
-   (import (owl defmac))
    (import (owl lazy))
    (import (owl math))
 

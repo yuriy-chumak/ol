@@ -9,7 +9,7 @@
       time-ms)
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl io)
       (owl error)
       (owl interop)

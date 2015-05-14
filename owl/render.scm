@@ -4,7 +4,7 @@
 (define-library (owl render)
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl string)
       (owl list)
       (owl list-extra)

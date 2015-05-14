@@ -10,7 +10,7 @@
       par por* por interop)
 
    (import 
-      (owl defmac)
+      (r5rs base)
       (owl primop))
 
    (begin

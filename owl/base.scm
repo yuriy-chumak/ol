@@ -3,6 +3,7 @@
 (define-library (owl base)
 
    (export
+      (exports (r5rs base))
       (exports (owl list))
       (exports (owl rlist))
       (exports (owl list-extra))
@@ -17,7 +18,6 @@
       (exports (owl equal))
       (exports (owl eof))
       (exports (owl random))
-      (exports (owl defmac))
       (exports (owl render))
       (exports (owl error))
       (exports (owl interop))
@@ -30,6 +30,7 @@
       wait)
 
    (import
+      (r5rs base)
       (owl list)
       (owl rlist)
       (owl list-extra)
@@ -50,7 +51,6 @@
       (owl equal)
       (owl random)
       (owl regex)
-      (owl defmac)
       (owl render)
       (owl error)
       (owl interop)

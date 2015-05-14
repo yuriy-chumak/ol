@@ -8,7 +8,7 @@
       )
 
    (import 
-      (owl defmac)
+      (r5rs base)
       (owl equal)
       (owl list)
       (owl error)
