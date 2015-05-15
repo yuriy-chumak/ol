@@ -2,7 +2,7 @@ FAILED := $(shell mktemp -u)
 CFLAGS := -std=c99 -O3
 boot.c := bootstrap~
 
-all: ol tests
+all: ol boot tests
 boot: bootstrap
 
 install:
@@ -14,7 +14,8 @@ clean:
 
 
 ol: src/olvm.c src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol \
+	-DHAS_SOCKETS=1 -DHAS_PINVOKE=1 -DHAS_DLOPEN=1 -ldl
 	
 vm: src/olvm.c
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -O3 -o vm
@@ -35,7 +36,7 @@ bootstrap: boot.fasl
 	    echo '\033[1;32mBuild Ok.\033[0m' ;\
 	else \
 	    cp bootstrap $(boot.c) ;\
-	    make boot ;\
+	    make bootstrap ;\
 	fi
 
 
@@ -97,4 +98,4 @@ tests: \
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
 	@echo "passed!"
 
-.PHONY: tests
+.PHONY: boot

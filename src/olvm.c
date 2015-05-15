@@ -535,23 +535,23 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
 
-#define is_pair(ob)                 (is_pointer(ob) && V(ob) == HPAIR)
-#define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)ob) == TSTRING)
-#define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)ob) == TPORT) // todo: maybe need to check port rawness?
+#define is_pair(ob)                 (is_pointer(ob) &&         *(word*)(ob)  == HPAIR)
+#define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)(ob)) == TSTRING)
+#define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)(ob)) == TPORT) // todo: maybe need to check port rawness?
 
-#define car(ob)                     (((word*)ob)[1])
-#define cdr(ob)                     (((word*)ob)[2])
+#define car(ob)                     (((word*)(ob))[1])
+#define cdr(ob)                     (((word*)(ob))[2])
 
 // todo: потом переделать в трюк
 // алгоритмические трюки:
 // x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
 // signed fix to int
-#define uftoi(fix) ({ ((word)fix >> IPOS); })
-#define sftoi(fix) ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
+#define uftoi(fix)  ({ ((word)fix >> IPOS); })
+#define sftoi(fix)  ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
 
 #define NR                          128 // see n-registers in register.scm
 
-#define MEMPAD                      ((NR + 2) * W) /* space at end of heap for starting GC */
+#define MEMPAD                      ((NR + 2) * sizeof(word)) // space at end of heap for starting GC
 #define MINGEN                      (1024 * 32)  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
@@ -578,23 +578,21 @@ int execv(const char *path, char *const argv[]);
 // -=( gc )=-----------------------------------------------
 
 /*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
-// несколько ссылок "на почитать" по теме GC:
-//   shamil.free.fr/comp/ocaml/html/book011.html
+// "на почитать" по теме GC:
+// shamil.free.fr/comp/ocaml/html/book011.html
 
 // память машины, управляемая сборщиком мусора
 typedef struct heap_t
 {
 	//  begin <= genstart <= end
-	word *begin;     // was: memstart
-	word *end;       // was: memend
+	word *begin;     // begin of heap memory block
+	word *end;       // end of heap
 
-	word *genstart;  // was: genstart
+	word *genstart;  // new generation begin pointer
 
 	word *fp;        // allocation pointer
 } heap_t;
 
-// allocation pointer (top of allocated heap)
-//static __thread word *fp;
 
 // выделить сырой блок памяти
 #define NEW(size) ({\
@@ -646,6 +644,9 @@ word*p = NEW_OBJECT (3, type);\
 #define NEW_LIST(_1, _2, _3, _4, _5, NAME, ...) NAME
 #define new_list(...) NEW_LIST(__VA_ARGS__, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
 
+// кортеж
+#define new_tuple(length)  new ((length)+1, TTUPLE)
+
 
 // остальные аллокаторы
 #define new_raw_object(size, type, pads) ({\
@@ -654,27 +655,22 @@ word*p = new (size);\
 	/*return*/ p;\
 })
 
-#define new_tuple(length)  new ((length)+1, TTUPLE)
-
 /* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
-#define new_bytevector(size, type) ({\
-	int len = size;\
-	int words = (len / W) + ((len % W) ? 2 : 1);\
-	int pads = (words - 1) * W - len;\
-	/*return*/\
-	new_raw_object (words, type, pads);\
+#define new_bytevector(length, type) ({\
+	int size = (length);\
+	int words = (size / W) + ((size % W) ? 2 : 1);\
+	int pads = (words - 1) * W - size;\
+	\
+word* p = new_raw_object (words, type, pads);\
+	/*return*/ p;\
 })
 
 #define new_string(length, string) ({\
-	int len = length;\
-	char* data = string;\
-	\
-	int words = (len / W) + ((len % W) ? 2 : 1);\
-	int pads = (words - 1) * W - len;\
-	\
-	word* p = new_raw_object (words, TSTRING, pads);\
+word* p = new_bytevector(length, TSTRING);\
 	char* ptr = (char*)&p[1];\
-	while (len--) *ptr++ = *data++;\
+	int size = length;\
+	char* data = string;\
+	while (size--) *ptr++ = *data++;\
 	*ptr = '\0'; \
 	/*return*/ p;\
 })
@@ -683,7 +679,7 @@ word*p = new (size);\
 // создать новый порт
 #define new_port(a) ({\
 word value = (word) a;\
-	word *me = new (2, RAWH(TPORT));\
+	word* me = new (2, RAWH(TPORT));\
 	me[1] = value;\
 	/*return*/ me;\
 })
@@ -706,7 +702,7 @@ word value = (word) a;\
 #define new_npair(a1, a2) new (TINT, a1, a2)
 
 
-#define cont(n)                     V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
+#define cont(n)                 V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
 
 // возвращается по цепочке "flagged" указателей назад
 static __inline__
@@ -730,17 +726,16 @@ typedef int32_t   wdiff;
 #endif
 
 static __inline__
-void fix_pointers(word *pos, wdiff delta, word *end)
+void fix_pointers(word *pos, ptrdiff_t delta, word *end)
 {
 	while (1) {
 		word hdr = *pos;
-		int n = hdrsize(hdr);
 		if (hdr == 0) return; // end marker reached. only dragons beyond this point.
+		int n = hdrsize(hdr);
 		if (is_raw(hdr))
 			pos += n; // no pointers in raw objects
 		else {
-			pos++;
-			n--;
+			pos++, n--;
 			while (n--) {
 				word val = *pos;
 				if (allocp(val))
@@ -998,7 +993,6 @@ void set_signal_handler() {
 #define R4                          R[4]
 #define R5                          R[5]
 #define R6                          R[6]
-#define G(ptr, n)                   ((word *)(ptr))[n]
 
 // структура с параметрами для запуска виртуальной машины
 struct args
@@ -1504,30 +1498,30 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		/************************************************************************************/
 		// более высокоуровневые конструкции
 		//	смотреть "owl/primop.scm" и "lang/assemble.scm"
+
 		case RAW: { // raw type lst (fixme, alloc amount testing compiler pass not in place yet!) (?)
 			word *lst = (word *) A1;
 			int len = 0;
 			word* p = lst;
-			while (allocp(p) && *p == HPAIR) {
+			while (is_pair(p)) { // allocp(p) && *p == HPAIR) {
 				len++;
 				p = (word *) p[2];
 			}
 
 			if ((word) p == INULL && len <= MAXOBJ) {
-				int nwords = (len/W) + ((len%W) ? 2 : 1);
-				int type = fixval (A0);
-				int pads = (nwords-1)*W - len; // padding byte count, usually stored to top 3 bits
+				int type = uftoi (A0);
+				word *raw = new_bytevector (len, type);
 
-				word *raw = (word*) new_raw_object (nwords, type, pads);
-
-				p = lst;
 				unsigned char *pos;
-				pos = ((unsigned char *) raw) + W;
+				pos = (unsigned char *) &raw[1];
+				p = lst;
 				while ((word) p != INULL) {
-					*pos++ = fixval(p[1]) & 255;
-					p = (word *) p[2];
+					*pos++ = uftoi(car(p)) & 255;
+					p = (word*)cdr(p);
 				}
-				while (pads--) *pos++ = 0; // clear the padding bytes
+
+				while ((word)pos % sizeof(word)) // clear the padding bytes
+					*pos++ = 0;
 				A2 = (word)raw;
 			}
 			else
