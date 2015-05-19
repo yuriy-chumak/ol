@@ -1,5 +1,5 @@
 FAILED := $(shell mktemp -u)
-CFLAGS := -std=c99 -O3
+CFLAGS += -std=c99 -O3
 boot.c := bootstrap~
 
 all: ol tests
