@@ -94,14 +94,15 @@
                            (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
                            (cons #\] tl)
                            (iota (size obj) -1 1)))))
-               
-               ((record? obj)
-                  (ilist #\# #\{
-                     (render (ref obj 1) ;; type tag object
-                        (fold
-                           (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
-                           (cons #\} tl)
-                           (iota (size obj) -1 1)))))
+
+; disabled, because records currently unload
+;               ((record? obj)
+;                  (ilist #\# #\{
+;                     (render (ref obj 1) ;; type tag object
+;                        (fold
+;                           (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
+;                           (cons #\} tl)
+;                           (iota (size obj) -1 1)))))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
                   (ilist #\# #\r (render (rlist->list obj) tl)))

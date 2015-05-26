@@ -467,8 +467,17 @@
             ((patternp `(import . ,(λ (x) #true))))
             (λ (exp) (match patternp exp))))
 
+;      (define (library-definition? x)
+;         (or
+;         (and (pair? x) (list? x) (eq? (car x) '_define-library))
+;         (and (pair? x) (list? x) (eq? (car x) '#define-library))
+;         ))
       (define (library-definition? x)
-         (and (pair? x) (list? x) (eq? (car x) '_define-library)))
+         (or
+         (and (pair? x) (list? x) (eq? (car x) '_define-library))
+         (and (pair? x) (list? x) (eq? (car x) '_define-library))
+         
+         ))
 
       ;; a simple eval 
 

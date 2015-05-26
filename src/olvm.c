@@ -448,6 +448,7 @@ typedef struct object
 //#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
 //#define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
 #define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in fixnum
+#define HIGHBIT                     ((unsigned long)1 << FBITS) // high long bit set
 #define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #if __amd64__
@@ -699,9 +700,6 @@ word value = (word) a;\
 	return object;
 }*/
 
-#define new_npair(a1, a2) new (TINT, a1, a2)
-
-
 #define cont(n)                 V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
 
 // возвращается по цепочке "flagged" указателей назад
@@ -782,8 +780,6 @@ wdiff adjust_heap(heap_t *heap, int cells)
 // todo: ввести третий generation
 //__attribute__ ((aligned(sizeof(int))))
 static word gc(heap_t *heap, int size, word regs) {
-
-	//static int marked;
 	// просматривает список справа налево
 	void mark(word *pos, word *end)
 	{
@@ -870,7 +866,6 @@ static word gc(heap_t *heap, int size, word regs) {
 //	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
 	heap->fp = fp;
-
 	#if DEBUG_GC
 		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
 				uptime,
@@ -946,7 +941,7 @@ void signal_handler(int signal) {
 static __inline__ void bytecopy(char *from, char *to, int n) { while(n--) *to++ = *from++; }
 static __inline__ void wordcopy(word *from, word *to, int n) { while(n--) *to++ = *from++; }
 static __inline__
-unsigned int lenn(char *pos, size_t max) { /* added here, strnlen was missing in win32 compile */
+unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in win32 compile
    unsigned int p = 0;
    while (p < max && *pos++) p++;
    return p;
@@ -1618,20 +1613,20 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 
 		// то же самое, но для числовых пар
-		case NCONS:  /* ncons a b r */
-			A2 = (word)new_npair (A0, A1);
+		case NCONS:  // ncons a b r
+			A2 = (word) new (TINT, A0, A1);
 			ip += 3; break;
 
 		case NCAR: {  // ncar a r
 			word T = A0;
-			CHECK(allocp(T), T, NCAR);
+			CHECK(is_pointer(T), T, NCAR);
 			A1 = car(T);
 			ip += 2; break;
 		}
 
 		case NCDR: {  // ncdr a r
 			word T = A0;
-			CHECK(allocp(T), T, NCDR);
+			CHECK(is_pointer(T), T, NCDR);
 			A1 = cdr(T);
 			ip += 2; break;
 		}
@@ -1663,36 +1658,35 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			ip += 3; break;
 
 		// АЛУ (арифметическо-логическое устройство)
-		case ADDITION: { // fx+ a b r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
-			word r = fixval(A0) + fixval(A1);
-			word low = r & FMAX;
-			A3 = (r & ((long)1 << FBITS)) ? ITRUE : IFALSE;
-			A2 = F(low);
+		case ADDITION: { // fx+ a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
+			word r = uftoi(A0) + uftoi(A1);
+			A2 = F(r & FMAX);
+			A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
+
 			ip += 4; break; }
+		case SUBTRACTION: { // fx- a b  r u, args prechecked, signs ignored
+			word r = (uftoi(A0) | HIGHBIT) - uftoi(A1);
+			A2 = F(r & FMAX);
+			A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
+
+			ip += 4; break; }
+
 		case MULTIPLICATION: { // fx* a b l h
-//		  uint64_t res = ((uint64_t) ((uint64_t) fixval(A0)) * ((uint64_t) fixval(A1)));
-			bign_t r = (bign_t) fixval(A0) * (bign_t) fixval(A1);
+			bign_t r = (bign_t) uftoi(A0) * (bign_t) uftoi(A1);
 			A2 = F(r & FMAX);
-			A3 = F((r >>FBITS)&FMAX);
-			ip += 4; break; }
-		case SUBTRACTION: { /* fx- a b r u, args prechecked, signs ignored */
-			word r = (fixval(A0) | ((long)1<<FBITS)) - fixval(A1);
-			A2 = F(r & FMAX);
-			A3 = (r & ((long)1<<FBITS)) ? IFALSE : ITRUE;
-			ip += 4; break; }
-		case DIVISION: { // fx/ ah al b qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
-//			CHECK();
+			A3 = F((r>>FBITS) & FMAX);
 
+			ip += 4; break; }
+		case DIVISION: { // fx/ ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
+			bign_t a = (((bign_t) uftoi(A0)) << FBITS) | (bign_t) uftoi(A1);
+			word b = uftoi(A2);
 
-			bign_t a = (((bign_t) fixval(A0)) << FBITS) | (bign_t)fixval(A1);
-			word b = fixval(A2);
 			bign_t q = a / b;
 			A3 = F(q>>FBITS);
 			A4 = F(q & FMAX);
 			A5 = F(a - q * b);
 
-			ip += 6; break;
-		}
+			ip += 6; break; }
 
 
 		case 44: {/* less a b r */
@@ -2238,6 +2232,76 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			// EXEC
+			case 59: {
+				FILE* pipe = popen((const char*)&car(a), "r");
+
+				char* p = &car(fp);
+				while (!feof(pipe)) {
+					fread(p++, 1, 1, pipe);
+				}
+				pclose(pipe);
+
+				int count = p - (char*)&car(fp) - 1;
+				result = new_bytevector(count, TSTRING);
+
+				/*int stdin[2];
+				if (pipe(stdin) < 0) {
+					fprintf(stderr, "pipe for child input redirect failed.\n");
+					break;
+				}
+
+				int stdout[2];
+				if (pipe(stdout) < 0) {
+					fprintf(stderr, "pipe for child output redirect failed.\n");
+					close(stdin[0]);
+					close(stdin[1]);
+					break;
+				}
+
+				int child = fork();
+				if (child == 0) {
+					fprintf(stderr, "fork.1\n");
+					dup2(stdin[0], STDIN_FILENO);
+					dup2(stdout[1], STDOUT_FILENO);
+					dup2(stdout[1], STDERR_FILENO);
+
+					fprintf(stderr, "fork.2\n");
+					close(stdin[0]);
+					close(stdin[1]);
+					close(stdout[0]);
+					close(stdout[1]);
+
+					fprintf(stderr, "fork.3\n");
+
+					char* command = (char*)&car(a);
+					char* args = 0; // temp, b
+					char* envp = 0;
+
+					fprintf(stderr, "command: %s\n", command);
+
+					exit(execve(command, 0, 0));
+				}
+				else {
+					close(stdin[0]);
+					close(stdout[1]);
+
+					if (is_string(c))
+						write(stdin[1], &car(c), lenn(&car(c), -1));
+
+					// read
+					char* p = &car(fp);
+					while (read(stdout[0], p++, 1) == 1)
+						continue;
+					int count = p - (char*)&car(fp) - 1;
+					result = new_bytevector(count, TSTRING);
+
+					close(stdin[1]);
+					close(stdout[0]);
+				}*/
+				break;
+			}
+
 			// EXIT
 			// http://linux.die.net/man/2/exit
 			// exit - cause normal process termination, function does not return.
@@ -2328,34 +2392,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						result = (word)new_port(function);
 					else
 						fprintf(stderr, "dlsym failed: %s\n", dlerror());
-					break;
-				}
-				// временный тестовый вызов
-				case 1033: { // temp, todo: (dlclose module)
-					//forcegc = 1;
-/*					printf("opengl version: %s\n", glGetString(GL_VERSION));
-					int glVersion[2] = {-1, -1}; // Set some default values for the version
-					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
-					glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]); // Get back the OpenGL MAJOR version we are using
-
-					GLint status;*/
-//					PFNGLGETSHADERIVPROC  glGetShaderiv  = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
-//					glGetShaderiv(3, GL_COMPILE_STATUS, &status);
-
-//					PFNGLGETPROGRAMIVPROC glGetProgramiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetProgramiv");
-//					glGetProgramiv(1, GL_LINK_STATUS, &status);
-
-					result = IFALSE;
-/*
-					word* A = a;
-					char* B = (word*)b + 1;
-					if (A[1] == 0) {
-						printf("\n\n\n\n\n\n\n\n\n\nB = %s\n\n\n", B);
-						result = F(0);
-						exit(123);
-					}
-
-*/
 					break;
 				}
 
@@ -2721,6 +2757,37 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break; // case 32
 				}
 #endif//HAS_PINVOKE
+
+				// временный тестовый вызов
+				case 1033: { // temp, todo: (dlclose module)
+					//forcegc = 1;
+/*					printf("opengl version: %s\n", glGetString(GL_VERSION));
+					int glVersion[2] = {-1, -1}; // Set some default values for the version
+					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
+					glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]); // Get back the OpenGL MAJOR version we are using
+
+					GLint status;*/
+//					PFNGLGETSHADERIVPROC  glGetShaderiv  = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
+//					glGetShaderiv(3, GL_COMPILE_STATUS, &status);
+
+//					PFNGLGETPROGRAMIVPROC glGetProgramiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetProgramiv");
+//					glGetProgramiv(1, GL_LINK_STATUS, &status);
+
+					result = IFALSE;
+/*
+					word* A = a;
+					char* B = (word*)b + 1;
+					if (A[1] == 0) {
+						printf("\n\n\n\n\n\n\n\n\n\nB = %s\n\n\n", B);
+						result = F(0);
+						exit(123);
+					}
+
+*/
+					break;
+				}
+
+
 
 				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
 					word *name = (word *)a;

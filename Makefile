@@ -1,8 +1,8 @@
 FAILED := $(shell mktemp -u)
-CFLAGS := -std=c99 -O3
+CFLAGS += -std=c99 -O3
 boot.c := bootstrap~
 
-all: ol boot tests
+all: ol tests
 boot: bootstrap
 
 install:
@@ -12,10 +12,32 @@ clean:
 	rm -f bootstrap
 	rm -f $(boot.c)
 
+config: config/HAS_DLOPEN\
+        config/HAS_SOCKETS
+
+config/HAS_DLOPEN:
+	@printf "Checking for dlopen()... "
+	@if echo "\
+	    char dlopen();\
+	    \
+	    int main() {\
+	    return dlopen();\
+	    }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
+		echo "Ok.";\
+		printf 1 > $@.2;\
+	else\
+		echo "\033[0;31mNot found.\033[0m";\
+		printf 0 > $@.2;\
+	fi
+
+config/HAS_SOCKETS:
+	@printf "Checking got sockets support... "
+	@echo "TBD."
+
 
 ol: src/olvm.c src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol \
-	-DHAS_SOCKETS=1 -DHAS_PINVOKE=1 -DHAS_DLOPEN=1 -ldl
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol
+#	-DHAS_SOCKETS=1 -DHAS_PINVOKE=1 -DHAS_DLOPEN=1 -ldl
 	
 vm: src/olvm.c
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -O3 -o vm
