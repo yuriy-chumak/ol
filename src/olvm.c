@@ -495,8 +495,7 @@ typedef struct object
 #define TSTRING                      (3)
 
 #define TPORT                       (12)
-#define TRAWPORT                    RAWH(TPORT)
-#define TCONST                      13
+#define TCONST                      (13)
 #define TFF                         24
 #define TBVEC                       19
 #define TBYTECODE                   16
@@ -515,6 +514,7 @@ typedef struct object
 // special pinvoke types
 #define TFLOAT                      46
 #define TDOUBLE                     47
+#define TMEMP                       44
 
 #define INULL                       make_immediate(0, TCONST)
 #define IFALSE                      make_immediate(1, TCONST)
@@ -2353,12 +2353,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 
 
-				// -=( pinvoke )=-------------------------------------------------
 #if HAS_PINVOKE
+				// -=( pinvoke )=-------------------------------------------------
 				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
 				case 1030: { // (dlopen filename mode)
 					word *filename = (word*)a;
-					int mode = (int)fixval(b);
+					int mode = (int) uftoi(b);
 
 					void* module;
 					if (is_pointer(filename) && hdrtype(*filename) == TSTRING)
@@ -2369,16 +2369,16 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						break; // invalid filename
 
 					if (module)
-						result = (word)new_port(module);
-					else
-						fprintf(stderr, "dlopen failed: %s\n", dlerror());
+						result = (word) new_port(module);
+//					else
+//						fprintf(stderr, "dlopen failed: %s\n", dlerror());
 					break;
 				}
 				case 1031: { // (dlsym module function)
 					word* A = (word*)a;
 
-					CHECK(hdrtype(A[0]) == TPORT, A, 1031);
-					void* module = (void*) A[1];
+					CHECK(is_port(A), A, SYSCALL);
+					void* module = car (A);
 
 					word* symbol = (word*)b;
 					// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
@@ -2406,60 +2406,72 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						// todo: проанализировать частоту количества аргументов и переделать все в
 						//   бинарный if
 
+						// __attribute__((stdcall))
 /*						__stdcall // gcc style for lambdas in pure C
 						int (*stdcall[])(char*) = {
 								({ int $(char *str){ printf("Test: %s\n", str); } $; })
 						};*/
 						#define CALL(conv) \
 							switch (count) {\
-							case  0: return ((conv word (*) ())\
+							case  0: return ((conv word (*)  ())\
 											function) ();\
-							case  1: return ((conv word (*) (word))\
+							case  1: return ((conv word (*)  (word))\
 											function) (args[0]);\
-							case  2: return ((conv word (*) (word, word)) function)\
+							case  2: return ((conv word (*)  (word, word)) function)\
 											(args[0], args[1]);\
-							case  3: return ((conv word (*) (word, word, word)) function)\
+							case  3: return ((conv word (*)  (word, word, word)) function)\
 											(args[0], args[1], args[2]);\
-							case  4: return ((conv word (*) (word, word, word, word)) function)\
+							case  4: return ((conv word (*)  (word, word, word, word)) function)\
 											(args[0], args[1], args[2], args[3]);\
-							case  5: return ((conv word (*) (word, word, word, word,\
-							                            word))\
-		                                     function) (args[0], args[1], args[2], args[3],\
-		                                                args[4]);\
-							case  6: return ((conv word (*) (word, word, word, word, word, word)) function)\
-											(args[0], args[1], args[2], args[3], args[4], args[5]);\
-							case  7: return ((conv word (*) (word, word, word, word, word, word, word)) function)\
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);\
-							case  8: return ((conv word (*) (word, word, word, word, word, word, word, word)) function)\
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);\
-							case  9: return ((conv word (*) (word, word, word, word, word, word, word, word, word)) function)\
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);\
-							case 10: return ((conv word (*) (word, word, word, word, word, word, word, word, word, word)) function)\
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);\
-							case 11: return ((conv word (*) (word, word, word, word, word, word, word, word, word, word, word)) function)\
-											(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);\
-							case 12: return ((conv word (*) (word, word, word, word, word, word, word, word,\
-							                            word, word, word, word))\
-											function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-													   args[ 4], args[ 5], args[ 6], args[ 7], \
-													   args[ 8], args[ 9], args[10], args[11]);\
-							case 18: return ((conv word (*) (word, word, word, word, word, word, word, word,\
-							                            word, word, word, word, word, word, word, word,\
-														word, word))\
-											function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-													   args[ 4], args[ 5], args[ 6], args[ 7], \
-													   args[ 8], args[ 9], args[10], args[11], \
-													   args[12], args[13], args[14], args[15], \
-													   args[16], args[17]);\
+							case  5: return ((conv word (*)  (word, word, word, word, word))\
+		                                     function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+		                                                args[ 4]);\
+							case  6: return ((conv word (*)  (word, word, word, word, word, word))\
+							                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+							                            args[ 4], args[ 5]);\
+							case  7: return ((conv word (*)  (word, word, word, word, word, word, \
+									                          word))\
+									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+									        		    args[ 4], args[ 5], args[ 6]);\
+							case  8: return ((conv word (*)  (word, word, word, word, word, word, \
+									                          word, word))\
+									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+									        		    args[ 4], args[ 5], args[ 6], args[ 7]);\
+							case  9: return ((conv word (*)  (word, word, word, word, word, word, \
+									                          word, word, word))\
+									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
+														args[ 8]);\
+							case 10: return ((conv word (*)  (word, word, word, word, word, word, \
+									                          word, word, word, word))\
+									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
+														args[ 8], args[ 9]);\
+							case 11: return ((conv word (*)  (word, word, word, word, word, word, \
+									                          word, word, word, word, word))\
+									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
+														args[ 8], args[ 9], args[10]);\
+							case 12: return ((conv word (*)  (word, word, word, word, word, word, \
+									                          word, word, word, word, word, word))\
+											 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
+													    args[ 4], args[ 5], args[ 6], args[ 7], \
+													    args[ 8], args[ 9], args[10], args[11]);\
+							case 18: return ((conv word (*)  (word, word, word, word, word, word, \
+									                          word, word, word, word, word, word, \
+															  word, word, word, word, word, word))\
+											 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
+													    args[ 4], args[ 5], args[ 6], args[ 7], \
+													    args[ 8], args[ 9], args[10], args[11], \
+													    args[12], args[13], args[14], args[15], \
+													    args[16], args[17]);\
 							default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", count);\
 								break;\
 							}
-						// чуть-чуть ускоримся для линукса
 #ifdef __linux__
 						#define __cdecl
 						CALL(__cdecl);
 #else
-//						*(char*)0 = 123;
 						//todo: set __cdecl = 0, and __stdcall = 1
 						switch (convention) {
 						case 0:
@@ -2477,15 +2489,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						}
 #endif
 						return 0;
-					}
-					long from_fix(word* arg) {
-						long value = fixval((unsigned long)arg);
-						// этот кусок временный - потом переделать в трюк
-						// алгоритмические трюки:
-						// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
-						if ((unsigned long)arg & 0x80)
-							return -value;
-						return value;
 					}
 					long from_int(word* arg) {
 						// так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит (первые два члена)
@@ -2514,7 +2517,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 						float a, b;
 						if (immediatep(pa))
-							a = from_fix(pa);
+							a = sftoi(pa);
 						else {
 							switch (hdrtype(pa[0])) {
 							case TINT:
@@ -2526,7 +2529,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 							}
 						}
 						if (immediatep(pb))
-							b = from_fix(pb);
+							b = sftoi(pb);
 						else {
 							switch (hdrtype(pb[0])) {
 							case TINT:
@@ -2581,7 +2584,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						case TFIX:
 						case TINT:
 							if (immediatep(arg))
-								args[i] = from_fix(arg);
+								args[i] = sftoi(arg);
 							else
 							switch (hdrtype(arg[0])) {
 							case TINT: // source type
@@ -2605,7 +2608,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 						case TFLOAT:
 							if (immediatep(arg))
-								*(float*)&args[i] = (float)from_fix(arg);
+								*(float*)&args[i] = (float)sftoi(arg);
 							else
 							switch (hdrtype(arg[0])) {
 							case TINT: // source type
@@ -2623,7 +2626,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 							break;
 						case TDOUBLE:
 							if (immediatep(arg))
-								*(double*)&args[i++] = (double)from_fix(arg);
+								*(double*)&args[i++] = (double)sftoi(arg);
 							else
 							switch (hdrtype(arg[0])) {
 							case TINT: // source type
@@ -2654,6 +2657,11 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 								args[i] = 0; // todo: error
 							}
 							break;
+						// special case - отправить fp
+						case TMEMP: {
+							args[i] = (word) fp;
+							break;
+						}
 
 						case TBVEC:
 						case TSTRING:
@@ -2739,9 +2747,11 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 							result = got < 0 ? (F(-got) | 0x80) : F(got);
 							break;
 						case TPORT:
-							result = (word)new_port(got);
+							result = (word) new_port(got);
 							break;
-						// todo: TRATIONAL
+						case TMEMP:
+							result = fp = (word*) got;
+							break;
 
 						case TSTRING:
 							if (got != 0)
@@ -2750,8 +2760,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						case TVOID:
 							result = INULL;
 							break;
-//						default:
-//							result = IFALSE;
+//                      todo: TRATIONAL
 					}
 
 					break; // case 32
@@ -3399,3 +3408,11 @@ int vm_feof(OL* vm)
 	return fifo_feof(&vm->i);
 }
 #endif//EMBEDDED_VM
+
+
+
+// embedded example
+__attribute__((__visibility__("default")))
+word some_alloc(word* fp) {
+	return new_pair(F(1), F(2));
+}

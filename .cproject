@@ -37,6 +37,10 @@
 								<option id="gnu.c.link.option.libs.37796547" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="dl"/>
 								</option>
+								<option id="gnu.c.link.option.ldflags.459371601" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="" valueType="string"/>
+								<option id="gnu.c.link.option.other.4954598" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" valueType="stringList">
+									<listOptionValue builtIn="false" value="--export-dynamic"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1663177488" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
