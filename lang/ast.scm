@@ -7,13 +7,15 @@
 	(export call? var? value-of sexp->ast mkcall mklambda mkvarlambda mkvar mkval)
 
    (import
+      (r5rs base)
+      (owl error)
+      
       (owl list-extra)
       (owl math)
       (owl primop)
       (owl tuple)
       (owl list)
       (owl symbol)
-      (owl defmac)
       (owl equal)
       (owl io) ; for display
       (lang env))

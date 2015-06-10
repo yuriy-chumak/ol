@@ -10,12 +10,12 @@
 ;      inst->op)
 
    (import
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (owl ff)
       (owl list)
       (owl math)
       (owl list-extra)
-      (owl error)
       (only (owl interop) interact)
       (lang register)
       (owl primop))

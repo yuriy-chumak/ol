@@ -6,14 +6,14 @@
    (export cps)
 
    (import
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (lang ast)
       (owl list)
       (owl list-extra)
       (owl math)
       (owl gensym)
       (owl io)
-      (owl error)
       (only (lang env) primop? primop-of)
       (owl primop)) 
 

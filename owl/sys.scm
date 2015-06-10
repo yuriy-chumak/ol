@@ -29,7 +29,8 @@
       sigterm)
 
    (import
-      (owl defmac)
+      (r5rs base)
+
       (owl string)
       (owl math)
       (owl equal)

@@ -63,7 +63,8 @@
 		)
 
    (import
-      (owl defmac)
+      (r5rs base)
+
       (owl vector)
       (owl math)
       (owl primop)

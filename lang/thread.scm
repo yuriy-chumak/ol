@@ -18,9 +18,9 @@
       repl-signal-handler)
 
    (import
-      (owl defmac)
-      (owl queue)
+      (r5rs base)
       (owl error)
+      (owl queue)
       (owl interop)
       (owl ff)
       (owl primop)

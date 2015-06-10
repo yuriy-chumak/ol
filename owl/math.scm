@@ -47,9 +47,9 @@
       )
 
    (import
-      (owl defmac)
-      (owl list)
+      (r5rs base)
       (owl error)
+      (owl list)
       (owl interop)
       (owl ff))
 

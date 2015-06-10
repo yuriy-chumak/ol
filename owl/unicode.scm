@@ -22,9 +22,9 @@
       valid-code-point?)
 
    (import
+      (r5rs base)
       (except (owl list) render)
       (owl list-extra)
-      (owl defmac)
       (owl lazy)
       (owl math)
       (owl error))

@@ -5,7 +5,7 @@
       read-tuple)
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl list-extra)
       (owl list) 
       (owl math) 

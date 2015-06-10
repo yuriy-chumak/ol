@@ -1,12 +1,11 @@
 (define-library (owl list)
 
    (export 
-      null null?
+      null
       caar cadr cdar cddr
       caaar caadr cadar caddr 
       cdaar cdadr cddar cdddr
-      list?      
-      zip for fold foldr map for-each
+      zip for fold foldr for-each
       has? getq last drop-while
       mem
       fold-map foldr-map
@@ -41,7 +40,7 @@
       )
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl primop)
       (owl boolean))
 
@@ -51,8 +50,6 @@
       ;; constants are always inlined, so you pay just one byte of source for readability
 
       (define null '())
-
-      (define (null? x) (eq? x null))
 
       (define-syntax withcc
          (syntax-rules ()
@@ -89,12 +86,6 @@
       (define (cddadr x) (cdr (cdr (car (cdr x)))))
       (define (cdddar x) (cdr (cdr (cdr (car x)))))
       (define (cddddr x) (cdr (cdr (cdr (cdr x)))))
-
-      (define (list? l)
-         (cond
-            ((null? l) #true)
-            ((pair? l) (list? (cdr l)))
-            (else #false)))
 
       (define (zip op a b)
          (cond
@@ -136,14 +127,6 @@
             st
             (op (car lst)
                (foldr op st (cdr lst)))))
-
-      (define (map fn lst)
-         (if (null? lst)
-            null
-            (lets 
-               ((hd tl lst)
-                (hd (fn hd))) ;; compute head first
-               (cons hd (map fn tl)))))
 
       (define (for-each op lst)
          (if (null? lst)

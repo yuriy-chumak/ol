@@ -24,7 +24,8 @@
       queue->list)
 
    (import
-      (owl defmac)
+      (r5rs base)
+      
       (owl list)
       (owl math)
       (owl error)

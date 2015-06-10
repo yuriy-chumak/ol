@@ -68,8 +68,11 @@ Android way
 MacOS/iOS way
    tbd.
    
-openWebOS way
-   tbd.
+Open webOS way
+   Put toolchain/ol.bb bitbake receipe into any place of open webOs receipes folder (i.e.
+   ./meta-oe/) and run "make ol" from root open webOs folder.
+   Upload ol executable from BUILD/work/<build-name>/ol/1.0.0-1-r0/build to machine /bin.
+   Now you cat execute ol under webos command line or other way you would like.
 
 
 VERY INTERESTING WAY
@@ -254,3 +257,10 @@ DOCUMENTATION
 ~~~~~~~~~~~~~
 
 Not yet provided, check the source codes
+
+
+SOME NOTES
+~~~~~~~~~~
+env *special-forms* list of all special forms
+vm *primitives* list of all primitives
+lang *owl-core* basic OL language elements

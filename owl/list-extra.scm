@@ -11,9 +11,9 @@
       )
 
    (import
+      (r5rs base)
       (owl math)
       (owl list)
-      (owl defmac)
       (owl error)
       (owl interop))
 

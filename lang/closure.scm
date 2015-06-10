@@ -9,7 +9,8 @@
       uncompiled-closure?)
 
    (import
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (owl list)
       (owl error)
       (lang ast)

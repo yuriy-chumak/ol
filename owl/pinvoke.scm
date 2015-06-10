@@ -51,7 +51,7 @@
 
    (export 
       dlopen
-      dlsym
+      dlsym dlsym+
 
       RTLD_LAZY
       RTLD_NOW
@@ -76,7 +76,7 @@
    )
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl io)
       (owl math)
       (owl string))
@@ -130,6 +130,7 @@
       (lambda args
 ;        (print "pinvoke: " name)
          (sys-prim 1032 function args rtty))))
+(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
 ;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl         
 ;;(define (dlsym-c type dll name . prototype)
 ;;; todo: отправлять тип функции третим параметром (sys-prim 1031) и в виртуальной машине

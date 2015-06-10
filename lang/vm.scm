@@ -8,6 +8,7 @@
 (define-library (lang vm)
    (export 
       primops
+      *primitives*
       primop-name ;; primop → symbol | primop
 
       multiple-return-variable-primops
@@ -15,7 +16,7 @@
       special-bind-primop?)
 
    (import
-      (owl defmac)) ; ie r5rs
+      (r5rs base))
 
    (begin
 ;          итак, процесс замены кода операции на другой:
@@ -187,7 +188,7 @@
          (tuple 'red?      41  1 1 red?)
          (tuple 'ff-toggle 46  1 1 ff-toggle)
       ))
-
+      (define *primitives* primops)
 
 
       (define (get-primitive name)
@@ -234,12 +235,12 @@
                      (else
                         (loop (cdr primops))))))))
 
-;; run, apply, apply-cont - moved to the right places (defmac ie r5rs, lang/thread)
+;; run, apply, apply-cont - moved to the right places (r5rs, lang/thread)
 ;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
 ;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40))))
 ;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
 ;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40)))) - used in (owl defmac) in call-with-current-continuation
+;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40)))) - used in (r5rs base) in call-with-current-continuation
 ;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
 
 

@@ -29,7 +29,8 @@
       null-stream?)
 
    (import
-      (owl defmac)
+      (r5rs base)
+
       (owl lazy)
       (owl math)
       (owl list)

@@ -14,14 +14,14 @@
       n-registers)
 
    (import
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (owl ff)
       (owl math)
       (owl list-extra)
       (owl primop)
       (owl io)
       (owl equal)
-      (owl error)
       (owl list)
       (scheme misc))
 

@@ -1,3 +1,4 @@
+(display "#ifndef NAKED_VM\n")
 (display "unsigned char *language = (unsigned char*) \"")
 (for-each (lambda (x)
              (display "\\x")
@@ -5,4 +6,5 @@
              (display (string (ref "0123456789abcdef" (mod x 16)))))
           (file->list "boot.fasl"))
 (display "\";")
+(display "\n#endif")
 (halt 0)

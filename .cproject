@@ -27,7 +27,8 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.1189045074" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.dialect.std.247679204" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.c99" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1416926901" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="HAS_DLOPEN"/>
+									<listOptionValue builtIn="false" value="HAS_DLOPEN=1"/>
+									<listOptionValue builtIn="false" value="HAS_PINVOKE=1"/>
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.1176707031" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1106465048" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
@@ -35,6 +36,10 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.2022155944" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug">
 								<option id="gnu.c.link.option.libs.37796547" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="dl"/>
+								</option>
+								<option id="gnu.c.link.option.ldflags.459371601" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="" valueType="string"/>
+								<option id="gnu.c.link.option.other.4954598" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" valueType="stringList">
+									<listOptionValue builtIn="false" value="--export-dynamic"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1663177488" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

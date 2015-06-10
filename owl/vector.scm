@@ -78,7 +78,7 @@
       *vec-leaf-size*)     ; needed for vector IO
 
    (import 
-      (owl defmac)
+      (r5rs base)
       (owl lazy)
       (owl list)
       (owl list-extra)

@@ -6,9 +6,9 @@
    (export macro-expand match make-transformer)
 
    (import
-      (owl defmac)
-      (owl list)
+      (r5rs base)
       (owl error)
+      (owl list)
       (owl equal)
       (owl list-extra)
       (owl primop)

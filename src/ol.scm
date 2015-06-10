@@ -23,12 +23,12 @@
  | DEALINGS IN THE SOFTWARE.
  |#
 
-;; check that (owl defmac) is indeed from last generation
+;; check that (r5rs base) is indeed from last generation
 
 (define build-start (time-ms))
 (print "Loading code...")
 
-; (import (owl defmac))
+; (import (r5rs base))
 
 (mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
 
@@ -40,7 +40,7 @@
          (equal? (car lib) '(owl core)))
       *libraries*))
 
-(import (owl defmac)) ;; reload default macros needed for defining libraries etc
+(import (r5rs base)) ;; reload default macros needed for defining libraries etc
 
 ;; forget everhything except these and core values (later list also them explicitly)
 ,forget-all-but (*vm-special-ops* *libraries* *codes* wait stdin stdout stderr set-ticker-value build-start)
@@ -53,7 +53,7 @@
 ;; this should later be just a sequence of imports followed by a fasl dump
 
 (import (owl core))     ;; get special forms, primops and define-syntax
-(import (owl defmac))   ;; get define, define-library, import, ... from the just loaded (owl defmac)
+(import (r5rs base))    ;; get define, define-library, import, ... from the just loaded (owl defmac)
 
 ;(define *interactive* (sys-prim 500 stdin #f #f)) ;; was #true
 (define *interactive* #f)
@@ -84,7 +84,7 @@
    (export string-set! vector-set!) ; set! set-car! set-cdr! 
 
    (import 
-      (owl defmac)
+      (r5rs base)
       (owl error)
       (owl interop))
 
@@ -108,7 +108,7 @@
    (export boolean?)
 
    (import  
-      (owl defmac)
+      (r5rs base)
       (owl unsupported))
 
    (begin
@@ -159,7 +159,7 @@
 
    (export eof?)
 
-   (import (owl defmac))
+   (import (r5rs base))
 
    (begin
       (define eof-value
@@ -355,8 +355,8 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 
 (define-library (owl char)
    (export char->integer integer->char)
+   (import (r5rs base))
    (import
-      (owl defmac)
       (owl math))
    (begin
       (define self (λ (x) x))
@@ -602,8 +602,8 @@ Check out http://code.google.com/p/owl-lisp for more information.")
    (export usual-suspects)
    ; make sure the same bindings are visible that will be at the toplevel
 
+   (import (r5rs base))
    (import
-      (owl defmac)
       (owl math)
       (owl random)
       (lang thread)

@@ -36,6 +36,7 @@
       )
 
    (import
+      (r5rs base)
       (owl math)
       (owl lazy)
       (owl list)
@@ -47,8 +48,7 @@
       (owl io)
       (owl interop)
       (owl sort)
-      (owl time)
-      (owl defmac))
+      (owl time))
 
    (begin
       ;;;

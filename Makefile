@@ -12,26 +12,68 @@ clean:
 	rm -f bootstrap
 	rm -f $(boot.c)
 
+config: config/HAS_DLOPEN\
+        config/HAS_SOCKETS
 
-ol: src/olvm.c src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol
+config/HAS_DLOPEN:
+	@printf "Checking for dlopen()... "
+	@if echo "\
+	    char dlopen();\
+	    \
+	    int main() {\
+	    return dlopen();\
+	    return 0;\
+	    }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
+		echo "Ok.";\
+		printf 1 > $@;\
+	else\
+		echo "\033[0;31mNot found.\033[0m";\
+		printf 0 > $@;\
+	fi
+
+config/HAS_SOCKETS:
+	@printf "Checking for sockets support... "
+	@if echo "\
+	    char socket();\
+	    \
+	    int main() {\
+	    return socket();\
+	    return 0;\
+	    }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
+		echo "Ok.";\
+		printf 1 > $@;\
+	else\
+		echo "\033[0;31mNot found.\033[0m";\
+		printf 0 > $@;\
+	fi
+
+
+ol: src/olvm.c src/boot.c config
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol \
+	-DHAS_DLOPEN=`cat config/HAS_DLOPEN` \
+	-DHAS_SOCKETS=`cat config/HAS_SOCKETS` \
+	-DHAS_PINVOKE=1 -ldl
 	
 vm: src/olvm.c
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -O3 -o vm
 
 $(boot.c): src/boot.c
-	cp src/boot.c $(boot.c)
+	@cp src/boot.c $(boot.c)
 
-boot.fasl: src/ol.scm ol $(boot.c) lang/*.scm owl/*.scm
-	ol src/ol.scm
+boot.fasl: src/ol.scm ol $(boot.c) r5rs/*.scm lang/*.scm owl/*.scm
+	@ol src/ol.scm
 
 bootstrap: boot.fasl
-	ol src/to-c.scm > bootstrap
-	if diff bootstrap bootstrap~ >/dev/null ;then\
-	    echo "\033[1;32mOk.\033[0m" ;\
+	@ol src/to-c.scm > bootstrap
+	@if diff bootstrap bootstrap~ >/dev/null ;then\
+	    echo '\033[1;32m  `___`  \033[0m' ;\
+	    echo '\033[1;32m  (o,o)  \033[0m' ;\
+	    echo '\033[1;32m  \)  )  \033[0m' ;\
+	    echo '\033[1;32m___"_"___\033[0m' ;\
+	    echo '\033[1;32mBuild Ok.\033[0m' ;\
 	else \
 	    cp bootstrap $(boot.c) ;\
-	    make boot ;\
+	    make bootstrap ;\
 	fi
 
 
@@ -93,4 +135,4 @@ tests: \
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
 	@echo "passed!"
 
-.PHONY: tests
+.PHONY: boot

@@ -1,7 +1,7 @@
 (define-library (owl equal)
 
    (import 
-      (owl defmac)
+      (r5rs base)
       (owl string)
       (owl symbol)
       (owl list)

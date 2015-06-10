@@ -11,7 +11,8 @@
       load-fasl)
 
    (import 
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (owl fasl)
       (owl list)
       (owl sort)
@@ -26,7 +27,6 @@
       (owl render)
       (owl lazy)
 ;      (lang cgen)
-      (owl error)
       (only (owl interop) mail exit-owl)
       (only (lang env) signal-halt signal-tag)
       (only (owl unicode) utf8-decode)

@@ -8,7 +8,7 @@
       ; opcode->wrapper
       poll-tag name-tag link-tag buffer-tag signal-tag signal-halt thread-quantum meta-tag
       current-library-key
-      env-set-macro *tabula-rasa* env-del 
+      env-set-macro env-del *special-forms*
       env-get ;; env key default → val | default
       env-del ;; env key → env'
       env-set ;; env-set env key val → env'
@@ -19,7 +19,8 @@
       )
 
    (import
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (owl ff)
       (owl list)
       (owl symbol)
@@ -28,7 +29,7 @@
       (owl equal)
       (owl list-extra)
       (owl math)
-		(owl io)
+      (owl io)
       (scheme misc)
       (owl primop))
 
@@ -228,10 +229,9 @@
 
       ;; only special forms supported by the compiler, no primops etc
       ;; fixme: should use distinct identifiers like #:foo for these, since these can unintentionally clash with formals
-      (define *tabula-rasa*
+      (define *special-forms*
          (list->ff
             (list
-               ;; special forms.
                (cons 'lambda  (tuple 'special 'lambda)) ;; fixme: should be a macro generating _lambda instead
                (cons 'quote   (tuple 'special 'quote))
                (cons 'rlambda (tuple 'special 'rlambda))

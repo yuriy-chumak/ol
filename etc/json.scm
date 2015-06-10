@@ -1,3 +1,4 @@
+#!/bin/ol
 ;;;
 ;;; a quick and dirty JSON parser (imported from work, will be hacked mainly separately)
 ;;;

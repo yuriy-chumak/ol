@@ -10,7 +10,7 @@
    (export iget iput ifold iff->list)
    
    (import 
-      (owl defmac)
+      (r5rs base)
       (owl ff)
       (owl list))
 

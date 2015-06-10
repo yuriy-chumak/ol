@@ -16,10 +16,10 @@
       compile)
 
    (import
-      (owl defmac)
+      (r5rs base)
+      (owl error)
       (owl math)
       (owl list)
-      (owl error)
       (owl symbol)
       (owl list-extra)
       (lang ast)
