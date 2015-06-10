@@ -22,22 +22,37 @@ config/HAS_DLOPEN:
 	    \
 	    int main() {\
 	    return dlopen();\
+	    return 0;\
 	    }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
 		echo "Ok.";\
-		printf 1 > $@.2;\
+		printf 1 > $@;\
 	else\
 		echo "\033[0;31mNot found.\033[0m";\
-		printf 0 > $@.2;\
+		printf 0 > $@;\
 	fi
 
 config/HAS_SOCKETS:
-	@printf "Checking got sockets support... "
-	@echo "TBD."
+	@printf "Checking for sockets support... "
+	@if echo "\
+	    char socket();\
+	    \
+	    int main() {\
+	    return socket();\
+	    return 0;\
+	    }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
+		echo "Ok.";\
+		printf 1 > $@;\
+	else\
+		echo "\033[0;31mNot found.\033[0m";\
+		printf 0 > $@;\
+	fi
 
 
-ol: src/olvm.c src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol
-#	-DHAS_SOCKETS=1 -DHAS_PINVOKE=1 -DHAS_DLOPEN=1 -ldl
+ol: src/olvm.c src/boot.c config
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol \
+	-DHAS_DLOPEN=`cat config/HAS_DLOPEN` \
+	-DHAS_SOCKETS=`cat config/HAS_SOCKETS` \
+	-DHAS_PINVOKE=1 -ldl
 	
 vm: src/olvm.c
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -O3 -o vm

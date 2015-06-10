@@ -201,7 +201,7 @@ static int pthread_yield(void)
 
 // -----------------------------------------------------------
 // -=( fifo )=------------------------------------------------
-#if EMBEDDED_VM
+#if EMBEDDED_VM_FIFO
 // кольцевой текстовый буфер для общения с виртуальной машиной
 
 #define FIFOLENGTH (1 << 14) // 4 * 4096 for now // was << 14
@@ -370,20 +370,22 @@ char* dlerror() {
 // --
 //
 // виртуальная машина
-typedef struct OL
-{
-#if EMBEDDED_VM
-	pthread_t tid;
-	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
-	struct fifo o;
-#endif
-} OL;
 
 // unsigned int that is capable of storing a pointer
 // основной тип даных, зависит от разрядности машины
 // based on C99 standard, <stdint.h>
 typedef uintptr_t word;
 
+typedef struct OL
+{
+	word *fp; // allocation pointer (top of allocated heap)
+
+#if 0//EMBEDDED_VM
+	pthread_t tid;
+	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
+	struct fifo o;
+#endif
+} OL;
 
 //;; descriptor format:
 // это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
@@ -514,7 +516,8 @@ typedef struct object
 // special pinvoke types
 #define TFLOAT                      46
 #define TDOUBLE                     47
-#define TMEMP                       44
+#define TTHIS                       44
+#define TRAWP                       45
 
 #define INULL                       make_immediate(0, TCONST)
 #define IFALSE                      make_immediate(1, TCONST)
@@ -549,6 +552,8 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 // signed fix to int
 #define uftoi(fix)  ({ ((word)fix >> IPOS); })
 #define sftoi(fix)  ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
+#define itosf(val)  ({ val < 0 ? (F(-val) | 0x80) : F(val); })
+
 
 #define NR                          128 // see n-registers in register.scm
 
@@ -609,6 +614,13 @@ word*p = NEW (size);\
 	/*return*/ p;\
 })
 
+#define NEW_RAW_OBJECT(size, type, pads) ({\
+word*p = NEW (size);\
+	*p = make_raw_header(size, type, pads);\
+	/*return*/ p;\
+})
+
+
 // a1 и a2 надо предвычислить перед тем, как выделим память,
 // так как они в свою очередь могут быть аллоцируемыми объектами.
 #define NEW_PAIR(type, a1, a2) ({\
@@ -624,26 +636,55 @@ word*p = NEW_OBJECT (3, type);\
 // хитрый макрос агрегирующий макросы-аллокаторы памяти
 //	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
 #define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new(...) NEW_MACRO(__VA_ARGS__, NEW_PAIR, NEW_OBJECT, NEW)(__VA_ARGS__)
+#define new(...) NEW_MACRO(__VA_ARGS__, NOTHING, NEW_OBJECT, NEW)(__VA_ARGS__)
+
+#define NEW_PAIR3(type, a1, a2) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	/* точка следования */ \
+word*p = NEW_OBJECT (3, type);\
+	p[1] = data1;\
+	p[2] = data2;\
+	/*return*/ p;\
+})
+#define NEW_PAIR2(a1, a2) NEW_PAIR3(TPAIR, a1, a2)
+// по факту эта функция сводится к простому:
+/*static __inline__ word* new_pair (word* a1, word* a2)
+{
+	word *object = fp;
+
+	fp[0] = PAIRHDR;
+	fp[1] = (word) a1;
+	fp[2] = (word) a2;
+
+	fp += 3;
+	return object;
+}*/
+
+
+#define NEW_PAIRX(_1, _2, _3, NAME, ...) NAME
+#define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_PAIR3, NEW_PAIR2, NOTHING, NOTHING)(__VA_ARGS__)
+
 
 // аллокаторы списоков (todo: что ставить в качестве типа частей, вместо TPAIR?)
 #define new_list1(type, a1) \
-	new (type, a1, INULL)
+	new_pair (type, a1, INULL)
 #define new_list2(type, a1, a2) \
-	new (type, a1,\
-	           new (TPAIR, a2, INULL))
+	new_pair (type, a1,\
+	                new_pair (TPAIR, a2, INULL))
 #define new_list3(type, a1, a2, a3) \
-	new (type, a1,\
-	           new (TPAIR, a2,\
-	                       new (TPAIR, a3, INULL)))
+	new_pair (type, a1,\
+	                new_pair (TPAIR, a2,\
+	                                 new_pair (TPAIR, a3, INULL)))
 #define new_list4(type, a1, a2, a3, a4) \
-	new (type, a1,\
-	           new (TPAIR, a2,\
-	                       new (TPAIR, a3,\
-	                                   new (TPAIR, a4, INULL))))
+	new_pair (type, a1,\
+	                new_pair (TPAIR, a2,\
+	                                 new_pair (TPAIR, a3,\
+	                                                  new_pair (TPAIR, a4, INULL))))
 
 #define NEW_LIST(_1, _2, _3, _4, _5, NAME, ...) NAME
 #define new_list(...) NEW_LIST(__VA_ARGS__, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
+
 
 // кортеж
 #define new_tuple(length)  new ((length)+1, TTUPLE)
@@ -685,20 +726,6 @@ word value = (word) a;\
 	/*return*/ me;\
 })
 
-
-#define new_pair(a1, a2) new (TPAIR, a1, a2)
-// по факту эта функция сводится к простому:
-/*static __inline__ word* new_pair (word* a1, word* a2)
-{
-	word *object = fp;
-
-	fp[0] = PAIRHDR;
-	fp[1] = (word) a1;
-	fp[2] = (word) a2;
-
-	fp += 3;
-	return object;
-}*/
 
 #define cont(n)                 V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
 
@@ -997,7 +1024,6 @@ struct args
 	// структура памяти VM. распределяется еще до запуска самой машины
 	word max_heap_size; // max heap size in MB
 	struct heap_t heap;
-	word *fp; // allocation pointer (top of allocated heap)
 
 	void *userdata;
 	volatile char signal;// сигнал, что машина запустилась
@@ -1032,9 +1058,11 @@ void* runtime(void *args) // heap top
 	max_heap_size = ((struct args*)args)->max_heap_size; // max heap size in MB
 
 	// allocation pointer (top of allocated heap)
-	fp            = ((struct args*)args)->fp;
+	fp            = ((struct args*)args)->vm->fp;
+	OL* ol        = ((struct args*)args)->vm;
 
-#	if EMBEDDED_VM
+
+#	if 0//EMBEDDED_VM
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
 	fifo *fi =&((struct args*)args)->vm->o;
 	fifo *fo =&((struct args*)args)->vm->i;
@@ -1079,7 +1107,7 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 			this = (word *) R[0];
 			if (!allocp(this)) {
 				// fprintf(stderr, "Unexpected virtual machine exit\n");
-#				if EMBEDDED_VM
+#				if 0//EMBEDDED_VM
 				// подождем, пока освободится место в консоли
 				while (fifo_full(fo)) pthread_yield();
 				fifo_put(fo, EOF); // и положим туда EOF
@@ -1614,7 +1642,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 		// то же самое, но для числовых пар
 		case NCONS:  // ncons a b r
-			A2 = (word) new (TINT, A0, A1);
+			A2 = (word) new_pair (TINT, A0, A1);
 			ip += 3; break;
 
 		case NCAR: {  // ncar a r
@@ -1997,7 +2025,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					dogc(size);
 
 				int got;
-#if EMBEDDED_VM
+#if 0//EMBEDDED_VM
 				if (fd == 0) { // stdin reads from fi
 					if (fifo_empty(fi)) {
 						// todo: process EOF, please!
@@ -2058,7 +2086,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				int wrote;
 
-#if EMBEDDED_VM
+#if 0//EMBEDDED_VM
 				if (fd == 1) // stdout wrote to the fo
 					wrote = fifo_puts(fo, ((char *)buff)+W, len);
 				else
@@ -2308,7 +2336,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			case 1006:
 			case 60: {
 				free(heap.begin); // освободим занятую память
-#if EMBEDDED_VM
+#if 0//EMBEDDED_VM
 				// подождем, пока освободится место в консоли
 				while (fifo_full(fo)) pthread_yield();
 				fifo_put(fo, EOF); // и положим туда EOF
@@ -2563,9 +2591,19 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					int returntype = imm_val (C[1]);
 
 					long got;   // результат вызова функции
+					int embed = 0;  // это вызов через THIS
 					int i = 0;     // количество аргументов
 					word* p = (word*)B;   // сами аргументы
 					word* t = (word*)C[2];
+
+					// special case - отправить this
+					// ограничим THIS первым параметром вызова
+					if (is_pointer(t) && hdrtype(*t) == TPAIR && uftoi(car(t)) == TTHIS) {
+						args[i++] = (word) ol;//this
+						embed = 1;
+						t = (word*) car(cdr(t)); // (cdr t)
+					}
+
 					while ((word)p != INULL) { // пока есть аргументы
 						assert (hdrtype(*p) == TPAIR); // assert list
 						assert (hdrtype(*t) == TPAIR); // assert list
@@ -2657,11 +2695,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 								args[i] = 0; // todo: error
 							}
 							break;
-						// special case - отправить fp
-						case TMEMP: {
-							args[i] = (word) fp;
-							break;
-						}
 
 						case TBVEC:
 						case TSTRING:
@@ -2714,6 +2747,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 								args[i] = INULL; // todo: error
 							}
 							break;
+						case TRAWP:
+							args[i] = (word)arg;
+							break;
+						default:
+							args[i] = 0;
+							break;
 						}
 
 						p = (word*)p[2]; // (cdr p)
@@ -2722,7 +2761,13 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					}
 					assert ((word)t == INULL); // количество аргументов совпало!
 
+					if (embed) {
+						ol->fp = fp;
+					}
 					got = call(returntype >> 6, function, args, i);
+					if (embed) {
+						fp = ol->fp;
+					}
 
 					switch (returntype & 0x3F) {
 						case TINT:
@@ -2744,13 +2789,13 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 							}
 							// else goto case 0 (иначе вернем type-fx+)
 						case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-							result = got < 0 ? (F(-got) | 0x80) : F(got);
+							result = itosf(got);
 							break;
 						case TPORT:
 							result = (word) new_port(got);
 							break;
-						case TMEMP:
-							result = fp = (word*) got;
+						case TRAWP:
+							result = got;
 							break;
 
 						case TSTRING:
@@ -3128,19 +3173,13 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
 //
-// this is NOT thread safe function
-#if EMBEDDED_VM
-OL*
-vm_new(unsigned char* language, void (*release)(void*))
-{
-	unsigned char* bootstrap = language;
-
-#else
 #ifndef NAKED_VM
 extern unsigned char* language;
 #else
 unsigned char* language = NULL;
 #endif
+
+#if !EMBEDDED_VM
 int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
@@ -3199,12 +3238,16 @@ int main(int argc, char** argv)
 		}
 	}
 
-	// если отсутствует базовый образ:
-	if (bootstrap == 0) {
-		printf("no system image found\n");
-		exit(1);
-	}
+	OL*ol =
+			vm_new(bootstrap, bootstrap != language ? free : NULL);
+	free(ol);
+	return 0;
+}
+#endif
 
+int    // this is NOT thread safe function
+vm_new(unsigned char* bootstrap, void (*release)(void*))
+{
 #if	HAS_SOCKETS
 #ifdef _WIN32
 	WSADATA wsaData;
@@ -3216,8 +3259,6 @@ int main(int argc, char** argv)
 //	AllocConsole();
 #endif//win32
 #endif
-
-#endif//EMBEDDED_VM
 
 	// ===============================================================
 	// создадим виртуальную машину
@@ -3251,30 +3292,40 @@ int main(int argc, char** argv)
 	//  загрузить в память аргументы перед вызовом образа
 	// по совместительству, это еще и корневой объект
 	fp = heap.begin;
-	word oargs;
-	// подготовим аргументы
+	void* result = 0; // результат выполнения.
+	word oargs; // аргументы
 	{
 		oargs = INULL;
-#ifndef TEST_GC2
-
-#if EMBEDDED_VM
-		char* filename = "-";
-		char *pos = filename;
-
-		int len = 0;
-		while (*pos++) len++;
-
-		oargs = (word)new_pair (new_string (len, filename), oargs);
-#else
+#if !EMBEDDED_VM
 		// аргументы
-		for (int i = argc - 1; i > 0; i--)
-			oargs = (word)new_pair (new_string (strlen(argv[i]), argv[i]), oargs);
-		// и название скрипта
-		if (argc == 1)
-			oargs = (word)new_pair (new_string (1, "-"), INULL); // или IFALSE ?
+		// todo: for win32 do ::GetCommandLine()
+		int f = open("/proc/self/cmdline", O_RDONLY, S_IRUSR);
+		if (f) {
+			int r;
+			do {
+				char *pos = (char*)(fp + 1);
+				while ((r = read(f, pos, 1)) > 0 && (*pos != 0)) {
+					pos++;
+				}
+				int length = pos - (char*)fp - W;
+				if (r > 0 && length > 0) // если есть что добавить
+					oargs = (word)new_pair (new_bytevector(length, TSTRING), oargs);
+			}
+			while (r > 0);
+			close(f);
+		}
+		else
 #endif
+		{
+			char* filename = "#";
+			char *pos = filename;
 
-#else
+			int len = 0;
+			while (*pos++) len++;
+
+			oargs = (word)new_pair (new_string (len, filename), oargs);
+		}
+#if 0
 		word *a, *b, *c, *d, *e;
 
 		a = new_string(28, "aaaaaaaaaaaaaaaaaaaaaaaaaaaa");
@@ -3291,8 +3342,31 @@ int main(int argc, char** argv)
 #endif
 	}
 
+	// если это текстовый скрипт
+	if (bootstrap[0] > 3) {
+		char* filename[16]; // lenght of above string
+		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
 
-	// а теперь поработаем со сериализованным образом:
+		int f = mkstemp(filename);
+		write(f, bootstrap, strlen(bootstrap));
+		close(f);
+
+		freopen(filename, "r", stdin);
+		unlink(filename); // сразу приберем за собой.
+
+		bootstrap = language;
+	}
+
+	// если отсутствует исполнимый образ
+	if (bootstrap == 0) {
+		printf("no boot image found\n");
+		result = (void*)0;
+		goto done;
+	}
+
+
+
+	// а теперь поработаем с сериализованным образом:
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 
@@ -3310,32 +3384,26 @@ int main(int argc, char** argv)
 //	assert (fp < heap.end);// gc needed during heap import
 
 	// все, программа в памяти, можно освобождать исходник
-#if EMBEDDED_VM
 	if (release)
-		release(language);
-#else
-	if (bootstrap != language)
-		free(bootstrap);
-#endif
+		release(bootstrap);
 
 	// ===============================================================
 
 	struct args args; // аргументы для запуска
 	args.vm = handle; // виртуальной машины OL
+	args.vm->fp = fp;
 
 	// а это инициализационные аргументы для памяти виртуальной машины
 	args.heap.begin    = heap.begin;
 	args.heap.end      = heap.end;
 	args.heap.genstart = heap.genstart;
 	args.max_heap_size = max_heap_size; // max heap size in MB
-	args.fp = fp;
 	args.userdata      = (word*) oargs;
 
-	void* result = 0; // результат выполнения.
 //	if (_isatty(_fileno(stdin))) // is character device (not redirected) (interactive session)
 //		fputs("(define *interactive* #t)\n", stdin);
 
-#if EMBEDDED_VM
+#if 0 //EMBEDDED_VM
 	args.signal = 0;
 	if (pthread_create(&handle->tid, NULL, &runtime, &args) == 0) {
 		while (!args.signal)
@@ -3350,6 +3418,7 @@ int main(int argc, char** argv)
 	set_blocking(1, 0);
 	set_blocking(2, 0);
 #	endif
+
 	result = runtime(&args);
 #endif
 
@@ -3365,15 +3434,10 @@ done:
 #endif//win32
 #endif
 
-
-#if EMBEDDED_VM
-	return NULL;
-#else
 	return (int)(long)result;
-#endif
 }
 
-#if EMBEDDED_VM
+#if 0 //EMBEDDED_VM
 
 /*void eval(char* message, char* response, int length)
 {
@@ -3409,10 +3473,3 @@ int vm_feof(OL* vm)
 }
 #endif//EMBEDDED_VM
 
-
-
-// embedded example
-__attribute__((__visibility__("default")))
-word some_alloc(word* fp) {
-	return new_pair(F(1), F(2));
-}

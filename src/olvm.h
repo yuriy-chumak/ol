@@ -2,6 +2,11 @@
 #ifndef __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 #define	__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 
+//-- common header
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 // тут игра слов OL:
 //	сокращение от Owl-Lisp
 //	нулевой порог вхождения (0L - число 0) (Lisp - очень простой язык)
@@ -11,15 +16,15 @@ struct OL;
 
 // defaults. please don't change. use -DOPTIONSYMBOL commandline option instead
 #ifndef HAS_SOCKETS
-#define HAS_SOCKETS 0 // system sockets support
+#define HAS_SOCKETS 1 // system sockets support
 #endif
 
 #ifndef HAS_DLOPEN
-#define HAS_DLOPEN 0  // dlopen/dlsym support
+#define HAS_DLOPEN 1  // dlopen/dlsym support
 #endif
 
 #ifndef HAS_PINVOKE
-#define HAS_PINVOKE 0 // pinvoke (for dlopen/dlsym) support
+#define HAS_PINVOKE 1 // pinvoke (for dlopen/dlsym) support
 #endif
 
 #ifndef EMBEDDED_VM   // use as embedded vm in project
@@ -32,25 +37,24 @@ struct OL;
 
 //-- end of options
 
-//-- common header
-#ifdef __cplusplus
-	extern "C" {
-#endif
 
 // todo: add vm_free or vm_delete or vm_destroy or something
 
-#ifdef EMBEDDED_VM
-struct OL*
-vm_new(unsigned char* language, void (*release)(void*));
+//struct OL*
+int
+vm_new(unsigned char* bootstrap, void (*release)(void*));
 
+#if 0 //EMBEDDED_VM
 //int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
 
 int vm_puts(struct OL* vm, char *message, int n);
 int vm_gets(struct OL* vm, char *message, int n);
 int vm_feof(struct OL* vm);  // все ли забрали из входящего буфера
+#endif
+
 
 #ifdef __cplusplus
-struct OL
+/*class OL
 {
 private:
 	OL* vm;
@@ -62,11 +66,9 @@ public:
 
 	int puts(char *message, int n) { vm_puts(vm, message, n);
 	int gets(char *message, int n) { vm_gets(vm, message, n);
-};
+};*/
 #else
 typedef struct OL OL;
-#endif
-
 #endif
 
 //-- end of header
