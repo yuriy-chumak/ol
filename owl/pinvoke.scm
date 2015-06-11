@@ -117,8 +117,14 @@
 ; Do not delete object when closed.
 (define RTLD_NODELETE	#x01000)
 
+(define pinvoke (sys-prim 1031 (sys-prim 1030 '() 1 #false) "pinvoke" #false))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать 
+(define (dlsym+ dll name)
+   (let ((function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+      (lambda args
+         (sys-prim 1032 function args #false))))
+         
 (define (dlsym  dll type name . prototype)
 ;  (print "dlsym: " name)
    ; todo: add arguments to the call of function and use as types
@@ -129,8 +135,10 @@
          (function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
       (lambda args
 ;        (print "pinvoke: " name)
-         (sys-prim 1032 function args rtty))))
-(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
+         (sys-prim 1032 pinvoke (list function rtty args) #false))))
+;         (sys-prim 1032 function args rtty))))
+
+;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
 ;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl         
 ;;(define (dlsym-c type dll name . prototype)
 ;;; todo: отправлять тип функции третим параметром (sys-prim 1031) и в виртуальной машине

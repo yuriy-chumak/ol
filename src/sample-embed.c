@@ -12,9 +12,12 @@
 
 // embedded example
 __attribute__((__visibility__("default")))
-word* sample_add(OL* ol, word* fa, word* fb) {
+word* sample_add(OL* ol, word arguments) {
 	word* fp; // memory pointer
 	fp = ol->fp;
+
+	word* fa = (word*)car(arguments); arguments = cdr(arguments);
+	word* fb = (word*)car(arguments); arguments = cdr(arguments);
 
 	// math
 	int a = sftoi(fa);
@@ -36,12 +39,8 @@ int main(int argc, char** argv)
 
 	return vm_new(
 			"(import (owl pinvoke) (owl io))"
-//			"(define THIS 44)"
-			"(define RAWP 45)"
 			"(define % (dlopen '() RTLD_LAZY))" // get own handle
-			// 44 - memory top pointer (fp) //todo: change to OL*
-			// 45 - direct mem pointer
-			"(define sample_add (dlsym+ % (__cdecl RAWP) \"sample_add\"  RAWP RAWP))"
+			"(define sample_add (dlsym+ % \"sample_add\"))"
 			"(print \"sample_add: \""
 			"   (sample_add 1 2))"
 			"(halt 1)", 0);

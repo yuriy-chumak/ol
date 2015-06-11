@@ -2381,20 +2381,19 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 
 
-#if HAS_PINVOKE
-				// -=( pinvoke )=-------------------------------------------------
-				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
-				case 1030: { // (dlopen filename mode)
+#if HAS_DLOPEN
+				// -=( dlopen )=-------------------------------------------------
+				case 1030: { // (dlopen filename mode #false)
 					word *filename = (word*)a;
 					int mode = (int) uftoi(b);
 
 					void* module;
-					if (is_pointer(filename) && hdrtype(*filename) == TSTRING)
-						module = dlopen((char*) &filename[1], mode);
-					else if ((word)filename == INULL)
+					if ((word) filename == INULL)
 						module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
+					else if (is_pointer(filename) && hdrtype(*filename) == TSTRING)
+						module = dlopen((char*) &filename[1], mode);
 					else
-						break; // invalid filename
+						break; // invalid filename, return #false
 
 					if (module)
 						result = (word) new_port(module);
@@ -2402,7 +2401,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 //						fprintf(stderr, "dlopen failed: %s\n", dlerror());
 					break;
 				}
-				case 1031: { // (dlsym module function)
+				case 1031: { // (dlsym module function #false)
 					word* A = (word*)a;
 
 					CHECK(is_port(A), A, SYSCALL);
@@ -2423,392 +2422,24 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 				}
 
-				// вызвать библиотечную функцию
-				case 1032: { // pinvoke
-					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
-					word call(int convention, void* function, word args[], int count) {
-						// todo: ограничиться количеством функций поменьше
-						//	а можно сделать все в одной switch:
-						// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
-						// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
-						// todo: проанализировать частоту количества аргументов и переделать все в
-						//   бинарный if
-
-						// __attribute__((stdcall))
-/*						__stdcall // gcc style for lambdas in pure C
-						int (*stdcall[])(char*) = {
-								({ int $(char *str){ printf("Test: %s\n", str); } $; })
-						};*/
-						#define CALL(conv) \
-							switch (count) {\
-							case  0: return ((conv word (*)  ())\
-											function) ();\
-							case  1: return ((conv word (*)  (word))\
-											function) (args[0]);\
-							case  2: return ((conv word (*)  (word, word)) function)\
-											(args[0], args[1]);\
-							case  3: return ((conv word (*)  (word, word, word)) function)\
-											(args[0], args[1], args[2]);\
-							case  4: return ((conv word (*)  (word, word, word, word)) function)\
-											(args[0], args[1], args[2], args[3]);\
-							case  5: return ((conv word (*)  (word, word, word, word, word))\
-		                                     function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                                                args[ 4]);\
-							case  6: return ((conv word (*)  (word, word, word, word, word, word))\
-							                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-							                            args[ 4], args[ 5]);\
-							case  7: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6]);\
-							case  8: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6], args[ 7]);\
-							case  9: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-														args[ 8]);\
-							case 10: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word, word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-														args[ 8], args[ 9]);\
-							case 11: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word, word, word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-														args[ 8], args[ 9], args[10]);\
-							case 12: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word, word, word, word))\
-											 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-													    args[ 4], args[ 5], args[ 6], args[ 7], \
-													    args[ 8], args[ 9], args[10], args[11]);\
-							case 18: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word, word, word, word, \
-															  word, word, word, word, word, word))\
-											 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-													    args[ 4], args[ 5], args[ 6], args[ 7], \
-													    args[ 8], args[ 9], args[10], args[11], \
-													    args[12], args[13], args[14], args[15], \
-													    args[16], args[17]);\
-							default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", count);\
-								break;\
-							}
-#ifdef __linux__
-						#define __cdecl
-						CALL(__cdecl);
-#else
-						//todo: set __cdecl = 0, and __stdcall = 1
-						switch (convention) {
-						case 0:
-							CALL(__stdcall);
-							break;
-						case 1:
-							CALL(__cdecl);
-							break;
-						case 2:
-							CALL(__fastcall);
-							break;
-						default:
-							fprintf(stderr, "Unsupported calling convention %d", convention >> 6);
-							break;
-						}
-#endif
-						return 0;
-					}
-					long from_int(word* arg) {
-						// так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит (первые два члена)
-						assert (immediatep(arg[1]));
-						assert (allocp(arg[2]));
-
-						return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << (sizeof(word) * 8 - 8));
-					}
-					float from_int_to_float(word* arg) {
-						// читаем длинное число в float формат
-						assert (immediatep(arg[1]));
-						float f = (unsigned long)arg[1] >> 8;
-						float mul = 0x1000000; // 1 << 24
-						while (allocp(arg[2])) {
-							arg = (word*)arg[2];
-							f += (unsigned long)(arg[1] >> 8) * mul;
-							mul *= 0x1000000;
-						}
-						assert (arg[2] == INULL);
-
-						return f;
-					}
-					float from_rational(word* arg) {
-						word* pa = (word*)arg[1];
-						word* pb = (word*)arg[2];
-
-						float a, b;
-						if (immediatep(pa))
-							a = sftoi(pa);
-						else {
-							switch (hdrtype(pa[0])) {
-							case TINT:
-								a = +from_int_to_float(pa);
-								break;
-							case TINTN:
-								a = -from_int_to_float(pa);
-								break;
-							}
-						}
-						if (immediatep(pb))
-							b = sftoi(pb);
-						else {
-							switch (hdrtype(pb[0])) {
-							case TINT:
-								b = +from_int_to_float(pb);
-								break;
-							case TINTN:
-								b = -from_int_to_float(pb);
-								break;
-							}
-						}
-
-						return (a / b);
-					}
-
-
-					// a - function address
+				// вызвать функцию (special case - отправить this)
+				case 1032: { // (pinvoke function args #false)
+					// a - function address (port)
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
-					// c - '(return-type . argument-types-list)
 					word* A = (word*)a;
 					word* B = (word*)b;
-					word* C = (word*)c;
+					word* C = (word*)c; // reserved
 
 					CHECK(hdrtype(A[0]) == TPORT, A, 1032);
 					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
-					assert ((word)C != INULL && hdrtype(C[0]) == TPAIR);
-					// C[1] = return-type
-					// C[2] = argument-types
+					assert ((word)C == IFALSE);
 
-					word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
-					void *function = (void*) (A[1]);  assert (function);
-					int returntype = imm_val (C[1]);
+					void *function = (void*) car(A);  assert (function);
 
-					long got;   // результат вызова функции
-					int embed = 0;  // это вызов через THIS
-					int i = 0;     // количество аргументов
-					word* p = (word*)B;   // сами аргументы
-					word* t = (word*)C[2];
-
-					// special case - отправить this
-					// ограничим THIS первым параметром вызова
-					if (is_pointer(t) && hdrtype(*t) == TPAIR && uftoi(car(t)) == TTHIS) {
-						args[i++] = (word) ol;//this
-						embed = 1;
-						t = (word*) car(cdr(t)); // (cdr t)
-					}
-
-					while ((word)p != INULL) { // пока есть аргументы
-						assert (hdrtype(*p) == TPAIR); // assert list
-						assert (hdrtype(*t) == TPAIR); // assert list
-
-						int type = imm_val (t[1]);
-						word* arg = (word*) p[1]; // car
-
-/*						// todo: add argument overriding as PAIR as argument value
-						if (hdrtype(p[1]) == TPAIR) {
-							type = imm_val (((word*)p[1])[1]);
-							arg = ((word*)p[1])[2];
-						}*/
-
-						// destination type
-						switch (type) {
-						case TFIX:
-						case TINT:
-							if (immediatep(arg))
-								args[i] = sftoi(arg);
-							else
-							switch (hdrtype(arg[0])) {
-							case TINT: // source type
-								args[i] = +from_int(arg);
-								break;
-							case TINTN:
-								args[i] = -from_int(arg);
-								break;
-							case TRATIONAL:
-								args[i] =  (int)from_rational(arg);
-								break;
-							// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
-							case TPORT:
-							case TBVEC:
-								args[i] = arg[1];
-								break;
-							default:
-								args[i] = 0; // todo: error
-							}
-							break;
-
-						case TFLOAT:
-							if (immediatep(arg))
-								*(float*)&args[i] = (float)sftoi(arg);
-							else
-							switch (hdrtype(arg[0])) {
-							case TINT: // source type
-								*(float*)&args[i] = +(float)from_int(arg);
-								break;
-							case TINTN:
-								*(float*)&args[i] = -(float)from_int(arg);
-								break;
-							case TRATIONAL:
-								*(float*)&args[i] = (float)from_rational(arg);
-								break;
-							default:
-								*(float*)&args[i] = (float)0.0; // todo: error, return infinity, maybe, or NaN
-							}
-							break;
-						case TDOUBLE:
-							if (immediatep(arg))
-								*(double*)&args[i++] = (double)sftoi(arg);
-							else
-							switch (hdrtype(arg[0])) {
-							case TINT: // source type
-								*(double*)&args[i++] = +(double)from_int(arg);
-								break;
-							case TINTN:
-								*(double*)&args[i++] = -(double)from_int(arg);
-								break;
-							case TRATIONAL:
-								*(double*)&args[i++] = (double)from_rational(arg);
-								break;
-							default:
-								*(double*)&args[i++] = (double)0.0; // todo: error, same as float
-							}
-							break;
-
-						// запрос порта - это запрос значения порта
-						// todo: добавить тип "указатель на порт"
-						case TPORT:
-							if ((word)arg == INULL)
-								args[i] = (word) (void*)0;
-							else
-							switch (hdrtype(arg[0])) {
-							case TPORT:
-								args[i] = arg[1];
-								break;
-							default:
-								args[i] = 0; // todo: error
-							}
-							break;
-
-						case TBVEC:
-						case TSTRING:
-							if ((word)arg == INULL)
-								args[i] = (word) (void*)0;
-//#if sizeof(void*) = 8
-//								args[++i] = (word) (void*)0;
-//#endif
-							else
-							switch (hdrtype(arg[0])) {
-							case TBVEC:
-							case TSTRING:
-							case TPORT:
-//							case TCONST:
-								// in arg[0] size got size of string
-								args[i] = (word)(&arg[1]);
-								break;
-							default:
-								args[i] = 0; // todo: error
-							}
-							break;
-						case TTUPLE:
-							if ((word)arg == INULL)
-								args[i] = (word) (void*)0;
-							else
-							switch (hdrtype(arg[0])) {
-/*							case TCONST:
-								switch ((word)arg) {
-								case INULL:
-									args[i] = (word) (void*)0;
-								}*/
-							case TTUPLE: { // ?
-								// tuple, это последовательность, а не список!
-								// todo: сделать функцию cast или что-то такое
-								// что-бы возвращать список, какой мне нужен
-
-								// аллоцировать массив и сложить в него указатели на элементы кортежа
-								int size = hdrsize(arg[0]);
-								*fp++ = make_raw_header(size, TBVEC, 0);
-								args[i] = (word)fp; // ссылка на массив указателей на элементы
-
-								word* src = &arg[1];
-								while (--size)
-									*fp++ = (word)((word*)*src++ + 1);
-	//								int j;
-	//								for (j = 1; j < size; j++)
-								}
-								break;
-							default:
-								args[i] = INULL; // todo: error
-							}
-							break;
-						case TRAWP:
-							args[i] = (word)arg;
-							break;
-						default:
-							args[i] = 0;
-							break;
-						}
-
-						p = (word*)p[2]; // (cdr p)
-						t = (word*)t[2]; // (cdr t)
-						i++;
-					}
-					assert ((word)t == INULL); // количество аргументов совпало!
-
-					if (embed) {
-						ol->fp = fp;
-					}
-					got = call(returntype >> 6, function, args, i);
-					if (embed) {
-						fp = ol->fp;
-					}
-
-					switch (returntype & 0x3F) {
-						case TINT:
-							// todo: переделать!
-							if (got > 0xFFFFFF) {
-								// прошу внимания!
-								//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-								word* hi = fp; fp += 3; // high 8 bits
-								hi[0] = HINT;
-								hi[1] = make_immediate(got >> 24, 0); // type-fx+
-								hi[2] = INULL;
-								word* lo = fp; fp += 3; // low 24 bits
-								lo[0] = HINT;
-								lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
-								lo[2] = (word)hi;
-
-								result = (word)lo;
-								break;
-							}
-							// else goto case 0 (иначе вернем type-fx+)
-						case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-							result = itosf(got);
-							break;
-						case TPORT:
-							result = (word) new_port(got);
-							break;
-						case TRAWP:
-							result = got;
-							break;
-
-						case TSTRING:
-							if (got != 0)
-								result = (word) new_string (lenn((char*)got, FMAX+1), (char*)got);
-							break;
-						case TVOID:
-							result = INULL;
-							break;
-//                      todo: TRATIONAL
-					}
-
-					break; // case 32
+					ol->fp = fp;
+					result = ((word (*)  (OL*, word*))function) (ol, B);
+					fp = ol->fp;
+					break;
 				}
 #endif//HAS_PINVOKE
 
@@ -3473,3 +3104,386 @@ int vm_feof(OL* vm)
 }
 #endif//EMBEDDED_VM
 
+
+#if HAS_PINVOKE
+//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
+word pinvoke(OL* self, word arguments)
+{
+	word* fp, result;
+
+	// get memory pointer
+	fp = self->fp;
+
+	// http://byteworm.com/2010/10/12/container/ (lambdas in c)
+	word call(int convention, void* function, word args[], int count) {
+		// todo: ограничиться количеством функций поменьше
+		//	а можно сделать все в одной switch:
+		// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
+		// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
+		// todo: проанализировать частоту количества аргументов и переделать все в
+		//   бинарный if
+
+		// __attribute__((stdcall))
+/*						__stdcall // gcc style for lambdas in pure C
+		int (*stdcall[])(char*) = {
+				({ int $(char *str){ printf("Test: %s\n", str); } $; })
+		};*/
+		#define CALL(conv) \
+			switch (count) {\
+			case  0: return ((conv word (*)  ())\
+							function) ();\
+			case  1: return ((conv word (*)  (word))\
+							function) (args[0]);\
+			case  2: return ((conv word (*)  (word, word)) function)\
+							(args[0], args[1]);\
+			case  3: return ((conv word (*)  (word, word, word)) function)\
+							(args[0], args[1], args[2]);\
+			case  4: return ((conv word (*)  (word, word, word, word)) function)\
+							(args[0], args[1], args[2], args[3]);\
+			case  5: return ((conv word (*)  (word, word, word, word, word))\
+                             function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+                                        args[ 4]);\
+			case  6: return ((conv word (*)  (word, word, word, word, word, word))\
+			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+			                            args[ 4], args[ 5]);\
+			case  7: return ((conv word (*)  (word, word, word, word, word, word, \
+					                          word))\
+					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+					        		    args[ 4], args[ 5], args[ 6]);\
+			case  8: return ((conv word (*)  (word, word, word, word, word, word, \
+					                          word, word))\
+					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+					        		    args[ 4], args[ 5], args[ 6], args[ 7]);\
+			case  9: return ((conv word (*)  (word, word, word, word, word, word, \
+					                          word, word, word))\
+					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+					        		    args[ 4], args[ 5], args[ 6], args[ 7],\
+										args[ 8]);\
+			case 10: return ((conv word (*)  (word, word, word, word, word, word, \
+					                          word, word, word, word))\
+					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+					        		    args[ 4], args[ 5], args[ 6], args[ 7],\
+										args[ 8], args[ 9]);\
+			case 11: return ((conv word (*)  (word, word, word, word, word, word, \
+					                          word, word, word, word, word))\
+					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+					        		    args[ 4], args[ 5], args[ 6], args[ 7],\
+										args[ 8], args[ 9], args[10]);\
+			case 12: return ((conv word (*)  (word, word, word, word, word, word, \
+					                          word, word, word, word, word, word))\
+							 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
+									    args[ 4], args[ 5], args[ 6], args[ 7], \
+									    args[ 8], args[ 9], args[10], args[11]);\
+			case 18: return ((conv word (*)  (word, word, word, word, word, word, \
+					                          word, word, word, word, word, word, \
+											  word, word, word, word, word, word))\
+							 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
+									    args[ 4], args[ 5], args[ 6], args[ 7], \
+									    args[ 8], args[ 9], args[10], args[11], \
+									    args[12], args[13], args[14], args[15], \
+									    args[16], args[17]);\
+			default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", count);\
+				break;\
+			}
+#ifdef __linux__
+		#define __cdecl
+		CALL(__cdecl);
+#else
+		//todo: set __cdecl = 0, and __stdcall = 1
+		switch (convention) {
+		case 0:
+			CALL(__stdcall);
+			break;
+		case 1:
+			CALL(__cdecl);
+			break;
+		case 2:
+			CALL(__fastcall);
+			break;
+		default:
+			fprintf(stderr, "Unsupported calling convention %d", convention >> 6);
+			break;
+		}
+#endif
+		return 0;
+	}
+	long from_int(word* arg) {
+		// так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит (первые два члена)
+		assert (immediatep(arg[1]));
+		assert (allocp(arg[2]));
+
+		return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << (sizeof(word) * 8 - 8));
+	}
+	float from_int_to_float(word* arg) {
+		// читаем длинное число в float формат
+		assert (immediatep(arg[1]));
+		float f = (unsigned long)arg[1] >> 8;
+		float mul = 0x1000000; // 1 << 24
+		while (allocp(arg[2])) {
+			arg = (word*)arg[2];
+			f += (unsigned long)(arg[1] >> 8) * mul;
+			mul *= 0x1000000;
+		}
+		assert (arg[2] == INULL);
+
+		return f;
+	}
+	float from_rational(word* arg) {
+		word* pa = (word*)arg[1];
+		word* pb = (word*)arg[2];
+
+		float a, b;
+		if (immediatep(pa))
+			a = sftoi(pa);
+		else {
+			switch (hdrtype(pa[0])) {
+			case TINT:
+				a = +from_int_to_float(pa);
+				break;
+			case TINTN:
+				a = -from_int_to_float(pa);
+				break;
+			}
+		}
+		if (immediatep(pb))
+			b = sftoi(pb);
+		else {
+			switch (hdrtype(pb[0])) {
+			case TINT:
+				b = +from_int_to_float(pb);
+				break;
+			case TINTN:
+				b = -from_int_to_float(pb);
+				break;
+			}
+		}
+
+		return (a / b);
+	}
+
+
+	// a - function address
+	// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
+	// c - '(return-type . argument-types-list)
+	word* A = (word*)car(arguments); arguments = cdr(arguments); // function
+	word* B = (word*)car(arguments); arguments = cdr(arguments); // rtty
+	word* C = (word*)car(arguments); arguments = cdr(arguments); // args
+
+//	assert(hdrtype(A[0]) == TPORT, A, 1032);
+	assert ((word)B != INULL && hdrtype(B[0]) == TPAIR);
+	assert ((word)C == INULL || hdrtype(C[0]) == TPAIR);
+	// C[1] = return-type
+	// C[2] = argument-types
+
+	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
+	void *function = (void*)car(A);  assert (function);
+	int returntype = uftoi(car(B));
+
+	long got;   // результат вызова функции
+	int i = 0;     // количество аргументов
+	word* p = (word*)C;   // сами аргументы
+	word* t = (word*)cdr(B); // rtty
+
+	while ((word)p != INULL) { // пока есть аргументы
+		assert (hdrtype(*p) == TPAIR); // assert list
+		assert (hdrtype(*t) == TPAIR); // assert list
+
+		int type = uftoi(car(t));
+		word* arg = (word*)car(p);
+
+/*						// todo: add argument overriding as PAIR as argument value
+		if (hdrtype(p[1]) == TPAIR) {
+			type = imm_val (((word*)p[1])[1]);
+			arg = ((word*)p[1])[2];
+		}*/
+
+		// destination type
+		switch (type) {
+		case TFIX:
+		case TINT:
+			if (immediatep(arg))
+				args[i] = sftoi(arg);
+			else
+			switch (hdrtype(arg[0])) {
+			case TINT: // source type
+				args[i] = +from_int(arg);
+				break;
+			case TINTN:
+				args[i] = -from_int(arg);
+				break;
+			case TRATIONAL:
+				args[i] =  (int)from_rational(arg);
+				break;
+			// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
+			case TPORT:
+			case TBVEC:
+				args[i] = arg[1];
+				break;
+			default:
+				args[i] = 0; // todo: error
+			}
+			break;
+
+		case TFLOAT:
+			if (immediatep(arg))
+				*(float*)&args[i] = (float)sftoi(arg);
+			else
+			switch (hdrtype(arg[0])) {
+			case TINT: // source type
+				*(float*)&args[i] = +(float)from_int(arg);
+				break;
+			case TINTN:
+				*(float*)&args[i] = -(float)from_int(arg);
+				break;
+			case TRATIONAL:
+				*(float*)&args[i] = (float)from_rational(arg);
+				break;
+			default:
+				*(float*)&args[i] = (float)0.0; // todo: error, return infinity, maybe, or NaN
+			}
+			break;
+		case TDOUBLE:
+			if (immediatep(arg))
+				*(double*)&args[i++] = (double)sftoi(arg);
+			else
+			switch (hdrtype(arg[0])) {
+			case TINT: // source type
+				*(double*)&args[i++] = +(double)from_int(arg);
+				break;
+			case TINTN:
+				*(double*)&args[i++] = -(double)from_int(arg);
+				break;
+			case TRATIONAL:
+				*(double*)&args[i++] = (double)from_rational(arg);
+				break;
+			default:
+				*(double*)&args[i++] = (double)0.0; // todo: error, same as float
+			}
+			break;
+
+		// запрос порта - это запрос значения порта
+		// todo: добавить тип "указатель на порт"
+		case TPORT:
+			if ((word)arg == INULL)
+				args[i] = (word) (void*)0;
+			else
+			switch (hdrtype(arg[0])) {
+			case TPORT:
+				args[i] = arg[1];
+				break;
+			default:
+				args[i] = 0; // todo: error
+			}
+			break;
+
+		case TBVEC:
+		case TSTRING:
+			if ((word)arg == INULL)
+				args[i] = (word) (void*)0;
+//#if sizeof(void*) = 8
+//								args[++i] = (word) (void*)0;
+//#endif
+			else
+			switch (hdrtype(arg[0])) {
+			case TBVEC:
+			case TSTRING:
+			case TPORT:
+//			case TCONST:
+				// in arg[0] size got size of string
+				args[i] = (word)(&arg[1]);
+				break;
+			default:
+				args[i] = 0; // todo: error
+			}
+			break;
+		case TTUPLE:
+			if ((word)arg == INULL)
+				args[i] = (word) (void*)0;
+			else
+			switch (hdrtype(arg[0])) {
+/*							case TCONST:
+				switch ((word)arg) {
+				case INULL:
+					args[i] = (word) (void*)0;
+				}*/
+			case TTUPLE: { // ?
+				// tuple, это последовательность, а не список!
+				// todo: сделать функцию cast или что-то такое
+				// что-бы возвращать список, какой мне нужен
+
+				// аллоцировать массив и сложить в него указатели на элементы кортежа
+				int size = hdrsize(arg[0]);
+				*fp++ = make_raw_header(size, TBVEC, 0);
+				args[i] = (word)fp; // ссылка на массив указателей на элементы
+
+				word* src = &arg[1];
+				while (--size)
+					*fp++ = (word)((word*)*src++ + 1);
+//								int j;
+//								for (j = 1; j < size; j++)
+				}
+				break;
+			default:
+				args[i] = INULL; // todo: error
+			}
+			break;
+		case TRAWP:
+			args[i] = (word)arg;
+			break;
+		default:
+			args[i] = 0;
+			break;
+		}
+
+		p = (word*)p[2]; // (cdr p)
+		t = (word*)t[2]; // (cdr t)
+		i++;
+	}
+	assert ((word)t == INULL); // количество аргументов совпало!
+
+	got = call(returntype >> 6, function, args, i);
+
+	switch (returntype & 0x3F) {
+		case TINT:
+			// todo: переделать!
+			if (got > 0xFFFFFF) {
+				// прошу внимания!
+				//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
+				word* hi = fp; fp += 3; // high 8 bits
+				hi[0] = HINT;
+				hi[1] = make_immediate(got >> 24, 0); // type-fx+
+				hi[2] = INULL;
+				word* lo = fp; fp += 3; // low 24 bits
+				lo[0] = HINT;
+				lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
+				lo[2] = (word)hi;
+
+				result = (word)lo;
+				break;
+			}
+			// else goto case 0 (иначе вернем type-fx+)
+		case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
+			result = itosf(got);
+			break;
+		case TPORT:
+			result = (word) new_port(got);
+			break;
+		case TRAWP:
+			result = got;
+			break;
+
+		case TSTRING:
+			if (got != 0)
+				result = (word) new_string (lenn((char*)got, FMAX+1), (char*)got);
+			break;
+		case TVOID:
+			result = INULL;
+			break;
+//                      todo: TRATIONAL
+	}
+
+	self->fp = fp;
+
+	return result;
+}
+#endif//HAS_PINVOKE

@@ -60,7 +60,7 @@
   )
 
   (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl list) (owl string)
       (owl math) (owl vector)
       (owl error)

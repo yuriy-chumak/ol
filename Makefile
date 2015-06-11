@@ -50,10 +50,10 @@ config/HAS_SOCKETS:
 
 ol: src/olvm.c src/boot.c config
 	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol \
-	-DHAS_DLOPEN=`cat config/HAS_DLOPEN` \
+	-DHAS_DLOPEN=`cat config/HAS_DLOPEN` -ldl \
 	-DHAS_SOCKETS=`cat config/HAS_SOCKETS` \
-	-DHAS_PINVOKE=1 -ldl
-	
+	-DHAS_PINVOKE=1
+
 vm: src/olvm.c
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -O3 -o vm
 
