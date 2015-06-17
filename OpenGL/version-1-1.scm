@@ -31,7 +31,7 @@
 ; Dependencies
 ;	None
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
 
@@ -135,7 +135,7 @@
 ; Dependencies
 ;	None
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
 
@@ -180,7 +180,7 @@
 ; Dependencies
 ;	EXT_blend_minmax affects the definition of this extension
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
       
@@ -244,7 +244,7 @@
 ; Dependencies
 ;	None
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
       
@@ -290,7 +290,7 @@
 ;	SGIS_texture_filter4 affects the definition of this extension.
 ;	EXT_subtexture affects the definition of this extension.
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
 ;	EXT_texture is required.
@@ -342,7 +342,7 @@
 ;	EXT_abgr affects the definition of this extension
 ;	EXT_texture3D affects the definition of this extension
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
 ;	EXT_texture is required.
@@ -388,7 +388,7 @@
 ; Dependencies
 ;	EXT_texture3D affects the definition of this extension
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
 
@@ -514,7 +514,7 @@
 
 ; ---------------------------------------------------------------------------
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
 

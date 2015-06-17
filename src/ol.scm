@@ -412,7 +412,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       null?  null 
       time
       time-ms
-      halt
+      halt exec
       seccomp
       apply
       call/cc

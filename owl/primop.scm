@@ -10,8 +10,8 @@
       (exports (lang vm))
 
       ;; extra ops
-      halt wait
-      
+      halt wait exec
+
       set-ticker-value
       set-memory-limit get-word-size get-memory-limit start-seccomp)
 
@@ -59,6 +59,8 @@
 ;      21 kill
 
 
+      ;; used syscalls
+      (define (exec function . args) (sys-prim 59 function args #false))
 
       ;; special things exposed by the vm
       (define (set-memory-limit n) (sys-prim 1007 n n n))

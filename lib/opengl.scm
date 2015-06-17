@@ -1,7 +1,7 @@
 (define-library (lib opengl)
    (export
       (exports (OpenGL version-1-2))
-      
+
       GenTextures ; byte-vector (number)
 
       ; todo: move to the (lib windows)

@@ -396,7 +396,7 @@
 ; ============================================================================
 ; == implementation ==========================================================
    (import
-      (owl defmac) (owl io) (owl string)
+      (r5rs base) (owl io) (owl string)
       (owl pinvoke))
    (begin
 
@@ -409,7 +409,9 @@
 ;      (3 "GLKit")))      ; macos, https://developer.apple.com/library/mac/documentation/graphicsimaging/conceptual/OpenGL-MacProgGuide/opengl_intro/opengl_intro.html
 
 (define    GL_VERSION_1_0    1)
-(define % (dlopen GL_LIBRARY 0))
+(define % (or
+   (dlopen "opengl32" RTLD_LAZY)
+   (dlopen "libGL.so" RTLD_LAZY)))
 	
 ; поддержка расширений :
 ;(define _glGetProcAddress_address
@@ -417,15 +419,17 @@
 ;     (1 (dlsym % type-handle "wglGetProcAddress"))
 ;     (2 (dlsym % type-handle "glXGetProcAddress"))
 ;     (3 "GLKit")))
-(define GetProcAddress (dlsym % type-port "wglGetProcAddress" type-string))
-     
+(define GetProcAddress (or
+   (dlsym % type-port "wglGetProcAddress" type-string)
+   (dlsym % type-port "glXGetProcAddress" type-string)))
+
 (define (glGetProcAddress type name . prototype)
    (let ((rtty (cons type prototype))
          (function (GetProcAddress (c-string name)))) ; todo: избавиться от (c-string)
+      (if function
       (lambda args
 ;        (print "opengl pinvoke: " (c-string name))
-         (sys-prim 1032 function args rtty))))
-
+         (exec pinvoke function rtty args)))))
 
 ;//	Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
 ;// Правая. x-направо, y-вверх, z-к себе

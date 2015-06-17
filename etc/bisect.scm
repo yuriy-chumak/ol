@@ -12,7 +12,7 @@
    )
 
    (import
-      (owl defmac)
+      (r5rs base)
       (owl math))
 
    (begin

@@ -64,7 +64,7 @@
 //	все остальное - макросы
 
 #include <assert.h>
-#include <unistd.h> // posix
+#include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #include <stddef.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -140,6 +140,7 @@
 //#define ESRCH 3
 typedef HANDLE pthread_t;
 typedef struct pthread_attr_t {} pthread_attr_t;
+
 static int
 pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
                void *(*function)(void *), void * argument)
@@ -344,7 +345,7 @@ int dlclose(void *handle)
 }*/
 
 static
-void *dlsym  (void *handle, const char *name)
+void *dlsym(void *handle, const char *name)
 {
 	FARPROC function;
 
@@ -431,14 +432,6 @@ typedef struct object
 } __attribute__ ((aligned(sizeof(word)), packed)) object; // or  ?
 #pragma pack(pop)*/
 
-/*typedef struct pair
-{
-	word header;
-	word *car;
-	word *cdr;
-} pair;*/
-
-
 #define IPOS                        8  // offset of immediate payload
 #define SPOS                        16 // offset of size bits in header
 #define TPOS                        2  // offset of type bits in header
@@ -454,9 +447,9 @@ typedef struct object
 #define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #if __amd64__
-#define bign_t                      __int128
+#define big                      __int128
 #else
-#define bign_t                      long long //__int64
+#define big                      long long //__int64
 #endif
 
 #define RAWBIT                      ((1 << RPOS))
@@ -1602,14 +1595,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		case CAR: {  // car a r:
 			word T = A0;
 			CHECK(is_pair(T), T, CAR);
-			A1 = ((word*)T)[1];
+			A1 = car(T); //((word*)T)[1];
 			ip += 2; break;
 		}
 
 		case CDR: {  // car a r:
 			word T = A0;
-			CHECK(is_pair(T), T, CDR); // bug? was 52 instead of CDR(53)
-			A1 = ((word*)T)[2];
+			CHECK(is_pair(T), T, CDR);
+			A1 = cdr(T); //((word*)T)[2];
 			ip += 2; break;
 		}
 
@@ -1670,7 +1663,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				if (is_raw(hdr) || hdrsize(hdr) < pos)
 					A3 = IFALSE;
 				else {
-					word size = hdrsize(hdr);
+					word size = hdrsize (hdr);
 					word *newobj = new (size);
 					word val = A2;
 					for (int i = 0; i <= size; i++)
@@ -1682,7 +1675,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		}
 
 		case EQ: // eq a b r
-			A2 = TRUEFALSE(A0 == A1);
+			A2 = (A0 == A1) ? ITRUE : IFALSE;
 			ip += 3; break;
 
 		// АЛУ (арифметическо-логическое устройство)
@@ -1690,29 +1683,29 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			word r = uftoi(A0) + uftoi(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
-
 			ip += 4; break; }
 		case SUBTRACTION: { // fx- a b  r u, args prechecked, signs ignored
 			word r = (uftoi(A0) | HIGHBIT) - uftoi(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
-
 			ip += 4; break; }
 
 		case MULTIPLICATION: { // fx* a b l h
-			bign_t r = (bign_t) uftoi(A0) * (bign_t) uftoi(A1);
+			big r = (big) uftoi(A0) * (big) uftoi(A1);
 			A2 = F(r & FMAX);
-			A3 = F((r>>FBITS) & FMAX);
-
+			A3 = F(r>>FBITS); //  & FMAX)
 			ip += 4; break; }
 		case DIVISION: { // fx/ ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
-			bign_t a = (((bign_t) uftoi(A0)) << FBITS) | (bign_t) uftoi(A1);
-			word b = uftoi(A2);
+			big a = (big) uftoi(A1) | (((big) uftoi(A0)) << FBITS);
+			big b = (big) uftoi(A2);
 
-			bign_t q = a / b;
+			// http://stackoverflow.com/questions/7070346/c-best-way-to-get-integer-division-and-remainder
+			big q = a / b;
+			big r = a % b;
+
 			A3 = F(q>>FBITS);
 			A4 = F(q & FMAX);
-			A5 = F(a - q * b);
+			A5 = F(r);
 
 			ip += 6; break; }
 
@@ -1744,12 +1737,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 	      NEXT(3); }
 
 		case 58: { /* fx>> a b hi lo */
-			bign_t r = ((bign_t) fixval(A0)) << (FBITS - fixval(A1));
+			big r = ((big) fixval(A0)) << (FBITS - fixval(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
 		case 59: { /* fx<< a b hi lo */
-			bign_t r = ((bign_t) fixval(A0)) << (fixval(A1));
+			big r = ((big) fixval(A0)) << (fixval(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
@@ -1793,7 +1786,10 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 		// неиспользуемые коды (историческое наследие, при желании можно реюзать)
 		case 33:
-			ERROR(33, IFALSE, IFALSE);
+		case 34:
+		case 37:
+		case 62:
+			ERROR(op, IFALSE, IFALSE);
 			break;
 
 		// мутатор (нерабочий !)
@@ -1970,10 +1966,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 		}
 
-		// ...
-//		case SYSCALL2: {
-//			break;
-//		}
 
 		case CLOCK: { // clock <secs> <ticks>
 //			if (seccompp) {
@@ -2003,7 +1995,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
-			word op = fixval(A0);
+			word op = uftoi (A0);
 			word a = A1, b = A2, c = A3;
 			word result = IFALSE;  // default returned value is #false
 //			fprintf(stderr, "SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
@@ -2131,6 +2123,13 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			// PIPE
+			case 22: {
+				// TBD.
+				break;
+			}
+
+
 			// ==================================================
 			//  network part:
 
@@ -2148,7 +2147,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
 				word* host = (word*) b; // todo: check for string type
-				int port = fixval(c);
+				int port = uftoi (c);
 
 				struct sockaddr_in addr;
 				addr.sin_family = AF_INET;
@@ -2203,7 +2202,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			case 49: { //  (socket, port, #false) // todo: c for options
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
-				int port = fixval(b);
+				int port = uftoi (b);
 
 				// todo: assert on argument types
 				struct sockaddr_in interface;
@@ -2245,7 +2244,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #else
 //				for Linux:
 //				if (!seccompp)
-#	if 0 // _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(). use nanosleep instead
+#	if _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(), use nanosleep instead
 				if (usleep(fixval(a)*1000) == 0)
 					result = ITRUE;
 #	else
@@ -2262,8 +2261,33 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 			// EXEC
 			case 59: {
-				FILE* pipe = popen((const char*)&car(a), "r");
+#if HAS_DLOPEN
+				// if a is port (result of dlopen)
+				if (is_port(a)) {
+					// a - function address (port)
+					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
+					word* A = (word*)a;
+					word* B = (word*)b;
+					word* C = (word*)c; // reserved
 
+					//CHECK(hdrtype(A[0]) == TPORT, A, 59);
+					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
+					assert ((word)C == IFALSE);
+
+					void *function = (void*) car(A);  assert (function);
+
+					ol->fp = fp;
+					result = ((word (*)  (OL*, word*))function) (ol, B);
+					fp = ol->fp;
+					break;
+				}
+#endif
+				// if a is string:
+				if (is_string(a)) {
+					// todo: change to syscalls:
+					FILE* pipe = popen((const char*)car(a), "r");
+
+				// todo: check for available memory, gc()
 				char* p = &car(fp);
 				while (!feof(pipe)) {
 					fread(p++, 1, 1, pipe);
@@ -2327,6 +2351,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					close(stdin[1]);
 					close(stdout[0]);
 				}*/
+				}
 				break;
 			}
 
@@ -2343,9 +2368,10 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				pthread_exit((void*)fixval(a));
 #else
-					exit(sftoi(a));
+				exit(sftoi(a));
 #endif
-				break; // сюда мы уже не должны попасть.
+				assert(0);   // сюда мы уже не должны попасть
+				break;
 			}
 
 			// EXEC
@@ -2441,7 +2467,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					fp = ol->fp;
 					break;
 				}
-#endif//HAS_PINVOKE
+#endif
 
 				// временный тестовый вызов
 				case 1033: { // temp, todo: (dlclose module)
@@ -2824,29 +2850,31 @@ int main(int argc, char** argv)
 			exit(2);	// не найден файл или он пустой
 
 		char bom;
-		FILE *bin = fopen(argv[1], "rb");
+		int bin = open(argv[1], O_RDONLY, (S_IRUSR | S_IWUSR));
 		if (!bin)
 			exit(4);	// не смогли файл открыть
 
-		int pos = fread(&bom, 1, 1, bin); // прочитаем один байт
+		int pos = read(bin, &bom, 1); // прочитаем один байт
 		if (pos < 1)
 			exit(5);	// не смогли файл прочитать
 
 		// переделать
 		if (bom == '#') { // skip possible hashbang
-			while (fread(&bom, 1, 1, bin) == 1 && bom != '\n')
+			while (read(bin, &bom, 1) == 1 && bom != '\n')
 				st.st_size--;
 			st.st_size--;
-			if (fread(&bom, 1, 1, bin) < 0)
+			if (read(bin, &bom, 1) < 0)
 				exit(5);
 			st.st_size--;
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
 			// а значит что? что файл надо замапить вместо stdin
-			fclose(bin);
+			// rollback назад, на 1 прочитанный символ
 #ifndef NAKED_VM
-			freopen(argv[1], "r", stdin);
+			lseek(bin, -1, SEEK_CUR);
+			dup2(bin, STDIN_FILENO);
+			close(bin);
 #else
 			exit(6); // некому проинтерпретировать скрипт
 #endif
@@ -2859,11 +2887,11 @@ int main(int argc, char** argv)
 
 			ptr[0] = bom;
 			while (pos < st.st_size) {
-				int n = fread(&ptr[pos], 1, st.st_size - pos, bin);
+				int n = read(bin, &ptr[pos], st.st_size - pos);
 				if (n < 0) exit(5); // не смогли прочитать
 				pos += n;
 			}
-			fclose(bin);
+			close(bin);
 
 			bootstrap = ptr;
 		}
@@ -2975,7 +3003,7 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 
 	// если это текстовый скрипт
 	if (bootstrap[0] > 3) {
-		char* filename[16]; // lenght of above string
+		char filename[16]; // lenght of above string
 		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
 
 		int f = mkstemp(filename);
@@ -3105,8 +3133,9 @@ int vm_feof(OL* vm)
 #endif//EMBEDDED_VM
 
 
-#if HAS_PINVOKE
 //   а тут у нас реализация pinvoke механизма. пример в opengl.scm
+#if HAS_PINVOKE
+__attribute__((__visibility__("default")))
 word pinvoke(OL* self, word arguments)
 {
 	word* fp, result;
@@ -3182,6 +3211,14 @@ word pinvoke(OL* self, word arguments)
 									    args[ 8], args[ 9], args[10], args[11], \
 									    args[12], args[13], args[14], args[15], \
 									    args[16], args[17]);\
+			case 3 + 0x700:\
+					return ((conv word (*) (float, float, float)) function)\
+							(*(float*)&args[0], *(float*)&args[1],\
+							 *(float*)&args[2]);\
+			case 4 + 0xF00:\
+					return ((conv word (*) (float, float, float, float)) function)\
+							(*(float*)&args[0], *(float*)&args[1],\
+							 *(float*)&args[2], *(float*)&args[3]);\
 			default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", count);\
 				break;\
 			}
@@ -3278,6 +3315,7 @@ word pinvoke(OL* self, word arguments)
 	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = uftoi(car(B));
+	int floats = 0;
 
 	long got;   // результат вызова функции
 	int i = 0;     // количество аргументов
@@ -3296,6 +3334,9 @@ word pinvoke(OL* self, word arguments)
 			type = imm_val (((word*)p[1])[1]);
 			arg = ((word*)p[1])[2];
 		}*/
+
+		args[i] = 0; // обнулим (так как потом можем записать только часть)
+		// может и не надо.
 
 		// destination type
 		switch (type) {
@@ -3341,6 +3382,7 @@ word pinvoke(OL* self, word arguments)
 			default:
 				*(float*)&args[i] = (float)0.0; // todo: error, return infinity, maybe, or NaN
 			}
+			floats |= (0x100 << i);
 			break;
 		case TDOUBLE:
 			if (immediatep(arg))
@@ -3441,32 +3483,25 @@ word pinvoke(OL* self, word arguments)
 	}
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	got = call(returntype >> 6, function, args, i);
+	got = call(returntype >> 6, function, args, i + floats);
 
 	switch (returntype & 0x3F) {
 		case TINT:
 			// todo: переделать!
-			if (got > 0xFFFFFF) {
+			if (got > FMAX) {
 				// прошу внимания!
 				//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-				word* hi = fp; fp += 3; // high 8 bits
-				hi[0] = HINT;
-				hi[1] = make_immediate(got >> 24, 0); // type-fx+
-				hi[2] = INULL;
-				word* lo = fp; fp += 3; // low 24 bits
-				lo[0] = HINT;
-				lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
-				lo[2] = (word)hi;
-
-				result = (word)lo;
+				result = new_pair(TINT, make_immediate(got & 0xFFFFFF, 0),
+				                        new_pair(TINT, make_immediate(got >> 24, 0),
+				                                       INULL));
 				break;
 			}
 			// else goto case 0 (иначе вернем type-fx+)
 		case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = itosf(got);
+			result = itosf (got);
 			break;
 		case TPORT:
-			result = (word) new_port(got);
+			result = (word) new_port (got);
 			break;
 		case TRAWP:
 			result = got;

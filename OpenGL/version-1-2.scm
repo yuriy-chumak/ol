@@ -25,7 +25,7 @@
 ; Dependencies
 ;	None
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-0))
 
@@ -80,7 +80,7 @@
    )
 
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-1))
       
