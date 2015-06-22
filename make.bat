@@ -5,7 +5,7 @@ if exist boot.fasl move /Y boot.fasl boot.fasl.bak
 
 :: соберем интерпретатор (с интегрированным протестированным рабочим образом из транка)
 echo echo | set /p test=Compiling ol virtual machine... 
-gcc src/olvm.c -DSTANDALONE src/boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -O3 -std=c11
+gcc src/olvm.c -DHAS_DLOPEN=1 -DHAS_SOCKETS=1 -DHAS_PINVOKE=1 src/boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -lws2_32 -O3 -std=c11
 if ERRORLEVEL 1 exit
 echo Ok.
 

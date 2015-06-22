@@ -91,9 +91,23 @@
       (begin
          (glXMakeCurrent dpy win cx)
          (print "x")
-         (glClearColor 0 0 1 1)
+         (glClearColor 0 0.4 0 1)
          (glClear #x00004000)
-;         (glFlush)
+         
+         (glMatrixMode GL_PROJECTION)
+         (glLoadIdentity)
+         (glOrtho 0 1
+                  0 1
+                  -1 1)
+         (glMatrixMode GL_MODELVIEW)
+         (glLoadIdentity)
+         
+         (glBegin GL_LINES)
+         (glVertex3f 0 0 0)
+         (glVertex3f 1 1 0)
+         (glEnd)
+         
+         
          (glXSwapBuffers dpy win)
          (glXMakeCurrent dpy null null)
       ))

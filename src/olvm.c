@@ -447,9 +447,9 @@ typedef struct object
 #define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #if __amd64__
-#define big                      __int128
+#define big                         __int128
 #else
-#define big                      long long //__int64
+#define big                         long long //__int64
 #endif
 
 #define RAWBIT                      ((1 << RPOS))
@@ -2035,14 +2035,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #endif
 				{
 #ifdef _WIN32
-					if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
-					   n = read(fd, ((char *) res) + W, max);
+					if (!_isatty(portfd) || _kbhit()) { // we don't get hit by kb in pipe
+						got = read(portfd, (char *) &fp[1], size);
 					} else {
-					   n = -1;
-					   errno = EAGAIN;
+						got = -1;
+						errno = EAGAIN;
 					}
 #else
-					got = read(portfd, (char*) &fp[1], size);
+					got = read(portfd, (char *) &fp[1], size);
 #endif
 				}
 
@@ -2168,21 +2168,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
-			// ACCEPT
-			// http://linux.die.net/man/2/accept
-			case 43: { // (accept host)
-				CHECK(is_port(a), a, SYSCALL);
-				int sockfd = car (a);
-
-				struct sockaddr_in addr;
-				socklen_t len = sizeof(addr);
-				int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
-				// On error, -1 is returned
-				if (sock >= 0)
-					result = (word) new_port (sock);
-				break;
-			}
-
 			// SHUTDOWN
 			// http://linux.die.net/man/2/shutdown
 			case 48: { // (shutdown socket #f #f)
@@ -2232,11 +2217,28 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
+
+			// ACCEPT
+			// http://linux.die.net/man/2/accept
+			case 43: { // (accept sockfd)
+				CHECK(is_port(a), a, SYSCALL);
+				int sockfd = car (a);
+
+				struct sockaddr_in addr;
+				socklen_t len = sizeof(addr);
+				int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
+				// On error, -1 is returned
+				if (sock >= 0)
+					result = (word) new_port (sock);
+				break;
+			}
+
 #endif
 			// ==================================================
 
 
 			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
+			// NANOSLEEP
 			case 35: {
 				CHECK(immediatep(a), a, 35);
 #ifdef _WIN32
@@ -2259,18 +2261,19 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
-			// EXEC
+			// (EXECVE program-or-function)
+			// http://linux.die.net/man/3/execve
 			case 59: {
 #if HAS_DLOPEN
-				// if a is port (result of dlopen)
+				// if a is port (result of dlsym)
 				if (is_port(a)) {
 					// a - function address (port)
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 					word* A = (word*)a;
 					word* B = (word*)b;
-					word* C = (word*)c; // reserved
+					word* C = (word*)c; // reserved, assert #false
 
-					//CHECK(hdrtype(A[0]) == TPORT, A, 59);
+				//	CHECK(hdrtype(A[0]) == TPORT, A, 59);
 					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
 					assert ((word)C == IFALSE);
 
@@ -2284,78 +2287,80 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #endif
 				// if a is string:
 				if (is_string(a)) {
-					// todo: change to syscalls:
+#if 1
 					FILE* pipe = popen((const char*)car(a), "r");
 
-				// todo: check for available memory, gc()
-				char* p = &car(fp);
-				while (!feof(pipe)) {
-					fread(p++, 1, 1, pipe);
-				}
-				pclose(pipe);
-
-				int count = p - (char*)&car(fp) - 1;
-				result = new_bytevector(count, TSTRING);
-
-				/*int stdin[2];
-				if (pipe(stdin) < 0) {
-					fprintf(stderr, "pipe for child input redirect failed.\n");
-					break;
-				}
-
-				int stdout[2];
-				if (pipe(stdout) < 0) {
-					fprintf(stderr, "pipe for child output redirect failed.\n");
-					close(stdin[0]);
-					close(stdin[1]);
-					break;
-				}
-
-				int child = fork();
-				if (child == 0) {
-					fprintf(stderr, "fork.1\n");
-					dup2(stdin[0], STDIN_FILENO);
-					dup2(stdout[1], STDOUT_FILENO);
-					dup2(stdout[1], STDERR_FILENO);
-
-					fprintf(stderr, "fork.2\n");
-					close(stdin[0]);
-					close(stdin[1]);
-					close(stdout[0]);
-					close(stdout[1]);
-
-					fprintf(stderr, "fork.3\n");
-
-					char* command = (char*)&car(a);
-					char* args = 0; // temp, b
-					char* envp = 0;
-
-					fprintf(stderr, "command: %s\n", command);
-
-					exit(execve(command, 0, 0));
-				}
-				else {
-					close(stdin[0]);
-					close(stdout[1]);
-
-					if (is_string(c))
-						write(stdin[1], &car(c), lenn(&car(c), -1));
-
-					// read
 					char* p = &car(fp);
-					while (read(stdout[0], p++, 1) == 1)
-						continue;
-					int count = p - (char*)&car(fp) - 1;
-					result = new_bytevector(count, TSTRING);
+					while (!feof(pipe)) {
+						// todo: check for available memory, gc()
+						p += fread(p, 1, 1024, pipe);
+					}
+					pclose(pipe);
 
-					close(stdin[1]);
-					close(stdout[0]);
-				}*/
+					int count = p - (char*)&car(fp) - 1;
+					result = (word) new_bytevector(count, TSTRING);
+#else	// popen by syscall
+					int stdin[2];
+					if (pipe(stdin) < 0) {
+						fprintf(stderr, "pipe for child input redirect failed.\n");
+						break;
+					}
+
+					int stdout[2];
+					if (pipe(stdout) < 0) {
+						fprintf(stderr, "pipe for child output redirect failed.\n");
+						close(stdin[0]);
+						close(stdin[1]);
+						break;
+					}
+
+					int child = fork();
+					if (child == 0) {
+						fprintf(stderr, "fork.1\n");
+						dup2(stdin[0], STDIN_FILENO);
+						dup2(stdout[1], STDOUT_FILENO);
+						dup2(stdout[1], STDERR_FILENO);
+
+						fprintf(stderr, "fork.2\n");
+						close(stdin[0]);
+						close(stdin[1]);
+						close(stdout[0]);
+						close(stdout[1]);
+
+						fprintf(stderr, "fork.3\n");
+
+						char* command = (char*)&car(a);
+						char* args = 0; // temp, b
+						char* envp = 0;
+
+						fprintf(stderr, "command: %s\n", command);
+
+						exit(execve(command, 0, 0));
+					}
+					else {
+						close(stdin[0]);
+						close(stdout[1]);
+
+						if (is_string(c))
+							write(stdin[1], &car(c), lenn(&car(c), -1));
+
+						// read
+						char* p = &car(fp);
+						while (read(stdout[0], p++, 1) == 1)
+							continue;
+						int count = p - (char*)&car(fp) - 1;
+						result = new_bytevector(count, TSTRING);
+
+						close(stdin[1]);
+						close(stdout[0]);
+					}
+#endif
+					break;
 				}
 				break;
 			}
 
-			// EXIT
+			// EXIT errorcode
 			// http://linux.die.net/man/2/exit
 			// exit - cause normal process termination, function does not return.
 			case 1006:
@@ -2373,10 +2378,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				assert(0);   // сюда мы уже не должны попасть
 				break;
 			}
-
-			// EXEC
-			// http://linux.die.net/man/3/exec
-			//
 
 			// other commands
 
@@ -3135,7 +3136,8 @@ int vm_feof(OL* vm)
 
 //   а тут у нас реализация pinvoke механизма. пример в opengl.scm
 #if HAS_PINVOKE
-__attribute__((__visibility__("default")))
+__attribute__
+       ((__visibility__("default")))
 word pinvoke(OL* self, word arguments)
 {
 	word* fp, result;
@@ -3144,7 +3146,20 @@ word pinvoke(OL* self, word arguments)
 	fp = self->fp;
 
 	// http://byteworm.com/2010/10/12/container/ (lambdas in c)
-	word call(int convention, void* function, word args[], int count) {
+
+	// https://en.wikipedia.org/wiki/X86_calling_conventions
+	// x86 conventions: cdecl, syscall(OS/2), optlink(IBM)
+	// pascal(OS/2, MsWin 3.x, Delphi), stdcall(Win32),
+	// fastcall(ms), vectorcall(ms), safecall(delphi),
+	// thiscall(ms)
+
+	// x64 calling conventions: linux, windows
+#if	__amd64__
+	word call(void* function, word argv[], int argc) {
+#else
+	word call(int returntype, void* function, word argv[], int argc) {
+#endif
+
 		// todo: ограничиться количеством функций поменьше
 		//	а можно сделать все в одной switch:
 		// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
@@ -3157,77 +3172,98 @@ word pinvoke(OL* self, word arguments)
 		int (*stdcall[])(char*) = {
 				({ int $(char *str){ printf("Test: %s\n", str); } $; })
 		};*/
+		// http://www.agner.org/optimize/calling_conventions.pdf
 		#define CALL(conv) \
-			switch (count) {\
+			switch (argc) {\
 			case  0: return ((conv word (*)  ())\
-							function) ();\
+							 function) ();\
 			case  1: return ((conv word (*)  (word))\
-							function) (args[0]);\
-			case  2: return ((conv word (*)  (word, word)) function)\
-							(args[0], args[1]);\
-			case  3: return ((conv word (*)  (word, word, word)) function)\
-							(args[0], args[1], args[2]);\
-			case  4: return ((conv word (*)  (word, word, word, word)) function)\
-							(args[0], args[1], args[2], args[3]);\
+							 function) (argv[ 0]);\
+			case  2: return ((conv word (*)  (word, word))\
+			                 function) (argv[ 0], argv[ 1]);\
+			case  3: return ((conv word (*)  (word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2]);\
+			case  4: return ((conv word (*)  (word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3]);\
 			case  5: return ((conv word (*)  (word, word, word, word, word))\
-                             function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-                                        args[ 4]);\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4]);\
 			case  6: return ((conv word (*)  (word, word, word, word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-			                            args[ 4], args[ 5]);\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5]);\
 			case  7: return ((conv word (*)  (word, word, word, word, word, word, \
-					                          word))\
-					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-					        		    args[ 4], args[ 5], args[ 6]);\
+			                                  word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6]);\
 			case  8: return ((conv word (*)  (word, word, word, word, word, word, \
-					                          word, word))\
-					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-					        		    args[ 4], args[ 5], args[ 6], args[ 7]);\
+			                                  word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7]);\
 			case  9: return ((conv word (*)  (word, word, word, word, word, word, \
-					                          word, word, word))\
-					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-					        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-										args[ 8]);\
+			                                  word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
+			                            argv[ 8]);\
 			case 10: return ((conv word (*)  (word, word, word, word, word, word, \
-					                          word, word, word, word))\
-					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-					        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-										args[ 8], args[ 9]);\
+			                                  word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
+			                            argv[ 8], argv[ 9]);\
 			case 11: return ((conv word (*)  (word, word, word, word, word, word, \
-					                          word, word, word, word, word))\
-					         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-					        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-										args[ 8], args[ 9], args[10]);\
+			                                  word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
+			                            argv[ 8], argv[ 9], argv[10]);\
 			case 12: return ((conv word (*)  (word, word, word, word, word, word, \
-					                          word, word, word, word, word, word))\
-							 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-									    args[ 4], args[ 5], args[ 6], args[ 7], \
-									    args[ 8], args[ 9], args[10], args[11]);\
+			                                  word, word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
+			                            argv[ 8], argv[ 9], argv[10], argv[11]);\
 			case 18: return ((conv word (*)  (word, word, word, word, word, word, \
-					                          word, word, word, word, word, word, \
-											  word, word, word, word, word, word))\
-							 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-									    args[ 4], args[ 5], args[ 6], args[ 7], \
-									    args[ 8], args[ 9], args[10], args[11], \
-									    args[12], args[13], args[14], args[15], \
-									    args[16], args[17]);\
-			case 3 + 0x700:\
-					return ((conv word (*) (float, float, float)) function)\
-							(*(float*)&args[0], *(float*)&args[1],\
-							 *(float*)&args[2]);\
-			case 4 + 0xF00:\
-					return ((conv word (*) (float, float, float, float)) function)\
-							(*(float*)&args[0], *(float*)&args[1],\
-							 *(float*)&args[2], *(float*)&args[3]);\
-			default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", count);\
+			                                  word, word, word, word, word, word, \
+			                                  word, word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
+			                            argv[ 8], argv[ 9], argv[10], argv[11], \
+			                            argv[12], argv[13], argv[14], argv[15], \
+			                            argv[16], argv[17]);\
+			/* floats, only for __amd64__ */\
+			case 2 + 0x000300:\
+			         return ((conv word (*)  (float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1]);\
+			case 3 + 0x000700:\
+			         return ((conv word (*)  (float, float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2]);\
+			case 4 + 0x000F00:\
+			         return ((conv word (*)  (float, float, float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2], *(float*)&argv[3]);\
+			/* doubles, only for __amd64__ */\
+			case 2 + 0x0300000:\
+			         return ((conv word (*)  (double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1]);\
+			case 3 + 0x0700000:\
+			         return ((conv word (*)  (double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2]);\
+			case 4 + 0x0F00000:\
+			         return ((conv word (*)  (double, double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2], *(double*)&argv[3]);\
+			case 6 + 0x3F00000:\
+			         return ((conv word (*)  (double, double, double, double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2], *(double*)&argv[3],\
+			                            *(double*)&argv[4], *(double*)&argv[5]);\
+			default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", argc);\
 				break;\
 			}
 #ifdef __linux__
-		#define __cdecl
-		CALL(__cdecl);
+		CALL();
 #else
 		//todo: set __cdecl = 0, and __stdcall = 1
-		switch (convention) {
+		switch (returntype >> 8) {
 		case 0:
 			CALL(__stdcall);
 			break;
@@ -3242,7 +3278,7 @@ word pinvoke(OL* self, word arguments)
 			break;
 		}
 #endif
-		return 0;
+		return 0; // if no call have made
 	}
 	long from_int(word* arg) {
 		// так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит (первые два члена)
@@ -3315,7 +3351,8 @@ word pinvoke(OL* self, word arguments)
 	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = uftoi(car(B));
-	int floats = 0;
+	int floats = 0; // временный хак
+	int doubles = 0;// тоже
 
 	long got;   // результат вызова функции
 	int i = 0;     // количество аргументов
@@ -3367,40 +3404,45 @@ word pinvoke(OL* self, word arguments)
 
 		case TFLOAT:
 			if (immediatep(arg))
-				*(float*)&args[i] = (float)sftoi(arg);
+				*(float*)&args[i] = (float) (int)sftoi(arg);
 			else
 			switch (hdrtype(arg[0])) {
 			case TINT: // source type
-				*(float*)&args[i] = +(float)from_int(arg);
+				*(float*)&args[i] = (float)+from_int(arg);
 				break;
 			case TINTN:
-				*(float*)&args[i] = -(float)from_int(arg);
+				*(float*)&args[i] = (float)-from_int(arg);
 				break;
 			case TRATIONAL:
-				*(float*)&args[i] = (float)from_rational(arg);
+				*(float*)&args[i] = (float) from_rational(arg);
 				break;
 			default:
-				*(float*)&args[i] = (float)0.0; // todo: error, return infinity, maybe, or NaN
+				*(float*)&args[i] = (float) 0.0; // todo: error, return infinity, maybe, or NaN
 			}
 			floats |= (0x100 << i);
 			break;
 		case TDOUBLE:
 			if (immediatep(arg))
-				*(double*)&args[i++] = (double)sftoi(arg);
+				*(double*)&args[i] = (double) (int)sftoi(arg);
 			else
 			switch (hdrtype(arg[0])) {
 			case TINT: // source type
-				*(double*)&args[i++] = +(double)from_int(arg);
+				*(double*)&args[i] = (double)+from_int(arg);
 				break;
 			case TINTN:
-				*(double*)&args[i++] = -(double)from_int(arg);
+				*(double*)&args[i] = (double)-from_int(arg);
 				break;
 			case TRATIONAL:
-				*(double*)&args[i++] = (double)from_rational(arg);
+				*(double*)&args[i] = (double) from_rational(arg);
 				break;
 			default:
-				*(double*)&args[i++] = (double)0.0; // todo: error, same as float
+				*(double*)&args[i] = (double) 0.0; // todo: error, same as float
 			}
+#if __amd64__
+			doubles |= (0x100000 << i);
+#else
+			i++; // for x86 double fills two words
+#endif
 			break;
 
 		// запрос порта - это запрос значения порта
@@ -3443,7 +3485,7 @@ word pinvoke(OL* self, word arguments)
 				args[i] = (word) (void*)0;
 			else
 			switch (hdrtype(arg[0])) {
-/*							case TCONST:
+/*			case TCONST:
 				switch ((word)arg) {
 				case INULL:
 					args[i] = (word) (void*)0;
@@ -3461,8 +3503,8 @@ word pinvoke(OL* self, word arguments)
 				word* src = &arg[1];
 				while (--size)
 					*fp++ = (word)((word*)*src++ + 1);
-//								int j;
-//								for (j = 1; j < size; j++)
+//				int j;
+//				for (j = 1; j < size; j++)
 				}
 				break;
 			default:
@@ -3483,14 +3525,23 @@ word pinvoke(OL* self, word arguments)
 	}
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	got = call(returntype >> 6, function, args, i + floats);
+//	#00000000 00000000 - dword
+//	#00000000 000000xx - count of arguments
+//	#00000000 000xxx00 - count of floats - 12 ?
+//	#00000000 xxx00000 - count of doubles - 12 ?
+#if __amd64__
+	got = call(function, args, i + floats + doubles);
+#else
+	got = call(returntype >> 8, args, i);
+#endif
 
 	switch (returntype & 0x3F) {
 		case TINT:
 			// todo: переделать!
 			if (got > FMAX) {
 				// прошу внимания!
-				//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
+				//  в числовой паре надо сначала положить старшую часть,
+				//  и только потом младшую!
 				result = new_pair(TINT, make_immediate(got & 0xFFFFFF, 0),
 				                        new_pair(TINT, make_immediate(got >> 24, 0),
 				                                       INULL));
