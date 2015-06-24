@@ -77,7 +77,7 @@
 
 
 (define win (XCreateSimpleWindow dpy (XRootWindow dpy s)
-   10 10 660 200 1
+   10 10 200 200 1
    (XBlackPixel dpy s) (XWhitePixel dpy s)))
    
 (XSelectInput dpy win (OR ExposureMask KeyPressMask))
@@ -96,15 +96,23 @@
          
          (glMatrixMode GL_PROJECTION)
          (glLoadIdentity)
-         (glOrtho 0 1
-                  0 1
+         (glOrtho  0 1
+                   0 1
                   -1 1)
          (glMatrixMode GL_MODELVIEW)
          (glLoadIdentity)
          
          (glBegin GL_LINES)
-         (glVertex3f 0 0 0)
-         (glVertex3f 1 1 0)
+         (let loop ((x 0))
+            (glVertex2f x 0)
+            (glVertex2f x 1)
+            (if (< x 1)
+               (loop (+ x 1/8))))
+         (let loop ((y 0))
+            (glVertex2f 0 y)
+            (glVertex2f 1 y)
+            (if (< y 1)
+               (loop (+ y 1/8))))
          (glEnd)
          
          

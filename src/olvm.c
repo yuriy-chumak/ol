@@ -539,6 +539,8 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define car(ob)                     (((word*)(ob))[1])
 #define cdr(ob)                     (((word*)(ob))[2])
 
+#define cadr(ob)                    car(cdr(ob))
+
 // todo: потом переделать в трюк
 // алгоритмические трюки:
 // x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
@@ -576,7 +578,9 @@ int execv(const char *path, char *const argv[]);
 // --------------------------------------------------------
 // -=( gc )=-----------------------------------------------
 
-/*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
+/*** Garbage Collector,
+ * based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982)
+ ***/
 // "на почитать" по теме GC:
 // shamil.free.fr/comp/ocaml/html/book011.html
 
@@ -3140,7 +3144,7 @@ __attribute__
        ((__visibility__("default")))
 word pinvoke(OL* self, word arguments)
 {
-	word* fp, result;
+	word *fp, result;
 
 	// get memory pointer
 	fp = self->fp;
@@ -3173,6 +3177,58 @@ word pinvoke(OL* self, word arguments)
 				({ int $(char *str){ printf("Test: %s\n", str); } $; })
 		};*/
 		// http://www.agner.org/optimize/calling_conventions.pdf
+#if __amd64__
+		#define CALLFLOATS(conv) \
+			case 2 + 0x0300:\
+			         return ((conv word (*)  (float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1]);\
+			case 3 + 0x0700:\
+			         return ((conv word (*)  (float, float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2]);\
+			case 4 + 0x0F00:\
+			         return ((conv word (*)  (float, float, float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2], *(float*)&argv[3]);
+#else
+		#define CALLFLOATS(conv)
+#endif
+
+#if __amd64__
+		#define CALLDOUBLES(conv) \
+			case 2 + 0x0030000:\
+			         return ((conv word (*)  (double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1]);\
+			case 3 + 0x0070000:\
+			         return ((conv word (*)  (double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2]);\
+			case 4 + 0x00F0000:\
+			         return ((conv word (*)  (double, double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2], *(double*)&argv[3]);\
+			case 6 + 0x03F0000:\
+			         return ((conv word (*)  (double, double, double, double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2], *(double*)&argv[3],\
+			                            *(double*)&argv[4], *(double*)&argv[5]);\
+			case 9 + 0x1FF0000:\
+			         return ((conv word (*)  (double, double, double, double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2], *(double*)&argv[3],\
+			                            *(double*)&argv[4], *(double*)&argv[5]);
+#else
+		#define CALLDOUBLES(conv)\
+			case 18: return ((conv word (*)  (word, word, word, word, word, word, \
+			                                  word, word, word, word, word, word, \
+			                                  word, word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
+			                            argv[ 8], argv[ 9], argv[10], argv[11], \
+			                            argv[12], argv[13], argv[14], argv[15], \
+			                            argv[16], argv[17]);
+#endif
+
 		#define CALL(conv) \
 			switch (argc) {\
 			case  0: return ((conv word (*)  ())\
@@ -3219,43 +3275,8 @@ word pinvoke(OL* self, word arguments)
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
 			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
 			                            argv[ 8], argv[ 9], argv[10], argv[11]);\
-			case 18: return ((conv word (*)  (word, word, word, word, word, word, \
-			                                  word, word, word, word, word, word, \
-			                                  word, word, word, word, word, word))\
-			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
-			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
-			                            argv[ 8], argv[ 9], argv[10], argv[11], \
-			                            argv[12], argv[13], argv[14], argv[15], \
-			                            argv[16], argv[17]);\
-			/* floats, only for __amd64__ */\
-			case 2 + 0x000300:\
-			         return ((conv word (*)  (float, float))\
-			                 function) (*(float*)&argv[0], *(float*)&argv[1]);\
-			case 3 + 0x000700:\
-			         return ((conv word (*)  (float, float, float))\
-			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
-			                            *(float*)&argv[2]);\
-			case 4 + 0x000F00:\
-			         return ((conv word (*)  (float, float, float, float))\
-			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
-			                            *(float*)&argv[2], *(float*)&argv[3]);\
-			/* doubles, only for __amd64__ */\
-			case 2 + 0x0300000:\
-			         return ((conv word (*)  (double, double))\
-			                 function) (*(double*)&argv[0], *(double*)&argv[1]);\
-			case 3 + 0x0700000:\
-			         return ((conv word (*)  (double, double, double))\
-			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
-			                            *(double*)&argv[2]);\
-			case 4 + 0x0F00000:\
-			         return ((conv word (*)  (double, double, double, double))\
-			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
-			                            *(double*)&argv[2], *(double*)&argv[3]);\
-			case 6 + 0x3F00000:\
-			         return ((conv word (*)  (double, double, double, double, double, double))\
-			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
-			                            *(double*)&argv[2], *(double*)&argv[3],\
-			                            *(double*)&argv[4], *(double*)&argv[5]);\
+			CALLFLOATS(conv)\
+			CALLDOUBLES(conv)\
 			default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", argc);\
 				break;\
 			}
@@ -3281,29 +3302,30 @@ word pinvoke(OL* self, word arguments)
 		return 0; // if no call have made
 	}
 	long from_int(word* arg) {
-		// так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит (первые два члена)
+		// так как в стек мы все равно большое сложить не сможем, то возьмем
+		// только то, что влазит (первые два члена)
 		assert (immediatep(arg[1]));
 		assert (allocp(arg[2]));
 
-		return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << (sizeof(word) * 8 - 8));
+		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
 	}
 	float from_int_to_float(word* arg) {
 		// читаем длинное число в float формат
-		assert (immediatep(arg[1]));
-		float f = (unsigned long)arg[1] >> 8;
+		assert (immediatep(car(arg)));
+		float f = (unsigned long)uftoi(car(arg));
 		float mul = 0x1000000; // 1 << 24
-		while (allocp(arg[2])) {
-			arg = (word*)arg[2];
-			f += (unsigned long)(arg[1] >> 8) * mul;
+		while (is_pointer(cdr(arg))) {
+			arg = (word*)cdr(arg);
+			f += (unsigned long)uftoi(cdr(arg)) * mul;
 			mul *= 0x1000000;
 		}
-		assert (arg[2] == INULL);
+		assert (cdr(arg) == INULL);
 
 		return f;
 	}
 	float from_rational(word* arg) {
-		word* pa = (word*)arg[1];
-		word* pb = (word*)arg[2];
+		word* pa = (word*)car(arg);
+		word* pb = (word*)cdr(arg);
 
 		float a, b;
 		if (immediatep(pa))
@@ -3351,8 +3373,8 @@ word pinvoke(OL* self, word arguments)
 	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = uftoi(car(B));
-	int floats = 0; // временный хак
-	int doubles = 0;// тоже
+	int floats = 0; // для amd64
+	int doubles = 0; // temp
 
 	long got;   // результат вызова функции
 	int i = 0;     // количество аргументов
@@ -3366,13 +3388,13 @@ word pinvoke(OL* self, word arguments)
 		int type = uftoi(car(t));
 		word* arg = (word*)car(p);
 
-/*						// todo: add argument overriding as PAIR as argument value
+/*		// todo: add argument overriding as PAIR as argument value
 		if (hdrtype(p[1]) == TPAIR) {
 			type = imm_val (((word*)p[1])[1]);
 			arg = ((word*)p[1])[2];
 		}*/
 
-		args[i] = 0; // обнулим (так как потом можем записать только часть)
+//		args[i] = 0; // обнулим (так как потом можем записать только часть)
 		// может и не надо.
 
 		// destination type
@@ -3439,7 +3461,7 @@ word pinvoke(OL* self, word arguments)
 				*(double*)&args[i] = (double) 0.0; // todo: error, same as float
 			}
 #if __amd64__
-			doubles |= (0x100000 << i);
+			doubles |= (0x10000 << i);
 #else
 			i++; // for x86 double fills two words
 #endif
@@ -3527,9 +3549,34 @@ word pinvoke(OL* self, word arguments)
 
 //	#00000000 00000000 - dword
 //	#00000000 000000xx - count of arguments
-//	#00000000 000xxx00 - count of floats - 12 ?
-//	#00000000 xxx00000 - count of doubles - 12 ?
+//	#00000000 000xxx00 - count of floats - up to 12 ?
+//	#00000000 xxx00000 - count of doubles - up to 12 ?
 #if __amd64__
+	// http://locklessinc.com/articles/gcc_asm/
+	// http://www.agner.org/optimize/calling_conventions.pdf
+
+
+//	int foo = 3, bar = 4, ppp = 1;
+//	__asm__ ("\
+//		add %2, %1    \n\
+//		call *%3       \n\
+//		mov %1, %0    \n"
+//	: "=rax"(ppp) 		// ouput
+//	: "r10"(foo), "rax"(bar)// input
+//	, "m"(function)
+//	: "cc"			// modify flags
+//	);
+//	// movss %xmm0,-0x1e4(%rbp) - float
+//	// movss 0x160a(%rip),%xmm0 - float
+//	// movsd 0x160e(%rip),%xmm0 - double
+//
+//	// linux calling convention:
+//	// rdi, rsi, rdx, rcx, r8, r9, xmm0..7
+//
+//	// register int out asm("r10") x;
+//
+//	float R = ((float (*)  (int, double, int))function) (1, 2.0, 3);
+
 	got = call(function, args, i + floats + doubles);
 #else
 	got = call(returntype >> 8, args, i);
@@ -3537,20 +3584,20 @@ word pinvoke(OL* self, word arguments)
 
 	switch (returntype & 0x3F) {
 		case TINT:
-			// todo: переделать!
 			if (got > FMAX) {
 				// прошу внимания!
 				//  в числовой паре надо сначала положить старшую часть,
 				//  и только потом младшую!
-				result = new_pair(TINT, make_immediate(got & 0xFFFFFF, 0),
-				                        new_pair(TINT, make_immediate(got >> 24, 0),
-				                                       INULL));
+				result = (word) new_pair(TINT, F(got & 0xFFFFFF),
+				                               new_pair(TINT, F(got >> 24),
+				                                              INULL));
 				break;
 			}
-			// else goto case 0 (иначе вернем type-fx+)
-		case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
+			// no break
+		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = itosf (got);
 			break;
+			// else goto case 0 (иначе вернем type-fx+)
 		case TPORT:
 			result = (word) new_port (got);
 			break;
