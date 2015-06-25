@@ -63,7 +63,7 @@
       (r5rs base) (owl io)
       (owl list) (owl string)
       (owl math) (owl vector)
-      (owl error)
+      (owl error) (owl primop)
       (owl interop)
       (owl pinvoke))
   (begin
@@ -73,13 +73,11 @@
 (define (port) (raw type-port '(0)))
 
 
-(define % (dlopen '() RTLD_LAZY)) ; dummy - how to get own handle
-
 (define % (or
    (dlopen "sqlite3" RTLD_LAZY)
    (dlopen "libsqlite3.so" RTLD_LAZY)))
    
-(if (null? %)
+(if (not %)
    (begin
       (print "Can't load sqlite3 library. Will halt")
 ;      (case *OS*

@@ -1,3 +1,5 @@
+#!/bin/ol
+(define *include-dirs* (append *include-dirs* '("..")))
 ; http://www.scheme.com/tspl4/ - The Scheme Programming Language (Fourth Edition)
 ; http://community.schemewiki.org/?scheme-faq-standards#implementations
 ;!
@@ -7,13 +9,13 @@
 (import (lib sqlite))
 
 ; вспомогательный макрос для собрать в кучку все bor
-(define OR (lambda list (fold bor 0 list)))
+(define (OR . args) (fold bor 0 args))
 
 ; todo: move this test into separate script (tests/sqlite3.scm)
 (define database (make-sqlite3))
 (print "open: "     (sqlite3-open (c-string ":memory:") database))
 (print "close: "    (sqlite3-close database))
-(print "open: "     (sqlite3-open (c-string ":memory:") database))
+(print "open: "     (sqlite3-open (c-string "x.sqlite") database))
 
 
 

@@ -2757,10 +2757,10 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 }
 
 static
+// функция подсчета количества объектов в загружаемом образе
 int count_fasl_objects(word *words, unsigned char *lang) {
 	unsigned char* hp;
 
-	// функция подсчета количества объектов в загружаемом образе
 	word decode_word() {
 		word result = 0;
 		word newobj, i;
@@ -2791,6 +2791,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 					hp++;
 				}
 				decode_word(&hp); // simply skip word
+				++allocated;
 			}
 			break;
 		}
@@ -2850,18 +2851,19 @@ int main(int argc, char** argv)
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
 	if (argc > 1 && strcmp(argv[1], "-") != 0) {
+		// todo: use mmap()
 		struct stat st;
 		if (stat(argv[1], &st) || st.st_size == 0)
-			exit(2);	// не найден файл или он пустой
+			exit(errno);	// не найден файл или он пустой
 
 		char bom;
 		int bin = open(argv[1], O_RDONLY, (S_IRUSR | S_IWUSR));
 		if (!bin)
-			exit(4);	// не смогли файл открыть
+			exit(errno);	// не смогли файл открыть
 
 		int pos = read(bin, &bom, 1); // прочитаем один байт
 		if (pos < 1)
-			exit(5);	// не смогли файл прочитать
+			exit(errno);	// не смогли файл прочитать
 
 		// переделать
 		if (bom == '#') { // skip possible hashbang
@@ -2869,7 +2871,7 @@ int main(int argc, char** argv)
 				st.st_size--;
 			st.st_size--;
 			if (read(bin, &bom, 1) < 0)
-				exit(5);
+				exit(errno);
 			st.st_size--;
 		}
 
@@ -2902,8 +2904,22 @@ int main(int argc, char** argv)
 		}
 	}
 
-	OL*ol =
-			vm_new(bootstrap, bootstrap != language ? free : NULL);
+#if	HAS_SOCKETS && defined(_WIN32)
+	WSADATA wsaData;
+	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
+	if (sock_init  != 0) {
+		printf("WSAStartup failed with error: %d\n", sock_init);
+		return 1;
+	}
+	AllocConsole();
+#endif
+
+	OL*ol = vm_new(bootstrap, bootstrap != language ? free : NULL);
+
+#if	HAS_SOCKETS && defined(_WIN32)
+	WSACleanup();
+#endif
+
 	free(ol);
 	return 0;
 }
@@ -2912,17 +2928,30 @@ int main(int argc, char** argv)
 int    // this is NOT thread safe function
 vm_new(unsigned char* bootstrap, void (*release)(void*))
 {
-#if	HAS_SOCKETS
-#ifdef _WIN32
-	WSADATA wsaData;
-	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
-	if (sock_init  != 0) {
-		printf("WSAStartup failed with error: %d\n", sock_init);
-		return 1;
+
+	// если это текстовый скрипт, замапим его на stdin
+	if (bootstrap[0] > 3) {
+		char filename[16]; // lenght of above string
+		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
+
+		int f = mkstemp(filename); // временный файл
+		write(f, bootstrap, strlen(bootstrap));
+		close(f);
+
+		dup2(open(filename, O_BINARY, S_IRUSR), STDIN_FILENO);
+		unlink(filename); // сразу приберем за собой
+
+		if (release)
+			release(bootstrap);
+		bootstrap = language;
+		release = 0;
 	}
-//	AllocConsole();
-#endif//win32
-#endif
+
+	// если отсутствует исполнимый образ
+	if (bootstrap == 0) {
+		fprintf(stderr, "no boot image found\n");
+		return 0;
+	}
 
 	// ===============================================================
 	// создадим виртуальную машину
@@ -2933,13 +2962,20 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
 
+
+	// а теперь поработаем с сериализованным образом:
+	word nwords = 0;
+	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
+
 	heap_t heap;
 //	static //__tlocal__
 	word *fp;
 
+	void* result = 0; // результат выполнения.
+
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
-	int required_memory_size = (INITCELLS + MEMPAD + 1024*1024); // ?
+	int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
 	heap.begin = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
 	if (!heap.begin) {
 		fprintf(stderr, "Failed to allocate %d words for vm memory\n", required_memory_size);
@@ -2956,7 +2992,6 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 	//  загрузить в память аргументы перед вызовом образа
 	// по совместительству, это еще и корневой объект
 	fp = heap.begin;
-	void* result = 0; // результат выполнения.
 	word oargs; // аргументы
 	{
 		oargs = INULL;
@@ -2981,7 +3016,7 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 		else
 #endif
 		{
-			char* filename = "#";
+			char* filename = "-";
 			char *pos = filename;
 
 			int len = 0;
@@ -3005,34 +3040,6 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 		gc(0, e, &fp);
 #endif
 	}
-
-	// если это текстовый скрипт
-	if (bootstrap[0] > 3) {
-		char filename[16]; // lenght of above string
-		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
-
-		int f = mkstemp(filename);
-		write(f, bootstrap, strlen(bootstrap));
-		close(f);
-
-		freopen(filename, "r", stdin);
-		unlink(filename); // сразу приберем за собой.
-
-		bootstrap = language;
-	}
-
-	// если отсутствует исполнимый образ
-	if (bootstrap == 0) {
-		printf("no boot image found\n");
-		result = (void*)0;
-		goto done;
-	}
-
-
-
-	// а теперь поработаем с сериализованным образом:
-	word nwords = 0;
-	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 
 	//heap.fp = fp;
 	//oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
@@ -3092,12 +3099,7 @@ done:
 	free(heap.begin);
 	free(handle);
 
-#if	HAS_SOCKETS
-#ifdef _WIN32
-	WSACleanup();
-#endif//win32
-#endif
-
+exit:
 	return (int)(long)result;
 }
 
@@ -3281,8 +3283,10 @@ word pinvoke(OL* self, word arguments)
 				break;\
 			}
 #ifdef __linux__
+		// default calling convention - cdecl
 		CALL();
 #else
+		// default calling convention - stdcall
 		//todo: set __cdecl = 0, and __stdcall = 1
 		switch (returntype >> 8) {
 		case 0:
