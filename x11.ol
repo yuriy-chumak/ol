@@ -4,60 +4,11 @@
 
 ; http://www.eg.bucknell.edu/~cs367/glx/xintro.html
 (import (owl pinvoke) (owl io)
+   (lib x11)
    (OpenGL version-1-0)
 )
 
-;(define % (dlopen '() RTLD_LAZY)) ; dummy - how to get own handle
-(define GL (dlopen "libGL.so" RTLD_LAZY))
-
-; opengl: https://gist.github.com/gszauer/da038dec2a7ffc288c41
-(define glXChooseVisual  (dlsym GL type-port "glXChooseVisual" type-port type-int+ type-vector-raw))
-(define glXCreateContext (dlsym GL type-port "glXCreateContext" type-port type-port type-int+ type-int+))
-(define glXMakeCurrent   (dlsym GL type-int+ "glXMakeCurrent"  type-port type-port type-port))
-(define glXSwapBuffers   (dlsym GL type-int+ "glXSwapBuffers"  type-port type-port))
-
-;(print (syscall 59 "ls" "-l" #f))
-
 (define OR (lambda args (fold bor 0 args)))
-
-(define % (dlopen "libX11.so" RTLD_LAZY))
-(define XOpenDisplay (dlsym % type-port "XOpenDisplay" type-int+))
-(define XDefaultScreen (dlsym % type-int+ "XDefaultScreen" type-port))
-
-(define XRootWindow (dlsym % type-port "XRootWindow" type-port type-int+))
-(define XBlackPixel (dlsym % type-port "XBlackPixel" type-port type-int+))
-(define XWhitePixel (dlsym % type-port "XWhitePixel" type-port type-int+))
-
-(define XCreateWindow (dlsym % type-port "XCreateWindow"
-   type-port ; display
-   type-port ; parent Window
-   type-int+ type-int+ type-int+ type-int+ ; x y width height
-   type-int+ ; border width
-   type-int+ ; depth
-   type-int+ ; class
-   type-port ; visual
-   type-int+ ; valuemask
-   type-port ; attributes
-   ))
-(define XCreateSimpleWindow (dlsym % type-port "XCreateSimpleWindow"
-   type-port type-port ; display, parent Window
-   type-int+ type-int+ type-int+ type-int+ ; x y width height
-   type-int+ ; border width
-   type-int+ ; border
-   type-int+ ; background
-   ))
-   
-; http://tronche.com/gui/x/xlib/events/mask.html
-(define ExposureMask (<< 1 15))
-(define KeyPressMask (<< 1 0))
-(define XSelectInput (dlsym % type-int+ "XSelectInput" type-port type-port type-int+))
-
-(define XMapWindow (dlsym % type-int+ "XMapWindow" type-port type-port))
-(define XNextEvent (dlsym % type-int+ "XNextEvent" type-port type-vector-raw))
-
-;(define Colormap type-port)
-;(define XCreateColormap (dlsym % Colormap "XCreateColormap" type-port type-port type-port type-fix+))
-
 
 ;(main)
 (define dpy (XOpenDisplay 0))

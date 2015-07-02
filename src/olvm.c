@@ -51,8 +51,7 @@
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
 //
-// PORT: равка, с типом type-port и размером 2 (либо type-fix+/type-int+ for immediate value)
-// todo: проверить, что все работает в 64-битном коде (fck! оно таки работает!!!)
+// PORT: равка, с типом type-port и размером 2
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
 //  а изменяемые у нас вектора
 
@@ -80,13 +79,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <sys/utsname.h> // uname
 
 #define __USE_POSIX199309 // for nanosleep
 #include <time.h>
 
-#	ifndef O_BINARY
-#		define O_BINARY 0
-#	endif
+// ?
+#ifndef O_BINARY
+#	define O_BINARY 0
+#endif
 
 // ========================================
 //  HAS_SOCKETS 1
@@ -360,7 +361,7 @@ char* dlerror() {
 }
 
 #else
-#include <dlfcn.h>
+#	include <dlfcn.h>
 #endif
 
 #endif//EMBEDDED_VM
@@ -388,29 +389,30 @@ typedef struct OL
 #endif
 } OL;
 
-//;; descriptor format:
+// descriptor format:
+// заголовок объекта, то, что лежит у него в ob[0] (*ob)
+// object headers are further
+//  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1
+//   '----------| '--||'-| '----|
+//              |    ||  |      '-----> object type
+//              |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
+//              |    |'---------------> rawness bit (raw objects have no decriptors(pointers) in them)
+//              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
+//              '---------------------> object size in words
+//  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
+//	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
+//
 // это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
-//                            .------------> 24-bit payload if immediate
-//                            |      .-----> type tag if immediate
-//                            |      |.----> immediateness
-//   .------------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
-//  [pppppppp pppppppp pppppppp tttttti0]
-//   '-------------------------------|
-//                                   '-----> 4- or 8-byte aligned pointer if not immediate
+//                       .------------> 24-bit payload if immediate
+//                       |      .-----> type tag if immediate
+//                       |      |.----> immediateness
+//   .-------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
+//  [... pppppppp pppppppp tttttti0]
+//   '--------------------------|
+//                              '-----> 4- or 8-byte aligned pointer if not immediate
 //      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
-// а вот это заголовок объекта, то, что лежит у него в ob[0] (*ob)
-// object headers are further
-//  [ssssssss ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда! выставлен в 1
-//   '---------------| '--||'-| '----|
-//                   |    ||  |      '-----> object type
-//                   |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
-//                   |    |'---------------> rawness bit (raw objects have no decriptors(pointers) in them)
-//                   |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
-//                   '---------------------> object size in words
-//  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
-//	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
 //
 //; note - there are 6 type bits, but one is currently wasted in old header position
 //; to the right of them, so all types must be <32 until they can be slid to right
@@ -536,8 +538,9 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)(ob)) == TSTRING)
 #define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)(ob)) == TPORT) // todo: maybe need to check port rawness?
 
-#define car(ob)                     (((word*)(ob))[1])
-#define cdr(ob)                     (((word*)(ob))[2])
+#define ref(ob,n)                   (((word*)(ob))[n])
+#define car(ob)                     ref(ob, 1)
+#define cdr(ob)                     ref(ob, 2)
 
 #define cadr(ob)                    car(cdr(ob))
 
@@ -556,7 +559,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define MINGEN                      (1024 * 32)  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
-//static int breaked;      /* set in signal handler, passed over to owl in thread switch */
+static int breaked = 0;      /* set in signal handler, passed over to owl in thread switch */
 //static int seccompp;     /* are we in seccomp? */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
@@ -618,24 +621,14 @@ word*p = NEW (size);\
 })
 
 
-// a1 и a2 надо предвычислить перед тем, как выделим память,
-// так как они в свою очередь могут быть аллоцируемыми объектами.
-#define NEW_PAIR(type, a1, a2) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	/* точка следования */ \
-word*p = NEW_OBJECT (3, type);\
-	p[1] = data1;\
-	p[2] = data2;\
-	/*return*/ p;\
-})
-
 // хитрый макрос агрегирующий макросы-аллокаторы памяти
 //	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
-#define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new(...) NEW_MACRO(__VA_ARGS__, NOTHING, NEW_OBJECT, NEW)(__VA_ARGS__)
+#define NEW_MACRO(_1, _2, NAME, ...) NAME
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_OBJECT, NEW)(__VA_ARGS__)
 
-#define NEW_PAIR3(type, a1, a2) ({\
+// a1 и a2 надо предвычислить перед тем, как выделим память,
+// так как они в свою очередь могут быть аллоцируемыми объектами.
+#define NEW_TYPED_PAIR(type, a1, a2) ({\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
@@ -644,7 +637,8 @@ word*p = NEW_OBJECT (3, type);\
 	p[2] = data2;\
 	/*return*/ p;\
 })
-#define NEW_PAIR2(a1, a2) NEW_PAIR3(TPAIR, a1, a2)
+
+#define NEW_PAIR(a1, a2) NEW_TYPED_PAIR(TPAIR, a1, a2)
 // по факту эта функция сводится к простому:
 /*static __inline__ word* new_pair (word* a1, word* a2)
 {
@@ -660,7 +654,7 @@ word*p = NEW_OBJECT (3, type);\
 
 
 #define NEW_PAIRX(_1, _2, _3, NAME, ...) NAME
-#define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_PAIR3, NEW_PAIR2, NOTHING, NOTHING)(__VA_ARGS__)
+#define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
 
 
 // аллокаторы списоков (todo: что ставить в качестве типа частей, вместо TPAIR?)
@@ -678,9 +672,15 @@ word*p = NEW_OBJECT (3, type);\
 	                new_pair (TPAIR, a2,\
 	                                 new_pair (TPAIR, a3,\
 	                                                  new_pair (TPAIR, a4, INULL))))
+#define new_list5(type, a1, a2, a3, a4, a5) \
+	new_pair (type, a1,\
+	                new_pair (TPAIR, a2,\
+	                                 new_pair (TPAIR, a3,\
+	    	                                          new_pair (TPAIR, a4,\
+	                                                                   new_pair (TPAIR, a5, INULL)))))
 
-#define NEW_LIST(_1, _2, _3, _4, _5, NAME, ...) NAME
-#define new_list(...) NEW_LIST(__VA_ARGS__, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
+#define NEW_LIST(_1, _2, _3, _4, _5, _6, NAME, ...) NAME
+#define new_list(...) NEW_LIST(__VA_ARGS__, new_list5, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
 
 
 // кортеж
@@ -700,7 +700,7 @@ word*p = new (size);\
 	int words = (size / W) + ((size % W) ? 2 : 1);\
 	int pads = (words - 1) * W - size;\
 	\
-word* p = new_raw_object (words, type, pads);\
+word* p = new_raw_object(words, type, pads);\
 	/*return*/ p;\
 })
 
@@ -881,19 +881,19 @@ static word gc(heap_t *heap, int size, word regs) {
 //	word *root = fp + 1; // same
 
 	// непосредственно сам GC
-//	clock_t uptime;
-//	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
+	clock_t uptime;
+	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
 	root[0] = regs;
 	mark(root, fp);        // assert (root > fp)
 	fp = sweep(fp);
 	regs = root[0];
-//	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
+	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
 	heap->fp = fp;
 	#if DEBUG_GC
 		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
 				uptime,
-				sizeof(word) * (fp - heap->begin), marked, -1, -1, -1);
+				sizeof(word) * (fp - heap->begin), -1, -1, -1, -1);
 	#endif
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
@@ -902,7 +902,7 @@ static word gc(heap_t *heap, int size, word regs) {
 		word heapsize = (word) heap->end - (word) heap->begin;
 		word nused = heapsize - nfree;
 
-		nfree -= size*W + MEMPAD;   /* how much really could be snipped off */
+		nfree -= size*W + MEMPAD;   // how much really could be snipped off
 		if (nfree < (heapsize / 10) || nfree < 0) {
 			/* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
 			((word*)regs)[hdrsize(*(word*)regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
@@ -947,7 +947,7 @@ void set_blocking(int sock, int blockp) {
 #endif
 }
 
-/*#ifndef _WIN32
+#ifndef _WIN32
 static
 void signal_handler(int signal) {
    switch(signal) {
@@ -959,16 +959,16 @@ void signal_handler(int signal) {
          breaked |= 4;
    }
 }
-#endif*/
+#endif
 
 /* small functions defined locally after hitting some portability issues */
-static __inline__ void bytecopy(char *from, char *to, int n) { while(n--) *to++ = *from++; }
-static __inline__ void wordcopy(word *from, word *to, int n) { while(n--) *to++ = *from++; }
+static __inline__ void bytecopy(char *from, char *to, int n) { while (n--) *to++ = *from++; }
+static __inline__ void wordcopy(word *from, word *to, int n) { while (n--) *to++ = *from++; }
 static __inline__
 unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in win32 compile
-   unsigned int p = 0;
-   while (p < max && *pos++) p++;
-   return p;
+	unsigned int p = 0;
+	while (p < max && *pos++) p++;
+	return p;
 }
 
 void set_signal_handler() {
@@ -977,11 +977,10 @@ void set_signal_handler() {
    struct sigaction sa;
    sa.sa_handler = signal_handler;
    sigemptyset(&sa.sa_mask);
-   sa.sa_flags = SA_RESTART;
+// sa.sa_flags = SA_RESTART;
    sigaction(SIGINT, &sa, NULL);
    sigaction(SIGPIPE, &sa, NULL);
-#endif
-*/
+#endif//*/
 }
 
 
@@ -993,10 +992,12 @@ void set_signal_handler() {
 	word size = *ip++, tmp; word *T = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; \
 	*T = make_header(size, proctype); T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-#define NEXT(n)                     ip += n; goto main_dispatch
-//#define SKIP(n)                     ip += n; break;
 #define TICKS                       10000 /* # of function calls in a thread quantum  */
-#define ERROR(opcode, a, b)         { R[4] = F(opcode); R[5] = (word) a; R[6] = (word) b; goto invoke_mcp; }
+#define ERROR(opcode, a, b)         { \
+	R[4] = F(opcode);\
+	R[5] = (word) a; \
+	R[6] = (word) b; \
+	goto invoke_mcp; }
 #define CHECK(exp,val,code)         if (!(exp)) ERROR(code, val, ITRUE);
 
 #define A0                          R[ip[0]]
@@ -1077,10 +1078,10 @@ void* runtime(void *args) // heap top
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
 	word* this = (word*) ptrs[nobjs];
 
-	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусорными объектами
+	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	for (int i = i; i < NR; i++)
 		R[i] = INULL;
-	R[0] = IFALSE; // mcp (no yet)
+	R[0] = IFALSE; // mcp (пока нету)
 	R[3] = IHALT;  // continuation
 	R[4] = (word) userdata; // command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
@@ -1728,17 +1729,17 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 	      word a = A0;
 	      word b = A1;
 	      A2 = a & b;
-	      NEXT(3); }
+	      ip += 3; break; }
 		case 56: { /* bor a b r, prechecked */
 	      word a = A0;
 	      word b = A1;
 	      A2 = a | b;
-	      NEXT(3); }
+	      ip += 3; break; }
 		case 57: { /* bxor a b r, prechecked */
 	      word a = A0;
 	      word b = A1;
 	      A2 = a ^ (b & (FMAX << IPOS)); /* inherit a's type info */
-	      NEXT(3); }
+	      ip += 3; break; }
 
 		case 58: { /* fx>> a b hi lo */
 			big r = ((big) fixval(A0)) << (FBITS - fixval(A1));
@@ -2294,7 +2295,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #if 1
 					FILE* pipe = popen((const char*)car(a), "r");
 
-					char* p = &car(fp);
+					char* p = (char*) &car(fp);
 					while (!feof(pipe)) {
 						// todo: check for available memory, gc()
 						p += fread(p, 1, 1024, pipe);
@@ -2382,6 +2383,25 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				assert(0);   // сюда мы уже не должны попасть
 				break;
 			}
+
+			// UNAME (uname)
+			// http://linux.die.net/man/2/uname
+			case 63: {
+				struct utsname name;
+				if (uname(&name))
+					break;
+
+				result = (word)new_list (TPAIR,
+						new_string(strlen((char*)name.sysname), name.sysname),
+						new_string(strlen((char*)name.nodename), name.nodename),
+						new_string(strlen((char*)name.release), name.release),
+						new_string(strlen((char*)name.version), name.version),
+						new_string(strlen((char*)name.machine), name.machine)
+				);
+
+				break;
+			}
+
 
 			// other commands
 
@@ -2914,6 +2934,7 @@ int main(int argc, char** argv)
 	AllocConsole();
 #endif
 
+	set_signal_handler();
 	OL*ol = vm_new(bootstrap, bootstrap != language ? free : NULL);
 
 #if	HAS_SOCKETS && defined(_WIN32)
@@ -3041,9 +3062,9 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 #endif
 	}
 
-	//heap.fp = fp;
-	//oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
-	//fp = heap.fp;
+	heap.fp = fp;
+	oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
+	fp = heap.fp;
 
 	// Десериализация загруженного образа в объекты
 //	word* ptrs = fp;

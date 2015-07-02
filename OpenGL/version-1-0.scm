@@ -400,18 +400,16 @@
       (owl pinvoke))
    (begin
 
-; todo: сделать определение нужной библиотеки самодостаточным, без всяких *OS*
-(define GL_LIBRARY
-   "opengl32")
-;   (case *OS*
-;      (1 "opengl32.dll") ; windows
-;      (2 "libGL.so")     ; linux
-;      (3 "GLKit")))      ; macos, https://developer.apple.com/library/mac/documentation/graphicsimaging/conceptual/OpenGL-MacProgGuide/opengl_intro/opengl_intro.html
-
 (define    GL_VERSION_1_0    1)
-(define % (or
-   (dlopen "opengl32" RTLD_LAZY)
-   (dlopen "libGL.so" RTLD_LAZY)))
+
+; done: сделать определение нужной библиотеки самодостаточным, без всяких *OS*
+(define uname (syscall 63 0 0 0)) ; internal
+(define GL_LIBRARY
+   (if (string-eq? (car uname) "Windows")  "opengl32"
+   (if (string-eq? (car uname) "Linux")    "libGL.so"
+   )))
+
+(define % (dlopen GL_LIBRARY RTLD_LAZY))
 	
 ; поддержка расширений :
 ;(define _glGetProcAddress_address
@@ -419,9 +417,11 @@
 ;     (1 (dlsym % type-handle "wglGetProcAddress"))
 ;     (2 (dlsym % type-handle "glXGetProcAddress"))
 ;     (3 "GLKit")))
-(define GetProcAddress (or
-   (dlsym % type-port "wglGetProcAddress" type-string)
-   (dlsym % type-port "glXGetProcAddress" type-string)))
+(define GetProcAddress ; internal function
+   (dlsym % type-port
+      (if (string-eq? (car uname) "Windows")  "wglGetProcAddress"
+      (if (string-eq? (car uname) "Linux")    "glXGetProcAddress"))
+   type-string))
 
 (define (glGetProcAddress type name . prototype)
    (let ((rtty (cons type prototype))

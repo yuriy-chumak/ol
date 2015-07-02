@@ -58,7 +58,7 @@
 ;(define *interactive* (sys-prim 500 stdin #f #f)) ;; was #true
 (define *interactive* #f)
 
-(define *include-dirs* (list ".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
+(define *include-dirs* (list "." "/usr/lib/ol")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 
 (define *owl-names* #empty)
 

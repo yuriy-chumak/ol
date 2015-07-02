@@ -186,7 +186,7 @@
             ((if (null? test) then else) (if (eq? test '()) then else))
             ((if (empty? test) then else) (if (eq? test #empty) then else)) ;; FIXME - handle with partial eval later
             ((if (eq? a b) then else) (_branch 0 a b then else))            
-            ((if (a . b) then else) (let ((x (a . b))) (if x then else)))   ; or ((lambda (x) (if x then else)) (a . b)))
+            ((if (a . b) then else) (let ((x (a . b))) (if x then else)))   ; or ((lambda (x) (if x then else)) (a . b))
             ((if #false then else) else)
             ((if #true then else) then)
             ((if test then else) (_branch 0 test #false else then))))

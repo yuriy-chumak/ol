@@ -413,7 +413,7 @@
 ; ---------------------------------------------------------------------------
    (begin
    (define EXT_texture_object 1) ; todo: change to the dynamic, maybe.
-   (define % (dlopen GL_LIBRARY 0))
+   (define % (dlopen GL_LIBRARY RTLD_LAZY))
 
    (define glBindTexture (dlsym % GLvoid "glBindTexture" GLenum GLuint))
    ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);

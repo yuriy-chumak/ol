@@ -68,8 +68,6 @@
       (owl pinvoke))
   (begin
 
-;temp:
-;(define (port) (cast "*" type-port))
 (define (port) (raw type-port '(0)))
 
 
