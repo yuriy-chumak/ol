@@ -1142,25 +1142,25 @@
 ;WINGDIAPI void APIENTRY glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexGeni (GLenum coord, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
-  (define glTexImage1D (dlsym % GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum GLvoid*))
-  (define glTexImage2D (dlsym % GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum GLvoid*))
-  (define glTexParameteri (dlsym % GLvoid "glTexParameteri" GLenum GLenum GLint))
+   (define glTexImage1D (dlsym % GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum GLvoid*))
+   (define glTexImage2D (dlsym % GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum GLvoid*))
+   (define glTexParameteri (dlsym % GLvoid "glTexParameteri" GLenum GLenum GLint))
 
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
-  (define glTranslatef (dlsym % GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
-  (define glVertex2d (dlsym % GLvoid "glVertex2d" GLdouble GLdouble))
+   (define glTranslatef (dlsym % GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
+   (define glVertex2d (dlsym % GLvoid "glVertex2d" GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
-  (define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
+   (define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex2fv (const GLfloat *v);
-  (define glVertex2i (dlsym % GLvoid "glVertex2i" GLint GLint))
+   (define glVertex2i (dlsym % GLvoid "glVertex2i" GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
 ;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v);
-  (define glVertex3d (dlsym % GLvoid "glVertex3d" GLdouble GLdouble GLdouble))
+   (define glVertex3d (dlsym % GLvoid "glVertex3d" GLdouble GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
-  (define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
+   (define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);
-  (define glVertex3i (dlsym % GLvoid "glVertex3i" GLint GLint GLint))
+   (define glVertex3i (dlsym % GLvoid "glVertex3i" GLint GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex3s (GLshort x, GLshort y, GLshort z);
 ;WINGDIAPI void APIENTRY glVertex3sv (const GLshort *v);
@@ -1172,6 +1172,6 @@
 ;WINGDIAPI void APIENTRY glVertex4iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex4s (GLshort x, GLshort y, GLshort z, GLshort w);
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
-  (define glViewport (dlsym % GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+   (define glViewport (dlsym % GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
 ))

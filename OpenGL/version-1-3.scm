@@ -8,12 +8,12 @@
   )
   
    (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl pinvoke)
       (OpenGL version-1-2-1))
    (begin
-
-(define    GL_VERSION_1_3    1)
-(define % (dlopen "opengl32" 0))
+   (define GL_VERSION_1_3 1)
+   
+   (define % (dlopen GL_LIBRARY RTLD_LAZY))
 
 ))

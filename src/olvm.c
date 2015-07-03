@@ -891,9 +891,11 @@ static word gc(heap_t *heap, int size, word regs) {
 
 	heap->fp = fp;
 	#if DEBUG_GC
-		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+		fprintf(stderr, "GC done in %4d ms (use: %8d from %8d bytes - %2d%%): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
 				uptime,
-				sizeof(word) * (fp - heap->begin), -1, -1, -1, -1);
+				(sizeof(word) * (fp - heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
+				(sizeof(word) * (fp - heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)),
+				-1, -1, -1, -1);
 	#endif
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
@@ -3164,7 +3166,7 @@ int vm_feof(OL* vm)
 //   а тут у нас реализация pinvoke механизма. пример в opengl.scm
 #if HAS_PINVOKE
 __attribute__
-       ((__visibility__("default")))
+	((__visibility__("default")))
 word pinvoke(OL* self, word arguments)
 {
 	word *fp, result;
@@ -3202,6 +3204,18 @@ word pinvoke(OL* self, word arguments)
 		// http://www.agner.org/optimize/calling_conventions.pdf
 #if __amd64__
 		#define CALLFLOATS(conv) \
+			case 2 + 0x0200:\
+			         return ((conv word (*)  (word, float))\
+			                 function) (argv[0], *(float*)&argv[1]);\
+			case 3 + 0x0600:\
+			         return ((conv word (*)  (word, float, float))\
+			                 function) (argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2]);\
+			case 4 + 0x0E00:\
+			         return ((conv word (*)  (word, float, float, float))\
+			                 function) (argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2], *(float*)&argv[3]);\
+			\
 			case 2 + 0x0300:\
 			         return ((conv word (*)  (float, float))\
 			                 function) (*(float*)&argv[0], *(float*)&argv[1]);\

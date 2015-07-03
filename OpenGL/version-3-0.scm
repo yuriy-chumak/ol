@@ -5,19 +5,20 @@
 ;  в классах младших версий opengl и выключать не используемые (устаревшие) фичи.
 ;  для этого надо добавить в OL примитив (defined?), который я там пока не нашел.
 
-(import         (OpenGL version-2-1))
+(import         (OpenGL version-1-0))
 (define-library (OpenGL version-3-0)
-  (export
+   (export
     GL_VERSION_3_0
 
-  )
+   )
   
-  (import
-    (owl defmac) (owl io)
-    (owl pinvoke))
-  (begin
-
-(define    GL_VERSION_3_0    1)
-(define % (dlopen "opengl32" 0))
+   (import
+      (owl defmac) (owl io)
+      (owl pinvoke))
+    
+   (begin
+   (define GL_VERSION_3_0 1)
+  
+   (define % (dlopen GL_LIBRARY RTLD_LAZY))
 
 ))
