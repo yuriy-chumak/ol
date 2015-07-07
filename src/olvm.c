@@ -402,7 +402,7 @@ typedef struct OL
 //  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
 //	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
 //
-// это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
+// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
 //                       .------------> 24-bit payload if immediate
 //                       |      .-----> type tag if immediate
 //                       |      |.----> immediateness
@@ -469,7 +469,7 @@ typedef struct object
 // fliptag used in dir sys-prims
 
 //#define header(x)                   *(word *x)
-#define imm_type(x)                 ((((word)x) >> TPOS) & 0x3F)
+//#define imm_type(x)                 ((((word)x) >> TPOS) & 0x3F)
 #define imm_val(x)                   (((word)x) >> IPOS)
 #define hdrsize(x)                  ((((word)x) >> SPOS) & MAXOBJ)
 #define padsize(x)                  ((((word)x) >> IPOS) & 7)
@@ -483,6 +483,7 @@ typedef struct object
 
 #define is_pointer(x)               (!immediatep(x))
 #define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
+#define is_fixed(x)                 (((word)x) & 2) // immediate value
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 #define TFIX                         (0)      // type-fix+
@@ -891,11 +892,13 @@ static word gc(heap_t *heap, int size, word regs) {
 
 	heap->fp = fp;
 	#if DEBUG_GC
-		fprintf(stderr, "GC done in %4d ms (use: %8d from %8d bytes - %2d%%): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
-				uptime,
+		struct tm tm = *localtime(&(time_t){time(NULL)});
+		char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
+		fprintf(stderr, "%s, GC done in %2d ms (use: %7d from %8d bytes - %2d%%): tbd.\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+				buff/*asctime(&tm)*/, uptime,
 				(sizeof(word) * (fp - heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
-				(sizeof(word) * (fp - heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)),
-				-1, -1, -1, -1);
+				(sizeof(word) * (fp - heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)));
+//				-1, -1, -1, -1);
 	#endif
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
@@ -952,6 +955,7 @@ void set_blocking(int sock, int blockp) {
 #ifndef _WIN32
 static
 void signal_handler(int signal) {
+	fprintf(stderr, "signal %d!\n", signal);
    switch(signal) {
       case SIGINT:
          breaked |= 2; break;
@@ -974,15 +978,15 @@ unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in
 }
 
 void set_signal_handler() {
-/*
+
 #ifndef _WIN32
-   struct sigaction sa;
-   sa.sa_handler = signal_handler;
-   sigemptyset(&sa.sa_mask);
+//   struct sigaction sa;
+//   sa.sa_handler = signal_handler;
+//   sigemptyset(&sa.sa_mask);
 // sa.sa_flags = SA_RESTART;
-   sigaction(SIGINT, &sa, NULL);
-   sigaction(SIGPIPE, &sa, NULL);
-#endif//*/
+   signal(SIGINT, signal_handler);
+   signal(SIGPIPE, signal_handler);
+#endif
 }
 
 
@@ -1439,7 +1443,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			CHECK(allocp(this), this, RUN);
 
 			word hdr = *this;
-			if (imm_type(hdr) == TTHREAD) {
+			if (typeof (hdr) == TTHREAD) {
 				int pos = hdrsize(hdr) - 1;
 				word code = this[pos];
 				acc = pos - 3;

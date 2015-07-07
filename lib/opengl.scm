@@ -25,7 +25,7 @@
 ;(define WIN32 (string-eq? (car uname) "Windows"))
 
 ;(import (lib winapi))
-(import (lib x11))
+;(import (lib x11))
 
 ; пара служебных функций
 

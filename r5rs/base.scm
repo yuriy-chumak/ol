@@ -31,6 +31,12 @@
       
       ;;; Chapter 2
       ;;; Lexical conventions
+      ;
+      ;  This section gives an informal account of some of the lexical conventions used in writing Scheme
+      ; programs. For a formal syntax of Scheme, see section 7.1.
+      ;  Upper and lower case forms of a letter are never distinguished except within character and string
+      ; constants. For example, Foo is the same identifier as FOO, and #x1AB is the same number as #X1ab.
+      ;
       ;; 2.1  Identifiers
       ; lambda        q
       ; list->vector  soup
@@ -38,7 +44,11 @@
       ; <=?           a34kTMNs
       ; the-word-recursion-has-many-meanings
       ;
+      ;  Extended alphabetic characters may be used within identifiers as if they were letters. The
+      ; following are extended alphabetic characters:
+      ;
       ; ! $ % & * + - . / : < = > ? @ ^ _ ~
+      ;
 
       ;; 2.2  Whitespace and comments
       ;; 2.3  Other notations
