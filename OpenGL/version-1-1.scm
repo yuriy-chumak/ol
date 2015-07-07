@@ -31,8 +31,7 @@
 ; Dependencies
 ;	None
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
@@ -135,8 +134,7 @@
 ; Dependencies
 ;	None
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
@@ -180,8 +178,7 @@
 ; Dependencies
 ;	EXT_blend_minmax affects the definition of this extension
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
       
 ; ---------------------------------------------------------------------------
@@ -244,8 +241,7 @@
 ; Dependencies
 ;	None
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
       
 ; ---------------------------------------------------------------------------
@@ -290,9 +286,9 @@
 ;	SGIS_texture_filter4 affects the definition of this extension.
 ;	EXT_subtexture affects the definition of this extension.
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
+
 ;	EXT_texture is required.
    (import
       (OpenGL EXT texture))
@@ -342,9 +338,9 @@
 ;	EXT_abgr affects the definition of this extension
 ;	EXT_texture3D affects the definition of this extension
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
+
 ;	EXT_texture is required.
    (import
       (OpenGL EXT texture))
@@ -388,8 +384,7 @@
 ; Dependencies
 ;	EXT_texture3D affects the definition of this extension
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
@@ -413,7 +408,7 @@
 ; ---------------------------------------------------------------------------
    (begin
    (define EXT_texture_object 1) ; todo: change to the dynamic, maybe.
-   (define % (dlopen GL_LIBRARY 0))
+   (define % (dlopen GL_LIBRARY RTLD_LAZY))
 
    (define glBindTexture (dlsym % GLvoid "glBindTexture" GLenum GLuint))
    ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
@@ -514,8 +509,7 @@
 
 ; ---------------------------------------------------------------------------
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
 
    (import (OpenGL EXT vertex_array))

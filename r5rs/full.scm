@@ -2,5 +2,8 @@
 (define-library (r5rs full)
    (import (r5rs base))
    (export
-      (exports (r5rs base))
+     (exports (r5rs base)))
+      
+   (begin
+   (print "TBD.")
 ))

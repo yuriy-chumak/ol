@@ -49,13 +49,16 @@ config/HAS_SOCKETS:
 
 
 ol: src/olvm.c src/boot.c config
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol \
-	-DHAS_DLOPEN=`cat config/HAS_DLOPEN` \
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol -s \
+	-Xlinker --export-dynamic \
+	-DHAS_DLOPEN=`cat config/HAS_DLOPEN` -ldl \
 	-DHAS_SOCKETS=`cat config/HAS_SOCKETS` \
-	-DHAS_PINVOKE=1 -ldl
-	
+	-DHAS_PINVOKE=1
+	@echo Ok.
+
 vm: src/olvm.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -O3 -o vm
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DNDEBUG -O3 -o vm -s -ldl
+	@echo Ok.
 
 $(boot.c): src/boot.c
 	@cp src/boot.c $(boot.c)
@@ -134,5 +137,9 @@ tests: \
 	done
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
 	@echo "passed!"
+
+sample-embed:
+	gcc src/sample-embed.c src/olvm.c src/boot.c -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
+	-Xlinker --export-dynamic
 
 .PHONY: boot

@@ -6,7 +6,7 @@
 ;; todo: maybe move ncar, and other "n" to the normal but with macroses on top level with type checking.
 
 (define-library (lang vm)
-   (export 
+   (export
       primops
       *primitives*
       primop-name ;; primop → symbol | primop
@@ -121,7 +121,7 @@
       ;(define ff-toggle (raw type-bytecode '(46 4 5  24 5)))
 
       ;(define sys-prim (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
-      (define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
+      ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
 
       (define primops (list
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
@@ -281,24 +281,26 @@
 ;      18 fork
 ;      21 kill
 
+      ;; used syscalls
+      (define (exec function . args) (sys-prim 59 function args #false))
 
-
-      ;; special things exposed by the vm
-      (define (set-memory-limit n) (sys-prim 1007 n n n))
-      (define (get-word-size)      (sys-prim 1008 #false #false #false))
-      (define (get-memory-limit)   (sys-prim 1009 #false #false #false))
-      (define (start-seccomp)      (sys-prim 1010 #false #false #false)) ; not enabled by defa
-
-      ;; stop the vm *immediately* without flushing input or anything else with return value n
-      (define (halt n)             (sys-prim 1006 n n n))
-      ;; make thread sleep for a few thread scheduler rounds
-      (define (set-ticker-value n) (sys-prim 1022 n #false #false))
-      (define (wait n)
-         (if (eq? n 0)
-            n
-            (let* ((n _ (fx- n 1)))
-               (set-ticker-value 0)
-               (wait n))))
+;      ;; special things exposed by the vm
+;      (define (set-memory-limit n) (sys-prim 1007 n n n))
+;      (define (get-word-size)      (sys-prim 1008 #false #false #false))
+;      (define (get-memory-limit)   (sys-prim 1009 #false #false #false))
+;      (define (start-seccomp)      (sys-prim 1010 #false #false #false)) ; not enabled by defa
+;
+;      ;; stop the vm *immediately* without flushing input or anything else with return value n
+;      (define (halt n)             (sys-prim 1006 n n n))
+;      ;; make thread sleep for a few thread scheduler rounds
+;      (define (set-ticker-value n) (sys-prim 1022 n #false #false))
+;      (define (wait n)
+;         (if (eq? n 0)
+;            n
+;            (let* ((n _ (fx- n 1)))
+;               (set-ticker-value 0)
+;               (wait n))))
+               
 
 
 ; проверку типов вынесем на уровень компилятора!

@@ -52,6 +52,7 @@
    (export 
       dlopen
       dlsym dlsym+
+      pinvoke exec
 
       RTLD_LAZY
       RTLD_NOW
@@ -79,6 +80,7 @@
       (r5rs base)
       (owl io)
       (owl math)
+      (owl primop) ; exec
       (owl string))
 
    (begin
@@ -117,8 +119,15 @@
 ; Do not delete object when closed.
 (define RTLD_NODELETE	#x01000)
 
+(define pinvoke (sys-prim 1031 (sys-prim 1030 '() 1 #false) "pinvoke" #false))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать 
+(define (dlsym+ dll name)
+   (let ((function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+      (if function
+         (lambda args
+            (exec function args #false)))))
+         
 (define (dlsym  dll type name . prototype)
 ;  (print "dlsym: " name)
    ; todo: add arguments to the call of function and use as types
@@ -127,10 +136,13 @@
    ; совпадает (возможно еще во время компиляции)
    (let ((rtty (cons type prototype))
          (function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+      (if function
       (lambda args
-;        (print "pinvoke: " name)
-         (sys-prim 1032 function args rtty))))
-(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
+;         (print "pinvoke: " name)
+         (exec pinvoke  function rtty args)))))
+;         (sys-prim 1032 function args rtty))))
+
+;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
 ;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl         
 ;;(define (dlsym-c type dll name . prototype)
 ;;; todo: отправлять тип функции третим параметром (sys-prim 1031) и в виртуальной машине

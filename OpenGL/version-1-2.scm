@@ -25,8 +25,7 @@
 ; Dependencies
 ;	None
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
@@ -80,15 +79,17 @@
    )
 
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-1))
       
    (import (OpenGL EXT bgra))
       
    (begin
-
-   (define    GL_VERSION_1_2    1)
-   (define % (dlopen "opengl32" 0))
+   (define GL_VERSION_1_2 1)
+   (define % (dlopen GL_LIBRARY RTLD_LAZY))
+   
+   
+;  ; opengl 1.2 https://www.opengl.org/registry/api/GL/glext.h
+   
 
 ))

@@ -1,11 +1,5 @@
 bin/
-c/ol.c
-c/vm.c
 doc/ol.1.gz
-fasl/bootp.fasl
-fasl/boot.fasl
-fasl/ol.fasl
 tmp
 =======
 Debug/
-/examples/

@@ -8,13 +8,12 @@
   )
   
    (import
-      (owl defmac) (owl io)
-      (owl pinvoke)
+      (r5rs base) (owl io)
       (OpenGL version-1-4))
    (begin
-
-(define    GL_VERSION_1_5    1)
-(define % (dlopen "opengl32" 0))
+   (define GL_VERSION_1_5 1)
+   
+   (define % (dlopen GL_LIBRARY RTLD_LAZY))
 
 ;	using GLintptr		= System.IntPtr;	// ptrdiff_t
 ;	using GLsizeiptr	= System.IntPtr;	// ptrdiff_t

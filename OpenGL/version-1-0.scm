@@ -391,41 +391,39 @@
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
     ; https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml
     glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height)
+    
+    (exports (owl pinvoke))
   )
   
 ; ============================================================================
 ; == implementation ==========================================================
    (import
-      (owl defmac) (owl io) (owl string)
+      (r5rs base) (owl io) (owl string)
       (owl pinvoke))
    (begin
+   (define GL_VERSION_1_0 1)
 
-; todo: сделать определение нужной библиотеки самодостаточным, без всяких *OS*
+(define uname (syscall 63 0 0 0)) ; internal
 (define GL_LIBRARY
-   "opengl32")
-;   (case *OS*
-;      (1 "opengl32.dll") ; windows
-;      (2 "libGL.so")     ; linux
-;      (3 "GLKit")))      ; macos, https://developer.apple.com/library/mac/documentation/graphicsimaging/conceptual/OpenGL-MacProgGuide/opengl_intro/opengl_intro.html
+   (if (string-eq? (car uname) "Windows")  "opengl32"
+   (if (string-eq? (car uname) "Linux")    "libGL.so"
+   )))
 
-(define    GL_VERSION_1_0    1)
-(define % (dlopen GL_LIBRARY 0))
+(define % (dlopen GL_LIBRARY RTLD_LAZY))
 	
 ; поддержка расширений :
-;(define _glGetProcAddress_address
-;   (case *OS*
-;     (1 (dlsym % type-handle "wglGetProcAddress"))
-;     (2 (dlsym % type-handle "glXGetProcAddress"))
-;     (3 "GLKit")))
-(define GetProcAddress (dlsym % type-port "wglGetProcAddress" type-string))
-     
+(define GetProcAddress ; internal function
+   (dlsym % type-port
+      (if (string-eq? (car uname) "Windows")  "wglGetProcAddress"
+      (if (string-eq? (car uname) "Linux")    "glXGetProcAddress"))
+    type-string))
+
 (define (glGetProcAddress type name . prototype)
    (let ((rtty (cons type prototype))
          (function (GetProcAddress (c-string name)))) ; todo: избавиться от (c-string)
+      (if function
       (lambda args
-;        (print "opengl pinvoke: " (c-string name))
-         (sys-prim 1032 function args rtty))))
-
+         (exec pinvoke function rtty args)))))
 
 ;//	Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
 ;// Правая. x-направо, y-вверх, z-к себе
@@ -1138,25 +1136,25 @@
 ;WINGDIAPI void APIENTRY glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexGeni (GLenum coord, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
-  (define glTexImage1D (dlsym % GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum GLvoid*))
-  (define glTexImage2D (dlsym % GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum GLvoid*))
-  (define glTexParameteri (dlsym % GLvoid "glTexParameteri" GLenum GLenum GLint))
+   (define glTexImage1D (dlsym % GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum GLvoid*))
+   (define glTexImage2D (dlsym % GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum GLvoid*))
+   (define glTexParameteri (dlsym % GLvoid "glTexParameteri" GLenum GLenum GLint))
 
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
-  (define glTranslatef (dlsym % GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
-  (define glVertex2d (dlsym % GLvoid "glVertex2d" GLdouble GLdouble))
+   (define glTranslatef (dlsym % GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
+   (define glVertex2d (dlsym % GLvoid "glVertex2d" GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
-  (define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
+   (define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex2fv (const GLfloat *v);
-  (define glVertex2i (dlsym % GLvoid "glVertex2i" GLint GLint))
+   (define glVertex2i (dlsym % GLvoid "glVertex2i" GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
 ;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v);
-  (define glVertex3d (dlsym % GLvoid "glVertex3d" GLdouble GLdouble GLdouble))
+   (define glVertex3d (dlsym % GLvoid "glVertex3d" GLdouble GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
-  (define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
+   (define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);
-  (define glVertex3i (dlsym % GLvoid "glVertex3i" GLint GLint GLint))
+   (define glVertex3i (dlsym % GLvoid "glVertex3i" GLint GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex3s (GLshort x, GLshort y, GLshort z);
 ;WINGDIAPI void APIENTRY glVertex3sv (const GLshort *v);
@@ -1168,6 +1166,6 @@
 ;WINGDIAPI void APIENTRY glVertex4iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex4s (GLshort x, GLshort y, GLshort z, GLshort w);
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
-  (define glViewport (dlsym % GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+   (define glViewport (dlsym % GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
 ))

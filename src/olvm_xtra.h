@@ -63,6 +63,8 @@ word*p = NEW_OBJECT (3, TPAIR);\
 #define uftoi(fix)  ({ ((word)fix >> IPOS); })
 #define sftoi(fix)  ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
 
+#define car(ob)                     (((word*)(ob))[1])
+#define cdr(ob)                     (((word*)(ob))[2])
 
 
 #endif /* SRC_OLVM_XTRA_H_ */

@@ -51,8 +51,7 @@
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
 //
-// PORT: равка, с типом type-port и размером 2 (либо type-fix+/type-int+ for immediate value)
-// todo: проверить, что все работает в 64-битном коде (fck! оно таки работает!!!)
+// PORT: равка, с типом type-port и размером 2
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
 //  а изменяемые у нас вектора
 
@@ -64,7 +63,7 @@
 //	все остальное - макросы
 
 #include <assert.h>
-#include <unistd.h> // posix
+#include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #include <stddef.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -80,13 +79,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <sys/utsname.h> // uname
 
 #define __USE_POSIX199309 // for nanosleep
 #include <time.h>
 
-#	ifndef O_BINARY
-#		define O_BINARY 0
-#	endif
+// ?
+#ifndef O_BINARY
+#	define O_BINARY 0
+#endif
 
 // ========================================
 //  HAS_SOCKETS 1
@@ -132,7 +133,7 @@
 
 // -----------------------------
 // Threading (pthread for win32)
-#if EMBEDDED_VM
+#if 0//EMBEDDED_VM
 
 #ifdef _WIN32
 //	http://mirrors.kernel.org/sourceware/pthreads-win32/
@@ -140,6 +141,7 @@
 //#define ESRCH 3
 typedef HANDLE pthread_t;
 typedef struct pthread_attr_t {} pthread_attr_t;
+
 static int
 pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
                void *(*function)(void *), void * argument)
@@ -344,7 +346,7 @@ int dlclose(void *handle)
 }*/
 
 static
-void *dlsym  (void *handle, const char *name)
+void *dlsym(void *handle, const char *name)
 {
 	FARPROC function;
 
@@ -359,7 +361,7 @@ char* dlerror() {
 }
 
 #else
-#include <dlfcn.h>
+#	include <dlfcn.h>
 #endif
 
 #endif//EMBEDDED_VM
@@ -387,29 +389,30 @@ typedef struct OL
 #endif
 } OL;
 
-//;; descriptor format:
-// это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
-//                            .------------> 24-bit payload if immediate
-//                            |      .-----> type tag if immediate
-//                            |      |.----> immediateness
-//   .------------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
-//  [pppppppp pppppppp pppppppp tttttti0]
-//   '-------------------------------|
-//                                   '-----> 4- or 8-byte aligned pointer if not immediate
+// descriptor format:
+// заголовок объекта, то, что лежит у него в ob[0] (*ob)
+// object headers are further
+//  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1
+//   '----------| '--||'-| '----|
+//              |    ||  |      '-----> object type
+//              |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
+//              |    |'---------------> rawness bit (raw objects have no decriptors(pointers) in them)
+//              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
+//              '---------------------> object size in words
+//  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
+//	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
+//
+// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
+//                       .------------> 24-bit payload if immediate
+//                       |      .-----> type tag if immediate
+//                       |      |.----> immediateness
+//   .-------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
+//  [... pppppppp pppppppp tttttti0]
+//   '--------------------------|
+//                              '-----> 4- or 8-byte aligned pointer if not immediate
 //      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
-// а вот это заголовок объекта, то, что лежит у него в ob[0] (*ob)
-// object headers are further
-//  [ssssssss ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда! выставлен в 1
-//   '---------------| '--||'-| '----|
-//                   |    ||  |      '-----> object type
-//                   |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
-//                   |    |'---------------> rawness bit (raw objects have no decriptors(pointers) in them)
-//                   |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
-//                   '---------------------> object size in words
-//  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
-//	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
 //
 //; note - there are 6 type bits, but one is currently wasted in old header position
 //; to the right of them, so all types must be <32 until they can be slid to right
@@ -431,14 +434,6 @@ typedef struct object
 } __attribute__ ((aligned(sizeof(word)), packed)) object; // or  ?
 #pragma pack(pop)*/
 
-/*typedef struct pair
-{
-	word header;
-	word *car;
-	word *cdr;
-} pair;*/
-
-
 #define IPOS                        8  // offset of immediate payload
 #define SPOS                        16 // offset of size bits in header
 #define TPOS                        2  // offset of type bits in header
@@ -454,9 +449,9 @@ typedef struct object
 #define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
 #define MAXOBJ                      0xffff         /* max words in tuple including header */
 #if __amd64__
-#define bign_t                      __int128
+#define big                         __int128
 #else
-#define bign_t                      long long //__int64
+#define big                         long long //__int64
 #endif
 
 #define RAWBIT                      ((1 << RPOS))
@@ -474,7 +469,7 @@ typedef struct object
 // fliptag used in dir sys-prims
 
 //#define header(x)                   *(word *x)
-#define imm_type(x)                 ((((word)x) >> TPOS) & 0x3F)
+//#define imm_type(x)                 ((((word)x) >> TPOS) & 0x3F)
 #define imm_val(x)                   (((word)x) >> IPOS)
 #define hdrsize(x)                  ((((word)x) >> SPOS) & MAXOBJ)
 #define padsize(x)                  ((((word)x) >> IPOS) & 7)
@@ -488,6 +483,7 @@ typedef struct object
 
 #define is_pointer(x)               (!immediatep(x))
 #define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
+#define is_fixed(x)                 (((word)x) & 2) // immediate value
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 #define TFIX                         (0)      // type-fix+
@@ -543,8 +539,11 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)(ob)) == TSTRING)
 #define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)(ob)) == TPORT) // todo: maybe need to check port rawness?
 
-#define car(ob)                     (((word*)(ob))[1])
-#define cdr(ob)                     (((word*)(ob))[2])
+#define ref(ob,n)                   (((word*)(ob))[n])
+#define car(ob)                     ref(ob, 1)
+#define cdr(ob)                     ref(ob, 2)
+
+#define cadr(ob)                    car(cdr(ob))
 
 // todo: потом переделать в трюк
 // алгоритмические трюки:
@@ -561,7 +560,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define MINGEN                      (1024 * 32)  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
-//static int breaked;      /* set in signal handler, passed over to owl in thread switch */
+static int breaked = 0;      /* set in signal handler, passed over to owl in thread switch */
 //static int seccompp;     /* are we in seccomp? */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
@@ -583,7 +582,9 @@ int execv(const char *path, char *const argv[]);
 // --------------------------------------------------------
 // -=( gc )=-----------------------------------------------
 
-/*** Garbage Collector, based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982) ***/
+/*** Garbage Collector,
+ * based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982)
+ ***/
 // "на почитать" по теме GC:
 // shamil.free.fr/comp/ocaml/html/book011.html
 
@@ -621,24 +622,14 @@ word*p = NEW (size);\
 })
 
 
-// a1 и a2 надо предвычислить перед тем, как выделим память,
-// так как они в свою очередь могут быть аллоцируемыми объектами.
-#define NEW_PAIR(type, a1, a2) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	/* точка следования */ \
-word*p = NEW_OBJECT (3, type);\
-	p[1] = data1;\
-	p[2] = data2;\
-	/*return*/ p;\
-})
-
 // хитрый макрос агрегирующий макросы-аллокаторы памяти
 //	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
-#define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new(...) NEW_MACRO(__VA_ARGS__, NOTHING, NEW_OBJECT, NEW)(__VA_ARGS__)
+#define NEW_MACRO(_1, _2, NAME, ...) NAME
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_OBJECT, NEW)(__VA_ARGS__)
 
-#define NEW_PAIR3(type, a1, a2) ({\
+// a1 и a2 надо предвычислить перед тем, как выделим память,
+// так как они в свою очередь могут быть аллоцируемыми объектами.
+#define NEW_TYPED_PAIR(type, a1, a2) ({\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
@@ -647,7 +638,8 @@ word*p = NEW_OBJECT (3, type);\
 	p[2] = data2;\
 	/*return*/ p;\
 })
-#define NEW_PAIR2(a1, a2) NEW_PAIR3(TPAIR, a1, a2)
+
+#define NEW_PAIR(a1, a2) NEW_TYPED_PAIR(TPAIR, a1, a2)
 // по факту эта функция сводится к простому:
 /*static __inline__ word* new_pair (word* a1, word* a2)
 {
@@ -663,7 +655,7 @@ word*p = NEW_OBJECT (3, type);\
 
 
 #define NEW_PAIRX(_1, _2, _3, NAME, ...) NAME
-#define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_PAIR3, NEW_PAIR2, NOTHING, NOTHING)(__VA_ARGS__)
+#define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
 
 
 // аллокаторы списоков (todo: что ставить в качестве типа частей, вместо TPAIR?)
@@ -681,9 +673,15 @@ word*p = NEW_OBJECT (3, type);\
 	                new_pair (TPAIR, a2,\
 	                                 new_pair (TPAIR, a3,\
 	                                                  new_pair (TPAIR, a4, INULL))))
+#define new_list5(type, a1, a2, a3, a4, a5) \
+	new_pair (type, a1,\
+	                new_pair (TPAIR, a2,\
+	                                 new_pair (TPAIR, a3,\
+	    	                                          new_pair (TPAIR, a4,\
+	                                                                   new_pair (TPAIR, a5, INULL)))))
 
-#define NEW_LIST(_1, _2, _3, _4, _5, NAME, ...) NAME
-#define new_list(...) NEW_LIST(__VA_ARGS__, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
+#define NEW_LIST(_1, _2, _3, _4, _5, _6, NAME, ...) NAME
+#define new_list(...) NEW_LIST(__VA_ARGS__, new_list5, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
 
 
 // кортеж
@@ -703,7 +701,7 @@ word*p = new (size);\
 	int words = (size / W) + ((size % W) ? 2 : 1);\
 	int pads = (words - 1) * W - size;\
 	\
-word* p = new_raw_object (words, type, pads);\
+word* p = new_raw_object(words, type, pads);\
 	/*return*/ p;\
 })
 
@@ -884,19 +882,23 @@ static word gc(heap_t *heap, int size, word regs) {
 //	word *root = fp + 1; // same
 
 	// непосредственно сам GC
-//	clock_t uptime;
-//	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
+	clock_t uptime;
+	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
 	root[0] = regs;
 	mark(root, fp);        // assert (root > fp)
 	fp = sweep(fp);
 	regs = root[0];
-//	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
+	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
 	heap->fp = fp;
 	#if DEBUG_GC
-		fprintf(stderr, "GC done in %4d ms (use: %8d bytes): marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
-				uptime,
-				sizeof(word) * (fp - heap->begin), marked, -1, -1, -1);
+		struct tm tm = *localtime(&(time_t){time(NULL)});
+		char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
+		fprintf(stderr, "%s, GC done in %2d ms (use: %7d from %8d bytes - %2d%%): tbd.\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+				buff/*asctime(&tm)*/, uptime,
+				(sizeof(word) * (fp - heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
+				(sizeof(word) * (fp - heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)));
+//				-1, -1, -1, -1);
 	#endif
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
@@ -905,7 +907,7 @@ static word gc(heap_t *heap, int size, word regs) {
 		word heapsize = (word) heap->end - (word) heap->begin;
 		word nused = heapsize - nfree;
 
-		nfree -= size*W + MEMPAD;   /* how much really could be snipped off */
+		nfree -= size*W + MEMPAD;   // how much really could be snipped off
 		if (nfree < (heapsize / 10) || nfree < 0) {
 			/* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
 			((word*)regs)[hdrsize(*(word*)regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
@@ -950,9 +952,10 @@ void set_blocking(int sock, int blockp) {
 #endif
 }
 
-/*#ifndef _WIN32
+#ifndef _WIN32
 static
 void signal_handler(int signal) {
+	fprintf(stderr, "signal %d!\n", signal);
    switch(signal) {
       case SIGINT:
          breaked |= 2; break;
@@ -962,29 +965,28 @@ void signal_handler(int signal) {
          breaked |= 4;
    }
 }
-#endif*/
+#endif
 
 /* small functions defined locally after hitting some portability issues */
-static __inline__ void bytecopy(char *from, char *to, int n) { while(n--) *to++ = *from++; }
-static __inline__ void wordcopy(word *from, word *to, int n) { while(n--) *to++ = *from++; }
+static __inline__ void bytecopy(char *from, char *to, int n) { while (n--) *to++ = *from++; }
+static __inline__ void wordcopy(word *from, word *to, int n) { while (n--) *to++ = *from++; }
 static __inline__
 unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in win32 compile
-   unsigned int p = 0;
-   while (p < max && *pos++) p++;
-   return p;
+	unsigned int p = 0;
+	while (p < max && *pos++) p++;
+	return p;
 }
 
 void set_signal_handler() {
-/*
+
 #ifndef _WIN32
-   struct sigaction sa;
-   sa.sa_handler = signal_handler;
-   sigemptyset(&sa.sa_mask);
-   sa.sa_flags = SA_RESTART;
-   sigaction(SIGINT, &sa, NULL);
-   sigaction(SIGPIPE, &sa, NULL);
+//   struct sigaction sa;
+//   sa.sa_handler = signal_handler;
+//   sigemptyset(&sa.sa_mask);
+// sa.sa_flags = SA_RESTART;
+   signal(SIGINT, signal_handler);
+   signal(SIGPIPE, signal_handler);
 #endif
-*/
 }
 
 
@@ -996,10 +998,12 @@ void set_signal_handler() {
 	word size = *ip++, tmp; word *T = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; \
 	*T = make_header(size, proctype); T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-#define NEXT(n)                     ip += n; goto main_dispatch
-//#define SKIP(n)                     ip += n; break;
 #define TICKS                       10000 /* # of function calls in a thread quantum  */
-#define ERROR(opcode, a, b)         { R[4] = F(opcode); R[5] = (word) a; R[6] = (word) b; goto invoke_mcp; }
+#define ERROR(opcode, a, b)         { \
+	R[4] = F(opcode);\
+	R[5] = (word) a; \
+	R[6] = (word) b; \
+	goto invoke_mcp; }
 #define CHECK(exp,val,code)         if (!(exp)) ERROR(code, val, ITRUE);
 
 #define A0                          R[ip[0]]
@@ -1080,10 +1084,10 @@ void* runtime(void *args) // heap top
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
 	word* this = (word*) ptrs[nobjs];
 
-	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусорными объектами
+	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	for (int i = i; i < NR; i++)
 		R[i] = INULL;
-	R[0] = IFALSE; // mcp (no yet)
+	R[0] = IFALSE; // mcp (пока нету)
 	R[3] = IHALT;  // continuation
 	R[4] = (word) userdata; // command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
@@ -1439,7 +1443,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			CHECK(allocp(this), this, RUN);
 
 			word hdr = *this;
-			if (imm_type(hdr) == TTHREAD) {
+			if (typeof (hdr) == TTHREAD) {
 				int pos = hdrsize(hdr) - 1;
 				word code = this[pos];
 				acc = pos - 3;
@@ -1602,14 +1606,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		case CAR: {  // car a r:
 			word T = A0;
 			CHECK(is_pair(T), T, CAR);
-			A1 = ((word*)T)[1];
+			A1 = car(T); //((word*)T)[1];
 			ip += 2; break;
 		}
 
 		case CDR: {  // car a r:
 			word T = A0;
-			CHECK(is_pair(T), T, CDR); // bug? was 52 instead of CDR(53)
-			A1 = ((word*)T)[2];
+			CHECK(is_pair(T), T, CDR);
+			A1 = cdr(T); //((word*)T)[2];
 			ip += 2; break;
 		}
 
@@ -1670,7 +1674,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				if (is_raw(hdr) || hdrsize(hdr) < pos)
 					A3 = IFALSE;
 				else {
-					word size = hdrsize(hdr);
+					word size = hdrsize (hdr);
 					word *newobj = new (size);
 					word val = A2;
 					for (int i = 0; i <= size; i++)
@@ -1682,7 +1686,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		}
 
 		case EQ: // eq a b r
-			A2 = TRUEFALSE(A0 == A1);
+			A2 = (A0 == A1) ? ITRUE : IFALSE;
 			ip += 3; break;
 
 		// АЛУ (арифметическо-логическое устройство)
@@ -1690,29 +1694,29 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			word r = uftoi(A0) + uftoi(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
-
 			ip += 4; break; }
 		case SUBTRACTION: { // fx- a b  r u, args prechecked, signs ignored
 			word r = (uftoi(A0) | HIGHBIT) - uftoi(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
-
 			ip += 4; break; }
 
 		case MULTIPLICATION: { // fx* a b l h
-			bign_t r = (bign_t) uftoi(A0) * (bign_t) uftoi(A1);
+			big r = (big) uftoi(A0) * (big) uftoi(A1);
 			A2 = F(r & FMAX);
-			A3 = F((r>>FBITS) & FMAX);
-
+			A3 = F(r>>FBITS); //  & FMAX)
 			ip += 4; break; }
 		case DIVISION: { // fx/ ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
-			bign_t a = (((bign_t) uftoi(A0)) << FBITS) | (bign_t) uftoi(A1);
-			word b = uftoi(A2);
+			big a = (big) uftoi(A1) | (((big) uftoi(A0)) << FBITS);
+			big b = (big) uftoi(A2);
 
-			bign_t q = a / b;
+			// http://stackoverflow.com/questions/7070346/c-best-way-to-get-integer-division-and-remainder
+			big q = a / b;
+			big r = a % b;
+
 			A3 = F(q>>FBITS);
 			A4 = F(q & FMAX);
-			A5 = F(a - q * b);
+			A5 = F(r);
 
 			ip += 6; break; }
 
@@ -1731,25 +1735,25 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 	      word a = A0;
 	      word b = A1;
 	      A2 = a & b;
-	      NEXT(3); }
+	      ip += 3; break; }
 		case 56: { /* bor a b r, prechecked */
 	      word a = A0;
 	      word b = A1;
 	      A2 = a | b;
-	      NEXT(3); }
+	      ip += 3; break; }
 		case 57: { /* bxor a b r, prechecked */
 	      word a = A0;
 	      word b = A1;
 	      A2 = a ^ (b & (FMAX << IPOS)); /* inherit a's type info */
-	      NEXT(3); }
+	      ip += 3; break; }
 
 		case 58: { /* fx>> a b hi lo */
-			bign_t r = ((bign_t) fixval(A0)) << (FBITS - fixval(A1));
+			big r = ((big) fixval(A0)) << (FBITS - fixval(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
 		case 59: { /* fx<< a b hi lo */
-			bign_t r = ((bign_t) fixval(A0)) << (fixval(A1));
+			big r = ((big) fixval(A0)) << (fixval(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
@@ -1793,7 +1797,10 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 		// неиспользуемые коды (историческое наследие, при желании можно реюзать)
 		case 33:
-			ERROR(33, IFALSE, IFALSE);
+		case 34:
+		case 37:
+		case 62:
+			ERROR(op, IFALSE, IFALSE);
 			break;
 
 		// мутатор (нерабочий !)
@@ -1970,10 +1977,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 		}
 
-		// ...
-//		case SYSCALL2: {
-//			break;
-//		}
 
 		case CLOCK: { // clock <secs> <ticks>
 //			if (seccompp) {
@@ -2003,7 +2006,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
-			word op = fixval(A0);
+			word op = uftoi (A0);
 			word a = A1, b = A2, c = A3;
 			word result = IFALSE;  // default returned value is #false
 //			fprintf(stderr, "SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
@@ -2043,14 +2046,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #endif
 				{
 #ifdef _WIN32
-					if (!_isatty(fd) || _kbhit()) { /* we don't get hit by kb in pipe */
-					   n = read(fd, ((char *) res) + W, max);
+					if (!_isatty(portfd) || _kbhit()) { // we don't get hit by kb in pipe
+						got = read(portfd, (char *) &fp[1], size);
 					} else {
-					   n = -1;
-					   errno = EAGAIN;
+						got = -1;
+						errno = EAGAIN;
 					}
 #else
-					got = read(portfd, (char*) &fp[1], size);
+					got = read(portfd, (char *) &fp[1], size);
 #endif
 				}
 
@@ -2131,6 +2134,13 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			// PIPE
+			case 22: {
+				// TBD.
+				break;
+			}
+
+
 			// ==================================================
 			//  network part:
 
@@ -2148,7 +2158,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
 				word* host = (word*) b; // todo: check for string type
-				int port = fixval(c);
+				int port = uftoi (c);
 
 				struct sockaddr_in addr;
 				addr.sin_family = AF_INET;
@@ -2166,21 +2176,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				if (connect(sockfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) >= 0)
 					result = ITRUE;
 //				set_blocking(sock, 0);
-				break;
-			}
-
-			// ACCEPT
-			// http://linux.die.net/man/2/accept
-			case 43: { // (accept host)
-				CHECK(is_port(a), a, SYSCALL);
-				int sockfd = car (a);
-
-				struct sockaddr_in addr;
-				socklen_t len = sizeof(addr);
-				int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
-				// On error, -1 is returned
-				if (sock >= 0)
-					result = (word) new_port (sock);
 				break;
 			}
 
@@ -2203,7 +2198,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			case 49: { //  (socket, port, #false) // todo: c for options
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
-				int port = fixval(b);
+				int port = uftoi (b);
 
 				// todo: assert on argument types
 				struct sockaddr_in interface;
@@ -2233,11 +2228,28 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
+
+			// ACCEPT
+			// http://linux.die.net/man/2/accept
+			case 43: { // (accept sockfd)
+				CHECK(is_port(a), a, SYSCALL);
+				int sockfd = car (a);
+
+				struct sockaddr_in addr;
+				socklen_t len = sizeof(addr);
+				int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
+				// On error, -1 is returned
+				if (sock >= 0)
+					result = (word) new_port (sock);
+				break;
+			}
+
 #endif
 			// ==================================================
 
 
 			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
+			// NANOSLEEP
 			case 35: {
 				CHECK(immediatep(a), a, 35);
 #ifdef _WIN32
@@ -2245,7 +2257,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #else
 //				for Linux:
 //				if (!seccompp)
-#	if 0 // _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(). use nanosleep instead
+#	if _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(), use nanosleep instead
 				if (usleep(fixval(a)*1000) == 0)
 					result = ITRUE;
 #	else
@@ -2260,77 +2272,106 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
-			// EXEC
+			// (EXECVE program-or-function)
+			// http://linux.die.net/man/3/execve
 			case 59: {
-				FILE* pipe = popen((const char*)&car(a), "r");
+#if HAS_DLOPEN
+				// if a is port (result of dlsym)
+				if (is_port(a)) {
+					// a - function address (port)
+					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
+					word* A = (word*)a;
+					word* B = (word*)b;
+					word* C = (word*)c; // reserved, assert #false
 
-				char* p = &car(fp);
-				while (!feof(pipe)) {
-					fread(p++, 1, 1, pipe);
-				}
-				pclose(pipe);
+				//	CHECK(hdrtype(A[0]) == TPORT, A, 59);
+					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
+					assert ((word)C == IFALSE);
 
-				int count = p - (char*)&car(fp) - 1;
-				result = new_bytevector(count, TSTRING);
+					void *function = (void*) car(A);  assert (function);
 
-				/*int stdin[2];
-				if (pipe(stdin) < 0) {
-					fprintf(stderr, "pipe for child input redirect failed.\n");
+					ol->fp = fp;
+					result = ((word (*)  (OL*, word*))function) (ol, B);
+					fp = ol->fp;
 					break;
 				}
+#endif
+				// if a is string:
+				if (is_string(a)) {
+#if 1
+					FILE* pipe = popen((const char*)car(a), "r");
 
-				int stdout[2];
-				if (pipe(stdout) < 0) {
-					fprintf(stderr, "pipe for child output redirect failed.\n");
-					close(stdin[0]);
-					close(stdin[1]);
-					break;
-				}
+					char* p = (char*) &car(fp);
+					while (!feof(pipe)) {
+						// todo: check for available memory, gc()
+						p += fread(p, 1, 1024, pipe);
+					}
+					pclose(pipe);
 
-				int child = fork();
-				if (child == 0) {
-					fprintf(stderr, "fork.1\n");
-					dup2(stdin[0], STDIN_FILENO);
-					dup2(stdout[1], STDOUT_FILENO);
-					dup2(stdout[1], STDERR_FILENO);
-
-					fprintf(stderr, "fork.2\n");
-					close(stdin[0]);
-					close(stdin[1]);
-					close(stdout[0]);
-					close(stdout[1]);
-
-					fprintf(stderr, "fork.3\n");
-
-					char* command = (char*)&car(a);
-					char* args = 0; // temp, b
-					char* envp = 0;
-
-					fprintf(stderr, "command: %s\n", command);
-
-					exit(execve(command, 0, 0));
-				}
-				else {
-					close(stdin[0]);
-					close(stdout[1]);
-
-					if (is_string(c))
-						write(stdin[1], &car(c), lenn(&car(c), -1));
-
-					// read
-					char* p = &car(fp);
-					while (read(stdout[0], p++, 1) == 1)
-						continue;
 					int count = p - (char*)&car(fp) - 1;
-					result = new_bytevector(count, TSTRING);
+					result = (word) new_bytevector(count, TSTRING);
+#else	// popen by syscall
+					int stdin[2];
+					if (pipe(stdin) < 0) {
+						fprintf(stderr, "pipe for child input redirect failed.\n");
+						break;
+					}
 
-					close(stdin[1]);
-					close(stdout[0]);
-				}*/
+					int stdout[2];
+					if (pipe(stdout) < 0) {
+						fprintf(stderr, "pipe for child output redirect failed.\n");
+						close(stdin[0]);
+						close(stdin[1]);
+						break;
+					}
+
+					int child = fork();
+					if (child == 0) {
+						fprintf(stderr, "fork.1\n");
+						dup2(stdin[0], STDIN_FILENO);
+						dup2(stdout[1], STDOUT_FILENO);
+						dup2(stdout[1], STDERR_FILENO);
+
+						fprintf(stderr, "fork.2\n");
+						close(stdin[0]);
+						close(stdin[1]);
+						close(stdout[0]);
+						close(stdout[1]);
+
+						fprintf(stderr, "fork.3\n");
+
+						char* command = (char*)&car(a);
+						char* args = 0; // temp, b
+						char* envp = 0;
+
+						fprintf(stderr, "command: %s\n", command);
+
+						exit(execve(command, 0, 0));
+					}
+					else {
+						close(stdin[0]);
+						close(stdout[1]);
+
+						if (is_string(c))
+							write(stdin[1], &car(c), lenn(&car(c), -1));
+
+						// read
+						char* p = &car(fp);
+						while (read(stdout[0], p++, 1) == 1)
+							continue;
+						int count = p - (char*)&car(fp) - 1;
+						result = new_bytevector(count, TSTRING);
+
+						close(stdin[1]);
+						close(stdout[0]);
+					}
+#endif
+					break;
+				}
 				break;
 			}
 
-			// EXIT
+			// EXIT errorcode
 			// http://linux.die.net/man/2/exit
 			// exit - cause normal process termination, function does not return.
 			case 1006:
@@ -2343,14 +2384,30 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				pthread_exit((void*)fixval(a));
 #else
-					exit(sftoi(a));
+				exit(sftoi(a));
 #endif
-				break; // сюда мы уже не должны попасть.
+				assert(0);   // сюда мы уже не должны попасть
+				break;
 			}
 
-			// EXEC
-			// http://linux.die.net/man/3/exec
-			//
+			// UNAME (uname)
+			// http://linux.die.net/man/2/uname
+			case 63: {
+				struct utsname name;
+				if (uname(&name))
+					break;
+
+				result = (word)new_list (TPAIR,
+						new_string(strlen((char*)name.sysname), name.sysname),
+						new_string(strlen((char*)name.nodename), name.nodename),
+						new_string(strlen((char*)name.release), name.release),
+						new_string(strlen((char*)name.version), name.version),
+						new_string(strlen((char*)name.machine), name.machine)
+				);
+
+				break;
+			}
+
 
 			// other commands
 
@@ -2381,20 +2438,19 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 
 
-#if HAS_PINVOKE
-				// -=( pinvoke )=-------------------------------------------------
-				//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
-				case 1030: { // (dlopen filename mode)
+#if HAS_DLOPEN
+				// -=( dlopen )=-------------------------------------------------
+				case 1030: { // (dlopen filename mode #false)
 					word *filename = (word*)a;
 					int mode = (int) uftoi(b);
 
 					void* module;
-					if (is_pointer(filename) && hdrtype(*filename) == TSTRING)
-						module = dlopen((char*) &filename[1], mode);
-					else if ((word)filename == INULL)
+					if ((word) filename == INULL)
 						module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
+					else if (is_pointer(filename) && hdrtype(*filename) == TSTRING)
+						module = dlopen((char*) &filename[1], mode);
 					else
-						break; // invalid filename
+						break; // invalid filename, return #false
 
 					if (module)
 						result = (word) new_port(module);
@@ -2402,7 +2458,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 //						fprintf(stderr, "dlopen failed: %s\n", dlerror());
 					break;
 				}
-				case 1031: { // (dlsym module function)
+				case 1031: { // (dlsym module function #false)
 					word* A = (word*)a;
 
 					CHECK(is_port(A), A, SYSCALL);
@@ -2423,394 +2479,26 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 				}
 
-				// вызвать библиотечную функцию
-				case 1032: { // pinvoke
-					// http://byteworm.com/2010/10/12/container/ (lambdas in c)
-					word call(int convention, void* function, word args[], int count) {
-						// todo: ограничиться количеством функций поменьше
-						//	а можно сделать все в одной switch:
-						// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
-						// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
-						// todo: проанализировать частоту количества аргументов и переделать все в
-						//   бинарный if
-
-						// __attribute__((stdcall))
-/*						__stdcall // gcc style for lambdas in pure C
-						int (*stdcall[])(char*) = {
-								({ int $(char *str){ printf("Test: %s\n", str); } $; })
-						};*/
-						#define CALL(conv) \
-							switch (count) {\
-							case  0: return ((conv word (*)  ())\
-											function) ();\
-							case  1: return ((conv word (*)  (word))\
-											function) (args[0]);\
-							case  2: return ((conv word (*)  (word, word)) function)\
-											(args[0], args[1]);\
-							case  3: return ((conv word (*)  (word, word, word)) function)\
-											(args[0], args[1], args[2]);\
-							case  4: return ((conv word (*)  (word, word, word, word)) function)\
-											(args[0], args[1], args[2], args[3]);\
-							case  5: return ((conv word (*)  (word, word, word, word, word))\
-		                                     function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                                                args[ 4]);\
-							case  6: return ((conv word (*)  (word, word, word, word, word, word))\
-							                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-							                            args[ 4], args[ 5]);\
-							case  7: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6]);\
-							case  8: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6], args[ 7]);\
-							case  9: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-														args[ 8]);\
-							case 10: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word, word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-														args[ 8], args[ 9]);\
-							case 11: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word, word, word))\
-									         function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-									        		    args[ 4], args[ 5], args[ 6], args[ 7],\
-														args[ 8], args[ 9], args[10]);\
-							case 12: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word, word, word, word))\
-											 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-													    args[ 4], args[ 5], args[ 6], args[ 7], \
-													    args[ 8], args[ 9], args[10], args[11]);\
-							case 18: return ((conv word (*)  (word, word, word, word, word, word, \
-									                          word, word, word, word, word, word, \
-															  word, word, word, word, word, word))\
-											 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-													    args[ 4], args[ 5], args[ 6], args[ 7], \
-													    args[ 8], args[ 9], args[10], args[11], \
-													    args[12], args[13], args[14], args[15], \
-													    args[16], args[17]);\
-							default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", count);\
-								break;\
-							}
-#ifdef __linux__
-						#define __cdecl
-						CALL(__cdecl);
-#else
-						//todo: set __cdecl = 0, and __stdcall = 1
-						switch (convention) {
-						case 0:
-							CALL(__stdcall);
-							break;
-						case 1:
-							CALL(__cdecl);
-							break;
-						case 2:
-							CALL(__fastcall);
-							break;
-						default:
-							fprintf(stderr, "Unsupported calling convention %d", convention >> 6);
-							break;
-						}
-#endif
-						return 0;
-					}
-					long from_int(word* arg) {
-						// так как в стек мы все равно большое сложить не сможем, то возьмем только то, что влазит (первые два члена)
-						assert (immediatep(arg[1]));
-						assert (allocp(arg[2]));
-
-						return (arg[1] >> 8) | ((((word*)arg[2])[1] >> 8) << (sizeof(word) * 8 - 8));
-					}
-					float from_int_to_float(word* arg) {
-						// читаем длинное число в float формат
-						assert (immediatep(arg[1]));
-						float f = (unsigned long)arg[1] >> 8;
-						float mul = 0x1000000; // 1 << 24
-						while (allocp(arg[2])) {
-							arg = (word*)arg[2];
-							f += (unsigned long)(arg[1] >> 8) * mul;
-							mul *= 0x1000000;
-						}
-						assert (arg[2] == INULL);
-
-						return f;
-					}
-					float from_rational(word* arg) {
-						word* pa = (word*)arg[1];
-						word* pb = (word*)arg[2];
-
-						float a, b;
-						if (immediatep(pa))
-							a = sftoi(pa);
-						else {
-							switch (hdrtype(pa[0])) {
-							case TINT:
-								a = +from_int_to_float(pa);
-								break;
-							case TINTN:
-								a = -from_int_to_float(pa);
-								break;
-							}
-						}
-						if (immediatep(pb))
-							b = sftoi(pb);
-						else {
-							switch (hdrtype(pb[0])) {
-							case TINT:
-								b = +from_int_to_float(pb);
-								break;
-							case TINTN:
-								b = -from_int_to_float(pb);
-								break;
-							}
-						}
-
-						return (a / b);
-					}
-
-
-					// a - function address
+				// вызвать функцию (special case - отправить this)
+				case 1032: { // (pinvoke function args #false)
+					// a - function address (port)
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
-					// c - '(return-type . argument-types-list)
 					word* A = (word*)a;
 					word* B = (word*)b;
-					word* C = (word*)c;
+					word* C = (word*)c; // reserved
 
 					CHECK(hdrtype(A[0]) == TPORT, A, 1032);
 					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
-					assert ((word)C != INULL && hdrtype(C[0]) == TPAIR);
-					// C[1] = return-type
-					// C[2] = argument-types
+					assert ((word)C == IFALSE);
 
-					word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
-					void *function = (void*) (A[1]);  assert (function);
-					int returntype = imm_val (C[1]);
+					void *function = (void*) car(A);  assert (function);
 
-					long got;   // результат вызова функции
-					int embed = 0;  // это вызов через THIS
-					int i = 0;     // количество аргументов
-					word* p = (word*)B;   // сами аргументы
-					word* t = (word*)C[2];
-
-					// special case - отправить this
-					// ограничим THIS первым параметром вызова
-					if (is_pointer(t) && hdrtype(*t) == TPAIR && uftoi(car(t)) == TTHIS) {
-						args[i++] = (word) ol;//this
-						embed = 1;
-						t = (word*) car(cdr(t)); // (cdr t)
-					}
-
-					while ((word)p != INULL) { // пока есть аргументы
-						assert (hdrtype(*p) == TPAIR); // assert list
-						assert (hdrtype(*t) == TPAIR); // assert list
-
-						int type = imm_val (t[1]);
-						word* arg = (word*) p[1]; // car
-
-/*						// todo: add argument overriding as PAIR as argument value
-						if (hdrtype(p[1]) == TPAIR) {
-							type = imm_val (((word*)p[1])[1]);
-							arg = ((word*)p[1])[2];
-						}*/
-
-						// destination type
-						switch (type) {
-						case TFIX:
-						case TINT:
-							if (immediatep(arg))
-								args[i] = sftoi(arg);
-							else
-							switch (hdrtype(arg[0])) {
-							case TINT: // source type
-								args[i] = +from_int(arg);
-								break;
-							case TINTN:
-								args[i] = -from_int(arg);
-								break;
-							case TRATIONAL:
-								args[i] =  (int)from_rational(arg);
-								break;
-							// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
-							case TPORT:
-							case TBVEC:
-								args[i] = arg[1];
-								break;
-							default:
-								args[i] = 0; // todo: error
-							}
-							break;
-
-						case TFLOAT:
-							if (immediatep(arg))
-								*(float*)&args[i] = (float)sftoi(arg);
-							else
-							switch (hdrtype(arg[0])) {
-							case TINT: // source type
-								*(float*)&args[i] = +(float)from_int(arg);
-								break;
-							case TINTN:
-								*(float*)&args[i] = -(float)from_int(arg);
-								break;
-							case TRATIONAL:
-								*(float*)&args[i] = (float)from_rational(arg);
-								break;
-							default:
-								*(float*)&args[i] = (float)0.0; // todo: error, return infinity, maybe, or NaN
-							}
-							break;
-						case TDOUBLE:
-							if (immediatep(arg))
-								*(double*)&args[i++] = (double)sftoi(arg);
-							else
-							switch (hdrtype(arg[0])) {
-							case TINT: // source type
-								*(double*)&args[i++] = +(double)from_int(arg);
-								break;
-							case TINTN:
-								*(double*)&args[i++] = -(double)from_int(arg);
-								break;
-							case TRATIONAL:
-								*(double*)&args[i++] = (double)from_rational(arg);
-								break;
-							default:
-								*(double*)&args[i++] = (double)0.0; // todo: error, same as float
-							}
-							break;
-
-						// запрос порта - это запрос значения порта
-						// todo: добавить тип "указатель на порт"
-						case TPORT:
-							if ((word)arg == INULL)
-								args[i] = (word) (void*)0;
-							else
-							switch (hdrtype(arg[0])) {
-							case TPORT:
-								args[i] = arg[1];
-								break;
-							default:
-								args[i] = 0; // todo: error
-							}
-							break;
-
-						case TBVEC:
-						case TSTRING:
-							if ((word)arg == INULL)
-								args[i] = (word) (void*)0;
-//#if sizeof(void*) = 8
-//								args[++i] = (word) (void*)0;
-//#endif
-							else
-							switch (hdrtype(arg[0])) {
-							case TBVEC:
-							case TSTRING:
-							case TPORT:
-//							case TCONST:
-								// in arg[0] size got size of string
-								args[i] = (word)(&arg[1]);
-								break;
-							default:
-								args[i] = 0; // todo: error
-							}
-							break;
-						case TTUPLE:
-							if ((word)arg == INULL)
-								args[i] = (word) (void*)0;
-							else
-							switch (hdrtype(arg[0])) {
-/*							case TCONST:
-								switch ((word)arg) {
-								case INULL:
-									args[i] = (word) (void*)0;
-								}*/
-							case TTUPLE: { // ?
-								// tuple, это последовательность, а не список!
-								// todo: сделать функцию cast или что-то такое
-								// что-бы возвращать список, какой мне нужен
-
-								// аллоцировать массив и сложить в него указатели на элементы кортежа
-								int size = hdrsize(arg[0]);
-								*fp++ = make_raw_header(size, TBVEC, 0);
-								args[i] = (word)fp; // ссылка на массив указателей на элементы
-
-								word* src = &arg[1];
-								while (--size)
-									*fp++ = (word)((word*)*src++ + 1);
-	//								int j;
-	//								for (j = 1; j < size; j++)
-								}
-								break;
-							default:
-								args[i] = INULL; // todo: error
-							}
-							break;
-						case TRAWP:
-							args[i] = (word)arg;
-							break;
-						default:
-							args[i] = 0;
-							break;
-						}
-
-						p = (word*)p[2]; // (cdr p)
-						t = (word*)t[2]; // (cdr t)
-						i++;
-					}
-					assert ((word)t == INULL); // количество аргументов совпало!
-
-					if (embed) {
-						ol->fp = fp;
-					}
-					got = call(returntype >> 6, function, args, i);
-					if (embed) {
-						fp = ol->fp;
-					}
-
-					switch (returntype & 0x3F) {
-						case TINT:
-							// todo: переделать!
-							if (got > 0xFFFFFF) {
-								// прошу внимания!
-								//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-								word* hi = fp; fp += 3; // high 8 bits
-								hi[0] = HINT;
-								hi[1] = make_immediate(got >> 24, 0); // type-fx+
-								hi[2] = INULL;
-								word* lo = fp; fp += 3; // low 24 bits
-								lo[0] = HINT;
-								lo[1] = make_immediate(got & 0xFFFFFF, 0); // type-fx+
-								lo[2] = (word)hi;
-
-								result = (word)lo;
-								break;
-							}
-							// else goto case 0 (иначе вернем type-fx+)
-						case 0: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-							result = itosf(got);
-							break;
-						case TPORT:
-							result = (word) new_port(got);
-							break;
-						case TRAWP:
-							result = got;
-							break;
-
-						case TSTRING:
-							if (got != 0)
-								result = (word) new_string (lenn((char*)got, FMAX+1), (char*)got);
-							break;
-						case TVOID:
-							result = INULL;
-							break;
-//                      todo: TRATIONAL
-					}
-
-					break; // case 32
+					ol->fp = fp;
+					result = ((word (*)  (OL*, word*))function) (ol, B);
+					fp = ol->fp;
+					break;
 				}
-#endif//HAS_PINVOKE
+#endif
 
 				// временный тестовый вызов
 				case 1033: { // temp, todo: (dlclose module)
@@ -3095,10 +2783,10 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 }
 
 static
+// функция подсчета количества объектов в загружаемом образе
 int count_fasl_objects(word *words, unsigned char *lang) {
 	unsigned char* hp;
 
-	// функция подсчета количества объектов в загружаемом образе
 	word decode_word() {
 		word result = 0;
 		word newobj, i;
@@ -3129,6 +2817,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 					hp++;
 				}
 				decode_word(&hp); // simply skip word
+				++allocated;
 			}
 			break;
 		}
@@ -3188,34 +2877,37 @@ int main(int argc, char** argv)
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
 	if (argc > 1 && strcmp(argv[1], "-") != 0) {
+		// todo: use mmap()
 		struct stat st;
 		if (stat(argv[1], &st) || st.st_size == 0)
-			exit(2);	// не найден файл или он пустой
+			exit(errno);	// не найден файл или он пустой
 
 		char bom;
-		FILE *bin = fopen(argv[1], "rb");
+		int bin = open(argv[1], O_RDONLY, (S_IRUSR | S_IWUSR));
 		if (!bin)
-			exit(4);	// не смогли файл открыть
+			exit(errno);	// не смогли файл открыть
 
-		int pos = fread(&bom, 1, 1, bin); // прочитаем один байт
+		int pos = read(bin, &bom, 1); // прочитаем один байт
 		if (pos < 1)
-			exit(5);	// не смогли файл прочитать
+			exit(errno);	// не смогли файл прочитать
 
 		// переделать
 		if (bom == '#') { // skip possible hashbang
-			while (fread(&bom, 1, 1, bin) == 1 && bom != '\n')
+			while (read(bin, &bom, 1) == 1 && bom != '\n')
 				st.st_size--;
 			st.st_size--;
-			if (fread(&bom, 1, 1, bin) < 0)
-				exit(5);
+			if (read(bin, &bom, 1) < 0)
+				exit(errno);
 			st.st_size--;
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
 			// а значит что? что файл надо замапить вместо stdin
-			fclose(bin);
+			// rollback назад, на 1 прочитанный символ
 #ifndef NAKED_VM
-			freopen(argv[1], "r", stdin);
+			lseek(bin, -1, SEEK_CUR);
+			dup2(bin, STDIN_FILENO);
+			close(bin);
 #else
 			exit(6); // некому проинтерпретировать скрипт
 #endif
@@ -3228,18 +2920,33 @@ int main(int argc, char** argv)
 
 			ptr[0] = bom;
 			while (pos < st.st_size) {
-				int n = fread(&ptr[pos], 1, st.st_size - pos, bin);
+				int n = read(bin, &ptr[pos], st.st_size - pos);
 				if (n < 0) exit(5); // не смогли прочитать
 				pos += n;
 			}
-			fclose(bin);
+			close(bin);
 
 			bootstrap = ptr;
 		}
 	}
 
-	OL*ol =
-			vm_new(bootstrap, bootstrap != language ? free : NULL);
+#if	HAS_SOCKETS && defined(_WIN32)
+	WSADATA wsaData;
+	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
+	if (sock_init  != 0) {
+		printf("WSAStartup failed with error: %d\n", sock_init);
+		return 1;
+	}
+	AllocConsole();
+#endif
+
+	set_signal_handler();
+	OL*ol = vm_new(bootstrap, bootstrap != language ? free : NULL);
+
+#if	HAS_SOCKETS && defined(_WIN32)
+	WSACleanup();
+#endif
+
 	free(ol);
 	return 0;
 }
@@ -3248,17 +2955,30 @@ int main(int argc, char** argv)
 int    // this is NOT thread safe function
 vm_new(unsigned char* bootstrap, void (*release)(void*))
 {
-#if	HAS_SOCKETS
-#ifdef _WIN32
-	WSADATA wsaData;
-	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
-	if (sock_init  != 0) {
-		printf("WSAStartup failed with error: %d\n", sock_init);
-		return 1;
+
+	// если это текстовый скрипт, замапим его на stdin
+	if (bootstrap[0] > 3) {
+		char filename[16]; // lenght of above string
+		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
+
+		int f = mkstemp(filename); // временный файл
+		write(f, bootstrap, strlen(bootstrap));
+		close(f);
+
+		dup2(open(filename, O_BINARY, S_IRUSR), STDIN_FILENO);
+		unlink(filename); // сразу приберем за собой
+
+		if (release)
+			release(bootstrap);
+		bootstrap = language;
+		release = 0;
 	}
-//	AllocConsole();
-#endif//win32
-#endif
+
+	// если отсутствует исполнимый образ
+	if (bootstrap == 0) {
+		fprintf(stderr, "no boot image found\n");
+		return 0;
+	}
 
 	// ===============================================================
 	// создадим виртуальную машину
@@ -3269,13 +2989,20 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
 
+
+	// а теперь поработаем с сериализованным образом:
+	word nwords = 0;
+	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
+
 	heap_t heap;
 //	static //__tlocal__
 	word *fp;
 
+	void* result = 0; // результат выполнения.
+
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
-	int required_memory_size = (INITCELLS + MEMPAD + 1024*1024); // ?
+	int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
 	heap.begin = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
 	if (!heap.begin) {
 		fprintf(stderr, "Failed to allocate %d words for vm memory\n", required_memory_size);
@@ -3292,7 +3019,6 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 	//  загрузить в память аргументы перед вызовом образа
 	// по совместительству, это еще и корневой объект
 	fp = heap.begin;
-	void* result = 0; // результат выполнения.
 	word oargs; // аргументы
 	{
 		oargs = INULL;
@@ -3317,7 +3043,7 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 		else
 #endif
 		{
-			char* filename = "#";
+			char* filename = "-";
 			char *pos = filename;
 
 			int len = 0;
@@ -3342,37 +3068,9 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 #endif
 	}
 
-	// если это текстовый скрипт
-	if (bootstrap[0] > 3) {
-		char* filename[16]; // lenght of above string
-		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
-
-		int f = mkstemp(filename);
-		write(f, bootstrap, strlen(bootstrap));
-		close(f);
-
-		freopen(filename, "r", stdin);
-		unlink(filename); // сразу приберем за собой.
-
-		bootstrap = language;
-	}
-
-	// если отсутствует исполнимый образ
-	if (bootstrap == 0) {
-		printf("no boot image found\n");
-		result = (void*)0;
-		goto done;
-	}
-
-
-
-	// а теперь поработаем с сериализованным образом:
-	word nwords = 0;
-	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
-
-	//heap.fp = fp;
-	//oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
-	//fp = heap.fp;
+	heap.fp = fp;
+	oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
+	fp = heap.fp;
 
 	// Десериализация загруженного образа в объекты
 //	word* ptrs = fp;
@@ -3428,12 +3126,7 @@ done:
 	free(heap.begin);
 	free(handle);
 
-#if	HAS_SOCKETS
-#ifdef _WIN32
-	WSACleanup();
-#endif//win32
-#endif
-
+exit:
 	return (int)(long)result;
 }
 
@@ -3473,3 +3166,500 @@ int vm_feof(OL* vm)
 }
 #endif//EMBEDDED_VM
 
+
+//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
+#if HAS_PINVOKE
+__attribute__
+	((__visibility__("default")))
+word pinvoke(OL* self, word arguments)
+{
+	word *fp, result;
+
+	// get memory pointer
+	fp = self->fp;
+
+	// http://byteworm.com/2010/10/12/container/ (lambdas in c)
+
+	// https://en.wikipedia.org/wiki/X86_calling_conventions
+	// x86 conventions: cdecl, syscall(OS/2), optlink(IBM)
+	// pascal(OS/2, MsWin 3.x, Delphi), stdcall(Win32),
+	// fastcall(ms), vectorcall(ms), safecall(delphi),
+	// thiscall(ms)
+
+	// x64 calling conventions: linux, windows
+#if	__amd64__
+	word call(void* function, word argv[], int argc) {
+#else
+	word call(int returntype, void* function, word argv[], int argc) {
+#endif
+
+		// todo: ограничиться количеством функций поменьше
+		//	а можно сделать все в одной switch:
+		// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
+		// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
+		// todo: проанализировать частоту количества аргументов и переделать все в
+		//   бинарный if
+
+		// __attribute__((stdcall))
+/*						__stdcall // gcc style for lambdas in pure C
+		int (*stdcall[])(char*) = {
+				({ int $(char *str){ printf("Test: %s\n", str); } $; })
+		};*/
+		// http://www.agner.org/optimize/calling_conventions.pdf
+#if __amd64__
+		#define CALLFLOATS(conv) \
+			case 2 + 0x0200:\
+			         return ((conv word (*)  (word, float))\
+			                 function) (argv[0], *(float*)&argv[1]);\
+			case 3 + 0x0600:\
+			         return ((conv word (*)  (word, float, float))\
+			                 function) (argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2]);\
+			case 4 + 0x0E00:\
+			         return ((conv word (*)  (word, float, float, float))\
+			                 function) (argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2], *(float*)&argv[3]);\
+			\
+			case 2 + 0x0300:\
+			         return ((conv word (*)  (float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1]);\
+			case 3 + 0x0700:\
+			         return ((conv word (*)  (float, float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2]);\
+			case 4 + 0x0F00:\
+			         return ((conv word (*)  (float, float, float, float))\
+			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
+			                            *(float*)&argv[2], *(float*)&argv[3]);
+#else
+		#define CALLFLOATS(conv)
+#endif
+
+#if __amd64__
+		#define CALLDOUBLES(conv) \
+			case 2 + 0x0030000:\
+			         return ((conv word (*)  (double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1]);\
+			case 3 + 0x0070000:\
+			         return ((conv word (*)  (double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2]);\
+			case 4 + 0x00F0000:\
+			         return ((conv word (*)  (double, double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2], *(double*)&argv[3]);\
+			case 6 + 0x03F0000:\
+			         return ((conv word (*)  (double, double, double, double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2], *(double*)&argv[3],\
+			                            *(double*)&argv[4], *(double*)&argv[5]);\
+			case 9 + 0x1FF0000:\
+			         return ((conv word (*)  (double, double, double, double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
+			                            *(double*)&argv[2], *(double*)&argv[3],\
+			                            *(double*)&argv[4], *(double*)&argv[5]);
+#else
+		#define CALLDOUBLES(conv)\
+			case 18: return ((conv word (*)  (word, word, word, word, word, word, \
+			                                  word, word, word, word, word, word, \
+			                                  word, word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
+			                            argv[ 8], argv[ 9], argv[10], argv[11], \
+			                            argv[12], argv[13], argv[14], argv[15], \
+			                            argv[16], argv[17]);
+#endif
+
+		#define CALL(conv) \
+			switch (argc) {\
+			case  0: return ((conv word (*)  ())\
+							 function) ();\
+			case  1: return ((conv word (*)  (word))\
+							 function) (argv[ 0]);\
+			case  2: return ((conv word (*)  (word, word))\
+			                 function) (argv[ 0], argv[ 1]);\
+			case  3: return ((conv word (*)  (word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2]);\
+			case  4: return ((conv word (*)  (word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3]);\
+			case  5: return ((conv word (*)  (word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4]);\
+			case  6: return ((conv word (*)  (word, word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5]);\
+			case  7: return ((conv word (*)  (word, word, word, word, word, word, \
+			                                  word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6]);\
+			case  8: return ((conv word (*)  (word, word, word, word, word, word, \
+			                                  word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7]);\
+			case  9: return ((conv word (*)  (word, word, word, word, word, word, \
+			                                  word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
+			                            argv[ 8]);\
+			case 10: return ((conv word (*)  (word, word, word, word, word, word, \
+			                                  word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
+			                            argv[ 8], argv[ 9]);\
+			case 11: return ((conv word (*)  (word, word, word, word, word, word, \
+			                                  word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
+			                            argv[ 8], argv[ 9], argv[10]);\
+			case 12: return ((conv word (*)  (word, word, word, word, word, word, \
+			                                  word, word, word, word, word, word))\
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
+			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
+			                            argv[ 8], argv[ 9], argv[10], argv[11]);\
+			CALLFLOATS(conv)\
+			CALLDOUBLES(conv)\
+			default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", argc);\
+				break;\
+			}
+#ifdef __linux__
+		// default calling convention - cdecl
+		CALL();
+#else
+		// default calling convention - stdcall
+		//todo: set __cdecl = 0, and __stdcall = 1
+		switch (returntype >> 8) {
+		case 0:
+			CALL(__stdcall);
+			break;
+		case 1:
+			CALL(__cdecl);
+			break;
+		case 2:
+			CALL(__fastcall);
+			break;
+		default:
+			fprintf(stderr, "Unsupported calling convention %d", convention >> 6);
+			break;
+		}
+#endif
+		return 0; // if no call have made
+	}
+	long from_int(word* arg) {
+		// так как в стек мы все равно большое сложить не сможем, то возьмем
+		// только то, что влазит (первые два члена)
+		assert (immediatep(arg[1]));
+		assert (allocp(arg[2]));
+
+		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
+	}
+	float from_int_to_float(word* arg) {
+		// читаем длинное число в float формат
+		assert (immediatep(car(arg)));
+		float f = (unsigned long)uftoi(car(arg));
+		float mul = 0x1000000; // 1 << 24
+		while (is_pointer(cdr(arg))) {
+			arg = (word*)cdr(arg);
+			f += (unsigned long)uftoi(cdr(arg)) * mul;
+			mul *= 0x1000000;
+		}
+		assert (cdr(arg) == INULL);
+
+		return f;
+	}
+	float from_rational(word* arg) {
+		word* pa = (word*)car(arg);
+		word* pb = (word*)cdr(arg);
+
+		float a, b;
+		if (immediatep(pa))
+			a = sftoi(pa);
+		else {
+			switch (hdrtype(pa[0])) {
+			case TINT:
+				a = +from_int_to_float(pa);
+				break;
+			case TINTN:
+				a = -from_int_to_float(pa);
+				break;
+			}
+		}
+		if (immediatep(pb))
+			b = sftoi(pb);
+		else {
+			switch (hdrtype(pb[0])) {
+			case TINT:
+				b = +from_int_to_float(pb);
+				break;
+			case TINTN:
+				b = -from_int_to_float(pb);
+				break;
+			}
+		}
+
+		return (a / b);
+	}
+
+
+	// a - function address
+	// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
+	// c - '(return-type . argument-types-list)
+	word* A = (word*)car(arguments); arguments = cdr(arguments); // function
+	word* B = (word*)car(arguments); arguments = cdr(arguments); // rtty
+	word* C = (word*)car(arguments); arguments = cdr(arguments); // args
+
+//	assert(hdrtype(A[0]) == TPORT, A, 1032);
+	assert ((word)B != INULL && hdrtype(B[0]) == TPAIR);
+	assert ((word)C == INULL || hdrtype(C[0]) == TPAIR);
+	// C[1] = return-type
+	// C[2] = argument-types
+
+	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
+	void *function = (void*)car(A);  assert (function);
+	int returntype = uftoi(car(B));
+	int floats = 0; // для amd64
+	int doubles = 0; // temp
+
+	long got;   // результат вызова функции
+	int i = 0;     // количество аргументов
+	word* p = (word*)C;   // сами аргументы
+	word* t = (word*)cdr(B); // rtty
+
+	while ((word)p != INULL) { // пока есть аргументы
+		assert (hdrtype(*p) == TPAIR); // assert list
+		assert (hdrtype(*t) == TPAIR); // assert list
+
+		int type = uftoi(car(t));
+		word* arg = (word*)car(p);
+
+/*		// todo: add argument overriding as PAIR as argument value
+		if (hdrtype(p[1]) == TPAIR) {
+			type = imm_val (((word*)p[1])[1]);
+			arg = ((word*)p[1])[2];
+		}*/
+
+//		args[i] = 0; // обнулим (так как потом можем записать только часть)
+		// может и не надо.
+
+		// destination type
+		switch (type) {
+		case TFIX:
+		case TINT:
+			if (immediatep(arg))
+				args[i] = sftoi(arg);
+			else
+			switch (hdrtype(arg[0])) {
+			case TINT: // source type
+				args[i] = +from_int(arg);
+				break;
+			case TINTN:
+				args[i] = -from_int(arg);
+				break;
+			case TRATIONAL:
+				args[i] =  (int)from_rational(arg);
+				break;
+			// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
+			case TPORT:
+			case TBVEC:
+				args[i] = arg[1];
+				break;
+			default:
+				args[i] = 0; // todo: error
+			}
+			break;
+
+		case TFLOAT:
+			if (immediatep(arg))
+				*(float*)&args[i] = (float) (int)sftoi(arg);
+			else
+			switch (hdrtype(arg[0])) {
+			case TINT: // source type
+				*(float*)&args[i] = (float)+from_int(arg);
+				break;
+			case TINTN:
+				*(float*)&args[i] = (float)-from_int(arg);
+				break;
+			case TRATIONAL:
+				*(float*)&args[i] = (float) from_rational(arg);
+				break;
+			default:
+				*(float*)&args[i] = (float) 0.0; // todo: error, return infinity, maybe, or NaN
+			}
+			floats |= (0x100 << i);
+			break;
+		case TDOUBLE:
+			if (immediatep(arg))
+				*(double*)&args[i] = (double) (int)sftoi(arg);
+			else
+			switch (hdrtype(arg[0])) {
+			case TINT: // source type
+				*(double*)&args[i] = (double)+from_int(arg);
+				break;
+			case TINTN:
+				*(double*)&args[i] = (double)-from_int(arg);
+				break;
+			case TRATIONAL:
+				*(double*)&args[i] = (double) from_rational(arg);
+				break;
+			default:
+				*(double*)&args[i] = (double) 0.0; // todo: error, same as float
+			}
+#if __amd64__
+			doubles |= (0x10000 << i);
+#else
+			i++; // for x86 double fills two words
+#endif
+			break;
+
+		// запрос порта - это запрос значения порта
+		// todo: добавить тип "указатель на порт"
+		case TPORT:
+			if ((word)arg == INULL)
+				args[i] = (word) (void*)0;
+			else
+			switch (hdrtype(arg[0])) {
+			case TPORT:
+				args[i] = arg[1];
+				break;
+			default:
+				args[i] = 0; // todo: error
+			}
+			break;
+
+		case TBVEC:
+		case TSTRING:
+			if ((word)arg == INULL)
+				args[i] = (word) (void*)0;
+//#if sizeof(void*) = 8
+//								args[++i] = (word) (void*)0;
+//#endif
+			else
+			switch (hdrtype(arg[0])) {
+			case TBVEC:
+			case TSTRING:
+			case TPORT:
+//			case TCONST:
+				// in arg[0] size got size of string
+				args[i] = (word)(&arg[1]);
+				break;
+			default:
+				args[i] = 0; // todo: error
+			}
+			break;
+		case TTUPLE:
+			if ((word)arg == INULL)
+				args[i] = (word) (void*)0;
+			else
+			switch (hdrtype(arg[0])) {
+/*			case TCONST:
+				switch ((word)arg) {
+				case INULL:
+					args[i] = (word) (void*)0;
+				}*/
+			case TTUPLE: { // ?
+				// tuple, это последовательность, а не список!
+				// todo: сделать функцию cast или что-то такое
+				// что-бы возвращать список, какой мне нужен
+
+				// аллоцировать массив и сложить в него указатели на элементы кортежа
+				int size = hdrsize(arg[0]);
+				*fp++ = make_raw_header(size, TBVEC, 0);
+				args[i] = (word)fp; // ссылка на массив указателей на элементы
+
+				word* src = &arg[1];
+				while (--size)
+					*fp++ = (word)((word*)*src++ + 1);
+//				int j;
+//				for (j = 1; j < size; j++)
+				}
+				break;
+			default:
+				args[i] = INULL; // todo: error
+			}
+			break;
+		case TRAWP:
+			args[i] = (word)arg;
+			break;
+		default:
+			args[i] = 0;
+			break;
+		}
+
+		p = (word*)p[2]; // (cdr p)
+		t = (word*)t[2]; // (cdr t)
+		i++;
+	}
+	assert ((word)t == INULL); // количество аргументов совпало!
+
+//	#00000000 00000000 - dword
+//	#00000000 000000xx - count of arguments
+//	#00000000 000xxx00 - count of floats - up to 12 ?
+//	#00000000 xxx00000 - count of doubles - up to 12 ?
+#if __amd64__
+	// http://locklessinc.com/articles/gcc_asm/
+	// http://www.agner.org/optimize/calling_conventions.pdf
+
+
+//	int foo = 3, bar = 4, ppp = 1;
+//	__asm__ ("\
+//		add %2, %1    \n\
+//		call *%3       \n\
+//		mov %1, %0    \n"
+//	: "=rax"(ppp) 		// ouput
+//	: "r10"(foo), "rax"(bar)// input
+//	, "m"(function)
+//	: "cc"			// modify flags
+//	);
+//	// movss %xmm0,-0x1e4(%rbp) - float
+//	// movss 0x160a(%rip),%xmm0 - float
+//	// movsd 0x160e(%rip),%xmm0 - double
+//
+//	// linux calling convention:
+//	// rdi, rsi, rdx, rcx, r8, r9, xmm0..7
+//
+//	// register int out asm("r10") x;
+//
+//	float R = ((float (*)  (int, double, int))function) (1, 2.0, 3);
+
+	got = call(function, args, i + floats + doubles);
+#else
+	got = call(returntype >> 8, args, i);
+#endif
+
+	switch (returntype & 0x3F) {
+		case TINT:
+			if (got > FMAX) {
+				// прошу внимания!
+				//  в числовой паре надо сначала положить старшую часть,
+				//  и только потом младшую!
+				result = (word) new_pair(TINT, F(got & 0xFFFFFF),
+				                               new_pair(TINT, F(got >> 24),
+				                                              INULL));
+				break;
+			}
+			// no break
+		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
+			result = itosf (got);
+			break;
+			// else goto case 0 (иначе вернем type-fx+)
+		case TPORT:
+			result = (word) new_port (got);
+			break;
+		case TRAWP:
+			result = got;
+			break;
+
+		case TSTRING:
+			if (got != 0)
+				result = (word) new_string (lenn((char*)got, FMAX+1), (char*)got);
+			break;
+		case TVOID:
+			result = INULL;
+			break;
+//                      todo: TRATIONAL
+	}
+
+	self->fp = fp;
+
+	return result;
+}
+#endif//HAS_PINVOKE
