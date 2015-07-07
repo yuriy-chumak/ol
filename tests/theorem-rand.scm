@@ -1,5 +1,3 @@
-#!/usr/bin/ol --run
-
 ;; todo: move to (owl proof) after dust settles
 
 ;; DSL - still being prototyped

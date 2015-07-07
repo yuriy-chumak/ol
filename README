@@ -1,6 +1,19 @@
 OL - Owl Lisp -- yet another pet lisp
-   Copyright (c) 2012-14 Aki Helin
-   Copyright (c) 2015 Yuriy Chumak
+Copyright (c) 2014       Aki Helin
+Copyright (c) 2014, 2015 Yuriy Chumak
+
+Version 1.0.0 RC1
+
+~~~~~~~~~~~~~~~~~
+This program is free software;  you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of
+the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 
 Related:
 	http://people.csail.mit.edu/jaffer/Scheme (r5rs)
@@ -280,15 +293,17 @@ For normal C function call (actually platform invoke mechanism) you must
 
 More information about pinvoke you can get in source files
    lib/sqlite.scm
-   lib/opengl.scm and OpenGL/version-1-0.scm (works under Windows for now)
-   lib/Windows.scm
+   lib/opengl.scm and OpenGL/version-X-X.scm
+   lib/winapi.scm
+   lib/x11.scm
 
 All embedded OL api in progress and can be changed in feature.
+
 
 DOCUMENTATION
 ~~~~~~~~~~~~~
 
-Not yet provided, check the source codes
+Not yet provided, check the source codes - r5rs/base.owl
 
 
 SOME NOTES

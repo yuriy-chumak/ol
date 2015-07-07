@@ -391,6 +391,8 @@
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
     ; https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml
     glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height)
+    
+    (exports (owl pinvoke))
   )
   
 ; ============================================================================
@@ -399,10 +401,8 @@
       (r5rs base) (owl io) (owl string)
       (owl pinvoke))
    (begin
+   (define GL_VERSION_1_0 1)
 
-(define    GL_VERSION_1_0    1)
-
-; done: сделать определение нужной библиотеки самодостаточным, без всяких *OS*
 (define uname (syscall 63 0 0 0)) ; internal
 (define GL_LIBRARY
    (if (string-eq? (car uname) "Windows")  "opengl32"
@@ -412,23 +412,17 @@
 (define % (dlopen GL_LIBRARY RTLD_LAZY))
 	
 ; поддержка расширений :
-;(define _glGetProcAddress_address
-;   (case *OS*
-;     (1 (dlsym % type-handle "wglGetProcAddress"))
-;     (2 (dlsym % type-handle "glXGetProcAddress"))
-;     (3 "GLKit")))
 (define GetProcAddress ; internal function
    (dlsym % type-port
       (if (string-eq? (car uname) "Windows")  "wglGetProcAddress"
       (if (string-eq? (car uname) "Linux")    "glXGetProcAddress"))
-   type-string))
+    type-string))
 
 (define (glGetProcAddress type name . prototype)
    (let ((rtty (cons type prototype))
          (function (GetProcAddress (c-string name)))) ; todo: избавиться от (c-string)
       (if function
       (lambda args
-;        (print "opengl pinvoke: " (c-string name))
          (exec pinvoke function rtty args)))))
 
 ;//	Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/

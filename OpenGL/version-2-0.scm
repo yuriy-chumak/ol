@@ -33,7 +33,6 @@ glDrawArrays
   
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-5))
    (begin
    (define GL_VERSION_2_0 1)

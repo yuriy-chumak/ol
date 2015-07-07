@@ -395,6 +395,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 (import (lang eval))
 
 (import (owl base))
+(import (owl pinvoke))
 
 ;; push it to libraries for sharing, replacing the old one
 (define *libraries* 
@@ -406,7 +407,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 (define shared-misc
    (share-bindings
       error
-      pair?  boolean?  fixnum?  eof?  symbol?  
+      pair?  boolean?  fixnum?  eof?  symbol?
       tuple?  string?  function? procedure? equal? eqv? bytecode?
       not
       null?  null 
@@ -445,6 +446,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       string->symbol
       close-port flush-port
       read-file
+      ;dlopen dlsym RTLD_LAZY
       set-memory-limit 
       get-word-size
       get-memory-limit
@@ -614,6 +616,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
       (owl sort)
       (owl equal)
       (owl ff)
+      (owl pinvoke)
       (owl sexp))
 
    (begin
@@ -636,7 +639,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                take keep remove 
                thread-controller
                ;sexp-parser 
-               rand seed->rands
+               dlopen dlsym RTLD_LAZY
                ))))
 
 (import (owl usuals))

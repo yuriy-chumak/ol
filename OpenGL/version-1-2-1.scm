@@ -9,7 +9,6 @@
   
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-2))
    (begin
    (define GL_VERSION_1_2_1 1)

@@ -32,7 +32,6 @@
 ;	None
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
@@ -136,7 +135,6 @@
 ;	None
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
@@ -181,7 +179,6 @@
 ;	EXT_blend_minmax affects the definition of this extension
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
       
 ; ---------------------------------------------------------------------------
@@ -245,7 +242,6 @@
 ;	None
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
       
 ; ---------------------------------------------------------------------------
@@ -291,8 +287,8 @@
 ;	EXT_subtexture affects the definition of this extension.
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
+
 ;	EXT_texture is required.
    (import
       (OpenGL EXT texture))
@@ -343,8 +339,8 @@
 ;	EXT_texture3D affects the definition of this extension
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
+
 ;	EXT_texture is required.
    (import
       (OpenGL EXT texture))
@@ -389,7 +385,6 @@
 ;	EXT_texture3D affects the definition of this extension
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
@@ -515,7 +510,6 @@
 ; ---------------------------------------------------------------------------
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
 
    (import (OpenGL EXT vertex_array))

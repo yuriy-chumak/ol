@@ -26,7 +26,6 @@
 ;	None
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
@@ -81,7 +80,6 @@
 
    (import
       (r5rs base) (owl io)
-      (owl pinvoke)
       (OpenGL version-1-1))
       
    (import (OpenGL EXT bgra))

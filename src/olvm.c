@@ -133,7 +133,7 @@
 
 // -----------------------------
 // Threading (pthread for win32)
-#if EMBEDDED_VM
+#if 0//EMBEDDED_VM
 
 #ifdef _WIN32
 //	http://mirrors.kernel.org/sourceware/pthreads-win32/
