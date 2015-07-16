@@ -1,17 +1,25 @@
 #pragma once
+/**
+ * This program is free software;  you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+**/
 #ifndef __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 #define	__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
-
-//-- common header
 #ifdef __cplusplus
 	extern "C" {
 #endif
 
 // тут игра слов OL:
-//	сокращение от Owl-Lisp
-//	нулевой порог вхождения (0L - число 0) (Lisp - очень простой язык)
-//	тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков)
-//  ol' - сокращение от old (старый), отсылка к тому, что lisp - один из старейших языков
+//	сокращение от Owl-Lisp,
+//	нулевой порог вхождения (0L - число 0) (Lisp - ОЧЕНЬ простой язык),
+//	тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков),
+//	ol' - сокращение от old (старый), отсылка к тому, что lisp - один из старейших языков.
 struct OL;
 
 // defaults. please don't change. use -DOPTIONSYMBOL commandline option instead
@@ -75,5 +83,4 @@ typedef struct OL OL;
 #ifdef __cplusplus
 	}
 #endif
-
 #endif//__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__

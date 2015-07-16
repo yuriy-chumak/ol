@@ -486,6 +486,7 @@ typedef struct object
 #define is_fixed(x)                 (((word)x) & 2) // immediate value
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
+// todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TFIX                         (0)      // type-fix+
 #define TFIXN                        (0 + 32) // type-fix-
 #define TPAIR                        (1)
@@ -2955,8 +2956,7 @@ int main(int argc, char** argv)
 int    // this is NOT thread safe function
 vm_new(unsigned char* bootstrap, void (*release)(void*))
 {
-
-	// если это текстовый скрипт, замапим его на stdin
+	// если это текстовый скрипт, замапим его на stdin, а сами используем встроенный (если) язык
 	if (bootstrap[0] > 3) {
 		char filename[16]; // lenght of above string
 		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
@@ -2998,7 +2998,7 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 //	static //__tlocal__
 	word *fp;
 
-	void* result = 0; // результат выполнения.
+	void* result = 0; // результат выполнения скрипта
 
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
@@ -3068,18 +3068,13 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 #endif
 	}
 
-	heap.fp = fp;
-	oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
-	fp = heap.fp;
+//	heap.fp = fp;
+//	oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
+//	fp = heap.fp;
 
 	// Десериализация загруженного образа в объекты
-//	word* ptrs = fp;
-//	fp += nobjs + 1;
-
-//	ptrs[0] = make_raw_header(nobjs + 1, 0, 0);
 	word *ptrs = new_raw_object (nobjs+1, TCONST, 0);
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
-//	assert (fp < heap.end);// gc needed during heap import
 
 	// все, программа в памяти, можно освобождать исходник
 	if (release)
@@ -3097,9 +3092,6 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 	args.heap.genstart = heap.genstart;
 	args.max_heap_size = max_heap_size; // max heap size in MB
 	args.userdata      = (word*) oargs;
-
-//	if (_isatty(_fileno(stdin))) // is character device (not redirected) (interactive session)
-//		fputs("(define *interactive* #t)\n", stdin);
 
 #if 0 //EMBEDDED_VM
 	args.signal = 0;

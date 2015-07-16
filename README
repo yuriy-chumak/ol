@@ -1,5 +1,5 @@
 OL - Owl Lisp -- yet another pet lisp
-Copyright (c) 2014       Aki Helin
+Copyright (c) 2014 Aki Helin
 Copyright (c) 2014, 2015 Yuriy Chumak
 
 Version 1.0.0 RC1
@@ -44,7 +44,7 @@ BUILD
 ~~~~~
 
 SIMPLE WAY
-   $ make ol
+   $ make; make install
 
 
 MORE INTERESTING WAY
@@ -57,10 +57,10 @@ To build OL for linux x86-64 platform
    
 To build only OL vm (virtual machine) for linux x86 platform,
 that can execute only compiled (binary) lisp scripts
-   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m32  -o ol
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m32  -o vm
 
 Same for x86-64 linux platform
-   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m64  -o ol
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m64  -o vm
    
 OL vm can execute only precompiled OL scripts (see BINARY SCRIPTS section)
 and is very small (about 25KB for x86-64 executable).
@@ -90,13 +90,14 @@ Open webOS way
 
 VERY INTERESTING WAY
 
-You can change OL scheme language (yes, you can) by editing sources in
-lang/ and owl/ subfolders.
-For building OL language (not OL virtual machine)
-   $ make boot
-This will create new (in successfull way) src/boot.c that contains ol interpreter code
+   You can change OL scheme language (yes, you can) by editing sources in
+   lang/ and owl/ subfolders.
+
+To build OL language (not OL virtual machine)
+   $ make recompile
+   This will create new (in successfull way) repl binary that contains ol interpreter code
    
-Few words about OL can be found (will be) in the documentation.
+   Few words about OL can be found (will be) in the documentation.
    
 
 ADDITIONAL OL VM FEATURES

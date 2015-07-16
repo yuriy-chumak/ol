@@ -1,5 +1,6 @@
 #!/bin/ol
 
+;(define *interactive* #t)
 (define width 640)
 (define height 480)
 

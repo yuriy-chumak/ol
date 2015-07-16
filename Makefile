@@ -1,17 +1,17 @@
+export PATH := .:$(PATH)
+
 FAILED := $(shell mktemp -u)
-CFLAGS += -std=c99 -O3
+CFLAGS += -std=c99 -O3 -DNDEBUG
 boot.c := bootstrap~
+repl.o := src/repl.o
 
-all: ol tests
-boot: bootstrap
+all: ol
 
-install:
-	cp -b bootstrap src/boot.c
-	
 clean:
-	rm -f bootstrap
-	rm -f $(boot.c)
+	rm -f boot.fasl
+	rm -f $(repl.o)
 
+# config temporary disabled
 config: config/HAS_DLOPEN\
         config/HAS_SOCKETS
 
@@ -48,35 +48,41 @@ config/HAS_SOCKETS:
 	fi
 
 
-ol: src/olvm.c src/boot.c config
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -O3 -o ol -s \
-	-Xlinker --export-dynamic \
-	-DHAS_DLOPEN=`cat config/HAS_DLOPEN` -ldl \
-	-DHAS_SOCKETS=`cat config/HAS_SOCKETS` \
-	-DHAS_PINVOKE=1
+install:
+#	install -D lib /usr/lib/ol ...
+#	cp -b bootstrap src/boot.c
+	
+
+
+ol: src/olvm.c src/boot.c
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ -s \
+	-Xlinker --export-dynamic -ldl
 	@echo Ok.
+
 
 vm: src/olvm.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DNDEBUG -O3 -o vm -s -ldl
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ -s \
+	-Xlinker --export-dynamic -ldl
 	@echo Ok.
 
-$(boot.c): src/boot.c
-	@cp src/boot.c $(boot.c)
+	
+#src/repl.o: repl
+#	objcopy -B i386 -I binary -O default repl src/repl.o
+src/boot.c: repl vm
+	vm repl <src/to-c.scm >src/boot.c
 
-boot.fasl: src/ol.scm ol $(boot.c) r5rs/*.scm lang/*.scm owl/*.scm
-	@ol src/ol.scm
 
-bootstrap: boot.fasl
-	@ol src/to-c.scm > bootstrap
-	@if diff bootstrap bootstrap~ >/dev/null ;then\
+recompile: boot.fasl
+boot.fasl: vm repl src/ol.scm r5rs/*.scm lang/*.scm owl/*.scm
+	@vm repl < src/ol.scm
+	@if diff boot.fasl repl>/dev/null ;then\
 	    echo '\033[1;32m  `___`  \033[0m' ;\
 	    echo '\033[1;32m  (o,o)  \033[0m' ;\
 	    echo '\033[1;32m  \)  )  \033[0m' ;\
 	    echo '\033[1;32m___"_"___\033[0m' ;\
 	    echo '\033[1;32mBuild Ok.\033[0m' ;\
 	else \
-	    cp bootstrap $(boot.c) ;\
-	    make bootstrap ;\
+	    cp -b $@ repl ;make $@ ;\
 	fi
 
 
@@ -142,4 +148,4 @@ sample-embed:
 	gcc src/sample-embed.c src/olvm.c src/boot.c -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
 	-Xlinker --export-dynamic
 
-.PHONY: boot
+.PHONY: all
