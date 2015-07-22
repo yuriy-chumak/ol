@@ -655,21 +655,13 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 
 ;; say hi if interactive mode and fail if cannot do so (the rest are done using 
 ;; repl-prompt. this should too, actually)
-(define (greeting env seccomp?)
+(define (greeting seccomp?)
    (if (syscall 16 stdin 19 #f)
       (or
          (and
             (print (if seccomp? owl-ohai-seccomp owl-ohai))
             (display "> "))
          (halt 127))))
-
-;; todo: this should probly be wrapped in a separate try to catch them all
-; ... → program rval going to exit-owl
-(define (repl-start vm-args repl compiler env)
-(let ((seccomp? #false)) ; else (seccomp megs)
-   (greeting env seccomp?)
-   (repl-trampoline repl 
-      (env-set env '*seccomp* seccomp?))))
 
 
 ; *owl* points to owl root directory
@@ -709,21 +701,22 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
                      (list
                         (tuple 'init
                            (λ () 
-                              (fork-server 'repl
-                                 (λ () 
-                                    ;; get basic io running
-                                    (start-base-threads)
+                              (fork-server 'repl (lambda ()
+                                 ;; get basic io running
+                                 (start-base-threads)
 
-                                    ;; repl needs symbol etc interning, which is handled by this thread
-                                    (fork-server 'intern interner-thunk)
+                                 ;; repl needs symbol etc interning, which is handled by this thread
+                                 (fork-server 'intern interner-thunk)
 
-                                    ;; set a signal handler which stop evaluation instead of owl 
-                                    ;; if a repl eval thread is running
-                                    (set-signal-action repl-signal-handler)
+                                 ;; set a signal handler which stop evaluation instead of owl 
+                                 ;; if a repl eval thread is running
+                                 (set-signal-action repl-signal-handler)
 
-                                    (exit-owl
-                                       (repl-start '("-") repl compiler ; список с одним параметром вместо vm-args, в будущем могу поменять
-                                          (fold 
+                                 (exit-owl
+                                    (let ((seccomp? #false)) ; else (seccomp megs)
+                                       (greeting seccomp?)
+                                       (repl-trampoline repl
+                                          (fold ; this is our environment:
                                              (λ (env defn)
                                                 (env-set env (car defn) (cdr defn)))
                                              initial-environment
@@ -732,13 +725,15 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
                                                 (cons 'dump compiler)
                                                 (cons 'eval exported-eval)
                                                 (cons 'render render) ;; can be removed when all rendering is done via libraries
+                                                ; globals
                                                 (cons '*owl-version* *owl-version*)
                                                 ;;(cons '*owl-metadata* *owl-metadata*)
                                                 (cons '*owl-names* initial-names)
                                                 (cons '*vm-args* vm-args)
                                                 (cons '*vm-special-ops* vm-special-ops)
+                                                (cons '*seccomp* seccomp?)
                                                 ;;(cons '*codes* (vm-special-ops->codes vm-special-ops))
-                                                )))))))))
+                                                ))))))))))
                      null)))))))
 
 ;; todo: dumping with fasl option should only dump the fasl and only fasl

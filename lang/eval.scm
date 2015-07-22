@@ -854,7 +854,7 @@
                   (if bounced? 
                      (begin ;; we may need to reprint a prompt here
                         (if (env-get env '*interactive* #false) 
-                           (display "> "))  ;; reprint prompt
+                           (display "?> "))  ;; reprint prompt
                         stdin)
                      stdin))
                 (env (bind-toplevel env)))
