@@ -629,7 +629,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
                               ((get opts 'output #false) => (λ (given) given)) ; requested with -o
                               ((equal? path "-") path) ; stdin → stdout
                               (else (c-source-name path)))
-                           ;; inverse option on command line, add here if set
+                           ; inverse option on command line, add here if set
                            (if (get opts 'no-threads #false)
                               opts
                               (put opts 'want-threads #true))
@@ -653,31 +653,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       #false))
 
 
-;; -> vm exit with 0 on success, n>0 on error
-(define (try-repl-string env str)
-   (tuple-case (repl-string env str)
-      ((ok val env)
-         (exit-owl
-            (if (print val) 0 127)))
-      ((error reason partial-env)
-         (print-repl-error 
-            (list "An error occurred while evaluating:" str reason))
-         (exit-owl 1))
-      (else
-         (exit-owl 2))))
-
-;; exit with 0 if value is non-false, 1 if it's false, 127 if error
-(define (try-test-string env str)
-   (tuple-case (repl-string env str)
-      ((ok val env)
-         (exit-owl (if val 0 1)))
-      ((error reason partial-env)
-         (print-repl-error 
-            (list "An error occurred while evaluating:" str reason))
-         (exit-owl 127))
-      (else
-         (exit-owl 127))))
-
 ;; say hi if interactive mode and fail if cannot do so (the rest are done using 
 ;; repl-prompt. this should too, actually)
 (define (greeting env seccomp?)
@@ -691,54 +666,10 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 ;; todo: this should probly be wrapped in a separate try to catch them all
 ; ... → program rval going to exit-owl
 (define (repl-start vm-args repl compiler env)
-   (or
-      (process-arguments (cdr vm-args) command-line-rules error-usage-text
-         (λ (dict others)
-            (lets 
-               ((env ;; maybe set debug causing (owl eval) to print intermediate steps
-                  (if (getf dict 'debug)
-                     (env-set env '*debug* #true)
-                     env))
-                (seccomp?
-                  (if (get dict 'seccomp #false)
-                     (let ((megs (get dict 'seccomp-heap 'bug)))
-                        (seccomp megs) ;; <- process exits unless this succeeds 
-                        #true)
-                     #false)))
-               (cond
-                  ((or (getf dict 'output) (getf dict 'output-format))
-                     (if (< (length others) 2) ;; can take just one file or stdin
-                        (repl-compile compiler env 
-                           (if (null? others) "-" (car others)) dict)
-                        (begin
-                           (print "compile just one file for now please: " others)
-                           1)))
-;                  ((getf dict 'run) =>
-;                     (λ (path)
-;                        (owl-run (try (λ () (repl-file env path)) #false) (cons "ol" others) path
-;                           (get dict 'profile #false))))
-                  ((getf dict 'evaluate) => 
-                     (λ (str)
-                        (try-repl-string env str))) ;; fixme, no error reporting
-                  ((getf dict 'test) => 
-                     (λ (str)
-                        (try-test-string env str)))
-                  ((null? others)
-                     (greeting env seccomp?)
-                     (repl-trampoline repl 
-                        (env-set env '*seccomp* seccomp?)))
-                  (else
-                     ;; load the given files
-                     (define input
-                        (foldr (λ (path tail) (ilist ',load path tail)) null others))
-                     (tuple-case (repl env input)
-                        ((ok val env)  
-                           0)
-                        ((error reason partial-env)
-                           (print-repl-error reason)
-                           1)))))))
-      2))
-
+(let ((seccomp? #false)) ; else (seccomp megs)
+   (greeting env seccomp?)
+   (repl-trampoline repl 
+      (env-set env '*seccomp* seccomp?))))
 
 
 ; *owl* points to owl root directory
@@ -830,5 +761,5 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 ;       (want-threads . #true)
        (want-codes . #true)        ;?
        (want-native-ops . #true))) ;?
-   null) ; "none" = null, "some" = usual-suspects, "all" = heap-entry : vm extensions (none, some, all)
+   "some") ; "none" = null, "some" = usual-suspects, "all" = heap-entry : vm extensions (none, some, all)
 (print "Output written at " (- (time-ms) build-start) " ms.")

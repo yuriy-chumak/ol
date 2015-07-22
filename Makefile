@@ -101,6 +101,7 @@ boot.fasl: vm repl src/ol.scm r5rs/*.scm lang/*.scm owl/*.scm
 	    echo '\033[1;32m___"_"___\033[0m' ;\
 	    echo '\033[1;32mBuild Ok.\033[0m' ;\
 	else \
+	    echo `stat -c%s repl` -\> `stat -c%s $@` ;\
 	    cp -b $@ repl ;make $@ ;\
 	fi
 
