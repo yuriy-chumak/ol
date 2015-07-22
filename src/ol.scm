@@ -560,27 +560,16 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
             2))
       1))
 
-(define about-owl 
-"Owl Lisp -- It's a lisp thing.
-Copyright (c) 2008-2011 Aki Helin
-Check out http://code.google.com/p/owl-lisp for more information.")
-
-
-
-
-
 ;;;
 ;;; MCP, master control program and the thread controller
 ;;;
 
 ; special keys in mcp state 
 
-
 ;; pick usual suspects in a module to avoid bringing them to toplevel here
-;; mainly to avoid accidentalaly introducing bringing generic functions here  
+;; mainly to avoid accidentalaly introducing bringing generic functions here
 
 (define-library (owl usuals)
-
    (export usual-suspects)
    ; make sure the same bindings are visible that will be at the toplevel
 
@@ -621,7 +610,6 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                ;sexp-parser 
                dlopen dlsym RTLD_LAZY
                ))))
-
 (import (owl usuals))
 
 
@@ -665,14 +653,6 @@ Check out http://code.google.com/p/owl-lisp for more information.")
       #false))
 
 
-(define (try-load-state path args)
-   (let ((val (load-fasl path #false)))
-      (if (function? val)
-         (try (λ () (val (cons path args))) 127)
-         (begin
-            (print "failed to load dump from " path)
-            1))))
-  
 ;; -> vm exit with 0 on success, n>0 on error
 (define (try-repl-string env str)
    (tuple-case (repl-string env str)
@@ -726,16 +706,6 @@ Check out http://code.google.com/p/owl-lisp for more information.")
                         #true)
                      #false)))
                (cond
-                  ((getf dict 'help)
-                     (print brief-usage-text)
-                     (print-rules command-line-rules)
-                     0)
-                  ((getf dict 'version)
-                     (print "Owl Lisp " *owl-version*)
-                     0)
-                  ((getf dict 'about) (print about-owl) 0)
-                  ((getf dict 'load) =>
-                     (λ (path) (try-load-state path others)))
                   ((or (getf dict 'output) (getf dict 'output-format))
                      (if (< (length others) 2) ;; can take just one file or stdin
                         (repl-compile compiler env 
