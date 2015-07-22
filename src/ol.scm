@@ -100,23 +100,6 @@
 
 
 ;; move these simple ones to a separate library later (owl immediate?)
-(define-library (owl boolean)
-
-   (export boolean?)
-
-   (import  
-      (r5rs base)
-      (owl unsupported))
-
-   (begin
-      (define (boolean? x)
-         (cond
-            ((eq? x #true) #true)
-            ((eq? x #false) #true)
-            (else #false)))))
-
-(import (owl boolean))
-
 (import (owl list))
 
 (import (owl ff))

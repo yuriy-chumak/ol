@@ -134,8 +134,6 @@ tests: \
     tests/por-prime-rand.scm\
     tests/por-terminate.scm\
     tests/queue-rand.scm\
-    tests/r5rs.scm\
-    tests/r7rs.scm\
     tests/record.scm\
     tests/rlist-rand.scm\
     tests/seven.scm\
@@ -153,7 +151,7 @@ tests: \
 	@rm -f $(FAILED)
 	@for F in $^ ;do \
 	    echo -n "Testing $$F ... " ;\
-	    if ./ol $$F | diff - $$F.ok >/dev/null ;then\
+	    if ./vm repl <$$F | diff - $$F.ok >/dev/null ;then\
 	        echo "Ok." ;\
 	    else \
 	        echo "\033[0;31mFailed!\033[0m" ;\

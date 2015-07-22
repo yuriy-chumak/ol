@@ -41,8 +41,7 @@
 
    (import
       (r5rs base)
-      (owl primop)
-      (owl boolean))
+      (owl primop))
 
    (begin
       (define o (λ (f g) (λ (x) (f (g x))))) ; wtf???

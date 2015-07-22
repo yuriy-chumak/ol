@@ -8,7 +8,6 @@
       (owl string)
       (owl list)
       (owl list-extra)
-      (owl boolean)
       (owl symbol)
       (owl ff)
       (owl tuple)
