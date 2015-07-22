@@ -1,5 +1,8 @@
 export PATH := .:$(PATH)
 
+.PHONY: all clean config install recompile tests
+
+PREFIX := /usr
 FAILED := $(shell mktemp -u)
 CFLAGS += -std=c99 -O3 -DNDEBUG
 boot.c := bootstrap~
@@ -10,6 +13,28 @@ all: ol
 clean:
 	rm -f boot.fasl
 	rm -f $(repl.o)
+
+install: ol repl
+	install -d /usr/lib/ol
+	install -d /usr/lib/ol/etc
+	install -d /usr/lib/ol/lib
+	install -d /usr/lib/ol/owl
+	install -d /usr/lib/ol/r5rs
+	install -d /usr/lib/ol/scheme
+	install -d /usr/lib/ol/OpenGL
+	install -D -m 644 etc/* /usr/lib/ol/etc
+	install -D -m 644 lib/* /usr/lib/ol/lib
+	install -D -m 644 owl/* /usr/lib/ol/owl
+	install -D -m 644 r5rs/* /usr/lib/ol/r5rs
+	install -D -m 644 scheme/* /usr/lib/ol/scheme
+	install -D -m 644 OpenGL/* /usr/lib/ol/OpenGL
+	# install executables:
+	install -c -m 644 ol /usr/bin/ol
+	install -c -m 644 repl /usr/lib/ol/repl
+	
+uninstall:
+	-rm -rf /usr/lib/ol/
+	
 
 # config temporary disabled
 config: config/HAS_DLOPEN\
@@ -46,12 +71,6 @@ config/HAS_SOCKETS:
 		echo "\033[0;31mNot found.\033[0m";\
 		printf 0 > $@;\
 	fi
-
-
-install:
-#	install -D lib /usr/lib/ol ...
-#	cp -b bootstrap src/boot.c
-	
 
 
 ol: src/olvm.c src/boot.c
@@ -147,5 +166,3 @@ tests: \
 sample-embed:
 	gcc src/sample-embed.c src/olvm.c src/boot.c -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
 	-Xlinker --export-dynamic
-
-.PHONY: all

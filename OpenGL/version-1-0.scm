@@ -403,14 +403,19 @@
    (begin
    (define GL_VERSION_1_0 1)
 
+; https://en.wikipedia.org/wiki/Uname
 (define uname (syscall 63 0 0 0)) ; internal
 (define GL_LIBRARY
    (if (string-eq? (car uname) "Windows")  "opengl32"
    (if (string-eq? (car uname) "Linux")    "libGL.so"
+   ;...
    )))
 
 (define % (dlopen GL_LIBRARY RTLD_LAZY))
-	
+;(if (not %)
+;   (begin (print "Can't load opengl library")
+;          (halt 1)))
+
 ; поддержка расширений :
 (define GetProcAddress ; internal function
    (dlsym % type-port
@@ -425,14 +430,14 @@
       (lambda args
          (exec pinvoke function rtty args)))))
 
-;//	Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
+;//  Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
 ;// Правая. x-направо, y-вверх, z-к себе
 ;// В исходном состоянии OpenGL камера находится в начале мировых координат, смотрит в
 ;// отрицательную сторону оси z, направляющий вектор камеры (нормаль) совпадает с осью
 ;// y (камера стоит на плоскости x0z).
-;//	GL_MODELVIEW: Модельные преобразования (модельно-видовая матрица) - применяются к размещению объектов на сцене.
-;//	GL_PROJECTION: Видовые преобразования (проекционная матрица) - применяются к размещению и ориентации точки обзора (настройка камеры).
-;//	GL_TEXTURE: Текстурные преобразования (текстурная матрица) - применяются для управления текстурами заполнения объектов. (?)
+;//  GL_MODELVIEW: Модельные преобразования (модельно-видовая матрица) - применяются к размещению объектов на сцене.
+;//  GL_PROJECTION: Видовые преобразования (проекционная матрица) - применяются к размещению и ориентации точки обзора (настройка камеры).
+;//  GL_TEXTURE: Текстурные преобразования (текстурная матрица) - применяются для управления текстурами заполнения объектов. (?)
 
 
 (define GLvoid  type-void)  ; void GLvoid
@@ -449,12 +454,12 @@
 (define GLuint  type-int+)
 (define GLuint* type-vector-raw)
 
-(define GLfloat type-float) ; typedef float GLfloat
-(define GLdouble type-double) ; typedef double GLdouble;
+(define GLfloat  type-float)  ; typedef float GLfloat
+(define GLdouble type-double) ; typedef double GLdouble
 
 ;GLclampf
-;(define GLuint  type-fix+)  ;typedef unsigned int GLuint;
-;(define GLubyte type-fix+)  ;typedef unsigned char GLubyte;
+;(define GLuint  type-fix+)  ; typedef unsigned int GLuint;
+;(define GLubyte type-fix+)  ; typedef unsigned char GLubyte;
 (define GLubyte* type-string)
 
 

@@ -24,6 +24,8 @@
 
 #include "olvm.h"
 
+#define _POSIX_C_SOURCE 200112L
+
 // На данный момент поддерживаются две операционные системы:
 //  Windows, Linux
 // Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
@@ -62,6 +64,9 @@
 //	lambda, quote, rlambda (recursive lambda), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
 //	все остальное - макросы
 
+#define  _BSD_SOURCE
+#include <features.h>
+
 #include <assert.h>
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #include <stddef.h>
@@ -74,15 +79,14 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <fcntl.h>
+#include <time.h>
+#include <termios.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include <sys/utsname.h> // uname
-
-#define __USE_POSIX199309 // for nanosleep
-#include <time.h>
 
 // ?
 #ifndef O_BINARY
@@ -540,7 +544,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)(ob)) == TSTRING)
 #define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)(ob)) == TPORT) // todo: maybe need to check port rawness?
 
-#define ref(ob,n)                   (((word*)(ob))[n])
+#define ref(ob, n)                  (((word*)(ob))[n])
 #define car(ob)                     ref(ob, 1)
 #define cdr(ob)                     ref(ob, 2)
 
@@ -2135,6 +2139,30 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			// IOCTL (syscall 16 fd request #f)
+			case 16: {
+				CHECK(is_port(a), a, SYSCALL);
+				int portfd = car (a);
+				int ioctl = uftoi(b);
+
+				switch (ioctl) {
+				case 19: { // TIOCGETA
+					struct termios t;
+					if (tcgetattr(portfd, &t) != -1) {
+//					if (isatty(portfd)) {
+						result = ITRUE;
+						fprintf(stderr, "TIOCGETA: ok!\n");
+					}
+					else
+						fprintf(stderr, "TIOCGETA: --.\n");
+					break;
+				}
+				default:
+					;// do nothing
+				}
+				break;
+			}
+
 			// PIPE
 			case 22: {
 				// TBD.
@@ -2254,22 +2282,31 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			case 35: {
 				CHECK(immediatep(a), a, 35);
 #ifdef _WIN32
-				Sleep(fixval(a));
+				Sleep(uftoi(a));
 #else
-//				for Linux:
-//				if (!seccompp)
-#	if _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(), use nanosleep instead
-				if (usleep(fixval(a)*1000) == 0)
+				struct timeval ts = { uftoi(a) / 1000, (uftoi(a) % 1000) * 1000000 };
+				if (select(0, NULL, NULL, NULL, &ts) == 0)
 					result = ITRUE;
-#	else
+//				poll(0, 0, uftoi(a));
+#endif
+/*				for Linux:
+//				if (!seccompp)
+#	if	_POSIX_C_SOURCE >= 199309L
 				struct timespec ts = { fixval(a) / 1000, (fixval(a) % 1000) * 1000000 };
 				struct timespec rem;
 				if (nanosleep(&ts, &rem) == 0)
 					result = ITRUE;
 				else
 					result = F(rem.tv_sec * 1000 + rem.tv_nsec / 1000000);
-#	endif
-#endif
+#	else
+#	if _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(), use nanosleep instead
+				if (usleep((useconds_t)uftoi (a) * 1000) == 0)
+					result = ITRUE;
+#	endif*/
+				// or
+				// poll(0, 0, uftoi(a));*/
+
+//#endif
 				break;
 			}
 
@@ -2415,12 +2452,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 			//  остальное можно спокойно оформлять отдельными функциями
 
-				// isatty()
-				case 500: {
-					result = TRUEFALSE( isatty(fixval(a)) );
-					break;
-				}
-
 				case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 					result = F(max_heap_size);
 					max_heap_size = fixval(a);
@@ -2463,9 +2494,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					word* A = (word*)a;
 
 					CHECK(is_port(A), A, SYSCALL);
-					void* module = car (A);
+					void* module = (void*)car (A);
 
-					word* symbol = (word*)b;
+					word* symbol = (word*) b;
 					// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
 					if (!(immediatep(symbol) || hdrtype(*symbol) == TSTRING))
 						break;
@@ -2942,19 +2973,18 @@ int main(int argc, char** argv)
 #endif
 
 	set_signal_handler();
-	OL*ol = vm_new(bootstrap, bootstrap != language ? free : NULL);
+	int r = olvm(bootstrap, bootstrap != language ? free : NULL);
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSACleanup();
 #endif
 
-	free(ol);
-	return 0;
+	return r;
 }
 #endif
 
 int    // this is NOT thread safe function
-vm_new(unsigned char* bootstrap, void (*release)(void*))
+olvm(unsigned char* bootstrap, void (*release)(void*))
 {
 	// если это текстовый скрипт, замапим его на stdin, а сами используем встроенный (если) язык
 	if (bootstrap[0] > 3) {
@@ -2962,7 +2992,8 @@ vm_new(unsigned char* bootstrap, void (*release)(void*))
 		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
 
 		int f = mkstemp(filename); // временный файл
-		write(f, bootstrap, strlen(bootstrap));
+		if (!write(f, bootstrap, strlen(bootstrap)))
+			;
 		close(f);
 
 		dup2(open(filename, O_BINARY, S_IRUSR), STDIN_FILENO);

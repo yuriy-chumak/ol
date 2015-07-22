@@ -46,11 +46,7 @@ struct OL;
 //-- end of options
 
 
-// todo: add vm_free or vm_delete or vm_destroy or something
-
-//struct OL*
-int
-vm_new(unsigned char* bootstrap, void (*release)(void*));
+int olvm(unsigned char* bootstrap, void (*release)(void*));
 
 #if 0 //EMBEDDED_VM
 //int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
