@@ -1,5 +1,5 @@
 ;;;
-;;; ol.scm: an Owl read-eval-print loop.
+;;; ol.scm: an Owl read-eval-print loop binary image compiler.
 ;;;
 
 #| Copyright (c) 2012 Aki Helin
@@ -24,20 +24,16 @@
  | DEALINGS IN THE SOFTWARE.
  |#
 
-;; check that (r5rs base) is indeed from last generation
-
 (define build-start (time-ms))
 (print "Loading code...")
-
-; (import (r5rs base))
 
 (mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
 
 ; forget all other libraries to have them be reloaded and rebuilt
 
 (define *libraries*
-   (keep 
-      (λ (lib) 
+   (keep
+      (λ (lib)
          (equal? (car lib) '(owl core)))
       *libraries*))
 
@@ -50,14 +46,12 @@
 ;;;
 ;;; Time for a new REPL
 ;;;
+(import (owl core))     ;; get special forms, primops and define-syntax
 
 ;; this should later be just a sequence of imports followed by a fasl dump
-
-(import (owl core))     ;; get special forms, primops and define-syntax
-(import (r5rs base))    ;; get define, define-library, import, ... from the just loaded (owl defmac)
+(import (r5rs base))    ;; get define, define-library, import, ... from the just loaded
 
 (define *include-dirs* (list "." "/usr/lib/ol")) ;; now we can (import <libname>) and have them be autoloaded to current repl
-
 (define *owl-names* #empty)
 
 (import (owl interop))
@@ -70,10 +64,10 @@
 
 ;; http://semver.org/lang/ru/
 (define *owl-version* "1.0.0")
-(define exit-seccomp-failed 2)    ;; --seccomp given but cannot do it
-(define max-object-size #xffff)
+(define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
+(define max-object-size #xffff)  ; todo: change as dependent of word size
 
-(define owl-ohai "You see a prompt.")
+(define owl-ohai "You see a prompt.") ; todo: change to version string
 (define owl-ohai-seccomp "You see a prompt. You feel restricted.")
 
 ;; throw an error if some familiar but unsupported Scheme functions are called
@@ -101,23 +95,14 @@
 
 ;; move these simple ones to a separate library later (owl immediate?)
 (import (owl list))
-
 (import (owl ff))
-
 (import (only (owl iff))) ;; hack, load it but don't import anything
-
 (import (owl math))
-
 (import (owl list-extra))
-
 (import (owl sort))
-
 (import (owl math-extra))
-
 (import (owl lazy))
-
 (import (only (owl unicode) encode-point))
-
 (import (owl string))
 
 
@@ -126,21 +111,15 @@
    (list->string (render-number n null base)))
 
 (import (owl vector))
-
 (import (owl symbol))
-
 (import (owl tuple))
-
 (import (owl equal))
-
 (import (owl rlist))
 
+; todo: change to (eof-object? ) as "r5rs/6.6.2 Input", add #eof to parser
 (define-library (owl eof)
-
    (export eof?)
-
    (import (r5rs base))
-
    (begin
       (define eof-value
          (cast 4 13))
@@ -170,7 +149,6 @@
 
 (import (scheme misc))
 
-(import (lang env))
 
 (import (owl gensym))
 
@@ -188,6 +166,7 @@
          (list "error: " 'instruction opcode 'info (tuple a b)))))
 
 
+(import (lang env))
 (import (lang macro))
 
 (import (lang ast))
@@ -275,7 +254,7 @@
 
 (import (only (lang dump) make-compiler dump-fasl load-fasl))
 
-
+; create the compiler:
 (define compiler ; <- to compile things out of the currently running repl using the freshly loaded compiler
    (make-compiler *vm-special-ops*))
 
@@ -683,8 +662,8 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 ;;;
 
 (define (heap-entry symbol-list)
-   (λ (codes) ;; all my codes are belong to codes
-      (lets
+   (lambda (codes) ;; all my codes are belong to codes
+      (let*
          ((initial-names *owl-names*)
           (interner-thunk (initialize-interner symbol-list codes)))
          (λ (vm-special-ops)

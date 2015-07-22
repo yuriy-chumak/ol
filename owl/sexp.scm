@@ -33,22 +33,25 @@
    (begin
 
       (define (between? lo x hi)
-         (and (<= lo x) (<= x hi)))
+         (<= lo x hi))
 
-      (define special-symbol-chars (string->bytes "+-=<>!*%?_/"))
+      ; todo: rename to extended-alphabetic-chars
+;     (define special-symbol-chars (string->bytes "!$%&*+-/:<=>?@^_~")) ; . reserved for numbers, sorry.
+      (define special-initial-chars (string->bytes "!$%&*+-/:<=>?^_~"))
+      (define special-subseqent-chars (string->bytes "@")) ; . must be too
 
-      (define (symbol-lead-char? n) 
+      (define (symbol-lead-char? n)
          (or 
             (between? #\a n #\z)
             (between? #\A n #\Z)
-            (has? special-symbol-chars n)
+            (has? special-initial-chars n)
             (> n 127)))         ;; allow high code points in symbols
 
       (define (symbol-char? n) 
-         (or (symbol-lead-char? n) 
-            (or
-               (between? #\0 n #\9)
-               (> n 127))))         ;; allow high code points in symbols
+         (or
+            (symbol-lead-char? n)
+            (between? #\0 n #\9)
+            (has? special-subseqent-chars n)))
 
       (define get-symbol 
          (get-either
@@ -340,6 +343,7 @@
                      (get-word "T" #true)
                      (get-word "F" #false)
                      (get-word "e" #empty)
+                     ;(get-word "define" ... ?
                      (let-parses
                         ((bang (get-imm #\!))
                          (line get-rest-of-line))
