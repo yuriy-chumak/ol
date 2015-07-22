@@ -24,8 +24,6 @@
 
 #include "olvm.h"
 
-#define _POSIX_C_SOURCE 200112L
-
 // На данный момент поддерживаются две операционные системы:
 //  Windows, Linux
 // Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
@@ -64,9 +62,6 @@
 //	lambda, quote, rlambda (recursive lambda), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
 //	все остальное - макросы
 
-#define  _BSD_SOURCE
-#include <features.h>
-
 #include <assert.h>
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #include <stddef.h>
@@ -87,6 +82,9 @@
 #include <sys/stat.h>
 
 #include <sys/utsname.h> // uname
+
+#define __USE_POSIX199309 // for nanosleep
+#include <time.h>
 
 // ?
 #ifndef O_BINARY
@@ -2148,13 +2146,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				switch (ioctl) {
 				case 19: { // TIOCGETA
 					struct termios t;
-					if (tcgetattr(portfd, &t) != -1) {
-//					if (isatty(portfd)) {
+					if (tcgetattr(portfd, &t) != -1)
 						result = ITRUE;
-						fprintf(stderr, "TIOCGETA: ok!\n");
-					}
-					else
-						fprintf(stderr, "TIOCGETA: --.\n");
 					break;
 				}
 				default:
@@ -2282,31 +2275,22 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			case 35: {
 				CHECK(immediatep(a), a, 35);
 #ifdef _WIN32
-				Sleep(uftoi(a));
+				Sleep(fixval(a));
 #else
-				struct timeval ts = { uftoi(a) / 1000, (uftoi(a) % 1000) * 1000000 };
-				if (select(0, NULL, NULL, NULL, &ts) == 0)
-					result = ITRUE;
-//				poll(0, 0, uftoi(a));
-#endif
-/*				for Linux:
+//				for Linux:
 //				if (!seccompp)
-#	if	_POSIX_C_SOURCE >= 199309L
+#	if _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(), use nanosleep instead
+				if (usleep(fixval(a)*1000) == 0)
+					result = ITRUE;
+#	else
 				struct timespec ts = { fixval(a) / 1000, (fixval(a) % 1000) * 1000000 };
 				struct timespec rem;
 				if (nanosleep(&ts, &rem) == 0)
 					result = ITRUE;
 				else
 					result = F(rem.tv_sec * 1000 + rem.tv_nsec / 1000000);
-#	else
-#	if _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(), use nanosleep instead
-				if (usleep((useconds_t)uftoi (a) * 1000) == 0)
-					result = ITRUE;
-#	endif*/
-				// or
-				// poll(0, 0, uftoi(a));*/
-
-//#endif
+#	endif
+#endif
 				break;
 			}
 
@@ -2451,6 +2435,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 			// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 			//  остальное можно спокойно оформлять отдельными функциями
+
+				// isatty()
+				case 500: {
+					result = TRUEFALSE( isatty(fixval(a)) );
+					break;
+				}
 
 				case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 					result = F(max_heap_size);
@@ -2972,7 +2962,7 @@ int main(int argc, char** argv)
 	AllocConsole();
 #endif
 
-	set_signal_handler();
+	//set_signal_handler();
 	int r = olvm(bootstrap, bootstrap != language ? free : NULL);
 
 #if	HAS_SOCKETS && defined(_WIN32)

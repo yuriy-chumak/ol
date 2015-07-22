@@ -43,11 +43,9 @@
 ;            (primop 'sys       '(27 4 5 6 7  8  24 8)  4 1)
 ;
 ;           пример выполнение raw-кода прямо в интерпретаторе:
-;            (define *interactive* #t)
-;            ;; Defined *interactive*
-;            > (define x (raw (list 51 4 5 6 24 6) type-bytecode #false))
-;            ;; Defined x
-;            > (x 1 2)
+;            > (define construct (raw type-bytecode (list 51 4 5 6 24 6)))
+;            ;; Defined construct
+;            > (construct 1 2)
 ;            '(1 . 2)
 ;            >
 

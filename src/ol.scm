@@ -3,6 +3,7 @@
 ;;;
 
 #| Copyright (c) 2012 Aki Helin
+ | Copyright (c) 2014, 2015 Yuriy Chumak
  |
  | Permission is hereby granted, free of charge, to any person obtaining a 
  | copy of this software and associated documentation files (the "Software"),
@@ -55,9 +56,6 @@
 (import (owl core))     ;; get special forms, primops and define-syntax
 (import (r5rs base))    ;; get define, define-library, import, ... from the just loaded (owl defmac)
 
-;(define *interactive* (sys-prim 500 stdin #f #f)) ;; was #true
-(define *interactive* #f)
-
 (define *include-dirs* (list "." "/usr/lib/ol")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 
 (define *owl-names* #empty)
@@ -80,7 +78,6 @@
 
 ;; throw an error if some familiar but unsupported Scheme functions are called
 (define-library (owl unsupported)
-
    (export string-set! vector-set!) ; set! set-car! set-cdr! 
 
    (import 
@@ -721,7 +718,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
 ;; say hi if interactive mode and fail if cannot do so (the rest are done using 
 ;; repl-prompt. this should too, actually)
 (define (greeting env seccomp?)
-   (if (env-get env '*interactive* #f)
+   (if (syscall 16 stdin 19 #f)
       (or
          (and
             (print (if seccomp? owl-ohai-seccomp owl-ohai))
@@ -735,11 +732,7 @@ Check out http://code.google.com/p/owl-lisp for more information.")
       (process-arguments (cdr vm-args) command-line-rules error-usage-text
          (λ (dict others)
             (lets 
-               ((env ;; be quiet automatically if any of these are set
-                  (if (fold (λ (is this) (or is (get dict this #false))) #false '(quiet test evaluate output output-format))
-                     (env-set env '*interactive* #false)
-                     (env-set env '*interactive* #false))) ; was #true
-                (env ;; maybe set debug causing (owl eval) to print intermediate steps
+               ((env ;; maybe set debug causing (owl eval) to print intermediate steps
                   (if (getf dict 'debug)
                      (env-set env '*debug* #true)
                      env))
