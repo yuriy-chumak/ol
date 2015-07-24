@@ -40,7 +40,7 @@
 (import (r5rs base)) ;; reload default macros needed for defining libraries etc
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*vm-special-ops* *libraries* *codes* wait stdin stdout stderr set-ticker-value build-start)
+,forget-all-but (*libraries* *codes* wait stdin stdout stderr set-ticker-value build-start)
 
 
 ;;;
@@ -229,20 +229,14 @@
 
 ;(import (lang cgen))
 
-(import (only (lang dump) make-compiler dump-fasl load-fasl))
-
-; create the compiler:
-(define compiler ; <- to compile things out of the currently running repl using the freshly loaded compiler
-   (make-compiler *vm-special-ops*))
-
 ; path -> 'loaded | 'saved
-(define (suspend path)
-   (let ((maybe-world (wrap-the-whole-world-to-a-thunk #true #true)))
-      (if (eq? maybe-world 'resumed)
-         'loaded
-         (begin
-            (dump-fasl maybe-world path)
-            'saved))))
+;(define (suspend path)
+;   (let ((maybe-world (wrap-the-whole-world-to-a-thunk #true #true)))
+;      (if (eq? maybe-world 'resumed)
+;         'loaded
+;         (begin
+;            (dump-fasl maybe-world path)
+;            'saved))))
 
 (import (owl sys))
 
@@ -541,25 +535,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
             ))))
 (import (owl usuals))
 
-;; say hi if interactive mode and fail if cannot do so (the rest are done using 
-;; repl-prompt. this should too, actually)
-(define (greeting seccomp?)
-   (if (syscall 16 stdin 19 #f)
-      (and
-         (print (if seccomp? owl-ohai-seccomp owl-ohai))
-         (display "> "))))
-
-
-; *owl* points to owl root directory
-; initally read from binary path (argv [0] )
-
-(define (directory-of path)
-   (runes->string
-      (reverse
-         (drop-while 
-            (lambda (x) (not (eq? x #\/))) ; 47
-            (reverse
-               (string->bytes path))))))
+(print "Code loaded at " (- (time-ms) build-start) " ms.")
 
 
 
@@ -568,62 +544,62 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 ;;; Dump a new repl image
 ;;;
 
+;; say hi if interactive mode and fail if cannot do so (the rest are done using 
+;; repl-prompt. this should too, actually)
 (define (heap-entry symbol-list)
-   (lambda (codes) ;; all my codes are belong to codes
+   (λ (codes) ;; all my codes are belong to codes
       (let*
          ((initial-names *owl-names*)
           (interner-thunk (initialize-interner symbol-list codes)))
-         (λ (vm-special-ops)
-            (let ((compiler (make-compiler vm-special-ops)))
-               ;; still running in the boostrapping system
-               ;; the next value after evaluation will be the new repl heap
-               ;; start point for the vm
+;         (λ (vm-special-ops)
+            ;; still running in the boostrapping system
+            ;; the next value after evaluation will be the new repl heap
+            ;; start point for the vm
 
-               ;; entry point of the compiled image?
-               (λ (vm-args)
-                  ;(print "vm-args: " (null? vm-args "null" vm-args))
-                  ;; now we're running in the new repl 
-                  (start-thread-controller
-                     (list
-                        (tuple 'init
-                           (λ () 
-                              (fork-server 'repl (lambda ()
-                                 ;; get basic io running
-                                 (start-base-threads)
+            ;; entry point of the compiled image?
+            (λ (vm-args)
+               ;(print "vm-args: " (null? vm-args "null" vm-args))
+               ;; now we're running in the new repl 
+               (start-thread-controller
+                  (list
+                     (tuple 'init
+                        (λ () 
+                           (fork-server 'repl (lambda ()
+                              ;; get basic io running
+                              (start-base-threads)
 
-                                 ;; repl needs symbol etc interning, which is handled by this thread
-                                 (fork-server 'intern interner-thunk)
+                              ;; repl needs symbol etc interning, which is handled by this thread
+                              (fork-server 'intern interner-thunk)
 
-                                 ;; set a signal handler which stop evaluation instead of owl 
-                                 ;; if a repl eval thread is running
-                                 (set-signal-action repl-signal-handler)
+                              ;; set a signal handler which stop evaluation instead of owl 
+                              ;; if a repl eval thread is running
+                              (set-signal-action repl-signal-handler)
 
-                                 (exit-owl
-                                    (let ((seccomp? #false)) ; else (seccomp megs)
-                                       (greeting seccomp?)
-                                       (repl-trampoline repl
-                                          (fold ; this is our environment:
-                                             (λ (env defn)
-                                                (env-set env (car defn) (cdr defn)))
-                                             initial-environment
-                                             (list
-                                                ;(cons '*owl* (directory-of (car vm-args)))
-                                                (cons 'dump compiler)
-                                                (cons 'eval exported-eval)
-                                                (cons 'render render) ;; can be removed when all rendering is done via libraries
-                                                ; globals
-                                                (cons '*owl-version* *owl-version*)
-                                                ;;(cons '*owl-metadata* *owl-metadata*)
-                                                (cons '*owl-names* initial-names)
-                                                (cons '*vm-args* vm-args)
-                                                (cons '*vm-special-ops* vm-special-ops)
-                                                (cons '*seccomp* seccomp?)
-                                                ;;(cons '*codes* (vm-special-ops->codes vm-special-ops))
-                                                ))))))))))
-                     null)))))))
-
-;; todo: dumping with fasl option should only dump the fasl and only fasl
-
+                              (exit-owl
+                                 (let ((seccomp? #false)) ; else (seccomp megs)
+                                    ; greeting
+                                    (if (syscall 16 stdin 19 #f)
+                                        (begin
+                                        (print (if seccomp? owl-ohai-seccomp owl-ohai))
+                                        (display "> ")))
+                                    (repl-trampoline repl
+                                       (fold ; our environment:
+                                          (λ (env defn)
+                                             (env-set env (car defn) (cdr defn)))
+                                          initial-environment
+                                          (list
+                                             (cons 'eval exported-eval)
+                                             (cons 'render render) ;; can be removed when all rendering is done via libraries
+                                             ; globals
+                                             (cons '*owl-version* *owl-version*)
+                                             ;;(cons '*owl-metadata* *owl-metadata*)
+                                             (cons '*owl-names* initial-names)
+                                             (cons '*vm-args* vm-args)
+                                             ;(cons '*vm-special-ops* vm-special-ops)
+                                             (cons '*seccomp* seccomp?)
+                                             ;;(cons '*codes* (vm-special-ops->codes vm-special-ops))
+                                             ))))))))))
+                  null)))))
 
 ;;;
 ;;; Dump the new repl
@@ -632,15 +608,81 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 ;; note, one one could use the compiler of the currently running system, but using 
 ;; the rebuilt one here to make changes possible in 1 instead of 2 build cycles.
 ;; (this may be changed later)
-(print "Code loaded at " (- (time-ms) build-start) " ms.")
 (print "Compiling ...")
 
-(compiler heap-entry "unused historical thingy"
-   (list->ff
-     `((output . "boot.fasl")      ; output file
-       (want-symbols . #true)      ;?
-;       (want-threads . #true)
-       (want-codes . #true)        ;?
-       (want-native-ops . #true))) ;?
-   "some") ; "none" = null, "some" = usual-suspects, "all" = heap-entry : vm extensions (none, some, all)
+; was: create the compiler:
+;(import (only (lang dump) make-compiler)); dump-fasl load-fasl))
+;(define compiler ; <- to compile things out of the currently running repl using the freshly loaded compiler
+;   (make-compiler *vm-special-ops*))
+
+;(compiler heap-entry "unused historical thingy"
+;   (list->ff
+;     `((output . "boot.fasl")      ; output file
+;       (want-symbols . #true)      ;?
+;       (want-threads . #false)
+;       (want-codes . #true)        ;?
+;       (want-native-ops . #true))) ;?
+;   "some") ; "none" = null, "some" = usual-suspects, "all" = heap-entry : vm extensions (none, some, all)
+
+;--
+(define (symbols-of node)
+   (define tag (list 'syms))
+
+   (define (walk trail node)
+      (cond
+         ((immediate? node) trail)
+         ((get trail node #false) trail)
+         ((symbol? node) 
+            (let ((trail (put trail node 1)))
+               (put trail tag 
+                  (cons node (get trail tag null)))))
+         ((raw? node) trail)
+         (else
+            (fold walk 
+               (put trail node #true)
+               (tuple->list node)))))
+   (define trail
+      (walk (put empty tag null) node))
+
+   (get 
+      (walk (put empty tag null) node)
+      tag null))
+
+;--
+(define (code-refs seen obj)
+   (cond
+      ((immediate? obj) (values seen empty))
+      ((bytecode? obj)
+         (values seen (put empty obj 1)))
+      ((get seen obj #false) =>
+         (λ (here) (values seen here)))
+      (else
+         (let loop ((seen seen) (lst (tuple->list obj)) (here empty))
+            (if (null? lst)
+               (values (put seen obj here) here)
+               (lets ((seen this (code-refs seen (car lst))))
+                  (loop seen (cdr lst)
+                     (ff-union this here +))))))))
+(define (codes-of ob) 
+   (lets ((refs this (code-refs empty ob)))
+      (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
+
+;--
+(let*((path "boot.fasl")
+      (entry heap-entry)
+      (entry (entry (symbols-of entry))) ; symbol-list
+      (entry (entry (codes-of entry)))   ; codes
+      (bytes ;; encode the resulting object for saving in some form
+         (fasl-encode entry))
+      (port ;; where to save the result
+         (open-output-file path)))
+   (if (not port) (begin
+      (print "Could not open " path " for writing")
+         #false)
+      (begin ;; just save the fasl dump
+         (write-bytes port bytes)
+         (close-port port)
+         #true)))
+
+
 (print "Output written at " (- (time-ms) build-start) " ms.")
