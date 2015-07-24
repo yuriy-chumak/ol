@@ -344,7 +344,7 @@
 
                 ;(_ (print " - output format " format))
                 (entry ;; start threading if requested (note how this affects the other args)
-                  (if (get opts 'want-threads #false) 
+                  (if (get opts 'want-threads #false)
                      (with-threading entry)
                      entry)) ; <- continue adding this next
                
@@ -397,7 +397,6 @@
                      #false)
                   ((not format)
                      (print "I do not know how to write that.")
-                     (print "Use -o file.c, -o file.fasl, or defined format with -x c or -x fasl")
                      #false)
                   ((eq? format 'fasl) ;; just save the fasl dump
                      (write-bytes port bytes)

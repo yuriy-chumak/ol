@@ -69,7 +69,7 @@
       (define errorLog (make-string maxLengthValue 0))
       (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)
       (print errorLog)
-      (halt 0)))
+      (exit-owl 0)))
 (glAttachShader po vs)
 
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
@@ -157,7 +157,7 @@
       (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)
       (print errorLog)
       (print "@")
-      (halt 0)))
+      (exit-owl 0)))
 (glAttachShader po fs)
 
 (glLinkProgram po)

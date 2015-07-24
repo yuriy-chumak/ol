@@ -128,19 +128,12 @@
          (eq? x eof-value))))
 
 (import (owl render))
- 
 (import (only (owl queue))) ; just load it
-
 (import (owl intern))
-
 (import (owl eof))
-
 (import (owl io))
-
 (import (owl parse))
-
 (import (owl regex))
-
 (import (owl sexp))
 
 (define (ok? x) (eq? (ref x 1) 'ok))
@@ -148,8 +141,6 @@
 (define (fail reason) (tuple 'fail reason))
 
 (import (scheme misc))
-
-
 (import (owl gensym))
 
 
@@ -214,20 +205,6 @@
 
 (define file-in 0)
 (define file-out 1)
-
-; read-file path|fd fail -> (exp ...) ∨ (fail reason)
-(define (read-file src fail)
-   (cond
-      ((string? src)
-         (let ((port (open-input-file src)))
-            (if port
-               (read-file port fail)
-               (fail (list "unable to open " src)))))
-      ((number? src)
-         (read-exps-from src null fail))
-      (else 
-         (fail (list "bad source " src)))))
-
 
 (define-syntax share-bindings
    (syntax-rules (defined)
@@ -365,52 +342,51 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 ;; todo: share the modules instead later
 (define shared-misc
    (share-bindings
-      error
-      pair?  boolean?  fixnum?  eof?  symbol?
-      tuple?  string?  function? procedure? equal? eqv? bytecode?
-      not
-      null?  null 
-      time
-      time-ms
-      halt exec
-      seccomp
-      apply
-      call/cc
-      call-with-current-continuation
-      display print-to print print* 
-      render 
-      system-println
-      sleep
-      list->tuple
-      exit-thread
-      number->string
-      fork
-      fork-named
-      fork-linked
-      fork-server
-      fork-linked-server
-      exit-owl
-      single-thread?
-      set-ticker-value
-      kill
-      catch-thread
-      release-thread
-      suspend
-      mail interact
-      string->number
-      wait
-      wait-mail accept-mail check-mail return-mails
-      set-signal-action
-      byte-vector?
-      string->symbol
-      close-port flush-port
-      read-file
-      ;dlopen dlsym RTLD_LAZY
-      set-memory-limit 
-      get-word-size
-      get-memory-limit
-      string->sexp
-      profile
+;      error
+;      boolean?  fixnum?  eof?  symbol?
+;      tuple?  string?  function? procedure? equal? eqv? bytecode?
+;      not
+;      null?  null 
+;      time
+;      time-ms
+;      halt exec
+;      seccomp
+;      apply
+;      call/cc
+;      call-with-current-continuation
+;      display print-to print print* 
+;      render 
+;      system-println
+;      sleep
+;      list->tuple
+;      exit-thread
+;      number->string
+;      fork
+;      fork-named
+;      fork-linked
+;      fork-server
+;      fork-linked-server
+;      exit-owl
+;      single-thread?
+;      set-ticker-value
+;      kill
+;      catch-thread
+;      release-thread
+;      suspend
+;      mail interact
+;      string->number
+;      wait
+;      wait-mail accept-mail check-mail return-mails
+;      set-signal-action
+;      byte-vector?
+;      string->symbol
+;      close-port flush-port
+;      ;dlopen dlsym RTLD_LAZY
+;      set-memory-limit 
+;      get-word-size
+;      get-memory-limit
+;      string->sexp
+;      profile
       *features*
       *include-dirs*
       *libraries*      ;; all currently loaded libraries
@@ -441,32 +417,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
 
 ;; todo: after there are a few more compiler options than one, start using -On mapped to predefined --compiler-flags foo=bar:baz=quux
-
-(define command-line-rules
-   (cl-rules
-     `((help     "-h" "--help")
-       (about    "-a" "--about")
-       (version  "-v" "--version")
-       (evaluate "-e" "--eval"     has-arg comment "evaluate given expression and print result")
-       (test     "-t" "--test"     has-arg comment "evaluate given expression exit with 0 unless the result is #false")
-       (quiet    "-q" "--quiet"    comment "be quiet (default in non-interactive mode)")
-;       (run      "-r" "--run"      has-arg comment "run the last value of the given foo.scm with given arguments" terminal)
-       (load     "-l" "--load"     has-arg  comment "resume execution of a saved program state (fasl)")
-       (output   "-o" "--output"   has-arg  comment "where to put compiler output (default auto)")
-       (seccomp  "-S" "--seccomp"  comment "enter seccomp at startup or exit if it failed")
-       (seccomp-heap     "-H" "--heap"     cook ,string->integer default "5"
-         comment "allocate n megabytes of memory at startup if using seccomp")
-       (output-format  "-x" "--output-format"   has-arg comment "output format when compiling (default auto)")
-       (optimize "-O" "--optimize" cook ,string->integer comment "optimization level in C-compiltion (0-2)")
-       ;(profile  "-p" "--profile" comment "Count calls when combined with --run (testing)")
-       ;(debug    "-d" "--debug" comment "Define *debug* at toplevel verbose compilation")
-       ;(linked  #false "--most-linked" has-arg cook ,string->integer comment "compile most linked n% bytecode vectors to C")
-       (no-threads #false "--no-threads" comment "do not include threading and io to generated c-code")
-       )))
-
-(define brief-usage-text "Usage: ol [args] [file] ...")
-
-(define error-usage-text "ol -h helps.")
 
 ;; repl-start, thread controller is now runnig and io can be 
 ;; performed. check the vm args what should be done and act 
@@ -571,76 +521,33 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       ; commonly needed functions 
       (define usual-suspects
          (list
-               put get del ff-fold fupd
-               - + * /
-               div gcd ediv
-               << < <= = >= > >> 
-               equal? has? mem
-               band bor bxor
-               sort
-               ; suffix-array bisect
-               fold foldr for map reverse length zip append unfold
-               lref lset iota
-               ;vec-ref vec-len vec-fold vec-foldr
-               ;print 
-               mail interact 
-               take keep remove 
-               thread-controller
-               ;sexp-parser 
-               dlopen dlsym RTLD_LAZY
-               ))))
+            put get del ff-fold fupd
+            - + * /
+            div gcd ediv
+            << < <= = >= > >> 
+            equal? has? mem
+            band bor bxor
+            sort
+            ; suffix-array bisect
+            fold foldr for map reverse length zip append unfold
+            lref lset iota
+            ;vec-ref vec-len vec-fold vec-foldr
+            ;print 
+            mail interact 
+            take keep remove 
+            thread-controller
+            ;sexp-parser 
+            dlopen dlsym RTLD_LAZY
+            ))))
 (import (owl usuals))
-
-
-;; handles $ ol -c stuff
-(define (repl-compile compiler env path opts)
-   (try
-      (λ ()
-         ;; evaluate in a thread to catch error messages here
-         (let ((outcome (if (equal? path "-") (repl-port env stdin) (repl-file env path))))
-            (tuple-case outcome
-               ((ok val env)
-                  (if (or 1 (function? val)) ;; <- testing, could allow individual module compilation also
-                     (begin
-                        (compiler val 
-                           ;; output path
-                           (cond
-                              ((get opts 'output #false) => (λ (given) given)) ; requested with -o
-                              ((equal? path "-") path) ; stdin → stdout
-                              (else (c-source-name path)))
-                           ; inverse option on command line, add here if set
-                           (if (get opts 'no-threads #false)
-                              opts
-                              (put opts 'want-threads #true))
-                           ;; to be customizable via command line opts
-                           (let ((opt (abs (get opts 'optimize 0))))
-                              (cond
-                                 ((>= opt 2) val) ;; compile everything to native extended primops for -O2
-                                 ((= opt 1) usual-suspects) ;; compile some if -O1
-                                 (else #false)))) ;; otherwise use bytecode and plain vm
-                           0)
-                     (begin
-                        (print "The last value should be a function of one value (the command line arguments), but it is instead " val)
-                        2)))
-               ((error reason env)
-                  (print-repl-error
-                     (list "Cannot compile" path "because " reason))
-                  2)
-               (else
-                  (print-repl-error "Weird eval outcome.")
-                  3))))
-      #false))
-
 
 ;; say hi if interactive mode and fail if cannot do so (the rest are done using 
 ;; repl-prompt. this should too, actually)
 (define (greeting seccomp?)
    (if (syscall 16 stdin 19 #f)
-      (or
-         (and
-            (print (if seccomp? owl-ohai-seccomp owl-ohai))
-            (display "> "))
-         (halt 127))))
+      (and
+         (print (if seccomp? owl-ohai-seccomp owl-ohai))
+         (display "> "))))
 
 
 ; *owl* points to owl root directory
@@ -650,7 +557,7 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
    (runes->string
       (reverse
          (drop-while 
-            (lambda (x) (not (eq? x 47)))
+            (lambda (x) (not (eq? x #\/))) ; 47
             (reverse
                (string->bytes path))))))
 
