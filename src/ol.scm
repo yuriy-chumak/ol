@@ -541,88 +541,8 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Dump a new repl image
+;;; new repl image
 ;;;
-
-;; say hi if interactive mode and fail if cannot do so (the rest are done using 
-;; repl-prompt. this should too, actually)
-(define (heap-entry symbol-list)
-   (λ (codes) ;; all my codes are belong to codes
-      (let*
-         ((initial-names *owl-names*)
-          (interner-thunk (initialize-interner symbol-list codes)))
-;         (λ (vm-special-ops)
-            ;; still running in the boostrapping system
-            ;; the next value after evaluation will be the new repl heap
-            ;; start point for the vm
-
-            ;; entry point of the compiled image?
-            (λ (vm-args)
-               ;(print "vm-args: " (null? vm-args "null" vm-args))
-               ;; now we're running in the new repl 
-               (start-thread-controller
-                  (list
-                     (tuple 'init
-                        (λ () 
-                           (fork-server 'repl (lambda ()
-                              ;; get basic io running
-                              (start-base-threads)
-
-                              ;; repl needs symbol etc interning, which is handled by this thread
-                              (fork-server 'intern interner-thunk)
-
-                              ;; set a signal handler which stop evaluation instead of owl 
-                              ;; if a repl eval thread is running
-                              (set-signal-action repl-signal-handler)
-
-                              (exit-owl
-                                 (let ((seccomp? #false)) ; else (seccomp megs)
-                                    ; greeting
-                                    (if (syscall 16 stdin 19 #f)
-                                        (begin
-                                        (print (if seccomp? owl-ohai-seccomp owl-ohai))
-                                        (display "> ")))
-                                    (repl-trampoline repl
-                                       (fold ; our environment:
-                                          (λ (env defn)
-                                             (env-set env (car defn) (cdr defn)))
-                                          initial-environment
-                                          (list
-                                             (cons 'eval exported-eval)
-                                             (cons 'render render) ;; can be removed when all rendering is done via libraries
-                                             ; globals
-                                             (cons '*owl-version* *owl-version*)
-                                             ;;(cons '*owl-metadata* *owl-metadata*)
-                                             (cons '*owl-names* initial-names)
-                                             (cons '*vm-args* vm-args)
-                                             ;(cons '*vm-special-ops* vm-special-ops)
-                                             (cons '*seccomp* seccomp?)
-                                             ;;(cons '*codes* (vm-special-ops->codes vm-special-ops))
-                                             ))))))))))
-                  null)))))
-
-;;;
-;;; Dump the new repl
-;;;
-
-;; note, one one could use the compiler of the currently running system, but using 
-;; the rebuilt one here to make changes possible in 1 instead of 2 build cycles.
-;; (this may be changed later)
-(print "Compiling ...")
-
-; was: create the compiler:
-;(import (only (lang dump) make-compiler)); dump-fasl load-fasl))
-;(define compiler ; <- to compile things out of the currently running repl using the freshly loaded compiler
-;   (make-compiler *vm-special-ops*))
-
-;(compiler heap-entry "unused historical thingy"
-;   (list->ff
-;     `((output . "boot.fasl")      ; output file
-;       (want-symbols . #true)      ;?
-;       (want-threads . #false)
-;       (want-codes . #true)        ;?
-;       (want-native-ops . #true))) ;?
-;   "some") ; "none" = null, "some" = usual-suspects, "all" = heap-entry : vm extensions (none, some, all)
 
 ;--
 (define (symbols-of node)
@@ -667,22 +587,77 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
    (lets ((refs this (code-refs empty ob)))
       (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 
-;--
+
+
+
+;; say hi if interactive mode and fail if cannot do so (the rest are done using 
+;; repl-prompt. this should too, actually)
+(define (get-main-entry)
+   (let*((initial-names *owl-names*)
+
+         (symbols (symbols-of get-main-entry))
+         (codes   (codes-of   get-main-entry))
+         (interner-thunk (initialize-interner symbols codes)))
+      ; main: / entry point of the compiled image
+      (λ (vm-args)
+         ;(print "vm-args: " (null? vm-args "null" vm-args))
+         ;; now we're running in the new repl 
+         (start-thread-controller
+            (list ;1 thread
+               (tuple 'init
+                  (λ () 
+                     (fork-server 'repl (lambda ()
+                        ;; get basic io running
+                        (start-base-threads)
+
+                        ;; repl needs symbol etc interning, which is handled by this thread
+                        (fork-server 'intern interner-thunk)
+
+                        ;; set a signal handler which stop evaluation instead of owl 
+                        ;; if a repl eval thread is running
+                        (set-signal-action repl-signal-handler)
+
+                        (exit-owl
+                           (let* ((isatty? (syscall 16 stdin 19 #f))
+                                  (seccomp? #false) ; else (seccomp megs) - check is memory enough
+                                  (env (fold
+                                          (λ (env defn)
+                                             (env-set env (car defn) (cdr defn)))
+                                          initial-environment
+                                          (list
+                                          ;   (cons 'eval exported-eval)
+                                          ;   (cons 'render render) ;; can be removed when all rendering is done via libraries
+                                             ; globals
+                                             (cons '*owl-version* *owl-version*)
+                                             (cons '*owl-names* initial-names)
+                                             (cons '*vm-args* vm-args)
+                                             (cons '*seccomp* seccomp?)
+                                          ))))
+                              (if isatty?
+                                 (begin ;greeting
+                                    (print (if seccomp? owl-ohai-seccomp owl-ohai))
+                                    (display "> ")))
+                              (repl-trampoline repl env))))))))
+            null)))) ; no threads state
+
+;;;
+;;; Dump the new repl
+;;;
+
+(print "Compiling ...")
+
 (let*((path "boot.fasl")
-      (entry heap-entry)
-      (entry (entry (symbols-of entry))) ; symbol-list
-      (entry (entry (codes-of entry)))   ; codes
-      (bytes ;; encode the resulting object for saving in some form
-         (fasl-encode entry))
       (port ;; where to save the result
-         (open-output-file path)))
-   (if (not port) (begin
-      (print "Could not open " path " for writing")
+         (open-output-file path))
+
+      (bytes ;; encode the resulting object for saving in some form
+         (fasl-encode (get-main-entry))))
+   (if (not port)
+      (begin
+         (print "Could not open " path " for writing")
          #false)
       (begin ;; just save the fasl dump
          (write-bytes port bytes)
          (close-port port)
+         (print "Output written at " (- (time-ms) build-start) " ms.")
          #true)))
-
-
-(print "Output written at " (- (time-ms) build-start) " ms.")

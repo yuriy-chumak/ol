@@ -4,7 +4,7 @@
 
 (define-library (owl args)
 
-	(export 
+   (export 
       process-arguments    ;; sexp → cl-rules
       format-rules         ;; cl-rules → str
       print-rules          ;; cl-rules → _
@@ -46,7 +46,7 @@
       (define (explode str)
          (if (m/^-[^-]{2,}/ str)
             (map
-               (λ (char) (runes->string (list 45 char)))
+               (λ (char) (runes->string (list #\- char)))
                (cdr (string->bytes str)))
             #false))
 

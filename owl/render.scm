@@ -34,10 +34,6 @@
       (define lp #\()
       (define rp #\))
       
-      ;; temp hack for port->fd
-      (define (port->fd port)
-         (cast (refb port 1) type-int+))
-
       ;; this could be removed?
       (define (make-renderer meta)
          (define (render obj tl)
@@ -71,8 +67,8 @@
                   (render (symbol->string obj) tl))
 
                ;; these are a subclass of vectors in owl
-               ;((byte-vector? obj)
-               ;   (ilist #\# #\u #\8 (render (vector->list obj) tl)))
+               ((byte-vector? obj)
+                  (ilist #\# #\u #\8 (render (vector->list obj) tl)))
 
                ((vector? obj)
                   (cons #\# (render (vector->list obj) tl)))
@@ -114,10 +110,10 @@
                ((eq? obj #empty) (ilist #\# #\e #\m #\p #\t #\y tl))
 
 ; unused?             
-;               ((tuple? obj)
-;                  (ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
+               ((tuple? obj)
+                  (ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
 
-               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (port->fd obj) (cons #\] tl))))
+               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render "#port" (cons #\] tl))))
 
                ((eof? obj) (ilist #\# #\e #\o #\f tl))
 

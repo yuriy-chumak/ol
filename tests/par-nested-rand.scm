@@ -1,4 +1,4 @@
-
+(import (owl primop))
 (define (small-range? lo hi)
    (< (- hi lo) 100))
 
