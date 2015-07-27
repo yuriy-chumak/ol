@@ -3635,7 +3635,7 @@ word pinvoke(OL* self, word arguments)
 
 	got = call(function, args, i + floats + doubles);
 #else
-	got = call(returntype >> 8, args, i);
+	got = call(returntype >> 8, function, args, i);
 #endif
 
 	switch (returntype & 0x3F) {
