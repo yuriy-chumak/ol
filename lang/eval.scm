@@ -5,20 +5,21 @@
 
 ; used only in ol.scm
 (define-library (lang eval)
-
-	(export 
-		repl-file 
-		repl-port
-		repl-string 
-		repl-trampoline 
-		repl
-		exported-eval						; fixme, here only temporarily
-		print-repl-error
-		bind-toplevel
+   (export 
+      repl-file 
+      repl-port
+      repl-string 
+      repl-trampoline 
+      repl
+      print-repl-error
+      bind-toplevel
       library-import                ; env exps fail-cont → env' | (fail-cont <reason>)
       evaluate
       *owl-core*
-		)
+      ; 6.5 Eval
+      eval
+      ;scheme-report-environment null-environment
+      interaction-environment)
 
    (import 
       (r5rs base)
@@ -482,16 +483,36 @@
 
       ;; a simple eval 
 
-      (define (exported-eval exp env)
+      ; todo: implement R5RS "6.5 Eval"
+      (define (eval exp env)
          (tuple-case (macro-expand exp env)
             ((ok exp env)
                (tuple-case (evaluate-as exp env (list 'evaluating))
-                  ((ok value env) 
+                  ((ok value env)
                      value)
                   ((fail reason)
                      #false)))
             ((fail reason)
                #false)))
+;      (define-syntax eval
+;         (syntax-rules (*toplevel*)
+;            ((eval (exp env))
+;               (tuple-case (macro-expand exp env)
+;                  ((ok exp env)
+;                     (tuple-case (evaluate-as exp env (list 'evaluating))
+;                        ((ok value env)
+;                           value)
+;                        ((fail reason)
+;                           #false)))
+;                  ((fail reason)
+;                     #false)))
+;            ((eval (exp))
+;               (eval exp *toplevel*))))
+
+      (define-syntax interaction-environment
+         (syntax-rules (*toplevel*)
+            ((interaction-environment)
+               *toplevel*)))
 
       (define (bind-toplevel env)
          (env-set env '*toplevel*
