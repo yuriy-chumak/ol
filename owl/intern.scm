@@ -232,12 +232,6 @@
                   (tuple-case msg
                      ((flush) ;; clear names before boot (deprecated)
                         (interner root codes))
-                     ((defined? string)
-                        ;(print "test for symbol [" string "]")
-                        (if (maybe-lookup-symbol root string)
-                           (mail sender #t)
-                           (mail sender #f))
-                        (interner root codes))
                      (else
                         ;(print "unknown interner op: " msg)
                         (interner root codes))))
@@ -255,8 +249,10 @@
                   (mail sender 'bad-kitty)
                   (interner root codes)))))
 
-      (define (defined? string)
-         (interact 'intern (tuple 'defined? string)))
+      (define-syntax defined?
+         (syntax-rules (*toplevel*)
+            ((defined? symbol)
+               (get *toplevel* symbol #false))))
 
 
       ;; a placeholder interner for programs which don't need the other services
