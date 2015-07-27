@@ -91,6 +91,11 @@
 #	define O_BINARY 0
 #endif
 
+extern int usleep (__useconds_t __useconds);
+extern FILE *popen (const char *__command, const char *__modes);
+extern int pclose (FILE *__stream);
+extern int mkstemp (char *__template);
+
 // ========================================
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
