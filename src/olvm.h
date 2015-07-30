@@ -57,24 +57,6 @@ int vm_feof(struct OL* vm);  // все ли забрали из входящег
 #endif
 
 
-#ifdef __cplusplus
-/*class OL
-{
-private:
-	OL* vm;
-public:
-	OLvm(unsigned char* language) { vm = vm_new(language); }
-	virtual ~OLvm() { free(vm); }
-
-	int stop() { puts(vm, ",quit", 5); }
-
-	int puts(char *message, int n) { vm_puts(vm, message, n);
-	int gets(char *message, int n) { vm_gets(vm, message, n);
-};*/
-#else
-typedef struct OL OL;
-#endif
-
 //-- end of header
 #ifdef __cplusplus
 	}

@@ -28,7 +28,17 @@
 //  Windows, Linux
 // Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
 
+// CLANG compatibility layer
+#ifndef __has_feature         // Optional of course.
+#	define __has_feature(x) 0  // Compatibility with non-clang compilers.
+#endif
+#ifndef __has_extension
+#	define __has_extension __has_feature // Compatibility with pre-3.0 compilers.
+#endif
+
+
 // https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
+#include <features.h>
 #ifndef __GNUC__
 #	warning "This code tested only under Gnu C compiler"
 #else
@@ -46,13 +56,19 @@
 
 // check this for nested functions:
 //	https://github.com/Leushenko/C99-Lambda
+#ifdef __clang__
+#define $F(returns, name, ...) returns (^name)(__VA_ARGS__) = ^(__VA_ARGS__)
+#else
+#define $F(returns, name, ...) returns name(__VA_ARGS__)
+#define __block // no required
+#endif
 
 // posix or not:
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
 //
 // PORT: равка, с типом type-port и размером 2
-// todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
+// todo: ?переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
 //  а изменяемые у нас вектора
 
 // http://joeq.sourceforge.net/about/other_os_java.html
@@ -83,7 +99,7 @@
 
 #include <sys/utsname.h> // uname
 
-#define __USE_POSIX199309 // for nanosleep
+//#define __USE_POSIX199309 // for nanosleep
 #include <time.h>
 
 // ?
@@ -814,7 +830,7 @@ wdiff adjust_heap(heap_t *heap, int cells)
 //__attribute__ ((aligned(sizeof(int))))
 static word gc(heap_t *heap, int size, word regs) {
 	// просматривает список справа налево
-	void mark(word *pos, word *end)
+	$F(void, mark,  word *pos, word *end)
 	{
 	//	marked = 0;
 	//	assert(pos is NOT flagged)
@@ -844,10 +860,10 @@ static word gc(heap_t *heap, int size, word regs) {
 			else
 				pos--;
 		}
-	}
+	};
 
 	// на самом деле - compact & sweep
-	word *sweep(word* end)
+	$F(word*, sweep,  word* end)
 	{
 		word *old, *newobject;
 
@@ -880,7 +896,7 @@ static word gc(heap_t *heap, int size, word regs) {
 				old += hdrsize(*old);
 		}
 		return newobject;
-	}
+	};
 
 	// gc:
 	word *fp = heap->fp;
@@ -1050,14 +1066,15 @@ struct args
 static //__attribute__((aligned(8)))
 void* runtime(void *args) // heap top
 {
-	heap_t heap;
-	register word *fp; // memory allocation pointer
-	int slice = TICKS; // default thread slice (n calls per slice)
+	__block heap_t heap;
+	__block register word *fp; // memory allocation pointer
+	__block int slice = TICKS; // default thread slice (n calls per slice)
 
 	int max_heap_size;
 
 	// регистры виртуальной машины
-	word R[NR];
+	__block
+	word* R = malloc(sizeof(word) * NR);
 	int breaked = 0;
 
 //	int seccompp = 0;
@@ -1090,6 +1107,7 @@ void* runtime(void *args) // heap top
 	int nobjs = hdrsize(ptrs[0]) - 1;
 
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
+	__block
 	word* this = (word*) ptrs[nobjs];
 
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
@@ -1153,7 +1171,8 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 			else
 			if ((type & 60) == TFF) { //((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
 
-				word get(word *ff, word key, word def) { // ff assumed to be valid
+				$F(word, get  ,word *ff, word key, word def) // ff assumed to be valid
+				{
 					while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
 						word this = ff[1], hdr;
 						if (this == key)
@@ -1172,7 +1191,7 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 						}
 					}
 					return def;
-				}
+				};
 
 				word *cont = (word *) R[3];
 				switch (acc)
@@ -1242,7 +1261,7 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 	}
 
 invoke:; // nargs and regs ready, maybe gc and execute ob
-	void dogc(int size)
+	$F(void, dogc,  int size)
 	{
 		int p = 0, N = NR;
 		// создадим в топе временный объект со значениями всех регистров
@@ -1259,7 +1278,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 		// закончили, почистим за собой:
 		fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
-	}
+	};
 	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
 	//  регистры, мы их складываем в память во временный кортеж.
 	if (/*forcegc || */(fp >= heap.end - 16 * 1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
@@ -2404,6 +2423,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			case 1006:
 			case 60: {
 				free(heap.begin); // освободим занятую память
+				free(R); // и регистры
 #if 0//EMBEDDED_VM
 				// подождем, пока освободится место в консоли
 				while (fifo_full(fo)) pthread_yield();
@@ -2570,7 +2590,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				default:
 					if (op >= 1000) {
-						word prim_sys(int op, word a, word b, word c) {
+						// todo: unwind this
+						$F(word, prim_sys,  int op, word a, word b, word c)
+						{
 						   switch(op) {
 						      case 1010: /* enter linux seccomp mode */
 						#ifdef __gnu_linux__
@@ -2684,12 +2706,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						      default:
 						         return IFALSE;
 						   }
-						}
+						};
 
 						result = prim_sys(op, a, b, c);
 					}
 					else {
-						word syscall(word op, word a, word b, word c)
+						$F(word, syscall,  word op, word a, word b, word c)
 						{
 							switch (op)
 							{
@@ -2698,7 +2720,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 							}
 
 							return IFALSE;
-						}
+						};
 
 						result = syscall(op, a, b, c);
 					}
@@ -2732,17 +2754,20 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
 // fasl decoding
 // возвращает новый топ стека
 static __inline__
-word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
+word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* _fp)
 {
-	register
+	register __block
 	unsigned char* hp = bootstrap;
+	register __block
+	word* fp = _fp;
 //	if (*hp == '#') // этот код не нужен, так как сюда приходит уже без шабанга
 //		while (*hp++ != '\n') continue;
 
 	// tbd: comment
 	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность 0x7FFFFFFFFFFFFFFF (самое большое число)
 	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
-	word get_nat() {
+	$F(word, get_nat)
+	{
 		long long result = 0;// word
 		long long newobj, i; // word
 		do {
@@ -2753,14 +2778,15 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			result = newobj + (i & 127);
 		} while (i & 128);
 #if __amd64__
-		return result;
+		return (word)result;
 #else
 		return result == 0x7FFFFFFFFFFFFFFF ? 0x7FFFFFFF : (word)result;
 #endif
-	}
+	};
 
 	// tbd: comment
-	word *get_field(word *ptrs, int pos) {
+	$F(word*, get_field,  word *ptrs, int pos)
+	{
 		if (*hp == 0) { // fixnum
 			hp++;
 			unsigned char type = *hp++;
@@ -2771,7 +2797,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			*fp++ = ptrs[pos-diff];
 		}
 		return fp;
-	}
+	};
 
 	// function entry:
 	for (int me = 0; me < nobjs; me++) {
@@ -2812,9 +2838,11 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 static
 // функция подсчета количества объектов в загружаемом образе
 int count_fasl_objects(word *words, unsigned char *lang) {
+	__block
 	unsigned char* hp;
 
-	word decode_word() {
+	$F(word, decode_word)
+	{
 		word result = 0;
 		word newobj, i;
 		do {
@@ -2826,7 +2854,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		}
 		while (i & 128);
 		return result;
-	}
+	};
 
 	// count:
 	int n = 0;
@@ -3206,10 +3234,11 @@ word pinvoke(OL* self, word arguments)
 
 	// x64 calling conventions: linux, windows
 #if	__amd64__
-	word call(void* function, word argv[], int argc) {
+	$F(word, call,  void* function, word argv[], int argc)
 #else
-	word call(int returntype, void* function, word argv[], int argc) {
+	$F(word, call,  int returntype, void* function, word argv[], int argc)
 #endif
+	{
 
 		// todo: ограничиться количеством функций поменьше
 		//	а можно сделать все в одной switch:
@@ -3360,17 +3389,20 @@ word pinvoke(OL* self, word arguments)
 			break;
 		}
 #endif
-		return 0; // if no call have made
-	}
-	long from_int(word* arg) {
+		return (word)0; // if no call have made
+	};
+
+	$F(long, from_int, word* arg)
+	{
 		// так как в стек мы все равно большое сложить не сможем, то возьмем
 		// только то, что влазит (первые два члена)
 		assert (immediatep(arg[1]));
 		assert (allocp(arg[2]));
 
-		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
-	}
-	float from_int_to_float(word* arg) {
+		return (long)((car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS));
+	};
+	$F(float, from_int_to_float,  word* arg)
+	{
 		// читаем длинное число в float формат
 		assert (immediatep(car(arg)));
 		float f = (unsigned long)uftoi(car(arg));
@@ -3383,8 +3415,9 @@ word pinvoke(OL* self, word arguments)
 		assert (cdr(arg) == INULL);
 
 		return f;
-	}
-	float from_rational(word* arg) {
+	};
+	$F(float, from_rational,  word* arg)
+	{
 		word* pa = (word*)car(arg);
 		word* pb = (word*)cdr(arg);
 
@@ -3415,7 +3448,7 @@ word pinvoke(OL* self, word arguments)
 		}
 
 		return (a / b);
-	}
+	};
 
 
 	// a - function address

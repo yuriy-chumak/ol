@@ -36,6 +36,11 @@ uninstall:
 	-rm -rf /usr/lib/ol/
 	
 
+# http://mackyle.github.io/blocksruntime/
+clang: src/olvm.c src/boot.c
+	clang-3.5 -fblocks src/olvm.c src/boot.c -ldl -lBlocksRuntime -o ol-c
+
+
 # config temporary disabled
 config: config/HAS_DLOPEN\
         config/HAS_SOCKETS
