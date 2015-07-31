@@ -53,7 +53,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="io.c|toolchain|tests|samples|raw|etc|doc|Debug|bench|examples|src/repl.c|src/testing.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="tutorial|io.c|toolchain|tests|samples|raw|etc|doc|Debug|bench|examples|src/repl.c|src/testing.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -100,7 +100,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="io.c|toolchain|tests|samples|raw|etc|doc|Debug|bench|examples|src/repl.c|src/testing.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="tutorial|io.c|toolchain|tests|samples|raw|etc|doc|Debug|bench|examples|src/repl.c|src/testing.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

@@ -2328,6 +2328,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 			// (EXECVE program-or-function)
 			// http://linux.die.net/man/3/execve
+			case 1032:
 			case 59: {
 #if HAS_DLOPEN
 				// if a is port (result of dlsym)
@@ -2502,8 +2503,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 					if (module)
 						result = (word) new_port(module);
-//					else
-//						fprintf(stderr, "dlopen failed: %s\n", dlerror());
 					break;
 				}
 				case 1031: { // (dlsym module function #false)
@@ -2520,12 +2519,18 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					word function = (word)dlsym(module, immediatep(symbol)
 							? (char*) imm_val((word)symbol)
 							: (char*) &symbol[1]);
-					if (function) // тут сразу создаем длинный port, так как адреса скорее всего более 24 бит
+					if (function)
 						result = (word)new_port(function);
 					else
 						fprintf(stderr, "dlsym failed: %s\n", dlerror());
 					break;
 				}
+/*				case 1032: { // (dlerror)
+					char* error = dlerror();
+					if (error)
+						result = (word) new_string(strlen(error), error);
+					break;
+				}*/
 #endif
 
 				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
@@ -2672,11 +2677,11 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
 	this = (word *) R[0];
 	R[0] = IFALSE;
 	R[3] = F(3);
-	if (allocp(this)) {
+	if (is_pointer(this)) {
 		acc = 4;
 		goto apply;
 	}
-	return (void*) 1; /* no mcp to handle error (fail in it?), so nonzero exit  */
+	return (void*) -1; // no mcp to handle error (fail in it?), so nonzero exit
 }
 
 
@@ -2697,28 +2702,33 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	// tbd: comment
 	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность 0x7FFFFFFFFFFFFFFF (самое большое число)
 	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
-	word get_nat() {
-		long long result;
-		long long newobj;
+	word get_nat()
+	{
+		long long nat = 0;
 		char i;
 
-		result = 0;
+		#if NO_NAT_OVERFLOW_CHECK
+		#	define overflow_kills(n)
+		#else
+		#	define overflow_kills(n) exit(n)
+		#endif
 		do {
+			long long underflow = nat; // can be removed for release
+			nat <<= 7;
+			if (nat >> 7 != underflow) // can be removed for release
+				overflow_kills(9);     // can be removed for release
 			i = *hp++;
-			newobj = result << 7;
-			if (result != (newobj >> 7))
-				exit(9); // overflow kills
-			result = newobj + (i & 127);
-		} while (i & 128);
+			nat = nat + (i & 127);
+		} while (i & 128); // 1<<7
 #if __amd64__
-		return result;
+		return nat;
 #else
-		return result == (word)(int)result; //0x7FFFFFFFFFFFFFFF ? 0x7FFFFFFF : (word)result;
+		return (word)(int)nat; //0x7FFFFFFFFFFFFFFF ? 0x7FFFFFFF : (word)result;
 #endif
 	}
 
 	// tbd: comment
-	word *get_field(word *ptrs, int pos) {
+	void decode_field(word *ptrs, int pos) {
 		if (*hp == 0) { // fixnum
 			hp++;
 			unsigned char type = *hp++;
@@ -2728,7 +2738,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			word diff = get_nat();
 			*fp++ = ptrs[pos-diff];
 		}
-		return fp;
+//		return fp;
 	}
 
 	// function entry:
@@ -2741,7 +2751,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			int size = get_nat();
 			*fp++ = make_header(size+1, type); // +1 to include header in size
 			while (size--)
-				get_field(ptrs, me);
+				decode_field(ptrs, me);
 			break;
 		}
 		case 2: {
@@ -2773,17 +2783,15 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	unsigned char* hp;
 
 	word decode_word() {
-		word result = 0;
-		word newobj, i;
+		long long nat = 0;
+		char i;
 		do {
+			nat <<= 7;
 			i = *hp++;
-			newobj = result << 7;
-			//assert (result == (newobj >> 7)); // temp
-	//			if (result != (newobj >> 7)) exit(9); // overflow kills
-			result = newobj + (i & 127);
+			nat = nat + (i & 127);
 		}
 		while (i & 128);
-		return result;
+		return (word)(int)nat;
 	}
 
 	// count:
@@ -2793,21 +2801,20 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	int allocated = 0;
 	while (*hp != 0) {
 		switch (*hp++) {
-		case 1: {
+		case 1: { // fix
 			hp++; ++allocated;
 			int size = decode_word();
 			while (size--) {
-				if (*hp == 0) {
-					hp++; ++allocated;
-					hp++;
-				}
-				decode_word(&hp); // simply skip word
+				//decode_field:
+				if (*hp == 0)
+					hp += 2;
+				decode_word(); // simply skip word
 				++allocated;
 			}
 			break;
 		}
-		case 2: {
-			hp++;
+		case 2: { // pointer
+			hp++;// ++allocated;
 			int size = decode_word();
 			hp += size;
 
@@ -2825,7 +2832,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		n++;
 	}
 
-	*words = allocated;
+	*words = allocated + (n + 1); // n+1 for args[]
 	return n;
 }
 
@@ -2978,6 +2985,8 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 
+	fprintf(stderr, "counted %d words for %d objects\n", nwords, nobjs);
+
 	heap_t heap;
 //	static //__tlocal__
 	word *fp;
@@ -3035,21 +3044,6 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 
 			oargs = (word)new_pair (new_string (len, filename), oargs);
 		}
-#if 0
-		word *a, *b, *c, *d, *e;
-
-		a = new_string(28, "aaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-		b = new_pair(a, INULL);
-			new_string(16, "bbbbbbbbbbbbbbbb");
-		c = new_pair(a, INULL);
-			new_string(16, "cccccccccccccccc");
-		d = new_pair(b, c);
-			new_string(16, "dddddddddddddddd");
-		e = new_pair(d, c);
-			new_string(16, "eeeeeeeeeeeeeeee");
-
-		gc(0, e, &fp);
-#endif
 	}
 
 //	heap.fp = fp;
@@ -3059,6 +3053,8 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 	// Десериализация загруженного образа в объекты
 	word *ptrs = new_raw_object (nobjs+1, TCONST, 0);
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
+
+	fprintf(stderr, "decoded %d words\n", fp - heap.begin);
 
 	// все, программа в памяти, можно освобождать исходник
 	if (release)

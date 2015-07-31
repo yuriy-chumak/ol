@@ -43,6 +43,9 @@ struct OL;
 #define NO_SECCOMP
 //efine STANDALONE // самостоятельный бинарник без потоков
 
+// set for 1 to disable overflow check for binary images in release
+#define NO_NAT_OVERFLOW_CHECK 0
+
 //-- end of options
 #define SYSCALL_READ 0
 #define SYSCALL_WRITE 1
@@ -51,6 +54,7 @@ struct OL;
 
 #define SYSCALL_IOCTL 16
 #define SYSCALL_IOCTL_TIOCGETA 19
+
 
 
 int olvm(unsigned char* bootstrap, void (*release)(void*));
