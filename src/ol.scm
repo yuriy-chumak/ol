@@ -625,9 +625,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
                                              (env-set env (car defn) (cdr defn)))
                                           initial-environment
                                           (list
-                                          ;   (cons 'eval exported-eval)
-                                          ;   (cons 'render render) ;; can be removed when all rendering is done via libraries
-                                             ; globals
                                              (cons '*owl-version* *owl-version*)
                                              (cons '*owl-names* initial-names)
                                              (cons '*vm-args* vm-args)

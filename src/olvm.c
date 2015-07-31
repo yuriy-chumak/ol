@@ -538,6 +538,8 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define likely(x)                   __builtin_expect((x), 1)
 #define unlikely(x)                 __builtin_expect((x), 0)
 
+#define is_const(ob)                (typeof (ob) == TCONST)
+
 #define is_pair(ob)                 (is_pointer(ob) &&         *(word*)(ob)  == HPAIR)
 #define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)(ob)) == TSTRING)
 #define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)(ob)) == TPORT) // todo: maybe need to check port rawness?
@@ -1329,7 +1331,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #	define MKT      23   // make tuple
 #	define BIND     32
 #	define LISTUPLE 35
-#	define FFBIND   49
+#	define BINDFF   49
 
 #	define MKRED    43
 #	define MKBLACK  42
@@ -1808,7 +1810,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 		// мутатор (нерабочий !)
 		case 10: { // set! o t r
-			word T = IFALSE;
+			A3 = IFALSE;
+			/*word T = IFALSE;
 			if (allocp(A0) && immediatep(A1) && immediatep(A2)) {
 				word *obj = (word *)A0;
 				word offset = fixval(A1);
@@ -1828,23 +1831,31 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 				}
 			}
-			A3 = T;
+			A3 = T;*/
 			ip += 4; break;
 		}
 		case 11: { // (set-car! pair value)
 			word *pair = (word *)A0;
-			CHECK(is_pointer(pair) && pair[0] == HPAIR, pair, 11);
+			word value = A1;
 
-			car(pair) = (word) A1;
+			// we can't set ref as part of pair due to gc specific
+			CHECK(is_pair(pair), pair, 11);
+			CHECK(is_fixed(value) || is_const(value),        value, 11);
+
+			car(pair) = value;
 
 			A2 = A0;
 			ip += 3; break;
 		}
 		case 12: { // (set-cdr! pair value)
 			word *pair = (word *)A0;
-			CHECK(is_pointer(pair) && pair[0] == HPAIR, pair, 12);
+			word value = A1;
 
-			cdr(pair) = (word) A1;
+			// case as (set-car!)
+			CHECK(is_pair(pair), pair, 12);
+			CHECK(is_fixed(value) || is_const(value),        value, 12);
+
+			cdr(pair) = value;
 
 			A2 = A0;
 			ip += 3; break;
@@ -1879,7 +1890,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		}
 
 		// bind ff to registers
-		case FFBIND: { // with-ff <node >l k v r */ // bindff - bind node left key val right, filling in #false when implicit
+		case BINDFF: { // with-ff <node >l k v r */ // bindff - bind node left key val right, filling in #false when implicit
 			word *T = (word *) A0;
 			word hdr = *T++;
 			A2 = *T++; // key
