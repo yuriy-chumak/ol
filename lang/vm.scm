@@ -289,7 +289,7 @@
 ;      (define (start-seccomp)      (sys-prim 1010 #false #false #false)) ; not enabled by defa
 ;
 ;      ;; stop the vm *immediately* without flushing input or anything else with return value n
-;      (define (halt n)             (sys-prim 1006 n n n))
+;      (define (halt n)             (sys-prim 60 n n n))
 ;      ;; make thread sleep for a few thread scheduler rounds
 ;      (define (set-ticker-value n) (sys-prim 1022 n #false #false))
 ;      (define (wait n)

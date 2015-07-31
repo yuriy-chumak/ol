@@ -138,9 +138,7 @@
          (function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
       (if function
       (lambda args
-;         (print "pinvoke: " name)
          (exec pinvoke  function rtty args)))))
-;         (sys-prim 1032 function args rtty))))
 
 ;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
 ;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl         
@@ -150,7 +148,7 @@
 ;;   (let ((function (cons '((bor type 64) . prototype) (sys-prim 1031 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
 ;;;;;(let ((function (cons (bor type 64) (sys-prim 1031 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
 ;;      (lambda args ;  function       type          ;arguments
-;;         (sys-prim 1032 (cdr function) (car function) args))))
+;;         (sys-prim 59 (cdr function) (car function) args))))
 
 ; Calling Conventions
 (define (__stdcall  arg) (+ arg   0)) ; __stdcall is default for Windows

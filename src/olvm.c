@@ -29,6 +29,7 @@
 // Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
 
 // https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
+#include <features.h>
 #ifndef __GNUC__
 #	warning "This code tested only under Gnu C compiler"
 #else
@@ -90,6 +91,12 @@
 #ifndef O_BINARY
 #	define O_BINARY 0
 #endif
+
+// temp warning fixes
+int usleep (unsigned int __useconds);
+FILE* popen(const char*, const char*);
+int pclose(const FILE*);
+int mkstemp(const char*);
 
 // ========================================
 //  HAS_SOCKETS 1
@@ -668,22 +675,22 @@ word*p = NEW_OBJECT (3, type);\
 	new_pair (type, a1, INULL)
 #define new_list2(type, a1, a2) \
 	new_pair (type, a1,\
-	                new_pair (TPAIR, a2, INULL))
+	                new_pair (type, a2, INULL))
 #define new_list3(type, a1, a2, a3) \
 	new_pair (type, a1,\
-	                new_pair (TPAIR, a2,\
-	                                 new_pair (TPAIR, a3, INULL)))
+	                new_pair (type, a2,\
+	                                new_pair (type, a3, INULL)))
 #define new_list4(type, a1, a2, a3, a4) \
 	new_pair (type, a1,\
-	                new_pair (TPAIR, a2,\
-	                                 new_pair (TPAIR, a3,\
-	                                                  new_pair (TPAIR, a4, INULL))))
+	                new_pair (type, a2,\
+	                                new_pair (type, a3,\
+	                                                new_pair (type, a4, INULL))))
 #define new_list5(type, a1, a2, a3, a4, a5) \
 	new_pair (type, a1,\
-	                new_pair (TPAIR, a2,\
-	                                 new_pair (TPAIR, a3,\
-	    	                                          new_pair (TPAIR, a4,\
-	                                                                   new_pair (TPAIR, a5, INULL)))))
+	                new_pair (type, a2,\
+	                                new_pair (type, a3,\
+	    	                                        new_pair (type, a4,\
+	                                                                new_pair (type, a5, INULL)))))
 
 #define NEW_LIST(_1, _2, _3, _4, _5, _6, NAME, ...) NAME
 #define new_list(...) NEW_LIST(__VA_ARGS__, new_list5, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
@@ -2030,7 +2037,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// (READ fd count) -> buf
 			// http://linux.die.net/man/2/read
 			// count<0 means read all
-			case 0: {
+#			ifdef SYSCALL_READ
+			case SYSCALL_READ: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
 				int size = sftoi (b);
@@ -2083,12 +2091,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
+#			endif
 
 			// (WRITE fd buffer size) -> wrote
 			// http://linux.die.net/man/2/write
 			// size<0 means write all
 			// n if wrote, 0 if busy, #false if error (argument or write)
-			case 1: {
+#			ifdef SYSCALL_WRITE
+			case SYSCALL_WRITE: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
 				int size = sftoi (c);
@@ -2117,9 +2127,11 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
+#			endif
 
 			// OPEN
-			case 2: {
+#			ifdef SYSCALL_OPEN
+			case SYSCALL_OPEN: {
 				CHECK(is_string(a), a, SYSCALL);
 				word* path = (word*) a; // todo: check for string type
 				int mode = fixval(b);
@@ -2136,9 +2148,11 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
+#			endif
 
 			// CLOSE
-			case 3: {
+#			ifdef SYSCALL_CLOSE
+			case SYSCALL_CLOSE: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
 
@@ -2147,25 +2161,32 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
+#			endif
 
 			// IOCTL (syscall 16 fd request #f)
-			case 16: {
+#			ifdef SYSCALL_IOCTL
+			case SYSCALL_IOCTL: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
 				int ioctl = uftoi(b);
 
 				switch (ioctl) {
-				case 19: { // TIOCGETA
-					struct termios t;
-					if (tcgetattr(portfd, &t) != -1)
-						result = ITRUE;
-					break;
-				}
-				default:
-					;// do nothing
+
+#					ifdef SYSCALL_IOCTL_TIOCGETA
+					case SYSCALL_IOCTL_TIOCGETA: { // TIOCGETA
+						struct termios t;
+						if (tcgetattr(portfd, &t) != -1)
+							result = ITRUE;
+						break;
+					}
+#					endif
+
+					default:
+						;// do nothing
 				}
 				break;
 			}
+#			endif
 
 			// PIPE
 			case 22: {
@@ -2317,8 +2338,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					word* B = (word*)b;
 					word* C = (word*)c; // reserved, assert #false
 
-				//	CHECK(hdrtype(A[0]) == TPORT, A, 59);
-					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
+					// CHECK(is_port(A), A, 59);
+					assert ((word)B == INULL || is_pair(B));
 					assert ((word)C == IFALSE);
 
 					void *function = (void*) car(A);  assert (function);
@@ -2419,7 +2440,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #else
 				exit(sftoi(a));
 #endif
-				assert(0);   // сюда мы уже не должны попасть
+				assert (0);  // сюда мы уже не должны попасть
 				break;
 			}
 
@@ -2446,12 +2467,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 			// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 			//  остальное можно спокойно оформлять отдельными функциями
-
-				// isatty()
-				case 500: {
-					result = TRUEFALSE( isatty(fixval(a)) );
-					break;
-				}
 
 				case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 					result = F(max_heap_size);
@@ -2511,58 +2526,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						fprintf(stderr, "dlsym failed: %s\n", dlerror());
 					break;
 				}
-
-				// вызвать функцию (special case - отправить this)
-				case 1032: { // (pinvoke function args #false)
-					// a - function address (port)
-					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
-					word* A = (word*)a;
-					word* B = (word*)b;
-					word* C = (word*)c; // reserved
-
-					CHECK(hdrtype(A[0]) == TPORT, A, 1032);
-					assert ((word)B == INULL || hdrtype(B[0]) == TPAIR);
-					assert ((word)C == IFALSE);
-
-					void *function = (void*) car(A);  assert (function);
-
-					ol->fp = fp;
-					result = ((word (*)  (OL*, word*))function) (ol, B);
-					fp = ol->fp;
-					break;
-				}
 #endif
-
-				// временный тестовый вызов
-				case 1033: { // temp, todo: (dlclose module)
-					//forcegc = 1;
-/*					printf("opengl version: %s\n", glGetString(GL_VERSION));
-					int glVersion[2] = {-1, -1}; // Set some default values for the version
-					glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
-					glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]); // Get back the OpenGL MAJOR version we are using
-
-					GLint status;*/
-//					PFNGLGETSHADERIVPROC  glGetShaderiv  = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
-//					glGetShaderiv(3, GL_COMPILE_STATUS, &status);
-
-//					PFNGLGETPROGRAMIVPROC glGetProgramiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetProgramiv");
-//					glGetProgramiv(1, GL_LINK_STATUS, &status);
-
-					result = IFALSE;
-/*
-					word* A = a;
-					char* B = (word*)b + 1;
-					if (A[1] == 0) {
-						printf("\n\n\n\n\n\n\n\n\n\nB = %s\n\n\n", B);
-						result = F(0);
-						exit(123);
-					}
-
-*/
-					break;
-				}
-
-
 
 				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
 					word *name = (word *)a;
@@ -2574,141 +2538,126 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 				}
 
-				default:
-					if (op >= 1000) {
-						word prim_sys(int op, word a, word b, word c) {
-						   switch(op) {
-						      case 1010: /* enter linux seccomp mode */
-						#ifdef __gnu_linux__
-						#ifndef NO_SECCOMP
-						         if (seccompp) /* a true value, but different to signal that we're already in seccomp */
-						            return INULL;
-						         seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
-						#ifdef PR_SET_SECCOMP
-						         if (prctl(PR_SET_SECCOMP,1) != -1) { /* true if no problem going seccomp */
-						            seccompp = 1;
-						            return ITRUE;
-						         }
-						#endif
-						#endif
-						#endif
-						         return IFALSE; /* seccomp not supported in current repl */
-						      /* dirops only to be used via exposed functions */
-						      case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
-						         char *path = W + (char *) a; /* skip header */
-						         DIR *dirp = opendir(path);
-						         if(!dirp) return IFALSE;
-						         return fliptag(dirp); }
-						      case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
-						         DIR *dirp = (DIR *)fliptag(a);
-						         word *res;
-						         unsigned int len;
-						         struct dirent *dire = readdir(dirp);
-						         if (!dire) return IEOF; /* eof at end of dir stream */
-						         len = lenn(dire->d_name, FMAX+1);
-						         if (len == FMAX+1) return IFALSE; /* false for errors, like too long file names */
-						         res = new_bytevector(len, TSTRING); /* make a fake raw string (OS may not use valid UTF-8) */
-						         bytecopy((char *)&dire->d_name, (char *) (res + 1), len); /* *no* terminating null, this is an owl bvec */
-						         return (word)res; }
-						      case 1013: /* sys-closedir dirp _ _ -> ITRUE */
-						         closedir((DIR *)fliptag(a));
-						         return ITRUE;
-						      case 1014: { /* set-ticks n _ _ -> old */
-						         word old = F(slice);
-						         slice = fixval(a);
-						         return old; }
-						      case 1017: { // system (char*)
-						    	  int result = system((char*)a + W);
-						    	  return F(result);
-						      }
+				default: {
+					word prim_sys(int op, word a, word b, word c) {
+					   switch(op) {
+						  case 1010: /* enter linux seccomp mode */
+					#ifdef __gnu_linux__
+					#ifndef NO_SECCOMP
+							 if (seccompp) /* a true value, but different to signal that we're already in seccomp */
+								return INULL;
+							 seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
+					#ifdef PR_SET_SECCOMP
+							 if (prctl(PR_SET_SECCOMP,1) != -1) { /* true if no problem going seccomp */
+								seccompp = 1;
+								return ITRUE;
+							 }
+					#endif
+					#endif
+					#endif
+							 return IFALSE; /* seccomp not supported in current repl */
+						  /* dirops only to be used via exposed functions */
+						  case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
+							 char *path = W + (char *) a; /* skip header */
+							 DIR *dirp = opendir(path);
+							 if(!dirp) return IFALSE;
+							 return fliptag(dirp); }
+						  case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
+							 DIR *dirp = (DIR *)fliptag(a);
+							 word *res;
+							 unsigned int len;
+							 struct dirent *dire = readdir(dirp);
+							 if (!dire) return IEOF; /* eof at end of dir stream */
+							 len = lenn(dire->d_name, FMAX+1);
+							 if (len == FMAX+1) return IFALSE; /* false for errors, like too long file names */
+							 res = new_bytevector(len, TSTRING); /* make a fake raw string (OS may not use valid UTF-8) */
+							 bytecopy((char *)&dire->d_name, (char *) (res + 1), len); /* *no* terminating null, this is an owl bvec */
+							 return (word)res; }
+						  case 1013: /* sys-closedir dirp _ _ -> ITRUE */
+							 closedir((DIR *)fliptag(a));
+							 return ITRUE;
+						  case 1014: { /* set-ticks n _ _ -> old */
+							 word old = F(slice);
+							 slice = fixval(a);
+							 return old; }
+						  case 1017: { // system (char*)
+							  int result = system((char*)a + W);
+							  return F(result);
+						  }
 
 /*						#ifndef _WIN32
-						          char *path = ((char *) a) + W;
-						          int nargs = llen((word *)b);
-						         char **args = malloc((nargs+1) * sizeof(char *)); // potential memory leak
-						         char **argp = args;
-						         if (args == NULL)
-						            return IFALSE;
-						         while(nargs--) {
-						            *argp++ = ((char *) ((word *) b)[1]) + W;
-						            b = ((word *) b)[2];
-						         }
-						         *argp = NULL;
-						         set_blocking(0,1); // try to return stdio to blocking mode
-						         set_blocking(1,1); // warning, other file descriptors will stay in nonblocking mode
-						         set_blocking(2,1);
-						         execv(path, args); // may return -1 and set errno
-						         set_blocking(0,0); // exec failed, back to nonblocking io for owl
-						         set_blocking(1,0);
-						         set_blocking(2,0);
-						#endif
-						         return IFALSE; }*/
-						      case 1020: { /* chdir path res */
-						         char *path = ((char *)a) + W;
-						         if (chdir(path) < 0)
-						            return IFALSE;
-						         return ITRUE; }
-						#if 0 // ndef _WIN32
-						      case 1019: { /* wait <pid> <respair> _ */
-						         pid_t pid = (a == IFALSE) ? -1 : fixval(a);
-						         int status;
-						         word *r = (word *) b;
-						         pid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
-						         if (pid == -1)
-						            return IFALSE; /* error */
-						         if (pid == 0)
-						            return ITRUE; /* no changes, would block */
-						         if (WIFEXITED(status)) {
-						            r[1] = F(1);
-						            r[2] = F(WEXITSTATUS(status));
-						         } else if (WIFSIGNALED(status)) {
-						            r[1] = F(2);
-						            r[2] = F(WTERMSIG(status));
-						         } else if (WIFSTOPPED(status)) {
-						            r[1] = F(3);
-						            r[2] = F(WSTOPSIG(status));
-						         } else if (WIFCONTINUED(status)) {
-						            r[1] = F(4);
-						            r[2] = F(1);
-						         } else {
-						            fprintf(stderr, "vm: unexpected process exit status: %d\n", status);
-						            r = (word *)IFALSE;
-						         }
-						         return (word)r; }
-						      case 1018: { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
-						         pid_t pid = fork();
-						         if (pid == -1) /* fork failed */
-						            return IFALSE;
-						         if (pid == 0) /* we're in child, return true */
-						            return ITRUE;
-						         if ((int)pid > FMAX)
-						            fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
-						         return F(pid&FMAX); }
-						      case 1021: /* kill pid signal → fixnum */
-						         return (kill(fixval(a), fixval(b)) < 0) ? IFALSE : ITRUE;
-						#endif
-						      default:
-						         return IFALSE;
-						   }
-						}
-
-						result = prim_sys(op, a, b, c);
+							  char *path = ((char *) a) + W;
+							  int nargs = llen((word *)b);
+							 char **args = malloc((nargs+1) * sizeof(char *)); // potential memory leak
+							 char **argp = args;
+							 if (args == NULL)
+								return IFALSE;
+							 while(nargs--) {
+								*argp++ = ((char *) ((word *) b)[1]) + W;
+								b = ((word *) b)[2];
+							 }
+							 *argp = NULL;
+							 set_blocking(0,1); // try to return stdio to blocking mode
+							 set_blocking(1,1); // warning, other file descriptors will stay in nonblocking mode
+							 set_blocking(2,1);
+							 execv(path, args); // may return -1 and set errno
+							 set_blocking(0,0); // exec failed, back to nonblocking io for owl
+							 set_blocking(1,0);
+							 set_blocking(2,0);
+					#endif
+							 return IFALSE; }*/
+						  case 1020: { /* chdir path res */
+							 char *path = ((char *)a) + W;
+							 if (chdir(path) < 0)
+								return IFALSE;
+							 return ITRUE; }
+					#if 0 // ndef _WIN32
+						  case 1019: { /* wait <pid> <respair> _ */
+							 pid_t pid = (a == IFALSE) ? -1 : fixval(a);
+							 int status;
+							 word *r = (word *) b;
+							 pid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
+							 if (pid == -1)
+								return IFALSE; /* error */
+							 if (pid == 0)
+								return ITRUE; /* no changes, would block */
+							 if (WIFEXITED(status)) {
+								r[1] = F(1);
+								r[2] = F(WEXITSTATUS(status));
+							 } else if (WIFSIGNALED(status)) {
+								r[1] = F(2);
+								r[2] = F(WTERMSIG(status));
+							 } else if (WIFSTOPPED(status)) {
+								r[1] = F(3);
+								r[2] = F(WSTOPSIG(status));
+							 } else if (WIFCONTINUED(status)) {
+								r[1] = F(4);
+								r[2] = F(1);
+							 } else {
+								fprintf(stderr, "vm: unexpected process exit status: %d\n", status);
+								r = (word *)IFALSE;
+							 }
+							 return (word)r; }
+						  case 1018: { /* fork ret → #false=failed, fixnum=ok we're in parent process, #true=ok we're in child process */
+							 pid_t pid = fork();
+							 if (pid == -1) /* fork failed */
+								return IFALSE;
+							 if (pid == 0) /* we're in child, return true */
+								return ITRUE;
+							 if ((int)pid > FMAX)
+								fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
+							 return F(pid&FMAX); }
+						  case 1021: /* kill pid signal → fixnum */
+							 return (kill(fixval(a), fixval(b)) < 0) ? IFALSE : ITRUE;
+					#endif
+						  default:
+							 return IFALSE;
+					   }
 					}
-					else {
-						word syscall(word op, word a, word b, word c)
-						{
-							switch (op)
-							{
-								default:
-									break;
-							}
 
-							return IFALSE;
-						}
-
-						result = syscall(op, a, b, c);
-					}
+					result = prim_sys(op, a, b, c);
 					break;
+				}
 				}
 
 				A4 = result;
@@ -2749,8 +2698,10 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность 0x7FFFFFFFFFFFFFFF (самое большое число)
 	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 	word get_nat() {
-		long long result = 0;// word
-		long long newobj, i; // word
+		long long result;
+		long long newobj, i;
+
+		result = 0;
 		do {
 			i = *hp++;
 			newobj = result << 7;
@@ -2761,7 +2712,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 #if __amd64__
 		return result;
 #else
-		return result == 0x7FFFFFFFFFFFFFFF ? 0x7FFFFFFF : (word)result;
+		return result == (word)(int)result; //0x7FFFFFFFFFFFFFFF ? 0x7FFFFFFF : (word)result;
 #endif
 	}
 

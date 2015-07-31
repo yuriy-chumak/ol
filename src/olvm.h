@@ -44,6 +44,13 @@ struct OL;
 //efine STANDALONE // самостоятельный бинарник без потоков
 
 //-- end of options
+#define SYSCALL_READ 0
+#define SYSCALL_WRITE 1
+#define SYSCALL_OPEN 2
+#define SYSCALL_CLOSE 3
+
+#define SYSCALL_IOCTL 16
+#define SYSCALL_IOCTL_TIOCGETA 19
 
 
 int olvm(unsigned char* bootstrap, void (*release)(void*));
