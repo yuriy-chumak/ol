@@ -165,15 +165,6 @@
 (import (lang cps))
 (import (lang alpha))
 
-; a value that can be created by an instruction
-
-(define (small-value? val)
-   (or
-      (and (fixnum? val) (>= val -127) (< val 127))   
-      (eq? val #true)
-      (eq? val #false)
-      (eq? val null)))
-
 (import (lang thread))
 ;import (lang assemble))
 (import (lang closure))
@@ -203,9 +194,6 @@
 (define input-chunk-size  1024)
 (define output-chunk-size 4096)
 
-(define file-in 0)
-(define file-out 1)
-
 (define-syntax share-bindings
    (syntax-rules (defined)
       ((share-bindings) null)
@@ -220,23 +208,9 @@
       (λ (envl mod)
          (append (ff->list mod) envl))))
 
-;,load "owl/arguments.scm"
-;,load "owl/random.scm"
-
 (import (owl random))
 
 (import (owl args))
-
-;(import (lang cgen))
-
-; path -> 'loaded | 'saved
-;(define (suspend path)
-;   (let ((maybe-world (wrap-the-whole-world-to-a-thunk #true #true)))
-;      (if (eq? maybe-world 'resumed)
-;         'loaded
-;         (begin
-;            (dump-fasl maybe-world path)
-;            'saved))))
 
 (import (owl sys))
 
@@ -277,9 +251,7 @@
       (ensure-free-heap-space n-megs))
    (or (sys-prim 1010 #false #false #false)
       (begin
-         (system-stderr "Failed to enter seccomp sandbox. 
-You must be on a newish Linux and have seccomp support enabled in kernel.
-")
+         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
          (halt exit-seccomp-failed))))
 
 
@@ -386,9 +358,11 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       *libraries*      ;; all currently loaded libraries
       ))
 
+(print "Code loaded at " (- (time-ms) build-start) " ms.")
 
-;,load "owl/test.scm"     ; a simple algorithm equality/benchmark tester
-;,load "owl/sys.scm"      ; more operating system interface
+;;;
+;;; MCP, master control program and the thread controller
+;;;
 
 (define shared-bindings shared-misc)
 
@@ -397,11 +371,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       (λ (env pair) (env-put-raw env (car pair) (cdr pair)))
       *owl-core*
       shared-bindings))
-     
-;; owl core needed before eval
-
-;; toplevel can be defined later
-
 
 (define initial-environment
    (bind-toplevel
@@ -409,119 +378,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
          '((owl base))
          (λ (reason) (error "bootstrap import error: " reason))
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
-
-;; todo: after there are a few more compiler options than one, start using -On mapped to predefined --compiler-flags foo=bar:baz=quux
-
-;; repl-start, thread controller is now runnig and io can be 
-;; performed. check the vm args what should be done and act 
-;; accordingly.
-
-; note, return value is not the owl return value. it comes
-; from thread controller after all threads have finished.
-
-
-(define (strip-zeros n)
-   (cond
-      ((= n 0) n)
-      ((= 0 (rem n 10))
-         (strip-zeros (div n 10)))
-      (else n)))
-
-(define (memory-limit-ok? n w)
-   (cond
-      ((< n 1) (print "Too little memory allowed.") #false)
-      ((and (= w 4) (> n 4096)) (print "This is a 32-bit executable, so you cannot use more than 4096Mb of memory.") #false)
-      ((and (= w 8) (> n 65536)) (print "65536 is as high as you can go.") #false)
-      (else #true)))
-
-(define (maybe-set-memory-limit args)
-   (let ((limit (get args 'memlimit #false)))
-      (if limit
-         (if (memory-limit-ok? limit (get-word-size))
-            (set-memory-limit limit)
-            (system-println "Bad memory limit")))))
-
-(define (c-source-name path)
-   (cond
-      ((m/\.[a-z]+$/ path) ;; .scm, .lisp, .owl etc
-         (s/\.[a-z]+$/.c/ path))
-      (else
-         (string-append path ".c"))))
-
-(define (try thunk fail-val)
-   ; run the compiler chain in a new task
-   (let ((id (list 'thread)))
-      (fork-linked-server id thunk)
-      (tuple-case (ref (accept-mail (λ (env) (eq? (ref env 1) id))) 2)
-         ((finished result not used)
-            result)
-         ((crashed opcode a b)
-            (print-to stderr (verbose-vm-error opcode a b))
-            fail-val)
-         ((error cont reason info)
-            ; note, these could easily be made resumable by storing cont
-            (print-to stderr
-               (list->string
-                  (foldr render '(10) (list "error: " reason info))))
-            fail-val)
-         (else is bad ;; should not happen
-            (print-to stderr (list "que? " bad))
-            fail-val))))
-
-;;;
-;;; MCP, master control program and the thread controller
-;;;
-
-; special keys in mcp state 
-
-;; pick usual suspects in a module to avoid bringing them to toplevel here
-;; mainly to avoid accidentalaly introducing bringing generic functions here
-
-;(define-library (owl usuals)
-;   (export usual-suspects)
-;   ; make sure the same bindings are visible that will be at the toplevel
-;
-;   (import (r5rs base))
-;   (import
-;      (owl math)
-;      (owl random)
-;      (lang thread)
-;      (owl list)
-;      (owl list-extra)
-;      (owl interop)
-;      (owl vector)
-;      (owl sort)
-;      (owl equal)
-;      (owl ff)
-;      (owl pinvoke)
-;      (owl sexp))
-;
-;   (begin
-;      ; commonly needed functions 
-;      (define usual-suspects
-;         (list
-;            put get del ff-fold fupd
-;            - + * /
-;            div gcd ediv
-;            << < <= = >= > >> 
-;            equal? has? mem
-;            band bor bxor
-;            sort
-;            ; suffix-array bisect
-;            fold foldr for map reverse length zip append unfold
-;            lref lset iota
-;            ;vec-ref vec-len vec-fold vec-foldr
-;            ;print 
-;            mail interact 
-;            take keep remove 
-;            thread-controller
-;            ;sexp-parser 
-;            dlopen dlsym RTLD_LAZY
-;            ))))
-;(import (owl usuals))
-
-(print "Code loaded at " (- (time-ms) build-start) " ms.")
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -9,4 +9,3 @@
 
 (display "\";")
 (display "\n#endif")
-(halt 0)

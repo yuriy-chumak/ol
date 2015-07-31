@@ -2699,7 +2699,8 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 	word get_nat() {
 		long long result;
-		long long newobj, i;
+		long long newobj;
+		char i;
 
 		result = 0;
 		do {

@@ -27,6 +27,7 @@
       (exports (owl math-extra))
       (exports (owl math))
       (exports (owl tuple))
+      defined?
       wait)
 
    (import
@@ -53,5 +54,6 @@
       (owl regex)
       (owl render)
       (owl error)
+      (only (owl intern) defined?)
       (owl interop)
       (owl math)))
