@@ -5,9 +5,11 @@
 
 (define (dlopen name flag) (sys-prim 1030 (c-string name) flag #false))
 (define (dlsym  type dll name) ; todo: переименовать в get-proc-address ?
-   (let ((function (cons type (sys-prim 1031 dll (c-string name) #false))))
+   (let ((rtty (cons type prototype))
+         (function (sys-prim 1031 dll (c-string name) #false)))
+      (if function
       (lambda args
-         (sys-prim 1032 (cdr function) (car function) args))))
+         (exec pinvoke  function rtty args)))))
 
 (define user32_dll (dlopen "user32" 0))
   (define IDOK 1)

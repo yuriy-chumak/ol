@@ -10,6 +10,9 @@
 ;  + case-lambda nodes separately 
 ;     o 
 
+; TODO: change case-lambda to lambda-case or
+;       change tuple-case to case-tuple.
+
 (define-library (lang compile)
 
    (export 
@@ -37,9 +40,9 @@
 
       (define (small-value? val)
          (or
-            (and (fixnum? val) (>= val -127) (< val 127))
             (eq? val #true)
             (eq? val #false)
+            (and (fixnum? val) (>= val -127) (< val 127))
             (eq? val null)))
 
       (define (ok exp env) (tuple 'ok exp env))

@@ -44,7 +44,7 @@
       (owl list-extra)
       (owl render)
       (owl string)
-      (owl sexp)
+      (lang sexp)
       (owl parse)
       (owl equal)
       (scheme misc)

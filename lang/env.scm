@@ -48,7 +48,7 @@
       (define current-library-key '*owl-source*) ; toplevel value storing what is being loaded atm
 
       (define (signal-halt threads state controller) 
-			(print-to stderr "stopping on signal") 
+         (print-to stderr "stopping on signal") 
          (halt 42)) ;; exit owl with a specific return value
       (define thread-quantum 10000)
 

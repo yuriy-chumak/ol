@@ -134,7 +134,6 @@
 (import (owl io))
 (import (owl parse))
 (import (owl regex))
-(import (owl sexp))
 
 (define (ok? x) (eq? (ref x 1) 'ok))
 (define (ok exp env) (tuple 'ok exp env))
@@ -159,20 +158,12 @@
 
 (import (lang env))
 (import (lang macro))
+(import (lang sexp))
 
 (import (lang ast))
 (import (lang fixedpoint))
 (import (lang cps))
 (import (lang alpha))
-
-; a value that can be created by an instruction
-
-(define (small-value? val)
-   (or
-      (and (fixnum? val) (>= val -127) (< val 127))   
-      (eq? val #true)
-      (eq? val #false)
-      (eq? val null)))
 
 (import (lang thread))
 ;import (lang assemble))
@@ -203,9 +194,6 @@
 (define input-chunk-size  1024)
 (define output-chunk-size 4096)
 
-(define file-in 0)
-(define file-out 1)
-
 (define-syntax share-bindings
    (syntax-rules (defined)
       ((share-bindings) null)
@@ -220,24 +208,11 @@
       (λ (envl mod)
          (append (ff->list mod) envl))))
 
-;,load "owl/arguments.scm"
-;,load "owl/random.scm"
-
 (import (owl random))
 
 (import (owl args))
 
 ;(import (lang cgen))
-
-; path -> 'loaded | 'saved
-;(define (suspend path)
-;   (let ((maybe-world (wrap-the-whole-world-to-a-thunk #true #true)))
-;      (if (eq? maybe-world 'resumed)
-;         'loaded
-;         (begin
-;            (dump-fasl maybe-world path)
-;            'saved))))
-
 (import (owl sys))
 
 ;;;
@@ -277,9 +252,7 @@
       (ensure-free-heap-space n-megs))
    (or (sys-prim 1010 #false #false #false)
       (begin
-         (system-stderr "Failed to enter seccomp sandbox. 
-You must be on a newish Linux and have seccomp support enabled in kernel.
-")
+         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
          (halt exit-seccomp-failed))))
 
 
@@ -386,9 +359,11 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       *libraries*      ;; all currently loaded libraries
       ))
 
+(print "Code loaded at " (- (time-ms) build-start) " ms.")
 
-;,load "owl/test.scm"     ; a simple algorithm equality/benchmark tester
-;,load "owl/sys.scm"      ; more operating system interface
+;;;
+;;; MCP, master control program and the thread controller
+;;;
 
 (define shared-bindings shared-misc)
 
@@ -397,11 +372,6 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
       (λ (env pair) (env-put-raw env (car pair) (cdr pair)))
       *owl-core*
       shared-bindings))
-     
-;; owl core needed before eval
-
-;; toplevel can be defined later
-
 
 (define initial-environment
    (bind-toplevel
@@ -410,139 +380,69 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
          (λ (reason) (error "bootstrap import error: " reason))
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
 
-;; todo: after there are a few more compiler options than one, start using -On mapped to predefined --compiler-flags foo=bar:baz=quux
-
-;; repl-start, thread controller is now runnig and io can be 
-;; performed. check the vm args what should be done and act 
-;; accordingly.
-
-; note, return value is not the owl return value. it comes
-; from thread controller after all threads have finished.
-
-
-(define (strip-zeros n)
-   (cond
-      ((= n 0) n)
-      ((= 0 (rem n 10))
-         (strip-zeros (div n 10)))
-      (else n)))
-
-(define (memory-limit-ok? n w)
-   (cond
-      ((< n 1) (print "Too little memory allowed.") #false)
-      ((and (= w 4) (> n 4096)) (print "This is a 32-bit executable, so you cannot use more than 4096Mb of memory.") #false)
-      ((and (= w 8) (> n 65536)) (print "65536 is as high as you can go.") #false)
-      (else #true)))
-
-(define (maybe-set-memory-limit args)
-   (let ((limit (get args 'memlimit #false)))
-      (if limit
-         (if (memory-limit-ok? limit (get-word-size))
-            (set-memory-limit limit)
-            (system-println "Bad memory limit")))))
-
-(define (c-source-name path)
-   (cond
-      ((m/\.[a-z]+$/ path) ;; .scm, .lisp, .owl etc
-         (s/\.[a-z]+$/.c/ path))
-      (else
-         (string-append path ".c"))))
-
-(define (try thunk fail-val)
-   ; run the compiler chain in a new task
-   (let ((id (list 'thread)))
-      (fork-linked-server id thunk)
-      (tuple-case (ref (accept-mail (λ (env) (eq? (ref env 1) id))) 2)
-         ((finished result not used)
-            result)
-         ((crashed opcode a b)
-            (print-to stderr (verbose-vm-error opcode a b))
-            fail-val)
-         ((error cont reason info)
-            ; note, these could easily be made resumable by storing cont
-            (print-to stderr
-               (list->string
-                  (foldr render '(10) (list "error: " reason info))))
-            fail-val)
-         (else is bad ;; should not happen
-            (print-to stderr (list "que? " bad))
-            fail-val))))
-
-(define (owl-run outcome args path profile?)
-   (if outcome
-      (tuple-case outcome
-         ((ok val env)
-            ;; be silent when all is ok
-            ;; exit with 127 and have error message go to stderr when the run crashes
-            (if profile?
-               (try (λ () (profile (λ () (val args)) 30)) 127)
-               (try (λ () (val args)) 127)))
-         ((error reason env)
-            (print-repl-error
-               (list "ol: cannot run" path "because there was an error during loading:" reason))
-            2))
-      1))
-
-;;;
-;;; MCP, master control program and the thread controller
-;;;
-
-; special keys in mcp state 
-
-;; pick usual suspects in a module to avoid bringing them to toplevel here
-;; mainly to avoid accidentalaly introducing bringing generic functions here
-
-(define-library (owl usuals)
-   (export usual-suspects)
-   ; make sure the same bindings are visible that will be at the toplevel
-
-   (import (r5rs base))
-   (import
-      (owl math)
-      (owl random)
-      (lang thread)
-      (owl list)
-      (owl list-extra)
-      (owl interop)
-      (owl vector)
-      (owl sort)
-      (owl equal)
-      (owl ff)
-      (owl pinvoke)
-      (owl sexp))
-
-   (begin
-      ; commonly needed functions 
-      (define usual-suspects
-         (list
-            put get del ff-fold fupd
-            - + * /
-            div gcd ediv
-            << < <= = >= > >> 
-            equal? has? mem
-            band bor bxor
-            sort
-            ; suffix-array bisect
-            fold foldr for map reverse length zip append unfold
-            lref lset iota
-            ;vec-ref vec-len vec-fold vec-foldr
-            ;print 
-            mail interact 
-            take keep remove 
-            thread-controller
-            ;sexp-parser 
-            dlopen dlsym RTLD_LAZY
-            ))))
-(import (owl usuals))
-
-(print "Code loaded at " (- (time-ms) build-start) " ms.")
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; new repl image
 ;;;
+
+;; say hi if interactive mode and fail if cannot do so (the rest are done using 
+;; repl-prompt. this should too, actually)
+(define (get-main-entry symbols codes)
+   (let*((initial-names   *owl-names*)
+         (initial-version *owl-version*)
+
+         (interner-thunk (initialize-interner symbols codes)))
+      ; main: / entry point of the compiled image
+      (λ (vm-args)
+         ;(print "vm-args: " (null? vm-args "null" vm-args))
+         ;; now we're running in the new repl 
+         (start-thread-controller
+            (list ;1 thread
+               (tuple 'init
+                  (λ () 
+                     (fork-server 'repl (lambda ()
+                        ;; get basic io running
+                        (start-base-threads)
+
+                        ;; repl needs symbol etc interning, which is handled by this thread
+                        (fork-server 'intern interner-thunk)
+
+                        ;; set a signal handler which stop evaluation instead of owl 
+                        ;; if a repl eval thread is running
+                        (set-signal-action repl-signal-handler)
+
+                        ;; repl
+                        (exit-owl
+                           (let* ((isatty? (syscall 16 stdin 19 #f))
+                                  (seccomp? #false) ; else (seccomp megs) - check is memory enough
+                                  (env (fold
+                                          (λ (env defn)
+                                             (env-set env (car defn) (cdr defn)))
+                                          initial-environment
+                                          (list
+                                             (cons '*owl-names*   initial-names)
+                                             (cons '*owl-version* initial-version)
+                                             (cons '*vm-args* vm-args)
+                                             (cons '*seccomp* seccomp?)
+                                          ))))
+                              (if isatty?
+                                 (begin ;greeting
+                                    (print (if seccomp? owl-ohai-seccomp owl-ohai))
+                                    (display "> ")))
+                              (repl-trampoline repl env))))))))
+            null)))) ; no threads state
+
+
+
+;(define symbols (symbols-of get-main-entry))
+;(define codes   (codes-of   get-main-entry))
+
+;;;
+;;; Dump the new repl
+;;;
+
+(print "Compiling ...")
 
 ;--
 (define (symbols-of node)
@@ -590,65 +490,14 @@ You must be on a newish Linux and have seccomp support enabled in kernel.
 
 
 
-;; say hi if interactive mode and fail if cannot do so (the rest are done using 
-;; repl-prompt. this should too, actually)
-(define (get-main-entry)
-   (let*((initial-names *owl-names*)
-
-         (symbols (symbols-of get-main-entry))
-         (codes   (codes-of   get-main-entry))
-         (interner-thunk (initialize-interner symbols codes)))
-      ; main: / entry point of the compiled image
-      (λ (vm-args)
-         ;(print "vm-args: " (null? vm-args "null" vm-args))
-         ;; now we're running in the new repl 
-         (start-thread-controller
-            (list ;1 thread
-               (tuple 'init
-                  (λ () 
-                     (fork-server 'repl (lambda ()
-                        ;; get basic io running
-                        (start-base-threads)
-
-                        ;; repl needs symbol etc interning, which is handled by this thread
-                        (fork-server 'intern interner-thunk)
-
-                        ;; set a signal handler which stop evaluation instead of owl 
-                        ;; if a repl eval thread is running
-                        (set-signal-action repl-signal-handler)
-
-                        (exit-owl
-                           (let* ((isatty? (syscall 16 stdin 19 #f))
-                                  (seccomp? #false) ; else (seccomp megs) - check is memory enough
-                                  (env (fold
-                                          (λ (env defn)
-                                             (env-set env (car defn) (cdr defn)))
-                                          initial-environment
-                                          (list
-                                             (cons '*owl-version* *owl-version*)
-                                             (cons '*owl-names* initial-names)
-                                             (cons '*vm-args* vm-args)
-                                             (cons '*seccomp* seccomp?)
-                                          ))))
-                              (if isatty?
-                                 (begin ;greeting
-                                    (print (if seccomp? owl-ohai-seccomp owl-ohai))
-                                    (display "> ")))
-                              (repl-trampoline repl env))))))))
-            null)))) ; no threads state
-
-;;;
-;;; Dump the new repl
-;;;
-
-(print "Compiling ...")
-
 (let*((path "boot.fasl")
       (port ;; where to save the result
          (open-output-file path))
 
+      (symbols (symbols-of get-main-entry))
+      (codes   (codes-of   get-main-entry))
       (bytes ;; encode the resulting object for saving in some form
-         (fasl-encode (get-main-entry))))
+         (fasl-encode (get-main-entry symbols codes))))
    (if (not port)
       (begin
          (print "Could not open " path " for writing")

@@ -13,7 +13,7 @@
       (owl list)
       (owl error)
       (owl string)
-      (only (owl sexp) list->number)
+      (only (lang sexp) list->number)
       (owl math))
 
    (begin
