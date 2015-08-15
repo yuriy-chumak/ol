@@ -525,9 +525,9 @@ typedef struct object
 #define TTHIS                       44
 #define TRAWP                       45
 
-#define INULL                       make_immediate(0, TCONST)
-#define IFALSE                      make_immediate(1, TCONST)
-#define ITRUE                       make_immediate(2, TCONST)
+#define IFALSE                      make_immediate(0, TCONST)
+#define ITRUE                       make_immediate(1, TCONST)
+#define INULL                       make_immediate(2, TCONST)
 #define IEMPTY                      make_immediate(3, TCONST) /* empty ff */
 #define IEOF                        make_immediate(4, TCONST)
 #define IHALT                       INULL /* FIXME: adde a distinct IHALT */
@@ -3102,8 +3102,7 @@ done:
 	free(heap.begin);
 	free(handle);
 
-exit:
-	return (int)(long)result;
+	return uftoi (result);
 }
 
 #if 0 //EMBEDDED_VM
