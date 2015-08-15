@@ -1,6 +1,9 @@
 #!/bin/ol
 
-;(define *interactive* #t)
+;(define sx12 (lambda () (if (syscall 2000 0 0 0) 1 2)))
+;(syscall 2000 3 3 3)
+
+;(syscall 2000 (sx12) type size)
 (define width 640)
 (define height 480)
 

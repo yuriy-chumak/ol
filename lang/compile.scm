@@ -10,6 +10,9 @@
 ;  + case-lambda nodes separately 
 ;     o 
 
+; TODO: change case-lambda to lambda-case or
+;       change tuple-case to case-tuple.
+
 (define-library (lang compile)
 
    (export 

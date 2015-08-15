@@ -1,6 +1,6 @@
 ;; todo: remove implicit UTF-8 conversion from parser and move to a separate pass
 
-(define-library (owl sexp)
+(define-library (lang sexp)
    
    (export 
       sexp-parser 
@@ -269,7 +269,7 @@
               (#\" . #x0022)
               (#\\ . #x005c))))
 
-      (define get-quoted-string-char 
+      (define get-quoted-string-char
          (let-parses
             ((skip (get-imm #\\))
              (char 
@@ -343,7 +343,7 @@
                      (get-word "T" #true)
                      (get-word "F" #false)
                      (get-word "e" #empty)
-                     ;(get-word "define" ... ?
+;                    (get-word "define" #define)
                      (let-parses
                         ((bang (get-imm #\!))
                          (line get-rest-of-line))

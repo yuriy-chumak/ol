@@ -701,6 +701,7 @@ word*p = NEW_OBJECT (3, type);\
 
 
 // остальные аллокаторы
+//todo: make __pads automaticall calculated
 #define new_raw_object(size, type, pads) ({\
 word*p = new (size);\
 	*p = make_raw_header(size, type, pads);\
@@ -710,10 +711,10 @@ word*p = new (size);\
 /* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
 #define new_bytevector(length, type) ({\
 	int size = (length);\
-	int words = (size / W) + ((size % W) ? 2 : 1);\
-	int pads = (words - 1) * W - size;\
+	int words = (size + W - 1) / W;\
+	int pads = W - (size % W);\
 	\
-word* p = new_raw_object(words, type, pads);\
+word* p = new_raw_object(words + 1, type, pads);\
 	/*return*/ p;\
 })
 
@@ -1061,7 +1062,7 @@ void* runtime(void *args) // heap top
 	int max_heap_size;
 
 	// регистры виртуальной машины
-	word R[NR];
+	word R[NR]; // 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	int breaked = 0;
 
 //	int seccompp = 0;
@@ -1099,7 +1100,7 @@ void* runtime(void *args) // heap top
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	for (int i = i; i < NR; i++)
 		R[i] = INULL;
-	R[0] = IFALSE; // mcp (пока нету)
+	R[0] = IFALSE; // MCP - master control program (пока нету)
 	R[3] = IHALT;  // continuation
 	R[4] = (word) userdata; // command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
@@ -2486,6 +2487,10 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					ticker = fixval(a);
 					break;
 
+				case 2000:
+					result = ITRUE;
+					break;
+
 
 #if HAS_DLOPEN
 				// -=( dlopen )=-------------------------------------------------
@@ -2756,17 +2761,15 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		}
 		case 2: {
 			int type = *hp++ & 31; /* low 5 bits, the others are pads */
-			int bytes = get_nat();
-			int size = ((bytes % W) == 0) ? (bytes/W)+1 : (bytes/W) + 2;
-			int pads = (size-1)*W - bytes;
+			int size = get_nat();
+			int words = (size + W - 1) / W;
+			int pads = W - (size % W);
 
-			*fp++ = make_raw_header(size, type, pads);
-			unsigned char *wp = (unsigned char *) fp;
-			while (bytes--)
+			unsigned char *wp = (unsigned char*) &car(new_raw_object (words + 1, type, pads));
+			while (size--)
 				*wp++ = *hp++;
 			while (pads--)
 				*wp++ = 0;
-			fp = (word *) wp;
 			break;
 		}
 		default:
@@ -2818,7 +2821,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 			int size = decode_word();
 			hp += size;
 
-			int words = (size/W) + (((size % W) == 0) ? 1 : 2);
+			int words = (size / W) + ((size % W) ? 2 : 1);
 			allocated += words;
 
 			break;
@@ -2832,7 +2835,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		n++;
 	}
 
-	*words = allocated + (n + 1); // n+1 for args[]
+	*words = allocated;
 	return n;
 }
 
@@ -2985,10 +2988,11 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 
-	fprintf(stderr, "counted %d words for %d objects\n", nwords, nobjs);
+	nwords += (nobjs + 2); // for ptrs
+
+//	fprintf(stderr, "counted %d words for %d objects\n", nwords, nobjs);
 
 	heap_t heap;
-//	static //__tlocal__
 	word *fp;
 
 	void* result = 0; // результат выполнения скрипта
@@ -3054,7 +3058,7 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 	word *ptrs = new_raw_object (nobjs+1, TCONST, 0);
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
 
-	fprintf(stderr, "decoded %d words\n", fp - heap.begin);
+//	fprintf(stderr, "decoded %d words\n", fp - heap.begin);
 
 	// все, программа в памяти, можно освобождать исходник
 	if (release)

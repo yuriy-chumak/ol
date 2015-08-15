@@ -63,6 +63,7 @@
       ;ff-bind
 
       ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
+      ;(define raw     (raw type-bytecode '(60 4 5 6  24 6)))
 
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
@@ -122,12 +123,13 @@
       ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
 
       (define primops (list
+         ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
+         (tuple 'raw      60  2 1 raw) ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
+
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
          (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
-         (tuple 'mkt      MKT     'any   1 #f)      ;; mkt type v0 .. vn t (отдельно, похоже, не используется)
+         (tuple 'mkt      MKT     'any   1 #false)  ;; mkt type v0 .. vn t (why #f?)
          (tuple 'ff-bind  FFBIND  1 #false ff-bind) ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
-         ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
-         (tuple 'raw      60  2 1 (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
 
          ; вторая по значимости команда
          (tuple 'cons     51  2 1 cons)
@@ -166,6 +168,7 @@
 
          ; базовая математика
          (tuple 'fx+      38  2 2 fx+)
+;         (tuple '#+       38  2 2 #+)
          (tuple 'fx*      39  2 2 fx*)
          (tuple 'fx-      40  2 2 fx-)
          (tuple 'fx/      26  3 3 fx/)

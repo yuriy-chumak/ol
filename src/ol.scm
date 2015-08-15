@@ -134,7 +134,6 @@
 (import (owl io))
 (import (owl parse))
 (import (owl regex))
-(import (owl sexp))
 
 (define (ok? x) (eq? (ref x 1) 'ok))
 (define (ok exp env) (tuple 'ok exp env))
@@ -159,6 +158,7 @@
 
 (import (lang env))
 (import (lang macro))
+(import (lang sexp))
 
 (import (lang ast))
 (import (lang fixedpoint))
