@@ -1,5 +1,6 @@
 ;; test a suffix array
 (import (etc suffix))
+(import (owl random))
 
 ; note: end = minimum 
 

@@ -1,7 +1,8 @@
 ;;;
 ;;; a bit of testing
 ;;;
-(import (scheme misc))
+(import (owl random)
+        (scheme misc))
 
 ; lset could be on toplevel
 

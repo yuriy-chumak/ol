@@ -1,3 +1,4 @@
+(import (owl random))
 
 (define seed (time-ms))
 

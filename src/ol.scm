@@ -208,7 +208,7 @@
       (λ (envl mod)
          (append (ff->list mod) envl))))
 
-(import (owl random))
+;(import (owl random))
 
 (import (owl args))
 

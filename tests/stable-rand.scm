@@ -1,4 +1,5 @@
 ;;; check that the default sort is stable
+(import (owl random))
 
 (define rst (seed->rands (time-ms)))
 
