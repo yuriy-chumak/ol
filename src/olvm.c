@@ -3,7 +3,7 @@
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
 // математику считать так: (receive (fx+ 16777214 1) (lambda (hi lo) (list hi lo)))
 //                   либо: (let* ((hi lo (fx+ 16777214 1))) (...))
-// при превышении выдает мусор
+// при превышении выдает, естественно, мусор
 //
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
 //      http://igorkov.org/pdf/Z80-Central-Processor-Unit.pdf
@@ -23,6 +23,24 @@
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
 
 #include "olvm.h"
+
+// defaults. please don't change. use -DOPTIONSYMBOL gcc command line option instead
+#ifndef HAS_SOCKETS
+#define HAS_SOCKETS 1 // system sockets support
+#endif
+
+#ifndef HAS_DLOPEN
+#define HAS_DLOPEN 1  // dlopen/dlsym support
+#endif
+
+#ifndef HAS_PINVOKE
+#define HAS_PINVOKE 1 // pinvoke (for dlopen/dlsym) support
+#endif
+
+#ifndef EMBEDDED_VM   // use as embedded vm in project
+#define EMBEDDED_VM 0
+#endif
+
 
 // На данный момент поддерживаются две операционные системы:
 //  Windows, Linux
@@ -386,17 +404,6 @@ char* dlerror() {
 // основной тип даных, зависит от разрядности машины
 // based on C99 standard, <stdint.h>
 typedef uintptr_t word;
-
-typedef struct OL
-{
-	word *fp; // allocation pointer (top of allocated heap)
-
-#if 0//EMBEDDED_VM
-	pthread_t tid;
-	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
-	struct fifo o;
-#endif
-} OL;
 
 // descriptor format:
 // заголовок объекта, то, что лежит у него в ob[0] (*ob)
@@ -1033,14 +1040,25 @@ void set_signal_handler() {
 #define R5                          R[5]
 #define R6                          R[6]
 
+// OL
+struct OLvm
+{
+	word max_heap_size; // max heap size in MB
+	struct heap_t heap;
+
+#if 0//EMBEDDED_VM
+	pthread_t tid;
+	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
+	struct fifo o;
+#endif
+
+};
+
+
 // структура с параметрами для запуска виртуальной машины
 struct args
 {
-	OL *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
-
-	// структура памяти VM. распределяется еще до запуска самой машины
-	word max_heap_size; // max heap size in MB
-	struct heap_t heap;
+	struct OLvm *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
 
 	void *userdata;
 	volatile char signal;// сигнал, что машина запустилась
@@ -1053,9 +1071,9 @@ struct args
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
 
 static //__attribute__((aligned(8)))
-void* runtime(void *args) // heap top
+void* runtime(OL* ol, word* userdata) // heap top
 {
-	heap_t heap;
+	heap_t* heap;
 	register word *fp; // memory allocation pointer
 	int slice = TICKS; // default thread slice (n calls per slice)
 
@@ -1067,17 +1085,9 @@ void* runtime(void *args) // heap top
 
 //	int seccompp = 0;
 
-	// инициализируем локальную память
-	heap.begin    = ((struct args*)args)->heap.begin;
-	heap.end      = ((struct args*)args)->heap.end;
-	heap.genstart = ((struct args*)args)->heap.genstart; // разделитель Old Generation и New Generation
-
-	max_heap_size = ((struct args*)args)->max_heap_size; // max heap size in MB
-
 	// allocation pointer (top of allocated heap)
-	fp            = ((struct args*)args)->vm->fp;
-	OL* ol        = ((struct args*)args)->vm;
-
+//	OL* ol         = ((struct args*)args)->vm;
+//	void* userdata = ((struct args*)args)->userdata; // command line
 
 #	if 0//EMBEDDED_VM
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
@@ -1085,13 +1095,17 @@ void* runtime(void *args) // heap top
 	fifo *fo =&((struct args*)args)->vm->i;
 #	endif
 
-	void *userdata = ((struct args*)args)->userdata; // command line
+	// инициализируем локальную память
+	heap          = &ol->heap;
+	max_heap_size =  ol->max_heap_size; // max heap size in MB
+
+	fp = heap->fp;
 
 	// все, машина инициализирована, отсигналимся
-	((struct args*)args)->signal = 1;
+//	((struct args*)args)->signal = 1;
 
 	// thinkme: может стоит искать и загружать какой-нибудь main() ?
-	word* ptrs = (word*)userdata + 3;
+	word* ptrs = (word*) heap->begin;
 	int nobjs = hdrsize(ptrs[0]) - 1;
 
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
@@ -1107,6 +1121,7 @@ void* runtime(void *args) // heap top
 
 	int bank = 0; // ticks deposited at interop
 	int ticker = slice; // any initial value ok
+
 
 	// instruction pointer
 	unsigned char *ip = 0;
@@ -1255,9 +1270,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		while (++p <= N) regs[p] = R[p-1];
 		regs[p] = (word) this;
 		// выполним сборку мусора
-		heap.fp = fp;
-		regs = (word*)gc(&heap, size, (word)regs); // GC занимает 0-15 ms
-		fp = heap.fp;
+		heap->fp = fp;
+		regs = (word*)gc(heap, size, (word)regs); // GC занимает 0-15 ms
+		fp = heap->fp;
 		// и восстановим все регистры, уже подкорректированные сборщиком
 		this = (word *) regs[p];
 		while (--p >= 1) R[p-1] = regs[p];
@@ -1267,12 +1282,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 	}
 	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
 	//  регистры, мы их складываем в память во временный кортеж.
-	if (/*forcegc || */(fp >= heap.end - 16 * 1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
+	if (/*forcegc || */(fp >= heap->end - 16 * 1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
 		dogc (16 * 1024 * sizeof(word));
 		ip = (unsigned char *) &this[1];
 
 		// проверим, не слишком ли мы зажрались
-		word heapsize = (word) heap.end - (word) heap.begin;
+		word heapsize = (word) heap->end - (word) heap->begin;
 		if ((heapsize / (1024*1024)) > max_heap_size)
 			breaked |= 8; // will be passed over to mcp at thread switch
 
@@ -1333,6 +1348,13 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 #	define CLOCK 61
 #	define SYSCALL 63
+#		define SYSCALL_READ 0
+#		define SYSCALL_WRITE 1
+#		define SYSCALL_OPEN 2
+#		define SYSCALL_CLOSE 3
+
+#		define SYSCALL_IOCTL 16
+#		define SYSCALL_IOCTL_TIOCGETA 19
 
 
 	// tuples, trees
@@ -2045,9 +2067,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				int size = sftoi (b);
 
 				if (size < 0)
-					size = (heap.end - fp) * W - MEMPAD;
+					size = (heap->end - fp) * W - MEMPAD;
 				else
-				if (size > (heap.end - fp) * W - MEMPAD)
+				if (size > (heap->end - fp) * W - MEMPAD)
 					dogc(size);
 
 				int got;
@@ -2346,25 +2368,31 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 					void *function = (void*) car(A);  assert (function);
 
-					ol->fp = fp;
+					ol->heap.fp = fp;
 					result = ((word (*)  (OL*, word*))function) (ol, B);
-					fp = ol->fp;
+					fp = ol->heap.fp;
 					break;
 				}
 #endif
 				// if a is string:
 				if (is_string(a)) {
 #if 1
-					FILE* pipe = popen((const char*)car(a), "r");
+					FILE* pipe = popen((const char*)&car(a), "r");
+					if (! pipe)
+						break;
 
 					char* p = (char*) &car(fp);
-					while (!feof(pipe)) {
-						// todo: check for available memory, gc()
-						p += fread(p, 1, 1024, pipe);
-					}
+					int available = heap->end - fp - W;
+//					while (!feof(pipe)) {
+//						// todo: check for available memory, gc()
+//						p += fread(p, 1, 1024, pipe);
+//					}
+					p += fread(p, 1, available, pipe);
 					pclose(pipe);
 
-					int count = p - (char*)&car(fp) - 1;
+					int count = p - (char*)&car(fp);
+					if (count == 0)
+						break;
 					result = (word) new_bytevector(count, TSTRING);
 #else	// popen by syscall
 					int stdin[2];
@@ -2432,7 +2460,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// exit - cause normal process termination, function does not return.
 			case 1006:
 			case 60: {
-				free(heap.begin); // освободим занятую память
+				free(heap->begin); // освободим занятую память
+				heap->begin = 0;
 #if 0//EMBEDDED_VM
 				// подождем, пока освободится место в консоли
 				while (fifo_full(fo)) pthread_yield();
@@ -2871,6 +2900,7 @@ int main(int argc, char** argv)
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
+	// todo: перенести в eval !
 	if (argc > 1 && strcmp(argv[1], "-") != 0) {
 		// todo: use mmap()
 		struct stat st;
@@ -2936,18 +2966,23 @@ int main(int argc, char** argv)
 #endif
 
 	//set_signal_handler();
-	int r = olvm(bootstrap, bootstrap != language ? free : NULL);
+	OL* olvm =
+	OL_new(bootstrap, bootstrap != language ? free : NULL);
+	void* r = OL_eval(olvm, argc, argv);
+	OL_free(olvm);
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSACleanup();
 #endif
 
-	return r;
+	return is_fixed(r) ? sftoi (r) : -1;
 }
 #endif
 
-int    // this is NOT thread safe function
-olvm(unsigned char* bootstrap, void (*release)(void*))
+//int    // this is NOT thread safe function
+//olvm(unsigned char* bootstrap, void (*release)(void*))
+OL*
+OL_new(unsigned char* bootstrap, void (*release)(void*))
 {
 	// если это текстовый скрипт, замапим его на stdin, а сами используем встроенный (если) язык
 	if (bootstrap[0] > 3) {
@@ -2992,67 +3027,23 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 
 //	fprintf(stderr, "counted %d words for %d objects\n", nwords, nobjs);
 
-	heap_t heap;
+	heap_t* heap = &handle->heap;
 	word *fp;
-
-	void* result = 0; // результат выполнения скрипта
 
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
-	heap.begin = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
-	if (!heap.begin) {
+	heap->genstart = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
+	if (!heap->genstart) {
 		fprintf(stderr, "Failed to allocate %d words for vm memory\n", required_memory_size);
-		goto done;
+		goto fail;
 	}
-	heap.end = heap.begin + required_memory_size;
-	heap.genstart = heap.begin;
+	// ok:
+	heap->begin = heap->genstart;
+	heap->end = heap->begin + required_memory_size;
+	handle->max_heap_size = max_heap_size;
 
-	// подготовим в памяти машины параметры командной строки:
-
-	// create '("some string" . NIL) as parameter for the start lambda
-	// а вообще, от этого блока надо избавится.
-	//  но пока оставлю как пример того, как можно предварительно
-	//  загрузить в память аргументы перед вызовом образа
-	// по совместительству, это еще и корневой объект
-	fp = heap.begin;
-	word oargs; // аргументы
-	{
-		oargs = INULL;
-#if !EMBEDDED_VM
-		// аргументы
-		// todo: for win32 do ::GetCommandLine()
-		int f = open("/proc/self/cmdline", O_RDONLY, S_IRUSR);
-		if (f) {
-			int r;
-			do {
-				char *pos = (char*)(fp + 1);
-				while ((r = read(f, pos, 1)) > 0 && (*pos != 0)) {
-					pos++;
-				}
-				int length = pos - (char*)fp - W;
-				if (r > 0 && length > 0) // если есть что добавить
-					oargs = (word)new_pair (new_bytevector(length, TSTRING), oargs);
-			}
-			while (r > 0);
-			close(f);
-		}
-		else
-#endif
-		{
-			char* filename = "-";
-			char *pos = filename;
-
-			int len = 0;
-			while (*pos++) len++;
-
-			oargs = (word)new_pair (new_string (len, filename), oargs);
-		}
-	}
-
-//	heap.fp = fp;
-//	oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
-//	fp = heap.fp;
+	fp = heap->begin;
 
 	// Десериализация загруженного образа в объекты
 	word *ptrs = new_raw_object (nobjs+1, TCONST, 0);
@@ -3064,19 +3055,25 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 	if (release)
 		release(bootstrap);
 
-	// ===============================================================
+	heap->fp = fp;
+	return handle;
 
-	struct args args; // аргументы для запуска
-	args.vm = handle; // виртуальной машины OL
-	args.vm->fp = fp;
+fail:
+	free(heap->begin);
+	free(handle);
+	return 0;
+}
 
-	// а это инициализационные аргументы для памяти виртуальной машины
-	args.heap.begin    = heap.begin;
-	args.heap.end      = heap.end;
-	args.heap.genstart = heap.genstart;
-	args.max_heap_size = max_heap_size; // max heap size in MB
-	args.userdata      = (word*) oargs;
+void OL_free(OL* ol)
+{
+	free(ol->heap.begin);
+	free(ol);
+}
 
+// ===============================================================
+void*
+OL_eval(OL* handle, int argc, char** argv)
+{
 #if 0 //EMBEDDED_VM
 	args.signal = 0;
 	if (pthread_create(&handle->tid, NULL, &runtime, &args) == 0) {
@@ -3092,17 +3089,59 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 	set_blocking(1, 0);
 	set_blocking(2, 0);
 #	endif
-
-	result = runtime(&args);
 #endif
 
+	// подготовим аргументы:
+	word* userdata;
+	{
+		word* fp = handle->heap.fp;
+		userdata = (word*)INULL;
+#if !EMBEDDED_VM
+		// аргументы
+		// todo: for win32 do ::GetCommandLine()
+		/*int f = open("/proc/self/cmdline", O_RDONLY, S_IRUSR);
+		if (f) {
+			int r;
+			do {
+				char *pos = (char*)(fp + 1);
+				while ((r = read(f, pos, 1)) > 0 && (*pos != 0)) {
+					pos++;
+				}
+				int length = pos - (char*)fp - W;
+				if (r > 0 && length > 0) // если есть что добавить
+					userdata = new_pair (new_bytevector(length, TSTRING), userdata);
+			}
+			while (r > 0);
+			close(f);
+		}*/
+		for (int i = 0; i < argc; i++, argv++) {
+			char *pos = (char*)(fp + 1);
+			char *v = *argv;
+			while ((*pos = *v++) != 0)
+				pos++;
+			int length = pos - (char*)fp - W;
+			if (length > 0) // если есть что добавить
+				userdata = new_pair (new_bytevector(length, TSTRING), userdata);
+		}
+#else
+		{
+			char* filename = "-";
+			char *pos = filename;
+
+			int len = 0;
+			while (*pos++) len++;
+
+			userdata = new_pair (new_string (len, filename), userdata);
+		}
+#endif
+		handle->heap.fp = fp;
+	}
+
+	void* result = // результат выполнения скрипта
+	runtime(handle, userdata);
+
 	// ===============================================================
-
-done:
-	free(heap.begin);
-	free(handle);
-
-	return uftoi (result);
+	return result;
 }
 
 #if 0 //EMBEDDED_VM
@@ -3148,10 +3187,11 @@ __attribute__
 	((__visibility__("default")))
 word pinvoke(OL* self, word arguments)
 {
-	word *fp, result;
-
+	heap_t* heap = &self->heap;
 	// get memory pointer
-	fp = self->fp;
+
+	word*
+	fp = heap->fp;
 
 	// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 
@@ -3600,6 +3640,7 @@ word pinvoke(OL* self, word arguments)
 	got = call(returntype >> 8, args, i);
 #endif
 
+	word result;
 	switch (returntype & 0x3F) {
 		case TINT:
 			if (got > FMAX) {
@@ -3633,8 +3674,7 @@ word pinvoke(OL* self, word arguments)
 //                      todo: TRATIONAL
 	}
 
-	self->fp = fp;
-
+	heap->fp = fp;
 	return result;
 }
 #endif//HAS_PINVOKE
