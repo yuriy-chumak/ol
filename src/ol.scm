@@ -297,7 +297,6 @@
 (import (lang eval))
 
 (import (owl base))
-(import (owl pinvoke))
 
 ;; push it to libraries for sharing, replacing the old one
 (define *libraries* 
