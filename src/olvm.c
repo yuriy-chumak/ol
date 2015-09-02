@@ -3227,7 +3227,7 @@ int vm_feof(OL* vm)
 #if HAS_PINVOKE
 __attribute__
 	((__visibility__("default")))
-word pinvoke(OL* self, word arguments)
+word pinvoke(OL* self, word* arguments)
 {
 	heap_t* heap = &self->heap;
 	// get memory pointer
@@ -3460,9 +3460,9 @@ word pinvoke(OL* self, word arguments)
 	// a - function address
 	// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 	// c - '(return-type . argument-types-list)
-	word* A = (word*)car(arguments); arguments = cdr(arguments); // function
-	word* B = (word*)car(arguments); arguments = cdr(arguments); // rtty
-	word* C = (word*)car(arguments); arguments = cdr(arguments); // args
+	word* A = (word*)car(arguments); arguments = (word*)cdr(arguments); // function
+	word* B = (word*)car(arguments); arguments = (word*)cdr(arguments); // rtty
+	word* C = (word*)car(arguments); arguments = (word*)cdr(arguments); // args
 
 //	assert(hdrtype(A[0]) == TPORT, A, 1032);
 	assert ((word)B != INULL && hdrtype(B[0]) == TPAIR);
@@ -3682,7 +3682,7 @@ word pinvoke(OL* self, word arguments)
 	got = call(returntype >> 8, args, i);
 #endif
 
-	word result;
+	word result = IFALSE;
 	switch (returntype & 0x3F) {
 		case TINT:
 			if (got > FMAX) {
@@ -3723,7 +3723,7 @@ word pinvoke(OL* self, word arguments)
 
 __attribute__
 	((__visibility__("default")))
-word testcall(OL* self, word arguments)
+word testcall(OL* self, word* arguments)
 {
 	fprintf(stderr, "testcall>: fp=%p\n", self->heap.fp);
 	self->gc(256);
