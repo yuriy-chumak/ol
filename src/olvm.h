@@ -16,25 +16,24 @@
 	extern "C" {
 #endif
 
-// тут игра слов OL:
-//	сокращение от Owl-Lisp,
-//	нулевой порог вхождения (0L - число 0) (Lisp - ОЧЕНЬ простой язык),
-//	тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков),
-//	ol' - сокращение от old (старый), отсылка к тому, что lisp - один из старейших языков.
-struct OLvm;
+// игра слов:
+// OL -
+//	* сокращение от предка - Owl Lisp'a,
+//	* нулевой порог вхождения (0L - число 0) (Lisp - ОЧЕНЬ простой язык),
+//	* тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков),
+//	* ol' - сокращение от old (старый), отсылка к тому, что lisp - один из старейших языков.
+struct ol_t;
 
 // internal option
 #define NO_SECCOMP
-//efine STANDALONE // самостоятельный бинарник без потоков
 
 // set for 1 to disable overflow check for binary images in release
 #define NO_NAT_OVERFLOW_CHECK 0
 
-struct OLvm*
-OL_new(unsigned char* bootstrap, void (*release)(void*));
-void OL_free(struct OLvm* ol);
+struct ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
+struct ol_t* OL_free(struct ol_t* ol);
 
-void* OL_eval(struct OLvm* handle, int argc, char** argv);
+void* OL_eval(struct ol_t* ol, int argc, char** argv);
 
 //int olvm(unsigned char* bootstrap, void (*release)(void*));
 
@@ -67,12 +66,12 @@ public:
 //	int gets(char *message, int n) { vm_gets(vm, message, n);
 };
 #else
-#define OL struct OLvm
-//typedef struct OL OL;
+//#define OL struct OLvm
+typedef struct ol_t OL;
 #endif
 
 //-- end of header
 #ifdef __cplusplus
 	}
 #endif
-#endif//__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
+#endif//__OLVM_H__

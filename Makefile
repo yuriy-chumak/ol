@@ -38,44 +38,59 @@ uninstall:
 
 # config temporary disabled
 config: config/HAS_DLOPEN\
-        config/HAS_SOCKETS
+        config/HAS_SOCKETS\
+        config/XVisualInfo config/XEvent
+
+
+exists = \
+	@printf "Checking for $2 support... ";\
+	if echo "\
+	   \#include $1\n\
+	   char $2();\
+	   \
+	   int main() {\
+	      return $2();\
+	      return 0;\
+	   }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
+		echo "Ok.";\
+		printf 1 > $@;\
+	else\
+		echo "\033[0;31mNot found.\033[0m";\
+		printf 0 > $@;\
+	fi
 
 config/HAS_DLOPEN:
-	@printf "Checking for dlopen()... "
-	@if echo "\
-	    char dlopen();\
-	    \
-	    int main() {\
-	    return dlopen();\
-	    return 0;\
-	    }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
-		echo "Ok.";\
-		printf 1 > $@;\
-	else\
-		echo "\033[0;31mNot found.\033[0m";\
-		printf 0 > $@;\
-	fi
-
+	$(call exists, <stdlib.h>,dlopen)
 config/HAS_SOCKETS:
-	@printf "Checking for sockets support... "
-	@if echo "\
-	    char socket();\
-	    \
-	    int main() {\
-	    return socket();\
-	    return 0;\
-	    }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
-		echo "Ok.";\
-		printf 1 > $@;\
+	$(call exists, <stdlib.h>,socket)
+
+
+sizeof = \
+	@printf "Determining size of $2 structure... ";\
+	if echo "\
+	   \#include $1\n\
+	   int main() {\
+	      return (int)sizeof($2);\
+	   }" | gcc -xc - -ldl -o /tmp/$2.$$$$; then\
+		echo "Ok."; \
+		chmod u+x /tmp/$2.$$$$;\
+		/tmp/$2.$$$$; printf "(define sizeof:$2 %d)" $$? >$@;\
+		rm -f /tmp/$2.$$$$;\
 	else\
-		echo "\033[0;31mNot found.\033[0m";\
+		echo "\033[0;31mError.\033[0m";\
 		printf 0 > $@;\
 	fi
 
+config/XEvent:
+	$(call sizeof, <X11/Xutil.h>,XEvent)
+config/XVisualInfo:
+	$(call sizeof, <X11/Xutil.h>,XVisualInfo)
 
+
+# ol
 ol: src/olvm.c src/boot.c
 	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ -s \
-	-Xlinker --export-dynamic -ldl
+	   -Xlinker --export-dynamic -ldl
 	@echo Ok.
 
 
@@ -84,7 +99,7 @@ vm: src/olvm.c
 	-Xlinker --export-dynamic -ldl
 	@echo Ok.
 
-	
+
 #src/repl.o: repl
 #	objcopy -B i386 -I binary -O default repl src/repl.o
 src/boot.c: repl vm

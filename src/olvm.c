@@ -49,7 +49,7 @@
 // https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
 #include <features.h>
 #ifndef __GNUC__
-#	warning "This code tested only under Gnu C compiler"
+#	warning "!!! This code built only by Gnu C compiler"
 #else
 #	define GCC_VERSION (__GNUC__ * 10000 \
 	                  + __GNUC_MINOR__ * 100 \
@@ -62,6 +62,10 @@
 #		error "Code require c99 enabled (-std=c99)"
 #	endif
 #endif
+
+#define DO_PRAGMA(x) _Pragma (#x)
+#define TODO(x) DO_PRAGMA(message ("TODO - " #x))
+//TODO(Some text to put in compile log)
 
 // check this for nested functions:
 //	https://github.com/Leushenko/C99-Lambda
@@ -331,7 +335,7 @@ int fifo_feof(struct fifo* f)
 
 // --------------------------------------------------------
 // -=( dl )=-----------------------------------------------
-#ifdef HAS_DLOPEN
+#if HAS_DLOPEN
 // интерфейс к динамическому связыванию системных библиотек
 
 #ifdef _WIN32
@@ -391,7 +395,7 @@ char* dlerror() {
 #	include <dlfcn.h>
 #endif
 
-#endif//EMBEDDED_VM
+#endif//HAS_DLOPEN
 
 
 // ----------
@@ -402,7 +406,7 @@ char* dlerror() {
 
 // unsigned int that is capable of storing a pointer
 // основной тип даных, зависит от разрядности машины
-// based on C99 standard, <stdint.h>
+//  ,based on C99 standard, <stdint.h>
 typedef uintptr_t word;
 
 // descriptor format:
@@ -418,7 +422,7 @@ typedef uintptr_t word;
 //  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
 //	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
 //
-// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
+// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект
 //                       .------------> 24-bit payload if immediate
 //                       |      .-----> type tag if immediate
 //                       |      |.----> immediateness
@@ -448,7 +452,7 @@ typedef struct object
 		word ref[1];
 	};
 } __attribute__ ((aligned(sizeof(word)), packed)) object; // or  ?
-#pragma pack(pop)*/
+#pragma pack(pop)//*/
 
 #define IPOS                        8  // offset of immediate payload
 #define SPOS                        16 // offset of size bits in header
@@ -883,7 +887,8 @@ static word gc(heap_t *heap, int size, word regs) {
 					newobject += h;
 				}
 				else {
-					while (--h) *++newobject = *++old;
+					while (--h)
+						*++newobject = *++old;
 					old++;
 					newobject++;
 				}
@@ -896,10 +901,11 @@ static word gc(heap_t *heap, int size, word regs) {
 
 	// gc:
 	word *fp = heap->fp;
-
-	*fp = make_header(2, TTUPLE); // fyi: в *fp спокойно можно оставить мусор
 	word *root = &fp[1]; // skip header
 //	word *root = fp + 1; // same
+
+//в *fp спокойно можно оставить мусор
+	*fp = make_header(2, TTUPLE);
 
 	// непосредственно сам GC
 	clock_t uptime;
@@ -948,12 +954,13 @@ static word gc(heap_t *heap, int size, word regs) {
 				nfree = (word) heap->end - regs;
 			}
 		}
-		heap->genstart = (word*)regs; /* always start newobj generation */
-	} else if (nfree < MINGEN || nfree < size*W*2) {
-		heap->genstart = heap->begin; /* start full generation */
+		heap->genstart = (word*)regs; // always start newobj generation
+	} else
+	if (nfree < MINGEN || nfree < size*W*2) {
+		heap->genstart = heap->begin; // start full generation
 		return gc(heap, size, regs);
 	} else {
-		heap->genstart = (word*)regs; /* start newobj generation */
+		heap->genstart = (word*)regs; // start newobj generation
 	}
 	return regs;
 }
@@ -1009,16 +1016,46 @@ void set_signal_handler() {
 #endif
 }
 
+/***********************************************************************************
+ * OL
+ */
+struct ol_t
+{
+	struct heap_t heap; // must be first member
+	word max_heap_size; // max heap size in MB
+
+	// вызвать GC если в памяти мало места в КБ
+	// для безусловного вызова передать -1
+	void (*gc)(int kb);
+
+#if 0//EMBEDDED_VM
+	pthread_t tid;
+	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
+	struct fifo o;
+#endif
+};
+
+/* структура с параметрами для запуска виртуальной машины (unused)
+struct args
+{
+	struct OL *vm;
+
+	void *userdata;
+	volatile char signal; // сигнал, что машина запустилась
+};*/
+
+
+#define TICKS                       10000 // # of function calls in a thread quantum
 
 #define OCLOSE(proctype)            { \
-	word size = *ip++, tmp; word *T = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; \
-	*T = make_header(size, proctype); T[1] = tmp; tmp = 2; \
+	word size = *ip++, tmp; word *T = new (size, proctype); \
+	tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 #define CLOSE1(proctype)            { \
-	word size = *ip++, tmp; word *T = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; \
-	*T = make_header(size, proctype); T[1] = tmp; tmp = 2; \
+	word size = *ip++, tmp; word *T = new (size, proctype); \
+	tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-#define TICKS                       10000 /* # of function calls in a thread quantum  */
+
 #define ERROR(opcode, a, b)         { \
 	R[4] = F(opcode);\
 	R[5] = (word) a; \
@@ -1040,38 +1077,12 @@ void set_signal_handler() {
 #define R5                          R[5]
 #define R6                          R[6]
 
-// OL
-struct OLvm
-{
-	word max_heap_size; // max heap size in MB
-	struct heap_t heap;
-
-#if 0//EMBEDDED_VM
-	pthread_t tid;
-	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
-	struct fifo o;
-#endif
-
-};
-
-
-// структура с параметрами для запуска виртуальной машины
-struct args
-{
-	struct OLvm *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
-
-	void *userdata;
-	volatile char signal;// сигнал, что машина запустилась
-};
-
-// args + 0 = (list "arg0" "arg 1")
-// args + 3 = objects list
-// Несколько замечаний по этой функции:
+// Несколько замечаний по WIN32::ThreadProc
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
 
 static //__attribute__((aligned(8)))
-void* runtime(OL* ol, word* userdata) // heap top
+void* runtime(OL* ol, word* userdata) // userdata - is command line
 {
 	heap_t* heap;
 	register word *fp; // memory allocation pointer
@@ -1079,15 +1090,11 @@ void* runtime(OL* ol, word* userdata) // heap top
 
 	int max_heap_size;
 
-	// регистры виртуальной машины
+	// регистры виртуальной машины:
 	word R[NR]; // 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
+
 	int breaked = 0;
-
 //	int seccompp = 0;
-
-	// allocation pointer (top of allocated heap)
-//	OL* ol         = ((struct args*)args)->vm;
-//	void* userdata = ((struct args*)args)->userdata; // command line
 
 #	if 0//EMBEDDED_VM
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
@@ -1104,11 +1111,11 @@ void* runtime(OL* ol, word* userdata) // heap top
 	// все, машина инициализирована, отсигналимся
 //	((struct args*)args)->signal = 1;
 
-	// thinkme: может стоит искать и загружать какой-нибудь main() ?
 	word* ptrs = (word*) heap->begin;
 	int nobjs = hdrsize(ptrs[0]) - 1;
 
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
+	// thinkme: может стоит искать и загружать какой-нибудь main() ?
 	word* this = (word*) ptrs[nobjs];
 
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
@@ -1119,9 +1126,30 @@ void* runtime(OL* ol, word* userdata) // heap top
 	R[4] = (word) userdata; // command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
 
+	void dogc(int size)
+	{
+		int p = 0, N = NR;
+		// создадим в топе временный объект со значениями всех регистров
+		word *regs = (word*) new_tuple (N + 1);
+		while (++p <= N) regs[p] = R[p-1];
+		regs[p] = (word) this;
+		// выполним сборку мусора
+		heap->fp = fp;
+		regs = (word*)gc(heap, size, (word)regs); // GC занимает 0-15 ms
+		fp = heap->fp;
+		// и восстановим все регистры, уже подкорректированные сборщиком
+		this = (word *) regs[p];
+		while (--p >= 1) R[p-1] = regs[p];
+
+		// закончили, почистим за собой:
+		ol->heap.fp = fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
+	}
+	ol->gc = ({ void $(int kb) {
+		if (kb == 0 || fp >= heap->end - kb * 1024) dogc(kb/W);
+	}$; });
+
 	int bank = 0; // ticks deposited at interop
 	int ticker = slice; // any initial value ok
-
 
 	// instruction pointer
 	unsigned char *ip = 0;
@@ -1262,24 +1290,6 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 	}
 
 invoke:; // nargs and regs ready, maybe gc and execute ob
-	void dogc(int size)
-	{
-		int p = 0, N = NR;
-		// создадим в топе временный объект со значениями всех регистров
-		word *regs = (word*) new_tuple (N + 1);
-		while (++p <= N) regs[p] = R[p-1];
-		regs[p] = (word) this;
-		// выполним сборку мусора
-		heap->fp = fp;
-		regs = (word*)gc(heap, size, (word)regs); // GC занимает 0-15 ms
-		fp = heap->fp;
-		// и восстановим все регистры, уже подкорректированные сборщиком
-		this = (word *) regs[p];
-		while (--p >= 1) R[p-1] = regs[p];
-
-		// закончили, почистим за собой:
-		fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
-	}
 	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
 	//  регистры, мы их складываем в память во временный кортеж.
 	if (/*forcegc || */(fp >= heap->end - 16 * 1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
@@ -3033,10 +3043,11 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
+	heap->begin =
 	heap->genstart = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
-	if (!heap->genstart) {
+	if (!heap->begin) {
 		fprintf(stderr, "Failed to allocate %d words for vm memory\n", required_memory_size);
-		goto fail;
+		return OL_free(handle);
 	}
 	// ok:
 	heap->begin = heap->genstart;
@@ -3057,17 +3068,13 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 
 	heap->fp = fp;
 	return handle;
-
-fail:
-	free(heap->begin);
-	free(handle);
-	return 0;
 }
 
-void OL_free(OL* ol)
+OL* OL_free(OL* ol)
 {
 	free(ol->heap.begin);
 	free(ol);
+	return 0;
 }
 
 // ===============================================================
@@ -3678,3 +3685,13 @@ word pinvoke(OL* self, word arguments)
 	return result;
 }
 #endif//HAS_PINVOKE
+
+__attribute__
+	((__visibility__("default")))
+word testcall(OL* self, word arguments)
+{
+	fprintf(stderr, "testcall>: fp=%p\n", self->heap.fp);
+	self->gc(256);
+	fprintf(stderr, "testcall<: fp=%p\n", self->heap.fp);
+	return IFALSE;
+}

@@ -1,4 +1,7 @@
-#!/bin/ol
+#!./ol
+(import (owl pinvoke))
+
+;((dlsym+ (dlopen null 1) "testcall") 1 2 3)
 
 ;(import (owl primop))
 ;(exec "curl http://google.com")
