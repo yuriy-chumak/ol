@@ -16,8 +16,12 @@
 ; 
 
 (import
+   (owl random) (owl random!)
    (etc bisect)
    (scheme misc))
+
+(define (rand unused max)
+   (values unused (rand! max)))
 
 ;; Params
 
@@ -349,9 +353,10 @@
          ∀ l ∊ List 
             l = (map car (zip cons l l))
 
-      theorem ncr-def 
-         ∀ a b ∊ Byte 
-            (>= a b) ⇒ (ncr a b) = (/ (! a) (* (! b) (! (- a b))))
+;FIXME!
+;      theorem ncr-def 
+;         ∀ a b ∊ Byte 
+;            (>= a b) ⇒ (ncr a b) = (/ (! a) (* (! b) (! (- a b))))
 
       theorem halve-1
          ∀ l ∊ List 
@@ -543,7 +548,7 @@
                   ;(print (list (caar tests) 'ok 'with env))
                   (loop rs (cdr tests) failed))
                (begin
-                  ;(print (list (caar tests) 'bad 'with env))
+                  (print (list (caar tests) 'bad 'with env))
                   (loop rs (cdr tests) 
                      (cons (cons (caar tests) env) failed))))))))
 

@@ -6,6 +6,7 @@
 
 (import (owl math))
 (import (owl math-extra))
+(import (owl random))
 
 ; fixme, put abs to math
 
@@ -166,8 +167,9 @@
 			(lambda (a b) (= (+ a (+ b 1)) (+ (+ a b) 1))))
 		(tuple 'binary any any 'mul-trans-two 
 			(lambda (a b) (= (* a (* b 2)) (* (* a b) 2))))
-		(tuple 'binary any any-nz 'div-twice 
-			(lambda (a b)	(= (/ (/ a b) b) (/ a (* b b)))))
+; FIXME!
+;		(tuple 'binary any any-nz 'div-twice 
+;			(lambda (a b)	(= (/ (/ a b) b) (/ a (* b b)))))
 		(tuple 'binary int int-nz 'rem-abs-less 
 			(lambda (a b) (< (abs (rem a b)) (abs b))))
 		(tuple 'binary int int-nz 'a=qb+r 	

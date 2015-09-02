@@ -1,4 +1,6 @@
 (import (owl primop))
+(import (owl random))
+
 (define (small-range? lo hi)
    (< (- hi lo) 100))
 

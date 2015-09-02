@@ -1,3 +1,5 @@
+(import (owl random))
+
 (let loop ((rst (seed->rands (time-ms))) (n 0))
    (if (= n 10)
       (print "ok")

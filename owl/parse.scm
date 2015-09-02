@@ -256,7 +256,8 @@
       ; are usually used in functional parsers.
 
       (define (stdio-port? port)
-         (has? (list stdin stdout stderr) port))
+         (let ((stdioports (list stdin stdout stderr)))
+            (has? stdioports port)))
 
       ; rchunks fd block? -> rchunks' end?
       ;; bug: maybe-get-input should now use in-process mail queuing using return-mails interop at the end if necessary 

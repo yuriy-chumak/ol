@@ -868,10 +868,12 @@
          (λ () (fd->exp-stream stdin "> " sexp-parser syntax-fail bounced?)))
 
       (define (repl-trampoline repl env)
+;        (print "args: " (get env '*vm-args* #f))
          (let boing ((repl repl) (env env) (bounced? #false))
+;           (print "boing-" bounced?)
             (lets
                ((stdin (stdin-sexp-stream bounced?))
-                (stdin  
+                (stdin
                   (if bounced? 
                      (begin ;; we may need to reprint a prompt here
                         (if (env-get env '*interactive* #false) 
@@ -883,17 +885,17 @@
                   ((ok val env)
                      ;; the end
                      (if (env-get env '*interactive* #false)
-                        (print "bye bye _o/~"))
+                        (print "bye bye :/"))
                      (halt 0))
                   ((error reason env)
                      ; better luck next time
                      (cond
                         ((list? reason)
                            (print-repl-error reason)
-                           (boing repl env #true))
+                           (boing repl env #false))
                         (else
                            (print reason)
-                           (boing repl env #true))))
+                           (boing repl env #false))))
                   (else is foo
                      (print "Repl is rambling: " foo)
                      (boing repl env #true))))))

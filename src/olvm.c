@@ -3,11 +3,11 @@
  * Copyright (c) 2014 Aki Helin
  * Copyright (c) 2014, 2015 Yuriy Chumak
  *
+ * Simple purely functional Lisp, mostly
+ *
  * Version 1.0.0 RC2
- * simple purely functional Lisp, mostly
- *
- *
  * ~~~~~~~~~~~~~~~~~
+ *
  * This program is free software;  you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of
@@ -36,7 +36,7 @@
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
 // математику считать так: (receive (fx+ 16777214 1) (lambda (hi lo) (list hi lo)))
 //                   либо: (let* ((hi lo (fx+ 16777214 1))) (...))
-// при превышении выдает мусор
+// при превышении выдает, естественно, мусор
 //
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
 //      http://igorkov.org/pdf/Z80-Central-Processor-Unit.pdf
@@ -57,23 +57,32 @@
 
 #include "olvm.h"
 
+// defaults. please don't change. use -DOPTIONSYMBOL gcc command line option instead
+#ifndef HAS_SOCKETS
+#define HAS_SOCKETS 1 // system sockets support
+#endif
+
+#ifndef HAS_DLOPEN
+#define HAS_DLOPEN 1  // dlopen/dlsym support
+#endif
+
+#ifndef HAS_PINVOKE
+#define HAS_PINVOKE 1 // pinvoke (for dlopen/dlsym) support
+#endif
+
+#ifndef EMBEDDED_VM   // use as embedded vm in project
+#define EMBEDDED_VM 0
+#endif
+
+
 // На данный момент поддерживаются две операционные системы:
 //  Windows, Linux
 // Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
 
-// CLANG compatibility layer
-#ifndef __has_feature         // Optional of course.
-#	define __has_feature(x) 0  // Compatibility with non-clang compilers.
-#endif
-#ifndef __has_extension
-#	define __has_extension __has_feature // Compatibility with pre-3.0 compilers.
-#endif
-
-
 // https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
 #include <features.h>
 #ifndef __GNUC__
-#	warning "This code tested only under Gnu C compiler"
+#	warning "!!! This code built only by Gnu C compiler"
 #else
 #	define GCC_VERSION (__GNUC__ * 10000 \
 	                  + __GNUC_MINOR__ * 100 \
@@ -87,22 +96,19 @@
 #	endif
 #endif
 
+#define DO_PRAGMA(x) _Pragma (#x)
+#define TODO(x) DO_PRAGMA(message ("TODO - " #x))
+//TODO(Some text to put in compile log)
+
 // check this for nested functions:
 //	https://github.com/Leushenko/C99-Lambda
-// define is reserved, let use defun
-#ifdef __clang__
-#define defun(name, returns, ...) returns (^name)__VA_ARGS__ = ^ __VA_ARGS__
-#else
-#define defun(name, returns, ...) returns name __VA_ARGS__
-#define __block // no required
-#endif
 
 // posix or not:
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
 //
 // PORT: равка, с типом type-port и размером 2
-// todo: ?переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
+// todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
 //  а изменяемые у нас вектора
 
 // http://joeq.sourceforge.net/about/other_os_java.html
@@ -133,7 +139,7 @@
 
 #include <sys/utsname.h> // uname
 
-//#define __USE_POSIX199309 // for nanosleep
+#define __USE_POSIX199309 // for nanosleep
 #include <time.h>
 
 // ?
@@ -141,6 +147,7 @@
 #	define O_BINARY 0
 #endif
 
+// temp warning fixes
 #ifndef __useconds_t
 #define __useconds_t unsigned int
 #endif
@@ -365,7 +372,7 @@ int fifo_feof(struct fifo* f)
 
 // --------------------------------------------------------
 // -=( dl )=-----------------------------------------------
-#ifdef HAS_DLOPEN
+#if HAS_DLOPEN
 // интерфейс к динамическому связыванию системных библиотек
 
 #ifdef _WIN32
@@ -425,7 +432,7 @@ char* dlerror() {
 #	include <dlfcn.h>
 #endif
 
-#endif//EMBEDDED_VM
+#endif//HAS_DLOPEN
 
 
 // ----------
@@ -436,19 +443,8 @@ char* dlerror() {
 
 // unsigned int that is capable of storing a pointer
 // основной тип даных, зависит от разрядности машины
-// based on C99 standard, <stdint.h>
+//  ,based on C99 standard, <stdint.h>
 typedef uintptr_t word;
-
-typedef struct OL
-{
-	word *fp; // allocation pointer (top of allocated heap)
-
-#if 0//EMBEDDED_VM
-	pthread_t tid;
-	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
-	struct fifo o;
-#endif
-} OL;
 
 // descriptor format:
 // заголовок объекта, то, что лежит у него в ob[0] (*ob)
@@ -463,7 +459,7 @@ typedef struct OL
 //  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
 //	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
 //
-// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на объект
+// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект
 //                       .------------> 24-bit payload if immediate
 //                       |      .-----> type tag if immediate
 //                       |      |.----> immediateness
@@ -493,7 +489,7 @@ typedef struct object
 		word ref[1];
 	};
 } __attribute__ ((aligned(sizeof(word)), packed)) object; // or  ?
-#pragma pack(pop)*/
+#pragma pack(pop)//*/
 
 #define IPOS                        8  // offset of immediate payload
 #define SPOS                        16 // offset of size bits in header
@@ -577,9 +573,9 @@ typedef struct object
 #define TTHIS                       44
 #define TRAWP                       45
 
-#define INULL                       make_immediate(0, TCONST)
-#define IFALSE                      make_immediate(1, TCONST)
-#define ITRUE                       make_immediate(2, TCONST)
+#define IFALSE                      make_immediate(0, TCONST)
+#define ITRUE                       make_immediate(1, TCONST)
+#define INULL                       make_immediate(2, TCONST)
 #define IEMPTY                      make_immediate(3, TCONST) /* empty ff */
 #define IEOF                        make_immediate(4, TCONST)
 #define IHALT                       INULL /* FIXME: adde a distinct IHALT */
@@ -763,10 +759,10 @@ word*p = new (size);\
 /* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
 #define new_bytevector(length, type) ({\
 	int size = (length);\
-	int words = (size / W) + ((size % W) ? 2 : 1);\
+	int words = (size + W - 1) / W;\
 	int pads = W - (size % W);\
 	\
-word* p = new_raw_object(words, type, pads);\
+word* p = new_raw_object(words + 1, type, pads);\
 	/*return*/ p;\
 })
 
@@ -871,7 +867,7 @@ wdiff adjust_heap(heap_t *heap, int cells)
 //__attribute__ ((aligned(sizeof(int))))
 static word gc(heap_t *heap, int size, word regs) {
 	// просматривает список справа налево
-	defun(mark, void,(word *pos, word *end))
+	void mark(word *pos, word *end)
 	{
 	//	marked = 0;
 	//	assert(pos is NOT flagged)
@@ -901,10 +897,10 @@ static word gc(heap_t *heap, int size, word regs) {
 			else
 				pos--;
 		}
-	};
+	}
 
 	// на самом деле - compact & sweep
-	defun(sweep, word*,(word* end))
+	word *sweep(word* end)
 	{
 		word *old, *newobject;
 
@@ -928,7 +924,8 @@ static word gc(heap_t *heap, int size, word regs) {
 					newobject += h;
 				}
 				else {
-					while (--h) *++newobject = *++old;
+					while (--h)
+						*++newobject = *++old;
 					old++;
 					newobject++;
 				}
@@ -937,14 +934,15 @@ static word gc(heap_t *heap, int size, word regs) {
 				old += hdrsize(*old);
 		}
 		return newobject;
-	};
+	}
 
 	// gc:
 	word *fp = heap->fp;
-
-	*fp = make_header(2, TTUPLE); // fyi: в *fp спокойно можно оставить мусор
 	word *root = &fp[1]; // skip header
 //	word *root = fp + 1; // same
+
+//в *fp спокойно можно оставить мусор
+	*fp = make_header(2, TTUPLE);
 
 	// непосредственно сам GC
 	clock_t uptime;
@@ -993,12 +991,13 @@ static word gc(heap_t *heap, int size, word regs) {
 				nfree = (word) heap->end - regs;
 			}
 		}
-		heap->genstart = (word*)regs; /* always start newobj generation */
-	} else if (nfree < MINGEN || nfree < size*W*2) {
-		heap->genstart = heap->begin; /* start full generation */
+		heap->genstart = (word*)regs; // always start newobj generation
+	} else
+	if (nfree < MINGEN || nfree < size*W*2) {
+		heap->genstart = heap->begin; // start full generation
 		return gc(heap, size, regs);
 	} else {
-		heap->genstart = (word*)regs; /* start newobj generation */
+		heap->genstart = (word*)regs; // start newobj generation
 	}
 	return regs;
 }
@@ -1054,16 +1053,46 @@ void set_signal_handler() {
 #endif
 }
 
+/***********************************************************************************
+ * OL
+ */
+struct ol_t
+{
+	struct heap_t heap; // must be first member
+	word max_heap_size; // max heap size in MB
+
+	// вызвать GC если в памяти мало места в КБ
+	// для безусловного вызова передать -1
+	void (*gc)(int kb);
+
+#if 0//EMBEDDED_VM
+	pthread_t tid;
+	struct fifo i; // обе очереди придется держать здесь, так как данные должны быть доступны даже после того, как vm остановится.
+	struct fifo o;
+#endif
+};
+
+/* структура с параметрами для запуска виртуальной машины (unused)
+struct args
+{
+	struct OL *vm;
+
+	void *userdata;
+	volatile char signal; // сигнал, что машина запустилась
+};*/
+
+
+#define TICKS                       10000 // # of function calls in a thread quantum
 
 #define OCLOSE(proctype)            { \
-	word size = *ip++, tmp; word *T = new (size); tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; \
-	*T = make_header(size, proctype); T[1] = tmp; tmp = 2; \
+	word size = *ip++, tmp; word *T = new (size, proctype); \
+	tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 #define CLOSE1(proctype)            { \
-	word size = *ip++, tmp; word *T = new (size); tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; \
-	*T = make_header(size, proctype); T[1] = tmp; tmp = 2; \
+	word size = *ip++, tmp; word *T = new (size, proctype); \
+	tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-#define TICKS                       10000 /* # of function calls in a thread quantum  */
+
 #define ERROR(opcode, a, b)         { \
 	R[4] = F(opcode);\
 	R[5] = (word) a; \
@@ -1085,58 +1114,24 @@ void set_signal_handler() {
 #define R5                          R[5]
 #define R6                          R[6]
 
-// структура с параметрами для запуска виртуальной машины
-struct args
-{
-	OL *vm;	// виртуальная машина (из нее нам нужны буфера ввода/вывода)
-
-	// структура памяти VM. распределяется еще до запуска самой машины
-	word max_heap_size; // max heap size in MB
-	struct heap_t heap;
-
-	void *userdata;
-	volatile char signal;// сигнал, что машина запустилась
-};
-
-// args + 0 = (list "arg0" "arg 1")
-// args + 3 = objects list
-// Несколько замечаний по этой функции:
+// Несколько замечаний по WIN32::ThreadProc
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
 
 static //__attribute__((aligned(8)))
-void* runtime(void *args) // heap top
+void* runtime(OL* ol, word* userdata) // userdata - is command line
 {
-	__block heap_t heap;
-	__block register word *fp; // memory allocation pointer
-	__block int slice = TICKS; // default thread slice (n calls per slice)
+	heap_t* heap;
+	register word *fp; // memory allocation pointer
+	int slice = TICKS; // default thread slice (n calls per slice)
 
 	int max_heap_size;
 
-	// регистры виртуальной машины
+	// регистры виртуальной машины:
 	word R[NR]; // 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 
-#ifdef __clang__
-	__block
-	word* Rp = R;//malloc(sizeof(word) * NR);
-#define R Rp
-#endif
-
 	int breaked = 0;
-
 //	int seccompp = 0;
-
-	// инициализируем локальную память
-	heap.begin    = ((struct args*)args)->heap.begin;
-	heap.end      = ((struct args*)args)->heap.end;
-	heap.genstart = ((struct args*)args)->heap.genstart; // разделитель Old Generation и New Generation
-
-	max_heap_size = ((struct args*)args)->max_heap_size; // max heap size in MB
-
-	// allocation pointer (top of allocated heap)
-	fp            = ((struct args*)args)->vm->fp;
-	OL* ol        = ((struct args*)args)->vm;
-
 
 #	if 0//EMBEDDED_VM
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
@@ -1144,26 +1139,51 @@ void* runtime(void *args) // heap top
 	fifo *fo =&((struct args*)args)->vm->i;
 #	endif
 
-	void *userdata = ((struct args*)args)->userdata; // command line
+	// инициализируем локальную память
+	heap          = &ol->heap;
+	max_heap_size =  ol->max_heap_size; // max heap size in MB
+
+	fp = heap->fp;
 
 	// все, машина инициализирована, отсигналимся
-	((struct args*)args)->signal = 1;
+//	((struct args*)args)->signal = 1;
 
-	// thinkme: может стоит искать и загружать какой-нибудь main() ?
-	word* ptrs = (word*)userdata + 3;
+	word* ptrs = (word*) heap->begin;
 	int nobjs = hdrsize(ptrs[0]) - 1;
 
 	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
-	__block
+	// thinkme: может стоит искать и загружать какой-нибудь main() ?
 	word* this = (word*) ptrs[nobjs];
 
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	for (int i = i; i < NR; i++)
 		R[i] = INULL;
-	R[0] = IFALSE; // MCP - master control program
+	R[0] = IFALSE; // MCP - master control program (пока нету)
 	R[3] = IHALT;  // continuation
 	R[4] = (word) userdata; // command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
+
+	void dogc(int size)
+	{
+		int p = 0, N = NR;
+		// создадим в топе временный объект со значениями всех регистров
+		word *regs = (word*) new_tuple (N + 1);
+		while (++p <= N) regs[p] = R[p-1];
+		regs[p] = (word) this;
+		// выполним сборку мусора
+		heap->fp = fp;
+		regs = (word*)gc(heap, size, (word)regs); // GC занимает 0-15 ms
+		fp = heap->fp;
+		// и восстановим все регистры, уже подкорректированные сборщиком
+		this = (word *) regs[p];
+		while (--p >= 1) R[p-1] = regs[p];
+
+		// закончили, почистим за собой:
+		ol->heap.fp = fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
+	}
+	ol->gc = ({ void $(int kb) {
+		if (kb == 0 || fp >= heap->end - kb * 1024) dogc(kb/W);
+	}$; });
 
 	int bank = 0; // ticks deposited at interop
 	int ticker = slice; // any initial value ok
@@ -1218,8 +1238,7 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 			else
 			if ((type & 60) == TFF) { //((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
 
-				defun(get, word, (word *ff, word key, word def)) // ff assumed to be valid
-				{
+				word get(word *ff, word key, word def) { // ff assumed to be valid
 					while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
 						word this = ff[1], hdr;
 						if (this == key)
@@ -1238,7 +1257,7 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 						}
 					}
 					return def;
-				};
+				}
 
 				word *cont = (word *) R[3];
 				switch (acc)
@@ -1308,32 +1327,14 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 	}
 
 invoke:; // nargs and regs ready, maybe gc and execute ob
-	defun(dogc, void, (int size))
-	{
-		int p = 0, N = NR;
-		// создадим в топе временный объект со значениями всех регистров
-		word *regs = (word*) new_tuple (N + 1);
-		while (++p <= N) regs[p] = R[p-1];
-		regs[p] = (word) this;
-		// выполним сборку мусора
-		heap.fp = fp;
-		regs = (word*)gc(&heap, size, (word)regs); // GC занимает 0-15 ms
-		fp = heap.fp;
-		// и восстановим все регистры, уже подкорректированные сборщиком
-		this = (word *) regs[p];
-		while (--p >= 1) R[p-1] = regs[p];
-
-		// закончили, почистим за собой:
-		fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
-	};
 	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
 	//  регистры, мы их складываем в память во временный кортеж.
-	if (/*forcegc || */(fp >= heap.end - 16 * 1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
+	if (/*forcegc || */(fp >= heap->end - 16 * 1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
 		dogc (16 * 1024 * sizeof(word));
 		ip = (unsigned char *) &this[1];
 
 		// проверим, не слишком ли мы зажрались
-		word heapsize = (word) heap.end - (word) heap.begin;
+		word heapsize = (word) heap->end - (word) heap->begin;
 		if ((heapsize / (1024*1024)) > max_heap_size)
 			breaked |= 8; // will be passed over to mcp at thread switch
 
@@ -1394,6 +1395,13 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 #	define CLOCK 61
 #	define SYSCALL 63
+#		define SYSCALL_READ 0
+#		define SYSCALL_WRITE 1
+#		define SYSCALL_OPEN 2
+#		define SYSCALL_CLOSE 3
+
+#		define SYSCALL_IOCTL 16
+#		define SYSCALL_IOCTL_TIOCGETA 19
 
 
 	// tuples, trees
@@ -1431,10 +1439,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			}
 			goto apply;
 
-		case 3: OCLOSE(TCLOS); continue;
-		case 4: OCLOSE(TPROC); continue;
-		case 6: CLOSE1(TCLOS); continue;
-		case 7: CLOSE1(TPROC); continue;
 
 		case GOTO:
 			this = (word *)A0; acc = ip[1];
@@ -1561,18 +1565,19 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			ip += 4; break;
 
 
-		case JEQ: // jeq a b o: extended jump if equal
+		case JEQ: /* jeq a b o, extended jump  */
 			if (A0 == A1)
 				ip += (ip[3] << 8) + ip[2]; // little-endian
 			ip += 4; break;
 
-		case JP:    // {JZ, JN, JT, JF} a hi lo
+		case JP:    // JZ, JN, JT, JF a hi lo
 			// was: FIXME, convert this to jump-const <n> comparing to make_immediate(<n>,TCONST),
 			//  но я считаю, что надо просто добавить еще одну команду, а эти так и оставить
 			if (A0 == I[op>>6])
 				ip += (ip[2] << 8) + ip[1]; // little-endian
 			ip += 3; break;
 
+		// используется в (func ...) в primop.scm
 		case JF2: { // jmp-nargs (>=) a hi lo
 			int arity = ip[0];
 			if (acc == arity) {
@@ -1592,6 +1597,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				ip += (ip[1] << 8) | ip[2];
 			ip += 3; break;
 		}
+
+
+		case 3: OCLOSE(TCLOS); continue;
+		case 4: OCLOSE(TPROC); continue;
+		case 6: CLOSE1(TCLOS); continue;
+		case 7: CLOSE1(TPROC); continue;
 
 		/************************************************************************************/
 		// более высокоуровневые конструкции
@@ -2103,9 +2114,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				int size = sftoi (b);
 
 				if (size < 0)
-					size = (heap.end - fp) * W - MEMPAD;
+					size = (heap->end - fp) * W - MEMPAD;
 				else
-				if (size > (heap.end - fp) * W - MEMPAD)
+				if (size > (heap->end - fp) * W - MEMPAD)
 					dogc(size);
 
 				int got;
@@ -2229,8 +2240,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				int portfd = car (a);
 				int ioctl = uftoi(b);
 
-				switch (ioctl)
-				{
+				switch (ioctl) {
+
 #					ifdef SYSCALL_IOCTL_TIOCGETA
 					case SYSCALL_IOCTL_TIOCGETA: { // TIOCGETA
 						struct termios t;
@@ -2403,25 +2414,31 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 					void *function = (void*) car(A);  assert (function);
 
-					ol->fp = fp;
+					ol->heap.fp = fp;
 					result = ((word (*)  (OL*, word*))function) (ol, B);
-					fp = ol->fp;
+					fp = ol->heap.fp;
 					break;
 				}
 #endif
 				// if a is string:
 				if (is_string(a)) {
 #if 1
-					FILE* pipe = popen((const char*)car(a), "r");
+					FILE* pipe = popen((const char*)&car(a), "r");
+					if (! pipe)
+						break;
 
 					char* p = (char*) &car(fp);
-					while (!feof(pipe)) {
-						// todo: check for available memory, gc()
-						p += fread(p, 1, 1024, pipe);
-					}
+					int available = heap->end - fp - W;
+//					while (!feof(pipe)) {
+//						// todo: check for available memory, gc()
+//						p += fread(p, 1, 1024, pipe);
+//					}
+					p += fread(p, 1, available, pipe);
 					pclose(pipe);
 
-					int count = p - (char*)&car(fp) - 1;
+					int count = p - (char*)&car(fp);
+					if (count == 0)
+						break;
 					result = (word) new_bytevector(count, TSTRING);
 #else	// popen by syscall
 					int stdin[2];
@@ -2489,8 +2506,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// exit - cause normal process termination, function does not return.
 			case 1006:
 			case 60: {
-				free(heap.begin); // освободим занятую память
-				//free(R); // и регистры
+				free(heap->begin); // освободим занятую память
+				heap->begin = 0;
 #if 0//EMBEDDED_VM
 				// подождем, пока освободится место в консоли
 				while (fifo_full(fo)) pthread_yield();
@@ -2566,8 +2583,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 					if (module)
 						result = (word) new_port(module);
-//					else
-//						fprintf(stderr, "dlopen failed: %s\n", dlerror());
 					break;
 				}
 				case 1031: { // (dlsym module function #false)
@@ -2609,7 +2624,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				}
 
 				default: {
-					defun (prim_sys, word, (int op, word a, word b, word c)) {
+					word prim_sys(int op, word a, word b, word c) {
 					   switch(op) {
 						  case 1010: /* enter linux seccomp mode */
 					#ifdef __gnu_linux__
@@ -2723,7 +2738,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						  default:
 							 return IFALSE;
 					   }
-					};
+					}
 
 					result = prim_sys(op, a, b, c);
 					break;
@@ -2757,19 +2772,17 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
 // fasl decoding
 // возвращает новый топ стека
 static __inline__
-word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* _fp)
+word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
-	register __block
+	register
 	unsigned char* hp = bootstrap;
-	register __block
-	word* fp = _fp;
 //	if (*hp == '#') // этот код не нужен, так как сюда приходит уже без шабанга
 //		while (*hp++ != '\n') continue;
 
 	// tbd: comment
 	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность 0x7FFFFFFFFFFFFFFF (самое большое число)
 	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
-	defun(get_nat, word, ())
+	word get_nat()
 	{
 		long long nat = 0;
 		char i;
@@ -2788,15 +2801,14 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* _fp)
 			nat = nat + (i & 127);
 		} while (i & 128); // 1<<7
 #if __amd64__
-		return (word)nat;
+		return nat;
 #else
 		return (word)(int)nat; //0x7FFFFFFFFFFFFFFF ? 0x7FFFFFFF : (word)result;
 #endif
-	};
+	}
 
 	// tbd: comment
-	defun(decode_field, void, (word *ptrs, int pos))
-	{
+	void decode_field(word *ptrs, int pos) {
 		if (*hp == 0) { // fixnum
 			hp++;
 			unsigned char type = *hp++;
@@ -2806,7 +2818,8 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* _fp)
 			word diff = get_nat();
 			*fp++ = ptrs[pos-diff];
 		}
-	};
+//		return fp;
+	}
 
 	// function entry:
 	for (int me = 0; me < nobjs; me++) {
@@ -2824,19 +2837,14 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* _fp)
 		case 2: {
 			int type = *hp++ & 31; /* low 5 bits, the others are pads */
 			int size = get_nat();
-//			new_string(size, fp);
-			int words = (size / W) + ((size % W) ? 2 : 1); //((bytes % W) == 0) ? (bytes/W)+1 : (bytes/W) + 2;
-//			int pads = W - (size % W);
-			int pads = (words - 1) * W - size;
+			int words = (size + W - 1) / W;
+			int pads = W - (size % W);
 
-			unsigned char *wp = (unsigned char*)&car(new_raw_object (words, type, pads));
-//			*fp++ = make_raw_header(words, type, pads);
-//			unsigned char *wp = (unsigned char *) fp;
+			unsigned char *wp = (unsigned char*) &car(new_raw_object (words + 1, type, pads));
 			while (size--)
 				*wp++ = *hp++;
 			while (pads--)
 				*wp++ = 0;
-//			fp = (word *) wp;
 			break;
 		}
 		default:
@@ -2850,11 +2858,9 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* _fp)
 static
 // функция подсчета количества объектов в загружаемом образе
 int count_fasl_objects(word *words, unsigned char *lang) {
-	__block
 	unsigned char* hp;
 
-	defun(decode_word, word, ())
-	{
+	word decode_word() {
 		long long nat = 0;
 		char i;
 		do {
@@ -2864,7 +2870,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		}
 		while (i & 128);
 		return (word)(int)nat;
-	};
+	}
 
 	// count:
 	int n = 0;
@@ -2877,7 +2883,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 			hp++; ++allocated;
 			int size = decode_word();
 			while (size--) {
-				// decode_field:
+				//decode_field:
 				if (*hp == 0)
 					hp += 2;
 				decode_word(); // simply skip word
@@ -2940,6 +2946,7 @@ int main(int argc, char** argv)
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
+	// todo: перенести в eval !
 	if (argc > 1 && strcmp(argv[1], "-") != 0) {
 		// todo: use mmap()
 		struct stat st;
@@ -3005,18 +3012,22 @@ int main(int argc, char** argv)
 #endif
 
 	//set_signal_handler();
-	int r = olvm(bootstrap, bootstrap != language ? free : NULL);
+	OL* olvm = OL_new(bootstrap, bootstrap != language ? free : NULL);
+	void* r = OL_eval(olvm, argc, argv);
+	OL_free(olvm);
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSACleanup();
 #endif
 
-	return r;
+	return is_fixed(r) ? sftoi (r) : -1;
 }
 #endif
 
-int    // this is NOT thread safe function
-olvm(unsigned char* bootstrap, void (*release)(void*))
+//int    // this is NOT thread safe function
+//olvm(unsigned char* bootstrap, void (*release)(void*))
+OL*
+OL_new(unsigned char* bootstrap, void (*release)(void*))
 {
 	// если это текстовый скрипт, замапим его на stdin, а сами используем встроенный (если) язык
 	if (bootstrap[0] > 3) {
@@ -3061,67 +3072,24 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 
 //	fprintf(stderr, "counted %d words for %d objects\n", nwords, nobjs);
 
-	heap_t heap;
+	heap_t* heap = &handle->heap;
 	word *fp;
-
-	void* result = 0; // результат выполнения скрипта
 
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
-	heap.begin = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
-	if (!heap.begin) {
+	heap->begin =
+	heap->genstart = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
+	if (!heap->begin) {
 		fprintf(stderr, "Failed to allocate %d words for vm memory\n", required_memory_size);
-		goto done;
+		return OL_free(handle);
 	}
-	heap.end = heap.begin + required_memory_size;
-	heap.genstart = heap.begin;
+	// ok:
+	heap->begin = heap->genstart;
+	heap->end = heap->begin + required_memory_size;
+	handle->max_heap_size = max_heap_size;
 
-	// подготовим в памяти машины параметры командной строки:
-
-	// create '("some string" . NIL) as parameter for the start lambda
-	// а вообще, от этого блока надо избавится.
-	//  но пока оставлю как пример того, как можно предварительно
-	//  загрузить в память аргументы перед вызовом образа
-	// по совместительству, это еще и корневой объект
-	fp = heap.begin;
-	word oargs; // аргументы
-	{
-		oargs = INULL;
-#if !EMBEDDED_VM
-		// аргументы
-		// todo: for win32 do ::GetCommandLine()
-		int f = open("/proc/self/cmdline", O_RDONLY, S_IRUSR);
-		if (f) {
-			int r;
-			do {
-				char *pos = (char*)(fp + 1);
-				while ((r = read(f, pos, 1)) > 0 && (*pos != 0)) {
-					pos++;
-				}
-				int length = pos - (char*)fp - W;
-				if (r > 0 && length > 0) // если есть что добавить
-					oargs = (word)new_pair (new_bytevector(length, TSTRING), oargs);
-			}
-			while (r > 0);
-			close(f);
-		}
-		else
-#endif
-		{
-			char* filename = "-";
-			char *pos = filename;
-
-			int len = 0;
-			while (*pos++) len++;
-
-			oargs = (word)new_pair (new_string (len, filename), oargs);
-		}
-	}
-
-//	heap.fp = fp;
-//	oargs = gc(&heap, nwords + (16*1024), oargs); // get enough space to load the heap without triggering gc
-//	fp = heap.fp;
+	fp = heap->begin;
 
 	// Десериализация загруженного образа в объекты
 	word *ptrs = new_raw_object (nobjs+1, TCONST, 0);
@@ -3133,19 +3101,21 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 	if (release)
 		release(bootstrap);
 
-	// ===============================================================
+	heap->fp = fp;
+	return handle;
+}
 
-	struct args args; // аргументы для запуска
-	args.vm = handle; // виртуальной машины OL
-	args.vm->fp = fp;
+OL* OL_free(OL* ol)
+{
+	free(ol->heap.begin);
+	free(ol);
+	return 0;
+}
 
-	// а это инициализационные аргументы для памяти виртуальной машины
-	args.heap.begin    = heap.begin;
-	args.heap.end      = heap.end;
-	args.heap.genstart = heap.genstart;
-	args.max_heap_size = max_heap_size; // max heap size in MB
-	args.userdata      = (word*) oargs;
-
+// ===============================================================
+void*
+OL_eval(OL* handle, int argc, char** argv)
+{
 #if 0 //EMBEDDED_VM
 	args.signal = 0;
 	if (pthread_create(&handle->tid, NULL, &runtime, &args) == 0) {
@@ -3161,18 +3131,59 @@ olvm(unsigned char* bootstrap, void (*release)(void*))
 	set_blocking(1, 0);
 	set_blocking(2, 0);
 #	endif
-
-	result = runtime(&args);
 #endif
 
+	// подготовим аргументы:
+	word* userdata;
+	{
+		word* fp = handle->heap.fp;
+		userdata = (word*)INULL;
+#if !EMBEDDED_VM
+		// аргументы
+		// todo: for win32 do ::GetCommandLine()
+		/*int f = open("/proc/self/cmdline", O_RDONLY, S_IRUSR);
+		if (f) {
+			int r;
+			do {
+				char *pos = (char*)(fp + 1);
+				while ((r = read(f, pos, 1)) > 0 && (*pos != 0)) {
+					pos++;
+				}
+				int length = pos - (char*)fp - W;
+				if (r > 0 && length > 0) // если есть что добавить
+					userdata = new_pair (new_bytevector(length, TSTRING), userdata);
+			}
+			while (r > 0);
+			close(f);
+		}*/
+		for (int i = 0; i < argc; i++, argv++) {
+			char *pos = (char*)(fp + 1);
+			char *v = *argv;
+			while ((*pos = *v++) != 0)
+				pos++;
+			int length = pos - (char*)fp - W;
+			if (length > 0) // если есть что добавить
+				userdata = new_pair (new_bytevector(length, TSTRING), userdata);
+		}
+#else
+		{
+			char* filename = "-";
+			char *pos = filename;
+
+			int len = 0;
+			while (*pos++) len++;
+
+			userdata = new_pair (new_string (len, filename), userdata);
+		}
+#endif
+		handle->heap.fp = fp;
+	}
+
+	void* result = // результат выполнения скрипта
+	runtime(handle, userdata);
+
 	// ===============================================================
-
-done:
-	free(heap.begin);
-	free(handle);
-
-exit:
-	return (int)(long)result;
+	return result;
 }
 
 #if 0 //EMBEDDED_VM
@@ -3218,10 +3229,11 @@ __attribute__
 	((__visibility__("default")))
 word pinvoke(OL* self, word arguments)
 {
-	word *fp, result;
-
+	heap_t* heap = &self->heap;
 	// get memory pointer
-	fp = self->fp;
+
+	word*
+	fp = heap->fp;
 
 	// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 
@@ -3233,11 +3245,10 @@ word pinvoke(OL* self, word arguments)
 
 	// x64 calling conventions: linux, windows
 #if	__amd64__
-	defun(call, word, (void* function, word argv[], int argc))
+	word call(void* function, word argv[], int argc) {
 #else
-	defun(call, word, (int returntype, void* function, word argv[], int argc))
+	word call(int returntype, void* function, word argv[], int argc) {
 #endif
-	{
 
 		// todo: ограничиться количеством функций поменьше
 		//	а можно сделать все в одной switch:
@@ -3384,24 +3395,21 @@ word pinvoke(OL* self, word arguments)
 			CALL(__fastcall);
 			break;
 		default:
-			fprintf(stderr, "Unsupported calling convention %d", returntype >> 8);
+			fprintf(stderr, "Unsupported calling convention %d", convention >> 6);
 			break;
 		}
 #endif
-		return (word)0; // if no call have made
-	};
-
-	defun(from_int, long, (word* arg))
-	{
+		return 0; // if no call have made
+	}
+	long from_int(word* arg) {
 		// так как в стек мы все равно большое сложить не сможем, то возьмем
 		// только то, что влазит (первые два члена)
 		assert (immediatep(arg[1]));
 		assert (allocp(arg[2]));
 
-		return (long)((car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS));
-	};
-	defun(from_int_to_float, float, (word* arg))
-	{
+		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
+	}
+	float from_int_to_float(word* arg) {
 		// читаем длинное число в float формат
 		assert (immediatep(car(arg)));
 		float f = (unsigned long)uftoi(car(arg));
@@ -3414,9 +3422,8 @@ word pinvoke(OL* self, word arguments)
 		assert (cdr(arg) == INULL);
 
 		return f;
-	};
-	defun(from_rational, float, (word* arg))
-	{
+	}
+	float from_rational(word* arg) {
 		word* pa = (word*)car(arg);
 		word* pb = (word*)cdr(arg);
 
@@ -3447,7 +3454,7 @@ word pinvoke(OL* self, word arguments)
 		}
 
 		return (a / b);
-	};
+	}
 
 
 	// a - function address
@@ -3672,9 +3679,10 @@ word pinvoke(OL* self, word arguments)
 
 	got = call(function, args, i + floats + doubles);
 #else
-	got = call(returntype >> 8, function, args, i);
+	got = call(returntype >> 8, args, i);
 #endif
 
+	word result;
 	switch (returntype & 0x3F) {
 		case TINT:
 			if (got > FMAX) {
@@ -3708,8 +3716,17 @@ word pinvoke(OL* self, word arguments)
 //                      todo: TRATIONAL
 	}
 
-	self->fp = fp;
-
+	heap->fp = fp;
 	return result;
 }
 #endif//HAS_PINVOKE
+
+__attribute__
+	((__visibility__("default")))
+word testcall(OL* self, word arguments)
+{
+	fprintf(stderr, "testcall>: fp=%p\n", self->heap.fp);
+	self->gc(256);
+	fprintf(stderr, "testcall<: fp=%p\n", self->heap.fp);
+	return IFALSE;
+}

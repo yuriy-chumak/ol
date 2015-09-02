@@ -343,7 +343,7 @@
                      (get-word "T" #true)
                      (get-word "F" #false)
                      (get-word "e" #empty)
-                     ;(get-word "define" ... ?
+;                    (get-word "define" #define)
                      (let-parses
                         ((bang (get-imm #\!))
                          (line get-rest-of-line))

@@ -1,4 +1,5 @@
 (import (owl queue))
+(import (owl random))
 
 ; test by mirroring random operations with lists and (append lst (list a)) for snoc
 

@@ -1,4 +1,6 @@
 (import (owl primop))
+(import (owl random))
+
 ;; check that threads which return a given value after n context switches return them
 ;; when computed via par in the same order as if the values were sorted by n.
 

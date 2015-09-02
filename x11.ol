@@ -1,6 +1,15 @@
-#!/bin/ol
+#!./ol
+(import (owl pinvoke))
 
-;(define *interactive* #t)
+;((dlsym+ (dlopen null 1) "testcall") 1 2 3)
+
+;(import (owl primop))
+;(exec "curl http://google.com")
+
+;(define sx12 (lambda () (if (syscall 2000 0 0 0) 1 2)))
+;(syscall 2000 3 3 3)
+
+;(syscall 2000 (sx12) type size)
 (define width 640)
 (define height 480)
 

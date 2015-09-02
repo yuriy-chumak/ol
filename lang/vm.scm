@@ -168,6 +168,7 @@
 
          ; базовая математика
          (tuple 'fx+      38  2 2 fx+)
+;         (tuple '#+       38  2 2 #+)
          (tuple 'fx*      39  2 2 fx*)
          (tuple 'fx-      40  2 2 fx-)
          (tuple 'fx/      26  3 3 fx/)
