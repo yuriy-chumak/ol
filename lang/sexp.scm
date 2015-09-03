@@ -47,13 +47,13 @@
             (has? special-initial-chars n)
             (> n 127)))         ;; allow high code points in symbols
 
-      (define (symbol-char? n) 
+      (define (symbol-char? n)
          (or
             (symbol-lead-char? n)
             (between? #\0 n #\9)
             (has? special-subseqent-chars n)))
 
-      (define get-symbol 
+      (define get-symbol
          (get-either
             (let-parses 
                ((head (get-rune-if symbol-lead-char?))
@@ -196,7 +196,7 @@
             (if (eq? imag 0)
                real
                (complex real imag))))
-              
+
       (define get-rest-of-line
          (let-parses
             ((chars (get-greedy* (get-byte-if (lambda (x) (not (eq? x 10))))))
@@ -266,6 +266,7 @@
               (#\t . #x0009)
               (#\n . #x000a)
               (#\r . #x000d)
+              (#\e . #x001B)
               (#\" . #x0022)
               (#\\ . #x005c))))
 
@@ -306,7 +307,7 @@
                   (get-byte-if (λ (x) (get quotations x #false)))))
              (value parser))
             (list (get quotations type #false) value)))
-     
+
       (define get-named-char
          (get-any-of
             (get-word "null" 0)

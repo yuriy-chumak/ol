@@ -2267,7 +2267,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 			// ==================================================
 			//  network part:
-
+			//
+			// http://www.kegel.com/c10k.html
 #if HAS_SOCKETS
 			// SOCKET
 			case 41: { // socket (todo: options: STREAM or DGRAM)
@@ -2363,8 +2364,36 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				socklen_t len = sizeof(addr);
 				int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
 				// On error, -1 is returned
-				if (sock >= 0)
+				if (sock < 0)
+					break;
+#if _WIN32
+				unsigned long mode = blocking ? 0 : 1;
+				if (ioctlsocket(fd, FIONBIO, &mode) == 0)
+#else
+				int flags = fcntl(sock, F_GETFL, 0);
+				if (flags < 0)
+					break;
+				flags = (flags | O_NONBLOCK);
+				if (fcntl(sock, F_SETFL, flags) == 0)
+#endif
 					result = (word) new_port (sock);
+				break;
+			}
+
+			// SELECT
+			// http://linux.die.net/man/2/select
+			case 23: { // (select sockfd)
+				CHECK(is_port(a), a, SYSCALL);
+				int sockfd = car (a);
+
+				struct timeval timeout = { 0, 100 }; // 100ms
+				fd_set fds;
+				FD_ZERO(&fds); FD_SET(sockfd, &fds);
+
+				if (select(FD_SETSIZE, &fds, NULL, NULL, &timeout) != -1
+						&& FD_ISSET(sockfd, &fds))
+					result = ITRUE;
+
 				break;
 			}
 

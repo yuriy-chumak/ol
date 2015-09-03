@@ -4,7 +4,7 @@ export PATH := .:$(PATH)
 
 PREFIX := /usr
 FAILED := $(shell mktemp -u)
-CFLAGS += -std=c99 -O3 -DNDEBUG
+CFLAGS += -std=c99 -O2 -DNDEBUG
 boot.c := bootstrap~
 repl.o := src/repl.o
 
