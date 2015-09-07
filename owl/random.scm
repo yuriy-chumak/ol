@@ -225,7 +225,7 @@
       (define (bitmask num)
          (if (eq? num 0)
             1
-            (let loop ((n *max-fixnum*))
+            (let loop ((n (fmax)))
                (lets ((np _ (fx>> n 1)))
                   (if (lesser? np num) ;; we lost the high bit
                      n

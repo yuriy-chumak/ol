@@ -62,7 +62,7 @@
 
                ((boolean? obj)
                   (append (string->list (if obj "#true" "#false")) tl))
-                  
+
                ((symbol? obj)
                   (render (symbol->string obj) tl))
 

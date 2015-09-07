@@ -27,8 +27,8 @@ struct ol_t;
 // internal option
 #define NO_SECCOMP
 
-// set for 1 to disable overflow check for binary images in release
-#define NO_NAT_OVERFLOW_CHECK 0
+// comment this to enable overflow checking in binary program decoder
+#define OVERFLOW_KILLS(n)
 
 struct ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
 struct ol_t* OL_free(struct ol_t* ol);
@@ -69,6 +69,17 @@ public:
 //#define OL struct OLvm
 typedef struct ol_t OL;
 #endif
+
+/* tips and tricks: */
+
+// uncomment next linex to remove correspondent syscall from vm,
+// or change in to any number (except 0) to assign new syscall number
+
+// #define SYSCALL_IOCTL 0
+// #define SYSCALL_SYSINFO 0
+
+
+
 
 //-- end of header
 #ifdef __cplusplus

@@ -222,37 +222,37 @@
 
 ;; fixme: allow a faster way to allocate memory
 ;; n-megs → _
-(define (ensure-free-heap-space megs)
-   (if (> megs 0)
-      (lets
-         ((my-word-size (get-word-size)) ;; word size in bytes in the current binary (4 or 8)
-          (blocksize 65536)              ;; want this many bytes per node in list
-          (pairsize (* my-word-size 3))  ;; size of cons cell, being [header] [car-field] [cdr-field]
-          (bytes                         ;; want n bytes after vector header and pair node for each block
-            (map (λ (x) 0) 
-               (iota 0 1 
-                  (- blocksize (+ pairsize my-word-size)))))
-          (n-blocks  
-            (ceil (/ (* megs (* 1024 1024)) blocksize))))
-         ;; make a big data structure
-         (map
-            (λ (node)
-               ;; make a freshly allocated byte vector at each node
-               (list->byte-vector bytes))
-            (iota 0 1 n-blocks))
-         ;; leave it as garbage
-         #true)))
-
+;(define (ensure-free-heap-space megs)
+;   (if (> megs 0)
+;      (lets
+;         ((my-word-size (get-word-size)) ;; word size in bytes in the current binary (4 or 8)
+;          (blocksize 65536)              ;; want this many bytes per node in list
+;          (pairsize (* my-word-size 3))  ;; size of cons cell, being [header] [car-field] [cdr-field]
+;          (bytes                         ;; want n bytes after vector header and pair node for each block
+;            (map (λ (x) 0) 
+;               (iota 0 1 
+;                  (- blocksize (+ pairsize my-word-size)))))
+;          (n-blocks  
+;            (ceil (/ (* megs (* 1024 1024)) blocksize))))
+;         ;; make a big data structure
+;         (map
+;            (λ (node)
+;               ;; make a freshly allocated byte vector at each node
+;               (list->byte-vector bytes))
+;            (iota 0 1 n-blocks))
+;         ;; leave it as garbage
+;         #true)))
+;
 ;; enter seccomp with at least n-megs of free space in heap, or stop the world (including all other threads and io)
-(define (seccomp n-megs)
-   ;; grow some heap space work working, which is usually necessary given that we can't 
-   ;; get any more memory after entering seccomp
-   (if (and n-megs (> n-megs 0))
-      (ensure-free-heap-space n-megs))
-   (or (sys-prim 1010 #false #false #false)
-      (begin
-         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
-         (halt exit-seccomp-failed))))
+;(define (seccomp n-megs)
+;   ;; grow some heap space work working, which is usually necessary given that we can't 
+;   ;; get any more memory after entering seccomp
+;   (if (and n-megs (> n-megs 0))
+;      (ensure-free-heap-space n-megs))
+;   (or (sys-prim 1010 #false #false #false)
+;      (begin
+;         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
+;         (halt exit-seccomp-failed))))
 
 
 (define-library (owl char)

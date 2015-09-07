@@ -4,15 +4,21 @@ export PATH := .:$(PATH)
 
 PREFIX := /usr
 FAILED := $(shell mktemp -u)
-CFLAGS += -std=c99 -O2 -DNDEBUG
+CFLAGS += -std=c99 -O2 -DNDEBUG -s
 boot.c := bootstrap~
 repl.o := src/repl.o
 
 all: ol
 
+debug: src/olvm.c src/boot.c
+	$(CC) -std=c99 -O0 -g  src/olvm.c src/boot.c -o ol \
+	   -Xlinker --export-dynamic -ldl
+	@echo Ok.
+
 clean:
 	rm -f boot.fasl
 	rm -f $(repl.o)
+	rm -f ./vm ./ol
 
 install: ol repl
 	install -d /usr/lib/ol
@@ -94,14 +100,27 @@ config/XVisualInfo:
 
 # ol
 ol: src/olvm.c src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ -s \
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ \
 	   -Xlinker --export-dynamic -ldl
 	@echo Ok.
 
 
 vm: src/olvm.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ -s \
-	-Xlinker --export-dynamic -ldl
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
+	   -Xlinker --export-dynamic -ldl
+	@echo Ok.
+
+
+#32
+ol32: src/olvm.c src/boot.c
+	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ \
+	   -Xlinker --export-dynamic -ldl -m32
+	@echo Ok.
+
+
+vm32: src/olvm.c
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
+	   -Xlinker --export-dynamic -ldl -m32
 	@echo Ok.
 
 

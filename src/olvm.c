@@ -70,6 +70,10 @@
 #define HAS_PINVOKE 1 // pinvoke (for dlopen/dlsym) support
 #endif
 
+#ifndef HAS_STRFTIME
+#define HAS_STRFTIME 1
+#endif
+
 #ifndef EMBEDDED_VM   // use as embedded vm in project
 #define EMBEDDED_VM 0
 #endif
@@ -138,6 +142,8 @@
 #include <sys/stat.h>
 
 #include <sys/utsname.h> // uname
+#include <sys/sysinfo.h> // sysinfo
+#include <sys/resource.h>// getrusage
 
 #define __USE_POSIX199309 // for nanosleep
 #include <time.h>
@@ -570,7 +576,7 @@ typedef struct object
 // special pinvoke types
 #define TFLOAT                      46
 #define TDOUBLE                     47
-#define TTHIS                       44
+//#define TTHIS                       44
 #define TRAWP                       45
 
 #define IFALSE                      make_immediate(0, TCONST)
@@ -603,7 +609,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define car(ob)                     ref(ob, 1)
 #define cdr(ob)                     ref(ob, 2)
 
-#define cadr(ob)                    car(cdr(ob))
+#define cadr(o)                     car(cdr(o))
 
 // todo: потом переделать в трюк
 // алгоритмические трюки:
@@ -611,7 +617,14 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 // signed fix to int
 #define uftoi(fix)  ({ ((word)fix >> IPOS); })
 #define sftoi(fix)  ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
+#define itouf(val)  ({ F(val); })
 #define itosf(val)  ({ val < 0 ? (F(-val) | 0x80) : F(val); })
+
+// TINT(as pair) to int
+#define uitoi(num)  ({ uftoi(car(B)) | (is_pointer(cdr(B)) ? uftoi(cadr(B)) << FBITS : 0); })
+#define itoui(val)  ({ val > FMAX ? new_list(TINT, itouf(val & FMAX), itouf(val >> FBITS)) : (word*) itouf(val); })
+
+// todo: add to itouf precompiled case with sizeof(val) < ...
 
 
 #define NR                          128 // see n-registers in register.scm
@@ -681,7 +694,6 @@ word*p = NEW (size);\
 	/*return*/ p;\
 })
 
-
 // хитрый макрос агрегирующий макросы-аллокаторы памяти
 //	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
 #define NEW_MACRO(_1, _2, NAME, ...) NAME
@@ -714,9 +726,9 @@ word*p = NEW_OBJECT (3, type);\
 }*/
 
 
-#define NEW_PAIRX(_1, _2, _3, NAME, ...) NAME
-#define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
+#define NEW_PAIRX(_1, _2, UP, NAME, ...) NAME
 
+#define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
 
 // аллокаторы списоков (todo: что ставить в качестве типа частей, вместо TPAIR?)
 #define new_list1(type, a1) \
@@ -740,12 +752,64 @@ word*p = NEW_OBJECT (3, type);\
 	    	                                        new_pair (type, a4,\
 	                                                                new_pair (type, a5, INULL)))))
 
-#define NEW_LIST(_1, _2, _3, _4, _5, _6, NAME, ...) NAME
+#define NEW_LIST(_1, _2, _3, _4, _5, UP, NAME, ...) NAME // UP for listN needs N+1 argument
 #define new_list(...) NEW_LIST(__VA_ARGS__, new_list5, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
 
+// кортеж:
+// набор макросов для tuple:
+#define new_tuple1(a1) ({\
+	word data1 = (word) a1;\
+	/* точка следования */ \
+word*p = NEW_OBJECT (2, TTUPLE);\
+	p[1] = data1;\
+	/*return*/ p;\
+})
+#define new_tuple2(a1,a2) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	/* точка следования */ \
+word*p = NEW_OBJECT (3, TTUPLE);\
+	p[1] = data1;\
+	p[2] = data2;\
+	/*return*/ p;\
+})
+#define new_tuple3(a1,a2,a3) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	word data3 = (word) a3;\
+	/* точка следования */ \
+word*p = NEW_OBJECT (4, TTUPLE);\
+	p[1] = data1;\
+	p[2] = data2;\
+	p[3] = data3;\
+	/*return*/ p;\
+})
+#define new_tuple9(a1,a2,a3,a4,a5,a6,a7,a8,a9) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	word data3 = (word) a3;\
+	word data4 = (word) a4;\
+	word data5 = (word) a5;\
+	word data6 = (word) a6;\
+	word data7 = (word) a7;\
+	word data8 = (word) a8;\
+	word data9 = (word) a9;\
+	/* точка следования */ \
+word*p = NEW_OBJECT (10, TTUPLE);\
+	p[1] = data1;\
+	p[2] = data2;\
+	p[3] = data3;\
+	p[4] = data4;\
+	p[5] = data5;\
+	p[6] = data6;\
+	p[7] = data7;\
+	p[8] = data8;\
+	p[9] = data9;\
+	/*return*/ p;\
+})
 
-// кортеж
-#define new_tuple(length)  new ((length)+1, TTUPLE)
+#define NEW_TUPLE(_1, _2, _3, _4, _5, _6, _7, _8, _9, NAME, ...) NAME
+#define new_tuple(...) NEW_TUPLE(__VA_ARGS__, new_tuple9, new_tuple8, new_tuple7, new_tuple6, new_tuple5, new_tuple4, new_tuple3, new_tuple2, new_tuple1, NOTHING)(__VA_ARGS__)
 
 
 // остальные аллокаторы
@@ -1016,19 +1080,21 @@ void set_blocking(int sock, int blockp) {
 #endif
 }
 
+#if 0
 #ifndef _WIN32
 static
 void signal_handler(int signal) {
 	fprintf(stderr, "signal %d!\n", signal);
-   switch(signal) {
-      case SIGINT:
-         breaked |= 2; break;
+	switch(signal) {
+//      case SIGINT:
+//        breaked |= 2; break;
       case SIGPIPE: break; // can cause loop when reporting errors
       default:
          // printf("vm: signal %d\n", signal);
          breaked |= 4;
    }
 }
+#endif
 #endif
 
 /* small functions defined locally after hitting some portability issues */
@@ -1041,15 +1107,11 @@ unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in
 	return p;
 }
 
-void set_signal_handler() {
-
+void set_signal_handler()
+{
 #ifndef _WIN32
-//   struct sigaction sa;
-//   sa.sa_handler = signal_handler;
-//   sigemptyset(&sa.sa_mask);
-// sa.sa_flags = SA_RESTART;
-   signal(SIGINT, signal_handler);
-   signal(SIGPIPE, signal_handler);
+//	signal(SIGINT, signal_handler);
+	signal(SIGPIPE, SIG_IGN);
 #endif
 }
 
@@ -1167,7 +1229,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	{
 		int p = 0, N = NR;
 		// создадим в топе временный объект со значениями всех регистров
-		word *regs = (word*) new_tuple (N + 1);
+		word *regs = (word*) new (N + 2, TTUPLE); // N for regs, 1 for this, and 1 for header
 		while (++p <= N) regs[p] = R[p-1];
 		regs[p] = (word) this;
 		// выполним сборку мусора
@@ -1209,7 +1271,7 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 				while (fifo_full(fo)) pthread_yield();
 				fifo_put(fo, EOF); // и положим туда EOF
 #				endif
-				return (void*)fixval(R[3]);
+				return (void*)uftoi(R[3]);
 			}
 
 			R[0] = IFALSE; // set no mcp
@@ -1326,10 +1388,13 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 		ERROR(257, this, INULL); // not callable
 	}
 
-invoke:; // nargs and regs ready, maybe gc and execute ob
-	// если места в буфере не хватает, то мы вызываем GC, а чтобы автоматически подкорректировались
-	//  регистры, мы их складываем в память во временный кортеж.
-	if (/*forcegc || */(fp >= heap->end - 16 * 1024)) { // (((word)fp) + 1024*64 >= ((word) memend))
+invoke:;
+	// nargs and regs ready, maybe gc and execute ob
+
+	// если места в буфере не хватает, то мы вызываем GC,
+	//	а чтобы автоматически подкорректировались регистры,
+	//	мы их складываем в память во временный кортеж.
+	if (/*forcegc || */(fp >= heap->end - 16 * 1024)) {
 		dogc (16 * 1024 * sizeof(word));
 		ip = (unsigned char *) &this[1];
 
@@ -1337,7 +1402,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		word heapsize = (word) heap->end - (word) heap->begin;
 		if ((heapsize / (1024*1024)) > max_heap_size)
 			breaked |= 8; // will be passed over to mcp at thread switch
-
 	}
 
 	// todo: add "NOP" function (may be 0x0 ?)
@@ -1381,28 +1445,41 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #	define REF   47
 
 #	define NCONS 29
-#	define NCAR  30
-#	define NCDR  31
+#	define NCAR  30 // todo: check is it can be removed and changed to car
+#	define NCDR  31 // todo: check is it can be removed and changed to cdr
 
 #	define SIZEB 28
 #	define REFB  48
 
-	//
+	// ?
 #	define SET   45
 
 	// АЛУ
 #	define EQ    54
 
-#	define CLOCK 61
+#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 #	define SYSCALL 63
+		// read, write, open, close must exist
 #		define SYSCALL_READ 0
 #		define SYSCALL_WRITE 1
 #		define SYSCALL_OPEN 2
 #		define SYSCALL_CLOSE 3
 
+#		ifndef SYSCALL_IOCTL
 #		define SYSCALL_IOCTL 16
+#		endif
 #		define SYSCALL_IOCTL_TIOCGETA 19
 
+#		define SYSCALL_GETDENTS 78
+
+#		define SYSCALL_GETTIMEOFDATE 96
+#		ifndef SYSCALL_GETRUSAGE
+#		define SYSCALL_GETRUSAGE 98
+#		endif
+#		ifndef SYSCALL_SYSINFO
+#		define SYSCALL_SYSINFO 99
+#		endif
+#		define SYSCALL_TIME 201
 
 	// tuples, trees
 #	define MKT      23   // make tuple
@@ -1415,10 +1492,12 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 #	define FFTOGGLE 46
 #	define FFREDQ   41
 
+
 #	define ADDITION 38
 #	define DIVISION 26
 #	define MULTIPLICATION 39
 #	define SUBTRACTION 40
+	// todo: add shifts right, left, etc.
 
 	// free numbers: 34, 37, 62 (was _connect)
 
@@ -1426,10 +1505,10 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 	// Rn - регистр машины (R[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
-	while (1) { // todo: добавить условие выхода из цикла
-		int op; // operation to execute
+	for(;;) {
+		int op;//operation to execute:
 		switch ((op = *ip++) & 0x3F) {
-		case 0:
+		case 0: // todo: change 0 to NOP, add new code for super_dispatch
 			op = (ip[0] << 8) | ip[1]; // big endian
 			// super_dispatch: run user instructions
 			switch (op) {
@@ -1659,10 +1738,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			ip += 2; break;
 		}
 
+		// todo: переделать!
 		case CAST: { // cast o t r
 			word T = A0;
 			word type = fixval(A1) & 63;
 
+//			if (type == TPORT && typeof(T) == TINT) {
+//				A2 = IFALSE;
+//			}
 			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
 			// это лучше сделать тут, наверное, а не отдельной командой
 			if (immediatep(T))
@@ -1877,9 +1960,16 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			ERROR(17, this, F(acc));
 			break;
 
-		// неиспользуемые коды (историческое наследие, при желании можно реюзать)
+		// todo: add the instruction name
 		case 33:
+			A0 = F(FMAX);
+			ip += 1; break;
+		// todo: add the instruction name
 		case 34:
+			A0 = F(FBITS);
+			ip += 1; break;
+
+			// неиспользуемые коды (историческое наследие, при желании можно реюзать)
 		case 37:
 		case 62:
 			ERROR(op, IFALSE, IFALSE);
@@ -2081,12 +2171,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				struct timeval tp;
 				gettimeofday(&tp, NULL);
 
-				A1 = F(tp.tv_usec / 1000);
-
-				if (tp.tv_sec < FMAX) // mainly for x64
-					A0 = F(tp.tv_sec);
-				else
-					A0 = (word) new_list (TINT, F(tp.tv_sec & FMAX), F(tp.tv_sec >> FBITS));
+				A0 = (word) itoui (tp.tv_sec);
+				A1 = (word) itoui (tp.tv_usec / 1000);
 //			}
 			ip += 2; break;
 		}
@@ -2095,11 +2181,14 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 		// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
 		// https://filippo.io/linux-syscall-table/
 		case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
+			// main link: http://man7.org/linux/man-pages/man2/syscall.2.html
+			//            http://man7.org/linux/man-pages/dir_section_2.html
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
+			word result = IFALSE;  // default returned value is #false
+		//	CHECK(is_fixed(A0) && typeof(A0) == TFIX, A0, SYSCALL);
 			word op = uftoi (A0);
 			word a = A1, b = A2, c = A3;
-			word result = IFALSE;  // default returned value is #false
 //			fprintf(stderr, "SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
 			switch (op) {
@@ -2107,7 +2196,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			// (READ fd count) -> buf
 			// http://linux.die.net/man/2/read
 			// count<0 means read all
-#			ifdef SYSCALL_READ
 			case SYSCALL_READ: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
@@ -2161,13 +2249,11 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
-#			endif
 
 			// (WRITE fd buffer size) -> wrote
 			// http://linux.die.net/man/2/write
 			// size<0 means write all
 			// n if wrote, 0 if busy, #false if error (argument or write)
-#			ifdef SYSCALL_WRITE
 			case SYSCALL_WRITE: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
@@ -2197,19 +2283,21 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
-#			endif
 
-			// OPEN
-#			ifdef SYSCALL_OPEN
+			// (OPEN "path" mode)
+			// http://man7.org/linux/man-pages/man2/open.2.html
 			case SYSCALL_OPEN: {
 				CHECK(is_string(a), a, SYSCALL);
-				word* path = (word*) a; // todo: check for string type
-				int mode = fixval(b);
+				word* fn = (word*) a;
+				int mode = uftoi (b);
 				mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
-				int file = open((char *) &path[1], mode, (S_IRUSR | S_IWUSR));
+
+				int file = open((char*) &fn[1], mode, (S_IRUSR | S_IWUSR));
+				if (file < 0)
+					break;
 
 				struct stat sb;
-				if (file < 0 || fstat(file, &sb) == -1 || (S_ISDIR(sb.st_mode))) {
+				if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
 					close(file);
 					break;
 				}
@@ -2218,10 +2306,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
-#			endif
 
 			// CLOSE
-#			ifdef SYSCALL_CLOSE
 			case SYSCALL_CLOSE: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
@@ -2231,10 +2317,9 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				break;
 			}
-#			endif
 
 			// IOCTL (syscall 16 fd request #f)
-#			ifdef SYSCALL_IOCTL
+#			if SYSCALL_IOCTL
 			case SYSCALL_IOCTL: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
@@ -2242,7 +2327,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 
 				switch (ioctl) {
 
-#					ifdef SYSCALL_IOCTL_TIOCGETA
+#					if SYSCALL_IOCTL_TIOCGETA
 					case SYSCALL_IOCTL_TIOCGETA: { // TIOCGETA
 						struct termios t;
 						if (tcgetattr(portfd, &t) != -1)
@@ -2258,6 +2343,41 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			}
 #			endif
 
+
+			// directories
+			case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
+				word* A = (word*)a;
+				DIR *dirp = opendir((char*) &A[1]);
+				if (dirp)
+					result = (word)new_port(dirp);
+				break;
+			}
+			// get directory entry
+			case SYSCALL_GETDENTS:
+			case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
+				CHECK(is_port(a), a, SYSCALL);
+				DIR* dirp = (DIR*) car (a);
+
+				struct dirent *dire = readdir(dirp);
+				if (!dire) {
+					result = IEOF; /* eof at end of dir stream */
+					break;
+				}
+
+				// todo: check the heap overflow!
+				unsigned int len;
+				len = lenn(dire->d_name, FMAX+1);
+				if (len == FMAX+1)
+					break; /* false for errors, like too long file names */
+				result = (word) new_string(len, dire->d_name);
+				break;
+			}
+			case 1013: /* sys-closedir dirp _ _ -> ITRUE */
+				closedir((DIR *)car(a));
+				result = ITRUE;
+				break;
+
+
 			// PIPE
 			case 22: {
 				// TBD.
@@ -2270,6 +2390,8 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 			//
 			// http://www.kegel.com/c10k.html
 #if HAS_SOCKETS
+			// todo: add getsockname() and getpeername() syscalls
+
 			// SOCKET
 			case 41: { // socket (todo: options: STREAM or DGRAM)
 				int sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -2530,10 +2652,52 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			// (gettimeofday)
+			// todo: change (clock) call to this one
+			case SYSCALL_GETTIMEOFDATE: {
+				struct timeval tv;
+				if (gettimeofday(&tv, NULL) == 0)
+					result = (word) new_pair (itoui(tv.tv_sec), itouf(tv.tv_usec));
+				break;
+			}
+
+			/**
+			 * @brief (time format seconds #f)
+			 * @arg format return string, else seconds
+			 * @arg if seconds == false, get current seconds
+			 * @see http://man7.org/linux/man-pages/man2/time.2.html
+			 */
+			case SYSCALL_TIME: {
+				word* B = (word*) b;
+				time_t seconds;
+				if ((word) B == IFALSE)
+					seconds = time (0);
+				else if (typeof (B) == TFIX)
+					seconds = uftoi(B);
+				else if (is_pointer(B) && typeof(*B) == TINT)
+					seconds = uitoi(B);
+				else
+					break;
+#if HAS_STRFTIME
+				word* A = (word*) a;
+				if (is_string(A)) {
+					char* ptr = (char*) &fp[1];
+					struct tm * timeinfo = localtime(&seconds);
+					if (!timeinfo) // error???
+						break;
+					// The environment variables TZ and LC_TIME are used!
+					size_t len = strftime(ptr, (size_t) (heap->end - fp - MEMPAD), (char*)&A[1], timeinfo);
+					result = (word) new_bytevector(len+1, TSTRING);
+				}
+				else
+#endif
+					result = itoui (seconds);
+				break;
+			}
+
 			// EXIT errorcode
 			// http://linux.die.net/man/2/exit
 			// exit - cause normal process termination, function does not return.
-			case 1006:
 			case 60: {
 				free(heap->begin); // освободим занятую память
 				heap->begin = 0;
@@ -2568,11 +2732,72 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				break;
 			}
 
+			#if SYSCALL_GETRUSAGE
+			// GETRUSAGE (getrusage)
+			case SYSCALL_GETRUSAGE: {
+				struct rusage u;
+				// arguments currently ignored. used RUSAGE_SELF
+				if (getrusage(RUSAGE_SELF, &u) == 0)
+					result = (word) new_tuple(
+							new_pair (itoui(u.ru_utime.tv_sec), itouf(u.ru_utime.tv_usec)),
+							new_pair (itoui(u.ru_stime.tv_sec), itouf(u.ru_stime.tv_usec))
+/*
+							itoui(info.uptime),
+							new_tuple(itoui(info.loads[0]),
+									  itoui(info.loads[1]),
+									  itoui(info.loads[2])),
+							itoui(info.totalram),
+							itoui(info.freeram),
+							itoui(info.sharedram),
+							itoui(info.bufferram),
+							itoui(info.totalswap),
+							itoui(info.freeswap),
+							itouf(info.procs) // procs is short*/
+					);
+				break;
 
-			// other commands
+			}
+			#endif
+
+			#if SYSCALL_SYSINFO
+			// SYSINFO (sysinfo)
+			case SYSCALL_SYSINFO: {
+				struct sysinfo info;
+				if (sysinfo(&info) == 0)
+					result = (word) new_tuple(
+							itoui(info.uptime),
+							new_tuple(itoui(info.loads[0]),
+									  itoui(info.loads[1]),
+									  itoui(info.loads[2])),
+							itoui(info.totalram),
+							itoui(info.freeram),
+							itoui(info.sharedram),
+							itoui(info.bufferram),
+							itoui(info.totalswap),
+							itoui(info.freeswap),
+							itouf(info.procs) // procs is short
+					);
+				break;
+			}
+			#endif
+
+			// todo: add syscall 100 (times)
+
+
+			// =- 1000+ -===========================================================================
+			// other internal commands
 
 			// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 			//  остальное можно спокойно оформлять отдельными функциями
+/*			case 1001: // *max-fixnum*
+				result = F(FMAX);
+				break;
+			case 1002: // *pre-max-fixnum*
+				result = F(FMAX >> 1);
+				break;
+			case 1003: // *fixnum-bits*
+				result = F(FBITS);
+				break;*/
 
 				case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 					result = F(max_heap_size);
@@ -2583,21 +2808,35 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					break;
 
 				case 1008: /* get machine word size (in bytes) */ // todo: переделать на другой номер
-					  result = F(W);
-					  break;
+					fprintf(stderr, "::get-word-size called.\n");
+					result = F(W);
+					break;
 
-				case 1022:
+				case 1022: // set ticker
 					result = (ticker & FMAX);
 					ticker = fixval(a);
 					break;
 
-				case 2000:
-					result = ITRUE;
+				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
+					word *name = (word *)a;
+					if (is_string(name)) {
+						char* value = getenv((char*)&name[1]);
+						if (value)
+							result = (word) new_string(lenn(value, FMAX), value);
+					}
 					break;
-
+				}
+				case 1117: { // get memory stats -> (list generation fp total)
+					int g = heap->genstart - heap->begin;
+					int f = fp - heap->begin;
+					int t = heap->end - heap->begin;
+					result = (word) new_list(TPAIR, F(g), F(f), F(t));
+					break;
+				}
 
 #if HAS_DLOPEN
 				// -=( dlopen )=-------------------------------------------------
+				// todo: change to 175(init_module) or 174(sys_create_module) or 134 (sys_uselib)
 				case 1030: { // (dlopen filename mode #false)
 					word *filename = (word*)a;
 					int mode = (int) uftoi(b);
@@ -2614,6 +2853,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 						result = (word) new_port(module);
 					break;
 				}
+				// todo: change to 176 (sys_delete_module)
 				case 1031: { // (dlsym module function #false)
 					word* A = (word*)a;
 
@@ -2642,15 +2882,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				}*/
 #endif
 
-				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
-					word *name = (word *)a;
-					if (is_string(name)) {
-						char* value = getenv((char*)&name[1]);
-						if (value)
-							result = (word) new_string(lenn(value, FMAX), value);
-					}
-					break;
-				}
 
 				default: {
 					word prim_sys(int op, word a, word b, word c) {
@@ -2671,25 +2902,6 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 					#endif
 							 return IFALSE; /* seccomp not supported in current repl */
 						  /* dirops only to be used via exposed functions */
-						  case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
-							 char *path = W + (char *) a; /* skip header */
-							 DIR *dirp = opendir(path);
-							 if(!dirp) return IFALSE;
-							 return fliptag(dirp); }
-						  case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
-							 DIR *dirp = (DIR *)fliptag(a);
-							 word *res;
-							 unsigned int len;
-							 struct dirent *dire = readdir(dirp);
-							 if (!dire) return IEOF; /* eof at end of dir stream */
-							 len = lenn(dire->d_name, FMAX+1);
-							 if (len == FMAX+1) return IFALSE; /* false for errors, like too long file names */
-							 res = new_bytevector(len, TSTRING); /* make a fake raw string (OS may not use valid UTF-8) */
-							 bytecopy((char *)&dire->d_name, (char *) (res + 1), len); /* *no* terminating null, this is an owl bvec */
-							 return (word)res; }
-						  case 1013: /* sys-closedir dirp _ _ -> ITRUE */
-							 closedir((DIR *)fliptag(a));
-							 return ITRUE;
 						  case 1014: { /* set-ticks n _ _ -> old */
 							 word old = F(slice);
 							 slice = fixval(a);
@@ -2778,7 +2990,7 @@ invoke:; // nargs and regs ready, maybe gc and execute ob
 				ip += 5; break;
 			}
 		}
-		main_dispatch: continue; // временная замена вызову "break" в свиче, пока не закончу рефакторинг
+		continue; // временная замена вызову "break" в свиче, пока не закончу рефакторинг
 	}
 	// while(1);
 
@@ -2813,27 +3025,21 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 	word get_nat()
 	{
-		long long nat = 0;
+		word nat = 0;
 		char i;
 
-		#if NO_NAT_OVERFLOW_CHECK
-		#	define overflow_kills(n)
-		#else
-		#	define overflow_kills(n) exit(n)
+		#ifndef OVERFLOW_KILLS
+		#define OVERFLOW_KILLS(n) exit(n)
 		#endif
 		do {
 			long long underflow = nat; // can be removed for release
 			nat <<= 7;
 			if (nat >> 7 != underflow) // can be removed for release
-				overflow_kills(9);     // can be removed for release
+				OVERFLOW_KILLS(9);     // can be removed for release
 			i = *hp++;
 			nat = nat + (i & 127);
 		} while (i & 128); // 1<<7
-#if __amd64__
 		return nat;
-#else
-		return (word)(int)nat; //0x7FFFFFFFFFFFFFFF ? 0x7FFFFFFF : (word)result;
-#endif
 	}
 
 	// tbd: comment
@@ -3040,7 +3246,7 @@ int main(int argc, char** argv)
 	AllocConsole();
 #endif
 
-	//set_signal_handler();
+	set_signal_handler();
 	OL* olvm = OL_new(bootstrap, bootstrap != language ? free : NULL);
 	void* r = OL_eval(olvm, argc, argv);
 	OL_free(olvm);
@@ -3708,7 +3914,7 @@ word pinvoke(OL* self, word* arguments)
 
 	got = call(function, args, i + floats + doubles);
 #else
-	got = call(returntype >> 8, args, i);
+	got = call(returntype >> 8, function, args, i);
 #endif
 
 	word result = IFALSE;

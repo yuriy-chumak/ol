@@ -56,7 +56,7 @@
 
       ;; unsafe-dirfd → #false | eof | bvec
       (define (read-dir obj)
-         (sys-prim 1012 obj #false #false))
+         (sys-prim 78 obj #false #false))
 
       ;; _ → #true
       (define (close-dir obj)

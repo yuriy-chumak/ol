@@ -88,8 +88,8 @@
    (begin
 
       ;; number of bits each vector tree node dispatches from index
-      (define *vec-bits* (>> *fixnum-bits* 1))
-      ; (define *vec-bits* 8) ;; legacy
+      ; (define *vec-bits* (>> *fixnum-bits* 1))
+      (define *vec-bits* 16) ;; legacy
 
       (define *vec-leaf-size* (<< 1 *vec-bits*))
       (define *vec-leaf-max* (- *vec-leaf-size* 1))

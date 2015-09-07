@@ -4,6 +4,7 @@
 ;; todo: convert arity checks 17 -> 25
 
 ;; todo: maybe move ncar, and other "n" to the normal but with macroses on top level with type checking.
+;; todo: переделать так, чтобы регистр возврата был самый первый, тогда можно будет обойтись без RET
 
 (define-library (lang vm)
    (export
@@ -13,7 +14,10 @@
 
       multiple-return-variable-primops
       variable-input-arity?
-      special-bind-primop?)
+      special-bind-primop?
+      
+      ; some usable basic functions (syscalls)
+      exec yield)
 
    (import
       (r5rs base))
@@ -177,6 +181,8 @@
 
          ; системный таймер
          (tuple 'clock    61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
+         (tuple 'fmax     33  0 1 (raw type-bytecode '(33 4)))
+         (tuple 'fmbits   34  0 1 (raw type-bytecode '(34 4)))
 
          ; syscall интерфейс
          (tuple 'sys-prim 63  4 1 sys-prim)
@@ -283,7 +289,8 @@
 ;      21 kill
 
       ;; used syscalls
-      (define (exec function . args) (sys-prim 59 function args #false))
+      (define (exec function . args) (syscall 59 function args #f))
+      (define (yield)                (syscall 1022 0 #false #false))
 
 ;      ;; special things exposed by the vm
 ;      (define (set-memory-limit n) (sys-prim 1007 n n n))

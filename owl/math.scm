@@ -42,9 +42,7 @@
       denominator numerator
       remainder modulo
       truncate round
-      rational complex
-      *max-fixnum* *fixnum-bits*
-      )
+      rational complex)
 
    (import
       (r5rs base)
@@ -56,32 +54,34 @@
    (begin
       (define o (λ (f g) (λ (x) (f (g x)))))
 
-      ;; check how many fixnum bits the vm supports with fx<<
-      ;; idea is to allow the vm to be compiled with different ranges, initially fixed to 24
-      (define *max-fixnum*
-         (let loop ((f 0))
-            (lets
-               ((o f (fx<< f 1)) ;; repeat (f<<1)|1 until overflow
-                (f (fxbor f 1)))
-               (if (eq? o 0)
-                  (loop f)
-                  f))))
+;      ;; check how many fixnum bits the vm supports with fx<<
+;      ;; idea is to allow the vm to be compiled with different ranges, initially fixed to 24
+;      (define *max-fixnum*
+;         (let loop ((f 0))
+;            (lets
+;               ((o f (fx<< f 1)) ;; repeat (f<<1)|1 until overflow
+;                (f (fxbor f 1)))
+;               (if (eq? o 0)
+;                  (loop f)
+;                  f))))
+;      now changed to vm call (fmax)
 
       ;; biggest before highest bit is set (needed in some bignum ops)
-      (define *pre-max-fixnum*
-         (lets
-            ((f o (fx>> *max-fixnum* 1)))
+      (define (*pre-max-fixnum*)
+         (let*
+            ((f o (fx>> (fmax) 1)))
             f))
 
-      ;; count the number of bits in *max-fixnum*
-      (define *fixnum-bits*
-         (let loop ((f *max-fixnum*) (n 0))
-            (if (eq? f 0)
-               n
-               (lets
-                  ((f _ (fx>> f 1))
-                   (n _ (fx+ n 1)))
-                  (loop f n)))))
+;      ;; count the number of bits in *max-fixnum*
+;      (define (*fixnum-bits*)
+;         (let loop ((f (fmax)) (n 0))
+;            (if (eq? f 0)
+;               n
+;               (lets
+;                  ((f _ (fx>> f 1))
+;                   (n _ (fx+ n 1)))
+;                  (loop f n)))))
+;      now changed to vm call (fmbits)
 
       (define *big-one*
          (ncons 1 null))
@@ -277,12 +277,12 @@
          (let ((t (type n)))
             (cond
                ((eq? t type-fix+)
-                  (if (eq? n *max-fixnum*)
+                  (if (eq? n (fmax))
                      *first-bignum*
                      (lets ((n x (fx+ n 1))) n)))
                ((eq? t type-int+)
                   (let ((lo (ncar n)))
-                     (if (eq? lo *max-fixnum*)
+                     (if (eq? lo (fmax))
                         (ncons 0 (nat-succ (ncdr n)))
                         (lets ((lo x (fx+ lo 1)))
                            (ncons lo (ncdr n))))))
@@ -596,7 +596,7 @@
       (define (>> a b)
          (case (type b)
             (type-fix+
-               (lets ((_ wor bits (fx/ 0 b *fixnum-bits*)))
+               (lets ((_ wor bits (fx/ 0 b (fmbits))))
                   (if (eq? wor 0) 
                      (case (type a)
                         (type-fix+ (receive (fx>> a bits) (lambda (hi lo) hi)))
@@ -616,7 +616,7 @@
                ;; todo, use digit multiples instead or drop each digit
                (if (eq? a 0)
                   0 ;; terminate early if out of bits
-                  (>> (ncdr a) (subi b *fixnum-bits*))))
+                  (>> (ncdr a) (subi b (fmbits)))))
             (else
                (big-bad-args '>> a b))))
 
@@ -644,7 +644,7 @@
          (cond
             ((eq? a 0) 0)
             ((eq? (type b) type-fix+)
-               (lets ((_ words bits (fx/ 0 b *fixnum-bits*)))
+               (lets ((_ words bits (fx/ 0 b (fmbits))))
                   (case (type a)
                      (type-fix+
                         (lets ((hi lo (fx<< a bits)))
@@ -677,7 +677,7 @@
                         (big-bad-args '<< a b)))))
             ((eq? (type b) type-int+)
                ;; not likely to happen though
-               (<< (<< a *max-fixnum*) (subi b *max-fixnum*)))
+               (<< (<< a (fmax)) (subi b (fmax))))
             (else
                ;; could allow negative shift left to mean a shift right, but that is 
                ;; probably more likely an accident than desired behavior, so failing here
@@ -1112,7 +1112,7 @@
                   ((null? na)
                      (if (null? nb)
                         (let ((b-lead (ncar b)))
-                           (if (eq? b-lead *max-fixnum*)
+                           (if (eq? b-lead (fmax))
                               (if (eq? n 0)
                                  0
                                  (shift-local-down (ncar a) *pre-max-fixnum* (subi n 1)))
@@ -1126,7 +1126,7 @@
                         ; divisor is larger
                         0))
                   ((null? nb)
-                     (div-shift (ncdr a) b (add n *fixnum-bits*)))
+                     (div-shift (ncdr a) b (add n (fmbits))))
                   (else
                      (div-shift (ncdr a) (ncdr b) n))))))
                
@@ -1195,7 +1195,7 @@
                   (cond
                      ((null? dr) (values tl dr)) ; failed below
                      (dr
-                        (let ((d (subi d 1))) ; int- (of was -*max-fixnum*), fix- or fix+
+                        (let ((d (subi d 1))) ; int- (of was -fmax), fix- or fix+
                            (if (negative? d)
                               (values (ncons (add d *first-bignum*) tl) #true) ; borrow
                               (values (ncons d tl) #false))))
@@ -1279,7 +1279,7 @@
             (lets ((rb (nrev b)))
                (if (lesser? #b000000111111111111111111 (ncar rb))
                   ; scale them to get a more fitting head for b
-                  ; and also get rid of the special case where it is *max-fixnum*
+                  ; and also get rid of the special case where it is fmax
                   (>> (nat-rem-reverse (<< a 12) (<< b 12)) 12)
                   (let ((r (rrem (nrev a) rb)))
                      (cond
@@ -1319,7 +1319,7 @@
       ; b is usually shorter, so shift b right and then substract instead 
       ; of moving a by s
 
-      (define last-bit (subi *fixnum-bits* 1))
+      (define last-bit (subi (fmbits) 1))
 
       (define (divex bit bp a b out)
          (cond
@@ -2045,7 +2045,7 @@
       (define (log2-big n digs)
          (let ((tl (ncdr n)))
             (if (null? tl)
-               (add (log2-msd (ncar n)) (mul digs *fixnum-bits*))
+               (add (log2-msd (ncar n)) (mul digs (fmbits)))
                (log2-big tl (add digs 1)))))
 
       (define (log2 n)

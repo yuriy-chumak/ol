@@ -1,24 +1,39 @@
+#pragma once
+
 /*
- * olvm_xtra.h
+ * pinvoke.h
  *
- *  Created on: Jun 10, 2015
+ *  Created on: Sep 8, 2015
  *      Author: uri
  */
 
-#ifndef SRC_OLVM_XTRA_H_
-#define SRC_OLVM_XTRA_H_
-
-#include "olvm.h"
-
 #include <stdint.h>
+
 // unsigned int that is capable of storing a pointer
 // основной тип даных, зависит от разрядности машины
 // based on C99 standard, <stdint.h>
 typedef uintptr_t word;
 
+// память машины, управляемая сборщиком мусора
+typedef struct heap_t
+{
+	//  begin <= genstart <= end
+	word *begin;     // begin of heap memory block
+	word *end;       // end of heap
+
+	word *genstart;  // new generation begin pointer
+
+	word *fp;        // allocation pointer
+} heap_t;
+
 struct OL
 {
-	word *fp; // allocation pointer (top of allocated heap)
+	struct heap_t heap; // must be first member
+	word max_heap_size; // max heap size in MB
+
+	// вызвать GC если в памяти мало места в КБ
+	// для безусловного вызова передать -1
+	void (*gc)(int kb);
 };
 
 // парочка полезных макросов
@@ -31,14 +46,31 @@ struct OL
 #define TTUPLE                      (2)
 #define TSTRING                     (3)
 
+#define TPORT                       (12)
+#define TCONST                      (13)
+
 #define make_immediate(value, type) ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(size, type)     (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
 #define F(val)                      (((word)(val) << IPOS) | 2)
 
+#define RAWBIT                      ((1 << RPOS))
+#define RAWH(t)                     (t | (RAWBIT >> TPOS))
+
+#define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in fixnum
+#define HIGHBIT                     ((unsigned long)1 << FBITS) // high long bit set
+#define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
+#define MAXOBJ                      0xffff         // max words in tuple including header
+
+
+#define IFALSE                      make_immediate(0, TCONST)
+#define ITRUE                       make_immediate(1, TCONST)
+#define INULL                       make_immediate(2, TCONST)
+#define IEMPTY                      make_immediate(3, TCONST) /* empty ff */
+
 
 #define NEW(size) ({\
-	word* addr = fp;\
-	fp += size;\
+	word* addr = self->heap.fp;\
+	self->heap.fp += size;\
 	/*return*/ addr;\
 })
 
@@ -62,11 +94,10 @@ word*p = NEW_OBJECT (3, TPAIR);\
 // создать новый порт
 #define new_port(a) ({\
 word value = (word) a;\
-	word* me = new (2, RAWH(TPORT));\
+	word* me = NEW_OBJECT (2, RAWH(TPORT));\
 	me[1] = value;\
 	/*return*/ me;\
 })
-
 
 #define uftoi(fix)  ({ ((word)fix >> IPOS); })
 #define sftoi(fix)  ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
@@ -74,5 +105,8 @@ word value = (word) a;\
 #define car(ob)                     (((word*)(ob))[1])
 #define cdr(ob)                     (((word*)(ob))[2])
 
+#define hdrsize(x)  ((((word)x) >> SPOS) & MAXOBJ)
+#define padsize(x)  ((((word)x) >> IPOS) & 7)
+#define hdrtype(x)  ((((word)x) >> TPOS) & 0x3F) // 0xFF from (p) << 8) in make_raw_header
 
-#endif /* SRC_OLVM_XTRA_H_ */
+#define typeof(x) hdrtype(x)

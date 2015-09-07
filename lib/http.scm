@@ -1,30 +1,46 @@
 ; http server
+; HTTP/1.0 - https://tools.ietf.org/html/rfc1945
 (define-library (lib http)
   (export
     http:run)
-  (import (r5rs base) (owl parse) (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl error) (owl interop))
+  (import (r5rs base) (owl parse)
+      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl error) (owl interop)
+      (only (owl intern) intern-symbols string->uninterned-symbol string->symbol)
+     )
   
 (begin
   ;(define *debug* #t)
   ;(print "\e[1;1H\e[2J")
+  
+   (define (upalpha? x) (<= #\A x #\Z))
+   (define (loalpha? x) (<= #\a x #\z))
+   (define (alpha-char? x)
+      (or (upalpha? x)
+          (loalpha? x)))
+   (define (digit-char? x)
+      (<= #\0 x #\9))
+   (define (ctl-char? x)
+      (or (<= 0 x 31)
+          (= x 127)))
+  
+  
+  
+  
 
-(define (timestamp)
-   (let* ((ss ms (clock)))
-      (list (mod (floor (/ ss 60)) 24)
-            (mod ss 60)
-            ms)))
+(define (timestamp) (syscall 201 "%c" #f #f))
 (define (set-ticker-value n) (sys-prim 1022 n #false #false))
 
 
-(define (send fd . args)
-   (for-each (lambda (arg)
-      (display-to fd arg)) args))
+;(define (send fd . args)
+;   (for-each (lambda (arg)
+;      (display-to fd arg)) args))
 
 
 ; parser
       (define (syntax-fail pos info lst)
-         (list "syntax-error-mark" info
-            (list ">>> " pos "-" (runes->string lst) " <<<")))
+         '(() (())))
+;         (list "syntax-error-mark" info
+;            (list ">>> " pos "-" (runes->string lst) " <<<")))
 
       (define quoted-values
          (list->ff
@@ -34,7 +50,7 @@
               (#\n . #x000a)
               (#\r . #x000d)
               (#\e . #x001B)
-              (#\" . #x0022)
+              (#\" . #x0022) ;"
               (#\\ . #x005c))))
               
       (define (a-z? x)
@@ -45,7 +61,7 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)
-             (has? '(#\/ #\: #\.) x)))
+             (has? '(#\/ #\: #\. #\& #\? #\=) x)))
 
       (define (space-char? x) (= x #\space))
 
@@ -86,6 +102,11 @@
                         (+ (* n base) d)))))
             0 digits))
 
+;               ((head (get-rune-if symbol-lead-char?))
+;                (tail (get-greedy* (get-rune-if symbol-char?)))
+;                (next (peek get-byte))
+;                (foo (assert (lambda (b) (not (symbol-char? b))) next))) ; avoid useless backtracking
+;               (string->uninterned-symbol (runes->string (cons head tail))))
 
       (define get-rest-of-line
          (let-parses
@@ -110,12 +131,10 @@
              (skip        (get-imm #\space))
              (proto  (get-greedy+ (get-rune-if uri?))) ; todo:
              (skip (get-imm #\return)) (skip (get-imm #\newline)))
-            (begin
-               (print (timestamp) "> request uri: " (runes->string uri))
-            (list
+            (tuple
                (runes->string method)
                (runes->string uri)
-               (runes->string proto)))))
+               (runes->string proto))))
 
       (define get-header-line
          (let-parses (
@@ -125,7 +144,8 @@
              (value (get-greedy+ (get-rune-if (lambda (x) (not (eq? x #\return))))))
              (skip (get-imm #\return)) (skip (get-imm #\newline)))
             (cons
-               (runes->string name)
+               (string->symbol (runes->string name))
+;               (string->uninterned-symbol (runes->string name))
                (runes->string value))))
 
 
@@ -134,8 +154,8 @@
              (request-line get-request-line)
              (headers-array (get-greedy* get-header-line))
              (skip (get-imm #\return)) (skip (get-imm #\newline)))
-            (list
-               request-line headers-array)))
+            (cons
+               request-line (list->ff headers-array))))
 
 
 ;(print (car
@@ -151,16 +171,23 @@
 
 (define (on-accept fd onRequest)
 (lambda ()
-   (let* ((ss ms (clock)))
-   (print "connected at " (timestamp))
+   (let* ((ss1 ms1 (clock)))
+   (print "\n> *** " (timestamp) ":")
    (let ((send (lambda args
             (for-each (lambda (arg)
                (display-to fd arg)) args))))
-   (let ((request (fd->exp-stream fd "> " http-parser syntax-fail #f)))
-      (print "request is " (car request))
-      (send "HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8\n\n<HTML><BODY>")
-      (onRequest (car request) send)
-      (send "<HR>" (let* ((s2 m2 (clock))) (+ (* (- s2 ss) 1000) (- m2 ms))) "ms " "</BODY></HTML>"))
+   ; loop if keep-alive
+   (let loop ()
+      (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
+             (Request-Line (car (car request))))
+         (if (null? Request-Line)
+            (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
+            (onRequest Request-Line (cdr (car request)) send))
+         (let* ((ss2 ms2 (clock)))
+            (print "Request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms."))
+         ;(if (string-eq? (getf (cdr request) 'Connection) "keep-alive?")
+         ;   (loop))
+      ))
    (syscall 3 fd #f #f)
    (print "done." )))))
 
@@ -173,13 +200,14 @@
          (loop (+ port 2))
          (print "Server binded to " port)))
    ; listen      
-   (if (not (syscall 50 socket #f #f))   (exit-owl (print "Can't listen")))
+   (if (not (syscall 50 socket #f #f))
+      (exit-owl (print "Can't listen")))
    
    ; accept
-   (let loop ((socket socket))
+   (let loop ()
       (if (syscall 23 socket #f #f)
          (let ((fd (syscall 43 socket #f #f)))
             (fork (on-accept fd onRequest)))
          (set-ticker-value 0))
-      (loop socket))))
+      (loop))))
 ))
