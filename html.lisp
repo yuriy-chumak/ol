@@ -20,6 +20,7 @@
 (define (yield) (sys-prim 1022 0 #false #false))
 (define (mem-stats) (syscall 1117 #f #f #f))
 (define (time format seconds) (syscall 201 format seconds #f))
+(define uname (syscall 63 0 0 0))
 
 ; some constants for uptime
 (define (div a b) (floor (/ a b)))
@@ -74,6 +75,7 @@
                    (stime (ref rusage 2))
                    (uptime (ref sysinfo 1)))
                (send
+                     "<div style='float:left'>"
                      "uptime: "
                               (div      uptime D   ) " days, "
                               (div (rem uptime D) H) " hr, "
@@ -90,11 +92,17 @@
                               (div (rem (car stime) D) H) " hr, "
                               (div (rem (car stime) H) M) " min, "
                               (     rem (car stime) M   ) " sec."
-                     "</small></pre>")))
+                     "</div>")
+               (send "<div style='float:right'>"
+                     (time "%c" #false) ", Web Server: "
+                        (ref (*version*) 1) "/" (ref (*version*) 2)
+                        ", "
+                        (ref uname 1) " " (ref uname 5)
+                     "</div>")
+               (send "<div style='clear: both'></div></small></pre>")))
          ((string-eq? url "/data.tsv")
             (send "date\tGeneration\tAllocated\tTotal Size\t\n")
             (interact 'memory-stats-collector send))
-;         ((string-eq? url "/200")
          (else
             (send "<HTML><BODY>")
             (send "<h1>url:" url "</h1>")

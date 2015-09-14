@@ -17,7 +17,7 @@
 
 (import
    (owl random) (owl random!)
-   (etc bisect)
+   (etc bisect) (owl math-prime)
    (scheme misc))
 
 (define (rand unused max)

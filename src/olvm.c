@@ -57,6 +57,10 @@
 
 #include "olvm.h"
 
+#define __OLVM_NAME__ "OL"
+#define __OLVM_VERSION__ "1.0"
+
+
 // defaults. please don't change. use -DOPTIONSYMBOL gcc command line option instead
 #ifndef HAS_SOCKETS
 #define HAS_SOCKETS 1 // system sockets support
@@ -602,6 +606,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define is_const(ob)                (typeof (ob) == TCONST)
 
 #define is_pair(ob)                 (is_pointer(ob) &&         *(word*)(ob)  == HPAIR)
+#define is_npair(ob)                (is_pointer(ob) &&         *(word*)(ob)  == HINT)
 #define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)(ob)) == TSTRING)
 #define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)(ob)) == TPORT) // todo: maybe need to check port rawness?
 
@@ -621,6 +626,9 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define itosf(val)  ({ val < 0 ? (F(-val) | 0x80) : F(val); })
 
 // TINT(as pair) to int
+// прошу внимания!
+//  в числовой паре надо сначала положить старшую часть,
+//  и только потом младшую!
 #define uitoi(num)  ({ uftoi(car(B)) | (is_pointer(cdr(B)) ? uftoi(cadr(B)) << FBITS : 0); })
 #define itoui(val)  ({ val > FMAX ? new_list(TINT, itouf(val & FMAX), itouf(val >> FBITS)) : (word*) itouf(val); })
 
@@ -760,7 +768,7 @@ word*p = NEW_OBJECT (3, type);\
 #define new_tuple1(a1) ({\
 	word data1 = (word) a1;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (2, TTUPLE);\
+word*p = NEW_OBJECT (1+1, TTUPLE);\
 	p[1] = data1;\
 	/*return*/ p;\
 })
@@ -768,7 +776,7 @@ word*p = NEW_OBJECT (2, TTUPLE);\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (3, TTUPLE);\
+word*p = NEW_OBJECT (2+1, TTUPLE);\
 	p[1] = data1;\
 	p[2] = data2;\
 	/*return*/ p;\
@@ -778,10 +786,25 @@ word*p = NEW_OBJECT (3, TTUPLE);\
 	word data2 = (word) a2;\
 	word data3 = (word) a3;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (4, TTUPLE);\
+word*p = NEW_OBJECT (3+1, TTUPLE);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
+	/*return*/ p;\
+})
+#define new_tuple5(a1,a2,a3,a4,a5) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	word data3 = (word) a3;\
+	word data4 = (word) a4;\
+	word data5 = (word) a5;\
+	/* точка следования */ \
+word*p = NEW_OBJECT (5+1, TTUPLE);\
+	p[1] = data1;\
+	p[2] = data2;\
+	p[3] = data3;\
+	p[4] = data4;\
+	p[5] = data5;\
 	/*return*/ p;\
 })
 #define new_tuple9(a1,a2,a3,a4,a5,a6,a7,a8,a9) ({\
@@ -795,7 +818,7 @@ word*p = NEW_OBJECT (4, TTUPLE);\
 	word data8 = (word) a8;\
 	word data9 = (word) a9;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (10, TTUPLE);\
+word*p = NEW_OBJECT (9+1, TTUPLE);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -1008,6 +1031,9 @@ static word gc(heap_t *heap, int size, word regs) {
 //в *fp спокойно можно оставить мусор
 	*fp = make_header(2, TTUPLE);
 
+	if (size == 0)
+		heap->genstart = heap->begin; // start full generation
+
 	// непосредственно сам GC
 	clock_t uptime;
 	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
@@ -1056,13 +1082,13 @@ static word gc(heap_t *heap, int size, word regs) {
 			}
 		}
 		heap->genstart = (word*)regs; // always start newobj generation
-	} else
-	if (nfree < MINGEN || nfree < size*W*2) {
+	}
+	else if (nfree < MINGEN || nfree < size*W*2) {
 		heap->genstart = heap->begin; // start full generation
 		return gc(heap, size, regs);
-	} else {
-		heap->genstart = (word*)regs; // start newobj generation
 	}
+	else
+		heap->genstart = (word*)regs; // simply start newobj generation
 	return regs;
 }
 
@@ -1357,13 +1383,10 @@ apply: // apply something at "this" to values in regs, or maybe switch context
 
 					word *state;
 					state = (word*) new (acc, TTHREAD);
-					state[acc-1] = R[acc];
 					for (int pos = 1; pos < acc-1; pos++)
 						state[pos] = R[pos];
-//					while (pos < acc-1) {
-//						state[pos] = R[pos];
-//						pos++;
-//					}
+					state[acc-1] = R[acc];
+
 					this = (word *) R[0]; // mcp
 
 					R[0] = IFALSE; // remove mcp cont
@@ -1456,6 +1479,7 @@ invoke:;
 
 	// АЛУ
 #	define EQ    54
+#	define LESS  44
 
 #	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 #	define SYSCALL 63
@@ -1497,6 +1521,11 @@ invoke:;
 #	define DIVISION 26
 #	define MULTIPLICATION 39
 #	define SUBTRACTION 40
+#	define BINARY_AND 55
+#	define BINARY_OR  56
+#	define BINARY_XOR 57
+#	define SHIFT_RIGHT 58
+#	define SHIFT_LEFT 59
 	// todo: add shifts right, left, etc.
 
 	// free numbers: 34, 37, 62 (was _connect)
@@ -1816,17 +1845,15 @@ invoke:;
 
 		case NCAR: {  // ncar a r
 			word T = A0;
-			CHECK(is_pointer(T), T, NCAR);
+			CHECK(is_pointer(T), T, NCAR); // todo: is_npair
 			A1 = car(T);
-			ip += 2; break;
-		}
+			ip += 2; break; }
 
 		case NCDR: {  // ncdr a r
 			word T = A0;
-			CHECK(is_pointer(T), T, NCDR);
+			CHECK(is_pointer(T), T, NCDR); // todo: in_npair
 			A1 = cdr(T);
-			ip += 2; break;
-		}
+			ip += 2; break; }
 
 
 		case SET: { // set t o v r
@@ -1836,23 +1863,32 @@ invoke:;
 			else {
 				word hdr = *p;
 				word pos = fixval(A1);
-				if (is_raw(hdr) || hdrsize(hdr) < pos)
+				if (is_raw(hdr) || hdrsize(hdr) < pos || !pos)
 					A3 = IFALSE;
 				else {
 					word size = hdrsize (hdr);
 					word *newobj = new (size);
 					word val = A2;
 					for (int i = 0; i <= size; i++)
-						newobj[i] = (pos == i && i) ? val : p[i];
-					A3 = (word) newobj;
+						newobj[i] = p[i];
+					newobj[pos] = val;
+					A3 = (word)newobj;
 				}
 			}
-			ip += 4; break;
-		}
+			ip += 4; break; }
 
 		case EQ: // eq a b r
 			A2 = (A0 == A1) ? ITRUE : IFALSE;
 			ip += 3; break;
+		case LESS: {// less a b r
+			word a = A0;
+			word b = A1;
+			if (immediatep(a))
+				A2 = immediatep(b) ? TRUEFALSE(a < b) : ITRUE;  // imm < alloc
+			else
+				A2 = immediatep(b) ? IFALSE : TRUEFALSE(a < b); // alloc > imm
+			ip += 3; break; }
+
 
 		// АЛУ (арифметическо-логическое устройство)
 		case ADDITION: { // fx+ a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
@@ -1886,51 +1922,35 @@ invoke:;
 			ip += 6; break; }
 
 
-		case 44: {/* less a b r */
-			word a = A0;
-			word b = A1;
-			if (immediatep(a))
-				A2 = immediatep(b) ? TRUEFALSE(a < b) : ITRUE;  /* imm < alloc */
-			else
-				A2 = immediatep(b) ? IFALSE : TRUEFALSE(a < b); /* alloc > imm */
-			ip += 3; break; }
+		case BINARY_AND: // band a b r, prechecked
+			A2 = (A0 & A1);
+			ip += 3; break;
+		case BINARY_OR:  // bor a b r, prechecked
+			A2 = (A0 | A1);
+			ip += 3; break;
+		case BINARY_XOR: // bxor a b r, prechecked
+			A2 = (A0 ^ (A1 & (FMAX << IPOS))); // inherit a's type info
+			ip += 3; break;
 
-
-		case 55: { /* band a b r, prechecked */
-	      word a = A0;
-	      word b = A1;
-	      A2 = a & b;
-	      ip += 3; break; }
-		case 56: { /* bor a b r, prechecked */
-	      word a = A0;
-	      word b = A1;
-	      A2 = a | b;
-	      ip += 3; break; }
-		case 57: { /* bxor a b r, prechecked */
-	      word a = A0;
-	      word b = A1;
-	      A2 = a ^ (b & (FMAX << IPOS)); /* inherit a's type info */
-	      ip += 3; break; }
-
-		case 58: { /* fx>> a b hi lo */
-			big r = ((big) fixval(A0)) << (FBITS - fixval(A1));
+		case SHIFT_RIGHT: { // fx>> a b hi lo
+			big r = ((big) uftoi(A0)) << (FBITS - uftoi(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
-		case 59: { /* fx<< a b hi lo */
-			big r = ((big) fixval(A0)) << (fixval(A1));
+		case SHIFT_LEFT: { // fx<< a b hi lo
+			big r = ((big) uftoi(A0)) << (uftoi(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
 
 
-		case REFB: { /* refb t o r */ /* todo: merge with ref, though 0-based  */
+		case REFB: { /* refb t o r */
 			word *p = (word *) A0;
 			if (immediatep(p))
 				A2 = F(-1); // todo: return IFALSE
 			else {
 				word hdr = *p;
-				word hsize = ((hdrsize(hdr)-1)*W) - padsize(hdr); /* bytes - pads */
+				word hsize = ((hdrsize(hdr)-1)*W) - padsize(hdr); // bytes - pads
 				int pos = fixval(A1);
 				if (pos >= hsize)
 					A2 = IFALSE;
@@ -1969,9 +1989,12 @@ invoke:;
 			A0 = F(FBITS);
 			ip += 1; break;
 
+		case 62: // get virtual machine info
+			A0 = (word) new_tuple(new_string(2, __OLVM_NAME__), new_string(3, __OLVM_VERSION__));
+			ip += 1; break;
+
 			// неиспользуемые коды (историческое наследие, при желании можно реюзать)
 		case 37:
-		case 62:
 			ERROR(op, IFALSE, IFALSE);
 			break;
 
@@ -2042,8 +2065,8 @@ invoke:;
 			ip += size+1; break;
 		}
 
-		// bind tuple to registers
-		case BIND: { /* bind <tuple > <n> <r0> .. <rn> */ // todo: move to sys-prim?
+		// bind tuple to registers, todo: rename to bind-t or bindt or bnt
+		case BIND: { /* bind <tuple > <n> <r0> .. <rn> */
 			word *tuple = (word *) R[*ip++];
 			CHECK(is_pointer(tuple), tuple, BIND);
 
@@ -2185,7 +2208,7 @@ invoke:;
 			//            http://man7.org/linux/man-pages/dir_section_2.html
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
-			word result = IFALSE;  // default returned value is #false
+			word result = IFALSE;  // default returned value is #false, todo: change to word*
 		//	CHECK(is_fixed(A0) && typeof(A0) == TFIX, A0, SYSCALL);
 			word op = uftoi (A0);
 			word a = A1, b = A2, c = A3;
@@ -2203,7 +2226,7 @@ invoke:;
 
 				if (size < 0)
 					size = (heap->end - fp) * W - MEMPAD;
-				else
+				else // todo: change to ol->gc(size) or similar
 				if (size > (heap->end - fp) * W - MEMPAD)
 					dogc(size);
 
@@ -2691,7 +2714,7 @@ invoke:;
 				}
 				else
 #endif
-					result = itoui (seconds);
+					result = (word)itoui (seconds);
 				break;
 			}
 
@@ -2721,7 +2744,7 @@ invoke:;
 				if (uname(&name))
 					break;
 
-				result = (word)new_list (TPAIR,
+				result = (word)new_tuple(
 						new_string(strlen((char*)name.sysname), name.sysname),
 						new_string(strlen((char*)name.nodename), name.nodename),
 						new_string(strlen((char*)name.release), name.release),
@@ -2786,7 +2809,9 @@ invoke:;
 
 			// =- 1000+ -===========================================================================
 			// other internal commands
-
+			case 1000:
+				dogc(0);
+				break;
 			// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 			//  остальное можно спокойно оформлять отдельными функциями
 /*			case 1001: // *max-fixnum*
@@ -3015,13 +3040,12 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
 static __inline__
 word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
-	register
 	unsigned char* hp = bootstrap;
 //	if (*hp == '#') // этот код не нужен, так как сюда приходит уже без шабанга
 //		while (*hp++ != '\n') continue;
 
 	// tbd: comment
-	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность 0x7FFFFFFFFFFFFFFF (самое большое число)
+	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
 	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 	word get_nat()
 	{
@@ -3351,46 +3375,18 @@ OL* OL_free(OL* ol)
 void*
 OL_eval(OL* handle, int argc, char** argv)
 {
-#if 0 //EMBEDDED_VM
-	args.signal = 0;
-	if (pthread_create(&handle->tid, NULL, &runtime, &args) == 0) {
-		while (!args.signal)
-			pthread_yield();
-		return handle;
-	}
-	fprintf(stderr, "Can't create thread for vm");
-#else
 #	ifndef _WIN32
-	setvbuf(stderr, (void*)0, _IONBF, 0);
+//	setvbuf(stderr, (void*)0, _IONBF, 0);
 //	setvbuf(stdout, (void*)0, _IONBF, 0);
-	set_blocking(1, 0);
-	set_blocking(2, 0);
+	set_blocking(STDOUT_FILENO, 0);
+	set_blocking(STDERR_FILENO, 0);
 #	endif
-#endif
 
 	// подготовим аргументы:
-	word* userdata;
+	word* userdata = (word*) INULL;
 	{
 		word* fp = handle->heap.fp;
-		userdata = (word*)INULL;
 #if !EMBEDDED_VM
-		// аргументы
-		// todo: for win32 do ::GetCommandLine()
-		/*int f = open("/proc/self/cmdline", O_RDONLY, S_IRUSR);
-		if (f) {
-			int r;
-			do {
-				char *pos = (char*)(fp + 1);
-				while ((r = read(f, pos, 1)) > 0 && (*pos != 0)) {
-					pos++;
-				}
-				int length = pos - (char*)fp - W;
-				if (r > 0 && length > 0) // если есть что добавить
-					userdata = new_pair (new_bytevector(length, TSTRING), userdata);
-			}
-			while (r > 0);
-			close(f);
-		}*/
 		for (int i = 0; i < argc; i++, argv++) {
 			char *pos = (char*)(fp + 1);
 			char *v = *argv;
@@ -3414,59 +3410,22 @@ OL_eval(OL* handle, int argc, char** argv)
 		handle->heap.fp = fp;
 	}
 
-	void* result = // результат выполнения скрипта
-	runtime(handle, userdata);
-
-	// ===============================================================
-	return result;
+	// результат выполнения скрипта
+	return runtime(handle, userdata);
 }
 
-#if 0 //EMBEDDED_VM
-
-/*void eval(char* message, char* response, int length)
-{
-	fifo_puts(&fi, message, strlen(message) + 1);
-	fifo_gets(&fo, response, length);
-}
-void eval2(char* message)
-{
-	fifo_puts(&fi, message, strlen(message) + 1);
-}*/
-
-int vm_alive(OL* vm)
-{
-	return (pthread_kill(vm->tid, 0) != ESRCH);
-}
-
-
-int vm_puts(OL* vm, char *message, int n)
-{
-	if (!vm_alive(vm))
-		return 0; // если машина уже умерла - нет смысла ей еще что-то передавать
-	return fifo_puts(&vm->o, message, n);
-}
-int vm_gets(OL* vm, char *message, int n)
-{
-	if (!vm_alive(vm) && fifo_empty(&vm->i)) // если там уже ничего нет, иначе заберем
-		return *message = 0;
-	return fifo_gets(&vm->i, message, n);
-}
-int vm_feof(OL* vm)
-{
-	return fifo_feof(&vm->i);
-}
-#endif//EMBEDDED_VM
-
-
-//   а тут у нас реализация pinvoke механизма. пример в opengl.scm
+/**
+ * PInvoke - Platform Invoke
+ *
+ * а тут у нас реализация pinvoke механизма. пример в lib/opengl.scm, lib/sqlite.scm, etc.
+ */
 #if HAS_PINVOKE
 __attribute__
-	((__visibility__("default")))
+		((__visibility__("default")))
 word pinvoke(OL* self, word* arguments)
 {
-	heap_t* heap = &self->heap;
 	// get memory pointer
-
+	heap_t* heap = &self->heap;
 	word*
 	fp = heap->fp;
 
@@ -3711,7 +3670,6 @@ word pinvoke(OL* self, word* arguments)
 	int floats = 0; // для amd64
 	int doubles = 0; // temp
 
-	long got;   // результат вызова функции
 	int i = 0;     // количество аргументов
 	word* p = (word*)C;   // сами аргументы
 	word* t = (word*)cdr(B); // rtty
@@ -3882,6 +3840,8 @@ word pinvoke(OL* self, word* arguments)
 	}
 	assert ((word)t == INULL); // количество аргументов совпало!
 
+	long got;   // результат вызова функции
+
 //	#00000000 00000000 - dword
 //	#00000000 000000xx - count of arguments
 //	#00000000 000xxx00 - count of floats - up to 12 ?
@@ -3912,23 +3872,16 @@ word pinvoke(OL* self, word* arguments)
 //
 //	float R = ((float (*)  (int, double, int))function) (1, 2.0, 3);
 
-	got = call(function, args, i + floats + doubles);
+	got = call(function, args, i + floats+doubles);
 #else
 	got = call(returntype >> 8, function, args, i);
 #endif
 
-	word result = IFALSE;
+	word result = IFALSE; // change to word*
 	switch (returntype & 0x3F) {
 		case TINT:
-			if (got > FMAX) {
-				// прошу внимания!
-				//  в числовой паре надо сначала положить старшую часть,
-				//  и только потом младшую!
-				result = (word) new_pair(TINT, F(got & 0xFFFFFF),
-				                               new_pair(TINT, F(got >> 24),
-				                                              INULL));
-				break;
-			}
+			result = (word) itoui(got);
+			break;
 			// no break
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = itosf (got);
@@ -3948,20 +3901,10 @@ word pinvoke(OL* self, word* arguments)
 		case TVOID:
 			result = INULL;
 			break;
-//                      todo: TRATIONAL
+//      todo TRATIONAL:
 	}
 
 	heap->fp = fp;
 	return result;
 }
 #endif//HAS_PINVOKE
-
-__attribute__
-	((__visibility__("default")))
-word testcall(OL* self, word* arguments)
-{
-	fprintf(stderr, "testcall>: fp=%p\n", self->heap.fp);
-	self->gc(256);
-	fprintf(stderr, "testcall<: fp=%p\n", self->heap.fp);
-	return IFALSE;
-}

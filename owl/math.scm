@@ -15,6 +15,7 @@
 ;; write this sans big(gish) humbers in code to allow changing
 
 ; todo: read this http://www.fitc.unc.edu.ar/javadev/math/previous/algorithms.html
+; todo: move all math to folder math
 
 (define-library (owl math)
 
@@ -64,24 +65,24 @@
 ;               (if (eq? o 0)
 ;                  (loop f)
 ;                  f))))
-;      now changed to vm call (fmax)
+;      now changed to vm call (fxmax)
 
       ;; biggest before highest bit is set (needed in some bignum ops)
       (define (*pre-max-fixnum*)
          (let*
-            ((f o (fx>> (fmax) 1)))
+            ((f o (fx>> (fxmax) 1)))
             f))
 
 ;      ;; count the number of bits in *max-fixnum*
 ;      (define (*fixnum-bits*)
-;         (let loop ((f (fmax)) (n 0))
+;         (let loop ((f (fxmax)) (n 0))
 ;            (if (eq? f 0)
 ;               n
 ;               (lets
 ;                  ((f _ (fx>> f 1))
 ;                   (n _ (fx+ n 1)))
 ;                  (loop f n)))))
-;      now changed to vm call (fmbits)
+;      now changed to vm call (fxmbits)
 
       (define *big-one*
          (ncons 1 null))
@@ -277,12 +278,12 @@
          (let ((t (type n)))
             (cond
                ((eq? t type-fix+)
-                  (if (eq? n (fmax))
+                  (if (eq? n (fxmax))
                      *first-bignum*
                      (lets ((n x (fx+ n 1))) n)))
                ((eq? t type-int+)
                   (let ((lo (ncar n)))
-                     (if (eq? lo (fmax))
+                     (if (eq? lo (fxmax))
                         (ncons 0 (nat-succ (ncdr n)))
                         (lets ((lo x (fx+ lo 1)))
                            (ncons lo (ncdr n))))))
@@ -345,7 +346,7 @@
 
       (define-syntax sub-small->pick-sign
          (syntax-rules ()
-            ((sub-small->pick-sign a b)
+            ((sub-small->pick-sign a b) ; todo: переделать!
                (lets ((r uf? (fx- a b)))
                   (if uf?
                      (lets ((r _ (fx- b a))) ;; could also fix here by adding or bitwise
@@ -596,7 +597,7 @@
       (define (>> a b)
          (case (type b)
             (type-fix+
-               (lets ((_ wor bits (fx/ 0 b (fmbits))))
+               (lets ((_ wor bits (fx/ 0 b (fxmbits))))
                   (if (eq? wor 0) 
                      (case (type a)
                         (type-fix+ (receive (fx>> a bits) (lambda (hi lo) hi)))
@@ -616,7 +617,7 @@
                ;; todo, use digit multiples instead or drop each digit
                (if (eq? a 0)
                   0 ;; terminate early if out of bits
-                  (>> (ncdr a) (subi b (fmbits)))))
+                  (>> (ncdr a) (subi b (fxmbits)))))
             (else
                (big-bad-args '>> a b))))
 
@@ -644,7 +645,7 @@
          (cond
             ((eq? a 0) 0)
             ((eq? (type b) type-fix+)
-               (lets ((_ words bits (fx/ 0 b (fmbits))))
+               (lets ((_ words bits (fx/ 0 b (fxmbits))))
                   (case (type a)
                      (type-fix+
                         (lets ((hi lo (fx<< a bits)))
@@ -677,7 +678,7 @@
                         (big-bad-args '<< a b)))))
             ((eq? (type b) type-int+)
                ;; not likely to happen though
-               (<< (<< a (fmax)) (subi b (fmax))))
+               (<< (<< a (fxmax)) (subi b (fxmax))))
             (else
                ;; could allow negative shift left to mean a shift right, but that is 
                ;; probably more likely an accident than desired behavior, so failing here
@@ -1112,7 +1113,7 @@
                   ((null? na)
                      (if (null? nb)
                         (let ((b-lead (ncar b)))
-                           (if (eq? b-lead (fmax))
+                           (if (eq? b-lead (fxmax))
                               (if (eq? n 0)
                                  0
                                  (shift-local-down (ncar a) *pre-max-fixnum* (subi n 1)))
@@ -1126,7 +1127,7 @@
                         ; divisor is larger
                         0))
                   ((null? nb)
-                     (div-shift (ncdr a) b (add n (fmbits))))
+                     (div-shift (ncdr a) b (add n (fxmbits))))
                   (else
                      (div-shift (ncdr a) (ncdr b) n))))))
                
@@ -1195,7 +1196,7 @@
                   (cond
                      ((null? dr) (values tl dr)) ; failed below
                      (dr
-                        (let ((d (subi d 1))) ; int- (of was -fmax), fix- or fix+
+                        (let ((d (subi d 1))) ; int- (of was -fxmax), fix- or fix+
                            (if (negative? d)
                               (values (ncons (add d *first-bignum*) tl) #true) ; borrow
                               (values (ncons d tl) #false))))
@@ -1279,7 +1280,7 @@
             (lets ((rb (nrev b)))
                (if (lesser? #b000000111111111111111111 (ncar rb))
                   ; scale them to get a more fitting head for b
-                  ; and also get rid of the special case where it is fmax
+                  ; and also get rid of the special case where it is fxmax
                   (>> (nat-rem-reverse (<< a 12) (<< b 12)) 12)
                   (let ((r (rrem (nrev a) rb)))
                      (cond
@@ -1319,7 +1320,7 @@
       ; b is usually shorter, so shift b right and then substract instead 
       ; of moving a by s
 
-      (define last-bit (subi (fmbits) 1))
+      (define last-bit (subi (fxmbits) 1))
 
       (define (divex bit bp a b out)
          (cond
@@ -2045,7 +2046,7 @@
       (define (log2-big n digs)
          (let ((tl (ncdr n)))
             (if (null? tl)
-               (add (log2-msd (ncar n)) (mul digs (fmbits)))
+               (add (log2-msd (ncar n)) (mul digs (fxmbits)))
                (log2-big tl (add digs 1)))))
 
       (define (log2 n)

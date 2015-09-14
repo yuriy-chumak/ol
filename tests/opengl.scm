@@ -47,8 +47,6 @@
 
 ; todo: тип для (dlsym) - всегда число, добавить в проверку
 
-;(sys-prim 1033 (/ 1245678912456789 1245678912456788) (cast 1 type-rational) #false)
-
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
 
 ; real code
@@ -82,7 +80,6 @@
 
 ;(wglMakeCurrent (tuple "a" "b" "c"))
 
-;(sys-prim 1033 (cast type-fix+ 3/7) #false #false)
 (define GLchar** type-tuple)
 (define GLint* type-vector-raw)
 (define GLsizei* type-vector-raw)

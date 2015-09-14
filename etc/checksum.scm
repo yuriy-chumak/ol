@@ -15,7 +15,7 @@
    (import
       (owl defmac)
       (owl math)
-      (owl math-extra)
+      (owl math-extra) (owl math-prime)
       (owl list)
       (owl string)
       (owl vector)

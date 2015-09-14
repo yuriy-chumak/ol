@@ -130,6 +130,11 @@
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
          (tuple 'raw      60  2 1 raw) ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
 
+         ; vm-specific constants
+         (tuple '*version* 62  0 1 (raw type-bytecode '(62 4)))
+         (tuple 'fxmax     33  0 1 (raw type-bytecode '(33 4)))
+         (tuple 'fxmbits   34  0 1 (raw type-bytecode '(34 4)))
+
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
          (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
          (tuple 'mkt      MKT     'any   1 #false)  ;; mkt type v0 .. vn t (why #f?)
@@ -172,7 +177,7 @@
 
          ; базовая математика
          (tuple 'fx+      38  2 2 fx+)
-;         (tuple '#+       38  2 2 #+)
+;        (tuple '#+       38  2 2 #+)
          (tuple 'fx*      39  2 2 fx*)
          (tuple 'fx-      40  2 2 fx-)
          (tuple 'fx/      26  3 3 fx/)
@@ -181,8 +186,6 @@
 
          ; системный таймер
          (tuple 'clock    61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
-         (tuple 'fmax     33  0 1 (raw type-bytecode '(33 4)))
-         (tuple 'fmbits   34  0 1 (raw type-bytecode '(34 4)))
 
          ; syscall интерфейс
          (tuple 'sys-prim 63  4 1 sys-prim)

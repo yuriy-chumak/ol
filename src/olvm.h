@@ -28,7 +28,7 @@ struct ol_t;
 #define NO_SECCOMP
 
 // comment this to enable overflow checking in binary program decoder
-#define OVERFLOW_KILLS(n)
+//#define OVERFLOW_KILLS(n)
 
 struct ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
 struct ol_t* OL_free(struct ol_t* ol);

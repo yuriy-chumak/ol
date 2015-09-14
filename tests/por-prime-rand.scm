@@ -1,3 +1,4 @@
+(import (owl math-prime))
 (define num (+ (band (time-ms) #b1111111111) 2))
 
 (define por-opts 
