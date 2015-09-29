@@ -1,6 +1,7 @@
 #!/bin/ol
 
-(import (lib http))
+(import (lib http)
+        (lib sha1))
 ; simplest example:
 ;(http:run 8080 (lambda (request headers send)
 ;   (send "HTTP/1.1 200 OK\n")
@@ -48,23 +49,40 @@
             (mail sender stats))))
    (yield)
    (let ((ss (time #false #f)))
-      (if (> (- ss seconds) 29)
+      (if (> (- ss seconds) 2)
          (let ((mem (mem-stats)))
             (loop (cons (cons (time "%d%H%M%S\t" ss) mem) stats) ss))
          (loop stats seconds))))))
 
 
-(http:run 8080 (lambda (request headers send)
+(http:run 8080 (lambda (fd request headers send close)
    (print "Request: " request)
    (print "Headers: " headers)
-   (send "HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8\n")
-   (send "Server: OL/1.0\n")
-   (send "\n")
 
    (let* ((url (ref request 2))
           (url (if (string-eq? url "/") "/index.html" url)))
       (cond
+         ((string-eq? url "/ws")
+            (let ((Upgrade (getf headers 'Upgrade)))
+               (if Upgrade (begin
+                  (print "id: " (string-append (getf headers 'Sec-WebSocket-Key) "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
+                  (print "answer: " (base64:encode (sha1:digest (string-append (getf headers 'Sec-WebSocket-Key) "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))))
+                  (send "HTTP/1.1 101 Switching Protocols\n")
+                  (send "Connection: Upgrade\n")
+                  (send "Origin: null\n")
+                  (send "Sec-WebSocket-Protocol: echo-protocol\n")
+                  (send "Sec-WebSocket-Accept: " (base64:encode (sha1:digest (string-append (getf headers 'Sec-WebSocket-Key) "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))) "\n")
+                  (send "Upgrade: websocket\n")
+                  (send "Server: OL/1.0\n")
+                  (send "\n")
+                  ;else
+                  (send "HTTP/1.1 200 OK\nServer: OL/1.0\n\n-"))))
+
          ((string-eq? url "/index.html")
+            (send "HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8\n")
+            (send "Server: OL/1.0\n")
+            (send "\n")
+
             (send (runes->string (file->list (str-app "./tutorial/2. Web Server" url))))
             (send "<hr>")
             (send "<pre><small>")
@@ -99,11 +117,21 @@
                         ", "
                         (ref uname 1) " " (ref uname 5)
                      "</div>")
-               (send "<div style='clear: both'></div></small></pre>")))
+               (send "<div style='clear: both'></div></small></pre>"))
+            (close #t))
          ((string-eq? url "/data.tsv")
+            (send "HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8\n")
+            (send "Server: OL/1.0\n")
+            (send "\n")
+            
             (send "date\tGeneration\tAllocated\tTotal Size\t\n")
-            (interact 'memory-stats-collector send))
+            (interact 'memory-stats-collector send)
+            (close #t))
          (else
+            (send "HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8\n")
+            (send "Server: OL/1.0\n")
+            (send "\n")
+            
             (send "<HTML><BODY>")
             (send "<h1>url:" url "</h1>")
             (send "<hr>")
@@ -117,5 +145,6 @@
                               (div (rem uptime H) M) " min, "
                               (     rem uptime M   ) " sec."
                      "</small>"))
-            (send "</BODY></HTML>"))))))
+            (send "</BODY></HTML>")
+            (close #t))))))
 ))

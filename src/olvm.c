@@ -58,7 +58,7 @@
 #include "olvm.h"
 
 #define __OLVM_NAME__ "OL"
-#define __OLVM_VERSION__ "1.0"
+#define __OLVM_VERSION__ "1.0.0"
 
 
 // defaults. please don't change. use -DOPTIONSYMBOL gcc command line option instead
@@ -162,7 +162,7 @@
 #define __useconds_t unsigned int
 #endif
 
-extern int usleep (__useconds_t __useconds);
+//extern int usleep (__useconds_t __useconds);
 extern FILE *popen (const char *__command, const char *__modes);
 extern int pclose (FILE *__stream);
 extern int mkstemp (char *__template);
@@ -190,9 +190,9 @@ extern int mkstemp (char *__template);
 #	include <arpa/inet.h> // for inet_addr()
 
 #endif
-#ifdef __ANDROID__
-	typedef unsigned long in_addr_t;
-#endif
+//#ifdef __ANDROID__
+//	typedef unsigned long in_addr_t;
+//#endif
 
 #ifdef __APPLE__
 #	include "TargetConditionals.h"
@@ -554,28 +554,33 @@ typedef struct object
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
-#define TFIX                         (0)      // type-fix+
-#define TFIXN                        (0 + 32) // type-fix-
 #define TPAIR                        (1)
 #define TTUPLE                       (2)
 #define TSTRING                      (3)
+#define TSYMBOL                      (4)
 
 #define TPORT                       (12)
+#define TMEMP                       (62)
 #define TCONST                      (13)
+
+#define TBYTECODE                   (16)
+#define TPROC                       (17)
+#define TCLOS                       (18)
 #define TFF                         24
+
 #define TBVEC                       19
-#define TBYTECODE                   16
-#define TPROC                       17
-#define TCLOS                       18
 #define TSTRINGWIDE                 22
 
 #define TTHREAD                     31 // type-thread-state
 
-#define TVOID                       48 // type-void
-#define TINT                        40 // type-int+
-#define TINTN                       41 // type-int-
-#define TRATIONAL                   42
-#define TCOMPLEX                    43
+#define TFIX                         (0)  // type-fix+
+#define TFIXN                       (32)  // type-fix-
+#define TINT                        (40)  // type-int+
+#define TINTN                       (41)  // type-int-
+#define TRATIONAL                   (42)
+#define TCOMPLEX                    (43)
+
+#define TVOID                       (48) // type-void
 
 // special pinvoke types
 #define TFLOAT                      46
@@ -609,6 +614,7 @@ static const word I[]               = { F(0), INULL, ITRUE, IFALSE };  /* for ld
 #define is_npair(ob)                (is_pointer(ob) &&         *(word*)(ob)  == HINT)
 #define is_string(ob)               (is_pointer(ob) && hdrtype(*(word*)(ob)) == TSTRING)
 #define is_port(ob)                 (is_pointer(ob) && hdrtype(*(word*)(ob)) == TPORT) // todo: maybe need to check port rawness?
+#define is_memp(ob)                 (is_pointer(ob) && hdrtype(*(word*)(ob)) == TMEMP) // todo: maybe need to check port rawness?
 
 #define ref(ob, n)                  (((word*)(ob))[n])
 #define car(ob)                     ref(ob, 1)
@@ -868,6 +874,12 @@ word* p = new_bytevector(length, TSTRING);\
 #define new_port(a) ({\
 word value = (word) a;\
 	word* me = new (2, RAWH(TPORT));\
+	me[1] = value;\
+	/*return*/ me;\
+})
+#define new_memp(a) ({\
+word value = (word) a;\
+	word* me = new (2, RAWH(TMEMP));\
 	me[1] = value;\
 	/*return*/ me;\
 })
@@ -1528,7 +1540,7 @@ invoke:;
 #	define SHIFT_LEFT 59
 	// todo: add shifts right, left, etc.
 
-	// free numbers: 34, 37, 62 (was _connect)
+	// free numbers: 37 (was _connect)
 
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
@@ -1990,7 +2002,9 @@ invoke:;
 			ip += 1; break;
 
 		case 62: // get virtual machine info
-			A0 = (word) new_tuple(new_string(2, __OLVM_NAME__), new_string(3, __OLVM_VERSION__));
+			A0 = (word) new_tuple(
+					new_string(sizeof(__OLVM_NAME__)-1, __OLVM_NAME__),
+					new_string(sizeof(__OLVM_VERSION__)-1, __OLVM_VERSION__));
 			ip += 1; break;
 
 			// неиспользуемые коды (историческое наследие, при желании можно реюзать)
@@ -2575,14 +2589,13 @@ invoke:;
 			case 59: {
 #if HAS_DLOPEN
 				// if a is port (result of dlsym)
-				if (is_port(a)) {
+				if (is_memp(a)) {
 					// a - function address (port)
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 					word* A = (word*)a;
 					word* B = (word*)b;
 					word* C = (word*)c; // reserved, assert #false
 
-					// CHECK(is_port(A), A, 59);
 					assert ((word)B == INULL || is_pair(B));
 					assert ((word)C == IFALSE);
 
@@ -2597,6 +2610,27 @@ invoke:;
 				// if a is string:
 				if (is_string(a)) {
 #if 1
+					if (is_port (b)) {
+						int port_fd = car (b);
+
+						int child = fork();
+						if (child == 0) {
+							fprintf(stderr, "fork.1\n");
+							dup2(port_fd, STDIN_FILENO);
+							dup2(port_fd, STDOUT_FILENO);
+
+							char* command = (char*)&car(a);
+							execve(command, 0, 0);
+							fprintf(stderr, "done!\n");
+							exit(0);
+//							exit(execve(command, 0, 0));
+						}
+						else {
+							fprintf(stderr, "child: %d forked\n", child);
+							result = ITRUE;
+						}
+						break;
+					}
 					FILE* pipe = popen((const char*)&car(a), "r");
 					if (! pipe)
 						break;
@@ -2894,7 +2928,7 @@ invoke:;
 							? (char*) imm_val((word)symbol)
 							: (char*) &symbol[1]);
 					if (function)
-						result = (word)new_port(function);
+						result = (word)new_memp(function);
 					else
 						fprintf(stderr, "dlsym failed: %s\n", dlerror());
 					break;
@@ -3664,6 +3698,7 @@ word pinvoke(OL* self, word* arguments)
 	// C[1] = return-type
 	// C[2] = argument-types
 
+	// todo: может выделять в общей куче,а не стеке?
 	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = uftoi(car(B));

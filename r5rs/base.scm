@@ -1,4 +1,6 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
+; rename to scheme/r5rs/base ?
+; rename to ./r5rs ?
 (define-library (r5rs base)
    (begin
       ; ========================================================================================================
@@ -8,15 +10,14 @@
       ;                  Dedicated to the Memory of ALGOL 60
       ;
       ; ========================================================================================================
-      ; There are some standard chapters sequence changed, due to more cleaner code:
-      ;  chapters 4.2.2 (let, let*, letrec) and 4.2.3 (begin) goes before 4.1.5 due
-      ;  to usings of this constructions in following definitins.
 
       ;;; Chapter 1
       ;;; Overview of Scheme
-      ;; 1.1  Semantics
-      ;; 1.2  Syntax
-      ;; 1.3  Notation and terminology
+      ; 1.1  Semantics
+      ; 1.2  Syntax
+
+
+      ; 1.3  Notation and terminology
       ; 1.3.1  Primitive, library, and optional features
       ; 1.3.2  Error situations and unspecified behavior
       (define-syntax syntax-error
@@ -32,53 +33,171 @@
       ;;; Chapter 2
       ;;; Lexical conventions
       ;
-      ;  This section gives an informal account of some of the lexical conventions used in writing Scheme
+      ; This section gives an informal account of some of the lexical conventions used in writing Scheme
       ; programs. For a formal syntax of Scheme, see section 7.1.
-      ;  Upper and lower case forms of a letter are never distinguished except within character and string
+      ; Upper and lower case forms of a letter are never distinguished except within character and string
       ; constants. For example, Foo is the same identifier as FOO, and #x1AB is the same number as #X1ab.
       ;
-      ;; 2.1  Identifiers
+      ; 2.1  Identifiers
+      ;
       ; lambda        q
       ; list->vector  soup
       ; +             V17a
       ; <=?           a34kTMNs
       ; the-word-recursion-has-many-meanings
       ;
-      ;  Extended alphabetic characters may be used within identifiers as if they were letters. The
+      ; Extended alphabetic characters may be used within identifiers as if they were letters. The
       ; following are extended alphabetic characters:
       ;
       ; ! $ % & * + - . / : < = > ? @ ^ _ ~
       ;
 
-      ;; 2.2  Whitespace and comments
-      ;; 2.3  Other notations
+      ; 2.2  Whitespace and comments
+      ; 2.3  Other notations
 
 
       ;;; Chapter 3
       ;;; Basic concepts
-      ;; 3.1  Variables, syntactic keywords, and regions
-      ;; 3.2  Disjointness of types
-      ;; 3.3  External representations
-      ;; 3.4  Storage model
-      ;; 3.5  Proper tail recursion
+      ; 3.1  Variables, syntactic keywords, and regions
+      ; 3.2  Disjointness of types
+      ; 3.3  External representations
+      ; 3.4  Storage model
+      ; 3.5  Proper tail recursion
       
       
       ;;; Chapter 4
       ;;; Expressions
-      ;; 4.1  Primitive expression types
+      ; 4.1  Primitive expression types
+
       ; 4.1.1  Variable references
       ; syntax:  <variable>
-      
-      
+
       ; 4.1.2  Literal expressions
+      ; syntax:  quote <datum>
+      ; syntax:  '<datum>
+      ; syntax:  <constant>
+
       ; 4.1.3  Procedure calls
+      ; syntax:  (<operator> <operand1> ...)
+
       ; 4.1.4  Procedures
-      ; syntax:  (lambda <formals> <body>) 
+      ; syntax:  (lambda <formals> <body>)
       (define-syntax λ
          (syntax-rules () 
             ((λ . x) (lambda . x))))
 
-      ; --- 4.2.2 and 4.2.3 must be declared before 4.1.5, 4.1.6, 4.2.1 due to language dependencies
+      ; rXrs syntax: (rlambda <variables> <values> <body>)
+      ; rXrs syntex: (case-lambda ...
+      (define-syntax case-lambda      ;expand case-lambda syntax to to (_case-lambda <lambda> (_case-lambda ... (_case-lambda <lambda> <lambda)))
+         (syntax-rules (lambda _case-lambda)
+            ((case-lambda) #false) 
+            ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
+            ((case-lambda (formals . body))
+               ;; downgrade to a run-of-the-mill lambda
+               (lambda formals . body))
+            ((case-lambda (formals . body) . rest)
+               ;; make a list of options to be compiled to a chain of code bodies w/ jumps
+               ;; note, could also merge to a jump table + sequence of codes, but it doesn't really matter
+               ;; because speed-sensitive stuff will be compiled to C where this won't matter
+               (_case-lambda (lambda formals . body)
+                  (case-lambda . rest)))))
+
+      ; -------------------
+      ; 4.1.5  Conditionals
+      ; syntax:  if <test> <consequent> <alternate>
+      ; syntax:  if <test> <consequent>
+      (define-syntax if
+         (syntax-rules (not eq? and null? pair? empty? type =)
+            ((if test          then)      (if test then #false))
+            ((if (not test)    then else) (if test else then))              ; optimization
+            ((if (null? test)  then else) (if (eq? test '()) then else))    ; optimization
+            ((if (empty? test) then else) (if (eq? test #empty) then else)) ; optimization  ; FIXME - handle with partial eval later
+            ((if (eq? a b)     then else) (_branch 0 a b then else))        ; optimization
+            ((if (a . b)       then else) ((lambda (x) (if x then else)) (a . b)))
+            ((if #false        then else)  else)                            ; optimization
+            ((if #true         then else)  then)                            ; optimization
+            ((if test          then else) (_branch 0 test #false else then))))
+
+      ; ------------------
+      ; 4.1.6  Assignments
+      ; syntax: set! <variable> <expression> 
+      (define-syntax set!
+         (syntax-rules () 
+            ((set! var val) (error "set! is not supported: " '(set! var val)))))
+
+
+      ;; 4.2  Derived expression types
+      ; The constructs in this section are hygienic, as discussed in section 4.3. For reference purposes,
+      ; section 7.3 gives macro definitions that will convert most of the constructs described in this
+      ; section into the primitive constructs described in the previous section.
+
+      ; -------------------
+      ; 4.2.1  Conditionals
+      ; library syntax:  (cond <clause1> <clause2> ...)
+      (define-syntax cond
+         (syntax-rules (else =>)
+            ((cond) #false)
+            ((cond (else exp . rest))
+               ((lambda () exp . rest)))        ; (begin ...)
+            ((cond (clause => exp) . rest)
+               ((lambda (fresh)
+                  (if fresh
+                     (exp fresh)
+                     (cond . rest)))  clause))
+            ((cond (clause exp . rest-exps) . rest)
+               (if clause
+                  ((lambda () exp . rest-exps)) ; (begin ...)
+                  (cond . rest)))))
+
+      ; library syntax:  (case <key> <clause1> <clause2> ...)
+      (define-syntax case
+         (syntax-rules (else eqv? memv =>)
+            ((case (op . args) . clauses)
+               ((lambda (fresh) ; let ((fresh (op.args)))
+                  (case fresh . clauses)) (op . args)))
+            ((case thing) #false)
+            ((case thing ((a) => exp) . clauses)
+               (if (eqv? thing (quote a))
+                  (exp thing)
+                  (case thing . clauses)))
+            ((case thing ((a ...) => exp) . clauses)
+               (if (memv thing (quote (a ...)))
+                  (exp thing)
+                  (case thing . clauses)))
+            ((case thing ((a) . body) . clauses)
+               (if (eqv? thing (quote a))
+                  ((lambda () . body)) ; (begin . body)
+                  (case thing . clauses)))
+            ((case thing (else => func))
+               (func thing))
+            ((case thing (else . body))
+               ((lambda () . body)))   ; (begin . body)
+            ((case thing ((a . b) . body) . clauses)
+               (if (memv thing (quote (a . b)))
+                  ((lambda () . body)) ; (begin . body)
+                  (case thing . clauses)))
+            ((case thing (atom . then) . clauses) ;; added for (case (type foo) (type-foo thenfoo) (type-bar thenbar) ...)
+               (if (eq? thing atom)
+                  ((lambda () . then)) ; (begin . body)
+                  (case thing . clauses)))))
+
+      ; library syntax:  (and <test1> ...)
+      (define-syntax and
+         (syntax-rules ()
+            ((and) #true)
+            ((and a) a)
+            ((and a . b)
+               (if a (and . b) #false))))
+
+      ; library syntax:  (or <test1> ...)
+      (define-syntax or
+         (syntax-rules ()
+            ((or) #false)
+            ((or (a . b) . c)
+               ((lambda (x) (or x . c))  (a . b)))
+            ((or a . b)
+               (if a a (or . b)))))
+
 
       ; -------------------------
       ; 4.2.2  Binding constructs
@@ -108,11 +227,11 @@
       ; library syntax:  (let <bindings> <body>)
       ;                  (let keyword <bindings> <body>) named let, from 4.2.4 Iteration
       (define-syntax let
-            (syntax-rules ()
-               ((let ((var val) ...) exp . rest) 
-                  ((lambda (var ...) exp . rest) val ...))
-               ((let keyword ((var init) ...) exp . rest) 
-                  (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
+         (syntax-rules ()
+            ((let ((var val) ...) exp . rest) 
+               ((lambda (var ...) exp . rest) val ...))
+            ((let keyword ((var init) ...) exp . rest) ; todo: move to (r5rs full)
+               (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
 
       ; library syntax:  (let* <bindings> <body>)
       (define-syntax let*
@@ -145,22 +264,10 @@
 
       ; -----------------
       ; 4.2.3  Sequencing
-
       ; library syntax:  (begin <expression1> <expression2> ...)
       (define-syntax begin
-         (syntax-rules (define define-syntax letrec define-values let*-values) ; ===>
-            ;((begin
-            ;   (define-syntax key1 rules1)
-            ;   (define-syntax key2 rules2) ... . rest)
-            ;   (letrec-syntax ((key1 rules1) (key2 rules2) ...)
-            ;      (begin . rest)))
+         (syntax-rules (define letrec define-values let*-values letrec) ; todo: rename define-values to define*
             ((begin exp) exp)
-            ;((begin expression ===> wanted . rest)  ;; inlined assertions
-            ;   (begin
-            ;   (let ((val expression))
-            ;      (if (eq? val (quote wanted)) #t
-            ;         (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons wanted '()))))))
-            ;   (begin . rest)))
             ((begin (define . a) (define . b) ... . rest)
                (begin 42 () (define . a) (define . b) ... . rest))
             ((begin (define-values (val ...) . body) . rest)
@@ -179,138 +286,36 @@
                (begin 43 b (a . c) exps))
             ((begin 43 () bindings exps)
                (letrec bindings (begin . exps)))
-            ((begin first . rest)  
-               ((lambda (free)
-                  (begin . rest))
-                  first))))
-
-
-      ; -------------------
-      ; 4.1.5  Conditionals
-      ; Temporary hack: if inlines some predicates.
-      (define-syntax if
-         (syntax-rules 
-            (not eq? and null? pair? empty? type =)
-            ((if test exp) (if test exp #false))
-            ((if (not test) then else) (if test else then))
-            ((if (null? test) then else) (if (eq? test '()) then else))
-            ((if (empty? test) then else) (if (eq? test #empty) then else)) ;; FIXME - handle with partial eval later
-            ((if (eq? a b) then else) (_branch 0 a b then else))            
-            ((if (a . b) then else) (let ((x (a . b))) (if x then else)))   ; or ((lambda (x) (if x then else)) (a . b))
-            ((if #false then else) else)
-            ((if #true then else) then)
-            ((if test then else) (_branch 0 test #false else then))))
-
-      ; ------------------
-      ; 4.1.6  Assignments
-
-      ;; 4.2  Derived expression types
-      ; The constructs in this section are hygienic, as discussed in section 4.3. For reference purposes,
-      ; section 7.3 gives macro definitions that will convert most of the constructs described in this
-      ; section into the primitive constructs described in the previous section.
-
-      ; -------------------
-      ; 4.2.1  Conditionals
-
-      ; library syntax:  (or <test1> ...)
-      (define-syntax or
-         (syntax-rules ()
-            ((or) #false)
-            ((or (a . b) . c)
-               (let ((x (a . b)))
-                  (or x . c)))
-            ((or a . b)
-               (if a a (or . b)))))
-
-      ; library syntax:  (and <test1> ...)
-      (define-syntax and
-         (syntax-rules ()
-            ((and) #true)
-            ((and a) a)
-            ((and a . b)
-               (if a (and . b) #false))))
-      
-      ; library syntax:  (cond <clause1> <clause2> ...)
-      (define-syntax cond
-         (syntax-rules (else =>)
-            ((cond) #false)
-            ((cond (else exp . rest))
-               (begin exp . rest))
-            ((cond (clause => exp) . rest) 
-               (let ((fresh clause))
-                  (if fresh
-                     (exp fresh)
-                     (cond . rest))))
-            ((cond (clause exp . rest-exps) . rest) 
-               (if clause
-                  (begin exp . rest-exps)
-                  (cond . rest)))))
-
-      ; library syntax:  (case <key> <clause1> <clause2> ...)
-      (define-syntax case
-         (syntax-rules (else eqv? memv =>)
-            ((case (op . args) . clauses)
-               (let ((fresh (op . args)))
-                  (case fresh . clauses)))
-            ((case thing) #false)
-            ((case thing ((a) => exp) . clauses)
-               (if (eqv? thing (quote a))
-                  (exp thing)
-                  (case thing . clauses)))
-            ((case thing ((a ...) => exp) . clauses)
-               (if (memv thing (quote (a ...)))
-                  (exp thing)
-                  (case thing . clauses)))
-            ((case thing ((a) . body) . clauses)
-               (if (eqv? thing (quote a))
-                  (begin . body)
-                  (case thing . clauses)))
-            ((case thing (else => func))
-               (func thing))
-            ((case thing (else . body))
-               (begin . body))
-            ((case thing ((a . b) . body) . clauses)
-               (if (memv thing (quote (a . b)))
-                  (begin . body)
-                  (case thing . clauses)))
-            ((case thing (atom . then) . clauses) ;; added for (case (type foo) (type-foo thenfoo) (type-bar thenbar) ...)
-               (if (eq? thing atom)
-                  (begin . then)
-                  (case thing . clauses)))))
-
-      ; expand case-lambda syntax to to (_case-lambda <lambda> (_case-lambda ... (_case-lambda <lambda> <lambda)))
-      (define-syntax case-lambda
-         (syntax-rules (lambda _case-lambda)
-            ((case-lambda) #false) 
-            ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
-            ((case-lambda (formals . body))
-               ;; downgrade to a run-of-the-mill lambda
-               (lambda formals . body))
-            ((case-lambda (formals . body) . rest)
-               ;; make a list of options to be compiled to a chain of code bodies w/ jumps
-               ;; note, could also merge to a jump table + sequence of codes, but it doesn't really matter
-               ;; because speed-sensitive stuff will be compiled to C where this won't matter
-               (_case-lambda (lambda formals . body)
-                  (case-lambda . rest)))))
+            ((begin first . rest)
+               ((lambda (free) (begin . rest))  first))))
 
 
       ; ----------------
       ; 4.2.4  Iteration
-      
-      (define-syntax do
-        (syntax-rules ()
-          ((do 
-            ((var init step) ...)
-            (test expr ...)
-            command ...)
-           (let loop ((var init) ...)
-            (if test 
-               (begin expr ...)
-               (loop step ...))))))
+      ; library syntax: do ((<variable1> <init1> <step1>) ...) (<test> <expression> ...) <command> ...
+      (define-syntax do ; ?
+         (syntax-rules ()
+            ((do ((var init step) ...) (test expr ...) command ...)
+               (let loop ((var init) ...)
+                  (if test 
+                     (begin expr ...)
+                     (loop step ...))))))
+
 
       ; -------------------------
       ; 4.2.5  Delayed evaluation
+      ; library syntax:  delay <expression>
+      (define-syntax delay
+         (syntax-rules ()
+            ((delay (op . args))
+               (lambda () (op . args)))
+            ((delay value) value)))
+
+
+      ; ---------------------
       ; 4.2.6  Quasiquotation
+      ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ==> (a 3 (4 5 6) b)
+      ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ==> (a 3 4 5 6 b)
       (define-syntax quasiquote
          (syntax-rules (unquote quote unquote-splicing append _work _sharp_vector list->vector)
                                                    ;          ^         ^
@@ -412,25 +417,108 @@
       ; Built-in procedures that can easily be written in terms of other built-in procedures are
       ; identified as ``library procedures''.
       ;
-      ;
-      ;; ....................
-      
+      (define-syntax assert
+         (syntax-rules (eq? list ==>)
+            ((assert expression)
+               (assert expression ==> #true))
+            ((assert expression ==> result)
+               (if (eq? expression (quote result)) #true
+                  ((raw 16 '(27 4 5 6 7 8  24 8))
+                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) '()))))))))
+;            ((assert result expression . stuff)
+;               (if (eq? expression result) #t
+;                  ((raw type-bytecode '(27 4 5 6 7 8  24 8))
+;                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
+;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
+
+      ;; ---------------------------
       ;; 6.1  Equivalence predicates
-      
+
       ; procedure:  (eqv? obj1 obj2) 
+      (define (eqv? a b)
+         (cond
+            ((eq? a b)
+               #true)
+;            ((symbol? a) #false) ; would have been eq?, because they are interned
+;            ((pair? a)
+;               (if (pair? b)
+;                  (and (equal? (car a) (car b)) (equal? (cdr a) (cdr b)))
+;                  #false))
+;            (else
+;               (let ((sa (size a)))
+;                  (cond
+;                     ; a is immediate -> would have been eq?
+;                     ((not sa)   #false)
+;                     ; same size
+;                     ((eq? sa (size b))
+;                        (let ((ta (type a)))
+;                           ; check equal types
+;                           (if (eq? ta (type b))
+;                              (if (raw? a)
+;                                 ; equal raw objects, check bytes
+;                                 (lets
+;                                    ((ea (sizeb a)) ; raw objects may have padding bytes, so recheck the sizes
+;                                     (eb (sizeb b)))
+;                                    (if (eq? ea eb)
+;                                       (if (eq? ea 0)
+;                                          #true
+;                                          (eq-bytes a b (- ea 1)))
+;                                       #false))
+;                                 ; equal ntuples, check fields
+;                                 (eq-fields a b equal? sa))
+;                              #false)))
+;                     (else #false))))))
+            (else #false)))
       ; tbd.
       
+
       ; procedure:  (eq? obj1 obj2)    * builtin
-      
+      ; library procedure: equal? obj1 obj2       
+;      (define-syntax (eqv? a b)
+;         (cond
+;            ((eq? a b)
+;               #true)
+;;            ((symbol? a) #false) ; would have been eq?, because they are interned
+;            ((pair? a)
+;               (if (pair? b)
+;                  (and (equal? (car a) (car b)) (equal? (cdr a) (cdr b)))
+;                  #false))
+;            (else
+;               (let ((sa (size a)))
+;                  (cond
+;                     ; a is immediate -> would have been eq?
+;                     ((not sa)   #false)
+;                     ; same size
+;                     ((eq? sa (size b))
+;                        (let ((ta (type a)))
+;                           ; check equal types
+;                           (if (eq? ta (type b))
+;                              (if (raw? a)
+;                                 ; equal raw objects, check bytes
+;                                 (lets
+;                                    ((ea (sizeb a)) ; raw objects may have padding bytes, so recheck the sizes
+;                                     (eb (sizeb b)))
+;                                    (if (eq? ea eb)
+;                                       (if (eq? ea 0)
+;                                          #true
+;                                          (eq-bytes a b (- ea 1)))
+;                                       #false))
+;                                 ; equal ntuples, check fields
+;                                 (eq-fields a b equal? sa))
+;                              #false)))
+;                     (else #false))))))
+;            (else #false)))
+
       ;; 6.2  Numbers
+      ; -------------------------------
       ; This data types related to olvm
-      ;     - not a part of r5rs -     
+      ;     - not a part of r5rs -
       (define type-fix+              0)
       (define type-fix-             32)
       (define type-int+             40)
       (define type-int-             41)
       (define type-rational         42)
-      (define type-complex          43) ;; 3 free below
+      (define type-complex          43)
       
       ; 6.2.1  Numerical types
       ; 6.2.2  Exactness
@@ -439,7 +527,7 @@
       
       ; ---------------------------
       ; 6.2.5  Numerical operations
-      
+      ;
       ; procedure:  (number? obj) 
       (define (number? o)
          (case (type o)
@@ -456,8 +544,10 @@
       ; procedure:  (rational? obj) 
       ; procedure:  (integer? obj) 
       ; procedure:  (exact? z) 
-      ; procedure:  (inexact? z)       
-      ; procedure:  (= z1 z2 z3 ...) 
+      ; procedure:  (inexact? z)
+      
+      ; *** declared in (r5rs math), (r5rs math-extra)
+      ; procedure:  (= z1 z2 z3 ...) <- (r5rs math)
       ; procedure:  (< x1 x2 x3 ...) 
       ; procedure:  (> x1 x2 x3 ...) 
       ; procedure:  (<= x1 x2 x3 ...) 
@@ -472,45 +562,85 @@
       ; procedure:  (+ z1 ...) 
       ; procedure:  (* z1 ...) 
       ; procedure:  (- z1 z2) 
-      ; procedure:  (- z) 
+      ; procedure:  (- z)
       ; optional procedure:  (- z1 z2 ...) 
       ; procedure:  (/ z1 z2) 
       ; procedure:  (/ z) 
       ; optional procedure:  (/ z1 z2 ...)       
-      ; ........
-      
+      ; library procedure: (abs x)
+      ; procedure: quotient (n1 n2)
+      ; procedure: remainder n1 n2
+      ; procedure: modulo n1 n2 
+      ; library procedure: gcd n1 ... 
+      ; library procedure: lcm n1 ... 
+      ; procedure: numerator q 
+      ; procedure: denominator q 
+      ; procedure: floor x
+      ; procedure: ceiling x
+      ; procedure: truncate x
+      ; procedure: round x 
+      ; library procedure: rationalize x y 
+      ; procedure: exp z
+      ; procedure: log z
+      ; procedure: sin z
+      ; procedure: cos z
+      ; procedure: tan z
+      ; procedure: asin z
+      ; procedure: acos z
+      ; procedure: atan z
+      ; procedure: atan y x 
+      ; procedure: sqrt z 
+      ; procedure: expt z1 z2 
+      ; procedure: make-rectangular x1 x2
+      ; procedure: make-polar x3 x4
+      ; procedure: real-part z
+      ; procedure: imag-part z
+      ; procedure: magnitude z
+      ; procedure: angle z 
+      ; procedure: exact->inexact z 
+      ; procedure: inexact->exact z 
+
+      ; ---------------------------------
       ; 6.2.6  Numerical input and output
-      ; procedure:  (number->string z) 
-      ; procedure:  (number->string z radix) 
-      ; procedure:  (string->number string) 
-      ; procedure:  (string->number string radix) 
+      ; procedure:  (number->string z) <- (r5rs strings?)
+      ; procedure:  (number->string z radix) <- (r5rs strings?)
+;      (define (number->string n base)
+;         (list->string (render-number n null base)))
+      
+      ; procedure:  (string->number string) <- (lang s-exp?)
+      ; procedure:  (string->number string radix) <- (lang s-exp?)
+;      (define string->number (case-lambda
+;         ((str base) (list->number (string->list str) base))
+;         (str        (list->number (string->list str) 10))))
       
       
       ;; *********************
       ;; 6.3  Other data types
       ;
-      ; This section describes operations on some of Scheme's non-numeric data types: booleans, pairs,
-      ; lists, symbols, characters, strings and vectors.
+      ;  This section describes operations on some of Scheme's non-numeric data types: booleans, pairs,
+      ;  lists, symbols, characters, strings and vectors.
+      ;
+      ; -------------------------------
       ; This data types related to olvm
-      ;     - not a part of r5rs -     
+      ;     - not a part of r5rs -
       (define type-pair              1)
+      (define type-tuple             2)
+      (define type-string            3)
+      (define type-symbol            4)
       
       (define type-bytecode         16)
       (define type-proc             17)
       (define type-clos             18)
+      (define type-thread-state     31)
+
       (define type-vector-dispatch  15)
       (define type-vector-leaf      11)
       (define type-vector-raw       19) ;; see also TBVEC in c/ovm.c
-      (define type-ff-black-leaf     8)
-      (define type-symbol            4)
-      (define type-tuple             2)
-      (define type-symbol            4)
       (define type-rlist-node       14)
       (define type-rlist-spine      10)
-      (define type-string            3)
+      
       (define type-string-wide      22)
       (define type-string-dispatch  21)
-      (define type-thread-state     31)
       (define type-record            5)
 
       ;; transitional trees or future ffs
@@ -518,32 +648,62 @@
       (define type-ff-r             25)
       (define type-ff-red           26)
       (define type-ff-red-r         27)
+      (define type-ff-black-leaf     8)
 
       ; + type-ff-red, type-ff-right
-
-      ; 8 - black ff leaf
-      ;; IMMEDIATE
-      
       (define type-eof              20) ;; moved from 4, clashing with symbols
-;      (define type-const            13) ;; old type-null, moved from 1, clashing with pairs
+;     (define type-const            13) ;; old type-null, moved from 1, clashing with pairs
       (define type-port             12)
-      (define type-tcp-client       62)
-      
+      (define type-memp             62)
+
 
       ; ---------------
       ; 6.3.1  Booleans
+      ;
+      ; Of all the standard Scheme values, only #f counts as false in conditional expressions.
+      ; Except for #f, all standard Scheme values, including #t, pairs, the empty list, symbols,
+      ; numbers, strings, vectors, and procedures, count as true.
+      ;      Note: Programmers accustomed to other dialects of Lisp should be aware that Scheme
+      ;            distinguishes both #f and the empty list from the symbol nil. 
+      ; Boolean constants evaluate to themselves, so they do not need to be quoted in programs.
+      (assert #t                                     ==>  #t)
+      (assert #f                                     ==>  #f)
+      (assert (quote #f)                             ==>  #f)
 
-      ; library procedure:  (not obj) 
+
+      ; library procedure:  (not obj)
       (define (not x)
          (if x #false #true))
 
-      ; library procedure:  (boolean? obj) 
+      (assert (not #t)                               ==>  #f)
+      (assert (not 3)                                ==>  #f)
+      (assert (not '(3 . 0))                         ==>  #f)
+      (assert (not #f)                               ==>  #t)
+      (assert (not '())                              ==>  #f)
+      (assert (not cons)                             ==>  #f)
+      (assert (not 'nil)                             ==>  #f)
+         
+
+      ; library procedure:  (boolean? obj)
       (define (boolean? o)
          (cond
             ((eq? o #true) #true)
             ((eq? o #false) #true)
             (else #false)))
 
+      (assert (boolean? #f)                          ==>  #t)
+      (assert (boolean? 0)                           ==>  #f)
+      (assert (boolean? '())                         ==>  #f)
+
+
+      ; Оставить здесь только самые абзово необходимые вещи, все остальное переместить в:
+      ;   6.3.2 -> (r5rs lists)
+      ;   6.3.3 -> (r5rs symbols)
+      ;   6.3.4 -> (r5rs characters)
+      ;   6.3.5 -> (r5rs strings)
+      ;   6.3.6 -> (r5rs vectors)
+      ;   
+      ;
 
       ; ----------------------
       ; 6.3.2. Pairs and lists
@@ -552,17 +712,23 @@
       (define (pair? o)
          (eq? (type o) type-pair))
 
+      (assert (pair? '(a . b))                       ==>  #t)
+      (assert (pair? '(a b c))                       ==>  #t)
+      (assert (pair? '())                            ==>  #f)
+      (assert (pair? '#(a b))                        ==>  #f)
+
       ; procedure:  (cons obj1 obj2)    * builtin
       ; procedure:  (car pair)          * builtin
       ; procedure:  (cdr pair)          * builtin
       ; procedure:  (set-car! pair obj) * builtin (not implemented yet)
       ; procedure:  (set-cdr! pair obj) * builtin (not implemented yet)
-      ; library procedure:  (caar pair)
-      ; library procedure:  (cadr pair)
+
+      ; library procedure:  (caar pair) <- (r5rs lists)
+      ; library procedure:  (cadr pair) <- (r5rs lists)
       ; ...
-      ; library procedure:  (cdddar pair)
-      ; library procedure:  (cddddr pair)
-      
+      ; library procedure:  (cdddar pair) <- (r5rs lists)
+      ; library procedure:  (cddddr pair) <- (r5rs lists)
+
       ; library procedure:  (null? obj)
       (define (null? x)
          (eq? x '()))
@@ -582,8 +748,46 @@
                (cons a (list . b)))))
                
       ; library procedure:  (length list)
+      (define (length l)
+         (let loop ((n 0) (l l))
+            (if (null? l)
+               n
+               (let* ((n _ (fx+ n 1)))
+                  (loop n (cdr l))))))
+
       ; library procedure:  (append list ...)
+;      (define (app a b app)
+;         (if (null? a)
+;            b
+;            (cons (car a) (app (cdr a) b app))))
+;      
+;      (define (appl l appl)
+;         (if (null? (cdr l))
+;            (car l)
+;            (app (car l) (appl (cdr l) appl) app)))
+
+      (define append
+         (let*((app (lambda (a b app)
+                  (if (null? a)
+                     b
+                     (cons (car a) (app (cdr a) b app)))))
+               (appl (lambda (l appl)
+                  (if (null? (cdr l))
+                     (car l)
+                     (app (car l) (appl (cdr l) appl) app)))))
+         (case-lambda
+            ((a b) (app a b app))
+            ((a b . cs) (app a (app b (appl cs appl) app) app))
+            ((a) a)
+            (() '()))))
+
       ; library procedure:  (reverse list)
+      (define (reverse l)
+         (let rev-loop ((a l) (b '()))
+         (if (null? a)
+            b
+            (rev-loop (cdr a) (cons (car a) b)))))
+      
       ; library procedure:  (list-tail list k)
       ; library procedure:  (list-ref list k)
       
@@ -754,12 +958,6 @@
                   (tuple-case 42 tuple type case ...)))))
        
 
-;      (define-syntax assert
-;         (syntax-rules (if sys eq?)
-;            ((assert result expression . stuff)
-;               (if (eq? expression result) #t
-;                  (sys '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
-;;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
 
 
       ;; note, no let-values yet, so using let*-values in define-values
@@ -931,6 +1129,12 @@
       ; 
 
       ; 6.4 Control features
+      
+      ;; force is effectively unnecessary in Owl, so might as well signal a 
+      ;; warning if this is used, because the code probably assumes 
+      ;; mutable state.
+
+      (define (force thunk) (thunk))
 
 
       ;(assert #t (procedure? car))
@@ -954,22 +1158,32 @@
             ((lets/cc var . body) 
                (call/cc (λ (var) (lets . body))))))
 
+      (define-syntax assert
+         (syntax-rules (equal? list ==>)
+            ((assert expression)
+               (assert expression ==> #true))
+            ((assert expression ==> result)
+               (if (equal? expression (quote result)) #true
+                  ((raw 16 '(27 4 5 6 7 8  24 8))
+                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) '()))))))))
 )
 ; ---------------------------
    (export
-      λ syntax-error ;assert
+      λ syntax-error assert
 
-      begin 
-      quasiquote letrec let if 
-      letrec* let*-values
-      cond case define ;define*
-      lets let* or and list
-      ilist tuple tuple-case 
-      call-with-values do define-library
+      if set! cond case and or not
+      letrec letrec* let let* let*-values lets
+      begin do
+      delay force
+
+      quasiquote
+      define ;define*
+      list length append reverse
+      ilist tuple tuple-case
+      call-with-values define-library
       case-lambda
       define-values
-      not
-      
+
       ; список типов
       type-complex
       type-rational
@@ -995,8 +1209,7 @@
 ;      type-const
       type-rlist-spine
       type-rlist-node
-      type-port 
-      type-tcp-client ; todo: remove and use (cons 'tcp-client port)
+      type-port type-memp
       type-string
       type-string-wide
       type-string-dispatch
@@ -1022,6 +1235,4 @@
       bytecode? function? ff?
       
       map list? map2
-   )
-
-)
+))

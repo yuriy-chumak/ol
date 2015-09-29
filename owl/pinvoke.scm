@@ -95,10 +95,6 @@
 ;(define FLOAT   type-rational) ; todo: same
 
 
-; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
-;  и возвращает ее уникальный handle
-(define (dlopen name flag) (sys-prim 1030 (if (string? name) (c-string name) name) flag #false))
-
 ; The MODE argument to `dlopen' contains one of the following:
 (define RTLD_LAZY	#x00001)	; Lazy function call binding.
 (define RTLD_NOW	#x00002)	; Immediate function call binding.
@@ -119,15 +115,21 @@
 ; Do not delete object when closed.
 (define RTLD_NODELETE	#x01000)
 
-(define pinvoke (sys-prim 1031 (sys-prim 1030 '() 1 #false) "pinvoke" #false))
+; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
+;  и возвращает ее уникальный handle (type-port)
+(define dlopen (case-lambda
+   ((name flag) (sys-prim 1030 (if (string? name) (c-string name) name) flag #false))
+   ((name)      (sys-prim 1030 (if (string? name) (c-string name) name) RTLD_LAZY #false))))
 
-; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать 
+(define pinvoke (sys-prim 1031 (sys-prim 1030 '() RTLD_LAZY #false) "pinvoke" #false))
+
+; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать (type-memp)
 (define (dlsym+ dll name)
    (let ((function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
       (if function
          (lambda args
             (exec function args #false)))))
-         
+
 (define (dlsym  dll type name . prototype)
 ;  (print "dlsym: " name)
    ; todo: add arguments to the call of function and use as types

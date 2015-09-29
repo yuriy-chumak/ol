@@ -68,6 +68,10 @@
 
       ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
       ;(define raw     (raw type-bytecode '(60 4 5 6  24 6)))
+      
+      ;(define *version* (raw type-bytecode '(62 4)))
+      ;(define fxmax     (raw type-bytecode '(33 4)))
+      ;(define fxmbits   (raw type-bytecode '(34 4)))
 
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
@@ -114,7 +118,7 @@
       ;(define fx>>  (raw type-bytecode '(58 4 5    6 7)))
       ;(define fx<<  (raw type-bytecode '(59 4 5    6 7)))
 
-      ; 
+      ; deprecated:
       ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
       ;(define listuple  (raw type-bytecode '(35 4 5 6 7  24 7)))
@@ -131,9 +135,9 @@
          (tuple 'raw      60  2 1 raw) ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
 
          ; vm-specific constants
-         (tuple '*version* 62  0 1 (raw type-bytecode '(62 4)))
-         (tuple 'fxmax     33  0 1 (raw type-bytecode '(33 4)))
-         (tuple 'fxmbits   34  0 1 (raw type-bytecode '(34 4)))
+         (tuple '*version* 62  0 1 *version*)
+         (tuple 'fxmax     33  0 1 fxmax)
+         (tuple 'fxmbits   34  0 1 fxmbits)
 
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
          (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
@@ -151,11 +155,10 @@
          (tuple 'car      52  1 1 car)   ;(raw type-bytecode '(52 4 5    24 5)))
          (tuple 'cdr      53  1 1 cdr)   ;(raw type-bytecode '(53 4 5    24 5)))
          (tuple 'ref      47  2 1 ref)   ;(raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
-         
+
          (tuple 'set      45  3 1 set)   ;(raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
          (tuple 'set-car! 11  2 1 set-car!) ;(raw type-bytecode '(11 4 5 6  24 6)))
          (tuple 'set-cdr! 12  2 1 set-cdr!) ;(raw type-bytecode '(12 4 5 6  24 6)))
-         ;tuple 'set!     10  3 1 set!) ; '(10 4 5 6  7  24 7)  3 1) ; (set! tuple pos val)
 
          (tuple 'eq?      54  2 1 eq?)
          (tuple 'lesser?  44  2 1 lesser?)

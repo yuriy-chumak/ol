@@ -576,30 +576,31 @@
       ;; (foo bar baz) → "/foo/bar/baz.scm"
       (define (library-name->path iset)
          (bytes->string
-            (cons #\/
-               (foldr
-                  (λ (thing tl)
-                     (append 
-                        (string->list (symbol->string thing))
-                        (if (null? tl) 
-                           (string->list ".scm")
-                           (cons #\/ tl))))
-                  null iset))))
+            (foldr
+               (λ (thing tl)
+                  (append 
+                     (string->list (symbol->string thing))
+                     (if (null? tl) 
+                        (string->list ".scm")
+                        (cons #\/ tl))))
+            null iset)))
 
       ;; try to find and parse contents of <path> and wrap to (begin ...) or call fail
       (define (repl-include env path fail)
+;        (print "repl-include path: " path)
          (lets
-            ((include-dirs (env-get env includes-key null))
-             (conv (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path))))))
-             (paths (map conv include-dirs))
-             (contentss (map file->list paths))
-             (data (first (λ (x) x) contentss #false)))
+            ((paths (map
+                       (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path)))))
+                       (env-get env includes-key null)))
+;             (_ (print "paths: " paths))
+             (datas (lmap file->list paths))
+             (data (first (λ (x) x) datas #false)))
             (if data
                (let ((exps (list->sexps data "library fail" path)))
                   (if exps ;; all of the file parsed to a list of sexps
                      (cons 'begin exps)
                      (fail (list "Failed to parse contents of " path))))
-               (fail (list "Couldn't find " path "from any of" include-dirs)))))
+               (fail (list "Couldn't find " path "from any of" (env-get env includes-key null))))))
 
       ;; nonempty list of symbols or integers 
       (define (valid-library-name? x)
