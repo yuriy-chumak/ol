@@ -171,25 +171,24 @@
 
 (define (on-accept fd onRequest)
 (lambda ()
-   (let* ((ss1 ms1 (clock)))
-   (print "\n> *** " (timestamp) ":")
-   (let ((send (lambda args
-            (for-each (lambda (arg)
-               (display-to fd arg)) args))))
-   ; loop if keep-alive
-   (let loop ()
-      (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
-             (Request-Line (car (car request))))
-         (if (null? Request-Line)
-            (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
-            (onRequest Request-Line (cdr (car request)) send))
-         (let* ((ss2 ms2 (clock)))
-            (print "Request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms."))
-         ;(if (string-eq? (getf (cdr request) 'Connection) "keep-alive?")
-         ;   (loop))
-      ))
+   (call/cc (lambda (close)
+      (let* ((ss1 ms1 (clock)))
+      (print "\n> *** " (timestamp) ":")
+      (let ((send (lambda args
+               (for-each (lambda (arg)
+                  (display-to fd arg)) args))))
+      ; loop if keep-alive
+      (let loop ()
+         (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
+                (Request-Line (car (car request))))
+            (if (null? Request-Line)
+               (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
+               (onRequest fd Request-Line (cdr (car request)) send close))
+;           (let* ((ss2 ms2 (clock)))
+;              (print "Request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms."))
+            (loop)))))))
    (syscall 3 fd #f #f)
-   (print "done." )))))
+   (print "done." )))
 
 
 (define (http:run port onRequest)

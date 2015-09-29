@@ -16,7 +16,6 @@
       force-ll                ; ll -> list
       subsets permutations    ; usual applications
       lunfold
-      delay force
       avg
       )
 
@@ -28,18 +27,6 @@
       (owl error))
 
    (begin
-      ;; convert an application to a thunk
-      (define-syntax delay
-         (syntax-rules ()
-            ((delay (op . args))
-               (λ () (op . args)))
-            ((delay value) value)))
-
-      ;; force is effectively unnecessary in Owl, so might as well signal a 
-      ;; warning if this is used, because the code probably assumes 
-      ;; mutable state.
-
-      (define (force thunk) (thunk))
 
       ;; possibly delay construction of tail
       (define-syntax pair

@@ -80,10 +80,6 @@
       (owl interop))
 
    (begin
-;      (define-syntax set!
-;         (syntax-rules () 
-;            ((set! var val) (error "set! is not supported: " '(set! var val)))))
-;  
       (define (unsupported name)
          (error "Mutator not supported: " name))
 
@@ -421,6 +417,7 @@
                                           (list
                                              (cons '*owl-names*   initial-names)
                                              (cons '*owl-version* initial-version)
+;                                             (cons '*include-dirs* (list "/usr/lib/ol" "."))
                                              (cons '*vm-args* vm-args)
                                              (cons '*seccomp* seccomp?)
                                           ))))
