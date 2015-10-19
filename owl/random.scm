@@ -51,6 +51,10 @@
       (owl time))
 
    (begin
+      (define ncar car)
+      (define ncdr cdr)
+      (define (ncons a b) (mkt type-int+ a b))
+
       ;;;
       ;;; Pseudorandom data generators
       ;;;
@@ -124,8 +128,8 @@
          (if (null? seed)
             out
             (lets
-               ((lo hi (fx* (ncar seed) rand-mult))
-                (this over (fx+ lo acc)))
+               ((lo hi (fx:* (ncar seed) rand-mult))
+                (this over (fx:+ lo acc)))
                (rand-walk hi (ncdr seed) (ncons this out)))))
 
       (define (rand-succ seed)
@@ -178,9 +182,9 @@
          (lets 
             ((digit rs (uncons rs 0))
              (lo (fxband digit #xff))
-             (digit _ (fx>> digit 8))
+             (digit _ (fx:>> digit 8))
              (mid (fxband digit #xff))
-             (hi _ (fx>> digit 8)))
+             (hi _ (fx:>> digit 8)))
             (ilist lo mid hi 
                (λ () (rands->bytes rs)))))
 
@@ -226,8 +230,8 @@
          (if (eq? num 0)
             1
             (let loop ((n (fxmax)))
-               (lets ((np _ (fx>> n 1)))
-                  (if (lesser? np num) ;; we lost the high bit
+               (lets ((np _ (fx:>> n 1)))
+                  (if (fx:< np num) ;; we lost the high bit
                      n
                      (loop np))))))
 
@@ -236,7 +240,7 @@
             (lets
                ((digit rs (uncons rs #false))
                 (m (fxband digit mask)))
-               (if (lesser? m n)
+               (if (fx:< m n)
                   (values rs m)
                   (loop rs mask)))))
 
@@ -247,7 +251,7 @@
                ((digit rs (uncons rs #false))
                 (m (fxband digit mask)))
                (cond
-                  ((lesser? m n) (values rs m))
+                  ((fx:< m n) (values rs m))
                   ((eq? m n) (values rs m))
                   (else (loop rs mask))))))
          
@@ -418,7 +422,7 @@
          (lets ((n rs (uncons rs 0)))
             (values rs (cons (cons n val) done))))
 
-      (define (carless a b) (lesser? (car a) (car b))) ; labels are fixnums, so use eq-like comparison
+      (define (carless a b) (fx:< (car a) (car b))) ; labels are fixnums, so use eq-like comparison
 
       (define (shuffle-merge rs pairs tail rec)
          (if (null? pairs)
@@ -460,7 +464,7 @@
                (values rs (raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
                (lets 
                   ((d rs (uncons rs 0))
-                   (n _ (fx- n 1))) 
+                   (n _ (fx:- n 1))) 
                   (loop rs (cons (fxband d 255) out) n)))))
 
       (define (random-data-file rs path)
@@ -559,6 +563,6 @@
          (else
             (lets 
                ((byte rs (uncons rs 0))
-                (n _ (fx+ n 1)))
+                (n _ (fx:+ n 1)))
                (loop rs (cons byte out) n))))))
       

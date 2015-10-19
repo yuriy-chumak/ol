@@ -30,7 +30,7 @@
             (cond
                ((eq? a sentinel) #true) ; sentinel is teh minimum
                ((eq? b sentinel) #false) ; ditto
-               (else (lesser? a b)))))
+               (else (fx:< a b)))))
 
       (define (cdr< a b) (< (cdr a) (cdr b))) 
       (define (car< a b) (< (car a) (car b)))

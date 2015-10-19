@@ -335,7 +335,7 @@
    (define (ref-small-tree r p n)
       (if (eq? n 0) 
          r
-         (lets ((n _ (fx>> n 1)))
+         (lets ((n _ (fx:>> n 1)))
             (if (eq? (fxband p n) 0)
                (ref-small-tree (ref r 1) p n)
                (ref-small-tree (ref r 2) p n)))))

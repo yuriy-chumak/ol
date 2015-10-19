@@ -77,19 +77,19 @@
       (define stdout (raw type-port '(1)))
       (define stderr (raw type-port '(2)))
 
-      (define (sys-read fd maxlen)         (sys-prim 0 fd maxlen #false))
-      (define (sys-write fd buffer length) (sys-prim 1 fd buffer length))
+      (define (sys:read fd maxlen)         (syscall 0 fd maxlen #false))
+      (define (sys:write fd buffer length) (syscall 1 fd buffer length))
 
       ;; use type 12 for fds 
 
       (define (fopen path mode)
          (cond
             ((c-string path) => 
-               (λ (path) (sys-prim 2 path mode #false)))
+               (λ (path) (syscall 2 path mode #false)))
             (else #false)))
 
       (define (fclose fd)
-         (sys-prim 3 fd #false #false)) ; 1002
+         (syscall 3 fd #false #false)) ; 1002
 
       ;; use fd 65535 as the unique sleeper thread name.
       (define sid (raw type-port '(255 255)))
@@ -102,7 +102,7 @@
          (raw type-vector-raw (map (lambda (p) (refb bvec p)) (iota n 1 (sizeb bvec)))))
 
       (define (try-write-block fd bvec len)
-         (if (port? fd) (sys-write fd bvec len) #false))
+         (if (port? fd) (sys:write fd bvec len) #false))
 
       ;; bvec port → bool
       (define (write-really bvec fd)
@@ -132,7 +132,7 @@
          *vec-leaf-size*) ;; changing from 256 breaks vector leaf things
 
       (define (try-get-block fd block-size block?)
-         (let ((res (sys-read fd block-size)))
+         (let ((res (sys:read fd block-size)))
             (if (eq? res #true) ;; would block
                (if block?
                   (begin
@@ -216,13 +216,13 @@
                rounds)
             ((single-thread?)
                ;; note: could make this check every n rounds or ms
-               (if (sys-prim 35 (* ms-per-round rounds) #f #f) ;; sleep really for a while
+               (if (syscall 35 (* ms-per-round rounds) #f #f) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
                   (set-ticker-value 0)))
             (else
                (lets
                   ((a (wait 1))
-                   (rounds _ (fx- rounds 1)))
+                   (rounds _ (fx:- rounds 1)))
                   (sleep-for rounds)))))
 
       (define (wake-neighbours l)
@@ -243,7 +243,7 @@
                   (sleeper (add-sleeper ls env))))
             (else
                (sleep-for (caar ls))
-               (mail (cdar ls) 'awake) ;; wake up the thread ((n . id) ...)
+               (mail (cdar ls) 'awake) ;; 'awake have no meaning, this is simply "wake up" the thread ((n . id) ...)
                (sleeper (wake-neighbours (cdr ls)))))) ;; wake up all the ((0 . id) ...) after it, if any
 
       (define (start-sleeper)
@@ -314,7 +314,7 @@
                (write-really (raw type-vector-raw (reverse out)) fd))
             (else
                ;; avoid dependency on generic math in IO
-               (lets ((len _ (fx+ len 1)))
+               (lets ((len _ (fx:+ len 1)))
                   (printer (cdr lst) len (cons (car lst) out) fd)))))
 
       (define (write-byte-vector port bvec)
@@ -361,7 +361,7 @@
 
       ;; fixme: system-X do not belong here
       (define (system-print str)
-         (sys-write 1 str (sizeb str)))
+         (sys:write stdout str (sizeb str)))
 
       (define (system-println str)
          (system-print str)
@@ -369,7 +369,7 @@
       "))
 
       (define (system-stderr str) ; <- str is a raw or pre-rendered string
-         (sys-write 2 str (sizeb str)))
+         (sys:write stderr str (sizeb str)))
 
       ;;; 
       ;;; Files <-> vectors
@@ -466,7 +466,7 @@
       (define (stream-chunk buff pos tail)
          (if (eq? pos 0)
             (cons (refb buff pos) tail)
-            (lets ((next x (fx- pos 1)))
+            (lets ((next x (fx:- pos 1)))
                (stream-chunk buff next
                   (cons (refb buff pos) tail)))))
 

@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+   <meta charset="utf-8" />
+   <title>OL</title>
+   <meta name="author" content="Yuriy Chumak - yuriy-chumak"/>
+
+   <script src="jquery-1.11.3.min.js"></script>
+   <link  href="jquery.terminal.css" rel="stylesheet"/>
+   <script src="jquery.terminal-0.8.8.min.js"></script>
+   <script src="jquery-tools-flashembed.js">  </script>
+   <script src="jsocket-1.0.0.min.js"></script>
+    
+   <!--[if IE]>
+   <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+   <![endif]-->
+</head>
+<body>
+   <div id="terminal"></div>
+   <script>
+var socket;
+
+$('#terminal').terminal(function(command, terminal) {
+   socket.writeFlush(command);
+}, {
+   prompt: '> ',
+   name: 'repl',
+   greetings: '\
+OL - Owl Lisp -- yet another pet lisp\n\
+Copyright (c) 2014 Aki Helin\n\
+Copyright (c) 2014, 2015 Yuriy Chumak\n\
+~~~~~~~~~~~~~~~~~\n',
+   height: 200,
+   enabled: false,
+
+   onInit: function(terminal) {
+      terminal.echo("Loading...");
+
+      JSocket.init("TCP.swf", function () {
+         console.log("yes");
+         socket = new JSocket({
+            connectHandler: connectHandler,
+            dataHandler:    dataHandler,
+            closeHandler:   closeHandler,
+            errorHandler:   errorHandler
+         });
+         socket.connect("localhost", 8080);
+         console.log("trying to connect");
+      });
+      function connectHandler() {
+         terminal.echo("Connecting...");
+         socket.writeFlush("GET /ol HTTP/1.1\x0D\x0A\x0D\x0A");
+//         socket.write("Host: " + location.hostname + "\x0D\x0A\x0D\x0A");
+//         socket.flush();
+         terminal.resume();
+      }
+      function dataHandler(data) {
+         terminal.echo(data);
+      }
+      function closeHandler() {
+         terminal.pause();
+         alert('lost connection')
+      }
+      function errorHandler(errorstr) {
+         terminal.pause();
+         alert(errorstr);
+      }
+   }
+});
+  </script>
+  
+</body></html>

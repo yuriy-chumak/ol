@@ -124,7 +124,7 @@
                      (begin   
                         ;(set-ticker 0) ;; FIXME restore this when librarized
                         ;; no bignum math yet at this point
-                        (lets ((rounds _ (fx- rounds 1)))
+                        (lets ((rounds _ (fx:- rounds 1)))
                            (loop (check-mail) spam rounds)))))
                ((eq? (ref envp 1) id)
                   ;; got it

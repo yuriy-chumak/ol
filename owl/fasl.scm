@@ -246,7 +246,7 @@
                   null
                   (list (list->byte-vector (reverse buff)))))
             ((pair? bs)
-               (lets ((n _ (fx+ n 1)))
+               (lets ((n _ (fx:+ n 1)))
                   (chunk-stream (cdr bs) n (cons (car bs) buff))))
             (else
                (chunk-stream (bs) n buff))))

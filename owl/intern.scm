@@ -57,7 +57,7 @@
                          (b bs s2))
                         (cond
                            ((eq? a b) (walk as bs))
-                           ((lesser? a b) #false)
+                           ((fx:< a b) #false)
                            (else #true))))
                   ((null? s2) 1)
                   (else (walk s1 (s2)))))
@@ -132,7 +132,7 @@
             (let ((ab (refb a pos)) (bb (refb b pos)))
                (cond
                   ((eq? ab bb) (compare-bytes a b (+ pos 1) end))
-                  ((lesser? ab bb) is-less)
+                  ((fx:< ab bb) is-less)
                   (else is-greater)))))
 
       ;; shorter is less, otherwase lexical comparison from start
@@ -142,7 +142,7 @@
              (bs (sizeb b)))
             (cond 
                ((eq? as bs) (compare-bytes a b 0 as))
-               ((lesser? as bs) is-less)
+               ((fx:< as bs) is-less)
                (else is-greater))))
 
       ;; fixme: should occasionally balance the tree

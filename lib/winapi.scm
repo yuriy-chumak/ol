@@ -175,6 +175,6 @@
 ;  (define (wgl-proc-address type name)
 ;    (let ((function (cons type (wglGetProcAddress (c-string name)))))
 ;      (lambda args
-;        (sys-prim 32 (cdr function) (car function) args))))
+;        (syscall 32 (cdr function) (car function) args))))
 
 ))

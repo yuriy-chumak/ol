@@ -6,7 +6,7 @@
 (define (dlopen name flag) (sys-prim 1030 (c-string name) flag #false))
 (define (dlsym  type dll name) ; todo: переименовать в get-proc-address ?
    (let ((rtty (cons type prototype))
-         (function (sys-prim 1031 dll (c-string name) #false)))
+         (function (syscall 1031 dll (c-string name) #false)))
       (if function
       (lambda args
          (exec pinvoke  function rtty args)))))

@@ -5,7 +5,7 @@
 ;!
 
 ;  (define isCompiled (list->byte-vector '(0 0 0 0)))
-;  (sys-prim 1033 isCompiled #false #false)
+;  (syscall 1033 isCompiled #false #false)
 (import (lib sqlite))
 
 ; вспомогательный макрос для собрать в кучку все bor

@@ -133,7 +133,7 @@
                   (lets 
                      ((a (+ a (car lst)))
                       (b (+ a b))
-                      (s _ (fx+ s 1)))
+                      (s _ (fx:+ s 1)))
                      (walk (cdr lst) a b s)))))
 
          (λ (lst) (walk lst 0 0 #true)))

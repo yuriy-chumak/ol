@@ -86,6 +86,8 @@
       (owl math))
 
    (begin
+      (define ncar car)
+      (define ncdr cdr)
 
       ;; number of bits each vector tree node dispatches from index
       ; (define *vec-bits* (>> *fixnum-bits* 1))
@@ -105,7 +107,7 @@
       (define (vec-dispatch-1 v n)
          (case (type v)
             (type-vector-dispatch ; vector dispatch node with #[Leaf D0 ... D255]
-               (lets ((n _ (fx+ (fxband n *vec-leaf-max*) 2))) ;; jump over header and leaf
+               (lets ((n _ (fx:+ (fxband n *vec-leaf-max*) 2))) ;; jump over header and leaf
                   (ref v n)))
             (else
                (error "Bad vector node in dispatch-1: type " (type v)))))
@@ -115,8 +117,8 @@
          (case (type v)
             (type-vector-dispatch
                (lets 
-                  ((p _ (fx>> d *vec-bits*))
-                   (p _ (fx+ p 2)))
+                  ((p _ (fx:>> d *vec-bits*))
+                   (p _ (fx:+ p 2)))
                   (ref v p)))
             (type-vector-leaf
                (error "Leaf vector in dispatch-2: " v))
@@ -129,7 +131,7 @@
       (define (vec-seek v ds)
          (lets ((d ds ds))
             (if (null? ds)
-               (if (lesser? d *vec-leaf-size*) ; just one byte at top digit?
+               (if (fx:< d *vec-leaf-size*) ; just one byte at top digit?
                   (vec-dispatch-1 v d)
                   (vec-dispatch-1 (vec-dispatch-2 v d) d))
                (vec-dispatch-1 (vec-seek v ds) d))))
@@ -144,7 +146,7 @@
             (type-vector-leaf 
                 (if (eq? n *vec-leaf-max*)
                    (ref v *vec-leaf-size*)
-                   (lets ((n _ (fx+ (fxband n *vec-leaf-max*) 1)))
+                   (lets ((n _ (fx:+ (fxband n *vec-leaf-max*) 1)))
                      (ref v n))))
             (else 
                (error "bad vector node in vec-ref-digit: type " (type v)))))
@@ -164,7 +166,7 @@
                (cond
                   ((eq? (type v) type-vector-raw)
                      (refb v n))
-                  ((lesser? n *vec-leaf-size*)
+                  ((fx:< n *vec-leaf-size*)
                      (vec-ref-digit v n))
                   (else
                      (vec-ref-digit (vec-dispatch-2 v n) (fxband n *vec-leaf-max*)))))
@@ -185,7 +187,7 @@
             (type-fix+
                (cond
                   ((eq? (type v) type-vector-raw) v)
-                  ((lesser? n *vec-leaf-size*) v)
+                  ((fx:< n *vec-leaf-size*) v)
                   (else (vec-dispatch-2 v n))))
             (type-int+
                (vec-leaf-big v n))
@@ -223,9 +225,9 @@
       (define (make-leaf rvals n raw?)
          (if raw?
             ;; the leaf contains only fixnums 0-255, so make a compact leaf
-           (list->byte-vector (reverse rvals)) ;; make node and reverse
-           ;; the leaf contains other values, so need full 4/8-byte descriptors
-           (listuple type-vector-leaf n (reverse rvals))))
+            (list->byte-vector (reverse rvals)) ;; make node and reverse
+            ;; the leaf contains other values, so need full 4/8-byte descriptors
+            (listuple type-vector-leaf n (reverse rvals))))
 
       (define (byte? val) 
          (and 
@@ -360,7 +362,7 @@
             (cons (refb bv pos) tail)
             (lets
                ((byte (refb bv pos)) 
-                (pos _ (fx- pos 1)))
+                (pos _ (fx:- pos 1)))
                (copy-bvec bv pos (cons byte tail)))))
 
       (define (byte-vector->list bv)
@@ -378,13 +380,13 @@
       (define (iter-raw-leaf v p tl)
          (if (eq? p 0)
             (cons (refb v p) tl)
-            (lets ((n _ (fx- p 1)))
+            (lets ((n _ (fx:- p 1)))
                (iter-raw-leaf v n (cons (refb v p) tl)))))
 
       (define (iter-leaf v p tl)
          (if (eq? p 0)
             tl
-            (lets ((n _ (fx- p 1)))
+            (lets ((n _ (fx:- p 1)))
                (iter-leaf v n (cons (ref v p) tl)))))
 
       (define (iter-leaf-of v tl)
@@ -421,7 +423,7 @@
                      ;; last leaf reached, iter prefix and stop
                      (iter-leaf-range (vec-leaf-of v p) 0 n null)))
                ((eq? n 0) null)
-               ((lesser? n (- *vec-leaf-size* start))
+               ((fx:< n (- *vec-leaf-size* start))
                   ;; the whole range is in a part of this leaf
                   (iter-leaf-range (vec-leaf-of v p) start n null))
                (else

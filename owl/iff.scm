@@ -15,6 +15,9 @@
       (owl list))
 
    (begin
+      (define ncar car)
+      (define ncdr cdr)
+      (define (ncons a b) (mkt type-int+ a b))
 
       (define tag #false) ;; non-digit special ff key
 

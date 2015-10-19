@@ -59,8 +59,8 @@
       (define ARITY-ERROR 17)
 
       (define BIND 32)
-      (define FFBIND 49)
       (define MKT 23)
+      (define FFBIND 49)
 
       ;(define bind    (raw type-bytecode '(32 4)))
       ;(define ff-bind (raw type-bytecode '(49 4)))
@@ -69,9 +69,9 @@
       ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
       ;(define raw     (raw type-bytecode '(60 4 5 6  24 6)))
       
-      ;(define *version* (raw type-bytecode '(62 4)))
-      ;(define fxmax     (raw type-bytecode '(33 4)))
-      ;(define fxmbits   (raw type-bytecode '(34 4)))
+      ;(define vm:version (raw type-bytecode '(62 4)))
+      ;(define fxmax      (raw type-bytecode '(33 4)))
+      ;(define fxmbits    (raw type-bytecode '(34 4)))
 
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
@@ -99,10 +99,6 @@
       ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
       ;(define lesser? (raw type-bytecode '(44 4 5 6  24 6)))
 
-      ;(define ncons   (raw type-bytecode '(29 4 5 6  24 6)))
-      ;(define ncar    (raw type-bytecode '(30 4 5    24 5)))
-      ;(define ncdr    (raw type-bytecode '(31 4 5    24 5)))
-
       ;(define fxband  (raw type-bytecode '(55 4 5 6  24 6)))
       ;(define fxbor   (raw type-bytecode '(56 4 5 6  24 6)))
       ;(define fxbxor  (raw type-bytecode '(57 4 5 6  24 6)))
@@ -111,7 +107,7 @@
       ;(define sizeb   (raw type-bytecode '(28 4 5    24 5)))
 
       ; арифметические операции, возвращают пару(тройку) значений, использовать через let*/receive
-      ;(define fx+   (raw type-bytecode '(38 4 5    6 7)))     ;'(38 4 5    6 7  )
+      ;(define fx:+   (raw type-bytecode '(38 4 5    6 7)))     ;'(38 4 5    6 7  )
       ;(define fx*   (raw type-bytecode '(39 4 5    6 7)))
       ;(define fx-   (raw type-bytecode '(40 4 5    6 7)))
       ;(define fx/   (raw type-bytecode '(26 4 5 6  7 8 9)))
@@ -127,28 +123,27 @@
       ;(define red?      (raw type-bytecode '(41 4 5  24 5)))
       ;(define ff-toggle (raw type-bytecode '(46 4 5  24 5)))
 
-      ;(define sys-prim (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
-      ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8))) ; todo: rename sys-prim to syscall
+      ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8)))
 
       (define primops (list
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
          (tuple 'raw      60  2 1 raw) ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
 
          ; vm-specific constants
-         (tuple '*version* 62  0 1 *version*)
-         (tuple 'fxmax     33  0 1 fxmax)
-         (tuple 'fxmbits   34  0 1 fxmbits)
+         (tuple 'vm:version 62  0 1 vm:version)
+         (tuple 'fxmax      33  0 1 fxmax)
+         (tuple 'fxmbits    34  0 1 fxmbits)
 
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
-         (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really 1
+         (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
          (tuple 'mkt      MKT     'any   1 #false)  ;; mkt type v0 .. vn t (why #f?)
-         (tuple 'ff-bind  FFBIND  1 #false ff-bind) ;; SPECIAL ** (ffbind thing (lambda (name ...) body)) 
+
 
          ; вторая по значимости команда
          (tuple 'cons     51  2 1 cons)
 
          ; операции по работе с памятью
-         (tuple 'type     15  1 1 type)  ;; get just the type bits (new)
+         (tuple 'type     15  1 1 type)  ;; get just the type bits
          (tuple 'size     36  1 1 size)  ;; get object size (- 1)
          (tuple 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
 
@@ -161,45 +156,37 @@
          (tuple 'set-cdr! 12  2 1 set-cdr!) ;(raw type-bytecode '(12 4 5 6  24 6)))
 
          (tuple 'eq?      54  2 1 eq?)
-         (tuple 'lesser?  44  2 1 lesser?)
 
-         ; поддержка больших чисел
-         ;; вопрос - а нахрена именно числовой набор функций? может обойдемся обычным - cons, car, cdr?
-         (tuple 'ncons    29  2 1 ncons)
-         (tuple 'ncar     30  1 1 ncar)
-         (tuple 'ncdr     31  1 1 ncdr)
-         
-         ;; логика
-         (tuple 'fxband   55  2 1 fxband)
-         (tuple 'fxbor    56  2 1 fxbor)
-         (tuple 'fxbxor   57  2 1 fxbxor)
-         
-         ;; строки
+         ;; байтовые массивы (строки, etc.)
          (tuple 'refb     48  2 1 refb)
          (tuple 'sizeb    28  1 1 sizeb)
 
          ; базовая математика
-         (tuple 'fx+      38  2 2 fx+)
-;        (tuple '#+       38  2 2 #+)
-         (tuple 'fx*      39  2 2 fx*)
-         (tuple 'fx-      40  2 2 fx-)
-         (tuple 'fx/      26  3 3 fx/)
-         (tuple 'fx>>     58  2 2 fx>>)
-         (tuple 'fx<<     59  2 2 fx<<)
+         (tuple 'fx:<     44  2 1 fx:<)
+         (tuple 'fx:+     38  2 2 fx:+)
+         (tuple 'fx:*     39  2 2 fx:*)
+         (tuple 'fx:-     40  2 2 fx:-)
+         (tuple 'fx:/     26  3 3 fx:/)
+         ; сдвиги
+         (tuple 'fx:>>    58  2 2 fx:>>)
+         (tuple 'fx:<<    59  2 2 fx:<<)
+         ;; бинарная арифметика
+         (tuple 'fxband   55  2 1 fxband)
+         (tuple 'fxbor    56  2 1 fxbor)
+         (tuple 'fxbxor   57  2 1 fxbxor)
 
          ; системный таймер
          (tuple 'clock    61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
-
-         ; syscall интерфейс
-         (tuple 'sys-prim 63  4 1 sys-prim)
          (tuple 'syscall  63  4 1 syscall)
 
-         ; поддержка ff деревьев
-         (tuple 'listuple  35  3 1 listuple)
-         (tuple 'mkblack   42  4 1 mkblack)
-         (tuple 'mkred     43  4 1 mkred)
-         (tuple 'red?      41  1 1 red?)
-         (tuple 'ff-toggle 46  1 1 ff-toggle)
+         (tuple 'listuple 35  3 1 listuple)  ; todo: rename to list->tuple
+
+         ; поддержка red-black деревьев
+         (tuple 'ff:bind   49  1 #f ff:bind) ;; SPECIAL ** (ff:bind thing (lambda (name ...) body))
+         (tuple 'mkblack   42  4  1 mkblack)
+         (tuple 'mkred     43  4  1 mkred)
+         (tuple 'red?      41  1  1 red?)
+         (tuple 'ff:toggle 46  1  1 ff:toggle)
       ))
       (define *primitives* primops)
 

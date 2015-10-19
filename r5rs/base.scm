@@ -6,7 +6,7 @@
       ; ========================================================================================================
       ; Scheme
       ;
-      ; Revised(3) Report on the Algorithmic Language Scheme
+      ; Revised(5) Report on the Algorithmic Language Scheme
       ;                  Dedicated to the Memory of ALGOL 60
       ;
       ; ========================================================================================================
@@ -86,8 +86,8 @@
          (syntax-rules () 
             ((λ . x) (lambda . x))))
 
-      ; rXrs syntax: (rlambda <variables> <values> <body>)
-      ; rXrs syntex: (case-lambda ...
+      ; oLrs syntax: (rlambda <variables> <values> <body>)
+      ; oLrs syntex: (case-lambda ...
       (define-syntax case-lambda      ;expand case-lambda syntax to to (_case-lambda <lambda> (_case-lambda ... (_case-lambda <lambda> <lambda)))
          (syntax-rules (lambda _case-lambda)
             ((case-lambda) #false) 
@@ -166,19 +166,19 @@
                   (case thing . clauses)))
             ((case thing ((a) . body) . clauses)
                (if (eqv? thing (quote a))
-                  ((lambda () . body)) ; (begin . body)
+                  ((lambda () . body)) ; means (begin . body)
                   (case thing . clauses)))
             ((case thing (else => func))
                (func thing))
             ((case thing (else . body))
-               ((lambda () . body)))   ; (begin . body)
+               ((lambda () . body)))   ; means (begin . body)
             ((case thing ((a . b) . body) . clauses)
                (if (memv thing (quote (a . b)))
-                  ((lambda () . body)) ; (begin . body)
+                  ((lambda () . body)) ; means (begin . body)
                   (case thing . clauses)))
             ((case thing (atom . then) . clauses) ;; added for (case (type foo) (type-foo thenfoo) (type-bar thenbar) ...)
                (if (eq? thing atom)
-                  ((lambda () . then)) ; (begin . body)
+                  ((lambda () . then)) ; means (begin . body)
                   (case thing . clauses)))))
 
       ; library syntax:  (and <test1> ...)
@@ -230,7 +230,7 @@
          (syntax-rules ()
             ((let ((var val) ...) exp . rest) 
                ((lambda (var ...) exp . rest) val ...))
-            ((let keyword ((var init) ...) exp . rest) ; todo: move to (r5rs full)
+            ((let keyword ((var init) ...) exp . rest)
                (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
 
       ; library syntax:  (let* <bindings> <body>)
@@ -423,7 +423,7 @@
                (assert expression ==> #true))
             ((assert expression ==> result)
                (if (eq? expression (quote result)) #true
-                  ((raw 16 '(27 4 5 6 7 8  24 8))
+                  ((raw 16 '(27 4 5 6 7 8  24 8)) ; (sys a b c d)
                      '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) '()))))))))
 ;            ((assert result expression . stuff)
 ;               (if (eq? expression result) #t
@@ -470,10 +470,22 @@
 ;                     (else #false))))))
             (else #false)))
       ; tbd.
-      
 
-      ; procedure:  (eq? obj1 obj2)    * builtin
-      ; library procedure: equal? obj1 obj2       
+
+      ; --------------------------
+      ; procedure: (eq? obj1 obj2)    * builtin
+      ; 
+      ; Rationale: It will usually be possible to implement `eq?' much more efficiently than `eqv?',
+      ; for example, as a simple pointer comparison instead of as some more complicated operation.
+      ; One reason is that it may not be possible to compute `eqv?' of two numbers in constant time,
+      ; whereas `eq?' implemented as pointer comparison will always finish in constant time. `Eq?'
+      ; may be used like `eqv?' in applications using procedures to implement objects with state
+      ; since it obeys the same constraints as `eqv?'. 
+
+
+      ; library procedure: (equal? obj1 obj2)
+      ; 
+
 ;      (define-syntax (eqv? a b)
 ;         (cond
 ;            ((eq? a b)
@@ -752,8 +764,14 @@
          (let loop ((n 0) (l l))
             (if (null? l)
                n
-               (let* ((n _ (fx+ n 1)))
+               (let* ((n _ (fx:+ n 1)))
                   (loop n (cdr l))))))
+                  
+      (assert (length '(a b c))                      ==>  3)
+      (assert (length '(a (b) (c d e)))              ==>  3)
+      (assert (length '())                           ==>  0)
+
+                  
 
       ; library procedure:  (append list ...)
 ;      (define (app a b app)
@@ -836,59 +854,59 @@
             (else #false)))
 
 
-       ;; *********************
-       ;; 6.4  Control features
+      ;; *********************
+      ;; 6.4  Control features
 
-       ; *ol* extension
-       (define (ff? o)        ; OL extension
-          (or (eq? o #empty)
-              (eq? 24 (fxband (type o) #b1111100))))
+      ; *ol* extension
+      (define (ff? o)        ; OL extension
+         (or (eq? o #empty)
+             (eq? 24 (fxband (type o) #b1111100))))
 
-       ; *ol* extension
-       (define (bytecode? o)  ; OL extension
-          (eq? (type o) type-bytecode))
+      ; *ol* extension
+      (define (bytecode? o)  ; OL extension
+         (eq? (type o) type-bytecode))
 
-       ; *ol* extension
-       (define (function? o)  ; OL extension
-          (case (type o)
-             (type-proc #true)
-             (type-clos #true)
-             (type-bytecode #true)
-             (else #false)))
+      ; *ol* extension
+      (define (function? o)  ; OL extension
+         (case (type o)
+            (type-proc #true)
+            (type-clos #true)
+            (type-bytecode #true)
+            (else #false)))
 
-       ; procedure:  (procedure? obj)
-       (define (procedure? o)
-          (or (function? o) (ff? o)))
+      ; procedure:  (procedure? obj)
+      (define (procedure? o)
+         (or (function? o) (ff? o)))
 
 
-       ; procedure:  (apply proc arg1 ... args)  *builtin
+      ; procedure:  (apply proc arg1 ... args)  *builtin
 
-       ; library procedure:  (map proc list1 list2 ...)
-       (define (map fn lst)
-          (if (null? lst)
-             '()
-             (let*
-                ((head tail lst)
-                 (head (fn head))) ;; compute head first
-                (cons head (map fn tail)))))
+      ; library procedure:  (map proc list1 list2 ...)
+;      (define (map fn lst)
+;         (if (null? lst)
+;            '()
+;            (let*
+;               ((head tail lst)
+;                (head (fn head))) ;; compute head first
+;               (cons head (map fn tail)))))
 
-       ; experimental syntax for map for variable count of arguments
-       ;  can be changed to map used (apply f (map car .)) and (map cdr .))
-       ; todo: test and change map to this version
-       (define map2 (case-lambda
-          ((f a b c) (let loop ((a a)(b b)(c c))
+      ; experimental syntax for map for variable count of arguments
+      ;  can be changed to map used (apply f (map car .)) and (map cdr .))
+      ; todo: test and change map to this version
+      (define map (case-lambda
+         ((f a b c) (let loop ((a a)(b b)(c c))
                         (if (null? a)
                            '()
                            (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
-          ((f a b) (let loop ((a a)(b b))
+         ((f a b)   (let loop ((a a)(b b))
                         (if (null? a)
                            '()
                            (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
-          ((f a) (let loop ((a a))
+         ((f a)     (let loop ((a a))
                         (if (null? a)
                            '()
                            (cons (f (car a)) (loop (cdr a))))))
-          (() #f)))
+         (() #f)))
 
        ; library procedure:  (for-each proc list1 list2 ...)
        ; library procedure:  (force promise)
@@ -1234,5 +1252,5 @@
       ; ol extension:
       bytecode? function? ff?
       
-      map list? map2
+      map list?
 ))

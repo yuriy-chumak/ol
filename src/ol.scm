@@ -245,7 +245,7 @@
 ;   ;; get any more memory after entering seccomp
 ;   (if (and n-megs (> n-megs 0))
 ;      (ensure-free-heap-space n-megs))
-;   (or (sys-prim 1010 #false #false #false)
+;   (or (syscall 1010 #false #false #false)
 ;      (begin
 ;         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
 ;         (halt exit-seccomp-failed))))
@@ -408,9 +408,9 @@
 
                         ;; repl
                         (exit-owl
-                           (let* ((isatty? (syscall 16 stdin 19 #f))
-                                  (seccomp? #false) ; else (seccomp megs) - check is memory enough
-                                  (env (fold
+                           (let*((isatty? (syscall 16 stdin 19 #f))
+                                 (seccomp? #false) ; else (seccomp megs) - check is memory enough
+                                 (env (fold
                                           (λ (env defn)
                                              (env-set env (car defn) (cdr defn)))
                                           initial-environment
@@ -419,6 +419,9 @@
                                              (cons '*owl-version* initial-version)
 ;                                             (cons '*include-dirs* (list "/usr/lib/ol" "."))
                                              (cons '*vm-args* vm-args)
+                                             (cons '*version* (vm:version))
+                                            ;(cons '*scheme* 'r5rs)
+                                            ;(cons '*lisp* (vm:version))
                                              (cons '*seccomp* seccomp?)
                                           ))))
                               (if isatty?

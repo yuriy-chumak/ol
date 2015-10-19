@@ -17,7 +17,7 @@
             ((eq? pos 0)
                #true)
             ((eq (ref a pos) (ref b pos))
-               (lets ((pos x (fx- pos 1)))
+               (lets ((pos x (fx:- pos 1)))
                   (eq-fields a b eq pos)))
             (else #false)))
 
@@ -25,7 +25,7 @@
          (if (eq? (refb a pos) (refb b pos))
             (if (eq? pos 0)
                #true
-               (receive (fx- pos 1)
+               (receive (fx:- pos 1)
                   (λ (pos x) (eq-bytes a b pos))))
             #false))
 

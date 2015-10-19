@@ -1,5 +1,5 @@
 ;;;
-;;; Extra IO etc exposed via the sys-prim
+;;; Extra IO etc exposed via the syscall
 ;;;
 
 ;; Adding some extra system primops to see how much could be added while 
@@ -51,16 +51,16 @@
       (define (open-dir path)
          (let ((cs (c-string path)))
             (if (and cs (<= (string-length cs) #xffff))
-               (sys-prim 1011 cs #false #false)
+               (syscall 1011 cs #false #false)
                #false)))
 
       ;; unsafe-dirfd → #false | eof | bvec
       (define (read-dir obj)
-         (sys-prim 78 obj #false #false))
+         (syscall 78 obj #false #false))
 
       ;; _ → #true
       (define (close-dir obj)
-         (sys-prim 1013 obj #false #false))
+         (syscall 1013 obj #false #false))
 
       ;;; 
       ;;; Safe derived operations
@@ -87,7 +87,7 @@
       (define (chdir path)
          (let ((path (c-string path)))
             (and path
-               (sys-prim 1020 path #false #false))))
+               (syscall 1020 path #false #false))))
 
       ;;; 
       ;;; Processes
@@ -101,15 +101,15 @@
             ((path (c-string path))
              (args (map c-string args)))
             (if (and path (all (λ (x) x) args))
-               (sys-prim 1017 path args #false)
+               (syscall 1017 path args #false)
                (cons path args))))
 
       ;; → #false = fork failed, #true = ok, we're in child, n = ok, child pid is n
       (define (fork)
-         (sys-prim 1018 #false #false #false))
+         (syscall 1018 #false #false #false))
 
       (define (wait pid)
-         (let ((res (sys-prim 1019 pid (cons #false #false) #false)))
+         (let ((res (syscall 1019 pid (cons #false #false) #false)))
             (cond
                ((not res) res)
                ((eq? res #true)
@@ -133,7 +133,7 @@
 
       ;; pid signal → success?
       (define (kill pid signal)
-         (sys-prim 1021 pid signal #false))
+         (syscall 1021 pid signal #false))
 
 
       ;;;
@@ -144,7 +144,7 @@
       (define (getenv str)
          (let ((str (c-string str)))
             (if str 
-               (let ((bvec (sys-prim 1016 str #false #false)))
+               (let ((bvec (syscall 1016 str #false #false)))
                   (if bvec
                      (bytes->string (vec->list bvec))
                      #false))

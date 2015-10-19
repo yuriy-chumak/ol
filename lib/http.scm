@@ -28,7 +28,7 @@
   
 
 (define (timestamp) (syscall 201 "%c" #f #f))
-(define (set-ticker-value n) (sys-prim 1022 n #false #false))
+(define (set-ticker-value n) (syscall 1022 n #false #false))
 
 
 ;(define (send fd . args)
@@ -38,9 +38,9 @@
 
 ; parser
       (define (syntax-fail pos info lst)
+         (print "http parser fail: " info)
+         (print ">>> " pos "-" (runes->string lst) " <<<")
          '(() (())))
-;         (list "syntax-error-mark" info
-;            (list ">>> " pos "-" (runes->string lst) " <<<")))
 
       (define quoted-values
          (list->ff
@@ -61,7 +61,13 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)
-             (has? '(#\/ #\: #\. #\& #\? #\=) x)))
+             (has? '(#\/ #\: #\. #\& #\? #\- #\+ #\= #\< #\>) x)))
+      (define (xml? x)
+         (or (<= #\0 x #\9)
+             (<= #\A x #\Z)
+             (<= #\a x #\z)
+             (has? '(#\< #\/ #\> #\-) x)))
+      
 
       (define (space-char? x) (= x #\space))
 
@@ -150,12 +156,18 @@
 
 
       (define http-parser
-         (let-parses (
-             (request-line get-request-line)
-             (headers-array (get-greedy* get-header-line))
-             (skip (get-imm #\return)) (skip (get-imm #\newline)))
-            (cons
-               request-line (list->ff headers-array))))
+         (get-any-of
+            (let-parses ( ; process 'GET /smth HTTP/1.1'
+                  (request-line get-request-line)
+                  (headers-array (get-greedy* get-header-line))
+                  (skip (get-imm #\return)) (skip (get-imm #\newline))) ; \r\n\r\n
+               (cons
+                  request-line (list->ff headers-array)))
+            (let-parses ( ; process '<policy-file-request/>\0' request:
+                  (request (get-greedy+ (get-rune-if xml?))))
+;                  (skip    (get-imm 0)))
+               (cons
+                  (tuple (runes->string request)) #empty))))
 
 
 ;(print (car
@@ -171,42 +183,50 @@
 
 (define (on-accept fd onRequest)
 (lambda ()
-   (call/cc (lambda (close)
-      (let* ((ss1 ms1 (clock)))
-      (print "\n> *** " (timestamp) ":")
-      (let ((send (lambda args
-               (for-each (lambda (arg)
-                  (display-to fd arg)) args))))
-      ; loop if keep-alive
-      (let loop ()
-         (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
-                (Request-Line (car (car request))))
-            (if (null? Request-Line)
-               (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
-               (onRequest fd Request-Line (cdr (car request)) send close))
-;           (let* ((ss2 ms2 (clock)))
-;              (print "Request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms."))
-            (loop)))))))
-   (syscall 3 fd #f #f)
-   (print "done." )))
+   (if (call/cc (lambda (close)
+         (let* ((ss1 ms1 (clock)))
+         (print "\n> *** " (timestamp) ":")
+         (let ((send (lambda args
+                  (for-each (lambda (arg)
+                     (display-to fd arg)) args))))
+         ; loop if no close
+         (let loop ()
+            (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
+                   (Request-Line (car (car request))))
+               (if (null? Request-Line)
+                  (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
+                  (onRequest fd Request-Line (cdr (car request)) send close))
+;              (let* ((ss2 ms2 (clock)))
+;               (print "Request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms."))
+               (loop)))))))
+      (begin
+         (display "socket closed, ")
+         (syscall 3 fd #f #f)))
+   (print "on-accept done." )
+   ; workaround for bug with "ol: dropping envelope to missing thread"
+   (let sleep ((x 1000))
+      (set-ticker-value 0)
+      (if (> x 0)
+         (sleep (- x 1))))
+   ))
 
 
 (define (http:run port onRequest)
 (let ((socket (syscall 41 #f #f #f)))
    ; bind
    (let loop ((port port))
-      (if (not (syscall 49 socket port #f))
+      (if (not (syscall 49 socket port #f)) ; bind
          (loop (+ port 2))
          (print "Server binded to " port)))
    ; listen      
-   (if (not (syscall 50 socket #f #f))
+   (if (not (syscall 50 socket #f #f)) ; listen
       (exit-owl (print "Can't listen")))
    
    ; accept
    (let loop ()
-      (if (syscall 23 socket #f #f)
-         (let ((fd (syscall 43 socket #f #f)))
-            (fork (on-accept fd onRequest)))
-         (set-ticker-value 0))
+      (if (syscall 23 socket #f #f) ; select
+         (let ((fd (syscall 43 socket #f #f))) ; accept
+            (fork (on-accept fd onRequest))))
+      (set-ticker-value 0)
       (loop))))
 ))

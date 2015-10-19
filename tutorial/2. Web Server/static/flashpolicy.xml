@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE cross-domain-policy SYSTEM "/xml/dtds/cross-domain-policy.dtd">
+
+<!-- Policy file for xmlsocket://iaaa.dlinkddns.com -->
+<!-- http://www.adobe.com/devnet/flashplayer/articles/cross_domain_policy.html -->
+<cross-domain-policy>
+
+   <!-- This is a master socket policy file -->
+   <!-- No other socket policies on the host will be permitted -->
+   <site-control permitted-cross-domain-policies="master-only"/>
+
+   <!-- Instead of setting to-ports="*", administrator's can use ranges and commas -->
+   <!-- This will allow access to ports 123, 456, 457 and 458 -->
+   <allow-access-from domain="127.0.0.1" to-ports="8080-8088" />
+   <allow-access-from domain="localhost" to-ports="8080-8088" />
+
+</cross-domain-policy>
+

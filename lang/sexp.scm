@@ -267,7 +267,7 @@
               (#\n . #x000a)
               (#\r . #x000d)
               (#\e . #x001B)
-              (#\" . #x0022)
+              (#\" . #x0022) ;"
               (#\\ . #x005c))))
 
       (define get-quoted-string-char
@@ -287,13 +287,13 @@
 
       (define get-string
          (let-parses
-            ((skip (get-imm #\"))
+            ((skip (get-imm #\")) ;"
              (chars
                (get-kleene*
                   (get-either
                      get-quoted-string-char
-                     (get-rune-if (lambda (x) (not (has? '(#\" #\\) x)))))))
-             (skip (get-imm #\")))
+                     (get-rune-if (lambda (x) (not (has? '(#\" #\\) x))))))) ;"
+             (skip (get-imm #\"))) ;"
             (runes->string chars)))
 
       (define quotations

@@ -92,10 +92,10 @@
       ;; a fast /^-/ to shave some startup ms for thousands of arguments, which are getting common for some tools
       (define (dashy? str)
          (let ((s (sizeb str)))
-            (if (lesser? s 1)
+            (if (fx:< s 1) ; todo: ?
                #false
                (eq? 45 (refb str 0)))))
-         
+
       (define (walk rules args dict others)
          (cond 
             ((null? args)

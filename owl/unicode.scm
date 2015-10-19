@@ -85,7 +85,7 @@
 
       ;(define (encode-point rout val)
       ;   (cond
-      ;      ((lesser? val 128) val) ; the usual suspect
+      ;      ((fx:< val 128) val) ; the usual suspect
       ;      ((< val #b100000000000) ; fits in 5+6 bits with 2-byte encoding
       ;         (extra-encode rout val #b11000000 1 #b11111))
       ;      ((< val #b10000000000000000) ; fits in 4 + 2*6 bits with 3-byte encoding

@@ -18,22 +18,20 @@
       del         ; O(log2 n), ff x key -> ff' 
       keys        ; O(n), ff → (key ...) 
       ff-update   ; O(log2 n), ff x key x value -> ff' | fail if key not in ff
-      fupd        ; alias for ff-update 
+      fupd        ; alias for ff-update
                   ;    - no rebalancing, just walk to leaf and update value
       ff-union ff-diff ; TEMP
       ff-fold ff-foldr ; like list folds but (op st key val) -> st'
       ff-map      ; like list map but (op key val) -> val'
-		ff-iter     ; ff -> ((key . value) ...) stream (in order)
+      ff-iter     ; ff -> ((key . value) ...) stream (in order)
       ff-singleton? ; ff → bool (has just one key?)
-      list->ff ff->list 
+      list->ff ff->list
       ff->sexp
       ff-ok?
       empty
       empty?
       
-      getf       ; (getf ff key) == (get ff key #false)
-
-      )
+      getf)       ; (getf ff key) == (get ff key #false)
 
    (import 
       (r5rs base)
@@ -130,7 +128,7 @@
    
       ;; fixnum addition, math not defined yte
       (define (f+ a b)
-         (lets ((c _ (fx+ a b))) c))
+         (lets ((c _ (fx:+ a b))) c))
 
       ;; ff → nat | #false if difference spotted
       (define (black-depth ff)
@@ -162,18 +160,18 @@
             ;((with-ff (name l k v r) . rest)
             ;   (lets ((l k v r (explode name))) . rest))
             ((with-ff (name l k v r) . rest)
-               (ff-bind name (lambda (l k v r) . rest)))
+               (ff:bind name (lambda (l k v r) . rest)))
             ))
 
       ;; toggle redness, name of old prim
-      (define-syntax ff-toggle
-         (syntax-rules ()
-            ((ff-toggle node)
-               (cast node (fxbxor (type node) redness)))))
+;      (define-syntax ff-toggle
+;         (syntax-rules ()
+;            ((ff-toggle node)
+;               (cast node (fxbxor (type node) redness)))))
 
       ;; FIXME: misleading names!
-      (define-syntax color-black (syntax-rules () ((color-black x) (ff-toggle x))))
-      (define-syntax color-red   (syntax-rules () ((color-red x)   (ff-toggle x))))
+      (define-syntax color-black (syntax-rules () ((color-black x) (ff:toggle x))))
+      (define-syntax color-red   (syntax-rules () ((color-red x)   (ff:toggle x))))
 
 
       ;;;
@@ -244,7 +242,7 @@
             (if (red? node)
                (with-ff (node left this this-val right)
                   (cond
-                     ((lesser? key this)
+                     ((fx:< key this)
                         (red (putn left key val) this this-val right))
                      ((eq? key this)
                         (red left key val right))
@@ -252,7 +250,7 @@
                         (red left this this-val (putn right key val)))))
                (with-ff (node left this this-val right)
                   (cond
-                     ((lesser? key this)
+                     ((fx:< key this)
                         (black-bleft (putn left key val) this this-val right))
                      ((eq? key this)
                         (black left key val right))
@@ -267,7 +265,7 @@
                (cond
                   ((eq? this-k key)
                      (ref ff 2))
-                  ((lesser? key this-k)
+                  ((fx:< key this-k)
                      ;; go left if possible
                      (case (size ff)
                         (4 (get (ref ff 3) key def))
@@ -300,7 +298,7 @@
                      (2 (ff-update #empty key val)) ;; fail
                      (3 (set ff 3 (ff-update (ref ff 3) key val))) ;; must be here due to contract
                      (else
-                        (if (lesser? key this)
+                        (if (fx:< key this)
                            (set ff 3 (ff-update (ref ff 3) key val))
                            (set ff 4 (ff-update (ref ff 4) key val)))))))))
 
@@ -487,7 +485,7 @@
          (if (nonempty? ff)
             (with-ff (ff left this-key val right)
                (cond
-                  ((lesser? key this-key)
+                  ((fx:< key this-key)
                      (let ((sub (deln left key)))
                         (cond
                            ((eq? sub left)   

@@ -404,10 +404,10 @@
    (define GL_VERSION_1_0 1)
 
 ; https://en.wikipedia.org/wiki/Uname
-(define uname (syscall 63 0 0 0)) ; internal
+(define uname (syscall 63 #f #f #f))
 (define GL_LIBRARY
-   (if (string-eq? (car uname) "Windows")  "opengl32"
-   (if (string-eq? (car uname) "Linux")    "libGL.so"
+   (if (string-eq? (ref uname 1) "Windows")  "opengl32"
+   (if (string-eq? (ref uname 1) "Linux")    "libGL.so"
    ;...
    )))
 
@@ -419,8 +419,8 @@
 ; поддержка расширений :
 (define GetProcAddress ; internal function
    (dlsym % type-port
-      (if (string-eq? (car uname) "Windows")  "wglGetProcAddress"
-      (if (string-eq? (car uname) "Linux")    "glXGetProcAddress"))
+      (if (string-eq? (ref uname 1) "Windows")  "wglGetProcAddress"
+      (if (string-eq? (ref uname 1) "Linux")    "glXGetProcAddress"))
     type-string))
 
 (define (glGetProcAddress type name . prototype)

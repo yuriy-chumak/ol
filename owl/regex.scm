@@ -494,7 +494,7 @@
                         (cons char tl)
                         (let ((op (car tl)))
                            (cond
-                              ((and (lesser? 47 op) (lesser? op 58)) ;; fixme: silly
+                              ((and (fx:< 47 op) (fx:< op 58)) ;; fixme: silly
                                  (let ((submatch (ranges-ref ms (- op 48))))
                                     (if submatch
                                        (append submatch (cdr tl))
@@ -589,9 +589,9 @@
       (define (imm-val imm val)
          (let-parses ((d (get-imm imm))) val))
 
-      (define digit? (λ (b) (and (lesser? 47 b) (lesser? b 58)))) ;; 0-9
-      (define alpha? (λ (b) (and (lesser? 96 b) (lesser? b 123)))) ;; a-z
-      (define big-alpha? (λ (b) (and (lesser? 64 b) (lesser? b 91)))) ;; A-Z
+      (define digit? (λ (b) (and (fx:< 47 b) (fx:< b 58)))) ;; 0-9
+      (define alpha? (λ (b) (and (fx:< 96 b) (fx:< b 123)))) ;; a-z
+      (define big-alpha? (λ (b) (and (fx:< 64 b) (fx:< b 91)))) ;; A-Z
       (define alnum? (λ (b) (or (alpha? b) (big-alpha? b) (digit? b))))
       (define word? (λ (b) (or (eq? b 95) (alnum? b))))
       (define space? (λ (b) (has? '(32 9 13 10 11 12) b)))
@@ -649,8 +649,8 @@
       (define get-digit
          (let-parses
             ((b get-byte)
-             (verify (lesser? 47 b) #false)
-             (verify (lesser? b 58) #false))
+             (verify (fx:< 47 b) #false)
+             (verify (fx:< b 58) #false))
             (- b 48)))
 
       (define get-number

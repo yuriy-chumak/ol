@@ -207,7 +207,7 @@
       (define (get-between below above)
          (get-byte-if
             (λ (x)
-               (and (lesser? below x) (lesser? x above)))))
+               (and (fx:< below x) (fx:< x above)))))
 
       ; #b10xxxxxx
       (define get-extension-byte 
@@ -220,7 +220,7 @@
       ;; fixme: get-rune == get-utf-8
       (define get-rune
          (get-any-of
-            (get-byte-if (λ (x) (lesser? x 128)))
+            (get-byte-if (λ (x) (fx:< x 128)))
             (let-parses
                ((a (get-between 127 224))
                 (verify (not (eq? a #b11000000)) "blank leading 2-byte char") ;; would be non-minimal

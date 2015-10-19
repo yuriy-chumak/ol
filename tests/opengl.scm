@@ -7,7 +7,7 @@
 (define *USE_GLBEGIN* 1)
 
 ;  (define isCompiled (list->byte-vector '(0 0 0 0)))
-;  (sys-prim 1033 isCompiled #false #false)
+;  (syscall 1033 isCompiled #false #false)
 (import (owl pinvoke))
 (import (lib windows))
 (import (OpenGL version-2-1))
@@ -190,7 +190,7 @@
   (define resolution (glGetUniformLocation po (c-string "resolution")))
 
 ;(print "glGetUniformLocation: " (glGetUniformLocation po "color"))
-;(sys-prim 1032 (cdr function) (car function) args))))
+;(syscall 1032 (cdr function) (car function) args))))
 
 
 (ShowWindow window SW_SHOW)

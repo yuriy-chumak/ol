@@ -118,14 +118,14 @@
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle (type-port)
 (define dlopen (case-lambda
-   ((name flag) (sys-prim 1030 (if (string? name) (c-string name) name) flag #false))
-   ((name)      (sys-prim 1030 (if (string? name) (c-string name) name) RTLD_LAZY #false))))
+   ((name flag) (syscall 1030 (if (string? name) (c-string name) name) flag #false))
+   ((name)      (syscall 1030 (if (string? name) (c-string name) name) RTLD_LAZY #false))))
 
-(define pinvoke (sys-prim 1031 (sys-prim 1030 '() RTLD_LAZY #false) "pinvoke" #false))
+(define pinvoke (syscall 1031 (syscall 1030 '() RTLD_LAZY #false) "pinvoke" #false))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать (type-memp)
 (define (dlsym+ dll name)
-   (let ((function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+   (let ((function (syscall 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
       (if function
          (lambda args
             (exec function args #false)))))
@@ -137,7 +137,7 @@
    ; иначе использовать указанное в arguments; обязательно выводить предупреждение, если количество аргументов не
    ; совпадает (возможно еще во время компиляции)
    (let ((rtty (cons type prototype))
-         (function (sys-prim 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+         (function (syscall 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
       (if function
       (lambda args
          (exec pinvoke  function rtty args)))))
@@ -145,12 +145,12 @@
 ;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
 ;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl         
 ;;(define (dlsym-c type dll name . prototype)
-;;; todo: отправлять тип функции третим параметром (sys-prim 1031) и в виртуальной машине
+;;; todo: отправлять тип функции третим параметром (syscall 1031) и в виртуальной машине
 ;;;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ? 
-;;   (let ((function (cons '((bor type 64) . prototype) (sys-prim 1031 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
-;;;;;(let ((function (cons (bor type 64) (sys-prim 1031 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
+;;   (let ((function (cons '((bor type 64) . prototype) (syscall 1031 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
+;;;;;(let ((function (cons (bor type 64) (syscall 1031 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
 ;;      (lambda args ;  function       type          ;arguments
-;;         (sys-prim 59 (cdr function) (car function) args))))
+;;         (syscall 59 (cdr function) (car function) args))))
 
 ; Calling Conventions
 (define (__stdcall  arg) (+ arg   0)) ; __stdcall is default for Windows

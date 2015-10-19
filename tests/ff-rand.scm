@@ -8,7 +8,7 @@
 			(cond
 				((eq? this k)
 					(cons (cons k v) (cdr lst)))
-				((lesser? this k)
+				((fx:< this k)
 					(cons (car lst)
 						(lput (cdr lst) k v)))
 				(else
@@ -20,7 +20,7 @@
 		(let ((this (caar lst)))
 			(cond
 				((eq? this k) (cdr lst))
-				((lesser? this k)
+				((fx:< this k)
 					(cons (car lst) (ldel (cdr lst) k)))
 				(else lst)))))
 

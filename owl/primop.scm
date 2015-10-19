@@ -3,8 +3,6 @@
 ;; todo: convert tuple to variable arity
 ;; todo: convert arity checks 17 -> 25
 
-;; todo: maybe move ncar, and other "n" to the normal but with macroses on top level with type checking.
-
 (define-library (owl primop)
    (export 
       (exports (lang vm))
@@ -21,13 +19,13 @@
 
    (begin
 
-;; Список sys-prim'ов
-; поэтапный перевод sys-prim'ов в syscall'ы
+;; Список syscall'ов
+; поэтапный перевод syscall'ов в syscall'ы
 ; 1. добавить 100 к старым номерам
 ; 2. завести правильные новые
 ; 3. удалить старые
 
-;      (define (__fsend) (sys-prim 0 #false #false #false))
+;      (define (__fsend) (syscall 0 #false #false #false))
 ;      1 __fopen
 ;      2 __close
 ;      3 __sopen
@@ -60,22 +58,22 @@
 
 
       ;; used syscalls
-      (define (exec function . args) (sys-prim 59 function args #false))
+      (define (exec function . args) (syscall 59 function args #false))
 
       ;; special things exposed by the vm
-      (define (set-memory-limit n) (sys-prim 1007 n n n))
-      (define (get-word-size)      (sys-prim 1008 #false #false #false))
-      (define (get-memory-limit)   (sys-prim 1009 #false #false #false))
-      (define (start-seccomp)      (sys-prim 1010 #false #false #false)) ; not enabled by defa
+      (define (set-memory-limit n) (syscall 1007 n n n))
+      (define (get-word-size)      (syscall 1008 #false #false #false))
+      (define (get-memory-limit)   (syscall 1009 #false #false #false))
+      (define (start-seccomp)      (syscall 1010 #false #false #false)) ; not enabled by defa
 
       ;; stop the vm *immediately* without flushing input or anything else with return value n
-      (define (halt n)             (sys-prim 60 n n n))
+      (define (halt n)             (syscall 60 n n n))
       ;; make thread sleep for a few thread scheduler rounds
-      (define (set-ticker-value n) (sys-prim 1022 n #false #false))
+      (define (set-ticker-value n) (syscall 1022 n #false #false))
       (define (wait n)
          (if (eq? n 0)
             n
-            (let* ((n _ (fx- n 1)))
+            (let* ((n _ (fx:- n 1)))
                (set-ticker-value 0)
                (wait n))))
 

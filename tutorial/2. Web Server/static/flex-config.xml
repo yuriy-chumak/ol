@@ -1,0 +1,7 @@
+<flex-config>
+    <target-player>9</target-player>
+    <default-size>
+        <width>1</width>
+        <height>1</height>
+    </default-size>
+</flex-config>

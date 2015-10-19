@@ -19,7 +19,7 @@
 // игра слов:
 // OL -
 //	* сокращение от предка - Owl Lisp'a,
-//	* нулевой порог вхождения (0L - число 0) (Lisp - ОЧЕНЬ простой язык),
+//	* нулевой порог вхождения (0L - число 0, L - level) (Lisp - ОЧЕНЬ простой язык),
 //	* тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков),
 //	* ol' - сокращение от old (старый), отсылка к тому, что lisp - один из старейших языков.
 struct ol_t;
@@ -27,25 +27,12 @@ struct ol_t;
 // internal option
 #define NO_SECCOMP
 
-// comment this to enable overflow checking in binary program decoder
-//#define OVERFLOW_KILLS(n)
-
 struct ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
 struct ol_t* OL_free(struct ol_t* ol);
 
 void* OL_eval(struct ol_t* ol, int argc, char** argv);
 
-//int olvm(unsigned char* bootstrap, void (*release)(void*));
-
-#if 0 //EMBEDDED_VM
-//int vm_alive(struct OL* vm); // (возможно не нужна) проверяет, что vm еще работает
-
-int vm_puts(struct OL* vm, char *message, int n);
-int vm_gets(struct OL* vm, char *message, int n);
-int vm_feof(struct OL* vm);  // все ли забрали из входящего буфера
-#endif
-
-
+// c++ interface:
 #ifdef __cplusplus
 class OL
 {
@@ -59,16 +46,23 @@ public:
 	int eval() {
 		return 0;
 	}
-
-//	int stop() { puts(vm, ",quit", 5); }
-
-//	int puts(char *message, int n) { vm_puts(vm, message, n);
-//	int gets(char *message, int n) { vm_gets(vm, message, n);
 };
 #else
-//#define OL struct OLvm
 typedef struct ol_t OL;
 #endif
+
+// ------------------------------------------------------------------
+// -=( Error Checking )=---------------------------------------------
+//                         to disable (to increase speed for example)
+//                         check remove comment corresponded #define.
+//                                  (doesn't increase speed for real)
+
+//#define CAR_CHECK(arg) 1
+//#define CDR_CHECK(arg) 1
+
+// comment this to enable overflow checking in binary program decoder
+//#define OVERFLOW_KILLS(n)
+
 
 /* tips and tricks: */
 
@@ -77,6 +71,7 @@ typedef struct ol_t OL;
 
 // #define SYSCALL_IOCTL 0
 // #define SYSCALL_SYSINFO 0
+// #define SYSCALL_GETRUSAGE 0
 
 
 
