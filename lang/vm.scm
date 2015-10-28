@@ -93,6 +93,7 @@
       ;(define ref     (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
       ;(define set     (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
 
+      ;(define set!    (raw type-bytecode '(10 4 5 6  24 6)))
       ;(define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
       ;(define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
 
@@ -152,8 +153,10 @@
          (tuple 'ref      47  2 1 ref)   ;(raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
 
          (tuple 'set      45  3 1 set)   ;(raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
-         (tuple 'set-car! 11  2 1 set-car!) ;(raw type-bytecode '(11 4 5 6  24 6)))
-         (tuple 'set-cdr! 12  2 1 set-cdr!) ;(raw type-bytecode '(12 4 5 6  24 6)))
+
+         (tuple 'set!     10  2 1 set!)
+         (tuple 'set-car! 11  2 1 set-car!)
+         (tuple 'set-cdr! 12  2 1 set-cdr!)
 
          (tuple 'eq?      54  2 1 eq?)
 

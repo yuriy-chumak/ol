@@ -121,9 +121,9 @@
       ; ------------------
       ; 4.1.6  Assignments
       ; syntax: set! <variable> <expression> 
-      (define-syntax set!
-         (syntax-rules () 
-            ((set! var val) (error "set! is not supported: " '(set! var val)))))
+      ;(define-syntax set!
+      ;   (syntax-rules () 
+      ;      ((set! var val) (error "set! is not supported: " '(set! var val)))))
 
 
       ;; 4.2  Derived expression types
@@ -665,8 +665,8 @@
       ; + type-ff-red, type-ff-right
       (define type-eof              20) ;; moved from 4, clashing with symbols
 ;     (define type-const            13) ;; old type-null, moved from 1, clashing with pairs
-      (define type-port             12)
-      (define type-memp             62)
+      (define type-port             12) ;; always raw data
+      (define type-memp             62) ;; always raw data
 
 
       ; ---------------
@@ -1189,7 +1189,7 @@
    (export
       λ syntax-error assert
 
-      if set! cond case and or not
+      if cond case and or not
       letrec letrec* let let* let*-values lets
       begin do
       delay force

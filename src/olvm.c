@@ -114,15 +114,13 @@
 // posix or not:
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
-//
-// PORT: равка, с типом type-port и размером 2
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
 //  а изменяемые у нас вектора
 
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
 
-// компилятор lisp поддерживает только несколько специальных форм:
+// компилятор owl-lisp поддерживает только несколько специальных форм:
 //	lambda, quote, rlambda (recursive lambda), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
 //	все остальное - макросы
 
@@ -163,9 +161,14 @@
 #endif
 
 //extern int usleep (__useconds_t __useconds);
-extern FILE *popen (const char *__command, const char *__modes);
-extern int pclose (FILE *__stream);
+//extern FILE *popen (const char *__command, const char *__modes);
+//extern int pclose (FILE *__stream);
 extern int mkstemp (char *__template);
+
+//https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic error "-Wuninitialized"
+//#pragma GCC diagnostic pop
 
 // ========================================
 //  HAS_SOCKETS 1
@@ -208,177 +211,6 @@ extern int mkstemp (char *__template);
 #endif
 
 #endif
-
-// -----------------------------
-// Threading (pthread for win32)
-#if 0//EMBEDDED_VM
-
-#ifdef _WIN32
-//	http://mirrors.kernel.org/sourceware/pthreads-win32/
-#define PTW32_VERSION 2,9,1,0
-//#define ESRCH 3
-typedef HANDLE pthread_t;
-typedef struct pthread_attr_t {} pthread_attr_t;
-
-static int
-pthread_create(pthread_t * thread, const pthread_attr_t * attributes,
-               void *(*function)(void *), void * argument)
-{
-	pthread_t th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)function, argument, 0, NULL);
-	if (thread != NULL)
-		*thread = th;
-	return (th == NULL);
-}
-
-static int
-pthread_yield(void)
-{
-	Sleep(1);
-	return 0;
-}
-
-/*static int
-pthread_join(pthread_t thread, void **value_ptr)
-{
-	return WaitForSingleObject(thread, INFINITE);
-}*/
-
-static int
-pthread_kill(pthread_t thread, int sig)
-{
-	assert(sig == 0);
-	if (sig == 0)
-		return (WaitForSingleObject(thread, 0) == WAIT_OBJECT_0) ? ESRCH : 0;
-	else
-		fprintf(stderr, "Invalid pthread_kill parameter signal %d", sig);
-//	TerminateThread(thread, sig);
-	return 0;
-}
-
-static void
-pthread_exit(void *value_ptr)
-{
-	ExitThread((DWORD)value_ptr);
-}
-/*static unsigned sleep(unsigned seconds)
-{
-	Sleep(seconds * 1000);
-}*/
-#endif
-#ifdef __APPLE__ // __MACH__
-#	include <sched.h>
-static int pthread_yield(void)
-{
-	return sched_yield();
-}
-#endif
-#ifdef __linux__
-#	define _GNU_SOURCE
-#	include <pthread.h>
-#endif
-
-#endif
-
-// -----------------------------------------------------------
-// -=( fifo )=------------------------------------------------
-#if EMBEDDED_VM_FIFO
-// кольцевой текстовый буфер для общения с виртуальной машиной
-
-#define FIFOLENGTH (1 << 14) // 4 * 4096 for now // was << 14
-
-
-// todo: (?) когда приходит запрос на "после конца" входного буфера даных,
-//	значит, машина сделала все, что надо было и теперь ждет новых даных.
-//	похоже, пора возвращать сигнал "я все сделала"
-
-struct fifo
-{
-	volatile char eof;
-	volatile
-	unsigned int putp, getp;
-	char buffer[FIFOLENGTH];
-};
-//static __tlocal__ *fi, *fo;
-//   fi = {0, 0}, fo = {0, 0}; // input/output
-typedef struct fifo fifo;
-
-// несколько основных ассертов:
-// assert (f->putp >= f->getp)
-
-static volatile __inline__
-char fifo_empty(struct fifo* f)
-{
-	return ((f->putp - f->getp) == 0);
-}
-static volatile __inline__
-char fifo_full(struct fifo* f)
-{
-	return ((f->putp - f->getp) == sizeof(f->buffer));
-}
-
-static __inline__
-char fifo_put(struct fifo* f, char c)
-{
-	assert (! fifo_full(f));
-	f->buffer[f->putp++ % FIFOLENGTH] = c;
-	return c;
-}
-static __inline__
-char fifo_get(struct fifo* f)
-{
-	assert (! fifo_empty(f));
-	char
-	c = f->buffer[f->getp++ % FIFOLENGTH];
-	return c;
-}
-
-/*static __inline__ // must be called for VALID fifo
-void fifo_clear(struct fifo* f)
-{
-	f->getp = f->putp = 0;
-}*/
-
-// utility fifo functions
-static
-int fifo_puts(struct fifo* f, char *message, int n)
-{
-	char *ptr = message;
-	while (n--) {
-		while (fifo_full(f))
-			pthread_yield();
-		fifo_put(f, *ptr++);
-	}
-	return ptr - message;
-}
-static
-int fifo_gets(struct fifo* f, char *message, int n)
-{
-	assert (n > 0);
-	char *ptr = message;
-	while (--n) {
-		char c;
-		while (fifo_empty(f))
-			pthread_yield( );
-		c = fifo_get(f);
-		if (c == EOF) {
-			f->eof = 1;
-			break;
-		}
-
-		if ((*ptr++ = c) == '\n')
-			break;
-	}
-	*ptr = '\0'; // удалим крайний символ
-	return ptr - message;
-}
-static
-int fifo_feof(struct fifo* f)
-{
-	return f->eof;
-}
-
-#endif//EMBEDDED_VM
-
 
 // --------------------------------------------------------
 // -=( dl )=-----------------------------------------------
@@ -442,21 +274,21 @@ char* dlerror() {
 #	include <dlfcn.h>
 #endif
 
-#endif//HAS_DLOPEN
+#endif //HAS_DLOPEN
 
 
 // ----------
 // -=( OL )=----------------------------------------------------------------------
 // --
 //
-// виртуальная машина
+// виртуальная машина:
 
 // unsigned int that is capable of storing a pointer
-// основной тип даных, зависит от разрядности машины
-//  ,based on C99 standard, <stdint.h>
+// основной data type, зависит от разрядности машины
+//  ,базируется на C99 стандарте, <stdint.h>
 typedef uintptr_t word;
 
-// descriptor format:
+// descriptor format
 // заголовок объекта, то, что лежит у него в ob[0] (*ob)
 // object headers are further
 //  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1
@@ -488,33 +320,63 @@ typedef uintptr_t word;
 // todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
 //	и ptr на функцию, что делает финализацию.
 // todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
+// http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
-// удалю я пока эту высокоуровневую хрень :)
-/*
-#pragma pack(push, 0)
-typedef struct object
+#define SPOS     16  // == offsetof (struct header, size)
+#define TPOS      2  // == offsetof (struct header, type)
+#define RPOS     11  // == offsetof (struct header, rawness)
+
+__attribute__
+		((aligned(sizeof(word)), packed))
+struct header
+{
+	unsigned mark : 1;    // mark bit (can only be 1 during gc)
+	unsigned i    : 1;    // for headers always 1
+	unsigned type : 6;    // object type
+
+	unsigned padding : 3; // number of padding (unused) bytes at end of object
+	unsigned rawness : 1;
+	unsigned         : 4; // unused
+
+	unsigned size : sizeof(word) - 16 / 8; // 16 is size of prev bits
+};
+
+
+#define IPOS      8  // == offsetof (struct direct, payload)
+
+__attribute__
+		((aligned(sizeof(word)), packed))
+struct direct
+{
+	unsigned mark : 1;    // mark bit (can only be 1 during gc)
+	unsigned i    : 1;    // for directs always 1
+	unsigned type : 6;    // object type
+
+	unsigned payload : sizeof(word) - 1;
+};
+
+__attribute__
+		((aligned(sizeof(word)), packed))
+struct object
 {
 	union {
 		word header;
 		word ref[1];
 	};
-} __attribute__ ((aligned(sizeof(word)), packed)) object; // or  ?
-#pragma pack(pop)//*/
+};
 
-#define IPOS                        8  // offset of immediate payload
-#define SPOS                        16 // offset of size bits in header
-#define TPOS                        2  // offset of type bits in header
-#define RPOS                        11 // offset of RAW bit in header (IPOS+3)
+// ------------------------------------------------------
 
 #define V(ob)                       *((word *) (ob)) // *ob, ob[0]
 #define W                           sizeof (word)
 
 //#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
-//#define FBITS                       24             /* bits in fixnum, on the way to 24 and beyond */
-#define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in fixnum
+#define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in atomic (short) numbers
 #define HIGHBIT                     ((unsigned long)1 << FBITS) // high long bit set
 #define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
-#define MAXOBJ                      0xffff         /* max words in tuple including header */
+// todo: remove MAXOBJ!
+#define MAXOBJ                      0xffff         // max words in tuple including header
+
 #if __amd64__
 #define big                         __int128
 #else
@@ -523,7 +385,7 @@ typedef struct object
 
 #define RAWBIT                      ((1 << RPOS))
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
-#define make_immediate(value, type)    ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
+#define make_direct(value, type)       ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(size, type)        (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
 #define make_raw_header(size, type, p) (( (word)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
 // p is padding
@@ -539,8 +401,8 @@ typedef struct object
 //#define imm_type(x)                 ((((word)x) >> TPOS) & 0x3F)
 #define imm_val(x)                   (((word)x) >> IPOS)
 #define hdrsize(x)                  ((((word)x) >> SPOS) & MAXOBJ)
-#define padsize(x)                  ((((word)x) >> IPOS) & 7)
-#define hdrtype(x)                  ((((word)x) >> TPOS) & 0x3F) // 0xFF from (p) << 8) in make_raw_header
+#define padsize(x)                  (unsigned char)((((word)x) >> IPOS) & 7)
+#define hdrtype(x)                  (unsigned char)((((word)x) >> TPOS) & 0x3F) // 0xFF from (p) << 8) in make_raw_header
 
 #define typeof(x) hdrtype(x)
 
@@ -548,9 +410,9 @@ typedef struct object
 #define allocp(x)                   (!immediatep(x))
 #define is_raw(hdr)                 ((hdr) & RAWBIT)
 
-#define is_pointer(x)               (!immediatep(x))
 #define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
-#define is_fixed(x)                 (((word)x) & 2) // immediate value
+#define is_direct(x)                (((word)x) & 2) // direct value
+#define is_pointer(x)               (!is_direct(x))
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
@@ -560,7 +422,6 @@ typedef struct object
 #define TSYMBOL                      (4)
 
 #define TPORT                       (12)
-#define TMEMP                       (62)
 #define TCONST                      (13)
 
 #define TBYTECODE                   (16)
@@ -573,53 +434,56 @@ typedef struct object
 
 #define TTHREAD                     31 // type-thread-state
 
-#define TFIX                         (0)  // type-fix+
+// numbers
+#define TFIX                        ( 0)  // type-fix+ // todo: rename to TSHORT or TSMALL
 #define TFIXN                       (32)  // type-fix-
-#define TINT                        (40)  // type-int+
+#define TINT                        (40)  // type-int+ // todo: rename to TBIG or something
 #define TINTN                       (41)  // type-int-
 #define TRATIONAL                   (42)
 #define TCOMPLEX                    (43)
 
-#define TVOID                       (48) // type-void
+// pinvoke
+#define TMEMP                       (62) // always raw!
+#define TVOID                       (48) // only for pinvoke
+#define TRAWVALUE                   (45) // only for pinvoke
 
 // special pinvoke types
 #define TFLOAT                      46
 #define TDOUBLE                     47
-//#define TTHIS                       44
-#define TRAWP                       45
+//#define TTHIS                     44
 
-#define IFALSE                      make_immediate(0, TCONST)
-#define ITRUE                       make_immediate(1, TCONST)
-#define INULL                       make_immediate(2, TCONST)
-#define IEMPTY                      make_immediate(3, TCONST) /* empty ff */
-#define IEOF                        make_immediate(4, TCONST)
-#define IHALT                       INULL /* FIXME: adde a distinct IHALT */
+#define IFALSE                      make_direct(0, TCONST)
+#define ITRUE                       make_direct(1, TCONST)
+#define INULL                       make_direct(2, TCONST)
+#define IEMPTY                      make_direct(3, TCONST) // empty ff
+#define IEOF                        make_direct(4, TCONST)
+#define IHALT                       INULL // FIXME: adde a distinct IHALT
 
 #define HPAIR                       make_header(3, TPAIR)
 #define HINT                        make_header(3, TINT)
 #define HINTN                       make_header(3, TINTN)
 #define HRATIONAL                   make_header(3, TRATIONAL)
-#define HPORT                       make_header(2, RAWH(TPORT))
+#define HMEMP                       make_header(2, RAWH(TMEMP))
 #define HCOMPLEX                    make_header(3, TCOMPLEX)
 
 #define FFRIGHT                     1
 #define FFRED                       2
 
 #define flagged_or_raw(hdr)         (hdr & (RAWBIT|1))
-#define likely(x)                   __builtin_expect((x), 1)
-#define unlikely(x)                 __builtin_expect((x), 0)
+//#define likely(x)                   __builtin_expect((x), 1)
+//#define unlikely(x)                 __builtin_expect((x), 0)
 
 #define is_const(ob)                (typeof (ob) == TCONST)
 
-#define is_pair(ob)                 (is_pointer(ob) &&         *(word*)(ob)  == HPAIR)
-#define is_npair(ob)                (is_pointer(ob) &&         *(word*)(ob)  == HINT)
-#define is_npairn(ob)               (is_pointer(ob) &&         *(word*)(ob)  == HINTN)
-#define is_rational(ob)             (is_pointer(ob) &&         *(word*)(ob)  == HRATIONAL)
-#define is_complex(ob)              (is_pointer(ob) &&         *(word*)(ob)  == HCOMPLEX)
+#define is_pair(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HPAIR)
+#define is_npair(ob)                (is_pointer(ob) &&        (*(word*)(ob)) == HINT)
+#define is_npairn(ob)               (is_pointer(ob) &&        (*(word*)(ob)) == HINTN)
+#define is_rational(ob)             (is_pointer(ob) &&        (*(word*)(ob)) == HRATIONAL)
+#define is_complex(ob)              (is_pointer(ob) &&        (*(word*)(ob)) == HCOMPLEX)
 #define is_string(ob)               (is_pointer(ob) && typeof (*(word*)(ob)) == TSTRING)
 #define is_tuple(ob)                (is_pointer(ob) && typeof (*(word*)(ob)) == TTUPLE)
-#define is_port(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TPORT) // todo: maybe need to check port rawness?
-#define is_memp(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TMEMP) // todo: maybe need to check memp rawness?
+#define is_port(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TPORT)
+#define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HMEMP)
 
 #define ref(ob, n)                  (((word*)(ob))[n])
 #define car(ob)                     ref(ob, 1)
@@ -627,6 +491,8 @@ typedef struct object
 
 #define caar(o)                     car(car(o))
 #define cadr(o)                     car(cdr(o))
+#define cdar(o)                     cdr(car(o))
+#define cddr(o)                     cdr(cdr(o))
 
 // набор макросов - проверок для команд
 // car, cdr:
@@ -643,21 +509,41 @@ typedef struct object
 // алгоритмические трюки:
 // x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
 // signed fix to int
+
+// i - machine integer
+// ui - unsigned, si - signed
+// todo: add this
+// a - atomic number (internal, that fits in one register), type-fix
+//  or small numbers,
+//  or short numbers
+// ua, sa - unsigned/signed respectively.
+// Z - mножество целых чисел.
+
+// элементарная арифметика
 #define uftoi(fix)  ({ ((word)fix >> IPOS); })
 #define sftoi(fix)  ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
-#define itosf(val)  ({ val < 0 ? (F(-val) | 0x80) : F(val); })
+#define itouf(val)  ({ (((word)(val) << IPOS) | 2); })
+#define itosf(val)  ({ val < 0 ? (itouf(-val) | 0x80) : itouf(val); })
 
+// арифметика целых (возможно больших)
 // TINT(as pair) to int
 // прошу внимания!
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-#define uitoi(num)  ({ uftoi(car(B)) | (is_pointer(cdr(B)) ? uftoi(cadr(B)) << FBITS : 0); })
-#define itouf(val)  ({\
+#define untoi(num)  ({ uftoi(car(B)) | (is_pointer(cdr(B)) ? uftoi(cadr(B)) << FBITS : 0); })
+#define itoun(val)  ({\
 	(word*)(\
 	(sizeof(val) < sizeof(word) - 1)\
-		? F(val)\
-		: val > FMAX\
-			? new_list(TINT, F(val & FMAX), F(val >> FBITS))\
-			: F(val));})
+		? itouf(val)\
+		: (val <= FMAX)\
+			? itouf(val)\
+			: (word)new_list(TINT, itouf(val & FMAX), itouf(val >> FBITS)));})
+//#define itosn(val)  ({\
+//	(word*)(\
+//	(sizeof(val) < sizeof(word) - 1)\
+//		? sftoi(val)\
+//		: (val <= FMAX)\
+//			? sftoi(val)\
+//			: (word)new_list(TINT, sftoi(val & FMAX), sftoi(val >> FBITS)));})
 
 
 #define NR                          128 // see n-registers in register.scm
@@ -682,8 +568,8 @@ int chdir(const char *path);
 
 
 
-// --------------------------------------------------------
-// -=( GC )=-----------------------------------------------
+// -----------------------------------------------------//--------------------
+// -=( GC )=------------------------------------------------------------------
 
 /*** Garbage Collector,
  * based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982)
@@ -697,13 +583,13 @@ typedef struct heap_t
 	//  begin <= genstart <= end
 	word *begin;     // begin of heap memory block
 	word *end;       // end of heap
-
 	word *genstart;  // new generation begin pointer
-
+	// new (size) == *(size*)fp++
 	word *fp;        // allocation pointer
 } heap_t;
 
 
+// -= new =--------------------------------------------
 // выделить сырой блок памяти
 #define NEW(size) ({\
 	word* addr = fp;\
@@ -718,16 +604,19 @@ word*p = NEW (size);\
 	/*return*/ p;\
 })
 
+// аллоцировать новый "сырой" объект (указанного типа),
+//  данные объекта не проверяются сборщиком мусора и не
+//  должны содержать другие объекты!
 #define NEW_RAW_OBJECT(size, type, pads) ({\
 word*p = NEW (size);\
 	*p = make_raw_header(size, type, pads);\
 	/*return*/ p;\
 })
 
-// хитрый макрос агрегирующий макросы-аллокаторы памяти
-//	http://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
 #define NEW_MACRO(_1, _2, NAME, ...) NAME
 #define new(...) NEW_MACRO(__VA_ARGS__, NEW_OBJECT, NEW)(__VA_ARGS__)
+
+// -= new_pair =----------------------------------------
 
 // a1 и a2 надо предвычислить перед тем, как выделим память,
 // так как они в свою очередь могут быть аллоцируемыми объектами.
@@ -742,48 +631,44 @@ word*p = NEW_OBJECT (3, type);\
 })
 
 #define NEW_PAIR(a1, a2) NEW_TYPED_PAIR(TPAIR, a1, a2)
-/* по факту эта функция сводится к простому:
-	word *object = fp;
-
-	fp[0] = PAIRHDR;
-	fp[1] = (word) a1;
-	fp[2] = (word) a2;
-
-	fp += 3;
-	return object;*/
-
 
 #define NEW_PAIRX(_1, _2, UP, NAME, ...) NAME
-
 #define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
 
-// аллокаторы списоков (todo: что ставить в качестве типа частей, вместо TPAIR?)
+// -= new_list =----------------------------------------
+
+// аллокаторы списоков (ставить в качестве типа частей TPAIR! так как часть списка - список)
 #define new_list1(type, a1) \
 	new_pair (type, a1, INULL)
 #define new_list2(type, a1, a2) \
-	new_pair (type, a1,\
-	                new_pair (type, a2, INULL))
+	new_pair (type,\
+		a1, new_pair (TPAIR,\
+			a2, INULL))
 #define new_list3(type, a1, a2, a3) \
-	new_pair (type, a1,\
-	                new_pair (type, a2,\
-	                                new_pair (type, a3, INULL)))
+	new_pair (type,\
+		a1, new_pair (TPAIR,\
+			a2, new_pair (TPAIR,\
+				a3, INULL)))
 #define new_list4(type, a1, a2, a3, a4) \
-	new_pair (type, a1,\
-	                new_pair (type, a2,\
-	                                new_pair (type, a3,\
-	                                                new_pair (type, a4, INULL))))
+	new_pair (type,\
+		a1, new_pair (TPAIR,\
+			a2, new_pair (TPAIR,\
+				a3, new_pair (TPAIR,\
+					a4, INULL))))
 #define new_list5(type, a1, a2, a3, a4, a5) \
-	new_pair (type, a1,\
-	                new_pair (type, a2,\
-	                                new_pair (type, a3,\
-	    	                                        new_pair (type, a4,\
-	                                                                new_pair (type, a5, INULL)))))
+	new_pair (type,\
+		a1, new_pair (TPAIR,\
+			a2, new_pair (TPAIR,\
+				a3, new_pair (TPAIR,\
+					a4, new_pair (TPAIR,\
+						a5, INULL)))))
 
 #define NEW_LIST(_1, _2, _3, _4, _5, UP, NAME, ...) NAME // UP for listN needs N+1 argument
 #define new_list(...) NEW_LIST(__VA_ARGS__, new_list5, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
 
+// -= new_tuple =---------------------------------------
+
 // кортеж:
-// набор макросов для tuple:
 #define new_tuple1(a1) ({\
 	word data1 = (word) a1;\
 	/* точка следования */ \
@@ -882,10 +767,13 @@ word*p = NEW_OBJECT (13+1, TTUPLE);\
 })
 
 #define NEW_TUPLE(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME
-#define new_tuple(...) NEW_TUPLE(__VA_ARGS__, new_tuple13, new_tuple12, new_tuple11, new_tuple10, new_tuple9, new_tuple8, new_tuple7, new_tuple6, new_tuple5, new_tuple4, new_tuple3, new_tuple2, new_tuple1, NOTHING)(__VA_ARGS__)
+#define new_tuple(...) NEW_TUPLE(__VA_ARGS__, new_tuple13, new_tuple12, new_tuple11,\
+		new_tuple10, new_tuple9, new_tuple8, new_tuple7, new_tuple6, new_tuple5,\
+		new_tuple4, new_tuple3, new_tuple2, new_tuple1, NOTHING)(__VA_ARGS__)
 
 
-// остальные аллокаторы
+// -= остальные аллокаторы =----------------------------
+
 //todo: make __pads automaticall calculated
 #define new_raw_object(size, type, pads) ({\
 word*p = new (size);\
@@ -929,28 +817,29 @@ word value = (word) a;\
 })
 
 
-#define cont(n)                 V((word)n & ~1)  // ~ - bitwise NOT (корректное разименование указателя, без учета бита mark)
+// -= gc implementation =-----------
 
 // возвращается по цепочке "flagged" указателей назад
 static __inline__
 word *chase(word* pos) {
-//	assert(pos IS flagged)
-//	word xpos = *(word*) ((word)pos & ~1);
-	word ppos = cont(pos);                       // ppos = *pos;
-	while (is_pointer(ppos) && is_flagged(ppos)) {  // ? ppos & 0x3 == 0x1
-		pos = (word *) ppos;                     // pos = ppos
-		ppos = cont(pos);                        // ppos = *pos;
+	//	assert(pos IS flagged)
+	word* ptpos;
+	while (1) {
+		ptpos = *(word**) ((word)pos & ~1);      // ppos = *pos; ~ = bitwise NOT, (корректное разименование указателя, без учета бита mark)
+		if (!is_pointer(ptpos) || !is_flagged(ptpos)) // ppos & 0x3 == 0x1
+			return (word*)((word)pos & ~1);
+		pos = ptpos;
 	}
-//	assert(pos IS flagged)
-	return (word*)((word)pos & ~1);
+
+//	word** ppos;
+//	while (1) {
+//		ppos = (word**) ((word)pos & ~1);      // ppos = *pos; ~ = bitwise NOT, (корректное разименование указателя, без учета бита mark)
+//		if (!is_pointer(*ppos) || !is_flagged(*ppos)) // ppos & 0x3 == 0x1
+//			return ppos;
+//		pos = *ppos;
+//	}
 }
 
-
-#ifdef _LP64
-typedef int64_t   wdiff;
-#else
-typedef int32_t   wdiff;
-#endif
 
 static __inline__
 void fix_pointers(word *pos, ptrdiff_t delta, word *end)
@@ -975,7 +864,7 @@ void fix_pointers(word *pos, ptrdiff_t delta, word *end)
 
 /* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
 static __inline__
-wdiff adjust_heap(heap_t *heap, int cells)
+ptrdiff_t adjust_heap(heap_t *heap, int cells)
 {
 //	if (seccompp) /* realloc is not allowed within seccomp */
 //		return 0;
@@ -992,7 +881,7 @@ wdiff adjust_heap(heap_t *heap, int cells)
 		heap->end = heap->begin + new_words - MEMPAD; // leave MEMPAD words alone
 		return 0;
 	} else if (heap->begin) { // d'oh! we need to O(n) all the pointers...
-		wdiff delta = (word)heap->begin - (word)old;
+		ptrdiff_t delta = (word)heap->begin - (word)old;
 		heap->end = heap->begin + new_words - MEMPAD; // leave MEMPAD words alone
 		fix_pointers(heap->begin, delta, heap->end);
 		return delta;
@@ -1395,7 +1284,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 								ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
 							break;
 						default:
-						    fprintf(stderr, "assert! hdrsize(hdr) == %d\n", hdrsize(hdr));
+						    fprintf(stderr, "assert! hdrsize(hdr) == %d\n", (int)hdrsize(hdr));
 							assert (0);
 							//ff = (word *) ((key < this) ? ff[3] : ff[4]);
 						}
@@ -1520,10 +1409,6 @@ invoke:;
 #	define CAR   52
 #	define CDR   53
 #	define REF   47
-
-//#	define NCONS 29
-//#	define NCAR  30 // removed and changed to car
-//#	define NCDR  31 // removed and changed to cdr
 
 #	define SIZEB 28
 #	define REFB  48
@@ -1650,14 +1535,14 @@ invoke:;
 			}
 			word *lst = (word *) R[reg+1];
 
-			while (allocp(lst) && *lst == HPAIR) { // unwind argument list
+			while (is_pair(lst)) { // unwind argument list
 				// FIXME: unwind only up to last register and add limited rewinding to arity check
 				if (reg > NR) { // dummy handling for now
 					fprintf(stderr, "TOO LARGE APPLY\n");
 					exit(3);
 				}
-				R[reg++] = lst[1];
-				lst = (word *) lst[2];
+				R[reg++] = car (lst);
+				lst = (word *) cdr (lst);
 				arity++;
 			}
 			acc = arity;
@@ -1738,7 +1623,7 @@ invoke:;
 			ip += 4; break;
 
 		case JP: {  // JZ, JN, JT, JF a hi lo
-			// was: FIXME, convert this to jump-const <n> comparing to make_immediate(<n>,TCONST),
+			// was: FIXME, convert this to jump-const <n> comparing to make_direct(<n>,TCONST),
 			//  но я считаю, что надо просто добавить еще одну команду, а эти так и оставить
 			const word I[] = { F(0), INULL, ITRUE, IFALSE };
 			if (A0 == I[op>>6])
@@ -1781,9 +1666,9 @@ invoke:;
 			word *lst = (word *) A1;
 			int len = 0;
 			word* p = lst;
-			while (is_pair(p)) { // allocp(p) && *p == HPAIR) {
+			while (is_pair(p)) {
 				len++;
-				p = (word *) p[2];
+				p = (word*)cdr (p);
 			}
 
 			if ((word) p == INULL && len <= MAXOBJ) {
@@ -1798,8 +1683,8 @@ invoke:;
 					p = (word*)cdr(p);
 				}
 
-				while ((word)pos % sizeof(word)) // clear the padding bytes
-					*pos++ = 0;
+				while ((word)pos % sizeof(word)) // clear the padding bytes,
+					*pos++ = 0;                  //  required!!! (for system-based types)
 				A2 = (word)raw;
 			}
 			else
@@ -1817,7 +1702,7 @@ invoke:;
 		case TYPE: { // type o r <- actually sixtet
 			word T = A0;
 			if (is_pointer(T))
-				T = V(T);
+				T = *((word *) (T));
 			A1 = F(typeof (T)); // was: F((T >> TPOS) & 63);
 			ip += 2; break;
 		}
@@ -1839,7 +1724,7 @@ invoke:;
 			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
 			// это лучше сделать тут, наверное, а не отдельной командой
 			if (immediatep(T))
-				A2 = make_immediate(imm_val(T), type);
+				A2 = make_direct(imm_val(T), type);
 			else
 			{ // make a clone of more desired type
 				word* ob = (word*)T;
@@ -2044,9 +1929,17 @@ invoke:;
 			ERROR(op, IFALSE, IFALSE);
 			break;
 
-		// мутатор (нерабочий !)
-		case 10: { // set! o t r
-			A3 = IFALSE;
+		// мутатор
+		case 10: { // (set! variable value)
+			// variable and expression both must be MEMP
+			word* variable = A0;
+			word* value = A1;
+
+			CHECK(is_memp(variable), variable, 10);
+			CHECK(is_memp(value), value, 10);
+
+			car (variable) = car (value);
+			A3 = ITRUE;
 			/*word T = IFALSE;
 			if (allocp(A0) && immediatep(A1) && immediatep(A2)) {
 				word *obj = (word *)A0;
@@ -2068,7 +1961,7 @@ invoke:;
 				}
 			}
 			A3 = T;*/
-			ip += 4; break;
+			ip += 3; break;
 		}
 		case 11: { // (set-car! pair value)
 			word *pair = (word *)A0;
@@ -2076,7 +1969,7 @@ invoke:;
 
 			// we can't set ref as part of pair due to gc specific
 			CHECK(is_pair(pair), pair, 11);
-			CHECK(is_fixed(value) || is_const(value),        value, 11);
+			CHECK(is_direct(value) || is_const(value), value, 11);
 
 			car(pair) = value;
 
@@ -2089,7 +1982,7 @@ invoke:;
 
 			// case as (set-car!)
 			CHECK(is_pair(pair), pair, 12);
-			CHECK(is_fixed(value) || is_const(value),        value, 12);
+			CHECK(is_direct(value) || is_const(value), value, 12);
 
 			cdr(pair) = value;
 
@@ -2098,10 +1991,10 @@ invoke:;
 		}
 
 
-		// make-tuple
+		// make tuple
 		case MKT: { // mkt t s f1 .. fs r
 			word type = *ip++;
-			word size = *ip++ + 1; /* the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples */
+			word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples
 			word *p = new (size+1, type), i = 0; // s fields + header
 			while (i < size) {
 				p[i+1] = R[ip[i]];
@@ -2110,6 +2003,24 @@ invoke:;
 			R[ip[i]] = (word) p;
 			ip += size+1; break;
 		}
+
+		// make tuple from list
+		case LISTUPLE: { // listuple type size lst to
+			word type = fixval(A0);
+			word size = fixval(A1);
+			word list = A2;
+			word *p = new (size+1);
+			A3 = (word) p;
+			*p++ = make_header(size+1, type);
+			while (size--) {
+				CHECK(is_pair(list), list, LISTUPLE);
+				*p++ = car (list);
+				list = cdr (list);
+			}
+			ip += 4; break;
+		}
+
+
 
 		// bind tuple to registers, todo: rename to bind-t or bindt or bnt
 		case BIND: { /* bind <tuple > <n> <r0> .. <rn> */
@@ -2144,22 +2055,6 @@ invoke:;
 				A4 = *ff;
 			}
 			ip += 5; break;
-		}
-
-		// make tuple from list
-		case LISTUPLE: { // listuple type size lst to
-			word type = fixval(A0);
-			word size = fixval(A1);
-			word *lst = (word *)A2;
-			word *p = new (size+1);
-			A3 = (word) p;
-			*p++ = make_header(size+1, type);
-			while (size--) {
-				CHECK((is_pointer(lst) && lst[0] == HPAIR), lst, LISTUPLE);
-				*p++ = lst[1];
-				lst = (word *) lst[2];
-			}
-			ip += 4; break;
 		}
 
 		/** ff's ---------------------------------------------------
@@ -2240,8 +2135,8 @@ invoke:;
 				struct timeval tp;
 				gettimeofday(&tp, NULL);
 
-				A0 = (word) itouf (tp.tv_sec);
-				A1 = (word) itouf (tp.tv_usec / 1000);
+				A0 = (word) itoun (tp.tv_sec);
+				A1 = (word) itoun (tp.tv_usec / 1000);
 //			}
 			ip += 2; break;
 		}
@@ -2254,7 +2149,7 @@ invoke:;
 			//            http://man7.org/linux/man-pages/dir_section_2.html
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
-			word result = IFALSE;  // default returned value is #false, todo: change to word*
+			word* result = IFALSE;  // default returned value is #false, todo: change to word*
 		//	CHECK(is_fixed(A0) && typeof (A0) == TFIX, A0, SYSCALL);
 			word op = uftoi (A0);
 			word a = A1, b = A2, c = A3;
@@ -2309,12 +2204,12 @@ invoke:;
 				if (got > 0) {
 					// todo: обработать когда приняли не все,
 					//	     вызвать gc() и допринять. и т.д.
-					result = (word) new_bytevector (got, TBVEC);
+					result = new_bytevector (got, TBVEC);
 				}
 				else if (got == 0)
-					result = IEOF;
+					result = (word*)IEOF;
 				else if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
-					result = ITRUE;
+					result = (word*)ITRUE;
 
 				break;
 			}
@@ -2371,7 +2266,7 @@ invoke:;
 					break;
 				}
 				set_blocking(file, 0);
-				result = (word) new_port(file);
+				result = new_port(file);
 
 				break;
 			}
@@ -2388,24 +2283,24 @@ invoke:;
 			}
 
 			// STATs
-			word unstat(struct stat* st) {
-				return (word) new_tuple(
+			word* unstat(struct stat* st) {
+				return new_tuple(
 						IFALSE, // st_dev   - устройство
 						IFALSE, // st_ino   - inode
 						IFALSE, // st_mode  - режим доступа
 						IFALSE, // st_nlink - количество жестких ссылок
-						itouf(st->st_uid),//- идентификатор пользователя-владельца
-						itouf(st->st_gid),//- идентификатор группы-владельца
+						itoun(st->st_uid),//- идентификатор пользователя-владельца
+						itoun(st->st_gid),//- идентификатор группы-владельца
 						IFALSE, // st_rdev  - тип устройства (если это устройство)
-						itouf(st->st_size),// общий размер в байтах
+						itoun(st->st_size),// общий размер в байтах
 						IFALSE, // st_blksize размер блока ввода-вывода в файловой системе
 						IFALSE, // st_blocks  количество выделенных блоков
 						// Since Linux 2.6, the kernel supports nanosecond
 						//   precision for the following timestamp fields.
 						// but we do not support this for a while
-						itouf(st->st_atime),//время последнего доступа (в секундах)
-						itouf(st->st_mtime),//время последней модификации (в секундах)
-						itouf(st->st_ctime) //время последнего изменения (в секундах)
+						itoun(st->st_atime),//время последнего доступа (в секундах)
+						itoun(st->st_mtime),//время последней модификации (в секундах)
+						itoun(st->st_ctime) //время последнего изменения (в секундах)
 				);
 			}
 			case SYSCALL_STAT: {
@@ -2434,7 +2329,9 @@ invoke:;
 			// IOCTL (syscall 16 fd request #f)
 #			if SYSCALL_IOCTL
 			case SYSCALL_IOCTL: {
-				CHECK(is_port(a), a, SYSCALL);
+				if (!is_port(a))
+					break;
+
 				int portfd = car (a);
 				int ioctl = uftoi(b);
 
@@ -2462,7 +2359,7 @@ invoke:;
 				word* A = (word*)a;
 				DIR *dirp = opendir((char*) &A[1]);
 				if (dirp)
-					result = (word)new_port(dirp);
+					result = new_port(dirp);
 				break;
 			}
 			// get directory entry
@@ -2482,7 +2379,7 @@ invoke:;
 				len = lenn(dire->d_name, FMAX+1);
 				if (len == FMAX+1)
 					break; /* false for errors, like too long file names */
-				result = (word) new_string(len, dire->d_name);
+				result = new_string(len, dire->d_name);
 				break;
 			}
 			case 1013: /* sys-closedir dirp _ _ -> ITRUE */
@@ -2509,7 +2406,7 @@ invoke:;
 			case 41: { // socket (todo: options: STREAM or DGRAM)
 				int sock = socket(PF_INET, SOCK_STREAM, 0);
 				if (sock != -1)
-					result = (word) new_port (sock);
+					result = new_port (sock);
 				break;
 			}
 
@@ -2611,7 +2508,7 @@ invoke:;
 				flags = (flags | O_NONBLOCK);
 				if (fcntl(sock, F_SETFL, flags) == 0)
 #endif
-					result = (word) new_port (sock);
+					result = new_port (sock);
 				break;
 			}
 
@@ -2630,6 +2527,40 @@ invoke:;
 						&& FD_ISSET(sockfd, &fds))
 					result = ITRUE;
 
+				break;
+			}
+
+			// GETPEERNAME
+			// http://linux.die.net/man/2/getpeername
+			case 51: { // (getpeername sockfd)
+				CHECK(is_port(a), a, SYSCALL);
+				int sockfd = car (a);
+
+				struct sockaddr_storage peer;
+				socklen_t len = sizeof(peer);
+
+				// On success, zero is returned.
+				if (getpeername(sockfd, (struct sockaddr *) &peer, &len) != 0)
+					break;
+
+				char ipstr[INET6_ADDRSTRLEN];
+				unsigned short port;
+
+				if (peer.ss_family == AF_INET) {
+					struct sockaddr_in *s = (struct sockaddr_in *)&peer;
+					port = ntohs(s->sin_port);
+					inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+				}
+				else
+				if (peer.ss_family == AF_INET6) {
+					struct sockaddr_in6 *s = (struct sockaddr_in6 *)&peer;
+					port = ntohs(s->sin6_port);
+					inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
+				}
+				else
+					break;
+
+				result = new_pair(new_string(strlen(ipstr), ipstr), F(port));
 				break;
 			}
 
@@ -2770,7 +2701,7 @@ invoke:;
 			case SYSCALL_GETTIMEOFDATE: {
 				struct timeval tv;
 				if (gettimeofday(&tv, NULL) == 0)
-					result = (word) new_pair (itouf(tv.tv_sec), itouf(tv.tv_usec));
+					result = new_pair (itoun(tv.tv_sec), itoun(tv.tv_usec));
 				break;
 			}
 
@@ -2788,7 +2719,7 @@ invoke:;
 				else if (typeof (B) == TFIX)
 					seconds = uftoi(B);
  				else if (is_pointer(B) && typeof (*B) == TINT)
-					seconds = uitoi(B);
+					seconds = untoi(B);
 				else
 					break;
 #if HAS_STRFTIME
@@ -2800,11 +2731,11 @@ invoke:;
 						break;
 					// The environment variables TZ and LC_TIME are used!
 					size_t len = strftime(ptr, (size_t) (heap->end - fp - MEMPAD), (char*)&A[1], timeinfo);
-					result = (word) new_bytevector(len+1, TSTRING);
+					result = new_bytevector(len+1, TSTRING);
 				}
 				else
 #endif
-					result = (word)itouf (seconds);
+					result = itoun (seconds);
 				break;
 			}
 
@@ -2825,7 +2756,7 @@ invoke:;
 				if (uname(&name))
 					break;
 
-				result = (word)new_tuple(
+				result = new_tuple(
 						new_string(strlen((char*)name.sysname), name.sysname),
 						new_string(strlen((char*)name.nodename), name.nodename),
 						new_string(strlen((char*)name.release), name.release),
@@ -2842,21 +2773,21 @@ invoke:;
 				struct rusage u;
 				// arguments currently ignored. used RUSAGE_SELF
 				if (getrusage(RUSAGE_SELF, &u) == 0)
-					result = (word) new_tuple(
-							new_pair (itouf(u.ru_utime.tv_sec), itouf(u.ru_utime.tv_usec)),
-							new_pair (itouf(u.ru_stime.tv_sec), itouf(u.ru_stime.tv_usec))
+					result = new_tuple(
+							new_pair (itoun(u.ru_utime.tv_sec), itoun(u.ru_utime.tv_usec)),
+							new_pair (itoun(u.ru_stime.tv_sec), itoun(u.ru_stime.tv_usec))
 /*
-							itouf(info.uptime),
-							new_tuple(itouf(info.loads[0]),
-									  itouf(info.loads[1]),
-									  itouf(info.loads[2])),
-							itouf(info.totalram),
-							itouf(info.freeram),
-							itouf(info.sharedram),
-							itouf(info.bufferram),
-							itouf(info.totalswap),
-							itouf(info.freeswap),
-							itouf(info.procs) // procs is short*/
+							itoun(info.uptime),
+							new_tuple(itoun(info.loads[0]),
+									  itoun(info.loads[1]),
+									  itoun(info.loads[2])),
+							itoun(info.totalram),
+							itoun(info.freeram),
+							itoun(info.sharedram),
+							itoun(info.bufferram),
+							itoun(info.totalswap),
+							itoun(info.freeswap),
+							itoun(info.procs) // procs is short*/
 					);
 				break;
 
@@ -2868,18 +2799,18 @@ invoke:;
 			case SYSCALL_SYSINFO: {
 				struct sysinfo info;
 				if (sysinfo(&info) == 0)
-					result = (word) new_tuple(
-							itouf(info.uptime),
-							new_tuple(itouf(info.loads[0]),
-									  itouf(info.loads[1]),
-									  itouf(info.loads[2])),
-							itouf(info.totalram),
-							itouf(info.freeram),
-							itouf(info.sharedram),
-							itouf(info.bufferram),
-							itouf(info.totalswap),
-							itouf(info.freeswap),
-							itouf(info.procs) // procs is short
+					result = new_tuple(
+							itoun(info.uptime),
+							new_tuple(itoun(info.loads[0]),
+									  itoun(info.loads[1]),
+									  itoun(info.loads[2])),
+							itoun(info.totalram),
+							itoun(info.freeram),
+							itoun(info.sharedram),
+							itoun(info.bufferram),
+							itoun(info.totalswap),
+							itoun(info.freeswap),
+							itoun(info.procs) // procs is short
 					);
 				break;
 			}
@@ -2928,7 +2859,7 @@ invoke:;
 					if (is_string(name)) {
 						char* value = getenv((char*)&name[1]);
 						if (value)
-							result = (word) new_string(lenn(value, FMAX), value);
+							result = new_string(lenn(value, FMAX), value);
 					}
 					break;
 				}
@@ -2936,7 +2867,7 @@ invoke:;
 					int g = heap->genstart - heap->begin;
 					int f = fp - heap->begin;
 					int t = heap->end - heap->begin;
-					result = (word) new_list(TPAIR, F(g), F(f), F(t));
+					result = new_list(TPAIR, F(g), F(f), F(t));
 					break;
 				}
 
@@ -2956,7 +2887,7 @@ invoke:;
 						break; // invalid filename, return #false
 
 					if (module)
-						result = (word) new_port(module);
+						result = new_port(module);
 					break;
 				}
 				// todo: change to 176 (sys_delete_module)
@@ -2975,7 +2906,7 @@ invoke:;
 							? (char*) imm_val((word)symbol)
 							: (char*) &symbol[1]);
 					if (function)
-						result = (word)new_memp(function);
+						result = new_memp(function);
 					else
 						fprintf(stderr, "dlsym failed: %s\n", dlerror());
 					break;
@@ -2983,7 +2914,7 @@ invoke:;
 /*				case 1032: { // (dlerror)
 					char* error = dlerror();
 					if (error)
-						result = (word) new_string(strlen(error), error);
+						result = new_string(strlen(error), error);
 					break;
 				}*/
 #endif
@@ -3153,7 +3084,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		if (*hp == 0) { // fixnum
 			hp++;
 			unsigned char type = *hp++;
-			word val = make_immediate(get_nat(), type);
+			word val = make_direct(get_nat(), type);
 			*fp++ = val;
 		} else {
 			word diff = get_nat();
@@ -3360,7 +3291,7 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	return is_fixed(r) ? sftoi (r) : -1;
+	return is_direct(r) ? sftoi (r) : -1;
 }
 #endif
 
@@ -3786,6 +3717,7 @@ word pinvoke(OL* self, word* arguments)
 				break;
 			// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
 			case TPORT:
+			case TMEMP:
 			case TBVEC:
 				args[i] = arg[1];
 				break;
@@ -3839,11 +3771,13 @@ word pinvoke(OL* self, word* arguments)
 
 		// запрос порта - это запрос значения порта
 		// todo: добавить тип "указатель на порт"
+		case TMEMP:
 		case TPORT:
 			if ((word)arg == INULL)
 				args[i] = (word) (void*)0;
 			else
 			switch (hdrtype(arg[0])) {
+			case TMEMP:
 			case TPORT:
 				args[i] = arg[1];
 				break;
@@ -3863,6 +3797,7 @@ word pinvoke(OL* self, word* arguments)
 			switch (hdrtype(arg[0])) {
 			case TBVEC:
 			case TSTRING:
+			case TMEMP:
 			case TPORT:
 //			case TCONST:
 				// in arg[0] size got size of string
@@ -3903,7 +3838,7 @@ word pinvoke(OL* self, word* arguments)
 				args[i] = INULL; // todo: error
 			}
 			break;
-		case TRAWP:
+		case TRAWVALUE:
 			args[i] = (word)arg;
 			break;
 		default:
@@ -3954,10 +3889,10 @@ word pinvoke(OL* self, word* arguments)
 	got = call(returntype >> 8, function, args, i);
 #endif
 
-	word result = IFALSE; // change to word*
+	word* result = IFALSE; // change to word*
 	switch (returntype & 0x3F) {
 		case TINT:
-			result = (word) itouf(got);
+			result = itoun (got);
 			break;
 			// no break
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
@@ -3965,15 +3900,18 @@ word pinvoke(OL* self, word* arguments)
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
 		case TPORT:
-			result = (word) new_port (got);
+			result = new_port (got);
 			break;
-		case TRAWP:
+		case TMEMP:
+			result = new_memp (got);
+			break;
+		case TRAWVALUE:
 			result = got;
 			break;
 
 		case TSTRING:
 			if (got != 0)
-				result = (word) new_string (lenn((char*)got, FMAX+1), (char*)got);
+				result = new_string (lenn((char*)got, FMAX+1), (char*)got);
 			break;
 		case TVOID:
 			result = INULL;

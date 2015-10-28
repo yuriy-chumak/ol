@@ -59,7 +59,7 @@
       (define (ok? x) (eq? (ref x 1) 'ok))
       (define (ok exp env) (tuple 'ok exp env))
       (define (fail reason) (tuple 'fail reason))
-      (define (isatty fd) (syscall 16 fd 19 #f))
+      (define (isatty? fd) (syscall 16 fd 19 #f))
 
       (define (name->func name)
          (some
@@ -224,7 +224,7 @@
       ;; render the value if *interactive*, and print as such (or not at all) if it is a repl-message
       ;; if interactive mode and output fails, the error is fatal
       (define (prompt env val)
-         (let ((prompt (isatty stdin)))
+         (let ((prompt (isatty? stdin)))
             (if prompt
                (if (repl-message? val)
                   (begin
