@@ -11,13 +11,13 @@
 #pragma once
 
 #ifndef __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
-#define	__OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
+#define __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
 #ifdef __cplusplus
 	extern "C" {
 #endif
 
-// игра слов:
-// OL -
+// (игра слов)
+// OL:
 //	* сокращение от предка - Owl Lisp'a,
 //	* нулевой порог вхождения (0L - число 0, L - level) (Lisp - ОЧЕНЬ простой язык),
 //	* тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков),
@@ -25,7 +25,7 @@
 struct ol_t;
 
 // internal option
-#define NO_SECCOMP
+//#define NO_SECCOMP
 
 struct ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
 struct ol_t* OL_free(struct ol_t* ol);
@@ -73,7 +73,9 @@ typedef struct ol_t OL;
 // #define SYSCALL_SYSINFO 0
 // #define SYSCALL_GETRUSAGE 0
 
-
+#ifdef _WIN32
+#define SYSCALL_PRCTL 0
+#endif
 
 
 //-- end of header

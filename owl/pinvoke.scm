@@ -48,11 +48,11 @@
 ;; todo: date handling
 
 (define-library (owl pinvoke)
-
    (export 
       dlopen
       dlsym dlsym+
       pinvoke exec
+      uname
 
       RTLD_LAZY
       RTLD_NOW
@@ -62,18 +62,13 @@
       RTLD_GLOBAL
       RTLD_LOCAL
       RTLD_NODELETE
-      
+
       type-float type-double type-void
-      
+
       ; по-поводу calling convention:
       ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
       ;  пока что пусть остается так.
       __stdcall __cdecl __fastcall
-      
-      ;*PLATFORM*
-;     *OS_WINDOWS* *OS_LINUX* *OS_ANDROID* *OS_MACOS*
-      *OS* ; todo: решить, что лучше - одна переменная или много
-           ; с одной можно сделать (case *OS* (...))
    )
 
    (import
@@ -96,21 +91,21 @@
 
 
 ; The MODE argument to `dlopen' contains one of the following:
-(define RTLD_LAZY	#x00001)	; Lazy function call binding.
-(define RTLD_NOW	#x00002)	; Immediate function call binding.
-(define	RTLD_BINDING_MASK   #x3)	; Mask of binding time value.
-(define RTLD_NOLOAD	#x00004)	; Do not load the object.
-(define RTLD_DEEPBIND	#x00008)	; Use deep binding.
+(define RTLD_LAZY	      #x00001); Lazy function call binding.
+(define RTLD_NOW        #x00002); Immediate function call binding.
+(define RTLD_BINDING_MASK   #x3); Mask of binding time value.
+(define RTLD_NOLOAD     #x00004); Do not load the object.
+(define RTLD_DEEPBIND   #x00008); Use deep binding.
 
 ; If the following bit is set in the MODE argument to `dlopen',
 ; the symbols of the loaded object and its dependencies are made
 ; visible as if the object were linked directly into the program.
-(define RTLD_GLOBAL	#x00100)
+(define RTLD_GLOBAL     #x00100)
 
 ; Unix98 demands the following flag which is the inverse to RTLD_GLOBAL.
 ; The implementation does this by default and so we can define the
 ; value to zero.
-(define RTLD_LOCAL	0)
+(define RTLD_LOCAL      0)
 
 ; Do not delete object when closed.
 (define RTLD_NODELETE	#x01000)
@@ -118,7 +113,7 @@
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle (type-port)
 (define dlopen (case-lambda
-   ((name flag) (syscall 1030 (if (string? name) (c-string name) name) flag #false))
+   ((name flag) (syscall 1030 (if (string? name) (c-string name) name) flag      #false))
    ((name)      (syscall 1030 (if (string? name) (c-string name) name) RTLD_LAZY #false))))
 
 (define pinvoke (syscall 1031 (syscall 1030 '() RTLD_LAZY #false) "pinvoke" #false))
@@ -170,35 +165,7 @@
 (define type-void   48)
 
 ;; OS detection
-(define (null? x) (eq? x '()))
+(define (uname) (syscall 63 #f #f #f))
+
 ; see also: http://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/predef/reference/boost_os_operating_system_macros.html
-(define *OS_AIX* #f)    ; http://en.wikipedia.org/wiki/AIX_operating_system
-(define *OS_AMIGAOS* #f); http://en.wikipedia.org/wiki/AmigaOS
-(define *OS_ANDROID* #f); http://en.wikipedia.org/wiki/Android_%28operating_system%29
-(define *OS_BEOS* #f)   ; http://en.wikipedia.org/wiki/BeOS
-(define *OS_BSD* #f)    ; http://en.wikipedia.org/wiki/Berkeley_Software_Distribution
-(define *OS_CYGWIN* #f) ; http://en.wikipedia.org/wiki/Cygwin
-(define *OS_HPUX* #f)   ; http://en.wikipedia.org/wiki/HP-UX
-(define *OS_IRIX* #f)   ; http://en.wikipedia.org/wiki/Irix
-(define *OS_LINUX* #f)  ; http://en.wikipedia.org/wiki/Linux
-(define *OS_MACOS* #f)  ; http://en.wikipedia.org/wiki/Mac_OS
-(define *OS_OS400* #f)  ; http://en.wikipedia.org/wiki/IBM_i
-(define *OS_QNX*   #f)  ; http://en.wikipedia.org/wiki/QNX
-(define *OS_SOLARIS* #f); http://en.wikipedia.org/wiki/Solaris_Operating_Environment
-(define *OS_UNIX* #f)   ; http://en.wikipedia.org/wiki/Unix
-(define *OS_OS_SVR4* #f); http://en.wikipedia.org/wiki/UNIX_System_V
-(define *OS_VMS* #f)    ; http://en.wikipedia.org/wiki/Vms
-(define *OS_WINDOWS* #f);     (not (null? (dlopen (c-string "kernel32") 0))))   ; http://en.wikipedia.org/wiki/Category:Microsoft_Windows
-(define *OS_BSD_BSDI* #f); http://en.wikipedia.org/wiki/BSD/OS
-(define *OS_BSD_DRAGONFLY* #f); http://en.wikipedia.org/wiki/DragonFly_BSD
-(define *OS_BSD_FREE* #f); http://en.wikipedia.org/wiki/Freebsd
-(define *OS_BSD_NET* #f); http://en.wikipedia.org/wiki/Netbsd
-(define *OS_BSD_OPEN* #f); http://en.wikipedia.org/wiki/Openbsd
-
-(define *OS*
-  (if *OS_WINDOWS* 1
-  (if *OS_LINUX*   2
-  (if *OS_ANDROID* 3
-  (if *OS_MACOS*   4)))))
-
 ))

@@ -183,7 +183,7 @@
 
       ;; number of milliseconds to sleep for real at a time when no threads are running but
       ;; they want to sleep, typically waiting for input or output
-      (define ms-per-round 10)
+      (define ns-per-round 10000000)
 
       ;; IO is closely tied to sleeping in owl now, because instead of the poll there are 
       ;; several threads doing their own IO with their own fds. the ability to sleep well 
@@ -216,7 +216,7 @@
                rounds)
             ((single-thread?)
                ;; note: could make this check every n rounds or ms
-               (if (syscall 35 (* ms-per-round rounds) #f #f) ;; sleep really for a while
+               (if (syscall 35 (* ns-per-round rounds) #f #f) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
                   (set-ticker-value 0)))
             (else

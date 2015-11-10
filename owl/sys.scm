@@ -97,7 +97,7 @@
       ;; returns only if exec fails
 
       (define (exec path args)
-         (lets
+         (let*
             ((path (c-string path))
              (args (map c-string args)))
             (if (and path (all (λ (x) x) args))

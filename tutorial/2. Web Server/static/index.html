@@ -16,6 +16,24 @@
    <![endif]-->
 </head>
 <body>
+   Hi. This is terminal with your unique ol (Owl Lisp) remote session, if successfully conneted and started, sure.
+   Type <b>,help</b> to help, <b>,quit</b> to end session.
+   <br/><small>
+   This session works in <b>restricted</b> mode (aka sandbox).
+   Any try to execute any system call (like stat, open file, close file, etc.), ',load' command, '(clock)' function
+      will close the session!
+   For safety reasons, sure and sorry.</small>
+   <br/>
+   But you can execute any lisp scripts! For example let's try:
+   <pre>(fold * 1 (iota 1 1 100))</pre>
+   or
+   <pre>
+   (let f ((n 273)) ; factorial
+      (if (= n 1)
+         1
+         (* n (f (- n 1)))))
+   </pre>
+   <p>
    <div id="terminal"></div>
    <script>
 var socket;
@@ -44,25 +62,32 @@ Copyright (c) 2014, 2015 Yuriy Chumak\n\
             closeHandler:   closeHandler,
             errorHandler:   errorHandler
          });
-         socket.connect("localhost", 8080);
-         console.log("trying to connect");
+         socket.connect(location.hostname, location.port);
+         console.log("Trying to connect...");
       });
       function connectHandler() {
-         terminal.echo("Connecting...");
-         socket.writeFlush("GET /ol HTTP/1.1\x0D\x0A\x0D\x0A");
-//         socket.write("Host: " + location.hostname + "\x0D\x0A\x0D\x0A");
-//         socket.flush();
+         terminal.echo("Connected.");
+         terminal.focus();
+         socket.write("GET /ol HTTP/1.1\x0D\x0A");
+         socket.write("Host: " + location.hostname + "\x0D\x0A");
+         socket.write("\x0D\x0A");
+         socket.flush();
          terminal.resume();
       }
       function dataHandler(data) {
-         terminal.echo(data);
+         if (data.length > 2 && data.indexOf('> ', data.length - 2) !== -1)
+            terminal.echo(data.substring(0, data.length - 2));
+         else
+            terminal.echo(data);
       }
       function closeHandler() {
          terminal.pause();
+         terminal.echo("Disconnected.");
          alert('lost connection')
       }
       function errorHandler(errorstr) {
          terminal.pause();
+         terminal.echo("Error: " + errorstr);
          alert(errorstr);
       }
    }

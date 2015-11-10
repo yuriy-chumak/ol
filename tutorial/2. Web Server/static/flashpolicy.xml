@@ -15,4 +15,3 @@
    <allow-access-from domain="localhost" to-ports="8080-8088" />
 
 </cross-domain-policy>
-

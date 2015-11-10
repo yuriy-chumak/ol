@@ -1,5 +1,5 @@
 ;;;
-;;; ol.scm: an Owl read-eval-print loop binary image compiler.
+;;; ol.scm: an Owl read-eval-print loop (REPL) binary image compiler.
 ;;;
 
 #| Copyright (c) 2012 Aki Helin
@@ -218,7 +218,8 @@
 
 ;; fixme: allow a faster way to allocate memory
 ;; n-megs → _
-;(define (ensure-free-heap-space megs)
+(define (ensure-free-heap-space megs)
+   #true)
 ;   (if (> megs 0)
 ;      (lets
 ;         ((my-word-size (get-word-size)) ;; word size in bytes in the current binary (4 or 8)
@@ -240,15 +241,16 @@
 ;         #true)))
 ;
 ;; enter seccomp with at least n-megs of free space in heap, or stop the world (including all other threads and io)
-;(define (seccomp n-megs)
-;   ;; grow some heap space work working, which is usually necessary given that we can't 
-;   ;; get any more memory after entering seccomp
-;   (if (and n-megs (> n-megs 0))
-;      (ensure-free-heap-space n-megs))
-;   (or (syscall 1010 #false #false #false)
-;      (begin
-;         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
-;         (halt exit-seccomp-failed))))
+(define (seccomp n-megs)
+   ;; grow some heap space work working, which is usually necessary given that we can't 
+   ;; get any more memory after entering seccomp
+   (if (and n-megs (> n-megs 0))
+      (ensure-free-heap-space n-megs))
+   (or
+      (syscall 157 #false #false #false)
+      (begin
+         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
+         (halt exit-seccomp-failed))))
 
 
 (define-library (owl char)
@@ -408,8 +410,11 @@
 
                         ;; repl
                         (exit-owl
-                           (let*((isatty? (syscall 16 stdin 19 #f))
-                                 (seccomp? #false) ; else (seccomp megs) - check is memory enough
+                           (let*((seccomp? (if (pair? vm-args)
+                                             (let has? ((args (cdr vm-args)))
+                                                (if (null? args) #f
+                                                   (if (string-eq? (car args) "--seccomp") #t
+                                                      (has? (cdr args)))))))
                                  (env (fold
                                           (λ (env defn)
                                              (env-set env (car defn) (cdr defn)))
@@ -417,16 +422,18 @@
                                           (list
                                              (cons '*owl-names*   initial-names)
                                              (cons '*owl-version* initial-version)
-;                                             (cons '*include-dirs* (list "/usr/lib/ol" "."))
+;                                            (cons '*include-dirs* (list "/usr/lib/ol" "."))
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* (vm:version))
                                             ;(cons '*scheme* 'r5rs)
-                                            ;(cons '*lisp* (vm:version))
                                              (cons '*seccomp* seccomp?)
                                           ))))
-                              (if isatty?
+                              (if seccomp?
+                                 (seccomp 1)) ;(seccomp megs) - check is memory enough
+                              (if (syscall 16 stdin 19 #f) ; isatty?
                                  (begin ;greeting
                                     (print (if seccomp? owl-ohai-seccomp owl-ohai))
+                                    (print "Type ',help' to help, ',quit' to end session")
                                     (display "> ")))
                               (repl-trampoline repl env))))))))
             null)))) ; no threads state

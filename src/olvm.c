@@ -5,7 +5,7 @@
  *
  * Simple purely functional Lisp, mostly
  *
- * Version 1.0.0 RC2
+ * Version 1.0.0 RC3
  * ~~~~~~~~~~~~~~~~~
  *
  * This program is free software;  you can redistribute it and/or
@@ -31,6 +31,8 @@
  *
  */
 
+#include "olvm.h"
+
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
@@ -54,8 +56,6 @@
 
 // pinned objects - если это будут просто какие-то равки, то можно их размещать ДО основной памяти,
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
-
-#include "olvm.h"
 
 #define __OLVM_NAME__ "OL"
 #define __OLVM_VERSION__ "1.0"
@@ -114,6 +114,8 @@
 // posix or not:
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 
+#define __USE_POSIX199309 // nanosleep, etc.
+
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
 //  а изменяемые у нас вектора
 
@@ -136,7 +138,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <fcntl.h>
-#include <time.h>
 #include <termios.h>
 
 #include <sys/time.h>
@@ -147,8 +148,13 @@
 #include <sys/sysinfo.h> // sysinfo
 #include <sys/resource.h>// getrusage
 
-#define __USE_POSIX199309 // for nanosleep
 #include <time.h>
+
+#include <sys/prctl.h>
+
+//#if SYSCALL_PRCTL
+#include <linux/seccomp.h>
+//#endif
 
 // ?
 #ifndef O_BINARY
@@ -160,12 +166,9 @@
 #define __useconds_t unsigned int
 #endif
 
-//extern int usleep (__useconds_t __useconds);
-//extern FILE *popen (const char *__command, const char *__modes);
-//extern int pclose (FILE *__stream);
 extern int mkstemp (char *__template);
 
-//https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
+// https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic error "-Wuninitialized"
 //#pragma GCC diagnostic pop
@@ -367,8 +370,9 @@ struct object
 
 // ------------------------------------------------------
 
-#define V(ob)                       *((word *) (ob)) // *ob, ob[0]
 #define W                           sizeof (word)
+#define F(val)                      (((word)(val) << IPOS) | 2)
+
 
 //#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
 #define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in atomic (short) numbers
@@ -389,8 +393,6 @@ struct object
 #define make_header(size, type)        (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
 #define make_raw_header(size, type, p) (( (word)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
 // p is padding
-
-#define F(val)                      (((word)(val) << IPOS) | 2)
 
 #define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
 #define fixval(desc)                ((desc) >> IPOS) // unsigned shift!!!
@@ -484,6 +486,8 @@ struct object
 #define is_tuple(ob)                (is_pointer(ob) && typeof (*(word*)(ob)) == TTUPLE)
 #define is_port(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TPORT)
 #define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HMEMP)
+#define is_number(ob)               (is_npair(ob) || is_direct(ob))
+#define is_atomic(ob)               is_direct(ob)
 
 #define ref(ob, n)                  (((word*)(ob))[n])
 #define car(ob)                     ref(ob, 1)
@@ -520,31 +524,28 @@ struct object
 // Z - mножество целых чисел.
 
 // элементарная арифметика
-#define uftoi(fix)  ({ ((word)fix >> IPOS); })
-#define sftoi(fix)  ({ ((word)fix & 0x80) ? -uftoi (fix) : uftoi (fix); })
+#define uftoi(fix)  ({ ((word)(fix) >> IPOS); })
+#define sftoi(fix)  ({ ((word)(fix) & 0x80) ? -uftoi (fix) : uftoi (fix); })
 #define itouf(val)  ({ (((word)(val) << IPOS) | 2); })
-#define itosf(val)  ({ val < 0 ? (itouf(-val) | 0x80) : itouf(val); })
+#define itosf(val)  ({ (val) < 0 ? (itouf(-val) | 0x80) : itouf(val); })
 
 // арифметика целых (возможно больших)
 // TINT(as pair) to int
 // прошу внимания!
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-#define untoi(num)  ({ uftoi(car(B)) | (is_pointer(cdr(B)) ? uftoi(cadr(B)) << FBITS : 0); })
+#define untoi(num)  ({\
+	is_atomic(num) ? \
+		uftoi(num) : \
+	uftoi(car(num)) | uftoi(cadr(num)) << FBITS; }) //(is_pointer(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
 #define itoun(val)  ({\
 	(word*)(\
-	(sizeof(val) < sizeof(word) - 1)\
-		? itouf(val)\
-		: (val <= FMAX)\
+	__builtin_choose_expr(sizeof(val) < sizeof(word),\
+		itouf(val),\
+		(val <= FMAX\
 			? itouf(val)\
-			: (word)new_list(TINT, itouf(val & FMAX), itouf(val >> FBITS)));})
-//#define itosn(val)  ({\
-//	(word*)(\
-//	(sizeof(val) < sizeof(word) - 1)\
-//		? sftoi(val)\
-//		: (val <= FMAX)\
-//			? sftoi(val)\
-//			: (word)new_list(TINT, sftoi(val & FMAX), sftoi(val >> FBITS)));})
+			: (word)new_list(TINT, itouf(val & FMAX), itouf((val) >> FBITS)))));})
 
+//#define itosn(val)  ({ ...
 
 #define NR                          128 // see n-registers in register.scm
 
@@ -552,18 +553,12 @@ struct object
 #define MINGEN                      (1024 * 32)  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
-static int breaked = 0;      /* set in signal handler, passed over to owl in thread switch */
-//static int seccompp;     /* are we in seccomp? */
+//static int breaked = 0;      /* set in signal handler, passed over to owl in thread switch */
+static int seccompp = 0;     /* are we in seccomp? */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
-//void exit(int rval);
-//void *realloc(void *ptr, size_t size);
-//void *malloc(size_t size);
-//char *getenv(const char *name);
 DIR *opendir(const char *name);
-DIR *fdopendir(int fd);
 pid_t fork(void);
-pid_t waitpid(pid_t pid, int *status, int options);
 int chdir(const char *path);
 
 
@@ -866,8 +861,8 @@ void fix_pointers(word *pos, ptrdiff_t delta, word *end)
 static __inline__
 ptrdiff_t adjust_heap(heap_t *heap, int cells)
 {
-//	if (seccompp) /* realloc is not allowed within seccomp */
-//		return 0;
+	if (seccompp) /* realloc is not allowed within seccomp */
+		return 0;
 
 	// add newobj realloc + heap fixer here later
 	word nwords = heap->end - heap->begin + MEMPAD; // MEMPAD is after memend
@@ -980,13 +975,13 @@ static word gc(heap_t *heap, int size, word regs) {
 		heap->genstart = heap->begin; // start full generation
 
 	// непосредственно сам GC
-	clock_t uptime;
-	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
+//	clock_t uptime;
+//	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
 	root[0] = regs;
 	mark(root, fp);        // assert (root > fp)
 	fp = sweep(fp);
 	regs = root[0];
-	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
+//	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
 	heap->fp = fp;
 	#if DEBUG_GC
@@ -1445,6 +1440,9 @@ invoke:;
 #		ifndef SYSCALL_SYSINFO
 #		define SYSCALL_SYSINFO 99
 #		endif
+#		ifndef SYSCALL_PRCTL
+#		define SYSCALL_PRCTL 157
+#		endif
 #		define SYSCALL_TIME 201
 
 	// tuples, trees
@@ -1459,15 +1457,15 @@ invoke:;
 #	define FFREDQ   41
 
 	// ALU
-#	define ADDITION 38
-#	define DIVISION 26
+#	define ADDITION       38
+#	define DIVISION       26
 #	define MULTIPLICATION 39
-#	define SUBTRACTION 40
-#	define BINARY_AND 55
-#	define BINARY_OR  56
-#	define BINARY_XOR 57
-#	define SHIFT_RIGHT 58
-#	define SHIFT_LEFT 59
+#	define SUBTRACTION    40
+#	define BINARY_AND     55
+#	define BINARY_OR      56
+#	define BINARY_XOR     57
+#	define SHIFT_RIGHT    58
+#	define SHIFT_LEFT     59
 
 	// free numbers: 37 (was _connect), 29(ncons), 30(ncar), 31(ncdr)
 
@@ -1932,8 +1930,8 @@ invoke:;
 		// мутатор
 		case 10: { // (set! variable value)
 			// variable and expression both must be MEMP
-			word* variable = A0;
-			word* value = A1;
+			word* variable = (word*) A0;
+			word* value = (word*) A1;
 
 			CHECK(is_memp(variable), variable, 10);
 			CHECK(is_memp(value), value, 10);
@@ -2207,9 +2205,9 @@ invoke:;
 					result = new_bytevector (got, TBVEC);
 				}
 				else if (got == 0)
-					result = (word*)IEOF;
+					result = IEOF;
 				else if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
-					result = (word*)ITRUE;
+					result = ITRUE;
 
 				break;
 			}
@@ -2340,7 +2338,10 @@ invoke:;
 #					if SYSCALL_IOCTL_TIOCGETA
 					case SYSCALL_IOCTL_TIOCGETA: { // TIOCGETA
 						struct termios t;
-						if (tcgetattr(portfd, &t) != -1)
+						if (seccompp)
+							result = (portfd == STDOUT_FILENO) || (portfd == STDERR_FILENO);
+						else
+						if ((portfd == STDOUT_FILENO) || (portfd == STDERR_FILENO) || tcgetattr(portfd, &t) != -1)
 							result = ITRUE;
 						break;
 					}
@@ -2517,12 +2518,13 @@ invoke:;
 			case 23: { // (select sockfd)
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
+				int timeus = is_number(b) ? untoi(b) : 100000;
 				// todo: timeout as "b"
 
 				fd_set fds;
 				FD_ZERO(&fds); FD_SET(sockfd, &fds);
 
-				struct timeval timeout = { 0, 100000 }; // µs
+				struct timeval timeout = { timeus / 1000000, timeus % 1000000 }; // µs
 				if (select(sockfd + 1, &fds, NULL, NULL, &timeout) > 0
 						&& FD_ISSET(sockfd, &fds))
 					result = ITRUE;
@@ -2572,23 +2574,22 @@ invoke:;
 			// TODO: change to "select" call
 			// NANOSLEEP
 			case 35: {
-				CHECK(immediatep(a), a, 35);
-#ifdef _WIN32
-				Sleep(fixval(a));
-#else
-//				for Linux:
-//				if (!seccompp)
-#	if _POSIX_C_SOURCE < 200809L // POSIX.1-2008 removes the specification of usleep(), use nanosleep instead
-				if (usleep(fixval(a)*1000) == 0)
-					result = ITRUE;
-#	else
-				struct timespec ts = { fixval(a) / 1000, (fixval(a) % 1000) * 1000000 };
+				//CHECK(is_number(a), a, 35);
+
+				if (seccompp) {
+					result = (word*) ITRUE;
+					break;
+				}
+
+#ifdef _WIN32// for Windows
+				Sleep(fixval(a) / 1000000); // in ms
+#else//			for Linux:
+				struct timespec ts = { untoi(a) / 1000000000, untoi(a) % 1000000000 };
 				struct timespec rem;
 				if (nanosleep(&ts, &rem) == 0)
-					result = ITRUE;
+					result = (word*) ITRUE;
 				else
-					result = F(rem.tv_sec * 1000 + rem.tv_nsec / 1000000);
-#	endif
+					result = itoun((rem.tv_sec * 1000000000 + rem.tv_nsec));
 #endif
 				break;
 			}
@@ -2608,10 +2609,10 @@ invoke:;
 					assert ((word)B == INULL || is_pair(B));
 					assert ((word)C == IFALSE);
 
-					void *function = (void*) car(A);  assert (function);
+					word* (*function)(OL*, word*) = (word* (*)(OL*, word*)) car(A);  assert (function);
 
 					ol->heap.fp = fp;
-					result = ((word (*)  (OL*, word*))function) (ol, B);
+					result = function(ol, B);
 					fp = ol->heap.fp;
 					break;
 				}
@@ -2622,7 +2623,7 @@ invoke:;
 					char* command = (char*)&car(a);
 					int child = fork();
 					if (child == 0) {
-						fprintf(stderr, "fork.1\n");
+						fprintf(stderr, "forking %s\n", command);
 						if (is_pair (c)) {
 							const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
 							for (int i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
@@ -2631,66 +2632,24 @@ invoke:;
 						}
 // DEBUG:					else if (c != IFALSE)
 //								fprintf(stderr, "invalid value for execve\n");
-						exit(execve(command, 0, 0));
+						char** args = NULL;
+						if (is_pair(b)) {
+							word* p;
+							int l = 1;
+							p = b;
+							while (p != INULL)
+								l++, p = cdr(p);
+							char** arg = args = __builtin_alloca(sizeof(char**) * (l + 1));
+							p = b;
+							while (p != INULL)
+								*arg++ = &caar(p), p = cdr(p);
+							*arg = 0;
+						}
+						exit(execve(command, args, 0));
 						assert(0);
 					}
-					result = ITRUE;
-#if 0	// popen by syscall
-					int stdin[2];
-					if (pipe(stdin) < 0) {
-						fprintf(stderr, "pipe for child input redirect failed.\n");
-						break;
-					}
-
-					int stdout[2];
-					if (pipe(stdout) < 0) {
-						fprintf(stderr, "pipe for child output redirect failed.\n");
-						close(stdin[0]);
-						close(stdin[1]);
-						break;
-					}
-
-					int child = fork();
-					if (child == 0) {
-						fprintf(stderr, "fork.1\n");
-						dup2(stdin[0], STDIN_FILENO);
-						dup2(stdout[1], STDOUT_FILENO);
-						dup2(stdout[1], STDERR_FILENO);
-
-						fprintf(stderr, "fork.2\n");
-						close(stdin[0]);
-						close(stdin[1]);
-						close(stdout[0]);
-						close(stdout[1]);
-
-						fprintf(stderr, "fork.3\n");
-
-						char* command = (char*)&car(a);
-						char* args = 0; // temp, b
-						char* envp = 0;
-
-						fprintf(stderr, "command: %s\n", command);
-
-						exit(execve(command, 0, 0));
-					}
-					else {
-						close(stdin[0]);
-						close(stdout[1]);
-
-						if (is_string(c))
-							write(stdin[1], &car(c), lenn(&car(c), -1));
-
-						// read
-						char* p = &car(fp);
-						while (read(stdout[0], p++, 1) == 1)
-							continue;
-						int count = p - (char*)&car(fp) - 1;
-						result = new_bytevector(count, TSTRING);
-
-						close(stdin[1]);
-						close(stdout[0]);
-					}
-#endif
+					else if (child > 0)
+						result = ITRUE;
 					break;
 				}
 				break;
@@ -2743,7 +2702,8 @@ invoke:;
 			// http://linux.die.net/man/2/exit
 			// exit - cause normal process termination, function does not return.
 			case 60: {
-				free(heap->begin); // освободим занятую память
+				if (!seccompp)
+					free(heap->begin); // освободим занятую память
 				heap->begin = 0;
 				exit(sftoi(a));
 				assert (0);  // сюда мы уже не должны попасть
@@ -2917,33 +2877,34 @@ invoke:;
 						result = new_string(strlen(error), error);
 					break;
 				}*/
-#endif
+#endif// HAS_DLOPEN
+
+				// https://www.mindcollapse.com/blog/processes-isolation.html
+				// http://outflux.net/teach-seccomp/
+				#if SYSCALL_PRCTL
+				case SYSCALL_PRCTL:
+					//seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
+
+					/*struct sock_filter filter[] = {
+						// http://outflux.net/teach-seccomp/
+					};*/
+					if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT, 0, 0, 0) != -1) { /* true if no problem going seccomp */
+						seccompp = 1;
+						result = (word*)ITRUE;
+					}
+					break;
+				#endif
 
 
 				default: {
 					word prim_sys(int op, word a, word b, word c) {
 					   switch(op) {
-						  case 1010: /* enter linux seccomp mode */
-					#ifdef __gnu_linux__
-					#ifndef NO_SECCOMP
-							 if (seccompp) /* a true value, but different to signal that we're already in seccomp */
-								return INULL;
-							 seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
-					#ifdef PR_SET_SECCOMP
-							 if (prctl(PR_SET_SECCOMP,1) != -1) { /* true if no problem going seccomp */
-								seccompp = 1;
-								return ITRUE;
-							 }
-					#endif
-					#endif
-					#endif
-							 return IFALSE; /* seccomp not supported in current repl */
 						  /* dirops only to be used via exposed functions */
 						  case 1014: { /* set-ticks n _ _ -> old */
 							 word old = F(slice);
 							 slice = fixval(a);
 							 return old; }
-						  case 1017: { // system (char*)
+						  case 1017: { // system (char*) // todo: remove this!
 							  int result = system((char*)a + W);
 							  return F(result);
 						  }
@@ -3217,6 +3178,7 @@ int main(int argc, char** argv)
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
+	//  остальные - командная строка
 	// todo: перенести в eval !
 	if (argc > 1 && strcmp(argv[1], "-") != 0) {
 		// todo: use mmap()
@@ -3284,7 +3246,12 @@ int main(int argc, char** argv)
 
 	set_signal_handler();
 	OL* olvm = OL_new(bootstrap, bootstrap != language ? free : NULL);
-	void* r = OL_eval(olvm, argc, argv);
+	void* r = OL_eval(olvm,
+#ifdef NAKED_VM
+	argc-1, &argv[1]);
+#else
+	argc, argv);
+#endif
 	OL_free(olvm);
 
 #if	HAS_SOCKETS && defined(_WIN32)
@@ -3429,7 +3396,7 @@ OL_eval(OL* handle, int argc, char** argv)
 #if HAS_PINVOKE
 __attribute__
 		((__visibility__("default")))
-word pinvoke(OL* self, word* arguments)
+word* pinvoke(OL* self, word* arguments)
 {
 	// get memory pointer
 	heap_t* heap = &self->heap;
@@ -3889,14 +3856,14 @@ word pinvoke(OL* self, word* arguments)
 	got = call(returntype >> 8, function, args, i);
 #endif
 
-	word* result = IFALSE; // change to word*
+	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
 		case TINT:
 			result = itoun (got);
 			break;
 			// no break
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = itosf (got);
+			result = (word*) itosf (got);
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
 		case TPORT:
@@ -3906,7 +3873,7 @@ word pinvoke(OL* self, word* arguments)
 			result = new_memp (got);
 			break;
 		case TRAWVALUE:
-			result = got;
+			result = (word*) got;
 			break;
 
 		case TSTRING:
@@ -3914,7 +3881,7 @@ word pinvoke(OL* self, word* arguments)
 				result = new_string (lenn((char*)got, FMAX+1), (char*)got);
 			break;
 		case TVOID:
-			result = INULL;
+			result = (word*) INULL;
 			break;
 //      todo TRATIONAL:
 	}

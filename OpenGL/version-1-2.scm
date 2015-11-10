@@ -1,4 +1,4 @@
-; OpenGL 1.2 (1998)
+; OpenGL 1.2 (1998), OpenGL 1.2.1 (1998)
 ; 
 
 ;EXT_texture3D	Three-dimensional texturing.
@@ -90,6 +90,24 @@
    
    
 ;  ; opengl 1.2 https://www.opengl.org/registry/api/GL/glext.h
+
+
+))
+
+; OpenGL 1.2.1 (1998)
+(define-library (OpenGL version-1-2-1)
+   (export
+      (exports (OpenGL version-1-2))
+    GL_VERSION_1_2_1
+
+   )
+  
+   (import
+      (r5rs base) (owl io)
+      (OpenGL version-1-2))
+   (begin
+   (define GL_VERSION_1_2_1 1)
    
+   (define % (dlopen GL_LIBRARY RTLD_LAZY))
 
 ))

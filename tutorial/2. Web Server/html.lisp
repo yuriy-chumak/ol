@@ -135,7 +135,7 @@
             (cond
                ((string-eq? url "/ol")
                   (print "!!! ol")
-                  (syscall 59 (c-string "/bin/ol") #f (list fd fd fd))
+                  (syscall 59 (c-string "/bin/ol") (list (c-string "#") (c-string "-") (c-string "--seccomp")) (list fd fd fd))
                   (close #t))
 
                ((or
