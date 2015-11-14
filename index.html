@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Owl Lisp</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+
+    <script src="javascripts/jquery-2.1.1.min.js"></script>
+    <link  href="stylesheets/jquery.terminal.css" rel="stylesheet"/>
+    <script src="javascripts/jquery.terminal-0.8.8.min.js"></script>
+    <script src="javascripts/jquery-tools-flashembed.js">  </script>
+    <script src="javascripts/jsocket-1.0.0.min.js"></script>
+
+    <link  href="stylesheets/github.css" rel="stylesheet">
+    <script src="javascripts/highlight-8.9.1.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Owl Lisp</h1>
+        <p>Project site</p>
+
+        <p class="view"><a href="https://github.com/yuriy-chumak/OL">View GitHub project page</a></p>
+        <div id="terminal">#</div>
+      </header>
+      <!-- ====================================================================================== -->
+      <section>
+         <h3> <a id="welcome" class="anchor" href="#welcome" aria-hidden="true"><span class="octicon octicon-link"></span></a>
+   Welcome.
+         </h3>
+      <p>
+      OL (Owl Lisp) is a purely (<i>mostly</i>) functional dialect of Lisp.
+      It implements an extended subset of <a href="http://www.schemers.org/Documents/Standards/R5RS/">R5RS</a> Scheme but has been renamed as a Lisp by its author mainly to avoid confusion.
+      <p>
+
+      You can try <b>ol</b> in the provided terminal on this page, if it successfully connected to server. For example, type
+      <pre><code id="fold1">(fold * 1 (iota 1 1 99))</code><button class="doit" onclick="doit(fold1.textContent)">do it for me.</button></pre>
+      this must output 99! for you.
+
+      <p>
+      Or you can try more interesting example - here will be task description.
+      <pre><code id="fold2">(print "were will be task code")</code><button class="doit" onclick="doit(fold2.textContent)">do it for me.</button></pre>
+      <p>
+
+         <h3> <a id="designe-goals" class="anchor" href="#designe-goals" aria-hidden="true"><span class="octicon octicon-link"></span></a>
+   Design goals
+         </h3>
+      <p>
+      <ol>
+         <li>Simple core language</li>
+         <li>Mostly implemented in itself</li>
+         <li>All data structures are immutable</li>
+         <li>Embeddable</li>
+         <li>Easy interoperate with existing native code</li>
+         <li>...</li>
+      </ol>
+      <p>
+
+         <h3> <a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span class="octicon octicon-link"></span></a>
+   Etc.
+         </h3>
+      <p>
+      </section>
+      <footer style="text-align:right">
+         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://github.com/orderedlist">orderedlist</a></small></p>
+         <p><small>Used JQuery Terminal Emulator plugin by <a href="http://terminal.jcubic.pl/"></a>JQueryTerminal</small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+
+    <script>
+var socket;
+
+var terminal =
+$('#terminal').terminal(function(command, terminal) {
+   socket.writeFlush(command);
+}, {
+   prompt: '> ',
+   name: 'repl',
+   greetings: '\
+OL - Owl Lisp -- yet another pet lisp\n\
+Copyright (c) 2014 Aki Helin\n\
+Copyright (c) 2014, 2015 Yuriy Chumak\n\
+~~~~~~~~~~~~~~~~~\n',
+   height: 200,
+   enabled: false,
+
+   onInit: function(terminal) {
+      terminal.pause();
+      terminal.echo("Loading...");
+
+      JSocket.init("TCP.swf", function () {
+         console.log("yes");
+         socket = new JSocket({
+            connectHandler: connectHandler,
+            dataHandler:    dataHandler,
+            closeHandler:   closeHandler,
+            errorHandler:   errorHandler
+         });
+         socket.connect("iaaa.dlinkddns.com", 80);
+         console.log("Trying to connect...");
+      });
+      function connectHandler() {
+         terminal.echo("Connected.");
+         terminal.focus();
+         socket.write("GET /ol HTTP/1.0"         + "\x0D\x0A");
+         socket.write("Host: iaaa.dlinkddns.com" + "\x0D\x0A");
+         socket.write("\x0D\x0A");
+         socket.flush();
+         terminal.resume();
+      }
+      function dataHandler(data) {
+         if (data.length > 2 && data.indexOf('> ', data.length - 2) !== -1)
+            terminal.echo(data.substring(0, data.length - 2));
+         else
+            terminal.echo(data);
+      }
+      function closeHandler() {
+         terminal.pause();
+         terminal.echo("Disconnected.");
+         alert('lost connection')
+      }
+      function errorHandler(errorstr) {
+         terminal.pause();
+         terminal.echo("Error: " + errorstr);
+         alert(errorstr);
+      }
+   }
+});
+
+function doit(text)
+{
+   terminal.insert(text);
+   terminal.focus();
+}
+    </script>
+
+  </body>
+</html>
