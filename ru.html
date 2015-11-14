@@ -5,7 +5,9 @@
 <p>
       OL (Owl Lisp) - чисто функциональный (<i>на самом деле - почти</i>) диалект Lisp'а.
       Ol реализован как расширенный сабсет <a href="http://www.schemers.org/Documents/Standards/R5RS/">R5RS</a> Scheme,
-        но был переименован его автором в Lisp чтобы избежать недоразумений.</p>
+        но был переименован его автором в Lisp чтобы избежать возможной путаницы и недоразумений.</p>
+<p>
+      В общем, ol - встраеваемый, но вполне самостоятельный динамический язык со своей виртуальной машиной, сборкой мусора, возможностью компилировать скрипты в бинарный формат (и, естественно, выполнять их), динамическим связыванием с функциями из "родных" системных библиотек и, что главное, это настоящий Lisp!.</p>
 
 <p>
       Вы можете сразу попробовать <b>ol</b> в деле в терминале на этой страничке, если, конечно, терминал успешно подсоединился к серверу.
@@ -17,22 +19,9 @@
       Ну или вы можете попробовать более интересный пример - (еще пару минут, и я его придумаю)
       <pre><code id="fold2" data-language="scheme">(print "тут будет интересный пример")</code><button class="doit" onclick="doit(fold2.textContent)">сделать это за меня.</button></pre></p>
 
-<h3> <a id="designe-goals" class="anchor" href="#designe-goals" aria-hidden="true"><span class="octicon octicon-link"></span></a>
-   Цели дизайна
-         </h3>
-<p>
-      <ol>
-         <li>Simple core language</li>
-         <li>Mostly implemented in itself</li>
-         <li>All data structures are immutable</li>
-         <li>Embeddable</li>
-         <li>Easy interoperate with existing native code</li>
-         <li>...</li>
-      </ol></p>
-
          <h3> <a id="tutorial" class="anchor" href="#tutorial" aria-hidden="true"><span class="octicon octicon-link"></span></a>
-         <a href="?ru/tutorial" class="link">
-   Tutorial.
+         <a href="?ru/tutorial">
+   <b>Tutorial.</b>
          </a></h3>
 
    Some works more.

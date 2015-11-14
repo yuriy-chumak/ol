@@ -29,14 +29,15 @@
       <header>
         <h1>Owl Lisp</h1>
         <p>Project site
-          (<a href="?ru" class="link" >rus</a>)
-          (<a href="?en" class="link" >eng</a>)
+          (<a href="?ru">rus</a>)
+          (<a href="?en">eng</a>)
         </p>
 
         <p class="view"><a href="https://github.com/yuriy-chumak/OL">View GitHub project page</a></p>
 
-        <div id="terminal">
-          <noscript><b>Looks like you have disabled scripts for this page. Please enable to all feature.</b></noscript>
+        Remote terminal session:
+        <div id="terminal" class="terminal">
+          <noscript><b>Looks like you have disabled scripts for this page. Please enable it to be able to continue with.</b></noscript>
         </div>
       </header>
       <!-- ====================================================================================== -->
@@ -79,8 +80,9 @@
          </h3>
       </section>
       <footer style="text-align:right">
-         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://github.com/orderedlist">orderedlist</a></small></p>
-         <p><small>Used JQuery Terminal Emulator plugin by <a href="http://terminal.jcubic.pl/"></a>JQueryTerminal</small></p>
+         <br><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://github.com/orderedlist">orderedlist</a></small>
+         <br><small>Used JQuery Terminal Emulator plugin by <a href="http://terminal.jcubic.pl/">JQueryTerminal</a></small>
+         <br><small>Used Rainbow code syntax highlighting library by <a href="https://craig.is/making/rainbows">Craig Campbell</a></small>
       </footer>
     </div>
     <script src="javascripts/scale.fix.js"></script>
@@ -144,7 +146,9 @@ Copyright (c) 2014, 2015 Yuriy Chumak\n\
       }
    }
 });
+    </script>
 
+    <script>
 function doit(text)
 {
    terminal.insert(text);
@@ -155,6 +159,7 @@ var History;
 
 function updateLink()
 {
+   if ($(this).context.attributes.href.value.startsWith("?"))
    $(this).click(function (event) {
       event.preventDefault();
       var link = $(this).context;
@@ -172,13 +177,13 @@ function updateLink()
 }
 
 // update all links to dynamic load pages:
-$('.link').each(updateLink);
+$('a').each(updateLink);
 
 function show(page)
 {
    page = page || "?en"; // default page
    $("#content").load(page.substr(1) + ".html", function() {
-      $('#content .link').each(updateLink);
+      $('#content a').each(updateLink);
       Rainbow.color();
    });
 }
@@ -191,8 +196,10 @@ function show(page)
 
       if (state.data.title)
          document.title = state.data.title;
-      if (state.data.content)
+      if (state.data.content) {
          $("#content").html(state.data.content)
+         $('#content a').each(updateLink);
+      }
       else
          show(state.data.href);
    }

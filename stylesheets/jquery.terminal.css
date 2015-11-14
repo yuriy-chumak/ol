@@ -88,8 +88,8 @@
 }
 .terminal, .cmd {
     font-family: FreeMono, monospace;
-    color: #aaa;
-    background-color: #000;
+    color: #eee;
+    background-color: #222;
     font-size: 12px;
     line-height: 14px;
 }
