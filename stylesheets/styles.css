@@ -7,6 +7,10 @@ body {
   font-weight:300;
 }
 
+code {
+  font-family: monospace;
+}
+
 .doit {
   float: right;
   font-size: small;
@@ -62,7 +66,11 @@ blockquote {
   font-style:italic;
 }
 
-code, pre {
+button:disabled {
+  color:#bbb;
+}
+
+pre {
   font-family:Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
   color:#333;
   font-size:12px;
