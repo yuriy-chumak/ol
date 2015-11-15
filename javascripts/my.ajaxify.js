@@ -8,7 +8,6 @@ var History;
 
 function updateLink()
 {
-   if ($(this).context.attributes.href.value.startsWith("?"))
    $(this).click(function (event) {
       event.preventDefault();
       var link = $(this).context;
@@ -26,14 +25,14 @@ function updateLink()
 }
 
 // update all links to dynamic load pages:
-$('a').each(updateLink);
+$("a[href^='?']").each(updateLink);
 
 function show(page)
 {
-   page = page || "?en"; // default page
+   page = page || "?en";  // :default page
    $("#content").load(page.substr(1) + ".html", function() {
       $("html, body").animate({ scrollTop: 0 });
-      $('#content a').each(updateLink);
+      $("#content a[href^='?']").each(updateLink);
       Rainbow.color();
    });
 }
