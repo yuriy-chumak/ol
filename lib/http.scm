@@ -183,26 +183,26 @@
 
 (define (on-accept fd onRequest)
 (lambda ()
+   (let*((ss1 ms1 (clock)))
    (if (call/cc (lambda (close)
-         (let* ((ss1 ms1 (clock)))
-         (print "\n> *** " (timestamp) ":")
-         (let ((send (lambda args
-                  (for-each (lambda (arg)
-                     (display-to fd arg)) args))))
-         ; loop if no close
-         (let loop ()
-            (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
-                   (Request-Line (car (car request))))
-               (if (null? Request-Line)
-                  (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
-                  (onRequest fd Request-Line (cdr (car request)) send close))
-;              (let* ((ss2 ms2 (clock)))
-;               (print "Request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms."))
-               (loop)))))))
+      (let ((send (lambda args
+               (for-each (lambda (arg)
+                  (display-to fd arg)) args))))
+      ; loop if no close
+      (let loop ()
+         (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
+                (Request-Line (car (car request))))
+            (if (null? Request-Line)
+               (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
+               (onRequest fd Request-Line (cdr (car request)) send close))
+            (loop))))))
       (begin
-         (display "socket closed, ")
-         (syscall 3 fd #f #f)))
+         (syscall 3 fd #f #f)
+         (display "socket closed, ")))
    (print "on-accept done." )
+   (let*((ss2 ms2 (clock)))
+      (print "Request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
+
    ; workaround for bug with "ol: dropping envelope to missing thread"
    (let sleep ((x 1000))
       (set-ticker-value 0)
@@ -226,6 +226,7 @@
    (let loop ()
       (if (syscall 23 socket #f #f) ; select
          (let ((fd (syscall 43 socket #f #f))) ; accept
+            (print "\n> *** New request from " (syscall 51 fd #f #f) " at " (timestamp) ": ")
             (fork (on-accept fd onRequest))))
       (set-ticker-value 0)
       (loop))))

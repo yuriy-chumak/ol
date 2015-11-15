@@ -482,7 +482,6 @@
       ; may be used like `eqv?' in applications using procedures to implement objects with state
       ; since it obeys the same constraints as `eqv?'. 
 
-
       ; library procedure: (equal? obj1 obj2)
       ; 
 

@@ -553,8 +553,9 @@ struct object
 #define MINGEN                      (1024 * 32)  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
-//static int breaked = 0;      /* set in signal handler, passed over to owl in thread switch */
-static int seccompp = 0;     /* are we in seccomp? */
+//static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
+#define SECCOMP                     10000
+static int seccompp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
 DIR *opendir(const char *name);
@@ -1160,7 +1161,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	word R[NR]; // 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 
 	int breaked = 0;
-//	int seccompp = 0;
+	seccompp = 0;
 
 #	if 0//EMBEDDED_VM
 	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
@@ -1431,6 +1432,7 @@ invoke:;
 #		endif
 #		define SYSCALL_IOCTL_TIOCGETA 19
 
+#		define SYSCALL_EXIT 60
 #		define SYSCALL_GETDENTS 78
 
 #		define SYSCALL_GETTIMEOFDATE 96
@@ -2153,11 +2155,12 @@ invoke:;
 			word a = A1, b = A2, c = A3;
 //			fprintf(stderr, "SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
-			switch (op) {
+			switch (op + seccompp) {
 
 			// (READ fd count) -> buf
 			// http://linux.die.net/man/2/read
 			// count<0 means read all
+			case SYSCALL_READ + SECCOMP:
 			case SYSCALL_READ: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
@@ -2216,6 +2219,7 @@ invoke:;
 			// http://linux.die.net/man/2/write
 			// size<0 means write all
 			// n if wrote, 0 if busy, #false if error (argument or write)
+			case SYSCALL_WRITE + SECCOMP:
 			case SYSCALL_WRITE: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
@@ -2302,6 +2306,8 @@ invoke:;
 				);
 			}
 			case SYSCALL_STAT: {
+				if (! is_string(a))
+					break;
 				CHECK(is_string(a), a, SYSCALL);
 				char* s = &car (a);
 
@@ -2326,6 +2332,7 @@ invoke:;
 
 			// IOCTL (syscall 16 fd request #f)
 #			if SYSCALL_IOCTL
+			case SYSCALL_IOCTL + SECCOMP:
 			case SYSCALL_IOCTL: {
 				if (!is_port(a))
 					break;
@@ -2333,22 +2340,18 @@ invoke:;
 				int portfd = car (a);
 				int ioctl = uftoi(b);
 
-				switch (ioctl) {
-
-#					if SYSCALL_IOCTL_TIOCGETA
-					case SYSCALL_IOCTL_TIOCGETA: { // TIOCGETA
+				switch (ioctl + seccompp) {
+					case SYSCALL_IOCTL_TIOCGETA: {
 						struct termios t;
-						if (seccompp)
-							result = (portfd == STDOUT_FILENO) || (portfd == STDERR_FILENO);
-						else
-						if ((portfd == STDOUT_FILENO) || (portfd == STDERR_FILENO) || tcgetattr(portfd, &t) != -1)
+						if (tcgetattr(portfd, &t) != -1)
 							result = ITRUE;
 						break;
 					}
-#					endif
-
-					default:
-						;// do nothing
+					case SYSCALL_IOCTL_TIOCGETA + SECCOMP: {
+						if ((portfd == STDIN_FILENO) || (portfd == STDOUT_FILENO) || (portfd == STDERR_FILENO))
+							result = ITRUE;
+						break;
+					}
 				}
 				break;
 			}
@@ -2371,7 +2374,7 @@ invoke:;
 
 				struct dirent *dire = readdir(dirp);
 				if (!dire) {
-					result = IEOF; /* eof at end of dir stream */
+					result = IEOF; // eof at end of dir stream
 					break;
 				}
 
@@ -2889,7 +2892,7 @@ invoke:;
 						// http://outflux.net/teach-seccomp/
 					};*/
 					if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT, 0, 0, 0) != -1) { /* true if no problem going seccomp */
-						seccompp = 1;
+						seccompp = SECCOMP;
 						result = (word*)ITRUE;
 					}
 					break;
