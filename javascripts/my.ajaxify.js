@@ -8,7 +8,7 @@ var History;
 
 function updateLink()
 {
-   if ($(this).context.attributes.href.value.startsWith("?"))
+   if ($(this).context.attributes.href.value.haystack.lastIndexOf("?", 0) === 0) // startsWith("?")
    $(this).click(function (event) {
       event.preventDefault();
       var link = $(this).context;
