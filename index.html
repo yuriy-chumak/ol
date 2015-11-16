@@ -23,23 +23,116 @@
    <!--[if lt IE 9]>
    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
    <![endif]-->
+   
+   <style media="screen" type="text/css">
+.overlay {
+   position: fixed;
+   top: 0; left: 0;
+   width: 100%;
+   height: 100%;
+   background: rgba(0, 0, 0, 0.7);
+   visibility: hidden;
+   opacity: 0;
+}
+.overlay:target {
+   visibility: visible;
+   opacity: 1;
+}
+
+header .popup {
+   margin: 70px auto;
+   padding: 20px;
+   background: #fff;
+   border-radius: 5px;
+   width: 60%;
+   height: 60%;
+   position: relative;
+
+   overflow:auto;
+}
+
+/* close button*/
+.popup .close {
+   position: absolute;
+   top: 20px;
+   right: 30px;
+   font-size: 30px;
+   font-weight: bold;
+   text-decoration: none;
+   color: #333;
+}
+.popup .close:hover {
+   color: orange;
+}
+.popup .content {
+   max-height: 30%;
+   overflow: auto;
+}
+
+   </style>
  </head>
  <body>
    <div class="wrapper">
       <header>
-        <h1>Owl Lisp</h1>
-        <p>Project site
-          (<a href="?ru">rus</a>)
-          (<a href="?en">eng</a>)
-        </p>
+         <h1>Owl Lisp</h1>
+         <p><span id="main"></span>
+         <script>$("#main").html(
+            "(<a href='?ru'>rus</a>)"+
+            "(<a href='?en'>eng</a>)"
+         )
+         </script>
+         <br><small>This program is distributed under <a href="http://www.gnu.org/licenses/">GPL v2</a> licence.</small></p>
 
-        <p class="view"><a href="https://github.com/yuriy-chumak/OL">View GitHub project page</a></p>
+         <p class="view"><a href="https://github.com/yuriy-chumak/OL" target="_blank">View GitHub project page</a></p>
 
-        Remote terminal session:
-        <div id="terminal" class="terminal">
-          <noscript><b>Looks like you have disabled scripts for this page. Please enable it to be able to continue with.</b></noscript>
-        </div>
-        <small style="float: right">must be available <a href="http://get.adobe.com/flashplayer/">abobe flash plugin</a> for now.&nbsp;</small>
+         Remote <a href="#about-terminal" style="text-decoration: none; border-bottom: 1px dashed; cursor: help;">terminal</a> session:
+         <div id="terminal" class="terminal">
+            <noscript><b>Looks like you have disabled scripts for this page. Please enable it to continue working with.</b></noscript>
+         </div>
+         <div id="about-terminal" class="overlay">
+            <div class="popup">
+               <h2>About Terminal</h2>
+               <a class="close" href="#">×</a>
+               <p>
+                  Это терминал к вашей уникальной, созданной только для вас сессии Ol на моем сервере, запущенный с целью упростить вам знакомство с Ol.
+                  Не эмулятор, симулятор или скриптовая реализация - самый настоящый 64-битный Ol, будто вы его лично собрали и запустили.</p>
+               <p>
+                  Для работы терминал требует наличия adobe flash. Возможно, в будущем это ограничение будет снято.
+
+               <h3>Песочница</h3>
+               <p>
+                  Эта терминальная сессия запущщена в песочнице (изолированной среде) на сервере <a href="http://iaaa.dlinkddns.com" target="_blank">iaaa.dlinkddns.com</a> под управлением Ubuntu 14.04.3 LTS x64, на той стороне для вас работает
+                  последняя версия /bin/ol, собранная из <a href="https://github.com/yuriy-chumak/OL" target="_blank">официального репозитария</a> из ветки master. Проверить версию ol можно набрав <i>*version*</i> в терминале.
+                  Терминальные сессии, к слову, обслуживаются тоже /bin/ol.</p>
+
+               <p>
+                  Поэтому вам будут доступны не все возможности, предоставляемые Ol - песочница подразумевает набор ограничений, направленных на безопасность.
+                  Никто из пользователей не должен иметь возможность нарушить работоспособность сервера или получить доступ к приватным данным других пользователей.
+                  Вам не будут доступны:
+
+                  <ol>
+                     <li>Чтение, запись, создание, удаление файлов; чтение каталогов</li>
+                     <li>Работа с сокетами</li>
+                     <li>Функции работы со временем</li>
+                     <li>Выполнение внешних программ</li>
+                     <li>Использование любых внешних (не встроенных) библиотек, как входящих в поставку Ol, так и системных через интерфейс PInvoke.</li>
+                  </ol>
+
+                  Все эти функции при обращении к ним будут возвращать #false.
+                  Потоки вывода stdout и stderr подсоединены к терминалу и на работу с ними никаких ограничений не накладывается.
+                  Список уже загруженных и разрешенных к использованию библиотек можно получить командой ",libraries" (не забудьте запятую перед командой).</p>
+
+               <p>
+                  В случае попытки тем или иным образом выйти за границы разрешенного, терминальная сессия будет убита без предупреждения.
+                  Перезагрузите страницу для создания новой сессии.</p>
+
+               <p>
+                  Желаю удачи в успешном знакомстве с проектом!
+
+               <p><small style="float: right">Copyright (c) 2015 Yuriy Chumak</small></p>
+            </div>
+         </div>
+         <small style="float: right">must be available <a href="http://get.adobe.com/flashplayer/">abobe flash plugin</a> for now.&nbsp;</small>
       </header>
       <!-- ====================================================================================== -->
       <section id="content">
@@ -49,19 +142,19 @@
          </h3>
 <p>
       OL (Owl Lisp) is a purely <i>(mostly)</i> functional dialect of Lisp.
-      It implements an extended subset of <a href="http://www.schemers.org/Documents/Standards/R5RS/">R5RS</a> Scheme but has been renamed as a Lisp by its author mainly to avoid possible confusion.</p>
+      It implements an extended subset of <a href="http://www.schemers.org/Documents/Standards/R5RS/" target="_blank">R5RS</a> Scheme but has been renamed as a Lisp by its author mainly to avoid possible confusion.</p>
 
 <p>
       You can immediately try Ol in the provided terminal on this page. For example, type:
-      <pre><code id="sample1" data-language="scheme">(+ 3/7 2+4i)</code><button class="doit" onclick="doit(sample1.textContent)" disabled>do it for me.</button></pre>
+      <pre><code id="sample1" data-language="scheme">(+ 3/7 2+4i)</code><button class="doit" onclick="doit(sample1.textContent)" disabled>send to the terminal</button></pre>
       
       Or you can try more interesting example
-      <pre><code id="sample2" data-language="scheme">(fold * 1 (iota 1 1 100))</code><button class="doit" onclick="doit(sample2.textContent)" disabled>do it for me.</button></pre>
+      <pre><code id="sample2" data-language="scheme">(fold * 1 (iota 1 1 100))</code><button class="doit" onclick="doit(sample2.textContent)" disabled>send to the terminal</button></pre>
       which is another way of
       <pre><code id="sample3" data-language="scheme">(let factorial ((n 99))
    (if (= n 1)
       1
-      (* n (factorial (- n 1)))))</code><button class="doit" onclick="doit(sample3.textContent)" disabled>do it for me.</button></pre>
+      (* n (factorial (- n 1)))))</code><button class="doit" onclick="doit(sample3.textContent)" disabled>send to the terminal</button></pre>
       
       This must output 99! for you.</p>
 
@@ -69,14 +162,15 @@
    Learn
          </h3>
 
-   I'm writing docs right now. It will be available very soon. You can check <b><a href="?ru/examples">SAMPLES</a></b> for now.
+   I'm writing docs right now. It will be available very soon.
+<p><small style="float: right">Copyright (c) 2015 Yuriy Chumak</small></p>
 </span>
       </section>
       <!-- ====================================================================================== -->
       <footer style="text-align:right">
-         <br><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://github.com/orderedlist">orderedlist</a></small>
-         <br><small>Used <a href="http://terminal.jcubic.pl/">JQuery Terminal Emulator</a> plugin</small>
-         <br><small>Used <a href="https://craig.is/making/rainbows">Rainbow</a> code syntax highlighting library</small>
+         <br><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://github.com/orderedlist" target="_blank">orderedlist</a></small>
+         <br><small>Used <a href="http://terminal.jcubic.pl/" target="_blank">JQuery Terminal Emulator</a> plugin</small>
+         <br><small>Used <a href="https://craig.is/making/rainbows" target="_blank">Rainbow</a> code syntax highlighting library</small>
       </footer>
    </div>
 

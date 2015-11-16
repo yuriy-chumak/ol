@@ -1,5 +1,6 @@
 /*
    Copyright 2014 GitHub Inc.
+   Copyright 2015 Yuriy Chumak.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -115,7 +116,7 @@
 }
 
 .doit {
-    position: relative;
+    float: right;
     display: inline-block;
     #padding: 6px 12px;
     font-size: 13px;

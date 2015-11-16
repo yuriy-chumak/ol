@@ -11,11 +11,6 @@ code {
   font-family: monospace;
 }
 
-.doit {
-  float: right;
-  font-size: small;
-}
-
 h1, h2, h3, h4, h5, h6 {
   color:#222;
   margin:0 0 20px;
@@ -135,10 +130,7 @@ header ul {
 }
 
 header li {
-  width:89px;
-  float:left;
   border-right:1px solid #d2d2d2;
-  height:40px;
 }
 
 header ul a {
