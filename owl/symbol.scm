@@ -9,8 +9,7 @@
 
    (import
       (r5rs base)
-      (owl string)
-      (owl error))
+      (owl string))
 
    (begin
       (define (symbol->string x) 
@@ -22,4 +21,4 @@
                   ((m/ / str) ;; fixme: doesn't quote internal |:s yet
                      (string-append (string-append "|" str) "|"))
                   (else str)))
-            (error "Not a symbol: " x)))))
+            (runtime-error "Not a symbol: " x)))))

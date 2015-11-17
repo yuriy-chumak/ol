@@ -25,7 +25,6 @@
    (import
       (r5rs base)
       (owl string)
-      (owl error)
       (owl interop)
       (owl list)
       (owl math)
@@ -272,7 +271,7 @@
                ((null? msg)
                   (mail sender 'dummy-interner))
                (else
-                  (error "bad interner request: " msg)))))
+                  (runtime-error "bad interner request: " msg)))))
 
       (define (start-dummy-interner)
          (fork-server 'intern dummy-interner))

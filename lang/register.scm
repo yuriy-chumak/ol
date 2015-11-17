@@ -15,7 +15,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl ff)
       (owl math)
       (owl list-extra)
@@ -134,7 +133,7 @@
             ((jf a then else)
                (tuple 'jf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             (else
-               (error "rtl-rename: what is this: " code))))
+               (runtime-error "rtl-rename: what is this: " code))))
 
 
       ;; try to remap the register to each known good alternative 
@@ -201,7 +200,7 @@
                   ((eq? a b)
                      (rtl-retard more)) ; drop useless instruction
                   ((> b highest-register)
-                     (error "out of registers in move: " b))
+                     (runtime-error "out of registers in move: " b))
                   (else
                      (lets 
                         ((more uses (rtl-retard more))
@@ -301,7 +300,7 @@
             ((jab a type then else)
                (rtl-retard-jump rtl-retard 'jab a type then else))
             (else
-               (error "rtl-retard: unknown code: " code))))
+               (runtime-error "rtl-retard: unknown code: " code))))
 
       (define (allocate-registers rtl)
          (lets ((rtl usages (rtl-retard rtl)))

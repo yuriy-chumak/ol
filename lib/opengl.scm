@@ -14,7 +14,7 @@
 ;   )
 
    (import
-     (r5rs base) (owl io) (owl primop) (owl error) (owl tuple) (owl string)
+     (r5rs base) (owl io) (owl primop) (owl tuple) (owl string)
      (owl pinvoke) (owl list) (owl math) (owl vector) (owl list-extra) (owl ff)
      (owl interop)
 
@@ -93,7 +93,7 @@
 ;         (this window context  ss ms  userdata  renderer  keyboard mouse))
       ; error on invalid command
       (else
-         (print "Unknown opengl server request: " message)
+         (runtime-error "Unknown opengl server request" message)
          args)))
 
 (define (message-loop-processor args)

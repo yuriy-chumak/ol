@@ -76,7 +76,6 @@
 
    (import 
       (r5rs base)
-      (owl error)
       (owl interop))
 
    (begin

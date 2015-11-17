@@ -47,7 +47,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl list)
       (owl interop)
       (owl ff))
@@ -137,10 +136,10 @@
                (nrev-walk num null))))
 
       (define (big-bad-args op a b)
-         (error "Bad math:" (list op a b)))
+         (runtime-error "Bad math:" (list op a b)))
 
       (define (big-unimplemented op a b)
-         (error "Math too high:" (list op a b)))
+         (runtime-error "Math too high:" (list op a b)))
 
 
       ;;;
@@ -261,8 +260,8 @@
                   (type-fix- #true)
                   (type-int+ #false)
                   (type-int- #true)
-                  (else (error "Bad number: " a))))
-            (else (error 'negative? a))))
+                  (else (runtime-error "Bad number: " a))))
+            (else (runtime-error 'negative? a))))
 
       (define positive? 
          (o not negative?))
@@ -1893,7 +1892,7 @@
       (define (/ a b)
          (cond    
             ((eq? b 0)
-               (error "division by zero " (list '/ a b)))
+               (runtime-error "division by zero " (list '/ a b)))
             ((eq? (type a) type-complex)
                (if (eq? (type b) type-complex)
                   (lets 
@@ -1942,7 +1941,7 @@
             (type-int+ n)
             (type-int- (ncons (ncar n) (ncdr n)))
             (type-rational (if (negative? n) (sub 0 n) n))
-            (else (error "bad math: " (list 'abs n)))))
+            (else (runtime-error "bad math: " (list 'abs n)))))
 
       (define (floor n)
          (if (eq? (type n) type-rational)
@@ -2210,7 +2209,7 @@
             ((a b) (op a b))
             ((a) a)
             ((a . bs) (fold op a bs))
-            (() (or zero (error "No arguments for " op)))))
+            (() (or zero (runtime-error "No arguments for " op)))))
 
       (define min (vararg-fold min #false))
       (define max (vararg-fold max #false))

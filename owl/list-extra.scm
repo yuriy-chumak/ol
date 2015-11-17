@@ -14,13 +14,12 @@
       (r5rs base)
       (owl math)
       (owl list)
-      (owl error)
       (owl interop))
 
    (begin
       (define (lref lst pos)
          (cond
-            ((null? lst) (error "lref: out of list" pos))
+            ((null? lst) (runtime-error "lref: out of list" pos))
             ((eq? pos 0) (car lst))
             (else (lref (cdr lst) (- pos 1)))))
 
@@ -28,7 +27,7 @@
 
       (define (lset lst pos val)
          (cond
-            ((null? lst) (error "list-set: out of list setting " val))
+            ((null? lst) (runtime-error "list-set: out of list setting " val))
             ((eq? pos 0) (cons val (cdr lst)))
             (else
                (cons (car lst)
@@ -36,7 +35,7 @@
       
       (define (ldel lst pos)
          (cond
-            ((null? lst) (error "list-del: out of list, left " pos))
+            ((null? lst) (runtime-error "list-del: out of list, left " pos))
             ((eq? pos 0) (cdr lst))
             (else (cons (car lst) (ldel (cdr lst) (- pos 1))))))
 
@@ -44,7 +43,7 @@
       (define (ledn lst pos op)
          (cond
             ((eq? pos 0) (op lst))
-            ((null? lst) (error "ledn: out of list, remaining " pos))
+            ((null? lst) (runtime-error "ledn: out of list, remaining " pos))
             (else
                (lets ((hd tl lst))
                   (cons hd (ledn tl (- pos 1) op))))))
@@ -52,7 +51,7 @@
       ;; list edit - apply op to value at given pos
       (define (led lst pos op)
          (cond
-            ((null? lst) (error "led: out of list, remaining " pos))
+            ((null? lst) (runtime-error "led: out of list, remaining " pos))
             ((eq? pos 0) (cons (op (car lst)) (cdr lst)))
             (else
                (lets ((hd tl lst))
@@ -62,7 +61,7 @@
       (define (lins lst pos val)
          (cond
             ((eq? pos 0) (cons val lst))
-            ((null? lst) (error "lins: out of list, left " pos))
+            ((null? lst) (runtime-error "lins: out of list, left " pos))
             (else
                (lets ((hd tl lst))
                   (cons hd (lins tl (- pos 1) val))))))
@@ -107,7 +106,7 @@
             ((= from to) 
                null)
             (else 
-               (error "bad iota: " (list 'iota from step to)))))
+               (runtime-error "bad iota: " (list 'iota from step to)))))
       
       (define (list-tail lst n)
          (if (eq? n 0)

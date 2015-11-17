@@ -7,7 +7,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl list)
       (owl equal)
       (owl list-extra)
@@ -82,7 +81,7 @@
       (define (push dict key val)
          (cond
             ((null? dict)
-               (error "push: key not in dict: " key))
+               (runtime-error "push: key not in dict: " key))
             ((eq? (caar dict) key)
                (cons
                   (append (car dict) (list val))

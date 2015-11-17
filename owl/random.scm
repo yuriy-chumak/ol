@@ -40,7 +40,6 @@
       (owl math)
       (owl lazy)
       (owl list)
-      (owl error)
       (owl tuple)
       (owl vector)
       (owl list-extra)
@@ -279,7 +278,7 @@
             (case (type max)
                (type-fix+ (rand-fixnum rs max))
                (type-int+ (rand-bignum rs max))
-               (else (error "bad rand limit: " max)))))
+               (else (runtime-error "bad rand limit: " max)))))
 
       ;; a quick skew check. the modulo issue caused a >10% skew in some cases earlier
       ;(let loop ((rs (seed->rands (time-ms))) (n 0) (sum 0) (lim 10000000000))
@@ -309,7 +308,7 @@
                (lets ((rs n (rand rs (vec-len obj))))
                   (values rs (vec-ref obj n))))
             (else
-               (error "rand-elem: what be " obj))))
+               (runtime-error "rand-elem: what be " obj))))
 
       ;; select all from lst with a 1-bit in corresponding position
       (define (select-members lst bits this out)
@@ -402,7 +401,7 @@
             ;; fixme: is this indeed ok?
             (lets ((rs o (rand rs (- hi lo))))
                (values rs (+ o lo)))
-            (error "rnd-range: bad range: " (list lo hi))))
+            (runtime-error "rnd-range: bad range: " (list lo hi))))
 
       ;(define data (iota 0 1 10))
       ;(let loop ((rst (expt (time-ms) 3)))

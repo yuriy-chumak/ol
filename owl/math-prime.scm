@@ -20,8 +20,7 @@
       (owl sort)
       (owl primop)
       (only (owl interop) por por*)
-      (owl ff)
-      (owl error))
+      (owl ff))
 
    (begin
       ;;;

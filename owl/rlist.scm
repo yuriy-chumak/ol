@@ -42,8 +42,7 @@
       (r5rs base)
       (owl list)
       (owl math)
-      (owl equal)
-      (owl error))
+      (owl equal))
 
    (begin
       (define rnull? null?)
@@ -126,7 +125,7 @@
 
       (define (rset rl pos val)
          (if (null? rl) 
-            (error "rset: out of list setting " val)
+            (runtime-error "rset: out of list setting " val)
             (lets ((w t tl rl))
                (if (< pos w)
                   (spine w (rset-tree t w pos val) tl)

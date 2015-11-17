@@ -28,7 +28,6 @@
       
       (owl list)
       (owl math)
-      (owl error)
       (owl list-extra))
 
    (begin
@@ -83,7 +82,7 @@
             (if (null? hd)
                (cond
                   ((null? rtl)
-                     (error "qcar: empty queue: " cl))
+                     (runtime-error "qcar: empty queue: " cl))
                   (else
                      (lets ((hd rtl (half-rev rtl)))
                         (values (car hd) (cons hd rtl)))))
@@ -95,7 +94,7 @@
             (if (null? rtl)
                (cond
                   ((null? hd)
-                     (error "qrac: empty queue: " cl))
+                     (runtime-error "qrac: empty queue: " cl))
                   (else
                      (lets ((rtl hd (half-rev hd)))
                         (values (car rtl) (cons hd rtl)))))

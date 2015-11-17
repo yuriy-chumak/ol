@@ -26,7 +26,6 @@
       (owl io) ; testing
       (owl primop)
       (owl unicode)
-      (owl error)
       (only (owl intern) intern-symbols string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 
@@ -92,7 +91,7 @@
                (let ((d (get digit-values digit #false)))
                   (cond
                      ((or (not d) (>= d base))
-                        (error "bad digit " digit))
+                        (runtime-error "bad digit " digit))
                      (else
                         (+ (* n base) d)))))
             0 digits))

@@ -21,7 +21,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl ff)
       (owl list)
       (owl symbol)
@@ -83,7 +82,7 @@
             ((invoke module name arg ...)
                ((env-get module (quote name)
                   (lambda (arg ...)
-                     (error "invoke: failed to invoke " 
+                     (runtime-error "invoke: failed to invoke " 
                         (cons (quote name) 
                            (list arg ...)))))
                   arg ...))))

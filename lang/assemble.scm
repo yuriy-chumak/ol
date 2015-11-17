@@ -11,7 +11,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl ff)
       (owl list)
       (owl math)
@@ -93,14 +92,14 @@
       (define (inst->op name)
          (or
             (get vm-instructions name #false)
-            (error "inst->op: unknown instruction " name)))
+            (runtime-error "inst->op: unknown instruction " name)))
 
       (define (reg a)
          (if (eq? (type a) type-fix+)
             (if (< a n-registers)
                a
-               (error "register too high: " a))
-            (error "bad register: " a)))
+               (runtime-error "register too high: " a))
+            (runtime-error "bad register: " a)))
 
 
       ;;;
@@ -287,13 +286,13 @@
             ((code-var fixed? arity insts)
                (let* ((insts (allocate-registers insts)))
                   (if (not insts)
-                     (error "failed to allocate registers" "")
+                     (runtime-error "failed to allocate registers" "")
                      (lets/cc ret
-                        ((fail (λ (why) (error "Error in bytecode assembly: " why) #false))
+                        ((fail (λ (why) (runtime-error "Error in bytecode assembly: " why) #false))
                          (bytes (assemble insts fail))
                          (len (length bytes)))
                         (if (> len #xffff)
-                           (error "too much bytecode: " len))
+                           (runtime-error "too much bytecode: " len))
                         (bytes->bytecode
                            (if fixed?
                               ; вот тут можно забрать проверку на арность (-)
@@ -314,6 +313,6 @@
                                        (list 17)        ;; force error
                                        tail)))))))))
             (else
-               (error "assemble-code: unknown AST node " obj))))
+               (runtime-error "assemble-code: unknown AST node " obj))))
 
 ))

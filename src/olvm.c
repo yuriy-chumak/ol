@@ -391,7 +391,7 @@ struct object
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
 #define make_direct(value, type)       ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(size, type)        (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
-#define make_raw_header(size, type, p) (( (word)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
+#define make_raw_header(type, size, p) (( (word)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
 // p is padding
 
 #define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
@@ -445,7 +445,7 @@ struct object
 #define TCOMPLEX                    (43)
 
 // pinvoke
-#define TMEMP                       (62) // always raw!
+#define TWORD                       (62) // always raw!
 #define TVOID                       (48) // only for pinvoke
 #define TRAWVALUE                   (45) // only for pinvoke
 
@@ -465,7 +465,6 @@ struct object
 #define HINT                        make_header(3, TINT)
 #define HINTN                       make_header(3, TINTN)
 #define HRATIONAL                   make_header(3, TRATIONAL)
-#define HMEMP                       make_header(2, RAWH(TMEMP))
 #define HCOMPLEX                    make_header(3, TCOMPLEX)
 
 #define FFRIGHT                     1
@@ -484,8 +483,8 @@ struct object
 #define is_complex(ob)              (is_pointer(ob) &&        (*(word*)(ob)) == HCOMPLEX)
 #define is_string(ob)               (is_pointer(ob) && typeof (*(word*)(ob)) == TSTRING)
 #define is_tuple(ob)                (is_pointer(ob) && typeof (*(word*)(ob)) == TTUPLE)
-#define is_port(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TPORT)
-#define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HMEMP)
+#define is_port(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TPORT) // stdin, stdout, stderr can have paddings :(
+#define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == RAWH(TWORD))
 #define is_number(ob)               (is_npair(ob) || is_direct(ob))
 #define is_atomic(ob)               is_direct(ob)
 
@@ -553,13 +552,17 @@ struct object
 #define MINGEN                      (1024 * 32)  /* minimum generation size before doing full GC  */
 #define INITCELLS                   1000
 
-//static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
+// http://outflux.net/teach-seccomp/
+// http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
+// https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt
 #define SECCOMP                     10000
 static int seccompp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
+//static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
+
 DIR *opendir(const char *name);
-pid_t fork(void);
+//pid_t fork(void);
 int chdir(const char *path);
 
 
@@ -586,7 +589,7 @@ typedef struct heap_t
 
 
 // -= new =--------------------------------------------
-// выделить сырой блок памяти
+// выделить блок памяти, unsafe
 #define NEW(size) ({\
 	word* addr = fp;\
 	fp += size;\
@@ -594,7 +597,7 @@ typedef struct heap_t
 })
 
 // аллоцировать новый объект (указанного типа)
-#define NEW_OBJECT(size, type) ({\
+#define NEW_OBJECT(type, size) ({\
 word*p = NEW (size);\
 	*p = make_header(size, type);\
 	/*return*/ p;\
@@ -603,14 +606,17 @@ word*p = NEW (size);\
 // аллоцировать новый "сырой" объект (указанного типа),
 //  данные объекта не проверяются сборщиком мусора и не
 //  должны содержать другие объекты!
-#define NEW_RAW_OBJECT(size, type, pads) ({\
+#define NEW_RAW_OBJECT(type, size, pads) ({\
 word*p = NEW (size);\
-	*p = make_raw_header(size, type, pads);\
+	*p = make_raw_header(type, size, pads);\
 	/*return*/ p;\
 })
 
-#define NEW_MACRO(_1, _2, NAME, ...) NAME
-#define new(...) NEW_MACRO(__VA_ARGS__, NEW_OBJECT, NEW)(__VA_ARGS__)
+// new(size) - allocate memory, without type
+// new(type, size) - allocate object, with type
+// new(type, size, pads) - allocate RAW object, with RAWH(type)
+#define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_RAW_OBJECT, NEW_OBJECT, NEW)(__VA_ARGS__)
 
 // -= new_pair =----------------------------------------
 
@@ -620,7 +626,7 @@ word*p = NEW (size);\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (3, type);\
+word*p = NEW_OBJECT (type, 3);\
 	p[1] = data1;\
 	p[2] = data2;\
 	/*return*/ p;\
@@ -628,8 +634,8 @@ word*p = NEW_OBJECT (3, type);\
 
 #define NEW_PAIR(a1, a2) NEW_TYPED_PAIR(TPAIR, a1, a2)
 
-#define NEW_PAIRX(_1, _2, UP, NAME, ...) NAME
-#define new_pair(...) NEW_PAIRX(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
+#define NEW_PAIR_MACRO(_1, _2, UP, NAME, ...) NAME
+#define new_pair(...) NEW_PAIR_MACRO(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
 
 // -= new_list =----------------------------------------
 
@@ -659,7 +665,7 @@ word*p = NEW_OBJECT (3, type);\
 					a4, new_pair (TPAIR,\
 						a5, INULL)))))
 
-#define NEW_LIST(_1, _2, _3, _4, _5, UP, NAME, ...) NAME // UP for listN needs N+1 argument
+#define NEW_LIST(_1, _2, _3, _4, _5, UP, NAME, ...) NAME
 #define new_list(...) NEW_LIST(__VA_ARGS__, new_list5, new_list4, new_list3, new_list2, new_list1, NOTHING)(__VA_ARGS__)
 
 // -= new_tuple =---------------------------------------
@@ -668,7 +674,7 @@ word*p = NEW_OBJECT (3, type);\
 #define new_tuple1(a1) ({\
 	word data1 = (word) a1;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (1+1, TTUPLE);\
+word*p = new (TTUPLE, 1+1);\
 	p[1] = data1;\
 	/*return*/ p;\
 })
@@ -676,7 +682,7 @@ word*p = NEW_OBJECT (1+1, TTUPLE);\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (2+1, TTUPLE);\
+word*p = new (TTUPLE, 2+1);\
 	p[1] = data1;\
 	p[2] = data2;\
 	/*return*/ p;\
@@ -686,7 +692,7 @@ word*p = NEW_OBJECT (2+1, TTUPLE);\
 	word data2 = (word) a2;\
 	word data3 = (word) a3;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (3+1, TTUPLE);\
+word*p = new (TTUPLE, 3+1);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -699,7 +705,7 @@ word*p = NEW_OBJECT (3+1, TTUPLE);\
 	word data4 = (word) a4;\
 	word data5 = (word) a5;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (5+1, TTUPLE);\
+word*p = new (TTUPLE, 5+1);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -718,7 +724,7 @@ word*p = NEW_OBJECT (5+1, TTUPLE);\
 	word data8 = (word) a8;\
 	word data9 = (word) a9;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (9+1, TTUPLE);\
+word*p = new (TTUPLE, 9+1);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -745,7 +751,7 @@ word*p = NEW_OBJECT (9+1, TTUPLE);\
 	word data12 = (word) a12;\
 	word data13 = (word) a13;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (13+1, TTUPLE);\
+word*p = new (TTUPLE, 13+1);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -764,34 +770,27 @@ word*p = NEW_OBJECT (13+1, TTUPLE);\
 
 #define NEW_TUPLE(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME
 #define new_tuple(...) NEW_TUPLE(__VA_ARGS__, new_tuple13, new_tuple12, new_tuple11,\
-		new_tuple10, new_tuple9, new_tuple8, new_tuple7, new_tuple6, new_tuple5,\
-		new_tuple4, new_tuple3, new_tuple2, new_tuple1, NOTHING)(__VA_ARGS__)
+			new_tuple10, new_tuple9, new_tuple8, new_tuple7, new_tuple6, new_tuple5,\
+			new_tuple4, new_tuple3, new_tuple2, new_tuple1, NOTHING)(__VA_ARGS__)
 
 
 // -= остальные аллокаторы =----------------------------
 
-//todo: make __pads automaticall calculated
-#define new_raw_object(size, type, pads) ({\
-word*p = new (size);\
-	*p = make_raw_header(size, type, pads);\
-	/*return*/ p;\
-})
-
 /* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
-#define new_bytevector(length, type) ({\
+#define new_bytevector(type, length) ({\
 	int size = (length);\
 	int words = (size + W - 1) / W;\
 	int pads = W - (size % W);\
 	\
-word* p = new_raw_object(words + 1, type, pads);\
+word* p = new (type, words + 1, pads);\
 	/*return*/ p;\
 })
 
-#define new_string(length, string) ({\
-word* p = new_bytevector(length, TSTRING);\
+#define new_string(string, length) ({\
+	char* data = string;\
+word* p = new_bytevector(TSTRING, length);\
 	char* ptr = (char*)&p[1];\
 	int size = length;\
-	char* data = string;\
 	while (size--) *ptr++ = *data++;\
 	*ptr = '\0'; \
 	/*return*/ p;\
@@ -801,13 +800,13 @@ word* p = new_bytevector(length, TSTRING);\
 // создать новый порт
 #define new_port(a) ({\
 word value = (word) a;\
-	word* me = new (2, RAWH(TPORT));\
+	word* me = new (TPORT, 2, 0);\
 	me[1] = value;\
 	/*return*/ me;\
 })
-#define new_memp(a) ({\
+#define new_native_function(a) ({\
 word value = (word) a;\
-	word* me = new (2, RAWH(TMEMP));\
+	word* me = new (TWORD, 2, 0);\
 	me[1] = value;\
 	/*return*/ me;\
 })
@@ -1114,11 +1113,11 @@ struct args
 #define TICKS                       10000 // # of function calls in a thread quantum
 
 #define OCLOSE(proctype)            { \
-	word size = *ip++, tmp; word *T = new (size, proctype); \
+	word size = *ip++, tmp; word *T = new (proctype, size); \
 	tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 #define CLOSE1(proctype)            { \
-	word size = *ip++, tmp; word *T = new (size, proctype); \
+	word size = *ip++, tmp; word *T = new (proctype, size); \
 	tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 
@@ -1197,7 +1196,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	{
 		int p = 0, N = NR;
 		// создадим в топе временный объект со значениями всех регистров
-		word *regs = (word*) new (N + 2, TTUPLE); // N for regs, 1 for this, and 1 for header
+		word *regs = (word*) new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
 		while (++p <= N) regs[p] = R[p-1];
 		regs[p] = (word) this;
 		// выполним сборку мусора
@@ -1321,7 +1320,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 					R[acc] = (word) this;
 
 					word *state;
-					state = (word*) new (acc, TTHREAD);
+					state = (word*) new (TTHREAD, acc);
 					for (int pos = 1; pos < acc-1; pos++)
 						state[pos] = R[pos];
 					state[acc-1] = R[acc];
@@ -1673,7 +1672,7 @@ invoke:;
 
 			if ((word) p == INULL && len <= MAXOBJ) {
 				int type = uftoi (A0);
-				word *raw = new_bytevector (len, type);
+				word *raw = new_bytevector (type, len);
 
 				unsigned char *pos;
 				pos = (unsigned char *) &raw[1];
@@ -1684,7 +1683,7 @@ invoke:;
 				}
 
 				while ((word)pos % sizeof(word)) // clear the padding bytes,
-					*pos++ = 0;                  //  required!!! (for system-based types)
+					*pos++ = 0;                  //             required!!!
 				A2 = (word)raw;
 			}
 			else
@@ -1920,8 +1919,8 @@ invoke:;
 		// (vm:version)
 		case 62: // get virtual machine info
 			A0 = (word) new_pair(TPAIR,
-					new_string(sizeof(__OLVM_NAME__)-1, __OLVM_NAME__),
-					new_string(sizeof(__OLVM_VERSION__)-1, __OLVM_VERSION__));
+					new_string(__OLVM_NAME__, sizeof(__OLVM_NAME__)-1),
+					new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
 			ip += 1; break;
 
 			// неиспользуемые коды (историческое наследие, при желании можно реюзать)
@@ -1995,7 +1994,7 @@ invoke:;
 		case MKT: { // mkt t s f1 .. fs r
 			word type = *ip++;
 			word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples
-			word *p = new (size+1, type), i = 0; // s fields + header
+			word *p = new (type, size+1), i = 0; // s fields + header
 			while (i < size) {
 				p[i+1] = R[ip[i]];
 				i++;
@@ -2070,19 +2069,19 @@ invoke:;
 			word *me;
 			if (l == IEMPTY) {
 				if (r == IEMPTY)
-					me = new (3, t);
+					me = new (t, 3);
 				else {
-					me = new (4, t|FFRIGHT);
+					me = new (t|FFRIGHT, 4);
 					me[3] = r;
 				}
 			}
 			else
 			if (r == IEMPTY) {
-				me = new (4, t);
+				me = new (t, 4);
 				me[3] = l;
 			}
 			else {
-				me = new (5, t);
+				me = new (t, 5);
 				me[3] = l;
 				me[4] = r;
 			}
@@ -2205,7 +2204,7 @@ invoke:;
 				if (got > 0) {
 					// todo: обработать когда приняли не все,
 					//	     вызвать gc() и допринять. и т.д.
-					result = new_bytevector (got, TBVEC);
+					result = new_bytevector (TBVEC, got);
 				}
 				else if (got == 0)
 					result = IEOF;
@@ -2383,7 +2382,7 @@ invoke:;
 				len = lenn(dire->d_name, FMAX+1);
 				if (len == FMAX+1)
 					break; /* false for errors, like too long file names */
-				result = new_string(len, dire->d_name);
+				result = new_string(dire->d_name, len);
 				break;
 			}
 			case 1013: /* sys-closedir dirp _ _ -> ITRUE */
@@ -2565,7 +2564,7 @@ invoke:;
 				else
 					break;
 
-				result = new_pair(new_string(strlen(ipstr), ipstr), F(port));
+				result = new_pair(new_string(ipstr, strlen(ipstr)), F(port));
 				break;
 			}
 
@@ -2693,7 +2692,7 @@ invoke:;
 						break;
 					// The environment variables TZ and LC_TIME are used!
 					size_t len = strftime(ptr, (size_t) (heap->end - fp - MEMPAD), (char*)&A[1], timeinfo);
-					result = new_bytevector(len+1, TSTRING);
+					result = new_bytevector(TSTRING, len+1);
 				}
 				else
 #endif
@@ -2720,11 +2719,11 @@ invoke:;
 					break;
 
 				result = new_tuple(
-						new_string(strlen((char*)name.sysname), name.sysname),
-						new_string(strlen((char*)name.nodename), name.nodename),
-						new_string(strlen((char*)name.release), name.release),
-						new_string(strlen((char*)name.version), name.version),
-						new_string(strlen((char*)name.machine), name.machine)
+						new_string(name.sysname, strlen((char*)name.sysname)),
+						new_string(name.nodename,strlen((char*)name.nodename)),
+						new_string(name.release, strlen((char*)name.release)),
+						new_string(name.version, strlen((char*)name.version)),
+						new_string(name.machine, strlen((char*)name.machine))
 				);
 
 				break;
@@ -2822,7 +2821,7 @@ invoke:;
 					if (is_string(name)) {
 						char* value = getenv((char*)&name[1]);
 						if (value)
-							result = new_string(lenn(value, FMAX), value);
+							result = new_string(value, lenn(value, FMAX));
 					}
 					break;
 				}
@@ -2869,7 +2868,7 @@ invoke:;
 							? (char*) imm_val((word)symbol)
 							: (char*) &symbol[1]);
 					if (function)
-						result = new_memp(function);
+						result = new_native_function(function);
 					else
 						fprintf(stderr, "dlsym failed: %s\n", dlerror());
 					break;
@@ -2877,7 +2876,7 @@ invoke:;
 /*				case 1032: { // (dlerror)
 					char* error = dlerror();
 					if (error)
-						result = new_string(strlen(error), error);
+						result = new_string(error, strlen(error));
 					break;
 				}*/
 #endif// HAS_DLOPEN
@@ -3075,7 +3074,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			int words = ((size + W) - 1) / W;
 			int pads = (W - (size % W));
 
-			unsigned char *wp = (unsigned char*) &car(new_raw_object (words + 1, type, pads));
+			unsigned char *wp = (unsigned char*) &car(new (type, words+1, pads));
 			while (size--)
 				*wp++ = *hp++;
 			while (pads--)
@@ -3148,21 +3147,6 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	*words = allocated;
 	return n;
 }
-
-/*static word* new_string2 (size_t length, char* string)
-{
-	word* object = fp;
-
-	int size = (length / W) + ((length % W) ? 2 : 1);
-	int pads = (size-1) * W - length;
-
-	*fp = make_raw_header(size, TSTRING, pads);
-	char* p = ((char *) fp) + W;
-	while (length--) *p++ = *string++;
-
-	fp += size;
-	return object;
-}*/
 
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
@@ -3328,7 +3312,7 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 
 	// Десериализация загруженного образа в объекты
 	fp = heap->begin;
-	word *ptrs = new_raw_object (nobjs+1, TCONST, 0);
+	word *ptrs = new(TCONST, nobjs+1, 0);
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
 
 //	fprintf(stderr, "decoded %d words\n", fp - heap.begin);
@@ -3371,7 +3355,7 @@ OL_eval(OL* handle, int argc, char** argv)
 				pos++;
 			int length = pos - (char*)fp - W;
 			if (length > 0) // если есть что добавить
-				userdata = new_pair (new_bytevector(length, TSTRING), userdata);
+				userdata = new_pair (new_bytevector(TSTRING, length), userdata);
 		}
 #else
 		{
@@ -3381,7 +3365,7 @@ OL_eval(OL* handle, int argc, char** argv)
 			int len = 0;
 			while (*pos++) len++;
 
-			userdata = new_pair (new_string (len, filename), userdata);
+			userdata = new_pair (new_string (filename, len), userdata);
 		}
 #endif
 		handle->heap.fp = fp;
@@ -3687,7 +3671,7 @@ word* pinvoke(OL* self, word* arguments)
 				break;
 			// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
 			case TPORT:
-			case TMEMP:
+			case TWORD:
 			case TBVEC:
 				args[i] = arg[1];
 				break;
@@ -3741,13 +3725,13 @@ word* pinvoke(OL* self, word* arguments)
 
 		// запрос порта - это запрос значения порта
 		// todo: добавить тип "указатель на порт"
-		case TMEMP:
+		case TWORD:
 		case TPORT:
 			if ((word)arg == INULL)
 				args[i] = (word) (void*)0;
 			else
 			switch (hdrtype(arg[0])) {
-			case TMEMP:
+			case TWORD:
 			case TPORT:
 				args[i] = arg[1];
 				break;
@@ -3767,7 +3751,7 @@ word* pinvoke(OL* self, word* arguments)
 			switch (hdrtype(arg[0])) {
 			case TBVEC:
 			case TSTRING:
-			case TMEMP:
+			case TWORD:
 			case TPORT:
 //			case TCONST:
 				// in arg[0] size got size of string
@@ -3794,7 +3778,7 @@ word* pinvoke(OL* self, word* arguments)
 
 				// аллоцировать массив и сложить в него указатели на элементы кортежа
 				int size = hdrsize(arg[0]);
-				*fp++ = make_raw_header(size, TBVEC, 0);
+				*fp++ = make_raw_header(TBVEC, size, 0);
 				args[i] = (word)fp; // ссылка на массив указателей на элементы
 
 				word* src = &arg[1];
@@ -3872,8 +3856,8 @@ word* pinvoke(OL* self, word* arguments)
 		case TPORT:
 			result = new_port (got);
 			break;
-		case TMEMP:
-			result = new_memp (got);
+		case TWORD:
+			result = new_native_function (got);
 			break;
 		case TRAWVALUE:
 			result = (word*) got;
@@ -3881,7 +3865,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TSTRING:
 			if (got != 0)
-				result = new_string (lenn((char*)got, FMAX+1), (char*)got);
+				result = new_string ((char*)got, lenn((char*)got, FMAX+1));
 			break;
 		case TVOID:
 			result = (word*) INULL;

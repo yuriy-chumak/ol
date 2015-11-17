@@ -11,7 +11,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl gensym)
       (lang ast)
       (owl math)
@@ -91,7 +90,7 @@
                    (then free (alpha then env free)))
                   (values (tuple 'case-lambda fn then) free)))
             (else
-               (error "alpha: unknown AST node: " exp))))
+               (runtime-error "alpha: unknown AST node: " exp))))
 
       (define (alpha-convert exp env)
          (lets 

@@ -7,7 +7,6 @@
       (r5rs base)
       (owl symbol)
       (owl string)
-      (owl error)
       (owl list)
       (owl tuple)
       (owl render)
@@ -79,7 +78,7 @@
                (max-ast-id fn 
                   (max-ast-id else max)))
             (else
-               (error "gensym: max-ast-id: what is this: " exp))))
+               (runtime-error "gensym: max-ast-id: what is this: " exp))))
 
 
       (define (gensym exp)

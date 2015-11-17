@@ -35,7 +35,6 @@
    (import
       (r5rs base)
       (owl parse)
-      (owl error)
       (owl ff)
       (owl list)
       (owl math)
@@ -85,7 +84,7 @@
                   (accept (ls) buff ms cont))))
          (if (eq? (type cp) type-fix+)
             accept
-            (error "match string cannot yet contain a " cp)))
+            (runtime-error "match string cannot yet contain a " cp)))
       
       (define (pred fn) ;; match match a specific (fixnum) code point
          (define (accept ls buff ms cont)
@@ -149,7 +148,7 @@
       (define (make-char-class complement? cs)
          (cond
             ((null? cs) ;; should not come out of parser
-               (error "empty char class: " cs))
+               (runtime-error "empty char class: " cs))
             (complement? 
                ;; always use an iff for now in [^...]
                (reject-iff
@@ -421,7 +420,7 @@
             ((null? x) x)
             ((string? x) (str-iter x))
             ((vector? x) (vec-iter x))
-            (else (error "how do i iterate " x))))
+            (else (runtime-error "how do i iterate " x))))
 
       ;; todo: now that the matchers are constructed here, the terminals /[^]...[$]/ could be handled externally!
       (define (make-matcher rex start?)
@@ -438,7 +437,7 @@
                (let ((res (rex-match-prefix rex (iter target))))
                   (if res (reverse (ref res 2)) res)))
             (λ (target)
-               (error "no non-head copy matcher yet: " rex))))
+               (runtime-error "no non-head copy matcher yet: " rex))))
 
       (define (flush out)
          (if (null? out)
@@ -765,7 +764,7 @@
                   (λ (rx) (at-most m rx))
                   (λ (rx) (rex-and (exactly n rx) (at-most (- m n) rx)))))
             (else
-               (error "make-repeater: bad range: " (list n 'to m)))))
+               (runtime-error "make-repeater: bad range: " (list n 'to m)))))
 
       (define get-range 
          (let-parses

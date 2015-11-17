@@ -82,7 +82,6 @@
       (owl lazy)
       (owl list)
       (owl list-extra)
-      (owl error)
       (owl math))
 
    (begin
@@ -110,7 +109,7 @@
                (lets ((n _ (fx:+ (fxband n *vec-leaf-max*) 2))) ;; jump over header and leaf
                   (ref v n)))
             (else
-               (error "Bad vector node in dispatch-1: type " (type v)))))
+               (runtime-error "Bad vector node in dispatch-1: type " (type v)))))
 
       ; dispatch the high half bits of a fixnum, returning the subnode
       (define (vec-dispatch-2 v d) ; -> v'
@@ -121,9 +120,9 @@
                    (p _ (fx:+ p 2)))
                   (ref v p)))
             (type-vector-leaf
-               (error "Leaf vector in dispatch-2: " v))
+               (runtime-error "Leaf vector in dispatch-2: " v))
             (else
-               (error "Bad vector node in dispatch-2: obj " (type v)))))
+               (runtime-error "Bad vector node in dispatch-2: obj " (type v)))))
 
       ; dispatch 8-bit parts (256-way tree)
       ; note, the highest one must know whether it must dispatch one or two bytes
@@ -149,7 +148,7 @@
                    (lets ((n _ (fx:+ (fxband n *vec-leaf-max*) 1)))
                      (ref v n))))
             (else 
-               (error "bad vector node in vec-ref-digit: type " (type v)))))
+               (runtime-error "bad vector node in vec-ref-digit: type " (type v)))))
 
       ; find the node holding the last digit and read it
       (define (vec-ref-big v n)
@@ -173,7 +172,7 @@
             (type-int+
                (vec-ref-big v n))
             (else 
-               (error "vec-ref: bad index: " n))))
+               (runtime-error "vec-ref: bad index: " n))))
 
       ;;; searching the leaves containing a pos 
       
@@ -192,7 +191,7 @@
             (type-int+
                (vec-leaf-big v n))
             (else
-               (error "vec-leaf-of: bad index: " n))))
+               (runtime-error "vec-leaf-of: bad index: " n))))
 
       
       ;; others
@@ -206,7 +205,7 @@
             (type-vector-leaf
                (size vec))
             (else
-               (error "vec-len: not a vector: " (list vec 'of 'type (type vec))))))
+               (runtime-error "vec-len: not a vector: " (list vec 'of 'type (type vec))))))
 
 
 
@@ -314,7 +313,7 @@
                   (cond
                      ((null? below) this)
                      ((null? this)
-                        (error "out of leaves before out of data: " (length below)))
+                        (runtime-error "out of leaves before out of data: " (length below)))
                      ;((number? (car this)) ;; skip size field at roo
                      ;   (cons (car this) (loop below (cdr this))))
                      (else
@@ -440,8 +439,8 @@
                ((< p e) 
                   (iter-range-really v p (- e p)))
                ((= p e) null)
-               (else (error "vec-iter-range: bad range " (cons p e))))
-            (error "vec-iter-range: end outside of vector: " e)))
+               (else (runtime-error "vec-iter-range: bad range " (cons p e))))
+            (runtime-error "vec-iter-range: end outside of vector: " e)))
 
       ;; iterate back to front
 

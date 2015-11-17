@@ -35,7 +35,6 @@
       (owl math)
       (owl equal)
       (owl io)
-      (owl error)
       (owl interop)
       (owl eof)
       (owl list)

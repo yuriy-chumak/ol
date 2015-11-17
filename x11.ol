@@ -30,7 +30,7 @@
       8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
       9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
      10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
-   
+
       0 0 0  0  )))); None
 (define cx (glXCreateContext dpy vi 0 1))
 
@@ -47,7 +47,7 @@
       (vec-iter
          (let ((vec (file->vector path)))
             (if vec vec
-               (error "Unable to load: " path))))))
+               (runtime-error "Unable to load: " path))))))
 
 
 ;(init)
@@ -83,76 +83,77 @@
 
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
 (glShaderSource fs 1 (tuple (c-string "
-    #version 120 // OpenGL 2.1
-    //	http://glslsandbox.com/e#19102.0
-    uniform float time;
+   #version 120 // OpenGL 2.1
 
-    #define iterations 14
-    #define formuparam 0.530
+   // http://glslsandbox.com/e#19102.0
+   uniform float time;
 
-    #define volsteps 18
-    #define stepsize 0.2
+   #define iterations 14
+   #define formuparam 0.530
 
-    #define zoom   0.800
-    #define tile   0.850
-    #define speed  0.0001
+   #define volsteps 18
+   #define stepsize 0.2
 
-    #define brightness 0.0015
-    #define darkmatter 0.400
-    #define distfading 0.760
-    #define saturation 0.800
+   #define zoom   0.800
+   #define tile   0.850
+   #define speed  0.0001
 
-    void main(void) {
-    	vec2 viewport = vec2(1280, 720);
+   #define brightness 0.0015
+   #define darkmatter 0.400
+   #define distfading 0.760
+   #define saturation 0.800
 
-    	//get coords and direction
-    	vec2 uv=gl_FragCoord.xy / viewport.xy - .5;
-    	uv.y*=viewport.y/viewport.x;
-    	vec3 dir=vec3(uv*zoom,1.);
+   void main(void) {
+      vec2 viewport = vec2(1280, 720);
 
-    	float a2=speed+.5;
-    	float a1=0.0;
-    	mat2 rot1=mat2(cos(a1),sin(a1),-sin(a1),cos(a1));
-    	mat2 rot2=rot1;//mat2(cos(a2),sin(a2),-sin(a2),cos(a2));
-    	dir.xz*=rot1;
-    	dir.xy*=rot2;
+      //get coords and direction
+      vec2 uv=gl_FragCoord.xy / viewport.xy - .5;
+      uv.y*=viewport.y/viewport.x;
+      vec3 dir=vec3(uv*zoom,1.);
 
-    	vec3 from=vec3(-0.05, 0.05, 0);
-    	//from.x-=time; <- movement
+      float a2=speed+.5;
+      float a1=0.0;
+      mat2 rot1=mat2(cos(a1),sin(a1),-sin(a1),cos(a1));
+      mat2 rot2=rot1;//mat2(cos(a2),sin(a2),-sin(a2),cos(a2));
+      dir.xz*=rot1;
+      dir.xy*=rot2;
 
-    	from.z = time / 20000.0;
+      vec3 from=vec3(-0.05, 0.05, 0);
+      //from.x-=time; <- movement
 
-    	from.x-=0.2;//mouse.x;
-    	from.y-=0.7;//mouse.y;
+      from.z = time / 20000.0;
 
-    	from.xz*=rot1;
-    	from.xy*=rot2;
+      from.x-=0.2;//mouse.x;
+      from.y-=0.7;//mouse.y;
 
-    	//volumetric rendering
-    	float s=.4,fade=.2;
-    	vec3 v=vec3(0.4);
-    	for (int r=0; r<volsteps; r++) {
-    		vec3 p=from+s*dir*.5;
-    		p = abs(vec3(tile)-mod(p,vec3(tile*2.))); // tiling fold
-    		float pa,a=pa=0.;
-    		for (int i=0; i<iterations; i++) { 
-    			p=abs(p)/dot(p,p)-formuparam; // the magic formula
-    			a+=abs(length(p)-pa); // absolute sum of average change
-    			pa=length(p);
-    		}
-    		float dm=max(0.,darkmatter-a*a*.001); //dark matter
-    		a*=a*a*2.; // add contrast
-    		if (r>3) fade*=1.-dm; // dark matter, don't render near
-    		//v+=vec3(dm,dm*.5,0.);
-    		v+=fade;
-    		v+=vec3(s,s*s,s*s*s*s)*a*brightness*fade; // coloring based on distance
-    		fade*=distfading; // distance fading
-    		s+=stepsize;
-    	}
-    	v=mix(vec3(length(v)),v,saturation); //color adjust
-    	gl_FragColor = vec4(v*.01,1.);	
+      from.xz*=rot1;
+      from.xy*=rot2;
 
-    }")) null)
+      //volumetric rendering
+      float s=.4,fade=.2;
+      vec3 v=vec3(0.4);
+      for (int r=0; r<volsteps; r++) {
+      	vec3 p=from+s*dir*.5;
+      	p = abs(vec3(tile)-mod(p,vec3(tile*2.))); // tiling fold
+      	float pa,a=pa=0.;
+      	for (int i=0; i<iterations; i++) { 
+      		p=abs(p)/dot(p,p)-formuparam; // the magic formula
+      		a+=abs(length(p)-pa); // absolute sum of average change
+      		pa=length(p);
+      	}
+      	float dm=max(0.,darkmatter-a*a*.001); //dark matter
+      	a*=a*a*2.; // add contrast
+      	if (r>3) fade*=1.-dm; // dark matter, don't render near
+      	//v+=vec3(dm,dm*.5,0.);
+      	v+=fade;
+      	v+=vec3(s,s*s,s*s*s*s)*a*brightness*fade; // coloring based on distance
+      	fade*=distfading; // distance fading
+      	s+=stepsize;
+      }
+      v=mix(vec3(length(v)),v,saturation); //color adjust
+      gl_FragColor = vec4(v*.01,1.);	
+
+   }")) null)
 (glCompileShader fs)
   (define isCompiled "word")
   (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
@@ -186,6 +187,7 @@
 (define XEvent (raw type-vector-raw (repeat 0 192)))
 
 (let loop ()
+   ; http://www-h.eng.cam.ac.uk/help/tpl/graphics/X/X11R5/node25.html
    (let process-events ()
       (if (> (XPending dpy) 0)
          (begin
@@ -199,9 +201,9 @@
       (glUseProgram po)
 
       (let* ((ss ms (clock)))
-        (glUniform1f time (+ (/ ms 1000) (mod ss 3600)))) ; раз в час будем сбрасывать период
+         (glUniform1f time (+ (/ ms 1000) (mod ss 3600)))) ; раз в час будем сбрасывать период
       (if (> resolution 0)
-        (glUniform2f resolution width height))
+         (glUniform2f resolution width height))
 
       (glBegin GL_TRIANGLE_STRIP)
         (glVertex2f -1 -1)

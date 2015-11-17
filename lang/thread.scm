@@ -19,7 +19,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl queue)
       (owl interop)
       (owl ff)

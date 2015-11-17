@@ -1,6 +1,7 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
 ; rename to scheme/r5rs/base ?
 ; rename to ./r5rs ?
+; todo: merge (owl tuple)
 (define-library (r5rs base)
    (begin
       ; ========================================================================================================
@@ -21,9 +22,9 @@
       ; 1.3.1  Primitive, library, and optional features
       ; 1.3.2  Error situations and unspecified behavior
       (define-syntax syntax-error
-         (syntax-rules (error)
+         (syntax-rules (runtime-error)
             ((syntax-error . stuff)
-               (error "Syntax error: " (quote stuff)))))
+               (runtime-error "Syntax error: " (quote stuff)))))
 
       ; 1.3.3  Entry format
       ; 1.3.4  Evaluation examples
@@ -417,6 +418,8 @@
       ; Built-in procedures that can easily be written in terms of other built-in procedures are
       ; identified as ``library procedures''.
       ;
+
+      ; this is simlified (assert) that use (eq?), please be careful!
       (define-syntax assert
          (syntax-rules (eq? list ==>)
             ((assert expression)
@@ -1175,6 +1178,10 @@
             ((lets/cc var . body) 
                (call/cc (λ (var) (lets . body))))))
 
+      ; internal, todo: to be created and renamed
+      (define sys (raw 16 '(27 4 5 6 7 8  24 8)))
+      
+      ; differs from previous by using (equal?) instead of (eq?)
       (define-syntax assert
          (syntax-rules (equal? list ==>)
             ((assert expression)
@@ -1183,10 +1190,14 @@
                (if (equal? expression (quote result)) #true
                   ((raw 16 '(27 4 5 6 7 8  24 8))
                      '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) '()))))))))
+
+      (define (runtime-error reason info) ; todo: move to (owl mcp)?
+         (call/cc (λ (resume) (sys resume 5 reason info))))
+      (define error runtime-error)
 )
 ; ---------------------------
    (export
-      λ syntax-error assert
+      λ syntax-error assert error runtime-error
 
       if cond case and or not
       letrec letrec* let let* let*-values lets

@@ -26,8 +26,7 @@
       (except (owl list) render)
       (owl list-extra)
       (owl lazy)
-      (owl math)
-      (owl error))
+      (owl math))
 
    (begin
       ;; UTF-8
@@ -124,7 +123,7 @@
                   (ext point)
                   tl))
             (else
-               (error "utf8 encode: code point too high " point))))
+               (runtime-error "utf8 encode: code point too high " point))))
 
       ; ll -> list | #false
       (define (utf8-encode thing)

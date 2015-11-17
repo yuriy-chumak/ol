@@ -42,7 +42,6 @@
       (owl vector)
       (owl render)
       (only (owl primop) wait)
-      (owl error)
       (owl interop))
 
    (begin

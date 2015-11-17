@@ -8,8 +8,7 @@
       (r5rs base)
       (owl list-extra)
       (owl list) 
-      (owl math) 
-      (owl error))
+      (owl math))
 
    (begin
       (define (tuple? x) 
@@ -19,7 +18,7 @@
          (let ((l (length lst)))
             (if (eq? (type l) type-fix+)
                (listuple 2 l lst)
-               (error "list does not fit a tuple: length " l))))
+               (runtime-error "list does not fit a tuple: length " l))))
 
       (define (read-tuple tuple pos lst)
          (if (= pos 0)

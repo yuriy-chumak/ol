@@ -51,7 +51,6 @@
    (import (r5rs base))
 
    (import (owl iff))
-   (import (owl error))
    (import (owl unicode))
    (import (owl list))
    (import (owl list-extra))
@@ -68,7 +67,7 @@
             (type-string          (sizeb str))
             (type-string-wide     (size str))
             (type-string-dispatch (ref str 1))
-            (else (error "string-length: not a string: " str))))
+            (else (runtime-error "string-length: not a string: " str))))
 
       ;;; enumerate code points forwards
 
@@ -102,7 +101,7 @@
                      (str-iter-any (ref str pos)
                         (lambda () (loop (+ pos 1)))))))
             (else
-               (error "str-iter: not a string: " str))))
+               (runtime-error "str-iter: not a string: " str))))
 
       (define (str-iter str) (str-iter-any str null))
 
@@ -139,7 +138,7 @@
                         (lambda ()
                            (loop (- pos 1)))))))
             (else
-               (error "str-iterr: not a string: " str))))
+               (runtime-error "str-iterr: not a string: " str))))
 
       (define (str-iterr str) (str-iterr-any str null))
 
@@ -197,7 +196,7 @@
             (let ((str (raw type-string (reverse rcps))))
                (if str
                   str
-                  (error "Failed to make string: " rcps)))
+                  (runtime-error "Failed to make string: " rcps)))
             (listuple type-string-wide len (reverse rcps))))
 
       ;; ll|list out n ascii? chunk → string | #false
@@ -354,11 +353,11 @@
       (define (substring str start end)
          (cond
             ((< (string-length str) end)
-               (error "substring: out of string: " end))
+               (runtime-error "substring: out of string: " end))
             ((negative? start)
-               (error "substring: negative start: " start))
+               (runtime-error "substring: negative start: " start))
             ((< end start)
-               (error "substring: bad interval " (cons start end)))
+               (runtime-error "substring: bad interval " (cons start end)))
             (else 
                (list->string (ltake (ldrop (str-iter str) start) (- end start))))))
 

@@ -35,9 +35,7 @@
 
    (import 
       (r5rs base)
-      (owl list)
-      (owl error)
-      )
+      (owl list))
 
    (begin
 
@@ -290,7 +288,7 @@
       ;; ff key val -> ff', *key must be in ff*
       (define (ff-update ff key val)
          (if (eq? ff #empty)
-            (error "fupd: not there: " key)
+            (runtime-error "fupd: not there: " key)
             (let ((this (ref ff 1)))
                (if (eq? key this)
                   (set ff 2 val) ;; key and value have fixed position

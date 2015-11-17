@@ -16,7 +16,6 @@
       (owl list-extra)
       (owl lazy)
       (owl math)
-      (owl error)
       (owl interop)
       (owl io)
       (owl render)
@@ -170,21 +169,21 @@
                   ((eq? op 'cook)
                      (if (and (pair? lst) (function? (car lst)))
                         (cl-rule (put node 'cook (car lst)) (cdr lst))
-                        (error "cl-rule: cook is not a function: " (list (car lst) 'has 'type (type (car lst))))))
+                        (runtime-error "cl-rule: cook is not a function: " (list (car lst) 'has 'type (type (car lst))))))
                   ((eq? op 'check)
                      (if (and (pair? lst) (function? (car lst)))
                         (cl-rule (put node op (car lst)) (cdr lst))
-                        (error "cl-rule: check is not a function: " (car lst))))
+                        (runtime-error "cl-rule: check is not a function: " (car lst))))
                   ((eq? op 'default)
                      (if (and (pair? lst) (string? (car lst)))
                         (cl-rule (put node op (car lst)) (cdr lst))
-                        (error "cl-rule: default is not a string: " (car lst))))
+                        (runtime-error "cl-rule: default is not a string: " (car lst))))
                   ((eq? op 'comment)
                      (if (and (pair? lst) (string? (car lst)))
                         (cl-rule (put node op (car lst)) (cdr lst))
-                        (error "cl-rule: comment is not a string: " (car lst))))
+                        (runtime-error "cl-rule: comment is not a string: " (car lst))))
                   (else
-                     (error "cl-rule: i do not get this: " lst))))))
+                     (runtime-error "cl-rule: i do not get this: " lst))))))
 
       ;	(name short long comment default (cook) (predicate) (mandatory?) (single?) (terminal?))
       (define (cl-rules lst)
@@ -194,7 +193,7 @@
                   (cl-rule 
                      (list->ff (zip cons '(id short long) lst))
                      (cdddr lst))
-                  (error "cl-rules: funny option: " lst)))
+                  (runtime-error "cl-rules: funny option: " lst)))
             lst))
 
       ;; printing help based on the rules

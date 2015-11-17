@@ -19,7 +19,6 @@
       (owl list)
       (owl string)
       (owl vector)
-      (owl error)
       (owl lazy))
 
    (begin
@@ -84,9 +83,9 @@
          ((data (string->list "Wikipedia")) ;; guess where the example checksum is from
           (expected 300286872))
          (if (not (= expected (adler-32 data)))
-            (error "adler-32 is broken: " 'bad))
+            (runtime-error "adler-32 is broken: " 'bad))
          (if (not (= expected ((make-adler 32) data)))
-            (error "make-adler is broken: " 'bad)))
+            (runtime-error "make-adler is broken: " 'bad)))
 
       ;;; Fletcher64 (composite modulus, faster to compute but less accurate results)
 
@@ -153,7 +152,7 @@
             ((string? x) (default-checksummer (str-iter x)))
             ((vector? x) (default-checksummer (vec-iter x)))
             (else
-              (error "checksum: what is " x)))) 
+              (runtime-error "checksum: what is " x)))) 
 
 
       ;; default checksum generator
@@ -175,6 +174,6 @@
                      ((null? data) data)
                      ((string? data) (str-iter data))
                      ((vector? data) (vec-iter data))
-                     (else (error "how do i compute a checksum for " data)))))))))
+                     (else (runtime-error "how do i compute a checksum for " data)))))))))
 
 

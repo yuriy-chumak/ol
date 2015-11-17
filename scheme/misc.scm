@@ -11,7 +11,6 @@
       (r5rs base)
       (owl equal)
       (owl list)
-      (owl error)
       (owl string)
       (only (lang sexp) list->number)
       (owl math))
@@ -56,7 +55,7 @@
       ;      (lets ((d l l)) (if (null? l) (func a b c d)
       ;      (lets ((e l l)) (if (null? l) (func a b c d e)
       ;      (lets ((f l l)) (if (null? l) (func a b c d e f)
-      ;         (error "apply: too many arguments: " (ilist a b c d e f l))))))))))))))))
+      ;         (runtime-error "apply: too many arguments: " (ilist a b c d e f l))))))))))))))))
 
       ;; owl doesn't have inexact numbers, so any argument
       ;; coming in will always be rational differing by 0

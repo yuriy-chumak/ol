@@ -7,7 +7,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (lang ast)
       (owl list)
       (owl list-extra)
@@ -83,8 +82,8 @@
                         (list (mklambda formals body) rator)
                         env free)))
                (else
-                  (error "bad arguments for tuple bind: " rands)))
-            (error "bad arguments for tuple bind: " rands)))
+                  (runtime-error "bad arguments for tuple bind: " rands)))
+            (runtime-error "bad arguments for tuple bind: " rands)))
 
 
       ;; (a0 .. an) → (cons a0 (cons .. (cons an null))), modulo AST
@@ -128,7 +127,7 @@
                            (tuple 'lambda formals body)
                            rands env cont free)))
                   (else
-                     (error "Bad head lambda arguments:" (list 'args formals 'rands rands)))))
+                     (runtime-error "Bad head lambda arguments:" (list 'args formals 'rands rands)))))
             ((call rator2 rands2)
                (lets
                   ((this free (fresh free))
@@ -189,7 +188,7 @@
                               else)
                            free)))
                   (else
-                     (error "cps-branch: then is not a lambda: " then))))
+                     (runtime-error "cps-branch: then is not a lambda: " then))))
             (else
                (lets
                   ((then free (cps then env cont free))
@@ -212,7 +211,7 @@
                      (tuple 'lambda-var fixed? formals body-cps)
                      free)))
             (else
-               (error "cps-receive: receiver is not a lambda. " semi-cont))))
+               (runtime-error "cps-receive: receiver is not a lambda. " semi-cont))))
 
       ;; translate a chain of lambdas as if they were at operator position
       ;; note! also cars are handled as the same jump, which is silly
@@ -228,7 +227,7 @@
             ((lambda-var fixed? formals body)
                (cps-just-lambda cps formals fixed? body env free))
             (else
-               (error "cps-case-lambda: what is " node))))
+               (runtime-error "cps-case-lambda: what is " node))))
 
       (define (cps-exp exp env cont free)
          (tuple-case exp
@@ -252,7 +251,7 @@
                (lets ((res free (cps-case-lambda cps-exp exp env cont free)))
                   (values (mkcall cont (list res)) free)))
             (else
-               (error "CPS does not do " exp))))
+               (runtime-error "CPS does not do " exp))))
 
       (define (val-eq? node val)
          (tuple-case node

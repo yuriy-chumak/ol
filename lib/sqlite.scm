@@ -63,7 +63,7 @@
       (r5rs base) (owl io)
       (owl list) (owl string)
       (owl math) (owl vector)
-      (owl error) (owl primop)
+      (owl primop)
       (owl interop)
       (owl pinvoke))
   (begin

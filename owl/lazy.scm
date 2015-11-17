@@ -23,8 +23,7 @@
       (r5rs base)
       (owl math)
       (owl list)
-      (owl list-extra)
-      (owl error))
+      (owl list-extra))
 
    (begin
 
@@ -36,7 +35,7 @@
       (define (tail l)
          (cond
             ((pair? l) (cdr l))
-            ((null? l) (error "tail: null stream " l))
+            ((null? l) (runtime-error "tail: null stream " l))
             (else (tail (l)))))
 
       (define (llast l)
@@ -44,7 +43,7 @@
             ((pair? l)
                (let ((tl (cdr l)))
                   (if (null? tl) (car l) (llast tl))))
-            ((null? l) (error "llast: empty list: " l))
+            ((null? l) (runtime-error "llast: empty list: " l))
             (else (llast (l)))))
 
       ;; l → hd l' | error
@@ -189,7 +188,7 @@
             ((ll (ldrop ll p))
              (val ll (uncons ll blank)))
             (if (eq? val blank)
-               (error "llref: out of list: " p)
+               (runtime-error "llref: out of list: " p)
                val)))
 
       (define (ltake l n) (ltaker l n null))
@@ -277,7 +276,7 @@
             (cond
                ((null? ll)
                   (if (eq? len 0)
-                     (error "avg: empty list: " ll)
+                     (runtime-error "avg: empty list: " ll)
                      (/ sum len)))
                ((pair? ll)
                   (loop (cdr ll) (+ sum (car ll)) (+ len 1)))

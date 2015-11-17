@@ -20,7 +20,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl math)
       (owl list)
       (owl symbol)
@@ -102,7 +101,7 @@
       ;; find which register has the literals-tuple
       (define (find-literals env)
          (if (null? env)
-            (error "No literals found: " env)
+            (runtime-error "No literals found: " env)
             (tuple-case (car env)
                ((lit vals id)
                   id)
@@ -127,13 +126,13 @@
                      (λ (regs pos)
                         (cont regs pos))))
                ((not position)
-                  (error "rtl-value: cannot make a load for a " val))
+                  (runtime-error "rtl-value: cannot make a load for a " val))
                ((fixnum? (cdr position))
                   (let ((this (next-free-register regs)))
                      (tuple 'refi (car position) (cdr position) this
                         (cont (cons (tuple 'val val this) regs) this))))
                (else
-                  (error "tried to use old chain load in " val)))))
+                  (runtime-error "tried to use old chain load in " val)))))
 
       (define (rtl-variable regs sym cont)
          (let ((position (find-variable regs sym)))
@@ -141,13 +140,13 @@
                ((fixnum? position)
                   (cont regs position))
                ((not position)
-                  (error "rtl-variable: cannot find the variable " sym))
+                  (runtime-error "rtl-variable: cannot find the variable " sym))
                ((fixnum? (cdr position))
                   (let ((this (next-free-register regs)))
                      (tuple 'refi (car position) (cdr position) this
                         (cont (cons (tuple 'var sym this) regs) this))))
                (else
-                  (error "no chain load: " position)))))
+                  (runtime-error "no chain load: " position)))))
 
 
       (define (rtl-close regs lit-offset env lit cont)
@@ -179,7 +178,7 @@
             (λ (x)
                (if (symbol? x)
                   (tuple 'var x)
-                  (error "Cannot yet load this env node: " env)))
+                  (runtime-error "Cannot yet load this env node: " env)))
             env))
 
       (define (create-alias regs name position)
@@ -206,7 +205,7 @@
                      (λ (regs envp)
                         (rtl-close regs lpos envp lit cont))))
                (else
-                  (error "rtl-simple: unknown thing: " a))))
+                  (runtime-error "rtl-simple: unknown thing: " a))))
 
          (define (many regs args places cont)
             (if (null? args)
@@ -239,7 +238,7 @@
       (define (rtl-primitive regs op formals args cont)
          (if (eq? op 23) ; generalize this later. mkt is not a safe instruction!
             (if (null? args)
-               (error "rtl-primitive: no type for mkt" args)
+               (runtime-error "rtl-primitive: no type for mkt" args)
                (begin
                   (rtl-primitive regs 
                      (+ (<< op 8) (band (value-of (car args)) #xff))
@@ -348,7 +347,7 @@
                               => (λ (call) (ret call)))
                            (else #false))))
                   ; has never happened in practice
-                  (error "failed to compile call: " call)))))
+                  (runtime-error "failed to compile call: " call)))))
 
       (define (rtl-jump rator rands free inst)
          (let ((nargs (length rands)))
@@ -407,7 +406,7 @@
                   (else
                      ;(if (or (not rator) (ff? rator)) ;; finite functions are also applicable
                      ;   #false
-                     ;   (error "Bad operator: " rator))
+                     ;   (runtime-error "Bad operator: " rator))
                      #false ;; <- can't remember why we're not failing here. changed while adding variable arity?
                      )))
             (else 
@@ -455,7 +454,7 @@
                (some 
                   (λ (x) (if (eq? (ref x 2) op) x #false))
                   primops)))
-            (if node node (error "Unknown primop: " op))))
+            (if node node (runtime-error "Unknown primop: " op))))
 
       (define (opcode-arity-ok? op n)
          (bind (opcode->primop op)
@@ -519,10 +518,10 @@
                                                    (tuple 'lambda selected then-body)
                                                    else)))))
                                     (else
-                                       (error "rtl-any: bad jab then branch: " then)))))
-                           (error "rtl-any: bad alloc binding branch type: " b))))
+                                       (runtime-error "rtl-any: bad jab then branch: " then)))))
+                           (runtime-error "rtl-any: bad alloc binding branch type: " b))))
                   (else
-                     (error "rtl-any: unknown branch type: " kind))))
+                     (runtime-error "rtl-any: unknown branch type: " kind))))
             ((call rator rands)
                ;; compile as primop call, bind if rator is lambda or a generic call
                (let ((op (and (eq? (ref rator 1) 'value) (primitive? (ref rator 2)))))
@@ -533,10 +532,10 @@
                               (rtl-primitive regs op formals (cdr rands)
                                  (λ (regs) (rtl-any regs body)))
                               ;; fixme: should be a way to show just parts of AST nodes, which may look odd
-                              (error "Bad number of arguments for primitive: " 
+                              (runtime-error "Bad number of arguments for primitive: " 
                                  (list 'op (primop-name op) 'got (length (cdr rands)) 'arguments))))
                         (else
-                           (error "bad primitive args: " rands)))
+                           (runtime-error "bad primitive args: " rands)))
                      (tuple-case rator
                         ((lambda formals body)
                            ;; ((lambda (args) ...) ...) => add new aliases for values
@@ -545,11 +544,11 @@
                                  ;;; note that this is an alias thing...
                                  (if (= (length formals) (length args))
                                     (rtl-any (create-aliases regs formals args) body)
-                                    (error "Bad argument count in lambda call: " (list 'args args 'formals formals))))))
+                                    (runtime-error "Bad argument count in lambda call: " (list 'args args 'formals formals))))))
                         (else
                            (rtl-call regs rator rands))))))
             (else
-               (error "rtl-any: wtf: " exp))))
+               (runtime-error "rtl-any: wtf: " exp))))
 
       (define (formals->regs formals pos)
          (if (null? formals)
@@ -604,7 +603,7 @@
                   (tuple 'lambda-var #true formals body)
                   clos literals tail))
             (else
-               (error "rtl-plain-lambda: bad node " exp))))
+               (runtime-error "rtl-plain-lambda: bad node " exp))))
 
       ;; temporary back-conversion for jump compiling
       (define (bytecode->list thing)
@@ -615,7 +614,7 @@
                ;; get the bytecode
                (bytecode->list (ref thing 1)))
             (else
-               (error "bytecode->list: " thing))))
+               (runtime-error "bytecode->list: " thing))))
             
       (define (rtl-case-lambda rtl exp clos literals)
          (tuple-case exp
@@ -630,7 +629,7 @@
                   (bytecode->list 
                      (rtl-case-lambda rtl else clos literals))))
             (else
-               (error "rtl-case-lambda: bad node " exp))))
+               (runtime-error "rtl-case-lambda: bad node " exp))))
   
       ;; todo: separate closure nodes from lambdas now that the arity may vary
       ;; todo: control flow analysis time - if we can see what the arguments are here, the info could be used to make most continuation returns direct via known call opcodes, which could remove an important branch prediction killer
@@ -652,7 +651,7 @@
                    (body (rtl-case-lambda rtl-procedure body clos lits)))
                   body))
             (else
-               (error "rtl-procedure: bad input: " node))))
+               (runtime-error "rtl-procedure: bad input: " node))))
 
       ; exp → exp'
       (define (rtl-exp exp)
@@ -660,7 +659,7 @@
             ((closure formals body clos literals)
                (if (null? clos)
                   (rtl-procedure exp)
-                  (error "rtl-exp: free variables in entry closure: " clos)))
+                  (runtime-error "rtl-exp: free variables in entry closure: " clos)))
             (else
                #false)))
 

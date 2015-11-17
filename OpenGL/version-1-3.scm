@@ -2,14 +2,14 @@
 
 (define-library (OpenGL version-1-3)
    (export
-      (exports (OpenGL version-1-2-1))
+      (exports (OpenGL version-1-2))
     GL_VERSION_1_3
 
   )
   
    (import
       (r5rs base) (owl io)
-      (OpenGL version-1-2-1))
+      (OpenGL version-1-2))
    (begin
    (define GL_VERSION_1_3 1)
    

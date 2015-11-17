@@ -28,8 +28,7 @@
       (owl sort)
       (owl primop)
       (only (owl interop) por por*)
-      (owl ff)
-      (owl error))
+      (owl ff))
 
    (begin
       (define ncar car)
@@ -92,14 +91,14 @@
          (case (type n)
             (type-fix+
                (lets ((s r (exact-integer-sqrt n)))
-                  (if (eq? r 0) s (error "sqrt: no exact solution for " n))))
+                  (if (eq? r 0) s (runtime-error "sqrt: no exact solution for " n))))
             (type-int+
                (lets ((s r (exact-integer-sqrt n)))
-                  (if (eq? r 0) s (error "sqrt: no exact solution for " n))))
+                  (if (eq? r 0) s (runtime-error "sqrt: no exact solution for " n))))
             (type-fix- (complex 0 (sqrt (abs n))))
             (type-int- (complex 0 (sqrt (abs n))))
             (else 
-               (error "sqrt: math too high: " n))))
+               (runtime-error "sqrt: math too high: " n))))
 
       ;;; exponentiation
 

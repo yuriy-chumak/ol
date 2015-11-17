@@ -7,7 +7,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (lang ast)
       (owl math)
       (owl list)
@@ -114,7 +113,7 @@
                            deps))
                      null)))
             
-            (error "unable to resolve dependencies for mutual recursion. remaining bindings are " deps)))
+            (runtime-error "unable to resolve dependencies for mutual recursion. remaining bindings are " deps)))
 
       ;;; remove nodes and associated deps
       (define (remove-deps lost deps)
@@ -169,7 +168,7 @@
                         (tuple 'lambda (reverse (cdr (reverse deps))) (tuple 'call exp (map mkvar deps))))
                      exp))
                (else
-                  (error "carry-simple-recursion: what is this node type: " exp))))
+                  (runtime-error "carry-simple-recursion: what is this node type: " exp))))
          (walk exp))
 
 
@@ -181,7 +180,7 @@
                      (tuple-case (lookup env sym)
                         ((recursive formals deps)
                            (if (not (= (length formals) (length rands)))
-                              (error 
+                              (runtime-error 
                                  "Wrong number of arguments: "
                                  (list 'call exp 'expects formals)))
                            (let ((sub-env (env-bind env formals)))
@@ -228,7 +227,7 @@
                (tuple 'values
                   (map (lambda (exp) (carry-bindings exp env)) vals)))
             (else
-               (error "carry-bindings: strage expression: " exp))))
+               (runtime-error "carry-bindings: strage expression: " exp))))
 
       ;;; ((name (lambda (formals) body) deps) ...) env 
       ;;; -> ((lambda (formals+deps) body') ...)
@@ -327,7 +326,7 @@
                            (lambda (node)
                               (if (null? (diff (deps-of node) partition))
                                  (set-deps node partition)
-                                 (error 
+                                 (runtime-error 
                                     "mutual recursion bug, partitions differ: " 
                                     (list 'picked partition 'found node))))
                            nodes))
@@ -351,7 +350,7 @@
                               (env-bind env (map first nodes)))))))
 
                (else
-                  (error "generate-bindings: cannot bind anything from " deps)))))
+                  (runtime-error "generate-bindings: cannot bind anything from " deps)))))
 
 
       (define (dependency-closure deps)
@@ -429,7 +428,7 @@
                   (unletrec func env)
                   (unletrec else env)))
             (else
-               (error "Funny AST node in unletrec: " exp))))
+               (runtime-error "Funny AST node in unletrec: " exp))))
 
       ;; exp env -> #(ok exp' env)
       (define (fix-points exp env)

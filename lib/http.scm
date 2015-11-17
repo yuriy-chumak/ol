@@ -4,7 +4,7 @@
   (export
     http:run)
   (import (r5rs base) (owl parse)
-      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl error) (owl interop)
+      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (owl intern) intern-symbols string->uninterned-symbol string->symbol)
      )
   
@@ -103,7 +103,7 @@
                (let ((d (get digit-values digit #false)))
                   (cond
                      ((or (not d) (>= d base))
-                        (error "bad digit " digit))
+                        (runtime-error "bad digit " digit))
                      (else
                         (+ (* n base) d)))))
             0 digits))

@@ -8,7 +8,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       
       (owl list-extra)
       (owl math)

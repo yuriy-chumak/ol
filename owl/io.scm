@@ -52,7 +52,6 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl interop)
       (owl queue)
       (owl string)

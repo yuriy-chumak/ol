@@ -10,9 +10,7 @@
 
    (import
       (r5rs base)
-      (owl error)
       (owl list)
-      (owl error)
       (lang ast)
       (owl math)
       (owl tuple)
@@ -67,7 +65,7 @@
                               (cons dummy-cont (cdr rands))
                               used)))
                      (else
-                        (error "Bad primitive continuation: " (car rands)))))
+                        (runtime-error "Bad primitive continuation: " (car rands)))))
                (lets
                   ((rator used (closurize rator used #false))
                    (rands used (closurize-list closurize rands used)))
@@ -137,7 +135,7 @@
                         (tuple 'case-lambda func else)
                         used))))
             (else
-               (error "closurize: unknown exp type: " exp))))
+               (runtime-error "closurize: unknown exp type: " exp))))
 
       (define (literalize-list literalize exps used)
          (if (null? exps)
@@ -222,7 +220,7 @@
                    (else used (literalize else used)))
                   (values (tuple 'case-lambda func else) used)))
             (else
-               (error "literalize: unknown exp type: " exp))))
+               (runtime-error "literalize: unknown exp type: " exp))))
 
       (define (build-closures exp env)
          (lets
@@ -230,7 +228,7 @@
              (exp lits (literalize exp null)))
             (if (and (pair? lits) (uncompiled-closure? (car lits)))
                (ok (cdar lits) env)
-               (error "Bad closurize output: " 
+               (runtime-error "Bad closurize output: " 
                   (list 'exp exp 'lits lits)))))
 
 ))

@@ -12,7 +12,6 @@
       (owl ff)
       (owl tuple)
       (owl rlist)
-      (owl error)
       (owl interop)
       (owl lazy)
       (owl eof)
