@@ -349,14 +349,16 @@ struct header
 
 __attribute__
 		((aligned(sizeof(word)), packed))
-struct direct
+struct value
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
 	unsigned i    : 1;    // for directs always 1
-	unsigned type : 6;    // object type
+	unsigned type : 5;    // object type
+	unsigned sign : 1;    // sign
 
 	unsigned payload : sizeof(word) - 1;
 };
+// as value type we use only "TFIX" and "TCONST"
 
 __attribute__
 		((aligned(sizeof(word)), packed))
@@ -389,8 +391,8 @@ struct object
 
 #define RAWBIT                      ((1 << RPOS))
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
-#define make_direct(value, type)       ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
-#define make_header(size, type)        (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
+#define make_value(type, value)        ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
+#define make_header(type, size)        (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
 #define make_raw_header(type, size, p) (( (word)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
 // p is padding
 
@@ -408,13 +410,14 @@ struct object
 
 #define typeof(x) hdrtype(x)
 
-#define immediatep(x)               (((word)x) & 2)
-#define allocp(x)                   (!immediatep(x))
-#define is_raw(hdr)                 ((hdr) & RAWBIT)
-
+#define is_value(x)                 (((word)x) & 2)
+#define is_object(x)                (!is_value(x))
+#define is_raw_value(x)             (((word)x) & RAWBIT)
 #define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
+
 #define is_direct(x)                (((word)x) & 2) // direct value
-#define is_pointer(x)               (!is_direct(x))
+#define is_pointer(x)               (!is_value(x))
+#define is_reference(x)             (!is_value(x))
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
@@ -454,18 +457,20 @@ struct object
 #define TDOUBLE                     47
 //#define TTHIS                     44
 
-#define IFALSE                      make_direct(0, TCONST)
-#define ITRUE                       make_direct(1, TCONST)
-#define INULL                       make_direct(2, TCONST)
-#define IEMPTY                      make_direct(3, TCONST) // empty ff
-#define IEOF                        make_direct(4, TCONST)
+#define IFALSE                      make_value(TCONST, 0)
+#define ITRUE                       make_value(TCONST, 1)
+#define INULL                       make_value(TCONST, 2)
+#define IEMPTY                      make_value(TCONST, 3) // empty ff
+#define IEOF                        make_value(TCONST, 4)
 #define IHALT                       INULL // FIXME: adde a distinct IHALT
 
-#define HPAIR                       make_header(3, TPAIR)
-#define HINT                        make_header(3, TINT)
-#define HINTN                       make_header(3, TINTN)
-#define HRATIONAL                   make_header(3, TRATIONAL)
-#define HCOMPLEX                    make_header(3, TCOMPLEX)
+#define HPAIR                       make_header(TPAIR, 3)
+#define HWORD                       make_raw_header(TWORD, 2, 0)
+
+#define HINT                        make_header(TINT, 3)
+#define HINTN                       make_header(TINTN, 3)
+#define HRATIONAL                   make_header(TRATIONAL, 3)
+#define HCOMPLEX                    make_header(TCOMPLEX, 3)
 
 #define FFRIGHT                     1
 #define FFRED                       2
@@ -484,8 +489,10 @@ struct object
 #define is_string(ob)               (is_pointer(ob) && typeof (*(word*)(ob)) == TSTRING)
 #define is_tuple(ob)                (is_pointer(ob) && typeof (*(word*)(ob)) == TTUPLE)
 #define is_port(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TPORT) // stdin, stdout, stderr can have paddings :(
-#define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == RAWH(TWORD))
-#define is_number(ob)               (is_npair(ob) || is_direct(ob))
+#define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HWORD)
+
+#define is_number(ob)               (is_npair(ob) || (is_value(ob) && typeof (*(word*)(ob)) == TINT))
+#define is_numbern(ob)              (is_npairn(ob) || (is_value(ob) && typeof (*(word*)(ob)) == TINTN))
 #define is_atomic(ob)               is_direct(ob)
 
 #define ref(ob, n)                  (((word*)(ob))[n])
@@ -528,20 +535,29 @@ struct object
 #define itouf(val)  ({ (((word)(val) << IPOS) | 2); })
 #define itosf(val)  ({ (val) < 0 ? (itouf(-val) | 0x80) : itouf(val); })
 
+// работа с numeric value типами
+#ifndef UVTOI_CHECK
+#define UVTOI_CHECK(v) assert (is_value(v) && (((struct value*)(&v))->type == TFIX));
+#endif
+#define uvtoi(v)  ({ UVTOI_CHECK(v); (((struct value*)(&v))->payload); })
+
+#ifndef SVTOI_CHECK
+#define SVTOI_CHECK(v) assert (is_value(v) && ((struct value)(v).type == TFIX);
+#endif
+#define svtoi(v)  ({ SVTOI_CHECK(v); ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v); })
+
 // арифметика целых (возможно больших)
 // TINT(as pair) to int
 // прошу внимания!
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 #define untoi(num)  ({\
-	is_atomic(num) ? \
-		uftoi(num) : \
-	uftoi(car(num)) | uftoi(cadr(num)) << FBITS; }) //(is_pointer(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
+	is_value(num) ? uftoi(num)\
+		: uftoi(car(num)) | uftoi(cadr(num)) << FBITS; }) //(is_pointer(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
 #define itoun(val)  ({\
 	(word*)(\
 	__builtin_choose_expr(sizeof(val) < sizeof(word),\
 		itouf(val),\
-		(val <= FMAX\
-			? itouf(val)\
+		(val <= FMAX ? itouf(val) \
 			: (word)new_list(TINT, itouf(val & FMAX), itouf((val) >> FBITS)))));})
 
 //#define itosn(val)  ({ ...
@@ -599,7 +615,7 @@ typedef struct heap_t
 // аллоцировать новый объект (указанного типа)
 #define NEW_OBJECT(type, size) ({\
 word*p = NEW (size);\
-	*p = make_header(size, type);\
+	*p = make_header(type, size);\
 	/*return*/ p;\
 })
 
@@ -788,9 +804,9 @@ word* p = new (type, words + 1, pads);\
 
 #define new_string(string, length) ({\
 	char* data = string;\
+	int size = length;\
 word* p = new_bytevector(TSTRING, length);\
 	char* ptr = (char*)&p[1];\
-	int size = length;\
 	while (size--) *ptr++ = *data++;\
 	*ptr = '\0'; \
 	/*return*/ p;\
@@ -843,13 +859,13 @@ void fix_pointers(word *pos, ptrdiff_t delta, word *end)
 		word hdr = *pos;
 		if (hdr == 0) return; // end marker reached. only dragons beyond this point.
 		int n = hdrsize(hdr);
-		if (is_raw(hdr))
+		if (is_raw_value(hdr))
 			pos += n; // no pointers in raw objects
 		else {
 			pos++, n--;
 			while (n--) {
 				word val = *pos;
-				if (allocp(val))
+				if (is_object(val))
 					*pos = val + delta;
 				pos++;
 			}
@@ -907,7 +923,7 @@ static word gc(heap_t *heap, int size, word regs) {
 				}
 				else {
 					word hdr = *(word *) val;
-	//				//if (immediatep(hdr))
+	//				//if (is_value(hdr))
 	//					*(word *) val |= 1; // flag this ? (таки надо, иначе часть объектов не распознается как pinned!)
 	//				marked++;
 
@@ -969,7 +985,7 @@ static word gc(heap_t *heap, int size, word regs) {
 //	word *root = fp + 1; // same
 
 //в *fp спокойно можно оставить мусор
-	*fp = make_header(2, TTUPLE);
+	*fp = make_header(TTUPLE, 2);
 
 	if (size == 0)
 		heap->genstart = heap->begin; // start full generation
@@ -1140,8 +1156,6 @@ struct args
 #define R2                          R[2]
 #define R3                          R[3]
 #define R4                          R[4]
-#define R5                          R[5]
-#define R6                          R[6]
 
 // Несколько замечаний по WIN32::ThreadProc
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
@@ -1185,7 +1199,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	word* this = (word*) ptrs[nobjs];
 
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
-	for (int i = i; i < NR; i++)
+	for (ptrdiff_t i = i; i < NR; i++)
 		R[i] = INULL;
 	R[0] = IFALSE; // MCP - master control program
 	R[3] = IHALT;  // continuation
@@ -1231,7 +1245,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 		if ((word)this == IHALT) {
 			// a tread or mcp is calling the final continuation
 			this = (word *) R[0];
-			if (!allocp(this)) {
+			if (!is_object(this)) {
 				fprintf(stderr, "Unexpected virtual machine exit\n");
 				return (void*)uftoi(R[3]);
 			}
@@ -1249,14 +1263,14 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 		} /* <- add a way to call the newobj vm prim table also here? */
 
 		// ...
-		if (allocp(this)) { // если это аллоцированный объект
+		if (is_object(this)) { // если это аллоцированный объект
 			//word hdr = *this & 0x0FFF; // cut size out, take just header info
 			word type = hdrtype(*this);
-			if (type == TPROC) { //hdr == make_header(0, TPROC)) { // proc
+			if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc
 				R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			}
 			else
-			if (type == TCLOS) { //hdr == make_header(0, TCLOS)) { // clos
+			if (type == TCLOS) { //hdr == make_header(TCLOS, 0)) { // clos
 				R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 				R[2] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			}
@@ -1321,7 +1335,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 
 					word *state;
 					state = (word*) new (TTHREAD, acc);
-					for (int pos = 1; pos < acc-1; pos++)
+					for (ptrdiff_t pos = 1; pos < acc-1; pos++)
 						state[pos] = R[pos];
 					state[acc-1] = R[acc];
 
@@ -1571,7 +1585,7 @@ invoke:;
 			R[0] = R[3];
 			ticker = bank ? bank : fixval(A1);
 			bank = 0;
-			CHECK(allocp(this), this, RUN);
+			CHECK(is_object(this), this, RUN);
 
 			word hdr = *this;
 			if (typeof (hdr) == TTHREAD) {
@@ -1622,7 +1636,7 @@ invoke:;
 			ip += 4; break;
 
 		case JP: {  // JZ, JN, JT, JF a hi lo
-			// was: FIXME, convert this to jump-const <n> comparing to make_direct(<n>,TCONST),
+			// was: FIXME, convert this to jump-const <n> comparing to make_value(<n>,TCONST),
 			//  но я считаю, что надо просто добавить еще одну команду, а эти так и оставить
 			const word I[] = { F(0), INULL, ITRUE, IFALSE };
 			if (A0 == I[op>>6])
@@ -1708,7 +1722,7 @@ invoke:;
 
 		case SIZE: { // size o r
 			word T = A0;
-			A1 = (immediatep(T)) ? IFALSE : F(hdrsize(*(word*)T) - 1);
+			A1 = is_value(T) ? IFALSE : F(hdrsize(*(word*)T) - 1);
 			ip += 2; break;
 		}
 
@@ -1722,8 +1736,8 @@ invoke:;
 //			}
 			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
 			// это лучше сделать тут, наверное, а не отдельной командой
-			if (immediatep(T))
-				A2 = make_direct(imm_val(T), type);
+			if (is_value(T))
+				A2 = make_value(type, imm_val(T));
 			else
 			{ // make a clone of more desired type
 				word* ob = (word*)T;
@@ -1762,7 +1776,7 @@ invoke:;
 				A2 = IFALSE;
 			else {
 				word hdr = *p;
-				if (is_raw(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
+				if (is_raw_value(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
 					word pos = fixval(A1);
 					word size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
 					if (pos >= size)
@@ -1785,18 +1799,18 @@ invoke:;
 
 		case SET: { // set t o v r
 			word *p = (word *)A0;
-			if (immediatep(p))
+			if (is_value(p))
 				A3 = IFALSE;
 			else {
 				word hdr = *p;
 				word pos = fixval(A1);
-				if (is_raw(hdr) || hdrsize(hdr) < pos || !pos)
+				if (is_raw_value(hdr) || hdrsize(hdr) < pos || !pos)
 					A3 = IFALSE;
 				else {
 					word size = hdrsize (hdr);
 					word *newobj = new (size);
 					word val = A2;
-					for (int i = 0; i <= size; i++)
+					for (ptrdiff_t i = 0; i <= size; i++)
 						newobj[i] = p[i];
 					newobj[pos] = val;
 					A3 = (word)newobj;
@@ -1810,10 +1824,10 @@ invoke:;
 		case LESS: {// less a b r
 			word a = A0;
 			word b = A1;
-			if (immediatep(a))
-				A2 = immediatep(b) ? TRUEFALSE(a < b) : ITRUE;  // imm < alloc
+			if (is_value(a))
+				A2 = is_value(b) ? TRUEFALSE(a < b) : ITRUE;  // imm < alloc
 			else
-				A2 = immediatep(b) ? IFALSE : TRUEFALSE(a < b); // alloc > imm
+				A2 = is_value(b) ? IFALSE : TRUEFALSE(a < b); // alloc > imm
 			ip += 3; break; }
 
 
@@ -1889,11 +1903,11 @@ invoke:;
 
 		case SIZEB: { // sizeb obj to
 			word* T = (word*) A0;
-			if (immediatep(T))
+			if (is_value(T))
 				A1 = IFALSE;
 			else {
 				word hdr = *T;
-				if (is_raw(hdr))
+				if (is_raw_value(hdr))
 					A1 = F((hdrsize(hdr)-1)*W - padsize(hdr));
 				else
 					A1 = IFALSE;
@@ -1940,7 +1954,7 @@ invoke:;
 			car (variable) = car (value);
 			A3 = ITRUE;
 			/*word T = IFALSE;
-			if (allocp(A0) && immediatep(A1) && immediatep(A2)) {
+			if (is_object(A0) && is_value(A1) && is_value(A2)) {
 				word *obj = (word *)A0;
 				word offset = fixval(A1);
 				word value = fixval(A2);
@@ -2010,7 +2024,7 @@ invoke:;
 			word list = A2;
 			word *p = new (size+1);
 			A3 = (word) p;
-			*p++ = make_header(size+1, type);
+			*p++ = make_header(type, size+1);
 			while (size--) {
 				CHECK(is_pair(list), list, LISTUPLE);
 				*p++ = car (list);
@@ -2028,7 +2042,7 @@ invoke:;
 
 			word pos = 1, n = *ip++;
 			//word hdr = *tuple;
-			//CHECK(!(is_raw(hdr) || hdrsize(hdr)-1 != n), tuple, BIND);
+			//CHECK(!(is_raw_value(hdr) || hdrsize(hdr)-1 != n), tuple, BIND);
 			while (n--)
 				R[*ip++] = tuple[pos++];
 
@@ -2225,7 +2239,7 @@ invoke:;
 				int size = sftoi (c);
 
 				word *buff = (word *) b;
-				if (immediatep(buff))
+				if (is_value(buff))
 					break;
 
 				int length = (hdrsize(*buff) - 1) * sizeof(word);
@@ -2628,7 +2642,7 @@ invoke:;
 						fprintf(stderr, "forking %s\n", command);
 						if (is_pair (c)) {
 							const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
-							for (int i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
+							for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
 								if (is_port(car(c)))
 									dup2(caar(c), in[i]), c = cdr (c);
 						}
@@ -2636,7 +2650,7 @@ invoke:;
 //								fprintf(stderr, "invalid value for execve\n");
 						char** args = NULL;
 						if (is_pair(b)) {
-							word* p;
+							word p;
 							int l = 1;
 							p = b;
 							while (p != INULL)
@@ -2644,7 +2658,7 @@ invoke:;
 							char** arg = args = __builtin_alloca(sizeof(char**) * (l + 1));
 							p = b;
 							while (p != INULL)
-								*arg++ = &caar(p), p = cdr(p);
+								*arg++ = (char*)&caar(p), p = cdr(p);
 							*arg = 0;
 						}
 						exit(execve(command, args, 0));
@@ -2861,10 +2875,10 @@ invoke:;
 
 					word* symbol = (word*) b;
 					// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
-					if (!(immediatep(symbol) || hdrtype(*symbol) == TSTRING))
+					if (!(is_value(symbol) || hdrtype(*symbol) == TSTRING))
 						break;
 
-					word function = (word)dlsym(module, immediatep(symbol)
+					word function = (word)dlsym(module, is_value(symbol)
 							? (char*) imm_val((word)symbol)
 							: (char*) &symbol[1]);
 					if (function)
@@ -3047,7 +3061,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		if (*hp == 0) { // fixnum
 			hp++;
 			unsigned char type = *hp++;
-			word val = make_direct(get_nat(), type);
+			word val = make_value(type, get_nat());
 			*fp++ = val;
 		} else {
 			word diff = get_nat();
@@ -3056,14 +3070,14 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	}
 
 	// function entry:
-	for (int me = 0; me < nobjs; me++) {
+	for (ptrdiff_t me = 0; me < nobjs; me++) {
 		ptrs[me] = (word) fp;
 
 		switch (*hp++) { // todo: adding type information here would reduce fasl and executable size
 		case 1: {
 			int type = *hp++;
 			int size = get_nat();
-			*fp++ = make_header(size+1, type); // +1 to include header in size
+			*fp++ = make_header(type, size+1); // +1 to include header in size
 			while (size--)
 				decode_field(ptrs, me);
 			break;
@@ -3348,7 +3362,7 @@ OL_eval(OL* handle, int argc, char** argv)
 		word* fp = handle->heap.fp;
 #if !EMBEDDED_VM
 		argv += argc - 1;
-		for (int i = argc; i > 1; i--, argv--) {
+		for (ptrdiff_t i = argc; i > 1; i--, argv--) {
 			char *pos = (char*)(fp + 1);
 			char *v = *argv;
 			while ((*pos = *v++) != 0)
@@ -3559,14 +3573,14 @@ word* pinvoke(OL* self, word* arguments)
 	long from_int(word* arg) {
 		// так как в стек мы все равно большое сложить не сможем, то возьмем
 		// только то, что влазит (первые два члена)
-		assert (immediatep(arg[1]));
-		assert (allocp(arg[2]));
+		assert (is_value(arg[1]));
+		assert (is_object(arg[2]));
 
 		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
 	}
 	float from_int_to_float(word* arg) {
 		// читаем длинное число в float формат
-		assert (immediatep(car(arg)));
+		assert (is_value(car(arg)));
 		float f = (unsigned long)uftoi(car(arg));
 		float mul = 0x1000000; // 1 << 24
 		while (is_pointer(cdr(arg))) {
@@ -3583,7 +3597,7 @@ word* pinvoke(OL* self, word* arguments)
 		word* pb = (word*)cdr(arg);
 
 		float a, b;
-		if (immediatep(pa))
+		if (is_value(pa))
 			a = sftoi(pa);
 		else {
 			switch (hdrtype(pa[0])) {
@@ -3595,7 +3609,7 @@ word* pinvoke(OL* self, word* arguments)
 				break;
 			}
 		}
-		if (immediatep(pb))
+		if (is_value(pb))
 			b = sftoi(pb);
 		else {
 			switch (hdrtype(pb[0])) {
@@ -3656,7 +3670,7 @@ word* pinvoke(OL* self, word* arguments)
 		switch (type) {
 		case TFIX:
 		case TINT:
-			if (immediatep(arg))
+			if (is_value(arg))
 				args[i] = sftoi(arg);
 			else
 			switch (hdrtype(arg[0])) {
@@ -3681,7 +3695,7 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 
 		case TFLOAT:
-			if (immediatep(arg))
+			if (is_value(arg))
 				*(float*)&args[i] = (float) (int)sftoi(arg);
 			else
 			switch (hdrtype(arg[0])) {
@@ -3700,7 +3714,7 @@ word* pinvoke(OL* self, word* arguments)
 			floats |= (0x100 << i);
 			break;
 		case TDOUBLE:
-			if (immediatep(arg))
+			if (is_value(arg))
 				*(double*)&args[i] = (double) (int)sftoi(arg);
 			else
 			switch (hdrtype(arg[0])) {
@@ -3877,3 +3891,22 @@ word* pinvoke(OL* self, word* arguments)
 	return result;
 }
 #endif//HAS_PINVOKE
+
+	__attribute__
+			((__visibility__("default")))
+word* test(OL* self, word* arguments)
+{
+	// get memory pointer
+	heap_t* heap = &self->heap;
+	word*
+	fp = heap->fp;
+
+	arguments = (word*)car(arguments);
+
+	word* A = (word*)car(arguments); arguments = (word*)cdr(arguments); // function
+	word* B = (word*)car(arguments); arguments = (word*)cdr(arguments); // rtty
+	word* C = (word*)car(arguments); arguments = (word*)cdr(arguments); // args
+
+	heap->fp = fp;
+	return 0;
+}

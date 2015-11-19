@@ -64,6 +64,7 @@
       RTLD_NODELETE
 
       type-float type-double type-void
+      load-dynamic-library
 
       ; по-поводу calling convention:
       ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
@@ -114,7 +115,8 @@
 ;  и возвращает ее уникальный handle (type-port)
 (define dlopen (case-lambda
    ((name flag) (syscall 1030 (if (string? name) (c-string name) name) flag      #false))
-   ((name)      (syscall 1030 (if (string? name) (c-string name) name) RTLD_LAZY #false))))
+   ((name)      (syscall 1030 (if (string? name) (c-string name) name) RTLD_LAZY #false))
+   (()          (syscall 1030 '()                                      RTLD_LAZY #false))))
 
 (define pinvoke (syscall 1031 (syscall 1030 '() RTLD_LAZY #false) "pinvoke" #false))
 
@@ -136,6 +138,17 @@
       (if function
       (lambda args
          (exec pinvoke  function rtty args)))))
+
+(define (load-dynamic-library name)
+   (let ((dll (dlopen name)))
+      (if dll
+         (lambda (type name . prototype)
+            (let ((rtty (cons type prototype))
+                  (function (syscall 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+               (if function
+                  (lambda args
+                     (exec pinvoke  function rtty args))))))))
+
 
 ;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
 ;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl         
