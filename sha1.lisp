@@ -8,9 +8,9 @@
 
 (define (ash n shift)
    (if (< shift 0)
-      (let* ((x _ (fx>> n (- shift))))
+      (let* ((x _ (fx:>> n (- shift))))
          x)
-      (let* ((_ x (fx<< n shift)))
+      (let* ((_ x (fx:<< n shift)))
          x)))
          
 (define XOR (lambda args (fold bxor 0 args)))

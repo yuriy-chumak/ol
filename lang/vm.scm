@@ -119,10 +119,11 @@
       ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
       ;(define listuple  (raw type-bytecode '(35 4 5 6 7  24 7)))
-      ;(define mkblack   (raw type-bytecode '(42 4 5 6 7 8  24 8)))
-      ;(define mkred     (raw type-bytecode '(43 4 5 6 7 8  24 8)))
-      ;(define red?      (raw type-bytecode '(41 4 5  24 5)))
-      ;(define ff-toggle (raw type-bytecode '(46 4 5  24 5)))
+      (define ff:red     (raw type-bytecode '(43 4 5 6 7 8  24 8)))
+      (define ff:black   (raw type-bytecode '(42 4 5 6 7 8  24 8)))
+      (define ff:toggle  (raw type-bytecode '(46 4 5  24 5)))
+      (define ff:red?    (raw type-bytecode '(41 4 5  24 5)))
+      (define ff:right?  (raw type-bytecode '(37 4 5  24 5)))
 
       ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8)))
 
@@ -130,27 +131,17 @@
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
          (tuple 'raw      60  2 1 raw) ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
 
-         ; vm-specific constants
-         (tuple 'vm:version 62  0 1 vm:version)
-         (tuple 'fxmax      33  0 1 fxmax)
-         (tuple 'fxmbits    34  0 1 fxmbits)
-
-         ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
-         (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
-         (tuple 'mkt      MKT     'any   1 #false)  ;; mkt type v0 .. vn t (why #f?)
-
-
          ; вторая по значимости команда
          (tuple 'cons     51  2 1 cons)
 
          ; операции по работе с памятью
-         (tuple 'type     15  1 1 type)  ;; get just the type bits
-         (tuple 'size     36  1 1 size)  ;; get object size (- 1)
-         (tuple 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
-
          (tuple 'car      52  1 1 car)   ;(raw type-bytecode '(52 4 5    24 5)))
          (tuple 'cdr      53  1 1 cdr)   ;(raw type-bytecode '(53 4 5    24 5)))
          (tuple 'ref      47  2 1 ref)   ;(raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
+
+         (tuple 'type     15  1 1 type)  ;; get just the type bits
+         (tuple 'size     36  1 1 size)  ;; get object size (- 1)
+         (tuple 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
 
          (tuple 'set      45  3 1 set)   ;(raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
 
@@ -182,14 +173,27 @@
          (tuple 'clock    61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
          (tuple 'syscall  63  4 1 syscall)
 
+
+         ; vm-specific constants
+         (tuple 'vm:version 62  0 1 vm:version)
+         (tuple 'fxmax      33  0 1 fxmax)
+         (tuple 'fxmbits    34  0 1 fxmbits)
+
+         ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
+         (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
+         (tuple 'mkt      MKT     'any   1 #false)  ;; mkt type v0 .. vn t (why #f?)
+
+
+
          (tuple 'listuple 35  3 1 listuple)  ; todo: rename to list->tuple
 
          ; поддержка red-black деревьев
          (tuple 'ff:bind   49  1 #f ff:bind) ;; SPECIAL ** (ff:bind thing (lambda (name ...) body))
-         (tuple 'mkblack   42  4  1 mkblack)
-         (tuple 'mkred     43  4  1 mkred)
-         (tuple 'red?      41  1  1 red?)
+         (tuple 'ff:red    43  4  1 ff:red)
+         (tuple 'ff:black  42  4  1 ff:black)
          (tuple 'ff:toggle 46  1  1 ff:toggle)
+         (tuple 'ff:red?   41  1  1 ff:red?)
+         (tuple 'ff:right? (refb ff:right? 0)   1  1 ff:right?)
       ))
       (define *primitives* primops)
 

@@ -117,7 +117,6 @@
 #define __USE_POSIX199309 // nanosleep, etc.
 
 // todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
-//  а изменяемые у нас вектора
 
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
@@ -377,9 +376,9 @@ struct object
 
 
 //#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
-#define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in atomic (short) numbers
+#define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in value (short number)
 #define HIGHBIT                     ((unsigned long)1 << FBITS) // high long bit set
-#define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
+#define FMAX                        (((long)1 << FBITS)-1)      // maximum value value (and most negative value)
 // todo: remove MAXOBJ!
 #define MAXOBJ                      0xffff         // max words in tuple including header
 
@@ -397,18 +396,19 @@ struct object
 // p is padding
 
 #define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
-#define fixval(desc)                ((desc) >> IPOS) // unsigned shift!!!
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
 // fliptag used in dir sys-prims
 
 //#define header(x)                   *(word *x)
 //#define imm_type(x)                 ((((word)x) >> TPOS) & 0x3F)
-#define imm_val(x)                   (((word)x) >> IPOS)
-#define hdrsize(x)                  ((((word)x) >> SPOS) & MAXOBJ)
+#define imm_val(x)                  (((word)x) >> IPOS)
+#define hdrsize(x)                  (((word)x) >> SPOS)
 #define padsize(x)                  (unsigned char)((((word)x) >> IPOS) & 7)
 #define hdrtype(x)                  (unsigned char)((((word)x) >> TPOS) & 0x3F) // 0xFF from (p) << 8) in make_raw_header
 
-#define typeof(x) hdrtype(x)
+#define typeof(x)                   (unsigned char)((((word)x) >> TPOS) & 0x3F)
+#define valuetype(x)                ((typeof (x)) & 0x1F)
+#define reftype(x)                  (typeof (*(word*)x))
 
 #define is_value(x)                 (((word)x) & 2)
 #define is_object(x)                (!is_value(x))
@@ -432,17 +432,20 @@ struct object
 #define TBYTECODE                   (16)
 #define TPROC                       (17)
 #define TCLOS                       (18)
-#define TFF                         24
+#define TFF                         (24) // 25,26,27 same
+#	define FFRIGHT                     1 // flags for TFF
+#	define FFRED                       2
 
 #define TBVEC                       19
 #define TSTRINGWIDE                 22
 
 #define TTHREAD                     31 // type-thread-state
 
-// numbers
+// numbers (value type)
 #define TFIX                        ( 0)  // type-fix+ // todo: rename to TSHORT or TSMALL
-#define TFIXN                       (32)  // type-fix-
-#define TINT                        (40)  // type-int+ // todo: rename to TBIG or something
+//#define TFIXN                       (TFIX + 32)  // type-fix-
+// numbers (reference type)
+#define TINT                        (40)  // type-int+ // todo: rename to TINTEGER
 #define TINTN                       (41)  // type-int-
 #define TRATIONAL                   (42)
 #define TCOMPLEX                    (43)
@@ -472,8 +475,6 @@ struct object
 #define HRATIONAL                   make_header(TRATIONAL, 3)
 #define HCOMPLEX                    make_header(TCOMPLEX, 3)
 
-#define FFRIGHT                     1
-#define FFRED                       2
 
 #define flagged_or_raw(hdr)         (hdr & (RAWBIT|1))
 //#define likely(x)                   __builtin_expect((x), 1)
@@ -529,44 +530,45 @@ struct object
 // ua, sa - unsigned/signed respectively.
 // Z - mножество целых чисел.
 
-// элементарная арифметика
-#define uftoi(fix)  ({ ((word)(fix) >> IPOS); })
-#define sftoi(fix)  ({ ((word)(fix) & 0x80) ? -uftoi (fix) : uftoi (fix); })
-#define itouf(val)  ({ (((word)(val) << IPOS) | 2); })
-#define itosf(val)  ({ (val) < 0 ? (itouf(-val) | 0x80) : itouf(val); })
-
 // работа с numeric value типами
 #ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v) assert (is_value(v) && (((struct value*)(&v))->type == TFIX));
+#define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define uvtoi(v)  ({ UVTOI_CHECK(v); (((struct value*)(&v))->payload); })
+#define uvtoi(v)  ({ word x = (word)v; UVTOI_CHECK(x); (x >> IPOS); })
+#define itouv(i)  ({ word x = (word)i;                 (x << IPOS) | 2; })
+		// (((struct value*)(&v))->payload);
 
 #ifndef SVTOI_CHECK
-#define SVTOI_CHECK(v) assert (is_value(v) && ((struct value)(v).type == TFIX);
+#define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define svtoi(v)  ({ SVTOI_CHECK(v); ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v); })
+#define svtoi(v)  ({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS);     })
+#define itosv(i)  ({ word x = (word)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
+
+		// ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
+
 
 // арифметика целых (возможно больших)
 // TINT(as pair) to int
 // прошу внимания!
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 #define untoi(num)  ({\
-	is_value(num) ? uftoi(num)\
-		: uftoi(car(num)) | uftoi(cadr(num)) << FBITS; }) //(is_pointer(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
+	is_value(num) ? uvtoi(num)\
+		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; }) //(is_pointer(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
 #define itoun(val)  ({\
 	(word*)(\
 	__builtin_choose_expr(sizeof(val) < sizeof(word),\
-		itouf(val),\
-		(val <= FMAX ? itouf(val) \
-			: (word)new_list(TINT, itouf(val & FMAX), itouf((val) >> FBITS)))));})
+		itouv(val),\
+		(val <= FMAX ? itouv(val) \
+			: (word)new_list(TINT, itouv(val & FMAX), itouv((val) >> FBITS)))));})
 
 //#define itosn(val)  ({ ...
 
 #define NR                          128 // see n-registers in register.scm
 
-#define MEMPAD                      ((NR + 2) * sizeof(word)) // space at end of heap for starting GC
-#define MINGEN                      (1024 * 32)  /* minimum generation size before doing full GC  */
-#define INITCELLS                   1000
+#define GCPAD                      ((NR + 2) * sizeof(word)) // space at end of heap for starting GC
+#define MEMPAD                     (GCPAD + 1024) // резервируемое место для работы в памяти
+#define MINGEN                     (1024 * 32)  /* minimum generation size before doing full GC  */
+#define INITCELLS                  (1000)
 
 // http://outflux.net/teach-seccomp/
 // http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
@@ -931,7 +933,7 @@ static word gc(heap_t *heap, int size, word regs) {
 					*pos = *ptr;
 					*ptr = ((word)pos | 1);
 
-					if (flagged_or_raw(hdr))
+					if (hdr & (RAWBIT|1))
 						pos--;
 					else
 						pos = ((word *) val) + (hdrsize(hdr)-1);
@@ -1247,7 +1249,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 			this = (word *) R[0];
 			if (!is_object(this)) {
 				fprintf(stderr, "Unexpected virtual machine exit\n");
-				return (void*)uftoi(R[3]);
+				return (void*) uvtoi(R[3]);
 			}
 
 			R[0] = IFALSE; // set no mcp
@@ -1265,7 +1267,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 		// ...
 		if (is_object(this)) { // если это аллоцированный объект
 			//word hdr = *this & 0x0FFF; // cut size out, take just header info
-			word type = hdrtype(*this);
+			word type = typeof (*this);
 			if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc
 				R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			}
@@ -1470,6 +1472,7 @@ invoke:;
 #	define MKBLACK  42
 #	define FFTOGGLE 46
 #	define FFREDQ   41
+#	define FFRIGHTQ 37
 
 	// ALU
 #	define ADDITION       38
@@ -1583,7 +1586,7 @@ invoke:;
 //				fprintf(stderr, "run R[%d], R[%d]\n", ip[0], ip[1]);
 			this = (word *) A0;
 			R[0] = R[3];
-			ticker = bank ? bank : fixval(A1);
+			ticker = bank ? bank : uvtoi (A1);
 			bank = 0;
 			CHECK(is_object(this), this, RUN);
 
@@ -1675,8 +1678,8 @@ invoke:;
 		// более высокоуровневые конструкции
 		//	смотреть "owl/primop.scm" и "lang/assemble.scm"
 
-		case RAW: { // raw type lst (fixme, alloc amount testing compiler pass not in place yet!) (?)
-			word *lst = (word *) A1;
+		case RAW: { // raw type lst
+			word *lst = (word*) A1;
 			int len = 0;
 			word* p = lst;
 			while (is_pair(p)) {
@@ -1685,14 +1688,14 @@ invoke:;
 			}
 
 			if ((word) p == INULL && len <= MAXOBJ) {
-				int type = uftoi (A0);
+				int type = uvtoi (A0);
 				word *raw = new_bytevector (type, len);
 
 				unsigned char *pos;
 				pos = (unsigned char *) &raw[1];
 				p = lst;
 				while ((word) p != INULL) {
-					*pos++ = uftoi(car(p)) & 255;
+					*pos++ = uvtoi(car(p)) & 255;
 					p = (word*)cdr(p);
 				}
 
@@ -1728,8 +1731,10 @@ invoke:;
 
 		// todo: переделать!
 		case CAST: { // cast obj type -> result
+			if (!is_value(A1))
+				break;
 			word T = A0;
-			word type = fixval(A1) & 63;
+			word type = uvtoi(A1) & 63;
 
 //			if (type == TPORT && typeof(T) == TINT) {
 //				A2 = IFALSE;
@@ -1777,7 +1782,7 @@ invoke:;
 			else {
 				word hdr = *p;
 				if (is_raw_value(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
-					word pos = fixval(A1);
+					word pos = uvtoi (A1);
 					word size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
 					if (pos >= size)
 						A2 = IFALSE;
@@ -1785,7 +1790,7 @@ invoke:;
 						A2 = F(((unsigned char *) p)[pos+W]);
 				}
 				else {
-					word pos = fixval(A1);
+					word pos = uvtoi (A1);
 					word size = hdrsize(hdr);
 					if (!pos || size <= pos) // tuples are indexed from 1
 						A2 = IFALSE;
@@ -1803,7 +1808,7 @@ invoke:;
 				A3 = IFALSE;
 			else {
 				word hdr = *p;
-				word pos = fixval(A1);
+				word pos = uvtoi (A1);
 				if (is_raw_value(hdr) || hdrsize(hdr) < pos || !pos)
 					A3 = IFALSE;
 				else {
@@ -1833,24 +1838,24 @@ invoke:;
 
 		// АЛУ (арифметическо-логическое устройство)
 		case ADDITION: { // fx+ a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
-			word r = uftoi(A0) + uftoi(A1);
+			word r = uvtoi(A0) + uvtoi(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
 			ip += 4; break; }
 		case SUBTRACTION: { // fx- a b  r u, args prechecked, signs ignored
-			word r = (uftoi(A0) | HIGHBIT) - uftoi(A1);
+			word r = (uvtoi(A0) | HIGHBIT) - uvtoi(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
 			ip += 4; break; }
 
 		case MULTIPLICATION: { // fx* a b l h
-			big r = (big) uftoi(A0) * (big) uftoi(A1);
+			big r = (big) uvtoi(A0) * (big) uvtoi(A1);
 			A2 = F(r & FMAX);
 			A3 = F(r>>FBITS); //  & FMAX)
 			ip += 4; break; }
 		case DIVISION: { // fx/ ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
-			big a = (big) uftoi(A1) | (((big) uftoi(A0)) << FBITS);
-			big b = (big) uftoi(A2);
+			big a = (big) uvtoi(A1) | (((big) uvtoi(A0)) << FBITS);
+			big b = (big) uvtoi(A2);
 
 			// http://stackoverflow.com/questions/7070346/c-best-way-to-get-integer-division-and-remainder
 			big q = a / b;
@@ -1874,12 +1879,12 @@ invoke:;
 			ip += 3; break;
 
 		case SHIFT_RIGHT: { // fx>> a b hi lo
-			big r = ((big) uftoi(A0)) << (FBITS - uftoi(A1));
+			big r = ((big) uvtoi(A0)) << (FBITS - uvtoi(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
 		case SHIFT_LEFT: { // fx<< a b hi lo
-			big r = ((big) uftoi(A0)) << (uftoi(A1));
+			big r = ((big) uvtoi(A0)) << (uvtoi(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
@@ -1887,12 +1892,12 @@ invoke:;
 
 		case REFB: { /* refb t o r */
 			word *p = (word *) A0;
-			if (!is_pointer(p))
-				A2 = IFALSE;//F(-1); // todo: return IFALSE
+			if (!is_reference(p))
+				A2 = IFALSE;
 			else {
 				word hdr = *p;
 				word hsize = ((hdrsize(hdr)-1)*W) - padsize(hdr); // bytes - pads
-				int pos = fixval(A1);
+				int pos = uvtoi (A1);
 				if (pos >= hsize)
 					A2 = IFALSE;
 				else
@@ -1937,11 +1942,6 @@ invoke:;
 					new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
 			ip += 1; break;
 
-			// неиспользуемые коды (историческое наследие, при желании можно реюзать)
-		case 37:
-			ERROR(op, IFALSE, IFALSE);
-			break;
-
 		// мутатор
 		case 10: { // (set! variable value)
 			// variable and expression both must be MEMP
@@ -1956,10 +1956,10 @@ invoke:;
 			/*word T = IFALSE;
 			if (is_object(A0) && is_value(A1) && is_value(A2)) {
 				word *obj = (word *)A0;
-				word offset = fixval(A1);
-				word value = fixval(A2);
+				word offset = uvtoi(A1);
+				word value = uvtoi(A2);
 
-				switch (hdrtype(obj[0]))
+				switch (typeof (*obj))
 				{
 				case TPAIR:
 					while (offset-- && ((word)obj != INULL))
@@ -2017,10 +2017,10 @@ invoke:;
 			ip += size+1; break;
 		}
 
-		// make tuple from list
+		// make typed tuple from list
 		case LISTUPLE: { // listuple type size lst to
-			word type = fixval(A0);
-			word size = fixval(A1);
+			word type = uvtoi (A0);
+			word size = uvtoi (A1);
 			word list = A2;
 			word *p = new (size+1);
 			A3 = (word) p;
@@ -2109,7 +2109,7 @@ invoke:;
 		// fftoggle - toggle node color
 		case FFTOGGLE: {
 			word *node = (word *) A0;
-			CHECK(is_pointer(node), node, FFTOGGLE);
+			assert (is_reference(node));
 
 			word *p = fp;
 			A1 = (word)p;
@@ -2117,18 +2117,31 @@ invoke:;
 			word h = *node++;
 			*p++ = (h ^ (FFRED << TPOS));
 			switch (hdrsize(h)) {
-			case 5:  *p++ = *node++;
-			case 4:  *p++ = *node++;
-			default: *p++ = *node++;
-			         *p++ = *node++;
+				case 5:  *p++ = *node++;
+				case 4:  *p++ = *node++;
+				default: *p++ = *node++;
+				         *p++ = *node++;
 			}
 			fp = (word*) p;
 			ip += 2; break;
 		}
 
-		case FFREDQ: { // red? node r (has highest type bit?) */
-			word *node = (word *) A0;
-			if (is_pointer(node) && ((node[0]) & (FFRED << TPOS)))
+		case FFREDQ: { // red? node r
+			word node = A0;
+			if (is_reference(node)) // assert to IEMPTY || is_reference() ?
+				node = *(word*)node;
+			if ((typeof (node) & (0x3C | FFRED)) == (TFF|FFRED))
+				A1 = ITRUE;
+			else
+				A1 = IFALSE;
+			ip += 2; break;
+		}
+
+		case FFRIGHTQ: { // ff:right? node r
+			word node = A0;
+			if (is_reference(node)) // assert to IEMPTY || is_reference() ?
+				node = *(word*)node;
+			if ((typeof (node) & (0x3C | FFRIGHT)) == (TFF|FFRIGHT))
 				A1 = ITRUE;
 			else
 				A1 = IFALSE;
@@ -2164,7 +2177,7 @@ invoke:;
 			//                     http://www.x86-64.org/documentation/abi.pdf
 			word* result = IFALSE;  // default returned value is #false, todo: change to word*
 		//	CHECK(is_fixed(A0) && typeof (A0) == TFIX, A0, SYSCALL);
-			word op = uftoi (A0);
+			word op = uvtoi (A0);
 			word a = A1, b = A2, c = A3;
 //			fprintf(stderr, "SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
@@ -2177,7 +2190,7 @@ invoke:;
 			case SYSCALL_READ: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
-				int size = sftoi (b);
+				int size = svtoi (b);
 
 				if (size < 0)
 					size = (heap->end - fp) * W - MEMPAD;
@@ -2236,7 +2249,7 @@ invoke:;
 			case SYSCALL_WRITE: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
-				int size = sftoi (c);
+				int size = svtoi (c);
 
 				word *buff = (word *) b;
 				if (is_value(buff))
@@ -2268,7 +2281,7 @@ invoke:;
 			case SYSCALL_OPEN: {
 				CHECK(is_string(a), a, SYSCALL);
 				char* s = & car(a);
-				int mode = uftoi (b);
+				int mode = uvtoi (b);
 				mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
 
 				int file = open(s, mode, (S_IRUSR | S_IWUSR));
@@ -2351,7 +2364,7 @@ invoke:;
 					break;
 
 				int portfd = car (a);
-				int ioctl = uftoi(b);
+				int ioctl = uvtoi(b);
 
 				switch (ioctl + seccompp) {
 					case SYSCALL_IOCTL_TIOCGETA: {
@@ -2432,7 +2445,7 @@ invoke:;
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
 				word* host = (word*) b; // todo: check for string type
-				int port = uftoi (c);
+				int port = uvtoi (c);
 
 				struct sockaddr_in addr;
 				addr.sin_family = AF_INET;
@@ -2472,7 +2485,7 @@ invoke:;
 			case 49: { //  (socket, port, #false) // todo: c for options
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
-				int port = uftoi (b);
+				int port = uvtoi (b);
 
 				// todo: assert on argument types
 				struct sockaddr_in interface;
@@ -2598,7 +2611,7 @@ invoke:;
 				}
 
 #ifdef _WIN32// for Windows
-				Sleep(fixval(a) / 1000000); // in ms
+				Sleep(uvtoi (a) / 1000000); // in ms
 #else//			for Linux:
 				struct timespec ts = { untoi(a) / 1000000000, untoi(a) % 1000000000 };
 				struct timespec rem;
@@ -2692,7 +2705,7 @@ invoke:;
 				if ((word) B == IFALSE)
 					seconds = time (0);
 				else if (typeof (B) == TFIX)
-					seconds = uftoi(B);
+					seconds = uvtoi(B);
  				else if (is_pointer(B) && typeof (*B) == TINT)
 					seconds = untoi(B);
 				else
@@ -2721,7 +2734,7 @@ invoke:;
 				if (!seccompp)
 					free(heap->begin); // освободим занятую память
 				heap->begin = 0;
-				exit(sftoi(a));
+				exit(svtoi(a));
 				assert (0);  // сюда мы уже не должны попасть
 			}
 
@@ -2814,7 +2827,7 @@ invoke:;
 
 				case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 					result = F(max_heap_size);
-					max_heap_size = fixval(a);
+					max_heap_size = uvtoi (a);
 					break;
 				case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
 					result = F(max_heap_size);
@@ -2827,7 +2840,7 @@ invoke:;
 
 				case 1022: // set ticker
 					result = (ticker & FMAX);
-					ticker = fixval(a);
+					ticker = uvtoi (a);
 					break;
 
 				case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
@@ -2852,12 +2865,12 @@ invoke:;
 				// todo: change to 175(init_module) or 174(sys_create_module) or 134 (sys_uselib)
 				case 1030: { // (dlopen filename mode #false)
 					word *filename = (word*)a;
-					int mode = (int) uftoi(b);
+					int mode = (int) uvtoi(b);
 
 					void* module;
 					if ((word) filename == INULL)
 						module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
-					else if (is_pointer(filename) && hdrtype(*filename) == TSTRING)
+					else if (is_pointer(filename) && typeof (*filename) == TSTRING)
 						module = dlopen((char*) &filename[1], mode);
 					else
 						break; // invalid filename, return #false
@@ -2875,7 +2888,7 @@ invoke:;
 
 					word* symbol = (word*) b;
 					// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
-					if (!(is_value(symbol) || hdrtype(*symbol) == TSTRING))
+					if (!(is_value(symbol) || typeof (*symbol) == TSTRING))
 						break;
 
 					word function = (word)dlsym(module, is_value(symbol)
@@ -2918,7 +2931,7 @@ invoke:;
 						  /* dirops only to be used via exposed functions */
 						  case 1014: { /* set-ticks n _ _ -> old */
 							 word old = F(slice);
-							 slice = fixval(a);
+							 slice = uvtoi (a);
 							 return old; }
 						  case 1017: { // system (char*) // todo: remove this!
 							  int result = system((char*)a + W);
@@ -2953,7 +2966,7 @@ invoke:;
 							 return ITRUE; }
 					#if 0 // ndef _WIN32
 						  case 1019: { /* wait <pid> <respair> _ */
-							 pid_t pid = (a == IFALSE) ? -1 : fixval(a);
+							 pid_t pid = (a == IFALSE) ? -1 : uvtoi (a);
 							 int status;
 							 word *r = (word *) b;
 							 pid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
@@ -2988,7 +3001,7 @@ invoke:;
 								fprintf(stderr, "vm: child pid larger than max fixnum: %d\n", pid);
 							 return F(pid&FMAX); }
 						  case 1021: /* kill pid signal → fixnum */
-							 return (kill(fixval(a), fixval(b)) < 0) ? IFALSE : ITRUE;
+							 return (kill(uvtoi (a), uvtoi (b)) < 0) ? IFALSE : ITRUE;
 					#endif
 						  default:
 							 return IFALSE;
@@ -3259,7 +3272,7 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	return is_direct(r) ? sftoi (r) : -1;
+	return is_value(r) ? svtoi (r) : -1;
 }
 #endif
 
@@ -3581,11 +3594,11 @@ word* pinvoke(OL* self, word* arguments)
 	float from_int_to_float(word* arg) {
 		// читаем длинное число в float формат
 		assert (is_value(car(arg)));
-		float f = (unsigned long)uftoi(car(arg));
+		float f = (unsigned long)uvtoi(car(arg));
 		float mul = 0x1000000; // 1 << 24
 		while (is_pointer(cdr(arg))) {
 			arg = (word*)cdr(arg);
-			f += (unsigned long)uftoi(cdr(arg)) * mul;
+			f += (unsigned long)uvtoi(cdr(arg)) * mul;
 			mul *= 0x1000000;
 		}
 		assert (cdr(arg) == INULL);
@@ -3598,9 +3611,9 @@ word* pinvoke(OL* self, word* arguments)
 
 		float a, b;
 		if (is_value(pa))
-			a = sftoi(pa);
+			a = svtoi(pa);
 		else {
-			switch (hdrtype(pa[0])) {
+			switch (reftype(pa)) {
 			case TINT:
 				a = +from_int_to_float(pa);
 				break;
@@ -3610,9 +3623,9 @@ word* pinvoke(OL* self, word* arguments)
 			}
 		}
 		if (is_value(pb))
-			b = sftoi(pb);
+			b = svtoi(pb);
 		else {
-			switch (hdrtype(pb[0])) {
+			switch (reftype(pb)) {
 			case TINT:
 				b = +from_int_to_float(pb);
 				break;
@@ -3633,16 +3646,16 @@ word* pinvoke(OL* self, word* arguments)
 	word* B = (word*)car(arguments); arguments = (word*)cdr(arguments); // rtty
 	word* C = (word*)car(arguments); arguments = (word*)cdr(arguments); // args
 
-//	assert(hdrtype(A[0]) == TPORT, A, 1032);
-	assert ((word)B != INULL && hdrtype(B[0]) == TPAIR);
-	assert ((word)C == INULL || hdrtype(C[0]) == TPAIR);
+//	assert(is_port(A), A, 1032);
+	assert ((word)B != INULL && (is_reference(B) && reftype(B) == TPAIR));
+	assert ((word)C == INULL || (is_reference(B) && reftype(C) == TPAIR));
 	// C[1] = return-type
 	// C[2] = argument-types
 
 	// todo: может выделять в общей куче,а не стеке?
 	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
 	void *function = (void*)car(A);  assert (function);
-	int returntype = uftoi(car(B));
+	int returntype = uvtoi(car(B));
 	int floats = 0; // для amd64
 	int doubles = 0; // temp
 
@@ -3651,14 +3664,14 @@ word* pinvoke(OL* self, word* arguments)
 	word* t = (word*)cdr(B); // rtty
 
 	while ((word)p != INULL) { // пока есть аргументы
-		assert (hdrtype(*p) == TPAIR); // assert list
-		assert (hdrtype(*t) == TPAIR); // assert list
+		assert (reftype(p) == TPAIR); // assert list
+		assert (reftype(t) == TPAIR); // assert list
 
-		int type = uftoi(car(t));
+		int type = uvtoi(car(t));
 		word* arg = (word*)car(p);
 
 /*		// todo: add argument overriding as PAIR as argument value
-		if (hdrtype(p[1]) == TPAIR) {
+		if (typeof (p[1]) == TPAIR) {
 			type = imm_val (((word*)p[1])[1]);
 			arg = ((word*)p[1])[2];
 		}*/
@@ -3671,9 +3684,9 @@ word* pinvoke(OL* self, word* arguments)
 		case TFIX:
 		case TINT:
 			if (is_value(arg))
-				args[i] = sftoi(arg);
+				args[i] = svtoi(arg);
 			else
-			switch (hdrtype(arg[0])) {
+			switch (reftype(arg)) {
 			case TINT: // source type
 				args[i] = +from_int(arg);
 				break;
@@ -3696,9 +3709,9 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TFLOAT:
 			if (is_value(arg))
-				*(float*)&args[i] = (float) (int)sftoi(arg);
+				*(float*)&args[i] = (float) (int)svtoi(arg);
 			else
-			switch (hdrtype(arg[0])) {
+			switch (reftype(arg)) {
 			case TINT: // source type
 				*(float*)&args[i] = (float)+from_int(arg);
 				break;
@@ -3715,9 +3728,9 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		case TDOUBLE:
 			if (is_value(arg))
-				*(double*)&args[i] = (double) (int)sftoi(arg);
+				*(double*)&args[i] = (double) (int)svtoi(arg);
 			else
-			switch (hdrtype(arg[0])) {
+			switch (reftype(arg)) {
 			case TINT: // source type
 				*(double*)&args[i] = (double)+from_int(arg);
 				break;
@@ -3744,7 +3757,7 @@ word* pinvoke(OL* self, word* arguments)
 			if ((word)arg == INULL)
 				args[i] = (word) (void*)0;
 			else
-			switch (hdrtype(arg[0])) {
+			switch (reftype(arg)) {
 			case TWORD:
 			case TPORT:
 				args[i] = arg[1];
@@ -3762,7 +3775,7 @@ word* pinvoke(OL* self, word* arguments)
 //								args[++i] = (word) (void*)0;
 //#endif
 			else
-			switch (hdrtype(arg[0])) {
+			switch (reftype(arg)) {
 			case TBVEC:
 			case TSTRING:
 			case TWORD:
@@ -3779,7 +3792,7 @@ word* pinvoke(OL* self, word* arguments)
 			if ((word)arg == INULL)
 				args[i] = (word) (void*)0;
 			else
-			switch (hdrtype(arg[0])) {
+			switch (reftype(arg)) {
 /*			case TCONST:
 				switch ((word)arg) {
 				case INULL:
@@ -3864,7 +3877,7 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 			// no break
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) itosf (got);
+			result = (word*) itosv (got);
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
 		case TPORT:

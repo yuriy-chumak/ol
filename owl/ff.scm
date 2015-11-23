@@ -68,8 +68,8 @@
                (mkt type-ff-red k v l r))))
 
       ;; vm versions
-      (define black mkblack)
-      (define red mkred)
+      (define black ff:black)
+      (define red ff:red)
 
       ;; local temporary helper because all branches are the wrong way around
       (define-syntax nonempty? 
@@ -77,14 +77,16 @@
             ((nonempty? x) (not (eq? x #empty)))))
 
       ;; not red → black or #empty
-      (define-syntax red?
-         (syntax-rules ()
-            ((red? node) (eq? redness (fxband (type node) redness))))) ;; false for black nodes and #empty
+      (define red? ff:red?)
+;      (define-syntax red?
+;         (syntax-rules ()
+;            ((red? node) (eq? redness (fxband (type node) redness))))) ;; false for black nodes and #empty
      
       ;; does a (non-empty) red or black node of size 3 have a right child? 2 never does and 4 always has
-      (define-syntax right?
-         (syntax-rules ()
-            ((right? node) (eq? rightness (fxband (type node) rightness)))))
+      (define right? ff:right?)
+;      (define-syntax right?
+;         (syntax-rules ()
+;            ((right? node) (eq? rightness (fxband (type node) rightness)))))
 
       ;; preserve structure, intended for debugging only
       (define (color ff)
