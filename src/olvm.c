@@ -57,6 +57,36 @@
 // pinned objects - если это будут просто какие-то равки, то можно их размещать ДО основной памяти,
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
 
+// todo: support ALL of this OS
+//    Linux-i386
+//    Linux-x86_64 (amd64)
+//    Linux-powerpc
+//    Linux-sparc
+//    Linux-ARM
+//    Win32-i386 (2000/XP, WinNT or later)
+//    Win64-x86_64 (XP or later)
+//    Wince-ARM (cross compiled from win32-i386)
+//    FreeBSD-i386
+//    FreeBSD-x86_64
+//    Mac OS X/Darwin for PowerPC (32 and 64 bit)
+//    Mac OS X/Darwin for Intel (32 and 64 bit)
+//    iOS (ARM and AArch64/ARM64) and iPhoneSimulator (32 and 64 bit)
+//    OS/2-i386 (OS/2 Warp v3.0, 4.0, WarpServer for e-Business and eComStation)
+//    Haiku-i386
+//    GO32v2-i386
+//    Nintendo Gameboy Advance-ARM (cross compile from win32-i386)
+//    Nintendo DS-ARM (cross compile from win32-i386)
+//    Nintendo Wii-powerpc (cross compile from win32-i386)
+//    AIX 5.3 and later for PowerPC (32 and 64 bit)
+//    Java JVM (1.5 and later) and Android Dalvik (Android 4.0 and later)
+//    Android (ARM, i386, MIPS) via cross-compiling.
+//    MSDos-i8086 (cross compiled from win32-i386 or Linux)
+//    Amiga, MorphOS and AROS
+// Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
+
+// todo: strip ELF http://habrahabr.ru/post/137706/
+
+
 #define __OLVM_NAME__ "OL"
 #define __OLVM_VERSION__ "1.0"
 
@@ -81,11 +111,6 @@
 #ifndef EMBEDDED_VM   // use as embedded vm in project
 #define EMBEDDED_VM 0
 #endif
-
-
-// На данный момент поддерживаются две операционные системы:
-//  Windows, Linux
-// Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
 
 // https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
 #include <features.h>
@@ -149,20 +174,14 @@
 
 #include <time.h>
 
-#include <sys/prctl.h>
-
 //#if SYSCALL_PRCTL
+#include <sys/prctl.h>
 #include <linux/seccomp.h>
 //#endif
 
 // ?
 #ifndef O_BINARY
 #	define O_BINARY 0
-#endif
-
-// temp warning fixes
-#ifndef __useconds_t
-#define __useconds_t unsigned int
 #endif
 
 extern int mkstemp (char *__template);
@@ -383,9 +402,9 @@ struct object
 #define MAXOBJ                      0xffff         // max words in tuple including header
 
 #if __amd64__
-#define big                         __int128
+#define big                         unsigned __int128
 #else
-#define big                         long long //__int64
+#define big                         unsigned long long //__int64
 #endif
 
 #define RAWBIT                      ((1 << RPOS))
@@ -795,10 +814,11 @@ word*p = new (TTUPLE, 13+1);\
 // -= остальные аллокаторы =----------------------------
 
 /* make a byte vector object to hold len bytes (compute size, advance fp, set padding count) */
+// W - (size % W);
 #define new_bytevector(type, length) ({\
 	int size = (length);\
 	int words = (size + W - 1) / W;\
-	int pads = W - (size % W);\
+	int pads = words * W - size;\
 	\
 word* p = new (type, words + 1, pads);\
 	/*return*/ p;\
@@ -1829,10 +1849,18 @@ invoke:;
 		case LESS: {// less a b r
 			word a = A0;
 			word b = A1;
-			if (is_value(a))
-				A2 = is_value(b) ? TRUEFALSE(a < b) : ITRUE;  // imm < alloc
-			else
-				A2 = is_value(b) ? IFALSE : TRUEFALSE(a < b); // alloc > imm
+
+			A2 = is_value(a)
+				? is_value(b)    // imm < alloc
+					? a < b
+						? ITRUE
+						: IFALSE
+					: ITRUE
+				: is_value(b)    // alloc > imm
+					? IFALSE
+					: a < b
+						? ITRUE
+						: IFALSE;
 			ip += 3; break; }
 
 
@@ -1871,6 +1899,7 @@ invoke:;
 		case BINARY_AND: // band a b r, prechecked
 			A2 = (A0 & A1);
 			ip += 3; break;
+		// disjunction
 		case BINARY_OR:  // bor a b r, prechecked
 			A2 = (A0 | A1);
 			ip += 3; break;
@@ -2049,6 +2078,9 @@ invoke:;
 			break;
 		}
 
+		/** ff's ---------------------------------------------------
+		 *
+		 */
 		// bind ff to registers
 		case BINDFF: { // with-ff <node >l k v r */ // bindff - bind node left key val right, filling in #false when implicit
 			word *ff = (word *) A0;
@@ -2070,9 +2102,6 @@ invoke:;
 			ip += 5; break;
 		}
 
-		/** ff's ---------------------------------------------------
-		 *
-		 */
 		// create red/black node
 		case MKBLACK: // mkblack l k v r t
 		case MKRED: { // mkred l k v r t
@@ -2149,21 +2178,13 @@ invoke:;
 		}
 
 
+		// ---------------------------------------------------------
 		case CLOCK: { // clock <secs> <ticks>
-//			if (seccompp) {
-//				unsigned long secs = seccomp_time / 1000;
-//				A1 = F(seccomp_time - (secs * 1000));
-//				ob[1] = F(secs >> FBITS);
-//				ob[4] = F(secs & FMAX);
-//				seccomp_time += ((seccomp_time + 10) > seccomp_time) ? 10 : 0; // virtual 10ms passes
-//			}
-//			else {
-				struct timeval tp;
-				gettimeofday(&tp, NULL);
+			struct timeval tp;
+			gettimeofday(&tp, NULL);
 
-				A0 = (word) itoun (tp.tv_sec);
-				A1 = (word) itoun (tp.tv_usec / 1000);
-//			}
+			A0 = (word) itoun (tp.tv_sec);
+			A1 = (word) itoun (tp.tv_usec / 1000);
 			ip += 2; break;
 		}
 
@@ -2175,7 +2196,7 @@ invoke:;
 			//            http://man7.org/linux/man-pages/dir_section_2.html
 			// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 			//                     http://www.x86-64.org/documentation/abi.pdf
-			word* result = IFALSE;  // default returned value is #false, todo: change to word*
+			word* result = (word*)IFALSE;  // default returned value is #false
 		//	CHECK(is_fixed(A0) && typeof (A0) == TFIX, A0, SYSCALL);
 			word op = uvtoi (A0);
 			word a = A1, b = A2, c = A3;
@@ -2199,34 +2220,16 @@ invoke:;
 					dogc(size);
 
 				int got;
-#if 0//EMBEDDED_VM
-				if (fd == 0) { // stdin reads from fi
-					if (fifo_empty(fi)) {
-						// todo: process EOF, please!
-						n = -1;
-						errno = EAGAIN;
-					}
-					else {
-						char *d = ((char*) res) + W;
-						while (!fifo_empty(fi))
-							*d++ = fifo_get(fi);
-						n = d - (((char*) res) + W);
-					}
-				}
-				else
-#endif
-				{
 #ifdef _WIN32
-					if (!_isatty(portfd) || _kbhit()) { // we don't get hit by kb in pipe
-						got = read(portfd, (char *) &fp[1], size);
-					} else {
-						got = -1;
-						errno = EAGAIN;
-					}
-#else
+				if (!_isatty(portfd) || _kbhit()) { // we don't get hit by kb in pipe
 					got = read(portfd, (char *) &fp[1], size);
-#endif
+				} else {
+					got = -1;
+					errno = EAGAIN;
 				}
+#else
+				got = read(portfd, (char *) &fp[1], size);
+#endif
 
 				if (got > 0) {
 					// todo: обработать когда приняли не все,
@@ -2234,9 +2237,9 @@ invoke:;
 					result = new_bytevector (TBVEC, got);
 				}
 				else if (got == 0)
-					result = IEOF;
+					result = (word*)IEOF;
 				else if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
-					result = ITRUE;
+					result = (word*)ITRUE;
 
 				break;
 			}
@@ -2255,7 +2258,7 @@ invoke:;
 				if (is_value(buff))
 					break;
 
-				int length = (hdrsize(*buff) - 1) * sizeof(word);
+				int length = (hdrsize(*buff) - 1) * sizeof(word); // todo: pads!
 				if (size > length || size == -1)
 					size = length;
 
@@ -2269,9 +2272,9 @@ invoke:;
 					wrote = write(portfd, (char*)&buff[1], size);
 
 				if (wrote > 0)
-					result = F(wrote);
+					result = (word*) itoun (wrote);
 				else if (errno == EAGAIN || errno == EWOULDBLOCK)
-					result = F(0);
+					result = (word*) itoun (0);
 
 				break;
 			}
@@ -2280,11 +2283,11 @@ invoke:;
 			// http://man7.org/linux/man-pages/man2/open.2.html
 			case SYSCALL_OPEN: {
 				CHECK(is_string(a), a, SYSCALL);
-				char* s = & car(a);
+				word* s = & car(a);
 				int mode = uvtoi (b);
 				mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
 
-				int file = open(s, mode, (S_IRUSR | S_IWUSR));
+				int file = open((char*)s, mode, (S_IRUSR | S_IWUSR));
 				if (file < 0)
 					break;
 
@@ -2305,7 +2308,7 @@ invoke:;
 				int portfd = car (a);
 
 				if (close(portfd) == 0)
-					result = ITRUE;
+					result = (word*)ITRUE;
 
 				break;
 			}
@@ -2335,10 +2338,10 @@ invoke:;
 				if (! is_string(a))
 					break;
 				CHECK(is_string(a), a, SYSCALL);
-				char* s = &car (a);
+				word* s = &car (a);
 
 				struct stat st;
-				if (stat(s, &st) < 0)
+				if (stat((char*) s, &st) < 0)
 					break;
 
 				result = unstat(&st);
@@ -2370,12 +2373,12 @@ invoke:;
 					case SYSCALL_IOCTL_TIOCGETA: {
 						struct termios t;
 						if (tcgetattr(portfd, &t) != -1)
-							result = ITRUE;
+							result = (word*)ITRUE;
 						break;
 					}
 					case SYSCALL_IOCTL_TIOCGETA + SECCOMP: {
 						if ((portfd == STDIN_FILENO) || (portfd == STDOUT_FILENO) || (portfd == STDERR_FILENO))
-							result = ITRUE;
+							result = (word*)ITRUE;
 						break;
 					}
 				}
@@ -2400,7 +2403,7 @@ invoke:;
 
 				struct dirent *dire = readdir(dirp);
 				if (!dire) {
-					result = IEOF; // eof at end of dir stream
+					result = (word*)IEOF; // eof at end of dir stream
 					break;
 				}
 
@@ -2414,7 +2417,7 @@ invoke:;
 			}
 			case 1013: /* sys-closedir dirp _ _ -> ITRUE */
 				closedir((DIR *)car(a));
-				result = ITRUE;
+				result = (word*)ITRUE;
 				break;
 
 
@@ -2461,7 +2464,7 @@ invoke:;
 //				ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
 //				addr.sin_addr.s_addr = htonl(ipfull);
 				if (connect(sockfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) >= 0)
-					result = ITRUE;
+					result = (word*)ITRUE;
 //				set_blocking(sock, 0);
 				break;
 			}
@@ -2476,7 +2479,7 @@ invoke:;
 				if (shutdown(socket, 2) != 0) // both
 					break;
 
-				result = ITRUE;
+				result = (word*)ITRUE;
 				break;
 			}
 
@@ -2495,7 +2498,7 @@ invoke:;
 
 				// On success, zero is returned.
 				if (bind(sockfd, (struct sockaddr *) &interface, sizeof(interface)) == 0)
-					result = ITRUE;
+					result = (word*)ITRUE;
 				break;
 			}
 
@@ -2510,7 +2513,7 @@ invoke:;
 				// On success, zero is returned.
 				if (listen(sockfd, 42) == 0) {
 		//					set_blocking(sockfd, 0);
-					result = ITRUE;
+					result = (word*)ITRUE;
 				}
 
 				break;
@@ -2556,7 +2559,7 @@ invoke:;
 				struct timeval timeout = { timeus / 1000000, timeus % 1000000 }; // µs
 				if (select(sockfd + 1, &fds, NULL, NULL, &timeout) > 0
 						&& FD_ISSET(sockfd, &fds))
-					result = ITRUE;
+					result = (word*)ITRUE;
 
 				break;
 			}
@@ -2678,7 +2681,7 @@ invoke:;
 						assert(0);
 					}
 					else if (child > 0)
-						result = ITRUE;
+						result = (word*)ITRUE;
 					break;
 				}
 				break;
@@ -2826,20 +2829,19 @@ invoke:;
 				break;*/
 
 				case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
-					result = F(max_heap_size);
+					result = itoun (max_heap_size);
 					max_heap_size = uvtoi (a);
 					break;
 				case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
-					result = F(max_heap_size);
+					result = itoun (max_heap_size);
 					break;
 
 				case 1008: /* get machine word size (in bytes) */ // todo: переделать на другой номер
-					fprintf(stderr, "::get-word-size called.\n");
-					result = F(W);
+					result = itoun (W);
 					break;
 
 				case 1022: // set ticker
-					result = (ticker & FMAX);
+					result = itoun (ticker);
 					ticker = uvtoi (a);
 					break;
 
@@ -3008,12 +3010,12 @@ invoke:;
 					   }
 					}
 
-					result = prim_sys(op, a, b, c);
+					result = (word*)prim_sys(op, a, b, c);
 					break;
 				}
 				}
 
-				A4 = result;
+				A4 = (word) result;
 				ip += 5; break;
 			}
 		}
@@ -3098,8 +3100,8 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		case 2: {
 			int type = *hp++ & 31; /* low 5 bits, the others are pads */
 			int size = get_nat();
-			int words = ((size + W) - 1) / W;
-			int pads = (W - (size % W));
+			int words = (size + W - 1) / W;
+			int pads = words * W - size;//(W - (size % W));
 
 			unsigned char *wp = (unsigned char*) &car(new (type, words+1, pads));
 			while (size--)
@@ -3904,7 +3906,7 @@ word* pinvoke(OL* self, word* arguments)
 	return result;
 }
 #endif//HAS_PINVOKE
-
+#if 0
 	__attribute__
 			((__visibility__("default")))
 word* test(OL* self, word* arguments)
@@ -3923,3 +3925,4 @@ word* test(OL* self, word* arguments)
 	heap->fp = fp;
 	return 0;
 }
+#endif

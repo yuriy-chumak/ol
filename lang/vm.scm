@@ -62,8 +62,9 @@
       (define MKT 23)
       (define FFBIND 49)
 
-      ;(define bind    (raw type-bytecode '(32 4)))
-      ;(define ff-bind (raw type-bytecode '(49 4)))
+      ;(define bind     (raw type-bytecode '(32 4)))
+      ;(define ff-bind  (raw type-bytecode '(49 4)))
+      ;(define listuple (raw type-bytecode '(35 4 5 6 7  24 7)))
       ;ff-bind
 
       ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
@@ -98,37 +99,37 @@
       ;(define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
 
       ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
-      ;(define lesser? (raw type-bytecode '(44 4 5 6  24 6)))
 
-      ;(define fxband  (raw type-bytecode '(55 4 5 6  24 6)))
-      ;(define fxbor   (raw type-bytecode '(56 4 5 6  24 6)))
-      ;(define fxbxor  (raw type-bytecode '(57 4 5 6  24 6)))
-      
       ;(define refb    (raw type-bytecode '(48 4 5 6  24 6)))
       ;(define sizeb   (raw type-bytecode '(28 4 5    24 5)))
 
-      ; арифметические операции, возвращают пару(тройку) значений, использовать через let*/receive
-      ;(define fx:+   (raw type-bytecode '(38 4 5    6 7)))     ;'(38 4 5    6 7  )
-      ;(define fx*   (raw type-bytecode '(39 4 5    6 7)))
-      ;(define fx-   (raw type-bytecode '(40 4 5    6 7)))
-      ;(define fx/   (raw type-bytecode '(26 4 5 6  7 8 9)))
-      ;(define fx>>  (raw type-bytecode '(58 4 5    6 7)))
-      ;(define fx<<  (raw type-bytecode '(59 4 5    6 7)))
+      ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/receive
+      ;(define fx:<  (raw type-bytecode '(44 4 5 6  24 6)))
+      ;(define fx:+  (raw type-bytecode '(38 4 5    6 7)))     ;'(38 4 5    6 7  )
+      ;(define fx:*  (raw type-bytecode '(39 4 5    6 7)))
+      ;(define fx:-  (raw type-bytecode '(40 4 5    6 7)))
+      ;(define fx:/  (raw type-bytecode '(26 4 5 6  7 8 9)))
+      ;(define fx:>> (raw type-bytecode '(58 4 5    6 7)))
+      ;(define fx:<< (raw type-bytecode '(59 4 5    6 7)))
+
+      (define fx:and (raw type-bytecode '(55 4 5 6  24 6)))
+      (define fx:or  (raw type-bytecode '(56 4 5 6  24 6)))
+      (define fx:xor (raw type-bytecode '(57 4 5 6  24 6)))
 
       ; deprecated:
       ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
-      ;(define listuple  (raw type-bytecode '(35 4 5 6 7  24 7)))
-      (define ff:red     (raw type-bytecode '(43 4 5 6 7 8  24 8)))
-      (define ff:black   (raw type-bytecode '(42 4 5 6 7 8  24 8)))
-      (define ff:toggle  (raw type-bytecode '(46 4 5  24 5)))
-      (define ff:red?    (raw type-bytecode '(41 4 5  24 5)))
-      (define ff:right?  (raw type-bytecode '(37 4 5  24 5)))
+      (define ff:red     (raw type-bytecode '(43 4 5 6 7  8  24 8)))
+      (define ff:black   (raw type-bytecode '(42 4 5 6 7  8  24 8)))
+      (define ff:toggle  (raw type-bytecode '(46 4        5  24 5)))
+      (define ff:red?    (raw type-bytecode '(41 4        5  24 5)))
+      (define ff:right?  (raw type-bytecode '(37 4        5  24 5)))
 
       ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8)))
 
       (define primops (list
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
+         ; todo: rename to vm:bytecode ?
          (tuple 'raw      60  2 1 raw) ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
 
          ; вторая по значимости команда
@@ -165,9 +166,9 @@
          (tuple 'fx:>>    58  2 2 fx:>>)
          (tuple 'fx:<<    59  2 2 fx:<<)
          ;; бинарная арифметика
-         (tuple 'fxband   55  2 1 fxband)
-         (tuple 'fxbor    56  2 1 fxbor)
-         (tuple 'fxbxor   57  2 1 fxbxor)
+         (tuple 'fx:and   55  2 1 fx:and)
+         (tuple 'fx:or    56  2 1 fx:or)
+         (tuple 'fx:xor   57  2 1 fx:xor)
 
          ; системный таймер
          (tuple 'clock    61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
@@ -180,20 +181,20 @@
          (tuple 'fxmbits    34  0 1 fxmbits)
 
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
+         ; todo: rename to tuple-bind ?
          (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
+         ; todo: rename to make-tuple ?
          (tuple 'mkt      MKT     'any   1 #false)  ;; mkt type v0 .. vn t (why #f?)
-
-
-
-         (tuple 'listuple 35  3 1 listuple)  ; todo: rename to list->tuple
+         ; todo: rename to list->typedtuple ?
+         (tuple 'listuple 35  3 1 listuple)
 
          ; поддержка red-black деревьев
-         (tuple 'ff:bind   49  1 #f ff:bind) ;; SPECIAL ** (ff:bind thing (lambda (name ...) body))
-         (tuple 'ff:red    43  4  1 ff:red)
-         (tuple 'ff:black  42  4  1 ff:black)
-         (tuple 'ff:toggle 46  1  1 ff:toggle)
-         (tuple 'ff:red?   41  1  1 ff:red?)
-         (tuple 'ff:right? (refb ff:right? 0)   1  1 ff:right?)
+         (tuple 'ff:bind    49 1 #f  ff:bind) ;; SPECIAL ** (ff:bind thing (lambda (name ...) body))
+         (tuple 'ff:red     43 4  1  ff:red)
+         (tuple 'ff:black   42 4  1  ff:black)
+         (tuple 'ff:toggle  46 1  1  ff:toggle)
+         (tuple 'ff:red?    41 1  1  ff:red?)
+         (tuple 'ff:right?  37 1  1  ff:right?)
       ))
       (define *primitives* primops)
 
@@ -231,7 +232,7 @@
          
       ; используется в выводе сообщений "инструкция такая-то сфейлила"
       (define (primop-name pop)
-         (let ((pop (fxband pop 63))) ; ignore top bits which sometimes have further data
+         (let ((pop (fx:and pop 63))) ; ignore top bits which sometimes have further data
             (or
                (instruction-name pop)
                (let loop ((primops primops))
@@ -244,10 +245,10 @@
 
 ;; run, apply, apply-cont - moved to the right places (r5rs, lang/thread)
 ;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40))))
+;      (define apply-cont (raw type-bytecode (list (fx:or 20 #x40))))
 ;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
 ;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-;      (define apply-cont (raw type-bytecode (list (fxbor 20 #x40)))) - used in (r5rs base) in call-with-current-continuation
+;      (define apply-cont (raw type-bytecode (list (fx:or 20 #x40)))) - used in (r5rs base) in call-with-current-continuation
 ;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
 
 

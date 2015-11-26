@@ -165,7 +165,7 @@
             (pair (ncar (ref rst 2)) (adhoc-seed->rands rst))))
 
       (define (bit x n)
-         (if (eq? 0 (fxband x n)) 0 1))
+         (if (eq? 0 (fx:and x n)) 0 1))
 
       (define (rands->bits rs)
          (lets 
@@ -180,9 +180,9 @@
       (define (rands->bytes rs)
          (lets 
             ((digit rs (uncons rs 0))
-             (lo (fxband digit #xff))
+             (lo (fx:and digit #xff))
              (digit _ (fx:>> digit 8))
-             (mid (fxband digit #xff))
+             (mid (fx:and digit #xff))
              (hi _ (fx:>> digit 8)))
             (ilist lo mid hi 
                (λ () (rands->bytes rs)))))
@@ -238,7 +238,7 @@
          (let loop ((rs rs) (mask (bitmask n)))
             (lets
                ((digit rs (uncons rs #false))
-                (m (fxband digit mask)))
+                (m (fx:and digit mask)))
                (if (fx:< m n)
                   (values rs m)
                   (loop rs mask)))))
@@ -248,7 +248,7 @@
          (let loop ((rs rs) (mask (bitmask n)))
             (lets
                ((digit rs (uncons rs #false))
-                (m (fxband digit mask)))
+                (m (fx:and digit mask)))
                (cond
                   ((fx:< m n) (values rs m))
                   ((eq? m n) (values rs m))
@@ -464,7 +464,7 @@
                (lets 
                   ((d rs (uncons rs 0))
                    (n _ (fx:- n 1))) 
-                  (loop rs (cons (fxband d 255) out) n)))))
+                  (loop rs (cons (fx:and d 255) out) n)))))
 
       (define (random-data-file rs path)
          (let 

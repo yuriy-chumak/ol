@@ -64,7 +64,7 @@
 ;         (let loop ((f 0))
 ;            (lets
 ;               ((o f (fx:<< f 1)) ;; repeat (f<<1)|1 until overflow
-;                (f (fxbor f 1)))
+;                (f (fx:or f 1)))
 ;               (if (eq? o 0)
 ;                  (loop f)
 ;                  f))))
@@ -555,8 +555,8 @@
       ;;; BITWISE OPERATIONS
       ;;;
 
-      ; fxband, fxbor, fx:<<, fx:>>
-      ; fxband, fxor -> result
+      ; fx:and, fx:or, fx:<<, fx:>>
+      ; fx:and, fxor -> result
       ; fx:<< -> hi + lo
       ; fx:>> -> hi + lo
 
@@ -570,7 +570,7 @@
             (let ((next (ncar rest)))
                (lets ((hi lo (fx:>> next n)))
                   (lets
-                     ((this (fxbor this lo))
+                     ((this (fx:or this lo))
                       (tail (shift-right-walk hi (ncdr rest) n #false)))
                      (cond
                         (tail (ncons this tail))
@@ -631,7 +631,7 @@
                null
                (ncons last null))
             (lets ((hi lo (fx:<< (ncar num) n)))
-               (ncons (fxbor last lo)
+               (ncons (fx:or last lo)
                   (shift-left (ncdr num) n hi)))))
 
       ; << quarantees n is a fixnum
@@ -693,7 +693,7 @@
             ((eq? b null) 0)
             (else
                (lets
-                  ((this (fxband (ncar a) (ncar b)))
+                  ((this (fx:and (ncar a) (ncar b)))
                    (tail (big-band (ncdr a) (ncdr b))))
                   (cond
                      ((eq? tail 0) this)
@@ -709,7 +709,7 @@
             ((eq? b null) a)
             (else
                (lets
-                  ((this (fxbor (ncar a) (ncar b)))
+                  ((this (fx:or (ncar a) (ncar b)))
                    (tail (big-bor (ncdr a) (ncdr b))))
                   (ncons this tail)))))
 
@@ -720,7 +720,7 @@
             ((null? b) a)
             (else
                (lets
-                  ((this (fxbxor (ncar a) (ncar b)))
+                  ((this (fx:xor (ncar a) (ncar b)))
                    (tail (big-bxor-digits (ncdr a) (ncdr b))))
                   (if (null? tail)
                      (if (eq? this 0)
@@ -741,14 +741,14 @@
          (case (type a)
             (type-fix+
                (case (type b)
-                  (type-fix+ (fxband a b))
-                  (type-int+ (fxband a (ncar b)))
+                  (type-fix+ (fx:and a b))
+                  (type-int+ (fx:and a (ncar b)))
                   (else
                      (big-bad-args 'band a b))))
             (type-int+
                (case (type b)
                   (type-fix+
-                     (fxband (ncar a) b))
+                     (fx:and (ncar a) b))
                   (type-int+
                      (big-band a b))
                   (else
@@ -763,16 +763,16 @@
          (case (type a)
             (type-fix+
                (case (type b)
-                  (type-fix+ (fxbor a b))
+                  (type-fix+ (fx:or a b))
                   (type-int+ 
-                     (ncons (fxbor a (ncar b))
+                     (ncons (fx:or a (ncar b))
                         (ncdr b)))
                   (else
                      (big-bad-args 'bor a b))))
             (type-int+
                (case (type b)
                   (type-fix+
-                     (ncons (fxbor b (ncar a))
+                     (ncons (fx:or b (ncar a))
                         (ncdr a)))
                   (type-int+
                      (big-bor a b))
@@ -785,15 +785,15 @@
          (case (type a)
             (type-fix+
                (case (type b)
-                  (type-fix+ (fxbxor a b))
+                  (type-fix+ (fx:xor a b))
                   (type-int+ 
-                     (ncons (fxbxor a (ncar b)) (ncdr b)))
+                     (ncons (fx:xor a (ncar b)) (ncdr b)))
                   (else
                      (big-bad-args 'bxor a b))))
             (type-int+
                (case (type b)
                   (type-fix+
-                     (ncons (fxbxor b (ncar a)) (ncdr a)))
+                     (ncons (fx:xor b (ncar a)) (ncdr a)))
                   (type-int+
                      (big-bxor a b))
                   (else
@@ -1342,7 +1342,7 @@
                      (divex bit bp a b out))))
             (else ; shift + substract = amortized O(2b) + O(log a)
                (divex bit bp (subi a (<< b bp))
-                  b (ncons (fxbor bit (ncar out)) (ncdr out))))))
+                  b (ncons (fx:or bit (ncar out)) (ncdr out))))))
 
       (define divex-start (ncons 0 null))
 

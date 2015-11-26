@@ -106,7 +106,7 @@
 
       (define type-byte-of type)
          ;(type-byte-of val)
-         ;(fxband (>> (type-old val) 3) 255)
+         ;(fx:and (>> (type-old val) 3) 255)
 
       (define (enc-immediate val tail)
          (cons 0
@@ -178,7 +178,7 @@
                   (lets
                      ;; nuke padding bytes since the vm/decoder must fill these while loading
                      ;; (because different word size may require more/less padding)
-                     ((t (fxband (type-byte-of val) #b11111))
+                     ((t (fx:and (type-byte-of val) #b11111))
                       (bs (sizeb val)))
                      (ilist 2 t
                         (send-number bs
@@ -266,7 +266,7 @@
 
       (define (get-nat ll fail top)
          (lets ((ll b (grab ll fail)))
-            (if (eq? 0 (fxband b 128)) ; leaf case
+            (if (eq? 0 (fx:and b 128)) ; leaf case
                (values ll (bor (<< top 7) b))
                (get-nat ll fail (bor (<< top 7) (band b low7))))))
       

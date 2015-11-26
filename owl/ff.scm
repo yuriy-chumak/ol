@@ -80,13 +80,13 @@
       (define red? ff:red?)
 ;      (define-syntax red?
 ;         (syntax-rules ()
-;            ((red? node) (eq? redness (fxband (type node) redness))))) ;; false for black nodes and #empty
+;            ((red? node) (eq? redness (fx:and (type node) redness))))) ;; false for black nodes and #empty
      
       ;; does a (non-empty) red or black node of size 3 have a right child? 2 never does and 4 always has
       (define right? ff:right?)
 ;      (define-syntax right?
 ;         (syntax-rules ()
-;            ((right? node) (eq? rightness (fxband (type node) rightness)))))
+;            ((right? node) (eq? rightness (fx:and (type node) rightness)))))
 
       ;; preserve structure, intended for debugging only
       (define (color ff)
@@ -167,7 +167,7 @@
 ;      (define-syntax ff-toggle
 ;         (syntax-rules ()
 ;            ((ff-toggle node)
-;               (cast node (fxbxor (type node) redness)))))
+;               (cast node (fx:xor (type node) redness)))))
 
       ;; FIXME: misleading names!
       (define-syntax color-black (syntax-rules () ((color-black x) (ff:toggle x))))

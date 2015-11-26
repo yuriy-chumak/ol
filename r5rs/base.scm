@@ -862,7 +862,7 @@
       ; *ol* extension
       (define (ff? o)        ; OL extension
          (or (eq? o #empty)
-             (eq? 24 (fxband (type o) #b1111100))))
+             (eq? 24 (fx:and (type o) #b1111100))))
 
       ; *ol* extension
       (define (bytecode? o)  ; OL extension

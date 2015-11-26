@@ -107,7 +107,7 @@
       ;;;
 
       (define (output-code op lst)
-         (if (eq? op (fxband op #xff))
+         (if (eq? op (fx:and op #xff))
             (cons op lst)
             (output-code
                (>> op 8)
