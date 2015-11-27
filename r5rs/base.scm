@@ -641,7 +641,7 @@
       (define type-tuple             2)
       (define type-string            3)
       (define type-symbol            4)
-      
+
       (define type-bytecode         16)
       (define type-proc             17)
       (define type-clos             18)
@@ -652,7 +652,7 @@
       (define type-vector-raw       19) ;; see also TBVEC in c/ovm.c
       (define type-rlist-node       14)
       (define type-rlist-spine      10)
-      
+
       (define type-string-wide      22)
       (define type-string-dispatch  21)
       (define type-record            5)
@@ -1077,7 +1077,10 @@
       ;; (size  x)         n                       n               #false
       ;; (sizeb x)       #false                    n               #false
 
+      (define (value? obj) (eq? #false (size obj)))
+
       (define (immediate? obj) (eq? #false (size obj)))
+      (define reference? size)
       (define allocated? size)
       (define raw?       sizeb)
 
@@ -1219,7 +1222,7 @@
       type-int-
       type-record
 
-      immediate? allocated? raw?
+      value? immediate? allocated? raw?
 
       type-bytecode
       type-proc

@@ -3,7 +3,7 @@
 ; 
 ;not working yet - (import (owl win32))
 
-(define (dlopen name flag) (sys-prim 1030 (c-string name) flag #false))
+(define (dlopen name) (sys-prim 1030 (c-string name) 1 #false))
 (define (dlsym  type dll name) ; todo: переименовать в get-proc-address ?
    (let ((rtty (cons type prototype))
          (function (syscall 1031 dll (c-string name) #false)))

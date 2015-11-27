@@ -11,7 +11,6 @@
       dir-fold
       dir->list
       exec
-      fork
       wait
       chdir
       kill
@@ -102,10 +101,6 @@
             (if (and path (all (λ (x) x) args))
                (syscall 1017 path args #false)
                (cons path args))))
-
-      ;; → #false = fork failed, #true = ok, we're in child, n = ok, child pid is n
-      (define (fork)
-         (syscall 1018 #false #false #false))
 
       (define (wait pid)
          (let ((res (syscall 1019 pid (cons #false #false) #false)))
