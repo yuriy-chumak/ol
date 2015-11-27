@@ -30,7 +30,7 @@ $("a[href^='?']").each(updateLink);
 function show(page)
 {
    page = page || "?en";  // :default page
-   $("#content").load(page.substr(1) + ".htm", function() {
+   $("#content").load(page.substr(1) + ".html", function() {
       $("html, body").animate({ scrollTop: 0 });
       $("#content a[href^='?']").each(updateLink);
       Rainbow.color();

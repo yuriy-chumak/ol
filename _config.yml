@@ -1,0 +1,10 @@
+# Site settings
+title: Owl Lisp
+email: yuriy-chumak@mail.com
+description: Owl Lisp project page
+baseurl: "/OL/"
+url: "http://yuriy-chumak.github.io"
+github_username:  yuriy-chumak
+
+# Build settings
+markdown: kramdown
