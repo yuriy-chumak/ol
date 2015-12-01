@@ -50,6 +50,7 @@
 (define-library (owl pinvoke)
    (export 
       dlopen
+      dlclose
       dlsym dlsym+
       pinvoke exec
       uname
@@ -114,18 +115,19 @@
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle (type-port)
 (define dlopen (case-lambda
-   ((name flag) (syscall 1030 (if (string? name) (c-string name) name) flag      #false))
-   ((name)      (syscall 1030 (if (string? name) (c-string name) name) RTLD_LAZY #false))
-   (()          (syscall 1030 '()                                      RTLD_LAZY #false))))
+   ((name flag) (syscall 174 (if (string? name) (c-string name) name) flag      #false))
+   ((name)      (syscall 174 (if (string? name) (c-string name) name) RTLD_LAZY #false))
+   (()          (syscall 174 '()                                      RTLD_LAZY #false))))
+(define (dlclose module) (syscall 176 module #f #f))
 
-(define pinvoke (syscall 1031 (syscall 1030 '() RTLD_LAZY #false) "pinvoke" #false))
+(define pinvoke (syscall 177 (dlopen) "pinvoke" #f))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать (type-memp)
 (define (dlsym+ dll name)
-   (let ((function (syscall 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+   (let ((function (syscall 177 dll (c-string name) #false)))
       (if function
-         (lambda args
-            (exec function args #false)))))
+      (lambda args
+         (exec function args #false)))))
 
 (define (dlsym  dll type name . prototype)
 ;  (print "dlsym: " name)
@@ -134,7 +136,7 @@
    ; иначе использовать указанное в arguments; обязательно выводить предупреждение, если количество аргументов не
    ; совпадает (возможно еще во время компиляции)
    (let ((rtty (cons type prototype))
-         (function (syscall 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+         (function (syscall 177 dll (c-string name) #false)))
       (if function
       (lambda args
          (exec pinvoke  function rtty args)))))
@@ -144,19 +146,19 @@
       (if dll
          (lambda (type name . prototype)
             (let ((rtty (cons type prototype))
-                  (function (syscall 1031 dll (c-string name) #false))) ; todo: избавиться от (c-string)
+                  (function (syscall 177 dll (c-string name) #f))) ; todo: избавиться от (c-string)
                (if function
                   (lambda args
                      (exec pinvoke  function rtty args))))))))
 
 
 ;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
-;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl         
+;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl
 ;;(define (dlsym-c type dll name . prototype)
-;;; todo: отправлять тип функции третим параметром (syscall 1031) и в виртуальной машине
+;;; todo: отправлять тип функции третим параметром (syscall 177) и в виртуальной машине
 ;;;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ? 
-;;   (let ((function (cons '((bor type 64) . prototype) (syscall 1031 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
-;;;;;(let ((function (cons (bor type 64) (syscall 1031 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
+;;   (let ((function (cons '((bor type 64) . prototype) (syscall 171 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
+;;;;;(let ((function (cons (bor type 64) (syscall 177 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
 ;;      (lambda args ;  function       type          ;arguments
 ;;         (syscall 59 (cdr function) (car function) args))))
 

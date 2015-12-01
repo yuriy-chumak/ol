@@ -1,57 +1,93 @@
 export PATH := .:$(PATH)
+$(shell mkdir -p config)
 
-.PHONY: all clean config install recompile tests
+.PHONY: all config recompile install uninstall clean tests
 
-PREFIX := /usr
+PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
 CFLAGS += -std=c99 -O2 -DNDEBUG -s
 boot.c := bootstrap~
 repl.o := src/repl.o
 
-all: ol
+#http://www.gnu.org/prep/standards/html_node/DESTDIR.html
+# http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap03.html#tag_03_266
+# "Multiple successive slashes are considered to be the same as one slash."
+DESTDIR?=
 
-debug: src/olvm.c src/boot.c
-	$(CC) -std=c99 -O0 -g  src/olvm.c src/boot.c -o ol \
-	   -Xlinker --export-dynamic -ldl
-	@echo Ok.
+
+#temp:
+CC := colorgcc
+
+#main
+all: ol config
+
+
+#debug: src/olvm.c src/boot.c
+#	$(CC) -std=c99 -O0 -g  src/olvm.c src/boot.c -o ol \
+#	   -Xlinker --export-dynamic -ldl
+#	@echo Ok.
 
 clean:
 	rm -f boot.fasl
 	rm -f $(repl.o)
 	rm -f ./vm ./ol
+	rm -rf ./config
 
 install: ol repl
-	install -d /usr/lib/ol
-	install -d /usr/lib/ol/etc
-	install -d /usr/lib/ol/lib
-	install -d /usr/lib/ol/owl
-	install -d /usr/lib/ol/r5rs
-	install -d /usr/lib/ol/scheme
-	install -d /usr/lib/ol/OpenGL
-	install -D -m 644 etc/* /usr/lib/ol/etc
-	install -D -m 644 lib/* /usr/lib/ol/lib
-	install -D -m 644 owl/* /usr/lib/ol/owl
-	install -D -m 644 r5rs/* /usr/lib/ol/r5rs
-	install -D -m 644 scheme/* /usr/lib/ol/scheme
-	install -D -m 644 OpenGL/* /usr/lib/ol/OpenGL
 	# install executables:
-	install -c -m 644 ol /usr/bin/ol
-	install -c -m 644 repl /usr/lib/ol/repl
-	
+	@echo Installing main binary...
+	install -d $(DESTDIR)/$(PREFIX)/bin
+	install -c -m 755 ol $(DESTDIR)/$(PREFIX)/bin/ol
+	# install binary REPL:
+	@echo Installing REPL...
+	install -d $(DESTDIR)/$(PREFIX)/lib/ol
+	install -c -m 644 repl $(DESTDIR)/$(PREFIX)/lib/ol/repl
+	# basic libraries:
+	@echo Installing libraries...
+	@for F in r5rs owl lib etc scheme OpenGL ;do \
+	   echo installing $$F libraries... ;\
+	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
+	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
+	done
 uninstall:
-	-rm -rf /usr/lib/ol/
-	
+	-rm -f $(DESTDIR)/$(PREFIX)/bin/ol
+	-rm -rf $(DESTDIR)/$(PREFIX)/lib/ol
+
+packages: debian-amd64-package
+	@echo "done."
+
+# echo '(display (cdr *version*))' | ./ol
+# example: http://lxr.free-electrons.com/source/scripts/package/Makefile
+create-debian-package = \
+	@printf "Creating $1 DEBIAN package... ";\
+	make install DESTDIR=$1/$2;\
+	cd $1/$2 ;\
+	mkdir DEBIAN;\
+	find .$(PREFIX) -type f       > DEBIAN/conffiles;\
+	\
+	echo Package: ol              > DEBIAN/control;\
+	echo Version: 1.0.0           >>DEBIAN/control;\
+	echo Architecture: $2         >>DEBIAN/control;\
+	echo Maintainer: Yuriy Chumak >>DEBIAN/control;\
+	echo Priority: optional       >>DEBIAN/control;\
+	echo Description: Owl Lisp - a purely \(mostly\) functional dialect of Lisp \
+	                              >>DEBIAN/control;\
+	\
+	fakeroot dpkg -b . ../ol_1.0_$2.deb
+
+debian-amd64-package:
+	$(call create-debian-package,Build,amd64)
+
 
 # http://mackyle.github.io/blocksruntime/
-clang: src/olvm.c src/boot.c
-	clang-3.5 -fblocks src/olvm.c src/boot.c -ldl -lBlocksRuntime -o ol-c
+#clang: src/olvm.c src/boot.c
+#	clang-3.5 -fblocks src/olvm.c src/boot.c -ldl -lBlocksRuntime -o ol-c
 
 
-# config temporary disabled
+# this is only container for config targets
 config: config/HAS_DLOPEN\
         config/HAS_SOCKETS\
         config/XVisualInfo config/XEvent
-
 
 exists = \
 	@printf "Checking for $2 support... ";\
@@ -99,33 +135,20 @@ config/XVisualInfo:
 
 
 # ol
-ol: src/olvm.c src/boot.c
+ol: src/olvm.c src/olvm.h src/boot.c
 	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ \
 	   -Xlinker --export-dynamic -ldl
 	@echo Ok.
 
 
-vm: src/olvm.c
+vm: src/olvm.c src/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
 	   -Xlinker --export-dynamic -ldl
 	@echo Ok.
 
 
-#32
-ol32: src/olvm.c src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ \
-	   -Xlinker --export-dynamic -ldl -m32
-	@echo Ok.
-
-
-vm32: src/olvm.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
-	   -Xlinker --export-dynamic -ldl -m32
-	@echo Ok.
-
-
-#src/repl.o: repl
-#	objcopy -B i386 -I binary -O default repl src/repl.o
+src/repl.o: repl
+	objcopy -B i386 -I binary -O default repl src/repl.o
 src/boot.c: repl vm
 	vm repl <src/to-c.scm >src/boot.c
 
@@ -134,14 +157,14 @@ recompile: boot.fasl
 boot.fasl: vm repl src/ol.scm r5rs/*.scm lang/*.scm owl/*.scm
 	@vm repl < src/ol.scm
 	@if diff boot.fasl repl>/dev/null ;then\
-	    echo '\033[1;32m  `___`  \033[0m' ;\
-	    echo '\033[1;32m  (o,o)  \033[0m' ;\
-	    echo '\033[1;32m  \)  )  \033[0m' ;\
-	    echo '\033[1;32m___"_"___\033[0m' ;\
-	    echo '\033[1;32mBuild Ok.\033[0m' ;\
+	   echo '\033[1;32m  `___`  \033[0m' ;\
+	   echo '\033[1;32m  (o,o)  \033[0m' ;\
+	   echo '\033[1;32m  \)  )  \033[0m' ;\
+	   echo '\033[1;32m___"_"___\033[0m' ;\
+	   echo '\033[1;32mBuild Ok.\033[0m' ;\
 	else \
-	    echo `stat -c%s repl` -\> `stat -c%s $@` ;\
-	    cp -b $@ repl ;make $@ ;\
+	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
+	   cp -b $@ repl ;make $@ ;\
 	fi
 
 

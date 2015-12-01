@@ -1,21 +1,11 @@
 #!./ol
 (import (owl pinvoke))
 
-;((dlsym+ (dlopen null 1) "testcall") 1 2 3)
-
-;(import (owl primop))
-;(exec "curl http://google.com")
-
-;(define sx12 (lambda () (if (syscall 2000 0 0 0) 1 2)))
-;(syscall 2000 3 3 3)
-
-;(syscall 2000 (sx12) type size)
 (define width 640)
 (define height 480)
 
-(import (owl pinvoke) (owl io)
-   (lib x11)
-   (OpenGL version-2-0))
+(import (owl pinvoke) (lib x11)
+   (owl io) (OpenGL version-2-0))
 
 (define OR (lambda args (fold bor 0 args)))
 

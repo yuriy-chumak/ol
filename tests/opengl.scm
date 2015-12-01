@@ -190,7 +190,6 @@
   (define resolution (glGetUniformLocation po (c-string "resolution")))
 
 ;(print "glGetUniformLocation: " (glGetUniformLocation po "color"))
-;(syscall 1032 (cdr function) (car function) args))))
 
 
 (ShowWindow window SW_SHOW)

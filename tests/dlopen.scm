@@ -3,10 +3,10 @@
 ; 
 ;not working yet - (import (owl win32))
 
-(define (dlopen name) (sys-prim 1030 (c-string name) 1 #false))
+(define (dlopen name) (sys-prim 174 (c-string name) 1 #false))
 (define (dlsym  type dll name) ; todo: переименовать в get-proc-address ?
    (let ((rtty (cons type prototype))
-         (function (syscall 1031 dll (c-string name) #false)))
+         (function (syscall 177 dll (c-string name) #false)))
       (if function
       (lambda args
          (exec pinvoke  function rtty args)))))

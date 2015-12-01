@@ -51,7 +51,7 @@
 ;; this should later be just a sequence of imports followed by a fasl dump
 (import (r5rs base))    ;; get define, define-library, import, ... from the just loaded
 
-(define *include-dirs* (list "." "/usr/lib/ol")) ;; now we can (import <libname>) and have them be autoloaded to current repl
+(define *include-dirs* '(".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
 
 (import (owl interop))
@@ -421,7 +421,7 @@
                                           (list
                                              (cons '*owl-names*   initial-names)
                                              (cons '*owl-version* initial-version)
-;                                            (cons '*include-dirs* (list "/usr/lib/ol" "."))
+                                             (cons '*include-dirs* (list "." "/usr/lib/ol"))
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* (vm:version))
                                             ;(cons '*scheme* 'r5rs)

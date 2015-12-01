@@ -13,8 +13,7 @@
       glGetProcAddress 
 
       ; GL types
-      GLvoid
-      GLvoid*
+      ; https://www.opengl.org/wiki/OpenGL_Type
       GLenum
       GLboolean
       GLbitfield
@@ -22,21 +21,65 @@
       ;GLshort
       GLint
       GLsizei
-      GLubyte
+      GLubyte  GLubyte*
       ;GLushort
-      GLuint
-      GLuint*
+      GLuint   GLuint*
 
       GLfloat
-      ;GLclampf
+      GLclampf
       GLdouble
       ;GLclampd
 
-      GLubyte*
+      GLvoid   GLvoid*
 
-;WINGDIAPI void APIENTRY glAccum (GLenum op, GLfloat value);
-;WINGDIAPI void APIENTRY glAlphaFunc (GLenum func, GLclampf ref);
-   glBegin ; void (GLenum mode)
+
+   GL_TRUE                          ;1
+   GL_FALSE                         ;0
+
+   GL_CURRENT_BIT                   ;0x00000001
+   GL_POINT_BIT                     ;0x00000002
+   GL_LINE_BIT                      ;0x00000004
+   GL_POLYGON_BIT                   ;0x00000008
+   GL_POLYGON_STIPPLE_BIT           ;0x00000010
+   GL_PIXEL_MODE_BIT                ;0x00000020
+   GL_LIGHTING_BIT                  ;0x00000040
+   GL_FOG_BIT                       ;0x00000080
+   GL_DEPTH_BUFFER_BIT              ;0x00000100
+   GL_ACCUM_BUFFER_BIT              ;0x00000200
+   GL_STENCIL_BUFFER_BIT            ;0x00000400
+   GL_VIEWPORT_BIT                  ;0x00000800
+   GL_TRANSFORM_BIT                 ;0x00001000
+   GL_ENABLE_BIT                    ;0x00002000
+   GL_COLOR_BUFFER_BIT              ;0x00004000
+   GL_HINT_BIT                      ;0x00008000
+   GL_EVAL_BIT                      ;0x00010000
+   GL_LIST_BIT                      ;0x00020000
+   GL_TEXTURE_BIT                   ;0x00040000
+   GL_SCISSOR_BIT                   ;0x00080000
+   GL_ALL_ATTRIB_BITS               ;0x000fffff
+
+
+   glAccum                             ; void (GLenum op, GLfloat value)
+   ; op
+      GL_ACCUM                         ;0x0100
+      GL_LOAD                          ;0x0101
+      GL_RETURN                        ;0x0102
+      GL_MULT                          ;0x0103
+      GL_ADD                           ;0x0104
+
+   glAlphaFunc                         ; void (GLenum func, GLclampf ref)
+   ; func
+      GL_NEVER                         ;0x0200
+      GL_LESS                          ;0x0201
+      GL_EQUAL                         ;0x0202
+      GL_LEQUAL                        ;0x0203
+      GL_GREATER                       ;0x0204
+      GL_NOTEQUAL                      ;0x0205
+      GL_GEQUAL                        ;0x0206
+      GL_ALWAYS                        ;0x0207
+
+   glBegin                             ; void (GLenum mode)
+   ; mode
       GL_POINTS
       GL_LINES
       GL_LINE_LOOP
@@ -48,11 +91,33 @@
       GL_QUAD_STRIP
       GL_POLYGON
 
-;WINGDIAPI void APIENTRY glBitmap (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
-   glBlendFunc ; void (GLenum sfactor, GLenum dfactor)
-      GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-;WINGDIAPI void APIENTRY glCallList (GLuint list);
-;WINGDIAPI void APIENTRY glCallLists (GLsizei n, GLenum type, const GLvoid *lists);
+   glBitmap                            ; void (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap)
+
+   glBlendFunc                         ; void (GLenum sfactor, GLenum dfactor)
+   ; sfactor
+      GL_ZERO                          ;0
+      GL_ONE                           ;1
+      GL_SRC_COLOR                     ;0x0300
+      GL_ONE_MINUS_SRC_COLOR           ;0x0301
+      GL_SRC_ALPHA                     ;0x0302
+      GL_ONE_MINUS_SRC_ALPHA           ;0x0303
+      GL_DST_ALPHA                     ;0x0304
+      GL_ONE_MINUS_DST_ALPHA           ;0x0305
+   ; dfactor
+      ;GL_ZERO
+      ;GL_ONE
+      GL_DST_COLOR                     ;0x0306
+      GL_ONE_MINUS_DST_COLOR           ;0x0307
+      GL_SRC_ALPHA_SATURATE            ;0x0308
+      ;GL_SRC_ALPHA
+      ;GL_ONE_MINUS_SRC_ALPHA
+      ;GL_DST_ALPHA
+      ;GL_ONE_MINUS_DST_ALPHA
+
+   glCallList                          ; void (GLuint list)
+   
+   glCallLists                         ; void (GLsizei n, GLenum type, const GLvoid *lists)
+
    glClear ; GLbitfield mask
       GL_COLOR_BUFFER_BIT
       GL_ACCUM_BUFFER_BIT
@@ -448,86 +513,93 @@
 ;//  GL_TEXTURE: Текстурные преобразования (текстурная матрица) - применяются для управления текстурами заполнения объектов. (?)
 
 
-(define GLvoid  type-void)  ; void GLvoid
-(define GLenum  type-int+)  ; typedef unsigned int GLenum - int+ значит, что это целое число, fix+ значит, что это маленькое число
-(define GLboolean  type-fix+) ; typedef unsigned char GLboolean;
-(define GLbitfield type-int+) ; typedef unsigned int GLbitfield;
+   (define GLvoid  type-void)  ; void GLvoid
+   (define GLenum  type-int+)  ; typedef unsigned int GLenum - int+ значит, что это целое число, fix+ значит, что это маленькое число
+   (define GLboolean  type-fix+) ; typedef unsigned char GLboolean;
+   (define GLbitfield type-int+) ; typedef unsigned int GLbitfield;
 
-(define GLvoid* type-vector-raw)
+   (define GLvoid* type-vector-raw)
 
-(define GLbyte  type-fix+)
-(define GLint   type-int+)  ; typedef int GLint
-(define GLsizei type-int+)  ; typedef int GLsizei
-(define GLubyte type-fix+)
-(define GLuint  type-int+)
-(define GLuint* type-vector-raw)
+   (define GLbyte  type-fix+)
+   (define GLint   type-int+)  ; typedef int GLint
+   (define GLsizei type-int+)  ; typedef int GLsizei
+   (define GLubyte type-fix+)
+   (define GLuint  type-int+)
+   (define GLuint* type-vector-raw)
 
-(define GLfloat  type-float)  ; typedef float GLfloat
-(define GLdouble type-double) ; typedef double GLdouble
+   (define GLfloat  type-float)  ; typedef float GLfloat
+   (define GLclampf type-float)  ; typedef float GLclampf
+   (define GLdouble type-double) ; typedef double GLdouble
+   (define GLclampd type-double) ; typedef dluble GLclampd
 
-;GLclampf
-;(define GLuint  type-fix+)  ; typedef unsigned int GLuint;
-;(define GLubyte type-fix+)  ; typedef unsigned char GLubyte;
-(define GLubyte* type-string)
+   ;(define GLuint  type-fix+)  ; typedef unsigned int GLuint;
+   ;(define GLubyte type-fix+)  ; typedef unsigned char GLubyte;
+   (define GLubyte* type-string)
 
 
-		(define GL_ACCUM #x0100)
-		(define GL_LOAD #x0101)
-		(define GL_RETURN #x0102)
-		(define GL_MULT #x0103)
-		(define GL_ADD #x0104)
-		(define GL_NEVER #x0200)
-		(define GL_LESS #x0201)
-		(define GL_EQUAL #x0202)
-		(define GL_LEQUAL #x0203)
-		(define GL_GREATER #x0204)
-		(define GL_NOTEQUAL #x0205)
-		(define GL_GEQUAL #x0206)
-		(define GL_ALWAYS #x0207)
-		(define GL_CURRENT_BIT #x00000001)
-		(define GL_POINT_BIT #x00000002)
-		(define GL_LINE_BIT #x00000004)
-		(define GL_POLYGON_BIT #x00000008)
-		(define GL_POLYGON_STIPPLE_BIT #x00000010)
-		(define GL_PIXEL_MODE_BIT #x00000020)
-		(define GL_LIGHTING_BIT #x00000040)
-		(define GL_FOG_BIT #x00000080)
-		(define GL_DEPTH_BUFFER_BIT #x00000100)
-		(define GL_ACCUM_BUFFER_BIT #x00000200)
-		(define GL_STENCIL_BUFFER_BIT #x00000400)
-		(define GL_VIEWPORT_BIT #x00000800)
-		(define GL_TRANSFORM_BIT #x00001000)
-		(define GL_ENABLE_BIT #x00002000)
-		(define GL_COLOR_BUFFER_BIT #x00004000)
-		(define GL_HINT_BIT #x00008000)
-		(define GL_EVAL_BIT #x00010000)
-		(define GL_LIST_BIT #x00020000)
-		(define GL_TEXTURE_BIT #x00040000)
-		(define GL_SCISSOR_BIT #x00080000)
-		(define GL_ALL_ATTRIB_BITS #x000FFFFF)
-		(define GL_POINTS #x0000)
-		(define GL_LINES #x0001)
-		(define GL_LINE_LOOP #x0002)
-		(define GL_LINE_STRIP #x0003)
-		(define GL_TRIANGLES #x0004)
-		(define GL_TRIANGLE_STRIP #x0005)
-		(define GL_TRIANGLE_FAN #x0006)
-		(define GL_QUADS #x0007)
-		(define GL_QUAD_STRIP #x0008)
-		(define GL_POLYGON #x0009)
-		(define GL_ZERO 0)
-		(define GL_ONE 1)
-		(define GL_SRC_COLOR #x0300)
-		(define GL_ONE_MINUS_SRC_COLOR #x0301)
-		(define GL_SRC_ALPHA #x0302)
-		(define GL_ONE_MINUS_SRC_ALPHA #x0303)
-		(define GL_DST_ALPHA #x0304)
-		(define GL_ONE_MINUS_DST_ALPHA #x0305)
-		(define GL_DST_COLOR #x0306)
-		(define GL_ONE_MINUS_DST_COLOR #x0307)
-		(define GL_SRC_ALPHA_SATURATE #x0308)
-		(define GL_TRUE 1)
-		(define GL_FALSE 0)
+   (define GL_TRUE  1)
+   (define GL_FALSE 0)
+
+   (define GL_CURRENT_BIT         #x00000001)
+   (define GL_POINT_BIT           #x00000002)
+   (define GL_LINE_BIT            #x00000004)
+   (define GL_POLYGON_BIT         #x00000008)
+   (define GL_POLYGON_STIPPLE_BIT #x00000010)
+   (define GL_PIXEL_MODE_BIT      #x00000020)
+   (define GL_LIGHTING_BIT        #x00000040)
+   (define GL_FOG_BIT             #x00000080)
+   (define GL_DEPTH_BUFFER_BIT    #x00000100)
+   (define GL_ACCUM_BUFFER_BIT    #x00000200)
+   (define GL_STENCIL_BUFFER_BIT  #x00000400)
+   (define GL_VIEWPORT_BIT        #x00000800)
+   (define GL_TRANSFORM_BIT       #x00001000)
+   (define GL_ENABLE_BIT          #x00002000)
+   (define GL_COLOR_BUFFER_BIT    #x00004000)
+   (define GL_HINT_BIT            #x00008000)
+   (define GL_EVAL_BIT            #x00010000)
+   (define GL_LIST_BIT            #x00020000)
+   (define GL_TEXTURE_BIT         #x00040000)
+   (define GL_SCISSOR_BIT         #x00080000)
+   (define GL_ALL_ATTRIB_BITS     #x000FFFFF)
+
+   (define GL_ACCUM    #x0100)
+   (define GL_LOAD     #x0101)
+   (define GL_RETURN   #x0102)
+   (define GL_MULT     #x0103)
+   (define GL_ADD      #x0104)
+
+   (define GL_NEVER    #x0200)
+   (define GL_LESS     #x0201)
+   (define GL_EQUAL    #x0202)
+   (define GL_LEQUAL   #x0203)
+   (define GL_GREATER  #x0204)
+   (define GL_NOTEQUAL #x0205)
+   (define GL_GEQUAL   #x0206)
+   (define GL_ALWAYS   #x0207)
+
+   (define GL_POINTS         #x0000)
+   (define GL_LINES          #x0001)
+   (define GL_LINE_LOOP      #x0002)
+   (define GL_LINE_STRIP     #x0003)
+   (define GL_TRIANGLES      #x0004)
+   (define GL_TRIANGLE_STRIP #x0005)
+   (define GL_TRIANGLE_FAN   #x0006)
+   (define GL_QUADS          #x0007)
+   (define GL_QUAD_STRIP     #x0008)
+   (define GL_POLYGON        #x0009)
+
+   (define GL_ZERO                0)
+   (define GL_ONE                 1)
+   (define GL_SRC_COLOR           #x0300)
+   (define GL_ONE_MINUS_SRC_COLOR #x0301)
+   (define GL_SRC_ALPHA           #x0302)
+   (define GL_ONE_MINUS_SRC_ALPHA #x0303)
+   (define GL_DST_ALPHA           #x0304)
+   (define GL_ONE_MINUS_DST_ALPHA #x0305)
+   (define GL_DST_COLOR           #x0306)
+   (define GL_ONE_MINUS_DST_COLOR #x0307)
+   (define GL_SRC_ALPHA_SATURATE  #x0308)
+
 		(define GL_CLIP_PLANE0 #x3000)
 		(define GL_CLIP_PLANE1 #x3001)
 		(define GL_CLIP_PLANE2 #x3002)
@@ -905,16 +977,16 @@
 		(define GL_REPEAT #x2901)
 
 
-;WINGDIAPI void APIENTRY glAccum (GLenum op, GLfloat value);
-;WINGDIAPI void APIENTRY glAlphaFunc (GLenum func, GLclampf ref);
-  (define glBegin (dlsym % GLvoid "glBegin" GLenum))
-;WINGDIAPI void APIENTRY glBitmap (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
-  (define glBlendFunc (dlsym % GLvoid "glBlendFunc" GLenum GLenum))
-;WINGDIAPI void APIENTRY glCallList (GLuint list);
-;WINGDIAPI void APIENTRY glCallLists (GLsizei n, GLenum type, const GLvoid *lists);
-  (define glClear (dlsym % GLvoid "glClear" GLbitfield))
+   (define glAccum      (dlsym % GLvoid "glAccum" GLenum GLfloat))
+   (define glAlphaFunc  (dlsym % GLvoid "glAlphaFunc" GLenum GLclampf))
+   (define glBegin      (dlsym % GLvoid "glBegin" GLenum))
+   (define glBitmap     (dlsym % GLvoid "glBitmap" GLsizei GLsizei GLfloat GLfloat GLfloat GLfloat GLubyte*))
+   (define glBlendFunc  (dlsym % GLvoid "glBlendFunc" GLenum GLenum))
+   (define glCallList   (dlsym % GLvoid "glCallList" GLuint))
+   (define glCallLists  (dlsym % GLvoid "glCallLists" GLsizei GLenum GLvoid*))
+   (define glClear      (dlsym % GLvoid "glClear" GLbitfield))
 ;WINGDIAPI void APIENTRY glClearAccum (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-  (define glClearColor (dlsym % GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
+   (define glClearColor (dlsym % GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glClearIndex (GLfloat c);
 ;WINGDIAPI void APIENTRY glClipPlane (GLenum plane, const GLdouble *equation);
 ;WINGDIAPI void APIENTRY glColor3b (GLbyte red, GLbyte green, GLbyte blue);

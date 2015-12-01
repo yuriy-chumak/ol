@@ -1,42 +1,41 @@
 ; OpenGL 1.1 (1997)
 ; в комментриях указаны расширения, которые были интегрированы в этот выпуск
 ; todo: во время загрузки расширения проверять, действительно оно существует
-;	или отсутствует, и соответственно этому себя вести
+;     или отсутствует, и соответственно этому себя вести
 
 ; ===========================================================================
 ; EXT_vertex_array
-;	Multiple vertices may be passed to the GL with a single function call.
+;     Multiple vertices may be passed to the GL with a single function call.
 ;
-;	https://www.opengl.org/registry/specs/EXT/vertex_array.txt
+;     https://www.opengl.org/registry/specs/EXT/vertex_array.txt
 ;
 ; Version
-;	$Date: 1995/10/03 05:39:58 $ $Revision: 1.16 $  FINAL
+;     $Date: 1995/10/03 05:39:58 $ $Revision: 1.16 $  FINAL
 ;
 ; Overview
-;	This extension adds the ability to specify multiple geometric primitives
-;	with very few subroutine calls.  Instead of calling an OpenGL procedure
-;	to pass each individual vertex, normal, or color, separate arrays
-;	of vertexes, normals, and colors are prespecified, and are used to
-;	define a sequence of primitives (all of the same type) when a single
-;	call is made to DrawArraysEXT.  A stride mechanism is provided so that
-;	an application can choose to keep all vertex data staggered in a
-;	single array, or sparsely in separate arrays.  Single-array storage
-;	may optimize performance on some implementations.
+;     This extension adds the ability to specify multiple geometric primitives
+;     with very few subroutine calls.  Instead of calling an OpenGL procedure
+;     to pass each individual vertex, normal, or color, separate arrays
+;     of vertexes, normals, and colors are prespecified, and are used to
+;     define a sequence of primitives (all of the same type) when a single
+;     call is made to DrawArraysEXT.  A stride mechanism is provided so that
+;     an application can choose to keep all vertex data staggered in a
+;     single array, or sparsely in separate arrays.  Single-array storage
+;     may optimize performance on some implementations.
 ;
-;	This extension also supports the rendering of individual array elements,
-;	each specified as an index into the enabled arrays.
+;     This extension also supports the rendering of individual array elements,
+;     each specified as an index into the enabled arrays.
 (define-library (OpenGL EXT vertex_array)
 
 ; ---------------------------------------------------------------------------
 ; Dependencies
-;	None
+;     None
    (import
       (r5rs base) (owl io)
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
-   (export
-    EXT_vertex_array
+   (export  EXT_vertex_array
 
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
@@ -103,7 +102,7 @@
 ; ---------------------------------------------------------------------------
    (begin
    (define EXT_vertex_array 1)
-   
+
 ))
 
 
@@ -138,8 +137,7 @@
       (OpenGL version-1-0))
 
 ; ---------------------------------------------------------------------------
-   (export
-    EXT_polygon_offset
+   (export  EXT_polygon_offset
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
@@ -152,7 +150,7 @@
 ; ---------------------------------------------------------------------------
    (begin
    (define EXT_polygon_offset 1)
-   
+
 ))
 
 
@@ -182,15 +180,14 @@
       (OpenGL version-1-0))
       
 ; ---------------------------------------------------------------------------
-   (export
-    EXT_blend_logic_op
+   (export  EXT_blend_logic_op
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
    
 ; ---------------------------------------------------------------------------
 ; New Tokens
-    
+
 )
   
 ; ---------------------------------------------------------------------------

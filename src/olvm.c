@@ -514,8 +514,8 @@ struct object
 #define is_port(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TPORT) // stdin, stdout, stderr can have paddings :(
 #define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HWORD)
 
-#define is_number(ob)               (is_npair(ob) || (is_value(ob) && typeof (*(word*)(ob)) == TINT))
-#define is_numbern(ob)              (is_npairn(ob) || (is_value(ob) && typeof (*(word*)(ob)) == TINTN))
+#define is_number(ob)               (is_npair(ob)  || (is_value(ob) && typeof (ob) == TFIX))
+#define is_numbern(ob)              (is_npairn(ob) || (is_value(ob) && typeof (ob) == TFIXN))
 #define is_atomic(ob)               is_direct(ob)
 
 #define ref(ob, n)                  (((word*)(ob))[n])
@@ -829,9 +829,9 @@ word* p = new_bytevector(TSTRING, length);\
 })
 
 #define NEW_STRING(string) ({\
-	char* data = string;\
-	int lenstr = strlen(data);\
-	NEW_STRING2(data, lenstr);\
+	char* str = string;\
+	int strln = strlen(str);\
+	NEW_STRING2(str, strln);\
 })
 
 #define NEW_STRING_MACRO(_1, _2, NAME, ...) NAME
@@ -1461,7 +1461,11 @@ invoke:;
 #		endif
 #		define SYSCALL_KILL 62
 #		define SYSCALL_TIME 201
-#		define SYSCALL_USELIB 134 // unused, look at dlopen
+
+#		define SYSCALL_DLOPEN 174
+#		define SYSCALL_DLCLOSE 176
+#		define SYSCALL_DLSYM 177
+#		define SYSCALL_DLERROR 178
 
 	// tuples, trees
 #	define MKT      23   // make tuple
@@ -2537,7 +2541,7 @@ invoke:;
 			case 23: { // (select sockfd)
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
-				int timeus = is_number(b) ? untoi(b) : 100000;
+				int timeus = is_number(b) ? untoi (b) : 100000;
 				// todo: timeout as "b"
 
 				fd_set fds;
@@ -2854,7 +2858,7 @@ invoke:;
 
 #if HAS_DLOPEN
 			// -=( dlopen )=-------------------------------------------------
-			case 1030: { // (dlopen filename mode #false) (todo: maybe change to SYSCALL_USELIB)
+			case SYSCALL_DLOPEN: { // (dlopen filename mode #false)
 				word *filename = (word*)a;
 				int mode = (int) uvtoi(b);
 
@@ -2871,12 +2875,18 @@ invoke:;
 				break;
 			}
 
-			// todo: change to 176 (sys_delete_module)
-			case 1031: { // (dlsym module function #false)
-				word* A = (word*)a;
+			case SYSCALL_DLCLOSE: {
+				CHECK(is_port(a), a, SYSCALL);
+				void* module = (void*)car (a);
 
-				CHECK(is_port(A), A, SYSCALL);
-				void* module = (void*)car (A);
+				if (dlclose(module) == 0)
+					result = (word*) ITRUE;
+				break;
+			}
+
+			case SYSCALL_DLSYM: { // (dlsym module function #false)
+				CHECK(is_port(a), a, SYSCALL);
+				void* module = (void*)car (a);
 
 				word* symbol = (word*) b;
 				// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
@@ -2892,7 +2902,7 @@ invoke:;
 					fprintf(stderr, "dlsym failed: %s\n", dlerror());
 				break;
 			}
-			case 1032: { // (dlerror)
+			case SYSCALL_DLERROR: { // (dlerror)
 				char* error = dlerror();
 				if (error)
 					result = new_string(error);
