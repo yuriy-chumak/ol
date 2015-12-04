@@ -51,8 +51,8 @@
 
 
 ; пример, как можно передать в функцию массив указателей на строки:
-(glShaderSource vs 2 (tuple (c-string "#version 120 // OpenGL 2.1\n")
-                            (c-string "
+(glShaderSource vs 2 (list (c-string "#version 120 // OpenGL 2.1\n")
+                           (c-string "
     void main() {
         gl_Position = gl_Vertex; // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
     }")) null)
@@ -72,7 +72,7 @@
 (glAttachShader po vs)
 
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
-(glShaderSource fs 1 (tuple (c-string "
+(glShaderSource fs 1 (list (c-string "
    #version 120 // OpenGL 2.1
 
    // http://glslsandbox.com/e#19102.0
@@ -172,7 +172,7 @@
 
 (glXMakeCurrent dpy null null)
 
-
+;(print gluErrorString)
 
 (define XEvent (raw type-vector-raw (repeat 0 192)))
 
@@ -197,9 +197,13 @@
 
       (glBegin GL_TRIANGLE_STRIP)
         (glVertex2f -1 -1)
-        (glVertex2f +1 -1)
-        (glVertex2f -1 +1)
-        (glVertex2f +1 +1)
+        (glVertex2fv '(+1 -1))
+        (glVertex2d -1 +1)
+        (glVertex2dv '(+1 +1))
+        ;(glVertex2fv '(-1 -1))
+        ;(glVertex2fv '(+1 -1))
+        ;(glVertex2fv '(-1 +1))
+        ;(glVertex2fv '(+1 +1))
       (glEnd)
 
       (glUseProgram 0)

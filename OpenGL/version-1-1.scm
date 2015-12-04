@@ -97,11 +97,53 @@
 ;        TEXTURE_COORD_ARRAY_POINTER_EXT 0x8092
 ;        EDGE_FLAG_ARRAY_POINTER_EXT    0x8093
 
+
 )
 
 ; ---------------------------------------------------------------------------
    (begin
    (define EXT_vertex_array 1)
+
+		(define GL_VERTEX_ARRAY #x8074)
+		(define GL_NORMAL_ARRAY #x8075)
+		(define GL_COLOR_ARRAY #x8076)
+		(define GL_INDEX_ARRAY #x8077)
+		(define GL_TEXTURE_COORD_ARRAY #x8078)
+		(define GL_EDGE_FLAG_ARRAY #x8079)
+		(define GL_VERTEX_ARRAY_SIZE #x807A)
+		(define GL_VERTEX_ARRAY_TYPE #x807B)
+		(define GL_VERTEX_ARRAY_STRIDE #x807C)
+		(define GL_NORMAL_ARRAY_TYPE #x807E)
+		(define GL_NORMAL_ARRAY_STRIDE #x807F)
+		(define GL_COLOR_ARRAY_SIZE #x8081)
+		(define GL_COLOR_ARRAY_TYPE #x8082)
+		(define GL_COLOR_ARRAY_STRIDE #x8083)
+		(define GL_INDEX_ARRAY_TYPE #x8085)
+		(define GL_INDEX_ARRAY_STRIDE #x8086)
+		(define GL_TEXTURE_COORD_ARRAY_SIZE #x8088)
+		(define GL_TEXTURE_COORD_ARRAY_TYPE #x8089)
+		(define GL_TEXTURE_COORD_ARRAY_STRIDE #x808A)
+		(define GL_EDGE_FLAG_ARRAY_STRIDE #x808C)
+		(define GL_VERTEX_ARRAY_POINTER #x808E)
+		(define GL_NORMAL_ARRAY_POINTER #x808F)
+		(define GL_COLOR_ARRAY_POINTER #x8090)
+		(define GL_INDEX_ARRAY_POINTER #x8091)
+		(define GL_TEXTURE_COORD_ARRAY_POINTER #x8092)
+		(define GL_EDGE_FLAG_ARRAY_POINTER #x8093)
+		(define GL_V2F #x2A20)
+		(define GL_V3F #x2A21)
+		(define GL_C4UB_V2F #x2A22)
+		(define GL_C4UB_V3F #x2A23)
+		(define GL_C3F_V3F #x2A24)
+		(define GL_N3F_V3F #x2A25)
+		(define GL_C4F_N3F_V3F #x2A26)
+		(define GL_T2F_V3F #x2A27)
+		(define GL_T4F_V4F #x2A28)
+		(define GL_T2F_C4UB_V3F #x2A29)
+		(define GL_T2F_C3F_V3F #x2A2A)
+		(define GL_T2F_N3F_V3F #x2A2B)
+		(define GL_T2F_C4F_N3F_V3F #x2A2C)
+		(define GL_T4F_C4F_N3F_V4F #x2A2D)
 
 ))
 
@@ -421,7 +463,7 @@
    (export
       (exports (OpenGL version-1-0))
     GL_VERSION_1_1
-      
+
       (exports (OpenGL EXT vertex_array))
       (exports (OpenGL EXT polygon_offset))
       (exports (OpenGL EXT blend_logic_op))
@@ -429,8 +471,8 @@
       (exports (OpenGL EXT copy_texture))
       (exports (OpenGL EXT subtexture))
       (exports (OpenGL EXT texture_object))
-      
-    
+
+
     ; todo: move this to the right place
       GL_ALPHA4
       GL_ALPHA8
@@ -472,6 +514,7 @@
       GL_TEXTURE_ALPHA_SIZE
       GL_TEXTURE_LUMINANCE_SIZE
       GL_TEXTURE_INTENSITY_SIZE
+
 ;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
 ;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 ;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
@@ -529,46 +572,7 @@
 ;typedef double GLclampd
 
 		(define GL_DOUBLE #x140A)
-		(define GL_VERTEX_ARRAY #x8074)
-		(define GL_NORMAL_ARRAY #x8075)
-		(define GL_COLOR_ARRAY #x8076)
-		(define GL_INDEX_ARRAY #x8077)
-		(define GL_TEXTURE_COORD_ARRAY #x8078)
-		(define GL_EDGE_FLAG_ARRAY #x8079)
-		(define GL_VERTEX_ARRAY_SIZE #x807A)
-		(define GL_VERTEX_ARRAY_TYPE #x807B)
-		(define GL_VERTEX_ARRAY_STRIDE #x807C)
-		(define GL_NORMAL_ARRAY_TYPE #x807E)
-		(define GL_NORMAL_ARRAY_STRIDE #x807F)
-		(define GL_COLOR_ARRAY_SIZE #x8081)
-		(define GL_COLOR_ARRAY_TYPE #x8082)
-		(define GL_COLOR_ARRAY_STRIDE #x8083)
-		(define GL_INDEX_ARRAY_TYPE #x8085)
-		(define GL_INDEX_ARRAY_STRIDE #x8086)
-		(define GL_TEXTURE_COORD_ARRAY_SIZE #x8088)
-		(define GL_TEXTURE_COORD_ARRAY_TYPE #x8089)
-		(define GL_TEXTURE_COORD_ARRAY_STRIDE #x808A)
-		(define GL_EDGE_FLAG_ARRAY_STRIDE #x808C)
-		(define GL_VERTEX_ARRAY_POINTER #x808E)
-		(define GL_NORMAL_ARRAY_POINTER #x808F)
-		(define GL_COLOR_ARRAY_POINTER #x8090)
-		(define GL_INDEX_ARRAY_POINTER #x8091)
-		(define GL_TEXTURE_COORD_ARRAY_POINTER #x8092)
-		(define GL_EDGE_FLAG_ARRAY_POINTER #x8093)
-		(define GL_V2F #x2A20)
-		(define GL_V3F #x2A21)
-		(define GL_C4UB_V2F #x2A22)
-		(define GL_C4UB_V3F #x2A23)
-		(define GL_C3F_V3F #x2A24)
-		(define GL_N3F_V3F #x2A25)
-		(define GL_C4F_N3F_V3F #x2A26)
-		(define GL_T2F_V3F #x2A27)
-		(define GL_T4F_V4F #x2A28)
-		(define GL_T2F_C4UB_V3F #x2A29)
-		(define GL_T2F_C3F_V3F #x2A2A)
-		(define GL_T2F_N3F_V3F #x2A2B)
-		(define GL_T2F_C4F_N3F_V3F #x2A2C)
-		(define GL_T4F_C4F_N3F_V4F #x2A2D)
+		
 		(define GL_POLYGON_OFFSET #x8037)
 		(define GL_POLYGON_OFFSET_FACTOR #x8038)
 		(define GL_POLYGON_OFFSET_UNITS #x2A00)

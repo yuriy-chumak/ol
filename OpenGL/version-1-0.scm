@@ -3,7 +3,7 @@
 ; OpenGL core profile implementation
 (define-library (OpenGL version-1-0)
    (export
-      GL_VERSION_1_0
+    GL_VERSION_1_0
       GL_LIBRARY  ; internal variable
 
       ; todo: move to the right place
@@ -25,7 +25,7 @@
       ;GLushort
       GLuint   GLuint*
 
-      GLfloat
+      GLfloat  GLfloat*
       GLclampf
       GLdouble
       ;GLclampd
@@ -33,39 +33,39 @@
       GLvoid   GLvoid*
 
 
-   GL_TRUE                          ;1
-   GL_FALSE                         ;0
+      GL_TRUE GL_FALSE                 ;1, 0
 
-   GL_CURRENT_BIT                   ;0x00000001
-   GL_POINT_BIT                     ;0x00000002
-   GL_LINE_BIT                      ;0x00000004
-   GL_POLYGON_BIT                   ;0x00000008
-   GL_POLYGON_STIPPLE_BIT           ;0x00000010
-   GL_PIXEL_MODE_BIT                ;0x00000020
-   GL_LIGHTING_BIT                  ;0x00000040
-   GL_FOG_BIT                       ;0x00000080
-   GL_DEPTH_BUFFER_BIT              ;0x00000100
-   GL_ACCUM_BUFFER_BIT              ;0x00000200
-   GL_STENCIL_BUFFER_BIT            ;0x00000400
-   GL_VIEWPORT_BIT                  ;0x00000800
-   GL_TRANSFORM_BIT                 ;0x00001000
-   GL_ENABLE_BIT                    ;0x00002000
-   GL_COLOR_BUFFER_BIT              ;0x00004000
-   GL_HINT_BIT                      ;0x00008000
-   GL_EVAL_BIT                      ;0x00010000
-   GL_LIST_BIT                      ;0x00020000
-   GL_TEXTURE_BIT                   ;0x00040000
-   GL_SCISSOR_BIT                   ;0x00080000
-   GL_ALL_ATTRIB_BITS               ;0x000fffff
+      GL_CURRENT_BIT                   ;0x00000001
+      GL_POINT_BIT                     ;0x00000002
+      GL_LINE_BIT                      ;0x00000004
+      GL_POLYGON_BIT                   ;0x00000008
+      GL_POLYGON_STIPPLE_BIT           ;0x00000010
+      GL_PIXEL_MODE_BIT                ;0x00000020
+      GL_LIGHTING_BIT                  ;0x00000040
+      GL_FOG_BIT                       ;0x00000080
+      GL_DEPTH_BUFFER_BIT              ;0x00000100
+      GL_ACCUM_BUFFER_BIT              ;0x00000200
+      GL_STENCIL_BUFFER_BIT            ;0x00000400
+      GL_VIEWPORT_BIT                  ;0x00000800
+      GL_TRANSFORM_BIT                 ;0x00001000
+      GL_ENABLE_BIT                    ;0x00002000
+      GL_COLOR_BUFFER_BIT              ;0x00004000
+      GL_HINT_BIT                      ;0x00008000
+      GL_EVAL_BIT                      ;0x00010000
+      GL_LIST_BIT                      ;0x00020000
+      GL_TEXTURE_BIT                   ;0x00040000
+      GL_SCISSOR_BIT                   ;0x00080000
+      GL_ALL_ATTRIB_BITS               ;0x000fffff
 
 
    glAccum                             ; void (GLenum op, GLfloat value)
    ; op
-      GL_ACCUM                         ;0x0100
-      GL_LOAD                          ;0x0101
-      GL_RETURN                        ;0x0102
-      GL_MULT                          ;0x0103
-      GL_ADD                           ;0x0104
+      GL_ACCUM
+      GL_LOAD
+      GL_RETURN
+      GL_MULT
+      GL_ADD
+   ; value
 
    glAlphaFunc                         ; void (GLenum func, GLclampf ref)
    ; func
@@ -77,6 +77,7 @@
       GL_NOTEQUAL                      ;0x0205
       GL_GEQUAL                        ;0x0206
       GL_ALWAYS                        ;0x0207
+   ; ref
 
    glBegin                             ; void (GLenum mode)
    ; mode
@@ -95,24 +96,24 @@
 
    glBlendFunc                         ; void (GLenum sfactor, GLenum dfactor)
    ; sfactor
-      GL_ZERO                          ;0
-      GL_ONE                           ;1
-      GL_SRC_COLOR                     ;0x0300
-      GL_ONE_MINUS_SRC_COLOR           ;0x0301
-      GL_SRC_ALPHA                     ;0x0302
-      GL_ONE_MINUS_SRC_ALPHA           ;0x0303
-      GL_DST_ALPHA                     ;0x0304
-      GL_ONE_MINUS_DST_ALPHA           ;0x0305
+      GL_ZERO
+      GL_ONE
+      GL_SRC_COLOR
+      GL_ONE_MINUS_SRC_COLOR
+      GL_SRC_ALPHA
+      GL_ONE_MINUS_SRC_ALPHA
+      GL_DST_ALPHA
+      GL_ONE_MINUS_DST_ALPHA
    ; dfactor
-      ;GL_ZERO
-      ;GL_ONE
-      GL_DST_COLOR                     ;0x0306
-      GL_ONE_MINUS_DST_COLOR           ;0x0307
-      GL_SRC_ALPHA_SATURATE            ;0x0308
-      ;GL_SRC_ALPHA
-      ;GL_ONE_MINUS_SRC_ALPHA
-      ;GL_DST_ALPHA
-      ;GL_ONE_MINUS_DST_ALPHA
+      GL_ZERO
+      GL_ONE
+      GL_DST_COLOR
+      GL_ONE_MINUS_DST_COLOR
+      GL_SRC_ALPHA_SATURATE
+      GL_SRC_ALPHA
+      GL_ONE_MINUS_SRC_ALPHA
+      GL_DST_ALPHA
+      GL_ONE_MINUS_DST_ALPHA
 
    glCallList                          ; void (GLuint list)
    
@@ -123,13 +124,14 @@
       GL_ACCUM_BUFFER_BIT
       GL_STENCIL_BUFFER_BIT
       GL_DEPTH_BUFFER_BIT
+
 ;WINGDIAPI void APIENTRY glClearAccum (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
    glClearColor ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 ;WINGDIAPI void APIENTRY glClearDepth (GLclampd depth);
 ;WINGDIAPI void APIENTRY glClearIndex (GLfloat c);
 ;WINGDIAPI void APIENTRY glClearStencil (GLint s);
 ;WINGDIAPI void APIENTRY glClipPlane (GLenum plane, const GLdouble *equation);
-;WINGDIAPI void APIENTRY glColor3b (GLbyte red, GLbyte green, GLbyte blue);
+   glColor3b    ; void (GLbyte red, GLbyte green, GLbyte blue)
 ;WINGDIAPI void APIENTRY glColor3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue);
 ;WINGDIAPI void APIENTRY glColor3dv (const GLdouble *v);
@@ -180,6 +182,7 @@
 ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag);
     glEnable ; void (GLenum)
        GL_TEXTURE_1D GL_TEXTURE_2D GL_BLEND
+       GL_DEPTH_TEST
     glEnd ; void
 
 ;WINGDIAPI void APIENTRY glEndList (void);
@@ -432,9 +435,9 @@
    glTranslatef ; void (GLfloat x, GLfloat y, GLfloat z)
 ;WINGDIAPI void APIENTRY glVertex2d (GLdouble x, GLdouble y);
    glVertex2d ; void (GLdouble x, GLdouble y)
-;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
+   glVertex2dv; void (const GLdouble *v)
    glVertex2f ; void (GLfloat x, GLfloat y)
-;WINGDIAPI void APIENTRY glVertex2fv (const GLfloat *v);
+   glVertex2fv; void (const GLfloat *v)
    glVertex2i ; void (GLint x, GLint y)
 ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
@@ -442,7 +445,7 @@
    glVertex3d ; void (GLdouble x, GLdouble y, GLdouble z)
 ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
    glVertex3f ; void (GLfloat x, GLfloat y, GLfloat z)
-;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);
+   glVertex3fv; void (const GLfloat *v)
    glVertex3i ; void (GLint x, GLint y, GLint z)
 ;WINGDIAPI void APIENTRY glVertex3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex3s (GLshort x, GLshort y, GLshort z);
@@ -457,6 +460,11 @@
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
    ; https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml
    glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height)
+   
+   gluErrorString
+   gluOrtho2D
+   gluPerspective
+   gluLookAt
 
    (exports (owl pinvoke))) ; temp export
   
@@ -484,14 +492,14 @@
       (else
          (runtime-error "Unknown platform"))))
 
-(define % (dlopen GL_LIBRARY RTLD_LAZY))
-;(if (not %)
+(define $ (dlopen GL_LIBRARY))
+;(if (not $)
 ;   (begin (print "Can't load opengl library")
 ;          (halt 1)))
 
 ; поддержка расширений :
 (define GetProcAddress ; internal function
-   (dlsym % type-port
+   (dlsym $ type-port
       (if (string-eq? (ref uname 1) "Windows")  "wglGetProcAddress"
       (if (string-eq? (ref uname 1) "Linux")    "glXGetProcAddress"))
     type-string))
@@ -502,6 +510,7 @@
       (if function
       (lambda args
          (exec pinvoke function rtty args)))))
+
 
 ;//  Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
 ;// Правая. x-направо, y-вверх, z-к себе
@@ -514,17 +523,17 @@
 
 
    (define GLvoid  type-void)  ; void GLvoid
-   (define GLenum  type-int+)  ; typedef unsigned int GLenum - int+ значит, что это целое число, fix+ значит, что это маленькое число
-   (define GLboolean  type-fix+) ; typedef unsigned char GLboolean;
-   (define GLbitfield type-int+) ; typedef unsigned int GLbitfield;
+   (define GLenum  type-fix+)  ; typedef unsigned int GLenum
+   (define GLboolean  type-fix+) ; typedef unsigned char GLboolean
+   (define GLbitfield type-fix+) ; typedef unsigned int GLbitfield
 
    (define GLvoid* type-vector-raw)
 
    (define GLbyte  type-fix+)
-   (define GLint   type-int+)  ; typedef int GLint
-   (define GLsizei type-int+)  ; typedef int GLsizei
+   (define GLint   type-fix+)  ; typedef int GLint
+   (define GLsizei type-fix+)  ; typedef int GLsizei
    (define GLubyte type-fix+)
-   (define GLuint  type-int+)
+   (define GLuint  type-fix+)
    (define GLuint* type-vector-raw)
 
    (define GLfloat  type-float)  ; typedef float GLfloat
@@ -535,6 +544,10 @@
    ;(define GLuint  type-fix+)  ; typedef unsigned int GLuint;
    ;(define GLubyte type-fix+)  ; typedef unsigned char GLubyte;
    (define GLubyte* type-string)
+
+   ; references
+   (define GLfloat* (fx:or GLfloat #x40))
+   (define GLdouble* (fx:or GLdouble #x40))
 
 
    (define GL_TRUE  1)
@@ -562,31 +575,31 @@
    (define GL_SCISSOR_BIT         #x00080000)
    (define GL_ALL_ATTRIB_BITS     #x000FFFFF)
 
-   (define GL_ACCUM    #x0100)
-   (define GL_LOAD     #x0101)
-   (define GL_RETURN   #x0102)
-   (define GL_MULT     #x0103)
-   (define GL_ADD      #x0104)
+   (define GL_ACCUM               #x0100)
+   (define GL_LOAD                #x0101)
+   (define GL_RETURN              #x0102)
+   (define GL_MULT                #x0103)
+   (define GL_ADD                 #x0104)
 
-   (define GL_NEVER    #x0200)
-   (define GL_LESS     #x0201)
-   (define GL_EQUAL    #x0202)
-   (define GL_LEQUAL   #x0203)
-   (define GL_GREATER  #x0204)
-   (define GL_NOTEQUAL #x0205)
-   (define GL_GEQUAL   #x0206)
-   (define GL_ALWAYS   #x0207)
+   (define GL_NEVER               #x0200)
+   (define GL_LESS                #x0201)
+   (define GL_EQUAL               #x0202)
+   (define GL_LEQUAL              #x0203)
+   (define GL_GREATER             #x0204)
+   (define GL_NOTEQUAL            #x0205)
+   (define GL_GEQUAL              #x0206)
+   (define GL_ALWAYS              #x0207)
 
-   (define GL_POINTS         #x0000)
-   (define GL_LINES          #x0001)
-   (define GL_LINE_LOOP      #x0002)
-   (define GL_LINE_STRIP     #x0003)
-   (define GL_TRIANGLES      #x0004)
-   (define GL_TRIANGLE_STRIP #x0005)
-   (define GL_TRIANGLE_FAN   #x0006)
-   (define GL_QUADS          #x0007)
-   (define GL_QUAD_STRIP     #x0008)
-   (define GL_POLYGON        #x0009)
+   (define GL_POINTS              #x0000)
+   (define GL_LINES               #x0001)
+   (define GL_LINE_LOOP           #x0002)
+   (define GL_LINE_STRIP          #x0003)
+   (define GL_TRIANGLES           #x0004)
+   (define GL_TRIANGLE_STRIP      #x0005)
+   (define GL_TRIANGLE_FAN        #x0006)
+   (define GL_QUADS               #x0007)
+   (define GL_QUAD_STRIP          #x0008)
+   (define GL_POLYGON             #x0009)
 
    (define GL_ZERO                0)
    (define GL_ONE                 1)
@@ -606,6 +619,7 @@
 		(define GL_CLIP_PLANE3 #x3003)
 		(define GL_CLIP_PLANE4 #x3004)
 		(define GL_CLIP_PLANE5 #x3005)
+		
 		(define GL_BYTE #x1400)
 		(define GL_UNSIGNED_BYTE #x1401)
 		(define GL_SHORT #x1402)
@@ -616,6 +630,7 @@
 		(define GL_2_BYTES #x1407)
 		(define GL_3_BYTES #x1408)
 		(define GL_4_BYTES #x1409)
+		
 		(define GL_NONE 0)
 		(define GL_FRONT_LEFT #x0400)
 		(define GL_FRONT_RIGHT #x0401)
@@ -630,6 +645,7 @@
 		(define GL_AUX1 #x040A)
 		(define GL_AUX2 #x040B)
 		(define GL_AUX3 #x040C)
+		
 		(define GL_NO_ERROR 0)
 		(define GL_INVALID_ENUM #x0500)
 		(define GL_INVALID_VALUE #x0501)
@@ -637,11 +653,13 @@
 		(define GL_STACK_OVERFLOW #x0503)
 		(define GL_STACK_UNDERFLOW #x0504)
 		(define GL_OUT_OF_MEMORY #x0505)
+		
 		(define GL_2D #x0600)
 		(define GL_3D #x0601)
 		(define GL_3D_COLOR #x0602)
 		(define GL_3D_COLOR_TEXTURE #x0603)
 		(define GL_4D_COLOR_TEXTURE #x0604)
+		
 		(define GL_PASS_THROUGH_TOKEN #x0700)
 		(define GL_POINT_TOKEN #x0701)
 		(define GL_LINE_TOKEN #x0702)
@@ -650,13 +668,17 @@
 		(define GL_DRAW_PIXEL_TOKEN #x0705)
 		(define GL_COPY_PIXEL_TOKEN #x0706)
 		(define GL_LINE_RESET_TOKEN #x0707)
+		
 		(define GL_EXP #x0800)
 		(define GL_EXP2 #x0801)
+		
 		(define GL_CW #x0900)
 		(define GL_CCW #x0901)
+		
 		(define GL_COEFF #x0A00)
 		(define GL_ORDER #x0A01)
 		(define GL_DOMAIN #x0A02)
+		
 		(define GL_CURRENT_COLOR #x0B00)
 		(define GL_CURRENT_INDEX #x0B01)
 		(define GL_CURRENT_NORMAL #x0B02)
@@ -866,14 +888,17 @@
 		(define GL_FEEDBACK_BUFFER_TYPE #x0DF2)
 		(define GL_SELECTION_BUFFER_POINTER #x0DF3)
 		(define GL_SELECTION_BUFFER_SIZE #x0DF4)
+		
 		(define GL_TEXTURE_WIDTH #x1000)
 		(define GL_TEXTURE_HEIGHT #x1001)
 		(define GL_TEXTURE_INTERNAL_FORMAT #x1003)
 		(define GL_TEXTURE_BORDER_COLOR #x1004)
 		(define GL_TEXTURE_BORDER #x1005)
+		
 		(define GL_DONT_CARE #x1100)
 		(define GL_FASTEST #x1101)
 		(define GL_NICEST #x1102)
+		
 		(define GL_LIGHT0 #x4000)
 		(define GL_LIGHT1 #x4001)
 		(define GL_LIGHT2 #x4002)
@@ -882,6 +907,7 @@
 		(define GL_LIGHT5 #x4005)
 		(define GL_LIGHT6 #x4006)
 		(define GL_LIGHT7 #x4007)
+		
 		(define GL_AMBIENT #x1200)
 		(define GL_DIFFUSE #x1201)
 		(define GL_SPECULAR #x1202)
@@ -892,8 +918,10 @@
 		(define GL_CONSTANT_ATTENUATION #x1207)
 		(define GL_LINEAR_ATTENUATION #x1208)
 		(define GL_QUADRATIC_ATTENUATION #x1209)
+		
 		(define GL_COMPILE #x1300)
 		(define GL_COMPILE_AND_EXECUTE #x1301)
+		
 		(define GL_CLEAR #x1500)
 		(define GL_AND #x1501)
 		(define GL_AND_REVERSE #x1502)
@@ -910,16 +938,20 @@
 		(define GL_OR_INVERTED #x150D)
 		(define GL_NAND #x150E)
 		(define GL_SET #x150F)
+		
 		(define GL_EMISSION #x1600)
 		(define GL_SHININESS #x1601)
 		(define GL_AMBIENT_AND_DIFFUSE #x1602)
 		(define GL_COLOR_INDEXES #x1603)
+		
 		(define GL_MODELVIEW #x1700)
 		(define GL_PROJECTION #x1701)
 		(define GL_TEXTURE #x1702)
+		
 		(define GL_COLOR #x1800)
 		(define GL_DEPTH #x1801)
 		(define GL_STENCIL #x1802)
+		
 		(define GL_COLOR_INDEX #x1900)
 		(define GL_STENCIL_INDEX #x1901)
 		(define GL_DEPTH_COMPONENT #x1902)
@@ -931,75 +963,91 @@
 		(define GL_RGBA #x1908)
 		(define GL_LUMINANCE #x1909)
 		(define GL_LUMINANCE_ALPHA #x190A)
+		
 		(define GL_BITMAP #x1A00)
+		
 		(define GL_POINT #x1B00)
 		(define GL_LINE #x1B01)
 		(define GL_FILL #x1B02)
+		
 		(define GL_RENDER #x1C00)
 		(define GL_FEEDBACK #x1C01)
 		(define GL_SELECT #x1C02)
+		
 		(define GL_FLAT #x1D00)
 		(define GL_SMOOTH #x1D01)
+		
 		(define GL_KEEP #x1E00)
 		(define GL_REPLACE #x1E01)
 		(define GL_INCR #x1E02)
 		(define GL_DECR #x1E03)
+		
 		(define GL_VENDOR #x1F00)
 		(define GL_RENDERER #x1F01)
 		(define GL_VERSION #x1F02)
 		(define GL_EXTENSIONS #x1F03)
+		
 		(define GL_S #x2000)
 		(define GL_T #x2001)
 		(define GL_R #x2002)
 		(define GL_Q #x2003)
+		
 		(define GL_MODULATE #x2100)
 		(define GL_DECAL #x2101)
+		
 		(define GL_TEXTURE_ENV_MODE #x2200)
 		(define GL_TEXTURE_ENV_COLOR #x2201)
+		
 		(define GL_TEXTURE_ENV #x2300)
+		
 		(define GL_EYE_LINEAR #x2400)
 		(define GL_OBJECT_LINEAR #x2401)
 		(define GL_SPHERE_MAP #x2402)
+		
 		(define GL_TEXTURE_GEN_MODE #x2500)
 		(define GL_OBJECT_PLANE #x2501)
 		(define GL_EYE_PLANE #x2502)
+		
 		(define GL_NEAREST #x2600)
 		(define GL_LINEAR #x2601)
+		
 		(define GL_NEAREST_MIPMAP_NEAREST #x2700)
 		(define GL_LINEAR_MIPMAP_NEAREST #x2701)
 		(define GL_NEAREST_MIPMAP_LINEAR #x2702)
 		(define GL_LINEAR_MIPMAP_LINEAR #x2703)
+		
 		(define GL_TEXTURE_MAG_FILTER #x2800)
 		(define GL_TEXTURE_MIN_FILTER #x2801)
 		(define GL_TEXTURE_WRAP_S #x2802)
 		(define GL_TEXTURE_WRAP_T #x2803)
+		
 		(define GL_CLAMP #x2900)
 		(define GL_REPEAT #x2901)
 
 
-   (define glAccum      (dlsym % GLvoid "glAccum" GLenum GLfloat))
-   (define glAlphaFunc  (dlsym % GLvoid "glAlphaFunc" GLenum GLclampf))
-   (define glBegin      (dlsym % GLvoid "glBegin" GLenum))
-   (define glBitmap     (dlsym % GLvoid "glBitmap" GLsizei GLsizei GLfloat GLfloat GLfloat GLfloat GLubyte*))
-   (define glBlendFunc  (dlsym % GLvoid "glBlendFunc" GLenum GLenum))
-   (define glCallList   (dlsym % GLvoid "glCallList" GLuint))
-   (define glCallLists  (dlsym % GLvoid "glCallLists" GLsizei GLenum GLvoid*))
-   (define glClear      (dlsym % GLvoid "glClear" GLbitfield))
-;WINGDIAPI void APIENTRY glClearAccum (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-   (define glClearColor (dlsym % GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
-;WINGDIAPI void APIENTRY glClearIndex (GLfloat c);
-;WINGDIAPI void APIENTRY glClipPlane (GLenum plane, const GLdouble *equation);
-;WINGDIAPI void APIENTRY glColor3b (GLbyte red, GLbyte green, GLbyte blue);
+   (define glAccum       (dlsym $ GLvoid "glAccum"      GLenum GLfloat))
+   (define glAlphaFunc   (dlsym $ GLvoid "glAlphaFunc"  GLenum GLclampf))
+   (define glBegin       (dlsym $ GLvoid "glBegin"      GLenum))
+   (define glBitmap      (dlsym $ GLvoid "glBitmap"     GLsizei GLsizei GLfloat GLfloat GLfloat GLfloat GLubyte*))
+   (define glBlendFunc   (dlsym $ GLvoid "glBlendFunc"  GLenum GLenum))
+   (define glCallList    (dlsym $ GLvoid "glCallList"   GLuint))
+   (define glCallLists   (dlsym $ GLvoid "glCallLists"  GLsizei GLenum GLvoid*))
+   (define glClear       (dlsym $ GLvoid "glClear"      GLbitfield))
+   (define glClearAccum  (dlsym $ GLvoid "glClearAccum" GLfloat GLfloat GLfloat GLfloat))
+   (define glClearColor  (dlsym $ GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
+   (define glClearIndex  (dlsym $ GLvoid "glClearIndex" GLfloat))
+;  (define glClipPlane   (dlsym $ GLvoid "glClipPlane"  GLenum GLdouble*))
+   (define glColor3b     (dlsym $ GLvoid "glColor3b"    GLbyte GLbyte GLbyte))
 ;WINGDIAPI void APIENTRY glColor3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue);
 ;WINGDIAPI void APIENTRY glColor3dv (const GLdouble *v);
-  (define glColor3f (dlsym % GLvoid "glColor3f" GLfloat GLfloat GLfloat))
+   (define glColor3f     (dlsym $ GLvoid "glColor3f"    GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glColor3fv (const GLfloat *v);
-  (define glColor3i (dlsym % GLvoid "glColor3i" GLint GLint GLint))
+   (define glColor3i     (dlsym $ GLvoid "glColor3i"    GLint GLint GLint))
 ;WINGDIAPI void APIENTRY glColor3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glColor3s (GLshort red, GLshort green, GLshort blue);
 ;WINGDIAPI void APIENTRY glColor3sv (const GLshort *v);
-  (define glColor3ub (dlsym % GLvoid "glColor3ub" GLubyte GLubyte GLubyte))
+   (define glColor3ub    (dlsym $ GLvoid "glColor3ub"   GLubyte GLubyte GLubyte))
 ;WINGDIAPI void APIENTRY glColor3ubv (const GLubyte *v);
 ;WINGDIAPI void APIENTRY glColor3ui (GLuint red, GLuint green, GLuint blue);
 ;WINGDIAPI void APIENTRY glColor3uiv (const GLuint *v);
@@ -1009,6 +1057,7 @@
 ;WINGDIAPI void APIENTRY glColor4bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glColor4d (GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha);
 ;WINGDIAPI void APIENTRY glColor4dv (const GLdouble *v);
+   (define glColor4f     (dlsym $ GLvoid "glColor4f"    GLfloat GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 ;WINGDIAPI void APIENTRY glColor4fv (const GLfloat *v);
 ;WINGDIAPI void APIENTRY glColor4i (GLint red, GLint green, GLint blue, GLint alpha);
@@ -1021,17 +1070,17 @@
 ;WINGDIAPI void APIENTRY glColor4uiv (const GLuint *v);
 ;WINGDIAPI void APIENTRY glColor4us (GLushort red, GLushort green, GLushort blue, GLushort alpha);
 ;WINGDIAPI void APIENTRY glColor4usv (const GLushort *v);
-;WINGDIAPI void APIENTRY glColorMaterial (GLenum face, GLenum mode);
+   (define glColorMaterial (dlsym $ GLvoid "glColorMaterial" GLenum GLenum))
 ;WINGDIAPI void APIENTRY glCopyPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
-  (define glCullFace (dlsym % GLvoid "glCullFace" GLenum))
-;WINGDIAPI void APIENTRY glDeleteLists (GLuint list, GLsizei range);
-  (define glDisable (dlsym % GLvoid "glDisable" GLenum))
+   (define glCullFace    (dlsym $ GLvoid "glCullFace"   GLenum))
+   (define glDeleteLists (dlsym $ GLvoid "glDeleteLists" GLuint GLsizei))
+   (define glDisable     (dlsym $ GLvoid "glDisable"    GLenum))
 ;WINGDIAPI void APIENTRY glDrawPixels (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glEdgeFlag (GLboolean flag);
 ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag);
-  (define glEnable (dlsym % GLvoid "glEnable" GLenum))
-  (define glEnd (dlsym % GLvoid "glEnd"))
-;WINGDIAPI void APIENTRY glEndList (void);
+   (define glEnable      (dlsym $ GLvoid "glEnable"     GLenum))
+   (define glEnd         (dlsym $ GLvoid "glEnd"))
+   (define glEndList     (dlsym $ GLvoid "glEndList"))
 ;WINGDIAPI void APIENTRY glEvalCoord1d (GLdouble u);
 ;WINGDIAPI void APIENTRY glEvalCoord1dv (const GLdouble *u);
 ;WINGDIAPI void APIENTRY glEvalCoord1f (GLfloat u);
@@ -1049,7 +1098,7 @@
 ;WINGDIAPI void APIENTRY glFogfv (GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glFogi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glFogiv (GLenum pname, const GLint *params);
-  (define glFrontFace (dlsym % GLvoid "glFrontFace" GLenum))
+   (define glFrontFace (dlsym $ GLvoid "glFrontFace" GLenum))
 ;WINGDIAPI void APIENTRY glFrustum (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 ;WINGDIAPI GLuint APIENTRY glGenLists (GLsizei range);
 ;WINGDIAPI void APIENTRY glGetClipPlane (GLenum plane, GLdouble *equation);
@@ -1064,13 +1113,13 @@
 ;WINGDIAPI void APIENTRY glGetPixelMapuiv (GLenum map, GLuint *values);
 ;WINGDIAPI void APIENTRY glGetPixelMapusv (GLenum map, GLushort *values);
 ;WINGDIAPI void APIENTRY glGetPolygonStipple (GLubyte *mask);
-  (define glGetString (dlsym % GLubyte* "glGetString" GLenum))
+   (define glGetString (dlsym $ GLubyte* "glGetString" GLenum))
 ;WINGDIAPI void APIENTRY glGetTexEnvfv (GLenum target, GLenum pname, GLfloat *params);
 ;WINGDIAPI void APIENTRY glGetTexEnviv (GLenum target, GLenum pname, GLint *params);
 ;WINGDIAPI void APIENTRY glGetTexGendv (GLenum coord, GLenum pname, GLdouble *params);
 ;WINGDIAPI void APIENTRY glGetTexGenfv (GLenum coord, GLenum pname, GLfloat *params);
 ;WINGDIAPI void APIENTRY glGetTexGeniv (GLenum coord, GLenum pname, GLint *params);
-  (define glHint (dlsym % GLvoid "glHint" GLenum GLenum))
+   (define glHint (dlsym $ GLvoid "glHint" GLenum GLenum))
 ;WINGDIAPI void APIENTRY glIndexMask (GLuint mask);
 ;WINGDIAPI void APIENTRY glIndexd (GLdouble c);
 ;WINGDIAPI void APIENTRY glIndexdv (const GLdouble *c);
@@ -1091,9 +1140,9 @@
 ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern);
-  (define glLineWidth (dlsym % GLvoid "glLineWidth" GLfloat))
+   (define glLineWidth (dlsym $ GLvoid "glLineWidth" GLfloat))
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
-  (define glLoadIdentity (dlsym % GLvoid "glLoadIdentity"))
+   (define glLoadIdentity (dlsym $ GLvoid "glLoadIdentity"))
 ;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
 ;WINGDIAPI void APIENTRY glLoadMatrixf (const GLfloat *m);
 ;WINGDIAPI void APIENTRY glLoadName (GLuint name);
@@ -1109,7 +1158,7 @@
 ;WINGDIAPI void APIENTRY glMaterialfv (GLenum face, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params);
-  (define glMatrixMode (dlsym % GLvoid "glMatrixMode" GLenum))
+   (define glMatrixMode (dlsym $ GLvoid "glMatrixMode" GLenum))
 ;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
 ;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
 ;WINGDIAPI void APIENTRY glNewList (GLuint list, GLenum mode);
@@ -1124,7 +1173,7 @@
 ;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz);
 ;WINGDIAPI void APIENTRY glNormal3sv (const GLshort *v);
 ;WINGDIAPI void APIENTRY glOrtho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
-  (define glOrtho (dlsym % GLvoid "glOrtho" GLdouble GLdouble  GLdouble GLdouble  GLdouble GLdouble))
+   (define glOrtho (dlsym $ GLvoid "glOrtho" GLdouble GLdouble  GLdouble GLdouble  GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token);
 ;WINGDIAPI void APIENTRY glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values);
 ;WINGDIAPI void APIENTRY glPixelMapuiv (GLenum map, GLsizei mapsize, const GLuint *values);
@@ -1132,7 +1181,7 @@
 ;WINGDIAPI void APIENTRY glPixelTransferf (GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
-   (define glPointSize (dlsym % GLvoid "glPointSize" GLfloat))
+   (define glPointSize (dlsym $ GLvoid "glPointSize" GLfloat))
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
 ;WINGDIAPI void APIENTRY glPopMatrix (void);
@@ -1178,7 +1227,7 @@
 ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
 ;WINGDIAPI void APIENTRY glScalef (GLfloat x, GLfloat y, GLfloat z);
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
-  (define glShadeModel (dlsym % GLvoid "glShadeModel" GLenum))
+  (define glShadeModel (dlsym $ GLvoid "glShadeModel" GLenum))
 ;WINGDIAPI void APIENTRY glTexCoord1d (GLdouble s);
 ;WINGDIAPI void APIENTRY glTexCoord1dv (const GLdouble *v);
 ;WINGDIAPI void APIENTRY glTexCoord1f (GLfloat s);
@@ -1189,7 +1238,7 @@
 ;WINGDIAPI void APIENTRY glTexCoord1sv (const GLshort *v);
 ;WINGDIAPI void APIENTRY glTexCoord2d (GLdouble s, GLdouble t);
 ;WINGDIAPI void APIENTRY glTexCoord2dv (const GLdouble *v);
-  (define glTexCoord2f (dlsym % GLvoid "glTexCoord2f" GLfloat GLfloat))
+  (define glTexCoord2f (dlsym $ GLvoid "glTexCoord2f" GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glTexCoord2fv (const GLfloat *v);
 ;WINGDIAPI void APIENTRY glTexCoord2i (GLint s, GLint t);
 ;WINGDIAPI void APIENTRY glTexCoord2iv (const GLint *v);
@@ -1221,25 +1270,27 @@
 ;WINGDIAPI void APIENTRY glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glTexGeni (GLenum coord, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
-   (define glTexImage1D (dlsym % GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum GLvoid*))
-   (define glTexImage2D (dlsym % GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum GLvoid*))
-   (define glTexParameteri (dlsym % GLvoid "glTexParameteri" GLenum GLenum GLint))
+   (define glTexImage1D (dlsym $ GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum GLvoid*))
+   (define glTexImage2D (dlsym $ GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum GLvoid*))
+   (define glTexParameteri (dlsym $ GLvoid "glTexParameteri" GLenum GLenum GLint))
 
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
-   (define glTranslatef (dlsym % GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
-   (define glVertex2d (dlsym % GLvoid "glVertex2d" GLdouble GLdouble))
-;WINGDIAPI void APIENTRY glVertex2dv (const GLdouble *v);
-   (define glVertex2f (dlsym % GLvoid "glVertex2f" GLfloat GLfloat))
-;WINGDIAPI void APIENTRY glVertex2fv (const GLfloat *v);
-   (define glVertex2i (dlsym % GLvoid "glVertex2i" GLint GLint))
+   (define glTranslatef (dlsym $ GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
+   (define glVertex2d  (dlsym $ GLvoid "glVertex2d"  GLdouble GLdouble))
+   (define glVertex2dv (dlsym $ GLvoid "glVertex2dv" GLdouble*))
+   (define glVertex2f  (dlsym $ GLvoid "glVertex2f"  GLfloat GLfloat))
+   (define glVertex2fv (dlsym $ GLvoid "glVertex2fv" GLfloat*))
+           ;(define (glVertex2f a b) (glVertex2fv (list a b)))
+   (define glVertex2i (dlsym $ GLvoid "glVertex2i" GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
 ;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v);
-   (define glVertex3d (dlsym % GLvoid "glVertex3d" GLdouble GLdouble GLdouble))
+   (define glVertex3d (dlsym $ GLvoid "glVertex3d" GLdouble GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
-   (define glVertex3f (dlsym % GLvoid "glVertex3f" GLfloat GLfloat GLfloat))
+   (define glVertex3f  (dlsym $ GLvoid "glVertex3f"  GLfloat GLfloat GLfloat))
+   (define glVertex3fv (dlsym $ GLvoid "glVertex3fv" GLfloat*))
 ;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);
-   (define glVertex3i (dlsym % GLvoid "glVertex3i" GLint GLint GLint))
+   (define glVertex3i (dlsym $ GLvoid "glVertex3i" GLint GLint GLint))
 ;WINGDIAPI void APIENTRY glVertex3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex3s (GLshort x, GLshort y, GLshort z);
 ;WINGDIAPI void APIENTRY glVertex3sv (const GLshort *v);
@@ -1251,6 +1302,26 @@
 ;WINGDIAPI void APIENTRY glVertex4iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glVertex4s (GLshort x, GLshort y, GLshort z, GLshort w);
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
-   (define glViewport (dlsym % GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+   (define glViewport (dlsym $ GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
+; GLU
+(define GLU_LIBRARY
+   (cond
+      ((string-eq? (ref uname 1) "Windows")  "glu32")
+      ((string-eq? (ref uname 1) "Linux")    "libGLU.so")
+      ;"HP-UX"
+      ;"SunOS"
+      ;"Darwin"
+      ;"FreeBSD"
+      ;"CYGWIN_NT-5.2-WOW64"
+      ;"MINGW32_NT-5.2"
+      ;...
+      (else
+         (runtime-error "Unknown platform"))))
+(define $ (dlopen GLU_LIBRARY))
+
+   (define gluErrorString (dlsym $ GLubyte* "gluErrorString" GLenum))
+   (define gluOrtho2D     (dlsym $ GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
+   (define gluPerspective (dlsym $ GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
+   (define gluLookAt      (dlsym $ GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
 ))

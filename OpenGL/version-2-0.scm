@@ -41,7 +41,9 @@ glDrawArrays
 
 ;	using GLchar		= System.Byte;		// char
 
-(define GLchar** type-tuple)
+(define GLchar** (fx:or type-string #x40))
+;(define GLchar** type-tuple)
+
 (define GLint* type-vector-raw)
 (define GLsizei* type-vector-raw)
 (define GLchar* type-string)

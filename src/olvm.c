@@ -165,6 +165,7 @@
 #include <inttypes.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <alloca.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -556,15 +557,18 @@ struct object
 #ifndef UVTOI_CHECK
 #define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define uvtoi(v)  ({ word x = (word)v; UVTOI_CHECK(x); (x >> IPOS); })
-#define itouv(i)  ({ word x = (word)i;                 (x << IPOS) | 2; })
+#define uvtoi(v)   (int)({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
+#define uvtol(v)  (long)({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
+#define itouv(i)  (word)({ word x = (word)i;                 (word) (x << IPOS) | 2; })
 		// (((struct value*)(&v))->payload);
 
+// todo: add overflow checking...
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define svtoi(v)  ({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS);     })
-#define itosv(i)  ({ word x = (word)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
+#define svtoi(v)   (int)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define svtol(v)  (long)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define itosv(i)  (word)({ word x = (word)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 
 		// ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 
@@ -1104,6 +1108,13 @@ unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in
 	while (p < max && *pos++) p++;
 	return p;
 }
+unsigned int llen(word list)
+{
+	unsigned int p = 0;
+	while (list != INULL)
+		list = cdr(list), p++;
+	return p;
+}
 
 void set_signal_handler()
 {
@@ -1248,7 +1259,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 			this = (word *) R[0];
 			if (!is_object(this)) {
 				fprintf(stderr, "Unexpected virtual machine exit\n");
-				return (void*) uvtoi(R[3]);
+				return (void*) uvtol(R[3]);
 			}
 
 			R[0] = IFALSE; // set no mcp
@@ -3418,10 +3429,12 @@ word* pinvoke(OL* self, word* arguments)
 			                            *(double*)&argv[2], *(double*)&argv[3],\
 			                            *(double*)&argv[4], *(double*)&argv[5]);\
 			case 9 + 0x1FF0000:\
-			         return ((conv word (*)  (double, double, double, double, double, double))\
-			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
-			                            *(double*)&argv[2], *(double*)&argv[3],\
-			                            *(double*)&argv[4], *(double*)&argv[5]);
+			         return ((conv word (*)  (double, double, double,\
+			                                  double, double, double,\
+									          double, double, double))\
+			                 function) (*(double*)&argv[0], *(double*)&argv[1], *(double*)&argv[2],\
+			                            *(double*)&argv[3], *(double*)&argv[4], *(double*)&argv[5],\
+								        *(double*)&argv[6], *(double*)&argv[7], *(double*)&argv[8]);
 #else
 		#define CALLDOUBLES(conv)\
 			case 18: return ((conv word (*)  (word, word, word, word, word, word, \
@@ -3508,14 +3521,16 @@ word* pinvoke(OL* self, word* arguments)
 #endif
 		return 0; // if no call have made
 	}
-	long from_int(word* arg) {
+
+	long from_int(word arg) {
 		// так как в стек мы все равно большое сложить не сможем, то возьмем
 		// только то, что влазит (первые два члена)
-		assert (is_value(arg[1]));
-		assert (is_object(arg[2]));
+//		assert (is_value(arg[1]));
+//		assert (is_object(arg[2]));
 
 		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
 	}
+
 	float from_int_to_float(word* arg) {
 		// читаем длинное число в float формат
 		assert (is_value(car(arg)));
@@ -3530,13 +3545,13 @@ word* pinvoke(OL* self, word* arguments)
 
 		return f;
 	}
-	float from_rational(word* arg) {
+	float from_rational(word arg) {
 		word* pa = (word*)car(arg);
 		word* pb = (word*)cdr(arg);
 
 		float a, b;
 		if (is_value(pa))
-			a = svtoi(pa);
+			a = svtol(pa);
 		else {
 			switch (reftype(pa)) {
 			case TINT:
@@ -3548,7 +3563,7 @@ word* pinvoke(OL* self, word* arguments)
 			}
 		}
 		if (is_value(pb))
-			b = svtoi(pb);
+			b = svtol(pb);
 		else {
 			switch (reftype(pb)) {
 			case TINT:
@@ -3561,6 +3576,83 @@ word* pinvoke(OL* self, word* arguments)
 		}
 
 		return (a / b);
+	}
+
+	int to_int(word arg) {
+		if (is_value(arg))
+			return svtoi(arg);
+
+		switch (reftype(arg)) {
+		case TINT:
+			return (int)+from_int(arg);
+		case TINTN:
+			return (int)-from_int(arg);
+		case TRATIONAL:
+			return (int) from_rational(arg);
+		case TCOMPLEX:
+			return to_int(car(arg)); // return real part of value
+		default:
+			fprintf(stderr, "can't get int from %d\n", reftype(arg));
+		}
+
+		return 0;
+	}
+
+	long to_long(word arg) {
+		if (is_value(arg))
+			return svtol(arg);
+
+		switch (reftype(arg)) {
+		case TINT:
+			return (long)+from_int(arg);
+		case TINTN:
+			return (long)-from_int(arg);
+		case TRATIONAL:
+			return (long) from_rational(arg);
+		case TCOMPLEX:
+			return to_long(car(arg)); // return real part of value
+		default:
+			fprintf(stderr, "can't get int from %d\n", reftype(arg));
+		}
+
+		return 0;
+	}
+
+	float to_float(word arg) {
+		if (is_value(arg))
+			return svtol(arg);
+
+		switch (reftype(arg)) {
+		case TINT:
+			return (float)+from_int(arg);
+		case TINTN:
+			return (float)-from_int(arg);
+		case TRATIONAL:
+			return (float) from_rational(arg);
+		case TCOMPLEX:
+			return to_float(car(arg)); // return real part of value
+		}
+		return 0;
+	}
+
+	double to_double(word arg) {
+		if (is_value(arg))
+			return svtol (arg);
+
+		switch (reftype(arg)) {
+		case TINT:
+			return (double)+from_int(arg);
+			break;
+		case TINTN:
+			return (double)-from_int(arg);
+			break;
+		case TRATIONAL:
+			return (double) from_rational(arg);
+			break;
+		case TCOMPLEX:
+			return to_double(car(arg)); // return real part of value
+		}
+		return 0;
 	}
 
 
@@ -3591,11 +3683,11 @@ word* pinvoke(OL* self, word* arguments)
 	word* t = (word*)cdr(B); // rtty
 
 	while ((word)p != INULL) { // пока есть аргументы
-		assert (reftype(p) == TPAIR); // assert list
-		assert (reftype(t) == TPAIR); // assert list
+		assert (reftype(p) == TPAIR); // assert(list)
+		assert (reftype(t) == TPAIR); // assert(list)
 
 		int type = uvtoi(car(t));
-		word* arg = (word*)car(p);
+		word arg = (word) car(p);
 
 /*		// todo: add argument overriding as PAIR as argument value
 		if (typeof (p[1]) == TPAIR) {
@@ -3603,11 +3695,12 @@ word* pinvoke(OL* self, word* arguments)
 			arg = ((word*)p[1])[2];
 		}*/
 
-//		args[i] = 0; // обнулим (так как потом можем записать только часть)
+		args[i] = 0; // обнулим (так как потом можем перезаписать только часть)
 		// может и не надо.
 
 		// destination type
 		switch (type) {
+		// целочисленные типы:
 		case TFIX:
 		case TINT:
 			if (is_value(arg))
@@ -3627,55 +3720,72 @@ word* pinvoke(OL* self, word* arguments)
 			case TPORT:
 			case TWORD:
 			case TBVEC:
-				args[i] = arg[1];
+				args[i] = car(arg);
 				break;
 			default:
+				fprintf(stderr, "can't cast %d to int\n", type);
 				args[i] = 0; // todo: error
 			}
 			break;
 
+		case TFIX + 0x40: {
+			int c = llen(arg);
+			int* p = (int*) alloca(c * sizeof(int));
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = to_int(car(l)), l = cdr(l);
+			break;
+		}
+
+		case TINT + 0x40: {
+			int c = llen(arg);
+			long* p = (long*) alloca(c * sizeof(long));
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = to_long(car(l)), l = cdr(l);
+			break;
+		}
+
+		// с плавающей запятой:*/
 		case TFLOAT:
-			if (is_value(arg))
-				*(float*)&args[i] = (float) (int)svtoi(arg);
-			else
-			switch (reftype(arg)) {
-			case TINT: // source type
-				*(float*)&args[i] = (float)+from_int(arg);
-				break;
-			case TINTN:
-				*(float*)&args[i] = (float)-from_int(arg);
-				break;
-			case TRATIONAL:
-				*(float*)&args[i] = (float) from_rational(arg);
-				break;
-			default:
-				*(float*)&args[i] = (float) 0.0; // todo: error, return infinity, maybe, or NaN
-			}
+			*(float*)&args[i] = to_float(arg);
+
 			floats |= (0x100 << i);
 			break;
-		case TDOUBLE:
-			if (is_value(arg))
-				*(double*)&args[i] = (double) (int)svtoi(arg);
-			else
-			switch (reftype(arg)) {
-			case TINT: // source type
-				*(double*)&args[i] = (double)+from_int(arg);
-				break;
-			case TINTN:
-				*(double*)&args[i] = (double)-from_int(arg);
-				break;
-			case TRATIONAL:
-				*(double*)&args[i] = (double) from_rational(arg);
-				break;
-			default:
-				*(double*)&args[i] = (double) 0.0; // todo: error, same as float
-			}
-#if __amd64__
-			doubles |= (0x10000 << i);
-#else
-			i++; // for x86 double fills two words
-#endif
+		case TFLOAT + 0x40: {
+			int c = llen(arg);
+			float* p = (float*) alloca(c * sizeof(float));
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = to_float(car(l)), l = cdr(l);
 			break;
+		}
+
+		case TDOUBLE:
+			*(double*)&args[i] = to_double(arg);
+			#if __amd64__
+				doubles |= (0x10000 << i);
+			#else
+				i++; // for x86 double fills two floats (words)
+			#endif
+			break;
+
+		case TDOUBLE + 0x40: {
+			int c = llen(arg);
+			double* p = (double*) alloca(c * sizeof(double));
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = to_double(car(l)), l = cdr(l);
+			break;
+		}
 
 		// запрос порта - это запрос значения порта
 		// todo: добавить тип "указатель на порт"
@@ -3687,7 +3797,7 @@ word* pinvoke(OL* self, word* arguments)
 			switch (reftype(arg)) {
 			case TWORD:
 			case TPORT:
-				args[i] = arg[1];
+				args[i] = car(arg);
 				break;
 			default:
 				args[i] = 0; // todo: error
@@ -3709,12 +3819,25 @@ word* pinvoke(OL* self, word* arguments)
 			case TPORT:
 //			case TCONST:
 				// in arg[0] size got size of string
-				args[i] = (word)(&arg[1]);
+				args[i] = (word)(&car(arg));
 				break;
 			default:
 				args[i] = 0; // todo: error
 			}
 			break;
+
+		case TSTRING + 0x40: {
+			int c = llen(arg);
+			char** p = (char**) alloca(c * sizeof(char*));
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = (char*) &caar(l), l = cdr(l);
+			break;
+		}
+
+
 		case TTUPLE:
 			if ((word)arg == INULL)
 				args[i] = (word) (void*)0;
@@ -3731,11 +3854,11 @@ word* pinvoke(OL* self, word* arguments)
 				// что-бы возвращать список, какой мне нужен
 
 				// аллоцировать массив и сложить в него указатели на элементы кортежа
-				int size = hdrsize(arg[0]);
+				int size = hdrsize(*(word*)arg);
 				*fp++ = make_raw_header(TBVEC, size, 0);
 				args[i] = (word)fp; // ссылка на массив указателей на элементы
 
-				word* src = &arg[1];
+				word* src = &car(arg);
 				while (--size)
 					*fp++ = (word)((word*)*src++ + 1);
 //				int j;
@@ -3750,12 +3873,11 @@ word* pinvoke(OL* self, word* arguments)
 			args[i] = (word)arg;
 			break;
 		default:
-			args[i] = 0;
-			break;
+			fprintf(stderr, "can't recognize %d type\n", type);
 		}
 
-		p = (word*)p[2]; // (cdr p)
-		t = (word*)t[2]; // (cdr t)
+		p = (word*)cdr(p); // (cdr p)
+		t = (word*)cdr(t); // (cdr t)
 		i++;
 	}
 	assert ((word)t == INULL); // количество аргументов совпало!
@@ -3831,7 +3953,7 @@ word* pinvoke(OL* self, word* arguments)
 	return result;
 }
 #endif//HAS_PINVOKE
-#if 0
+#if 1
 	__attribute__
 			((__visibility__("default")))
 word* test(OL* self, word* arguments)
