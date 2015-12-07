@@ -16,7 +16,7 @@ DESTDIR?=
 
 
 #temp:
-CC := colorgcc
+#CC := colorgcc
 
 #main
 all: ol config

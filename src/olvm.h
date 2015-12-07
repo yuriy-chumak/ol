@@ -78,7 +78,9 @@ typedef struct ol_t OL;
 // #define SYSCALL_GETRUSAGE 0
 
 #ifdef _WIN32
+#define SYSCALL_SYSINFO 0
 #define SYSCALL_PRCTL 0
+#define SYSCALL_GETRUSAGE 0
 #endif
 
 

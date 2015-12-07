@@ -33,6 +33,9 @@
 
 #include "olvm.h"
 
+// TODO: JIT!
+//	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
+
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
@@ -113,9 +116,7 @@
 
 #define _POSIX_SOURCE //
 
-
-// https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
-#include <features.h>
+// http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
 #	warning "!!! This code built only by Gnu C compiler"
 #else
@@ -131,22 +132,31 @@
 #	endif
 #endif
 
+// https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
 #define DO_PRAGMA(x) _Pragma (#x)
 #define TODO(x) DO_PRAGMA(message ("TODO - " #x))
 //TODO(Some text to put in compile log)
+
+#ifndef _WIN32
+#include <features.h>
+#endif
 
 // check this for nested functions:
 //	https://github.com/Leushenko/C99-Lambda
 
 // posix or not:
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
+// http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system#WindowswithCygwinPOSIX
 
 #define __USE_POSIX199309 // nanosleep, etc.
 
-// todo: переименовать tuple в array. array же неизменяемый, все равно. (??? - seems to not needed)
+#ifdef __MINGW32__ // bug in mingw
+#define _cdecl __cdecl
+#endif
 
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
+
 
 // компилятор owl-lisp поддерживает только несколько специальных форм:
 //	lambda, quote, rlambda (recursive lambda), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
@@ -164,23 +174,29 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <fcntl.h>
+#ifndef _WIN32
 #include <termios.h>
 #include <alloca.h>
+#else
+#include <malloc.h>
+#endif
 
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef _WIN32
 #include <sys/utsname.h> // uname
 #include <sys/sysinfo.h> // sysinfo
 #include <sys/resource.h>// getrusage
+#endif
 
 #include <time.h>
 
-//#if SYSCALL_PRCTL
+#ifdef __linux
 #include <sys/prctl.h>
 #include <linux/seccomp.h>
-//#endif
+#endif
 
 // ?
 #ifndef O_BINARY
@@ -2356,7 +2372,6 @@ invoke:;
 			}
 
 			// IOCTL (syscall 16 fd request #f)
-#			if SYSCALL_IOCTL
 			case SYSCALL_IOCTL + SECCOMP:
 			case SYSCALL_IOCTL: {
 				if (!is_port(a))
@@ -2367,9 +2382,13 @@ invoke:;
 
 				switch (ioctl + seccompp) {
 					case SYSCALL_IOCTL_TIOCGETA: {
-						struct termios t;
-						if (tcgetattr(portfd, &t) != -1)
-							result = (word*)ITRUE;
+						#ifdef _WIN32
+							if (_isatty(portfd))
+						#else
+							struct termios t;
+							if (tcgetattr(portfd, &t) != -1)
+						#endif
+								result = (word*)ITRUE;
 						break;
 					}
 					case SYSCALL_IOCTL_TIOCGETA + SECCOMP: {
@@ -2380,8 +2399,6 @@ invoke:;
 				}
 				break;
 			}
-#			endif
-
 
 			// directories
 			case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
@@ -2534,8 +2551,8 @@ invoke:;
 				if (sock < 0)
 					break;
 #if _WIN32
-				unsigned long mode = blocking ? 0 : 1;
-				if (ioctlsocket(fd, FIONBIO, &mode) == 0)
+				unsigned long mode = 1; //
+				if (ioctlsocket(sock, FIONBIO, &mode) == 0)
 #else
 				int flags = fcntl(sock, F_GETFL, 0);
 				if (flags < 0)
@@ -2572,6 +2589,8 @@ invoke:;
 				CHECK(is_port(a), a, SYSCALL);
 				int sockfd = car (a);
 
+				// todo: https://svn.code.sf.net/p/plibc/code/trunk/plibc/src/inet_ntop.c
+#ifndef _WIN32
 				struct sockaddr_storage peer;
 				socklen_t len = sizeof(peer);
 
@@ -2597,6 +2616,7 @@ invoke:;
 					break;
 
 				result = new_pair(new_string(ipstr), F(port));
+#endif
 				break;
 			}
 
@@ -2616,7 +2636,7 @@ invoke:;
 				}
 
 #ifdef _WIN32// for Windows
-				Sleep(uvtoi (a) / 1000000); // in ms
+				Sleep(untoi (a) / 1000000); // in ms
 #else//			for Linux:
 				struct timespec ts = { untoi(a) / 1000000000, untoi(a) % 1000000000 };
 				struct timespec rem;
@@ -2655,6 +2675,7 @@ invoke:;
 				// todo: add case (cons program environment)
 				if (is_string(a)) {
 					char* command = (char*)&car(a);
+#ifndef _WIN32
 					int child = fork();
 					if (child == 0) {
 						fprintf(stderr, "forking %s\n", command);
@@ -2684,6 +2705,7 @@ invoke:;
 					}
 					else if (child > 0)
 						result = (word*)ITRUE;
+#endif
 					break;
 				}
 				break;
@@ -2746,6 +2768,7 @@ invoke:;
 			// UNAME (uname)
 			// http://linux.die.net/man/2/uname
 			case 63: {
+#ifndef _WIN32
 				struct utsname name;
 				if (uname(&name))
 					break;
@@ -2757,6 +2780,7 @@ invoke:;
 						new_string(name.version),
 						new_string(name.machine)
 				);
+#endif
 
 				break;
 			}
@@ -2936,8 +2960,10 @@ invoke:;
 				break;
 			#endif
 			case SYSCALL_KILL:
+#ifndef _WIN32
 				if (kill(uvtoi (a), uvtoi (b)) >= 0)
 					result = (word*) ITRUE;
+#endif
 				break;
 			}
 			A4 = (word) result;
@@ -3515,7 +3541,7 @@ word* pinvoke(OL* self, word* arguments)
 			CALL(__fastcall);
 			break;
 		default:
-			fprintf(stderr, "Unsupported calling convention %d", convention >> 6);
+			fprintf(stderr, "Unsupported calling convention %d", returntype >> 8);
 			break;
 		}
 #endif
