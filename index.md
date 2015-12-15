@@ -7,7 +7,7 @@ categories: index
 ### Summary
 
    OL (Owl Lisp) is a purely <i>(mostly)</i> functional dialect of Lisp.
-It implements an extended subset of <a href="http://www.schemers.org/Documents/Standards/R5RS/" target="_blank">R5RS</a> Scheme but has been renamed as a Lisp by its author mainly to avoid possible confusion.
+It implements an extended subset of <a href="http://www.schemers.org/Documents/Standards/R5RS/" target="_blank">R<sup>5</sup>RS</a> Scheme but has been renamed as a Lisp by its author mainly to avoid possible confusion.
 
    You can immediately try Ol in the provided terminal on this page. For example, type:
 <pre><code id="sample1" data-language="scheme">(+ 3/7 2+4i)</code><button class="doit" onclick="doit(sample1.textContent)" disabled>send to the terminal</button></pre>

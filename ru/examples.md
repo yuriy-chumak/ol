@@ -54,4 +54,3 @@ categories: ru
 </code></pre>
 
    Some works more.
-</span>

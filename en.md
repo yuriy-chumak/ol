@@ -23,6 +23,3 @@ which is another way of
 ### Learn
 
    I'm writing docs right now. It will be available very soon. You can check <b><a href="?ru/examples">SAMPLES</a></b> for now.
-
-<small style="float: right">Copyright (c) 2015 Yuriy Chumak</small>
-

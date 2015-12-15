@@ -22,6 +22,3 @@ Ol реализован как расширенный сабсет [R5RS](http:/
 ### [Tutorial](?ru/tutorial)
 
    Some works more.
-
-<small style="float: right">Copyright (c) 2015 Yuriy Chumak</small>
-

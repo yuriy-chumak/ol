@@ -15,4 +15,6 @@ categories: ru
       1. [Переменные, ключевые слова и область видимости](?ru/basic-concepts/Variables-keywords-regions)
 1. [Примеры](?ru/examples)
 
+1. [OpenGL](?ru/opengl)
+
    Some works more.
