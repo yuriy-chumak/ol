@@ -1,5 +1,5 @@
 ;!
-(define-library (lib windows)
+(define-library (lib winapi)
   (export 
     GetModuleHandle  ; 
     
@@ -53,7 +53,7 @@
   )
 
   (import
-      (owl defmac) (owl io)
+      (r5rs base) (owl io)
       (owl list) (owl string)
       (owl math)
       (owl pinvoke))

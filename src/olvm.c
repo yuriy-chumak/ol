@@ -573,7 +573,7 @@ struct object
 #ifndef UVTOI_CHECK
 #define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define uvtoi(v)   (int)({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
+#define uvtoi(v)   /*(int)*/({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
 #define uvtol(v)  (long)({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
 #define itouv(i)  (word)({ word x = (word)i;                 (word) (x << IPOS) | 2; })
 		// (((struct value*)(&v))->payload);
@@ -582,7 +582,7 @@ struct object
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define svtoi(v)   (int)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define svtoi(v)   /*(int)*/({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define svtol(v)  (long)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define itosv(i)  (word)({ word x = (word)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 
@@ -1227,7 +1227,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	word* this = (word*) ptrs[nobjs];
 
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
-	for (ptrdiff_t i = i; i < NR; i++)
+	for (ptrdiff_t i = 0; i < NR; i++)
 		R[i] = INULL;
 	R[0] = IFALSE; // MCP - master control program
 	R[3] = IHALT;  // continuation
@@ -1493,6 +1493,11 @@ invoke:;
 #		define SYSCALL_DLCLOSE 176
 #		define SYSCALL_DLSYM 177
 #		define SYSCALL_DLERROR 178
+
+#ifdef _WIN32
+#	define SYSCALL_GETRUSAGE 0
+#	define SYSCALL_SYSINFO 0
+#endif
 
 	// tuples, trees
 #	define MKT      23   // make tuple
@@ -2768,7 +2773,26 @@ invoke:;
 			// UNAME (uname)
 			// http://linux.die.net/man/2/uname
 			case 63: {
-#ifndef _WIN32
+				#ifdef _WIN32 // todo: add this to win32
+				struct utsname
+				{
+					char sysname[65];
+				    char nodename[65];
+				    char release[65];
+				    char version[65];
+				    char machine[65];
+				};
+
+				int uname(struct utsname* out) {
+					strncpy(out->sysname, "Windows", sizeof(out->sysname));
+					strncpy(out->nodename, "", sizeof(out->nodename));
+					strncpy(out->release, "", sizeof(out->release));
+					strncpy(out->version, "", sizeof(out->version));
+					strncpy(out->machine, "", sizeof(out->machine));
+					return 0;
+				};
+				#endif
+
 				struct utsname name;
 				if (uname(&name))
 					break;
@@ -2780,7 +2804,6 @@ invoke:;
 						new_string(name.version),
 						new_string(name.machine)
 				);
-#endif
 
 				break;
 			}
@@ -3979,7 +4002,7 @@ word* pinvoke(OL* self, word* arguments)
 	return result;
 }
 #endif//HAS_PINVOKE
-#if 1
+#if 0
 	__attribute__
 			((__visibility__("default")))
 word* test(OL* self, word* arguments)
