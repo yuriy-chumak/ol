@@ -135,9 +135,9 @@
 ;WINGDIAPI void APIENTRY glColor3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue);
 ;WINGDIAPI void APIENTRY glColor3dv (const GLdouble *v);
-   glColor3f ; void (GLfloat red, GLfloat green, GLfloat blue)
-;WINGDIAPI void APIENTRY glColor3fv (const GLfloat *v);
-   glColor3i ; void (GLint red, GLint green, GLint blue)
+   glColor3f  ; void (GLfloat red, GLfloat green, GLfloat blue)
+   glColor3fv ; void (const GLfloat *v)
+   glColor3i  ; void (GLint red, GLint green, GLint blue)
 ;WINGDIAPI void APIENTRY glColor3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glColor3s (GLshort red, GLshort green, GLshort blue);
 ;WINGDIAPI void APIENTRY glColor3sv (const GLshort *v);
@@ -480,8 +480,8 @@
 (define uname (syscall 63 #f #f #f))
 (define GL_LIBRARY
    (cond
-      ((string-eq? (ref uname 1) "Windows")  "opengl32")
-      ((string-eq? (ref uname 1) "Linux")    "libGL.so")
+      ((string-ci=? (ref uname 1) "Windows")  "opengl32")
+      ((string-ci=? (ref uname 1) "Linux")    "libGL.so")
       ;"HP-UX"
       ;"SunOS"
       ;"Darwin"
@@ -1042,7 +1042,7 @@
 ;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue);
 ;WINGDIAPI void APIENTRY glColor3dv (const GLdouble *v);
    (define glColor3f     (dlsym $ GLvoid "glColor3f"    GLfloat GLfloat GLfloat))
-;WINGDIAPI void APIENTRY glColor3fv (const GLfloat *v);
+   (define glColor3fv    (dlsym $ GLvoid "glColor3fv"   GLfloat*))
    (define glColor3i     (dlsym $ GLvoid "glColor3i"    GLint GLint GLint))
 ;WINGDIAPI void APIENTRY glColor3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glColor3s (GLshort red, GLshort green, GLshort blue);
@@ -1099,7 +1099,7 @@
 ;WINGDIAPI void APIENTRY glFogi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glFogiv (GLenum pname, const GLint *params);
    (define glFrontFace (dlsym $ GLvoid "glFrontFace" GLenum))
-;WINGDIAPI void APIENTRY glFrustum (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
+   (define glFrustum (dlsym $ GLvoid "glFrustum" GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
 ;WINGDIAPI GLuint APIENTRY glGenLists (GLsizei range);
 ;WINGDIAPI void APIENTRY glGetClipPlane (GLenum plane, GLdouble *equation);
 ;WINGDIAPI void APIENTRY glGetLightfv (GLenum light, GLenum pname, GLfloat *params);

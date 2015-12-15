@@ -888,27 +888,6 @@ word *chase(word* pos) {
 	}
 }
 
-static __inline__
-void fix_pointers(word *pos, ptrdiff_t delta, word *end)
-{
-	for (;;) {
-		word hdr = *pos;
-		if (hdr == 0) return; // end marker reached. only dragons beyond this point.
-		int n = hdrsize(hdr);
-		if (is_raw_value(hdr))
-			pos += n; // no pointers in raw objects
-		else {
-			pos++, n--;
-			while (n--) {
-				word val = *pos;
-				if (is_object(val))
-					*pos = val + delta;
-				pos++;
-			}
-		}
-	}
-}
-
 /* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
 static __inline__
 ptrdiff_t adjust_heap(heap_t *heap, int cells)
@@ -917,20 +896,47 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 		return 0;
 
 	// add newobj realloc + heap fixer here later
-	word nwords = heap->end - heap->begin + MEMPAD; // MEMPAD is after memend
+	word nwords = heap->end - heap->begin; // MEMPAD is after memend
 	word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); // limit heap growth speed
 	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
 		return 0; // don't try to adjust heap if the size_t would overflow in realloc
 
+	new_words += MEMPAD;
+
 	word *old = heap->begin;
-	heap->begin = realloc(heap->begin, new_words*W);
+	heap->begin = realloc(heap->begin, new_words * W);
 	if (heap->begin == old) { // whee, no heap slide \o/
 		heap->end = heap->begin + new_words - MEMPAD; // leave MEMPAD words alone
+
 		return 0;
-	} else if (heap->begin) { // d'oh! we need to O(n) all the pointers...
-		ptrdiff_t delta = (word)heap->begin - (word)old;
+	}
+
+	if (heap->begin) { // d'oh! we need to O(n) all the pointers...
 		heap->end = heap->begin + new_words - MEMPAD; // leave MEMPAD words alone
-		fix_pointers(heap->begin, delta, heap->end);
+
+		ptrdiff_t delta = heap->begin - old;
+
+		heap->fp += delta;
+		word* pos = heap->begin;
+		word* end = heap->fp;
+
+		// fix_pointers
+		delta *= sizeof(word);
+		while (pos < end) {
+			word hdr = *pos;
+			int n = hdrsize(hdr);
+			if (is_raw_value(hdr))
+				pos += n; // no pointers in raw objects
+			else {
+				pos++, n--;
+				while (n--) {
+					word val = *pos;
+					if (is_object(val))
+						*pos = val + delta;
+					pos++;
+				}
+			}
+		}
 		return delta;
 	} else {
 		printf("adjust_heap failed.\n");
@@ -1016,26 +1022,30 @@ static word gc(heap_t *heap, int size, word regs) {
 	}
 
 	// gc:
-	word *fp = heap->fp;
-	word *root = &fp[1]; // skip header
-//	word *root = fp + 1; // same
+	{
+		word *fp;
 
-//в *fp спокойно можно оставить мусор
-	*fp = make_header(TTUPLE, 2);
+		fp = heap->fp;
+		word *root = &fp[1]; // skip header
+	//	word *root = fp + 1; // same
+	//в *fp спокойно можно оставить мусор
+		*fp = make_header(TTUPLE, 2);
 
-	if (size == 0)
-		heap->genstart = heap->begin; // start full generation
+		if (size == 0)
+			heap->genstart = heap->begin; // start full generation
 
-	// непосредственно сам GC
-//	clock_t uptime;
-//	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
-	root[0] = regs;
-	mark(root, fp);        // assert (root > fp)
-	fp = sweep(fp);
-	regs = root[0];
-//	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
+		// непосредственно сам GC
+	//	clock_t uptime;
+	//	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
+		root[0] = regs;
+		mark(root, fp);        // assert (root > fp)
+		fp = sweep(fp);
+		regs = root[0];
+	//	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
 
-	heap->fp = fp;
+		heap->fp = fp;
+	}
+
 	#if DEBUG_GC
 		struct tm tm = *localtime(&(time_t){time(NULL)});
 		char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
@@ -1055,9 +1065,9 @@ static word gc(heap_t *heap, int size, word regs) {
 		nfree -= size*W + MEMPAD;   // how much really could be snipped off
 		if (nfree < (heapsize / 10) || nfree < 0) {
 			/* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
-			((word*)regs)[hdrsize(*(word*)regs)] = 0; /* use an invalid descriptor to denote end live heap data  */
 			regs += adjust_heap(heap, size*W + nused/10 + 4096);
-			nfree = (word)heap->end - (word)regs;
+			nfree = (word)heap->end - regs;
+
 //			if (nfree <= size)
 //				breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
 		}
@@ -1065,10 +1075,8 @@ static word gc(heap_t *heap, int size, word regs) {
 			/* decrease heap size if more than 20% is free by 10% of the free space */
 			int dec = -(nfree/10);
 			int newobj = nfree - dec;
-			if (newobj > size*W*2 + MEMPAD) {
-				//regs[hdrsize(*regs)] = 0; /* as above */
-				((word*)regs)[hdrsize(*(word*)regs)] = 0;
-				regs += adjust_heap(heap, dec + MEMPAD*W);
+			if (newobj > size*W*2) {
+				regs += adjust_heap(heap, dec);
 				heapsize = (word) heap->end - (word) heap->begin;
 				nfree = (word) heap->end - regs;
 			}
@@ -1203,12 +1211,6 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 
 	int breaked = 0;
 	seccompp = 0;
-
-#	if 0//EMBEDDED_VM
-	// подсистема взаимодействия с виртуальной машиной посредством ввода/вывода
-	fifo *fi =&((struct args*)args)->vm->o;
-	fifo *fo =&((struct args*)args)->vm->i;
-#	endif
 
 	// инициализируем локальную память
 	heap          = &ol->heap;
@@ -2556,7 +2558,7 @@ invoke:;
 				if (sock < 0)
 					break;
 #if _WIN32
-				unsigned long mode = 1; //
+				unsigned long mode = 1; // non blocking
 				if (ioctlsocket(sock, FIONBIO, &mode) == 0)
 #else
 				int flags = fcntl(sock, F_GETFL, 0);

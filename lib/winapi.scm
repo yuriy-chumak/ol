@@ -1,11 +1,13 @@
 ;!
 (define-library (lib winapi)
-  (export 
-    GetModuleHandle  ; 
+(export 
+   kernel32
+   GetModuleHandle  ; 
+
     
-    user32 IDOK IDCANCEL
-    MessageBox       ;
-      MB_OK MB_OKCANCEL MB_ICONASTERISK
+   user32 IDOK IDCANCEL
+   MessageBox       ;
+     MB_OK MB_OKCANCEL MB_ICONASTERISK
     
     PeekMessage      ;
       PM_REMOVE
@@ -42,21 +44,20 @@
     GetClientRect 
     GetCursorPos
     ScreenToClient
-    
-    ; gdi32
+   
+   ; gdi32
     ChoosePixelFormat
     SetPixelFormat
     SwapBuffers
-    
-    ; wgl
+   
+   ; wgl
     wglCreateContext wglMakeCurrent wglDeleteContext wglGetProcAddress
   )
 
   (import
       (r5rs base) (owl io)
       (owl list) (owl string)
-      (owl math)
-      (owl pinvoke))
+      (owl math) (owl pinvoke))
   (begin
 
 (define INTEGER type-int+)
@@ -89,21 +90,20 @@
 
 
 ; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
-(define kernel32_dll (dlopen "kernel32" 0))
-  (define GetModuleHandle (dlsym kernel32_dll type-port "GetModuleHandleA" LPCTSTR))
+(define kernel32 (dlopen (c-string "kernel32")))
+(define GetModuleHandle (dlsym kernel32 type-port "GetModuleHandleA" LPCTSTR))
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda args (fold bor 0 args)))
 
-
 ;(define _exe (GetModuleHandle 0))
 ;(define CreateGLWindow (dlsym-c type-fix+ _exe "CreateGLWindow"))
 
-(define user32 (dlopen (c-string "user32") 0))
+(define user32 (dlopen (c-string "user32")))
   (define IDOK 1)
   (define IDCANCEL 2)
 
-  (define MessageBox (dlsym user32 int "MessageBoxA" HWND LPCTSTR LPCTSTR UINT))
+  (define MessageBox (dlsym user32 (__stdcall int) "MessageBoxA" HWND LPCTSTR LPCTSTR UINT))
     (define MB_OK 0)
     (define MB_OKCANCEL 1)
     (define MB_ICONASTERISK 64)
@@ -120,8 +120,8 @@
     (define WM_KEYDOWN 256)
     (define WM_KEYUP 257)
     (define WM_PAINT 15)
-  ;; давление юры 06/09/2014 в 13:43 - 125/ 91
-  ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
+ ;; давление юры 06/09/2014 в 13:43 - 125/ 91
+ ;;                           14.07 - 130/101 (после чашки кофе, голова пре-болеть перестала)
   (define GetKeyState      (dlsym user32 (__stdcall SHORT) "GetKeyState" int))
   (define GetAsyncKeyState (dlsym user32 (__stdcall SHORT) "GetAsyncKeyState" int))
   (define GetKeyboardState (dlsym user32 (__stdcall BOOL) "GetKeyboardState" PBYTE))
@@ -129,7 +129,7 @@
   (define GetSystemMetrics (dlsym user32 (__stdcall int) "GetSystemMetrics" int))
     (define SM_CXSCREEN 0)
     (define SM_CYSCREEN 1)
-  
+
   ;; функции работы с win32 окнами
   (define CreateWindowEx   (dlsym user32 (__stdcall HWND) "CreateWindowExA" DWORD LPCTSTR LPCTSTR DWORD int int int int HWND HMENU HINSTANCE LPVOID)) ; ANSI version
     (define WS_EX_APPWINDOW      #x00040000)
