@@ -13,6 +13,12 @@
 (define dpy (XOpenDisplay 0))
 (define s (XDefaultScreen dpy))
 
+(define win (XCreateSimpleWindow dpy (XRootWindow dpy s)
+   0 0 width height 1
+   (XBlackPixel dpy s) (XWhitePixel dpy s)))
+(XMapWindow dpy win)
+   
+
 (define vi (glXChooseVisual dpy s
    (raw type-vector-raw '(
       4 0 0 0 ; GLX_RGBA
@@ -24,12 +30,7 @@
       0 0 0  0  )))); None
 (define cx (glXCreateContext dpy vi 0 1))
 
-(define win (XCreateSimpleWindow dpy (XRootWindow dpy s)
-   0 0 width height 1
-   (XBlackPixel dpy s) (XWhitePixel dpy s)))
-   
 (XSelectInput dpy win (OR ExposureMask KeyPressMask))
-(XMapWindow dpy win)
 
 ;(help)
 (define (file->string path)

@@ -11,6 +11,13 @@
 (define display (XOpenDisplay 0))
 (define screen (XDefaultScreen display))
 
+(define window (XCreateSimpleWindow display (XRootWindow display screen)
+   0 0 width height 1
+   (XBlackPixel display screen) (XWhitePixel display screen)))
+
+(XSelectInput display window ExposureMask)
+(XMapWindow display window)
+
 (define vi (glXChooseVisual display screen
    (raw type-vector-raw '(
       4 0 0 0 ; GLX_RGBA
@@ -21,13 +28,6 @@
 
       0 0 0 0)))); None
 (define cx (glXCreateContext display vi 0 1))
-
-(define window (XCreateSimpleWindow display (XRootWindow display screen)
-   0 0 width height 1
-   (XBlackPixel display screen) (XWhitePixel display screen)))
-   
-(XSelectInput display window ExposureMask)
-(XMapWindow display window)
 
 
 ;(init)

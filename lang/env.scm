@@ -171,8 +171,7 @@
                      ((_case-lambda)
                         (cons (car exp) (map walk (cdr exp))))
                      ((values receive _branch)
-                        (cons (car exp)
-                           (map walk (cdr exp))))
+                        (cons (car exp) (map walk (cdr exp))))
                      ((quote) exp)
                      (else
                         (map walk exp))))
@@ -232,8 +231,8 @@
       (define *special-forms*
          (list->ff
             (list
-               (cons 'lambda  (tuple 'special 'lambda)) ;; fixme: should be a macro generating _lambda instead
                (cons 'quote   (tuple 'special 'quote))
+               (cons 'lambda  (tuple 'special 'lambda))
                (cons 'rlambda (tuple 'special 'rlambda))
                (cons 'receive (tuple 'special 'receive))
                (cons '_branch (tuple 'special '_branch))

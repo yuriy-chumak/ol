@@ -93,7 +93,7 @@
 #define __OLVM_NAME__ "OL"
 #define __OLVM_VERSION__ "1.0"
 
-// defaults. please don't change. use -DOPTIONSYMBOL gcc command line option instead
+// defaults. please don't change. use -DOPTIONSYMBOL gcc command line defines instead
 #ifndef HAS_SOCKETS
 #define HAS_SOCKETS 1 // system sockets support
 #endif
@@ -1990,40 +1990,40 @@ invoke:;
 					new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
 			ip += 1; break;
 
-		// мутатор
-		case 10: { // (set! variable value)
-			// variable and expression both must be MEMP
-			word* variable = (word*) A0;
-			word* value = (word*) A1;
-
-			CHECK(is_memp(variable), variable, 10);
-			CHECK(is_memp(value), value, 10);
-
-			car (variable) = car (value);
-			A3 = ITRUE;
-			/*word T = IFALSE;
-			if (is_object(A0) && is_value(A1) && is_value(A2)) {
-				word *obj = (word *)A0;
-				word offset = uvtoi(A1);
-				word value = uvtoi(A2);
-
-				switch (typeof (*obj))
-				{
-				case TPAIR:
-					while (offset-- && ((word)obj != INULL))
-						obj = (word*)obj[2];
-					if (offset == -1)
-						obj[1] = T = value;
-					break;
-				case TTUPLE:
-					if (offset < hdrsize(*obj))
-						obj[offset+1] = T = value;
-					break;
-				}
-			}
-			A3 = T;*/
-			ip += 3; break;
-		}
+//		// мутатор
+//		case 10: { // (set! variable value)
+//			// variable and expression both must be MEMP
+//			word* variable = (word*) A0;
+//			word* value = (word*) A1;
+//
+//			CHECK(is_memp(variable), variable, 10);
+//			CHECK(is_memp(value), value, 10);
+//
+//			car (variable) = car (value);
+//			A3 = ITRUE;
+//			/*word T = IFALSE;
+//			if (is_object(A0) && is_value(A1) && is_value(A2)) {
+//				word *obj = (word *)A0;
+//				word offset = uvtoi(A1);
+//				word value = uvtoi(A2);
+//
+//				switch (typeof (*obj))
+//				{
+//				case TPAIR:
+//					while (offset-- && ((word)obj != INULL))
+//						obj = (word*)obj[2];
+//					if (offset == -1)
+//						obj[1] = T = value;
+//					break;
+//				case TTUPLE:
+//					if (offset < hdrsize(*obj))
+//						obj[offset+1] = T = value;
+//					break;
+//				}
+//			}
+//			A3 = T;*/
+//			ip += 3; break;
+//		}
 		case 11: { // (set-car! pair value)
 			word *pair = (word *)A0;
 			word value = A1;

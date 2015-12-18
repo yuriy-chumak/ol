@@ -4,6 +4,10 @@
 ; todo: merge (owl tuple)
 (define-library (r5rs base)
    (begin
+
+      ; TODO: rename rlambda to let-values or something similar
+      ; TODO: rename _define to define-symbol, set!, or similar
+
       ; ========================================================================================================
       ; Scheme
       ;
@@ -87,8 +91,8 @@
          (syntax-rules () 
             ((λ . x) (lambda . x))))
 
-      ; oLrs syntax: (rlambda <variables> <values> <body>)
-      ; oLrs syntex: (case-lambda ...
+      ; http://srfi.schemers.org/srfi-16/srfi-16.html
+      ; srfi syntex: (case-lambda ...
       (define-syntax case-lambda      ;expand case-lambda syntax to to (_case-lambda <lambda> (_case-lambda ... (_case-lambda <lambda> <lambda)))
          (syntax-rules (lambda _case-lambda)
             ((case-lambda) #false) 
@@ -241,6 +245,7 @@
                (receive gen (lambda (var ...) (let* rest . body))))
             ((let* ((var val) . rest-bindings) exp . rest-exps)
                ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
+            ; http://srfi.schemers.org/srfi-71/srfi-71.html
             ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
                (receive (op . args)
                   (lambda (var ...) 
@@ -345,8 +350,8 @@
       ;; 4.3  Macros
       ; 4.3.1  Binding constructs for syntactic keywords
       ; 4.3.2  Pattern language
-      
-      
+
+
       ;;; Chapter 5
       ;;; Program structure
       ;; 5.1  Programs
@@ -399,14 +404,14 @@
                   (lambda (var ...) (let*-values rest . body))))
             ((let*-values () . rest)
                (begin . rest))))
-               
-               
-               
+
+
+
       ; 5.2.1  Top level definitions
       ; 5.2.2  Internal definitions
       ; 5.3  Syntax definitions
-      
-      
+
+
       ;;; Chapter 6
       ;;; Standard procedures
       ;
@@ -419,7 +424,7 @@
       ; identified as ``library procedures''.
       ;
 
-      ; this is simlified (assert) that use (eq?), please be careful!
+      ; this is temporary simlified 'assert' that use 'eq?', please be careful!
       (define-syntax assert
          (syntax-rules (eq? list ==>)
             ((assert expression)

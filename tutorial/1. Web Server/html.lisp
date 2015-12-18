@@ -1,4 +1,4 @@
-#!/bin/ol
+#!/usr/bin/ol
 
 (import (lib http))
 ; simplest example:
