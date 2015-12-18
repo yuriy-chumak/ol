@@ -1,26 +1,44 @@
 ---
 layout: page
-title:  Tutorial
+title:  OpenGL tutorials
 date:   пт, 27-лис-2015 19:39:47 +0200
 categories: ru
 ---
    Для демонстрации возможностей Ol вполне подойдет OpenGL. Я приведу пример полного цикла разработки своего мультиплатформенного приложения на базе Ol без привлечения других языков и/или инструментов. Сами примеры можно взять в [официальном репозитарии](https://github.com/yuriy-chumak/OL/tree/master/tutorial/OpenGL){:target="_blank"} Ol.
 
-   Демонстрация будет разбита на несколько логических последовательных частей, в результате которых мы научимся создавать трехмерный график некоторой функции.
+   Демонстрация будет разбита на несколько последовательных частей, в результате которых мы научимся создавать трехмерный график некоторой функции.
+
 
 #### Создание окна
 
-   Для вывода чего-либо на дисплей нам, естественно, надо для этого попросить у операционной системы место. В этом примере мы продемонстрируем, как это сделать. Урок будет включать разные варианты "просьб" для разных операционных систем. Сейчас это будут Ms Windows и Linux (Ubuntu), позже я добавлю MacOS, Android, BSD, iOS, etc.
+   Для вывода чего-либо на дисплей нам, естественно, надо для этого попросить у операционной системы место. Такое место называется "окно". После того, как система его нам выделит, надо разместить это окно на экране. Этот процесс, хотя и является общим для всех операционных систем, все же специфичен для каждой из них и требует вызова разных функций. Далее продемонстрировано, как это можно сделать.
 
 ##### Linux
-<pre><code data-language="scheme">
-(import (OpenGL version-1-0)
-   (lib x11) (owl io))
 
-;(main)
+   Биндинги для Linux X11 сложены в библиотеку lib/x11, подключим ее:
+
+<pre><code data-language="scheme">
+(import (lib x11))
+</code></pre>
+
+   Теперь нам надо выбрать дисплей, с которым мы хотим работать (в примере это будет доступный по-умолчанию дисплей) и рабочий стол, на котором мы будем размещать наше окно (в Linux можно размещать на одном дисплее разные рабочие пространства).
+
+<pre><code data-language="scheme">
 (define display (XOpenDisplay 0))
 (define screen (XDefaultScreen display))
 
+(define window (XCreateSimpleWindow display (XRootWindow display screen)
+   0 0 width height 1
+   (XBlackPixel display screen) (XWhitePixel display screen)))
+(XMapWindow display window)
+(XSelectInput display window ExposureMask)
+</code></pre>
+
+   Детальное описание всех функций можно найти в официальной документации по X11.
+
+   Теперь нам надо выбрать конфигурацию оборудования для дальнейшего рендеринга. Здесь мы зададим 24-канальный цвет и двойную буферизацию. Создадим "контекст" выполнения графической подсистемы.
+
+<pre><code data-language="scheme">
 (define vi (glXChooseVisual display screen
    (raw type-vector-raw '(
       4 0 0 0 ; GLX_RGBA
@@ -31,24 +49,22 @@ categories: ru
 
       0 0 0 0)))); None
 (define cx (glXCreateContext display vi 0 1))
+</code></pre>
 
-(define window (XCreateSimpleWindow display (XRootWindow display screen)
-   0 0 width height 1
-   (XBlackPixel display screen) (XWhitePixel display screen)))
-...
-(XSelectInput display window ExposureMask)
-(XMapWindow display window)
+   Все, окно создано и сконфигурировано. Теперь надо проинициализировать "дефолтные" параметры OpenGL, в примере это будет минимум - модель окрашивания примитивов и цвет для очистки окна.
 
-
-;(init)
+<pre><code data-language="scheme">
 (glXMakeCurrent display window cx)
 
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
 (glXMakeCurrent display null null)
+</code></pre>
 
+   На этом вся подготовка закончилась. Теперь надо запустить цикл отрисовки - цикл, в котором мы будем рендерить кадры нашей сцены. В этом примере весь рендеринг - это очистка окна цветом, заданным выше.
 
+<pre><code data-language="scheme">
 ;(loop)
 (let ((XEvent (raw type-vector-raw (repeat 0 192))))
 (let loop ()
@@ -64,10 +80,9 @@ categories: ru
    (glXSwapBuffers display window)
    (glXMakeCurrent display null null)
 (loop)))
-
-;(done)
-(print "Ok.")
 </code></pre>
+
+   Этот цикл завершится, когда пользователь закроет окно. Способы обработки клавиатуры, событий мыши выходят за рамки базового примера.
 
 ##### Windows
 <pre><code data-language="scheme">
