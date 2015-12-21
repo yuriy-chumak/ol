@@ -18,8 +18,8 @@ which is another way of
       1
       (* n (factorial (- n 1)))))</code><button class="doit" onclick="doit(sample3.textContent)">send to the terminal</button></pre>
       
-   This must output 99! for you.
+   This must calculate factorial of 99 (99!) for you.
 
 ### Learn
 
-   I'm writing docs right now. It will be available very soon. You can check <b><a href="?ru/examples">SAMPLES</a></b> for now.
+   I'm writing docs right now. It will be available very soon. You can check <b><a href="?en/examples">SAMPLES</a></b> for now.
