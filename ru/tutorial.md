@@ -13,6 +13,7 @@ categories: ru
    1. [Лексические соглашения](?ru/lexical-conventions)
    1. [Общее представление](?ru/basic-concepts)
       1. [Переменные, ключевые слова и область видимости](?ru/basic-concepts/Variables-keywords-regions)
+1. [Внутреннее устройство виртуальной машины](?ru/internals)
 1. [Примеры](?ru/examples)
    1. [OpenGL](?ru/opengl)
    1. [HTTP Server](?ru/http-server)

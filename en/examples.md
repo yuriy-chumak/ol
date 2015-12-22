@@ -213,7 +213,7 @@ categories: en
 (example "Hello, Lisp!")
 (example "abc")
 (example "Night
-THE sun descending in the west  
+THE sun descending in the west
 The evening star does shine; 
 The birds are silent in their nest.
  
@@ -223,15 +223,14 @@ And I must seek for mine.")
    This will output:
 
 <pre><code>
-
-Hello, Lisp! ==> JOFseripot79ycrTANu0xN8FP0A=
-abc ==> qZk+NkcGgWq6PiVxeFDCbJzQ2J0=
+Hello, Lisp! ==> 24e16c7ab8a9a2defdc9cad300dbb4c4df053f40
+abc ==> a9993e364706816aba3e25717850c26c9cd0d89d
 Night
-THE sun descending in the west  
-The evening star does shine; 
+THE sun descending in the west
+The evening star does shine;
 The birds are silent in their nest.
- 
-And I must seek for mine. ==> 3A5t2MMPNp8lCUX0v7QNt5jZC9k=
+
+And I must seek for mine. ==> 0860bc39e3ae96947eeace44f3788f31ec43af1e
 </code></pre>
 
    Some works more.
