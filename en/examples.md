@@ -31,8 +31,8 @@ categories: en
 
    Simple hash function that used, for example, by WebSocket auth algorithm. Examples of usage at the end of source.
 
-<pre><button class="doit" onclick="doit(numbers.textContent)">send to the terminal</button>
-<code data-language="scheme" id="numbers">; https://en.wikipedia.org/wiki/SHA-1
+<pre><button class="doit" onclick="doit(sha1.textContent)">send to the terminal</button>
+<code data-language="scheme" id="sha1">; https://en.wikipedia.org/wiki/SHA-1
 
 ; band - binary AND operation
 ; bor - binary OR operation
@@ -231,6 +231,168 @@ The evening star does shine;
 The birds are silent in their nest.
 
 And I must seek for mine. ==> 0860bc39e3ae96947eeace44f3788f31ec43af1e
+</code></pre>
+
+#### Simple Neural Network
+
+   This code demonstrates learning process and working results for neural network that can detect numbers from bitmaps.
+
+<pre><button class="doit" onclick="doit(neural.textContent)">send to the terminal</button>
+<code data-language="scheme" id="neural">
+; this is main learning configuration parameter,
+;  higher is better, but slower
+(define THRESHOLD 30)
+
+; ANSWER sad #t/#f, PANSWER returns numerical probability
+(define (ANSWER axon-weights signal)
+   (> (fold + 0 (zip * signal axon-weights)) THRESHOLD))
+(define (PANSWER axon-weights signal)
+   (/ (fold + 0 (zip * signal axon-weights)) THRESHOLD))
+
+
+; Let's encode some sample numbers:
+; 0:     1:     2:     3:     4:     5:     6:     7:     8:     9:
+; x x x  . . x  x x x  x x x  x . x  x x x  x x x  x x x  x x x  x x x
+; x . x  . . x  . . x  . . x  x . x  x . .  x . .  . . x  x . x  x . x
+; x . x  . . x  x x x  . x x  x x x  x x x  x x x  . . x  x x x  x x x
+; x . x  . . x  x . .  . . x  . . x  . . x  x . x  . . x  x . x  . . x
+; x x x  . . x  x x x  x x x  . . x  x x x  x x x  . . x  x x x  x x x
+(define pattern-0 '(1 1 1  1 0 1  1 0 1  1 0 1  1 1 1))
+(define pattern-1 '(0 0 1  0 0 1  0 0 1  0 0 1  0 0 1))
+(define pattern-2 '(1 1 1  0 0 1  1 1 1  1 0 0  1 1 1))
+(define pattern-3 '(1 1 1  0 0 1  0 1 1  0 0 1  1 1 1))
+(define pattern-4 '(1 0 1  1 0 1  1 1 1  0 0 1  0 0 1))
+(define pattern-5 '(1 1 1  1 0 0  1 1 1  0 0 1  1 1 1))
+(define pattern-6 '(1 1 1  1 0 0  1 1 1  1 0 1  1 1 1))
+(define pattern-7 '(1 1 1  0 0 1  0 0 1  0 0 1  0 0 1))
+(define pattern-8 '(1 1 1  1 0 1  1 1 1  1 0 1  1 1 1))
+(define pattern-9 '(1 1 1  1 0 1  1 1 1  0 0 1  1 1 1))
+
+; Let's teach two neurons simulateonusly, one for detecting
+;  number "one" and second for detecting number "two"
+; 1 means "ok" for "one" and for "two" neurons respectively
+
+; this is our learning matrix:
+(define patterns (list
+   (cons pattern-0 '(0 0))
+   (cons pattern-1 '(1 0))
+   (cons pattern-2 '(0 1))
+   (cons pattern-3 '(0 0))
+   (cons pattern-4 '(0 0))
+   (cons pattern-5 '(0 0))
+   (cons pattern-6 '(0 0))
+   (cons pattern-7 '(0 0))
+   (cons pattern-8 '(0 0))
+   (cons pattern-9 '(0 0))
+   ; some random noise...
+   '((0 0 0  0 0 0  0 0 0  0 1 0  0 0 0) . (0 0))
+   '((1 1 1  0 0 0  0 0 0  0 0 0  0 0 0) . (0 0))
+   '((0 0 0  1 1 1  0 0 0  0 0 0  0 0 0) . (0 0))
+   '((1 1 1  0 0 0  1 1 1  0 0 0  1 1 1) . (0 0))
+   '((0 0 0  0 0 0  1 1 1  0 0 0  0 0 0) . (0 0))
+   '((0 0 0  0 0 0  0 0 0  1 1 1  0 0 0) . (0 0))
+   '((0 0 0  0 0 0  1 1 1  1 1 1  0 0 0) . (0 0))
+   '((0 0 0  0 0 0  0 0 0  0 0 0  1 1 1) . (0 0))
+   '((1 1 1  1 1 1  1 1 1  1 1 1  1 1 1) . (0 0))
+   '((0 0 0  1 1 1  1 1 1  0 0 0  0 0 0) . (0 0))
+   '((1 0 1  1 0 1  1 0 1  1 1 1  0 0 0) . (0 0))
+   '((1 1 1  0 0 0  1 1 1  1 1 1  0 0 0) . (0 0))
+   '((0 0 0  0 0 0  0 0 0  0 0 0  1 1 1) . (0 0))
+))
+
+; this is main learning function:
+(define (learn pattern answer matrix)
+   (if (null? pattern) ; паттерны закончились, вернем подкорретированную матрицу
+      matrix
+      (let ((sensor (car pattern))
+            (matrix-result (ANSWER (car pattern) matrix))
+            (is-pattern-good (car answer)))
+         (for-each display (list
+            "testing pattern "
+            (car pattern)
+            " : "
+            (car answer)
+            "> "))
+            
+         ; sad "ok" while "not ok", let's repeat leaning
+         (if (and matrix-result
+                  (= is-pattern-good 0))
+            (begin
+               (print "- bad pattern good answer, matrix: " matrix).
+               (learn pattern answer (zip - matrix sensor)))
+         ; sad "no" while is "ok", let's repeat leaning
+         (if (and (not matrix-result)
+                  (= is-pattern-good 1))
+            (begin
+               (print "- good pattern bad answer, matrix: " matrix).
+               (learn pattern answer (zip + matrix sensor)))
+         ; all ок, can continue to the next pattern
+         (begin
+            (print "- ok: " matrix)
+            (learn (cdr pattern) (cdr answer) matrix)))))))
+
+; and small looper for it
+(define (times counter matrix patterns answers)
+  (let time ((counter counter) (matrix matrix))
+   (if (= counter 0)
+      matrix
+      (time (- counter 1) (learn patterns answers matrix)))))
+
+; well done. now we can learn our neurons:
+(define zero-input-vector '(1 0 0  0 1 0  0 0 0  1 1 1  0 1 0))
+
+; пройдемся по этому списку, скажем, 200 раз - 200 процессов обучения
+(define one-v (times 200 zero-input-vector (map car patterns) (map (lambda (list) (car list)) (map cdr patterns))))
+(define two-v (times 200 zero-input-vector (map car patterns) (map (lambda (list) (cadr list)) (map cdr patterns))))
+
+(print "result matrix is: " one-v)
+(print "result matrix is: " two-v)
+
+; Let's do some tests...
+(print "one-v on one: " (ANSWER one-v pattern-1))
+(print "one-v on two: " (ANSWER one-v pattern-2))
+(print "one-v on six: " (ANSWER one-v pattern-6))
+(print)
+(print "two-v on one: " (ANSWER two-v pattern-1))
+(print "two-v on two: " (ANSWER two-v pattern-2))
+(print "two-v on six: " (ANSWER two-v pattern-6))
+
+; And, at least, this network can answer "maybe"!
+;  let's check for pattern "one" when some of
+;  points are changed
+
+(print "at least: " (PANSWER one-v '(0 0 1  0 0 1  0 0 1  0 0 1  0 0 1)))
+(print "at least: " (PANSWER one-v '(0 0 1  0 0 1  0 0 0  0 0 1  0 0 1)))
+(print "at least: " (PANSWER one-v '(0 0 1  0 1 1  0 0 1  0 0 1  0 0 1)))
+(print "at least: " (PANSWER one-v '(0 0 1  0 0 1  0 0 1  0 0 1  1 0 1)))
+
+</code></pre>
+
+   And results of this "smart" newrons:
+<pre><code>
+testing pattern (1 1 1 1 0 1 1 0 1 1 0 1 1 1 1) : 0> - ok: (1 0 0 0 1 0 0 0 0 1 1 1 0 1 0)
+testing pattern (0 0 1 0 0 1 0 0 1 0 0 1 0 0 1) : 1> - good pattern bad answer, matrix: (1 0 0 0 1 0 0 0 0 1 1 1 0 1 0)
+testing pattern (0 0 1 0 0 1 0 0 1 0 0 1 0 0 1) : 1> - good pattern bad answer, matrix: (1 0 1 0 1 1 0 0 1 1 1 2 0 1 1)
+testing pattern (0 0 1 0 0 1 0 0 1 0 0 1 0 0 1) : 1> - good pattern bad answer, matrix: (1 0 2 0 1 2 0 0 2 1 1 3 0 1 2)
+...
+testing pattern (1 0 1 1 0 1 1 0 1 1 1 1 0 0 0) : 0> - ok: (4 3 3 -6 0 5 3 3 3 4 0 -5 3 4 3)
+testing pattern (1 1 1 0 0 0 1 1 1 1 1 1 0 0 0) : 0> - ok: (4 3 3 -6 0 5 3 3 3 4 0 -5 3 4 3)
+testing pattern (0 0 0 0 0 0 0 0 0 0 0 0 1 1 1) : 0> - ok: (4 3 3 -6 0 5 3 3 3 4 0 -5 3 4 3)
+result matrix is: (-1 -2 6 -1 0 6 -1 -2 6 0 0 7 -2 -1 6)
+result matrix is: (4 3 3 -6 0 5 3 3 3 4 0 -5 3 4 3)
+
+one-v on one: #true
+one-v on two: #false
+one-v on six: #false
+
+two-v on one: #false
+two-v on two: #true
+two-v on six: #false
+
+at least: 31/30
+at least: 5/6
+at least: 16/15
+at least: 1
 </code></pre>
 
    Some works more.
