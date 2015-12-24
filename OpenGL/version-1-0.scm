@@ -323,7 +323,7 @@
 ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
    glPointSize ; void (GLfloat size)
-;WINGDIAPI void APIENTRY glPolygonMode (GLenum face, GLenum mode);
+   glPolygonMode ; void (GLenum face, GLenum mode)
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
 ;WINGDIAPI void APIENTRY glPopMatrix (void);
@@ -369,7 +369,7 @@
 ;WINGDIAPI void APIENTRY glRotated (GLdouble angle, GLdouble x, GLdouble y, GLdouble z);
 ;WINGDIAPI void APIENTRY glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
 ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
-;WINGDIAPI void APIENTRY glScalef (GLfloat x, GLfloat y, GLfloat z);
+   glScalef ; void (GLfloat x, GLfloat y, GLfloat z)
 ;WINGDIAPI void APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height);
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
    glShadeModel ; void (GLenum model)
@@ -461,10 +461,29 @@
    ; https://www.khronos.org/opengles/sdk/docs/man/xhtml/glViewport.xml
    glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height)
    
+    GLU_VERSION_1_1
+    GLU_VERSION_1_2
+   
+   
    gluErrorString
    gluOrtho2D
    gluPerspective
    gluLookAt
+   
+   gluNewQuadric gluDeleteQuadric gluQuadricDrawStyle
+      GLU_FILL GLU_LINE GLU_SILHOUETTE GLU_POINT
+   gluSphere
+   
+;   gluNewTess gluBeginPolygon gluTessVertex 
+
+   gluNewNurbsRenderer gluNurbsSurface gluBeginSurface gluEndSurface
+   gluNurbsProperty
+      GLU_OUTLINE_POLYGON GLU_OUTLINE_PATCH
+   
+   GLU_U_STEP GLU_V_STEP GLU_DISPLAY_MODE
+   
+   GL_MAP1_VERTEX_3 GL_MAP2_VERTEX_3
+   GL_LINE GL_FILL GL_POINT
 
    (exports (owl pinvoke))) ; temp export
   
@@ -1182,6 +1201,7 @@
 ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
    (define glPointSize (dlsym $ GLvoid "glPointSize" GLfloat))
+   (define glPolygonMode (dlsym $ GLvoid "glPolygonMode" GLenum GLenum)) ; opengl 1.1 ?
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
 ;WINGDIAPI void APIENTRY glPopMatrix (void);
@@ -1225,9 +1245,9 @@
 ;WINGDIAPI void APIENTRY glRotated (GLdouble angle, GLdouble x, GLdouble y, GLdouble z);
 ;WINGDIAPI void APIENTRY glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
 ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
-;WINGDIAPI void APIENTRY glScalef (GLfloat x, GLfloat y, GLfloat z);
+   (define glScalef (dlsym $ GLvoid "glScalef" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
-  (define glShadeModel (dlsym $ GLvoid "glShadeModel" GLenum))
+   (define glShadeModel (dlsym $ GLvoid "glShadeModel" GLenum))
 ;WINGDIAPI void APIENTRY glTexCoord1d (GLdouble s);
 ;WINGDIAPI void APIENTRY glTexCoord1dv (const GLdouble *v);
 ;WINGDIAPI void APIENTRY glTexCoord1f (GLfloat s);
@@ -1305,6 +1325,9 @@
    (define glViewport (dlsym $ GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
 ; GLU
+(define GLU_VERSION_1_1                 1)
+(define GLU_VERSION_1_2                 1)
+
 (define GLU_LIBRARY
    (cond
       ((string-eq? (ref uname 1) "Windows")  "glu32")
@@ -1320,8 +1343,38 @@
          (runtime-error "Unknown platform"))))
 (define $ (dlopen GLU_LIBRARY))
 
+(define GLUquadric* type-port)
+
    (define gluErrorString (dlsym $ GLubyte* "gluErrorString" GLenum))
    (define gluOrtho2D     (dlsym $ GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
    (define gluPerspective (dlsym $ GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
    (define gluLookAt      (dlsym $ GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
+   
+   (define gluNewQuadric    (dlsym $ GLUquadric* "gluNewQuadric"))
+   (define gluDeleteQuadric (dlsym $ GLvoid "gluDeleteQuadric" GLUquadric*))
+   (define gluQuadricDrawStyle (dlsym $ GLvoid "gluQuadricDrawStyle" GLUquadric* GLenum))
+      (define GLU_POINT               100010)
+      (define GLU_LINE                100011)
+      (define GLU_FILL                100012)
+      (define GLU_SILHOUETTE          100013)
+   (define gluSphere (dlsym $ GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
+   
+(define GLUnurbs* type-port)
+   (define gluNewNurbsRenderer (dlsym $ GLUnurbs* "gluNewNurbsRenderer"))
+   (define gluBeginSurface (dlsym $ GLvoid "gluBeginSurface" GLUnurbs*))
+   (define gluNurbsSurface (dlsym $ GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
+   (define gluEndSurface   (dlsym $ GLvoid "gluEndSurface" GLUnurbs*))
+   (define gluNurbsProperty(dlsym $ GLvoid "gluNurbsProperty" GLUnurbs* GLenum GLfloat))
+      ;/*     GLU_FILL                100012 */
+      (define GLU_OUTLINE_POLYGON     100240)
+      (define GLU_OUTLINE_PATCH       100241)
+   
+(define GLU_AUTO_LOAD_MATRIX    100200)
+(define GLU_CULLING             100201)
+(define GLU_SAMPLING_TOLERANCE  100203)
+(define GLU_DISPLAY_MODE        100204)
+(define GLU_PARAMETRIC_TOLERANCE        100202)
+(define GLU_SAMPLING_METHOD             100205)
+(define GLU_U_STEP                      100206)
+(define GLU_V_STEP                      100207)
 ))

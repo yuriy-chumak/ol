@@ -3437,6 +3437,10 @@ word* pinvoke(OL* self, word* arguments)
 			case 2 + 0x0200:\
 			         return ((conv word (*)  (word, float))\
 			                 function) (argv[0], *(float*)&argv[1]);\
+			case 3 + 0x0400:\
+			         return ((conv word (*)  (word, word, float))\
+			                 function) (argv[0], argv[1],\
+			                            *(float*)&argv[2]);\
 			case 3 + 0x0600:\
 			         return ((conv word (*)  (word, float, float))\
 			                 function) (argv[0], *(float*)&argv[1],\
@@ -3463,6 +3467,9 @@ word* pinvoke(OL* self, word* arguments)
 
 #if __amd64__
 		#define CALLDOUBLES(conv) \
+			case 4 + 0x0020000:\
+			         return ((conv word (*)  (word, double, word, word))\
+			                 function) (argv[0], *(double*)&argv[1], argv[2], argv[3]);\
 			case 2 + 0x0030000:\
 			         return ((conv word (*)  (double, double))\
 			                 function) (*(double*)&argv[0], *(double*)&argv[1]);\
