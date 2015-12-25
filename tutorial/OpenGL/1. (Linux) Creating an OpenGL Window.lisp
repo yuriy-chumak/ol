@@ -17,6 +17,7 @@
 
 (XSelectInput display window ExposureMask)
 (XMapWindow display window)
+(XStoreName display window "1. Creating an OpenGL Window")
 
 (define vi (glXChooseVisual display screen
    (raw type-vector-raw '(
@@ -33,6 +34,10 @@
 ;(init)
 (glXMakeCurrent display window cx)
 
+(print "OpenGL version: " (glGetString GL_VERSION))
+(print "OpenGL vendor: " (glGetString GL_VENDOR)) 
+(print "OpenGL renderer: " (glGetString GL_RENDERER))
+
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
@@ -48,6 +53,7 @@
             (XNextEvent display XEvent)
             (process-events))))
 
+   ;(draw)
    (glXMakeCurrent display window cx)
    (glClear GL_COLOR_BUFFER_BIT)
 

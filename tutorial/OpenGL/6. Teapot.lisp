@@ -1,34 +1,5 @@
 #!/usr/bin/ol
-
-(import (OpenGL version-1-0)
-   (lib x11) (owl io))
-
-(define width 640)
-(define height 480)
-
-;(main)
-(define display (XOpenDisplay 0))
-(define screen (XDefaultScreen display))
-
-(define vi (glXChooseVisual display screen
-   (raw type-vector-raw '(
-      4 0 0 0 ; GLX_RGBA
-      5 0 0 0  1 0 0 0 ; GLX_DOUBLEBUFFER
-      8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
-      9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
-     10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
-     12 0 0 0  1 0 0 0 ; GLX_DEPTH_SIZE
-
-      0 0 0 0)))); None
-(define cx (glXCreateContext display vi 0 1))
-
-(define window (XCreateSimpleWindow display (XRootWindow display screen)
-   0 0 width height 1
-   (XBlackPixel display screen) (XWhitePixel display screen)))
-   
-(XSelectInput display window ExposureMask)
-(XMapWindow display window)
-
+(import (lib linux opengl) (owl io))
 
 ;(teapot)
 (define vertices '(
@@ -91,10 +62,7 @@
     (  0.7280 -1.3000 2.55000 ) (  0.0000 -1.3000 2.55000 )
     (  1.3000  0.0000 2.40000 ) (  1.3000 -0.7280 2.40000 )
     (  0.7280 -1.3000 2.40000 ) (  0.0000 -1.3000 2.40000 )))
-    
-;(print
-;(fold append '() vertices))
-    
+
 (define (nth list n)
    (if (= n 0) (car list)
                (nth (cdr list) (- n 1))))
@@ -125,42 +93,35 @@
 
 (define knots '(0 0 0 0 1 1 1 1))
 
-;(init)
-(glXMakeCurrent display window cx)
 
-(glShadeModel GL_SMOOTH)
-(glClearColor 0.11 0.11 0.11 1)
+(gl:run "6. Teapot" 640 480
 
-(glMatrixMode GL_PROJECTION)
-(glLoadIdentity)
-(gluPerspective 45 (/ width height) 0.1 100)
+; init
+(lambda ()
+   (glShadeModel GL_SMOOTH)
+   (glClearColor 0.11 0.11 0.11 1)
 
-(glEnable GL_DEPTH_TEST)
+   (glMatrixMode GL_PROJECTION)
+   (glLoadIdentity)
+   (gluPerspective 45 (/ 640 480) 0.1 100)
 
-(define teapot (gluNewNurbsRenderer))
-(gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
+   (glEnable GL_DEPTH_TEST)
 
-(glXMakeCurrent display null null)
+   (let ((teapot (gluNewNurbsRenderer)))
+      (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
 
-;(loop)
-(let ((XEvent (raw type-vector-raw (repeat 0 192))))
-(let loop ((x 1) (dx 0.02) (z 3) (dz 0.03))
-   (let process-events ()
-      (if (> (XPending display) 0)
-         (begin
-            (XNextEvent display XEvent)
-            (process-events))))
+   (list 1 0.02 3 0.03  teapot)))
 
-      (glXMakeCurrent display window cx)
+; draw
+(lambda (x   dx y   dy  teapot)
    (glClear (fx:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
-   (gluLookAt x 8 z
+   (gluLookAt x y 8
       0 0 0
       0 1 0)
 
-   ; teapot
    (let ((render (lambda (surface)
                      (gluBeginSurface teapot)
                      (gluNurbsSurface teapot 8 knots 8 knots (* 4 3) 3  (fold append '() (map (lambda (n) (nth vertices n)) surface))  4 4 GL_MAP2_VERTEX_3)
@@ -187,13 +148,7 @@
       (for-each render Handle:)
       (for-each render Spout:))
 
-
-   (glXSwapBuffers display window)
-   (glXMakeCurrent display null null)
-
    (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
-         (nz (if (or (> z 4) (< z -4)) (- dz) dz)))
-      (loop (+ x nx) nx (+ z nz) nz))))
-
-;(done)
-(print "Ok.")
+         (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
+      (list (+ x nx) nx (+ y ny) ny teapot))
+))

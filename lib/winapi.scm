@@ -1,4 +1,3 @@
-;!
 (define-library (lib winapi)
 (export 
    kernel32

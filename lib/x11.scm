@@ -14,6 +14,7 @@
     XSelectInput
     XMapWindow
     XNextEvent XPending
+    XStoreName
 
     
     ; glX
@@ -62,6 +63,8 @@
 (define XMapWindow (dlsym % type-int+ "XMapWindow" type-port type-port))
 (define XNextEvent (dlsym % type-int+ "XNextEvent" type-port type-vector-raw))
 (define XPending   (dlsym % type-int+ "XPending"   type-port))
+
+(define XStoreName (dlsym % type-int+ "XStoreName" type-port type-port type-string))
 
 ;(define Colormap type-port)
 ;(define XCreateColormap (dlsym % Colormap "XCreateColormap" type-port type-port type-port type-fix+))
