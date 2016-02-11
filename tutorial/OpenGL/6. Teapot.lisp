@@ -1,5 +1,5 @@
 #!/usr/bin/ol
-(import (lib linux opengl) (owl io))
+(import (lib opengl))
 
 ;(teapot)
 (define vertices '(
@@ -94,7 +94,9 @@
 (define knots '(0 0 0 0 1 1 1 1))
 
 
-(gl:run "6. Teapot" 640 480
+(gl:run
+
+   "6. Teapot"
 
 ; init
 (lambda ()

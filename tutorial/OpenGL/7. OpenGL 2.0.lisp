@@ -1,11 +1,16 @@
 #!/usr/bin/ol
-(import (lib linux opengl) (owl io))
+(import (lib opengl))
+
+(define Context (gl:Create "7. OpenGL 2.0"))
+
 (import (OpenGL version-2-0))
 
 (define width 640)
 (define height 480)
 
-(gl:run "7. OpenGL 2.0" 640 480
+(gl:run
+
+   Context
 
 ; init
 (lambda ()
@@ -15,8 +20,8 @@
 (let ((po (glCreateProgram))
       (vs (glCreateShader GL_VERTEX_SHADER))
       (fs (glCreateShader GL_FRAGMENT_SHADER)))
-   (print "po: " po)
-   (print "vs: " vs)
+   (if (= po 0)
+      (runtime-error "Can't create shader program." '()))
 
    ; пример, как можно передать в функцию массив указателей на строки:
    ; vertex shader:

@@ -16,9 +16,13 @@
     XNextEvent XPending
     XStoreName
 
-    
-    ; glX
-    glXChooseVisual glXCreateContext glXMakeCurrent glXSwapBuffers
+
+   ; GLX (WGL: Windows, CGL: Mac OS X, EGL)
+   glXQueryVersion
+   glXChooseVisual glXCreateContext glXMakeCurrent glXSwapBuffers
+   glXChooseFBConfig glXGetVisualFromFBConfig; glXCreateContextAttribs
+
+   vector->int32
   )
 
   (import
@@ -29,7 +33,7 @@
   (begin
 
 (define % (dlopen "libX11.so" RTLD_LAZY))
-(define XOpenDisplay (dlsym % type-port "XOpenDisplay" type-int+))
+(define XOpenDisplay (dlsym % type-port "XOpenDisplay" type-string))
 (define XDefaultScreen (dlsym % type-int+ "XDefaultScreen" type-port))
 
 (define XRootWindow (dlsym % type-port "XRootWindow" type-port type-int+))
@@ -73,11 +77,25 @@
 ;(define XInternAtom (dlsym % type-port "XInternAtom" type-port type-string type-fix+))
 ;(define XSetWMProtocols (
 
+(define type-int* (fx:or type-int+ #x40))
 ; -=( wgl )=------------------------------------------------------------
 ; opengl: https://gist.github.com/gszauer/da038dec2a7ffc288c41
 (define GL (dlopen "libGL.so" RTLD_LAZY))
+   (define glXQueryVersion  (dlsym GL type-fix+ "glXQueryVersion" type-port type-vector-raw type-vector-raw))
+
    (define glXChooseVisual  (dlsym GL type-port "glXChooseVisual" type-port type-int+ type-vector-raw))
    (define glXCreateContext (dlsym GL type-port "glXCreateContext" type-port type-port type-int+ type-int+))
    (define glXMakeCurrent   (dlsym GL type-int+ "glXMakeCurrent"  type-port type-port type-port))
    (define glXSwapBuffers   (dlsym GL type-int+ "glXSwapBuffers"  type-port type-port))
+
+   (define glXChooseFBConfig(dlsym GL type-port "glXChooseFBConfig" type-port type-int+ type-vector-raw type-vector-raw)) ; minimal 1.3
+   (define glXGetVisualFromFBConfig (dlsym GL type-port "glXGetVisualFromFBConfig" type-port type-port))
+
+
+
+   (define (vector->int32 vector)
+      (+ (<< (refb vector 0) 0)
+         (<< (refb vector 1) 8)
+         (<< (refb vector 2) 16)
+         (<< (refb vector 3) 24)))
 ))

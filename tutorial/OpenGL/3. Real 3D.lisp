@@ -1,8 +1,8 @@
 #!/usr/bin/ol
+(import (lib opengl))
+(gl:run
 
-(import (lib linux opengl) (owl io))
-
-(gl:run "3. Real 3D" 640 480
+   "3. Real 3D"
 
 ; init
 (lambda ()

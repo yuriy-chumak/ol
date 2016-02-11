@@ -13,7 +13,7 @@
    (begin
    (define GL_VERSION_1_5 1)
    
-   (define % (dlopen GL_LIBRARY RTLD_LAZY))
+   (define $ (dlopen GL_LIBRARY))
 
 ;	using GLintptr		= System.IntPtr;	// ptrdiff_t
 ;	using GLsizeiptr	= System.IntPtr;	// ptrdiff_t

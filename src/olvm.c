@@ -5,7 +5,7 @@
  *
  * Simple purely functional Lisp, mostly
  *
- * Version 1.0.0 RC3
+ * Version 1.0.0 RC4
  * ~~~~~~~~~~~~~~~~~
  *
  * This program is free software;  you can redistribute it and/or
@@ -88,6 +88,7 @@
 // Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
 
 // todo: strip ELF http://habrahabr.ru/post/137706/
+// http://www.catch22.net/tuts/reducing-executable-size
 
 
 #define __OLVM_NAME__ "OL"
@@ -366,8 +367,7 @@ typedef uintptr_t word;
 #define TPOS      2  // == offsetof (struct header, type)
 #define RPOS     11  // == offsetof (struct header, rawness)
 
-__attribute__
-		((aligned(sizeof(word)), packed))
+__attribute__ ((aligned(sizeof(word)), packed))
 struct header
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
@@ -384,8 +384,7 @@ struct header
 
 #define IPOS      8  // == offsetof (struct direct, payload)
 
-__attribute__
-		((aligned(sizeof(word)), packed))
+__attribute__ ((aligned(sizeof(word)), packed))
 struct value
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
@@ -397,8 +396,7 @@ struct value
 };
 // as value type we use only "TFIX" and "TCONST"
 
-__attribute__
-		((aligned(sizeof(word)), packed))
+__attribute__ ((aligned(sizeof(word)), packed))
 struct object
 {
 	union {
@@ -470,7 +468,7 @@ struct object
 #define TBYTECODE                   (16)
 #define TPROC                       (17)
 #define TCLOS                       (18)
-#define TFF                         (24) // 25,26,27 same
+#define TFF                         (24) // // 26,27 same
 #	define FFRIGHT                     1 // flags for TFF
 #	define FFRED                       2
 
@@ -497,6 +495,7 @@ struct object
 #define TFLOAT                      46
 #define TDOUBLE                     47
 //#define TTHIS                     44
+#define TINT64                      44
 
 #define IFALSE                      make_value(TCONST, 0)
 #define ITRUE                       make_value(TCONST, 1)
@@ -836,6 +835,7 @@ word*p = new (TTUPLE, 13+1);\
 word* p = new (type, words + 1, pads);\
 	/*return*/ p;\
 })
+
 
 #define NEW_STRING2(string, length) ({\
 	char* data = string;\
@@ -1415,13 +1415,17 @@ invoke:;
 	// управляющие команды:
 #	define APPLY 20 // apply-cont = 20+64
 #	define RET   24
-#	define SYS   27
 #	define RUN   50
 	// безусловные переходы
 #	define GOTO   2       // jmp a, nargs
 #	define GOTO_CODE 18   //
 #	define GOTO_PROC 19   //
 #	define GOTO_CLOS 21   //
+
+#	define SYS   27
+
+// 3, 4: OCLOSE
+// 6, 7: CLOSE1
 
 	// список команд смотреть в assembly.scm
 #	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
@@ -1524,7 +1528,7 @@ invoke:;
 #	define SHIFT_RIGHT    58
 #	define SHIFT_LEFT     59
 
-	// free numbers: 37 (was _connect), 29(ncons), 30(ncar), 31(ncdr)
+	// free numbers: 29(ncons), 30(ncar), 31(ncdr)
 
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
@@ -1543,6 +1547,21 @@ invoke:;
 			}
 			goto apply;
 
+		// free commands
+#ifdef HAS_PINVOKE
+/*		case 33: { // IN ref-atom, len
+			int len = untoi(A1);
+			word* address = car (A0);
+			A2 = new_bytevector (TBVEC, len);
+			bytecopy(address, &car(A2), len);
+
+			ip += 3; break;
+		}*/
+#endif
+
+//		unused:
+//		case 30:
+//		case 31:
 
 		case GOTO:
 			this = (word *)A0; acc = ip[1];
@@ -1717,6 +1736,7 @@ invoke:;
 		// более высокоуровневые конструкции
 		//	смотреть "owl/primop.scm" и "lang/assemble.scm"
 
+		// todo: add numeric argument as "length" parameter
 		case RAW: { // raw type lst
 			word *lst = (word*) A1;
 			int len = 0;
@@ -1975,18 +1995,24 @@ invoke:;
 			break;
 
 		// todo: add the instruction name
-		case 33:
+		case 29:
+			A0 = F(W);
+			ip += 1; break;
+		case 30:
+		case 33: // todo: change to 30
 			A0 = F(FMAX);
 			ip += 1; break;
 		// todo: add the instruction name
-		case 34:
+		case 31:
+		case 34: // todo: change to 31
 			A0 = F(FBITS);
 			ip += 1; break;
+			// todo: add the instruction name
 
 		// (vm:version)
 		case 62: // get virtual machine info
 			A0 = (word) new_pair(TPAIR,
-					new_string(__OLVM_NAME__, sizeof(__OLVM_NAME__)-1),
+					new_string(__OLVM_NAME__,    sizeof(__OLVM_NAME__)   -1),
 					new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
 			ip += 1; break;
 
@@ -2597,14 +2623,19 @@ invoke:;
 				int sockfd = car (a);
 
 				// todo: https://svn.code.sf.net/p/plibc/code/trunk/plibc/src/inet_ntop.c
-#ifndef _WIN32
 				struct sockaddr_storage peer;
 				socklen_t len = sizeof(peer);
 
 				// On success, zero is returned.
 				if (getpeername(sockfd, (struct sockaddr *) &peer, &len) != 0)
 					break;
+#ifdef _WIN32
+				char* ipaddress = inet_ntoa(((struct sockaddr_in *)&peer)->sin_addr);
+				unsigned short port = ntohs(((struct sockaddr_in *)&peer)->sin_port);
 
+				result = new_pair(new_string(ipaddress), F(port));
+
+#else
 				char ipstr[INET6_ADDRSTRLEN];
 				unsigned short port;
 
@@ -2621,9 +2652,9 @@ invoke:;
 				}
 				else
 					break;
-
 				result = new_pair(new_string(ipstr), F(port));
 #endif
+
 				break;
 			}
 
@@ -3395,8 +3426,12 @@ OL_eval(OL* handle, int argc, char** argv)
  * а тут у нас реализация pinvoke механизма. пример в lib/opengl.scm, lib/sqlite.scm, etc.
  */
 #if HAS_PINVOKE
+#ifdef _WIN32
+__declspec(dllexport)
+#else
 __attribute__
 		((__visibility__("default")))
+#endif
 word* pinvoke(OL* self, word* arguments)
 {
 	// get memory pointer
@@ -3808,6 +3843,30 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		}
 
+		case TINT64: {
+			if (is_value(arg))
+				*(long long*)&args[i] = svtoi(arg);
+			else
+			switch (reftype(arg)) {
+			case TINT: // source type
+				*(long long*)&args[i] = +from_int(arg);
+				break;
+			case TINTN:
+				*(long long*)&args[i] = -from_int(arg);
+				break;
+			case TRATIONAL:
+				*(long long*)&args[i] = from_rational(arg);
+				break;
+			default:
+				fprintf(stderr, "can't cast %d to long\n", type);
+			}
+			#if !__amd64__
+				i++; // for x86 long values (fills two ints)
+			#endif
+
+			break;
+		}
+
 		// с плавающей запятой:*/
 		case TFLOAT:
 			*(float*)&args[i] = to_float(arg);
@@ -3866,21 +3925,15 @@ word* pinvoke(OL* self, word* arguments)
 		case TSTRING:
 			if ((word)arg == INULL)
 				args[i] = (word) (void*)0;
-//#if sizeof(void*) = 8
-//								args[++i] = (word) (void*)0;
-//#endif
 			else
 			switch (reftype(arg)) {
 			case TBVEC:
 			case TSTRING:
-			case TWORD:
-			case TPORT:
-//			case TCONST:
 				// in arg[0] size got size of string
-				args[i] = (word)(&car(arg));
+				args[i] = (word) &car(arg);
 				break;
 			default:
-				args[i] = 0; // todo: error
+				fprintf(stderr, "invalid parameter values (requested string)\n");
 			}
 			break;
 
@@ -3980,9 +4033,8 @@ word* pinvoke(OL* self, word* arguments)
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
 		case TINT:
-			result = itoun (got);
+			result = (word*) itoun (got);
 			break;
-			// no break
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = (word*) itosv (got);
 			break;
@@ -3991,7 +4043,8 @@ word* pinvoke(OL* self, word* arguments)
 			result = new_port (got);
 			break;
 		case TWORD:
-			result = new_native_function (got);
+			if (got)
+				result = new_native_function (got);
 			break;
 		case TRAWVALUE:
 			result = (word*) got;

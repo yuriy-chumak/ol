@@ -64,6 +64,7 @@
       RTLD_LOCAL
       RTLD_NODELETE
 
+      ; todo: rename type-float to type-float32 and type-double to type-float64
       type-float type-double type-void
       load-dynamic-library
 

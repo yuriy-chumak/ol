@@ -6,8 +6,6 @@
 (define-library (lang assemble)
    (export
       assemble-code)
-;      bytes->bytecode
-;      inst->op)
 
    (import
       (r5rs base)
@@ -39,60 +37,52 @@
                   (or (eq? out (cdr node)) (not (cdr node))))
                #true)))
 
-      (define vm-instructions
-         (list->ff
-            `((move . 9)      ; move a, t:      Ra -> Rt
-              (refi . 1)      ; refi a, p, t:   Ra[p] -> Rt, p unsigned                                       ;+
-              (move2 . 5)     ; two moves, 4 args
 
-              (clos0 . 3)      ; clos lp, o, nenv, e0 ... en, t: 
-              (cloc0 . 4)      ; cloc lp, o, nenv, e0 ... en, t: 
-              (clos1 . 6)
-              (cloc1 . 7)
+      ; vm-instructions
+      (define MOVE  9) ; move a, t:      Ra -> Rt
+      (define REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
+      (define MOVE2 5) ; two moves, 4 args
 
-              ;conditional jumps
-              (jeq  . 8)   ; jeq a b o1 o2
-              (jz   . ,(+ 16 (<< 0 6)))     ; jump-imm[0] if zero                                            ;+
-              (jn   . ,(+ 16 (<< 1 6)))     ; jump-imm[1] if null                                            ;+
-              ;jt   . ,(+ 16 (<< 2 6)))     ; jump-imm[2] if true                                            ;+
-              (jf   . ,(+ 16 (<< 3 6)))     ; jump-imm[3] if false                                           ;+
-              ;jf2  . 25)  ; jf2 a, ol, oh  ; jump if arity failed
-              
-              ; executions
-              (goto . 2)      ; jmp a, nargs    call Ra with nargs args
-              (goto-code . 18)
-              (goto-proc . 19)
-              (goto-clos . 21)
-              (ret  . 24)     ; ret a:          call R3 (usually cont) with Ra
-              
-              ; ld
-              (ld   . 14)     ; ld a, t:        Rt = a, signed byte
-              (ldn  . ,(+ 13 (<< 1 6)))     ; 77                                                             ;+
-              (ldt  . ,(+ 13 (<< 2 6)))     ; 141  ldt t:          Rt = true                                 ;+
-              (ldf  . ,(+ 13 (<< 3 6)))     ; 205  ldf t:          Rt = false                                ;+
-              
+      ; load
+      (define LD   14) ; ld a, t:        Rt = a, signed byte
+      (define LDN  (+ 13 (<< 1 6))) ; 77
+      (define LDT  (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
+      (define LDF  (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
+
+      ;
+      (define CLOS0 3) ; clos lp, o, nenv, e0 ... en, t:
+      (define CLOC0 4) ; cloc lp, o, nenv, e0 ... en, t:
+      (define CLOS1 6)
+      (define CLOC1 7)
+
+      ; conditional jumps
+      (define JEQ   8) ; jeq a b o1 o2
+      (define JZ   (+ 16 (<< 0 6))) ; jump-imm[0] if zero
+      (define JN   (+ 16 (<< 1 6))) ; jump-imm[0] if null
+      (define JT   (+ 16 (<< 2 6))) ; jump-imm[0] if true
+      (define JF   (+ 16 (<< 3 6))) ; jump-imm[0] if false
+      (define JF2  25) ; jump if arity failed
+      (define JF2-ex (+ JF2 (<< 1 6))) ; JF2 with extra flag
+
+      ; executions
+      (define GOTO 2) ; jmp a, nargs    call Ra with nargs args
+      (define GOTO-CODE 18)
+      (define GOTO-PROC 19)
+      (define GOTO-CLOS 21)
+      (define RET 24) ; ret a:          call R3 (usually cont) with Ra
+
+      (define ARITY-ERROR 17)
+
 ;              (igoto . 26)   ; indirect goto
-;              (cons . 51)     ; cons a, b, t:   Rt = mkpair(a, b)
-;              (car  . 52)     ; car a, t:       Rt = car(a);
-;              (cdr  . 53)     ; cdr a, t:       Rt = cdr(a);
-;              (eq   . 54)     ; eq a, b, t:     Rt = (Ra == Rb) ? true : false;
 ;              (mk   . 9)      ; mk n, a0, ..., an, t, size up to 256
 ;              (mki  . 11)     ; mki size, type, v1, ..., vn, to
 ;              (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
-              
               
 ;              (set . 25)     ; set a, p, b     Ra[Rp] = Rb
 ;              (jbf . 26)     ; jump-binding tuple n f offset ... r1 ... rn
               
               ;; ldi = 13                                                                                    ;+
 ;              (movh . 13)       ;                                                                            ;+
-              
-              )))
-
-      (define (inst->op name)
-         (or
-            (get vm-instructions name #false)
-            (runtime-error "inst->op: unknown instruction " name)))
 
       (define (reg a)
          (if (eq? (type a) type-fix+)
@@ -118,14 +108,12 @@
       (define (assemble code fail)
          (tuple-case code
             ((ret a)
-               (list (inst->op 'ret) (reg a)))
+               (list RET (reg a)))
             ((move a b more)
-               (lets
-                  ((tl (assemble more fail))
-                   (op (inst->op 'move)))
-                  (if (eq? (car tl) op) ;; [move a b] + [move c d] = [move2 a b c d] to remove a common dispatch
-                     (ilist (inst->op 'move2) (reg a) (reg b) (cdr tl))
-                     (ilist op (reg a) (reg b) tl))))
+               (let ((tl (assemble more fail)))
+                  (if (eq? (car tl) MOVE) ;; [move a b] + [move c d] = [move2 a b c d] to remove a common dispatch
+                     (ilist MOVE2 (reg a) (reg b) (cdr tl))
+                     (ilist MOVE (reg a) (reg b) tl))))
             ((prim op args to more)
                (cond
                   ;; fixme: handle mk differently, this was supposed to be a temp hack
@@ -170,14 +158,14 @@
             ((clos-proc lpos offset env to more)
                ;; make a 2-level closure
                (if (= lpos 1)
-                  (cons (inst->op 'clos1)
+                  (cons CLOS1
                      (cons (+ 2 (length env))      
                         ;; size of object (hdr code e0 ... en) 
                         (cons offset
                            (append (map reg env)
                               (cons (reg to)
                                  (assemble more fail))))))
-                  (cons (inst->op 'clos0)
+                  (cons CLOS0
                      (cons (+ 2 (length env))      
                         ;; size of object (hdr code e0 ... en) 
                         (cons (reg lpos)
@@ -187,14 +175,14 @@
                                     (assemble more fail)))))))))
             ((clos-code lpos offset env to more)      ;; make a 1-level closure
                (if (= lpos 1)
-                  (cons (inst->op 'cloc1)
+                  (cons CLOC1
                      (cons (+ 2 (length env))   
                         ;; size of object (hdr code e0 ... en) 
                         (cons offset
                            (append (map reg env)
                               (cons (reg to)
                                  (assemble more fail))))))
-                  (cons (inst->op 'cloc0)
+                  (cons CLOC0
                      (cons (+ 2 (length env))   
                         ;; size of object (hdr code e0 ... en) 
                         (cons (reg lpos)
@@ -206,35 +194,35 @@
                (cond
                   ;; todo: add implicit load values to free bits of the instruction
                   ((eq? val null)
-                     (ilist (inst->op 'ldn) (reg to)
+                     (ilist LDN (reg to)
                         (assemble cont fail)))
                   ((fixnum? val)
                      (let ((code (assemble cont fail)))
                         (if (or (> val 126) (< val -126)) ; would be a bug
                            (fail (list "ld: big value: " val)))
-                        (ilist (inst->op 'ld) 
+                        (ilist LD
                            (if (< val 0) (+ 256 val) val)
                            (reg to) code)))
                   ((eq? val #false)
-                     (ilist (inst->op 'ldf) (reg to)
+                     (ilist LDF (reg to)
                         (assemble cont fail)))
                   ((eq? val #true)
-                     (ilist (inst->op 'ldt) (reg to)
+                     (ilist LDT (reg to)
                         (assemble cont fail)))
                   (else
                      (fail (list "cannot assemble a load for " val)))))
             ((refi from offset to more)
                (ilist 
-                  (inst->op 'refi) (reg from) offset (reg to) 
+                  REFI (reg from) offset (reg to) 
                   (assemble more fail)))
             ((goto op nargs)
-               (list (inst->op 'goto) (reg op) nargs))
+               (list GOTO (reg op) nargs))
             ((goto-code op n)
-               (list (inst->op 'goto-code) (reg op) n)) ;; <- arity needed for dispatch
+               (list GOTO-CODE (reg op) n)) ;; <- arity needed for dispatch
             ((goto-proc op n)
-               (list (inst->op 'goto-proc) (reg op) n))
+               (list GOTO-PROC (reg op) n))
             ((goto-clos op n)
-               (list (inst->op 'goto-clos) (reg op) n))
+               (list GOTO-CLOS (reg op) n))
             ;; todo: all jumps could have parameterized lengths (0 = 1-byte, n>0 = 2-byte, being the max code length)
             ((jeq a b then else)
                (lets
@@ -242,7 +230,7 @@
                    (else (assemble else fail))
                    (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist (inst->op 'jeq) (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (ilist JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             ((jz a then else)
                (lets
@@ -250,7 +238,7 @@
                    (else (assemble else fail))
                    (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist (inst->op 'jz) (reg a) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (ilist JZ (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             ((jf a then else)
                (lets
@@ -258,7 +246,7 @@
                    (else (assemble else fail))
                    (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist (inst->op 'jf) (reg a) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (ilist JF (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             ((jn a then else)
                (lets
@@ -266,7 +254,7 @@
                    (else (assemble else fail))
                    (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist (inst->op 'jn) (reg a) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (ilist JN (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (else
                ;(print "assemble: what is " code)
@@ -298,19 +286,19 @@
                               ; вот тут можно забрать проверку на арность (-)
                               ; без проверки на арность проваливается тест "case-lambda"
                               ; todo: оставить проверку для lambda, забрать для всего остального
-                              (ilist 25 arity             ;; 25 = JF2
+                              (ilist JF2 arity
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes
                                     (if (null? tail)
-                                       (list 17)          ;; 17 == ARITY-ERROR
+                                       (list ARITY-ERROR)
                                        tail)))
-                              (ilist 89 (if fixed? arity (- arity 1))       ;; last is the optional one (25 + 64)
+                              (ilist JF2-ex (if fixed? arity (- arity 1))
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes 
                                     (if (null? tail)
-                                       (list 17)        ;; force error
+                                       (list ARITY-ERROR) ;; force error
                                        tail)))))))))
             (else
                (runtime-error "assemble-code: unknown AST node " obj))))

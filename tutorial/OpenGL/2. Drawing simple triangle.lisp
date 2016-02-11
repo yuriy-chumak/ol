@@ -1,8 +1,8 @@
 #!/usr/bin/ol
+(import (lib opengl))
+(gl:run
 
-(import (lib linux opengl) (owl io))
-
-(gl:run "2. Drawing simple triangle" 640 480
+   "2. Drawing simple triangle"
 
 ; init
 (lambda ()

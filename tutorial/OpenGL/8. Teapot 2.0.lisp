@@ -1,5 +1,7 @@
 #!/usr/bin/ol
-(import (lib linux opengl) (owl io))
+(import (lib opengl))
+(define Context (gl:Create "8. Teapot 2.0"))
+
 (import (OpenGL version-2-0))
 
 (define width 640)
@@ -101,6 +103,10 @@
 (let ((po (glCreateProgram))
       (vs (glCreateShader GL_VERTEX_SHADER))
       (fs (glCreateShader GL_FRAGMENT_SHADER)))
+
+   (if (= po 0)
+      (runtime-error "Can't create shader program." '()))
+
    ; пример, как можно передать в функцию массив указателей на строки:
    ; vertex shader:
    (glShaderSource vs 2 (list (c-string "#version 120 // OpenGL 2.1\n")
@@ -213,7 +219,7 @@
    (glDetachShader po vs)
 po))
 
-(gl:run "7. OpenGL 2.0" 640 480
+(gl:run Context
 
 ; init
 (lambda ()
@@ -243,13 +249,6 @@ po))
       0 1 0)
 
    (glUseProgram po)
-;   (let ((time (glGetUniformLocation po (c-string "time")))
-;         (resolution (glGetUniformLocation po (c-string "resolution"))))
-;
-;   (let* ((ss ms (clock)))
-;      (glUniform1f time (+ (/ ms 1000) (mod ss 3600)))) ; раз в час будем сбрасывать период
-;   (if (> resolution 0)
-;      (glUniform2f resolution width height))
 
    (let ((render (lambda (surface)
                      (gluBeginSurface teapot)
@@ -279,5 +278,4 @@ po))
 
    (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
          (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
-      (list (+ x nx) nx (+ y ny) ny  po teapot)))
-))
+      (list (+ x nx) nx (+ y ny) ny  po teapot))))

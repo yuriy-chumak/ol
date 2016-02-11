@@ -1,14 +1,27 @@
 #!/usr/bin/ol
 
-(import (OpenGL version-1-0)
+(import (OpenGL EGL version-1-1)
    (lib x11) (owl io))
 
 (define width 640)
 (define height 480)
 
-
 ;(main)
-(define display (XOpenDisplay null))
+(define x11Display (XOpenDisplay null))
+(define eglDisplay (eglGetDisplay x11Display))
+
+(define egl-major (raw type-vector-raw '(0 0 0 0)))
+(define egl-minor (raw type-vector-raw '(0 0 0 0)))
+(eglInitialize eglDisplay egl-major egl-minor)
+
+(print "EGL version: " (refb egl-major 0) "." (refb egl-minor 0))
+(print "EGL_VERSION: " (eglQueryString eglDisplay EGL_VERSION))
+(print "EGL_VENDOR: " (eglQueryString eglDisplay EGL_VENDOR))
+(print "EGL_EXTENSIONS: " (eglQueryString eglDisplay EGL_EXTENSIONS))
+
+(runtime-error "Ok" '())
+
+
 (define screen (XDefaultScreen display))
 
 (define window (XCreateSimpleWindow display (XRootWindow display screen)

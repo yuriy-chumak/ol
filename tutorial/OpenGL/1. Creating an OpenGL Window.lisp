@@ -1,8 +1,8 @@
 #!/usr/bin/ol
+(import (lib opengl))
+(gl:run
 
-(import (lib linux opengl) (owl io))
-
-(gl:run "1. Creating an OpenGL Window" 640 480
+   "1. Creating an OpenGL Window"
 
 ; init
 (lambda ()

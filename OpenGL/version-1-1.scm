@@ -1,476 +1,68 @@
 ; OpenGL 1.1 (1997)
 ; в комментриях указаны расширения, которые были интегрированы в этот выпуск
-; todo: во время загрузки расширения проверять, действительно оно существует
-;     или отсутствует, и соответственно этому себя вести
-
-; ===========================================================================
-; EXT_vertex_array
-;     Multiple vertices may be passed to the GL with a single function call.
-;
-;     https://www.opengl.org/registry/specs/EXT/vertex_array.txt
-;
-; Version
-;     $Date: 1995/10/03 05:39:58 $ $Revision: 1.16 $  FINAL
-;
-; Overview
-;     This extension adds the ability to specify multiple geometric primitives
-;     with very few subroutine calls.  Instead of calling an OpenGL procedure
-;     to pass each individual vertex, normal, or color, separate arrays
-;     of vertexes, normals, and colors are prespecified, and are used to
-;     define a sequence of primitives (all of the same type) when a single
-;     call is made to DrawArraysEXT.  A stride mechanism is provided so that
-;     an application can choose to keep all vertex data staggered in a
-;     single array, or sparsely in separate arrays.  Single-array storage
-;     may optimize performance on some implementations.
-;
-;     This extension also supports the rendering of individual array elements,
-;     each specified as an index into the enabled arrays.
-(define-library (OpenGL EXT vertex_array)
-
-; ---------------------------------------------------------------------------
-; Dependencies
-;     None
-   (import
-      (r5rs base) (owl io)
-      (OpenGL version-1-0))
-
-; ---------------------------------------------------------------------------
-   (export  EXT_vertex_array
-
-; ---------------------------------------------------------------------------
-; New Procedures and Functions
-   ;ArrayElementEXT
-   ;DrawArraysEXT    
-   ;VertexPointerEXT
-   ;NormalPointerEXT
-   ;ColorPointerEXT
-   ;IndexPointerEXT
-   ;TexCoordPointerEXT
-   ;EdgeFlagPointerEXT
-   ;GetPointervEXT
-   
-; ---------------------------------------------------------------------------
-; New Tokens
-;
-;	Accepted by the <cap> parameter of Enable, Disable, and IsEnabled, and
-;	by the <pname> parameter of GetBooleanv, GetIntegerv, GetFloatv, and
-;	GetDoublev:
-;        VERTEX_ARRAY_EXT               0x8074
-;        NORMAL_ARRAY_EXT               0x8075
-;        COLOR_ARRAY_EXT                0x8076
-;        INDEX_ARRAY_EXT                0x8077
-;        TEXTURE_COORD_ARRAY_EXT        0x8078
-;        EDGE_FLAG_ARRAY_EXT            0x8079
-
-;	Accepted by the <type> parameter of VertexPointerEXT, NormalPointerEXT,
-;	ColorPointerEXT, IndexPointerEXT, and TexCoordPointerEXT:
-;        DOUBLE_EXT                     0x140A
-
-;	Accepted by the <pname> parameter of GetBooleanv, GetIntegerv,
-;	GetFloatv, and GetDoublev:
-;        VERTEX_ARRAY_SIZE_EXT          0x807A
-;        VERTEX_ARRAY_TYPE_EXT          0x807B
-;        VERTEX_ARRAY_STRIDE_EXT        0x807C
-;        VERTEX_ARRAY_COUNT_EXT         0x807D
-;        NORMAL_ARRAY_TYPE_EXT          0x807E
-;        NORMAL_ARRAY_STRIDE_EXT        0x807F
-;        NORMAL_ARRAY_COUNT_EXT         0x8080
-;        COLOR_ARRAY_SIZE_EXT           0x8081
-;        COLOR_ARRAY_TYPE_EXT           0x8082
-;        COLOR_ARRAY_STRIDE_EXT         0x8083
-;        COLOR_ARRAY_COUNT_EXT          0x8084
-;        INDEX_ARRAY_TYPE_EXT           0x8085
-;        INDEX_ARRAY_STRIDE_EXT         0x8086
-;        INDEX_ARRAY_COUNT_EXT          0x8087
-;        TEXTURE_COORD_ARRAY_SIZE_EXT   0x8088
-;        TEXTURE_COORD_ARRAY_TYPE_EXT   0x8089
-;        TEXTURE_COORD_ARRAY_STRIDE_EXT 0x808A
-;        TEXTURE_COORD_ARRAY_COUNT_EXT  0x808B
-;        EDGE_FLAG_ARRAY_STRIDE_EXT     0x808C
-;        EDGE_FLAG_ARRAY_COUNT_EXT      0x808D
-        
-;	Accepted by the <pname> parameter of GetPointervEXT:
-;        VERTEX_ARRAY_POINTER_EXT       0x808E
-;        NORMAL_ARRAY_POINTER_EXT       0x808F
-;        COLOR_ARRAY_POINTER_EXT        0x8090
-;        INDEX_ARRAY_POINTER_EXT        0x8091
-;        TEXTURE_COORD_ARRAY_POINTER_EXT 0x8092
-;        EDGE_FLAG_ARRAY_POINTER_EXT    0x8093
-
-
-)
-
-; ---------------------------------------------------------------------------
-   (begin
-   (define EXT_vertex_array 1)
-
-		(define GL_VERTEX_ARRAY #x8074)
-		(define GL_NORMAL_ARRAY #x8075)
-		(define GL_COLOR_ARRAY #x8076)
-		(define GL_INDEX_ARRAY #x8077)
-		(define GL_TEXTURE_COORD_ARRAY #x8078)
-		(define GL_EDGE_FLAG_ARRAY #x8079)
-		(define GL_VERTEX_ARRAY_SIZE #x807A)
-		(define GL_VERTEX_ARRAY_TYPE #x807B)
-		(define GL_VERTEX_ARRAY_STRIDE #x807C)
-		(define GL_NORMAL_ARRAY_TYPE #x807E)
-		(define GL_NORMAL_ARRAY_STRIDE #x807F)
-		(define GL_COLOR_ARRAY_SIZE #x8081)
-		(define GL_COLOR_ARRAY_TYPE #x8082)
-		(define GL_COLOR_ARRAY_STRIDE #x8083)
-		(define GL_INDEX_ARRAY_TYPE #x8085)
-		(define GL_INDEX_ARRAY_STRIDE #x8086)
-		(define GL_TEXTURE_COORD_ARRAY_SIZE #x8088)
-		(define GL_TEXTURE_COORD_ARRAY_TYPE #x8089)
-		(define GL_TEXTURE_COORD_ARRAY_STRIDE #x808A)
-		(define GL_EDGE_FLAG_ARRAY_STRIDE #x808C)
-		(define GL_VERTEX_ARRAY_POINTER #x808E)
-		(define GL_NORMAL_ARRAY_POINTER #x808F)
-		(define GL_COLOR_ARRAY_POINTER #x8090)
-		(define GL_INDEX_ARRAY_POINTER #x8091)
-		(define GL_TEXTURE_COORD_ARRAY_POINTER #x8092)
-		(define GL_EDGE_FLAG_ARRAY_POINTER #x8093)
-		(define GL_V2F #x2A20)
-		(define GL_V3F #x2A21)
-		(define GL_C4UB_V2F #x2A22)
-		(define GL_C4UB_V3F #x2A23)
-		(define GL_C3F_V3F #x2A24)
-		(define GL_N3F_V3F #x2A25)
-		(define GL_C4F_N3F_V3F #x2A26)
-		(define GL_T2F_V3F #x2A27)
-		(define GL_T4F_V4F #x2A28)
-		(define GL_T2F_C4UB_V3F #x2A29)
-		(define GL_T2F_C3F_V3F #x2A2A)
-		(define GL_T2F_N3F_V3F #x2A2B)
-		(define GL_T2F_C4F_N3F_V3F #x2A2C)
-		(define GL_T4F_C4F_N3F_V4F #x2A2D)
-
-))
-
-
-; ===========================================================================
-; EXT_polygon_offset
-;	Depth values may be offset on a per-primitive basis.
-;
-;	https://www.opengl.org/registry/specs/EXT/polygon_offset.txt
-;
-; Version
-;	$Date: 1995/06/17 03:34:49 $ $Revision: 1.12 $
-;
-; Overview
-;	The depth values of fragments generated by rendering polygons are
-;	displaced by an amount that is proportional to the maximum absolute
-;	value of the depth slope of the polygon, measured and applied in window
-;	coordinates.  This displacement allows lines (or points) and polygons
-;	in the same plane to be rendered without interaction -- the lines
-;	rendered either completely in front of or behind the polygons
-;	(depending on the sign of the offset factor).  It also allows multiple
-;	coplanar polygons to be rendered without interaction, if different
-;	offset factors are used for each polygon.  Applications include
-;	rendering hidden-line images, rendering solids with highlighted edges,
-;	and applying `decals' to surfaces.
-(define-library (OpenGL EXT polygon_offset)
-
-; ---------------------------------------------------------------------------
-; Dependencies
-;	None
-   (import
-      (r5rs base) (owl io)
-      (OpenGL version-1-0))
-
-; ---------------------------------------------------------------------------
-   (export  EXT_polygon_offset
-    
-; ---------------------------------------------------------------------------
-; New Procedures and Functions
-   
-; ---------------------------------------------------------------------------
-; New Tokens
-    
-)
-   
-; ---------------------------------------------------------------------------
-   (begin
-   (define EXT_polygon_offset 1)
-
-))
-
-
-; ===========================================================================
-; EXT_blend_logic_op
-;	Fragment colors may be blended into the framebuffer using bitwise operations.
-;
-;	https://www.opengl.org/registry/specs/EXT/blend_logic_op.txt
-;
-; Version
-;	 $Date: 1995/03/31 04:40:24 $ $Revision: 1.4 $
-;
-; Overview
-;	A single additional blending equation is specified using the interface
-;	defined by EXT_blend_minmax.  This equation is a simple logical
-;	combination of the source and destination colors, where the specific
-;	logical operation is as specified by LogicOp.  While only the XOR
-;	operation may find wide application, the generality of full logical
-;	operations is allowed.
-(define-library (OpenGL EXT blend_logic_op)
-
-; ---------------------------------------------------------------------------
-; Dependencies
-;	EXT_blend_minmax affects the definition of this extension
-   (import
-      (r5rs base) (owl io)
-      (OpenGL version-1-0))
-      
-; ---------------------------------------------------------------------------
-   (export  EXT_blend_logic_op
-    
-; ---------------------------------------------------------------------------
-; New Procedures and Functions
-   
-; ---------------------------------------------------------------------------
-; New Tokens
-
-)
-  
-; ---------------------------------------------------------------------------
-   (begin
-   (define EXT_blend_logic_op 1)
-
-))
-
-
-; ===========================================================================
-; EXT_texture
-;	Various texturing improvements, including proxy textures and sized internal formats.
-;
-;	http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture.txt
-;	https://www.opengl.org/registry/specs/EXT/texture.txt
-;
-; Version
-;	$Date: 1996/04/05 19:17:03 $ $Revision: 1.21 $
-;
-; Overview
-;	The original intention of this extension was simply to support various
-;	numeric resolutions of color components in texture images.  While it
-;	accomplishes this, it also accomplishes a larger task, that of
-;	formalizing the notion of an internal format for images, corresponding
-;	to the external format that already existed for image data in host
-;	memory.  This notion of an internal image format will be used
-;	extensively in later extensions, especially those concerned with pixel
-;	manipulation.
-;
-;	The idea of an internal format is simple: rather than treating a
-;	retained image as having 1, 2, 3, or 4 components, treat it as though
-;	it has a specific format, such as LUMINANCE_ALPHA, or just ALPHA.  Then
-;	define the semantics of the use of internal images with these formats in
-;	a consistent way.  Because texture mapping is already defined in GL, the
-;	semantics for internal-format images were chosen to match those of the 1,
-;	2, 3, and 4 component internal images that already existed.  The new
-;	semantics are a superset of the old ones, however, so this extension
-;	adds capabilities to GL, as well as allowing internal resolutions to be
-;	specified.
-;
-;	This extension also defines a robust method for applications to
-;	determine what combinations of texture dimensions and resolutions are
-;	supported by an implementation.  It also introduces a new texture
-;	environment: REPLACE_EXT.
-(define-library (OpenGL EXT texture)
-
-; ---------------------------------------------------------------------------
-; Dependencies
-;	None
-   (import
-      (r5rs base) (owl io)
-      (OpenGL version-1-0))
-      
-; ---------------------------------------------------------------------------
-   (export
-    EXT_texture
-    
-; ---------------------------------------------------------------------------
-; New Procedures and Functions
-   
-; ---------------------------------------------------------------------------
-; New Tokens
-    
-)
-  
-; ---------------------------------------------------------------------------
-   (begin
-   (define EXT_texture 1)
-   
-))
-
-
-; ===========================================================================
-; EXT_copy_texture
-;	Various methods to alter texture images, including image copying and sub-image replacement.
-;
-;	https://www.opengl.org/registry/specs/EXT/copy_texture.txt
-;
-; Version
-;	$Date: 1995/06/17 03:33:42 $ $Revision: 1.21 $
-;
-; Overview
-;	This extension defines methods to load texture images directly from the
-;	framebuffer.  Methods are defined for both complete and partial
-;	replacement of a texture image.  Because it is not possible to define
-;	an entire 3D texture using a 2D framebuffer image, 3D textures are
-;	supported only for partial replacement.
-(define-library (OpenGL EXT copy_texture)
-
-; ---------------------------------------------------------------------------
-; Dependencies
-;	EXT_texture3D affects the definition of this extension.
-;	SGIS_texture_filter4 affects the definition of this extension.
-;	EXT_subtexture affects the definition of this extension.
-   (import
-      (r5rs base) (owl io)
-      (OpenGL version-1-0))
-
-;	EXT_texture is required.
-   (import
-      (OpenGL EXT texture))
-
-; ---------------------------------------------------------------------------
-   (export
-    EXT_copy_texture
-    
-; ---------------------------------------------------------------------------
-; New Procedures and Functions
-   
-; ---------------------------------------------------------------------------
-; New Tokens
-    
-)
-  
-; ---------------------------------------------------------------------------
-   (begin
-   (define EXT_copy_texture 1)
-   
-))
-
-
-; ===========================================================================
-; EXT_subtexture
-;	Various methods to alter texture images, including image copying and sub-image replacement.
-;
-;	https://www.opengl.org/registry/specs/EXT/subtexture.txt
-;
-; Version
-;	$Date: 1995/10/03 05:39:55 $ $Revision: 1.17 $
-;
-; Overview
-;	This extension allows a contiguous portion of an already-existing
-;	texture image to be redefined, without affecting the remaining portion
-;	of the image, or any of the other state that describe the texture.  No
-;	provision is made to query a subregion of a texture.
-
-;	Semantics for null image pointers are defined for TexImage1D,
-;	TexImage2D, and TexImage3DEXT.  Null image pointers can be used by
-;	applications to effectively support texture arrays whose dimensions
-;	are not a power of 2.
-(define-library (OpenGL EXT subtexture)
-
-; ---------------------------------------------------------------------------
-; Dependencies
-;	EXT_abgr affects the definition of this extension
-;	EXT_texture3D affects the definition of this extension
-   (import
-      (r5rs base) (owl io)
-      (OpenGL version-1-0))
-
-;	EXT_texture is required.
-   (import
-      (OpenGL EXT texture))
-
-; ---------------------------------------------------------------------------
-   (export
-    EXT_subtexture
-    
-; ---------------------------------------------------------------------------
-; New Procedures and Functions
-   
-; ---------------------------------------------------------------------------
-; New Tokens
-    
-)
-  
-; ---------------------------------------------------------------------------
-   (begin
-   (define EXT_subtexture 1)
-   
-))
-
-
-; ===========================================================================
-; EXT_texture_object
-;	Texture state may be stored in a GL object, for greater efficiency.
-;
-;	https://www.opengl.org/registry/specs/EXT/texture_object.txt
-;
-; Version
-;	$Date: 1995/10/03 05:39:56 $ $Revision: 1.27 $
-;
-; Overview
-;	This extension introduces named texture objects.  The only way to name
-;	a texture in GL 1.0 is by defining it as a single display list.  Because
-;	display lists cannot be edited, these objects are static.  Yet it is
-;	important to be able to change the images and parameters of a texture.
-(define-library (OpenGL EXT texture_object)
-
-; ---------------------------------------------------------------------------
-; Dependencies
-;	EXT_texture3D affects the definition of this extension
-   (import
-      (r5rs base) (owl io)
-      (OpenGL version-1-0))
-
-; ---------------------------------------------------------------------------
-   (export
-    EXT_texture_object
-
-; ---------------------------------------------------------------------------
-; New Procedures and Functions
-      glGenTextures ; void (GLsizei n, GLuint *textures)
-      ;DeleteTextures
-      glBindTexture ; void (GLenum target, GLuint texture)
-      ;PrioritizeTextures
-      ;AreTexturesResident
-      ;IsTexture
-
-; ---------------------------------------------------------------------------
-; New Tokens
-    
-)
-  
-; ---------------------------------------------------------------------------
-   (begin
-   (define EXT_texture_object 1) ; todo: change to the dynamic, maybe.
-   (define % (dlopen GL_LIBRARY RTLD_LAZY))
-
-   (define glBindTexture (dlsym % GLvoid "glBindTexture" GLenum GLuint))
-   ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
-   (define glGenTextures (dlsym % GLvoid "glGenTextures" GLsizei GLuint*))
-   ;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
-   
-))
-
-
-; ===========================================================================
-; ===========================================================================
+; ==========================================================================
 (define-library (OpenGL version-1-1)
-   (export
-      (exports (OpenGL version-1-0))
-    GL_VERSION_1_1
+(export
+       (exports (OpenGL version-1-0))
+   GL_VERSION_1_1
 
-      (exports (OpenGL EXT vertex_array))
-      (exports (OpenGL EXT polygon_offset))
-      (exports (OpenGL EXT blend_logic_op))
-      (exports (OpenGL EXT texture))
-      (exports (OpenGL EXT copy_texture))
-      (exports (OpenGL EXT subtexture))
-      (exports (OpenGL EXT texture_object))
+;/* ClientArrayType */
+;/*      GL_VERTEX_ARRAY */
+;/*      GL_NORMAL_ARRAY */
+;/*      GL_COLOR_ARRAY */
+;/*      GL_INDEX_ARRAY */
+;/*      GL_TEXTURE_COORD_ARRAY */
+;/*      GL_EDGE_FLAG_ARRAY */
+
+;/* ColorPointerType */
+;/*      GL_BYTE */
+;/*      GL_UNSIGNED_BYTE */
+;/*      GL_SHORT */
+;/*      GL_UNSIGNED_SHORT */
+;/*      GL_INT */
+;/*      GL_UNSIGNED_INT */
+;/*      GL_FLOAT */
+;/*      GL_DOUBLE */
+
+;/* DataType */
+;#define GL_BYTE                           0x1400
+;#define GL_UNSIGNED_BYTE                  0x1401
+;#define GL_SHORT                          0x1402
+;#define GL_UNSIGNED_SHORT                 0x1403
+;#define GL_INT                            0x1404
+;#define GL_UNSIGNED_INT                   0x1405
+;#define GL_FLOAT                          0x1406
+;#define GL_2_BYTES                        0x1407
+;#define GL_3_BYTES                        0x1408
+;#define GL_4_BYTES                        0x1409
+;#define GL_DOUBLE                         0x140A
+
+
+;   ;glDisable
+;   ; mode
+;      GL_INDEX_LOGIC_OP
+;      GL_COLOR_LOGIC_OP
+;/*      GL_VERTEX_ARRAY */
+;/*      GL_NORMAL_ARRAY */
+;/*      GL_COLOR_ARRAY */
+;/*      GL_INDEX_ARRAY */
+;/*      GL_TEXTURE_COORD_ARRAY */
+;/*      GL_EDGE_FLAG_ARRAY */
+;/*      GL_POLYGON_OFFSET_POINT */
+;/*      GL_POLYGON_OFFSET_LINE */
+;/*      GL_POLYGON_OFFSET_FILL */
+
+;/* GetPointerTarget */
+;/*      GL_VERTEX_ARRAY_POINTER */
+;/*      GL_NORMAL_ARRAY_POINTER */
+;/*      GL_COLOR_ARRAY_POINTER */
+;/*      GL_INDEX_ARRAY_POINTER */
+;/*      GL_TEXTURE_COORD_ARRAY_POINTER */
+;/*      GL_EDGE_FLAG_ARRAY_POINTER */
+
+
+
+; -------------------
 
 
     ; todo: move this to the right place
@@ -552,18 +144,119 @@
       (r5rs base) (owl io)
       (OpenGL version-1-0))
 
-   (import (OpenGL EXT vertex_array))
-   (import (OpenGL EXT polygon_offset))
-   (import (OpenGL EXT blend_logic_op))
-   (import (OpenGL EXT texture))
-   (import (OpenGL EXT copy_texture))
-   (import (OpenGL EXT subtexture))
-   (import (OpenGL EXT texture_object))
-
 ; ---------------------------------------------------------------------------
-   (begin
+(begin
    (define GL_VERSION_1_1 1)
 
+#|
+/* ClientArrayType */
+/*      GL_VERTEX_ARRAY */
+/*      GL_NORMAL_ARRAY */
+/*      GL_COLOR_ARRAY */
+/*      GL_INDEX_ARRAY */
+/*      GL_TEXTURE_COORD_ARRAY */
+/*      GL_EDGE_FLAG_ARRAY */
+
+/* ColorPointerType */
+/*      GL_BYTE */
+/*      GL_UNSIGNED_BYTE */
+/*      GL_SHORT */
+/*      GL_UNSIGNED_SHORT */
+/*      GL_INT */
+/*      GL_UNSIGNED_INT */
+/*      GL_FLOAT */
+/*      GL_DOUBLE */
+
+/* DataType */
+#define GL_BYTE                           0x1400
+#define GL_UNSIGNED_BYTE                  0x1401
+#define GL_SHORT                          0x1402
+#define GL_UNSIGNED_SHORT                 0x1403
+#define GL_INT                            0x1404
+#define GL_UNSIGNED_INT                   0x1405
+#define GL_FLOAT                          0x1406
+#define GL_2_BYTES                        0x1407
+#define GL_3_BYTES                        0x1408
+#define GL_4_BYTES                        0x1409
+#define GL_DOUBLE                         0x140A
+
+/*      GL_INDEX_LOGIC_OP */
+/*      GL_COLOR_LOGIC_OP */
+
+/*      GL_VERTEX_ARRAY */
+/*      GL_NORMAL_ARRAY */
+/*      GL_COLOR_ARRAY */
+/*      GL_INDEX_ARRAY */
+/*      GL_TEXTURE_COORD_ARRAY */
+/*      GL_EDGE_FLAG_ARRAY */
+/*      GL_POLYGON_OFFSET_POINT */
+/*      GL_POLYGON_OFFSET_LINE */
+/*      GL_POLYGON_OFFSET_FILL */
+
+/* GetPointerTarget */
+/*      GL_VERTEX_ARRAY_POINTER */
+/*      GL_NORMAL_ARRAY_POINTER */
+/*      GL_COLOR_ARRAY_POINTER */
+/*      GL_INDEX_ARRAY_POINTER */
+/*      GL_TEXTURE_COORD_ARRAY_POINTER */
+/*      GL_EDGE_FLAG_ARRAY_POINTER */
+
+#define GL_CLIENT_ATTRIB_STACK_DEPTH      0x0BB1
+#define GL_INDEX_LOGIC_OP                 0x0BF1
+#define GL_COLOR_LOGIC_OP                 0x0BF2
+#define GL_MAX_CLIENT_ATTRIB_STACK_DEPTH  0x0D3B
+#define GL_FEEDBACK_BUFFER_POINTER        0x0DF0
+#define GL_FEEDBACK_BUFFER_SIZE           0x0DF1
+#define GL_FEEDBACK_BUFFER_TYPE           0x0DF2
+#define GL_SELECTION_BUFFER_POINTER       0x0DF3
+#define GL_SELECTION_BUFFER_SIZE          0x0DF4
+/*      GL_TEXTURE_BINDING_1D */
+/*      GL_TEXTURE_BINDING_2D */
+/*      GL_VERTEX_ARRAY */
+/*      GL_NORMAL_ARRAY */
+/*      GL_COLOR_ARRAY */
+/*      GL_INDEX_ARRAY */
+/*      GL_TEXTURE_COORD_ARRAY */
+/*      GL_EDGE_FLAG_ARRAY */
+/*      GL_VERTEX_ARRAY_SIZE */
+/*      GL_VERTEX_ARRAY_TYPE */
+/*      GL_VERTEX_ARRAY_STRIDE */
+/*      GL_NORMAL_ARRAY_TYPE */
+/*      GL_NORMAL_ARRAY_STRIDE */
+/*      GL_COLOR_ARRAY_SIZE */
+/*      GL_COLOR_ARRAY_TYPE */
+/*      GL_COLOR_ARRAY_STRIDE */
+/*      GL_INDEX_ARRAY_TYPE */
+/*      GL_INDEX_ARRAY_STRIDE */
+/*      GL_TEXTURE_COORD_ARRAY_SIZE */
+/*      GL_TEXTURE_COORD_ARRAY_TYPE */
+/*      GL_TEXTURE_COORD_ARRAY_STRIDE */
+/*      GL_EDGE_FLAG_ARRAY_STRIDE */
+/*      GL_POLYGON_OFFSET_FACTOR */
+/*      GL_POLYGON_OFFSET_UNITS */
+
+#define GL_TEXTURE_INTERNAL_FORMAT        0x1003
+/*      GL_TEXTURE_RED_SIZE */
+/*      GL_TEXTURE_GREEN_SIZE */
+/*      GL_TEXTURE_BLUE_SIZE */
+/*      GL_TEXTURE_ALPHA_SIZE */
+/*      GL_TEXTURE_LUMINANCE_SIZE */
+/*      GL_TEXTURE_INTENSITY_SIZE */
+/*      GL_TEXTURE_PRIORITY */
+/*      GL_TEXTURE_RESIDENT */
+
+/*      GL_PHONG_HINT */
+
+/* IndexPointerType */
+/*      GL_SHORT */
+/*      GL_INT */
+/*      GL_FLOAT */
+/*      GL_DOUBLE */
+
+.......
+
+
+|#
 ; 1.1
 ;(define GLbyte  ?) ; typedef signed char GLbyte
 ;(define GLshort ?) ; typedef short GLshort
@@ -629,31 +322,43 @@
 		(define GL_CLIENT_VERTEX_ARRAY_BIT #x00000002)
 		(define GL_CLIENT_ALL_ATTRIB_BITS #xFFFFFFFF)
 
-;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
-;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
-;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
-;WINGDIAPI void APIENTRY glPolygonOffset (GLfloat factor, GLfloat units);
+;WINGDIAPI GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
+;WINGDIAPI void APIENTRY glArrayElement (GLint i);
+;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glCopyTexImage1D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border);
 ;WINGDIAPI void APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
 ;WINGDIAPI void APIENTRY glCopyTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
 ;WINGDIAPI void APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
-;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
-;WINGDIAPI void APIENTRY glArrayElement (GLint i);
-;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
 ;WINGDIAPI void APIENTRY glDisableClientState (GLenum array);
+;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
+;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 ;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
+;WINGDIAPI void APIENTRY glGenTextures (GLsizei n, GLuint *textures);
+;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
 ;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
-;WINGDIAPI void APIENTRY glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities);
 ;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
 ;WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
+;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
+;WINGDIAPI void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glPolygonOffset (GLfloat factor, GLfloat units);
 ;WINGDIAPI void APIENTRY glPopClientAttrib (void);
+;WINGDIAPI void APIENTRY glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities);
 ;WINGDIAPI void APIENTRY glPushClientAttrib (GLbitfield mask);
+;WINGDIAPI void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
+;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+;WINGDIAPI void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 
+; integrate:
+;   EXT_vertex_array
+;   WIN_draw_range_elements
+;   WIN_swap_hint
+;   EXT_paletted_texture
+
+
+(define GLU_VERSION_1_2                 1)
+; add glu functions
 ))
