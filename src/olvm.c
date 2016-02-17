@@ -3469,6 +3469,9 @@ word* pinvoke(OL* self, word* arguments)
 		// http://www.agner.org/optimize/calling_conventions.pdf
 #if __amd64__
 		#define CALLFLOATS(conv) \
+			case 1 + 0x0100:\
+			         return ((conv word (*)  (float))\
+			                 function) (*(float*)&argv[0]);\
 			case 2 + 0x0200:\
 			         return ((conv word (*)  (word, float))\
 			                 function) (argv[0], *(float*)&argv[1]);\

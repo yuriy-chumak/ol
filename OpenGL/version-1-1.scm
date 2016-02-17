@@ -6,6 +6,12 @@
        (exports (OpenGL version-1-0))
    GL_VERSION_1_1
 
+   glBindTexture ; void (GLenum target, GLuint texture)
+   ; target
+       GL_TEXTURE_1D
+       GL_TEXTURE_2D
+
+
 ;/* ClientArrayType */
 ;/*      GL_VERTEX_ARRAY */
 ;/*      GL_NORMAL_ARRAY */
@@ -147,6 +153,14 @@
 ; ---------------------------------------------------------------------------
 (begin
    (define GL_VERSION_1_1 1)
+
+(define $ (or
+   (dlopen GL_LIBRARY)
+   (runtime-error "Can't load OpenGL library")))
+
+
+(define glBindTexture (dlsym $ GLvoid "glBindTexture" GLenum GLuint))
+
 
 #|
 /* ClientArrayType */

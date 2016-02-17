@@ -110,10 +110,11 @@
                (vi (glXChooseVisual display screen
                      (raw type-vector-raw '(
                         4 0 0 0 ; GLX_RGBA
-                        5 0 0 0  1 0 0 0 ; GLX_DOUBLEBUFFER
-                        8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
-                        9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
-                       10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
+                        5 0 0 0 ; GLX_DOUBLEBUFFER
+                        8 0 0 0  8 0 0 0 ; GLX_RED_SIZE
+                        9 0 0 0  8 0 0 0 ; GLX_GREEN_SIZE
+                       10 0 0 0  8 0 0 0 ; GLX_BLUE_SIZE
+                       12 0 0 0  24 0 0 0   ; GLX_DEPTH_SIZE
                         0 0 0 0))))); None
             (XSelectInput display window  (<< 1 15)) ; ExposureMask
             (XStoreName display window title)

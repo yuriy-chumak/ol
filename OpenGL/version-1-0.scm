@@ -285,7 +285,7 @@
 
    glEnd ; void
 
-;WINGDIAPI void APIENTRY glEndList (void);
+   glEndList ; void glEndList (void)
 ;WINGDIAPI void APIENTRY glEvalCoord1d (GLdouble u);
 ;WINGDIAPI void APIENTRY glEvalCoord1dv (const GLdouble *u);
 ;WINGDIAPI void APIENTRY glEvalCoord1f (GLfloat u);
@@ -629,14 +629,41 @@
 ;WINGDIAPI void APIENTRY glInitNames (void);
 ;WINGDIAPI GLboolean APIENTRY glIsEnabled (GLenum cap);
 ;WINGDIAPI GLboolean APIENTRY glIsList (GLuint list);
-;WINGDIAPI void APIENTRY glLightModelf (GLenum pname, GLfloat param);
+   glLightModelf  ; void (GLenum pname, GLfloat param)
+   ; name
+      GL_LIGHT_MODEL_AMBIENT
+      GL_LIGHT_MODEL_LOCAL_VIEWER
+      GL_LIGHT_MODEL_TWO_SIDE
+
+   ; param
 ;WINGDIAPI void APIENTRY glLightModelfv (GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glLightModeli (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glLightModeliv (GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glLightf (GLenum light, GLenum pname, GLfloat param);
-;WINGDIAPI void APIENTRY glLightfv (GLenum light, GLenum pname, const GLfloat *params);
+   glLightfv ; void (GLenum light, GLenum pname, const GLfloat *params)
 ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
+   ; light
+      GL_LIGHT0
+      GL_LIGHT1
+      GL_LIGHT2
+      GL_LIGHT3
+      GL_LIGHT4
+      GL_LIGHT5
+      GL_LIGHT6
+      GL_LIGHT7
+   ; pname
+      GL_AMBIENT
+      GL_DIFFUSE
+      GL_SPECULAR
+      GL_POSITION
+      GL_SPOT_DIRECTION
+      GL_SPOT_EXPONENT
+      GL_SPOT_CUTOFF
+      GL_CONSTANT_ATTENUATION
+      GL_LINEAR_ATTENUATION
+      GL_QUADRATIC_ATTENUATION
+
 ;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern);
    glLineWidth ; void (GLfloat width)
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
@@ -663,7 +690,10 @@
       GL_TEXTURE
 ;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
 ;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
-;WINGDIAPI void APIENTRY glNewList (GLuint list, GLenum mode);
+   glNewList ; void (GLuint list, GLenum mode)
+   ; mode
+      GL_COMPILE
+      GL_COMPILE_AND_EXECUTE
 ;WINGDIAPI void APIENTRY glNormal3b (GLbyte nx, GLbyte ny, GLbyte nz);
 ;WINGDIAPI void APIENTRY glNormal3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glNormal3d (GLdouble nx, GLdouble ny, GLdouble nz);
@@ -688,7 +718,7 @@
    glPolygonMode ; void (GLenum face, GLenum mode)
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
-;WINGDIAPI void APIENTRY glPopMatrix (void);
+   glPopMatrix ; void glPopMatrix (void)
 ;WINGDIAPI void APIENTRY glPopName (void);
 ;WINGDIAPI void APIENTRY glPushAttrib (GLbitfield mask);
    glPushAttrib
@@ -714,7 +744,7 @@
       GL_SCISSOR_BIT                   ;0x00080000
       GL_ALL_ATTRIB_BITS               ;0x000fffff
 
-;WINGDIAPI void APIENTRY glPushMatrix (void);
+   glPushMatrix   ; void glPushMatrix (void)
 ;WINGDIAPI void APIENTRY glPushName (GLuint name);
 ;WINGDIAPI void APIENTRY glRasterPos2d (GLdouble x, GLdouble y);
 ;WINGDIAPI void APIENTRY glRasterPos2dv (const GLdouble *v);
@@ -752,9 +782,9 @@
 ;WINGDIAPI void APIENTRY glRectsv (const GLshort *v1, const GLshort *v2);
 ;WINGDIAPI GLint APIENTRY glRenderMode (GLenum mode);
 ;WINGDIAPI void APIENTRY glRotated (GLdouble angle, GLdouble x, GLdouble y, GLdouble z);
-;WINGDIAPI void APIENTRY glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
+   glRotatef ; void (GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
-   glScalef ; void (GLfloat x, GLfloat y, GLfloat z)
+   glScalef  ; void (GLfloat x, GLfloat y, GLfloat z)
 ;WINGDIAPI void APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height);
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
    glShadeModel ; void (GLenum model)
@@ -853,6 +883,9 @@
    
    gluNewQuadric gluDeleteQuadric gluQuadricDrawStyle
       GLU_FILL GLU_LINE GLU_SILHOUETTE GLU_POINT
+   gluQuadricOrientation
+      GLU_OUTSIDE GLU_INSIDE
+
    gluSphere
    
 ;   gluNewTess gluBeginPolygon gluTessVertex 
@@ -1534,12 +1567,12 @@
 ;WINGDIAPI void APIENTRY glIndexsv (const GLshort *c);
 ;WINGDIAPI void APIENTRY glInitNames (void);
 ;WINGDIAPI GLboolean APIENTRY glIsList (GLuint list);
-;WINGDIAPI void APIENTRY glLightModelf (GLenum pname, GLfloat param);
+   (define glLightModelf (dlsym $ GLvoid "glLightModelf" GLenum GLfloat))
 ;WINGDIAPI void APIENTRY glLightModelfv (GLenum pname, const GLfloat *params);
 ;WINGDIAPI void APIENTRY glLightModeli (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glLightModeliv (GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glLightf (GLenum light, GLenum pname, GLfloat param);
-;WINGDIAPI void APIENTRY glLightfv (GLenum light, GLenum pname, const GLfloat *params);
+   (define glLightfv (dlsym $ GLvoid "glLightfv" GLenum GLenum GLfloat*))
 ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern);
@@ -1564,7 +1597,7 @@
    (define glMatrixMode (dlsym $ GLvoid "glMatrixMode" GLenum))
 ;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
 ;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
-;WINGDIAPI void APIENTRY glNewList (GLuint list, GLenum mode);
+   (define glNewList (dlsym $ GLvoid "glNewList" GLuint GLenum))
 ;WINGDIAPI void APIENTRY glNormal3b (GLbyte nx, GLbyte ny, GLbyte nz);
 ;WINGDIAPI void APIENTRY glNormal3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glNormal3d (GLdouble nx, GLdouble ny, GLdouble nz);
@@ -1589,9 +1622,10 @@
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
 ;WINGDIAPI void APIENTRY glPopAttrib (void);
 ;WINGDIAPI void APIENTRY glPopMatrix (void);
+   (define glPopMatrix  (dlsym $ GLvoid "glPopMatrix"))
 ;WINGDIAPI void APIENTRY glPopName (void);
    (define glPushAttrib (dlsym $ GLvoid "glPushAttrib" GLbitfield))
-;WINGDIAPI void APIENTRY glPushMatrix (void);
+   (define glPushMatrix (dlsym $ GLvoid "glPushMatrix"))
 ;WINGDIAPI void APIENTRY glPushName (GLuint name);
 ;WINGDIAPI void APIENTRY glRasterPos2d (GLdouble x, GLdouble y);
 ;WINGDIAPI void APIENTRY glRasterPos2dv (const GLdouble *v);
@@ -1627,7 +1661,7 @@
 ;WINGDIAPI void APIENTRY glRectsv (const GLshort *v1, const GLshort *v2);
 ;WINGDIAPI GLint APIENTRY glRenderMode (GLenum mode);
 ;WINGDIAPI void APIENTRY glRotated (GLdouble angle, GLdouble x, GLdouble y, GLdouble z);
-;WINGDIAPI void APIENTRY glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
+   (define glRotatef (dlsym $ GLvoid "glRotatef" GLfloat GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
    (define glScalef (dlsym $ GLvoid "glScalef" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
@@ -1927,6 +1961,10 @@
       (define GLU_LINE                100011)
       (define GLU_FILL                100012)
       (define GLU_SILHOUETTE          100013)
+   (define gluQuadricOrientation (dlsym $ GLvoid "gluQuadricOrientation" GLUquadric* GLenum))
+      (define GLU_OUTSIDE             100020)
+      (define GLU_INSIDE              100021)
+
    (define gluSphere (dlsym $ GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
    
 (define GLUnurbs* type-port)

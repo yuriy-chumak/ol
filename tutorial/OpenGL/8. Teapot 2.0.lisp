@@ -113,8 +113,8 @@
                               (c-string "
    varying vec2 xy;
    void main() {
-      gl_Position = ftransform(); // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
-      xy = gl_Position.xy / 8.0;
+      gl_Position = ftransform(); // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewProjectionMatrix * gl_Vertex
+      xy = normalize(gl_NormalMatrix * gl_Normal).xy / 1.0;
       }")) null)
    (glCompileShader vs)
    (let ((isCompiled (raw type-vector-raw '(0))))
@@ -199,7 +199,8 @@
       	s+=stepsize;
       }
       v=mix(vec3(length(v)),v,saturation); //color adjust
-      gl_FragColor = vec4(v*.01,1.);	
+      gl_FragColor = vec4(v*.01,1.);
+      //gl_FragColor = vec4(xy.x, xy.y, 0, 1.0);
       }")) null)
    (glCompileShader fs)
    (let ((isCompiled (raw type-vector-raw '(0))))
@@ -226,11 +227,8 @@ po))
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (gluPerspective 45 (/ 640 480) 0.1 100)
-
    (glEnable GL_DEPTH_TEST)
+   (glEnable GL_AUTO_NORMAL)
 
    (let ((po (compile-shader))
          (teapot (gluNewNurbsRenderer)))
@@ -241,14 +239,17 @@ po))
 ; draw
 (lambda (x   dx y   dy  po teapot)
    (glClear (fx:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+   (glUseProgram po)
    
+   (glMatrixMode GL_PROJECTION)
+   (glLoadIdentity)
+   (gluPerspective 45 (/ 640 480) 0.1 100)
+
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
    (gluLookAt x y 8
       0 0 0
       0 1 0)
-
-   (glUseProgram po)
 
    (let ((render (lambda (surface)
                      (gluBeginSurface teapot)
