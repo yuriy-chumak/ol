@@ -1,5 +1,5 @@
 ;;;
-;;; ol.scm: an Owl read-eval-print loop (REPL) binary image compiler.
+;;; ol.scm: an Otus Lisp read-eval-print loop (REPL) binary image compiler.
 ;;;
 
 #| Copyright (c) 2012 Aki Helin

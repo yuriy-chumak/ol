@@ -1,10 +1,10 @@
 ;;;
-;;; Testing the intersection of R5RS and Owl
+;;; Testing the intersection of R5RS and Ol
 ;;;
 (import (scheme misc))
 
 (define (print thing)
-   ;; silly R5RS & Owl version
+   ;; silly R5RS & Ol version
    (display thing)
    (display "
 "))

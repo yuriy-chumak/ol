@@ -70,7 +70,7 @@ create-debian-package = \
 	echo Architecture: $2         >>DEBIAN/control;\
 	echo Maintainer: Yuriy Chumak >>DEBIAN/control;\
 	echo Priority: optional       >>DEBIAN/control;\
-	echo Description: Owl Lisp - a purely \(mostly\) functional dialect of Lisp \
+	echo Description: Otus Lisp - a purely \(mostly\) functional dialect of Lisp \
 	                              >>DEBIAN/control;\
 	\
 	fakeroot dpkg -b . ../ol_1.0_$2.deb

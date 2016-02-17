@@ -1,4 +1,4 @@
-OL - Owl Lisp -- yet another pet lisp
+OL - Otus Lisp - yet another pet lisp
 Copyright (c) 2014 Aki Helin
 Copyright (c) 2014, 2015 Yuriy Chumak
 
@@ -30,7 +30,7 @@ Original Owl Lisp project can be found at
 OVERVIEW
 ~~~~~~~~
 
-OL (Owl Lisp) is a simple purely functional Lisp. Mostly purely.
+OL (Otus Lisp) is a simple purely functional Lisp. Mostly purely.
 
 
 REQUIREMENTS
@@ -205,7 +205,7 @@ Register interpreter in the linux:
 USAGE
 ~~~~~
 
-OL (Owl Lisp) can be used either interactively, or to interpret code
+OL (Otus Lisp) can be used either interactively, or to interpret code
 from files, or compile programs to fasl-images. The difference between
 an ol program and a plain script is that the program should just have
 a function of one argument as the last value, which will be called with

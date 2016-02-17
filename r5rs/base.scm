@@ -1158,7 +1158,7 @@
 
       ; 6.4 Control features
       
-      ;; force is effectively unnecessary in Owl, so might as well signal a 
+      ;; force is effectively unnecessary in Ol, so might as well signal a 
       ;; warning if this is used, because the code probably assumes 
       ;; mutable state.
 

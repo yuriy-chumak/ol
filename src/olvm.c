@@ -1,5 +1,5 @@
 /**
- * OL - Owl Lisp -- yet another pet lisp
+ * OL - Otus Lisp - yet another pet lisp
  * Copyright (c) 2014 Aki Helin
  * Copyright (c) 2014, 2015 Yuriy Chumak
  *
