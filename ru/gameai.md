@@ -1,0 +1,260 @@
+---
+layout: page
+title:  Game AI example
+date:   Thu 18 Feb 2016 01:01:04 AM EET
+categories: ru
+---
+
+Давайте попробуем создать небольшой ИИ, который сможет находить дорогу в лабиринте на основании неполного знания карты. Такое себе "похожее" на нормальное поведение человека.
+
+В качестве визуализатора используем описанную в разделе [OpenGL](?ru/opengl) библиотеку OpenGL. Исходный код примера можно взять на [официальном сайте](https://github.com/yuriy-chumak/OL/tree/master/tutorial/X.%20Path%20Finder) проекта.
+
+Для начала, нам нужна пара простых функций рисования и скелет, который рисует карту.
+
+Это будет лабиринт:
+<pre><code data-language="scheme">
+; схема лабиринта
+(define scheme '(
+ (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)
+ (1 0 1 0 0 0 0 0 0 0 0 1 0 0 0 1)
+ (1 0 1 0 0 0 0 0 0 0 1 1 1 0 0 1)
+ (1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1)
+ (1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1)
+ (1 0 1 0 0 0 0 0 1 0 1 0 1 0 0 1)
+ (1 0 0 0 0 0 0 0 1 0 0 0 1 0 0 1)
+ (1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1)
+ (1 0 1 1 1 1 1 1 1 1 1 0 1 0 0 1)
+ (1 0 1 0 0 0 0 0 0 0 1 0 1 0 0 1)
+ (1 0 1 0 0 0 0 0 0 0 0 0 1 0 0 1)
+ (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
+
+; и пара утилитарных функций
+(define (nth list n)
+   (if (= n 0) (car list)
+               (nth (cdr list) (- n 1))))
+
+(define (at x y)
+   (nth (nth scheme y) x))
+(define (at2 x y scheme)
+   (nth (nth scheme y) x))
+
+(define (quad x y)
+   (glVertex2f x y)
+   (glVertex2f x (+ y 1))
+   (glVertex2f (+ x 1) (+ y 1))
+   (glVertex2f (+ x 1) y))
+</code></pre>
+
+Теперь создадим окно и нарисуем в нем все, что нам надо: карту, которую "видел" созданный нами персонаж, его текущее положение и каждую секунду будем его сдвигать к нужной нам точке "выхода".
+
+Эта функция будет побольше, чуть позже я ее объясню:
+<pre><code data-language="scheme">
+(define Context (gl:Create "Pathfinder sample"))
+
+(gl:run
+   Context
+
+; init
+(lambda ()
+
+   (glMatrixMode GL_PROJECTION)
+   (glLoadIdentity) ; вот тут мы зеркально отражаем карту сверху вниз
+   (glOrtho -1 (+ WIDTH 1) (+ HEIGHT 1) -1  -1 1)
+   (glMatrixMode GL_MODELVIEW)
+
+   (list #empty))
+
+; draw
+(lambda (userdata)
+(let (;(x (get userdata 'x 1.5))
+      ;(y (get userdata 'y 1.5))
+      (old-time (get userdata 'old-time 0)))
+
+   (glClearColor 0.2 0.2 0.2 1.)
+   (glClear GL_COLOR_BUFFER_BIT)
+
+   (let*((new-time _ (clock))) (if (> new-time old-time) (begin
+
+      ; передвинемся в случайном направлении:
+      (let ((xy (interact me (tuple 'A* 14 1))))
+         (mail me (tuple 'move (car xy) (cdr xy))))
+
+      (mail me (tuple 'update-fov scheme))
+   ))
+
+   ; нарисуем карту, которую "помнит" создание
+   (let ((map (interact me (tuple 'get-fov))))
+      (glColor3f 0 1 0)
+      (glBegin GL_QUADS)
+      (for-each (lambda (i)
+         (for-each (lambda (j)
+            (if (> (at2 i j map) 0)
+               (let ((age (at2 i j map))) ; как давно оно клетку "видело"
+                  (let ((color (/ 1.0 (/ age 7))))
+                  (glColor3f color color color)
+                  (quad i j)))
+               (begin
+                  (glColor3f 0 0 0)
+                  (quad i j))
+            ))
+            (iota 0 1 HEIGHT)))
+         (iota 0 1 WIDTH))
+      (glEnd))
+
+      ; нарисуем, где сейчас наше создание находится:
+      (glPointSize 6)
+      (glBegin GL_POINTS)
+      (let ((xy (interact me (tuple 'get-location))))
+         (glPointSize 9.0)
+            (glColor3f 1 0 0)
+            (glVertex2f (+ (car xy) 0.5) (+ (cdr xy) 0.5))
+            (glColor3f 0 1 0)
+            (glVertex2f 14.5 1.5))
+      (glEnd)
+      (glPointSize 0)
+
+      ; вернем модифицированные параметры
+      (list (put userdata 'old-time new-time)))))
+</code></pre>
+
+#### А* алгоритм
+
+Для начала нам нужна реализация алгоритма Брезенхейма в наших условиях:
+<pre><code data-language="scheme">
+(define (horizontal-bresenham x1 y1  x2 y2  dk)
+(let* ((x (+ 1 (floor x1)))
+       (y (+ y1 (* (- x x1) dk))))
+(let loop ((x x) (y y) (oldy -1)  (n (- (ceil x2) x)))
+   (if (= n 0)
+      #t
+   (if (and.
+          (not (= y oldy)) ; если пересекли линию стен
+          (> (at (- x 1) (floor y)) 0))
+      #f
+   (if (> (at x (floor y)) 0)
+      #f
+   (loop (+ x 1) (+ y dk) y (- n 1))))))))
+
+(define (vertical-bresenham x1 y1  x2 y2  dk)
+(let* ((y (+ 1 (floor y1)))
+       (x (+ x1 (* (- y y1) dk))))
+(let loop ((x x) (y y) (oldx -1)  (n (- (ceil y2) y)))
+   (if (= n 0)
+      #t
+   (if (and.
+          (not (= x oldx)) ; если пересекли линию стен
+          (> (at (floor x) (- y 1)) 0))
+      #f
+   (if (> (at (floor x) y) 0)
+      #f
+   (loop (+ x dk) (+ y 1) y (- n 1))))))))
+
+(define (is-point-can-see-point x1 y1  x2 y2)
+; подразумевается, что начальная и конечная точки НЕ в стене
+;(if (and (= (floor x1) (floor x2)) (= (floor y1) (floor y2))) ; если это один и тот же блок
+;   #t
+(let ((dx (- x2 x1))
+      (dy (- y2 y1)))
+   (if (> (abs dx) (abs dy)) ; горизонтальный
+      (if (> dx 0)
+         (horizontal-bresenham x1 y1  x2 y2  (/ dy dx))
+         (horizontal-bresenham x2 y2  x1 y1  (/ dy dx)))
+      (if (> dy 0)
+         (vertical-bresenham x1 y1  x2 y2  (/ dx dy))
+         (vertical-bresenham x2 y2  x1 y1  (/ dx dy))))))
+
+(define (is-visible x1 y1 x2 y2)
+   (and (> x1 0) (> y1 0) (< x1 WIDTH) (< y1 HEIGHT)
+        (> x2 0) (> y2 0) (< x2 WIDTH) (< y2 HEIGHT)
+        (is-point-can-see-point x1 y1 x2 y2)))
+</code></pre>
+
+А теперь подпрограмма обработки команд "создания" (creature):
+ * (set-location localtion) - передвинуть сознание в заданные координаты
+ * (get-fov) - получить карту, как ее видит создание. 0 - пустая клетка, 1..x - как давно тут было видно стену.
+ * (update-fov map) - обновить карту создания
+ * (move dx dy) - передвинуться на dx,dy клеток в сторону (если это возможно - не мешают стены)
+ * (A* to-x to-y) - самый интересный алгоритм, возвращает '(dx.dy), куда надо сдвинуться созданию, чтобы попытаться приблизиться к точке '(to-x.to-y), используя алгоритм поиска пути A* по неполной карте (той, которую видело и помнит создание).
+
+Вот этот A* алгоритм, как самый интересный, я и приведу в следующем блоке:
+<pre><code data-language="scheme">
+(let ((xy (cons x y))
+
+      (hash (lambda (xy)
+         (+ (<< (car xy) 16) (cdr xy))))
+      (floor? (lambda (x y)
+         (eq? (at2 x y fov) 0))))
+(print "********************************************************************")
+
+(mail sender
+(let step1 ((n 21);(xy (cons x y))
+            (c-list-set #empty)
+            (o-list-set (put #empty (hash xy)  (tuple xy #f  0 0 0))))
+   ; else поищем куда-бы перейти
+   ; найдем клетку с минимальной стоимостью F
+   (let*((f (ff-fold (lambda (s key value)
+                        ;(print "ff-fold: " s " - " value)
+                        (if (< (ref value 5) (car s))
+                           (cons (ref value 5) value)
+                           s))
+               (cons 9999 #f) o-list-set))
+         (_ (print "next: " f))
+         (xy (ref (cdr f) 1)) ; положение клетки с минимальным весом '(x.y)
+         ; перенесем ее из открытого в закрытый список
+         (o-list-set (del o-list-set (hash xy)))
+         (c-list-set (put c-list-set (hash xy) (cdr f))))
+
+      (if (and
+            (eq? (car xy) to-x)
+            (eq? (cdr xy) to-y))
+         ;(eq? n 0)
+         (let rev ((xy xy))
+            (print "xy: " xy)
+            (let*((parent (ref (get c-list-set (hash xy) #f) 2)) ; переделать
+                  (parent-of-parent (ref (get c-list-set (hash parent) #f) 2)))
+               (if parent-of-parent (rev parent)
+                  (cons
+                     (- (car xy) (car parent))
+                     (- (cdr xy) (cdr parent))))))
+         ;(cons o-list-set c-list-set) ;  todo: вернуть только первый шаг (развернув путь)
+
+         ; 5: Проверяем все соседние клетки.
+         (let*((x (car xy))
+               (y (cdr xy))
+
+               (_ (print x " :: " y " ^ " (hash xy)))
+               (_ (print "c-list-set: " c-list-set))
+               (_ (print "o-list-set: " o-list-set))
+
+               (o-list-set (fold (lambda (n v)
+                              (if (and
+                                    (floor? (car v) (cdr v)) ; если туда можно передвинуться...
+                                    (eq? #f (get c-list-set (hash v) #f)))
+                                 (let ((G (+ (ref (get c-list-set (hash xy) #f) 3) 1)); G родителя + 1
+                                       ;H calculated by "Manhattan method"
+                                       (H (* (+ (abs (- (car v) to-x))
+                                             (abs (- (cdr v) to-y))) 2))
+                                       ; 6: Если соседняя клетка уже находится в открытом списке
+                                       (got (get o-list-set (hash v) #f)))
+
+                                    (print "ready to open: " v "(" xy ") - H:" H ", got:" got)
+
+                                    ; если эта клетка уже в списке
+                                    (if got
+                                       (if (< G (ref got 3)) ; но наш путь короче
+                                          (put n (hash v)  (tuple v xy  G H (+ G H)))
+                                          ;else ничего не делаем
+                                          n)
+                                       ; else
+                                       (put n (hash v)  (tuple v xy  G H (+ G H)))))
+                                 n))
+                              o-list-set (list
+                                             (cons x (- y 1))
+                                             (cons x (+ y 1))
+                                             (cons (- x 1) y)
+                                             (cons (+ x 1) y))))
+
+
+         )
+            (step1 (- n 1) c-list-set o-list-set)))))))
+</code></pre>
