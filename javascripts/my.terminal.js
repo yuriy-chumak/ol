@@ -7,7 +7,7 @@ $('#terminal').terminal(function(command, terminal) {
    prompt: '> ',
    name: 'repl',
    greetings: '\
-OL - Owl Lisp -- yet another pet lisp\n\
+OL - Otus Lisp - yet another pet lisp\n\
 Copyright (c) 2014 Aki Helin\n\
 Copyright (c) 2014, 2015 Yuriy Chumak\n\
 ~~~~~~~~~~~~~~~~~\n',

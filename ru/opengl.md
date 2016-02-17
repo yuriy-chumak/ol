@@ -4,9 +4,10 @@ title:  OpenGL tutorials
 date:   пт, 27-лис-2015 19:39:47 +0200
 categories: ru
 ---
-   Для демонстрации возможностей Ol вполне подойдет OpenGL. Я приведу пример полного цикла разработки своего мультиплатформенного приложения на базе Ol без привлечения других языков и/или инструментов. Сами примеры можно взять в [официальном репозитарии](https://github.com/yuriy-chumak/OL/tree/master/tutorial/OpenGL){:target="_blank"} Ol.
 
-   Демонстрация будет разбита на несколько последовательных частей, в результате которых мы научимся создавать трехмерный график некоторой функции.
+Для демонстрации возможностей Ol вполне подойдет OpenGL. Я приведу пример полного цикла разработки своего мультиплатформенного приложения на базе Ol без привлечения других языков и/или инструментов. Сами примеры можно взять в [официальном репозитарии](https://github.com/yuriy-chumak/OL/tree/master/tutorial/OpenGL){:target="_blank"} Ol.
+
+Демонстрация будет разбита на несколько последовательных частей, в результате которых мы научимся создавать трехмерный график некоторой функции.
 
 
 #### Создание окна
@@ -297,7 +298,7 @@ categories: ru
       	vec3 p=from+s*dir*.5;
       	p = abs(vec3(tile)-mod(p,vec3(tile*2.))); // tiling fold
       	float pa,a=pa=0.;
-      	for (int i=0; i<iterations; i++) { 
+      	for (int i=0; i<iterations; i++) {
       		p=abs(p)/dot(p,p)-formuparam; // the magic formula
       		a+=abs(length(p)-pa); // absolute sum of average change
       		pa=length(p);
@@ -312,7 +313,7 @@ categories: ru
       	s+=stepsize;
          }
          v=mix(vec3(length(v)),v,saturation); //color adjust
-         gl_FragColor = vec4(v*.01,1.);	
+         gl_FragColor = vec4(v*.01,1.);
 
       }")) null)
    (glCompileShader fs)
@@ -338,7 +339,7 @@ categories: ru
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
-   
+
    (list po)))
 
 ; draw
@@ -365,4 +366,3 @@ categories: ru
 
 (list po)))
 </code></pre>
-

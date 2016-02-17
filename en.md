@@ -4,7 +4,7 @@ title:  Summary
 date:   пт, 27-лис-2015 19:40:51 +0200
 categories: en
 ---
-   OL (Owl Lisp) is a purely *(mostly)* functional dialect of Lisp.
+   OL (Otus Lisp) is a purely (*mostly*) functional dialect of Lisp.
 It implements an extended subset of [R5RS](http://www.schemers.org/Documents/Standards/R5RS/){:target="_blank"} Scheme but has been renamed as a Lisp by its author mainly to avoid possible confusion.
 
    You can immediately try Ol in the provided terminal on this page. For example, type:

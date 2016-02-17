@@ -17,5 +17,6 @@ categories: ru
 1. [Примеры](?ru/examples)
    1. [OpenGL](?ru/opengl)
    1. [HTTP Server](?ru/http-server)
+   1. [Game AI](?ru/gameai)
 
    Some works more.
