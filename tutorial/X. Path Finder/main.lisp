@@ -6,7 +6,13 @@
    (lib opengl)
    (OpenGL version-1-1)
 )
-,load "graphics.lisp"
+
+(define (quad x y)
+   (glVertex2f x y)
+   (glVertex2f x (+ y 1))
+   (glVertex2f (+ x 1) (+ y 1))
+   (glVertex2f (+ x 1) y))
+
 
 (define (nth list n)
    (if (= n 0) (car list)
@@ -14,18 +20,18 @@
 
 ; ===========================================================================
 (define scheme '(
- (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)
- (1 0 1 0 0 0 0 0 0 0 0 1 0 0 0 1)
- (1 0 1 0 0 0 0 0 0 0 1 1 1 0 0 1)
- (1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1)
- (1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1)
- (1 0 1 0 0 0 0 0 1 0 1 0 1 0 0 1)
- (1 0 0 0 0 0 0 0 1 0 0 0 1 0 0 1)
- (1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1)
- (1 0 1 1 1 1 1 1 1 1 1 0 1 0 0 1)
- (1 0 1 0 0 0 0 0 0 0 1 0 1 0 0 1)
- (1 0 1 0 0 0 0 0 0 0 0 0 1 0 0 1)
- (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
+   (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)
+   (1 0 1 0 0 0 0 0 0 0 0 1 0 0 0 1)
+   (1 0 1 0 0 0 0 0 0 0 1 1 1 0 0 1)
+   (1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1)
+   (1 0 1 1 1 1 1 1 1 0 1 0 1 1 1 1) ;0 0 1
+   (1 0 1 0 0 0 0 0 1 0 1 0 1 0 0 1)
+   (1 0 0 0 0 0 0 0 1 0 0 0 1 0 0 1)
+   (1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1)
+   (1 0 1 1 1 1 1 1 1 1 1 0 1 0 0 1)
+   (1 0 1 0 0 0 0 0 0 0 1 0 1 0 0 1)
+   (1 0 1 0 0 0 0 0 0 0 0 0 1 0 0 1)
+   (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
 (define (at x y)
    (nth (nth scheme y) x))
 (define (at2 x y scheme)
@@ -49,11 +55,17 @@
 (define me (new-creature 1 1))
 (mail me (tuple 'update-fov scheme))
 
+(define (quad x y)
+   (glVertex2f x y)
+   (glVertex2f x (+ y 1))
+   (glVertex2f (+ x 1) (+ y 1))
+   (glVertex2f (+ x 1) y))
+
+
+
 
 (define Context (gl:Create "Pathfinder sample"))
 
-
-;
 ; окно - рисовалка
 ; ---------------------------------------------------------------------------
 
@@ -80,21 +92,21 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
 ; нарисуем карту как она есть
-;   (glBegin GL_QUADS)
-;      (let by-y ((y 0) (line scheme))
-;      (if (not (null? line)) (begin
-;         (let by-x ((x 0) (cell (car line)))
-;         (if (not (null? cell)) (begin
-;            (case (car cell)
-;               (0 (glColor3f 0.1 0.1 0.1))
-;               (1 (glColor3f 0.7 0.7 0.7)))
-;            (quad x y)
-;            (by-x (+ x 1) (cdr cell)))))
-;         (by-y (+ y 1) (cdr line)))))
-;   (glEnd)
+   (glBegin GL_QUADS)
+      (let by-y ((y 0) (line scheme))
+      (if (not (null? line)) (begin
+         (let by-x ((x 0) (cell (car line)))
+         (if (not (null? cell)) (begin
+            (case (car cell)
+               (0 (glColor3f 0.1 0.1 0.1))
+               (1 (glColor3f 0.7 0.7 0.7)))
+            (quad x y)
+            (by-x (+ x 1) (cdr cell)))))
+         (by-y (+ y 1) (cdr line)))))
+   (glEnd)
 
    ; будем что-то делать только раз в секунду
-   (let*((new-time _ (clock))) (if (> new-time old-time) (begin
+   (let*((new-time _ (clock))) (if (>= new-time old-time) (begin
 
       ; передвинемся в случайном направлении:
       (let ((xy (interact me (tuple 'A* 14 1))))
@@ -107,15 +119,12 @@
 ;         (3 (mail me (tuple 'move 0 -1))))
       ; обновим карту "я видел" 
       (mail me (tuple 'update-fov scheme))
-
-
-
-
    ))
 
 
 
       ; нарисуем карту, которую "помнит" создание
+      (if #f
       (let ((map (interact me (tuple 'get-fov))))
          (glColor3f 0 1 0)
          (glBegin GL_QUADS)
@@ -123,7 +132,7 @@
             (for-each (lambda (j)
                (if (> (at2 i j map) 0)
                   (let ((age (at2 i j map))) ; как давно оно клетку "видело"
-                     (let ((color (/ 1.0 (/ age 7))))
+                     (let ((color (/ 1.0 (/ (- 100 age) 7))))
                      (glColor3f color color color)
                      (quad i j)))
                   (begin
@@ -133,6 +142,7 @@
                (iota 0 1 HEIGHT)))
             (iota 0 1 WIDTH))
          (glEnd))
+      )
 
       ; открытый список
       (if #f
