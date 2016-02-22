@@ -41,8 +41,6 @@
   
 ; ---------------------------------------------------------------------------
    (begin
-;   (gl:make-current)
    (define EXT_copy_texture (glIsExtensionSupported "GL_EXT_copy_texture"))
-   
-;   (gl:stop-current)
+
 ))

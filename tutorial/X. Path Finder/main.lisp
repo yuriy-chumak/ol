@@ -26,7 +26,7 @@
    (1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1)
    (1 0 1 1 1 1 1 1 1 0 1 0 1 1 1 1) ;0 0 1
    (1 0 1 0 0 0 0 0 1 0 1 0 1 0 0 1)
-   (1 0 0 0 0 0 0 0 1 0 0 0 1 0 0 1)
+   (1 0 0 0 0 0 0 0 1 0 0 0 1 1 0 1)
    (1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1)
    (1 0 1 1 1 1 1 1 1 1 1 0 1 0 0 1)
    (1 0 1 0 0 0 0 0 0 0 1 0 1 0 0 1)
@@ -36,6 +36,7 @@
    (nth (nth scheme y) x))
 (define (at2 x y scheme)
    (nth (nth scheme y) x))
+
 
 ; константы
 (define WIDTH (length (car scheme)))
@@ -63,7 +64,6 @@
 
 
 
-
 (define Context (gl:Create "Pathfinder sample"))
 
 ; окно - рисовалка
@@ -84,14 +84,15 @@
 
 ; draw
 (lambda (userdata)
-(let (;(x (get userdata 'x 1.5))
-      ;(y (get userdata 'y 1.5))
+(let*((x (get userdata 'x 14))
+      (y (get userdata 'y 1))
       (old-time (get userdata 'old-time 0)))
 
    (glClearColor 0.2 0.2 0.2 1.)
    (glClear GL_COLOR_BUFFER_BIT)
 
 ; нарисуем карту как она есть
+   (if #t (begin
    (glBegin GL_QUADS)
       (let by-y ((y 0) (line scheme))
       (if (not (null? line)) (begin
@@ -104,23 +105,21 @@
             (by-x (+ x 1) (cdr cell)))))
          (by-y (+ y 1) (cdr line)))))
    (glEnd)
-
-   ; будем что-то делать только раз в секунду
-   (let*((new-time _ (clock))) (if (>= new-time old-time) (begin
-
-      ; передвинемся в случайном направлении:
-      (let ((xy (interact me (tuple 'A* 14 1))))
-         (mail me (tuple 'move (car xy) (cdr xy))))
-
-;      (case (rand! 4)
-;         (0 (mail me (tuple 'move -1 0)))
-;         (1 (mail me (tuple 'move +1 0)))
-;         (2 (mail me (tuple 'move 0 +1)))
-;         (3 (mail me (tuple 'move 0 -1))))
-      ; обновим карту "я видел" 
-      (mail me (tuple 'update-fov scheme))
    ))
 
+   ; будем что-то делать только раз в секунду
+   (let*((new-time _ (clock))
+         (step (if #t;(> new-time old-time)
+                  (let ((ne
+                  (interact me (tuple 'A* x y))))
+                     (mail me (tuple 'update-fov scheme))
+                     ne)
+                  (cons 0 0))))
+
+      (if (not (and (eq? (car step) 0) (eq? (cdr step) 0)))
+         (mail me (tuple 'move (car step) (cdr step))))
+
+      ; попросим монстра осмотреться
 
 
       ; нарисуем карту, которую "помнит" создание
@@ -170,20 +169,35 @@
          (glEnd)
       ))
 
-   ; нарисуем, где сейчас наше создание находится:
-   (glPointSize 6)
-   (glBegin GL_POINTS)
-   (let ((xy (interact me (tuple 'get-location))))
-      (glPointSize 9.0)
-         (glColor3f 1 0 0)
-         (glVertex2f (+ (car xy) 0.5) (+ (cdr xy) 0.5))
-         (glColor3f 0 1 0)
-         (glVertex2f 14.5 1.5))
-   (glEnd)
-   (glPointSize 0)
+
+      ; нарисуем, где сейчас наше создание находится:
+      (glPointSize 6)
+      (glBegin GL_POINTS)
+      (let ((xy (interact me (tuple 'get-location))))
+         (glPointSize 9.0)
+            (if (and (= (car xy) x) (= (cdr xy) y))
+               (begin
+                  (glColor3f 1 1 0)
+                  (glVertex2f (+ x 0.5) (+ y 0.5)))
+               (begin
+            (glColor3f 1 0 0)
+            (glVertex2f (+ (car xy) 0.5) (+ (cdr xy) 0.5))
+            (glColor3f 0 1 0) ; и куда собирается пойти
+            (glVertex2f (+ x 0.5) (+ y 0.5))))
+      (glEnd)
+      (glPointSize 0)
 
    ; вернем модифицированные параметры
-   (list (put userdata 'old-time new-time)))))
+      (list (put
+         (if (and (eq? (car step) 0) (eq? (cdr step) 0) (> new-time old-time))
+            (let do ((x (rand! WIDTH))
+                     (y (rand! HEIGHT)))
+               (if (eq? (at2 x y scheme) 0)
+                  (put (put userdata 'x x) 'y y)
+                  (do (rand! WIDTH) (rand! HEIGHT))))
+            userdata)
+            ; send new
+         'old-time new-time)))))))
 
    ; пол (как травку)
 ;   (BindTexture grass-texture)

@@ -70,9 +70,6 @@
 
 ; --------------------------------------------------------------------------
    (begin
-   (gl:make-current)
    (define ARB_shader_object (glIsExtensionSupported "GL_ARB_shader_object"))
 
-
-   (gl:stop-current)
 ))

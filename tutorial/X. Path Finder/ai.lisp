@@ -1,4 +1,3 @@
-; алгоритм проверки виден ли угол из центра некоторого кубика
 ; todo: оформить библиотекой
 
 ; can be organized as set-car!
@@ -252,9 +251,8 @@
          (mail sender (cons x y))
          (this fov x y))
 
-      ; обновить "свою" карту мира
+      ; обновить "свою" карту мира (fov) на основе заданной карты (map)
       ((update-fov map)
-;         (print "creature: 'update-fov requested")
          (let ((fov ; new fov
          (let ((X (+ x 0.5)) (Y (+ y 0.5))) ; точка, из которой смотрим
          (let for-y ((y 0) (lines fov) (map-lines map))
@@ -266,8 +264,6 @@
                         null
                         (cons 
                            (let ((cell (car cells)))
-;                              (print "creature: test for " x " " y " " X " " Y)
-;                              (print "creature: test for " x " " y " " X " " Y " " (cdr map-cells))
                               (if (or
                                     (is-point-can-see-point X Y x y)
                                     (is-point-can-see-point X Y (+ x 1) y)
@@ -275,7 +271,7 @@
                                     (is-point-can-see-point X Y x (+ y 1)))
                                     ;; вот тут надо бы проапдейтить вейпоинты, которые зависят от этого блока (?)
                                  (if (eq? (car map-cells) 0)
-                                    0 99)
+                                    0 (+ 90 (rand! 10)))
                                  (if (> cell 0) (- cell 1) 0))) ; тут мы "забываем" что было в виденном ранее блоке
                            (for-x (+ x 1) (cdr cells) (cdr map-cells)))))
                   (for-y (+ y 1) (cdr lines) (cdr map-lines))))))))
@@ -311,6 +307,8 @@
          ;print "***********************************")
          ; отправить назад результат работы алгоритма
          (mail sender
+         (if (and (= x to-x) (= y to-y)); уже на месте
+            (cons 0 0)
          (let step1 ((n 99) ; количество шагов поиска
                      (c-list-set #empty)
                      (o-list-set (put #empty (hash xy)  (tuple xy #f  0 0 0))))
@@ -384,11 +382,8 @@
                                                       (cons x (- y 1))
                                                       (cons x (+ y 1))
                                                       (cons (- x 1) y)
-                                                      (cons (+ x 1) y))))
-
-
-                  )
-                     (step1 (- n 1) c-list-set o-list-set))))))))
+                                                      (cons (+ x 1) y)))))
+                     (step1 (- n 1) c-list-set o-list-set)))))))))
 
          (this fov x y))
 

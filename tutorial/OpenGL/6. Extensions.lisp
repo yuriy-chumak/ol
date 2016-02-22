@@ -2,12 +2,13 @@
 (import (lib opengl))
 
 (define Context (gl:Create "6. Extensions"))
-(gl:MakeCurrent Context)
+
+;(gl:MakeCurrent Context)
 (import (OpenGL EXT texture_object))
 (import (OpenGL EXT vertex_array))
 (import (OpenGL EXT subtexture))
 (import (OpenGL ARB shader_object))
-(gl:StopCurrent Context)
+;(gl:StopCurrent Context)
 
 (if (not (and
          EXT_texture_object
