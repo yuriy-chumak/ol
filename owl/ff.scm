@@ -1,6 +1,6 @@
 ;;;
 ;;; Finite functions (or red-black key-value maps)
-;;;
+;;; Хеш-таблица с прямой адресацией.
 
 ;; fixme: ff unit tests went missing at some point. add with lib-compare vs naive alists.
 ;; fixme: ffc[ad]r are no longer needed as primitives
@@ -12,11 +12,11 @@
 
 (define-library (owl ff)
 
-   (export 
-      get         ; O(log2 n), ff x key x default-value -> value | default-value 
+   (export
+      get         ; O(log2 n), ff x key x default-value -> value | default-value
       put         ; O(log2 n), ff x key x value -> ff'
-      del         ; O(log2 n), ff x key -> ff' 
-      keys        ; O(n), ff → (key ...) 
+      del         ; O(log2 n), ff x key -> ff'
+      keys        ; O(n), ff → (key ...)
       ff-update   ; O(log2 n), ff x key x value -> ff' | fail if key not in ff
       fupd        ; alias for ff-update
                   ;    - no rebalancing, just walk to leaf and update value
@@ -30,10 +30,10 @@
       ff-ok?
       empty
       empty?
-      
+
       getf)       ; (getf ff key) == (get ff key #false)
 
-   (import 
+   (import
       (r5rs base)
       (owl list))
 
@@ -72,7 +72,7 @@
       (define red ff:red)
 
       ;; local temporary helper because all branches are the wrong way around
-      (define-syntax nonempty? 
+      (define-syntax nonempty?
          (syntax-rules ()
             ((nonempty? x) (not (eq? x #empty)))))
 
@@ -81,7 +81,7 @@
 ;      (define-syntax red?
 ;         (syntax-rules ()
 ;            ((red? node) (eq? redness (fx:and (type node) redness))))) ;; false for black nodes and #empty
-     
+
       ;; does a (non-empty) red or black node of size 3 have a right child? 2 never does and 4 always has
       (define right? ff:right?)
 ;      (define-syntax right?
@@ -97,8 +97,8 @@
             ff
             (case (size ff)
                (2 (lets ((k v ff)) (list (color ff) k)))
-               (3 (lets ((k v x ff)) 
-                  (if (right? ff) 
+               (3 (lets ((k v x ff))
+                  (if (right? ff)
                      (list (color ff) k '-> (ff->sexp x))
                      (list (color ff) (ff->sexp x) '<- k))))
                (4 (lets ((k v l r ff))
@@ -125,7 +125,7 @@
                   (and (red? ff) (or (red? l) (red? r)))
                   (red-red-violation? l)
                   (red-red-violation? r)))))
-   
+
       ;; fixnum addition, math not defined yte
       (define (f+ a b)
          (lets ((c _ (fx:+ a b))) c))
@@ -134,7 +134,7 @@
       (define (black-depth ff)
          (if (eq? ff #empty)
             0
-            (lets 
+            (lets
                ((l k v r (explode ff))
                 (ld (black-depth l))
                 (rd (black-depth r)))
@@ -151,7 +151,7 @@
             ((red-red-violation? ff)
                ;(print "FF ERROR, red-red violation")
                #false)
-            (else 
+            (else
                #true)))
 
       ;; bytecode above, vm primitive below
@@ -221,7 +221,7 @@
                   ((red? rl) ; case 3
                      (with-ff (rl b yk yv c)
                         (let ((zk rk) (zv rv) (d rr))
-                           (red 
+                           (red
                               (black left key val b)
                               yk yv
                               (black c zk zv d)))))
@@ -235,7 +235,7 @@
                   (else
                      (black left key val right))))
             (black left key val right)))
-                  
+
       (define (putn node key val)
          (if (eq? node #empty)
             (red #empty key val #empty)
@@ -270,7 +270,7 @@
                      (case (size ff)
                         (4 (get (ref ff 3) key def))
                         (2 def)
-                        (else 
+                        (else
                            (if (right? ff)
                               def
                               (get (ref ff 3) key def)))))
@@ -279,7 +279,7 @@
                      (case (size ff)
                         (4 (get (ref ff 4) key def))
                         (2 def)
-                        (else 
+                        (else
                            (if (right? ff)
                               (get (ref ff 3) key def)
                               def))))))))
@@ -355,7 +355,7 @@
                         (ff-fold op state r))
                      (op state k v))))
             state))
-      
+
        ;; iterate key-value pairs in order
        (define (ff-iterate tree tl)
          (if (nonempty? tree)
@@ -402,9 +402,9 @@
             null ff))
 
 
-      ;;; 
-      ;;; Deletion 
-      ;;; 
+      ;;;
+      ;;; Deletion
+      ;;;
 
       (define (ball-left left key val right)
          (cond
@@ -427,7 +427,7 @@
             ((red? left)
                (with-ff (left a xk xv b)
                   (with-ff (b b yk yv c)
-                     (red 
+                     (red
                         (black-bleft (color-red a) xk xv b)
                         yk yv
                         (black c key val right)))))
@@ -457,7 +457,7 @@
                                     (red mr rk rv rr)))))
                         (with-ff (left a xk xv b)
                            (with-ff (right c yk yv d)
-                              (red a xk xv 
+                              (red a xk xv
                                  (red middle yk yv d))))))
                   (with-ff (left a xk xv b)
                      (red a xk xv (app b right)))))
@@ -488,7 +488,7 @@
                   ((fx:< key this-key)
                      (let ((sub (deln left key)))
                         (cond
-                           ((eq? sub left)   
+                           ((eq? sub left)
                               ff)
                            ((red? left)
                               (red     sub this-key val right))
@@ -513,7 +513,7 @@
             (if (red? ff)
                (color-black ff)
                ff)))
-         
+
 
       ;;;
       ;;; FIXME bad hacks
@@ -548,10 +548,10 @@
 
 ;(import (owl ff))
 ;
-;(print 
+;(print
 ;   (get
-;      (fold 
-;         (λ (ff x) 
+;      (fold
+;         (λ (ff x)
 ;            (if (not (ff-ok? ff))
 ;               (print "FF BAD " (ff->sexp ff)))
 ;            (put ff x (if (= x 42) 'correct (+ x 100))))

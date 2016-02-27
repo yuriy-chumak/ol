@@ -15,7 +15,7 @@
       multiple-return-variable-primops
       variable-input-arity?
       special-bind-primop?
-      
+
       ; some usable basic functions (syscalls)
       exec yield)
 
@@ -69,7 +69,7 @@
 
       ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
       ;(define raw     (raw type-bytecode '(60 4 5 6  24 6)))
-      
+
       ;(define vm:version (raw type-bytecode '(62 4)))
       ;(define fxmax      (raw type-bytecode '(33 4)))
       ;(define fxmbits    (raw type-bytecode '(34 4)))
@@ -172,8 +172,8 @@
 
          ; системный таймер
          (tuple 'clock    61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
+         ; системные вызовы
          (tuple 'syscall  63  4 1 syscall)
-
 
          ; vm-specific constants
          (tuple 'vm:version 62  0 1 vm:version)
@@ -182,11 +182,11 @@
 
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
          ; todo: rename to tuple-bind ?
-         (tuple 'bind     BIND    1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
-         ; todo: rename to make-tuple ?
-         (tuple 'mkt      MKT     'any   1 #false)  ;; mkt type v0 .. vn t (why #f?)
+         (tuple 'bind     BIND 1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
+         ; todo: rename to make-tuple,  vm:mkt?
+         (tuple 'mkt       MKT 'any 1 #false)  ;; mkt type v0 .. vn t (why #f?)
          ; todo: rename to list->typedtuple ?
-         (tuple 'listuple 35  3 1 listuple)
+         (tuple 'listuple   35  3 1 listuple)
 
          ; поддержка red-black деревьев
          (tuple 'ff:bind    49 1 #f  ff:bind) ;; SPECIAL ** (ff:bind thing (lambda (name ...) body))
@@ -229,7 +229,7 @@
          (cond
             ((eq? op ARITY-ERROR) 'arity-error)
             (else #false)))
-         
+
       ; используется в выводе сообщений "инструкция такая-то сфейлила"
       (define (primop-name pop)
          (let ((pop (fx:and pop 63))) ; ignore top bits which sometimes have further data
@@ -263,7 +263,7 @@
 ;      2 __close
 ;      3 __sopen
 ;      4 __accept
-      
+
 ;      5 __fread
 ;      +6 __exit
 ;      +7 __set-memory-limit
@@ -276,7 +276,7 @@
 ;      31 __dlsym
 ;      32 __pinvoke
 ;      33 __gc ; TEMP
-      
+
 ;      11 __sys-open-dir
 ;      12 __sys-read-dir
 ;      13 __sys-closedir
@@ -309,7 +309,7 @@
 ;            (let* ((n _ (fx- n 1)))
 ;               (set-ticker-value 0)
 ;               (wait n))))
-               
+
 
 
 ; проверку типов вынесем на уровень компилятора!
@@ -320,9 +320,9 @@
 ;      (define (error reason info)
 ;         (interop 5 reason info))
 ;      (define (pair? x) (eq? type-pair (type x))) ; list.scm
-;      (define (fixnum? x) 
+;      (define (fixnum? x)
 ;         (let ((t (type x)))
-;            (or 
+;            (or
 ;               (eq? t type-fix+)
 ;               (eq? t type-fix-)
 ;               )))

@@ -232,8 +232,8 @@
 ;      (iota 0 1 HEIGHT))
 ;   (glEnd)
 
-   
-   
+
+
    ; нарисуем линию
 ;   #|
 ;   (let ((mx (get userdata 'mouse #f)))
@@ -249,7 +249,7 @@
 ;                  (glColor3f 0 1 0)
 ;                  (glColor3f 0.2 0.2 0.2))
 ;               (glEnd)
-;            
+;
 ;               ;(glLineWidth 3.0)
 ;               (glBegin GL_LINES)
 ;                (glVertex2f (floor (car mx)) (floor (cdr mx)))
@@ -307,10 +307,10 @@
 ;         (lookout (+ n 1) x y)))))
 ;   (glEnd)
 ;   #||#
-   
-   
+
+
    ; хорошо, теперь попробуем построить список ключевых точек (вейпоинтов), про которые мы теперь знаем, что они на карте есть
-   ;  
+   ;
    ;  для начала - по тем, что сверху
 ;   #|
 ;   (let* ((me (get-mouse-pos))
@@ -319,7 +319,7 @@
 ;      (glColor3f 0 0 1)
 ;      (glPointSize 4.0)
 ;      (glBegin GL_POINTS)
-;      
+;
 ;      (let draw ((p points))
 ;         (if (null? p)
 ;            #t
@@ -347,7 +347,7 @@
 ;               (check-corner x y))
 ;            (if (> i 0)
 ;               (bottom-to-top x (- y 1) (- i 1))))
-      
+
 
 ;(mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
 ;(call/cc (lambda (return)
@@ -355,7 +355,7 @@
 ;   (case key
 ;      (32
 ;         (mail me (tuple 'update-fov scheme)))
-;         
+;
 ;      (39
 ;         (mail me (tuple 'move +1 0))
 ;         (mail me (tuple 'update-fov scheme)))
@@ -371,7 +371,7 @@
 ;      (40
 ;         (mail me (tuple 'move 0 +1))
 ;         (mail me (tuple 'update-fov scheme))))
-;         
+;
 ;   userdata)))))
 ;
 ;(mail 'opengl (tuple 'set-mouse (lambda (userdata  lbutton rbutton x y)
@@ -381,5 +381,5 @@
 ;      (mail me (tuple 'update-fov scheme))
 ;      (return (put userdata 'mouse (to-map-from-screen (cons x y))))))
 ;   userdata)))))
-   
+
 )

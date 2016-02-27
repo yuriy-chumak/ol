@@ -263,7 +263,7 @@ extern int mkstemp (char *__template);
 #include <windows.h>
 // seen at https://github.com/dlfcn-win32/dlfcn-win32/blob/master/dlfcn.c
 
-//static thread_local char *dlerrno = 0;
+static DWORD dlerrno = 0;
 static
 void *dlopen(const char *filename, int mode/*unused*/)
 {
@@ -288,6 +288,7 @@ void *dlopen(const char *filename, int mode/*unused*/)
 		 * folder).
 		 */
 		hModule = LoadLibraryEx((LPSTR)filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	dlerrno = GetLastError();
 	return hModule;
 }
 /*static
@@ -307,8 +308,8 @@ void *dlsym(void *handle, const char *name)
 
 static
 char* dlerror() {
+//	size_t size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, dlerrno, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT))
 	return "description unavailable";
-
 }
 
 #else
@@ -378,7 +379,7 @@ struct header
 	unsigned rawness : 1;
 	unsigned         : 4; // unused
 
-	unsigned size : sizeof(word) - 16 / 8; // 16 is size of prev bits
+	unsigned size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
 
 
@@ -392,7 +393,7 @@ struct value
 	unsigned type : 5;    // object type
 	unsigned sign : 1;    // sign
 
-	unsigned payload : sizeof(word) - 1;
+	unsigned payload : 8 * sizeof(word) - (1+1+5+1);
 };
 // as value type we use only "TFIX" and "TCONST"
 
@@ -401,7 +402,7 @@ struct object
 {
 	union {
 		word header;
-		word ref[1];
+		word ref[0];
 	};
 };
 
@@ -1174,12 +1175,12 @@ struct ol_t
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 
 #define ERROR(opcode, a, b)         { \
-	fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__);\
+	fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__); /* TEMP */\
 	R[4] = (word) itoun(opcode);\
 	R[5] = (word) (a); \
 	R[6] = (word) (b); \
 	goto invoke_mcp; }
-#define CHECK(exp,val,code)         if (!(exp)) ERROR(code, val, ITRUE);
+#define CHECK(exp,val,opcode)       if (!(exp)) ERROR(opcode, val, ITRUE);
 
 #define A0                          R[ip[0]]
 #define A1                          R[ip[1]]
@@ -2297,6 +2298,8 @@ invoke:;
 			case SYSCALL_WRITE: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = car (a);
+//				CHECK(is_port(a) || (is_direct(a) && (uvtoi(a) <= 2)), a, SYSCALL);
+//				int portfd = is_port(a) ? car (a) : uvtoi(a);
 				int size = svtoi (c);
 
 				word *buff = (word *) b;
@@ -2806,7 +2809,7 @@ invoke:;
 			// UNAME (uname)
 			// http://linux.die.net/man/2/uname
 			case 63: {
-				#ifdef _WIN32 // todo: add this to win32
+				#ifdef _WIN32
 				struct utsname
 				{
 					char sysname[65];
@@ -2817,10 +2820,158 @@ invoke:;
 				};
 
 				int uname(struct utsname* out) {
+					DWORD nodenamesize = sizeof(out->nodename);
+					GetComputerNameA(out->nodename, &nodenamesize);
+
+/*					SYSTEM_INFO si;
+					VOID (WINAPI *GetNativeSystemInfo)(LPSYSTEM_INFO) = (VOID (WINAPI*)(LPSYSTEM_INFO))
+							GetProcAddress(GetModuleHandle("kernel32.dll"), "GetNativeSystemInfo");
+					if (GetNativeSystemInfo)
+						GetNativeSystemInfo(&si);
+					else
+						GetSystemInfo(&si);
+
+					OSVERSIONINFOEXA oi;
+					oi.dwOSVersionInfoSize = (DWORD)sizeof(OSVERSIONINFOEXA);
+					if (!GetVersionExA((OSVERSIONINFOA*)&oi)) {
+						oi.dwOSVersionInfoSize = (DWORD)sizeof(OSVERSIONINFOA);
+						if (!GetVersionExA((LPOSVERSIONINFOA)&oi)) {
+							// todo: try GetVersion
+							fprintf(stderr, "GetVersionEx failed");
+							return +13;
+						}
+					}*/
+
 					strncpy(out->sysname, "Windows", sizeof(out->sysname));
-					strncpy(out->nodename, "", sizeof(out->nodename));
-					strncpy(out->release, "", sizeof(out->release));
-					strncpy(out->version, "", sizeof(out->version));
+/*					if (oi.dwPlatformId < VER_PLATFORM_WIN32_NT) {
+						oi.dwBuildNumber = (DWORD)LOWORD(oi.dwBuildNumber);
+						if (oi.dwMinorVersion == 0) {
+							strcat(out->sysname, " 95");
+							if (oi.dwBuildNumber >= 1111) {
+								strcat(out->sysname, ", OSR2");
+								if (oi.dwBuildNumber >= 1212) strcat(out->sysname, ".5");
+							}
+						}
+						else if (oi.dwMinorVersion == 0x90) {
+							strcat(out->sysname, " Me");
+						}
+						else {
+							strcat(out->sysname, " 98");
+							if (oi.dwBuildNumber >= 2222) strcat(out->sysname, ", Second Edition");
+						}
+					}
+					else {
+						if (oi.dwMajorVersion <= 4) {
+							strcat(out->sysname, " NT");
+							itoa(oi.dwMajorVersion, &out->sysname[strlen(out->sysname)], 10);
+							strcat(out->sysname, ".");
+							itoa(oi.dwMinorVersion, &out->sysname[strlen(out->sysname)], 10);
+							if (oi.dwMajorVersion >= 4) {
+								switch (oi.wProductType) {
+								case VER_NT_WORKSTATION:       strcat(out->sysname, ", Workstation");       break;
+								case VER_NT_DOMAIN_CONTROLLER: strcat(out->sysname, ", Domain Controller"); break;
+								case VER_NT_SERVER:            strcat(out->sysname, ", Server");            break;
+								}
+							}
+						}
+						else {
+							switch (256 * oi.dwMajorVersion + oi.dwMinorVersion) {
+							case 0x500:
+								strcat(out->sysname, " 2000");
+								if      (oi.wProductType == VER_NT_WORKSTATION) strcat(out->sysname, " Professional");
+								else if (oi.wSuiteMask & VER_SUITE_DATACENTER ) strcat(out->sysname, " Datacenter Server");
+								else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE ) strcat(out->sysname, " Advanced Server");
+								else strcat(out->sysname, " Server");
+								break;
+
+							case 0x501:
+								strcat(out->sysname, " XP");
+								if (oi.wSuiteMask & VER_SUITE_PERSONAL)
+									strcat(out->sysname, " Home Edition");
+								else
+									strcat(out->sysname, " Professional");
+								break;
+
+							case 0x502: {
+								#ifndef VER_SUITE_WH_SERVER
+									#define VER_SUITE_WH_SERVER 0x00008000
+								#endif
+
+								char *name, *type;
+
+								if (GetSystemMetrics(SM_SERVERR2))
+									name = "Server 2003 R2";
+								else if (oi.wSuiteMask == VER_SUITE_STORAGE_SERVER)
+									name = "Storage Server 2003";
+								else if (oi.wSuiteMask == VER_SUITE_WH_SERVER)
+									name = "Home Server";
+								else if (oi.wProductType == VER_NT_WORKSTATION && si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+									name = "XP"; type = "Professional x64 Edition";
+								}
+								else
+									name = "Server 2003";
+
+								if (oi.wProductType != VER_NT_WORKSTATION) {
+									if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_IA64) {
+										if (oi.wSuiteMask & VER_SUITE_DATACENTER)
+											type = "Datacenter Edition for Itanium-based Systems";
+										else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE)
+											type = "Enterprise Edition for Itanium-based Systems";
+									}
+									else if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64) {
+										if (oi.wSuiteMask & VER_SUITE_DATACENTER)
+											type = "Datacenter x64 Edition";
+										else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE)
+											type = "Enterprise x64 Edition";
+										else
+											type = "Standard x64 Edition";
+									}
+									else {
+										if (oi.wSuiteMask & VER_SUITE_COMPUTE_SERVER)  type = "Compute Cluster Edition";
+										else if (oi.wSuiteMask & VER_SUITE_DATACENTER) type = "Datacenter Edition";
+										else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE) type = "Enterprise Edition";
+										else if (oi.wSuiteMask & VER_SUITE_BLADE)      type = "Web Edition";
+										else                                           type = "Standard Edition";
+									}
+								}
+								snprintf(out->sysname, sizeof(out->sysname), "Windows %s, %s", name, type);
+								break;
+							}
+//
+//					            case 0x600: case 0x601:
+//					               if (oi.wProductType == VER_NT_WORKSTATION) ps1 = oi.dwMinorVersion == 0 ? "Vista" : "7";
+//					               else ps1 =  oi.dwMinorVersion == 0 ? "Server 2008" : "Server 2008 R2";
+//
+//					               DWORD dwType = PRODUCT_UNDEFINED;
+//					               if (NULL != (u.f=get_func("GetProductInfo"))) u.GetProductInfo(oi.dwMajorVersion,oi.dwMinorVersion,0,0,&dwType);
+//					               switch( dwType ) {
+//					                  case PRODUCT_ULTIMATE:          ps2 = "Ultimate Edition";       break;
+//					                  case PRODUCT_HOME_PREMIUM:      ps2 = "Home Premium Edition";   break;
+//					                  case PRODUCT_HOME_BASIC:        ps2 = "Home Basic Edition";     break;
+//					                  case PRODUCT_ENTERPRISE:        ps2 = "Enterprise Edition";     break;
+//					                  case PRODUCT_BUSINESS:          ps2 = "Business Edition";       break;
+//					                  case PRODUCT_STARTER:           ps2 = "Starter Edition";        break;
+//					                  case PRODUCT_CLUSTER_SERVER:    ps2 = "Cluster Server Edition"; break;
+//					                  case PRODUCT_DATACENTER_SERVER: ps2 = "Datacenter Edition";     break;
+//					                  case PRODUCT_DATACENTER_SERVER_CORE: ps2 = "Datacenter Edition (core installation)"; break;
+//					                  case PRODUCT_ENTERPRISE_SERVER: ps2 = "Enterprise Edition";     break;
+//					                  case PRODUCT_ENTERPRISE_SERVER_CORE: ps2 = "Enterprise Edition (core installation)"; break;
+//					                  case PRODUCT_ENTERPRISE_SERVER_IA64: ps2 = "Enterprise Edition for Itanium-based Systems"; break;
+//					                  case PRODUCT_SMALLBUSINESS_SERVER: ps2 = "Small Business Server"; break;
+//					                  case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM: ps2 = "Small Business Server Premium Edition"; break;
+//					                  case PRODUCT_STANDARD_SERVER:   ps2 = "Standard Edition";       break;
+//					                  case PRODUCT_STANDARD_SERVER_CORE: ps2 = "Standard Edition (core installation)"; break;
+//					                  case PRODUCT_WEB_SERVER:        ps2 = "Web Server Edition";     break;
+//					               }
+//					            break;
+					         }
+					      }
+					   }
+//					   add_sp(os, oi.szCSDVersion);//*/
+
+
+					strncpy(out->release, "", sizeof(out->release)); // oi.dwMajorVersion, oi.dwMinorVersion, oi.dwBuildNumber
+					strncpy(out->version, "", sizeof(out->version)); // kernel + " " + release
 					strncpy(out->machine, "", sizeof(out->machine));
 					return 0;
 				};
@@ -3195,6 +3346,11 @@ extern unsigned char* language;
 unsigned char* language = NULL;
 #endif
 
+void fail(int num, char* message)
+{
+	fprintf(stderr, "%s", message);
+	exit(num);
+}
 #if !EMBEDDED_VM
 int main(int argc, char** argv)
 {
@@ -3209,16 +3365,16 @@ int main(int argc, char** argv)
 		// todo: use mmap()
 		struct stat st;
 		if (stat(argv[1], &st) || st.st_size == 0)
-			exit(errno);	// не найден файл или он пустой
+			fail(errno, "File not found or empty");	// не найден файл или он пустой
 
 		char bom;
-		int bin = open(argv[1], O_RDONLY, (S_IRUSR | S_IWUSR));
+		int bin = open(argv[1], O_RDONLY | O_BINARY, (S_IRUSR | S_IWUSR));
 		if (!bin)
-			exit(errno);	// не смогли файл открыть
+			fail(errno, "Can't open file");	// не смогли файл открыть
 
 		int pos = read(bin, &bom, 1); // прочитаем один байт
 		if (pos < 1)
-			exit(errno);	// не смогли файл прочитать
+			fail(errno, "Can't read file");	// не смогли файл прочитать
 
 		// переделать
 		if (bom == '#') { // skip possible hashbang
@@ -3226,31 +3382,32 @@ int main(int argc, char** argv)
 				st.st_size--;
 			st.st_size--;
 			if (read(bin, &bom, 1) < 0)
-				exit(errno);
+				fail(errno, "Can't read file");
 			st.st_size--;
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
-			// а значит что? что файл надо замапить вместо stdin
+			// а значит что? что файл надо замапить вместо stdin (нет!!! - надо передать его первым параметром в загрузчик)
 			// rollback назад, на 1 прочитанный символ
 #ifndef NAKED_VM
 			lseek(bin, -1, SEEK_CUR);
 			dup2(bin, STDIN_FILENO);
 			close(bin);
 #else
-			exit(6); // некому проинтерпретировать скрипт
+			fail(6, "Invalid binary script"); // некому проинтерпретировать скрипт
 #endif
 		}
 		else {
 			// иначе загрузим его
 			unsigned char* ptr = (unsigned char*)malloc(st.st_size);
 			if (ptr == NULL)
-				exit(3);	// опа, не смогли выделить память...
+				fail(3, "Can't alloc memory");	// опа, не смогли выделить память...
 
 			ptr[0] = bom;
 			while (pos < st.st_size) {
 				int n = read(bin, &ptr[pos], st.st_size - pos);
-				if (n < 0) exit(5); // не смогли прочитать
+				if (n < 0)
+					fail(errno, "Can't read file"); // не смогли прочитать
 				pos += n;
 			}
 			close(bin);
@@ -3258,6 +3415,10 @@ int main(int argc, char** argv)
 			bootstrap = ptr;
 		}
 	}
+#ifdef NAKED_VM
+	else
+		fail(7, "Invalid binary script");
+#endif
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
@@ -3270,6 +3431,7 @@ int main(int argc, char** argv)
 #endif
 
 	set_signal_handler();
+
 	OL* olvm = OL_new(bootstrap, bootstrap != language ? free : NULL);
 	void* r = OL_eval(olvm,
 #ifdef NAKED_VM

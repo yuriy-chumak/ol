@@ -149,7 +149,7 @@
       (glVertex3f -1 -1  1)
 
    (glEnd)
-   
+
    (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
          (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
       (list (+ x nx) nx (+ y ny) ny))

@@ -5,22 +5,22 @@
 #| Copyright (c) 2012 Aki Helin
  | Copyright (c) 2014, 2015 Yuriy Chumak
  |
- | Permission is hereby granted, free of charge, to any person obtaining a 
+ | Permission is hereby granted, free of charge, to any person obtaining a
  | copy of this software and associated documentation files (the "Software"),
  | to deal in the Software without restriction, including without limitation
  | the rights to use, copy, modify, merge, publish, distribute, sublicense,
  | and/or sell copies of the Software, and to permit persons to whom the
  | Software is furnished to do so, subject to the following conditions
- | 
- | The above copyright notice and this permission notice shall be included 
+ |
+ | The above copyright notice and this permission notice shall be included
  | in all copies or substantial portions of the Software.
- | 
+ |
  | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  | IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- | FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+ | FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
  | THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- | LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- | FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ | LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ | FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  | DEALINGS IN THE SOFTWARE.
  |#
 
@@ -72,9 +72,9 @@
 
 ;; throw an error if some familiar but unsupported Scheme functions are called
 (define-library (owl unsupported)
-   (export string-set! vector-set!) ; set! set-car! set-cdr! 
+   (export string-set! vector-set!) ; set! set-car! set-cdr!
 
-   (import 
+   (import
       (r5rs base)
       (owl interop))
 
@@ -118,7 +118,7 @@
    (begin
       (define eof-value
          (cast 4 13))
-      (define (eof? x) 
+      (define (eof? x)
          ;(eq? type-eof (type x))
          (eq? x eof-value))))
 
@@ -138,7 +138,7 @@
 (import (owl gensym))
 
 
-;; does not belong here, but needed in macros for now 
+;; does not belong here, but needed in macros for now
 
 (define (verbose-vm-error opcode a b)
    (cond
@@ -198,7 +198,7 @@
                (tuple 'defined (mkval this)))
             (share-bindings . rest)))))
 
-(define (share-modules mods) 
+(define (share-modules mods)
    (for null mods
       (λ (envl mod)
          (append (ff->list mod) envl))))
@@ -210,7 +210,7 @@
 (import (owl sys))
 
 ;;;
-;;; Entering seccomp 
+;;; Entering seccomp
 ;;;
 
 ;; a temporary O(n) way to get some space in the heap
@@ -225,10 +225,10 @@
 ;          (blocksize 65536)              ;; want this many bytes per node in list
 ;          (pairsize (* my-word-size 3))  ;; size of cons cell, being [header] [car-field] [cdr-field]
 ;          (bytes                         ;; want n bytes after vector header and pair node for each block
-;            (map (λ (x) 0) 
-;               (iota 0 1 
+;            (map (λ (x) 0)
+;               (iota 0 1
 ;                  (- blocksize (+ pairsize my-word-size)))))
-;          (n-blocks  
+;          (n-blocks
 ;            (ceil (/ (* megs (* 1024 1024)) blocksize))))
 ;         ;; make a big data structure
 ;         (map
@@ -241,7 +241,7 @@
 ;
 ;; enter seccomp with at least n-megs of free space in heap, or stop the world (including all other threads and io)
 (define (seccomp n-megs)
-   ;; grow some heap space work working, which is usually necessary given that we can't 
+   ;; grow some heap space work working, which is usually necessary given that we can't
    ;; get any more memory after entering seccomp
    (if (and n-megs (> n-megs 0))
       (ensure-free-heap-space n-megs))
@@ -285,7 +285,7 @@
 
 ;; implementation features, used by cond-expand
 (define *features*
-   (cons 
+   (cons
       (string->symbol (string-append "owl-lisp-" *owl-version*))
       '(owl-lisp r7rs exact-closed ratios exact-complex full-unicode immutable)))
       ;;          ^
@@ -296,8 +296,8 @@
 (import (owl base))
 
 ;; push it to libraries for sharing, replacing the old one
-(define *libraries* 
-   (cons 
+(define *libraries*
+   (cons
       (cons '(owl core) *owl-core*)
       (keep (λ (x) (not (equal? (car x) '(owl core)))) *libraries*)))
 
@@ -308,7 +308,7 @@
 ;      boolean?  fixnum?  eof?  symbol?
 ;      tuple?  string?  function? procedure? equal? eqv? bytecode?
 ;      not
-;      null?  null 
+;      null?  null
 ;      time
 ;      time-ms
 ;      halt exec
@@ -316,8 +316,8 @@
 ;      apply
 ;      call/cc
 ;      call-with-current-continuation
-;      display print-to print print* 
-;      render 
+;      display print-to print print*
+;      render
 ;      system-println
 ;      sleep
 ;      list->tuple
@@ -344,7 +344,7 @@
 ;      string->symbol
 ;      close-port flush-port
 ;      ;dlopen dlsym RTLD_LAZY
-;      set-memory-limit 
+;      set-memory-limit
 ;      get-word-size
 ;      get-memory-limit
 ;      string->sexp
@@ -363,7 +363,7 @@
 (define shared-bindings shared-misc)
 
 (define initial-environment-sans-macros
-   (fold 
+   (fold
       (λ (env pair) (env-put-raw env (car pair) (cdr pair)))
       *owl-core*
       shared-bindings))
@@ -381,7 +381,7 @@
 ;;; new repl image
 ;;;
 
-;; say hi if interactive mode and fail if cannot do so (the rest are done using 
+;; say hi if interactive mode and fail if cannot do so (the rest are done using
 ;; repl-prompt. this should too, actually)
 (define (get-main-entry symbols codes)
    (let*((initial-names   *owl-names*)
@@ -391,11 +391,11 @@
       ; main: / entry point of the compiled image
       (λ (vm-args)
          ;(print "vm-args: " (null? vm-args "null" vm-args))
-         ;; now we're running in the new repl 
+         ;; now we're running in the new repl
          (start-thread-controller
             (list ;1 thread
                (tuple 'init
-                  (λ () 
+                  (λ ()
                      (fork-server 'repl (lambda ()
                         ;; get basic io running
                         (start-base-threads)
@@ -403,17 +403,18 @@
                         ;; repl needs symbol etc interning, which is handled by this thread
                         (fork-server 'intern interner-thunk)
 
-                        ;; set a signal handler which stop evaluation instead of owl 
+                        ;; set a signal handler which stop evaluation instead of owl
                         ;; if a repl eval thread is running
                         (set-signal-action repl-signal-handler)
 
                         ;; repl
                         (exit-owl
                            (let*((seccomp? (if (pair? vm-args)
-                                             (let has? ((args (cdr vm-args)))
-                                                (if (null? args) #f
-                                                   (if (string-eq? (car args) "--seccomp") #t
-                                                      (has? (cdr args)))))))
+                                             (let loop ((args (cdr vm-args)))
+                                                          (cond
+                                                             ((null? args) #f)
+                                                             ((string-eq? (car args) "--seccomp") #t)
+                                                             (else (loop (cdr args)))))))
                                  (env (fold
                                           (λ (env defn)
                                              (env-set env (car defn) (cdr defn)))
@@ -421,7 +422,12 @@
                                           (list
                                              (cons '*owl-names*   initial-names)
                                              (cons '*owl-version* initial-version)
-                                             (cons '*include-dirs* (list "." "/usr/lib/ol"))
+                                             (let ((ol-home (getenv "OL_HOME")))
+                                                (cons '*include-dirs* (list "." (if ol-home ol-home
+                                                   (cond
+                                                      ((string-eq? (ref (uname) 1) "Linux") "/usr/lib/ol")
+                                                      ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
+                                                      (else "."))))))
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* (vm:version))
                                             ;(cons '*scheme* 'r5rs)
@@ -456,19 +462,19 @@
       (cond
          ((immediate? node) trail)
          ((get trail node #false) trail)
-         ((symbol? node) 
+         ((symbol? node)
             (let ((trail (put trail node 1)))
-               (put trail tag 
+               (put trail tag
                   (cons node (get trail tag null)))))
          ((raw? node) trail)
          (else
-            (fold walk 
+            (fold walk
                (put trail node #true)
                (tuple->list node)))))
    (define trail
       (walk (put empty tag null) node))
 
-   (get 
+   (get
       (walk (put empty tag null) node)
       tag null))
 
@@ -487,7 +493,7 @@
                (lets ((seen this (code-refs seen (car lst))))
                   (loop seen (cdr lst)
                      (ff-union this here +))))))))
-(define (codes-of ob) 
+(define (codes-of ob)
    (lets ((refs this (code-refs empty ob)))
       (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 

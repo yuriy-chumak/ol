@@ -14,6 +14,7 @@
       wait
       chdir
       kill
+      uname
       getenv
       sighup
       signint
@@ -60,11 +61,11 @@
       (define (close-dir obj)
          (syscall 1013 obj #false #false))
 
-      ;;; 
+      ;;;
       ;;; Safe derived operations
-      ;;; 
+      ;;;
 
-      ;; dir elements are #false or fake strings, which have the type of small raw ASCII 
+      ;; dir elements are #false or fake strings, which have the type of small raw ASCII
       ;; strings, but may in fact contain anything the OS happens to allow in a file name.
 
       (define (dir-fold op st path)
@@ -87,9 +88,9 @@
             (and path
                (syscall 1020 path #false #false))))
 
-      ;;; 
+      ;;;
       ;;; Processes
-      ;;; 
+      ;;;
 
       ;; path (arg0 ...), arg0 customarily being path
       ;; returns only if exec fails
@@ -109,7 +110,7 @@
                ((eq? res #true)
                   (interact sleeper-id 6) ;; sleep using the associated IO thread
                   (wait pid))
-               (else 
+               (else
                   ;; pair of (<exittype> . <result>)
                   res))))
 
@@ -130,6 +131,8 @@
          (syscall 1021 pid signal #false))
 
 
+      (define (uname)
+         (syscall 63 #f #f #f))
       ;;;
       ;;; Environment variables
       ;;;
@@ -137,10 +140,9 @@
       ;; str → bvec | F
       (define (getenv str)
          (let ((str (c-string str)))
-            (if str 
+            (if str
                (let ((bvec (syscall 1016 str #false #false)))
                   (if bvec
                      (bytes->string (vec->list bvec))
                      #false))
                #false)))))
-

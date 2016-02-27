@@ -173,6 +173,7 @@
       GL_DIFFUSE
       GL_SPECULAR
       GL_EMISSION
+      GL_SHININESS
       GL_AMBIENT_AND_DIFFUSE
 
    glCopyPixels                        ; void (GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
@@ -680,8 +681,8 @@
 ;WINGDIAPI void APIENTRY glMapGrid1f (GLint un, GLfloat u1, GLfloat u2);
 ;WINGDIAPI void APIENTRY glMapGrid2d (GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2);
 ;WINGDIAPI void APIENTRY glMapGrid2f (GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2);
-;WINGDIAPI void APIENTRY glMaterialf (GLenum face, GLenum pname, GLfloat param);
-;WINGDIAPI void APIENTRY glMaterialfv (GLenum face, GLenum pname, const GLfloat *params);
+   glMaterialf  ; void (GLenum face, GLenum pname, GLfloat param)
+   glMaterialfv ; void (GLenum face, GLenum pname, const GLfloat *params)
 ;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params);
    glMatrixMode ; void (GLenum mode)
@@ -1590,8 +1591,8 @@
 ;WINGDIAPI void APIENTRY glMapGrid1f (GLint un, GLfloat u1, GLfloat u2);
 ;WINGDIAPI void APIENTRY glMapGrid2d (GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2);
 ;WINGDIAPI void APIENTRY glMapGrid2f (GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2);
-;WINGDIAPI void APIENTRY glMaterialf (GLenum face, GLenum pname, GLfloat param);
-;WINGDIAPI void APIENTRY glMaterialfv (GLenum face, GLenum pname, const GLfloat *params);
+   (define glMaterialf  (dlsym $ GLvoid "glMaterialf"  GLenum GLenum GLfloat))
+   (define glMaterialfv (dlsym $ GLvoid "glMaterialfv" GLenum GLenum GLfloat*))
 ;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params);
    (define glMatrixMode (dlsym $ GLvoid "glMatrixMode" GLenum))
