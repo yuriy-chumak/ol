@@ -1,7 +1,7 @@
 ---
 layout: page
 title:  Summary
-date:   пт, 27-лис-2015 19:40:51 +0200
+date: 2016-02-27 12:42:07 UTC
 categories: en
 ---
 
@@ -23,6 +23,6 @@ which is another way of
 
 ### Learn
 
-   Current news can be found in [russian translated](?ru) part of this site.
+   Current news can be found in [russian translated](?ru) part of this site that frequently updates.
 
    I'm writing docs right now. It will be available very soon. You can check <b><a href="?en/examples">SAMPLES</a></b> for now.

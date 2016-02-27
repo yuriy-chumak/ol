@@ -6,5 +6,8 @@ baseurl: "/OL"
 url: "http://yuriy-chumak.github.io"
 github_username:  yuriy-chumak
 
+gems:
+  - jekyll-sitemap
+
 # Build settings
 markdown: kramdown
