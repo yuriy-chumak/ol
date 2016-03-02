@@ -103,7 +103,7 @@
       GL_ONE_MINUS_DST_ALPHA
 
    glCallList                          ; void (GLuint list)
-   
+
    glCallLists                         ; void (GLsizei n, GLenum type, const GLvoid *lists)
 
    glClear                             ; void (GLbitfield mask)
@@ -259,7 +259,7 @@
       GL_COLOR_MATERIAL
       GL_NORMALIZE
       GL_AUTO_NORMAL
-      
+
    glDrawBuffer                        ; void (GLenum mode)
    ; mode
       GL_NONE
@@ -872,31 +872,31 @@
 ;WINGDIAPI void APIENTRY glVertex4s (GLshort x, GLshort y, GLshort z, GLshort w);
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
    glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height)
-   
+
 
       GLU_VERSION_1_0
       GLU_VERSION_1_1
-   
+
    gluErrorString
    gluOrtho2D
    gluPerspective
    gluLookAt
-   
+
    gluNewQuadric gluDeleteQuadric gluQuadricDrawStyle
       GLU_FILL GLU_LINE GLU_SILHOUETTE GLU_POINT
    gluQuadricOrientation
       GLU_OUTSIDE GLU_INSIDE
 
    gluSphere
-   
-;   gluNewTess gluBeginPolygon gluTessVertex 
+
+;   gluNewTess gluBeginPolygon gluTessVertex
 
    gluNewNurbsRenderer gluNurbsSurface gluBeginSurface gluEndSurface
    gluNurbsProperty
       GLU_OUTLINE_POLYGON GLU_OUTLINE_PATCH
-   
+
    GLU_U_STEP GLU_V_STEP GLU_DISPLAY_MODE
-   
+
    GL_MAP1_VERTEX_3 GL_MAP2_VERTEX_3
    GL_LINE GL_FILL GL_POINT
 
@@ -1462,6 +1462,7 @@
    (define glClearIndex  (dlsym $ GLvoid "glClearIndex" GLfloat))
    (define glClearStencil(dlsym $ GLvoid "glClearStencil" GLint))
    (define glClipPlane   (dlsym $ GLvoid "glClipPlane"  GLenum GLdouble*))
+   ; glColor:
    (define glColor3b     (dlsym $ GLvoid "glColor3b"    GLbyte GLbyte GLbyte))
 ;WINGDIAPI void APIENTRY glColor3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue);
@@ -1495,6 +1496,7 @@
 ;WINGDIAPI void APIENTRY glColor4uiv (const GLuint *v);
 ;WINGDIAPI void APIENTRY glColor4us (GLushort red, GLushort green, GLushort blue, GLushort alpha);
 ;WINGDIAPI void APIENTRY glColor4usv (const GLushort *v);
+
    (define glColorMask   (dlsym $ GLvoid "glColorMask"  GLboolean GLboolean GLboolean GLboolean))
    (define glColorMaterial (dlsym $ GLvoid "glColorMaterial" GLenum GLenum))
    (define glCopyPixels  (dlsym $ GLvoid "glCopyPixels" GLint GLint GLsizei GLsizei GLenum))
@@ -1789,20 +1791,20 @@
    ;apple? (dlsym $ type-port "CGLCreateContext" ...)
    (else   (runtime-error "Unknown platform" uname))))
 
-;glXCreateGLXPixmap	CreateDIBitmap / CreateDIBSection
-;glXDestroyContext	wglDeleteContext
-;glXDestroyGLXPixmap	DeleteObject
-;glXGetConfig	DescribePixelFormat
-;glXGetCurrentContext	wglGetCurrentContext
-;glXGetCurrentDrawable	wglGetCurrentDC
-;glXMakeCurrent	wglMakeCurrent
-;glXQueryExtension	GetVersion
-;glXQueryVersion	GetVersion
-;glXSwapBuffers	SwapBuffers
-;glXUseXFont	wglUseFontBitmaps / wglUseFontOutlines
-;XGetVisualInfo	GetPixelFormat
-;XCreateWindow	CreateWindow / CreateWindowEx and GetDC / BeginPaint
-;XSync	GdiFlush
+;glXCreateGLXPixmap  CreateDIBitmap / CreateDIBSection
+;glXDestroyContext   wglDeleteContext
+;glXDestroyGLXPixmap DeleteObject
+;glXGetConfig  DescribePixelFormat
+;glXGetCurrentContext   wglGetCurrentContext
+;glXGetCurrentDrawable  wglGetCurrentDC
+;glXMakeCurrent   wglMakeCurrent
+;glXQueryExtension   GetVersion
+;glXQueryVersion  GetVersion
+;glXSwapBuffers   SwapBuffers
+;glXUseXFont   wglUseFontBitmaps / wglUseFontOutlines
+;XGetVisualInfo   GetPixelFormat
+;XCreateWindow CreateWindow / CreateWindowEx and GetDC / BeginPaint
+;XSync   GdiFlush
 
 (define gl:MakeCurrent (cond
    (win32? (dlsym $ type-fix+ "wglMakeCurrent" type-port type-port))
@@ -1954,7 +1956,7 @@
    (define gluOrtho2D     (dlsym $ GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
    (define gluPerspective (dlsym $ GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
    (define gluLookAt      (dlsym $ GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
-   
+
    (define gluNewQuadric    (dlsym $ GLUquadric* "gluNewQuadric"))
    (define gluDeleteQuadric (dlsym $ GLvoid "gluDeleteQuadric" GLUquadric*))
    (define gluQuadricDrawStyle (dlsym $ GLvoid "gluQuadricDrawStyle" GLUquadric* GLenum))
@@ -1967,7 +1969,7 @@
       (define GLU_INSIDE              100021)
 
    (define gluSphere (dlsym $ GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
-   
+
 (define GLUnurbs* type-port)
    (define gluNewNurbsRenderer (dlsym $ GLUnurbs* "gluNewNurbsRenderer"))
    (define gluBeginSurface (dlsym $ GLvoid "gluBeginSurface" GLUnurbs*))
@@ -1977,7 +1979,7 @@
       ;/*     GLU_FILL                100012
       (define GLU_OUTLINE_POLYGON     100240)
       (define GLU_OUTLINE_PATCH       100241)
-   
+
 (define GLU_AUTO_LOAD_MATRIX    100200)
 (define GLU_CULLING             100201)
 (define GLU_SAMPLING_TOLERANCE  100203)

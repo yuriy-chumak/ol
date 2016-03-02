@@ -136,7 +136,10 @@
 // https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
 #define DO_PRAGMA(x) _Pragma (#x)
 #define TODO(x) DO_PRAGMA(message ("TODO - " #x))
-//TODO(Some text to put in compile log)
+
+TODO("set должен стать универсальным, как get - работать и для raw объектов тоже!")
+TODO("size должен стать универсальным, как get - работать и для raw объектов тоже")
+TODO("позволить cast делать port из 0, 1 и 2. после чего усилить проверку is_port")
 
 #ifndef _WIN32
 #include <features.h>
@@ -1484,6 +1487,10 @@ invoke:;
 #		define SYSCALL_GETDENTS 78
 
 #		define SYSCALL_GETTIMEOFDATE 96
+
+#		ifndef SYSCALL_GETRLIMIT
+#		define SYSCALL_GETRLIMIT 97
+#		endif
 #		ifndef SYSCALL_GETRUSAGE
 #		define SYSCALL_GETRUSAGE 98
 #		endif
@@ -1502,6 +1509,7 @@ invoke:;
 #		define SYSCALL_DLERROR 178
 
 #ifdef _WIN32
+#	define SYSCALL_GETRLIMIT 0
 #	define SYSCALL_GETRUSAGE 0
 #	define SYSCALL_SYSINFO 0
 #endif
@@ -1784,8 +1792,19 @@ invoke:;
 		}
 
 		case SIZE: { // size o r
-			word T = A0;
-			A1 = is_value(T) ? IFALSE : F(hdrsize(*(word*)T) - 1);
+//			word T = A0;
+//			A1 = is_value(T) ? IFALSE : F(hdrsize(*(word*)T) - 1);
+//
+			word* T = (word*) A0;
+			if (is_value(T))
+				A1 = IFALSE;
+			else {
+				word hdr = *T;
+				if (is_raw_value(hdr))
+					A1 = F((hdrsize(hdr)-1)*W - padsize(hdr));
+				else
+					A1 = F(hdrsize(*(word*)T) - 1);
+			}
 			ip += 2; break;
 		}
 
@@ -1804,7 +1823,8 @@ invoke:;
 			if (is_value(T))
 				A2 = make_value(type, imm_val(T));
 			else
-			{ // make a clone of more desired type
+			{
+				// make a clone of more desired type
 				word* ob = (word*)T;
 				word hdr = *ob++;
 				int size = hdrsize(hdr);
@@ -1869,7 +1889,7 @@ invoke:;
 			else {
 				word hdr = *p;
 				word pos = uvtoi (A1);
-				if (is_raw_value(hdr) || hdrsize(hdr) < pos || !pos)
+				if (is_raw_value(hdr) || hdrsize(hdr) < pos || !pos) // todo: change in
 					A3 = IFALSE;
 				else {
 					word size = hdrsize (hdr);
@@ -2991,6 +3011,20 @@ invoke:;
 
 				break;
 			}
+
+			#if SYSCALL_GETRLIMIT
+			// GETRUSAGE (getrusage)
+			case SYSCALL_GETRLIMIT: {
+				struct rlimit r;
+				// arguments currently ignored. used RUSAGE_SELF
+				if (getrlimit(uvtoi(a), &u) == 0)
+					result = cons(
+							limit.rlim_cur,
+							limit.rlim_max);
+				break;
+
+			}
+			#endif
 
 			#if SYSCALL_GETRUSAGE
 			// GETRUSAGE (getrusage)

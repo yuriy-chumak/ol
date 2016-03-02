@@ -28,10 +28,12 @@
 (define PHOSPHOR-ENABLED #true)
 (define RANDGLOW-ENABLED #true)
 
-(define SLIDING-DISABLED #true)
+;(define DEFAULT-DENCITY 20)
+;(define DEFAULT-GLOWRATE 10)
 
+; defaults
 (define config (list->ff (list
-   (cons 'density  60)
+   (cons 'density  20)
    (cons 'glowrate 10))))
 
 
@@ -60,6 +62,9 @@
 (define (get-matrix-value matrix i j)
    (car (ith (car (ith matrix j)) i)))
 
+(define (set-matrix-value matrix i j value)
+   (set-car! (ith (car (ith matrix j)) i) value))
+
 
 (define set! (case-lambda
 ((matrix i j value)
@@ -73,9 +78,13 @@
 ; ===========================================================
 ;matrix():
 
+(define glyphs (create-matrix WIDTH HEIGHT))
+(define glows  (create-matrix WIDTH HEIGHT))
+(define spinners (create-matrix WIDTH HEIGHT))
+
 (define cells (list->ff (list
-   (cons 'glyph     (create-matrix WIDTH HEIGHT))
-   (cons 'glow      (create-matrix WIDTH HEIGHT))
+;   (cons 'glyph     (create-matrix WIDTH HEIGHT))
+;   (cons 'glow      (create-matrix WIDTH HEIGHT))
    (cons 'spinner   (create-matrix WIDTH HEIGHT))))) ; 1/0
 
 (define feeders (list->ff (list
@@ -109,20 +118,22 @@
 (define spinners_new_length (create-scalar 20)) ; config.spinners, may change
 
 (define (densitizer density)
-   (cond
-      ((< density 10) 85)
-      ((< density 15) 60)
-      ((< density 20) 45)
-      ((< density 25) 25)
-      ((< density 30) 20)
-      ((< density 35) 15)
-      ((< density 45) 10)
-      ((< density 50)  8)
-      ((< density 55)  7)
-      ((< density 65)  5)
-      ((< density 80)  3)
-      ((< density 90)  2)
-      (else 1)))
+   density)
+;   (cond
+;      ((< density 10) 85)
+;      ((< density 15) 60)
+;      ((< density 20) 45)
+;      ((< density 25) 25)
+;      ((< density 30) 20)
+;      ((< density 35) 15)
+;      ((< density 45) 10)
+;      ((< density 50)  8)
+;      ((< density 55)  7)
+;      ((< density 65)  5)
+;      ((< density 80)  3)
+;      ((< density 90)  2)
+;      (else 1)))
+
 ;(runtime-error "debug-exit" '())
 
 ;
@@ -167,27 +178,26 @@
                      (begin
                         (if (and
                               PHOSPHOR-ENABLED
-                              (ne? (get-matrix-value (getf cells 'glyph) x y) 0)
-                              (eq? (get-matrix-value (getf cells 'glyph) x (- y 1)) 0))
-                           (set! (getf cells 'glow) x y -1)
+                              (ne? (get-matrix-value glyphs x y) 0)
+                              (eq? (get-matrix-value glyphs x (- y 1)) 0))
+                           (set! glows x y -1)
                            (begin
-                              (set! (getf cells 'glow ) x y (get-matrix-value (getf cells 'glow ) x (- y 1)))
-                              (set! (getf cells 'glyph) x y (get-matrix-value (getf cells 'glyph) x (- y 1)))))
-                        ;(set! (getf cells 'changed ) x y 1)
+                              (set! glows x y (get-matrix-value glows x (- y 1)))
+                              (set! glyphs x y (get-matrix-value glyphs x (- y 1)))))
                         (loop (- y 1)))))))))
 
-   (set! (getf cells 'glyph) x y glyph)
+   (set! glyphs x y glyph)
    ;(set! (getf cells 'changed) x y 0)
 
    (if (eq? glyph 0)
       (if bottom_feeder_p
-         (set! (getf cells 'glow ) x y (+ 1 (rand! 2)))
-         (set! (getf cells 'glow ) x y 0)))))))
+         (set! glows x y (+ 1 (rand! 2)))
+         (set! glows x y 0)))))))
 
 
 (gl:run
 
-   "2. Drawing simple triangle"
+   "Digital Rain"
 
 ; init
 (lambda ()
@@ -201,11 +211,6 @@
    (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
       42 448
       0 GL_RGB GL_UNSIGNED_BYTE (file->vector "matrix.rgb"))
-
-; изменение состояния матрицы:
-; matrix->setDensity(100.0f * (pi.CommitTotal / (float)pi.CommitLimit));
-; matrix->setUsage(10);
-; matrix->Update()
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
@@ -257,20 +262,19 @@
    (if RANDGLOW-ENABLED
       (let loop ((i (rand! (floor (/ (* (getf config 'glowrate) (/ WIDTH 2)) 10)))))
          (if (> i 0)
-            (let ((x (rand! WIDTH))
-                  (y (rand! HEIGHT)))
+            (let ((y (rand! HEIGHT))
+                  (x (rand! WIDTH)))
                (if (and
-                     (ne? (get-matrix-value (getf cells 'glyph) x y) 0)
-                     (eq? (get-matrix-value (getf cells 'glow ) x y) 0))
-                  (begin
-                     (set! (getf cells 'glow ) x y (rand! 20))
-                     )) ;(set! (getf cells 'changed) x y 1)
+                     (ne? (get-matrix-value glyphs x y) 0)
+                     (eq? (get-matrix-value glows x y) 0))
+                  (set-matrix-value glows x y (rand! 20)))
                (loop (- i 1))))))
+
    ;; Change some of the feeders
    (if #t
    (let loop ((x 0))
       (if (< x WIDTH) (begin
-         (if (or
+         (if (and
                (eq? (get-vector-value (getf feeders 'remaining) x) 0)
                (eq? (rand! (densitizer (get-value density)))       0))
             (begin
@@ -319,8 +323,8 @@
    (glBegin GL_QUADS)
    ; Let's draw the matrix!
    (let for-y ((y 0)
-               (glow* (getf cells 'glow))
-               (glyph* (getf cells 'glyph))
+               (glow* glows)
+               (glyph* glyphs)
                (spinner* (getf cells 'spinner)))
       (if (< y HEIGHT) (begin
       (let for-x ((x 0)
@@ -339,8 +343,6 @@
                      (else          SWITCH_PLAIN)) 3))
                (v (/ glyph NGLYPHS)))
 
-            ;(print glyph ": " u ", " v)
-
             (glTexCoord2f    u         v)
             (glVertex2f x y)
             (glTexCoord2f    u      (+ v 1/28))
@@ -350,19 +352,17 @@
             (glTexCoord2f (+ u 1/3)    v)
             (glVertex2f (+ x 1) y))
 
-            ;cell->changed = 0;
-
             (if #t (begin ;(not (= oldtime time)) (begin
 ;
-            (if (> glow 0)
-               (set! (getf cells 'glow) x y (- glow 1)) ; cell->changed = 1;
-            (if (< glow 0) (begin
-               (set! (getf cells 'glow) x y (+ glow 1)) ; cell->changed = 1;
-               (if (eq? glow -1)
-                  (set! (getf cells 'glyph) x y  0))))) ; cell->changed = 1;
+               (if (> glow 0)
+                  (set! glows x y (- glow 1)) ; cell->changed = 1;
+               (if (< glow 0) (begin
+                  (set! glows x y (+ glow 1)) ; cell->changed = 1;
+                  (if (eq? glow -1)
+                     (set! glyphs x y  0))))) ; cell->changed = 1;
 
-            (if (> spinner 0)
-               (set! (getf cells 'glyph) x y (rand! NGLYPHS))))) ; cell->changed = 1;
+               (if (> spinner 0)
+                  (set! glyphs x y (rand! NGLYPHS))))) ; cell->changed = 1;
 
             (for-x (+ x 1) (cdr glow*) (cdr glyph*) (cdr spinner*)))))
       (for-y (+ y 1) (cdr glow*) (cdr glyph*) (cdr spinner*)))))
