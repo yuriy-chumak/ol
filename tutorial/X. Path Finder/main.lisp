@@ -20,20 +20,30 @@
 
 ; ===========================================================================
 (define scheme '(
-   (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)
-   (1 0 1 0 0 0 0 0 0 0 0 1 0 0 0 1)
-   (1 0 1 0 0 0 0 0 0 0 1 1 1 0 0 1)
-   (1 0 1 1 1 1 1 1 1 0 1 0 1 0 0 1)
-   (1 0 1 1 1 1 1 1 1 0 1 0 1 1 1 1) ;0 0 1
-   (1 0 1 0 0 0 0 0 1 0 1 0 1 0 0 1)
-   (1 0 0 0 0 0 0 0 1 0 0 0 1 1 0 1)
-   (1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1)
-   (1 0 1 1 1 1 1 1 1 1 1 0 1 0 0 1)
-   (1 0 1 0 0 0 0 0 0 0 1 0 1 0 0 1)
-   (1 0 1 0 0 0 0 0 0 0 0 0 1 0 0 1)
-   (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
+   (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  1 1 1 1 1 1 1 1 1 1 1 1 1 1)
+   (1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 1 0 0 0 0 1 1 0 0 0 0 1)
+   (1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 1 1 0 0 0 1 1 0 1 0 0 1)
+   (1 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 1 1 0 0 1 1 0 0 0 1)
+   (1 0 1 1 1 1 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 1 0 1 1 0 1 1 0 0 0 1)
+   (1 0 1 0 0 0 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 1 1 0 1 1  0 0 0 0 0 0 1 1 1 1 0 1 0 1)
+   (1 0 1 0 0 0 1 0 0 1 1 1 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 1 0 0 1 1 0 0 0 0 1)
+   (1 0 1 0 0 0 1 0 0 0 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0 1  0 1 0 0 0 0 0 1 1 1 0 0 0 1)
+   (1 0 1 0 0 0 1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 0 0 0 1 1 1 0 0 0 1)
+   (1 0 1 0 0 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0 0 1 0 0 0 0 1 1 0 0 0 0 1)
+   (1 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 0 0 0 1 1 0 0 0 0 1)
+   (1 0 0 0 0 0 0 0 0 1 1 1 1 0 0 1 1 1 1 1 1 1 1 0 1 1  0 0 0 1 0 0 0 1 1 0 0 0 0 1)
+   (1 0 1 0 0 0 0 0 0 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 1 0 0 0 0 1 1 1 0 0 0 0 1)
+   (1 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 1 1 1 0 0 0 0 0 1)
+   (1 0 1 1 1 1 1 1 1 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 1 1 0 0 0 0 1 0 1)
+   (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 1 1 0 1 0 0 0 0 1)
+   (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 1 1 0 0 0 0 0 0 0 1)
+   (1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 0 0 0 0 0 1 0 0 1)
+   (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 1 1 0 0 0 0 0 0 0 1)
+   (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
+
 (define (at x y)
    (nth (nth scheme y) x))
+
 (define (at2 x y scheme)
    (nth (nth scheme y) x))
 
@@ -109,15 +119,15 @@
 
    ; будем что-то делать только раз в секунду
    (let*((new-time _ (clock))
-         (step (if #t;(> new-time old-time)
+         (step (if #t ;(> new-time old-time)
                   (let ((ne
                   (interact me (tuple 'A* x y))))
-                     (mail me (tuple 'update-fov scheme))
+                      (mail me (tuple 'update-fov scheme))
                      ne)
                   (cons 0 0))))
 
-      (if (not (and (eq? (car step) 0) (eq? (cdr step) 0)))
-         (mail me (tuple 'move (car step) (cdr step))))
+      (if (not (and (eq? (ref step 1) 0) (eq? (ref step 2) 0)))
+         (mail me (tuple 'move (ref step 1) (ref step 2))))
 
       ; попросим монстра осмотреться
 
@@ -143,31 +153,26 @@
          (glEnd))
       )
 
-      ; открытый список
-      (if #f
-      (let ((map (interact me (tuple 'A* 14 1))))
+      ; один из списков
+;      (print (ref step 3))
+      (if #t
+      (if (not (and (eq? (ref step 1) 0) (eq? (ref step 2) 0)))
+      (let ((map (ref step 3)))
          ; draw 'open list
-         (glBegin GL_POINTS)
-         (glColor3f 0 0 1)
-         (print "-- open-list -------")
+         (glBegin GL_LINES)
+;        (glColor3f 0 0.3 0.3)
          (ff-fold (lambda (n v xyp)
-;                     (glColor3f 0 0 (/ (- 10 (ref xyp 3)) 10))
-                     (print "> " v ":" xyp " ^" (/ (- 10 (ref xyp 3)) 10))
-                     (let ((xy (ref xyp 1)))
-                     (glVertex2f (+ (car xy) 0.5) (+ (cdr xy) 0.5))))
-            #f (car map))
-         (print "-- closed-list -------")
-
-         (glColor3f 0 1 0)
-         (ff-fold (lambda (n v xyp)
-;                     (glColor3f 0 (/ (- 10 (ref xyp 3)) 10) 0)
-                     (print "> " v ":" xyp)
-                     (let ((xy (ref xyp 1)))
-                     (glVertex2f (+ (car xy) 0.5) (+ (cdr xy) 0.5))))
-            #f (cdr map))
-         (print "-- end -------------")
+                     (let ((from (ref xyp 1))
+                           (to   (ref xyp 2)))
+                        (if to
+                           (begin
+                              (glColor3f 1 0 0)
+                              (glVertex2f (+ (car from) 0.5) (+ (cdr from) 0.5))
+                              (glColor3f 0 1 0)
+                              (glVertex2f (+ (car to) 0.5) (+ (cdr to) 0.5))))))
+            #f map)
          (glEnd)
-      ))
+      )))
 
 
       ; нарисуем, где сейчас наше создание находится:
@@ -189,7 +194,7 @@
 
    ; вернем модифицированные параметры
       (list (put
-         (if (and (eq? (car step) 0) (eq? (cdr step) 0) (> new-time old-time))
+         (if (and (eq? (ref step 1) 0) (eq? (ref step 2) 0) (> new-time old-time))
             (let do ((x (rand! WIDTH))
                      (y (rand! HEIGHT)))
                (if (eq? (at2 x y scheme) 0)

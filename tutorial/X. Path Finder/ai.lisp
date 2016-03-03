@@ -10,7 +10,7 @@
    (this (+ id 1))))))
 (define (generate-unique-id)
    (interact 'IDs #f))
-   
+
 
 ;(fork-server 'creatures (lambda ()
 ;(let this ((all #empty))
@@ -48,14 +48,14 @@
 (let loop ((x x) (y y) (oldy -1)  (n (- (ceil x2) x)))
    (if (= n 0)
       #t
-   (if (and 
+   (if (and
           (not (= y oldy)) ; если пересекли линию стен
           (> (at (- x 1) (floor y)) 0))
       #f
    (if (> (at x (floor y)) 0)
       #f
    (loop (+ x 1) (+ y dk) y (- n 1))))))))
-      
+
 
 (define (vertical-bresenham x1 y1  x2 y2  dk)
 (let* ((y (+ 1 (floor y1)))
@@ -63,7 +63,7 @@
 (let loop ((x x) (y y) (oldx -1)  (n (- (ceil y2) y)))
    (if (= n 0)
       #t
-   (if (and 
+   (if (and
           (not (= x oldx)) ; если пересекли линию стен
           (> (at (floor x) (- y 1)) 0))
       #f
@@ -116,7 +116,7 @@
       (= (at (- x 1) y) 0)
       (> (at (- x 1) (- y 1)) 0)
       (= (at x (- y 1)) 0)))
-      
+
 (define (find-point-in-list list xy)
    (if (null? list)
       #f
@@ -124,7 +124,7 @@
             (= (cdr (car list)) (cdr xy)))
       #t
    (find-point-in-list (cdr list) xy))))
-   
+
 (define (add-waypoint xy list)
    (if (find-point-in-list list xy)
       list
@@ -149,7 +149,7 @@
 ;(define (get-waypoints me N)
 ; fixme: вейпоинты в списке могут дублироваться
 
-; Осмотреться. Возвращает список вейпоинтов. 
+; Осмотреться. Возвращает список вейпоинтов.
 ;(let lookout ((n 0) (x (floor (car me))) (y (floor (cdr me)))  (points '()))
 ;   (if (= n N)
 ;      points
@@ -197,7 +197,7 @@
 ;         (let for-x ((x 0) (cells (car lines)))
 ;            (if (null? cells)
 ;               null
-;               (cons 
+;               (cons
 ;                  (let ((cell (car cells)))
 ;                     (if (and
 ;                           (or
@@ -263,7 +263,7 @@
                   (let for-x ((x 0) (cells (car lines)) (map-cells (car map-lines)))
                      (if (null? cells)
                         null
-                        (cons 
+                        (cons
                            (let ((cell (car cells)))
                               (if (or
                                     (is-point-can-see-point X Y x y)
@@ -308,15 +308,15 @@
          ;print "***********************************")
          ; отправить назад результат работы алгоритма
          (mail sender
-         (if (and (= x to-x) (= y to-y)); уже на месте
-            (cons 0 0)
-         (let step1 ((n 99) ; количество шагов поиска
+         (if (and (= x to-x) (= y to-y)) ; уже пришли
+            (tuple 0 0 '() '())
+         (let step1 ((n 999); количество шагов поиска
                      (c-list-set #empty)
                      (o-list-set (put #empty (hash xy)  (tuple xy #f  0 0 0))))
             (if (eq? o-list-set #empty)
-               (cons 0 0)     ; некуда идти - постоим
+               (tuple 0 0 '() '()) ; некуда идти - постоим
 
-            ; найдем клетку с минимальной стоимостью F
+            ; найдем клетку с минимальной стоимостью:
             (let*((f (ff-fold (lambda (s key value)
                                  (if (< (ref value 5) (car s))
                                     (cons (ref value 5) value)
@@ -328,7 +328,8 @@
                   (o-list-set (del o-list-set (hash xy)))
                   (c-list-set (put c-list-set (hash xy) (cdr f))))
 
-               (if (or (eq? n 0) 
+               ;
+               (if (or (eq? n 0)
                      (and
                         (eq? (car xy) to-x)
                         (eq? (cdr xy) to-y)))
@@ -338,9 +339,12 @@
                      (let*((parent (ref (get c-list-set (hash xy) #f) 2)) ; todo: переделать
                            (parent-of-parent (ref (get c-list-set (hash parent) #f) 2)))
                         (if parent-of-parent (rev parent)
-                           (cons
+                           (tuple
                               (- (car xy) (car parent))
-                              (- (cdr xy) (cdr parent))))))
+                              (- (cdr xy) (cdr parent))
+                              c-list-set
+                              o-list-set
+                              ))))
 
                   ; 5: Проверяем все соседние клетки.
                   ;  Игнорируем те, которые находятся в закрытом списке или непроходимы
@@ -349,7 +353,7 @@
                   ;  для всех этих клеток.
                   (let*((x (car xy))
                         (y (cdr xy))
-               
+
 ;                        (_ (print x " :: " y " ^ " (hash xy)))
 ;                        (_ (print "c-list-set: " c-list-set))
 ;                        (_ (print "o-list-set: " o-list-set))
@@ -369,7 +373,7 @@
                                                 (got (get o-list-set (hash v) #f)))
 
 ;                                             (print "ready to open: " v "(" xy ") - H:" H ", got:" got)
-         
+
                                              ; если эта клетка уже в списке
                                              (if got
                                                 (if (< G (ref got 3)) ; но наш путь короче
@@ -392,5 +396,5 @@
       (else
          (print "'ai error: unknown command " msg)
          (this fov x y)))))))))
-   (print "new creature " id " spawned.")      
+   (print "new creature " id " spawned.")
    id))
