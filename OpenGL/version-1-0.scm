@@ -148,7 +148,7 @@
 ;WINGDIAPI void APIENTRY glColor4bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glColor4d (GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha);
 ;WINGDIAPI void APIENTRY glColor4dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+   glColor4f ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 ;WINGDIAPI void APIENTRY glColor4fv (const GLfloat *v);
 ;WINGDIAPI void APIENTRY glColor4i (GLint red, GLint green, GLint blue, GLint alpha);
 ;WINGDIAPI void APIENTRY glColor4iv (const GLint *v);

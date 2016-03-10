@@ -309,12 +309,12 @@
          ; отправить назад результат работы алгоритма
          (mail sender
          (if (and (= x to-x) (= y to-y)) ; уже пришли
-            (tuple 0 0 '() '())
+            (tuple 0 0 #empty #empty)
          (let step1 ((n 999); количество шагов поиска
                      (c-list-set #empty)
                      (o-list-set (put #empty (hash xy)  (tuple xy #f  0 0 0))))
             (if (eq? o-list-set #empty)
-               (tuple 0 0 '() '()) ; некуда идти - постоим
+               (tuple 0 0 #empty #empty) ; некуда идти - постоим
 
             ; найдем клетку с минимальной стоимостью:
             (let*((f (ff-fold (lambda (s key value)
