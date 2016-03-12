@@ -382,7 +382,7 @@ struct header
 	unsigned rawness : 1;
 	unsigned         : 4; // unused
 
-	unsigned size : 8 * sizeof(word) - (1+1+6+3+1+4);
+	word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
 
 
@@ -396,7 +396,7 @@ struct value
 	unsigned type : 5;    // object type
 	unsigned sign : 1;    // sign
 
-	unsigned payload : 8 * sizeof(word) - (1+1+5+1);
+	word  payload : 8 * sizeof(word) - (1+1+5+1);
 };
 // as value type we use only "TFIX" and "TCONST"
 
@@ -587,7 +587,7 @@ struct object
 #endif
 #define svtoi(v)   /*(int)*/({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define svtol(v)  (long)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
-#define itosv(i)  (word)({ word x = (word)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
+#define itosv(i)  (word)({ long x = (long)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 
 		// ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 
@@ -3005,10 +3005,10 @@ invoke:;
 			case SYSCALL_GETRLIMIT: {
 				struct rlimit r;
 				// arguments currently ignored. used RUSAGE_SELF
-				if (getrlimit(uvtoi(a), &u) == 0)
-					result = cons(
-							limit.rlim_cur,
-							limit.rlim_max);
+				if (getrlimit(uvtoi(a), &r) == 0)
+					result = new_tuple(
+							itoun(r.rlim_cur),
+							itoun(r.rlim_max));
 				break;
 
 			}
