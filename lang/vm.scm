@@ -88,40 +88,40 @@
       ;(define type    (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
       ;(define size    (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
       ;(define cast    (raw type-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
-      (define raw?    (raw type-bytecode '(48 4 5    24 5)))
+      ;(define raw?    (raw type-bytecode '(48 4 5    24 5)))
 
       ;(define car     (raw type-bytecode '(52 4 5    24 5)))
       ;(define cdr     (raw type-bytecode '(53 4 5    24 5)))
       ;(define ref     (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
       ;(define set     (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
 
-      (define set!    (raw type-bytecode '(10 4 5 6  24 6)))
+      ;(define set!    (raw type-bytecode '(10 4 5 6  24 6)))
       ;(define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
       ;(define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
 
       ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
-      (define less?   (raw type-bytecode '(44 4 5 6  24 6)))
+      ;(define less?   (raw type-bytecode '(44 4 5 6  24 6)))
 
       ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/receive
       ;(define fx:+  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
       ;(define fx:*  (raw type-bytecode '(39 4 5       6 7)))
       ;(define fx:-  (raw type-bytecode '(40 4 5       6 7)))
       ;(define fx:/  (raw type-bytecode '(26 4 5 6     7 8 9)))
-      ;(define fx:>> (raw type-bytecode '(58 4 5       6 7)))
-      ;(define fx:<< (raw type-bytecode '(59 4 5       6 7)))
+      ;(define fx:>> (raw type-bytecode '(58 4 5       6 7))) ; todo: rename to fx:>
+      ;(define fx:<< (raw type-bytecode '(59 4 5       6 7))) ; todo: rename to fx:<
 
-      (define fx:and (raw type-bytecode '(55 4 5 6  24 6)))
-      (define fx:or  (raw type-bytecode '(56 4 5 6  24 6)))
-      (define fx:xor (raw type-bytecode '(57 4 5 6  24 6)))
+      ;(define fx:and (raw type-bytecode '(55 4 5 6  24 6)))
+      ;(define fx:or  (raw type-bytecode '(56 4 5 6  24 6)))
+      ;(define fx:xor (raw type-bytecode '(57 4 5 6  24 6)))
 
       ; deprecated:
       ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
-      (define ff:red     (raw type-bytecode '(43 4 5 6 7  8  24 8)))
-      (define ff:black   (raw type-bytecode '(42 4 5 6 7  8  24 8)))
-      (define ff:toggle  (raw type-bytecode '(46 4        5  24 5)))
-      (define ff:red?    (raw type-bytecode '(41 4        5  24 5)))
-      (define ff:right?  (raw type-bytecode '(37 4        5  24 5)))
+      ;(define ff:red     (raw type-bytecode '(43 4 5 6 7  8  24 8)))
+      ;(define ff:black   (raw type-bytecode '(42 4 5 6 7  8  24 8)))
+      ;(define ff:toggle  (raw type-bytecode '(46 4        5  24 5)))
+      ;(define ff:red?    (raw type-bytecode '(41 4        5  24 5)))
+      ;(define ff:right?  (raw type-bytecode '(37 4        5  24 5)))
 
       ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8)))
 
@@ -143,9 +143,9 @@
          (tuple 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
          (tuple 'raw?     48  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
 
-         (tuple 'set      45  3 1 set)   ;(raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
+         (tuple 'set      45  3 1 set)   ; (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
 
-         (tuple 'set!     10  2 1 set!)
+         (tuple 'set!     10  3 1 set!)
          (tuple 'set-car! 11  2 1 set-car!)
          (tuple 'set-cdr! 12  2 1 set-cdr!)
 

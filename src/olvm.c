@@ -455,8 +455,8 @@ struct object
 #define is_raw_value(x)             (((word)x) & RAWBIT)
 #define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
 
-#define is_direct(x)                (((word)x) & 2) // direct value
-#define is_pointer(x)               (!is_value(x))
+#define is_direct(x)                (((word)x) & 2) // todo: remove, use is_value instead
+#define is_pointer(x)               (!is_value(x))  // todo: remove, use is_reference instead
 #define is_reference(x)             (!is_value(x))
 
 // встроенные типы (смотреть defmac.scm по "ALLOCATED")
@@ -576,7 +576,7 @@ struct object
 #ifndef UVTOI_CHECK
 #define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define uvtoi(v)   /*(int)*/({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
+#define uvtoi(v)        ({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
 #define uvtol(v)  (long)({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
 #define itouv(i)  (word)({ word x = (word)i;                 (word) (x << IPOS) | 2; })
 		// (((struct value*)(&v))->payload);
@@ -1183,7 +1183,7 @@ struct ol_t
 	R[5] = (word) (a); \
 	R[6] = (word) (b); \
 	goto invoke_mcp; }
-#define CHECK(exp,val,opcode)       if (!(exp)) ERROR(opcode, val, ITRUE);
+#define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 #define A0                          R[ip[0]]
 #define A1                          R[ip[1]]
@@ -1457,10 +1457,9 @@ invoke:;
 #	define CDR   53
 #	define REF   47
 
-//#	define REFB  48
-
 	// ?
 #	define SET   45
+#	define SETe  10
 
 	// ?
 #	define EQ    54
@@ -1899,24 +1898,60 @@ invoke:;
 		}
 
 
-		case SET: { // set t o v r
+		case SET: { // (set object position value), position starts from 1
 			word *p = (word *)A0;
-			if (is_value(p))
+			word pos = uvtoi(A1);
+
+			if (!is_reference(p))
+				A3 = IFALSE;
+			else
+			if (is_raw_value(*p)) {
+				CHECK(is_value(A2), A2, 10001)
+				word hdr = *p;
+				word size = hdrsize (hdr);
+				word *newobj = new (size);
+				for (ptrdiff_t i = 0; i < size; i++)
+					newobj[i] = p[i];
+				if (pos < (size-1)*sizeof(word) - padsize(hdr) + 1)
+					((char*)&car(newobj))[pos - 1] = (char)uvtoi(A2);
+				A3 = (word)newobj;
+			}
+			else
+			if (hdrsize(*p) < pos || !pos)
 				A3 = IFALSE;
 			else {
+				//if (is_tuple(p)) {
 				word hdr = *p;
-				word pos = uvtoi (A1);
-				if (is_raw_value(hdr) || hdrsize(hdr) < pos || !pos) // todo: change in
-					A3 = IFALSE;
-				else {
-					word size = hdrsize (hdr);
-					word *newobj = new (size);
-					word val = A2;
-					for (ptrdiff_t i = 0; i <= size; i++)
-						newobj[i] = p[i];
-					newobj[pos] = val;
-					A3 = (word)newobj;
-				}
+				word size = hdrsize (hdr);
+				word *newobj = new (size);
+				word val = A2;
+				for (ptrdiff_t i = 0; i < size; i++)
+					newobj[i] = p[i];
+				newobj[pos] = val;
+				A3 = (word)newobj;
+			}
+			ip += 4; break; }
+
+		case SETe: { // (set! variable position value)
+			word *p = (word *)A0;
+			word pos = uvtoi (A1);
+
+			CHECK(is_value(A2), A2, 10001); // todo: move to silent return IFALSE
+
+			if (!is_reference(p))
+				A3 = IFALSE;
+			else
+			if (is_raw_value(*p)) {
+				if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
+					((char*)&car(p))[pos - 1] = (char) uvtoi(A2);
+				A3 = p;
+			}
+			else
+			if (hdrsize(*p) < pos || !pos)
+				A3 = IFALSE;
+			else {
+				p[pos] = A2;
+				A3 = p;
 			}
 			ip += 4; break; }
 
@@ -2024,40 +2059,6 @@ invoke:;
 					new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
 			ip += 1; break;
 
-//		// мутатор
-//		case 10: { // (set! variable value)
-//			// variable and expression both must be MEMP
-//			word* variable = (word*) A0;
-//			word* value = (word*) A1;
-//
-//			CHECK(is_memp(variable), variable, 10);
-//			CHECK(is_memp(value), value, 10);
-//
-//			car (variable) = car (value);
-//			A3 = ITRUE;
-//			/*word T = IFALSE;
-//			if (is_object(A0) && is_value(A1) && is_value(A2)) {
-//				word *obj = (word *)A0;
-//				word offset = uvtoi(A1);
-//				word value = uvtoi(A2);
-//
-//				switch (typeof (*obj))
-//				{
-//				case TPAIR:
-//					while (offset-- && ((word)obj != INULL))
-//						obj = (word*)obj[2];
-//					if (offset == -1)
-//						obj[1] = T = value;
-//					break;
-//				case TTUPLE:
-//					if (offset < hdrsize(*obj))
-//						obj[offset+1] = T = value;
-//					break;
-//				}
-//			}
-//			A3 = T;*/
-//			ip += 3; break;
-//		}
 		case 11: { // (set-car! pair value)
 			word *pair = (word *)A0;
 			word value = A1;

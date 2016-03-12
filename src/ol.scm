@@ -140,12 +140,13 @@
 ;; does not belong here, but needed in macros for now
 
 (define (verbose-vm-error opcode a b)
-   (cond
-      ((eq? opcode 256)
+   (case opcode
+      (256
          ; fixme, add but got ...
          (list 'function b 'expected a 'arguments))
-      ((eq? opcode 52) (list "car, bad pair: " a))
-      ((eq? opcode 53) (list "cdr, bad pair: " a))
+      (52 (list "car, bad pair: " a))
+      (53 (list "cdr, bad pair: " a))
+      (1001 (list "value argument for set! must be value-type"))
       (else
          (list "error: " 'instruction opcode 'info (tuple a b)))))
 
