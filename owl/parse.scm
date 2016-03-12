@@ -58,7 +58,7 @@
 
       (define (get-byte ll ok fail pos)
          (cond
-            ((null? ll) (fail pos eof-error)) ; will always be the largest value 
+            ((null? ll) (fail pos eof-error)) ; will always be the largest value
             ((pair? ll) (ok (cdr ll) fail (car ll) (+ pos 1)))
             (else (get-byte (ll) ok fail pos))))
 
@@ -67,7 +67,7 @@
          (λ (ll ok fail pos)
             (ok ll fail val pos)))
 
-      ;; todo: in addition to assert would be useful to have compute (returns the value) and check <predicate> 
+      ;; todo: in addition to assert would be useful to have compute (returns the value) and check <predicate>
       (define (assert pred val) ; fixme: should have a error message to throw when no luck
          (λ (ll ok fail pos)
             (let ((res (pred val)))
@@ -81,7 +81,7 @@
                (let ((val term))
                   (let-parses 42 sc ft lst pos r body)))
             ((let-parses 42 sc ft lst pos ((val parser) . r) body)
-               (parser lst 
+               (parser lst
                   (λ (lst ft val pos)
                      (let-parses 42 sc ft lst pos r body))
                   ft pos))
@@ -109,7 +109,7 @@
       ; make sure the next thing is *not* accepted by parser (unfortunate name, change later)
       (define (peek parser) ; fixme, add error message
          (λ (lst ok fail pos)
-            (parser lst 
+            (parser lst
                (λ (lst fail val pos)
                   ; we do *not* want a match
                   (fail lst "peek matched"))
@@ -139,7 +139,7 @@
                               (loop (cdr bytes) lst fail pos)
                               (fail pos (list "expected next '" (runes->string bytes) "'"))))
                         fail pos))))))
-     
+
       ;; fixme: not correct yet
       (define (get-word-ci str val)
          (let ((bytes (string->bytes str)))
@@ -169,10 +169,10 @@
             (get-epsilon null)))
 
       ; get all of successful parses of parser not allowing backtracking
-      ; intention being that "aaaaa" has quite a few combinations of (kleene+ a), 
-      ; and when describing something like lexical structure, which is usually 
-      ; handled by a pass greedily matching regular expressions, this may cause 
-      ; unexpected exponential slowdowns on parse errors when using simple 
+      ; intention being that "aaaaa" has quite a few combinations of (kleene+ a),
+      ; and when describing something like lexical structure, which is usually
+      ; handled by a pass greedily matching regular expressions, this may cause
+      ; unexpected exponential slowdowns on parse errors when using simple
       ; parsing combinators like these in lib-parse.
 
       (define (get-greedy parser zero-ok?)
@@ -206,10 +206,10 @@
       (define (get-between below above)
          (get-byte-if
             (λ (x)
-               (and (fx:< below x) (fx:< x above)))))
+               (and (less? below x) (less? x above)))))
 
       ; #b10xxxxxx
-      (define get-extension-byte 
+      (define get-extension-byte
          (let-parses
             ((b get-byte)
              (verify (eq? #b10000000 (fx:and b #b11000000)) "Bad extension byte"))
@@ -219,7 +219,7 @@
       ;; fixme: get-rune == get-utf-8
       (define get-rune
          (get-any-of
-            (get-byte-if (λ (x) (fx:< x 128)))
+            (get-byte-if (λ (x) (less? x 128)))
             (let-parses
                ((a (get-between 127 224))
                 (verify (not (eq? a #b11000000)) "blank leading 2-byte char") ;; would be non-minimal
@@ -247,11 +247,11 @@
       ;;; Port data streaming and parsing
       ;;;
 
-      ; this is fairly distinct from the rest of lib-parse, because it mainly deals with 
+      ; this is fairly distinct from the rest of lib-parse, because it mainly deals with
       ; IO operation sequencing.
 
       ; notice that this difficulty comes from owl not havign side-effects on data structures
-      ; even in the VM level, ruling out lazy lists and and manually mutated streams, which 
+      ; even in the VM level, ruling out lazy lists and and manually mutated streams, which
       ; are usually used in functional parsers.
 
       (define (stdio-port? port)
@@ -259,7 +259,7 @@
             (has? stdioports port)))
 
       ; rchunks fd block? -> rchunks' end?
-      ;; bug: maybe-get-input should now use in-process mail queuing using return-mails interop at the end if necessary 
+      ;; bug: maybe-get-input should now use in-process mail queuing using return-mails interop at the end if necessary
       (define (maybe-get-input rchunks fd block? prompt)
          (let ((chunk (try-get-block fd 1024 #false)))
             ;; handle received input
@@ -287,18 +287,18 @@
 
       (define (fd->exp-stream fd prompt parse fail re-entry?)
          (let loop ((old-data null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
-            (lets 
-               ((rchunks end? 
-                  (if finished? 
-                     (values null #true) 
-                     (maybe-get-input null fd (or (null? old-data) block?) 
+            (lets
+               ((rchunks end?
+                  (if finished?
+                     (values null #true)
+                     (maybe-get-input null fd (or (null? old-data) block?)
                         (if (null? old-data) prompt "|   "))))
                 (data (push-chunks old-data rchunks)))
                (if (null? data)
                   (if end? null (loop data #true #false))
                   (parse data
                      (λ (data-tail backtrack val pos)
-                        (pair val 
+                        (pair val
                            (if (and finished? (null? data-tail))
                               null
                               (loop data-tail (null? data-tail) end?))))
@@ -351,7 +351,7 @@
                (else
                   (row-loop row (cdr bytes) (+ pos 1) (cons (car bytes) rthis))))))
 
-      (define (has-newline? ll)   
+      (define (has-newline? ll)
          (cond
             ((null? ll) #false)
             ((not (pair? ll)) (has-newline? (ll)))
@@ -366,10 +366,10 @@
             (else (null-ll? (ll)))))
 
       ; try to parse all of data with given parser, or return fail-val
-      ; printing a nice error message if maybe-error-msg is given 
+      ; printing a nice error message if maybe-error-msg is given
 
       (define (try-parse parser data maybe-path maybe-error-msg fail-val)
-         (parser data    
+         (parser data
             (λ (data fail val pos)
                (if (null-ll? data)
                   ; all successfully parsed
@@ -380,10 +380,9 @@
                ; print error if maybe-error-msg is given
                (if maybe-error-msg
                   (if (or maybe-path (has-newline? data))
-                     (print-row-syntax-error 
-                        (or maybe-path "input") 
+                     (print-row-syntax-error
+                        (or maybe-path "input")
                         maybe-error-msg data pos)
                      (print-syntax-error maybe-error-msg data (- pos 1)))) ; is the one from preceding newlines?
                fail-val)
             0))))
-

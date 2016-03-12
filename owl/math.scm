@@ -165,7 +165,7 @@
             (else
                (let ((ad (ncar a)) (bd (ncar b)))
                   (cond
-                     ((fx:< ad bd)
+                     ((less? ad bd)
                         (big-less (ncdr a) (ncdr b) #true))
                      ((eq? ad bd)
                         (big-less (ncdr a) (ncdr b) lower))
@@ -177,7 +177,7 @@
          (case (type a)
             (type-fix+
                (case (type b)
-                  (type-fix+   (fx:< a b))
+                  (type-fix+   (less? a b))
                   (type-int+ #true)
                   (else #false)))
             (type-fix-
@@ -186,7 +186,7 @@
                   (type-fix-
                      (if (eq? a b)
                         #false
-                        (fx:< b a)))
+                        (less? b a)))
                   (type-int+ #true)
                   (else #false)))
             (type-int+
@@ -944,7 +944,7 @@
                   ; 3O(n)
                   ((ah at bh bt atl
                      (splice-nums a b a b null null #true 0)))
-                  (if (fx:< atl 30)
+                  (if (less? atl 30)
                      (mul-simple a b)
                      (lets
                          ; 3F(O(n/2)) + 2O(n/2)
@@ -1093,7 +1093,7 @@
          (cond
             ((eq? n 0) 0)
             ((eq? a b) (subi n 1))
-            ((fx:< b a) n)
+            ((less? b a) n)
             (else
                (lets ((b over (fx:>> b 1)))
                   (shift-local-down a b (subi n 1))))))
@@ -1102,7 +1102,7 @@
       (define (shift-local-up a b n)
          (cond
             ((eq? a b) (subi n 1))
-            ((fx:< a b) (subi n 1))
+            ((less? a b) (subi n 1))
             (else
                (lets ((over b (fx:<< b 1)))
                   (if (eq? over 0)
@@ -1124,7 +1124,7 @@
                               (let ((aa (ncar a)) (bb (add b-lead 1)))
                                  ; increment b to ensure b'000.. > b....
                                  (cond
-                                    ((fx:< aa bb)
+                                    ((less? aa bb)
                                        (shift-local-down aa bb n))
                                     (else
                                        (shift-local-up aa bb n))))))
@@ -1147,7 +1147,7 @@
                (cond
                   ; hack warning, -1 0 1 are lesser of 2, but not -2
                   ; (tag bits including sign are low)
-                  ((fx:< s 2)
+                  ((less? s 2)
                      (nat-quotrem-finish a b out))
                   (else
                      (let ((this (<< b s)))
@@ -1182,7 +1182,7 @@
                (cond
                   ; hack warning, -1 0 1 are lesser of 2, but not -2
                   ; (tag bits including sign are low)
-                  ((fx:< s 2)
+                  ((less? s 2)
                      (nat-rem-finish a b))
                   (else
                      (loop (subi a (<< b s))))))))
@@ -1250,7 +1250,7 @@
          (cond
             ((null? a) a)
             ((null? (ncdr a)) a)
-            ((fx:< (ncar b) (ncar a))
+            ((less? (ncar b) (ncar a))
                (lets
                   ((h over (fx:+ (ncar b) 1))
                    (_ f r (fx:/ 0 (ncar a) h))
@@ -1282,7 +1282,7 @@
          (if (< a b)
             a
             (lets ((rb (nrev b)))
-               (if (fx:< #b000000111111111111111111 (ncar rb))
+               (if (less? #b000000111111111111111111 (ncar rb))
                   ; scale them to get a more fitting head for b
                   ; and also get rid of the special case where it is fxmax
                   (>> (nat-rem-reverse (<< a 12) (<< b 12)) 12)

@@ -2,9 +2,9 @@
 ;; POSIX regular expressions
 ;;
 
-;; this library implements a mostly complete POSIX-compatible 
-;; regular expressions. at the moment lib-regex tries to just 
-;; get all the features right. *lots* of non-constant-factor 
+;; this library implements a mostly complete POSIX-compatible
+;; regular expressions. at the moment lib-regex tries to just
+;; get all the features right. *lots* of non-constant-factor
 ;; optimizations are missing.
 
 ;;; spec: http://pubs.opengroup.org/onlinepubs/007908799/xbd/re.html
@@ -29,7 +29,7 @@
       get-sexp-regex
       string->regex
       string->replace-regex
-		string->complete-match-regex
+      string->complete-match-regex
       )
 
    (import
@@ -46,9 +46,9 @@
 
    (begin
 
-      ;;; 
+      ;;;
       ;;; Matching functions
-      ;;; 
+      ;;;
 
       ;; the regexp is represented by a function which does stream matching
 
@@ -67,7 +67,7 @@
       (define (dot ls buff ms cont)
          (cond
             ((null? ls) #false)
-            ((pair? ls) 
+            ((pair? ls)
                (cont (cdr ls) (cons (car ls) buff) ms))
             (else (dot (ls) buff ms cont))))
 
@@ -80,12 +80,12 @@
                   (if (eq? (car ls) cp)
                      (cont (cdr ls) (cons cp buff) ms)
                      #false))
-               (else 
+               (else
                   (accept (ls) buff ms cont))))
          (if (eq? (type cp) type-fix+)
             accept
             (runtime-error "match string cannot yet contain a " cp)))
-      
+
       (define (pred fn) ;; match match a specific (fixnum) code point
          (define (accept ls buff ms cont)
             (cond
@@ -94,10 +94,10 @@
                   (if (fn (car ls))
                      (cont (cdr ls) (cons (car ls) buff) ms)
                      #false))
-               (else 
+               (else
                   (accept (ls) buff ms cont))))
          accept)
-      
+
       ;; [ab..n], store set in a ff (range 0-65535)
       (define (accept-ff ff)
          (λ (ls buff ms cont)
@@ -139,7 +139,7 @@
          (call/cc
             (λ (ret)
                (for empty cs
-                  (λ (ff n) 
+                  (λ (ff n)
                      (if (eq? (type n) type-fix+)
                         (put ff n #true)
                         (ret #false))))))) ;; code point outside of fixnum range
@@ -149,7 +149,7 @@
          (cond
             ((null? cs) ;; should not come out of parser
                (runtime-error "empty char class: " cs))
-            (complement? 
+            (complement?
                ;; always use an iff for now in [^...]
                (reject-iff
                   (for #empty cs
@@ -158,13 +158,13 @@
                (imm (car cs)))
             ((make-ff cs) =>
                (λ (ff) (accept-ff ff)))
-            (else 
-               (accept-iff    
+            (else
+               (accept-iff
                   (for #empty cs
                      (λ (iff val) (iput iff val #true)))))))
 
       ;; <ra>|<rb>
-      (define (rex-or ra rb)  
+      (define (rex-or ra rb)
          (λ (ls buff ms cont)
             (or (ra ls buff ms cont)
                 (rb ls buff ms cont))))
@@ -172,16 +172,16 @@
       ;; <ra><rb>
       (define (rex-and ra rb)
          (λ (ls buff ms cont)
-            (ra ls buff ms 
+            (ra ls buff ms
                (λ (ls buff ms)
                   (rb ls buff ms cont)))))
 
-      ;; note that all repetitions could be implemented with a generic repeater. here 
+      ;; note that all repetitions could be implemented with a generic repeater. here
       ;; we splice them to several smaller ones, mainly because small parsing functions
-      ;; are prettier, and all mathmaticians would like to do with just star anyway, 
+      ;; are prettier, and all mathmaticians would like to do with just star anyway,
       ;; so it will be given an important role.
 
-      ;;; greedy base quantifiers 
+      ;;; greedy base quantifiers
 
       ;; <rx>*
       (define (star rx)
@@ -204,10 +204,10 @@
       (define (alt-star rx)
          (define (collect ls buff ms cont)
             (or (cont ls buff ms)
-               (rx ls buff ms 
+               (rx ls buff ms
                   (λ (ls buff ms) (collect ls buff ms cont)))))
          collect)
-     
+
       ;; <rx>+?
       (define (alt-plus rx) (rex-and rx (alt-star rx)))
 
@@ -241,7 +241,7 @@
                   (define (maybe ls buff ms n)
                      (if (eq? n 0)
                         (cont ls buff ms)
-                        (or 
+                        (or
                            (rx ls buff ms (λ (ls buff ms) (maybe ls buff ms (- n 1))))
                            (cont ls buff ms))))
                   (maybe ls buff ms n)))))
@@ -272,7 +272,7 @@
          (cond
             ((null? head) out)
             ((eq? head old) out)
-            (else 
+            (else
                (add-range (cdr head) old (cons (car head) out)))))
 
       ;; find node = (id . start-pos) in ms, and update the cdr to hold the range between buff and the start-pos
@@ -289,7 +289,7 @@
       (define (chunk rex)
          (λ (ls buff ms cont)
             (lets
-               ((id (+ 1 (caar ms)))   ;; my submatch id 
+               ((id (+ 1 (caar ms)))   ;; my submatch id
                 (node (cons id buff))) ;; leave marker with pointer to current matched position (start of range)
                (rex ls buff (cons node ms)
                   (λ (ls buffp ms)
@@ -302,7 +302,7 @@
          (λ (ls buff ms cont)
             (rex ls buff ms
                (λ (lsp buffp msp) (cont ls buff ms))))) ;; there she blows
-      
+
       (define (lookahead-not rex)
          (λ (ls buff ms cont)
             (if (rex ls buff ms (λ (a b c) #true))
@@ -322,7 +322,7 @@
                   ((rex try rev ms (λ (ls buff ms) (null? ls)))
                      (cont ls buff ms))
                   ((null? rev) #false)
-                  (else 
+                  (else
                      (lets ((char rev rev))
                         (loop rev (cons char try))))))))
 
@@ -335,7 +335,7 @@
                      #false)
                   ((null? rev)
                      (cont ls buff ms))
-                  (else 
+                  (else
                      (lets ((char rev rev))
                         (loop rev (cons char try))))))))
 
@@ -366,7 +366,7 @@
                         (values #false #false)))))
             (else
                (match-list (ls) val buff))))
-         
+
       (define (matched n)
          (λ (ls buff ms cont)
             (let ((val (ranges-ref (reverse ms) n)))
@@ -379,11 +379,11 @@
       ;;; Running the regexen
       ;;;
 
-      (define start-node 
+      (define start-node
          (cons 0 null))
 
       ;; ranges = ((nth-range . start-node) ...)
-      (define blank-ranges 
+      (define blank-ranges
          (list start-node))
 
 
@@ -397,7 +397,7 @@
       (define (rex-match-prefix? rex ll)
          (rex ll null blank-ranges
             (λ (ls buff ms) #true)))
-      
+
       ;; rex ll → #false | #(ls buff ms), for replacing
       (define (rex-match-prefix rex ll)
          (rex ll null blank-ranges
@@ -406,7 +406,7 @@
       ;; rex str → bool (if matches anywhere)
       (define (rex-match-anywhere? rex ll)
          (cond
-            ((null? ll) 
+            ((null? ll)
                (rex-match-prefix? rex ll))
             ((pair? ll)
                (if (rex-match-prefix? rex ll)
@@ -429,7 +429,7 @@
                (rex-match-prefix? rex (iter target)))
             (λ (target)
                (rex-match-anywhere? rex (iter target)))))
-     
+
       ;; another half-sensible but at the moment useful thing would be (m/<regex>/ iterable) -> #false | (head . tail)
       (define (make-copy-matcher rex start?)
          (if start?
@@ -464,7 +464,7 @@
                         (rex-cut rex (cdr ll) start? (cons (car ll) out))))))
             (else
                (rex-cut rex (ll) start? out))))
-         
+
 
       ;; regex that cuts stuff to pieces at matches
       (define (make-cutter rex start?)
@@ -479,7 +479,7 @@
       ;;;
 
       ;; replacer is a function from code point streams to code point streams
-      ;; it may either itself find all the matches and perform substitutions, 
+      ;; it may either itself find all the matches and perform substitutions,
       ;; handle the first one, or something completely different.
 
       ;; fixme: trailing \ is handled wrong
@@ -493,7 +493,7 @@
                         (cons char tl)
                         (let ((op (car tl)))
                            (cond
-                              ((and (fx:< 47 op) (fx:< op 58)) ;; fixme: silly
+                              ((and (less? 47 op) (less? op 58)) ;; fixme: silly
                                  (let ((submatch (ranges-ref ms (- op 48))))
                                     (if submatch
                                        (append submatch (cdr tl))
@@ -516,7 +516,7 @@
                   (let ((match (rex-match-prefix rex ll)))
                      (cond
                         (match
-                           (lets 
+                           (lets
                               ((ls buff ms match)
                                (ms (update-node ms start-node buff))) ;; save whole match to \0
                               (cond
@@ -530,14 +530,14 @@
                            ;; stop if no match at beginning and ^
                            ll)
                         (else
-                           ;; proceed to content 
+                           ;; proceed to content
                            (cons (car ll) (loop (cdr ll)))))))
                (else ;; force
                   (loop (ll))))))
 
       ;; todo: use the flags of the regexp to choose what kind of replacer to make. now implicit /g
       (define (make-replacer rex rep all? start?)
-         (λ (target) 
+         (λ (target)
             (cond
                ((string? target)
                   (runes->string (rex-replace (str-iter target) rex rep start? all?)))
@@ -552,31 +552,31 @@
 
       (define get-dot  ;; .
          (let-parses ((foo (get-imm 46))) dot))
-      
+
       (define get-fini ;; $
          (let-parses ((foo (get-imm 36))) fini))
 
       ;; maybe get a ?
-      (define get-altp 
+      (define get-altp
          (get-either (get-imm 63) (get-epsilon #false)))
 
       ;; → (rex → rex')
-      (define get-star 
-         (let-parses 
+      (define get-star
+         (let-parses
             ((skip (get-imm 42))
              (altp get-altp))
             (if altp alt-star star)))
-      
+
       ;; a+ = aa*
-      (define get-plus 
-         (let-parses 
+      (define get-plus
+         (let-parses
             ((skip (get-imm 43))
              (altp get-altp))
             (if altp alt-plus plus)))
-      
+
       ;; a? = a{0,1} = (a|"")
-      (define get-quest 
-         (let-parses 
+      (define get-quest
+         (let-parses
             ((skip (get-imm 63))
              (altp get-altp))
             (if altp alt-quest quest)))
@@ -584,19 +584,19 @@
       (define (i x) x)
 
       (define special-chars '(40 41 124 46 47)) ;; kinda ugly. the parser should check for these first
-     
+
       (define (imm-val imm val)
          (let-parses ((d (get-imm imm))) val))
 
-      (define digit? (λ (b) (and (fx:< 47 b) (fx:< b 58)))) ;; 0-9
-      (define alpha? (λ (b) (and (fx:< 96 b) (fx:< b 123)))) ;; a-z
-      (define big-alpha? (λ (b) (and (fx:< 64 b) (fx:< b 91)))) ;; A-Z
+      (define digit? (λ (b) (and (less? 47 b) (less? b 58)))) ;; 0-9
+      (define alpha? (λ (b) (and (less? 96 b) (less? b 123)))) ;; a-z
+      (define big-alpha? (λ (b) (and (less? 64 b) (less? b 91)))) ;; A-Z
       (define alnum? (λ (b) (or (alpha? b) (big-alpha? b) (digit? b))))
       (define word? (λ (b) (or (eq? b 95) (alnum? b))))
       (define space? (λ (b) (has? '(32 9 13 10 11 12) b)))
 
       ;; shared automata parts corresponding to predefined character classes
-      (define accept-digit (pred digit?)) 
+      (define accept-digit (pred digit?))
       (define accept-dot (imm 46))
       (define accept-nondigit (pred (λ (b) (not (digit? b)))))
       (define accept-alnum (pred alnum?))
@@ -604,7 +604,7 @@
       (define accept-nonword (pred (λ (b) (not (word? b)))))
       (define accept-space (pred space?))
       (define accept-nonspace (pred (λ (b) (not (space? b)))))
-      
+
       ;; \<x>
       (define get-quoted-char
          (let-parses
@@ -626,14 +626,14 @@
 
       ;; strings are already sequences of unicode code points, so no need to decode here
       ;; accept any non-special char
-      (define get-plain-char 
-         (let-parses 
+      (define get-plain-char
+         (let-parses
             ((val get-byte) ;; really get-code-point since the input is already decoded
              (verify (not (has? special-chars val)) "bad special char"))
             (imm val)))
-       
+
       (define (quoted-imm val)
-         (let-parses 
+         (let-parses
             ((quote (get-imm 92))
              (val (get-imm val)))
             val))
@@ -648,8 +648,8 @@
       (define get-digit
          (let-parses
             ((b get-byte)
-             (verify (fx:< 47 b) #false)
-             (verify (fx:< b 58) #false))
+             (verify (less? 47 b) #false)
+             (verify (less? b 58) #false))
             (- b 48)))
 
       (define get-number
@@ -679,13 +679,13 @@
              (verify (char->hex b) #false))
             (char->hex b)))
 
-      (define get-8bit 
+      (define get-8bit
          (let-parses ((hi get-hex) (lo get-hex)) (bor (<< hi 4) lo)))
-      
-      (define get-16bit 
+
+      (define get-16bit
          (let-parses ((hi get-8bit) (lo get-8bit)) (bor (<< hi 8) lo)))
-      
-      (define get-32bit 
+
+      (define get-32bit
          (let-parses ((hi get-16bit) (lo get-16bit)) (bor (<< hi 16) lo)))
 
       ;; todo: what is the quotation used for 32-bit \xhhhhhhhh?
@@ -716,7 +716,7 @@
       ;; a quoted character or anything other than ]
       (define parse-char-class-char
          (get-either
-            parse-quoted-char 
+            parse-quoted-char
             (let-parses
                ((char get-byte)
                 (verify (not (eq? char 93)) #false))
@@ -729,7 +729,7 @@
              (c
                (get-either
                   (let-parses
-                     ((skip (get-imm 45)) ; - 
+                     ((skip (get-imm 45)) ; -
                       (c parse-char-class-char)
                       (verify (<= b c) "bad range"))
                      c)
@@ -740,7 +740,7 @@
          (get-either
             (get-imm 94)  ;; hack, returned 94 on match is also true
             (get-epsilon #false)))
-         
+
       (define get-char-class
          (let-parses
             ((open (get-imm 91))
@@ -756,22 +756,22 @@
             ((eq? m 'inf)
                (λ (rx) (at-least n rx)))
             ((= n m)
-               (if (eq? n 0) 
+               (if (eq? n 0)
                   epsilon
                   (λ (rx) (exactly n rx))))
-            ((< n m) ;; <= enforced when parsing but ok to double-check as this is only done once 
-               (if (eq? n 0) 
+            ((< n m) ;; <= enforced when parsing but ok to double-check as this is only done once
+               (if (eq? n 0)
                   (λ (rx) (at-most m rx))
                   (λ (rx) (rex-and (exactly n rx) (at-most (- m n) rx)))))
             (else
                (runtime-error "make-repeater: bad range: " (list n 'to m)))))
 
-      (define get-range 
+      (define get-range
          (let-parses
             ((skip (get-imm 123))   ; <{>...}
-             (start  
+             (start
                (get-either get-number (get-epsilon 0))) ; <{[n]>...}
-             (end 
+             (end
                (get-either
                   (let-parses
                      ((skip (get-imm 44)) ; <{[n],>
@@ -833,7 +833,7 @@
                       (close (get-imm 41)))
                      (chunk rex))
                   get-char-class
-                  get-reference 
+                  get-reference
                   get-quoted-char
                   get-plain-char))
              (repetition
@@ -843,7 +843,7 @@
                   get-quest
                   get-range
                   (get-epsilon i)))
-             (tail 
+             (tail
                (get-any-of
                   (let-parses ;; join tail of exp with implicit catenation
                      ((tl (get-catn get-regex)))
@@ -857,9 +857,9 @@
             ((hd (get-catn get-regex))
              (tl (get-kleene* (let-parses ((skip (get-imm 124)) (rex (get-catn get-regex))) rex))))
             (fold rex-or hd tl)))
-    
+
       (define get-matcher-regex
-         (let-parses 
+         (let-parses
             ((skip (get-imm #\m)) ;; [m]atch
              (skip (get-imm 47))  ;; opening /
              (start? (get-either (get-imm 94) (get-epsilon #false))) ;; maybe get leading ^ (special)
@@ -873,7 +873,7 @@
             (make-matcher (rex-and rex fini) #true)))
 
       (define get-copy-matcher-regex
-         (let-parses 
+         (let-parses
             ((skip (get-imm #\g)) ;; [g]rab
              (skip (get-imm 47))  ;; opening /
              (start? (get-either (get-imm 94) (get-epsilon #false))) ;; maybe get leading ^ (special)
@@ -882,7 +882,7 @@
             (make-copy-matcher rex start?)))
 
       (define get-cutter-regex
-         (let-parses 
+         (let-parses
             ((skip (get-imm 99))  ;; [c]ut
              (skip (get-imm 47))  ;; opening /
              (start? (get-either (get-imm 94) (get-epsilon #false))) ;; maybe get leading ^ (special)
@@ -895,7 +895,7 @@
             )
            (make-cutter rex start?)))
 
-      (define get-replace-char 
+      (define get-replace-char
          (get-either
             (let-parses ;; quoted
                ((skip (get-imm 92)) ;; \\
@@ -907,8 +907,8 @@
                char)))
 
       (define get-maybe-g
-         (get-either 
-            (get-imm 103) 
+         (get-either
+            (get-imm 103)
             (get-epsilon #false)))
 
       ;; for testing, s/<regex>/<str>/[g]
@@ -935,7 +935,7 @@
       ;; str -> rex|#false, for conversion of strings to complete matchers
       (define (string->complete-match-regex str)
          (try-parse get-body-regex (str-iter str) #false #false #false))
-      
+
       ;; str → rex|#false, same as is used in owl parser
       (define (string->extended-regexp str)
          (try-parse get-sexp-regex (str-iter str) #false #false #false))

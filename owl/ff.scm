@@ -242,7 +242,7 @@
             (if (red? node)
                (with-ff (node left this this-val right)
                   (cond
-                     ((fx:< key this)
+                     ((less? key this)
                         (red (putn left key val) this this-val right))
                      ((eq? key this)
                         (red left key val right))
@@ -250,7 +250,7 @@
                         (red left this this-val (putn right key val)))))
                (with-ff (node left this this-val right)
                   (cond
-                     ((fx:< key this)
+                     ((less? key this)
                         (black-bleft (putn left key val) this this-val right))
                      ((eq? key this)
                         (black left key val right))
@@ -265,7 +265,7 @@
                (cond
                   ((eq? this-k key)
                      (ref ff 2))
-                  ((fx:< key this-k)
+                  ((less? key this-k)
                      ;; go left if possible
                      (case (size ff)
                         (4 (get (ref ff 3) key def))
@@ -298,7 +298,7 @@
                      (2 (ff-update #empty key val)) ;; fail
                      (3 (set ff 3 (ff-update (ref ff 3) key val))) ;; must be here due to contract
                      (else
-                        (if (fx:< key this)
+                        (if (less? key this)
                            (set ff 3 (ff-update (ref ff 3) key val))
                            (set ff 4 (ff-update (ref ff 4) key val)))))))))
 
@@ -485,7 +485,7 @@
          (if (nonempty? ff)
             (with-ff (ff left this-key val right)
                (cond
-                  ((fx:< key this-key)
+                  ((less? key this-key)
                      (let ((sub (deln left key)))
                         (cond
                            ((eq? sub left)

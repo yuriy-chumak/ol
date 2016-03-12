@@ -100,9 +100,9 @@
       ;(define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
 
       ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
+      (define less?   (raw type-bytecode '(44 4 5 6  24 6)))
 
       ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/receive
-      ;(define fx:<  (raw type-bytecode '(44 4 5 6  24 6)))
       ;(define fx:+  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
       ;(define fx:*  (raw type-bytecode '(39 4 5       6 7)))
       ;(define fx:-  (raw type-bytecode '(40 4 5       6 7)))
@@ -151,9 +151,9 @@
 
          ; простейшая стравнивалка
          (tuple 'eq?      54  2 1 eq?)
+         (tuple 'less?    44  2 1 less?)
 
          ; базовая математика
-         (tuple 'fx:<     44  2 1 fx:<)
          (tuple 'fx:+     38  2 2 fx:+)
          (tuple 'fx:*     39  2 2 fx:*)
          (tuple 'fx:-     40  2 2 fx:-)

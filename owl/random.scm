@@ -7,10 +7,10 @@
 
 (define-library (owl random)
 
-   (export   
+   (export
       ;; prngs
 ;      lcg-rands           ;; seed (int32) → rands
-      
+
       ;; stream construction
       seed->rands         ;; seed → ll of (digit ...) ;; only the default one, later also merseinne twister, blum blum shub etc alternatives
       rands->bits         ;; (digit ...) → (0|1 ...)
@@ -58,11 +58,11 @@
       ;;; Pseudorandom data generators
       ;;;
 
-      ; random data generators implement an infinite stream of positive fixnums, 
+      ; random data generators implement an infinite stream of positive fixnums,
       ; which are used by the various functions which need a random data source.
-      ; as usual the state variables are explicitly passed into and returned from 
-      ; the functions, usually as the first parameter to each direction. these 
-      ; could be tucked into a monad some time in the future, but at least for now 
+      ; as usual the state variables are explicitly passed into and returned from
+      ; the functions, usually as the first parameter to each direction. these
+      ; could be tucked into a monad some time in the future, but at least for now
       ; it seems nice to be explicit about the flow of data.
 
       ;;; Linear Congruential Generater -- old and simple
@@ -90,7 +90,7 @@
                (nrev-iter ds (ncons d to)))))
 
       (define (nrev-fix ds)
-         (if (null? ds) 
+         (if (null? ds)
             0
             (lets ((d ds ds))
                (cond
@@ -104,16 +104,16 @@
       (define word32 #xffffffff)
 
       (define (xorshift-128 x y z w)
-         (lets 
+         (lets
             ((t (bxor x (band word32 (<< x 11))))
              (x y)
              (y z)
              (z w)
              (w (bxor w (bxor (>> w 19) (bxor t (>> t 8))))))
             (if (eq? (type w) type-fix+)
-               (cons w (cons 0 
+               (cons w (cons 0
                   (λ () (xorshift-128 x y z w))))
-               (cons (ncar w) (cons (ncar (ncdr w)) 
+               (cons (ncar w) (cons (ncar (ncdr w))
                   (λ () (xorshift-128 x y z w)))))))
 
       (define xors (xorshift-128 123456789 362436069 521288629 88675123))
@@ -168,36 +168,36 @@
          (if (eq? 0 (fx:and x n)) 0 1))
 
       (define (rands->bits rs)
-         (lets 
+         (lets
             ((d rs (uncons rs 0))
              (tl (λ () (rands->bits rs))))
             (let loop ((p #b1000000000000000))
-               (if (eq? p 0) 
+               (if (eq? p 0)
                   tl
                   (cons (bit d p) (loop (>> p 1)))))))
 
       ;; note! assumes 24-bit fixnums
       (define (rands->bytes rs)
-         (lets 
+         (lets
             ((digit rs (uncons rs 0))
              (lo (fx:and digit #xff))
              (digit _ (fx:>> digit 8))
              (mid (fx:and digit #xff))
              (hi _ (fx:>> digit 8)))
-            (ilist lo mid hi 
+            (ilist lo mid hi
                (λ () (rands->bytes rs)))))
 
       ;; eww, don't try this at home. to be fixed pretty soon. passed dieharder tests pretty well though.
       (define o (λ (f g) (λ (x) (f (g x)))))
       (define seed->rands adhoc-seed->rands)
 
-      (define seed->bits 
+      (define seed->bits
          (o rands->bits seed->rands))
-      
+
       (define seed->bytes
          (o rands->bytes seed->rands))
 
-      ;; note, a custom uncons could also promote random seeds to streams, but probably better to force 
+      ;; note, a custom uncons could also promote random seeds to streams, but probably better to force
       ;; being explicit about the choice of prng and require all functions to receive just digit streams.
 
       ;;;
@@ -207,7 +207,7 @@
       (define (rand-big rs n)
          (if (null? n)
             (values rs null #true)
-            (lets 
+            (lets
                ((rs head eq (rand-big rs (ncdr n)))
                 (this rs (uncons rs 0)))
                (if eq
@@ -230,7 +230,7 @@
             1
             (let loop ((n (fxmax)))
                (lets ((np _ (fx:>> n 1)))
-                  (if (fx:< np num) ;; we lost the high bit
+                  (if (less? np num) ;; we lost the high bit
                      n
                      (loop np))))))
 
@@ -239,27 +239,27 @@
             (lets
                ((digit rs (uncons rs #false))
                 (m (fx:and digit mask)))
-               (if (fx:< m n)
+               (if (less? m n)
                   (values rs m)
                   (loop rs mask)))))
 
-      ;; like rand-fixnum, but <= limit instead of < 
+      ;; like rand-fixnum, but <= limit instead of <
       (define (rand-bignum-topdigit rs n)
          (let loop ((rs rs) (mask (bitmask n)))
             (lets
                ((digit rs (uncons rs #false))
                 (m (fx:and digit mask)))
                (cond
-                  ((fx:< m n) (values rs m))
+                  ((less? m n) (values rs m))
                   ((eq? m n) (values rs m))
                   (else (loop rs mask))))))
-         
+
       (define (rand-bignum rs n)
          (let loop ((rs rs) (left n) (out null))
             (lets ((digit left left))
                (if (null? left)
                   ;; last bignum digit (most significant bits) -> grab a suitable fixnum and compare
-                  (lets 
+                  (lets
                      ((rs top (rand-bignum-topdigit rs digit))
                       (try (nrev-fix (cons top out))))
                      (if (< try n)
@@ -285,7 +285,7 @@
       ;   (if (eq? 0 (band 1023 n))
       ;      (let ((avg (div sum (max n 1))))
       ;         (print
-      ;            (list "at " n " sum " sum " avg " avg " delta percent " 
+      ;            (list "at " n " sum " sum " avg " avg " delta percent "
       ;               (let ((perc (div (* 100 (abs (- (>> lim 1) avg))) (>> lim 1))))
       ;                  perc)))))
       ;   (lets ((rs val (rand rs lim)))
@@ -315,7 +315,7 @@
          (cond
             ((null? lst) out)
             ((eq? this (band bits this))
-               (select-members lst (- bits this) this 
+               (select-members lst (- bits this) this
                   (cons (car lst) out)))
             ((eq? this #x8000) ; highest fixnum bit
                (select-members (cdr lst) (ncdr bits) 1 out))
@@ -354,19 +354,19 @@
             ((null? ll)
                (values rs (return-selection res)))
             ((pair? ll)
-               (lets 
+               (lets
                   ((rs x (rand rs p))
                    (res (if (< x n) (rset res x (car ll)) res)))
                   (reservoir-sampler rs (cdr ll) n (+ p 1) res)))
-            (else 
+            (else
                (reservoir-sampler rs (ll) n p res))))
 
       ;; populate initial n elements to reservoir and start sampler if full
       (define (reservoir-init rs ll n p res)
          (cond
-            ((null? ll) 
+            ((null? ll)
                (values rs (return-selection res)))
-            ((= n p) 
+            ((= n p)
                (reservoir-sampler rs ll n (+ n 1) res))
             ((pair? ll) (reservoir-init rs (cdr ll) n (+ p 1) (rcons (car ll) res)))
             (else (reservoir-init rs (ll) n p res))))
@@ -397,7 +397,7 @@
                (values rs n))))
 
       (define (rand-range rs lo hi)
-         (if (< lo hi) 
+         (if (< lo hi)
             ;; fixme: is this indeed ok?
             (lets ((rs o (rand rs (- hi lo))))
                (values rs (+ o lo)))
@@ -421,7 +421,7 @@
          (lets ((n rs (uncons rs 0)))
             (values rs (cons (cons n val) done))))
 
-      (define (carless a b) (fx:< (car a) (car b))) ; labels are fixnums, so use eq-like comparison
+      (define (carless a b) (less? (car a) (car b))) ; labels are fixnums, so use eq-like comparison
 
       (define (shuffle-merge rs pairs tail rec)
          (if (null? pairs)
@@ -436,7 +436,7 @@
 
       (define (shuffler rs lst tail)
          (if (null? lst)
-            (values rs tail) 
+            (values rs tail)
             (lets
                ((rs opts (fold2 shuffle-label rs null lst))
                 (opts (sort carless opts)))
@@ -461,13 +461,13 @@
          (let loop ((rs rs) (out null) (n n))
             (if (eq? n 0)
                (values rs (raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
-               (lets 
+               (lets
                   ((d rs (uncons rs 0))
-                   (n _ (fx:- n 1))) 
+                   (n _ (fx:- n 1)))
                   (loop rs (cons (fx:and d 255) out) n)))))
 
       (define (random-data-file rs path)
-         (let 
+         (let
             ((port (open-output-file path))
              (block (* 1024 32)) ; write in 32kb blocks
              (megs (* 1024 500))) ; ~1GB is enough for dieharder and smallcrush, 500 might be enough for crush?
@@ -509,9 +509,9 @@
       ;;;
 
       (define (prng-speed str)
-         (let 
+         (let
             ((start (time-ms))
-             (ndigits (* 1024 64))) ; make 1mb 
+             (ndigits (* 1024 64))) ; make 1mb
             (let loop ((str str) (n ndigits))
                (if (eq? n 0)
                   (print (floor (/ (* ndigits 16) (- (time-ms) start))) " bits/ms")
@@ -546,7 +546,7 @@
 
 ))
 
-;; test program for dieharder stdout test 
+;; test program for dieharder stdout test
 ;;   $ bin/ol -O2 -o rand.c owl/random.scm && gcc -O2 -o rand rand.c && ./rand | dieharder -a -g 200 | tee report.txt)
 
 (import (owl random))
@@ -560,8 +560,7 @@
             (if (write-byte-vector stdout (list->byte-vector (reverse out))) ;; keep order
                (loop rs null 0)))
          (else
-            (lets 
+            (lets
                ((byte rs (uncons rs 0))
                 (n _ (fx:+ n 1)))
                (loop rs (cons byte out) n))))))
-      

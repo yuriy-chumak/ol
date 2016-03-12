@@ -130,7 +130,7 @@
       (define (vec-seek v ds)
          (lets ((d ds ds))
             (if (null? ds)
-               (if (fx:< d *vec-leaf-size*) ; just one byte at top digit?
+               (if (less? d *vec-leaf-size*) ; just one byte at top digit?
                   (vec-dispatch-1 v d)
                   (vec-dispatch-1 (vec-dispatch-2 v d) d))
                (vec-dispatch-1 (vec-seek v ds) d))))
@@ -165,7 +165,7 @@
                (cond
                   ((eq? (type v) type-vector-raw)
                      (ref v n))
-                  ((fx:< n *vec-leaf-size*)
+                  ((less? n *vec-leaf-size*)
                      (vec-ref-digit v n))
                   (else
                      (vec-ref-digit (vec-dispatch-2 v n) (fx:and n *vec-leaf-max*)))))
@@ -186,7 +186,7 @@
             (type-fix+
                (cond
                   ((eq? (type v) type-vector-raw) v)
-                  ((fx:< n *vec-leaf-size*) v)
+                  ((less? n *vec-leaf-size*) v)
                   (else (vec-dispatch-2 v n))))
             (type-int+
                (vec-leaf-big v n))
@@ -422,7 +422,7 @@
                      ;; last leaf reached, iter prefix and stop
                      (iter-leaf-range (vec-leaf-of v p) 0 n null)))
                ((eq? n 0) null)
-               ((fx:< n (- *vec-leaf-size* start))
+               ((less? n (- *vec-leaf-size* start))
                   ;; the whole range is in a part of this leaf
                   (iter-leaf-range (vec-leaf-of v p) start n null))
                (else

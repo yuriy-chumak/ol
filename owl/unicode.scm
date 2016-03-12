@@ -30,16 +30,16 @@
 
    (begin
       ;; UTF-8
-      ; overall idea: each unicode code point is represented as a leading byte 
-      ; possibly followed by extra bytes. a leading byte in ASCII range 0-127 
-      ; represents the corresponding code point. for higher values the high bits 
-      ; are used as a tag to mark how many of the following bytes also have bits 
+      ; overall idea: each unicode code point is represented as a leading byte
+      ; possibly followed by extra bytes. a leading byte in ASCII range 0-127
+      ; represents the corresponding code point. for higher values the high bits
+      ; are used as a tag to mark how many of the following bytes also have bits
       ; belonging to this code point, and the subsequent ones have extension tag
       ; and some payload bits.
       ;
       ; codepoint = [typetag|high-bits] [01|lower-bits]*
       ; 0xxxxxxx -- 7-bit        -- 7-bit codepoints as in ASCII
-      ; 10xxxxxx -- continuation -- extra-payload bits for large code points 
+      ; 10xxxxxx -- continuation -- extra-payload bits for large code points
       ; 110xxxxx -- 2-byte char  -- leading 5 bits (followed by 1 cont bytes)
       ; 1110xxxx -- 3-byte char  -- leading 4 bits (followed by 2 cont bytes)
       ; 11110xxx -- 4-byte char  -- leading 3 bits (followed by 3 cont bytes)
@@ -84,7 +84,7 @@
 
       ;(define (encode-point rout val)
       ;   (cond
-      ;      ((fx:< val 128) val) ; the usual suspect
+      ;      ((less? val 128) val) ; the usual suspect
       ;      ((< val #b100000000000) ; fits in 5+6 bits with 2-byte encoding
       ;         (extra-encode rout val #b11000000 1 #b11111))
       ;      ((< val #b10000000000000000) ; fits in 4 + 2*6 bits with 3-byte encoding
@@ -97,7 +97,7 @@
 
       ; grab low 6 bits of a number
       (define (ext n)
-         (fx:or extension 
+         (fx:or extension
             (band n #b111111)))
 
       (define (encode-point point tl)
@@ -238,22 +238,18 @@
       ;;; encoding code points to byte-lists
 
 
-      ;;; decoding byte-lists to code points 
+      ;;; decoding byte-lists to code points
 
       (define (two-byte-point a b)
          (bor (<< (fx:and a #x1f) 6) (fx:and b #x3f)))
 
       (define (three-byte-point a b c)
-         (bor (bor (<< (fx:and a #x0f) 12) (<< (fx:and b #x3f) 6)) 
+         (bor (bor (<< (fx:and a #x0f) 12) (<< (fx:and b #x3f) 6))
             (fx:and c #x3f)))
 
       (define (four-byte-point a b c d)
-         (bor 
-            (bor (<< (fx:and a #x07) 18) (<< (fx:and b #x3f) 12)) 
+         (bor
+            (bor (<< (fx:and a #x07) 18) (<< (fx:and b #x3f) 12))
             (bor (<< (fx:and c #x3f)  6)     (fx:and d #x3f))))
 
 ))
-
-
-
-         

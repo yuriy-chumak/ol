@@ -1457,13 +1457,12 @@ invoke:;
 #	define CDR   53
 #	define REF   47
 
-#	define SIZEB 28
 //#	define REFB  48
 
 	// ?
 #	define SET   45
 
-	// АЛУ
+	// ?
 #	define EQ    54
 #	define LESS  44
 
@@ -1998,23 +1997,8 @@ invoke:;
 			ip += 4; break; }
 
 
-		case SIZEB: { // sizeb obj to
-			word* T = (word*) A0;
-			if (is_value(T))
-				A1 = IFALSE;
-			else {
-				word hdr = *T;
-				if (is_raw_value(hdr))
-					A1 = F((hdrsize(hdr)-1)*W - padsize(hdr));
-				else
-					A1 = IFALSE;
-			}
-			ip += 2; break;
-		}
-
-
-		// ошибки!
-		case 17: /* arity error */
+		// ошибка арности
+		case 17:
 			ERROR(17, this, F(acc));
 			break;
 
