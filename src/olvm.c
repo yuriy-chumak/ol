@@ -523,6 +523,7 @@ struct object
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
 #define is_const(ob)                (typeof (ob) == TCONST)
+#define is_port(ob)                 ( (ob & 0xFF) == ((TPORT << TPOS) | 2) ) // (is_value(ob) && typeof(ob) == TPORT)
 
 #define is_pair(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HPAIR)
 #define is_npair(ob)                (is_pointer(ob) &&        (*(word*)(ob)) == HINT)
@@ -531,7 +532,6 @@ struct object
 #define is_complex(ob)              (is_pointer(ob) &&        (*(word*)(ob)) == HCOMPLEX)
 #define is_string(ob)               (is_pointer(ob) && typeof (*(word*)(ob)) == TSTRING)
 #define is_tuple(ob)                (is_pointer(ob) && typeof (*(word*)(ob)) == TTUPLE)
-#define is_port(ob)                 (is_pointer(ob) && typeof (*(word*)(ob)) == TPORT) // stdin, stdout, stderr can have paddings :(
 #define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HWORD)
 
 #define is_number(ob)               (is_npair(ob)  || (is_value(ob) && typeof (ob) == TFIX))
@@ -546,6 +546,8 @@ struct object
 #define cadr(o)                     car(cdr(o))
 #define cdar(o)                     cdr(car(o))
 #define cddr(o)                     cdr(cdr(o))
+
+#define port(o)                     (word)imm_val(o)
 
 // набор макросов - проверок для команд
 // car, cdr:
@@ -644,6 +646,9 @@ typedef struct heap_t
 
 
 // -= new =--------------------------------------------
+// создает порт, НЕ аллоцирует память
+#define make_port(a)               ({ assert((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
+
 // выделить блок памяти, unsafe
 #define NEW(size) ({\
 	word* addr = fp;\
@@ -862,13 +867,6 @@ word* p = new_bytevector(TSTRING, length);\
 #define new_string(...) NEW_STRING_MACRO(__VA_ARGS__, NEW_STRING2, NEW_STRING)(__VA_ARGS__)
 
 
-// создать новый порт
-#define new_port(a) ({\
-word value = (word) a;\
-	word* me = new (TPORT, 2, 0);\
-	me[1] = value;\
-	/*return*/ me;\
-})
 #define new_native_function(a) ({\
 word value = (word) a;\
 	word* me = new (TWORD, 2, 0);\
@@ -1830,10 +1828,10 @@ invoke:;
 			if (is_value(T)) {
 				int val = imm_val(T);
 				if (type == TPORT) {
-//					if (val == 0 || val == 1 || val == 2)
-						A2 = (word)new_port(val);
-//					else
-//						A2 = IFALSE;
+					if (val >= 0 && val <= 2)
+						A2 = make_port(val);
+					else
+						A2 = IFALSE;
 				}
 				else
 					A2 = make_value(type, val);
@@ -2264,7 +2262,7 @@ invoke:;
 			case SYSCALL_READ + SECCOMP:
 			case SYSCALL_READ: {
 				CHECK(is_port(a), a, SYSCALL);
-				int portfd = car (a);
+				int portfd = port(a);
 				int size = svtoi (b);
 
 				if (size < 0)
@@ -2305,7 +2303,7 @@ invoke:;
 			case SYSCALL_WRITE + SECCOMP:
 			case SYSCALL_WRITE: {
 				CHECK(is_port(a), a, SYSCALL);
-				int portfd = car (a);
+				int portfd = port(a);
 //				CHECK(is_port(a) || (is_direct(a) && (uvtoi(a) <= 2)), a, SYSCALL);
 //				int portfd = is_port(a) ? car (a) : uvtoi(a);
 				int size = svtoi (c);
@@ -2353,7 +2351,7 @@ invoke:;
 					break;
 				}
 				set_blocking(file, 0);
-				result = new_port(file);
+				result = make_port(file);
 
 				break;
 			}
@@ -2361,7 +2359,7 @@ invoke:;
 			// CLOSE
 			case SYSCALL_CLOSE: {
 				CHECK(is_port(a), a, SYSCALL);
-				int portfd = car (a);
+				int portfd = port(a);
 
 				if (close(portfd) == 0)
 					result = (word*)ITRUE;
@@ -2405,7 +2403,7 @@ invoke:;
 			}
 			case SYSCALL_FSTAT: {
 				CHECK(is_port(a), a, SYSCALL);
-				int portfd = car (a);
+				int portfd = port(a);
 
 				struct stat st;
 				if (fstat(portfd, &st) < 0)
@@ -2421,7 +2419,7 @@ invoke:;
 				if (!is_port(a))
 					break;
 
-				int portfd = car (a);
+				int portfd = port(a);
 				int ioctl = uvtoi(b);
 
 				switch (ioctl + seccompp) {
@@ -2449,14 +2447,14 @@ invoke:;
 				word* A = (word*)a;
 				DIR *dirp = opendir((char*) &A[1]);
 				if (dirp)
-					result = new_port(dirp);
+					result = make_port(dirp);
 				break;
 			}
 			// get directory entry
 			case SYSCALL_GETDENTS:
 			case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
 				CHECK(is_port(a), a, SYSCALL);
-				DIR* dirp = (DIR*) car (a);
+				DIR* dirp = (DIR*) port(a);
 
 				struct dirent *dire = readdir(dirp);
 				if (!dire) {
@@ -2502,14 +2500,14 @@ invoke:;
 			case 41: { // socket (todo: options: STREAM or DGRAM)
 				int sock = socket(PF_INET, SOCK_STREAM, 0);
 				if (sock != -1)
-					result = new_port (sock);
+					result = make_port (sock);
 				break;
 			}
 
 			// CONNECT
 			case 42: { // (connect sockfd host port)
 				CHECK(is_port(a), a, SYSCALL);
-				int sockfd = car (a);
+				int sockfd = port(a);
 				word* host = (word*) b; // todo: check for string type
 				int port = uvtoi (c);
 
@@ -2536,7 +2534,7 @@ invoke:;
 			// http://linux.die.net/man/2/shutdown
 			case 48: { // (shutdown socket #f #f)
 				CHECK(is_port(a), a, SYSCALL);
-				int socket = car (a);
+				int socket = port(a);
 
 				// On error, -1 is returned
 				if (shutdown(socket, 2) != 0) // both
@@ -2550,7 +2548,7 @@ invoke:;
 			// http://linux.die.net/man/2/bind
 			case 49: { //  (socket, port, #false) // todo: c for options
 				CHECK(is_port(a), a, SYSCALL);
-				int sockfd = car (a);
+				int sockfd = port(a);
 				int port = uvtoi (b);
 
 				// todo: assert on argument types
@@ -2571,7 +2569,7 @@ invoke:;
 			// as a socket that will be used to accept incoming connection requests using accept(2).
 			case 50: {
 				CHECK(is_port(a), a, SYSCALL);
-				int sockfd = car (a);
+				int sockfd = port(a);
 
 				// On success, zero is returned.
 				if (listen(sockfd, 42) == 0) {
@@ -2586,7 +2584,7 @@ invoke:;
 			// http://linux.die.net/man/2/accept
 			case 43: { // (accept sockfd)
 				CHECK(is_port(a), a, SYSCALL);
-				int sockfd = car (a);
+				int sockfd = port(a);
 
 				struct sockaddr_in addr;
 				socklen_t len = sizeof(addr);
@@ -2604,7 +2602,7 @@ invoke:;
 				flags = (flags | O_NONBLOCK);
 				if (fcntl(sock, F_SETFL, flags) == 0)
 #endif
-					result = new_port (sock);
+					result = make_port (sock);
 				break;
 			}
 
@@ -2612,7 +2610,7 @@ invoke:;
 			// http://linux.die.net/man/2/select
 			case 23: { // (select sockfd)
 				CHECK(is_port(a), a, SYSCALL);
-				int sockfd = car (a);
+				int sockfd = port(a);
 				int timeus = is_number(b) ? untoi (b) : 100000;
 				// todo: timeout as "b"
 
@@ -2631,7 +2629,7 @@ invoke:;
 			// http://linux.die.net/man/2/getpeername
 			case 51: { // (getpeername sockfd)
 				CHECK(is_port(a), a, SYSCALL);
-				int sockfd = car (a);
+				int sockfd = port(a);
 
 				// todo: https://svn.code.sf.net/p/plibc/code/trunk/plibc/src/inet_ntop.c
 				struct sockaddr_storage peer;
@@ -2732,7 +2730,7 @@ invoke:;
 							const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
 							for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
 								if (is_port(car(c)))
-									dup2(caar(c), in[i]), c = cdr (c);
+									dup2(port(car(c)), in[i]), c = cdr (c);
 						}
 // DEBUG:					else if (c != IFALSE)
 //								fprintf(stderr, "invalid value for execve\n");
@@ -3141,12 +3139,12 @@ invoke:;
 					break; // invalid filename, return #false
 
 				if (module)
-					result = new_port(module);
+					result = new_native_function(module);
 				break;
 			}
 
 			case SYSCALL_DLCLOSE: {
-				CHECK(is_port(a), a, SYSCALL);
+				//CHECK(is_port(a), a, SYSCALL);
 				void* module = (void*)car (a);
 
 				if (dlclose(module) == 0)
@@ -3155,7 +3153,7 @@ invoke:;
 			}
 
 			case SYSCALL_DLSYM: { // (dlsym module function #false)
-				CHECK(is_port(a), a, SYSCALL);
+				//CHECK(is_port(a), a, SYSCALL);
 				void* module = (void*)car (a);
 
 				word* symbol = (word*) b;
@@ -4233,7 +4231,7 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
 		case TPORT:
-			result = new_port (got);
+			result = make_port (got);
 			break;
 		case TWORD:
 			if (got)
