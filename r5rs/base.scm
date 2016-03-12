@@ -33,8 +33,8 @@
       ; 1.3.3  Entry format
       ; 1.3.4  Evaluation examples
       ; 1.3.5  Naming conventions
-      
-      
+
+
       ;;; Chapter 2
       ;;; Lexical conventions
       ;
@@ -68,8 +68,8 @@
       ; 3.3  External representations
       ; 3.4  Storage model
       ; 3.5  Proper tail recursion
-      
-      
+
+
       ;;; Chapter 4
       ;;; Expressions
       ; 4.1  Primitive expression types
@@ -88,14 +88,14 @@
       ; 4.1.4  Procedures
       ; syntax:  (lambda <formals> <body>)
       (define-syntax λ
-         (syntax-rules () 
+         (syntax-rules ()
             ((λ . x) (lambda . x))))
 
       ; http://srfi.schemers.org/srfi-16/srfi-16.html
       ; srfi syntex: (case-lambda ...
       (define-syntax case-lambda      ;expand case-lambda syntax to to (_case-lambda <lambda> (_case-lambda ... (_case-lambda <lambda> <lambda)))
          (syntax-rules (lambda _case-lambda)
-            ((case-lambda) #false) 
+            ((case-lambda) #false)
             ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
             ((case-lambda (formals . body))
                ;; downgrade to a run-of-the-mill lambda
@@ -125,9 +125,9 @@
 
       ; ------------------
       ; 4.1.6  Assignments
-      ; syntax: set! <variable> <expression> 
+      ; syntax: set! <variable> <expression>
       ;(define-syntax set!
-      ;   (syntax-rules () 
+      ;   (syntax-rules ()
       ;      ((set! var val) (error "set! is not supported: " '(set! var val)))))
 
 
@@ -233,7 +233,7 @@
       ;                  (let keyword <bindings> <body>) named let, from 4.2.4 Iteration
       (define-syntax let
          (syntax-rules ()
-            ((let ((var val) ...) exp . rest) 
+            ((let ((var val) ...) exp . rest)
                ((lambda (var ...) exp . rest) val ...))
             ((let keyword ((var init) ...) exp . rest)
                (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
@@ -248,11 +248,11 @@
             ; http://srfi.schemers.org/srfi-71/srfi-71.html
             ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
                (receive (op . args)
-                  (lambda (var ...) 
+                  (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* ((var ... node) . rest-bindings) exp . rest-exps)
                (bind node
-                  (lambda (var ...) 
+                  (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* (((name ...) <= value) . rest) . code)
                (bind value
@@ -303,7 +303,7 @@
          (syntax-rules ()
             ((do ((var init step) ...) (test expr ...) command ...)
                (let loop ((var init) ...)
-                  (if test 
+                  (if test
                      (begin expr ...)
                      (loop step ...))))))
 
@@ -338,15 +338,15 @@
             ((quasiquote _work () (_sharp_vector . es))
                (list->vector
                   (quasiquote _work () es)))
-            ((quasiquote _work d (a . b))  
-               (cons (quasiquote _work d a) 
+            ((quasiquote _work d (a . b))
+               (cons (quasiquote _work d a)
                      (quasiquote _work d b)))
             ((quasiquote _work d atom)
                (quote atom))
             ((quasiquote . stuff)
                (quasiquote _work () . stuff))))
-      
-      
+
+
       ;; 4.3  Macros
       ; 4.3.1  Binding constructs for syntactic keywords
       ; 4.3.2  Pattern language
@@ -371,7 +371,7 @@
 ;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
             ((define op val)
                (_define op val))))
-               
+
 ;      ;; not defining directly because rlambda doesn't yet do variable arity
 ;      ;(define list ((lambda (x) x) (lambda x x)))
 ;
@@ -381,7 +381,7 @@
 ;      (define-syntax define*
 ;         (syntax-rules (print list)
 ;            ((define* (op . args) . body)
-;               (define (op . args) 
+;               (define (op . args)
 ;                  (print " * " (list (quote op) . args))
 ;                  .  body))
 ;            ((define* name (lambda (arg ...) . body))
@@ -442,7 +442,7 @@
       ;; ---------------------------
       ;; 6.1  Equivalence predicates
 
-      ; procedure:  (eqv? obj1 obj2) 
+      ; procedure:  (eqv? obj1 obj2)
       (define (eqv? a b)
          (cond
             ((eq? a b)
@@ -482,16 +482,16 @@
 
       ; --------------------------
       ; procedure: (eq? obj1 obj2)    * builtin
-      ; 
+      ;
       ; Rationale: It will usually be possible to implement `eq?' much more efficiently than `eqv?',
       ; for example, as a simple pointer comparison instead of as some more complicated operation.
       ; One reason is that it may not be possible to compute `eqv?' of two numbers in constant time,
       ; whereas `eq?' implemented as pointer comparison will always finish in constant time. `Eq?'
       ; may be used like `eqv?' in applications using procedures to implement objects with state
-      ; since it obeys the same constraints as `eqv?'. 
+      ; since it obeys the same constraints as `eqv?'.
 
       ; library procedure: (equal? obj1 obj2)
-      ; 
+      ;
 
 ;      (define-syntax (eqv? a b)
 ;         (cond
@@ -532,22 +532,22 @@
       ; -------------------------------
       ; This data types related to olvm
       ;     - not a part of r5rs -
-      (define type-fix+              0)
-      (define type-fix-             32)
-      (define type-int+             40)
-      (define type-int-             41)
-      (define type-rational         42)
-      (define type-complex          43)
-      
+      (define type-fix+              0) ; value
+      (define type-fix-             32) ; value
+      (define type-int+             40) ; reference
+      (define type-int-             41) ; reference
+      (define type-rational         42) ; reference
+      (define type-complex          43) ; reference
+
       ; 6.2.1  Numerical types
       ; 6.2.2  Exactness
       ; 6.2.3  Implementation restrictions
       ; 6.2.4  Syntax of numerical constants
-      
+
       ; ---------------------------
       ; 6.2.5  Numerical operations
       ;
-      ; procedure:  (number? obj) 
+      ; procedure:  (number? obj)
       (define (number? o)
          (case (type o)
             (type-fix+ #true)
@@ -557,48 +557,48 @@
             (type-rational #true)
             (type-complex #true)
             (else #false)))
-      
-      ; procedure:  (complex? obj) 
-      ; procedure:  (real? obj) 
-      ; procedure:  (rational? obj) 
-      ; procedure:  (integer? obj) 
-      ; procedure:  (exact? z) 
+
+      ; procedure:  (complex? obj)
+      ; procedure:  (real? obj)
+      ; procedure:  (rational? obj)
+      ; procedure:  (integer? obj)
+      ; procedure:  (exact? z)
       ; procedure:  (inexact? z)
-      
+
       ; *** declared in (r5rs math), (r5rs math-extra)
       ; procedure:  (= z1 z2 z3 ...) <- (r5rs math)
-      ; procedure:  (< x1 x2 x3 ...) 
-      ; procedure:  (> x1 x2 x3 ...) 
-      ; procedure:  (<= x1 x2 x3 ...) 
-      ; procedure:  (>= x1 x2 x3 ...) 
-      ; library procedure:  (zero? z) 
-      ; library procedure:  (positive? x) 
-      ; library procedure:  (negative? x) 
-      ; library procedure:  (odd? n) 
-      ; library procedure:  (even? n)       
-      ; library procedure:  (max x1 x2 ...) 
-      ; library procedure:  (min x1 x2 ...) 
-      ; procedure:  (+ z1 ...) 
-      ; procedure:  (* z1 ...) 
-      ; procedure:  (- z1 z2) 
+      ; procedure:  (< x1 x2 x3 ...)
+      ; procedure:  (> x1 x2 x3 ...)
+      ; procedure:  (<= x1 x2 x3 ...)
+      ; procedure:  (>= x1 x2 x3 ...)
+      ; library procedure:  (zero? z)
+      ; library procedure:  (positive? x)
+      ; library procedure:  (negative? x)
+      ; library procedure:  (odd? n)
+      ; library procedure:  (even? n)
+      ; library procedure:  (max x1 x2 ...)
+      ; library procedure:  (min x1 x2 ...)
+      ; procedure:  (+ z1 ...)
+      ; procedure:  (* z1 ...)
+      ; procedure:  (- z1 z2)
       ; procedure:  (- z)
-      ; optional procedure:  (- z1 z2 ...) 
-      ; procedure:  (/ z1 z2) 
-      ; procedure:  (/ z) 
-      ; optional procedure:  (/ z1 z2 ...)       
+      ; optional procedure:  (- z1 z2 ...)
+      ; procedure:  (/ z1 z2)
+      ; procedure:  (/ z)
+      ; optional procedure:  (/ z1 z2 ...)
       ; library procedure: (abs x)
       ; procedure: quotient (n1 n2)
       ; procedure: remainder n1 n2
-      ; procedure: modulo n1 n2 
-      ; library procedure: gcd n1 ... 
-      ; library procedure: lcm n1 ... 
-      ; procedure: numerator q 
-      ; procedure: denominator q 
+      ; procedure: modulo n1 n2
+      ; library procedure: gcd n1 ...
+      ; library procedure: lcm n1 ...
+      ; procedure: numerator q
+      ; procedure: denominator q
       ; procedure: floor x
       ; procedure: ceiling x
       ; procedure: truncate x
-      ; procedure: round x 
-      ; library procedure: rationalize x y 
+      ; procedure: round x
+      ; library procedure: rationalize x y
       ; procedure: exp z
       ; procedure: log z
       ; procedure: sin z
@@ -607,17 +607,17 @@
       ; procedure: asin z
       ; procedure: acos z
       ; procedure: atan z
-      ; procedure: atan y x 
-      ; procedure: sqrt z 
-      ; procedure: expt z1 z2 
+      ; procedure: atan y x
+      ; procedure: sqrt z
+      ; procedure: expt z1 z2
       ; procedure: make-rectangular x1 x2
       ; procedure: make-polar x3 x4
       ; procedure: real-part z
       ; procedure: imag-part z
       ; procedure: magnitude z
-      ; procedure: angle z 
-      ; procedure: exact->inexact z 
-      ; procedure: inexact->exact z 
+      ; procedure: angle z
+      ; procedure: exact->inexact z
+      ; procedure: inexact->exact z
 
       ; ---------------------------------
       ; 6.2.6  Numerical input and output
@@ -625,14 +625,14 @@
       ; procedure:  (number->string z radix) <- (r5rs strings?)
 ;      (define (number->string n base)
 ;         (list->string (render-number n null base)))
-      
+
       ; procedure:  (string->number string) <- (lang s-exp?)
       ; procedure:  (string->number string radix) <- (lang s-exp?)
 ;      (define string->number (case-lambda
 ;         ((str base) (list->number (string->list str) base))
 ;         (str        (list->number (string->list str) 10))))
-      
-      
+
+
       ;; *********************
       ;; 6.3  Other data types
       ;
@@ -642,39 +642,58 @@
       ; -------------------------------
       ; This data types related to olvm
       ;     - not a part of r5rs -
-      (define type-pair              1)
-      (define type-tuple             2)
-      (define type-string            3)
-      (define type-symbol            4)
+;      (define type-fix-             32) ; value
+;      (define type-int+             40) ; reference
+;      (define type-int-             41) ; reference
+;      (define type-rational         42) ; reference
+;      (define type-complex          43) ; reference
 
-      (define type-bytecode         16)
-      (define type-proc             17)
-      (define type-clos             18)
-      (define type-thread-state     31)
+      ;define type-fix+              0) ; value
+      (define type-pair              1) ; reference
+      (define type-tuple             2) ; reference
+      (define type-string            3) ; reference, raw -> 35 (#b100000 + 3)?
+      (define type-symbol            4) ; reference
+      ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
+      ; 6
+      ; 7
+      (define type-ff-black-leaf     8) ; reference ; TODO: move to 28
+      ; 9
 
-      (define type-vector-dispatch  15)
-      (define type-vector-leaf      11)
-      (define type-vector-raw       19) ;; see also TBVEC in c/ovm.c
-      (define type-rlist-node       14)
-      (define type-rlist-spine      10)
+      (define type-rlist-spine      10) ; reference
+      (define type-vector-leaf      11) ; reference
 
-      (define type-string-wide      22)
-      (define type-string-dispatch  21)
-      (define type-record            5)
+      (define type-port             12) ; value, raw
+      (define type-const            13) ; value
+
+      (define type-rlist-node       14) ; reference
+      (define type-vector-dispatch  15) ; reference
+
+      (define type-bytecode         16) ; reference, raw
+      (define type-proc             17) ; reference
+      (define type-clos             18) ; reference
+
+      (define type-vector-raw       19) ; references, raw    ; see also TBVEC in c/ovm.c
+
+      ; 20
+      (define type-string-dispatch  21) ; reference
+      (define type-string-wide      22) ; reference, raw
+      ; 23
 
       ;; transitional trees or future ffs
-      (define type-ff               24)
-      (define type-ff-r             25)
-      (define type-ff-red           26)
-      (define type-ff-red-r         27)
-      (define type-ff-black-leaf     8)
-
+      (define type-ff               24) ; reference
+      (define type-ff-r             25) ; reference
+      (define type-ff-red           26) ; reference
+      (define type-ff-red-r         27) ; reference
       ; + type-ff-red, type-ff-right
-      (define type-eof              20) ;; moved from 4, clashing with symbols
-;     (define type-const            13) ;; old type-null, moved from 1, clashing with pairs
-      (define type-port             12) ;; always raw data
-      (define type-memp             62) ;; always raw data
 
+      ;28
+      ;29
+      ;30
+
+      (define type-thread-state     31) ; reference
+
+      ; это дополнительные типы для PINVOKE механизма
+      (define type-memp             62) ; value
 
       ; ---------------
       ; 6.3.1  Booleans
@@ -683,7 +702,7 @@
       ; Except for #f, all standard Scheme values, including #t, pairs, the empty list, symbols,
       ; numbers, strings, vectors, and procedures, count as true.
       ;      Note: Programmers accustomed to other dialects of Lisp should be aware that Scheme
-      ;            distinguishes both #f and the empty list from the symbol nil. 
+      ;            distinguishes both #f and the empty list from the symbol nil.
       ; Boolean constants evaluate to themselves, so they do not need to be quoted in programs.
       (assert #t                                     ==>  #t)
       (assert #f                                     ==>  #f)
@@ -701,7 +720,7 @@
       (assert (not '())                              ==>  #f)
       (assert (not cons)                             ==>  #f)
       (assert (not 'nil)                             ==>  #f)
-         
+
 
       ; library procedure:  (boolean? obj)
       (define (boolean? o)
@@ -721,7 +740,7 @@
       ;   6.3.4 -> (r5rs characters)
       ;   6.3.5 -> (r5rs strings)
       ;   6.3.6 -> (r5rs vectors)
-      ;   
+      ;
       ;
 
       ; ----------------------
@@ -751,7 +770,7 @@
       ; library procedure:  (null? obj)
       (define (null? x)
          (eq? x '()))
-         
+
       ; library procedure:  (list? obj)
       (define (list? l)
          (cond
@@ -765,7 +784,7 @@
             ((list) '())
             ((list a . b)
                (cons a (list . b)))))
-               
+
       ; library procedure:  (length list)
       (define (length l)
          (let loop ((n 0) (l l))
@@ -773,19 +792,19 @@
                n
                (let* ((n _ (fx:+ n 1)))
                   (loop n (cdr l))))))
-                  
+
       (assert (length '(a b c))                      ==>  3)
       (assert (length '(a (b) (c d e)))              ==>  3)
       (assert (length '())                           ==>  0)
 
-                  
+
 
       ; library procedure:  (append list ...)
 ;      (define (app a b app)
 ;         (if (null? a)
 ;            b
 ;            (cons (car a) (app (cdr a) b app))))
-;      
+;
 ;      (define (appl l appl)
 ;         (if (null? (cdr l))
 ;            (car l)
@@ -812,26 +831,26 @@
          (if (null? a)
             b
             (rev-loop (cdr a) (cons (car a) b)))))
-      
+
       ; library procedure:  (list-tail list k)
       ; library procedure:  (list-ref list k)
-      
-      ; library procedure:  (memq obj list) 
-      ; library procedure:  (memv obj list) 
-      ; library procedure:  (member obj list) 
-      
-      ; library procedure:  (assq obj alist) 
-      ; library procedure:  (assv obj alist) 
-      ; library procedure:  (assoc obj alist) 
-      
+
+      ; library procedure:  (memq obj list)
+      ; library procedure:  (memv obj list)
+      ; library procedure:  (member obj list)
+
+      ; library procedure:  (assq obj alist)
+      ; library procedure:  (assv obj alist)
+      ; library procedure:  (assoc obj alist)
+
 
       ; --------------
       ; 6.3.3. Symbols
-      
+
       ; procedure:  (symbol? obj)
       (define (symbol? o)
          (eq? (type o) type-symbol))
-         
+
       ; procedure:  (symbol->string symbol) *tbd
       ; procedure:  (string->symbol string) *tbd
 
@@ -917,7 +936,7 @@
 
        ; library procedure:  (for-each proc list1 list2 ...)
        ; library procedure:  (force promise)
-       
+
        ; procedure:  (call-with-current-continuation proc)
        ; Continuation - http://en.wikipedia.org/wiki/Continuation
        (define apply-cont (raw type-bytecode '(#x54)))  ;; не экспортим, внутренняя
@@ -931,13 +950,13 @@
                         ((c . x) (apply-cont k x))))))) ; (apply-cont k x)
 
        (define call/cc call-with-current-continuation)
-       
-       
+
+
        ; procedure:  (values obj ...)
        ; procedure:  (call-with-values producer consumer)
        ; procedure:  (dynamic-wind before thunk after)
-       ; 
-       
+       ;
+
        ;; 6.5  Eval
        ; ...
 
@@ -950,7 +969,7 @@
             ((tuple a . bs) ;; there are no such things as 0-tuples
                (mkt 2 a . bs))))
 
-      ; replace this with typed destructuring compare later on 
+      ; replace this with typed destructuring compare later on
 
       (define-syntax tuple-case
          (syntax-rules (else _ is eq? bind div)
@@ -981,7 +1000,7 @@
             ((tuple-case tuple case ...)
                (let ((type (ref tuple 1)))
                   (tuple-case 42 tuple type case ...)))))
-       
+
 
 
 
@@ -1007,7 +1026,7 @@
 
 
       ; i hate special characters, especially in such common operations.
-      ; let* (let sequence) is way prettier and a bit more descriptive 
+      ; let* (let sequence) is way prettier and a bit more descriptive
 
 
       ;; now a function
@@ -1083,11 +1102,17 @@
       ;; (sizeb x)       #false                    n               #false
 
       (define (value? obj) (eq? #false (size obj)))
-
-      (define (immediate? obj) (eq? #false (size obj)))
       (define reference? size)
-      (define allocated? size)
-      (define raw?       sizeb)
+      (define raw?      sizeb)
+      ;(define (raw? o) (syscall 1001 o #f #f))
+;         (case (type o)
+;            (type-string #t)
+;            (type-string-wide #t)
+;            (type-bytecode #t)
+;            (type-port #t)
+;            (type-vector-raw #t)
+;
+;         ))
 
 
 
@@ -1105,7 +1130,7 @@
       ;
       ; These predicates define the types boolean, pair, symbol, number, char (or character), string, vector, port, and procedure. The empty list is a special object of its own type; it satisfies none of the above predicates.
       ;
-      ; Although there is a separate boolean type, any Scheme value can be used as a boolean value for the purpose of a conditional test. As explained in section 6.3.1, all values count as true in such a test except for #f. This report uses the word ``true'' to refer to any Scheme value except #f, and the word ``false'' to refer to #f. 
+      ; Although there is a separate boolean type, any Scheme value can be used as a boolean value for the purpose of a conditional test. As explained in section 6.3.1, all values count as true in such a test except for #f. This report uses the word ``true'' to refer to any Scheme value except #f, and the word ``false'' to refer to #f.
       (define (port? o)
          (eq? (type o) type-port))
 
@@ -1153,13 +1178,13 @@
       ;; (not obj) library procedure
 
 
-      ; 
-      ; 
+      ;
+      ;
 
       ; 6.4 Control features
-      
-      ;; force is effectively unnecessary in Ol, so might as well signal a 
-      ;; warning if this is used, because the code probably assumes 
+
+      ;; force is effectively unnecessary in Ol, so might as well signal a
+      ;; warning if this is used, because the code probably assumes
       ;; mutable state.
 
       (define (force thunk) (thunk))
@@ -1168,7 +1193,7 @@
       ;(assert #t (procedure? car))
       ;(assert #f (procedure? 'car))
       ;(assert #t (procedure? (lambda (x) x)))
-      
+
 
       ;; essential procedure: apply proc args
       ;; procedure: apply proc arg1 ... args
@@ -1181,14 +1206,14 @@
       ; non standard, owl extension
       (define-syntax lets/cc
          (syntax-rules (call/cc)
-            ((lets/cc (om . nom) . fail) 
-               (syntax-error "let/cc: continuation name cannot be " (quote (om . nom)))) 
-            ((lets/cc var . body) 
+            ((lets/cc (om . nom) . fail)
+               (syntax-error "let/cc: continuation name cannot be " (quote (om . nom))))
+            ((lets/cc var . body)
                (call/cc (λ (var) (lets . body))))))
 
       ; internal, todo: to be created and renamed
       (define sys (raw 16 '(27 4 5 6 7 8  24 8)))
-      
+
       ; differs from previous by using (equal?) instead of (eq?)
       (define-syntax assert
          (syntax-rules (equal? list ==>)
@@ -1225,9 +1250,8 @@
       type-rational
       type-int+
       type-int-
-      type-record
 
-      value? immediate? allocated? raw?
+      value? raw? reference?
 
       type-bytecode
       type-proc
@@ -1239,7 +1263,6 @@
       type-vector-leaf
       type-vector-raw
       type-ff-black-leaf
-      type-eof
       type-tuple
       type-symbol
 ;      type-const
@@ -1269,6 +1292,6 @@
       boolean? pair? symbol? number? char? string? vector? port? procedure? null?
       ; ol extension:
       bytecode? function? ff?
-      
+
       map list?
 ))

@@ -3,31 +3,31 @@
 ;;;
 ;
 ; fasl protocl for inter-owl/process communication:
-;	- each message is a fasl-encoded object
-;	- all protocol-messages are plain owl objects
-;		+ therefore, the this will work mostly like if the things
+;  - each message is a fasl-encoded object
+;  - all protocol-messages are plain owl objects
+;     + therefore, the this will work mostly like if the things
 ;       were running on the same machine and/or process
-;	- remote execution keeps *no* sharing state.
-;		+ all threads are self-contained, and must be able to 
+;  - remote execution keeps *no* sharing state.
+;     + all threads are self-contained, and must be able to
 ;       migrate elsewhere at any point (modulo io)
 ;  - evaluator node operation:
-;		+ contains a thread scheduler and one thread handling thread
+;     + contains a thread scheduler and one thread handling thread
 ;       and object migration
-;		+ has a mapping of local thread ids to their origins
-;		+ when a thread finishes (or crashes) serialize the result and send to origin with id
-;	 	+ when a new thread is received
-;			- choose a new thread identifier for it (fixnum)
-;			- fork it 
-;			- send #(1 <id>) as reponse
-;	- evaluator messages
-;		+ #(1 <id>) - reponse - thread forked 
-;		+ #(2 <id>) - request - ask if the thread is runnign
-;		+ #(3 <id>) - request - kill a thread (if running)
-;	- evaluator has a list of fds for active communication
-;		+ for a locally forked evaluator, just stdin and stdout 
-;		+ a server node has a socket to which it accepts connections
-;		+ authenticated things talk over a stream-ciphered channel, etc, with the same requests
-;		+ when a connection closes, all requests started by it are also closed (by default)
+;     + has a mapping of local thread ids to their origins
+;     + when a thread finishes (or crashes) serialize the result and send to origin with id
+;     + when a new thread is received
+;        - choose a new thread identifier for it (fixnum)
+;        - fork it
+;        - send #(1 <id>) as reponse
+;  - evaluator messages
+;     + #(1 <id>) - reponse - thread forked
+;     + #(2 <id>) - request - ask if the thread is runnign
+;     + #(3 <id>) - request - kill a thread (if running)
+;  - evaluator has a list of fds for active communication
+;     + for a locally forked evaluator, just stdin and stdout
+;     + a server node has a socket to which it accepts connections
+;     + authenticated things talk over a stream-ciphered channel, etc, with the same requests
+;     + when a connection closes, all requests started by it are also closed (by default)
 
 ;; todo: removing dependencies to bignum math would increase speed
 ;; todo: add a version which handles symbols and ff's specially
@@ -35,32 +35,32 @@
 ;; fixme: encoder which returns the number of objects is probably no longer needed
 
 ; protocol
-;	<obj> = 0 <type> <value> 				-- immediate object
-;			= 1 <type> <size> <field> ... -- allocated
-;			= 2 <type> <size> <byte>  ... -- allocated, raw data
+;  <obj> = 0 <type> <value>            -- immediate object
+;        = 1 <type> <size> <field> ... -- allocated
+;        = 2 <type> <size> <byte>  ... -- allocated, raw data
 ; now used
-;		00 - imm
-;		01 - alloc
-;		10 - alloc raw
-;		11 - free -> use as tag for allocs where the type fits 6 bits (not in use atm)
-;	
-;	<field> = 0 <type> <val> -- immediate
-;			  = <N> -- pointer to nth last object (see hack warning below)
+;     00 - imm
+;     01 - alloc
+;     10 - alloc raw
+;     11 - free -> use as tag for allocs where the type fits 6 bits (not in use atm)
+;
+;  <field> = 0 <type> <val> -- immediate
+;          = <N> -- pointer to nth last object (see hack warning below)
 
 (define-library (owl fasl)
 
-	(export 
-		fasl-encode 			; obj -> (byte ... 0)
-		fasl-encode-cooked 	; obj cook -> (byte ... 0), with (cook alloc-obj) -> alloc-obj' 
-		fasl-encode-stream   ; obj cook -> (bvec ...) stream
-		fasl-decode				; (byte ...) -> obj, input can be lazy
+   (export
+      fasl-encode          ; obj -> (byte ... 0)
+      fasl-encode-cooked   ; obj cook -> (byte ... 0), with (cook alloc-obj) -> alloc-obj'
+      fasl-encode-stream   ; obj cook -> (bvec ...) stream
+      fasl-decode          ; (byte ...) -> obj, input can be lazy
       decode-or            ; (byte ...) fail → object | (fail reason)
-		encode					; obj -> (byte ... 0), n-alloc-objs (mainly for bootstrapping)
-		tuple->list				; TEMPORARILY HERE
-		objects-below			; obj -> (obj ...), all allocated objects below obj
+      encode               ; obj -> (byte ... 0), n-alloc-objs (mainly for bootstrapping)
+      tuple->list          ; TEMPORARILY HERE
+      objects-below        ; obj -> (obj ...), all allocated objects below obj
       decode-stream        ; ll failval → (ob ...) | (ob .. failval)
       sub-objects          ; obj wanted? -> ((obj . n-occurrences) ...)
-		)
+      )
 
    (import
       (r5rs base)
@@ -116,7 +116,7 @@
       (define (partial-object-closure root pred)
          (define (clos seen obj)
             (cond
-               ((immediate? obj) seen)
+               ((value? obj) seen)
                ((not (pred obj)) seen)
                ((getf seen obj) =>
                   (λ (n) (fupd seen obj (+ n 1))))
@@ -135,7 +135,7 @@
       (define (object-closure obj)
          (partial-object-closure obj (λ (x) #t)))
 
-      (define (objects-below obj)	
+      (define (objects-below obj)
          (ff-fold
             (λ (out obj _) (cons obj out))
             null (object-closure obj)))
@@ -150,12 +150,12 @@
 
       (define (render-field clos pos)
          (λ (elem out)
-            (if (immediate? elem)
+            (if (value? elem)
                (enc-immediate elem out)
                (let ((target (get clos elem "bug")))
-                  ; hack warning: objects cannot refer to themselves and the 
-                  ; heap is unidirectional, so pos - target > 0, so a 0 can 
-                  ; be safely used as the immediate marker, and pointers can 
+                  ; hack warning: objects cannot refer to themselves and the
+                  ; heap is unidirectional, so pos - target > 0, so a 0 can
+                  ; be safely used as the immediate marker, and pointers can
                   ; have the delta directly encoded as a natural, which always
                   ; starts with a nonzero byte when the natural > 0
                   (send-number (- pos target) out)))))
@@ -187,8 +187,8 @@
                      ((t (type-byte-of val))
                       (s (size val)))
                      ; options for optimization
-                     ;	t and s fit in 6 bits -> pack (seems to be only about 1/20 compression)
-                     ;	t fits in 6 bits -> (+ (<< t 2) 3) (ditto)
+                     ;  t and s fit in 6 bits -> pack (seems to be only about 1/20 compression)
+                     ;  t fits in 6 bits -> (+ (<< t 2) 3) (ditto)
                      (ilist 1 t
                         (send-number s
                            (render-fields out (tuple->list val) pos clos))))))))
@@ -197,7 +197,7 @@
 
       ;; produce tail-first eagerly
       ;(define (encoder-output clos cook)
-      ;	(ff-foldr (encode-allocated clos cook) fasl-finale clos))
+      ;  (ff-foldr (encode-allocated clos cook) fasl-finale clos))
 
       (define (encoder-output clos cook)
          (let ((enc (encode-allocated clos cook)))
@@ -209,7 +209,7 @@
                         (enc (lambda () (loop (cdr kvs))) (car kv) (cdr kv))))
                   (else (loop (kvs)))))))
 
-               
+
       ; root cook-fn -> byte-stream
       (define (encoder obj cook)
          (encoder-output
@@ -219,7 +219,7 @@
 
       ; -> byte stream
       (define (encode obj cook)
-         (if (allocated? obj)
+         (if (reference? obj)
             (encoder obj cook)
             (enc-immediate obj null)))
 
@@ -238,7 +238,7 @@
       (define (chunk-stream bs n buff)
          (cond
             ((eq? n chunk-size)
-               (cons 
+               (cons
                   (list->byte-vector (reverse buff))
                   (chunk-stream bs 0 null)))
             ((null? bs)
@@ -254,7 +254,7 @@
       (define (fasl-encode-stream obj cook)
          (chunk-stream (encode obj cook) 0 null))
 
-      ;;; 
+      ;;;
       ;;; Decoder
       ;;;
 
@@ -269,9 +269,9 @@
             (if (eq? 0 (fx:and b 128)) ; leaf case
                (values ll (bor (<< top 7) b))
                (get-nat ll fail (bor (<< top 7) (band b low7))))))
-      
+
       (define (decode-immediate ll fail)
-         (lets 
+         (lets
             ((ll type (grab ll fail))
              (ll val  (get-nat ll fail 0)))
             (values ll (cast val type))))
@@ -324,7 +324,7 @@
                             (ll rbytes (get-bytes ll size fail null))
                             (obj (raw type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
-                     ((eq? kind 0) ;; fasl stream end marker 
+                     ((eq? kind 0) ;; fasl stream end marker
                         ;; object done
                         (values ll (rcar got)))
                      ((eq? (band kind 3) 3) ; shortcut allocated
@@ -348,7 +348,7 @@
                      ((null? ll) (fail enodata))
                      ((pair? ll)
                         ; a leading 0 is special and means the stream has no allocated objects, just one immediate one
-                        (if (eq? 0 (car ll)) 
+                        (if (eq? 0 (car ll))
                            (decode-immediate (cdr ll) fail)
                            (decoder ll null fail)))
                      (else (decode-or (ll) err)))))))

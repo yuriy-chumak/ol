@@ -119,7 +119,6 @@
       (define eof-value
          (cast 4 13))
       (define (eof? x)
-         ;(eq? type-eof (type x))
          (eq? x eof-value))))
 
 (import (owl render))
@@ -145,8 +144,8 @@
       ((eq? opcode 256)
          ; fixme, add but got ...
          (list 'function b 'expected a 'arguments))
-      ((eq? opcode 52) (list "car: bad pair: " a))
-      ((eq? opcode 53) (list "cdr: bad pair: " a))
+      ((eq? opcode 52) (list "car, bad pair: " a))
+      ((eq? opcode 53) (list "cdr, bad pair: " a))
       (else
          (list "error: " 'instruction opcode 'info (tuple a b)))))
 
@@ -460,13 +459,19 @@
 
    (define (walk trail node)
       (cond
-         ((immediate? node) trail)
+         ((value? node) trail)
          ((get trail node #false) trail)
          ((symbol? node)
             (let ((trail (put trail node 1)))
                (put trail tag
                   (cons node (get trail tag null)))))
-         ((raw? node) trail)
+         ((raw? node)
+            (cond
+               ((eq? (type node) type-bytecode) #t)
+               ((eq? (type node) type-string) #t)
+               ((eq? (type node) type-port) #t)
+               (else (print "raw: " node)))
+            trail)
          (else
             (fold walk
                (put trail node #true)
@@ -481,7 +486,7 @@
 ;--
 (define (code-refs seen obj)
    (cond
-      ((immediate? obj) (values seen empty))
+      ((value? obj) (values seen empty))
       ((bytecode? obj)
          (values seen (put empty obj 1)))
       ((get seen obj #false) =>

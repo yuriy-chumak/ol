@@ -26,20 +26,20 @@
    (1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 1 0 0 0 0 2 2 0 0 0 0 1)
    (1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 1 1 0 0 0 2 2 0 1 0 0 1)
    (1 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 2 2 0 0 2 2 0 0 0 1)
-   (1 0 1 1 1 1 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 2 0 2 2 0 2 2 0 0 0 1)
+   (1 0 1 1 1 1 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 3 0 2 2 0 2 2 0 0 0 1)
    (1 0 1 0 0 0 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 1 1 0 1 1  0 0 0 0 0 0 2 2 2 2 0 1 0 1)
-   (1 0 1 0 0 0 1 0 0 1 1 1 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 2 0 0 2 2 0 0 0 0 1)
-   (1 0 1 0 0 0 1 0 0 0 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0 1  0 1 0 0 0 0 0 2 2 2 0 0 0 1)
+   (1 0 1 0 0 0 1 0 0 1 1 1 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 3 0 0 2 2 0 0 0 0 1)
+   (1 0 1 0 0 0 1 0 0 0 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0 1  0 3 0 0 0 0 0 2 2 2 0 0 0 1)
    (1 0 1 0 0 0 1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 0 0 0 2 2 2 0 0 0 1)
-   (1 0 1 0 0 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0 0 1 0 0 0 0 2 2 0 0 0 0 1)
+   (1 0 1 0 0 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0 0 3 0 0 0 0 2 2 0 0 0 0 1)
    (1 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 0 0 0 2 2 0 0 0 0 1)
-   (1 0 0 0 0 0 0 0 0 1 1 1 1 0 0 1 1 1 1 1 1 1 1 0 1 1  0 0 0 1 0 0 0 2 2 0 0 0 0 1)
+   (1 0 0 0 0 0 0 0 0 1 1 1 1 0 0 1 1 1 1 1 1 1 1 0 1 1  0 0 0 3 0 0 0 2 2 0 0 0 0 1)
    (1 0 1 0 0 0 0 0 0 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 1 0 0 0 0 2 2 2 0 0 0 0 1)
    (1 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 2 0 0 0 0 0 1)
-   (1 0 1 1 1 1 1 1 1 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 0 0 0 0 2 0 1)
-   (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 0 2 0 0 0 0 1)
+   (1 0 1 1 1 1 1 1 1 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 0 0 0 0 3 0 1)
+   (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 0 3 0 0 0 0 1)
    (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 2 2 0 0 0 0 0 0 0 1)
-   (1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 0 0 0 0 0 2 0 0 1)
+   (1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 0 0 0 0 0 3 0 0 1)
    (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 2 2 0 0 0 0 0 0 0 1)
    (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  1 1 1 1 2 2 1 1 1 1 1 1 1 1)))
 
@@ -103,14 +103,16 @@
 
 
 (define (draw-map-cell x y cell alpha)
-   (glColor3f alpha alpha alpha)
    (cond
-   ((eq? cell 0)
-         (quadT x y 1/8 1/8))
-   ((eq? cell 2)
-         (glColor3f 0 (* alpha 0.4) alpha)
-         (quadT x y 6/8 5/8))
-   ((eq? cell 1) (cond
+   ((eq? cell 2) ; вода
+      (glColor3f 0 (* alpha 0.4) alpha)
+      (quadT x y 6/8 6/8))
+   ((eq? cell 3) ; кусты
+      (glColor3f 0 alpha (* alpha 0.4))
+      (quadT x y 5/8 5/8))
+   ((eq? cell 1)
+      (glColor3f alpha alpha alpha)
+      (cond
       ; монолитная стена
       ((and (eq? (safe-at (- x 1) y) 1)
             (eq? (safe-at (+ x 1) y) 1)
@@ -233,14 +235,23 @@
    (glOrtho -1 (+ WIDTH 1) (+ HEIGHT 3) -3  -1 1)
    (glMatrixMode GL_MODELVIEW)
 
-   (glEnable GL_TEXTURE_2D)
    (glBindTexture GL_TEXTURE_2D 0)
+   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+   (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
+      16 16
+      0 GL_BGR GL_UNSIGNED_BYTE (file->vector "ground.rgb"))
+   (glDisable GL_TEXTURE_2D)
+
+   (glEnable GL_TEXTURE_2D)
+   (glBindTexture GL_TEXTURE_2D 1)
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
    (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
       128 128
       0 GL_BGR GL_UNSIGNED_BYTE (file->vector "tileset.rgb"))
-   (glDisable GL_TEXTURE_2D)
+
+   ;(glEnable GL_BLEND)
 
    (list #empty))
 
@@ -253,11 +264,25 @@
    (glClearColor 0.2 0.2 0.2 1.)
    (glClear GL_COLOR_BUFFER_BIT)
 
-; нарисуем карту как она есть
+   ; нарисуем карту как она есть
    (glEnable GL_TEXTURE_2D)
-   ; 1. сначала нарисуем стены
-
    (glBindTexture GL_TEXTURE_2D 0)
+
+   ; сначала пол
+   (glBegin GL_QUADS)
+      (glColor3f 0.4 0.4 0.4)
+      (glTexCoord2f 0 0)
+      (glVertex2f   0 0)
+      (glTexCoord2f 0 HEIGHT)
+      (glVertex2f   0 HEIGHT)
+      (glTexCoord2f WIDTH HEIGHT)
+      (glVertex2f   WIDTH HEIGHT)
+      (glTexCoord2f WIDTH 0)
+      (glVertex2f   WIDTH 0)
+   (glEnd)
+
+   ; а теперь стены для пользователя
+   (glBindTexture GL_TEXTURE_2D 1)
    (glBegin GL_QUADS)
       (let by-y ((y 0) (line scheme))
       (if (not (null? line)) (begin
@@ -294,28 +319,6 @@
                      (draw-map-cell i j (at i j) 1)))))
                (iota 0 1 HEIGHT)))
             (iota 0 1 WIDTH))
-         (glEnd)
-         (glDisable GL_TEXTURE_2D))
-      )
-
-      ; старый вариант
-      (if #f
-      (let ((map (interact me (tuple 'get-fov))))
-         (glBegin GL_QUADS)
-         (glColor3f 0 1 0)
-         (for-each (lambda (i)
-            (for-each (lambda (j)
-               (if (> (at2 i j map) 0)
-                  (let ((age (at2 i j map))) ; как давно оно клетку "видело"
-                     (let ((color (/ 1.0 (/ (- 100 age) 7))))
-                     (glColor3f color color color)
-                     (quad i j)))
-                  (begin
-                     (glColor3f 0 0 0)
-                     (quad i j))
-               ))
-               (iota 0 1 HEIGHT)))
-            (iota 0 1 WIDTH))
          (glEnd))
       )
 
@@ -325,6 +328,7 @@
       ;(if (not (and (eq? (ref step 1) 0) (eq? (ref step 2) 0)))
       (let ((map (ref step 3)))
          ; draw 'open list
+         (glDisable GL_TEXTURE_2D)
          (glBegin GL_LINES)
          (ff-fold (lambda (n v xyp)
                      (let ((from (ref xyp 1))
@@ -341,21 +345,16 @@
 
 
       ; нарисуем, где сейчас наше создание находится:
-      (glPointSize 6)
-      (glBegin GL_POINTS)
+      (glEnable GL_TEXTURE_2D)
+      (glColor3f 1 1 1)
+      (glBegin GL_QUADS)
       (let ((xy (interact me (tuple 'get-location))))
-         (glPointSize 9.0)
-            (if (and (= (car xy) x) (= (cdr xy) y))
-               (begin
-                  (glColor3f 1 1 0)
-                  (glVertex2f (+ x 0.5) (+ y 0.5)))
-               (begin
-            (glColor3f 1 0 0)
-            (glVertex2f (+ (car xy) 0.5) (+ (cdr xy) 0.5))
-            (glColor3f 0 1 0) ; и куда собирается пойти
-            (glVertex2f (+ x 0.5) (+ y 0.5))))
+         (if (and (= (car xy) x) (= (cdr xy) y))
+            (quadT x y 7/8 1/8)
+            (begin
+               (quadT (car xy) (cdr xy) 5/8 1/8) ; где сейчас
+               (quadT x y 6/8 1/8)))) ; куда собирается пойти
       (glEnd)
-      (glPointSize 0)
 
 
       ; все, теперь можем двигаться туда,  куда хотели:
@@ -371,7 +370,7 @@
                   (do (rand! WIDTH) (rand! HEIGHT))))
             userdata)
             ; send new
-         'old-time new-time)))))))
+         'old-time new-time))))))
 
    ; пол (как травку)
 ;   (BindTexture grass-texture)

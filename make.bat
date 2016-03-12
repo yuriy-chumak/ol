@@ -7,18 +7,24 @@ IF "%1"=="vm" GOTO VM
 IF "%1"=="boot" GOTO BOOT
 IF "%1"=="ol" GOTO OL
 IF "%1"=="repl" GOTO REPL
+IF "%1"=="/help"  GOTO HELP
+IF "%1"=="--help" GOTO HELP
+IF "%1"=="/h"     GOTO HELP
 GOTO:EOF
 
-::   repl
-:: +------+  boot  +------+  ol  +------+
-:: | REPL |------->| BOOT |----->|  OL  |
-:: +------+        +------+      +------+
-::                    ^              ^
-::    vm              |              |
-:: +------+           |              |
-:: |  VM  |-----------+--------------/
-:: +------+
-::
+:HELP
+
+echo "  repl                                "
+echo "+------+  boot  +------+  ol  +------+"
+echo "| REPL |------->| BOOT |----->|  OL  |"
+echo "+------+        +------+      +------+"
+echo "                   ^              ^   "
+echo "   vm              |              |   "
+echo "+------+           |              |   "
+echo "|  VM  |-----------+--------------/   "
+echo "+------+                              "
+echo.
+GOTO:EOF
 
 :VM
 gcc -std=c99 -O2 -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32
@@ -34,7 +40,7 @@ GOTO:EOF
 
 :REPL
 vm repl < src/ol.scm
-FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo %%~zI -> %%~zJ
+FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo "%%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again
 ::  call :BOOT

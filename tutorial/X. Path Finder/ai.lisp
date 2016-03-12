@@ -353,13 +353,6 @@
                   ;  для всех этих клеток.
                   (let*((x (car xy))
                         (y (cdr xy))
-
-;                        (_ (print x " :: " y " ^ " (hash xy)))
-;                        (_ (print "c-list-set: " c-list-set))
-;                        (_ (print "o-list-set: " o-list-set))
-
-;                        (_ (print "------------------------------"))
-
                         (o-list-set (fold (lambda (n v)
                                        (if (and
                                              (floor? (car v) (cdr v)) ; если туда можно передвинуться...
@@ -371,8 +364,6 @@
                                                       (abs (- (cdr v) to-y))) 2))
                                                 ; 6: Если соседняя клетка уже находится в открытом списке
                                                 (got (get o-list-set (hash v) #f)))
-
-;                                             (print "ready to open: " v "(" xy ") - H:" H ", got:" got)
 
                                              ; если эта клетка уже в списке
                                              (if got

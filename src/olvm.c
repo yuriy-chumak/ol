@@ -336,7 +336,7 @@ typedef uintptr_t word;
 // descriptor format
 // заголовок объекта, то, что лежит у него в ob[0] (*ob)
 // object headers are further
-//  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1
+//  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1 (почему?, а для GC!)
 //   '----------| '--||'-| '----|
 //              |    ||  |      '-----> object type
 //              |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
@@ -469,15 +469,15 @@ struct object
 #define TPORT                       (12)
 #define TCONST                      (13)
 
-#define TBYTECODE                   (16)
+#define TBYTECODE                   (16) // must be RAW type
 #define TPROC                       (17)
 #define TCLOS                       (18)
 #define TFF                         (24) // // 26,27 same
 #	define FFRIGHT                     1 // flags for TFF
 #	define FFRED                       2
 
-#define TBVEC                       19
-#define TSTRINGWIDE                 22
+#define TBVEC                       19   // must be RAW type
+#define TSTRINGWIDE                 22   // must be RAW type
 
 #define TTHREAD                     31 // type-thread-state
 
@@ -485,13 +485,13 @@ struct object
 #define TFIX                        ( 0)  // type-fix+ // todo: rename to TSHORT or TSMALL
 //#define TFIXN                       (TFIX + 32)  // type-fix-
 // numbers (reference type)
-#define TINT                        (40)  // type-int+ // todo: rename to TINTEGER
+#define TINT                        (40)  // type-int+ // todo: rename to TINTEGER (?)
 #define TINTN                       (41)  // type-int-
 #define TRATIONAL                   (42)
 #define TCOMPLEX                    (43)
 
 // pinvoke
-#define TWORD                       (62) // always raw!
+#define TWORD                       (62) // only for pinvoke, must be RAW, always raw!
 #define TVOID                       (48) // only for pinvoke
 #define TRAWVALUE                   (45) // only for pinvoke
 
@@ -510,7 +510,7 @@ struct object
 
 
 #define HPAIR                       make_header(TPAIR, 3)
-#define HWORD                       make_raw_header(TWORD, 2, 0)
+#define HWORD                       make_raw_header(TWORD, 2, 0) // must be RAW
 
 #define HINT                        make_header(TINT, 3)
 #define HINTN                       make_header(TINTN, 3)
@@ -1786,7 +1786,7 @@ invoke:;
 		case TYPE: { // type o r <- actually sixtet
 			word T = A0;
 			if (is_pointer(T))
-				T = *((word *) (T));
+				T = *((word *) (T)); // todo: add RAWNESS to this
 			A1 = F(typeof (T)); // was: F((T >> TPOS) & 63);
 			ip += 2; break;
 		}
@@ -3083,7 +3083,13 @@ invoke:;
 			case 1000:
 				dogc(0);
 				break;
-
+			case 1001:
+				if (is_reference(a)) {
+					word hdr = *(word*)a;
+					if (is_raw_value(hdr))
+						result = ITRUE;
+				}
+				break;
 			case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 				result = itoun (max_heap_size);
 				max_heap_size = uvtoi (a);
