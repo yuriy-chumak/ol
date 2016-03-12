@@ -465,8 +465,8 @@
 ;                              (if (raw? a)
 ;                                 ; equal raw objects, check bytes
 ;                                 (lets
-;                                    ((ea (sizeb a)) ; raw objects may have padding bytes, so recheck the sizes
-;                                     (eb (sizeb b)))
+;                                    ((ea (size a)) ; raw objects may have padding bytes, so recheck the sizes
+;                                     (eb (size b)))
 ;                                    (if (eq? ea eb)
 ;                                       (if (eq? ea 0)
 ;                                          #true
@@ -515,8 +515,8 @@
 ;                              (if (raw? a)
 ;                                 ; equal raw objects, check bytes
 ;                                 (lets
-;                                    ((ea (sizeb a)) ; raw objects may have padding bytes, so recheck the sizes
-;                                     (eb (sizeb b)))
+;                                    ((ea (size a)) ; raw objects may have padding bytes, so recheck the sizes
+;                                     (eb (size b)))
 ;                                    (if (eq? ea eb)
 ;                                       (if (eq? ea 0)
 ;                                          #true
@@ -1099,11 +1099,9 @@
 
       ;;           allocated/pointers     allocated/rawdata    immediate
       ;; (size  x)         n                       n               #false
-      ;; (sizeb x)       #false                    n               #false
 
       (define (value? obj) (eq? #false (size obj)))
       (define reference? size)
-      (define raw?      sizeb)
       ;(define (raw? o) (syscall 1001 o #f #f))
 ;         (case (type o)
 ;            (type-string #t)

@@ -199,7 +199,7 @@
       (define (vec-len vec)
          (case (type vec)
             (type-vector-raw
-               (sizeb vec))
+               (size vec))
             (type-vector-dispatch
                (ref vec 2))
             (type-vector-leaf
@@ -365,7 +365,7 @@
                (copy-bvec bv pos (cons byte tail)))))
 
       (define (byte-vector->list bv)
-         (let ((size (sizeb bv)))
+         (let ((size (size bv)))
             (if (eq? size 0)
                null
                (copy-bvec bv (- size 1) null))))
@@ -392,7 +392,7 @@
          (case (type v)
             (type-vector-dispatch (iter-leaf-of (ref v 1) tl))
             (type-vector-raw
-               (let ((s (sizeb v)))
+               (let ((s (size v)))
                   (if (eq? s 0)
                      tl
                      (iter-raw-leaf v (- s 1) tl))))
@@ -460,11 +460,11 @@
       (define (iterr-any-leaf v tl)
          (case (type v)
             (type-vector-dispatch (iterr-any-leaf (ref v 1) tl))
-            (type-vector-raw (iterr-raw-leaf v (sizeb v) tl))
+            (type-vector-raw (iterr-raw-leaf v (size v) tl))
             (type-vector-leaf (iterr-leaf v (size v) tl))
             (else
                tl))) ; size field in root is a number → skip
-      
+
       (define (vec-iterr-loop v p)
          (if (eq? type-fix- (type p))
             null

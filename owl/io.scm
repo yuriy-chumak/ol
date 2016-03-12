@@ -98,14 +98,14 @@
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
       (define (bvec-tail bvec n)
-         (raw type-vector-raw (map (lambda (p) (ref bvec p)) (iota n 1 (sizeb bvec)))))
+         (raw type-vector-raw (map (lambda (p) (ref bvec p)) (iota n 1 (size bvec)))))
 
       (define (try-write-block fd bvec len)
          (if (port? fd) (sys:write fd bvec len) #false))
 
       ;; bvec port → bool
       (define (write-really bvec fd)
-         (let ((end (sizeb bvec)))
+         (let ((end (size bvec)))
             (if (eq? end 0)
                #true
                (let loop ()
@@ -158,7 +158,7 @@
                ((eof? this) (values #true this))
                ((not this) (values #false this))
                (else
-                  (let ((n (sizeb this)))
+                  (let ((n (size this)))
                      (if (eq? n block-size)
                         (values #false this)
                         (lets ((eof-seen? tail (get-whole-block fd (- block-size n))))
@@ -285,7 +285,7 @@
                ((pair? ll)
                   (if (byte-vector? (car ll))
                      (if (write-really (car ll) fd)
-                        (loop (cdr ll) (+ n (sizeb (car ll))))
+                        (loop (cdr ll) (+ n (size (car ll))))
                         (values ll n))
                      (values ll n)))
                ((null? ll)
@@ -360,7 +360,7 @@
 
       ;; fixme: system-X do not belong here
       (define (system-print str)
-         (sys:write stdout str (sizeb str)))
+         (sys:write stdout str (size str)))
 
       (define (system-println str)
          (system-print str)
@@ -368,7 +368,7 @@
       "))
 
       (define (system-stderr str) ; <- str is a raw or pre-rendered string
-         (sys:write stderr str (sizeb str)))
+         (sys:write stderr str (size str)))
 
       ;;;
       ;;; Files <-> vectors
@@ -382,7 +382,7 @@
                   (let ((buff (if (eof? val) buff (cons val buff))))
                      (merge-chunks
                         (reverse buff)
-                        (fold + 0 (map sizeb buff)))))
+                        (fold + 0 (map size buff)))))
                ((not val)
                   #false)
                (else
@@ -390,7 +390,7 @@
                      (cons val buff))))))
 
       (define (explode-block block tail)
-         (let ((end (sizeb block)))
+         (let ((end (size block)))
             (if (eq? end 0)
                tail
                (let loop ((pos (- end 1)) (tail tail))
@@ -480,7 +480,7 @@
                      ;(print "bytes-stream-port: no buffer received?")
                      null)
                   (else
-                     (stream-chunk buff (- (sizeb buff) 1)
+                     (stream-chunk buff (- (size buff) 1)
                         (port->byte-stream fd)))))))
 
       (define (lines fd)

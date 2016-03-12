@@ -1445,13 +1445,13 @@ invoke:;
 
 	// примитивы языка:
 #	define RAW   60
-//sys-prim 63
 
 #	define CONS  51
 
 #	define TYPE  15
 #	define SIZE  36
 #	define CAST  22
+#	define RAWq  48 // (raw?), временное решение пока не придумаю как от него совсем избавиться
 
 #	define CAR   52
 #	define CDR   53
@@ -1459,7 +1459,6 @@ invoke:;
 
 #	define SIZEB 28
 //#	define REFB  48
-#	define RAWq  48
 
 	// ?
 #	define SET   45
@@ -1469,6 +1468,7 @@ invoke:;
 #	define LESS  44
 
 #	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
+
 #	define SYSCALL 63
 		// read, write, open, close must exist
 #		define SYSCALL_READ 0
@@ -1777,6 +1777,14 @@ invoke:;
 
 			ip += 3; break;
 		}
+		case RAWq: {
+			word* T = (word*) A0;
+			if (is_reference(T) && is_raw_value(*T))
+				A1 = ITRUE;
+			else
+				A1 = IFALSE;
+			ip += 2; break;
+		}
 
 		// операции посложнее
 		case CONS:   // cons a b r:   Rr = (cons Ra Rb)
@@ -1916,7 +1924,8 @@ invoke:;
 		case EQ: // eq a b r
 			A2 = (A0 == A1) ? ITRUE : IFALSE;
 			ip += 3; break;
-		case LESS: {// less a b r
+
+		case LESS: {// fx:< a b r
 			word a = A0;
 			word b = A1;
 
@@ -1989,14 +1998,6 @@ invoke:;
 			ip += 4; break; }
 
 
-		case RAWq: {
-			word* T = (word*) A0;
-			if (is_reference(T) && is_raw_value(*T))
-				A1 = ITRUE;
-			else
-				A1 = IFALSE;
-			ip += 2; break;
-		}
 		case SIZEB: { // sizeb obj to
 			word* T = (word*) A0;
 			if (is_value(T))

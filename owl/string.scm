@@ -64,7 +64,7 @@
 
       (define (string-length str)
          (case (type str)
-            (type-string          (sizeb str))
+            (type-string          (size str))
             (type-string-wide     (size str))
             (type-string-dispatch (ref str 1))
             (else (runtime-error "string-length: not a string: " str))))

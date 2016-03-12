@@ -609,7 +609,7 @@
       (define (bytecode->list thing)
          (cond
             ((bytecode? thing)
-               (map (λ (p) (ref thing p)) (iota 0 1 (sizeb thing))))
+               (map (λ (p) (ref thing p)) (iota 0 1 (size thing))))
             ((function? thing)
                ;; get the bytecode
                (bytecode->list (ref thing 1)))

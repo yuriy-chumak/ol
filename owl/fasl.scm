@@ -179,7 +179,7 @@
                      ;; nuke padding bytes since the vm/decoder must fill these while loading
                      ;; (because different word size may require more/less padding)
                      ((t (fx:and (type-byte-of val) #b11111))
-                      (bs (sizeb val)))
+                      (bs (size val)))
                      (ilist 2 t
                         (send-number bs
                            (copy-bytes out val (- bs 1)))))

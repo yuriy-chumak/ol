@@ -137,8 +137,8 @@
       ;; shorter is less, otherwase lexical comparison from start
       (define (compare-code a b)
          (lets
-            ((as (sizeb a))
-             (bs (sizeb b)))
+            ((as (size a))
+             (bs (size b)))
             (cond
                ((eq? as bs) (compare-bytes a b 0 as))
                ((fx:< as bs) is-less)

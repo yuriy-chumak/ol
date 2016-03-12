@@ -88,6 +88,7 @@
       ;(define type    (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
       ;(define size    (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
       ;(define cast    (raw type-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+      (define raw?    (raw type-bytecode '(48 4 5    24 5)))
 
       ;(define car     (raw type-bytecode '(52 4 5    24 5)))
       ;(define cdr     (raw type-bytecode '(53 4 5    24 5)))
@@ -100,17 +101,14 @@
 
       ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
 
-      (define raw?    (raw type-bytecode '(48 4 5    24 5)))
-      ;(define sizeb   (raw type-bytecode '(28 4 5    24 5)))
-
       ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/receive
       ;(define fx:<  (raw type-bytecode '(44 4 5 6  24 6)))
-      ;(define fx:+  (raw type-bytecode '(38 4 5    6 7)))     ;'(38 4 5    6 7  )
-      ;(define fx:*  (raw type-bytecode '(39 4 5    6 7)))
-      ;(define fx:-  (raw type-bytecode '(40 4 5    6 7)))
-      ;(define fx:/  (raw type-bytecode '(26 4 5 6  7 8 9)))
-      ;(define fx:>> (raw type-bytecode '(58 4 5    6 7)))
-      ;(define fx:<< (raw type-bytecode '(59 4 5    6 7)))
+      ;(define fx:+  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
+      ;(define fx:*  (raw type-bytecode '(39 4 5       6 7)))
+      ;(define fx:-  (raw type-bytecode '(40 4 5       6 7)))
+      ;(define fx:/  (raw type-bytecode '(26 4 5 6     7 8 9)))
+      ;(define fx:>> (raw type-bytecode '(58 4 5       6 7)))
+      ;(define fx:<< (raw type-bytecode '(59 4 5       6 7)))
 
       (define fx:and (raw type-bytecode '(55 4 5 6  24 6)))
       (define fx:or  (raw type-bytecode '(56 4 5 6  24 6)))
@@ -129,20 +127,21 @@
 
       (define primops (list
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
-         ; todo: rename to vm:bytecode ?
-         (tuple 'raw      60  2 1 raw) ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
+         ; todo: rename to vm:bytecode, vm:raw ?
+         (tuple 'raw      60  2 1 raw)   ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
 
          ; вторая по значимости команда
          (tuple 'cons     51  2 1 cons)
 
          ; операции по работе с памятью
-         (tuple 'car      52  1 1 car)   ;(raw type-bytecode '(52 4 5    24 5)))
-         (tuple 'cdr      53  1 1 cdr)   ;(raw type-bytecode '(53 4 5    24 5)))
-         (tuple 'ref      47  2 1 ref)   ;(raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
+         (tuple 'car      52  1 1 car)   ; (raw type-bytecode '(52 4 5    24 5)))
+         (tuple 'cdr      53  1 1 cdr)   ; (raw type-bytecode '(53 4 5    24 5)))
+         (tuple 'ref      47  2 1 ref)   ; (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
 
          (tuple 'type     15  1 1 type)  ;; get just the type bits
          (tuple 'size     36  1 1 size)  ;; get object size (- 1)
          (tuple 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
+         (tuple 'raw?     48  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
 
          (tuple 'set      45  3 1 set)   ;(raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
 
@@ -150,11 +149,8 @@
          (tuple 'set-car! 11  2 1 set-car!)
          (tuple 'set-cdr! 12  2 1 set-cdr!)
 
+         ; простейшая стравнивалка
          (tuple 'eq?      54  2 1 eq?)
-
-         ;; байтовые массивы (строки, etc.)
-         (tuple 'raw?     48  1 1 raw?)  ; временное решение, пока не придумаю как удалить совсем
-         (tuple 'sizeb    28  1 1 sizeb)
 
          ; базовая математика
          (tuple 'fx:<     44  2 1 fx:<)

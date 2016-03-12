@@ -90,7 +90,7 @@
 
       ;; a fast /^-/ to shave some startup ms for thousands of arguments, which are getting common for some tools
       (define (dashy? str)
-         (let ((s (sizeb str)))
+         (let ((s (size str)))
             (if (fx:< s 1) ; todo: ?
                #false
                (eq? 45 (ref str 0)))))
