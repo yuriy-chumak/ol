@@ -7,6 +7,7 @@ PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
 # http://ptspts.blogspot.com/2013/12/how-to-make-smaller-c-and-c-binaries.html
 CFLAGS += -std=c99 -O2 -DNDEBUG -s
+#CFLAGS := -std=c99 -g
 boot.c := bootstrap~
 repl.o := src/repl.o
 

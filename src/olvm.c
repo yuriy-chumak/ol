@@ -1,7 +1,7 @@
 /**
  * OL - Otus Lisp - yet another pet lisp
  * Copyright (c) 2014 Aki Helin
- * Copyright (c) 2014, 2015 Yuriy Chumak
+ * Copyright (c) 2014- 2016 Yuriy Chumak
  *
  * Simple purely functional Lisp, mostly
  *
@@ -330,7 +330,7 @@ char* dlerror() {
 
 // unsigned int that is capable of storing a pointer
 // основной data type, зависит от разрядности машины
-//  ,базируется на C99 стандарте, <stdint.h>
+//   базируется на C99 стандарте, <stdint.h>
 typedef uintptr_t word;
 
 // descriptor format
@@ -367,12 +367,26 @@ typedef uintptr_t word;
 // todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
-#define SPOS     16  // == offsetof (struct header, size)
-#define TPOS      2  // == offsetof (struct header, type)
-#define RPOS     11  // == offsetof (struct header, rawness)
+#define IPOS      8  // === offsetof (struct direct, payload)
 
 __attribute__ ((aligned(sizeof(word)), packed))
-struct header
+struct value_t
+{
+	unsigned mark : 1;    // mark bit (can only be 1 during gc)
+	unsigned i    : 1;    // for directs always 1
+	unsigned type : 5;    // object type
+	unsigned sign : 1;    // sign
+
+	word  payload : 8 * sizeof(word) - (1+1+5+1);
+};
+
+
+#define SPOS     16  // === offsetof (struct header, size)
+#define TPOS      2  // === offsetof (struct header, type)
+#define RPOS     11  // === offsetof (struct header, rawness)
+
+__attribute__ ((aligned(sizeof(word)), packed))
+struct header_t
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
 	unsigned i    : 1;    // for headers always 1
@@ -385,26 +399,11 @@ struct header
 	word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
 
-
-#define IPOS      8  // == offsetof (struct direct, payload)
-
 __attribute__ ((aligned(sizeof(word)), packed))
-struct value
-{
-	unsigned mark : 1;    // mark bit (can only be 1 during gc)
-	unsigned i    : 1;    // for directs always 1
-	unsigned type : 5;    // object type
-	unsigned sign : 1;    // sign
-
-	word  payload : 8 * sizeof(word) - (1+1+5+1);
-};
-// as value type we use only "TFIX" and "TCONST"
-
-__attribute__ ((aligned(sizeof(word)), packed))
-struct object
+struct object_t
 {
 	union {
-		word header;
+		struct header_t header;
 		word ref[0];
 	};
 };
@@ -430,6 +429,7 @@ struct object
 
 #define RAWBIT                      ((1 << RPOS))
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
+
 #define make_value(type, value)        ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
 #define make_header(type, size)        (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
 #define make_raw_header(type, size, p) (( (word)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
@@ -439,27 +439,19 @@ struct object
 #define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
 // fliptag used in dir sys-prims
 
-//#define header(x)                   *(word *x)
-//#define imm_type(x)                 ((((word)x) >> TPOS) & 0x3F)
-#define imm_val(x)                  (((word)x) >> IPOS)
-#define hdrsize(x)                  (((word)x) >> SPOS)
-#define padsize(x)                  (unsigned char)((((word)x) >> IPOS) & 7)
-#define hdrtype(x)                  (unsigned char)((((word)x) >> TPOS) & 0x3F) // 0xFF from (p) << 8) in make_raw_header
-
-#define typeof(x)                   (unsigned char)((((word)x) >> TPOS) & 0x3F)
-#define valuetype(x)                ((typeof (x)) & 0x1F)
-#define reftype(x)                  (typeof (*(word*)x))
-
-#define is_value(x)                 (((word)x) & 2)
-#define is_object(x)                (!is_value(x))
-#define is_raw_value(x)             (((word)x) & RAWBIT)
-#define is_flagged(x)               (((word)x) & 1) // flag - mark for GC
-
-#define is_direct(x)                (((word)x) & 2) // todo: remove, use is_value instead
-#define is_pointer(x)               (!is_value(x))  // todo: remove, use is_reference instead
+// два главных класса аргументов:
+#define is_value(x)                 (((word)(x)) & 2)
 #define is_reference(x)             (!is_value(x))
+#define is_rawobject(x)             (((word)(x)) & RAWBIT) // todo: rename to is_rawobject?
 
-// встроенные типы (смотреть defmac.scm по "ALLOCATED")
+// всякая всячина:
+#define hdrsize(x)                  (((word)x) >> SPOS)
+#define padsize(x)                  (unsigned char)((((word)(x)) >> IPOS) & 7)
+
+#define typeof(x)                   (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
+#define valuetype(x)                (typeof (x) & 0x1F)
+#define reftype(x)                  (typeof (*(word*)(x)))
+
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
 #define TTUPLE                       (2)
@@ -483,7 +475,7 @@ struct object
 
 // numbers (value type)
 #define TFIX                        ( 0)  // type-fix+ // todo: rename to TSHORT or TSMALL
-//#define TFIXN                       (TFIX + 32)  // type-fix-
+#define TFIXN                       (TFIX + 32)  // type-fix-
 // numbers (reference type)
 #define TINT                        (40)  // type-int+ // todo: rename to TINTEGER (?)
 #define TINTN                       (41)  // type-int-
@@ -491,7 +483,7 @@ struct object
 #define TCOMPLEX                    (43)
 
 // pinvoke
-#define TWORD                       (62) // only for pinvoke, must be RAW, always raw!
+#define TWORD                       (62) // only for pinvoke, must be RAW
 #define TVOID                       (48) // only for pinvoke
 #define TRAWVALUE                   (45) // only for pinvoke
 
@@ -501,6 +493,7 @@ struct object
 //#define TTHIS                     44
 #define TINT64                      44
 
+
 #define IFALSE                      make_value(TCONST, 0)
 #define ITRUE                       make_value(TCONST, 1)
 #define INULL                       make_value(TCONST, 2)
@@ -509,34 +502,34 @@ struct object
 #define IHALT                       INULL // FIXME: adde a distinct IHALT
 
 
-#define HPAIR                       make_header(TPAIR, 3)
 #define HWORD                       make_raw_header(TWORD, 2, 0) // must be RAW
 
-#define HINT                        make_header(TINT, 3)
-#define HINTN                       make_header(TINTN, 3)
-#define HRATIONAL                   make_header(TRATIONAL, 3)
-#define HCOMPLEX                    make_header(TCOMPLEX, 3)
-
-
-#define flagged_or_raw(hdr)         (hdr & (RAWBIT|1))
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
 #define is_const(ob)                (typeof (ob) == TCONST)
-#define is_port(ob)                 ( (ob & 0xFF) == ((TPORT << TPOS) | 2) ) // (is_value(ob) && typeof(ob) == TPORT)
+#define is_port(ob)                 ((ob & 0xFF) == ((TPORT << TPOS) | 2)) // (is_value(ob) && typeof(ob) == TPORT)
 
-#define is_pair(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HPAIR)
-#define is_npair(ob)                (is_pointer(ob) &&        (*(word*)(ob)) == HINT)
-#define is_npairn(ob)               (is_pointer(ob) &&        (*(word*)(ob)) == HINTN)
-#define is_rational(ob)             (is_pointer(ob) &&        (*(word*)(ob)) == HRATIONAL)
-#define is_complex(ob)              (is_pointer(ob) &&        (*(word*)(ob)) == HCOMPLEX)
-#define is_string(ob)               (is_pointer(ob) && typeof (*(word*)(ob)) == TSTRING)
-#define is_tuple(ob)                (is_pointer(ob) && typeof (*(word*)(ob)) == TTUPLE)
-#define is_memp(ob)                 (is_pointer(ob) &&        (*(word*)(ob)) == HWORD)
+#define is_fix(ob)                  (is_value(ob)     && typeof (ob) == TFIX)
+#define is_fixn(ob)                 (is_value(ob)     && typeof (ob) == TFIXN)
+#define is_pair(ob)                 (is_reference(ob) &&        (*(word*)(ob)) == make_header(TPAIR,     3))
+#define is_npair(ob)                (is_reference(ob) &&        (*(word*)(ob)) == make_header(TINT,      3))
+#define is_npairn(ob)               (is_reference(ob) &&        (*(word*)(ob)) == make_header(TINTN,     3))
+#define is_rational(ob)             (is_reference(ob) &&        (*(word*)(ob)) == make_header(TRATIONAL, 3))
+#define is_complex(ob)              (is_reference(ob) &&        (*(word*)(ob)) == make_header(TCOMPLEX,  3))
 
-#define is_number(ob)               (is_npair(ob)  || (is_value(ob) && typeof (ob) == TFIX))
-#define is_numbern(ob)              (is_npairn(ob) || (is_value(ob) && typeof (ob) == TFIXN))
-#define is_atomic(ob)               is_direct(ob)
+#define is_string(ob)               (is_reference(ob) && typeof (*(word*)(ob)) == TSTRING)
+#define is_tuple(ob)                (is_reference(ob) && typeof (*(word*)(ob)) == TTUPLE)
+
+#define is_handle(ob)               (is_reference(ob) &&        (*(word*)(ob)) == HWORD)
+
+#define is_number(ob)               (is_npair(ob)  || is_fix(ob))
+#define is_numbern(ob)              (is_npairn(ob) || is_fixn(ob))
+
+
+// взять значение аргумента:
+#define value(x)                    ({ assert(is_value(x));     (((word)(x)) >> IPOS); })
+#define reference(x)                ({ assert(is_reference(x)); *(word*)(x); })
 
 #define ref(ob, n)                  (((word*)(ob))[n])
 #define car(ob)                     ref(ob, 1)
@@ -547,7 +540,8 @@ struct object
 #define cdar(o)                     cdr(car(o))
 #define cddr(o)                     cdr(cdr(o))
 
-#define port(o)                     (word)imm_val(o)
+#define port(o)                     value(o)
+
 
 // набор макросов - проверок для команд
 // car, cdr:
@@ -587,7 +581,7 @@ struct object
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define svtoi(v)   /*(int)*/({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define svtoi(v)        ({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define svtol(v)  (long)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define itosv(i)  (word)({ long x = (long)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 
@@ -599,7 +593,7 @@ struct object
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 #define untoi(num)  ({\
 	is_value(num) ? uvtoi(num)\
-		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; }) //(is_pointer(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
+		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; }) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
 #define itoun(val)  ({\
 	(word*)(\
 	__builtin_choose_expr(sizeof(val) < sizeof(word),\
@@ -607,6 +601,7 @@ struct object
 		(val <= FMAX ? itouv(val) \
 			: (word)new_list(TINT, itouv(val & FMAX), itouv((val) >> FBITS)))));})
 
+#define make_integer(val) itoun(val)
 
 #define NR                          128 // see n-registers in register.scm
 
@@ -867,15 +862,24 @@ word* p = new_bytevector(TSTRING, length);\
 #define new_string(...) NEW_STRING_MACRO(__VA_ARGS__, NEW_STRING2, NEW_STRING)(__VA_ARGS__)
 
 
-#define new_native_function(a) ({\
-word value = (word) a;\
+#define new_handle(a) ({\
+word data = (word) a;\
 	word* me = new (TWORD, 2, 0);\
-	me[1] = value;\
-	/*return*/ me;\
+	me[1] = data;\
+	/*return*/me;\
+})
+
+#define new_native_function(a) ({\
+word data = (word) a;\
+	word* me = new (TWORD, 2, 0);\
+	me[1] = data;\
+	/*return*/me;\
 })
 
 
 // -= gc implementation =-----------
+#define is_flagged(x) (((word)(x)) & 1)  // mark for GC
+
 
 // возвращается по цепочке "flagged" указателей назад
 static __inline__
@@ -884,7 +888,7 @@ word *chase(word* pos) {
 	word* ppos;
 	while (1) {
 		ppos = *(word**) ((word)pos & ~1);      // ppos = *pos; ~ = bitwise NOT, (корректное разименование указателя, без учета бита mark)
-		if (!is_pointer(ppos) || !is_flagged(ppos)) // ppos & 0x3 == 0x1
+		if (!is_reference(ppos) || !is_flagged(ppos)) // ppos & 0x3 == 0x1
 			return (word*)((word)pos & ~1);
 		pos = ppos;
 	}
@@ -927,13 +931,13 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 		while (pos < end) {
 			word hdr = *pos;
 			int n = hdrsize(hdr);
-			if (is_raw_value(hdr))
+			if (is_rawobject(hdr))
 				pos += n; // no pointers in raw objects
 			else {
 				pos++, n--;
 				while (n--) {
 					word val = *pos;
-					if (is_object(val))
+					if (is_reference(val))
 						*pos = val + delta;
 					pos++;
 				}
@@ -960,7 +964,7 @@ static word gc(heap_t *heap, int size, word regs) {
 	//	assert(pos is NOT flagged)
 		while (pos != end) {
 			word val = pos[0]; // pos header
-			if (is_pointer(val) && val >= ((word) heap->genstart)) { // genstart - начало молодой генерации
+			if (is_reference(val) && val >= ((word) heap->genstart)) { // genstart - начало молодой генерации
 				if (is_flagged(val)) {
 					pos = chase((word*) val);
 					pos--;
@@ -1277,14 +1281,14 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 		if ((word)this == IHALT) {
 			// a tread or mcp is calling the final continuation
 			this = (word *) R[0];
-			if (!is_object(this)) {
+			if (!is_reference(this)) {
 				fprintf(stderr, "Unexpected virtual machine exit\n");
 				return (void*) uvtol(R[3]);
 			}
 
 			R[0] = IFALSE; // set no mcp
 			R[4] = R[3];
-			R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
+			R[3] = make_value(TFIX, 2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
 			R[5] = IFALSE;
 			R[6] = IFALSE;
 			breaked = 0;
@@ -1295,7 +1299,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 		} /* <- add a way to call the newobj vm prim table also here? */
 
 		// ...
-		if (is_object(this)) { // если это аллоцированный объект
+		if (is_reference(this)) { // если это аллоцированный объект
 			//word hdr = *this & 0x0FFF; // cut size out, take just header info
 			word type = typeof (*this);
 			if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc
@@ -1652,7 +1656,7 @@ invoke:;
 			R[0] = R[3];
 			ticker = bank ? bank : uvtoi (A1);
 			bank = 0;
-			CHECK(is_object(this), this, RUN);
+			CHECK(is_reference(this), this, RUN);
 
 			word hdr = *this;
 			if (typeof (hdr) == TTHREAD) {
@@ -1775,7 +1779,7 @@ invoke:;
 		}
 		case RAWq: {
 			word* T = (word*) A0;
-			if (is_reference(T) && is_raw_value(*T))
+			if (is_reference(T) && is_rawobject(*T))
 				A1 = ITRUE;
 			else
 				A1 = IFALSE;
@@ -1790,9 +1794,9 @@ invoke:;
 
 		case TYPE: { // type o r <- actually sixtet
 			word T = A0;
-			if (is_pointer(T))
+			if (is_reference(T))
 				T = *((word *) (T)); // todo: add RAWNESS to this
-			A1 = F(typeof (T)); // was: F((T >> TPOS) & 63);
+			A1 = make_integer(typeof (T)); // was: F((T >> TPOS) & 63);
 			ip += 2; break;
 		}
 
@@ -1805,7 +1809,7 @@ invoke:;
 				A1 = IFALSE;
 			else {
 				word hdr = *T;
-				if (is_raw_value(hdr))
+				if (is_rawobject(hdr))
 					A1 = F((hdrsize(hdr)-1)*W - padsize(hdr));
 				else
 					A1 = F(hdrsize(*(word*)T) - 1);
@@ -1826,7 +1830,7 @@ invoke:;
 			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
 			// это лучше сделать тут, наверное, а не отдельной командой
 			if (is_value(T)) {
-				int val = imm_val(T);
+				int val = value(T);
 				if (type == TPORT) {
 					if (val >= 0 && val <= 2)
 						A2 = make_port(val);
@@ -1871,11 +1875,11 @@ invoke:;
 
 		case REF: {  // ref t o -> r
 			word *p = (word *) A0;
-			if (!is_pointer(p))
+			if (!is_reference(p))
 				A2 = IFALSE;
 			else {
 				word hdr = *p;
-				if (is_raw_value(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
+				if (is_rawobject(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
 					word pos = uvtoi (A1);
 					word size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
 					if (pos >= size)
@@ -1903,7 +1907,7 @@ invoke:;
 			if (!is_reference(p))
 				A3 = IFALSE;
 			else
-			if (is_raw_value(*p)) {
+			if (is_rawobject(*p)) {
 				CHECK(is_value(A2), A2, 10001)
 				word hdr = *p;
 				word size = hdrsize (hdr);
@@ -1939,7 +1943,7 @@ invoke:;
 			if (!is_reference(p))
 				A3 = IFALSE;
 			else
-			if (is_raw_value(*p)) {
+			if (is_rawobject(*p)) {
 				if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
 					((char*)&car(p))[pos - 1] = (char) uvtoi(A2);
 				A3 = p;
@@ -2059,26 +2063,26 @@ invoke:;
 
 		case 11: { // (set-car! pair value)
 			word *pair = (word *)A0;
-			word value = A1;
+			word cargo = A1;
 
 			// we can't set ref as part of pair due to gc specific
 			CHECK(is_pair(pair), pair, 11);
-			CHECK(is_direct(value) || is_const(value), value, 11);
+			CHECK(is_value(cargo), cargo, 11);
 
-			car(pair) = value;
+			car(pair) = cargo;
 
 			A2 = A0;
 			ip += 3; break;
 		}
-		case 12: { // (set-cdr! pair value)
+		case 12: { // (set-cdr! pair cargo)
 			word *pair = (word *)A0;
-			word value = A1;
+			word cargo = A1;
 
 			// case as (set-car!)
 			CHECK(is_pair(pair), pair, 12);
-			CHECK(is_direct(value) || is_const(value), value, 12);
+			CHECK(is_value(cargo), cargo, 12);
 
-			cdr(pair) = value;
+			cdr(pair) = cargo;
 
 			A2 = A0;
 			ip += 3; break;
@@ -2119,11 +2123,11 @@ invoke:;
 		// bind tuple to registers, todo: rename to bind-t or bindt or bnt
 		case BIND: { /* bind <tuple > <n> <r0> .. <rn> */
 			word *tuple = (word *) R[*ip++];
-			//CHECK(is_pointer(tuple), tuple, BIND);
+			//CHECK(is_reference(tuple), tuple, BIND);
 
 			word pos = 1, n = *ip++;
 			//word hdr = *tuple;
-			//CHECK(!(is_raw_value(hdr) || hdrsize(hdr)-1 != n), tuple, BIND);
+			//CHECK(!(is_raw(hdr) || hdrsize(hdr)-1 != n), tuple, BIND);
 			while (n--)
 				R[*ip++] = tuple[pos++];
 
@@ -2304,7 +2308,7 @@ invoke:;
 			case SYSCALL_WRITE: {
 				CHECK(is_port(a), a, SYSCALL);
 				int portfd = port(a);
-//				CHECK(is_port(a) || (is_direct(a) && (uvtoi(a) <= 2)), a, SYSCALL);
+//				CHECK(is_port(a) || (is_value(a) && (uvtoi(a) <= 2)), a, SYSCALL);
 //				int portfd = is_port(a) ? car (a) : uvtoi(a);
 				int size = svtoi (c);
 
@@ -2700,7 +2704,7 @@ invoke:;
 			case 59: {
 #if HAS_DLOPEN
 				// if a is result of dlsym
-				if (is_memp(a)) {
+				if (is_handle(a)) { // todo: change to is_mem_pointer or is_mem_function or something similar
 					// a - function address (port)
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 					word* A = (word*)a;
@@ -2780,7 +2784,7 @@ invoke:;
 					seconds = time (0);
 				else if (typeof (B) == TFIX)
 					seconds = uvtoi(B);
- 				else if (is_pointer(B) && typeof (*B) == TINT)
+ 				else if (is_reference(B) && typeof (*B) == TINT)
 					seconds = untoi(B);
 				else
 					break;
@@ -3072,7 +3076,7 @@ invoke:;
 			case 1001:
 				if (is_reference(a)) {
 					word hdr = *(word*)a;
-					if (is_raw_value(hdr))
+					if (is_rawobject(hdr))
 						result = ITRUE;
 				}
 				break;
@@ -3103,9 +3107,9 @@ invoke:;
 			case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
 				word *name = (word *)a;
 				if (is_string(name)) {
-					char* value = getenv((char*)&name[1]);
-					if (value)
-						result = new_string(value, lenn(value, FMAX));
+					char* env = getenv((char*)&name[1]);
+					if (env)
+						result = new_string(env, lenn(env, FMAX));
 				}
 				break;
 			}
@@ -3133,18 +3137,18 @@ invoke:;
 				void* module;
 				if ((word) filename == INULL)
 					module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
-				else if (is_pointer(filename) && typeof (*filename) == TSTRING)
+				else if (is_reference(filename) && typeof (*filename) == TSTRING)
 					module = dlopen((char*) &filename[1], mode);
 				else
 					break; // invalid filename, return #false
 
 				if (module)
-					result = new_native_function(module);
+					result = new_handle(module);
 				break;
 			}
 
 			case SYSCALL_DLCLOSE: {
-				//CHECK(is_port(a), a, SYSCALL);
+				CHECK(is_handle(a), a, SYSCALL);
 				void* module = (void*)car (a);
 
 				if (dlclose(module) == 0)
@@ -3153,7 +3157,7 @@ invoke:;
 			}
 
 			case SYSCALL_DLSYM: { // (dlsym module function #false)
-				//CHECK(is_port(a), a, SYSCALL);
+				CHECK(is_handle(a), a, SYSCALL);
 				void* module = (void*)car (a);
 
 				word* symbol = (word*) b;
@@ -3162,7 +3166,7 @@ invoke:;
 					break;
 
 				word function = (word)dlsym(module, is_value(symbol)
-						? (char*) imm_val((word)symbol)
+						? (char*) value((word)symbol)
 						: (char*) &symbol[1]);
 				if (function)
 					result = new_native_function(function);
@@ -3213,7 +3217,7 @@ invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
 	this = (word *) R[0];
 	R[0] = IFALSE;
 	R[3] = F(3);
-	if (is_pointer(this)) {
+	if (is_reference(this)) {
 		acc = 4;
 		goto apply;
 	}
@@ -3810,7 +3814,7 @@ word* pinvoke(OL* self, word* arguments)
 		// так как в стек мы все равно большое сложить не сможем, то возьмем
 		// только то, что влазит (первые два члена)
 //		assert (is_value(arg[1]));
-//		assert (is_object(arg[2]));
+//		assert (is_reference(arg[2]));
 
 		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
 	}
@@ -3820,7 +3824,7 @@ word* pinvoke(OL* self, word* arguments)
 		assert (is_value(car(arg)));
 		float f = (unsigned long)uvtoi(car(arg));
 		float mul = 0x1000000; // 1 << 24
-		while (is_pointer(cdr(arg))) {
+		while (is_reference(cdr(arg))) {
 			arg = (word*)cdr(arg);
 			f += (unsigned long)uvtoi(cdr(arg)) * mul;
 			mul *= 0x1000000;
@@ -3975,7 +3979,7 @@ word* pinvoke(OL* self, word* arguments)
 
 /*		// todo: add argument overriding as PAIR as argument value
 		if (typeof (p[1]) == TPAIR) {
-			type = imm_val (((word*)p[1])[1]);
+			type = value (((word*)p[1])[1]);
 			arg = ((word*)p[1])[2];
 		}*/
 
@@ -4001,7 +4005,7 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] =  (int)from_rational(arg);
 				break;
 			// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
-			case TPORT:
+			case TPORT: // todo: change to THANDLE
 			case TWORD:
 			case TBVEC:
 				args[i] = car(arg);
@@ -4098,13 +4102,13 @@ word* pinvoke(OL* self, word* arguments)
 		// запрос порта - это запрос значения порта
 		// todo: добавить тип "указатель на порт"
 		case TWORD:
-		case TPORT:
+		case TPORT: // todo: change to THANDLE
 			if ((word)arg == INULL)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
 			case TWORD:
-			case TPORT:
+			case TPORT: // todo: change to THANDLE
 				args[i] = car(arg);
 				break;
 			default:
@@ -4230,8 +4234,8 @@ word* pinvoke(OL* self, word* arguments)
 			result = (word*) itosv (got);
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
-		case TPORT:
-			result = make_port (got);
+		case TPORT: // todo: change to THANDLE
+			result = new_handle(got);
 			break;
 		case TWORD:
 			if (got)
