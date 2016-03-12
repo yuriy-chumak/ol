@@ -1,7 +1,7 @@
 ; http://standards.freedesktop.org/wm-spec/wm-spec-1.5.html
 ; http://www-h.eng.cam.ac.uk/help/tpl/graphics/X/X11R5/node25.html
 (define-library (lib x11)
-  (export 
+  (export
     XOpenDisplay
     XDefaultScreen
     XRootWindow
@@ -94,8 +94,8 @@
 
 
    (define (vector->int32 vector)
-      (+ (<< (refb vector 0) 0)
-         (<< (refb vector 1) 8)
-         (<< (refb vector 2) 16)
-         (<< (refb vector 3) 24)))
+      (+ (<< (ref vector 0) 0)
+         (<< (ref vector 1) 8)
+         (<< (ref vector 2) 16)
+         (<< (ref vector 3) 24)))
 ))

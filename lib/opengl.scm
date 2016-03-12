@@ -143,14 +143,14 @@
          (let ((MSG (raw type-vector-raw (repeat 0 28))))
          (let loop ()
             (if (= 1 (PeekMessage MSG '() 0 0 1))
-               (let ((message (+ (<< (refb MSG 4)  0)
-                                 (<< (refb MSG 5)  8)
-                                 (<< (refb MSG 6) 16)
-                                 (<< (refb MSG 7) 24))))
+               (let ((message (+ (<< (ref MSG 4)  0)
+                                 (<< (ref MSG 5)  8)
+                                 (<< (ref MSG 6) 16)
+                                 (<< (ref MSG 7) 24))))
                   ;(print message ": " MSG)
                   (if (and
                         (eq? message 273) ; WM_COMMAND
-                        (eq? (+ (refb MSG 8) (<< (refb MSG 9) 8)) 2)) ; IDCANCEL
+                        (eq? (+ (ref MSG 8) (<< (ref MSG 9) 8)) 2)) ; IDCANCEL
                      2 ; EXIT
                      (begin
                         (TranslateMessage MSG)

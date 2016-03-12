@@ -98,7 +98,7 @@
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
       (define (bvec-tail bvec n)
-         (raw type-vector-raw (map (lambda (p) (refb bvec p)) (iota n 1 (sizeb bvec)))))
+         (raw type-vector-raw (map (lambda (p) (ref bvec p)) (iota n 1 (sizeb bvec)))))
 
       (define (try-write-block fd bvec len)
          (if (port? fd) (sys:write fd bvec len) #false))
@@ -396,7 +396,7 @@
                (let loop ((pos (- end 1)) (tail tail))
                   (if (eq? pos -1)
                      tail
-                     (loop (- pos 1) (cons (refb block pos) tail)))))))
+                     (loop (- pos 1) (cons (ref block pos) tail)))))))
 
       (define (read-blocks->list port buff)
          (let ((block (get-block port 4096)))
@@ -464,10 +464,10 @@
 
       (define (stream-chunk buff pos tail)
          (if (eq? pos 0)
-            (cons (refb buff pos) tail)
+            (cons (ref buff pos) tail)
             (lets ((next x (fx:- pos 1)))
                (stream-chunk buff next
-                  (cons (refb buff pos) tail)))))
+                  (cons (ref buff pos) tail)))))
 
       (define (port->byte-stream fd)
          (λ ()

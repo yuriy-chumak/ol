@@ -34,8 +34,8 @@
 ;(define (make-byte-vector n elem)
 ;   (list->byte-vector (repeat elem n)))
 ;(define (get-int16 byte-vector offset)
-;   (+ (refb byte-vector offset)
-;      (* (refb byte-vector (+ offset 1)) 256)))
+;   (+ (ref byte-vector offset)
+;      (* (ref byte-vector (+ offset 1)) 256)))
 ;(define ?? (lambda (function arguments) (if function (apply function arguments) arguments)))
 
 
@@ -94,7 +94,7 @@
 ; обработчик команд
 (define (command-processor args)
    (tuple-case message
-      ; задать окно для рендеринга, проинициализировать в нем opengl контекст 
+      ; задать окно для рендеринга, проинициализировать в нем opengl контекст
       ((set-main-window new-window) ; создать окно
          (let ((window (getf args 'window)))
          ; если у нас уже есть окно - удалим его и освободим ресурсы
@@ -112,7 +112,7 @@
                (put (put args
                   'window window)
                   'context '(#f.#f)))))
-            
+
       ; простые сеттеры и геттеры:
       ; задать функцию рендерера, swap-buffers будет происходить автоматически
       ((register-renderer renderer)
@@ -132,7 +132,7 @@
 (define (message-loop-processor args)
    (let ((XEvent (raw type-vector-raw (repeat 0 192))))
       (XNextEvent dpy XEvent)
-      (if (= (refb XEvent 0) 12)
+      (if (= (ref XEvent 0) 12)
          (let ((renderer (getf args 'renderer)))
             (if renderer (renderer))))))
 
@@ -148,7 +148,7 @@
       (TranslateMessage MSG)
       (DispatchMessage MSG))
 
-   (case (+ (refb MSG 4) (* (refb MSG 5) 256))
+   (case (+ (ref MSG 4) (* (ref MSG 5) 256))
       (WM_LBUTTONDOWN ;WM_SIZING
          (print "WM_LBUTTONDOWN")
          (if mouse
@@ -165,9 +165,9 @@
             (glViewport 0 0 (get-int16 rect #x8) (get-int16 rect #xC)))
          (this window hDC hRC  ss ms  userdata  renderer  keyboard mouse))
       (WM_KEYDOWN
-         (print "WM_KEYDOWN: " (refb MSG 8) "-" (refb MSG 9))
+         (print "WM_KEYDOWN: " (ref MSG 8) "-" (ref MSG 9))
          (if keyboard
-            (let* ((userdata (keyboard userdata (refb MSG 8))))
+            (let* ((userdata (keyboard userdata (ref MSG 8))))
                (print "new userdata: " userdata)
                (this window hDC hRC  ss ms  userdata  renderer  keyboard mouse))
             (this window hDC hRC  ss ms  userdata  renderer  keyboard mouse)))
@@ -220,7 +220,7 @@
       ;(_yield)
       (wait 5)
       (main-game-loop predicate))))
-  
+
 (define (gl:create-window title width height)
 (let ((window create-gl-window 0 0 width height))
    (interact 'opengl (tuple 'set-main-window window))
@@ -229,5 +229,5 @@
 ;(define (destroy-window window)
 ;   (interact 'opengl (tuple 'set-main-window #false))
 ;   (DestroyWindow window))
-   
+
 ;))

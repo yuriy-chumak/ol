@@ -100,7 +100,7 @@
 
       ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
 
-      ;(define refb    (raw type-bytecode '(48 4 5 6  24 6)))
+      (define raw?    (raw type-bytecode '(48 4 5    24 5)))
       ;(define sizeb   (raw type-bytecode '(28 4 5    24 5)))
 
       ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/receive
@@ -153,7 +153,7 @@
          (tuple 'eq?      54  2 1 eq?)
 
          ;; байтовые массивы (строки, etc.)
-         (tuple 'refb     48  2 1 refb)
+         (tuple 'raw?     48  1 1 raw?)  ; временное решение, пока не придумаю как удалить совсем
          (tuple 'sizeb    28  1 1 sizeb)
 
          ; базовая математика

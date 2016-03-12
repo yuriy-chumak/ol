@@ -47,7 +47,7 @@
       char=?             ; cp cp → bool (temp)
       char-ci=?          ; cp cp → bool (temp)
       )
-      
+
    (import (r5rs base))
 
    (import (owl iff))
@@ -72,9 +72,9 @@
       ;;; enumerate code points forwards
 
       (define (str-iter-leaf str tl pos end)
-         (if (eq? pos end) 
+         (if (eq? pos end)
             tl
-            (pair (refb str pos)
+            (pair (ref str pos)
                (lets ((pos u (fx:+ pos 1)))
                   (str-iter-leaf str tl pos end)))))
 
@@ -92,7 +92,7 @@
                   (if (eq? len 0)
                      tl
                      (str-iter-leaf str tl 0 len))))
-            (type-string-wide 
+            (type-string-wide
                (str-iter-wide-leaf str tl 1))
             (type-string-dispatch
                (let loop ((pos 2))
@@ -105,12 +105,12 @@
 
       (define (str-iter str) (str-iter-any str null))
 
-      ;;; iterate backwards 
+      ;;; iterate backwards
 
       (define (str-iterr-leaf str tl pos)
          (if (eq? pos 0)
-            (cons (refb str pos) tl)
-            (pair (refb str pos)
+            (cons (ref str pos) tl)
+            (pair (ref str pos)
                (lets ((pos u (fx:- pos 1)))
                   (str-iterr-leaf str tl pos)))))
 
@@ -159,7 +159,7 @@
       (define (string->bytes str)    (str-foldr encode-point null str))
       (define (render-string str tl) (str-foldr encode-point tl str))
       (define (string->runes str)    (str-foldr cons null str))
-      (define (render-quoted-string str tl) 
+      (define (render-quoted-string str tl)
          (str-foldr encode-quoted-point tl str))
 
 
@@ -203,7 +203,7 @@
       (define (stringify runes out n ascii? chu)
          (cond
             ((null? runes)
-               (finish-string 
+               (finish-string
                   (reverse (cons (make-chunk out n ascii?) chu))))
             ; make 4Kb chunks by default
             ((eq? n 4096)
@@ -212,22 +212,22 @@
             ((pair? runes)
                (cond
                   ((and ascii? (< 128 (car runes)) (> n 256))
-                     ; allow smaller leaf chunks 
+                     ; allow smaller leaf chunks
                      (stringify runes null 0 #true
                         (cons (make-chunk out n ascii?) chu)))
                   ((valid-code-point? (car runes))
                      (let ((rune (car runes)))
-                        (stringify (cdr runes) (cons rune out) (+ n 1) 
+                        (stringify (cdr runes) (cons rune out) (+ n 1)
                            (and ascii? (< rune 128))
                            chu)))
                   (else #false)))
             (else (stringify (runes) out n ascii? chu))))
 
       ;; (codepoint ..) → string | #false
-      (define (runes->string lst) 
+      (define (runes->string lst)
          (stringify lst null 0 #true null))
 
-      (define bytes->string 
+      (define bytes->string
          (o runes->string utf8-decode))
 
       ;;; temps
@@ -236,14 +236,14 @@
       ; figure out how to handle balancing. 234-trees with occasional rebalance?
       (define (str-app a b)
          (bytes->string
-            (render-string a 
+            (render-string a
                (render-string b null))))
 
       (define (string-eq-walk a b)
          (cond
             ((pair? a)
                (cond
-                  ((pair? b) 
+                  ((pair? b)
                      (if (= (car a) (car b))
                         (string-eq-walk (cdr a) (cdr b))
                         #false))
@@ -253,7 +253,7 @@
                         (if (and (pair? b) (= (car b) (car a)))
                            (string-eq-walk (cdr a) (cdr b))
                            #false)))))
-            ((null? a) 
+            ((null? a)
                (cond
                   ((pair? b) #false)
                   ((null? b) #true)
@@ -277,24 +277,24 @@
 
       (define (c-string str) ; -> bvec | #false
          (if (eq? (type str) type-string)
-            ;; do not re-encode raw strings. these are normally ASCII strings 
-            ;; which would not need encoding anyway, but explicitly bypass it 
-            ;; to allow these strings to contain *invalid string data*. This 
-            ;; allows bad non UTF-8 strings coming for example from command 
-            ;; line arguments (like paths having invalid encoding) to be used 
+            ;; do not re-encode raw strings. these are normally ASCII strings
+            ;; which would not need encoding anyway, but explicitly bypass it
+            ;; to allow these strings to contain *invalid string data*. This
+            ;; allows bad non UTF-8 strings coming for example from command
+            ;; line arguments (like paths having invalid encoding) to be used
             ;; for opening files.
             (raw type-string (str-foldr cons '(0) str))
             (let ((bs (str-foldr encode-point '(0) str)))
                ; check that the UTF-8 encoded version fits one raw chunk (64KB)
-               (if (<= (length bs) #xffff) 
+               (if (<= (length bs) #xffff)
                   (raw type-string bs)
                   #false))))
 
       (define null-terminate c-string)
 
-      ;; a naive string replace. add one of the usual faster versions and 
+      ;; a naive string replace. add one of the usual faster versions and
       ;; basic regex matching later (maybe that one to lib-lazy instead?)
-      ;; but even a slow one will do for now because it is needd for dumping 
+      ;; but even a slow one will do for now because it is needd for dumping
       ;; sources.
 
       ;; todo: let l be a lazy list and iterate with it over whatever
@@ -329,7 +329,7 @@
 ;               (else
 ;                  (walk (cons (car in) rout) (cdr in)))))
          (walk null lst)))
-      
+
       (define (str-replace str pat val)
          (runes->string
             (replace-all
@@ -358,14 +358,14 @@
                (runtime-error "substring: negative start: " start))
             ((< end start)
                (runtime-error "substring: bad interval " (cons start end)))
-            (else 
+            (else
                (list->string (ltake (ldrop (str-iter str) start) (- end start))))))
 
       ;; lexicographic comparison with end of string < lowest code point
       ;; 1 = sa smaller, 2 = equal, 3 = sb smaller
       (define (str-compare cook sa sb)
          (let loop ((la (cook (str-iter sa))) (lb (cook (str-iter sb))))
-            (lets 
+            (lets
                ((a la (uncons la #false))
                 (b lb (uncons lb #false)))
                (cond
@@ -377,10 +377,10 @@
 
       ;; iff of codepoint → codepoint | (codepoint ...), the first being equal to (codepoint)
       (define char-fold-iff
-         (fold 
-            (λ (iff node) 
-               (if (= (length node) 2) 
-                  (iput iff (car node) (cadr node)) 
+         (fold
+            (λ (iff node)
+               (if (= (length node) 2)
+                  (iput iff (car node) (cadr node))
                   (iput iff (car node) (cdr node))))
             #empty char-folds))
 
@@ -396,7 +396,7 @@
          (llref (str-iter str) p))
 
       (define (upcase ll)
-         (lets 
+         (lets
             ((cp ll (uncons ll #false)))
             (if cp
                (let ((cp (iget char-fold-iff cp cp)))
@@ -409,7 +409,7 @@
 
       ;; fixme: incomplete, added because needed for ascii range elsewhere
       (define (char-ci=? a b)
-         (or (eq? a b) 
+         (or (eq? a b)
             (=
                (iget char-fold-iff a a)
                (iget char-fold-iff b b))))
@@ -429,4 +429,3 @@
 
       (define (make-string n char)
          (list->string (repeat char n)))))
-

@@ -1458,7 +1458,8 @@ invoke:;
 #	define REF   47
 
 #	define SIZEB 28
-#	define REFB  48
+//#	define REFB  48
+#	define RAWq  48
 
 	// ?
 #	define SET   45
@@ -1988,22 +1989,14 @@ invoke:;
 			ip += 4; break; }
 
 
-		case REFB: { /* refb t o r */
-			word *p = (word *) A0;
-			if (!is_reference(p))
-				A2 = IFALSE;
-			else {
-				word hdr = *p;
-				word hsize = ((hdrsize(hdr)-1)*W) - padsize(hdr); // bytes - pads
-				int pos = uvtoi (A1);
-				if (pos >= hsize)
-					A2 = IFALSE;
-				else
-					A2 = F(((unsigned char *) p)[pos+W]);
-			}
-			ip += 3; break;
+		case RAWq: {
+			word* T = (word*) A0;
+			if (is_reference(T) && is_raw_value(*T))
+				A1 = ITRUE;
+			else
+				A1 = IFALSE;
+			ip += 2; break;
 		}
-
 		case SIZEB: { // sizeb obj to
 			word* T = (word*) A0;
 			if (is_value(T))
