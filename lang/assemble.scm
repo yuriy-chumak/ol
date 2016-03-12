@@ -22,7 +22,7 @@
       ;; primops = (#(name opcode in-args|#f out-args|#f wrapper-fn) ...)
 
       ;; ff of opcode → (in|#f out|#f), #f if variable
-      (define primop-arities 
+      (define primop-arities
          (fold
             (λ (ff node)
                (lets ((name op in out wrapper node))
@@ -77,10 +77,10 @@
 ;              (mk   . 9)      ; mk n, a0, ..., an, t, size up to 256
 ;              (mki  . 11)     ; mki size, type, v1, ..., vn, to
 ;              (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
-              
+
 ;              (set . 25)     ; set a, p, b     Ra[Rp] = Rb
 ;              (jbf . 26)     ; jump-binding tuple n f offset ... r1 ... rn
-              
+
               ;; ldi = 13                                                                                    ;+
 ;              (movh . 13)       ;                                                                            ;+
 
@@ -140,9 +140,9 @@
                         (fail (list "Bad opcode arity for " op (length args) 1))))
                   ((list? to)
                      (if (opcode-arity-ok? op (length args) (length to))
-                        (if (has? multiple-return-variable-primops op)    
+                        (if (has? multiple-return-variable-primops op)
                            (cons op
-                              (append (map reg args)      
+                              (append (map reg args)
                                  ; <- nargs implicit, FIXME check nargs opcode too
                                  (append (map reg to)
                                     (assemble more fail))))
@@ -159,15 +159,15 @@
                ;; make a 2-level closure
                (if (= lpos 1)
                   (cons CLOS1
-                     (cons (+ 2 (length env))      
-                        ;; size of object (hdr code e0 ... en) 
+                     (cons (+ 2 (length env))
+                        ;; size of object (hdr code e0 ... en)
                         (cons offset
                            (append (map reg env)
                               (cons (reg to)
                                  (assemble more fail))))))
                   (cons CLOS0
-                     (cons (+ 2 (length env))      
-                        ;; size of object (hdr code e0 ... en) 
+                     (cons (+ 2 (length env))
+                        ;; size of object (hdr code e0 ... en)
                         (cons (reg lpos)
                            (cons offset
                               (append (map reg env)
@@ -176,15 +176,15 @@
             ((clos-code lpos offset env to more)      ;; make a 1-level closure
                (if (= lpos 1)
                   (cons CLOC1
-                     (cons (+ 2 (length env))   
-                        ;; size of object (hdr code e0 ... en) 
+                     (cons (+ 2 (length env))
+                        ;; size of object (hdr code e0 ... en)
                         (cons offset
                            (append (map reg env)
                               (cons (reg to)
                                  (assemble more fail))))))
                   (cons CLOC0
-                     (cons (+ 2 (length env))   
-                        ;; size of object (hdr code e0 ... en) 
+                     (cons (+ 2 (length env))
+                        ;; size of object (hdr code e0 ... en)
                         (cons (reg lpos)
                            (cons offset
                               (append (map reg env)
@@ -212,8 +212,8 @@
                   (else
                      (fail (list "cannot assemble a load for " val)))))
             ((refi from offset to more)
-               (ilist 
-                  REFI (reg from) offset (reg to) 
+               (ilist
+                  REFI (reg from) offset (reg to)
                   (assemble more fail)))
             ((goto op nargs)
                (list GOTO (reg op) nargs))
@@ -296,7 +296,7 @@
                               (ilist JF2-ex (if fixed? arity (- arity 1))
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
-                                 (append bytes 
+                                 (append bytes
                                     (if (null? tail)
                                        (list ARITY-ERROR) ;; force error
                                        tail)))))))))

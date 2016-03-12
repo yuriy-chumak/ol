@@ -21,12 +21,12 @@
       ;; stream-oriented blocking (for the writing thread) io
       blocks->port            ;; ll fd → ll' n-bytes-written, don't close fd
       closing-blocks->port    ;; ll fd → ll' n-bytes-written, close fd
-   
+
       file->vector            ;; vector io, may be moved elsewhere later
       file->list              ;; list io, may be moved elsewhere later
       vector->file
       write-vector            ;; vec port
-      port->byte-stream       ;; fd → (byte ...) | thunk 
+      port->byte-stream       ;; fd → (byte ...) | thunk
 
       stdin stdout stderr
       display-to        ;; port val → bool
@@ -35,7 +35,7 @@
       print
       print*
       print*-to         ;; port val → bool
-      write 
+      write
       writer-to         ;; names → (port val → bool + io)
       write-to          ;; port val → bool
       write-bytes       ;; port byte-list   → bool
@@ -72,18 +72,18 @@
    (begin
 
       ;; standard io ports
-      (define stdin  (raw type-port '(0)))
-      (define stdout (raw type-port '(1)))
-      (define stderr (raw type-port '(2)))
+      (define stdin  (cast 0 type-port))
+      (define stdout (cast 1 type-port))
+      (define stderr (cast 2 type-port))
 
       (define (sys:read fd maxlen)         (syscall 0 fd maxlen #false))
       (define (sys:write fd buffer length) (syscall 1 fd buffer length))
 
-      ;; use type 12 for fds 
+      ;; use type 12 for fds
 
       (define (fopen path mode)
          (cond
-            ((c-string path) => 
+            ((c-string path) =>
                (λ (path) (syscall 2 path mode #false)))
             (else #false)))
 
@@ -91,7 +91,7 @@
          (syscall 3 fd #false #false)) ; 1002
 
       ;; use fd 65535 as the unique sleeper thread name.
-      (define sid (raw type-port '(255 255)))
+      (define sid (cast 65536 type-port))
       (define sleeper-id sid)
 
       ;;; Writing
@@ -113,7 +113,7 @@
                      (cond
                         ((eq? wrote end) #true) ;; ok, wrote the whole chunk
                         ((eq? wrote 0) ;; 0 = EWOULDBLOCK
-                           (interact sid 2) ;; fixme: adjustable delay rounds 
+                           (interact sid 2) ;; fixme: adjustable delay rounds
                            (loop))
                         (wrote ;; partial write
                            (write-really (bvec-tail bvec wrote) fd))
@@ -122,12 +122,12 @@
       ;; how many bytes (max) to add to output buffer before flushing it to the fd
       (define output-buffer-size 4096)
 
-      (define (open-input-file path) (fopen path 0)) 
+      (define (open-input-file path) (fopen path 0))
       (define (open-output-file path) (fopen path 1))
 
       ;;; Reading
 
-      (define input-block-size 
+      (define input-block-size
          *vec-leaf-size*) ;; changing from 256 breaks vector leaf things
 
       (define (try-get-block fd block-size block?)
@@ -165,7 +165,7 @@
                            (cond
                               ((eof? tail) (values #true this))
                               ((not tail) (values #false this)) ;; next read will also fail, return last ok data
-                              (else 
+                              (else
                                  ;; unnecessarily many conversions if there are many partial
                                  ;; reads, but block size is tiny in file->vector making this
                                  ;; irrelevant
@@ -184,16 +184,16 @@
       ;; they want to sleep, typically waiting for input or output
       (define ns-per-round 10000000)
 
-      ;; IO is closely tied to sleeping in owl now, because instead of the poll there are 
-      ;; several threads doing their own IO with their own fds. the ability to sleep well 
+      ;; IO is closely tied to sleeping in owl now, because instead of the poll there are
+      ;; several threads doing their own IO with their own fds. the ability to sleep well
       ;; is critical, so the global sleeping thread is also in lib-io.
 
       (define (find-bed ls id n)
-         (if (null? ls) 
+         (if (null? ls)
             (list (cons n id)) ;; last bed, select alarm
             (let ((this (caar ls)))
                (if (< n this) ;; add before someone to be waked later
-                  (ilist 
+                  (ilist
                      (cons n id)
                      (cons (- this n) (cdr (car ls)))
                      (cdr ls))
@@ -231,14 +231,14 @@
                (mail (cdar l) 'rise-n-shine)
                (wake-neighbours (cdr l)))
             (else l)))
-         
+
       ;; ls = queue of ((rounds . id) ...), sorted and only storing deltas
       (define (sleeper ls)
          (cond
             ((null? ls)
                (sleeper (add-sleeper ls (wait-mail))))
             ((check-mail) =>
-               (λ (env) 
+               (λ (env)
                   (sleeper (add-sleeper ls env))))
             (else
                (sleep-for (caar ls))
@@ -273,10 +273,10 @@
 
       (define socket-read-delay 2)
 
-      ;; In case one doesn't need asynchronous atomic io operations, one can use 
+      ;; In case one doesn't need asynchronous atomic io operations, one can use
       ;; threadless stream-based blocking (for the one thred) IO.
 
-      ;; write a stream of byte vectors to a fd and 
+      ;; write a stream of byte vectors to a fd and
       ;; (bvec ...) fd → ll' n-written, doesn't close port
       ;;                  '-> null if all written without errors
       (define (blocks->port ll fd)
@@ -306,7 +306,7 @@
       (define (printer lst len out fd)
          (cond
             ((eq? len output-buffer-size)
-               (and 
+               (and
                   (write-really (raw type-vector-raw (reverse out)) fd)
                   (printer lst 0 null fd)))
             ((null? lst)
@@ -330,8 +330,8 @@
             (λ (to obj)
                (printer (serialize obj '()) 0 null to))))
 
-      (define write-to 
-         (writer-to 
+      (define write-to
+         (writer-to
             (put #empty map "map")))
 
       (define (display-to to obj)
@@ -340,7 +340,7 @@
       (define (display x)
          (display-to stdout x))
 
-      (define print 
+      (define print
          (case-lambda
             ((obj) (print-to stdout obj))
             (xs (printer (foldr render '(#\newline) xs) 0 null stdout))))
@@ -354,7 +354,7 @@
          (printer (foldr render '(10) lst) 0 null stdout))
 
       (define-syntax output
-         (syntax-rules () 
+         (syntax-rules ()
             ((output . stuff)
                (print* (list stuff)))))
 
@@ -370,7 +370,7 @@
       (define (system-stderr str) ; <- str is a raw or pre-rendered string
          (sys:write stderr str (sizeb str)))
 
-      ;;; 
+      ;;;
       ;;; Files <-> vectors
       ;;;
 
@@ -386,7 +386,7 @@
                ((not val)
                   #false)
                (else
-                  (read-blocks port 
+                  (read-blocks port
                      (cons val buff))))))
 
       (define (explode-block block tail)
@@ -428,7 +428,7 @@
                (begin
                   ;(print "file->vector: cannot open " path)
                   #false))))
-      
+
       (define (file->list path) ; path -> vec | #false
          (let ((port (maybe-open-file path)))
             (if port
@@ -472,7 +472,7 @@
       (define (port->byte-stream fd)
          (λ ()
             (let ((buff (get-block fd input-block-size)))
-               (cond  
+               (cond
                   ((eof? buff)
                      (close-port fd)
                      null)
@@ -514,14 +514,14 @@
       (define (take-nap)
          (interact sid 5))
 
-      (define (fasl-save obj path) 
-         (vector->file 
+      (define (fasl-save obj path)
+         (vector->file
             (list->vector (fasl-encode obj))
             path))
 
       (define (fasl-load path fail-val)
          (let ((bs (file->byte-stream path)))
-            (if bs 
+            (if bs
                (fasl-decode bs fail-val)
                fail-val)))
 ))

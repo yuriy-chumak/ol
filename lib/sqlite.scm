@@ -32,23 +32,23 @@
   ; types
     ;sqlite3* sqlite3_value sqlite3_stmt
     make-sqlite3 make-sqlite3-stmt
-    
+
   ; constants
     SQLITE-OK SQLITE-ERROR SQLITE-BUSY SQLITE-LOCKED
     SQLITE-DONE SQLITE-ROW
     SQLITE-STATIC SQLITE-TRANSIENT
     SQLITE-INTEGER SQLITE-FLOAT SQLITE-BLOB SQLITE-NULL SQLITE-TEXT
-  
+
   ; creation/destruction
     sqlite3-open
     sqlite3-close
-    
+
   ; statement management
     sqlite3-prepare-v2
     sqlite3-step
     sqlite3-reset
     sqlite3-finalize
-    
+
   ; result set
     sqlite3-column-count
     sqlite3-column-name
@@ -68,22 +68,22 @@
       (owl pinvoke))
   (begin
 
-(define (port) (raw type-port '(0)))
+(define (port) (cast 0 type-port))
 
 
 (define % (or
    (dlopen "sqlite3" RTLD_LAZY)
    (dlopen "libsqlite3.so" RTLD_LAZY)))
-   
+
 (if (not %)
    (begin
       (print "Can't load sqlite3 library. Will halt")
 ;      (case *OS*
 ;         (0 (print "Download dll from http://www.sqlite.org/download.html"))
-;         (1 (print "sudo apt-get install sqlite3"))) 
+;         (1 (print "sudo apt-get install sqlite3")))
       (exit-owl 1)))
 
-; служебные 
+; служебные
 (define (make-sqlite3)      (port)) ;like port (raw type-vector-raw '(0)))
 (define (make-sqlite3-stmt) (port)) ;(list->byte-vector '(0 0 0 0)))
 
@@ -118,7 +118,7 @@
 
 
 ; https://www.sqlite.org/c3ref/open.html
-; ex: file:data.db?mode=ro&cache=private 
+; ex: file:data.db?mode=ro&cache=private
 (define sqlite3-open  (dlsym % (__cdecl type-fix+) "sqlite3_open"  type-string sqlite3**))
 (define sqlite3-close (dlsym % (__cdecl type-fix+) "sqlite3_close" sqlite3*))
 

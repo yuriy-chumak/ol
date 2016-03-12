@@ -662,7 +662,7 @@
       (define type-rlist-spine      10) ; reference
       (define type-vector-leaf      11) ; reference
 
-      (define type-port             12) ; value, raw
+      (define type-port             12) ; value, raw         ; todo: port снова можно сделать value типом и ограничить до sizeof(word)-1 байт
       (define type-const            13) ; value
 
       (define type-rlist-node       14) ; reference

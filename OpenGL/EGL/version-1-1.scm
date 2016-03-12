@@ -3,10 +3,10 @@
 (define-library (OpenGL EGL version-1-1)
    (export
       EGL_LIBRARY    ; internal variable
-                     
+
       ; EGL Types
-      EGLBoolean     ; typedef unsigned int 
-      EGLint         ; typedef int32_t 
+      EGLBoolean     ; typedef unsigned int
+      EGLint         ; typedef int32_t
       EGLDisplay     ; typedef void*
       EGLConfig      ; typedef void*
       EGLSurface     ; typedef void*
@@ -215,8 +215,8 @@
 ;
 
 
-(define EGLBoolean type-int+) ; typedef int 
-(define EGLint type-int+)     ; typedef int32_t 
+(define EGLBoolean type-int+) ; typedef int
+(define EGLint type-int+)     ; typedef int32_t
 (define EGLDisplay type-port) ; typedef void *
 (define EGLConfig type-port)  ; typedef void *
 (define EGLSurface type-port) ; typedef void *

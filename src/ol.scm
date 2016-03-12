@@ -470,7 +470,8 @@
                ((eq? (type node) type-bytecode) #t)
                ((eq? (type node) type-string) #t)
                ((eq? (type node) type-port) #t)
-               (else (print "raw: " node)))
+               ((eq? (type node) type-vector-raw) #t)
+               (else (print "unknown raw object: " node)))
             trail)
          (else
             (fold walk

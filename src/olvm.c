@@ -1808,7 +1808,7 @@ invoke:;
 			ip += 2; break;
 		}
 
-		// todo: переделать!
+		// todo: переделать! и вообще, найти как от этой команды избавится!
 		case CAST: { // cast obj type -> result
 			if (!is_value(A1))
 				break;
@@ -1820,8 +1820,17 @@ invoke:;
 //			}
 			// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
 			// это лучше сделать тут, наверное, а не отдельной командой
-			if (is_value(T))
-				A2 = make_value(type, imm_val(T));
+			if (is_value(T)) {
+				int val = imm_val(T);
+				if (type == TPORT) {
+//					if (val == 0 || val == 1 || val == 2)
+						A2 = (word)new_port(val);
+//					else
+//						A2 = IFALSE;
+				}
+				else
+					A2 = make_value(type, val);
+			}
 			else
 			{
 				// make a clone of more desired type

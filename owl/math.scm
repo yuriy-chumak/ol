@@ -100,6 +100,7 @@
             (or
                (eq? t type-fix+)
                ;(eq? t type-fix-) ;; <- FIXME - breaks build, someone isn't expecting negative fixnums
+               ; TODO: исправить!
                )))
 
       (define (exact? n) #true)    ;; RnRS compat
