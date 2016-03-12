@@ -2,15 +2,15 @@
 ;;; Register allocation
 ;;;
 
-; Earlier compilation steps produce RTL that has an unbounded set 
-; of registers. Register allocation handles limiting them to the 
-; number available in VM, while also trying to retarget operations 
+; Earlier compilation steps produce RTL that has an unbounded set
+; of registers. Register allocation handles limiting them to the
+; number available in VM, while also trying to retarget operations
 ; to more sensible registers.
 
 (define-library (lang register)
 
    (export
-      allocate-registers 
+      allocate-registers
       n-registers)
 
    (import
@@ -29,7 +29,7 @@
       (define n-registers 128)
       (define highest-register (- n-registers 1)) ;; atm lower than NR in ovm.c
 
-      ; reg-touch U r -> mark as live -> make sure it has a value 
+      ; reg-touch U r -> mark as live -> make sure it has a value
       ; (must be in some register)
 
       (define (reg-touch usages reg)
@@ -43,7 +43,7 @@
       (define (reg-root usages reg)
          (put usages reg (list reg)))
 
-      ; return a list of registers from uses (where the value has been moved to), or 
+      ; return a list of registers from uses (where the value has been moved to), or
       ; some list of low registers if this one is outside the available ones
       (define (use-list uses reg)
          (let ((opts (keep (λ (x) (< x highest-register)) (get uses reg null))))
@@ -69,7 +69,7 @@
       (define (bad? to target op)
          (or (eq? to target) (not (eq? to (op to)))))
 
-      ; try to rename the register and exit via fail if the values are disturbed 
+      ; try to rename the register and exit via fail if the values are disturbed
 
       (define (rtl-rename code op target fail)
          (tuple-case code
@@ -92,7 +92,7 @@
                            (tuple 'move a b (rtl-rename more op target fail)))))))
             ((prim opcode args to more)
                (if (fixnum? to)
-                  (if (bad? to target op) 
+                  (if (bad? to target op)
                      (fail)
                      (tuple 'prim opcode
                         (map op args)
@@ -101,7 +101,7 @@
                      (fail)
                      (tuple 'prim opcode (map op args) to (rtl-rename more op target fail)))))
             ((clos-proc lp off env to more)
-               (if (bad? to target op) 
+               (if (bad? to target op)
                   (fail)
                   (tuple 'clos-proc (op lp) off (map op env) to (rtl-rename more op target fail))))
             ((clos-code lp off env to more)
@@ -118,12 +118,12 @@
                   (tuple 'refi (op from) offset to (rtl-rename more op target fail))))
             ((goto fn nargs)
                (tuple 'goto (op fn) nargs))
-            ((goto-code fn nargs)
-               (tuple 'goto-code (op fn) nargs))
-            ((goto-proc fn nargs)
-               (tuple 'goto-proc (op fn) nargs))
-            ((goto-clos fn nargs)
-               (tuple 'goto-clos (op fn) nargs))
+            ;((goto-code fn nargs)
+            ;   (tuple 'goto-code (op fn) nargs))
+            ;((goto-proc fn nargs)
+            ;   (tuple 'goto-proc (op fn) nargs))
+            ;((goto-clos fn nargs)
+            ;   (tuple 'goto-clos (op fn) nargs))
             ((jeq a b then else)
                (tuple 'jeq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             ((jn a then else)
@@ -136,7 +136,7 @@
                (runtime-error "rtl-rename: what is this: " code))))
 
 
-      ;; try to remap the register to each known good alternative 
+      ;; try to remap the register to each known good alternative
       ;; finish with (cont the-register code)
 
       (define (retarget-first code old news uses cont)
@@ -145,10 +145,10 @@
             (let ((new (car news)))
                (if (or (eq? old new) (get uses new #false))
                   (retarget-first code old (cdr news) uses cont)
-                  (let ((new-code 
+                  (let ((new-code
                      (call/cc
                         (λ (drop)
-                           (rtl-rename code 
+                           (rtl-rename code
                               (λ (reg) (if (eq? reg old) new reg))
                               new
                               (lambda () (drop #false)))))))
@@ -157,7 +157,7 @@
                         (retarget-first code old (cdr news) uses cont)))))))
 
       (define (rtl-retard-jump proc op a b then else)
-         (lets 
+         (lets
             ((then then-uses (proc then))
              (else else-uses (proc else))
              (uses (merge-usages then-uses else-uses))
@@ -181,7 +181,7 @@
                      (pass)
                      (rtl-retard (tuple clos-type lpos offset env to-new more-new)))))))
 
-      ; retarget register saves to registers where they are moved 
+      ; retarget register saves to registers where they are moved
       ; where possible (register retargeting level 1)
 
       (define (rtl-retard code)
@@ -202,7 +202,7 @@
                   ((> b highest-register)
                      (runtime-error "out of registers in move: " b))
                   (else
-                     (lets 
+                     (lets
                         ((more uses (rtl-retard more))
                          (uses (del uses b))
                          (targets (use-list uses a)))
@@ -213,9 +213,9 @@
                            (values (tuple 'move a b more) (put uses a (cons b targets))))))))
 
             ((prim op args to more)
-               (lets 
+               (lets
                   ((more uses (rtl-retard more))
-                   (pass 
+                   (pass
                      (λ () (values
                         (tuple 'prim op args to more)
                         (fold reg-touch (del uses to) args)))))
@@ -249,7 +249,7 @@
                         (pass)))))
 
             ((ld val to cont)
-               (lets 
+               (lets
                   ((cont uses (rtl-retard cont))
                    (good (use-list uses to))
                    (good (if (> to highest-register) (append good (iota 0 1 highest-register)) good))
@@ -260,19 +260,19 @@
                            (pass)
                            (rtl-retard (tuple 'ld val to-new cont-new)))))))
 
-            ((clos-proc lpos offset env to more)  
+            ((clos-proc lpos offset env to more)
                (rtl-retard-closure rtl-retard code))
 
-            ((clos-code lpos offset env to more) 
+            ((clos-code lpos offset env to more)
                (rtl-retard-closure rtl-retard code))
 
             ((refi from offset to more)
-               (lets 
+               (lets
                   ((more uses (rtl-retard more))
                    (uses (reg-touch uses from))
                    (good (use-list uses to))
-                   (uses (del uses to)) 
-                   (pass 
+                   (uses (del uses to))
+                   (pass
                      (λ () (values (tuple 'refi from offset to more)
                         (reg-touch uses from)))))
                   (retarget-first more to good uses
@@ -283,12 +283,12 @@
                               (tuple 'refi from offset to-new more-new)))))))
             ((goto op nargs)
                (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
-            ((goto-code op nargs)
-               (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
-            ((goto-proc op nargs)
-               (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
-            ((goto-clos op nargs)
-               (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
+            ;((goto-code op nargs)
+            ;   (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
+            ;((goto-proc op nargs)
+            ;   (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
+            ;((goto-clos op nargs)
+            ;   (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
             ((jeq a b then else)
                (rtl-retard-jump rtl-retard 'jeq a b     then else))
             ((jn a then else)
@@ -305,5 +305,5 @@
       (define (allocate-registers rtl)
          (lets ((rtl usages (rtl-retard rtl)))
             rtl))
-         
+
    ))

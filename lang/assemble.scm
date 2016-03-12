@@ -66,9 +66,9 @@
 
       ; executions
       (define GOTO 2) ; jmp a, nargs    call Ra with nargs args
-      (define GOTO-CODE 18)
-      (define GOTO-PROC 19)
-      (define GOTO-CLOS 21)
+      ;(define GOTO-CODE 18) ; not used for now, check (fn-type)
+      ;(define GOTO-PROC 19) ; not used for now, check (fn-type)
+      ;(define GOTO-CLOS 21) ; not used for now, check (fn-type)
       (define RET 24) ; ret a:          call R3 (usually cont) with Ra
 
       (define ARITY-ERROR 17)
@@ -217,12 +217,12 @@
                   (assemble more fail)))
             ((goto op nargs)
                (list GOTO (reg op) nargs))
-            ((goto-code op n)
-               (list GOTO-CODE (reg op) n)) ;; <- arity needed for dispatch
-            ((goto-proc op n)
-               (list GOTO-PROC (reg op) n))
-            ((goto-clos op n)
-               (list GOTO-CLOS (reg op) n))
+            ;((goto-code op n)
+            ;   (list GOTO-CODE (reg op) n)) ;; <- arity needed for dispatch
+            ;((goto-proc op n)
+            ;   (list GOTO-PROC (reg op) n))
+            ;((goto-clos op n)
+            ;   (list GOTO-CLOS (reg op) n))
             ;; todo: all jumps could have parameterized lengths (0 = 1-byte, n>0 = 2-byte, being the max code length)
             ((jeq a b then else)
                (lets

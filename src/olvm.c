@@ -1422,9 +1422,9 @@ invoke:;
 #	define RUN   50
 	// безусловные переходы
 #	define GOTO   2       // jmp a, nargs
-#	define GOTO_CODE 18   //
-#	define GOTO_PROC 19   //
-#	define GOTO_CLOS 21   //
+//#	define GOTO_CODE 18   //
+//#	define GOTO_PROC 19   //
+//#	define GOTO_CLOS 21   //
 
 #	define SYS   27
 
@@ -1576,24 +1576,24 @@ invoke:;
 			this = (word *)A0; acc = ip[1];
 			goto apply;
 
-		case GOTO_CODE:
-			this = (word *)A0; acc = ip[1];
-			ip = (unsigned char*) &this[1];
-			goto invoke;
-		case GOTO_PROC:
-			this = (word *)A0; acc = ip[1];
-			R1 = (word) this;
-			this = (word *) this[1];
-			ip = (unsigned char*) &this[1];
-			goto invoke;
-		case GOTO_CLOS:
-			this = (word *)A0; acc = ip[1];
-			R1 = (word) this;
-			this = (word *) this[1];
-			R2 = (word) this;
-			this = (word *) this[1];
-			ip = (unsigned char*) &this[1];
-			goto invoke;
+//		case GOTO_CODE:
+//			this = (word *)A0; acc = ip[1];
+//			ip = (unsigned char*) &this[1];
+//			goto invoke;
+//		case GOTO_PROC:
+//			this = (word *)A0; acc = ip[1];
+//			R1 = (word) this;
+//			this = (word *) this[1];
+//			ip = (unsigned char*) &this[1];
+//			goto invoke;
+//		case GOTO_CLOS:
+//			this = (word *)A0; acc = ip[1];
+//			R1 = (word) this;
+//			this = (word *) this[1];
+//			R2 = (word) this;
+//			this = (word *) this[1];
+//			ip = (unsigned char*) &this[1];
+//			goto invoke;
 
 		// apply
 		case APPLY: {
