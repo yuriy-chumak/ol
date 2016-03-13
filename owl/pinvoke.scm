@@ -75,7 +75,7 @@
    )
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl io)
       (owl math)
       (owl primop) ; exec

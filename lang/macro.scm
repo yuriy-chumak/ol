@@ -6,7 +6,7 @@
    (export macro-expand match make-transformer)
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl list)
       (owl equal)
       (owl list-extra)

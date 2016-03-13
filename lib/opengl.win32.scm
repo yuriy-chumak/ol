@@ -14,7 +14,7 @@
 ;   )
 
    (import
-      (r5rs base) (owl io) (owl primop) (owl tuple) (owl string)
+      (r5rs core) (owl io) (owl primop) (owl tuple) (owl string)
       (owl pinvoke) (owl list) (owl math) (owl vector) (owl list-extra) (owl ff)
       (owl interop)
 

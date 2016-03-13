@@ -29,7 +29,7 @@
       null-stream?)
 
    (import
-      (r5rs base)
+      (r5rs core)
 
       (owl lazy)
       (owl math)

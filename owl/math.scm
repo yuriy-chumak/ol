@@ -46,7 +46,7 @@
       rational complex)
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl list)
       (owl interop)
       (owl ff))

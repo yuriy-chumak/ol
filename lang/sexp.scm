@@ -12,7 +12,7 @@
       list->sexps)
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl parse)
       (owl math)
       (owl string)

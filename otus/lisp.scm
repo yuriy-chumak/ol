@@ -3,7 +3,7 @@
 (define-library (otus lisp)
 
    (export
-      (exports (r5rs base))
+      (exports (r5rs core))
       (exports (owl list))
       (exports (owl rlist))
       (exports (owl list-extra))
@@ -31,7 +31,7 @@
       wait)    ; todo: move to right library
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl list)
       (owl rlist)
       (owl list-extra)

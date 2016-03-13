@@ -11,7 +11,7 @@
       cl-rules)            ;; sexp → cl-rules
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl symbol)
       (owl list-extra)
       (owl lazy)

@@ -20,14 +20,14 @@
       exec yield)
 
    (import
-      (r5rs base))
+      (r5rs core))
 
    (begin
 ;          итак, процесс замены кода операции на другой:
 ;          1. заводим новую операцию (например, как я сделал с raw)
 ;           (tuple 'raw2       62  2 1 (raw2 type-bytecode (list JF2 2 0 6  62 4 5 6 24 6  17)))
 ;          2. добавляем ее код в виртуальную машину
-;          3. добавляем ее в список *owl-core* в lang/eval.scm
+;          3. добавляем ее в список *src-olvm* в lang/eval.scm
 ;          4. пересобираем boot
 ;          5. переименовываем все вхождения старой команды в новую
 ;          6. пересобираем boot
@@ -244,7 +244,7 @@
 ;      (define apply-cont (raw type-bytecode (list (fx:or 20 #x40))))
 ;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
 ;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-;      (define apply-cont (raw type-bytecode (list (fx:or 20 #x40)))) - used in (r5rs base) in call-with-current-continuation
+;      (define apply-cont (raw type-bytecode (list (fx:or 20 #x40)))) - used in (r5rs core) in call-with-current-continuation
 ;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
 
 

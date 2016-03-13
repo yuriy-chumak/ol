@@ -6,7 +6,7 @@
    (export cps)
 
    (import
-      (r5rs base)
+      (r5rs core)
       (lang ast)
       (owl list)
       (owl list-extra)

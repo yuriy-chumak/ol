@@ -8,7 +8,7 @@
       )
 
    (import 
-      (r5rs base)
+      (r5rs core)
       (owl equal)
       (owl list)
       (owl string)

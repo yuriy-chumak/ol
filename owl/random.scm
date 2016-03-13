@@ -36,7 +36,7 @@
       )
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl math)
       (owl lazy)
       (owl list)

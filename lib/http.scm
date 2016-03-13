@@ -3,7 +3,7 @@
 (define-library (lib http)
   (export
     http:run)
-  (import (r5rs base) (owl parse)
+  (import (r5rs core) (owl parse)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (owl intern) intern-symbols string->uninterned-symbol string->symbol)
      )

@@ -9,7 +9,7 @@
       time-ms)
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl io)
       (owl interop)
       (owl math))

@@ -1,11 +1,8 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
-; rename to scheme/r5rs/base ?
-; rename to ./r5rs ?
-; todo: merge (owl tuple)
-(define-library (r5rs base)
+(define-library (r5rs core)
    (begin
 
-      ; TODO: rename rlambda to let-values or something similar
+      ; TODO: rename rlambda to let-values or something similar (or evaluate, ...)
       ; TODO: rename _define to define-symbol, set!, or similar
 
       ; ========================================================================================================

@@ -51,7 +51,7 @@
    )
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl interop)
       (owl queue)
       (owl string)

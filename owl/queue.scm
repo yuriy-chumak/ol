@@ -24,7 +24,7 @@
       queue->list)
 
    (import
-      (r5rs base)
+      (r5rs core)
       
       (owl list)
       (owl math)

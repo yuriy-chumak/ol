@@ -54,7 +54,7 @@
   )
 
   (import
-      (r5rs base) (owl io)
+      (r5rs core) (owl io)
       (owl list) (owl string)
       (owl math) (owl pinvoke))
   (begin

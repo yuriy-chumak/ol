@@ -15,14 +15,14 @@
       bind-toplevel
       library-import                ; env exps fail-cont → env' | (fail-cont <reason>)
       evaluate
-      *owl-core*
+      *src-olvm*
       ; 6.5 Eval
       eval
       ;scheme-report-environment null-environment
       interaction-environment)
 
    (import 
-      (r5rs base)
+      (r5rs core)
       
       (owl list)
       (owl primop)
@@ -69,7 +69,7 @@
             (print* msg)))
 
       ;; library (just the value of) containing only special forms, primops and
-      (define *owl-core*
+      (define *src-olvm*
          (fold
             (λ (env thing)
                (env-set env (ref thing 1) (ref thing 5))) ; add primitives to the end of list
@@ -718,7 +718,7 @@
             (else 
                (fail (list "unknown library term: " (car exp))))))
 
-      ;; variables which are added to *owl-core* when evaluating libraries   
+      ;; variables which are added to *src-olvm* when evaluating libraries   
       (define library-exports
          (list 
             library-key     ;; loaded libraries
@@ -791,7 +791,7 @@
                      (lets ((module (build-export (cdr exp) env (λ (x) x)))) ; <- to be removed soon, dummy fail cont
                         (ok module env)))
                   ((library-definition? exp)
-                     ;; evaluate libraries in a blank *owl-core* env (only primops, specials and define-syntax)
+                     ;; evaluate libraries in a blank *src-olvm* env (only primops, specials and define-syntax)
                      ;; include just loaded *libraries* and *include-paths* from the current one to share them
                      (lets/cc ret
                         ((exps (map cadr (cdr exp))) ;; drop the quotes
@@ -805,7 +805,7 @@
                          (lib-env
                            (fold 
                               (λ (lib-env key) (env-set lib-env key (env-get env key null)))
-                              *owl-core* library-exports))
+                              *src-olvm* library-exports))
                          (lib-env (env-set lib-env current-library-key name)))
                         (tuple-case (repl-library exps lib-env repl fail) ;; anything else must be incuded explicitly
                            ((ok library lib-env)

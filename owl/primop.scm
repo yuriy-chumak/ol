@@ -14,7 +14,7 @@
       set-memory-limit get-word-size get-memory-limit start-seccomp)
 
    (import
-      (r5rs base)
+      (r5rs core)
       (lang vm))
 
    (begin

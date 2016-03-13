@@ -20,7 +20,7 @@
       )
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl math)
       (owl list)
       (owl list-extra))

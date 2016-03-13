@@ -4,7 +4,7 @@
       strftime)
 
    (import
-      (r5rs base))
+      (r5rs core))
 
    (begin
 

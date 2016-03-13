@@ -22,7 +22,7 @@
       valid-code-point?)
 
    (import
-      (r5rs base)
+      (r5rs core)
       (except (owl list) render)
       (owl list-extra)
       (owl lazy)

@@ -41,7 +41,7 @@
       )
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl primop))
 
    (begin

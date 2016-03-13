@@ -30,14 +30,14 @@
 (mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
 
 ; forget all other libraries to have them be reloaded and rebuilt
-; (owl core) содержит базовые элементы языка
+; (src olvm) содержит список базовых элементов языка
 (define *libraries*
    (keep
       (λ (lib)
-         (equal? (car lib) '(owl core)))
+         (equal? (car lib) '(src olvm)))
       *libraries*))
 
-(import (r5rs base)) ;; reload default macros needed for defining libraries etc
+(import (r5rs core)) ;; reload default macros needed for defining libraries etc
 
 ;; forget everhything except these and core values (later list also them explicitly)
 ,forget-all-but (*libraries* *codes* wait stdin stdout stderr set-ticker-value build-start)
@@ -46,10 +46,10 @@
 ;;;
 ;;; Time for a new REPL
 ;;;
-(import (owl core))     ;; get special forms, primops and define-syntax
+(import (src olvm))     ;; get special forms, primops and define-syntax
 
 ;; this should later be just a sequence of imports followed by a fasl dump
-(import (r5rs base))    ;; get define, define-library, import, ... from the just loaded
+(import (r5rs core))    ;; get define, define-library, import, ... from the just loaded
 
 (define *include-dirs* '(".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
@@ -75,7 +75,7 @@
    (export string-set! vector-set!) ; set! set-car! set-cdr!
 
    (import
-      (r5rs base)
+      (r5rs core)
       (owl interop))
 
    (begin
@@ -253,7 +253,7 @@
 
 (define-library (owl char)
    (export char->integer integer->char)
-   (import (r5rs base))
+   (import (r5rs core))
    (import
       (owl math))
    (begin
@@ -292,66 +292,18 @@
 
 (import (lang eval))
 
-;(import (owl base))
-
 ;; push it to libraries for sharing, replacing the old one
-(define *libraries*
+(define *libraries* ; заменим старую (src olvm) на новую
    (cons
-      (cons '(owl core) *owl-core*)
-      (keep (λ (x) (not (equal? (car x) '(owl core)))) *libraries*)))
+      (cons '(src olvm) *src-olvm*)
+      (keep (λ (x) (not (equal? (car x) '(src olvm)))) *libraries*)))
 
 ;; todo: share the modules instead later
 (define shared-misc
    (share-bindings
-;      error
-;      boolean?  fixnum?  eof?  symbol?
-;      tuple?  string?  function? procedure? equal? eqv? bytecode?
-;      not
-;      null?  null
-;      time
-;      time-ms
-;      halt exec
-;      seccomp
-;      apply
-;      call/cc
-;      call-with-current-continuation
-;      display print-to print print*
-;      render
-;      system-println
-;      sleep
-;      list->tuple
-;      exit-thread
-;      number->string
-;      fork
-;      fork-named
-;      fork-linked
-;      fork-server
-;      fork-linked-server
-;      exit-owl
-;      single-thread?
-;      set-ticker-value
-;      kill
-;      catch-thread
-;      release-thread
-;      suspend
-;      mail interact
-;      string->number
-;      wait
-;      wait-mail accept-mail check-mail return-mails
-;      set-signal-action
-;      byte-vector?
-;      string->symbol
-;      close-port flush-port
-;      ;dlopen dlsym RTLD_LAZY
-;      set-memory-limit
-;      get-word-size
-;      get-memory-limit
-;      string->sexp
-;      profile
       *features*
       *include-dirs*
-      *libraries*      ;; all currently loaded libraries
-      ))
+      *libraries*))      ;; all currently loaded libraries
 
 (print "Code loaded at " (- (time-ms) build-start) " ms.")
 
@@ -364,7 +316,7 @@
 (define initial-environment-sans-macros
    (fold
       (λ (env pair) (env-put-raw env (car pair) (cdr pair)))
-      *owl-core*
+      *src-olvm*
       shared-bindings))
 
 (define initial-environment
