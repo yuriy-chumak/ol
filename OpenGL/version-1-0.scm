@@ -902,14 +902,14 @@
 
    glIsExtensionSupported
 
-   (exports (r5rs base))
+   (exports (r5rs core))
    (exports (owl io))
    (exports (owl pinvoke))
 )
 ; ============================================================================
 ; == implementation ==========================================================
    (import
-      (r5rs base) (owl io) (owl string)
+      (r5rs core) (owl io) (owl string)
       (owl pinvoke)
       (owl interop) (owl list))
 

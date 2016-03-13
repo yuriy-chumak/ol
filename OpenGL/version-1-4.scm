@@ -8,7 +8,7 @@
    )
   
    (import
-      (r5rs base) (owl io)
+      (r5rs core) (owl io)
       (OpenGL version-1-3))
    (begin
    (define GL_VERSION_1_4 1)

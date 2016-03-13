@@ -353,8 +353,8 @@
 
                (if (> spinner 0)
                   (setx! glyphs x y (rand! NGLYPHS)))))))
-      (lrange 0 1 WIDTH)))
-   (lrange 0 1 HEIGHT))
+      (iota WIDTH)))
+   (iota HEIGHT))
  ; cell->changed = 1;
 
             

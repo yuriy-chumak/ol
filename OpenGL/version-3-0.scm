@@ -11,7 +11,7 @@
 )
   
    (import
-      (r5rs base) (owl io)
+      (r5rs core) (owl io)
       (OpenGL version-1-0))
 
 (begin

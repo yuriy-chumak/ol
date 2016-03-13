@@ -10,7 +10,7 @@
    )
 
    (import
-      (r5rs base) (owl io)
+      (r5rs core) (owl io)
       (OpenGL version-1-1))
       
    (import (OpenGL EXT bgra))
@@ -33,7 +33,7 @@
    )
   
    (import
-      (r5rs base) (owl io)
+      (r5rs core) (owl io)
       (OpenGL version-1-2))
 
 (begin

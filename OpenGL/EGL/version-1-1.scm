@@ -164,7 +164,7 @@
 )
 
    (import
-      (r5rs base) (owl io) (owl string)
+      (r5rs core) (owl io) (owl string)
       (OpenGL ES version-1-0)
 
       (owl pinvoke) (lib platform) (lib x11)

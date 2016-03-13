@@ -23,7 +23,7 @@
 ;	EXT_abgr affects the definition of this extension
 ;	EXT_texture3D affects the definition of this extension
    (import
-      (r5rs base) (owl io)
+      (r5rs core) (owl io)
       (OpenGL version-1-0))
 
 ;	EXT_texture is required.

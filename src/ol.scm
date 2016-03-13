@@ -54,8 +54,6 @@
 (define *include-dirs* '(".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
 
-(import (owl interop))
-(import (owl primop))
 
 (define *loaded* '())   ;; can be removed soon, was used by old ,load and ,require
 
@@ -70,69 +68,8 @@
 (define owl-ohai "You see a prompt.") ; todo: change to version string
 (define owl-ohai-seccomp "You see a prompt. You feel restricted.")
 
-;; throw an error if some familiar but unsupported Scheme functions are called
-(define-library (owl unsupported)
-   (export string-set! vector-set!) ; set! set-car! set-cdr!
-
-   (import
-      (r5rs core)
-      (owl interop))
-
-   (begin
-      (define (unsupported name)
-         (error "Mutator not supported: " name))
-
-;      (define (set-car! pair val) (unsupported "set-car!"))
-;      (define (set-cdr! pair val) (unsupported "set-cdr!"))
-      (define (vector-set! vec pos val) (unsupported "vector-set!"))
-      (define (string-set! str pos val) (unsupported "string-set!"))))
-
-
-
-
-;; move these simple ones to a separate library later (owl immediate?)
-(import (owl list))
-(import (owl ff))
-(import (only (owl iff))) ;; hack, load it but don't import anything
-(import (owl math))
-(import (owl list-extra))
-(import (owl sort))
-(import (owl math-extra))
-(import (owl lazy))
-(import (only (owl unicode) encode-point))
-(import (owl string))
-
-
-;; move these elsewhere
-(define (number->string n base)
-   (list->string (render-number n null base)))
-
-(import (owl vector))
-(import (owl symbol))
-(import (owl tuple))
-(import (owl equal))
-(import (owl rlist))
-
-; todo: change to (eof-object? ) as "r5rs/6.6.2 Input", add #eof to parser
-(import (owl render))
-(import (only (owl queue))) ; just load it
-(import (owl intern))
-(import (owl io))
-(import (owl parse))
-(import (owl regex))
-
-(define (ok? x) (eq? (ref x 1) 'ok))
-(define (ok exp env) (tuple 'ok exp env))
-(define (fail reason) (tuple 'fail reason))
-
-(import (scheme misc))
-(import (owl gensym))
-
-;; SRFI
-(import (r5rs srfi-1))
 
 (import (otus lisp))
-
 
 ;; does not belong here, but needed in macros for now
 
@@ -146,6 +83,15 @@
       (1001 (list "value argument for set! must be value-type"))
       (else
          (list "error: " 'instruction opcode 'info (tuple a b)))))
+
+(import (owl interop))
+(import (owl primop))
+
+(import (owl intern))
+(import (owl parse))
+(import (owl regex))
+
+(import (owl gensym))
 
 
 (import (lang env))
