@@ -65,7 +65,6 @@
       (owl fasl)
       (owl tuple)
       (owl primop)
-      (owl eof)
       (owl lazy)
       (only (owl vector) merge-chunks vec-leaves))
 

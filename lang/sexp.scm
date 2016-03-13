@@ -19,7 +19,6 @@
       (owl list)
       (owl math-extra)
       (owl vector)
-      (owl eof)
       (owl list-extra)
       (owl ff)
       (owl lazy)
@@ -338,6 +337,7 @@
                      (get-word "true" #true)    ;; get the longer ones first if present
                      (get-word "false" #false)
                      (get-word "empty" #empty)
+                     (get-word "eof" (cast 4 13)) ;; #eof
                      (get-word "t" #true)
                      (get-word "f" #false)
                      (get-word "T" #true)

@@ -14,7 +14,6 @@
       (owl rlist)
       (owl interop)
       (owl lazy)
-      (owl eof)
       (owl math)
       (only (owl fasl) sub-objects)
       (only (owl vector) byte-vector? vector? vector->list)

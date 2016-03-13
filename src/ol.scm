@@ -88,6 +88,8 @@
       (define (string-set! str pos val) (unsupported "string-set!"))))
 
 
+
+
 ;; move these simple ones to a separate library later (owl immediate?)
 (import (owl list))
 (import (owl ff))
@@ -112,19 +114,9 @@
 (import (owl rlist))
 
 ; todo: change to (eof-object? ) as "r5rs/6.6.2 Input", add #eof to parser
-(define-library (owl eof)
-   (export eof?)
-   (import (r5rs base))
-   (begin
-      (define eof-value
-         (cast 4 13))
-      (define (eof? x)
-         (eq? x eof-value))))
-
 (import (owl render))
 (import (only (owl queue))) ; just load it
 (import (owl intern))
-(import (owl eof))
 (import (owl io))
 (import (owl parse))
 (import (owl regex))
@@ -139,6 +131,7 @@
 ;; SRFI
 (import (r5rs srfi-1))
 
+(import (otus lisp))
 
 
 ;; does not belong here, but needed in macros for now
@@ -169,6 +162,7 @@
 (import (lang closure))
 (import (lang compile))
 
+
 (define error-tag "err")
 
 (define (error? x)
@@ -176,6 +170,7 @@
       (eq? (ref x 1) error-tag)))
 
 (import (owl time))
+(import (owl fasl))
 
 ;; fixme: should sleep one round to get a timing, and then use avg of the last one(s) to make an educated guess
 (define (sleep ms)
@@ -297,7 +292,7 @@
 
 (import (lang eval))
 
-(import (owl base))
+;(import (owl base))
 
 ;; push it to libraries for sharing, replacing the old one
 (define *libraries*
@@ -375,7 +370,7 @@
 (define initial-environment
    (bind-toplevel
       (library-import initial-environment-sans-macros
-         '((owl base))
+         '((otus lisp))
          (λ (reason) (error "bootstrap import error: " reason))
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
 

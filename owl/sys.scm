@@ -36,7 +36,6 @@
       (owl equal)
       (owl io)
       (owl interop)
-      (owl eof)
       (owl list)
       (owl vector))
 

@@ -957,8 +957,24 @@
        ; procedure:  (dynamic-wind before thunk after)
        ;
 
-       ;; 6.5  Eval
-       ; ...
+      ;; 6.5  Eval
+      ; ...
+
+      ;; 6.6
+      ; ...
+
+      ;; 6.6.2 Input
+      ; library procedure:  (read)
+      ; library procedure:  (read port)
+      ; procedure:  (read-char)
+      ; procedure:  (read-char port)
+      ; procedure:  (peek-char)
+      ; procedure:  (peek-char port)
+      ; procedure:  (eof-object? obj) 
+      ; procedure:  (char-ready?)
+      ; procedure:  (char-ready? port)
+
+      (define (eof? o) (eq? o #eof))
 
 
        ;; **********
@@ -1287,7 +1303,7 @@
       call-with-current-continuation call/cc lets/cc
 
       ; 3.2.
-      boolean? pair? symbol? number? char? string? vector? port? procedure? null?
+      boolean? pair? symbol? number? char? string? vector? port? procedure? null? eof?
       ; ol extension:
       bytecode? function? ff?
 

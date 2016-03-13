@@ -50,7 +50,6 @@
       (owl lazy)
       (lang macro)
       (owl intern)
-      (owl eof)
       (only (owl regex) string->regex))
 
    (begin
@@ -193,7 +192,7 @@
       ; -> (ok value env), (error reason env)
 
       (define repl-op?
-         (let ((pattern (list 'unquote symbol?)))	
+         (let ((pattern (list 'unquote symbol?)))
             (λ (exp) (match pattern exp))))
 
       (define (mark-loaded env path)

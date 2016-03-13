@@ -1,6 +1,6 @@
 ;; currently a union library of some existing ones 
 
-(define-library (owl base)
+(define-library (otus lisp)
 
    (export
       (exports (r5rs base))
@@ -16,7 +16,6 @@
       (exports (owl sort))
       (exports (owl vector))
       (exports (owl equal))
-      (exports (owl eof))
 ;      (exports (owl random))
       (exports (owl render))
       (exports (owl interop))
@@ -26,8 +25,10 @@
       (exports (owl math-extra))
       (exports (owl math))
       (exports (owl tuple))
-      defined?
-      wait)
+
+      (exports (r5rs srfi-1))
+      defined? ; todo: move to right library
+      wait)    ; todo: move to right library
 
    (import
       (r5rs base)
@@ -41,7 +42,6 @@
       (owl time)
       (owl lazy)
       (owl math-extra)
-      (owl eof)
       (owl string)
 ;      (scheme misc)
       (owl symbol)
@@ -54,4 +54,7 @@
       (owl render)
       (only (owl intern) defined?)
       (owl interop)
-      (owl math)))
+      (owl math)
+
+      (r5rs srfi-1)
+))
