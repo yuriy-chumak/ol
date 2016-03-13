@@ -17,7 +17,7 @@
 
 ;; ff of all numbers
 (define wanted 
-   (fold (λ (ff n) (put ff n n)) empty (iota 0 1 n)))
+   (fold (λ (ff n) (put ff n n)) empty (lrange 0 1 n)))
 
 (define (drop-mails)
    (wait-mail)
@@ -59,9 +59,9 @@
             (λ () (spammer (seed->rands n))))
          rst))
    (seed->rands seed)
-   (iota 0 1 n))
+   (lrange 0 1 n))
 
 ;; start all threads
 (for-each
    (λ (id) (mail id 'start))
-   (iota 0 1 n))
+   (lrange 0 1 n))

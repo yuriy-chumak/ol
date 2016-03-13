@@ -215,7 +215,7 @@
 	(define decrypt encrypt)
 
 	(lets 
-		((data (map (lambda (x) (band x #xff)) (iota 0 1 (* 16 1024))))
+		((data (map (lambda (x) (band x #xff)) (lrange 0 1 (* 16 1024))))
 		 (start (time)))
 		(print "bbs encrypting...")
 		(receive (encrypt (car key) data)

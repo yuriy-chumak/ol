@@ -1,5 +1,6 @@
 (define-library (owl list)
 
+   ; todo: move fold to srfi-1
    (export 
       null
       caar cadr cdar cddr

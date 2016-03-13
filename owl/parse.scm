@@ -329,7 +329,7 @@
          (print-to stderr reason)
          (write-bytes stderr '(32 32 32)) ; indent by 3 spaces
          (write-bytes stderr (cons 96 (append (force-ll bytes) '(39 10))))
-         (write-bytes stderr (map (λ (x) 32) (iota 0 1 (+ posn 4)))) ; move to right position
+         (write-bytes stderr (map (λ (x) 32) (lrange 0 1 (+ posn 4)))) ; move to right position
          (write-bytes stderr '(94 10)))
 
       ; find the row where the error occurs

@@ -430,16 +430,16 @@
       (rfoldr cons null rl))
 
    '(begin
-      (print " => " (fold - 0 (iota 0 1 100)))
-      (print " => " (rfold - 0 (foldr rcons null (iota 0 1 100))))
-      (print " => " (foldr - 0 (iota 0 1 100)))
-      (print " => " (rfoldr - 0 (foldr rcons null (iota 0 1 100))))
-      (print " => " (let ((a (iota 0 1 100)) (b (iota 100 1 200))) 
+      (print " => " (fold - 0 (lrange 0 1 100)))
+      (print " => " (rfold - 0 (foldr rcons null (lrange 0 1 100))))
+      (print " => " (foldr - 0 (lrange 0 1 100)))
+      (print " => " (rfoldr - 0 (foldr rcons null (lrange 0 1 100))))
+      (print " => " (let ((a (lrange 0 1 100)) (b (lrange 100 1 200))) 
                         (equal? (rlist->list (rapp (list->rlist a) (list->rlist b)))
                                 (rlist->list (list->rlist (append a b))))))
-      (print " => " (let ((l (iota 0 1 100))) (equal? (length l) (rlen (list->rlist l)))))
-      (print " => " (let ((l (iota 0 1 1000))) (equal? (length l) (rlen (list->rlist l)))))
-      (print " => " (let ((l (iota 0 1 10000))) (equal? (length l) (rlen (list->rlist l)))))
+      (print " => " (let ((l (lrange 0 1 100))) (equal? (length l) (rlen (list->rlist l)))))
+      (print " => " (let ((l (lrange 0 1 1000))) (equal? (length l) (rlen (list->rlist l)))))
+      (print " => " (let ((l (lrange 0 1 10000))) (equal? (length l) (rlen (list->rlist l)))))
       )
 
    (define (rlist->num rl)
@@ -453,9 +453,9 @@
 
    '(for-each
       (λ (n)
-         ;(print " -> " (foldr rcons null (iota 0 1 n)))
-         (print " ==> " (rlist->num (foldr rcons null (iota 0 1 n)))))
-      (iota 1 1 10))
+         ;(print " -> " (foldr rcons null (lrange 0 1 n)))
+         (print " ==> " (rlist->num (foldr rcons null (lrange 0 1 n)))))
+      (lrange 1 1 10))
 
 )
 

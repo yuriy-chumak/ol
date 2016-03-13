@@ -122,14 +122,14 @@
 	(let*
 		((ns 
 			(map (lambda (x) (<< 1 x))
-				(map (lambda (x) (expt 2 x)) (iota 0 1 6))))
+				(map (lambda (x) (expt 2 x)) (lrange 0 1 6))))
 		 (ns (append ns (map (lambda (x) (- x 1)) ns)))
 		 (ns (append ns (map (lambda (x) (- 0 x)) ns))))
 		; positive first
 		(sort > (cons 0 ns))))
 
 (define simple-numbers
-	(map (lambda (x) (expt 2 x)) (iota 0 1 17)))
+	(map (lambda (x) (expt 2 x)) (lrange 0 1 17)))
 
 ;;; 
 ;;;  Unit tests 

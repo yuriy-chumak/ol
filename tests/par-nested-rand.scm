@@ -6,7 +6,7 @@
 
 (define (seek rs lo hi n)
    (if (small-range? lo hi)
-      (if (has? (iota lo 1 hi) n)
+      (if (has? (lrange lo 1 hi) n)
          (begin
             (print "found it!")
             #true)

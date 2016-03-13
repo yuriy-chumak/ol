@@ -39,7 +39,7 @@
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
-// математику считать так: (receive (fx+ 16777214 1) (lambda (hi lo) (list hi lo)))
+// математику считать так: (receive (fx:+ 16777214 1) (lambda (lo hi) (list hi lo)))
 //                   либо: (let* ((hi lo (fx+ 16777214 1))) (...))
 // при превышении выдает, естественно, мусор
 //
@@ -137,9 +137,7 @@
 #define DO_PRAGMA(x) _Pragma (#x)
 #define TODO(x) DO_PRAGMA(message ("TODO - " #x))
 
-TODO("set должен стать универсальным, как get - работать и для raw объектов тоже!")
-TODO("size должен стать универсальным, как get - работать и для raw объектов тоже")
-TODO("позволить cast делать port из 0, 1 и 2. после чего усилить проверку is_port")
+// TODO: ref, set, must base on 0 (like list-ref, vector-ref, etc.), not on 1. create temporary refn, setn based on 1 (?)
 
 #ifndef _WIN32
 #include <features.h>

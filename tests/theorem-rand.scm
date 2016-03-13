@@ -34,10 +34,10 @@
 ; f :: ? → _, keys
 (define (domain x)
    (cond
-      ((rlist? x)  (iota 0 1 (rlen x)))
-      ((list? x)   (iota 0 1 (length x)))
-      ((string? x) (iota 0 1 (string-length x)))
-      ((vector? x) (iota 0 1 (vec-len x)))
+      ((rlist? x)  (lrange 0 1 (rlen x)))
+      ((list? x)   (lrange 0 1 (length x)))
+      ((string? x) (lrange 0 1 (string-length x)))
+      ((vector? x) (lrange 0 1 (vec-len x)))
       ((ff? x)     (keys x))
       (else (error "domain: what is " x))))
 
@@ -449,7 +449,7 @@
              = (fold 
                   (lambda (rp i) (rset rp i (+ 1 (rget rp i 'bad))))
                   r 
-                  (iota 0 1 (rlen r)))
+                  (lrange 0 1 (rlen r)))
 
       theorem rlist-convert
          ∀ l ∊ List 
@@ -473,16 +473,16 @@
 
       theorem lazy-1
          ∀ n ∊ Byte
-            (fold + 0 (iota 0 1 n)) = (lfold + 0 (liota 0 1 n))
+            (fold + 0 (lrange 0 1 n)) = (lfold + 0 (liota 0 1 n))
       
       theorem lazy-2
          ∀ n ∊ Byte
-            (zip cons (iota 0 1 n) (iota n -1 0)) 
+            (zip cons (lrange 0 1 n) (lrange n -1 0)) 
                = (force-ll (lzip cons (liota 0 1 n) (liota n -1 0)))
 
       theorem lazy-3
          ∀ n ∊ Byte
-            (reverse (iota 0 1 n)) = (lfoldr cons null (liota 0 1 n))
+            (reverse (lrange 0 1 n)) = (lfoldr cons null (liota 0 1 n))
 
       theorem str-1
          ∀ l ∊ (List-of Short)

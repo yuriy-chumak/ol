@@ -51,7 +51,7 @@
                ((< reg highest-register)
                   opts)
                ((null? opts)
-                  (iota 4 1 highest-register))
+                  (lrange 4 1 highest-register))
                (else opts))))
 
       ; union on each register target
@@ -191,7 +191,7 @@
                (if (> a highest-register)
                   ;; needs to be relocated lower, so return here a wish to put is somewhere lower
                   (values code
-                     (put (reg-root empty 3) a (iota 4 1 highest-register))) ; please move me anywhere lower
+                     (put (reg-root empty 3) a (lrange 4 1 highest-register))) ; please move me anywhere lower
                   (values code
                      (reg-touch (reg-root empty 3) a))))
 
@@ -252,7 +252,7 @@
                (lets
                   ((cont uses (rtl-retard cont))
                    (good (use-list uses to))
-                   (good (if (> to highest-register) (append good (iota 0 1 highest-register)) good))
+                   (good (if (> to highest-register) (append good (lrange 0 1 highest-register)) good))
                    (pass (λ () (values (tuple 'ld val to cont) (del uses to)))))
                   (retarget-first cont to good uses
                      (λ (to-new cont-new)
@@ -282,13 +282,13 @@
                            (rtl-retard
                               (tuple 'refi from offset to-new more-new)))))))
             ((goto op nargs)
-               (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
+               (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             ;((goto-code op nargs)
-            ;   (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
+            ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             ;((goto-proc op nargs)
-            ;   (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
+            ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             ;((goto-clos op nargs)
-            ;   (values code (fold reg-root empty (cons op (iota 3 1 (+ 4 nargs))))))
+            ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             ((jeq a b then else)
                (rtl-retard-jump rtl-retard 'jeq a b     then else))
             ((jn a then else)

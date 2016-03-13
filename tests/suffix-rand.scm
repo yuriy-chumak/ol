@@ -22,7 +22,7 @@
    (list->vector
       (sort 
          (λ (a b) (lex-less? data a b))
-         (iota 0 1 (vec-len data)))))
+         (lrange 0 1 (vec-len data)))))
 
 (define (try rst maxlen alphafact)
    (lets

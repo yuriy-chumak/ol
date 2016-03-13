@@ -5,4 +5,4 @@
    (export bad-kitty)
    (begin
       (define bad-kitty 
-         (map (λ (x) 'paw) (iota 0 1 4)))))
+         (map (λ (x) 'paw) (lrange 0 1 4)))))

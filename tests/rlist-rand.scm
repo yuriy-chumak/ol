@@ -22,7 +22,7 @@
 		(lets ((rst n (rand rst 25))
 				 (steps (- steps 1)))
 			;; draw a graph of the list length 
-			;(mail stdout (fold (lambda (out n) (cons 45 out)) '(124 10) (iota 0 1 len)))
+			;(mail stdout (fold (lambda (out n) (cons 45 out)) '(124 10) (lrange 0 1 len)))
 			(case n
 				((0 1 2) ; cons a new head
 					(if (< len max-list-size)

@@ -734,7 +734,7 @@
                       (verify (<= b c) "bad range"))
                      c)
                   (get-epsilon b))))
-            (iota b 1 (+ c 1))))
+            (lrange b 1 (+ c 1))))
 
       (define get-maybe-caret
          (get-either

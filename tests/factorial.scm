@@ -1,7 +1,7 @@
 ;; compute some factorials
 
 (define (fakt x) 
-   (fold * 1 (iota 1 1 (+ x 1))))
+   (fold * 1 (lrange 1 1 (+ x 1))))
 
 (define (fakti x)
    (let loop ((n 1) (x x))

@@ -93,9 +93,9 @@
          (list->ff
             (foldr append null
                (list
-                  (map (lambda (d) (cons d (- d 48))) (iota #\0 1 #\9))  ;; 0-9
-                  (map (lambda (d) (cons d (- d 55))) (iota 65 1 71))  ;; A-F
-                  (map (lambda (d) (cons d (- d 87))) (iota 97 1 103)) ;; a-f
+                  (map (lambda (d) (cons d (- d 48))) (lrange #\0 1 #\9))  ;; 0-9
+                  (map (lambda (d) (cons d (- d 55))) (lrange 65 1 71))  ;; A-F
+                  (map (lambda (d) (cons d (- d 87))) (lrange 97 1 103)) ;; a-f
                   ))))
       (define (bytes->number digits base)
          (fold

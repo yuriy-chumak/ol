@@ -556,13 +556,13 @@
 ;               (print "FF BAD " (ff->sexp ff)))
 ;            (put ff x (if (= x 42) 'correct (+ x 100))))
 ;         #empty
-;         (iota 0 1 100))
+;         (lrange 0 1 100))
 ;      42 'miss))
 ;
 ;
 ;(lets
 ;   ((rs (seed->rands (time-ms)))
-;    (rs keys (random-permutation rs (iota 0 1 10)))
+;    (rs keys (random-permutation rs (lrange 0 1 10)))
 ;    (pairs (map (λ (x) (cons x (+ x 100))) keys))
 ;    (ff (list->ff pairs))
 ;    (_ (print (ff->list ff)))

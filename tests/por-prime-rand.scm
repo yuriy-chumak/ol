@@ -4,7 +4,7 @@
 (define por-opts 
    (map 
       (λ (try) (λ () (ediv num try)))
-      (iota 2 1 (+ 1 (isqrt num)))))
+      (lrange 2 1 (+ 1 (isqrt num)))))
 
 (define (xor a b)
    (if a b (if b #false (not a))))

@@ -22,7 +22,7 @@
 
 (define-values (rs nums)  (random-numbers rs 1000 n))
 
-(define-values (rs steps) (random-permutation rs (iota 0 1 n)))
+(define-values (rs steps) (random-permutation rs (lrange 0 1 n)))
 
 (define step-order (map car (sort (λ (a b) (< (cdr a) (cdr b))) (zip cons nums steps))))
 

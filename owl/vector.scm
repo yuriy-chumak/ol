@@ -521,7 +521,7 @@
       ;; fixme: proper vec-range not implemented
       (define (vec-range-naive vec from to) ; O(m log n)
          (list->vector
-            (map (λ (p) (vec-ref vec p)) (iota from 1 to))))
+            (map (λ (p) (vec-ref vec p)) (lrange from 1 to))))
 
       (define vec-range vec-range-naive)
 

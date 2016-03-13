@@ -22,6 +22,6 @@
             (else
                (error "dlog failure: " (list (list 'dlog y a n) " = " x))))))
    (seed->rands (time-ms))
-   (iota 0 1 100))
+   (lrange 0 1 100))
 
 (print "ok")

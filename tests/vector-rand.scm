@@ -29,7 +29,7 @@
 ;            (tuple vec start end)))
 ;      (liter rand-succ (lets ((ss ms (clock))) (+ (* ss 1000) ms))))
 ;   (λ (t) (lets ((v s e t)) (force (vec-iter-range v s e))))
-;   (λ (t) (lets ((v s e t)) (map (λ (p) (vec-ref v p)) (iota s 1 e)))))
+;   (λ (t) (lets ((v s e t)) (map (λ (p) (vec-ref v p)) (lrange s 1 e)))))
 ;(test ;; vector fold[r]
 ;   (lmap
 ;      (λ (rst)

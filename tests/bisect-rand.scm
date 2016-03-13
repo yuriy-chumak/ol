@@ -13,4 +13,4 @@
             (print* (list " -> square ok " limit)))
          (if (= (div n m) (divide n m))
             (print* (list " -> divide ok " limit)))))
-   (map (λ (x) (expt 2 x)) (iota 3 1 100)))
+   (map (λ (x) (expt 2 x)) (lrange 3 1 100)))

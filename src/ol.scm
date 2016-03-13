@@ -30,7 +30,7 @@
 (mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
 
 ; forget all other libraries to have them be reloaded and rebuilt
-
+; (owl core) содержит базовые элементы языка
 (define *libraries*
    (keep
       (λ (lib)
@@ -135,6 +135,10 @@
 
 (import (scheme misc))
 (import (owl gensym))
+
+;; SRFI
+(import (r5rs srfi-1))
+
 
 
 ;; does not belong here, but needed in macros for now

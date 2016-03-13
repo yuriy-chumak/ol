@@ -98,7 +98,7 @@
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
       (define (bvec-tail bvec n)
-         (raw type-vector-raw (map (lambda (p) (ref bvec p)) (iota n 1 (size bvec)))))
+         (raw type-vector-raw (map (lambda (p) (ref bvec p)) (lrange n 1 (size bvec)))))
 
       (define (try-write-block fd bvec len)
          (if (port? fd) (sys:write fd bvec len) #false))

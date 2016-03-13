@@ -3,7 +3,7 @@
    (export 
       lref lset ldel length
       led ledn lins
-      take drop iota
+      take drop lrange; iota
       list-ref
       list-tail
       repeat
@@ -87,27 +87,28 @@
 
       ; fixme, iotas should be unfolds
 
-      (define (iota-up p s e)
+      (define (range-up p s e)
          (if (< p e)
-            (cons p (iota-up (+ p s) s e))
+            (cons p (range-up (+ p s) s e))
             null))
 
-      (define (iota-down p s e)
+      (define (range-down p s e)
          (if (> p e)
-            (cons p (iota-down (+ p s) s e))
+            (cons p (range-down (+ p s) s e))
             null))
 
-      (define (iota from step to)
+      (define (lrange from step to)
          (cond
             ((> step 0)
-               (if (< to from) null (iota-up from step to)))
+               (if (< to from) null (range-up from step to)))
             ((< step 0)
-               (if (> to from) null (iota-down from step to)))
+               (if (> to from) null (range-down from step to)))
             ((= from to) 
                null)
             (else 
-               (runtime-error "bad iota: " (list 'iota from step to)))))
-      
+               (runtime-error "bad lrange: " (list 'lrange from step to)))))
+
+
       (define (list-tail lst n)
          (if (eq? n 0)
             lst

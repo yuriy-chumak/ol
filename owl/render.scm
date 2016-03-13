@@ -87,7 +87,7 @@
                         (fold
                            (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
                            (cons #\] tl)
-                           (iota (size obj) -1 1)))))
+                           (lrange (size obj) -1 1)))))
 
 ; disabled, because records currently unload
 ;               ((record? obj)
@@ -96,7 +96,7 @@
 ;                        (fold
 ;                           (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
 ;                           (cons #\} tl)
-;                           (iota (size obj) -1 1)))))
+;                           (lrange (size obj) -1 1)))))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
                   (ilist #\# #\r (render (rlist->list obj) tl)))
@@ -221,7 +221,7 @@
                ;         (fold
                ;            (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
                ;            (cons 41 tl)
-               ;            (iota (size obj) -1 1)))))
+               ;            (lrange (size obj) -1 1)))))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
                   (ilist #\# #\r (ser sh (rlist->list obj) k)))

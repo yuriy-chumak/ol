@@ -104,10 +104,10 @@
 
 	(define hex-val
 		(list->ff
-			(append (zip cons (iota 48 1 58) (iota 0 1 10)) ; 0-9
+			(append (zip cons (lrange 48 1 58) (lrange 0 1 10)) ; 0-9
 				(append 
-					(zip cons (iota 97 1 103) (iota 10 1 16))	; a-f
-					(zip cons (iota 65 1 71)  (iota 10 1 16)))))) ; A-F
+					(zip cons (lrange 97 1 103) (lrange 10 1 16))	; a-f
+					(zip cons (lrange 65 1 71)  (lrange 10 1 16)))))) ; A-F
 
 	(define get-hex 
 		(let-parses ((digit (get-byte-if (λ (x) (get hex-val x #false)))))

@@ -263,7 +263,7 @@
              (baby
                (sort carless
                   (map (λ (r) (cons (rem (* y (expt-mod a r n)) n) r)) ; (ya^r. r)
-                     (iota 5 1 s)))
+                     (lrange 5 1 s)))
                ;(sort carless
                ;   (let loop ((ya (bound y n)) (r 0))
                ;      (if (= r s)
@@ -273,7 +273,7 @@
              (giant
                (sort carless
                   (map (λ (t) (cons (expt-mod a (* s t) n) (bound (* t s) n)))
-                     (iota 1 1 (+ s 1))))))
+                     (lrange 1 1 (+ s 1))))))
             ;; i thought the match would be unique, but there seem to be many and some aren't solutions. not sure yet why.
             (find-match baby giant (λ (x) (= y (expt-mod a x n))))))
 

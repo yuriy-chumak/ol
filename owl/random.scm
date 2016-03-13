@@ -403,7 +403,7 @@
                (values rs (+ o lo)))
             (runtime-error "rnd-range: bad range: " (list lo hi))))
 
-      ;(define data (iota 0 1 10))
+      ;(define data (lrange 0 1 10))
       ;(let loop ((rst (expt (time-ms) 3)))
       ;   (print " => " (reservoir-sample rst data 5))
       ;   (loop (rand-succ rst)))
@@ -501,7 +501,7 @@
                   (values rs #false)
                   (values rs #true))))) ;; <- natural number > 0 -> >= 100%
 
-      ;(lets ((rs l (shuffle (seed->rands 42) (iota 0 1 100))))
+      ;(lets ((rs l (shuffle (seed->rands 42) (lrange 0 1 100))))
       ;   (print " xxx " l))
 
       ;;;

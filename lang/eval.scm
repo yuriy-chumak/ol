@@ -179,7 +179,7 @@
                ((and (pair? lst) (null? (cdr lst)) (list? (car lst)))
                   (cons 10
                      (let ((ind (+ ind 2)))
-                        (append (map (λ (x) 32) (iota 0 1 ind))
+                        (append (map (λ (x) 32) (lrange 0 1 ind))
                            (format-error (car lst) ind)))))
                ((pair? lst)
                   (render (car lst)

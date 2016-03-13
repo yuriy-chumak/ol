@@ -121,7 +121,7 @@
             (type-fix+ (lnums-fix n))
             (else (lnums-other n))))
 
-      ;;; lazy iota, with some fixnum hacks to make it run at decent speed
+      ;;; lazy lrange, with some fixnum hacks to make it run at decent speed
 
       (define (liota-walk st step end)
          (if (= st end)
@@ -139,7 +139,7 @@
                      null
                      (pair st (liota-walk-one (+ st 1) end)))))))
 
-      ; fixnum range iota making 2 cells at a time. this is actually a bit
+      ; fixnum range lrange making 2 cells at a time. this is actually a bit
       ; faster than a corresponding (ugly) local loop.
 
       (define (liota-fix pos end)
@@ -156,9 +156,9 @@
             (if (eq? (type pos) type-fix+)
                (if (eq? (type end) type-fix+)
                   (liota-fix pos end)         ; positive fixnum range interval
-                  (liota-walk-one pos end))    ; increment iota
+                  (liota-walk-one pos end))    ; increment lrange
                (liota-walk-one pos end))
-            (liota-walk pos step end)))      ; general iota
+            (liota-walk pos step end)))      ; general lrange
 
       (define (liter op st)
          (pair st (liter op (op st))))
@@ -261,9 +261,9 @@
 
       (define subsets subs)
 
-      ; (lfold (lambda (n s) (print s) (+ n 1)) 0 (subsets (iota 0 1 5)))
+      ; (lfold (lambda (n s) (print s) (+ n 1)) 0 (subsets (lrange 0 1 5)))
 
-      ; (lfold (lambda (n s) (print s) (+ n 1)) 0 (permutations (iota 0 1 5)))
+      ; (lfold (lambda (n s) (print s) (+ n 1)) 0 (permutations (lrange 0 1 5)))
 
       (define (force-ll it)
          (cond

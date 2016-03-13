@@ -58,7 +58,7 @@
          
 (define (message->words message)
    (let cycle ((W
-               (let loop ((t (iota 0 1 16)))
+               (let loop ((t (lrange 0 1 16)))
                   (if (null? t)
                      null
                   (let*((p (* (car t) 4)))

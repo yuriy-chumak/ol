@@ -41,7 +41,7 @@
          (fork-server (+ id 1) (λ () (mailer (seed->rands seed-2) id)))
          rst))
    (seed->rands (* (time-ms) (<< (time-ms) 9)))
-   (iota 0 2 n-threads))
+   (lrange 0 2 n-threads))
 
-(for-each (λ (id) (mail id 'start)) (iota 0 1 n-threads))
+(for-each (λ (id) (mail id 'start)) (lrange 0 1 n-threads))
 

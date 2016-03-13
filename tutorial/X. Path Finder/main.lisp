@@ -317,8 +317,8 @@
                      (let ((color (/ 1.0 (/ (- 100 age) 7))))
                      ;(glColor3f color color color)
                      (draw-map-cell i j (at i j) 1)))))
-               (iota 0 1 HEIGHT)))
-            (iota 0 1 WIDTH))
+               (lrange 0 1 HEIGHT)))
+            (lrange 0 1 WIDTH))
          (glEnd))
       )
 
@@ -388,8 +388,8 @@
 ;                        (if (is-visible i (+ j 1)       x y) 0.25 0))))
 ;               (glColor3f c c c)
 ;               (quadT i j))))
-;         (iota 0 1 HEIGHT)))
-;      (iota 0 1 WIDTH)))
+;         (lrange 0 1 HEIGHT)))
+;      (lrange 0 1 WIDTH)))
 ;   (glEnd)
 ;   (glDisable GL_TEXTURE_2D)
 
@@ -398,11 +398,11 @@
 ;   (for-each (lambda (i)
 ;       (glVertex2f i 0)
 ;       (glVertex2f i HEIGHT))
-;      (iota 0 1 WIDTH))
+;      (lrange 0 1 WIDTH))
 ;   (for-each (lambda (i)
 ;       (glVertex2f 0 i)
 ;       (glVertex2f WIDTH i))
-;      (iota 0 1 HEIGHT))
+;      (lrange 0 1 HEIGHT))
 ;   (glEnd)
 
 
