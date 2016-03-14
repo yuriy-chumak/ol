@@ -71,19 +71,6 @@
 
 (import (otus lisp))
 
-;; does not belong here, but needed in macros for now
-
-(define (verbose-vm-error opcode a b)
-   (case opcode
-      (256
-         ; fixme, add but got ...
-         (list 'function b 'expected a 'arguments))
-      (52 (list "car, bad pair: " a))
-      (53 (list "cdr, bad pair: " a))
-      (1001 (list "value argument for set! must be value-type"))
-      (else
-         (list "error: " 'instruction opcode 'info (tuple a b)))))
-
 (import (owl interop))
 (import (owl primop))
 

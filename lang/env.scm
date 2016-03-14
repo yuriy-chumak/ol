@@ -1,8 +1,8 @@
-; 
+;
 (define-library (lang env)
 
-(export 
-      lookup env-bind 
+(export
+      lookup env-bind
       empty-env
       apply-env env-fold
       verbose-vm-error prim-opcodes primop-of primitive?
@@ -43,11 +43,11 @@
       (define link-tag "mcp/links")
       (define signal-tag "mcp/break")
       (define meta-tag '*owl-metadata*) ; key for object metadata
-      (define name-tag '*owl-names*)    ; key for reverse function/object → name mapping 
+      (define name-tag '*owl-names*)    ; key for reverse function/object → name mapping
       (define current-library-key '*owl-source*) ; toplevel value storing what is being loaded atm
 
-      (define (signal-halt threads state controller) 
-         (print-to stderr "stopping on signal") 
+      (define (signal-halt threads state controller)
+         (print-to stderr "stopping on signal")
          (halt 42)) ;; exit owl with a specific return value
       (define thread-quantum 10000)
 
@@ -65,12 +65,12 @@
                   (else def)))
             (else def)))
 
-      (define env-get-raw get) ;; will use different ff 
-      (define env-put-raw put) ;; will use different ff 
+      (define env-get-raw get) ;; will use different ff
+      (define env-put-raw put) ;; will use different ff
 
       (define (env-set env key val)
          (put env key
-            (tuple 'defined 
+            (tuple 'defined
                (tuple 'value val))))
 
       (define (env-set-macro env key transformer)
@@ -82,8 +82,8 @@
             ((invoke module name arg ...)
                ((env-get module (quote name)
                   (lambda (arg ...)
-                     (runtime-error "invoke: failed to invoke " 
-                        (cons (quote name) 
+                     (runtime-error "invoke: failed to invoke "
+                        (cons (quote name)
                            (list arg ...)))))
                   arg ...))))
 
@@ -103,10 +103,10 @@
       ;;; apply-env
       ;;;
 
-      ; this compiler pass maps sexps to sexps where each free 
+      ; this compiler pass maps sexps to sexps where each free
       ; occurence of a variable is replaced by it's value
 
-      ; this is functionally equivalent to making a big 
+      ; this is functionally equivalent to making a big
       ; (((lambda (name ..) exp) value)), but the compiler currently
       ; handles values occurring in the sexp itself a bit more efficiently
 
@@ -125,12 +125,12 @@
             ((bound) exp)
             ((defined defn)
                (tuple-case defn
-                  ((value val) 
+                  ((value val)
                      (value-exp val))
                   (else is funny
                      (fail (list "funny defined value: " funny)))))
             ((undefined)
-               (fail (list "What is" 
+               (fail (list "What is"
                   (bytes->string (foldr render '() (list "'" exp "'?"))))))
             (else is bad
                (fail (list "The symbol" exp "has a funny value: '" bad "'")))))
@@ -189,14 +189,14 @@
       ; after macros have been expanded
 
       (define (apply-env exp env)
-         (call/cc 
+         (call/cc
             (lambda (ret)
                (ok env
-                  ((walker env 
-                     (lambda (reason) 
+                  ((walker env
+                     (lambda (reason)
                         (ret (fail reason))))
                      exp)))))
-         
+
       (define env-fold ff-fold)
 
       (define env-del del)
@@ -204,13 +204,24 @@
       ;;; these cannot be in primop since they use lists and ffs
 
       (define (verbose-vm-error opcode a b)
-         (if (eq? opcode 17) ;; arity error, could be variable 
-            ; this is either a call, in which case it has an implicit continuation, 
-            ; or a return from a function which doesn't have it. it's usually a call, 
-            ; so -1 to not count continuation. there is no way to differentiate the 
-            ; two, since there are no calls and returns, just jumps.
-            `(function ,a got did not want ,(- b 1) arguments) 
-            `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
+         (cons "error: "
+         (if (eq? opcode 17)  ;; arity error, could be variable
+               ; this is either a call, in which case it has an implicit continuation,
+               ; or a return from a function which doesn't have it. it's usually a call,
+               ; so -1 to not count continuation. there is no way to differentiate the
+               ; two, since there are no calls and returns, just jumps.
+            `(function ,a got did not want ,(- b 1) arguments)
+         (if (eq? opcode 52)
+            `(trying to get car of a non-pair ,a)
+         (if (eq? opcode 53)
+            `(trying to get cdr of a non-pair ,a)
+         `(,(primop-name opcode) reported error ": " ,a " " ,b)
+         )))))
+         ;   ;((eq? opcode 52)
+         ;   ;   `(trying to get car of a non-pair ,a))
+         ;   (else
+         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
+
 
       ;; ff of opcode → wrapper
       (define prim-opcodes ;; ff of wrapper-fn → opcode
@@ -233,11 +244,11 @@
             (list
                (cons 'quote   (tuple 'special 'quote))
                (cons 'lambda  (tuple 'special 'lambda))
-               (cons 'rlambda (tuple 'special 'rlambda))
+               (cons 'rlambda (tuple 'special 'rlambda)) ; todo: rename to eval-lambda or similar
                (cons 'receive (tuple 'special 'receive))
-               (cons '_branch (tuple 'special '_branch))
-               (cons '_define (tuple 'special '_define))
-               (cons '_case-lambda (tuple 'special '_case-lambda))
+               (cons '_branch (tuple 'special '_branch)) ; todo: rename to (ol:if) or similar
+               (cons '_define (tuple 'special '_define)) ; todo: rename to (ol:define) or define-symbol or similar
+               (cons '_case-lambda (tuple 'special '_case-lambda)) ; todo: rename to ...
                (cons 'values   (tuple 'special 'values)))))
 
       ;; take a subset of env

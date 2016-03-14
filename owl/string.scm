@@ -75,14 +75,14 @@
          (if (eq? pos end)
             tl
             (pair (ref str pos)
-               (lets ((pos u (fx:+ pos 1)))
+               (lets ((pos u (vm:add pos 1)))
                   (str-iter-leaf str tl pos end)))))
 
       (define (str-iter-wide-leaf str tl pos)
          (if (eq? pos (size str))
             (cons (ref str pos) tl)
             (pair (ref str pos)
-               (lets ((pos o (fx:+ pos 1)))
+               (lets ((pos o (vm:add pos 1)))
                   (str-iter-wide-leaf str tl pos)))))
 
       (define (str-iter-any str tl)
@@ -111,14 +111,14 @@
          (if (eq? pos 0)
             (cons (ref str pos) tl)
             (pair (ref str pos)
-               (lets ((pos u (fx:- pos 1)))
+               (lets ((pos u (vm:sub pos 1)))
                   (str-iterr-leaf str tl pos)))))
 
       (define (str-iterr-wide-leaf str tl pos)
          (if (eq? pos 1)
             (cons (ref str pos) tl)
             (pair (ref str pos)
-               (lets ((pos u (fx:- pos 1)))
+               (lets ((pos u (vm:sub pos 1)))
                   (str-iterr-wide-leaf str tl pos)))))
 
       (define (str-iterr-any str tl)

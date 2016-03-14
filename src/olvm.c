@@ -39,8 +39,8 @@
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
-// математику считать так: (receive (fx:+ 16777214 1) (lambda (lo hi) (list hi lo)))
-//                   либо: (let* ((hi lo (fx+ 16777214 1))) (...))
+// математику считать так: (receive (vm:add (fxmax) 1) (lambda (n carry) (list carry n)))
+//                   либо: (let* ((n carry (fx+ (fxmax) 1))) (...))
 // при превышении выдает, естественно, мусор
 //
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
@@ -1959,7 +1959,7 @@ invoke:;
 			A2 = (A0 == A1) ? ITRUE : IFALSE;
 			ip += 3; break;
 
-		case LESS: {// fx:< a b r
+		case LESS: {// less? a b r
 			word a = A0;
 			word b = A1;
 
@@ -1978,25 +1978,25 @@ invoke:;
 
 
 		// АЛУ (арифметическо-логическое устройство)
-		case ADDITION: { // fx+ a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
-			word r = uvtoi(A0) + uvtoi(A1);
+		case ADDITION: { // vm:add a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
+			word r = value(A0) + value(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
 			ip += 4; break; }
-		case SUBTRACTION: { // fx- a b  r u, args prechecked, signs ignored
-			word r = (uvtoi(A0) | HIGHBIT) - uvtoi(A1);
+		case SUBTRACTION: { // vm:sub a b  r u, args prechecked, signs ignored
+			word r = (value(A0) | HIGHBIT) - value(A1);
 			A2 = F(r & FMAX);
 			A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
 			ip += 4; break; }
 
-		case MULTIPLICATION: { // fx* a b l h
-			big r = (big) uvtoi(A0) * (big) uvtoi(A1);
+		case MULTIPLICATION: { // vm:mul a b l h
+			big r = (big) value(A0) * (big) value(A1);
 			A2 = F(r & FMAX);
 			A3 = F(r>>FBITS); //  & FMAX)
 			ip += 4; break; }
-		case DIVISION: { // fx/ ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
-			big a = (big) uvtoi(A1) | (((big) uvtoi(A0)) << FBITS);
-			big b = (big) uvtoi(A2);
+		case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
+			big a = (big) value(A1) | (((big) value(A0)) << FBITS);
+			big b = (big) value(A2);
 
 			// http://stackoverflow.com/questions/7070346/c-best-way-to-get-integer-division-and-remainder
 			big q = a / b;
@@ -2009,24 +2009,24 @@ invoke:;
 			ip += 6; break; }
 
 
-		case BINARY_AND: // band a b r, prechecked
+		case BINARY_AND: // vm:and a b r, prechecked
 			A2 = (A0 & A1);
 			ip += 3; break;
 		// disjunction
-		case BINARY_OR:  // bor a b r, prechecked
+		case BINARY_OR:  // vm:or a b r, prechecked
 			A2 = (A0 | A1);
 			ip += 3; break;
-		case BINARY_XOR: // bxor a b r, prechecked
+		case BINARY_XOR: // vm:xor a b r, prechecked
 			A2 = (A0 ^ (A1 & (FMAX << IPOS))); // inherit a's type info
 			ip += 3; break;
 
-		case SHIFT_RIGHT: { // fx>> a b hi lo
-			big r = ((big) uvtoi(A0)) << (FBITS - uvtoi(A1));
+		case SHIFT_RIGHT: { // vm:shr a b hi lo
+			big r = ((big) value(A0)) << (FBITS - value(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
-		case SHIFT_LEFT: { // fx<< a b hi lo
-			big r = ((big) uvtoi(A0)) << (uvtoi(A1));
+		case SHIFT_LEFT: { // vm:shl a b hi lo
+			big r = ((big) value(A0)) << (value(A1));
 			A2 = F(r>>FBITS);
 			A3 = F(r & FMAX);
 			ip += 4; break; }
@@ -3379,6 +3379,7 @@ void fail(int num, char* message)
 	fprintf(stderr, "%s", message);
 	exit(num);
 }
+
 #if !EMBEDDED_VM
 int main(int argc, char** argv)
 {

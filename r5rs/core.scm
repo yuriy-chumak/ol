@@ -787,8 +787,10 @@
          (let loop ((n 0) (l l))
             (if (null? l)
                n
-               (let* ((n _ (fx:+ n 1)))
-                  (loop n (cdr l))))))
+               (receive (vm:add n 1)
+                  (lambda (n carry)
+;                     (if carry (runtime-error ...))
+                     (loop n (cdr l)))))))
 
       (assert (length '(a b c))                      ==>  3)
       (assert (length '(a (b) (c d e)))              ==>  3)
@@ -883,7 +885,7 @@
       ; *ol* extension
       (define (ff? o)        ; OL extension
          (or (eq? o #empty)
-             (eq? 24 (fx:and (type o) #b1111100))))
+             (eq? 24 (vm:and (type o) #b1111100))))
 
       ; *ol* extension
       (define (bytecode? o)  ; OL extension
@@ -967,7 +969,7 @@
       ; procedure:  (read-char port)
       ; procedure:  (peek-char)
       ; procedure:  (peek-char port)
-      ; procedure:  (eof-object? obj) 
+      ; procedure:  (eof-object? obj)
       ; procedure:  (char-ready?)
       ; procedure:  (char-ready? port)
 

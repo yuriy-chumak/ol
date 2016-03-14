@@ -19,7 +19,7 @@
       cl_half     ; unsigned 16-bit
       cl_float    ; floating 32-bit
       cl_double   ; floating 64-bit
-      
+
       ; CL platform types
 ;      cl_platform_id*
 ;      cl_device_id*
@@ -550,7 +550,7 @@
 ;#define CL_RUNNING                                  0x1
 ;#define CL_SUBMITTED                                0x2
 ;#define CL_QUEUED                                   0x3
-  
+
 ;/* cl_profiling_info  */
 ;#define CL_PROFILING_COMMAND_QUEUED                 0x1280
 ;#define CL_PROFILING_COMMAND_SUBMIT                 0x1281
@@ -614,10 +614,10 @@
 ;clReleaseContext(cl_context /* context */) CL_API_SUFFIX__VERSION_1_0;
 ;
 ;extern CL_API_ENTRY cl_int CL_API_CALL
-;clGetContextInfo(cl_context         /* context */, 
-;                 cl_context_info    /* param_name */, 
-;                 size_t             /* param_value_size */, 
-;                 void *             /* param_value */, 
+;clGetContextInfo(cl_context         /* context */,
+;                 cl_context_info    /* param_name */,
+;                 size_t             /* param_value_size */,
+;                 void *             /* param_value */,
 ;                 size_t *           /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
 
 ; Command Queue APIs
@@ -630,7 +630,7 @@
 ; ...
 
 ; Program Object APIs
-      (define char** (fx:or type-string #x40)) ; todo: change size_t* to array of integers
+      (define char** (vm:or type-string #x40)) ; todo: change size_t* to array of integers
    (define clCreateProgramWithSource (dlsym $ cl_program "clCreateProgramWithSource" cl_context cl_uint char** size_t* cl_int*))
 
    (define clBuildProgram (dlsym $ cl_int "clBuildProgram" cl_program cl_uint cl_device_id* char* CL_CALLBACK* void*))

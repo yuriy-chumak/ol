@@ -1,7 +1,7 @@
 ;;;; random number generator
 (define-library (owl random!)
 
-   (export   
+   (export
       rand!)
 
    (import
@@ -16,10 +16,10 @@
                 (seed (cons ms ss)))
             (lambda (limit)
                (let* ((x (car seed))
-                      (a _ (fx:* x 214013))
-                      (b _ (fx:+ a 2531011))
-                      (c _ (fx:>> b 16))
-                      (o p d (fx:/ 0 c limit)))
+                      (a _ (vm:mul x 214013))
+                      (b _ (vm:add a 2531011))
+                      (c _ (vm:shr b 16))
+                      (o p d (vm:div 0 c limit)))
                   (set-car! seed c)
                   d))))
 ))

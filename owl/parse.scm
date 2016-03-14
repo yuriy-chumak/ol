@@ -211,7 +211,7 @@
       (define get-extension-byte
          (let-parses
             ((b get-byte)
-             (verify (eq? #b10000000 (fx:and b #b11000000)) "Bad extension byte"))
+             (verify (eq? #b10000000 (vm:and b #b11000000)) "Bad extension byte"))
             b))
 
       ;; fixme: could also support the longer proposed ones

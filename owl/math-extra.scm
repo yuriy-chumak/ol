@@ -6,23 +6,23 @@
 
 (define-library (owl math-extra)
 
-   (export 
+   (export
       exact-integer-sqrt ;; n → m r, m^2 + r = n
       isqrt              ;; n → (floor (sqrt n))
       sqrt               ;; n → m, m^2 = n
       expt expt-mod
-      ncr npr 
+      ncr npr
       !
       dlog dlog-simple
       fib
       histogram
-      ; inv-mod mod-solve 
+      ; inv-mod mod-solve
       )
 
-   (import 
+   (import
       (r5rs core)
       (owl math)
-      (owl iff) 
+      (owl iff)
       (owl list)
       (owl list-extra)
       (owl sort)
@@ -45,7 +45,7 @@
          (cond
             ((eq? n 0) f)
             ((eq? (type n) type-fix+)
-               (lets ((hi lo (fx:>> n 1)))
+               (lets ((hi lo (vm:shr n 1)))
                   (nbits hi (nat-succ f))))
             (else
                (let ((tl (ncdr n)))
@@ -85,7 +85,7 @@
          (let ((sq (isqrt n)))
             (values sq (sub n (mul sq sq)))))
 
-      ;; sqrt n → m such that m^2 = n 
+      ;; sqrt n → m such that m^2 = n
       ;; fixme: finish sqrt after adding complex numbers
       (define (sqrt n)
          (case (type n)
@@ -97,7 +97,7 @@
                   (if (eq? r 0) s (runtime-error "sqrt: no exact solution for " n))))
             (type-fix- (complex 0 (sqrt (abs n))))
             (type-int- (complex 0 (sqrt (abs n))))
-            (else 
+            (else
                (runtime-error "sqrt: math too high: " n))))
 
       ;;; exponentiation
@@ -131,9 +131,9 @@
             ((eq? (band p 1) 0)
                (expt-mod-loop (rem (mul ap ap) m) (>> p 1) out m))
             (else
-               (expt-mod-loop (rem (mul ap ap) m) (>> p 1) 
+               (expt-mod-loop (rem (mul ap ap) m) (>> p 1)
                   (rem (mul out ap) m) m))))
-            
+
       (define (expt-mod a b m)
          (cond
             ((eq? b 0) (mod 1 m))
@@ -197,7 +197,7 @@
                   ((iget seen this #false) #false) ; looped, not solvable
                   (else (loop (+ x 1) (iput seen this #true)))))))
 
-      ;; like naive, but avoids useless multiplications and remainders 
+      ;; like naive, but avoids useless multiplications and remainders
       (define (dlp-simple y a n)
          (let loop ((x 0) (v 1) (seen empty))
             (cond
@@ -222,10 +222,10 @@
                   (step?                                 ; fast hare is fast
                      (loop x1 v1 (+ x2 1) (dlp-th-step v2 a n) #false))
                   (else                                  ; enhance
-                     (loop 
+                     (loop
                         (+ x1 1) (dlp-th-step v1 a n)
                         (+ x2 1) (dlp-th-step v2 a n) #true))))))
-     
+
 
       ;; Shanks' baby-step giant-step algorithm (still not quite working properly)
 
@@ -235,7 +235,7 @@
          (cond
             ((null? b) #false)
             ((null? g) #false)
-            ((= (caar b) (caar g)) 
+            ((= (caar b) (caar g))
                (let ((x (- (cdar g) (cdar b))))
                   (if (pred x)
                      x
@@ -329,4 +329,3 @@
                         (loop (cdr data) (+ count 1) limit)))))))
 
 ))
-

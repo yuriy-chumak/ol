@@ -32,18 +32,18 @@ glVertexAttribPointer
 GL_FLOAT
 glDrawArrays
 )
-  
+
    (import
       (r5rs core) (owl io)
       (OpenGL version-1-5))
 (begin
    (define GL_VERSION_2_0 1)
-   
+
    (define % (dlopen GL_LIBRARY))
 
-;	using GLchar		= System.Byte;		// char
+;  using GLchar      = System.Byte;    // char
 
-(define GLchar** (fx:or type-string #x40))
+(define GLchar** (vm:or type-string #x40))
 ;(define GLchar** type-tuple)
 
 (define GLint* type-vector-raw)

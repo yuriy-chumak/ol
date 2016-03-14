@@ -9,7 +9,7 @@
       start-nested-parallel-computation wrap-the-whole-world-to-a-thunk ; ??
       par por* por interop)
 
-   (import 
+   (import
       (r5rs core)
       (owl primop))
 
@@ -46,12 +46,12 @@
       (define (mail id msg)
          (interop 9 id msg))
 
-      (define (kill id) 
+      (define (kill id)
          (interop 15 id #false))
 
       (define (single-thread?)
          (interop 7 #true #true))
-         
+
       (define (set-signal-action choice)
          (interop 12 choice #false))
 
@@ -86,12 +86,12 @@
                ((null? rss) #false)
                ((car rss) => (λ (result) result))
                (else (loop ((cdr rss)))))))
-               
+
       (define-syntax por
          (syntax-rules ()
             ((por exp ...)
                (por* (list (λ () exp) ...)))))
-    
+
       (define (wait-mail)           (interop 13 #false #false))
       (define (check-mail)          (interop 13 #false #true))
 
@@ -121,10 +121,10 @@
                   (if (eq? rounds 0)
                      (return-from-wait default spam)
                      ;; no mail, request a thread switch and recurse, at which point all other threads have moved
-                     (begin   
+                     (begin
                         ;(set-ticker 0) ;; FIXME restore this when librarized
                         ;; no bignum math yet at this point
-                        (lets ((rounds _ (fx:- rounds 1)))
+                        (lets ((rounds _ (vm:sub rounds 1)))
                            (loop (check-mail) spam rounds)))))
                ((eq? (ref envp 1) id)
                   ;; got it
@@ -132,17 +132,17 @@
                (else
                   ;; got spam, keep waiting
                   (loop (check-mail) (cons envp spam) rounds)))))
-         
+
 
       (define (fork thunk)
-         ; the tuple is fresh and therefore a proper although rather 
+         ; the tuple is fresh and therefore a proper although rather
          ; nondescriptive thread name
          (fork-named (tuple 'anonimas) thunk))
 
 
-      ; Message passing (aka mailing) is asynchronous, and at least 
-      ; in a one-core environment order-preserving. interact is like 
-      ; mail, but it blocks the thread until the desired response 
+      ; Message passing (aka mailing) is asynchronous, and at least
+      ; in a one-core environment order-preserving. interact is like
+      ; mail, but it blocks the thread until the desired response
       ; arrives. Messages are of the form #(<sender-id> <message>).
 
       (define (interact whom message)

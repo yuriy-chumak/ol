@@ -220,7 +220,7 @@
             (else
                (lets
                   ((a (wait 1))
-                   (rounds _ (fx:- rounds 1)))
+                   (rounds _ (vm:sub rounds 1)))
                   (sleep-for rounds)))))
 
       (define (wake-neighbours l)
@@ -312,7 +312,7 @@
                (write-really (raw type-vector-raw (reverse out)) fd))
             (else
                ;; avoid dependency on generic math in IO
-               (lets ((len _ (fx:+ len 1)))
+               (lets ((len _ (vm:add len 1)))
                   (printer (cdr lst) len (cons (car lst) out) fd)))))
 
       (define (write-byte-vector port bvec)
@@ -464,7 +464,7 @@
       (define (stream-chunk buff pos tail)
          (if (eq? pos 0)
             (cons (ref buff pos) tail)
-            (lets ((next x (fx:- pos 1)))
+            (lets ((next x (vm:sub pos 1)))
                (stream-chunk buff next
                   (cons (ref buff pos) tail)))))
 

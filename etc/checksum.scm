@@ -1,12 +1,12 @@
-;;; 
+;;;
 ;;; A simple checksummer
-;;; 
+;;;
 
 ; rle + crosspollination
 ;;
 
 (define-library (etc checksum)
-   (export 
+   (export
       checksum            ; ll -> nat, default checksum
       adler-32
       fletcher-64
@@ -38,7 +38,7 @@
                ((null? ll) (+ (<< b 16) a))
                (else (loop (ll) a b)))))
 
-      ;;; AdlerX checksum - get an Adler of any size 
+      ;;; AdlerX checksum - get an Adler of any size
 
       ;; todo: add pseudoprime? to lib-math, ad optionally use largest-primeish here
       (define (largest-prime-below n)
@@ -64,7 +64,7 @@
             (define (walk lst a b)
                (cond
                   ((null? lst)
-                     (lets 
+                     (lets
                         ((abits (>> n 1))
                          (bbits (- n abits)))
                         (bor (band a (- (<< 1 abits) 1))
@@ -79,7 +79,7 @@
 
       ;;; a quick check
 
-      (let 
+      (let
          ((data (string->list "Wikipedia")) ;; guess where the example checksum is from
           (expected 300286872))
          (if (not (= expected (adler-32 data)))
@@ -101,10 +101,10 @@
                      (loop (cdr ll) a b)))
                ((null? ll) (* a b)) ; shift would actually be better (larger target space)
                (else (loop (ll) a b)))))
-                     
 
 
-      ;;; Fletcher 
+
+      ;;; Fletcher
 
       ; a simpler version of Adler, which could be faster in owl
 
@@ -124,15 +124,15 @@
                   (bor (band b mask)
                      (<< (band a mask) bits)))
                ((eq? s bits)
-                  (lets 
+                  (lets
                      ((a (band mask (+ a (car lst))))
                       (b (band mask (+ a b))))
                      (walk (cdr lst) a b 0)))
                (else
-                  (lets 
+                  (lets
                      ((a (+ a (car lst)))
                       (b (+ a b))
-                      (s _ (fx:+ s 1)))
+                      (s _ (vm:add s 1)))
                      (walk (cdr lst) a b s)))))
 
          (λ (lst) (walk lst 0 0 #true)))
@@ -152,7 +152,7 @@
             ((string? x) (default-checksummer (str-iter x)))
             ((vector? x) (default-checksummer (vec-iter x)))
             (else
-              (runtime-error "checksum: what is " x)))) 
+              (runtime-error "checksum: what is " x))))
 
 
       ;; default checksum generator
@@ -163,7 +163,7 @@
          ;make-fletcher ; O(1) construction, pretty much duplicates
          make-adler     ; slow construction for large n, prettu accurate
          )
-     
+
       ;; n → (list|vector|string → checksum)
       (define (make-checksummer n)
          (let ((csum (default-checksummer n)))
@@ -175,5 +175,3 @@
                      ((string? data) (str-iter data))
                      ((vector? data) (vec-iter data))
                      (else (runtime-error "how do i compute a checksum for " data)))))))))
-
-

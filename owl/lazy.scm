@@ -110,9 +110,9 @@
       (define (lnums-fix a)
          (if (less? a #xfff0)
             (lets
-               ((b _ (fx:+ a 1))
-                (c _ (fx:+ b 1))
-                (d _ (fx:+ c 1)))
+               ((b _ (vm:add a 1))
+                (c _ (vm:add b 1))
+                (d _ (vm:add c 1)))
                (ilist a b c (lambda () (lnums-fix d))))
             (lnums-other a)))
 
@@ -144,9 +144,9 @@
 
       (define (liota-fix pos end)
          (if (less? pos end)
-            (lets ((posp u (fx:+ pos 1)))
+            (lets ((posp u (vm:add pos 1)))
                (if (less? posp end)
-                  (lets ((next o (fx:+ posp 1)))
+                  (lets ((next o (vm:add posp 1)))
                      (cons pos (pair posp (liota-fix next end))))
                   (list pos)))
             null))

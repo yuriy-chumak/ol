@@ -1,6 +1,9 @@
 export PATH := .:$(PATH)
 $(shell mkdir -p config)
 
+# TODO: move vm.asm to src/ folder
+# TODO: split ol.scm into two files
+
 .PHONY: all config recompile install uninstall clean tests
 
 PREFIX ?= /usr

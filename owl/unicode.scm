@@ -97,7 +97,7 @@
 
       ; grab low 6 bits of a number
       (define (ext n)
-         (fx:or extension
+         (vm:or extension
             (band n #b111111)))
 
       (define (encode-point point tl)
@@ -157,7 +157,7 @@
                (values #false lst))
             ((pair? lst)
                (let ((hd (car lst)))
-                  (if (eq? #b10000000 (fx:and #b11000000 hd))
+                  (if (eq? #b10000000 (vm:and #b11000000 hd))
                      (get-extension-bytes (cdr lst) (- n 1) (bor (<< val 6) (band hd #b111111)) min)
                      ;; not a valid continuation byte -> error
                      (values #false lst))))
@@ -168,17 +168,17 @@
       (define (decode-char lst)
          (let ((hd (car lst)))
             (cond
-               ((eq? 0 (fx:and hd #b10000000))
+               ((eq? 0 (vm:and hd #b10000000))
                   (values hd (cdr lst)))
-               ((eq? #b11000000 (fx:and hd #b11100000))
+               ((eq? #b11000000 (vm:and hd #b11100000))
                   ; 2-byte char with top bits 110, 5 bits here
-                  (get-extension-bytes (cdr lst) 1 (fx:and #b11111 hd) min-2byte))
-               ((eq? #b11100000 (fx:and #b11110000 hd))
+                  (get-extension-bytes (cdr lst) 1 (vm:and #b11111 hd) min-2byte))
+               ((eq? #b11100000 (vm:and #b11110000 hd))
                   ; 3-byte char, 4 bits here
-                  (get-extension-bytes (cdr lst) 2 (fx:and #b1111 hd) min-3byte))
-               ((eq? #b11110000 (fx:and #b11111000 hd))
+                  (get-extension-bytes (cdr lst) 2 (vm:and #b1111 hd) min-3byte))
+               ((eq? #b11110000 (vm:and #b11111000 hd))
                   ; 4-byte char, 3 bits here
-                  (get-extension-bytes (cdr lst) 3 (fx:and #b111 hd) min-4byte))
+                  (get-extension-bytes (cdr lst) 3 (vm:and #b111 hd) min-4byte))
                (else
                   ; invalid leading byte
                   (values #false lst)))))
@@ -241,15 +241,15 @@
       ;;; decoding byte-lists to code points
 
       (define (two-byte-point a b)
-         (bor (<< (fx:and a #x1f) 6) (fx:and b #x3f)))
+         (bor (<< (vm:and a #x1f) 6) (vm:and b #x3f)))
 
       (define (three-byte-point a b c)
-         (bor (bor (<< (fx:and a #x0f) 12) (<< (fx:and b #x3f) 6))
-            (fx:and c #x3f)))
+         (bor (bor (<< (vm:and a #x0f) 12) (<< (vm:and b #x3f) 6))
+            (vm:and c #x3f)))
 
       (define (four-byte-point a b c d)
          (bor
-            (bor (<< (fx:and a #x07) 18) (<< (fx:and b #x3f) 12))
-            (bor (<< (fx:and c #x3f)  6)     (fx:and d #x3f))))
+            (bor (<< (vm:and a #x07) 18) (<< (vm:and b #x3f) 12))
+            (bor (<< (vm:and c #x3f)  6)     (vm:and d #x3f))))
 
 ))

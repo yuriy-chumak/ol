@@ -24,12 +24,12 @@
       (car (cdr (cdr li))))
 
 
-   (define iota 
+   (define iota
       (let ((iota (lambda (count start step)
          (let loop ((i 0) (n start) (r '()))
             (if (eq? i count)
                (reverse r)
-               (receive (fx:+ i 1) (lambda (i overflow)
+               (receive (vm:add i 1) (lambda (i carry)
                   (loop i (+ n step) (cons n r)))))))))
       (case-lambda
          ((count)

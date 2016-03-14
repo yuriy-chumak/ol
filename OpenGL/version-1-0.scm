@@ -976,8 +976,8 @@
    (define GLubyte* type-string)
 
    ; references
-   (define GLfloat*  (fx:or GLfloat  #x40))
-   (define GLdouble* (fx:or GLdouble #x40))
+   (define GLfloat*  (vm:or GLfloat  #x40))
+   (define GLdouble* (vm:or GLdouble #x40))
 
 
    (define GL_TRUE  1)

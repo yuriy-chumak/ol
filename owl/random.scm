@@ -127,8 +127,8 @@
          (if (null? seed)
             out
             (lets
-               ((lo hi (fx:* (ncar seed) rand-mult))
-                (this over (fx:+ lo acc)))
+               ((lo hi (vm:mul (ncar seed) rand-mult))
+                (this over (vm:add lo acc)))
                (rand-walk hi (ncdr seed) (ncons this out)))))
 
       (define (rand-succ seed)
@@ -165,7 +165,7 @@
             (pair (ncar (ref rst 2)) (adhoc-seed->rands rst))))
 
       (define (bit x n)
-         (if (eq? 0 (fx:and x n)) 0 1))
+         (if (eq? 0 (vm:and x n)) 0 1))
 
       (define (rands->bits rs)
          (lets
@@ -180,10 +180,10 @@
       (define (rands->bytes rs)
          (lets
             ((digit rs (uncons rs 0))
-             (lo (fx:and digit #xff))
-             (digit _ (fx:>> digit 8))
-             (mid (fx:and digit #xff))
-             (hi _ (fx:>> digit 8)))
+             (lo (vm:and digit #xff))
+             (digit _ (vm:shr digit 8))
+             (mid (vm:and digit #xff))
+             (hi _ (vm:shr digit 8)))
             (ilist lo mid hi
                (λ () (rands->bytes rs)))))
 
@@ -229,7 +229,7 @@
          (if (eq? num 0)
             1
             (let loop ((n (fxmax)))
-               (lets ((np _ (fx:>> n 1)))
+               (lets ((np _ (vm:shr n 1)))
                   (if (less? np num) ;; we lost the high bit
                      n
                      (loop np))))))
@@ -238,7 +238,7 @@
          (let loop ((rs rs) (mask (bitmask n)))
             (lets
                ((digit rs (uncons rs #false))
-                (m (fx:and digit mask)))
+                (m (vm:and digit mask)))
                (if (less? m n)
                   (values rs m)
                   (loop rs mask)))))
@@ -248,7 +248,7 @@
          (let loop ((rs rs) (mask (bitmask n)))
             (lets
                ((digit rs (uncons rs #false))
-                (m (fx:and digit mask)))
+                (m (vm:and digit mask)))
                (cond
                   ((less? m n) (values rs m))
                   ((eq? m n) (values rs m))
@@ -463,8 +463,8 @@
                (values rs (raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
                (lets
                   ((d rs (uncons rs 0))
-                   (n _ (fx:- n 1)))
-                  (loop rs (cons (fx:and d 255) out) n)))))
+                   (n _ (vm:sub n 1)))
+                  (loop rs (cons (vm:and d 255) out) n)))))
 
       (define (random-data-file rs path)
          (let
@@ -562,5 +562,5 @@
          (else
             (lets
                ((byte rs (uncons rs 0))
-                (n _ (fx:+ n 1)))
+                (n _ (vm:add n 1)))
                (loop rs (cons byte out) n))))))

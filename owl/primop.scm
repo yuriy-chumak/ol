@@ -4,7 +4,7 @@
 ;; todo: convert arity checks 17 -> 25
 
 (define-library (owl primop)
-   (export 
+   (export
       (exports (lang vm))
 
       ;; extra ops
@@ -30,7 +30,7 @@
 ;      2 __close
 ;      3 __sopen
 ;      4 __accept
-      
+
 ;      5 __fread
 ;      +6 __exit
 ;      +7 __set-memory-limit
@@ -43,7 +43,7 @@
 ;      31 __dlsym
 ;      32 __pinvoke
 ;      33 __gc ; TEMP
-      
+
 ;      11 __sys-open-dir
 ;      12 __sys-read-dir
 ;      13 __sys-closedir
@@ -73,7 +73,7 @@
       (define (wait n)
          (if (eq? n 0)
             n
-            (let* ((n _ (fx:- n 1)))
+            (let* ((n _ (vm:sub n 1)))
                (set-ticker-value 0)
                (wait n))))
 
@@ -86,9 +86,9 @@
 ;      (define (error reason info)
 ;         (interop 5 reason info))
 ;      (define (pair? x) (eq? type-pair (type x))) ; list.scm
-;      (define (fixnum? x) 
+;      (define (fixnum? x)
 ;         (let ((t (type x)))
-;            (or 
+;            (or
 ;               (eq? t type-fix+)
 ;               (eq? t type-fix-)
 ;               )))

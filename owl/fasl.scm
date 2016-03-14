@@ -106,7 +106,7 @@
 
       (define type-byte-of type)
          ;(type-byte-of val)
-         ;(fx:and (>> (type-old val) 3) 255)
+         ;(vm:and (>> (type-old val) 3) 255)
 
       (define (enc-immediate val tail)
          (cons 0
@@ -178,7 +178,7 @@
                   (lets
                      ;; nuke padding bytes since the vm/decoder must fill these while loading
                      ;; (because different word size may require more/less padding)
-                     ((t (fx:and (type-byte-of val) #b11111))
+                     ((t (vm:and (type-byte-of val) #b11111))
                       (bs (size val)))
                      (ilist 2 t
                         (send-number bs
@@ -246,7 +246,7 @@
                   null
                   (list (list->byte-vector (reverse buff)))))
             ((pair? bs)
-               (lets ((n _ (fx:+ n 1)))
+               (lets ((n _ (vm:add n 1)))
                   (chunk-stream (cdr bs) n (cons (car bs) buff))))
             (else
                (chunk-stream (bs) n buff))))
@@ -266,7 +266,7 @@
 
       (define (get-nat ll fail top)
          (lets ((ll b (grab ll fail)))
-            (if (eq? 0 (fx:and b 128)) ; leaf case
+            (if (eq? 0 (vm:and b 128)) ; leaf case
                (values ll (bor (<< top 7) b))
                (get-nat ll fail (bor (<< top 7) (band b low7))))))
 

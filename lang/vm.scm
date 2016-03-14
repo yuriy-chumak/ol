@@ -103,16 +103,16 @@
       ;(define less?   (raw type-bytecode '(44 4 5 6  24 6)))
 
       ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/receive
-      ;(define fx:+  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
-      ;(define fx:*  (raw type-bytecode '(39 4 5       6 7)))
-      ;(define fx:-  (raw type-bytecode '(40 4 5       6 7)))
-      ;(define fx:/  (raw type-bytecode '(26 4 5 6     7 8 9)))
-      ;(define fx:>> (raw type-bytecode '(58 4 5       6 7))) ; todo: rename to fx:>
-      ;(define fx:<< (raw type-bytecode '(59 4 5       6 7))) ; todo: rename to fx:<
+      ;(define vm:add  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
+      ;(define vm:mul  (raw type-bytecode '(39 4 5       6 7)))
+      ;(define vm:sub  (raw type-bytecode '(40 4 5       6 7)))
+      ;(define vm:div  (raw type-bytecode '(26 4 5 6     7 8 9)))
+      ;(define vm:shr  (raw type-bytecode '(58 4 5       6 7)))
+      ;(define vm:shl  (raw type-bytecode '(59 4 5       6 7)))
 
-      ;(define fx:and (raw type-bytecode '(55 4 5 6  24 6)))
-      ;(define fx:or  (raw type-bytecode '(56 4 5 6  24 6)))
-      ;(define fx:xor (raw type-bytecode '(57 4 5 6  24 6)))
+      ;(define vm:and  (raw type-bytecode '(55 4 5 6  24 6)))
+      ;(define vm:or   (raw type-bytecode '(56 4 5 6  24 6)))
+      ;(define vm:xor  (raw type-bytecode '(57 4 5 6  24 6)))
 
       ; deprecated:
       ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
@@ -148,26 +148,28 @@
          (tuple 'set!     10  3 1 set!)
          (tuple 'set-car! 11  2 1 set-car!)
          (tuple 'set-cdr! 12  2 1 set-cdr!)
+         ; 13 available
+         ; 14 available
 
-         ; простейшая стравнивалка
+         ; компараторы
          (tuple 'eq?      54  2 1 eq?)
          (tuple 'less?    44  2 1 less?)
 
-         ; базовая математика
-         (tuple 'fx:+     38  2 2 fx:+)
-         (tuple 'fx:*     39  2 2 fx:*)
-         (tuple 'fx:-     40  2 2 fx:-)
-         (tuple 'fx:/     26  3 3 fx:/)
+         ; базовая арифметика
+         (tuple 'vm:add   38  2 2 vm:add)
+         (tuple 'vm:mul   39  2 2 vm:mul)
+         (tuple 'vm:sub   40  2 2 vm:sub)
+         (tuple 'vm:div   26  3 3 vm:div) ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
          ; сдвиги
-         (tuple 'fx:>>    58  2 2 fx:>>)
-         (tuple 'fx:<<    59  2 2 fx:<<)
-         ;; бинарная арифметика
-         (tuple 'fx:and   55  2 1 fx:and)
-         (tuple 'fx:or    56  2 1 fx:or)
-         (tuple 'fx:xor   57  2 1 fx:xor)
+         (tuple 'vm:shr   58  2 2 vm:shr)
+         (tuple 'vm:shl   59  2 2 vm:shl)
+         ; бинарная арифметика
+         (tuple 'vm:and   55  2 1 vm:and)
+         (tuple 'vm:or    56  2 1 vm:or)
+         (tuple 'vm:xor   57  2 1 vm:xor)
 
          ; системный таймер
-         (tuple 'clock    61  0 2 clock)            ;; must add 61 to the multiple-return-variable-primops list
+         (tuple 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
          ; системные вызовы
          (tuple 'syscall  63  4 1 syscall)
 
@@ -178,11 +180,11 @@
 
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
          ; todo: rename to tuple-bind ?
-         (tuple 'bind     BIND 1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
+         (tuple 'bind       32 1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
          ; todo: rename to make-tuple,  vm:mkt?
-         (tuple 'mkt       MKT 'any 1 #false)  ;; mkt type v0 .. vn t (why #f?)
+         (tuple 'mkt        23 'any 1 #false)  ;; mkt type v0 .. vn t (why #f?)
          ; todo: rename to list->typedtuple ?
-         (tuple 'listuple   35  3 1 listuple)
+         (tuple 'listuple   35 3 1  listuple)
 
          ; поддержка red-black деревьев
          (tuple 'ff:bind    49 1 #f  ff:bind) ;; SPECIAL ** (ff:bind thing (lambda (name ...) body))
@@ -228,7 +230,7 @@
 
       ; используется в выводе сообщений "инструкция такая-то сфейлила"
       (define (primop-name pop)
-         (let ((pop (fx:and pop 63))) ; ignore top bits which sometimes have further data
+         (let ((pop (vm:and pop #x3F))) ; ignore top bits which sometimes have further data
             (or
                (instruction-name pop)
                (let loop ((primops primops))
@@ -238,15 +240,6 @@
                         (ref (car primops) 1))
                      (else
                         (loop (cdr primops))))))))
-
-;; run, apply, apply-cont - moved to the right places (r5rs, lang/thread)
-;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-;      (define apply-cont (raw type-bytecode (list (fx:or 20 #x40))))
-;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
-;      (define apply      (raw type-bytecode (list 20))) ;; <- no arity, just call 20
-;      (define apply-cont (raw type-bytecode (list (fx:or 20 #x40)))) - used in (r5rs core) in call-with-current-continuation
-;      (define run        (raw type-bytecode (list JF2 3 0 6  50 4 5 6  24 6  ARITY-ERROR)))
-
 
 ;; Список sys-prim'ов
 ; поэтапный перевод sys-prim'ов в syscall'ы

@@ -106,7 +106,7 @@
       (define (vec-dispatch-1 v n)
          (case (type v)
             (type-vector-dispatch ; vector dispatch node with #[Leaf D0 ... D255]
-               (lets ((n _ (fx:+ (fx:and n *vec-leaf-max*) 2))) ;; jump over header and leaf
+               (lets ((n _ (vm:add (vm:and n *vec-leaf-max*) 2))) ;; jump over header and leaf
                   (ref v n)))
             (else
                (runtime-error "Bad vector node in dispatch-1: type " (type v)))))
@@ -116,8 +116,8 @@
          (case (type v)
             (type-vector-dispatch
                (lets
-                  ((p _ (fx:>> d *vec-bits*))
-                   (p _ (fx:+ p 2)))
+                  ((p _ (vm:shr d *vec-bits*))
+                   (p _ (vm:add p 2)))
                   (ref v p)))
             (type-vector-leaf
                (runtime-error "Leaf vector in dispatch-2: " v))
@@ -139,13 +139,13 @@
       (define (vec-ref-digit v n)
          (case (type v)
             (type-vector-raw
-               (ref v (fx:and n *vec-leaf-max*)))
+               (ref v (vm:and n *vec-leaf-max*)))
             (type-vector-dispatch
                 (vec-ref-digit (ref v 1) n)) ; read the leaf of the node
             (type-vector-leaf
                 (if (eq? n *vec-leaf-max*)
                    (ref v *vec-leaf-size*)
-                   (lets ((n _ (fx:+ (fx:and n *vec-leaf-max*) 1)))
+                   (lets ((n _ (vm:add (vm:and n *vec-leaf-max*) 1)))
                      (ref v n))))
             (else
                (runtime-error "bad vector node in vec-ref-digit: type " (type v)))))
@@ -168,7 +168,7 @@
                   ((less? n *vec-leaf-size*)
                      (vec-ref-digit v n))
                   (else
-                     (vec-ref-digit (vec-dispatch-2 v n) (fx:and n *vec-leaf-max*)))))
+                     (vec-ref-digit (vec-dispatch-2 v n) (vm:and n *vec-leaf-max*)))))
             (type-int+
                (vec-ref-big v n))
             (else
@@ -231,7 +231,7 @@
       (define (byte? val)
          (and
             (eq? (type val) type-fix+)
-            (eq? val (fx:and val 255))))
+            (eq? val (vm:and val 255))))
 
       ;; list -> list of leaf nodes
       (define (chunk-list lst out leaves n raw? len)
@@ -361,7 +361,7 @@
             (cons (ref bv pos) tail)
             (lets
                ((byte (ref bv pos))
-                (pos _ (fx:- pos 1)))
+                (pos _ (vm:sub pos 1)))
                (copy-bvec bv pos (cons byte tail)))))
 
       (define (byte-vector->list bv)
@@ -379,13 +379,13 @@
       (define (iter-raw-leaf v p tl)
          (if (eq? p 0)
             (cons (ref v p) tl)
-            (lets ((n _ (fx:- p 1)))
+            (lets ((n _ (vm:sub p 1)))
                (iter-raw-leaf v n (cons (ref v p) tl)))))
 
       (define (iter-leaf v p tl)
          (if (eq? p 0)
             tl
-            (lets ((n _ (fx:- p 1)))
+            (lets ((n _ (vm:sub p 1)))
                (iter-leaf v n (cons (ref v p) tl)))))
 
       (define (iter-leaf-of v tl)

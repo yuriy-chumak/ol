@@ -77,7 +77,7 @@
 ;(define XInternAtom (dlsym % type-port "XInternAtom" type-port type-string type-fix+))
 ;(define XSetWMProtocols (
 
-(define type-int* (fx:or type-int+ #x40))
+(define type-int* (vm:or type-int+ #x40))
 ; -=( wgl )=------------------------------------------------------------
 ; opengl: https://gist.github.com/gszauer/da038dec2a7ffc288c41
 (define GL (dlopen "libGL.so" RTLD_LAZY))

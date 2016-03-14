@@ -17,7 +17,7 @@
             ((eq? pos 0)
                #true)
             ((eq (ref a pos) (ref b pos))
-               (lets ((pos x (fx:- pos 1)))
+               (lets ((pos x (vm:sub pos 1)))
                   (recursive-eq a b eq pos)))))
 
       ;; fixme: ff:s should have a separate equality test too
