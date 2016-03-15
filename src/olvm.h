@@ -83,6 +83,15 @@ typedef struct ol_t OL;
 #define SYSCALL_SYSINFO 0
 #define SYSCALL_PRCTL 0
 #define SYSCALL_GETRUSAGE 0
+#define SYSCALL_GETRLIMIT 0
+#endif
+
+
+#ifdef __FreeBSD__
+#define SYSCALL_SYSINFO 0
+#define SYSCALL_PRCTL 0
+#define SYSCALL_GETRUSAGE 0
+#define SYSCALL_GETRLIMIT 0
 #endif
 
 

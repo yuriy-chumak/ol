@@ -61,16 +61,16 @@
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
 
 // todo: support ALL of this OS
-//    Linux-i386
-//    Linux-x86_64 (amd64)
+//    Linux-i386                                                                  +
+//    Linux-x86_64 (amd64)                                                        +
 //    Linux-powerpc
 //    Linux-sparc
 //    Linux-ARM
-//    Win32-i386 (2000/XP, WinNT or later)
-//    Win64-x86_64 (XP or later)
+//    Win32-i386 (2000/XP, WinNT or later)                                        +
+//    Win64-x86_64 (XP or later)                                                  .
 //    Wince-ARM (cross compiled from win32-i386)
-//    FreeBSD-i386
-//    FreeBSD-x86_64
+//    FreeBSD-i386                                                                .
+//    FreeBSD-x86_64                                                              +
 //    Mac OS X/Darwin for PowerPC (32 and 64 bit)
 //    Mac OS X/Darwin for Intel (32 and 64 bit)
 //    iOS (ARM and AArch64/ARM64) and iPhoneSimulator (32 and 64 bit)
@@ -83,12 +83,14 @@
 //    AIX 5.3 and later for PowerPC (32 and 64 bit)
 //    Java JVM (1.5 and later) and Android Dalvik (Android 4.0 and later)
 //    Android (ARM, i386, MIPS) via cross-compiling.
-//    MSDos-i8086 (cross compiled from win32-i386 or Linux)
+//    MSDos-i8086 (cross compiled from win32-i386 or Linux)                       -
 //    Amiga, MorphOS and AROS
-// Обратите внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
+// Обратить внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
 
 // todo: strip ELF http://habrahabr.ru/post/137706/
 // http://www.catch22.net/tuts/reducing-executable-size
+
+// todo: add setsockopt syscall https://www.freebsd.org/doc/en/books/developers-handbook/ipv6.html
 
 
 #define __OLVM_NAME__ "OL"
@@ -137,9 +139,9 @@
 #define DO_PRAGMA(x) _Pragma (#x)
 #define TODO(x) DO_PRAGMA(message ("TODO - " #x))
 
-// TODO: ref, set, must base on 0 (like list-ref, vector-ref, etc.), not on 1. create temporary refn, setn based on 1 (?)
+// TODO: ref, set, must base on 0 (like list-ref, vector-ref, etc.), not on 1. create temporary ref1, set1 based on 1 (?)
 
-#ifndef _WIN32
+#ifdef __linux__
 #include <features.h>
 #endif
 
@@ -171,6 +173,8 @@
 #include <signal.h>
 #include <dirent.h>
 #include <string.h>
+// no alloca.h, use https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+
 
 #include <errno.h>
 #include <stdio.h>
@@ -178,7 +182,6 @@
 #include <fcntl.h>
 #ifndef _WIN32
 #include <termios.h>
-#include <alloca.h>
 #else
 #include <malloc.h>
 #endif
@@ -189,13 +192,17 @@
 
 #ifndef _WIN32
 #include <sys/utsname.h> // uname
+#ifndef __FreeBSD__
 #include <sys/sysinfo.h> // sysinfo
 #include <sys/resource.h>// getrusage
+#else
+// in FreeBSD use "getloadavg"
+#endif
 #endif
 
 #include <time.h>
 
-#ifdef __linux
+#ifdef __linux__
 #include <sys/prctl.h>
 #include <linux/seccomp.h>
 #endif
@@ -212,11 +219,23 @@ extern int mkstemp (char *__template);
 //#pragma GCC diagnostic error "-Wuninitialized"
 //#pragma GCC diagnostic pop
 
+// some portability issues (mainly for freebsd)
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK EAGAIN
+#endif
+
 // ========================================
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
 
 // headers
+#ifdef __linux__
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+#	include <netdb.h>     // for gethostbyname()
+#	include <arpa/inet.h> // for inet_addr()
+#endif
+
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	define VC_EXTRALEAN
@@ -225,16 +244,31 @@ extern int mkstemp (char *__template);
 #	include <ws2tcpip.h>
 #	include <conio.h>
 	typedef unsigned long in_addr_t;
-#	define EWOULDBLOCK WSAEWOULDBLOCK
-#	undef ERROR // due to macro redefinition
-#else
 
+#	ifndef EWOULDBLOCK
+#	define EWOULDBLOCK WSAEWOULDBLOCK
+#	endif
+
+#	undef ERROR // due to macro redefinition
+#endif
+
+#ifdef __FreeBSD__
 #	include <sys/socket.h>
 #	include <netinet/in.h>
-#	include <netdb.h>     // for gethostbyname()
+
 #	include <arpa/inet.h> // for inet_addr()
+#	include <netdb.h>     // for gethostbyname()
+
+#	ifndef PF_INET
+#	define PF_INET AF_INET
+#	endif
+
+#	ifndef INADDR_NONE
+#	define INADDR_NONE	0xffffffff
+#	endif
 
 #endif
+
 #ifdef __ANDROID__
 	typedef unsigned long in_addr_t;
 #endif
@@ -594,7 +628,7 @@ struct object_t
 		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; }) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
 #define itoun(val)  ({\
 	(word*)(\
-	__builtin_choose_expr(sizeof(val) < sizeof(word),\
+	__builtin_choose_expr((sizeof(val) < sizeof(word)),\
 		itouv(val),\
 		(val <= FMAX ? itouv(val) \
 			: (word)new_list(TINT, itouv(val & FMAX), itouv((val) >> FBITS)))));})
@@ -1506,12 +1540,6 @@ invoke:;
 #		define SYSCALL_DLCLOSE 176
 #		define SYSCALL_DLSYM 177
 #		define SYSCALL_DLERROR 178
-
-#ifdef _WIN32
-#	define SYSCALL_GETRLIMIT 0
-#	define SYSCALL_GETRUSAGE 0
-#	define SYSCALL_SYSINFO 0
-#endif
 
 	// tuples, trees
 #	define MKT      23   // make tuple
@@ -2500,6 +2528,8 @@ invoke:;
 
 			// SOCKET
 			case 41: { // socket (todo: options: STREAM or DGRAM)
+				// http://beej.us/net2/html/syscalls.html
+				// right way: use PF_INET in socket call
 				int sock = socket(PF_INET, SOCK_STREAM, 0);
 				if (sock != -1)
 					result = make_port (sock);
@@ -2647,23 +2677,28 @@ invoke:;
 				result = new_pair(new_string(ipaddress), F(port));
 
 #else
-				char ipstr[INET6_ADDRSTRLEN];
 				unsigned short port;
 
 				if (peer.ss_family == AF_INET) {
+					char ipaddress[INET_ADDRSTRLEN];
+
 					struct sockaddr_in *s = (struct sockaddr_in *)&peer;
 					port = ntohs(s->sin_port);
-					inet_ntop(AF_INET, &s->sin_addr, ipstr, sizeof ipstr);
+					inet_ntop(AF_INET, &s->sin_addr, ipaddress, sizeof ipaddress);
+					result = new_pair(new_string(ipaddress), F(port));
 				}
+				/* temporary disable IP_v6, todo: return back
 				else
 				if (peer.ss_family == AF_INET6) {
+					char ipaddress[INET6_ADDRSTRLEN];
+
 					struct sockaddr_in6 *s = (struct sockaddr_in6 *)&peer;
 					port = ntohs(s->sin6_port);
-					inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
-				}
+					inet_ntop(AF_INET6, &s->sin6_addr, ipaddress, sizeof ipaddress);
+					result = new_pair(new_string(ipaddress), F(port));
+				}*/
 				else
 					break;
-				result = new_pair(new_string(ipstr), F(port));
 #endif
 
 				break;
@@ -2811,7 +2846,7 @@ invoke:;
 					free(heap->begin); // освободим занятую память
 				heap->begin = 0;
 				exit(svtoi(a));
-				assert (0);  // сюда мы уже не должны попасть
+				__builtin_unreachable(); // сюда мы уже не попадем
 			}
 
 			// UNAME (uname)
@@ -3786,9 +3821,12 @@ word* pinvoke(OL* self, word* arguments)
 				break;\
 			}
 #ifdef __linux__
-		// default calling convention - cdecl
-		CALL();
-#else
+		CALL(); // cdecl
+#endif
+#ifdef __FreeBSD__
+		CALL(); // cdecl
+#endif
+#ifdef _WIN32
 		// default calling convention - stdcall
 		//todo: set __cdecl = 0, and __stdcall = 1
 		switch (returntype >> 8) {
@@ -4017,7 +4055,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TFIX + 0x40: {
 			int c = llen(arg);
-			int* p = (int*) alloca(c * sizeof(int));
+			int* p = (int*) __builtin_alloca(c * sizeof(int));
 			args[i] = (word)p;
 
 			word l = arg;
@@ -4028,7 +4066,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TINT + 0x40: {
 			int c = llen(arg);
-			long* p = (long*) alloca(c * sizeof(long));
+			long* p = (long*) __builtin_alloca(c * sizeof(long));
 			args[i] = (word)p;
 
 			word l = arg;
@@ -4069,7 +4107,7 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		case TFLOAT + 0x40: {
 			int c = llen(arg);
-			float* p = (float*) alloca(c * sizeof(float));
+			float* p = (float*) __builtin_alloca(c * sizeof(float));
 			args[i] = (word)p;
 
 			word l = arg;
@@ -4089,7 +4127,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TDOUBLE + 0x40: {
 			int c = llen(arg);
-			double* p = (double*) alloca(c * sizeof(double));
+			double* p = (double*) __builtin_alloca(c * sizeof(double));
 			args[i] = (word)p;
 
 			word l = arg;
@@ -4133,7 +4171,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TSTRING + 0x40: {
 			int c = llen(arg);
-			char** p = (char**) alloca(c * sizeof(char*));
+			char** p = (char**) __builtin_alloca(c * sizeof(char*));
 			args[i] = (word)p;
 
 			word l = arg;

@@ -6,6 +6,8 @@ $(shell mkdir -p config)
 
 .PHONY: all config recompile install uninstall clean tests
 
+CC=gcc
+
 PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
 # http://ptspts.blogspot.com/2013/12/how-to-make-smaller-c-and-c-binaries.html
@@ -14,18 +16,28 @@ CFLAGS += -std=c99 -O2 -DNDEBUG -s
 boot.c := bootstrap~
 repl.o := src/repl.o
 
-#http://www.gnu.org/prep/standards/html_node/DESTDIR.html
+# dependencies
+UNAME := $(shell uname -s)
+ifeq ($(UNAME),Linux)
+L := -ldl
+endif
+ifeq ($(UNAME),FreeBSD)
+L := -lc
+endif
+
+# Windows/MinGW
+ifeq ($(UNAME),MINGW32_NT-6.1)
+L := -lws2_32
+endif
+
+# http://www.gnu.org/prep/standards/html_node/DESTDIR.html
 # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap03.html#tag_03_266
 # "Multiple successive slashes are considered to be the same as one slash."
 DESTDIR?=
 
 
-#temp:
-#CC := colorgcc
-
 #main
-all: ol config
-
+all:ol
 
 #debug: src/olvm.c src/boot.c
 #	$(CC) -std=c99 -O0 -g  src/olvm.c src/boot.c -o ol \
@@ -103,7 +115,7 @@ exists = \
 	   int main() {\
 	      return $2();\
 	      return 0;\
-	   }" | gcc -xc - -ldl -o /dev/null 2>/dev/null; then\
+	   }" | gcc -xc - $3 -o /dev/null 2>/dev/null; then\
 		echo "Ok.";\
 		printf 1 > $@;\
 	else\
@@ -112,7 +124,7 @@ exists = \
 	fi
 
 config/HAS_DLOPEN:
-	$(call exists, <stdlib.h>,dlopen)
+	$(call exists, <stdlib.h>,dlopen,-ldl)
 config/HAS_SOCKETS:
 	$(call exists, <stdlib.h>,socket)
 
@@ -123,7 +135,7 @@ sizeof = \
 	   \#include $1\n\
 	   int main() {\
 	      return (int)sizeof($2);\
-	   }" | gcc -xc - -ldl -o /tmp/$2.$$$$; then\
+	   }" | gcc -xc - $3 -o /tmp/$2.$$$$; then\
 		echo "Ok."; \
 		chmod u+x /tmp/$2.$$$$;\
 		/tmp/$2.$$$$; printf "(define sizeof:$2 %d)" $$? >$@;\
@@ -142,13 +154,13 @@ config/XVisualInfo:
 # ol
 ol: src/olvm.c src/olvm.h src/boot.c
 	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ \
-	   -Xlinker --export-dynamic -ldl
+	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
 
 
 vm: src/olvm.c src/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
-	   -Xlinker --export-dynamic -ldl
+	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
 
 
