@@ -1,7 +1,7 @@
 ---
 layout: page
 title:  Game AI example
-date:   Thu 18 Feb 2016 01:01:04 AM EET
+date: 2016-03-15 16:56:57 UTC
 categories: ru
 ---
 
@@ -97,8 +97,8 @@ categories: ru
                   (glColor3f 0 0 0)
                   (quad i j))
             ))
-            (iota 0 1 HEIGHT)))
-         (iota 0 1 WIDTH))
+            (lrage 0 1 HEIGHT)))
+         (lrage 0 1 WIDTH))
       (glEnd))
 
       ; нарисуем, где сейчас наше создание находится:

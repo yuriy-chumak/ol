@@ -1,7 +1,7 @@
 ---
 layout: page
 title:  Samples
-date:   пн, 21-гру-2015 15:36:58 +0200
+date: 2016-03-15 16:56:57 UTC
 categories: en
 ---
 #### Simplest Web Server
@@ -86,10 +86,10 @@ categories: en
       (band (>> x 16) #xFF)
       (band (>> x  8) #xFF)
       (band (>> x  0) #xFF)))
-         
+
 (define (message->words message)
    (let cycle ((W
-               (let loop ((t (iota 0 1 16)))
+               (let loop ((t (lrange 0 1 16)))
                   (if (null? t)
                      null
                   (let*((p (* (car t) 4)))
@@ -187,7 +187,7 @@ categories: en
                                     d
                                     (+ t 1))
                               (values a b c d e)))))
-                              
+
                   (main (+ i 1)
                      (->32 (+ A a))
                      (->32 (+ B b))
@@ -209,14 +209,14 @@ categories: en
 ; examples:
 (define (example message)
    (print message " ==> " (->string (sha1:digest message))))
-   
+
 (example "Hello, Lisp!")
 (example "abc")
 (example "Night
 THE sun descending in the west
-The evening star does shine; 
+The evening star does shine;
 The birds are silent in their nest.
- 
+
 And I must seek for mine.")
 </code></pre>
 
@@ -313,7 +313,7 @@ And I must seek for mine. ==> 0860bc39e3ae96947eeace44f3788f31ec43af1e
             " : "
             (car answer)
             "> "))
-            
+
          ; sad "ok" while "not ok", let's repeat leaning
          (if (and matrix-result
                   (= is-pattern-good 0))
