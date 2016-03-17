@@ -31,6 +31,22 @@
  *
  */
 
+// http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
+#ifndef __GNUC__
+#	warning "This code written only for Gnu C compiler"
+#else
+#	define GCC_VERSION (__GNUC__ * 10000 \
+	                  + __GNUC_MINOR__ * 100 \
+	                  + __GNUC_PATCHLEVEL__)
+#	if GCC_VERSION < 30200
+#		error "Code require gcc version > 3.2 (with nested functions support)"
+#	endif
+
+#	if __STDC_VERSION__ < 199901L
+#		error "Code require c99 enabled (-std=c99)"
+#	endif
+#endif
+
 #include "olvm.h"
 
 // TODO: JIT!
@@ -71,6 +87,8 @@
 //    Wince-ARM (cross compiled from win32-i386)
 //    FreeBSD-i386                                                                .
 //    FreeBSD-x86_64                                                              +
+//    NetBSD-i386                                                                 .
+//    NetBSD-x86_64                                                               +
 //    Mac OS X/Darwin for PowerPC (32 and 64 bit)
 //    Mac OS X/Darwin for Intel (32 and 64 bit)
 //    iOS (ARM and AArch64/ARM64) and iPhoneSimulator (32 and 64 bit)
@@ -119,25 +137,12 @@
 
 #define _POSIX_SOURCE //
 
-// http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
-#ifndef __GNUC__
-#	warning "!!! This code built only by Gnu C compiler"
-#else
-#	define GCC_VERSION (__GNUC__ * 10000 \
-	                  + __GNUC_MINOR__ * 100 \
-	                  + __GNUC_PATCHLEVEL__)
-#	if GCC_VERSION < 30200
-#		error "Code require gcc version > 3.2 (with nested functions support)"
-#	endif
-
-#	if __STDC_VERSION__ < 199901L
-#		error "Code require c99 enabled (-std=c99)"
+#ifdef __NetBSD__     // make all NetBSD features available
+#	ifndef _NETBSD_SOURCE
+#	define _NETBSD_SOURCE 1
 #	endif
 #endif
 
-// https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
-#define DO_PRAGMA(x) _Pragma (#x)
-#define TODO(x) DO_PRAGMA(message ("TODO - " #x))
 
 // TODO: ref, set, must base on 0 (like list-ref, vector-ref, etc.), not on 1. create temporary ref1, set1 based on 1 (?)
 
@@ -192,8 +197,7 @@
 
 #ifndef _WIN32
 #include <sys/utsname.h> // uname
-#ifndef __FreeBSD__
-#include <sys/sysinfo.h> // sysinfo
+#ifndef __linux__
 #include <sys/resource.h>// getrusage
 #else
 // in FreeBSD use "getloadavg"
@@ -201,6 +205,9 @@
 #endif
 
 #include <time.h>
+#ifdef __unix__
+#include <sys/time.h>
+#endif
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -252,9 +259,10 @@ extern int mkstemp (char *__template);
 #	undef ERROR // due to macro redefinition
 #endif
 
-#ifdef __FreeBSD__
+#ifdef __unix__
 #	include <sys/socket.h>
 #	include <netinet/in.h>
+#	include <sys/select.h>
 
 #	include <arpa/inet.h> // for inet_addr()
 #	include <netdb.h>     // for gethostbyname()
@@ -266,7 +274,6 @@ extern int mkstemp (char *__template);
 #	ifndef INADDR_NONE
 #	define INADDR_NONE	0xffffffff
 #	endif
-
 #endif
 
 #ifdef __ANDROID__
@@ -326,11 +333,11 @@ void *dlopen(const char *filename, int mode/*unused*/)
 	dlerrno = GetLastError();
 	return hModule;
 }
-/*static
+static
 int dlclose(void *handle)
 {
 	return FreeLibrary((HMODULE)handle);
-}*/
+}
 
 static
 void *dlsym(void *handle, const char *name)
@@ -1530,6 +1537,10 @@ invoke:;
 #		ifndef SYSCALL_SYSINFO
 #		define SYSCALL_SYSINFO 99
 #		endif
+#		if SYSCALL_SYSINFO
+#			include <sys/sysinfo.h>
+#		endif
+
 #		ifndef SYSCALL_PRCTL
 #		define SYSCALL_PRCTL 157
 #		endif
@@ -1821,8 +1832,8 @@ invoke:;
 		case TYPE: { // type o r <- actually sixtet
 			word T = A0;
 			if (is_reference(T))
-				T = *((word *) (T)); // todo: add RAWNESS to this
-			A1 = make_integer(typeof (T)); // was: F((T >> TPOS) & 63);
+				T = *((word *) (T)); // todo: add RAWNESS to this (?)
+			A1 = F(typeof (T));
 			ip += 2; break;
 		}
 
@@ -1972,14 +1983,14 @@ invoke:;
 			if (is_rawobject(*p)) {
 				if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
 					((char*)&car(p))[pos - 1] = (char) uvtoi(A2);
-				A3 = p;
+				A3 = (word) p;
 			}
 			else
 			if (hdrsize(*p) < pos || !pos)
 				A3 = IFALSE;
 			else {
 				p[pos] = A2;
-				A3 = p;
+				A3 = (word) p;
 			}
 			ip += 4; break; }
 
@@ -2381,7 +2392,7 @@ invoke:;
 					break;
 				}
 				set_blocking(file, 0);
-				result = make_port(file);
+				result = (word*)make_port(file);
 
 				break;
 			}
@@ -2477,7 +2488,7 @@ invoke:;
 				word* A = (word*)a;
 				DIR *dirp = opendir((char*) &A[1]);
 				if (dirp)
-					result = make_port(dirp);
+					result = (word*)make_port(dirp);
 				break;
 			}
 			// get directory entry
@@ -2532,7 +2543,7 @@ invoke:;
 				// right way: use PF_INET in socket call
 				int sock = socket(PF_INET, SOCK_STREAM, 0);
 				if (sock != -1)
-					result = make_port (sock);
+					result = (word*)make_port (sock);
 				break;
 			}
 
@@ -2634,7 +2645,7 @@ invoke:;
 				flags = (flags | O_NONBLOCK);
 				if (fcntl(sock, F_SETFL, flags) == 0)
 #endif
-					result = make_port (sock);
+					result = (word*)make_port (sock);
 				break;
 			}
 
@@ -3110,7 +3121,7 @@ invoke:;
 				if (is_reference(a)) {
 					word hdr = *(word*)a;
 					if (is_rawobject(hdr))
-						result = ITRUE;
+						result = (word*)ITRUE;
 				}
 				break;
 			case 1007: // set memory limit (in mb) / // todo: переделать на другой номер

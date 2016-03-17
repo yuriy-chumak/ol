@@ -39,14 +39,14 @@ void* OL_eval(struct ol_t* ol, int argc, char** argv);
 class OL
 {
 private:
-	OLvm* vm;
+	ol_t* vm;
 public:
 	OL(unsigned char* language) { vm = ol_new(language, 0); }
-	virtual ~OLvm() { free(vm); }
+	virtual ~OL() { OL_free(vm); }
 
 
-	int eval() {
-		return 0;
+	int eval(int argc, char** argv) {
+		return (int)OL_eval(argc, argv);
 	}
 };
 #else
@@ -86,8 +86,16 @@ typedef struct ol_t OL;
 #define SYSCALL_GETRLIMIT 0
 #endif
 
+// todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
 
 #ifdef __FreeBSD__
+#define SYSCALL_SYSINFO 0
+#define SYSCALL_PRCTL 0
+#define SYSCALL_GETRUSAGE 0
+#define SYSCALL_GETRLIMIT 0
+#endif
+
+#ifdef __NetBSD__
 #define SYSCALL_SYSINFO 0
 #define SYSCALL_PRCTL 0
 #define SYSCALL_GETRUSAGE 0
