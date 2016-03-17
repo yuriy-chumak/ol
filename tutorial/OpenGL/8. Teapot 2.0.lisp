@@ -238,7 +238,7 @@ po))
 
 ; draw
 (lambda (x   dx y   dy  po teapot)
-   (glClear (fx:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+   (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
    (glUseProgram po)
 
    (glMatrixMode GL_PROJECTION)
