@@ -1,7 +1,7 @@
 ---
 layout: page
 title:  Tutorial
-date:   пт, 27-лис-2015 19:39:47 +0200
+date: 2016-03-17 12:50:03 UTC
 categories: ru
 ---
    Tutorial разбит на логические части, частично повторяющие структуру [R5RS](http://www.schemers.org/Documents/Standards/R5RS/){:target="_blank"} Scheme.
@@ -16,6 +16,7 @@ categories: ru
 1. [Внутреннее устройство виртуальной машины](?ru/internals)
 1. [Примеры](?ru/examples)
    1. [OpenGL](?ru/opengl)
+   1. [Matrix](?ru/matrix)
    1. [HTTP Server](?ru/http-server)
    1. [Game AI](?ru/gameai)
 
