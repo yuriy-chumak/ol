@@ -1,19 +1,21 @@
 ---
 layout: page
 title:  Summary
-date: 2016-03-17 12:50:03 UTC
+date: 2016-03-17 13:16:33 UTC
 categories: index
 ---
 
    Otus Lisp (или ol, произносится как [`отэс лисп], [ол]) - чисто функциональный (на самом деле - *не совсем*, но об этом - позже) диалект языка Lisp.
-Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Распространяется по лицензии [GPL v3](https://github.com/yuriy-chumak/OL/blob/master/COPYING).
+Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Маленький, встраиваемый, кроссплатформенный (Linux, Windows, FreeBSD, NetBSD).
+
+   Распространяется по лицензии [GPL v3](https://github.com/yuriy-chumak/OL/blob/master/COPYING).
 
    Вот неполный список того, что может предоставить ol:
 
   * встраиваемость,
   * маленькая и быстрая виртуальной машина (всего 42 КБ в бинарном виде<sup>[*](#42kb)</sup>)
   * высокоэффективный сборщик мусора (благодаря чистой функциональности языка)
-  * мультиплатформенность (Linux, Windows, [webOS, Android, MacOS, *BSD, etc. - в реальных ближайших планах])
+  * кроссплатформенность (Linux, Windows, FreeBSD, NetBSD, [webOS, Android, MacOS, etc. - в реальных ближайших планах])
   * возможность компилировать lisp-скрипты в бинарный формат, а так же выполнять их
   * динамическое связывание с функциями из "родных" системных библиотек (в разделе [tutorial](?ru/tutorial) есть примеры программирования с помощью OpenGL под Linux и Windows без использования других языков программирования, таких как C)
   * возможность работать в песочнице <sup>[*](#sandbox)</sup>
