@@ -195,18 +195,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifndef _WIN32
+#ifdef __linux__
 #include <sys/utsname.h> // uname
-#ifndef __linux__
 #include <sys/resource.h>// getrusage
-#else
-// in FreeBSD use "getloadavg"
-#endif
 #endif
 
 #include <time.h>
+
 #ifdef __unix__
-#include <sys/time.h>
+#include <sys/utsname.h>
 #endif
 
 #ifdef __linux__

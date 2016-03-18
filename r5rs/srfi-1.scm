@@ -10,7 +10,7 @@
    (owl list))
 
    (export
-      first second third ;fourth fifth sixth seventh eighth ninth tenth
+      first second third fourth fifth sixth seventh eighth ninth tenth
 
       iota
 )
@@ -22,6 +22,20 @@
       (car (cdr li)))
    (define (third li)
       (car (cdr (cdr li))))
+   (define (fourth li)
+      (car (cdr (cdr (cdr li)))))
+   (define (fifth li)
+      (car (cdr (cdr (cdr (cdr li))))))
+   (define (sixth li)
+      (car (cdr (cdr (cdr (cdr (cdr li)))))))
+   (define (seventh li)
+      (car (cdr (cdr (cdr (cdr (cdr (cdr li))))))))
+   (define (eighth li)
+      (car (cdr (cdr (cdr (cdr (cdr (cdr (cdr li)))))))))
+   (define (ninth li)
+      (car (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr li))))))))))
+   (define (tenth li)
+      (car (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr li)))))))))))
 
 
    (define iota

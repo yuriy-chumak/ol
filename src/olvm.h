@@ -87,21 +87,12 @@ typedef struct ol_t OL;
 #endif
 
 // todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
-
-#ifdef __FreeBSD__
+#ifdef __unix__
 #define SYSCALL_SYSINFO 0
 #define SYSCALL_PRCTL 0
 #define SYSCALL_GETRUSAGE 0
 #define SYSCALL_GETRLIMIT 0
 #endif
-
-#ifdef __NetBSD__
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_PRCTL 0
-#define SYSCALL_GETRUSAGE 0
-#define SYSCALL_GETRLIMIT 0
-#endif
-
 
 //-- end of header
 #ifdef __cplusplus

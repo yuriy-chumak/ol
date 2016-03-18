@@ -13,6 +13,8 @@
 
    (import
       (r5rs core)
+      (r5rs srfi-1)
+
       (owl parse)
       (owl math)
       (owl string)
@@ -34,7 +36,7 @@
          (<= lo x hi))
 
       ; todo: rename to extended-alphabetic-chars
-;     (define special-symbol-chars (string->bytes "!$%&*+-/:<=>?@^_~")) ; . reserved for numbers, sorry.
+;     (define special-symbol-chars (string->bytes "!$%&*+-/:<=>?@^_~")) ; dot(.) reserved for numbers, sorry.
       (define special-initial-chars (string->bytes "!$%&*+-/:<=>?^_~"))
       (define special-subseqent-chars (string->bytes "@")) ; . must be too
 
@@ -65,23 +67,24 @@
                 (skip (get-imm #\|)))
                (string->uninterned-symbol (runes->string chars)))))
 
-      (define (digit-char? x) 
-         (or (between? 48 x 57)
-            (between? 65 x 70)
-            (between? 97 x 102)))
+;      (define (digit-char? x)
+;         (or
+;            (between? #\0 x #\9)
+;            (between? #\A x #\F)
+;            (between? #\a x #\f)))
 
-      (define digit-values 
+      (define digit-values
          (list->ff
             (foldr append null
                (list
-                  (map (lambda (d) (cons d (- d 48))) (lrange 48 1 58))  ;; 0-9
-                  (map (lambda (d) (cons d (- d 55))) (lrange 65 1 71))  ;; A-F
-                  (map (lambda (d) (cons d (- d 87))) (lrange 97 1 103)) ;; a-f
+                  (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
+                  (map (lambda (d i) (cons d i)) (iota  6 #\A) (iota 6 10))  ;; A-F
+                  (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
                   ))))
 
       (define (digit-char? base)
          (if (eq? base 10)
-            (λ (n) (between? 48 n 57))
+            (λ (n) (between? #\0 n #\9))
             (λ (n) (< (get digit-values n 100) base))))
 
       (define (bytes->number digits base)
@@ -96,7 +99,7 @@
             0 digits))
 
       (define get-sign
-         (get-any-of (get-imm 43) (get-imm 45) (get-epsilon 43)))
+         (get-any-of (get-imm #\+) (get-imm #\-) (get-epsilon #\+)))
         
       (define bases
          (list->ff
@@ -124,7 +127,7 @@
          (let-parses
             ((sign-char get-sign) ; + / -, default +
              (n (get-natural base)))
-            (if (eq? sign-char 43) n (- 0 n))))
+            (if (eq? sign-char #\-) n (- n))))
 
       ;; → n, to multiply with
       (define (get-exponent base)
