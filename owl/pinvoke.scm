@@ -65,13 +65,19 @@
       RTLD_NODELETE
 
       ; todo: rename type-float to type-float32 and type-double to type-float64
-      type-float type-double type-void
+      type-float type-double type-void type-void* type-void** ; type-vptr, type-vptr* ?
       load-dynamic-library
 
       ; по-поводу calling convention:
       ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
       ;  пока что пусть остается так.
       __stdcall __cdecl __fastcall
+
+;      (define type-memp             62) ; value
+;      (define type-userdata         62)
+;      (define type-void             48) ; no return pinvoke value
+;      (define type-void*            49)  ; 
+
    )
 
    (import
@@ -123,7 +129,7 @@
 
 (define pinvoke (syscall 177 (dlopen) "pinvoke" #f))
 
-; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать (type-memp)
+; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать
 (define (dlsym+ dll name)
    (let ((function (syscall 177 dll (c-string name) #false)))
       (if function
@@ -179,6 +185,8 @@
 (define type-float  46) ;was: type-rational)
 (define type-double 47) ; пока нету, но возможно будет
 (define type-void   48)
+(define type-void*  49)
+(define type-void** 113) ; #x40 + 49
 
 ;; OS detection
 (define (uname) (syscall 63 #f #f #f))

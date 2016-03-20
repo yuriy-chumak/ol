@@ -52,11 +52,11 @@
    (win32?
       (let ((user32 (dlopen "user32.dll"))
             (gdi32  (dlopen "gdi32")))
-      (let ((CreateWindowEx   (dlsym user32 type-port "CreateWindowExA" type-int+ type-string type-string type-int+ type-int+ type-int+ type-int+ type-int+ type-port type-port type-port type-vector-raw))
-            (GetDC            (dlsym user32 type-port "GetDC" type-port))
-            (ShowWindow       (dlsym user32 type-fix+ "ShowWindow" type-port type-int+))
-            (ChoosePixelFormat(dlsym gdi32  type-int+ "ChoosePixelFormat" type-port type-vector-raw))
-            (SetPixelFormat   (dlsym gdi32  type-fix+ "SetPixelFormat" type-port type-int+ type-vector-raw)))
+      (let ((CreateWindowEx   (dlsym user32 type-void* "CreateWindowExA" type-int+ type-string type-string type-int+ type-int+ type-int+ type-int+ type-int+ type-void* type-void* type-void* type-void*))
+            (GetDC            (dlsym user32 type-void* "GetDC" type-void*))
+            (ShowWindow       (dlsym user32 type-fix+ "ShowWindow" type-void* type-int+))
+            (ChoosePixelFormat(dlsym gdi32  type-int+ "ChoosePixelFormat" type-void* type-void*))
+            (SetPixelFormat   (dlsym gdi32  type-fix+ "SetPixelFormat" type-void* type-int+ type-void*)))
       (lambda (title)
          (let*((window (CreateWindowEx
                   #x00040100 "#32770" (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
@@ -84,23 +84,23 @@
    (linux?
       (let ((libx11 (dlopen "libX11.so"))
             (libGL  (dlopen "libGL.so")))
-      (let ((XOpenDisplay  (dlsym libx11 type-port "XOpenDisplay" type-string))
-            (XDefaultScreen(dlsym libx11 type-int+ "XDefaultScreen" type-port))
-            (XRootWindow   (dlsym libx11 type-port "XRootWindow" type-port type-int+))
-            (XBlackPixel   (dlsym libx11 type-port "XBlackPixel" type-port type-int+))
-            (XWhitePixel   (dlsym libx11 type-port "XWhitePixel" type-port type-int+))
-            (XCreateSimpleWindow (dlsym libx11 type-port "XCreateSimpleWindow"
-                              type-port type-port ; display, parent Window
+      (let ((XOpenDisplay  (dlsym libx11 type-void* "XOpenDisplay" type-string))
+            (XDefaultScreen(dlsym libx11 type-int+  "XDefaultScreen" type-void*))
+            (XRootWindow   (dlsym libx11 type-void* "XRootWindow" type-void* type-int+))
+            (XBlackPixel   (dlsym libx11 type-int+  "XBlackPixel" type-void* type-int+))
+            (XWhitePixel   (dlsym libx11 type-int+  "XWhitePixel" type-void* type-int+))
+            (XCreateSimpleWindow (dlsym libx11 type-void* "XCreateSimpleWindow"
+                              type-void* type-void* ; display, parent Window
                               type-int+ type-int+ type-int+ type-int+ ; x y width height
                               type-int+ ; border width
                               type-int+ ; border
                               type-int+ ; background
                            ))
-            (XSelectInput  (dlsym libx11 type-int+ "XSelectInput" type-port type-port type-int+))
-            (XMapWindow    (dlsym libx11 type-int+ "XMapWindow" type-port type-port))
-            (XStoreName    (dlsym libx11 type-int+ "XStoreName" type-port type-port type-string))
-            (glXChooseVisual     (dlsym libGL type-port "glXChooseVisual" type-port type-int+ type-vector-raw))
-            (glXCreateContext    (dlsym libGL type-port "glXCreateContext" type-port type-port type-int+ type-int+)))
+            (XSelectInput (dlsym libx11 type-int+ "XSelectInput" type-void* type-void* type-int+))
+            (XMapWindow   (dlsym libx11 type-int+ "XMapWindow" type-void* type-void*))
+            (XStoreName   (dlsym libx11 type-int+ "XStoreName" type-void* type-void* type-string))
+            (glXChooseVisual  (dlsym libGL type-void* "glXChooseVisual" type-void* type-int+ type-void*))
+            (glXCreateContext (dlsym libGL type-void* "glXCreateContext" type-void* type-void* type-int+ type-int+)))
       (lambda (title)
          (let*((display (XOpenDisplay null))
                (screen (XDefaultScreen display))
@@ -135,10 +135,10 @@
 (define gl:ProcessEvents (cond ; todo: add "onClose" handler
    (win32?
       (let ((user32 (dlopen "user32.dll")))
-      (let ((PeekMessage      (dlsym user32 type-fix+ "PeekMessageA"     type-vector-raw type-port type-int+ type-int+ type-int+))
-            (TranslateMessage (dlsym user32 type-fix+ "TranslateMessage" type-vector-raw))
-            (GetMessage       (dlsym user32 type-fix+ "GetMessageA"      type-vector-raw type-port type-int+ type-int+))
-            (DispatchMessage  (dlsym user32 type-int+ "DispatchMessageA" type-vector-raw)))
+      (let ((PeekMessage      (dlsym user32 type-fix+ "PeekMessageA"     type-void* type-void* type-int+ type-int+ type-int+))
+            (TranslateMessage (dlsym user32 type-fix+ "TranslateMessage" type-void*))
+            (GetMessage       (dlsym user32 type-fix+ "GetMessageA"      type-void* type-void* type-int+ type-int+))
+            (DispatchMessage  (dlsym user32 type-int+ "DispatchMessageA" type-void*)))
       (lambda (context)
          (let ((MSG (raw type-vector-raw (repeat 0 28))))
          (let loop ()
@@ -158,8 +158,8 @@
                         (loop)))))))))))
    (linux?
       (let ((libx11 (dlopen "libX11.so")))
-      (let ((XPending  (dlsym libx11 type-int+ "XPending"   type-port))
-            (XNextEvent(dlsym libx11 type-int+ "XNextEvent" type-port type-vector-raw)))
+      (let ((XPending  (dlsym libx11 type-int+ "XPending"   type-void*))
+            (XNextEvent(dlsym libx11 type-int+ "XNextEvent" type-void* type-void*)))
       (lambda (context)
          (let ((XEvent (raw type-vector-raw (repeat 0 192)))
                (display (ref context 1)))
@@ -203,7 +203,7 @@
 ;   (print args)))
 
 ;         (gl:ProcessEvents context)
-;      (let ((XEvent (raw type-vector-raw (repeat 0 192))))
+;      (let ((XEvent (raw type-void* (repeat 0 192))))
 ;         (let process-events ((unused 0))
 ;            (if (> (XPending display) 0)
 ;               (process-events (XNextEvent display XEvent))))

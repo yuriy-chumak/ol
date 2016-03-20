@@ -71,12 +71,10 @@
 
 (import (otus lisp))
 
-(import (owl interop))
 (import (owl primop))
 
 (import (owl intern))
 (import (owl parse))
-(import (owl regex))
 
 (import (owl gensym))
 

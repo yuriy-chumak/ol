@@ -1,5 +1,4 @@
 #!/bin/ol
-(define *include-dirs* (append *include-dirs* '("..")))
 ; http://www.scheme.com/tspl4/ - The Scheme Programming Language (Fourth Edition)
 ; http://community.schemewiki.org/?scheme-faq-standards#implementations
 ;!

@@ -68,7 +68,7 @@
       (owl pinvoke))
   (begin
 
-(define (port) (cast 0 type-port))
+(define (new-void*) (cast 0 type-void*))
 
 
 (define % (or
@@ -77,22 +77,21 @@
 
 (if (not %)
    (begin
-      (print "Can't load sqlite3 library. Will halt")
+      (runtime-error "Can't load sqlite3 library. Will halt")))
 ;      (case *OS*
 ;         (0 (print "Download dll from http://www.sqlite.org/download.html"))
 ;         (1 (print "sudo apt-get install sqlite3")))
-      (exit-owl 1)))
 
 ; служебные
-(define (make-sqlite3)      (port)) ;like port (raw type-vector-raw '(0)))
-(define (make-sqlite3-stmt) (port)) ;(list->byte-vector '(0 0 0 0)))
+(define (make-sqlite3)      (new-void*)) ;like void* (raw type-vector-raw '(0)))
+(define (make-sqlite3-stmt) (new-void*)) ;(list->byte-vector '(0 0 0 0)))
 
 ; todo: завести под это дело отдельный тип - что-то вроде type-int+-ref и т.д.
-(define sqlite3*  type-port)
-(define sqlite3** type-vector-raw) ;ptr to port
-(define sqlite3_stmt*  type-port)
-(define sqlite3_stmt** type-vector-raw) ;ptr to port
-(define char** type-vector-raw) ; тут проблема!!! (?)
+(define sqlite3*  type-void*)
+(define sqlite3** type-vector-raw) ;ptr to void*
+(define sqlite3_stmt*  type-void*)
+(define sqlite3_stmt** type-vector-raw) ;ptr to void*
+(define char** type-vector-raw)
 
 (define sqlite3_value type-fix+)
 (define sqlite3_int64 type-vector-raw)

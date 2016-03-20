@@ -1,5 +1,4 @@
 /**
- * OL - Otus Lisp - yet another pet lisp
  * Copyright (c) 2014 Aki Helin
  * Copyright (c) 2014- 2016 Yuriy Chumak
  *
@@ -500,36 +499,36 @@ struct object_t
 #define TBYTECODE                   (16) // must be RAW type
 #define TPROC                       (17)
 #define TCLOS                       (18)
+
 #define TFF                         (24) // // 26,27 same
 #	define FFRIGHT                     1 // flags for TFF
 #	define FFRED                       2
 
-#define TBVEC                       19   // must be RAW type
-#define TSTRINGWIDE                 22   // must be RAW type
+#define TBVEC                       (19)   // must be RAW type
+#define TSTRINGWIDE                 (22)   // must be RAW type
 
-#define TTHREAD                     31 // type-thread-state
+#define TTHREAD                     (31) // type-thread-state
 
 // numbers (value type)
-#define TFIX                        ( 0)  // type-fix+ // todo: rename to TSHORT or TSMALL
-#define TFIXN                       (TFIX + 32)  // type-fix-
+#define TFIX                         (0)  // type-fix+ // todo: rename to TSHORT or TSMALL
+#define TFIXN                       (32 + TFIX)  // type-fix-
 // numbers (reference type)
 #define TINT                        (40)  // type-int+ // todo: rename to TINTEGER (?)
 #define TINTN                       (41)  // type-int-
 #define TRATIONAL                   (42)
 #define TCOMPLEX                    (43)
 
-// pinvoke
-#define TWORD                       (62) // only for pinvoke, must be RAW
+// for pinvoke
 #define TVOID                       (48) // only for pinvoke
-#define TRAWVALUE                   (45) // only for pinvoke
+#define TVPTR                       (49) // void*, only RAW, can't be 0
+#define TUSERDATA                   (62) // only for pinvoke, must be RAW, can be 0
 
-// special pinvoke types
+// only pinvoke argument types
+#define TINT64                      44
 #define TFLOAT                      46
 #define TDOUBLE                     47
-//#define TTHIS                     44
-#define TINT64                      44
 
-
+// constants:
 #define IFALSE                      make_value(TCONST, 0)
 #define ITRUE                       make_value(TCONST, 1)
 #define INULL                       make_value(TCONST, 2)
@@ -538,13 +537,13 @@ struct object_t
 #define IHALT                       INULL // FIXME: adde a distinct IHALT
 
 
-#define HWORD                       make_raw_header(TWORD, 2, 0) // must be RAW
+#define HVPTR                       make_raw_header(TVPTR, 2, 0) // must be RAW
 
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
 #define is_const(ob)                (typeof (ob) == TCONST)
-#define is_port(ob)                 ((ob & 0xFF) == ((TPORT << TPOS) | 2)) // (is_value(ob) && typeof(ob) == TPORT)
+#define is_port(ob)                 (is_value(ob)     && typeof (ob) == TPORT)
 
 #define is_fix(ob)                  (is_value(ob)     && typeof (ob) == TFIX)
 #define is_fixn(ob)                 (is_value(ob)     && typeof (ob) == TFIXN)
@@ -557,7 +556,7 @@ struct object_t
 #define is_string(ob)               (is_reference(ob) && typeof (*(word*)(ob)) == TSTRING)
 #define is_tuple(ob)                (is_reference(ob) && typeof (*(word*)(ob)) == TTUPLE)
 
-#define is_handle(ob)               (is_reference(ob) &&        (*(word*)(ob)) == HWORD)
+#define is_vptr(ob)                 (is_reference(ob) &&        (*(word*)(ob)) == HVPTR)
 
 #define is_number(ob)               (is_npair(ob)  || is_fix(ob))
 #define is_numbern(ob)              (is_npairn(ob) || is_fixn(ob))
@@ -898,20 +897,26 @@ word* p = new_bytevector(TSTRING, length);\
 #define new_string(...) NEW_STRING_MACRO(__VA_ARGS__, NEW_STRING2, NEW_STRING)(__VA_ARGS__)
 
 
-#define new_handle(a) ({\
+#define new_vptr(a) ({\
 word data = (word) a;\
-	word* me = new (TWORD, 2, 0);\
+	word* me = new (TVPTR, 2, 0);\
 	me[1] = data;\
 	/*return*/me;\
 })
 
 #define new_native_function(a) ({\
 word data = (word) a;\
-	word* me = new (TWORD, 2, 0);\
+	word* me = new (TVPTR, 2, 0);\
 	me[1] = data;\
 	/*return*/me;\
 })
 
+#define new_userdata(a) ({\
+word data = (word) a;\
+	word* me = new (TUSERDATA, 2, 0);\
+	me[1] = data;\
+	/*return*/me;\
+})
 
 // -= gc implementation =-----------
 #define is_flagged(x) (((word)(x)) & 1)  // mark for GC
@@ -1217,9 +1222,9 @@ struct ol_t
 
 #define ERROR(opcode, a, b)         { \
 	fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__); /* TEMP */\
-	R[4] = (word) itoun(opcode);\
-	R[5] = (word) (a); \
-	R[6] = (word) (b); \
+	R[4] = F (opcode);\
+	R[5] = (word) (a);\
+	R[6] = (word) (b);\
 	goto invoke_mcp; }
 #define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 
@@ -1483,13 +1488,13 @@ invoke:;
 
 	// примитивы языка:
 #	define RAW   60
+#	define RAWq  48       // (raw?), временное решение пока не придумаю как от него совсем избавиться
 
 #	define CONS  51
 
 #	define TYPE  15
 #	define SIZE  36
 #	define CAST  22
-#	define RAWq  48 // (raw?), временное решение пока не придумаю как от него совсем избавиться
 
 #	define CAR   52
 #	define CDR   53
@@ -2745,7 +2750,7 @@ invoke:;
 			case 59: {
 #if HAS_DLOPEN
 				// if a is result of dlsym
-				if (is_handle(a)) { // todo: change to is_mem_pointer or is_mem_function or something similar
+				if (is_vptr(a)) {
 					// a - function address (port)
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 					word* A = (word*)a;
@@ -3184,12 +3189,12 @@ invoke:;
 					break; // invalid filename, return #false
 
 				if (module)
-					result = new_handle(module);
+					result = new_vptr(module);
 				break;
 			}
 
 			case SYSCALL_DLCLOSE: {
-				CHECK(is_handle(a), a, SYSCALL);
+				CHECK(is_vptr(a), a, SYSCALL);
 				void* module = (void*)car (a);
 
 				if (dlclose(module) == 0)
@@ -3198,7 +3203,7 @@ invoke:;
 			}
 
 			case SYSCALL_DLSYM: { // (dlsym module function #false)
-				CHECK(is_handle(a), a, SYSCALL);
+				CHECK(is_vptr(a), a, SYSCALL);
 				void* module = (void*)car (a);
 
 				word* symbol = (word*) b;
@@ -3831,7 +3836,7 @@ word* pinvoke(OL* self, word* arguments)
 #ifdef __linux__
 		CALL(); // cdecl
 #endif
-#ifdef __FreeBSD__
+#ifdef __unix__
 		CALL(); // cdecl
 #endif
 #ifdef _WIN32
@@ -4035,35 +4040,24 @@ word* pinvoke(OL* self, word* arguments)
 		switch (type) {
 		// целочисленные типы:
 		case TFIX:
-		case TINT:
 			if (is_value(arg))
-				args[i] = svtoi(arg);
+				args[i] = (int)svtoi(arg);
 			else
 			switch (reftype(arg)) {
-			case TINT: // source type
-				args[i] = +from_int(arg);
+			case TINT:
+				args[i] = (int)+from_int(arg);
 				break;
 			case TINTN:
-				args[i] = -from_int(arg);
-				break;
-			case TRATIONAL:
-				args[i] =  (int)from_rational(arg);
-				break;
-			// временное решение специально для sqlite3, потом я заведу отдельный тип type-int+-ref (такой, как type-handle)
-			case TPORT: // todo: change to THANDLE
-			case TWORD:
-			case TBVEC:
-				args[i] = car(arg);
+				args[i] = (int)-from_int(arg);
 				break;
 			default:
 				fprintf(stderr, "can't cast %d to int\n", type);
 				args[i] = 0; // todo: error
 			}
 			break;
-
-		case TFIX + 0x40: {
+		case TFIX + 0x40: { // int*
 			int c = llen(arg);
-			int* p = (int*) __builtin_alloca(c * sizeof(int));
+			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: new_raw_vector()
 			args[i] = (word)p;
 
 			word l = arg;
@@ -4072,9 +4066,25 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		}
 
-		case TINT + 0x40: {
+		case TINT:
+			if (is_value(arg))
+				args[i] = (long)svtoi(arg);
+			else
+			switch (reftype(arg)) {
+			case TINT: // source type
+				args[i] = (long)+from_int(arg);
+				break;
+			case TINTN:
+				args[i] = (long)-from_int(arg);
+				break;
+			default:
+				fprintf(stderr, "can't cast %d to int\n", type);
+				args[i] = 0; // todo: error
+			}
+			break;
+		case TINT + 0x40: { // long*
 			int c = llen(arg);
-			long* p = (long*) __builtin_alloca(c * sizeof(long));
+			long* p = (long*) __builtin_alloca(c * sizeof(long)); // todo: use new()
 			args[i] = (word)p;
 
 			word l = arg;
@@ -4083,7 +4093,7 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		}
 
-		case TINT64: {
+		case TINT64: { // long long
 			if (is_value(arg))
 				*(long long*)&args[i] = svtoi(arg);
 			else
@@ -4106,8 +4116,9 @@ word* pinvoke(OL* self, word* arguments)
 
 			break;
 		}
+		// todo: case TINT64 + 0x40:
 
-		// с плавающей запятой:*/
+		// с плавающей запятой:
 		case TFLOAT:
 			*(float*)&args[i] = to_float(arg);
 
@@ -4115,7 +4126,7 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		case TFLOAT + 0x40: {
 			int c = llen(arg);
-			float* p = (float*) __builtin_alloca(c * sizeof(float));
+			float* p = (float*) __builtin_alloca(c * sizeof(float)); // todo: use new()
 			args[i] = (word)p;
 
 			word l = arg;
@@ -4135,7 +4146,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TDOUBLE + 0x40: {
 			int c = llen(arg);
-			double* p = (double*) __builtin_alloca(c * sizeof(double));
+			double* p = (double*) __builtin_alloca(c * sizeof(double)); // todo: use new()
 			args[i] = (word)p;
 
 			word l = arg;
@@ -4146,37 +4157,49 @@ word* pinvoke(OL* self, word* arguments)
 
 		// запрос порта - это запрос значения порта
 		// todo: добавить тип "указатель на порт"
-		case TWORD:
-		case TPORT: // todo: change to THANDLE
-			if ((word)arg == INULL)
+//		case TUSERDATA:
+		case TVPTR:
+			if ((word)arg == INULL || (word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
-			case TWORD:
-			case TPORT: // todo: change to THANDLE
+			case TVPTR:
 				args[i] = car(arg);
 				break;
+			case TBVEC:
+			case TSTRING:
+				args[i] = (word) &car(arg);
+				break;
 			default:
-				args[i] = 0; // todo: error
+				fprintf(stderr, "invalid parameter value (requested vptr)\n");
 			}
 			break;
-
-		case TBVEC:
-		case TSTRING:
-			if ((word)arg == INULL)
+		case TVPTR + 0x40: {
+			if ((word)arg == INULL || (word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
-			case TBVEC:
+			case TVPTR:
+				args[i] = (word) &car(arg);
+				break;
+			default:
+				fprintf(stderr, "invalid parameter value (requested vptr)\n");
+			}
+			break;
+		}
+
+		case TSTRING:
+			if ((word)arg == INULL || (word)arg == IFALSE)
+				args[i] = (word) (void*)0;
+			else
+			switch (reftype(arg)) {
 			case TSTRING:
-				// in arg[0] size got size of string
 				args[i] = (word) &car(arg);
 				break;
 			default:
 				fprintf(stderr, "invalid parameter values (requested string)\n");
 			}
 			break;
-
 		case TSTRING + 0x40: {
 			int c = llen(arg);
 			char** p = (char**) __builtin_alloca(c * sizeof(char*));
@@ -4185,25 +4208,24 @@ word* pinvoke(OL* self, word* arguments)
 			word l = arg;
 			while (c--)
 				*p++ = (char*) &caar(l), l = cdr(l);
-			break;
+
+/*			int size = llen(arg) + 1;
+			*fp++ = make_raw_header(TBVEC, size, 0);
+			args[i] = (word)fp;
+
+			word src = arg;
+			while (--size)
+				*fp++ = (char*) &caar(src), src = cdr(src);
+
+			break;*/
 		}
-
-
+/*
 		case TTUPLE:
-			if ((word)arg == INULL)
+			if ((word)arg == INULL || (word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
-/*			case TCONST:
-				switch ((word)arg) {
-				case INULL:
-					args[i] = (word) (void*)0;
-				}*/
 			case TTUPLE: { // ?
-				// tuple, это последовательность, а не список!
-				// todo: сделать функцию cast или что-то такое
-				// что-бы возвращать список, какой мне нужен
-
 				// аллоцировать массив и сложить в него указатели на элементы кортежа
 				int size = hdrsize(*(word*)arg);
 				*fp++ = make_raw_header(TBVEC, size, 0);
@@ -4212,17 +4234,15 @@ word* pinvoke(OL* self, word* arguments)
 				word* src = &car(arg);
 				while (--size)
 					*fp++ = (word)((word*)*src++ + 1);
-//				int j;
-//				for (j = 1; j < size; j++)
 				}
 				break;
 			default:
 				args[i] = INULL; // todo: error
 			}
-			break;
-		case TRAWVALUE:
-			args[i] = (word)arg;
-			break;
+			break;*/
+//		case TRAWVALUE:
+//			args[i] = (word)arg;
+//			break;
 		default:
 			fprintf(stderr, "can't recognize %d type\n", type);
 		}
@@ -4272,30 +4292,33 @@ word* pinvoke(OL* self, word* arguments)
 
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
-		case TINT:
-			result = (word*) itoun (got);
-			break;
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = (word*) itosv (got);
 			break;
+		case TINT:
+			result = (word*) itoun (got);
+			break;
 			// else goto case 0 (иначе вернем type-fx+)
-		case TPORT: // todo: change to THANDLE
-			result = new_handle(got);
+//		case TPORT:
+//			result = new_port(got);
+//			break;
+		case TUSERDATA:
+			result = new_native_function (got);
 			break;
-		case TWORD:
+		case TVPTR:
 			if (got)
-				result = new_native_function (got);
+				result = new_vptr (got);
 			break;
-		case TRAWVALUE:
-			result = (word*) got;
-			break;
+//		case TRAWVALUE:
+//			result = (word*) got;
+//			break;
 
 		case TSTRING:
 			if (got != 0)
 				result = new_string ((char*)got, lenn((char*)got, FMAX+1));
 			break;
 		case TVOID:
-			result = (word*) INULL;
+			result = (word*) ITRUE;
 			break;
 //      todo TRATIONAL:
 	}

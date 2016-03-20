@@ -950,23 +950,23 @@
 ;  GL_PROJECTION: Видовые преобразования (проекционная матрица) - применяются к размещению и ориентации точки обзора (настройка камеры).
 ;  GL_TEXTURE: Текстурные преобразования (текстурная матрица) - применяются для управления текстурами заполнения объектов. (?)
 
-   (define GLvoid   type-void)  ; void GLvoid
-   (define GLvoid*  type-vector-raw)
+   (define GLvoid   type-void)   ; void GLvoid
+   (define GLvoid*  type-void*)
 
    (define GLenum   type-fix+)   ; typedef unsigned int GLenum
    (define GLboolean  type-fix+) ; typedef unsigned char GLboolean
-   (define GLboolean* type-vector-raw)
+   (define GLboolean* type-void*)
    (define GLbitfield type-fix+) ; typedef unsigned int GLbitfield
 
    (define GLbyte   type-fix+)   ; typedef signed char
    (define GLshort  type-fix+)   ; typedef short
    (define GLint    type-fix+)   ; typedef int GLint
-   (define GLint*   type-vector-raw)
+   (define GLint*   type-void*)
    (define GLsizei  type-fix+)   ; typedef int GLsizei
    (define GLubyte  type-fix+)   ; typedef unsigned char
    (define GLushort type-fix+)   ; typedef unsigned chort
    (define GLuint   type-fix+)   ; typedef unsigned int
-   (define GLuint*  type-vector-raw)
+   (define GLuint*  type-void*)
 
    (define GLfloat  type-float)  ; typedef float GLfloat
    (define GLclampf type-float)  ; typedef float GLclampf
@@ -1779,16 +1779,16 @@
          (exec pinvoke function rtty args)))))
 
 ; остальные WGL/GLX/... функции
-(define Display* type-port)
-(define XVisualInfo* type-port)
+(define Display* type-void*)
+(define XVisualInfo* type-void*)
 ;glXChooseVisual      ChoosePixelFormat
 ;glXCopyContext       wglCopyContext
 
 ;glXCreateContext     wglCreateContext
 (define gl:CreateContext (cond
-   (win32? (dlsym $ type-port "wglCreateContext" type-port))
-   (linux? (dlsym $ type-port "glXCreateContext" Display* XVisualInfo* type-int+ type-int+))
-   ;apple? (dlsym $ type-port "CGLCreateContext" ...)
+   (win32? (dlsym $ type-void* "wglCreateContext" type-void*))
+   (linux? (dlsym $ type-void* "glXCreateContext" Display* XVisualInfo* type-int+ type-int+))
+   ;apple? (dlsym $ type-void* "CGLCreateContext" ...)
    (else   (runtime-error "Unknown platform" uname))))
 
 ;glXCreateGLXPixmap  CreateDIBitmap / CreateDIBSection
@@ -1807,13 +1807,13 @@
 ;XSync   GdiFlush
 
 (define gl:MakeCurrent (cond
-   (win32? (dlsym $ type-fix+ "wglMakeCurrent" type-port type-port))
-   (linux? (dlsym $ type-int+ "glXMakeCurrent" type-port type-port type-port))
+   (win32? (dlsym $ type-fix+ "wglMakeCurrent" type-void* type-void*))
+   (linux? (dlsym $ type-int+ "glXMakeCurrent" type-void* type-void* type-void*))
    (else   (runtime-error "Unknown platform" uname))))
 
 (define gl:SwapBuffers (cond
-   (win32? (dlsym (dlopen "gdi32") type-fix+ "SwapBuffers" type-port))
-   (linux? (dlsym $ type-port "glXSwapBuffers" type-port type-port))
+   (win32? (dlsym (dlopen "gdi32") type-fix+ "SwapBuffers" type-void*))
+   (linux? (dlsym $ type-void* "glXSwapBuffers" type-void* type-void*))
    (else   (runtime-error "Unknown platform" uname))))
 
 ;   (let*((display (XOpenDisplay null))
@@ -1864,7 +1864,7 @@
 ;                    (runtime-error "Unknown platform" uname))))))
 ;
 ;(let ((open-display (if win32? (lambda (name) #f)
-;                    (if linux? (dlsym lib1 type-port "XOpenDisplay" type-string)
+;                    (if linux? (dlsym lib1 type-void* "XOpenDisplay" type-string)
 ;                    (runtime-error "Unknown platform" uname)))))
 ;
 ;(let this ((context null))
@@ -1950,7 +1950,7 @@
       (else  (runtime-error "Unknown platform" uname))))
 (define $ (dlopen GLU_LIBRARY))
 
-(define GLUquadric* type-port)
+(define GLUquadric* type-void*)
 
    (define gluErrorString (dlsym $ GLubyte* "gluErrorString" GLenum))
    (define gluOrtho2D     (dlsym $ GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
@@ -1970,7 +1970,7 @@
 
    (define gluSphere (dlsym $ GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
 
-(define GLUnurbs* type-port)
+(define GLUnurbs* type-void*)
    (define gluNewNurbsRenderer (dlsym $ GLUnurbs* "gluNewNurbsRenderer"))
    (define gluBeginSurface (dlsym $ GLvoid "gluBeginSurface" GLUnurbs*))
    (define gluNurbsSurface (dlsym $ GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))

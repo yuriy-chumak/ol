@@ -665,9 +665,9 @@
       (define type-rlist-node       14) ; reference
       (define type-vector-dispatch  15) ; reference
 
-      (define type-bytecode         16) ; reference, raw
-      (define type-proc             17) ; reference
-      (define type-clos             18) ; reference
+      (define type-bytecode         16) ; reference, raw     ; declared functions (?)
+      (define type-proc             17) ; reference          ; from otus lisp bin (?)
+      (define type-clos             18) ; reference          ; from (import smth) (?)
 
       (define type-vector-raw       19) ; references, raw    ; see also TBVEC in c/ovm.c
 
@@ -690,7 +690,10 @@
       (define type-thread-state     31) ; reference
 
       ; это дополнительные типы для PINVOKE механизма
-      (define type-memp             62) ; value
+;      (define type-memp             62) ; value
+;      (define type-userdata         62)
+;      (define type-void             48) ; no return pinvoke value
+;      (define type-void*            49)  ; 
 
       ; ---------------
       ; 6.3.1  Booleans
@@ -1278,10 +1281,10 @@
       type-ff-black-leaf
       type-tuple
       type-symbol
-;      type-const
+      type-const
       type-rlist-spine
       type-rlist-node
-      type-port type-memp
+      type-port
       type-string
       type-string-wide
       type-string-dispatch
