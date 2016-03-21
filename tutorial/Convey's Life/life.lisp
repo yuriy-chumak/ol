@@ -1,0 +1,98 @@
+#!/usr/bin/ol
+(import (lib opengl))
+
+(define (hash x y)
+   (let ((x (mod (+ x 128) 128))
+         (y (mod (+ y 96) 96)))
+   (+ (* y 128) x)))
+;(define (hash x y)
+;   (+ (* y 64) x))
+
+(define (alive gen x y)
+   (let ((n
+      (+ (get gen (hash (- x 1) (- y 1)) 0)
+         (get gen (hash    x    (- y 1)) 0)
+         (get gen (hash (+ x 1) (- y 1)) 0)
+         (get gen (hash (- x 1)    y   ) 0)
+         ;get gen (hash    x       y   ) 0)
+         (get gen (hash (+ x 1)    y   ) 0)
+         (get gen (hash (- x 1) (+ y 1)) 0)
+         (get gen (hash    x    (+ y 1)) 0)
+         (get gen (hash (+ x 1) (+ y 1)) 0))))
+      (if (eq? n 2)
+         (get gen (hash x y) #f)
+      (if (eq? n 3)
+         #true))))
+
+(gl:run
+
+   "2. Drawing simple triangle"
+
+; init
+(lambda ()
+   (glShadeModel GL_SMOOTH)
+   (glClearColor 0.11 0.11 0.11 1)
+   (glOrtho 0 640/5 0 480/5 0 1)
+
+   (list
+   (let ((initial (file->vector "initial.bmp")))
+   (list->ff (map (lambda (p) (cons (hash (car p) (cdr p)) 1))
+      (fold (lambda (st p)
+         (let ((n (+ p #x436)))
+         (if (eq? (vector-ref initial n) 0)
+            (cons (cons (mod p 64) (div p 64)) st) st)))
+      null
+      (iota (- (size initial) #x436))))))))
+
+; draw
+(lambda (generation)
+   (glClear GL_COLOR_BUFFER_BIT)
+
+;   (let ((min-x (ff-fold (lambda (st key value)
+;                            (let ((x (mod key 1024)))
+;                               (if (< x st) x st)))
+;                         -1 generation))
+;         (max-x (ff-fold (lambda (st key value)
+;                            (let ((x (mod key 1024)))
+;                               (if (> x st) x st)))
+;                         +1 generation))
+;         (min-y (ff-fold (lambda (st key value)
+;                            (let ((y (div key 1024)))
+;                               (if (< y st) y st)))
+;                         -1 generation))
+;         (max-y (ff-fold (lambda (st key value)
+;                            (let ((y (div key 1024)))
+;                               (if (> y st) y st)))
+;                         +1 generation)))
+;   (print min-x "-" max-x ":" min-y "-" max-y)
+;   (glLoadIdentity)
+;   (glOrtho min-x max-x min-y max-y 0 1))
+
+   (glPointSize 10)
+   (glColor3f 0.2 0.5 0.2)
+   (glBegin GL_POINTS)
+      (ff-fold (lambda (st key value)
+         (glVertex2f (mod key 128)
+                     (div key 128))
+      ) #f generation)
+   (glEnd)
+
+   (list ;generation)))
+      (ff-fold (lambda (st key value)
+         (let ((x (mod key 128))
+               (y (div key 128)))
+            (fold (lambda (st key)
+               (let ((x (car key))
+                     (y (cdr key)))
+                  (if (alive generation x y) (put st (hash x y) 1) st)))
+               (if (alive generation x y) (put st (hash x y) 1) st)
+               (list (cons (- x 1) (- y 1))
+                     (cons    x    (- y 1))
+                     (cons (+ x 1) (- y 1))
+                     (cons (- x 1)    y   )
+                     ;cons    x       y   )
+                     (cons (+ x 1)    y   )
+                     (cons (- x 1) (+ y 1))
+                     (cons    x    (+ y 1))
+                     (cons (+ x 1) (+ y 1))))))
+         #empty generation))))

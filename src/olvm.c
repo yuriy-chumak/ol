@@ -149,6 +149,11 @@
 #include <features.h>
 #endif
 
+#ifdef __unix__
+#include <sys/cdefs.h>
+#endif
+
+
 // check this for nested functions:
 //	https://github.com/Leushenko/C99-Lambda
 
