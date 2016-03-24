@@ -197,7 +197,43 @@
       (gl:Disable context)
 
       (this userdata))))))))
+
+;(define gl:run (lambda args
+;   (let run ((title #f) (init #f) (draw #f) (args args) (selector #f))
+;      (if (null? args)
+;         (gl:run title init draw)
+;      (cond
+;      ((eq? (car args) 'init)
+;         (run title (cadr args) draw (cddr args) selector))
+;      ((eq? (car args) 'draw)
+;         (run title init (cadr args) (cddr args) selector))
+;      (else
+;         (if selector
+;            (selector title init draw args)
+;            (run title init draw args (lambda (title init draw args)
+;               (run (car args) init draw (cdr args) (lambda (title init draw args)
+;                  (run title (car args) draw (cdr args) (lambda (title init draw args)
+;                     (run title init (car args) (cdr args) #f))))))))))))))
+
+(define gl:run (lambda args
+   (let run ((title #f) (init #f) (draw #f) (args args))
+      (if (null? args)
+         (gl:run title init draw)
+      (cond
+      ((eq? (car args) 'init)
+         (run title (cadr args) draw (cddr args)))
+      ((eq? (car args) 'draw)
+         (run title init (cadr args) (cddr args)))
+      (else (cond
+         ((eq? title #f)
+            (run (car args) init draw (cdr args)))
+         ((eq? init #f)
+            (run title (car args) draw (cdr args)))
+         ((eq? draw #f)
+            (run title init (car args) (cdr args))))))))))
+
 ))
+
 
 ;(define gl:run2 (lambda args
 ;   (print args)))

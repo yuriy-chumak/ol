@@ -26,9 +26,9 @@
 
 (gl:run
 
-   "2. Drawing simple triangle"
+   "Convey's The game of Life"
 
-; init
+'init
 (lambda ()
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
@@ -44,7 +44,7 @@
       null
       (iota (- (size initial) #x436))))))))
 
-; draw
+;'draw
 (lambda (generation)
    (glClear GL_COLOR_BUFFER_BIT)
 

@@ -1,18 +1,18 @@
 
 ;; tests for (beginnings of) R7RS-style library support
 
-(define-library (foo test) 
-   (export bar) 
-   (import (owl base))
-   (begin 
+(define-library (foo test)
+   (export bar)
+   (import (otus lisp))
+   (begin
       (define mine "ALPHA")
       (define bar "BAR"))
    (import)
 )
 
 (define-library (foo bar)
-   (import 
-      (owl base)
+   (import
+      (otus lisp)
       (foo test))
    (export baz)
    (begin
@@ -23,8 +23,8 @@
 ;; test export + renaming
 
 (define-library (rename)
-   (import (owl base))
-   (export 
+   (import (otus lisp))
+   (export
       (rename foo bar)
       (rename bar foo))
    (begin
@@ -32,7 +32,7 @@
       (define bar "foo")))
 
 (define-library (test)
-   (import (owl base) (rename))
+   (import (otus lisp) (rename))
    (export out)
    (begin
       (define out 42)
@@ -41,7 +41,7 @@
 ;; test only import
 
 (define-library (foobar)
-   (import (owl base))
+   (import (otus lisp))
    (export foo bar)
    (begin
       (define foo "foo")
@@ -49,15 +49,15 @@
 
 (define-library (barfoo)
    (export foo bar)
-   (import (owl base))
+   (import (otus lisp))
    (begin
       (define foo "BAD")
       (define bar "bar")))
 
 (define-library (test)
    (export foobar)
-   (import 
-      (owl base)
+   (import
+      (otus lisp)
       (only (foobar) foo)
       (only (barfoo) bar))
    (begin
@@ -68,7 +68,7 @@
 (define-library (test)
    (export foobar)
    (import
-      (owl base)
+      (otus lisp)
       (except (foobar) bar)
       (except (barfoo) foo))
    (begin
@@ -76,17 +76,17 @@
          (print (cons foo bar)))
       (foobar)))
 
-;; nested and prefixing 
+;; nested and prefixing
 
 (define-library (aa)
-   (import (owl base))
+   (import (otus lisp))
    (export foo bar)
    (begin
       (define foo "aa-foo")
       (define bar "aa-bar")))
 
 (define-library (bb)
-   (import (owl base))
+   (import (otus lisp))
    (export foo bar)
    (begin
       (define foo "bb-foo")
@@ -95,7 +95,7 @@
 (define-library (test)
    (export test)
    (import
-      (owl base)
+      (otus lisp)
       (prefix (except (aa) bar) aa-)
       (prefix (only (bb) bar) bb-))
    (begin
@@ -107,8 +107,8 @@
 
 (define-library (cond)
    (export test)
-   (import (owl base))
-   (cond-expand 
+   (import (otus lisp))
+   (cond-expand
       (pyramid-scheme
          (import (only (norway) coasts))
          (begin
@@ -125,7 +125,7 @@
 
 (define-library (cond logic)
    (export test)
-   (import (owl base))
+   (import (otus lisp))
    (cond-expand
       ((and owl-lisp (not owl-lisp))
          (begin (define foo "wrong")))
@@ -144,7 +144,7 @@
 
 (define-library (include test)
    (export test)
-   (import (owl base))
+   (import (otus lisp))
    (include "included.txt") ;; load tests/included.txt or fail
    (begin (test)))          ;; call it to get output
 
@@ -157,7 +157,7 @@
 
 (define-library (foo bar)
    (export a b)
-   (import (owl base))
+   (import (otus lisp))
    (begin
       (define a "O")
       (define b "O")))
@@ -166,10 +166,8 @@
 
 (import (only (foo bar) b))
 
-(print (list a '_ b)) ; 
+(print (list a '_ b)) ;
 
 (import (except (foo bar) b))
 
 (print (list a '_ b))
-
-

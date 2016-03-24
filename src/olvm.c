@@ -25,8 +25,8 @@
  *
  *
  * Original Owl Lisp project can be found at
- *   https://code.google.com/p/owl-lisp/
  *   https://github.com/aoh/owl-lisp
+ *   https://code.google.com/p/owl-lisp/
  *
  */
 
@@ -134,7 +134,9 @@
 #define EMBEDDED_VM 0
 #endif
 
-#define _POSIX_SOURCE //
+// http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
+#define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
+                      // as well as all of the ISO C facilities.
 
 #ifdef __NetBSD__     // make all NetBSD features available
 #	ifndef _NETBSD_SOURCE
@@ -142,8 +144,6 @@
 #	endif
 #endif
 
-
-// TODO: ref, set, must base on 0 (like list-ref, vector-ref, etc.), not on 1. create temporary ref1, set1 based on 1 (?)
 
 #ifdef __linux__
 #include <features.h>
@@ -1444,7 +1444,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 		// else
 		ERROR(257, this, INULL); // not callable
 	}
-
+	goto invoke;
 invoke:;
 	// nargs and regs ready, maybe gc and execute ob
 
@@ -2776,8 +2776,8 @@ invoke:;
 				// if a is string:
 				// todo: add case (cons program environment)
 				if (is_string(a)) {
-					char* command = (char*)&car(a);
 #ifndef _WIN32
+					char* command = (char*)&car(a);
 					int child = fork();
 					if (child == 0) {
 						fprintf(stderr, "forking %s\n", command);
@@ -4269,16 +4269,18 @@ word* pinvoke(OL* self, word* arguments)
 	// http://www.agner.org/optimize/calling_conventions.pdf
 
 
-//	int foo = 3, bar = 4, ppp = 1;
-//	__asm__ ("\
-//		add %2, %1    \n\
-//		call *%3       \n\
-//		mov %1, %0    \n"
-//	: "=rax"(ppp) 		// ouput
-//	: "r10"(foo), "rax"(bar)// input
-//	, "m"(function)
-//	: "cc"			// modify flags
-//	);
+/*	int foo = 3, bar = 4, ppp = 1;
+
+	__asm__ ("\
+		add %2, %1    \n\
+		call *%3       \n\
+		mov %1, %0    \n"
+	: "=rax"(ppp) 		// ouput
+	: "r10"(foo), "rax"(bar)// input
+	, "m"(function)
+	: "cc"			// modify flags
+	);
+
 //	// movss %xmm0,-0x1e4(%rbp) - float
 //	// movss 0x160a(%rip),%xmm0 - float
 //	// movsd 0x160e(%rip),%xmm0 - double
@@ -4289,6 +4291,7 @@ word* pinvoke(OL* self, word* arguments)
 //	// register int out asm("r10") x;
 //
 //	float R = ((float (*)  (int, double, int))function) (1, 2.0, 3);
+*/
 
 	got = call(function, args, i + floats+doubles);
 #else
