@@ -1,8 +1,12 @@
 OL - Otus Lisp - yet another pet lisp
-Copyright (c) 2014 Aki Helin
-Copyright (c) 2014, 2015 Yuriy Chumak
+Copyright(c) 2014 Aki Helin
+Copyright(c) 2014 - 2016 Yuriy Chumak
 
-Version 1.0.0 RC1
+Grew out of the Owl Lisp by Aki Helin
+
+Version 1.0.0 RC2
+at https://yuriy-chumak.github.io/OL/
+
 
 ~~~~~~~~~~~~~~~~~
 This program is free software;  you can redistribute it and/or
@@ -17,11 +21,10 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 You should have received a copy of the GNU GPL along with this
 program.           If not, see <http://www.gnu.org/licenses/>.
 
-
 Related:
 	http://people.csail.mit.edu/jaffer/Scheme (r5rs)
 	http://groups.csail.mit.edu/mac/projects/scheme/
-	
+
 Original Owl Lisp project can be found at
 	https://code.google.com/p/owl-lisp/
 	https://github.com/aoh/owl-lisp
@@ -30,7 +33,7 @@ Original Owl Lisp project can be found at
 OVERVIEW
 ~~~~~~~~
 
-OL (Otus Lisp) is a simple purely functional Lisp. Mostly purely.
+Otus Lisp is a simple purely functional Lisp (mostly purely).
 
 
 REQUIREMENTS
@@ -39,8 +42,9 @@ REQUIREMENTS
 For linux you should have gcc installed.
 For linux you maybe want make installed too.
 For windows you should have MinGW installed.
+For unix (FreeBSD, NetBSD, OpenBSD) you should have gcc installed.
 
-Minimal appropriate gcc version is 3.2 due to nested functions usage.
+Minimal appropriate gcc version is 3.2 (nested functions usage).
 
 
 BUILD
@@ -49,22 +53,24 @@ BUILD
 SIMPLE WAY
    $ make; make install
 
+* unix clients must use gmake instead
+
 
 MORE INTERESTING WAY
 
 To build OL for linux x86 platform
-   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m32  -o ol
+   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m32  -o ol -ldl
 
 To build OL for linux x86-64 platform
-   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m64  -o ol
-   
-To build only OL vm (virtual machine) for linux x86 platform,
+   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m64  -o ol -ldl
+
+To build only olvm (virtual machine) for linux x86 platform,
 that can execute only compiled (binary) lisp scripts
-   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m32  -o vm
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m32  -o vm -ldl
 
 Same for x86-64 linux platform
-   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m64  -o vm
-   
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m64  -o vm -ldl
+
 OL vm can execute only precompiled OL scripts (see BINARY SCRIPTS section)
 and is very small (about 25KB for x86-64 executable).
 Full OL with interpreter that can execute text lisp scripts more fat
@@ -73,17 +79,27 @@ Full OL with interpreter that can execute text lisp scripts more fat
 Windows way
    > set PATH=%PATH%;C:\MinGW\bin
    > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O3  -o ol
-Same for only vm
+Same for only olvm
    > set PATH=%PATH%;C:\MinGW\bin
    > gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O3  -o ol
 
-   
+
+FreeBSD/OpenBSD/NetBSD way
+
+   BSD require including "c" library instead of dl:
+
+   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m32  -o ol -lc
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m32  -o vm -lc
+   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m64  -o ol -lc
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m64  -o vm -lc
+
+
 Android way
    tbd.
-   
+
 MacOS/iOS way
    tbd.
-   
+
 Open webOS way
    Put toolchain/ol.bb bitbake receipe into any place of open webOs receipes folder (i.e.
    ./meta-oe/) and run "make ol" from root open webOs folder.
@@ -99,9 +115,9 @@ VERY INTERESTING WAY
 To build OL language (not OL virtual machine)
    $ make recompile
    This will create new (in successfull way) repl binary that contains ol interpreter code
-   
+
    Few words about OL can be found (will be) in the documentation.
-   
+
 
 ADDITIONAL OL VM FEATURES
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,22 +126,22 @@ To build OL with sockets (linux and windows) support
    add -DHAS_SOCKETS to gcc command line
     or set appropriate define in src/olvm.h to 1
    add -lws2_32 for Windows
-    
+
 To build OL with dlopen/dlsym (LoadLibrary/GetProcAddress for windows) support
    add -DHAS_DLOPEN and -ldl to gcc command line
     or set appropriate define in src/olvm.h to 1
-    
+
    please note, that opengl/sqlite/other libs requires this define enabled to 1
-   
+
 To build OL with pinvoke (Platform Invoke mechanism) support
    add -DHAS_PINVOKE to gcc command line
     or set appropriate define in src/olvm.h to 1
 
    please note, that opengl/sqlite/other libs requires this define enabled to 1
-   
+
 To build OL as embedded in your project interpreter
    add -DEMBEDDED_VM to gcc command line
-   
+
    more information about embedded OL can be found in EMBEDDED OL section.
 
 
@@ -133,12 +149,15 @@ To build OL as embedded in your project interpreter
 INSTALLATION
 ~~~~~~~~~~~~
 
-No automatic installation still yet, you must manually copy 'ol' executable
+You can create .deb packet for linux-64 (tested under Ubuntu 14.04) using
+   $ make debian-amd64-package
+
+No other automatic installation still yet, you must manually copy 'ol' executable
 to any appropriate place, for example
    $ cp ol /usr/bin
    or
    > copy ol.exe C:\WINDOWS\COMMAND
-   
+
 
 RUNNING
 ~~~~~~~
@@ -147,8 +166,8 @@ There are few ways to execute ol
 
 Interactive mode
    $ol
-   (define *interactive* #t)        # yes, you must enter this manually
-   ;; Defined *interactive*
+   You see a prompt.
+   Type ',help' to help, ',quit' to end session
    > (+ 1 2 3)                      # now you in REPL and can play with in
    6
    > ,quit                          # this ends interactive session
@@ -167,12 +186,20 @@ OL can execute precompiled scripts.
 You can compile your script by using this code
 --- cut ---
 (define (main)
-   ; anything you want to compile
+   #true ; anything you want to compile
 )
 (vector->file (list->vector (fasl-encode (lambda (args)
    (main)))) "out.bl")
 --- cut ---
 where "out.bl" your output file name
+
+As result will be create binary script, that can be executed directly by ol
+or vm:
+---cut ---
+0000000000: 02 10 0C 19 02 00 07 01 | 01 02 05 02 05 01 11 02
+0000000010: 10 09 19 01 00 04 8D 04 | 18 04 11 01 11 02 02 01
+0000000020: 00                      |
+---cut ---
 
 Now you can execute this code by OL as full OL or as "naked" OL (vm)
    $ol out.bl
@@ -186,6 +213,7 @@ FILES
    src/boot.c  - the OL interpreter/compiler
    lang/*.scm  - implementation of OL repl and compiler
    owl/*.scm   - implementation ol OL libraries
+   r5rs/*.scm  - basic OL language
    tests/*.scm - some automated tests
 
 
@@ -199,7 +227,7 @@ assoc .bl=OLisp.Binary.File
 ftype OLisp.Binary.File=ol "%1" %*
 
 Register interpreter in the linux:
-#!ol
+#!/usr/bin/ol
 
 
 USAGE
@@ -288,7 +316,7 @@ For normal C function call (actually platform invoke mechanism) you must
       *) other (dlsym) args is argument types for native function, pinvoke
          will try to convert arguments of myFunction lambda to this type.
          available types can be checked in owl/pinvoke.scm too.
-         
+
          Small comment for this: if you want to get number - let use type-int+,
          if you expect SMALL number - let use type-fix+. No differences between
          types with + and with - are present.

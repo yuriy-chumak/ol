@@ -90,9 +90,9 @@
    (cons 'spinner   (create-matrix WIDTH HEIGHT))))) ; 1/0
 
 (define feeders (list->ff (list
-   (cons 'remaining (create-vector WIDTH))
-   (cons 'throttle  (create-vector WIDTH))
    (cons 'y         (create-vector WIDTH)))))
+(define remainings (create-vector WIDTH))
+(define throttles (create-vector WIDTH))
 
 (define spinners (list->ff (list
    (cons 'x (create-vector 101))
@@ -233,16 +233,16 @@
    (if #t
    (let loop ((x 0))
       (if (< x WIDTH)
-         (let ((throttle  (get-vector-value (getf feeders 'throttle)  x))
-               (remaining (get-vector-value (getf feeders 'remaining) x))
+         (let ((throttle  (get-vector-value throttles x))
+               (remaining (get-vector-value remainings x))
                (y         (get-vector-value (getf feeders 'y)         x)))
 
             (cond
                ((> throttle 0)
-                  (setx! (getf feeders 'throttle) x (- throttle 1)))
+                  (setx! throttles x (- throttle 1)))
                ((> remaining 0)
                   (insert_glyph (+ (rand! NGLYPHS) 1) x y)
-                  (setx! (getf feeders 'remaining) x (- remaining 1))
+                  (setx! remainings x (- remaining 1))
                   (if (>= y 0)
                      (setx! (getf feeders 'y) x (+ y 1))))
                (else
@@ -250,7 +250,7 @@
                   (if (>= y 0)
                      (setx! (getf feeders 'y) x (+ y 1)))))
             (if (eq? (rand! 10) 0)
-               (setx! (getf feeders 'throttle) x (+ (rand! 5) (rand! 5))))
+               (setx! throttles x (+ (rand! 5) (rand! 5))))
 
             (loop (+ x 1)))))
    )
@@ -274,13 +274,13 @@
    (let loop ((x 0))
       (if (< x WIDTH) (begin
          (if (and
-               (eq? (get-vector-value (getf feeders 'remaining) x) 0)
+               (eq? (get-vector-value remainings x) 0)
                (eq? (rand! (densitizer (get-value density)))       0))
             (begin
-               (setx! (getf feeders 'remaining) x (+ 3 (rand! HEIGHT)))
-               (setx! (getf feeders 'throttle ) x (+ (rand! 5) (rand! 5)))
+               (setx! remainings x (+ 3 (rand! HEIGHT)))
+               (setx! throttles x (+ (rand! 5) (rand! 5)))
                (if (> (rand! 4) 0)
-                  (setx! (getf feeders 'remaining) x 0))
+                  (setx! remainings x 0))
 
                (case SLIDING-MODE
                   (0 (setx! (getf feeders 'y) x  (rand! HEIGHT)))
@@ -295,14 +295,11 @@
    (if #t
    (if (eq? (rand! 50) 0) (begin
       ; update spinners
-;      (print "spinners: " spinners_length ", " spinners_new_length)
       (cond
          ((> (get-value spinners_new_length) (get-value spinners_length))
-;            (print "up")
             (setx! spinners_length (+ (get-value spinners_length) 1))
             (create_spinner (get-value spinners_length)))
          ((< (get-value spinners_new_length) (get-value spinners_length))
-;            (print "down")
             (setx! spinners_length (- (get-value spinners_length) 1))
             (clear_spinner  (get-value spinners_length))))
 
@@ -357,7 +354,7 @@
    (iota HEIGHT))
  ; cell->changed = 1;
 
-            
+
    (glEnd)
 
    (list time))))
