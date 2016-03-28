@@ -10,7 +10,8 @@
 
 ;(main)
 (define window (CreateWindowEx
-   (OR WS_EX_APPWINDOW WS_EX_WINDOWEDGE) "#32770" "1. Creating an OpenGL Window" ; #32770 is for system classname for DIALOG
+   (OR WS_EX_APPWINDOW WS_EX_WINDOWEDGE) (c-string "#32770") ; #32770 is for system classname for DIALOG
+   (c-string "1. Creating an OpenGL Window")
    (OR WS_OVERLAPPEDWINDOW WS_CLIPSIBLINGS WS_CLIPCHILDREN)
    0 0 width height ; x y width height
    null ; no parent window
@@ -33,7 +34,7 @@
 (wglMakeCurrent hDC hRC)
 
 (print "OpenGL version: " (glGetString GL_VERSION))
-(print "OpenGL vendor: " (glGetString GL_VENDOR)) 
+(print "OpenGL vendor: " (glGetString GL_VENDOR))
 (print "OpenGL renderer: " (glGetString GL_RENDERER))
 
 (glShadeModel GL_SMOOTH)

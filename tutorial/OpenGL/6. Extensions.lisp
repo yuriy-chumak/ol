@@ -8,6 +8,7 @@
 (import (OpenGL EXT vertex_array))
 (import (OpenGL EXT subtexture))
 (import (OpenGL ARB shader_object))
+(import (OpenGL EXT bgra))
 ;(gl:StopCurrent Context)
 
 (if (not (and

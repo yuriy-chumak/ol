@@ -1,6 +1,4 @@
-; Platform Invoke library
-
-;;; Copyright (c) 2014, Yuriy Chumak
+;;; Copyright (c) 2014 - 2016 Yuriy Chumak
 ;;; All rights reserved.
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
@@ -25,10 +23,10 @@
 ;;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;
-; using example:
-;(import (owl pinvoke))
-;(define user32 (dlopen "user32" 0))
+
+; usage example:
+;(import (otus pinvoke))
+;(define user32 (dlopen "user32"))
 ;  (define IDOK 1)
 ;  (define IDCANCEL 2)
 ;
@@ -42,13 +40,13 @@
 ;    (bor MB_OKCANCEL MB_ICONASTERISK))
 ;  IDOK)
 ;    (print "OK")
-;    (print "CANCEL")))
+;    (print "CANCEL"))
 
 
 ;; todo: date handling
 
-(define-library (owl pinvoke)
-   (export 
+(define-library (otus pinvoke)
+   (export
       dlopen
       dlclose
       dlsym dlsym+
@@ -64,20 +62,26 @@
       RTLD_LOCAL
       RTLD_NODELETE
 
-      ; todo: rename type-float to type-float32 and type-double to type-float64
-      type-float type-double type-void type-void* type-void** ; type-vptr, type-vptr* ?
-      load-dynamic-library
 
+      type-short ; 16-bit integer
+      type-int   ; 32-bit integer
+      type-long  ; 32 for 32-bit platform, 64 for 64-bit
+
+      type-int16
+      type-int32
+      type-int64 ; 64-bit integer
+
+      type-float
+      type-double
+
+      type-void type-void* type-void**
+
+
+      load-dynamic-library
       ; по-поводу calling convention:
       ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
       ;  пока что пусть остается так.
       __stdcall __cdecl __fastcall
-
-;      (define type-memp             62) ; value
-;      (define type-userdata         62)
-;      (define type-void             48) ; no return pinvoke value
-;      (define type-void*            49)  ; 
-
    )
 
    (import
@@ -100,7 +104,7 @@
 
 
 ; The MODE argument to `dlopen' contains one of the following:
-(define RTLD_LAZY	      #x00001); Lazy function call binding.
+(define RTLD_LAZY       #x00001); Lazy function call binding.
 (define RTLD_NOW        #x00002); Immediate function call binding.
 (define RTLD_BINDING_MASK   #x3); Mask of binding time value.
 (define RTLD_NOLOAD     #x00004); Do not load the object.
@@ -117,7 +121,7 @@
 (define RTLD_LOCAL      0)
 
 ; Do not delete object when closed.
-(define RTLD_NODELETE	#x01000)
+(define RTLD_NODELETE   #x01000)
 
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle (type-port)
@@ -163,7 +167,7 @@
 ;; dlsym-c - аналог dlsym, то с правилом вызова __cdecl
 ;;(define (dlsym-c type dll name . prototype)
 ;;; todo: отправлять тип функции третим параметром (syscall 177) и в виртуальной машине
-;;;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ? 
+;;;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ?
 ;;   (let ((function (cons '((bor type 64) . prototype) (syscall 171 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
 ;;;;;(let ((function (cons (bor type 64) (syscall 177 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
 ;;      (lambda args ;  function       type          ;arguments
@@ -182,11 +186,24 @@
 ; для результата, что превышает x00FFFFFF надо использовать type-handle
 ; 44 - is socket but will be free
 ;(define type-handle 45)
-(define type-float  46) ;was: type-rational)
-(define type-double 47) ; пока нету, но возможно будет
+; todo: (cast type-constant) and start from number 1?
+(define type-float  46)
+(define type-double 47)
 (define type-void   48)
-(define type-void*  49)
-(define type-void** 113) ; #x40 + 49
+(define type-void*  49)  ; same as type-vptr
+(define type-void** 113) ; 49 + #x40
+
+(define type-word   50)  (define type-long  type-word)
+
+(define type-int16  51)  (define type-short type-int16)
+(define type-int32  52)  (define type-int   type-int32)
+(define type-int64  53)
+;define type-int128 54)
+;define type-int256 55)
+;define type-int512 56)
+
+(define type-userdata 62)
+
 
 ;; OS detection
 (define (uname) (syscall 63 #f #f #f))

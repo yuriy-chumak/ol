@@ -1,3 +1,4 @@
+(runtime-error "Example deprecated!" '())
 (define SHADER_NUM 1)
 
 
@@ -30,7 +31,7 @@
 ; переключение в полноєкранній режим - http://blogs.msdn.com/b/oldnewthing/archive/2010/04/12/9994016.aspx
 ; PIXELFORMATDESCRIPTOR
 (define pfd (list->byte-vector '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
-                                                   00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))                        
+                                                   00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
 (define hDC (GetDC window))
 (define PixelFormat (ChoosePixelFormat hDC pfd))
 (print "PixelFormat = " PixelFormat)
@@ -135,13 +136,13 @@
 ; пример, как можно передать в функцию массив указателей на строки:
 (glShaderSource vs 2 (tuple (c-string "#version 120 // OpenGL 2.1\n")
                             (c-string "
-	void main() {
-		gl_Position = gl_Vertex; // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
-	}")) null)
+   void main() {
+      gl_Position = gl_Vertex; // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
+   }")) null)
 (glCompileShader vs)
   (define isCompiled "word")
   (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
-  
+
   (if (= (ref isCompiled 0) 0)
     (begin
       (define maxLength "word")
@@ -169,7 +170,7 @@
 (glCompileShader fs)
   (define isCompiled "word")
   (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
-  
+
   (if (= (ref isCompiled 0) 0)
     (begin
       (define maxLength "word")
@@ -226,17 +227,17 @@
     (begin
       (TranslateMessage MSG)
       (DispatchMessage MSG))
-      
+
     (begin ; DrawGLScene
        (glClear GL_COLOR_BUFFER_BIT)
-       
+
        (glUseProgram po)
 
       (let* ((ss ms (clock)))
         (glUniform1f time (+ (/ ms 1000) (mod ss 3600)))) ; раз в час будем сбрасывать период
       (if (> resolution 0)
         (glUniform2f resolution width height))
-      
+
       (glBegin GL_TRIANGLE_STRIP)
 ;        (glVertex3i 0 0 0)
 ;        (glVertex3i 2 0 0)
@@ -251,7 +252,7 @@
 ;      (glEnableVertexAttribArray 0)
 ;      (glVertexAttribPointer 0 4 GL_FLOAT 0 0 vertexPositions)
 ;      (glDrawArrays GL_TRIANGLES 0 3)
-       
+
        (glUseProgram 0)
        (SwapBuffers hDC)))
   (if (= (GetAsyncKeyState 27) 0) (cycle)))

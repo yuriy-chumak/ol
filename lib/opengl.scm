@@ -1,13 +1,10 @@
 (define-library (lib opengl)
-   (import
-      (r5rs core) (owl io) (owl primop) (owl tuple) (owl string)
-      (owl pinvoke) (owl list) (owl math) (owl vector) (owl list-extra) (owl ff)
-      (owl interop)
+ (import
+  (otus lisp) (otus pinvoke)
+  (OpenGL version-1-0))
 
-      (OpenGL version-1-0))
-
-   (export
-      (exports (OpenGL version-1-0))
+ (export
+   (exports (OpenGL version-1-0))
       gl:run
 
       gl:Create ; create window + context

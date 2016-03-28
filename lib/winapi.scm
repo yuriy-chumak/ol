@@ -1,13 +1,13 @@
 (define-library (lib winapi)
-(export 
+(export
    kernel32
-   GetModuleHandle  ; 
+   GetModuleHandle  ;
 
-    
+
    user32 IDOK IDCANCEL
    MessageBox       ;
      MB_OK MB_OKCANCEL MB_ICONASTERISK
-    
+
     PeekMessage      ;
       PM_REMOVE
     TranslateMessage ;
@@ -40,10 +40,10 @@
       SW_SHOW
     SetForegroundWindow SetFocus
     GetWindowRect
-    GetClientRect 
+    GetClientRect
     GetCursorPos
     ScreenToClient
-   
+
    ; gdi32
     ChoosePixelFormat
     SetPixelFormat
@@ -56,7 +56,7 @@
   (import
       (r5rs core) (owl io)
       (owl list) (owl string)
-      (owl math) (owl pinvoke))
+      (owl math) (otus pinvoke))
   (begin
 
 (define INTEGER type-int+)
@@ -138,7 +138,7 @@
     (define WS_CLIPCHILDREN      #x02000000)
     (define WS_POPUP             #x80000000)
   (define DestroyWindow    (dlsym user32 (__stdcall BOOL) "DestroyWindow" HWND))
-    
+
   (define GetDC               (dlsym user32 (__stdcall HDC) "GetDC" HWND))
   (define ReleaseDC           (dlsym user32 (__stdcall int) "ReleaseDC" HWND HDC))
   (define ShowWindow          (dlsym user32 (__stdcall BOOL) "ShowWindow" HWND int))
@@ -157,9 +157,9 @@
   (define GetClientRect       (dlsym user32 (__stdcall BOOL) "GetClientRect" HWND LPRECT))
   (define GetCursorPos        (dlsym user32 (__stdcall BOOL) "GetCursorPos" LPPOINT))
   (define ScreenToClient      (dlsym user32 (__stdcall BOOL) "ScreenToClient" HWND LPPOINT))
-  
+
 (define PIXELFORMATDESCRIPTOR* type-vector-raw)
-  
+
 (define gdi32 (dlopen "gdi32" 0))
   (define ChoosePixelFormat (dlsym gdi32 int "ChoosePixelFormat" HDC PIXELFORMATDESCRIPTOR*))
   (define SetPixelFormat    (dlsym gdi32 BOOL "SetPixelFormat" HDC int PIXELFORMATDESCRIPTOR*))

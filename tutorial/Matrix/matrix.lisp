@@ -1,7 +1,6 @@
 #!/usr/bin/ol
 (import (lib opengl))
-(import (OpenGL version-1-1)
-      (OpenGL EXT bgra))
+(import (OpenGL version-1-1))
 
 (define rand!
    (let* ((ss ms (clock))

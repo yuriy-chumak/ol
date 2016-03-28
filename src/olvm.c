@@ -137,6 +137,8 @@
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
 #define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
                       // as well as all of the ISO C facilities.
+#define __USE_POSIX199309 // nanosleep, etc. //?
+
 
 #ifdef __NetBSD__     // make all NetBSD features available
 #	ifndef _NETBSD_SOURCE
@@ -161,8 +163,6 @@
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 // http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system#WindowswithCygwinPOSIX
 
-#define __USE_POSIX199309 // nanosleep, etc.
-
 #ifdef __MINGW32__ // bug in mingw
 #define _cdecl __cdecl
 #endif
@@ -171,8 +171,8 @@
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
 
 
-// компилятор owl-lisp поддерживает только несколько специальных форм:
-//	lambda, quote, rlambda (recursive lambda), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
+// компилятор otus-lisp поддерживает только несколько специальных форм:
+//	lambda, quote, rlambda (evaluate lambda now), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
 //	все остальное - макросы
 
 #include <assert.h>
@@ -182,7 +182,7 @@
 #include <signal.h>
 #include <dirent.h>
 #include <string.h>
-// no alloca.h, use https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+// no <alloca.h>, use http://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
 
 
 #include <errno.h>
@@ -516,22 +516,26 @@ struct object_t
 
 // numbers (value type)
 #define TFIX                         (0)  // type-fix+ // todo: rename to TSHORT or TSMALL
-#define TFIXN                       (32 + TFIX)  // type-fix-
+#define TFIXN                       (32)  // type-fix-
 // numbers (reference type)
 #define TINT                        (40)  // type-int+ // todo: rename to TINTEGER (?)
 #define TINTN                       (41)  // type-int-
 #define TRATIONAL                   (42)
 #define TCOMPLEX                    (43)
+//efine TINEXACT                    (44)  // float or double, depends on machine bitness
 
-// for pinvoke
-#define TVOID                       (48) // only for pinvoke
+// pinvoke types:
+#define TVOID                       (48)
 #define TVPTR                       (49) // void*, only RAW, can't be 0
-#define TUSERDATA                   (62) // only for pinvoke, must be RAW, can be 0
+#define TUSERDATA                   (62) // only for pinvoke, must be RAW, can have 0
+#define TLONG                       (50) // 32 for 32-bit architecture, 64 for 64-bit
 
-// only pinvoke argument types
-#define TINT64                      44
-#define TFLOAT                      46
-#define TDOUBLE                     47
+#define TINT16                      (51)
+#define TINT32                      (52)
+#define TINT64                      (53)
+
+#define TFLOAT                      (46)
+#define TDOUBLE                     (47)
 
 // constants:
 #define IFALSE                      make_value(TCONST, 0)
@@ -903,13 +907,6 @@ word* p = new_bytevector(TSTRING, length);\
 
 
 #define new_vptr(a) ({\
-word data = (word) a;\
-	word* me = new (TVPTR, 2, 0);\
-	me[1] = data;\
-	/*return*/me;\
-})
-
-#define new_native_function(a) ({\
 word data = (word) a;\
 	word* me = new (TVPTR, 2, 0);\
 	me[1] = data;\
@@ -3220,7 +3217,7 @@ invoke:;
 						? (char*) value((word)symbol)
 						: (char*) &symbol[1]);
 				if (function)
-					result = new_native_function(function);
+					result = new_vptr(function);
 				else
 					fprintf(stderr, "dlsym failed: %s\n", dlerror());
 				break;
@@ -3780,11 +3777,9 @@ word* pinvoke(OL* self, word* arguments)
 			case 18: return ((conv word (*)  (word, word, word, word, word, word, \
 			                                  word, word, word, word, word, word, \
 			                                  word, word, word, word, word, word))\
-			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
-			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
-			                            argv[ 8], argv[ 9], argv[10], argv[11], \
-			                            argv[12], argv[13], argv[14], argv[15], \
-			                            argv[16], argv[17]);
+			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], argv[ 4], argv[ 5],\
+			                            argv[ 6], argv[ 7], argv[ 8], argv[ 9], argv[10], argv[11],\
+			                            argv[12], argv[13], argv[14], argv[15], argv[16], argv[17]);
 #endif
 
 		#define CALL(conv) \
@@ -3839,10 +3834,10 @@ word* pinvoke(OL* self, word* arguments)
 				break;\
 			}
 #ifdef __linux__
-		CALL(); // cdecl
+		CALL(); // always __cdecl
 #endif
 #ifdef __unix__
-		CALL(); // cdecl
+		CALL(); // always __cdecl
 #endif
 #ifdef _WIN32
 		// default calling convention - stdcall
@@ -3867,7 +3862,7 @@ word* pinvoke(OL* self, word* arguments)
 
 	long from_int(word arg) {
 		// так как в стек мы все равно большое сложить не сможем, то возьмем
-		// только то, что влазит (первые два члена)
+		// только то, что влазит (первые два члена) (временное решение!)
 //		assert (is_value(arg[1]));
 //		assert (is_reference(arg[2]));
 
@@ -4006,7 +4001,7 @@ word* pinvoke(OL* self, word* arguments)
 	word* B = (word*)car(arguments); arguments = (word*)cdr(arguments); // rtty
 	word* C = (word*)car(arguments); arguments = (word*)cdr(arguments); // args
 
-//	assert(is_port(A), A, 1032);
+	assert (is_vptr(A));
 	assert ((word)B != INULL && (is_reference(B) && reftype(B) == TPAIR));
 	assert ((word)C == INULL || (is_reference(B) && reftype(C) == TPAIR));
 	// C[1] = return-type
@@ -4015,10 +4010,10 @@ word* pinvoke(OL* self, word* arguments)
 	// todo: может выделять в общей куче,а не стеке?
 	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
 	void *function = (void*)car(A);  assert (function);
-	int returntype = uvtoi(car(B));
-	int floats = 0; // для amd64
+	int returntype = value(car(B));
 #if __amd64__
-	int doubles = 0; // temp
+	int floats = 0;  // для amd64
+	int doubles = 0; // same
 #endif
 
 	int i = 0;     // количество аргументов
@@ -4029,7 +4024,7 @@ word* pinvoke(OL* self, word* arguments)
 		assert (reftype(p) == TPAIR); // assert(list)
 		assert (reftype(t) == TPAIR); // assert(list)
 
-		int type = uvtoi(car(t));
+		int type = value(car(t));
 		word arg = (word) car(p);
 
 /*		// todo: add argument overriding as PAIR as argument value
@@ -4039,39 +4034,13 @@ word* pinvoke(OL* self, word* arguments)
 		}*/
 
 		args[i] = 0; // обнулим (так как потом можем перезаписать только часть)
-		// может и не надо.
+		// ^ может не надо?
 
 		// destination type
 		switch (type) {
 		// целочисленные типы:
-		case TFIX:
-			if (is_value(arg))
-				args[i] = (int)svtoi(arg);
-			else
-			switch (reftype(arg)) {
-			case TINT:
-				args[i] = (int)+from_int(arg);
-				break;
-			case TINTN:
-				args[i] = (int)-from_int(arg);
-				break;
-			default:
-				fprintf(stderr, "can't cast %d to int\n", type);
-				args[i] = 0; // todo: error
-			}
-			break;
-		case TFIX + 0x40: { // int*
-			int c = llen(arg);
-			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: new_raw_vector()
-			args[i] = (word)p;
-
-			word l = arg;
-			while (c--)
-				*p++ = to_int(car(l)), l = cdr(l);
-			break;
-		}
-
-		case TINT:
+		case TINT: // <-- deprecated
+		case TLONG: // 32-bit for 32-bit arch, 64-bit for 64-bit arch
 			if (is_value(arg))
 				args[i] = (long)svtoi(arg);
 			else
@@ -4087,7 +4056,8 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] = 0; // todo: error
 			}
 			break;
-		case TINT + 0x40: { // long*
+		case TINT + 0x40: // <-- deprecated
+		case TLONG + 0x40: { // long*
 			int c = llen(arg);
 			long* p = (long*) __builtin_alloca(c * sizeof(long)); // todo: use new()
 			args[i] = (word)p;
@@ -4097,6 +4067,37 @@ word* pinvoke(OL* self, word* arguments)
 				*p++ = to_long(car(l)), l = cdr(l);
 			break;
 		}
+
+
+		case TFIX: // <-- deprecated
+		case TINT32:
+			if (is_value(arg))
+				args[i] = (int)svtoi(arg);
+			else
+			switch (reftype(arg)) {
+			case TINT:
+				args[i] = (int)+from_int(arg);
+				break;
+			case TINTN:
+				args[i] = (int)-from_int(arg);
+				break;
+			default:
+				fprintf(stderr, "can't cast %d to int\n", type);
+				args[i] = 0; // todo: error
+			}
+			break;
+		case TFIX + 0x40: // <-- deprecated
+		case TINT32 + 0x40: { // int*
+			int c = llen(arg);
+			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: new_raw_vector()
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = to_int(car(l)), l = cdr(l);
+			break;
+		}
+
 
 		case TINT64: { // long long
 			if (is_value(arg))
@@ -4127,7 +4128,9 @@ word* pinvoke(OL* self, word* arguments)
 		case TFLOAT:
 			*(float*)&args[i] = to_float(arg);
 
+			#if __amd64__
 			floats |= (0x100 << i);
+			#endif
 			break;
 		case TFLOAT + 0x40: {
 			int c = llen(arg);
@@ -4162,7 +4165,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		// запрос порта - это запрос значения порта
 		// todo: добавить тип "указатель на порт"
-//		case TUSERDATA:
+		case TUSERDATA:
 		case TVPTR:
 			if ((word)arg == INULL || (word)arg == IFALSE)
 				args[i] = (word) (void*)0;
@@ -4193,11 +4196,13 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		}
 
+		case TBVEC:
 		case TSTRING:
 			if ((word)arg == INULL || (word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
+			case TBVEC:
 			case TSTRING:
 				args[i] = (word) &car(arg);
 				break;
@@ -4206,23 +4211,16 @@ word* pinvoke(OL* self, word* arguments)
 			}
 			break;
 		case TSTRING + 0x40: {
-			int c = llen(arg);
-			char** p = (char**) __builtin_alloca(c * sizeof(char*));
-			args[i] = (word)p;
+			int size = llen(arg) + 1;
 
-			word l = arg;
-			while (c--)
-				*p++ = (char*) &caar(l), l = cdr(l);
-
-/*			int size = llen(arg) + 1;
-			*fp++ = make_raw_header(TBVEC, size, 0);
-			args[i] = (word)fp;
+			// TODO: check the available memory and gun GC if necessary
+			word* p = new (TBVEC, size, 0);
+			args[i] = (word)++p;
 
 			word src = arg;
 			while (--size)
-				*fp++ = (char*) &caar(src), src = cdr(src);
-
-			break;*/
+				*p++ = (word) &caar(src), src = cdr(src);
+			break;
 		}
 /*
 		case TTUPLE:
@@ -4303,15 +4301,15 @@ word* pinvoke(OL* self, word* arguments)
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = (word*) itosv (got);
 			break;
-		case TINT:
+		case TINT: // type-int+
 			result = (word*) itoun (got);
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
-//		case TPORT:
-//			result = new_port(got);
-//			break;
+		case TPORT:
+			result = (word*) make_port (got);
+			break;
 		case TUSERDATA:
-			result = new_native_function (got);
+			result = new_userdata (got);
 			break;
 		case TVPTR:
 			if (got)

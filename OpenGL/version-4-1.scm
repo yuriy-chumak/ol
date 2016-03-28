@@ -6,8 +6,7 @@
     GL_VERSION_4_1
    )
 
-   (import
-      (r5rs core) (owl io)
+   (import (r5rs core)
       (OpenGL version-4-0))
    (begin
    (define GL_VERSION_4_1 1)

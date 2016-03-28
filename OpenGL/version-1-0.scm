@@ -2,7 +2,8 @@
 
 ; OpenGL base profile implementation
 (define-library (OpenGL version-1-0)
-(export
+ (import (otus lisp) (otus pinvoke))
+ (export
 
    GL_VERSION_1_0
 
@@ -902,17 +903,11 @@
 
    glIsExtensionSupported
 
-   (exports (r5rs core))
-   (exports (owl io))
-   (exports (owl pinvoke))
+   (exports (otus lisp))
+   (exports (otus pinvoke))
 )
 ; ============================================================================
 ; == implementation ==========================================================
-   (import
-      (r5rs core) (owl io) (owl string)
-      (owl pinvoke)
-      (owl interop) (owl list))
-
 (begin
    (define GL_VERSION_1_0 1)
 
@@ -941,14 +936,14 @@
    (dlopen GL_LIBRARY)
    (runtime-error "Can't load OpenGL library")))
 
-;  Базовая система координат OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
-; Правая. x-направо, y-вверх, z-к себе
-; В исходном состоянии OpenGL камера находится в начале мировых координат, смотрит в
-; отрицательную сторону оси z, направляющий вектор камеры (нормаль) совпадает с осью
-; Oy (камера стоит на плоскости xOz).
-;  GL_MODELVIEW: Модельные преобразования (модельно-видовая матрица) - применяются к размещению объектов на сцене.
-;  GL_PROJECTION: Видовые преобразования (проекционная матрица) - применяются к размещению и ориентации точки обзора (настройка камеры).
-;  GL_TEXTURE: Текстурные преобразования (текстурная матрица) - применяются для управления текстурами заполнения объектов. (?)
+;  Ð‘Ð°Ð·Ð¾Ð²Ð°Ñ ÑÐ¸ÑÑ‚ÐµÐ¼Ð° ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚ OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
+; ÐŸÑ€Ð°Ð²Ð°Ñ. x-Ð½Ð°Ð¿Ñ€Ð°Ð²Ð¾, y-Ð²Ð²ÐµÑ€Ñ…, z-Ðº ÑÐµÐ±Ðµ
+; Ð’ Ð¸ÑÑ…Ð¾Ð´Ð½Ð¾Ð¼ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ð¸ OpenGL ÐºÐ°Ð¼ÐµÑ€Ð° Ð½Ð°Ñ…Ð¾Ð´Ð¸Ñ‚ÑÑ Ð² Ð½Ð°Ñ‡Ð°Ð»Ðµ Ð¼Ð¸Ñ€Ð¾Ð²Ñ‹Ñ… ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚, ÑÐ¼Ð¾Ñ‚Ñ€Ð¸Ñ‚ Ð²
+; Ð¾Ñ‚Ñ€Ð¸Ñ†Ð°Ñ‚ÐµÐ»ÑŒÐ½ÑƒÑŽ ÑÑ‚Ð¾Ñ€Ð¾Ð½Ñƒ Ð¾ÑÐ¸ z, Ð½Ð°Ð¿Ñ€Ð°Ð²Ð»ÑÑŽÑ‰Ð¸Ð¹ Ð²ÐµÐºÑ‚Ð¾Ñ€ ÐºÐ°Ð¼ÐµÑ€Ñ‹ (Ð½Ð¾Ñ€Ð¼Ð°Ð»ÑŒ) ÑÐ¾Ð²Ð¿Ð°Ð´Ð°ÐµÑ‚ Ñ Ð¾ÑÑŒÑŽ
+; Oy (ÐºÐ°Ð¼ÐµÑ€Ð° ÑÑ‚Ð¾Ð¸Ñ‚ Ð½Ð° Ð¿Ð»Ð¾ÑÐºÐ¾ÑÑ‚Ð¸ xOz).
+;  GL_MODELVIEW: ÐœÐ¾Ð´ÐµÐ»ÑŒÐ½Ñ‹Ðµ Ð¿Ñ€ÐµÐ¾Ð±Ñ€Ð°Ð·Ð¾Ð²Ð°Ð½Ð¸Ñ (Ð¼Ð¾Ð´ÐµÐ»ÑŒÐ½Ð¾-Ð²Ð¸Ð´Ð¾Ð²Ð°Ñ Ð¼Ð°Ñ‚Ñ€Ð¸Ñ†Ð°) - Ð¿Ñ€Ð¸Ð¼ÐµÐ½ÑÑŽÑ‚ÑÑ Ðº Ñ€Ð°Ð·Ð¼ÐµÑ‰ÐµÐ½Ð¸ÑŽ Ð¾Ð±ÑŠÐµÐºÑ‚Ð¾Ð² Ð½Ð° ÑÑ†ÐµÐ½Ðµ.
+;  GL_PROJECTION: Ð’Ð¸Ð´Ð¾Ð²Ñ‹Ðµ Ð¿Ñ€ÐµÐ¾Ð±Ñ€Ð°Ð·Ð¾Ð²Ð°Ð½Ð¸Ñ (Ð¿Ñ€Ð¾ÐµÐºÑ†Ð¸Ð¾Ð½Ð½Ð°Ñ Ð¼Ð°Ñ‚Ñ€Ð¸Ñ†Ð°) - Ð¿Ñ€Ð¸Ð¼ÐµÐ½ÑÑŽÑ‚ÑÑ Ðº Ñ€Ð°Ð·Ð¼ÐµÑ‰ÐµÐ½Ð¸ÑŽ Ð¸ Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð°Ñ†Ð¸Ð¸ Ñ‚Ð¾Ñ‡ÐºÐ¸ Ð¾Ð±Ð·Ð¾Ñ€Ð° (Ð½Ð°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° ÐºÐ°Ð¼ÐµÑ€Ñ‹).
+;  GL_TEXTURE: Ð¢ÐµÐºÑÑ‚ÑƒÑ€Ð½Ñ‹Ðµ Ð¿Ñ€ÐµÐ¾Ð±Ñ€Ð°Ð·Ð¾Ð²Ð°Ð½Ð¸Ñ (Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ð½Ð°Ñ Ð¼Ð°Ñ‚Ñ€Ð¸Ñ†Ð°) - Ð¿Ñ€Ð¸Ð¼ÐµÐ½ÑÑŽÑ‚ÑÑ Ð´Ð»Ñ ÑƒÐ¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð¸Ñ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ð°Ð¼Ð¸ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ Ð¾Ð±ÑŠÐµÐºÑ‚Ð¾Ð². (?)
 
    (define GLvoid   type-void)   ; void GLvoid
    (define GLvoid*  type-void*)
@@ -1759,9 +1754,9 @@
 ;   (linux? (dlopen "libX11.so"))
 ;   (else   (runtime-error "Unknown platform" uname))))
 
-; поддержка расширений :
+; Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ° Ñ€Ð°ÑÑˆÐ¸Ñ€ÐµÐ½Ð¸Ð¹ :
 (define GetProcAddress ; internal function
-   (dlsym $ 62; type-native-function
+   (dlsym $ type-vptr
       (c-string (cond
          (win32? "wglGetProcAddress")
          (linux? "glXGetProcAddress")
@@ -1778,7 +1773,7 @@
          ;(print "> " name)
          (exec pinvoke function rtty args)))))
 
-; остальные WGL/GLX/... функции
+; Ð¾ÑÑ‚Ð°Ð»ÑŒÐ½Ñ‹Ðµ WGL/GLX/... Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸
 (define Display* type-void*)
 (define XVisualInfo* type-void*)
 ;glXChooseVisual      ChoosePixelFormat
@@ -1868,11 +1863,11 @@
 ;                    (runtime-error "Unknown platform" uname)))))
 ;
 ;(let this ((context null))
-;   ; обработчик команд сервера opengl
+;   ; Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸Ðº ÐºÐ¾Ð¼Ð°Ð½Ð´ ÑÐµÑ€Ð²ÐµÑ€Ð° opengl
 ;   (let* ((envelope (wait-mail))
 ;          (sender message envelope))
 ;      (tuple-case message
-;         ; создать окно для рендеринга, проинициализировать в нем opengl контекст
+;         ; ÑÐ¾Ð·Ð´Ð°Ñ‚ÑŒ Ð¾ÐºÐ½Ð¾ Ð´Ð»Ñ Ñ€ÐµÐ½Ð´ÐµÑ€Ð¸Ð½Ð³Ð°, Ð¿Ñ€Ð¾Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ Ð² Ð½ÐµÐ¼ opengl ÐºÐ¾Ð½Ñ‚ÐµÐºÑÑ‚
 ;         ((create-gl-context)
 ;            (let*((display (open-display null))
 ;                  (screen  (XDefaultScreen display))
@@ -1989,12 +1984,13 @@
 (define GLU_U_STEP                      100206)
 (define GLU_V_STEP                      100207)
 
-; поддержка расширений
-(import (owl list))
+; поддержка расширений:
+(import (owl string))
+
 (define (glIsExtensionSupported extension)
 (let ((string (append '(#x20) (string->runes (glGetString GL_EXTENSIONS)) '(#x20)))
       (substr (append '(#x20) (string->runes extension) '(#x20))))
-(for-each (λ (x) (display-to stderr x)) (list "Checking " extension " support..."))
+(for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support..."))
 (if
 (let iter ((string string))
    (or

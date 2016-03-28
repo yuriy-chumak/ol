@@ -17,7 +17,7 @@
 
 (XSelectInput display window ExposureMask)
 (XMapWindow display window)
-(XStoreName display window "1. Creating an OpenGL Window")
+(XStoreName display window (c-string "1. Creating an OpenGL Window"))
 
 (define vi (glXChooseVisual display screen
    (raw type-vector-raw '(
@@ -35,7 +35,7 @@
 (glXMakeCurrent display window cx)
 
 (print "OpenGL version: " (glGetString GL_VERSION))
-(print "OpenGL vendor: " (glGetString GL_VENDOR)) 
+(print "OpenGL vendor: " (glGetString GL_VENDOR))
 (print "OpenGL renderer: " (glGetString GL_RENDERER))
 
 (glShadeModel GL_SMOOTH)

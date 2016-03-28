@@ -177,7 +177,7 @@
 ; == implementation ==========================================================
    (import
       (r5rs core) (owl math) (owl io) (owl string)
-      (owl pinvoke)
+      (otus pinvoke)
       (owl interop) (owl list))
 
 (begin

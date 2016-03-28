@@ -659,7 +659,7 @@
       (define type-rlist-spine      10) ; reference
       (define type-vector-leaf      11) ; reference
 
-      (define type-port             12) ; value, raw         ; todo: port снова можно сделать value типом и ограничить до sizeof(word)-1 байт
+      (define type-port             12) ; value
       (define type-const            13) ; value
 
       (define type-rlist-node       14) ; reference
@@ -669,7 +669,7 @@
       (define type-proc             17) ; reference          ; from otus lisp bin (?)
       (define type-clos             18) ; reference          ; from (import smth) (?)
 
-      (define type-vector-raw       19) ; references, raw    ; see also TBVEC in c/ovm.c
+      (define type-vector-raw       19) ; reference, raw     ; see also TBVEC in c/ovm.c
 
       ; 20
       (define type-string-dispatch  21) ; reference
@@ -688,12 +688,7 @@
       ;30
 
       (define type-thread-state     31) ; reference
-
-      ; это дополнительные типы для PINVOKE механизма
-;      (define type-memp             62) ; value
-;      (define type-userdata         62)
-;      (define type-void             48) ; no return pinvoke value
-;      (define type-void*            49)  ; 
+      (define type-vptr             49) ; reference,  raw
 
       ; ---------------
       ; 6.3.1  Booleans
@@ -1289,6 +1284,7 @@
       type-string-wide
       type-string-dispatch
       type-thread-state
+      type-vptr
 
       ;; sketching types
       type-ff               ;; k v, k v l, k v l r, black node with children in order

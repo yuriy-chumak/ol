@@ -7,15 +7,14 @@
 
   )
   
-   (import
-      (r5rs core) (owl io)
+   (import (r5rs core)
       (OpenGL version-1-4))
    (begin
    (define GL_VERSION_1_5 1)
-   
+
    (define $ (dlopen GL_LIBRARY))
 
-;	using GLintptr		= System.IntPtr;	// ptrdiff_t
-;	using GLsizeiptr	= System.IntPtr;	// ptrdiff_t
+;  using GLintptr    = System.IntPtr;  // ptrdiff_t
+;  using GLsizeiptr  = System.IntPtr;  // ptrdiff_t
 
 ))

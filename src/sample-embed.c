@@ -38,8 +38,8 @@ int main(int argc, char** argv)
 	}
 
 	struct OL* ol = OL_new(
-			"(import (owl pinvoke) (owl io))"
-			"(define % (dlopen '() RTLD_LAZY))" // get own handle
+			"(import (otus pinvoke) (owl io))"
+			"(define % (dlopen))" // get own handle
 			"(define sample_add (dlsym+ % \"sample_add\"))"
 			"(print \"sample_add: \""
 			"   (sample_add 1 2))", 0);

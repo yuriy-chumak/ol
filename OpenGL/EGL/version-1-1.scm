@@ -167,7 +167,7 @@
       (r5rs core) (owl io) (owl string)
       (OpenGL ES version-1-0)
 
-      (owl pinvoke) (lib platform) (lib x11)
+      (otus pinvoke) (lib platform) (lib x11)
       (owl interop) (owl list))
 
 (begin

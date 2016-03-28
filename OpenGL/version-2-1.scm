@@ -7,12 +7,11 @@
 
   )
   
-   (import
-      (r5rs core) (owl io)
+   (import (r5rs core)
       (OpenGL version-2-0))
    (begin
    (define GL_VERSION_2_1 1)
-   
+
    (define % (dlopen GL_LIBRARY RTLD_LAZY))
 
 ))

@@ -29,7 +29,7 @@
       (r5rs core) (owl io)
       (owl list) (owl string)
       (owl math)
-      (owl pinvoke))
+      (otus pinvoke))
   (begin
 
 (define % (dlopen "libX11.so" RTLD_LAZY))

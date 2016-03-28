@@ -7,10 +7,10 @@
 
 ; let's init context
 (define (vector->int32 vector) (+
-   (<< (refb vector 0)  0)
-   (<< (refb vector 1)  8)
-   (<< (refb vector 2) 16)
-   (<< (refb vector 3) 24)))
+   (<< (ref vector 0)  0)
+   (<< (ref vector 1)  8)
+   (<< (ref vector 2) 16)
+   (<< (ref vector 3) 24)))
 
 (define major (raw type-vector-raw '(0 0 0 0)))
 (define minor (raw type-vector-raw '(0 0 0 0)))
@@ -55,7 +55,7 @@
      10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
      11 0 0 0  1 0 0 0 ; GLX_ALPHA_SIZE
       5 0 0 0 ; GLX_DOUBLEBUFFER
-   
+
       0 0 0 0))
    num))
 (print (vector->int32 num) ":" (IN fbc 4))
@@ -102,7 +102,7 @@
 (glXMakeCurrent display window cx)
 
 (print "OpenGL version: " (glGetString GL_VERSION))
-(print "OpenGL vendor: " (glGetString GL_VENDOR)) 
+(print "OpenGL vendor: " (glGetString GL_VENDOR))
 (print "OpenGL renderer: " (glGetString GL_RENDERER))
 
 

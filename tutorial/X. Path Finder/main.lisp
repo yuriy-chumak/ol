@@ -2,12 +2,9 @@
 ;;;; Алгоритм ориентирования и поиска пути в сложном лабиринте
 (import
    (owl ff) (owl random!)
-   (owl pinvoke)
    (lib opengl)
    (OpenGL version-1-1)
 )
-
-(import (OpenGL EXT bgra))
 
 (define (quad x y)
    (glVertex2f x y)
@@ -100,6 +97,7 @@
 
 
 (define Context (gl:Create "Pathfinder sample"))
+(import (OpenGL EXT bgra))
 
 
 (define (draw-map-cell x y cell alpha)
@@ -555,4 +553,4 @@
 ;      (return (put userdata 'mouse (to-map-from-screen (cons x y))))))
 ;   userdata)))))
 
-)
+(print "bye.")

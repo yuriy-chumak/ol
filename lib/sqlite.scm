@@ -65,7 +65,7 @@
       (owl math) (owl vector)
       (owl primop)
       (owl interop)
-      (owl pinvoke))
+      (otus pinvoke))
   (begin
 
 (define (new-void*) (cast 0 type-void*))

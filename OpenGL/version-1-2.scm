@@ -9,17 +9,16 @@
 
    )
 
-   (import
-      (r5rs core) (owl io)
+   (import (r5rs core)
       (OpenGL version-1-1))
-      
+
    (import (OpenGL EXT bgra))
-      
+
 (begin
    (define GL_VERSION_1_2 1)
    (define $ (dlopen GL_LIBRARY))
-   
-   
+
+
 ;  ; opengl 1.2 https://www.opengl.org/registry/api/GL/glext.h
 
    (define GLU_VERSION_1_3 1)
@@ -31,9 +30,8 @@
        (exports (OpenGL version-1-2))
    GL_VERSION_1_2_1
    )
-  
-   (import
-      (r5rs core) (owl io)
+
+   (import (r5rs core)
       (OpenGL version-1-2))
 
 (begin

@@ -33,8 +33,7 @@ GL_FLOAT
 glDrawArrays
 )
 
-   (import
-      (r5rs core) (owl io)
+   (import (otus lisp)
       (OpenGL version-1-5))
 (begin
    (define GL_VERSION_2_0 1)

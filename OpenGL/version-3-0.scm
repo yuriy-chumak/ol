@@ -9,14 +9,13 @@
    GL_MINOR_VERSION
 
 )
-  
-   (import
-      (r5rs core) (owl io)
+
+   (import (r5rs core)
       (OpenGL version-1-0))
 
 (begin
    (define GL_VERSION_3_0 1)
-   
+
    (define $ (dlopen GL_LIBRARY RTLD_LAZY))
 
 (define GL_MAJOR_VERSION                  #x821B)
