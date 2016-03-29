@@ -1,5 +1,5 @@
 ;;;; random number generator
-(define-library (owl random!)
+(define-library (otus random!)
 
    (export
       rand!)
@@ -9,19 +9,32 @@
       (owl math)
       (owl time))
 
-   (begin
-      ; (rand limit)
-      (define rand!
-         (let* ((ss ms (clock))
-                (seed (cons ms ss)))
-            (lambda (limit)
-               (let* ((x (car seed))
-                      (a _ (vm:mul x 214013))
-                      (b _ (vm:add a 2531011))
-                      (c _ (vm:shr b 16))
-                      (o p d (vm:div 0 c limit)))
-                  (set-car! seed c)
-                  d))))
+(begin
+
+; (rand limit)
+;(define rand!
+;   (let* ((ss ms (clock))
+;          (seed (cons ms ss)))
+;      (lambda (limit)
+;         (let* ((x (car seed))
+;                (a _ (vm:mul x 214013))
+;                (b _ (vm:add a 2531011))
+;                (c _ (vm:shr b 16))
+;                (o p d (vm:div 0 c limit)))
+;            (set-car! seed c)
+;            d))))
+
+(define rand!
+   (let* ((ss ms (clock))
+          (seed (band (+ ss ms) #xffffffff))
+          (seed (cons (band seed #xffffff) (>> seed 24))))
+      (lambda (limit)
+         (let*((next (+ (car seed) (<< (cdr seed) 24)))
+               (next (+ (* next 1103515245) 12345)))
+            (set-car! seed (band     next     #xffffff))
+            (set-cdr! seed (band (>> next 24) #xffffff))
+
+            (mod (mod (floor (/ next 65536)) 32768) limit)))))
 
 ; based on Marsaglia's letter: http://www.cse.yorku.ca/~oz/marsaglia-rng.html
 

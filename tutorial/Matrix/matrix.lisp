@@ -1,19 +1,6 @@
 #!/usr/bin/ol
-(import (lib opengl))
+(import (lib opengl) (otus random!))
 (import (OpenGL version-1-1))
-
-(define rand!
-   (let* ((ss ms (clock))
-          (seed (band (+ ss ms) #xffffffff))
-          (seed (cons (band seed #xffffff) (>> seed 24))))
-      (lambda (limit)
-         (let*((next (+ (car seed) (<< (cdr seed) 24)))
-               (next (+ (* next 1103515245) 12345)))
-            (set-car! seed (band     next     #xffffff))
-            (set-cdr! seed (band (>> next 24) #xffffff))
-
-            (mod (mod (floor (/ next 65536)) 32768) limit)))))
-
 
 (define WIDTH  (/ 64 1)) ;(floor (/ 640 GLYPH_WIDTH))) ; /14 = 45.7
 (define HEIGHT (/ 56 1)) ;(floor (/ 480 GLYPH_HEIGHT))) ;/16 = 30

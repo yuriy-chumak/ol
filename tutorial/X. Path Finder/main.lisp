@@ -1,7 +1,7 @@
 #!/usr/bin/ol
 ;;;; Алгоритм ориентирования и поиска пути в сложном лабиринте
 (import
-   (owl ff) (owl random!)
+   (owl ff) (otus random!)
    (lib opengl)
    (OpenGL version-1-1)
 )

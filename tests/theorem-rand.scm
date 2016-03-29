@@ -1,7 +1,7 @@
 ;; todo: move to (owl proof) after dust settles
 
 ;; DSL - still being prototyped
-; 
+;
 ;  Theorem = (∀ var ... ∊ set)* Term
 ;  Term = Term ⇒ Term                    -- implies
 ;       | Term ⇔ Term                    -- if and only if
@@ -13,10 +13,10 @@
 ;       | Term ∨ Term          <- ditto
 ;       | (Term)               <- not there yet
 ;       | ∀ var ... ∊ set Term <- -||-
-; 
+;
 
 (import
-   (owl random) (owl random!)
+   (owl random) (otus random!)
    (etc bisect) (owl math-prime)
    (scheme misc))
 
@@ -64,7 +64,7 @@
          (lets ((rs n (rand rs (length l))))
             (values rs (lref l n))))))
 
-;; todo: precedence: ¬ ∧ ∨ ∀ ∃ ⇒  
+;; todo: precedence: ¬ ∧ ∨ ∀ ∃ ⇒
 ;; todo:
 ;; todo: is the ∀ a ∊ A P == ∀ a (a ∊ A) ⇒ P worth having a nonstandard syntax?
 ;; plan: (translate rs env thing ... OP . rst) -> translate left and right sides around op, convert to (OP-value first rest)
@@ -72,47 +72,47 @@
 
 ;; node :: rs env → rs' env' result
 
-(define-syntax translate 
+(define-syntax translate
    (syntax-rules (∀ ∊ → ↔ ← ⇒ ⇔ = ∧ ∨)
       ((translate rs a ⇒ . b) ;; we want a R b R c to be a R (b R c)
-         (translate rs a → . b)) 
+         (translate rs a → . b))
       ((translate rs a ⇔ . b)
          (translate rs a ↔ . b))
-      ((translate rs a → . b) 
-         (lets 
+      ((translate rs a → . b)
+         (lets
             ((rs env-a ar (translate rs a)))
             (if ar
                (lets ((rs env-b br (translate rs . b)))
                   (values rs (append env-a env-b) br))
                (values rs env-a #true))))
-      ((translate rs var ← defn . rest) 
+      ((translate rs var ← defn . rest)
          (let ((var defn))
             (lets ((rs env res (translate rs . rest)))
                (values rs (cons (cons (quote var) var) env) res))))
-      ((translate rs var ∊ exp . rest) 
-         (lets 
+      ((translate rs var ∊ exp . rest)
+         (lets
             ((rs var (choose rs exp))
              (rs env res (translate rs . rest)))
             (values rs (cons (cons (quote var) var) env) res)))
-      ((translate rs a ↔ b) 
-         (lets 
+      ((translate rs a ↔ b)
+         (lets
             ((rs env-a ar (translate rs a))
              (rs env-b br (translate rs b))
              (env (append env-a env-b)))
             (values rs env (if ar br (not br)))))
-      ((translate rs a = b) 
+      ((translate rs a = b)
          (values rs null (equal? a b)))
       ((translate rs ∀ var ∊ gen . rest)
-         (lets 
+         (lets
             ((rs var (gen rs))
              (rs env res (translate rs . rest)))
             (values rs (cons (cons (quote var) var) env) res)))
       ((translate rs ∀ var next ... ∊ gen . rest)
-         (lets 
+         (lets
             ((rs var (gen rs))
              (rs env res (translate rs ∀ next ... ∊ gen . rest)))
             (values rs (cons (cons (quote var) var) env) res)))
-      ((translate rs term) 
+      ((translate rs term)
          (values rs null term))))
 
 #| theorem name:
@@ -138,7 +138,7 @@
 
 
 
-;; Generators 
+;; Generators
 
 (define (Bool rs)
    (lets ((d rs (uncons rs 0)))
@@ -162,7 +162,7 @@
    (lets
       ((rs sign (rand rs 2))
        (rs n (Nat rs)))
-      (values rs 
+      (values rs
          (if (eq? sign 0)
             (- 0 n)
             n))))
@@ -199,7 +199,7 @@
       (lets ((rs n (rand rs elem-ip)))
          (if (eq? n 0)
             (values rs null)
-            (lets 
+            (lets
                ((rs head (thing rs))
                 (rs tail ((List-of thing) rs)))
                (values rs (cons head tail)))))))
@@ -209,7 +209,7 @@
       (lets ((rs n (rand rs elem-ip)))
          (if (eq? n 0)
             (values rs null)
-            (lets 
+            (lets
                ((rs head (thing rs))
                 (rs tail ((Rlist-of thing) rs)))
                (values rs (rcons head tail)))))))
@@ -250,9 +250,9 @@
                (loop rs (cons b out)))))))
 
 
-;; Theory 
+;; Theory
 
-(define (nonzero? a) 
+(define (nonzero? a)
    (not (eq? a 0)))
 
 (define tests-1
@@ -260,73 +260,73 @@
    (theory
 
       theorem prime-1
-         ∀ a ∊ Nat 
-            (< a 100000000) ⇒ 
+         ∀ a ∊ Nat
+            (< a 100000000) ⇒
                (prime? a) ⇒ (= 1 (length (factor a)))
-     
+
       theorem factor-1
          ∀ a ∊ Nat
-            (and (< 1 a) (< a 1000000)) ⇒ 
+            (and (< 1 a) (< a 1000000)) ⇒
                a = (fold * 1 (map (λ (p) (expt (car p) (cdr p))) (factor a)))
 
       theorem add-comm
-         ∀ a b ∊ Num 
+         ∀ a b ∊ Num
             (+ a b) = (+ b a)
 
       theorem add-assoc
-         ∀ a b c ∊ Num 
+         ∀ a b c ∊ Num
             (+ a (+ b c)) = (+ (+ a b) c)
 
       theorem add-3
-         ∀ a ∊ Num 
+         ∀ a ∊ Num
             a = (+ a 0)
 
       theorem mul-add-double
-         ∀ a ∊ Num 
+         ∀ a ∊ Num
             (+ a a) = (* a 2)
 
       theorem mul-distrib
          ∀ a b c ∊ Num
             (* a (+ b c)) = (+ (* a b) (* a c))
-            
+
       theorem mul-add-1
-         ∀ a b ∊ Num 
+         ∀ a b ∊ Num
             (* a (+ b 1)) = (+ (* a b) a)
 
       theorem add-cancel
-         ∀ a b ∊ Num 
+         ∀ a b ∊ Num
             a = (- (+ a b) b)
 
       theorem div-cancel-1
-         ∀ a b ∊ Num 
+         ∀ a b ∊ Num
             (nonzero? b) ⇒ a = (* (/ a b) b)
 
       theorem div-cancel-2
-         ∀ a b ∊ Num 
+         ∀ a b ∊ Num
             (nonzero? b) ⇒ a = (/ (* a b) b)
 
-      theorem div-twice 
-         ∀ a b ∊ Num 
+      theorem div-twice
+         ∀ a b ∊ Num
             (nonzero? b) ⇒ (/ (/ a b) b) = (/ a (* b b))
 
       theorem div-self
-         ∀ a ∊ Num 
+         ∀ a ∊ Num
             (nonzero? a) ⇒ 1 = (/ a a)
 
       theorem mul-comm
-         ∀ a b ∊ Num 
+         ∀ a b ∊ Num
             (* a b) = (* b a)
-      
+
       theorem mul-assoc
-         ∀ a b c ∊ Num 
+         ∀ a b c ∊ Num
             (* a (* b c)) = (* (* a b) c)
 
       theorem shift-cancel
-         ∀ a ∊ Nat ∀ b ∊ Byte 
+         ∀ a ∊ Nat ∀ b ∊ Byte
             a = (>> (<< a b) b)
 
       theorem gcd-comm
-         ∀ a b ∊ Int 
+         ∀ a b ∊ Int
             (gcd a b) = (gcd b a)
 
       theorem gcd-assoc
@@ -338,38 +338,38 @@
             (* a b) = (* (gcd a b) (lcm a b))
 
       theorem rev-1
-         ∀ l ∊ List 
+         ∀ l ∊ List
             l = (reverse (reverse l))
 
       theorem reverse-fold
-         ∀ l ∊ List 
+         ∀ l ∊ List
             (reverse l) = (fold (λ (a b) (cons b a)) null l)
 
       theorem foldr-copy
-         ∀ l ∊ List 
+         ∀ l ∊ List
             l = (foldr cons null l)
 
       theorem zip-map
-         ∀ l ∊ List 
+         ∀ l ∊ List
             l = (map car (zip cons l l))
 
 ;FIXME!
-;      theorem ncr-def 
-;         ∀ a b ∊ Byte 
+;      theorem ncr-def
+;         ∀ a b ∊ Byte
 ;            (>= a b) ⇒ (ncr a b) = (/ (! a) (* (! b) (! (- a b))))
 
       theorem halve-1
-         ∀ l ∊ List 
+         ∀ l ∊ List
             l = (lets ((hd tl (halve l))) (append hd tl))
 
       theorem sort-rev
-         ∀ l ∊ (List-of Byte) 
+         ∀ l ∊ (List-of Byte)
             (sort < l) = (reverse (sort > l))
 
       theorem ff-del
          ∀ f ∊ (Ff-of Byte) ∀ a b ∊ Byte
             b = (get (del (put f a a) a) a b)
-     
+
       theorem ff-del-all
          ∀ f ∊ (Ff-of Byte)
             empty = (ff-fold (λ (ff key val) (del ff key)) f f)
@@ -377,10 +377,10 @@
       theorem ff-put
          ∀ f ∊ (Ff-of Byte) ∀ a b ∊ Byte
             b = (get (put f a b) a #false)
-            
+
       theorem ff-keys-sorted
          ∀ f ∊ (Ff-of Short)
-            ks ← (keys f) ;; inorder 
+            ks ← (keys f) ;; inorder
                ks = (sort < ks)
 
       theorem ff-fold-foldr
@@ -402,18 +402,18 @@
 
       theorem quotrem-1
          ∀ a b ∊ Int
-            (nonzero? b) ⇒  
-               (lets ((q r (quotrem a b))) 
+            (nonzero? b) ⇒
+               (lets ((q r (quotrem a b)))
                   (and (< (abs r) (abs b)) (= (+ (* q b) r) a)))
 
       theorem expt-1
          ∀ a ∊ Num ∀ p ∊ Byte
-            (and (< 0 p) (< p 10)) ⇒ 
+            (and (< 0 p) (< p 10)) ⇒
                (expt a p) = (* a (expt a (- p 1)))
 
       theorem totient-1
          ∀ a ∊ Nat
-            (and (< 1 a) (< a 100000)) ⇒ 
+            (and (< 1 a) (< a 100000)) ⇒
                (prime? a) ⇔ (= (phi a) (- a 1))
 
 ))
@@ -445,17 +445,17 @@
 
       theorem rlist-set-get-map
          ∀ r ∊ (Rlist-of Byte)
-            (rmap (λ (x) (+ x 1)) r) 
-             = (fold 
+            (rmap (λ (x) (+ x 1)) r)
+             = (fold
                   (lambda (rp i) (rset rp i (+ 1 (rget rp i 'bad))))
-                  r 
+                  r
                   (lrange 0 1 (rlen r)))
 
       theorem rlist-convert
-         ∀ l ∊ List 
+         ∀ l ∊ List
             l = (rlist->list (list->rlist l))
 
-      theorem rlist-cons-moves 
+      theorem rlist-cons-moves
          ∀ r ∊ Rlist
             l ← (rlen r)
             (> l 0) ⇒
@@ -474,10 +474,10 @@
       theorem lazy-1
          ∀ n ∊ Byte
             (fold + 0 (lrange 0 1 n)) = (lfold + 0 (liota 0 1 n))
-      
+
       theorem lazy-2
          ∀ n ∊ Byte
-            (zip cons (lrange 0 1 n) (lrange n -1 0)) 
+            (zip cons (lrange 0 1 n) (lrange n -1 0))
                = (force-ll (lzip cons (liota 0 1 n) (liota n -1 0)))
 
       theorem lazy-3
@@ -494,11 +494,11 @@
 
       theorem list-keep-remove
          ∀ l ∊ List
-            (sort < l) = (sort < (append (keep odd? l) (remove odd? l))) 
+            (sort < l) = (sort < (append (keep odd? l) (remove odd? l)))
 
       theorem pick-test
          ∀ l ∊ (List-of Byte)
-            (pair? l) ⇒  
+            (pair? l) ⇒
                e ∊ l
                (< e 256)
 
@@ -519,9 +519,9 @@
 ))
 
 (define tests
-   (foldr append null 
-      (list 
-         tests-1 
+   (foldr append null
+      (list
+         tests-1
          tests-2)))
 
 
@@ -549,7 +549,7 @@
                   (loop rs (cdr tests) failed))
                (begin
                   (print (list (caar tests) 'bad 'with env))
-                  (loop rs (cdr tests) 
+                  (loop rs (cdr tests)
                      (cons (cons (caar tests) env) failed))))))))
 
 ;; run a few rounds at load/compile time, like in in $ make random-test
@@ -607,5 +607,3 @@
                            (begin
                               (print "TESTS FAILED: " (list 'fails fails 'seed seed 'n n))
                               2))))))))))
-
-
