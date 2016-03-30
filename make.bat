@@ -11,8 +11,25 @@ IF "%1"=="release" GOTO RELEASE
 IF "%1"=="/help"  GOTO HELP
 IF "%1"=="--help" GOTO HELP
 IF "%1"=="/h"     GOTO HELP
-IF "%1"=="105"    GOTO 105
+IF "%1"=="101"    GOTO 101
+IF "%1"=="111"    GOTO 111
+IF "%1"=="121"    GOTO 121
 GOTO:EOF
+
+
+:ALL
+CALL :VM
+CALL :REPL
+CALL :BOOT
+CALL :OL
+CALL :101
+CALL :111
+CALL :121
+GOTO:EOF
+
+rem 101 - NetBSD x64
+rem 111 - FreeBSD x64
+rem 121 - OpenBSD x64
 
 :HELP
 
@@ -57,43 +74,53 @@ if errorlevel 1 goto again
 copy boot.fasl repl
 GOTO :REPL
 
-:ALL
-CALL :VM
-CALL :REPL
-CALL :BOOT
-CALL :OL
-GOTO:EOF
-
 :RELEASE
 gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32
 gcc -std=c99 -O2 -s -Wall -fmessage-length=0 src/boot.c src/olvm.c -o "ol.exe" -lws2_32
 GOTO:EOF
 
 
-
-:: testing the build in the virtual machines
-:105
-echo Starting FreeBSD 10.2 x86-64...
-"C:\Program Files\Oracle\VirtualBox\VBoxManage" startvm "FreeBSD 10.2 x86-64" --type headless
-echo Connecting to the host...
-:105_wait
-ping 192.168.56.105 -w 1 -n 1 >NUL
-if errorlevel 1 goto 105_wait
-
-echo Copying source files...
-call :cp 192.168.56.105 Makefile
-call :cp 192.168.56.105 src/olvm.c
-call :cp 192.168.56.105 src/olvm.h
-call :cp 192.168.56.105 src/boot.c
-call :cp 192.168.56.105 repl
-
-echo Running make...
-plink -ssh -2 -l ol -pw ol -m gmake 192.168.56.105
-
-"C:\Program Files\Oracle\VirtualBox\VBoxManage" controlvm "FreeBSD 10.2 x86-64" savestate
-
+:101
+CALL :REMOTE 10122 "NetBSD 7.0 x86-64"   gmake
 GOTO:EOF
 
+:111
+CALL :REMOTE 11122 "FreeBSD 10.2 x86-64" gmake
+GOTO:EOF
+
+:121
+CALL :REMOTE 12122 "OpenBSD 5.8 x86-64"  gmake
+GOTO:EOF
+
+
+:: ====================================================================================
+
+:REMOTE
+echo Starting %~2...
+"C:\Program Files\Oracle\VirtualBox\VBoxManage" startvm "%~2" --type headless
+:: --type headless
+
+echo Connecting to the host...
+:wait
+echo.>%TEMP%\empty
+plink -ssh -2 -l ol -pw ol 127.0.0.1 -P %~1 -m %TEMP%\empty
+if errorlevel 1 goto wait
+
+echo Copying source files...
+call :cp 127.0.0.1 %~1 Makefile
+call :cp 127.0.0.1 %~1 src/olvm.c
+call :cp 127.0.0.1 %~1 src/olvm.h
+call :cp 127.0.0.1 %~1 src/boot.c
+call :cp 127.0.0.1 %~1 repl
+
+echo Running make...
+echo %~3>%TEMP%\gmake
+plink -ssh -2 -l ol -pw ol 127.0.0.1 -P %~1 -m %TEMP%\gmake
+
+"C:\Program Files\Oracle\VirtualBox\VBoxManage" controlvm "%~2" savestate
+GOTO:EOF
+
+
 :cp
-pscp -l ol -pw ol %~2 %~1:%~2
+pscp -l ol -pw ol -P %~2 %~3 %~1:%~3
 goto:eof

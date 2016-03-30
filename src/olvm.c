@@ -215,10 +215,15 @@
 #include <linux/seccomp.h>
 #endif
 
-// ?
+
 #ifndef O_BINARY
 #	define O_BINARY 0
 #endif
+
+#ifndef __SIZEOF_LONG__
+#	define __SIZEOF_LONG__ (sizeof(long))
+#endif
+
 
 extern int mkstemp (char *__template);
 
@@ -444,7 +449,7 @@ struct object_t
 {
 	union {
 		struct header_t header;
-		word ref[0];
+		word ref[1];
 	};
 };
 
@@ -452,7 +457,6 @@ struct object_t
 
 #define W                           sizeof (word)
 #define F(val)                      (((word)(val) << IPOS) | 2)
-
 
 //#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
 #define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in value (short number)
@@ -998,7 +1002,7 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 
 // todo: ввести третий generation
-__attribute__ ((aligned(sizeof(word))))
+//__attribute__ ((aligned(sizeof(word))))
 static word gc(heap_t *heap, int size, word regs) {
 	// просматривает список справа налево
 	void mark(word *pos, word *end)
@@ -1303,9 +1307,9 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 		// закончили, почистим за собой:
 		ol->heap.fp = fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
 	}
-	ol->gc = ({ void $(int kb) {
+	ol->gc = ({ void f(int kb) {
 		if (kb == 0 || fp >= heap->end - kb * 1024) dogc(kb/W);
-	}$; });
+	}f; });
 
 	int bank = 0; // ticks deposited at interop
 	int ticker = slice; // any initial value ok

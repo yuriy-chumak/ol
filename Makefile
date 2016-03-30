@@ -27,6 +27,9 @@ endif
 ifeq ($(UNAME),NetBSD)
 L := -lc
 endif
+ifeq ($(UNAME),OpenBSD)
+L := -lc -ftrampolines
+endif
 
 # Windows/MinGW
 ifeq ($(UNAME),MINGW32_NT-6.1)
