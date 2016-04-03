@@ -94,6 +94,13 @@ typedef struct ol_t OL;
 #define SYSCALL_GETRLIMIT 0
 #endif
 
+#ifdef __linux__
+#undef SYSCALL_SYSINFO
+#undef SYSCALL_PRCTL
+#undef SYSCALL_GETRUSAGE
+#undef SYSCALL_GETRLIMIT
+#endif
+
 //-- end of header
 #ifdef __cplusplus
 	}
