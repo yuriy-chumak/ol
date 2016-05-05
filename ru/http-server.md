@@ -1,12 +1,12 @@
 ---
 layout: page
 title:  Simple HTTP Server
-date:   пт, 18-гру-2015 15:24:07 +0200
+date: 2016-05-05 12:03:10 UTC
 categories: ru
 ---
 #### Простой пример
 
-   Вот как выглядит самый простой http сервер на lisp:
+   Otus Lisp позволяет быстро прототипировать типичные задачи. Например, можно создать простой http сервер всего парой строк:
 
 <pre><code data-language="scheme">
 (import (lib http))
@@ -15,8 +15,8 @@ categories: ru
    (send "HTTP/1.0 200 OK\n"
          "Connection: close\n"
          "Content-Type: text/html; charset=UTF-8\n"
-         "Server: " (car *version*) "/" (cdr *version*) "\n\n"
-
+         "Server: " (car *version*) "/" (cdr *version*)
+         "\n\n"
          "<h1>200: OK</h1>"
          (ref request 1) ": " (ref request 2)
          "<hr><small>" headers
@@ -29,6 +29,8 @@ categories: ru
 #### Пример посложнее
 
    В этом примере мы сделаем "настоящий" веб-сервер. То есть такой, который умеет отдавать нам контент, правильно заполняя поле content-type.
+   
+   Создадим функцию sendfile, которая проверяет наличие файла, отправляя при его отсутствии код 404.
 
 <pre><code data-language="scheme">
 (import (lib http))
