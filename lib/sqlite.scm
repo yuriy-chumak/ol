@@ -2,7 +2,7 @@
 ;;; https://github.com/yuriy-chumak/OL
 ;;; http://www.sqlite.org
 
-;;; Copyright (c) 2014, Yuriy Chumak
+;;; Copyright (c) 2014, 2016 Yuriy Chumak
 ;;; All rights reserved.
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,6 @@
 
 (define-library (lib sqlite)
   (export
-  ; types
-    ;sqlite3* sqlite3_value sqlite3_stmt
     make-sqlite3 make-sqlite3-stmt
 
   ; constants
@@ -60,27 +58,27 @@
   )
 
   (import
-      (r5rs core) (owl io)
-      (owl list) (owl string)
-      (owl math) (owl vector)
+      (otus lisp)
       (owl primop)
       (owl interop)
       (otus pinvoke))
-  (begin
 
-(define (new-void*) (cast 0 type-void*))
+(begin
 
+(define (new-void*) (raw type-void* '(0)))
 
 (define % (or
-   (dlopen "sqlite3" RTLD_LAZY)
-   (dlopen "libsqlite3.so" RTLD_LAZY)))
+   (dlopen "sqlite3")
+   (dlopen "libsqlite3.so")))
 
 (if (not %)
-   (begin
-      (runtime-error "Can't load sqlite3 library. Will halt")))
-;      (case *OS*
-;         (0 (print "Download dll from http://www.sqlite.org/download.html"))
-;         (1 (print "sudo apt-get install sqlite3")))
+   (let ((uname (syscall 63 #f #f #f)))
+      (runtime-error "Can't load sqlite3 library."
+         (cond
+         ((string-ci=? (ref uname 1) "Windows")
+            "Download dll from http://www.sqlite.org/download.html")
+         ((string-ci=? (ref uname 1) "Linux")
+            "Use, for example, sudo apt-get install sqlite3")))))
 
 ; служебные
 (define (make-sqlite3)      (new-void*)) ;like void* (raw type-vector-raw '(0)))
@@ -88,9 +86,9 @@
 
 ; todo: завести под это дело отдельный тип - что-то вроде type-int+-ref и т.д.
 (define sqlite3*  type-void*)
-(define sqlite3** type-vector-raw) ;ptr to void*
+(define sqlite3** type-void**)
 (define sqlite3_stmt*  type-void*)
-(define sqlite3_stmt** type-vector-raw) ;ptr to void*
+(define sqlite3_stmt** type-void**)
 (define char** type-vector-raw)
 
 (define sqlite3_value type-fix+)
@@ -127,10 +125,10 @@
 (define sqlite3-reset      (dlsym % (__cdecl type-fix+) "sqlite3_reset"      sqlite3_stmt*))
 (define sqlite3-finalize   (dlsym % (__cdecl type-fix+) "sqlite3_finalize"   sqlite3_stmt*))
 
-(define sqlite3-column-count (dlsym % (__cdecl type-fix+) "sqlite3_column_count" sqlite3_stmt*))
+(define sqlite3-column-count (dlsym % (__cdecl type-fix+)   "sqlite3_column_count" sqlite3_stmt*))
 (define sqlite3-column-name  (dlsym % (__cdecl type-string) "sqlite3_column_name" sqlite3_stmt* type-fix+))
-(define sqlite3-column-int   (dlsym % (__cdecl type-int+) "sqlite3_column_int" sqlite3_stmt* type-fix+))
-(define sqlite3-column-bytes (dlsym % (__cdecl type-int+) "sqlite3_column_bytes" sqlite3_stmt* type-fix+))
+(define sqlite3-column-int   (dlsym % (__cdecl type-int+)   "sqlite3_column_int" sqlite3_stmt* type-fix+))
+(define sqlite3-column-bytes (dlsym % (__cdecl type-int+)   "sqlite3_column_bytes" sqlite3_stmt* type-fix+))
 ;sqlite3_column_double
 (define sqlite3-column-text  (dlsym % (__cdecl type-string) "sqlite3_column_text" sqlite3_stmt* type-fix+))
 ;(define sqlite3_column_blob  (dlsym % (__cdecl type-string) "sqlite3_column_blob" sqlite3_stmt* type-fix+))
