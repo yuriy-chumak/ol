@@ -1516,6 +1516,14 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 					ERROR(259, this, INULL);
 
 			// todo: сюда надо добавить реакцию на внешние колбеки
+			// похоже, при возникновении колбека надо вызвать MCP с кодом колбека (в userdata), и спецкодом
+			// а mcp должен сам поискать у себя в списке, какую из функций надо вызвать (например, через RUN)
+			// причем в конце обработчика колбека надо освободить семафор
+
+			// если пришел новый ждущий обработки коллбек, то не надо создавать отдельный поток,
+			//	надо просто выздать функцию из mcp, которая по userdata выберет кого именно выполнять,
+			//	после чего отпустит.
+			// TODO: не забыть про контекст вызвавшего потока!
 			if (--ticker < 0) {
 				// время потока вышло, переключим на следующий
 				ticker = TICKS;
@@ -1538,13 +1546,38 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 					// 1 - runnig and time slice exhausted
 					// 10: breaked - call signal handler
 					// 14: memory limit was exceeded
+					// NEW: код вызова коллбека, и уже в mcp надо будет обработать эту таску, причем
+					//	в контексте вызвавшего потока!!!
 					R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); // fixme - handle also different signals via one handler
-					R[4] = (word) state;
-					R[5] = F(breaked);
+					R[4] = (word) state; // thread state
+					R[5] = F(breaked); // сюда можно передать userdata из потока
 					R[6] = IFALSE;
 					acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
 					breaked = 0;
 				}
+/*	RUN sample:
+			this = (word *) A0;
+			R[0] = R[3];
+			ticker = bank ? bank : uvtoi (A1);
+			bank = 0;
+			CHECK(is_reference(this), this, RUN);
+
+			word hdr = *this;
+			if (typeof (hdr) == TTHREAD) {
+				int pos = hdrsize(hdr) - 1;
+				word code = this[pos];
+				acc = pos - 3;
+				while (--pos)
+					R[pos] = this[pos];
+				ip = ((unsigned char *) code) + W;
+				continue; // no apply, continue
+			}
+			// else call a thunk with terminal continuation:
+			R[3] = IHALT; // exit via R0 when the time comes
+			acc = 1;
+			goto apply;
+
+ */
 				continue;
 			}
 
@@ -4488,4 +4521,51 @@ word* test(OL* self, word* arguments)
 	heap->fp = fp;
 	return 0;
 }
+#endif
+
+// callback testing
+#if 0
+#include <windows.h>
+
+DWORD WINAPI thread(LPVOID lpParam)
+{
+	printf("thread>\n");
+	void** params = (void**)lpParam;
+
+	printf("thread> sleep\n");
+	Sleep((int)params[2]);
+
+	int (*callback)(int, int, void*) = (int(*)(int, int, void*))params[0];
+
+	printf("thread> execute callback %p (userdata: %p)\n", params[0], params[1]);
+	int result = callback(1, 2, params[1]);
+
+	printf("<thread %d\n", result);
+	free(params);
+	return 1;
+}
+
+#ifdef _WIN32
+__declspec(dllexport)
+#else
+__attribute__
+		((__visibility__("default")))
+#endif
+int execute(int (*callback)(int, int, void*), void* userdata, int wait)
+{
+	printf("callback> %p(userdata: %p)\n", callback, userdata);
+
+	void** params = (void**)malloc(sizeof(void*) * 3);
+	params[0] = callback;
+	params[1] = userdata;
+	params[2] = (void*)wait;
+
+//	CreateThread( NULL, 0,
+//           thread, params,
+//		   0, NULL);
+
+	printf("<callback\n");
+	return 1;
+}
+
 #endif
