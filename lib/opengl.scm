@@ -20,6 +20,9 @@
 (define win32? (string-ci=? (ref uname 1) "Windows"))
 (define linux? (string-ci=? (ref uname 1) "Linux"))
 
+(define WIDTH 1280)
+(define HEIGHT 920)
+
 ; ===================================================
 (define gl:Enable (cond
    (win32?  (lambda (context)
@@ -58,7 +61,7 @@
          (let*((window (CreateWindowEx
                   #x00040100 "#32770" (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
                   #x06cf0000 ; WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
-                  0 0 640 480 ; x y width height
+                  0 0 WIDTH HEIGHT ; x y width height
                   null ; no parent window
                   null ; no menu
                   null ; instance
@@ -102,7 +105,7 @@
          (let*((display (XOpenDisplay null))
                (screen (XDefaultScreen display))
                (window (XCreateSimpleWindow display (XRootWindow display screen)
-                  0 0 640 480 1
+                  0 0 WIDTH HEIGHT 1
                   (XBlackPixel display screen) (XWhitePixel display screen)))
                (vi (glXChooseVisual display screen
                      (raw type-vector-raw '(

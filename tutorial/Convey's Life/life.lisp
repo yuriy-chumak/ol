@@ -1,10 +1,14 @@
 #!/usr/bin/ol
 (import (lib opengl))
+(import (otus random!))
+
+(define WIDTH 256)  ;128
+(define HEIGHT 192) ;96)
 
 (define (hash x y)
-   (let ((x (mod (+ x 128) 128))
-         (y (mod (+ y 96) 96)))
-   (+ (* y 128) x)))
+   (let ((x (mod (+ x WIDTH) WIDTH))
+         (y (mod (+ y HEIGHT) HEIGHT)))
+   (+ (* y 65536) x)))
 ;(define (hash x y)
 ;   (+ (* y 64) x))
 
@@ -32,7 +36,12 @@
 (lambda ()
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
-   (glOrtho 0 640/5 0 480/5 0 1)
+   (glOrtho 0 WIDTH 0 HEIGHT 0 1)
+
+;   (list
+;   (list->ff (map (lambda (i) (let ((x (rand2! WIDTH)) (y (rand2! HEIGHT)))
+;                                 (cons (hash x y) 1))) (iota 1200)))))
+
 
    (list
    (let ((initial (file->vector "initial.bmp")))
@@ -68,25 +77,32 @@
 ;   (glLoadIdentity)
 ;   (glOrtho min-x max-x min-y max-y 0 1))
 
-   (glPointSize 10)
+   (glPointSize (/ 640 WIDTH))
    (glColor3f 0.2 0.5 0.2)
    (glBegin GL_POINTS)
       (ff-fold (lambda (st key value)
-         (glVertex2f (mod key 128)
-                     (div key 128))
+         (glVertex2f (mod key 65536)
+                     (div key 65536))
       ) #f generation)
    (glEnd)
 
-   (list ;generation)))
+   (print "cells count: "
+   (ff-fold (lambda (st key value)
+               (+ st 1))
+      0
+      generation))
+
+
+   (list ; generation)))
       (ff-fold (lambda (st key value)
-         (let ((x (mod key 128))
-               (y (div key 128)))
+         (let ((x (mod key 65536))
+               (y (div key 65536)))
             (fold (lambda (st key)
-               (let ((x (car key))
-                     (y (cdr key)))
-                  (if (alive generation x y) (put st (hash x y) 1) st)))
-               (if (alive generation x y) (put st (hash x y) 1) st)
-               (list (cons (- x 1) (- y 1))
+                     (let ((x (car key))
+                          (y (cdr key)))
+                        (if (alive generation x y) (put st (hash x y) 1) st)))
+               (if (alive generation x y) (put st (hash x y) 1) st) ; the cell
+               (list (cons (- x 1) (- y 1)) ; possible cell neighbors
                      (cons    x    (- y 1))
                      (cons (+ x 1) (- y 1))
                      (cons (- x 1)    y   )

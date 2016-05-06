@@ -5,8 +5,8 @@
 
 (import (OpenGL version-2-0))
 
-(define width 640)
-(define height 480)
+(define width 1280)
+(define height 920)
 
 (gl:run
 
@@ -44,6 +44,10 @@
    (glAttachShader po vs)
 
    ; fragment shader:
+   (print *vm-args* ": " (cadr *vm-args*))
+   (if (eq? (length *vm-args*) 2)
+   (glShaderSource fs 1 (list (c-string (runes->string (file->list (cadr *vm-args*))))) null)
+
    (glShaderSource fs 2 (list (c-string "#version 120 // OpenGL 2.1")
                               (c-string "
       // http://glslsandbox.com/e#19102.0
@@ -114,7 +118,7 @@
          v=mix(vec3(length(v)),v,saturation); //color adjust
          gl_FragColor = vec4(v*.01,1.);
 
-      }")) null)
+      }")) null))
    (glCompileShader fs)
    (let ((isCompiled (raw type-vector-raw '(0))))
       (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
@@ -126,6 +130,7 @@
                (errorLog (make-string maxLengthValue 0))
                (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
             (runtime-error errorLog))))
+
    (glAttachShader po fs)
 
    (glLinkProgram po)
@@ -139,10 +144,11 @@
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
 
-   (list po)))
+   (let* ((ss ms (clock)))
+   (list po ss ms))))
 
 ; draw
-(lambda (po)
+(lambda (po ss ms)
    (let ((time (glGetUniformLocation po (c-string "time")))
          (resolution (glGetUniformLocation po (c-string "resolution"))))
 
@@ -151,8 +157,8 @@
    (glLoadIdentity)
 
    (glUseProgram po)
-   (let* ((ss ms (clock)))
-      (glUniform1f time (+ (/ ms 1000) (mod ss 3600)))) ; раз в час будем сбрасывать период
+   (let* ((s2 m2 (clock)))
+      (glUniform1f time (+ (/ (- m2 ms) 1000) (- s2 ss)))) ; раз в час будем сбрасывать период
    (if (> resolution 0)
       (glUniform2f resolution width height))
 
@@ -163,4 +169,4 @@
       (glVertex2f +1 +1)
    (glEnd))
 
-(list po)))
+(list po ss ms)))
