@@ -114,6 +114,9 @@
       ;(define vm:or   (raw type-bytecode '(56 4 5 6  24 6)))
       ;(define vm:xor  (raw type-bytecode '(57 4 5 6  24 6)))
 
+      ;(define vm:run  (raw type-bytecode '(50 4 5)))
+
+
       ; deprecated:
       ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 

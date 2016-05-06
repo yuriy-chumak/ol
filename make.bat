@@ -8,6 +8,7 @@ IF "%1"=="boot" GOTO BOOT
 IF "%1"=="ol" GOTO OL
 IF "%1"=="repl" GOTO REPL
 IF "%1"=="release" GOTO RELEASE
+IF "%1"=="tests" GOTO TESTS
 IF "%1"=="/help"  GOTO HELP
 IF "%1"=="--help" GOTO HELP
 IF "%1"=="/h"     GOTO HELP
@@ -59,7 +60,7 @@ GOTO:EOF
 
 :REPL
 vm repl < src/ol.scm
-FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo "%%~zI -> %%~zJ"
+FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again
 ::  call :BOOT
@@ -92,6 +93,63 @@ GOTO:EOF
 CALL :REMOTE 12122 "OpenBSD 5.8 x86-64"  gmake
 GOTO:EOF
 
+:TEST
+echo|set /p=Testing %1 ...
+ol %1 >C:\TEMP\out
+fc C:\TEMP\out %1.ok > nul
+if errorlevel 1 goto fail1
+echo Ok.
+GOTO:EOF
+:fail1
+echo Failed.
+GOTO:EOF
+
+
+
+:TESTS
+call :TEST tests\apply.scm
+call :TEST tests\banana.scm
+call :TEST tests\callcc.scm
+call :TEST tests\case-lambda.scm
+call :TEST tests\echo.scm
+call :TEST tests\ellipsis.scm
+call :TEST tests\eval.scm
+call :TEST tests\factor-rand.scm
+call :TEST tests\factorial.scm
+call :TEST tests\fasl.scm
+call :TEST tests\ff-call.scm
+call :TEST tests\ff-del-rand.scm
+call :TEST tests\ff-rand.scm
+call :TEST tests\fib-rand.scm
+call :TEST tests\hashbang.scm
+call :TEST tests\iff-rand.scm
+call :TEST tests\library.scm
+call :TEST tests\macro-capture.scm
+call :TEST tests\macro-lambda.scm
+call :TEST tests\mail-order.scm
+call :TEST tests\math-rand.scm
+call :TEST tests\par-nested.scm
+call :TEST tests\par-nested-rand.scm
+call :TEST tests\par-rand.scm
+call :TEST tests\perm-rand.scm
+call :TEST tests\por-prime-rand.scm
+call :TEST tests\por-terminate.scm
+call :TEST tests\queue-rand.scm
+call :TEST tests\record.scm
+call :TEST tests\rlist-rand.scm
+call :TEST tests\seven.scm
+call :TEST tests\share.scm
+call :TEST tests\stable-rand.scm
+call :TEST tests\str-quote.scm
+call :TEST tests\string.scm
+call :TEST tests\suffix-rand.scm
+call :TEST tests\theorem-rand.scm
+call :TEST tests\toplevel-persist.scm
+call :TEST tests\utf-8-rand.scm
+call :TEST tests\vararg.scm
+call :TEST tests\vector-rand.scm
+call :TEST tests\numbers.scm
+GOTO:EOF
 
 :: ====================================================================================
 
