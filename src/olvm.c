@@ -51,6 +51,8 @@
 // TODO: JIT!
 //	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
 
+// http://man7.org/linux/man-pages/man7/posixoptions.7.html
+
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
@@ -170,6 +172,7 @@
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
 
+#undef __COREDLL__
 
 // компилятор otus-lisp поддерживает только несколько специальных форм:
 //	lambda, quote, rlambda (evaluate lambda now), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
@@ -191,28 +194,30 @@
 #include <fcntl.h>
 #ifndef _WIN32
 #include <termios.h>
-#else
-#include <malloc.h>
 #endif
 
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef __linux__
-#include <sys/utsname.h> // uname
-#include <sys/resource.h>// getrusage
-#endif
-
 #include <time.h>
 
 #ifdef __unix__
-#include <sys/utsname.h>
+#	include <sys/utsname.h>
 #endif
 
 #ifdef __linux__
-#include <sys/prctl.h>
-#include <linux/seccomp.h>
+#	include <sys/utsname.h> // uname
+#	include <sys/resource.h>// getrusage
+#	include <sys/prctl.h>
+#	include <linux/seccomp.h>
+#endif
+
+#ifdef _WIN32
+#	define WIN32_LEAN_AND_MEAN
+#	define VC_EXTRALEAN
+
+#	include <malloc.h>
 #endif
 
 
@@ -225,8 +230,6 @@
 #endif
 
 
-extern int mkstemp (char *__template);
-
 // https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic error "-Wuninitialized"
@@ -235,6 +238,111 @@ extern int mkstemp (char *__template);
 // some portability issues (mainly for freebsd)
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK EAGAIN
+#endif
+
+
+#ifdef _WIN32
+#	define WIN32_LEAN_AND_MEAN
+#	define VC_EXTRALEAN
+#	include <windows.h>
+
+
+/* mkstemp extracted from libc/sysdeps/posix/tempname.c.  Copyright
+   (C) 1991-1999, 2000, 2001, 2006 Free Software Foundation, Inc.*/
+
+static const char letters[] =
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+int
+mkstemp (char *tmpl)
+{
+  int len;
+  char *XXXXXX;
+  static unsigned long long value;
+  unsigned long long random_time_bits;
+  unsigned int count;
+  int fd = -1;
+  int save_errno = errno;
+
+  /* A lower bound on the number of temporary files to attempt to
+     generate.  The maximum total number of temporary file names that
+     can exist for a given template is 62**6.  It should never be
+     necessary to try all these combinations.  Instead if a reasonable
+     number of names is tried (we define reasonable as 62**3) fail to
+     give the system administrator the chance to remove the problems.  */
+#define ATTEMPTS_MIN (62 * 62 * 62)
+
+  /* The number of times to attempt to generate a temporary file.  To
+     conform to POSIX, this must be no smaller than TMP_MAX.  */
+#if ATTEMPTS_MIN < TMP_MAX
+  unsigned int attempts = TMP_MAX;
+#else
+  unsigned int attempts = ATTEMPTS_MIN;
+#endif
+
+  len = strlen (tmpl);
+  if (len < 6 || strcmp (&tmpl[len - 6], "XXXXXX"))
+    {
+      errno = EINVAL;
+      return -1;
+    }
+
+/* This is where the Xs start.  */
+  XXXXXX = &tmpl[len - 6];
+
+  /* Get some more or less random data.  */
+  {
+    SYSTEMTIME stNow;
+    FILETIME ftNow;
+
+    // get system time
+    GetSystemTime(&stNow);
+    stNow.wMilliseconds = 500;
+    if (!SystemTimeToFileTime(&stNow, &ftNow))
+    {
+        errno = -1;
+        return -1;
+    }
+
+    random_time_bits = (((unsigned long long)ftNow.dwHighDateTime << 32)
+                       | (unsigned long long)ftNow.dwLowDateTime);
+  }
+  value += random_time_bits ^ (unsigned long long)GetCurrentThreadId ();
+
+  for (count = 0; count < attempts; value += 7777, ++count)
+    {
+      unsigned long long v = value;
+
+      /* Fill in the random bits.  */
+      XXXXXX[0] = letters[v % 62];
+      v /= 62;
+      XXXXXX[1] = letters[v % 62];
+      v /= 62;
+      XXXXXX[2] = letters[v % 62];
+      v /= 62;
+      XXXXXX[3] = letters[v % 62];
+      v /= 62;
+      XXXXXX[4] = letters[v % 62];
+      v /= 62;
+      XXXXXX[5] = letters[v % 62];
+
+      fd = open (tmpl, O_RDWR | O_CREAT | O_EXCL, _S_IREAD | _S_IWRITE);
+      if (fd >= 0)
+      {
+        errno = save_errno;
+        return fd;
+      }
+      else if (errno != EEXIST)
+        return -1;
+    }
+
+  /* We got out of the loop because we ran out of combinations to try.  */
+  errno = EEXIST;
+  return -1;
+}
+
+#else
+extern int mkstemp (char *__template);
 #endif
 
 // ========================================
@@ -250,11 +358,12 @@ extern int mkstemp (char *__template);
 #endif
 
 #ifdef _WIN32
-#	define WIN32_LEAN_AND_MEAN
-#	define VC_EXTRALEAN
-#	include <windows.h>
 #	include <winsock2.h>
 #	include <ws2tcpip.h>
+#endif
+
+#ifdef _WIN32
+#	include <windows.h>
 #	include <conio.h>
 	typedef unsigned long in_addr_t;
 
@@ -456,7 +565,7 @@ struct object_t
 // ------------------------------------------------------
 
 #define W                           sizeof (word)
-#define F(val)                      (((word)(val) << IPOS) | 2)
+#define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIX, val)
 
 //#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
 #define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in value (short number)
@@ -1128,7 +1237,7 @@ static word gc(heap_t *heap, int size, word regs) {
 			/* decrease heap size if more than 20% is free by 10% of the free space */
 			int dec = -(nfree/10);
 			int newobj = nfree - dec;
-			if (newobj > size*W*2) {
+			if (newobj > 2 * size*W) {
 				regs += adjust_heap(heap, dec);
 				heapsize = (word) heap->end - (word) heap->begin;
 				nfree = (word) heap->end - regs;
@@ -1335,7 +1444,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 
 			R[0] = IFALSE; // set no mcp
 			R[4] = R[3];
-			R[3] = make_value(TFIX, 2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
+			R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
 			R[5] = IFALSE;
 			R[6] = IFALSE;
 			breaked = 0;
@@ -3055,7 +3164,7 @@ invoke:;
 			}
 
 			#if SYSCALL_GETRLIMIT
-			// GETRUSAGE (getrusage)
+			// GETRLIMIT (getrlimit)
 			case SYSCALL_GETRLIMIT: {
 				struct rlimit r;
 				// arguments currently ignored. used RUSAGE_SELF
@@ -3070,25 +3179,48 @@ invoke:;
 
 			#if SYSCALL_GETRUSAGE
 			// GETRUSAGE (getrusage)
+			// @returns: (tuple utime stime)
+			//           utime: total amount of time spent executing in user mode, expressed in a timeval structure (seconds plus microseconds)
+			//           stime: total amount of time spent executing in kernel mode, expressed in a timeval structure (seconds plus microseconds)
 			case SYSCALL_GETRUSAGE: {
+				#ifdef _WIN32
+				struct rusage
+				{
+					struct timeval ru_utime;
+					struct timeval ru_stime;
+				};
+
+				#define RUSAGE_SELF 0
+				int getrusage(int who, struct rusage* usage) {
+					FILETIME createTime;
+					FILETIME exitTime;
+					FILETIME kernelTime;
+					FILETIME userTime;
+					if (GetProcessTimes(GetCurrentProcess(), &createTime, &exitTime, &kernelTime, &userTime) != -1) {
+						ULARGE_INTEGER li;
+
+						li.LowPart = userTime.dwLowDateTime;
+						li.HighPart = userTime.dwHighDateTime;
+						usage->ru_utime.tv_sec = li.QuadPart / 10000000;
+						usage->ru_utime.tv_usec = li.QuadPart % 10000000;
+
+						li.LowPart = kernelTime.dwLowDateTime;
+						li.HighPart = kernelTime.dwHighDateTime;
+						usage->ru_stime.tv_sec = li.QuadPart / 10000000;
+						usage->ru_stime.tv_usec = li.QuadPart % 10000000;
+				        return 0;
+					}
+					else
+						return -1;
+				}
+				#endif
+
 				struct rusage u;
 				// arguments currently ignored. used RUSAGE_SELF
 				if (getrusage(RUSAGE_SELF, &u) == 0)
 					result = new_tuple(
 							new_pair (itoun(u.ru_utime.tv_sec), itoun(u.ru_utime.tv_usec)),
 							new_pair (itoun(u.ru_stime.tv_sec), itoun(u.ru_stime.tv_usec))
-/*
-							itoun(info.uptime),
-							new_tuple(itoun(info.loads[0]),
-									  itoun(info.loads[1]),
-									  itoun(info.loads[2])),
-							itoun(info.totalram),
-							itoun(info.freeram),
-							itoun(info.sharedram),
-							itoun(info.bufferram),
-							itoun(info.totalswap),
-							itoun(info.freeswap),
-							itoun(info.procs) // procs is short*/
 					);
 				break;
 
