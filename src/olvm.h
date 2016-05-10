@@ -100,6 +100,12 @@ typedef struct ol_t OL;
 #undef SYSCALL_GETRLIMIT
 #endif
 
+#ifdef __ANDROID__
+#define SYSCALL_SYSINFO 0
+#define SYSCALL_PRCTL 0
+#define SYSCALL_GETRLIMIT 0
+#endif
+
 //-- end of header
 #ifdef __cplusplus
 	}

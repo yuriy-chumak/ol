@@ -15,6 +15,7 @@ IF "%1"=="/h"     GOTO HELP
 IF "%1"=="101"    GOTO 101
 IF "%1"=="111"    GOTO 111
 IF "%1"=="121"    GOTO 121
+IF "%1"=="android" GOTO ANDROID
 GOTO:EOF
 
 
@@ -152,6 +153,10 @@ call :TEST tests\numbers.scm
 GOTO:EOF
 
 :: ====================================================================================
+
+:ANDROID
+D:\Projects\Mobile\android-ndk-r10e\ndk-build.cmd
+GOTO:EOF
 
 :REMOTE
 echo Starting %~2...

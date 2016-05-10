@@ -209,8 +209,10 @@
 #ifdef __linux__
 #	include <sys/utsname.h> // uname
 #	include <sys/resource.h>// getrusage
-#	include <sys/prctl.h>
-#	include <linux/seccomp.h>
+#	if SYSCALL_PRCTL
+#		include <sys/prctl.h>
+#		include <linux/seccomp.h>
+#	endif
 #endif
 
 #ifdef _WIN32
@@ -391,9 +393,9 @@ extern int mkstemp (char *__template);
 #	endif
 #endif
 
-#ifdef __ANDROID__
-	typedef unsigned long in_addr_t;
-#endif
+//#ifdef __ANDROID__
+//	typedef unsigned long in_addr_t;
+//#endif
 
 #ifdef __APPLE__
 #	include "TargetConditionals.h"
