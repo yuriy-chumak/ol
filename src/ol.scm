@@ -272,7 +272,7 @@
          (interner-thunk (initialize-interner symbols codes)))
       ; main: / entry point of the compiled image
       (λ (vm-args)
-         ;(print "vm-args: " (null? vm-args "null" vm-args))
+         ;(print "//vm-args: " vm-args)
          ;; now we're running in the new repl
          (start-thread-controller
             (list ;1 thread
@@ -307,22 +307,22 @@
                                              (let ((ol-home (getenv "OL_HOME")))
                                                 (cons '*include-dirs* (list "." (if ol-home ol-home
                                                    (cond
-                                                      ((string-eq? (ref (uname) 1) "Linux") "/usr/lib/ol")
                                                       ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
-                                                      (else "."))))))
+                                                      (else "/usr/lib/ol")))))) ; Linux,  NetBSD,  FreeBSD,  OpenBSD
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* (vm:version))
                                             ;(cons '*scheme* 'r5rs)
                                              (cons '*seccomp* seccomp?)
-                                          ))))
+                                          )))
+                                 (in (if (> (length vm-args) 0) ; если первым параметром идет какой-то текст, то попробуем его проинтерпретировать
+                                        (open-input-file (car vm-args))
+                                        stdin)))
                               (if seccomp?
                                  (seccomp 1)) ;(seccomp megs) - check is memory enough
-                              (if (syscall 16 stdin 19 #f) ; isatty?
-                                 (begin ;greeting
-                                    (print (if seccomp? owl-ohai-seccomp owl-ohai))
-                                    (print "Type ',help' to help, ',quit' to end session")
-                                    (display "> ")))
-                              (repl-trampoline repl env))))))))
+                              (if (syscall 16 in 19 #f) ; we are in console? (isatty)
+                                 (print (if seccomp? owl-ohai-seccomp owl-ohai) "\n"
+                                        "Type ',help' to help, ',quit' to end session"))
+                              (repl-trampoline env in))))))))
             null)))) ; no threads state
 
 

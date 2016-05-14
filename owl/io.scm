@@ -90,7 +90,7 @@
          (syscall 3 fd #false #false)) ; 1002
 
       ;; use fd 65535 as the unique sleeper thread name.
-      (define sid (cast 65536 type-port))
+      (define sid (cast 65536 type-port)) ; ?? or 65535?
       (define sleeper-id sid)
 
       ;;; Writing

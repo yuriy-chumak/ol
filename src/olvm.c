@@ -209,16 +209,15 @@
 #ifdef __linux__
 #	include <sys/utsname.h> // uname
 #	include <sys/resource.h>// getrusage
-#	if SYSCALL_PRCTL
+//#	if SYSCALL_PRCTL
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
-#	endif
+//#	endif
 #endif
 
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
-#	define VC_EXTRALEAN
-
+#	include <windows.h>
 #	include <malloc.h>
 #endif
 
@@ -244,8 +243,6 @@
 
 
 #ifdef _WIN32
-#	define WIN32_LEAN_AND_MEAN
-#	define VC_EXTRALEAN
 #	include <windows.h>
 
 
@@ -365,7 +362,6 @@ extern int mkstemp (char *__template);
 #endif
 
 #ifdef _WIN32
-#	include <windows.h>
 #	include <conio.h>
 	typedef unsigned long in_addr_t;
 
@@ -418,8 +414,6 @@ extern int mkstemp (char *__template);
 // интерфейс к динамическому связыванию системных библиотек
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 // seen at https://github.com/dlfcn-win32/dlfcn-win32/blob/master/dlfcn.c
 
 static DWORD dlerrno = 0;
@@ -2464,6 +2458,9 @@ invoke:;
 				if (size > (heap->end - fp) * W - MEMPAD)
 					dogc(size);
 
+//				if (portfd == 0)
+//					fprintf(stderr, "reading stdin (isatty: %d+%d)!\n", _isatty(portfd), _kbhit());
+
 				int got;
 #ifdef _WIN32
 				if (!_isatty(portfd) || _kbhit()) { // we don't get hit by kb in pipe
@@ -2475,6 +2472,8 @@ invoke:;
 #else
 				got = read(portfd, (char *) &fp[1], size);
 #endif
+//				if (portfd == 0)
+//					fprintf(stderr, "got %d\n", got);
 
 				if (got > 0) {
 					// todo: обработать когда приняли не все,
@@ -3637,14 +3636,13 @@ int main(int argc, char** argv)
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
-			// а значит что? что файл надо замапить вместо stdin (нет!!! - надо передать его первым параметром в загрузчик)
-			// rollback назад, на 1 прочитанный символ
-#ifndef NAKED_VM
-			lseek(bin, -1, SEEK_CUR);
-			dup2(bin, STDIN_FILENO);
-			close(bin);
-#else
+//			// а значит что? что файл надо замапить вместо stdin (нет!!! - надо передать его первым параметром в загрузчик)
+//			// rollback назад, на 1 прочитанный символ
+#ifdef NAKED_VM
 			fail(6, "Invalid binary script"); // некому проинтерпретировать скрипт
+#else
+			close(bin); // todo: сместить аргументы на 1 вперед
+			// argc--; argv++
 #endif
 		}
 		else {
@@ -3704,7 +3702,7 @@ int main(int argc, char** argv)
 OL*
 OL_new(unsigned char* bootstrap, void (*release)(void*))
 {
-	// если это текстовый скрипт, замапим его на stdin, а сами используем встроенный (если) язык
+/*	// если это текстовый скрипт, замапим его на stdin, а сами используем встроенный (если) язык
 	if (bootstrap[0] > 3) {
 		char filename[16]; // lenght of above string
 		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
@@ -3721,7 +3719,7 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 			release(bootstrap);
 		bootstrap = language;
 		release = 0;
-	}
+	}*/
 
 	// если отсутствует исполнимый образ
 	if (bootstrap == 0) {

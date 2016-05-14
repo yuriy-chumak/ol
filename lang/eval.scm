@@ -228,13 +228,13 @@
                   (begin
                      (if (cdr val)
                         (print (cdr val)))
-                     (if (not (display "> "))
+                     (if (not (display "$ "))
                         (halt 127)))
                   (begin
                      (maybe-show-metadata env val)
                      ((writer-to (env-get env name-tag empty))
                         stdout val)
-                     (if (not (display "\n> "))
+                     (if (not (display "\n% "))
                         (halt 127)))))))
 
       (define syntax-error-mark (list 'syntax-error))
@@ -293,13 +293,13 @@
                   (lets
                      ((current-prompt (env-get env '*interactive* #false)) ; <- switch prompt during loading
                       (load-env
-                        (if prompt
+                        (if prompt ; FIXME: no variable prompt found
                            (env-set env '*interactive* #false) ;; <- switch prompt during load (if enabled)
                            env))
-                      (outcome (repl load-env exps)))
+                      (outcome (repl load-env exps #false))) ; FIXME: #true or #false?
                      (tuple-case outcome
                         ((ok val env)
-                           (repl (mark-loaded (env-set env '*interactive* current-prompt) path) in))
+                           (repl (mark-loaded (env-set env '*interactive* current-prompt) path) in #false)) ; FIXME: #true or #false?
                         ((error reason partial-env)
                            ; fixme, check that the fd is closed!
                            (repl-fail env (list "Could not load" path "because" reason))))))
@@ -332,7 +332,7 @@
          (case op
             ((help)
                (prompt env repl-ops-help)
-               (repl env in))
+               (repl env in #false)) ; FIXME: #true or #false?
             ((load)
                (lets ((op in (uncons in #false)))
                   (cond
@@ -370,7 +370,8 @@
                            ;         ;      (env-del env name)))
                            ;         (else env)))
                            ;   env env)
-                           in))
+                           in
+                           #true)) ; FIXME: #true or #false?
                      (repl-fail env (list "bad word list: " op)))))
             ((words w)
                (prompt env
@@ -383,7 +384,7 @@
                               (sort string<?
                                  (map symbol->string
                                     (env-keys env))))))))
-               (repl env in))
+               (repl env in #t)) ; FIXME: #true or #false?
             ((find)
                (lets
                   ((thing in (uncons in #false))
@@ -393,12 +394,12 @@
                         (prompt env (keep (λ (sym) (rex (symbol->string sym))) (env-keys env))))
                      (else
                         (prompt env "I would have preferred a regex or a symbol.")))
-                  (repl env in)))
+                  (repl env in #t))) ; FIXME: #true or #false?
             ((libraries libs l)
                (print "Currently defined libraries:")
                (for-each print (map car (env-get env library-key null)))
                (prompt env (repl-message #false))
-               (repl env in))
+               (repl env in #t)) ; FIXME: #true or #false?
             ((expand)
                (lets ((exp in (uncons in #false)))
                   (tuple-case (macro-expand exp env)
@@ -406,13 +407,13 @@
                         (write exp))
                      ((fail reason)
                         (print "Macro expansion failed: " reason)))
-                  (repl env in)))
+                  (repl env in #t))) ; FIXME: #true or #false?
             ((quit)
                ; this goes to repl-trampoline
                (tuple 'ok 'quitter env))
             (else
                (print "unknown repl op: " op)
-               (repl env in))))
+               (repl env in #t)))) ; FIXME: #true or #false?
 
       ;; → (name ...) | #false
       (define (exported-names env lib-name)
@@ -616,7 +617,7 @@
                         (repl-include env
                            (library-name->path iset) (λ (why) (ret #false)))))))
                (if exps
-                  (tuple-case (repl env (cdr exps)) ; drop begin
+                  (tuple-case (repl env (cdr exps) #f) ; drop begin,  ; FIXME: #true or #false?
                      ((ok value env)
                         ;; we now have the library if it was defined in the file
                         (values 'ok env))
@@ -696,7 +697,7 @@
                   repl fail))
             ((headed? 'begin (car exp))
                ;; run basic repl on it
-               (tuple-case (repl env (cdar exp))
+               (tuple-case (repl env (cdar exp) #f) ; FIXME: #true or #false?
                   ((ok value env)
                      ;; continue on to other defines or export
                      (repl-library (cdr exp) env repl fail))
@@ -836,7 +837,7 @@
 
       ; (repl env in) -> #(ok value env) | #(error reason env)
 
-      (define (repl env in)
+      (define (repl env in interactive)
          (let loop ((env env) (in in) (last 'blank))
             (cond
                ((null? in)
@@ -860,50 +861,12 @@
                (else
                   (loop env (in) last)))))
 
-
-      ;; run the repl on a fresh input stream, report errors and catch exit
-
-      (define (stdin-sexp-stream bounced?)
-         (λ () (fd->exp-stream stdin "> " sexp-parser syntax-fail bounced?)))
-
-      (define (repl-trampoline repl env)
-;        (print "args: " (get env '*vm-args* #f))
-         (let boing ((repl repl) (env env) (bounced? #false))
-;           (print "boing-" bounced?)
-            (lets
-               ((stdin (stdin-sexp-stream bounced?))
-                (stdin
-                  (if bounced?
-                     (begin ;; we may need to reprint a prompt here
-                        (if (env-get env '*interactive* #false)
-                           (display "?> "))  ;; reprint prompt
-                        stdin)
-                     stdin))
-                (env (bind-toplevel env)))
-               (tuple-case (repl env stdin)
-                  ((ok val env)
-                     ;; the end
-                     (if (env-get env '*interactive* #false)
-                        (print "bye bye :/"))
-                     (halt 0))
-                  ((error reason env)
-                     ; better luck next time
-                     (cond
-                        ((list? reason)
-                           (print-repl-error reason)
-                           (boing repl env #false))
-                        (else
-                           (print reason)
-                           (boing repl env #false))))
-                  (else is foo
-                     (print "Repl is rambling: " foo)
-                     (boing repl env #true))))))
-
       (define (repl-port env fd)
          (repl env
             (if (eq? fd stdin)
-               (λ () (fd->exp-stream stdin "> " sexp-parser syntax-fail #false))
-               (fd->exp-stream fd "> " sexp-parser syntax-fail #false))))
+               (λ () (fd->exp-stream stdin "> " sexp-parser syntax-fail #false)) ; а это выводится если все ок
+               (fd->exp-stream fd "" sexp-parser syntax-fail #false))
+            (eq? fd stdin)))
 
       (define (repl-file env path)
          (let ((fd (open-input-file path)))
@@ -915,8 +878,31 @@
          (lets ((exps (try-parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
             ;; list of sexps
             (if exps
-               (repl env exps)
+               (repl env exps #false)
                (tuple 'error "not parseable" env))))
 
 
+      ;; run the repl on a fresh input stream, report errors and catch exit
+      (define (repl-trampoline env in)
+         (let boing ((env env))
+            (if (syscall 16 in 19 #f) (display "> ")) ; это сообщение выводится в самом начале и при ошибках
+            (let ((env (bind-toplevel env)))
+               (tuple-case (repl-port env in)
+                  ((ok val env)
+                     ;; the end
+                     (if (syscall 16 in 19 #f)
+                        (print "bye bye :/"))
+                     (halt 0))
+                  ((error reason env)
+                     ; better luck next time
+                     (cond
+                        ((list? reason)
+                           (print-repl-error reason)
+                           (boing env))
+                        (else
+                           (print reason)
+                           (boing env))))
+                  (else is foo
+                     (print "Repl is rambling: " foo)
+                     (boing env))))))
 ))
