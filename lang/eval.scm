@@ -58,6 +58,8 @@
       (define (ok exp env) (tuple 'ok exp env))
       (define (fail reason) (tuple 'fail reason))
       (define (isatty? fd) (syscall 16 fd 19 #f))
+      (define (interactive? env) (env-get env '*interactive* #false))
+
 
       (define (name->func name)
          (some
@@ -222,20 +224,17 @@
       ;; render the value if isatty?, and print as such (or not at all) if it is a repl-message
       ;; if interactive mode and output fails, the error is fatal
       (define (prompt env val)
-         (let ((prompt (isatty? stdin)))
-            (if prompt
-               (if (repl-message? val)
-                  (begin
-                     (if (cdr val)
-                        (print (cdr val)))
-                     (if (not (display "$ "))
-                        (halt 127)))
-                  (begin
-                     (maybe-show-metadata env val)
-                     ((writer-to (env-get env name-tag empty))
-                        stdout val)
-                     (if (not (display "\n% "))
-                        (halt 127)))))))
+         (if (interactive? env)
+            (if (repl-message? val)
+               (begin
+                  (if (cdr val)
+                     (print (cdr val)))
+                  (display "$ "))
+               (begin
+                  (maybe-show-metadata env val)
+                  ((writer-to (env-get env name-tag empty))
+                     stdout val)
+                  (display "\n> ")))))
 
       (define syntax-error-mark (list 'syntax-error))
 
@@ -291,15 +290,12 @@
                   ;(if (env-get env '*interactive* #false)
                   ;   (print " + " path))
                   (lets
-                     ((current-prompt (env-get env '*interactive* #false)) ; <- switch prompt during loading
-                      (load-env
-                        (if prompt ; FIXME: no variable prompt found
-                           (env-set env '*interactive* #false) ;; <- switch prompt during load (if enabled)
-                           env))
-                      (outcome (repl load-env exps #false))) ; FIXME: #true or #false?
+                     ((interactive (env-get env '*interactive* #false))
+                      (load-env    (env-set env '*interactive* #false))
+                      (outcome (repl load-env exps #false)))
                      (tuple-case outcome
                         ((ok val env)
-                           (repl (mark-loaded (env-set env '*interactive* current-prompt) path) in #false)) ; FIXME: #true or #false?
+                           (repl (mark-loaded (env-set env '*interactive* interactive) path) in #false)) ; FIXME: #true or #false?
                         ((error reason partial-env)
                            ; fixme, check that the fd is closed!
                            (repl-fail env (list "Could not load" path "because" reason))))))
@@ -319,7 +315,8 @@
                (thing->rex (symbol->string thing)))
             (else #false)))
 
-      (define repl-ops-help "Commands:
+      (define repl-ops-help
+"Commands:
    ,help             - show this
    ,words            - list all current definitions
    ,expand <expr>    - expand macros in the expression
@@ -884,14 +881,21 @@
 
       ;; run the repl on a fresh input stream, report errors and catch exit
       (define (repl-trampoline env in)
+         (if (interactive? env)
+            ; ohai:
+            (print (if (env-get env '*seccomp* #false)
+                  "You see a prompt. You feel restricted."
+                  "You see a prompt.") "\n"        ; todo: change to version string?
+               "Type ',help' to help, ',quit' to end session"))
+
          (let boing ((env env))
-            (if (syscall 16 in 19 #f) (display "> ")) ; это сообщение выводится в самом начале и при ошибках
+            (if (interactive? env) (display "> ")) ; это сообщение выводится в самом начале и при ошибках
             (let ((env (bind-toplevel env)))
                (tuple-case (repl-port env in)
                   ((ok val env)
-                     ;; the end
-                     (if (syscall 16 in 19 #f)
-                        (print "bye bye :/"))
+                     ;; bye-bye
+                     (if (interactive? env)
+                        (print "bye-bye :/"))
                      (halt 0))
                   ((error reason env)
                      ; better luck next time
@@ -903,6 +907,6 @@
                            (print reason)
                            (boing env))))
                   (else is foo
-                     (print "Repl is rambling: " foo)
+                     (print "Repl is rambling: " foo) ; what is this?
                      (boing env))))))
 ))

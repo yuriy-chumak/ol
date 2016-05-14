@@ -65,9 +65,6 @@
 (define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
 (define max-object-size #xffff)  ; todo: change as dependent of word size
 
-(define owl-ohai "You see a prompt.") ; todo: change to version string
-(define owl-ohai-seccomp "You see a prompt. You feel restricted.")
-
 
 (import (otus lisp))
 
@@ -297,6 +294,9 @@
                                                              ((null? args) #f)
                                                              ((string-eq? (car args) "--seccomp") #t)
                                                              (else (loop (cdr args)))))))
+                                 (file (if (eq? (length vm-args) 0)
+                                          stdin
+                                          (open-input-file (car vm-args))))
                                  (env (fold
                                           (λ (env defn)
                                              (env-set env (car defn) (cdr defn)))
@@ -309,20 +309,15 @@
                                                    (cond
                                                       ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
                                                       (else "/usr/lib/ol")))))) ; Linux,  NetBSD,  FreeBSD,  OpenBSD
+                                             (cons '*interactive* (syscall 16 file 19 #f)) ; is file a tty?
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* (vm:version))
                                             ;(cons '*scheme* 'r5rs)
                                              (cons '*seccomp* seccomp?)
-                                          )))
-                                 (in (if (> (length vm-args) 0) ; если первым параметром идет какой-то текст, то попробуем его проинтерпретировать
-                                        (open-input-file (car vm-args))
-                                        stdin)))
+                                          ))))
                               (if seccomp?
                                  (seccomp 1)) ;(seccomp megs) - check is memory enough
-                              (if (syscall 16 in 19 #f) ; we are in console? (isatty)
-                                 (print (if seccomp? owl-ohai-seccomp owl-ohai) "\n"
-                                        "Type ',help' to help, ',quit' to end session"))
-                              (repl-trampoline env in))))))))
+                              (repl-trampoline env file))))))))
             null)))) ; no threads state
 
 
