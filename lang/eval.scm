@@ -229,7 +229,7 @@
                (begin
                   (if (cdr val)
                      (print (cdr val)))
-                  (display "$ "))
+                  (display "> "))
                (begin
                   (maybe-show-metadata env val)
                   ((writer-to (env-get env name-tag empty))
@@ -292,10 +292,10 @@
                   (lets
                      ((interactive (env-get env '*interactive* #false))
                       (load-env    (env-set env '*interactive* #false))
-                      (outcome (repl load-env exps #false)))
+                      (outcome (repl load-env exps)))
                      (tuple-case outcome
                         ((ok val env)
-                           (repl (mark-loaded (env-set env '*interactive* interactive) path) in #false)) ; FIXME: #true or #false?
+                           (repl (mark-loaded (env-set env '*interactive* interactive) path) in))
                         ((error reason partial-env)
                            ; fixme, check that the fd is closed!
                            (repl-fail env (list "Could not load" path "because" reason))))))
@@ -329,7 +329,7 @@
          (case op
             ((help)
                (prompt env repl-ops-help)
-               (repl env in #false)) ; FIXME: #true or #false?
+               (repl env in))
             ((load)
                (lets ((op in (uncons in #false)))
                   (cond
@@ -367,8 +367,7 @@
                            ;         ;      (env-del env name)))
                            ;         (else env)))
                            ;   env env)
-                           in
-                           #true)) ; FIXME: #true or #false?
+                           in))
                      (repl-fail env (list "bad word list: " op)))))
             ((words w)
                (prompt env
@@ -381,22 +380,22 @@
                               (sort string<?
                                  (map symbol->string
                                     (env-keys env))))))))
-               (repl env in #t)) ; FIXME: #true or #false?
+               (repl env in))
             ((find)
-               (lets
-                  ((thing in (uncons in #false))
-                   (rex (thing->rex thing)))
-                  (cond
-                     ((function? rex)
-                        (prompt env (keep (λ (sym) (rex (symbol->string sym))) (env-keys env))))
-                     (else
-                        (prompt env "I would have preferred a regex or a symbol.")))
-                  (repl env in #t))) ; FIXME: #true or #false?
+               (prompt env
+                  (let*((thing in (uncons in #false))
+                        (rex (thing->rex thing)))
+                     (cond
+                        ((function? rex)
+                           (keep (λ (sym) (rex (symbol->string sym))) (env-keys env)))
+                        (else
+                           "I would have preferred a regex or a symbol."))))
+               (repl env in))
             ((libraries libs l)
                (print "Currently defined libraries:")
                (for-each print (map car (env-get env library-key null)))
                (prompt env (repl-message #false))
-               (repl env in #t)) ; FIXME: #true or #false?
+               (repl env in))
             ((expand)
                (lets ((exp in (uncons in #false)))
                   (tuple-case (macro-expand exp env)
@@ -404,13 +403,13 @@
                         (write exp))
                      ((fail reason)
                         (print "Macro expansion failed: " reason)))
-                  (repl env in #t))) ; FIXME: #true or #false?
+                  (repl env in)))
             ((quit)
                ; this goes to repl-trampoline
                (tuple 'ok 'quitter env))
             (else
                (print "unknown repl op: " op)
-               (repl env in #t)))) ; FIXME: #true or #false?
+               (repl env in))))
 
       ;; → (name ...) | #false
       (define (exported-names env lib-name)
@@ -614,7 +613,7 @@
                         (repl-include env
                            (library-name->path iset) (λ (why) (ret #false)))))))
                (if exps
-                  (tuple-case (repl env (cdr exps) #f) ; drop begin,  ; FIXME: #true or #false?
+                  (tuple-case (repl env (cdr exps)) ; drop begin,
                      ((ok value env)
                         ;; we now have the library if it was defined in the file
                         (values 'ok env))
@@ -694,7 +693,7 @@
                   repl fail))
             ((headed? 'begin (car exp))
                ;; run basic repl on it
-               (tuple-case (repl env (cdar exp) #f) ; FIXME: #true or #false?
+               (tuple-case (repl env (cdar exp))
                   ((ok value env)
                      ;; continue on to other defines or export
                      (repl-library (cdr exp) env repl fail))
@@ -834,7 +833,7 @@
 
       ; (repl env in) -> #(ok value env) | #(error reason env)
 
-      (define (repl env in interactive)
+      (define (repl env in)
          (let loop ((env env) (in in) (last 'blank))
             (cond
                ((null? in)
@@ -862,8 +861,7 @@
          (repl env
             (if (eq? fd stdin)
                (λ () (fd->exp-stream stdin "> " sexp-parser syntax-fail #false)) ; а это выводится если все ок
-               (fd->exp-stream fd "" sexp-parser syntax-fail #false))
-            (eq? fd stdin)))
+               (fd->exp-stream fd "" sexp-parser syntax-fail #false))))
 
       (define (repl-file env path)
          (let ((fd (open-input-file path)))
@@ -875,7 +873,7 @@
          (lets ((exps (try-parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
             ;; list of sexps
             (if exps
-               (repl env exps #false)
+               (repl env exps)
                (tuple 'error "not parseable" env))))
 
 
