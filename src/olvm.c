@@ -218,6 +218,7 @@
 #ifdef _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
+
 #	include <malloc.h>
 #endif
 
@@ -239,109 +240,6 @@
 // some portability issues (mainly for freebsd)
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK EAGAIN
-#endif
-
-
-#ifdef _WIN32
-#	include <windows.h>
-
-
-/* mkstemp extracted from libc/sysdeps/posix/tempname.c.  Copyright
-   (C) 1991-1999, 2000, 2001, 2006 Free Software Foundation, Inc.*/
-
-static const char letters[] =
-"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-int
-mkstemp (char *tmpl)
-{
-  int len;
-  char *XXXXXX;
-  static unsigned long long value;
-  unsigned long long random_time_bits;
-  unsigned int count;
-  int fd = -1;
-  int save_errno = errno;
-
-  /* A lower bound on the number of temporary files to attempt to
-     generate.  The maximum total number of temporary file names that
-     can exist for a given template is 62**6.  It should never be
-     necessary to try all these combinations.  Instead if a reasonable
-     number of names is tried (we define reasonable as 62**3) fail to
-     give the system administrator the chance to remove the problems.  */
-#define ATTEMPTS_MIN (62 * 62 * 62)
-
-  /* The number of times to attempt to generate a temporary file.  To
-     conform to POSIX, this must be no smaller than TMP_MAX.  */
-#if ATTEMPTS_MIN < TMP_MAX
-  unsigned int attempts = TMP_MAX;
-#else
-  unsigned int attempts = ATTEMPTS_MIN;
-#endif
-
-  len = strlen (tmpl);
-  if (len < 6 || strcmp (&tmpl[len - 6], "XXXXXX"))
-    {
-      errno = EINVAL;
-      return -1;
-    }
-
-/* This is where the Xs start.  */
-  XXXXXX = &tmpl[len - 6];
-
-  /* Get some more or less random data.  */
-  {
-    SYSTEMTIME stNow;
-    FILETIME ftNow;
-
-    // get system time
-    GetSystemTime(&stNow);
-    stNow.wMilliseconds = 500;
-    if (!SystemTimeToFileTime(&stNow, &ftNow))
-    {
-        errno = -1;
-        return -1;
-    }
-
-    random_time_bits = (((unsigned long long)ftNow.dwHighDateTime << 32)
-                       | (unsigned long long)ftNow.dwLowDateTime);
-  }
-  value += random_time_bits ^ (unsigned long long)GetCurrentThreadId ();
-
-  for (count = 0; count < attempts; value += 7777, ++count)
-    {
-      unsigned long long v = value;
-
-      /* Fill in the random bits.  */
-      XXXXXX[0] = letters[v % 62];
-      v /= 62;
-      XXXXXX[1] = letters[v % 62];
-      v /= 62;
-      XXXXXX[2] = letters[v % 62];
-      v /= 62;
-      XXXXXX[3] = letters[v % 62];
-      v /= 62;
-      XXXXXX[4] = letters[v % 62];
-      v /= 62;
-      XXXXXX[5] = letters[v % 62];
-
-      fd = open (tmpl, O_RDWR | O_CREAT | O_EXCL, _S_IREAD | _S_IWRITE);
-      if (fd >= 0)
-      {
-        errno = save_errno;
-        return fd;
-      }
-      else if (errno != EEXIST)
-        return -1;
-    }
-
-  /* We got out of the loop because we ran out of combinations to try.  */
-  errno = EEXIST;
-  return -1;
-}
-
-#else
-extern int mkstemp (char *__template);
 #endif
 
 // ========================================
@@ -3609,7 +3507,6 @@ int main(int argc, char** argv)
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
 	//  остальные - командная строка
-	// todo: перенести в eval !
 	if (argc > 1 && strcmp(argv[1], "-") != 0) {
 		// todo: use mmap()
 		struct stat st;
@@ -3636,13 +3533,10 @@ int main(int argc, char** argv)
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
-//			// а значит что? что файл надо замапить вместо stdin (нет!!! - надо передать его первым параметром в загрузчик)
-//			// rollback назад, на 1 прочитанный символ
 #ifdef NAKED_VM
 			fail(6, "Invalid binary script"); // некому проинтерпретировать скрипт
 #else
 			close(bin); // todo: сместить аргументы на 1 вперед
-			// argc--; argv++
 #endif
 		}
 		else {
@@ -3666,27 +3560,25 @@ int main(int argc, char** argv)
 #ifdef NAKED_VM
 	else
 		fail(7, "Invalid binary script");
+
+	argc--; argv++;
 #endif
+
+	set_signal_handler();
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
 	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
 	if (sock_init  != 0) {
-		printf("WSAStartup failed with error: %d\n", sock_init);
+		fprintf(stderr, "WSAStartup failed with error: %d\n", sock_init);
 		return 1;
 	}
 	AllocConsole();
 #endif
 
-	set_signal_handler();
-
-	OL* olvm = OL_new(bootstrap, bootstrap != language ? free : NULL);
-	void* r = OL_eval(olvm,
-#ifdef NAKED_VM
-	argc-1, &argv[1]);
-#else
-	argc, argv);
-#endif
+	OL* olvm =
+	OL_new(bootstrap, bootstrap != language ? free : NULL);
+	void* r = OL_eval(olvm, argc, argv);
 	OL_free(olvm);
 
 #if	HAS_SOCKETS && defined(_WIN32)
@@ -3702,25 +3594,6 @@ int main(int argc, char** argv)
 OL*
 OL_new(unsigned char* bootstrap, void (*release)(void*))
 {
-/*	// если это текстовый скрипт, замапим его на stdin, а сами используем встроенный (если) язык
-	if (bootstrap[0] > 3) {
-		char filename[16]; // lenght of above string
-		strncpy(filename, "/tmp/olvmXXXXXX", sizeof(filename));
-
-		int f = mkstemp(filename); // временный файл
-		if (!write(f, bootstrap, strlen((char*) bootstrap)))
-			;
-		close(f);
-
-		dup2(open(filename, O_BINARY, S_IRUSR), STDIN_FILENO);
-		unlink(filename); // сразу приберем за собой
-
-		if (release)
-			release(bootstrap);
-		bootstrap = language;
-		release = 0;
-	}*/
-
 	// если отсутствует исполнимый образ
 	if (bootstrap == 0) {
 		fprintf(stderr, "no boot image found\n");
