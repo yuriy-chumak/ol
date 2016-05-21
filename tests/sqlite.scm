@@ -18,26 +18,45 @@
 
 
 
-(define (execute query)
+(define (execute query . args)
    (let ((statement (make-sqlite3-stmt)))
-      (if (> 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
-         (print "error query [" query "] preparation"))
-      (sqlite3-step statement)
-      (sqlite3-finalize statement)))
+      (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
+         (runtime-error "error query preparation" query))
+      (let loop ((n 1) (args args))
+         (if (not (null? args))
+            (let ((arg (car args)))
+               (print "type-arg: " (type arg))
+               (cond
+                  ((integer? arg)
+                     (print "integer")
+                     ;todo: if > max-int-value use sqlite3_bind_int64
+                     (sqlite3-bind-int    statement n arg))
+                  ((rational? arg)
+                     (sqlite3-bind-double statement n arg))
+                  (else
+                     (runtime-error "Unsupported parameter type" arg)))
+               (loop (+ n 1) (cdr args)))))
+      (let ((result (sqlite3-step statement)))
+         (sqlite3-finalize statement)
+         result)))
+
 (define (select query)
    (let ((statement (make-sqlite3-stmt)))
-      (if (> 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
+      (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
          (print "error query [" query "] preparation"))
       (sqlite3-step statement)
       statement))
-(define (select2 query handler)
+
+(define (sqlite:for-each query handler)
    (let ((statement (make-sqlite3-stmt)))
-      (if (> 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
-         (print "error query [" query "] preparation"))
-      (let ((result
-                (handler (if (= (sqlite3-step statement) SQLITE-ROW) statement null))))
-         (sqlite3-finalize statement)
-         result)))
+      (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
+         (runtime-error "error query preparation" query))
+      (let loop ((x null))
+         (if (= (sqlite3-step statement) SQLITE-ROW)
+            (loop (handler statement))))
+      (sqlite3-finalize statement)))
+
+; todo: add sqlite3-fold function:
 (define (with-sql-query string processor)
    (define query (select string))
    (processor query)
@@ -45,11 +64,25 @@
 
 (define statement (make-sqlite3-stmt))
 
-(execute "DROP TABLE IF EXIST test")
-(execute "CREATE TABLE test (id INTEGER)")
-(execute "INSERT INTO test VALUES (1)")
-(execute "INSERT INTO test VALUES (2)")
-(execute "INSERT INTO test VALUES (7)")
+;(execute "DROP TABLE IF EXIST test")
+;(execute "CREATE TABLE test (id INTEGER)")
+(sqlite:exec database "INSERT INTO test VALUES (1)")
+(sqlite:exec database "INSERT INTO test VALUES (2)")
+(sqlite:exec database "INSERT INTO test VALUES (7)")
+
+
+(let ((db (make-sqlite3)))
+   (sqlite3-open (c-string "db.sqlite") db)
+   (sqlite:exec db "CREATE TABLE IF NOT EXISTS T (id INTEGER PRIMARY KEY, text STRING)")
+   (sqlite:exec db "INSERT INTO T (text) VALUES (?)" "one")
+   (sqlite:exec db "INSERT INTO T (text) VALUES (?)" "two")
+   (sqlite:exec db "INSERT INTO T (text) VALUES (?)" "three")
+   (sqlite:exec db "INSERT INTO T (text) VALUES (?)" "four")
+   (sqlite3-close db))
+
+
+(print "exec: " (sqlite:exec database "INSERT INTO test VALUES (?)" 11))
+
 ;(print "prepare: "  (sqlite3_prepare_v2 database (c-string "CREATE TABLE test ( id INTEGER )") -1 statement null))
 ;(print "step: " (sqlite3_step statement))
 
@@ -59,11 +92,8 @@
 (print "count(id) = " (sqlite3-column-int query 0))
 (sqlite3-finalize query)
 
-(print "count(id)2 = " (select2 "SELECT COUNT(id) FROM test"
-   (lambda (statement)
-      (if (null? statement)
-         "no result"
-         (sqlite3-column-int statement 0)))))
+(sqlite:for-each "SELECT * FROM test" (lambda (statement)
+   (print "value: " (sqlite3-column-int statement 0))))
 
 (print "finalize: " (sqlite3-finalize statement))
 (print "close: "    (sqlite3-close database))

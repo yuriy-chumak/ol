@@ -1,4 +1,4 @@
-;;; SQLite3 interface for OL
+;;; SQLite3 interface for Otus Lisp
 ;;; https://github.com/yuriy-chumak/OL
 ;;; http://www.sqlite.org
 
@@ -28,7 +28,7 @@
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define-library (lib sqlite)
-  (export
+   (export
     make-sqlite3 make-sqlite3-stmt
 
   ; constants
@@ -46,6 +46,13 @@
     sqlite3-step
     sqlite3-reset
     sqlite3-finalize
+    sqlite3-last-insert-rowid
+
+  ; ss
+    sqlite3-bind-parameter-index
+    sqlite3-bind-int
+    sqlite3-bind-double
+    sqlite3-bind-text
 
   ; result set
     sqlite3-column-count
@@ -55,34 +62,39 @@
     ;sqlite3_column_double
     sqlite3-column-text
     ;sqlite3_column_blob
-  )
 
-  (import
+  ; additional
+    sqlite:exec
+   )
+
+   (import
       (otus lisp)
-      (owl primop)
-      (owl interop)
       (otus pinvoke))
 
 (begin
 
+(define uname (syscall 63 #f #f #f))
+
+(define win32? (string-ci=? (ref uname 1) "Windows"))
+(define linux? (string-ci=? (ref uname 1) "Linux"))
+
 (define (new-void*) (raw type-void* '(0)))
 
-(define % (or
-   (dlopen "sqlite3")
-   (dlopen "libsqlite3.so")))
+(define % (dlopen (cond
+   (win32? "sqlite3")
+   (linux? "libsqlite3.so")
+   (else (runtime-error "No sqlite3 library support" "Unknown platform")))))
 
 (if (not %)
-   (let ((uname (syscall 63 #f #f #f)))
-      (runtime-error "Can't load sqlite3 library."
-         (cond
-         ((string-ci=? (ref uname 1) "Windows")
-            "Download dll from http://www.sqlite.org/download.html")
-         ((string-ci=? (ref uname 1) "Linux")
-            "Use, for example, sudo apt-get install sqlite3")))))
+   (runtime-error "Can't load sqlite3 library." (cond
+      (win32?
+         "Download dll from http://www.sqlite.org/download.html")
+      (linux?
+         "Use, for example, sudo apt-get install sqlite3"))))
 
 ; служебные
 (define (make-sqlite3)      (new-void*)) ;like void* (raw type-vector-raw '(0)))
-(define (make-sqlite3-stmt) (new-void*)) ;(list->byte-vector '(0 0 0 0)))
+(define (make-sqlite3-stmt) (new-void*)) ; or (list->byte-vector '(0 0 0 0)))
 
 ; todo: завести под это дело отдельный тип - что-то вроде type-int+-ref и т.д.
 (define sqlite3*  type-void*)
@@ -125,6 +137,18 @@
 (define sqlite3-reset      (dlsym % (__cdecl type-fix+) "sqlite3_reset"      sqlite3_stmt*))
 (define sqlite3-finalize   (dlsym % (__cdecl type-fix+) "sqlite3_finalize"   sqlite3_stmt*))
 
+(define sqlite3-last-insert-rowid (dlsym % (__cdecl type-fix+) "sqlite3_last_insert_rowid" sqlite3*))
+
+; In the SQL statement text input to sqlite3_prepare_v2() and its variants, literals may be replaced by a parameter that matches one of following templates:
+;    ? ?NNN :VVV @VVV $VVV 
+;
+; In the templates above, NNN represents an integer literal, and VVV represents an alphanumeric identifier.
+; The values of these parameters (also called "host parameter names" or "SQL parameters") can be set using the sqlite3_bind_*() routines defined here.
+(define sqlite3-bind-parameter-index (dlsym % (__cdecl type-fix+) "sqlite3_bind_parameter_index" sqlite3_stmt* type-string))
+(define sqlite3-bind-int    (dlsym % (__cdecl type-fix+) "sqlite3_bind_int"    sqlite3_stmt* type-int+ type-int+))
+(define sqlite3-bind-double (dlsym % (__cdecl type-fix+) "sqlite3_bind_double" sqlite3_stmt* type-int+ type-double))
+(define sqlite3-bind-text   (dlsym % (__cdecl type-fix+) "sqlite3_bind_text"   sqlite3_stmt* type-int+ type-string type-fix+ type-void*))
+
 (define sqlite3-column-count (dlsym % (__cdecl type-fix+)   "sqlite3_column_count" sqlite3_stmt*))
 (define sqlite3-column-name  (dlsym % (__cdecl type-string) "sqlite3_column_name" sqlite3_stmt* type-fix+))
 (define sqlite3-column-int   (dlsym % (__cdecl type-int+)   "sqlite3_column_int" sqlite3_stmt* type-fix+))
@@ -132,5 +156,30 @@
 ;sqlite3_column_double
 (define sqlite3-column-text  (dlsym % (__cdecl type-string) "sqlite3_column_text" sqlite3_stmt* type-fix+))
 ;(define sqlite3_column_blob  (dlsym % (__cdecl type-string) "sqlite3_column_blob" sqlite3_stmt* type-fix+))
+
+
+
+(define (sqlite:exec database query . args)
+   (let ((statement (make-sqlite3-stmt)))
+      (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
+         (runtime-error "error query preparation" query))
+      (let loop ((n 1) (args args))
+         (if (not (null? args))
+            (let ((arg (car args)))
+               (cond
+                  ((integer? arg)
+                     ;todo: if > max-int-value use sqlite3_bind_int64
+                     (sqlite3-bind-int    statement n arg))
+                  ((rational? arg)
+                     (sqlite3-bind-double statement n arg))
+                  ((string? arg)
+                     (sqlite3-bind-text   statement n arg (size arg) #f))
+                  (else
+                     (runtime-error "Unsupported parameter type" arg)))
+               (loop (+ n 1) (cdr args)))))
+      (sqlite3-step statement)
+      (let ((result (sqlite3-last-insert-rowid database)))
+         (sqlite3-finalize statement)
+         result)))
 
 ))
