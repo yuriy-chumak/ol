@@ -170,8 +170,8 @@
 ;               (cast node (vm:xor (type node) redness)))))
 
       ;; FIXME: misleading names!
-      (define-syntax color-black (syntax-rules () ((color-black x) (ff:toggle x))))
-      (define-syntax color-red   (syntax-rules () ((color-red x)   (ff:toggle x))))
+;      (define-syntax color-black (syntax-rules () ((color-black x) (ff:toggle x))))
+;      (define-syntax color-red   (syntax-rules () ((color-red x)   (ff:toggle x))))
 
 
       ;;;
@@ -199,7 +199,7 @@
       (define (black-bleft left key val right)
          (if (red? left)
             (if (red? right)
-               (red (color-black left) key val (color-black right))
+               (red (ff:toggle left) key val (ff:toggle right))
                (with-ff (left ll lk lv lr)
                   (cond
                      ((red? ll)   ; case 1
@@ -311,7 +311,7 @@
          (let ((res (ff key tag)))    ;; check if the key is already in ff
             (if (eq? res tag)         ;; not there → insert and rebalance
                (let ((ff (putn ff key val)))
-                  (if (red? ff) (color-black ff) ff))
+                  (if (red? ff) (ff:toggle ff) ff))
                (fupd ff key val))))   ;; path copy and update only
 
 
@@ -409,30 +409,30 @@
       (define (ball-left left key val right)
          (cond
             ((red? left)
-               (red (color-black left) key val right))
+               (red (ff:toggle left) key val right))
             ((red? right)
                (with-ff (right r zk zv c)
                   (with-ff (r a yk yv b)
                      (red
                         (black left key val a)
                         yk yv
-                        (black-bright b zk zv (color-red c))))))
+                        (black-bright b zk zv (ff:toggle c))))))
             (else
-               (black-bright left key val (color-red right)))))
+               (black-bright left key val (ff:toggle right)))))
 
       (define (ball-right left key val right)
          (cond
             ((red? right)
-               (red left key val (color-black right)))
+               (red left key val (ff:toggle right)))
             ((red? left)
                (with-ff (left a xk xv b)
                   (with-ff (b b yk yv c)
                      (red
-                        (black-bleft (color-red a) xk xv b)
+                        (black-bleft (ff:toggle a) xk xv b)
                         yk yv
                         (black c key val right)))))
             (else
-               (black-bleft (color-red left) key val right))))
+               (black-bleft (ff:toggle left) key val right))))
 
       ;; converted old primops, could also test types and ref the right spot
       (define (ffcar node) (with-ff (node l k v r) l))
@@ -511,7 +511,7 @@
       (define (del ff key)
          (let ((ff (deln ff key)))
             (if (red? ff)
-               (color-black ff)
+               (ff:toggle ff)
                ff)))
 
 

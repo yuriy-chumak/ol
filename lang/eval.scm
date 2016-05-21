@@ -331,7 +331,7 @@
                (prompt env repl-ops-help)
                (repl env in))
             ((load)
-               (lets ((op in (uncons in #false)))
+               (let* ((op in (uncons in #false)))
                   (cond
                      ((symbol? op)
                         (repl-load repl (symbol->string op) in env))
@@ -392,12 +392,11 @@
                            "I would have preferred a regex or a symbol."))))
                (repl env in))
             ((libraries libs l)
-               (print "Currently defined libraries:")
-               (for-each print (map car (env-get env library-key null)))
-               (prompt env (repl-message #false))
+               (prompt env
+                  (map car (env-get env library-key null)))
                (repl env in))
             ((expand)
-               (lets ((exp in (uncons in #false)))
+               (let*((exp in (uncons in #false)))
                   (tuple-case (macro-expand exp env)
                      ((ok exp env)
                         (write exp))
@@ -409,6 +408,7 @@
                (tuple 'ok 'quitter env))
             (else
                (print "unknown repl op: " op)
+               (prompt env (repl-message #f))
                (repl env in))))
 
       ;; → (name ...) | #false
@@ -834,7 +834,8 @@
       ; (repl env in) -> #(ok value env) | #(error reason env)
 
       (define (repl env in)
-         (let loop ((env env) (in in) (last 'blank))
+         (if (interactive? env) (display "> ")) ; это сообщение выводится в самом начале и при ошибках
+         (let loop ((env env) (in in) (last 'blank)) ; last - последний результат
             (cond
                ((null? in)
                   (repl-ok env last))
@@ -887,7 +888,6 @@
                "Type ',help' to help, ',quit' to end session"))
 
          (let boing ((env env))
-            (if (interactive? env) (display "> ")) ; это сообщение выводится в самом начале и при ошибках
             (let ((env (bind-toplevel env)))
                (tuple-case (repl-port env in)
                   ((ok val env)
