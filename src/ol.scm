@@ -40,7 +40,7 @@
 (import (r5rs core)) ;; reload default macros needed for defining libraries etc
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*libraries* *codes* wait stdin stdout stderr set-ticker-value build-start)
+,forget-all-but (*libraries* *codes* *vm-args* wait stdin stdout stderr set-ticker-value build-start)
 
 
 ;;;
@@ -254,6 +254,17 @@
          (λ (reason) (error "bootstrap import error: " reason))
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
 
+; 
+(define *version*
+   (let loop ((args *vm-args*))
+      (if (null? args)
+         (vm:version)
+      (if (string-eq? (car args) "--version")
+         (if (null? (cdr args))
+            (runtime-error "no version in command line" args)
+            (cadr args))
+         (loop (cdr args))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -288,15 +299,28 @@
 
                         ;; repl
                         (exit-owl
-                           (let*((seccomp? (if (pair? vm-args)
-                                             (let loop ((args (cdr vm-args)))
-                                                          (cond
-                                                             ((null? args) #f)
-                                                             ((string-eq? (car args) "--seccomp") #t)
-                                                             (else (loop (cdr args)))))))
-                                 (file (if (eq? (length vm-args) 0)
-                                          stdin
-                                          (open-input-file (car vm-args))))
+                           (let*((seccomp? home file
+                                    (let loop ((seccomp? #f) (home #f) (file #f) (args vm-args))
+                                       (cond
+                                       ((null? args)
+                                          (values seccomp? home file))
+                                       ((string-eq? (car args) "--seccomp")
+                                          (loop #t home file (cdr args)))
+                                       ((string-eq? (car args) "--home") ; TBD
+                                          (if (null? (cdr args))
+                                             (runtime-error "no heap size in command line" args)
+                                             (loop seccomp? (cadr args) home (cddr args))))
+                                       ((eq? file #false)
+                                          (loop seccomp? home (car args) (cdr args)))
+                                       (else
+                                          (loop seccomp? home file (cdr args))))))
+                                 (file (if file
+                                          (if (string-eq? file "-")
+                                             stdin
+                                             (open-input-file file))
+                                          stdin))
+                                 (version (cons "OL" *version*))
+
                                  (env (fold
                                           (λ (env defn)
                                              (env-set env (car defn) (cdr defn)))
@@ -311,7 +335,7 @@
                                                       (else "/usr/lib/ol")))))) ; Linux,  NetBSD,  FreeBSD,  OpenBSD
                                              (cons '*interactive* (syscall 16 file 19 #f)) ; is file a tty?
                                              (cons '*vm-args* vm-args)
-                                             (cons '*version* (vm:version))
+                                             (cons '*version* version)
                                             ;(cons '*scheme* 'r5rs)
                                              (cons '*seccomp* seccomp?)
                                           ))))
