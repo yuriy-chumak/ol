@@ -314,6 +314,12 @@
                                           (loop seccomp? home (car args) (cdr args)))
                                        (else
                                           (loop seccomp? home file (cdr args))))))
+
+                                 (home (or home
+                                           (getenv "OL_HOME")
+                                           (cond
+                                              ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
+                                              (else "/usr/lib/ol")))) ; Linux,  NetBSD,  FreeBSD,  OpenBSD
                                  (file (if file
                                           (if (string-eq? file "-")
                                              stdin
@@ -328,11 +334,7 @@
                                           (list
                                              (cons '*owl-names*   initial-names)
                                              (cons '*owl-version* initial-version)
-                                             (let ((ol-home (getenv "OL_HOME")))
-                                                (cons '*include-dirs* (list "." (if ol-home ol-home
-                                                   (cond
-                                                      ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
-                                                      (else "/usr/lib/ol")))))) ; Linux,  NetBSD,  FreeBSD,  OpenBSD
+                                             (cons '*include-dirs* (list "." home))
                                              (cons '*interactive* (syscall 16 file 19 #f)) ; is file a tty?
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* version)
