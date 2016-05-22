@@ -201,7 +201,7 @@
          (display "socket closed, ")))
    (print "on-accept done." )
    (let*((ss2 ms2 (clock)))
-      (print "Request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
+      (print "# " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
 
    ; workaround for bug with "ol: dropping envelope to missing thread"
    (let sleep ((x 1000))
@@ -226,7 +226,7 @@
    (let loop ()
       (if (syscall 23 socket #f #f) ; select
          (let ((fd (syscall 43 socket #f #f))) ; accept
-            (print "\n> *** New request from " (syscall 51 fd #f #f) " at " (timestamp) ": ")
+            (print "\n# " (timestamp) ": new request from " (syscall 51 fd #f #f))
             (fork (on-accept fd onRequest))))
       (set-ticker-value 0)
       (loop))))
