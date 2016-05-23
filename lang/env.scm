@@ -159,15 +159,15 @@
                            (list 'lambda (cadr exp)
                               ((walker (env-bind env (cadr exp)) fail)
                                  (caddr exp)))
-                           (fail (list "funny lambda: " exp))))
-                     ((rlambda)
+                           (fail (list "funny lambda " exp))))
+                     ((ol:let)
                         (if (and (= (length exp) 4) (formals-cool? exp))
                            (let ((walk (walker (env-bind env (cadr exp)) fail)))
-                              (list 'rlambda
+                              (list 'ol:let
                                  (cadr exp)
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
-                           (fail (list "funny rlambda: " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
+                           (fail (list "funny ol:let " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
                      ((_case-lambda)
                         (cons (car exp) (map walk (cdr exp))))
                      ((values receive _branch)
@@ -244,7 +244,7 @@
             (list
                (cons 'quote   (tuple 'special 'quote))
                (cons 'lambda  (tuple 'special 'lambda))
-               (cons 'rlambda (tuple 'special 'rlambda)) ; todo: rename to eval-lambda or similar
+               (cons 'ol:let  (tuple 'special 'ol:let))
                (cons 'receive (tuple 'special 'receive))
                (cons '_branch (tuple 'special '_branch)) ; todo: rename to (ol:if) or similar
                (cons '_define (tuple 'special '_define)) ; todo: rename to (ol:define) or define-symbol or similar

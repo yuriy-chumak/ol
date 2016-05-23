@@ -2,7 +2,6 @@
 (define-library (r5rs core)
    (begin
 
-      ; TODO: rename rlambda to let-values or something similar (or evaluate, ...)
       ; TODO: rename _define to define-symbol, set!, or similar
 
       ; ========================================================================================================
@@ -213,8 +212,8 @@
 
       ; library syntax:  (letrec <bindings> <body>)
       (define-syntax letrec
-         (syntax-rules (rlambda)
-            ((letrec ((?var ?val) ...) ?body) (rlambda (?var ...) (?val ...) ?body))
+         (syntax-rules ()
+            ((letrec ((?var ?val) ...) ?body) (ol:let (?var ...) (?val ...) ?body))
             ((letrec vars body ...) (letrec vars (begin body ...)))))
 
       ; library syntax:  (letrec* ...) - extension
@@ -232,6 +231,7 @@
          (syntax-rules ()
             ((let ((var val) ...) exp . rest)
                ((lambda (var ...) exp . rest) val ...))
+               ;why not (ol:let (var ...) (val ...) exp . rest)) ???
             ((let keyword ((var init) ...) exp . rest)
                (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
 
@@ -363,13 +363,13 @@
                (define op
                   (letrec ((op (lambda args body))) op)))
             ((define name (lambda (var ...) . body))
-               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+               (_define name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;            ((define name (λ (var ...) . body))
-;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+;               (_define name (ol:let (name) ((lambda (var ...) . body)) name)))
             ((define op val)
                (_define op val))))
 
-;      ;; not defining directly because rlambda doesn't yet do variable arity
+;      ;; not defining directly because ol:let doesn't yet do variable arity
 ;      ;(define list ((lambda (x) x) (lambda x x)))
 ;
 ;      ;; fixme, should use a print-limited variant for debugging
@@ -1163,9 +1163,9 @@
 ;               (define op
 ;                  (letrec ((op (lambda args body))) op)))
 ;            ((define name (lambda (var ...) . body))
-;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+;               (_define name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
-;;               (_define name (rlambda (name) ((lambda (var ...) . body)) name)))
+;;               (_define name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;            ((define op val)
 ;               (_define op val))))
 

@@ -373,26 +373,11 @@
                   (grow (deps-of node) deps)))
             deps))
 
-      (define (compile-rlambda names values body env)
-
-         ;; -> (name value-exp dependencies)
-         (define dependencies
-            (zip
-               (lambda (name value)
-                  (tuple name value
-                     (intersect names
-                        (free-vars value env))))
-               names values))
-
-         (generate-bindings
-            (dependency-closure dependencies)
-            body env))
-
-      ; walk the term and translate all rlambdas to normal lambdas
-
+      ; walk the term and translate all ol:let's to lambdas
       (define (unletrec exp env)
          (define (unletrec-list exps)
             (map (lambda (exp) (unletrec exp env)) exps))
+
          (tuple-case exp
             ((var value) exp)
             ((call rator rands)
@@ -405,11 +390,20 @@
             ((lambda-var fixed? formals body)
                (mkvarlambda formals
                   (unletrec body (env-bind env formals))))
-            ((rlambda names values body)
-               (lets
-                  ((env (env-bind env names))
-                   (handle (lambda (exp) (unletrec exp env))))
-                  (compile-rlambda names (map handle values) (handle body) env)))
+            ((ol:let names values body)
+               (let*((env (env-bind env names))
+                     (handle (lambda (exp) (unletrec exp env)))
+                     (values (map handle values))
+                     (body (handle body)))
+                  (generate-bindings
+                     (dependency-closure (zip
+                        (lambda (name value)
+                           (tuple name value
+                              (intersect names
+                                 (free-vars value env))))
+                        names values))
+                  body env)))
+
             ((receive op fn)
                (tuple 'receive (unletrec op env) (unletrec fn env)))
             ((value val) exp)

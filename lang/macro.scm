@@ -319,14 +319,7 @@
                                         (body free
                                           (expand body (env-bind env formals) free abort)))
                                        (values (list 'lambda formals body) free))))
-                              ((_case-lambda)
-                                 (if (or (null? (cdr exp)) (null? (cddr exp))) ;; (_case-lambda <lambda> <(case-)lambda>)
-                                    (abort (list "Bad _case-lambda: " exp))
-                                    (lets
-                                       ((first free (expand (cadr exp)  env free abort))
-                                        (rest  free (expand (caddr exp) env free abort)))
-                                       (values (list '_case-lambda first rest) free))))
-                              ((rlambda)
+                              ((ol:let)
                                  (lets
                                     ((formals (lref exp 1))
                                      (definitions (lref exp 2))
@@ -337,8 +330,15 @@
                                      (body free
                                        (expand body env free abort)))
                                     (values
-                                       (list 'rlambda formals definitions body)
+                                       (list 'ol:let formals definitions body)
                                        free)))
+                              ((_case-lambda)
+                                 (if (or (null? (cdr exp)) (null? (cddr exp))) ;; (_case-lambda <lambda> <(case-)lambda>)
+                                    (abort (list "Bad _case-lambda: " exp))
+                                    (lets
+                                       ((first free (expand (cadr exp)  env free abort))
+                                        (rest  free (expand (caddr exp) env free abort)))
+                                       (values (list '_case-lambda first rest) free))))
                               ((receive)
                                  (expand-list exp env free))
                               ((_branch)

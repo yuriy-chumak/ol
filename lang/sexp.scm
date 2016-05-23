@@ -33,7 +33,12 @@
    (begin
 
       (define (between? lo x hi)
-         (<= lo x hi))
+         (and
+            (or (less? lo x)
+               (eq? lo x))
+            (or (less? x hi)
+               (eq? x hi))))
+;         (<= lo x hi))
 
       ; todo: rename to extended-alphabetic-chars
 ;     (define special-symbol-chars (string->bytes "!$%&*+-/:<=>?@^_~")) ; dot(.) reserved for numbers, sorry.
