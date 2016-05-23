@@ -8,6 +8,7 @@
 
    (import
       (r5rs core)
+      (r5rs srfi-1)
 
       (owl list-extra)
       (owl math)
@@ -122,22 +123,22 @@
                                        (lambda (x) (translate x env fail))
                                        values)
                                     (translate body env fail)))
-                              (fail (list "Bad ol:let " exp))))
-                        (fail (list "Bad ol:let " exp))))
-                  ((_branch)
-                     (if (= (length exp) 6)
-                        (let
-                           ((a (lref exp 2))
-                            (b (lref exp 3))
-                            (then (lref exp 4))
-                            (else (lref exp 5)))
+                              (fail (list "Bad let: " exp))))
+                        (fail (list "Bad let: " exp))))
+                  ((ol:if) ;;; (branch type a b then else)
+                     (if (eq? (length exp) 6)
+                        (let ((type (second exp))
+                              (a (third exp))    ;(lref exp 2))
+                              (b (fourth exp))   ; lref exp 3))
+                              (then (fifth exp)) ;(lref exp 4))
+                              (else (sixth exp))) ; lref exp 5)))
                            (tuple 'branch
-                              (lref exp 1)               ; type
+                              type
                               (translate a env fail)
                               (translate b env fail)
                               (translate then env fail)
                               (translate else env fail)))
-                        (fail (list "Bad branch: " exp))))
+                        (fail (list "Bad if: " exp))))
                   ((_case-lambda)
                      (if (= (length exp) 3)
                         (tuple 'case-lambda

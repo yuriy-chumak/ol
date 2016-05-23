@@ -7,6 +7,7 @@
 
    (import
       (r5rs core)
+      (r5rs srfi-1)
       (owl list)
       (owl equal)
       (owl list-extra)
@@ -320,15 +321,14 @@
                                           (expand body (env-bind env formals) free abort)))
                                        (values (list 'lambda formals body) free))))
                               ((ol:let)
-                                 (lets
-                                    ((formals (lref exp 1))
-                                     (definitions (lref exp 2))
-                                     (body (lref exp 3))
-                                     (env (env-bind env formals))
-                                     (definitions free
-                                       (expand-list definitions env free))
-                                     (body free
-                                       (expand body env free abort)))
+                                 (let*((formals (second exp))    ; lref 1
+                                       (definitions (third exp)) ; lref 2
+                                       (body (fourth exp))       ; lref 3
+                                       (env (env-bind env formals))
+                                       (definitions free
+                                          (expand-list definitions env free))
+                                       (body free
+                                          (expand body env free abort)))
                                     (values
                                        (list 'ol:let formals definitions body)
                                        free)))
@@ -341,7 +341,7 @@
                                        (values (list '_case-lambda first rest) free))))
                               ((receive)
                                  (expand-list exp env free))
-                              ((_branch)
+                              ((ol:if)
                                  (expand-list exp env free))
                               ((values)
                                  (expand-list exp env free))

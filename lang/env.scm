@@ -154,6 +154,7 @@
                   (list 'quote exp))
                ((list? exp)
                   (case (car exp)
+                     ((quote) exp)
                      ((lambda)
                         (if (and (= (length exp) 3) (formals-cool? exp))
                            (list 'lambda (cadr exp)
@@ -168,11 +169,8 @@
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
                            (fail (list "funny ol:let " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((_case-lambda)
+                     ((values receive _case-lambda ol:if)
                         (cons (car exp) (map walk (cdr exp))))
-                     ((values receive _branch)
-                        (cons (car exp) (map walk (cdr exp))))
-                     ((quote) exp)
                      (else
                         (map walk exp))))
                ((symbol? exp)
@@ -245,11 +243,14 @@
                (cons 'quote   (tuple 'special 'quote))
                (cons 'lambda  (tuple 'special 'lambda))
                (cons 'ol:let  (tuple 'special 'ol:let))
+               (cons 'values  (tuple 'special 'values))
+;               (cons 'ol:def  (tuple 'special 'ol:def)) ; todo: rename to (ol:define) or define-symbol or similar
                (cons 'receive (tuple 'special 'receive))
-               (cons '_branch (tuple 'special '_branch)) ; todo: rename to (ol:if) or similar
-               (cons '_define (tuple 'special '_define)) ; todo: rename to (ol:define) or define-symbol or similar
+               (cons 'ol:if   (tuple 'special 'ol:if))
+               (cons '_define (tuple 'special '_define)) ; todo: rename to (ol:set) or define-symbol or similar
+               ; speedup optimization:
                (cons '_case-lambda (tuple 'special '_case-lambda)) ; todo: rename to ...
-               (cons 'values   (tuple 'special 'values)))))
+)))
 
       ;; take a subset of env
       ;; fixme - misleading name
