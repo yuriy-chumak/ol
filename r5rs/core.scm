@@ -2,8 +2,6 @@
 (define-library (r5rs core)
    (begin
 
-      ; TODO: rename _define to define-symbol, set!, or similar
-
       ; ========================================================================================================
       ; Scheme
       ;
@@ -363,11 +361,11 @@
                (define op
                   (letrec ((op (lambda args body))) op)))
             ((define name (lambda (var ...) . body))
-               (_define name (ol:let (name) ((lambda (var ...) . body)) name)))
+               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;            ((define name (λ (var ...) . body))
-;               (_define name (ol:let (name) ((lambda (var ...) . body)) name)))
+;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
             ((define op val)
-               (_define op val))))
+               (ol:set op val))))
 
 ;      ;; not defining directly because ol:let doesn't yet do variable arity
 ;      ;(define list ((lambda (x) x) (lambda x x)))
@@ -389,7 +387,7 @@
       (define-syntax define-values
          (syntax-rules (list)
             ((define-values (val ...) . body)
-               (_define (val ...)
+               (ol:set (val ...)
                   (let* ((val ... (begin . body)))
                      (list val ...))))))
 
@@ -1163,11 +1161,11 @@
 ;               (define op
 ;                  (letrec ((op (lambda args body))) op)))
 ;            ((define name (lambda (var ...) . body))
-;               (_define name (ol:let (name) ((lambda (var ...) . body)) name)))
+;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
-;;               (_define name (ol:let (name) ((lambda (var ...) . body)) name)))
+;;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;            ((define op val)
-;               (_define op val))))
+;               (ol:set op val))))
 
       ; 4.1.2 Literal expressions
       ; ...

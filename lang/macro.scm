@@ -298,14 +298,14 @@
                         ((special thing)
                            (case thing
                               ((quote) (values exp free))
-                              ((_define)
+                              ((ol:set)
                                  ;(print " - expanding (" exp ") define body " (caddr exp))
                                  (lets
                                     ((value free 
                                        (expand (caddr exp) env free abort)))
-                                    ;(print "  : " (list '_define (cadr exp) value free))
+                                    ;(print "  : " (list 'ol:set (cadr exp) value free))
                                     (values
-                                       (list '_define (cadr exp) value)
+                                       (list 'ol:set (cadr exp) value)
                                        free)))
                               ((lambda)
                                  (if (or (null? (cdr exp)) (null? (cddr exp))) ;; todo: use matcher instead

@@ -162,11 +162,11 @@
       (define includes-key '*include-dirs*) ;; paths where to try to load includes from
 
       (define definition?
-         (let ((pat (list '_define symbol? ?)))
+         (let ((pat (list 'ol:set symbol? ?)))
             (λ (exp) (match pat exp))))
 
       (define multi-definition?
-         (let ((pat (list '_define list? ?)))
+         (let ((pat (list 'ol:set list? ?)))
             (λ (exp) (match pat exp))))
 
       ;; toplevel variable which holds currently loaded (r7rs-style) libraries
@@ -464,17 +464,8 @@
             ((patternp `(import . ,(λ (x) #true))))
             (λ (exp) (match patternp exp))))
 
-;      (define (library-definition? x)
-;         (or
-;         (and (pair? x) (list? x) (eq? (car x) '_define-library))
-;         (and (pair? x) (list? x) (eq? (car x) '#define-library))
-;         ))
       (define (library-definition? x)
-         (or
-         (and (pair? x) (list? x) (eq? (car x) '_define-library))
-         (and (pair? x) (list? x) (eq? (car x) '_define-library))
-
-         ))
+         (and (pair? x) (list? x) (eq? (car x) '_define-library)))
 
       ;; a simple eval
 

@@ -244,10 +244,9 @@
                (cons 'lambda  (tuple 'special 'lambda))
                (cons 'ol:let  (tuple 'special 'ol:let))
                (cons 'values  (tuple 'special 'values))
-;               (cons 'ol:def  (tuple 'special 'ol:def)) ; todo: rename to (ol:define) or define-symbol or similar
                (cons 'receive (tuple 'special 'receive))
                (cons 'ol:if   (tuple 'special 'ol:if))
-               (cons '_define (tuple 'special '_define)) ; todo: rename to (ol:set) or define-symbol or similar
+               (cons 'ol:set  (tuple 'special 'ol:set))
                ; speedup optimization:
                (cons '_case-lambda (tuple 'special '_case-lambda)) ; todo: rename to ...
 )))
