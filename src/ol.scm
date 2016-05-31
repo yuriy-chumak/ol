@@ -254,7 +254,7 @@
          (λ (reason) (error "bootstrap import error: " reason))
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
 
-; 
+;
 (define *version*
    (let loop ((args *vm-args*))
       (if (null? args)
@@ -299,23 +299,24 @@
 
                         ;; repl
                         (exit-owl
-                           (let*((seccomp? home file
-                                    (let loop ((seccomp? #f) (home #f) (file #f) (args vm-args))
+                           (let*((file options
+                                    (let loop ((file #f) (options #empty) (args vm-args))
                                        (cond
-                                       ((null? args)
-                                          (values seccomp? home file))
-                                       ((string-eq? (car args) "--seccomp")
-                                          (loop #t home file (cdr args)))
-                                       ((string-eq? (car args) "--home") ; TBD
-                                          (if (null? (cdr args))
-                                             (runtime-error "no heap size in command line" args)
-                                             (loop seccomp? (cadr args) home (cddr args))))
-                                       ((eq? file #false)
-                                          (loop seccomp? home (car args) (cdr args)))
-                                       (else
-                                          (loop seccomp? home file (cdr args))))))
+                                          ((null? args)
+                                             (values file options))
+                                          ((string-eq? (car args) "--seccomp")
+                                             (loop file (put options 'seccomp #t) (cdr args)))
+                                          ((string-eq? (car args) "--home") ; TBD
+                                             (if (null? (cdr args))
+                                                (runtime-error "no heap size in command line" args))
+                                             (loop file (put options 'home (cadr args)) (cddr args)))
+                                          ((eq? file #false)
+                                             (print "file: " file)
+                                             (loop (car args) options (cdr args)))
+                                          (else
+                                             (loop file options (cdr args))))))
 
-                                 (home (or home
+                                 (home (or (get options 'home #f)
                                            (getenv "OL_HOME")
                                            (cond
                                               ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
@@ -325,6 +326,8 @@
                                              stdin
                                              (open-input-file file))
                                           stdin))
+                                 (seccomp? (get options 'seccomp #f))
+
                                  (version (cons "OL" *version*))
 
                                  (env (fold
@@ -335,7 +338,7 @@
                                              (cons '*owl-names*   initial-names)
                                              (cons '*owl-version* initial-version)
                                              (cons '*include-dirs* (list "." home))
-                                             (cons '*interactive* (syscall 16 file 19 #f)) ; is file a tty?
+                                             (cons '*interactive* (syscall 16 file 19 #f)) ; isatty()
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* version)
                                             ;(cons '*scheme* 'r5rs)
