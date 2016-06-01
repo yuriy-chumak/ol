@@ -299,37 +299,33 @@
 
                         ;; repl
                         (exit-owl
-                           (let*((file options
-                                    (let loop ((file #f) (options #empty) (args vm-args))
+                           (let*((file (if (null? vm-args)
+                                          stdin
+                                          (if (string-eq? (car vm-args) "-")
+                                             stdin
+                                             (open-input-file (car vm-args)))))
+                                 (options
+                                    (let loop ((options #empty) (args (if (null? vm-args) null (cdr vm-args))))
                                        (cond
                                           ((null? args)
-                                             (values file options))
+                                             options)
                                           ((string-eq? (car args) "--seccomp")
-                                             (loop file (put options 'seccomp #t) (cdr args)))
+                                             (loop (put options 'seccomp #t) (cdr args)))
                                           ((string-eq? (car args) "--home") ; TBD
                                              (if (null? (cdr args))
                                                 (runtime-error "no heap size in command line" args))
-                                             (loop file (put options 'home (cadr args)) (cddr args)))
-                                          ((eq? file #false)
-                                             (print "file: " file)
-                                             (loop (car args) options (cdr args)))
+                                             (loop (put options 'home (cadr args)) (cddr args)))
                                           (else
-                                             (loop file options (cdr args))))))
+                                             (loop options (cdr args))))))
 
-                                 (home (or (get options 'home #f)
+                                 (home (or (getf options 'home)
                                            (getenv "OL_HOME")
                                            (cond
                                               ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
                                               (else "/usr/lib/ol")))) ; Linux,  NetBSD,  FreeBSD,  OpenBSD
-                                 (file (if file
-                                          (if (string-eq? file "-")
-                                             stdin
-                                             (open-input-file file))
-                                          stdin))
-                                 (seccomp? (get options 'seccomp #f))
+                                 (seccomp? (getf options 'seccomp))
 
                                  (version (cons "OL" *version*))
-
                                  (env (fold
                                           (λ (env defn)
                                              (env-set env (car defn) (cdr defn)))
