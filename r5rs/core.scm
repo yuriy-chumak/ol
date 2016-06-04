@@ -87,7 +87,7 @@
 
       ; http://srfi.schemers.org/srfi-16/srfi-16.html
       ; srfi syntex: (case-lambda ...
-      (define-syntax case-lambda      ;expand case-lambda syntax to to (_case-lambda <lambda> (_case-lambda ... (_case-lambda <lambda> <lambda)))
+      (define-syntax case-lambda
          (syntax-rules ()
             ((case-lambda) #false)
             ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
@@ -98,7 +98,7 @@
                ;; make a list of options to be compiled to a chain of code bodies w/ jumps
                ;; note, could also merge to a jump table + sequence of codes, but it doesn't really matter
                ;; because speed-sensitive stuff will be compiled to C where this won't matter
-               (_case-lambda (lambda formals . body)
+               (ol:ifa (lambda formals . body)
                   (case-lambda . rest)))))
 
       ; -------------------
@@ -111,11 +111,11 @@
             ((if (not test)    then else) (if test else then))              ; optimization
             ((if (null? test)  then else) (if (eq? test '()) then else))    ; optimization
             ((if (empty? test) then else) (if (eq? test #empty) then else)) ; optimization  ; FIXME - handle with partial eval later
-            ((if (eq? a b)     then else) (ol:if 0 a b then else))          ; optimization
+            ((if (eq? a b)     then else) (ol:ifc 0 a b then else))          ; optimization
             ((if (a . b)       then else) ((lambda (x) (if x then else)) (a . b)))
             ((if #false        then else)  else)                            ; optimization  ; THINK - maybe it broke vehaviour with arguments evaluation?
             ((if #true         then else)  then)                            ; optimization  ; THINK - same ^^
-            ((if test          then else) (ol:if 0 test #false else then))))
+            ((if test          then else) (ol:ifc 0 test #false else then))))
 
       ; ------------------
       ; 4.1.6  Assignments

@@ -1,8 +1,8 @@
 ; already loaded when booting.
 
 (define-library (lang macro)
-   
-   ; remove make-transformer when it is no longer referred 
+
+   ; remove make-transformer when it is no longer referred
    (export macro-expand match make-transformer)
 
    (import
@@ -73,7 +73,7 @@
 
       ; store nulls to variables in exp
       (define (init-variables exp literals dict)
-         (fold 
+         (fold
             (λ (dict key) (cons (cons key null) dict))
             dict
             (diff (symbols-of exp) literals)))
@@ -92,8 +92,8 @@
                   (push (cdr dict) key val)))))
 
       (define (match-pattern pattern literals form fail)
-         (let loop 
-            ((pattern pattern) (form form) (collect? #false) 
+         (let loop
+            ((pattern pattern) (form form) (collect? #false)
                (fail fail) (dictionary null))
             (cond
                ((symbol? pattern)
@@ -109,7 +109,7 @@
                         (let ((binding (getq dictionary pattern)))
                            (if binding
                               (if (equal? (cadr binding) form)
-                                 dictionary 
+                                 dictionary
                                  (fail pattern))
                               (cons (list pattern form) dictionary))))))
                ((null? pattern)
@@ -117,40 +117,40 @@
                ((pair? pattern)
                   (cond
                      ((and (pair? (cdr pattern)) (eq? (cadr pattern) '...))
-                        (let ((dictionary 
-                                 (init-variables (car pattern) 
+                        (let ((dictionary
+                                 (init-variables (car pattern)
                                     literals  dictionary)))
                            ; each time a form is matched
                            ;   resume matching with a fail cont returning to
                            ;   process more
-                           (let next 
-                              ((prev-dict dictionary) 
-                               (old-form form) 
-                               (new-dict dictionary) 
+                           (let next
+                              ((prev-dict dictionary)
+                               (old-form form)
+                               (new-dict dictionary)
                                (form form))
                               (call/cc
                                  (lambda (ret)
                                  (if (and new-dict (pair? form))
                                     (loop (cddr pattern) form #false
                                        (lambda (argh)
-                                          (ret 
+                                          (ret
                                              (next new-dict form
                                                 (call/cc
                                                    (lambda (ret)
-                                                      (loop (car pattern) (car form) 
+                                                      (loop (car pattern) (car form)
                                                          #true (lambda (x) (ret #false))
                                                          new-dict)))
                                                 (cdr form))))
                                        new-dict)
                                  ; no more matches
-                                 (loop (cddr pattern) 
-                                    (if new-dict form old-form) 
-                                    #false 
-                                    fail 
+                                 (loop (cddr pattern)
+                                    (if new-dict form old-form)
+                                    #false
+                                    fail
                                     (if new-dict new-dict prev-dict))))))))
                      ((pair? form)
                         (loop (cdr pattern) (cdr form) collect? fail
-                           (loop (car pattern) (car form) collect? fail 
+                           (loop (car pattern) (car form) collect? fail
                               dictionary)))
                      (else (fail form))))
                ((equal? pattern form)
@@ -160,11 +160,11 @@
       (define (try-pattern pattern literals form)
          (call/cc
             (lambda (ret)
-               (match-pattern pattern literals form 
+               (match-pattern pattern literals form
                   (lambda (argh) (ret #false))))))
 
       ;; given dictionary resulting from pattern matching, decide how many times an ellipsis
-      ;; rewrite should be done. owl uses minimum repetition of length more than one, so that 
+      ;; rewrite should be done. owl uses minimum repetition of length more than one, so that
       ;; single matches can be used along with ellipsis matches.
 
       (define o (λ (f g) (λ (x) (f (g x)))))
@@ -180,10 +180,10 @@
                (else
                   ;; repetition of length 0 or n>1
                   (car opts)))))
-     
-      ;; pop all bindings of length > 1 
+
+      ;; pop all bindings of length > 1
       (define (pop-ellipsis dict)
-         (map 
+         (map
             (λ (p) (let ((vals (cdr p))) (if (null? (cdr vals)) p (cons (car p) (cdr vals)))))
             dict))
 
@@ -218,8 +218,8 @@
       ; exp env free -> status exp' free'
 
       (define toplevel-macro-definition?
-         (let 
-            ((pattern 
+         (let
+            ((pattern
                `(quote syntax-operation add #false (,symbol? ,list? ,list? ,list?))))
             ;; -> keyword literals patterns templates
             (lambda (exp)
@@ -245,8 +245,8 @@
                   ;; rule = (pattern gensyms template)
                   (let ((dictionary (try-pattern (car rule) literals form)))
                      (if dictionary
-                        (lets 
-                           ((free dictionary  
+                        (lets
+                           ((free dictionary
                               (add-fresh-bindings (cadr rule) free dictionary))
                             (new (rewrite dictionary (caddr rule))))
                            (tuple new free))
@@ -298,28 +298,27 @@
                         ((special thing)
                            (case thing
                               ((quote) (values exp free))
-                              ((ol:set)
-                                 ;(print " - expanding (" exp ") define body " (caddr exp))
-                                 (lets
-                                    ((value free 
-                                       (expand (caddr exp) env free abort)))
-                                    ;(print "  : " (list 'ol:set (cadr exp) value free))
-                                    (values
-                                       (list 'ol:set (cadr exp) value)
-                                       free)))
+
                               ((lambda)
                                  (if (or (null? (cdr exp)) (null? (cddr exp))) ;; todo: use matcher instead
                                     (abort (list "Bad lambda: " exp))
                                     (lets
                                        ((formals (cadr exp))
                                         (body-exps (cddr exp))
-                                        (body 
+                                        (body
                                           (if (and (pair? body-exps) (null? (cdr body-exps)))
                                              (car body-exps)
                                              (cons 'begin body-exps)))
                                         (body free
                                           (expand body (env-bind env formals) free abort)))
                                        (values (list 'lambda formals body) free))))
+                              ((ol:set)
+                                 (lets
+                                    ((value free
+                                       (expand (caddr exp) env free abort)))
+                                    (values
+                                       (list 'ol:set (cadr exp) value)
+                                       free)))
                               ((ol:let)
                                  (let*((formals (second exp))    ; lref 1
                                        (definitions (third exp)) ; lref 2
@@ -332,21 +331,23 @@
                                     (values
                                        (list 'ol:let formals definitions body)
                                        free)))
-                              ((_case-lambda)
-                                 (if (or (null? (cdr exp)) (null? (cddr exp))) ;; (_case-lambda <lambda> <(case-)lambda>)
-                                    (abort (list "Bad _case-lambda: " exp))
+                              ((ol:ifc)
+                                 (expand-list exp env free))
+                              ((ol:ifa)
+                                 (if (or (null? (cdr exp)) (null? (cddr exp))) ;; (case-lambda <lambda> <(case-)lambda>)
+                                    (abort (list "Bad ol:ifa: " exp))
                                     (lets
                                        ((first free (expand (cadr exp)  env free abort))
                                         (rest  free (expand (caddr exp) env free abort)))
-                                       (values (list '_case-lambda first rest) free))))
-                              ((receive)
-                                 (expand-list exp env free))
-                              ((ol:if)
-                                 (expand-list exp env free))
+                                       (values (list 'ol:ifa first rest) free))))
+
                               ((values)
                                  (expand-list exp env free))
+                              ((receive)
+                                 (expand-list exp env free))
+
                               (else
-                                 (abort 
+                                 (abort
                                     (list "expand: unknown special form: " exp)))))
                         ((bound)          (expand-list exp env free))
                         ((defined value)  (expand-list exp env free))
@@ -370,27 +371,27 @@
                   ((undefined)
                      ;; this can still be a literal used by a macro
                      (values exp free))
-                  (else 
+                  (else
                      (values exp free))))
-            (else 
+            (else
                (values exp free))))
 
       ; maybe extend the env if a macro is being defined
 
       (define (post-macro-expand exp env fail)
          (cond
-            ((toplevel-macro-definition? exp) 
-               (lets 
+            ((toplevel-macro-definition? exp)
+               (lets
                   ((rules (lref exp 4))
                    (keyword (lref rules 0))
                    (literals (lref rules 1))
                    (patterns (lref rules 2))
                    (templates (lref rules 3))
-                   (rules 
-                     (make-pattern-list literals patterns templates 
+                   (rules
+                     (make-pattern-list literals patterns templates
                         (lambda (sym)
                            (not (env-get-raw env sym #false)))))
-                   (transformer 
+                   (transformer
                      (make-transformer (cons keyword literals) rules)))
                   (let ((env (env-set-macro env keyword transformer)))
                      (ok (list 'quote keyword) env))))
@@ -408,4 +409,3 @@
 
 
 ))
-

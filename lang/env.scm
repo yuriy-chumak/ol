@@ -169,7 +169,7 @@
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
                            (fail (list "funny ol:let " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((values receive _case-lambda ol:if)
+                     ((values receive ol:ifa ol:ifc)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
                         (map walk exp))))
@@ -241,15 +241,15 @@
          (list->ff
             (list
                (cons 'quote   (tuple 'special 'quote))
+
                (cons 'lambda  (tuple 'special 'lambda))
-               (cons 'ol:let  (tuple 'special 'ol:let))
+               (cons 'ol:set  (tuple 'special 'ol:set)) ; 'define
+               (cons 'ol:let  (tuple 'special 'ol:let)) ; 'letrec
+               (cons 'ol:ifc  (tuple 'special 'ol:ifc)) ; 'branch
+               (cons 'ol:ifa  (tuple 'special 'ol:ifa)) ; 'case-lambda
+
                (cons 'values  (tuple 'special 'values))
-               (cons 'receive (tuple 'special 'receive))
-               (cons 'ol:if   (tuple 'special 'ol:if))
-               (cons 'ol:set  (tuple 'special 'ol:set))
-               ; speedup optimization:
-               (cons '_case-lambda (tuple 'special '_case-lambda)) ; todo: rename to ...
-)))
+               (cons 'receive (tuple 'special 'receive)))))
 
       ;; take a subset of env
       ;; fixme - misleading name

@@ -125,7 +125,7 @@
                                     (translate body env fail)))
                               (fail (list "Bad let: " exp))))
                         (fail (list "Bad let: " exp))))
-                  ((ol:if) ;;; (branch type a b then else)
+                  ((ol:ifc) ;;; (branch type a b then else)
                      (if (eq? (length exp) 6)
                         (let ((type (second exp))
                               (a (third exp))    ;(lref exp 2))
@@ -139,20 +139,21 @@
                               (translate then env fail)
                               (translate else env fail)))
                         (fail (list "Bad if: " exp))))
-                  ((_case-lambda)
+                  ((ol:ifa) ;;; (case-lambda (lambda-ok) (lambda-fail))
                      (if (= (length exp) 3)
                         (tuple 'case-lambda
                            (translate (cadr exp) env fail)
                            (translate (caddr exp) env fail))
                         (fail (list "Bad case-lambda node: " exp))))
+
+                  ((values)
+                     (tuple 'values
+                        (map (lambda (arg) (translate arg env fail)) (cdr exp))))
                   ((receive)  ; (receive <exp> <receiver>)
                      (tuple 'receive
                         (translate (lref exp 1) env fail)
                         (translate (lref exp 2) env fail)))
                   ;; FIXME pattern
-                  ((values)
-                     (tuple 'values
-                        (map (lambda (arg) (translate arg env fail)) (cdr exp))))
                   (else
                      (fail
                         (list

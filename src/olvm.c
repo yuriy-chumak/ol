@@ -174,8 +174,8 @@
 
 #undef __COREDLL__
 
-// компилятор otus-lisp поддерживает только несколько специальных форм:
-//	lambda, quote, rlambda (evaluate lambda now), receive, _branch, _define, _case-lambda, values (смотреть env.scm)
+// компилятор otus-lisp поддерживает несколько специальных форм:
+//	lambda, quote, ol:let, receive, ol:ifc, ol:set, ol:ica, values (смотреть env.scm)
 //	все остальное - макросы
 
 #include <assert.h>
