@@ -228,13 +228,14 @@
             (if (repl-message? val)
                (begin
                   (if (cdr val)
-                     (print (cdr val)))
-                  (display "> "))
+                     (print (cdr val))))
+                  ;(display "> "))
                (begin
                   (maybe-show-metadata env val)
                   ((writer-to (env-get env name-tag empty))
                      stdout val)
-                  (display "\n> ")))))
+                  (display "\n"))))) ;>
+
 
       (define syntax-error-mark (list 'syntax-error))
 
@@ -408,7 +409,7 @@
                (tuple 'ok 'quitter env))
             (else
                (print "unknown repl op: " op)
-               (prompt env (repl-message #f))
+               ;(prompt env (repl-message #f))
                (repl env in))))
 
       ;; → (name ...) | #false
@@ -843,6 +844,7 @@
                            (tuple-case (eval-repl this env repl)
                               ((ok result env)
                                  (prompt env result)
+                                 (if (interactive? env) (display "> "))
                                  (loop env in result))
                               ((fail reason)
                                  (repl-fail env reason)))))))
@@ -852,7 +854,7 @@
       (define (repl-port env fd)
          (repl env
             (if (eq? fd stdin)
-               (λ () (fd->exp-stream stdin "> " sexp-parser syntax-fail #false)) ; а это выводится если все ок
+               (λ () (fd->exp-stream stdin "$ " sexp-parser syntax-fail #false)) ; а это выводится если все ок
                (fd->exp-stream fd "" sexp-parser syntax-fail #false))))
 
       (define (repl-file env path)

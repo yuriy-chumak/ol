@@ -311,6 +311,8 @@
                                              options)
                                           ((string-eq? (car args) "--seccomp")
                                              (loop (put options 'seccomp #t) (cdr args)))
+                                          ((string-eq? (car args) "--interactive")
+                                             (loop (put options 'interactive #t) (cdr args)))
                                           ((string-eq? (car args) "--home") ; TBD
                                              (if (null? (cdr args))
                                                 (runtime-error "no heap size in command line" args))
@@ -324,6 +326,9 @@
                                               ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
                                               (else "/usr/lib/ol")))) ; Linux,  NetBSD,  FreeBSD,  OpenBSD
                                  (seccomp? (getf options 'seccomp))
+                                 (interactive? (or
+                                           (getf options 'interactive)
+                                           (syscall 16 file 19 #f))) ; isatty()
 
                                  (version (cons "OL" *version*))
                                  (env (fold
@@ -334,7 +339,7 @@
                                              (cons '*owl-names*   initial-names)
                                              (cons '*owl-version* initial-version)
                                              (cons '*include-dirs* (list "." home))
-                                             (cons '*interactive* (syscall 16 file 19 #f)) ; isatty()
+                                             (cons '*interactive* interactive?)
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* version)
                                             ;(cons '*scheme* 'r5rs)
