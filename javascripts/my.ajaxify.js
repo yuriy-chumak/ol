@@ -26,6 +26,9 @@ function updateLink()
 
 // update all links to dynamic load pages:
 $("a[href^='?']").each(updateLink);
+$("a[href^='http://'], a[href^='https://']").each(function() {
+   this.target = "_blank";
+});
 
 function show(page)
 {
@@ -33,6 +36,9 @@ function show(page)
    $("#content").load(page.substr(1) + ".html", function() {
       $("html, body").animate({ scrollTop: 0 });
       $("#content a[href^='?']").each(updateLink);
+      $("#content a[href^='http://'], #content a[href^='https://']").each(function() {
+         this.target = "_blank";
+      });
       Rainbow.color();
    });
 }
@@ -56,4 +62,3 @@ function show(page)
 
    show(window.location.search);
 })(window);
-

@@ -1,13 +1,14 @@
 ---
 layout: html
 title:  Otus Lisp
-date: 2016-03-17 13:16:33 UTC
+date: 2016-06-09 16:24:37 UTC
 categories: index
 ---
 ### Summary
 
    Otus Lisp (ol) is a purely (*mostly*) functional dialect of Lisp.
-It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme. It is small, embeddable and crossplatform (Linux, Windows, FreeBSD, NetBSD).
+It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme.
+It is small, embeddable and crossplatform (Linux, Windows, FreeBSD, BSDs, Android; 32-bit and 64-bit platforms; intel x86 and arm architextures).
 
    You can immediately try ol in the provided terminal on this page. For example, type:
 <pre><code id="sample1" data-language="scheme">(+ 3/7 2+4i)</code><button class="doit" onclick="doit(sample1.textContent)">send to the terminal</button></pre>

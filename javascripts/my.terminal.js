@@ -8,9 +8,10 @@ $('#terminal').terminal(function(command, terminal) {
    name: 'repl',
    greetings: '\
 OL - Otus Lisp - yet another pet lisp\n\
-Copyright (c) 2014 Aki Helin\n\
-Copyright (c) 2014, 2015 Yuriy Chumak\n\
-~~~~~~~~~~~~~~~~~\n',
+Copyright(c) 2014 - 2016 Yuriy Chumak\n\
+\n\
+Grew out of the Owl Lisp by Aki Helin\n\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n',
    height: 200,
    enabled: false,
 
@@ -18,8 +19,18 @@ Copyright (c) 2014, 2015 Yuriy Chumak\n\
       terminal.pause();
       terminal.echo("Loading...");
 
+      /*var tcp;
+      try {
+         tcp = navigator.TCPSocket.open('127.0.0.1', 9000, {
+            useSecureTransport: false
+         });
+      }
+      catch(err) {
+         terminal.error(err);
+      }*/
+
       JSocket.init("TCP.swf", function () {
-         console.log("yes");
+         console.log("creating TCP socket processor");
          socket = new JSocket({
             connectHandler: connectHandler,
             dataHandler:    dataHandler,
@@ -39,21 +50,29 @@ Copyright (c) 2014, 2015 Yuriy Chumak\n\
          terminal.resume();
       }
       function dataHandler(data) {
-         if (data.length > 2 && data.indexOf('> ', data.length - 2) !== -1)
+         if (data == "> ") // if starts from "> "
+            ; // do nothing
+         else if (data.length > 2 && data.indexOf('> ', data.length - 2) !== -1)
             terminal.echo(data.substring(0, data.length - 2));
          else
             terminal.echo(data);
       }
       function closeHandler() {
          terminal.pause();
-         terminal.echo("Disconnected.");
-         alert('lost connection')
+         terminal.error("Disconnected.");
       }
       function errorHandler(errorstr) {
          terminal.pause();
-         terminal.echo("Error: " + errorstr);
-         alert(errorstr);
+         terminal.error("Error: " + errorstr);
       }
    }
 });
 
+$('#terminal').mousewheel(function(event) {
+    terminal.scroll(event.deltaY);
+    // console.log(event.deltaX, event.deltaY, event.deltaFactor);
+    if (event.preventDefault)  //disable default wheel action of scrolling page
+        event.preventDefault();
+    else
+        return false;
+});
