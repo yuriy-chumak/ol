@@ -60,7 +60,9 @@ gcc -std=c99 -g -Wall -fmessage-length=0 src/boot.c src/olvm.c -o "ol.exe" -lws2
 GOTO:EOF
 
 :REPL
-vm repl < src/ol.scm
+set VERSION=
+for /f "delims=" %%a in ('git describe') do @set VERSION=%%a
+vm repl - --version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again

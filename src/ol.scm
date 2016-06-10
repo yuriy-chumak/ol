@@ -258,7 +258,7 @@
 (define *version*
    (let loop ((args *vm-args*))
       (if (null? args)
-         (vm:version)
+         (cdr (vm:version))
       (if (string-eq? (car args) "--version")
          (if (null? (cdr args))
             (runtime-error "no version in command line" args)
