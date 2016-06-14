@@ -2802,10 +2802,10 @@ invoke:;
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 					word* A = (word*)a;
 					word* B = (word*)b;
-					word* C = (word*)c;
+//					word* C = (word*)c;
 
 					assert ((word)B == INULL || is_pair(B));
-					assert ((word)C == IFALSE);
+//					assert ((word)C == IFALSE);
 
 					word* (*function)(OL*, word*) = (word* (*)(OL*, word*)) car(A);  assert (function);
 
@@ -3929,7 +3929,7 @@ word* pinvoke(OL* self, word* arguments)
 		word* pa = (word*)car(arg);
 		word* pb = (word*)cdr(arg);
 
-		float a, b;
+		float a = 0;
 		if (is_value(pa))
 			a = svtol(pa);
 		else {
@@ -3942,6 +3942,8 @@ word* pinvoke(OL* self, word* arguments)
 				break;
 			}
 		}
+
+		float b = 1;
 		if (is_value(pb))
 			b = svtol(pb);
 		else {
