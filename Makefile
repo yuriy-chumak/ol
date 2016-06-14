@@ -60,18 +60,28 @@ install: ol repl
 	# install executables:
 	@echo Installing main binary...
 	install -d $(DESTDIR)/$(PREFIX)/bin
-	install -c -m 755 ol $(DESTDIR)/$(PREFIX)/bin/ol
+	install -m 755 ol $(DESTDIR)/$(PREFIX)/bin/ol
 	# install binary REPL:
 	@echo Installing REPL...
 	install -d $(DESTDIR)/$(PREFIX)/lib/ol
-	install -c -m 644 repl $(DESTDIR)/$(PREFIX)/lib/ol/repl
+	install -m 644 repl $(DESTDIR)/$(PREFIX)/lib/ol/repl
 	# basic libraries:
 	@echo Installing libraries...
-	@for F in r5rs owl lib etc scheme OpenGL ;do \
+	@for F in r5rs owl lib etc scheme ;do \
 	   echo installing $$F libraries... ;\
 	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
 	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
 	done
+	@echo Installing OpenGL libraries...
+	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
+	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL/{ARB,EGL,ES,EXT}
+	@for F in OpenGL/ARB OpenGL/EGL OpenGL/ES OpenGL/EXT ;do \
+	   echo installing $$F libraries... ;\
+	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
+	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
+	done
+	install -D -m 644 OpenGL/*.scm $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
+
 uninstall:
 	-rm -f $(DESTDIR)/$(PREFIX)/bin/ol
 	-rm -rf $(DESTDIR)/$(PREFIX)/lib/ol
