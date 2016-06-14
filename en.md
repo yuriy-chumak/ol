@@ -1,7 +1,7 @@
 ---
 layout: page
 title:  Summary
-date: 2016-06-10 13:46:22 UTC
+date: 2016-06-14 15:51:52 UTC
 categories: en
 ---
 
@@ -39,7 +39,12 @@ which is another way of
 
 ### Download
 
-   Currently there are no prebuilt binaries, but I'm hardly working to solve this problem.
+   Available binary builds for:
+   
+  * CentOS, Fedora, OpenSUSE, RHEL: https://build.opensuse.org/package/show/home:yuriy-chumak/ol
+  * Debian, Ubuntu: https://build.opensuse.org/package/show/home:yuriy-chumak/ol
+  
+   I'm working for add more prebuilts.
    
 ### Learn
 
