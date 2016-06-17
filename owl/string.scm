@@ -21,6 +21,7 @@
       render-quoted-string
       str-iter           ; "a .. n" -> lazy (a .. n) list
       str-iterr          ; "a .. n" -> lazy (n .. a) list
+      str-iter-bytes     ; "a .. n" -> lazy (a .. n) list of UTF-8 encoded bytes
       str-fold           ; fold over code points, as in lists
       str-foldr          ; ditto
       str-app            ; a ++ b, temp
@@ -105,6 +106,14 @@
 
       (define (str-iter str) (str-iter-any str null))
 
+      (define (str-iter-bytes str)
+         (ledit
+            (lambda (codepoint)
+               (if (less? codepoint #x80)
+                  #false ;; keep the old one
+                  (encode-point codepoint null)))
+            (str-iter str)))
+
       ;;; iterate backwards
 
       (define (str-iterr-leaf str tl pos)
@@ -141,6 +150,7 @@
                (runtime-error "str-iterr: not a string: " str))))
 
       (define (str-iterr str) (str-iterr-any str null))
+
 
       ;; string folds
 
@@ -371,7 +381,7 @@
                (cond
                   ((not a) (if b 1 2))
                   ((not b) 3)
-                  ((< a b) 1) ;; todo: lesser? and eq? after they are interned
+                  ((< a b) 1) ;; todo: less? and eq? after they are interned
                   ((= a b) (loop la lb))
                   (else 3)))))
 
