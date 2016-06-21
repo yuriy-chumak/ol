@@ -1,11 +1,15 @@
 ---
 layout: page
-title:  Summary
-date: 2016-06-14 15:51:52 UTC
+title:  Lisp
+date: 2016-06-21 15:09:27 UTC
 categories: index
 ---
+> Любая достаточно сложная программа содержит заново написанную, неспецифицированную, глючную и медленную реализацию половины какого-либо из диалектов Lisp.
+> <br/> <span style="float: right;">Десятое правило Гринспена</span>
 
-   Otus Lisp (произносится как [`отэс лисп]), или ol ([ол]) - чисто функциональный [*](#pure) диалект языка Lisp.
+### О проекте
+
+   Otus Lisp (произносится как [`отэс лисп]), или ol ([ол]) - чисто функциональный[*](#pure) диалект языка Lisp.
 Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Маленький, встраиваемый, кроссплатформенный (Linux, Windows, разные BSD, Android; 32-битные и 64-битные платформы; архитектуры intel x86 и arm).
 
    Распространяется по лицензии [GPL v3](https://github.com/yuriy-chumak/OL/blob/master/COPYING).
@@ -39,8 +43,8 @@ Ol реализован как расширенное подмножество S
 
    Доступны бинарные сборки для некоторых операционных систем и архитектур:
    
-  * CentOS, Fedora, OpenSUSE, RHEL: https://build.opensuse.org/package/show/home:yuriy-chumak/ol
-  * Debian, Ubuntu: https://build.opensuse.org/package/show/home:yuriy-chumak/ol
+  * CentOS, Fedora, OpenSUSE, RHEL: На [openSUSE Build Service](https://build.opensuse.org/package/show/home:yuriy-chumak/ol)
+  * Debian, Ubuntu: Так же на [openSUSE Build Service](https://build.opensuse.org/package/show/home:yuriy-chumak/ol)
    
    Для остальных операционных систем соответствующие сборки тоже будут скоро доступны. Исходный код можно забрать на [странице проекта](https://github.com/yuriy-chumak/OL).
    
