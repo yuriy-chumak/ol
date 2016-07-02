@@ -612,11 +612,10 @@ struct object_t
 
 // i - machine integer
 // ui - unsigned, si - signed
-// todo: add this
-// a - atomic number (internal, that fits in one register), type-fix
+// v - value number (internal, that fits in one register), type-fix
 //  or small numbers,
 //  or short numbers
-// ua, sa - unsigned/signed respectively.
+// uv, sv - unsigned/signed respectively.
 // Z - mножество целых чисел.
 
 // работа с numeric value типами
@@ -632,9 +631,14 @@ struct object_t
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define svtoi(v)        ({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define svtol(v)  (long)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define itosv(i)  (word)({ long x = (long)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
+
+//#define svtoi(v)        ({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define svtoi(v)  (int) ({ word x = (word)v; SVTOI_CHECK(x); \
+		intptr_t sign = (intptr_t)(x << (8*sizeof(uintptr_t) - IPOS)) >> (8*sizeof(intptr_t) - 1); \
+		((x >> IPOS) ^ sign) - sign; \
+})
 
 		// ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 
@@ -2773,7 +2777,6 @@ invoke:;
 			// NANOSLEEP
 			case 35: {
 				//CHECK(is_number(a), a, 35);
-
 				if (seccompp) {
 					result = (word*) ITRUE;
 					break;
@@ -3502,6 +3505,24 @@ void fail(int num, char* message)
 int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
+
+/*	for (int i = 0; i < 12345678; i++) {
+		word p = F(i);
+		word n = F(i) | 0x80;
+
+		if (svtoi(p) != svtoI(p))
+			exit(88);
+		if (svtoi(n) != svtoI(n))
+			exit(89);
+	}*/
+
+/*	word x = (123 << IPOS) + (1 << 7) + 2;
+	int i = ({
+		SVTOI_CHECK(x);
+		int sign = (intptr_t)(x << (8*sizeof(uintptr_t) - IPOS)) >> (8*sizeof(intptr_t) - 1);
+		int number = ((x >> IPOS) ^ sign) - sign;
+		number; });
+*/
 
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
