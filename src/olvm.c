@@ -482,14 +482,10 @@ struct object_t
 #define make_raw_header(type, size, p) (( (word)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
 // p is padding
 
-#define TRUEFALSE(cval)             ((cval) ? ITRUE : IFALSE)
-#define fliptag(ptr)                ((word)ptr ^ 2) /* make a pointer look like some (usually bad) immediate object */
-// fliptag used in dir sys-prims
-
 // два главных класса аргументов:
 #define is_value(x)                 (((word)(x)) & 2)
 #define is_reference(x)             (!is_value(x))
-#define is_rawobject(x)             (((word)(x)) & RAWBIT) // todo: rename to is_rawobject?
+#define is_rawobject(x)             (((word)(x)) & RAWBIT)
 
 // всякая всячина:
 #define hdrsize(x)                  (((word)x) >> SPOS)
@@ -552,13 +548,10 @@ struct object_t
 #define IEOF                        make_value(TCONST, 4)
 #define IHALT                       INULL // FIXME: adde a distinct IHALT
 
-
-#define HVPTR                       make_raw_header(TVPTR, 2, 0) // must be RAW
-
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
-#define is_const(ob)                (typeof (ob) == TCONST)
+//#define is_const(ob)                (is_value(ob)     && typeof (ob) == TCONST)
 #define is_port(ob)                 (is_value(ob)     && typeof (ob) == TPORT)
 
 #define is_fix(ob)                  (is_value(ob)     && typeof (ob) == TFIX)
@@ -572,7 +565,7 @@ struct object_t
 #define is_string(ob)               (is_reference(ob) && typeof (*(word*)(ob)) == TSTRING)
 #define is_tuple(ob)                (is_reference(ob) && typeof (*(word*)(ob)) == TTUPLE)
 
-#define is_vptr(ob)                 (is_reference(ob) &&        (*(word*)(ob)) == HVPTR)
+#define is_vptr(ob)                 (is_reference(ob) &&        (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
 
 #define is_number(ob)               (is_npair(ob)  || is_fix(ob))
 #define is_numbern(ob)              (is_npairn(ob) || is_fixn(ob))
@@ -634,11 +627,12 @@ struct object_t
 #define svtol(v)  (long)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define itosv(i)  (word)({ long x = (long)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 
-//#define svtoi(v)        ({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define svtoi(v)        ({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+/*
 #define svtoi(v)  (int) ({ word x = (word)v; SVTOI_CHECK(x); \
 		intptr_t sign = (intptr_t)(x << (8*sizeof(uintptr_t) - IPOS)) >> (8*sizeof(intptr_t) - 1); \
 		((x >> IPOS) ^ sign) - sign; \
-})
+})*/
 
 		// ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 
@@ -2223,7 +2217,7 @@ invoke:;
 		 *
 		 */
 		// bind ff to registers
-		case BINDFF: { // with-ff <node >l k v r */ // bindff - bind node left key val right, filling in #false when implicit
+		case BINDFF: { // ff:bind <node >l k v r   - bind node left key val right, filling in #false when implicit
 			word *ff = (word *) A0;
 			word hdr = *ff++;
 			A2 = *ff++; // key
@@ -2244,8 +2238,8 @@ invoke:;
 		}
 
 		// create red/black node
-		case MKBLACK: // mkblack l k v r t
-		case MKRED: { // mkred l k v r t
+		case MKBLACK: // ff:black l k v r t
+		case MKRED: { // ff:red l k v r t
 			word t = op == MKBLACK ? TFF : TFF|FFRED;
 			word l = A0;
 			word r = A3;
@@ -2276,8 +2270,8 @@ invoke:;
 		    ip += 5; break;
 		}
 
-		// fftoggle - toggle node color
-		case FFTOGGLE: {
+		// toggle node color
+		case FFTOGGLE: { // ff:toggle
 			word *node = (word *) A0;
 			assert (is_reference(node));
 
@@ -2296,7 +2290,8 @@ invoke:;
 			ip += 2; break;
 		}
 
-		case FFREDQ: { // red? node r
+		// is node red predicate
+		case FFREDQ: { // ff:red? node r
 			word node = A0;
 			if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 				node = *(word*)node;
@@ -2307,6 +2302,7 @@ invoke:;
 			ip += 2; break;
 		}
 
+		// is node right predicate?
 		case FFRIGHTQ: { // ff:right? node r
 			word node = A0;
 			if (is_reference(node)) // assert to IEMPTY || is_reference() ?
