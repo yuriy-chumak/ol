@@ -186,7 +186,7 @@
 #include <dirent.h>
 #include <string.h>
 // no <alloca.h>, use http://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
-
+#include <setjmp.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -546,7 +546,8 @@ struct object_t
 #define INULL                       make_value(TCONST, 2)
 #define IEMPTY                      make_value(TCONST, 3) // empty ff
 #define IEOF                        make_value(TCONST, 4)
-#define IHALT                       INULL // FIXME: adde a distinct IHALT
+#define IHALT                       INULL // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
+#define IRETURN                     make_value(TCONST, 6)
 
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
@@ -1213,6 +1214,9 @@ struct ol_t
 	// вызвать GC если в памяти мало места в КБ
 	// для безусловного вызова передать -1
 	void (*gc)(int kb);
+
+	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
+	word R[NR];  // регистры виртуальной машины
 };
 
 
@@ -1247,29 +1251,46 @@ struct ol_t
 #define R3                          R[3]
 #define R4                          R[4]
 
+static jmp_buf cb_buffer;
+static jmp_buf cb_buffer2;
+
+void* userdatas[9];
+
+int callback(int userdata)
+{
+	__sync_synchronize();
+	if (setjmp(cb_buffer2) == 0)
+		longjmp(cb_buffer, userdata);
+	__sync_synchronize();
+	return 0;
+}
+
+int callbackcaller(int (*callback)(int), int userdata)
+{
+	int result;
+	result = callback(userdata); // вызвать колбэк три раза:
+	result = callback(userdata);
+	result = callback(userdata);
+	return result;
+}
+
 // Несколько замечаний по WIN32::ThreadProc
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
-
 static //__attribute__((aligned(8)))
 void* runtime(OL* ol, word* userdata) // userdata - is command line
 {
-	heap_t* heap;
+	heap_t* heap = &ol->heap;
 	register word *fp; // memory allocation pointer
 	int slice = TICKS; // default thread slice (n calls per slice)
 
-	int max_heap_size;
-
 	// регистры виртуальной машины:
-	word R[NR]; // 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
+	word* R = ol->R;
 
 	int breaked = 0;
 	seccompp = 0;
 
 	// инициализируем локальную память
-	heap          = &ol->heap;
-	max_heap_size =  ol->max_heap_size; // max heap size in MB
-
 	fp = heap->fp;
 
 	// все, машина инициализирована, отсигналимся
@@ -1318,6 +1339,22 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	// instruction pointer
 	unsigned char *ip = 0;
 
+	// todo: use MCP instead of userdata-lambda
+/*	int p = setjmp(cb_buffer);
+	if (p != 0) {
+		// called long_jmp
+		__sync_synchronize();
+		this = (word *) userdatas[p];
+		R[0] = R[3];
+		ticker = bank ? bank : 999;
+		bank = 0;
+
+		word hdr = *this;
+		R[3] = IRETURN;
+		acc = 1;
+		goto apply;
+	}*/
+
 	while (1) {
 		apply: // apply something at "this" to values in regs, or maybe switch context
 		if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
@@ -1345,6 +1382,9 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 			acc = 4;
 			continue;
 		} /* <- add a way to call the newobj vm prim table also here? */
+		if ((word)this == IRETURN) {
+			longjmp(cb_buffer2, 333);
+		}
 
 		// ...
 		if (is_reference(this)) { // если это аллоцированный объект
@@ -1492,7 +1532,7 @@ invoke:;
 
 		// проверим, не слишком ли мы зажрались
 		word heapsize = (word) heap->end - (word) heap->begin;
-		if ((heapsize / (1024*1024)) > max_heap_size)
+		if ((heapsize / (1024*1024)) > ol->max_heap_size)
 			breaked |= 8; // will be passed over to mcp at thread switch
 	}
 
@@ -1623,6 +1663,7 @@ invoke:;
 	// Rn - регистр машины (R[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
+mainloop:
 	for(;;) {
 		int op;//operation to execute:
 		switch ((op = *ip++) & 0x3F) {
@@ -2337,7 +2378,6 @@ invoke:;
 		//	CHECK(is_fixed(A0) && typeof (A0) == TFIX, A0, SYSCALL);
 			word op = uvtoi (A0);
 			word a = A1, b = A2, c = A3;
-//			fprintf(stderr, "SYSCALL(%d, %d, %d, %d)\n", op, a, b, c);
 
 			switch (op + seccompp) {
 
@@ -3196,11 +3236,11 @@ invoke:;
 				}
 				break;
 			case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
-				result = itoun (max_heap_size);
-				max_heap_size = uvtoi (a);
+				result = itoun (ol->max_heap_size);
+				ol->max_heap_size = uvtoi (a);
 				break;
 			case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
-				result = itoun (max_heap_size);
+				result = itoun (ol->max_heap_size);
 				break;
 			case 1008: /* get machine word size (in bytes) */ // todo: переделать на другой номер
 				result = itoun (sizeof (word));
@@ -3317,7 +3357,39 @@ invoke:;
 					result = (word*) ITRUE;
 #endif
 				break;
-			}
+
+			case 1111:
+				//userdatas[3] = (void*)a;
+
+				if (setjmp(cb_buffer) == 0)
+					callbackcaller(callback, 3);
+				else {
+					__sync_synchronize();
+//					if (setjmp(cb_buffer2) == 0) {
+						this = (word *) R[0];
+						R[0] = IFALSE;
+						R[3] = F(4); R[4] = a; R[5] = b; R[6] = c;
+						acc = 4;
+						if (ticker > 10)
+							bank = ticker; // deposit remaining ticks for return to thread
+						ticker = TICKS;
+						goto apply;
+//					}
+//					else
+//						longjmp(cb_buffer3, 8);
+				}
+				fprintf(stderr, "1111 out\n");
+
+				break;
+			case 1112: // todo: change to special command "RET FROM CALLBACK" ???
+				__sync_synchronize();
+				longjmp(cb_buffer2, 1); // todo: return a like in pinvoke!
+				// it can be done using pinvoke to the special function do_longjmp(void* arg)
+				// а чтонее - ссылки на переменную со значением, так как иначе нельзя будет возвращать нули!
+				break; // не нужен, todo: add special keyword __unreachable()
+
+			}// case
+
 			A4 = (word) result;
 			ip += 5; break;
 		}

@@ -151,8 +151,6 @@
          (tuple 'set!     10  3 1 set!)
          (tuple 'set-car! 11  2 1 set-car!)
          (tuple 'set-cdr! 12  2 1 set-cdr!)
-         ; 13 available
-         ; 14 available
 
          ; компараторы
          (tuple 'eq?      54  2 1 eq?)
