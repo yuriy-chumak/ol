@@ -1236,7 +1236,7 @@ struct ol_t
 	R[4] = F (opcode);\
 	R[5] = (word) (a);\
 	R[6] = (word) (b);\
-	goto invoke_mcp; }
+	return STATE_INVOKE_MCP; }
 #define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 #define A0                          R[ip[0]]
@@ -1355,20 +1355,26 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 		goto apply;
 	}*/
 
-	while (1) {
-		apply: // apply something at "this" to values in regs, or maybe switch context
+#define STATE_APPLY 1
+#define STATE_INVOKE 2
+#define STATE_INVOKE_MCP 3
+#define STATE_MAINLOOP 4
+
+	int __apply() {
+		// todo: разбить на сабстейты
 		if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
 			this = (word *) R[3]; /* call cont */
 			R[3] = (acc > 2) ? R[5] : IFALSE; /* default arg or false if none */
 			acc = 1;
-			continue;
+			return STATE_APPLY;
 		}
+
 		if ((word)this == IHALT) {
 			// a tread or mcp is calling the final continuation
 			this = (word *) R[0];
 			if (!is_reference(this)) {
 				fprintf(stderr, "Unexpected virtual machine exit\n");
-				return (void*) uvtol(R[3]);
+				return -1;//(void*) uvtol(R[3]);
 			}
 
 			R[0] = IFALSE; // set no mcp
@@ -1380,11 +1386,12 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 			ticker = TICKS;// ?
 			bank = 0;
 			acc = 4;
-			continue;
+			return STATE_APPLY;
 		} /* <- add a way to call the newobj vm prim table also here? */
-		if ((word)this == IRETURN) {
-			longjmp(cb_buffer2, 333);
-		}
+
+//		if ((word)this == IRETURN) {
+//			longjmp(cb_buffer2, 333);
+//		}
 
 		// ...
 		if (is_reference(this)) { // если это аллоцированный объект
@@ -1441,7 +1448,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 				}
 				this = cont;
 				acc = 1;
-				continue;
+				return STATE_APPLY;
 			}
 			else
 				if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
@@ -1510,152 +1517,43 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 			goto apply;
 
  */
-				continue;
+				return STATE_APPLY;
 			}
 
 			ip = (unsigned char *) &this[1];
-			break; // goto invoke
+			return STATE_INVOKE; // goto invoke
 		}
-		// else
-		ERROR(257, this, INULL); // not callable
+		else
+			ERROR(257, this, INULL); // not callable
 	}
-	goto invoke;
-invoke:;
-	// nargs and regs ready, maybe gc and execute ob
-
-	// если места в буфере не хватает, то мы вызываем GC,
-	//	а чтобы автоматически подкорректировались регистры,
-	//	мы их складываем в память во временный кортеж.
-	if (/*forcegc || */(fp >= heap->end - 16 * 1024)) {
-		dogc (16 * 1024 * sizeof(word));
-		ip = (unsigned char *) &this[1];
-
-		// проверим, не слишком ли мы зажрались
-		word heapsize = (word) heap->end - (word) heap->begin;
-		if ((heapsize / (1024*1024)) > ol->max_heap_size)
-			breaked |= 8; // will be passed over to mcp at thread switch
+	int __invoke_mcp() /* R4-R6 set, set R3=cont and R4=interop and call mcp */
+	{
+		this = (word *) R[0];
+		R[0] = IFALSE;
+		R[3] = F(3);
+		if (is_reference(this)) {
+			acc = 4;
+			return STATE_APPLY;
+		}
+		fprintf(stderr, "invoke_mcp failed\n");
+		return -1; // no mcp to handle error (fail in it?), so nonzero exit
 	}
+	void __try_gc() {
+		// nargs and regs ready, maybe gc and execute ob
 
-	// todo: add "NOP" function (may be 0x0 ?)
-	// todo: add "HLT" function (may be 0x0 ?)
+		// если места в буфере не хватает, то мы вызываем GC,
+		//	а чтобы автоматически подкорректировались регистры,
+		//	мы их складываем в память во временный кортеж.
+		if (/*forcegc || */(fp >= heap->end - 16 * 1024)) {
+			dogc (16 * 1024 * sizeof(word));
+			ip = (unsigned char *) &this[1];
 
-	// управляющие команды:
-#	define APPLY 20 // apply-cont = 20+64
-#	define RET   24
-#	define RUN   50
-	// безусловные переходы
-#	define GOTO   2       // jmp a, nargs
-//#	define GOTO_CODE 18   //
-//#	define GOTO_PROC 19   //
-//#	define GOTO_CLOS 21   //
-
-#	define SYS   27
-
-// 3, 4: OCLOSE
-// 6, 7: CLOSE1
-
-	// список команд смотреть в assembly.scm
-#	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
-#	define LD    14
-
-#	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
-#	define MOVE   9       //
-#	define MOV2   5       //
-
-#	define JEQ    8       // jeq
-#	define JP    16       // JZ, JN, JT, JF
-#	define JF2   25       // jf2
-
-	// примитивы языка:
-#	define RAW   60
-#	define RAWq  48       // (raw?), временное решение пока не придумаю как от него совсем избавиться
-
-#	define CONS  51
-
-#	define TYPE  15
-#	define SIZE  36
-#	define CAST  22
-
-#	define CAR   52
-#	define CDR   53
-#	define REF   47
-
-	// ?
-#	define SET   45
-#	define SETe  10
-
-	// ?
-#	define EQ    54
-#	define LESS  44
-
-#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
-
-#	define SYSCALL 63
-		// read, write, open, close must exist
-#		define SYSCALL_READ 0
-#		define SYSCALL_WRITE 1
-#		define SYSCALL_OPEN 2
-#		define SYSCALL_CLOSE 3
-#		define SYSCALL_STAT 4
-#		define SYSCALL_FSTAT 5
-//#		define SYSCALL_LSTAT 6
-
-#		ifndef SYSCALL_IOCTL
-#		define SYSCALL_IOCTL 16
-#		endif
-#		define SYSCALL_IOCTL_TIOCGETA 19
-
-#		define SYSCALL_EXIT 60
-#		define SYSCALL_GETDENTS 78
-
-#		define SYSCALL_GETTIMEOFDATE 96
-
-#		ifndef SYSCALL_GETRLIMIT
-#		define SYSCALL_GETRLIMIT 97
-#		endif
-#		ifndef SYSCALL_GETRUSAGE
-#		define SYSCALL_GETRUSAGE 98
-#		endif
-#		ifndef SYSCALL_SYSINFO
-#		define SYSCALL_SYSINFO 99
-#		endif
-#		if SYSCALL_SYSINFO
-#			include <sys/sysinfo.h>
-#		endif
-
-#		ifndef SYSCALL_PRCTL
-#		define SYSCALL_PRCTL 157
-#		endif
-#		define SYSCALL_KILL 62
-#		define SYSCALL_TIME 201
-
-#		define SYSCALL_DLOPEN 174
-#		define SYSCALL_DLCLOSE 176
-#		define SYSCALL_DLSYM 177
-#		define SYSCALL_DLERROR 178
-
-	// tuples, trees
-#	define MKT      23   // make tuple
-#	define BIND     32
-#	define LISTUPLE 35   // list -> typed tuple
-#	define BINDFF   49
-
-#	define MKRED    43
-#	define MKBLACK  42
-#	define FFTOGGLE 46
-#	define FFREDQ   41
-#	define FFRIGHTQ 37
-
-	// ALU
-#	define ADDITION       38
-#	define DIVISION       26
-#	define MULTIPLICATION 39
-#	define SUBTRACTION    40
-#	define BINARY_AND     55
-#	define BINARY_OR      56
-#	define BINARY_XOR     57
-#	define SHIFT_RIGHT    58
-#	define SHIFT_LEFT     59
+			// проверим, не слишком ли мы зажрались
+			word heapsize = (word) heap->end - (word) heap->begin;
+			if ((heapsize / (1024*1024)) > ol->max_heap_size)
+				breaked |= 8; // will be passed over to mcp at thread switch
+		}
+	}
 
 	// free numbers: 29(ncons), 30(ncar), 31(ncdr)
 
@@ -1663,8 +1561,130 @@ invoke:;
 	// Rn - регистр машины (R[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
-mainloop:
-	for(;;) {
+	int __mainloop() {
+
+			// todo: add "NOP" function (may be 0x0 ?)
+			// todo: add "HLT" function (may be 0x0 ?)
+
+			// управляющие команды:
+		#	define APPLY 20 // apply-cont = 20+64
+		#	define RET   24
+		#	define RUN   50
+			// безусловные переходы
+		#	define GOTO   2       // jmp a, nargs
+		//#	define GOTO_CODE 18   //
+		//#	define GOTO_PROC 19   //
+		//#	define GOTO_CLOS 21   //
+
+		#	define SYS   27
+
+		// 3, 4: OCLOSE
+		// 6, 7: CLOSE1
+
+			// список команд смотреть в assembly.scm
+		#	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
+		#	define LD    14
+
+		#	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
+		#	define MOVE   9       //
+		#	define MOV2   5       //
+
+		#	define JEQ    8       // jeq
+		#	define JP    16       // JZ, JN, JT, JF
+		#	define JF2   25       // jf2
+
+			// примитивы языка:
+		#	define RAW   60
+		#	define RAWq  48       // (raw?), временное решение пока не придумаю как от него совсем избавиться
+
+		#	define CONS  51
+
+		#	define TYPE  15
+		#	define SIZE  36
+		#	define CAST  22
+
+		#	define CAR   52
+		#	define CDR   53
+		#	define REF   47
+
+			// ?
+		#	define SET   45
+		#	define SETe  10
+
+			// ?
+		#	define EQ    54
+		#	define LESS  44
+
+		#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
+
+		#	define SYSCALL 63
+				// read, write, open, close must exist
+		#		define SYSCALL_READ 0
+		#		define SYSCALL_WRITE 1
+		#		define SYSCALL_OPEN 2
+		#		define SYSCALL_CLOSE 3
+		#		define SYSCALL_STAT 4
+		#		define SYSCALL_FSTAT 5
+		//#		define SYSCALL_LSTAT 6
+
+		#		ifndef SYSCALL_IOCTL
+		#		define SYSCALL_IOCTL 16
+		#		endif
+		#		define SYSCALL_IOCTL_TIOCGETA 19
+
+		#		define SYSCALL_EXIT 60
+		#		define SYSCALL_GETDENTS 78
+
+		#		define SYSCALL_GETTIMEOFDATE 96
+
+		#		ifndef SYSCALL_GETRLIMIT
+		#		define SYSCALL_GETRLIMIT 97
+		#		endif
+		#		ifndef SYSCALL_GETRUSAGE
+		#		define SYSCALL_GETRUSAGE 98
+		#		endif
+		#		ifndef SYSCALL_SYSINFO
+		#		define SYSCALL_SYSINFO 99
+		#		endif
+		#		if SYSCALL_SYSINFO
+		#			include <sys/sysinfo.h>
+		#		endif
+
+		#		ifndef SYSCALL_PRCTL
+		#		define SYSCALL_PRCTL 157
+		#		endif
+		#		define SYSCALL_KILL 62
+		#		define SYSCALL_TIME 201
+
+		#		define SYSCALL_DLOPEN 174
+		#		define SYSCALL_DLCLOSE 176
+		#		define SYSCALL_DLSYM 177
+		#		define SYSCALL_DLERROR 178
+
+			// tuples, trees
+		#	define MKT      23   // make tuple
+		#	define BIND     32
+		#	define LISTUPLE 35   // list -> typed tuple
+		#	define BINDFF   49
+
+		#	define MKRED    43
+		#	define MKBLACK  42
+		#	define FFTOGGLE 46
+		#	define FFREDQ   41
+		#	define FFRIGHTQ 37
+
+			// ALU
+		#	define ADDITION       38
+		#	define DIVISION       26
+		#	define MULTIPLICATION 39
+		#	define SUBTRACTION    40
+		#	define BINARY_AND     55
+		#	define BINARY_OR      56
+		#	define BINARY_XOR     57
+		#	define SHIFT_RIGHT    58
+		#	define SHIFT_LEFT     59
+
+		// ENTRY LOOP POINT
 		int op;//operation to execute:
 		switch ((op = *ip++) & 0x3F) {
 		case 0: // todo: change 0 to NOP, add new code for super_dispatch
@@ -1675,7 +1695,7 @@ mainloop:
 			default:
 				ERROR(258, F(op), ITRUE);
 			}
-			goto apply;
+			return STATE_APPLY;
 
 		// free commands
 #ifdef HAS_PINVOKE
@@ -1695,7 +1715,7 @@ mainloop:
 
 		case GOTO:
 			this = (word *)A0; acc = ip[1];
-			goto apply;
+			return STATE_APPLY;
 
 //		case GOTO_CODE:
 //			this = (word *)A0; acc = ip[1];
@@ -1750,14 +1770,14 @@ mainloop:
 				arity++;
 			}
 			acc = arity;
-			goto apply;
+			return STATE_APPLY;
 		}
 
 		case RET: // return value
 			this = (word *) R[3];
 			R[3] = A0;
 			acc = 1;
-			goto apply;
+			return STATE_APPLY;
 
 		case SYS: // sys continuation op arg1 arg2
 			this = (word *) R[0];
@@ -1767,7 +1787,7 @@ mainloop:
 			if (ticker > 10)
 				bank = ticker; // deposit remaining ticks for return to thread
 			ticker = TICKS;
-			goto apply;
+			return STATE_APPLY;
 
 		case RUN: { // run thunk quantum
 //			if (ip[0] != 4 || ip[1] != 5)
@@ -1786,12 +1806,12 @@ mainloop:
 				while (--pos)
 					R[pos] = this[pos];
 				ip = ((unsigned char *) code) + W;
-				continue; // no apply, continue
+				break;  // continue; // no apply, continue
 			}
 			// else call a thunk with terminal continuation:
 			R[3] = IHALT; // exit via R0 when the time comes
 			acc = 1;
-			goto apply;
+			return STATE_APPLY;
 		}
 
 
@@ -1857,10 +1877,10 @@ mainloop:
 		}
 
 
-		case 3: OCLOSE(TCLOS); continue;
-		case 4: OCLOSE(TPROC); continue;
-		case 6: CLOSE1(TCLOS); continue;
-		case 7: CLOSE1(TPROC); continue;
+		case 3: OCLOSE(TCLOS); break;//continue;
+		case 4: OCLOSE(TPROC); break;//continue;
+		case 6: CLOSE1(TCLOS); break;//continue;
+		case 7: CLOSE1(TPROC); break;//continue;
 
 		/************************************************************************************/
 		// более высокоуровневые конструкции
@@ -3358,6 +3378,7 @@ mainloop:
 #endif
 				break;
 
+/* TEMP for callbacks
 			case 1111:
 				//userdatas[3] = (void*)a;
 
@@ -3373,7 +3394,7 @@ mainloop:
 						if (ticker > 10)
 							bank = ticker; // deposit remaining ticks for return to thread
 						ticker = TICKS;
-						goto apply;
+						return STATE_APPLY;
 //					}
 //					else
 //						longjmp(cb_buffer3, 8);
@@ -3387,7 +3408,7 @@ mainloop:
 				// it can be done using pinvoke to the special function do_longjmp(void* arg)
 				// а чтонее - ссылки на переменную со значением, так как иначе нельзя будет возвращать нули!
 				break; // не нужен, todo: add special keyword __unreachable()
-
+*/
 			}// case
 
 			A4 = (word) result;
@@ -3397,19 +3418,31 @@ mainloop:
 			ERROR(op, new_string("Invalid opcode"), ITRUE);
 			break;
 		}
-		continue;
-	}// while(1);
+		return STATE_MAINLOOP;
+	}// mainloop
 
-invoke_mcp: /* R4-R6 set, set R3=cont and R4=interop and call mcp */
-	this = (word *) R[0];
-	R[0] = IFALSE;
-	R[3] = F(3);
-	if (is_reference(this)) {
-		acc = 4;
-		goto apply;
+/* MAIN STATE MACHINE */
+	int state;
+	state = STATE_APPLY; // initial state
+
+	while (1)
+	switch (state) {
+	case STATE_APPLY:
+		state = __apply(); // apply something at "this" to values in regs, or maybe switch context
+		break;
+	case STATE_INVOKE:
+		__try_gc();
+		state = STATE_MAINLOOP;
+		break;
+	case STATE_MAINLOOP:
+		state = __mainloop();
+		break;
+	case STATE_INVOKE_MCP:
+		state = __invoke_mcp();
+		break;
+	case -1:
+		return 0;
 	}
-	fprintf(stderr, "invoke_mcp failed\n");
-	return (void*) -1; // no mcp to handle error (fail in it?), so nonzero exit
 }
 
 
