@@ -1263,9 +1263,8 @@ struct ol_t
 
 // state machine:
 #define STATE_APPLY 1
-#define STATE_INVOKE 2
-#define STATE_INVOKE_MCP 3
-#define STATE_MAINLOOP 4
+#define STATE_INVOKE_MCP 2
+#define STATE_MAINLOOP 3
 
 
 static int invoke_mcp(OL *ol) /* R4-R6 set, set R3=cont and R4=interop and call mcp */
@@ -1281,26 +1280,6 @@ static int invoke_mcp(OL *ol) /* R4-R6 set, set R3=cont and R4=interop and call 
 	}
 	fprintf(stderr, "invoke_mcp failed\n");
 	return -1; // no mcp to handle error (fail in it?), so nonzero exit
-}
-
-static void try_gc(OL *ol) // not state?
-{
-	heap_t* heap = &ol->heap;
-	int reserved = 16 * 1024; // todo: change this to adequate value
-	// nargs and regs ready, maybe gc and execute ob
-
-	// если места в буфере не хватает, то мы вызываем GC,
-	//	а чтобы автоматически подкорректировались регистры,
-	//	мы их складываем в память во временный кортеж.
-	if (/*forcegc || */(ol->heap.fp >= heap->end - reserved)) { // TODO: переделать
-		ol->gc(ol, reserved);
-
-		word heapsize = (word) heap->end - (word) heap->begin;
-		if ((heapsize / (1024*1024)) > ol->max_heap_size)
-			ol->breaked |= 8; // will be passed over to mcp at thread switch
-
-		ol->ip = (unsigned char *) &ol->this[1];
-	}
 }
 
 static int apply(OL *ol)
@@ -1486,7 +1465,25 @@ static int apply(OL *ol)
 
 		ol->this = this;
 		ol->arity = acc;
-		return STATE_INVOKE; // goto invoke
+
+		heap_t* heap = &ol->heap;
+		int reserved = 16 * 1024; // todo: change this to adequate value
+		// nargs and regs ready, maybe gc and execute ob
+
+		// если места в буфере не хватает, то мы вызываем GC,
+		//	а чтобы автоматически подкорректировались регистры,
+		//	мы их складываем в память во временный кортеж.
+		if (/*forcegc || */(ol->heap.fp >= heap->end - reserved)) { // TODO: переделать
+			ol->gc(ol, reserved);
+
+			word heapsize = (word) heap->end - (word) heap->begin;
+			if ((heapsize / (1024*1024)) > ol->max_heap_size)
+				ol->breaked |= 8; // will be passed over to mcp at thread switch
+
+			ol->ip = (unsigned char *) &ol->this[1];
+		}
+
+		return STATE_MAINLOOP; // goto invoke
 	}
 	else
 		ERROR2(257, this, INULL); // not callable
@@ -3450,7 +3447,6 @@ static //__attribute__((aligned(8)))
 void* runtime(OL* ol, word* userdata) // userdata - is command line
 {
 	heap_t* heap = &ol->heap;
-	word* R = ol->R; // регистры виртуальной машины:
 	seccompp = 0;    // static variable, todo: change to local
 
 	word* ptrs = (word*) heap->begin;
@@ -3461,6 +3457,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	word* this = (word*) ptrs[nobjs];
 
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
+	word* R = ol->R; // регистры виртуальной машины:
 	for (ptrdiff_t i = 0; i < NR; i++)
 		R[i] = INULL;
 	R[0] = IFALSE; // MCP - master control program
@@ -3503,17 +3500,16 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	case STATE_APPLY:
 		state = apply(ol); // apply something at "this" to values in regs, or maybe switch context
 		break;
-	case STATE_INVOKE:
-		try_gc(ol);
-		state = STATE_MAINLOOP;
+	case STATE_INVOKE_MCP:
+		state = invoke_mcp(ol);
 		break;
 	case STATE_MAINLOOP:
 		state = mainloop(ol);
 		break;
-	case STATE_INVOKE_MCP:
-		state = invoke_mcp(ol);
-		break;
 	case -1:
+		return 0;
+	default:
+		assert(0); // unknown
 		return 0;
 	}
 }
