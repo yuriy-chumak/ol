@@ -412,7 +412,8 @@ typedef uintptr_t word;
 
 // todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
 //	и ptr на функцию, что делает финализацию.
-// todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
+// todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC !!!
+//	(идея: просто останавливаться на таких объектах, как на generation линии)
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
 #define IPOS      8  // === offsetof (struct direct, payload)
@@ -663,7 +664,7 @@ struct object_t
 // http://outflux.net/teach-seccomp/
 // http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
 // https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt
-#define SECCOMP                     10000
+#define SECCOMP                     10000 // todo: change to x1000 или что-то такое
 static int seccompp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
@@ -1216,7 +1217,7 @@ struct ol_t
 	void (*gc)(OL* ol, int kb);
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
-	word R[NR];  // регистры виртуальной машины
+	word R[NR+1];  // регистры виртуальной машины     // +1 is CB:TEMP
 	word *this;
 
 	unsigned char *ip;
@@ -1255,25 +1256,103 @@ struct ol_t
 #define A3                          R[ip[3]]
 #define A4                          R[ip[4]]
 #define A5                          R[ip[5]]
-#define R0                          R[0]
-#define R1                          R[1]
-#define R2                          R[2]
-#define R3                          R[3]
-#define R4                          R[4]
+#define R0                          (word*)R[0]
+#define R1                          (word*)R[1]
+#define R2                          (word*)R[2]
+#define R3                          (word*)R[3]
+#define R4                          (word*)R[4]
 
 // state machine:
 #define STATE_APPLY 1
 #define STATE_INVOKE_MCP 2
 #define STATE_MAINLOOP 3
+static int apply(OL *ol);
+static int invoke_mcp(OL *ol);
+static int mainloop(OL *ol);
 
 
-static int invoke_mcp(OL *ol) /* R4-R6 set, set R3=cont and R4=interop and call mcp */
+
+static jmp_buf cb_buffer;
+static jmp_buf cb_buffer2;
+
+void* userdatas[9];
+void* userdata = INULL;
+
+int callback(void* vm)
+{
+	OL* ol = (OL*) vm;
+	word* R = ol->R;
+
+	//word* cont = R[3];
+	fprintf(stdout, "\nR[3] = %p\n", R[3]);
+
+/*	ol->this = userdatas[0]; // R[0]
+	R[0] = IFALSE;
+	R[3] = F(4);
+	R[4] = userdatas[1];
+	R[5] = userdatas[2];
+	R[6] = userdatas[3];
+	if (ol->ticker > 10)
+		ol->bank = ol->ticker; // deposit remaining ticks for return to thread
+	ol->ticker = TICKS;
+	ol->arity = 4;*/
+
+	ol->this = userdata; // lambda для обратного вызова
+	ol->ticker = ol->bank ? ol->bank : 1000;
+	ol->bank = 0;
+	assert (is_reference(ol->this));
+	assert (typeof (*ol->this) != TTHREAD);
+
+	R[0] = R[3]; // подменяем mcp своим продолжением?
+	R[3] = IRETURN; // exit via R0 when the time comes
+	fprintf(stdout, "\nR[0] = %p\n", R[0]);
+
+	ol->arity = 1; // why?
+	// make apply
+
+	int state = STATE_APPLY;
+	while (1)
+	switch (state) {
+	case STATE_APPLY:
+		state = apply(ol); // apply something at "this" to values in regs, or maybe switch context
+		break;
+	case STATE_INVOKE_MCP:
+		state = invoke_mcp(ol);
+		break;
+	case STATE_MAINLOOP:
+		state = mainloop(ol);
+		break;
+	case -1:
+		fprintf(stdout, "\nR[0] = %p\n", R[0]); fflush(stdout);
+		//R[3] = cont;
+
+		R[3] = R[0];
+		R[0] = IFALSE; // ??? наверное да, так как прежний R0 уже должен стать недействительным
+		return 0; // return from callback
+	default:
+		assert(0); // unknown
+		return 0;
+	}
+}
+
+int callbackcaller(int (*callback)(void*), void* userdata)
+{
+	int result;
+	result = callback(userdata); // вызвать колбэк три раза:
+//	result = callback(userdata);
+//	result = callback(userdata);
+	return result;
+}
+
+
+
+static int invoke_mcp(OL *ol) /* R4-R6 set, and call mcp */
 {
 	word* R = ol->R;
 
 	ol->this = (word *) R[0];
 	R[0] = IFALSE;
-	R[3] = F(3);
+	R[3] = F(3); // vm thrown error
 	if (is_reference(ol->this)) {
 		ol->arity = 4;
 		return STATE_APPLY;
@@ -1300,14 +1379,14 @@ static int apply(OL *ol)
 	}
 
 	if ((word)this == IHALT) {
-		// a tread or mcp is calling the final continuation
+		// a thread or mcp is calling the final continuation
 		this = (word *) R[0];
 		if (!is_reference(this)) {
 			fprintf(stderr, "Unexpected virtual machine exit\n");
 			return -1;//(void*) uvtol(R[3]);
 		}
 
-		R[0] = IFALSE; // set no mcp
+		R[0] = IFALSE; // set mcp yes
 		R[4] = R[3];
 		R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
 		R[5] = IFALSE;
@@ -1322,9 +1401,9 @@ static int apply(OL *ol)
 		return STATE_APPLY;
 	} /* <- add a way to call the newobj vm prim table also here? */
 
-//		if ((word)this == IRETURN) {
-//			longjmp(cb_buffer2, 333);
-//		}
+	if ((word)this == IRETURN) {
+		return -1; // колбек закончен! надо просто выйти наверх (todo: change to special state)
+	}
 
 	// ...
 	if (is_reference(this)) { // если это аллоцированный объект
@@ -1422,8 +1501,6 @@ static int apply(OL *ol)
 				// 1 - runnig and time slice exhausted
 				// 10: breaked - call signal handler
 				// 14: memory limit was exceeded
-				// NEW: код вызова коллбека, и уже в mcp надо будет обработать эту таску, причем
-				//	в контексте вызвавшего потока!!!
 				R[3] = ol->breaked ? ((ol->breaked & 8) ? F(14) : F(10)) : F(1); // fixme - handle also different signals via one handler
 				R[4] = (word) state; // thread state
 				R[5] = F(ol->breaked); // сюда можно передать userdata из потока
@@ -1646,8 +1723,8 @@ static int mainloop(OL* ol)
 			ol->ip = ip;
 			ERROR(258, F(op), ITRUE);
 		}
-		ol->ip = ip;
-		return STATE_APPLY;
+		ol->ip = ip; // todo: возможно не нужен, так как ip перезапишется
+		return STATE_APPLY; // ???
 
 	// free commands
 #ifdef HAS_PINVOKE
@@ -1668,7 +1745,7 @@ static int mainloop(OL* ol)
 	case GOTO:
 		ol->this = (word *)A0;
 		ol->arity = ip[1];
-		ol->ip = ip;
+		ol->ip = ip; // todo: возможно не нужен, так как ip перезапишется
 		return STATE_APPLY;
 
 //		case GOTO_CODE:
@@ -1727,7 +1804,7 @@ static int mainloop(OL* ol)
 		acc = arity;
 
 		ol->arity = acc;
-		ol->ip = ip;
+		ol->ip = ip; // todo: возможно не нужен, так как ip перезапишется
 		return STATE_APPLY;
 	}
 
@@ -1736,7 +1813,7 @@ static int mainloop(OL* ol)
 		R[3] = A0;
 		ol->arity = 1;
 
-		ol->ip = ip;
+//		ol->ip = ip; // todo: возможно не нужен, так как ip перезапишется
 		return STATE_APPLY;
 
 	case SYS: // sys continuation op arg1 arg2
@@ -1748,7 +1825,7 @@ static int mainloop(OL* ol)
 			ol->bank = ol->ticker; // deposit remaining ticks for return to thread
 		ol->ticker = TICKS;
 
-		ol->ip = ip;
+		ol->ip = ip; // todo: возможно не нужен, так как ip перезапишется
 		return STATE_APPLY;
 
 	case RUN: { // run thunk quantum
@@ -1774,7 +1851,7 @@ static int mainloop(OL* ol)
 		R[3] = IHALT; // exit via R0 when the time comes
 		ol->arity = 1;
 
-		ol->ip = ip;
+		ol->ip = ip; // todo: возможно не нужен, так как ip перезапишется
 		return STATE_APPLY;
 	}
 
@@ -2143,6 +2220,7 @@ static int mainloop(OL* ol)
 
 	// ошибка арности
 	case 17:
+		// TODO: добавить в .scm вывод ошибки четности
 		ERROR(17, ol->this, F(ol->arity));
 		break;
 
@@ -3342,37 +3420,51 @@ static int mainloop(OL* ol)
 #endif
 			break;
 
-/* TEMP for callbacks
-		case 1111:
+///* TEMP for callbacks
+		case 1111: { // todo: заменить на отдельную команду типа CALL_CALLBACK или что-то похожее, но НЕ syscall
+			userdata = (void*)a; // лямбда для обратного вызова, ее надо временно добавить к GC!
+
+			word r0 = R[0];
+//			word r1 = R[1];
+//			word r2 = R[2];
+
+			ol->heap.fp = fp;
+			callbackcaller(callback, ol); // it saves R[3]
+			fp = ol->heap.fp;
+
+			R[0] = r0; // возможно, это неважно
+//			R[1] = r1;
+//			R[2] = r2;
+
+			// форсим операцию RET, так как ip скорее всего уже уничтожен
+			ol->this = R3; // а чему должен теперь быть равен R[3]?
+			R[3] = F(177); // походу, тут должен лежать результат операции
+			ol->arity = 1; // почему 1 ???
+
+			return STATE_APPLY;
+		}
+
+			/*
 			//userdatas[3] = (void*)a;
 
-			if (setjmp(cb_buffer) == 0)
-				callbackcaller(callback, 3);
-			else {
-				__sync_synchronize();
-//					if (setjmp(cb_buffer2) == 0) {
-					this = (word *) R[0];
-					R[0] = IFALSE;
-					R[3] = F(4); R[4] = a; R[5] = b; R[6] = c;
-					acc = 4;
-					if (ticker > 10)
-						bank = ticker; // deposit remaining ticks for return to thread
-					ticker = TICKS;
-					return STATE_APPLY;
-//					}
-//					else
-//						longjmp(cb_buffer3, 8);
-			}
-			fprintf(stderr, "1111 out\n");
+			ol->this = (word *) R[0];
+			R[0] = IFALSE;
+			R[3] = F(4); R[4] = a; R[5] = b; R[6] = c;
+			if (ol->ticker > 10)
+				ol->bank = ol->ticker; // deposit remaining ticks for return to thread
+			ol->ticker = TICKS;
+			ol->arity = 4;
+			ol->ip = ip; // вряд ли надо
+			return STATE_APPLY;*/
 
-			break;
+		// больше не нужно!
 		case 1112: // todo: change to special command "RET FROM CALLBACK" ???
-			__sync_synchronize();
-			longjmp(cb_buffer2, 1); // todo: return a like in pinvoke!
+		//	__sync_synchronize();
+		//	longjmp(cb_buffer2, 1); // todo: return a like in pinvoke!
 			// it can be done using pinvoke to the special function do_longjmp(void* arg)
 			// а чтонее - ссылки на переменную со значением, так как иначе нельзя будет возвращать нули!
 			break; // не нужен, todo: add special keyword __unreachable()
-*/
+//*/
 		}// case
 
 		A4 = (word) result;
@@ -3390,33 +3482,12 @@ static int mainloop(OL* ol)
 
 
 
-static jmp_buf cb_buffer;
-static jmp_buf cb_buffer2;
-
-void* userdatas[9];
-
-int callback(int userdata)
-{
-	__sync_synchronize();
-	if (setjmp(cb_buffer2) == 0)
-		longjmp(cb_buffer, userdata);
-	__sync_synchronize();
-	return 0;
-}
-
-int callbackcaller(int (*callback)(int), int userdata)
-{
-	int result;
-	result = callback(userdata); // вызвать колбэк три раза:
-	result = callback(userdata);
-	result = callback(userdata);
-	return result;
-}
-
 
 static void OL__gc(OL* ol, int ws)
 {
 	word* R = ol->R; // регистры виртуальной машины
+
+	R[NR] = userdata; // CB:TEMP
 
 	word *fp = ol->heap.fp; // memory allocation pointer
 
@@ -3424,7 +3495,9 @@ static void OL__gc(OL* ol, int ws)
 		return;
 
 	int size = ws * W;
-	int p = 0, N = NR;
+	int p = 0, N = NR + 1; // +1 is CB:TEMP
+
+
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = (word*) new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
 	while (++p <= N) regs[p] = R[p-1];
@@ -3438,6 +3511,8 @@ static void OL__gc(OL* ol, int ws)
 
 	// закончили, почистим за собой:
 	ol->heap.fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
+
+	userdata = R[NR]; // CB:TEMP
 }
 
 // Несколько замечаний по WIN32::ThreadProc
