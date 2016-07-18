@@ -654,7 +654,8 @@ struct object_t
 
 #define make_integer(val) itoun(val)
 
-#define NR                          128 // see n-registers in register.scm
+#define CR                          128 // available callbacks
+#define NR                          128 + CR // see n-registers in register.scm
 
 #define GCPAD                      ((NR + 2) * sizeof(word)) // space at end of heap for starting GC
 #define MEMPAD                     (GCPAD + 1024) // резервируемое место для работы в памяти
@@ -1217,7 +1218,7 @@ struct ol_t
 	void (*gc)(OL* ol, int kb);
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
-	word R[NR+1];  // регистры виртуальной машины     // +1 is CB:TEMP
+	word R[NR];  // регистры виртуальной машины, NR регистр портится, так как GC юзает this !!!
 	word *this;
 
 	unsigned char *ip;
@@ -1226,6 +1227,12 @@ struct ol_t
 	int breaked;
 	int ticker;
 	int bank;
+};
+
+struct ol_cbt
+{
+	OL* ol;
+	int cb;
 };
 
 
@@ -1272,19 +1279,10 @@ static int mainloop(OL *ol);
 
 
 
-static jmp_buf cb_buffer;
-static jmp_buf cb_buffer2;
-
-void* userdatas[9];
-void* userdata = INULL;
-
-int callback(void* vm)
+int callback(struct ol_cbt* ud)
 {
-	OL* ol = (OL*) vm;
+	OL* ol = ud->ol;
 	word* R = ol->R;
-
-	//word* cont = R[3];
-	fprintf(stdout, "\nR[3] = %p\n", R[3]);
 
 /*	ol->this = userdatas[0]; // R[0]
 	R[0] = IFALSE;
@@ -1297,15 +1295,14 @@ int callback(void* vm)
 	ol->ticker = TICKS;
 	ol->arity = 4;*/
 
-	ol->this = userdata; // lambda для обратного вызова
-	ol->ticker = ol->bank ? ol->bank : 1000;
+	ol->this = (word*) ol->R[128 + ud->cb]; // lambda для обратного вызова
+	ol->ticker = ol->bank ? ol->bank : 999; // зачем это?
 	ol->bank = 0;
 	assert (is_reference(ol->this));
 	assert (typeof (*ol->this) != TTHREAD);
 
 	R[0] = R[3]; // подменяем mcp своим продолжением?
 	R[3] = IRETURN; // exit via R0 when the time comes
-	fprintf(stdout, "\nR[0] = %p\n", R[0]);
 
 	ol->arity = 1; // why?
 	// make apply
@@ -1323,9 +1320,6 @@ int callback(void* vm)
 		state = mainloop(ol);
 		break;
 	case -1:
-		fprintf(stdout, "\nR[0] = %p\n", R[0]); fflush(stdout);
-		//R[3] = cont;
-
 		R[3] = R[0];
 		R[0] = IFALSE; // ??? наверное да, так как прежний R0 уже должен стать недействительным
 		return 0; // return from callback
@@ -1335,12 +1329,12 @@ int callback(void* vm)
 	}
 }
 
-int callbackcaller(int (*callback)(void*), void* userdata)
+int callbackcaller(int (*callback)(struct ol_cbt*), struct ol_cbt* userdata)
 {
 	int result;
 	result = callback(userdata); // вызвать колбэк три раза:
-//	result = callback(userdata);
-//	result = callback(userdata);
+	result = callback(userdata);
+	result = callback(userdata);
 	return result;
 }
 
@@ -1481,7 +1475,7 @@ static int apply(OL *ol)
 		if (--ol->ticker < 0) {
 			// время потока вышло, переключим на следующий
 			ol->ticker = TICKS;
-			if (R[0] != IFALSE) { // if no mcp, ignore
+			if (R[0] != IFALSE) { // ignore if this is mcp
 				// save vm state and enter mcp cont at R0
 				ol->bank = 0;
 				acc += 4; //
@@ -1793,6 +1787,7 @@ static int mainloop(OL* ol)
 
 		while (is_pair(lst)) { // unwind argument list
 			// FIXME: unwind only up to last register and add limited rewinding to arity check
+			// тут бага, количество регистров может стать больше, чем надо, и пиздец. todo: исправить!!
 			if (reg > NR) { // dummy handling for now
 				fprintf(stderr, "TOO LARGE APPLY\n");
 				exit(3);
@@ -3422,48 +3417,31 @@ static int mainloop(OL* ol)
 
 ///* TEMP for callbacks
 		case 1111: { // todo: заменить на отдельную команду типа CALL_CALLBACK или что-то похожее, но НЕ syscall
-			userdata = (void*)a; // лямбда для обратного вызова, ее надо временно добавить к GC!
+			R[128 + 1] = a; // первый и единственный пока колбек
+			// todo: искать свободный и заполнять его (а вообще! поюзать уже готовую FF и держать колбеки в отдельном регистре!
+			// todo: хранить пару cb +
 
-			word r0 = R[0];
-//			word r1 = R[1];
-//			word r2 = R[2];
+			//word r0 = R[0]; // надо как-то сохранить иначе, а то GC уничтожит, todo: возможно, передавать как параметр в лямбду!
+			R[128 + 2] = R[0];
 
 			ol->heap.fp = fp;
-			callbackcaller(callback, ol); // it saves R[3]
+			// todo: для работы gc надо добавить в OL аналогичный R список колбеков.
+			// а точнее, просто увеличить R и использовать его вторую часть в колбечном качестве
+			// реципиентам отдавать индекс колбека в регистре!
+			struct ol_cbt cbt = { ol, 1 };
+			callbackcaller(callback, &cbt); // it saves R[3]
 			fp = ol->heap.fp;
 
-			R[0] = r0; // возможно, это неважно
-//			R[1] = r1;
-//			R[2] = r2;
+			R[0] = R[128 + 2];
 
 			// форсим операцию RET, так как ip скорее всего уже уничтожен
-			ol->this = R3; // а чему должен теперь быть равен R[3]?
-			R[3] = F(177); // походу, тут должен лежать результат операции
-			ol->arity = 1; // почему 1 ???
+			// баг (или фича): тут прерывается выполнение контекста, так как портится ip
+			ol->this = R3;
+			R[3] = F(177); // походу, тут должен лежать результат операции - результат вызова callbackcaller()
+			ol->arity = 1; // почему 1, потому что результат только 1
 
 			return STATE_APPLY;
 		}
-
-			/*
-			//userdatas[3] = (void*)a;
-
-			ol->this = (word *) R[0];
-			R[0] = IFALSE;
-			R[3] = F(4); R[4] = a; R[5] = b; R[6] = c;
-			if (ol->ticker > 10)
-				ol->bank = ol->ticker; // deposit remaining ticks for return to thread
-			ol->ticker = TICKS;
-			ol->arity = 4;
-			ol->ip = ip; // вряд ли надо
-			return STATE_APPLY;*/
-
-		// больше не нужно!
-		case 1112: // todo: change to special command "RET FROM CALLBACK" ???
-		//	__sync_synchronize();
-		//	longjmp(cb_buffer2, 1); // todo: return a like in pinvoke!
-			// it can be done using pinvoke to the special function do_longjmp(void* arg)
-			// а чтонее - ссылки на переменную со значением, так как иначе нельзя будет возвращать нули!
-			break; // не нужен, todo: add special keyword __unreachable()
 //*/
 		}// case
 
@@ -3487,15 +3465,13 @@ static void OL__gc(OL* ol, int ws)
 {
 	word* R = ol->R; // регистры виртуальной машины
 
-	R[NR] = userdata; // CB:TEMP
-
 	word *fp = ol->heap.fp; // memory allocation pointer
 
 	if (ws != 0 && fp < ol->heap.end - ws)
 		return;
 
 	int size = ws * W;
-	int p = 0, N = NR + 1; // +1 is CB:TEMP
+	int p = 0, N = NR;
 
 
 	// создадим в топе временный объект со значениями всех регистров
@@ -3511,8 +3487,6 @@ static void OL__gc(OL* ol, int ws)
 
 	// закончили, почистим за собой:
 	ol->heap.fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
-
-	userdata = R[NR]; // CB:TEMP
 }
 
 // Несколько замечаний по WIN32::ThreadProc
@@ -3533,11 +3507,11 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	word* R = ol->R; // регистры виртуальной машины:
-	for (ptrdiff_t i = 0; i < NR; i++)
+	for (ptrdiff_t i = 0; i < NR; i++) // todo: < sizeof(ol->R) / sizeof(ol->R[0])
 		R[i] = INULL;
 	R[0] = IFALSE; // MCP - master control program
 	R[3] = IHALT;  // continuation
-	R[4] = (word) userdata; // command line as '(script arg0 arg1 arg2 ...)
+	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
 
 	ol->this = this;
