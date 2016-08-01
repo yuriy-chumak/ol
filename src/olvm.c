@@ -492,9 +492,9 @@ struct object_t
 #define hdrsize(x)                  (((word)x) >> SPOS)
 #define padsize(x)                  (unsigned char)((((word)(x)) >> IPOS) & 7)
 
-#define typeof(x)                   (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
-#define valuetype(x)                (typeof (x) & 0x1F)
-#define reftype(x)                  (typeof (*(word*)(x)))
+#define thetype(x)                  (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
+#define valuetype(x)                (thetype (x) & 0x1F)
+#define reftype(x)                  (thetype (*(word*)(x)))
 
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
@@ -553,21 +553,21 @@ struct object_t
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
-//#define is_const(ob)                (is_value(ob)     && typeof (ob) == TCONST)
-#define is_port(ob)                 (is_value(ob)     && typeof (ob) == TPORT)
+//#define is_const(ob)                (is_value(ob)     && thetype (ob) == TCONST)
+#define is_port(ob)                 (is_value(ob)     && valuetype (ob) == TPORT)
 
-#define is_fix(ob)                  (is_value(ob)     && typeof (ob) == TFIX)
-#define is_fixn(ob)                 (is_value(ob)     && typeof (ob) == TFIXN)
-#define is_pair(ob)                 (is_reference(ob) &&        (*(word*)(ob)) == make_header(TPAIR,     3))
-#define is_npair(ob)                (is_reference(ob) &&        (*(word*)(ob)) == make_header(TINT,      3))
-#define is_npairn(ob)               (is_reference(ob) &&        (*(word*)(ob)) == make_header(TINTN,     3))
-#define is_rational(ob)             (is_reference(ob) &&        (*(word*)(ob)) == make_header(TRATIONAL, 3))
-#define is_complex(ob)              (is_reference(ob) &&        (*(word*)(ob)) == make_header(TCOMPLEX,  3))
+#define is_fix(ob)                  (is_value(ob)     && valuetype (ob) == TFIX)
+#define is_fixn(ob)                 (is_value(ob)     && valuetype (ob) == TFIXN)
+#define is_pair(ob)                 (is_reference(ob) &&         (*(word*)(ob)) == make_header(TPAIR,     3))
+#define is_npair(ob)                (is_reference(ob) &&         (*(word*)(ob)) == make_header(TINT,      3))
+#define is_npairn(ob)               (is_reference(ob) &&         (*(word*)(ob)) == make_header(TINTN,     3))
+#define is_rational(ob)             (is_reference(ob) &&         (*(word*)(ob)) == make_header(TRATIONAL, 3))
+#define is_complex(ob)              (is_reference(ob) &&         (*(word*)(ob)) == make_header(TCOMPLEX,  3))
 
-#define is_string(ob)               (is_reference(ob) && typeof (*(word*)(ob)) == TSTRING)
-#define is_tuple(ob)                (is_reference(ob) && typeof (*(word*)(ob)) == TTUPLE)
+#define is_string(ob)               (is_reference(ob) && reftype (ob) == TSTRING)
+#define is_tuple(ob)                (is_reference(ob) && reftype (ob) == TTUPLE)
 
-#define is_vptr(ob)                 (is_reference(ob) &&        (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
+#define is_vptr(ob)                 (is_reference(ob) &&         (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
 
 #define is_number(ob)               (is_npair(ob)  || is_fix(ob))
 #define is_numbern(ob)              (is_npairn(ob) || is_fixn(ob))
@@ -1284,12 +1284,12 @@ int callback(struct ol_cbt* ud)
 	OL* ol = ud->ol;
 	word* R = ol->R;
 
-/*
+///*
 	ol->this = (word*) ol->R[128 + ud->cb]; // lambda для обратного вызова
-	ol->ticker = ol->bank ? ol->bank : 999; // зачем это?
-	ol->bank = 0;
+//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это?
+//	ol->bank = 0;
 	assert (is_reference(ol->this));
-	assert (typeof (*ol->this) != TTHREAD);
+	assert (reftype (ol->this) != TTHREAD);
 
 	R[0] = R[3]; // подменяем mcp своим продолжением?
 	R[3] = IRETURN; // exit via R0 when the time comes
@@ -1300,29 +1300,29 @@ int callback(struct ol_cbt* ud)
 
 	// try to use threads:
 	// save vm state and enter mcp cont at R0
-	ol->bank = 0;
-	ol->arity += 4; //
-	R[ol->arity] = ol->R[128 + ud->cb];
+//	ol->bank = 0;
+//	ol->arity += 4; //
+//	R[ol->arity] = ol->R[128 + ud->cb];
 
-	word *thread;
-	register word *fp = ol->heap.fp;
-	thread = (word*) new (TTHREAD, ol->arity);
-	for (ptrdiff_t pos = 1; pos < ol->arity-1; pos++)
-		thread[pos] = R[pos];
-	thread[ol->arity-1] = R[ol->arity];
+//	word *thread;
+//	register word *fp = ol->heap.fp;
+//	thread = (word*) new (TTHREAD, ol->arity);
+//	for (ptrdiff_t pos = 1; pos < ol->arity-1; pos++)
+//		thread[pos] = R[pos];
+//	thread[ol->arity-1] = R[ol->arity];
+//
+//	ol->this = (word *) R[0]; // mcp
 
-	ol->this = (word *) R[0]; // mcp
-
-	R[0] = IFALSE; // remove mcp cont
-	// R3 marks the interop to perform
-	// 1 - runnig and time slice exhausted
-	// 10: breaked - call signal handler
-	// 14: memory limit was exceeded
-	R[3] = 1; //
-	R[4] = (word) thread; // thread state
-	R[5] = F(ol->breaked); // сюда можно передать userdata из потока
-	R[6] = IFALSE;
-	ol->arity = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
+//	R[0] = IFALSE; // remove mcp cont
+//	// R3 marks the interop to perform
+//	// 1 - runnig and time slice exhausted
+//	// 10: breaked - call signal handler
+//	// 14: memory limit was exceeded
+//	R[3] = 1; //
+//	R[4] = (word) thread; // thread state
+//	R[5] = F(ol->breaked); // сюда можно передать userdata из потока
+//	R[6] = IFALSE;
+//	ol->arity = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
 
 
 //*/
@@ -1339,6 +1339,7 @@ int callback(struct ol_cbt* ud)
 		state = mainloop(ol);
 		break;
 	case -1:
+		// возврат из колбека
 		R[3] = R[0];
 		R[0] = IFALSE; // ??? наверное да, так как прежний R0 уже должен стать недействительным
 		return 0; // return from callback
@@ -1352,8 +1353,8 @@ int callbackcaller(int (*callback)(struct ol_cbt*), struct ol_cbt* userdata)
 {
 	int result;
 	result = callback(userdata); // вызвать колбэк три раза:
-	result = callback(userdata);
-	result = callback(userdata);
+//	result = callback(userdata);
+//	result = callback(userdata);
 	return result;
 }
 
@@ -1421,7 +1422,7 @@ static int apply(OL *ol)
 	// ...
 	if (is_reference(this)) { // если это аллоцированный объект
 		//word hdr = *this & 0x0FFF; // cut size out, take just header info
-		word type = typeof (*this);
+		word type = reftype (this);
 		if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
@@ -1531,7 +1532,7 @@ static int apply(OL *ol)
 		CHECK(is_reference(this), this, RUN);
 
 		word hdr = *this;
-		if (typeof (hdr) == TTHREAD) {
+		if (thetype (hdr) == TTHREAD) {
 			int pos = hdrsize(hdr) - 1;
 			word code = this[pos];
 			acc = pos - 3;
@@ -1852,7 +1853,7 @@ static int mainloop(OL* ol)
 		CHECK(is_reference(ol->this), ol->this, RUN);
 
 		word hdr = *ol->this;
-		if (typeof (hdr) == TTHREAD) {
+		if (thetype (hdr) == TTHREAD) {
 			int pos = hdrsize(hdr) - 1;
 			word code = ol->this[pos];
 			ol->arity = pos - 3;
@@ -1994,7 +1995,7 @@ static int mainloop(OL* ol)
 		word T = A0;
 		if (is_reference(T))
 			T = *((word *) (T)); // todo: add RAWNESS to this (?)
-		A1 = F(typeof (T));
+		A1 = F(thetype (T));
 		ip += 2; break;
 	}
 
@@ -2022,7 +2023,7 @@ static int mainloop(OL* ol)
 		word T = A0;
 		word type = uvtoi(A1) & 63;
 
-//			if (type == TPORT && typeof(T) == TINT) {
+//			if (type == TPORT && thetype(T) == TINT) {
 //				A2 = IFALSE;
 //			}
 		// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
@@ -2415,7 +2416,7 @@ static int mainloop(OL* ol)
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((typeof (node) & (0x3C | FFRED)) == (TFF|FFRED))
+		if ((thetype (node) & (0x3C | FFRED)) == (TFF|FFRED))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
@@ -2427,7 +2428,7 @@ static int mainloop(OL* ol)
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((typeof (node) & (0x3C | FFRIGHT)) == (TFF|FFRIGHT))
+		if ((thetype (node) & (0x3C | FFRIGHT)) == (TFF|FFRIGHT))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
@@ -2454,7 +2455,7 @@ static int mainloop(OL* ol)
 		// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 		//                     http://www.x86-64.org/documentation/abi.pdf
 		word* result = (word*)IFALSE;  // default returned value is #false
-	//	CHECK(is_fixed(A0) && typeof (A0) == TFIX, A0, SYSCALL);
+	//	CHECK(is_fixed(A0) && thetype (A0) == TFIX, A0, SYSCALL);
 		word op = uvtoi (A0);
 		word a = A1, b = A2, c = A3;
 
@@ -2990,9 +2991,9 @@ static int mainloop(OL* ol)
 			time_t seconds;
 			if ((word) B == IFALSE)
 				seconds = time (0);
-			else if (typeof (B) == TFIX)
+			else if (valuetype (B) == TFIX)
 				seconds = uvtoi(B);
-				else if (is_reference(B) && typeof (*B) == TINT)
+			else if (is_reference(B) && reftype (B) == TINT)
 				seconds = untoi(B);
 			else
 				break;
@@ -3047,7 +3048,7 @@ static int mainloop(OL* ol)
 				if (GetNativeSystemInfo)
 					GetNativeSystemInfo(&si);
 				else
-					GetSystemInfo(&si);
+					GetSystemInfo(&si); // todo: make as getprocaddress
 
 				OSVERSIONINFOEXA oi;
 				oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXA);
@@ -3157,36 +3158,43 @@ static int mainloop(OL* ol)
 							snprintf(out->sysname, sizeof(out->sysname), "Windows %s, %s", name, type);
 							break;
 						}
-//
-//					            case 0x600: case 0x601:
-//					               if (oi.wProductType == VER_NT_WORKSTATION) ps1 = oi.dwMinorVersion == 0 ? "Vista" : "7";
-//					               else ps1 =  oi.dwMinorVersion == 0 ? "Server 2008" : "Server 2008 R2";
-//
-//					               DWORD dwType = PRODUCT_UNDEFINED;
-//					               if (NULL != (u.f=get_func("GetProductInfo"))) u.GetProductInfo(oi.dwMajorVersion,oi.dwMinorVersion,0,0,&dwType);
-//					               switch( dwType ) {
-//					                  case PRODUCT_ULTIMATE:          ps2 = "Ultimate Edition";       break;
-//					                  case PRODUCT_HOME_PREMIUM:      ps2 = "Home Premium Edition";   break;
-//					                  case PRODUCT_HOME_BASIC:        ps2 = "Home Basic Edition";     break;
-//					                  case PRODUCT_ENTERPRISE:        ps2 = "Enterprise Edition";     break;
-//					                  case PRODUCT_BUSINESS:          ps2 = "Business Edition";       break;
-//					                  case PRODUCT_STARTER:           ps2 = "Starter Edition";        break;
-//					                  case PRODUCT_CLUSTER_SERVER:    ps2 = "Cluster Server Edition"; break;
-//					                  case PRODUCT_DATACENTER_SERVER: ps2 = "Datacenter Edition";     break;
-//					                  case PRODUCT_DATACENTER_SERVER_CORE: ps2 = "Datacenter Edition (core installation)"; break;
-//					                  case PRODUCT_ENTERPRISE_SERVER: ps2 = "Enterprise Edition";     break;
-//					                  case PRODUCT_ENTERPRISE_SERVER_CORE: ps2 = "Enterprise Edition (core installation)"; break;
-//					                  case PRODUCT_ENTERPRISE_SERVER_IA64: ps2 = "Enterprise Edition for Itanium-based Systems"; break;
-//					                  case PRODUCT_SMALLBUSINESS_SERVER: ps2 = "Small Business Server"; break;
-//					                  case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM: ps2 = "Small Business Server Premium Edition"; break;
-//					                  case PRODUCT_STANDARD_SERVER:   ps2 = "Standard Edition";       break;
-//					                  case PRODUCT_STANDARD_SERVER_CORE: ps2 = "Standard Edition (core installation)"; break;
-//					                  case PRODUCT_WEB_SERVER:        ps2 = "Web Server Edition";     break;
-//					               }
-//					            break;
-				         }
-				      }
-				   }
+
+						case 0x600: case 0x601: {
+							const char* ps1;
+
+							if (oi.wProductType == VER_NT_WORKSTATION)
+								ps1 = oi.dwMinorVersion == 0 ? "Vista" : "7";
+							else
+								ps1 = oi.dwMinorVersion == 0 ? "Server 2008" : "Server 2008 R2";
+
+						//   DWORD dwType = PRODUCT_UNDEFINED;
+						//   if (NULL != (u.f=get_func("GetProductInfo"))) u.GetProductInfo(oi.dwMajorVersion,oi.dwMinorVersion,0,0,&dwType);
+						//   switch( dwType ) {
+						//	  case PRODUCT_ULTIMATE:          ps2 = "Ultimate Edition";       break;
+						//	  case PRODUCT_HOME_PREMIUM:      ps2 = "Home Premium Edition";   break;
+						//	  case PRODUCT_HOME_BASIC:        ps2 = "Home Basic Edition";     break;
+						//	  case PRODUCT_ENTERPRISE:        ps2 = "Enterprise Edition";     break;
+						//	  case PRODUCT_BUSINESS:          ps2 = "Business Edition";       break;
+						//	  case PRODUCT_STARTER:           ps2 = "Starter Edition";        break;
+						//	  case PRODUCT_CLUSTER_SERVER:    ps2 = "Cluster Server Edition"; break;
+						//	  case PRODUCT_DATACENTER_SERVER: ps2 = "Datacenter Edition";     break;
+						//	  case PRODUCT_DATACENTER_SERVER_CORE: ps2 = "Datacenter Edition (core installation)"; break;
+						//	  case PRODUCT_ENTERPRISE_SERVER: ps2 = "Enterprise Edition";     break;
+						//	  case PRODUCT_ENTERPRISE_SERVER_CORE: ps2 = "Enterprise Edition (core installation)"; break;
+						//	  case PRODUCT_ENTERPRISE_SERVER_IA64: ps2 = "Enterprise Edition for Itanium-based Systems"; break;
+						//	  case PRODUCT_SMALLBUSINESS_SERVER: ps2 = "Small Business Server"; break;
+						//	  case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM: ps2 = "Small Business Server Premium Edition"; break;
+						//	  case PRODUCT_STANDARD_SERVER:   ps2 = "Standard Edition";       break;
+						//	  case PRODUCT_STANDARD_SERVER_CORE: ps2 = "Standard Edition (core installation)"; break;
+						//	  case PRODUCT_WEB_SERVER:        ps2 = "Web Server Edition";     break;
+						//   }
+							break;
+						}
+						default:
+							break;
+						}
+					}
+				}
 //					   add_sp(os, oi.szCSDVersion);//*/
 
 
@@ -3306,7 +3314,7 @@ static int mainloop(OL* ol)
 		case 1000:
 			ol->gc(ol, 0);
 			break;
-		case 1001:
+		case 1001: // is raw object?
 			if (is_reference(a)) {
 				word hdr = *(word*)a;
 				if (is_rawobject(hdr))
@@ -3370,7 +3378,7 @@ static int mainloop(OL* ol)
 			void* module;
 			if ((word) filename == INULL)
 				module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
-			else if (is_reference(filename) && typeof (*filename) == TSTRING)
+			else if (is_reference(filename) && reftype (filename) == TSTRING)
 				module = dlopen((char*) &filename[1], mode);
 			else
 				break; // invalid filename, return #false
@@ -3395,7 +3403,7 @@ static int mainloop(OL* ol)
 
 			word* symbol = (word*) b;
 			// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
-			if (!(is_value(symbol) || typeof (*symbol) == TSTRING))
+			if (!(is_value(symbol) || reftype (symbol) == TSTRING))
 				break;
 
 			word function = (word)dlsym(module, is_value(symbol)
@@ -3453,13 +3461,13 @@ static int mainloop(OL* ol)
 			callbackcaller(callback, &cbt); // it saves R[3]
 			fp = ol->heap.fp;
 
-//			R[0] = R[128 + 2];
+			R[0] = R[128 + 2];
 
 			// форсим операцию RET, так как ip скорее всего уже уничтожен
 			// баг (или фича): тут прерывается выполнение контекста, так как портится ip
-//			ol->this = R3;
-//			R[3] = F(177); // походу, тут должен лежать результат операции - результат вызова callbackcaller()
-//			ol->arity = 1; // почему 1, потому что результат только 1
+			ol->this = R3;
+			R[3] = F(177); // походу, тут должен лежать результат операции - результат вызова callbackcaller()
+			ol->arity = 1; // почему 1, потому что результат только 1
 
 			return STATE_APPLY;
 		}
@@ -4333,7 +4341,7 @@ word* pinvoke(OL* self, word* arguments)
 		word arg = (word) car(p);
 
 /*		// todo: add argument overriding as PAIR as argument value
-		if (typeof (p[1]) == TPAIR) {
+		if (thetype (p[1]) == TPAIR) {
 			type = value (((word*)p[1])[1]);
 			arg = ((word*)p[1])[2];
 		}*/
