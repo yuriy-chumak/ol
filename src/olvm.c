@@ -475,7 +475,7 @@ struct object_t
 #define big                         unsigned long long //__int64
 #endif
 
-#define RAWBIT                      ((1 << RPOS))
+#define RAWBIT                      (1 << RPOS)
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
 
 #define make_value(type, value)        ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
@@ -1284,17 +1284,7 @@ int callback(struct ol_cbt* ud)
 	OL* ol = ud->ol;
 	word* R = ol->R;
 
-/*	ol->this = userdatas[0]; // R[0]
-	R[0] = IFALSE;
-	R[3] = F(4);
-	R[4] = userdatas[1];
-	R[5] = userdatas[2];
-	R[6] = userdatas[3];
-	if (ol->ticker > 10)
-		ol->bank = ol->ticker; // deposit remaining ticks for return to thread
-	ol->ticker = TICKS;
-	ol->arity = 4;*/
-
+/*
 	ol->this = (word*) ol->R[128 + ud->cb]; // lambda для обратного вызова
 	ol->ticker = ol->bank ? ol->bank : 999; // зачем это?
 	ol->bank = 0;
@@ -1305,8 +1295,37 @@ int callback(struct ol_cbt* ud)
 	R[3] = IRETURN; // exit via R0 when the time comes
 
 	ol->arity = 1; // why?
-	// make apply
+	// make apply */
 
+
+	// try to use threads:
+	// save vm state and enter mcp cont at R0
+	ol->bank = 0;
+	ol->arity += 4; //
+	R[ol->arity] = ol->R[128 + ud->cb];
+
+	word *thread;
+	register word *fp = ol->heap.fp;
+	thread = (word*) new (TTHREAD, ol->arity);
+	for (ptrdiff_t pos = 1; pos < ol->arity-1; pos++)
+		thread[pos] = R[pos];
+	thread[ol->arity-1] = R[ol->arity];
+
+	ol->this = (word *) R[0]; // mcp
+
+	R[0] = IFALSE; // remove mcp cont
+	// R3 marks the interop to perform
+	// 1 - runnig and time slice exhausted
+	// 10: breaked - call signal handler
+	// 14: memory limit was exceeded
+	R[3] = 1; //
+	R[4] = (word) thread; // thread state
+	R[5] = F(ol->breaked); // сюда можно передать userdata из потока
+	R[6] = IFALSE;
+	ol->arity = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
+
+
+//*/
 	int state = STATE_APPLY;
 	while (1)
 	switch (state) {
@@ -1475,20 +1494,20 @@ static int apply(OL *ol)
 		if (--ol->ticker < 0) {
 			// время потока вышло, переключим на следующий
 			ol->ticker = TICKS;
-			if (R[0] != IFALSE) { // ignore if this is mcp
+			if (R[0] != IFALSE) { // if mcp present
 				// save vm state and enter mcp cont at R0
 				ol->bank = 0;
 				acc += 4; //
-				R[acc] = (word) this;
 
 				word *state;
 				register word *fp = ol->heap.fp;
 				state = (word*) new (TTHREAD, acc);
 				for (ptrdiff_t pos = 1; pos < acc-1; pos++)
 					state[pos] = R[pos];
-				state[acc-1] = R[acc];
 
-				this = (word *) R[0]; // mcp
+				R[acc] = (word)this;
+				state[acc-1] = (word) this;
+				this = (word*) R[0]; // mcp
 
 				R[0] = IFALSE; // remove mcp cont
 				// R3 marks the interop to perform
@@ -1813,7 +1832,7 @@ static int mainloop(OL* ol)
 
 	case SYS: // sys continuation op arg1 arg2
 		ol->this = (word *) R[0];
-		R[0] = IFALSE;
+		R[0] = IFALSE; // let's call mcp
 		R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
 		ol->arity = 4;
 		if (ol->ticker > 10)
@@ -3011,7 +3030,7 @@ static int mainloop(OL* ol)
 			#ifdef _WIN32
 			struct utsname
 			{
-				char sysname[65];
+				char sysname[65];  //
 			    char nodename[65];
 			    char release[65];
 			    char version[65];
@@ -3022,7 +3041,7 @@ static int mainloop(OL* ol)
 				DWORD nodenamesize = sizeof(out->nodename);
 				GetComputerNameA(out->nodename, &nodenamesize);
 
-/*					SYSTEM_INFO si;
+				SYSTEM_INFO si;
 				VOID (WINAPI *GetNativeSystemInfo)(LPSYSTEM_INFO) = (VOID (WINAPI*)(LPSYSTEM_INFO))
 						GetProcAddress(GetModuleHandle("kernel32.dll"), "GetNativeSystemInfo");
 				if (GetNativeSystemInfo)
@@ -3031,18 +3050,20 @@ static int mainloop(OL* ol)
 					GetSystemInfo(&si);
 
 				OSVERSIONINFOEXA oi;
-				oi.dwOSVersionInfoSize = (DWORD)sizeof(OSVERSIONINFOEXA);
+				oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXA);
 				if (!GetVersionExA((OSVERSIONINFOA*)&oi)) {
-					oi.dwOSVersionInfoSize = (DWORD)sizeof(OSVERSIONINFOA);
-					if (!GetVersionExA((LPOSVERSIONINFOA)&oi)) {
-						// todo: try GetVersion
-						fprintf(stderr, "GetVersionEx failed");
-						return +13;
-					}
-				}*/
+					DWORD dwVersion = GetVersion();
+					oi.dwMajorVersion = (DWORD)(LOBYTE(LOWORD(dwVersion)));
+					oi.dwMinorVersion = (DWORD)(HIBYTE(LOWORD(dwVersion)));
+
+					if (dwVersion < 0x80000000)
+						oi.dwBuildNumber = (DWORD)(HIWORD(dwVersion));
+					else
+						oi.dwBuildNumber = 0;
+				}
 
 				strncpy(out->sysname, "Windows", sizeof(out->sysname));
-/*					if (oi.dwPlatformId < VER_PLATFORM_WIN32_NT) {
+				if (oi.dwPlatformId < VER_PLATFORM_WIN32_NT) {
 					oi.dwBuildNumber = (DWORD)LOWORD(oi.dwBuildNumber);
 					if (oi.dwMinorVersion == 0) {
 						strcat(out->sysname, " 95");
@@ -3074,7 +3095,7 @@ static int mainloop(OL* ol)
 						}
 					}
 					else {
-						switch (256 * oi.dwMajorVersion + oi.dwMinorVersion) {
+						switch (0x100 * oi.dwMajorVersion + oi.dwMinorVersion) {
 						case 0x500:
 							strcat(out->sysname, " 2000");
 							if      (oi.wProductType == VER_NT_WORKSTATION) strcat(out->sysname, " Professional");
@@ -3432,13 +3453,13 @@ static int mainloop(OL* ol)
 			callbackcaller(callback, &cbt); // it saves R[3]
 			fp = ol->heap.fp;
 
-			R[0] = R[128 + 2];
+//			R[0] = R[128 + 2];
 
 			// форсим операцию RET, так как ip скорее всего уже уничтожен
 			// баг (или фича): тут прерывается выполнение контекста, так как портится ip
-			ol->this = R3;
-			R[3] = F(177); // походу, тут должен лежать результат операции - результат вызова callbackcaller()
-			ol->arity = 1; // почему 1, потому что результат только 1
+//			ol->this = R3;
+//			R[3] = F(177); // походу, тут должен лежать результат операции - результат вызова callbackcaller()
+//			ol->arity = 1; // почему 1, потому что результат только 1
 
 			return STATE_APPLY;
 		}
