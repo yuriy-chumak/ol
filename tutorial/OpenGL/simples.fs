@@ -67,7 +67,7 @@ void main( void )
    result.xy            += float(quadrant.w);
 
    result               += grid/4.;
-   result               += abs(floor(mod(time*128., 2048.))-ulam) < 1. ? 1. : 0.;
+//   result               += abs(floor(mod(time*128., 2048.))-ulam) < 1. ? 1. : 0.;
    result.xyz           += print;
 
    result               *= seive;
@@ -106,6 +106,7 @@ float little_sieve(float n)
    }
    return float(prime);
 }
+
 
 float extract_bit(float n, float b)
 {

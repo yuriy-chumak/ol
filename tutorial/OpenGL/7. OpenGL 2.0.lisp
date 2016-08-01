@@ -40,21 +40,20 @@
                (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
                (errorLog (make-string maxLengthValue 0))
                (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
-            (runtime-error errorLog))))
+            (runtime-error errorLog vs))))
    (glAttachShader po vs)
 
    ; fragment shader:
-   (print *vm-args* ": " (cadr *vm-args*))
    (if (eq? (length *vm-args*) 2)
-   (glShaderSource fs 1 (list (c-string (runes->string (file->list (cadr *vm-args*))))) null)
+      (glShaderSource fs 1 (list (c-string (runes->string (file->list (cadr *vm-args*))))) null)
 
-   (glShaderSource fs 2 (list (c-string "#version 120 // OpenGL 2.1")
-                              (c-string "
-      // http://glslsandbox.com/e#19102.0
-      uniform float time;
+      (glShaderSource fs 2 (list (c-string "#version 120 // OpenGL 2.1")
+                                 (c-string "
+         // http://glslsandbox.com/e#19102.0
+         uniform float time;
 
-      #define iterations 14
-      #define formuparam 0.530
+         #define iterations 14
+         #define formuparam 0.530
 
       #define volsteps 18
       #define stepsize 0.2
@@ -129,7 +128,7 @@
                (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
                (errorLog (make-string maxLengthValue 0))
                (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
-            (runtime-error errorLog))))
+            (runtime-error errorLog fs))))
 
    (glAttachShader po fs)
 
