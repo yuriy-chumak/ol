@@ -1254,7 +1254,7 @@ struct ol_cbt
 	R[6] = (word) (b);\
 	ol->this = this; \
 	ol->arity = acc; \
-	return STATE_INVOKE_MCP; }
+	return STATE_ERROR; }
 #define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 #define A0                          R[ip[0]]
@@ -1271,78 +1271,57 @@ struct ol_cbt
 
 // state machine:
 #define STATE_APPLY 1
-#define STATE_INVOKE_MCP 2
+#define STATE_ERROR 2
 #define STATE_MAINLOOP 3
 static int apply(OL *ol);
-static int invoke_mcp(OL *ol);
+static int error(OL *ol);
 static int mainloop(OL *ol);
 
 
 
-int callback(struct ol_cbt* ud)
+int callback(struct ol_cbt* cb)
 {
-	OL* ol = ud->ol;
+	OL* ol = cb->ol;
 	word* R = ol->R;
 
 ///*
-	ol->this = (word*) ol->R[128 + ud->cb]; // lambda для обратного вызова
-//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это?
+	ol->this = (word*) ol->R[128 + cb->cb]; // lambda для обратного вызова
+//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, если без потоков работаем
 //	ol->bank = 0;
 	assert (is_reference(ol->this));
 	assert (reftype (ol->this) != TTHREAD);
 
-	R[0] = R[3]; // подменяем mcp своим продолжением?
-	R[3] = IRETURN; // exit via R0 when the time comes
+	// надо сохранить значения, иначе их уничтожит GC
+	// todo: складывать их в память! и восстанавливать оттуда же
+	R[128 + 2] = R[0]; // mcp?
+	R[128 + 3] = R[3]; // continuation
+
+	// вызовем колбек:
+	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callback функции
+	R[3] = IRETURN; // команда выхода из колбека
 
 	ol->arity = 1; // why?
-	// make apply */
 
-
-	// try to use threads:
-	// save vm state and enter mcp cont at R0
-//	ol->bank = 0;
-//	ol->arity += 4; //
-//	R[ol->arity] = ol->R[128 + ud->cb];
-
-//	word *thread;
-//	register word *fp = ol->heap.fp;
-//	thread = (word*) new (TTHREAD, ol->arity);
-//	for (ptrdiff_t pos = 1; pos < ol->arity-1; pos++)
-//		thread[pos] = R[pos];
-//	thread[ol->arity-1] = R[ol->arity];
-//
-//	ol->this = (word *) R[0]; // mcp
-
-//	R[0] = IFALSE; // remove mcp cont
-//	// R3 marks the interop to perform
-//	// 1 - runnig and time slice exhausted
-//	// 10: breaked - call signal handler
-//	// 14: memory limit was exceeded
-//	R[3] = 1; //
-//	R[4] = (word) thread; // thread state
-//	R[5] = F(ol->breaked); // сюда можно передать userdata из потока
-//	R[6] = IFALSE;
-//	ol->arity = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
-
-
-//*/
+	// make apply
 	int state = STATE_APPLY;
 	while (1)
 	switch (state) {
 	case STATE_APPLY:
 		state = apply(ol); // apply something at "this" to values in regs, or maybe switch context
 		break;
-	case STATE_INVOKE_MCP:
-		state = invoke_mcp(ol);
-		break;
 	case STATE_MAINLOOP:
 		state = mainloop(ol);
 		break;
-	case -1:
+	case -1: // todo: change -1 to STATE_DONE or something similar
 		// возврат из колбека
-		R[3] = R[0];
-		R[0] = IFALSE; // ??? наверное да, так как прежний R0 уже должен стать недействительным
+		R[3] = R[128 + 3];
+		R[0] = R[128 + 2]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
 		return 0; // return from callback
+
+	case STATE_ERROR:
+		assert (0); // не должно быть вызовов MCP в колбеке!
+		//state = invoke_mcp(ol);
+		break;
 	default:
 		assert(0); // unknown
 		return 0;
@@ -1360,7 +1339,7 @@ int callbackcaller(int (*callback)(struct ol_cbt*), struct ol_cbt* userdata)
 
 
 
-static int invoke_mcp(OL *ol) /* R4-R6 set, and call mcp */
+static int error(OL *ol) /* R4-R6 set, and call mcp */
 {
 	word* R = ol->R;
 
@@ -1483,31 +1462,24 @@ static int apply(OL *ol)
 			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
 				ERROR2(259, this, INULL);
 
-		// todo: сюда надо добавить реакцию на внешние колбеки
-		// похоже, при возникновении колбека надо вызвать MCP с кодом колбека (в userdata), и спецкодом
-		// а mcp должен сам поискать у себя в списке, какую из функций надо вызвать (например, через RUN)
-		// причем в конце обработчика колбека надо освободить семафор
-
-		// если пришел новый ждущий обработки коллбек, то не надо создавать отдельный поток,
-		//	надо просто выздать функцию из mcp, которая по userdata выберет кого именно выполнять,
-		//	после чего отпустит.
-		// TODO: не забыть про контекст вызвавшего потока!
+		// А не стоит ли нам переключить поток?
 		if (--ol->ticker < 0) {
 			// время потока вышло, переключим на следующий
 			ol->ticker = TICKS;
-			if (R[0] != IFALSE) { // if mcp present
-				// save vm state and enter mcp cont at R0
+			if (R[0] != IFALSE) { // if mcp present:
+				// save vm state and enter mcp cont at R0!
 				ol->bank = 0;
-				acc += 4; //
+				acc += 4;
 
-				word *state;
+				word *thread;
+
 				register word *fp = ol->heap.fp;
-				state = (word*) new (TTHREAD, acc);
+				thread = (word*) new (TTHREAD, acc);
 				for (ptrdiff_t pos = 1; pos < acc-1; pos++)
-					state[pos] = R[pos];
+					thread[pos] = R[pos];
 
 				R[acc] = (word)this;
-				state[acc-1] = (word) this;
+				thread[acc-1] = (word) this;
 				this = (word*) R[0]; // mcp
 
 				R[0] = IFALSE; // remove mcp cont
@@ -1516,47 +1488,25 @@ static int apply(OL *ol)
 				// 10: breaked - call signal handler
 				// 14: memory limit was exceeded
 				R[3] = ol->breaked ? ((ol->breaked & 8) ? F(14) : F(10)) : F(1); // fixme - handle also different signals via one handler
-				R[4] = (word) state; // thread state
+				R[4] = (word) thread; // thread state
 				R[5] = F(ol->breaked); // сюда можно передать userdata из потока
 				R[6] = IFALSE;
 				acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
 				ol->breaked = 0;
 
 				ol->heap.fp = fp;
+
+				// reapply new thread
+				ol->this = this;
+				ol->arity = acc;
+				return STATE_APPLY;
 			}
-/*	RUN sample:
-		this = (word *) A0;
-		R[0] = R[3];
-		ticker = bank ? bank : uvtoi (A1);
-		bank = 0;
-		CHECK(is_reference(this), this, RUN);
-
-		word hdr = *this;
-		if (thetype (hdr) == TTHREAD) {
-			int pos = hdrsize(hdr) - 1;
-			word code = this[pos];
-			acc = pos - 3;
-			while (--pos)
-				R[pos] = this[pos];
-			ip = ((unsigned char *) code) + W;
-			continue; // no apply, continue
 		}
-		// else call a thunk with terminal continuation:
-		R[3] = IHALT; // exit via R0 when the time comes
-		acc = 1;
-		goto apply;
-
-*/
-			ol->this = this;
-			ol->arity = acc;
-			return STATE_APPLY;
-		}
-
-		ol->ip = (unsigned char *) &this[1];
 
 		ol->this = this;
 		ol->arity = acc;
 
+		// теперь проверим доступную память
 		heap_t* heap = &ol->heap;
 		int reserved = 16 * 1024; // todo: change this to adequate value
 		// nargs and regs ready, maybe gc and execute ob
@@ -1571,10 +1521,10 @@ static int apply(OL *ol)
 			if ((heapsize / (1024*1024)) > ol->max_heap_size)
 				ol->breaked |= 8; // will be passed over to mcp at thread switch
 
-			ol->ip = (unsigned char *) &ol->this[1];
 		}
 
-		return STATE_MAINLOOP; // goto invoke
+		ol->ip = (unsigned char *) &ol->this[1];
+		return STATE_MAINLOOP; // let's execute
 	}
 	else
 		ERROR2(257, this, INULL); // not callable
@@ -1590,7 +1540,7 @@ static int apply(OL *ol)
 	R[6] = (word) (b);\
 	ol->ip = ip; \
 	heap->fp = fp; \
-	return STATE_INVOKE_MCP; }
+	return STATE_ERROR; }
 
 // ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 // Rn - регистр машины (R[n])
@@ -3448,10 +3398,6 @@ static int mainloop(OL* ol)
 		case 1111: { // todo: заменить на отдельную команду типа CALL_CALLBACK или что-то похожее, но НЕ syscall
 			R[128 + 1] = a; // первый и единственный пока колбек
 			// todo: искать свободный и заполнять его (а вообще! поюзать уже готовую FF и держать колбеки в отдельном регистре!
-			// todo: хранить пару cb +
-
-			//word r0 = R[0]; // надо как-то сохранить иначе, а то GC уничтожит, todo: возможно, передавать как параметр в лямбду!
-			R[128 + 2] = R[0];
 
 			ol->heap.fp = fp;
 			// todo: для работы gc надо добавить в OL аналогичный R список колбеков.
@@ -3460,8 +3406,6 @@ static int mainloop(OL* ol)
 			struct ol_cbt cbt = { ol, 1 };
 			callbackcaller(callback, &cbt); // it saves R[3]
 			fp = ol->heap.fp;
-
-			R[0] = R[128 + 2];
 
 			// форсим операцию RET, так как ip скорее всего уже уничтожен
 			// баг (или фича): тут прерывается выполнение контекста, так как портится ip
@@ -3538,8 +3482,8 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	word* R = ol->R; // регистры виртуальной машины:
 	for (ptrdiff_t i = 0; i < NR; i++) // todo: < sizeof(ol->R) / sizeof(ol->R[0])
 		R[i] = INULL;
-	R[0] = IFALSE; // MCP - master control program
-	R[3] = IHALT;  // continuation
+	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
+	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
 	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
 
@@ -3550,41 +3494,21 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	ol->bank = 0; // ticks deposited at interop
 	ol->ticker = TICKS; // any initial value ok
 
-	// instruction pointer
-//	unsigned char *ip = ol->ip = 0;
-
-	// todo: use MCP instead of userdata-lambda
-/*	int p = setjmp(cb_buffer);
-	if (p != 0) {
-		// called long_jmp
-		__sync_synchronize();
-		this = (word *) userdatas[p];
-		R[0] = R[3];
-		ticker = bank ? bank : 999;
-		bank = 0;
-
-		word hdr = *this;
-		R[3] = IRETURN;
-		acc = 1;
-		goto apply;
-	}*/
-
 /* MAIN STATE MACHINE */
-	int state;
-	state = STATE_APPLY; // initial state
+	int state = STATE_APPLY; // initial state
 
 	while (1)
 	switch (state) {
 	case STATE_APPLY:
 		state = apply(ol); // apply something at "this" to values in regs, or maybe switch context
 		break;
-	case STATE_INVOKE_MCP:
-		state = invoke_mcp(ol);
+	case STATE_ERROR:
+		state = error(ol); // обработчик ошибок
 		break;
 	case STATE_MAINLOOP:
 		state = mainloop(ol);
 		break;
-	case -1:
+	case -1: // exit
 		return 0;
 	default:
 		assert(0); // unknown
