@@ -167,6 +167,10 @@
 
 #ifdef __MINGW32__ // bug in mingw
 #define _cdecl __cdecl
+
+#ifdef __STRICT_ANSI__
+#undef __STRICT_ANSI__
+#endif
 #endif
 
 // http://joeq.sourceforge.net/about/other_os_java.html
@@ -3110,12 +3114,12 @@ static int mainloop(OL* ol)
 						}
 
 						case 0x600: case 0x601: {
-							const char* ps1;
+						//	const char* ps1;
 
-							if (oi.wProductType == VER_NT_WORKSTATION)
-								ps1 = oi.dwMinorVersion == 0 ? "Vista" : "7";
-							else
-								ps1 = oi.dwMinorVersion == 0 ? "Server 2008" : "Server 2008 R2";
+						//	if (oi.wProductType == VER_NT_WORKSTATION)
+						//		ps1 = oi.dwMinorVersion == 0 ? "Vista" : "7";
+						//	else
+						//		ps1 = oi.dwMinorVersion == 0 ? "Server 2008" : "Server 2008 R2";
 
 						//   DWORD dwType = PRODUCT_UNDEFINED;
 						//   if (NULL != (u.f=get_func("GetProductInfo"))) u.GetProductInfo(oi.dwMajorVersion,oi.dwMinorVersion,0,0,&dwType);
@@ -3160,11 +3164,11 @@ static int mainloop(OL* ol)
 				break;
 
 			result = new_tuple(
-					new_string(name.sysname),
-					new_string(name.nodename),
-					new_string(name.release),
-					new_string(name.version),
-					new_string(name.machine)
+				new_string(name.sysname),
+				new_string(name.nodename),
+				new_string(name.release),
+				new_string(name.version),
+				new_string(name.machine)
 			);
 
 			break;
