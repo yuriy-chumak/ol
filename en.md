@@ -4,6 +4,8 @@ title:  Summary
 date: 2016-06-14 15:51:52 UTC
 categories: en
 ---
+> Project news can be found in [russian translated](?ru) part of this site that frequently updates.
+<br/>
 
    Otus Lisp is a purely (*mostly*) functional dialect of Lisp.
 It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme.
