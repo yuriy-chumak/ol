@@ -110,7 +110,9 @@
 // http://www.catch22.net/tuts/reducing-executable-size
 
 // todo: add setsockopt syscall https://www.freebsd.org/doc/en/books/developers-handbook/ipv6.html
-
+// todo: перенести регистры в топ heap памяти, так их размер можно будет сделать динамическим,
+//       а заодно там же колбеки будут лежать нормально. и, главное, gc станет работать быстрее.
+// todo: колбеки выбирать из списка - первый нулевой
 
 #define __OLVM_NAME__ "OL"
 #define __OLVM_VERSION__ "1.0"
@@ -186,6 +188,7 @@
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <signal.h>
 #include <dirent.h>
 #include <string.h>
@@ -544,6 +547,11 @@ struct object_t
 
 #define TFLOAT                      (46)
 #define TDOUBLE                     (47)
+
+// todo: сделать два типа колбеков - короткий (такой как я сейчас сделаю)
+//       и "длинный", который будет запускать отдельный поток (сопрограмму) и позволит в это же время
+//       работать остальным сопрограммам.
+#define TCALLBACK                   (61) // type-callback, receives '(description . callback-lambda)
 
 // constants:
 #define IFALSE                      make_value(TCONST, 0)
@@ -1281,15 +1289,17 @@ static int apply(OL *ol);
 static int error(OL *ol);
 static int mainloop(OL *ol);
 
-
-
-int callback(struct ol_cbt* cb)
+// todo: добавить возможность вызова колбека как сопрограммы (так и назвать - сопрограмма)
+//       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
+//       все остальные свои сопрограммы.
+OL* callback_ol;
+int callback(int id, void* arg1, va_list args)
 {
-	OL* ol = cb->ol;
+	OL* ol = callback_ol;
 	word* R = ol->R;
 
 ///*
-	ol->this = (word*) ol->R[128 + cb->cb]; // lambda для обратного вызова
+	ol->this = cdr (ol->R[128 + id]); // lambda для обратного вызова
 //	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, если без потоков работаем
 //	ol->bank = 0;
 	assert (is_reference(ol->this));
@@ -1297,14 +1307,36 @@ int callback(struct ol_cbt* cb)
 
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же
-	R[128 + 2] = R[0]; // mcp?
-	R[128 + 3] = R[3]; // continuation
+	R[128 + 102] = R[0]; // mcp?
+	R[128 + 103] = R[3]; // continuation
 
 	// вызовем колбек:
 	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callback функции
 	R[3] = IRETURN; // команда выхода из колбека
+	ol->arity = 1;
 
-	ol->arity = 1; // why?
+	word* types = car(ol->R[128 + id]);
+
+	// todo: разбить на две части, первую с arg1, остальные с args
+	int a = 4;
+	word* fp = ol->heap.fp;
+	while (types != INULL) {
+		switch (car(types)) {
+		case F(TVPTR):
+			R[a] = new_vptr(arg1);
+			break;
+		case F(TINT):
+			R[a] = F(0);
+			break;
+		default:
+			fprintf(stderr, "uknonwn argument\n");
+			break;
+		}
+		a++;
+		ol->arity++;
+		types = cdr(types);
+	}
+	ol->heap.fp = fp;
 
 	// make apply
 	int state = STATE_APPLY;
@@ -1318,8 +1350,8 @@ int callback(struct ol_cbt* cb)
 		break;
 	case -1: // todo: change -1 to STATE_DONE or something similar
 		// возврат из колбека
-		R[3] = R[128 + 3];
-		R[0] = R[128 + 2]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
+		R[3] = R[128 + 103];
+		R[0] = R[128 + 102]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
 		return 0; // return from callback
 
 	case STATE_ERROR:
@@ -1331,6 +1363,28 @@ int callback(struct ol_cbt* cb)
 		return 0;
 	}
 }
+
+#define callbackX(x) \
+int callback##x(void* arg1, ...)\
+{\
+	va_list args;\
+	va_start(args, arg1);\
+	int r = callback(x, arg1, args);\
+	va_end(args);\
+	return r;\
+}
+callbackX(1)
+callbackX(2)
+callbackX(3)
+callbackX(4)
+
+int (*callbacks[])(int, void*, va_list) = {
+	0,
+	callback1,
+	callback2,
+	callback3,
+	callback4
+};
 
 int callbackcaller(int (*callback)(struct ol_cbt*), struct ol_cbt* userdata)
 {
@@ -3398,8 +3452,12 @@ static int mainloop(OL* ol)
 #endif
 			break;
 
+		// create callback
+//		case 1111: {
+//
+//		}
 ///* TEMP for callbacks
-		case 1111: { // todo: заменить на отдельную команду типа CALL_CALLBACK или что-то похожее, но НЕ syscall
+/*		case 1111: { // todo: заменить на отдельную команду типа CALL_CALLBACK или что-то похожее, но НЕ syscall
 			R[128 + 1] = a; // первый и единственный пока колбек
 			// todo: искать свободный и заполнять его (а вообще! поюзать уже готовую FF и держать колбеки в отдельном регистре!
 
@@ -3418,7 +3476,7 @@ static int mainloop(OL* ol)
 			ol->arity = 1; // почему 1, потому что результат только 1
 
 			return STATE_APPLY;
-		}
+		}*/
 //*/
 		}// case
 
@@ -3485,7 +3543,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	word* R = ol->R; // регистры виртуальной машины:
 	for (ptrdiff_t i = 0; i < NR; i++) // todo: < sizeof(ol->R) / sizeof(ol->R[0])
-		R[i] = INULL;
+		R[i] = IFALSE; // was: INULL, why??
 	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
 	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
 	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
@@ -3774,7 +3832,7 @@ int main(int argc, char** argv)
 #endif
 
 	OL* olvm =
-	OL_new(bootstrap, bootstrap != language ? free : NULL);
+	OL_new(bootstrap, bootstrap != language ? free : NULL); callback_ol = olvm; // last one is TEMP! for callback support
 	void* r = OL_eval(olvm, argc, argv);
 	OL_free(olvm);
 
@@ -3950,35 +4008,42 @@ word* pinvoke(OL* self, word* arguments)
 #if __amd64__
 		#define CALLFLOATS(conv) \
 			case 1 + 0x0100:\
-			         return ((conv word (*)  (float))\
+			        return ((conv word (*)  (float))\
 			                 function) (*(float*)&argv[0]);\
 			case 2 + 0x0200:\
-			         return ((conv word (*)  (word, float))\
+			        return ((conv word (*)  (word, float))\
 			                 function) (argv[0], *(float*)&argv[1]);\
+			case 3 + 0x0200:\
+			        return ((conv word (*)  (word, float, word))\
+			                 function) (argv[0], *(float*)&argv[1], argv[2]);\
 			case 3 + 0x0400:\
-			         return ((conv word (*)  (word, word, float))\
+			        return ((conv word (*)  (word, word, float))\
 			                 function) (argv[0], argv[1],\
 			                            *(float*)&argv[2]);\
 			case 3 + 0x0600:\
-			         return ((conv word (*)  (word, float, float))\
+			        return ((conv word (*)  (word, float, float))\
 			                 function) (argv[0], *(float*)&argv[1],\
 			                            *(float*)&argv[2]);\
 			case 4 + 0x0E00:\
-			         return ((conv word (*)  (word, float, float, float))\
+			        return ((conv word (*)  (word, float, float, float))\
 			                 function) (argv[0], *(float*)&argv[1],\
 			                            *(float*)&argv[2], *(float*)&argv[3]);\
 			\
 			case 2 + 0x0300:\
-			         return ((conv word (*)  (float, float))\
+			        return ((conv word (*)  (float, float))\
 			                 function) (*(float*)&argv[0], *(float*)&argv[1]);\
 			case 3 + 0x0700:\
-			         return ((conv word (*)  (float, float, float))\
+			        return ((conv word (*)  (float, float, float))\
 			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
 			                            *(float*)&argv[2]);\
 			case 4 + 0x0F00:\
-			         return ((conv word (*)  (float, float, float, float))\
+			        return ((conv word (*)  (float, float, float, float))\
 			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
-			                            *(float*)&argv[2], *(float*)&argv[3]);
+			                            *(float*)&argv[2], *(float*)&argv[3]);\
+			case 6 + 0x0E00:\
+	                return ((conv word (*)  (word, float, float, float, word, word))\
+	                         function) (argv[0], *(float*)&argv[1], *(float*)&argv[2],\
+	                                    *(float*)&argv[3], argv[4], argv[5]);
 #else
 		#define CALLFLOATS(conv)
 #endif
@@ -4373,14 +4438,20 @@ word* pinvoke(OL* self, word* arguments)
 			floats |= (0x100 << i);
 			#endif
 			break;
-		case TFLOAT + 0x40: {
+		case TFLOAT + 0x80:
+		case TFLOAT + 0x40: { // todo: add backroll after the call
+			if (arg == INULL) // empty array must return NULL
+				break;
+			if (arg == IFALSE)// empty array must return NULL
+				break;
+
 			int c = llen(arg);
-			float* p = (float*) __builtin_alloca(c * sizeof(float)); // todo: use new()
-			args[i] = (word)p;
+			float* f = (float*) __builtin_alloca(c * sizeof(float)); // todo: use new()
+			args[i] = (word)f;
 
 			word l = arg;
 			while (c--)
-				*p++ = to_float(car(l)), l = cdr(l);
+				*f++ = to_float(car(l)), l = cdr(l);
 			break;
 		}
 
@@ -4463,6 +4534,24 @@ word* pinvoke(OL* self, word* arguments)
 				*p++ = (word) &caar(src), src = cdr(src);
 			break;
 		}
+
+		case TCALLBACK: {
+			// todo: сделать поиск свободного индекса для колбека
+			//  а вообще - завести отдельную команду для создания колбека и для его освобождения
+			//  ведь как-то надо от них избавляться!
+			for (int c = 1; c < 5; c++) {
+				if (self->R[128+c] == IFALSE) {
+					self->R[128+c] = arg;
+					args[i] = callbacks[c];
+					break;
+				}
+			}
+
+//			self->R[128+1] = arg;
+//			args[i] = &callback1;
+
+			break;
+		}
 /*
 		case TTUPLE:
 			if ((word)arg == INULL || (word)arg == IFALSE)
@@ -4536,6 +4625,45 @@ word* pinvoke(OL* self, word* arguments)
 #else
 	got = call(returntype >> 8, function, args, i);
 #endif
+
+	// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
+	p = (word*)C;   // сами аргументы
+	t = (word*)cdr(B); // rtty
+
+	i = 0;
+	while ((word)p != INULL) { // пока есть аргументы
+		assert (reftype(p) == TPAIR); // assert(list)
+		assert (reftype(t) == TPAIR); // assert(list)
+
+		int type = value(car(t));
+		word arg = (word) car(p);
+
+		// destination type
+		switch (type) {
+		case TFLOAT + 0x80: {
+			// вот тут попробуем заполнить переменные назад
+			int c = llen(arg);
+			float* f = args[i];
+
+			word l = arg;
+			while (c--) {
+				float value = *f++;
+				word* num = car(l);
+				assert (reftype(num) == TRATIONAL);
+				car(num) = F((unsigned int)(value * 1000)); // todo: process negtive numbers
+				cdr(num) = F(1000);
+
+				l = cdr(l);
+			}
+			break;
+			}
+		}
+
+		p = (word*)cdr(p); // (cdr p)
+		t = (word*)cdr(t); // (cdr t)
+		i++;
+	}
+
 
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
