@@ -935,6 +935,10 @@
 (define $ (or
    (dlopen GL_LIBRARY)
    (runtime-error "Can't load OpenGL library")))
+(define WGL $)
+(define GLX (if linux? (dlopen "libGLX.so")))
+(define GDI (if win32? (dlopen "gdi32.dll")))
+;define EGL
 
 ;  Ð‘Ð°Ð·Ð¾Ð²Ð°Ñ ÑÐ¸ÑÑ‚ÐµÐ¼Ð° ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚ OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
 ; ÐŸÑ€Ð°Ð²Ð°Ñ. x-Ð½Ð°Ð¿Ñ€Ð°Ð²Ð¾, y-Ð²Ð²ÐµÑ€Ñ…, z-Ðº ÑÐµÐ±Ðµ
@@ -1755,14 +1759,10 @@
 ;   (else   (runtime-error "Unknown platform" uname))))
 
 ; Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ° Ñ€Ð°ÑÑˆÐ¸Ñ€ÐµÐ½Ð¸Ð¹ :
-(define GetProcAddress ; internal function
-   (dlsym $ type-vptr
-      (c-string (cond
-         (win32? "wglGetProcAddress")
-         (linux? "glXGetProcAddress")
-         ;apple? "
-         (else   (runtime-error "Unknown platform" uname))))
-      type-string))
+(define GetProcAddress (cond ; internal function
+   (win32? (dlsym WGL type-vptr "wglGetProcAddress" type-string))
+   (linux? (dlsym GLX type-vptr "glXGetProcAddress" type-string))
+   (else   (runtime-error "Unknown platform" uname))))
 
 (define (gl:GetProcAddress type name . prototype)
    (let ((rtty (cons type prototype))
@@ -1781,8 +1781,8 @@
 
 ;glXCreateContext     wglCreateContext
 (define gl:CreateContext (cond
-   (win32? (dlsym $ type-void* "wglCreateContext" type-void*))
-   (linux? (dlsym $ type-void* "glXCreateContext" Display* XVisualInfo* type-int+ type-int+))
+   (win32? (dlsym WGL type-void* "wglCreateContext" type-void*))
+   (linux? (dlsym GLX type-void* "glXCreateContext" Display* XVisualInfo* type-void* type-int+))
    ;apple? (dlsym $ type-void* "CGLCreateContext" ...)
    (else   (runtime-error "Unknown platform" uname))))
 
@@ -1802,13 +1802,13 @@
 ;XSync   GdiFlush
 
 (define gl:MakeCurrent (cond
-   (win32? (dlsym $ type-fix+ "wglMakeCurrent" type-void* type-void*))
-   (linux? (dlsym $ type-int+ "glXMakeCurrent" type-void* type-void* type-void*))
+   (win32? (dlsym WGL type-fix+ "wglMakeCurrent" type-void* type-void*))
+   (linux? (dlsym GLX type-int+ "glXMakeCurrent" type-void* type-void* type-void*))
    (else   (runtime-error "Unknown platform" uname))))
 
 (define gl:SwapBuffers (cond
-   (win32? (dlsym (dlopen "gdi32") type-fix+ "SwapBuffers" type-void*))
-   (linux? (dlsym $ type-void* "glXSwapBuffers" type-void* type-void*))
+   (win32? (dlsym GDI type-fix+ "SwapBuffers"    type-void*))
+   (linux? (dlsym GLX type-vptr "glXSwapBuffers" type-void* type-void*))
    (else   (runtime-error "Unknown platform" uname))))
 
 ;   (let*((display (XOpenDisplay null))
@@ -1943,34 +1943,36 @@
       ;"MINGW32_NT-5.2"
       ;...
       (else  (runtime-error "Unknown platform" uname))))
-(define $ (dlopen GLU_LIBRARY))
+(define GLU (or
+   (dlopen GLU_LIBRARY)
+   (runtime-error "Can't find glu library" #f)))
 
 (define GLUquadric* type-void*)
 
-   (define gluErrorString (dlsym $ GLubyte* "gluErrorString" GLenum))
-   (define gluOrtho2D     (dlsym $ GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
-   (define gluPerspective (dlsym $ GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
-   (define gluLookAt      (dlsym $ GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
+   (define gluErrorString (dlsym GLU GLubyte* "gluErrorString" GLenum))
+   (define gluOrtho2D     (dlsym GLU GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
+   (define gluPerspective (dlsym GLU GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
+   (define gluLookAt      (dlsym GLU GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
 
-   (define gluNewQuadric    (dlsym $ GLUquadric* "gluNewQuadric"))
-   (define gluDeleteQuadric (dlsym $ GLvoid "gluDeleteQuadric" GLUquadric*))
-   (define gluQuadricDrawStyle (dlsym $ GLvoid "gluQuadricDrawStyle" GLUquadric* GLenum))
+   (define gluNewQuadric    (dlsym GLU GLUquadric* "gluNewQuadric"))
+   (define gluDeleteQuadric (dlsym GLU GLvoid "gluDeleteQuadric" GLUquadric*))
+   (define gluQuadricDrawStyle (dlsym GLU GLvoid "gluQuadricDrawStyle" GLUquadric* GLenum))
       (define GLU_POINT               100010)
       (define GLU_LINE                100011)
       (define GLU_FILL                100012)
       (define GLU_SILHOUETTE          100013)
-   (define gluQuadricOrientation (dlsym $ GLvoid "gluQuadricOrientation" GLUquadric* GLenum))
+   (define gluQuadricOrientation (dlsym GLU GLvoid "gluQuadricOrientation" GLUquadric* GLenum))
       (define GLU_OUTSIDE             100020)
       (define GLU_INSIDE              100021)
 
-   (define gluSphere (dlsym $ GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
+   (define gluSphere (dlsym GLU GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
 
 (define GLUnurbs* type-void*)
-   (define gluNewNurbsRenderer (dlsym $ GLUnurbs* "gluNewNurbsRenderer"))
-   (define gluBeginSurface (dlsym $ GLvoid "gluBeginSurface" GLUnurbs*))
-   (define gluNurbsSurface (dlsym $ GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
-   (define gluEndSurface   (dlsym $ GLvoid "gluEndSurface" GLUnurbs*))
-   (define gluNurbsProperty(dlsym $ GLvoid "gluNurbsProperty" GLUnurbs* GLenum GLfloat))
+   (define gluNewNurbsRenderer (dlsym GLU GLUnurbs* "gluNewNurbsRenderer"))
+   (define gluBeginSurface (dlsym GLU GLvoid "gluBeginSurface" GLUnurbs*))
+   (define gluNurbsSurface (dlsym GLU GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
+   (define gluEndSurface   (dlsym GLU GLvoid "gluEndSurface" GLUnurbs*))
+   (define gluNurbsProperty(dlsym GLU GLvoid "gluNurbsProperty" GLUnurbs* GLenum GLfloat))
       ;/*     GLU_FILL                100012
       (define GLU_OUTLINE_POLYGON     100240)
       (define GLU_OUTLINE_PATCH       100241)

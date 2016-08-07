@@ -83,7 +83,7 @@
    ; -=( linux )=---------------------------------------------------------------------
    (linux?
       (let ((libx11 (dlopen "libX11.so"))
-            (libGL  (dlopen "libGL.so")))
+            (libGLX (dlopen "libGLX.so")))
       (let ((XOpenDisplay  (dlsym libx11 type-void* "XOpenDisplay" type-string))
             (XDefaultScreen(dlsym libx11 type-int+  "XDefaultScreen" type-void*))
             (XRootWindow   (dlsym libx11 type-void* "XRootWindow" type-void* type-int+))
@@ -99,8 +99,8 @@
             (XSelectInput (dlsym libx11 type-int+ "XSelectInput" type-void* type-void* type-int+))
             (XMapWindow   (dlsym libx11 type-int+ "XMapWindow" type-void* type-void*))
             (XStoreName   (dlsym libx11 type-int+ "XStoreName" type-void* type-void* type-string))
-            (glXChooseVisual  (dlsym libGL type-void* "glXChooseVisual" type-void* type-int+ type-void*))
-            (glXCreateContext (dlsym libGL type-void* "glXCreateContext" type-void* type-void* type-int+ type-int+)))
+            (glXChooseVisual  (dlsym libGLX type-void* "glXChooseVisual" type-void* type-int+ (vm:or type-int+ #x40)))
+            (glXCreateContext (dlsym libGLX type-void* "glXCreateContext" type-void* type-void* type-int+ type-int+)))
       (lambda (title)
          (let*((display (XOpenDisplay null))
                (screen (XDefaultScreen display))
@@ -108,18 +108,18 @@
                   0 0 WIDTH HEIGHT 1
                   (XBlackPixel display screen) (XWhitePixel display screen)))
                (vi (glXChooseVisual display screen
-                     (raw type-vector-raw '(
-                        4 0 0 0 ; GLX_RGBA
-                        5 0 0 0 ; GLX_DOUBLEBUFFER
-                        8 0 0 0  8 0 0 0 ; GLX_RED_SIZE
-                        9 0 0 0  8 0 0 0 ; GLX_GREEN_SIZE
-                       10 0 0 0  8 0 0 0 ; GLX_BLUE_SIZE
-                       12 0 0 0  24 0 0 0   ; GLX_DEPTH_SIZE
-                        0 0 0 0))))); None
+                     '(
+                        4 ; GLX_RGBA
+                        8  1  ; GLX_RED_SIZE
+                        9  1  ; GLX_GREEN_SIZE
+                       10  1  ; GLX_BLUE_SIZE
+                       12  1  ; GLX_DEPTH_SIZE
+                        5 ; GLX_DOUBLEBUFFER
+                        0)))) ; None
             (XSelectInput display window  (<< 1 15)) ; ExposureMask
             (XStoreName display window title)
             (XMapWindow display window)
-            (let ((cx (gl:CreateContext display vi 0 1)))
+            (let ((cx (gl:CreateContext display vi null 1)))
                (gl:MakeCurrent display window cx)
                (print "OpenGL version: " (glGetString GL_VERSION))
                (print "OpenGL vendor: " (glGetString GL_VENDOR))

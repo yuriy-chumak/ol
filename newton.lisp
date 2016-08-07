@@ -32,6 +32,12 @@
 (define NewtonBodySetForce (dlsym $ type-void "NewtonBodySetForce" type-vptr type-float*))
 (define NewtonBodyGetMatrix (dlsym $ type-void "NewtonBodyGetMatrix" type-vptr (vm:or type-float #x80)))
 
+(define NewtonCreateTreeCollision (dlsym $ type-vptr "NewtonCreateTreeCollision" type-vptr type-fix+))
+(define NewtonTreeCollisionBeginBuild (dlsym $ type-void "NewtonTreeCollisionBeginBuild" type-vptr))
+(define NewtonTreeCollisionAddFace (dlsym $ type-void "NewtonTreeCollisionAddFace" type-vptr type-int+ type-float* type-fix+ type-fix+))
+(define NewtonTreeCollisionEndBuild (dlsym $ type-void "NewtonTreeCollisionEndBuild" type-vptr type-fix+))
+
+
 (define NewtonInvalidateCache (dlsym $ type-void "NewtonInvalidateCache" type-vptr))
 (define NewtonUpdate (dlsym $ type-void "NewtonUpdate" type-vptr type-float))
 
@@ -51,6 +57,24 @@
 (NewtonWorldSetDestructorCallback world NewtonWorldDestructorCallback)
 
 
+; создадим "пол"
+(define collision (or
+   (NewtonCreateTreeCollision world 0)
+   (runtime-error "Can't create bacground" #f)))
+(NewtonTreeCollisionBeginBuild collision)
+(NewtonTreeCollisionAddFace collision 4 '(
+   -100 0  100
+    100 0  100
+    100 0 -100
+   -100 0 -100) (* 3 4) 0) ; (* 3 4) is stride, where 4 is sizeof(float)
+(NewtonTreeCollisionEndBuild collision 1)
+(NewtonCreateDynamicBody world collision '(1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1))
+(NewtonDestroyCollision collision)
+
+
+
+
+
 (define collision (or
    (NewtonCreateBox world  1 1 1  0  #f)
    (runtime-error "Can't create box" #f)))
@@ -60,7 +84,7 @@
          1 0 0 0 ; front
          0 1 0 0 ; up
          0 0 1 0 ; right
-         0 0 0 1 ; posit
+         0 50 0 1 ; posit
       ))
    (runtime-error "Can't create rigid body" #f)))
 
@@ -91,7 +115,7 @@
          (NewtonBodyGetMatrix rigidBody matrix)
          (print "height: " (list-ref matrix 13))))
 
-   (iota 100))
+   (iota 1000))
 (print)
 
 

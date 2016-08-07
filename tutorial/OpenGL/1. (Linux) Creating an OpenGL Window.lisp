@@ -10,25 +10,33 @@
 ;(main)
 (define display (XOpenDisplay null))
 (define screen (XDefaultScreen display))
+(define root (XRootWindow display screen))
 
-(define window (XCreateSimpleWindow display (XRootWindow display screen)
+(define vi (or
+   (glXChooseVisual display screen (list
+      GLX_RGBA
+      GLX_DOUBLEBUFFER
+      GLX_RED_SIZE 1
+      GLX_GREEN_SIZE 1
+      GLX_BLUE_SIZE 1
+      GLX_DEPTH_SIZE 1
+      0))
+   (runtime-error "Can't get visual for display" #f)))
+
+(define window (XCreateSimpleWindow display root
    0 0 width height 1
    (XBlackPixel display screen) (XWhitePixel display screen)))
 
-(XSelectInput display window ExposureMask)
+
+(define cx (or
+   (glXCreateContext display vi null 1)
+   (runtime-error "Can't create gl context" #f)))
+
+(XFree vi)
+
 (XMapWindow display window)
+(XSelectInput display window ExposureMask)
 (XStoreName display window (c-string "1. Creating an OpenGL Window"))
-
-(define vi (glXChooseVisual display screen
-   (raw type-vector-raw '(
-      4 0 0 0 ; GLX_RGBA
-      5 0 0 0  1 0 0 0 ; GLX_DOUBLEBUFFER
-      8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
-      9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
-     10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
-
-      0 0 0 0)))); None
-(define cx (glXCreateContext display vi 0 1))
 
 
 ;(init)

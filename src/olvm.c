@@ -4362,7 +4362,16 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] = 0; // todo: error
 			}
 			break;
-		case TINT + 0x40: // <-- deprecated
+		case TINT + 0x40: {
+			int c = llen(arg);
+			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: use new()
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = to_int(car(l)), l = cdr(l);
+			break;
+		}
 		case TLONG + 0x40: { // long*
 			int c = llen(arg);
 			long* p = (long*) __builtin_alloca(c * sizeof(long)); // todo: use new()
