@@ -629,19 +629,19 @@ struct object_t
 #ifndef UVTOI_CHECK
 #define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define uvtoi(v)        ({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
-#define uvtol(v)  (long)({ word x = (word)v; UVTOI_CHECK(x); (word) (x >> IPOS); })
-#define itouv(i)  (word)({ word x = (word)i;                 (word) (x << IPOS) | 2; })
+#define uvtoi(v)        ({ word x = (word)(v); UVTOI_CHECK(x); (word) (x >> IPOS); })
+#define uvtol(v)  (long)({ word x = (word)(v); UVTOI_CHECK(x); (word) (x >> IPOS); })
+#define itouv(i)  (word)({ word x = (word)(i);                 (word) (x << IPOS) | 2; })
 		// (((struct value*)(&v))->payload);
 
 // todo: add overflow checking...
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define svtol(v)  (long)({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
-#define itosv(i)  (word)({ long x = (long)i;                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
+#define svtol(v)  (long)({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define itosv(i)  (word)({ long x = (long)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 
-#define svtoi(v)        ({ word x = (word)v; SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define svtoi(v)        ({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 /*
 #define svtoi(v)  (int) ({ word x = (word)v; SVTOI_CHECK(x); \
 		intptr_t sign = (intptr_t)(x << (8*sizeof(uintptr_t) - IPOS)) >> (8*sizeof(intptr_t) - 1); \
@@ -4650,7 +4650,7 @@ word* pinvoke(OL* self, word* arguments)
 				float value = *f++;
 				word* num = car(l);
 				assert (reftype(num) == TRATIONAL);
-				car(num) = F((unsigned int)(value * 1000)); // todo: process negtive numbers
+				car(num) = itosv(value * 1000);
 				cdr(num) = F(1000);
 
 				l = cdr(l);
