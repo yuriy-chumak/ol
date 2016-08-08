@@ -670,8 +670,8 @@
    glLineWidth ; void (GLfloat width)
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
    glLoadIdentity ; void (void);
-;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
-;WINGDIAPI void APIENTRY glLoadMatrixf (const GLfloat *m);
+   glLoadMatrixd  ; void (const GLdouble *m);
+   glLoadMatrixf  ; void (const GLfloat *m);
 ;WINGDIAPI void APIENTRY glLoadName (GLuint name);
 ;WINGDIAPI void APIENTRY glLogicOp (GLenum opcode);
 ;WINGDIAPI void APIENTRY glMap1d (GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble *points);
@@ -690,8 +690,8 @@
       GL_PROJECTION
       GL_MODELVIEW
       GL_TEXTURE
-;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
-;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
+   glMultMatrixd ; void (const GLdouble *m)
+   glMultMatrixf ; void (const GLfloat *m)
    glNewList ; void (GLuint list, GLenum mode)
    ; mode
       GL_COMPILE
@@ -1581,8 +1581,8 @@
    (define glLineWidth (dlsym $ GLvoid "glLineWidth" GLfloat))
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
    (define glLoadIdentity (dlsym $ GLvoid "glLoadIdentity"))
-;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
-;WINGDIAPI void APIENTRY glLoadMatrixf (const GLfloat *m);
+   (define glLoadMatrixd (dlsym $ GLvoid "glLoadMatrixd" GLdouble*))
+   (define glLoadMatrixf (dlsym $ GLvoid "glLoadMatrixf" GLfloat*))
 ;WINGDIAPI void APIENTRY glLoadName (GLuint name);
 ;WINGDIAPI void APIENTRY glMap1d (GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble *points);
 ;WINGDIAPI void APIENTRY glMap1f (GLenum target, GLfloat u1, GLfloat u2, GLint stride, GLint order, const GLfloat *points);
@@ -1597,8 +1597,8 @@
 ;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params);
    (define glMatrixMode (dlsym $ GLvoid "glMatrixMode" GLenum))
-;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
-;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
+   (define glMultMatrixd (dlsym $ GLvoid "glMultMatrixd" GLdouble*))
+   (define glMultMatrixf (dlsym $ GLvoid "glMultMatrixf" GLfloat*))
    (define glNewList (dlsym $ GLvoid "glNewList" GLuint GLenum))
 ;WINGDIAPI void APIENTRY glNormal3b (GLbyte nx, GLbyte ny, GLbyte nz);
 ;WINGDIAPI void APIENTRY glNormal3bv (const GLbyte *v);

@@ -639,7 +639,8 @@ struct object_t
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
 #define svtol(v)  (long)({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
-#define itosv(i)  (word)({ long x = (long)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
+#define ltosv(i)  (word)({ long x = (long)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
+#define itosv(i)  (word)({ long x = (int) (i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 
 #define svtoi(v)        ({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 /*
@@ -1053,6 +1054,13 @@ static word gc(heap_t *heap, int size, word regs) {
 		}
 	}
 
+	// TODO: вот здесь можно провести очень неплохую оптимизацию
+	//       а именно - проверить обратные функции (R[128+], которые
+	//       лежат в памяти по адресу root+128 - если данные в регистре
+	//       не изменились, значит больше нету никого, кто ссылается на
+	//       тот же элемент данных (обратный вызов), а значит его можно
+	//       просто удалить!
+
 	// на самом деле - compact & sweep
 	word *sweep(word* end)
 	{
@@ -1090,18 +1098,16 @@ static word gc(heap_t *heap, int size, word regs) {
 		return newobject;
 	}
 
+	if (size == 0) // сделать полную сборку?
+		heap->genstart = heap->begin; // start full generation
 	// gc:
+	word *fp;
+	fp = heap->fp;
 	{
-		word *fp;
-
-		fp = heap->fp;
 		word *root = &fp[1]; // skip header
 	//	word *root = fp + 1; // same
-	//в *fp спокойно можно оставить мусор
+	//в *fp спокойно можно оставить мусор, вместо TTUPLE
 		*fp = make_header(TTUPLE, 2);
-
-		if (size == 0)
-			heap->genstart = heap->begin; // start full generation
 
 		// непосредственно сам GC
 	//	clock_t uptime;
@@ -1111,9 +1117,8 @@ static word gc(heap_t *heap, int size, word regs) {
 		fp = sweep(fp);
 		regs = root[0];
 	//	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
-
-		heap->fp = fp;
 	}
+	heap->fp = fp;
 
 	#if DEBUG_GC
 		struct tm tm = *localtime(&(time_t){time(NULL)});
@@ -1299,7 +1304,7 @@ int callback(int id, void* arg1, va_list args)
 	word* R = ol->R;
 
 ///*
-	ol->this = cdr (ol->R[128 + id]); // lambda для обратного вызова
+	ol->this = (word*)cdr (ol->R[128 + id]);// lambda для обратного вызова
 //	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, если без потоков работаем
 //	ol->bank = 0;
 	assert (is_reference(ol->this));
@@ -1307,7 +1312,9 @@ int callback(int id, void* arg1, va_list args)
 
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же
-	R[128 + 102] = R[0]; // mcp?
+	R[128 + 100] = R[0]; // mcp?
+//	R[128 + 101] = R[1];
+//	R[128 + 102] = R[2];
 	R[128 + 103] = R[3]; // continuation
 
 	// вызовем колбек:
@@ -1315,15 +1322,18 @@ int callback(int id, void* arg1, va_list args)
 	R[3] = IRETURN; // команда выхода из колбека
 	ol->arity = 1;
 
-	word* types = car(ol->R[128 + id]);
+	word types = car(ol->R[128 + id]);
 
 	// todo: разбить на две части, первую с arg1, остальные с args
 	int a = 4;
-	word* fp = ol->heap.fp;
+//	R[a] = IFALSE;
+
+	word* fp;
+	fp = ol->heap.fp;
 	while (types != INULL) {
 		switch (car(types)) {
 		case F(TVPTR):
-			R[a] = new_vptr(arg1);
+			R[a] = (word)new_vptr(arg1);
 			break;
 		case F(TINT):
 			R[a] = F(0);
@@ -1338,7 +1348,6 @@ int callback(int id, void* arg1, va_list args)
 	}
 	ol->heap.fp = fp;
 
-	// make apply
 	int state = STATE_APPLY;
 	while (1)
 	switch (state) {
@@ -1351,12 +1360,13 @@ int callback(int id, void* arg1, va_list args)
 	case -1: // todo: change -1 to STATE_DONE or something similar
 		// возврат из колбека
 		R[3] = R[128 + 103];
-		R[0] = R[128 + 102]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
+//		R[1] = R[128 + 102];
+//		R[1] = R[128 + 101];
+		R[0] = R[128 + 100]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
 		return 0; // return from callback
 
 	case STATE_ERROR:
 		assert (0); // не должно быть вызовов MCP в колбеке!
-		//state = invoke_mcp(ol);
 		break;
 	default:
 		assert(0); // unknown
@@ -1377,23 +1387,46 @@ callbackX(1)
 callbackX(2)
 callbackX(3)
 callbackX(4)
+callbackX(5)
+callbackX(6)
+callbackX(7)
+callbackX(8)
+callbackX(9)
+callbackX(10)
+callbackX(11)
+callbackX(12)
+callbackX(13)
+callbackX(14)
+callbackX(15)
+callbackX(16)
+callbackX(17)
+callbackX(18)
+callbackX(19)
+callbackX(20)
 
-int (*callbacks[])(int, void*, va_list) = {
+int (*callbacks[])(void*, ...) = {
 	0,
 	callback1,
 	callback2,
 	callback3,
-	callback4
+	callback4,
+	callback5,
+	callback6,
+	callback7,
+	callback8,
+	callback9,
+	callback10,
+	callback11,
+	callback12,
+	callback13,
+	callback14,
+	callback15,
+	callback16,
+	callback17,
+	callback18,
+	callback19,
+	callback20
 };
-
-int callbackcaller(int (*callback)(struct ol_cbt*), struct ol_cbt* userdata)
-{
-	int result;
-	result = callback(userdata); // вызвать колбэк три раза:
-//	result = callback(userdata);
-//	result = callback(userdata);
-	return result;
-}
 
 
 
@@ -1418,15 +1451,17 @@ static int apply(OL *ol)
 	unsigned short acc = ol->arity;
 	word* R = ol->R;
 
+apply:
 	// todo: разбить на сабстейты
 	if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
 		this = (word *) R[3];              /* call cont */
 		R[3] = (acc > 2) ? R[5] : IFALSE;  /* default arg or false if none */
 		acc = 1;
 
-		ol->this = this;
-		ol->arity = acc;
-		return STATE_APPLY;
+		goto apply;
+		//ol->this = this;
+		//ol->arity = acc;
+		//return STATE_APPLY;
 	}
 
 	if ((word)this == IHALT) {
@@ -1437,7 +1472,7 @@ static int apply(OL *ol)
 			return -1;//(void*) uvtol(R[3]);
 		}
 
-		R[0] = IFALSE; // set mcp yes
+		R[0] = IFALSE; // set mcp yes?
 		R[4] = R[3];
 		R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
 		R[5] = IFALSE;
@@ -1447,12 +1482,16 @@ static int apply(OL *ol)
 		ol->bank = 0;
 		acc = 4;
 
-		ol->this = this;
-		ol->arity = acc;
-		return STATE_APPLY;
+		goto apply;
+		//ol->this = this;
+		//ol->arity = acc;
+		//return STATE_APPLY;
 	} /* <- add a way to call the newobj vm prim table also here? */
 
 	if ((word)this == IRETURN) {
+		// в R[3] находится код возврата
+		ol->this = this;
+		ol->arity = acc;
 		return -1; // колбек закончен! надо просто выйти наверх (todo: change to special state)
 	}
 
@@ -1512,9 +1551,10 @@ static int apply(OL *ol)
 			this = cont;
 			acc = 1;
 
-			ol->this = this;
-			ol->arity = acc;
-			return STATE_APPLY;
+			goto apply;
+			//ol->this = this;
+			//ol->arity = acc;
+			//return STATE_APPLY;
 		}
 		else
 			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
@@ -1555,9 +1595,10 @@ static int apply(OL *ol)
 				ol->heap.fp = fp;
 
 				// reapply new thread
-				ol->this = this;
-				ol->arity = acc;
-				return STATE_APPLY;
+				goto apply;
+				//ol->this = this;
+				//ol->arity = acc;
+				//return STATE_APPLY;
 			}
 		}
 
@@ -1735,6 +1776,7 @@ static int mainloop(OL* ol)
 
 	// ENTRY LOOP POINT
 	int op;//operation to execute:
+loop:
 	switch ((op = *ip++) & 0x3F) {
 	case 0: // todo: change 0 to NOP, add new code for super_dispatch
 		op = (ip[0] << 8) | ip[1]; // big endian
@@ -3487,7 +3529,7 @@ static int mainloop(OL* ol)
 		ERROR(op, new_string("Invalid opcode"), ITRUE);
 		break;
 	}
-
+//	goto loop;
 	ol->ip = ip;
 	ol->heap.fp = fp;
 	return STATE_MAINLOOP;
@@ -3496,18 +3538,19 @@ static int mainloop(OL* ol)
 
 
 
-static void OL__gc(OL* ol, int ws)
+static void OL__gc(OL* ol, int ws) // ws - required size in words
 {
-	word* R = ol->R; // регистры виртуальной машины
-
 	word *fp = ol->heap.fp; // memory allocation pointer
 
 	if (ws != 0 && fp < ol->heap.end - ws)
 		return;
 
+	word* R = ol->R;
+
 	int size = ws * W;
 	int p = 0, N = NR;
 
+//	fprintf(stderr, "*");
 
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = (word*) new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
@@ -4548,7 +4591,7 @@ word* pinvoke(OL* self, word* arguments)
 			// todo: сделать поиск свободного индекса для колбека
 			//  а вообще - завести отдельную команду для создания колбека и для его освобождения
 			//  ведь как-то надо от них избавляться!
-			for (int c = 1; c < 5; c++) {
+			for (int c = 1; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
 				if (self->R[128+c] == IFALSE) {
 					self->R[128+c] = arg;
 					args[i] = callbacks[c];
@@ -4601,6 +4644,10 @@ word* pinvoke(OL* self, word* arguments)
 //	#00000000 000000xx - count of arguments
 //	#00000000 000xxx00 - count of floats - up to 12 ?
 //	#00000000 xxx00000 - count of doubles - up to 12 ?
+
+	self->R[128 + 101] = B;
+	self->R[128 + 102] = C;
+	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
 #if __amd64__
 	// http://locklessinc.com/articles/gcc_asm/
 	// http://www.agner.org/optimize/calling_conventions.pdf
@@ -4634,6 +4681,10 @@ word* pinvoke(OL* self, word* arguments)
 #else
 	got = call(returntype >> 8, function, args, i);
 #endif
+	// ??? бля, где гарантия, что C и B не поменялись???
+	fp = heap->fp;
+	B = self->R[128 + 101];
+	C = self->R[128 + 102];
 
 	// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
 	p = (word*)C;   // сами аргументы
@@ -4652,15 +4703,19 @@ word* pinvoke(OL* self, word* arguments)
 		case TFLOAT + 0x80: {
 			// вот тут попробуем заполнить переменные назад
 			int c = llen(arg);
-			float* f = args[i];
+			float* f = (float*)args[i];
 
 			word l = arg;
 			while (c--) {
 				float value = *f++;
 				word* num = car(l);
 				assert (reftype(num) == TRATIONAL);
-				car(num) = itosv(value * 1000);
-				cdr(num) = F(1000);
+				// максимальная читабельность
+				car(num) = itosv(value * 10000);
+				cdr(num) = F(10000);
+				// максимальная точность (fixme: пока не работает как надо)
+				//car(num) = itosv(value * FMAX);
+				//cdr(num) = F(FMAX);
 
 				l = cdr(l);
 			}
@@ -4677,7 +4732,7 @@ word* pinvoke(OL* self, word* arguments)
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) itosv (got);
+			result = (word*) ltosv (got); // ltosv or itosv?
 			break;
 		case TINT: // type-int+
 			result = (word*) itoun (got);
