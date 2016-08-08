@@ -3,6 +3,8 @@
 (import (otus random!))
 (import (otus pinvoke))
 
+(define (gettimeofday) (syscall 96 #f #f #f))
+
 (define $ (or
 ;   (dlopen "/home/uri/Desktop/Otus Lisp/src/tutorial/newton-dynamics/coreLibrary_300/projects/posix64/libNewton.so")
    (dlopen "newton")
@@ -204,12 +206,18 @@
 
    (glEnable GL_DEPTH_TEST)
 
-   (NewtonInvalidateCache world))
+   (NewtonInvalidateCache world)
+
+   ; return parameter list:
+   (let ((oldtime (gettimeofday)))
+   (list oldtime)))
 
 ; draw
-(lambda ()
+(lambda (oldtime)
+(let ((newtime (gettimeofday)))
    ; обновим мир
-   (NewtonUpdate world 1/400)
+   (NewtonUpdate world (* (+ (- (car newtime) (car oldtime)) (/ (- (cdr newtime) (cdr oldtime)) 1000000)) 2))
+
    ; и нарисуем его
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
@@ -253,6 +261,10 @@
          (glMultMatrixf matrix)
          (glCube)
          (glPopMatrix)) cubes))
+
+   ; return new parameter list:
+   (list
+      newtime))
 ))
 
 (NewtonDestroy world)
