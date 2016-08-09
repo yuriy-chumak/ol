@@ -11,7 +11,7 @@
 
 
 (define $ (or
-;   (dlopen "/home/uri/Desktop/Otus Lisp/src/tutorial/newton-dynamics/coreLibrary_300/projects/posix64/libNewton.so")
+   (dlopen "libNewton.so")
    (dlopen "newton")
    (runtime-error "Can't load newton library" #f)))
 
@@ -85,11 +85,11 @@
 
 
 ; ...
-(define ApplyGravity (cons
+(define ApplyGravity (syscall 1111 (cons
    (list type-vptr type-void* type-int+)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -9.8 0 0))
-)))
+)) #f #f))
 
 
 ; добавим один куб
@@ -108,11 +108,11 @@
                0 0 1 0 ; right
 
                ,(/ (- (rand! 400) 200) 100) ; x
-               ,(+ id 12)                   ; y
+               ,(+ id 20)                   ; y
                ,(/ (- (rand! 400) 200) 100) ; z
                1       ; posit
              ))))
-   (iota 10)))
+   (iota 100)))
 (for-each (lambda (cube)
    (NewtonBodySetMassProperties cube 1.0 collision)
    (NewtonBodySetForceAndTorqueCallback cube ApplyGravity)
@@ -139,7 +139,7 @@
                ,(/ (- (rand! 400) 200) 100) ; z
                1       ; posit
              ))))
-   (iota 10)))
+   (iota 75)))
 (for-each (lambda (sphere)
    (NewtonBodySetMassProperties sphere 1.0 collision)
    (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
@@ -249,7 +249,7 @@
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
-   (gluPerspective 45 (/ 640 480) 0.1 100)
+   (gluPerspective 45 (/ 640 480) 0.1 1000)
 
    (glEnable GL_DEPTH_TEST)
 
@@ -274,31 +274,43 @@
       0 0 0
       0 1 0)
 
+   ; платформа
+;;   (glBegin GL_LINE_STRIP)
+;;   (glBegin GL_QUADS)
+;   (glColor3f 0.4 0.4 0.4)
+;   (glVertex3f -100 0  100)
+;   (glVertex3f  100 0  100)
+;   (glVertex3f  100 0 -100)
+;   (glVertex3f -100 0 -100)
+;;   (glVertex3f -100 0  100)
+   (glEnd)
+
+
    (glBegin GL_LINES)
       ; Ox
       (glColor3f 1 0 0)
       (glVertex3f 0 0 0)
-      (glVertex3f 2 0 0)
-         (glVertex3f 2 0 0)
-         (glVertex3f 1.9 0.1 0)
-         (glVertex3f 2 0 0)
-         (glVertex3f 1.9 0 0.1)
+      (glVertex3f 20 0 0)
+         (glVertex3f 20 0 0)
+         (glVertex3f 19 1 0)
+         (glVertex3f 20 0 0)
+         (glVertex3f 19 0 1)
       ; Oy
       (glColor3f 0 1 0)
       (glVertex3f 0 0 0)
-      (glVertex3f 0 2 0)
-         (glVertex3f 0 2 0)
-         (glVertex3f 0.1 1.9 0)
-         (glVertex3f 0 2 0)
-         (glVertex3f 0 1.9 0.1)
+      (glVertex3f 0 20 0)
+         (glVertex3f 0 20 0)
+         (glVertex3f 1 19 0)
+         (glVertex3f 0 20 0)
+         (glVertex3f 0 19 1)
       ; Oz
       (glColor3f 0 0 1)
       (glVertex3f 0 0 0)
-      (glVertex3f 0 0 2)
-         (glVertex3f 0 0 2)
-         (glVertex3f 0.1 0 1.9)
-         (glVertex3f 0 0 2)
-         (glVertex3f 0 0.1 1.9)
+      (glVertex3f 0 0 20)
+         (glVertex3f 0 0 20)
+         (glVertex3f 1 0 19)
+         (glVertex3f 0 0 20)
+         (glVertex3f 0 1 19)
    (glEnd)
 
    (let ((matrix '(0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1)))

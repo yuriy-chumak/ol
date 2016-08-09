@@ -2115,7 +2115,7 @@ loop:
 		ip += 2; break;
 	}
 
-	case CDR: {  // car a -> r
+	case CDR: {  // cdr a -> r
 		word T = A0;
 		CHECK(CDR_CHECK(T), T, CDR);
 		A1 = cdr(T);//((word*)T)[2];
@@ -3495,9 +3495,18 @@ loop:
 			break;
 
 		// create callback
-//		case 1111: {
-//
-//		}
+		case 1111: {
+			// TCALLBACK
+			for (int c = 1; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
+				if (R[128+c] == IFALSE) {
+					R[128+c] = a;
+					result = F(c);
+					break;
+				}
+			}
+
+			break;
+		}
 ///* TEMP for callbacks
 /*		case 1111: { // todo: заменить на отдельную команду типа CALL_CALLBACK или что-то похожее, но НЕ syscall
 			R[128 + 1] = a; // первый и единственный пока колбек
@@ -4071,6 +4080,10 @@ word* pinvoke(OL* self, word* arguments)
 			        return ((conv word (*)  (word, float, float, float))\
 			                 function) (argv[0], *(float*)&argv[1],\
 			                            *(float*)&argv[2], *(float*)&argv[3]);\
+			case 4 + 0x0200:\
+			        return ((conv word (*)  (word, float, word, word))\
+			                 function) (argv[0], *(float*)&argv[1],\
+			                            argv[2], argv[3]);\
 			\
 			case 2 + 0x0300:\
 			        return ((conv word (*)  (float, float))\
@@ -4591,13 +4604,14 @@ word* pinvoke(OL* self, word* arguments)
 			// todo: сделать поиск свободного индекса для колбека
 			//  а вообще - завести отдельную команду для создания колбека и для его освобождения
 			//  ведь как-то надо от них избавляться!
-			for (int c = 1; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
+			/*for (int c = 1; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
 				if (self->R[128+c] == IFALSE) {
 					self->R[128+c] = arg;
 					args[i] = callbacks[c];
 					break;
 				}
-			}
+			}*/
+			args[i] = callbacks[uvtoi(arg)];
 
 //			self->R[128+1] = arg;
 //			args[i] = &callback1;
