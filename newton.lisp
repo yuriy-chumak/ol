@@ -5,6 +5,11 @@
 
 (define (gettimeofday) (syscall 96 #f #f #f))
 
+(define Context (gl:Create "7. Newton"))
+
+
+
+
 (define $ (or
 ;   (dlopen "/home/uri/Desktop/Otus Lisp/src/tutorial/newton-dynamics/coreLibrary_300/projects/posix64/libNewton.so")
    (dlopen "newton")
@@ -12,6 +17,8 @@
 
 (define type-callback 61)
 (define type-float* (vm:or type-float #x40))
+(define NewtonWorld* type-vptr)
+(define dFloat* (vm:or type-float #x40))
 
 (define NewtonWorldGetVersion (dlsym $ type-fix+ "NewtonWorldGetVersion"))
 (define NewtonWorldFloatSize  (dlsym $ type-fix+ "NewtonWorldFloatSize"))
@@ -22,7 +29,10 @@
 (define NewtonWorldSetDestructorCallback (dlsym $ type-void "NewtonWorldSetDestructorCallback" type-vptr type-callback))
 
 ;
+(define NewtonCreateSphere (dlsym $ type-vptr "NewtonCreateSphere" NewtonWorld* type-float type-fix+ dFloat*))
 (define NewtonCreateBox (dlsym $ type-vptr "NewtonCreateBox" type-vptr type-float type-float type-float type-int+ type-float*))
+
+
 (define NewtonCreateDynamicBody (dlsym $ type-vptr "NewtonCreateDynamicBody" type-vptr type-vptr type-float*))
 (define NewtonBodySetForceAndTorqueCallback (dlsym $ type-void "NewtonBodySetForceAndTorqueCallback" type-vptr type-callback))
 (define NewtonBodySetMassProperties (dlsym $ type-void "NewtonBodySetMassProperties" type-vptr type-float type-vptr))
@@ -74,6 +84,7 @@
 (NewtonDestroyCollision collision)
 
 
+; ...
 (define ApplyGravity (cons
    (list type-vptr type-void* type-int+)
    (lambda (body timestep threadIndex)
@@ -97,16 +108,45 @@
                0 0 1 0 ; right
 
                ,(/ (- (rand! 400) 200) 100) ; x
-               ,id              ; y
+               ,(+ id 12)                   ; y
                ,(/ (- (rand! 400) 200) 100) ; z
                1       ; posit
              ))))
-   (iota 20)))
-
+   (iota 10)))
 (for-each (lambda (cube)
    (NewtonBodySetMassProperties cube 1.0 collision)
    (NewtonBodySetForceAndTorqueCallback cube ApplyGravity)
 ) cubes)
+(NewtonDestroyCollision collision)
+
+
+(define collision (or
+   (NewtonCreateSphere world  0.5  0  #f)
+   (runtime-error "Can't create box" #f)))
+
+(define spheres (map
+   (lambda (id)
+      (let ((x (* id 0.7))
+            (y (* id 1)))
+         (NewtonCreateDynamicBody world collision
+            `(;x y z w
+               1 0 0 0 ; front
+               0 1 0 0 ; up
+               0 0 1 0 ; right
+
+               ,(/ (- (rand! 400) 200) 100) ; x
+               ,(+ id 1)                    ; y
+               ,(/ (- (rand! 400) 200) 100) ; z
+               1       ; posit
+             ))))
+   (iota 10)))
+(for-each (lambda (sphere)
+   (NewtonBodySetMassProperties sphere 1.0 collision)
+   (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
+) spheres)
+(NewtonDestroyCollision collision)
+
+
 ;
 ;
 ;(define rigidBody (or
@@ -137,7 +177,6 @@
 ;(NewtonBodySetForceAndTorqueCallback rigidBody2 ApplyGravity)
 ;(print "To rigid body added callback")
 
-(NewtonDestroyCollision collision)
 (print "3.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 (define (glCube)
@@ -189,11 +228,19 @@
    (glEnd)
    (glPopMatrix))
 
+(define gl-sphere (gluNewQuadric))
+(gluQuadricDrawStyle gl-sphere GLU_LINE)
+
+(define (glSphere)
+   (glPushMatrix)
+   (glScalef 0.5 0.5 0.5)
+   (gluSphere gl-sphere 1 16 8)
+   (glPopMatrix))
 
 
 (gl:run
 
-   "7. Newton"
+   Context
 
 ; init
 (lambda ()
@@ -261,6 +308,13 @@
          (glMultMatrixf matrix)
          (glCube)
          (glPopMatrix)) cubes))
+   (let ((matrix '(0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1)))
+      (for-each (lambda (sphere)
+         (NewtonBodyGetMatrix sphere matrix)
+         (glPushMatrix)
+         (glMultMatrixf matrix)
+         (glSphere)
+         (glPopMatrix)) spheres))
 
    ; return new parameter list:
    (list
