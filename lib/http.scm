@@ -7,25 +7,22 @@
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (owl intern) intern-symbols string->uninterned-symbol string->symbol)
      )
-  
+
 (begin
   ;(define *debug* #t)
   ;(print "\e[1;1H\e[2J")
-  
-   (define (upalpha? x) (<= #\A x #\Z))
-   (define (loalpha? x) (<= #\a x #\z))
+
+   (define (upper-case? x) (<= #\A x #\Z))
+   (define (lower-case? x) (<= #\a x #\z))
    (define (alpha-char? x)
-      (or (upalpha? x)
-          (loalpha? x)))
-   (define (digit-char? x)
-      (<= #\0 x #\9))
+      (or (upper-case? x)
+          (lower-case? x)))
+   (define (digit-char? x) (<= #\0 x #\9))
    (define (ctl-char? x)
       (or (<= 0 x 31)
           (= x 127)))
-  
-  
-  
-  
+
+
 
 (define (timestamp) (syscall 201 "%c" #f #f))
 (define (set-ticker-value n) (syscall 1022 n #false #false))
@@ -52,7 +49,7 @@
               (#\e . #x001B)
               (#\" . #x0022) ;"
               (#\\ . #x005c))))
-              
+
       (define (a-z? x)
          (<= #\a x #\z))
       (define (A-Z? x)
@@ -67,7 +64,7 @@
              (<= #\A x #\Z)
              (<= #\a x #\z)
              (has? '(#\< #\/ #\> #\-) x)))
-      
+
 
       (define (space-char? x) (= x #\space))
 
@@ -83,11 +80,13 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)))
-             
+
       (define (header-char? x)
          (or (<= #\A x #\Z)
              (<= #\a x #\z)
              (has? '(#\-) x)))
+
+      ;(define (separator-char?))
 
       (define digit-values
          (list->ff
@@ -174,7 +173,7 @@
 ;(file->exp-stream "GET" "> " http-parser syntax-fail)))
 ;(exit-owl 0)
 
-   
+
 ;   (exit-owl (print "Can't bind to 8080")))
 
 
@@ -191,9 +190,11 @@
       ; loop if no close
       (let loop ()
          (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
+                (_ (print "request: " request " - " (null? request)))
                 (Request-Line (car (car request))))
+            (print "Request-Line: " Request-Line)
             (if (null? Request-Line)
-               (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
+               (send "HTTP/1.0 400 Bad Request\n\n400")
                (onRequest fd Request-Line (cdr (car request)) send close))
             (loop))))))
       (begin
@@ -218,10 +219,10 @@
       (if (not (syscall 49 socket port #f)) ; bind
          (loop (+ port 2))
          (print "Server binded to " port)))
-   ; listen      
+   ; listen
    (if (not (syscall 50 socket #f #f)) ; listen
       (exit-owl (print "Can't listen")))
-   
+
    ; accept
    (let loop ()
       (if (syscall 23 socket #f #f) ; select
