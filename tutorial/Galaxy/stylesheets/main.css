@@ -1,0 +1,93 @@
+    body {
+        font: 24px Helvetica;
+        background: #999999;
+    }
+    
+     header {
+        display: block;
+        margin: 4px;
+        padding: 5px;
+        border: 1px solid #eebb55;
+        border-radius: 7pt;
+        background: #ffeebb;
+    }
+
+    #main {
+        display: flex;
+        /*min-height: 300px;*/
+        margin: 0px;
+        padding: 0px;
+        display: flex;
+        flex-flow: row;
+    }
+ 
+    #main > view {
+        min-height: 300px;
+        margin: 4px;
+        padding: 5px;
+        border: 1px solid #cccc33;
+        border-radius: 7pt;
+        background: #dddd88;
+        flex: 3 1 60%;
+        order: 2;
+    }
+
+    #main > info {
+        margin: 4px;
+        padding: 5px;
+        border: 1px solid #8888bb;
+        border-radius: 7pt;
+        background: #ccccff;
+        flex: 1 6 20%;
+        order: 1;
+        
+        display: flex;
+        flex-direction: column;
+    }
+  
+
+
+   scrolls {
+     display: block;
+      flex:auto;
+      
+      margin: 4px;
+      padding: 5px;
+      min-height: 50px;
+      border: 1px solid #eebb55;
+      border-radius: 7pt;
+      background: #ffeebb;
+   }
+
+   mailbox {
+     flex:none;
+     
+      margin: 4px;
+      padding: 5px;
+      min-height: 50px;
+      border: 1px solid #eebb55;
+      border-radius: 7pt;
+      background: #ffeebb;
+   }
+
+   scroll {
+      margin: 4px;
+      padding: 5px;
+      min-height: 50px;
+      border: 1px solid #eebb55;
+      border-radius: 7pt;
+      background: #996666;
+   }
+
+ 
+    /* Too narrow to support three columns */
+    @media all and (max-width: 640px) {
+        #main, #page {
+            flex-direction: column;
+        }
+
+        #main > view, #main > info {
+        /* Return them to document order */
+            order: 0;
+        }
+    }

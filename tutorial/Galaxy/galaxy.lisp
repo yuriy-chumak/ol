@@ -185,10 +185,10 @@
                   (sendfile fd "text/css" url))
 
                ((or
-                  (string-eq? url "/Minecraft/minecraft-1.6.4-highlands.exe")
-                  (string-eq? url "/Minecraft/minecraft-1.6.4-highlands.jar"))
+                  (string-eq? url "/")
+                  (string-eq? url "/index.html"))
 
-                  (send-404 fd))
+                  (sendfile fd "text/html" "/index.html"))
 
                ;else
                (else
