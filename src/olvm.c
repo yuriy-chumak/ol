@@ -2367,6 +2367,10 @@ invoke:;
 					got = -1;
 					errno = EAGAIN;
 				}
+				// Win32 socket workaround
+				if (got == -1 && errno == EBADF) {
+					got = recv(portfd, (char *) &fp[1], size, 0);
+				}
 #else
 				got = read(portfd, (char *) &fp[1], size);
 #endif
@@ -2415,6 +2419,13 @@ invoke:;
 #endif
 					wrote = write(portfd, (char*)&buff[1], size);
 
+#ifdef _WIN32
+				// Win32 socket workaround
+				if (wrote == -1 && errno == EBADF) {
+					wrote = send(portfd, (char*) &buff[1], size, 0);
+				}
+#endif
+
 				if (wrote > 0)
 					result = (word*) itoun (wrote);
 				else if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -2453,6 +2464,13 @@ invoke:;
 
 				if (close(portfd) == 0)
 					result = (word*)ITRUE;
+#ifdef _WIN32
+				// Win32 socket workaround
+				else if (errno == EBADF) {
+					if (closesocket(portfd) == 0)
+						result = (word*)ITRUE;
+				}
+#endif
 
 				break;
 			}
