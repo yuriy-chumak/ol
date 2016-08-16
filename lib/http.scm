@@ -169,14 +169,6 @@
                   (tuple (runes->string request)) #empty))))
 
 
-;(print (car
-;(file->exp-stream "GET" "> " http-parser syntax-fail)))
-;(exit-owl 0)
-
-
-;   (exit-owl (print "Can't bind to 8080")))
-
-
 ; todo: use atomic counter to check count of clients and do appropriate timeout on select
 ;  (1 for count > 0, 100 for count = 0)
 
@@ -184,22 +176,22 @@
 (lambda ()
    (let*((ss1 ms1 (clock)))
    (if (call/cc (lambda (close)
-      (let ((send (lambda args
-               (for-each (lambda (arg)
-                  (display-to fd arg)) args))))
-      ; loop if no close
-      (let loop ()
-         (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
-                (_ (print "request: " request " - " (null? request)))
-                (Request-Line (car (car request))))
-            (print "Request-Line: " Request-Line)
-            (if (null? Request-Line)
-               (send "HTTP/1.0 400 Bad Request\n\n400")
-               (onRequest fd Request-Line (cdr (car request)) send close))
-            (loop))))))
-      (begin
-         (syscall 3 fd #f #f)
-         (display "socket closed, ")))
+         (let ((send (lambda args
+                  (for-each (lambda (arg)
+                     (display-to fd arg)) args))))
+         (let for ()
+         (let loop ((request (fd->exp-stream fd "> " http-parser syntax-fail #f)))
+            (if (null? request)
+               (close #t)
+               (let ((Request-Line (car (car request)))
+                     (Headers-Line (cdr (car request))))
+                  ;(print "Request-Line: " Request-Line)
+                  ;(print "Headers-Line: " Headers-Line)
+               (if (null? Request-Line)
+                  (send "HTTP/1.0 400 Bad Request\n\n400")
+                  (onRequest fd Request-Line Headers-Line send close))
+               (loop (force (cdr request)))))) (for)))))
+      (display (if (syscall 3 fd #f #f) "socket closed, " "can't close socket, ")))
    (print "on-accept done." )
    (let*((ss2 ms2 (clock)))
       (print "# " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))

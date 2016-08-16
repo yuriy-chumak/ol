@@ -707,7 +707,7 @@ typedef struct heap_t
 
 // -= new =--------------------------------------------
 // создает порт, НЕ аллоцирует память
-#define make_port(a)               ({ assert((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
+#define make_port(a)               ({ assert ((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
 
 // выделить блок памяти, unsafe
 #define NEW(size) ({\
@@ -2534,11 +2534,13 @@ loop:
 				got = -1;
 				errno = EAGAIN;
 			}
+			// Win32 socket workaround
+			if (got == -1 && errno == EBADF) {
+				got = recv(portfd, (char *) &fp[1], size, 0);
+			}
 #else
 			got = read(portfd, (char *) &fp[1], size);
 #endif
-//				if (portfd == 0)
-//					fprintf(stderr, "got %d\n", got);
 
 			if (got > 0) {
 				// todo: обработать когда приняли не все,
@@ -2549,7 +2551,6 @@ loop:
 				result = (word*)IEOF;
 			else if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
 				result = (word*)ITRUE;
-
 			break;
 		}
 
@@ -2581,6 +2582,13 @@ loop:
 			else
 #endif
 				wrote = write(portfd, (char*)&buff[1], size);
+
+#ifdef _WIN32
+			// Win32 socket workaround
+			if (wrote == -1 && errno == EBADF) {
+				wrote = send(portfd, (char*) &buff[1], size, 0);
+			}
+#endif
 
 			if (wrote > 0)
 				result = (word*) itoun (wrote);
@@ -2620,6 +2628,13 @@ loop:
 
 			if (close(portfd) == 0)
 				result = (word*)ITRUE;
+#ifdef _WIN32
+			// Win32 socket workaround
+			else if (errno == EBADF) {
+				if (closesocket(portfd) == 0)
+					result = (word*)ITRUE;
+			}
+#endif
 
 			break;
 		}
@@ -2757,7 +2772,11 @@ loop:
 		case 41: { // socket (todo: options: STREAM or DGRAM)
 			// http://beej.us/net2/html/syscalls.html
 			// right way: use PF_INET in socket call
+#ifdef _WIN32
+			int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#else
 			int sock = socket(PF_INET, SOCK_STREAM, 0);
+#endif
 			if (sock != -1)
 				result = (word*)make_port (sock);
 			break;
@@ -2796,10 +2815,9 @@ loop:
 			int socket = port(a);
 
 			// On error, -1 is returned
-			if (shutdown(socket, 2) != 0) // both
-				break;
+			if (shutdown(socket, 2) == 0) // both
+				result = (word*)ITRUE;
 
-			result = (word*)ITRUE;
 			break;
 		}
 
