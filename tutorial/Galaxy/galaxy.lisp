@@ -6,7 +6,7 @@
 
 ; для упрощения работы и т.д,  пусть у нас будет одна большая база даных с множеством таблиц
 (define database (make-sqlite3)) ; make new database connection
-(print "open: "  (sqlite3-open (c-string ":memory:") database))
+(print "open: "  (sqlite3-open (c-string "database.sqlite") database))
 
 (define (sqlite:query query . args)
    (let ((statement (make-sqlite3-stmt)))
@@ -68,6 +68,18 @@
                (runtime-error "Can't execute SQL statement" #t))))))))
 
 
+(sqlite:query "CREATE TABLE IF NOT EXISTS users (
+   id INTEGER PRIMARY KEY -- comment
+)")
+
+(sqlite:query "CREATE TABLE IF NOT EXISTS scrolls (
+   id INTEGER PRIMARY KEY
+,  title TEXT
+)")
+(sqlite:query "INSERT INTO scrolls (title) VALUES (?)" "Planet")
+(sqlite:query "INSERT INTO scrolls (title) VALUES (?)" "Minerals on Hand")
+(sqlite:query "INSERT INTO scrolls (title) VALUES (?)" "Status")
+
 ;(print (sqlite:query "CREATE TABLE IF NOT EXISTS T (id INTEGER PRIMARY KEY, text STRING)"))
 ;(print (sqlite:query "INSERT INTO T (text) VALUES (?)" "one"))
 ;(print (sqlite:query "INSERT INTO T (text) VALUES (?)" "two"))
@@ -92,6 +104,7 @@
 
 
 
+(define has-two-dots? (string->regex "m/\\.\\./"))
 
 
 
@@ -101,7 +114,6 @@
 (define (time format seconds) (syscall 201 format seconds #f))
 (define uname (syscall 63 0 0 0))
 
-(define has-two-dots? (string->regex "m/\\.\\./"))
 (define (starts-with string sub)
    (if (> (string-length sub) (string-length string))
       #false
@@ -114,9 +126,10 @@
          (if (char=? (car string) char)
             n
             (loop (force (cdr string)) (+ n 1))))))
-(define (exec filename args fds)
-   (syscall 59 (c-string filename)
-      (map c-string args) fds))
+
+;(define (exec filename args fds)
+;   (syscall 59 (c-string filename)
+;      (map c-string args) fds))
 (define (concat . args)
    (foldr str-app "" args))
 
@@ -149,7 +162,7 @@
    (if stat (begin
       (print "Sending 200 OK, file size is " (ref stat 8) ", name is " path)
       (send "HTTP/1.0 200 OK\n"
-;            "Connection: close\n"
+            ;"Connection: close\n"
             "Content-Type: " content-type "\n"
             "Content-Length: " (ref stat 8) "\n"
             "Server: " (car *version*) "/" (cdr *version*) "\n\n")
@@ -159,7 +172,7 @@
    (begin
       (print "Sending 404 Not Found")
       (send "HTTP/1.0 404 Not Found\n"
-;            "Connection: close\n"
+            ;"Connection: close\n"
             "Content-Type: text/html\n"
             "Server: " (car *version*) "/" (cdr *version*) "\n\n")
       (send "<HTML><BODY>"
@@ -176,23 +189,55 @@
       ((string-eq? (ref request 1) "GET")
          (let ((url (ref request 2)))
             (cond
-               ;basic sanity check:
+               ; basic sanity check:
                ((has-two-dots? url)
                   (send-404 fd))
+
+               ; static web content:
                ((starts-with url "/javascripts/")
                   (sendfile fd "application/javascript" url))
                ((starts-with url "/stylesheets/")
                   (sendfile fd "text/css" url))
 
+               ; dynamic functions
                ((or
                   (string-eq? url "/")
                   (string-eq? url "/index.html"))
 
-                  (sendfile fd "text/html" "/index.html"))
-
+                  (send "HTTP/1.0 200 OK\n"
+                        "Content-Type: text/html\n"
+                        "Server: " (car *version*) "/" (cdr *version*) "\n"
+                        "\n")
+                  (send "<!DOCTYPE html>"
+                        "<html>"
+                        "<head>"
+                        "   <title>Some title</title>"
+                        "   <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />"
+                        "   <link href='stylesheets/main.css' type='text/css' rel='stylesheet' />"
+                        "</head>")
+                  (send "<body>"
+                        "<header>-menu-menu-menu-menu-menu-</header>"
+                        "   <div id='main'>"
+                        "      <view>"
+                        "         view"
+                        "      </view>"
+                        "      <info>"
+                        "         <scrolls>")
+                  (sqlite:for-each (sqlite:query
+                     "SELECT title FROM scrolls")
+                     (lambda (title)
+                        (send "<scroll>" title "</scroll>")
+                  ))
+                  (send "         </scrolls>"
+                        "         <mailbox>Mailbox</mailbox>"
+                        "         <mailbox>Summary</mailbox>"
+                        "      </info>"
+                        "   </div>"
+                        "</body>"
+                        "</html>"))
                ;else
                (else
                   (send-404 fd)))))
       (else
          (send-404 fd)))
-   (close #t)))
+   )) ; (close #t)))
