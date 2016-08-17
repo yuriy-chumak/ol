@@ -3,35 +3,9 @@
 (import (lib http))
 
 ,load "sqlite.lisp"
+,load "helpers.lisp"
 
 
-
-
-(define has-two-dots? (string->regex "m/\\.\\./"))
-
-; syscalls
-(define (yield) (syscall 1022 0 #false #false))
-(define (time format seconds) (syscall 201 format seconds #f))
-(define uname (syscall 63 0 0 0))
-
-(define (starts-with string sub)
-   (if (> (string-length sub) (string-length string))
-      #false
-      (string-eq? (substring string 0 (string-length sub)) sub)))
-
-(define (str-find str char)
-   (let loop ((string (str-iter str)) (n 0))
-      (if (null? string)
-         -1
-         (if (char=? (car string) char)
-            n
-            (loop (force (cdr string)) (+ n 1))))))
-
-;(define (exec filename args fds)
-;   (syscall 59 (c-string filename)
-;      (map c-string args) fds))
-(define (concat . args)
-   (foldr str-app "" args))
 
 ; ==============================================================
 ; todo: please,  return sendfile
@@ -82,6 +56,12 @@
 
 
 (http:run 8080 (lambda (fd request headers send close)
+;   (let send-200 ()
+;      (send "HTTP/1.0 200 OK\n"
+;            "Content-Type: text/html\n"
+;            "Server: " (car *version*) "/" (cdr *version*) "\n"
+;            "\n")
+
    (print "Request: " request)
    (print "Headers: " headers)
 
@@ -102,44 +82,122 @@
                ; dynamic functions
                ((or
                   (string-eq? url "/")
-                  (string-eq? url "/index.html"))
+                  (string-eq? url "/index.html")
+                  (string-eq? url "/login.html"))
 
                   (send "HTTP/1.0 200 OK\n"
                         "Content-Type: text/html\n"
                         "Server: " (car *version*) "/" (cdr *version*) "\n"
                         "\n")
+;                  (send "<!DOCTYPE html>"
+;                        "<html>"
+;                        "<head>"
+;                        "   <title>Some title</title>"
+;                        "   <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />"
+;;                        "   <link href='/stylesheets/main.css' type='text/css' rel='stylesheet' />"
+;                        "   <script src='/javascripts/jquery-2.1.1.min.js'></script>"
+;                        "</head>"
+;                        "<body>"
+;                        "   <div id='main'>"
+;                        "   </div>"
+;                        ; и сразу перейдем к списку игр
+;                        "   <script>$('#main').load('/games')</script>"
+;                        "   <noscript><b>Looks like you have disabled scripts for this page. Please enable it to continue working with.</b></noscript>"
+;                        "</body>"
+;                        "</html>"))
                   (send "<!DOCTYPE html>"
                         "<html>"
                         "<head>"
-                        "   <title>Some title</title>"
-                        "   <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />"
-                        "   <link href='/stylesheets/main.css' type='text/css' rel='stylesheet' />"
-                        "   <script src='/javascripts/jquery-2.1.1.min.js'></script>"
+                        "   <title>SIMPLE Login</title>"
+                        "   <link rel='stylesheet' href='/stylesheets/normalize.css'>"
+                        "   <script src='/javascripts/jquery-2.1.1.min.js'> </script>"
+                        "   <link rel='stylesheet' href='/stylesheets/login.css'>"
+                        "   <script src='/javascripts/jlogin.js'></script>"
                         "</head>"
                         "<body>"
-                        "   <div id='main'>"
-                        "   </div>"
-                        ; и сразу перейдем к списку игр
-                        "   <script>$('#main').load('/games')</script>"
+                        "   <section class='loginform cf'>"
+                        "      <form name='login' action='/login' method='get' accept-charset='utf-8' onsubmit='return onSubmit()'>"
+                        "         <ul>"
+                        "            <li>"
+                        "               <label for='usermail'>Email</label>"
+                        "               <input type='usermail' id='usermail' placeholder='yourname@email.com' required></li>"
+                        "            <li>"
+                        "               <label for='password'>Password</label>"
+                        "               <input type='password' id='password' placeholder='password' required></li>"
+                        "            <li>"
+                        "               <input type='submit' value='Login'>"
+                        "            </li>"
+                        "         </ul>"
+                        "      </form>"
+                        "   </section>"
                         "</body>"
                         "</html>"))
-               ; список игр пользователя
-               ((string-eq? url "/games")
+               ; обработка логина пользователя
+               ((starts-with url "/login/") ;e7bf1d8e30d58da23c37d9eef9da55cb
                   (send "HTTP/1.0 200 OK\n"
                         "Content-Type: text/html\n"
                         "Server: " (car *version*) "/" (cdr *version*) "\n"
                         "\n")
-                  (let ((account 0))
-                  (sqlite:for-each (sqlite:query
-                     "SELECT  id,name  FROM games WHERE id IN (
-                         SELECT DISTINCT game FROM game_players WHERE race IN (
-                            SELECT id FROM races WHERE account = ?
-                         )
-                      )" account)
-                     (lambda (id name)
-                        (send "<br><a href='/game/" id "'>" id " " name "</a>")
-                     )))
-                  (send "<br><hr>"))
+
+                  (let ((args (string-split url #\/)))
+                  (let ((username (list-ref args 1))
+                        (password (list-ref args 2)))
+                  (send "<!DOCTYPE html>"
+                        "<html>"
+                        "<head>"
+                        "   <title>SIMPLE Login</title>"
+                        "   <link rel='stylesheet' href='/stylesheets/normalize.css'>"
+                        "   <script src='/javascripts/jquery-2.1.1.min.js'> </script>"
+                        "   <link rel='stylesheet' href='/stylesheets/login.css'>"
+                        "</head>")
+                  (let ((key (sqlite:value "SELECT lower(hex(randomblob(16)))")))
+                  (if (sqlite:value "UPDATE accounts SET key=? WHERE username=? AND password=?" key username password)
+                  ; ok
+                  (send "<body>"
+                        "   <script>$('#main').load('/games/" key "')</script>"
+                        "   <noscript><b>Looks like you have disabled scripts for this page. Please enable it to continue working with.</b></noscript>"
+                        "</body>")
+                  ; false
+                  (send "<body>"
+                        "   <section class='loginform cf'>"
+                        "      <form name='sorry' action='/' method='get' accept-charset='utf-8' onsubmit='window.location = \"/\"; return false'>"
+                        "         <ul>"
+                        "            <li>"
+                        "               <label>Sorry, name or password is invalid.</label>"
+                        "            </li>"
+                        "            <li>"
+                        "               <label>Please, <a href='/'> try again</a>.</label>"
+                        "            </li>"
+                        "         </ul>"
+                        "      </form>"
+                        "   </section>"
+                        "</body>")))
+                  (send "</html>"))))
+
+               ; список игр пользователя
+               ((string-eq? url "/games/")
+                  (send "HTTP/1.0 200 OK\n"
+                        "Content-Type: text/html\n"
+                        "Server: " (car *version*) "/" (cdr *version*) "\n"
+                        "\n")
+                  (let ((args (string-split url #\/)))
+                  (let ((key (list-ref args 1)))
+
+                  (let ((account (sqlite:value "SELECT id FROM accounts WHERE key = ?" key)))
+                  (if account (begin
+                     (sqlite:for-each (sqlite:query
+                        "SELECT  id,name  FROM games WHERE id IN (
+                            SELECT DISTINCT game FROM game_players WHERE race IN (
+                               SELECT id FROM races WHERE account = ?
+                            )
+                         )" account)
+                        (lambda (id name)
+                           (send "<br><a href='/game/" account "/" id "'>" id " " name "</a>")
+                        )))
+                     ;else
+                     (send "I don't know who you are!"))
+                  (send "<br><hr>")))))
+
                ((starts-with url "/game/")
                   (send "HTTP/1.0 200 OK\n"
                         "Content-Type: text/html\n"

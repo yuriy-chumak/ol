@@ -6,13 +6,25 @@
 (sqlite:query "CREATE TABLE accounts (
    id INTEGER PRIMARY KEY
 ,  username TEXT
-,  email TEXT
+,  usermail TEXT -- временно не принимаем
+,  password TEXT
+
+,  key TEXT -- сеансовый ключ
 )")
 ; пользователь "никто" имеет номер 0
-(sqlite:query "INSERT INTO accounts (id, username) VALUES (?,?)"
-   0 "noname")
-(sqlite:query "INSERT INTO accounts (id, username) VALUES (?,?)"
-   1 "user#1")
+(for-each (lambda (values)
+   (apply sqlite:query (cons "INSERT INTO accounts (id, username, password) VALUES (?,?,?)" values))) '(
+      (0 "noname" "023456")
+      (1 "user@1" "123456")
+      (2 "user@2" "223456")
+      (3 "user@3" "323456")
+      (4 "user@4" "423456")
+      (5 "user@5" "523456")
+      (6 "user@6" "623456")
+      (7 "user@7" "723456")
+      (8 "user@8" "823456")
+      (9 "user@9" "923456")
+))
 
 
 ; в играх участвуют расы
@@ -85,4 +97,3 @@
    id INTEGER PRIMARY KEY
 ,  title TEXT
 )")
-

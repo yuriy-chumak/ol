@@ -47,6 +47,7 @@
     sqlite3-reset
     sqlite3-finalize
     sqlite3-last-insert-rowid
+    sqlite3_changes
 
   ; ss
     sqlite3-bind-parameter-index
@@ -139,6 +140,7 @@
 (define sqlite3-finalize   (dlsym % (__cdecl type-fix+) "sqlite3_finalize"   sqlite3_stmt*))
 
 (define sqlite3-last-insert-rowid (dlsym % (__cdecl type-fix+) "sqlite3_last_insert_rowid" sqlite3*))
+(define sqlite3_changes (dlsym % (__cdecl type-int+) "sqlite3_changes" sqlite3*))
 
 ; In the SQL statement text input to sqlite3_prepare_v2() and its variants, literals may be replaced by a parameter that matches one of following templates:
 ;    ? ?NNN :VVV @VVV $VVV
