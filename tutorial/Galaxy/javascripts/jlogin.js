@@ -21,3 +21,8 @@ function onRaceSubmit() {
 
 	return false;
 }
+
+function getAdvantagePointsLeft()
+{
+   ;
+}

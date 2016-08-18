@@ -35,18 +35,19 @@
 ,  name TEXT -- название расы
 ,  account REFERENCES accounts(id)
 
-,  primary_trait INTEGER
+,  prts INTEGER DEFAULT 0 -- Primary Racial Traints
+,  lrts INTEGER DEFAULT 0 -- Lesser Racial Traits
 )")
 ; есть несколько "предустановленных" рас, owner для них должен быть "0"
 (for-each (lambda (values)
    (apply db:query (cons
 "INSERT INTO races (id, name, account) VALUES (?,?,?)" values))) '(
-      (1  "Humanoid"   0)
-      (2  "Rabbitoid"  0)
-      (3  "Insectoid"  0)
-      (4  "Nucleotid"  1)
-      (5  "Silicanoid" 1)
-      (6  "Antetheral" 1)
+      (1  "Humanoids"   0)
+      (2  "Rabbitoids"  0)
+      (3  "Insectoids"  0)
+      (4  "Nucleotids"  1)
+      (5  "Silicanoids" 1)
+      (6  "Antetherals" 1)
 ))
 
 

@@ -5,6 +5,7 @@ html {
 label {
 	display: block;
 	color: #999;
+	margin-top: 10px;
 }
 .cf:before,
 .cf:after {
@@ -27,9 +28,9 @@ label {
 	padding: 25px;
 	background-color: rgba(250,250,250,0.5);
 	border-radius: 5px;
-    box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.2),
-    			inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.3);
+	box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.2),
+	            inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5);
+	border: 1px solid rgba(0, 0, 0, 0.3);
 }
 .loginform ul {
 	padding: 0;
@@ -39,14 +40,14 @@ label {
 	display: inline;
 	float: left;
 }
-.loginform input:not([type=submit]) {
+/*.loginform input:not([type=submit]) {
 	padding: 5px;
 	margin-right: 10px;
 	border: 1px solid rgba(0, 0, 0, 0.3);
 	border-radius: 3px;
 	box-shadow: inset 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
 				0px 1px 0px 0px rgba(250, 250, 250, 0.5);
-}
+}*/
 .loginform input[type=submit] {
 	border: 1px solid rgba(0, 0, 0, 0.3);
 	background: #64c8ef; /* Old browsers */
@@ -61,6 +62,14 @@ label {
 	padding: 5px 15px;
 	margin-right: 0;
 	margin-top: 15px;
+	border-radius: 3px;
+	text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+}
+.loginform input[type=radio] {
+	border: 1px solid rgba(0, 0, 0, 0.3);
+	color: #fff;
+	padding: 5px 15px;
+	margin-left: 15px;
 	border-radius: 3px;
 	text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
 }

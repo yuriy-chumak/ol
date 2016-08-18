@@ -270,7 +270,8 @@
 
                   (send-200 "Race"
                         "   <link rel='stylesheet' href='/stylesheets/login.css'>"
-                        "   <script src='/javascripts/jlogin.js'></script>")
+                        "   <script src='/javascripts/jlogin.js'></script>"
+                        "   <!--<script>$(document).ready(getAdvantagePointsLeft);</script>-->")
 
                   ; если много параметров, значит расу надо обновить
                   (if (eq? (length args) 4)
@@ -290,12 +291,16 @@
                         "         <ul>"
                         "            <li>"
                         "               <label for='name'>Name</label>"
-                        "               <input id='name' required value='"name"'></li>")
+                        "               <input id='name' required value='"name"'></li>"
+                        "            <li>"
+                        "               <label for='name'>Adv. Points Left</label>"
+                        "               <input id='apl' required value='"25"' readonly></li>")
+
                   (send "            <li style='clear:both'>"
                         "               <label>Primary Racial Trait</label></li>"
                         "            <li style='clear:both'></li>")
                   (for-each (lambda (name)
-                     (send "<li><input type='radio' name='group1' value='xxx'>"name"</input></li>"))
+                     (send "<li><input type='radio' name='PRTs'>"name"</input></li>"))
                      (list "Claim Adjuster"         ; CA
                            "Jack Of All Trades"     ; JOAT
                            "Interstellar Traveller" ; IT
@@ -306,6 +311,27 @@
                            "Super Stealth"          ; SS
                            "Hyper Expansion"        ; HE
                            "Alternate Reality"))    ; AR
+
+                  (send "            <li style='clear:both'>"
+                        "               <label>Lesser Racial Trait</label></li>"
+                        "            <li style='clear:both'></li>")
+                  (for-each (lambda (name)
+                     (send "<li><input type='radio' name='LRTs'>"name"</input></li>"))
+                     (list "Improved Fuel Efficiency" ;+ IFE
+                           "No Ramscoop Engines"      ;- NRSE
+                           "Total Terraforming"       ;+ TT
+                           "Cheap Engines"            ;- CE
+                           "Advanced Remote Mining"   ;+ ARM
+                           "Only Basic Remote Mining" ;- OBRM
+                           "Improved Starbases"       ;+ ISB
+                           "No Advanced Scanners"     ;- NAS
+                           "Generalized Research"     ;+ GR
+                           "Low Starting Population"  ;- LSP
+                           "Ultimate Recycling"       ;+ UR
+                           "Bleeding Edge Technology" ;- BET
+                           "Mineral Alchemy"          ;+ MA
+                           "Regenerating Shields"))   ;- RS
+
                   (send "            <li style='clear:both'>"
                         "               <input type='submit' value='Submit changes'>"
                         "               <a href='/home/"session"'>Cancel changes</a>"
@@ -370,6 +396,21 @@
                      (send-end)))))
 
 
+               ; всякая серверная математика
+               ((starts-with url "/get-advantage-points-left/") ; /prt/lrt
+                  (let ((args (string-split url #\/)))
+
+                  (if (ne? (length args) 3)
+                     (close (send-400)))
+
+                  (let ((prt (list-ref args 1))
+                        (lrt (list-ref args 2)))
+
+                     (send "HTTP/1.0 200 OK\n"
+                           "Content-Type: text/plain\n"
+                           "Server: " (car *version*) "/" (cdr *version*) "\n"
+                           "\n")
+                     (send "42"))))
 
                ;else
                (else
