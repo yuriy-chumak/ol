@@ -9,7 +9,8 @@
 ,  usermail TEXT -- временно не принимаем
 ,  password TEXT
 
-,  key TEXT -- сеансовый ключ
+,  session TEXT -- сеансовый ключ
+,  address TEXT -- адрес, с которого зашли в аккаунт (todo: завести отдлельную табличку, и позволить множественные заходы с разных адресов?)
 )")
 ; пользователь "никто" имеет номер 0
 (for-each (lambda (values)
@@ -38,7 +39,8 @@
 )")
 ; есть несколько "предустановленных" рас, owner для них должен быть "0"
 (for-each (lambda (values)
-   (apply sqlite:query (cons "INSERT INTO races (id, name, account) VALUES (?,?,?)" values))) '(
+   (apply sqlite:query (cons
+"INSERT INTO races (id, name, account) VALUES (?,?,?)" values))) '(
       (1  "Humanoid"   0)
       (2  "Rabbitoid"  0)
       (3  "Insectoid"  0)
@@ -69,14 +71,16 @@
 
 ; сразу создам парочку игр
 (for-each (lambda (values)
-   (apply sqlite:query (cons "INSERT INTO games (id, name, state) VALUES (?,?,?)" values))) '(
+   (apply sqlite:query (cons
+"INSERT INTO games (id, name, state) VALUES (?,?,?)" values))) '(
       (1  "A Walk in the Park" 0)
       (2  "A Barefoot JayWalk" 0)
       (3  "Roller Ball"        0)
       (4  "Blade Runner"       0)))
 
 (for-each (lambda (values)
-   (apply sqlite:query (cons "INSERT INTO game_players (id, game, race) VALUES (?,?,?)" values))) '(
+   (apply sqlite:query (cons
+"INSERT INTO game_players (id, game, race) VALUES (?,?,?)" values))) '(
       (1  1 1)
       (2  1 3)
       (3  2 2)
@@ -89,11 +93,11 @@
 ))
 
 
-(sqlite:query "CREATE TABLE users (
-   id INTEGER PRIMARY KEY -- comment
-)")
-
-(sqlite:query "CREATE TABLE scrolls (
-   id INTEGER PRIMARY KEY
-,  title TEXT
-)")
+;(sqlite:query "CREATE TABLE users (
+;   id INTEGER PRIMARY KEY -- comment
+;)")
+;
+;(sqlite:query "CREATE TABLE scrolls (
+;   id INTEGER PRIMARY KEY
+;,  title TEXT
+;)")
