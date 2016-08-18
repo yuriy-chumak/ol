@@ -8,7 +8,7 @@ label {
 }
 .cf:before,
 .cf:after {
-    content: ""; 
+    content: "";
     display: table;
 }
 
@@ -27,7 +27,7 @@ label {
 	padding: 25px;
 	background-color: rgba(250,250,250,0.5);
 	border-radius: 5px;
-    box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.2), 
+    box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.2),
     			inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5);
     border: 1px solid rgba(0, 0, 0, 0.3);
 }
@@ -44,8 +44,8 @@ label {
 	margin-right: 10px;
 	border: 1px solid rgba(0, 0, 0, 0.3);
 	border-radius: 3px;
-	box-shadow: inset 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 
-				0px 1px 0px 0px rgba(250, 250, 250, 0.5) ;
+	box-shadow: inset 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
+				0px 1px 0px 0px rgba(250, 250, 250, 0.5);
 }
 .loginform input[type=submit] {
 	border: 1px solid rgba(0, 0, 0, 0.3);
@@ -63,4 +63,12 @@ label {
 	margin-top: 15px;
 	border-radius: 3px;
 	text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+}
+.loginform a {
+	padding: 5px;
+	margin-right: 10px;
+	border: 1px solid rgba(0, 0, 0, 0.3);
+	border-radius: 3px;
+	box-shadow: inset 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
+				0px 1px 0px 0px rgba(250, 250, 250, 0.5);
 }

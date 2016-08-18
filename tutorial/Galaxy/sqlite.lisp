@@ -28,14 +28,16 @@
          (SQLITE-ROW
             statement)
          (SQLITE-DONE
-            (let ((result (sqlite3-last-insert-rowid database)))
-               (sqlite3-finalize statement)
-               result))
+            (sqlite3-finalize statement)
+            #false) ; no query results present
          (else
+            (print "Error!")
             (sqlite3-finalize statement)
             (runtime-error "Can't execute SQL statement" #t)))))
 
 (define (db:for-each statement f)
+   (print statement)
+   (if statement
    (let loop ()
       (let ((n (sqlite3_column_count statement)))
       ;(print "n: " n)
@@ -60,10 +62,11 @@
             (SQLITE-ROW
                (loop))
             (SQLITE-DONE
-               (sqlite3-finalize statement))
+               (sqlite3-finalize statement)
+               #false)
             (else
                (sqlite3-finalize statement)
-               (runtime-error "Can't execute SQL statement" #t))))))))
+               (runtime-error "Can't execute SQL statement" #t)))))))))
 
 
 (define (db:value query . args) ; select only one value
