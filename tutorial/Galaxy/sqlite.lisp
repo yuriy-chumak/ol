@@ -6,7 +6,7 @@
 (define database (make-sqlite3)) ; make new database connection
 (sqlite3-open (c-string "database.sqlite") database)
 
-(define (sqlite:query query . args) ; select multiple values
+(define (db:query query . args) ; select multiple values
    (let ((statement (make-sqlite3-stmt)))
       (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
          (runtime-error "error query preparation" query))
@@ -35,7 +35,7 @@
             (sqlite3-finalize statement)
             (runtime-error "Can't execute SQL statement" #t)))))
 
-(define (sqlite:for-each statement f)
+(define (db:for-each statement f)
    (let loop ()
       (let ((n (sqlite3_column_count statement)))
       ;(print "n: " n)
@@ -66,7 +66,7 @@
                (runtime-error "Can't execute SQL statement" #t))))))))
 
 
-(define (sqlite:value query . args) ; select only one value
+(define (db:value query . args) ; select only one value
    (let ((statement (make-sqlite3-stmt)))
       (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
          (runtime-error "error query preparation" query))
@@ -122,4 +122,4 @@
 
 ; tests:
 ;(print
-;(sqlite:value "UPDATE accounts SET key=? WHERE username=? AND password=?" "333" "user#1" "1234567"))
+;(db:value "UPDATE accounts SET key=? WHERE username=? AND password=?" "333" "user#1" "1234567"))

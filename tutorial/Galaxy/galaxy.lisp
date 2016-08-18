@@ -157,10 +157,10 @@
                      (send-200 "Logging in..."
                            "   <link rel='stylesheet' href='/stylesheets/login.css'>")
                      ; сгенерируем сеансовый ключ
-                     (let ((session (sqlite:value "SELECT lower(hex(randomblob(16)))")))                                         ; remote peer address
-                        (if (sqlite:value "UPDATE accounts SET session=?, address=? WHERE username=? AND password=?" session (car (syscall 51 fd #f #f)) username password)
+                     (let ((session (db:value "SELECT lower(hex(randomblob(16)))")))                                         ; remote peer address
+                        (if (db:value "UPDATE accounts SET session=?, address=? WHERE username=? AND password=?" session (car (syscall 51 fd #f #f)) username password)
                      ; ok
-                     (send "   <script>window.location.href = '/games/" session "'</script>")
+                     (send "   <script>window.location.href = '/home/" session "'</script>")
                      ; false
                      (send "   <section class='loginform cf'>"
                            "      <form name='sorry' action='/' method='get' accept-charset='utf-8' onsubmit='window.location = \"/\"; return false'>"
@@ -177,28 +177,39 @@
                      (send-end))))
 
                ; список игр пользователя
-               ((starts-with url "/games/") ; session
+               ((starts-with url "/home/") ; session
                   (let ((args (string-split url #\/)))
 
                   (if (ne? (length args) 2)
                      (close (send-400)))
 
                   (let ((session (list-ref args 1)))
-                  (let ((account (sqlite:value "SELECT id FROM accounts WHERE session = ? AND address = ?" session (car (syscall 51 fd #f #f)))))
+                  (let ((account (db:value "SELECT id FROM accounts WHERE session = ? AND address = ?" session (car (syscall 51 fd #f #f)))))
                      (if (not account)
                         (close (send-401)))
 
                      ; ok, все проверки закончены
-                     (send-200 "List")
+                     (send-200 "Home")
 
-                     (sqlite:for-each (sqlite:query
+                     (send "<br>"
+                           "Hello " (db:value "SELECT username FROM accounts WHERE account = ?" account) ",<br>")
+
+                     (send "<table>")
+                     (db:for-each (db:query
                         "SELECT  id,name  FROM games WHERE id IN (
                             SELECT DISTINCT game FROM game_players WHERE race IN (
                                SELECT id FROM races WHERE account = ?
                             )
                          )" account)
                         (lambda (id name)
-                           (send "<br><a href='/game/" session "/" id "'>" id " / " name "</a>")
+                           (send "<tr>"
+                                 "<td>id</td> <td><a href='/game/" session "/" id "'>" name "</a></td>"
+                                 "<td>" (case (db:value "SELECT state FROM games WHERE id=?" id)
+                                           (0 "New one")
+                                           (1 "Waiting for you turn")
+                                           (2 "Closed")
+                                           (else "Unknown"))
+                                 "</tr>")
                         ))
 
                      (send "<br><hr>")
@@ -212,7 +223,7 @@
 
                   (let ((session (list-ref args 1))
                         (game    (list-ref args 2)))
-                  (let ((account (sqlite:value "SELECT id FROM accounts WHERE session = ? AND address = ?" session (car (syscall 51 fd #f #f)))))
+                  (let ((account (db:value "SELECT id FROM accounts WHERE session = ? AND address = ?" session (car (syscall 51 fd #f #f)))))
                      (if (not account)
                         (close (send-401)))
                      ; todo: добавить проверку на то, что игра действительно принадлежит игроку
@@ -222,7 +233,7 @@
                      (send-200 "One"
                            "   <link href='/stylesheets/main.css' type='text/css' rel='stylesheet' />")
                      (send "   <header>"
-                           (sqlite:value "SELECT name FROM games WHERE id=?" game)
+                           (db:value "SELECT name FROM games WHERE id=?" game)
                            "   </header>"
                            "   <div id='main'>"
                            "      <view>"
