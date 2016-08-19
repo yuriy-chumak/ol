@@ -7,25 +7,22 @@
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (owl intern) intern-symbols string->uninterned-symbol string->symbol)
      )
-  
+
 (begin
   ;(define *debug* #t)
   ;(print "\e[1;1H\e[2J")
-  
-   (define (upalpha? x) (<= #\A x #\Z))
-   (define (loalpha? x) (<= #\a x #\z))
+
+   (define (upper-case? x) (<= #\A x #\Z))
+   (define (lower-case? x) (<= #\a x #\z))
    (define (alpha-char? x)
-      (or (upalpha? x)
-          (loalpha? x)))
-   (define (digit-char? x)
-      (<= #\0 x #\9))
+      (or (upper-case? x)
+          (lower-case? x)))
+   (define (digit-char? x) (<= #\0 x #\9))
    (define (ctl-char? x)
       (or (<= 0 x 31)
           (= x 127)))
-  
-  
-  
-  
+
+
 
 (define (timestamp) (syscall 201 "%c" #f #f))
 (define (set-ticker-value n) (syscall 1022 n #false #false))
@@ -52,7 +49,7 @@
               (#\e . #x001B)
               (#\" . #x0022) ;"
               (#\\ . #x005c))))
-              
+
       (define (a-z? x)
          (<= #\a x #\z))
       (define (A-Z? x)
@@ -61,13 +58,13 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)
-             (has? '(#\/ #\: #\. #\& #\? #\- #\+ #\= #\< #\>) x)))
+             (has? '(#\/ #\: #\. #\& #\? #\- #\+ #\= #\< #\> #\@ #\# #\_) x)))
       (define (xml? x)
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)
              (has? '(#\< #\/ #\> #\-) x)))
-      
+
 
       (define (space-char? x) (= x #\space))
 
@@ -83,11 +80,13 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)))
-             
+
       (define (header-char? x)
          (or (<= #\A x #\Z)
              (<= #\a x #\z)
              (has? '(#\-) x)))
+
+      ;(define (separator-char?))
 
       (define digit-values
          (list->ff
@@ -170,14 +169,6 @@
                   (tuple (runes->string request)) #empty))))
 
 
-;(print (car
-;(file->exp-stream "GET" "> " http-parser syntax-fail)))
-;(exit-owl 0)
-
-   
-;   (exit-owl (print "Can't bind to 8080")))
-
-
 ; todo: use atomic counter to check count of clients and do appropriate timeout on select
 ;  (1 for count > 0, 100 for count = 0)
 
@@ -185,20 +176,22 @@
 (lambda ()
    (let*((ss1 ms1 (clock)))
    (if (call/cc (lambda (close)
-      (let ((send (lambda args
-               (for-each (lambda (arg)
-                  (display-to fd arg)) args))))
-      ; loop if no close
-      (let loop ()
-         (let* ((request (fd->exp-stream fd "> " http-parser syntax-fail #f))
-                (Request-Line (car (car request))))
-            (if (null? Request-Line)
-               (send "HTTP/1.0 400 Bad Request\nServer: OL/1.0\n\n400")
-               (onRequest fd Request-Line (cdr (car request)) send close))
-            (loop))))))
-      (begin
-         (syscall 3 fd #f #f)
-         (display "socket closed, ")))
+         (let ((send (lambda args
+                  (for-each (lambda (arg)
+                     (display-to fd arg)) args))))
+         (let for ()
+         (let loop ((request (fd->exp-stream fd "> " http-parser syntax-fail #f)))
+            (if (null? request)
+               (close #t)
+               (let ((Request-Line (car (car request)))
+                     (Headers-Line (cdr (car request))))
+                  ;(print "Request-Line: " Request-Line)
+                  ;(print "Headers-Line: " Headers-Line)
+               (if (null? Request-Line)
+                  (send "HTTP/1.0 400 Bad Request\n\n400")
+                  (onRequest fd Request-Line Headers-Line send close))
+               (loop (force (cdr request)))))) (for)))))
+      (display (if (syscall 3 fd #f #f) "socket closed, " "can't close socket, ")))
    (print "on-accept done." )
    (let*((ss2 ms2 (clock)))
       (print "# " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
@@ -218,10 +211,10 @@
       (if (not (syscall 49 socket port #f)) ; bind
          (loop (+ port 2))
          (print "Server binded to " port)))
-   ; listen      
+   ; listen
    (if (not (syscall 50 socket #f #f)) ; listen
       (exit-owl (print "Can't listen")))
-   
+
    ; accept
    (let loop ()
       (if (syscall 23 socket #f #f) ; select
