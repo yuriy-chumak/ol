@@ -97,7 +97,7 @@
 ; --------------------------------------------------------------------------
    (begin
 ;   (gl:make-current)
-   (define EXT_vertex_array (glIsExtensionSupported "GL_EXT_vertex_array"))
+   (define EXT_vertex_array (gl:ExtensionSupported? "GL_EXT_vertex_array"))
 
 		(define GL_VERTEX_ARRAY #x8074)
 		(define GL_NORMAL_ARRAY #x8075)

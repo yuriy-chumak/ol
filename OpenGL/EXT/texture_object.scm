@@ -39,7 +39,7 @@
 
 ; ---------------------------------------------------------------------------
 (begin
-   (define EXT_texture_object (glIsExtensionSupported "GL_EXT_texture_object"))
+   (define EXT_texture_object (gl:ExtensionSupported? "GL_EXT_texture_object"))
    (define $ (dlopen GL_LIBRARY))
 
    (define glBindTexture (if EXT_texture_object

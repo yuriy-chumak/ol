@@ -42,7 +42,7 @@
    (begin
 ;   (gl:make-current)
 
-   (define EXT_polygon_offset (glIsExtensionSupported "GL_EXT_polygon_offset"))
+   (define EXT_polygon_offset (gl:ExtensionSupported? "GL_EXT_polygon_offset"))
 
 ;   (gl:stop-current)
 ))

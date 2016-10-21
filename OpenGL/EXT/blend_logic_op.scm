@@ -36,7 +36,7 @@
 ; ---------------------------------------------------------------------------
    (begin
 ;   (gl:make-current)
-   (define EXT_blend_logic_op (glIsExtensionSupported "GL_EXT_blend_logic_op"))
+   (define EXT_blend_logic_op (gl:ExtensionSupported? "GL_EXT_blend_logic_op"))
 
 ;   (gl:stop-current)
 ))

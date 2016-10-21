@@ -21,6 +21,8 @@
       gl:SwapBuffers
 
       gl:GetVersion
+      gl:ExtensionSupported?
+
 
       ; GL types
       ; https://www.opengl.org/wiki/OpenGL_Type
@@ -900,8 +902,6 @@
 
    GL_MAP1_VERTEX_3 GL_MAP2_VERTEX_3
    GL_LINE GL_FILL GL_POINT
-
-   glIsExtensionSupported
 
    (exports (otus lisp))
    (exports (otus pinvoke))
@@ -1989,7 +1989,7 @@
 ; поддержка расширений:
 (import (owl string))
 
-(define (glIsExtensionSupported extension)
+(define (gl:ExtensionSupported? extension)
 (let ((string (append '(#x20) (string->runes (glGetString GL_EXTENSIONS)) '(#x20)))
       (substr (append '(#x20) (string->runes extension) '(#x20))))
 (for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support..."))
