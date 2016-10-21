@@ -342,18 +342,20 @@
                ((skip (get-imm #\#))
                 (val
                   (get-any-of
-                     (get-word "true" #true)    ;; get the longer ones first if present
                      (get-word "false" #false)
+                     (get-word "true"  #true)    ;; get the longer ones first if present
+                     (get-word "null"  #null)
                      (get-word "empty" #empty)
-                     (get-word "eof" (cast 4 13)) ;; #eof
-                     (get-word "t" #true)
-                     (get-word "f" #false)
-                     (get-word "T" #true)
-                     (get-word "F" #false)
-                     (get-word "e" #empty)
+                     (get-word "eof"   #eof)     ; (cast 4 13))
+                     ; сокращения
+                     (get-word "t"     #true)
+                     (get-word "f"     #false)
+                     (get-word "T"     #true)
+                     (get-word "F"     #false)
+                     (get-word "e"     #empty)
 ;                    (get-word "define" #define)
                      (let-parses
-                        ((bang (get-imm #\!))
+                        ((bang (get-imm #\!)) ; sha-bang
                          (line get-rest-of-line))
                         (list 'quote (list 'hashbang (list->string line)))))))
                val)))
