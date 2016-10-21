@@ -11,7 +11,7 @@
 
 
 (define $ (or
-   (dlopen "libNewton.so")
+   (dlopen "./libNewton.so")
    (dlopen "newton")
    (runtime-error "Can't load newton library" #f)))
 
@@ -72,13 +72,26 @@
 ; создадим "пол"
 (define collision (or
    (NewtonCreateTreeCollision world 0)
-   (runtime-error "Can't create bacground" #f)))
+   (runtime-error "Can't create background" #f)))
 (NewtonTreeCollisionBeginBuild collision)
+; пол
 (NewtonTreeCollisionAddFace collision 4 '(
-   -100 0  100
-    100 0  100
-    100 0 -100
-   -100 0 -100) (* 3 4) 0) ; (* 3 4) is stride, where 4 is sizeof(float)
+   -10 0  10
+    10 0  10
+    10 0 -10
+   -10 0 -10) (* 3 4) 0) ; (* 3 4) is stride, where 4 is sizeof(float)
+; ступеньки
+(NewtonTreeCollisionAddFace collision 4 '(
+   -4 0.6  4
+    4 0.6  4
+    4 0.6 -4
+   -4 0.6 -4) (* 3 4) 0) ; (* 3 4) is stride, where 4 is sizeof(float)
+(NewtonTreeCollisionAddFace collision 4 '(
+   -2 1.2  2
+    2 1.2  2
+    2 1.2 -2
+   -2 1.2 -2) (* 3 4) 0) ; (* 3 4) is stride, where 4 is sizeof(float)
+
 (NewtonTreeCollisionEndBuild collision 1)
 (NewtonCreateDynamicBody world collision '(1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1))
 (NewtonDestroyCollision collision)
@@ -88,7 +101,7 @@
 (define ApplyGravity (syscall 1111 (cons
    (list type-vptr type-void* type-int+)
    (lambda (body timestep threadIndex)
-      (NewtonBodySetForce body '(0 -9.8 0 0))
+      (NewtonBodySetForce body '(0 -4.8 0 0))
 )) #f #f))
 
 
@@ -108,11 +121,11 @@
                0 0 1 0 ; right
 
                ,(/ (- (rand! 400) 200) 100) ; x
-               ,(+ id 20)                   ; y
+               ,(+ id 10)                   ; y
                ,(/ (- (rand! 400) 200) 100) ; z
                1       ; posit
              ))))
-   (iota 100)))
+   (iota 20)))
 (for-each (lambda (cube)
    (NewtonBodySetMassProperties cube 1.0 collision)
    (NewtonBodySetForceAndTorqueCallback cube ApplyGravity)
@@ -135,11 +148,11 @@
                0 0 1 0 ; right
 
                ,(/ (- (rand! 400) 200) 100) ; x
-               ,(+ id 1)                    ; y
+               ,(+ (/ id 10) 1)                    ; y
                ,(/ (- (rand! 400) 200) 100) ; z
                1       ; posit
              ))))
-   (iota 75)))
+   (iota 50)))
 (for-each (lambda (sphere)
    (NewtonBodySetMassProperties sphere 1.0 collision)
    (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
@@ -275,14 +288,34 @@
       0 1 0)
 
    ; платформа
-;;   (glBegin GL_LINE_STRIP)
-;;   (glBegin GL_QUADS)
-;   (glColor3f 0.4 0.4 0.4)
-;   (glVertex3f -100 0  100)
-;   (glVertex3f  100 0  100)
-;   (glVertex3f  100 0 -100)
-;   (glVertex3f -100 0 -100)
-;;   (glVertex3f -100 0  100)
+;   (glBegin GL_LINE_STRIP)
+   (glBegin GL_QUADS)
+      (glColor3f 0.4 0.4 0.4)
+      (glVertex3f -10 0  10)
+      (glVertex3f  10 0  10)
+      (glVertex3f  10 0 -10)
+      (glVertex3f -10 0 -10)
+      (glColor3f 0.2 0.2 0.2)
+      (glVertex3f -4 0.01  4)
+      (glVertex3f  4 0.01  4)
+      (glVertex3f  4 0.01 -4)
+      (glVertex3f -4 0.01 -4)
+      (glColor3f 0.5 0.5 0.5)
+      (glVertex3f -4 0.6  4)
+      (glVertex3f  4 0.6  4)
+      (glVertex3f  4 0.6 -4)
+      (glVertex3f -4 0.6 -4)
+      (glColor3f 0.2 0.2 0.2)
+      (glVertex3f -2 0.61  2)
+      (glVertex3f  2 0.61  2)
+      (glVertex3f  2 0.61 -2)
+      (glVertex3f -2 0.61 -2)
+      (glColor3f 0.5 0.5 0.5)
+      (glVertex3f -2 1.2  2)
+      (glVertex3f  2 1.2  2)
+      (glVertex3f  2 1.2 -2)
+      (glVertex3f -2 1.2 -2)
+   ;  (glVertex3f -100 0  100)
    (glEnd)
 
 
