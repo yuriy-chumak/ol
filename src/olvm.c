@@ -1723,6 +1723,8 @@ static int mainloop(OL* ol)
 	#		endif
 	#		define SYSCALL_IOCTL_TIOCGETA 19
 
+	#		define SYSCALL_SENDFILE 40
+
 	#		define SYSCALL_EXIT 60
 	#		define SYSCALL_GETDENTS 78
 
@@ -2714,6 +2716,24 @@ loop:
 			}
 			break;
 		}
+
+		case SYSCALL_SENDFILE + SECCOMP:
+		case SYSCALL_SENDFILE: { // (syscall 40 fd file-fd size)
+			if (!is_port(a) || !is_port(b))
+				break;
+
+			int socket = port(a);
+			int filefd = port(b);
+			int size = svtoi (c);
+
+			int wrote = sendfile(socket, filefd, NULL, size);
+			if (wrote < 0)
+				break;
+
+			result = itoun(wrote);
+			break;
+		}
+
 
 		// directories
 		case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
