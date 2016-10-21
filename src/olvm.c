@@ -1265,14 +1265,6 @@ struct ol_cbt
 	tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 
-#define ERROR2(opcode, a, b)         { \
-	fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__); /* TEMP */\
-	R[4] = F (opcode);\
-	R[5] = (word) (a);\
-	R[6] = (word) (b);\
-	ol->this = this; \
-	ol->arity = acc; \
-	return STATE_ERROR; }
 #define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 #define A0                          R[ip[0]]
@@ -1448,6 +1440,18 @@ static int error(OL *ol) /* R4-R6 set, and call mcp */
 
 static int apply(OL *ol)
 {
+	#	undef ERROR
+	#	define ERROR(opcode, a, b) \
+		{ \
+			fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__); /* TEMP */\
+			R[4] = F (opcode);\
+			R[5] = (word) (a);\
+			R[6] = (word) (b);\
+			ol->this = this; \
+			ol->arity = acc; \
+			return STATE_ERROR; \
+		}
+
 	word* this = ol->this;
 	unsigned short acc = ol->arity;
 	word* R = ol->R;
@@ -1487,7 +1491,7 @@ apply:
 		//ol->this = this;
 		//ol->arity = acc;
 		//return STATE_APPLY;
-	} /* <- add a way to call the newobj vm prim table also here? */
+	}
 
 	if ((word)this == IRETURN) {
 		// в R[3] находится код возврата
@@ -1541,13 +1545,13 @@ apply:
 			case 2:
 				R[3] = get(this, R[4],    0);
 				if (!R[3])
-					ERROR2(260, this, R[4]);
+					ERROR(260, this, R[4]);
 				break;
 			case 3:
 				R[3] = get(this, R[4], R[5]);
 				break;
 			default:
-				ERROR2(259, this, INULL);
+				ERROR(259, this, INULL);
 			}
 			this = cont;
 			acc = 1;
@@ -1559,7 +1563,7 @@ apply:
 		}
 		else
 			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
-				ERROR2(259, this, INULL);
+				ERROR(259, this, INULL);
 
 		// А не стоит ли нам переключить поток?
 		if (--ol->ticker < 0) {
@@ -1627,20 +1631,12 @@ apply:
 		return STATE_MAINLOOP; // let's execute
 	}
 	else
-		ERROR2(257, this, INULL); // not callable
+		ERROR(257, this, INULL); // not callable
 }
 
 
 
 // free numbers: 29(ncons), 30(ncar), 31(ncdr)
-#define ERROR(opcode, a, b)         { \
-	fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__); /* TEMP */\
-	R[4] = F (opcode);\
-	R[5] = (word) (a);\
-	R[6] = (word) (b);\
-	ol->ip = ip; \
-	heap->fp = fp; \
-	return STATE_ERROR; }
 
 // ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 // Rn - регистр машины (R[n])
@@ -1648,14 +1644,26 @@ apply:
 // todo: добавить в комменты к команде теоретическое количество тактов на операцию
 static int mainloop(OL* ol)
 {
-	word* R = ol->R; // регистры виртуальной машины
-	unsigned char *ip = ol->ip;
+	word* R = ol->R;   // регистры виртуальной машины
 	heap_t* heap = &ol->heap;
 
 	word *fp = heap->fp; // memory allocation pointer
+	unsigned char *ip = ol->ip;
 
 	// todo: add "NOP" function (may be 0x0 ?)
 	// todo: add "HLT" function (may be 0x0 ?)
+
+	#	undef ERROR
+	#	define ERROR(opcode, a, b) \
+		{ \
+			fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__); /* TEMP */\
+			R[4] = F (opcode);\
+			R[5] = (word) (a);\
+			R[6] = (word) (b);\
+			ol->ip = ip; \
+			heap->fp = fp; \
+			return STATE_ERROR; \
+		}
 
 		// управляющие команды:
 	#	define APPLY 20 // apply-cont = 20+64
