@@ -1715,7 +1715,7 @@ static int mainloop(OL* ol)
 	#		define SYSCALL_OPEN 2
 	#		define SYSCALL_CLOSE 3
 	#		define SYSCALL_STAT 4
-	#		define SYSCALL_FSTAT 5
+	//#		define SYSCALL_FSTAT 5
 	//#		define SYSCALL_LSTAT 6
 
 	#		ifndef SYSCALL_IOCTL
@@ -2642,49 +2642,45 @@ loop:
 			break;
 		}
 
-		// STATs
-			word* unstat(struct stat* st) {
-				return new_tuple(
-						IFALSE, // st_dev   - устройство
-						IFALSE, // st_ino   - inode
-						IFALSE, // st_mode  - режим доступа
-						IFALSE, // st_nlink - количество жестких ссылок
-						itoun(st->st_uid),//- идентификатор пользователя-владельца
-						itoun(st->st_gid),//- идентификатор группы-владельца
-						IFALSE, // st_rdev  - тип устройства (если это устройство)
-						itoun(st->st_size),// общий размер в байтах
-						IFALSE, // st_blksize размер блока ввода-вывода в файловой системе
-						IFALSE, // st_blocks  количество выделенных блоков
-						// Since Linux 2.6, the kernel supports nanosecond
-						//   precision for the following timestamp fields.
-						// but we do not support this for a while
-						itoun(st->st_atime),//время последнего доступа (в секундах)
-						itoun(st->st_mtime),//время последней модификации (в секундах)
-						itoun(st->st_ctime) //время последнего изменения (в секундах)
-				);
-			}
 		case SYSCALL_STAT: {
-			if (! is_string(a))
-				break;
-			CHECK(is_string(a), a, SYSCALL);
-			word* s = &car (a);
-
 			struct stat st;
-			if (stat((char*) s, &st) < 0)
+
+			if (is_port(a)) {
+				if (fstat(port (a), &st) < 0)
+					break;
+			}
+			else
+			if (is_string(a)) {
+				if (b == ITRUE) {
+					if (lstat((char*) &car (a), &st) < 0)
+						break;
+				}
+				else {
+					if (stat((char*) &car (a), &st) < 0)
+						break;
+				}
+			}
+			else
 				break;
 
-			result = unstat(&st);
-			break;
-		}
-		case SYSCALL_FSTAT: {
-			CHECK(is_port(a), a, SYSCALL);
-			int portfd = port(a);
-
-			struct stat st;
-			if (fstat(portfd, &st) < 0)
-				break;
-
-			result = unstat(&st);
+			result = new_tuple(
+					itoun(st.st_dev),    // устройство
+					itoun(st.st_ino),    // inode
+					itoun(st.st_mode),   // режим доступа
+					itoun(st.st_nlink),  // количество жестких ссылок
+					itoun(st.st_uid),    // идентификатор пользователя-владельца
+					itoun(st.st_gid),    // идентификатор группы-владельца
+					itoun(st.st_rdev),   // тип устройства (если это устройство)
+					itoun(st.st_size),   // общий размер в байтах
+					itoun(st.st_blksize),// размер блока ввода-вывода в файловой системе
+					itoun(st.st_blocks), // количество выделенных блоков
+					// Since Linux 2.6, the kernel supports nanosecond
+					//   precision for the following timestamp fields.
+					// but we do not support this for a while
+					itoun(st.st_atime),  // время последнего доступа (в секундах)
+					itoun(st.st_mtime),  // время последней модификации (в секундах)
+					itoun(st.st_ctime)   // время последнего изменения (в секундах)
+			);
 			break;
 		}
 
