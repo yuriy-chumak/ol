@@ -1306,17 +1306,17 @@ int callback(int id, void* arg1, va_list args)
 
 ///*
 	ol->this = (word*)cdr (ol->R[128 + id]);// lambda для обратного вызова
-//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, если без потоков работаем
+//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, так как без потоков работаем
 //	ol->bank = 0;
 	assert (is_reference(ol->this));
 	assert (reftype (ol->this) != TTHREAD);
 
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же
-	R[128 + 100] = R[0]; // mcp?
-//	R[128 + 101] = R[1];
-//	R[128 + 102] = R[2];
-	R[128 + 103] = R[3]; // continuation
+	R[128 + 0] = R[0]; // mcp?
+//	R[128 + 1] = R[1];
+//	R[128 + 2] = R[2];
+	R[128 + 3] = R[3]; // continuation
 
 	// вызовем колбек:
 	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callback функции
@@ -1360,10 +1360,10 @@ int callback(int id, void* arg1, va_list args)
 		break;
 	case -1: // todo: change -1 to STATE_DONE or something similar
 		// возврат из колбека
-		R[3] = R[128 + 103];
-//		R[1] = R[128 + 102];
-//		R[1] = R[128 + 101];
-		R[0] = R[128 + 100]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
+		R[3] = R[128 + 3];
+//		R[1] = R[128 + 2];
+//		R[1] = R[128 + 1];
+		R[0] = R[128 + 0]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
 		return 0; // return from callback
 
 	case STATE_ERROR:
@@ -1384,9 +1384,9 @@ int callback##x(void* arg1, ...)\
 	va_end(args);\
 	return r;\
 }
-callbackX(1)
-callbackX(2)
-callbackX(3)
+//callbackX(1)
+//callbackX(2)
+//callbackX(3)
 callbackX(4)
 callbackX(5)
 callbackX(6)
@@ -1407,9 +1407,9 @@ callbackX(20)
 
 int (*callbacks[])(void*, ...) = {
 	0,
-	callback1,
-	callback2,
-	callback3,
+	0,//callback1,
+	0,//callback2,
+	0,//callback3,
 	callback4,
 	callback5,
 	callback6,
@@ -3532,7 +3532,7 @@ loop:
 		// create callback
 		case 1111: {
 			// TCALLBACK
-			for (int c = 1; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
+			for (int c = 4; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
 				if (R[128+c] == IFALSE) {
 					R[128+c] = a;
 					result = F(c);
@@ -4636,18 +4636,7 @@ word* pinvoke(OL* self, word* arguments)
 		}
 
 		case TCALLBACK: {
-			// todo: сделать поиск свободного индекса для колбека
-			//  а вообще - завести отдельную команду для создания колбека и для его освобождения
-			//  ведь как-то надо от них избавляться!
-			/*for (int c = 1; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
-				if (self->R[128+c] == IFALSE) {
-					self->R[128+c] = arg;
-					args[i] = callbacks[c];
-					break;
-				}
-			}*/
 			args[i] = callbacks[uvtoi(arg)];
-
 //			self->R[128+1] = arg;
 //			args[i] = &callback1;
 
