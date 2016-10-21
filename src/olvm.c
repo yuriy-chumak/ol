@@ -689,7 +689,7 @@ static int seccompp = 0;     /* are we in seccomp? а также дельта д
 
 /*** Garbage Collector,
  * based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982)
- ***/
+ **/
 // "на почитать" по теме GC:
 // shamil.free.fr/comp/ocaml/html/book011.html
 
@@ -700,7 +700,7 @@ typedef struct heap_t
 	word *begin;     // begin of heap memory block
 	word *end;       // end of heap
 	word *genstart;  // new generation begin pointer
-	// new (size) == *(size*)fp++
+	// new (size) === *(size*)fp++
 	word *fp;        // allocation pointer
 } heap_t;
 
@@ -736,7 +736,7 @@ word*p = NEW (size);\
 // new(type, size) - allocate object, with type
 // new(type, size, pads) - allocate RAW object, with RAWH(type)
 #define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new(...) NEW_MACRO(__VA_ARGS__, NEW_RAW_OBJECT, NEW_OBJECT, NEW)(__VA_ARGS__)
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_RAW_OBJECT, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
 
 // -= new_pair =----------------------------------------
 
@@ -755,7 +755,7 @@ word*p = NEW_OBJECT (type, 3);\
 #define NEW_PAIR(a1, a2) NEW_TYPED_PAIR(TPAIR, a1, a2)
 
 #define NEW_PAIR_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new_pair(...) NEW_PAIR_MACRO(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING)(__VA_ARGS__)
+#define new_pair(...) NEW_PAIR_MACRO(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
 
 // -= new_list =----------------------------------------
 
@@ -924,7 +924,7 @@ word* p = new_bytevector(TSTRING, length);\
 })
 
 #define NEW_STRING_MACRO(_1, _2, NAME, ...) NAME
-#define new_string(...) NEW_STRING_MACRO(__VA_ARGS__, NEW_STRING2, NEW_STRING)(__VA_ARGS__)
+#define new_string(...) NEW_STRING_MACRO(__VA_ARGS__, NEW_STRING2, NEW_STRING, NOTHING)(__VA_ARGS__)
 
 
 #define new_vptr(a) ({\
@@ -1009,7 +1009,7 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 		}
 		return delta;
 	} else {
-		printf("adjust_heap failed.\n");
+		fprintf(stderr, "adjust_heap failed.\n");
 		//breaked |= 8; // will be passed over to mcp at thread switch
 		return 0;
 	}
@@ -1020,7 +1020,8 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 
 // todo: ввести третий generation
 //__attribute__ ((aligned(sizeof(word))))
-static word gc(heap_t *heap, int size, word regs) {
+static
+word gc(heap_t *heap, int size, word regs) {
 	// просматривает список справа налево
 	void mark(word *pos, word *end)
 	{
@@ -1061,7 +1062,7 @@ static word gc(heap_t *heap, int size, word regs) {
 	//       тот же элемент данных (обратный вызов), а значит его можно
 	//       просто удалить!
 
-	// на самом деле - compact & sweep
+	// на самом деле compact & sweep
 	word *sweep(word* end)
 	{
 		word *old, *newobject;
@@ -1110,13 +1111,13 @@ static word gc(heap_t *heap, int size, word regs) {
 		*fp = make_header(TTUPLE, 2);
 
 		// непосредственно сам GC
-	//	clock_t uptime;
-	//	uptime = -(1000 * clock()) / CLOCKS_PER_SEC;
+	//	clock_t gctime;
+	//	gctime = -(1000 * clock()) / CLOCKS_PER_SEC;
 		root[0] = regs;
 		mark(root, fp);        // assert (root > fp)
 		fp = sweep(fp);
 		regs = root[0];
-	//	uptime += (1000 * clock()) / CLOCKS_PER_SEC;
+	//	gctime += (1000 * clock()) / CLOCKS_PER_SEC;
 	}
 	heap->fp = fp;
 
@@ -1124,7 +1125,7 @@ static word gc(heap_t *heap, int size, word regs) {
 		struct tm tm = *localtime(&(time_t){time(NULL)});
 		char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
 		fprintf(stderr, "%s, GC done in %2d ms (use: %7d from %8d bytes - %2d%%): tbd.\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
-				buff/*asctime(&tm)*/, uptime,
+				buff/*asctime(&tm)*/, gctime,
 				(sizeof(word) * (fp - heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
 				(sizeof(word) * (fp - heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)));
 //				-1, -1, -1, -1);
@@ -1168,7 +1169,7 @@ static word gc(heap_t *heap, int size, word regs) {
 
 
 /*** OS Interaction and Helpers ***/
-//static
+static
 void set_blocking(int sock, int blockp) {
 #ifdef _WIN32
 //   unsigned long flags = 1;
@@ -1176,7 +1177,7 @@ void set_blocking(int sock, int blockp) {
 //      // tbd. ioctlsocket(sock, FIONBIO, &flags);
 //   }
 #else
-   fcntl(sock, F_SETFL, (blockp ?: O_NONBLOCK));
+	fcntl(sock, F_SETFL, (blockp ?: O_NONBLOCK));
 #endif
 }
 
