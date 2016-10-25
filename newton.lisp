@@ -76,10 +76,10 @@
 (NewtonTreeCollisionBeginBuild collision)
 ; пол
 (NewtonTreeCollisionAddFace collision 4 '(
-   -10 0  10
-    10 0  10
-    10 0 -10
-   -10 0 -10) (* 3 4) 0) ; (* 3 4) is stride, where 4 is sizeof(float)
+   -9 0.1  9
+    9 0.1  9
+    9 0.1 -9
+   -9 0.1 -9) (* 3 4) 0) ; (* 3 4) is stride, where 4 is sizeof(float)
 ; ступеньки
 (NewtonTreeCollisionAddFace collision 4 '(
    -4 0.6  4
@@ -120,12 +120,12 @@
                0 1 0 0 ; up
                0 0 1 0 ; right
 
-               ,(/ (- (rand! 400) 200) 100) ; x
-               ,(+ id 10)                   ; y
-               ,(/ (- (rand! 400) 200) 100) ; z
+               ,(/ (- (rand! 2000) 1000) 100) ; x
+               ,(+ (/ id 3) 5)                ; y
+               ,(/ (- (rand! 2000) 1000) 100) ; z
                1       ; posit
              ))))
-   (iota 20)))
+   (iota 50)))
 (for-each (lambda (cube)
    (NewtonBodySetMassProperties cube 1.0 collision)
    (NewtonBodySetForceAndTorqueCallback cube ApplyGravity)
@@ -137,27 +137,26 @@
    (NewtonCreateSphere world  0.5  0  #f)
    (runtime-error "Can't create box" #f)))
 
-(define spheres (map
-   (lambda (id)
-      (let ((x (* id 0.7))
-            (y (* id 1)))
-         (NewtonCreateDynamicBody world collision
-            `(;x y z w
-               1 0 0 0 ; front
-               0 1 0 0 ; up
-               0 0 1 0 ; right
-
-               ,(/ (- (rand! 400) 200) 100) ; x
-               ,(+ (/ id 10) 1)                    ; y
-               ,(/ (- (rand! 400) 200) 100) ; z
-               1       ; posit
-             ))))
-   (iota 50)))
+(define spheres null);(map
+;   (lambda (id)
+;      (NewtonCreateDynamicBody world collision
+;         `(;x y z w
+;            1 0 0 0 ; front
+;            0 1 0 0 ; up
+;            0 0 1 0 ; right
+;
+;            ,(/ (- (rand! 400) 200) 100) ; x
+;            ,(+ (/ id 3) 1)             ; y
+;            ,(/ (- (rand! 400) 200) 100) ; z
+;            1       ; posit
+;          )))
+;   (iota 50)))
 (for-each (lambda (sphere)
    (NewtonBodySetMassProperties sphere 1.0 collision)
    (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
 ) spheres)
-(NewtonDestroyCollision collision)
+; we need this collision for feature use
+;(NewtonDestroyCollision collision)
 
 
 ;
@@ -195,44 +194,45 @@
 (define (glCube)
    (glPushMatrix)
    (glScalef 0.5 0.5 0.5)
+   (glColor3f 0.7 0.7 0.7)
    (glBegin GL_QUADS)
       ; front
-      (glColor3f 0.7 0.7 0.7)
-      (glVertex3f  1 -1 -1)
+      (glNormal3f  0  0 -1)
       (glVertex3f  1  1 -1)
-      (glVertex3f -1  1 -1)
+      (glVertex3f  1 -1 -1)
       (glVertex3f -1 -1 -1)
+      (glVertex3f -1  1 -1)
 
       ; back
-      (glColor3f 0.9 0.8 0.5)
-      (glVertex3f  1 -1  1)
-      (glVertex3f  1  1  1)
+      (glNormal3f  0  0  1)
       (glVertex3f -1  1  1)
       (glVertex3f -1 -1  1)
+      (glVertex3f  1 -1  1)
+      (glVertex3f  1  1  1)
 
       ; right
-      (glColor3f 0.7 0.2 0.2)
+      (glNormal3f  1  0  0)
       (glVertex3f  1 -1 -1)
       (glVertex3f  1  1 -1)
       (glVertex3f  1  1  1)
       (glVertex3f  1 -1  1)
 
       ; left
-      (glColor3f 0.2 0.2 0.7)
-      (glVertex3f -1 -1 -1)
-      (glVertex3f -1  1 -1)
+      (glNormal3f  1  0  0)
       (glVertex3f -1  1  1)
       (glVertex3f -1 -1  1)
+      (glVertex3f -1 -1 -1)
+      (glVertex3f -1  1 -1)
 
       ; top
-      (glColor3f 0.7 0.7 0.2)
-      (glVertex3f  1  1  1)
-      (glVertex3f  1  1 -1)
+      (glNormal3f  0  1  0)
       (glVertex3f -1  1 -1)
       (glVertex3f -1  1  1)
+      (glVertex3f  1  1  1)
+      (glVertex3f  1  1 -1)
 
       ; bottom
-      (glColor3f 0.2 0.7 0.7)
+      (glNormal3f  0  1  0)
       (glVertex3f  1 -1  1)
       (glVertex3f  1 -1 -1)
       (glVertex3f -1 -1 -1)
@@ -242,7 +242,7 @@
    (glPopMatrix))
 
 (define gl-sphere (gluNewQuadric))
-(gluQuadricDrawStyle gl-sphere GLU_LINE)
+(gluQuadricDrawStyle gl-sphere GLU_FILL)
 
 (define (glSphere)
    (glPushMatrix)
@@ -266,20 +266,33 @@
 
    (glEnable GL_DEPTH_TEST)
 
-   (NewtonInvalidateCache world)
+   ; http://www.glprogramming.com/red/chapter12.html
+   (glEnable GL_LIGHTING)
+   (glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
+   (glEnable GL_NORMALIZE)
+
+   ; http://compgraphics.info/OpenGL/lighting/light_sources.php
+   (glEnable GL_LIGHT0)
+   (glLightfv GL_LIGHT0 GL_DIFFUSE '(0.7 0.7 0.7 1.0))
+
+   (glEnable GL_COLOR_MATERIAL)
+
+   (NewtonInvalidateCache world) ; say "world construction finished"
 
    ; return parameter list:
    (let ((oldtime (gettimeofday)))
-   (list oldtime)))
+   (list oldtime 1 cubes spheres)))
 
 ; draw
-(lambda (oldtime)
+(lambda (oldtime i cubes spheres)
 (let ((newtime (gettimeofday)))
    ; обновим мир
-   (NewtonUpdate world (* (+ (- (car newtime) (car oldtime)) (/ (- (cdr newtime) (cdr oldtime)) 1000000)) 2))
+   (let ((ms (* (+ (- (car newtime) (car oldtime)) (/ (- (cdr newtime) (cdr oldtime)) 1000000)) 2)))
+      (NewtonUpdate world (if (> ms 0.006) 0.006 ms)))
 
    ; и нарисуем его
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
@@ -287,36 +300,28 @@
       0 0 0
       0 1 0)
 
+   (glLightfv GL_LIGHT0 GL_POSITION (list 10 5 2 1))
+   ; colors in opengl when lighting use: http://stackoverflow.com/questions/8494942/why-does-my-color-go-away-when-i-enable-lighting-in-opengl
+   (glColorMaterial GL_FRONT GL_DIFFUSE)
+
+;   (glLightfv GL_LIGHT0 GL_POSITION (list 7 3.0 3.0 0.0))
+
    ; платформа
-;   (glBegin GL_LINE_STRIP)
-   (glBegin GL_QUADS)
-      (glColor3f 0.4 0.4 0.4)
-      (glVertex3f -10 0  10)
-      (glVertex3f  10 0  10)
-      (glVertex3f  10 0 -10)
-      (glVertex3f -10 0 -10)
-      (glColor3f 0.2 0.2 0.2)
-      (glVertex3f -4 0.01  4)
-      (glVertex3f  4 0.01  4)
-      (glVertex3f  4 0.01 -4)
-      (glVertex3f -4 0.01 -4)
-      (glColor3f 0.5 0.5 0.5)
-      (glVertex3f -4 0.6  4)
-      (glVertex3f  4 0.6  4)
-      (glVertex3f  4 0.6 -4)
-      (glVertex3f -4 0.6 -4)
-      (glColor3f 0.2 0.2 0.2)
-      (glVertex3f -2 0.61  2)
-      (glVertex3f  2 0.61  2)
-      (glVertex3f  2 0.61 -2)
-      (glVertex3f -2 0.61 -2)
-      (glColor3f 0.5 0.5 0.5)
-      (glVertex3f -2 1.2  2)
-      (glVertex3f  2 1.2  2)
-      (glVertex3f  2 1.2 -2)
-      (glVertex3f -2 1.2 -2)
-   ;  (glVertex3f -100 0  100)
-   (glEnd)
+;  (glBegin GL_LINE_STRIP)
+   (glPushMatrix)
+   (glScalef 18 0.2 18)
+   (glCube)
+   (glPopMatrix)
+
+   (glPushMatrix)
+   (glScalef 8 1.2 8)
+   (glCube)
+   (glPopMatrix)
+   
+   (glPushMatrix)
+   (glScalef 4 2.4 4)
+   (glCube)
+   (glPopMatrix)
 
 
    (glBegin GL_LINES)
@@ -346,6 +351,7 @@
          (glVertex3f 0 1 19)
    (glEnd)
 
+;  (glMaterialfv GL_FRONT GL_DIFFUSE '(1 0 0 1))
    (let ((matrix '(0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1)))
       (for-each (lambda (cube)
          (NewtonBodyGetMatrix cube matrix)
@@ -361,9 +367,28 @@
          (glSphere)
          (glPopMatrix)) spheres))
 
+   (if (and (> i 1000)
+            (eq? (mod i 100) 0))
+      (list
+         newtime (+ i 1) cubes 
+            (let ((sphere (NewtonCreateDynamicBody world collision
+                  `(;x y z w
+                     1 0 0 0 ; front
+                     0 1 0 0 ; up
+                     0 0 1 0 ; right
+
+                     ,(/ (- (rand! 200) 100) 100) ; x
+                     ,8             ; y
+                     ,(/ (- (rand! 200) 100) 100) ; z
+                     1       ; posit
+                   ))))
+               (NewtonBodySetMassProperties sphere 1.0 collision)
+               (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
+               (print "objects count: " (length spheres))
+               (cons sphere spheres)))
    ; return new parameter list:
-   (list
-      newtime))
+      (list
+         newtime (+ i 1) cubes spheres)))
 ))
 
 (NewtonDestroy world)
