@@ -207,6 +207,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifdef _WIN32
+#	define lstat stat
+#endif
+
 #include <time.h>
 
 #ifdef __unix__
@@ -1222,6 +1226,39 @@ void set_signal_handler()
 	signal(SIGPIPE, SIG_IGN);
 #endif
 }
+
+#ifndef __linux__
+
+size_t
+sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
+{
+	off_t orig;
+	char buf[8192];
+	size_t toRead, numRead, numSent, totSent;
+
+	while (count > 0) {
+		toRead = (sizeof(buf) < count) ? sizeof(buf) : count;
+
+		numRead = read(in_fd, buf, toRead);
+		if (numRead == -1)
+			return -1;
+		if (numRead == 0)
+			break;                      /* EOF */
+
+		numSent = write(out_fd, buf, numRead);
+		if (numSent == -1)
+			return -1;
+		if (numSent == 0) {               /* Should never happen */
+			fprintf(stderr, "sendfile: write() transferred 0 bytes");
+			return 0;
+		}
+
+		count -= numSent;
+		totSent += numSent;
+	}
+	return totSent;
+}
+#endif
 
 /***********************************************************************************
  * OL
@@ -2680,8 +2717,8 @@ loop:
 					itoun(st.st_gid),    // идентификатор группы-владельца
 					itoun(st.st_rdev),   // тип устройства (если это устройство)
 					itoun(st.st_size),   // общий размер в байтах
-					itoun(st.st_blksize),// размер блока ввода-вывода в файловой системе
-					itoun(st.st_blocks), // количество выделенных блоков
+					0, // itoun(st.st_blksize),// размер блока ввода-вывода в файловой системе
+					0, // itoun(st.st_blocks), // количество выделенных блоков
 					// Since Linux 2.6, the kernel supports nanosecond
 					//   precision for the following timestamp fields.
 					// but we do not support this for a while
