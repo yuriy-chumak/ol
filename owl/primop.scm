@@ -11,7 +11,7 @@
       halt wait exec
 
       set-ticker-value
-      set-memory-limit get-word-size get-memory-limit start-seccomp)
+      set-memory-limit get-word-size get-memory-limit)
 
    (import
       (r5rs core)
@@ -61,10 +61,10 @@
       (define (exec function . args) (syscall 59 function args #false))
 
       ;; special things exposed by the vm
-      (define (set-memory-limit n) (syscall 1007 n n n))
+      (define (set-memory-limit n) (syscall 12 n #f #f))
       (define (get-word-size)      (syscall 1008 #false #false #false))
-      (define (get-memory-limit)   (syscall 1009 #false #false #false))
-      (define (start-seccomp)      (syscall 1010 #false #false #false)) ; not enabled by defa
+      (define (get-memory-limit)   (syscall 12 #f #f #f))
+;      (define (start-seccomp)      (syscall 1010 #false #false #false)) ; not enabled by defa
 
       ;; stop the vm *immediately* without flushing input or anything else with return value n
       (define (halt n)             (syscall 60 n n n))

@@ -1284,12 +1284,6 @@ struct ol_t
 	int bank;
 };
 
-struct ol_cbt
-{
-	OL* ol;
-	int cb;
-};
-
 
 #define TICKS                       10000 // # of function calls in a thread quantum
 
@@ -1759,9 +1753,12 @@ static int mainloop(OL* ol)
 	#		define SYSCALL_WRITE 1
 	#		define SYSCALL_OPEN 2
 	#		define SYSCALL_CLOSE 3
-	#		define SYSCALL_STAT 4
-	//#		define SYSCALL_FSTAT 5
-	//#		define SYSCALL_LSTAT 6
+	#		define SYSCALL_STAT 4 // same for fstat and lstat
+	// 5, 6 - free
+	//#		define SYSCALL_POLL 7
+	// 12 - reserved for memory functions
+	#		define SYSCALL_BRK 12
+	// 14 - todo: set signal handling
 
 	#		ifndef SYSCALL_IOCTL
 	#		define SYSCALL_IOCTL 16
@@ -2729,6 +2726,15 @@ loop:
 			break;
 		}
 
+		case SYSCALL_BRK: // get or set memory limit (in mb)
+			// b, c is reserved for feature use
+			result = itoun (ol->max_heap_size);
+			//if (a == F(0))
+			//	ol->gc(0);
+			if (is_number(a))
+				ol->max_heap_size = uvtoi (a);
+			break;
+
 		// IOCTL (syscall 16 fd request #f)
 		case SYSCALL_IOCTL + SECCOMP:
 		case SYSCALL_IOCTL: {
@@ -3575,7 +3581,7 @@ loop:
 			break;
 
 		// create callback
-		case 1111: {
+		case 1111:
 			// TCALLBACK
 			for (int c = 4; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
 				if (R[128+c] == IFALSE) {
@@ -3586,29 +3592,6 @@ loop:
 			}
 
 			break;
-		}
-///* TEMP for callbacks
-/*		case 1111: { // todo: заменить на отдельную команду типа CALL_CALLBACK или что-то похожее, но НЕ syscall
-			R[128 + 1] = a; // первый и единственный пока колбек
-			// todo: искать свободный и заполнять его (а вообще! поюзать уже готовую FF и держать колбеки в отдельном регистре!
-
-			ol->heap.fp = fp;
-			// todo: для работы gc надо добавить в OL аналогичный R список колбеков.
-			// а точнее, просто увеличить R и использовать его вторую часть в колбечном качестве
-			// реципиентам отдавать индекс колбека в регистре!
-			struct ol_cbt cbt = { ol, 1 };
-			callbackcaller(callback, &cbt); // it saves R[3]
-			fp = ol->heap.fp;
-
-			// форсим операцию RET, так как ip скорее всего уже уничтожен
-			// баг (или фича): тут прерывается выполнение контекста, так как портится ip
-			ol->this = R3;
-			R[3] = F(177); // походу, тут должен лежать результат операции - результат вызова callbackcaller()
-			ol->arity = 1; // почему 1, потому что результат только 1
-
-			return STATE_APPLY;
-		}*/
-//*/
 		}// case
 
 		A4 = (word) result;

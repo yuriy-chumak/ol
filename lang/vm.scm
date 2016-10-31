@@ -284,9 +284,9 @@
       (define (yield)                (syscall 1022 0 #false #false))
 
 ;      ;; special things exposed by the vm
-;      (define (set-memory-limit n) (sys-prim 1007 n n n))
+;      (define (set-memory-limit n) (sys-prim 12 n #f #f))
 ;      (define (get-word-size)      (sys-prim 1008 #false #false #false))
-;      (define (get-memory-limit)   (sys-prim 1009 #false #false #false))
+;      (define (get-memory-limit)   (sys-prim 12 #false #false #false))
 ;      (define (start-seccomp)      (sys-prim 1010 #false #false #false)) ; not enabled by defa
 ;
 ;      ;; stop the vm *immediately* without flushing input or anything else with return value n
