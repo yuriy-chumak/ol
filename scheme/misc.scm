@@ -4,10 +4,9 @@
       assoc assv assq
       rationalize
       string->integer
-      string->number
-      )
+      string->number)
 
-   (import 
+   (import
       (r5rs core)
       (owl equal)
       (owl list)

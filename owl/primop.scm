@@ -92,17 +92,4 @@
 ;               (eq? t type-fix+)
 ;               (eq? t type-fix-)
 ;               )))
-;
-;
-;
-;      (define (set-car! object value)
-;         (if (and (pair? object) (fixnum? value))
-;            (set-car! object value)
-;            (error "set-car! first argument is not a pair")))
-;      (define (set-cdr! object value)
-;         (if (and (pair? object) (fixnum? value))
-;            (set-cdr! object value)
-;            (error "set-car! first argument is not a pair")))
-
-
 ))

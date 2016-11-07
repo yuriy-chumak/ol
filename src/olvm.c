@@ -2291,7 +2291,7 @@ loop:
 		A2 = F(r & FMAX);
 		A3 = F(r>>FBITS); //  & FMAX)
 		ip += 4; break; }
-	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fixnums
+	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fix-es
 		big a = (big) value(A1) | (((big) value(A0)) << FBITS);
 		big b = (big) value(A2);
 
@@ -2336,19 +2336,15 @@ loop:
 		break;
 
 	// todo: add the instruction name
-	case 29:
+	case 29: // (vm:wordsize)
 		A0 = F(W);
 		ip += 1; break;
-	case 30:
-	case 33: // todo: change to 30
+	case 30: // (fxmax)
 		A0 = F(FMAX);
 		ip += 1; break;
-	// todo: add the instruction name
-	case 31:
-	case 34: // todo: change to 31
+	case 31: // (fxbits)
 		A0 = F(FBITS);
 		ip += 1; break;
-		// todo: add the instruction name
 
 	// (vm:version)
 	case 62: // get virtual machine info
@@ -2357,7 +2353,7 @@ loop:
 				new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
 		ip += 1; break;
 
-	case 11: { // (set-car! pair value)
+/*	case 11: { // (set-car! pair value)
 		word *pair = (word *)A0;
 		word cargo = A1;
 
@@ -2382,7 +2378,7 @@ loop:
 
 		A2 = A0;
 		ip += 3; break;
-	}
+	}*/
 
 
 	// make tuple

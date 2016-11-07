@@ -751,8 +751,13 @@
       ; procedure:  (cons obj1 obj2)    * builtin
       ; procedure:  (car pair)          * builtin
       ; procedure:  (cdr pair)          * builtin
-      ; procedure:  (set-car! pair obj) * builtin (not implemented yet)
-      ; procedure:  (set-cdr! pair obj) * builtin (not implemented yet)
+      ; procedure:  (set-car! pair obj)
+      (define (set-car! o v)
+         (set! o 1 v))
+
+      ; procedure:  (set-cdr! pair obj)
+      (define (set-cdr! o v)
+         (set! o 2 v))
 
       ; library procedure:  (caar pair) <- (r5rs lists)
       ; library procedure:  (cadr pair) <- (r5rs lists)
@@ -1304,4 +1309,6 @@
       bytecode? function? ff?
 
       map list?
+
+      set-car! set-cdr!
 ))

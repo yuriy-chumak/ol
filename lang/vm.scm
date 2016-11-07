@@ -70,9 +70,10 @@
       ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
       ;(define raw     (raw type-bytecode '(60 4 5 6  24 6)))
 
-      ;(define vm:version (raw type-bytecode '(62 4)))
-      ;(define fxmax      (raw type-bytecode '(33 4)))
-      ;(define fxmbits    (raw type-bytecode '(34 4)))
+      ;(define vm:version  (raw type-bytecode '(62 4)))
+      ;(define fxmax       (raw type-bytecode '(33 4)))
+      ;(define fxmbits     (raw type-bytecode '(34 4)))
+      ;(define vm:wordsize (raw type-bytecode '(29 4)))
 
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
@@ -96,8 +97,8 @@
       ;(define set     (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
 
       ;(define set!    (raw type-bytecode '(10 4 5 6  24 6)))
-      ;(define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
-      ;(define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
+      ;moved to the r5rs, (define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
+      ;moved to the r5rs, (define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
 
       ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
       ;(define less?   (raw type-bytecode '(44 4 5 6  24 6)))
@@ -149,8 +150,8 @@
          (tuple 'set      45  3 1 set)   ; (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
 
          (tuple 'set!     10  3 1 set!)
-         (tuple 'set-car! 11  2 1 set-car!)
-         (tuple 'set-cdr! 12  2 1 set-cdr!)
+         ;tuple 'set-car! 11  2 1 set-car!)
+         ;tuple 'set-cdr! 12  2 1 set-cdr!)
 
          ; компараторы
          (tuple 'eq?      54  2 1 eq?)
@@ -175,9 +176,10 @@
          (tuple 'syscall  63  4 1 syscall)
 
          ; vm-specific constants
-         (tuple 'vm:version 62  0 1 vm:version)
-         (tuple 'fxmax      33  0 1 fxmax)
-         (tuple 'fxmbits    34  0 1 fxmbits)
+         (tuple 'vm:version  62  0 1 vm:version)
+         (tuple 'fxmax       30  0 1 fxmax)   ; todo: rename :may be vm:aimv - "atomic integer maximal value"?
+         (tuple 'fxmbits     31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
+         (tuple 'vm:wordsize 29  0 1 vm:wordsize)
 
          ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
          ; todo: rename to tuple-bind ?
@@ -316,17 +318,4 @@
 ;               (eq? t type-fix+)
 ;               (eq? t type-fix-)
 ;               )))
-;
-;
-;
-;      (define (set-car! object value)
-;         (if (and (pair? object) (fixnum? value))
-;            (set-car! object value)
-;            (error "set-car! first argument is not a pair")))
-;      (define (set-cdr! object value)
-;         (if (and (pair? object) (fixnum? value))
-;            (set-cdr! object value)
-;            (error "set-car! first argument is not a pair")))
-
-
 ))

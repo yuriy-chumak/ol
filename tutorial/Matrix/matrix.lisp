@@ -55,12 +55,12 @@
 
 
 (define setx! (case-lambda
-((matrix i j value)
-   (set! (ith matrix j) (+ i 1) value))
-((vector i value)
-   (set! vector (+ i 1) value))
-((scalar value)
-   (set-car! scalar value))))
+   ((matrix i j value)
+      (set! (ith matrix j) (+ i 1) value))
+   ((vector i value)
+      (set! vector (+ i 1) value))
+   ((scalar value)
+      (set-car! scalar value))))
 
 
 ; ===========================================================
