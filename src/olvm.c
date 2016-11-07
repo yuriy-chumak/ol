@@ -2045,7 +2045,7 @@ loop:
 		word *lst = (word*) A1;
 		int len = 0;
 		word* p = lst;
-		while (is_pair(p)) {
+		while (is_pair(p)) { // is proper list?
 			len++;
 			p = (word*)cdr (p);
 		}
@@ -2239,23 +2239,24 @@ loop:
 		else
 		if (is_rawobject(*p)) {
 			if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
-				((char*)&car(p))[pos - 1] = (char) uvtoi(A2);
+				((char*)&car(p))[pos] = (char) uvtoi(A2);
 			A3 = (word) p;
 		}
 		else
-		if (hdrsize(*p) < pos || !pos)
-			A3 = IFALSE;
-		else {
+		if (pos >= 1 && pos <= hdrsize(*p)) {
 			p[pos] = A2;
 			A3 = (word) p;
 		}
+		else
+			A3 = IFALSE;
+
 		ip += 4; break; }
 
-	case EQ: // eq a b r
+	case EQ: // (eq? a b)
 		A2 = (A0 == A1) ? ITRUE : IFALSE;
 		ip += 3; break;
 
-	case LESS: {// less? a b r
+	case LESS: { // (less? a b)
 		word a = A0;
 		word b = A1;
 
