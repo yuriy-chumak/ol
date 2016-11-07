@@ -1,7 +1,9 @@
 #!/usr/bin/ol
+
 (import (lib opengl))
 (import (otus random!))
 (import (otus pinvoke))
+(import (lib newton))
 
 (define (gettimeofday) (syscall 96 #f #f #f))
 
@@ -10,49 +12,49 @@
 
 
 
-(define $ (or
-   (dlopen "./libNewton.so")
-   (dlopen "newton")
-   (runtime-error "Can't load newton library" #f)))
+;(define $ (or
+;   (dlopen "./libNewton.so")
+;   (dlopen "newton")
+;   (runtime-error "Can't load newton library" #f)))
 
 (define type-callback 61)
-(define type-float* (vm:or type-float #x40))
-(define NewtonWorld* type-vptr)
-(define dFloat* (vm:or type-float #x40))
-
-(define NewtonWorldGetVersion (dlsym $ type-fix+ "NewtonWorldGetVersion"))
-(define NewtonWorldFloatSize  (dlsym $ type-fix+ "NewtonWorldFloatSize"))
-(define NewtonGetMemoryUsed   (dlsym $ type-int+ "NewtonGetMemoryUsed"))
-
-(define NewtonCreate  (dlsym $ type-vptr "NewtonCreate"))
-(define NewtonDestroy (dlsym $ type-void "NewtonDestroy" type-vptr))
-(define NewtonWorldSetDestructorCallback (dlsym $ type-void "NewtonWorldSetDestructorCallback" type-vptr type-callback))
-
+;(define type-float* (vm:or type-float #x40))
+;(define NewtonWorld* type-vptr)
+;(define dFloat* (vm:or type-float #x40))
 ;
-(define NewtonCreateSphere (dlsym $ type-vptr "NewtonCreateSphere" NewtonWorld* type-float type-fix+ dFloat*))
-(define NewtonCreateBox (dlsym $ type-vptr "NewtonCreateBox" type-vptr type-float type-float type-float type-int+ type-float*))
-
-
-(define NewtonCreateDynamicBody (dlsym $ type-vptr "NewtonCreateDynamicBody" type-vptr type-vptr type-float*))
-(define NewtonBodySetForceAndTorqueCallback (dlsym $ type-void "NewtonBodySetForceAndTorqueCallback" type-vptr type-callback))
-(define NewtonBodySetMassProperties (dlsym $ type-void "NewtonBodySetMassProperties" type-vptr type-float type-vptr))
-(define NewtonDestroyCollision (dlsym $ type-void "NewtonDestroyCollision" type-vptr))
-
-(define NewtonBodySetForce (dlsym $ type-void "NewtonBodySetForce" type-vptr type-float*))
-(define NewtonBodySetMatrix (dlsym $ type-void "NewtonBodySetMatrix" type-vptr (vm:or type-float #x40)))
-(define NewtonBodyGetMatrix (dlsym $ type-void "NewtonBodyGetMatrix" type-vptr (vm:or type-float #x80)))
-
-(define NewtonCreateTreeCollision (dlsym $ type-vptr "NewtonCreateTreeCollision" type-vptr type-fix+))
-(define NewtonTreeCollisionBeginBuild (dlsym $ type-void "NewtonTreeCollisionBeginBuild" type-vptr))
-(define NewtonTreeCollisionAddFace (dlsym $ type-void "NewtonTreeCollisionAddFace" type-vptr type-int+ type-float* type-fix+ type-fix+))
-(define NewtonTreeCollisionEndBuild (dlsym $ type-void "NewtonTreeCollisionEndBuild" type-vptr type-fix+))
-
-
-(define NewtonInvalidateCache (dlsym $ type-void "NewtonInvalidateCache" type-vptr))
-(define NewtonUpdate (dlsym $ type-void "NewtonUpdate" type-vptr type-float))
-
-(print "NewtonWorldGetVersion = " (NewtonWorldGetVersion))
-(print "NewtonWorldFloatSize = "  (NewtonWorldFloatSize))
+;(define NewtonWorldGetVersion (dlsym $ type-fix+ "NewtonWorldGetVersion"))
+;(define NewtonWorldFloatSize  (dlsym $ type-fix+ "NewtonWorldFloatSize"))
+;(define NewtonGetMemoryUsed   (dlsym $ type-int+ "NewtonGetMemoryUsed"))
+;
+;(define NewtonCreate  (dlsym $ type-vptr "NewtonCreate"))
+;(define NewtonDestroy (dlsym $ type-void "NewtonDestroy" type-vptr))
+;(define NewtonWorldSetDestructorCallback (dlsym $ type-void "NewtonWorldSetDestructorCallback" type-vptr type-callback))
+;
+;
+;(define NewtonCreateSphere (dlsym $ type-vptr "NewtonCreateSphere" NewtonWorld* type-float type-fix+ dFloat*))
+;(define NewtonCreateBox (dlsym $ type-vptr "NewtonCreateBox" type-vptr type-float type-float type-float type-int+ type-float*))
+;
+;
+;(define NewtonCreateDynamicBody (dlsym $ type-vptr "NewtonCreateDynamicBody" type-vptr type-vptr type-float*))
+;(define NewtonBodySetForceAndTorqueCallback (dlsym $ type-void "NewtonBodySetForceAndTorqueCallback" type-vptr type-callback))
+;(define NewtonBodySetMassProperties (dlsym $ type-void "NewtonBodySetMassProperties" type-vptr type-float type-vptr))
+;(define NewtonDestroyCollision (dlsym $ type-void "NewtonDestroyCollision" type-vptr))
+;
+;(define NewtonBodySetForce (dlsym $ type-void "NewtonBodySetForce" type-vptr type-float*))
+;(define NewtonBodySetMatrix (dlsym $ type-void "NewtonBodySetMatrix" type-vptr (vm:or type-float #x40)))
+;(define NewtonBodyGetMatrix (dlsym $ type-void "NewtonBodyGetMatrix" type-vptr (vm:or type-float #x80)))
+;
+;(define NewtonCreateTreeCollision (dlsym $ type-vptr "NewtonCreateTreeCollision" type-vptr type-fix+))
+;(define NewtonTreeCollisionBeginBuild (dlsym $ type-void "NewtonTreeCollisionBeginBuild" type-vptr))
+;(define NewtonTreeCollisionAddFace (dlsym $ type-void "NewtonTreeCollisionAddFace" type-vptr type-int+ type-float* type-fix+ type-fix+))
+;(define NewtonTreeCollisionEndBuild (dlsym $ type-void "NewtonTreeCollisionEndBuild" type-vptr type-fix+))
+;
+;
+;(define NewtonInvalidateCache (dlsym $ type-void "NewtonInvalidateCache" type-vptr))
+;(define NewtonUpdate (dlsym $ type-void "NewtonUpdate" type-vptr type-float))
+;
+;(print "NewtonWorldGetVersion = " (NewtonWorldGetVersion))
+;(print "NewtonWorldFloatSize = "  (NewtonWorldFloatSize))
 (print "1.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 
@@ -125,7 +127,7 @@
                ,(/ (- (rand! 2000) 1000) 100) ; z
                1       ; posit
              ))))
-   (iota 50)))
+   (iota 100)))
 (for-each (lambda (cube)
    (NewtonBodySetMassProperties cube 1.0 collision)
    (NewtonBodySetForceAndTorqueCallback cube ApplyGravity)
@@ -136,6 +138,7 @@
 (define collision (or
    (NewtonCreateSphere world  0.5  0  #f)
    (runtime-error "Can't create box" #f)))
+(NewtonDestroyCollision collision)
 
 (define spheres null);(map
 ;   (lambda (id)
@@ -151,10 +154,10 @@
 ;            1       ; posit
 ;          )))
 ;   (iota 50)))
-(for-each (lambda (sphere)
-   (NewtonBodySetMassProperties sphere 1.0 collision)
-   (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
-) spheres)
+;(for-each (lambda (sphere)
+;   (NewtonBodySetMassProperties sphere 1.0 collision)
+;   (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
+;) spheres)
 ; we need this collision for feature use
 ;(NewtonDestroyCollision collision)
 
@@ -189,12 +192,16 @@
 ;(NewtonBodySetForceAndTorqueCallback rigidBody2 ApplyGravity)
 ;(print "To rigid body added callback")
 
+
+(NewtonInvalidateCache world) ; say "world construction finished"
+
 (print "3.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 (define (glCube)
+   (glColor3f 0.7 0.7 0.7)
+
    (glPushMatrix)
    (glScalef 0.5 0.5 0.5)
-   (glColor3f 0.7 0.7 0.7)
    (glBegin GL_QUADS)
       ; front
       (glNormal3f  0  0 -1)
@@ -244,11 +251,27 @@
 (define gl-sphere (gluNewQuadric))
 (gluQuadricDrawStyle gl-sphere GLU_FILL)
 
+(define gl-cone (gluNewQuadric))
+(gluQuadricDrawStyle gl-cone GLU_FILL)
+
 (define (glSphere)
    (glPushMatrix)
    (glScalef 0.5 0.5 0.5)
    (gluSphere gl-sphere 1 16 8)
    (glPopMatrix))
+(define (glCone)
+   (glPushMatrix)
+   (glRotatef 90.0 0 1 0)
+   (gluCylinder gl-cone 0.5 0 1  15 5)
+   (glPopMatrix))
+
+
+(define collision (or
+   ;(NewtonCreateCone world  0.5 1  0 #f)
+   (NewtonCreateSphere world  0.5  0  #f)
+   (runtime-error "Can't create box" #f)))
+
+
 
 
 (gl:run
@@ -277,7 +300,6 @@
 
    (glEnable GL_COLOR_MATERIAL)
 
-   (NewtonInvalidateCache world) ; say "world construction finished"
 
    ; return parameter list:
    (let ((oldtime (gettimeofday)))
@@ -365,6 +387,7 @@
          (glPushMatrix)
          (glMultMatrixf matrix)
          (glSphere)
+         ;(glCone)
          (glPopMatrix)) spheres))
 
    (if (and (> i 1000)

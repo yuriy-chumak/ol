@@ -1362,8 +1362,11 @@ int callback(int id, void* arg1, va_list args)
 		case F(TINT):
 			R[a] = F(0);
 			break;
+		case F(TVOID):
+			R[a] = IFALSE;
+			break;
 		default:
-			fprintf(stderr, "uknonwn argument\n");
+			fprintf(stderr, "unknown argument type\n");
 			break;
 		}
 		a++;
@@ -4144,6 +4147,10 @@ word* pinvoke(OL* self, word* arguments)
 			        return ((conv word (*)  (word, float, word, word))\
 			                 function) (argv[0], *(float*)&argv[1],\
 			                            argv[2], argv[3]);\
+			case 5 + 0x0600:\
+			        return ((conv word (*)  (word, float, float, word, word))\
+			                 function) (argv[0], *(float*)&argv[1], *(float*)&argv[2],\
+			                            argv[3], argv[4]);\
 			\
 			case 2 + 0x0300:\
 			        return ((conv word (*)  (float, float))\
@@ -4185,6 +4192,11 @@ word* pinvoke(OL* self, word* arguments)
 			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
 			                            *(double*)&argv[2], *(double*)&argv[3],\
 			                            *(double*)&argv[4], *(double*)&argv[5]);\
+			case 6 + 0x00E0000:\
+			         return ((conv word (*)  (word, double, double, double, word, word))\
+	                         function) (argv[0], *(double*)&argv[1],\
+	                                    *(double*)&argv[2], *(double*)&argv[3],\
+	                                    argv[4], argv[5]);\
 			case 9 + 0x1FF0000:\
 			         return ((conv word (*)  (double, double, double,\
 			                                  double, double, double,\

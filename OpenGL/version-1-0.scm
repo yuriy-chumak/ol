@@ -891,6 +891,7 @@
       GLU_OUTSIDE GLU_INSIDE
 
    gluSphere
+   gluCylinder
 
 ;   gluNewTess gluBeginPolygon gluTessVertex
 
@@ -1966,6 +1967,7 @@
       (define GLU_INSIDE              100021)
 
    (define gluSphere (dlsym GLU GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
+   (define gluCylinder (dlsym GLU GLvoid "gluCylinder" GLUquadric* GLdouble GLdouble GLdouble GLint GLint))
 
 (define GLUnurbs* type-void*)
    (define gluNewNurbsRenderer (dlsym GLU GLUnurbs* "gluNewNurbsRenderer"))
