@@ -7,8 +7,9 @@
 *.h text
 
 # Declare files that will always have CRLF line endings on checkout.
-*.scm text eol=lf
+*.scm text linguist-language=Scheme
 *.scm.ok text eol=lf
+*.lisp text linguist-language=Scheme
 
 # Denote all files that are truly binary and should not be modified.
 *.png binary
