@@ -100,7 +100,7 @@
 
 
 ; ...
-(define ApplyGravity (syscall 1111 (cons
+(define ApplyGravity (syscall 175 (cons
    (list type-vptr type-void* type-int+)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -4.8 0 0))
@@ -339,7 +339,7 @@
    (glScalef 8 1.2 8)
    (glCube)
    (glPopMatrix)
-   
+
    (glPushMatrix)
    (glScalef 4 2.4 4)
    (glCube)
@@ -393,7 +393,7 @@
    (if (and (> i 1000)
             (eq? (mod i 100) 0))
       (list
-         newtime (+ i 1) cubes 
+         newtime (+ i 1) cubes
             (let ((sphere (NewtonCreateDynamicBody world collision
                   `(;x y z w
                      1 0 0 0 ; front

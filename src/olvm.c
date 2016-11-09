@@ -32,17 +32,17 @@
 
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
-#	warning "This code written only for Gnu C compiler"
+#	warning "This code must be compiled by Gnu C compiler"
 #else
 #	define GCC_VERSION (__GNUC__ * 10000 \
 	                  + __GNUC_MINOR__ * 100 \
 	                  + __GNUC_PATCHLEVEL__)
 #	if GCC_VERSION < 30200
-#		error "Code require gcc version > 3.2 (with nested functions support)"
+#		error "Required gcc version > 3.2 (with nested functions support)"
 #	endif
 
 #	if __STDC_VERSION__ < 199901L
-#		error "Code require c99 enabled (-std=c99)"
+#		error "Required c99 enabled (-std=c99)"
 #	endif
 #endif
 
@@ -253,6 +253,29 @@
 #define EWOULDBLOCK EAGAIN
 #endif
 
+// ========================================
+void STDERR(char* format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	puts("\n");
+}
+
+void crash(int code, char* format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	puts("\n");
+	exit(code);
+}
 // ========================================
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
@@ -742,6 +765,9 @@ word*p = NEW (size);\
 #define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
 #define new(...) NEW_MACRO(__VA_ARGS__, NEW_RAW_OBJECT, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
 
+// -= new_value =---------------------------------------
+#define new_value(a) ((word*)F(a))
+
 // -= new_pair =----------------------------------------
 
 // a1 и a2 надо предвычислить перед тем, как выделим память,
@@ -1013,7 +1039,7 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 		}
 		return delta;
 	} else {
-		fprintf(stderr, "adjust_heap failed.\n");
+		crash(101, "adjust_heap failed."); // crash
 		//breaked |= 8; // will be passed over to mcp at thread switch
 		return 0;
 	}
@@ -1128,7 +1154,7 @@ word gc(heap_t *heap, int size, word regs) {
 	#if DEBUG_GC
 		struct tm tm = *localtime(&(time_t){time(NULL)});
 		char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
-		fprintf(stderr, "%s, GC done in %2d ms (use: %7d from %8d bytes - %2d%%): tbd.\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+		STDERR("%s, GC done in %2d ms (use: %7d from %8d bytes - %2d%%): tbd.", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
 				buff/*asctime(&tm)*/, gctime,
 				(sizeof(word) * (fp - heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
 				(sizeof(word) * (fp - heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)));
@@ -1189,7 +1215,7 @@ void set_blocking(int sock, int blockp) {
 #ifndef _WIN32
 static
 void signal_handler(int signal) {
-	fprintf(stderr, "signal %d!\n", signal);
+	STDERR("signal %d!", signal);
 	switch(signal) {
 //      case SIGINT:
 //        breaked |= 2; break;
@@ -1232,7 +1258,6 @@ void set_signal_handler()
 size_t
 sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 {
-	off_t orig;
 	char buf[8192];
 	size_t toRead, numRead, numSent, totSent;
 
@@ -1249,7 +1274,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		if (numSent == -1)
 			return -1;
 		if (numSent == 0) {               /* Should never happen */
-			fprintf(stderr, "sendfile: write() transferred 0 bytes");
+			STDERR("sendfile: write() transferred 0 bytes");
 			return 0;
 		}
 
@@ -1366,7 +1391,7 @@ int callback(int id, void* arg1, va_list args)
 			R[a] = IFALSE;
 			break;
 		default:
-			fprintf(stderr, "unknown argument type\n");
+			STDERR("unknown argument type");
 			break;
 		}
 		a++;
@@ -1468,7 +1493,7 @@ static int error(OL *ol) /* R4-R6 set, and call mcp */
 		ol->arity = 4;
 		return STATE_APPLY;
 	}
-	fprintf(stderr, "invoke_mcp failed\n");
+	STDERR("invoke_mcp failed");
 	return -1; // no mcp to handle error (fail in it?), so nonzero exit
 }
 
@@ -1477,7 +1502,7 @@ static int apply(OL *ol)
 	#	undef ERROR
 	#	define ERROR(opcode, a, b) \
 		{ \
-			fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__); /* TEMP */\
+			STDERR("ERROR: %s/%d", __FILE__, __LINE__); /* TEMP */\
 			R[4] = F (opcode);\
 			R[5] = (word) (a);\
 			R[6] = (word) (b);\
@@ -1507,7 +1532,7 @@ apply:
 		// a thread or mcp is calling the final continuation
 		this = (word *) R[0];
 		if (!is_reference(this)) {
-			fprintf(stderr, "Unexpected virtual machine exit\n");
+			STDERR("Unexpected virtual machine exit");
 			return -1;//(void*) uvtol(R[3]);
 		}
 
@@ -1565,7 +1590,7 @@ apply:
 							ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
 						break;
 					default:
-					    fprintf(stderr, "assert! hdrsize(hdr) == %d\n", (int)hdrsize(hdr));
+						STDERR("assert! hdrsize(hdr) == %d", (int)hdrsize(hdr));
 						assert (0);
 						//ff = (word *) ((key < this) ? ff[3] : ff[4]);
 					}
@@ -1690,7 +1715,7 @@ static int mainloop(OL* ol)
 	#	undef ERROR
 	#	define ERROR(opcode, a, b) \
 		{ \
-			fprintf(stderr, "ERROR: %s/%d\n", __FILE__, __LINE__); /* TEMP */\
+			STDERR("ERROR: %s/%d", __FILE__, __LINE__); /* TEMP */\
 			R[4] = F (opcode);\
 			R[5] = (word) (a);\
 			R[6] = (word) (b);\
@@ -1798,6 +1823,7 @@ static int mainloop(OL* ol)
 	#		define SYSCALL_DLCLOSE 176
 	#		define SYSCALL_DLSYM 177
 	#		define SYSCALL_DLERROR 178
+	#		define SYSCALL_MKCB 175
 
 		// tuples, trees
 	#	define MKT      23   // make tuple
@@ -1849,10 +1875,6 @@ loop:
 		ip += 3; break;
 	}*/
 #endif
-
-//		unused:
-//		case 30:
-//		case 31:
 
 	case GOTO:
 		ol->this = (word *)A0;
@@ -1907,7 +1929,7 @@ loop:
 			// FIXME: unwind only up to last register and add limited rewinding to arity check
 			// тут бага, количество регистров может стать больше, чем надо, и пиздец. todo: исправить!!
 			if (reg > NR) { // dummy handling for now
-				fprintf(stderr, "TOO LARGE APPLY\n");
+				STDERR("TOO LARGE APPLY");
 				exit(3);
 			}
 			R[reg++] = car (lst);
@@ -1943,7 +1965,7 @@ loop:
 
 	case RUN: { // run thunk quantum
 //			if (ip[0] != 4 || ip[1] != 5)
-//				fprintf(stderr, "run R[%d], R[%d]\n", ip[0], ip[1]);
+//				STDERR("run R[%d], R[%d]", ip[0], ip[1]);
 		ol->this = (word *) A0;
 		R[0] = R[3];
 		ol->ticker = ol->bank ? ol->bank : uvtoi (A1);
@@ -3074,7 +3096,7 @@ loop:
 				char* command = (char*)&car(a);
 				int child = fork();
 				if (child == 0) {
-					fprintf(stderr, "forking %s\n", command);
+					STDERR("forking %s", command);
 					if (is_pair (c)) {
 						const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
 						for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
@@ -3082,7 +3104,7 @@ loop:
 								dup2(port(car(c)), in[i]), c = cdr (c);
 					}
 // DEBUG:					else if (c != IFALSE)
-//								fprintf(stderr, "invalid value for execve\n");
+//								STDERR("invalid value for execve\n");
 					char** args = NULL;
 					if (is_pair(b)) {
 						word p;
@@ -3548,13 +3570,24 @@ loop:
 			if (function)
 				result = new_vptr(function);
 			else
-				fprintf(stderr, "dlsym failed: %s\n", dlerror());
+				STDERR("dlsym failed: %s", dlerror());
 			break;
 		}
 		case SYSCALL_DLERROR: { // (dlerror)
 			char* error = dlerror();
 			if (error)
 				result = new_string(error);
+			break;
+		}
+		case SYSCALL_MKCB: {
+			// TCALLBACK
+			for (int c = 4; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
+				if (R[128+c] == IFALSE) {
+					R[128+c] = a;
+					result = (word*)F(c);
+					break;
+				}
+			}
 			break;
 		}
 #endif// HAS_DLOPEN
@@ -3573,6 +3606,7 @@ loop:
 			}
 			break;
 		#endif
+
 		case SYSCALL_KILL:
 #ifndef _WIN32
 			if (kill(uvtoi (a), uvtoi (b)) >= 0)
@@ -3580,18 +3614,6 @@ loop:
 #endif
 			break;
 
-		// create callback
-		case 1111:
-			// TCALLBACK
-			for (int c = 4; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
-				if (R[128+c] == IFALSE) {
-					R[128+c] = a;
-					result = F(c);
-					break;
-				}
-			}
-
-			break;
 		}// case
 
 		A4 = (word) result;
@@ -3622,7 +3644,7 @@ static void OL__gc(OL* ol, int ws) // ws - required size in words
 	int size = ws * W;
 	int p = 0, N = NR;
 
-//	fprintf(stderr, "*");
+//	STDERR("*");
 
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = (word*) new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
@@ -3844,12 +3866,6 @@ extern unsigned char* language;
 unsigned char* language = NULL;
 #endif
 
-void fail(int num, char* message)
-{
-	fprintf(stderr, "%s", message);
-	exit(num);
-}
-
 #if !EMBEDDED_VM
 int main(int argc, char** argv)
 {
@@ -3881,16 +3897,16 @@ int main(int argc, char** argv)
 		// todo: use mmap()
 		struct stat st;
 		if (stat(argv[1], &st) || st.st_size == 0)
-			fail(errno, "File not found or empty");	// не найден файл или он пустой
+			crash(errno, "File not found or empty");	// не найден файл или он пустой
 
 		char bom;
 		int bin = open(argv[1], O_RDONLY | O_BINARY, (S_IRUSR | S_IWUSR));
 		if (!bin)
-			fail(errno, "Can't open file");	// не смогли файл открыть
+			crash(errno, "Can't open file");	// не смогли файл открыть
 
 		int pos = read(bin, &bom, 1); // прочитаем один байт
 		if (pos < 1)
-			fail(errno, "Can't read file");	// не смогли файл прочитать
+			crash(errno, "Can't read file");	// не смогли файл прочитать
 
 		// переделать
 		if (bom == '#') { // skip possible hashbang
@@ -3898,13 +3914,13 @@ int main(int argc, char** argv)
 				st.st_size--;
 			st.st_size--;
 			if (read(bin, &bom, 1) < 0)
-				fail(errno, "Can't read file");
+				crash(errno, "Can't read file");
 			st.st_size--;
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
 #ifdef NAKED_VM
-			fail(6, "Invalid binary script"); // некому проинтерпретировать скрипт
+			crash(6, "Invalid binary script"); // некому проинтерпретировать скрипт
 #else
 			close(bin); // todo: сместить аргументы на 1 вперед
 #endif
@@ -3913,13 +3929,13 @@ int main(int argc, char** argv)
 			// иначе загрузим его
 			unsigned char* ptr = (unsigned char*)malloc(st.st_size);
 			if (ptr == NULL)
-				fail(3, "Can't alloc memory");	// опа, не смогли выделить память...
+				crash(3, "Can't alloc memory");	// опа, не смогли выделить память...
 
 			ptr[0] = bom;
 			while (pos < st.st_size) {
 				int n = read(bin, &ptr[pos], st.st_size - pos);
 				if (n < 0)
-					fail(errno, "Can't read file"); // не смогли прочитать
+					crash(errno, "Can't read file"); // не смогли прочитать
 				pos += n;
 			}
 			close(bin);
@@ -3929,7 +3945,7 @@ int main(int argc, char** argv)
 	}
 #ifdef NAKED_VM
 	else
-		fail(7, "Invalid binary script");
+		crash(7, "Invalid binary script");
 
 	argc--; argv++;
 #endif
@@ -3940,7 +3956,7 @@ int main(int argc, char** argv)
 	WSADATA wsaData;
 	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
 	if (sock_init  != 0) {
-		fprintf(stderr, "WSAStartup failed with error: %d\n", sock_init);
+		STDERR("WSAStartup failed with error: %d", sock_init);
 		return 1;
 	}
 	AllocConsole();
@@ -3966,7 +3982,7 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 {
 	// если отсутствует исполнимый образ
 	if (bootstrap == 0) {
-		fprintf(stderr, "no boot image found\n");
+		STDERR("no boot image found");
 		return 0;
 	}
 
@@ -3994,7 +4010,7 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	heap->begin =
 	heap->genstart = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
-		fprintf(stderr, "Failed to allocate %d words for vm memory\n", required_memory_size);
+		STDERR("Failed to allocate %d words for vm memory", required_memory_size);
 		goto fail;
 	}
 	// ok
@@ -4262,7 +4278,7 @@ word* pinvoke(OL* self, word* arguments)
 			                            argv[ 8], argv[ 9], argv[10], argv[11]);\
 			CALLFLOATS(conv)\
 			CALLDOUBLES(conv)\
-			default: fprintf(stderr, "Unsupported parameters count for pinvoke function: %d", argc);\
+			default: STDERR("Unsupported parameters count for pinvoke function: %d", argc);\
 				break;\
 			}
 #ifdef __linux__
@@ -4285,7 +4301,7 @@ word* pinvoke(OL* self, word* arguments)
 			CALL(__fastcall);
 			break;
 		default:
-			fprintf(stderr, "Unsupported calling convention %d", returntype >> 8);
+			STDERR("Unsupported calling convention %d", returntype >> 8);
 			break;
 		}
 #endif
@@ -4364,7 +4380,7 @@ word* pinvoke(OL* self, word* arguments)
 		case TCOMPLEX:
 			return to_int(car(arg)); // return real part of value
 		default:
-			fprintf(stderr, "can't get int from %d\n", reftype(arg));
+			STDERR("can't get int from %d", reftype(arg));
 		}
 
 		return 0;
@@ -4384,7 +4400,7 @@ word* pinvoke(OL* self, word* arguments)
 		case TCOMPLEX:
 			return to_long(car(arg)); // return real part of value
 		default:
-			fprintf(stderr, "can't get int from %d\n", reftype(arg));
+			STDERR("can't get int from %d", reftype(arg));
 		}
 
 		return 0;
@@ -4486,7 +4502,7 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] = (long)-from_int(arg);
 				break;
 			default:
-				fprintf(stderr, "can't cast %d to int\n", type);
+				STDERR("can't cast %d to int", type);
 				args[i] = 0; // todo: error
 			}
 			break;
@@ -4525,7 +4541,7 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] = (int)-from_int(arg);
 				break;
 			default:
-				fprintf(stderr, "can't cast %d to int\n", type);
+				STDERR("can't cast %d to int", type);
 				args[i] = 0; // todo: error
 			}
 			break;
@@ -4557,7 +4573,7 @@ word* pinvoke(OL* self, word* arguments)
 				*(long long*)&args[i] = from_rational(arg);
 				break;
 			default:
-				fprintf(stderr, "can't cast %d to long\n", type);
+				STDERR("can't cast %d to long", type);
 			}
 			#if !__amd64__
 				i++; // for x86 long values (fills two ints)
@@ -4628,7 +4644,7 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] = (word) &car(arg);
 				break;
 			default:
-				fprintf(stderr, "invalid parameter value (requested vptr)\n");
+				STDERR("invalid parameter value (requested vptr)");
 			}
 			break;
 		case TVPTR + 0x40: {
@@ -4640,7 +4656,7 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] = (word) &car(arg);
 				break;
 			default:
-				fprintf(stderr, "invalid parameter value (requested vptr)\n");
+				STDERR("invalid parameter value (requested vptr)");
 			}
 			break;
 		}
@@ -4656,7 +4672,7 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] = (word) &car(arg);
 				break;
 			default:
-				fprintf(stderr, "invalid parameter values (requested string)\n");
+				STDERR("invalid parameter values (requested string)");
 			}
 			break;
 		case TSTRING + 0x40: {
@@ -4704,7 +4720,7 @@ word* pinvoke(OL* self, word* arguments)
 //			args[i] = (word)arg;
 //			break;
 		default:
-			fprintf(stderr, "can't recognize %d type\n", type);
+			STDERR("can't recognize %d type", type);
 		}
 
 		p = (word*)cdr(p); // (cdr p)
@@ -4841,6 +4857,8 @@ word* pinvoke(OL* self, word* arguments)
 	return result;
 }
 #endif//HAS_PINVOKE
+
+// pinvoke testing
 #if 0
 	__attribute__
 			((__visibility__("default")))

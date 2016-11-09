@@ -20,7 +20,7 @@
 ;
 ; Authors
 ; Newton Dynamics is a project of Julio Jerez and Alain Suero and various
-; other contributors. 
+; other contributors.
 ; See the AUTHORS page on github for a full list of all contributors.
 
 (define-library (lib newton)
@@ -172,7 +172,7 @@
       ;NewtonBodyAddForce
       ;NewtonBodyAddTorque
       ;NewtonBodyCalculateInverseDynamicForce
-      
+
       ;NewtonBodySetCentreOfMass
       ;NewtonBodySetMassMatrix
       ;NewtonBodySetFullMassMatrix
@@ -279,11 +279,11 @@
    (begin
 
 (define $ (or
-   (dlopen "libNewton.so")
-   (dlopen "newton")
+   ;(dlopen "libNewton.so")
+   (dlopen "newton.dll")
    (runtime-error "Can't load newton library" #f)))
 (define (make-cb p l)
-   (syscall 1111 (cons p l) #f #f))
+   (syscall 175 (cons p l) #f #f))
 
 (define type-callback 61)
 (define type-float* (vm:or type-float #x40))
