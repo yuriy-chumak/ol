@@ -1270,6 +1270,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 	char buf[8192];
 	size_t toRead, numRead, numSent, totSent;
 
+	totSent = 0;
 	while (count > 0) {
 		toRead = (sizeof(buf) < count) ? sizeof(buf) : count;
 
@@ -4125,11 +4126,19 @@ word* pinvoke(OL* self, word* arguments)
 	// thiscall(ms)
 
 	// x64 calling conventions: linux, windows
-#if	__amd64__
-	word call(void* function, word argv[], int argc) {
-#else
-	word call(int returntype, void* function, word argv[], int argc) {
-#endif
+	// TODO: change return type to universal union
+	typedef union ret_t
+	{
+		word w;
+		float f;
+		double d;
+	} ret_t;
+
+	#if	__amd64__
+	ret_t call(void* function, word argv[], int argc) {
+	#else
+	ret_t call(int convention, void* function, word argv[], int argc) {
+	#endif
 
 		// todo: ограничиться количеством функций поменьше
 		//	а можно сделать все в одной switch:
@@ -4147,48 +4156,48 @@ word* pinvoke(OL* self, word* arguments)
 #if __amd64__
 		#define CALLFLOATS(conv) \
 			case 1 + 0x0100:\
-			        return ((conv word (*)  (float))\
+			        return (ret_t)(word)((conv word (*)  (float))\
 			                 function) (*(float*)&argv[0]);\
 			case 2 + 0x0200:\
-			        return ((conv word (*)  (word, float))\
+			        return (ret_t)(word)((conv word (*)  (word, float))\
 			                 function) (argv[0], *(float*)&argv[1]);\
 			case 3 + 0x0200:\
-			        return ((conv word (*)  (word, float, word))\
+			        return (ret_t)(word)((conv word (*)  (word, float, word))\
 			                 function) (argv[0], *(float*)&argv[1], argv[2]);\
 			case 3 + 0x0400:\
-			        return ((conv word (*)  (word, word, float))\
+			        return (ret_t)(word)((conv word (*)  (word, word, float))\
 			                 function) (argv[0], argv[1],\
 			                            *(float*)&argv[2]);\
 			case 3 + 0x0600:\
-			        return ((conv word (*)  (word, float, float))\
+			        return (ret_t)(word)((conv word (*)  (word, float, float))\
 			                 function) (argv[0], *(float*)&argv[1],\
 			                            *(float*)&argv[2]);\
 			case 4 + 0x0E00:\
-			        return ((conv word (*)  (word, float, float, float))\
+			        return (ret_t)(word)((conv word (*)  (word, float, float, float))\
 			                 function) (argv[0], *(float*)&argv[1],\
 			                            *(float*)&argv[2], *(float*)&argv[3]);\
 			case 4 + 0x0200:\
-			        return ((conv word (*)  (word, float, word, word))\
+			        return (ret_t)(word)((conv word (*)  (word, float, word, word))\
 			                 function) (argv[0], *(float*)&argv[1],\
 			                            argv[2], argv[3]);\
 			case 5 + 0x0600:\
-			        return ((conv word (*)  (word, float, float, word, word))\
+			        return (ret_t)(word)((conv word (*)  (word, float, float, word, word))\
 			                 function) (argv[0], *(float*)&argv[1], *(float*)&argv[2],\
 			                            argv[3], argv[4]);\
 			\
 			case 2 + 0x0300:\
-			        return ((conv word (*)  (float, float))\
+			        return (ret_t)(word)((conv word (*)  (float, float))\
 			                 function) (*(float*)&argv[0], *(float*)&argv[1]);\
 			case 3 + 0x0700:\
-			        return ((conv word (*)  (float, float, float))\
+			        return (ret_t)(word)((conv word (*)  (float, float, float))\
 			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
 			                            *(float*)&argv[2]);\
 			case 4 + 0x0F00:\
-			        return ((conv word (*)  (float, float, float, float))\
+			        return (ret_t)(word)((conv word (*)  (float, float, float, float))\
 			                 function) (*(float*)&argv[0], *(float*)&argv[1],\
 			                            *(float*)&argv[2], *(float*)&argv[3]);\
 			case 6 + 0x0E00:\
-	                return ((conv word (*)  (word, float, float, float, word, word))\
+	                return (ret_t)(word)((conv word (*)  (word, float, float, float, word, word))\
 	                         function) (argv[0], *(float*)&argv[1], *(float*)&argv[2],\
 	                                    *(float*)&argv[3], argv[4], argv[5]);
 #else
@@ -4198,31 +4207,31 @@ word* pinvoke(OL* self, word* arguments)
 #if __amd64__
 		#define CALLDOUBLES(conv) \
 			case 4 + 0x0020000:\
-			         return ((conv word (*)  (word, double, word, word))\
+			         return (ret_t)(word)((conv word (*)  (word, double, word, word))\
 			                 function) (argv[0], *(double*)&argv[1], argv[2], argv[3]);\
 			case 2 + 0x0030000:\
-			         return ((conv word (*)  (double, double))\
+			         return (ret_t)(word)((conv word (*)  (double, double))\
 			                 function) (*(double*)&argv[0], *(double*)&argv[1]);\
 			case 3 + 0x0070000:\
-			         return ((conv word (*)  (double, double, double))\
+			         return (ret_t)(word)((conv word (*)  (double, double, double))\
 			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
 			                            *(double*)&argv[2]);\
 			case 4 + 0x00F0000:\
-			         return ((conv word (*)  (double, double, double, double))\
+			         return (ret_t)(word)((conv word (*)  (double, double, double, double))\
 			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
 			                            *(double*)&argv[2], *(double*)&argv[3]);\
 			case 6 + 0x03F0000:\
-			         return ((conv word (*)  (double, double, double, double, double, double))\
+			         return (ret_t)(word)((conv word (*)  (double, double, double, double, double, double))\
 			                 function) (*(double*)&argv[0], *(double*)&argv[1],\
 			                            *(double*)&argv[2], *(double*)&argv[3],\
 			                            *(double*)&argv[4], *(double*)&argv[5]);\
 			case 6 + 0x00E0000:\
-			         return ((conv word (*)  (word, double, double, double, word, word))\
+			         return (ret_t)(word)((conv word (*)  (word, double, double, double, word, word))\
 	                         function) (argv[0], *(double*)&argv[1],\
 	                                    *(double*)&argv[2], *(double*)&argv[3],\
 	                                    argv[4], argv[5]);\
 			case 9 + 0x1FF0000:\
-			         return ((conv word (*)  (double, double, double,\
+			         return (ret_t)(word)((conv word (*)  (double, double, double,\
 			                                  double, double, double,\
 									          double, double, double))\
 			                 function) (*(double*)&argv[0], *(double*)&argv[1], *(double*)&argv[2],\
@@ -4230,7 +4239,7 @@ word* pinvoke(OL* self, word* arguments)
 								        *(double*)&argv[6], *(double*)&argv[7], *(double*)&argv[8]);
 #else
 		#define CALLDOUBLES(conv)\
-			case 18: return ((conv word (*)  (word, word, word, word, word, word, \
+			case 18: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
 			                                  word, word, word, word, word, word, \
 			                                  word, word, word, word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], argv[ 4], argv[ 5],\
@@ -4240,46 +4249,46 @@ word* pinvoke(OL* self, word* arguments)
 
 		#define CALL(conv) \
 			switch (argc) {\
-			case  0: return ((conv word (*)  ())\
+			case  0: return (ret_t)(word)((conv word (*)  ())\
 							 function) ();\
-			case  1: return ((conv word (*)  (word))\
+			case  1: return (ret_t)(word)((conv word (*)  (word))\
 							 function) (argv[ 0]);\
-			case  2: return ((conv word (*)  (word, word))\
+			case  2: return (ret_t)(word)((conv word (*)  (word, word))\
 			                 function) (argv[ 0], argv[ 1]);\
-			case  3: return ((conv word (*)  (word, word, word))\
+			case  3: return (ret_t)(word)((conv word (*)  (word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2]);\
-			case  4: return ((conv word (*)  (word, word, word, word))\
+			case  4: return (ret_t)(word)((conv word (*)  (word, word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3]);\
-			case  5: return ((conv word (*)  (word, word, word, word, word))\
+			case  5: return (ret_t)(word)((conv word (*)  (word, word, word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
 			                            argv[ 4]);\
-			case  6: return ((conv word (*)  (word, word, word, word, word, word))\
+			case  6: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
 			                            argv[ 4], argv[ 5]);\
-			case  7: return ((conv word (*)  (word, word, word, word, word, word, \
+			case  7: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
 			                                  word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
 			                            argv[ 4], argv[ 5], argv[ 6]);\
-			case  8: return ((conv word (*)  (word, word, word, word, word, word, \
+			case  8: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
 			                                  word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
 			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7]);\
-			case  9: return ((conv word (*)  (word, word, word, word, word, word, \
+			case  9: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
 			                                  word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
 			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
 			                            argv[ 8]);\
-			case 10: return ((conv word (*)  (word, word, word, word, word, word, \
+			case 10: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
 			                                  word, word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
 			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
 			                            argv[ 8], argv[ 9]);\
-			case 11: return ((conv word (*)  (word, word, word, word, word, word, \
+			case 11: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
 			                                  word, word, word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3],\
 			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7],\
 			                            argv[ 8], argv[ 9], argv[10]);\
-			case 12: return ((conv word (*)  (word, word, word, word, word, word, \
+			case 12: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
 			                                  word, word, word, word, word, word))\
 			                 function) (argv[ 0], argv[ 1], argv[ 2], argv[ 3], \
 			                            argv[ 4], argv[ 5], argv[ 6], argv[ 7], \
@@ -4289,16 +4298,106 @@ word* pinvoke(OL* self, word* arguments)
 			default: STDERR("Unsupported parameters count for pinvoke function: %d", argc);\
 				break;\
 			}
+
+// platform defines:
+// https://sourceforge.net/p/predef/wiki/Architectures/
+// buildin assembly:
+// http://locklessinc.com/articles/gcc_asm/
+// http://www.agner.org/optimize/calling_conventions.pdf
+
+#if __i386__
+		// TODO: implement the floating point returning
+
+		// The cdecl (which stands for C declaration) is a calling convention
+		// that originates from the C programming language and is used by many
+		// C compilers for the x86 architecture.[1] In cdecl, subroutine
+		// arguments are passed on the stack. Integer values and memory
+		// addresses are returned in the EAX register, floating point values in
+		// the ST0 x87 register. Registers EAX, ECX, and EDX are caller-saved,
+		// and the rest are callee-saved. The x87 floating point registers ST0
+		// to ST7 must be empty (popped or freed) when calling a new function,
+		// and ST1 to ST7 must be empty on exiting a function. ST0 must also be
+		// empty when not used for returning a value.
+		ret_t x86_cdecl_call(void* function, word argv[], int argc) {
+			ret_t got;
+			//__asm__("int $3");
+			__asm__("# manual x86 __cdecl call implementation\n"
+					"	pushl %%ebp           \n"
+					"	movl  %%esp, %%ebp    \n" // save esp before calling the function
+
+					"	test  %3, %3     \n"
+					"	jz    1f         \n"
+					"	leal  -4(%2,%3,4), %2 \n"
+					"0: \n"
+					"	pushl (%2)       \n"
+					"	subl  $4, %2     \n"
+					"	decl  %3         \n"
+					"	jnz	  0b         \n"
+					"1: \n"
+					"	call  *%1        \n"
+					// TODO: add storing the float variable (if returned) to the got as "fstp"
+					"	movl  %%ebp, %%esp    \n"
+					"	popl  %%ebp           \n"
+			: "=eax"(got.w) 		// ouput
+			: "r"(function), "r"(argv), "r"(argc) // input, can use "m"(function)
+			: "cc","ecx","edx" // modify flags, ecx, edx
+			);
+			return got;
+		}
+		ret_t x86_stdcall_call(void* function, word argv[], int argc) {
+			word got;
+			//__asm__("int $3");
+			__asm__("# manual x86 __stdcall call implementation\n"
+					"	test  %3, %3     \n"
+					"	jz    1f         \n"
+					"	leal  -4(%2,%3,4), %2 \n"
+					"0: \n"
+					"	pushl (%2)       \n"
+					"	subl  $4, %2     \n"
+					"	decl  %3         \n"
+					"	jnz	  0b         \n"
+					"1: \n"
+					"	call  *%1        \n"
+			: "=eax"(got) 		// ouput
+			: "r"(function), "r"(argv), "r"(argc)
+			: "cc","ecx","edx"
+			);
+			return (ret_t)(word)got;
+		}
+
+		switch (convention) {
+		case 0:
+			// win32 uses by default stdcall calling convention, other use cdecl
+		#if _WIN32
+			return x86_stdcall_call(function, argv, argc);
+		#else
+			return x86_cdecl_call(function, argv, argc)
+		#endif
+			break;
+
+		case 1: // __stdcall
+			return x86_stdcall_call(function, argv, argc);
+			break;
+		case 2: // __cdecl
+			return x86_cdecl_call(function, argv, argc);
+		case 3: // __fastcall
+			CALL(__fastcall);
+			break;
+		default:
+			STDERR("Unsupported calling convention %d", convention);
+			break;
+		}
+#else
+
 #ifdef __linux__
 		CALL(); // always __cdecl
 #endif
 #ifdef __unix__
 		CALL(); // always __cdecl
 #endif
+
 #ifdef _WIN32
-		// default calling convention - stdcall
-		//todo: set __cdecl = 0, and __stdcall = 1
-		switch (returntype >> 8) {
+		switch (convention) {
 		case 0:
 			CALL(__stdcall);
 			break;
@@ -4309,11 +4408,12 @@ word* pinvoke(OL* self, word* arguments)
 			CALL(__fastcall);
 			break;
 		default:
-			STDERR("Unsupported calling convention %d", returntype >> 8);
+			STDERR("Unsupported calling convention %d", convention);
 			break;
 		}
 #endif
-		return 0; // if no call have made
+#endif
+		return (ret_t)(word)0; // if no call have made
 	}
 
 	long from_int(word arg) {
@@ -4739,7 +4839,7 @@ word* pinvoke(OL* self, word* arguments)
 	}
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	long got;   // результат вызова функции
+	ret_t got;   // результат вызова функции
 
 //	#00000000 00000000 - dword
 //	#00000000 000000xx - count of arguments
@@ -4750,8 +4850,6 @@ word* pinvoke(OL* self, word* arguments)
 	self->R[128 + 102] = (word)C;
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
 #if __amd64__
-	// http://locklessinc.com/articles/gcc_asm/
-	// http://www.agner.org/optimize/calling_conventions.pdf
 
 
 /*	int foo = 3, bar = 4, ppp = 1;
@@ -4780,8 +4878,9 @@ word* pinvoke(OL* self, word* arguments)
 
 	got = call(function, args, i + floats+doubles);
 #else
-	got = call(returntype >> 8, function, args, i);
+	got = call(returntype >> 6, function, args, i);
 #endif
+
 	// ??? бля, где гарантия, что C и B не поменялись???
 	fp = heap->fp;
 	B = (word*)self->R[128 + 101];
@@ -4833,36 +4932,36 @@ word* pinvoke(OL* self, word* arguments)
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) ltosv (got); // ltosv or itosv?
+			result = (word*) ltosv (got.w); // ltosv or itosv?
 			break;
 		case TINT: // type-int+
-			result = (word*) itoun (got);
+			result = (word*) itoun (got.w);
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
 		case TPORT:
-			result = (word*) make_port (got);
+			result = (word*) make_port (got.w);
 			break;
 		case TVOID:
 			result = (word*) ITRUE;
 			break;
 
 		case TUSERDATA:
-			result = new_userdata (got);
+			result = new_userdata (got.w);
 			break;
 		case TVPTR:
-			if (got)
-				result = new_vptr (got);
+			if (got.w)
+				result = new_vptr (got.w);
 			break;
 
 		case TSTRING:
-			if (got) {
-				int l = lenn((char*)got, FMAX+1);
+			if (got.w) {
+				int l = lenn((char*)got.w, FMAX+1);
 				if (fp + (l/sizeof(word)) > heap->end) {
 					self->gc(self, l/sizeof(word));
 					heap = &self->heap;
 					fp = heap->fp;
 				}
-				result = new_string ((char*)got, l);
+				result = new_string ((char*)got.w, l);
 			}
 			break;
 

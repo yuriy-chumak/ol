@@ -174,9 +174,11 @@
 ;;         (syscall 59 (cdr function) (car function) args))))
 
 ; Calling Conventions
-(define (__stdcall  arg) (+ arg   0)) ; __stdcall is default for Windows
-(define (__cdecl    arg) (+ arg  64))
-(define (__fastcall arg) (+ arg 128))
+; default call is __stdcall for windows and __cdecl for linux
+; you can directly provide required calling convention:
+(define (__stdcall  arg) (+ arg #b01000000))
+(define (__cdecl    arg) (+ arg #b10000000))
+(define (__fastcall arg) (+ arg #b11000000))
 
 ; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?
 ;(define (INTEGER arg) (cons 45 arg))
