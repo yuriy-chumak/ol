@@ -4824,8 +4824,8 @@ word* pinvoke(OL* self, word* arguments)
 			}
 		}
 
-		p = (word*)cdr(p); // (cdr p)
-		t = (word*)cdr(t); // (cdr t)
+		p = (word*) cdr(p);
+		t = (word*) cdr(t);
 		i++;
 	}
 
@@ -4842,6 +4842,10 @@ word* pinvoke(OL* self, word* arguments)
 		case TPORT:
 			result = (word*) make_port (got);
 			break;
+		case TVOID:
+			result = (word*) ITRUE;
+			break;
+
 		case TUSERDATA:
 			result = new_userdata (got);
 			break;
@@ -4849,17 +4853,19 @@ word* pinvoke(OL* self, word* arguments)
 			if (got)
 				result = new_vptr (got);
 			break;
-//		case TRAWVALUE:
-//			result = (word*) got;
-//			break;
 
 		case TSTRING:
-			if (got != 0)
-				result = new_string ((char*)got, lenn((char*)got, FMAX+1));
+			if (got) {
+				int l = lenn((char*)got, FMAX+1);
+				if (fp + (l/sizeof(word)) > heap->end) {
+					self->gc(self, l/sizeof(word));
+					heap = &self->heap;
+					fp = heap->fp;
+				}
+				result = new_string ((char*)got, l);
+			}
 			break;
-		case TVOID:
-			result = (word*) ITRUE;
-			break;
+
 //      todo TRATIONAL:
 	}
 
