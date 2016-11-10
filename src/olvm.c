@@ -766,7 +766,7 @@ word*p = NEW (size);\
 #define new(...) NEW_MACRO(__VA_ARGS__, NEW_RAW_OBJECT, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
 
 // -= new_value =---------------------------------------
-#define new_value(a) ((word*)F(a))
+#define new_value(a) ((word*)F(a)) // same as make_value(TFIX, a)
 
 // -= new_pair =----------------------------------------
 
@@ -1333,7 +1333,6 @@ struct ol_t
 #define R1                          (word*)R[1]
 #define R2                          (word*)R[2]
 #define R3                          (word*)R[3]
-#define R4                          (word*)R[4]
 
 // state machine:
 #define STATE_APPLY 1
@@ -1850,7 +1849,7 @@ static int mainloop(OL* ol)
 
 	// ENTRY LOOP POINT
 	int op;//operation to execute:
-loop:
+//loop:
 	switch ((op = *ip++) & 0x3F) {
 	case 0: // todo: change 0 to NOP, add new code for super_dispatch
 		op = (ip[0] << 8) | ip[1]; // big endian
@@ -4689,7 +4688,7 @@ word* pinvoke(OL* self, word* arguments)
 		}
 
 		case TCALLBACK: {
-			args[i] = callbacks[uvtoi(arg)];
+			args[i] = (word)callbacks[uvtoi(arg)];
 //			self->R[128+1] = arg;
 //			args[i] = &callback1;
 
@@ -4736,8 +4735,8 @@ word* pinvoke(OL* self, word* arguments)
 //	#00000000 000xxx00 - count of floats - up to 12 ?
 //	#00000000 xxx00000 - count of doubles - up to 12 ?
 
-	self->R[128 + 101] = B;
-	self->R[128 + 102] = C;
+	self->R[128 + 101] = (word)B;
+	self->R[128 + 102] = (word)C;
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
 #if __amd64__
 	// http://locklessinc.com/articles/gcc_asm/
@@ -4774,8 +4773,8 @@ word* pinvoke(OL* self, word* arguments)
 #endif
 	// ??? бля, где гарантия, что C и B не поменялись???
 	fp = heap->fp;
-	B = self->R[128 + 101];
-	C = self->R[128 + 102];
+	B = (word*)self->R[128 + 101];
+	C = (word*)self->R[128 + 102];
 
 	// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
 	p = (word*)C;   // сами аргументы
@@ -4799,7 +4798,7 @@ word* pinvoke(OL* self, word* arguments)
 			word l = arg;
 			while (c--) {
 				float value = *f++;
-				word* num = car(l);
+				word num = car(l);
 				assert (reftype(num) == TRATIONAL);
 				// максимальная читабельность
 				car(num) = itosv(value * 10000);
