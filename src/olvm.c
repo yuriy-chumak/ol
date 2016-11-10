@@ -597,16 +597,17 @@ struct object_t
 
 #define is_fix(ob)                  (is_value(ob)     && valuetype (ob) == TFIX)
 #define is_fixn(ob)                 (is_value(ob)     && valuetype (ob) == TFIXN)
-#define is_pair(ob)                 (is_reference(ob) &&         (*(word*)(ob)) == make_header(TPAIR,     3))
-#define is_npair(ob)                (is_reference(ob) &&         (*(word*)(ob)) == make_header(TINT,      3))
-#define is_npairn(ob)               (is_reference(ob) &&         (*(word*)(ob)) == make_header(TINTN,     3))
-#define is_rational(ob)             (is_reference(ob) &&         (*(word*)(ob)) == make_header(TRATIONAL, 3))
-#define is_complex(ob)              (is_reference(ob) &&         (*(word*)(ob)) == make_header(TCOMPLEX,  3))
+#define is_pair(ob)                 (is_reference(ob) &&  (*(word*)(ob)) == make_header(TPAIR,     3))
+#define is_npair(ob)                (is_reference(ob) &&  (*(word*)(ob)) == make_header(TINT,      3))
+#define is_npairn(ob)               (is_reference(ob) &&  (*(word*)(ob)) == make_header(TINTN,     3))
+#define is_rational(ob)             (is_reference(ob) &&  (*(word*)(ob)) == make_header(TRATIONAL, 3))
+#define is_complex(ob)              (is_reference(ob) &&  (*(word*)(ob)) == make_header(TCOMPLEX,  3))
 
-#define is_string(ob)               (is_reference(ob) && reftype (ob) == TSTRING)
-#define is_tuple(ob)                (is_reference(ob) && reftype (ob) == TTUPLE)
+#define is_string(ob)               (is_reference(ob) &&   reftype (ob) == TSTRING)
+#define is_tuple(ob)                (is_reference(ob) &&   reftype (ob) == TTUPLE)
 
-#define is_vptr(ob)                 (is_reference(ob) &&         (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
+#define is_vptr(ob)                 (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
+#define is_callback(ob)             (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TCALLBACK, 2, 0))
 
 #define is_number(ob)               (is_npair(ob)  || is_fix(ob))
 #define is_numbern(ob)              (is_npairn(ob) || is_fixn(ob))
@@ -971,6 +972,13 @@ word data = (word) a;\
 	/*return*/me;\
 })
 
+#define new_callback(a) ({\
+word data = (word) a;\
+	word* me = new (TCALLBACK, 2, 0);\
+	me[1] = data;\
+	/*return*/me;\
+})
+
 // -= gc implementation =-----------
 #define is_flagged(x) (((word)(x)) & 1)  // mark for GC
 
@@ -1145,6 +1153,7 @@ word gc(heap_t *heap, int size, word regs) {
 	//	gctime = -(1000 * clock()) / CLOCKS_PER_SEC;
 		root[0] = regs;
 		mark(root, fp);        // assert (root > fp)
+		// todo: проверить о очистить callbacks перед sweep
 		fp = sweep(fp);
 		regs = root[0];
 	//	gctime += (1000 * clock()) / CLOCKS_PER_SEC;
@@ -3583,7 +3592,7 @@ static int mainloop(OL* ol)
 			for (int c = 4; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
 				if (R[128+c] == IFALSE) {
 					R[128+c] = a;
-					result = (word*)F(c);
+					result = new_callback(c);
 					break;
 				}
 			}
@@ -4660,6 +4669,7 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		}
 
+		// todo: а может объединить TBVEC и TSTRING в один тип?
 		case TBVEC:
 		case TSTRING:
 			if ((word)arg == INULL || (word)arg == IFALSE)
@@ -4688,10 +4698,11 @@ word* pinvoke(OL* self, word* arguments)
 		}
 
 		case TCALLBACK: {
-			args[i] = (word)callbacks[uvtoi(arg)];
-//			self->R[128+1] = arg;
-//			args[i] = &callback1;
-
+			if (is_callback(arg)) {
+				args[i] = (word)callbacks[car(arg)];
+			}
+			else
+				STDERR("invalid parameter values (requested callback)");
 			break;
 		}
 /*
