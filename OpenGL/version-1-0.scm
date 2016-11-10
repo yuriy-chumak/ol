@@ -1992,9 +1992,10 @@
 (import (owl string))
 
 (define (gl:ExtensionSupported? extension)
-(let ((string (append '(#x20) (string->runes (glGetString GL_EXTENSIONS)) '(#x20)))
-      (substr (append '(#x20) (string->runes extension) '(#x20))))
+(let ((string (append '(#x20) (string->bytes (glGetString GL_EXTENSIONS)) '(#x20)))
+      (substr (append '(#x20) (string->bytes extension) '(#x20))))
 (for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support..."))
+
 (if
 (let iter ((string string))
    (or
