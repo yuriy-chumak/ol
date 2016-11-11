@@ -1371,8 +1371,8 @@ int callback(int id, void* arg1, va_list args)
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же
 	R[128 + 0] = R[0]; // mcp?
-//	R[128 + 1] = R[1];
-//	R[128 + 2] = R[2];
+//	R[128 + 1] = R[1]; // не надо
+//	R[128 + 2] = R[2]; // не надо
 	R[128 + 3] = R[3]; // continuation
 
 	// вызовем колбек:
@@ -1421,8 +1421,8 @@ int callback(int id, void* arg1, va_list args)
 	case -1: // todo: change -1 to STATE_DONE or something similar
 		// возврат из колбека
 		R[3] = R[128 + 3];
-//		R[1] = R[128 + 2];
-//		R[1] = R[128 + 1];
+//		R[1] = R[128 + 2]; // не надо
+//		R[1] = R[128 + 1]; // не надо
 		R[0] = R[128 + 0]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
 		return 0; // return from callback
 
@@ -1444,9 +1444,7 @@ int callback##x(void* arg1, ...)\
 	va_end(args);\
 	return r;\
 }
-//callbackX(1)
-//callbackX(2)
-//callbackX(3)
+// 0 .. 3 - not used
 callbackX(4)
 callbackX(5)
 callbackX(6)
@@ -1466,10 +1464,7 @@ callbackX(19)
 callbackX(20)
 
 int (*callbacks[])(void*, ...) = {
-	0,
-	0,//callback1,
-	0,//callback2,
-	0,//callback3,
+	0, 0, 0, 0, // callback0..callback3
 	callback4,
 	callback5,
 	callback6,
@@ -4127,17 +4122,12 @@ word* pinvoke(OL* self, word* arguments)
 
 	// x64 calling conventions: linux, windows
 	// TODO: change return type to universal union
-	typedef union ret_t
-	{
-		word w;
-		float f;
-		double d;
-	} ret_t;
+	typedef long long ret_t;
 
 	#if	__amd64__
-	ret_t call(void* function, word argv[], int argc) {
+	ret_t call(int type, void* function, word argv[], int argc) {
 	#else
-	ret_t call(int convention, void* function, word argv[], int argc) {
+	ret_t call(int type, void* function, word argv[], int argc) {
 	#endif
 
 		// todo: ограничиться количеством функций поменьше
@@ -4247,7 +4237,7 @@ word* pinvoke(OL* self, word* arguments)
 			                            argv[12], argv[13], argv[14], argv[15], argv[16], argv[17]);
 #endif
 
-		#define CALL(conv) \
+		#define CALL(conv) ({\
 			switch (argc) {\
 			case  0: return (ret_t)(word)((conv word (*)  ())\
 							 function) ();\
@@ -4297,7 +4287,7 @@ word* pinvoke(OL* self, word* arguments)
 			CALLDOUBLES(conv)\
 			default: STDERR("Unsupported parameters count for pinvoke function: %d", argc);\
 				break;\
-			}
+			}; (ret_t)0;})
 
 // platform defines:
 // https://sourceforge.net/p/predef/wiki/Architectures/
@@ -4305,9 +4295,47 @@ word* pinvoke(OL* self, word* arguments)
 // http://locklessinc.com/articles/gcc_asm/
 // http://www.agner.org/optimize/calling_conventions.pdf
 
+// intel architecture:
 #if __i386__
-		// TODO: implement the floating point returning
+		// returning two floating point values example:
+		// asm ("fsincos" : "=t" (cos), "=u" (sin) : "0" (inp));
+		// takes two inputs, and replaces them with one output
+		// asm ("fyl2xp1" : "=t" (result) : "0" (x), "u" (y) : "st(1)");
 
+		// 64-bit assembly
+		#	if __amd64__
+		#	define cdecl_word_call(f,v,c)    CALL(__cdecl)
+		#	define stdcall_word_call(f,v,c)  CALL(__stdcall)
+		#	define cdecl_float_call(f,v,c)   CALL(__cdecl)
+		#	define stdcall_float_call(f,v,c) CALL(__stdcall)
+
+		ret_t x64_cdecl_word_call(void* function, word argv[], int argc) {
+			ret_t got;
+			return got;
+		}
+		ret_t x64_stdcall_word_call(void* function, word argv[], int argc) {
+			ret_t got;
+			return got;
+		}
+		ret_t x64_cdecl_float_call(void* function, word argv[], int argc) {
+			ret_t got;
+			return got;
+		}
+		ret_t x64_stdcall_float_call(void* function, word argv[], int argc) {
+			ret_t got;
+			return got;
+		}
+
+		// 32-bit assembly
+		#	else
+		#	define cdecl_word_call(f,v,c)    CALL(__cdecl) //x86_cdecl_word_call
+		#	define stdcall_word_call(f,v,c)  CALL(__stdcall)
+		#	define cdecl_float_call(f,v,c)   CALL(__cdecl) //x86_cdecl_float_call
+		#	define stdcall_float_call(f,v,c) CALL(__stdcall) //x86_stdcall_float_call
+
+		#	define stdcall_word_call     x86_stdcall_word_call
+
+		// CDECL
 		// The cdecl (which stands for C declaration) is a calling convention
 		// that originates from the C programming language and is used by many
 		// C compilers for the x86 architecture.[1] In cdecl, subroutine
@@ -4318,7 +4346,7 @@ word* pinvoke(OL* self, word* arguments)
 		// to ST7 must be empty (popped or freed) when calling a new function,
 		// and ST1 to ST7 must be empty on exiting a function. ST0 must also be
 		// empty when not used for returning a value.
-		ret_t x86_cdecl_call(void* function, word argv[], int argc) {
+		ret_t x86_cdecl_word_call(void* function, word argv[], int argc) {
 			ret_t got;
 			//__asm__("int $3");
 			__asm__("# manual x86 __cdecl call implementation\n"
@@ -4335,17 +4363,73 @@ word* pinvoke(OL* self, word* arguments)
 					"	jnz	  0b         \n"
 					"1: \n"
 					"	call  *%1        \n"
-					// TODO: add storing the float variable (if returned) to the got as "fstp"
-					"	movl  %%ebp, %%esp    \n"
+
+					"	movl  %%ebp, %%esp    \n" // todo: change to leavel instruction
 					"	popl  %%ebp           \n"
-			: "=eax"(got.w) 		// ouput
+			: "=eax"(got) 		// ouput
 			: "r"(function), "r"(argv), "r"(argc) // input, can use "m"(function)
 			: "cc","ecx","edx" // modify flags, ecx, edx
 			);
 			return got;
 		}
-		ret_t x86_stdcall_call(void* function, word argv[], int argc) {
-			word got;
+		ret_t x86_cdecl_float_call(void* function, word argv[], int argc) {
+			ret_t got;
+			//__asm__("int $3");
+			__asm__("# manual x86 __cdecl call implementation\n"
+					"	pushl %%ebp           \n"
+					"	movl  %%esp, %%ebp    \n"
+
+					"	test  %3, %3     \n"
+					"	jz    1f         \n"
+					"	leal  -4(%2,%3,4), %2 \n"
+					"0: \n"
+					"	pushl (%2)       \n"
+					"	subl  $4, %2     \n"
+					"	decl  %3         \n"
+					"	jnz	  0b         \n"
+					"1: \n"
+					"	call  *%1        \n"
+
+					"	movl  %%ebp, %%esp    \n"
+					"	popl  %%ebp           \n"
+			: "=t"(got) 		// ouput
+			: "r"(function), "r"(argv), "r"(argc)
+			: "cc","ecx","edx"
+			);
+			return got;
+		}
+
+		// STDCALL
+		ret_t x86_stdcall_word_call(void* function, word argv[], int argc) {
+			word got = 0;
+			//__asm__("int $3");
+			//return (ret_t)CALL(__stdcall);
+			__asm__("# manual x86 __stdcall call implementation\n"
+//					"   pushl %%ebx; pushl %%esi; pushl %%ecx; pushl %%edx \n"
+//					"	pushl %%ebp           \n"
+//					"	movl  %%esp, %%ebp    \n"
+					"	test  %3, %3     \n"
+					"	jz    1f         \n"
+					"	leal  -4(%2,%3,4), %2 \n"
+					"0: \n"
+					"	pushl (%2)       \n"
+					"	subl  $4, %2     \n"
+					"	decl  %3         \n"
+					"	jnz	  0b         \n"
+					"1: \n"
+					"	call  *%1        \n"
+//					"	movl  %%ebp, %%esp    \n"
+//					"	popl  %%ebp           \n"
+//					"   popl %%edx; popl %%ecx; popl %%esi; popl %%ebx \n"
+			: "=eax"(got) 		// ouput
+			: "r"(function), "Ir"(argv), "Ir"(argc)
+			: "cc", "ecx", "edx"
+			);
+			got = (ret_t)(word)CALL(__stdcall); // TEMP!
+			return (ret_t)got;
+		}
+		ret_t x86_stdcall_float_call(void* function, word argv[], int argc) {
+			ret_t got;
 			//__asm__("int $3");
 			__asm__("# manual x86 __stdcall call implementation\n"
 					"	test  %3, %3     \n"
@@ -4358,64 +4442,74 @@ word* pinvoke(OL* self, word* arguments)
 					"	jnz	  0b         \n"
 					"1: \n"
 					"	call  *%1        \n"
-			: "=eax"(got) 		// ouput
+			: "=t"(got) 		// ouput
 			: "r"(function), "r"(argv), "r"(argc)
-			: "cc","ecx","edx"
+			//: "cc","ecx","edx"
 			);
-			return (ret_t)(word)got;
+			return got;
 		}
+		#endif // architecture
+// arm architectures:
+#elif __arm__
+		#	define cdecl_word_call(f,v,c)    STDERR("unsupported architecture")
+		#	define stdcall_word_call(f,v,c)  STDERR("unsupported architecture")
+		#	define cdecl_float_call(f,v,c)   STDERR("unsupported architecture")
+		#	define stdcall_float_call(f,v,c) STDERR("unsupported architecture")
 
-		switch (convention) {
-		case 0:
-			// win32 uses by default stdcall calling convention, other use cdecl
-		#if _WIN32
-			return x86_stdcall_call(function, argv, argc);
-		#else
-			return x86_cdecl_call(function, argv, argc)
-		#endif
-			break;
-
-		case 1: // __stdcall
-			return x86_stdcall_call(function, argv, argc);
-			break;
-		case 2: // __cdecl
-			return x86_cdecl_call(function, argv, argc);
-		case 3: // __fastcall
-			CALL(__fastcall);
-			break;
-		default:
-			STDERR("Unsupported calling convention %d", convention);
-			break;
-		}
+// default architecture:
 #else
-
-#ifdef __linux__
-		CALL(); // always __cdecl
+		// default architecture is not supports:
+		// * floating point return values
+		// * all possible arguments conbinations
+		#	define cdecl_word_call(f,v,c)    CALL(__cdecl)
+		#	define stdcall_word_call(f,v,c)  CALL(__stdcall)
+		#	define cdecl_float_call(f,v,c)   CALL(__cdecl)
+		#	define stdcall_float_call(f,v,c) CALL(__stdcall)
 #endif
-#ifdef __unix__
-		CALL(); // always __cdecl
-#endif
+		// #define mcall(conv,type) conv##_##type##_call(function, argv, argc)
 
-#ifdef _WIN32
-		switch (convention) {
-		case 0:
-			CALL(__stdcall);
-			break;
+		// default calling convenstions:
+		// * for linux   - cdecl
+		// * for unix    - cdecl
+		// * for windows - stdcall
+		switch (type >> 6) {
+		// CDECL: (1)
+		#	if defined(__linux__) || \
+			   defined(__unix__)
+		case 0: // for linux default calling convention is stdcall
+		#	endif
 		case 1:
-			CALL(__cdecl);
+			switch (type & 0x3F) {
+			case TRATIONAL:
+				return cdecl_float_call(function, argv, argc);
+			default:
+				return cdecl_word_call(function, argv, argc);
+			}
 			break;
+
+		// STDCALL: (2)
+		#	if defined(_WIN32)
+		case 0: // for win32 default calling convention is stdcall
+		#	endif
 		case 2:
-			CALL(__fastcall);
+			switch (type & 0x3F) {
+			case TRATIONAL:
+				return stdcall_float_call(function, argv, argc);
+			default:
+				return stdcall_word_call(function, argv, argc);
+			}
 			break;
+
+		// FASTCALL: (3)
+		case 3:
 		default:
-			STDERR("Unsupported calling convention %d", convention);
+			STDERR("Unsupported calling convention %d", type >> 6);
 			break;
 		}
-#endif
-#endif
-		return (ret_t)(word)0; // if no call have made
+		return (ret_t)(double)0; // if no call have made
 	}
 
+	// lisp->c convertors
 	long from_int(word arg) {
 		// так как в стек мы все равно большое сложить не сможем, то возьмем
 		// только то, что влазит (первые два члена) (временное решение!)
@@ -4569,14 +4663,18 @@ word* pinvoke(OL* self, word* arguments)
 	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = value(car(B));
+
+	// унифицируем возвращаемый тип
+	if (returntype == TFLOAT || returntype == TDOUBLE)
+		returntype = TRATIONAL;
+
 #if __amd64__
-	int floats = 0;  // для amd64
-	int doubles = 0; // same
+	int floats = 0, doubles = 0; // в amd64 флоаты и даблы передаются отдельно
 #endif
 
 	int i = 0;     // количество аргументов
 	word* p = (word*)C;   // сами аргументы
-	word* t = (word*)cdr(B); // rtty
+	word* t = (word*)cdr (B); // rtty
 
 	while ((word)p != INULL) { // пока есть аргументы
 		assert (reftype(p) == TPAIR); // assert(list)
@@ -4700,14 +4798,14 @@ word* pinvoke(OL* self, word* arguments)
 			#endif
 			break;
 		case TFLOAT + 0x80:
-		case TFLOAT + 0x40: { // todo: add backroll after the call
-			if (arg == INULL) // empty array must return NULL
+		case TFLOAT + 0x40: {
+			if (arg == INULL) // empty array must be interpreted as nullptr
 				break;
-			if (arg == IFALSE)// empty array must return NULL
+			if (arg == IFALSE)// empty array must be interpreted as nullptr
 				break;
 
 			int c = llen(arg);
-			float* f = (float*) __builtin_alloca(c * sizeof(float)); // todo: use new()
+			float* f = (float*) __builtin_alloca(c * sizeof(float));
 			args[i] = (word)f;
 
 			word l = arg;
@@ -4725,7 +4823,13 @@ word* pinvoke(OL* self, word* arguments)
 			#endif
 			break;
 
+		case TDOUBLE + 0x80:
 		case TDOUBLE + 0x40: {
+			if (arg == INULL) // empty array must be interpreted as nullptr
+				break;
+			if (arg == IFALSE)// empty array must be interpreted as nullptr
+				break;
+
 			int c = llen(arg);
 			double* p = (double*) __builtin_alloca(c * sizeof(double)); // todo: use new()
 			args[i] = (word)p;
@@ -4846,45 +4950,20 @@ word* pinvoke(OL* self, word* arguments)
 //	#00000000 000xxx00 - count of floats - up to 12 ?
 //	#00000000 xxx00000 - count of doubles - up to 12 ?
 
-	self->R[128 + 101] = (word)B;
-	self->R[128 + 102] = (word)C;
+	self->R[128 + 1] = (word)B;
+	self->R[128 + 2] = (word)C;
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
+
 #if __amd64__
-
-
-/*	int foo = 3, bar = 4, ppp = 1;
-
-	__asm__ ("\
-		add %2, %1    \n\
-		call *%3       \n\
-		mov %1, %0    \n"
-	: "=rax"(ppp) 		// ouput
-	: "r10"(foo), "rax"(bar)// input
-	, "m"(function)
-	: "cc"			// modify flags
-	);
-
-//	// movss %xmm0,-0x1e4(%rbp) - float
-//	// movss 0x160a(%rip),%xmm0 - float
-//	// movsd 0x160e(%rip),%xmm0 - double
-//
-//	// linux calling convention:
-//	// rdi, rsi, rdx, rcx, r8, r9, xmm0..7
-//
-//	// register int out asm("r10") x;
-//
-//	float R = ((float (*)  (int, double, int))function) (1, 2.0, 3);
-*/
-
-	got = call(function, args, i + floats+doubles);
+	got = call(returntype, function, args, i + floats+doubles);
 #else
-	got = call(returntype >> 6, function, args, i);
+	got = call(returntype, function, args, i);
 #endif
 
 	// ??? бля, где гарантия, что C и B не поменялись???
 	fp = heap->fp;
-	B = (word*)self->R[128 + 101];
-	C = (word*)self->R[128 + 102];
+	B = (word*)self->R[128 + 1];
+	C = (word*)self->R[128 + 2];
 
 	// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
 	p = (word*)C;   // сами аргументы
@@ -4932,40 +5011,48 @@ word* pinvoke(OL* self, word* arguments)
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) ltosv (got.w); // ltosv or itosv?
+			result = (word*) ltosv (got); // ltosv or itosv?
 			break;
 		case TINT: // type-int+
-			result = (word*) itoun (got.w);
+			result = (word*) itoun (got);
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
 		case TPORT:
-			result = (word*) make_port (got.w);
+			result = (word*) make_port (got);
 			break;
 		case TVOID:
 			result = (word*) ITRUE;
 			break;
 
 		case TUSERDATA:
-			result = new_userdata (got.w);
+			result = new_userdata (got);
 			break;
 		case TVPTR:
-			if (got.w)
-				result = new_vptr (got.w);
+			if (got)
+				result = new_vptr (got);
 			break;
 
 		case TSTRING:
-			if (got.w) {
-				int l = lenn((char*)got.w, FMAX+1);
+			if (got) {
+				int l = lenn((char*)got, FMAX+1);
 				if (fp + (l/sizeof(word)) > heap->end) {
 					self->gc(self, l/sizeof(word));
 					heap = &self->heap;
 					fp = heap->fp;
 				}
-				result = new_string ((char*)got.w, l);
+				result = new_string ((char*)got, l);
 			}
 			break;
 
-//      todo TRATIONAL:
+		case TRATIONAL: {
+			// TODO: please, optimize this!
+			double value = got;
+			double n = value * 10000;
+			double d = 10000;
+			// максимальная читабельность
+			result = new_pair(TRATIONAL, itosv(n), itouv(d));
+			break;
+		}
 	}
 
 	heap->fp = fp;
@@ -4974,6 +5061,7 @@ word* pinvoke(OL* self, word* arguments)
 #endif//HAS_PINVOKE
 
 // pinvoke testing
+
 #if 0
 	__attribute__
 			((__visibility__("default")))
@@ -4994,6 +5082,16 @@ word* test(OL* self, word* arguments)
 	return 0;
 }
 #endif
+
+#if 0
+	__declspec(dllexport)
+__stdcall
+float float_test(float a, float b)
+{
+	return a + b;
+}
+#endif
+
 
 // callback testing
 #if 0
