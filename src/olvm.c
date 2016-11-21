@@ -4099,6 +4099,82 @@ OL_eval(OL* handle, int argc, char** argv)
  * а тут у нас реализация pinvoke механизма. пример в lib/opengl.scm, lib/sqlite.scm, etc.
  */
 #if HAS_PINVOKE
+
+#if __amd64__
+#define crlf "\n\t"
+long long x64_call(word argv[], double ad[], int i, int d, long long mask, void* function, int type);
+# if _WIN32
+# else // System V (unix, linux, osx)
+// rdi: argv[]
+// rsi: ad[]
+// edx: i
+// ecx: d
+// r8:  mask
+// r9: function
+// 16(rbp): mask
+__asm__(
+"x64_call:"                 crlf     // "int $3\n\t"
+	"pushq %rbx"            crlf
+	"movq  %r9, %rbx"       crlf
+
+	"pushq %rbp"            crlf
+	"movq  %rsp, %rbp"      crlf
+	// 1. если есть флоаты, то заполним их
+"1:"                        crlf
+	"testl %ecx, %ecx"      crlf
+	"jz    2f"              crlf
+	"movl  %ecx, %eax"      crlf // floats count
+	"movsd  0(%rsi), %xmm0" crlf
+	"decl  %ecx"            crlf
+	"jz    2f"              crlf
+	"movsd  8(%rsi), %xmm1" crlf
+	"decl  %ecx"            crlf
+	"jz    2f"              crlf
+	"movsd 16(%rsi), %xmm2" crlf
+	"decl  %ecx"            crlf
+	"jnz   3f"              crlf // последняя проверка скажет, надо ли писать в стек
+	// 2. проверим на "лишние" оверинты
+"2:"                        crlf
+	"cmpl  $6, %edx"        crlf
+	"jbe   4f"              crlf
+	// забросим весь оверхед в стек с учетом очередности и маски
+"3:"                        crlf
+	// 4. заполним обычные rdi, esi, ... не проверяя количество аргументов, так будет быстрее
+"4:"                        crlf
+	"movq  8(%rdi), %rsi"   crlf
+	"movq 16(%rdi), %rdx"   crlf
+	"movq 24(%rdi), %rcx"   crlf
+	"movq 32(%rdi), %r8"    crlf
+	"movq 48(%rdi), %r9"    crlf
+	"movq   (%rdi), %rdi"   crlf
+	"call *%rbx"            crlf
+	// 5. вернем результат
+"5:"                        crlf
+	"movq 24(%rbp), %rbx"   crlf
+	"cmpl $46, %ebx"        crlf // TFLOAT
+	"jne  5f"               crlf
+	"cvtss2sd %xmm0, %xmm0" crlf
+	"jmp  6f"               crlf
+"5: "                       crlf
+	"cmpl $47, %ebx"        crlf // TDOUBLE
+	"jne  7f"               crlf
+"6:"                        crlf
+	"pushq %rax"            crlf // сохраним дабл в обычном регистре
+	"movsd %xmm0, (%rsp)"   crlf
+	"popq  %rax"            crlf
+"7:"                        crlf
+	"leave"                 crlf
+	"popq %rbx"             crlf
+	"ret");
+
+// RDI, RSI, RDX, RCX (R10 in the Linux kernel interface[17]:124), R8, and R9
+// while XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6 and XMM7 are used for floats
+# endif
+#endif
+
+
+
+
 #ifdef _WIN32
 __declspec(dllexport)
 #else
@@ -4125,7 +4201,7 @@ word* pinvoke(OL* self, word* arguments)
 	typedef long long ret_t;
 
 	#if	__amd64__
-	ret_t call(int type, void* function, word argv[], int argc) {
+	ret_t call(int type, void* function, word argv[], int argc, double ad[], int d, long long mask) {
 	#else
 	ret_t call(int type, void* function, word argv[], int argc) {
 	#endif
@@ -4296,44 +4372,19 @@ word* pinvoke(OL* self, word* arguments)
 // http://www.agner.org/optimize/calling_conventions.pdf
 
 // intel architecture:
+// 32-bit assembly
 #if __i386__
 		// returning two floating point values example:
 		// asm ("fsincos" : "=t" (cos), "=u" (sin) : "0" (inp));
 		// takes two inputs, and replaces them with one output
 		// asm ("fyl2xp1" : "=t" (result) : "0" (x), "u" (y) : "st(1)");
 
-		// 64-bit assembly
-		#	if __amd64__
-		#	define cdecl_word_call(f,v,c)    CALL(__cdecl)
-		#	define stdcall_word_call(f,v,c)  CALL(__stdcall)
-		#	define cdecl_float_call(f,v,c)   CALL(__cdecl)
-		#	define stdcall_float_call(f,v,c) CALL(__stdcall)
-
-		ret_t x64_cdecl_word_call(void* function, word argv[], int argc) {
-			ret_t got;
-			return got;
-		}
-		ret_t x64_stdcall_word_call(void* function, word argv[], int argc) {
-			ret_t got;
-			return got;
-		}
-		ret_t x64_cdecl_float_call(void* function, word argv[], int argc) {
-			ret_t got;
-			return got;
-		}
-		ret_t x64_stdcall_float_call(void* function, word argv[], int argc) {
-			ret_t got;
-			return got;
-		}
-
-		// 32-bit assembly
-		#	else
 		#	define cdecl_word_call(f,v,c)    CALL(__cdecl) //x86_cdecl_word_call
 		#	define stdcall_word_call(f,v,c)  CALL(__stdcall)
 		#	define cdecl_float_call(f,v,c)   CALL(__cdecl) //x86_cdecl_float_call
 		#	define stdcall_float_call(f,v,c) CALL(__stdcall) //x86_stdcall_float_call
 
-		#	define stdcall_word_call     x86_stdcall_word_call
+//		#	define stdcall_word_call     x86_stdcall_word_call
 
 		// CDECL
 		// The cdecl (which stands for C declaration) is a calling convention
@@ -4448,7 +4499,31 @@ word* pinvoke(OL* self, word* arguments)
 			);
 			return got;
 		}
-		#endif // architecture
+// 64-bit assembly
+#elif __amd64__
+		#	if _WIN32
+		// Microsoft x64 calling convention
+		// rcx, rdx, r8, r9 for integers or pointers
+		// xmm0, xmm1, xmm2, xmm3 for floats
+		// others are right to left
+		//
+		// rbx, rbp, rdi, rsi, rsp, r12, r13, r14, r15 must be saved
+			// ...
+
+		#	else
+		// sdsd
+		// RDI, RSI, RDX, RCX (R10 in the Linux kernel interface[17]:124), R8, and R9
+		// while XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6 and XMM7 are used for floats
+
+		// if function is float, add "movd %xmm0, %eax" at the end
+
+		#	define cdecl_word_call(f,v,c)    CALL(__cdecl)
+		#	define stdcall_word_call(f,v,c)  CALL(__stdcall)
+		#	define cdecl_float_call(f,v,c)   CALL(__cdecl)
+		#	define stdcall_float_call(f,v,c) CALL(__stdcall)
+
+		#	endif
+
 // arm architectures:
 #elif __arm__
 		#	define cdecl_word_call(f,v,c)    STDERR("unsupported architecture")
@@ -4468,6 +4543,9 @@ word* pinvoke(OL* self, word* arguments)
 #endif
 		// #define mcall(conv,type) conv##_##type##_call(function, argv, argc)
 
+#if __amd64__
+
+#else
 		// default calling convenstions:
 		// * for linux   - cdecl
 		// * for unix    - cdecl
@@ -4506,6 +4584,7 @@ word* pinvoke(OL* self, word* arguments)
 			STDERR("Unsupported calling convention %d", type >> 6);
 			break;
 		}
+#endif
 		return (ret_t)(double)0; // if no call have made
 	}
 
@@ -4608,6 +4687,7 @@ word* pinvoke(OL* self, word* arguments)
 		return 0;
 	}
 
+	// todo: заменить на вызов (float)to_double(arg)
 	float to_float(word arg) {
 		if (is_value(arg))
 			return svtol(arg);
@@ -4659,22 +4739,23 @@ word* pinvoke(OL* self, word* arguments)
 	// C[1] = return-type
 	// C[2] = argument-types
 
-	// todo: может выделять в общей куче,а не стеке?
+	// todo: может выделять в общей куче,а не стеке? (кстати, да!)
 	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
+	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = value(car(B));
 
-	// унифицируем возвращаемый тип
-	if (returntype == TFLOAT || returntype == TDOUBLE)
-		returntype = TRATIONAL;
-
 #if __amd64__
+	int f = 0;
 	int floats = 0, doubles = 0; // в amd64 флоаты и даблы передаются отдельно
 #endif
 
 	int i = 0;     // количество аргументов
+	int d = 0;     // количество аргументов для float (amd64)
 	word* p = (word*)C;   // сами аргументы
 	word* t = (word*)cdr (B); // rtty
+
+	long long floatsmask = 0; // маска для флоатов (на случай, если их надо больше передавать, чем 7
 
 	while ((word)p != INULL) { // пока есть аргументы
 		assert (reftype(p) == TPAIR); // assert(list)
@@ -4689,8 +4770,10 @@ word* pinvoke(OL* self, word* arguments)
 			arg = ((word*)p[1])[2];
 		}*/
 
-		args[i] = 0; // обнулим (так как потом можем перезаписать только часть)
+		// args[i] = 0; // обнулим (так как потом можем перезаписать только часть)
 		// ^ может не надо?
+
+		floatsmask <<= 1; // подготовим маску к следующему аргументу
 
 		// destination type
 		switch (type) {
@@ -4781,7 +4864,7 @@ word* pinvoke(OL* self, word* arguments)
 			default:
 				STDERR("can't cast %d to long", type);
 			}
-			#if !__amd64__
+			#if __i386__
 				i++; // for x86 long values (fills two ints)
 			#endif
 
@@ -4791,11 +4874,17 @@ word* pinvoke(OL* self, word* arguments)
 
 		// с плавающей запятой:
 		case TFLOAT:
+		#if __amd64__
+			//ad[d] = 0;
+			*(float*)&ad[d++] = (float)to_double(arg);
+			floatsmask++; --i;
+		#else
 			*(float*)&args[i] = to_float(arg);
 
 			#if __amd64__
 			floats |= (0x100 << i);
 			#endif
+		#endif
 			break;
 		case TFLOAT + 0x80:
 		case TFLOAT + 0x40: {
@@ -4815,12 +4904,17 @@ word* pinvoke(OL* self, word* arguments)
 		}
 
 		case TDOUBLE:
+		#if __amd64__
+			ad[d++] = to_double(arg);
+			floatsmask++; --i;
+		#else
 			*(double*)&args[i] = to_double(arg);
 			#if __amd64__
 				doubles |= (0x10000 << i);
 			#else
 				i++; // for x86 double fills two floats (words)
 			#endif
+		#endif
 			break;
 
 		case TDOUBLE + 0x80:
@@ -4955,7 +5049,8 @@ word* pinvoke(OL* self, word* arguments)
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
 
 #if __amd64__
-	got = call(returntype, function, args, i + floats+doubles);
+	//got = call(returntype, function, args, i, ad, d, floatsmask); // was: i + floats+doubles);
+	got = x64_call(args, ad, i, d, floatsmask, function, returntype);
 #else
 	got = call(returntype, function, args, i);
 #endif
@@ -5044,9 +5139,11 @@ word* pinvoke(OL* self, word* arguments)
 			}
 			break;
 
-		case TRATIONAL: {
+		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
+		case TFLOAT:
+		case TDOUBLE: {
 			// TODO: please, optimize this!
-			double value = got;
+			double value = *(double*)&got;
 			double n = value * 10000;
 			double d = 10000;
 			// максимальная читабельность
@@ -5059,83 +5156,3 @@ word* pinvoke(OL* self, word* arguments)
 	return result;
 }
 #endif//HAS_PINVOKE
-
-// pinvoke testing
-
-#if 0
-	__attribute__
-			((__visibility__("default")))
-word* test(OL* self, word* arguments)
-{
-	// get memory pointer
-	heap_t* heap = &self->heap;
-	word*
-	fp = heap->fp;
-
-	arguments = (word*)car(arguments);
-
-	word* A = (word*)car(arguments); arguments = (word*)cdr(arguments); // function
-	word* B = (word*)car(arguments); arguments = (word*)cdr(arguments); // rtty
-	word* C = (word*)car(arguments); arguments = (word*)cdr(arguments); // args
-
-	heap->fp = fp;
-	return 0;
-}
-#endif
-
-#if 0
-	__declspec(dllexport)
-__stdcall
-float float_test(float a, float b)
-{
-	return a + b;
-}
-#endif
-
-
-// callback testing
-#if 0
-#include <windows.h>
-
-DWORD WINAPI thread(LPVOID lpParam)
-{
-	printf("thread>\n");
-	void** params = (void**)lpParam;
-
-	printf("thread> sleep\n");
-	Sleep((int)params[2]);
-
-	int (*callback)(int, int, void*) = (int(*)(int, int, void*))params[0];
-
-	printf("thread> execute callback %p (userdata: %p)\n", params[0], params[1]);
-	int result = callback(1, 2, params[1]);
-
-	printf("<thread %d\n", result);
-	free(params);
-	return 1;
-}
-
-#ifdef _WIN32
-__declspec(dllexport)
-#else
-__attribute__
-		((__visibility__("default")))
-#endif
-int execute(int (*callback)(int, int, void*), void* userdata, int wait)
-{
-	printf("callback> %p(userdata: %p)\n", callback, userdata);
-
-	void** params = (void**)malloc(sizeof(void*) * 3);
-	params[0] = callback;
-	params[1] = userdata;
-	params[2] = (void*)wait;
-
-//	CreateThread( NULL, 0,
-//           thread, params,
-//		   0, NULL);
-
-	printf("<callback\n");
-	return 1;
-}
-
-#endif
