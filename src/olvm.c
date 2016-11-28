@@ -668,7 +668,7 @@ struct object_t
 #endif
 #define svtol(v)  (long)({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define ltosv(i)  (word)({ long x = (long)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
-#define itosv(i)  (word)({ long x = (int) (i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
+//#define itosv(i)  (word)({ long x = (int) (i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 
 #define svtoi(v)        ({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 /*
@@ -4132,6 +4132,21 @@ __asm__(
 	"jz    2f"              crlf
 	"movsd 16(%rsi), %xmm2" crlf
 	"decl  %ecx"            crlf
+	"jz    2f"              crlf
+	"movsd 16(%rsi), %xmm3" crlf
+	"decl  %ecx"            crlf
+	"jz    2f"              crlf
+	"movsd 16(%rsi), %xmm4" crlf
+	"decl  %ecx"            crlf
+	"jz    2f"              crlf
+	"movsd 16(%rsi), %xmm5" crlf
+	"decl  %ecx"            crlf
+	"jz    2f"              crlf
+	"movsd 16(%rsi), %xmm6" crlf
+	"decl  %ecx"            crlf
+	"jz    2f"              crlf
+	"movsd 16(%rsi), %xmm7" crlf
+	"decl  %ecx"            crlf
 	"jnz   3f"              crlf // последняя проверка скажет, надо ли писать в стек
 	// 2. проверим на "лишние" оверинты
 "2:"                        crlf
@@ -4139,6 +4154,7 @@ __asm__(
 	"jbe   4f"              crlf
 	// забросим весь оверхед в стек с учетом очередности и маски
 "3:"                        crlf
+	// ...
 	// 4. заполним обычные rdi, esi, ... не проверяя количество аргументов, так будет быстрее
 "4:"                        crlf
 	"movq  8(%rdi), %rsi"   crlf
@@ -4146,7 +4162,7 @@ __asm__(
 	"movq 24(%rdi), %rcx"   crlf
 	"movq 32(%rdi), %r8"    crlf
 	"movq 48(%rdi), %r9"    crlf
-	"movq   (%rdi), %rdi"   crlf
+	"movq  0(%rdi), %rdi"   crlf
 	"call *%rbx"            crlf
 	// 5. вернем результат
 "5:"                        crlf
@@ -4875,15 +4891,14 @@ word* pinvoke(OL* self, word* arguments)
 		// с плавающей запятой:
 		case TFLOAT:
 		#if __amd64__
-			//ad[d] = 0;
 			*(float*)&ad[d++] = (float)to_double(arg);
 			floatsmask++; --i;
 		#else
 			*(float*)&args[i] = to_float(arg);
-
-			#if __amd64__
-			floats |= (0x100 << i);
-			#endif
+//
+//			#if __amd64__
+//			floats |= (0x100 << i);
+//			#endif
 		#endif
 			break;
 		case TFLOAT + 0x80:
@@ -4909,11 +4924,11 @@ word* pinvoke(OL* self, word* arguments)
 			floatsmask++; --i;
 		#else
 			*(double*)&args[i] = to_double(arg);
-			#if __amd64__
-				doubles |= (0x10000 << i);
-			#else
+//			#if __amd64__
+//				doubles |= (0x10000 << i);
+//			#else
 				i++; // for x86 double fills two floats (words)
-			#endif
+//			#endif
 		#endif
 			break;
 
@@ -4945,7 +4960,7 @@ word* pinvoke(OL* self, word* arguments)
 			case TVPTR:
 				args[i] = car(arg);
 				break;
-			case TBVEC:
+			case TBVEC: // todo: change to is_rawdata
 			case TSTRING:
 				args[i] = (word) &car(arg);
 				break;
@@ -4968,6 +4983,7 @@ word* pinvoke(OL* self, word* arguments)
 		}
 
 		// todo: а может объединить TBVEC и TSTRING в один тип?
+		// todo: change to is_rawdata
 		case TBVEC:
 		case TSTRING:
 			if ((word)arg == INULL || (word)arg == IFALSE)
@@ -5085,8 +5101,10 @@ word* pinvoke(OL* self, word* arguments)
 				word num = car(l);
 				assert (reftype(num) == TRATIONAL);
 				// максимальная читабельность
-				car(num) = itosv(value * 10000);
-				cdr(num) = F(10000);
+				long nom = value * 10000;
+				long denom = 1000;
+				car(num) = ltosv(nom);
+				cdr(num) = F(denom);
 				// максимальная точность (fixme: пока не работает как надо)
 				//car(num) = itosv(value * FMAX);
 				//cdr(num) = F(FMAX);
@@ -5144,10 +5162,10 @@ word* pinvoke(OL* self, word* arguments)
 		case TDOUBLE: {
 			// TODO: please, optimize this!
 			double value = *(double*)&got;
-			double n = value * 10000;
-			double d = 10000;
-			// максимальная читабельность
-			result = new_pair(TRATIONAL, itosv(n), itouv(d));
+			long n = value * 10000;
+			long d = 10000;
+			// максимальная читабельность?
+			result = new_pair(TRATIONAL, ltosv(n), itouv(d));
 			break;
 		}
 	}
