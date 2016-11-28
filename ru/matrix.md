@@ -1,11 +1,11 @@
 ---
 layout: page
 title:  Digital Rain example
-date:   чт, 17-vfh-2015 14:44:00 +0200
+date: 2016-11-28 15:51:55 UTC
 categories: ru
 ---
 
-   В качестве теста мутаторов в основной репозиторий был добавлен пример [Matrix](https://github.com/yuriy-chumak/OL/tree/master/tutorial/Matrix), который рисует в окошке "цифровой дождь". Вывод настраивается с помощью нескольких констант:
+   В качестве теста мутаторов в основной репозиторий был добавлен пример [Matrix](https://github.com/yuriy-chumak/ol/tree/master/tutorial/Matrix), который рисует в окошке "цифровой дождь". Вывод настраивается с помощью нескольких констант:
    
   * SLIDING-MODE - стиль дождя
     * 0: без слайдеров
@@ -15,5 +15,5 @@ categories: ru
   * HEIGHT - количество глифов по вертикали
   * PHOSPHOR-ENABLED - включить свечение глифов
   * RANDGLOW-ENABLED - включить свечение слайдеров
-  
+
   ![Скрин окна вывода](assets/matrix-64x56.png)
