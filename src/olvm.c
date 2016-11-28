@@ -5029,10 +5029,10 @@ word* pinvoke(OL* self, word* arguments)
 					word num = car(l);
 					assert (reftype(num) == TRATIONAL);
 					// максимальная читабельность
-					long nom = value * 10000;
-					long denom = 1000;
-					car(num) = ltosv(nom);
-					cdr(num) = F(denom);
+					long n = value * 10000;
+					long d = 10000;
+					car(num) = ltosv(n);
+					cdr(num) = ltosv(d);
 					// максимальная точность (fixme: пока не работает как надо)
 					//car(num) = itosv(value * FMAX);
 					//cdr(num) = F(FMAX);

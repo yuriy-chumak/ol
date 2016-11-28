@@ -95,9 +95,11 @@
          "Use, for example, sudo apt-get install sqlite3"))))
 
 ; all sqlite imports are __cdecl under all OS
-(define :dlsym dlsym)
-(define (dlsym dll type . args)
-   (apply :dlsym (cons dll (cons (__cdecl type) args))))
+; olvm correctly processes cdecl and stdcall both, so no more need to special
+; declaration of it
+;(define :dlsym dlsym)
+;(define (dlsym dll type . args)
+;   (apply :dlsym (cons dll (cons (__cdecl type) args))))
 
 
 
