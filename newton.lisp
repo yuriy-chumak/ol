@@ -101,7 +101,7 @@
 
 ; ...
 (define ApplyGravity (syscall 175 (cons
-   (list type-vptr type-void* type-int+)
+   (list type-vptr type-float type-int+)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -4.8 0 0))
 )) #f #f))

@@ -224,6 +224,8 @@
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
 //#	endif
+
+#	include <sys/mman.h>
 #endif
 
 #ifdef _WIN32
@@ -232,7 +234,6 @@
 
 #	include <malloc.h>
 #endif
-
 
 #ifndef O_BINARY
 #	define O_BINARY 0
@@ -1355,10 +1356,9 @@ static int mainloop(OL *ol);
 // todo: добавить возможность вызова колбека как сопрограммы (так и назвать - сопрограмма)
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
 //       все остальные свои сопрограммы.
-OL* callback_ol;
-int callback(int id, void* arg1, va_list args)
+// ret is ret address to the caller function
+int callback(OL* ol, int id, void* ret, ...)
 {
-	OL* ol = callback_ol;
 	word* R = ol->R;
 
 ///*
@@ -1376,28 +1376,47 @@ int callback(int id, void* arg1, va_list args)
 	R[128 + 3] = R[3]; // continuation
 
 	// вызовем колбек:
-	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callback функции
+	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callback функций
 	R[3] = IRETURN; // команда выхода из колбека
 	ol->arity = 1;
 
 	word types = car(ol->R[128 + id]);
 
-	// todo: разбить на две части, первую с arg1, остальные с args
 	int a = 4;
 //	R[a] = IFALSE;
 
 	word* fp;
 	fp = ol->heap.fp;
+
+	va_list args;
+	va_start(args, ret);
 	while (types != INULL) {
 		switch (car(types)) {
-		case F(TVPTR):
-			R[a] = (word)new_vptr(arg1);
+		case F(TVPTR): {
+			void* ptr = va_arg(args, void*);
+			R[a] = (word)new_vptr(ptr);
 			break;
-		case F(TINT):
-			R[a] = F(0);
+		}
+		case F(TINT): {
+			int arg = va_arg(args, int);
+			R[a] = F(arg);
 			break;
+		}
+		case F(TFLOAT): {
+			// http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
+			// no floats!
+			long arg = va_arg(args, long);
+
+			float value = *(float*)&arg;
+			long n = value * 10000;
+			long d = 10000;
+			// максимальная читабельность?
+			R[a] = (word)new_pair(TRATIONAL, ltosv(n), itouv(d));
+			break;
+		}
 		case F(TVOID):
 			R[a] = IFALSE;
+			va_arg(args, long);
 			break;
 		default:
 			STDERR("unknown argument type");
@@ -1407,6 +1426,8 @@ int callback(int id, void* arg1, va_list args)
 		ol->arity++;
 		types = cdr(types);
 	}
+	va_end(args);
+
 	ol->heap.fp = fp;
 
 	int state = STATE_APPLY;
@@ -1434,57 +1455,6 @@ int callback(int id, void* arg1, va_list args)
 		return 0;
 	}
 }
-
-#define callbackX(x) \
-int callback##x(void* arg1, ...)\
-{\
-	va_list args;\
-	va_start(args, arg1);\
-	int r = callback(x, arg1, args);\
-	va_end(args);\
-	return r;\
-}
-// 0 .. 3 - not used
-callbackX(4)
-callbackX(5)
-callbackX(6)
-callbackX(7)
-callbackX(8)
-callbackX(9)
-callbackX(10)
-callbackX(11)
-callbackX(12)
-callbackX(13)
-callbackX(14)
-callbackX(15)
-callbackX(16)
-callbackX(17)
-callbackX(18)
-callbackX(19)
-callbackX(20)
-
-// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
-int (*callbacks[])(void*, ...) = {
-	0, 0, 0, 0, // callback0..callback3
-	callback4,
-	callback5,
-	callback6,
-	callback7,
-	callback8,
-	callback9,
-	callback10,
-	callback11,
-	callback12,
-	callback13,
-	callback14,
-	callback15,
-	callback16,
-	callback17,
-	callback18,
-	callback19,
-	callback20
-};
-
 
 
 static int error(OL *ol) /* R4-R6 set, and call mcp */
@@ -3586,13 +3556,46 @@ static int mainloop(OL* ol)
 		}
 		case SYSCALL_MKCB: {
 			// TCALLBACK
-			for (int c = 4; c < sizeof(callbacks)/sizeof(callbacks[0]); c++) {
+			int c;
+			for (c = 4; c < CR; c++) {
 				if (R[128+c] == IFALSE) {
 					R[128+c] = a;
-					result = new_callback(c);
 					break;
 				}
 			}
+
+			char* ptr;
+#ifdef __i386__
+			// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
+			static char bytecode[] =
+					"\x90"  // nop
+					"\x6A\x00" // push $0
+					"\x68----" // push ol
+					"\xB9----" // mov ecx, ...
+					"\xFF\xD1" // call ecx
+					"\x59\x59" // pop ecx, pop ecx
+					"\xC3"; // ret
+			#ifdef _WIN32
+				HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
+						0, sizeof(bytecode), NULL);
+				if (!mh)
+					STDERR("Can't create memory mapped object");
+				ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS,
+						0, 0, sizeof(bytecode));
+				CloseHandle(mh);
+			#else
+				ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
+						MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+			#endif
+
+			memcpy(ptr, &bytecode, sizeof(bytecode));
+			*(char*)&ptr[2] = (char)c;
+			*(long*)&ptr[4] = (long)ol;
+			*(long*)&ptr[9] = callback;
+
+#endif
+			result = new_callback(ptr);
+
 			break;
 		}
 #endif// HAS_DLOPEN
@@ -3968,7 +3971,7 @@ int main(int argc, char** argv)
 #endif
 
 	OL* olvm =
-	OL_new(bootstrap, bootstrap != language ? free : NULL); callback_ol = olvm; // last one is TEMP! for callback support
+	OL_new(bootstrap, bootstrap != language ? free : NULL);
 	void* r = OL_eval(olvm, argc, argv);
 	OL_free(olvm);
 
@@ -4905,7 +4908,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TCALLBACK: {
 			if (is_callback(arg)) {
-				args[i] = (word)callbacks[car(arg)];
+				args[i] = (word)car(arg);
 			}
 			else
 				STDERR("invalid parameter values (requested callback)");
