@@ -4,11 +4,12 @@ Copyright(c) 2014 - 2016 Yuriy Chumak
 
 Grew out of the Owl Lisp by Aki Helin
 
-Version 1.0.0 RC2
-at https://yuriy-chumak.github.io/OL/
+   Version 1.0
+at https://yuriy-chumak.github.io/ol/
 
 
-~~~~~~~~~~~~~~~~~
+LICENSE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This program is free software;  you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
 published by the Free Software Foundation; either version 2 of
@@ -33,65 +34,68 @@ Original Owl Lisp project can be found at
 OVERVIEW
 ~~~~~~~~
 
-Otus Lisp is a simple purely functional Lisp (mostly purely).
+Otus Lisp is a purely (/mostly/) functional dialect of Lisp. It
+implements an extended subset of R5RS Scheme. It is small,
+embeddable and crossplatform.
+It can call and be called by native applications and libraries.
 
 
 REQUIREMENTS
 ~~~~~~~~~~~~
 
-For linux you should have gcc installed.
-For linux you maybe want make installed too.
-For windows you should have MinGW installed.
-For unix (FreeBSD, NetBSD, OpenBSD) you should have gcc installed.
+For un*x you should have GCC installed.
+For windows you should have MINGW installed.
+For un*x you maybe want MAKE installed too.
 
-Minimal appropriate gcc version is 3.2 (nested functions usage).
+Minimal appropriate gcc version is 3.2.
 
 
 BUILD
 ~~~~~
 
 SIMPLE WAY
+
    $ make; make install
 
-* unix clients must use gmake instead
+* gmake for unix and *bsd clients
 
 
-MORE INTERESTING WAY
+MORE INTERESTING WAYS
 
-To build OL for linux x86 platform
-   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m32  -o ol -ldl
+Linux way
 
-To build OL for linux x86-64 platform
-   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m64  -o ol -ldl
+To build OL for linux platform
+   $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -ldl
 
 To build only olvm (virtual machine) for linux x86 platform,
 that can execute only compiled (binary) lisp scripts
-   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m32  -o vm -ldl
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -ldl
 
-Same for x86-64 linux platform
-   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m64  -o vm -ldl
+* to select 32- or 64-bit platform please add "-m32" or "-m64" to
+  the command line
 
-OL vm can execute only precompiled OL scripts (see BINARY SCRIPTS section)
-and is very small (about 25KB for x86-64 executable).
-Full OL with interpreter that can execute text lisp scripts more fat
-(about 400KB executable).
+
+OLvm can execute only precompiled OL scripts (see BINARY SCRIPTS
+section) and is very small (about 35KB).
+Full OL with interpreter that can execute text lisp scripts more
+fat (about 400KB executable).
+
 
 Windows way
+
    > set PATH=%PATH%;C:\MinGW\bin
-   > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O3  -o ol
-Same for only olvm
+   > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol
+Same for "naked" olvm
    > set PATH=%PATH%;C:\MinGW\bin
-   > gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O3  -o ol
+   > gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol
 
 
 FreeBSD/OpenBSD/NetBSD way
 
    BSD require including "c" library instead of dl:
 
-   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m32  -o ol -lc
-   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m32  -o vm -lc
-   $ gcc src/olvm.c src/boot.c  -std=c99 -O3 -m64  -o ol -lc
-   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O3 -m64  -o vm -lc
+   $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -lc
+   $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -lc
 
 
 Android way
@@ -116,24 +120,33 @@ To build OL language (not OL virtual machine)
    $ make recompile
    This will create new (in successfull way) repl binary that contains ol interpreter code
 
-   Few words about OL can be found (will be) in the documentation.
+   Few words about OL can be found in documentation on the project page.
+
+
+SPEEDUP
+~~~~~~~
+
+You can disable most internal checks for speedup by editing the  olvm.h  header
+file, for example you can uncomment "#define CAR_CHECK(arg) 1" macro to disable
+the virtual machine internal checks for pair validness. But it  can  make  olvm
+less stable!
 
 
 ADDITIONAL OL VM FEATURES
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To build OL with sockets (linux and windows) support
+To force build OL with sockets (linux and windows) support
    add -DHAS_SOCKETS to gcc command line
     or set appropriate define in src/olvm.h to 1
    add -lws2_32 for Windows
 
-To build OL with dlopen/dlsym (LoadLibrary/GetProcAddress for windows) support
+To force build OL with dlopen/dlsym (LoadLibrary/GetProcAddress for windows) support
    add -DHAS_DLOPEN and -ldl to gcc command line
     or set appropriate define in src/olvm.h to 1
 
    please note, that opengl/sqlite/other libs requires this define enabled to 1
 
-To build OL with pinvoke (Platform Invoke mechanism) support
+To force build OL with pinvoke (Platform Invoke mechanism) support
    add -DHAS_PINVOKE to gcc command line
     or set appropriate define in src/olvm.h to 1
 
@@ -152,11 +165,12 @@ INSTALLATION
 You can create .deb packet for linux-64 (tested under Ubuntu 14.04) using
    $ make debian-amd64-package
 
-No other automatic installation still yet, you must manually copy 'ol' executable
+No automatic installation for windows still yet, you must manually copy 'ol' executable
 to any appropriate place, for example
-   $ cp ol /usr/bin
-   or
    > copy ol.exe C:\WINDOWS\COMMAND
+
+For un*x simply type
+   $ make install
 
 
 RUNNING
@@ -165,7 +179,7 @@ RUNNING
 There are few ways to execute ol
 
 Interactive mode
-   $ol
+   $ ol
    You see a prompt.
    Type ',help' to help, ',quit' to end session
    > (+ 1 2 3)                      # now you in REPL and can play with in
@@ -174,9 +188,11 @@ Interactive mode
    bye bye _o/~
 
 Unattended mode
-   $ol scriptname.ol                # text script
-   $ol scriptname.bl                # binary (compiled) script
-   $echo '(print (+ 1 2 3))' | ol
+   $ ol scriptname.ol                # text script
+   $ ol scriptname.bl                # binary (compiled) script
+   $ echo '(print (+ 1 2 3))' | ol
+For windows
+   > echo (print (+ 1 2 3)) | ol
 
 
 BINARY SCRIPTS
@@ -201,8 +217,8 @@ or vm:
 0000000020: 00                      |
 ---cut ---
 
-Now you can execute this code by OL as full OL or as "naked" OL (vm)
-   $ol out.bl
+Now you can execute this code by OL as full OL or as "naked" OLvm
+   $ ol out.bl
 
 
 FILES
@@ -212,8 +228,8 @@ FILES
    src/olvm.c  - the OL vm
    src/boot.c  - the OL interpreter/compiler
    lang/*.scm  - implementation of OL repl and compiler
-   owl/*.scm   - implementation ol OL libraries
-   r5rs/*.scm  - basic OL language
+   owl/*.scm   - implementation of OL libraries
+   r5rs/*.scm  - r5rs compliant OL language part
    tests/*.scm - some automated tests
 
 
@@ -242,8 +258,8 @@ the command line argument list when the program is executed.
 
 EMBEDDED OL
 ~~~~~~~~~~~
-OL can be embedded in your project. More info can be found in docs
-(not yet written).
+OL can be embedded in your project. More info can be found in docs.
+
 This is usage sample:
 --- cut ---
 // embedded example
@@ -271,8 +287,8 @@ word* sample_add(OL* ol, word arguments) {
 int main(int argc, char** argv)
 {
     return vm_new(
-        "(import (owl pinvoke) (owl io))"
-        "(define % (dlopen '() RTLD_LAZY))" // get own handle
+        "(import (otus pinvoke) (owl io))"
+        "(define % (dlopen))" // get own handle
         "(define sample_add (dlsym+ % \"sample_add\"))"
         "(print \"sample_add: \""
         "   (sample_add 1 2))"
@@ -285,9 +301,9 @@ You can call your own functions from OL code.
 Currently this is more complecated. You need:
    a) compile OL with -DHAS_DLOPEN and -DHAS_PINVOKE options
       (don't forget for -DEMBEDDED_VM)
-   b) send to vm "(import (owl pinvoke))" (owl/pinvoke.scm must
+   b) send to vm "(import (otus pinvoke))" (owl/pinvoke.scm must
       be accessible from your executable)
-   c) send to vm "(define me (dload '() 1))" where "me" is some
+   c) send to vm "(define me (dload))" where "me" is some
       appropriate variable name or you can use "let, let*" or
       any other construction you like
 Now you have two variants - embed OL function or simple C function call.
@@ -329,13 +345,15 @@ More information about pinvoke you can get in source files
    lib/winapi.scm
    lib/x11.scm
 
-All embedded OL api in progress and can be changed in feature.
+* All embedded OL api in progress and can be changed in feature.
 
 
 DOCUMENTATION
 ~~~~~~~~~~~~~
 
-Not yet provided, check the source codes - r5rs/base.owl
+Please refer to the project page.
+Check the source codes - r5rs/core.owl
+
 
 
 SOME NOTES

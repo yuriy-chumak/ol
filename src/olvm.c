@@ -3585,7 +3585,7 @@ static int mainloop(OL* ol)
 				CloseHandle(mh);
 			#else
 				ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
-						MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+						MAP_PRIVATE, -1, 0);
 			#endif
 
 			memcpy(ptr, &bytecode, sizeof(bytecode));
