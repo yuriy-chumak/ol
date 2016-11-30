@@ -23,11 +23,13 @@
  * How to build:
  *   make; make install
  *
+ * Project page:
+ *   http://yuriy-chumak.github.io/ol/
+ *
  *
  * Original Owl Lisp project can be found at
  *   https://github.com/aoh/owl-lisp
  *   https://code.google.com/p/owl-lisp/
- *
  */
 
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
@@ -72,9 +74,16 @@
 #endif
 
 #ifdef __ANDROID__
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRLIMIT 0
+// gdb for android: https://dan.drown.org/android/howto/gdb.html
+// http://resources.infosecinstitute.com/android-hacking-and-security-part-20-debugging-apps-on-android-emulator-using-gdb/
+
+// android supports seccomp only for Lollipop and Nougat
+// https://security.googleblog.com/2016/07/protecting-android-with-more-linux.html
+#	if __ANDROID_API__<15
+#		define SYSCALL_PRCTL 0
+#	endif
+#	define SYSCALL_SYSINFO 0
+#	define SYSCALL_GETRLIMIT 0
 #endif
 
 // TODO: JIT!
@@ -107,6 +116,7 @@
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
 
 // todo: support ALL of this OS
+// http://sourceforge.net/p/predef/wiki/OperatingSystems/
 //    Linux-i386                                                                  +
 //    Linux-x86_64 (amd64)                                                        +
 //    Linux-powerpc
@@ -133,7 +143,8 @@
 //    Android (ARM, i386, MIPS) via cross-compiling.
 //    MSDos-i8086 (cross compiled from win32-i386 or Linux)                       -
 //    Amiga, MorphOS and AROS
-// Обратить внимание на проект http://sourceforge.net/p/predef/wiki/OperatingSystems/
+
+// ABIs https://developer.android.com/ndk/guides/abis.html
 
 // todo: strip ELF http://habrahabr.ru/post/137706/
 // http://www.catch22.net/tuts/reducing-executable-size
@@ -212,8 +223,8 @@
 #endif
 
 // компилятор otus-lisp поддерживает несколько специальных форм:
-//	quote, lambda, receive, values, ol:let, ol:ifc, ol:set, ol:ica, (смотреть env.scm)
-//	все остальное - макросы
+//	quote, lambda, receive, values, ol:let, ol:ifc, ol:set, ol:ica, (env.scm)
+//	все остальное - макросы или функции/процедуры
 
 #include <assert.h>
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
@@ -3543,11 +3554,15 @@ static int mainloop(OL* ol)
 			word *filename = (word*)a;
 			int mode = (int) uvtoi(b);
 
+			// android 2.2 segfaults on dlopen(NULL, ...)
+			// http://code.google.com/p/android/issues/detail?id=5049
 			void* module;
-			if ((word) filename == INULL || (word) filename == IFALSE)
+			if ((word) filename == INULL || (word) filename == IFALSE) {
 				module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
-			else if (is_reference(filename) && reftype (filename) == TSTRING)
+			}
+			else if (is_reference(filename) && reftype (filename) == TSTRING) {
 				module = dlopen((char*) &filename[1], mode);
+			}
 			else
 				break; // invalid filename, return #false
 
@@ -4316,7 +4331,7 @@ __ASM__("x64_call:", // "int $3\n\t"
 // функция x86_call у нас будет универсальная cdecl/stdcall
 long long x86_call(word argv[], int i, void* function, int type);
 
-__ASM__("_x86_call:", //"int $3",
+__ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
 	"movl  %esp, %ebp",
 
@@ -4358,7 +4373,7 @@ __ASM__("_x86_call:", //"int $3",
 __declspec(dllexport)
 #else
 __attribute__
-		((__visibility__("default")))
+((__visibility__("default")))
 #endif
 word* pinvoke(OL* self, word* arguments)
 {
@@ -4381,7 +4396,6 @@ word* pinvoke(OL* self, word* arguments)
 
 		// todo: ограничиться количеством функций поменьше
 		//	а можно сделать все в одной switch:
-		// i += 5 * (returntype >> 6); // 5 - количество поддерживаемых функций
 		// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
 		// todo: проанализировать частоту количества аргументов и переделать все в
 		//   бинарный if
@@ -4392,7 +4406,7 @@ word* pinvoke(OL* self, word* arguments)
 				({ int $(char *str){ printf("Test: %s\n", str); } $; })
 		};*/
 		// http://www.agner.org/optimize/calling_conventions.pdf
-#if __amd64__
+#if 0 //__amd64__
 		#define CALLFLOATS(conv) \
 			case 1 + 0x0100:\
 			        return (ret_t)(word)((conv word (*)  (float))\
@@ -4443,7 +4457,7 @@ word* pinvoke(OL* self, word* arguments)
 		#define CALLFLOATS(conv)
 #endif
 
-#if __amd64__
+#if 0 //__amd64__
 		#define CALLDOUBLES(conv) \
 			case 4 + 0x0020000:\
 			         return (ret_t)(word)((conv word (*)  (word, double, word, word))\
@@ -4985,11 +4999,6 @@ word* pinvoke(OL* self, word* arguments)
 
 	ret_t got;   // результат вызова функции
 
-//	#00000000 00000000 - dword
-//	#00000000 000000xx - count of arguments
-//	#00000000 000xxx00 - count of floats - up to 12 ?
-//	#00000000 xxx00000 - count of doubles - up to 12 ?
-
 	self->R[128 + 1] = (word)B;
 	self->R[128 + 2] = (word)C;
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
@@ -5014,18 +5023,39 @@ word* pinvoke(OL* self, word* arguments)
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}
-#elif __ANDROID__
-	got = CALL();
+// arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
+#elif __arm__
+	inline ret_t call(word args[], int i, void* function, int type) {
+		CALL();
+	}
+	got = call(args, i, function, returntype & 0x3F);
+#elif __aarch64__
+	inline ret_t call(word args[], int i, void* function, int type) {
+		CALL();
+	}
+	got = call(args, i, function, returntype & 0x3F);
+#elif __mips__
+	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
+	inline ret_t call(word args[], int i, void* function, int type) {
+		CALL();
+	}
+	got = call(args, i, function, returntype & 0x3F);
 
-#else
+#else // ALL other
+	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
+		CALL(__cdecl);
+	}
+	inline ret_t call_stdcall(word args[], int i, void* function, int type) {
+		CALL(__stdcall);
+	}
+
 	switch (returntype >> 6) {
 	case 0:
 	case 1:
-		got = CALL(__cdecl);
+		got = call_cdecl(args, i, function, returntype & 0x3F);
 		break;
 	case 2:
-		//was: got = call(returntype, function, args, i);
-		got = CALL(__stdcall);
+		got = call_stdcall(args, i, function, returntype & 0x3F);
 		break;
 	// FASTCALL: (3)
 	case 3:
