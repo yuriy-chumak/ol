@@ -46,7 +46,36 @@
 #	endif
 #endif
 
+#if	HAS_CONFIG
 #include "olvm.h"
+#endif
+
+#ifdef _WIN32
+#define SYSCALL_PRCTL 0
+#define SYSCALL_SYSINFO 0
+#define SYSCALL_GETRLIMIT 0
+#endif
+
+// todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
+#ifdef __unix__
+#define SYSCALL_PRCTL 0
+#define SYSCALL_SYSINFO 0
+#define SYSCALL_GETRUSAGE 0
+#define SYSCALL_GETRLIMIT 0
+#endif
+
+#ifdef __linux__
+#undef SYSCALL_PRCTL
+#undef SYSCALL_SYSINFO
+#undef SYSCALL_GETRUSAGE
+#undef SYSCALL_GETRLIMIT
+#endif
+
+#ifdef __ANDROID__
+#define SYSCALL_PRCTL 0
+#define SYSCALL_SYSINFO 0
+#define SYSCALL_GETRLIMIT 0
+#endif
 
 // TODO: JIT!
 //	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
@@ -178,10 +207,12 @@
 // http://joeq.sourceforge.net/about/other_os_java.html
 // call/cc - http://fprog.ru/lib/ferguson-dwight-call-cc-patterns/
 
+#ifdef __WINCE__
 #undef __COREDLL__
+#endif
 
 // компилятор otus-lisp поддерживает несколько специальных форм:
-//	lambda, quote, ol:let, receive, ol:ifc, ol:set, ol:ica, values (смотреть env.scm)
+//	quote, lambda, receive, values, ol:let, ol:ifc, ol:set, ol:ica, (смотреть env.scm)
 //	все остальное - макросы
 
 #include <assert.h>
@@ -221,9 +252,10 @@
 #	include <sys/utsname.h> // uname
 #	include <sys/resource.h>// getrusage
 //#	if SYSCALL_PRCTL
+#	ifndef __ANDROID__
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
-//#	endif
+#	endif
 
 #	include <sys/mman.h>
 #endif
@@ -235,6 +267,7 @@
 #	include <malloc.h>
 #endif
 
+// additional defines:
 #ifndef O_BINARY
 #	define O_BINARY 0
 #endif
@@ -255,28 +288,22 @@
 #endif
 
 // ========================================
+static inline
+__attribute__ ((__always_inline__))
 void STDERR(char* format, ...)
 {
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
+	fprintf(stderr, format, __builtin_va_arg_pack());
 	puts("\n");
 }
 
+static inline
+__attribute__ ((__always_inline__))
 void crash(int code, char* format, ...)
 {
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
-	puts("\n");
+	STDERR(format, __builtin_va_arg_pack());
 	exit(code);
 }
+
 // ========================================
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
@@ -410,6 +437,7 @@ char* dlerror() {
 // --
 //
 // виртуальная машина:
+typedef struct ol_t OL;
 
 // unsigned int that is capable of storing a pointer
 // основной data type, зависит от разрядности машины
@@ -491,6 +519,13 @@ struct object_t
 		word ref[1];
 	};
 };
+
+// ------------------------------------------------------
+
+OL*
+OL_new(unsigned char* bootstrap, void (*release)(void*));
+OL* OL_free(struct ol_t* ol);
+void* OL_eval(struct ol_t* ol, int argc, char** argv);
 
 // ------------------------------------------------------
 
@@ -4452,7 +4487,7 @@ word* pinvoke(OL* self, word* arguments)
 #endif
 
 		#define CALL(conv) ({\
-			switch (argc) {\
+			switch (i) {\
 			case  0: return (ret_t)(word)((conv word (*)  ())\
 							 function) ();\
 			case  1: return (ret_t)(word)((conv word (*)  (word))\
@@ -4499,7 +4534,7 @@ word* pinvoke(OL* self, word* arguments)
 			                            args[ 8], args[ 9], args[10], args[11]);\
 			CALLFLOATS(conv)\
 			CALLDOUBLES(conv)\
-			default: STDERR("Unsupported parameters count for pinvoke function: %d", argc);\
+			default: STDERR("Unsupported parameters count for pinvoke function: %d", i);\
 				break;\
 			}; (ret_t)0;})
 
@@ -4979,6 +5014,8 @@ word* pinvoke(OL* self, word* arguments)
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}
+#elif __ANDROID__
+	got = CALL();
 
 #else
 	switch (returntype >> 6) {
@@ -4998,7 +5035,7 @@ word* pinvoke(OL* self, word* arguments)
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}
-	got = call(returntype, function, args, i);
+	//got = call(returntype, function, args, i);
 #endif
 
 	// ??? бля, где гарантия, что C и B не поменялись???

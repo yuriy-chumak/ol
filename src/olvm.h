@@ -79,33 +79,6 @@ typedef struct ol_t OL;
 // #define SYSCALL_SYSINFO 0
 // #define SYSCALL_GETRUSAGE 0
 
-#ifdef _WIN32
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRLIMIT 0
-#endif
-
-// todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
-#ifdef __unix__
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRUSAGE 0
-#define SYSCALL_GETRLIMIT 0
-#endif
-
-#ifdef __linux__
-#undef SYSCALL_PRCTL
-#undef SYSCALL_SYSINFO
-#undef SYSCALL_GETRUSAGE
-#undef SYSCALL_GETRLIMIT
-#endif
-
-#ifdef __ANDROID__
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRLIMIT 0
-#endif
-
 //-- end of header
 #ifdef __cplusplus
 	}
