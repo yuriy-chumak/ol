@@ -11,7 +11,7 @@ categories: index
    Otus Lisp is a purely[*](#pure) functional dialect of Lisp.
 It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to some of the [SRFI](http://srfi.schemers.org/). It is small, embeddable and crossplatform.
 
-   You can use it on Linux, Windows, *BSD, Android, webOS. It runs on x86, arm, mips architectures with 32- and 64-bit platforms.
+   You can use it on Linux, Windows, *BSD, Android, webOS, Odroid. It runs on x86, arm, mips architectures with 32- and 64-bit platforms.
 
    You can immediately try Otus Lisp (ol) in the provided terminal on the left of this page. For example, type
 <pre><code id="sample1" data-language="scheme">(+ 1 2 3 4 5 6 7)</code><button class="doit" onclick="doit(sample1.textContent)">send to the terminal</button></pre>
@@ -49,6 +49,10 @@ which is another way of
    I'm working for add more prebuilts.
    
 ### Project news
+
+  * Wed 30 Nov 2016 21:53 EET
+    * ol recompiled for odroid (please remember that ol works in "wild" under the odroid c1+ platform and provides web access to the server with remote terminal support)
+
   * Wed 30 Nov 2016 17:19 EET
     * added full android support to the ol, now full list of supported platforms is armeabi, armeabi-v7a, arm64-v8a, mips, mips64, x86, x86-64
     * successfully tested sockets under android armeabi, it works fine:
@@ -68,10 +72,7 @@ Type ',help' to help, ',quit' to end session
          "Content-Type: text/html; charset=UTF-8\n"
          "Server: " (car *version*) "/" (cdr *version*)
          "\n\n"
-         "<h1>200: OK</h1>"
-         (ref request 1) ": " (ref request 2)
-         "<hr><small>" headers
-         "</small>")
+         "200: OK")
    (close #t)
 ))
 Server binded to 8080

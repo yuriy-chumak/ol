@@ -12,7 +12,7 @@ categories: index
 
    Otus Lisp (произносится как [`отэс лисп]), или сокращенно ol ([`ол]) - чисто функциональный[*](#pure) диалект языка Lisp. Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Он маленький, встраиваемый и кроссплатформенный.
    
-  Вы можете использовать ol на Linux, Windows, *BSD, Android, WebOS. Он работает под x86, arm, mips архитектурами на 32 и 64-битных платформах.
+  Вы можете использовать ol на Linux, Windows, *BSD, Android, WebOS, Odroid. Он работает под x86, arm, mips архитектурами на 32 и 64-битных платформах.
 
    Распространяется по лицензии [GPL v3](https://github.com/yuriy-chumak/ol/blob/master/COPYING).
 
@@ -70,6 +70,9 @@ categories: index
 
 ### Новости проекта
 
+  * Wed 30 Nov 2016 21:53 EET
+    * пересобрал ol под odroid со всеми последними изменениями - пускай потрудится в боевых условиях (напомню, что терминал на странице работает на odroid c1+, веб-сервер бегает под управлением ol)
+
   * Wed 30 Nov 2016 16:57 EET
     * собрал и запустил ol под андроид! теперь в список официально поддерживаемых платформ можно добавить armeabi, armeabi-v7a, arm64-v8a, mips, mips64.
     * проверил под андроидом работу сокетов, работают:
@@ -89,10 +92,7 @@ Type ',help' to help, ',quit' to end session
          "Content-Type: text/html; charset=UTF-8\n"
          "Server: " (car *version*) "/" (cdr *version*)
          "\n\n"
-         "<h1>200: OK</h1>"
-         (ref request 1) ": " (ref request 2)
-         "<hr><small>" headers
-         "</small>")
+         "200: OK")
    (close #t)
 ))
 Server binded to 8080
