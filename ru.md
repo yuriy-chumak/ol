@@ -1,7 +1,7 @@
 ---
 layout: page
 title:  Lisp
-date: 2016-11-30 15:48:05 UTC
+date: 2016-12-01 16:16:30 UTC
 categories: index
 ---
 > Любая достаточно сложная программа содержит заново написанную, неспецифицированную, глючную и медленную реализацию половины какого-либо из диалектов Lisp.
@@ -45,8 +45,7 @@ categories: index
 
    Доступны бинарные сборки для некоторых операционных систем и архитектур:
 
-  * CentOS, Fedora, OpenSUSE, RHEL: На [openSUSE Build Service](https://build.opensuse.org/package/show/home:yuriy-chumak/ol)
-  * Debian, Ubuntu: Так же на [openSUSE Build Service](https://build.opensuse.org/package/show/home:yuriy-chumak/ol)
+  * CentOS, Fedora, OpenSUSE, RHEL, Debian, Ubuntu: На [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
 
    Для остальных операционных систем соответствующие сборки тоже будут скоро доступны. Исходный код можно забрать на [странице проекта](https://github.com/yuriy-chumak/ol).
 
@@ -70,6 +69,8 @@ categories: index
 
 ### Новости проекта
 
+  * Thr 01 Dec 2016 18:06 EET
+    * поправил проект под автоматическую сборку, теперь на [build.opensuse.org](https://build.opensuse.org/package/show/home:yuriy-chumak/ol) снова можно забирать актуальные версии проекта, в данном случае под x86 CentOS 6, x86 Debian 7, x86 Debian 8, x86 Fedora 22, x86 Fedora 23, x86 RHEL 5, x86 RHEL 6, x86 ScientificLinux 6, x86 openSUSE 13.1, x86 openSUSE 13.2, armv7l openSUSE Factory, aarch64 openSUSE Factory, x86 Ubuntu 12.04, x86 Ubuntu 14.04, x86 Ubuntu 16.04
   * Wed 30 Nov 2016 21:53 EET
     * пересобрал ol под odroid со всеми последними изменениями - пускай потрудится в боевых условиях (напомню, что терминал на странице работает на odroid c1+, веб-сервер бегает под управлением ol)
 

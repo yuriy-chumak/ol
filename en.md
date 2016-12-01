@@ -1,7 +1,7 @@
 ---
 layout: page
 title:  Summary
-date: 2016-11-30 15:27:48 UTC
+date: 2016-12-01 16:16:30 UTC
 categories: en
 ---
 > Project news can be found in [russian translated](?ru) part of this site that frequently updates.
@@ -42,13 +42,16 @@ which is another way of
 
    Available binary builds for:
    
-  * CentOS, Fedora, OpenSUSE, RHEL: https://build.opensuse.org/package/show/home:yuriy-chumak/ol
-  * Debian, Ubuntu: https://build.opensuse.org/package/show/home:yuriy-chumak/ol
+  * CentOS, Fedora, OpenSUSE, RHEL, Debian, Ubuntu: from [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
+
   
    I'm working for add more prebuilts.
    
 ### Project news
 
+  * Thr 01 Dec 2016 18:06 EET
+    * [build.opensuse.org](https://build.opensuse.org/package/show/home:yuriy-chumak/ol) works again, you can get prepared packages for the x86 CentOS 6, x86 Debian 7, x86 Debian 8, x86 Fedora 22, x86 Fedora 23, x86 RHEL 5, x86 RHEL 6, x86 ScientificLinux 6, x86 openSUSE 13.1, x86 openSUSE 13.2, armv7l openSUSE Factory, aarch64 openSUSE Factory, x86 Ubuntu 12.04, x86 Ubuntu 14.04, x86 Ubuntu 16.04
+    
   * Wed 30 Nov 2016 21:53 EET
     * ol recompiled for odroid (please remember that ol works in "wild" under the odroid c1+ platform and provides web access to the server with remote terminal support)
 
