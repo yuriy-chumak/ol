@@ -86,6 +86,10 @@
 #	define SYSCALL_GETRLIMIT 0
 #endif
 
+#ifdef NO_SECCOMP
+#	define SYSCALL_PRCTL 0
+#endif
+
 // TODO: JIT!
 //	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
 
@@ -181,8 +185,8 @@
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
 #define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
                       // as well as all of the ISO C facilities.
-#define __USE_POSIX199309 // nanosleep, etc. //?
-
+#define _BSD_SOURCE
+#define _GNU_SOURCE   // nanosleep, etc.
 
 #ifdef __NetBSD__     // make all NetBSD features available
 #	ifndef _NETBSD_SOURCE
@@ -207,7 +211,7 @@
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 // http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system#WindowswithCygwinPOSIX
 
-#ifdef __MINGW32__ // bug in mingw
+#ifdef __MINGW32__ // bugs in mingw
 #define _cdecl __cdecl
 
 #ifdef __STRICT_ANSI__
@@ -262,13 +266,13 @@
 #ifdef __linux__
 #	include <sys/utsname.h> // uname
 #	include <sys/resource.h>// getrusage
-//#	if SYSCALL_PRCTL
-#	ifndef __ANDROID__
+#	ifndef NO_SECCOMP
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
 #	endif
 
 #	include <sys/mman.h>
+#	include <sys/sendfile.h>
 #endif
 
 #ifdef _WIN32
@@ -3641,7 +3645,7 @@ static int mainloop(OL* ol)
 			memcpy(ptr, &bytecode, sizeof(bytecode));
 			*(char*)&ptr[2] = (char)c;
 			*(long*)&ptr[4] = (long)ol;
-			*(long*)&ptr[9] = callback;
+			*(long*)&ptr[9] = (long)&callback;
 
 #endif
 			result = new_callback(ptr);
@@ -4029,7 +4033,7 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	return is_value(r) ? svtoi (r) : -1;
+	return is_value(r) ? svtoi ((word)r) : -1;
 }
 #endif
 
@@ -4500,7 +4504,7 @@ word* pinvoke(OL* self, word* arguments)
 			                            args[12], args[13], args[14], args[15], args[16], args[17]);
 #endif
 
-		#define CALL(conv) ({\
+		#define CALL(conv) \
 			switch (i) {\
 			case  0: return (ret_t)(word)((conv word (*)  ())\
 							 function) ();\
@@ -4549,8 +4553,8 @@ word* pinvoke(OL* self, word* arguments)
 			CALLFLOATS(conv)\
 			CALLDOUBLES(conv)\
 			default: STDERR("Unsupported parameters count for pinvoke function: %d", i);\
-				break;\
-			}; (ret_t)0;})
+				return 0;\
+			};
 
 	// lisp->c convertors
 	long from_int(word arg) {
@@ -4997,7 +5001,7 @@ word* pinvoke(OL* self, word* arguments)
 	}
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	ret_t got;   // результат вызова функции
+	ret_t got = 0;   // результат вызова функции
 
 	self->R[128 + 1] = (word)B;
 	self->R[128 + 2] = (word)C;
@@ -5146,13 +5150,13 @@ word* pinvoke(OL* self, word* arguments)
 
 		case TSTRING:
 			if (got) {
-				int l = lenn((char*)got, FMAX+1);
+				int l = lenn((char*)(word)got, FMAX+1);
 				if (fp + (l/sizeof(word)) > heap->end) {
 					self->gc(self, l/sizeof(word));
 					heap = &self->heap;
 					fp = heap->fp;
 				}
-				result = new_string ((char*)got, l);
+				result = new_string ((char*)(word)got, l);
 			}
 			break;
 

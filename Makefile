@@ -1,34 +1,51 @@
 export PATH := .:$(PATH)
 $(shell mkdir -p config)
 
-# TODO: move vm.asm to src/ folder
-# TODO: split ol.scm into two files
+#do some configure staff
+exists = $(shell echo "\
+	   \#include $1\n\
+	   char $2();\
+	   \
+	   int main() {\
+	      return $2();\
+	      return 0;\
+	   }" | gcc -xc - $3 -o /dev/null 2>/dev/null && echo 1)
+# features
+UNAME  := $(shell uname -s)
+HAS_SECCOMP := $(call exists, <linux/seccomp.h>, prctl)
+HAS_DLOPEN  := $(call exists, <stdlib.h>, dlopen, -ldl)
+HAS_SOCKETS := $(call exists, <stdlib.h>, socket)
 
+# body
 .PHONY: all config recompile install uninstall clean tests
 
 CC=gcc
 
+# http://ptspts.blogspot.com/2013/12/how-to-make-smaller-c-and-c-binaries.html
+
 PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
-# http://ptspts.blogspot.com/2013/12/how-to-make-smaller-c-and-c-binaries.html
-CFLAGS += -std=c99 -O2 -DNDEBUG -s
-#CFLAGS := -std=c99 -g
+CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s)
 boot.c := bootstrap~
 repl.o := src/repl.o
 
-# dependencies
-UNAME := $(shell uname -s)
+CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1)\
+          $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1)\
+          $(if $(HAS_SECCOMP),, -DNO_SECCOMP)
+
+
 ifeq ($(UNAME),Linux)
-L := -ldl
+L := $(if HAS_DLOPEN, -ldl)
 endif
+
 ifeq ($(UNAME),FreeBSD)
-L := -lc
+L := $(if HAS_DLOPEN, -lc)
 endif
 ifeq ($(UNAME),NetBSD)
-L := -lc
+L := $(if HAS_DLOPEN, -lc)
 endif
 ifeq ($(UNAME),OpenBSD)
-L := -lc -ftrampolines
+L := $(if HAS_DLOPEN, -lc -ftrampolines)
 endif
 
 # Windows/MinGW
@@ -122,7 +139,7 @@ config: config/HAS_DLOPEN\
         config/HAS_SOCKETS\
         config/XVisualInfo config/XEvent
 
-exists = \
+existsW = \
 	@printf "Checking for $2 support... ";\
 	if echo "\
 	   \#include $1\n\
@@ -140,9 +157,9 @@ exists = \
 	fi
 
 config/HAS_DLOPEN:
-	$(call exists, <stdlib.h>,dlopen,-ldl)
+	$(call existsW, <stdlib.h>,dlopen,-ldl)
 config/HAS_SOCKETS:
-	$(call exists, <stdlib.h>,socket)
+	$(call existsW, <stdlib.h>,socket)
 
 
 sizeof = \

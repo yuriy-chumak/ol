@@ -48,7 +48,7 @@ echo.
 GOTO:EOF
 
 :VM
-gcc -std=c99 -g -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32
+gcc -std=c99 -g -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1
 GOTO:EOF
 
 :BOOT
@@ -56,7 +56,7 @@ vm repl <src/to-c.scm >src/boot.c
 GOTO:EOF
 
 :OL
-gcc -std=c99 -g -Wall -fmessage-length=0 src/boot.c src/olvm.c -o "ol.exe" -lws2_32
+gcc -std=c99 -g -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1
 GOTO:EOF
 
 :REPL

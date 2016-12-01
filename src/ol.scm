@@ -324,7 +324,7 @@
                                            (getenv "OL_HOME")
                                            (cond
                                               ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
-                                              (else "/usr/lib/ol")))) ; Linux,  NetBSD,  FreeBSD,  OpenBSD
+                                              (else "/usr/lib/ol")))) ; Linux, *BSD, etc.
                                  (seccomp? (getf options 'seccomp))
                                  (interactive? (or
                                            (getf options 'interactive)
