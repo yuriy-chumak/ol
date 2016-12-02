@@ -10,7 +10,7 @@ categories: index
 
 ### О проекте
 
-   Otus Lisp (произносится как [`отэс лисп]), или сокращенно ol ([`ол]) - чисто функциональный[*](#pure) диалект языка Lisp. Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Он маленький, встраиваемый и кроссплатформенный.
+   Otus Lisp (произносится как [\`отэс лисп]), или сокращенно ol ([\`ол]) - чисто функциональный[*](#pure) диалект языка Lisp. Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Маленький, встраиваемый и кроссплатформенный.
    
   Вы можете использовать ol на Linux, Windows, *BSD, Android, WebOS, Odroid. Он работает под x86, arm, mips архитектурами на 32 и 64-битных платформах.
 
@@ -45,9 +45,9 @@ categories: index
 
    Доступны бинарные сборки для некоторых операционных систем и архитектур:
 
-  * CentOS, Fedora, OpenSUSE, RHEL, Debian, Ubuntu: На [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
+  * CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Univention, OpenSUSE, Ubuntu: На [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
 
-   Для остальных операционных систем соответствующие сборки тоже будут скоро доступны. Исходный код можно забрать на [странице проекта](https://github.com/yuriy-chumak/ol).
+   Список операционных систем постоянно расширяется. Исходный код проекта для самостоятельной сборки, а также инструкции по этому вполне несложному процессу можно забрать из [официального репозирария](https://github.com/yuriy-chumak/ol).
 
    Otus Lisp распространяется в виде двух исполнимых бинарных файлов - самостоятельной виртуальной машины (vm для Linux, vm.exe для Windows) и интерпретатора OL (ol и ol.exe соответственно). А так же набора библиотек.
    В качестве базовой библиотеки выступает repl - реализация языка Otus Lisp поверх базовых примитивов виртуальной машины.
@@ -78,7 +78,7 @@ categories: index
   * Wed 30 Nov 2016 16:57 EET
     * собрал и запустил ol под андроид! теперь в список официально поддерживаемых платформ можно добавить armeabi, armeabi-v7a, arm64-v8a, mips, mips64.
     * проверил под андроидом работу сокетов, работают:
-<pre><code>
+```
 C:\>adb shell
 # cd /data/local/tmp
 # ./ol
@@ -98,27 +98,13 @@ Type ',help' to help, ',quit' to end session
    (close #t)
 ))
 Server binded to 8080
-.
-.
+
+
 # Wed Nov 30 16:56:01 2016 : new request from (10.0.2.2 . 53275)
 :: (10.0.2.2 . 53275)
 socket closed, on-accept done.
 # Wed Nov 30 16:56:02 2016 : request processed in 772ms.
-.
-# Wed Nov 30 16:56:02 2016 : new request from (10.0.2.2 . 53278)
-.
-# Wed Nov 30 16:56:02 2016 : new request from (10.0.2.2 . 53279)
-:: (10.0.2.2 . 53278)
-socket closed, on-accept done.
-# Wed Nov 30 16:56:03 2016 : request processed in 748ms.
-.
-# Wed Nov 30 16:56:03 2016 : new request from (10.0.2.2 . 53280)
-:: (10.0.2.2 . 53279)
-socket closed, on-accept done.
-# Wed Nov 30 16:56:04 2016 : request processed in 2238ms.
-socket closed, on-accept done.
-# Wed Nov 30 16:56:09 2016 : request processed in 5737ms.
-</code></pre>
+```
 
   * Mon 28 Nov 2016 17:32 EET
     * вышел из вынужденного отпуска, сразу заливаю очередной апдейт проекта
@@ -217,7 +203,7 @@ socket closed, on-accept done.
 
   * Fri 25 Mar 2016 13:08 EET
     * была у меня тут надобность быстро сгенерировать один большой и несколько сложный json, так под это дело родился модуль (lib json), который просто и незатейливо переводит s-выражение в текстовую json нотацию - поддерживаются строки, символы, числа (даже с плавающей точкой - до четвертого знака), массивы(!). Вот такой код (timestamp - внешняя функция, t - переменная цикла) легко и незатейливо превращается в соответствующий json:
-<pre><code>
+```
    ; lisp:
    (jsonify "   " `(
       (command . "command1")
@@ -255,7 +241,8 @@ socket closed, on-accept done.
          "w": 1
        }
      }
-   }</code></pre>
+   }
+```
 
   * Thr 24 Mar 2016 16:55 EET
     * в скрипт сборки под Windows добавил автоматическую сборку под виртуалкой с FreeBSD. Когда найду время, сделаю такое-же и для остальных систем. удобно, однако! написал make 105 и вуаля, оно собирается и сообщает о возможных ошибках сборки.

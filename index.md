@@ -43,7 +43,8 @@ which is another way of
 
    Available binary builds for:
    
-  * CentOS, Fedora, OpenSUSE, RHEL, Debian, Ubuntu: from [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
+  * CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Univention, OpenSUSE, Ubuntu: from [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
+
   
    I'm working for add more prebuilts.
    
@@ -51,14 +52,14 @@ which is another way of
 
   * Thr 01 Dec 2016 18:06 EET
     * [build.opensuse.org](https://build.opensuse.org/package/show/home:yuriy-chumak/ol) works again, you can get prepared packages for the x86 CentOS 6, x86 Debian 7, x86 Debian 8, x86 Fedora 22, x86 Fedora 23, x86 RHEL 5, x86 RHEL 6, x86 ScientificLinux 6, x86 openSUSE 13.1, x86 openSUSE 13.2, armv7l openSUSE Factory, aarch64 openSUSE Factory, x86 Ubuntu 12.04, x86 Ubuntu 14.04, x86 Ubuntu 16.04
-
+    
   * Wed 30 Nov 2016 21:53 EET
     * ol recompiled for odroid (please remember that ol works in "wild" under the odroid c1+ platform and provides web access to the server with remote terminal support)
 
   * Wed 30 Nov 2016 17:19 EET
     * added full android support to the ol, now full list of supported platforms is armeabi, armeabi-v7a, arm64-v8a, mips, mips64, x86, x86-64
     * successfully tested sockets under android armeabi, it works fine:
-<pre><code>
+```
 C:\>adb shell
 # cd /data/local/tmp
 # ./ol
@@ -78,28 +79,13 @@ Type ',help' to help, ',quit' to end session
    (close #t)
 ))
 Server binded to 8080
-.
-.
+
+
 # Wed Nov 30 16:56:01 2016 : new request from (10.0.2.2 . 53275)
 :: (10.0.2.2 . 53275)
 socket closed, on-accept done.
 # Wed Nov 30 16:56:02 2016 : request processed in 772ms.
-.
-# Wed Nov 30 16:56:02 2016 : new request from (10.0.2.2 . 53278)
-.
-# Wed Nov 30 16:56:02 2016 : new request from (10.0.2.2 . 53279)
-:: (10.0.2.2 . 53278)
-socket closed, on-accept done.
-# Wed Nov 30 16:56:03 2016 : request processed in 748ms.
-.
-# Wed Nov 30 16:56:03 2016 : new request from (10.0.2.2 . 53280)
-:: (10.0.2.2 . 53279)
-socket closed, on-accept done.
-# Wed Nov 30 16:56:04 2016 : request processed in 2238ms.
-socket closed, on-accept done.
-# Wed Nov 30 16:56:09 2016 : request processed in 5737ms.
-</code></pre>
-
+```
   * Mon 28 Nov 2016 17:32 EET
     * changed assembler code for the x86 and x86-64 pinvoke mechanism, decreased side and increased speed. for testing use neton-dynamics and opengl libraries
       ![screenshot 1](assets/newton3.png)
