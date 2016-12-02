@@ -58,7 +58,7 @@ which is another way of
   * Wed 30 Nov 2016 17:19 EET
     * added full android support to the ol, now full list of supported platforms is armeabi, armeabi-v7a, arm64-v8a, mips, mips64, x86, x86-64
     * successfully tested sockets under android armeabi, it works fine:
-```
+<pre><code>
 C:\>adb shell
 # cd /data/local/tmp
 # ./ol
@@ -84,7 +84,7 @@ Server binded to 8080
 :: (10.0.2.2 . 53275)
 socket closed, on-accept done.
 # Wed Nov 30 16:56:02 2016 : request processed in 772ms.
-```
+</code></pre>
   * Mon 28 Nov 2016 17:32 EET
     * changed assembler code for the x86 and x86-64 pinvoke mechanism, decreased side and increased speed. for testing use neton-dynamics and opengl libraries
       ![screenshot 1](assets/newton3.png)
