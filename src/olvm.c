@@ -158,6 +158,8 @@
 //       а заодно там же колбеки будут лежать нормально. и, главное, gc станет работать быстрее.
 // todo: колбеки выбирать из списка - первый нулевой
 
+// http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
+
 #define __OLVM_NAME__ "OL"
 #define __OLVM_VERSION__ "1.0"
 
@@ -192,6 +194,14 @@
 #	ifndef _NETBSD_SOURCE
 #	define _NETBSD_SOURCE 1
 #	endif
+#endif
+
+#include <stdint.h>
+// todo: please, check this!
+#if INTPTR_MAX == INT64_MAX
+#define MATH_64BIT 1
+#else
+#define MATH_64BIT 0
 #endif
 
 
@@ -303,19 +313,32 @@
 #endif
 
 // ========================================
-static inline
-__attribute__ ((__always_inline__))
+static
 void STDERR(char* format, ...)
 {
-	fprintf(stderr, format, __builtin_va_arg_pack());
+	// can't use __builtin_va_arg_pack for some old gcc
+	// fprintf(stderr, format, __builtin_va_arg_pack());
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
 	puts("\n");
 }
 
-static inline
-__attribute__ ((__always_inline__))
+static
 void crash(int code, char* format, ...)
 {
-	STDERR(format, __builtin_va_arg_pack());
+	// can't use __builtin_va_arg_pack for some old gcc
+	// STDERR(format, __builtin_va_arg_pack());
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	puts("\n");
 	exit(code);
 }
 
@@ -532,7 +555,7 @@ struct object_t
 	union {
 		struct header_t header;
 		word ref[1];
-	};
+	} u;
 };
 
 // ------------------------------------------------------
@@ -554,10 +577,11 @@ void* OL_eval(struct ol_t* ol, int argc, char** argv);
 // todo: remove MAXOBJ!
 #define MAXOBJ                      0xffff         // max words in tuple including header
 
-#if __amd64__
-#define big                         unsigned __int128
+// http://www.delorie.com/gnu/docs/gcc/gccint_53.html
+#if MATH_64BIT
+typedef unsigned long long big __attribute__ ((mode (TI))); // __uint128_t
 #else
-#define big                         unsigned long long //__int64
+typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 #endif
 
 #define RAWBIT                      (1 << RPOS)
@@ -3618,7 +3642,7 @@ static int mainloop(OL* ol)
 				}
 			}
 
-			char* ptr;
+			char* ptr = 0;
 #ifdef __i386__
 			// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
 			static char bytecode[] =
@@ -4220,18 +4244,46 @@ OL_eval(OL* handle, int argc, char** argv)
 
 // platform defines:
 // https://sourceforge.net/p/predef/wiki/Architectures/
+//
 // buildin assembly:
 // http://locklessinc.com/articles/gcc_asm/
 // http://www.agner.org/optimize/calling_conventions.pdf
 // https://en.wikibooks.org/wiki/Embedded_Systems/Mixed_C_and_Assembly_Programming
 
 // http://www.angelcode.com/dev/callconv/callconv.html
-#if __amd64__ // LP64
+#if __amd64__ // x86-64 (LP64?)
 
 // value returned in the rax
 long long x64_call(word argv[], double ad[], int i, int d, long long mask, void* function, int type);
 
-# if _WIN32 // Windows
+# if _WIN64 // Windows
+// rcx, rdx, r8, r9
+__ASM__("x64_call:_x64_call:", // "int $3\n\t"
+	"pushq %rbp",
+	"movq  %rsp, %rbp",
+	// 1. если есть флоаты, то заполним их
+"1:",
+	// 2. проверим на "лишние" оверинты
+"2:",
+	// забросим весь оверхед в стек с учетом очередности и маски
+"3:",
+	// ...
+	// 4. заполним обычные rdi, esi, ... не проверяя количество аргументов, так будет быстрее
+"4:",
+
+	// вернем результат
+"9:",
+	"leave",
+	"popq %rbx",
+	"ret",
+
+"5:",
+	"cvtss2sd %xmm0, %xmm0", // float->double
+"6:",
+	"pushq %rax",  // сохраним дабл в обычном регистре
+	"movsd %xmm0, (%rsp)",
+	"popq  %rax",
+	"jmp   9b");
 
 # else      // System V (unix, linux, osx)
 // rdi: argv[]
@@ -4241,7 +4293,7 @@ long long x64_call(word argv[], double ad[], int i, int d, long long mask, void*
 // r8:  mask
 // r9: function
 // 16(rbp): mask
-__ASM__("x64_call:", // "int $3\n\t"
+__ASM__("x64_call:_x64_call:", // "int $3\n\t"
 	"pushq %rbx",
 	"movq  %r9, %rbx",
 
@@ -4316,7 +4368,7 @@ __ASM__("x64_call:", // "int $3\n\t"
 // while XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6 and XMM7 are used for floats
 # endif
 
-#elif __i386__ // ILP32
+#elif __i386__ // ILP32(?)
 // value returned in the edx:eax
 
 // CDECL / STDCALL
@@ -4393,9 +4445,6 @@ word* pinvoke(OL* self, word* arguments)
 	// pascal(OS/2, MsWin 3.x, Delphi), stdcall(Win32),
 	// fastcall(ms), vectorcall(ms), safecall(delphi),
 	// thiscall(ms)
-
-	// x64 calling conventions: linux, windows
-	// TODO: change return type to universal union
 	typedef long long ret_t;
 
 		// todo: ограничиться количеством функций поменьше
@@ -4716,9 +4765,6 @@ word* pinvoke(OL* self, word* arguments)
 #if __amd64__
 	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
 	int d = 0;     // количество аргументов для float (amd64)
-
-	int f = 0;
-	int floats = 0, doubles = 0; // в amd64 флоаты и даблы передаются отдельно
 	long long floatsmask = 0; // маска для флоатов (на случай, если их надо больше передавать, чем 7
 #endif
 
@@ -4834,8 +4880,10 @@ word* pinvoke(OL* self, word* arguments)
 			default:
 				STDERR("can't cast %d to long", type);
 			}
-			#if __i386__
-				i++; // for x86 long values (fills two ints)
+			#if __amd64__ //__LP64__
+				// nothing
+			#else
+				i++; // for 32-bits long values (fills two ints)
 			#endif
 
 			break;
@@ -5046,7 +5094,7 @@ word* pinvoke(OL* self, word* arguments)
 	got = call(args, i, function, returntype & 0x3F);
 
 #else // ALL other
-	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
+/*	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
 		CALL(__cdecl);
 	}
 	inline ret_t call_stdcall(word args[], int i, void* function, int type) {
@@ -5068,11 +5116,14 @@ word* pinvoke(OL* self, word* arguments)
 	default:
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
+	}*/
+	inline ret_t call(word args[], int i, void* function, int type) {
+		CALL();
 	}
-	//got = call(returntype, function, args, i);
+	got = call(args, i, function, returntype & 0x3F);
 #endif
 
-	// ??? бля, где гарантия, что C и B не поменялись???
+	// где гарантия, что C и B не поменялись?
 	fp = heap->fp;
 	B = (word*)self->R[128 + 1];
 	C = (word*)self->R[128 + 2];

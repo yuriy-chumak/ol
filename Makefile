@@ -84,14 +84,13 @@ install: ol repl
 	install -m 644 repl $(DESTDIR)/$(PREFIX)/lib/ol/repl
 	# basic libraries:
 	@echo Installing libraries...
-	@for F in r5rs owl lib etc scheme ;do \
+	@for F in r5rs otus owl lib etc scheme ;do \
 	   echo installing $$F libraries... ;\
 	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
 	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
 	done
 	@echo Installing OpenGL libraries...
 	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
-	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL/{ARB,EGL,ES,EXT}
 	@for F in OpenGL/ARB OpenGL/EGL OpenGL/ES OpenGL/EXT ;do \
 	   echo installing $$F libraries... ;\
 	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
