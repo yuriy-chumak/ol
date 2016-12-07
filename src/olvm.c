@@ -647,8 +647,8 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 #define TINT32                      (52)
 #define TINT64                      (53)
 
-#define TFLOAT                      (46)
-#define TDOUBLE                     (47)
+#define TFLOAT                      (46) // '.' symbol
+#define TDOUBLE                     (47) // '/' symbol
 
 // todo: сделать два типа колбеков - короткий (такой как я сейчас сделаю)
 //       и "длинный", который будет запускать отдельный поток (сопрограмму) и позволит в это же время
@@ -3946,6 +3946,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
 //
+
 #ifndef NAKED_VM
 extern unsigned char* language;
 #else
@@ -3953,8 +3954,19 @@ unsigned char* language = NULL;
 #endif
 
 #if !EMBEDDED_VM
+__declspec(dllexport)
 int main(int argc, char** argv)
 {
+	// TEMP
+/*	__asm__("int $3");
+	CreateWindowEx(WS_EX_APPWINDOW|WS_EX_WINDOWEDGE,
+			"#32770",
+	"1",
+	WS_OVERLAPPEDWINDOW|WS_CLIPSIBLINGS|WS_CLIPCHILDREN,
+	0, 0, 100, 200, NULL, NULL, NULL, NULL);*/
+
+
+
 	unsigned char* bootstrap = language;
 
 /*	for (int i = 0; i < 12345678; i++) {
@@ -3982,6 +3994,7 @@ int main(int argc, char** argv)
 	if (argc > 1 && strcmp(argv[1], "-") != 0) {
 		// todo: use mmap()
 		struct stat st;
+
 		if (stat(argv[1], &st) || st.st_size == 0)
 			crash(errno, "File not found or empty");	// не найден файл или он пустой
 
@@ -4254,35 +4267,138 @@ OL_eval(OL* handle, int argc, char** argv)
 #if __amd64__ // x86-64 (LP64?)
 
 // value returned in the rax
+__declspec(dllexport)
 long long x64_call(word argv[], double ad[], int i, int d, long long mask, void* function, int type);
 
 # if _WIN64 // Windows
-// rcx, rdx, r8, r9
+// The x64 Application Binary Interface (ABI) uses a four register fast-call
+// calling convention by default. Space is allocated on the call stack as a
+// shadow store for callees to save those registers. There is a strict one-to-one
+// correspondence between the arguments to a function call and the registers
+// used for those arguments. Any argument that doesn’t fit in 8 bytes, or is
+// not 1, 2, 4, or 8 bytes, must be passed by reference. There is no attempt
+// to spread a single argument across multiple registers. The x87 register
+// stack is unused. It may be used by the callee, but must be considered volatile
+// across function calls. All floating point operations are done using the 16
+// XMM registers. Integer arguments are passed in registers RCX, RDX, R8, and
+// R9. Floating point arguments are passed in XMM0L, XMM1L, XMM2L, and XMM3L.
+// 16-byte arguments are passed by reference. Parameter passing is described
+// in detail in Parameter Passing. In addition to these registers, RAX, R10,
+// R11, XMM4, and XMM5 are considered volatile. All other registers are non-volatile.
+//
+// The caller is responsible for allocating space for parameters to the callee,
+// and must always allocate sufficient space to store four register parameters,
+// even if the callee doesn’t take that many parameters.
+
+// https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
+// rcx, rdx, r8, r9 (xmm0, xmm1, ..., xmm3) are arguments,
+// RAX, R10, R11, XMM4, and XMM5 are considered volatile
+
+// http://www.gamasutra.com/view/news/171088/x64_ABI_Intro_to_the_Windows_x64_calling_convention.php
+
+// rcx - argv
+// rdx - ad
+// r8d - i
+// r9d - d
+// [esp+8] mask
+// [esp+16] function
+// [esp+24] type
 __ASM__("x64_call:_x64_call:", // "int $3\n\t"
+// 32 bytes in stack is reserved
+	"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
+
 	// 1. если есть флоаты, то заполним их
 "1:",
+	"test  %r9d, %r9d",
+	"jz    2f",
+	"movsd  0(%rdx), %xmm0",
+	"dec   %r9d",
+	"jz    2f",
+	"movsd  8(%rdx), %xmm1",
+	"dec   %r9d",
+	"jz    2f",
+	"movsd 16(%rdx), %xmm2",
+	"dec   %r9d",
+	"jz    2f",
+	"movsd 16(%rdx), %xmm3",
+	"dec   %r9d",
+	"jnz   3f",  // последняя проверка скажет, надо ли писать флоаты в стек
 	// 2. проверим на "лишние" оверинты
 "2:",
-	// забросим весь оверхед в стек с учетом очередности и маски
+	"cmpl  $4, %r8d",
+	"jbe   4f",
+	// 3. забросим весь оверхед в стек, todo: с учетом очередности и маски
 "3:",
-	// ...
-	// 4. заполним обычные rdi, esi, ... не проверяя количество аргументов, так будет быстрее
-"4:",
+	// rdx + r9d*8 +4*8 -8 -> last float variable
+	// rcx + r8d*8      -8 -> last fixed variable
 
+	// The stack pointer must be aligned to 16 bytes in any region of code that isn’t part of an epilog or prolog, except within leaf functions.
+	"xorq  %rax, %rax",
+	"cmpl    $4, %r8d",
+	"cmova %r8d, %eax",
+	"addl  %r9d, %eax", // eax = r9d + (r8d > 4 ? r8d : 0);
+	"andl    $1, %eax",
+	"leaq  -16(%rsp,%rax,8), %rsp", // выравнивание стека по 16-байтной границе
+
+	"movl  %r8d, %eax",
+	"leaq  -8(%rcx,%rax,8), %r10", // last fixed element
+	"movl  %r9d, %eax",
+	"leaq  24(%rdx,%rax,8), %r11", // last float element (if any) 24=4*8-8
+//	"subl  $4, %r8d",
+//	"jnc   31f",
+//	"movl  $0, %r8d",
+"31:",
+	"shrq  48(%rbp)",
+	"jc   33f", // bit 0 was set, so push float value
+
+"32:", // push fixed
+	"cmpl  $4, %r8d",
+	"jbe   31b", // нету больше аргументов для fixed пуша
+	"pushq (%r10)",
+	"decl  %r8d",
+	"subq  $8, %r10",
+	"jmp   31b",
+"33:", // push float
+	"cmpl  $0, %r9d",
+	"je    4f", // аргументы закончились, флажок конца списка достугнут
+	"pushq (%r11)",
+	"decl  %r9d",
+	"subq  $8, %r11",
+	"jmp   31b",
+
+//"32:",
+//	"pushq (%rax)",
+//	"subq  $8, %rax",
+//	"decl  %r8d",
+//	"jnz   31b",
+	// ...
+	// 4. заполним обычные rcx, rdx, ... не проверяя количество аргументов, так будет быстрее
+"4:",
+	"mov  24(%rcx), %r9",
+	"mov  16(%rcx), %r8",
+	"mov   8(%rcx), %rdx",
+	"mov   0(%rcx), %rcx",
+	"mov  56(%rbp), %rax", // function
+	"subq $32, %rsp", // free space for function call
+	"call *%rax",
 	// вернем результат
+	"mov  64(%rbp), %rcx", // type
+	"cmp  $46, %rcx", // TFLOAT
+	"je   51f",
+	"cmp  $47, %rcx", // TFLOAT
+	"je   52f",
 "9:",
 	"leave",
-	"popq %rbx",
 	"ret",
 
-"5:",
+"51:",
 	"cvtss2sd %xmm0, %xmm0", // float->double
-"6:",
-	"pushq %rax",  // сохраним дабл в обычном регистре
+"52:",
+	"push  %rax",  // сохраним дабл в обычном регистре
 	"movsd %xmm0, (%rsp)",
-	"popq  %rax",
+	"pop   %rax",
 	"jmp   9b");
 
 # else      // System V (unix, linux, osx)
@@ -4765,7 +4881,7 @@ word* pinvoke(OL* self, word* arguments)
 #if __amd64__
 	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
 	int d = 0;     // количество аргументов для float (amd64)
-	long long floatsmask = 0; // маска для флоатов (на случай, если их надо больше передавать, чем 7
+	long long floatsmask = 1; // маска для флоатов, старший единичный бит - признак конца
 #endif
 
 	word* p = (word*)C;   // сами аргументы
@@ -4894,7 +5010,7 @@ word* pinvoke(OL* self, word* arguments)
 		case TFLOAT:
 		#if __amd64__
 			*(float*)&ad[d++] = (float)to_double(arg);
-			floatsmask++; --i;
+			floatsmask|=1; --i;
 		#else
 			*(float*)&args[i] = to_float(arg);
 		#endif
@@ -5056,7 +5172,9 @@ word* pinvoke(OL* self, word* arguments)
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
 
 #if __amd64__
+//	__asm("int $3");
 	got = x64_call(args, ad, i, d, floatsmask, function, returntype);
+//	__asm("int $3");
 
 #elif __i386__
 	// cdecl and stdcall in our case are same, so...
@@ -5229,8 +5347,81 @@ word* pinvoke(OL* self, word* arguments)
 }
 #endif//HAS_PINVOKE
 
-#if 0
+#if 1
+
+#if 1
+// win tests
 __declspec(dllexport)
+float fiiii(float f, int a, int b, int c, int d)
+{
+	fprintf(stderr, "f=%f\n", f);
+	fprintf(stderr, "a=%d\n", a);
+	fprintf(stderr, "b=%d\n", b);
+	fprintf(stderr, "c=%d\n", c);
+	fprintf(stderr, "d=%d\n", d);
+
+	return (a+b+c+d + f);
+}
+
+__declspec(dllexport)
+float ifiii(int a, float f, int b, int c, int d)
+{
+	fprintf(stderr, "a=%d\n", a);
+	fprintf(stderr, "f=%f\n", f);
+	fprintf(stderr, "b=%d\n", b);
+	fprintf(stderr, "c=%d\n", c);
+	fprintf(stderr, "d=%d\n", d);
+
+	return (a+b+c+d + f);
+}
+
+#endif
+
+
+
+
+__declspec(dllexport)
+int test4(int a, int b, int c, int d)
+{
+	fprintf(stderr, "a=%d\n", a);
+	fprintf(stderr, "b=%d\n", b);
+	fprintf(stderr, "c=%d\n", c);
+	fprintf(stderr, "d=%d\n", d);
+
+	return (a+b+c+d);
+}
+
+__declspec(dllexport)
+int test5(int a, int b, int c, int d, int e)
+{
+	fprintf(stderr, "a=%d\n", a);
+	fprintf(stderr, "b=%d\n", b);
+	fprintf(stderr, "c=%d\n", c);
+	fprintf(stderr, "d=%d\n", d);
+	fprintf(stderr, "e=%d\n", e);
+
+	return (a+b+c+d+e);
+}
+
+__declspec(dllexport)
+int test6(int a, int b, int c, int d, int e, int f)
+{
+	fprintf(stderr, "a=%d\n", a);
+	fprintf(stderr, "b=%d\n", b);
+	fprintf(stderr, "c=%d\n", c);
+	fprintf(stderr, "d=%d\n", d);
+	fprintf(stderr, "e=%d\n", e);
+	fprintf(stderr, "f=%d\n", f);
+
+	return (a+b+c+d+e+f);
+}
+
+__declspec(dllexport)
+int test0()
+{
+	return 7;
+}
+
 double floattest(float x, float y)
 {
 	return x+y;
