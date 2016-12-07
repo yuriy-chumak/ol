@@ -59,7 +59,7 @@
             (SetPixelFormat   (dlsym gdi32  type-fix+ "SetPixelFormat" type-void* type-int+ type-void*)))
       (lambda (title)
          (let*((window (CreateWindowEx
-                  #x00040100 "#32770" (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
+                  #x00040100 (c-string "#32770") (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
                   #x06cf0000 ; WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
                   0 0 WIDTH HEIGHT ; x y width height
                   null ; no parent window
@@ -140,17 +140,19 @@
             (GetMessage       (dlsym user32 type-fix+ "GetMessageA"      type-void* type-void* type-int+ type-int+))
             (DispatchMessage  (dlsym user32 type-int+ "DispatchMessageA" type-void*)))
       (lambda (context)
-         (let ((MSG (raw type-vector-raw (repeat 0 28))))
+         (let ((MSG (raw type-vector-raw (repeat 0 48)))) ; 28 for win32
          (let loop ()
             (if (= 1 (PeekMessage MSG '() 0 0 1))
-               (let ((message (+ (<< (ref MSG 4)  0)
-                                 (<< (ref MSG 5)  8)
-                                 (<< (ref MSG 6) 16)
-                                 (<< (ref MSG 7) 24))))
+               (let*((w (vm:wordsize))
+                     (message (+ (<< (ref MSG (+ 0 (* w 1)))  0)      ; 4 for win32
+                                 (<< (ref MSG (+ 1 (* w 1)))  8)
+                                 (<< (ref MSG (+ 2 (* w 1))) 16)
+                                 (<< (ref MSG (+ 3 (* w 1))) 24))))
                   ;(print message ": " MSG)
                   (if (and
                         (eq? message 273) ; WM_COMMAND
-                        (eq? (+ (ref MSG 8) (<< (ref MSG 9) 8)) 2)) ; IDCANCEL
+                        (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
+                                (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam (8 for win32) , IDCANCEL
                      2 ; EXIT
                      (begin
                         (TranslateMessage MSG)

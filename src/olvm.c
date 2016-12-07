@@ -1313,7 +1313,7 @@ void signal_handler(int signal) {
 #endif
 
 /* small functions defined locally after hitting some portability issues */
-static __inline__ void bytecopy(char *from, char *to, int n) { while (n--) *to++ = *from++; }
+//static __inline__ void bytecopy(char *from, char *to, int n) { while (n--) *to++ = *from++; }
 static __inline__ void wordcopy(word *from, word *to, int n) { while (n--) *to++ = *from++; }
 static __inline__
 unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in win32 compile
@@ -3954,7 +3954,6 @@ unsigned char* language = NULL;
 #endif
 
 #if !EMBEDDED_VM
-__declspec(dllexport)
 int main(int argc, char** argv)
 {
 	// TEMP
@@ -4268,7 +4267,7 @@ OL_eval(OL* handle, int argc, char** argv)
 
 // value returned in the rax
 __declspec(dllexport)
-long long x64_call(word argv[], double ad[], int i, int d, long long mask, void* function, int type);
+long long x64_call(word argv[], long long mask, void* function, int type);
 
 # if _WIN64 // Windows
 // The x64 Application Binary Interface (ABI) uses a four register fast-call
@@ -4297,97 +4296,51 @@ long long x64_call(word argv[], double ad[], int i, int d, long long mask, void*
 // http://www.gamasutra.com/view/news/171088/x64_ABI_Intro_to_the_Windows_x64_calling_convention.php
 
 // rcx - argv
-// rdx - ad
-// r8d - i
-// r9d - d
-// [esp+8] mask
-// [esp+16] function
-// [esp+24] type
-__ASM__("x64_call:_x64_call:", // "int $3\n\t"
-// 32 bytes in stack is reserved
-	"int $3",
+// edx - argc
+// r8  - function
+// r9d - type
+__ASM__("x64_call:_x64_call:",  //"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
-	// 1. если есть флоаты, то заполним их
-"1:",
-	"test  %r9d, %r9d",
-	"jz    2f",
-	"movsd  0(%rdx), %xmm0",
-	"dec   %r9d",
-	"jz    2f",
-	"movsd  8(%rdx), %xmm1",
-	"dec   %r9d",
-	"jz    2f",
-	"movsd 16(%rdx), %xmm2",
-	"dec   %r9d",
-	"jz    2f",
-	"movsd 16(%rdx), %xmm3",
-	"dec   %r9d",
-	"jnz   3f",  // последняя проверка скажет, надо ли писать флоаты в стек
-	// 2. проверим на "лишние" оверинты
-"2:",
-	"cmpl  $4, %r8d",
+	"pushq %r9",
+	"andl  $-16, %esp", // выравняем стек по 16-байтовой границе
+
+	// get count of arguments:
+	"xor   %rax, %rax",
+	"movl  %edx, %eax",
+
+	// get last parameter
+	"leaq  -8(%rcx, %rax,8), %r10",
+	"subq  $4, %rax",
 	"jbe   4f",
-	// 3. забросим весь оверхед в стек, todo: с учетом очередности и маски
-"3:",
-	// rdx + r9d*8 +4*8 -8 -> last float variable
-	// rcx + r8d*8      -8 -> last fixed variable
 
-	// The stack pointer must be aligned to 16 bytes in any region of code that isn’t part of an epilog or prolog, except within leaf functions.
-	"xorq  %rax, %rax",
-	"cmpl    $4, %r8d",
-	"cmova %r8d, %eax",
-	"addl  %r9d, %eax", // eax = r9d + (r8d > 4 ? r8d : 0);
-	"andl    $1, %eax",
-	"leaq  -16(%rsp,%rax,8), %rsp", // выравнивание стека по 16-байтной границе
+	// довыровняем стек, так как:
+	//  The stack pointer must be aligned to 16 bytes in any region of code
+	//  that isn’t part of an epilog or prolog, except within leaf functions.
+	"movq  %rax, %rdx",
+	"andq  $1, %rdx",
+	"leaq  -16(%rsp,%rdx,8), %rsp",
 
-	"movl  %r8d, %eax",
-	"leaq  -8(%rcx,%rax,8), %r10", // last fixed element
-	"movl  %r9d, %eax",
-	"leaq  24(%rdx,%rax,8), %r11", // last float element (if any) 24=4*8-8
-//	"subl  $4, %r8d",
-//	"jnc   31f",
-//	"movl  $0, %r8d",
-"31:",
-	"shrq  48(%rbp)",
-	"jc   33f", // bit 0 was set, so push float value
-
-"32:", // push fixed
-	"cmpl  $4, %r8d",
-	"jbe   31b", // нету больше аргументов для fixed пуша
+"1:",
 	"pushq (%r10)",
-	"decl  %r8d",
 	"subq  $8, %r10",
-	"jmp   31b",
-"33:", // push float
-	"cmpl  $0, %r9d",
-	"je    4f", // аргументы закончились, флажок конца списка достугнут
-	"pushq (%r11)",
-	"decl  %r9d",
-	"subq  $8, %r11",
-	"jmp   31b",
+	"decq  %rax",
+	"jnz   1b",
 
-//"32:",
-//	"pushq (%rax)",
-//	"subq  $8, %rax",
-//	"decl  %r8d",
-//	"jnz   31b",
-	// ...
-	// 4. заполним обычные rcx, rdx, ... не проверяя количество аргументов, так будет быстрее
+	// 4. заполним обычные rcx, rdx, ... не проверяя количество аргументов и их тип, так будет быстрее
 "4:",
-	"mov  24(%rcx), %r9",
-	"mov  16(%rcx), %r8",
-	"mov   8(%rcx), %rdx",
-	"mov   0(%rcx), %rcx",
-	"mov  56(%rbp), %rax", // function
-	"subq $32, %rsp", // free space for function call
+	"movq  %r8, %rax",
+	"movsd 24(%rcx), %xmm3", "mov  24(%rcx), %r9",
+	"movsd 16(%rcx), %xmm2", "mov  16(%rcx), %r8",
+	"movsd  8(%rcx), %xmm1", "mov  8(%rcx), %rdx",
+	"movsd  0(%rcx), %xmm0", "mov  0(%rcx), %rcx",
+	"subq $32, %rsp", // extra free space for call
 	"call *%rax",
 	// вернем результат
-	"mov  64(%rbp), %rcx", // type
-	"cmp  $46, %rcx", // TFLOAT
+	"cmpl $46, -8(%rbp)", // TFLOAT
 	"je   51f",
-	"cmp  $47, %rcx", // TFLOAT
+	"cmpl $47, -8(%rbp)", // TDOUBLE
 	"je   52f",
 "9:",
 	"leave",
@@ -4396,9 +4349,8 @@ __ASM__("x64_call:_x64_call:", // "int $3\n\t"
 "51:",
 	"cvtss2sd %xmm0, %xmm0", // float->double
 "52:",
-	"push  %rax",  // сохраним дабл в обычном регистре
 	"movsd %xmm0, (%rsp)",
-	"pop   %rax",
+	"pop   %rax", // можно попать, так как уже пушнули один r9 вверху (оптимизация)
 	"jmp   9b");
 
 # else      // System V (unix, linux, osx)
@@ -4465,7 +4417,7 @@ __ASM__("x64_call:_x64_call:", // "int $3\n\t"
 	"movq 24(%rbp), %rbx",
 	"cmpl $46, %ebx", // TFLOAT
 	"je   5f",
-	"cmpl $47, %ebx", // TFLOAT
+	"cmpl $47, %ebx", // TDOUBLE
 	"je   6f",
 "9:",
 	"leave",
@@ -4876,17 +4828,12 @@ word* pinvoke(OL* self, word* arguments)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = value(car(B));
 
-	word args[18]; // пока только 12 аргумента максимум (18 - специально для gluLookAt)
-	int i = 0;     // количество аргументов
-#if __amd64__
-	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
-	int d = 0;     // количество аргументов для float (amd64)
-	long long floatsmask = 1; // маска для флоатов, старший единичный бит - признак конца
-#endif
+	word args[32]; // 16 double аргументов максимум
+	int i = 0;     // актуальное количество аргументов
 
 	word* p = (word*)C;   // сами аргументы
 	word* t = (word*)cdr (B); // rtty
-	int has_wb = 0; // has write-back in arguments
+	int has_wb = 0; // has write-back in arguments (speedup)
 
 	while ((word)p != INULL) { // пока есть аргументы
 		assert (reftype(p) == TPAIR); // assert(list)
@@ -4901,11 +4848,7 @@ word* pinvoke(OL* self, word* arguments)
 			arg = ((word*)p[1])[2];
 		}*/
 
-		args[i] = 0; // обнулим (так как потом можем симулировать через break)
-
-#ifdef __amd64__
-		floatsmask <<= 1; // подготовим маску к следующему аргументу
-#endif
+		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
 
 		// destination type
 		switch (type) {
@@ -4996,10 +4939,8 @@ word* pinvoke(OL* self, word* arguments)
 			default:
 				STDERR("can't cast %d to long", type);
 			}
-			#if __amd64__ //__LP64__
-				// nothing
-			#else
-				i++; // for 32-bits long values (fills two ints)
+			#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
+				i++; // for 32-bits: long long values fills two words
 			#endif
 
 			break;
@@ -5008,15 +4949,11 @@ word* pinvoke(OL* self, word* arguments)
 
 		// с плавающей запятой:
 		case TFLOAT:
-		#if __amd64__
-			*(float*)&ad[d++] = (float)to_double(arg);
-			floatsmask|=1; --i;
-		#else
-			*(float*)&args[i] = to_float(arg);
-		#endif
+			*(float*)&args[i] = (float)to_double(arg);
 			break;
 		case TFLOAT + 0x80:
 			has_wb = 1;
+			//no break
 		case TFLOAT + 0x40: {
 			if (arg == INULL) // empty array must be interpreted as nullptr
 				break;
@@ -5034,17 +4971,15 @@ word* pinvoke(OL* self, word* arguments)
 		}
 
 		case TDOUBLE:
-		#if __amd64__
-			ad[d++] = to_double(arg);
-			floatsmask++; --i;
-		#else
-			// for x86 double fills two floats (words)
-			*(double*)&args[i++] = to_double(arg);
-		#endif
+			*(double*)&args[i] = to_double(arg);
+			#if UINT64_MAX > SIZE_MAX // sizeof(double) > sizeof(float) //__LP64__
+				++i; 	// for 32-bits: double fills two words
+			#endif
 			break;
 
 		case TDOUBLE + 0x80:
 			has_wb = 1;
+			//no break
 		case TDOUBLE + 0x40: {
 			if (arg == INULL) // empty array must be interpreted as nullptr
 				break;
@@ -5173,7 +5108,7 @@ word* pinvoke(OL* self, word* arguments)
 
 #if __amd64__
 //	__asm("int $3");
-	got = x64_call(args, ad, i, d, floatsmask, function, returntype);
+	got = x64_call(args, i, function, returntype);
 //	__asm("int $3");
 
 #elif __i386__
@@ -5347,7 +5282,7 @@ word* pinvoke(OL* self, word* arguments)
 }
 #endif//HAS_PINVOKE
 
-#if 1
+#if 0
 
 #if 1
 // win tests
@@ -5364,6 +5299,25 @@ float fiiii(float f, int a, int b, int c, int d)
 }
 
 __declspec(dllexport)
+float fii(float f, int a, int b)
+{
+	fprintf(stderr, "f=%f\n", f);
+	fprintf(stderr, "a=%d\n", a);
+	fprintf(stderr, "b=%d\n", b);
+
+	return (a+b + f);
+}
+
+__declspec(dllexport)
+float fi(float f, int a)
+{
+	fprintf(stderr, "f=%f\n", f);
+	fprintf(stderr, "a=%d\n", a);
+
+	return (a + f);
+}
+
+__declspec(dllexport)
 float ifiii(int a, float f, int b, int c, int d)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5373,6 +5327,30 @@ float ifiii(int a, float f, int b, int c, int d)
 	fprintf(stderr, "d=%d\n", d);
 
 	return (a+b+c+d + f);
+}
+
+__declspec(dllexport)
+float iiiif(int a, int b, int c, int d, float f)
+{
+	fprintf(stderr, "a=%d\n", a);
+	fprintf(stderr, "b=%d\n", b);
+	fprintf(stderr, "c=%d\n", c);
+	fprintf(stderr, "d=%d\n", d);
+	fprintf(stderr, "f=%f\n", f);
+
+	return (a+b+c+d + f);
+}
+
+__declspec(dllexport)
+float fiiif(float f, int a, int b, int c, float g)
+{
+	fprintf(stderr, "f=%f\n", f);
+	fprintf(stderr, "a=%d\n", a);
+	fprintf(stderr, "b=%d\n", b);
+	fprintf(stderr, "c=%d\n", c);
+	fprintf(stderr, "g=%f\n", g);
+
+	return (a+b+c + f+g);
 }
 
 #endif

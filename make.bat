@@ -4,8 +4,11 @@ echo %%0 = %0
 echo %%1 = %1
 IF "%1"==""   GOTO ALL
 IF "%1"=="vm" GOTO VM
+IF "%1"=="vmr" GOTO VMR
+IF "%1"=="vm32" GOTO VM32
 IF "%1"=="boot" GOTO BOOT
 IF "%1"=="ol" GOTO OL
+IF "%1"=="olr" GOTO OLR
 IF "%1"=="repl" GOTO REPL
 IF "%1"=="release" GOTO RELEASE
 IF "%1"=="tests" GOTO TESTS
@@ -48,15 +51,28 @@ echo.
 GOTO:EOF
 
 :VM
-gcc -std=c99 -g -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O0 -DHAS_PINVOKE=1 -m64
 GOTO:EOF
+
+:VMR
+gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1 -m64
+GOTO:EOF
+
+:VM32
+gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm32.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1 -m32
+GOTO:EOF
+
 
 :BOOT
 vm repl <src/to-c.scm >src/boot.c
 GOTO:EOF
 
 :OL
-gcc -std=c99 -g -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O0 -DHAS_PINVOKE=1 -m64
+GOTO:EOF
+
+:OLR
+gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1 -m64
 GOTO:EOF
 
 :REPL
@@ -98,7 +114,7 @@ GOTO:EOF
 
 :TEST
 echo|set /p=Testing %1 ...
-ol %1 >C:\TEMP\out
+ol.exe %1 >C:\TEMP\out
 fc C:\TEMP\out %1.ok > nul
 if errorlevel 1 goto fail1
 echo Ok.
