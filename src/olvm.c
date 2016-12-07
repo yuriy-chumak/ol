@@ -4266,8 +4266,14 @@ OL_eval(OL* handle, int argc, char** argv)
 #if __amd64__ // x86-64 (LP64?)
 
 // value returned in the rax
+#ifdef __linux__
+__attribute__
+((__visibility__("default")))
+long long x64_call(word argv[], double ad[], long long i, long long d, long long mask, void* function, long long type);
+#else
 __declspec(dllexport)
-long long x64_call(word argv[], long long mask, void* function, int type);
+long long x64_call(word argv[], long long argc, void* function, int type);
+#endif
 
 # if _WIN64 // Windows
 // The x64 Application Binary Interface (ABI) uses a four register fast-call
@@ -4360,74 +4366,108 @@ __ASM__("x64_call:_x64_call:",  //"int $3",
 // ecx: d
 // r8:  mask
 // r9: function
-// 16(rbp): mask
-__ASM__("x64_call:_x64_call:", // "int $3\n\t"
-	"pushq %rbx",
-	"movq  %r9, %rbx",
+// 16(rbp): type
+__attribute__((__visibility__("default"))) void x(); __ASM__("x:");
 
+__ASM__("x64_call:_x64_call:", //"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
+
+	"pushq %r9",
+	"andq  $-16, %rsp",
 	// 1. если есть флоаты, то заполним их
 "1:",
-	"testl %ecx, %ecx",
+// todo: optimization: fill all xmm and sub $6 from rcx with saturation!
+	"testq %rcx, %rcx",
 	"jz    2f",
-	"movl  %ecx, %eax", // floats count
-	"movsd  0(%rsi), %xmm0",
-	"decl  %ecx",
+	"movsd 0(%rsi), %xmm0",
+	"decq  %rcx",
 	"jz    2f",
-	"movsd  8(%rsi), %xmm1",
-	"decl  %ecx",
+	"movsd 8(%rsi), %xmm1",
+	"decq  %rcx",
 	"jz    2f",
 	"movsd 16(%rsi), %xmm2",
-	"decl  %ecx",
+	"decq  %rcx",
 	"jz    2f",
-	"movsd 16(%rsi), %xmm3",
-	"decl  %ecx",
+	"movsd 24(%rsi), %xmm3",
+	"decq  %rcx",
 	"jz    2f",
-	"movsd 16(%rsi), %xmm4",
-	"decl  %ecx",
+	"movsd 32(%rsi), %xmm4",
+	"decq  %rcx",
 	"jz    2f",
-	"movsd 16(%rsi), %xmm5",
-	"decl  %ecx",
+	"movsd 40(%rsi), %xmm5",
+	"decq  %rcx",
 	"jz    2f",
-	"movsd 16(%rsi), %xmm6",
-	"decl  %ecx",
+	"movsd 48(%rsi), %xmm6",
+	"decq  %rcx",
 	"jz    2f",
-	"movsd 16(%rsi), %xmm7",
-	"decl  %ecx",
-	"jnz   3f",  // последняя проверка скажет, надо ли писать в стек
+	"movsd 56(%rsi), %xmm7",
+	"decq  %rcx",
+	//"jnz   3f",  // последняя проверка скажет, надо ли писать в стек
 	// 2. проверим на "лишние" оверинты
 "2:",
+	"xorq  %rax, %rax",
 	"cmpl  $6, %edx",
-	"jbe   4f",
+	"cmova %rdx, %rax",
+	"addq  %rcx, %rax", // total parameters count
+	"testq %rax, %rax",
+	"jz    4f", // no more agruments for stack
 	// забросим весь оверхед в стек с учетом очередности и маски
 "3:",
-	// ...
+	"andq  $1, %rax",
+	"leaq  -16(%rsp,%rax,8),%rsp", // выравнивание стека по 16-байтной границе
+
+	"leaq  -8(%rdi,%rdx,8), %rax",
+	"leaq  56(%rsi,%rcx,8), %rsi", // last float argument  (if any) 56=8*8-8
+
+	"subq  $6, %rdx",
+"31:",
+	"shrq  %r8",
+	"jc    33f", // bit 0 was set, so push float value
+"32:", // push fixed
+	"cmpq  $0, %rdx",
+	"jbe   31b", // нету больше аргументов для fixed пуша
+	"pushq (%rax)",
+	"subq  $8, %rax",
+	"decq  %rdx",
+	"jnz   31b",
+	"test  %rcx, %rcx",
+	"jz    4f",
+	"jmp   31b",
+"33:", // push float
+	"cmpq  $0, %rcx",
+	"jbe   31b", // нету больше аргументов для float пуша
+	"pushq (%rsi)",
+	"subq  $8, %rsi",
+	"decq  %rcx",
+	"jnz   31b",
+	"test  %rdx, %rdx",
+	"jz    4f",
+	"jmp   31b",
+
 	// 4. заполним обычные rdi, esi, ... не проверяя количество аргументов, так будет быстрее
 "4:",
-	"movq  8(%rdi), %rsi",
-	"movq 16(%rdi), %rdx",
-	"movq 24(%rdi), %rcx",
-	"movq 32(%rdi), %r8",
-	"movq 48(%rdi), %r9",
-	"movq  0(%rdi), %rdi",
-	"call *%rbx",
+	"movq  40(%rdi), %r9",
+	"movq  32(%rdi), %r8",
+	"movq  24(%rdi), %rcx",
+	"movq  16(%rdi), %rdx",
+	"movq   8(%rdi), %rsi",
+	"movq   0(%rdi), %rdi",
+	"callq *-8(%rbp)",
 
 	// вернем результат
-	"movq 24(%rbp), %rbx",
-	"cmpl $46, %ebx", // TFLOAT
+	"cmpl $46, 16(%rbp)", // TFLOAT
 	"je   5f",
-	"cmpl $47, %ebx", // TDOUBLE
+	"cmpl $47, 16(%rbp)", // TDOUBLE
 	"je   6f",
 "9:",
 	"leave",
-	"popq %rbx",
 	"ret",
 
 "5:",
 	"cvtss2sd %xmm0, %xmm0", // float->double
 "6:",
-	"pushq %rax",  // сохраним дабл в обычном регистре
+//	"pushq %rax",  // сохраним дабл в обычном регистре
 	"movsd %xmm0, (%rsp)",
 	"popq  %rax",
 	"jmp   9b");
@@ -4830,6 +4870,11 @@ word* pinvoke(OL* self, word* arguments)
 
 	word args[32]; // 16 double аргументов максимум
 	int i = 0;     // актуальное количество аргументов
+#if __amd64__ && __linux__ // LP64
+	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
+	int d = 0;     // количество аргументов для float (amd64)
+	long long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
+#endif
 
 	word* p = (word*)C;   // сами аргументы
 	word* t = (word*)cdr (B); // rtty
@@ -4849,6 +4894,9 @@ word* pinvoke(OL* self, word* arguments)
 		}*/
 
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
+#if __amd64__ && __linux__ // LP64
+		floatsmask <<= 1; // подготовим маску к следующему аргументу
+#endif
 
 		// destination type
 		switch (type) {
@@ -4949,7 +4997,12 @@ word* pinvoke(OL* self, word* arguments)
 
 		// с плавающей запятой:
 		case TFLOAT:
-			*(float*)&args[i] = (float)to_double(arg);
+			#if __amd64__ && __linux__
+				*(float*)&ad[d++] = (float)to_double(arg);
+				floatsmask|=1; --i;
+			#else
+				*(float*)&args[i] = (float)to_double(arg);
+			#endif
 			break;
 		case TFLOAT + 0x80:
 			has_wb = 1;
@@ -4971,7 +5024,12 @@ word* pinvoke(OL* self, word* arguments)
 		}
 
 		case TDOUBLE:
-			*(double*)&args[i] = to_double(arg);
+			#if __amd64__ && __linux__
+				ad[d++] = to_double(arg);
+				floatsmask++; --i;
+			#else
+				*(double*)&args[i] = to_double(arg);
+			#endif
 			#if UINT64_MAX > SIZE_MAX // sizeof(double) > sizeof(float) //__LP64__
 				++i; 	// for 32-bits: double fills two words
 			#endif
@@ -5107,8 +5165,12 @@ word* pinvoke(OL* self, word* arguments)
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
 
 #if __amd64__
-//	__asm("int $3");
-	got = x64_call(args, i, function, returntype);
+	//	__asm("int $3");
+#	if __linux__
+		got = x64_call(args, ad, i, d, floatsmask, function, returntype);
+#	else
+		got = x64_call(args, i, function, returntype);
+#	endif
 //	__asm("int $3");
 
 #elif __i386__
@@ -5282,11 +5344,12 @@ word* pinvoke(OL* self, word* arguments)
 }
 #endif//HAS_PINVOKE
 
-#if 0
+#if 1
 
 #if 1
 // win tests
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 float fiiii(float f, int a, int b, int c, int d)
 {
 	fprintf(stderr, "f=%f\n", f);
@@ -5298,7 +5361,44 @@ float fiiii(float f, int a, int b, int c, int d)
 	return (a+b+c+d + f);
 }
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
+float iffiiiifi(int i, float f, float g, int j, int k, int l, int m, float h, int n)
+{
+	fprintf(stderr, "i=%d\n", i);
+	fprintf(stderr, "f=%f\n", f);
+	fprintf(stderr, "g=%f\n", g);
+	fprintf(stderr, "j=%d\n", j);
+	fprintf(stderr, "k=%d\n", k);
+	fprintf(stderr, "l=%d\n", l);
+	fprintf(stderr, "m=%d\n", m);
+	fprintf(stderr, "h=%f\n", h);
+	fprintf(stderr, "n=%d\n", n);
+
+	return (i+j+k+l+m+n + f+g+h);
+}
+
+__attribute__
+((__visibility__("default")))
+float iffiiiifiiffffff(int i, float f, float g, int j, int k, int l, int m, float h, int n, int o, float f1, float f2, float f3, float f4, float f5, float f6)
+{
+	fprintf(stderr, "i=%d\n", i);
+	fprintf(stderr, "f=%f\n", f);
+	fprintf(stderr, "g=%f\n", g);
+	fprintf(stderr, "j=%d\n", j);
+	fprintf(stderr, "k=%d\n", k);
+	fprintf(stderr, "l=%d\n", l);
+	fprintf(stderr, "m=%d\n", m);
+	fprintf(stderr, "h=%f\n", h);
+	fprintf(stderr, "n=%d\n", n);
+	fprintf(stderr, "o=%d\n", o);
+	fprintf(stderr, "%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
+
+	return (i+j+k+l+m+n + f+g+h);
+}
+
+__attribute__
+((__visibility__("default")))
 float fii(float f, int a, int b)
 {
 	fprintf(stderr, "f=%f\n", f);
@@ -5308,7 +5408,8 @@ float fii(float f, int a, int b)
 	return (a+b + f);
 }
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 float fi(float f, int a)
 {
 	fprintf(stderr, "f=%f\n", f);
@@ -5317,7 +5418,8 @@ float fi(float f, int a)
 	return (a + f);
 }
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 float ifiii(int a, float f, int b, int c, int d)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5329,7 +5431,8 @@ float ifiii(int a, float f, int b, int c, int d)
 	return (a+b+c+d + f);
 }
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 float iiiif(int a, int b, int c, int d, float f)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5341,7 +5444,8 @@ float iiiif(int a, int b, int c, int d, float f)
 	return (a+b+c+d + f);
 }
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 float fiiif(float f, int a, int b, int c, float g)
 {
 	fprintf(stderr, "f=%f\n", f);
@@ -5358,7 +5462,8 @@ float fiiif(float f, int a, int b, int c, float g)
 
 
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 int test4(int a, int b, int c, int d)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5369,7 +5474,8 @@ int test4(int a, int b, int c, int d)
 	return (a+b+c+d);
 }
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 int test5(int a, int b, int c, int d, int e)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5381,7 +5487,8 @@ int test5(int a, int b, int c, int d, int e)
 	return (a+b+c+d+e);
 }
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 int test6(int a, int b, int c, int d, int e, int f)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5394,7 +5501,8 @@ int test6(int a, int b, int c, int d, int e, int f)
 	return (a+b+c+d+e+f);
 }
 
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 int test0()
 {
 	return 7;
@@ -5404,7 +5512,8 @@ double floattest(float x, float y)
 {
 	return x+y;
 }
-__declspec(dllexport)
+__attribute__
+((__visibility__("default")))
 void int3()
 {
 	__asm__("int $3");
