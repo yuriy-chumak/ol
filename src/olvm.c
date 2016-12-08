@@ -32,6 +32,10 @@
  *   https://code.google.com/p/owl-lisp/
  */
 
+// TODO!!!!!!!
+// ILP64, LP64, LLP64:
+// http://stackoverflow.com/questions/384502/what-is-the-bit-size-of-long-on-64-bit-windows
+
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
 #	warning "This code must be compiled by Gnu C compiler"
@@ -1476,18 +1480,32 @@ long callback(OL* ol, int id, long* argi
 	fp = ol->heap.fp;
 
 	int i = 0;
-#if __amd64__
-	rest -= 4; // !!!
+#if __amd64__ && __linux__
+	int j = 0;
 #endif
+/*#if __amd64__  // !!!
+	#if _WIN64
+//	rest -= 4;
+	#else
+	rest -= 6;
+	#endif
+#endif*/
 //	int f = 0; // linux
 	while (types != INULL) {
 		switch (car(types)) {
 		case F(TVPTR): {
 			void*
 			#if __amd64__
+				#if _WIN64
 				value = i <= 4
-				        ? *(void**) &argi[i++]
-				        : *(void**) &rest[i++];
+				        ? *(void**) &argi[i]
+				        : *(void**) &rest[i-4];
+				#else
+				value = i <= 6
+						? *(void**) &argi[i]
+						: *(void**) &rest[i-6]; // ???
+				#endif
+				i++;
 			#else
 				value =   *(void**) &argi[i++];
 			#endif
@@ -1497,9 +1515,16 @@ long callback(OL* ol, int id, long* argi
 		case F(TINT): {
 			int
 			#if __amd64__
+				#if _WIN64
 				value = i <= 4
-				        ? *(int*) &argi[i++]
-				        : *(int*) &rest[i++];
+				        ? *(int*) &argi[i]
+				        : *(int*) &rest[i-4];
+				#else
+				value = i <= 6
+						? *(int*) &argi[i]
+						: *(int*) &rest[i-6]; // ???
+				#endif
+				i++;
 			#else
 				value =   *(int*) &argi[i++];
 			#endif
@@ -1509,9 +1534,17 @@ long callback(OL* ol, int id, long* argi
 		case F(TFLOAT): {
 			float
 			#if __amd64__
-				value = i <= 4              // win64, for linux please use
-				        ? *(float*) &argf[i++]
-				        : *(float*) &rest[i++];
+				#if _WIN64
+				value = i <= 4
+				        ? *(float*) &argf[i]
+				        : *(float*) &rest[i-6];
+				i++;
+				#else
+				value = j <= 8
+						? *(float*) &argf[j]
+						: *(float*) &rest[j-8]; // ???
+				j++;
+				#endif
 			#else
 				value =   *(float*) &argi[i++];
 			#endif
@@ -1524,9 +1557,17 @@ long callback(OL* ol, int id, long* argi
 		case F(TDOUBLE): {
 			double
 			#if __amd64__
-				value = i <= 4              // win64, for linux please use
-				        ? *(double*) &argf[i++]
-				        : *(double*) &rest[i++];
+				#if _WIN64
+				value = i <= 4
+				        ? *(double*) &argf[i]
+				        : *(double*) &rest[i-4];
+				i++;
+				#else
+				value = i <= 8
+						? *(double*) &argf[j]
+						: *(double*) &rest[j-8]; // ???
+				j++;
+				#endif
 			#else
 				value =   *(double*) &argi[i++]; i++;
 			#endif
@@ -1536,10 +1577,10 @@ long callback(OL* ol, int id, long* argi
 			R[a] = (word)new_pair(TRATIONAL, ltosv(n), itouv(d));
 			break;
 		}
-		case F(TVOID):
-			R[a] = IFALSE;
-			i++;
-			break;
+//		case F(TVOID):
+//			R[a] = IFALSE;
+//			i++;
+//			break;
 		default:
 			STDERR("unknown argument type");
 			break;
@@ -3773,7 +3814,55 @@ static int mainloop(OL* ol)
 			*(long long*)&ptr[66] = (long long)ol;
 			*(long long*)&ptr[82] = (long long)&callback;
 			#else
-			// no Linux yet
+
+
+			// rdi: ol
+			// rsi: id
+			// rdx: argi
+			// rcx: argf
+			// r8:  rest
+			// r9: --
+
+			//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+			static char bytecode[] =
+					"\xCC" // nop
+					"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
+					"\x55"                  // push rbp
+					"\x48\x89\xE5"          // mov ebp, rsp
+					"\x41\x51"              // push r9
+					"\x41\x50"              // push r8
+					"\x51"                  // push rcx
+					"\x52"                  // push rdx
+					"\x56"                  // push rsi
+					"\x57"                  // push rdi
+					"\x48\x89\xE2"          // mov rdx, rsp         // argi
+					// 21
+					"\x48\x83\xEC\x40"      // sub rsp, 8*8
+					"\x67\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
+					"\x67\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
+				    "\x67\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
+				    "\x67\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
+				    "\x67\xF2\x0F\x11\x54\x24\x20"    // movsd [esp+32], xmm4
+				    "\x67\xF2\x0F\x11\x6C\x24\x28"    // movsd [esp+40], xmm5
+				    "\x67\xF2\x0F\x11\x74\x24\x30"    // movsd [esp+48], xmm6
+				    "\x67\xF2\x0F\x11\x7C\x24\x38"    // movsd [esp+56], xmm7
+					"\x48\x83\xE1"          // mov rcx, rsp         // argf
+					// 84
+					"\x48\xBE--------"      // mov rsi, 0          // id
+					// 94
+					"\x48\xBF--------"      // mov rdi, 0          // ol
+					// 104
+					"\x48\xB8--------"      // mov rax, callback
+					"\xFF\xD0"              // call rax
+					"\xC9"                  // leave
+					"\xC3";                 // ret
+			ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
+					MAP_PRIVATE, -1, 0);
+
+			memcpy(ptr, &bytecode, sizeof(bytecode));
+			*(long*)&ptr[86] = c;
+			*(long*)&ptr[96] = (long long)ol;
+			*(long*)&ptr[106] = (long long)&callback;
 			#endif
 
 #endif
