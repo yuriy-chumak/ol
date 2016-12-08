@@ -3670,7 +3670,6 @@ static int mainloop(OL* ol)
 			*(char*)&ptr[2] = (char)c;
 			*(long*)&ptr[4] = (long)ol;
 			*(long*)&ptr[9] = (long)&callback;
-
 #endif
 			result = new_callback(ptr);
 
@@ -4377,41 +4376,29 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 	"andq  $-16, %rsp",
 	// 1. если есть флоаты, то заполним их
 "1:",
-// todo: optimization: fill all xmm and sub $6 from rcx with saturation!
-	"testq %rcx, %rcx",
-	"jz    2f",
-	"movsd 0(%rsi), %xmm0",
-	"decq  %rcx",
-	"jz    2f",
-	"movsd 8(%rsi), %xmm1",
-	"decq  %rcx",
-	"jz    2f",
+//	"testq %rcx, %rcx",
+//	"jz    2f",
+	"movsd  0(%rsi), %xmm0",
+	"movsd  8(%rsi), %xmm1",
 	"movsd 16(%rsi), %xmm2",
-	"decq  %rcx",
-	"jz    2f",
 	"movsd 24(%rsi), %xmm3",
-	"decq  %rcx",
-	"jz    2f",
 	"movsd 32(%rsi), %xmm4",
-	"decq  %rcx",
-	"jz    2f",
 	"movsd 40(%rsi), %xmm5",
-	"decq  %rcx",
-	"jz    2f",
 	"movsd 48(%rsi), %xmm6",
-	"decq  %rcx",
-	"jz    2f",
 	"movsd 56(%rsi), %xmm7",
-	"decq  %rcx",
-	//"jnz   3f",  // последняя проверка скажет, надо ли писать в стек
-	// 2. проверим на "лишние" оверинты
+//	"cmpq  $9,%rcx", // temp
+//	"jne   2f",      // temp
+//	"int   $3",      // temp
+	// 2. проверим на "стековые" аргументы
 "2:",
 	"xorq  %rax, %rax",
+	"subq  $8, %rcx",
+	"cmovs %rax, %rcx", // = max(rcx-8, 0)
 	"cmpl  $6, %edx",
-	"cmova %rdx, %rax",
-	"addq  %rcx, %rax", // total parameters count
+	"cmova %rdx, %rax", //
+	"addq  %rcx, %rax", // = max(rdx-6, 0) + max(rcx-8, 0)
 	"testq %rax, %rax",
-	"jz    4f", // no more agruments for stack
+	"jz    4f", // no agruments for push to stack
 	// забросим весь оверхед в стек с учетом очередности и маски
 "3:",
 	"andq  $1, %rax",
@@ -4426,26 +4413,26 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 	"jc    33f", // bit 0 was set, so push float value
 "32:", // push fixed
 	"cmpq  $0, %rdx",
-	"jbe   31b", // нету больше аргументов для fixed пуша
+	"jle   31b", // нету больше аргументов для fixed пуша
 	"pushq (%rax)",
 	"subq  $8, %rax",
 	"decq  %rdx",
 	"jnz   31b",
-	"test  %rcx, %rcx",
-	"jz    4f",
+	"cmpq  $0, %rcx",
+	"jle   4f",
 	"jmp   31b",
 "33:", // push float
 	"cmpq  $0, %rcx",
-	"jbe   31b", // нету больше аргументов для float пуша
+	"jle   31b", // нету больше аргументов для float пуша
 	"pushq (%rsi)",
 	"subq  $8, %rsi",
 	"decq  %rcx",
 	"jnz   31b",
-	"test  %rdx, %rdx",
-	"jz    4f",
+	"cmpq  $0, %rdx",
+	"jle   4f",
 	"jmp   31b",
 
-	// 4. заполним обычные rdi, esi, ... не проверяя количество аргументов, так будет быстрее
+	// 4. не проверяем количество аргументов, так будет быстрее
 "4:",
 	"movq  40(%rdi), %r9",
 	"movq  32(%rdi), %r8",
@@ -4453,6 +4440,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 	"movq  16(%rdi), %rdx",
 	"movq   8(%rdi), %rsi",
 	"movq   0(%rdi), %rdi",
+
 	"callq *-8(%rbp)",
 
 	// вернем результат
@@ -4467,9 +4455,8 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 "5:",
 	"cvtss2sd %xmm0, %xmm0", // float->double
 "6:",
-//	"pushq %rax",  // сохраним дабл в обычном регистре
 	"movsd %xmm0, (%rsp)",
-	"popq  %rax",
+	"popq  %rax", // corresponded push not required (we already pushed %r9)
 	"jmp   9b");
 
 // RDI, RSI, RDX, RCX (R10 in the Linux kernel interface[17]:124), R8, and R9
@@ -5165,7 +5152,7 @@ word* pinvoke(OL* self, word* arguments)
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
 
 #if __amd64__
-	//	__asm("int $3");
+//	__asm("int $3");
 #	if __linux__
 		got = x64_call(args, ad, i, d, floatsmask, function, returntype);
 #	else
@@ -5344,7 +5331,7 @@ word* pinvoke(OL* self, word* arguments)
 }
 #endif//HAS_PINVOKE
 
-#if 1
+#if 0
 
 #if 1
 // win tests
@@ -5376,6 +5363,22 @@ float iffiiiifi(int i, float f, float g, int j, int k, int l, int m, float h, in
 	fprintf(stderr, "n=%d\n", n);
 
 	return (i+j+k+l+m+n + f+g+h);
+}
+
+__attribute__
+((__visibility__("default")))
+double ddddddddd(double d1, double d2, double d3, double d4, double d5, double d6, double d7, double d8, double d9)
+{
+	fprintf(stderr, "d1=%f\n", d1);
+	fprintf(stderr, "d2=%f\n", d2);
+	fprintf(stderr, "d3=%f\n", d3);
+	fprintf(stderr, "d4=%f\n", d4);
+	fprintf(stderr, "d5=%f\n", d5);
+	fprintf(stderr, "d6=%f\n", d6);
+	fprintf(stderr, "d7=%f\n", d7);
+	fprintf(stderr, "d8=%f\n", d8);
+	fprintf(stderr, "d9=%f\n", d9);
+	return (d1+d2+d3+d4+d5+d6+d7+d8+d9);
 }
 
 __attribute__
