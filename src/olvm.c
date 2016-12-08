@@ -3815,20 +3815,12 @@ static int mainloop(OL* ol)
 			*(long long*)&ptr[82] = (long long)&callback;
 			#else
 
-
-			// rdi: ol
-			// rsi: id
-			// rdx: argi
-			// rcx: argf
-			// r8:  rest
-			// r9: --
-
 			//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
 			static char bytecode[] =
-					"\xCC" // nop
+					"\x90" // nop
 					"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
 					"\x55"                  // push rbp
-					"\x48\x89\xE5"          // mov ebp, rsp
+					"\x48\x89\xE5"          // mov rbp, rsp
 					"\x41\x51"              // push r9
 					"\x41\x50"              // push r8
 					"\x51"                  // push rcx
@@ -3838,37 +3830,35 @@ static int mainloop(OL* ol)
 					"\x48\x89\xE2"          // mov rdx, rsp         // argi
 					// 21
 					"\x48\x83\xEC\x40"      // sub rsp, 8*8
-					"\x67\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
-					"\x67\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
-				    "\x67\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
-				    "\x67\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
-				    "\x67\xF2\x0F\x11\x54\x24\x20"    // movsd [esp+32], xmm4
-				    "\x67\xF2\x0F\x11\x6C\x24\x28"    // movsd [esp+40], xmm5
-				    "\x67\xF2\x0F\x11\x74\x24\x30"    // movsd [esp+48], xmm6
-				    "\x67\xF2\x0F\x11\x7C\x24\x38"    // movsd [esp+56], xmm7
-					"\x48\x83\xE1"          // mov rcx, rsp         // argf
-					// 84
+					"\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
+					"\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
+				    "\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
+				    "\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
+				    "\xF2\x0F\x11\x54\x24\x20"    // movsd [esp+32], xmm4
+				    "\xF2\x0F\x11\x6C\x24\x28"    // movsd [esp+40], xmm5
+				    "\xF2\x0F\x11\x74\x24\x30"    // movsd [esp+48], xmm6
+				    "\xF2\x0F\x11\x7C\x24\x38"    // movsd [esp+56], xmm7
+					"\x48\x89\xE1"          // mov rcx, rsp         // argf
+					// 76
 					"\x48\xBE--------"      // mov rsi, 0          // id
-					// 94
+					// 86
 					"\x48\xBF--------"      // mov rdi, 0          // ol
-					// 104
+					// 96
 					"\x48\xB8--------"      // mov rax, callback
 					"\xFF\xD0"              // call rax
 					"\xC9"                  // leave
 					"\xC3";                 // ret
 			ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
-					MAP_PRIVATE, -1, 0);
+					MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
 			memcpy(ptr, &bytecode, sizeof(bytecode));
-			*(long*)&ptr[86] = c;
-			*(long*)&ptr[96] = (long long)ol;
-			*(long*)&ptr[106] = (long long)&callback;
+			*(long*)&ptr[78] = c;
+			*(long*)&ptr[88] = (long)ol;
+			*(long*)&ptr[98] = (long)&callback;
 			#endif
-
 #endif
 
 			result = new_callback(ptr);
-
 			break;
 		}
 #endif// HAS_DLOPEN
@@ -4461,6 +4451,7 @@ OL_eval(OL* handle, int argc, char** argv)
 #if __amd64__ // x86-64 (LP64?)
 
 // value returned in the rax
+PUBLIC
 #ifdef __linux__
 long x64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
 #else
@@ -5518,7 +5509,7 @@ word* pinvoke(OL* self, word* arguments)
 }
 #endif//HAS_PINVOKE
 
-#if 0
+#if 1
 // tests
 PUBLIC
 float fiiii(float f, int a, int b, int c, int d)
