@@ -56,6 +56,7 @@
 #define SYSCALL_PRCTL 0
 #define SYSCALL_SYSINFO 0
 #define SYSCALL_GETRLIMIT 0
+#define PUBLIC __declspec(dllexport)
 #endif
 
 // todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
@@ -64,6 +65,7 @@
 #define SYSCALL_SYSINFO 0
 #define SYSCALL_GETRUSAGE 0
 #define SYSCALL_GETRLIMIT 0
+#define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
 #ifdef __linux__
@@ -71,6 +73,7 @@
 #undef SYSCALL_SYSINFO
 #undef SYSCALL_GETRUSAGE
 #undef SYSCALL_GETRLIMIT
+#define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
 #ifdef __ANDROID__
@@ -84,6 +87,7 @@
 #	endif
 #	define SYSCALL_SYSINFO 0
 #	define SYSCALL_GETRLIMIT 0
+#define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
 #ifdef NO_SECCOMP
@@ -1431,8 +1435,17 @@ static int mainloop(OL *ol);
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
-int callback(OL* ol, int id, void* ret, ...)
+
+//long long callback(OL* ol, int id, word* args) // win32
+//long long callback(OL* ol, int id, long long* argi, double* argf, long long* others) // linux
+long callback(OL* ol, int id, long* argi
+#if __amd64__
+		, double* argf, long* rest
+#endif
+		) // win64
 {
+// http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
+//	__asm("int $3");
 	word* R = ol->R;
 
 ///*
@@ -1462,26 +1475,61 @@ int callback(OL* ol, int id, void* ret, ...)
 	word* fp;
 	fp = ol->heap.fp;
 
-	va_list args;
-	va_start(args, ret);
+	int i = 0;
+#if __amd64__
+	rest -= 4; // !!!
+#endif
+//	int f = 0; // linux
 	while (types != INULL) {
 		switch (car(types)) {
 		case F(TVPTR): {
-			void* ptr = va_arg(args, void*);
-			R[a] = (word)new_vptr(ptr);
+			void*
+			#if __amd64__
+				value = i <= 4
+				        ? *(void**) &argi[i++]
+				        : *(void**) &rest[i++];
+			#else
+				value =   *(void**) &argi[i++];
+			#endif
+			R[a] = (word) new_vptr(value);
 			break;
 		}
 		case F(TINT): {
-			int arg = va_arg(args, int);
-			R[a] = F(arg);
+			int
+			#if __amd64__
+				value = i <= 4
+				        ? *(int*) &argi[i++]
+				        : *(int*) &rest[i++];
+			#else
+				value =   *(int*) &argi[i++];
+			#endif
+			R[a] = F(value);
 			break;
 		}
 		case F(TFLOAT): {
-			// http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
-			// no floats!
-			long arg = va_arg(args, long);
-
-			float value = *(float*)&arg;
+			float
+			#if __amd64__
+				value = i <= 4              // win64, for linux please use
+				        ? *(float*) &argf[i++]
+				        : *(float*) &rest[i++];
+			#else
+				value =   *(float*) &argi[i++];
+			#endif
+			long n = value * 10000;
+			long d = 10000;
+			// максимальная читабельность?
+			R[a] = (word)new_pair(TRATIONAL, ltosv(n), itouv(d));
+			break;
+		}
+		case F(TDOUBLE): {
+			double
+			#if __amd64__
+				value = i <= 4              // win64, for linux please use
+				        ? *(double*) &argf[i++]
+				        : *(double*) &rest[i++];
+			#else
+				value =   *(double*) &argi[i++]; i++;
+			#endif
 			long n = value * 10000;
 			long d = 10000;
 			// максимальная читабельность?
@@ -1490,7 +1538,7 @@ int callback(OL* ol, int id, void* ret, ...)
 		}
 		case F(TVOID):
 			R[a] = IFALSE;
-			va_arg(args, long);
+			i++;
 			break;
 		default:
 			STDERR("unknown argument type");
@@ -1500,7 +1548,6 @@ int callback(OL* ol, int id, void* ret, ...)
 		ol->arity++;
 		types = cdr(types);
 	}
-	va_end(args);
 
 	ol->heap.fp = fp;
 
@@ -1528,6 +1575,12 @@ int callback(OL* ol, int id, void* ret, ...)
 		assert(0); // unknown
 		return 0;
 	}
+
+	// if result must be float or double,
+	// do the __ASM__ with loading the result into fpu/xmm register
+
+	return 0;
+
 }
 
 
@@ -3643,15 +3696,18 @@ static int mainloop(OL* ol)
 			}
 
 			char* ptr = 0;
-#ifdef __i386__
+#ifdef __i386__ // x86
 			// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
 			static char bytecode[] =
 					"\x90"  // nop
-					"\x6A\x00" // push $0
+					"\x8D\x44\x24\x04" // lea eax, [esp+4]
+					"\x50"     // push eax
+					// 6
+					"\x68----" // push $0
 					"\x68----" // push ol
-					"\xB9----" // mov ecx, ...
-					"\xFF\xD1" // call ecx
-					"\x59\x59" // pop ecx, pop ecx
+					"\xB8----" // mov eax, ...
+					"\xFF\xD0" // call eax
+					"\x83\xC4\x0C" // add esp, 3*4
 					"\xC3"; // ret
 			#ifdef _WIN32
 				HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
@@ -3667,10 +3723,61 @@ static int mainloop(OL* ol)
 			#endif
 
 			memcpy(ptr, &bytecode, sizeof(bytecode));
-			*(char*)&ptr[2] = (char)c;
-			*(long*)&ptr[4] = (long)ol;
-			*(long*)&ptr[9] = (long)&callback;
+			*(long*)&ptr[ 7] = c;
+			*(long*)&ptr[12] = (long)ol;
+			*(long*)&ptr[17] = (long)&callback;
+#elif __amd64__
+			// Windows x64
+			#ifdef _WIN32
+			//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+			static char bytecode[] =
+					"\x90" // nop
+					"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
+					"\x55"                  // push rbp
+					"\x48\x89\xE5"          // mov ebp, rsp
+					"\x41\x51"              // push r9
+					"\x41\x50"              // push r8
+					"\x52"                  // push rdx
+					"\x51"                  // push rcx
+					"\x49\x89\xE0"          // mov r8, esp         // argi
+					// 19
+					"\x48\x83\xEC\x20"      // sub esp, 32
+					"\x67\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
+					"\x67\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
+				    "\x67\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
+				    "\x67\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
+					"\x49\x89\xE1"          // mov r9, esp         // argf
+					// 54
+					"\x48\xBA--------"      // mov rdx, 0          // id
+					"\x48\xB9--------"      // mov rcx, 0          // ol
+					// 74
+					"\x50"	                // push rax // dummy
+					"\x50"                  // push rax            // rest
+					"\x48\x83\xEC\x20"      // sub rsp, 32         // free space
+					// 80
+					"\x48\xB8--------"      // mov rax, callback
+					"\xFF\xD0"              // call rax
+					"\xC9"                  // leave
+					"\xC3";                 // ret
+
+			HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
+					0, sizeof(bytecode), NULL);
+			if (!mh)
+				STDERR("Can't create memory mapped object");
+			ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE,
+					0, 0, sizeof(bytecode));
+			CloseHandle(mh);
+
+			memcpy(ptr, &bytecode, sizeof(bytecode));
+			*(long*)&ptr[56] = c;
+			*(long long*)&ptr[66] = (long long)ol;
+			*(long long*)&ptr[82] = (long long)&callback;
+			#else
+			// no Linux yet
+			#endif
+
 #endif
+
 			result = new_callback(ptr);
 
 			break;
@@ -4266,12 +4373,9 @@ OL_eval(OL* handle, int argc, char** argv)
 
 // value returned in the rax
 #ifdef __linux__
-__attribute__
-((__visibility__("default")))
-long long x64_call(word argv[], double ad[], long long i, long long d, long long mask, void* function, long long type);
+long x64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
 #else
-__declspec(dllexport)
-long long x64_call(word argv[], long long argc, void* function, int type);
+long x64_call(word argv[], long argc, void* function, long type);
 #endif
 
 # if _WIN64 // Windows
@@ -4366,8 +4470,6 @@ __ASM__("x64_call:_x64_call:",  //"int $3",
 // r8:  mask
 // r9: function
 // 16(rbp): type
-__attribute__((__visibility__("default"))) void x(); __ASM__("x:");
-
 __ASM__("x64_call:_x64_call:", //"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
@@ -4480,7 +4582,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 //
 // В нашем случае мы так или иначе восстанавливаем указатель стека, так что
 // функция x86_call у нас будет универсальная cdecl/stdcall
-long long x86_call(word argv[], int i, void* function, int type);
+long x86_call(word argv[], long i, void* function, long type);
 
 __ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
@@ -4520,12 +4622,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 #endif
 
 
-#ifdef _WIN32
-__declspec(dllexport)
-#else
-__attribute__
-((__visibility__("default")))
-#endif
+PUBLIC
 word* pinvoke(OL* self, word* arguments)
 {
 	// get memory pointer
@@ -4860,7 +4957,7 @@ word* pinvoke(OL* self, word* arguments)
 #if __amd64__ && __linux__ // LP64
 	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
 	int d = 0;     // количество аргументов для float (amd64)
-	long long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
+	long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
 #endif
 
 	word* p = (word*)C;   // сами аргументы
@@ -5152,16 +5249,15 @@ word* pinvoke(OL* self, word* arguments)
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
 
 #if __amd64__
-//	__asm("int $3");
-#	if __linux__
-		got = x64_call(args, ad, i, d, floatsmask, function, returntype);
-#	else
-		got = x64_call(args, i, function, returntype);
-#	endif
-//	__asm("int $3");
+	got =
+	#	if __linux__
+			x64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
+	#	else
+			x64_call(args, i, function, returntype & 0x3F);
+	#	endif
 
 #elif __i386__
-	// cdecl and stdcall in our case are same, so...
+/*	// cdecl and stdcall in our case are same, so...
 	switch (returntype >> 6) {
 	case 0:
 	case 1:
@@ -5176,7 +5272,9 @@ word* pinvoke(OL* self, word* arguments)
 	default:
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
-	}
+	}*/
+	got =
+			x86_call(args, i, function, returntype & 0x3F);
 // arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
 #elif __arm__
 	inline ret_t call(word args[], int i, void* function, int type) {
@@ -5332,11 +5430,8 @@ word* pinvoke(OL* self, word* arguments)
 #endif//HAS_PINVOKE
 
 #if 0
-
-#if 1
-// win tests
-__attribute__
-((__visibility__("default")))
+// tests
+PUBLIC
 float fiiii(float f, int a, int b, int c, int d)
 {
 	fprintf(stderr, "f=%f\n", f);
@@ -5348,8 +5443,7 @@ float fiiii(float f, int a, int b, int c, int d)
 	return (a+b+c+d + f);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 float iffiiiifi(int i, float f, float g, int j, int k, int l, int m, float h, int n)
 {
 	fprintf(stderr, "i=%d\n", i);
@@ -5365,8 +5459,7 @@ float iffiiiifi(int i, float f, float g, int j, int k, int l, int m, float h, in
 	return (i+j+k+l+m+n + f+g+h);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 double ddddddddd(double d1, double d2, double d3, double d4, double d5, double d6, double d7, double d8, double d9)
 {
 	fprintf(stderr, "d1=%f\n", d1);
@@ -5381,8 +5474,7 @@ double ddddddddd(double d1, double d2, double d3, double d4, double d5, double d
 	return (d1+d2+d3+d4+d5+d6+d7+d8+d9);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 float iffiiiifiiffffff(int i, float f, float g, int j, int k, int l, int m, float h, int n, int o, float f1, float f2, float f3, float f4, float f5, float f6)
 {
 	fprintf(stderr, "i=%d\n", i);
@@ -5400,8 +5492,7 @@ float iffiiiifiiffffff(int i, float f, float g, int j, int k, int l, int m, floa
 	return (i+j+k+l+m+n + f+g+h);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 float fii(float f, int a, int b)
 {
 	fprintf(stderr, "f=%f\n", f);
@@ -5411,8 +5502,7 @@ float fii(float f, int a, int b)
 	return (a+b + f);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 float fi(float f, int a)
 {
 	fprintf(stderr, "f=%f\n", f);
@@ -5421,8 +5511,7 @@ float fi(float f, int a)
 	return (a + f);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 float ifiii(int a, float f, int b, int c, int d)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5434,8 +5523,7 @@ float ifiii(int a, float f, int b, int c, int d)
 	return (a+b+c+d + f);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 float iiiif(int a, int b, int c, int d, float f)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5447,8 +5535,7 @@ float iiiif(int a, int b, int c, int d, float f)
 	return (a+b+c+d + f);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 float fiiif(float f, int a, int b, int c, float g)
 {
 	fprintf(stderr, "f=%f\n", f);
@@ -5460,13 +5547,7 @@ float fiiif(float f, int a, int b, int c, float g)
 	return (a+b+c + f+g);
 }
 
-#endif
-
-
-
-
-__attribute__
-((__visibility__("default")))
+PUBLIC
 int test4(int a, int b, int c, int d)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5477,8 +5558,7 @@ int test4(int a, int b, int c, int d)
 	return (a+b+c+d);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 int test5(int a, int b, int c, int d, int e)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5490,8 +5570,7 @@ int test5(int a, int b, int c, int d, int e)
 	return (a+b+c+d+e);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 int test6(int a, int b, int c, int d, int e, int f)
 {
 	fprintf(stderr, "a=%d\n", a);
@@ -5504,8 +5583,7 @@ int test6(int a, int b, int c, int d, int e, int f)
 	return (a+b+c+d+e+f);
 }
 
-__attribute__
-((__visibility__("default")))
+PUBLIC
 int test0()
 {
 	return 7;
@@ -5515,10 +5593,17 @@ double floattest(float x, float y)
 {
 	return x+y;
 }
-__attribute__
-((__visibility__("default")))
+
+PUBLIC
 void int3()
 {
 	__asm__("int $3");
 }
+
+PUBLIC
+int do_callback(int (dosmth)(int), int p)
+{
+	return dosmth(p*2);
+}
+
 #endif
