@@ -4380,6 +4380,28 @@ OL_eval(OL* handle, int argc, char** argv)
  */
 #if HAS_PINVOKE
 
+long long gcd(long long a, long long b)
+{
+	long long c;
+	while (a) {
+		c = a; a = b % a; b = c;
+	}
+	return b;
+}
+
+#define ftosn(f) ({\
+	double v = f; \
+	long long n = v * FMAX; \
+	long long d = FMAX; \
+	long long g = gcd(n, d); \
+\
+	(g == d) ? \
+		(word*) ltosv(v) : \
+	(g == 1) ? \
+		new_pair(TRATIONAL, ltosv(n), ltouv(d)) :\
+		new_pair(TRATIONAL, ltosv(n / g), ltosv(d / g)); \
+	})
+
 // C preprocessor trick, some kind of "map"
 // http://jhnet.co.uk/articles/cpp_magic !!
 // http://stackoverflow.com/questions/319328/writing-a-while-loop-in-the-c-preprocessor
@@ -4453,9 +4475,9 @@ OL_eval(OL* handle, int argc, char** argv)
 // value returned in the rax
 PUBLIC
 #ifdef __linux__
-long x64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
+long long x64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
 #else
-long x64_call(word argv[], long argc, void* function, long type);
+long long x64_call(word argv[], long argc, void* function, long type);
 #endif
 
 # if _WIN64 // Windows
@@ -4488,7 +4510,7 @@ long x64_call(word argv[], long argc, void* function, long type);
 // edx - argc
 // r8  - function
 // r9d - type
-__ASM__("x64_call:_x64_call:",  //"int $3",
+__ASM__("x64_call:_x64_call:",  // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
@@ -4891,7 +4913,7 @@ word* pinvoke(OL* self, word* arguments)
 		// читаем длинное число в float формат
 		assert (is_value(car(arg)));
 		float f = (unsigned long)uvtoi(car(arg));
-		float mul = 0x1000000; // 1 << 24
+		float mul = 0x1000000; // 1 << 24 //?
 		while (is_reference(cdr(arg))) {
 			arg = (word*)cdr(arg);
 			f += (unsigned long)uvtoi(cdr(arg)) * mul;
@@ -5494,12 +5516,8 @@ word* pinvoke(OL* self, word* arguments)
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
 		case TFLOAT:
 		case TDOUBLE: {
-			// TODO: please, optimize this!
 			double value = *(double*)&got;
-			long n = value * 10000;
-			long d = 10000;
-			// максимальная читабельность?
-			result = new_pair(TRATIONAL, ltosv(n), itouv(d));
+			result = ftosn(value);
 			break;
 		}
 	}
@@ -5509,7 +5527,7 @@ word* pinvoke(OL* self, word* arguments)
 }
 #endif//HAS_PINVOKE
 
-#if 1
+#if 0
 // tests
 PUBLIC
 float fiiii(float f, int a, int b, int c, int d)
