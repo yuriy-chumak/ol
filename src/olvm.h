@@ -29,9 +29,9 @@ struct ol_t;
 // internal option
 //#define NO_SECCOMP
 
-struct ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
-struct ol_t* OL_free(struct ol_t* ol);
-
+struct
+ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
+void  OL_free(struct ol_t* ol);
 void* OL_eval(struct ol_t* ol, int argc, char** argv);
 
 // c++ interface:

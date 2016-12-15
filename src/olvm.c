@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2014 Aki Helin
- * Copyright (c) 2014- 2016 Yuriy Chumak
- *
  * Simple purely functional Lisp, mostly
  *
- * Version 1.0.0 RC4
- * ~~~~~~~~~~~~~~~~~
+ * Version 1.1.0
+ *
+ * Copyright (c) 2014- 2016 Yuriy Chumak
+ * Copyright (c) 2014 Aki Helin
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
  * This program is free software;  you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,20 +16,20 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * Related:
- *   http://people.csail.mit.edu/jaffer/Scheme (r5rs)
- *   http://groups.csail.mit.edu/mac/projects/scheme/
- *
  * How to build:
  *   make; make install
  *
  * Project page:
  *   http://yuriy-chumak.github.io/ol/
  *
- *
- * Original Owl Lisp project can be found at
+ * The parent project - Owl Lisp - can be found at
  *   https://github.com/aoh/owl-lisp
  *   https://code.google.com/p/owl-lisp/
+ *
+ * Related:
+ *   http://people.csail.mit.edu/jaffer/Scheme (r5rs)
+ *   http://groups.csail.mit.edu/mac/projects/scheme/
+ *
  */
 
 // TODO!!!!!!!
@@ -44,7 +44,7 @@
 	                  + __GNUC_MINOR__ * 100 \
 	                  + __GNUC_PATCHLEVEL__)
 #	if GCC_VERSION < 30200
-#		error "Required gcc version > 3.2 (with nested functions support)"
+#		error "Required gcc version > 3.2 (nested functions support)"
 #	endif
 
 #	if __STDC_VERSION__ < 199901L
@@ -169,7 +169,7 @@
 // http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
 
 #define __OLVM_NAME__ "OL"
-#define __OLVM_VERSION__ "1.0"
+#define __OLVM_VERSION__ "1.1.0"
 
 // defaults. please don't change. use -DOPTIONSYMBOL gcc command line defines instead
 #ifndef HAS_SOCKETS
@@ -324,29 +324,24 @@
 static
 void STDERR(char* format, ...)
 {
-	// can't use __builtin_va_arg_pack for some old gcc
-	// fprintf(stderr, format, __builtin_va_arg_pack());
 	va_list args;
 
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
-
-	puts("\n");
+	fprintf(stderr, "\n");
 }
 
 static
 void crash(int code, char* format, ...)
 {
-	// can't use __builtin_va_arg_pack for some old gcc
-	// STDERR(format, __builtin_va_arg_pack());
 	va_list args;
 
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
 
-	puts("\n");
+	fprintf(stderr, "\n");
 	exit(code);
 }
 
@@ -430,26 +425,22 @@ void *dlopen(const char *filename, int mode/*unused*/)
 	// Do not let Windows display the critical-error-handler message box */
 	// UINT uMode = SetErrorMode( SEM_FAILCRITICALERRORS );
 
-	if (filename == 0)
-		/* POSIX says that if the value of file is 0, a handle on a global
-		 * symbol object must be provided. That object must be able to access
-		 * all symbols from the original program file, and any objects loaded
-		 * with the RTLD_GLOBAL flag.
-		 * The return value from GetModuleHandle( ) allows us to retrieve
-		 * symbols only from the original program file. For objects loaded with
-		 * the RTLD_GLOBAL flag, we create our own list later on.
-		 */
+	if (filename == 0) {
 		hModule = GetModuleHandle(NULL);
-	else
+	}
+	else {
 		/* POSIX says the search path is implementation-defined.
 		 * LOAD_WITH_ALTERED_SEARCH_PATH is used to make it behave more closely
 		 * to UNIX's search paths (start with system folders instead of current
 		 * folder).
 		 */
 		hModule = LoadLibraryEx((LPSTR)filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	}
+
 	dlerrno = GetLastError();
 	return hModule;
 }
+
 static
 int dlclose(void *handle)
 {
@@ -527,8 +518,7 @@ typedef uintptr_t word;
 
 #define IPOS      8  // === offsetof (struct direct, payload)
 
-__attribute__ ((aligned(sizeof(word)), packed))
-struct value_t
+struct __attribute__ ((aligned(sizeof(word)), packed)) value_t
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
 	unsigned i    : 1;    // for directs always 1
@@ -543,8 +533,7 @@ struct value_t
 #define TPOS      2  // === offsetof (struct header, type)
 #define RPOS     11  // === offsetof (struct header, rawness)
 
-__attribute__ ((aligned(sizeof(word)), packed))
-struct header_t
+struct __attribute__ ((aligned(sizeof(word)), packed)) header_t
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
 	unsigned i    : 1;    // for headers always 1
@@ -557,8 +546,7 @@ struct header_t
 	word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
 
-__attribute__ ((aligned(sizeof(word)), packed))
-struct object_t
+struct __attribute__ ((aligned(sizeof(word)), packed)) object_t
 {
 	union {
 		struct header_t header;
@@ -568,9 +556,8 @@ struct object_t
 
 // ------------------------------------------------------
 
-OL*
-OL_new(unsigned char* bootstrap, void (*release)(void*));
-OL* OL_free(struct ol_t* ol);
+OL* OL_new(unsigned char* bootstrap, void (*release)(void*));
+void OL_free(OL* ol);
 void* OL_eval(struct ol_t* ol, int argc, char** argv);
 
 // ------------------------------------------------------
@@ -741,17 +728,16 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 #define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
 #define uvtoi(v)        ({ word x = (word)(v); UVTOI_CHECK(x); (word) (x >> IPOS); })
-#define uvtol(v)  (long)({ word x = (word)(v); UVTOI_CHECK(x); (word) (x >> IPOS); })
-#define itouv(i)  (word)({ long x = ( int)(i);                 (word) (x << IPOS) | 2; })
-#define ltouv(i)  (word)({ long x = (long)(i);                 (word) (x << IPOS) | 2; })
-		// (((struct value*)(&v))->payload);
+#define itouv(i)  (word)({ word x = (word)(i);                 (word) (x << IPOS) | 2; })
+		// (((struct value_t*)(&v))->payload);
 
 // todo: add overflow checking...
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define svtoi(v)        ({ word x = ( int)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
-#define svtol(v)  (long)({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define svtoi(v)        ({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#define svtol svtoi
+//#define svtol(v)  (long)({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define ltosv(i)  (word)({ long x = (long)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 #define itosv(i)  (word)({ long x = ( int)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
 /*
@@ -1130,9 +1116,12 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 		}
 		return delta;
 	} else {
-		crash(101, "adjust_heap failed."); // crash
+		fprintf(stderr, "adjust_heap failed.\n"); // crash
+		exit(101);
+		#if GCC_VERSION > 40500
+		__builtin_unreachable();
+		#endif
 		//breaked |= 8; // will be passed over to mcp at thread switch
-		return 0;
 	}
 }
 
@@ -1244,6 +1233,7 @@ word gc(heap_t *heap, int size, word regs) {
 	heap->fp = fp;
 
 	#if DEBUG_GC
+		// todo: add diagnostik callback "if(heap->oncb) heap->oncb(heap, deltatime)"
 		struct tm tm = *localtime(&(time_t){time(NULL)});
 		char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
 		STDERR("%s, GC done in %2d ms (use: %7d from %8d bytes - %2d%%): tbd.", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
@@ -1260,17 +1250,20 @@ word gc(heap_t *heap, int size, word regs) {
 		word nused = heapsize - nfree;
 
 		nfree -= size*W + MEMPAD;   // how much really could be snipped off
+
+		// Please grow your buffers exponentially:
+		//  https://blog.mozilla.org/nnethercote/2014/11/04/please-grow-your-buffers-exponentially/
 		if (nfree < (heapsize / 10) || nfree < 0) {
-			/* increase heap size if less than 10% is free by ~10% of heap size (growth usually implies more growth) */
-			regs += adjust_heap(heap, size*W + nused/10 + 4096);
+			/* increase heap size if less than 10% is free by ~30% of heap size (growth usually implies more growth) */
+			regs += adjust_heap(heap, size*W + nused/3 + 4096);
 			nfree = (word)heap->end - regs;
 
 //			if (nfree <= size)
 //				breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
 		}
-		else if (nfree > (heapsize/5)) {
-			/* decrease heap size if more than 20% is free by 10% of the free space */
-			int dec = -(nfree/10);
+		else if (nfree > (heapsize/3)) {
+			/* decrease heap size if more than 30% is free by 10% of the free space */
+			int dec = -(nfree / 10);
 			int newobj = nfree - dec;
 			if (newobj > 2 * size*W) {
 				regs += adjust_heap(heap, dec);
@@ -4246,7 +4239,8 @@ int main(int argc, char** argv)
 #endif
 
 	OL* olvm =
-	OL_new(bootstrap, bootstrap != language ? free : NULL);
+		OL_new(bootstrap, bootstrap != language ? free : NULL);
+
 	void* r = OL_eval(olvm, argc, argv);
 	OL_free(olvm);
 
@@ -4254,18 +4248,15 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	return is_value(r) ? svtoi ((word)r) : -1;
+	return is_value(r) ? svtoi (r) : -1;
 }
 #endif
 
-//int    // this is NOT thread safe function
-//olvm(unsigned char* bootstrap, void (*release)(void*))
 OL*
 OL_new(unsigned char* bootstrap, void (*release)(void*))
 {
 	// если отсутствует исполнимый образ
 	if (bootstrap == 0) {
-		STDERR("no boot image found");
 		return 0;
 	}
 
@@ -4289,7 +4280,8 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
-	int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
+	//int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
+	int required_memory_size = nwords + nwords/3 + MEMPAD;
 	heap->begin =
 	heap->genstart = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
@@ -4302,7 +4294,7 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 
 	// Десериализация загруженного образа в объекты
 	fp = heap->begin;
-	word *ptrs = new(TCONST, nobjs+1, 0);
+	word *ptrs = new(TTUPLE, nobjs+1, 0);
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
 
 	if (fp == 0)
@@ -4321,11 +4313,10 @@ fail:
 	return 0;
 }
 
-OL* OL_free(OL* ol)
+void OL_free(OL* ol)
 {
 	free(ol->heap.begin);
 	free(ol);
-	return 0;
 }
 
 // ===============================================================
@@ -4398,7 +4389,7 @@ long long gcd(long long a, long long b)
 	(g == d) ? \
 		(word*) ltosv(v) : \
 	(g == 1) ? \
-		new_pair(TRATIONAL, ltosv(n), ltouv(d)) :\
+		new_pair(TRATIONAL, ltosv(n), itouv(d)) :\
 		new_pair(TRATIONAL, ltosv(n / g), ltosv(d / g)); \
 	})
 
