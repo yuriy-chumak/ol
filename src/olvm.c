@@ -56,6 +56,7 @@
 #include "olvm.h"
 #endif
 
+//
 #ifdef _WIN32
 #define SYSCALL_PRCTL 0
 #define SYSCALL_SYSINFO 0
@@ -245,7 +246,7 @@
 #endif
 
 // компилятор otus-lisp поддерживает несколько специальных форм:
-//	quote, lambda, receive, values, ol:let, ol:ifc, ol:set, ol:ica, (env.scm)
+//	quote, lambda, receive, values, ol:let, if:eq?, ol:set, ol:ifa, (env.scm)
 //	все остальное - макросы или функции/процедуры
 
 #include <assert.h>
@@ -711,6 +712,7 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 
 
 // todo: потом переделать в трюк
+// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
 // алгоритмические трюки:
 // x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
 // signed fix to int
@@ -736,6 +738,7 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
 #define svtoi(v)        ({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+
 #define svtol svtoi
 //#define svtol(v)  (long)({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
 #define ltosv(i)  (word)({ long x = (long)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
@@ -2159,9 +2162,8 @@ static int mainloop(OL* ol)
 		ip += 4; break;
 
 	case JP: {  // JZ, JN, JT, JF a hi lo
-		// was: FIXME, convert this to jump-const <n> comparing to make_value(<n>,TCONST),
-		//  но я считаю, что надо просто добавить еще одну команду, а эти так и оставить
-		const word I[] = { F(0), INULL, ITRUE, IFALSE };
+		static
+		const word I[] = { F(0), INULL, IEMPTY, IFALSE };
 		if (A0 == I[op>>6])
 			ip += (ip[2] << 8) + ip[1]; // little-endian
 		ip += 3; break;

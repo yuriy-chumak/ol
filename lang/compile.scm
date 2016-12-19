@@ -430,14 +430,16 @@
                ((value val) (pred val))
                (else #false))))
 
-      (define null-value?  (value-pred null?))
       (define false-value? (value-pred (λ (x) (eq? x #false))))
+      (define empty-value? (value-pred (λ (x) (eq? x #empty))))
+      (define null-value?  (value-pred (λ (x) (eq? x #null)))) ; was: null?))
       (define zero-value?  (value-pred (λ (x) (eq? x 0))))
 
       (define (simple-first a b cont)
          (cond
-            ((null-value? b)  (cont b a))
             ((false-value? b) (cont b a))
+            ((empty-value? b) (cont b a))
+            ((null-value? b)  (cont b a))
             ((zero-value? b)  (cont b a))
             (else
                (cont a b))))
@@ -473,18 +475,24 @@
                   (λ (a b)
                      (cond
                         ;; todo: convert jump-if-<val> rtl nodes to a single shared rtl node to avoid having to deal with them as separate instructions
-                        ((null-value? a) ; jump-if-null (optimization)
-                           (rtl-simple regs b (λ (regs bp)
-                              (let
-                                 ((then (rtl-any regs then))
-                                  (else (rtl-any regs else)))
-                                 (tuple 'jn bp then else)))))
                         ((false-value? a) ; jump-if-false
                            (rtl-simple regs b (λ (regs bp)
                               (let
                                  ((then (rtl-any regs then))
                                   (else (rtl-any regs else)))
                                  (tuple 'jf bp then else)))))
+                        ((empty-value? a) ; jump-if-empty
+                           (rtl-simple regs b (λ (regs bp)
+                              (let
+                                 ((then (rtl-any regs then))
+                                  (else (rtl-any regs else)))
+                                 (tuple 'je bp then else)))))
+                        ((null-value? a) ; jump-if-null
+                           (rtl-simple regs b (λ (regs bp)
+                              (let
+                                 ((then (rtl-any regs then))
+                                  (else (rtl-any regs else)))
+                                 (tuple 'jn bp then else)))))
                         ((zero-value? a) ; jump-if-false
                            (rtl-simple regs b (λ (regs bp)
                               (let

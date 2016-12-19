@@ -107,16 +107,15 @@
       ; syntax:  if <test> <consequent> <alternate>
       ; syntax:  if <test> <consequent>
       (define-syntax if
-         (syntax-rules (not eq? null? empty?)
-            ((if test          then)      (if test then #false))
-            ((if (not test)    then else) (if test else then))              ; optimization
-            ((if (null? test)  then else) (if (eq? test #null) then else))  ; optimization
-;           ((if (empty? test) then else) (if (eq? test #empty) then else)) ; optimization  ; FIXME - handle with partial eval later
-            ((if (eq? a b)     then else) (if:eq? a b then else))
-            ((if (a . b)       then else) ((lambda (x) (if x then else)) (a . b)))
-            ((if #true         then else)  then)                            ; optimization  ; THINK - maybe it broke vehaviour with arguments evaluation?
-            ((if #false        then else)  else)                            ; optimization  ; THINK - same ^^
-            ((if test          then else) (if:eq? test #false else then))))
+         (syntax-rules (not eq? null? empty? zero?)
+            ((if val       then)      (if val then #false))
+            ((if (not val) then else) (if val else then))
+            ((if (eq? a b) then else) (if:eq? a b then else))
+            ((if (null? test)  then else) (if (eq? test #null) then else))  ; boot image size and compilation speed optimization
+            ((if (a . b)   then else) ((lambda (x) (if x then else)) (a . b)))
+            ((if #true     then else)  then)
+            ((if #false    then else)  else)
+            ((if t         then else) (if:eq? t #false else then))))
 
       ; ------------------
       ; 4.1.6  Assignments
@@ -316,8 +315,8 @@
 
       ; ---------------------
       ; 4.2.6  Quasiquotation
-      ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ==> (a 3 (4 5 6) b)
-      ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ==> (a 3 4 5 6 b)
+      ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
+      ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
       (define-syntax quasiquote
          (syntax-rules (unquote quote unquote-splicing append _work _sharp_vector list->vector)
                                                    ;          ^         ^
@@ -422,13 +421,13 @@
 
       ; this is temporary simlified 'assert' that use 'eq?', please be careful!
       (define-syntax assert
-         (syntax-rules (eq? list ==>)
+         (syntax-rules (===>)
             ((assert expression)
-               (assert expression ==> #true))
-            ((assert expression ==> result)
-               (if (eq? expression (quote result)) #true
-                  ((raw 16 '(27 4 5 6 7 8  24 8)) ; (sys a b c d)
-                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) '()))))))))
+               (assert expression ===> #true))
+            ((assert expression ===> result)
+               (if:eq? expression (quote result) #true
+                  ((raw 16 '(27 4 5 6 7 8 24 8)) ; (sys a b c d)
+                     #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 ;            ((assert result expression . stuff)
 ;               (if (eq? expression result) #t
 ;                  ((raw type-bytecode '(27 4 5 6 7 8  24 8))
@@ -698,22 +697,22 @@
       ;      Note: Programmers accustomed to other dialects of Lisp should be aware that Scheme
       ;            distinguishes both #f and the empty list from the symbol nil.
       ; Boolean constants evaluate to themselves, so they do not need to be quoted in programs.
-      (assert #t                                     ==>  #t)
-      (assert #f                                     ==>  #f)
-      (assert (quote #f)                             ==>  #f)
+      (assert #t                                     ===>  #t)
+      (assert #f                                     ===>  #f)
+      (assert (quote #f)                             ===>  #f)
 
 
       ; library procedure:  (not obj)
       (define (not x)
          (if x #false #true))
 
-      (assert (not #t)                               ==>  #f)
-      (assert (not 3)                                ==>  #f)
-      (assert (not '(3 . 0))                         ==>  #f)
-      (assert (not #f)                               ==>  #t)
-      (assert (not '())                              ==>  #f)
-      (assert (not cons)                             ==>  #f)
-      (assert (not 'nil)                             ==>  #f)
+      (assert (not #t)                               ===>  #f)
+      (assert (not 3)                                ===>  #f)
+      (assert (not '(3 . 0))                         ===>  #f)
+      (assert (not #f)                               ===>  #t)
+      (assert (not '())                              ===>  #f)
+      (assert (not cons)                             ===>  #f)
+      (assert (not 'nil)                             ===>  #f)
 
 
       ; library procedure:  (boolean? obj)
@@ -723,9 +722,9 @@
             ((eq? o #false) #true)
             (else #false)))
 
-      (assert (boolean? #f)                          ==>  #t)
-      (assert (boolean? 0)                           ==>  #f)
-      (assert (boolean? '())                         ==>  #f)
+      (assert (boolean? #f)                          ===>  #t)
+      (assert (boolean? 0)                           ===>  #f)
+      (assert (boolean? '())                         ===>  #f)
 
 
       ; Оставить здесь только самые абзово необходимые вещи, все остальное переместить в:
@@ -744,10 +743,10 @@
       (define (pair? o)
          (eq? (type o) type-pair))
 
-      (assert (pair? '(a . b))                       ==>  #t)
-      (assert (pair? '(a b c))                       ==>  #t)
-      (assert (pair? '())                            ==>  #f)
-      (assert (pair? '#(a b))                        ==>  #f)
+      (assert (pair? '(a . b))                       ===>  #t)
+      (assert (pair? '(a b c))                       ===>  #t)
+      (assert (pair? '())                            ===>  #f)
+      (assert (pair? '#(a b))                        ===>  #f)
 
       ; procedure:  (cons obj1 obj2)    * builtin
       ; procedure:  (car pair)          * builtin
@@ -794,9 +793,9 @@
 ;                     (if carry (runtime-error ...))
                      (loop n (cdr l)))))))
 
-      (assert (length '(a b c))                      ==>  3)
-      (assert (length '(a (b) (c d e)))              ==>  3)
-      (assert (length '())                           ==>  0)
+      (assert (length '(a b c))                      ===>  3)
+      (assert (length '(a (b) (c d e)))              ===>  3)
+      (assert (length '())                           ===>  0)
 
 
 
@@ -1231,13 +1230,13 @@
 
       ; differs from previous by using (equal?) instead of (eq?)
       (define-syntax assert
-         (syntax-rules (equal? list ==>)
+         (syntax-rules (===>)
             ((assert expression)
-               (assert expression ==> #true))
-            ((assert expression ==> result)
+               (assert expression ===> #true))
+            ((assert expression ===> result)
                (if (equal? expression (quote result)) #true
-                  ((raw 16 '(27 4 5 6 7 8  24 8))
-                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) '()))))))))
+                  ((raw 16 '(27 4 5 6 7 8 24 8))
+                     #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 
       (define (runtime-error reason info) ; todo: move to (owl mcp)?
          (call/cc (λ (resume) (sys resume 5 reason info))))

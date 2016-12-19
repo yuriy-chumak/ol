@@ -126,10 +126,12 @@
             ;   (tuple 'goto-clos (op fn) nargs))
             ((jeq a b then else)
                (tuple 'jeq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)))
-            ((jn a then else)
+            ((jn a then else) ; todo: merge next four cases into one
                (tuple 'jn (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             ((jz a then else)
                (tuple 'jz (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
+            ((je a then else)
+               (tuple 'je (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             ((jf a then else)
                (tuple 'jf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             (else
@@ -295,6 +297,8 @@
                (rtl-retard-jump rtl-retard 'jn a empty  then else)) ; fp
             ((jf a then else)
                (rtl-retard-jump rtl-retard 'jf a empty  then else)) ; fp
+            ((je a then else)
+               (rtl-retard-jump rtl-retard 'je a empty  then else)) ; fp
             ((jz a then else)
                (rtl-retard-jump rtl-retard 'jz a empty  then else)) ; fp
             ((jab a type then else)

@@ -59,7 +59,7 @@
       (define JEQ   8) ; jeq a b o1 o2
       (define JZ   (+ 16 (<< 0 6))) ; jump-imm[0] if zero
       (define JN   (+ 16 (<< 1 6))) ; jump-imm[0] if null
-      (define JT   (+ 16 (<< 2 6))) ; jump-imm[0] if true
+      (define JE   (+ 16 (<< 2 6))) ; jump-imm[0] if empty
       (define JF   (+ 16 (<< 3 6))) ; jump-imm[0] if false
       (define JF2  25) ; jump if arity failed
       (define JF2-ex (+ JF2 (<< 1 6))) ; JF2 with extra flag
@@ -232,21 +232,13 @@
                   (cond
                      ((< len #xffff) (ilist JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
-            ((jz a then else)
+            ((jz a then else) ; todo: merge next four cases into one
                (lets
                   ((then (assemble then fail))
                    (else (assemble else fail))
                    (len (length else)))
                   (cond
                      ((< len #xffff) (ilist JZ (reg a) (band len #xff) (>> len 8) (append else then)))
-                     (else (fail (list "need a bigger jump instruction: length is " len))))))
-            ((jf a then else)
-               (lets
-                  ((then (assemble then fail))
-                   (else (assemble else fail))
-                   (len (length else)))
-                  (cond
-                     ((< len #xffff) (ilist JF (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             ((jn a then else)
                (lets
@@ -255,6 +247,22 @@
                    (len (length else)))
                   (cond
                      ((< len #xffff) (ilist JN (reg a) (band len #xff) (>> len 8) (append else then)))
+                     (else (fail (list "need a bigger jump instruction: length is " len))))))
+            ((je a then else)
+               (lets
+                  ((then (assemble then fail))
+                   (else (assemble else fail))
+                   (len (length else)))
+                  (cond
+                     ((< len #xffff) (ilist JE (reg a) (band len #xff) (>> len 8) (append else then)))
+                     (else (fail (list "need a bigger jump instruction: length is " len))))))
+            ((jf a then else)
+               (lets
+                  ((then (assemble then fail))
+                   (else (assemble else fail))
+                   (len (length else)))
+                  (cond
+                     ((< len #xffff) (ilist JF (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (else
                ;(print "assemble: what is " code)
