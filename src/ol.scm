@@ -73,9 +73,7 @@
 (import (owl intern))
 (import (owl parse))
 
-(import (owl gensym))
-
-
+(import (lang gensym))
 (import (lang env))
 (import (lang macro))
 (import (lang sexp))

@@ -11,7 +11,7 @@
 
    (import
       (r5rs core)
-      (owl gensym)
+      (lang gensym)
       (lang ast)
       (owl math)
       (owl list)

@@ -1,5 +1,5 @@
 
-(define-library (owl gensym)
+(define-library (lang gensym)
 
    (export gensym fresh)
 

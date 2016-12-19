@@ -11,7 +11,7 @@
       (owl list)
       (owl list-extra)
       (owl math)
-      (owl gensym)
+      (lang gensym)
       (owl io)
       (only (lang env) primop? primop-of)
       (owl primop)) 
