@@ -67,14 +67,14 @@
                   (values (tuple 'lambda-var fixed? new-formals body) free)))
             ((value val)
                (values exp free))
-            ((branch kind a b then else)
+            ((if:eq? a b then else)
                (lets
                   ((a free (alpha a env free))
                    (b free (alpha b env free))
                    (then free (alpha then env free))
                    (else free (alpha else env free)))
                   (values
-                     (tuple 'branch kind a b then else)
+                     (tuple 'if:eq? a b then else)
                      free)))
             ((receive from to)
                (lets

@@ -125,20 +125,18 @@
                                     (translate body env fail)))
                               (fail (list "Bad let: " exp))))
                         (fail (list "Bad let: " exp))))
-                  ((ol:ifc) ;;; (branch type a b then else)
-                     (if (eq? (length exp) 6)
-                        (let ((type (second exp))
-                              (a (third exp))    ;(lref exp 2))
-                              (b (fourth exp))   ; lref exp 3))
-                              (then (fifth exp)) ;(lref exp 4))
-                              (else (sixth exp))) ; lref exp 5)))
-                           (tuple 'branch
-                              type
+                  ((if:eq?) ;;; (if:eq? a b then else)
+                     (if (eq? (length exp) 5)
+                        (let ((a (second exp))
+                              (b (third exp))
+                              (then (fourth exp))
+                              (else (fifth exp)))
+                           (tuple 'if:eq?
                               (translate a env fail)
                               (translate b env fail)
                               (translate then env fail)
                               (translate else env fail)))
-                        (fail (list "Bad if: " exp))))
+                        (fail (list "Bad if:eq? " exp))))
                   ((ol:ifa) ;;; (case-lambda (lambda-ok) (lambda-fail))
                      (if (= (length exp) 3)
                         (tuple 'case-lambda

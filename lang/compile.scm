@@ -467,61 +467,37 @@
       ;; compile any AST node node to RTL
       (define (rtl-any regs exp)
          (tuple-case exp
-            ((branch kind a b then else)
-               (cond
-                  ((eq? kind 0)      ; branch on equality (jump if equal)
-                     (simple-first a b
-                        ;;; move simple to a, if any
-                        (λ (a b)
-                           (cond
-                              ;; todo: convert jump-if-<val> rtl nodes to a single shared rtl node to avoid having to deal with them as separate instructions
-                              ((null-value? a) ; jump-if-null (optimization)
-                                 (rtl-simple regs b (λ (regs bp)
-                                    (let
-                                       ((then (rtl-any regs then))
-                                        (else (rtl-any regs else)))
-                                       (tuple 'jn bp then else)))))
-                              ((false-value? a) ; jump-if-false
-                                 (rtl-simple regs b (λ (regs bp)
-                                    (let
-                                       ((then (rtl-any regs then))
-                                        (else (rtl-any regs else)))
-                                       (tuple 'jf bp then else)))))
-                              ((zero-value? a) ; jump-if-false
-                                 (rtl-simple regs b (λ (regs bp)
-                                    (let
-                                       ((then (rtl-any regs then))
-                                        (else (rtl-any regs else)))
-                                       (tuple 'jz bp then else)))))
-                              (else
-                                 (rtl-simple regs a (λ (regs ap)
-                                    (rtl-simple regs b (λ (regs bp)
-                                       (let
-                                          ((then (rtl-any regs then))
-                                           (else (rtl-any regs else)))
-                                          (tuple 'jeq ap bp then else)))))))))))
-                  ;; NOT IN USE YET -- typed binding
-                  ((eq? kind 4)   ; (branch-4 name type (λ (f0 .. fn) B) Else)
-                     ; FIXME check object size here (via meta)
-                     (let ((b (extract-value b)))
-                        (if (and (fixnum? b) (>= b 0) (< b 257))
-                           (rtl-simple regs a
-                              (λ (regs ap)
-                                 (tuple-case then
-                                    ((lambda formals body)
-                                       (bind (rtl-bind regs formals)
-                                          (λ (selected then-regs)
-                                             (let
-                                                ((then-body (rtl-any then-regs body))
-                                                 (else (rtl-any regs else)))
-                                                (tuple 'jab ap b
-                                                   (tuple 'lambda selected then-body)
-                                                   else)))))
-                                    (else
-                                       (runtime-error "rtl-any: bad jab then branch: " then)))))
-                           (runtime-error "rtl-any: bad alloc binding branch type: " b))))
-                  (else
-                     (runtime-error "rtl-any: unknown branch type: " kind))))
+            ((if:eq? a b then else)
+               (simple-first a b
+                  ;;; move simple to a, if any
+                  (λ (a b)
+                     (cond
+                        ;; todo: convert jump-if-<val> rtl nodes to a single shared rtl node to avoid having to deal with them as separate instructions
+                        ((null-value? a) ; jump-if-null (optimization)
+                           (rtl-simple regs b (λ (regs bp)
+                              (let
+                                 ((then (rtl-any regs then))
+                                  (else (rtl-any regs else)))
+                                 (tuple 'jn bp then else)))))
+                        ((false-value? a) ; jump-if-false
+                           (rtl-simple regs b (λ (regs bp)
+                              (let
+                                 ((then (rtl-any regs then))
+                                  (else (rtl-any regs else)))
+                                 (tuple 'jf bp then else)))))
+                        ((zero-value? a) ; jump-if-false
+                           (rtl-simple regs b (λ (regs bp)
+                              (let
+                                 ((then (rtl-any regs then))
+                                  (else (rtl-any regs else)))
+                                 (tuple 'jz bp then else)))))
+                        (else
+                           (rtl-simple regs a (λ (regs ap)
+                              (rtl-simple regs b (λ (regs bp)
+                                 (let
+                                    ((then (rtl-any regs then))
+                                     (else (rtl-any regs else)))
+                                    (tuple 'jeq ap bp then else)))))))))))
             ((call rator rands)
                ;; compile as primop call, bind if rator is lambda or a generic call
                (let ((op (and (eq? (ref rator 1) 'value) (primitive? (ref rator 2)))))

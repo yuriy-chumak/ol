@@ -79,19 +79,14 @@
                (if (has? used sym)
                   (values exp used)
                   (values exp (cons sym used))))
-            ((branch kind a b then else)
-               ; type 4 (binding compare) branches do not closurize then-case
+            ((if:eq? a b then else)
                (lets
                   ((a used (closurize a used #true))
                    (b used (closurize b used #true))
-                   (then used
-                     (closurize then used 
-                        (if (eq? 4 kind) 
-                           (begin (print "Not closurizing " then) #false)
-                           #true)))
+                   (then used (closurize then used #true))
                    (else used (closurize else used #true)))
                   (values
-                     (tuple 'branch kind a b then else)
+                     (tuple 'if:eq? a b then else)
                      used)))
             ((call rator rands)
                (closurize-call closurize rator rands used))
@@ -169,14 +164,14 @@
                      (append used (list val)))))
             ((var sym)
                (values exp used))
-            ((branch kind a b then else)
+            ((if:eq? a b then else)
                (lets
                   ((a used (literalize a used))
                    (b used (literalize b used))
                    (then used (literalize then used))
                    (else used (literalize else used)))
                   (values
-                     (tuple 'branch kind a b then else)
+                     (tuple 'if:eq? a b then else)
                      used)))
             ((call rator rands)
                (literalize-call literalize rator rands used))

@@ -69,7 +69,7 @@
             ((receive op fn)
                (max-ast-id op
                   (max-ast-id fn max)))
-            ((branch kind a b then else)
+            ((if:eq? a b then else)
                (max-ast-id a (max-ast-id b
                   (max-ast-id then (max-ast-id else max)))))
             ((values vals)

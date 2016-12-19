@@ -136,7 +136,7 @@
                   (cps rator env
                      (mklambda (list this) call-exp)
                      free)))
-            ((branch kind a b then else)
+            ((if:eq? a b then else)
                (lets ((this free (fresh free)))
                   (cps
                      (mkcall (mklambda (list this) (mkcall (mkvar this) rands))
@@ -150,13 +150,13 @@
             (else
                (cps-args cps rands (list cont rator) env free))))
 
-      (define (cps-branch cps kind a b then else env cont free)
+      (define (cps-if:eq? cps a b then else env cont free)
          (cond
             ((not (var? cont))
                (lets
                   ((this free (fresh free))
                    (exp free
-                     (cps-branch cps kind a b then else env (mkvar this) free)))
+                     (cps-if:eq? cps a b then else env (mkvar this) free)))
                   (values
                      (mkcall
                         (mklambda (list this) exp)
@@ -166,35 +166,20 @@
                (lets
                   ((this free (fresh free))
                    (rest free
-                     (cps-branch cps kind (mkvar this) b then else env cont free)))
+                     (cps-if:eq? cps (mkvar this) b then else env cont free)))
                   (cps a env (mklambda (list this) rest) free)))
             ((call? b)
                (lets
                   ((this free (fresh free))
                    (rest free 
-                     (cps-branch cps kind a (mkvar this) then else env cont free)))
+                     (cps-if:eq? cps a (mkvar this) then else env cont free)))
                   (cps b env (mklambda (list this) rest) free)))
-            ((eq? kind 4)
-               ; a binding type discrimination. matching branch is treated as in bind 
-               ; only cps-ing body to current continuation
-               (tuple-case then
-                  ((lambda formals body)
-                     (lets
-                        ((then-body free (cps body env cont free))
-                         (else free (cps else env cont free)))
-                        (values
-                           (tuple 'branch kind a b 
-                              (mklambda formals then-body)
-                              else)
-                           free)))
-                  (else
-                     (runtime-error "cps-branch: then is not a lambda: " then))))
             (else
                (lets
                   ((then free (cps then env cont free))
                    (else free (cps else env cont free)))
                   (values
-                     (tuple 'branch kind a b then else)
+                     (tuple 'if:eq? a b then else)
                      free)))))
 
       (define (cps-receive cps exp semi-cont env cont free)
@@ -241,8 +226,8 @@
                (cps-lambda cps-exp formals fixed? body env cont free))
             ((call rator rands)
                (cps-call cps-exp rator rands env cont free))
-            ((branch kind a b then else)
-               (cps-branch cps-exp kind a b then else env cont free))
+            ((if:eq? a b then else)
+               (cps-if:eq? cps-exp a b then else env cont free))
             ((values vals)
               (cps-values cps-exp vals env cont free))
             ((receive exp target)

@@ -331,7 +331,7 @@
                                     (values
                                        (list 'ol:let formals definitions body)
                                        free)))
-                              ((ol:ifc)
+                              ((if:eq?)
                                  (expand-list exp env free))
                               ((ol:ifa)
                                  (if (or (null? (cdr exp)) (null? (cddr exp))) ;; (case-lambda <lambda> <(case-)lambda>)

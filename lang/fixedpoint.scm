@@ -60,7 +60,7 @@
                ((receive op fn) 
                   (walk op bound
                      (walk fn bound found)))
-               ((branch kind a b then else)
+               ((if:eq? a b then else)
                   (walk-list (list a b then else) bound found))
                (else
                   (print "free-vars: unknown node type: " exp)
@@ -153,8 +153,8 @@
                   (if (has? formals name)
                      exp
                      (tuple 'lambda formals (walk body))))
-               ((branch kind a b then else)
-                  (tuple 'branch kind (walk a) (walk b) (walk then) (walk else)))
+               ((if:eq? a b then else)
+                  (tuple 'if:eq? (walk a) (walk b) (walk then) (walk else)))
                ((receive op fn)
                   (tuple 'receive (walk op) (walk fn)))
                ((values vals) 
@@ -200,13 +200,13 @@
                (mklambda formals
                   (carry-bindings body
                      (env-bind env formals))))
-            ((branch kind a b then else)
+            ((if:eq? a b then else)
                (let
                   ((a (carry-bindings a env))
                    (b (carry-bindings b env))
                    (then (carry-bindings then env))
                    (else (carry-bindings else env)))
-                  (tuple 'branch kind a b then else)))
+                  (tuple 'if:eq? a b then else)))
             ((receive op fn)
                (let
                   ((op (carry-bindings op env))
@@ -410,13 +410,13 @@
             ((values vals)
                (tuple 'values
                   (unletrec-list vals)))
-            ((branch kind a b then else)
+            ((if:eq? a b then else)
                (let
                   ((a (unletrec a env))
                    (b (unletrec b env))
                    (then (unletrec then env))
                    (else (unletrec else env)))
-                  (tuple 'branch kind a b then else)))
+                  (tuple 'if:eq? a b then else)))
             ((case-lambda func else)
                (tuple 'case-lambda 
                   (unletrec func env)

@@ -89,7 +89,8 @@
       ; srfi syntex: (case-lambda ...
       (define-syntax case-lambda
          (syntax-rules ()
-            ((case-lambda) #false)
+            ((case-lambda)
+               (lambda () (raw type-bytecode '(27)))) ; arity-error
             ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
             ((case-lambda (formals . body))
                ;; downgrade to a run-of-the-mill lambda
@@ -109,13 +110,13 @@
          (syntax-rules (not eq? null? empty?)
             ((if test          then)      (if test then #false))
             ((if (not test)    then else) (if test else then))              ; optimization
-            ((if (null? test)  then else) (if (eq? test '()) then else))    ; optimization
-            ((if (empty? test) then else) (if (eq? test #empty) then else)) ; optimization  ; FIXME - handle with partial eval later
-            ((if (eq? a b)     then else) (ol:ifc 0 a b then else))          ; optimization
+            ((if (null? test)  then else) (if (eq? test #null) then else))  ; optimization
+;           ((if (empty? test) then else) (if (eq? test #empty) then else)) ; optimization  ; FIXME - handle with partial eval later
+            ((if (eq? a b)     then else) (if:eq? a b then else))
             ((if (a . b)       then else) ((lambda (x) (if x then else)) (a . b)))
-            ((if #false        then else)  else)                            ; optimization  ; THINK - maybe it broke vehaviour with arguments evaluation?
-            ((if #true         then else)  then)                            ; optimization  ; THINK - same ^^
-            ((if test          then else) (ol:ifc 0 test #false else then))))
+            ((if #true         then else)  then)                            ; optimization  ; THINK - maybe it broke vehaviour with arguments evaluation?
+            ((if #false        then else)  else)                            ; optimization  ; THINK - same ^^
+            ((if test          then else) (if:eq? test #false else then))))
 
       ; ------------------
       ; 4.1.6  Assignments
@@ -767,7 +768,7 @@
 
       ; library procedure:  (null? obj)
       (define (null? x)
-         (eq? x '()))
+         (eq? x #null))
 
       ; library procedure:  (list? obj)
       (define (list? l)
