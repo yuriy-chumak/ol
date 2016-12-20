@@ -162,14 +162,12 @@
       (define includes-key '*include-dirs*) ;; paths where to try to load includes from
 
       (define definition?
-         (let ((pat (list 'set! symbol? ?))
-              (pat2 (list 'set symbol? ?)))
-            (λ (exp) (or (match pat exp) (match pat2 exp)))))
+         (let ((pat (list 'setq symbol? ?)))
+            (λ (exp) (match pat exp))))
 
       (define multi-definition?
-         (let ((pat (list 'set! list? ?))
-              (pat2 (list 'set list? ?)))
-            (λ (exp) (or (match pat exp) (match pat2 exp)))))
+         (let ((pat (list 'setq list? ?)))
+            (λ (exp) (match pat exp))))
 
       ;; toplevel variable which holds currently loaded (r7rs-style) libraries
       (define libraries-var '*libs*)

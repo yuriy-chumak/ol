@@ -312,19 +312,12 @@
                                         (body free
                                           (expand body (env-bind env formals) free abort)))
                                        (values (list 'lambda formals body) free))))
-                              ((set!)
+                              ((setq)
                                  (lets
                                     ((value free
                                        (expand (caddr exp) env free abort)))
                                     (values
-                                       (list 'set! (cadr exp) value)
-                                       free)))
-                              ((set)
-                                 (lets
-                                    ((value free
-                                       (expand (caddr exp) env free abort)))
-                                    (values
-                                       (list 'set (cadr exp) value)
+                                       (list 'setq (cadr exp) value)
                                        free)))
                               ((ol:let)
                                  (let*((formals (second exp))    ; lref 1

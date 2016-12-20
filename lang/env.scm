@@ -243,8 +243,7 @@
                (cons 'quote   (tuple 'special 'quote))
 
                (cons 'lambda  (tuple 'special 'lambda))
-               (cons 'set     (tuple 'special 'set))
-               (cons 'set!    (tuple 'special 'set!))
+               (cons 'setq    (tuple 'special 'setq))
                (cons 'ol:let  (tuple 'special 'ol:let)) ; 'letrec
                (cons 'if:eq?  (tuple 'special 'if:eq?)) ; (if (eq? a b) a b)
                (cons 'ol:ifa  (tuple 'special 'ol:ifa)) ; 'case-lambda
