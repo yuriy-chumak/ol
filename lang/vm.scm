@@ -93,9 +93,9 @@
       ;(define car     (raw type-bytecode '(52 4 5    24 5)))
       ;(define cdr     (raw type-bytecode '(53 4 5    24 5)))
       ;(define ref     (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
-      ;(define set     (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
+      (define set-ref  (raw type-bytecode '(45 4 5 6 7  24 7)))
 
-      ;(define set!    (raw type-bytecode '(10 4 5 6  24 6)))
+      (define set-ref! (raw type-bytecode '(10 4 5 6  24 6)))
       ;moved to the r5rs, (define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
       ;moved to the r5rs, (define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
 
@@ -147,9 +147,8 @@
          (tuple 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
          (tuple 'raw?     48  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
 
-         (tuple 'set      45  3 1 set)   ; (raw type-bytecode '(45 4 5 6 7  24 7))) ; (set tuple pos val) -> tuple'
-
-         (tuple 'set!     10  3 1 set!)
+         (tuple 'set-ref  45  3 1 set-ref)
+         (tuple 'set-ref! 10  3 1 set-ref!)
          ;tuple 'set-car! 11  2 1 set-car!)
          ;tuple 'set-cdr! 12  2 1 set-cdr!)
 

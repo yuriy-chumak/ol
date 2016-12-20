@@ -117,11 +117,11 @@
 
       (define (rset-tree n w p v)
          (if (eq? p 0)
-            (if-node n (set n 1 v) v)
+            (if-node n (set-ref n 1 v) v)
             (lets ((a t1 t2 n) (wp (>> w 1)))
                (if (<= p wp)
-                  (set n 2 (rset-tree t1 wp (- p 1) v))
-                  (set n 3 (rset-tree t2 wp (- p (+ wp 1)) v))))))
+                  (set-ref n 2 (rset-tree t1 wp (- p 1) v))
+                  (set-ref n 3 (rset-tree t2 wp (- p (+ wp 1)) v))))))
 
       (define (rset rl pos val)
          (if (null? rl)

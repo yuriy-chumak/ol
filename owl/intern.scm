@@ -97,12 +97,12 @@
                 (res (compare (symbol->string sym) (symbol->string this))))
                (cond
                   ((eq? res 0)
-                     (set node 2 sym))
+                     (set-ref node 2 sym))
                   (res
-                     (set node 1
+                     (set-ref node 1
                         (put-symbol (ref node 1) sym)))
                   (else
-                     (set node 3
+                     (set-ref node 3
                         (put-symbol (ref node 3) sym)))))
             (tuple #false sym #false)))
 

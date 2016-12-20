@@ -72,15 +72,15 @@
       ; syntax:  <variable>
 
       ; 4.1.2  Literal expressions
-      ; syntax:  quote <datum>
-      ; syntax:  '<datum>
-      ; syntax:  <constant>
+      ; syntax:  quote <datum>                * builtin
+      ; syntax:  '<datum>                     * builtin
+      ; syntax:  <constant>                   * builtin
 
       ; 4.1.3  Procedure calls
-      ; syntax:  (<operator> <operand1> ...)
+      ; syntax:  (<operator> <operand1> ...)  * builtin
 
       ; 4.1.4  Procedures
-      ; syntax:  (lambda <formals> <body>)
+      ; syntax:  (lambda <formals> <body>)    * builtin
       (define-syntax λ
          (syntax-rules ()
             ((λ . x) (lambda . x))))
@@ -120,9 +120,6 @@
       ; ------------------
       ; 4.1.6  Assignments
       ; syntax: set! <variable> <expression>
-      ;(define-syntax set!
-      ;   (syntax-rules ()
-      ;      ((set! var val) (error "set! is not supported: " '(set! var val)))))
 
 
       ;; 4.2  Derived expression types
@@ -361,11 +358,9 @@
                (define op
                   (letrec ((op (lambda args body))) op)))
             ((define name (lambda (var ...) . body))
-               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
-;            ((define name (λ (var ...) . body))
-;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
+               (set! name (ol:let (name) ((lambda (var ...) . body)) name)))
             ((define op val)
-               (ol:set op val))))
+               (set! op val))))
 
 ;      ;; not defining directly because ol:let doesn't yet do variable arity
 ;      ;(define list ((lambda (x) x) (lambda x x)))
@@ -387,7 +382,7 @@
       (define-syntax define-values
          (syntax-rules (list)
             ((define-values (val ...) . body)
-               (ol:set (val ...)
+               (set! (val ...)
                   (let* ((val ... (begin . body)))
                      (list val ...))))))
 
@@ -753,11 +748,11 @@
       ; procedure:  (cdr pair)          * builtin
       ; procedure:  (set-car! pair obj)
       (define (set-car! o v)
-         (set! o 1 v))
+         (set-ref! o 1 v))
 
       ; procedure:  (set-cdr! pair obj)
       (define (set-cdr! o v)
-         (set! o 2 v))
+         (set-ref! o 2 v))
 
       ; library procedure:  (caar pair) <- (r5rs lists)
       ; library procedure:  (cadr pair) <- (r5rs lists)
@@ -1166,11 +1161,11 @@
 ;               (define op
 ;                  (letrec ((op (lambda args body))) op)))
 ;            ((define name (lambda (var ...) . body))
-;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
+;               (set name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
-;;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
+;;               (set name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;            ((define op val)
-;               (ol:set op val))))
+;               (set op val))))
 
       ; 4.1.2 Literal expressions
       ; ...

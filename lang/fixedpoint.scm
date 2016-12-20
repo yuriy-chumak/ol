@@ -71,7 +71,7 @@
       (define (lambda? exp env)
          (eq? (ref exp 1) 'lambda))
 
-      (define (set-deps node deps) (set node 3 deps))
+      (define (set-deps node deps) (set-ref node 3 deps))
       (define (deps-of node) (ref node 3))
       (define (name-of node) (ref node 1))
 

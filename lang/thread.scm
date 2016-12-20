@@ -348,7 +348,7 @@
          (lets
             ((syscalls mcp-syscalls-during-profiling)
              (syscalls
-               (set syscalls 20
+               (set-ref syscalls 20
                   (λ (id cont b c todo done state tc)
                      ;; make a new thread scheduler using the other interop set
                      (define (scheduler self todo done state)
@@ -371,7 +371,7 @@
                         (put state 'prof           ;; profiling data is stored under key 'prof
                            (put empty 'tc tc)))))) ;; store normal scheduler there for resuming on interop 21
              (syscalls
-               (set syscalls 21 ;; end-profiling interop doesn't do anything when not profiling
+               (set-ref syscalls 21 ;; end-profiling interop doesn't do anything when not profiling
                   (λ (id cont b c todo done state tc)
                      (tc tc (cons (tuple id (λ () (cont 'not-profiling-you-fool))) todo) done state)))))
             syscalls))

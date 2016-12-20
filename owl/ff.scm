@@ -293,14 +293,14 @@
             (runtime-error "fupd: not there: " key)
             (let ((this (ref ff 1)))
                (if (eq? key this)
-                  (set ff 2 val) ;; key and value have fixed position
+                  (set-ref ff 2 val) ;; key and value have fixed position
                   (case (size ff)
                      (2 (ff-update #empty key val)) ;; fail
-                     (3 (set ff 3 (ff-update (ref ff 3) key val))) ;; must be here due to contract
+                     (3 (set-ref ff 3 (ff-update (ref ff 3) key val))) ;; must be here due to contract
                      (else
                         (if (less? key this)
-                           (set ff 3 (ff-update (ref ff 3) key val))
-                           (set ff 4 (ff-update (ref ff 4) key val)))))))))
+                           (set-ref ff 3 (ff-update (ref ff 3) key val))
+                           (set-ref ff 4 (ff-update (ref ff 4) key val)))))))))
 
       (define fupd ff-update)
 

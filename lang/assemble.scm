@@ -78,7 +78,7 @@
 ;              (mki  . 11)     ; mki size, type, v1, ..., vn, to
 ;              (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
 
-;              (set . 25)     ; set a, p, b     Ra[Rp] = Rb
+;              (set-ref . 25)     ; set-ref a, p, b     Ra[Rp] = Rb
 ;              (jbf . 26)     ; jump-binding tuple n f offset ... r1 ... rn
 
               ;; ldi = 13                                                                                    ;+

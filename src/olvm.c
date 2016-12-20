@@ -1892,7 +1892,7 @@ static int mainloop(OL* ol)
 
 		// примитивы языка:
 	#	define RAW   60
-	#	define RAWq  48       // (raw?), временное решение пока не придумаю как от него совсем избавиться
+	#	define RAWQ  48       // (raw?), временное решение пока не придумаю как от него совсем избавиться
 
 	#	define CONS  51
 
@@ -1905,8 +1905,8 @@ static int mainloop(OL* ol)
 	#	define REF   47
 
 		// ?
-	#	define SET   45
-	#	define SETe  10
+	#	define SETREF 45
+	#	define SETREFE 10
 
 		// ?
 	#	define EQ    54
@@ -1965,10 +1965,10 @@ static int mainloop(OL* ol)
 	#		define SYSCALL_MKCB 175
 
 		// tuples, trees
-	#	define MKT      23   // make tuple
-	#	define BIND     32
+	#	define MKT 23   // make tuple
+	#	define TUPLEAPPLY 32
 	#	define LISTUPLE 35   // list -> typed tuple
-	#	define BINDFF   49
+	#	define FFAPPLY 49
 
 	#	define MKRED    43
 	#	define MKBLACK  42
@@ -2041,6 +2041,7 @@ static int mainloop(OL* ol)
 //			goto invoke;
 
 	// apply
+	// todo: include apply-tuple, apply-values and apply-ff to the APPLY?
 	case APPLY: {
 		int reg, arity;
 		int acc = ol->arity;
@@ -2234,7 +2235,7 @@ static int mainloop(OL* ol)
 
 		ip += 3; break;
 	}
-	case RAWq: {
+	case RAWQ: {
 		word* T = (word*) A0;
 		if (is_reference(T) && is_rawobject(*T))
 			A1 = ITRUE;
@@ -2357,7 +2358,7 @@ static int mainloop(OL* ol)
 	}
 
 
-	case SET: { // (set object position value), position starts from 1
+	case SETREF: { // (set-ref object position value), position starts from 1
 		word *p = (word *)A0;
 		word pos = uvtoi(A1);
 
@@ -2391,7 +2392,7 @@ static int mainloop(OL* ol)
 		}
 		ip += 4; break; }
 
-	case SETe: { // (set! variable position value)
+	case SETREFE: { // (set-ref! variable position value)
 		word *p = (word *)A0;
 		word pos = uvtoi (A1);
 
@@ -2576,7 +2577,7 @@ static int mainloop(OL* ol)
 
 
 	// bind tuple to registers, todo: rename to bind-t or bindt or bnt
-	case BIND: { /* bind <tuple > <n> <r0> .. <rn> */
+	case TUPLEAPPLY: { /* bind <tuple > <n> <r0> .. <rn> */
 		word *tuple = (word *) R[*ip++];
 		//CHECK(is_reference(tuple), tuple, BIND);
 
@@ -2593,7 +2594,7 @@ static int mainloop(OL* ol)
 	 *
 	 */
 	// bind ff to registers
-	case BINDFF: { // ff:bind <node >l k v r   - bind node left key val right, filling in #false when implicit
+	case FFAPPLY: { // ff:bind <node >l k v r   - bind node left key val right, filling in #false when implicit
 		word *ff = (word *) A0;
 		word hdr = *ff++;
 		A2 = *ff++; // key
