@@ -74,7 +74,7 @@
             ((values-apply op fn)
                (max-ast-id op
                   (max-ast-id fn max)))
-            ((case-lambda fn else)
+            ((ifary fn else)
                (max-ast-id fn
                   (max-ast-id else max)))
             (else

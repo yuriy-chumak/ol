@@ -600,20 +600,20 @@
             (else
                (runtime-error "bytecode->list: " thing))))
 
-      (define (rtl-case-lambda rtl exp clos literals)
+      (define (rtl-ifary rtl exp clos literals)
          (tuple-case exp
             ((lambda-var fixed? formals body)
                (rtl-plain-lambda rtl exp clos literals null))
             ((lambda formals body) ;; soon to be deprecated
-               (rtl-case-lambda rtl
+               (rtl-ifary rtl
                   (tuple 'lambda-var #true formals body)
                   clos literals))
-            ((case-lambda func else)
+            ((ifary func else)
                (rtl-plain-lambda rtl func clos literals
                   (bytecode->list
-                     (rtl-case-lambda rtl else clos literals))))
+                     (rtl-ifary rtl else clos literals))))
             (else
-               (runtime-error "rtl-case-lambda: bad node " exp))))
+               (runtime-error "rtl-ifary: bad node " exp))))
 
       ;; todo: separate closure nodes from lambdas now that the arity may vary
       ;; todo: control flow analysis time - if we can see what the arguments are here, the info could be used to make most continuation returns direct via known call opcodes, which could remove an important branch prediction killer
@@ -632,7 +632,7 @@
             ((closure-case body clos literals)
                (lets
                   ((lits (rtl-literals rtl-procedure literals))
-                   (body (rtl-case-lambda rtl-procedure body clos lits)))
+                   (body (rtl-ifary rtl-procedure body clos lits)))
                   body))
             (else
                (runtime-error "rtl-procedure: bad input: " node))))

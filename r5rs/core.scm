@@ -99,7 +99,7 @@
                ;; make a list of options to be compiled to a chain of code bodies w/ jumps
                ;; note, could also merge to a jump table + sequence of codes, but it doesn't really matter
                ;; because speed-sensitive stuff will be compiled to C where this won't matter
-               (ol:ifa (lambda formals . body)
+               (ifary (lambda formals . body)
                   (case-lambda . rest)))))
 
       ; -------------------

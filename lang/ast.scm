@@ -137,12 +137,12 @@
                               (translate then env fail)
                               (translate else env fail)))
                         (fail (list "Bad if:eq? " exp))))
-                  ((ol:ifa) ;;; (case-lambda (lambda-ok) (lambda-fail))
+                  ((ifary) ; (ifary (lambda-ok) (lambda-fail))
                      (if (= (length exp) 3)
-                        (tuple 'case-lambda
+                        (tuple 'ifary
                            (translate (cadr exp) env fail)
                            (translate (caddr exp) env fail))
-                        (fail (list "Bad case-lambda node: " exp))))
+                        (fail (list "Bad ifary node: " exp))))
 
                   ((values)
                      (tuple 'values

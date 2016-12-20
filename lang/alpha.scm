@@ -84,11 +84,11 @@
                   ((from free (alpha from env free))
                    (to free   (alpha to   env free)))
                   (values (tuple 'values-apply from to) free)))
-            ((case-lambda fn then)
+            ((ifary fn then)
                (lets
                   ((fn free (alpha fn env free))
                    (then free (alpha then env free)))
-                  (values (tuple 'case-lambda fn then) free)))
+                  (values (tuple 'ifary fn then) free)))
             (else
                (runtime-error "alpha: unknown AST node: " exp))))
 

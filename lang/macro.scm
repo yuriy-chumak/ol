@@ -333,13 +333,13 @@
                                        free)))
                               ((if:eq?)
                                  (expand-list exp env free))
-                              ((ol:ifa)
-                                 (if (or (null? (cdr exp)) (null? (cddr exp))) ;; (case-lambda <lambda> <(case-)lambda>)
-                                    (abort (list "Bad ol:ifa: " exp))
+                              ((ifary)
+                                 (if (or (null? (cdr exp)) (null? (cddr exp)))
+                                    (abort (list "Bad ifary: " exp))
                                     (lets
                                        ((first free (expand (cadr exp)  env free abort))
                                         (rest  free (expand (caddr exp) env free abort)))
-                                       (values (list 'ol:ifa first rest) free))))
+                                       (values (list 'ifary first rest) free))))
 
                               ((values)
                                  (expand-list exp env free))

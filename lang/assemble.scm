@@ -291,7 +291,6 @@
                            (runtime-error "too much bytecode: " len))
                         (bytes->bytecode
                            (if fixed?
-                              ; вот тут можно забрать проверку на арность (-)
                               ; без проверки на арность проваливается тест "case-lambda"
                               ; todo: оставить проверку для lambda, забрать для всего остального
                               (ilist JF2 arity

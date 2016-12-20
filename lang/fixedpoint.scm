@@ -48,7 +48,7 @@
                   (walk body (union formals bound) found))
                ((lambda-var fixed? formals body)
                   (walk body (union formals bound) found))
-               ((case-lambda fn else)
+               ((ifary fn else)
                   (walk fn bound
                      (walk else bound found)))
                ((call rator rands)
@@ -417,8 +417,8 @@
                    (then (unletrec then env))
                    (else (unletrec else env)))
                   (tuple 'if:eq? a b then else)))
-            ((case-lambda func else)
-               (tuple 'case-lambda 
+            ((ifary func else)
+               (tuple 'ifary
                   (unletrec func env)
                   (unletrec else env)))
             (else

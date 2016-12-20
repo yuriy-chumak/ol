@@ -200,19 +200,19 @@
 
       ;; translate a chain of lambdas as if they were at operator position
       ;; note! also cars are handled as the same jump, which is silly
-      (define (cps-case-lambda cps node env cont free)
+      (define (cps-ifary cps node env cont free)
          (tuple-case node
-            ((case-lambda fn else)
+            ((ifary fn else)
                (lets 
-                  ((fn free (cps-case-lambda cps fn env cont free))
-                   (else free (cps-case-lambda cps else env cont free)))
-                  (values (tuple 'case-lambda fn else) free)))
+                  ((fn free (cps-ifary cps fn env cont free))
+                   (else free (cps-ifary cps else env cont free)))
+                  (values (tuple 'ifary fn else) free)))
             ((lambda formals body)
                (cps-just-lambda cps formals #true body env free))
             ((lambda-var fixed? formals body)
                (cps-just-lambda cps formals fixed? body env free))
             (else
-               (runtime-error "cps-case-lambda: what is " node))))
+               (runtime-error "cps-ifary: what is " node))))
 
       (define (cps-exp exp env cont free)
          (tuple-case exp
@@ -232,8 +232,8 @@
               (cps-values cps-exp vals env cont free))
             ((values-apply exp target)
               (cps-values-apply cps-exp exp target env cont free))
-            ((case-lambda fn else)
-               (lets ((res free (cps-case-lambda cps-exp exp env cont free)))
+            ((ifary fn else)
+               (lets ((res free (cps-ifary cps-exp exp env cont free)))
                   (values (mkcall cont (list res)) free)))
             (else
                (runtime-error "CPS does not do " exp))))
