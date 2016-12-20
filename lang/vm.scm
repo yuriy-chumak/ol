@@ -58,12 +58,11 @@
       (define RET 24)
       (define ARITY-ERROR 17)
 
-      (define BIND 32)
+      (define TUPLE-APPLY 32)
       (define MKT 23)
-      (define FFBIND 49)
+      (define FF-APPLY 49)
 
-      ;(define bind     (raw type-bytecode '(32 4)))
-      ;(define ff-bind  (raw type-bytecode '(49 4)))
+      (define tuple-apply    (raw type-bytecode '(32 4))) ; не возвращает значения
       ;(define listuple (raw type-bytecode '(35 4 5 6 7  24 7)))
       ;ff-bind
 
@@ -121,6 +120,7 @@
       ; deprecated:
       ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
+      (define ff-apply  (raw type-bytecode '(49 4)))
       ;(define ff:red     (raw type-bytecode '(43 4 5 6 7  8  24 8)))
       ;(define ff:black   (raw type-bytecode '(42 4 5 6 7  8  24 8)))
       ;(define ff:toggle  (raw type-bytecode '(46 4        5  24 5)))
@@ -181,16 +181,16 @@
          (tuple 'fxmbits     31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
          (tuple 'vm:wordsize 29  0 1 vm:wordsize)
 
-         ; пара специальных вещей (todo - переименовать их в что-то вроде %%bind, так как это внутренние команды компилятора)
-         ; todo: rename to tuple-bind ?
-         (tuple 'bind       32 1 #false bind)    ;; (bind thing (lambda (name ...) body)), fn is at CONT so arity is really
+         ; todo: add macro for call-with-tuple in r5rs
+         (tuple 'tuple-apply 32 1 #false tuple-apply)
          ; todo: rename to make-tuple,  vm:mkt?
-         (tuple 'mkt        23 'any 1 #false)  ;; mkt type v0 .. vn t (why #f?)
+         (tuple 'mkt         23 'any 1 #false)  ;; mkt type v0 .. vn t (why #f?)
          ; todo: rename to list->typedtuple ?
-         (tuple 'listuple   35 3 1  listuple)
+         (tuple 'listuple    35 3 1  listuple)
 
          ; поддержка red-black деревьев
-         (tuple 'ff:bind    49 1 #f  ff:bind) ;; SPECIAL ** (ff:bind thing (lambda (name ...) body))
+         (tuple 'ff-apply   49 1 #f  ff-apply)
+
          (tuple 'ff:red     43 4  1  ff:red)
          (tuple 'ff:black   42 4  1  ff:black)
          (tuple 'ff:toggle  46 1  1  ff:toggle)
@@ -208,19 +208,19 @@
 
 
       ;; fixme: handle multiple return value primops sanely (now a list)
+      ; для этих команд НЕ вставляется аргументом длина списка команд
       (define multiple-return-variable-primops
          (list
-            ; а почему bind не multiple-return?            (ref (get-primitive 'bind) 2) ; 32 (?)
-            FFBIND
+            FF-APPLY
 
             38 39 40 26 58 59 ; fx+, fx*, fx-, fx/, fx>>, fx<<
             61 ; (clock)
             ))
 
       ;; from cps
-      (define (special-bind-primop? op) ; bind ar ff-bind
-         (or (eq? op BIND)
-             (eq? op FFBIND)))
+      (define (special-bind-primop? op) ; tuple-apply and ff-apply
+         (or (eq? op TUPLE-APPLY)
+             (eq? op FF-APPLY)))
 
       (define (variable-input-arity? op)
          (or (eq? op MKT)))

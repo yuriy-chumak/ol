@@ -257,7 +257,7 @@
                                     regs)))))
                      (else
                         ; bind or ff-bind, or arithmetic
-                        (bind (rtl-bind regs formals)
+                        (tuple-apply (rtl-bind regs formals)
                            (λ (selected regs)
                               (tuple 'prim op args selected
                                  (cont regs))))))))))
@@ -459,7 +459,7 @@
             (if node node (runtime-error "Unknown primop: " op))))
 
       (define (opcode-arity-ok? op n)
-         (bind (opcode->primop op)
+         (tuple-apply (opcode->primop op)
             (λ (name op in out fn)
                (cond
                   ((eq? in n) #true)

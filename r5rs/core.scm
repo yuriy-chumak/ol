@@ -246,11 +246,11 @@
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* ((var ... node) . rest-bindings) exp . rest-exps)
-               (bind node
+               (tuple-apply node
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* (((name ...) <= value) . rest) . code)
-               (bind value
+               (tuple-apply value
                   (lambda (name ...)
                      (let* rest . code))))
             ((let* ()) exp)
@@ -995,12 +995,12 @@
             ;;; bind if the first value (literal) matches first of pattern
             ((tuple-case 42 tuple type ((this . vars) . body) . others)
                (if (eq? type (quote this))
-                  (bind tuple
+                  (tuple-apply tuple
                      (lambda (ignore . vars) . body))
                   (tuple-case 42 tuple type . others)))
             ;;; bind to anything
             ((tuple-case 42 tuple type ((_ . vars) . body) . rest)
-               (bind tuple
+               (tuple-apply tuple
                   (lambda (ignore . vars) . body)))
             ;;; an else case needing the tuple
             ((tuple-case 42 tuple type (else is name . body))

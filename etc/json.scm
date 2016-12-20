@@ -348,7 +348,7 @@
 	; event-driven operation 
 
 	(define (json-rpc-handler fd pending-reqs id input)
-		(bind (accept-mail)
+		(tuple-apply (accept-mail)
 			(λ (from msg)
 				(cond
 					((eq? from fd)
