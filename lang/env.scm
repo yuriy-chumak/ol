@@ -169,7 +169,7 @@
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
                            (fail (list "funny ol:let " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((values values-apply if:eq? ifary)
+                     ((values values-apply ifary ifeq)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
                         (map walk exp))))
@@ -245,8 +245,8 @@
                (cons 'lambda  (tuple 'special 'lambda))
                (cons 'setq    (tuple 'special 'setq))
                (cons 'ol:let  (tuple 'special 'ol:let)) ; 'letrec
-               (cons 'if:eq?  (tuple 'special 'if:eq?)) ; (if (eq? a b) a b)
                (cons 'ifary   (tuple 'special 'ifary))
+               (cons 'ifeq    (tuple 'special 'ifeq))
 
                (cons 'values  (tuple 'special 'values))
                (cons 'values-apply  (tuple 'special 'values-apply)))))

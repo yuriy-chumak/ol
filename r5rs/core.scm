@@ -110,12 +110,12 @@
          (syntax-rules (not eq? null? empty? zero?)
             ((if val       then)      (if val then #false))
             ((if (not val) then else) (if val else then))
-            ((if (eq? a b) then else) (if:eq? a b then else))
+            ((if (eq? a b) then else) (ifeq a b then else))
             ((if (null? test)  then else) (if (eq? test #null) then else))  ; boot image size and compilation speed optimization
             ((if (a . b)   then else) ((lambda (x) (if x then else)) (a . b)))
             ((if #true     then else)  then)
             ((if #false    then else)  else)
-            ((if t         then else) (if:eq? t #false else then))))
+            ((if t         then else) (ifeq t #false else then))))
 
       ; ------------------
       ; 4.1.6  Assignments
@@ -420,7 +420,7 @@
             ((assert expression)
                (assert expression ===> #true))
             ((assert expression ===> result)
-               (if:eq? expression (quote result) #true
+               (ifeq expression (quote result) #true
                   ((raw 16 '(27 4 5 6 7 8 24 8)) ; (sys a b c d)
                      #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 ;            ((assert result expression . stuff)

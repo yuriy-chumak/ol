@@ -67,15 +67,6 @@
                   (values (tuple 'lambda-var fixed? new-formals body) free)))
             ((value val)
                (values exp free))
-            ((if:eq? a b then else)
-               (lets
-                  ((a free (alpha a env free))
-                   (b free (alpha b env free))
-                   (then free (alpha then env free))
-                   (else free (alpha else env free)))
-                  (values
-                     (tuple 'if:eq? a b then else)
-                     free)))
             ((values vals)
                (lets ((vals free (alpha-list alpha vals env free)))
                   (values (tuple 'values vals) free)))
@@ -84,11 +75,20 @@
                   ((from free (alpha from env free))
                    (to free   (alpha to   env free)))
                   (values (tuple 'values-apply from to) free)))
-            ((ifary fn then)
+            ((ifeq a b then else)
                (lets
-                  ((fn free (alpha fn env free))
-                   (then free (alpha then env free)))
-                  (values (tuple 'ifary fn then) free)))
+                  ((a free (alpha a env free))
+                   (b free (alpha b env free))
+                   (then free (alpha then env free))
+                   (else free (alpha else env free)))
+                  (values
+                     (tuple 'ifeq a b then else)
+                     free)))
+            ((ifary then else)
+               (lets
+                  ((then free (alpha then env free))
+                   (else free (alpha else env free)))
+                  (values (tuple 'ifary then else) free)))
             (else
                (runtime-error "alpha: unknown AST node: " exp))))
 

@@ -66,14 +66,14 @@
                      (lambda (max exp) (max-ast-id exp max))
                      max rands)))
             ((value val) max)
-            ((if:eq? a b then else)
-               (max-ast-id a (max-ast-id b
-                  (max-ast-id then (max-ast-id else max)))))
             ((values vals)
                (fold (lambda (max exp) (max-ast-id exp max)) max vals))
             ((values-apply op fn)
                (max-ast-id op
                   (max-ast-id fn max)))
+            ((ifeq a b then else)
+               (max-ast-id a (max-ast-id b
+                  (max-ast-id then (max-ast-id else max)))))
             ((ifary fn else)
                (max-ast-id fn
                   (max-ast-id else max)))

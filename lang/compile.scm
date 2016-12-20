@@ -469,7 +469,7 @@
       ;; compile any AST node node to RTL
       (define (rtl-any regs exp)
          (tuple-case exp
-            ((if:eq? a b then else)
+            ((ifeq a b then else)
                (simple-first a b
                   ;;; move simple to a, if any
                   (λ (a b)

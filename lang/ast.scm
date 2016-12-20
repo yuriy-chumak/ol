@@ -125,23 +125,23 @@
                                     (translate body env fail)))
                               (fail (list "Bad let: " exp))))
                         (fail (list "Bad let: " exp))))
-                  ((if:eq?) ;;; (if:eq? a b then else)
+                  ((ifeq) ;;; (ifeq a b then else)
                      (if (eq? (length exp) 5)
                         (let ((a (second exp))
                               (b (third exp))
                               (then (fourth exp))
                               (else (fifth exp)))
-                           (tuple 'if:eq?
+                           (tuple 'ifeq
                               (translate a env fail)
                               (translate b env fail)
                               (translate then env fail)
                               (translate else env fail)))
-                        (fail (list "Bad if:eq? " exp))))
+                        (fail (list "Bad ifeq " exp))))
                   ((ifary) ; (ifary (lambda-ok) (lambda-fail))
                      (if (= (length exp) 3)
                         (tuple 'ifary
-                           (translate (cadr exp) env fail)
-                           (translate (caddr exp) env fail))
+                           (translate (second exp) env fail)
+                           (translate (third exp) env fail))
                         (fail (list "Bad ifary node: " exp))))
 
                   ((values)

@@ -331,7 +331,7 @@
                                     (values
                                        (list 'ol:let formals definitions body)
                                        free)))
-                              ((if:eq?)
+                              ((ifeq)
                                  (expand-list exp env free))
                               ((ifary)
                                  (if (or (null? (cdr exp)) (null? (cddr exp)))

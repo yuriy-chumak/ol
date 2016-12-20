@@ -136,7 +136,7 @@
                   (cps rator env
                      (mklambda (list this) call-exp)
                      free)))
-            ((if:eq? a b then else)
+            ((ifeq a b then else)
                (lets ((this free (fresh free)))
                   (cps
                      (mkcall (mklambda (list this) (mkcall (mkvar this) rands))
@@ -150,13 +150,13 @@
             (else
                (cps-args cps rands (list cont rator) env free))))
 
-      (define (cps-if:eq? cps a b then else env cont free)
+      (define (cps-ifeq cps a b then else env cont free)
          (cond
             ((not (var? cont))
                (lets
                   ((this free (fresh free))
                    (exp free
-                     (cps-if:eq? cps a b then else env (mkvar this) free)))
+                     (cps-ifeq cps a b then else env (mkvar this) free)))
                   (values
                      (mkcall
                         (mklambda (list this) exp)
@@ -166,20 +166,20 @@
                (lets
                   ((this free (fresh free))
                    (rest free
-                     (cps-if:eq? cps (mkvar this) b then else env cont free)))
+                     (cps-ifeq cps (mkvar this) b then else env cont free)))
                   (cps a env (mklambda (list this) rest) free)))
             ((call? b)
                (lets
                   ((this free (fresh free))
                    (rest free 
-                     (cps-if:eq? cps a (mkvar this) then else env cont free)))
+                     (cps-ifeq cps a (mkvar this) then else env cont free)))
                   (cps b env (mklambda (list this) rest) free)))
             (else
                (lets
                   ((then free (cps then env cont free))
                    (else free (cps else env cont free)))
                   (values
-                     (tuple 'if:eq? a b then else)
+                     (tuple 'ifeq a b then else)
                      free)))))
 
       (define (cps-values-apply cps exp semi-cont env cont free)
@@ -226,12 +226,12 @@
                (cps-lambda cps-exp formals fixed? body env cont free))
             ((call rator rands)
                (cps-call cps-exp rator rands env cont free))
-            ((if:eq? a b then else)
-               (cps-if:eq? cps-exp a b then else env cont free))
             ((values vals)
               (cps-values cps-exp vals env cont free))
             ((values-apply exp target)
               (cps-values-apply cps-exp exp target env cont free))
+            ((ifeq a b then else)
+               (cps-ifeq cps-exp a b then else env cont free))
             ((ifary fn else)
                (lets ((res free (cps-ifary cps-exp exp env cont free)))
                   (values (mkcall cont (list res)) free)))

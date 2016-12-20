@@ -48,6 +48,8 @@
                   (walk body (union formals bound) found))
                ((lambda-var fixed? formals body)
                   (walk body (union formals bound) found))
+               ((ifeq a b then else)
+                  (walk-list (list a b then else) bound found))
                ((ifary fn else)
                   (walk fn bound
                      (walk else bound found)))
@@ -60,8 +62,6 @@
                ((values-apply op fn) 
                   (walk op bound
                      (walk fn bound found)))
-               ((if:eq? a b then else)
-                  (walk-list (list a b then else) bound found))
                (else
                   (print "free-vars: unknown node type: " exp)
                   found)))
@@ -153,8 +153,8 @@
                   (if (has? formals name)
                      exp
                      (tuple 'lambda formals (walk body))))
-               ((if:eq? a b then else)
-                  (tuple 'if:eq? (walk a) (walk b) (walk then) (walk else)))
+               ((ifeq a b then else)
+                  (tuple 'ifeq (walk a) (walk b) (walk then) (walk else)))
                ((values vals) 
                   (tuple 'values (map walk vals)))
                ((values-apply op fn)
@@ -200,13 +200,13 @@
                (mklambda formals
                   (carry-bindings body
                      (env-bind env formals))))
-            ((if:eq? a b then else)
+            ((ifeq a b then else)
                (let
                   ((a (carry-bindings a env))
                    (b (carry-bindings b env))
                    (then (carry-bindings then env))
                    (else (carry-bindings else env)))
-                  (tuple 'if:eq? a b then else)))
+                  (tuple 'ifeq a b then else)))
             ((var sym)
                (tuple-case (lookup env sym)
                   ((recursive formals deps)
@@ -410,13 +410,13 @@
                   (unletrec-list vals)))
             ((values-apply op fn)
                (tuple 'values-apply (unletrec op env) (unletrec fn env)))
-            ((if:eq? a b then else)
+            ((ifeq a b then else)
                (let
                   ((a (unletrec a env))
                    (b (unletrec b env))
                    (then (unletrec then env))
                    (else (unletrec else env)))
-                  (tuple 'if:eq? a b then else)))
+                  (tuple 'ifeq a b then else)))
             ((ifary func else)
                (tuple 'ifary
                   (unletrec func env)
