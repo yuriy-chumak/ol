@@ -70,11 +70,11 @@
             ((values vals)
                (lets ((vals free (alpha-list alpha vals env free)))
                   (values (tuple 'values vals) free)))
-            ((values-apply from to)
+            ((apply-values from to)
                (lets
                   ((from free (alpha from env free))
                    (to free   (alpha to   env free)))
-                  (values (tuple 'values-apply from to) free)))
+                  (values (tuple 'apply-values from to) free)))
             ((ifeq a b then else)
                (lets
                   ((a free (alpha a env free))

@@ -102,7 +102,7 @@
       ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
       ;(define less?   (raw type-bytecode '(44 4 5 6  24 6)))
 
-      ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/values-apply
+      ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/apply-values
       ;(define vm:add  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
       ;(define vm:mul  (raw type-bytecode '(39 4 5       6 7)))
       ;(define vm:sub  (raw type-bytecode '(40 4 5       6 7)))

@@ -147,8 +147,8 @@
                   ((values)
                      (tuple 'values
                         (map (lambda (arg) (translate arg env fail)) (cdr exp))))
-                  ((values-apply)
-                     (tuple 'values-apply
+                  ((apply-values)
+                     (tuple 'apply-values
                         (translate (lref exp 1) env fail)
                         (translate (lref exp 2) env fail)))
                   ;; FIXME pattern

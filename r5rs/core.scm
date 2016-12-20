@@ -2,6 +2,23 @@
 (define-library (r5rs core)
    (begin
 
+      ; basic Otus Lisp elements:
+
+      ;; special forms:
+      ; quote lambda setq
+      ; values apply-values
+      ; ifeq ifary ol:let
+
+      ;; virtual machine primitives:
+      ; raw cons car cdr ref type size cast raw? set set! eq? less?
+      ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
+      ; clock syscall vm:version fxmax fxmbits vm:wordsize
+      ; tuple-apply mkt listuple
+      ; ff-apply ff:red ff:black ff:toggle ff:red? ff:right?
+
+
+
+
       ; ========================================================================================================
       ; Scheme
       ;
@@ -234,12 +251,12 @@
       (define-syntax let*
          (syntax-rules (<=)
             ((let* (((var ...) gen) . rest) . body)
-               (values-apply gen (lambda (var ...) (let* rest . body))))
+               (apply-values gen (lambda (var ...) (let* rest . body))))
             ((let* ((var val) . rest-bindings) exp . rest-exps)
                ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
             ; http://srfi.schemers.org/srfi-71/srfi-71.html
             ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
-               (values-apply (op . args)
+               (apply-values (op . args)
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* ((var ... node) . rest-bindings) exp . rest-exps)
@@ -390,7 +407,7 @@
       (define-syntax let*-values
          (syntax-rules ()
             ((let*-values (((var ...) gen) . rest) . body)
-               (values-apply gen
+               (apply-values gen
                   (lambda (var ...) (let*-values rest . body))))
             ((let*-values () . rest)
                (begin . rest))))
@@ -783,7 +800,7 @@
          (let loop ((n 0) (l l))
             (if (null? l)
                n
-               (values-apply (vm:add n 1)
+               (apply-values (vm:add n 1)
                   (lambda (n carry)
 ;                     (if carry (runtime-error ...))
                      (loop n (cdr l)))))))
@@ -1055,9 +1072,9 @@
       (define-syntax call-with-values
          (syntax-rules ()
             ((call-with-values (lambda () exp) (lambda (arg ...) body))
-               (values-apply exp (lambda (arg ...) body)))
+               (apply-values exp (lambda (arg ...) body)))
             ((call-with-values thunk (lambda (arg ...) body))
-               (values-apply (thunk) (lambda (arg ...) body)))))
+               (apply-values (thunk) (lambda (arg ...) body)))))
 
 
 

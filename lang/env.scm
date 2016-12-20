@@ -169,7 +169,7 @@
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
                            (fail (list "funny ol:let " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((values values-apply ifary ifeq)
+                     ((values apply-values ifary ifeq)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
                         (map walk exp))))
@@ -249,7 +249,7 @@
                (cons 'ifeq    (tuple 'special 'ifeq))
 
                (cons 'values  (tuple 'special 'values))
-               (cons 'values-apply  (tuple 'special 'values-apply)))))
+               (cons 'apply-values  (tuple 'special 'apply-values)))))
 
       ;; take a subset of env
       ;; fixme - misleading name

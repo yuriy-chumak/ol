@@ -46,14 +46,14 @@
 
 	(define (biggish-prime rst) 
 		(let loop ((rst rst)) 
-			(values-apply (rand rst 10000000000000) 
+			(apply-values (rand rst 10000000000000) 
 				(lambda (rst n) 
 					(if (prime? n) n (loop (rand-succ rst)))))))
 
 	(define (extended-euclid a b)
 		(if (= b 0)
 			(values a 1 0)
-			(values-apply (extended-euclid b (rem a b))
+			(apply-values (extended-euclid b (rem a b))
 				(lambda (dp xp yp)
 					(values dp yp (- xp (* yp (div a b))))))))
 
@@ -78,7 +78,7 @@
 			(if (= (gcd e phin) 1) e (loop (+ e 2)))))
 
 	(define ep 
-		(values-apply (extended-euclid e phin) 
+		(apply-values (extended-euclid e phin) 
 			(lambda (a x y) (if (< x 0) (+ x phin) x))))
 
 	(if (not (= 1 (rem (* e ep) phin)))
@@ -178,7 +178,7 @@
 								(print "  - it is " score)
 								(loop (rand-succ rst)))
 							(else
-								(values-apply (rand rst (* p q))
+								(apply-values (rand rst (* p q))
 									(lambda (rst x0)
 										(cons x0 (cons p q)))))))))))
 
@@ -207,7 +207,7 @@
 		(let loop ((st st) (bytes bytes) (out null))
 			(if (null? bytes)
 				(values st (reverse out))
-				(values-apply (byte st)
+				(apply-values (byte st)
 					(lambda (st byte)
 						(loop st (cdr bytes) 
 							(cons (bxor (car bytes) byte) out)))))))
@@ -218,13 +218,13 @@
 		((data (map (lambda (x) (band x #xff)) (lrange 0 1 (* 16 1024))))
 		 (start (time)))
 		(print "bbs encrypting...")
-		(values-apply (encrypt (car key) data)
+		(apply-values (encrypt (car key) data)
 			(lambda (st l) 
 				(let ((end (time)))
 					(print "encrypted in " (- end start))
 					(if (> (- end start) 0)
 						(print "bytes/s " (div (length data) (- end start))))
-					(values-apply (decrypt (car key) l)
+					(apply-values (decrypt (car key) l)
 						(lambda (st d)
 							(if (equal? data d)
 								(print "decryption ok")
