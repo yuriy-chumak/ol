@@ -90,7 +90,7 @@
             *primitives*))
 
       (define (execute exp env)
-         (receive (exp)
+         (values-apply (exp)
             (lambda vals
                (ok
                   (cond

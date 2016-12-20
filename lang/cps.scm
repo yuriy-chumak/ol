@@ -182,9 +182,9 @@
                      (tuple 'if:eq? a b then else)
                      free)))))
 
-      (define (cps-receive cps exp semi-cont env cont free)
+      (define (cps-values-apply cps exp semi-cont env cont free)
          (tuple-case semi-cont
-            ((lambda formals  body)
+            ((lambda formals body)
                (lets ((body-cps free (cps body env cont free)))
                   (cps exp env 
                      (mklambda formals body-cps)
@@ -196,7 +196,7 @@
                      (tuple 'lambda-var fixed? formals body-cps)
                      free)))
             (else
-               (runtime-error "cps-receive: receiver is not a lambda. " semi-cont))))
+               (runtime-error "cps-values-apply: receiver is not a lambda. " semi-cont))))
 
       ;; translate a chain of lambdas as if they were at operator position
       ;; note! also cars are handled as the same jump, which is silly
@@ -230,8 +230,8 @@
                (cps-if:eq? cps-exp a b then else env cont free))
             ((values vals)
               (cps-values cps-exp vals env cont free))
-            ((receive exp target)
-              (cps-receive cps-exp exp target env cont free))
+            ((values-apply exp target)
+              (cps-values-apply cps-exp exp target env cont free))
             ((case-lambda fn else)
                (lets ((res free (cps-case-lambda cps-exp exp env cont free)))
                   (values (mkcall cont (list res)) free)))

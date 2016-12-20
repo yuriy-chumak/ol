@@ -237,12 +237,12 @@
       (define-syntax let*
          (syntax-rules (<=)
             ((let* (((var ...) gen) . rest) . body)
-               (receive gen (lambda (var ...) (let* rest . body))))
+               (values-apply gen (lambda (var ...) (let* rest . body))))
             ((let* ((var val) . rest-bindings) exp . rest-exps)
                ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
             ; http://srfi.schemers.org/srfi-71/srfi-71.html
             ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
-               (receive (op . args)
+               (values-apply (op . args)
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* ((var ... node) . rest-bindings) exp . rest-exps)
@@ -395,7 +395,7 @@
       (define-syntax let*-values
          (syntax-rules ()
             ((let*-values (((var ...) gen) . rest) . body)
-               (receive gen
+               (values-apply gen
                   (lambda (var ...) (let*-values rest . body))))
             ((let*-values () . rest)
                (begin . rest))))
@@ -788,7 +788,7 @@
          (let loop ((n 0) (l l))
             (if (null? l)
                n
-               (receive (vm:add n 1)
+               (values-apply (vm:add n 1)
                   (lambda (n carry)
 ;                     (if carry (runtime-error ...))
                      (loop n (cdr l)))))))
@@ -1060,9 +1060,9 @@
       (define-syntax call-with-values
          (syntax-rules ()
             ((call-with-values (lambda () exp) (lambda (arg ...) body))
-               (receive exp (lambda (arg ...) body)))
+               (values-apply exp (lambda (arg ...) body)))
             ((call-with-values thunk (lambda (arg ...) body))
-               (receive (thunk) (lambda (arg ...) body)))))
+               (values-apply (thunk) (lambda (arg ...) body)))))
 
 
 

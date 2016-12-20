@@ -57,7 +57,7 @@
                ((value val) found)
                ((values vals)
                   (walk-list vals bound found))
-               ((receive op fn) 
+               ((values-apply op fn) 
                   (walk op bound
                      (walk fn bound found)))
                ((if:eq? a b then else)
@@ -155,10 +155,10 @@
                      (tuple 'lambda formals (walk body))))
                ((if:eq? a b then else)
                   (tuple 'if:eq? (walk a) (walk b) (walk then) (walk else)))
-               ((receive op fn)
-                  (tuple 'receive (walk op) (walk fn)))
                ((values vals) 
                   (tuple 'values (map walk vals)))
+               ((values-apply op fn)
+                  (tuple 'values-apply (walk op) (walk fn)))
                ((value val) exp)
                ((var sym)
                   (if (eq? sym name)
@@ -207,11 +207,6 @@
                    (then (carry-bindings then env))
                    (else (carry-bindings else env)))
                   (tuple 'if:eq? a b then else)))
-            ((receive op fn)
-               (let
-                  ((op (carry-bindings op env))
-                   (fn (carry-bindings fn env)))
-                  (tuple 'receive op fn)))
             ((var sym)
                (tuple-case (lookup env sym)
                   ((recursive formals deps)
@@ -226,6 +221,11 @@
             ((values vals)
                (tuple 'values
                   (map (lambda (exp) (carry-bindings exp env)) vals)))
+            ((values-apply op fn)
+               (let
+                  ((op (carry-bindings op env))
+                   (fn (carry-bindings fn env)))
+                  (tuple 'values-apply op fn)))
             (else
                (runtime-error "carry-bindings: strage expression: " exp))))
 
@@ -404,12 +404,12 @@
                         names values))
                   body env)))
 
-            ((receive op fn)
-               (tuple 'receive (unletrec op env) (unletrec fn env)))
             ((value val) exp)
             ((values vals)
                (tuple 'values
                   (unletrec-list vals)))
+            ((values-apply op fn)
+               (tuple 'values-apply (unletrec op env) (unletrec fn env)))
             ((if:eq? a b then else)
                (let
                   ((a (unletrec a env))

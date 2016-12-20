@@ -343,7 +343,7 @@
 
                               ((values)
                                  (expand-list exp env free))
-                              ((receive)
+                              ((values-apply)
                                  (expand-list exp env free))
 
                               (else

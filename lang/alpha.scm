@@ -76,14 +76,14 @@
                   (values
                      (tuple 'if:eq? a b then else)
                      free)))
-            ((receive from to)
-               (lets
-                  ((from free (alpha from env free))
-                   (to free   (alpha to   env free)))
-                  (values (tuple 'receive from to) free)))
             ((values vals)
                (lets ((vals free (alpha-list alpha vals env free)))
                   (values (tuple 'values vals) free)))
+            ((values-apply from to)
+               (lets
+                  ((from free (alpha from env free))
+                   (to free   (alpha to   env free)))
+                  (values (tuple 'values-apply from to) free)))
             ((case-lambda fn then)
                (lets
                   ((fn free (alpha fn env free))
