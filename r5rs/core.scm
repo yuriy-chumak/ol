@@ -917,7 +917,8 @@
          (or (function? o) (ff? o)))
 
 
-      ; procedure:  (apply proc arg1 ... args)  *builtin
+      ; procedure:  (apply proc arg1 ... args)  * builtin
+      (define apply      (raw type-bytecode '(20)))
 
       ; library procedure:  (map proc list1 list2 ...)
 ;      (define (map fn lst)
@@ -951,15 +952,14 @@
 
        ; procedure:  (call-with-current-continuation proc)
        ; Continuation - http://en.wikipedia.org/wiki/Continuation
-       (define apply-cont (raw type-bytecode '(#x54)))  ;; не экспортим, внутренняя
-
+       (define apply/cc (raw type-bytecode '(84)))
        (define call-with-current-continuation
           ('_sans_cps
              (λ (k f)
                 (f k (case-lambda
                         ((c a) (k a))
                         ((c a b) (k a b))
-                        ((c . x) (apply-cont k x))))))) ; (apply-cont k x)
+                        ((c . x) (apply/cc k x)))))))
 
        (define call/cc call-with-current-continuation)
 
@@ -1114,8 +1114,6 @@
 ;
 ;      (define self i)
 ;
-;      ; (define call/cc  ('_sans_cps (λ (k f) (f k (λ (r a) (k a))))))
-;
 ;      (define (i x) x)
 ;      (define (k x y) x)
 
@@ -1222,8 +1220,6 @@
 
 
       ;; essential procedure: apply proc args
-      ;; procedure: apply proc arg1 ... args
-      (define apply      (raw type-bytecode '(#x14)))  ;; <- no arity, just call 20
 
       ;; ...
 
@@ -1323,4 +1319,6 @@
       map list?
 
       set-car! set-cdr!
+
+      car cdr
 ))

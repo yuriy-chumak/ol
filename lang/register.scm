@@ -301,8 +301,8 @@
                (rtl-retard-jump rtl-retard 'je a empty  then else)) ; fp
             ((jz a then else)
                (rtl-retard-jump rtl-retard 'jz a empty  then else)) ; fp
-            ((jab a type then else)
-               (rtl-retard-jump rtl-retard 'jab a type then else))
+;            ((jab a type then else)
+;               (rtl-retard-jump rtl-retard 'jab a type then else))
             (else
                (runtime-error "rtl-retard: unknown code: " code))))
 
