@@ -12,16 +12,7 @@
       multiple-return-variable-primops
       variable-input-arity-primops
       special-bind-primops
-
-      ; some usable basic functions (syscalls)
-      exec yield
-      halt wait
-      set-ticker-value
-      set-memory-limit get-word-size get-memory-limit
       )
-
-   (import
-      (r5rs core))
 
    (begin
 ;          итак, процесс замены кода операции на другой:
@@ -53,107 +44,179 @@
 ;            > (construct 1 2)
 ;            '(1 . 2)
 ;            >
+      ;(define listuple (raw type-bytecode '(35 4 5 6 7  24 7)))
+      ;ff-bind
+
+      ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
+      ;(define raw     (raw type-bytecode '(60 4 5 6  24 6)))
+
+      ;(define vm:version  (raw type-bytecode '(62 4)))
+      ;(define fxmax       (raw type-bytecode '(33 4)))
+      ;(define fxmbits     (raw type-bytecode '(34 4)))
+      ;(define vm:wordsize (raw type-bytecode '(29 4)))
+
+      ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
+      ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
+      ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
+      ; the phrase `Contents of the Address part of the Register'; and cdr (pronounced `could-er') is an
+      ; acronym from the phrase `Contents of the Decrement part of the Register'. These phrases refer to
+      ; specific pieces of hardware on the very early computer on which the original Lisp was developed.
+      ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
+      ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
+      ; names for these functions, the old terms are still in use.
+      ;(define cons    (raw type-bytecode '(51 4 5 6  24 6)))
+
+      ;(define type    (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
+      ;(define size    (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
+      ;(define cast    (raw type-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+      ;(define raw?    (raw type-bytecode '(48 4 5    24 5)))
+
+      ;(define car     (raw type-bytecode '(52 4 5    24 5)))
+      ;(define cdr     (raw type-bytecode '(53 4 5    24 5)))
+      ;(define ref     (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
+      ;(define set-ref  (raw type-bytecode '(45 4 5 6 7  24 7)))
+
+      ;(define set-ref! (raw type-bytecode '(10 4 5 6  24 6)))
+      ;moved to the r5rs, (define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
+      ;moved to the r5rs, (define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
+
+      ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
+      ;(define less?   (raw type-bytecode '(44 4 5 6  24 6)))
+
+      ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/apply-values
+      ;(define vm:add  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
+      ;(define vm:mul  (raw type-bytecode '(39 4 5       6 7)))
+      ;(define vm:sub  (raw type-bytecode '(40 4 5       6 7)))
+      ;(define vm:div  (raw type-bytecode '(26 4 5 6     7 8 9)))
+      ;(define vm:shr  (raw type-bytecode '(58 4 5       6 7)))
+      ;(define vm:shl  (raw type-bytecode '(59 4 5       6 7)))
+
+      ;(define vm:and  (raw type-bytecode '(55 4 5 6  24 6)))
+      ;(define vm:or   (raw type-bytecode '(56 4 5 6  24 6)))
+      ;(define vm:xor  (raw type-bytecode '(57 4 5 6  24 6)))
+
+      ;(define vm:run  (raw type-bytecode '(50 4 5)))
+
+
+      ; deprecated:
+      ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
+
+      ;(define ff-apply  (raw type-bytecode '(49 4)))
+      ;(define ff:red     (raw type-bytecode '(43 4 5 6 7  8  24 8)))
+      ;(define ff:black   (raw type-bytecode '(42 4 5 6 7  8  24 8)))
+      ;(define ff:toggle  (raw type-bytecode '(46 4        5  24 5)))
+      ;(define ff:red?    (raw type-bytecode '(41 4        5  24 5)))
+      ;(define ff:right?  (raw type-bytecode '(37 4        5  24 5)))
+
+      ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8)))
+
+      (define-syntax list
+         (syntax-rules ()
+            ((list) '())
+            ((list a . b)
+               (cons a (list . b)))))
 
       ;; Список кодов виртуальной машины:
-      (define JF2 25)
-      (define RET 24)
-      (define ARITY-ERROR 17)
+      (setq JF2 25)
+      (setq RET 24)
+      (setq ARITY-ERROR 17)
 
-      (define TUPLE-APPLY 32)
-      (define MKT 23)
-      (define FF-APPLY 49)
+      (setq TUPLE-APPLY 32)
+      (setq MKT 23)
+      (setq FF-APPLY 49)
 
-      (define primops (list
+      (setq primops
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
          ; todo: rename to vm:bytecode, vm:raw ?
-         (tuple 'raw      60  2 1 raw)   ; (raw type-bytecode '(60 4 5 6  24 6))) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)))
+
+         ; raw создает бинарную последовательность, mkt - последовательность объектов
+         ; rename to vm:b и vm:o ?
+         (cons (mkt 2 'raw      60  2 1 raw)   ; (raw type-bytecode '(60 4 5 6  24 6)) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
+         (cons (mkt 2 'mkt      23 'any 1 #f)  ;; mkt type v0 .. vn t (why #f?)
 
          ; вторая по значимости команда
-         (tuple 'cons     51  2 1 cons)
+         (cons (mkt 2 'cons     51  2 1 cons)
 
          ; операции по работе с памятью
-         (tuple 'car      52  1 1 car)   ; (raw type-bytecode '(52 4 5    24 5)))
-         (tuple 'cdr      53  1 1 cdr)   ; (raw type-bytecode '(53 4 5    24 5)))
-         (tuple 'ref      47  2 1 ref)   ; (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
+         (cons (mkt 2 'car      52  1 1 car)   ; (raw type-bytecode '(52 4 5    24 5))
+         (cons (mkt 2 'cdr      53  1 1 cdr)   ; (raw type-bytecode '(53 4 5    24 5))
+         (cons (mkt 2 'ref      47  2 1 ref)   ; (raw type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
 
-         (tuple 'type     15  1 1 type)  ;; get just the type bits
-         (tuple 'size     36  1 1 size)  ;; get object size (- 1)
-         (tuple 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
-         (tuple 'raw?     48  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
+         (cons (mkt 2 'type     15  1 1 type)  ;; get just the type bits
+         (cons (mkt 2 'size     36  1 1 size)  ;; get object size (- 1)
+         (cons (mkt 2 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
+         (cons (mkt 2 'raw?     48  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
 
-         (tuple 'set-ref  45  3 1 set-ref)
-         (tuple 'set-ref! 10  3 1 set-ref!)
-         ;tuple 'set-car! 11  2 1 set-car!)
-         ;tuple 'set-cdr! 12  2 1 set-cdr!)
+         (cons (mkt 2 'set-ref  45  3 1 set-ref)
+         (cons (mkt 2 'set-ref! 10  3 1 set-ref!)
 
          ; компараторы
-         (tuple 'eq?      54  2 1 eq?)
-         (tuple 'less?    44  2 1 less?)
+         (cons (mkt 2 'eq?      54  2 1 eq?)
+         (cons (mkt 2 'less?    44  2 1 less?)
 
          ; базовая арифметика
-         (tuple 'vm:add   38  2 2 vm:add)
-         (tuple 'vm:mul   39  2 2 vm:mul)
-         (tuple 'vm:sub   40  2 2 vm:sub)
-         (tuple 'vm:div   26  3 3 vm:div) ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
+         (cons (mkt 2 'vm:add   38  2 2 vm:add)
+         (cons (mkt 2 'vm:mul   39  2 2 vm:mul)
+         (cons (mkt 2 'vm:sub   40  2 2 vm:sub)
+         (cons (mkt 2 'vm:div   26  3 3 vm:div) ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
          ; сдвиги
-         (tuple 'vm:shr   58  2 2 vm:shr)
-         (tuple 'vm:shl   59  2 2 vm:shl)
+         (cons (mkt 2 'vm:shr   58  2 2 vm:shr)
+         (cons (mkt 2 'vm:shl   59  2 2 vm:shl)
          ; бинарная арифметика
-         (tuple 'vm:and   55  2 1 vm:and)
-         (tuple 'vm:or    56  2 1 vm:or)
-         (tuple 'vm:xor   57  2 1 vm:xor)
+         (cons (mkt 2 'vm:and   55  2 1 vm:and)
+         (cons (mkt 2 'vm:or    56  2 1 vm:or)
+         (cons (mkt 2 'vm:xor   57  2 1 vm:xor)
 
          ; системный таймер
-         (tuple 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
+         (cons (mkt 2 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
          ; системные вызовы
-         (tuple 'syscall  63  4 1 syscall)
+         (cons (mkt 2 'syscall  63  4 1 syscall)
 
          ; vm-specific constants
-         (tuple 'vm:version  62  0 1 vm:version)
-         (tuple 'fxmax       30  0 1 fxmax)   ; todo: rename :may be vm:aimv - "atomic integer maximal value"?
-         (tuple 'fxmbits     31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
-         (tuple 'vm:wordsize 29  0 1 vm:wordsize)
+         (cons (mkt 2 'vm:version  62  0 1 vm:version)
+         (cons (mkt 2 'fxmax       30  0 1 fxmax)   ; todo: rename :may be vm:aimv - "atomic integer maximal value"?
+         (cons (mkt 2 'fxmbits     31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
+         (cons (mkt 2 'vm:wordsize 29  0 1 vm:wordsize)
 
          ; todo: add macro for call-with-tuple in r5rs
-         (tuple 'tuple-apply 32 1 #false tuple-apply)
+         (cons (mkt 2 'tuple-apply 32 1 #false tuple-apply)
          ; todo: rename to make-tuple,  vm:mkt?
-         (tuple 'mkt         23 'any 1 #false)  ;; mkt type v0 .. vn t (why #f?)
          ; todo: rename to list->typedtuple ?
-         (tuple 'listuple    35 3 1  listuple)
+         (cons (mkt 2 'listuple    35 3 1  listuple)
 
          ; поддержка red-black деревьев
-         (tuple 'ff-apply   49 1 #f  ff-apply)
+         (cons (mkt 2 'ff-apply   49 1 #f  ff-apply)
 
-         (tuple 'ff:red     43 4  1  ff:red)
-         (tuple 'ff:black   42 4  1  ff:black)
-         (tuple 'ff:toggle  46 1  1  ff:toggle)
-         (tuple 'ff:red?    41 1  1  ff:red?)
-         (tuple 'ff:right?  37 1  1  ff:right?)
-      ))
+         (cons (mkt 2 'ff:red     43 4  1  ff:red)
+         (cons (mkt 2 'ff:black   42 4  1  ff:black)
+         (cons (mkt 2 'ff:toggle  46 1  1  ff:toggle)
+         (cons (mkt 2 'ff:red?    41 1  1  ff:red?)
+         (cons (mkt 2 'ff:right?  37 1  1  ff:right?)
+         #null))))))))))))))))))))))))))))))))))))))
       ;(define *primitives* primops)
 
 
-      (define (get-primitive name)
-         (let loop ((p primops))
-            (if (eq? (ref (car p) 1) name)
-                (car p)
-                (loop (cdr p)))))
+;      (define (get-primitive name)
+;         (let loop ((p primops))
+;            (if (eq? (ref (car p) 1) name)
+;                (car p)
+;                (loop (cdr p)))))
 
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд
-      (define multiple-return-variable-primops
+      (setq multiple-return-variable-primops
          (list
             FF-APPLY
 
             38 39 40 26 58 59 ; fx+, fx*, fx-, fx/, fx>>, fx<<
             61 ; (clock)
             ))
-      (define variable-input-arity-primops
+      (setq variable-input-arity-primops
          (list
             MKT))
 
-      (define special-bind-primops
+      (setq special-bind-primops
          (list
             TUPLE-APPLY
             FF-APPLY))
@@ -194,28 +257,6 @@
 ;      19 wait <pid> <respair>
 ;      18 fork
 ;      21 kill
-
-      ;; used syscalls
-      (define (exec function . args) (syscall 59 function args #f))
-      (define (yield)                (syscall 1022 0 #false #false))
-
-      (define (halt n)               (syscall 60 n n n))
-
-      ;; stop the vm *immediately* without flushing input or anything else with return value n
-      ;; make thread sleep for a few thread scheduler rounds
-      (define (set-ticker-value n) (syscall 1022 n #false #false))
-      (define (wait n)
-         (if (eq? n 0)
-            n
-            (let* ((n _ (vm:sub n 1)))
-               (set-ticker-value 0)
-               (wait n))))
-
-
-      ;; special things exposed by the vm
-      (define (set-memory-limit n) (syscall 12 n #f #f))
-      (define (get-word-size)      (syscall 1008 #false #false #false))
-      (define (get-memory-limit)   (syscall 12 #f #f #f))
 
 ;      ;; special things exposed by the vm
 ;      (define (set-memory-limit n) (sys-prim 12 n #f #f))

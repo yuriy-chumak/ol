@@ -2134,7 +2134,7 @@ static int mainloop(OL* ol)
 	/************************************************************************************/
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
-	case LDI: {  // 13,  -> ldi(ldn, ldt, ldf){2bit what} [to]
+	case LDI: {  // 13,  -> ldi(ldz, ldn, ldt, ldf){2bit what} [to]
 		const word I[] = { F(0), INULL, ITRUE, IFALSE };
 		A0 = I[op>>6];
 		ip += 1; break;
@@ -2235,6 +2235,19 @@ static int mainloop(OL* ol)
 
 		ip += 3; break;
 	}
+	// make object
+	case MKT: { // mkt t s f1 .. fs r
+		word type = *ip++;
+		word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0 length objects
+		word *p = new (type, size+1), i = 0; // s fields + header
+		while (i < size) {
+			p[i+1] = R[ip[i]];
+			i++;
+		}
+		R[ip[i]] = (word) p;
+		ip += size+1; break;
+	}
+
 	case RAWQ: {
 		word* T = (word*) A0;
 		if (is_reference(T) && is_rawobject(*T))
@@ -2544,19 +2557,6 @@ static int mainloop(OL* ol)
 		ip += 3; break;
 	}*/
 
-
-	// make tuple
-	case MKT: { // mkt t s f1 .. fs r
-		word type = *ip++;
-		word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0-tuples
-		word *p = new (type, size+1), i = 0; // s fields + header
-		while (i < size) {
-			p[i+1] = R[ip[i]];
-			i++;
-		}
-		R[ip[i]] = (word) p;
-		ip += size+1; break;
-	}
 
 	// make typed tuple from list
 	case LISTUPLE: { // listuple type size lst to
