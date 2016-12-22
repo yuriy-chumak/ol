@@ -1,5 +1,6 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
 (define-library (r5rs core)
+   (import (src vm))
    (begin
 
       ; basic Otus Lisp elements:
@@ -107,7 +108,7 @@
       (define-syntax case-lambda
          (syntax-rules ()
             ((case-lambda)
-               (lambda () (raw type-bytecode '(17)))) ; arity-error
+               (lambda () (raw 16 '(17)))) ; arity-error (todo: change to runtime-error)
             ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
             ((case-lambda (formals . body))
                ;; downgrade to a run-of-the-mill lambda
@@ -656,10 +657,10 @@
 ;      (define type-complex          43) ; reference
 
       ;define type-fix+              0) ; value
-      (define type-pair              1) ; reference
-      (define type-tuple             2) ; reference
-      (define type-string            3) ; reference, raw -> 35 (#b100000 + 3)?
-      (define type-symbol            4) ; reference
+      (define type-pair              TPAIR)   ; reference
+      (define type-tuple             TTUPLE)  ; reference
+      (define type-string            TSTRING) ; reference, raw -> 35 (#b100000 + 3)?
+      (define type-symbol            TSYMBOL) ; reference
       ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
       ; 6
       ; 7
@@ -675,7 +676,7 @@
       (define type-rlist-node       14) ; reference
       (define type-vector-dispatch  15) ; reference
 
-      (define type-bytecode         16) ; reference, raw     ; declared functions (?)
+      (define type-bytecode         TBYTECODE) ; reference, raw     ; declared functions (?)
       (define type-proc             17) ; reference          ; from otus lisp bin (?)
       (define type-clos             18) ; reference          ; from (import smth) (?)
 

@@ -6,7 +6,7 @@
 ;; todo: maybe move ncar, and other "n" to the normal but with macroses on top level with type checking.
 ;; todo: переделать так, чтобы регистр возврата был самый первый, тогда можно будет обойтись без RET
 
-(define-library (lang vm)
+(define-library (src vm)
    (export
       primops
       multiple-return-variable-primops
@@ -83,8 +83,8 @@
       (setq type-rlist-spine      10) ; reference
       (setq type-vector-leaf      11) ; reference
 
-      (setq type-port             12) ; value
-      (setq type-const            13) ; value
+      (setq TPORT             12) ; value
+      (setq TCONST            13) ; value
 
       (setq type-rlist-node       14) ; reference
       (setq type-vector-dispatch  15) ; reference
@@ -112,16 +112,15 @@
       ;30
 
       (setq type-thread-state     31) ; reference
-      (setq type-vptr             49) ; reference,  raw
+      (setq TVPTR             49) ; reference,  raw
 
 
-      ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
       ;; Список кодов виртуальной машины:
       (setq JF2 25)
       (setq RET 24)
       (setq ARITY-ERROR 17)
 
-      ; vm-instructions
+      ; set
       (setq MOVE  9) ; move a, t:      Ra -> Rt
       (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
       (setq MOVE2 5) ; two moves, 4 args
@@ -132,7 +131,7 @@
       (setq LDT  141) ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
       (setq LDF  205) ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
 
-      ;
+      ; 
       (setq CLOS0 3) ; clos lp, o, nenv, e0 ... en, t:
       (setq CLOC0 4) ; cloc lp, o, nenv, e0 ... en, t:
       (setq CLOS1 6)
@@ -153,11 +152,12 @@
       ;(setq GOTO-PROC 19) ; not used for now, check (fn-type)
       ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
 
+      ; primitives
       (setq TUPLE-APPLY 32)
       (setq FF-APPLY 49)
-      (setq MKT 23)
+      (setq MKT 23)      ;no real mkt command
 
-      (setq RAW 60)        (setq raw     (raw TBYTECODE '(60 4 5 6  24 6)))
+      (setq RAW 60)      (setq raw     (raw TBYTECODE '(60 4 5 6  24 6)))
 
       ;(define vm:version  (raw type-bytecode '(62 4)))
       ;(define fxmax       (raw type-bytecode '(33 4)))
@@ -173,17 +173,16 @@
       ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
       ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
       ; names for these functions, the old terms are still in use.
-      ;(define cons    (raw type-bytecode '(51 4 5 6  24 6)))
+      (setq CONS 51)     (setq cons    (raw TBYTECODE '(51 4 5 6  24 6)))
+      (setq TYPE 15)     (setq type    (raw TBYTECODE '(15 4 5    24 5))) ;; get just the type bits (new)
+      (setq SIZE 36)     (setq size    (raw TBYTECODE '(36 4 5    24 5))) ;; get object size (- 1)
+      (setq CAST 22)     (setq cast    (raw TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+      (setq RAW? 48)     (setq raw?    (raw TBYTECODE '(48 4 5    24 5)))
 
-      ;(define type    (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
-      ;(define size    (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
-      ;(define cast    (raw type-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
-      ;(define raw?    (raw type-bytecode '(48 4 5    24 5)))
-
-      ;(define car     (raw type-bytecode '(52 4 5    24 5)))
-      ;(define cdr     (raw type-bytecode '(53 4 5    24 5)))
-      ;(define ref     (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
-      ;(define set-ref  (raw type-bytecode '(45 4 5 6 7  24 7)))
+      ;(define car     (raw TBYTECODE '(52 4 5    24 5)))
+      ;(define cdr     (raw TBYTECODE '(53 4 5    24 5)))
+      ;(define ref     (raw TBYTECODE '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
+      (setq SET-REF 45)  (setq set-ref  (raw TBYTECODE '(45 4 5 6 7  24 7)))
 
       ;(define set-ref! (raw type-bytecode '(10 4 5 6  24 6)))
       ;moved to the r5rs, (define set-car!(raw type-bytecode '(11 4 5 6  24 6)))

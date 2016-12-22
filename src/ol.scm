@@ -37,7 +37,8 @@
          (equal? (car lib) '(src olvm)))
       *libraries*))
 
-(import (r5rs core)) ;; reload default macros needed for defining libraries etc
+(import (src vm))   ;; команды виртуальной машины
+(import (r5rs core)) ;; базовый языковый набор ol
 
 ;; forget everhything except these and core values (later list also them explicitly)
 ,forget-all-but (*libraries* *codes* *vm-args* wait stdin stdout stderr set-ticker-value build-start)
@@ -46,7 +47,7 @@
 ;;;
 ;;; Time for a new REPL
 ;;;
-(import (src olvm))     ;; get special forms, primops and define-syntax
+(import (src olvm))     ;; get special forms, primops and define-syntax (virtual library)
 
 ;; this should later be just a sequence of imports followed by a fasl dump
 (import (r5rs core))    ;; get define, define-library, import, ... from the just loaded
@@ -61,14 +62,12 @@
 ;; shared parameters, librarize later or remove if possible
 
 ;; http://semver.org/lang/ru/
-(define *owl-version* "1.0.0")
+(define *owl-version* "1.1.0")
 (define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
 (define max-object-size #xffff)  ; todo: change as dependent of word size
 
 
 (import (otus lisp))
-
-;(import (lang vm)) ;?
 
 (import (owl intern))
 (import (owl parse))
@@ -84,7 +83,7 @@
 (import (lang alpha))
 
 (import (lang thread))
-;import (lang assemble))
+(import (lang assemble))
 (import (lang closure))
 (import (lang compile))
 

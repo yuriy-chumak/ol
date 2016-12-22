@@ -34,8 +34,8 @@
       (owl list-extra)
       (owl math)
       (owl io)
-      (scheme misc)
-      (lang vm))
+      (src vm)
+      (scheme misc))
 
    (begin
 

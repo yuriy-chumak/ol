@@ -14,7 +14,7 @@
       (owl math)
       (owl list-extra)
       (only (owl interop) interact)
-      (lang vm)
+      (src vm)
       (lang env)
       (lang register))
 
