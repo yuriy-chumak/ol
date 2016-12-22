@@ -27,7 +27,7 @@
       (lang ast)
       (owl lazy)
       (owl sort)
-      (owl primop)
+      (lang vm)
       (owl io)
       (only (lang env) primitive?)
       (lang assemble)

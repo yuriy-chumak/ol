@@ -15,7 +15,7 @@
       (owl list-extra)
       (only (owl interop) interact)
       (lang register)
-      (owl primop))
+      (lang vm))
 
    (begin
 

@@ -18,7 +18,7 @@
       (owl ff)
       (owl math)
       (owl list-extra)
-      (owl primop)
+      (lang vm)
       (owl io)
       (owl equal)
       (owl list)

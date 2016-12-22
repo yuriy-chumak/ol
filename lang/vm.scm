@@ -17,7 +17,11 @@
       special-bind-primop?
 
       ; some usable basic functions (syscalls)
-      exec yield)
+      exec yield
+      halt wait
+      set-ticker-value
+      set-memory-limit get-word-size get-memory-limit
+      )
 
    (import
       (r5rs core))
@@ -283,6 +287,24 @@
       ;; used syscalls
       (define (exec function . args) (syscall 59 function args #f))
       (define (yield)                (syscall 1022 0 #false #false))
+
+      (define (halt n)               (syscall 60 n n n))
+
+      ;; stop the vm *immediately* without flushing input or anything else with return value n
+      ;; make thread sleep for a few thread scheduler rounds
+      (define (set-ticker-value n) (syscall 1022 n #false #false))
+      (define (wait n)
+         (if (eq? n 0)
+            n
+            (let* ((n _ (vm:sub n 1)))
+               (set-ticker-value 0)
+               (wait n))))
+
+
+      ;; special things exposed by the vm
+      (define (set-memory-limit n) (syscall 12 n #f #f))
+      (define (get-word-size)      (syscall 1008 #false #false #false))
+      (define (get-memory-limit)   (syscall 12 #f #f #f))
 
 ;      ;; special things exposed by the vm
 ;      (define (set-memory-limit n) (sys-prim 12 n #f #f))

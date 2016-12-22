@@ -31,7 +31,7 @@
       (owl math)
       (owl io)
       (scheme misc)
-      (owl primop))
+      (lang vm))
 
    (begin
 

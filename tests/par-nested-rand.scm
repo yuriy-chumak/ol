@@ -1,4 +1,4 @@
-(import (owl primop))
+(import (lang vm))
 (import (owl random))
 
 (define (small-range? lo hi)

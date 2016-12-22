@@ -25,7 +25,7 @@
       (owl ff)
       (owl lazy)
       (owl io) ; testing
-      (owl primop)
+      (lang vm)
       (owl unicode)
       (only (owl intern) intern-symbols string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))

@@ -31,13 +31,13 @@
    (import
       (r5rs core)
       (r5rs srfi-1)
+      (lang vm)
 
       (owl list)
       (owl rlist)
       (owl list-extra)
       (owl tuple)
       (owl ff)
-      (owl primop)
       (owl io)
       (owl time)
       (owl lazy)

@@ -88,7 +88,7 @@
       (r5rs core)
       (owl io)
       (owl math)
-      (owl primop) ; exec
+      (only (lang vm) exec)
       (owl string))
 
    (begin

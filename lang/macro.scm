@@ -11,7 +11,7 @@
       (owl list)
       (owl equal)
       (owl list-extra)
-      (owl primop)
+      (lang vm)
       (owl math)
       (owl io)
       (owl sort)

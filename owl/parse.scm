@@ -40,7 +40,7 @@
       (owl io)
       (owl vector)
       (owl render)
-      (only (owl primop) wait)
+      (only (lang vm) wait)
       (owl interop))
 
    (begin

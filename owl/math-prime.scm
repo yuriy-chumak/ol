@@ -18,7 +18,7 @@
       (owl list-extra)
       (owl math-extra)
       (owl sort)
-      (owl primop)
+      (lang vm)
       (only (owl interop) por por*)
       (owl ff))
 

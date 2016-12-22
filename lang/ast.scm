@@ -12,7 +12,7 @@
 
       (owl list-extra)
       (owl math)
-      (owl primop)
+      (lang vm)
       (owl tuple)
       (owl list)
       (owl symbol)

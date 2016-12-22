@@ -14,7 +14,7 @@
       (lang gensym)
       (owl io)
       (only (lang env) primop? primop-of)
-      (owl primop)) 
+      (lang vm)) 
 
    (begin
       ;; fixme: information about cps-special primops could be stored elsewhere

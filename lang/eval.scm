@@ -25,7 +25,7 @@
       (r5rs core)
 
       (owl list)
-      (owl primop)
+      (lang vm)
       (lang compile)
       (lang closure)
       (lang cps)
