@@ -33,7 +33,6 @@
       ; 1.1  Semantics
       ; 1.2  Syntax
 
-
       ; 1.3  Notation and terminology
       ; 1.3.1  Primitive, library, and optional features
       ; 1.3.2  Error situations and unspecified behavior
@@ -1342,10 +1341,10 @@
 
       map list?
 
-            exec yield
+      exec yield
       halt wait
       set-ticker-value
       set-memory-limit get-word-size get-memory-limit
 
-;      (exports (lang vm2))
+      set-car! set-cdr!
 ))
