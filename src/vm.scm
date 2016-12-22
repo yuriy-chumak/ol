@@ -14,6 +14,7 @@
       special-bind-primops
 
 
+      ; commands
       MOVE REFI MOVE2
       LD LDN LDT LDF
       CLOS0 CLOC0 CLOS1 CLOC1
@@ -21,12 +22,24 @@
       GOTO
 
       RET ARITY-ERROR
-      TUPLE-APPLY MKT
+
+      ; types
+      TPAIR TTUPLE TSTRING TSYMBOL
+      TBYTECODE TVPTR
+
+      ; primitives
+      MKT RAW
+      CONS CAR CDR REF
+      SET-REF SET-REF!
+      EQ? LESS?
+      ADD MUL SUB DIV
+      SHR SHL
+      AND OR XOR
+
       FF-APPLY
 
-      TPAIR TTUPLE TSTRING TSYMBOL
-      TBYTECODE
 
+      TUPLE-APPLY
       )
 
    (begin
@@ -116,7 +129,6 @@
 
 
       ;; Список кодов виртуальной машины:
-      (setq JF2 25)
       (setq RET 24)
       (setq ARITY-ERROR 17)
 
@@ -154,15 +166,9 @@
 
       ; primitives
       (setq TUPLE-APPLY 32)
-      (setq FF-APPLY 49)
-      (setq MKT 23)      ;no real mkt command
 
+      (setq MKT 23)      ;no real mkt command, check rtl-primitive in (lang compile)
       (setq RAW 60)      (setq raw     (raw TBYTECODE '(60 4 5 6  24 6)))
-
-      ;(define vm:version  (raw type-bytecode '(62 4)))
-      ;(define fxmax       (raw type-bytecode '(33 4)))
-      ;(define fxmbits     (raw type-bytecode '(34 4)))
-      ;(define vm:wordsize (raw type-bytecode '(29 4)))
 
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
@@ -174,34 +180,33 @@
       ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
       ; names for these functions, the old terms are still in use.
       (setq CONS 51)     (setq cons    (raw TBYTECODE '(51 4 5 6  24 6)))
+
+      (setq CAR 52)      (setq car     (raw TBYTECODE '(52 4 5    24 5)))
+      (setq CDR 53)      (setq cdr     (raw TBYTECODE '(53 4 5    24 5)))
+      (setq REF 47)      (setq ref     (raw TBYTECODE '(47 4 5 6  24 6)))
+      
       (setq TYPE 15)     (setq type    (raw TBYTECODE '(15 4 5    24 5))) ;; get just the type bits (new)
       (setq SIZE 36)     (setq size    (raw TBYTECODE '(36 4 5    24 5))) ;; get object size (- 1)
       (setq CAST 22)     (setq cast    (raw TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
       (setq RAW? 48)     (setq raw?    (raw TBYTECODE '(48 4 5    24 5)))
 
-      ;(define car     (raw TBYTECODE '(52 4 5    24 5)))
-      ;(define cdr     (raw TBYTECODE '(53 4 5    24 5)))
-      ;(define ref     (raw TBYTECODE '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
       (setq SET-REF 45)  (setq set-ref  (raw TBYTECODE '(45 4 5 6 7  24 7)))
+      (setq SET-REF! 10) (setq set-ref! (raw TBYTECODE '(10 4 5 6    24 6))) ; todo: change to like set-ref
 
-      ;(define set-ref! (raw type-bytecode '(10 4 5 6  24 6)))
-      ;moved to the r5rs, (define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
-      ;moved to the r5rs, (define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
-
-      ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
-      ;(define less?   (raw type-bytecode '(44 4 5 6  24 6)))
+      (setq EQ? 54)      (setq eq?     (raw TBYTECODE '(54 4 5 6  24 6)))
+      (setq LESS? 44)    (setq less?   (raw TBYTECODE '(44 4 5 6  24 6)))
 
       ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/apply-values
-      ;(define vm:add  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
-      ;(define vm:mul  (raw type-bytecode '(39 4 5       6 7)))
-      ;(define vm:sub  (raw type-bytecode '(40 4 5       6 7)))
-      ;(define vm:div  (raw type-bytecode '(26 4 5 6     7 8 9)))
-      ;(define vm:shr  (raw type-bytecode '(58 4 5       6 7)))
-      ;(define vm:shl  (raw type-bytecode '(59 4 5       6 7)))
+      (setq ADD 38)      (setq vm:add  (raw TBYTECODE '(38 4 5       6 7)))
+      (setq MUL 39)      (setq vm:mul  (raw TBYTECODE '(39 4 5       6 7)))
+      (setq SUB 40)      (setq vm:sub  (raw TBYTECODE '(40 4 5       6 7)))
+      (setq DIV 26)      (setq vm:div  (raw TBYTECODE '(26 4 5 6     7 8 9)))
+      (setq SHR 58)      (setq vm:shr  (raw TBYTECODE '(58 4 5       6 7)))
+      (setq SHL 59)      (setq vm:shl  (raw TBYTECODE '(59 4 5       6 7)))
 
-      ;(define vm:and  (raw type-bytecode '(55 4 5 6  24 6)))
-      ;(define vm:or   (raw type-bytecode '(56 4 5 6  24 6)))
-      ;(define vm:xor  (raw type-bytecode '(57 4 5 6  24 6)))
+      (setq AND 55)      (setq vm:and  (raw TBYTECODE '(55 4 5 6  24 6)))
+      (setq OR 56)       (setq vm:or   (raw TBYTECODE '(56 4 5 6  24 6)))
+      (setq XOR 57)      (setq vm:xor  (raw TBYTECODE '(57 4 5 6  24 6)))
 
       ;(define vm:run  (raw type-bytecode '(50 4 5)))
 
@@ -209,7 +214,7 @@
       ; deprecated:
       ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
-      ;(define ff-apply  (raw type-bytecode '(49 4)))
+      (setq FF-APPLY 49) (setq ff-apply  (raw TBYTECODE '(49 4)))
       ;(define ff:red     (raw type-bytecode '(43 4 5 6 7  8  24 8)))
       ;(define ff:black   (raw type-bytecode '(42 4 5 6 7  8  24 8)))
       ;(define ff:toggle  (raw type-bytecode '(46 4        5  24 5)))
@@ -217,6 +222,12 @@
       ;(define ff:right?  (raw type-bytecode '(37 4        5  24 5)))
 
       ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8)))
+
+      ;(define vm:version  (raw type-bytecode '(62 4)))
+      ;(define fxmax       (raw type-bytecode '(33 4)))
+      ;(define fxmbits     (raw type-bytecode '(34 4)))
+      ;(define vm:wordsize (raw type-bytecode '(29 4)))
+
 
       (setq primops
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
@@ -226,40 +237,40 @@
          ; rename to vm:b и vm:o ?
          ; rename mkt to new?
          (cons (mkt TTUPLE 'mkt      MKT 'any 1 #f)  ;; mkt type v0 .. vn t (why #f?)
-         (cons (mkt TTUPLE 'raw      60  2 1 raw)   ; (raw type-bytecode '(60 4 5 6  24 6)) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
+         (cons (mkt TTUPLE 'raw      RAW  2 1 raw)   ; (raw type-bytecode '(60 4 5 6  24 6)) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
 
          ; вторая по значимости команда
-         (cons (mkt TTUPLE 'cons     51  2 1 cons)
+         (cons (mkt TTUPLE 'cons     CONS  2 1 cons)
 
          ; операции по работе с памятью
-         (cons (mkt TTUPLE 'car      52  1 1 car)   ; (raw type-bytecode '(52 4 5    24 5))
-         (cons (mkt TTUPLE 'cdr      53  1 1 cdr)   ; (raw type-bytecode '(53 4 5    24 5))
-         (cons (mkt TTUPLE 'ref      47  2 1 ref)   ; (raw type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
+         (cons (mkt TTUPLE 'car      CAR  1 1 car)   ; (raw type-bytecode '(52 4 5    24 5))
+         (cons (mkt TTUPLE 'cdr      CDR  1 1 cdr)   ; (raw type-bytecode '(53 4 5    24 5))
+         (cons (mkt TTUPLE 'ref      REF  2 1 ref)   ; (raw type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
 
-         (cons (mkt TTUPLE 'type     15  1 1 type)  ;; get just the type bits
-         (cons (mkt TTUPLE 'size     36  1 1 size)  ;; get object size (- 1)
-         (cons (mkt TTUPLE 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
-         (cons (mkt TTUPLE 'raw?     48  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
+         (cons (mkt TTUPLE 'type     TYPE  1 1 type)  ;; get just the type bits
+         (cons (mkt TTUPLE 'size     SIZE  1 1 size)  ;; get object size (- 1)
+         (cons (mkt TTUPLE 'cast     CAST  2 1 cast)  ;; cast object type (works for immediates and allocated)
+         (cons (mkt TTUPLE 'raw?     RAW?  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
 
-         (cons (mkt TTUPLE 'set-ref  45  3 1 set-ref)
-         (cons (mkt TTUPLE 'set-ref! 10  3 1 set-ref!)
+         (cons (mkt TTUPLE 'set-ref  SET-REF  3 1 set-ref)
+         (cons (mkt TTUPLE 'set-ref! SET-REF! 3 1 set-ref!)
 
          ; компараторы
-         (cons (mkt TTUPLE 'eq?      54  2 1 eq?)
-         (cons (mkt TTUPLE 'less?    44  2 1 less?)
+         (cons (mkt TTUPLE 'eq?      EQ?   2 1 eq?)
+         (cons (mkt TTUPLE 'less?    LESS? 2 1 less?)
 
          ; базовая арифметика
-         (cons (mkt TTUPLE 'vm:add   38  2 2 vm:add)
-         (cons (mkt TTUPLE 'vm:mul   39  2 2 vm:mul)
-         (cons (mkt TTUPLE 'vm:sub   40  2 2 vm:sub)
-         (cons (mkt TTUPLE 'vm:div   26  3 3 vm:div) ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
+         (cons (mkt TTUPLE 'vm:add   ADD  2 2 vm:add)
+         (cons (mkt TTUPLE 'vm:mul   MUL  2 2 vm:mul)
+         (cons (mkt TTUPLE 'vm:sub   SUB  2 2 vm:sub)
+         (cons (mkt TTUPLE 'vm:div   DIV  3 3 vm:div) ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
          ; сдвиги
-         (cons (mkt TTUPLE 'vm:shr   58  2 2 vm:shr)
-         (cons (mkt TTUPLE 'vm:shl   59  2 2 vm:shl)
+         (cons (mkt TTUPLE 'vm:shr   SHR  2 2 vm:shr)
+         (cons (mkt TTUPLE 'vm:shl   SHL  2 2 vm:shl)
          ; бинарная арифметика
-         (cons (mkt TTUPLE 'vm:and   55  2 1 vm:and)
-         (cons (mkt TTUPLE 'vm:or    56  2 1 vm:or)
-         (cons (mkt TTUPLE 'vm:xor   57  2 1 vm:xor)
+         (cons (mkt TTUPLE 'vm:and   AND  2 1 vm:and)
+         (cons (mkt TTUPLE 'vm:or    OR   2 1 vm:or)
+         (cons (mkt TTUPLE 'vm:xor   XOR  2 1 vm:xor)
 
          ; системный таймер
          (cons (mkt TTUPLE 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
