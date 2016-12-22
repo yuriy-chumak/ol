@@ -29,7 +29,7 @@
       (owl lazy)
       (owl sort)
       (owl io)
-      (only (lang env) primitive?)
+      (lang primop)
       (lang assemble)
       (lang closure))
 

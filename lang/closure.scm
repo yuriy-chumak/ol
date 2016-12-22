@@ -16,6 +16,7 @@
       (owl tuple)
       (owl list-extra)
       (lang env)
+      (lang primop)
       (only (owl io) print))
 
    (begin

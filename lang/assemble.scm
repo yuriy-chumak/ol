@@ -16,6 +16,7 @@
       (only (owl interop) interact)
       (src vm)
       (lang env)
+      (lang primop)
       (lang register))
 
    (begin

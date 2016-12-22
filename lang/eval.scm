@@ -50,6 +50,7 @@
       (owl lazy)
       (lang macro)
       (owl intern)
+      (lang primop)
       (only (owl regex) string->regex))
 
    (begin
@@ -70,7 +71,7 @@
          (if (env-get env '*debug* #false)
             (print* msg)))
 
-      ;; library (just the value of) containing only special forms, primops and
+      ;; library (just the value of) containing only special forms, primops and define-syntax macro
       (define *src-olvm*
          (fold
             (λ (env thing)
