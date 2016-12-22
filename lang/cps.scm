@@ -13,8 +13,8 @@
       (owl math)
       (lang gensym)
       (owl io)
-      (only (lang env) primop? primop-of)
-      (lang vm)) 
+      (lang vm)
+      (only (lang env) primop? primop-of special-bind-primop?))
 
    (begin
       ;; fixme: information about cps-special primops could be stored elsewhere

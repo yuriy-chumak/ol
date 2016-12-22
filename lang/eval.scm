@@ -87,7 +87,7 @@
                       (quote syntax-operation add #false
                         (keyword literals (pattern ...)
                         (template ...)))) )))
-            *primitives*))
+            primops))
 
       (define (execute exp env)
          (apply-values (exp)

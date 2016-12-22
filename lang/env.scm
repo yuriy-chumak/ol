@@ -5,7 +5,10 @@
       lookup env-bind
       empty-env
       apply-env env-fold
+      ; todo: move all primops functions to separate library
       verbose-vm-error prim-opcodes primop-of primitive?
+      primop-name ;; primop → symbol | primop
+      special-bind-primop? variable-input-arity?
       ; opcode->wrapper
       poll-tag name-tag link-tag buffer-tag signal-tag signal-halt thread-quantum meta-tag
       current-library-key
@@ -201,26 +204,6 @@
 
       ;;; these cannot be in primop since they use lists and ffs
 
-      (define (verbose-vm-error opcode a b)
-         (cons "error: "
-         (if (eq? opcode 17)  ;; arity error, could be variable
-               ; this is either a call, in which case it has an implicit continuation,
-               ; or a return from a function which doesn't have it. it's usually a call,
-               ; so -1 to not count continuation. there is no way to differentiate the
-               ; two, since there are no calls and returns, just jumps.
-            `(function ,a got did not want ,(- b 1) arguments)
-         (if (eq? opcode 52)
-            `(trying to get car of a non-pair ,a)
-         (if (eq? opcode 53)
-            `(trying to get cdr of a non-pair ,a)
-         `(,(primop-name opcode) reported error ": " ,a " " ,b)
-         )))))
-         ;   ;((eq? opcode 52)
-         ;   ;   `(trying to get car of a non-pair ,a))
-         ;   (else
-         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
-
-
       ;; ff of opcode → wrapper
       (define prim-opcodes ;; ff of wrapper-fn → opcode
          (for empty primops
@@ -264,5 +247,51 @@
          (ff-fold (λ (words key value) (cons key words)) null env))
 
       (define primitive? primop-of)
+
+      ;; non-primop instructions that can report errors
+      (define (instruction-name op)
+         (cond
+            ((eq? op 17) 'arity-error)
+            (else #false)))
+
+      ; используется в выводе сообщений "инструкция такая-то сфейлила"
+      (define (primop-name pop)
+         (let ((pop (vm:and pop #x3F))) ; ignore top bits which sometimes have further data
+            (or
+               (instruction-name pop)
+               (let loop ((primops primops))
+                  (cond
+                     ((null? primops) pop)
+                     ((eq? pop (ref (car primops) 2))
+                        (ref (car primops) 1))
+                     (else
+                        (loop (cdr primops))))))))
+
+      ;; from cps
+      (define (special-bind-primop? op) ; tuple-apply and ff-apply
+         (has? special-bind-primops op))
+
+      (define (variable-input-arity? op)
+         (has? variable-input-arity-primops op))
+
+
+      (define (verbose-vm-error opcode a b)
+         (cons "error: "
+         (if (eq? opcode 17)  ;; arity error, could be variable
+               ; this is either a call, in which case it has an implicit continuation,
+               ; or a return from a function which doesn't have it. it's usually a call,
+               ; so -1 to not count continuation. there is no way to differentiate the
+               ; two, since there are no calls and returns, just jumps.
+            `(function ,a got did not want ,(- b 1) arguments)
+         (if (eq? opcode 52)
+            `(trying to get car of a non-pair ,a)
+         (if (eq? opcode 53)
+            `(trying to get cdr of a non-pair ,a)
+         `(,(primop-name opcode) reported error ": " ,a " " ,b)
+         )))))
+         ;   ;((eq? opcode 52)
+         ;   ;   `(trying to get car of a non-pair ,a))
+         ;   (else
+         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
 
 ))

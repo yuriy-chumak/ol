@@ -9,12 +9,9 @@
 (define-library (lang vm)
    (export
       primops
-      *primitives*
-      primop-name ;; primop → symbol | primop
-
       multiple-return-variable-primops
-      variable-input-arity?
-      special-bind-primop?
+      variable-input-arity-primops
+      special-bind-primops
 
       ; some usable basic functions (syscalls)
       exec yield
@@ -65,73 +62,6 @@
       (define TUPLE-APPLY 32)
       (define MKT 23)
       (define FF-APPLY 49)
-
-      (define tuple-apply    (raw type-bytecode '(32 4))) ; не возвращает значения
-      ;(define listuple (raw type-bytecode '(35 4 5 6 7  24 7)))
-      ;ff-bind
-
-      ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
-      ;(define raw     (raw type-bytecode '(60 4 5 6  24 6)))
-
-      ;(define vm:version  (raw type-bytecode '(62 4)))
-      ;(define fxmax       (raw type-bytecode '(33 4)))
-      ;(define fxmbits     (raw type-bytecode '(34 4)))
-      ;(define vm:wordsize (raw type-bytecode '(29 4)))
-
-      ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
-      ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
-      ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
-      ; the phrase `Contents of the Address part of the Register'; and cdr (pronounced `could-er') is an
-      ; acronym from the phrase `Contents of the Decrement part of the Register'. These phrases refer to
-      ; specific pieces of hardware on the very early computer on which the original Lisp was developed.
-      ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
-      ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
-      ; names for these functions, the old terms are still in use.
-      ;(define cons    (raw type-bytecode '(51 4 5 6  24 6)))
-
-      ;(define type    (raw type-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
-      ;(define size    (raw type-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
-      ;(define cast    (raw type-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
-      ;(define raw?    (raw type-bytecode '(48 4 5    24 5)))
-
-      ;(define car     (raw type-bytecode '(52 4 5    24 5)))
-      ;(define cdr     (raw type-bytecode '(53 4 5    24 5)))
-      ;(define ref     (raw type-bytecode '(47 4 5 6  24 6)))   ; op47 = ref t o r = prim_ref(A0, A1)
-      (define set-ref  (raw type-bytecode '(45 4 5 6 7  24 7)))
-
-      (define set-ref! (raw type-bytecode '(10 4 5 6  24 6)))
-      ;moved to the r5rs, (define set-car!(raw type-bytecode '(11 4 5 6  24 6)))
-      ;moved to the r5rs, (define set-cdr!(raw type-bytecode '(12 4 5 6  24 6)))
-
-      ;(define eq?     (raw type-bytecode '(54 4 5 6  24 6)))
-      ;(define less?   (raw type-bytecode '(44 4 5 6  24 6)))
-
-      ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/apply-values
-      ;(define vm:add  (raw type-bytecode '(38 4 5       6 7)))     ;'(38 4 5    6 7  )
-      ;(define vm:mul  (raw type-bytecode '(39 4 5       6 7)))
-      ;(define vm:sub  (raw type-bytecode '(40 4 5       6 7)))
-      ;(define vm:div  (raw type-bytecode '(26 4 5 6     7 8 9)))
-      ;(define vm:shr  (raw type-bytecode '(58 4 5       6 7)))
-      ;(define vm:shl  (raw type-bytecode '(59 4 5       6 7)))
-
-      ;(define vm:and  (raw type-bytecode '(55 4 5 6  24 6)))
-      ;(define vm:or   (raw type-bytecode '(56 4 5 6  24 6)))
-      ;(define vm:xor  (raw type-bytecode '(57 4 5 6  24 6)))
-
-      ;(define vm:run  (raw type-bytecode '(50 4 5)))
-
-
-      ; deprecated:
-      ;(define clock   (raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
-
-      (define ff-apply  (raw type-bytecode '(49 4)))
-      ;(define ff:red     (raw type-bytecode '(43 4 5 6 7  8  24 8)))
-      ;(define ff:black   (raw type-bytecode '(42 4 5 6 7  8  24 8)))
-      ;(define ff:toggle  (raw type-bytecode '(46 4        5  24 5)))
-      ;(define ff:red?    (raw type-bytecode '(41 4        5  24 5)))
-      ;(define ff:right?  (raw type-bytecode '(37 4        5  24 5)))
-
-      ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8)))
 
       (define primops (list
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
@@ -200,7 +130,7 @@
          (tuple 'ff:red?    41 1  1  ff:red?)
          (tuple 'ff:right?  37 1  1  ff:right?)
       ))
-      (define *primitives* primops)
+      ;(define *primitives* primops)
 
 
       (define (get-primitive name)
@@ -219,33 +149,14 @@
             38 39 40 26 58 59 ; fx+, fx*, fx-, fx/, fx>>, fx<<
             61 ; (clock)
             ))
+      (define variable-input-arity-primops
+         (list
+            MKT))
 
-      ;; from cps
-      (define (special-bind-primop? op) ; tuple-apply and ff-apply
-         (or (eq? op TUPLE-APPLY)
-             (eq? op FF-APPLY)))
-
-      (define (variable-input-arity? op)
-         (or (eq? op MKT)))
-
-      ;; non-primop instructions that can report errors
-      (define (instruction-name op)
-         (cond
-            ((eq? op ARITY-ERROR) 'arity-error)
-            (else #false)))
-
-      ; используется в выводе сообщений "инструкция такая-то сфейлила"
-      (define (primop-name pop)
-         (let ((pop (vm:and pop #x3F))) ; ignore top bits which sometimes have further data
-            (or
-               (instruction-name pop)
-               (let loop ((primops primops))
-                  (cond
-                     ((null? primops) pop)
-                     ((eq? pop (ref (car primops) 2))
-                        (ref (car primops) 1))
-                     (else
-                        (loop (cdr primops))))))))
+      (define special-bind-primops
+         (list
+            TUPLE-APPLY
+            FF-APPLY))
 
 ;; Список sys-prim'ов
 ; поэтапный перевод sys-prim'ов в syscall'ы

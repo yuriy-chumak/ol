@@ -25,6 +25,7 @@
       (owl symbol)
       (owl list-extra)
       (lang ast)
+      (lang env)
       (owl lazy)
       (owl sort)
       (lang vm)
