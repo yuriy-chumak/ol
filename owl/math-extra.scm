@@ -26,7 +26,6 @@
       (owl list)
       (owl list-extra)
       (owl sort)
-      (lang vm)
       (only (owl interop) por por*)
       (owl ff))
 

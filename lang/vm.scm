@@ -12,9 +12,30 @@
       multiple-return-variable-primops
       variable-input-arity-primops
       special-bind-primops
+
+
+      MOVE REFI MOVE2
+      LD LDN LDT LDF
+      CLOS0 CLOC0 CLOS1 CLOC1
+      JEQ JZ JE JN JF JF2 JF2x
+      GOTO
+
+      RET ARITY-ERROR
+      TUPLE-APPLY MKT
+      FF-APPLY
+
+      TPAIR TTUPLE TSTRING TSYMBOL
+      TBYTECODE
+
       )
 
    (begin
+;      (define-syntax list
+;         (syntax-rules ()
+;            ((list) '())
+;            ((list a . b)
+;               (cons a (list . b)))))
+
 ;          итак, процесс замены кода операции на другой:
 ;          1. заводим новую операцию (например, как я сделал с raw)
 ;           (tuple 'raw2       62  2 1 (raw2 type-bytecode (list JF2 2 0 6  62 4 5 6 24 6  17)))
@@ -47,8 +68,96 @@
       ;(define listuple (raw type-bytecode '(35 4 5 6 7  24 7)))
       ;ff-bind
 
+      ; todo: rename to TPAIR, TTUPLE, etc.
+
+      (setq TPAIR              1) ; reference
+      (setq TTUPLE             2) ; reference
+      (setq TSTRING            3) ; reference, raw -> 35 (#b100000 + 3)?
+      (setq TSYMBOL            4) ; reference
+      ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
+      ; 6
+      ; 7
+      (setq type-ff-black-leaf     8) ; reference ; TODO: move to 28
+      ; 9
+
+      (setq type-rlist-spine      10) ; reference
+      (setq type-vector-leaf      11) ; reference
+
+      (setq type-port             12) ; value
+      (setq type-const            13) ; value
+
+      (setq type-rlist-node       14) ; reference
+      (setq type-vector-dispatch  15) ; reference
+
+      (setq TBYTECODE         16) ; reference, raw     ; declared functions (?)
+      (setq type-proc             17) ; reference          ; from otus lisp bin (?)
+      (setq type-clos             18) ; reference          ; from (import smth) (?)
+
+      (setq type-vector-raw       19) ; reference, raw     ; see also TBVEC in c/ovm.c
+
+      ; 20
+      (setq type-string-dispatch  21) ; reference
+      (setq type-string-wide      22) ; reference, raw
+      ; 23
+
+      ;; transitional trees or future ffs
+      (setq type-ff               24) ; reference
+      (setq type-ff-r             25) ; reference
+      (setq type-ff-red           26) ; reference
+      (setq type-ff-red-r         27) ; reference
+      ; + type-ff-red, type-ff-right
+
+      ;28
+      ;29
+      ;30
+
+      (setq type-thread-state     31) ; reference
+      (setq type-vptr             49) ; reference,  raw
+
+
       ;; *** если кому хочется заменить коды операций - это можно сделать тут ***
-      ;(define raw     (raw type-bytecode '(60 4 5 6  24 6)))
+      ;; Список кодов виртуальной машины:
+      (setq JF2 25)
+      (setq RET 24)
+      (setq ARITY-ERROR 17)
+
+      ; vm-instructions
+      (setq MOVE  9) ; move a, t:      Ra -> Rt
+      (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
+      (setq MOVE2 5) ; two moves, 4 args
+
+      ; load
+      (setq LD   14)  ; ld a, t:        Rt = a, signed byte
+      (setq LDN  77)  ; (+ 13 (<< 1 6))) ; 77
+      (setq LDT  141) ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
+      (setq LDF  205) ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
+
+      ;
+      (setq CLOS0 3) ; clos lp, o, nenv, e0 ... en, t:
+      (setq CLOC0 4) ; cloc lp, o, nenv, e0 ... en, t:
+      (setq CLOS1 6)
+      (setq CLOC1 7)
+
+      ; conditional jumps
+      (setq JEQ   8) ; jeq a b o1 o2
+      (setq JZ   16)  ;(+ 16 (<< 0 6))) ; jump-imm[0] if zero
+      (setq JN   80)  ;(+ 16 (<< 1 6))) ; jump-imm[0] if null
+      (setq JE   144) ;(+ 16 (<< 2 6))) ; jump-imm[0] if empty
+      (setq JF   208) ;(+ 16 (<< 3 6))) ; jump-imm[0] if false
+      (setq JF2  25) ; jump if arity failed
+      (setq JF2x 89) ; (+ JF2 (<< 1 6))) ; JF2 with extra flag
+
+      ; executions
+      (setq GOTO 2) ; jmp a, nargs    call Ra with nargs args
+      ;(setq GOTO-CODE 18) ; not used for now, check (fn-type)
+      ;(setq GOTO-PROC 19) ; not used for now, check (fn-type)
+      ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
+
+      (setq TUPLE-APPLY 32)
+      (setq FF-APPLY 49)
+      (setq MKT 23)
+
+      (setq RAW 60)        (setq raw     (raw TBYTECODE '(60 4 5 6  24 6)))
 
       ;(define vm:version  (raw type-bytecode '(62 4)))
       ;(define fxmax       (raw type-bytecode '(33 4)))
@@ -110,88 +219,74 @@
 
       ;(define syscall (raw type-bytecode '(63 4 5 6 7 8  24 8)))
 
-      (define-syntax list
-         (syntax-rules ()
-            ((list) '())
-            ((list a . b)
-               (cons a (list . b)))))
-
-      ;; Список кодов виртуальной машины:
-      (setq JF2 25)
-      (setq RET 24)
-      (setq ARITY-ERROR 17)
-
-      (setq TUPLE-APPLY 32)
-      (setq MKT 23)
-      (setq FF-APPLY 49)
-
       (setq primops
          ; сейчас у этой операции нету проверки арности. возможно стоит ее вернуть (если ее будут использовать).
          ; todo: rename to vm:bytecode, vm:raw ?
 
          ; raw создает бинарную последовательность, mkt - последовательность объектов
          ; rename to vm:b и vm:o ?
-         (cons (mkt 2 'raw      60  2 1 raw)   ; (raw type-bytecode '(60 4 5 6  24 6)) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
-         (cons (mkt 2 'mkt      23 'any 1 #f)  ;; mkt type v0 .. vn t (why #f?)
+         ; rename mkt to new?
+         (cons (mkt TTUPLE 'mkt      MKT 'any 1 #f)  ;; mkt type v0 .. vn t (why #f?)
+         (cons (mkt TTUPLE 'raw      60  2 1 raw)   ; (raw type-bytecode '(60 4 5 6  24 6)) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
 
          ; вторая по значимости команда
-         (cons (mkt 2 'cons     51  2 1 cons)
+         (cons (mkt TTUPLE 'cons     51  2 1 cons)
 
          ; операции по работе с памятью
-         (cons (mkt 2 'car      52  1 1 car)   ; (raw type-bytecode '(52 4 5    24 5))
-         (cons (mkt 2 'cdr      53  1 1 cdr)   ; (raw type-bytecode '(53 4 5    24 5))
-         (cons (mkt 2 'ref      47  2 1 ref)   ; (raw type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
+         (cons (mkt TTUPLE 'car      52  1 1 car)   ; (raw type-bytecode '(52 4 5    24 5))
+         (cons (mkt TTUPLE 'cdr      53  1 1 cdr)   ; (raw type-bytecode '(53 4 5    24 5))
+         (cons (mkt TTUPLE 'ref      47  2 1 ref)   ; (raw type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
 
-         (cons (mkt 2 'type     15  1 1 type)  ;; get just the type bits
-         (cons (mkt 2 'size     36  1 1 size)  ;; get object size (- 1)
-         (cons (mkt 2 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
-         (cons (mkt 2 'raw?     48  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
+         (cons (mkt TTUPLE 'type     15  1 1 type)  ;; get just the type bits
+         (cons (mkt TTUPLE 'size     36  1 1 size)  ;; get object size (- 1)
+         (cons (mkt TTUPLE 'cast     22  2 1 cast)  ;; cast object type (works for immediates and allocated)
+         (cons (mkt TTUPLE 'raw?     48  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
 
-         (cons (mkt 2 'set-ref  45  3 1 set-ref)
-         (cons (mkt 2 'set-ref! 10  3 1 set-ref!)
+         (cons (mkt TTUPLE 'set-ref  45  3 1 set-ref)
+         (cons (mkt TTUPLE 'set-ref! 10  3 1 set-ref!)
 
          ; компараторы
-         (cons (mkt 2 'eq?      54  2 1 eq?)
-         (cons (mkt 2 'less?    44  2 1 less?)
+         (cons (mkt TTUPLE 'eq?      54  2 1 eq?)
+         (cons (mkt TTUPLE 'less?    44  2 1 less?)
 
          ; базовая арифметика
-         (cons (mkt 2 'vm:add   38  2 2 vm:add)
-         (cons (mkt 2 'vm:mul   39  2 2 vm:mul)
-         (cons (mkt 2 'vm:sub   40  2 2 vm:sub)
-         (cons (mkt 2 'vm:div   26  3 3 vm:div) ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
+         (cons (mkt TTUPLE 'vm:add   38  2 2 vm:add)
+         (cons (mkt TTUPLE 'vm:mul   39  2 2 vm:mul)
+         (cons (mkt TTUPLE 'vm:sub   40  2 2 vm:sub)
+         (cons (mkt TTUPLE 'vm:div   26  3 3 vm:div) ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
          ; сдвиги
-         (cons (mkt 2 'vm:shr   58  2 2 vm:shr)
-         (cons (mkt 2 'vm:shl   59  2 2 vm:shl)
+         (cons (mkt TTUPLE 'vm:shr   58  2 2 vm:shr)
+         (cons (mkt TTUPLE 'vm:shl   59  2 2 vm:shl)
          ; бинарная арифметика
-         (cons (mkt 2 'vm:and   55  2 1 vm:and)
-         (cons (mkt 2 'vm:or    56  2 1 vm:or)
-         (cons (mkt 2 'vm:xor   57  2 1 vm:xor)
+         (cons (mkt TTUPLE 'vm:and   55  2 1 vm:and)
+         (cons (mkt TTUPLE 'vm:or    56  2 1 vm:or)
+         (cons (mkt TTUPLE 'vm:xor   57  2 1 vm:xor)
 
          ; системный таймер
-         (cons (mkt 2 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
+         (cons (mkt TTUPLE 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
          ; системные вызовы
-         (cons (mkt 2 'syscall  63  4 1 syscall)
+         (cons (mkt TTUPLE 'syscall  63  4 1 syscall)
 
          ; vm-specific constants
-         (cons (mkt 2 'vm:version  62  0 1 vm:version)
-         (cons (mkt 2 'fxmax       30  0 1 fxmax)   ; todo: rename :may be vm:aimv - "atomic integer maximal value"?
-         (cons (mkt 2 'fxmbits     31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
-         (cons (mkt 2 'vm:wordsize 29  0 1 vm:wordsize)
+         (cons (mkt TTUPLE 'vm:version  62  0 1 vm:version)
+         (cons (mkt TTUPLE 'fxmax       30  0 1 fxmax)   ; todo: rename :may be vm:aimv - "atomic integer maximal value"?
+         (cons (mkt TTUPLE 'fxmbits     31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
+         (cons (mkt TTUPLE 'vm:wordsize 29  0 1 vm:wordsize)
 
          ; todo: add macro for call-with-tuple in r5rs
-         (cons (mkt 2 'tuple-apply 32 1 #false tuple-apply)
+         (cons (mkt TTUPLE 'tuple-apply 32 1 #false tuple-apply)
          ; todo: rename to make-tuple,  vm:mkt?
          ; todo: rename to list->typedtuple ?
-         (cons (mkt 2 'listuple    35 3 1  listuple)
+         (cons (mkt TTUPLE 'listuple    35 3 1  listuple)
 
          ; поддержка red-black деревьев
-         (cons (mkt 2 'ff-apply   49 1 #f  ff-apply)
+         (cons (mkt TTUPLE 'ff-apply   49 1 #f  ff-apply)
 
-         (cons (mkt 2 'ff:red     43 4  1  ff:red)
-         (cons (mkt 2 'ff:black   42 4  1  ff:black)
-         (cons (mkt 2 'ff:toggle  46 1  1  ff:toggle)
-         (cons (mkt 2 'ff:red?    41 1  1  ff:red?)
-         (cons (mkt 2 'ff:right?  37 1  1  ff:right?)
+         (cons (mkt TTUPLE 'ff:red     43 4  1  ff:red)
+         (cons (mkt TTUPLE 'ff:black   42 4  1  ff:black)
+         (cons (mkt TTUPLE 'ff:toggle  46 1  1  ff:toggle)
+         (cons (mkt TTUPLE 'ff:red?    41 1  1  ff:red?)
+         (cons (mkt TTUPLE 'ff:right?  37 1  1  ff:right?)
          #null))))))))))))))))))))))))))))))))))))))
       ;(define *primitives* primops)
 
@@ -206,20 +301,24 @@
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд
       (setq multiple-return-variable-primops
-         (list
-            FF-APPLY
+         (cons FF-APPLY
+         (cons 38 ; fx+, fx*, fx-, fx/, fx>>, fx<<
+         (cons 39
+         (cons 40
+         (cons 26
+         (cons 58
+         (cons 59
+         (cons 61 ; (clock)
+         #null)))))))))
 
-            38 39 40 26 58 59 ; fx+, fx*, fx-, fx/, fx>>, fx<<
-            61 ; (clock)
-            ))
       (setq variable-input-arity-primops
-         (list
-            MKT))
+         (cons MKT
+         #null))
 
       (setq special-bind-primops
-         (list
-            TUPLE-APPLY
-            FF-APPLY))
+         (cons TUPLE-APPLY
+         (cons FF-APPLY
+         #null)))
 
 ;; Список sys-prim'ов
 ; поэтапный перевод sys-prim'ов в syscall'ы

@@ -13,7 +13,6 @@
       (owl math)
       (lang gensym)
       (owl io)
-      (lang vm)
       (only (lang env) primop? primop-of special-bind-primop?))
 
    (begin

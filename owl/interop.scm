@@ -10,8 +10,7 @@
       par por* por interop)
 
    (import
-      (r5rs core)
-      (lang vm))
+      (r5rs core))
 
    (begin
       ;; спецоперация для общения с менеджером внутренних потоков (todo: переименовать)

@@ -67,7 +67,6 @@
 
       (owl vector)
       (owl math)
-      (lang vm)
       (owl ff)
       (owl lazy)
       (owl list)

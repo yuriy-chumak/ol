@@ -9,6 +9,7 @@
       verbose-vm-error prim-opcodes primop-of primitive?
       primop-name ;; primop → symbol | primop
       special-bind-primop? variable-input-arity?
+      multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?
       ; opcode->wrapper
       poll-tag name-tag link-tag buffer-tag signal-tag signal-halt thread-quantum meta-tag
       current-library-key
@@ -273,6 +274,44 @@
 
       (define (variable-input-arity? op)
          (has? variable-input-arity-primops op))
+
+      (define (multiple-return-variable-primop? op)
+         (has? multiple-return-variable-primops op))
+
+      ;; primops = (#(name opcode in-args|#f out-args|#f wrapper-fn|#f) ...)
+
+      ;; ff of opcode → (in|#f out|#f), #f if variable
+      (define primop-arities
+         (fold
+            (λ (ff node)
+               (lets ((name op in out wrapper node))
+                  (put ff op (cons in out))))
+            empty primops))
+
+      (define (opcode-arity-ok? op in out)
+         (let ((node (getf primop-arities op)))
+            (if node
+               (and
+                  (or (eq? in  (car node)) (not (car node)))
+                  (or (eq? out (cdr node)) (not (cdr node))))
+               #true)))
+
+      ;; fixme: ??? O(n) search for opcode->primop. what the...
+      (define (opcode->primop op)
+         (let
+            ((node
+               (some
+                  (λ (x) (if (eq? (ref x 2) op) x #false))
+                  primops)))
+            (if node node (runtime-error "Unknown primop: " op))))
+
+      (define (opcode-arity-ok-2? op n)
+         (tuple-apply (opcode->primop op)
+            (λ (name op in out fn)
+               (cond
+                  ((eq? in n) #true)
+                  ((eq? in 'any) #true)
+                  (else #false)))))
 
 
       (define (verbose-vm-error opcode a b)

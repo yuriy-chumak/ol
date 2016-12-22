@@ -28,7 +28,6 @@
       (lang env)
       (owl lazy)
       (owl sort)
-      (lang vm)
       (owl io)
       (only (lang env) primitive?)
       (lang assemble)
@@ -450,23 +449,6 @@
             ((value val) val)
             (else #false)))
 
-      ;; fixme: ??? O(n) search for opcode->primop. what the...
-      (define (opcode->primop op)
-         (let
-            ((node
-               (some
-                  (λ (x) (if (eq? (ref x 2) op) x #false))
-                  primops)))
-            (if node node (runtime-error "Unknown primop: " op))))
-
-      (define (opcode-arity-ok? op n)
-         (tuple-apply (opcode->primop op)
-            (λ (name op in out fn)
-               (cond
-                  ((eq? in n) #true)
-                  ((eq? in 'any) #true)
-                  (else #false)))))
-
       ;; compile any AST node node to RTL
       (define (rtl-any regs exp)
          (tuple-case exp
@@ -513,7 +495,7 @@
                   (if op
                      (tuple-case (car rands)
                         ((lambda formals body)
-                           (if (opcode-arity-ok? op (length (cdr rands)))
+                           (if (opcode-arity-ok-2? op (length (cdr rands)))
                               (rtl-primitive regs op formals (cdr rands)
                                  (λ (regs) (rtl-any regs body)))
                               ;; fixme: should be a way to show just parts of AST nodes, which may look odd

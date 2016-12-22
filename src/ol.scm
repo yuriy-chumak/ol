@@ -68,7 +68,7 @@
 
 (import (otus lisp))
 
-(import (lang vm)) ;?
+;(import (lang vm)) ;?
 
 (import (owl intern))
 (import (owl parse))

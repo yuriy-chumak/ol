@@ -1,4 +1,3 @@
-(import (lang vm))
 (define (iter-ret n r)
    (if (= n 0)
       r

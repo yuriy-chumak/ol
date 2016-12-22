@@ -22,7 +22,6 @@
       (owl queue)
       (owl interop)
       (owl ff)
-      (lang vm)
       (owl list)
       (owl math)
       (owl tuple)

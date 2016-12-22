@@ -29,7 +29,6 @@
       (owl list)
       (owl math)
       (owl io)
-      (only (lang vm) apply)
       (owl ff)
       (owl tuple)
       (owl symbol))

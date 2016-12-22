@@ -39,7 +39,6 @@
       (owl list)
       (owl math)
       (owl string)
-      (lang vm)
       (owl vector)
       (owl list-extra)
       (owl iff))

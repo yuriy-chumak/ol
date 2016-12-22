@@ -12,7 +12,6 @@
 
       (owl list-extra)
       (owl math)
-      (lang vm)
       (owl tuple)
       (owl list)
       (owl symbol)
