@@ -2386,7 +2386,7 @@ static int mainloop(OL* ol)
 			for (ptrdiff_t i = 0; i < size; i++)
 				newobj[i] = p[i];
 			if (pos < (size-1)*sizeof(word) - padsize(hdr) + 1)
-				((char*)&car(newobj))[pos - 1] = (char)uvtoi(A2);
+				((char*)&car(newobj))[pos] = (char)uvtoi(A2);
 			A3 = (word)newobj;
 		}
 		else
