@@ -429,13 +429,14 @@
       (define (value-pred pred)
          (λ (val)
             (tuple-case val
-               ((value val) (pred val))
+               ((value val)
+                  (pred val))
                (else #false))))
 
-      (define false-value? (value-pred (λ (x) (eq? x #false))))
+      (define false-value? (value-pred (λ (x) (eq? x #f))))
       (define empty-value? (value-pred (λ (x) (eq? x #empty))))
-      (define null-value?  (value-pred (λ (x) (eq? x #null)))) ; was: null?))
-      (define zero-value?  (value-pred (λ (x) (eq? x 0))))
+      (define null-value? (value-pred (λ (x) (eq? x #null))))
+      (define zero-value? (value-pred (λ (x) (eq? x 0))))
 
       (define (simple-first a b cont)
          (cond
@@ -455,6 +456,7 @@
       (define (rtl-any regs exp)
          (tuple-case exp
             ((ifeq a b then else)
+               ; тут мы попытаемся поставить b первым аргументом, если b равно 0, #f, #t, #empty
                (simple-first a b
                   ;;; move simple to a, if any
                   (λ (a b)
@@ -462,34 +464,29 @@
                         ;; todo: convert jump-if-<val> rtl nodes to a single shared rtl node to avoid having to deal with them as separate instructions
                         ((false-value? a) ; jump-if-false
                            (rtl-simple regs b (λ (regs bp)
-                              (let
-                                 ((then (rtl-any regs then))
-                                  (else (rtl-any regs else)))
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
                                  (tuple 'jf bp then else)))))
                         ((empty-value? a) ; jump-if-empty
                            (rtl-simple regs b (λ (regs bp)
-                              (let
-                                 ((then (rtl-any regs then))
-                                  (else (rtl-any regs else)))
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
                                  (tuple 'je bp then else)))))
                         ((null-value? a) ; jump-if-null
                            (rtl-simple regs b (λ (regs bp)
-                              (let
-                                 ((then (rtl-any regs then))
-                                  (else (rtl-any regs else)))
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
                                  (tuple 'jn bp then else)))))
                         ((zero-value? a) ; jump-if-false
                            (rtl-simple regs b (λ (regs bp)
-                              (let
-                                 ((then (rtl-any regs then))
-                                  (else (rtl-any regs else)))
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
                                  (tuple 'jz bp then else)))))
                         (else
                            (rtl-simple regs a (λ (regs ap)
                               (rtl-simple regs b (λ (regs bp)
-                                 (let
-                                    ((then (rtl-any regs then))
-                                     (else (rtl-any regs else)))
+                                 (let ((then (rtl-any regs then))
+                                       (else (rtl-any regs else)))
                                     (tuple 'jeq ap bp then else)))))))))))
             ((call rator rands)
                ;; compile as primop call, bind if rator is lambda or a generic call

@@ -44,11 +44,11 @@
       ; this is internal simlified 'assert' that use 'eq?', please be careful!
       (define-syntax assert
          (syntax-rules (===>)
-            ((assert expression ===> result)
-               (ifeq expression (quote result)
+            ((assert expression ===> expectation)
+               (ifeq ((lambda (x) x) expression) (quote expectation)
                   #true
                   ;else runtime-error:
-                  (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
+                  (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
 
       ; 1.3.3  Entry format
       ; 1.3.4  Evaluation examples
@@ -111,6 +111,10 @@
          (syntax-rules ()
             ((λ . x) (lambda . x))))
 
+      ;(assert ((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6))
+      ;(assert ((lambda (x y . z) z) 3 4 5 6)          ===>  (5 6))
+              
+
       ; http://srfi.schemers.org/srfi-16/srfi-16.html
       ; srfi syntex: (case-lambda ...
       (define-syntax case-lambda
@@ -143,10 +147,12 @@
             ((if #false    then else)  else)
             ((if t         then else) (ifeq t #false else then))))
 
+      (assert (if (less? 2 3) 'yes 'no)               ===>  yes)
+      (assert (if (less? 3 2) 'yes 'no)               ===>  no)
+
       ; ------------------
       ; 4.1.6  Assignments
-      ; syntax: set! <variable> <expression>
-
+      ; syntax: set! <variable> <expression>  * not supported
 
       ;; 4.2  Derived expression types
       ; The constructs in this section are hygienic, as discussed in section 4.3. For reference purposes,
@@ -170,6 +176,14 @@
                (if clause
                   ((lambda () exp . rest-exps)) ; (begin ...)
                   (cond . rest)))))
+
+      (assert (cond ((less? 2 3) 'greater)
+                    ((less? 3 2) 'less))                  ===>  greater)
+      (assert (cond ((less? 3 3) 'greater)
+                    ((less? 3 3) 'less)
+                    (else 'equal))                        ===>  equal)
+      (assert (cond ((car (cdr '((a 1) (b 2)))) => car)
+                    (else #f))                            ===>  b)
 
       ; library syntax:  (case <key> <clause1> <clause2> ...)
       (define-syntax case
@@ -203,13 +217,29 @@
                   ((lambda () . then)) ; means (begin . body)
                   (case thing . clauses)))))
 
+      ;no memv yet to check this asserts
+      ;(assert (case 6
+      ;          ((2 3 5 7) 'prime)
+      ;          ((1 4 6 8 9) 'composite))                 ===> composite)
+      ;(assert (case (car '(c d))
+      ;          ((a e i o u) 'vowel)
+      ;          ((w y) 'semivowel)
+      ;          (else 'consonant))                        ===>  consonant)
+
       ; library syntax:  (and <test1> ...)
       (define-syntax and
          (syntax-rules ()
             ((and) #true)
+;            ((and (a . b) . c)
+;               ((lambda (x) (and x . c))  (a . b)))
             ((and a) a)
             ((and a . b)
                (if a (and . b) #false))))
+
+      (assert (and (eq? 2 2) (less? 1 2))                 ===> #true)
+      (assert (and (eq? 2 2) (less? 2 1))                 ===> #false)
+      (assert (and 1 2 '(f g) 'c)                         ===> c)
+      (assert (and)                                       ===> #true)
 
       ; library syntax:  (or <test1> ...)
       (define-syntax or
@@ -217,9 +247,14 @@
             ((or) #false)
             ((or (a . b) . c)
                ((lambda (x) (or x . c))  (a . b)))
+            ((or a) a)
             ((or a . b)
                (if a a (or . b)))))
 
+      (assert (or (eq? 2 2) (less? 1 2))                  ===> #true)
+      (assert (or (eq? 2 2) (less? 2 1))                  ===> #true)
+      (assert (or #f #f #f)                               ===> #false)
+      (assert (or #f 'c #f)                               ===> c)
 
       ; -------------------------
       ; 4.2.2  Binding constructs
@@ -703,22 +738,22 @@
       ;      Note: Programmers accustomed to other dialects of Lisp should be aware that Scheme
       ;            distinguishes both #f and the empty list from the symbol nil.
       ; Boolean constants evaluate to themselves, so they do not need to be quoted in programs.
-      (assert #t                                     ===>  #t)
-      (assert #f                                     ===>  #f)
-      (assert (quote #f)                             ===>  #f)
+      (assert #t                                ===>  #t)
+      (assert #f                                ===>  #f)
+      (assert (quote #f)                        ===>  #f)
 
 
       ; library procedure:  (not obj)
       (define (not x)
          (if x #false #true))
 
-      (assert (not #t)                               ===>  #f)
-      (assert (not 3)                                ===>  #f)
-      (assert (not '(3 . 0))                         ===>  #f)
-      (assert (not #f)                               ===>  #t)
-      (assert (not '())                              ===>  #f)
-      (assert (not cons)                             ===>  #f)
-      (assert (not 'nil)                             ===>  #f)
+      (assert (not #t)                          ===>  #f)
+      (assert (not 3)                           ===>  #f)
+      (assert (not '(3 . 0))                    ===>  #f)
+      (assert (not #f)                          ===>  #t)
+      (assert (not '())                         ===>  #f)
+      (assert (not cons)                        ===>  #f)
+      (assert (not 'nil)                        ===>  #f)
 
 
       ; library procedure:  (boolean? obj)
