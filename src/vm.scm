@@ -15,13 +15,12 @@
 
 
       ; commands
-      MOVE REFI MOVE2
-      LD LDN LDT LDF
-      CLOS0 CLOC0 CLOS1 CLOC1
+      GOTO APPLY RET SYS RUN ARITY-ERROR
       JEQ JZ JE JN JF JF2 JF2x
-      GOTO
+      CLOS0 CLOC0 CLOS1 CLOC1
 
-      RET ARITY-ERROR
+      LD LDE LDN LDT LDF
+      MOVE REFI MOVE2
 
       ; types
       TPAIR TTUPLE TSTRING TSYMBOL
@@ -129,7 +128,12 @@
 
 
       ;; Список кодов виртуальной машины:
+      (setq GOTO 2)
+      (setq APPLY 20)
       (setq RET 24)
+      (setq SYS 27)
+      (setq RUN 50)
+
       (setq ARITY-ERROR 17)
 
       ; set
@@ -139,6 +143,7 @@
 
       ; load
       (setq LD   14)  ; ld a, t:        Rt = a, signed byte
+      (setq LDE  13)  ; (+ 13 (<< 0 6))) ; 77
       (setq LDN  77)  ; (+ 13 (<< 1 6))) ; 77
       (setq LDT  141) ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
       (setq LDF  205) ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false

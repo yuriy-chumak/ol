@@ -1863,15 +1863,17 @@ static int mainloop(OL* ol)
 			return STATE_ERROR; \
 		}
 
-		// управляющие команды:
-	#	define APPLY 20 // apply-cont = 20+64
-	#	define RET   24
-	#	define RUN   50
-		// безусловные переходы
+	// безусловные переходы
 	#	define GOTO   2       // jmp a, nargs
 	//#	define GOTO_CODE 18   //
 	//#	define GOTO_PROC 19   //
 	//#	define GOTO_CLOS 21   //
+
+	// управляющие команды:
+	#	define APPLY 20 // apply-cont = 20+64
+	#	define RET   24
+	#	define RUN   50
+	#	define ARITY_ERROR 17
 
 	#	define SYS   27
 
@@ -2020,28 +2022,27 @@ static int mainloop(OL* ol)
 		ol->arity = ip[1];
 		ol->ip = ip; // todo: возможно не нужен, так как ip перезапишется
 		return STATE_APPLY;
-
-//		case GOTO_CODE:
-//			this = (word *)A0; acc = ip[1];
-//			ip = (unsigned char*) &this[1];
-//			goto invoke;
-//		case GOTO_PROC:
-//			this = (word *)A0; acc = ip[1];
-//			R1 = (word) this;
-//			this = (word *) this[1];
-//			ip = (unsigned char*) &this[1];
-//			goto invoke;
-//		case GOTO_CLOS:
-//			this = (word *)A0; acc = ip[1];
-//			R1 = (word) this;
-//			this = (word *) this[1];
-//			R2 = (word) this;
-//			this = (word *) this[1];
-//			ip = (unsigned char*) &this[1];
-//			goto invoke;
+//	case GOTO_CODE:
+//		this = (word *)A0; acc = ip[1];
+//		ip = (unsigned char*) &this[1];
+//		goto invoke;
+//	case GOTO_PROC:
+//		this = (word *)A0; acc = ip[1];
+//		R1 = (word) this;
+//		this = (word *) this[1];
+//		ip = (unsigned char*) &this[1];
+//		goto invoke;
+//	case GOTO_CLOS:
+//		this = (word *)A0; acc = ip[1];
+//		R1 = (word) this;
+//		this = (word *) this[1];
+//		R2 = (word) this;
+//		this = (word *) this[1];
+//		ip = (unsigned char*) &this[1];
+//		goto invoke;
 
 	// apply
-	// todo: include apply-tuple, apply-values and apply-ff to the APPLY?
+	// todo:? include apply-tuple, apply-values and apply-ff to the APPLY
 	case APPLY: {
 		int reg, arity;
 		int acc = ol->arity;
@@ -2068,6 +2069,7 @@ static int mainloop(OL* ol)
 		while (is_pair(lst)) { // unwind argument list
 			// FIXME: unwind only up to last register and add limited rewinding to arity check
 			// тут бага, количество регистров может стать больше, чем надо, и пиздец. todo: исправить!!
+			// todo: исправить с помощью динамического количества регистров!
 			if (reg > NR) { // dummy handling for now
 				STDERR("TOO LARGE APPLY");
 				exit(3);
@@ -2129,13 +2131,18 @@ static int mainloop(OL* ol)
 		ol->ip = ip; // todo: возможно не нужен, так как ip перезапишется
 		return STATE_APPLY;
 	}
+	// ошибка арности
+	case ARITY_ERROR:
+		// TODO: добавить в .scm вывод ошибки четности
+		ERROR(17, ol->this, F(ol->arity));
+		break;
 
 
 	/************************************************************************************/
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
-	case LDI: {  // 13,  -> ldi(ldz, ldn, ldt, ldf){2bit what} [to]
-		const word I[] = { F(0), INULL, ITRUE, IFALSE };
+	case LDI: {  // 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
+		const word I[] = { IEMPTY, INULL, ITRUE, IFALSE };
 		A0 = I[op>>6];
 		ip += 1; break;
 	}
@@ -2157,6 +2164,7 @@ static int mainloop(OL* ol)
 		ip += 4; break;
 
 
+	// условные переходы
 	case JEQ: /* jeq a b o, extended jump  */
 		if (A0 == A1)
 			ip += (ip[3] << 8) + ip[2]; // little-endian
@@ -2505,12 +2513,6 @@ static int mainloop(OL* ol)
 		A3 = F(r & FMAX);
 		ip += 4; break; }
 
-
-	// ошибка арности
-	case 17:
-		// TODO: добавить в .scm вывод ошибки четности
-		ERROR(17, ol->this, F(ol->arity));
-		break;
 
 	// todo: add the instruction name
 	case 29: // (vm:wordsize)

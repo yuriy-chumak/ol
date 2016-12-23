@@ -918,7 +918,7 @@
 
 
       ; procedure:  (apply proc arg1 ... args)  * builtin
-      (define apply      (raw type-bytecode '(20)))
+      (define apply      (raw type-bytecode `(,APPLY))) ; todo: add to vm and add arity check
 
       ; library procedure:  (map proc list1 list2 ...)
 ;      (define (map fn lst)

@@ -144,6 +144,15 @@
                   ((eq? val null)
                      (ilist LDN (reg to)
                         (assemble cont fail)))
+                  ((eq? val #false)
+                     (ilist LDF (reg to)
+                        (assemble cont fail)))
+                  ((eq? val #true)
+                     (ilist LDT (reg to)
+                        (assemble cont fail)))
+                  ((eq? val #empty)
+                     (ilist LDE (reg to)
+                        (assemble cont fail)))
                   ((fixnum? val)
                      (let ((code (assemble cont fail)))
                         (if (or (> val 126) (< val -126)) ; would be a bug
@@ -151,12 +160,6 @@
                         (ilist LD
                            (if (< val 0) (+ 256 val) val)
                            (reg to) code)))
-                  ((eq? val #false)
-                     (ilist LDF (reg to)
-                        (assemble cont fail)))
-                  ((eq? val #true)
-                     (ilist LDT (reg to)
-                        (assemble cont fail)))
                   (else
                      (fail (list "cannot assemble a load for " val)))))
             ((refi from offset to more)

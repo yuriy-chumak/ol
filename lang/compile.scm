@@ -39,10 +39,11 @@
 
       (define (small-value? val)
          (or
+            (eq? val #empty)
+            (eq? val #null)
             (eq? val #true)
             (eq? val #false)
-            (and (fixnum? val) (>= val -127) (< val 127))
-            (eq? val null)))
+            (and (fixnum? val) (>= val -127) (< val 127))))
 
       (define (ok exp env) (tuple 'ok exp env))
       (define (fail reason) (tuple 'fail reason))
