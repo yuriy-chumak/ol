@@ -80,7 +80,7 @@
 (define win32? (string-ci=? (ref uname 1) "Windows"))
 (define linux? (string-ci=? (ref uname 1) "Linux"))
 
-(define (new-void*) (raw type-void* '(0)))
+(define (new-void*) (vm:raw type-void* '(0)))
 
 (define % (dlopen (cond
    (win32? "sqlite3")
@@ -104,7 +104,7 @@
 
 
 ; служебные
-(define (make-sqlite3)      (new-void*)) ;like void* (raw type-vector-raw '(0)))
+(define (make-sqlite3)      (new-void*)) ;like void* (vm:raw type-vector-raw '(0)))
 (define (make-sqlite3-stmt) (new-void*)) ; or (list->byte-vector '(0 0 0 0)))
 
 ; todo: завести под это дело отдельный тип - что-то вроде type-int+-ref и т.д.

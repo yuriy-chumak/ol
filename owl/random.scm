@@ -52,7 +52,7 @@
    (begin
       (define ncar car)
       (define ncdr cdr)
-      (define (ncons a b) (mkt type-int+ a b))
+      (define (ncons a b) (vm:new type-int+ a b))
 
       ;;;
       ;;; Pseudorandom data generators
@@ -460,7 +460,7 @@
       (define (random-bvec rs n)
          (let loop ((rs rs) (out null) (n n))
             (if (eq? n 0)
-               (values rs (raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
+               (values rs (vm:raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
                (lets
                   ((d rs (uncons rs 0))
                    (n _ (vm:sub n 1)))

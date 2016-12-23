@@ -1818,7 +1818,7 @@
 ;                     0 0 640 480  1
 ;                     (XBlackPixel display screen) (XWhitePixel display screen))))
 ;   (let*((vi (glXChooseVisual display screen
-;                     (raw type-vector-raw '(
+;                     (vm:raw type-vector-raw '(
 ;                        4 0 0 0 ; GLX_RGBA
 ;                        8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
 ;                        9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
@@ -1876,7 +1876,7 @@
 ;                     0 0 640 480  1
 ;                     (XBlackPixel display screen) (XWhitePixel display screen))))
 ;            (let*((vi (glXChooseVisual display screen
-;                           (raw type-vector-raw '(
+;                           (vm:raw type-vector-raw '(
 ;                              4 0 0 0 ; GLX_RGBA
 ;                              8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
 ;                              9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE

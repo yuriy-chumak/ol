@@ -171,7 +171,7 @@
       (define (encode-allocated clos cook)
          (λ (out val-orig pos)
             (lets
-               ( ; (val-orig (if (eq? val-orig <tochange>) (raw 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
+               ( ; (val-orig (if (eq? val-orig <tochange>) (vm:raw 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
                 (val (cook val-orig)))
                (if (raw? val)
                   (lets
@@ -321,7 +321,7 @@
                             (ll size (get-nat ll fail 0))
                             (foo (if (> size 65535) (fail "bad raw object size")))
                             (ll rbytes (get-bytes ll size fail null))
-                            (obj (raw type (reverse rbytes))))
+                            (obj (vm:raw type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
                      ((eq? kind 0) ;; fasl stream end marker
                         ;; object done
@@ -332,7 +332,7 @@
                             (ll size (get-nat ll fail 0))
                             (foo (if (> size 65535) (fail "bad raw object size")))
                             (ll rbytes (get-bytes ll size fail null))
-                            (obj (raw type (reverse rbytes))))
+                            (obj (vm:raw type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
                      (else
                         (fail (list "unknown object tag: " kind))))))

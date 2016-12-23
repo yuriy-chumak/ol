@@ -11,7 +11,7 @@
       ; ifeq ifary ol:let
 
       ;; virtual machine primitives:
-      ; raw cons car cdr ref type size cast raw? set set! eq? less?
+      ; vm:new vm:raw cons car cdr ref type size cast raw? set set! eq? less?
       ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
       ; clock syscall vm:version fxmax fxmbits vm:wordsize
       ; tuple-apply vm:new listuple
@@ -107,7 +107,7 @@
       (define-syntax case-lambda
          (syntax-rules ()
             ((case-lambda)
-               (lambda () (raw 16 '(17)))) ; arity-error (todo: change to runtime-error)
+               (lambda () (vm:raw 16 '(17)))) ; arity-error (todo: change to runtime-error)
             ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
             ((case-lambda (formals . body))
                ;; downgrade to a run-of-the-mill lambda
@@ -438,11 +438,11 @@
                (assert expression ===> #true))
             ((assert expression ===> result)
                (ifeq expression (quote result) #true
-                  ((raw 16 '(27 4 5 6 7 8 24 8)) ; (sys a b c d)
+                  ((vm:raw 16 '(27 4 5 6 7 8 24 8)) ; (sys a b c d)
                      #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 ;            ((assert result expression . stuff)
 ;               (if (eq? expression result) #t
-;                  ((raw type-bytecode '(27 4 5 6 7 8  24 8))
+;                  ((vm:raw type-bytecode '(27 4 5 6 7 8  24 8))
 ;                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
 ;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
 
@@ -918,7 +918,7 @@
 
 
       ; procedure:  (apply proc arg1 ... args)  * builtin
-      (define apply      (raw type-bytecode `(,APPLY))) ; todo: add to vm and add arity check
+      (define apply      (vm:raw type-bytecode `(,APPLY))) ; todo: add to vm and add arity check
 
       ; library procedure:  (map proc list1 list2 ...)
 ;      (define (map fn lst)
@@ -952,7 +952,7 @@
 
        ; procedure:  (call-with-current-continuation proc)
        ; Continuation - http://en.wikipedia.org/wiki/Continuation
-       (define apply/cc (raw type-bytecode '(84)))
+       (define apply/cc (vm:raw type-bytecode '(84)))
        (define call-with-current-continuation
           ('_sans_cps
              (λ (k f)
@@ -1234,7 +1234,7 @@
                (call/cc (λ (var) (lets . body))))))
 
       ; internal, todo: to be created and renamed
-      (define sys (raw 16 '(27 4 5 6 7 8  24 8)))
+      (define sys (vm:raw 16 '(27 4 5 6 7 8  24 8)))
 
       ; differs from previous by using (equal?) instead of (eq?)
       (define-syntax assert
@@ -1243,7 +1243,7 @@
                (assert expression ===> #true))
             ((assert expression ===> result)
                (if (equal? expression (quote result)) #true
-                  ((raw 16 '(27 4 5 6 7 8 24 8))
+                  ((vm:raw 16 '(27 4 5 6 7 8 24 8))
                      #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 
       (define (runtime-error reason info) ; todo: move to (owl mcp)?

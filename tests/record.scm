@@ -27,7 +27,7 @@
                   (let ((tag (quote name))) ; ← note, not unique after redefinition, but atm seems useful to get pattern matching
                      (_record-values emit
                         tag
-                        (lambda (fieldname ...) (mkt type-record tag fieldname ...))
+                        (lambda (fieldname ...) (vm:new type-record tag fieldname ...))
                         (lambda (ob) (eq? tag (ref ob 1)))
                         ((field accessor) ...) (fieldname ...) ()))))))
 

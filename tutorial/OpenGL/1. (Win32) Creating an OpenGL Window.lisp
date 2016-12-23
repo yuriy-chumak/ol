@@ -20,7 +20,7 @@
    null))
 
 ; PIXELFORMATDESCRIPTOR
-(define pfd (raw type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
+(define pfd (vm:raw type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
                                                00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
 (define hDC (GetDC window))
 (define PixelFormat (ChoosePixelFormat hDC pfd))
@@ -48,7 +48,7 @@
 (SetFocus window)
 
 ;(loop)
-(let ((MSG (raw type-vector-raw (repeat 0 28))))
+(let ((MSG (vm:raw type-vector-raw (repeat 0 28))))
 (let loop ()
    (let process-events ()
       (if (= 1 (PeekMessage MSG '() 0 0 PM_REMOVE))

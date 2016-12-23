@@ -33,9 +33,9 @@
    (begin
 
      ; this function require two arguments!
-     (define run (raw type-bytecode '(50 4 5))) ; run requires two registers!
+     (define run (vm:raw type-bytecode '(50 4 5))) ; run requires two registers!
 ;      ; and safe version of this function (but a bit more slower)
-;     (define run (raw type-bytecode '(25 3 0 3  50 4 5  17)))
+;     (define run (vm:raw type-bytecode '(25 3 0 3  50 4 5  17)))
 
       (define (bad-interop id a b c todo done state)
          (system-println "mcp: got bad interop")

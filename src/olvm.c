@@ -1893,8 +1893,9 @@ static int mainloop(OL* ol)
 	#	define JF2   25       // jf2
 
 		// примитивы языка:
-	#	define RAW   60
-	#	define RAWQ  48       // (raw?), временное решение пока не придумаю как от него совсем избавиться
+	#	define VMNEW 23    // make object
+	#	define VMRAW 60    // make raw object
+	#	define RAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 
 	#	define CONS  51
 
@@ -1967,7 +1968,6 @@ static int mainloop(OL* ol)
 	#		define SYSCALL_MKCB 175
 
 		// tuples, trees
-	#	define MKT 23   // make tuple
 	#	define TUPLEAPPLY 32
 	#	define LISTUPLE 35   // list -> typed tuple
 	#	define FFAPPLY 49
@@ -2212,8 +2212,21 @@ static int mainloop(OL* ol)
 	// более высокоуровневые конструкции
 	//	смотреть "owl/primop.scm" и "lang/assemble.scm"
 
+	// make object
+	case VMNEW: { // mkt t s f1 .. fs r
+		word type = *ip++;
+		word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0 length objects
+		word *p = new (type, size+1), i = 0; // s fields + header
+		while (i < size) {
+			p[i+1] = R[ip[i]];
+			i++;
+		}
+		R[ip[i]] = (word) p;
+		ip += size+1; break;
+	}
+
 	// todo: add numeric argument as "length" parameter
-	case RAW: { // raw type lst
+	case VMRAW: { // raw type lst
 		word *lst = (word*) A1;
 		int len = 0;
 		word* p = lst;
@@ -2222,7 +2235,7 @@ static int mainloop(OL* ol)
 			p = (word*)cdr (p);
 		}
 
-		if ((word) p == INULL && len <= MAXOBJ) {
+		if ((word) p == INULL && len <= MAXOBJ) { // MAXOBJ - is it required?
 			int type = uvtoi (A0);
 			word *raw = new_bytevector (type, len);
 
@@ -2242,18 +2255,6 @@ static int mainloop(OL* ol)
 			A2 = IFALSE;
 
 		ip += 3; break;
-	}
-	// make object
-	case MKT: { // mkt t s f1 .. fs r
-		word type = *ip++;
-		word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0 length objects
-		word *p = new (type, size+1), i = 0; // s fields + header
-		while (i < size) {
-			p[i+1] = R[ip[i]];
-			i++;
-		}
-		R[ip[i]] = (word) p;
-		ip += size+1; break;
 	}
 
 	case RAWQ: {
