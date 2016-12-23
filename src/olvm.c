@@ -206,6 +206,9 @@
 #endif
 
 #include <stdint.h>
+
+// data types: LP64 	ILP64	LLP64	ILP32	LP32
+// http://www.unix.org/version2/whatsnew/lp64_wp.html
 // todo: please, check this!
 #if INTPTR_MAX == INT64_MAX
 #define MATH_64BIT 1
@@ -650,6 +653,7 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 //       и "длинный", который будет запускать отдельный поток (сопрограмму) и позволит в это же время
 //       работать остальным сопрограммам.
 #define TCALLBACK                   (61) // type-callback, receives '(description . callback-lambda)
+#define TANY                        (63) //
 
 // constants:
 #define IFALSE                      make_value(TCONST, 0)
@@ -737,7 +741,21 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
 #endif
-#define svtoi(v)        ({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
+#if MATH_64BIT
+#define svtoi(v) \
+	({ \
+		word x = (word)(v); SVTOI_CHECK(x); \
+		long long y = (x >> IPOS); \
+		(x & 0x80) ? -y : y; \
+	})
+#else
+#define svtoi(v) \
+	({ \
+		word x = (word)(v); SVTOI_CHECK(x); \
+		long y = (x >> IPOS); \
+		(x & 0x80) ? -y : y; \
+	})
+#endif
 
 #define svtol svtoi
 //#define svtol(v)  (long)({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
@@ -1571,6 +1589,25 @@ long callback(OL* ol, int id, long* argi
 			long d = 10000;
 			// максимальная читабельность?
 			R[a] = (word)new_pair(TRATIONAL, ltosv(n), itouv(d));
+			break;
+		}
+		case F(TSTRING): {
+			void*
+			#if __amd64__
+				#if _WIN64
+				value = i <= 4
+				        ? *(void**) &argi[i]
+				        : *(void**) &rest[i-4];
+				#else
+				value = i <= 6
+						? *(void**) &argi[i]
+						: *(void**) &rest[i-6]; // ???
+				#endif
+				i++;
+			#else
+				value =   *(void**) &argi[i++];
+			#endif
+			R[a] = (word) new_string(value);
 			break;
 		}
 //		case F(TVOID):
@@ -5081,6 +5118,14 @@ word* pinvoke(OL* self, word* arguments)
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
+		if (type == TANY) {
+			if (is_value(arg))
+				type = TINT;
+			else {
+				type = reftype (arg);
+			}
+		}
+
 		// destination type
 		switch (type) {
 		// целочисленные типы:
@@ -5346,6 +5391,9 @@ word* pinvoke(OL* self, word* arguments)
 	self->R[128 + 1] = (word)B;
 	self->R[128 + 2] = (word)C;
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
+
+//	if (floatsmask == 15)
+//		__asm__("int $3");
 
 #if __amd64__
 	got =

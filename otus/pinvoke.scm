@@ -76,6 +76,9 @@
 
       type-void type-void* type-void**
 
+      type-callback
+      type-any
+
 
       load-dynamic-library
       ; по-поводу calling convention:
@@ -204,6 +207,9 @@
 ;define type-int512 56)
 
 (define type-userdata 62)
+
+(define type-callback 61)
+(define type-any 63)
 
 
 ;; OS detection
