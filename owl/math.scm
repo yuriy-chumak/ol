@@ -56,7 +56,7 @@
 
       (define ncar car)
       (define ncdr cdr)
-      (define (ncons a b) (mkt type-int+ a b))
+      (define (ncons a b) (vm:new type-int+ a b))
 
 ;      ;; check how many fixnum bits the vm supports with vm:shl
 ;      ;; idea is to allow the vm to be compiled with different ranges, initially fixed to 24
@@ -455,7 +455,7 @@
 
       (define-syntax rational
          (syntax-rules ()
-            ((rational a b) (mkt type-rational a b))))
+            ((rational a b) (vm:new type-rational a b))))
 
       (define (negate num)
          (case (type num)
@@ -465,7 +465,7 @@
                   (cast num type-fix-)))   ;; a  -> -a
             (type-fix- (cast num type-fix+))   ;; -a ->  a
             (type-int+                ;;  A -> -A
-               (mkt type-int- (ncar num) (ncdr num)))
+               (vm:new type-int- (ncar num) (ncdr num)))
             (type-int-             ;; -A -> A
                (ncons (ncar num) (ncdr num)))
             (type-rational
@@ -1614,7 +1614,7 @@
 
       (define-syntax complex
          (syntax-rules ()
-            ((complex a b) (mkt type-complex a b))))
+            ((complex a b) (vm:new type-complex a b))))
 
       ; normalize, fix sign and construct rational
       (define (rationalize a b)

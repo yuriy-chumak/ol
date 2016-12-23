@@ -29,6 +29,7 @@
       (owl lazy)
       (owl sort)
       (owl io)
+      (only (src vm) NEW)
       (lang primop)
       (lang assemble)
       (lang closure))
@@ -235,11 +236,11 @@
                      (cdr formals)
                      (cons this taken))))))
 
-   ;; fixme: mkt chugs the type to the instruction
+   ;; fixme: vm:new chugs the type to the instruction
       (define (rtl-primitive regs op formals args cont)
-         (if (eq? op 23) ; generalize this later. mkt is not a safe instruction!
+         (if (eq? op NEW) ; generalize this later. vm:new is not a safe instruction!
             (if (null? args)
-               (runtime-error "rtl-primitive: no type for mkt" args)
+               (runtime-error "rtl-primitive: no type for vm:new" args)
                (begin
                   (rtl-primitive regs
                      (+ (<< op 8) (band (value-of (car args)) #xff))

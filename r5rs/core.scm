@@ -14,7 +14,7 @@
       ; raw cons car cdr ref type size cast raw? set set! eq? less?
       ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
       ; clock syscall vm:version fxmax fxmbits vm:wordsize
-      ; tuple-apply mkt listuple
+      ; tuple-apply vm:new listuple
       ; ff-apply ff:red ff:black ff:toggle ff:red? ff:right?
 
 
@@ -995,7 +995,7 @@
       (define-syntax tuple
          (syntax-rules ()
             ((tuple a . bs) ;; there are no such things as 0-tuples
-               (mkt 2 a . bs))))
+               (vm:new 2 a . bs))))
 
       ; replace this with typed destructuring compare later on
 
