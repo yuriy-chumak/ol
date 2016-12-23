@@ -41,6 +41,15 @@
             ((syntax-error . stuff)
                (runtime-error "Syntax error: " (quote stuff)))))
 
+      ; this is internal simlified 'assert' that use 'eq?', please be careful!
+      (define-syntax assert
+         (syntax-rules (===>)
+            ((assert expression ===> result)
+               (ifeq expression (quote result)
+                  #true
+                  ;else runtime-error:
+                  (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
+
       ; 1.3.3  Entry format
       ; 1.3.4  Evaluation examples
       ; 1.3.5  Naming conventions
@@ -430,21 +439,6 @@
       ; Built-in procedures that can easily be written in terms of other built-in procedures are
       ; identified as ``library procedures''.
       ;
-
-      ; this is internal simlified 'assert' that use 'eq?', please be careful!
-      (define-syntax assert
-         (syntax-rules (===>)
-            ((assert expression)
-               (assert expression ===> #true))
-            ((assert expression ===> result)
-               (ifeq expression (quote result) #true
-                  ((vm:raw TBYTECODE `(,SYS 4 5 6 7 8  ,RET 8)) ; (sys a b c d)
-                     #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
-;            ((assert result expression . stuff)
-;               (if (eq? expression result) #t
-;                  ((vm:raw TBYTECODE `(,SYS 4 5 6 7 8  ,RET 8))
-;                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
-;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
 
       ;; ---------------------------
       ;; 6.1  Equivalence predicates
@@ -1233,20 +1227,15 @@
             ((lets/cc var . body)
                (call/cc (λ (var) (lets . body))))))
 
-      ; internal, todo: to be created and renamed
-      (define sys (vm:raw TBYTECODE `(,SYS 4 5 6 7 8  ,RET 8)))
-
-      ; differs from previous by using (equal?) instead of (eq?)
+      ; real assert. differs from temporary by using equal? instead of eq?
       (define-syntax assert
          (syntax-rules (===>)
-            ((assert expression)
-               (assert expression ===> #true))
             ((assert expression ===> result)
-               (if (equal? expression (quote result)) #true
-                  (sys #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
+               (if (not (equal? expression (quote result)))
+                  (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 
-      (define (runtime-error reason info) ; todo: move to (owl mcp)?
-         (call/cc (λ (resume) (sys resume 5 reason info))))
+      (define (runtime-error reason info)
+         (call/cc (λ (resume) (vm:sys resume 5 reason info))))
       (define error runtime-error)
 
 
@@ -1274,7 +1263,8 @@
 )
 ; ---------------------------
    (export
-      λ syntax-error assert error runtime-error
+      λ
+      syntax-error assert error runtime-error
 
       if cond case and or not
       letrec letrec* let let* let*-values lets

@@ -132,7 +132,6 @@
       (setq APPLY 20)
       (setq APPLY/CC 84)
       (setq RET 24)
-      (setq SYS 27)
       (setq RUN 50)
 
       (setq ARITY-ERROR 17)
@@ -172,6 +171,7 @@
 
       (setq NEW 23)      ; no real vm:new command required, check rtl-primitive in (lang compile)
       (setq RAW 60)      (setq vm:raw  (vm:raw TBYTECODE '(60 4 5 6  24 6)))
+      (setq SYS 27)      (setq vm:sys  (vm:raw TBYTECODE '(27 4 5 6 7 8  24 8)))
 
       (setq RAW? 48)     (setq raw?    (vm:raw TBYTECODE '(48 4 5    24 5)))
       (setq CAST 22)     (setq cast    (vm:raw TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
@@ -241,6 +241,8 @@
          ; vm:raw создает бинарную последовательность, vm:new - последовательность объектов, cons - просто пару
          (cons (vm:new TTUPLE 'vm:new   NEW 'any 1 #f)   ; (vm:new type v0 .. vn t)
          (cons (vm:new TTUPLE 'vm:raw   RAW  2 1 vm:raw) ; (vm:raw type-bytecode '(60 4 5 6  24 6)) ; '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
+         ;cons (vm:new TTUPLE 'vm:run   RUN  ...)
+         (cons (vm:new TTUPLE 'vm:sys   SYS  4 1 vm:sys)
 
          (cons (vm:new TTUPLE 'cons     CONS 2 1 cons)
 
@@ -299,7 +301,7 @@
          (cons (vm:new TTUPLE 'ff:toggle  46 1  1  ff:toggle)
          (cons (vm:new TTUPLE 'ff:red?    41 1  1  ff:red?)
          (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
-         #null))))))))))))))))))))))))))))))))))))))
+         #null)))))))))))))))))))))))))))))))))))))))
       ;(define *primitives* primops)
 
 
