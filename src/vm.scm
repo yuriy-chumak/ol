@@ -15,7 +15,7 @@
 
 
       ; commands
-      GOTO APPLY RET SYS RUN ARITY-ERROR
+      GOTO APPLY APPLY/CC RET SYS RUN ARITY-ERROR
       JEQ JZ JE JN JF JF2 JF2x
       CLOS0 CLOC0 CLOS1 CLOC1
 
@@ -130,6 +130,7 @@
       ;; Список кодов виртуальной машины:
       (setq GOTO 2)
       (setq APPLY 20)
+      (setq APPLY/CC 84)
       (setq RET 24)
       (setq SYS 27)
       (setq RUN 50)
@@ -168,9 +169,6 @@
       ;(setq GOTO-CODE 18) ; not used for now, check (fn-type)
       ;(setq GOTO-PROC 19) ; not used for now, check (fn-type)
       ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
-
-      ; primitives
-      (setq TUPLE-APPLY 32)
 
       (setq NEW 23)      ; no real vm:new command required, check rtl-primitive in (lang compile)
       (setq RAW 60)      (setq vm:raw  (vm:raw TBYTECODE '(60 4 5 6  24 6)))
@@ -220,7 +218,10 @@
       ; deprecated:
       ;(define clock   (vm:raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
+      ; primitives
+      (setq TUPLE-APPLY 32)
       (setq FF-APPLY 49) (setq ff-apply  (vm:raw TBYTECODE '(49 4)))
+
       ;(define ff:red     (vm:raw type-bytecode '(43 4 5 6 7  8  24 8)))
       ;(define ff:black   (vm:raw type-bytecode '(42 4 5 6 7  8  24 8)))
       ;(define ff:toggle  (vm:raw type-bytecode '(46 4        5  24 5)))

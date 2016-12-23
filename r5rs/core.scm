@@ -36,7 +36,7 @@
       ; 1.3  Notation and terminology
       ; 1.3.1  Primitive, library, and optional features
       ; 1.3.2  Error situations and unspecified behavior
-      (define-syntax syntax-error
+      (define-syntax syntax-error        ; * ol specific
          (syntax-rules (runtime-error)
             ((syntax-error . stuff)
                (runtime-error "Syntax error: " (quote stuff)))))
@@ -107,7 +107,7 @@
       (define-syntax case-lambda
          (syntax-rules ()
             ((case-lambda)
-               (lambda () (vm:raw 16 '(17)))) ; arity-error (todo: change to runtime-error)
+               (lambda () (vm:raw TBYTECODE `(,ARITY-ERROR)))) ; arity-error (todo: change to runtime-error)
             ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
             ((case-lambda (formals . body))
                ;; downgrade to a run-of-the-mill lambda
@@ -431,18 +431,18 @@
       ; identified as ``library procedures''.
       ;
 
-      ; this is temporary simlified 'assert' that use 'eq?', please be careful!
+      ; this is internal simlified 'assert' that use 'eq?', please be careful!
       (define-syntax assert
          (syntax-rules (===>)
             ((assert expression)
                (assert expression ===> #true))
             ((assert expression ===> result)
                (ifeq expression (quote result) #true
-                  ((vm:raw 16 '(27 4 5 6 7 8 24 8)) ; (sys a b c d)
+                  ((vm:raw TBYTECODE `(,SYS 4 5 6 7 8  ,RET 8)) ; (sys a b c d)
                      #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 ;            ((assert result expression . stuff)
 ;               (if (eq? expression result) #t
-;                  ((vm:raw type-bytecode '(27 4 5 6 7 8  24 8))
+;                  ((vm:raw TBYTECODE `(,SYS 4 5 6 7 8  ,RET 8))
 ;                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
 ;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
 
@@ -918,7 +918,7 @@
 
 
       ; procedure:  (apply proc arg1 ... args)  * builtin
-      (define apply      (vm:raw type-bytecode `(,APPLY))) ; todo: add to vm and add arity check
+      (define apply      (vm:raw TBYTECODE `(,APPLY))) ; todo: add to vm and add arity check
 
       ; library procedure:  (map proc list1 list2 ...)
 ;      (define (map fn lst)
@@ -952,7 +952,7 @@
 
        ; procedure:  (call-with-current-continuation proc)
        ; Continuation - http://en.wikipedia.org/wiki/Continuation
-       (define apply/cc (vm:raw type-bytecode '(84)))
+       (define apply/cc (vm:raw TBYTECODE `(,APPLY/CC)))
        (define call-with-current-continuation
           ('_sans_cps
              (λ (k f)
@@ -1234,7 +1234,7 @@
                (call/cc (λ (var) (lets . body))))))
 
       ; internal, todo: to be created and renamed
-      (define sys (vm:raw 16 '(27 4 5 6 7 8  24 8)))
+      (define sys (vm:raw TBYTECODE `(,SYS 4 5 6 7 8  ,RET 8)))
 
       ; differs from previous by using (equal?) instead of (eq?)
       (define-syntax assert
@@ -1243,8 +1243,7 @@
                (assert expression ===> #true))
             ((assert expression ===> result)
                (if (equal? expression (quote result)) #true
-                  ((vm:raw 16 '(27 4 5 6 7 8 24 8))
-                     #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
+                  (sys #null 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 
       (define (runtime-error reason info) ; todo: move to (owl mcp)?
          (call/cc (λ (resume) (sys resume 5 reason info))))
