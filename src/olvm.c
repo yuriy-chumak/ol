@@ -788,10 +788,12 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 #define CR                          128 // available callbacks
 #define NR                          128 + CR // see n-registers in register.scm
 
-#define GCPAD                      ((NR + 2) * sizeof(word)) // space at end of heap for starting GC
+#define GCPAD                      ((NR + 3) * sizeof(word)) // space at end of heap for starting GC
 #define MEMPAD                     (GCPAD + 1024) // резервируемое место для работы в памяти
-#define MINGEN                     (1024 * 32)  /* minimum generation size before doing full GC  */
-#define INITCELLS                  (1000)
+// 1024 - некое магическое число, подразумевающее количество
+// памяти, используемой между вызовами apply
+//#define MINGEN                     (1024 * 32)  /* minimum generation size before doing full GC  */
+//#define INITCELLS                  (1000)
 
 // http://outflux.net/teach-seccomp/
 // http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
@@ -1086,7 +1088,7 @@ word *chase(word* pos) {
 	}
 }
 
-/* n-cells-wanted → heap-delta (to be added to pointers), updates memstart and memend  */
+// cells - на сколько увеличить (уменьшить) кучу (в словах)
 static __inline__
 ptrdiff_t adjust_heap(heap_t *heap, int cells)
 {
@@ -1094,24 +1096,21 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 		return 0;
 
 	// add newobj realloc + heap fixer here later
-	word nwords = heap->end - heap->begin; // MEMPAD is after memend
-	word new_words = nwords + ((cells > 0xffffff) ? 0xffffff : cells); // limit heap growth speed
-	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W)))
+	word nwords = heap->end - heap->begin;
+	word new_words = nwords + cells; // was: ((cells > 0xffffff) ? 0xffffff : cells); // limit heap growth speed
+	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W))) {
+		STDERR("size_t would overflow in realloc!");
 		return 0; // don't try to adjust heap if the size_t would overflow in realloc
-
-	new_words += MEMPAD;
-
-	word *old = heap->begin;
-	heap->begin = realloc(heap->begin, new_words * W);
-	if (heap->begin == old) { // whee, no heap slide \o/
-		heap->end = heap->begin + new_words - MEMPAD; // leave MEMPAD words alone
-
-		return 0;
 	}
 
-	if (heap->begin) { // d'oh! we need to O(n) all the pointers...
-		heap->end = heap->begin + new_words - MEMPAD; // leave MEMPAD words alone
+	word *old = heap->begin;
+	heap->begin = realloc(heap->begin, (new_words + MEMPAD) * sizeof(word));
+	heap->end = heap->begin + new_words;
 
+	if (heap->begin == old) // whee, no heap slide \o/
+		return 0;
+
+	if (heap->begin) { // d'oh! we need to O(n) all the pointers...
 		ptrdiff_t delta = heap->begin - old;
 
 		heap->fp += delta;
@@ -1119,18 +1118,17 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 		word* end = heap->fp;
 
 		// fix_pointers
-		delta *= sizeof(word);
 		while (pos < end) {
 			word hdr = *pos;
-			int n = hdrsize(hdr);
+			int sz = hdrsize(hdr);
 			if (is_rawobject(hdr))
-				pos += n; // no pointers in raw objects
+				pos += sz; // no pointers in raw objects
 			else {
-				pos++, n--;
-				while (n--) {
+				pos++, sz--;
+				while (sz--) {
 					word val = *pos;
 					if (is_reference(val))
-						*pos = val + delta;
+						*pos = val + delta*W;
 					pos++;
 				}
 			}
@@ -1144,6 +1142,7 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 		#endif
 		//breaked |= 8; // will be passed over to mcp at thread switch
 	}
+	return 0;
 }
 
 /* input desired allocation size and (the only) pointer to root object
@@ -1232,74 +1231,135 @@ word gc(heap_t *heap, int size, word regs) {
 
 	if (size == 0) // сделать полную сборку?
 		heap->genstart = heap->begin; // start full generation
+
+	#define DEBUG_GC 0
+
+	//if (heap->genstart == heap->begin)
+	//	fprintf(stderr, "+");
+	//else
+	//	fprintf(stderr, ".");
+	#if DEBUG_GC
+	fprintf(stderr, "(%6lld)", sizeof(word) * (heap->end - heap->fp));
+	#endif
+
 	// gc:
 	word *fp;
 	fp = heap->fp;
 	{
-		word *root = &fp[1]; // skip header
+		*fp = make_header(TTUPLE, 2); // этого можно не делать
+		word *root = &fp[1];
 	//	word *root = fp + 1; // same
-	//в *fp спокойно можно оставить мусор, вместо TTUPLE
-		*fp = make_header(TTUPLE, 2);
 
-		// непосредственно сам GC
-	//	clock_t gctime;
-	//	gctime = -(1000 * clock()) / CLOCKS_PER_SEC;
+		#if DEBUG_GC
+			clock_t gctime;
+			gctime = -(1000 * clock()) / CLOCKS_PER_SEC;
+		#endif
+
+		// непосредственно сам процесс сборки
 		root[0] = regs;
 		mark(root, fp);        // assert (root > fp)
 		// todo: проверить о очистить callbacks перед sweep
 		fp = sweep(fp);
 		regs = root[0];
-	//	gctime += (1000 * clock()) / CLOCKS_PER_SEC;
+
+		// todo: add diagnostik callback "if(heap->oncb) heap->oncb(heap, deltatime)"
+		#if DEBUG_GC
+			gctime += (1000 * clock()) / CLOCKS_PER_SEC;
+			struct tm tm = *localtime(&(time_t){time(NULL)});
+			char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
+			STDERR("%s, GC done in %d ms (use: %7d from %8d bytes - %2d%%): (%6d).", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+					buff/*asctime(&tm)*/, gctime,
+					((regs - (word)heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
+					((regs - (word)heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)),
+					((word) heap->end - regs)
+				);
+		//				-1, -1, -1, -1);
+		#endif
 	}
 	heap->fp = fp;
 
-	#if DEBUG_GC
-		// todo: add diagnostik callback "if(heap->oncb) heap->oncb(heap, deltatime)"
-		struct tm tm = *localtime(&(time_t){time(NULL)});
-		char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
-		STDERR("%s, GC done in %2d ms (use: %7d from %8d bytes - %2d%%): tbd.", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
-				buff/*asctime(&tm)*/, gctime,
-				(sizeof(word) * (fp - heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
-				(sizeof(word) * (fp - heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)));
-//				-1, -1, -1, -1);
-	#endif
+#define NEW_STRATEGY 1
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
+#if NEW_STRATEGY
+	ptrdiff_t hsize = heap->end - heap->begin; // вся куча в словах
+	ptrdiff_t nfree = heap->end - (word*)regs; // свободно в словах
+	ptrdiff_t heapsize = hsize;
+	ptrdiff_t nused = heapsize - nfree + size; // использовано слов
+#else
 	int nfree = (word)heap->end - (word)regs;
+#endif
 	if (heap->genstart == heap->begin) {
-		word heapsize = (word) heap->end - (word) heap->begin;
-		word nused = heapsize - nfree;
+		// напоминаю, сюда мы попадаем только после полной(!) сборки
+#if NEW_STRATEGY
+#else
+		ptrdiff_t nused = hsize - nfree + size; // использовано слов
+		ptrdiff_t heapsize = (word) heap->end - (word) heap->begin; // вся куча в байтах
+		ptrdiff_t nused = heapsize - nfree + size*W;                // использовано байт
+#endif
 
-		nfree -= size*W + MEMPAD;   // how much really could be snipped off
+		if (heapsize < nused)
+			heapsize = nused;
 
 		// Please grow your buffers exponentially:
 		//  https://blog.mozilla.org/nnethercote/2014/11/04/please-grow-your-buffers-exponentially/
+		//  ! https://habrahabr.ru/post/242279/
+
+#if NEW_STRATEGY
+		// выделим на "старое" поколение не менее 50% кучи, при этом кучу будем увеличивать на 33%
+		if (nused > (heapsize / 2)) {
+			//fprintf(stderr, ">");
+			// !!! множитель увеличения кучи должен быть меньше золотого сечения: 1.618
+			regs += adjust_heap(heap, heapsize / 3) * sizeof(W);
+		}
+		// decrease heap size if more than 33% is free by 11% of the free space
+		else if (nused < (heapsize / 3)) {
+			//fprintf(stderr, "<");
+			regs += adjust_heap(heap,-heapsize / 9) * sizeof(W);
+		}
+#else // OL reallocation strategy
+		nfree -= size*W + MEMPAD;   // how much really could be snipped off
+
 		if (nfree < (heapsize / 10) || nfree < 0) {
-			/* increase heap size if less than 10% is free by ~30% of heap size (growth usually implies more growth) */
-			regs += adjust_heap(heap, size*W + nused/3 + 4096);
+			// increase heap size if less than 10% is free by ~30% of heap size (growth usually implies more growth)
+			fprintf(stderr, ">");
+			regs += adjust_heap(heap, size*W + nused/3 + 4096) * sizeof(word);
 			nfree = (word)heap->end - regs;
 
 //			if (nfree <= size)
-//				breaked |= 8; /* will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side! */
+//				breaked |= 8; // will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side!
 		}
 		else if (nfree > (heapsize/3)) {
-			/* decrease heap size if more than 30% is free by 10% of the free space */
+			// decrease heap size if more than 30% is free by 10% of the free space
 			int dec = -(nfree / 10);
 			int newobj = nfree - dec;
 			if (newobj > 2 * size*W) {
-				regs += adjust_heap(heap, dec);
+				regs += adjust_heap(heap, dec) * sizeof(word);
+				fprintf(stderr, "<");
 				heapsize = (word) heap->end - (word) heap->begin;
 				nfree = (word) heap->end - regs;
 			}
 		}
-		heap->genstart = (word*)regs; // always start newobj generation
+#endif
+		heap->genstart = (word*)regs; // always start new generation
 	}
+#if NEW_STRATEGY
+	// полная сборка, если осталось меньше 20% свободного места в куче
+	//  иначе, у нас слишком часто будет вызываться сборщик
+	//  но тоже надо найти баланс
+	// TODO: посчитать математически, на каком именно месте
+	//  стоит остановиться, чтобы ни слишком часто не проводить молодую сборку,
+	//  ни слишком часто старую. мне, по тестам кажется, что 20% это вполне ок.
+	else if ((nfree - size) < heapsize / 5) {
+#else
 	else if (nfree < MINGEN || nfree < size*W*2) {
-		heap->genstart = heap->begin; // start full generation
+#endif
+		heap->genstart = heap->begin; // force start full generation
 		return gc(heap, size, regs);
 	}
 	else
-		heap->genstart = (word*)regs; // simply start newobj generation
+		heap->genstart = (word*)regs; // simply start new generation
+
 	return regs;
 }
 
@@ -1401,10 +1461,12 @@ struct ol_t
 	word max_heap_size; // max heap size in MB
 
 	// вызвать GC если в памяти мало места в КБ
-	// для безусловного вызова передать -1
-	void (*gc)(OL* ol, int kb);
+	// для безусловного вызова передать 0
+	// возвращает 1, если была проведена сборка
+	int (*gc)(OL* ol, int kb);
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
+	// todo: перенести R в конец кучи
 	word R[NR];  // регистры виртуальной машины, NR регистр портится, так как GC юзает this !!!
 	word *this;
 
@@ -1749,7 +1811,9 @@ apply:
 		}
 		else
 		if ((type & 60) == TFF) { // ((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
-			word get(word *ff, word key, word def) { // ff assumed to be valid
+			// ff assumed to be valid
+			word get(word *ff, word key, word def)
+			{
 				while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
 					word this = ff[1], hdr;
 					if (this == key)
@@ -1847,19 +1911,23 @@ apply:
 
 		// теперь проверим доступную память
 		heap_t* heap = &ol->heap;
+
+		// приблизительно сколько памяти может потребоваться для одного эпплая?
+		// теоретически, это можно вычислить проанализировав текущий контекст
+		// а практически, пока поюзаем количество доступных регистров
 		int reserved = 16 * 1024; // todo: change this to adequate value
+		reserved = MEMPAD;
 		// nargs and regs ready, maybe gc and execute ob
 
 		// если места в буфере не хватает, то мы вызываем GC,
 		//	а чтобы автоматически подкорректировались регистры,
 		//	мы их складываем в память во временный кортеж.
-		if (/*forcegc || */(ol->heap.fp >= heap->end - reserved)) { // TODO: переделать
+		if (ol->heap.fp >= heap->end - reserved) { // TODO: переделать
 			ol->gc(ol, reserved);
 
 			word heapsize = (word) heap->end - (word) heap->begin;
-			if ((heapsize / (1024*1024)) > ol->max_heap_size)
+			if ((heapsize / (1024*1024)) >= ol->max_heap_size)
 				ol->breaked |= 8; // will be passed over to mcp at thread switch
-
 		}
 
 		ol->ip = (unsigned char *) &ol->this[1];
@@ -2764,13 +2832,14 @@ static int mainloop(OL* ol)
 		case SYSCALL_READ: {
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
-			int size = svtoi (b);
+			int size = svtoi (b); // в байтах
 
+			size = ((size + W - 1) / W) + 1; // в словах
 			if (size < 0)
-				size = (heap->end - fp) * W - MEMPAD;
+				size = (heap->end - fp);
 			else
-			if (size > (heap->end - fp) * W - MEMPAD)
-				ol->gc(ol, size / W);
+			if (size > (heap->end - fp))
+				ol->gc(ol, size);
 
 			int got;
 #ifdef _WIN32
@@ -3342,7 +3411,7 @@ static int mainloop(OL* ol)
 				if (!timeinfo) // error???
 					break;
 				// The environment variables TZ and LC_TIME are used!
-				size_t len = strftime(ptr, (size_t) (heap->end - fp - MEMPAD), (char*)&A[1], timeinfo);
+				size_t len = strftime(ptr, (size_t) (heap->end - fp), (char*)&A[1], timeinfo);
 				result = new_bytevector(TSTRING, len+1);
 			}
 			else
@@ -3938,20 +4007,23 @@ static int mainloop(OL* ol)
 
 
 
-
-static void OL__gc(OL* ol, int ws) // ws - required size in words
+// проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
+static int OL__gc(OL* ol, int ws) // ws - required size in words
 {
 	word *fp = ol->heap.fp; // memory allocation pointer
 
+	// если места еще хватит, не будем ничего делать
+	// TODO: переделать на другую проверку
 	if (ws != 0 && fp < ol->heap.end - ws)
-		return;
+		return 0;
 
 	word* R = ol->R;
-
-	int size = ws * W;
 	int p = 0, N = NR;
 
 //	STDERR("*");
+
+	// TODO: складывать регистры не в топе, а в heap->real-end - NR - 2
+
 
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = (word*) new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
@@ -3959,13 +4031,15 @@ static void OL__gc(OL* ol, int ws) // ws - required size in words
 	regs[p] = (word) ol->this;
 	// выполним сборку мусора
 	ol->heap.fp = fp;
-	regs = (word*)gc(&ol->heap, size, (word)regs); // GC занимает 0-15 ms
+	regs = (word*)gc(&ol->heap, ws, (word)regs); // GC занимает 0-15 ms
 	// и восстановим все регистры, уже подкорректированные сборщиком
 	ol->this = (word *) regs[p];
 	while (--p >= 1) R[p-1] = regs[p];
 
 	// закончили, почистим за собой:
 	ol->heap.fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
+
+	return 1;
 }
 
 // Несколько замечаний по WIN32::ThreadProc
@@ -4324,15 +4398,20 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	//int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
-	int required_memory_size = nwords + nwords/3 + MEMPAD;
-	heap->begin =
-	heap->genstart = (word*) malloc(required_memory_size * sizeof(word)); // at least one argument string always fits
+
+	// в соответствии со стратегией сборки 50*1.3-33*0.9, и так как данные в бинарнике
+	// практически гарантированно "старое" поколение, выделим в два раза больше места.
+	int required_memory_size = nwords*2;
+
+	heap->begin = (word*) malloc((required_memory_size + MEMPAD) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
 		STDERR("Failed to allocate %d words for vm memory", required_memory_size);
 		goto fail;
 	}
 	// ok
 	heap->end = heap->begin + required_memory_size;
+	heap->genstart = heap->begin;
+
 	handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты
