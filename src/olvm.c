@@ -785,8 +785,8 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 
 #define make_integer(val) itoun(val)
 
-//#define CR                          128 // available callbacks
-//#define NR                          128 + CR // see n-registers in register.scm
+#define CR                          16 // available callbacks
+#define NR                          256 // see n-registers in register.scm
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
 #define MEMPAD                     (1024) // резервируемое место для работы apply в памяти
@@ -820,8 +820,6 @@ typedef struct heap_t
 	word *genstart;  // new generation begin pointer
 	// new (size) === *(size*)fp++
 	word *fp;        // allocation pointer
-
-	int CR, NR;
 } heap_t;
 
 
@@ -1104,7 +1102,7 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 	}
 
 	word *old = heap->begin;
-	heap->begin = realloc(heap->begin, (new_words + GCPAD(heap->NR)) * sizeof(word));
+	heap->begin = realloc(heap->begin, (new_words + GCPAD(NR)) * sizeof(word));
 	heap->end = heap->begin + new_words;
 
 	if (heap->begin == old) // whee, no heap slide \o/
@@ -1469,7 +1467,7 @@ struct ol_t
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
-	word *R;  // регистры виртуальной машины, NR (последний) регистр портится, так как GC юзает this !!!
+	word R[NR + CR];   // регистры виртуальной машины
 	word *this;
 
 	unsigned char *ip;
@@ -1529,9 +1527,8 @@ long callback(OL* ol, int id, long* argi
 // http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
 //	__asm("int $3");
 	word* R = ol->R;
-	int CR = ol->heap.CR;
 
-	ol->this = (word*)cdr (ol->R[CR + id]); // lambda для обратного вызова
+	ol->this = (word*)cdr (ol->R[NR + id]); // lambda для обратного вызова
 //	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, так как без потоков работаем
 //	ol->bank = 0;
 	assert (is_reference(ol->this));
@@ -1539,17 +1536,17 @@ long callback(OL* ol, int id, long* argi
 
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же
-	R[CR + 0] = R[0]; // mcp?
-//	R[CR + 1] = R[1]; // не надо
-//	R[CR + 2] = R[2]; // не надо
-	R[CR + 3] = R[3]; // continuation
+	R[NR + 0] = R[0]; // mcp?
+//	R[NR + 1] = R[1]; // не надо
+//	R[NR + 2] = R[2]; // не надо
+	R[NR + 3] = R[3]; // continuation
 
 	// вызовем колбек:
 	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callback функций
 	R[3] = IRETURN; // команда выхода из колбека
 	ol->arity = 1;
 
-	word types = car(ol->R[CR + id]);
+	word types = car(ol->R[NR + id]);
 
 	int a = 4;
 //	R[a] = IFALSE;
@@ -1702,11 +1699,10 @@ long callback(OL* ol, int id, long* argi
 		// возврат из колбека,
 		// R, NR могли измениться
 		R = ol->R;
-		int CR = ol->heap.CR;
-		R[3] = R[CR + 3];
-//		R[1] = R[CR + 2]; // не надо
-//		R[1] = R[CR + 1]; // не надо
-		R[0] = R[CR + 0]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
+		R[3] = R[NR + 3];
+//		R[1] = R[NR + 2]; // не надо
+//		R[1] = R[NR + 1]; // не надо
+		R[0] = R[NR + 0]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
 		return 0; // return from callback
 
 	case STATE_ERROR:
@@ -2180,7 +2176,7 @@ loop:
 			// FIXME: unwind only up to last register and add limited rewinding to arity check
 			// тут бага, количество регистров может стать больше, чем надо, и пиздец. todo: исправить!!
 			// todo: исправить с помощью динамического количества регистров!
-			if (reg > heap->NR) { // dummy handling for now
+			if (reg > NR) { // dummy handling for now
 				// TODO: add changing the size of R array!
 				STDERR("TOO LARGE APPLY");
 				exit(3);
@@ -3844,9 +3840,9 @@ loop:
 			// TCALLBACK
 			int c;
 			// TODO: увеличить heap->CR если маловато колбеков!
-			for (c = 4; c < heap->CR; c++) {
-				if (R[128+c] == IFALSE) {
-					R[128+c] = a;
+			for (c = 4; c < CR; c++) {
+				if (R[NR+c] == IFALSE) {
+					R[NR+c] = a;
 					break;
 				}
 			}
@@ -4026,7 +4022,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 		return 0;
 
 	word* R = ol->R;
-	int p = 0, N = ol->heap.NR;
+	int p = 0, N = NR+CR;
 
 	// если нам не хватило магических 1024, то у нас проблема
 	//assert (fp + N + 3 < ol->heap.end);
@@ -4068,7 +4064,7 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	word* R = ol->R; // регистры виртуальной машины:
-	for (ptrdiff_t i = 0; i < ol->heap.NR; i++)
+	for (ptrdiff_t i = 0; i < NR+CR; i++)
 		R[i] = IFALSE; // was: INULL, why??
 	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
 	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
@@ -4380,12 +4376,6 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
-	// подготовим регистры
-	handle->heap.CR = 127;
-	handle->heap.NR = 255+127;
-	handle->R = malloc((255+127)*sizeof(word));
-
-
 	// подготовим очереди в/в
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
@@ -4407,7 +4397,7 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
 	int required_memory_size = nwords*2 + MEMPAD;
 
-	heap->begin = (word*) malloc((required_memory_size + GCPAD(heap->NR)) * sizeof(word)); // at least one argument string always fits
+	heap->begin = (word*) malloc((required_memory_size + GCPAD(NR)) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
 		STDERR("Failed to allocate %d bytes in memory for vm", required_memory_size * sizeof(word));
 		goto fail;
