@@ -2845,8 +2845,10 @@ static int mainloop(OL* ol)
 			if (size < 0)
 				size = (heap->end - fp);
 			else
-			if (size > (heap->end - fp))
+			if (size > (heap->end - fp)) {
 				ol->gc(ol, size);
+				fp = heap->fp; // не забывать про изменение fp  в процессе сборки
+			}
 
 			int got;
 #ifdef _WIN32
@@ -4029,7 +4031,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	int p = 0, N = ol->heap.NR;
 
 	// если нам не хватило магических 1024, то у нас проблема
-	assert (fp + N + 3 > ol->heap.end);
+	//assert (fp + N + 3 < ol->heap.end);
 
 	// TODO: складывать регистры не в топе, а в heap->real-end - NR - 2
 
