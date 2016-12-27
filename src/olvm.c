@@ -788,8 +788,8 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 #define CR                          128 // available callbacks
 #define NR                          128 + CR // see n-registers in register.scm
 
-#define GCPAD                      ((NR + 3) * sizeof(word)) // space at end of heap for starting GC
-#define MEMPAD                     (GCPAD + 1024) // резервируемое место для работы в памяти
+#define GCPAD                      ((NR + 3) * sizeof(word)) // space after end of heap to guarantee the GC work
+#define MEMPAD                     (1024) // резервируемое место для работы apply в памяти
 // 1024 - некое магическое число, подразумевающее количество
 // памяти, используемой между вызовами apply
 //#define MINGEN                     (1024 * 32)  /* minimum generation size before doing full GC  */
@@ -1104,7 +1104,7 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 	}
 
 	word *old = heap->begin;
-	heap->begin = realloc(heap->begin, (new_words + MEMPAD) * sizeof(word));
+	heap->begin = realloc(heap->begin, (new_words + GCPAD) * sizeof(word));
 	heap->end = heap->begin + new_words;
 
 	if (heap->begin == old) // whee, no heap slide \o/
@@ -1282,6 +1282,8 @@ word gc(heap_t *heap, int size, word regs) {
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
 #if NEW_STRATEGY
+	size += MEMPAD; // гарантия места для apply
+
 	ptrdiff_t hsize = heap->end - heap->begin; // вся куча в словах
 	ptrdiff_t nfree = heap->end - (word*)regs; // свободно в словах
 	ptrdiff_t heapsize = hsize;
@@ -1915,15 +1917,15 @@ apply:
 		// приблизительно сколько памяти может потребоваться для одного эпплая?
 		// теоретически, это можно вычислить проанализировав текущий контекст
 		// а практически, пока поюзаем количество доступных регистров
-		int reserved = 16 * 1024; // todo: change this to adequate value
-		reserved = MEMPAD;
+		//int reserved = 16 * 1024; // todo: change this to adequate value
+		//reserved = MEMPAD;
 		// nargs and regs ready, maybe gc and execute ob
 
 		// если места в буфере не хватает, то мы вызываем GC,
 		//	а чтобы автоматически подкорректировались регистры,
-		//	мы их складываем в память во временный кортеж.
-		if (ol->heap.fp >= heap->end - reserved) { // TODO: переделать
-			ol->gc(ol, reserved);
+		//	мы их складываем в память во временный объект.
+		if (ol->heap.fp >= heap->end - MEMPAD) { // TODO: переделать
+			ol->gc(ol, 1);
 
 			word heapsize = (word) heap->end - (word) heap->begin;
 			if ((heapsize / (1024*1024)) >= ol->max_heap_size)
@@ -4020,10 +4022,10 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	word* R = ol->R;
 	int p = 0, N = NR;
 
-//	STDERR("*");
+	// если нам не хватило магических 1024, то у нас проблема
+	assert (fp + N + 3 > ol->heap.end);
 
 	// TODO: складывать регистры не в топе, а в heap->real-end - NR - 2
-
 
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = (word*) new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
@@ -4401,11 +4403,11 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 
 	// в соответствии со стратегией сборки 50*1.3-33*0.9, и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
-	int required_memory_size = nwords*2;
+	int required_memory_size = nwords*2 + MEMPAD;
 
-	heap->begin = (word*) malloc((required_memory_size + MEMPAD) * sizeof(word)); // at least one argument string always fits
+	heap->begin = (word*) malloc((required_memory_size + GCPAD) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
-		STDERR("Failed to allocate %d words for vm memory", required_memory_size);
+		STDERR("Failed to allocate %d bytes in memory for vm", required_memory_size*sizeof(word));
 		goto fail;
 	}
 	// ok
