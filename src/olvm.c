@@ -788,12 +788,10 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 //#define CR                          128 // available callbacks
 //#define NR                          128 + CR // see n-registers in register.scm
 
-#define GCPAD(nr)                  ((nr + 3) * sizeof(word)) // space after end of heap to guarantee the GC work
+#define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
 #define MEMPAD                     (1024) // резервируемое место для работы apply в памяти
 // 1024 - некое магическое число, подразумевающее количество
-// памяти, используемой между вызовами apply
-//#define MINGEN                     (1024 * 32)  /* minimum generation size before doing full GC  */
-//#define INITCELLS                  (1000)
+// памяти, используемой между вызовами apply. мои тесты пока показывают максимальное число 32
 
 // http://outflux.net/teach-seccomp/
 // http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
@@ -1776,7 +1774,8 @@ apply:
 		// a thread or mcp is calling the final continuation
 		this = (word *) R[0];
 		if (!is_reference(this)) {
-			STDERR("Unexpected virtual machine exit");
+			// no, this is expected exit!
+			// STDERR("Unexpected virtual machine exit");
 			return -1;//(void*) uvtol(R[3]);
 		}
 
@@ -2102,7 +2101,7 @@ static int mainloop(OL* ol)
 
 	// ENTRY LOOP POINT
 	int op;//operation to execute:
-//loop:
+loop:
 	switch ((op = *ip++) & 0x3F) {
 	case 0: // todo: change 0 to NOP, add new code for super_dispatch
 		op = (ip[0] << 8) | ip[1]; // big endian
@@ -2264,7 +2263,7 @@ static int mainloop(OL* ol)
 
 
 	case REFI: { //  1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
-		word* Ra = (word*)A0; A2 = Ra[ip[1]];
+		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
 		ip += 3; break;
 	}
 	case MOVE: // move a, t:      Rt = Ra
@@ -3436,7 +3435,8 @@ static int mainloop(OL* ol)
 			if (!seccompp)
 				free(heap->begin); // освободим занятую память
 			heap->begin = 0;
-			exit(svtoi(a));
+			return -1; // TEMP!
+			//exit(svtoi(a));
 			__builtin_unreachable(); // сюда мы уже не попадем
 		}
 
@@ -4009,13 +4009,11 @@ static int mainloop(OL* ol)
 		ERROR(op, new_string("Invalid opcode"), ITRUE);
 		break;
 	}
-//	goto loop;
 	ol->ip = ip;
 	ol->heap.fp = fp;
-	return STATE_MAINLOOP;
+	goto loop;
+//	return STATE_MAINLOOP;
 }// mainloop
-
-
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
 static int OL__gc(OL* ol, int ws) // ws - required size in words
@@ -4024,7 +4022,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 
 	// если места еще хватит, не будем ничего делать
 	// TODO: переделать на другую проверку
-	if (ws != 0 && fp < ol->heap.end - ws)
+	if (ws != 0 && fp < ol->heap.end - MEMPAD - ws) // какая-то стремная проверка...
 		return 0;
 
 	word* R = ol->R;
@@ -4261,16 +4259,6 @@ unsigned char* language = NULL;
 #if !EMBEDDED_VM
 int main(int argc, char** argv)
 {
-	// TEMP
-/*	__asm__("int $3");
-	CreateWindowEx(WS_EX_APPWINDOW|WS_EX_WINDOWEDGE,
-			"#32770",
-	"1",
-	WS_OVERLAPPEDWINDOW|WS_CLIPSIBLINGS|WS_CLIPCHILDREN,
-	0, 0, 100, 200, NULL, NULL, NULL, NULL);*/
-
-
-
 	unsigned char* bootstrap = language;
 
 /*	for (int i = 0; i < 12345678; i++) {
@@ -4393,9 +4381,9 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	memset(handle, 0x0, sizeof(OL));
 
 	// подготовим регистры
-	handle->heap.CR = 128;
-	handle->heap.NR = 128+128;
-	handle->R = malloc((128+128)*sizeof(word));
+	handle->heap.CR = 127;
+	handle->heap.NR = 255+127;
+	handle->R = malloc((255+127)*sizeof(word));
 
 
 	// подготовим очереди в/в
