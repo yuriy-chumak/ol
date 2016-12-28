@@ -222,11 +222,12 @@
          (vm:raw type-vector-raw bs))
 
       (define (make-leaf rvals raw?)
-         (if raw?
-            ;; the leaf contains only fixnums 0-255, so make a compact leaf
-            (list->byte-vector (reverse rvals)) ;; make node and reverse
-            ;; the leaf contains other values, so need full 4/8-byte descriptors
-            (unreel type-vector-leaf (reverse rvals))))
+         (let ((vals (reverse rvals)))
+            (if raw?
+               ;; the leaf contains only fixnums 0-255, so make a compact leaf
+               (list->byte-vector vals) ;; make node and reverse
+               ;; the leaf contains other values, so need full 4/8-byte descriptors
+               (unreel type-vector-leaf vals))))
 
       (define (byte? val)
          (and
@@ -267,7 +268,7 @@
             (else
                (lets ((these s (grab s *vec-leaf-size*)))
                   (cons
-                     (unreel type-vector-dispatch (cons (car l) these)) ;(+ 1 (length these)) 
+                     (unreel type-vector-dispatch (cons (car l) these))
                      (merge-each (cdr l) s))))))
 
       (define (merger l n)
@@ -320,7 +321,7 @@
                         (lets ((here below (cut-at below *vec-leaf-size* null)))
                            ;; attach up to 256 subtrees to this leaf
                            (cons
-                              (unreel type-vector-dispatch (cons (car this) here)) ; (+ 1 (length here))
+                              (unreel type-vector-dispatch (cons (car this) here))
                               (loop below (cdr this))))))))
             null (levels lst *vec-leaf-max*)))
 
@@ -340,7 +341,7 @@
                   ((low (car ll))                  ;; first leaf data, places 0-255
                    (fields (cdr ll))    ;; fill in the length of the vector at dispatch position 0
                    (subtrees (merge-levels fields))) ;; construct the subtrees
-                  (unreel type-vector-dispatch (ilist low len subtrees)))))) ;(+ 2 (length subtrees))
+                  (unreel type-vector-dispatch (ilist low len subtrees))))))
 
 
       (define (list->vector l)
