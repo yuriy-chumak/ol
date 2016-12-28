@@ -11,11 +11,12 @@
       ; ifeq ifary ol:let
 
       ;; virtual machine primitives:
-      ; vm:new vm:raw cons car cdr ref type size cast raw? set set! eq? less?
+      ; vm:new vm:raw unreel
+      ; cons car cdr ref type size cast raw? set set! eq? less?
       ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
       ; clock syscall vm:version fxmax fxmbits vm:wordsize
-      ; tuple-apply vm:new listuple
-      ; ff-apply ff:red ff:black ff:toggle ff:red? ff:right?
+      ; tuple-apply ff-apply
+      ; ff:red ff:black ff:toggle ff:red? ff:right?
 
 
 

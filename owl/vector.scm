@@ -221,12 +221,12 @@
       (define (list->byte-vector bs)
          (vm:raw type-vector-raw bs))
 
-      (define (make-leaf rvals n raw?)
+      (define (make-leaf rvals raw?)
          (if raw?
             ;; the leaf contains only fixnums 0-255, so make a compact leaf
             (list->byte-vector (reverse rvals)) ;; make node and reverse
             ;; the leaf contains other values, so need full 4/8-byte descriptors
-            (listuple type-vector-leaf n (reverse rvals))))
+            (unreel type-vector-leaf (reverse rvals))))
 
       (define (byte? val)
          (and
@@ -237,12 +237,12 @@
       (define (chunk-list lst out leaves n raw? len)
          (cond
             ((eq? n *vec-leaf-size*) ; flush out to leaves
-               (let ((leaf (make-leaf out n raw?)))
-                  (chunk-list lst null (cons (make-leaf out n raw?) leaves) 0 #true (+ len n))))
+               (let ((leaf (make-leaf out raw?)))
+                  (chunk-list lst null (cons (make-leaf out raw?) leaves) 0 #true (+ len n))))
             ((null? lst) ; partial (last) leaf
                (if (null? out)
                   (values (reverse leaves) len)
-                  (values (reverse (cons (make-leaf out n raw?) leaves)) (+ len n))))
+                  (values (reverse (cons (make-leaf out raw?) leaves)) (+ len n))))
             ((pair? lst)
                (if raw?
                   (chunk-list (cdr lst) (cons (car lst) out) leaves (+ n 1) (byte? (car lst)) len)
@@ -267,7 +267,7 @@
             (else
                (lets ((these s (grab s *vec-leaf-size*)))
                   (cons
-                     (listuple type-vector-dispatch (+ 1 (length these)) (cons (car l) these))
+                     (unreel type-vector-dispatch (cons (car l) these)) ;(+ 1 (length these)) 
                      (merge-each (cdr l) s))))))
 
       (define (merger l n)
@@ -320,7 +320,7 @@
                         (lets ((here below (cut-at below *vec-leaf-size* null)))
                            ;; attach up to 256 subtrees to this leaf
                            (cons
-                              (listuple type-vector-dispatch (+ 1 (length here)) (cons (car this) here))
+                              (unreel type-vector-dispatch (cons (car this) here)) ; (+ 1 (length here))
                               (loop below (cdr this))))))))
             null (levels lst *vec-leaf-max*)))
 
@@ -340,7 +340,7 @@
                   ((low (car ll))                  ;; first leaf data, places 0-255
                    (fields (cdr ll))    ;; fill in the length of the vector at dispatch position 0
                    (subtrees (merge-levels fields))) ;; construct the subtrees
-                  (listuple type-vector-dispatch (+ 2 (length subtrees)) (ilist low len subtrees))))))
+                  (unreel type-vector-dispatch (ilist low len subtrees)))))) ;(+ 2 (length subtrees))
 
 
       (define (list->vector l)

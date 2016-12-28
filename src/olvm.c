@@ -125,6 +125,8 @@
 // кастомные типы: https://www.gnu.org/software/guile/manual/html_node/Describing-a-New-Type.html#Describing-a-New-Type
 // список функций: http://jscheme.sourceforge.net/jscheme/doc/R4RSprimitives.html
 
+// интересное из мира Lisp 2015: https://habrahabr.ru/post/265589/
+
 // pinned objects - если это будут просто какие-то равки, то можно их размещать ДО основной памяти,
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
 
@@ -2077,7 +2079,7 @@ static int mainloop(OL* ol)
 
 		// tuples, trees
 	#	define TUPLEAPPLY 32
-	#	define LISTUPLE 35   // list -> typed tuple
+	#	define UNREEL 35   // list -> typed tuple
 	#	define FFAPPLY 49
 
 	#	define MKRED    43
@@ -2670,8 +2672,7 @@ loop:
 	}*/
 
 
-	// make typed tuple from list
-	case LISTUPLE: { // listuple type size lst to
+/*	case LISTUPLE: { // listuple type size lst to
 		word type = uvtoi (A0);
 		word size = uvtoi (A1);
 		word list = A2;
@@ -2684,6 +2685,28 @@ loop:
 			list = cdr (list);
 		}
 		ip += 4; break;
+	}*/
+	// make typed reference from list
+	case UNREEL: {
+		word type = uvtoi (A0);
+		word list = A1;
+
+		// think: проверку можно убрать ради скорости
+		if (is_pair(list)) {
+			word *ptr = fp;
+			A2 = (word)ptr;
+
+			word* me = ptr;
+			while (list != INULL) {
+				*++fp = car (list);
+				list = cdr (list);
+			}
+			*me = make_header(type, ++fp - ptr);
+		}
+		else {
+			A2 = IFALSE;
+		}
+		ip += 3; break;
 	}
 
 
@@ -4362,7 +4385,7 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	return(int)r;
+	return (int)(word)r;
 }
 #endif
 

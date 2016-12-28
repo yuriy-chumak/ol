@@ -196,35 +196,35 @@
                       (c d (split null l q))
                       (subs (map finish-string (list a b c d)))
                       (len (fold + 0 (map string-length subs))))
-                     (listuple type-string-dispatch 5 (cons len subs))))
+                     (unreel type-string-dispatch (cons len subs))))
                (else
-                  (listuple type-string-dispatch (+ n 1)
+                  (unreel type-string-dispatch ;(+ n 1)
                      (cons (fold + 0 (map string-length chunks)) chunks))))))
 
-      (define (make-chunk rcps len ascii?)
+      (define (make-chunk rcps ascii?)
          (if ascii?
             (let ((str (vm:raw type-string (reverse rcps))))
                (if str
                   str
                   (runtime-error "Failed to make string: " rcps)))
-            (listuple type-string-wide len (reverse rcps))))
+            (unreel type-string-wide (reverse rcps))))
 
       ;; ll|list out n ascii? chunk → string | #false
       (define (stringify runes out n ascii? chu)
          (cond
             ((null? runes)
                (finish-string
-                  (reverse (cons (make-chunk out n ascii?) chu))))
+                  (reverse (cons (make-chunk out ascii?) chu))))
             ; make 4Kb chunks by default
             ((eq? n 4096)
                (stringify runes null 0 #true
-                  (cons (make-chunk out n ascii?) chu)))
+                  (cons (make-chunk out ascii?) chu)))
             ((pair? runes)
                (cond
                   ((and ascii? (< 128 (car runes)) (> n 256))
                      ; allow smaller leaf chunks
                      (stringify runes null 0 #true
-                        (cons (make-chunk out n ascii?) chu)))
+                        (cons (make-chunk out ascii?) chu)))
                   ((valid-code-point? (car runes))
                      (let ((rune (car runes)))
                         (stringify (cdr runes) (cons rune out) (+ n 1)
