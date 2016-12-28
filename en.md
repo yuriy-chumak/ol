@@ -8,9 +8,9 @@ categories: en
 <br/>
 
    Otus Lisp is a purely[*](#pure) functional dialect of Lisp.
-It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to some of the [SRFI](http://srfi.schemers.org/). It is small, embeddable and crossplatform.
+It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It is small, embeddable and crossplatform.
 
-   You can use it on Linux, Windows, *BSD, Android, webOS, Odroid. It runs on x86, arm, mips architectures with 32- and 64-bit platforms.
+   You can use it on Linux (CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu, etc.), Windows, *BSD, Android, webOS, Odroid. It runs on x86, arm, mips, ppc architectures with 32- and 64-bit platforms.
 
    You can immediately try Otus Lisp (ol) in the provided terminal on the left of this page. For example, type
 <pre><code id="sample1" data-language="scheme">(+ 1 2 3 4 5 6 7)</code><button class="doit" onclick="doit(sample1.textContent)">send to the terminal</button></pre>
@@ -35,23 +35,27 @@ which is another way of
 208272237582511852109168640000000000
 000000000000
 
-> 
+>
 </code></pre>
 
 ### Download
 
    Available binary builds for:
-   
+
   * CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Univention, OpenSUSE, Ubuntu: from [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
 
-  
+
    I'm working for add more prebuilts.
-   
+
 ### Project news
+
+  * Wed 28 Dec 2016 18:15 EET
+    * preparing the release 1.1
+    * made great work with decreasing memory usage by three-five times and twise boost of execution speed (thanks to new gc memory management strategy).
 
   * Thr 01 Dec 2016 18:06 EET
     * [build.opensuse.org](https://build.opensuse.org/package/show/home:yuriy-chumak/ol) works again, you can get prepared packages for the x86 CentOS 6, x86 Debian 7, x86 Debian 8, x86 Fedora 22, x86 Fedora 23, x86 RHEL 5, x86 RHEL 6, x86 ScientificLinux 6, x86 openSUSE 13.1, x86 openSUSE 13.2, armv7l openSUSE Factory, aarch64 openSUSE Factory, x86 Ubuntu 12.04, x86 Ubuntu 14.04, x86 Ubuntu 16.04
-    
+
   * Wed 30 Nov 2016 21:53 EET
     * ol recompiled for odroid (please remember that ol works in "wild" under the odroid c1+ platform and provides web access to the server with remote terminal support)
 
@@ -92,7 +96,7 @@ socket closed, on-accept done.
   * Thr 10 Nov 2016 19:23 EET
     * nothing happend, i'm continuing the project, simply no time to the commenting all steps
   * Previous news records can be found in [russian translated](?ru) part of this site
-  
+
 ### Learn
 
    Current news can be found in [russian translated](?ru) part of this site that frequently updates.
