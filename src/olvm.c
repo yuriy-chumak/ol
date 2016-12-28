@@ -1507,6 +1507,7 @@ struct ol_t
 #define STATE_APPLY 1
 #define STATE_ERROR 2
 #define STATE_MAINLOOP 3
+#define STATE_DONE 0
 static int apply(OL *ol);
 static int error(OL *ol);
 static int mainloop(OL *ol);
@@ -1695,7 +1696,7 @@ long callback(OL* ol, int id, long* argi
 	case STATE_MAINLOOP:
 		state = mainloop(ol);
 		break;
-	case -1: // todo: change -1 to STATE_DONE or something similar
+	case STATE_DONE:
 		// возврат из колбека,
 		// R, NR могли измениться
 		R = ol->R;
@@ -1703,6 +1704,7 @@ long callback(OL* ol, int id, long* argi
 //		R[1] = R[NR + 2]; // не надо
 //		R[1] = R[NR + 1]; // не надо
 		R[0] = R[NR + 0]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
+		// todo: change to returning the value from old R[3]
 		return 0; // return from callback
 
 	case STATE_ERROR:
@@ -1732,7 +1734,7 @@ static int error(OL *ol) /* R4-R6 set, and call mcp */
 		return STATE_APPLY;
 	}
 	STDERR("invoke_mcp failed");
-	return -1; // no mcp to handle error (fail in it?), so nonzero exit
+	return STATE_DONE; // no mcp to handle error (fail in it?), so nonzero exit
 }
 
 static int apply(OL *ol)
@@ -1772,7 +1774,7 @@ apply:
 		if (!is_reference(this)) {
 			// no, this is expected exit!
 			// STDERR("Unexpected virtual machine exit");
-			return -1;//(void*) uvtol(R[3]);
+			return STATE_DONE;
 		}
 
 		R[0] = IFALSE; // set mcp yes?
@@ -1795,7 +1797,7 @@ apply:
 		// в R[3] находится код возврата
 		ol->this = this;
 		ol->arity = acc;
-		return -1; // колбек закончен! надо просто выйти наверх (todo: change to special state)
+		return STATE_DONE; // колбек закончен! надо просто выйти наверх (todo: change to special state)
 	}
 
 	// ...
@@ -3431,8 +3433,9 @@ loop:
 			if (!seccompp)
 				free(heap->begin); // освободим занятую память
 			heap->begin = 0;
-			return -1; // TEMP!
-			//exit(svtoi(a));
+			R[3] = a;
+			return STATE_DONE;
+			//was: exit(svtoi(a));
 			__builtin_unreachable(); // сюда мы уже не попадем
 		}
 
@@ -4092,8 +4095,8 @@ void* runtime(OL* ol, word* userdata) // userdata - is command line
 	case STATE_MAINLOOP:
 		state = mainloop(ol);
 		break;
-	case -1: // exit
-		return 0;
+	case STATE_DONE: // exit
+		return (void*)untoi(R[3]);
 	default:
 		assert(0); // unknown
 		return 0;
@@ -4359,7 +4362,7 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	return is_value(r) ? svtoi (r) : -1;
+	return(int)r;
 }
 #endif
 
