@@ -2407,7 +2407,7 @@ loop:
 		// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
 		// это лучше сделать тут, наверное, а не отдельной командой
 		if (is_value(T)) {
-			int val = value(T);
+			word val = value(T);
 			if (type == TPORT) {
 				if (val >= 0 && val <= 2)
 					A2 = make_port(val);
