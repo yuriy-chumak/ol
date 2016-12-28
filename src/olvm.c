@@ -209,7 +209,7 @@
 
 #include <stdint.h>
 
-// data types: LP64 	ILP64	LLP64	ILP32	LP32
+// possible data types: LP64 ILP64 LLP64 ILP32 LP32
 // http://www.unix.org/version2/whatsnew/lp64_wp.html
 // todo: please, check this!
 #if INTPTR_MAX == INT64_MAX
@@ -310,11 +310,6 @@
 #ifndef O_BINARY
 #	define O_BINARY 0
 #endif
-
-#ifndef __SIZEOF_LONG__
-#	define __SIZEOF_LONG__ (sizeof(long))
-#endif
-
 
 // https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
 //#pragma GCC diagnostic push
@@ -571,18 +566,19 @@ void* OL_eval(struct ol_t* ol, int argc, char** argv);
 #define W                           sizeof (word)
 #define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIX, val)
 
-//#define NWORDS                    1024*1024*8    /* static malloc'd heap size if used as a library */
-#define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in value (short number)
-#define HIGHBIT                     ((unsigned long)1 << FBITS) // high long bit set
-#define FMAX                        (((long)1 << FBITS)-1)      // maximum value value (and most negative value)
+#define FBITS                       ((sizeof (word) * 8) - 8) // bits in value (short number)
+#define HIGHBIT                     ((int_t)1 << FBITS) // maximum value value + 1
+#define FMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 // todo: remove MAXOBJ!
 #define MAXOBJ                      0xffff         // max words in tuple including header
 
 // http://www.delorie.com/gnu/docs/gcc/gccint_53.html
 #if MATH_64BIT
-typedef unsigned long long big __attribute__ ((mode (TI))); // __uint128_t
+typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
+typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
 #else
-typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
+typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
+typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 #endif
 
 #define RAWBIT                      (1 << RPOS)
@@ -715,77 +711,6 @@ typedef unsigned long long big __attribute__ ((mode (DI))); // __uint64_t
 #define CDR_CHECK(arg) is_pair(T) || is_npair(T) || is_npairn(T) || is_rational(T) || is_complex(T)
 #endif
 
-
-
-// todo: потом переделать в трюк
-// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
-// алгоритмические трюки:
-// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
-// signed fix to int
-
-// i - machine integer
-// ui - unsigned, si - signed
-// v - value number (internal, that fits in one register), type-fix
-//  or small numbers,
-//  or short numbers
-// uv, sv - unsigned/signed respectively.
-// Z - mножество целых чисел.
-
-// работа с numeric value типами
-#ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
-#endif
-#define uvtoi(v)        ({ word x = (word)(v); UVTOI_CHECK(x); (word) (x >> IPOS); })
-#define itouv(i)  (word)({ word x = (word)(i);                 (word) (x << IPOS) | 2; })
-		// (((struct value_t*)(&v))->payload);
-
-// todo: add overflow checking...
-#ifndef SVTOI_CHECK
-#define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
-#endif
-#if MATH_64BIT
-#define svtoi(v) \
-	({ \
-		word x = (word)(v); SVTOI_CHECK(x); \
-		long long y = (x >> IPOS); \
-		(x & 0x80) ? -y : y; \
-	})
-#else
-#define svtoi(v) \
-	({ \
-		word x = (word)(v); SVTOI_CHECK(x); \
-		long y = (x >> IPOS); \
-		(x & 0x80) ? -y : y; \
-	})
-#endif
-
-#define svtol svtoi
-//#define svtol(v)  (long)({ word x = (word)(v); SVTOI_CHECK(x); (x & 0x80) ? -(x >> IPOS)        : (x >> IPOS); })
-#define ltosv(i)  (word)({ long x = (long)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
-#define itosv(i)  (word)({ long x = ( int)(i);                 (x < 0)    ? (-x << IPOS) | 0x82 : (x << IPOS) | 2; })
-/*
-#define svtoi(v)  (int) ({ word x = (word)v; SVTOI_CHECK(x); \
-		intptr_t sign = (intptr_t)(x << (8*sizeof(uintptr_t) - IPOS)) >> (8*sizeof(intptr_t) - 1); \
-		((x >> IPOS) ^ sign) - sign; \
-})*/
-
-		// ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
-
-
-// арифметика целых (возможно больших)
-// прошу внимания!
-//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-#define untoi(num)  ({\
-	is_value(num) ? uvtoi(num)\
-		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; }) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
-#define itoun(val)  ({\
-	(word*)(\
-	__builtin_choose_expr((sizeof(val) < sizeof(word)),\
-		itouv(val),\
-		(val <= FMAX ? itouv(val) \
-			: (word)new_list(TINT, itouv(val & FMAX), itouv((val) >> FBITS)))));})
-
-#define make_integer(val) itoun(val)
 
 #define CR                          16 // available callbacks
 #define NR                          256 // see n-registers in register.scm
@@ -1366,6 +1291,67 @@ word gc(heap_t *heap, int size, word regs) {
 }
 
 
+// MATH
+// todo: потом переделать в трюк
+// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
+// алгоритмические трюки:
+// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
+// signed fix to int
+
+// i - machine integer
+// ui - unsigned, si - signed
+// v - value number (internal, that fits in one register), type-fix
+//  or small numbers,
+//  or short numbers
+// uv, sv - unsigned/signed respectively.
+// Z - mножество целых чисел.
+
+// работа с numeric value типами
+#ifndef UVTOI_CHECK
+#define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
+#endif
+#define uvtoi(v)  (int_t)({ word x1 = (word)(v); UVTOI_CHECK(x1); (word) (x1 >> IPOS); })
+#define itouv(i)  (word) ({ word x2 = (word)(i);                  (word) (x2 << IPOS) | 2; })
+		// (((struct value_t*)(&v))->payload);
+
+// todo: add overflow checking...
+#ifndef SVTOI_CHECK
+#define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
+#endif
+#define svtoi(v) \
+	({ \
+		word x3 = (word)(v); SVTOI_CHECK(x3); \
+		int_t y = (x3 >> IPOS); \
+		(x3 & 0x80) ? -y : y; \
+	})
+
+#define itosv(i)  (word)({ int_t x4 = (int_t)(i);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2; })
+// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
+
+// арифметика целых (возможно больших)
+// прошу внимания!
+//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
+#define untoi(num)  ({\
+	is_value(num) ? uvtoi(num)\
+		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; \
+	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
+
+// something wrong: looks like __builtin_choose_expr doesn't work as expected!
+#define itoun(val)  ({\
+	__builtin_choose_expr(sizeof(val) < sizeof(word), \
+		(word*)itouv(val),\
+		(word*)({ \
+			int_t x5 = (int_t)val; \
+			x5 <= FMAX ? \
+					(word)itouv(x5) : \
+					(word)new_pair(TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+		})); \
+	})
+
+#define make_integer(val) itoun(val)
+
+
+
 /*** OS Interaction and Helpers ***/
 static
 void set_blocking(int sock, int blockp) {
@@ -1626,10 +1612,10 @@ long callback(OL* ol, int id, long* argi
 			#else
 				value =   *(float*) &argi[i++];
 			#endif
-			long n = value * 10000;
+			long n = value * 10000; // todo: change to something like ftosn
 			long d = 10000;
 			// максимальная читабельность?
-			R[a] = (word)new_pair(TRATIONAL, ltosv(n), itouv(d));
+			R[a] = (word)new_pair(TRATIONAL, itosv(n), itouv(d));
 			break;
 		}
 		case F(TDOUBLE): {
@@ -1649,10 +1635,10 @@ long callback(OL* ol, int id, long* argi
 			#else
 				value =   *(double*) &argi[i++]; i++;
 			#endif
-			long n = value * 10000;
+			long n = value * 10000; // todo: change to something like ftosn
 			long d = 10000;
 			// максимальная читабельность?
-			R[a] = (word)new_pair(TRATIONAL, ltosv(n), itouv(d));
+			R[a] = (word)new_pair(TRATIONAL, itosv(n), itouv(d));
 			break;
 		}
 		case F(TSTRING): {
@@ -2573,28 +2559,28 @@ loop:
 
 	// АЛУ (арифметическо-логическое устройство)
 	case ADDITION: { // vm:add a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
-		word r = value(A0) + value(A1);
+		int_t r = value(A0) + value(A1);
 		A2 = F(r & FMAX);
 		A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
 		ip += 4; break; }
 	case SUBTRACTION: { // vm:sub a b  r u, args prechecked, signs ignored
-		word r = (value(A0) | HIGHBIT) - value(A1);
+		int_t r = (value(A0) | HIGHBIT) - value(A1);
 		A2 = F(r & FMAX);
 		A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
 		ip += 4; break; }
 
 	case MULTIPLICATION: { // vm:mul a b l h
-		big r = (big) value(A0) * (big) value(A1);
+		big_t r = (big_t) value(A0) * (big_t) value(A1);
 		A2 = F(r & FMAX);
 		A3 = F(r>>FBITS); //  & FMAX)
 		ip += 4; break; }
 	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fix-es
-		big a = (big) value(A1) | (((big) value(A0)) << FBITS);
-		big b = (big) value(A2);
+		big_t a = (big_t) value(A1) | (((big_t) value(A0)) << FBITS);
+		big_t b = (big_t) value(A2);
 
 		// http://stackoverflow.com/questions/7070346/c-best-way-to-get-integer-division-and-remainder
-		big q = a / b;
-		big r = a % b;
+		big_t q = a / b;
+		big_t r = a % b;
 
 		A3 = F(q>>FBITS);
 		A4 = F(q & FMAX);
@@ -2615,12 +2601,12 @@ loop:
 		ip += 3; break;
 
 	case SHIFT_RIGHT: { // vm:shr a b hi lo
-		big r = ((big) value(A0)) << (FBITS - value(A1));
+		big_t r = ((big_t) value(A0)) << (FBITS - value(A1));
 		A2 = F(r>>FBITS);
 		A3 = F(r & FMAX);
 		ip += 4; break; }
 	case SHIFT_LEFT: { // vm:shl a b hi lo
-		big r = ((big) value(A0)) << (value(A1));
+		big_t r = ((big_t) value(A0)) << (value(A1));
 		A2 = F(r>>FBITS);
 		A3 = F(r & FMAX);
 		ip += 4; break; }
@@ -3947,7 +3933,7 @@ loop:
 			CloseHandle(mh);
 
 			memcpy(ptr, &bytecode, sizeof(bytecode));
-			*(long*)&ptr[56] = c;
+			*(long long*)&ptr[56] = c;
 			*(long long*)&ptr[66] = (long long)ol;
 			*(long long*)&ptr[82] = (long long)&callback;
 			#else
@@ -3989,9 +3975,9 @@ loop:
 					MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
 			memcpy(ptr, &bytecode, sizeof(bytecode));
-			*(long*)&ptr[78] = c;
-			*(long*)&ptr[88] = (long)ol;
-			*(long*)&ptr[98] = (long)&callback;
+			*(long long*)&ptr[78] = c;
+			*(long long*)&ptr[88] = (long long)ol;
+			*(long long*)&ptr[98] = (long long)&callback;
 			#endif
 #endif
 
@@ -4513,9 +4499,9 @@ OL_eval(OL* handle, int argc, char** argv)
  */
 #if HAS_PINVOKE
 
-long long gcd(long long a, long long b)
+int_t gcd(int_t a, int_t b)
 {
-	long long c;
+	int_t c;
 	while (a) {
 		c = a; a = b % a; b = c;
 	}
@@ -4524,15 +4510,15 @@ long long gcd(long long a, long long b)
 
 #define ftosn(f) ({\
 	double v = f; \
-	long long n = v * FMAX; \
-	long long d = FMAX; \
-	long long g = gcd(n, d); \
+	int_t n = v * FMAX; \
+	int_t d = FMAX; \
+	int_t g = gcd(n, d); \
 \
 	(g == d) ? \
-		(word*) ltosv(v) : \
+		(word*) itosv(v) : \
 	(g == 1) ? \
-		new_pair(TRATIONAL, ltosv(n), itouv(d)) :\
-		new_pair(TRATIONAL, ltosv(n / g), ltosv(d / g)); \
+		new_pair(TRATIONAL, itosv(n), itouv(d)) :\
+		new_pair(TRATIONAL, itosv(n / g), itosv(d / g)); \
 	})
 
 // C preprocessor trick, some kind of "map"
@@ -5062,7 +5048,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		float a = 0;
 		if (is_value(pa))
-			a = svtol(pa);
+			a = svtoi(pa);
 		else {
 			switch (reftype(pa)) {
 			case TINT:
@@ -5076,7 +5062,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		float b = 1;
 		if (is_value(pb))
-			b = svtol(pb);
+			b = svtoi(pb);
 		else {
 			switch (reftype(pb)) {
 			case TINT:
@@ -5113,7 +5099,7 @@ word* pinvoke(OL* self, word* arguments)
 
 	long to_long(word arg) {
 		if (is_value(arg))
-			return svtol(arg);
+			return svtoi(arg);
 
 		switch (reftype(arg)) {
 		case TINT:
@@ -5134,7 +5120,7 @@ word* pinvoke(OL* self, word* arguments)
 	// todo: заменить на вызов (float)to_double(arg)
 	float to_float(word arg) {
 		if (is_value(arg))
-			return svtol(arg);
+			return svtoi(arg);
 
 		switch (reftype(arg)) {
 		case TINT:
@@ -5151,7 +5137,7 @@ word* pinvoke(OL* self, word* arguments)
 
 	double to_double(word arg) {
 		if (is_value(arg))
-			return svtol (arg);
+			return svtoi (arg);
 
 		switch (reftype(arg)) {
 		case TINT:
@@ -5599,11 +5585,11 @@ word* pinvoke(OL* self, word* arguments)
 					float value = *f++;
 					word num = car(l);
 					assert (reftype(num) == TRATIONAL);
-					// максимальная читабельность
+					// максимальная читабельность (todo: change like fto..)
 					long n = value * 10000;
 					long d = 10000;
-					car(num) = ltosv(n);
-					cdr(num) = ltosv(d);
+					car(num) = itosv(n);
+					cdr(num) = itosv(d);
 					// максимальная точность (fixme: пока не работает как надо)
 					//car(num) = itosv(value * FMAX);
 					//cdr(num) = F(FMAX);
@@ -5624,7 +5610,7 @@ word* pinvoke(OL* self, word* arguments)
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
 		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) itosv (got); // ltosv or itosv?
+			result = (word*) itosv (got);
 			break;
 		case TINT: // type-int+
 			result = (word*) itoun ((long)got);
