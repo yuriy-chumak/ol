@@ -1413,7 +1413,7 @@ struct ol_t
 
 	// текущий контекст с арностью
 	word *this;
-	unsigned short arity;
+	long arity;
 };
 
 static //__attribute__((aligned(8)))
@@ -1510,8 +1510,8 @@ void* runtime(OL* ol)
 {
 	heap_t* heap = &ol->heap;
 
-	word* this = ol->this;
-	unsigned short acc = ol->arity;
+	word*this = ol->this;
+	long acc = ol->arity;
 
 	word* R = ol->R;   // регистры виртуальной машины
 	word *fp = heap->fp; // memory allocation pointer
@@ -1968,6 +1968,7 @@ loop:;
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
 	case LDI: {  // 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
+		static
 		const word I[] = { IEMPTY, INULL, ITRUE, IFALSE };
 		A0 = I[op>>6];
 		ip += 1; break;
@@ -3751,7 +3752,6 @@ loop:;
 		ERROR(op, new_string("Invalid opcode"), ITRUE);
 		break;
 	}
-	ol->heap.fp = fp;
 	goto loop;
 
 error:; // R4-R6 set, and call mcp (if any)
