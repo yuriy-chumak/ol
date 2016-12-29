@@ -1,10 +1,10 @@
 /**
  * Simple purely functional Lisp, mostly
  *
- * Version 1.1.0
+ * Version 1.1
  *
- * Copyright (c) 2014- 2016 Yuriy Chumak
  * Copyright (c) 2014 Aki Helin
+ * Copyright (c) 2014- 2016 Yuriy Chumak
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
  * This program is free software;  you can redistribute it and/or
@@ -29,12 +29,9 @@
  * Related:
  *   http://people.csail.mit.edu/jaffer/Scheme (r5rs)
  *   http://groups.csail.mit.edu/mac/projects/scheme/
+ *   http://www.s48.org/
  *
  */
-
-// TODO!!!!!!!
-// ILP64, LP64, LLP64:
-// http://stackoverflow.com/questions/384502/what-is-the-bit-size-of-long-on-64-bit-windows
 
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
@@ -213,7 +210,7 @@
 
 // possible data types: LP64 ILP64 LLP64 ILP32 LP32
 // http://www.unix.org/version2/whatsnew/lp64_wp.html
-// todo: please, check this!
+// http://stackoverflow.com/questions/384502/what-is-the-bit-size-of-long-on-64-bit-windows
 #if INTPTR_MAX == INT64_MAX
 #define MATH_64BIT 1
 #else
@@ -1077,8 +1074,9 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
 
 // todo: ввести третий generation
 //__attribute__ ((aligned(sizeof(word))))
+// query: запрос на выделение query слов
 static
-word gc(heap_t *heap, int size, word regs) {
+word gc(heap_t *heap, int query, word regs) {
 	// просматривает список справа налево
 	void mark(word *pos, word *end)
 	{
@@ -1156,10 +1154,8 @@ word gc(heap_t *heap, int size, word regs) {
 		return newobject;
 	}
 
-	if (size == 0) // сделать полную сборку?
+	if (query == 0) // сделать полную сборку?
 		heap->genstart = heap->begin; // start full generation
-
-	#define DEBUG_GC 0
 
 	//if (heap->genstart == heap->begin)
 	//	fprintf(stderr, "+");
@@ -1205,86 +1201,42 @@ word gc(heap_t *heap, int size, word regs) {
 	}
 	heap->fp = fp;
 
-#define NEW_STRATEGY 1
-
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
-#if NEW_STRATEGY
-	size += MEMPAD; // гарантия места для apply
+	query += MEMPAD; // гарантия места для apply
 
 	ptrdiff_t hsize = heap->end - heap->begin; // вся куча в словах
 	ptrdiff_t nfree = heap->end - (word*)regs; // свободно в словах
-	ptrdiff_t heapsize = hsize;
-	ptrdiff_t nused = heapsize - nfree + size; // использовано слов
-#else
-	int nfree = (word)heap->end - (word)regs;
-#endif
+	ptrdiff_t nused = hsize - nfree + query; // использовано слов
 	if (heap->genstart == heap->begin) {
 		// напоминаю, сюда мы попадаем только после полной(!) сборки
-#if NEW_STRATEGY
-#else
-		ptrdiff_t nused = hsize - nfree + size; // использовано слов
-		ptrdiff_t heapsize = (word) heap->end - (word) heap->begin; // вся куча в байтах
-		ptrdiff_t nused = heapsize - nfree + size*W;                // использовано байт
-#endif
-
-		if (heapsize < nused)
-			heapsize = nused;
+		if (hsize < nused)
+			hsize = nused;
 
 		// Please grow your buffers exponentially:
 		//  https://blog.mozilla.org/nnethercote/2014/11/04/please-grow-your-buffers-exponentially/
 		//  ! https://habrahabr.ru/post/242279/
 
-#if NEW_STRATEGY
 		// выделим на "старое" поколение не менее 50% кучи, при этом кучу будем увеличивать на 33%
-		if (nused > (heapsize / 2)) {
+		if (nused > (hsize / 2)) {
 			//fprintf(stderr, ">");
 			// !!! множитель увеличения кучи должен быть меньше золотого сечения: 1.618
-			regs += adjust_heap(heap, heapsize / 3) * sizeof(W);
+			regs += adjust_heap(heap, hsize / 3) * sizeof(W);
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
-		else if (nused < (heapsize / 3)) {
+		else if (nused < (hsize / 3)) {
 			//fprintf(stderr, "<");
-			regs += adjust_heap(heap,-heapsize / 9) * sizeof(W);
+			regs += adjust_heap(heap,-hsize / 9) * sizeof(W);
 		}
-#else // OL reallocation strategy
-		nfree -= size*W + MEMPAD;   // how much really could be snipped off
-
-		if (nfree < (heapsize / 10) || nfree < 0) {
-			// increase heap size if less than 10% is free by ~30% of heap size (growth usually implies more growth)
-			fprintf(stderr, ">");
-			regs += adjust_heap(heap, size*W + nused/3 + 4096) * sizeof(word);
-			nfree = (word)heap->end - regs;
-
-//			if (nfree <= size)
-//				breaked |= 8; // will be passed over to mcp at thread switch. may cause owl<->gc loop if handled poorly on lisp side!
-		}
-		else if (nfree > (heapsize/3)) {
-			// decrease heap size if more than 30% is free by 10% of the free space
-			int dec = -(nfree / 10);
-			int newobj = nfree - dec;
-			if (newobj > 2 * size*W) {
-				regs += adjust_heap(heap, dec) * sizeof(word);
-				fprintf(stderr, "<");
-				heapsize = (word) heap->end - (word) heap->begin;
-				nfree = (word) heap->end - regs;
-			}
-		}
-#endif
 		heap->genstart = (word*)regs; // always start new generation
 	}
-#if NEW_STRATEGY
 	// полная сборка, если осталось меньше 20% свободного места в куче
 	//  иначе, у нас слишком часто будет вызываться сборщик
-	//  но тоже надо найти баланс
-	// TODO: посчитать математически, на каком именно месте
+	// TODO: посчитать математически, на каком именно числе
 	//  стоит остановиться, чтобы ни слишком часто не проводить молодую сборку,
 	//  ни слишком часто старую. мне, по тестам кажется, что 20% это вполне ок.
-	else if ((nfree - size) < heapsize / 5) {
-#else
-	else if (nfree < MINGEN || nfree < size*W*2) {
-#endif
+	else if ((nfree - query) < hsize / 5) {
 		heap->genstart = heap->begin; // force start full generation
-		return gc(heap, size, regs);
+		return gc(heap, query, regs);
 	}
 	else
 		heap->genstart = (word*)regs; // simply start new generation
@@ -1458,14 +1410,10 @@ struct ol_t
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
 	word R[NR + CR];   // регистры виртуальной машины
+
+	// текущий контекст с арностью
 	word *this;
-
-	unsigned char *ip;
 	unsigned short arity;
-
-	int breaked;
-	int ticker;
-	int bank;
 };
 
 static //__attribute__((aligned(8)))
@@ -1482,8 +1430,6 @@ void* runtime(OL* ol);  // главный цикл виртуальной маш
 	word size = *ip++, tmp; word *T = new (proctype, size); \
 	tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-
-#define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 #define A0                          R[ip[0]]
 #define A1                          R[ip[1]]
@@ -1505,7 +1451,7 @@ long callback(OL* ol, int id, long* argi
 		, double* argf, long* rest
 #endif
 		);
-//#include "olni.i"
+#include "olni.c"
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
 static int OL__gc(OL* ol, int ws) // ws - required size in words
@@ -1557,6 +1503,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 		R[6] = (word) (b);\
 		goto error; \
 	}
+#define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 static //__attribute__((aligned(8)))
 void* runtime(OL* ol)
@@ -1565,10 +1512,15 @@ void* runtime(OL* ol)
 
 	word* this = ol->this;
 	unsigned short acc = ol->arity;
+
 	word* R = ol->R;   // регистры виртуальной машины
 	word *fp = heap->fp; // memory allocation pointer
 
 	unsigned char *ip = 0; // указатель на инструкции
+
+	int breaked = 0;
+	int ticker = TICKS; // any initial value ok
+	int bank = 0;  // ticks deposited at interop
 
 apply:;
 	if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
@@ -1593,9 +1545,9 @@ apply:;
 		R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
 		R[5] = IFALSE;
 		R[6] = IFALSE;
-		ol->breaked = 0;
-		ol->ticker = TICKS;// ?
-		ol->bank = 0;
+		breaked = 0;
+		ticker = TICKS;// ?
+		bank = 0;
 		acc = 4;
 
 		goto apply;
@@ -1671,12 +1623,12 @@ apply:;
 				ERROR(259, this, INULL);
 
 		// А не стоит ли нам переключить поток?
-		if (--ol->ticker < 0) {
+		if (--ticker < 0) {
 			// время потока вышло, переключим на следующий
-			ol->ticker = TICKS;
+			ticker = TICKS;
 			if (R[0] != IFALSE) { // if mcp present:
 				// save vm state and enter mcp cont at R0!
-				ol->bank = 0;
+				bank = 0;
 				acc += 4;
 
 				word *thread;
@@ -1694,12 +1646,12 @@ apply:;
 				// 1 - runnig and time slice exhausted
 				// 10: breaked - call signal handler
 				// 14: memory limit was exceeded
-				R[3] = ol->breaked ? ((ol->breaked & 8) ? F(14) : F(10)) : F(1); // fixme - handle also different signals via one handler
+				R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); // fixme - handle also different signals via one handler
 				R[4] = (word) thread; // thread state
-				R[5] = F(ol->breaked); // сюда можно передать userdata из потока
+				R[5] = F(breaked); // сюда можно передать userdata из потока
 				R[6] = IFALSE;
 				acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
-				ol->breaked = 0;
+				breaked = 0;
 
 				// reapply new thread
 				goto apply;
@@ -1725,7 +1677,7 @@ apply:;
 
 			word heapsize = (word) heap->end - (word) heap->begin;
 			if ((heapsize / (1024*1024)) >= ol->max_heap_size)
-				ol->breaked |= 8; // will be passed over to mcp at thread switch
+				breaked |= 8; // will be passed over to mcp at thread switch
 		}
 
 		ip = (unsigned char *) &this[1];
@@ -1974,9 +1926,9 @@ loop:;
 		R[0] = IFALSE; // let's call mcp
 		R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
 		acc = 4;
-		if (ol->ticker > 10)
-			ol->bank = ol->ticker; // deposit remaining ticks for return to thread
-		ol->ticker = TICKS;
+		if (ticker > 10)
+			bank = ticker; // deposit remaining ticks for return to thread
+		ticker = TICKS;
 
 		goto apply;
 
@@ -1985,8 +1937,8 @@ loop:;
 	//				STDERR("run R[%d], R[%d]", ip[0], ip[1]);
 		this = (word *) A0;
 		R[0] = R[3];
-		ol->ticker = ol->bank ? ol->bank : uvtoi (A1);
-		ol->bank = 0;
+		ticker = bank ? bank : uvtoi (A1);
+		bank = 0;
 		CHECK(is_reference(this), this, RUN);
 
 		word hdr = *this;
@@ -3118,12 +3070,20 @@ loop:;
 
 				assert ((word)B == INULL || is_pair(B));
 	//					assert ((word)C == IFALSE);
-
 				word* (*function)(OL*, word*) = (word* (*)(OL*, word*)) car(A);  assert (function);
 
-				ol->heap.fp = fp;
+				ol->heap.fp = fp;  ol->this = this;
 				result = function(ol, B);
 				fp = ol->heap.fp;
+
+				// а вдруг вызвали gc?
+//				int sub
+//				= ip - (unsigned char *) &this[1];
+				this = ol->this;
+//				ip = (unsigned char *) &this[sub];
+
+				// todo: проверить, но похожу что этот выхов всегда сопровождается вызовом RET
+				// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
 				break;
 			}
 	#endif
@@ -3533,8 +3493,8 @@ loop:;
 		//  остальное можно спокойно оформлять отдельными функциями
 
 		case 1022: // set ticker
-			result = itoun (ol->ticker);
-			ol->ticker = uvtoi (a);
+			result = itoun (ticker);
+			ticker = uvtoi (a);
 			break;
 	//		case 1014: { /* set-ticks n _ _ -> old */
 	//			result = itoun (ol->slice);
@@ -3622,6 +3582,142 @@ loop:;
 				result = new_string(error);
 			break;
 		}
+		case SYSCALL_MKCB: {
+			// TCALLBACK
+			int c;
+			// TODO: увеличить heap->CR если маловато колбеков!
+			for (c = 4; c < CR; c++) {
+				if (R[NR+c] == IFALSE) {
+					R[NR+c] = a;
+					break;
+				}
+			}
+
+			char* ptr = 0;
+#ifdef __i386__ // x86
+			// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
+			static char bytecode[] =
+					"\x90"  // nop
+					"\x8D\x44\x24\x04" // lea eax, [esp+4]
+					"\x50"     // push eax
+					// 6
+					"\x68----" // push $0
+					"\x68----" // push ol
+					"\xB8----" // mov eax, ...
+					"\xFF\xD0" // call eax
+					"\x83\xC4\x0C" // add esp, 3*4
+					"\xC3"; // ret
+			#ifdef _WIN32
+				HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
+						0, sizeof(bytecode), NULL);
+				if (!mh)
+					STDERR("Can't create memory mapped object");
+				ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS,
+						0, 0, sizeof(bytecode));
+				CloseHandle(mh);
+			#else
+				ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
+						MAP_PRIVATE, -1, 0);
+			#endif
+
+			memcpy(ptr, &bytecode, sizeof(bytecode));
+			*(long*)&ptr[ 7] = c;
+			*(long*)&ptr[12] = (long)ol;
+			*(long*)&ptr[17] = (long)&callback;
+#elif __amd64__
+			// Windows x64
+			#ifdef _WIN32
+			//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+			static char bytecode[] =
+					"\x90" // nop
+					"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
+					"\x55"                  // push rbp
+					"\x48\x89\xE5"          // mov ebp, rsp
+					"\x41\x51"              // push r9
+					"\x41\x50"              // push r8
+					"\x52"                  // push rdx
+					"\x51"                  // push rcx
+					"\x49\x89\xE0"          // mov r8, esp         // argi
+					// 19
+					"\x48\x83\xEC\x20"      // sub esp, 32
+					"\x67\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
+					"\x67\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
+				    "\x67\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
+				    "\x67\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
+					"\x49\x89\xE1"          // mov r9, esp         // argf
+					// 54
+					"\x48\xBA--------"      // mov rdx, 0          // id
+					"\x48\xB9--------"      // mov rcx, 0          // ol
+					// 74
+					"\x50"	                // push rax // dummy
+					"\x50"                  // push rax            // rest
+					"\x48\x83\xEC\x20"      // sub rsp, 32         // free space
+					// 80
+					"\x48\xB8--------"      // mov rax, callback
+					"\xFF\xD0"              // call rax
+					"\xC9"                  // leave
+					"\xC3";                 // ret
+
+			HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
+					0, sizeof(bytecode), NULL);
+			if (!mh)
+				STDERR("Can't create memory mapped object");
+			ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE,
+					0, 0, sizeof(bytecode));
+			CloseHandle(mh);
+
+			memcpy(ptr, &bytecode, sizeof(bytecode));
+			*(long long*)&ptr[56] = c;
+			*(long long*)&ptr[66] = (long long)ol;
+			*(long long*)&ptr[82] = (long long)&callback;
+			#else
+
+			//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+			static char bytecode[] =
+					"\x90" // nop
+					"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
+					"\x55"                  // push rbp
+					"\x48\x89\xE5"          // mov rbp, rsp
+					"\x41\x51"              // push r9
+					"\x41\x50"              // push r8
+					"\x51"                  // push rcx
+					"\x52"                  // push rdx
+					"\x56"                  // push rsi
+					"\x57"                  // push rdi
+					"\x48\x89\xE2"          // mov rdx, rsp         // argi
+					// 21
+					"\x48\x83\xEC\x40"      // sub rsp, 8*8
+					"\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
+					"\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
+				    "\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
+				    "\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
+				    "\xF2\x0F\x11\x54\x24\x20"    // movsd [esp+32], xmm4
+				    "\xF2\x0F\x11\x6C\x24\x28"    // movsd [esp+40], xmm5
+				    "\xF2\x0F\x11\x74\x24\x30"    // movsd [esp+48], xmm6
+				    "\xF2\x0F\x11\x7C\x24\x38"    // movsd [esp+56], xmm7
+					"\x48\x89\xE1"          // mov rcx, rsp         // argf
+					// 76
+					"\x48\xBE--------"      // mov rsi, 0          // id
+					// 86
+					"\x48\xBF--------"      // mov rdi, 0          // ol
+					// 96
+					"\x48\xB8--------"      // mov rax, callback
+					"\xFF\xD0"              // call rax
+					"\xC9"                  // leave
+					"\xC3";                 // ret
+			ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
+					MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+
+			memcpy(ptr, &bytecode, sizeof(bytecode));
+			*(long long*)&ptr[78] = c;
+			*(long long*)&ptr[88] = (long long)ol;
+			*(long long*)&ptr[98] = (long long)&callback;
+			#endif
+#endif
+
+			result = new_callback(ptr);
+			break;
+		}
 	#endif// HAS_DLOPEN
 
 		// https://www.mindcollapse.com/blog/processes-isolation.html
@@ -3673,7 +3769,6 @@ done:;
 	ol->this = this;
 	ol->arity = acc;
 
-	ol->ip = ip;
 	ol->heap.fp = fp;
 
 	return (void*)untoi(ol->R[3]);
@@ -4077,12 +4172,10 @@ OL_eval(OL* handle, int argc, char** argv)
 	// все готово для выполнения главного цикла виртуальной машины
 	ol->this = this;
 	ol->arity = acc;
-	ol->gc = OL__gc;
 
-	ol->bank = 0; // ticks deposited at interop
-	ol->ticker = TICKS; // any initial value ok
+	ol->gc = OL__gc;
 
 	return runtime(handle);
 }
 
-#include "pinvoke.i"
+#include "pinvoke.c"

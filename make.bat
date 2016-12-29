@@ -4,11 +4,10 @@ echo %%0 = %0
 echo %%1 = %1
 IF "%1"==""   GOTO ALL
 IF "%1"=="vm" GOTO VM
-IF "%1"=="vmr" GOTO VMR
 IF "%1"=="vm32" GOTO VM32
 IF "%1"=="boot" GOTO BOOT
 IF "%1"=="ol" GOTO OL
-IF "%1"=="olr" GOTO OLR
+IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
 IF "%1"=="release" GOTO RELEASE
 IF "%1"=="tests" GOTO TESTS
@@ -27,9 +26,10 @@ CALL :VM
 CALL :REPL
 CALL :BOOT
 CALL :OL
-CALL :101
-CALL :111
-CALL :121
+CALL :TESTS
+::CALL :101
+::CALL :111
+::CALL :121
 GOTO:EOF
 
 rem 101 - NetBSD x64
@@ -51,15 +51,12 @@ echo.
 GOTO:EOF
 
 :VM
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O0 -DHAS_PINVOKE=1 -m64
-GOTO:EOF
-
-:VMR
-gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
 GOTO:EOF
 
 :VM32
-gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm32.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1 -m32
+set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
+gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -g2 -DNDEBUG -DHAS_PINVOKE=1 -m32
 GOTO:EOF
 
 
@@ -68,16 +65,17 @@ vm repl <src/to-c.scm >src/boot.c
 GOTO:EOF
 
 :OL
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O0 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
 GOTO:EOF
 
-:OLR
-gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -s -DNDEBUG -DHAS_PINVOKE=1 -m64
+:OL32
+set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
 GOTO:EOF
 
 :REPL
-set VERSION=
-for /f "delims=" %%a in ('git describe') do @set VERSION=%%a
+set VERSION=1.1.0
+::for /f "delims=" %%a in ('git describe') do @set VERSION=%%a
 vm repl - --version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
