@@ -127,6 +127,8 @@
 
 // интересное из мира Lisp 2015: https://habrahabr.ru/post/265589/
 
+// check the libuv https://github.com/libuv/libuv
+
 // pinned objects - если это будут просто какие-то равки, то можно их размещать ДО основной памяти,
 //	при этом основную память при переполнении pinned размера можно сдвигать вверх.
 
@@ -1341,10 +1343,10 @@ word gc(heap_t *heap, int size, word regs) {
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
 		(word*)itouv(val),\
 		(word*)({ \
-			int_t x5 = (int_t)val; \
+			int_t x5 = (int_t)(val); \
 			x5 <= FMAX ? \
-					(word)itouv(x5) : \
-					(word)new_pair(TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+					(word)itouv(x5): \
+					(word)new_list(TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
 		})); \
 	})
 
@@ -2619,7 +2621,7 @@ loop:
 	case 30: // (fxmax)
 		A0 = F(FMAX);
 		ip += 1; break;
-	case 31: // (fxbits)
+	case 31: // (fxmbits)
 		A0 = F(FBITS);
 		ip += 1; break;
 

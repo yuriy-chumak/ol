@@ -232,7 +232,7 @@
 
       ;(define vm:version  (vm:raw type-bytecode '(62 4)))
       ;(define fxmax       (vm:raw type-bytecode '(33 4)))
-      ;(define fxmbits     (vm:raw type-bytecode '(34 4)))
+      ;(define fxmbits     (vm:raw type-bytecode '(31 4)))
       ;(define vm:wordsize (vm:raw type-bytecode '(29 4)))
 
 
