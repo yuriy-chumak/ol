@@ -89,8 +89,6 @@ install: ol repl
 	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
 	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
 	done
-   install -d $(DESTDIR)/$(PREFIX)/lib/src
-   install -D -m 644 src/vm.scm $(DESTDIR)/$(PREFIX)/lib/src
 	@echo Installing OpenGL libraries...
 	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
 	@for F in OpenGL/ARB OpenGL/EGL OpenGL/ES OpenGL/EXT ;do \
