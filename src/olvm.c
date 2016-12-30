@@ -85,7 +85,7 @@
 // android supports seccomp only for Lollipop and Nougat
 // https://security.googleblog.com/2016/07/protecting-android-with-more-linux.html
 #	if __ANDROID_API__<15
-#		define SYSCALL_PRCTL 0
+#		define NO_SECCOMP
 #	endif
 #	define SYSCALL_SYSINFO 0
 #	define SYSCALL_GETRLIMIT 0
@@ -135,13 +135,13 @@
 //    Linux-x86_64 (amd64)                                                        +
 //    Linux-powerpc
 //    Linux-sparc
-//    Linux-ARM
+//    Linux-ARM                                                                   +
 //    Win32-i386 (2000/XP, WinNT or later)                                        +
-//    Win64-x86_64 (XP or later)                                                  .
+//    Win64-x86_64 (XP or later)                                                  +
 //    Wince-ARM (cross compiled from win32-i386)
-//    FreeBSD-i386                                                                .
+//    FreeBSD-i386                                                                +
 //    FreeBSD-x86_64                                                              +
-//    NetBSD-i386                                                                 .
+//    NetBSD-i386                                                                 +
 //    NetBSD-x86_64                                                               +
 //    Mac OS X/Darwin for PowerPC (32 and 64 bit)
 //    Mac OS X/Darwin for Intel (32 and 64 bit)
@@ -154,7 +154,7 @@
 //    Nintendo Wii-powerpc (cross compile from win32-i386)
 //    AIX 5.3 and later for PowerPC (32 and 64 bit)
 //    Java JVM (1.5 and later) and Android Dalvik (Android 4.0 and later)
-//    Android (ARM, i386, MIPS) via cross-compiling.
+//    Android (ARM, i386, MIPS) via cross-compiling.                              +
 //    MSDos-i8086 (cross compiled from win32-i386 or Linux)                       -
 //    Amiga, MorphOS and AROS
 
@@ -250,7 +250,7 @@
 #endif
 
 // компилятор otus-lisp поддерживает несколько специальных форм:
-//	quote, lambda, receive, values, ol:let, if:eq?, ol:set, ol:ifa, (env.scm)
+//	quote, lambda, receive, values, ol:let, ifeq, setq, ol:ifa, (env.scm)
 //	все остальное - макросы или функции/процедуры
 
 #include <assert.h>
@@ -3578,7 +3578,7 @@ loop:;
 			break;
 		}
 		case SYSCALL_DLERROR: { // (dlerror)
-			char* error = dlerror();
+			char* error = (char*)dlerror();
 			if (error)
 				result = new_string(error);
 			break;
