@@ -227,10 +227,10 @@
 (define EGLint* type-vector-raw) ;?
 
 
-(define EGL_DEFAULT_DISPLAY (raw type-port '(0)))
-(define EGL_NO_CONTEXT (raw type-port '(0)))
-(define EGL_NO_DISPLAY (raw type-port '(0)))
-(define EGL_NO_SURFACE (raw type-port '(0)))
+(define EGL_DEFAULT_DISPLAY (vm:raw type-port '(0)))
+(define EGL_NO_CONTEXT (vm:raw type-port '(0)))
+(define EGL_NO_DISPLAY (vm:raw type-port '(0)))
+(define EGL_NO_SURFACE (vm:raw type-port '(0)))
 
 (define EGL_VERSION_1_0 1)
 (define EGL_VERSION_1_1 1)

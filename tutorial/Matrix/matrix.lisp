@@ -51,16 +51,16 @@
    (ith (ith matrix j) i))
 
 (define (set-matrix-value matrix i j value)
-   (set! (ith matrix j) (+ i 1) value))
+   (set-ref! (ith matrix j) (+ i 1) value))
 
 
 (define setx! (case-lambda
-((matrix i j value)
-   (set! (ith matrix j) (+ i 1) value))
-((vector i value)
-   (set! vector (+ i 1) value))
-((scalar value)
-   (set-car! scalar value))))
+   ((matrix i j value)
+      (set-ref! (ith matrix j) (+ i 1) value))
+   ((vector i value)
+      (set-ref! vector (+ i 1) value))
+   ((scalar value)
+      (set-car! scalar value))))
 
 
 ; ===========================================================

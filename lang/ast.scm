@@ -12,7 +12,6 @@
 
       (owl list-extra)
       (owl math)
-      (owl primop)
       (owl tuple)
       (owl list)
       (owl symbol)
@@ -125,32 +124,30 @@
                                     (translate body env fail)))
                               (fail (list "Bad let: " exp))))
                         (fail (list "Bad let: " exp))))
-                  ((ol:ifc) ;;; (branch type a b then else)
-                     (if (eq? (length exp) 6)
-                        (let ((type (second exp))
-                              (a (third exp))    ;(lref exp 2))
-                              (b (fourth exp))   ; lref exp 3))
-                              (then (fifth exp)) ;(lref exp 4))
-                              (else (sixth exp))) ; lref exp 5)))
-                           (tuple 'branch
-                              type
+                  ((ifeq) ;;; (ifeq a b then else)
+                     (if (eq? (length exp) 5)
+                        (let ((a (second exp))
+                              (b (third exp))
+                              (then (fourth exp))
+                              (else (fifth exp)))
+                           (tuple 'ifeq
                               (translate a env fail)
                               (translate b env fail)
                               (translate then env fail)
                               (translate else env fail)))
-                        (fail (list "Bad if: " exp))))
-                  ((ol:ifa) ;;; (case-lambda (lambda-ok) (lambda-fail))
+                        (fail (list "Bad ifeq " exp))))
+                  ((ifary) ; (ifary (lambda-ok) (lambda-fail))
                      (if (= (length exp) 3)
-                        (tuple 'case-lambda
-                           (translate (cadr exp) env fail)
-                           (translate (caddr exp) env fail))
-                        (fail (list "Bad case-lambda node: " exp))))
+                        (tuple 'ifary
+                           (translate (second exp) env fail)
+                           (translate (third exp) env fail))
+                        (fail (list "Bad ifary node: " exp))))
 
                   ((values)
                      (tuple 'values
                         (map (lambda (arg) (translate arg env fail)) (cdr exp))))
-                  ((receive)  ; (receive <exp> <receiver>)
-                     (tuple 'receive
+                  ((apply-values)
+                     (tuple 'apply-values
                         (translate (lref exp 1) env fail)
                         (translate (lref exp 2) env fail)))
                   ;; FIXME pattern

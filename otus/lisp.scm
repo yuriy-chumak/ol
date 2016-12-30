@@ -37,7 +37,6 @@
       (owl list-extra)
       (owl tuple)
       (owl ff)
-      (owl primop)
       (owl io)
       (owl time)
       (owl lazy)

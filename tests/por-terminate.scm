@@ -1,4 +1,3 @@
-(import (owl primop))
 (define (iter-ret n r)
    (if (= n 0)
       r

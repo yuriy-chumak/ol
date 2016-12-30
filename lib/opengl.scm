@@ -59,15 +59,15 @@
             (SetPixelFormat   (dlsym gdi32  type-fix+ "SetPixelFormat" type-void* type-int+ type-void*)))
       (lambda (title)
          (let*((window (CreateWindowEx
-                  #x00040100 "#32770" (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
+                  #x00040100 (c-string "#32770") (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
                   #x06cf0000 ; WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
                   0 0 WIDTH HEIGHT ; x y width height
                   null ; no parent window
                   null ; no menu
                   null ; instance
                   null))
-               (pfd (raw type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
-                                                       00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
+               (pfd (vm:raw type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
+                                                          00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
                (hDC (GetDC window))
                (PixelFormat (ChoosePixelFormat hDC pfd)))
             (SetPixelFormat hDC PixelFormat pfd)
@@ -83,7 +83,7 @@
    ; -=( linux )=---------------------------------------------------------------------
    (linux?
       (let ((libx11 (dlopen "libX11.so"))
-            (libGL  (dlopen "libGL.so")))
+            (libGLX (dlopen "libGLX.so")))
       (let ((XOpenDisplay  (dlsym libx11 type-void* "XOpenDisplay" type-string))
             (XDefaultScreen(dlsym libx11 type-int+  "XDefaultScreen" type-void*))
             (XRootWindow   (dlsym libx11 type-void* "XRootWindow" type-void* type-int+))
@@ -99,8 +99,8 @@
             (XSelectInput (dlsym libx11 type-int+ "XSelectInput" type-void* type-void* type-int+))
             (XMapWindow   (dlsym libx11 type-int+ "XMapWindow" type-void* type-void*))
             (XStoreName   (dlsym libx11 type-int+ "XStoreName" type-void* type-void* type-string))
-            (glXChooseVisual  (dlsym libGL type-void* "glXChooseVisual" type-void* type-int+ type-void*))
-            (glXCreateContext (dlsym libGL type-void* "glXCreateContext" type-void* type-void* type-int+ type-int+)))
+            (glXChooseVisual  (dlsym libGLX type-void* "glXChooseVisual" type-void* type-int+ (vm:or type-int+ #x40)))
+            (glXCreateContext (dlsym libGLX type-void* "glXCreateContext" type-void* type-void* type-int+ type-int+)))
       (lambda (title)
          (let*((display (XOpenDisplay null))
                (screen (XDefaultScreen display))
@@ -108,18 +108,18 @@
                   0 0 WIDTH HEIGHT 1
                   (XBlackPixel display screen) (XWhitePixel display screen)))
                (vi (glXChooseVisual display screen
-                     (raw type-vector-raw '(
-                        4 0 0 0 ; GLX_RGBA
-                        5 0 0 0 ; GLX_DOUBLEBUFFER
-                        8 0 0 0  8 0 0 0 ; GLX_RED_SIZE
-                        9 0 0 0  8 0 0 0 ; GLX_GREEN_SIZE
-                       10 0 0 0  8 0 0 0 ; GLX_BLUE_SIZE
-                       12 0 0 0  24 0 0 0   ; GLX_DEPTH_SIZE
-                        0 0 0 0))))); None
+                     '(
+                        4 ; GLX_RGBA
+                        8  1  ; GLX_RED_SIZE
+                        9  1  ; GLX_GREEN_SIZE
+                       10  1  ; GLX_BLUE_SIZE
+                       12  1  ; GLX_DEPTH_SIZE
+                        5 ; GLX_DOUBLEBUFFER
+                        0)))) ; None
             (XSelectInput display window  (<< 1 15)) ; ExposureMask
             (XStoreName display window title)
             (XMapWindow display window)
-            (let ((cx (gl:CreateContext display vi 0 1)))
+            (let ((cx (gl:CreateContext display vi null 1)))
                (gl:MakeCurrent display window cx)
                (print "OpenGL version: " (glGetString GL_VERSION))
                (print "OpenGL vendor: " (glGetString GL_VENDOR))
@@ -140,17 +140,19 @@
             (GetMessage       (dlsym user32 type-fix+ "GetMessageA"      type-void* type-void* type-int+ type-int+))
             (DispatchMessage  (dlsym user32 type-int+ "DispatchMessageA" type-void*)))
       (lambda (context)
-         (let ((MSG (raw type-vector-raw (repeat 0 28))))
+         (let ((MSG (vm:raw type-vector-raw (repeat 0 48)))) ; 28 for win32
          (let loop ()
             (if (= 1 (PeekMessage MSG '() 0 0 1))
-               (let ((message (+ (<< (ref MSG 4)  0)
-                                 (<< (ref MSG 5)  8)
-                                 (<< (ref MSG 6) 16)
-                                 (<< (ref MSG 7) 24))))
+               (let*((w (vm:wordsize))
+                     (message (+ (<< (ref MSG (+ 0 (* w 1)))  0)      ; 4 for win32
+                                 (<< (ref MSG (+ 1 (* w 1)))  8)
+                                 (<< (ref MSG (+ 2 (* w 1))) 16)
+                                 (<< (ref MSG (+ 3 (* w 1))) 24))))
                   ;(print message ": " MSG)
                   (if (and
                         (eq? message 273) ; WM_COMMAND
-                        (eq? (+ (ref MSG 8) (<< (ref MSG 9) 8)) 2)) ; IDCANCEL
+                        (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
+                                (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam (8 for win32) , IDCANCEL
                      2 ; EXIT
                      (begin
                         (TranslateMessage MSG)
@@ -161,7 +163,7 @@
       (let ((XPending  (dlsym libx11 type-int+ "XPending"   type-void*))
             (XNextEvent(dlsym libx11 type-int+ "XNextEvent" type-void* type-void*)))
       (lambda (context)
-         (let ((XEvent (raw type-vector-raw (repeat 0 192)))
+         (let ((XEvent (vm:raw type-vector-raw (repeat 0 192)))
                (display (ref context 1)))
          (let loop ()
             (if (> (XPending display) 0)
@@ -239,7 +241,7 @@
 ;   (print args)))
 
 ;         (gl:ProcessEvents context)
-;      (let ((XEvent (raw type-void* (repeat 0 192))))
+;      (let ((XEvent (vm:raw type-void* (repeat 0 192))))
 ;         (let process-events ((unused 0))
 ;            (if (> (XPending display) 0)
 ;               (process-events (XNextEvent display XEvent))))

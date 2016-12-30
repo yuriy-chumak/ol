@@ -41,6 +41,6 @@
   
 ; ---------------------------------------------------------------------------
    (begin
-   (define EXT_copy_texture (glIsExtensionSupported "GL_EXT_copy_texture"))
+   (define EXT_copy_texture (gl:ExtensionSupported? "GL_EXT_copy_texture"))
 
 ))

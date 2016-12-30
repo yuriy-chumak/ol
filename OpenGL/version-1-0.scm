@@ -21,6 +21,8 @@
       gl:SwapBuffers
 
       gl:GetVersion
+      gl:ExtensionSupported?
+
 
       ; GL types
       ; https://www.opengl.org/wiki/OpenGL_Type
@@ -670,8 +672,8 @@
    glLineWidth ; void (GLfloat width)
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
    glLoadIdentity ; void (void);
-;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
-;WINGDIAPI void APIENTRY glLoadMatrixf (const GLfloat *m);
+   glLoadMatrixd  ; void (const GLdouble *m);
+   glLoadMatrixf  ; void (const GLfloat *m);
 ;WINGDIAPI void APIENTRY glLoadName (GLuint name);
 ;WINGDIAPI void APIENTRY glLogicOp (GLenum opcode);
 ;WINGDIAPI void APIENTRY glMap1d (GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble *points);
@@ -690,8 +692,8 @@
       GL_PROJECTION
       GL_MODELVIEW
       GL_TEXTURE
-;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
-;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
+   glMultMatrixd ; void (const GLdouble *m)
+   glMultMatrixf ; void (const GLfloat *m)
    glNewList ; void (GLuint list, GLenum mode)
    ; mode
       GL_COMPILE
@@ -700,7 +702,7 @@
 ;WINGDIAPI void APIENTRY glNormal3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glNormal3d (GLdouble nx, GLdouble ny, GLdouble nz);
 ;WINGDIAPI void APIENTRY glNormal3dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glNormal3f (GLfloat nx, GLfloat ny, GLfloat nz);
+   glNormal3f ; void (GLfloat nx, GLfloat ny, GLfloat nz)
 ;WINGDIAPI void APIENTRY glNormal3fv (const GLfloat *v);
 ;WINGDIAPI void APIENTRY glNormal3i (GLint nx, GLint ny, GLint nz);
 ;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v);
@@ -889,6 +891,7 @@
       GLU_OUTSIDE GLU_INSIDE
 
    gluSphere
+   gluCylinder
 
 ;   gluNewTess gluBeginPolygon gluTessVertex
 
@@ -900,8 +903,6 @@
 
    GL_MAP1_VERTEX_3 GL_MAP2_VERTEX_3
    GL_LINE GL_FILL GL_POINT
-
-   glIsExtensionSupported
 
    (exports (otus lisp))
    (exports (otus pinvoke))
@@ -935,6 +936,10 @@
 (define $ (or
    (dlopen GL_LIBRARY)
    (runtime-error "Can't load OpenGL library")))
+(define WGL $)
+(define GLX (if linux? (dlopen "libGLX.so")))
+(define GDI (if win32? (dlopen "gdi32.dll")))
+;define EGL
 
 ;  Ð‘Ð°Ð·Ð¾Ð²Ð°Ñ ÑÐ¸ÑÑ‚ÐµÐ¼Ð° ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚ OpenGL: http://www.intuit.ru/department/se/prcsharp/21/
 ; ÐŸÑ€Ð°Ð²Ð°Ñ. x-Ð½Ð°Ð¿Ñ€Ð°Ð²Ð¾, y-Ð²Ð²ÐµÑ€Ñ…, z-Ðº ÑÐµÐ±Ðµ
@@ -1577,8 +1582,8 @@
    (define glLineWidth (dlsym $ GLvoid "glLineWidth" GLfloat))
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
    (define glLoadIdentity (dlsym $ GLvoid "glLoadIdentity"))
-;WINGDIAPI void APIENTRY glLoadMatrixd (const GLdouble *m);
-;WINGDIAPI void APIENTRY glLoadMatrixf (const GLfloat *m);
+   (define glLoadMatrixd (dlsym $ GLvoid "glLoadMatrixd" GLdouble*))
+   (define glLoadMatrixf (dlsym $ GLvoid "glLoadMatrixf" GLfloat*))
 ;WINGDIAPI void APIENTRY glLoadName (GLuint name);
 ;WINGDIAPI void APIENTRY glMap1d (GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble *points);
 ;WINGDIAPI void APIENTRY glMap1f (GLenum target, GLfloat u1, GLfloat u2, GLint stride, GLint order, const GLfloat *points);
@@ -1593,14 +1598,14 @@
 ;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params);
    (define glMatrixMode (dlsym $ GLvoid "glMatrixMode" GLenum))
-;WINGDIAPI void APIENTRY glMultMatrixd (const GLdouble *m);
-;WINGDIAPI void APIENTRY glMultMatrixf (const GLfloat *m);
+   (define glMultMatrixd (dlsym $ GLvoid "glMultMatrixd" GLdouble*))
+   (define glMultMatrixf (dlsym $ GLvoid "glMultMatrixf" GLfloat*))
    (define glNewList (dlsym $ GLvoid "glNewList" GLuint GLenum))
 ;WINGDIAPI void APIENTRY glNormal3b (GLbyte nx, GLbyte ny, GLbyte nz);
 ;WINGDIAPI void APIENTRY glNormal3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glNormal3d (GLdouble nx, GLdouble ny, GLdouble nz);
 ;WINGDIAPI void APIENTRY glNormal3dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glNormal3f (GLfloat nx, GLfloat ny, GLfloat nz);
+   (define glNormal3f (dlsym $ GLvoid "glNormal3f" GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glNormal3fv (const GLfloat *v);
 ;WINGDIAPI void APIENTRY glNormal3i (GLint nx, GLint ny, GLint nz);
 ;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v);
@@ -1755,14 +1760,10 @@
 ;   (else   (runtime-error "Unknown platform" uname))))
 
 ; Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ° Ñ€Ð°ÑÑˆÐ¸Ñ€ÐµÐ½Ð¸Ð¹ :
-(define GetProcAddress ; internal function
-   (dlsym $ type-vptr
-      (c-string (cond
-         (win32? "wglGetProcAddress")
-         (linux? "glXGetProcAddress")
-         ;apple? "
-         (else   (runtime-error "Unknown platform" uname))))
-      type-string))
+(define GetProcAddress (cond ; internal function
+   (win32? (dlsym WGL type-vptr "wglGetProcAddress" type-string))
+   (linux? (dlsym GLX type-vptr "glXGetProcAddress" type-string))
+   (else   (runtime-error "Unknown platform" uname))))
 
 (define (gl:GetProcAddress type name . prototype)
    (let ((rtty (cons type prototype))
@@ -1781,8 +1782,8 @@
 
 ;glXCreateContext     wglCreateContext
 (define gl:CreateContext (cond
-   (win32? (dlsym $ type-void* "wglCreateContext" type-void*))
-   (linux? (dlsym $ type-void* "glXCreateContext" Display* XVisualInfo* type-int+ type-int+))
+   (win32? (dlsym WGL type-void* "wglCreateContext" type-void*))
+   (linux? (dlsym GLX type-void* "glXCreateContext" Display* XVisualInfo* type-void* type-int+))
    ;apple? (dlsym $ type-void* "CGLCreateContext" ...)
    (else   (runtime-error "Unknown platform" uname))))
 
@@ -1802,13 +1803,13 @@
 ;XSync   GdiFlush
 
 (define gl:MakeCurrent (cond
-   (win32? (dlsym $ type-fix+ "wglMakeCurrent" type-void* type-void*))
-   (linux? (dlsym $ type-int+ "glXMakeCurrent" type-void* type-void* type-void*))
+   (win32? (dlsym WGL type-fix+ "wglMakeCurrent" type-void* type-void*))
+   (linux? (dlsym GLX type-int+ "glXMakeCurrent" type-void* type-void* type-void*))
    (else   (runtime-error "Unknown platform" uname))))
 
 (define gl:SwapBuffers (cond
-   (win32? (dlsym (dlopen "gdi32") type-fix+ "SwapBuffers" type-void*))
-   (linux? (dlsym $ type-void* "glXSwapBuffers" type-void* type-void*))
+   (win32? (dlsym GDI type-fix+ "SwapBuffers"    type-void*))
+   (linux? (dlsym GLX type-vptr "glXSwapBuffers" type-void* type-void*))
    (else   (runtime-error "Unknown platform" uname))))
 
 ;   (let*((display (XOpenDisplay null))
@@ -1817,7 +1818,7 @@
 ;                     0 0 640 480  1
 ;                     (XBlackPixel display screen) (XWhitePixel display screen))))
 ;   (let*((vi (glXChooseVisual display screen
-;                     (raw type-vector-raw '(
+;                     (vm:raw type-vector-raw '(
 ;                        4 0 0 0 ; GLX_RGBA
 ;                        8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
 ;                        9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
@@ -1875,7 +1876,7 @@
 ;                     0 0 640 480  1
 ;                     (XBlackPixel display screen) (XWhitePixel display screen))))
 ;            (let*((vi (glXChooseVisual display screen
-;                           (raw type-vector-raw '(
+;                           (vm:raw type-vector-raw '(
 ;                              4 0 0 0 ; GLX_RGBA
 ;                              8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
 ;                              9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
@@ -1943,34 +1944,37 @@
       ;"MINGW32_NT-5.2"
       ;...
       (else  (runtime-error "Unknown platform" uname))))
-(define $ (dlopen GLU_LIBRARY))
+(define GLU (or
+   (dlopen GLU_LIBRARY)
+   (runtime-error "Can't find glu library" #f)))
 
 (define GLUquadric* type-void*)
 
-   (define gluErrorString (dlsym $ GLubyte* "gluErrorString" GLenum))
-   (define gluOrtho2D     (dlsym $ GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
-   (define gluPerspective (dlsym $ GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
-   (define gluLookAt      (dlsym $ GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
+   (define gluErrorString (dlsym GLU GLubyte* "gluErrorString" GLenum))
+   (define gluOrtho2D     (dlsym GLU GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
+   (define gluPerspective (dlsym GLU GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
+   (define gluLookAt      (dlsym GLU GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
 
-   (define gluNewQuadric    (dlsym $ GLUquadric* "gluNewQuadric"))
-   (define gluDeleteQuadric (dlsym $ GLvoid "gluDeleteQuadric" GLUquadric*))
-   (define gluQuadricDrawStyle (dlsym $ GLvoid "gluQuadricDrawStyle" GLUquadric* GLenum))
+   (define gluNewQuadric    (dlsym GLU GLUquadric* "gluNewQuadric"))
+   (define gluDeleteQuadric (dlsym GLU GLvoid "gluDeleteQuadric" GLUquadric*))
+   (define gluQuadricDrawStyle (dlsym GLU GLvoid "gluQuadricDrawStyle" GLUquadric* GLenum))
       (define GLU_POINT               100010)
       (define GLU_LINE                100011)
       (define GLU_FILL                100012)
       (define GLU_SILHOUETTE          100013)
-   (define gluQuadricOrientation (dlsym $ GLvoid "gluQuadricOrientation" GLUquadric* GLenum))
+   (define gluQuadricOrientation (dlsym GLU GLvoid "gluQuadricOrientation" GLUquadric* GLenum))
       (define GLU_OUTSIDE             100020)
       (define GLU_INSIDE              100021)
 
-   (define gluSphere (dlsym $ GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
+   (define gluSphere (dlsym GLU GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
+   (define gluCylinder (dlsym GLU GLvoid "gluCylinder" GLUquadric* GLdouble GLdouble GLdouble GLint GLint))
 
 (define GLUnurbs* type-void*)
-   (define gluNewNurbsRenderer (dlsym $ GLUnurbs* "gluNewNurbsRenderer"))
-   (define gluBeginSurface (dlsym $ GLvoid "gluBeginSurface" GLUnurbs*))
-   (define gluNurbsSurface (dlsym $ GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
-   (define gluEndSurface   (dlsym $ GLvoid "gluEndSurface" GLUnurbs*))
-   (define gluNurbsProperty(dlsym $ GLvoid "gluNurbsProperty" GLUnurbs* GLenum GLfloat))
+   (define gluNewNurbsRenderer (dlsym GLU GLUnurbs* "gluNewNurbsRenderer"))
+   (define gluBeginSurface (dlsym GLU GLvoid "gluBeginSurface" GLUnurbs*))
+   (define gluNurbsSurface (dlsym GLU GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
+   (define gluEndSurface   (dlsym GLU GLvoid "gluEndSurface" GLUnurbs*))
+   (define gluNurbsProperty(dlsym GLU GLvoid "gluNurbsProperty" GLUnurbs* GLenum GLfloat))
       ;/*     GLU_FILL                100012
       (define GLU_OUTLINE_POLYGON     100240)
       (define GLU_OUTLINE_PATCH       100241)
@@ -1987,10 +1991,11 @@
 ; поддержка расширений:
 (import (owl string))
 
-(define (glIsExtensionSupported extension)
-(let ((string (append '(#x20) (string->runes (glGetString GL_EXTENSIONS)) '(#x20)))
-      (substr (append '(#x20) (string->runes extension) '(#x20))))
+(define (gl:ExtensionSupported? extension)
+(let ((string (append '(#x20) (string->bytes (glGetString GL_EXTENSIONS)) '(#x20)))
+      (substr (append '(#x20) (string->bytes extension) '(#x20))))
 (for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support..."))
+
 (if
 (let iter ((string string))
    (or

@@ -18,7 +18,6 @@
       (owl ff)
       (owl math)
       (owl list-extra)
-      (owl primop)
       (owl io)
       (owl equal)
       (owl list)
@@ -26,7 +25,7 @@
 
    (begin
       ;; fixme: temp register limit
-      (define n-registers 128)
+      (define n-registers 256)
       (define highest-register (- n-registers 1)) ;; atm lower than NR in ovm.c
 
       ; reg-touch U r -> mark as live -> make sure it has a value
@@ -126,10 +125,12 @@
             ;   (tuple 'goto-clos (op fn) nargs))
             ((jeq a b then else)
                (tuple 'jeq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)))
-            ((jn a then else)
+            ((jn a then else) ; todo: merge next four cases into one
                (tuple 'jn (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             ((jz a then else)
                (tuple 'jz (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
+            ((je a then else)
+               (tuple 'je (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             ((jf a then else)
                (tuple 'jf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             (else
@@ -295,10 +296,12 @@
                (rtl-retard-jump rtl-retard 'jn a empty  then else)) ; fp
             ((jf a then else)
                (rtl-retard-jump rtl-retard 'jf a empty  then else)) ; fp
+            ((je a then else)
+               (rtl-retard-jump rtl-retard 'je a empty  then else)) ; fp
             ((jz a then else)
                (rtl-retard-jump rtl-retard 'jz a empty  then else)) ; fp
-            ((jab a type then else)
-               (rtl-retard-jump rtl-retard 'jab a type then else))
+;            ((jab a type then else)
+;               (rtl-retard-jump rtl-retard 'jab a type then else))
             (else
                (runtime-error "rtl-retard: unknown code: " code))))
 

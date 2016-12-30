@@ -43,7 +43,7 @@
          (let loop ((i 0) (n start) (r '()))
             (if (eq? i count)
                (reverse r)
-               (receive (vm:add i 1) (lambda (i carry)
+               (apply-values (vm:add i 1) (lambda (i carry)
                   (loop i (+ n step) (cons n r)))))))))
       (case-lambda
          ((count)

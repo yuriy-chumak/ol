@@ -56,7 +56,7 @@
 ; ---------------------------------------------------------------------------
    (begin
 ;   (gl:make-current)
-   (define EXT_texture (glIsExtensionSupported "GL_EXT_texture"))
+   (define EXT_texture (gl:ExtensionSupported? "GL_EXT_texture"))
    
 ;   (gl:stop-current)
 ))

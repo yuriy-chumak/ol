@@ -11,7 +11,7 @@
 
    (import
       (r5rs core)
-      (owl gensym)
+      (lang gensym)
       (lang ast)
       (owl math)
       (owl list)
@@ -67,28 +67,28 @@
                   (values (tuple 'lambda-var fixed? new-formals body) free)))
             ((value val)
                (values exp free))
-            ((branch kind a b then else)
+            ((values vals)
+               (lets ((vals free (alpha-list alpha vals env free)))
+                  (values (tuple 'values vals) free)))
+            ((apply-values from to)
+               (lets
+                  ((from free (alpha from env free))
+                   (to free   (alpha to   env free)))
+                  (values (tuple 'apply-values from to) free)))
+            ((ifeq a b then else)
                (lets
                   ((a free (alpha a env free))
                    (b free (alpha b env free))
                    (then free (alpha then env free))
                    (else free (alpha else env free)))
                   (values
-                     (tuple 'branch kind a b then else)
+                     (tuple 'ifeq a b then else)
                      free)))
-            ((receive from to)
+            ((ifary then else)
                (lets
-                  ((from free (alpha from env free))
-                   (to free   (alpha to   env free)))
-                  (values (tuple 'receive from to) free)))
-            ((values vals)
-               (lets ((vals free (alpha-list alpha vals env free)))
-                  (values (tuple 'values vals) free)))
-            ((case-lambda fn then)
-               (lets
-                  ((fn free (alpha fn env free))
-                   (then free (alpha then env free)))
-                  (values (tuple 'case-lambda fn then) free)))
+                  ((then free (alpha then env free))
+                   (else free (alpha else env free)))
+                  (values (tuple 'ifary then else) free)))
             (else
                (runtime-error "alpha: unknown AST node: " exp))))
 

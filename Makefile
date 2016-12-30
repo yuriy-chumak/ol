@@ -1,34 +1,51 @@
 export PATH := .:$(PATH)
 $(shell mkdir -p config)
 
-# TODO: move vm.asm to src/ folder
-# TODO: split ol.scm into two files
+#do some configure staff
+exists = $(shell echo "\
+	   \#include $1\n\
+	   char $2();\
+	   \
+	   int main() {\
+	      return $2();\
+	      return 0;\
+	   }" | gcc -xc - $3 -o /dev/null 2>/dev/null && echo 1)
+# features
+UNAME  := $(shell uname -s)
+HAS_SECCOMP := $(call exists, <linux/seccomp.h>, prctl)
+HAS_DLOPEN  := $(call exists, <stdlib.h>, dlopen, -ldl)
+HAS_SOCKETS := $(call exists, <stdlib.h>, socket)
 
+# body
 .PHONY: all config recompile install uninstall clean tests
 
 CC=gcc
 
+# http://ptspts.blogspot.com/2013/12/how-to-make-smaller-c-and-c-binaries.html
+
 PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
-# http://ptspts.blogspot.com/2013/12/how-to-make-smaller-c-and-c-binaries.html
-CFLAGS += -std=c99 -O2 -DNDEBUG -s
-#CFLAGS := -std=c99 -g
+CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s)
 boot.c := bootstrap~
 repl.o := src/repl.o
 
-# dependencies
-UNAME := $(shell uname -s)
+CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1)\
+          $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1)\
+          $(if $(HAS_SECCOMP),, -DNO_SECCOMP)
+
+
 ifeq ($(UNAME),Linux)
-L := -ldl
+L := $(if HAS_DLOPEN, -ldl)
 endif
+
 ifeq ($(UNAME),FreeBSD)
-L := -lc
+L := $(if HAS_DLOPEN, -lc)
 endif
 ifeq ($(UNAME),NetBSD)
-L := -lc
+L := $(if HAS_DLOPEN, -lc)
 endif
 ifeq ($(UNAME),OpenBSD)
-L := -lc -ftrampolines
+L := $(if HAS_DLOPEN, -lc -ftrampolines)
 endif
 
 # Windows/MinGW
@@ -67,14 +84,13 @@ install: ol repl
 	install -m 644 repl $(DESTDIR)/$(PREFIX)/lib/ol/repl
 	# basic libraries:
 	@echo Installing libraries...
-	@for F in r5rs owl lib etc scheme ;do \
+	@for F in r5rs otus owl lib etc scheme ;do \
 	   echo installing $$F libraries... ;\
 	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
 	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
 	done
 	@echo Installing OpenGL libraries...
 	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
-	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL/{ARB,EGL,ES,EXT}
 	@for F in OpenGL/ARB OpenGL/EGL OpenGL/ES OpenGL/EXT ;do \
 	   echo installing $$F libraries... ;\
 	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
@@ -99,14 +115,14 @@ create-debian-package = \
 	find .$(PREFIX) -type f       > DEBIAN/conffiles;\
 	\
 	echo Package: ol              > DEBIAN/control;\
-	echo Version: 1.0.0           >>DEBIAN/control;\
+	echo Version: 1.1             >>DEBIAN/control;\
 	echo Architecture: $2         >>DEBIAN/control;\
 	echo Maintainer: Yuriy Chumak >>DEBIAN/control;\
 	echo Priority: optional       >>DEBIAN/control;\
 	echo Description: Otus Lisp - a purely \(mostly\) functional dialect of Lisp \
 	                              >>DEBIAN/control;\
 	\
-	fakeroot dpkg -b . ../ol_1.0_$2.deb
+	fakeroot dpkg -b . ../ol_1.1_$2.deb
 
 debian-amd64-package:
 	$(call create-debian-package,Build,amd64)
@@ -122,7 +138,7 @@ config: config/HAS_DLOPEN\
         config/HAS_SOCKETS\
         config/XVisualInfo config/XEvent
 
-exists = \
+existsW = \
 	@printf "Checking for $2 support... ";\
 	if echo "\
 	   \#include $1\n\
@@ -140,9 +156,9 @@ exists = \
 	fi
 
 config/HAS_DLOPEN:
-	$(call exists, <stdlib.h>,dlopen,-ldl)
+	$(call existsW, <stdlib.h>,dlopen,-ldl)
 config/HAS_SOCKETS:
-	$(call exists, <stdlib.h>,socket)
+	$(call existsW, <stdlib.h>,socket)
 
 
 sizeof = \

@@ -1,4 +1,3 @@
-(import (owl primop))
 (import (owl random))
 
 ;; check that threads which return a given value after n context switches return them

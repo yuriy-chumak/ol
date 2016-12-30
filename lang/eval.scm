@@ -25,13 +25,13 @@
       (r5rs core)
 
       (owl list)
-      (owl primop)
       (lang compile)
       (lang closure)
       (lang cps)
       (lang alpha)
       (owl ff)
       (owl sort)
+      (src vm)
       (lang fixedpoint)
       (lang ast)
       (lang env)
@@ -50,6 +50,7 @@
       (owl lazy)
       (lang macro)
       (owl intern)
+      (lang primop)
       (only (owl regex) string->regex))
 
    (begin
@@ -70,7 +71,7 @@
          (if (env-get env '*debug* #false)
             (print* msg)))
 
-      ;; library (just the value of) containing only special forms, primops and
+      ;; library (just the value of) containing only special forms, primops and define-syntax macro
       (define *src-olvm*
          (fold
             (λ (env thing)
@@ -87,10 +88,10 @@
                       (quote syntax-operation add #false
                         (keyword literals (pattern ...)
                         (template ...)))) )))
-            *primitives*))
+            primops))
 
       (define (execute exp env)
-         (receive (exp)
+         (apply-values (exp)
             (lambda vals
                (ok
                   (cond
@@ -162,11 +163,11 @@
       (define includes-key '*include-dirs*) ;; paths where to try to load includes from
 
       (define definition?
-         (let ((pat (list 'ol:set symbol? ?)))
+         (let ((pat (list 'setq symbol? ?)))
             (λ (exp) (match pat exp))))
 
       (define multi-definition?
-         (let ((pat (list 'ol:set list? ?)))
+         (let ((pat (list 'setq list? ?)))
             (λ (exp) (match pat exp))))
 
       ;; toplevel variable which holds currently loaded (r7rs-style) libraries

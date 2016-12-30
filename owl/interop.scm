@@ -10,12 +10,11 @@
       par por* por interop)
 
    (import
-      (r5rs core)
-      (owl primop))
+      (r5rs core))
 
    (begin
       ;; спецоперация для общения с менеджером внутренних потоков (todo: переименовать)
-      (define sys (raw type-bytecode '(27 4 5 6 7 8  24 8)))
+      (define sys (vm:raw type-bytecode '(27 4 5 6 7 8  24 8)))
 
 
       (define (interop op a b)

@@ -16,6 +16,7 @@
       (owl tuple)
       (owl list-extra)
       (lang env)
+      (lang primop)
       (only (owl io) print))
 
    (begin
@@ -79,20 +80,6 @@
                (if (has? used sym)
                   (values exp used)
                   (values exp (cons sym used))))
-            ((branch kind a b then else)
-               ; type 4 (binding compare) branches do not closurize then-case
-               (lets
-                  ((a used (closurize a used #true))
-                   (b used (closurize b used #true))
-                   (then used
-                     (closurize then used 
-                        (if (eq? 4 kind) 
-                           (begin (print "Not closurizing " then) #false)
-                           #true)))
-                   (else used (closurize else used #true)))
-                  (values
-                     (tuple 'branch kind a b then else)
-                     used)))
             ((call rator rands)
                (closurize-call closurize rator rands used))
             ((lambda formals body)
@@ -115,7 +102,16 @@
                         (tuple 'closure-var fixed? formals body clos)
                         (tuple 'lambda-var fixed? formals body))
                      (union used clos))))
-            ((case-lambda func else)
+            ((ifeq a b then else)
+               (lets
+                  ((a used (closurize a used #true))
+                   (b used (closurize b used #true))
+                   (then used (closurize then used #true))
+                   (else used (closurize else used #true)))
+                  (values
+                     (tuple 'ifeq a b then else)
+                     used)))
+            ((ifary func else)
                ;; fixme: operator position handling of resulting unclosurized case-lambdas is missing
                (if close? 
                   ;; a normal value requiring a closure, and first node only 
@@ -123,7 +119,7 @@
                      ((func this-used (closurize func null #false)) ;; no used, don't close
                       (else this-used (closurize else this-used #false))) ;; same used, dont' close rest 
                      (values
-                        (tuple 'closure-case (tuple 'case-lambda func else) this-used)  ;; used the ones in here
+                        (tuple 'closure-case (tuple 'ifary func else) this-used)  ;; used the ones in here
                         (union used this-used)))                   ;; needed others and the ones in closure
                   ;; operator position case-lambda, which can (but isn't yet) be dispatche at compile 
                   ;; time, or a subsequent case-lambda node (above case requests no closurization) 
@@ -132,7 +128,7 @@
                      ((func used (closurize func used #false)) ;; don't closurize codes
                       (else used (closurize else used #false))) ;; ditto for the rest of the tail
                      (values 
-                        (tuple 'case-lambda func else)
+                        (tuple 'ifary func else)
                         used))))
             (else
                (runtime-error "closurize: unknown exp type: " exp))))
@@ -169,15 +165,6 @@
                      (append used (list val)))))
             ((var sym)
                (values exp used))
-            ((branch kind a b then else)
-               (lets
-                  ((a used (literalize a used))
-                   (b used (literalize b used))
-                   (then used (literalize then used))
-                   (else used (literalize else used)))
-                  (values
-                     (tuple 'branch kind a b then else)
-                     used)))
             ((call rator rands)
                (literalize-call literalize rator rands used))
             ((lambda formals body)
@@ -214,11 +201,20 @@
                    (closure-exp (tuple 'closure-case body clos bused))
                    (used (append used (list (cons closure-tag closure-exp)))))
                   (values (tuple 'make-closure (+ 1 (length used)) clos bused) used)))
-            ((case-lambda func else)
+            ((ifeq a b then else)
+               (lets
+                  ((a used (literalize a used))
+                   (b used (literalize b used))
+                   (then used (literalize then used))
+                   (else used (literalize else used)))
+                  (values
+                     (tuple 'ifeq a b then else)
+                     used)))
+            ((ifary func else)
                (lets
                   ((func used (literalize func used))
                    (else used (literalize else used)))
-                  (values (tuple 'case-lambda func else) used)))
+                  (values (tuple 'ifary func else) used)))
             (else
                (runtime-error "literalize: unknown exp type: " exp))))
 

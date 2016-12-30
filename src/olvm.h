@@ -18,7 +18,7 @@
 
 // (игра слов)
 // OL:
-//	* сокращение от названия проекта - Otus Lisp (наследник Owl Lisp'а),
+//	* сокращение от названия проекта - Otus Lisp (вырос из Owl Lisp'а),
 //	* нулевой порог вхождения (0L - число 0, L - level) (Lisp - ОЧЕНЬ простой язык),
 //	* тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков),
 //	* ol' - сокращение от old (старый), отсылка к тому, что lisp - один из старейших языков.
@@ -29,9 +29,9 @@ struct ol_t;
 // internal option
 //#define NO_SECCOMP
 
-struct ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
-struct ol_t* OL_free(struct ol_t* ol);
-
+struct
+ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
+void  OL_free(struct ol_t* ol);
 void* OL_eval(struct ol_t* ol, int argc, char** argv);
 
 // c++ interface:
@@ -78,33 +78,6 @@ typedef struct ol_t OL;
 // #define SYSCALL_IOCTL 0
 // #define SYSCALL_SYSINFO 0
 // #define SYSCALL_GETRUSAGE 0
-
-#ifdef _WIN32
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRLIMIT 0
-#endif
-
-// todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
-#ifdef __unix__
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRUSAGE 0
-#define SYSCALL_GETRLIMIT 0
-#endif
-
-#ifdef __linux__
-#undef SYSCALL_PRCTL
-#undef SYSCALL_SYSINFO
-#undef SYSCALL_GETRUSAGE
-#undef SYSCALL_GETRLIMIT
-#endif
-
-#ifdef __ANDROID__
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRLIMIT 0
-#endif
 
 //-- end of header
 #ifdef __cplusplus

@@ -22,7 +22,6 @@
       (owl queue)
       (owl interop)
       (owl ff)
-      (owl primop)
       (owl list)
       (owl math)
       (owl tuple)
@@ -34,9 +33,9 @@
    (begin
 
      ; this function require two arguments!
-     (define run (raw type-bytecode '(50 4 5))) ; run requires two registers!
+     (define run (vm:raw type-bytecode '(50 4 5))) ; run requires two registers!
 ;      ; and safe version of this function (but a bit more slower)
-;     (define run (raw type-bytecode '(25 3 0 3  50 4 5  17)))
+;     (define run (vm:raw type-bytecode '(25 3 0 3  50 4 5  17)))
 
       (define (bad-interop id a b c todo done state)
          (system-println "mcp: got bad interop")
@@ -139,6 +138,7 @@
 
             ; 4, fork
             (λ (id cont opts thunk todo done state tc)
+               ; (system-println "mcp: interop 4 -- fork")
                (lets
                   ((new-id (car opts))
                    (todo (ilist (tuple new-id thunk) (tuple id (λ () (cont new-id))) todo))
@@ -169,18 +169,21 @@
 
             ; 6, (return-mails rl)
             (λ (id cont rmails foo todo done state tc)
+               ; (system-println "interop 6 - return-mails")
                (let ((queue (get state id qnull)))
                   (tc tc (cons (tuple id (λ () (cont 'done))) todo)
                      done (put state id (foldr qsnoc queue rmails)))))
 
             ; 7, am i the only thread?
             (λ (id cont b c todo done state tc)
+               ; (system-println "interop 7 - am i the only thread?")
                (tc tc
                   (cons (tuple id (λ () (cont (and (null? todo) (null? done))))) todo)
                   done state))
 
             ; 8, get running thread ids (sans self)
             (λ (id cont b c todo done state tc)
+               ; (system-println "interop 8 - get running thread ids")
                (let
                   ((ids
                      (append
@@ -217,12 +220,14 @@
 
             ; 12, set break action
             (λ (id cont choice x todo done state tc)
+               ; (system-println "interop 12 - set break action")
                (tc tc
                   (cons (tuple id (λ () (cont #true))) todo)
                   done (put state signal-tag choice)))
 
             ; 13, look for mail in my inbox at state
             (λ (id cont foo nonblock? todo done state tc)
+               ; (system-println "interop 13 - look for mail in my inbox at state")
                (lets ((valp queue (quncons (get state id qnull) #false)))
                   (cond
                      (valp      ;; envelope popped from inbox
@@ -243,12 +248,14 @@
 
             ; 15, drop local thread
             (λ (id cont target c todo done state tc)
+               ; (system-println "interop 15 - drop local thread")
                (drop-thread target
                   (cons (tuple id (λ () (cont (tuple 'killing target)))) todo)
                   done state (tuple target (tuple 'killed-by id)) tc))
 
             ; 16, wrap the whole world to a thunk
             (λ (id cont path c todo done state tc)
+               ; (system-println "interop 16 - wrap the whole world to a thunk")
                (let
                   ((resume
                      (λ (args)
@@ -258,6 +265,7 @@
 
             ; 17, catch or release a running thread (not touching mailbox etc)
             (λ (id cont catch? info todo done state tc)
+               ; (system-println "interop 17 - catch or release a running thread (not touching mailbox etc)")
                (if catch?
                   (lets
                      ((all (append todo done))
@@ -271,6 +279,7 @@
 
             ; 18, get a list of currently running thread ids
             (λ (id cont b c todo done state tc)
+               ; (system-println "interop 18 - get a list of currently running thread ids")
                (lets
                   ((grab (λ (l n) (cons (ref n 1) l)))
                    (ids (fold grab (fold grab null todo) done)))
@@ -278,16 +287,19 @@
 
             ; 19, set return value proposal
             (λ (id cont b c todo done state tc)
+               ; (system-println "interop 19 - set return value proposal")
                (tc tc (cons (tuple id (λ () (cont b))) todo) done (put state return-value-tag b)))
 
             ;;; 20 & 21 change during profiling
 
             ; 20, start profiling, no-op during profiling returning 'already-profiling
             (λ (id cont b c todo done state tc)
+               ; (system-println "interop 20 - start profiling")
                (tc tc (cons (tuple id (λ () (cont 'already-profiling))) todo) done state))
 
             ; 21, end profiling, resume old ones, pass profiling info
             (λ (id cont b c todo done state tc)
+               ; (system-println "interop 21 - end profiling, resume old ones")
                (lets
                   ((prof (get state 'prof #false)) ;; ff storing profiling info
                    (tc (get prof 'tc #false))      ;; normal thread scheduler
@@ -297,6 +309,7 @@
 
             ; 22, nestable parallel computation
             (λ (id cont opts c todo done state tc)
+               ; (system-println "interop 22 - nestable parallel computation")
                (lets
                   ((por-state (tuple cont opts c)))
                   (tc tc (cons (tuple id por-state) todo) done state)))
@@ -334,7 +347,7 @@
          (lets
             ((syscalls mcp-syscalls-during-profiling)
              (syscalls
-               (set syscalls 20
+               (set-ref syscalls 20
                   (λ (id cont b c todo done state tc)
                      ;; make a new thread scheduler using the other interop set
                      (define (scheduler self todo done state)
@@ -357,7 +370,7 @@
                         (put state 'prof           ;; profiling data is stored under key 'prof
                            (put empty 'tc tc)))))) ;; store normal scheduler there for resuming on interop 21
              (syscalls
-               (set syscalls 21 ;; end-profiling interop doesn't do anything when not profiling
+               (set-ref syscalls 21 ;; end-profiling interop doesn't do anything when not profiling
                   (λ (id cont b c todo done state tc)
                      (tc tc (cons (tuple id (λ () (cont 'not-profiling-you-fool))) todo) done state)))))
             syscalls))

@@ -56,7 +56,7 @@
 
       (define ncar car)
       (define ncdr cdr)
-      (define (ncons a b) (mkt type-int+ a b))
+      (define (ncons a b) (vm:new type-int+ a b))
 
 ;      ;; check how many fixnum bits the vm supports with vm:shl
 ;      ;; idea is to allow the vm to be compiled with different ranges, initially fixed to 24
@@ -455,7 +455,7 @@
 
       (define-syntax rational
          (syntax-rules ()
-            ((rational a b) (mkt type-rational a b))))
+            ((rational a b) (vm:new type-rational a b))))
 
       (define (negate num)
          (case (type num)
@@ -465,7 +465,7 @@
                   (cast num type-fix-)))   ;; a  -> -a
             (type-fix- (cast num type-fix+))   ;; -a ->  a
             (type-int+                ;;  A -> -A
-               (mkt type-int- (ncar num) (ncdr num)))
+               (vm:new type-int- (ncar num) (ncdr num)))
             (type-int-             ;; -A -> A
                (ncons (ncar num) (ncdr num)))
             (type-rational
@@ -604,8 +604,8 @@
                (lets ((_ wor bits (vm:div 0 b (fxmbits))))
                   (if (eq? wor 0)
                      (case (type a)
-                        (type-fix+ (receive (vm:shr a bits) (lambda (hi lo) hi)))
-                        (type-fix- (receive (vm:shr a bits) (lambda (hi lo) (if (eq? hi 0) 0 (negate hi)))))
+                        (type-fix+ (apply-values (vm:shr a bits) (lambda (hi lo) hi)))
+                        (type-fix- (apply-values (vm:shr a bits) (lambda (hi lo) (if (eq? hi 0) 0 (negate hi)))))
                         (type-int+ (shift-right a bits))
                         (type-int- (negative (shift-right a bits)))
                         (else (big-bad-args '>> a b)))
@@ -834,7 +834,7 @@
       ; O(1), fixnum multiply overflowing to bignum
 
       ;(define (mult-fixnums a b)
-      ;   (receive (vm:mul a b)
+      ;   (apply-values (vm:mul a b)
       ;      (lambda (lo hi)
       ;         (if (eq? hi 0)
       ;            lo
@@ -1454,18 +1454,18 @@
                   (else (big-bad-args 'mod a b))))
             (type-int+
                (case (type b)
-                  (type-fix+ (receive (qr-big-small a b) (lambda (q r) r)))
-                  (type-fix- (receive (qr-big-small a b) (lambda (q r) r)))
+                  (type-fix+ (apply-values (qr-big-small a b) (lambda (q r) r)))
+                  (type-fix- (apply-values (qr-big-small a b) (lambda (q r) r)))
                   (type-int+ (nat-rem a b))
                   (type-int- (nat-rem a (negate b)))
                   (else (big-bad-args 'mod a b))))
             (type-int-
                (case (type b)
                   (type-fix+
-                     (receive (qr-big-small a b)
+                     (apply-values (qr-big-small a b)
                         (lambda (q r) (negate r))))
                   (type-fix-
-                     (receive (qr-big-small a b)
+                     (apply-values (qr-big-small a b)
                         (lambda (q r) (negate r))))
                   (type-int+ (negate (nat-rem (negate a) b)))
                   (type-int- (negate (nat-rem (negate a) (negate b))))
@@ -1493,24 +1493,24 @@
             (case (type a)
                (type-fix+
                   (case (type b)
-                     (type-fix+ (receive (vm:div 0 a b) (lambda (_ q r) (values q r))))
+                     (type-fix+ (apply-values (vm:div 0 a b) (lambda (_ q r) (values q r))))
                      (type-int+ (values 0 a))
-                     (type-fix- (receive (vm:div 0 a b) (lambda (_ q r) (values (negate q) r))))
+                     (type-fix- (apply-values (vm:div 0 a b) (lambda (_ q r) (values (negate q) r))))
                      (type-int- (values 0 a))
                      (else (big-bad-args 'quotrem a b))))
                (type-int+
                   (case (type b)
-                     (type-fix+ (receive (qr-big-small a b) (lambda (q r) (values q r))))
+                     (type-fix+ (apply-values (qr-big-small a b) (lambda (q r) (values q r))))
                      (type-int+ (nat-quotrem a b))
-                     (type-fix- (receive (qr-big-small a b) (lambda (q r) (values (negate q) r))))
-                     (type-int- (receive (nat-quotrem a (negate b))
+                     (type-fix- (apply-values (qr-big-small a b) (lambda (q r) (values (negate q) r))))
+                     (type-int- (apply-values (nat-quotrem a (negate b))
                               (lambda (q r) (values (negate q) r))))
                      (else (big-bad-args 'quotrem a b))))
                (type-fix-
                   (case (type b)
                      (type-fix+
-                        (receive (vm:div 0 a b) (lambda (_ q r) (values (negate q) (negate r)))))
-                     (type-fix- (receive (vm:div 0 a b) (lambda (_ q r) (values q (negate r)))))
+                        (apply-values (vm:div 0 a b) (lambda (_ q r) (values (negate q) (negate r)))))
+                     (type-fix- (apply-values (vm:div 0 a b) (lambda (_ q r) (values q (negate r)))))
                      (type-int+ (values 0 a))
                      (type-int- (values 0 a))
                      (else (big-bad-args 'quotrem a b))))
@@ -1519,10 +1519,10 @@
                      (type-fix+
                         (lets ((q r (qr-big-small a b)))
                            (values (negate q) (negate r))))
-                     (type-fix- (receive (qr-big-small a b) (lambda (q r) (values q (negate r)))))
-                     (type-int+ (receive (nat-quotrem (negate a) b)
+                     (type-fix- (apply-values (qr-big-small a b) (lambda (q r) (values q (negate r)))))
+                     (type-int+ (apply-values (nat-quotrem (negate a) b)
                               (lambda (q r) (values (negate q) (negate r)))))
-                     (type-int- (receive (nat-quotrem (negate a) (negate b))
+                     (type-int- (apply-values (nat-quotrem (negate a) (negate b))
                               (lambda (q r) (values q (negate r)))))
                      (else (big-bad-args 'quotrem a b))))
                (else
@@ -1614,7 +1614,7 @@
 
       (define-syntax complex
          (syntax-rules ()
-            ((complex a b) (mkt type-complex a b))))
+            ((complex a b) (vm:new type-complex a b))))
 
       ; normalize, fix sign and construct rational
       (define (rationalize a b)

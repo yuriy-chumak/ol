@@ -1,4 +1,4 @@
-#!/bin/ol
+#!/usr/bin/ol
 ; todo: write post like http://jakeyesbeck.com/2015/10/11/building-a-simple-web-server-with-ruby-2/
 
 (import (lib http))
@@ -65,15 +65,16 @@
          (for-each (lambda (arg)
             (display-to fd arg)) args)))
       (stat (syscall 4 path #f #f)))
-   (if stat (begin
-      (print "Sending 200 OK, file size is " (ref stat 8) ", name is " path)
-      (send "HTTP/1.0 200 OK\n"
-            "Connection: close\n"
-            "Content-Type: " content-type "\n"
-            "Content-Length: " (ref stat 8) "\n"
-            "Server: " (car *version*) "/" (cdr *version*) "\n\n")
-      (write-vector (file->vector path) fd)
-      (print "File sent."))
+   (if stat (let ((file (fopen path 0)))
+               (print "Sending 200 OK, file size is " (ref stat 8) ", name is " path)
+               (send "HTTP/1.0 200 OK\n"
+                     "Connection: close\n"
+                     "Content-Type: " content-type "\n"
+                     "Content-Length: " (ref stat 8) "\n"
+                     "Server: " (car *version*) "/" (cdr *version*) "\n\n")
+               (syscall 40 fd file (ref stat 8))
+               (fclose file)
+               (print "File sent."))
    ;else
    (begin
       (print "Sending 404 Not Found")
@@ -135,7 +136,7 @@
             (cond
                ((string-eq? url "/ol")
                   (print "!!! ol")
-                  (syscall 59 (c-string "/bin/ol") (list (c-string "#") (c-string "-") (c-string "--seccomp")) (list fd fd fd))
+                  (syscall 59 (c-string "/usr/bin/ol") (list (c-string "#") (c-string "-") (c-string "--seccomp")) (list fd fd fd))
                   (close #t))
 
                ((or

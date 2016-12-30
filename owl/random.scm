@@ -52,7 +52,7 @@
    (begin
       (define ncar car)
       (define ncdr cdr)
-      (define (ncons a b) (mkt type-int+ a b))
+      (define (ncons a b) (vm:new type-int+ a b))
 
       ;;;
       ;;; Pseudorandom data generators
@@ -460,7 +460,7 @@
       (define (random-bvec rs n)
          (let loop ((rs rs) (out null) (n n))
             (if (eq? n 0)
-               (values rs (raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
+               (values rs (vm:raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
                (lets
                   ((d rs (uncons rs 0))
                    (n _ (vm:sub n 1)))
@@ -549,18 +549,19 @@
 ;; test program for dieharder stdout test
 ;;   $ bin/ol -O2 -o rand.c owl/random.scm && gcc -O2 -o rand rand.c && ./rand | dieharder -a -g 200 | tee report.txt)
 
-(import (owl random))
-
-(define blocksize 4096)
-
-(λ (args)
-   (let loop ((rs (rands->bytes (seed->rands (time-ms)))) (out null) (n 0))
-      (cond
-         ((eq? n blocksize)
-            (if (write-byte-vector stdout (list->byte-vector (reverse out))) ;; keep order
-               (loop rs null 0)))
-         (else
-            (lets
-               ((byte rs (uncons rs 0))
-                (n _ (vm:add n 1)))
-               (loop rs (cons byte out) n))))))
+;(import (owl random))
+;
+;(define blocksize 4096)
+;
+;((λ (args)
+;   (let loop ((rs (rands->bytes (seed->rands (time-ms)))) (out null) (n 0))
+;      (cond
+;         ((eq? n blocksize)
+;            (if (write-byte-vector stdout (list->byte-vector (reverse out))) ;; keep order
+;               (loop rs null 0)))
+;         (else
+;            (lets
+;               ((byte rs (uncons rs 0))
+;                (n _ (vm:add n 1)))
+;               (loop rs (cons byte out) n))))))
+;'())

@@ -41,7 +41,7 @@
 
 ; ---------------------------------------------------------------------------
 (begin
-   (define EXT_bgra (glIsExtensionSupported "GL_EXT_bgra"))
+   (define EXT_bgra (gl:ExtensionSupported? "GL_EXT_bgra"))
 
    (define GL_BGR                 #x80E0)
    (define GL_BGRA                #x80E1)

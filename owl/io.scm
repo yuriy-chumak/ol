@@ -64,7 +64,6 @@
       (owl math)
       (owl fasl)
       (owl tuple)
-      (owl primop)
       (owl lazy)
       (only (owl vector) merge-chunks vec-leaves))
 
@@ -97,7 +96,7 @@
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
       (define (bvec-tail bvec n)
-         (raw type-vector-raw (map (lambda (p) (ref bvec p)) (lrange n 1 (size bvec)))))
+         (vm:raw type-vector-raw (map (lambda (p) (ref bvec p)) (lrange n 1 (size bvec)))))
 
       (define (try-write-block fd bvec len)
          (if (port? fd) (sys:write fd bvec len) #false))
@@ -306,10 +305,10 @@
          (cond
             ((eq? len output-buffer-size)
                (and
-                  (write-really (raw type-vector-raw (reverse out)) fd)
+                  (write-really (vm:raw type-vector-raw (reverse out)) fd)
                   (printer lst 0 null fd)))
             ((null? lst)
-               (write-really (raw type-vector-raw (reverse out)) fd))
+               (write-really (vm:raw type-vector-raw (reverse out)) fd))
             (else
                ;; avoid dependency on generic math in IO
                (lets ((len _ (vm:add len 1)))

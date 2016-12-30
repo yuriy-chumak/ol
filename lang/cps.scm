@@ -11,10 +11,9 @@
       (owl list)
       (owl list-extra)
       (owl math)
-      (owl gensym)
+      (lang gensym)
       (owl io)
-      (only (lang env) primop? primop-of)
-      (owl primop)) 
+      (lang primop))
 
    (begin
       ;; fixme: information about cps-special primops could be stored elsewhere
@@ -136,7 +135,7 @@
                   (cps rator env
                      (mklambda (list this) call-exp)
                      free)))
-            ((branch kind a b then else)
+            ((ifeq a b then else)
                (lets ((this free (fresh free)))
                   (cps
                      (mkcall (mklambda (list this) (mkcall (mkvar this) rands))
@@ -150,13 +149,13 @@
             (else
                (cps-args cps rands (list cont rator) env free))))
 
-      (define (cps-branch cps kind a b then else env cont free)
+      (define (cps-ifeq cps a b then else env cont free)
          (cond
             ((not (var? cont))
                (lets
                   ((this free (fresh free))
                    (exp free
-                     (cps-branch cps kind a b then else env (mkvar this) free)))
+                     (cps-ifeq cps a b then else env (mkvar this) free)))
                   (values
                      (mkcall
                         (mklambda (list this) exp)
@@ -166,40 +165,25 @@
                (lets
                   ((this free (fresh free))
                    (rest free
-                     (cps-branch cps kind (mkvar this) b then else env cont free)))
+                     (cps-ifeq cps (mkvar this) b then else env cont free)))
                   (cps a env (mklambda (list this) rest) free)))
             ((call? b)
                (lets
                   ((this free (fresh free))
                    (rest free 
-                     (cps-branch cps kind a (mkvar this) then else env cont free)))
+                     (cps-ifeq cps a (mkvar this) then else env cont free)))
                   (cps b env (mklambda (list this) rest) free)))
-            ((eq? kind 4)
-               ; a binding type discrimination. matching branch is treated as in bind 
-               ; only cps-ing body to current continuation
-               (tuple-case then
-                  ((lambda formals body)
-                     (lets
-                        ((then-body free (cps body env cont free))
-                         (else free (cps else env cont free)))
-                        (values
-                           (tuple 'branch kind a b 
-                              (mklambda formals then-body)
-                              else)
-                           free)))
-                  (else
-                     (runtime-error "cps-branch: then is not a lambda: " then))))
             (else
                (lets
                   ((then free (cps then env cont free))
                    (else free (cps else env cont free)))
                   (values
-                     (tuple 'branch kind a b then else)
+                     (tuple 'ifeq a b then else)
                      free)))))
 
-      (define (cps-receive cps exp semi-cont env cont free)
+      (define (cps-apply-values cps exp semi-cont env cont free)
          (tuple-case semi-cont
-            ((lambda formals  body)
+            ((lambda formals body)
                (lets ((body-cps free (cps body env cont free)))
                   (cps exp env 
                      (mklambda formals body-cps)
@@ -211,23 +195,23 @@
                      (tuple 'lambda-var fixed? formals body-cps)
                      free)))
             (else
-               (runtime-error "cps-receive: receiver is not a lambda. " semi-cont))))
+               (runtime-error "cps-apply-apply: receiver is not a lambda. " semi-cont))))
 
       ;; translate a chain of lambdas as if they were at operator position
       ;; note! also cars are handled as the same jump, which is silly
-      (define (cps-case-lambda cps node env cont free)
+      (define (cps-ifary cps node env cont free)
          (tuple-case node
-            ((case-lambda fn else)
+            ((ifary fn else)
                (lets 
-                  ((fn free (cps-case-lambda cps fn env cont free))
-                   (else free (cps-case-lambda cps else env cont free)))
-                  (values (tuple 'case-lambda fn else) free)))
+                  ((fn free (cps-ifary cps fn env cont free))
+                   (else free (cps-ifary cps else env cont free)))
+                  (values (tuple 'ifary fn else) free)))
             ((lambda formals body)
                (cps-just-lambda cps formals #true body env free))
             ((lambda-var fixed? formals body)
                (cps-just-lambda cps formals fixed? body env free))
             (else
-               (runtime-error "cps-case-lambda: what is " node))))
+               (runtime-error "cps-ifary: what is " node))))
 
       (define (cps-exp exp env cont free)
          (tuple-case exp
@@ -241,14 +225,14 @@
                (cps-lambda cps-exp formals fixed? body env cont free))
             ((call rator rands)
                (cps-call cps-exp rator rands env cont free))
-            ((branch kind a b then else)
-               (cps-branch cps-exp kind a b then else env cont free))
             ((values vals)
               (cps-values cps-exp vals env cont free))
-            ((receive exp target)
-              (cps-receive cps-exp exp target env cont free))
-            ((case-lambda fn else)
-               (lets ((res free (cps-case-lambda cps-exp exp env cont free)))
+            ((apply-values exp target)
+              (cps-apply-values cps-exp exp target env cont free))
+            ((ifeq a b then else)
+               (cps-ifeq cps-exp a b then else env cont free))
+            ((ifary fn else)
+               (lets ((res free (cps-ifary cps-exp exp env cont free)))
                   (values (mkcall cont (list res)) free)))
             (else
                (runtime-error "CPS does not do " exp))))

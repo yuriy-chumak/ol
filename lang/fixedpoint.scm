@@ -48,7 +48,9 @@
                   (walk body (union formals bound) found))
                ((lambda-var fixed? formals body)
                   (walk body (union formals bound) found))
-               ((case-lambda fn else)
+               ((ifeq a b then else)
+                  (walk-list (list a b then else) bound found))
+               ((ifary fn else)
                   (walk fn bound
                      (walk else bound found)))
                ((call rator rands)
@@ -57,11 +59,9 @@
                ((value val) found)
                ((values vals)
                   (walk-list vals bound found))
-               ((receive op fn) 
+               ((apply-values op fn) 
                   (walk op bound
                      (walk fn bound found)))
-               ((branch kind a b then else)
-                  (walk-list (list a b then else) bound found))
                (else
                   (print "free-vars: unknown node type: " exp)
                   found)))
@@ -71,7 +71,7 @@
       (define (lambda? exp env)
          (eq? (ref exp 1) 'lambda))
 
-      (define (set-deps node deps) (set node 3 deps))
+      (define (set-deps node deps) (set-ref node 3 deps))
       (define (deps-of node) (ref node 3))
       (define (name-of node) (ref node 1))
 
@@ -153,12 +153,12 @@
                   (if (has? formals name)
                      exp
                      (tuple 'lambda formals (walk body))))
-               ((branch kind a b then else)
-                  (tuple 'branch kind (walk a) (walk b) (walk then) (walk else)))
-               ((receive op fn)
-                  (tuple 'receive (walk op) (walk fn)))
+               ((ifeq a b then else)
+                  (tuple 'ifeq (walk a) (walk b) (walk then) (walk else)))
                ((values vals) 
                   (tuple 'values (map walk vals)))
+               ((apply-values op fn)
+                  (tuple 'apply-values (walk op) (walk fn)))
                ((value val) exp)
                ((var sym)
                   (if (eq? sym name)
@@ -200,18 +200,13 @@
                (mklambda formals
                   (carry-bindings body
                      (env-bind env formals))))
-            ((branch kind a b then else)
+            ((ifeq a b then else)
                (let
                   ((a (carry-bindings a env))
                    (b (carry-bindings b env))
                    (then (carry-bindings then env))
                    (else (carry-bindings else env)))
-                  (tuple 'branch kind a b then else)))
-            ((receive op fn)
-               (let
-                  ((op (carry-bindings op env))
-                   (fn (carry-bindings fn env)))
-                  (tuple 'receive op fn)))
+                  (tuple 'ifeq a b then else)))
             ((var sym)
                (tuple-case (lookup env sym)
                   ((recursive formals deps)
@@ -226,6 +221,11 @@
             ((values vals)
                (tuple 'values
                   (map (lambda (exp) (carry-bindings exp env)) vals)))
+            ((apply-values op fn)
+               (let
+                  ((op (carry-bindings op env))
+                   (fn (carry-bindings fn env)))
+                  (tuple 'apply-values op fn)))
             (else
                (runtime-error "carry-bindings: strage expression: " exp))))
 
@@ -404,21 +404,21 @@
                         names values))
                   body env)))
 
-            ((receive op fn)
-               (tuple 'receive (unletrec op env) (unletrec fn env)))
             ((value val) exp)
             ((values vals)
                (tuple 'values
                   (unletrec-list vals)))
-            ((branch kind a b then else)
+            ((apply-values op fn)
+               (tuple 'apply-values (unletrec op env) (unletrec fn env)))
+            ((ifeq a b then else)
                (let
                   ((a (unletrec a env))
                    (b (unletrec b env))
                    (then (unletrec then env))
                    (else (unletrec else env)))
-                  (tuple 'branch kind a b then else)))
-            ((case-lambda func else)
-               (tuple 'case-lambda 
+                  (tuple 'ifeq a b then else)))
+            ((ifary func else)
+               (tuple 'ifary
                   (unletrec func env)
                   (unletrec else env)))
             (else

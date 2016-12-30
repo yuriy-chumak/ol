@@ -11,11 +11,10 @@
       (owl list)
       (owl equal)
       (owl list-extra)
-      (owl primop)
       (owl math)
       (owl io)
       (owl sort)
-      (owl gensym)
+      (lang gensym)
       (owl symbol)
       (lang env))
 
@@ -312,12 +311,12 @@
                                         (body free
                                           (expand body (env-bind env formals) free abort)))
                                        (values (list 'lambda formals body) free))))
-                              ((ol:set)
+                              ((setq)
                                  (lets
                                     ((value free
                                        (expand (caddr exp) env free abort)))
                                     (values
-                                       (list 'ol:set (cadr exp) value)
+                                       (list 'setq (cadr exp) value)
                                        free)))
                               ((ol:let)
                                  (let*((formals (second exp))    ; lref 1
@@ -331,19 +330,19 @@
                                     (values
                                        (list 'ol:let formals definitions body)
                                        free)))
-                              ((ol:ifc)
+                              ((ifeq)
                                  (expand-list exp env free))
-                              ((ol:ifa)
-                                 (if (or (null? (cdr exp)) (null? (cddr exp))) ;; (case-lambda <lambda> <(case-)lambda>)
-                                    (abort (list "Bad ol:ifa: " exp))
+                              ((ifary)
+                                 (if (or (null? (cdr exp)) (null? (cddr exp)))
+                                    (abort (list "Bad ifary: " exp))
                                     (lets
                                        ((first free (expand (cadr exp)  env free abort))
                                         (rest  free (expand (caddr exp) env free abort)))
-                                       (values (list 'ol:ifa first rest) free))))
+                                       (values (list 'ifary first rest) free))))
 
                               ((values)
                                  (expand-list exp env free))
-                              ((receive)
+                              ((apply-values)
                                  (expand-list exp env free))
 
                               (else

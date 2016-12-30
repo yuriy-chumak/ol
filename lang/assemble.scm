@@ -14,71 +14,19 @@
       (owl math)
       (owl list-extra)
       (only (owl interop) interact)
-      (lang register)
-      (owl primop))
+      (src vm)
+      (lang env)
+      (lang primop)
+      (lang register))
 
    (begin
-
-      ;; primops = (#(name opcode in-args|#f out-args|#f wrapper-fn) ...)
-
-      ;; ff of opcode → (in|#f out|#f), #f if variable
-      (define primop-arities
-         (fold
-            (λ (ff node)
-               (lets ((name op in out wrapper node))
-                  (put ff op (cons in out))))
-            empty primops))
-
-      (define (opcode-arity-ok? op in out)
-         (let ((node (getf primop-arities op)))
-            (if node
-               (and
-                  (or (eq? in  (car node)) (not (car node)))
-                  (or (eq? out (cdr node)) (not (cdr node))))
-               #true)))
-
-
-      ; vm-instructions
-      (define MOVE  9) ; move a, t:      Ra -> Rt
-      (define REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
-      (define MOVE2 5) ; two moves, 4 args
-
-      ; load
-      (define LD   14) ; ld a, t:        Rt = a, signed byte
-      (define LDN  (+ 13 (<< 1 6))) ; 77
-      (define LDT  (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
-      (define LDF  (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
-
-      ;
-      (define CLOS0 3) ; clos lp, o, nenv, e0 ... en, t:
-      (define CLOC0 4) ; cloc lp, o, nenv, e0 ... en, t:
-      (define CLOS1 6)
-      (define CLOC1 7)
-
-      ; conditional jumps
-      (define JEQ   8) ; jeq a b o1 o2
-      (define JZ   (+ 16 (<< 0 6))) ; jump-imm[0] if zero
-      (define JN   (+ 16 (<< 1 6))) ; jump-imm[0] if null
-      (define JT   (+ 16 (<< 2 6))) ; jump-imm[0] if true
-      (define JF   (+ 16 (<< 3 6))) ; jump-imm[0] if false
-      (define JF2  25) ; jump if arity failed
-      (define JF2-ex (+ JF2 (<< 1 6))) ; JF2 with extra flag
-
-      ; executions
-      (define GOTO 2) ; jmp a, nargs    call Ra with nargs args
-      ;(define GOTO-CODE 18) ; not used for now, check (fn-type)
-      ;(define GOTO-PROC 19) ; not used for now, check (fn-type)
-      ;(define GOTO-CLOS 21) ; not used for now, check (fn-type)
-      (define RET 24) ; ret a:          call R3 (usually cont) with Ra
-
-      (define ARITY-ERROR 17)
 
 ;              (igoto . 26)   ; indirect goto
 ;              (mk   . 9)      ; mk n, a0, ..., an, t, size up to 256
 ;              (mki  . 11)     ; mki size, type, v1, ..., vn, to
 ;              (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
 
-;              (set . 25)     ; set a, p, b     Ra[Rp] = Rb
+;              (set-ref . 25)     ; set-ref a, p, b     Ra[Rp] = Rb
 ;              (jbf . 26)     ; jump-binding tuple n f offset ... r1 ... rn
 
               ;; ldi = 13                                                                                    ;+
@@ -140,7 +88,7 @@
                         (fail (list "bad opcode arity for" (or (primop-name op) op) (length args) 1))))
                   ((list? to)
                      (if (opcode-arity-ok? op (length args) (length to))
-                        (if (has? multiple-return-variable-primops op)
+                        (if (multiple-return-variable-primop? op)
                            (cons op
                               (append (map reg args)
                                  ; <- nargs implicit, FIXME check nargs opcode too
@@ -196,6 +144,15 @@
                   ((eq? val null)
                      (ilist LDN (reg to)
                         (assemble cont fail)))
+                  ((eq? val #false)
+                     (ilist LDF (reg to)
+                        (assemble cont fail)))
+                  ((eq? val #true)
+                     (ilist LDT (reg to)
+                        (assemble cont fail)))
+                  ((eq? val #empty)
+                     (ilist LDE (reg to)
+                        (assemble cont fail)))
                   ((fixnum? val)
                      (let ((code (assemble cont fail)))
                         (if (or (> val 126) (< val -126)) ; would be a bug
@@ -203,12 +160,6 @@
                         (ilist LD
                            (if (< val 0) (+ 256 val) val)
                            (reg to) code)))
-                  ((eq? val #false)
-                     (ilist LDF (reg to)
-                        (assemble cont fail)))
-                  ((eq? val #true)
-                     (ilist LDT (reg to)
-                        (assemble cont fail)))
                   (else
                      (fail (list "cannot assemble a load for " val)))))
             ((refi from offset to more)
@@ -232,21 +183,13 @@
                   (cond
                      ((< len #xffff) (ilist JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
-            ((jz a then else)
+            ((jz a then else) ; todo: merge next four cases into one
                (lets
                   ((then (assemble then fail))
                    (else (assemble else fail))
                    (len (length else)))
                   (cond
                      ((< len #xffff) (ilist JZ (reg a) (band len #xff) (>> len 8) (append else then)))
-                     (else (fail (list "need a bigger jump instruction: length is " len))))))
-            ((jf a then else)
-               (lets
-                  ((then (assemble then fail))
-                   (else (assemble else fail))
-                   (len (length else)))
-                  (cond
-                     ((< len #xffff) (ilist JF (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             ((jn a then else)
                (lets
@@ -256,13 +199,29 @@
                   (cond
                      ((< len #xffff) (ilist JN (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
+            ((je a then else)
+               (lets
+                  ((then (assemble then fail))
+                   (else (assemble else fail))
+                   (len (length else)))
+                  (cond
+                     ((< len #xffff) (ilist JE (reg a) (band len #xff) (>> len 8) (append else then)))
+                     (else (fail (list "need a bigger jump instruction: length is " len))))))
+            ((jf a then else)
+               (lets
+                  ((then (assemble then fail))
+                   (else (assemble else fail))
+                   (len (length else)))
+                  (cond
+                     ((< len #xffff) (ilist JF (reg a) (band len #xff) (>> len 8) (append else then)))
+                     (else (fail (list "need a bigger jump instruction: length is " len))))))
             (else
                ;(print "assemble: what is " code)
                (fail (list "Unknown opcode " code)))))
 
       ;; make bytecode and intern it (to improve sharing, not mandatory)
       (define (bytes->bytecode bytes)
-         (interact 'intern (raw type-bytecode bytes)))
+         (interact 'intern (vm:raw type-bytecode bytes)))
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont
@@ -283,7 +242,6 @@
                            (runtime-error "too much bytecode: " len))
                         (bytes->bytecode
                            (if fixed?
-                              ; вот тут можно забрать проверку на арность (-)
                               ; без проверки на арность проваливается тест "case-lambda"
                               ; todo: оставить проверку для lambda, забрать для всего остального
                               (ilist JF2 arity
@@ -293,7 +251,7 @@
                                     (if (null? tail)
                                        (list ARITY-ERROR)
                                        tail)))
-                              (ilist JF2-ex (if fixed? arity (- arity 1))
+                              (ilist JF2x (if fixed? arity (- arity 1))
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes

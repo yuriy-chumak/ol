@@ -1,7 +1,7 @@
 (define-library (lib json)
-  (export
-    jsonify guid rand!)
-  (import (otus lisp))
+   (export
+      jsonify guid rand!)
+   (import (otus lisp))
 
 (begin
 ; good fast randomizer

@@ -5,7 +5,6 @@
       lookup env-bind
       empty-env
       apply-env env-fold
-      verbose-vm-error prim-opcodes primop-of primitive?
       ; opcode->wrapper
       poll-tag name-tag link-tag buffer-tag signal-tag signal-halt thread-quantum meta-tag
       current-library-key
@@ -21,6 +20,7 @@
 
    (import
       (r5rs core)
+      (lang primop)
       (owl ff)
       (owl list)
       (owl symbol)
@@ -30,8 +30,8 @@
       (owl list-extra)
       (owl math)
       (owl io)
-      (scheme misc)
-      (owl primop))
+      (src vm)
+      (scheme misc))
 
    (begin
 
@@ -169,7 +169,7 @@
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
                            (fail (list "funny ol:let " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((values receive ol:ifa ol:ifc)
+                     ((values apply-values ifary ifeq)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
                         (map walk exp))))
@@ -201,40 +201,6 @@
 
       ;;; these cannot be in primop since they use lists and ffs
 
-      (define (verbose-vm-error opcode a b)
-         (cons "error: "
-         (if (eq? opcode 17)  ;; arity error, could be variable
-               ; this is either a call, in which case it has an implicit continuation,
-               ; or a return from a function which doesn't have it. it's usually a call,
-               ; so -1 to not count continuation. there is no way to differentiate the
-               ; two, since there are no calls and returns, just jumps.
-            `(function ,a got did not want ,(- b 1) arguments)
-         (if (eq? opcode 52)
-            `(trying to get car of a non-pair ,a)
-         (if (eq? opcode 53)
-            `(trying to get cdr of a non-pair ,a)
-         `(,(primop-name opcode) reported error ": " ,a " " ,b)
-         )))))
-         ;   ;((eq? opcode 52)
-         ;   ;   `(trying to get car of a non-pair ,a))
-         ;   (else
-         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
-
-
-      ;; ff of opcode → wrapper
-      (define prim-opcodes ;; ff of wrapper-fn → opcode
-         (for empty primops
-            (λ (ff node)
-               (put ff (ref node 5) (ref node 2)))))
-;      (define opcode->wrapper
-;         (for empty primops
-;            (λ (ff node)
-;               (put ff (ref node 2) (ref node 5)))))
-
-      ;; later check type, get first opcode and compare to primop wrapper
-      (define (primop-of val)
-         (get prim-opcodes val #false))
-
       ;; only special forms supported by the compiler, no primops etc
       ;; fixme: should use distinct identifiers like #:foo for these, since these can unintentionally clash with formals
       (define *special-forms*
@@ -243,13 +209,13 @@
                (cons 'quote   (tuple 'special 'quote))
 
                (cons 'lambda  (tuple 'special 'lambda))
-               (cons 'ol:set  (tuple 'special 'ol:set)) ; 'define
+               (cons 'setq    (tuple 'special 'setq))
                (cons 'ol:let  (tuple 'special 'ol:let)) ; 'letrec
-               (cons 'ol:ifc  (tuple 'special 'ol:ifc)) ; 'branch
-               (cons 'ol:ifa  (tuple 'special 'ol:ifa)) ; 'case-lambda
+               (cons 'ifary   (tuple 'special 'ifary))
+               (cons 'ifeq    (tuple 'special 'ifeq))
 
                (cons 'values  (tuple 'special 'values))
-               (cons 'receive (tuple 'special 'receive)))))
+               (cons 'apply-values  (tuple 'special 'apply-values)))))
 
       ;; take a subset of env
       ;; fixme - misleading name
@@ -262,7 +228,5 @@
 
       (define (env-keys env)
          (ff-fold (λ (words key value) (cons key words)) null env))
-
-      (define primitive? primop-of)
 
 ))

@@ -21,6 +21,7 @@
       render-quoted-string
       str-iter           ; "a .. n" -> lazy (a .. n) list
       str-iterr          ; "a .. n" -> lazy (n .. a) list
+      str-iter-bytes     ; "a .. n" -> lazy (a .. n) list of UTF-8 encoded bytes
       str-fold           ; fold over code points, as in lists
       str-foldr          ; ditto
       str-app            ; a ++ b, temp
@@ -105,6 +106,14 @@
 
       (define (str-iter str) (str-iter-any str null))
 
+      (define (str-iter-bytes str)
+         (ledit
+            (lambda (codepoint)
+               (if (less? codepoint #x80)
+                  #false ;; keep the old one
+                  (encode-point codepoint null)))
+            (str-iter str)))
+
       ;;; iterate backwards
 
       (define (str-iterr-leaf str tl pos)
@@ -141,6 +150,7 @@
                (runtime-error "str-iterr: not a string: " str))))
 
       (define (str-iterr str) (str-iterr-any str null))
+
 
       ;; string folds
 
@@ -186,35 +196,35 @@
                       (c d (split null l q))
                       (subs (map finish-string (list a b c d)))
                       (len (fold + 0 (map string-length subs))))
-                     (listuple type-string-dispatch 5 (cons len subs))))
+                     (unreel type-string-dispatch (cons len subs))))
                (else
-                  (listuple type-string-dispatch (+ n 1)
+                  (unreel type-string-dispatch ;(+ n 1)
                      (cons (fold + 0 (map string-length chunks)) chunks))))))
 
-      (define (make-chunk rcps len ascii?)
+      (define (make-chunk rcps ascii?)
          (if ascii?
-            (let ((str (raw type-string (reverse rcps))))
+            (let ((str (vm:raw type-string (reverse rcps))))
                (if str
                   str
                   (runtime-error "Failed to make string: " rcps)))
-            (listuple type-string-wide len (reverse rcps))))
+            (unreel type-string-wide (reverse rcps))))
 
       ;; ll|list out n ascii? chunk → string | #false
       (define (stringify runes out n ascii? chu)
          (cond
             ((null? runes)
                (finish-string
-                  (reverse (cons (make-chunk out n ascii?) chu))))
+                  (reverse (cons (make-chunk out ascii?) chu))))
             ; make 4Kb chunks by default
             ((eq? n 4096)
                (stringify runes null 0 #true
-                  (cons (make-chunk out n ascii?) chu)))
+                  (cons (make-chunk out ascii?) chu)))
             ((pair? runes)
                (cond
                   ((and ascii? (< 128 (car runes)) (> n 256))
                      ; allow smaller leaf chunks
                      (stringify runes null 0 #true
-                        (cons (make-chunk out n ascii?) chu)))
+                        (cons (make-chunk out ascii?) chu)))
                   ((valid-code-point? (car runes))
                      (let ((rune (car runes)))
                         (stringify (cdr runes) (cons rune out) (+ n 1)
@@ -283,11 +293,11 @@
             ;; allows bad non UTF-8 strings coming for example from command
             ;; line arguments (like paths having invalid encoding) to be used
             ;; for opening files.
-            (raw type-string (str-foldr cons '(0) str))
+            (vm:raw type-string (str-foldr cons '(0) str))
             (let ((bs (str-foldr encode-point '(0) str)))
                ; check that the UTF-8 encoded version fits one raw chunk (64KB)
                (if (<= (length bs) #xffff)
-                  (raw type-string bs)
+                  (vm:raw type-string bs)
                   #false))))
 
       (define null-terminate c-string)
@@ -371,7 +381,7 @@
                (cond
                   ((not a) (if b 1 2))
                   ((not b) 3)
-                  ((< a b) 1) ;; todo: lesser? and eq? after they are interned
+                  ((< a b) 1) ;; todo: less? and eq? after they are interned
                   ((= a b) (loop la lb))
                   (else 3)))))
 

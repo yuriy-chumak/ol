@@ -25,11 +25,12 @@
       (owl symbol)
       (owl list-extra)
       (lang ast)
+      (lang env)
       (owl lazy)
       (owl sort)
-      (owl primop)
       (owl io)
-      (only (lang env) primitive?)
+      (only (src vm) NEW)
+      (lang primop)
       (lang assemble)
       (lang closure))
 
@@ -39,10 +40,11 @@
 
       (define (small-value? val)
          (or
+            (eq? val #empty)
+            (eq? val #null)
             (eq? val #true)
             (eq? val #false)
-            (and (fixnum? val) (>= val -127) (< val 127))
-            (eq? val null)))
+            (and (fixnum? val) (>= val -127) (< val 127))))
 
       (define (ok exp env) (tuple 'ok exp env))
       (define (fail reason) (tuple 'fail reason))
@@ -234,11 +236,11 @@
                      (cdr formals)
                      (cons this taken))))))
 
-   ;; fixme: mkt chugs the type to the instruction
+   ;; fixme: vm:new chugs the type to the instruction
       (define (rtl-primitive regs op formals args cont)
-         (if (eq? op 23) ; generalize this later. mkt is not a safe instruction!
+         (if (eq? op NEW) ; generalize this later. vm:new is not a safe instruction!
             (if (null? args)
-               (runtime-error "rtl-primitive: no type for mkt" args)
+               (runtime-error "rtl-primitive: no type for vm:new" args)
                (begin
                   (rtl-primitive regs
                      (+ (<< op 8) (band (value-of (car args)) #xff))
@@ -257,7 +259,7 @@
                                     regs)))))
                      (else
                         ; bind or ff-bind, or arithmetic
-                        (bind (rtl-bind regs formals)
+                        (tuple-apply (rtl-bind regs formals)
                            (λ (selected regs)
                               (tuple 'prim op args selected
                                  (cont regs))))))))))
@@ -427,17 +429,20 @@
       (define (value-pred pred)
          (λ (val)
             (tuple-case val
-               ((value val) (pred val))
+               ((value val)
+                  (pred val))
                (else #false))))
 
-      (define null-value?  (value-pred null?))
-      (define false-value? (value-pred (λ (x) (eq? x #false))))
-      (define zero-value?  (value-pred (λ (x) (eq? x 0))))
+      (define false-value? (value-pred (λ (x) (eq? x #f))))
+      (define empty-value? (value-pred (λ (x) (eq? x #empty))))
+      (define null-value? (value-pred (λ (x) (eq? x #null))))
+      (define zero-value? (value-pred (λ (x) (eq? x 0))))
 
       (define (simple-first a b cont)
          (cond
-            ((null-value? b)  (cont b a))
             ((false-value? b) (cont b a))
+            ((empty-value? b) (cont b a))
+            ((null-value? b)  (cont b a))
             ((zero-value? b)  (cont b a))
             (else
                (cont a b))))
@@ -447,88 +452,49 @@
             ((value val) val)
             (else #false)))
 
-      ;; fixme: ??? O(n) search for opcode->primop. what the...
-      (define (opcode->primop op)
-         (let
-            ((node
-               (some
-                  (λ (x) (if (eq? (ref x 2) op) x #false))
-                  primops)))
-            (if node node (runtime-error "Unknown primop: " op))))
-
-      (define (opcode-arity-ok? op n)
-         (bind (opcode->primop op)
-            (λ (name op in out fn)
-               (cond
-                  ((eq? in n) #true)
-                  ((eq? in 'any) #true)
-                  (else #false)))))
-
       ;; compile any AST node node to RTL
       (define (rtl-any regs exp)
          (tuple-case exp
-            ((branch kind a b then else)
-               (cond
-                  ((eq? kind 0)      ; branch on equality (jump if equal)
-                     (simple-first a b
-                        ;;; move simple to a, if any
-                        (λ (a b)
-                           (cond
-                              ;; todo: convert jump-if-<val> rtl nodes to a single shared rtl node to avoid having to deal with them as separate instructions
-                              ((null-value? a) ; jump-if-null (optimization)
-                                 (rtl-simple regs b (λ (regs bp)
-                                    (let
-                                       ((then (rtl-any regs then))
-                                        (else (rtl-any regs else)))
-                                       (tuple 'jn bp then else)))))
-                              ((false-value? a) ; jump-if-false
-                                 (rtl-simple regs b (λ (regs bp)
-                                    (let
-                                       ((then (rtl-any regs then))
-                                        (else (rtl-any regs else)))
-                                       (tuple 'jf bp then else)))))
-                              ((zero-value? a) ; jump-if-false
-                                 (rtl-simple regs b (λ (regs bp)
-                                    (let
-                                       ((then (rtl-any regs then))
-                                        (else (rtl-any regs else)))
-                                       (tuple 'jz bp then else)))))
-                              (else
-                                 (rtl-simple regs a (λ (regs ap)
-                                    (rtl-simple regs b (λ (regs bp)
-                                       (let
-                                          ((then (rtl-any regs then))
-                                           (else (rtl-any regs else)))
-                                          (tuple 'jeq ap bp then else)))))))))))
-                  ;; NOT IN USE YET -- typed binding
-                  ((eq? kind 4)   ; (branch-4 name type (λ (f0 .. fn) B) Else)
-                     ; FIXME check object size here (via meta)
-                     (let ((b (extract-value b)))
-                        (if (and (fixnum? b) (>= b 0) (< b 257))
-                           (rtl-simple regs a
-                              (λ (regs ap)
-                                 (tuple-case then
-                                    ((lambda formals body)
-                                       (bind (rtl-bind regs formals)
-                                          (λ (selected then-regs)
-                                             (let
-                                                ((then-body (rtl-any then-regs body))
-                                                 (else (rtl-any regs else)))
-                                                (tuple 'jab ap b
-                                                   (tuple 'lambda selected then-body)
-                                                   else)))))
-                                    (else
-                                       (runtime-error "rtl-any: bad jab then branch: " then)))))
-                           (runtime-error "rtl-any: bad alloc binding branch type: " b))))
-                  (else
-                     (runtime-error "rtl-any: unknown branch type: " kind))))
+            ((ifeq a b then else)
+               ; тут мы попытаемся поставить b первым аргументом, если b равно 0, #f, #t, #empty
+               (simple-first a b
+                  ;;; move simple to a, if any
+                  (λ (a b)
+                     (cond
+                        ;; todo: convert jump-if-<val> rtl nodes to a single shared rtl node to avoid having to deal with them as separate instructions
+                        ((false-value? a) ; jump-if-false
+                           (rtl-simple regs b (λ (regs bp)
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
+                                 (tuple 'jf bp then else)))))
+                        ((empty-value? a) ; jump-if-empty
+                           (rtl-simple regs b (λ (regs bp)
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
+                                 (tuple 'je bp then else)))))
+                        ((null-value? a) ; jump-if-null
+                           (rtl-simple regs b (λ (regs bp)
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
+                                 (tuple 'jn bp then else)))))
+                        ((zero-value? a) ; jump-if-false
+                           (rtl-simple regs b (λ (regs bp)
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
+                                 (tuple 'jz bp then else)))))
+                        (else
+                           (rtl-simple regs a (λ (regs ap)
+                              (rtl-simple regs b (λ (regs bp)
+                                 (let ((then (rtl-any regs then))
+                                       (else (rtl-any regs else)))
+                                    (tuple 'jeq ap bp then else)))))))))))
             ((call rator rands)
                ;; compile as primop call, bind if rator is lambda or a generic call
                (let ((op (and (eq? (ref rator 1) 'value) (primitive? (ref rator 2)))))
                   (if op
                      (tuple-case (car rands)
                         ((lambda formals body)
-                           (if (opcode-arity-ok? op (length (cdr rands)))
+                           (if (opcode-arity-ok-2? op (length (cdr rands)))
                               (rtl-primitive regs op formals (cdr rands)
                                  (λ (regs) (rtl-any regs body)))
                               ;; fixme: should be a way to show just parts of AST nodes, which may look odd
@@ -582,7 +548,7 @@
          (map (λ (lit) (rtl-literal rtl-procedure lit)) lits))
 
       (define (list->proc lst)
-         (listuple type-proc (length lst) lst))
+         (unreel type-proc lst))
 
       ;; rtl-procedure now passes the intended new form here - replace it later in the AST node also
       (define (rtl-plain-lambda rtl exp clos literals tail)
@@ -616,20 +582,20 @@
             (else
                (runtime-error "bytecode->list: " thing))))
 
-      (define (rtl-case-lambda rtl exp clos literals)
+      (define (rtl-ifary rtl exp clos literals)
          (tuple-case exp
             ((lambda-var fixed? formals body)
                (rtl-plain-lambda rtl exp clos literals null))
             ((lambda formals body) ;; soon to be deprecated
-               (rtl-case-lambda rtl
+               (rtl-ifary rtl
                   (tuple 'lambda-var #true formals body)
                   clos literals))
-            ((case-lambda func else)
+            ((ifary func else)
                (rtl-plain-lambda rtl func clos literals
                   (bytecode->list
-                     (rtl-case-lambda rtl else clos literals))))
+                     (rtl-ifary rtl else clos literals))))
             (else
-               (runtime-error "rtl-case-lambda: bad node " exp))))
+               (runtime-error "rtl-ifary: bad node " exp))))
 
       ;; todo: separate closure nodes from lambdas now that the arity may vary
       ;; todo: control flow analysis time - if we can see what the arguments are here, the info could be used to make most continuation returns direct via known call opcodes, which could remove an important branch prediction killer
@@ -648,7 +614,7 @@
             ((closure-case body clos literals)
                (lets
                   ((lits (rtl-literals rtl-procedure literals))
-                   (body (rtl-case-lambda rtl-procedure body clos lits)))
+                   (body (rtl-ifary rtl-procedure body clos lits)))
                   body))
             (else
                (runtime-error "rtl-procedure: bad input: " node))))

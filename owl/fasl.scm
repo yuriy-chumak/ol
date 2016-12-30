@@ -67,7 +67,6 @@
 
       (owl vector)
       (owl math)
-      (owl primop)
       (owl ff)
       (owl lazy)
       (owl list)
@@ -172,7 +171,7 @@
       (define (encode-allocated clos cook)
          (λ (out val-orig pos)
             (lets
-               ( ; (val-orig (if (eq? val-orig <tochange>) (raw 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
+               ( ; (val-orig (if (eq? val-orig <tochange>) (vm:raw 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
                 (val (cook val-orig)))
                (if (raw? val)
                   (lets
@@ -314,7 +313,7 @@
                            ((ll type (grab ll fail))
                             (ll size (get-nat ll fail 0))
                             (ll fields (get-fields ll got size fail null))
-                            (obj (listuple type size fields)))
+                            (obj (unreel type #|size|# fields)))
                            (decoder ll (rcons obj got) fail)))
                      ((eq? kind 2) ; raw, type SIZE byte ...
                         (lets
@@ -322,7 +321,7 @@
                             (ll size (get-nat ll fail 0))
                             (foo (if (> size 65535) (fail "bad raw object size")))
                             (ll rbytes (get-bytes ll size fail null))
-                            (obj (raw type (reverse rbytes))))
+                            (obj (vm:raw type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
                      ((eq? kind 0) ;; fasl stream end marker
                         ;; object done
@@ -333,7 +332,7 @@
                             (ll size (get-nat ll fail 0))
                             (foo (if (> size 65535) (fail "bad raw object size")))
                             (ll rbytes (get-bytes ll size fail null))
-                            (obj (raw type (reverse rbytes))))
+                            (obj (vm:raw type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
                      (else
                         (fail (list "unknown object tag: " kind))))))

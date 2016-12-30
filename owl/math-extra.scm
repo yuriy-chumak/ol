@@ -26,7 +26,6 @@
       (owl list)
       (owl list-extra)
       (owl sort)
-      (owl primop)
       (only (owl interop) por por*)
       (owl ff))
 

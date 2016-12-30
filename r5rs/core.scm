@@ -1,6 +1,25 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
 (define-library (r5rs core)
+   (import (src vm))
    (begin
+
+      ; basic Otus Lisp elements:
+
+      ;; special forms:
+      ; quote lambda setq
+      ; values apply-values
+      ; ifeq ifary ol:let
+
+      ;; virtual machine primitives:
+      ; vm:new vm:raw unreel
+      ; cons car cdr ref type size cast raw? set set! eq? less?
+      ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
+      ; clock syscall vm:version fxmax fxmbits vm:wordsize
+      ; tuple-apply ff-apply
+      ; ff:red ff:black ff:toggle ff:red? ff:right?
+
+
+
 
       ; ========================================================================================================
       ; Scheme
@@ -15,14 +34,22 @@
       ; 1.1  Semantics
       ; 1.2  Syntax
 
-
       ; 1.3  Notation and terminology
       ; 1.3.1  Primitive, library, and optional features
       ; 1.3.2  Error situations and unspecified behavior
-      (define-syntax syntax-error
+      (define-syntax syntax-error        ; * ol specific
          (syntax-rules (runtime-error)
             ((syntax-error . stuff)
                (runtime-error "Syntax error: " (quote stuff)))))
+
+      ; this is internal simlified 'assert' that use 'eq?', please be careful!
+      (define-syntax assert
+         (syntax-rules (===>)
+            ((assert expression ===> expectation)
+               (ifeq ((lambda (x) x) expression) (quote expectation)
+                  #true
+                  ;else runtime-error:
+                  (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
 
       ; 1.3.3  Entry format
       ; 1.3.4  Evaluation examples
@@ -72,24 +99,29 @@
       ; syntax:  <variable>
 
       ; 4.1.2  Literal expressions
-      ; syntax:  quote <datum>
-      ; syntax:  '<datum>
-      ; syntax:  <constant>
+      ; syntax:  quote <datum>                * builtin
+      ; syntax:  '<datum>                     * builtin
+      ; syntax:  <constant>                   * builtin
 
       ; 4.1.3  Procedure calls
-      ; syntax:  (<operator> <operand1> ...)
+      ; syntax:  (<operator> <operand1> ...)  * builtin
 
       ; 4.1.4  Procedures
-      ; syntax:  (lambda <formals> <body>)
+      ; syntax:  (lambda <formals> <body>)    * builtin
       (define-syntax λ
          (syntax-rules ()
             ((λ . x) (lambda . x))))
+
+      ;(assert ((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6))
+      ;(assert ((lambda (x y . z) z) 3 4 5 6)          ===>  (5 6))
+              
 
       ; http://srfi.schemers.org/srfi-16/srfi-16.html
       ; srfi syntex: (case-lambda ...
       (define-syntax case-lambda
          (syntax-rules ()
-            ((case-lambda) #false)
+            ((case-lambda)
+               (lambda () (vm:raw TBYTECODE `(,ARITY-ERROR)))) ; arity-error (todo: change to runtime-error)
             ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
             ((case-lambda (formals . body))
                ;; downgrade to a run-of-the-mill lambda
@@ -98,7 +130,7 @@
                ;; make a list of options to be compiled to a chain of code bodies w/ jumps
                ;; note, could also merge to a jump table + sequence of codes, but it doesn't really matter
                ;; because speed-sensitive stuff will be compiled to C where this won't matter
-               (ol:ifa (lambda formals . body)
+               (ifary (lambda formals . body)
                   (case-lambda . rest)))))
 
       ; -------------------
@@ -106,24 +138,22 @@
       ; syntax:  if <test> <consequent> <alternate>
       ; syntax:  if <test> <consequent>
       (define-syntax if
-         (syntax-rules (not eq? null? empty?)
-            ((if test          then)      (if test then #false))
-            ((if (not test)    then else) (if test else then))              ; optimization
-            ((if (null? test)  then else) (if (eq? test '()) then else))    ; optimization
-            ((if (empty? test) then else) (if (eq? test #empty) then else)) ; optimization  ; FIXME - handle with partial eval later
-            ((if (eq? a b)     then else) (ol:ifc 0 a b then else))          ; optimization
-            ((if (a . b)       then else) ((lambda (x) (if x then else)) (a . b)))
-            ((if #false        then else)  else)                            ; optimization  ; THINK - maybe it broke vehaviour with arguments evaluation?
-            ((if #true         then else)  then)                            ; optimization  ; THINK - same ^^
-            ((if test          then else) (ol:ifc 0 test #false else then))))
+         (syntax-rules (not eq? null? empty? zero?)
+            ((if val       then)      (if val then #false))
+            ((if (not val) then else) (if val else then))
+            ((if (eq? a b) then else) (ifeq a b then else))
+            ((if (null? test)  then else) (if (eq? test #null) then else))  ; boot image size and compilation speed optimization
+            ((if (a . b)   then else) ((lambda (x) (if x then else)) (a . b)))
+            ((if #true     then else)  then)
+            ((if #false    then else)  else)
+            ((if t         then else) (ifeq t #false else then))))
+
+      (assert (if (less? 2 3) 'yes 'no)               ===>  yes)
+      (assert (if (less? 3 2) 'yes 'no)               ===>  no)
 
       ; ------------------
       ; 4.1.6  Assignments
-      ; syntax: set! <variable> <expression>
-      ;(define-syntax set!
-      ;   (syntax-rules ()
-      ;      ((set! var val) (error "set! is not supported: " '(set! var val)))))
-
+      ; syntax: set! <variable> <expression>  * not supported
 
       ;; 4.2  Derived expression types
       ; The constructs in this section are hygienic, as discussed in section 4.3. For reference purposes,
@@ -147,6 +177,14 @@
                (if clause
                   ((lambda () exp . rest-exps)) ; (begin ...)
                   (cond . rest)))))
+
+      (assert (cond ((less? 2 3) 'greater)
+                    ((less? 3 2) 'less))                  ===>  greater)
+      (assert (cond ((less? 3 3) 'greater)
+                    ((less? 3 3) 'less)
+                    (else 'equal))                        ===>  equal)
+      (assert (cond ((car (cdr '((a 1) (b 2)))) => car)
+                    (else #f))                            ===>  b)
 
       ; library syntax:  (case <key> <clause1> <clause2> ...)
       (define-syntax case
@@ -180,13 +218,29 @@
                   ((lambda () . then)) ; means (begin . body)
                   (case thing . clauses)))))
 
+      ;no memv yet to check this asserts
+      ;(assert (case 6
+      ;          ((2 3 5 7) 'prime)
+      ;          ((1 4 6 8 9) 'composite))                 ===> composite)
+      ;(assert (case (car '(c d))
+      ;          ((a e i o u) 'vowel)
+      ;          ((w y) 'semivowel)
+      ;          (else 'consonant))                        ===>  consonant)
+
       ; library syntax:  (and <test1> ...)
       (define-syntax and
          (syntax-rules ()
             ((and) #true)
+;            ((and (a . b) . c)
+;               ((lambda (x) (and x . c))  (a . b)))
             ((and a) a)
             ((and a . b)
                (if a (and . b) #false))))
+
+      (assert (and (eq? 2 2) (less? 1 2))                 ===> #true)
+      (assert (and (eq? 2 2) (less? 2 1))                 ===> #false)
+      (assert (and 1 2 '(f g) 'c)                         ===> c)
+      (assert (and)                                       ===> #true)
 
       ; library syntax:  (or <test1> ...)
       (define-syntax or
@@ -194,9 +248,14 @@
             ((or) #false)
             ((or (a . b) . c)
                ((lambda (x) (or x . c))  (a . b)))
+            ((or a) a)
             ((or a . b)
                (if a a (or . b)))))
 
+      (assert (or (eq? 2 2) (less? 1 2))                  ===> #true)
+      (assert (or (eq? 2 2) (less? 2 1))                  ===> #true)
+      (assert (or #f #f #f)                               ===> #false)
+      (assert (or #f 'c #f)                               ===> c)
 
       ; -------------------------
       ; 4.2.2  Binding constructs
@@ -237,20 +296,20 @@
       (define-syntax let*
          (syntax-rules (<=)
             ((let* (((var ...) gen) . rest) . body)
-               (receive gen (lambda (var ...) (let* rest . body))))
+               (apply-values gen (lambda (var ...) (let* rest . body))))
             ((let* ((var val) . rest-bindings) exp . rest-exps)
                ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
             ; http://srfi.schemers.org/srfi-71/srfi-71.html
             ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
-               (receive (op . args)
+               (apply-values (op . args)
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* ((var ... node) . rest-bindings) exp . rest-exps)
-               (bind node
+               (tuple-apply node
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* (((name ...) <= value) . rest) . code)
-               (bind value
+               (tuple-apply value
                   (lambda (name ...)
                      (let* rest . code))))
             ((let* ()) exp)
@@ -315,8 +374,8 @@
 
       ; ---------------------
       ; 4.2.6  Quasiquotation
-      ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ==> (a 3 (4 5 6) b)
-      ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ==> (a 3 4 5 6 b)
+      ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
+      ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
       (define-syntax quasiquote
          (syntax-rules (unquote quote unquote-splicing append _work _sharp_vector list->vector)
                                                    ;          ^         ^
@@ -361,11 +420,9 @@
                (define op
                   (letrec ((op (lambda args body))) op)))
             ((define name (lambda (var ...) . body))
-               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
-;            ((define name (λ (var ...) . body))
-;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
+               (setq name (ol:let (name) ((lambda (var ...) . body)) name)))
             ((define op val)
-               (ol:set op val))))
+               (setq op val))))
 
 ;      ;; not defining directly because ol:let doesn't yet do variable arity
 ;      ;(define list ((lambda (x) x) (lambda x x)))
@@ -387,7 +444,7 @@
       (define-syntax define-values
          (syntax-rules (list)
             ((define-values (val ...) . body)
-               (ol:set (val ...)
+               (setq (val ...)
                   (let* ((val ... (begin . body)))
                      (list val ...))))))
 
@@ -395,7 +452,7 @@
       (define-syntax let*-values
          (syntax-rules ()
             ((let*-values (((var ...) gen) . rest) . body)
-               (receive gen
+               (apply-values gen
                   (lambda (var ...) (let*-values rest . body))))
             ((let*-values () . rest)
                (begin . rest))))
@@ -418,21 +475,6 @@
       ; Built-in procedures that can easily be written in terms of other built-in procedures are
       ; identified as ``library procedures''.
       ;
-
-      ; this is temporary simlified 'assert' that use 'eq?', please be careful!
-      (define-syntax assert
-         (syntax-rules (eq? list ==>)
-            ((assert expression)
-               (assert expression ==> #true))
-            ((assert expression ==> result)
-               (if (eq? expression (quote result)) #true
-                  ((raw 16 '(27 4 5 6 7 8  24 8)) ; (sys a b c d)
-                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) '()))))))))
-;            ((assert result expression . stuff)
-;               (if (eq? expression result) #t
-;                  ((raw type-bytecode '(27 4 5 6 7 8  24 8))
-;                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons result '()))))))))
-;                 (call/cc (λ (resume) (sys resume 5 "Assertion error: " (list (quote expression) (quote stuff)))))
 
       ;; ---------------------------
       ;; 6.1  Equivalence predicates
@@ -644,10 +686,10 @@
 ;      (define type-complex          43) ; reference
 
       ;define type-fix+              0) ; value
-      (define type-pair              1) ; reference
-      (define type-tuple             2) ; reference
-      (define type-string            3) ; reference, raw -> 35 (#b100000 + 3)?
-      (define type-symbol            4) ; reference
+      (define type-pair              TPAIR)   ; reference
+      (define type-tuple             TTUPLE)  ; reference
+      (define type-string            TSTRING) ; reference, raw -> 35 (#b100000 + 3)?
+      (define type-symbol            TSYMBOL) ; reference
       ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
       ; 6
       ; 7
@@ -663,7 +705,7 @@
       (define type-rlist-node       14) ; reference
       (define type-vector-dispatch  15) ; reference
 
-      (define type-bytecode         16) ; reference, raw     ; declared functions (?)
+      (define type-bytecode         TBYTECODE) ; reference, raw     ; declared functions (?)
       (define type-proc             17) ; reference          ; from otus lisp bin (?)
       (define type-clos             18) ; reference          ; from (import smth) (?)
 
@@ -697,22 +739,22 @@
       ;      Note: Programmers accustomed to other dialects of Lisp should be aware that Scheme
       ;            distinguishes both #f and the empty list from the symbol nil.
       ; Boolean constants evaluate to themselves, so they do not need to be quoted in programs.
-      (assert #t                                     ==>  #t)
-      (assert #f                                     ==>  #f)
-      (assert (quote #f)                             ==>  #f)
+      (assert #t                                ===>  #t)
+      (assert #f                                ===>  #f)
+      (assert (quote #f)                        ===>  #f)
 
 
       ; library procedure:  (not obj)
       (define (not x)
          (if x #false #true))
 
-      (assert (not #t)                               ==>  #f)
-      (assert (not 3)                                ==>  #f)
-      (assert (not '(3 . 0))                         ==>  #f)
-      (assert (not #f)                               ==>  #t)
-      (assert (not '())                              ==>  #f)
-      (assert (not cons)                             ==>  #f)
-      (assert (not 'nil)                             ==>  #f)
+      (assert (not #t)                          ===>  #f)
+      (assert (not 3)                           ===>  #f)
+      (assert (not '(3 . 0))                    ===>  #f)
+      (assert (not #f)                          ===>  #t)
+      (assert (not '())                         ===>  #f)
+      (assert (not cons)                        ===>  #f)
+      (assert (not 'nil)                        ===>  #f)
 
 
       ; library procedure:  (boolean? obj)
@@ -722,9 +764,9 @@
             ((eq? o #false) #true)
             (else #false)))
 
-      (assert (boolean? #f)                          ==>  #t)
-      (assert (boolean? 0)                           ==>  #f)
-      (assert (boolean? '())                         ==>  #f)
+      (assert (boolean? #f)                          ===>  #t)
+      (assert (boolean? 0)                           ===>  #f)
+      (assert (boolean? '())                         ===>  #f)
 
 
       ; Оставить здесь только самые абзово необходимые вещи, все остальное переместить в:
@@ -743,16 +785,21 @@
       (define (pair? o)
          (eq? (type o) type-pair))
 
-      (assert (pair? '(a . b))                       ==>  #t)
-      (assert (pair? '(a b c))                       ==>  #t)
-      (assert (pair? '())                            ==>  #f)
-      (assert (pair? '#(a b))                        ==>  #f)
+      (assert (pair? '(a . b))                       ===>  #t)
+      (assert (pair? '(a b c))                       ===>  #t)
+      (assert (pair? '())                            ===>  #f)
+      (assert (pair? '#(a b))                        ===>  #f)
 
       ; procedure:  (cons obj1 obj2)    * builtin
       ; procedure:  (car pair)          * builtin
       ; procedure:  (cdr pair)          * builtin
-      ; procedure:  (set-car! pair obj) * builtin (not implemented yet)
-      ; procedure:  (set-cdr! pair obj) * builtin (not implemented yet)
+      ; procedure:  (set-car! pair obj)
+      (define (set-car! o v)
+         (set-ref! o 1 v))
+
+      ; procedure:  (set-cdr! pair obj)
+      (define (set-cdr! o v)
+         (set-ref! o 2 v))
 
       ; library procedure:  (caar pair) <- (r5rs lists)
       ; library procedure:  (cadr pair) <- (r5rs lists)
@@ -762,7 +809,7 @@
 
       ; library procedure:  (null? obj)
       (define (null? x)
-         (eq? x '()))
+         (eq? x #null))
 
       ; library procedure:  (list? obj)
       (define (list? l)
@@ -783,14 +830,14 @@
          (let loop ((n 0) (l l))
             (if (null? l)
                n
-               (receive (vm:add n 1)
+               (apply-values (vm:add n 1)
                   (lambda (n carry)
 ;                     (if carry (runtime-error ...))
                      (loop n (cdr l)))))))
 
-      (assert (length '(a b c))                      ==>  3)
-      (assert (length '(a (b) (c d e)))              ==>  3)
-      (assert (length '())                           ==>  0)
+      (assert (length '(a b c))                      ===>  3)
+      (assert (length '(a (b) (c d e)))              ===>  3)
+      (assert (length '())                           ===>  0)
 
 
 
@@ -900,7 +947,8 @@
          (or (function? o) (ff? o)))
 
 
-      ; procedure:  (apply proc arg1 ... args)  *builtin
+      ; procedure:  (apply proc arg1 ... args)  * builtin
+      (define apply      (vm:raw TBYTECODE `(,APPLY))) ; todo: add to vm and add arity check
 
       ; library procedure:  (map proc list1 list2 ...)
 ;      (define (map fn lst)
@@ -934,15 +982,14 @@
 
        ; procedure:  (call-with-current-continuation proc)
        ; Continuation - http://en.wikipedia.org/wiki/Continuation
-       (define apply-cont (raw type-bytecode '(#x54)))  ;; не экспортим, внутренняя
-
+       (define apply/cc (vm:raw TBYTECODE `(,APPLY/CC)))
        (define call-with-current-continuation
           ('_sans_cps
              (λ (k f)
                 (f k (case-lambda
                         ((c a) (k a))
                         ((c a b) (k a b))
-                        ((c . x) (apply-cont k x))))))) ; (apply-cont k x)
+                        ((c . x) (apply/cc k x)))))))
 
        (define call/cc call-with-current-continuation)
 
@@ -978,7 +1025,7 @@
       (define-syntax tuple
          (syntax-rules ()
             ((tuple a . bs) ;; there are no such things as 0-tuples
-               (mkt 2 a . bs))))
+               (vm:new 2 a . bs))))
 
       ; replace this with typed destructuring compare later on
 
@@ -990,12 +1037,12 @@
             ;;; bind if the first value (literal) matches first of pattern
             ((tuple-case 42 tuple type ((this . vars) . body) . others)
                (if (eq? type (quote this))
-                  (bind tuple
+                  (tuple-apply tuple
                      (lambda (ignore . vars) . body))
                   (tuple-case 42 tuple type . others)))
             ;;; bind to anything
             ((tuple-case 42 tuple type ((_ . vars) . body) . rest)
-               (bind tuple
+               (tuple-apply tuple
                   (lambda (ignore . vars) . body)))
             ;;; an else case needing the tuple
             ((tuple-case 42 tuple type (else is name . body))
@@ -1055,9 +1102,9 @@
       (define-syntax call-with-values
          (syntax-rules ()
             ((call-with-values (lambda () exp) (lambda (arg ...) body))
-               (receive exp (lambda (arg ...) body)))
+               (apply-values exp (lambda (arg ...) body)))
             ((call-with-values thunk (lambda (arg ...) body))
-               (receive (thunk) (lambda (arg ...) body)))))
+               (apply-values (thunk) (lambda (arg ...) body)))))
 
 
 
@@ -1096,8 +1143,6 @@
 ;      (define i (λ (x) x))
 ;
 ;      (define self i)
-;
-;      ; (define call/cc  ('_sans_cps (λ (k f) (f k (λ (r a) (k a))))))
 ;
 ;      (define (i x) x)
 ;      (define (k x y) x)
@@ -1161,11 +1206,11 @@
 ;               (define op
 ;                  (letrec ((op (lambda args body))) op)))
 ;            ((define name (lambda (var ...) . body))
-;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
-;;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
-;;               (ol:set name (ol:let (name) ((lambda (var ...) . body)) name)))
+;               (setq name (ol:let (name) ((lambda (var ...) . body)) name)))
+;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
+;               (setq name (ol:let (name) ((lambda (var ...) . body)) name)))
 ;            ((define op val)
-;               (ol:set op val))))
+;               (setq op val))))
 
       ; 4.1.2 Literal expressions
       ; ...
@@ -1205,8 +1250,6 @@
 
 
       ;; essential procedure: apply proc args
-      ;; procedure: apply proc arg1 ... args
-      (define apply      (raw type-bytecode '(#x14)))  ;; <- no arity, just call 20
 
       ;; ...
 
@@ -1220,26 +1263,44 @@
             ((lets/cc var . body)
                (call/cc (λ (var) (lets . body))))))
 
-      ; internal, todo: to be created and renamed
-      (define sys (raw 16 '(27 4 5 6 7 8  24 8)))
-
-      ; differs from previous by using (equal?) instead of (eq?)
+      ; real assert. differs from temporary by using equal? instead of eq?
       (define-syntax assert
-         (syntax-rules (equal? list ==>)
-            ((assert expression)
-               (assert expression ==> #true))
-            ((assert expression ==> result)
-               (if (equal? expression (quote result)) #true
-                  ((raw 16 '(27 4 5 6 7 8  24 8))
-                     '() 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) '()))))))))
+         (syntax-rules (===>)
+            ((assert expression ===> result)
+               (if (not (equal? expression (quote result)))
+                  (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 
-      (define (runtime-error reason info) ; todo: move to (owl mcp)?
-         (call/cc (λ (resume) (sys resume 5 reason info))))
+      (define (runtime-error reason info)
+         (call/cc (λ (resume) (vm:sys resume 5 reason info))))
       (define error runtime-error)
+
+
+      ;; used syscalls
+      (define (exec function . args) (syscall 59 function args #f))
+      (define (yield)                (syscall 1022 0 #false #false))
+
+      (define (halt n)               (syscall 60 n n n))
+
+      ;; stop the vm *immediately* without flushing input or anything else with return value n
+      ;; make thread sleep for a few thread scheduler rounds
+      (define (set-ticker-value n) (syscall 1022 n #false #false))
+      (define (wait n)
+         (if (eq? n 0)
+            n
+            (let* ((n _ (vm:sub n 1)))
+               (set-ticker-value 0)
+               (wait n))))
+
+
+      ;; special things exposed by the vm
+      (define (set-memory-limit n) (syscall 12 n #f #f))
+      (define (get-word-size)      (syscall 1008 #false #false #false))
+      (define (get-memory-limit)   (syscall 12 #f #f #f))
 )
 ; ---------------------------
    (export
-      λ syntax-error assert error runtime-error
+      λ
+      syntax-error assert error runtime-error
 
       if cond case and or not
       letrec letrec* let let* let*-values lets
@@ -1304,4 +1365,11 @@
       bytecode? function? ff?
 
       map list?
+
+      exec yield
+      halt wait
+      set-ticker-value
+      set-memory-limit get-word-size get-memory-limit
+
+      set-car! set-cdr!
 ))

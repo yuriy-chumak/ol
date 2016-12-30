@@ -11,6 +11,7 @@
       lfold lfoldr lmap lappend    ; main usage patterns
       lfor liota liter lnums
       lzip ltake llast llen
+      lcar lcdr ledit
       ldrop llref
       pair tail uncons
       force-ll                ; ll -> list
@@ -160,6 +161,18 @@
                (liota-walk-one pos end))
             (liota-walk pos step end)))      ; general lrange
 
+      (define (ledit op l)
+         (cond
+            ((pair? l)
+               (let ((x (op (car l))))
+                  (if x
+                     (append x (ledit op (cdr l)))
+                     (cons (car l) (ledit op (cdr l))))))
+            ((null? l) l)
+            (else 
+               (lambda ()
+                  (ledit op (l))))))
+
       (define (liter op st)
          (pair st (liter op (op st))))
 
@@ -282,5 +295,9 @@
                   (loop (cdr ll) (+ sum (car ll)) (+ len 1)))
                (else
                   (loop (ll) sum len)))))
+
+      (define (lcar ll) (if (pair? ll) (car ll) (lcar (ll))))
+
+      (define (lcdr ll) (if (pair? ll) (cdr ll) (lcdr (ll))))
 
 ))
