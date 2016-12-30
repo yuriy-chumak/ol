@@ -44,8 +44,33 @@ REQUIREMENTS
 ------------
 
 For un*x you should have GCC >3.2 installed.
+
 For windows you should have MINGW installed.
+
 For un*x you maybe want MAKE installed also.
+
+
+DOWNLOAD / INSTALLATION
+-----------------------
+
+Installation packages for CentOS 6 (x86, amd64), CentOS 7 (amd64),
+Debian 7 (x86, amd64), Debian 8 (x86, amd64), Fedora 22 (x86, amd64),
+Fedora 23 (x86, amd64), RHEL 5 (x86, amd64), RHEL 6 (x86, amd64),
+RHEL 7 (amd64), SLE 10 (x86, amd64), SLE 11 (x86, amd64), SLE 12 (amd64),
+ScientificLinux 6 (x86, amd64), ScientificLinux 7 (amd64),
+Univention 3.2 (x86, amd64), Univention 4.0 (x86, amd64),
+openSUSE 13.1 (x86, amd64), openSUSE 13.2 (x86, amd64), openSUSE Factory
+(aarch64, armv7l), openSUSE Leap 42.1 (amd64), openSUSE Tumbleweed (x86, amd64),
+Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l),
+Ubuntu 16.04 (x86, amd64) can be found at
+[openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
+
+Installation packages for Windows (x86, amd64) on the way.
+
+Precompiled binaries for Android (arm64-v8a, armeabi, armeabi-v7a,
+mips, mips64, x86, x86_64) on the way.
+
+Precompiled binary for Odroid (Ubuntu 14.04, armv7l) on the way.
 
 
 BUILD
@@ -168,30 +193,6 @@ Please note that external libraries (like opengl, sqlite, etc.)
 support require HAS_PINVOKE enabled.
 
 For embedding OL into your project check the EMBEDDED OL section.
-
-
-INSTALLATION
-------------
-
-You can get precompiled binaries for Linux (CentOS, Debian,
-Fedora, RHEL, SLE, SL, Univention, OpenSUSE, Ubuntu) at
-[openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
-
-#### OR
-
-You can create .deb packet for linux-64 using
-
-    $ make debian-amd64-package
-
-No precompiled binaries for windows, android, macOS, webOS still
-yet, you must manually copy compiled by yourself 'ol' executable
-to any appropriate place, for example
-
-    > copy ol.exe C:\WINDOWS\COMMAND
-
-For un*x simply type
-
-    $ make install
 
 
 RUNNING
