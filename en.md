@@ -12,6 +12,14 @@ It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Do
 
    You can use it on Linux (CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu, etc.), Windows, *BSD, Android, webOS, Odroid. It runs on x86, arm, mips, ppc architectures with 32- and 64-bit platforms.
 
+
+### Breaking news
+
+   Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Merry Christmas and happy lisping!
+
+
+### Summary (continue)
+
    You can immediately try Otus Lisp (ol) in the provided terminal on the left of this page. For example, type
 <pre><code id="sample1" data-language="scheme">(+ 1 2 3 4 5 6 7)</code><button class="doit" onclick="doit(sample1.textContent)">send to the terminal</button></pre>
    After pressing "Enter" button you will receive *28*.
@@ -48,6 +56,9 @@ which is another way of
    I'm working for add more prebuilts.
 
 ### Project news
+
+  * Fri 30 Dec 2016 17:06 EET
+    * release 1.1 ready to download.
 
   * Wed 28 Dec 2016 18:15 EET
     * preparing the release 1.1
