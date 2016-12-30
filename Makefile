@@ -115,14 +115,14 @@ create-debian-package = \
 	find .$(PREFIX) -type f       > DEBIAN/conffiles;\
 	\
 	echo Package: ol              > DEBIAN/control;\
-	echo Version: 1.0.0           >>DEBIAN/control;\
+	echo Version: 1.1             >>DEBIAN/control;\
 	echo Architecture: $2         >>DEBIAN/control;\
 	echo Maintainer: Yuriy Chumak >>DEBIAN/control;\
 	echo Priority: optional       >>DEBIAN/control;\
 	echo Description: Otus Lisp - a purely \(mostly\) functional dialect of Lisp \
 	                              >>DEBIAN/control;\
 	\
-	fakeroot dpkg -b . ../ol_1.0_$2.deb
+	fakeroot dpkg -b . ../ol_1.1_$2.deb
 
 debian-amd64-package:
 	$(call create-debian-package,Build,amd64)

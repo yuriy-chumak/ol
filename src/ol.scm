@@ -62,7 +62,7 @@
 ;; shared parameters, librarize later or remove if possible
 
 ;; http://semver.org/lang/ru/
-(define *owl-version* "1.1.0")
+(define *owl-version* "1.1")
 (define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
 (define max-object-size #xffff)  ; todo: change as dependent of word size
 
