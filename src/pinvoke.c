@@ -968,6 +968,9 @@ word* pinvoke(OL* self, word* arguments)
 //		case TRAWVALUE:
 //			args[i] = (word)arg;
 //			break;
+   	case TVOID:
+			args[i] = 0;
+			break;
 		default:
 			STDERR("can't recognize %d type", type);
 		}

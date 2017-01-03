@@ -681,8 +681,8 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 #define is_vptr(ob)                 (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
 #define is_callback(ob)             (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TCALLBACK, 2, 0))
 
-#define is_number(ob)               (is_npair(ob)  || is_fix(ob))
-#define is_numbern(ob)              (is_npairn(ob) || is_fixn(ob))
+#define is_number(ob)               (is_fix(ob) || is_npair(ob))
+#define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
 
 
 // взять значение аргумента:
@@ -1446,9 +1446,9 @@ void* runtime(OL* ol);  // главный цикл виртуальной маш
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
-long callback(OL* ol, int id, long* argi
+long callback(OL* ol, int id, int_t* argi
 #if __amd64__
-		, double* argf, long* rest
+		, double* argf, int_t* rest
 #endif
 		);
 #include "olni.c"
@@ -3771,7 +3771,10 @@ done:;
 
 	ol->heap.fp = fp;
 
-	return (void*)untoi(ol->R[3]);
+	if (is_number(R[3]))
+		return (void*)untoi(R[3]);
+	else
+		return (R[3] == IFALSE) ? (void*)0 : (void*)1;
 }
 
 // ======================================================================
@@ -3929,24 +3932,6 @@ unsigned char* language = NULL;
 int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
-
-/*	for (int i = 0; i < 12345678; i++) {
-		word p = F(i);
-		word n = F(i) | 0x80;
-
-		if (svtoi(p) != svtoI(p))
-			exit(88);
-		if (svtoi(n) != svtoI(n))
-			exit(89);
-	}*/
-
-/*	word x = (123 << IPOS) + (1 << 7) + 2;
-	int i = ({
-		SVTOI_CHECK(x);
-		int sign = (intptr_t)(x << (8*sizeof(uintptr_t) - IPOS)) >> (8*sizeof(intptr_t) - 1);
-		int number = ((x >> IPOS) ^ sign) - sign;
-		number; });
-*/
 
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
