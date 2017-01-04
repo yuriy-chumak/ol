@@ -41,8 +41,8 @@
 
       ; todo: rename to extended-alphabetic-chars
 ;     (define special-symbol-chars (string->bytes "!$%&*+-/:<=>?@^_~")) ; dot(.) reserved for numbers, sorry.
-      (define special-initial-chars (string->bytes "!$%&*+-/:<=>?^_~"))
-      (define special-subseqent-chars (string->bytes "@")) ; . must be too
+      (define special-initial-chars (string->runes "!$%&*+-/:<=>?^_~"))
+      (define special-subseqent-chars (string->runes "@")) ; . must be too
 
       (define (symbol-lead-char? n)
          (or 

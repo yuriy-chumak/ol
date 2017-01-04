@@ -126,7 +126,7 @@
          (get-byte-if (λ (x) (has? bytes x))))
 
       (define (get-word str val)
-         (let ((bytes (string->bytes str)))
+         (let ((bytes (string->runes str)))
             (λ (lst ok fail pos)
                (let loop ((bytes bytes) (lst lst) (fail fail) (pos pos))
                   (if (null? bytes)
@@ -140,7 +140,7 @@
 
       ;; fixme: not correct yet
       (define (get-word-ci str val)
-         (let ((bytes (string->bytes str)))
+         (let ((bytes (string->runes str)))
             (λ (lst ok fail pos)
                (let loop ((bytes bytes) (lst lst) (fail fail) (pos pos))
                   (if (null? bytes)
