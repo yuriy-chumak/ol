@@ -102,7 +102,7 @@
   (define IDOK 1)
   (define IDCANCEL 2)
 
-  (define MessageBox (dlsym user32 (__stdcall int) "MessageBoxA" HWND LPCTSTR LPCTSTR UINT))
+  (define MessageBox (dlsym user32 (__stdcall int) "MessageBoxW" HWND type-string-wide type-string-wide UINT))
     (define MB_OK 0)
     (define MB_OKCANCEL 1)
     (define MB_ICONASTERISK 64)

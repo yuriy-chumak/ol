@@ -686,8 +686,8 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 
 
 // взять значение аргумента:
-#define value(x)                    ({ assert(is_value(x));     (((word)(x)) >> IPOS); })
-#define reference(x)                ({ assert(is_reference(x)); *(word*)(x); })
+#define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
+#define reference(v)                ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
 
 #define ref(ob, n)                  (((word*)(ob))[n])
 #define car(ob)                     ref(ob, 1)

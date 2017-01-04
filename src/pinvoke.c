@@ -2,7 +2,7 @@
  * PInvoke - Platform Invoke
  * (nsfc - Native System Function Calls)
  *
- * а тут у нас реализация pinvoke механизма. пример в lib/opengl.scm, lib/sqlite.scm, etc.
+ * Р° С‚СѓС‚ Сѓ РЅР°СЃ СЂРµР°Р»РёР·Р°С†РёСЏ pinvoke РјРµС…Р°РЅРёР·РјР°. РїСЂРёРјРµСЂ РІ lib/opengl.scm, lib/sqlite.scm, etc.
  */
 #if HAS_PINVOKE
 
@@ -111,7 +111,7 @@ long long x64_call(word argv[], long argc, void* function, long type);
 // calling convention by default. Space is allocated on the call stack as a
 // shadow store for callees to save those registers. There is a strict one-to-one
 // correspondence between the arguments to a function call and the registers
-// used for those arguments. Any argument that doesn’t fit in 8 bytes, or is
+// used for those arguments. Any argument that doesnвЂ™t fit in 8 bytes, or is
 // not 1, 2, 4, or 8 bytes, must be passed by reference. There is no attempt
 // to spread a single argument across multiple registers. The x87 register
 // stack is unused. It may be used by the callee, but must be considered volatile
@@ -124,7 +124,7 @@ long long x64_call(word argv[], long argc, void* function, long type);
 //
 // The caller is responsible for allocating space for parameters to the callee,
 // and must always allocate sufficient space to store four register parameters,
-// even if the callee doesn’t take that many parameters.
+// even if the callee doesnвЂ™t take that many parameters.
 
 // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
 // rcx, rdx, r8, r9 (xmm0, xmm1, ..., xmm3) are arguments,
@@ -141,7 +141,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"movq  %rsp, %rbp",
 
 	"pushq %r9",
-	"andl  $-16, %esp", // выравняем стек по 16-байтовой границе
+	"andl  $-16, %esp", // РІС‹СЂР°РІРЅСЏРµРј СЃС‚РµРє РїРѕ 16-Р±Р°Р№С‚РѕРІРѕР№ РіСЂР°РЅРёС†Рµ
 
 	// get count of arguments:
 	"xor   %rax, %rax",
@@ -152,9 +152,9 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"subq  $4, %rax",
 	"jbe   4f",
 
-	// довыровняем стек, так как:
+	// РґРѕРІС‹СЂРѕРІРЅСЏРµРј СЃС‚РµРє, С‚Р°Рє РєР°Рє:
 	//  The stack pointer must be aligned to 16 bytes in any region of code
-	//  that isn’t part of an epilog or prolog, except within leaf functions.
+	//  that isnвЂ™t part of an epilog or prolog, except within leaf functions.
 	"movq  %rax, %rdx",
 	"andq  $1, %rdx",
 	"leaq  -16(%rsp,%rdx,8), %rsp",
@@ -165,7 +165,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"decq  %rax",
 	"jnz   1b",
 
-	// 4. заполним обычные rcx, rdx, ... не проверяя количество аргументов и их тип, так будет быстрее
+	// 4. Р·Р°РїРѕР»РЅРёРј РѕР±С‹С‡РЅС‹Рµ rcx, rdx, ... РЅРµ РїСЂРѕРІРµСЂСЏСЏ РєРѕР»РёС‡РµСЃС‚РІРѕ Р°СЂРіСѓРјРµРЅС‚РѕРІ Рё РёС… С‚РёРї, С‚Р°Рє Р±СѓРґРµС‚ Р±С‹СЃС‚СЂРµРµ
 "4:",
 	"movq  %r8, %rax",
 	"movsd 24(%rcx), %xmm3", "mov  24(%rcx), %r9",
@@ -174,7 +174,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"movsd  0(%rcx), %xmm0", "mov  0(%rcx), %rcx",
 	"subq $32, %rsp", // extra free space for call
 	"call *%rax",
-	// вернем результат
+	// РІРµСЂРЅРµРј СЂРµР·СѓР»СЊС‚Р°С‚
 	"cmpl $46, -8(%rbp)", // TFLOAT
 	"je   51f",
 	"cmpl $47, -8(%rbp)", // TDOUBLE
@@ -187,7 +187,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"cvtss2sd %xmm0, %xmm0", // float->double
 "52:",
 	"movsd %xmm0, (%rsp)",
-	"pop   %rax", // можно попать, так как уже пушнули один r9 вверху (оптимизация)
+	"pop   %rax", // РјРѕР¶РЅРѕ РїРѕРїР°С‚СЊ, С‚Р°Рє РєР°Рє СѓР¶Рµ РїСѓС€РЅСѓР»Рё РѕРґРёРЅ r9 РІРІРµСЂС…Сѓ (РѕРїС‚РёРјРёР·Р°С†РёСЏ)
 	"jmp   9b");
 
 # else      // System V (unix, linux, osx)
@@ -204,7 +204,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 
 	"pushq %r9",
 	"andq  $-16, %rsp",
-	// 1. если есть флоаты, то заполним их
+	// 1. РµСЃР»Рё РµСЃС‚СЊ С„Р»РѕР°С‚С‹, С‚Рѕ Р·Р°РїРѕР»РЅРёРј РёС…
 "1:",
 //	"testq %rcx, %rcx",
 //	"jz    2f",
@@ -219,7 +219,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 //	"cmpq  $9,%rcx", // temp
 //	"jne   2f",      // temp
 //	"int   $3",      // temp
-	// 2. проверим на "стековые" аргументы
+	// 2. РїСЂРѕРІРµСЂРёРј РЅР° "СЃС‚РµРєРѕРІС‹Рµ" Р°СЂРіСѓРјРµРЅС‚С‹
 "2:",
 	"xorq  %rax, %rax",
 	"subq  $8, %rcx",
@@ -229,10 +229,10 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 	"addq  %rcx, %rax", // = max(rdx-6, 0) + max(rcx-8, 0)
 	"testq %rax, %rax",
 	"jz    4f", // no agruments for push to stack
-	// забросим весь оверхед в стек с учетом очередности и маски
+	// Р·Р°Р±СЂРѕСЃРёРј РІРµСЃСЊ РѕРІРµСЂС…РµРґ РІ СЃС‚РµРє СЃ СѓС‡РµС‚РѕРј РѕС‡РµСЂРµРґРЅРѕСЃС‚Рё Рё РјР°СЃРєРё
 "3:",
 	"andq  $1, %rax",
-	"leaq  -16(%rsp,%rax,8),%rsp", // выравнивание стека по 16-байтной границе
+	"leaq  -16(%rsp,%rax,8),%rsp", // РІС‹СЂР°РІРЅРёРІР°РЅРёРµ СЃС‚РµРєР° РїРѕ 16-Р±Р°Р№С‚РЅРѕР№ РіСЂР°РЅРёС†Рµ
 
 	"leaq  -8(%rdi,%rdx,8), %rax",
 	"leaq  56(%rsi,%rcx,8), %rsi", // last float argument  (if any) 56=8*8-8
@@ -243,7 +243,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 	"jc    33f", // bit 0 was set, so push float value
 "32:", // push fixed
 	"cmpq  $0, %rdx",
-	"jle   31b", // нету больше аргументов для fixed пуша
+	"jle   31b", // РЅРµС‚Сѓ Р±РѕР»СЊС€Рµ Р°СЂРіСѓРјРµРЅС‚РѕРІ РґР»СЏ fixed РїСѓС€Р°
 	"pushq (%rax)",
 	"subq  $8, %rax",
 	"decq  %rdx",
@@ -253,7 +253,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 	"jmp   31b",
 "33:", // push float
 	"cmpq  $0, %rcx",
-	"jle   31b", // нету больше аргументов для float пуша
+	"jle   31b", // РЅРµС‚Сѓ Р±РѕР»СЊС€Рµ Р°СЂРіСѓРјРµРЅС‚РѕРІ РґР»СЏ float РїСѓС€Р°
 	"pushq (%rsi)",
 	"subq  $8, %rsi",
 	"decq  %rcx",
@@ -262,7 +262,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 	"jle   4f",
 	"jmp   31b",
 
-	// 4. не проверяем количество аргументов, так будет быстрее
+	// 4. РЅРµ РїСЂРѕРІРµСЂСЏРµРј РєРѕР»РёС‡РµСЃС‚РІРѕ Р°СЂРіСѓРјРµРЅС‚РѕРІ, С‚Р°Рє Р±СѓРґРµС‚ Р±С‹СЃС‚СЂРµРµ
 "4:",
 	"movq  40(%rdi), %r9",
 	"movq  32(%rdi), %r8",
@@ -273,7 +273,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 
 	"callq *-8(%rbp)",
 
-	// вернем результат
+	// РІРµСЂРЅРµРј СЂРµР·СѓР»СЊС‚Р°С‚
 	"cmpl $46, 16(%rbp)", // TFLOAT
 	"je   5f",
 	"cmpl $47, 16(%rbp)", // TDOUBLE
@@ -308,8 +308,8 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 // and ST1 to ST7 must be empty on exiting a function. ST0 must also be
 // empty when not used for returning a value.
 //
-// В нашем случае мы так или иначе восстанавливаем указатель стека, так что
-// функция x86_call у нас будет универсальная cdecl/stdcall
+// Р’ РЅР°С€РµРј СЃР»СѓС‡Р°Рµ РјС‹ С‚Р°Рє РёР»Рё РёРЅР°С‡Рµ РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј СѓРєР°Р·Р°С‚РµР»СЊ СЃС‚РµРєР°, С‚Р°Рє С‡С‚Рѕ
+// С„СѓРЅРєС†РёСЏ x86_call Сѓ РЅР°СЃ Р±СѓРґРµС‚ СѓРЅРёРІРµСЂСЃР°Р»СЊРЅР°СЏ cdecl/stdcall
 long x86_call(word argv[], long i, void* function, long type);
 
 __ASM__("x86_call:_x86_call:", //"int $3",
@@ -329,7 +329,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 "1:",
 	"call  *16(%ebp)",
 
-	"movl  20(%ebp), %ecx", // проверка возвращаемого типа
+	"movl  20(%ebp), %ecx", // РїСЂРѕРІРµСЂРєР° РІРѕР·РІСЂР°С‰Р°РµРјРѕРіРѕ С‚РёРїР°
 	"cmpl  $46, %ecx",      // TFLOAT
 	"je    3f",
 	"cmpl  $47, %ecx",      // TDOUBLE
@@ -338,7 +338,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"leave",
 	"ret",
 
-// с плавающей точкой мы всегда возвращаем double
+// СЃ РїР»Р°РІР°СЋС‰РµР№ С‚РѕС‡РєРѕР№ РјС‹ РІСЃРµРіРґР° РІРѕР·РІСЂР°С‰Р°РµРј double
 "3:", // double
 	"pushl %edx",
 	"pushl %eax",
@@ -367,11 +367,11 @@ word* pinvoke(OL* self, word* arguments)
 	// thiscall(ms)
 	typedef long long ret_t;
 
-		// todo: ограничиться количеством функций поменьше
-		//	а можно сделать все в одной switch:
-		// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
-		// todo: проанализировать частоту количества аргументов и переделать все в
-		//   бинарный if
+		// todo: РѕРіСЂР°РЅРёС‡РёС‚СЊСЃСЏ РєРѕР»РёС‡РµСЃС‚РІРѕРј С„СѓРЅРєС†РёР№ РїРѕРјРµРЅСЊС€Рµ
+		//	Р° РјРѕР¶РЅРѕ СЃРґРµР»Р°С‚СЊ РІСЃРµ РІ РѕРґРЅРѕР№ switch:
+		// todo: Р° РјРѕР¶РЅРѕ Р»СЏРјР±РґРѕР№ РѕС„РѕСЂРјРёС‚СЊ Рё Р·Р°СЃСѓРЅСѓС‚СЊ СЌС‚Сѓ Р»СЏР±РјРґСѓ РІ С„СѓРЅРєС†РёСЋ РµС‰Рµ РІ get-proc-address
+		// todo: РїСЂРѕР°РЅР°Р»РёР·РёСЂРѕРІР°С‚СЊ С‡Р°СЃС‚РѕС‚Сѓ РєРѕР»РёС‡РµСЃС‚РІР° Р°СЂРіСѓРјРµРЅС‚РѕРІ Рё РїРµСЂРµРґРµР»Р°С‚СЊ РІСЃРµ РІ
+		//   Р±РёРЅР°СЂРЅС‹Р№ if
 
 		// __attribute__((stdcall))
 /*						__stdcall // gcc style for lambdas in pure C
@@ -527,8 +527,8 @@ word* pinvoke(OL* self, word* arguments)
 
 	// lisp->c convertors
 	long from_int(word arg) {
-		// так как в стек мы все равно большое сложить не сможем, то возьмем
-		// только то, что влазит (первые два члена) (временное решение!)
+		// С‚Р°Рє РєР°Рє РІ СЃС‚РµРє РјС‹ РІСЃРµ СЂР°РІРЅРѕ Р±РѕР»СЊС€РѕРµ СЃР»РѕР¶РёС‚СЊ РЅРµ СЃРјРѕР¶РµРј, С‚Рѕ РІРѕР·СЊРјРµРј
+		// С‚РѕР»СЊРєРѕ С‚Рѕ, С‡С‚Рѕ РІР»Р°Р·РёС‚ (РїРµСЂРІС‹Рµ РґРІР° С‡Р»РµРЅР°) (РІСЂРµРјРµРЅРЅРѕРµ СЂРµС€РµРЅРёРµ!)
 //		assert (is_value(arg[1]));
 //		assert (is_reference(arg[2]));
 
@@ -536,7 +536,7 @@ word* pinvoke(OL* self, word* arguments)
 	}
 
 	float from_int_to_float(word* arg) {
-		// читаем длинное число в float формат
+		// С‡РёС‚Р°РµРј РґР»РёРЅРЅРѕРµ С‡РёСЃР»Рѕ РІ float С„РѕСЂРјР°С‚
 		assert (is_value(car(arg)));
 		float f = (unsigned long)uvtoi(car(arg));
 		float mul = 0x1000000; // 1 << 24 //?
@@ -624,7 +624,7 @@ word* pinvoke(OL* self, word* arguments)
 		return 0;
 	}
 
-	// todo: заменить на вызов (float)to_double(arg)
+	// todo: Р·Р°РјРµРЅРёС‚СЊ РЅР° РІС‹Р·РѕРІ (float)to_double(arg)
 	float to_float(word arg) {
 		if (is_value(arg))
 			return svtoi(arg);
@@ -676,23 +676,23 @@ word* pinvoke(OL* self, word* arguments)
 	// C[1] = return-type
 	// C[2] = argument-types
 
-	// todo: может выделять в общей куче,а не стеке? (кстати, да!)
+	// todo: РјРѕР¶РµС‚ РІС‹РґРµР»СЏС‚СЊ РІ РѕР±С‰РµР№ РєСѓС‡Рµ,Р° РЅРµ СЃС‚РµРєРµ? (РєСЃС‚Р°С‚Рё, РґР°!)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = value(car(B));
 
-	word args[32]; // 16 double аргументов максимум
-	int i = 0;     // актуальное количество аргументов
+	word args[32]; // 16 double Р°СЂРіСѓРјРµРЅС‚РѕРІ РјР°РєСЃРёРјСѓРј
+	int i = 0;     // Р°РєС‚СѓР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ Р°СЂРіСѓРјРµРЅС‚РѕРІ
 #if __amd64__ && __linux__ // LP64
-	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
-	int d = 0;     // количество аргументов для float (amd64)
-	long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
+	double ad[18]; // Рё РґР»СЏ С„Р»РѕР°С‚РѕРІ РѕС‚РґРµР»СЊРЅС‹Р№ РјР°СЃСЃРёРІ (amd64 specific)
+	int d = 0;     // РєРѕР»РёС‡РµСЃС‚РІРѕ Р°СЂРіСѓРјРµРЅС‚РѕРІ РґР»СЏ float (amd64)
+	long floatsmask = 0; // РјР°СЃРєР° РґР»СЏ С„Р»РѕР°С‚РѕРІ // deprecated:, СЃС‚Р°СЂС€РёР№ РµРґРёРЅРёС‡РЅС‹Р№ Р±РёС‚ - РїСЂРёР·РЅР°Рє РєРѕРЅС†Р°
 #endif
 
-	word* p = (word*)C;   // сами аргументы
+	word* p = (word*)C;   // СЃР°РјРё Р°СЂРіСѓРјРµРЅС‚С‹
 	word* t = (word*)cdr (B); // rtty
 	int has_wb = 0; // has write-back in arguments (speedup)
 
-	while ((word)p != INULL) { // пока есть аргументы
+	while ((word)p != INULL) { // РїРѕРєР° РµСЃС‚СЊ Р°СЂРіСѓРјРµРЅС‚С‹
 		assert (reftype(p) == TPAIR); // assert(list)
 		assert (reftype(t) == TPAIR); // assert(list)
 
@@ -705,9 +705,9 @@ word* pinvoke(OL* self, word* arguments)
 			arg = ((word*)p[1])[2];
 		}*/
 
-		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
+		args[i] = 0; // РѕР±РЅСѓР»РёРј (С‚РµРїРµСЂСЊ РґР°Р»СЊС€Рµ СЃРјРѕР¶РµРј СЃРёРјСѓР»РёСЂРѕРІР°С‚СЊ РѕР±РЅСѓР»РµРЅРёРµ С‡РµСЂРµР· break)
 #if __amd64__ && __linux__ // LP64
-		floatsmask <<= 1; // подготовим маску к следующему аргументу
+		floatsmask <<= 1; // РїРѕРґРіРѕС‚РѕРІРёРј РјР°СЃРєСѓ Рє СЃР»РµРґСѓСЋС‰РµРјСѓ Р°СЂРіСѓРјРµРЅС‚Сѓ
 #endif
 
 		if (type == TANY) {
@@ -720,7 +720,7 @@ word* pinvoke(OL* self, word* arguments)
 
 		// destination type
 		switch (type) {
-		// целочисленные типы:
+		// С†РµР»РѕС‡РёСЃР»РµРЅРЅС‹Рµ С‚РёРїС‹:
 		case TINT: // <-- deprecated
 		case TLONG: // 32-bit for 32-bit arch, 64-bit for 64-bit arch
 			if (is_value(arg))
@@ -815,7 +815,7 @@ word* pinvoke(OL* self, word* arguments)
 		}
 		// todo: case TINT64 + 0x40:
 
-		// с плавающей запятой:
+		// СЃ РїР»Р°РІР°СЋС‰РµР№ Р·Р°РїСЏС‚РѕР№:
 		case TFLOAT:
 			#if __amd64__ && __linux__
 				*(float*)&ad[d++] = (float)to_double(arg);
@@ -874,8 +874,8 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		}
 
-		// запрос порта - это запрос значения порта
-		// todo: добавить тип "указатель на порт"
+		// Р·Р°РїСЂРѕСЃ РїРѕСЂС‚Р° - СЌС‚Рѕ Р·Р°РїСЂРѕСЃ Р·РЅР°С‡РµРЅРёСЏ РїРѕСЂС‚Р°
+		// todo: РґРѕР±Р°РІРёС‚СЊ С‚РёРї "СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РїРѕСЂС‚"
 		case TUSERDATA:
 		case TVPTR:
 			if ((word)arg == INULL || (word)arg == IFALSE)
@@ -907,7 +907,7 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		}
 
-		// todo: а может объединить TBVEC и TSTRING в один тип?
+		// todo: Р° РјРѕР¶РµС‚ РѕР±СЉРµРґРёРЅРёС‚СЊ TBVEC Рё TSTRING РІ РѕРґРёРЅ С‚РёРї?
 		// todo: change to is_rawdata
 		case TBVEC:
 		case TSTRING:
@@ -919,6 +919,7 @@ word* pinvoke(OL* self, word* arguments)
 			case TSTRING:
 				args[i] = (word) &car(arg);
 				break;
+			// todo: TSTRINGWIDE
 			default:
 				STDERR("invalid parameter values (requested string)");
 			}
@@ -936,6 +937,53 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		}
 
+		// todo: do fix for windows!
+		//    Windows uses UTF-16LE encoding internally as the memory storage
+		//    format for Unicode strings, it considers this to be the natural
+		//    encoding of Unicode text. In the Windows world, there are ANSI
+		//    strings (the system codepage on the current machine, subject to
+		//    total unportability) and there are Unicode strings (stored
+		//    internally as UTF-16LE).
+		#ifdef _WIN32
+		case TSTRINGWIDE:
+			if ((word)arg == INULL || (word)arg == IFALSE)
+				args[i] = (word) (void*)0;
+			else
+			switch (reftype(arg)) {
+			case TBVEC:
+			case TSTRING: {
+				word hdr = reference(arg);
+				int len = (hdrsize(hdr)-1)*sizeof(word) - padsize(hdr);
+				short* unicode = (short*) __builtin_alloca(len * sizeof(short)); // todo: use new()
+
+				short* p = unicode;
+				char* s = (char*)&car(arg);
+				for (int i = 1; i < len; i++)
+					*p++ = (short)(*s++);
+				*p = 0;
+
+				args[i] = (word) unicode;
+				break;
+			}
+			case TSTRINGWIDE: {
+				int len = hdrsize(reference(arg));
+				short* unicode = (short*) __builtin_alloca(len * sizeof(short)); // todo: use new()
+
+				short* p = unicode;
+				word* s = &car(arg);
+				for (int i = 1; i < len; i++)
+					*p++ = (short)value(*s++);
+				*p = 0;
+
+				args[i] = (word) unicode;
+			}
+				break;
+			default:
+				STDERR("invalid parameter values (requested string)");
+			}
+			break;
+		#endif
+
 		case TCALLBACK: {
 			if (is_callback(arg)) {
 				args[i] = (word)car(arg);
@@ -951,10 +999,10 @@ word* pinvoke(OL* self, word* arguments)
 			else
 			switch (reftype(arg)) {
 			case TTUPLE: { // ?
-				// аллоцировать массив и сложить в него указатели на элементы кортежа
+				// Р°Р»Р»РѕС†РёСЂРѕРІР°С‚СЊ РјР°СЃСЃРёРІ Рё СЃР»РѕР¶РёС‚СЊ РІ РЅРµРіРѕ СѓРєР°Р·Р°С‚РµР»Рё РЅР° СЌР»РµРјРµРЅС‚С‹ РєРѕСЂС‚РµР¶Р°
 				int size = hdrsize(*(word*)arg);
 				*fp++ = make_raw_header(TBVEC, size, 0);
-				args[i] = (word)fp; // ссылка на массив указателей на элементы
+				args[i] = (word)fp; // СЃСЃС‹Р»РєР° РЅР° РјР°СЃСЃРёРІ СѓРєР°Р·Р°С‚РµР»РµР№ РЅР° СЌР»РµРјРµРЅС‚С‹
 
 				word* src = &car(arg);
 				while (--size)
@@ -979,13 +1027,13 @@ word* pinvoke(OL* self, word* arguments)
 		t = (word*)cdr(t); // (cdr t)
 		i++;
 	}
-	assert ((word)t == INULL); // количество аргументов совпало!
+	assert ((word)t == INULL); // РєРѕР»РёС‡РµСЃС‚РІРѕ Р°СЂРіСѓРјРµРЅС‚РѕРІ СЃРѕРІРїР°Р»Рѕ!
 
-	ret_t got = 0;   // результат вызова функции
+	ret_t got = 0;   // СЂРµР·СѓР»СЊС‚Р°С‚ РІС‹Р·РѕРІР° С„СѓРЅРєС†РёРё
 
 	self->R[128 + 1] = (word)B;
 	self->R[128 + 2] = (word)C;
-	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
+	heap->fp = fp; // СЃРѕС…СЂР°РЅРёРј, С‚Р°Рє РєР°Рє РІ call РјРѕРіСѓС‚ Р±С‹С‚СЊ РІС‹Р·РІР°РЅС‹ callbackРё, Рё РѕРЅРё РїРѕРїРѕСЂС‚СЏС‚ fp
 
 //	if (floatsmask == 15)
 //		__asm__("int $3");
@@ -1065,18 +1113,18 @@ word* pinvoke(OL* self, word* arguments)
 	got = call(args, i, function, returntype & 0x3F);
 #endif
 
-	// где гарантия, что C и B не поменялись?
+	// РіРґРµ РіР°СЂР°РЅС‚РёСЏ, С‡С‚Рѕ C Рё B РЅРµ РїРѕРјРµРЅСЏР»РёСЃСЊ?
 	fp = heap->fp;
 	B = (word*)self->R[128 + 1];
 	C = (word*)self->R[128 + 2];
 
 	if (has_wb) {
-		// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
-		p = (word*)C;   // сами аргументы
+		// РµС‰Рµ СЂР°Р· РїСЂРѕР±РµР¶РёРјСЃСЏ РїРѕ Р°СЂРіСѓРјРµРЅС‚Р°Рј, РјРѕР¶РµС‚ РєР°РєРёРµ РЅР°РґРѕ Р±СѓРґРµС‚ РІРµСЂРЅСѓС‚СЊ РІР·Р°Рґ
+		p = (word*)C;   // СЃР°РјРё Р°СЂРіСѓРјРµРЅС‚С‹
 		t = (word*)cdr(B); // rtty
 
 		i = 0;
-		while ((word)p != INULL) { // пока есть аргументы
+		while ((word)p != INULL) { // РїРѕРєР° РµСЃС‚СЊ Р°СЂРіСѓРјРµРЅС‚С‹
 			assert (reftype(p) == TPAIR); // assert(list)
 			assert (reftype(t) == TPAIR); // assert(list)
 
@@ -1086,7 +1134,7 @@ word* pinvoke(OL* self, word* arguments)
 			// destination type
 			switch (type) {
 			case TFLOAT + 0x80: {
-				// вот тут попробуем заполнить переменные назад
+				// РІРѕС‚ С‚СѓС‚ РїРѕРїСЂРѕР±СѓРµРј Р·Р°РїРѕР»РЅРёС‚СЊ РїРµСЂРµРјРµРЅРЅС‹Рµ РЅР°Р·Р°Рґ
 				int c = llen(arg);
 				float* f = (float*)args[i];
 
@@ -1095,12 +1143,12 @@ word* pinvoke(OL* self, word* arguments)
 					float value = *f++;
 					word num = car(l);
 					assert (reftype(num) == TRATIONAL);
-					// максимальная читабельность (todo: change like fto..)
+					// РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ С‡РёС‚Р°Р±РµР»СЊРЅРѕСЃС‚СЊ (todo: change like fto..)
 					long n = value * 10000;
 					long d = 10000;
 					car(num) = itosv(n);
 					cdr(num) = itosv(d);
-					// максимальная точность (fixme: пока не работает как надо)
+					// РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ С‚РѕС‡РЅРѕСЃС‚СЊ (fixme: РїРѕРєР° РЅРµ СЂР°Р±РѕС‚Р°РµС‚ РєР°Рє РЅР°РґРѕ)
 					//car(num) = itosv(value * FMAX);
 					//cdr(num) = F(FMAX);
 
@@ -1119,13 +1167,13 @@ word* pinvoke(OL* self, word* arguments)
 
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
-		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
+		case TFIX: // type-fix+ - РµСЃР»Рё СЏ СѓРІРµСЂРµРЅ, С‡С‚Рѕ С‡РёСЃР»Рѕ Р·Р°РІРµРґРѕРјРѕ РјРµРЅСЊС€Рµ 0x00FFFFFF! (РёР»Рё СЃРєРѕР»СЊРєРѕ С‚Р°Рј РІ x64)
 			result = (word*) itosv (got);
 			break;
 		case TINT: // type-int+
 			result = (word*) itoun ((long)got);
 			break;
-			// else goto case 0 (иначе вернем type-fx+)
+			// else goto case 0 (РёРЅР°С‡Рµ РІРµСЂРЅРµРј type-fx+)
 		case TPORT:
 			result = (word*) make_port ((long)got);
 			break;
@@ -1153,7 +1201,7 @@ word* pinvoke(OL* self, word* arguments)
 			}
 			break;
 
-		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
+		// РІРѕР·РІСЂР°С‰Р°РµРјС‹Р№ С‚РёРї РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ TRATIONAL, С‚Р°Рє РєР°Рє РЅРµРїРѕРЅСЏС‚РЅР° Р±СѓРґРµС‚ С‚РѕС‡РЅРѕСЃС‚СЊ
 		case TFLOAT:
 		case TDOUBLE: {
 			double value = *(double*)&got;
