@@ -876,9 +876,10 @@
       (define (repl-trampoline env in)
          (if (interactive? env)
             ; ohai:
-            (print (if (env-get env '*seccomp* #false)
-                  "You see a prompt. You feel restricted."
-                  "You see a prompt.") "\n"        ; todo: change to version string?
+            (print "You see a prompt." ; todo: add version string?
+               (if (env-get env '*sandbox* #false)
+                  " You feel restricted." "")
+               "\n"
                "Type ',help' to help, ',quit' to end session"))
 
          (let boing ((env env))

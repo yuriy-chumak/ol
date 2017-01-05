@@ -4,6 +4,11 @@
  *
  * а тут у нас реализация pinvoke механизма. пример в lib/opengl.scm, lib/sqlite.scm, etc.
  */
+
+// Libc and Unicode: http://www.tldp.org/HOWTO/Unicode-HOWTO-6.html
+// The Plan9 operating system, a variant of Unix, uses UTF-8 as character encoding
+//   in all applications. Its wide character type is called `Rune', not `wchar_t'.
+
 #if HAS_PINVOKE
 
 int_t gcd(int_t a, int_t b)
@@ -33,21 +38,20 @@ int_t gcd(int_t a, int_t b)
 // http://stackoverflow.com/questions/319328/writing-a-while-loop-in-the-c-preprocessor
 #define FIRST(a, ...) a
 #define SECOND(a, b, ...) b
-
 #define EMPTY()
 
-#define EVAL(...) EVAL1024(__VA_ARGS__)
+#define EVAL(...)     EVAL1024(__VA_ARGS__)
 #define EVAL1024(...) EVAL512(EVAL512(__VA_ARGS__))
-#define EVAL512(...) EVAL256(EVAL256(__VA_ARGS__))
-#define EVAL256(...) EVAL128(EVAL128(__VA_ARGS__))
-#define EVAL128(...) EVAL64(EVAL64(__VA_ARGS__))
-#define EVAL64(...) EVAL32(EVAL32(__VA_ARGS__))
-#define EVAL32(...) EVAL16(EVAL16(__VA_ARGS__))
-#define EVAL16(...) EVAL8(EVAL8(__VA_ARGS__))
-#define EVAL8(...) EVAL4(EVAL4(__VA_ARGS__))
-#define EVAL4(...) EVAL2(EVAL2(__VA_ARGS__))
-#define EVAL2(...) EVAL1(EVAL1(__VA_ARGS__))
-#define EVAL1(...) __VA_ARGS__
+#define EVAL512(...)  EVAL256(EVAL256(__VA_ARGS__))
+#define EVAL256(...)  EVAL128(EVAL128(__VA_ARGS__))
+#define EVAL128(...)  EVAL64(EVAL64(__VA_ARGS__))
+#define EVAL64(...)   EVAL32(EVAL32(__VA_ARGS__))
+#define EVAL32(...)   EVAL16(EVAL16(__VA_ARGS__))
+#define EVAL16(...)   EVAL8(EVAL8(__VA_ARGS__))
+#define EVAL8(...)    EVAL4(EVAL4(__VA_ARGS__))
+#define EVAL4(...)    EVAL2(EVAL2(__VA_ARGS__))
+#define EVAL2(...)    EVAL1(EVAL1(__VA_ARGS__))
+#define EVAL1(...)    __VA_ARGS__
 
 #define DEFER1(m) m EMPTY()
 #define DEFER2(m) m EMPTY EMPTY()()
@@ -99,13 +103,6 @@ int_t gcd(int_t a, int_t b)
 #if __amd64__ // x86-64 (LP64?)
 
 // value returned in the rax
-PUBLIC
-#ifdef __linux__
-long long x64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
-#else
-long long x64_call(word argv[], long argc, void* function, long type);
-#endif
-
 # if _WIN64 // Windows
 // The x64 Application Binary Interface (ABI) uses a four register fast-call
 // calling convention by default. Space is allocated on the call stack as a
@@ -136,6 +133,8 @@ long long x64_call(word argv[], long argc, void* function, long type);
 // edx - argc
 // r8  - function
 // r9d - type
+long long x64_call(word argv[], long argc, void* function, long type);
+
 __ASM__("x64_call:_x64_call:",  // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
@@ -198,6 +197,8 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 // r8:  mask
 // r9: function
 // 16(rbp): type
+long long x64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
+
 __ASM__("x64_call:_x64_call:", //"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
@@ -350,6 +351,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 #endif
 
 
+// Главная функция механизма pinvoke:
 PUBLIC
 word* pinvoke(OL* self, word* arguments)
 {
@@ -379,100 +381,6 @@ word* pinvoke(OL* self, word* arguments)
 				({ int $(char *str){ printf("Test: %s\n", str); } $; })
 		};*/
 		// http://www.agner.org/optimize/calling_conventions.pdf
-#if 0 //__amd64__
-		#define CALLFLOATS(conv) \
-			case 1 + 0x0100:\
-			        return (ret_t)(word)((conv word (*)  (float))\
-			                 function) (*(float*)&args[0]);\
-			case 2 + 0x0200:\
-			        return (ret_t)(word)((conv word (*)  (word, float))\
-			                 function) (args[0], *(float*)&args[1]);\
-			case 3 + 0x0200:\
-			        return (ret_t)(word)((conv word (*)  (word, float, word))\
-			                 function) (args[0], *(float*)&args[1], args[2]);\
-			case 3 + 0x0400:\
-			        return (ret_t)(word)((conv word (*)  (word, word, float))\
-			                 function) (args[0], args[1],\
-			                            *(float*)&args[2]);\
-			case 3 + 0x0600:\
-			        return (ret_t)(word)((conv word (*)  (word, float, float))\
-			                 function) (args[0], *(float*)&args[1],\
-			                            *(float*)&args[2]);\
-			case 4 + 0x0E00:\
-			        return (ret_t)(word)((conv word (*)  (word, float, float, float))\
-			                 function) (args[0], *(float*)&args[1],\
-			                            *(float*)&args[2], *(float*)&args[3]);\
-			case 4 + 0x0200:\
-			        return (ret_t)(word)((conv word (*)  (word, float, word, word))\
-			                 function) (args[0], *(float*)&args[1],\
-			                            args[2], args[3]);\
-			case 5 + 0x0600:\
-			        return (ret_t)(word)((conv word (*)  (word, float, float, word, word))\
-			                 function) (args[0], *(float*)&args[1], *(float*)&args[2],\
-			                            args[3], args[4]);\
-			\
-			case 2 + 0x0300:\
-			        return (ret_t)(word)((conv word (*)  (float, float))\
-			                 function) (*(float*)&args[0], *(float*)&args[1]);\
-			case 3 + 0x0700:\
-			        return (ret_t)(word)((conv word (*)  (float, float, float))\
-			                 function) (*(float*)&args[0], *(float*)&args[1],\
-			                            *(float*)&args[2]);\
-			case 4 + 0x0F00:\
-			        return (ret_t)(word)((conv word (*)  (float, float, float, float))\
-			                 function) (*(float*)&args[0], *(float*)&args[1],\
-			                            *(float*)&args[2], *(float*)&args[3]);\
-			case 6 + 0x0E00:\
-	                return (ret_t)(word)((conv word (*)  (word, float, float, float, word, word))\
-	                         function) (args[0], *(float*)&args[1], *(float*)&args[2],\
-	                                    *(float*)&args[3], args[4], args[5]);
-#else
-		#define CALLFLOATS(conv)
-#endif
-
-#if 0 //__amd64__
-		#define CALLDOUBLES(conv) \
-			case 4 + 0x0020000:\
-			         return (ret_t)(word)((conv word (*)  (word, double, word, word))\
-			                 function) (args[0], *(double*)&args[1], args[2], args[3]);\
-			case 2 + 0x0030000:\
-			         return (ret_t)(word)((conv word (*)  (double, double))\
-			                 function) (*(double*)&args[0], *(double*)&args[1]);\
-			case 3 + 0x0070000:\
-			         return (ret_t)(word)((conv word (*)  (double, double, double))\
-			                 function) (*(double*)&args[0], *(double*)&args[1],\
-			                            *(double*)&args[2]);\
-			case 4 + 0x00F0000:\
-			         return (ret_t)(word)((conv word (*)  (double, double, double, double))\
-			                 function) (*(double*)&args[0], *(double*)&args[1],\
-			                            *(double*)&args[2], *(double*)&args[3]);\
-			case 6 + 0x03F0000:\
-			         return (ret_t)(word)((conv word (*)  (double, double, double, double, double, double))\
-			                 function) (*(double*)&args[0], *(double*)&args[1],\
-			                            *(double*)&args[2], *(double*)&args[3],\
-			                            *(double*)&args[4], *(double*)&args[5]);\
-			case 6 + 0x00E0000:\
-			         return (ret_t)(word)((conv word (*)  (word, double, double, double, word, word))\
-	                         function) (args[0], *(double*)&args[1],\
-	                                    *(double*)&args[2], *(double*)&args[3],\
-	                                    args[4], args[5]);\
-			case 9 + 0x1FF0000:\
-			         return (ret_t)(word)((conv word (*)  (double, double, double,\
-			                                  double, double, double,\
-									          double, double, double))\
-			                 function) (*(double*)&args[0], *(double*)&args[1], *(double*)&args[2],\
-			                            *(double*)&args[3], *(double*)&args[4], *(double*)&args[5],\
-								        *(double*)&args[6], *(double*)&args[7], *(double*)&args[8]);
-#else
-		#define CALLDOUBLES(conv)\
-			case 18: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-			                                  word, word, word, word, word, word, \
-			                                  word, word, word, word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3], args[ 4], args[ 5],\
-			                            args[ 6], args[ 7], args[ 8], args[ 9], args[10], args[11],\
-			                            args[12], args[13], args[14], args[15], args[16], args[17]);
-#endif
-
 		#define CALL(conv) \
 			switch (i) {\
 			case  0: return (ret_t)(word)((conv word (*)  ())\
@@ -519,8 +427,6 @@ word* pinvoke(OL* self, word* arguments)
 			                 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
 			                            args[ 4], args[ 5], args[ 6], args[ 7], \
 			                            args[ 8], args[ 9], args[10], args[11]);\
-			CALLFLOATS(conv)\
-			CALLDOUBLES(conv)\
 			default: STDERR("Unsupported parameters count for pinvoke function: %d", i);\
 				return 0;\
 			};
@@ -967,7 +873,10 @@ word* pinvoke(OL* self, word* arguments)
 			}
 			case TSTRINGWIDE: {
 				int len = hdrsize(reference(arg));
-				short* unicode = (short*) __builtin_alloca(len * sizeof(short)); // todo: use new()
+				short* unicode = (short*) __builtin_alloca(len * sizeof(short));
+				// todo: use new()
+				// check the available memory in the heap
+				// use builtin unlucky for calling the gc if no more memory
 
 				short* p = unicode;
 				word* s = &car(arg);
