@@ -33,6 +33,10 @@
  *
  */
 
+// gcc profiling:
+// 1) gcc --coverage
+// 2) gcov -b olvm.c
+
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
 #	warning "This code must be compiled by Gnu C compiler"
@@ -1555,23 +1559,23 @@ apply:;
 
 	if ((word)this == IRETURN) {
 		// в R[3] находится код возврата
-		goto done;       // колбек закончен! надо просто выйти наверх (todo: change to special state)
+		goto done;       // колбек закончен! надо просто выйти наверх
 	}
 
 	// ...
 	if (is_reference(this)) { // если это аллоцированный объект
 		//word hdr = *this & 0x0FFF; // cut size out, take just header info
 		word type = reftype (this);
-		if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc
+		if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc (58% for "yes")
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
 		else
-		if (type == TCLOS) { //hdr == make_header(TCLOS, 0)) { // clos
+		if (type == TCLOS) { //hdr == make_header(TCLOS, 0)) { // clos (66% for "yes")
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			R[2] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
 		else
-		if ((type & 60) == TFF) { // ((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
+		if ((type & 60) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
 			word get(word *ff, word key, word def)
 			{
@@ -1619,7 +1623,7 @@ apply:;
 			goto apply;
 		}
 		else
-			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
+			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE)
 				ERROR(259, this, INULL);
 
 		// А не стоит ли нам переключить поток?
@@ -1849,7 +1853,7 @@ loop:;
 	}*/
 	#endif
 
-	case GOTO:
+	case GOTO: // (10%)
 		this = (word *)A0;
 		acc = ip[1];
 		goto apply;
@@ -1874,7 +1878,7 @@ loop:;
 
 	// apply
 	// todo:? include apply-tuple, apply-values and apply-ff to the APPLY
-	case APPLY: {
+	case APPLY: { // (0%)
 		int reg, arity;
 		if (op == APPLY) { // normal apply: cont=r3, fn=r4, a0=r5,
 			reg = 4; // include cont
@@ -1914,14 +1918,14 @@ loop:;
 		goto apply;
 	}
 
-	case RET: // return value
+	case RET: // (3%) return value
 		this = (word *) R[3];
 		R[3] = A0;
 		acc = 1;
 
 		goto apply;
 
-	case SYS: // sys continuation op arg1 arg2
+	case SYS: // (1%) sys continuation op arg1 arg2
 		this = (word *) R[0];
 		R[0] = IFALSE; // let's call mcp
 		R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
@@ -1932,7 +1936,7 @@ loop:;
 
 		goto apply;
 
-	case RUN: { // run thunk quantum
+	case RUN: { // (1%) run thunk quantum
 	//			if (ip[0] != 4 || ip[1] != 5)
 	//				STDERR("run R[%d], R[%d]", ip[0], ip[1]);
 		this = (word *) A0;
@@ -1958,7 +1962,7 @@ loop:;
 		goto apply;
 	}
 	// ошибка арности
-	case ARITY_ERROR:
+	case ARITY_ERROR: // (0%)
 		// TODO: добавить в .scm вывод ошибки четности
 		ERROR(17, this, F(acc));
 		break;
@@ -1967,48 +1971,48 @@ loop:;
 	/************************************************************************************/
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
-	case LDI: {  // 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
+	case LDI: {  // (1%) 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
 		static
 		const word I[] = { IEMPTY, INULL, ITRUE, IFALSE };
 		A0 = I[op>>6];
 		ip += 1; break;
 	}
-	case LD:
+	case LD: // (5%)
 		A1 = F(ip[0]);
 		ip += 2; break;
 
 
-	case REFI: { //  1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
+	case REFI: { // (24%) 1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
 		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
 		ip += 3; break;
 	}
-	case MOVE: // move a, t:      Rt = Ra
+	case MOVE: // (3%) move a, t:      Rt = Ra
 		A1 = A0;
 		ip += 2; break;
-	case MOV2: // mov2 from1 to1 from2 to2
+	case MOV2: // (6%) mov2 from1 to1 from2 to2
 		A1 = A0;
 		A3 = A2;
 		ip += 4; break;
 
 
 	// условные переходы
-	case JEQ: /* jeq a b o, extended jump  */
-		if (A0 == A1)
+	case JEQ: // (5%) jeq a b o, extended jump
+		if (A0 == A1) // 30% for "yes"
 			ip += (ip[3] << 8) + ip[2]; // little-endian
 		ip += 4; break;
 
-	case JP: {  // JZ, JN, JT, JF a hi lo
+	case JP: { // (10%) JZ, JN, JT, JF a hi lo
 		static
 		const word I[] = { F(0), INULL, IEMPTY, IFALSE };
-		if (A0 == I[op>>6])
+		if (A0 == I[op>>6]) // 49% for "yes"
 			ip += (ip[2] << 8) + ip[1]; // little-endian
 		ip += 3; break;
 	}
 
 	// используется в (func ...) в primop.scm
-	case JF2: { // jmp-nargs (>=) a hi lo
+	case JF2: { // (13%) jmp-nargs (>=) a hi lo
 		int arity = ip[0];
-		if (acc == arity) {
+		if (acc == arity) { // 99% for "yes"
 			if (op & 0x40) // add empty extra arg list
 				R[acc + 3] = INULL;
 		}
@@ -2028,10 +2032,12 @@ loop:;
 	}
 
 
-	case 3: OCLOSE(TCLOS); break;//continue;
-	case 4: OCLOSE(TPROC); break;//continue;
-	case 6: CLOSE1(TCLOS); break;//continue;
-	case 7: CLOSE1(TPROC); break;//continue;
+	case 3: OCLOSE(TCLOS); break; //continue; (2%)
+	case 4: OCLOSE(TPROC); break; //continue; (1%)
+	case 6: CLOSE1(TCLOS); break; //continue; (2%)
+	case 7: CLOSE1(TPROC); break; //continue; (1%)
+
+	// others: 1,2,3 %%)
 
 	/************************************************************************************/
 	// более высокоуровневые конструкции
