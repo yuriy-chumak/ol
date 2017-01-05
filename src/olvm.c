@@ -723,7 +723,7 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 // http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
 // https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt
 #define SECCOMP                     10000 // todo: change to x1000 или что-то такое
-static int seccompp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
+static int sandboxp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
 //static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
@@ -1016,7 +1016,7 @@ word *chase(word* pos) {
 static __inline__
 ptrdiff_t adjust_heap(heap_t *heap, int cells)
 {
-	if (seccompp) /* realloc is not allowed within seccomp */
+	if (sandboxp) /* realloc is not allowed within seccomp */
 		return 0;
 
 	// add newobj realloc + heap fixer here later
@@ -1715,7 +1715,7 @@ mainloop:;
 	// 6, 7: CLOSE1
 
 		// список команд смотреть в assembly.scm
-	#	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
+	#	define LDI   13       // LDE (13), LDN (77), LDT (141), LDF (205)
 	#	define LD    14
 
 	#	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
@@ -1723,8 +1723,8 @@ mainloop:;
 	#	define MOV2   5       //
 
 	#	define JEQ    8       // jeq
-	#	define JP    16       // JZ, JN, JT, JF
-	#	define JF2   25       // jf2
+	#	define JP    16       // JZ (16), JN (80), JT (144), JF (208)
+	#	define JF2   25       // jf2x (89)
 
 		// примитивы языка:
 	#	define VMNEW 23    // make object
@@ -1802,8 +1802,8 @@ mainloop:;
 	#		define SYSCALL_MKCB 175
 
 		// tuples, trees
-	#	define TUPLEAPPLY 32
 	#	define UNREEL 35   // list -> typed tuple
+	#	define TUPLEAPPLY 32
 	#	define FFAPPLY 49
 
 	#	define MKRED    43
@@ -2564,7 +2564,7 @@ loop:;
 		word op = uvtoi (A0);
 		word a = A1, b = A2, c = A3;
 
-		switch (op + seccompp) {
+		switch (op + sandboxp) {
 
 		// (READ fd count) -> buf
 		// http://linux.die.net/man/2/read
@@ -2757,7 +2757,7 @@ loop:;
 			int portfd = port(a);
 			int ioctl = uvtoi(b);
 
-			switch (ioctl + seccompp) {
+			switch (ioctl + sandboxp) {
 				case SYSCALL_IOCTL_TIOCGETA: {
 					#ifdef _WIN32
 						if (_isatty(portfd))
@@ -3039,7 +3039,7 @@ loop:;
 		// NANOSLEEP
 		case 35: {
 			//CHECK(is_number(a), a, 35);
-			if (seccompp) {
+			if (sandboxp) {
 				result = (word*) ITRUE;
 				break;
 			}
@@ -3175,7 +3175,7 @@ loop:;
 		// http://linux.die.net/man/2/exit
 		// exit - cause normal process termination, function does not return.
 		case 60: {
-			if (!seccompp)
+			if (!sandboxp)
 				free(heap->begin); // освободим занятую память
 			heap->begin = 0;
 			R[3] = a;
@@ -3730,7 +3730,7 @@ loop:;
 				// http://outflux.net/teach-seccomp/
 			};*/
 			if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT, 0, 0, 0) != -1) { /* true if no problem going seccomp */
-				seccompp = SECCOMP;
+				sandboxp = SECCOMP;
 				result = (word*)ITRUE;
 			}
 			break;
@@ -4136,7 +4136,7 @@ OL_eval(OL* handle, int argc, char** argv)
 	// результат выполнения скрипта
 	OL* ol = handle;
 	heap_t* heap = &ol->heap;
-	seccompp = 0;    // static variable
+	sandboxp = 0;    // static variable
 
 	word* ptrs = (word*) heap->begin;
 	int nobjs = hdrsize(ptrs[0]) - 1;

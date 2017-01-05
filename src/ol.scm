@@ -134,7 +134,7 @@
 (import (owl sys))
 
 ;;;
-;;; Entering seccomp
+;;; Entering sandbox
 ;;;
 
 ;; a temporary O(n) way to get some space in the heap
@@ -163,8 +163,8 @@
 ;         ;; leave it as garbage
 ;         #true)))
 ;
-;; enter seccomp with at least n-megs of free space in heap, or stop the world (including all other threads and io)
-(define (seccomp n-megs)
+;; enter sandbox with at least n-megs of free space in heap, or stop the world (including all other threads and io)
+(define (sandbox n-megs)
    ;; grow some heap space work working, which is usually necessary given that we can't
    ;; get any more memory after entering seccomp
    (if (and n-megs (> n-megs 0))
@@ -172,7 +172,7 @@
    (or
       (syscall 157 #false #false #false)
       (begin
-         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
+         (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
          (halt exit-seccomp-failed))))
 
 
@@ -306,8 +306,8 @@
                                        (cond
                                           ((null? args)
                                              options)
-                                          ((string-eq? (car args) "--seccomp")
-                                             (loop (put options 'seccomp #t) (cdr args)))
+                                          ((string-eq? (car args) "--sandbox")
+                                             (loop (put options 'sandbox #t) (cdr args)))
                                           ((string-eq? (car args) "--interactive")
                                              (loop (put options 'interactive #t) (cdr args)))
                                           ((string-eq? (car args) "--home") ; TBD
@@ -322,7 +322,7 @@
                                            (cond
                                               ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
                                               (else "/usr/lib/ol")))) ; Linux, *BSD, etc.
-                                 (seccomp? (getf options 'seccomp))
+                                 (sandbox? (getf options 'sandbox))
                                  (interactive? (or
                                            (getf options 'interactive)
                                            (syscall 16 file 19 #f))) ; isatty()
@@ -340,10 +340,10 @@
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* version)
                                             ;(cons '*scheme* 'r5rs)
-                                             (cons '*seccomp* seccomp?)
+                                             (cons '*sandbox* sandbox?)
                                           ))))
-                              (if seccomp?
-                                 (seccomp 1)) ;(seccomp megs) - check is memory enough
+                              (if sandbox?
+                                 (sandbox 1)) ;(sandbox megs) - check is memory enough
                               (repl-trampoline env file))))))))
             null)))) ; no threads state
 
