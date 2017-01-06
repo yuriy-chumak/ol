@@ -59,10 +59,12 @@
 
 //
 #ifdef _WIN32
-#define SYSCALL_PRCTL 0
+#define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
 #define SYSCALL_SYSINFO 0
 #define SYSCALL_GETRLIMIT 0
 #define PUBLIC __declspec(dllexport)
+// qemu for windows: https://qemu.weilnetz.de/
+// images for qemu: http://4pda.ru/forum/index.php?showtopic=318284
 #endif
 
 // todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
@@ -2635,7 +2637,7 @@ loop:;
 				break;
 
 			int length = (hdrsize(*buff) - 1) * sizeof(word); // todo: pads!
-			if (size > length || size == -1)
+			if (size > length || size == 0)
 				size = length;
 
 			int wrote;
