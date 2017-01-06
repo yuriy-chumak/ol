@@ -4,7 +4,7 @@
  * Version 1.1
  *
  * Copyright (c) 2014 Aki Helin
- * Copyright (c) 2014- 2016 Yuriy Chumak
+ * Copyright (c) 2014- 2017 Yuriy Chumak
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
  * This program is free software;  you can redistribute it and/or
@@ -22,7 +22,7 @@
  * Project page:
  *   http://yuriy-chumak.github.io/ol/
  *
- * The parent project - Owl Lisp - can be found at
+ * The parent project - Owl Lisp:
  *   https://github.com/aoh/owl-lisp
  *   https://code.google.com/p/owl-lisp/
  *
@@ -45,7 +45,7 @@
 	                  + __GNUC_MINOR__ * 100 \
 	                  + __GNUC_PATCHLEVEL__)
 #	if GCC_VERSION < 30200
-#		error "Required gcc version > 3.2 (nested functions support)"
+#		error "Required gcc version > 3.2"
 #	endif
 
 #	if __STDC_VERSION__ < 199901L
