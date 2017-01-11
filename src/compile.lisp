@@ -1,26 +1,54 @@
+(import (owl parse))
+(import (lang thread))
+
+(define syntax-error-mark (list 'syntax-error))
+
+(define (syntax-fail pos info lst)
+   (print "error")
+   #false)
+   ;(list syntax-error-mark info
+   ;   (list ">>> " "x" " <<<")))
+
+(define parser
+   (let-parses (
+         (line (get-greedy+ (get-rune-if (lambda (x) (not (eq? x #\newline))))))
+         (skip (get-imm #\newline)))
+      (runes->string line)))
+
+; ...
 (define (sleep1) (syscall 1200 #f #f #f))
 
-(define (factors n)
-   (let *factors ((d 1))
-      (cond ((> d n) (list))
-            ((= (mod n d) 0) (cons d (*factors (+ d 1))))
-            (else (*factors (+ d 1))))))
-
-(define (sum-factors n)
-      (let ((f (factors n)))
-        (let ((s (- (apply + f) n)))
-           (print n ": " f " > " s)
-           (sleep1)
-         s)))
-
-(define (go-throw-factors-cycle n)
-  (let *go ((x n))
-      (let ((s (sum-factors x)))
-        (if (or (= s n) (= s 0) (= s x)) s (*go s)))))
-
 (define main (lambda (args)
-   ;(print (sum-factors 14316))
-   (go-throw-factors-cycle 14316)
+         (start-thread-controller
+            (list ;1 thread
+               (tuple 'init
+                  (λ ()
+                     (fork-server 'main (lambda ()
+                        ;; get basic io running
+                        (start-base-threads)
+
+                        ;; repl needs symbol etc interning, which is handled by this thread
+                        ;(fork-server 'intern interner-thunk)
+
+                        ;; set a signal handler which stop evaluation instead of owl
+                        ;; if a repl eval thread is running
+                        ;(set-signal-action repl-signal-handler)
+
+                        ;; repl
+   (print "<pre>utf8 test: хелло\n")
+
+   (let loop ((request (fd->exp-stream stdin "" parser syntax-fail #f)))
+      (print "request: " request)
+      (if request
+         (begin
+         (print (car request)) (sleep1)))
+      (loop (force (cdr request))))
+
+   (print "</pre>")
+
+                              )))))
+            null) ; no threads state
+
 ))
 
 

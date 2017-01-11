@@ -9,58 +9,44 @@
     <div class="spinner" id='spinner'></div>
     <div class="emscripten" id="status">Downloading...</div>
 
-<span id='controls'>
-  <span><input type="checkbox" id="resize">Resize canvas</span>
-  <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer &nbsp;&nbsp;&nbsp;</span>
-  <span><input type="button" value="Fullscreen" onclick="Module.requestFullScreen(document.getElementById('pointerLock').checked, 
-                                                                            document.getElementById('resize').checked)">
-  </span>
-</span>
-
     <div class="emscripten">
       <progress value="0" max="100" id="progress" hidden=1></progress>
     </div>
-
-    
-    <div class="emscripten_border">
-      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
-    </div>
-    <textarea id="output" rows="8"></textarea>
 
     <script type='text/javascript'>
       var statusElement = document.getElementById('status');
       var progressElement = document.getElementById('progress');
       var spinnerElement = document.getElementById('spinner');
 
+      // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
+      stdinBuffer = unescape(encodeURIComponent("(print 123)\n"));
+
       var Module = {
-        preRun: [],
-        postRun: [],
-        print: (function() {
-          var element = document.getElementById('output');
-          if (element) element.value = ''; // clear browser cache
-          return function(text) {
-            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-            // These replacements are necessary if you render to raw HTML
-            //text = text.replace(/&/g, "&amp;");
-            //text = text.replace(/</g, "&lt;");
-            //text = text.replace(/>/g, "&gt;");
-            //text = text.replace('\n', '<br>', 'g');
-            console.log(text);
-            if (element) {
-              element.value += text + "\n";
-              element.scrollTop = element.scrollHeight; // focus on bottom
+        preRun: function() {
+          console.log("preRun");
+          function stdin() {
+            console.log("stdin");
+            if (stdinBuffer.length == 0) {
+              //stdinBuffer = unescape(encodeURIComponent(":utf-8:\n"));
+              return undefined;
             }
-          };
-        })(),
-        printErr: function(text) {
-          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-          if (0) { // XXX disabled for safety typeof dump == 'function') {
-            dump(text + '\n'); // fast, straight to the real console
-          } else {
-            console.error(text);
+
+            var ch = stdinBuffer.charCodeAt(0);
+            stdinBuffer = stdinBuffer.substr(1);
+
+            console.log(ch);
+            return ch;
           }
+          var stdout = null;
+          var stderr = null;
+          FS.init(stdin, stdout, stderr);
         },
-        canvas: (function() {
+        postRun: [],
+
+        print: function(text) { document.write(text); document.write("\n") },
+        printErr: function(text) { alert(text); },
+
+        /*canvas: (function() {
           var canvas = document.getElementById('canvas');
 
           // As a default initial behavior, pop up an alert when webgl context is lost. To make your
@@ -69,7 +55,7 @@
           canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
 
           return canvas;
-        })(),
+        })(),*/
         setStatus: function(text) {
           if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
           if (text === Module.setStatus.text) return;
@@ -106,8 +92,9 @@
         };
       };
     </script>
-    <script>
 
+
+    <script>
         (function() {
           var memoryInitializer = 'oljs.html.mem';
           if (typeof Module['locateFile'] === 'function') {
