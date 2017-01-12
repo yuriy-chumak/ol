@@ -187,7 +187,7 @@
 
       (define (fd->exp-stream fd prompt parse fail re-entry?) ; re-entry? unused
          (let loop ((old-data null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
-;            (print "fd->exp-stream: " old-data)
+            ;(print "fd->exp-stream: " old-data)
             (lets
                ((rchunks end?
                   (if finished?
@@ -196,7 +196,7 @@
                         (if (null? old-data) prompt "|   "))))
                 (data (push-chunks old-data rchunks)))
 
-;               (print "rchunks: " rchunks ", " data)
+               ;(print "rchunks: " rchunks ", " data)
                (if (null? data)
                   (if end? null (loop data #true #false))
                   (parse data
@@ -218,55 +218,7 @@
                      0)))))
 
 ; ------------------------------------------------------------------------------
-; ==============================================================================
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; new repl image
-;;;
 
-;; say hi if interactive mode and fail if cannot do so (the rest are done using
-;; repl-prompt. this should too, actually)
-(define (get-main-entry symbols codes)
-   (let*((initial-names   *owl-names*)
-         (initial-version *owl-version*)
-
-         (interner-thunk (initialize-interner symbols codes)))
-      ; main: / entry point of the compiled image
-      (λ (vm-args)
-         ;(print "//vm-args: " vm-args)
-         ;; now we're running in the new repl
-         (start-thread-controller
-            (list ;1 thread
-               (tuple 'init
-                  (λ ()
-                     (fork-server 'repl (lambda ()
-                        ;; get basic io running
-                        (start-base-threads)
-
-                        ;; repl needs symbol etc interning, which is handled by this thread
-                        (fork-server 'intern interner-thunk)
-
-                        ;; set a signal handler which stop evaluation instead of owl
-                        ;; if a repl eval thread is running
-                        (set-signal-action repl-signal-handler)
-
-                        ;; repl
-                        (let*((file stdin)
-                              (interactive? #false)
-                              (env (interaction-environment)))
-                           (repl-trampoline env file)))))))
-            null)))) ; no threads state
-
-
-
-;(define symbols (symbols-of get-main-entry))
-;(define codes   (codes-of   get-main-entry))
-
-;;;
-;;; Dump the new repl
-;;;
-
-;--
 (define (symbols-of node)
    (define tag (list 'syms))
 
@@ -316,51 +268,7 @@
    (lets ((refs this (code-refs empty ob)))
       (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 
-
-
-
-;(let*((path "boot.fasl")
-;      (port ;; where to save the result
-;         (open-output-file path))
-;
-;      (symbols (symbols-of get-main-entry))
-;      (codes   (codes-of   get-main-entry))
-;      (bytes ;; encode the resulting object for saving in some form
-;         (fasl-encode (get-main-entry symbols codes))))
-;   (if (not port)
-;      (begin
-;         (print "Could not open " path " for writing")
-;         #false)
-;      (begin ;; just save the fasl dump
-;         (write-bytes port bytes)
-;         (close-port port)
-;         (print "Output written at " (- (time-ms) build-start) " ms.")
-;         #true)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+; ==============================================================================
 (define parser
    (let-parses (
          (line (get-greedy+ (get-rune-if (lambda (x) (not (eq? x #\newline))))))
@@ -369,52 +277,6 @@
 
 ; ...
 (define (sleep1) (syscall 1200 #f #f #f))
-
-(define main (lambda (args)
-;   (print "<pre>")
-
-;   (let loop ((request (fd->exp-stream stdin "" parser syntax-fail #f)))
-;      (if request
-;         (begin
-;         (print (car request)) (sleep1)
-;         (loop (force (cdr request))))))
-;
-;   ;(repl-trampoline (interaction-environment) stdin)
-;   ;(print "</pre>")
-;
-;
-;         (start-thread-controller
-;            (list ;1 thread
-;               (tuple 'init
-;                  (λ ()
-;                     (fork-server 'main (lambda ()
-;                        ;; get basic io running
-;                        (start-base-threads)
-;
-;                        ;; repl needs symbol etc interning, which is handled by this thread
-;                        ;(fork-server 'intern interner-thunk)
-;
-;                        ;; set a signal handler which stop evaluation instead of owl
-;                        ;; if a repl eval thread is running
-;                        ;(set-signal-action repl-signal-handler)
-;
-;                        ;; repl
-;   (print "<pre>utf8 test: хелло\n")
-;   (repl-trampoline (interaction-environment) stdin)
-;   (print "</pre>")
-;                              )))))
-;            null) ; no threads state
-;
-
-
-
-;(let*((symbols (symbols-of get-main-entry))
-;      (codes   (codes-of   get-main-entry))
-;      (bytes ;; encode the resulting object for saving in some form
-;         (get-main-entry symbols codes)))
-;
-;   (bytes '()))
-   (print "<pre>2")
 
       (define (? x) #true)
 
@@ -471,7 +333,7 @@
          execute
       ))
 
-      (define (evaluate-as exp env task)
+      (define (evaluate-as exp env task-unused)
          ; run the compiler chain in a new task
          (let ((result
          (call/cc
@@ -480,27 +342,27 @@
                   (λ (state next)
                      (if (ok? state)
                         (begin
-                           (print "* " (ref state 2))
+                           ;(print "* " (ref state 2))
                            (next (ref state 2) (ref state 3)))
                         (begin
-                           (print "exit")
+                           ;(print "exit")
                            (exit state))))
                   (ok exp env)
                   compiler-passes)))))
-            (print (ref result 1))
+            ;(print (ref result 1))
             result))
 
       (define (evaluate exp env)
-         (evaluate-as exp env 'repl-eval-my))
+         (evaluate-as exp env 'repl))
 
 
       (define (eval-repl exp env repl)
-         (print "eval-repl: " exp)
+         ;(print "eval-repl: " exp)
          (tuple-case (macro-expand exp env)
             ((ok exp env)
                (cond
                   ((definition? exp)
-                     (print "definition: " exp)
+                     ;(print "definition: " exp)
                      (tuple-case (evaluate (caddr exp) env)
                         ((ok value env2)
                            (lets
@@ -516,7 +378,7 @@
                            (fail
                               (list "Definition of" (cadr exp) "failed because" reason)))))
                   ((multi-definition? exp)
-                     (print "multi-definition: " exp)
+                     ;(print "multi-definition: " exp)
                      (tuple-case (evaluate (caddr exp) env)
                         ((ok value env2)
                            (let ((names (cadr exp)))
@@ -534,23 +396,48 @@
                            (fail
                               (list "Definition of" (cadr exp) "failed because" reason)))))
                   (else
-                     (print "evaluate: " exp)
+                     ;(print "evaluate: " exp)
                      (evaluate exp env))))
             ((fail reason)
                (tuple 'fail
                   (list "Macro expansion failed: " reason)))))
 
+;------
+(define (get-main-entry symbols codes)
+   (let*((interner-thunk (initialize-interner symbols codes)))
+      ; main: / entry point of the REPL
+      (λ (vm-args)
+         ;(print "//vm-args: " vm-args)
+         ;; now we're running in the new repl
+         (start-thread-controller
+            (list ;1 thread
+               (tuple 'init
+                  (λ ()
+                     (fork-server 'repl (lambda ()
+                        ;; get basic io running
+                        (start-base-threads)
 
+                        ;; repl needs symbol etc interning, which is handled by this thread
+                        (fork-server 'intern interner-thunk)
+
+                        ;; set a signal handler which stop evaluation instead of owl
+                        ;; if a repl eval thread is running
+                        ;(set-signal-action repl-signal-handler)
+
+                        ;; repl
+                        (begin
+                           (print "<pre>")
 
          (let loop ((env  (interaction-environment))
                     (in   (fd->exp-stream stdin "> " sexp-parser syntax-fail #false))
                     (last 'blank)) ; last - последний результат
+            ;(print "loop:")
             (cond
                ((pair? in)
                   (lets ((this in (uncons in #false)))
                      (cond
                         ((eof? this)
-                           (print "EOF")
+                           ;(print "EOF")
                            (repl-ok env last))
                         ((syntax-error? this)
                            (print "SYNTAX-ERROR")
@@ -558,24 +445,45 @@
                         (else
                            (tuple-case (eval-repl this env repl)
                               ((ok result env)
-                                 (print "OK!!!")
+                                 ;(print "OK!!!")
                                  (loop env in result))
                               ((fail reason)
                                  (print "FAIL!!!")
                                  (repl-fail env reason)))))))
                (else
-                  (loop env (in) last))))
+                  (loop env (in) last)))))
+                             ;; repl end
+                              
+                              )))))
+            null)))) ; no threads state
 
-   ;(print (string->symbol "pre"))
+; run
+;(define main (lambda (args)
 
-))
+(let*((symbols (symbols-of get-main-entry))
+      (codes   (codes-of   get-main-entry))
+      (entry   (get-main-entry symbols codes))
+      (bytes (fasl-encode entry)))
 
-(display "unsigned char *language = (unsigned char*) \"")
+   (let*((path "program.b")
+         (port (open-output-file path)))
 
-;(main '())
-(for-each (lambda (x)
-             (display "\\x")
-             (display (string (ref "0123456789abcdef" (div x 16))))
-             (display (string (ref "0123456789abcdef" (mod x 16)))))
-          (fasl-encode main))
-(display "\";")
+      (write-bytes port bytes)
+      (close-port port))
+
+   (display "unsigned char *language = (unsigned char*) \"")
+   (for-each (lambda (x)
+                (display "\\x")
+                (display (string (ref "0123456789abcdef" (div x 16))))
+                (display (string (ref "0123456789abcdef" (mod x 16)))))
+      bytes)
+   (display "\";"))
+
+
+;
+;(let*((path "program.b")
+;      (port (open-output-file path))
+;
+;      (bytes (fasl-encode main)))
+;   (write-bytes port bytes)
+;   (close-port port))

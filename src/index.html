@@ -19,29 +19,27 @@
       var spinnerElement = document.getElementById('spinner');
 
       // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
-      stdinBuffer = unescape(encodeURIComponent("(print 123)\n"));
+      stdinBuffer = unescape(encodeURIComponent("(print \"let's go.\")\n"));
 
       var Module = {
         preRun: function() {
           console.log("preRun");
           function stdin() {
-            console.log("stdin");
             if (stdinBuffer.length == 0) {
-              //stdinBuffer = unescape(encodeURIComponent(":utf-8:\n"));
               return undefined;
             }
 
-            var ch = stdinBuffer.charCodeAt(0);
+            var chr = stdinBuffer.charCodeAt(0);
             stdinBuffer = stdinBuffer.substr(1);
-
-            console.log(ch);
-            return ch;
+            return chr;
           }
           var stdout = null;
           var stderr = null;
           FS.init(stdin, stdout, stderr);
         },
-        postRun: [],
+        postRun: function() {
+          console.log("postRun");
+        },
 
         print: function(text) { document.write(text); document.write("\n") },
         printErr: function(text) { alert(text); },
@@ -95,6 +93,7 @@
 
 
     <script>
+        /* for release:
         (function() {
           var memoryInitializer = 'oljs.html.mem';
           if (typeof Module['locateFile'] === 'function') {
@@ -106,12 +105,20 @@
           xhr.open('GET', memoryInitializer, true);
           xhr.responseType = 'arraybuffer';
           xhr.send(null);
-        })();
+        })();*/
 
         var script = document.createElement('script');
         script.src = "oljs.js";
         document.body.appendChild(script);
+    </script>
 
-</script>
+    <script>
+       var num = 0;
+       setInterval(function() {
+         stdinBuffer = stdinBuffer + unescape(encodeURIComponent("(print " + num + ")\n"));
+         num += 1;
+       }, 5000);
+    </script>
+  
   </body>
 </html>

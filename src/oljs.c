@@ -262,7 +262,7 @@ void STDERR(char* format, ...)
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\n"); fflush(stderr);
 }
 
 static
@@ -274,7 +274,7 @@ void crash(int code, char* format, ...)
 	vfprintf(stderr, format, args);
 	va_end(args);
 
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\n"); fflush(stderr);
 	exit(code);
 }
 
@@ -2377,8 +2377,9 @@ switch ((op = *ip++) & 0x3F) {
 			}
 			else if (got == 0)
 				result = (word*)IEOF;
-			else if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
+			else if (errno == EAGAIN) { // (may be the same value as EWOULDBLOCK) (POSIX.1)
 				result = (word*)ITRUE;
+			}
 			break;
 		}
 
@@ -2810,11 +2811,10 @@ switch ((op = *ip++) & 0x3F) {
 				result = (word*) ITRUE;
 			break;
 #endif
-		case 1200: {
+		case 1200:
 			emscripten_sleep(1);
 			result = (word*) ITRUE;
 			break;
-		}
 
 		}// case
 
@@ -3136,8 +3136,6 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 	nwords += (nobjs + 2); // for ptrs
 
-	printf("nwords: %d, nobjs: %d\n", nwords, nobjs);
-
 	heap_t* heap = &handle->heap;
 	word *fp;
 
@@ -3158,8 +3156,6 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	heap->end = heap->begin + required_memory_size;
 	heap->genstart = heap->begin;
 
-	printf("heap: %p, %p, %d\n", heap->begin, heap->end, heap->end - heap->begin);
-
 	handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты
@@ -3173,8 +3169,6 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	// все, программа в памяти, можно освобождать исходник
 	if (release)
 		release(bootstrap);
-
-	printf("heap: %p, %p, %p\n", heap->begin, heap->end, fp);
 
 	heap->fp = fp;
 	return handle;
