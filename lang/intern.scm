@@ -124,65 +124,6 @@
       ;;; BYTECODE INTERNING
       ;;;
 
-      (define is-less #false)
-      (define is-equal #true)
-      (define is-greater null)
-
-      (define (compare-bytes a b pos end)
-         (if (eq? pos end)
-            is-equal
-            (let ((ab (ref a pos)) (bb (ref b pos)))
-               (cond
-                  ((eq? ab bb) (compare-bytes a b (+ pos 1) end))
-                  ((less? ab bb) is-less)
-                  (else is-greater)))))
-
-      ;; shorter is less, otherwase lexical comparison from start
-      (define (compare-code a b)
-         (lets
-            ((as (size a))
-             (bs (size b)))
-            (cond
-               ((eq? as bs) (compare-bytes a b 0 as))
-               ((less? as bs) is-less)
-               (else is-greater))))
-
-      ;; fixme: should occasionally balance the tree
-
-      ;; codes bcode value → codes'
-      (define (insert-code codes bcode value)
-         (if codes
-            (lets
-               ((l k v r codes)
-                (res (compare-code k bcode)))
-               (cond
-                  ((eq? res is-equal)
-                     (tuple l bcode value r))
-                  ((eq? res is-less)
-                     (tuple (insert-code l bcode value) k v r))
-                  (else
-                     (tuple l k v (insert-code r bcode value)))))
-            (tuple #false bcode value #false)))
-
-       ;; codes bcode → bcode' | #false
-       (define (lookup-code codes bcode)
-         (if codes
-            (lets
-               ((l k v r codes)
-                (res (compare-code k bcode)))
-               (cond
-                  ((eq? res is-equal) v)
-                  ((eq? res is-less) (lookup-code l bcode))
-                  (else (lookup-code r bcode))))
-            #false))
-
-      ;; codes bcode → codes(') bcode(')
-      (define (intern-code codes bcode)
-         (let ((res (lookup-code codes bcode)))
-            (if res
-               (values codes res)
-               (values (insert-code codes bcode bcode) bcode))))
-
       ; this will be forked as 'interner
       ; to bootstrap, collect all symbols from the entry procedure, intern
       ; them, and then make the intial threads with an up-to-date interner
@@ -212,9 +153,8 @@
          42)
 
       ;; thread with string → symbol, ...
-      (define (interner aroot acodes)
+      (define (interner root) ; codes)
          ;(debug "interner: wait")
-         (let interner ((root aroot) (codes acodes))
          (let*((envelope (wait-mail))
                (sender msg envelope))
             (cond
@@ -223,38 +163,31 @@
                   ;(debug "interner: interning " msg)
                   (let*((root symbol (string->interned-symbol root msg)))
                      (mail sender symbol) ; отправим назад новый символ
-                     (interner root codes)))
+                     (interner root))) ; codes
 
-               ; find an old equal bytecode sequence, extended wrapper, or add a new code fragment
-               ((bytecode? msg)
-                  ;(debug "interner: interning bytecode")
-                  (let*((codes code (intern-code codes msg)))
-                     (mail sender code)
-                     (interner root codes)))    ;; name after first finding
-
-               ((tuple? msg)
-                  ;(debug "interner: tuple command " (ref (ref msg 1) 1)) ; avoid symbol->string
-                  (tuple-case msg
-                     ((flush) ;; clear names before boot (deprecated)
-                        ;(debug "interner: aroot:" aroot)
-                        ;(debug "interner: acodes:" acodes)
-                        (interner aroot acodes))
-                     (else
-                        ;(print "unknown interner op: " msg)
-                        (interner root codes))))
-               ((null? msg) ;; get current info
-                  (debug "interner: info")
-                  (mail sender (tuple 'interner-state root codes))
-                  (interner root codes))
-               ((symbol? msg)
-                  (debug "interner: " msg " -> " (maybe-lookup-symbol root "something"))
-                  (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
-                  (interner root codes))
+;               ((tuple? msg)
+;                  ;(debug "interner: tuple command " (ref (ref msg 1) 1)) ; avoid symbol->string
+;                  (tuple-case msg
+;                     ((flush) ;; clear names before boot (deprecated)
+;                        ;(debug "interner: aroot:" aroot)
+;                        ;(debug "interner: acodes:" acodes)
+;                        (interner root codes))
+;                     (else
+;                        ;(print "unknown interner op: " msg)
+;                        (interner root codes))))
+;               ((null? msg) ;; get current info
+;                  (debug "interner: info")
+;                  (mail sender (tuple 'interner-state root codes))
+;                  (interner root codes))
+;               ((symbol? msg)
+;                  (debug "interner: " msg " -> " (maybe-lookup-symbol root "something"))
+;                  (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
+;                  (interner root codes))
                (else
                   (debug "interner: bad")
 
                   (mail sender 'bad-kitty)
-                  (interner root codes))))))
+                  (interner root))))) ;codes
 
       ; fixme: invalid
       ;(define-syntax defined?
@@ -287,10 +220,9 @@
 
       ;; make a thunk to be forked as the thread
       ;; (sym ...)  ((bcode . value) ...) → thunk
-      (define (initialize-interner symbol-list codes)
+      (define (initialize-interner symbol-list)
          (let
-            ((sym-root (fold put-symbol empty-symbol-tree symbol-list))
-             (code-root (fold (λ (codes pair) (insert-code codes (car pair) (cdr pair))) #false codes)))
-            (λ () (interner sym-root code-root))))
+            ((sym-root (fold put-symbol empty-symbol-tree symbol-list)))
+            (λ () (interner sym-root)))) ;code-root
 
 ))

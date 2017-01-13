@@ -69,13 +69,12 @@
                   (cons #\# (render (vector->list obj) tl)))
 
                ((function? obj)
+                  (render "#<function>" tl))
                   ;; anonimas
                   ;(let ((symp (interact 'intern (tuple 'get-name obj))))
                   ;   (if symp
                   ;      (ilist #\# #\< (render symp (cons #\> tl)))
-                  ;      (render "#<function>" tl)))
-                  (render "#<function>" tl)
-               )
+                  ;      (render "#<function>" tl))))
 
                ((tuple? obj)
                   (ilist #\# #\[
