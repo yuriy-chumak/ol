@@ -95,6 +95,8 @@
                      (sendfile fd "text/html" "/index.html"))
                ((starts-with url "/olvm.js")
                   (sendfile fd "text/javascript" "/olvm.js"))
+               ((starts-with url "/olvm.html")
+                  (sendfile fd "text/html" "/olvm.html"))
                ((starts-with url "/olvm.html.mem")
                   (sendfile fd "text/javascript" "/olvm.html.mem"))
 

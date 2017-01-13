@@ -20,6 +20,7 @@
 
       // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
       stdinBuffer = unescape(encodeURIComponent("(print \"<pre>\")"));
+      stdinBuffer += unescape(encodeURIComponent("(define (f n) (if (eq? n 0) 1 (* n (f (- n 1)))))"));
 
       var Module = {
         preRun: function() {
@@ -96,10 +97,7 @@
        var num = 0;
        setInterval(function() {
          console.log("sending " + num);
-         stdinBuffer = stdinBuffer + unescape(encodeURIComponent("(print " + num + ")\n"));
-         /*stdinBuffer = stdinBuffer + unescape(encodeURIComponent(
-           window.prompt("(print 5)","(print 2)")
-         ));*/
+         stdinBuffer = stdinBuffer + unescape(encodeURIComponent("(print " + num + " \": \" (f " + num + "))"));
          num += 1;
        }, 5000);
     </script>

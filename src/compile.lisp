@@ -15,210 +15,15 @@
         (lang thread)
         (lang primop)
         (lang intern))
+(import (owl parse))
 
+; ------------------------------------------------------------------------------
 (define syntax-error-mark (list 'syntax-error))
 
-      (define (sys:read fd maxlen)         (syscall 0 fd maxlen #false))
-
-      (define (try-get-block fd block-size block?)
-         (let ((res (sys:read fd block-size)))
-;            (print "res: " res ", block?: " block?)
-            (if (eq? res #true) ;; would block
-               (if block?
-                  (begin
-                     (display ".")
-                     (syscall 1200 #f #f #f) ; wait for a moment
-                     ;(interact sid 5) ; todo: add checking the existing of thread controller
-                     (try-get-block fd block-size #true))
-                  res)
-               res))) ;; is #false, eof or bvec
-
-      (define (take-nap)
-         (syscall 1200 #f #f #f))
-
-
 (define (syntax-fail pos info lst)
-   (print "error")
    (list syntax-error-mark info
       (list ">>> " "x" " <<<")))
 
-; -- parse --------------------------------------------------
-      (define (assert pred val) ; fixme: should have a error message to throw when no luck
-         (λ (ll ok fail pos)
-            (let ((res (pred val)))
-               (if res
-                  (ok ll fail val pos)
-                  (fail pos "parser assert blocked")))))
-
-
-      (define-syntax let-parses
-         (syntax-rules (verify eval)
-            ((let-parses 42 sc ft lst pos ((val (eval term)) . r) body)
-               (let ((val term))
-                  (let-parses 42 sc ft lst pos r body)))
-            ((let-parses 42 sc ft lst pos ((val parser) . r) body)
-               (parser lst
-                  (λ (lst ft val pos)
-                     (let-parses 42 sc ft lst pos r body))
-                  ft pos))
-            ((let-parses 42 sc ft lst pos () body) (sc lst ft body pos))
-            ((let-parses 42 sc ft lst pos ((verify term msg) . r) body)
-               (if term
-                  (let-parses 42 sc ft lst pos r body)
-                  (ft pos msg)))
-            ((let-parses ((a . b) ...) body)
-               (λ (ll ok fail pos)
-                  (let-parses 42 ok fail ll pos ((a . b) ...) body)))))
-
-      (define (get-greedy parser zero-ok?)
-         (λ (lst ok fail pos)
-            (let loop ((lst lst) (rvals null) (pos pos))
-               (parser lst
-                  (λ (lst fail val pos)
-                     (loop lst (cons val rvals) pos))
-                  (λ (fpos freason)
-                     (if (or zero-ok? (pair? rvals))
-                        (ok lst fail (reverse rvals) pos) ; pass the original failure cont
-                        (fail fpos freason))) ; could fail differently when zero and requested at least one
-                  pos))))
-
-      (define (get-greedy* parser) (get-greedy parser #true))
-      (define (get-greedy+ parser) (get-greedy parser #false))
-
-      (define (get-either a b)
-         (λ (lst ok fail pos)
-            (a lst ok
-               (λ (fa fai)
-                  (b lst ok (λ (fb fbi) (if (< fa fb) (fail fb fbi) (fail fa fai))) pos))
-               pos)))
-
-      (define-syntax get-any-of
-         (syntax-rules ()
-            ((get-any-of a) a)
-            ((get-any-of a b) (get-either a b))
-            ((get-any-of a . bs)
-               (get-either a (get-any-of . bs)))))
-
-      (define eof-error "end of input")
-
-      (define (get-byte ll ok fail pos)
-         (cond
-            ((null? ll) (fail pos eof-error)) ; will always be the largest value
-            ((pair? ll) (ok (cdr ll) fail (car ll) (+ pos 1)))
-            (else (get-byte (ll) ok fail pos))))
-
-      ;; testing a slower one to check assertions
-      (define (get-byte-if pred)
-         (let-parses
-            ((b get-byte)
-             (verify (pred b) "bad byte")
-             ;(_ (assert pred b))
-             )
-            b))
-
-      (define (get-between below above)
-         (get-byte-if
-            (λ (x)
-               (and (less? below x) (less? x above)))))
-               
-      (define (get-imm n)
-         (let-parses
-            ((a get-byte)
-             (verify (eq? a n) '(expected n)))
-            a))
-
-
-      ; #b10xxxxxx
-      (define get-extension-byte
-         (let-parses
-            ((b get-byte)
-             (verify (eq? #b10000000 (vm:and b #b11000000)) "Bad extension byte"))
-            b))
-
-      ;; fixme: could also support the longer proposed ones
-      ;; fixme: get-rune == get-utf-8
-      (define get-rune
-         (get-any-of
-            (get-byte-if (λ (x) (less? x 128)))
-            (let-parses
-               ((a (get-between 127 224))
-                (verify (not (eq? a #b11000000)) "blank leading 2-byte char") ;; would be non-minimal
-                (b get-extension-byte))
-               (two-byte-point a b))
-            (let-parses
-               ((a (get-between 223 240))
-                (verify (not (eq? a #b11100000)) "blank leading 3-byte char") ;; would be non-minimal
-                (b get-extension-byte) (c get-extension-byte))
-               (three-byte-point a b c))
-            (let-parses
-               ((a (get-between 239 280))
-                (verify (not (eq? a #b11110000)) "blank leading 4-byte char") ;; would be non-minimal
-                (b get-extension-byte) (c get-extension-byte) (d get-extension-byte))
-               (four-byte-point a b c d))))
-
-      (define (get-rune-if pred)
-         (let-parses
-            ((rune get-rune)
-             (rune (assert pred rune)))
-            rune))
-
-      ; rchunks fd block? -> rchunks' end?
-      ;; bug: maybe-get-input should now use in-process mail queuing using return-mails interop at the end if necessary
-      (define (maybe-get-input rchunks fd block? prompt)
-         (let ((chunk (try-get-block fd 1024 #false)))
-;            (print "chunk: " chunk ", rchunks: " rchunks)
-            ;; handle received input
-            (cond
-               ((not chunk) ;; read error in port
-                  (values rchunks #true))
-               ((eq? chunk #true) ;; would block
-                  (take-nap) ;; interact with sleeper thread to let cpu sleep
-                  (values rchunks #false))
-               ((eof? chunk) ;; normal end if input, no need to call me again
-                  (values rchunks #true))
-               (else
-                  (maybe-get-input (cons chunk rchunks) fd #false prompt)))))
-
-      (define (push-chunks data rchunks)
-         (if (null? rchunks)
-            data
-            (append data
-               (foldr append null
-                  (map vec->list (reverse rchunks))))))
-
-      (define (fd->exp-stream fd prompt parse fail re-entry?) ; re-entry? unused
-         (let loop ((old-data null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
-            ;(print "fd->exp-stream: " old-data)
-            (lets
-               ((rchunks end?
-                  (if finished?
-                     (values null #true)
-                     (maybe-get-input null fd (or (null? old-data) block?)
-                        (if (null? old-data) prompt "|   "))))
-                (data (push-chunks old-data rchunks)))
-
-               ;(print "rchunks: " rchunks ", " data)
-               (if (null? data)
-                  (if end? null (loop data #true #false))
-                  (parse data
-                     (λ (data-tail backtrack val pos)
-                        (pair val
-                           (if (and finished? (null? data-tail))
-                              null
-                              (loop data-tail (null? data-tail) end?))))
-                     (λ (pos info)
-                        (cond
-                           (end?
-                              ; parse failed and out of data -> must be a parse error, like unterminated string
-                              (list (fail pos info data)))
-                           ((= pos (length data))
-                              ; parse error at eof and not all read -> get more data
-                              (loop data #true end?))
-                           (else
-                              (list (fail pos info data)))))
-                     0)))))
-
-; ------------------------------------------------------------------------------
 
 (define (symbols-of node)
    (define tag (list 'syms))
@@ -251,6 +56,8 @@
       tag null))
 
 ;--
+(define (codes-of ob)
+
    (define (code-refs seen obj)
       (cond
          ((value? obj) (values seen empty))
@@ -265,19 +72,18 @@
                   (lets ((seen this (code-refs seen (car lst))))
                      (loop seen (cdr lst)
                         (ff-union this here +))))))))
-(define (codes-of ob)
+
    (lets ((refs this (code-refs empty ob)))
       (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 
 ; ==============================================================================
-(define parser
-   (let-parses (
-         (line (get-greedy+ (get-rune-if (lambda (x) (not (eq? x #\newline))))))
-         (skip (get-imm #\newline)))
-      (runes->string line)))
-
-; ...
-(define (sleep1) (syscall 1200 #f #f #f))
+;(define parser
+;   (let-parses (
+;         (line (get-greedy+ (get-rune-if (lambda (x) (not (eq? x #\newline))))))
+;         (skip (get-imm #\newline)))
+;      (runes->string line)))
+;
+;(define (sleep1) (syscall 1200 #f #f #f))
 
       (define (? x) #true)
 
