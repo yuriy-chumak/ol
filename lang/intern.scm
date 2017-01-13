@@ -12,7 +12,7 @@
       bytes->symbol
       string->symbol
       symbol->string
-      initialize-interner
+      ;initialize-interner
       string->uninterned-symbol
       string->interned-symbol       ;; tree string → tree' symbol
       put-symbol                    ;; tree sym → tree'
@@ -20,6 +20,8 @@
       intern-symbols
       start-dummy-interner ; not used
       ;defined?
+
+      fork-intern-interner
       )
 
    (import
@@ -152,42 +154,60 @@
          (apply print-to (cons stderr args))
          42)
 
-      ;; thread with string → symbol, ...
-      (define (interner root) ; codes)
-         ;(debug "interner: wait")
-         (let*((envelope (wait-mail))
-               (sender msg envelope))
-            (cond
-               ; find an old symbol or make a new one
-               ((string? msg)
-                  ;(debug "interner: interning " msg)
-                  (let*((root symbol (string->interned-symbol root msg)))
-                     (mail sender symbol) ; отправим назад новый символ
-                     (interner root))) ; codes
+      ;
+      (define (fork-intern-interner symbols)
+         (let ((root (fold put-symbol empty-symbol-tree symbols)))
+            (fork-server 'intern (lambda ()
+               (let loop ((root root))
+                  (let*((envelope (wait-mail))
+                        (sender msg envelope))
+                     (cond
+                        ((string? msg)
+                           ;(debug "interner: interning bytecode")
+                           (let*((root symbol (string->interned-symbol root msg)))
+                              (mail sender symbol)
+                              (loop root)))
+                        ; todo: simplify this
+                        (else
+                           (mail sender 'bad-kitty)
+                           (loop root)))))))))
 
-;               ((tuple? msg)
-;                  ;(debug "interner: tuple command " (ref (ref msg 1) 1)) ; avoid symbol->string
-;                  (tuple-case msg
-;                     ((flush) ;; clear names before boot (deprecated)
-;                        ;(debug "interner: aroot:" aroot)
-;                        ;(debug "interner: acodes:" acodes)
-;                        (interner root codes))
-;                     (else
-;                        ;(print "unknown interner op: " msg)
-;                        (interner root codes))))
-;               ((null? msg) ;; get current info
-;                  (debug "interner: info")
-;                  (mail sender (tuple 'interner-state root codes))
-;                  (interner root codes))
-;               ((symbol? msg)
-;                  (debug "interner: " msg " -> " (maybe-lookup-symbol root "something"))
-;                  (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
-;                  (interner root codes))
-               (else
-                  (debug "interner: bad")
-
-                  (mail sender 'bad-kitty)
-                  (interner root))))) ;codes
+;      ;; thread with string → symbol, ...
+;      (define (interner root) ; codes)
+;         ;(debug "interner: wait")
+;         (let*((envelope (wait-mail))
+;               (sender msg envelope))
+;            (cond
+;               ; find an old symbol or make a new one
+;               ((string? msg)
+;                  ;(debug "interner: interning " msg)
+;                  (let*((root symbol (string->interned-symbol root msg)))
+;                     (mail sender symbol) ; отправим назад новый символ
+;                     (interner root))) ; codes
+;
+;;               ((tuple? msg)
+;;                  ;(debug "interner: tuple command " (ref (ref msg 1) 1)) ; avoid symbol->string
+;;                  (tuple-case msg
+;;                     ((flush) ;; clear names before boot (deprecated)
+;;                        ;(debug "interner: aroot:" aroot)
+;;                        ;(debug "interner: acodes:" acodes)
+;;                        (interner root codes))
+;;                     (else
+;;                        ;(print "unknown interner op: " msg)
+;;                        (interner root codes))))
+;;               ((null? msg) ;; get current info
+;;                  (debug "interner: info")
+;;                  (mail sender (tuple 'interner-state root codes))
+;;                  (interner root codes))
+;;               ((symbol? msg)
+;;                  (debug "interner: " msg " -> " (maybe-lookup-symbol root "something"))
+;;                  (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
+;;                  (interner root codes))
+;               (else
+;                  (debug "interner: bad")
+;
+;                  (mail sender 'bad-kitty)
+;                  (interner root))))) ;codes
 
       ; fixme: invalid
       ;(define-syntax defined?
@@ -220,9 +240,9 @@
 
       ;; make a thunk to be forked as the thread
       ;; (sym ...)  ((bcode . value) ...) → thunk
-      (define (initialize-interner symbol-list)
-         (let
-            ((sym-root (fold put-symbol empty-symbol-tree symbol-list)))
-            (λ () (interner sym-root)))) ;code-root
+;      (define (initialize-interner symbol-list)
+;         (let
+;            ((sym-root (fold put-symbol empty-symbol-tree symbol-list)))
+;            (λ () (interner sym-root)))) ;code-root
 
 ))

@@ -6,7 +6,7 @@
 (define-library (lang assemble)
    (export
       assemble-code
-      start-assembly-interner)
+      fork-bytecode-interner)
 
    (import
       (r5rs core)
@@ -22,7 +22,7 @@
       (lang register))
 
    (begin
-      (define assembly-server 'assembly)
+      (define bytecode-server 'bytecode-server)
 
       (define is-less #false)
       (define is-equal #true)
@@ -90,9 +90,9 @@
                (values (insert-code codes bytecode bytecode) bytecode))))
 
       ; start internal assembly interner
-      (define (start-assembly-interner bytecodes)
+      (define (fork-bytecode-interner bytecodes)
          (let ((codes (fold (λ (codes pair) (insert-code codes (car pair) (cdr pair))) #false bytecodes)))
-            (fork-server assembly-server (lambda ()
+            (fork-server bytecode-server (lambda ()
                (let loop ((codes codes))
                   (let*((envelope (wait-mail))
                         (sender msg envelope))
@@ -308,8 +308,8 @@
       ;; make bytecode and intern it (to improve sharing, not mandatory)
       (define (bytes->bytecode bytes)
          ;(vm:raw type-bytecode bytes)) ; more memory, less cpu
-         (interact assembly-server     ; more cpu, less memory
-            (vm:raw type-bytecode bytes))) 
+         (interact bytecode-server      ; more cpu, less memory
+            (vm:raw type-bytecode bytes)))
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont

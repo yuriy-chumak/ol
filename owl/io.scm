@@ -111,7 +111,8 @@
                      (cond
                         ((eq? wrote end) #true) ;; ok, wrote the whole chunk
                         ((eq? wrote 0) ;; 0 = EWOULDBLOCK
-                           (interact sid 2) ;; fixme: adjustable delay rounds
+                           (syscall 1200 #f #f #f) ; wait for a moment
+                           ;(interact sid 2) ;; fixme: adjustable delay rounds
                            (loop))
                         (wrote ;; partial write
                            (write-really (bvec-tail bvec wrote) fd))
@@ -133,7 +134,8 @@
             (if (eq? res #true) ;; would block
                (if block?
                   (begin
-                     (interact sid 5)
+                     (syscall 1200 #f #f #f) ; wait for a moment
+                     ;(interact sid 5) ; todo: add checking the existing of thread controller
                      (try-get-block fd block-size #true))
                   res)
                res))) ;; is #false, eof or bvec
@@ -458,7 +460,8 @@
                #false)))
 
       (define (wait-write fd)
-         (interact fd 'wait))
+         (syscall 1200 #f #f #f))
+         ;(interact fd 'wait))
 
       (define (stream-chunk buff pos tail)
          (if (eq? pos 0)
@@ -510,7 +513,8 @@
                #false)))
 
       (define (take-nap)
-         (interact sid 5))
+         (syscall 1200 #f #f #f))
+         ;(interact sid 5))
 
       (define (fasl-save obj path)
          (vector->file

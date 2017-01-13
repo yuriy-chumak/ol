@@ -274,9 +274,7 @@
 ;; repl-prompt. this should too, actually)
 (define (get-main-entry symbols codes)
    (let*((initial-names   *owl-names*)
-         (initial-version *owl-version*)
-
-         (interner-thunk (initialize-interner symbols)))
+         (initial-version *owl-version*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
          ;(print "//vm-args: " vm-args)
@@ -290,8 +288,8 @@
                         (start-base-threads)
 
                         ;; repl needs symbol etc interning, which is handled by this thread
-                        (fork-server 'intern interner-thunk)
-                        (start-assembly-interner codes)
+                        (fork-intern-interner symbols)
+                        (fork-bytecode-interner codes)
 
                         ;; set a signal handler which stop evaluation instead of owl
                         ;; if a repl eval thread is running

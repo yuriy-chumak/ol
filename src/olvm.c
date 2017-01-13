@@ -1385,12 +1385,19 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		if (numRead == 0)
 			break;                      /* EOF */
 
-		numSent = write(out_fd, buf, numRead);
-		if (numSent == -1)
-			return -1;
+		numSent = send(out_fd, buf, numRead, 0);
 		if (numSent == 0) {               /* Should never happen */
 			STDERR("sendfile: write() transferred 0 bytes");
 			return 0;
+		}
+		if (numSent == -1) {
+			STDERR("%d/%d\n", numSent, numRead);
+			//if (WSAGetLastError() == 10035) {
+				Sleep(100);
+				numSent = 0;
+			//}
+			//else
+			//	break;
 		}
 
 		count -= numSent;
@@ -2863,6 +2870,8 @@ loop:;
 			// right way: use PF_INET in socket call
 	#ifdef _WIN32
 			int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+			unsigned long v = 0;
+			ioctlsocket(sock, FIONBIO, &v); // set blocking mode
 	#else
 			int sock = socket(PF_INET, SOCK_STREAM, 0);
 	#endif
@@ -3749,6 +3758,10 @@ loop:;
 			if (kill(uvtoi (a), uvtoi (b)) >= 0)
 				result = (word*) ITRUE;
 	#endif
+			break;
+
+		case 1200:
+			result = (word*) ITRUE;
 			break;
 
 		}// case

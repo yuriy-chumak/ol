@@ -219,7 +219,9 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <fcntl.h>
+#ifndef _WIN32
 #include <termios.h>
+#endif
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -231,7 +233,9 @@
 #	include <sys/utsname.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#endif
 
 // additional defines:
 #ifndef O_BINARY
@@ -262,7 +266,7 @@ void STDERR(char* format, ...)
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
-	fprintf(stderr, "\n"); fflush(stderr);
+	fprintf(stderr, "\n");
 }
 
 static
@@ -274,7 +278,7 @@ void crash(int code, char* format, ...)
 	vfprintf(stderr, format, args);
 	va_end(args);
 
-	fprintf(stderr, "\n"); fflush(stderr);
+	fprintf(stderr, "\n");
 	exit(code);
 }
 
@@ -2812,7 +2816,9 @@ switch ((op = *ip++) & 0x3F) {
 			break;
 #endif
 		case 1200:
+#ifdef __EMSCRIPTEN__
 			emscripten_sleep(1);
+#endif
 			result = (word*) ITRUE;
 			break;
 

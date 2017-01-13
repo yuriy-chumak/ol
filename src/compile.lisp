@@ -1,6 +1,7 @@
 (import (owl unicode))
 (import (lang eval)
         (lang sexp)
+        (lang assemble)
 
         (lang env)
         (lang ast)
@@ -37,7 +38,7 @@
 
 
 (define (syntax-fail pos info lst)
-;   (print "error")
+   (print "error")
    (list syntax-error-mark info
       (list ">>> " "x" " <<<")))
 
@@ -250,20 +251,20 @@
       tag null))
 
 ;--
-(define (code-refs seen obj)
-   (cond
-      ((value? obj) (values seen empty))
-      ((bytecode? obj)
-         (values seen (put empty obj 1)))
-      ((get seen obj #false) =>
-         (λ (here) (values seen here)))
-      (else
-         (let loop ((seen seen) (lst (tuple->list obj)) (here empty))
-            (if (null? lst)
-               (values (put seen obj here) here)
-               (lets ((seen this (code-refs seen (car lst))))
-                  (loop seen (cdr lst)
-                     (ff-union this here +))))))))
+   (define (code-refs seen obj)
+      (cond
+         ((value? obj) (values seen empty))
+         ((bytecode? obj)
+            (values seen (put empty obj 1)))
+         ((get seen obj #false) =>
+            (λ (here) (values seen here)))
+         (else
+            (let loop ((seen seen) (lst (tuple->list obj)) (here empty))
+               (if (null? lst)
+                  (values (put seen obj here) here)
+                  (lets ((seen this (code-refs seen (car lst))))
+                     (loop seen (cdr lst)
+                        (ff-union this here +))))))))
 (define (codes-of ob)
    (lets ((refs this (code-refs empty ob)))
       (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
@@ -333,7 +334,7 @@
          execute
       ))
 
-      (define (evaluate-as exp env task-unused)
+      (define (evaluate-as exp env)
          ; run the compiler chain in a new task
          (let ((result
          (call/cc
@@ -353,7 +354,7 @@
             result))
 
       (define (evaluate exp env)
-         (evaluate-as exp env 'repl))
+         (evaluate-as exp env))
 
 
       (define (eval-repl exp env repl)
@@ -404,68 +405,48 @@
 
 ;------
 (define (get-main-entry symbols codes)
-   (let*((interner-thunk (initialize-interner symbols codes)))
-      ; main: / entry point of the REPL
-      (λ (vm-args)
-         ;(print "//vm-args: " vm-args)
-         ;; now we're running in the new repl
-         (start-thread-controller
-            (list ;1 thread
-               (tuple 'init
-                  (λ ()
-                     (fork-server 'repl (lambda ()
-                        ;; get basic io running
-                        (start-base-threads)
+   ; main: / entry point of the REPL
+   (λ (vm-args)
+      ;; now we're running in the new repl
+      (start-thread-controller
+         (list ;1 thread
+            (tuple 'init
+               (λ ()
+                  (fork-server 'repl (lambda ()
+                     ;; get basic io running
+                     (start-base-threads)
 
-                        ;; repl needs symbol etc interning, which is handled by this thread
-                        (fork-server 'intern interner-thunk)
+                     ;; repl needs symbol etc interning, which is handled by this thread
+                     (fork-intern-interner symbols)
+                     (fork-bytecode-interner codes)
 
-                        (fork (lambda ()
-                           (let loop ()
-                              (syscall 1200 0 0 0)
-                              (set-ticker-value 0)
-                              (loop))))
+                     ;; repl
+                     (let loop ((env  (interaction-environment))
+                                (in   (lambda () (fd->exp-stream stdin "> " sexp-parser syntax-fail #false)))
+                                (last 'blank)) ; last - последний результат
+                        (cond
+                           ((pair? in)
+                              (lets ((this in (uncons in #false)))
+                                 (cond
+                                    ((eof? this)
+                                       ;(print "EOF")
+                                       (repl-ok env last))
+                                    ((syntax-error? this)
+                                       (print "SYNTAX-ERROR")
+                                       (repl-fail env (cons "This makes no sense: " (cdr this))))
+                                    (else
+                                       (tuple-case (eval-repl this env repl)
+                                          ((ok result env)
+                                             (loop env in result))
+                                          ((fail reason)
+                                             (print "FAIL!!!")
+                                             (repl-fail env reason)))))))
+                           (else
+                              (loop env (in) last))))
+                     )))))
+               null))) ; no threads state
 
-                        ;; set a signal handler which stop evaluation instead of owl
-                        ;; if a repl eval thread is running
-                        ;(set-signal-action repl-signal-handler)
-
-                        ;; repl
-                        (begin
-                           (print "<pre>")
-
-         (let loop ((env  (interaction-environment))
-                    (in   (fd->exp-stream stdin "> " sexp-parser syntax-fail #false))
-                    (last 'blank)) ; last - последний результат
-            ;(print "loop:")
-            (cond
-               ((pair? in)
-                  (lets ((this in (uncons in #false)))
-                     (cond
-                        ((eof? this)
-                           ;(print "EOF")
-                           (repl-ok env last))
-                        ((syntax-error? this)
-                           (print "SYNTAX-ERROR")
-                           (repl-fail env (cons "This makes no sense: " (cdr this))))
-                        (else
-                           (tuple-case (eval-repl this env repl)
-                              ((ok result env)
-                                 ;(print "OK!!!")
-                                 (loop env in result))
-                              ((fail reason)
-                                 (print "FAIL!!!")
-                                 (repl-fail env reason)))))))
-               (else
-                  (loop env (in) last)))))
-                             ;; repl end
-                              
-                              )))))
-            null)))) ; no threads state
-
-; run
-;(define main (lambda (args)
-
+; compile the web-repl:
 (let*((symbols (symbols-of get-main-entry))
       (codes   (codes-of   get-main-entry))
       (entry   (get-main-entry symbols codes))
@@ -483,13 +464,5 @@
                 (display (string (ref "0123456789abcdef" (div x 16))))
                 (display (string (ref "0123456789abcdef" (mod x 16)))))
       bytes)
-   (display "\";"))
-
-
-;
-;(let*((path "program.b")
-;      (port (open-output-file path))
-;
-;      (bytes (fasl-encode main)))
-;   (write-bytes port bytes)
-;   (close-port port))
+   (display "\";")
+)

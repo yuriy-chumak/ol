@@ -19,7 +19,7 @@
       var spinnerElement = document.getElementById('spinner');
 
       // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
-      stdinBuffer = unescape(encodeURIComponent("(print \"let's go.\")\n"));
+      stdinBuffer = unescape(encodeURIComponent("(print \"<pre>\")"));
 
       var Module = {
         preRun: function() {
@@ -93,32 +93,35 @@
 
 
     <script>
-        /* for release:
-        (function() {
-          var memoryInitializer = 'oljs.html.mem';
-          if (typeof Module['locateFile'] === 'function') {
-            memoryInitializer = Module['locateFile'](memoryInitializer);
-          } else if (Module['memoryInitializerPrefixURL']) {
-            memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
-          }
-          var xhr = Module['memoryInitializerRequest'] = new XMLHttpRequest();
-          xhr.open('GET', memoryInitializer, true);
-          xhr.responseType = 'arraybuffer';
-          xhr.send(null);
-        })();*/
-
-        var script = document.createElement('script');
-        script.src = "oljs.js";
-        document.body.appendChild(script);
-    </script>
-
-    <script>
        var num = 0;
        setInterval(function() {
+         console.log("sending " + num);
          stdinBuffer = stdinBuffer + unescape(encodeURIComponent("(print " + num + ")\n"));
+         /*stdinBuffer = stdinBuffer + unescape(encodeURIComponent(
+           window.prompt("(print 5)","(print 2)")
+         ));*/
          num += 1;
        }, 5000);
     </script>
-  
+
+    <script>
+      /* for release:
+      (function() {
+        var memoryInitializer = 'olvm.js.mem';
+        if (typeof Module['locateFile'] === 'function') {
+          memoryInitializer = Module['locateFile'](memoryInitializer);
+        } else if (Module['memoryInitializerPrefixURL']) {
+          memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
+        }
+        var xhr = Module['memoryInitializerRequest'] = new XMLHttpRequest();
+        xhr.open('GET', memoryInitializer, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.send(null);
+      })();//*/
+
+      var script = document.createElement('script');
+      script.src = "olvm.js";
+      document.body.appendChild(script);
+    </script>
   </body>
 </html>
