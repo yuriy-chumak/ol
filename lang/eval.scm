@@ -49,7 +49,7 @@
       (scheme misc)
       (owl lazy)
       (lang macro)
-      (owl intern)
+      (lang intern)
       (lang primop)
       (only (owl regex) string->regex))
 

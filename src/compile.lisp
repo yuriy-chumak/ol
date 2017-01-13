@@ -13,7 +13,7 @@
         (lang macro)
         (lang thread)
         (lang primop)
-        (owl intern))
+        (lang intern))
 
 (define syntax-error-mark (list 'syntax-error))
 
@@ -419,6 +419,12 @@
 
                         ;; repl needs symbol etc interning, which is handled by this thread
                         (fork-server 'intern interner-thunk)
+
+                        (fork (lambda ()
+                           (let loop ()
+                              (syscall 1200 0 0 0)
+                              (set-ticker-value 0)
+                              (loop))))
 
                         ;; set a signal handler which stop evaluation instead of owl
                         ;; if a repl eval thread is running

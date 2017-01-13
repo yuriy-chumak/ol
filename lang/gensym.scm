@@ -10,7 +10,7 @@
       (owl list)
       (owl tuple)
       (owl render)
-      (owl intern)
+      (lang intern)
       (owl math))
 
    (begin

@@ -24,10 +24,12 @@
  | DEALINGS IN THE SOFTWARE.
  |#
 
-(define build-start (time-ms))
 (print "Loading code...")
 
-(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
+; fixme: можно не вызывать, все равно не работает :)
+;(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
+
+(define build-start (time-ms))
 
 ; forget all other libraries to have them be reloaded and rebuilt
 ; (src olvm) содержит список базовых элементов языка
@@ -69,7 +71,7 @@
 
 (import (otus lisp))
 
-(import (owl intern))
+(import (lang intern))
 (import (owl parse))
 
 (import (lang gensym))

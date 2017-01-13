@@ -7,7 +7,7 @@
 ;  - bytes->bytecode (where returned bytecode may use spacial primops)
 ; (- intern-char     -> x → x')
 
-(define-library (owl intern)
+(define-library (lang intern)
    (export
       bytes->symbol
       string->symbol
@@ -18,7 +18,7 @@
       put-symbol                    ;; tree sym → tree'
       empty-symbol-tree
       intern-symbols
-      start-dummy-interner
+      start-dummy-interner ; not used
       defined?
       )
 
@@ -36,6 +36,8 @@
    (begin
       ; hack warning, could use normal = and < here, but
       ; using primitives speeds up parsing a bit
+
+      ; TODO: подумать о табличке символов как ff с хеш-ключами
 
       (define empty-symbol-tree #false)
 
@@ -61,6 +63,7 @@
                   (else (walk s1 (s2)))))
             (else (walk (s1) s2))))
 
+      ; сравнить две строки
       (define (compare s1 s2)
          (walk (str-iter s1) (str-iter s2)))
 
@@ -71,6 +74,10 @@
 
       (define (symbol->string ob)
          (ref ob 1))
+
+      (define (string->symbol str)
+         (interact 'intern str))
+
 
       ; lookup node str sym -> node' sym'
 
@@ -112,9 +119,6 @@
                (values root old)
                (let ((new (string->uninterned-symbol str)))
                   (values (put-symbol root new) new)))))
-
-      (define (string->symbol str)
-         (interact 'intern str))
 
       ;;;
       ;;; BYTECODE INTERNING
@@ -203,50 +207,56 @@
             ((function? func) (bytecode-of (ref func 1)))
             (else #false)))
 
-      ;(define (debug . args)
-      ;   ;(apply print-to (cons stderr args))
-      ;   42)
+      (define (debug . args)
+         (apply print-to (cons stderr args))
+         42)
 
       ;; thread with string → symbol, ...
-      (define (interner root codes)
+      (define (interner aroot acodes)
          ;(debug "interner: wait")
-         (lets
-            ((env (wait-mail))
-             (sender msg env))
+         (let interner ((root aroot) (codes acodes))
+         (let*((envelope (wait-mail))
+               (sender msg envelope))
             (cond
-               ((string? msg) ;; find an old symbol or make a new one
+               ; find an old symbol or make a new one
+               ((string? msg)
                   ;(debug "interner: interning " msg)
-                  (lets ((root sym (string->interned-symbol root msg)))
-                     (mail sender sym)
+                  (let*((root symbol (string->interned-symbol root msg)))
+                     (mail sender symbol) ; отправим назад новый символ
                      (interner root codes)))
-               ((bytecode? msg) ;; find an old equal bytecode sequence, extended wrapper, or add a new code fragment
+
+               ; find an old equal bytecode sequence, extended wrapper, or add a new code fragment
+               ((bytecode? msg)
                   ;(debug "interner: interning bytecode")
-                  (lets
-                     ((codes code (intern-code codes msg)))
+                  (let*((codes code (intern-code codes msg)))
                      (mail sender code)
                      (interner root codes)))    ;; name after first finding
+
                ((tuple? msg)
                   ;(debug "interner: tuple command " (ref (ref msg 1) 1)) ; avoid symbol->string
                   (tuple-case msg
                      ((flush) ;; clear names before boot (deprecated)
-                        (interner root codes))
+                        ;(debug "interner: aroot:" aroot)
+                        ;(debug "interner: acodes:" acodes)
+                        (interner aroot acodes))
                      (else
                         ;(print "unknown interner op: " msg)
                         (interner root codes))))
                ((null? msg) ;; get current info
-                  ;(debug "interner: info")
+                  (debug "interner: info")
                   (mail sender (tuple 'interner-state root codes))
                   (interner root codes))
                ((symbol? msg)
-                  (print "interner: " msg " -> " (maybe-lookup-symbol root "something"))
+                  (debug "interner: " msg " -> " (maybe-lookup-symbol root "something"))
                   (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
                   (interner root codes))
                (else
-                  ;(debug "interner: bad")
+                  (debug "interner: bad")
 
                   (mail sender 'bad-kitty)
-                  (interner root codes)))))
+                  (interner root codes))))))
 
+      ; fixme: invalid
       (define-syntax defined?
          (syntax-rules (*toplevel*)
             ((defined? symbol)
@@ -255,7 +265,7 @@
 
       ;; a placeholder interner for programs which don't need the other services
       ;; soon to be removed
-      (define (dummy-interner)
+      (define (dummy-interner) ; not used
          (lets ((env (wait-mail))
                 (sender msg env))
             (cond
