@@ -19,7 +19,7 @@
       empty-symbol-tree
       intern-symbols
       start-dummy-interner ; not used
-      defined?
+      ;defined?
       )
 
    (import
@@ -257,10 +257,10 @@
                   (interner root codes))))))
 
       ; fixme: invalid
-      (define-syntax defined?
-         (syntax-rules (*toplevel*)
-            ((defined? symbol)
-               (get *toplevel* symbol #false))))
+      ;(define-syntax defined?
+      ;   (syntax-rules (*toplevel*)
+      ;      ((defined? symbol)
+      ;         (get *toplevel* symbol #false))))
 
 
       ;; a placeholder interner for programs which don't need the other services

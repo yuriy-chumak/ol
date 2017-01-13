@@ -1,7 +1,7 @@
 
 (define-library (lang gensym)
 
-   (export gensym fresh)
+   (export gensym)
 
    (import
       (r5rs core)
@@ -86,9 +86,6 @@
             ((id (+ 1 (if (tuple? exp) (max-ast-id exp 0) (max-gensym-id exp 0))))
              (digits (cons 103 (render id null))))
             (string->symbol (runes->string digits))))
-
-      (define (fresh free)
-         (values free (gensym free)))
 
       ;(gensym 1)
       ;(gensym '(1 2 3))
