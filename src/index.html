@@ -1,62 +1,106 @@
-<!doctype html>
-<html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>tests/numbers.scm</title>
-  </head>
-  <body>
-    <div class="spinner" id='spinner'></div>
-    <div class="emscripten" id="status">Downloading...</div>
+<!DOCTYPE HTML>
+<head>
+   <meta charset="utf-8" />
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <title>OL</title>
+   <meta name="author" content="Yuriy Chumak - yuriy-chumak"/>
 
-    <div class="emscripten">
-      <progress value="0" max="100" id="progress" hidden=1></progress>
-    </div>
+   <script src="static/jquery-1.11.3.min.js"></script>
+   <link  href="static/jquery.terminal.css" rel="stylesheet"/>
+   <script src="static/jquery.terminal-0.8.8.min.js"></script>
 
-    <script type='text/javascript'>
-      var statusElement = document.getElementById('status');
-      var progressElement = document.getElementById('progress');
-      var spinnerElement = document.getElementById('spinner');
+   <!--[if IE]>
+   <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+   <![endif]-->
+</head>
+<body>
+   <div id="terminal" autofocus></div>
 
+   <script>
+var stdInput = unescape(encodeURIComponent("(print \"You see a prompt.\")"));
+var terminal;
+$('#terminal').terminal(function(command, terminal) {
+   stdInput += unescape(encodeURIComponent(command));
+}, {
+   prompt: '> ',
+   name: 'repl',
+   greetings: '\
+OL - Otus Lisp - yet another pet lisp\n\
+Copyright(c) 2014 Aki Helin\n\
+Copyright(c) 2014 - 2017 Yuriy Chumak\n\
+~~~~~~~~~~~~~~~~~\n',
+   height: 200,
+   enabled: false,
+
+   onInit: function(term) {
+      terminal = term;
+      terminal.echo("Loading...");
+
+      /*
+      function connectHandler() {
+         terminal.echo("Connected.");
+         terminal.focus();
+         socket.write("GET /ol HTTP/1.1\x0D\x0A");
+         socket.write("Host: " + location.hostname + "\x0D\x0A");
+         socket.write("\x0D\x0A");
+         socket.flush();
+         terminal.resume();
+      }
+      function dataHandler(data) {
+         if (data.length > 2 && data.indexOf('> ', data.length - 2) !== -1)
+            terminal.echo(data.substring(0, data.length - 2));
+         else
+            terminal.echo(data);
+      }
+      function closeHandler() {
+         terminal.pause();
+         terminal.echo("Disconnected.");
+         alert('lost connection')
+      }
+      function errorHandler(errorstr) {
+         terminal.pause();
+         terminal.echo("Error: " + errorstr);
+         alert(errorstr);
+      }*/
+   }
+});
+   </script>
+
+
+   <script type='text/javascript'>
       // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
-      stdinBuffer = unescape(encodeURIComponent("(print \"<pre>\")"));
-      stdinBuffer += unescape(encodeURIComponent("(define (f n) (if (eq? n 0) 1 (* n (f (- n 1)))))"));
 
       var Module = {
         preRun: function() {
           console.log("preRun");
           function stdin() {
-            if (stdinBuffer.length == 0) {
+            if (stdInput.length == 0) {
               return undefined;
             }
 
-            var chr = stdinBuffer.charCodeAt(0);
-            stdinBuffer = stdinBuffer.substr(1);
+            var chr = stdInput.charCodeAt(0);
+            stdInput = stdInput.substring(1);
             return chr;
           }
           var stdout = null;
           var stderr = null;
           FS.init(stdin, stdout, stderr);
         },
-        postRun: function() {
-          console.log("postRun");
-        },
+         postRun: function() {
+            console.log("postRun");
+         },
 
-        print: function(text) { document.write(text); document.write("\n") },
-        printErr: function(text) { alert(text); },
+         print: function(text) {
+            terminal.echo(text);
+            //document.write(text); document.write("\n");
+         },
+         printErr: function(text) {
+            alert(text);
+         },
 
-        /*canvas: (function() {
-          var canvas = document.getElementById('canvas');
-
-          // As a default initial behavior, pop up an alert when webgl context is lost. To make your
-          // application robust, you may want to override this behavior before shipping!
-          // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-          canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
-
-          return canvas;
-        })(),*/
         setStatus: function(text) {
-          if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+          console.log(text);
+          /*if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
           if (text === Module.setStatus.text) return;
           var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
           var now = Date.now();
@@ -73,10 +117,11 @@
             progressElement.hidden = true;
             if (!text) spinnerElement.style.display = 'none';
           }
-          statusElement.innerHTML = text;
+          statusElement.innerHTML = text;*/
         },
         totalDependencies: 0,
         monitorRunDependencies: function(left) {
+          console.log(left);
           this.totalDependencies = Math.max(this.totalDependencies, left);
           Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
         }
@@ -85,7 +130,7 @@
       window.onerror = function(event) {
         // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
         Module.setStatus('Exception thrown, see JavaScript console');
-        spinnerElement.style.display = 'none';
+        //spinnerElement.style.display = 'none';
         Module.setStatus = function(text) {
           if (text) Module.printErr('[post-exception status] ' + text);
         };
@@ -94,16 +139,16 @@
 
 
     <script>
-       var num = 0;
+       /*var num = 0;
        setInterval(function() {
          console.log("sending " + num);
          stdinBuffer = stdinBuffer + unescape(encodeURIComponent("(print " + num + " \": \" (f " + num + "))"));
          num += 1;
-       }, 5000);
+       }, 1000);*/
     </script>
 
-    <script>
-      ///* for release:
+   <script>
+      /* for release:
       (function() {
         var memoryInitializer = 'olvm.html.mem';
         if (typeof Module['locateFile'] === 'function') {
@@ -120,6 +165,6 @@
       var script = document.createElement('script');
       script.src = "olvm.js";
       document.body.appendChild(script);
-    </script>
-  </body>
+   </script>
+</body>
 </html>

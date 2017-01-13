@@ -37,6 +37,10 @@
 // 1) gcc --coverage
 // 2) gcov -b olvm.c
 
+// todo: handle __asmjs__ and __EMSCRIPTEN__ (and __llvm__/__clang__)
+// Emscripten is a 32-bit platform, so size_t is a 32-bit unsigned integer,
+//  __POINTER_WIDTH__=32, __SIZEOF_LONG__=4 and __LONG_MAX__ equals 2147483647L.
+
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
 #	warning "This code must be compiled by Gnu C compiler"
