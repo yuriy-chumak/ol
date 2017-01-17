@@ -258,11 +258,11 @@
       (entry   (get-main-entry symbols codes))
       (bytes (fasl-encode entry)))
 
-   (let*((path "program.b")
-         (port (open-output-file path)))
-
-      (write-bytes port bytes)
-      (close-port port))
+;   (let*((path "repl-slim")
+;         (port (open-output-file path)))
+;
+;      (write-bytes port bytes)
+;      (close-port port))
 
    (display "unsigned char *language = (unsigned char*) \"")
    (for-each (lambda (x)

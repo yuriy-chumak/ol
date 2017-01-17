@@ -9,6 +9,8 @@ IF "%1"=="boot" GOTO BOOT
 IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
+IF "%1"=="slim" GOTO SLIM
+IF "%1"=="js" GOTO JS
 IF "%1"=="release" GOTO RELEASE
 IF "%1"=="tests" GOTO TESTS
 IF "%1"=="/help"  GOTO HELP
@@ -91,6 +93,16 @@ if errorlevel 1 goto again
 :again
 copy boot.fasl repl
 GOTO :REPL
+
+:SLIM
+vm repl src/slim.lisp >src/slim.c
+GOTO:EOF
+
+:JS
+@set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
+emcc src/slim.c src/olvm.c -o olvm.html -s ASYNCIFY=1
+GOTO:EOF
+
 
 :RELEASE
 gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32

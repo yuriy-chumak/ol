@@ -13,9 +13,7 @@
    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
    <![endif]-->
 </head>
-<body>
-   <div id="terminal" autofocus></div>
-
+<body style="height: 100%;" id="terminal">
    <script>
 var stdInput = unescape(encodeURIComponent("(print \"You see a prompt.\")"));
 var terminal;
@@ -29,40 +27,32 @@ OL - Otus Lisp - yet another pet lisp\n\
 Copyright(c) 2014 Aki Helin\n\
 Copyright(c) 2014 - 2017 Yuriy Chumak\n\
 ~~~~~~~~~~~~~~~~~\n',
-   height: 200,
    enabled: false,
 
    onInit: function(term) {
       terminal = term;
-      terminal.echo("Loading...");
 
-      /*
-      function connectHandler() {
-         terminal.echo("Connected.");
-         terminal.focus();
-         socket.write("GET /ol HTTP/1.1\x0D\x0A");
-         socket.write("Host: " + location.hostname + "\x0D\x0A");
-         socket.write("\x0D\x0A");
-         socket.flush();
-         terminal.resume();
-      }
-      function dataHandler(data) {
-         if (data.length > 2 && data.indexOf('> ', data.length - 2) !== -1)
-            terminal.echo(data.substring(0, data.length - 2));
-         else
-            terminal.echo(data);
-      }
-      function closeHandler() {
-         terminal.pause();
-         terminal.echo("Disconnected.");
-         alert('lost connection')
-      }
-      function errorHandler(errorstr) {
-         terminal.pause();
-         terminal.echo("Error: " + errorstr);
-         alert(errorstr);
-      }*/
+      var script = document.createElement('script');
+      script.src = "../../olvm.js";
+
+      script.addEventListener('load', function(me) {
+         terminal.echo("Loading...")
+      }, false);
+      script.addEventListener('error', function(event) {
+         terminal.echo("Can't find olvm.js. Please, build it first and try again.");
+      }, false);
+
+      document.body.appendChild(script);
    }
+});
+
+$('#terminal').mousewheel(function(event) {
+   terminal.scroll(event.deltaY);
+   // console.log(event.deltaX, event.deltaY, event.deltaFactor);
+   if (event.preventDefault)  //disable default wheel action of scrolling page
+      event.preventDefault();
+   else
+      return false;
 });
    </script>
 
@@ -88,6 +78,9 @@ Copyright(c) 2014 - 2017 Yuriy Chumak\n\
         },
          postRun: function() {
             console.log("postRun");
+
+            terminal.focus();
+            terminal.resume();
          },
 
          print: function(text) {
@@ -137,16 +130,6 @@ Copyright(c) 2014 - 2017 Yuriy Chumak\n\
       };
     </script>
 
-
-    <script>
-       /*var num = 0;
-       setInterval(function() {
-         console.log("sending " + num);
-         stdinBuffer = stdinBuffer + unescape(encodeURIComponent("(print " + num + " \": \" (f " + num + "))"));
-         num += 1;
-       }, 1000);*/
-    </script>
-
    <script>
       /* for release:
       (function() {
@@ -161,10 +144,6 @@ Copyright(c) 2014 - 2017 Yuriy Chumak\n\
         xhr.responseType = 'arraybuffer';
         xhr.send(null);
       })();//*/
-
-      var script = document.createElement('script');
-      script.src = "olvm.js";
-      document.body.appendChild(script);
    </script>
 </body>
 </html>

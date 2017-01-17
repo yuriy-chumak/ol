@@ -1,6 +1,8 @@
 export PATH := .:$(PATH)
 $(shell mkdir -p config)
 
+export PATH := $(PATH):/opt/emsdk_portable:/opt/emsdk_portable/clang/fastcomp/build_master_64/bin:/opt/emsdk_portable/node/4.1.1_64bit/bin:/opt/emsdk_portable/emscripten/master
+
 #do some configure staff
 exists = $(shell echo "\
 	   \#include $1\n\
@@ -196,10 +198,16 @@ vm: src/olvm.c src/olvm.h
 	@echo Ok.
 
 
+olvm.js: src/olvm.c src/olvm.h src/slim.c
+	emcc src/slim.c src/olvm.c -o olvm.html -s ASYNCIFY=1 -O1
+
+
 src/repl.o: repl
 	objcopy -B i386 -I binary -O default repl src/repl.o
-src/boot.c: repl vm
-	vm repl <src/to-c.scm >src/boot.c
+src/boot.c: repl vm src/boot.lisp
+	vm repl <src/boot.lisp >src/boot.c
+src/slim.c: repl vm src/slim.lisp
+	vm repl <src/slim.lisp >src/slim.c
 
 
 recompile: boot.fasl
