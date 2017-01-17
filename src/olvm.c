@@ -63,30 +63,37 @@
 
 //
 #ifdef _WIN32
-#define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRLIMIT 0
-#define PUBLIC __declspec(dllexport)
+#	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
+#	define SYSCALL_SYSINFO 0
+#	define SYSCALL_GETRLIMIT 0
+#	define PUBLIC __declspec(dllexport)
 // qemu for windows: https://qemu.weilnetz.de/
 // images for qemu: http://4pda.ru/forum/index.php?showtopic=318284
 #endif
 
 // todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
 #ifdef __unix__
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRUSAGE 0
-#define SYSCALL_GETRLIMIT 0
-#define PUBLIC __attribute__ ((__visibility__("default")))
+
+// FreeBSD, NetBSD, OpenBSD, MacOS, etc.
+# ifndef __linux__
+#	define SYSCALL_PRCTL 0
+#	define SYSCALL_SYSINFO 0
+#	define SYSCALL_GETRUSAGE 0
+#	define SYSCALL_GETRLIMIT 0
+# endif
+
+#	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
-#ifdef __linux__
-#undef SYSCALL_PRCTL
-#undef SYSCALL_SYSINFO
-#undef SYSCALL_GETRUSAGE
-#undef SYSCALL_GETRLIMIT
-#define PUBLIC __attribute__ ((__visibility__("default")))
+#ifdef __asmjs__
+#	define NO_SECCOMP
+
+#	define HAS_SOCKETS 0
+#	define HAS_DLOPEN  0
+#	define HAS_PINVOKE 0
+#	define HAS_STRFTIME 0 // why?
 #endif
+
 
 #ifdef __ANDROID__
 // gdb for android: https://dan.drown.org/android/howto/gdb.html
@@ -105,6 +112,7 @@
 #ifdef NO_SECCOMP
 #	define SYSCALL_PRCTL 0
 #endif
+
 
 // TODO: JIT!
 //	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
@@ -233,7 +241,9 @@
 #endif
 
 #ifdef __unix__
-#include <sys/cdefs.h>
+# ifndef __asmjs__
+#	include <sys/cdefs.h>
+# endif
 #endif
 
 
@@ -313,6 +323,10 @@
 #	include <windows.h>
 
 #	include <malloc.h>
+#endif
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 #endif
 
 // additional defines:
@@ -1083,87 +1097,90 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 
 // todo: ввести третий generation
+// просматривает список справа налево
+static
+void mark(word *pos, word *end, heap_t* heap)
+{
+//	marked = 0;
+//	assert(pos is NOT flagged)
+	while (pos != end) {
+		word val = pos[0]; // pos header
+		if (is_reference(val) && val >= ((word) heap->genstart)) { // genstart - начало молодой генерации
+			if (is_flagged(val)) {
+				pos = chase((word*) val);
+				pos--;
+			}
+			else {
+				word hdr = *(word *) val;
+//				//if (is_value(hdr))
+//					*(word *) val |= 1; // flag this ? (таки надо, иначе часть объектов не распознается как pinned!)
+//				marked++;
+
+				word* ptr = (word*)val;
+				*pos = *ptr;
+				*ptr = ((word)pos | 1);
+
+				if (hdr & (RAWBIT|1))
+					pos--;
+				else
+					pos = ((word *) val) + (hdrsize(hdr)-1);
+			}
+		}
+		else
+			pos--;
+	}
+}
+
+// TODO: вот здесь можно провести очень неплохую оптимизацию
+//       а именно - проверить обратные функции (R[128+], которые
+//       лежат в памяти по адресу root+128 - если данные в регистре
+//       не изменились, значит больше нету никого, кто ссылается на
+//       тот же элемент данных (обратный вызов), а значит его можно
+//       просто удалить!
+
+// на самом деле compact & sweep
+static
+word *sweep(word* end, heap_t* heap)
+{
+	word *old, *newobject;
+
+	newobject = old = heap->genstart;
+	while (old < end) {
+		if (is_flagged(*old)) {
+			word val = *newobject = *old;
+			while (is_flagged(val)) {
+				val &= ~1; //clear mark
+
+				word* ptr = (word*)val;
+				*newobject = *ptr;
+				*ptr = (word)newobject;
+
+				val = *newobject;
+			}
+
+			word h = hdrsize(val);
+			if (old == newobject) {
+				old += h;
+				newobject += h;
+			}
+			else {
+				while (--h)
+					*++newobject = *++old;
+				old++;
+				newobject++;
+			}
+		}
+		else
+			old += hdrsize(*old);
+	}
+	return newobject;
+}
+
 //__attribute__ ((aligned(sizeof(word))))
 // query: запрос на выделение query слов
 static
-word gc(heap_t *heap, int query, word regs) {
-	// просматривает список справа налево
-	void mark(word *pos, word *end)
-	{
-	//	marked = 0;
-	//	assert(pos is NOT flagged)
-		while (pos != end) {
-			word val = pos[0]; // pos header
-			if (is_reference(val) && val >= ((word) heap->genstart)) { // genstart - начало молодой генерации
-				if (is_flagged(val)) {
-					pos = chase((word*) val);
-					pos--;
-				}
-				else {
-					word hdr = *(word *) val;
-	//				//if (is_value(hdr))
-	//					*(word *) val |= 1; // flag this ? (таки надо, иначе часть объектов не распознается как pinned!)
-	//				marked++;
-
-					word* ptr = (word*)val;
-					*pos = *ptr;
-					*ptr = ((word)pos | 1);
-
-					if (hdr & (RAWBIT|1))
-						pos--;
-					else
-						pos = ((word *) val) + (hdrsize(hdr)-1);
-				}
-			}
-			else
-				pos--;
-		}
-	}
-
-	// TODO: вот здесь можно провести очень неплохую оптимизацию
-	//       а именно - проверить обратные функции (R[128+], которые
-	//       лежат в памяти по адресу root+128 - если данные в регистре
-	//       не изменились, значит больше нету никого, кто ссылается на
-	//       тот же элемент данных (обратный вызов), а значит его можно
-	//       просто удалить!
-
-	// на самом деле compact & sweep
-	word *sweep(word* end)
-	{
-		word *old, *newobject;
-
-		newobject = old = heap->genstart;
-		while (old < end) {
-			if (is_flagged(*old)) {
-				word val = *newobject = *old;
-				while (is_flagged(val)) {
-					val &= ~1; //clear mark
-
-					word* ptr = (word*)val;
-					*newobject = *ptr;
-					*ptr = (word)newobject;
-
-					val = *newobject;
-				}
-
-				word h = hdrsize(val);
-				if (old == newobject) {
-					old += h;
-					newobject += h;
-				}
-				else {
-					while (--h)
-						*++newobject = *++old;
-					old++;
-					newobject++;
-				}
-			}
-			else
-				old += hdrsize(*old);
-		}
-		return newobject;
-	}
-
+word gc(heap_t *heap, int query, word regs)
+{
 	if (query == 0) // сделать полную сборку?
 		heap->genstart = heap->begin; // start full generation
 
@@ -1190,9 +1207,9 @@ word gc(heap_t *heap, int query, word regs) {
 
 		// непосредственно сам процесс сборки
 		root[0] = regs;
-		mark(root, fp);        // assert (root > fp)
+		mark(root, fp, heap);        // assert (root > fp)
 		// todo: проверить о очистить callbacks перед sweep
-		fp = sweep(fp);
+		fp = sweep(fp, heap);
 		regs = root[0];
 
 		// todo: add diagnostik callback "if(heap->oncb) heap->oncb(heap, deltatime)"
@@ -1389,19 +1406,12 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		if (numRead == 0)
 			break;                      /* EOF */
 
-		numSent = send(out_fd, buf, numRead, 0);
+		numSent = write(out_fd, buf, numRead);
+		if (numSent == -1)
+			return -1;
 		if (numSent == 0) {               /* Should never happen */
 			STDERR("sendfile: write() transferred 0 bytes");
 			return 0;
-		}
-		if (numSent == -1) {
-			STDERR("%d/%d\n", numSent, numRead);
-			//if (WSAGetLastError() == 10035) {
-				Sleep(100);
-				numSent = 0;
-			//}
-			//else
-			//	break;
 		}
 
 		count -= numSent;
@@ -1463,12 +1473,15 @@ void* runtime(OL* ol);  // главный цикл виртуальной маш
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
-long callback(OL* ol, int id, int_t* argi
-#if __amd64__
+#if HAS_PINVOKE
+	long callback(OL* ol, int id, int_t* argi
+	#if __amd64__
 		, double* argf, int_t* rest
+	#endif
+	);
+
+#	include "olni.c"
 #endif
-		);
-#include "olni.c"
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
 static int OL__gc(OL* ol, int ws) // ws - required size in words
@@ -1508,6 +1521,34 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 // Несколько замечаний по WIN32::ThreadProc
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
+
+static
+word get(word *ff, word key, word def)
+{
+	while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
+		word this = ff[1], hdr;
+		if (this == key)
+			return ff[2];
+		hdr = ff[0];
+		switch (hdrsize(hdr)) {
+		case 5: ff = (word *) ((key < this) ? ff[3] : ff[4]);
+			break;
+		case 3: return def;
+		case 4:
+			if (key < this)
+				ff = (word *) ((hdr & (1 << TPOS)) ? IEMPTY : ff[3]);
+			else
+				ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
+			break;
+		default:
+			STDERR("assert! hdrsize(hdr) == %d", (int)hdrsize(hdr));
+			assert (0);
+			//ff = (word *) ((key < this) ? ff[3] : ff[4]);
+		}
+	}
+	return def;
+}
+
 
 #ifdef ERROR
 #undef ERROR
@@ -1590,32 +1631,6 @@ apply:;
 		else
 		if ((type & 60) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
-			word get(word *ff, word key, word def)
-			{
-				while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
-					word this = ff[1], hdr;
-					if (this == key)
-						return ff[2];
-					hdr = ff[0];
-					switch (hdrsize(hdr)) {
-					case 5: ff = (word *) ((key < this) ? ff[3] : ff[4]);
-						break;
-					case 3: return def;
-					case 4:
-						if (key < this)
-							ff = (word *) ((hdr & (1 << TPOS)) ? IEMPTY : ff[3]);
-						else
-							ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
-						break;
-					default:
-						STDERR("assert! hdrsize(hdr) == %d", (int)hdrsize(hdr));
-						assert (0);
-						//ff = (word *) ((key < this) ? ff[3] : ff[4]);
-					}
-				}
-				return def;
-			}
-
 			word *cont = (word *) R[3];
 			switch (acc)
 			{
@@ -2653,12 +2668,7 @@ loop:;
 
 			int wrote;
 
-	#if 0//EMBEDDED_VM
-			if (fd == 1) // stdout wrote to the fo
-				wrote = fifo_puts(fo, ((char *)buff)+W, len);
-			else
-	#endif
-				wrote = write(portfd, (char*)&buff[1], size);
+			wrote = write(portfd, (char*)&buff[1], size);
 
 	#ifdef _WIN32
 			// Win32 socket workaround
@@ -2675,6 +2685,7 @@ loop:;
 			break;
 		}
 
+#ifndef __asmjs__
 		// (OPEN "path" mode)
 		// http://man7.org/linux/man-pages/man2/open.2.html
 		case SYSCALL_OPEN: {
@@ -3763,8 +3774,11 @@ loop:;
 				result = (word*) ITRUE;
 	#endif
 			break;
-
+#endif
 		case 1200:
+#ifdef __EMSCRIPTEN__
+			emscripten_sleep(1);
+#endif
 			result = (word*) ITRUE;
 			break;
 
@@ -3773,11 +3787,13 @@ loop:;
 		A4 = (word) result;
 		ip += 5; break;
 	}
+
 	default:
 		ERROR(op, new_string("Invalid opcode"), ITRUE);
 		break;
 	}
 	goto loop;
+
 
 error:; // R4-R6 set, and call mcp (if any)
 	this = (word *) R[0];
@@ -3807,18 +3823,50 @@ done:;
 //
 
 // fasl decoding
-// возвращает новый топ стека
+// tbd: comment
+// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
+//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 static __inline__
+word get_nat(unsigned char** hp)
+{
+	word nat = 0;
+	char i;
+
+	#ifndef OVERFLOW_KILLS
+	#define OVERFLOW_KILLS(n) exit(n)
+	#endif
+	do {
+		long long underflow = nat; // can be removed for release
+		nat <<= 7;
+		if (nat >> 7 != underflow) // can be removed for release
+			OVERFLOW_KILLS(9);     // can be removed for release
+		i = *(*hp)++;
+		nat = nat + (i & 127);
+	} while (i & 128); // (1 << 7)
+	return nat;
+}
+static __inline__
+void decode_field(unsigned char** hp, word *ptrs, int pos, word** fp) {
+	if (*(*hp) == 0) { // fixnum
+		(*hp)++;
+		unsigned char type = *(*hp)++;
+		word val = make_value(type, get_nat(hp));
+		*(*fp)++ = val;
+	} else {
+		word diff = get_nat(hp);
+		*(*fp)++ = ptrs[pos-diff];
+	}
+}
+
+// возвращает новый топ стека
+static
 word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
 	unsigned char* hp = bootstrap;
 //	if (*hp == '#') // этот код не нужен, так как сюда приходит уже без шабанга
 //		while (*hp++ != '\n') continue;
 
-	// tbd: comment
-	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
-	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
-	word get_nat()
+/*	word (^get_nat_x)() = ^()
 	{
 		word nat = 0;
 		char i;
@@ -3835,20 +3883,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			nat = nat + (i & 127);
 		} while (i & 128); // (1 << 7)
 		return nat;
-	}
-
-	// tbd: comment
-	void decode_field(word *ptrs, int pos) {
-		if (*hp == 0) { // fixnum
-			hp++;
-			unsigned char type = *hp++;
-			word val = make_value(type, get_nat());
-			*fp++ = val;
-		} else {
-			word diff = get_nat();
-			*fp++ = ptrs[pos-diff];
-		}
-	}
+	};*/
 
 	// function entry:
 	for (ptrdiff_t me = 0; me < nobjs; me++) {
@@ -3857,15 +3892,15 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		switch (*hp++) { // todo: adding type information here would reduce fasl and executable size
 		case 1: {
 			int type = *hp++;
-			int size = get_nat();
+			int size = get_nat(&hp);
 			*fp++ = make_header(type, size+1); // +1 to include header in size
 			while (size--)
-				decode_field(ptrs, me);
+				decode_field(&hp, ptrs, me, &fp);
 			break;
 		}
 		case 2: {
 			int type = *hp++ & 31; /* low 5 bits, the others are pads */
-			int size = get_nat();
+			int size = get_nat(&hp);
 			int words = (size + W - 1) / W;
 			int pads = words * W - size;//(W - (size % W));
 
@@ -3884,22 +3919,23 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	return fp;
 }
 
+static __inline__
+word decode_word(unsigned char** hp) {
+	word nat = 0;
+	char i;
+	do {
+		nat <<= 7;
+		i = *(*hp)++;
+		nat = nat + (i & 127);
+	}
+	while (i & 128);
+	return nat;
+}
+
 static
 // функция подсчета количества объектов в загружаемом образе
 int count_fasl_objects(word *words, unsigned char *lang) {
 	unsigned char* hp;
-
-	word decode_word() {
-		word nat = 0;
-		char i;
-		do {
-			nat <<= 7;
-			i = *hp++;
-			nat = nat + (i & 127);
-		}
-		while (i & 128);
-		return nat;
-	}
 
 	// count:
 	int n = 0;
@@ -3910,19 +3946,19 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		switch (*hp++) {
 		case 1: { // fix
 			hp++; ++allocated;
-			int size = decode_word();
+			int size = decode_word(&hp);
 			while (size--) {
 				//decode_field:
 				if (*hp == 0)
 					hp += 2;
-				decode_word(); // simply skip word
+				decode_word(&hp); // simply skip word
 				++allocated;
 			}
 			break;
 		}
 		case 2: { // pointer
 			hp++;// ++allocated;
-			int size = decode_word();
+			int size = decode_word(&hp);
 			hp += size;
 
 			int words = (size / W) + ((size % W) ? 2 : 1);
@@ -4020,7 +4056,7 @@ int main(int argc, char** argv)
 	argc--; argv++;
 #endif
 
-	set_signal_handler();
+	//set_signal_handler();
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
@@ -4188,4 +4224,6 @@ OL_eval(OL* handle, int argc, char** argv)
 	return runtime(handle);
 }
 
-#include "pinvoke.c"
+#if HAS_PINVOKE
+#	include "pinvoke.c"
+#endif
