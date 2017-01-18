@@ -2171,7 +2171,7 @@ loop:;
 		if (is_value(T)) {
 			word val = value(T);
 			if (type == TPORT) {
-				if (val >= 0 && val <= 2)
+				if (val <= 2)
 					A2 = make_port(val);
 				else
 					A2 = IFALSE;

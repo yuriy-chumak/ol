@@ -29,6 +29,9 @@ CALL :REPL
 CALL :BOOT
 CALL :OL
 CALL :TESTS
+CALL :SLIM
+CALL :JS
+::CALL TESTS
 ::CALL :101
 ::CALL :111
 ::CALL :121
@@ -100,7 +103,7 @@ GOTO:EOF
 
 :JS
 @set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
-emcc src/slim.c src/olvm.c -o olvm.html -s ASYNCIFY=1
+emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O2 --llvm-opts "['-O2']" --memory-init-file 0 -v
 GOTO:EOF
 
 

@@ -199,7 +199,7 @@ vm: src/olvm.c src/olvm.h
 
 
 olvm.js: src/olvm.c src/olvm.h src/slim.c
-	emcc src/slim.c src/olvm.c -o olvm.html -s ASYNCIFY=1 -O1
+	emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O2 --llvm-opts "['-O2']" --memory-init-file 0 -v
 
 
 src/repl.o: repl
