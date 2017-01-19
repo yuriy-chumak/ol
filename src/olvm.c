@@ -3782,6 +3782,31 @@ loop:;
 			result = (word*) ITRUE;
 			break;
 
+		case 1201:
+#ifdef __EMSCRIPTEN__
+			CHECK(is_number(a), a, SYSCALL);
+			CHECK(is_string(b), b, SYSCALL);
+			char* string = (char*)&car(b);
+
+			switch (value(a)) {
+			case TSTRING: {
+				char* v = emscripten_run_script_string(string);
+				if (v)
+					result = new_string(v);
+				break;
+			}
+			case TINT: {
+				int v = emscripten_run_script_int(string);
+				result = itosv(v);
+				break;
+			}
+			default:
+				emscripten_run_script(string);
+				result = (word*) ITRUE;
+			}
+#endif
+			break;
+
 		}// case
 
 		A4 = (word) result;
