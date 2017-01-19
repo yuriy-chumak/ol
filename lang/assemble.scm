@@ -5,13 +5,15 @@
 ; user only in compile.scm
 (define-library (lang assemble)
    (export
-      assemble-code)
+      assemble-code
+      fork-bytecode-interner)
 
    (import
       (r5rs core)
       (owl ff)
       (owl list)
       (owl math)
+      (owl interop)
       (owl list-extra)
       (only (owl interop) interact)
       (src vm)
@@ -20,6 +22,90 @@
       (lang register))
 
    (begin
+      (define bytecode-server 'bytecode-server)
+
+      (define is-less #false)
+      (define is-equal #true)
+      (define is-greater '())
+
+      (define (compare-bytes a b pos end)
+         (if (eq? pos end)
+            is-equal
+            (let ((ab (ref a pos))
+                  (bb (ref b pos)))
+               (cond
+                  ((eq? ab bb)
+                     (compare-bytes a b (+ pos 1) end))
+                  ((less? ab bb)
+                     is-less)
+                  (else
+                     is-greater)))))
+
+      ;; shorter is less, otherwase lexical comparison from start
+      (define (compare-code a b)
+         (let*((as (size a))
+               (bs (size b)))
+            (cond
+               ((eq? as bs)
+                  (compare-bytes a b 0 as))
+               ((less? as bs)
+                  is-less)
+               (else
+                  is-greater))))
+
+      ;; fixme: should occasionally balance the tree
+
+      ;; codes bcode value → codes'
+      (define (insert-code codes bcode value)
+         (if codes
+            (let*((l k v r codes)
+                  (res (compare-code k bcode)))
+               (cond
+                  ((eq? res is-equal)
+                     (tuple l bcode value r))
+                  ((eq? res is-less)
+                     (tuple (insert-code l bcode value) k v r))
+                  (else
+                     (tuple l k v (insert-code r bcode value)))))
+            (tuple #false bcode value #false)))
+
+      (define (lookup-code codes bytecode)
+         (if codes
+            (let*((l k v r codes)
+                  (res (compare-code k bytecode)))
+               (cond
+                  ((eq? res is-equal)
+                     v)
+                  ((eq? res is-less)
+                     (lookup-code l bytecode))
+                  (else
+                     (lookup-code r bytecode))))
+            #false))
+
+      ;; codes bcode → codes(') bcode(')
+      (define (intern-code codes bytecode)
+         (let ((res (lookup-code codes bytecode)))
+            (if res
+               (values codes res)
+               (values (insert-code codes bytecode bytecode) bytecode))))
+
+      ; start internal assembly interner
+      (define (fork-bytecode-interner bytecodes)
+         (let ((codes (fold (λ (codes pair) (insert-code codes (car pair) (cdr pair))) #false bytecodes)))
+            (fork-server bytecode-server (lambda ()
+               (let loop ((codes codes))
+                  (let*((envelope (wait-mail))
+                        (sender msg envelope))
+                     (cond
+                        ((bytecode? msg)
+                           ;(debug "interner: interning bytecode")
+                           (let*((codes code (intern-code codes msg)))
+                              (mail sender code)
+                              (loop codes)))
+                        ; todo: simplify this
+                        (else
+                           (mail sender 'bad-kitty)
+                           (loop codes)))))))))
 
 ;              (igoto . 26)   ; indirect goto
 ;              (mk   . 9)      ; mk n, a0, ..., an, t, size up to 256
@@ -221,7 +307,9 @@
 
       ;; make bytecode and intern it (to improve sharing, not mandatory)
       (define (bytes->bytecode bytes)
-         (interact 'intern (vm:raw type-bytecode bytes)))
+         ;(vm:raw type-bytecode bytes)) ; more memory, less cpu
+         (interact bytecode-server      ; more cpu, less memory
+            (vm:raw type-bytecode bytes)))
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont

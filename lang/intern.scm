@@ -7,19 +7,21 @@
 ;  - bytes->bytecode (where returned bytecode may use spacial primops)
 ; (- intern-char     -> x → x')
 
-(define-library (owl intern)
+(define-library (lang intern)
    (export
       bytes->symbol
       string->symbol
       symbol->string
-      initialize-interner
+      ;initialize-interner
       string->uninterned-symbol
       string->interned-symbol       ;; tree string → tree' symbol
       put-symbol                    ;; tree sym → tree'
       empty-symbol-tree
       intern-symbols
-      start-dummy-interner
-      defined?
+      start-dummy-interner ; not used
+      ;defined?
+
+      fork-intern-interner
       )
 
    (import
@@ -36,6 +38,8 @@
    (begin
       ; hack warning, could use normal = and < here, but
       ; using primitives speeds up parsing a bit
+
+      ; TODO: подумать о табличке символов как ff с хеш-ключами
 
       (define empty-symbol-tree #false)
 
@@ -61,6 +65,7 @@
                   (else (walk s1 (s2)))))
             (else (walk (s1) s2))))
 
+      ; сравнить две строки
       (define (compare s1 s2)
          (walk (str-iter s1) (str-iter s2)))
 
@@ -71,6 +76,10 @@
 
       (define (symbol->string ob)
          (ref ob 1))
+
+      (define (string->symbol str)
+         (interact 'intern str))
+
 
       ; lookup node str sym -> node' sym'
 
@@ -113,71 +122,9 @@
                (let ((new (string->uninterned-symbol str)))
                   (values (put-symbol root new) new)))))
 
-      (define (string->symbol str)
-         (interact 'intern str))
-
       ;;;
       ;;; BYTECODE INTERNING
       ;;;
-
-      (define is-less #false)
-      (define is-equal #true)
-      (define is-greater null)
-
-      (define (compare-bytes a b pos end)
-         (if (eq? pos end)
-            is-equal
-            (let ((ab (ref a pos)) (bb (ref b pos)))
-               (cond
-                  ((eq? ab bb) (compare-bytes a b (+ pos 1) end))
-                  ((less? ab bb) is-less)
-                  (else is-greater)))))
-
-      ;; shorter is less, otherwase lexical comparison from start
-      (define (compare-code a b)
-         (lets
-            ((as (size a))
-             (bs (size b)))
-            (cond
-               ((eq? as bs) (compare-bytes a b 0 as))
-               ((less? as bs) is-less)
-               (else is-greater))))
-
-      ;; fixme: should occasionally balance the tree
-
-      ;; codes bcode value → codes'
-      (define (insert-code codes bcode value)
-         (if codes
-            (lets
-               ((l k v r codes)
-                (res (compare-code k bcode)))
-               (cond
-                  ((eq? res is-equal)
-                     (tuple l bcode value r))
-                  ((eq? res is-less)
-                     (tuple (insert-code l bcode value) k v r))
-                  (else
-                     (tuple l k v (insert-code r bcode value)))))
-            (tuple #false bcode value #false)))
-
-       ;; codes bcode → bcode' | #false
-       (define (lookup-code codes bcode)
-         (if codes
-            (lets
-               ((l k v r codes)
-                (res (compare-code k bcode)))
-               (cond
-                  ((eq? res is-equal) v)
-                  ((eq? res is-less) (lookup-code l bcode))
-                  (else (lookup-code r bcode))))
-            #false))
-
-      ;; codes bcode → codes(') bcode(')
-      (define (intern-code codes bcode)
-         (let ((res (lookup-code codes bcode)))
-            (if res
-               (values codes res)
-               (values (insert-code codes bcode bcode) bcode))))
 
       ; this will be forked as 'interner
       ; to bootstrap, collect all symbols from the entry procedure, intern
@@ -203,59 +150,75 @@
             ((function? func) (bytecode-of (ref func 1)))
             (else #false)))
 
-      ;(define (debug . args)
-      ;   ;(apply print-to (cons stderr args))
-      ;   42)
+      (define (debug . args)
+         (apply print-to (cons stderr args))
+         42)
 
-      ;; thread with string → symbol, ...
-      (define (interner root codes)
-         ;(debug "interner: wait")
-         (lets
-            ((env (wait-mail))
-             (sender msg env))
-            (cond
-               ((string? msg) ;; find an old symbol or make a new one
-                  ;(debug "interner: interning " msg)
-                  (lets ((root sym (string->interned-symbol root msg)))
-                     (mail sender sym)
-                     (interner root codes)))
-               ((bytecode? msg) ;; find an old equal bytecode sequence, extended wrapper, or add a new code fragment
-                  ;(debug "interner: interning bytecode")
-                  (lets
-                     ((codes code (intern-code codes msg)))
-                     (mail sender code)
-                     (interner root codes)))    ;; name after first finding
-               ((tuple? msg)
-                  ;(debug "interner: tuple command " (ref (ref msg 1) 1)) ; avoid symbol->string
-                  (tuple-case msg
-                     ((flush) ;; clear names before boot (deprecated)
-                        (interner root codes))
-                     (else
-                        ;(print "unknown interner op: " msg)
-                        (interner root codes))))
-               ((null? msg) ;; get current info
-                  ;(debug "interner: info")
-                  (mail sender (tuple 'interner-state root codes))
-                  (interner root codes))
-               ((symbol? msg)
-                  (print "interner: " msg " -> " (maybe-lookup-symbol root "something"))
-                  (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
-                  (interner root codes))
-               (else
-                  ;(debug "interner: bad")
+      ;
+      (define (fork-intern-interner symbols)
+         (let ((root (fold put-symbol empty-symbol-tree symbols)))
+            (fork-server 'intern (lambda ()
+               (let loop ((root root))
+                  (let*((envelope (wait-mail))
+                        (sender msg envelope))
+                     (cond
+                        ((string? msg)
+                           ;(debug "interner: interning bytecode")
+                           (let*((root symbol (string->interned-symbol root msg)))
+                              (mail sender symbol)
+                              (loop root)))
+                        ; todo: simplify this
+                        (else
+                           (mail sender 'bad-kitty)
+                           (loop root)))))))))
 
-                  (mail sender 'bad-kitty)
-                  (interner root codes)))))
+;      ;; thread with string → symbol, ...
+;      (define (interner root) ; codes)
+;         ;(debug "interner: wait")
+;         (let*((envelope (wait-mail))
+;               (sender msg envelope))
+;            (cond
+;               ; find an old symbol or make a new one
+;               ((string? msg)
+;                  ;(debug "interner: interning " msg)
+;                  (let*((root symbol (string->interned-symbol root msg)))
+;                     (mail sender symbol) ; отправим назад новый символ
+;                     (interner root))) ; codes
+;
+;;               ((tuple? msg)
+;;                  ;(debug "interner: tuple command " (ref (ref msg 1) 1)) ; avoid symbol->string
+;;                  (tuple-case msg
+;;                     ((flush) ;; clear names before boot (deprecated)
+;;                        ;(debug "interner: aroot:" aroot)
+;;                        ;(debug "interner: acodes:" acodes)
+;;                        (interner root codes))
+;;                     (else
+;;                        ;(print "unknown interner op: " msg)
+;;                        (interner root codes))))
+;;               ((null? msg) ;; get current info
+;;                  (debug "interner: info")
+;;                  (mail sender (tuple 'interner-state root codes))
+;;                  (interner root codes))
+;;               ((symbol? msg)
+;;                  (debug "interner: " msg " -> " (maybe-lookup-symbol root "something"))
+;;                  (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
+;;                  (interner root codes))
+;               (else
+;                  (debug "interner: bad")
+;
+;                  (mail sender 'bad-kitty)
+;                  (interner root))))) ;codes
 
-      (define-syntax defined?
-         (syntax-rules (*toplevel*)
-            ((defined? symbol)
-               (get *toplevel* symbol #false))))
+      ; fixme: invalid
+      ;(define-syntax defined?
+      ;   (syntax-rules (*toplevel*)
+      ;      ((defined? symbol)
+      ;         (get *toplevel* symbol #false))))
 
 
       ;; a placeholder interner for programs which don't need the other services
       ;; soon to be removed
-      (define (dummy-interner)
+      (define (dummy-interner) ; not used
          (lets ((env (wait-mail))
                 (sender msg env))
             (cond
@@ -277,10 +240,9 @@
 
       ;; make a thunk to be forked as the thread
       ;; (sym ...)  ((bcode . value) ...) → thunk
-      (define (initialize-interner symbol-list codes)
-         (let
-            ((sym-root (fold put-symbol empty-symbol-tree symbol-list))
-             (code-root (fold (λ (codes pair) (insert-code codes (car pair) (cdr pair))) #false codes)))
-            (λ () (interner sym-root code-root))))
+;      (define (initialize-interner symbol-list)
+;         (let
+;            ((sym-root (fold put-symbol empty-symbol-tree symbol-list)))
+;            (λ () (interner sym-root)))) ;code-root
 
 ))

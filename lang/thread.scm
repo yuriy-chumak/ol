@@ -48,9 +48,10 @@
                ((pair? st) ;; currently working, leave a mail to inbox queue
                   (values (fupd state to (qsnoc envelope st)) #false))
                ((not st) ;; no such thread, or just no inbox
-                  (system-stderr "ol: dropping envelope to missing thread\n")
+                  (system-stderr "ol: dropping envelope to missing thread: ")
+                  (system-stderr (bytes->string (render to '(10))))
                   (system-stderr "ol: envelope ")
-                  (system-stderr (bytes->string (bytes->string (render envelope '(10)))))
+                  (system-stderr (bytes->string (render envelope '(10))))
                   (values state #false))
                (else ;; activate the state function
                   (values
@@ -197,7 +198,7 @@
 
             ; 9, send mail
             (λ (id cont to msg todo done state tc)
-               ;(system-println "interop 9 - mail")
+               ;(system-stderr "interop 9 - mail")
                (let ((todo (cons (tuple id (λ () (cont 'delivered))) todo)))
                   ; send a normal mail
                   (lets ((state waked (deliver-mail state to (tuple id msg))))

@@ -24,10 +24,12 @@
  | DEALINGS IN THE SOFTWARE.
  |#
 
-(define build-start (time-ms))
 (print "Loading code...")
 
-(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
+; fixme: можно не вызывать, все равно не работает :)
+;(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
+
+(define build-start (time-ms))
 
 ; forget all other libraries to have them be reloaded and rebuilt
 ; (src olvm) содержит список базовых элементов языка
@@ -69,7 +71,7 @@
 
 (import (otus lisp))
 
-(import (owl intern))
+(import (lang intern))
 (import (owl parse))
 
 (import (lang gensym))
@@ -272,9 +274,7 @@
 ;; repl-prompt. this should too, actually)
 (define (get-main-entry symbols codes)
    (let*((initial-names   *owl-names*)
-         (initial-version *owl-version*)
-
-         (interner-thunk (initialize-interner symbols codes)))
+         (initial-version *owl-version*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
          ;(print "//vm-args: " vm-args)
@@ -288,7 +288,8 @@
                         (start-base-threads)
 
                         ;; repl needs symbol etc interning, which is handled by this thread
-                        (fork-server 'intern interner-thunk)
+                        (fork-intern-interner symbols)
+                        (fork-bytecode-interner codes)
 
                         ;; set a signal handler which stop evaluation instead of owl
                         ;; if a repl eval thread is running

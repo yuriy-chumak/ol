@@ -510,7 +510,8 @@
                #false)))
 
       (define (take-nap)
-         (interact sid 5))
+         (syscall 1200 #f #f #f))
+         ;(interact sid 5))
 
       (define (fasl-save obj path)
          (vector->file

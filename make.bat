@@ -1,7 +1,5 @@
-echo off
-echo ==========================================================================
-echo %%0 = %0
-echo %%1 = %1
+@echo off
+echo -=( building %1 )=-------------------------------------------------------------------
 IF "%1"==""   GOTO ALL
 IF "%1"=="vm" GOTO VM
 IF "%1"=="vm32" GOTO VM32
@@ -9,6 +7,8 @@ IF "%1"=="boot" GOTO BOOT
 IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
+IF "%1"=="slim" GOTO SLIM
+IF "%1"=="js" GOTO JS
 IF "%1"=="release" GOTO RELEASE
 IF "%1"=="tests" GOTO TESTS
 IF "%1"=="/help"  GOTO HELP
@@ -22,11 +22,26 @@ GOTO:EOF
 
 
 :ALL
-CALL :VM
-CALL :REPL
-CALL :BOOT
-CALL :OL
+for %%a in (
+   vm.exe
+   src\boot.c
+   ol.exe
+   src\slim.c
+   olvm.js
+) do if exist %%a erase %%a
+CALL :VM    & if not exist vm.exe goto :fail
+CALL :REPL  & fc /b repl boot.fasl > nul & if errorlevel 1 goto :fail
+CALL :BOOT  & if not exist src/boot.c goto :fail
+CALL :OL    & if not exist ol.exe goto :fail
 CALL :TESTS
+CALL :SLIM  & if not exist src/slim.c goto :fail
+CALL :JS    & if not exist olvm.js goto :fail
+
+echo '  `___`  '
+echo '  (o,o)  '
+echo '  \)  )  '
+echo '___"_"___'
+echo 'Build Ok.'
 ::CALL :101
 ::CALL :111
 ::CALL :121
@@ -47,28 +62,33 @@ echo "   vm              |              |   "
 echo "+------+           |              |   "
 echo "|  VM  |-----------+--------------/   "
 echo "+------+                              "
-echo.
+echo:
 GOTO:EOF
 
 :VM
+echo.   *** Making virtual machine:
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
 GOTO:EOF
 
 :VM32
+echo.   *** Making 32-bit virtual machine:
 set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
 gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -g2 -DNDEBUG -DHAS_PINVOKE=1 -m32
 GOTO:EOF
 
 
 :BOOT
-vm repl <src/to-c.scm >src/boot.c
+echo.   *** Making src/boot.c:
+vm repl <src/boot.lisp >src/boot.c
 GOTO:EOF
 
 :OL
+echo.   *** Making Otus Lisp:
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
 GOTO:EOF
 
 :OL32
+echo.   *** Making 32-bit Otus Lisp:
 set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
 GOTO:EOF
@@ -80,17 +100,22 @@ vm repl - --version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again
-::  call :BOOT
-::  call :OL
-	echo '  `___`  '
-	echo '  (o,o)  '
-	echo '  \)  )  '
-	echo '___"_"___'
-	echo 'Build Ok.'
-	GOTO:EOF
+GOTO:EOF
 :again
 copy boot.fasl repl
 GOTO :REPL
+
+:SLIM
+echo.   *** Making slim:
+vm repl src/slim.lisp >src/slim.c
+GOTO:EOF
+
+:JS
+echo.   *** Making virtual machine on js:
+@set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
+call emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O1 --memory-init-file 0 --llvm-opts "['-O2']"
+GOTO:EOF
+
 
 :RELEASE
 gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32
@@ -115,10 +140,10 @@ echo|set /p=Testing %1 ...
 ol.exe %1 >C:\TEMP\out
 fc C:\TEMP\out %1.ok > nul
 if errorlevel 1 goto fail1
-echo Ok.
+call :cecho 0a " Ok."
 GOTO:EOF
 :fail1
-echo Failed.
+call :cecho 0c " Failed."
 GOTO:EOF
 
 
@@ -181,7 +206,7 @@ echo Starting %~2...
 
 echo Connecting to the host...
 :wait
-echo.>%TEMP%\empty
+echo:>%TEMP%\empty
 plink -ssh -2 -l ol -pw ol 127.0.0.1 -P %~1 -m %TEMP%\empty
 if errorlevel 1 goto wait
 
@@ -203,3 +228,7 @@ GOTO:EOF
 :cp
 pscp -l ol -pw ol -P %~2 %~3 %~1:%~3
 goto:eof
+
+:fail
+echo. *** Build failed!!! ***
+exit

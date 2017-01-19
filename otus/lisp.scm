@@ -25,7 +25,7 @@
       (exports (owl math))
       (exports (owl tuple))
 
-      defined? ; todo: move to right library
+      ;defined? ; todo: move to right library
       wait)    ; todo: move to right library
 
    (import
@@ -49,7 +49,6 @@
       (owl equal)
       (owl regex)
       (owl render)
-      (only (owl intern) defined?)
       (owl interop)
       (owl math)
 
