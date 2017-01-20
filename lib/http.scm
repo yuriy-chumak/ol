@@ -22,6 +22,15 @@
       (or (<= 0 x 31)
           (= x 127)))
 
+(fork-server 'IDs (lambda ()
+(let this ((id 1))
+(let* ((envelope (wait-mail))
+       (sender msg envelope))
+   (mail sender id)
+   (this (+ id 1))))))
+(define (generate-unique-id)
+   (interact 'IDs #f))
+
 
 
 (define (timestamp) (syscall 201 "%c" #f #f))
@@ -172,36 +181,34 @@
 ; todo: use atomic counter to check count of clients and do appropriate timeout on select
 ;  (1 for count > 0, 100 for count = 0)
 
-(define (on-accept fd onRequest)
+(define (on-accept id fd onRequest)
 (lambda ()
-   (let*((ss1 ms1 (clock)))
-   (if (call/cc (lambda (close)
-         (let ((send (lambda args
+   (let*((ss1 ms1 (clock))
+         (send (lambda args
                   (for-each (lambda (arg)
                      (display-to fd arg)) args))))
-         (let for ()
-         (let loop ((request (fd->exp-stream fd "> " http-parser syntax-fail #f)))
-            (if (null? request)
-               (close #t)
-               (let ((Request-Line (car (car request)))
-                     (Headers-Line (cdr (car request))))
-                  ;(print "Request-Line: " Request-Line)
-                  ;(print "Headers-Line: " Headers-Line)
-               (if (null? Request-Line)
-                  (send "HTTP/1.0 400 Bad Request\n\n400")
-                  (onRequest fd Request-Line Headers-Line send close))
-               (loop (force (cdr request)))))) (for)))))
-      (display (if (syscall 3 fd #f #f) "socket closed, " "can't close socket, ")))
-   (print "on-accept done." )
-   (let*((ss2 ms2 (clock)))
-      (print "# " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
 
-   ; workaround for bug with "ol: dropping envelope to missing thread"
-   (let sleep ((x 1000))
-      (set-ticker-value 0)
-      (if (> x 0)
-         (sleep (- x 1))))
-   ))
+      (let loop ((request (fd->exp-stream fd "> " http-parser syntax-fail #f)))
+         (print id " loop:" request)
+         (if (call/cc (lambda (close)
+                         (if (null? request)
+                            #t
+                            (let ((Request-Line (car (car request)))
+                                  (Headers-Line (cdr (car request))))
+                               ;(print "Request-Line: " Request-Line)
+                               ;(print "Headers-Line: " Headers-Line)
+                               (if (null? Request-Line)
+                                  (send "HTTP/1.0 400 Bad Request\r\n\r\n400")
+                                  (onRequest fd Request-Line Headers-Line send close))
+                            #f))))
+            (begin
+               (display id)
+               (display (if (syscall 3 fd #f #f) " socket closed, " " can't close socket, ")))
+            ;else
+            (loop (force (cdr request)))))
+      (print "on-accept done." )
+      (let*((ss2 ms2 (clock)))
+         (print id " # " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))))
 
 
 (define (http:run port onRequest)
@@ -220,7 +227,7 @@
       (if (syscall 23 socket #f #f) ; select
          (let ((fd (syscall 43 socket #f #f))) ; accept
             (print "\n# " (timestamp) ": new request from " (syscall 51 fd #f #f))
-            (fork (on-accept fd onRequest))))
+            (fork (on-accept (generate-unique-id) fd onRequest))))
       (set-ticker-value 0)
       (loop))))
 ))
