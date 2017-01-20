@@ -1406,11 +1406,13 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		if (numRead == 0)
 			break;                      /* EOF */
 
-		numSent = write(out_fd, buf, numRead);
-		if (numSent == -1)
+		numSent = send(out_fd, buf, numRead, 0);
+		if (numSent == -1) {
+			STDERR("sendfile: send() returns -1");
 			return -1;
+		}
 		if (numSent == 0) {               /* Should never happen */
-			STDERR("sendfile: write() transferred 0 bytes");
+			STDERR("sendfile: send() transferred 0 bytes");
 			return 0;
 		}
 
