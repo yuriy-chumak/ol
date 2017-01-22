@@ -133,17 +133,17 @@
          (define (ser sh obj k)
             (cond
 
-               ((getf sh obj) =>
-                  (λ (id)
-                     (if (< id 0) ;; already written, just refer
-                        (ilist #\# (render (abs id) (pair #\# (k sh))))
-                        (ilist #\#
-                           (render id
-                              (ilist #\# #\=
-                                 (ser (del sh obj) obj
-                                    (λ (sh)
-                                       (delay
-                                          (k (put sh obj (- 0 id))))))))))))
+               ;((getf sh obj) =>
+               ;   (λ (id)
+               ;      (if (< id 0) ;; already written, just refer
+               ;         (ilist #\# (render (abs id) (pair #\# (k sh))))
+               ;         (ilist #\#
+               ;            (render id
+               ;               (ilist #\# #\=
+               ;                  (ser (del sh obj) obj
+               ;                     (λ (sh)
+               ;                        (delay
+               ;                           (k (put sh obj (- 0 id))))))))))))
 
                ((null? obj)
                   (ilist #\' #\( #\) (k sh)))
@@ -152,9 +152,9 @@
                   (render-number obj (delay (k sh)) 10))
 
                ((string? obj)
-                  (cons #\"
+                  (cons #\" ;"
                      (render-quoted-string obj  ;; <- all eager now
-                        (pair #\" (k sh)))))
+                        (pair #\" (k sh))))) ;"
 
                ((pair? obj)
                   (cons 40
@@ -163,20 +163,20 @@
                            ((null? obj)
                               ;; run of the mill list end
                               (pair 41 (k sh)))
-                           ((getf sh obj) =>
-                              (λ (id)
-                                 (ilist #\. #\space #\#
-                                    (render (abs id)
-                                       (cons #\#
-                                          (if (< id 0)
-                                             (pair 41 (k sh))
-                                             (pair #\=
-                                                (ser (del sh obj) obj
-                                                   (λ (sh)
-                                                      (pair 41
-                                                         (k
-                                                            (put sh obj
-                                                               (- 0 id)))))))))))))
+                           ;((getf sh obj) =>
+                           ;   (λ (id)
+                           ;      (ilist #\. #\space #\#
+                           ;         (render (abs id)
+                           ;            (cons #\#
+                           ;               (if (< id 0)
+                           ;                  (pair 41 (k sh))
+                           ;                  (pair #\=
+                           ;                     (ser (del sh obj) obj
+                           ;                        (λ (sh)
+                           ;                           (pair 41
+                           ;                              (k
+                           ;                                 (put sh obj
+                           ;                                    (- 0 id)))))))))))))
                            ((pair? obj)
                               ;; render car, then cdr
                               (ser sh (car obj)
