@@ -168,7 +168,7 @@
             (let-parses ( ; process 'GET /smth HTTP/1.1'
                   (request-line get-request-line)
                   (headers-array (get-greedy* get-header-line))
-                  (skip (get-imm #\return)) (skip (get-imm #\newline))) ; \r\n\r\n
+                  (skip (get-imm #\return)) (skip (get-imm #\newline))) ; \r\n
                (cons
                   request-line (list->ff headers-array)))
             (let-parses ( ; process '<policy-file-request/>\0' request:
@@ -200,7 +200,9 @@
                                (if (null? Request-Line)
                                   (send "HTTP/1.0 400 Bad Request\r\n\r\n400")
                                   (onRequest fd Request-Line Headers-Line send close))
-                            #f))))
+                            #f))
+                         (close #t)
+))
             (begin
                (display id)
                (display (if (syscall 3 fd #f #f) " socket closed, " " can't close socket, ")))
@@ -208,7 +210,13 @@
             (loop (force (cdr request)))))
       (print "on-accept done." )
       (let*((ss2 ms2 (clock)))
-         (print id " # " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))))
+         (print id " # " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
+
+   (let sleep ((x 1000))
+      (set-ticker-value 0)
+      (if (> x 0)
+         (sleep (- x 1))))
+   ))
 
 
 (define (http:run port onRequest)
