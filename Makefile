@@ -109,6 +109,7 @@ packages: debian-amd64-package
 
 # echo '(display (cdr *version*))' | ./ol
 # example: http://lxr.free-electrons.com/source/scripts/package/Makefile
+# howto: https://www.debian.org/doc/manuals/distribute-deb/distribute-deb.html
 create-debian-package = \
 	@printf "Creating $1 DEBIAN package... ";\
 	make install DESTDIR=$1/$2;\

@@ -164,18 +164,20 @@
 
 
       (define http-parser
-         (get-any-of
-            (let-parses ( ; process 'GET /smth HTTP/1.1'
+;         (get-any-of       ;process "GET /smth HTTP/1.1"
+            (let-parses (
                   (request-line get-request-line)
                   (headers-array (get-greedy* get-header-line))
-                  (skip (get-imm #\return)) (skip (get-imm #\newline))) ; \r\n
+                  (skip (get-imm #\return)) (skip (get-imm #\newline))) ; final \r\n
                (cons
                   request-line (list->ff headers-array)))
-            (let-parses ( ; process '<policy-file-request/>\0' request:
-                  (request (get-greedy+ (get-rune-if xml?))))
-;                  (skip    (get-imm 0)))
-               (cons
-                  (tuple (runes->string request)) #empty))))
+;            (let-parses ( ; process '<policy-file-request/>\0' request:
+;                  (request (get-greedy+ (get-rune-if xml?))))
+;;                  (skip    (get-imm 0)))
+;               (cons
+;                  (tuple (runes->string request)) #empty))
+;                  )
+)
 
 
 ; todo: use atomic counter to check count of clients and do appropriate timeout on select
@@ -186,9 +188,9 @@
    (let*((ss1 ms1 (clock))
          (send (lambda args
                   (for-each (lambda (arg)
-                     (display-to fd arg)) args))))
+                     (display-to fd arg)) args) #t)))
 
-      (let loop ((request (fd->exp-stream fd "> " http-parser syntax-fail #f)))
+      (let loop ((request (fd->exp-stream fd "" http-parser syntax-fail #f)))
          (print id " loop:" request)
          (if (call/cc (lambda (close)
                          (if (null? request)
@@ -198,11 +200,11 @@
                                ;(print "Request-Line: " Request-Line)
                                ;(print "Headers-Line: " Headers-Line)
                                (if (null? Request-Line)
-                                  (send "HTTP/1.0 400 Bad Request\r\n\r\n400")
+                                  (close (send "HTTP/1.0 400 Bad Request\r\n\r\n400"))
                                   (onRequest fd Request-Line Headers-Line send close))
-                            #f))
-                         (close #t)
-))
+                            (print "ok.")
+                            #f)) #|(close #t)|# ))
+               
             (begin
                (display id)
                (display (if (syscall 3 fd #f #f) " socket closed, " " can't close socket, ")))

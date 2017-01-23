@@ -1388,39 +1388,51 @@ void set_signal_handler()
 #endif
 }
 
-#ifndef __linux__
+#if HAS_SOCKETS
+# ifndef __linux__
 
 size_t
 sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 {
-	char buf[8192];
+	char buf[2*4096];
 	size_t toRead, numRead, numSent, totSent;
 
 	totSent = 0;
 	while (count > 0) {
 		toRead = (sizeof(buf) < count) ? sizeof(buf) : count;
 
+		// read
 		numRead = read(in_fd, buf, toRead);
-		if (numRead == -1)
+		if (numRead == -1) {
+			STDERR("sendfile: read() returns -1, error: %d", errno);
 			return -1;
-		if (numRead == 0)
+		}
+		if (numRead == 0) {
+			STDERR("sendfile: read() returns 0, error: %d", errno);
 			break;                      /* EOF */
+		}
 
+		// send
 		numSent = send(out_fd, buf, numRead, 0);
-		if (numSent == -1) {
-			STDERR("sendfile: send() returns -1");
+		if (numSent == SOCKET_ERROR) {
+			STDERR("sendfile: send() returns -1, error: %d", WSAGetLastError());
 			return -1;
 		}
 		if (numSent == 0) {               /* Should never happen */
-			STDERR("sendfile: send() transferred 0 bytes");
+			STDERR("sendfile: send() transferred 0 bytes, error: %d", WSAGetLastError());
 			return 0;
 		}
 
 		count -= numSent;
 		totSent += numSent;
 	}
+	if (shutdown(out_fd, SD_SEND) == SOCKET_ERROR) {
+		STDERR("sendfile: shutdown() returns -1, error: %d", WSAGetLastError());
+		return -1;
+	}
 	return totSent;
 }
+# endif
 #endif
 
 /***********************************************************************************
@@ -2631,6 +2643,9 @@ loop:;
 			// Win32 socket workaround
 			if (got == -1 && errno == EBADF) {
 				got = recv(portfd, (char *) &fp[1], size, 0);
+				if (got < 0)
+					if (WSAGetLastError() == WSAEWOULDBLOCK)
+						errno = EAGAIN;
 			}
 	#else
 			got = read(portfd, (char *) &fp[1], size);
@@ -2887,7 +2902,7 @@ loop:;
 			// right way: use PF_INET in socket call
 	#ifdef _WIN32
 			int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-			unsigned long v = 0;
+			unsigned long v = 1;
 			ioctlsocket(sock, FIONBIO, &v); // set blocking mode
 	#else
 			int sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -3799,7 +3814,7 @@ loop:;
 			}
 			case TINT: {
 				int v = emscripten_run_script_int(string);
-				result = itosv(v);
+				result = (word*)itosv(v);
 				break;
 			}
 			default:
