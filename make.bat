@@ -140,10 +140,10 @@ echo|set /p=Testing %1 ...
 ol.exe %1 >C:\TEMP\out
 fc C:\TEMP\out %1.ok > nul
 if errorlevel 1 goto fail1
-echo." Ok."
+echo. Ok.
 GOTO:EOF
 :fail1
-echo." Failed."
+echo. Failed.
 GOTO:EOF
 
 

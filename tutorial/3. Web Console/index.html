@@ -16,6 +16,7 @@
 <body style="height: 100%;" id="terminal">
    <script>
 var stdInput = unescape(encodeURIComponent("(print \"You see a prompt.\")"));
+
 var terminal;
 $('#terminal').terminal(function(command, terminal) {
    stdInput += unescape(encodeURIComponent(command));
@@ -56,26 +57,26 @@ $('#terminal').mousewheel(function(event) {
 });
    </script>
 
-
+   <!-- Ol loader -->
    <script type='text/javascript'>
       // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
 
       var Module = {
-        preRun: function() {
-          console.log("preRun");
-          function stdin() {
-            if (stdInput.length == 0) {
-              return undefined;
-            }
+         preRun: function() {
+            console.log("preRun");
+            function stdin() {
+               if (stdInput.length == 0) {
+                  return undefined;
+               }
 
-            var chr = stdInput.charCodeAt(0);
-            stdInput = stdInput.substring(1);
-            return chr;
-          }
-          var stdout = null;
-          var stderr = null;
-          FS.init(stdin, stdout, stderr);
-        },
+               var chr = stdInput.charCodeAt(0);
+               stdInput = stdInput.substring(1);
+               return chr;
+            }
+            var stdout = null;
+            var stderr = null;
+            FS.init(stdin, stdout, stderr);
+         },
          postRun: function() {
             console.log("postRun");
 
@@ -91,7 +92,7 @@ $('#terminal').mousewheel(function(event) {
             alert(text);
          },
 
-        setStatus: function(text) {
+         setStatus: function(text) {
           console.log(text);
           /*if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
           if (text === Module.setStatus.text) return;

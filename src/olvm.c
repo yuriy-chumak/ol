@@ -2902,8 +2902,8 @@ loop:;
 			// right way: use PF_INET in socket call
 	#ifdef _WIN32
 			int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-			unsigned long v = 1;
-			ioctlsocket(sock, FIONBIO, &v); // set blocking mode
+		//	unsigned long v = 1;
+		//	ioctlsocket(sock, FIONBIO, &v); // set blocking mode
 	#else
 			int sock = socket(PF_INET, SOCK_STREAM, 0);
 	#endif
