@@ -1415,8 +1415,13 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		// send
 		numSent = send(out_fd, buf, numRead, 0);
 		if (numSent == SOCKET_ERROR) {
-			STDERR("sendfile: send() returns -1, error: %d", WSAGetLastError());
-			return -1;
+			int err = WSAGetLastError();
+			STDERR("sendfile: send() returns -1, error: %d", err);
+			if (err != WSAEWOULDBLOCK)
+				return -1;
+
+			Sleep(1);
+			continue;
 		}
 		if (numSent == 0) {               /* Should never happen */
 			STDERR("sendfile: send() transferred 0 bytes, error: %d", WSAGetLastError());
@@ -1967,6 +1972,7 @@ loop:;
 
 		goto apply;
 
+	// return to continuation?
 	case SYS: // (1%) sys continuation op arg1 arg2
 		this = (word *) R[0];
 		R[0] = IFALSE; // let's call mcp
@@ -1995,7 +2001,7 @@ loop:;
 			while (--pos)
 				R[pos] = this[pos];
 			ip = ((unsigned char *) code) + W;
-			break;  // continue; // no apply, continue
+			break;  // no apply, continue
 		}
 		// else call a thunk with terminal continuation:
 		R[3] = IHALT; // exit via R0 when the time comes
@@ -2902,8 +2908,8 @@ loop:;
 			// right way: use PF_INET in socket call
 	#ifdef _WIN32
 			int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-		//	unsigned long v = 1;
-		//	ioctlsocket(sock, FIONBIO, &v); // set blocking mode
+			unsigned long v = 1;
+			ioctlsocket(sock, FIONBIO, &v); // set blocking mode
 	#else
 			int sock = socket(PF_INET, SOCK_STREAM, 0);
 	#endif
