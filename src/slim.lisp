@@ -250,7 +250,7 @@
                            (else
                               (loop env (in) last))))
                      )))))
-               null))) ; no threads state
+               ))) ; no threads state
 
 ; compile the web-repl:
 (let*((symbols (symbols-of get-main-entry))

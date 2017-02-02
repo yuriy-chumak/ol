@@ -5,7 +5,7 @@
       exit-owl release-thread catch-thread set-signal-action
       single-thread? kill mail fork-linked-server fork-server
       return-mails fork-server fork-linked fork-named exit-thread exit-owl
-      poll-mail-from start-profiling stop-profiling running-threads par*
+      poll-mail-from running-threads par*
       start-nested-parallel-computation wrap-the-whole-world-to-a-thunk ; ??
       par por* por interop)
 
@@ -148,9 +148,4 @@
          (mail whom message)
          (ref (accept-mail (λ (env) (eq? (ref env 1) whom))) 2))
 
-      (define (start-profiling)
-         (interop 20 #true #true))
-
-      (define (stop-profiling)
-         (interop 21 #true #true))
 ))

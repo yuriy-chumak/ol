@@ -189,26 +189,6 @@
       (define char->integer self)
       (define integer->char self)))
 
-;; profiling doesn't yet have a good home. merge to lib-internals or lib-debug later?
-;; run thunk and show n most called functions. no timings yet.
-(define (profile thunk n)
-   (lets
-      ((skip (start-profiling))
-       (skip (set-ticker-value 0))
-       (res (thunk))
-       (stats (stop-profiling))
-       (most-used
-         (take
-            (sort
-               (λ (a b) (> (car a) (car b)))
-               (ff-fold
-                  (λ (out func n)
-                     (cons (cons n func) out))
-                  null stats))
-            n)))
-      (for-each (λ (p) (print*-to stdout  (list (car p) ":" (cdr p)))) most-used) ;; <- could use stderr later
-      res))
-
 ;; implementation features, used by cond-expand
 (define *features*
    (cons
@@ -346,7 +326,7 @@
                               (if sandbox?
                                  (sandbox 1)) ;(sandbox megs) - check is memory enough
                               (repl-trampoline env file))))))))
-            null)))) ; no threads state
+            )))) ; no threads state
 
 
 
