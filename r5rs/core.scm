@@ -599,6 +599,14 @@
       ; procedure:  (real? obj)
       ; procedure:  (rational? obj)
       ; procedure:  (integer? obj)
+      (define (integer? a)
+         (case (type a)
+            (type-fix+ #true)
+            (type-fix- #true)
+            (type-int+ #true)
+            (type-int- #true)
+            (else #false)))
+
       ; procedure:  (exact? z)
       ; procedure:  (inexact? z)
 
@@ -1321,7 +1329,7 @@
       type-int+
       type-int-
 
-      value? raw? reference?
+      value? raw? reference? integer?
 
       type-bytecode
       type-proc
