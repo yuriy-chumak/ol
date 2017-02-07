@@ -626,7 +626,7 @@
       (assert (integer? 8/4)                         ===>  #t)
 
       ; procedure:  (exact? z)
-      (define (exact? a) #true)
+      (define exact? number?)
 
       ; procedure:  (inexact? z)
       (define (inexact? a) #false)
