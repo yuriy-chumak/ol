@@ -613,6 +613,17 @@
 
       ; procedure:  (number? obj)
       (define number? real?)
+      
+      (assert (complex? 3+4i)                        ===>  #t)
+      (assert (complex? 3)                           ===>  #t)
+      (assert (real? 3)                              ===>  #t)
+      (assert (real? -2.5+0.0i)                      ===>  #t)
+      (assert (real? 1e10)                           ===>  #t)
+      (assert (rational? 6/10)                       ===>  #t)
+      (assert (rational? 6/3)                        ===>  #t)
+      (assert (integer? 3+0i)                        ===>  #t)
+      (assert (integer? 3.0)                         ===>  #t)
+      (assert (integer? 8/4)                         ===>  #t)
 
       ; procedure:  (exact? z)
       (define (exact? a) #true)
