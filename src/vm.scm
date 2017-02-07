@@ -23,6 +23,7 @@
       MOVE REFI MOVE2
 
       ; types
+      TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX
       TPAIR TTUPLE TSTRING TSYMBOL
       TBYTECODE TVPTR
 
@@ -80,6 +81,12 @@
       ;ff-bind
 
       ; todo: rename to TPAIR, TTUPLE, etc.
+      (setq TFIX+              0) ; value
+      (setq TFIX-             32) ; value
+      (setq TINT+             40) ; reference
+      (setq TINT-             41) ; reference
+      (setq TRATIONAL         42) ; reference
+      (setq TCOMPLEX          43) ; reference
 
       (setq TPAIR              1) ; reference
       (setq TTUPLE             2) ; reference
@@ -127,11 +134,11 @@
 
 
       ;; Список кодов виртуальной машины:
-      (setq GOTO 2)
+      (setq GOTO   2)
       (setq APPLY 20)
       (setq APPLY/CC 84)
-      (setq RET 24)
-      (setq RUN 50)
+      (setq RET   24)
+      (setq RUN   50)
 
       (setq ARITY-ERROR 17)
 
