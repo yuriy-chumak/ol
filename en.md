@@ -57,6 +57,10 @@ which is another way of
 
 ### Project news
 
+  * Tue 07 Feb 2017 18:19 CET
+    * released project works and works fine.
+    * ol ported under web, so it can run under web-browsers and run fast.
+  
   * Fri 30 Dec 2016 17:06 EET
     * release 1.1 ready to download.
 
