@@ -332,14 +332,14 @@
                            (if fixed?
                               ; без проверки на арность проваливается тест "case-lambda"
                               ; todo: оставить проверку для lambda, забрать для всего остального
-                              (ilist JF2 arity
+                              (ilist JAF arity
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes
                                     (if (null? tail)
                                        (list ARITY-ERROR)
                                        tail)))
-                              (ilist JF2x (if fixed? arity (- arity 1))
+                              (ilist JAFX (if fixed? arity (- arity 1))
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes

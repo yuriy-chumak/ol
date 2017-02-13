@@ -1772,7 +1772,7 @@ mainloop:;
 
 	#	define JEQ    8       // jeq
 	#	define JP    16       // JZ (16), JN (80), JT (144), JF (208)
-	#	define JF2   25       // jf2x (89)
+	#	define JAF   25       // jafx (89)
 
 		// примитивы языка:
 	#	define VMNEW 23    // make object
@@ -2056,15 +2056,15 @@ loop:;
 		ip += 3; break;
 	}
 
-	// используется в (func ...) в primop.scm
-	case JF2: { // (13%) jmp-nargs (>=) a hi lo
+	// jmp if arity not equal (arity failed)
+	case JAF: { // (13%) jmp-nargs (>=) a hi lo
 		int arity = ip[0];
 		if (acc == arity) { // 99% for "yes"
 			if (op & 0x40) // add empty extra arg list
 				R[acc + 3] = INULL;
 		}
 		else
-		if (acc > arity && (op & 0x40)) {
+		if (acc > arity && (op & 0x40)) { // JAFx
 			word tail = INULL;  // todo: no call overflow handling yet
 			while (acc > arity) {
 				tail = (word)new_pair (R[acc + 2], tail);

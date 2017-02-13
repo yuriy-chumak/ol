@@ -16,7 +16,7 @@
 
       ; commands
       GOTO APPLY APPLY/CC RET SYS RUN ARITY-ERROR
-      JEQ JZ JE JN JF JF2 JF2x
+      JEQ JZ JE JN JF JAF JAFX
       CLOS0 CLOC0 CLOS1 CLOC1
 
       LD LDE LDN LDT LDF
@@ -51,7 +51,7 @@
 
 ;          итак, процесс замены кода операции на другой:
 ;          1. заводим новую операцию (например, как я сделал с raw)
-;           (tuple 'raw2       62  2 1 (raw2 type-bytecode (list JF2 2 0 6  62 4 5 6 24 6  17)))
+;           (tuple 'raw2       62  2 1 (raw2 type-bytecode (list JAF 2 0 6  62 4 5 6 24 6  17)))
 ;          2. добавляем ее код в виртуальную машину
 ;          3. добавляем ее в список *src-olvm* в lang/eval.scm
 ;          4. пересобираем boot
@@ -64,11 +64,11 @@
 
 ;           пример добавления новой функции:
 ;           параметры: код функции, in параметров, out параметров, непосредственно код
-;             код предваряется опкодом JF2 для проверки арности и (если не входит в список multiple-return-variable-primops)
+;             код предваряется опкодом JAF для проверки арности и (если не входит в список multiple-return-variable-primops)
 ;             возвратом результата и выводом ошибки при неправильной арности
-;            (tuple 'cons       51  2 1 (raw (list JF2 3 0 6  51 4 5 6  RET 6  17) type-bytecode #false))  ;; 17 == ARITY-ERROR
+;            (tuple 'cons       51  2 1 (raw (list JAF 3 0 6  51 4 5 6  RET 6  17) type-bytecode #false))  ;; 17 == ARITY-ERROR
 ;           вот еще несколько примеров
-;            (tuple 'clock      61  0 2 (raw (list JF2 2 0 3  61 4 5           17) type-bytecode #false))  ;; must add 61 to the multiple-return-variable-primops list
+;            (tuple 'clock      61  0 2 (raw (list JAF 2 0 3  61 4 5           17) type-bytecode #false))  ;; must add 61 to the multiple-return-variable-primops list
 ;            (primop 'raw       '(60 4 5 6    7  24 7)  3 1)
 ;            (primop 'sys       '(27 4 5 6 7  8  24 8)  4 1)
 ;
@@ -166,8 +166,8 @@
       (setq JN   80)  ;(+ 16 (<< 1 6))) ; jump-imm[0] if null
       (setq JE   144) ;(+ 16 (<< 2 6))) ; jump-imm[0] if empty
       (setq JF   208) ;(+ 16 (<< 3 6))) ; jump-imm[0] if false
-      (setq JF2  25) ; jump if arity failed
-      (setq JF2x 89) ; (+ JF2 (<< 1 6))) ; JF2 with extra flag
+      (setq JAF  25) ; jump if arity failed
+      (setq JAFX 89) ; (+ JAF (<< 1 6))) ; JAF with extra flag
 
       ; executions
       (setq GOTO 2) ; jmp a, nargs    call Ra with nargs args
@@ -176,7 +176,7 @@
       ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
 
       (setq NEW 23)      ; no real vm:new command required, check rtl-primitive in (lang compile)
-      (setq RAW 60)      (setq vm:raw  (vm:raw TBYTECODE '(60 4 5 6  24 6)))  ; was: '(JF2 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
+      (setq RAW 60)      (setq vm:raw  (vm:raw TBYTECODE '(60 4 5 6  24 6)))  ; was: '(JAF 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
       (setq UNREEL 35)   (setq unreel  (vm:raw TBYTECODE '(35 4 5 6  24 6)))
       (setq SYS 27)      (setq vm:sys  (vm:raw TBYTECODE '(27 4 5 6 7 8  24 8)))
 
