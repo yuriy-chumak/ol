@@ -114,7 +114,7 @@
 
       ;(assert ((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6))
       ;(assert ((lambda (x y . z) z) 3 4 5 6)          ===>  (5 6))
-              
+
 
       ; http://srfi.schemers.org/srfi-16/srfi-16.html
       ; srfi syntex: (case-lambda ...
@@ -579,7 +579,7 @@
       ; 6.2.1  Numerical types
       ; 6.2.2  Exactness
       ;
-      ; Otus Lisp numbers are always exact. 
+      ; Otus Lisp numbers are always exact.
 
       ; 6.2.3  Implementation restrictions
       ; 6.2.4  Syntax of numerical constants
@@ -600,7 +600,7 @@
       (define (rational? a)
          (or (integer? a)
              (case (type a)
-                (type-rational #true)))) 
+                (type-rational #true))))
 
       ; procedure:  (complex? obj)
       (define (complex? a)
@@ -613,7 +613,7 @@
 
       ; procedure:  (number? obj)
       (define number? real?)
-      
+
       (assert (complex? 3+4i)                        ===>  #t)
       (assert (complex? 3)                           ===>  #t)
       (assert (real? 3)                              ===>  #t)
@@ -924,18 +924,39 @@
 
 
       ; 6.3.4. Characters
-      ; (char? obj) procedure
+      ; procedure:  (char? obj)
       (define (char? o) (number? o))
 
 
       ; 6.3.5. Strings
-      ;; (string? obj) procedure
-      (define (string? o)
-         (case (type o)
-            (type-string #true)
-            (type-string-wide #true)
-            (type-string-dispatch #true)
-            (else #false)))
+      ; Strings are sequences of characters. Strings are written as sequences of characters enclosed
+      ; within doublequotes (`"'). A doublequote can be written inside a string only by escaping it
+      ; with a backslash (\), as in "The word \"recursion\" has many meanings."
+      ;
+      ; procedure:  (string? obj)
+      ; procedure:  (make-string k)
+      ; procedure:  (make-string k char)
+      ; library procedure:  (string char ...)
+      ; procedure:  (string-length string)
+      ; procedure:  (string-ref string k)
+      ; procedure:  (string-set! string k char)
+      ; library procedure:  (string=? string1 string2)
+      ; library procedure:  (string-ci=? string1 string2)
+      ; library procedure:  (string<? string1 string2)
+      ; library procedure:  (string>? string1 string2)
+      ; library procedure:  (string<=? string1 string2)
+      ; library procedure:  (string>=? string1 string2)
+      ; library procedure:  (string-ci<? string1 string2)
+      ; library procedure:  (string-ci>? string1 string2)
+      ; library procedure:  (string-ci<=? string1 string2)
+      ; library procedure:  (string-ci>=? string1 string2)
+      ; library procedure:  (substring string start end)
+      ; library procedure:  (string-append string ...)
+      ; library procedure:  (string->list string)
+      ; library procedure:  (list->string list)
+      ; library procedure:  (string-copy string)
+      ; library procedure:  (string-fill! string char)
+
 
 
       ; 6.3.6. Vectors

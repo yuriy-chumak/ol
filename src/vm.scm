@@ -115,7 +115,7 @@
 
       ; 20
       (setq type-string-dispatch  21) ; reference
-      (setq type-string-wide      22) ; reference, raw
+      (setq TSTRINGWIDE           22) ; reference, raw
       ; 23
 
       ;; transitional trees or future ffs
@@ -161,13 +161,13 @@
       (setq CLOC1 7)
 
       ; conditional jumps
-      (setq JEQ   8) ; jeq a b o1 o2
-      (setq JZ   16)  ;(+ 16 (<< 0 6))) ; jump-imm[0] if zero
-      (setq JN   80)  ;(+ 16 (<< 1 6))) ; jump-imm[0] if null
-      (setq JE   144) ;(+ 16 (<< 2 6))) ; jump-imm[0] if empty
-      (setq JF   208) ;(+ 16 (<< 3 6))) ; jump-imm[0] if false
-      (setq JAF  25) ; jump if arity failed
-      (setq JAFX 89) ; (+ JAF (<< 1 6))) ; JAF with extra flag
+      (setq JEQ   8)  ; jeq a b o1 o2
+      (setq JZ   16)  ; (+ 16 (<< 0 6))) ; jump-imm[0] if zero
+      (setq JN   80)  ; (+ 16 (<< 1 6))) ; jump-imm[0] if null
+      (setq JE   144) ; (+ 16 (<< 2 6))) ; jump-imm[0] if empty
+      (setq JF   208) ; (+ 16 (<< 3 6))) ; jump-imm[0] if false
+      (setq JAF  25)  ; jump if arity failed
+      (setq JAFX 89)  ; (+ JAF (<< 1 6))) ; JAF with extra flag
 
       ; executions
       (setq GOTO 2) ; jmp a, nargs    call Ra with nargs args

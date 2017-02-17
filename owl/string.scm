@@ -5,13 +5,15 @@
 (define-library (owl string)
 
    (export
-      string-length
       runes->string      ; code point list (ints) -> string
       bytes->string      ; UTF-8 encoded byte list -> string
       string->bytes      ; string -> list of UTF-8 bytes
       string->runes      ; string -> list of unicode code points
+
       list->string       ; aka runes->string
       string->list       ; aka string->runes
+
+      string-length
       string-eq?
       string-append
       c-string           ; str → #false | UTF-8 encoded null-terminated raw data string
@@ -33,6 +35,7 @@
       string-copy        ; id
       substring          ; str start end → str'
       string-ref         ; str pos → char | error
+      string?
       string=?           ; str str → bool
       string<?           ; str str → bool
       string>?           ; str str → bool
@@ -68,10 +71,10 @@
             (type-string          (size str))
             (type-string-wide     (size str))
             (type-string-dispatch (ref str 1))
+            ; todo: clarify the returning the runtime-error or simple #f
             (else (runtime-error "string-length: not a string: " str))))
 
       ;;; enumerate code points forwards
-
       (define (str-iter-leaf str tl pos end)
          (if (eq? pos end)
             tl
@@ -417,12 +420,19 @@
 
       (define char=? =)
 
-      ;; fixme: incomplete, added because needed for ascii range elsewhere
+      ; fixme: incomplete, added because needed for ascii range elsewhere
       (define (char-ci=? a b)
          (or (eq? a b)
             (=
                (iget char-fold-iff a a)
                (iget char-fold-iff b b))))
+
+      (define (string? o)
+         (case (type o)
+            (type-string #true)
+            (type-string-wide #true)
+            (type-string-dispatch #true)
+            (else #false)))
 
       (define string=? string-eq?)
       (define (string-ci=? a b) (eq? 2 (str-compare upcase a b)))
@@ -438,4 +448,6 @@
       (define (string-ci>=? a b) (not (eq? 1 (str-compare upcase a b))))
 
       (define (make-string n char)
-         (list->string (repeat char n)))))
+         (list->string (repeat char n)))
+
+))
