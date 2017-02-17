@@ -928,7 +928,6 @@
       ; Characters are written using the notation #\<character> or #\<character name>.
       ;
       ; procedure:  (char? obj)
-      (define (char? o) (number? o))
       ; procedure:  (char=? char1 char2)
       ; procedure:  (char<? char1 char2)
       ; procedure:  (char>? char1 char2)
@@ -1431,7 +1430,7 @@
       call-with-current-continuation call/cc lets/cc
 
       ; 6.3
-      not boolean? pair? symbol? char? vector? port? procedure? null? eof?
+      not boolean? pair? symbol? vector? port? procedure? null? eof?
 
       value? raw? reference?
 
