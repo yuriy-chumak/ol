@@ -178,17 +178,6 @@
          (halt exit-seccomp-failed))))
 
 
-(define-library (owl char)
-   (export char->integer integer->char)
-   (import (r5rs core))
-   (import
-      (owl math))
-   (begin
-      (define self (λ (x) x))
-
-      (define char->integer self)
-      (define integer->char self)))
-
 ;; implementation features, used by cond-expand
 (define *features*
    (cons

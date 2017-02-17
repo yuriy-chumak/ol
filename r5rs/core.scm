@@ -924,8 +924,30 @@
 
 
       ; 6.3.4. Characters
+      ; Characters are objects that represent printed characters such as letters and digits.
+      ; Characters are written using the notation #\<character> or #\<character name>.
+      ;
       ; procedure:  (char? obj)
       (define (char? o) (number? o))
+      ; procedure:  (char=? char1 char2)
+      ; procedure:  (char<? char1 char2)
+      ; procedure:  (char>? char1 char2)
+      ; procedure:  (char<=? char1 char2)
+      ; procedure:  (char>=? char1 char2)
+      ; library procedure:  (char-ci=? char1 char2)
+      ; library procedure:  (char-ci<? char1 char2)
+      ; library procedure:  (char-ci>? char1 char2)
+      ; library procedure:  (char-ci<=? char1 char2)
+      ; library procedure:  (char-ci>=? char1 char2)
+      ; library procedure:  (char-alphabetic? char)
+      ; library procedure:  (char-numeric? char)
+      ; library procedure:  (char-whitespace? char)
+      ; library procedure:  (char-upper-case? letter)
+      ; library procedure:  (char-lower-case? letter)
+      ; procedure:  (char->integer char)
+      ; procedure:  (integer->char n)
+      ; library procedure:  (char-upcase char)
+      ; library procedure:  (char-downcase char)
 
 
       ; 6.3.5. Strings
@@ -1409,7 +1431,7 @@
       call-with-current-continuation call/cc lets/cc
 
       ; 6.3
-      not boolean? pair? symbol? char? string? vector? port? procedure? null? eof?
+      not boolean? pair? symbol? char? vector? port? procedure? null? eof?
 
       value? raw? reference?
 
