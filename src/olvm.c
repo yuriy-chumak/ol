@@ -2273,7 +2273,7 @@ loop:;
 			for (ptrdiff_t i = 0; i < size; i++)
 				newobj[i] = p[i];
 			if (pos < (size-1)*sizeof(word) - padsize(hdr) + 1)
-				((char*)&car(newobj))[pos] = (char)uvtoi(A2);
+				((char*)&car(newobj))[pos] = (char)svtoi(A2);
 			A3 = (word)newobj;
 		}
 		else
@@ -2303,7 +2303,7 @@ loop:;
 		else
 		if (is_rawobject(*p)) {
 			if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
-				((char*)&car(p))[pos] = (char) uvtoi(A2);
+				((char*)&car(p))[pos] = (char) svtoi(A2);
 			A3 = (word) p;
 		}
 		else
