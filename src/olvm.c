@@ -490,6 +490,259 @@ char* dlerror() {
 #endif //HAS_DLOPEN
 
 
+// --------------------------------------------------------
+// -=( fork )=---------------------------------------------
+// sample implementation can be found at
+// https://github.com/jonclayden/multicore/blob/master/src/forknt.c
+#if _WIN32
+#include <ntdef.h>
+#include <ntstatus.h>
+
+typedef enum _MEMORY_INFORMATION_ {
+	MemoryBasicInformation,
+	MemoryWorkingSetList,
+	MemorySectionName,
+	MemoryBasicVlmInformation
+} MEMORY_INFORMATION_CLASS;
+typedef enum _SYSTEM_INFORMATION_CLASS { SystemHandleInformation = 0x10 } SYSTEM_INFORMATION_CLASS;
+typedef struct _CLIENT_ID {
+	HANDLE UniqueProcess;
+	HANDLE UniqueThread;
+} CLIENT_ID, *PCLIENT_ID;
+typedef struct _USER_STACK {
+	PVOID FixedStackBase;
+	PVOID FixedStackLimit;
+	PVOID ExpandableStackBase;
+	PVOID ExpandableStackLimit;
+	PVOID ExpandableStackBottom;
+} USER_STACK, *PUSER_STACK;
+typedef struct _SYSTEM_HANDLE_INFORMATION {
+	ULONG ProcessId;
+	UCHAR ObjectTypeNumber;
+	UCHAR Flags;
+	USHORT Handle;
+	PVOID Object;
+	ACCESS_MASK GrantedAccess;
+} SYSTEM_HANDLE_INFORMATION, *PSYSTEM_HANDLE_INFORMATION;
+typedef LONG KPRIORITY;
+typedef struct _THREAD_BASIC_INFORMATION {
+	NTSTATUS                ExitStatus;
+	PVOID                   TebBaseAddress;
+	CLIENT_ID               ClientId;
+	KAFFINITY               AffinityMask;
+	KPRIORITY               Priority;
+	KPRIORITY               BasePriority;
+} THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
+
+typedef enum _THREADINFOCLASS {
+	ThreadBasicInformation,
+	ThreadTimes,
+	ThreadPriority,
+	ThreadBasePriority,
+	ThreadAffinityMask,
+	ThreadImpersonationToken,
+	ThreadDescriptorTableEntry,
+	ThreadEnableAlignmentFaultFixup,
+	ThreadEventPair,
+	ThreadQuerySetWin32StartAddress,
+	ThreadZeroTlsCell,
+	ThreadPerformanceCount,
+	ThreadAmILastThread,
+	ThreadIdealProcessor,
+	ThreadPriorityBoost,
+	ThreadSetTlsArrayAddress,
+	ThreadIsIoPending,
+	ThreadHideFromDebugger
+} THREADINFOCLASS, *PTHREADINFOCLASS;
+
+
+typedef NTSTATUS (WINAPI *ZwCreateProcess_t)(OUT PHANDLE ProcessHandle,
+		                                     IN  ACCESS_MASK DesiredAccess,
+											 IN  POBJECT_ATTRIBUTES ObjectAttributes,
+											 IN  HANDLE InheritFromProcessHandle,
+											 IN  BOOLEAN InheritHandles,
+											 IN  HANDLE SectionHandle OPTIONAL,
+											 IN  HANDLE DebugPort OPTIONAL,
+											 IN  HANDLE ExceptionPort OPTIONAL);
+typedef NTSTATUS (WINAPI *ZwQuerySystemInformation_t)(SYSTEM_INFORMATION_CLASS SystemInformationClass,
+													  PVOID SystemInformation,
+													  ULONG SystemInformationLength,
+													  PULONG ReturnLength);
+typedef NTSTATUS (NTAPI *ZwQueryVirtualMemory_t)(IN  HANDLE ProcessHandle,
+												 IN  PVOID BaseAddress,
+												 IN  MEMORY_INFORMATION_CLASS MemoryInformationClass,
+												 OUT PVOID MemoryInformation,
+												 IN  ULONG MemoryInformationLength,
+												 OUT PULONG ReturnLength OPTIONAL);
+typedef NTSTATUS (NTAPI *ZwCreateThread_t)(OUT PHANDLE ThreadHandle,
+										   IN  ACCESS_MASK DesiredAccess,
+										   IN  POBJECT_ATTRIBUTES ObjectAttributes,
+										   IN  HANDLE ProcessHandle,
+										   OUT PCLIENT_ID ClientId,
+										   IN  PCONTEXT ThreadContext,
+										   IN  PUSER_STACK UserStack,
+										   IN  BOOLEAN CreateSuspended);
+typedef NTSTATUS (NTAPI *ZwGetContextThread_t)(IN  HANDLE ThreadHandle,
+		                                       OUT PCONTEXT Context);
+typedef NTSTATUS (NTAPI *ZwResumeThread_t)(IN  HANDLE ThreadHandle,
+		                                   OUT PULONG SuspendCount OPTIONAL);
+typedef NTSTATUS (NTAPI *ZwQueryInformationThread_t)(IN  HANDLE ThreadHandle,
+													 IN  THREAD_INFORMATION_CLASS ThreadInformationClass,
+													 OUT PVOID ThreadInformation,
+													 IN  ULONG ThreadInformationLength,
+													 OUT PULONG ReturnLength OPTIONAL );
+typedef NTSTATUS (NTAPI *ZwWriteVirtualMemory_t)(IN  HANDLE ProcessHandle,
+												 IN  PVOID BaseAddress,
+												 IN  PVOID Buffer,
+												 IN  ULONG NumberOfBytesToWrite,
+												 OUT PULONG NumberOfBytesWritten OPTIONAL);
+typedef NTSTATUS (NTAPI *ZwClose_t)(IN HANDLE ObjectHandle);
+#define NtCurrentProcess() ((HANDLE)-1)
+#define NtCurrentThread() ((HANDLE) -2)
+
+
+static jmp_buf jenv;
+static int child_entry(void) {
+	longjmp(jenv, 1);
+	return 0;
+}
+// windows реализация функции fork()
+pid_t fork(void)
+{
+	static int ready = 0;
+	static ZwCreateProcess_t ZwCreateProcess;
+	static ZwQuerySystemInformation_t ZwQuerySystemInformation;
+	static ZwQueryVirtualMemory_t ZwQueryVirtualMemory;
+	static ZwCreateThread_t ZwCreateThread;
+	static ZwGetContextThread_t ZwGetContextThread;
+	static ZwResumeThread_t ZwResumeThread;
+	static ZwQueryInformationThread_t ZwQueryInformationThread;
+	static ZwWriteVirtualMemory_t ZwWriteVirtualMemory;
+	static ZwClose_t ZwClose;
+
+
+	if (ready == 0) {
+		ready = -1; // fail.
+		HANDLE ntdll = GetModuleHandle("ntdll");
+		if (ntdll != NULL)
+			if ((ZwCreateProcess = (ZwCreateProcess_t) GetProcAddress(ntdll, "ZwCreateProcess")) &&
+				(ZwQuerySystemInformation = (ZwQuerySystemInformation_t) GetProcAddress(ntdll, "ZwQuerySystemInformation")) &&
+				(ZwQueryVirtualMemory = (ZwQueryVirtualMemory_t) GetProcAddress(ntdll, "ZwQueryVirtualMemory")) &&
+				(ZwCreateThread = (ZwCreateThread_t) GetProcAddress(ntdll, "ZwCreateThread")) &&
+				(ZwGetContextThread = (ZwGetContextThread_t) GetProcAddress(ntdll, "ZwGetContextThread")) &&
+				(ZwResumeThread = (ZwResumeThread_t) GetProcAddress(ntdll, "ZwResumeThread")) &&
+				(ZwQueryInformationThread = (ZwQueryInformationThread_t) GetProcAddress(ntdll, "ZwQueryInformationThread")) &&
+				(ZwWriteVirtualMemory = (ZwWriteVirtualMemory_t) GetProcAddress(ntdll, "ZwWriteVirtualMemory")) &&
+				(ZwClose = (ZwClose_t) GetProcAddress(ntdll, "ZwClose")))
+				ready = 1; // ok.
+	}
+
+	// well, do it
+	if (ready == 1) {
+		if (setjmp(jenv) != 0) return 0; // return as a child
+
+		// make sure all handles are inheritable
+		#if 0
+			ULONG n = 0x1000;
+			PULONG p = (PULONG) calloc(n, sizeof(ULONG));
+
+			// some guesswork to allocate a structure that will fit it all
+			while (ZwQuerySystemInformation(SystemHandleInformation, p, n * sizeof(ULONG), 0) == STATUS_INFO_LENGTH_MISMATCH) {
+				free(p);
+				n *= 2;
+				p = (PULONG) calloc(n, sizeof(ULONG));
+			}
+
+			/* p points to an ULONG with the count, the entries follow (hence p[0] is the size and p[1] is where the first entry starts */
+			PSYSTEM_HANDLE_INFORMATION h = (PSYSTEM_HANDLE_INFORMATION)(p + 1);
+
+			ULONG pid = GetCurrentProcessId();
+			ULONG i = 0, count = *p;
+
+			while (i < count) {
+				if (h[i].ProcessId == pid)
+					SetHandleInformation((HANDLE)(ULONG) h[i].Handle,
+							HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+				i++;
+			}
+			free(p);
+
+		#endif
+
+		HANDLE hProcess = 0, hThread = 0;
+		OBJECT_ATTRIBUTES oa = { sizeof(oa) };
+
+		// create forked process
+		if (ZwCreateProcess(&hProcess, PROCESS_ALL_ACCESS, &oa,
+		                    NtCurrentProcess(), TRUE, 0, 0, 0) < 0)
+			return -1;
+
+		CONTEXT context = {CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS | CONTEXT_FLOATING_POINT};
+
+		// set the Eip for the child process to our child function
+		if (ZwGetContextThread(NtCurrentThread(), &context) < 0)
+			return -1;
+		#if _WIN64
+		context.Rip = (intptr_t)&child_entry;
+		#else
+		context.Eip = (intptr_t)child_entry;
+		#endif
+
+		MEMORY_BASIC_INFORMATION mbi;
+		#if _WIN64
+		if (ZwQueryVirtualMemory(NtCurrentProcess(), (PVOID)context.Rsp,
+		                         MemoryBasicInformation, &mbi, sizeof mbi, 0) < 0)
+			return -1;
+		#else
+		if (ZwQueryVirtualMemory(NtCurrentProcess(), (PVOID)context.Esp,
+		                         MemoryBasicInformation, &mbi, sizeof mbi, 0) < 0)
+			return -1;
+		#endif
+
+		USER_STACK stack;
+	    stack.FixedStackBase = 0;
+	    stack.FixedStackLimit = 0;
+	    stack.ExpandableStackBase = (PCHAR)mbi.BaseAddress + mbi.RegionSize;
+	    stack.ExpandableStackLimit = mbi.BaseAddress;
+	    stack.ExpandableStackBottom = mbi.AllocationBase;
+
+		CLIENT_ID cid;
+
+	    // create thread using the modified context and stack
+	    if (ZwCreateThread(&hThread, THREAD_ALL_ACCESS, &oa, hProcess,
+	                       &cid, &context, &stack, TRUE) < 0)
+	    	return -1;
+
+	    // copy exception table
+	    THREAD_BASIC_INFORMATION tbi;
+	    if (ZwQueryInformationThread(NtCurrentThread(), ThreadBasicInformation,
+	                                 &tbi, sizeof tbi, 0) < 0)
+	    	return -1;
+	    PNT_TIB tib = (PNT_TIB)tbi.TebBaseAddress;
+	    if (ZwQueryInformationThread(hThread, ThreadBasicInformation,
+	                                 &tbi, sizeof tbi, 0) < 0)
+	    	return -1;
+	    if (ZwWriteVirtualMemory(hProcess, tbi.TebBaseAddress, &tib->ExceptionList,
+	                             sizeof tib->ExceptionList, 0) < 0)
+	    	return -1;
+
+	    // start (resume really) the child
+	    if (ZwResumeThread(hThread, 0) < 0)
+	    	return -1;
+
+	    // clean up
+	    ZwClose(hThread);
+	    ZwClose(hProcess);
+
+	    // exit with child's pid
+	    return (pid_t)cid.UniqueProcess;
+	}
+
+	return -1;
+}
+
+#endif
+
 // ----------
 // -=( OL )=----------------------------------------------------------------------
 // --
@@ -1323,6 +1576,16 @@ word gc(heap_t *heap, int query, word regs)
 			x5 <= FMAX ? \
 					(word)itouv(x5): \
 					(word)new_list(TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+		})); \
+	})
+#define itosn(val)  ({\
+	__builtin_choose_expr(sizeof(val) < sizeof(word), \
+		(word*)itosv(val),\
+		(word*)({ \
+			int_t x5 = (int_t)(val); \
+			x5 <= FMAX ? \
+					(word)itosv(x5): \
+					(word)new_list(x5 < 0 ? TINTN : TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
 		})); \
 	})
 
@@ -3111,6 +3374,12 @@ loop:;
 			break;
 		}
 
+		// (FORK)
+		case 57: {
+			result = (word*) itosv(fork());
+			break;
+		}
+
 		// (EXECVE program-or-function env (tuple port port port))
 		// http://linux.die.net/man/3/execve
 		case 59: {
@@ -3145,7 +3414,6 @@ loop:;
 			// if a is string:
 			// todo: add case (cons program environment)
 			if (is_string(a)) {
-	#ifndef _WIN32
 				char* command = (char*)&car(a);
 				int child = fork();
 				if (child == 0) {
@@ -3176,7 +3444,6 @@ loop:;
 				}
 				else if (child > 0)
 					result = (word*)ITRUE;
-	#endif
 				break;
 			}
 			break;
