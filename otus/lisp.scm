@@ -2,7 +2,9 @@
 (define-library (otus lisp)
 
    (export
-      (exports (r5rs full))
+      (exports (r5rs core))
+      (exports (r5rs srfi-1))
+      (exports (r5rs characters))
 
       (exports (owl list))
       (exports (owl rlist))
@@ -29,7 +31,8 @@
 
    (import
       (r5rs core)
-      (r5rs full)
+      (r5rs srfi-1)
+      (r5rs characters)
 
       (owl list)
       (owl rlist)
