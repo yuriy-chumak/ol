@@ -1,3 +1,4 @@
+; TODO: make vector indexer started from 0 (both byte-vectors and vectors!)
 ;;;
 ;;; Vectors
 ;;;
