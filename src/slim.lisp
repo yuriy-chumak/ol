@@ -18,6 +18,37 @@
 (import (owl parse))
 
 ; ------------------------------------------------------------------------------
+(define-syntax share-bindings
+   (syntax-rules (defined)
+      ((share-bindings) null)
+      ((share-bindings this . rest)
+         (cons
+            (cons 'this
+               (tuple 'defined (mkval this)))
+            (share-bindings . rest)))))
+
+(define shared-misc
+   (share-bindings
+      *features*
+      *include-dirs*
+      *libraries*))      ;; all currently loaded libraries
+(define shared-bindings shared-misc)
+
+(define initial-environment-sans-macros
+   (fold
+      (λ (env pair) (env-put-raw env (car pair) (cdr pair)))
+      *src-olvm*
+      shared-bindings))
+
+(define initial-environment
+   (bind-toplevel
+      (library-import initial-environment-sans-macros
+         '((otus lisp))
+         (λ (reason) (error "bootstrap import error: " reason))
+         (λ (env exp) (error "bootstrap import requires repl: " exp)))))
+
+
+
 (define syntax-error-mark (list 'syntax-error))
 
 (define (syntax-fail pos info lst)
@@ -227,7 +258,17 @@
                      (fork-bytecode-interner codes)
 
                      ;; repl
-                     (let loop ((env  (interaction-environment))
+                     (let loop ((env (fold
+                                          (λ (env defn)
+                                             (env-set env (car defn) (cdr defn)))
+                                          initial-environment
+                                          (list
+                                             ;(cons '*include-dirs* (list "." home))
+                                             (cons '*interactive* #true)
+                                             ;(cons '*vm-args* vm-args)
+                                             (cons '*version* (cons "OL" *version*))
+                                             ;(cons '*sandbox* sandbox?)
+                                          )))
                                 (in   (lambda () (fd->exp-stream stdin "> " sexp-parser syntax-fail #false)))
                                 (last 'blank)) ; last - последний результат
                         (cond
