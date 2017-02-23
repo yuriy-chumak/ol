@@ -1,0 +1,150 @@
+<!DOCTYPE HTML>
+<head>
+   <meta charset="utf-8" />
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <title>OL</title>
+   <meta name="author" content="Yuriy Chumak - yuriy-chumak"/>
+
+   <script src="static/jquery-1.11.3.min.js"></script>
+   <link  href="static/jquery.terminal.css" rel="stylesheet"/>
+   <script src="static/jquery.terminal-0.8.8.min.js"></script>
+
+   <!--[if IE]>
+   <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+   <![endif]-->
+</head>
+<body style="height: 100%;" id="terminal">
+   <script>
+var stdInput = unescape(encodeURIComponent("(print \"You see a prompt.\")"));
+
+var terminal;
+$('#terminal').terminal(function(command, terminal) {
+   stdInput += unescape(encodeURIComponent(command));
+}, {
+   prompt: '> ',
+   name: 'repl',
+   greetings: '\
+OL - Otus Lisp - yet another pet lisp\n\
+Copyright(c) 2014 Aki Helin\n\
+Copyright(c) 2014 - 2017 Yuriy Chumak\n\
+~~~~~~~~~~~~~~~~~\n',
+   enabled: false,
+
+   onInit: function(term) {
+      terminal = term;
+
+      var script = document.createElement('script');
+      script.src = "../../olvm.js";
+
+      script.addEventListener('load', function(me) {
+         terminal.echo("Loading...")
+      }, false);
+      script.addEventListener('error', function(event) {
+         terminal.echo("Can't find olvm.js. Please, build it first and try again.");
+      }, false);
+
+      document.body.appendChild(script);
+   }
+});
+
+$('#terminal').mousewheel(function(event) {
+   terminal.scroll(event.deltaY);
+   // console.log(event.deltaX, event.deltaY, event.deltaFactor);
+   if (event.preventDefault)  //disable default wheel action of scrolling page
+      event.preventDefault();
+   else
+      return false;
+});
+   </script>
+
+   <!-- Ol loader -->
+   <script type='text/javascript'>
+      // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
+
+      var Module = {
+         preRun: function() {
+            console.log("preRun");
+            function stdin() {
+               if (stdInput.length == 0) {
+                  return undefined;
+               }
+
+               var chr = stdInput.charCodeAt(0);
+               stdInput = stdInput.substring(1);
+               return chr;
+            }
+            var stdout = null;
+            var stderr = null;
+            FS.init(stdin, stdout, stderr);
+         },
+         postRun: function() {
+            console.log("postRun");
+
+            terminal.focus();
+            terminal.resume();
+         },
+
+         print: function(text) {
+            terminal.echo(text);
+            //document.write(text); document.write("\n");
+         },
+         printErr: function(text) {
+            alert(text);
+         },
+
+         setStatus: function(text) {
+          console.log(text);
+          /*if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+          if (text === Module.setStatus.text) return;
+          var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+          var now = Date.now();
+          if (m && now - Date.now() < 30) return; // if this is a progress update, skip it if too soon
+          if (m) {
+            text = m[1];
+            progressElement.value = parseInt(m[2])*100;
+            progressElement.max = parseInt(m[4])*100;
+            progressElement.hidden = false;
+            spinnerElement.hidden = false;
+          } else {
+            progressElement.value = null;
+            progressElement.max = null;
+            progressElement.hidden = true;
+            if (!text) spinnerElement.style.display = 'none';
+          }
+          statusElement.innerHTML = text;*/
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: function(left) {
+          console.log(left);
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+          Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+        }
+      };
+      Module.setStatus('Downloading...');
+      window.onerror = function(event) {
+        // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
+        Module.setStatus('Exception thrown, see JavaScript console');
+        //spinnerElement.style.display = 'none';
+        Module.setStatus = function(text) {
+          if (text) Module.printErr('[post-exception status] ' + text);
+        };
+      };
+    </script>
+
+   <script>
+      /* for release:
+      (function() {
+        var memoryInitializer = 'olvm.html.mem';
+        if (typeof Module['locateFile'] === 'function') {
+          memoryInitializer = Module['locateFile'](memoryInitializer);
+        } else if (Module['memoryInitializerPrefixURL']) {
+          memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
+        }
+        var xhr = Module['memoryInitializerRequest'] = new XMLHttpRequest();
+        xhr.open('GET', memoryInitializer, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.send(null);
+      })();//*/
+   </script>
+</body>
+</html>

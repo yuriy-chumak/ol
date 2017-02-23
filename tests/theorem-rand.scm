@@ -490,7 +490,7 @@
 
       theorem str-2
          ∀ s ∊ String
-            s = (bytes->string (string->bytes s))
+            s = (bytes->string (string->bytes s)) ; utf-8
 
       theorem list-keep-remove
          ∀ l ∊ List

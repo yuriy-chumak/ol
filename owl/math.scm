@@ -20,7 +20,7 @@
 (define-library (owl math)
 
    (export
-      fixnum? integer?
+      fixnum?
       + - * = /
       << < <= = >= > >>
       band bor bxor
@@ -36,9 +36,7 @@
       log log2
       render-number
       fx% ;; temp export until it is removed
-      zero? exact? inexact?
-      real? complex? rational?
-      exact->inexact inexact->exact
+      zero?
       negative? positive?
       denominator numerator
       remainder modulo
@@ -102,13 +100,6 @@
                ;(eq? t type-fix-) ;; <- FIXME - breaks build, someone isn't expecting negative fixnums
                ; TODO: исправить!
                )))
-
-      (define (exact? n) #true)    ;; RnRS compat
-      (define (inexact? n) #false)
-      ;; signaling an error would also make sense for these, but as compat
-      ;; functions returning the argument as suggested in filed bug
-      (define (exact->inexact n) n)
-      (define (inexact->exact n) n)
 
       ;; deprecated primop
       ;(define-syntax fxdivmod
@@ -240,14 +231,6 @@
                (big-bad-args '= a b))))
 
       ; later just, is major type X
-
-      (define (integer? a)
-         (case (type a)
-            (type-fix+ #true)
-            (type-fix- #true)
-            (type-int+ #true)
-            (type-int- #true)
-            (else #false)))
 
       (define (negative? a)
          (case (type a)

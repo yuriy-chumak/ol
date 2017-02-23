@@ -4,7 +4,7 @@
  * Version 1.1
  *
  * Copyright (c) 2014 Aki Helin
- * Copyright (c) 2014- 2016 Yuriy Chumak
+ * Copyright (c) 2014- 2017 Yuriy Chumak
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
  * This program is free software;  you can redistribute it and/or
@@ -22,7 +22,7 @@
  * Project page:
  *   http://yuriy-chumak.github.io/ol/
  *
- * The parent project - Owl Lisp - can be found at
+ * The parent project - Owl Lisp:
  *   https://github.com/aoh/owl-lisp
  *   https://code.google.com/p/owl-lisp/
  *
@@ -33,6 +33,13 @@
  *
  */
 
+// gcc profiling:
+// 1) gcc --coverage
+// 2) gcov -b olvm.c
+
+// Emscripten is a 32-bit platform, so size_t is a 32-bit unsigned integer,
+//  __POINTER_WIDTH__=32, __SIZEOF_LONG__=4 and __LONG_MAX__ equals 2147483647L.
+
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
 #	warning "This code must be compiled by Gnu C compiler"
@@ -41,7 +48,7 @@
 	                  + __GNUC_MINOR__ * 100 \
 	                  + __GNUC_PATCHLEVEL__)
 #	if GCC_VERSION < 30200
-#		error "Required gcc version > 3.2 (nested functions support)"
+#		error "Required gcc version > 3.2"
 #	endif
 
 #	if __STDC_VERSION__ < 199901L
@@ -55,28 +62,37 @@
 
 //
 #ifdef _WIN32
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRLIMIT 0
-#define PUBLIC __declspec(dllexport)
+#	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
+#	define SYSCALL_SYSINFO 0
+#	define SYSCALL_GETRLIMIT 0
+#	define PUBLIC __declspec(dllexport)
+// qemu for windows: https://qemu.weilnetz.de/
+// images for qemu: http://4pda.ru/forum/index.php?showtopic=318284
 #endif
 
 // todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
 #ifdef __unix__
-#define SYSCALL_PRCTL 0
-#define SYSCALL_SYSINFO 0
-#define SYSCALL_GETRUSAGE 0
-#define SYSCALL_GETRLIMIT 0
-#define PUBLIC __attribute__ ((__visibility__("default")))
+
+// FreeBSD, NetBSD, OpenBSD, MacOS, etc.
+# ifndef __linux__
+#	define SYSCALL_PRCTL 0
+#	define SYSCALL_SYSINFO 0
+#	define SYSCALL_GETRUSAGE 0
+#	define SYSCALL_GETRLIMIT 0
+# endif
+
+#	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
-#ifdef __linux__
-#undef SYSCALL_PRCTL
-#undef SYSCALL_SYSINFO
-#undef SYSCALL_GETRUSAGE
-#undef SYSCALL_GETRLIMIT
-#define PUBLIC __attribute__ ((__visibility__("default")))
+#ifdef __asmjs__
+#	define NO_SECCOMP
+
+#	define HAS_SOCKETS 0
+#	define HAS_DLOPEN  0
+#	define HAS_PINVOKE 0
+#	define HAS_STRFTIME 0 // why?
 #endif
+
 
 #ifdef __ANDROID__
 // gdb for android: https://dan.drown.org/android/howto/gdb.html
@@ -96,14 +112,13 @@
 #	define SYSCALL_PRCTL 0
 #endif
 
-// TODO: JIT!
-//	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
 
 // http://man7.org/linux/man-pages/man7/posixoptions.7.html
 
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
+
 // математику считать так: (receive (vm:add (fxmax) 1) (lambda (n carry) (list carry n)))
 //                   либо: (let* ((n carry (fx+ (fxmax) 1))) (...))
 // при превышении выдает, естественно, мусор
@@ -223,7 +238,9 @@
 #endif
 
 #ifdef __unix__
-#include <sys/cdefs.h>
+# ifndef __asmjs__
+#	include <sys/cdefs.h>
+# endif
 #endif
 
 
@@ -303,6 +320,10 @@
 #	include <windows.h>
 
 #	include <malloc.h>
+#endif
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 #endif
 
 // additional defines:
@@ -468,6 +489,259 @@ char* dlerror() {
 
 #endif //HAS_DLOPEN
 
+
+// --------------------------------------------------------
+// -=( fork )=---------------------------------------------
+// sample implementation can be found at
+// https://github.com/jonclayden/multicore/blob/master/src/forknt.c
+#if _WIN32
+#include <ntdef.h>
+#include <ntstatus.h>
+
+typedef enum _MEMORY_INFORMATION_ {
+	MemoryBasicInformation,
+	MemoryWorkingSetList,
+	MemorySectionName,
+	MemoryBasicVlmInformation
+} MEMORY_INFORMATION_CLASS;
+typedef enum _SYSTEM_INFORMATION_CLASS { SystemHandleInformation = 0x10 } SYSTEM_INFORMATION_CLASS;
+typedef struct _CLIENT_ID {
+	HANDLE UniqueProcess;
+	HANDLE UniqueThread;
+} CLIENT_ID, *PCLIENT_ID;
+typedef struct _USER_STACK {
+	PVOID FixedStackBase;
+	PVOID FixedStackLimit;
+	PVOID ExpandableStackBase;
+	PVOID ExpandableStackLimit;
+	PVOID ExpandableStackBottom;
+} USER_STACK, *PUSER_STACK;
+typedef struct _SYSTEM_HANDLE_INFORMATION {
+	ULONG ProcessId;
+	UCHAR ObjectTypeNumber;
+	UCHAR Flags;
+	USHORT Handle;
+	PVOID Object;
+	ACCESS_MASK GrantedAccess;
+} SYSTEM_HANDLE_INFORMATION, *PSYSTEM_HANDLE_INFORMATION;
+typedef LONG KPRIORITY;
+typedef struct _THREAD_BASIC_INFORMATION {
+	NTSTATUS                ExitStatus;
+	PVOID                   TebBaseAddress;
+	CLIENT_ID               ClientId;
+	KAFFINITY               AffinityMask;
+	KPRIORITY               Priority;
+	KPRIORITY               BasePriority;
+} THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
+
+typedef enum _THREADINFOCLASS {
+	ThreadBasicInformation,
+	ThreadTimes,
+	ThreadPriority,
+	ThreadBasePriority,
+	ThreadAffinityMask,
+	ThreadImpersonationToken,
+	ThreadDescriptorTableEntry,
+	ThreadEnableAlignmentFaultFixup,
+	ThreadEventPair,
+	ThreadQuerySetWin32StartAddress,
+	ThreadZeroTlsCell,
+	ThreadPerformanceCount,
+	ThreadAmILastThread,
+	ThreadIdealProcessor,
+	ThreadPriorityBoost,
+	ThreadSetTlsArrayAddress,
+	ThreadIsIoPending,
+	ThreadHideFromDebugger
+} THREADINFOCLASS, *PTHREADINFOCLASS;
+
+
+typedef NTSTATUS (WINAPI *ZwCreateProcess_t)(OUT PHANDLE ProcessHandle,
+		                                     IN  ACCESS_MASK DesiredAccess,
+											 IN  POBJECT_ATTRIBUTES ObjectAttributes,
+											 IN  HANDLE InheritFromProcessHandle,
+											 IN  BOOLEAN InheritHandles,
+											 IN  HANDLE SectionHandle OPTIONAL,
+											 IN  HANDLE DebugPort OPTIONAL,
+											 IN  HANDLE ExceptionPort OPTIONAL);
+typedef NTSTATUS (WINAPI *ZwQuerySystemInformation_t)(SYSTEM_INFORMATION_CLASS SystemInformationClass,
+													  PVOID SystemInformation,
+													  ULONG SystemInformationLength,
+													  PULONG ReturnLength);
+typedef NTSTATUS (NTAPI *ZwQueryVirtualMemory_t)(IN  HANDLE ProcessHandle,
+												 IN  PVOID BaseAddress,
+												 IN  MEMORY_INFORMATION_CLASS MemoryInformationClass,
+												 OUT PVOID MemoryInformation,
+												 IN  ULONG MemoryInformationLength,
+												 OUT PULONG ReturnLength OPTIONAL);
+typedef NTSTATUS (NTAPI *ZwCreateThread_t)(OUT PHANDLE ThreadHandle,
+										   IN  ACCESS_MASK DesiredAccess,
+										   IN  POBJECT_ATTRIBUTES ObjectAttributes,
+										   IN  HANDLE ProcessHandle,
+										   OUT PCLIENT_ID ClientId,
+										   IN  PCONTEXT ThreadContext,
+										   IN  PUSER_STACK UserStack,
+										   IN  BOOLEAN CreateSuspended);
+typedef NTSTATUS (NTAPI *ZwGetContextThread_t)(IN  HANDLE ThreadHandle,
+		                                       OUT PCONTEXT Context);
+typedef NTSTATUS (NTAPI *ZwResumeThread_t)(IN  HANDLE ThreadHandle,
+		                                   OUT PULONG SuspendCount OPTIONAL);
+typedef NTSTATUS (NTAPI *ZwQueryInformationThread_t)(IN  HANDLE ThreadHandle,
+													 IN  THREAD_INFORMATION_CLASS ThreadInformationClass,
+													 OUT PVOID ThreadInformation,
+													 IN  ULONG ThreadInformationLength,
+													 OUT PULONG ReturnLength OPTIONAL );
+typedef NTSTATUS (NTAPI *ZwWriteVirtualMemory_t)(IN  HANDLE ProcessHandle,
+												 IN  PVOID BaseAddress,
+												 IN  PVOID Buffer,
+												 IN  ULONG NumberOfBytesToWrite,
+												 OUT PULONG NumberOfBytesWritten OPTIONAL);
+typedef NTSTATUS (NTAPI *ZwClose_t)(IN HANDLE ObjectHandle);
+#define NtCurrentProcess() ((HANDLE)-1)
+#define NtCurrentThread() ((HANDLE) -2)
+
+
+static jmp_buf jenv;
+static int child_entry(void) {
+	longjmp(jenv, 1);
+	return 0;
+}
+// windows реализация функции fork()
+pid_t fork(void)
+{
+	static int ready = 0;
+	static ZwCreateProcess_t ZwCreateProcess;
+	static ZwQuerySystemInformation_t ZwQuerySystemInformation;
+	static ZwQueryVirtualMemory_t ZwQueryVirtualMemory;
+	static ZwCreateThread_t ZwCreateThread;
+	static ZwGetContextThread_t ZwGetContextThread;
+	static ZwResumeThread_t ZwResumeThread;
+	static ZwQueryInformationThread_t ZwQueryInformationThread;
+	static ZwWriteVirtualMemory_t ZwWriteVirtualMemory;
+	static ZwClose_t ZwClose;
+
+
+	if (ready == 0) {
+		ready = -1; // fail.
+		HANDLE ntdll = GetModuleHandle("ntdll");
+		if (ntdll != NULL)
+			if ((ZwCreateProcess = (ZwCreateProcess_t) GetProcAddress(ntdll, "ZwCreateProcess")) &&
+				(ZwQuerySystemInformation = (ZwQuerySystemInformation_t) GetProcAddress(ntdll, "ZwQuerySystemInformation")) &&
+				(ZwQueryVirtualMemory = (ZwQueryVirtualMemory_t) GetProcAddress(ntdll, "ZwQueryVirtualMemory")) &&
+				(ZwCreateThread = (ZwCreateThread_t) GetProcAddress(ntdll, "ZwCreateThread")) &&
+				(ZwGetContextThread = (ZwGetContextThread_t) GetProcAddress(ntdll, "ZwGetContextThread")) &&
+				(ZwResumeThread = (ZwResumeThread_t) GetProcAddress(ntdll, "ZwResumeThread")) &&
+				(ZwQueryInformationThread = (ZwQueryInformationThread_t) GetProcAddress(ntdll, "ZwQueryInformationThread")) &&
+				(ZwWriteVirtualMemory = (ZwWriteVirtualMemory_t) GetProcAddress(ntdll, "ZwWriteVirtualMemory")) &&
+				(ZwClose = (ZwClose_t) GetProcAddress(ntdll, "ZwClose")))
+				ready = 1; // ok.
+	}
+
+	// well, do it
+	if (ready == 1) {
+		if (setjmp(jenv) != 0) return 0; // return as a child
+
+		// make sure all handles are inheritable
+		#if 0
+			ULONG n = 0x1000;
+			PULONG p = (PULONG) calloc(n, sizeof(ULONG));
+
+			// some guesswork to allocate a structure that will fit it all
+			while (ZwQuerySystemInformation(SystemHandleInformation, p, n * sizeof(ULONG), 0) == STATUS_INFO_LENGTH_MISMATCH) {
+				free(p);
+				n *= 2;
+				p = (PULONG) calloc(n, sizeof(ULONG));
+			}
+
+			/* p points to an ULONG with the count, the entries follow (hence p[0] is the size and p[1] is where the first entry starts */
+			PSYSTEM_HANDLE_INFORMATION h = (PSYSTEM_HANDLE_INFORMATION)(p + 1);
+
+			ULONG pid = GetCurrentProcessId();
+			ULONG i = 0, count = *p;
+
+			while (i < count) {
+				if (h[i].ProcessId == pid)
+					SetHandleInformation((HANDLE)(ULONG) h[i].Handle,
+							HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+				i++;
+			}
+			free(p);
+
+		#endif
+
+		HANDLE hProcess = 0, hThread = 0;
+		OBJECT_ATTRIBUTES oa = { sizeof(oa) };
+
+		// create forked process
+		if (ZwCreateProcess(&hProcess, PROCESS_ALL_ACCESS, &oa,
+		                    NtCurrentProcess(), TRUE, 0, 0, 0) < 0)
+			return -1;
+
+		CONTEXT context = {CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS | CONTEXT_FLOATING_POINT};
+
+		// set the Eip for the child process to our child function
+		if (ZwGetContextThread(NtCurrentThread(), &context) < 0)
+			return -1;
+		#if _WIN64
+		context.Rip = (intptr_t)&child_entry;
+		#else
+		context.Eip = (intptr_t)child_entry;
+		#endif
+
+		MEMORY_BASIC_INFORMATION mbi;
+		#if _WIN64
+		if (ZwQueryVirtualMemory(NtCurrentProcess(), (PVOID)context.Rsp,
+		                         MemoryBasicInformation, &mbi, sizeof mbi, 0) < 0)
+			return -1;
+		#else
+		if (ZwQueryVirtualMemory(NtCurrentProcess(), (PVOID)context.Esp,
+		                         MemoryBasicInformation, &mbi, sizeof mbi, 0) < 0)
+			return -1;
+		#endif
+
+		USER_STACK stack;
+	    stack.FixedStackBase = 0;
+	    stack.FixedStackLimit = 0;
+	    stack.ExpandableStackBase = (PCHAR)mbi.BaseAddress + mbi.RegionSize;
+	    stack.ExpandableStackLimit = mbi.BaseAddress;
+	    stack.ExpandableStackBottom = mbi.AllocationBase;
+
+		CLIENT_ID cid;
+
+	    // create thread using the modified context and stack
+	    if (ZwCreateThread(&hThread, THREAD_ALL_ACCESS, &oa, hProcess,
+	                       &cid, &context, &stack, TRUE) < 0)
+	    	return -1;
+
+	    // copy exception table
+	    THREAD_BASIC_INFORMATION tbi;
+	    if (ZwQueryInformationThread(NtCurrentThread(), ThreadBasicInformation,
+	                                 &tbi, sizeof tbi, 0) < 0)
+	    	return -1;
+	    PNT_TIB tib = (PNT_TIB)tbi.TebBaseAddress;
+	    if (ZwQueryInformationThread(hThread, ThreadBasicInformation,
+	                                 &tbi, sizeof tbi, 0) < 0)
+	    	return -1;
+	    if (ZwWriteVirtualMemory(hProcess, tbi.TebBaseAddress, &tib->ExceptionList,
+	                             sizeof tib->ExceptionList, 0) < 0)
+	    	return -1;
+
+	    // start (resume really) the child
+	    if (ZwResumeThread(hThread, 0) < 0)
+	    	return -1;
+
+	    // clean up
+	    ZwClose(hThread);
+	    ZwClose(hProcess);
+
+	    // exit with child's pid
+	    return (pid_t)cid.UniqueProcess;
+	}
+
+	return -1;
+}
+
+#endif
 
 // ----------
 // -=( OL )=----------------------------------------------------------------------
@@ -681,13 +955,13 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 #define is_vptr(ob)                 (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
 #define is_callback(ob)             (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TCALLBACK, 2, 0))
 
-#define is_number(ob)               (is_npair(ob)  || is_fix(ob))
-#define is_numbern(ob)              (is_npairn(ob) || is_fixn(ob))
+#define is_number(ob)               (is_fix(ob) || is_npair(ob))
+#define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
 
 
 // взять значение аргумента:
-#define value(x)                    ({ assert(is_value(x));     (((word)(x)) >> IPOS); })
-#define reference(x)                ({ assert(is_reference(x)); *(word*)(x); })
+#define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
+#define reference(v)                ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
 
 #define ref(ob, n)                  (((word*)(ob))[n])
 #define car(ob)                     ref(ob, 1)
@@ -723,7 +997,7 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 // http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
 // https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt
 #define SECCOMP                     10000 // todo: change to x1000 или что-то такое
-static int seccompp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
+static int sandboxp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
 //static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
@@ -1016,7 +1290,7 @@ word *chase(word* pos) {
 static __inline__
 ptrdiff_t adjust_heap(heap_t *heap, int cells)
 {
-	if (seccompp) /* realloc is not allowed within seccomp */
+	if (sandboxp) /* realloc is not allowed within seccomp */
 		return 0;
 
 	// add newobj realloc + heap fixer here later
@@ -1073,87 +1347,90 @@ ptrdiff_t adjust_heap(heap_t *heap, int cells)
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
 
 // todo: ввести третий generation
+// просматривает список справа налево
+static
+void mark(word *pos, word *end, heap_t* heap)
+{
+//	marked = 0;
+//	assert(pos is NOT flagged)
+	while (pos != end) {
+		word val = pos[0]; // pos header
+		if (is_reference(val) && val >= ((word) heap->genstart)) { // genstart - начало молодой генерации
+			if (is_flagged(val)) {
+				pos = chase((word*) val);
+				pos--;
+			}
+			else {
+				word hdr = *(word *) val;
+//				//if (is_value(hdr))
+//					*(word *) val |= 1; // flag this ? (таки надо, иначе часть объектов не распознается как pinned!)
+//				marked++;
+
+				word* ptr = (word*)val;
+				*pos = *ptr;
+				*ptr = ((word)pos | 1);
+
+				if (hdr & (RAWBIT|1))
+					pos--;
+				else
+					pos = ((word *) val) + (hdrsize(hdr)-1);
+			}
+		}
+		else
+			pos--;
+	}
+}
+
+// TODO: вот здесь можно провести очень неплохую оптимизацию
+//       а именно - проверить обратные функции (R[128+], которые
+//       лежат в памяти по адресу root+128 - если данные в регистре
+//       не изменились, значит больше нету никого, кто ссылается на
+//       тот же элемент данных (обратный вызов), а значит его можно
+//       просто удалить!
+
+// на самом деле compact & sweep
+static
+word *sweep(word* end, heap_t* heap)
+{
+	word *old, *newobject;
+
+	newobject = old = heap->genstart;
+	while (old < end) {
+		if (is_flagged(*old)) {
+			word val = *newobject = *old;
+			while (is_flagged(val)) {
+				val &= ~1; //clear mark
+
+				word* ptr = (word*)val;
+				*newobject = *ptr;
+				*ptr = (word)newobject;
+
+				val = *newobject;
+			}
+
+			word h = hdrsize(val);
+			if (old == newobject) {
+				old += h;
+				newobject += h;
+			}
+			else {
+				while (--h)
+					*++newobject = *++old;
+				old++;
+				newobject++;
+			}
+		}
+		else
+			old += hdrsize(*old);
+	}
+	return newobject;
+}
+
 //__attribute__ ((aligned(sizeof(word))))
 // query: запрос на выделение query слов
 static
-word gc(heap_t *heap, int query, word regs) {
-	// просматривает список справа налево
-	void mark(word *pos, word *end)
-	{
-	//	marked = 0;
-	//	assert(pos is NOT flagged)
-		while (pos != end) {
-			word val = pos[0]; // pos header
-			if (is_reference(val) && val >= ((word) heap->genstart)) { // genstart - начало молодой генерации
-				if (is_flagged(val)) {
-					pos = chase((word*) val);
-					pos--;
-				}
-				else {
-					word hdr = *(word *) val;
-	//				//if (is_value(hdr))
-	//					*(word *) val |= 1; // flag this ? (таки надо, иначе часть объектов не распознается как pinned!)
-	//				marked++;
-
-					word* ptr = (word*)val;
-					*pos = *ptr;
-					*ptr = ((word)pos | 1);
-
-					if (hdr & (RAWBIT|1))
-						pos--;
-					else
-						pos = ((word *) val) + (hdrsize(hdr)-1);
-				}
-			}
-			else
-				pos--;
-		}
-	}
-
-	// TODO: вот здесь можно провести очень неплохую оптимизацию
-	//       а именно - проверить обратные функции (R[128+], которые
-	//       лежат в памяти по адресу root+128 - если данные в регистре
-	//       не изменились, значит больше нету никого, кто ссылается на
-	//       тот же элемент данных (обратный вызов), а значит его можно
-	//       просто удалить!
-
-	// на самом деле compact & sweep
-	word *sweep(word* end)
-	{
-		word *old, *newobject;
-
-		newobject = old = heap->genstart;
-		while (old < end) {
-			if (is_flagged(*old)) {
-				word val = *newobject = *old;
-				while (is_flagged(val)) {
-					val &= ~1; //clear mark
-
-					word* ptr = (word*)val;
-					*newobject = *ptr;
-					*ptr = (word)newobject;
-
-					val = *newobject;
-				}
-
-				word h = hdrsize(val);
-				if (old == newobject) {
-					old += h;
-					newobject += h;
-				}
-				else {
-					while (--h)
-						*++newobject = *++old;
-					old++;
-					newobject++;
-				}
-			}
-			else
-				old += hdrsize(*old);
-		}
-		return newobject;
-	}
-
+word gc(heap_t *heap, int query, word regs)
+{
 	if (query == 0) // сделать полную сборку?
 		heap->genstart = heap->begin; // start full generation
 
@@ -1180,9 +1457,9 @@ word gc(heap_t *heap, int query, word regs) {
 
 		// непосредственно сам процесс сборки
 		root[0] = regs;
-		mark(root, fp);        // assert (root > fp)
+		mark(root, fp, heap);        // assert (root > fp)
 		// todo: проверить о очистить callbacks перед sweep
-		fp = sweep(fp);
+		fp = sweep(fp, heap);
 		regs = root[0];
 
 		// todo: add diagnostik callback "if(heap->oncb) heap->oncb(heap, deltatime)"
@@ -1301,6 +1578,16 @@ word gc(heap_t *heap, int query, word regs) {
 					(word)new_list(TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
 		})); \
 	})
+#define itosn(val)  ({\
+	__builtin_choose_expr(sizeof(val) < sizeof(word), \
+		(word*)itosv(val),\
+		(word*)({ \
+			int_t x5 = (int_t)(val); \
+			x5 <= FMAX ? \
+					(word)itosv(x5): \
+					(word)new_list(x5 < 0 ? TINTN : TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+		})); \
+	})
 
 #define make_integer(val) itoun(val)
 
@@ -1361,37 +1648,56 @@ void set_signal_handler()
 #endif
 }
 
-#ifndef __linux__
+#if HAS_SOCKETS
+# ifndef __linux__
 
 size_t
 sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 {
-	char buf[8192];
+	char buf[2*4096];
 	size_t toRead, numRead, numSent, totSent;
 
 	totSent = 0;
 	while (count > 0) {
 		toRead = (sizeof(buf) < count) ? sizeof(buf) : count;
 
+		// read
 		numRead = read(in_fd, buf, toRead);
-		if (numRead == -1)
+		if (numRead == -1) {
+			STDERR("sendfile: read() returns -1, error: %d", errno);
 			return -1;
-		if (numRead == 0)
+		}
+		if (numRead == 0) {
+			STDERR("sendfile: read() returns 0, error: %d", errno);
 			break;                      /* EOF */
+		}
 
-		numSent = write(out_fd, buf, numRead);
-		if (numSent == -1)
-			return -1;
+		// send
+		numSent = send(out_fd, buf, numRead, 0);
+		if (numSent == SOCKET_ERROR) {
+			int err = WSAGetLastError();
+			STDERR("sendfile: send() returns -1, error: %d", err);
+			if (err != WSAEWOULDBLOCK)
+				return -1;
+
+			Sleep(1);
+			continue;
+		}
 		if (numSent == 0) {               /* Should never happen */
-			STDERR("sendfile: write() transferred 0 bytes");
+			STDERR("sendfile: send() transferred 0 bytes, error: %d", WSAGetLastError());
 			return 0;
 		}
 
 		count -= numSent;
 		totSent += numSent;
 	}
+	if (shutdown(out_fd, SD_SEND) == SOCKET_ERROR) {
+		STDERR("sendfile: shutdown() returns -1, error: %d", WSAGetLastError());
+		return -1;
+	}
 	return totSent;
 }
+# endif
 #endif
 
 /***********************************************************************************
@@ -1446,12 +1752,15 @@ void* runtime(OL* ol);  // главный цикл виртуальной маш
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
-long callback(OL* ol, int id, long* argi
-#if __amd64__
-		, double* argf, long* rest
+#if HAS_PINVOKE
+	long callback(OL* ol, int id, int_t* argi
+	#if __amd64__
+		, double* argf, int_t* rest
+	#endif
+	);
+
+#	include "olni.c"
 #endif
-		);
-#include "olni.c"
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
 static int OL__gc(OL* ol, int ws) // ws - required size in words
@@ -1491,6 +1800,34 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 // Несколько замечаний по WIN32::ThreadProc
 //  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
+
+static
+word get(word *ff, word key, word def)
+{
+	while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
+		word this = ff[1], hdr;
+		if (this == key)
+			return ff[2];
+		hdr = ff[0];
+		switch (hdrsize(hdr)) {
+		case 5: ff = (word *) ((key < this) ? ff[3] : ff[4]);
+			break;
+		case 3: return def;
+		case 4:
+			if (key < this)
+				ff = (word *) ((hdr & (1 << TPOS)) ? IEMPTY : ff[3]);
+			else
+				ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
+			break;
+		default:
+			STDERR("assert! hdrsize(hdr) == %d", (int)hdrsize(hdr));
+			assert (0);
+			//ff = (word *) ((key < this) ? ff[3] : ff[4]);
+		}
+	}
+	return def;
+}
+
 
 #ifdef ERROR
 #undef ERROR
@@ -1555,50 +1892,24 @@ apply:;
 
 	if ((word)this == IRETURN) {
 		// в R[3] находится код возврата
-		goto done;       // колбек закончен! надо просто выйти наверх (todo: change to special state)
+		goto done;       // колбек закончен! надо просто выйти наверх
 	}
 
 	// ...
 	if (is_reference(this)) { // если это аллоцированный объект
 		//word hdr = *this & 0x0FFF; // cut size out, take just header info
 		word type = reftype (this);
-		if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc
+		if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc (58% for "yes")
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
 		else
-		if (type == TCLOS) { //hdr == make_header(TCLOS, 0)) { // clos
+		if (type == TCLOS) { //hdr == make_header(TCLOS, 0)) { // clos (66% for "yes")
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			R[2] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
 		else
-		if ((type & 60) == TFF) { // ((hdr>>TPOS) & 60) == TFF) { /* low bits have special meaning */
+		if ((type & 60) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
-			word get(word *ff, word key, word def)
-			{
-				while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
-					word this = ff[1], hdr;
-					if (this == key)
-						return ff[2];
-					hdr = ff[0];
-					switch (hdrsize(hdr)) {
-					case 5: ff = (word *) ((key < this) ? ff[3] : ff[4]);
-						break;
-					case 3: return def;
-					case 4:
-						if (key < this)
-							ff = (word *) ((hdr & (1 << TPOS)) ? IEMPTY : ff[3]);
-						else
-							ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
-						break;
-					default:
-						STDERR("assert! hdrsize(hdr) == %d", (int)hdrsize(hdr));
-						assert (0);
-						//ff = (word *) ((key < this) ? ff[3] : ff[4]);
-					}
-				}
-				return def;
-			}
-
 			word *cont = (word *) R[3];
 			switch (acc)
 			{
@@ -1619,7 +1930,7 @@ apply:;
 			goto apply;
 		}
 		else
-			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE) /* not even code, extend bits later */
+			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE)
 				ERROR(259, this, INULL);
 
 		// А не стоит ли нам переключить поток?
@@ -1715,7 +2026,7 @@ mainloop:;
 	// 6, 7: CLOSE1
 
 		// список команд смотреть в assembly.scm
-	#	define LDI   13       // похоже, именно 13я команда не используется, а только 77 (LDN), 141 (LDT), 205 (LDF)
+	#	define LDI   13       // LDE (13), LDN (77), LDT (141), LDF (205)
 	#	define LD    14
 
 	#	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
@@ -1723,8 +2034,8 @@ mainloop:;
 	#	define MOV2   5       //
 
 	#	define JEQ    8       // jeq
-	#	define JP    16       // JZ, JN, JT, JF
-	#	define JF2   25       // jf2
+	#	define JP    16       // JZ (16), JN (80), JT (144), JF (208)
+	#	define JAF   25       // jafx (89)
 
 		// примитивы языка:
 	#	define VMNEW 23    // make object
@@ -1802,8 +2113,8 @@ mainloop:;
 	#		define SYSCALL_MKCB 175
 
 		// tuples, trees
-	#	define TUPLEAPPLY 32
 	#	define UNREEL 35   // list -> typed tuple
+	#	define TUPLEAPPLY 32
 	#	define FFAPPLY 49
 
 	#	define MKRED    43
@@ -1832,6 +2143,8 @@ loop:;
 		// super_dispatch: run user instructions
 		switch (op) {
 		/* AUTOGENERATED INSTRUCTIONS */
+		// TODO: JIT!
+		//	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
 		default:
 			ERROR(258, F(op), ITRUE);
 		}
@@ -1849,7 +2162,7 @@ loop:;
 	}*/
 	#endif
 
-	case GOTO:
+	case GOTO: // (10%)
 		this = (word *)A0;
 		acc = ip[1];
 		goto apply;
@@ -1874,7 +2187,7 @@ loop:;
 
 	// apply
 	// todo:? include apply-tuple, apply-values and apply-ff to the APPLY
-	case APPLY: {
+	case APPLY: { // (0%)
 		int reg, arity;
 		if (op == APPLY) { // normal apply: cont=r3, fn=r4, a0=r5,
 			reg = 4; // include cont
@@ -1914,14 +2227,15 @@ loop:;
 		goto apply;
 	}
 
-	case RET: // return value
+	case RET: // (3%) return value
 		this = (word *) R[3];
 		R[3] = A0;
 		acc = 1;
 
 		goto apply;
 
-	case SYS: // sys continuation op arg1 arg2
+	// return to continuation?
+	case SYS: // (1%) sys continuation op arg1 arg2
 		this = (word *) R[0];
 		R[0] = IFALSE; // let's call mcp
 		R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
@@ -1932,7 +2246,7 @@ loop:;
 
 		goto apply;
 
-	case RUN: { // run thunk quantum
+	case RUN: { // (1%) run thunk quantum
 	//			if (ip[0] != 4 || ip[1] != 5)
 	//				STDERR("run R[%d], R[%d]", ip[0], ip[1]);
 		this = (word *) A0;
@@ -1949,7 +2263,7 @@ loop:;
 			while (--pos)
 				R[pos] = this[pos];
 			ip = ((unsigned char *) code) + W;
-			break;  // continue; // no apply, continue
+			break;  // no apply, continue
 		}
 		// else call a thunk with terminal continuation:
 		R[3] = IHALT; // exit via R0 when the time comes
@@ -1958,7 +2272,7 @@ loop:;
 		goto apply;
 	}
 	// ошибка арности
-	case ARITY_ERROR:
+	case ARITY_ERROR: // (0%)
 		// TODO: добавить в .scm вывод ошибки четности
 		ERROR(17, this, F(acc));
 		break;
@@ -1967,53 +2281,53 @@ loop:;
 	/************************************************************************************/
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
-	case LDI: {  // 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
+	case LDI: {  // (1%) 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
 		static
 		const word I[] = { IEMPTY, INULL, ITRUE, IFALSE };
 		A0 = I[op>>6];
 		ip += 1; break;
 	}
-	case LD:
+	case LD: // (5%)
 		A1 = F(ip[0]);
 		ip += 2; break;
 
 
-	case REFI: { //  1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
+	case REFI: { // (24%) 1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
 		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
 		ip += 3; break;
 	}
-	case MOVE: // move a, t:      Rt = Ra
+	case MOVE: // (3%) move a, t:      Rt = Ra
 		A1 = A0;
 		ip += 2; break;
-	case MOV2: // mov2 from1 to1 from2 to2
+	case MOV2: // (6%) mov2 from1 to1 from2 to2
 		A1 = A0;
 		A3 = A2;
 		ip += 4; break;
 
 
 	// условные переходы
-	case JEQ: /* jeq a b o, extended jump  */
-		if (A0 == A1)
+	case JEQ: // (5%) jeq a b o, extended jump
+		if (A0 == A1) // 30% for "yes"
 			ip += (ip[3] << 8) + ip[2]; // little-endian
 		ip += 4; break;
 
-	case JP: {  // JZ, JN, JT, JF a hi lo
+	case JP: { // (10%) JZ, JN, JT, JF a hi lo
 		static
 		const word I[] = { F(0), INULL, IEMPTY, IFALSE };
-		if (A0 == I[op>>6])
+		if (A0 == I[op>>6]) // 49% for "yes"
 			ip += (ip[2] << 8) + ip[1]; // little-endian
 		ip += 3; break;
 	}
 
-	// используется в (func ...) в primop.scm
-	case JF2: { // jmp-nargs (>=) a hi lo
+	// jmp if arity not equal (arity failed)
+	case JAF: { // (13%) jmp-nargs (>=) a hi lo
 		int arity = ip[0];
-		if (acc == arity) {
+		if (acc == arity) { // 99% for "yes"
 			if (op & 0x40) // add empty extra arg list
 				R[acc + 3] = INULL;
 		}
 		else
-		if (acc > arity && (op & 0x40)) {
+		if (acc > arity && (op & 0x40)) { // JAFx
 			word tail = INULL;  // todo: no call overflow handling yet
 			while (acc > arity) {
 				tail = (word)new_pair (R[acc + 2], tail);
@@ -2028,10 +2342,12 @@ loop:;
 	}
 
 
-	case 3: OCLOSE(TCLOS); break;//continue;
-	case 4: OCLOSE(TPROC); break;//continue;
-	case 6: CLOSE1(TCLOS); break;//continue;
-	case 7: CLOSE1(TPROC); break;//continue;
+	case 3: OCLOSE(TCLOS); break; //continue; (2%)
+	case 4: OCLOSE(TPROC); break; //continue; (1%)
+	case 6: CLOSE1(TCLOS); break; //continue; (2%)
+	case 7: CLOSE1(TPROC); break; //continue; (1%)
+
+	// others: 1,2,3 %%)
 
 	/************************************************************************************/
 	// более высокоуровневые конструкции
@@ -2122,7 +2438,7 @@ loop:;
 		ip += 2; break;
 	}
 
-	// todo: переделать! и вообще, найти как от этой команды избавится!
+	// todo: переделать! и вообще, найти как от этой команды избавиться!
 	case CAST: { // cast obj type -> result
 		if (!is_value(A1))
 			break;
@@ -2137,7 +2453,7 @@ loop:;
 		if (is_value(T)) {
 			word val = value(T);
 			if (type == TPORT) {
-				if (val >= 0 && val <= 2)
+				if (val <= 2)
 					A2 = make_port(val);
 				else
 					A2 = IFALSE;
@@ -2220,7 +2536,7 @@ loop:;
 			for (ptrdiff_t i = 0; i < size; i++)
 				newobj[i] = p[i];
 			if (pos < (size-1)*sizeof(word) - padsize(hdr) + 1)
-				((char*)&car(newobj))[pos] = (char)uvtoi(A2);
+				((char*)&car(newobj))[pos] = (char)svtoi(A2);
 			A3 = (word)newobj;
 		}
 		else
@@ -2250,7 +2566,7 @@ loop:;
 		else
 		if (is_rawobject(*p)) {
 			if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
-				((char*)&car(p))[pos] = (char) uvtoi(A2);
+				((char*)&car(p))[pos] = (char) svtoi(A2);
 			A3 = (word) p;
 		}
 		else
@@ -2564,7 +2880,7 @@ loop:;
 		word op = uvtoi (A0);
 		word a = A1, b = A2, c = A3;
 
-		switch (op + seccompp) {
+		switch (op + sandboxp) {
 
 		// (READ fd count) -> buf
 		// http://linux.die.net/man/2/read
@@ -2595,6 +2911,9 @@ loop:;
 			// Win32 socket workaround
 			if (got == -1 && errno == EBADF) {
 				got = recv(portfd, (char *) &fp[1], size, 0);
+				if (got < 0)
+					if (WSAGetLastError() == WSAEWOULDBLOCK)
+						errno = EAGAIN;
 			}
 	#else
 			got = read(portfd, (char *) &fp[1], size);
@@ -2629,17 +2948,12 @@ loop:;
 				break;
 
 			int length = (hdrsize(*buff) - 1) * sizeof(word); // todo: pads!
-			if (size > length || size == -1)
+			if (size > length || size == 0)
 				size = length;
 
 			int wrote;
 
-	#if 0//EMBEDDED_VM
-			if (fd == 1) // stdout wrote to the fo
-				wrote = fifo_puts(fo, ((char *)buff)+W, len);
-			else
-	#endif
-				wrote = write(portfd, (char*)&buff[1], size);
+			wrote = write(portfd, (char*)&buff[1], size);
 
 	#ifdef _WIN32
 			// Win32 socket workaround
@@ -2656,6 +2970,7 @@ loop:;
 			break;
 		}
 
+#ifndef __asmjs__
 		// (OPEN "path" mode)
 		// http://man7.org/linux/man-pages/man2/open.2.html
 		case SYSCALL_OPEN: {
@@ -2757,7 +3072,7 @@ loop:;
 			int portfd = port(a);
 			int ioctl = uvtoi(b);
 
-			switch (ioctl + seccompp) {
+			switch (ioctl + sandboxp) {
 				case SYSCALL_IOCTL_TIOCGETA: {
 					#ifdef _WIN32
 						if (_isatty(portfd))
@@ -2855,6 +3170,8 @@ loop:;
 			// right way: use PF_INET in socket call
 	#ifdef _WIN32
 			int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+			unsigned long v = 1;
+			ioctlsocket(sock, FIONBIO, &v); // set blocking mode
 	#else
 			int sock = socket(PF_INET, SOCK_STREAM, 0);
 	#endif
@@ -3039,7 +3356,7 @@ loop:;
 		// NANOSLEEP
 		case 35: {
 			//CHECK(is_number(a), a, 35);
-			if (seccompp) {
+			if (sandboxp) {
 				result = (word*) ITRUE;
 				break;
 			}
@@ -3054,6 +3371,12 @@ loop:;
 			else
 				result = itoun((rem.tv_sec * 1000000000 + rem.tv_nsec));
 	#endif
+			break;
+		}
+
+		// (FORK)
+		case 57: {
+			result = (word*) itosv(fork());
 			break;
 		}
 
@@ -3091,7 +3414,6 @@ loop:;
 			// if a is string:
 			// todo: add case (cons program environment)
 			if (is_string(a)) {
-	#ifndef _WIN32
 				char* command = (char*)&car(a);
 				int child = fork();
 				if (child == 0) {
@@ -3122,7 +3444,6 @@ loop:;
 				}
 				else if (child > 0)
 					result = (word*)ITRUE;
-	#endif
 				break;
 			}
 			break;
@@ -3175,7 +3496,7 @@ loop:;
 		// http://linux.die.net/man/2/exit
 		// exit - cause normal process termination, function does not return.
 		case 60: {
-			if (!seccompp)
+			if (!sandboxp)
 				free(heap->begin); // освободим занятую память
 			heap->begin = 0;
 			R[3] = a;
@@ -3730,7 +4051,7 @@ loop:;
 				// http://outflux.net/teach-seccomp/
 			};*/
 			if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT, 0, 0, 0) != -1) { /* true if no problem going seccomp */
-				seccompp = SECCOMP;
+				sandboxp = SECCOMP;
 				result = (word*)ITRUE;
 			}
 			break;
@@ -3742,17 +4063,51 @@ loop:;
 				result = (word*) ITRUE;
 	#endif
 			break;
+#endif
+		case 1200:
+#ifdef __EMSCRIPTEN__
+			emscripten_sleep(1);
+#endif
+			result = (word*) ITRUE;
+			break;
+
+		case 1201:
+#ifdef __EMSCRIPTEN__
+			CHECK(is_number(a), a, SYSCALL);
+			CHECK(is_string(b), b, SYSCALL);
+			char* string = (char*)&car(b);
+
+			switch (value(a)) {
+			case TSTRING: {
+				char* v = emscripten_run_script_string(string);
+				if (v)
+					result = new_string(v);
+				break;
+			}
+			case TINT: {
+				int v = emscripten_run_script_int(string);
+				result = (word*)itosv(v);
+				break;
+			}
+			default:
+				emscripten_run_script(string);
+				result = (word*) ITRUE;
+			}
+#endif
+			break;
 
 		}// case
 
 		A4 = (word) result;
 		ip += 5; break;
 	}
+
 	default:
 		ERROR(op, new_string("Invalid opcode"), ITRUE);
 		break;
 	}
 	goto loop;
+
 
 error:; // R4-R6 set, and call mcp (if any)
 	this = (word *) R[0];
@@ -3771,7 +4126,10 @@ done:;
 
 	ol->heap.fp = fp;
 
-	return (void*)untoi(ol->R[3]);
+	if (is_number(R[3]))
+		return (void*)untoi(R[3]);
+	else
+		return (R[3] == IFALSE) ? (void*)0 : (void*)1;
 }
 
 // ======================================================================
@@ -3779,18 +4137,50 @@ done:;
 //
 
 // fasl decoding
-// возвращает новый топ стека
+// tbd: comment
+// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
+//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 static __inline__
+word get_nat(unsigned char** hp)
+{
+	word nat = 0;
+	char i;
+
+	#ifndef OVERFLOW_KILLS
+	#define OVERFLOW_KILLS(n) exit(n)
+	#endif
+	do {
+		long long underflow = nat; // can be removed for release
+		nat <<= 7;
+		if (nat >> 7 != underflow) // can be removed for release
+			OVERFLOW_KILLS(9);     // can be removed for release
+		i = *(*hp)++;
+		nat = nat + (i & 127);
+	} while (i & 128); // (1 << 7)
+	return nat;
+}
+static __inline__
+void decode_field(unsigned char** hp, word *ptrs, int pos, word** fp) {
+	if (*(*hp) == 0) { // fixnum
+		(*hp)++;
+		unsigned char type = *(*hp)++;
+		word val = make_value(type, get_nat(hp));
+		*(*fp)++ = val;
+	} else {
+		word diff = get_nat(hp);
+		*(*fp)++ = ptrs[pos-diff];
+	}
+}
+
+// возвращает новый топ стека
+static
 word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
 	unsigned char* hp = bootstrap;
 //	if (*hp == '#') // этот код не нужен, так как сюда приходит уже без шабанга
 //		while (*hp++ != '\n') continue;
 
-	// tbd: comment
-	// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
-	//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
-	word get_nat()
+/*	word (^get_nat_x)() = ^()
 	{
 		word nat = 0;
 		char i;
@@ -3807,20 +4197,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			nat = nat + (i & 127);
 		} while (i & 128); // (1 << 7)
 		return nat;
-	}
-
-	// tbd: comment
-	void decode_field(word *ptrs, int pos) {
-		if (*hp == 0) { // fixnum
-			hp++;
-			unsigned char type = *hp++;
-			word val = make_value(type, get_nat());
-			*fp++ = val;
-		} else {
-			word diff = get_nat();
-			*fp++ = ptrs[pos-diff];
-		}
-	}
+	};*/
 
 	// function entry:
 	for (ptrdiff_t me = 0; me < nobjs; me++) {
@@ -3829,15 +4206,15 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		switch (*hp++) { // todo: adding type information here would reduce fasl and executable size
 		case 1: {
 			int type = *hp++;
-			int size = get_nat();
+			int size = get_nat(&hp);
 			*fp++ = make_header(type, size+1); // +1 to include header in size
 			while (size--)
-				decode_field(ptrs, me);
+				decode_field(&hp, ptrs, me, &fp);
 			break;
 		}
 		case 2: {
 			int type = *hp++ & 31; /* low 5 bits, the others are pads */
-			int size = get_nat();
+			int size = get_nat(&hp);
 			int words = (size + W - 1) / W;
 			int pads = words * W - size;//(W - (size % W));
 
@@ -3856,22 +4233,23 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	return fp;
 }
 
+static __inline__
+word decode_word(unsigned char** hp) {
+	word nat = 0;
+	char i;
+	do {
+		nat <<= 7;
+		i = *(*hp)++;
+		nat = nat + (i & 127);
+	}
+	while (i & 128);
+	return nat;
+}
+
 static
 // функция подсчета количества объектов в загружаемом образе
 int count_fasl_objects(word *words, unsigned char *lang) {
 	unsigned char* hp;
-
-	word decode_word() {
-		word nat = 0;
-		char i;
-		do {
-			nat <<= 7;
-			i = *hp++;
-			nat = nat + (i & 127);
-		}
-		while (i & 128);
-		return nat;
-	}
 
 	// count:
 	int n = 0;
@@ -3882,19 +4260,19 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		switch (*hp++) {
 		case 1: { // fix
 			hp++; ++allocated;
-			int size = decode_word();
+			int size = decode_word(&hp);
 			while (size--) {
 				//decode_field:
 				if (*hp == 0)
 					hp += 2;
-				decode_word(); // simply skip word
+				decode_word(&hp); // simply skip word
 				++allocated;
 			}
 			break;
 		}
 		case 2: { // pointer
 			hp++;// ++allocated;
-			int size = decode_word();
+			int size = decode_word(&hp);
 			hp += size;
 
 			int words = (size / W) + ((size % W) ? 2 : 1);
@@ -3929,24 +4307,6 @@ unsigned char* language = NULL;
 int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
-
-/*	for (int i = 0; i < 12345678; i++) {
-		word p = F(i);
-		word n = F(i) | 0x80;
-
-		if (svtoi(p) != svtoI(p))
-			exit(88);
-		if (svtoi(n) != svtoI(n))
-			exit(89);
-	}*/
-
-/*	word x = (123 << IPOS) + (1 << 7) + 2;
-	int i = ({
-		SVTOI_CHECK(x);
-		int sign = (intptr_t)(x << (8*sizeof(uintptr_t) - IPOS)) >> (8*sizeof(intptr_t) - 1);
-		int number = ((x >> IPOS) ^ sign) - sign;
-		number; });
-*/
 
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
@@ -4010,7 +4370,7 @@ int main(int argc, char** argv)
 	argc--; argv++;
 #endif
 
-	set_signal_handler();
+	//set_signal_handler();
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
@@ -4151,7 +4511,7 @@ OL_eval(OL* handle, int argc, char** argv)
 	// результат выполнения скрипта
 	OL* ol = handle;
 	heap_t* heap = &ol->heap;
-	seccompp = 0;    // static variable
+	sandboxp = 0;    // static variable
 
 	word* ptrs = (word*) heap->begin;
 	int nobjs = hdrsize(ptrs[0]) - 1;
@@ -4178,4 +4538,6 @@ OL_eval(OL* handle, int argc, char** argv)
 	return runtime(handle);
 }
 
-#include "pinvoke.c"
+#if HAS_PINVOKE
+#	include "pinvoke.c"
+#endif

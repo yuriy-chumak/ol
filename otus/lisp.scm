@@ -4,6 +4,7 @@
    (export
       (exports (r5rs core))
       (exports (r5rs srfi-1))
+      (exports (r5rs characters))
 
       (exports (owl list))
       (exports (owl rlist))
@@ -25,12 +26,17 @@
       (exports (owl math))
       (exports (owl tuple))
 
-      defined? ; todo: move to right library
+      read
+
+      ;defined? ; todo: move to right library
       wait)    ; todo: move to right library
 
    (import
       (r5rs core)
       (r5rs srfi-1)
+      (r5rs characters)
+
+      (lang sexp)
 
       (owl list)
       (owl rlist)
@@ -49,8 +55,6 @@
       (owl equal)
       (owl regex)
       (owl render)
-      (only (owl intern) defined?)
       (owl interop)
       (owl math)
-
 ))

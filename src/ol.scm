@@ -2,32 +2,28 @@
 ;;; ol.scm: an Otus Lisp read-eval-print loop (REPL) binary image compiler.
 ;;;
 
-#| Copyright (c) 2012 Aki Helin
- | Copyright (c) 2014, 2015 Yuriy Chumak
+#| Copyright(c) 2012 Aki Helin
+ | Copyright(c) 2014 - 2017 Yuriy Chumak
  |
- | Permission is hereby granted, free of charge, to any person obtaining a
- | copy of this software and associated documentation files (the "Software"),
- | to deal in the Software without restriction, including without limitation
- | the rights to use, copy, modify, merge, publish, distribute, sublicense,
- | and/or sell copies of the Software, and to permit persons to whom the
- | Software is furnished to do so, subject to the following conditions
- |
- | The above copyright notice and this permission notice shall be included
- | in all copies or substantial portions of the Software.
- |
- | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- | IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- | FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- | THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- | LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- | FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- | DEALINGS IN THE SOFTWARE.
+ | This program is free software;  you can redistribute it and/or
+ | modify it under the terms of the GNU General Public License as
+ | published by the Free Software Foundation; either version 2 of
+ | the License, or (at your option) any later version.
+ | 
+ | This program is distributed in the hope that it will be useful,
+ | but WITHOUT ANY WARRANTY; without even the implied warranty of
+ | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ | 
+ | You should have received a copy of the GNU GPL along with this
+ | program.           If not, see <http://www.gnu.org/licenses/>.
  |#
 
-(define build-start (time-ms))
 (print "Loading code...")
 
-(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
+; fixme: можно не вызывать, все равно не работает :)
+;(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
+
+(define build-start (time-ms))
 
 ; forget all other libraries to have them be reloaded and rebuilt
 ; (src olvm) содержит список базовых элементов языка
@@ -69,7 +65,7 @@
 
 (import (otus lisp))
 
-(import (owl intern))
+(import (lang intern))
 (import (owl parse))
 
 (import (lang gensym))
@@ -134,7 +130,7 @@
 (import (owl sys))
 
 ;;;
-;;; Entering seccomp
+;;; Entering sandbox
 ;;;
 
 ;; a temporary O(n) way to get some space in the heap
@@ -163,8 +159,8 @@
 ;         ;; leave it as garbage
 ;         #true)))
 ;
-;; enter seccomp with at least n-megs of free space in heap, or stop the world (including all other threads and io)
-(define (seccomp n-megs)
+;; enter sandbox with at least n-megs of free space in heap, or stop the world (including all other threads and io)
+(define (sandbox n-megs)
    ;; grow some heap space work working, which is usually necessary given that we can't
    ;; get any more memory after entering seccomp
    (if (and n-megs (> n-megs 0))
@@ -172,40 +168,9 @@
    (or
       (syscall 157 #false #false #false)
       (begin
-         (system-stderr "Failed to enter seccomp sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
+         (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
          (halt exit-seccomp-failed))))
 
-
-(define-library (owl char)
-   (export char->integer integer->char)
-   (import (r5rs core))
-   (import
-      (owl math))
-   (begin
-      (define self (λ (x) x))
-
-      (define char->integer self)
-      (define integer->char self)))
-
-;; profiling doesn't yet have a good home. merge to lib-internals or lib-debug later?
-;; run thunk and show n most called functions. no timings yet.
-(define (profile thunk n)
-   (lets
-      ((skip (start-profiling))
-       (skip (set-ticker-value 0))
-       (res (thunk))
-       (stats (stop-profiling))
-       (most-used
-         (take
-            (sort
-               (λ (a b) (> (car a) (car b)))
-               (ff-fold
-                  (λ (out func n)
-                     (cons (cons n func) out))
-                  null stats))
-            n)))
-      (for-each (λ (p) (print*-to stdout  (list (car p) ":" (cdr p)))) most-used) ;; <- could use stderr later
-      res))
 
 ;; implementation features, used by cond-expand
 (define *features*
@@ -272,9 +237,7 @@
 ;; repl-prompt. this should too, actually)
 (define (get-main-entry symbols codes)
    (let*((initial-names   *owl-names*)
-         (initial-version *owl-version*)
-
-         (interner-thunk (initialize-interner symbols codes)))
+         (initial-version *owl-version*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
          ;(print "//vm-args: " vm-args)
@@ -288,7 +251,8 @@
                         (start-base-threads)
 
                         ;; repl needs symbol etc interning, which is handled by this thread
-                        (fork-server 'intern interner-thunk)
+                        (fork-intern-interner symbols)
+                        (fork-bytecode-interner codes)
 
                         ;; set a signal handler which stop evaluation instead of owl
                         ;; if a repl eval thread is running
@@ -306,8 +270,8 @@
                                        (cond
                                           ((null? args)
                                              options)
-                                          ((string-eq? (car args) "--seccomp")
-                                             (loop (put options 'seccomp #t) (cdr args)))
+                                          ((string-eq? (car args) "--sandbox")
+                                             (loop (put options 'sandbox #t) (cdr args)))
                                           ((string-eq? (car args) "--interactive")
                                              (loop (put options 'interactive #t) (cdr args)))
                                           ((string-eq? (car args) "--home") ; TBD
@@ -322,7 +286,7 @@
                                            (cond
                                               ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
                                               (else "/usr/lib/ol")))) ; Linux, *BSD, etc.
-                                 (seccomp? (getf options 'seccomp))
+                                 (sandbox? (getf options 'sandbox))
                                  (interactive? (or
                                            (getf options 'interactive)
                                            (syscall 16 file 19 #f))) ; isatty()
@@ -340,12 +304,12 @@
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* version)
                                             ;(cons '*scheme* 'r5rs)
-                                             (cons '*seccomp* seccomp?)
+                                             (cons '*sandbox* sandbox?)
                                           ))))
-                              (if seccomp?
-                                 (seccomp 1)) ;(seccomp megs) - check is memory enough
+                              (if sandbox?
+                                 (sandbox 1)) ;(sandbox megs) - check is memory enough
                               (repl-trampoline env file))))))))
-            null)))) ; no threads state
+            )))) ; no threads state
 
 
 

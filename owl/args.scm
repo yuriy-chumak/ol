@@ -46,7 +46,7 @@
          (if (m/^-[^-]{2,}/ str)
             (map
                (λ (char) (runes->string (list #\- char)))
-               (cdr (string->bytes str)))
+               (cdr (string->runes str)))
             #false))
 
       (define (fail fools)

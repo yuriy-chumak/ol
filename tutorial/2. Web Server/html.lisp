@@ -1,5 +1,7 @@
 #!/usr/bin/ol
 ; todo: write post like http://jakeyesbeck.com/2015/10/11/building-a-simple-web-server-with-ruby-2/
+; todo: check web sockets: https://github.com/meefik/websocket.sh
+;       https://github.com/sourcelair/xterm.js
 
 (import (lib http))
 ; simplest example:

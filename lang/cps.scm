@@ -21,6 +21,9 @@
       (define (ok exp env) (tuple 'ok exp env))
       (define (fail reason) (tuple 'fail reason))
 
+      (define (fresh free)
+         (values free (gensym free)))
+
       (define (cps-literal exp env cont free)
          (values
             (mkcall cont (list exp))

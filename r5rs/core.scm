@@ -114,7 +114,7 @@
 
       ;(assert ((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6))
       ;(assert ((lambda (x y . z) z) 3 4 5 6)          ===>  (5 6))
-              
+
 
       ; http://srfi.schemers.org/srfi-16/srfi-16.html
       ; srfi syntex: (case-lambda ...
@@ -578,29 +578,58 @@
 
       ; 6.2.1  Numerical types
       ; 6.2.2  Exactness
+      ;
+      ; Otus Lisp numbers are always exact.
+
       ; 6.2.3  Implementation restrictions
       ; 6.2.4  Syntax of numerical constants
 
       ; ---------------------------
       ; 6.2.5  Numerical operations
       ;
-      ; procedure:  (number? obj)
-      (define (number? o)
-         (case (type o)
+      ; procedure:  (integer? obj)
+      (define (integer? a)
+         (case (type a)
             (type-fix+ #true)
             (type-fix- #true)
             (type-int+ #true)
             (type-int- #true)
-            (type-rational #true)
-            (type-complex #true)
             (else #false)))
 
-      ; procedure:  (complex? obj)
-      ; procedure:  (real? obj)
       ; procedure:  (rational? obj)
-      ; procedure:  (integer? obj)
+      (define (rational? a)
+         (or (integer? a)
+             (case (type a)
+                (type-rational #true))))
+
+      ; procedure:  (complex? obj)
+      (define (complex? a)
+         (or (rational? a)
+             (case (type a)
+                (type-complex #true))))
+
+      ; procedure:  (real? obj)
+      (define real? complex?)
+
+      ; procedure:  (number? obj)
+      (define number? real?)
+
+      (assert (complex? 3+4i)                        ===>  #t)
+      (assert (complex? 3)                           ===>  #t)
+      (assert (real? 3)                              ===>  #t)
+      (assert (real? -2.5+0.0i)                      ===>  #t)
+      (assert (real? 1e10)                           ===>  #t)
+      (assert (rational? 6/10)                       ===>  #t)
+      (assert (rational? 6/3)                        ===>  #t)
+      (assert (integer? 3+0i)                        ===>  #t)
+      (assert (integer? 3.0)                         ===>  #t)
+      (assert (integer? 8/4)                         ===>  #t)
+
       ; procedure:  (exact? z)
+      (define exact? number?)
+
       ; procedure:  (inexact? z)
+      (define (inexact? a) #false)
 
       ; *** declared in (r5rs math), (r5rs math-extra)
       ; procedure:  (= z1 z2 z3 ...) <- (r5rs math)
@@ -653,8 +682,12 @@
       ; procedure: imag-part z
       ; procedure: magnitude z
       ; procedure: angle z
+
       ; procedure: exact->inexact z
+      (define (exact->inexact n) n)
+
       ; procedure: inexact->exact z
+      (define (inexact->exact n) n)
 
       ; ---------------------------------
       ; 6.2.6  Numerical input and output
@@ -679,13 +712,6 @@
       ; -------------------------------
       ; This data types related to olvm
       ;     - not a part of r5rs -
-;      (define type-fix-             32) ; value
-;      (define type-int+             40) ; reference
-;      (define type-int-             41) ; reference
-;      (define type-rational         42) ; reference
-;      (define type-complex          43) ; reference
-
-      ;define type-fix+              0) ; value
       (define type-pair              TPAIR)   ; reference
       (define type-tuple             TTUPLE)  ; reference
       (define type-string            TSTRING) ; reference, raw -> 35 (#b100000 + 3)?
@@ -898,18 +924,60 @@
 
 
       ; 6.3.4. Characters
-      ; (char? obj) procedure
-      (define (char? o) (number? o))
+      ; Characters are objects that represent printed characters such as letters and digits.
+      ; Characters are written using the notation #\<character> or #\<character name>.
+      ;
+      ; procedure:  (char? obj)
+      ; procedure:  (char=? char1 char2)
+      ; procedure:  (char<? char1 char2)
+      ; procedure:  (char>? char1 char2)
+      ; procedure:  (char<=? char1 char2)
+      ; procedure:  (char>=? char1 char2)
+      ; library procedure:  (char-ci=? char1 char2)
+      ; library procedure:  (char-ci<? char1 char2)
+      ; library procedure:  (char-ci>? char1 char2)
+      ; library procedure:  (char-ci<=? char1 char2)
+      ; library procedure:  (char-ci>=? char1 char2)
+      ; library procedure:  (char-alphabetic? char)
+      ; library procedure:  (char-numeric? char)
+      ; library procedure:  (char-whitespace? char)
+      ; library procedure:  (char-upper-case? letter)
+      ; library procedure:  (char-lower-case? letter)
+      ; procedure:  (char->integer char)
+      ; procedure:  (integer->char n)
+      ; library procedure:  (char-upcase char)
+      ; library procedure:  (char-downcase char)
 
 
       ; 6.3.5. Strings
-      ;; (string? obj) procedure
-      (define (string? o)
-         (case (type o)
-            (type-string #true)
-            (type-string-wide #true)
-            (type-string-dispatch #true)
-            (else #false)))
+      ; Strings are sequences of characters. Strings are written as sequences of characters enclosed
+      ; within doublequotes (`"'). A doublequote can be written inside a string only by escaping it
+      ; with a backslash (\), as in "The word \"recursion\" has many meanings."
+      ;
+      ; procedure:  (string? obj)
+      ; procedure:  (make-string k)
+      ; procedure:  (make-string k char)
+      ; library procedure:  (string char ...)
+      ; procedure:  (string-length string)
+      ; procedure:  (string-ref string k)
+      ; procedure:  (string-set! string k char)
+      ; library procedure:  (string=? string1 string2)
+      ; library procedure:  (string-ci=? string1 string2)
+      ; library procedure:  (string<? string1 string2)
+      ; library procedure:  (string>? string1 string2)
+      ; library procedure:  (string<=? string1 string2)
+      ; library procedure:  (string>=? string1 string2)
+      ; library procedure:  (string-ci<? string1 string2)
+      ; library procedure:  (string-ci>? string1 string2)
+      ; library procedure:  (string-ci<=? string1 string2)
+      ; library procedure:  (string-ci>=? string1 string2)
+      ; library procedure:  (substring string start end)
+      ; library procedure:  (string-append string ...)
+      ; library procedure:  (string->list string)
+      ; library procedure:  (list->string list)
+      ; library procedure:  (string-copy string)
+      ; library procedure:  (string-fill! string char)
+
 
 
       ; 6.3.6. Vectors
@@ -1302,7 +1370,7 @@
       λ
       syntax-error assert error runtime-error
 
-      if cond case and or not
+      if cond case and or
       letrec letrec* let let* let*-values lets
       begin do
       delay force
@@ -1315,19 +1383,21 @@
       case-lambda
       define-values
 
-      ; список типов
-      type-complex
-      type-rational
+      ; 6.2 (numbers)
+      type-fix+
+      type-fix-
       type-int+
       type-int-
+      type-rational
+      type-complex
 
-      value? raw? reference?
+      integer? rational? complex? real? number? exact? inexact?
+      exact->inexact inexact->exact
 
+      ; 6.3 (other data types)
       type-bytecode
       type-proc
       type-clos
-      type-fix+
-      type-fix-
       type-pair
       type-vector-dispatch
       type-vector-leaf
@@ -1359,8 +1429,11 @@
       apply
       call-with-current-continuation call/cc lets/cc
 
-      ; 3.2.
-      boolean? pair? symbol? number? char? string? vector? port? procedure? null? eof?
+      ; 6.3
+      not boolean? pair? symbol? vector? port? procedure? null? eof?
+
+      value? raw? reference?
+
       ; ol extension:
       bytecode? function? ff?
 

@@ -9,7 +9,13 @@
       get-sexps       ;; greedy* get-sexp
       string->sexp
       vector->sexps
-      list->sexps)
+      list->sexps
+      fd->exp-stream
+      file->exp-stream
+
+      ; io
+      read
+      )
 
    (import
       (r5rs core)
@@ -26,7 +32,7 @@
       (owl lazy)
       (owl io) ; testing
       (owl unicode)
-      (only (owl intern) intern-symbols string->uninterned-symbol)
+      (only (lang intern) intern-symbols string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 
    (begin
@@ -41,8 +47,8 @@
 
       ; todo: rename to extended-alphabetic-chars
 ;     (define special-symbol-chars (string->bytes "!$%&*+-/:<=>?@^_~")) ; dot(.) reserved for numbers, sorry.
-      (define special-initial-chars (string->bytes "!$%&*+-/:<=>?^_~"))
-      (define special-subseqent-chars (string->bytes "@")) ; . must be too
+      (define special-initial-chars (string->runes "!$%&*+-/:<=>?^_~"))
+      (define special-subseqent-chars (string->runes "@")) ; . must be too
 
       (define (symbol-lead-char? n)
          (or 
@@ -437,4 +443,88 @@
       (define (list->sexps lst fail errmsg)
          ; try-parse parser data maybe-path maybe-error-msg fail-val
          (try-parse get-sexps lst #false errmsg #false))
+
+
+      ; exp streams reader
+      ;; todo: fd->exp-stream could easily keep track of file name and line number to show also those in syntax error messages
+
+      ; rchunks fd block? -> rchunks' end?
+      ;; bug: maybe-get-input should now use in-process mail queuing using return-mails interop at the end if necessary
+      (define (maybe-get-input rchunks fd block? prompt)
+         (let ((chunk (try-get-block fd 1024 #false)))
+            ;; handle received input
+            (cond
+               ((not chunk) ;; read error in port
+                  (values rchunks #true))
+               ((eq? chunk #true) ;; would block
+                  (take-nap) ;; interact with sleeper thread to let cpu sleep
+                  (values rchunks #false))
+               ((eof? chunk) ;; normal end if input, no need to call me again
+                  (values rchunks #true))
+               (else
+                  (maybe-get-input (cons chunk rchunks) fd #false prompt)))))
+
+      (define (push-chunks data rchunks)
+         (if (null? rchunks)
+            data
+            (append data
+               (foldr append null
+                  (map vec->list (reverse rchunks))))))
+
+      ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
+
+      (define (fd->exp-stream fd prompt parse fail re-entry?) ; re-entry? unused
+         (let loop ((old-data null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
+            (lets
+               ((rchunks end?
+                  (if finished?
+                     (values null #true)
+                     (maybe-get-input null fd (or (null? old-data) block?)
+                        (if (null? old-data) prompt "|   "))))
+                (data (push-chunks old-data rchunks)))
+               (if (null? data)
+                  (if end? null (loop data #true #false))
+                  (parse data
+                     (λ (data-tail backtrack val pos)
+                        (pair val
+                           (if (and finished? (null? data-tail))
+                              null
+                              (loop data-tail (null? data-tail) end?))))
+                     (λ (pos info)
+                        (cond
+                           (end?
+                              ; parse failed and out of data -> must be a parse error, like unterminated string
+                              (list (fail pos info data)))
+                           ((= pos (length data))
+                              ; parse error at eof and not all read -> get more data
+                              (loop data #true end?))
+                           (else
+                              (list (fail pos info data)))))
+                     0)))))
+
+
+   ; (parser ll ok fail pos)
+   ;      -> (ok ll' fail' val pos)
+   ;      -> (fail fail-pos fail-msg')
+
+      (define (file->exp-stream path prompt parse fail)
+         (let ((fd (open-input-file path)))
+            (if fd
+               (fd->exp-stream fd prompt parse fail #false)
+               #false)))
+
+         (define (syntax-fail pos info lst)
+            (list #f info
+               (list ">>> " "x" " <<<")))
+         
+         (define (read-impl in)
+            (fd->exp-stream in "" sexp-parser syntax-fail #false))
+         
+         (define read
+            (case-lambda
+               ((in)
+                  (car (read-impl in)))
+               (()
+                  (car (read-impl stdin)))))
+
 ))

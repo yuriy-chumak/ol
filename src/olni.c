@@ -1,8 +1,8 @@
 //long long callback(OL* ol, int id, word* args) // win32
 //long long callback(OL* ol, int id, long long* argi, double* argf, long long* others) // linux
-long callback(OL* ol, int id, long* argi
+long callback(OL* ol, int id, int_t* argi
 #if __amd64__
-		, double* argf, long* rest
+		, double* argf, int_t* rest
 #endif
 		) // win64
 {
@@ -70,20 +70,20 @@ long callback(OL* ol, int id, long* argi
 			break;
 		}
 		case F(TINT): {
-			int
+			int_t
 			#if __amd64__
 				#if _WIN64
 				value = i <= 4
-				        ? *(int*) &argi[i]
-				        : *(int*) &rest[i-4];
+				        ? *(int_t*) &argi[i]
+				        : *(int_t*) &rest[i-4];
 				#else
 				value = i <= 6
-						? *(int*) &argi[i]
-						: *(int*) &rest[i-6]; // ???
+						? *(int_t*) &argi[i]
+						: *(int_t*) &rest[i-6]; // ???
 				#endif
 				i++;
 			#else
-				value =   *(int*) &argi[i++];
+				value =   *(int_t*) &argi[i++];
 			#endif
 			R[a] = F(value);
 			break;
@@ -150,16 +150,51 @@ long callback(OL* ol, int id, long* argi
 			#else
 				value =   *(void**) &argi[i++];
 			#endif
-			R[a] = (word) new_string(value);
+			R[a] = value ? (word)new_string(value) : IFALSE;
 			break;
 		}
 //		case F(TVOID):
 //			R[a] = IFALSE;
 //			i++;
 //			break;
-		default:
+		default: {
+			void*
+			#if __amd64__
+				#if _WIN64
+				value = i <= 4
+				        ? *(void**) &argi[i]
+				        : *(void**) &rest[i-4];
+				#else
+				value = i <= 6
+						? *(void**) &argi[i]
+						: *(void**) &rest[i-6]; // ???
+				#endif
+				i++;
+			#else
+				value =   *(void**) &argi[i++];
+			#endif
+
+			if (is_pair(car(types))) {
+				//int l = llen(car(types));
+				word tail = INULL;
+				char** strings = (char**)value;
+
+				word argv = car(types);
+				while (argv != INULL) {
+					switch (car (argv)) {
+					case F(TSTRING):
+						tail = (word) new_pair(new_string(*strings++), tail);
+						break;
+					}
+					argv = cdr (argv);
+				}
+				R[a] = tail;
+				break;
+			}
+
+			// else error
 			STDERR("unknown argument type");
-			break;
+			break; }
 		}
 		a++;
 		ol->arity++;
