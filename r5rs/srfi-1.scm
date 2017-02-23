@@ -10,12 +10,15 @@
    (owl list))
 
    (export
+      srfi-1
       first second third fourth fifth sixth seventh eighth ninth tenth
 
       iota
 )
 
 (begin
+   (define srfi-1 #true)
+
    (define (first li)
       (car li))
    (define (second li)
