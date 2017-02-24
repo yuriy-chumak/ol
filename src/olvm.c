@@ -494,6 +494,7 @@ char* dlerror() {
 // -=( fork )=---------------------------------------------
 // sample implementation can be found at
 // https://github.com/jonclayden/multicore/blob/master/src/forknt.c
+// originally from: "Windows NT/2000 native API reference" ISBN 1-57870-199-6.
 #if _WIN32
 #include <ntdef.h>
 #include <ntstatus.h>
@@ -602,6 +603,8 @@ typedef NTSTATUS (NTAPI *ZwClose_t)(IN HANDLE ObjectHandle);
 
 
 static jmp_buf jenv;
+
+__attribute__ ((naked))
 static int child_entry(void) {
 	longjmp(jenv, 1);
 	return 0;
@@ -642,7 +645,7 @@ pid_t fork(void)
 		if (setjmp(jenv) != 0) return 0; // return as a child
 
 		// make sure all handles are inheritable
-		#if 0
+		#if 1
 			ULONG n = 0x1000;
 			PULONG p = (PULONG) calloc(n, sizeof(ULONG));
 
@@ -677,7 +680,7 @@ pid_t fork(void)
 		                    NtCurrentProcess(), TRUE, 0, 0, 0) < 0)
 			return -1;
 
-		CONTEXT context = {CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS | CONTEXT_FLOATING_POINT};
+		CONTEXT context = { CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS | CONTEXT_FLOATING_POINT };
 
 		// set the Eip for the child process to our child function
 		if (ZwGetContextThread(NtCurrentThread(), &context) < 0)
@@ -2080,6 +2083,7 @@ mainloop:;
 	#		endif
 	#		define SYSCALL_IOCTL_TIOCGETA 19
 
+	#		define SYSCALL_NANOSLEEP 35
 	#		define SYSCALL_SENDFILE 40
 
 	#		define SYSCALL_EXIT 60
@@ -3352,25 +3356,27 @@ loop:;
 
 
 		// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
-		// TODO: change to "select" call
-		// NANOSLEEP
-		case 35: {
-			//CHECK(is_number(a), a, 35);
-			if (sandboxp) {
-				result = (word*) ITRUE;
-				break;
-			}
+		// TODO: change to "select" call (?)
+		case SYSCALL_NANOSLEEP: { // time-in-micro(!)seconds
+			CHECK(is_number(a), a, SYSCALL);
+			int_t us = untoi (a);
 
-	#ifdef _WIN32// for Windows
-			Sleep(untoi (a) / 1000000); // in ms
-	#else//			for Linux:
-			struct timespec ts = { untoi(a) / 1000000000, untoi(a) % 1000000000 };
-			struct timespec rem;
-			if (nanosleep(&ts, &rem) == 0)
-				result = (word*) ITRUE;
-			else
-				result = itoun((rem.tv_sec * 1000000000 + rem.tv_nsec));
-	#endif
+			result = (word*) ITRUE;
+
+			#ifdef __EMSCRIPTEN__
+				int_t ms = us / 1000;
+				emscripten_sleep(ms);
+			#endif
+			#ifdef _WIN32// for Windows
+				int_t ms = us / 1000;
+				Sleep(ms); // in ms
+			#endif
+			#ifdef __unix__ // Linux, *BSD, MacOS, etc.
+				struct timespec ts = { us / 1000000, (us % 1000000) * 1000 };
+				struct timespec rem;
+				if (nanosleep(&ts, &rem) != 0)
+					result = itoun((rem.tv_sec * 1000000 + rem.tv_nsec / 1000));
+			#endif
 			break;
 		}
 
