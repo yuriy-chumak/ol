@@ -13,9 +13,8 @@
       port?                   ;; _ → bool
       flush-port              ;; fd → _
       close-port              ;; fd → _
-      start-sleeper           ;; start a (global) sleeper thread
       sleeper-id              ;; id of sleeper thread
-      start-base-threads      ;; start stdio and sleeper threads
+      start-io-sleeper-thread ;; start sleeper thread
       wait-write              ;; fd → ? (no failure handling yet)
 
       ;; stream-oriented blocking (for the writing thread) io
@@ -48,6 +47,8 @@
       take-nap
       fasl-save         ;; obj path → done?
       fasl-load         ;; path default → done?
+
+      io:init
    )
 
    (import
@@ -243,25 +244,23 @@
                (mail (cdar ls) 'awake) ;; 'awake have no meaning, this is simply "wake up" the thread ((n . id) ...)
                (sleeper (wake-neighbours (cdr ls)))))) ;; wake up all the ((0 . id) ...) after it, if any
 
+      ;; start a (global) sleeper thread
       (define (start-sleeper)
          (fork-server sid
             (λ () (sleeper null))))
 
       ;; start normally mandatory threads (apart form meta which will be removed later)
-      (define (start-base-threads)
+      (define (start-io-sleeper-thread)
          (start-sleeper) ;; <- could also be removed later
-         (wait 1)
-         )
+         (wait 1))
 
       ;; deprecated
       (define (flush-port fd)
          ;(mail fd 'flush)
-         42
-         )
+         42)
 
       (define (close-port fd)
-         (fclose fd)
-         )
+         (fclose fd))
 
 
 
@@ -523,4 +522,8 @@
             (if bs
                (fasl-decode bs fail-val)
                fail-val)))
+
+
+      (define (io:init)
+         (start-io-sleeper-thread))
 ))

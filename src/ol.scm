@@ -248,7 +248,7 @@
                   (λ ()
                      (fork-server 'repl (lambda ()
                         ;; get basic io running
-                        (start-base-threads)
+                        (io:init)
 
                         ;; repl needs symbol etc interning, which is handled by this thread
                         (fork-intern-interner symbols)
