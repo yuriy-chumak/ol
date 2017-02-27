@@ -3046,8 +3046,8 @@ loop:;
 					itoun(st.st_gid),    // идентификатор группы-владельца
 					itoun(st.st_rdev),   // тип устройства (если это устройство)
 					itoun(st.st_size),   // общий размер в байтах
-					0, // itoun(st.st_blksize),// размер блока ввода-вывода в файловой системе
-					0, // itoun(st.st_blocks), // количество выделенных блоков
+					itoun(0), // itoun(st.st_blksize),// размер блока ввода-вывода в файловой системе
+					itoun(0), // itoun(st.st_blocks), // количество выделенных блоков
 					// Since Linux 2.6, the kernel supports nanosecond
 					//   precision for the following timestamp fields.
 					// but we do not support this for a while
