@@ -8,3 +8,4 @@ categories: en
 1. [Целые числа](?ru/internals/numbers)
 1. [Embed](?ru/internals/embed) и [PInvoke](?ru/internals/pinvoke)
 1. [Виртуальная машина](?ru/internals/olvm)
+1. [REPL](?ru/internals/repl)

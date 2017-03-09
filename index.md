@@ -1,6 +1,6 @@
 ---
 layout: html
-title:  Otus Lisp
+title: Ol /Otus Lisp/
 date: 2016-12-01 16:16:30 UTC
 categories: index
 ---
