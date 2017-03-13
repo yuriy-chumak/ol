@@ -3255,6 +3255,7 @@ loop:;
 
 		// wait4
 		case 61: {
+			#ifdef _WIN32
 			int_t pid = untoi(a);
 
 			HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
@@ -3262,6 +3263,7 @@ loop:;
 			CloseHandle(processHandle);
 
 			result = ITRUE;
+			#endif
 			break;
 		}
 
