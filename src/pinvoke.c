@@ -925,7 +925,29 @@ word* pinvoke(OL* self, word* arguments)
 //		case TRAWVALUE:
 //			args[i] = (word)arg;
 //			break;
-   	case TVOID:
+		case TPORT: {
+			if (arg == itosv(-1)) {
+				args[i] = -1;
+				break;
+			}
+			int portfd = port(arg);
+			switch (portfd) {
+			case 0: // stdin
+				args[i] = stdin;
+				break;
+			case 1: // stdout
+				args[i] = stdout;
+				break;
+			case 2: // stderr
+				args[i] = stderr;
+				break;
+			default:
+				args[i] = portfd;
+				break;
+			}
+			break;
+		}
+		case TVOID:
 			args[i] = 0;
 			break;
 		default:
