@@ -1807,10 +1807,18 @@
    (linux? (dlsym GLX type-int+ "glXMakeCurrent" type-void* type-void* type-void*))
    (else   (runtime-error "Unknown platform" uname))))
 
+
+
 (define gl:SwapBuffers (cond
-   (win32? (dlsym GDI type-fix+ "SwapBuffers"    type-void*))
-   (linux? (dlsym GLX type-vptr "glXSwapBuffers" type-void* type-void*))
-   (else   (runtime-error "Unknown platform" uname))))
+   (win32?
+      (let ((SwapBuffers (dlsym GDI type-fix+ "SwapBuffers"    type-void*)))
+         (lambda (context)
+            (SwapBuffers (ref context 1)))))
+   (linux?
+      (let ((SwapBuffers (dlsym GLX type-vptr "glXSwapBuffers" type-void* type-void*)))
+         (lambda (context)
+            (SwapBuffers (ref context 1) (ref context 3)))))
+   (else   (runtime-error "SwapBuffers: Unknown platform" uname))))
 
 ;   (let*((display (XOpenDisplay null))
 ;         (screen  (XDefaultScreen display))
