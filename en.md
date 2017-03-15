@@ -15,7 +15,7 @@ It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Do
 
 ### Breaking news
 
-   Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Merry Christmas and happy lisping!
+   Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
 
 
 ### Summary (continue)
@@ -56,6 +56,41 @@ which is another way of
    I'm working for add more prebuilts.
 
 ### Project news
+
+* Wed 15 Mar 2017
+  * created new repository yuriy-chumak/meala with implementation in ol of visual novel (external producer), looks like it's good instrument for creating such kind of games. additionally added sample opengl visualization. one more thing to ol gems )
+
+* Mon 13 Mar 2017
+  * added ports to pinvoke
+  * added wasm support to build scripts (not yet enough tested)
+  * added new (lib rlutil) library, now we can use terminal portable (win32/linux)
+  * in (lib opengl) gl:SwapBuffers made universal
+
+* Mon 27 Feb 2017
+  * fixed stat syscall
+
+* Fri 24 Feb 2017
+  * changed initializator name in (owl io) module, planned to add "auto" initializators for modules (autoexecutabled functions).
+
+* Thr 23 Feb 2017
+  * fixed environment initialization in "slim" version, got less binary size
+  * added environment indicators for srfi - for now as test feature
+
+* Wed 22 Feb 2017
+  * trying to implement fork for win32, no so happy
+  
+* Mon 20 Feb 2017
+  * khe-khe, we got own brainf**k interpreter!, simultaneously updated [rosetta code](http://rosettacode.org/wiki/Category:Ol) page.
+  * fixed set-ref and set-ref!, now they correcly works with signed numbers
+  * bf works - tested with bf self interpreter
+  
+* Fri 17 Feb 2017
+  * added compatible with r5rs (r5rs characters) module
+  * updated license text in ol.scm
+  
+* Mon 13 Feb 2017
+  * from this point will post news without time
+  * JF2 renamed to JAF (Jump if Arity Failed)
 
   * Tue 07 Feb 2017 18:19 CET
     * released project works and works fine.
