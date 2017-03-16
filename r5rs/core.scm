@@ -995,6 +995,9 @@
 
       ;; *********************
       ;; 6.4  Control features
+      ;
+      ; This chapter describes various primitive procedures which control the flow of program
+      ; execution in special ways. The procedure? predicate is also described here.
 
       ; *ol* extension
       (define (ff? o)        ; OL extension
@@ -1017,11 +1020,14 @@
       (define (procedure? o)
          (or (function? o) (ff? o)))
 
+      (assert (procedure? car)                    ===> #t)
+      (assert (procedure? 'car)                   ===> #f)
 
       ; procedure:  (apply proc arg1 ... args)  * builtin
-      (define apply      (vm:raw TBYTECODE `(,APPLY))) ; todo: add to vm and add arity check
+      (define apply (vm:raw TBYTECODE `(,APPLY)))
 
       ; library procedure:  (map proc list1 list2 ...)
+      ; The dynamic order in which proc is applied to the elements of the lists is unspecified.
 ;      (define (map fn lst)
 ;         (if (null? lst)
 ;            '()
@@ -1034,18 +1040,18 @@
       ;  can be changed to map used (apply f (map car .)) and (map cdr .))
       ; todo: test and change map to this version
       (define map (case-lambda
-         ((f a b c) (let loop ((a a)(b b)(c c))
-                        (if (null? a)
-                           '()
-                           (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
-         ((f a b)   (let loop ((a a)(b b))
-                        (if (null? a)
-                           '()
-                           (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
          ((f a)     (let loop ((a a))
                         (if (null? a)
-                           '()
+                           #null
                            (cons (f (car a)) (loop (cdr a))))))
+         ((f a b)   (let loop ((a a)(b b))
+                        (if (null? a)
+                           #null
+                           (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
+         ((f a b c) (let loop ((a a)(b b)(c c))
+                        (if (null? a)
+                           #null
+                           (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
          (() #f)))
 
        ; library procedure:  (for-each proc list1 list2 ...)
