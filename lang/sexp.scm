@@ -217,8 +217,8 @@
       ;; #!<string>\n parses to '(hashbang <string>)
       (define get-hashbang
          (let-parses
-            ((hash (get-imm 35))
-             (bang (get-imm 33))
+            ((hash (get-imm #\#))
+             (bang (get-imm #\!))
              (line get-rest-of-line))
             (list 'quote (list 'hashbang (list->string line)))))
       

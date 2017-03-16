@@ -4,6 +4,7 @@
    (export
       (exports (r5rs core))
       (exports (r5rs srfi-1))
+      (exports (r5rs srfi-87)) ; * builtin (r5rs core)
       (exports (r5rs characters))
 
       (exports (owl list))
@@ -34,6 +35,7 @@
    (import
       (r5rs core)
       (r5rs srfi-1)
+      (r5rs srfi-87)
       (r5rs characters)
 
       (lang sexp)

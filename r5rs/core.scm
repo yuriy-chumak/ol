@@ -193,10 +193,12 @@
                ((lambda (fresh) ; let ((fresh (op.args)))
                   (case fresh . clauses)) (op . args)))
             ((case thing) #false)
+            ; http://srfi.schemers.org/srfi-87/srfi-87.html
             ((case thing ((a) => exp) . clauses)
                (if (eqv? thing (quote a))
                   (exp thing)
                   (case thing . clauses)))
+            ; http://srfi.schemers.org/srfi-87/srfi-87.html
             ((case thing ((a ...) => exp) . clauses)
                (if (memv thing (quote (a ...)))
                   (exp thing)
@@ -205,6 +207,7 @@
                (if (eqv? thing (quote a))
                   ((lambda () . body)) ; means (begin . body)
                   (case thing . clauses)))
+            ; http://srfi.schemers.org/srfi-87/srfi-87.html
             ((case thing (else => func))
                (func thing))
             ((case thing (else . body))

@@ -9,6 +9,7 @@ IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
 IF "%1"=="slim" GOTO SLIM
 IF "%1"=="js" GOTO JS
+IF "%1"=="wasm" GOTO WASM
 IF "%1"=="release" GOTO RELEASE
 IF "%1"=="tests" GOTO TESTS
 IF "%1"=="/help"  GOTO HELP
@@ -114,6 +115,12 @@ GOTO:EOF
 echo.   *** Making virtual machine on js:
 @set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
 call emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O1 --memory-init-file 0 --llvm-opts "['-O2']"
+GOTO:EOF
+
+:WASM
+echo.   *** Making virtual machine for webassembly:
+@set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
+call emcc src/slim.c src/olvm.c -o olvm.html -s ASYNCIFY=1 -s WASM=1 -O1 --memory-init-file 0 --llvm-opts "['-O2']"
 GOTO:EOF
 
 

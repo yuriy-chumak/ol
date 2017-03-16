@@ -175,13 +175,7 @@
 
 ; ====================================================================================================
 (define (gl:run context init renderer)
-(let ((context (if (string? context) (gl:Create context) context))
-      (swap-buffers (cond
-         (win32? (lambda (context)
-            (gl:SwapBuffers (ref context 1))))
-         (linux? (lambda (context)
-            (gl:SwapBuffers (ref context 1) (ref context 3))))
-         (else (runtime-error "Unknown platform" uname)))))
+(let ((context (if (string? context) (gl:Create context) context)))
 
    (gl:Enable context)
    (let ((userdata (init)))
@@ -195,7 +189,7 @@
 
       (gl:Enable context)
       (let ((userdata (if renderer (apply renderer userdata) userdata)))
-      (swap-buffers context)
+      (gl:SwapBuffers context)
       (gl:Disable context)
 
       (this userdata))))))))
