@@ -58,6 +58,9 @@ which is another way of
 
 ### Project news
 
+* Thr 16 Mar 2017
+  * map speedup and r5rs compliant fold
+
 * Wed 15 Mar 2017
   * created new repository yuriy-chumak/meala with implementation in ol of visual novel (external producer), looks like it's good instrument for creating such kind of games. additionally added sample opengl visualization. one more thing to ol gems )
 
