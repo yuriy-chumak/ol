@@ -2124,36 +2124,46 @@ loop:;
 	}
 
 	// todo: add numeric argument as "length" parameter
-	case VMRAW: { // (vm:raw type lst)
-		word *lst = (word*) A1;
+	case VMRAW: { // (vm:raw type list|size)
+		int type = uvtoi(A0);
 		int len = 0;
-		word* p = lst;
-		while (is_pair(p)) { // is proper list?
-			len++;
-			p = (word*)cdr (p);
-		}
-
-		if ((word) p == INULL && len <= MAXOBJ) { // MAXOBJ - is it required?
-			int type = uvtoi (A0);
+		// size or #null ?
+		if (is_value(A1)) {
+			len = (A1 == INULL)  ? 0
+				: (A1 == IFALSE) ? 0 // todo: is it required?
+				: uvtoi(A1);
 			word *raw = new_bytevector (type, len);
+			A2 = (word) raw;
+		}
+		// list?
+		else {
+			word *lst = (word*) A1;
 
-			unsigned char *pos;
-			pos = (unsigned char *) &raw[1];
-			p = lst;
-			while ((word) p != INULL) {
-				*pos++ = uvtoi(car(p)) & 255;
-				p = (word*)cdr(p);
+			word* p = lst;
+			while (is_pair(p)) { // check the list
+				len++;
+				p = (word*)cdr (p);
 			}
 
-			while ((word)pos % sizeof(word)) // clear the padding bytes,
-				*pos++ = 0;                  //             required!!!
-			A2 = (word)raw;
-		}
-		else
-			A2 = IFALSE;
+			if ((word) p == INULL) { // && len <= MAXOBJ) { // MAXOBJ - is it required?
+				word *raw = new_bytevector (type, len);
 
-		ip += 3; break;
-	}
+				unsigned char *pos;
+				pos = (unsigned char *) &raw[1];
+				p = lst;
+				while ((word) p != INULL) {
+					*pos++ = uvtoi(car(p)) & 255;
+					p = (word*)cdr(p);
+				}
+
+				while ((word)pos % sizeof(word)) // clear the padding bytes,
+					*pos++ = 0;                  //             required!!!
+				A2 = (word)raw;
+			}
+			else
+				A2 = IFALSE;
+		}
+		ip += 3; break; }
 
 	case RAWQ: {  // raw? a -> r : Rr = (raw? Ra)
 		word* T = (word*) A0;

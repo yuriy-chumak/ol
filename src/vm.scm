@@ -246,9 +246,11 @@
       (setq primops
          ; аллокаторы
          ; vm:raw создает бинарную последовательность, vm:new - последовательность объектов, cons - просто пару
-         (cons (vm:new TTUPLE 'vm:new   NEW 'any 1 #f)   ; (vm:new type v0 .. vn t)
-         (cons (vm:new TTUPLE 'vm:raw   RAW  2 1 vm:raw)
-         (cons (vm:new TTUPLE 'unreel   UNREEL 2 1 unreel)
+         (cons (vm:new TTUPLE 'vm:new   NEW 'any 1   #f)   ; create reference object (vm:new type v1 .. vn)
+         (cons (vm:new TTUPLE 'vm:raw   RAW  2 1 vm:raw)   ; create raw reference object (vm:raw type '(v0 .. vn))
+                                                           ; create sized raw reference object (vm:raw type size)
+         (cons (vm:new TTUPLE 'unreel   UNREEL 2 1 unreel) ; аналог vm:new, but with list as (unreel type '(v1 .. vn))
+
          (cons (vm:new TTUPLE 'vm:sys   SYS  4 1 vm:sys)
          ;cons (vm:new TTUPLE 'vm:run   RUN  ...)
 
