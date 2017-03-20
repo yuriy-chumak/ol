@@ -214,7 +214,7 @@
       (setq SIZE 36)     (setq size    (vm:raw TBYTECODE '(36 4 5    24 5))) ;; get object size (- 1)
 
       (setq SET-REF 45)  (setq set-ref  (vm:raw TBYTECODE '(45 4 5 6 7  24 7)))
-      (setq SET-REF! 10) (setq set-ref! (vm:raw TBYTECODE '(10 4 5 6    24 6))) ; todo: change to like set-ref
+      (setq SET-REF! 10) (setq set-ref! (vm:raw TBYTECODE '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
 
       (setq EQ? 54)      (setq eq?     (vm:raw TBYTECODE '(54 4 5 6  24 6)))
       (setq LESS? 44)    (setq less?   (vm:raw TBYTECODE '(44 4 5 6  24 6)))

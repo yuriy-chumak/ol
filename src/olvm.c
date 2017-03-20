@@ -2318,21 +2318,19 @@ loop:;
 
 		CHECK(is_value(A2), A2, 10001); // todo: move to silent return IFALSE
 
-		if (!is_reference(p))
-			A3 = IFALSE;
-		else
-		if (is_rawobject(*p)) {
-			if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
-				((char*)&car(p))[pos] = (char) svtoi(A2);
-			A3 = (word) p;
+		A3 = IFALSE;
+		if (is_reference(p)) {
+			if (is_rawobject(*p)) {
+				if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
+					((char*)&car(p))[pos] = (char) svtoi(A2);
+				A3 = (word) p;
+			}
+			else
+			if (pos >= 1 && pos <= hdrsize(*p)) {
+				p[pos] = A2;
+				A3 = (word) p;
+			}
 		}
-		else
-		if (pos >= 1 && pos <= hdrsize(*p)) {
-			p[pos] = A2;
-			A3 = (word) p;
-		}
-		else
-			A3 = IFALSE;
 
 		ip += 4; break; }
 
