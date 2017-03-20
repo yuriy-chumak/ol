@@ -242,6 +242,8 @@
       ;(define fxmbits     (vm:raw type-bytecode '(31 4)))
       ;(define vm:wordsize (vm:raw type-bytecode '(29 4)))
 
+      (setq vm:endianness (vm:raw TBYTECODE '(28 4)))
+
 
       (setq primops
          ; аллокаторы
@@ -293,10 +295,11 @@
          (cons (vm:new TTUPLE 'syscall  63  4 1 syscall)
 
          ; vm-specific constants
-         (cons (vm:new TTUPLE 'vm:version  62  0 1 vm:version)
-         (cons (vm:new TTUPLE 'fxmax       30  0 1 fxmax)   ; todo: rename :may be vm:aimv - "atomic integer maximal value"?
-         (cons (vm:new TTUPLE 'fxmbits     31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
-         (cons (vm:new TTUPLE 'vm:wordsize 29  0 1 vm:wordsize)
+         (cons (vm:new TTUPLE 'vm:version    62  0 1 vm:version)
+         (cons (vm:new TTUPLE 'fxmax         30  0 1 fxmax)   ; todo: rename :may be vm:aimv - "atomic integer maximal value"?
+         (cons (vm:new TTUPLE 'fxmbits       31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
+         (cons (vm:new TTUPLE 'vm:wordsize   29  0 1 vm:wordsize)
+         (cons (vm:new TTUPLE 'vm:endianness 28  0 1 vm:endianness)
 
          ; todo: add macro for call-with-tuple in r5rs
          (cons (vm:new TTUPLE 'tuple-apply 32 1 #false tuple-apply)
@@ -309,7 +312,7 @@
          (cons (vm:new TTUPLE 'ff:toggle  46 1  1  ff:toggle)
          (cons (vm:new TTUPLE 'ff:red?    41 1  1  ff:red?)
          (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
-         #null)))))))))))))))))))))))))))))))))))))))
+         #null))))))))))))))))))))))))))))))))))))))))
       ;(define *primitives* primops)
 
 
