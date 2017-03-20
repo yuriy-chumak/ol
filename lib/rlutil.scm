@@ -113,8 +113,8 @@
             (SetConsoleCursorPosition   (dlsym kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-int+)))
       (lambda ()
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
-               (csbi (vm:raw type-vector-raw (repeat 0 22))) ; CONSOLE_SCREEN_BUFFER_INFO
-               (cCharsWritten (vm:raw type-vector-raw '(0 0 0 0)))) ; DWORD
+               (csbi (vm:raw type-vector-raw 22)) ; CONSOLE_SCREEN_BUFFER_INFO
+               (cCharsWritten (vm:raw type-vector-raw 4))) ; DWORD
             (GetConsoleScreenBufferInfo hConsole csbi)
             (let*((dwSizeX (+ (ref csbi 0) (<< (ref csbi 1) 8)))
                   (dwSizeY (+ (ref csbi 2) (<< (ref csbi 3) 8)))
@@ -152,7 +152,7 @@
             (SetConsoleTextAttribute (dlsym kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
       (lambda (color)
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
-               (csbi (vm:raw type-vector-raw (repeat 0 22)))) ; CONSOLE_SCREEN_BUFFER_INFO
+               (csbi (vm:raw type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
             (GetConsoleScreenBufferInfo hConsole csbi)
             (let ((wAttrib (+ (ref csbi 4) (<< (ref csbi 5) 8))))
                (SetConsoleTextAttribute hConsole (bor (band wAttrib #xFFF0) color)))))))
@@ -169,7 +169,7 @@
             (SetConsoleTextAttribute (dlsym kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
       (lambda (color)
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
-               (csbi (vm:raw type-vector-raw (repeat 0 22)))) ; CONSOLE_SCREEN_BUFFER_INFO
+               (csbi (vm:raw type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
             (GetConsoleScreenBufferInfo hConsole csbi)
             (let ((wAttrib (+ (ref csbi 4) (<< (ref csbi 5) 8))))
                (SetConsoleTextAttribute hConsole (bor (band wAttrib #xFF0F) (<< color 4))))))))
@@ -187,7 +187,7 @@
             (SetConsoleTextAttribute (dlsym kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+))
 
             (hConsole (GetStdHandle STD_OUTPUT_HANDLE))
-            (csbi (vm:raw type-vector-raw (repeat 0 22)))) ; CONSOLE_SCREEN_BUFFER_INFO
+            (csbi (vm:raw type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
          (GetConsoleScreenBufferInfo hConsole csbi)
       (let ((wAttrib (+ (ref csbi 4) (<< (ref csbi 5) 8))))
       (lambda ()
