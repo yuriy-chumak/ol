@@ -3210,22 +3210,22 @@ loop:;
 					si.dwFlags |= STARTF_USESTDHANDLES;
 					if (is_pair(c)) {
 						if (is_port(car(c)))
-							si.hStdInput = port(c);
+							si.hStdInput = (HANDLE) port(c);
 						c = cdr(c);
 					}
 					if (is_pair(c)) {
 						if (is_port(car(c)))
-							si.hStdOutput = port(c);
+							si.hStdOutput = (HANDLE) port(c);
 						c = cdr(c);
 					}
 					if (is_pair(c)) {
 						if (is_port(car(c)))
-							si.hStdError = port(c);
+							si.hStdError = (HANDLE) port(c);
 						c = cdr(c);
 					}
 
 					// черновой вариант
-					char* args = &car (fp);
+					char* args = (char*) &car (fp);
 					// todo: add length check!
 					sprintf(args, "\"%s\"", command);
 
@@ -3260,7 +3260,7 @@ loop:;
 			WaitForSingleObject(processHandle, INFINITE);
 			CloseHandle(processHandle);
 
-			result = ITRUE;
+			result = (word*) ITRUE;
 			#endif
 			break;
 		}

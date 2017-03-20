@@ -933,13 +933,13 @@ word* pinvoke(OL* self, word* arguments)
 			int portfd = port(arg);
 			switch (portfd) {
 			case 0: // stdin
-				args[i] = stdin;
+				args[i] = (word) stdin;
 				break;
 			case 1: // stdout
-				args[i] = stdout;
+				args[i] = (word) stdout;
 				break;
 			case 2: // stderr
-				args[i] = stderr;
+				args[i] = (word) stderr;
 				break;
 			default:
 				args[i] = portfd;
