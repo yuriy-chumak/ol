@@ -1464,7 +1464,7 @@ struct ol_t
 	struct heap_t heap; // must be first member
 	word max_heap_size; // max heap size in MB
 
-	// вызвать GC если в памяти мало места в КБ
+	// вызвать GC если в памяти мало места в словах
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
 	int (*gc)(OL* ol, int kb);
@@ -2132,6 +2132,16 @@ loop:;
 			len = (A1 == INULL)  ? 0
 				: (A1 == IFALSE) ? 0 // todo: is it required?
 				: uvtoi(A1);
+			// if there are no place for raw object:
+			if (len / sizeof(word) > heap->end - fp) {
+				int sp = ip - (unsigned char*)this;
+
+				heap->fp = fp; ol->this = this;
+				ol->gc(ol, len / sizeof(word));
+				fp = heap->fp; this = ol->this;
+
+				ip = (unsigned char*)this + sp;
+			}
 			word *raw = new_bytevector (type, len);
 			A2 = (word) raw;
 		}
@@ -2145,7 +2155,13 @@ loop:;
 				p = (word*)cdr (p);
 			}
 
-			if ((word) p == INULL) { // && len <= MAXOBJ) { // MAXOBJ - is it required?
+			if ((word) p == INULL) {
+				//if (len / sizeof(word) > heap->end - fp) {
+				//	fprintf(stderr, "*** gc!\n");
+				//	heap->fp = fp; ol->this = this;
+				//	ol->gc(ol, len / sizeof(word));
+				//	fp = heap->fp; this = ol->this;
+				//}
 				word *raw = new_bytevector (type, len);
 
 				unsigned char *pos;
