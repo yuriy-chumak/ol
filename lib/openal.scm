@@ -4,6 +4,8 @@
   (owl parse) (lang sexp))
 
  (export
+      alGetError
+
       alcOpenDevice
       alcCreateContext
       alcMakeContextCurrent
@@ -15,6 +17,9 @@
       alBufferData
 
       alSourcePlay
+
+      ; Source:
+      AL_BUFFER
    )
 
 (begin
@@ -55,14 +60,17 @@
 
 
 ; ===================================================
+   (define alGetError   (dlsym $ type-int+ "alGetError"))
+
    (define alcOpenDevice   (dlsym $ type-vptr "alcOpenDevice"  type-vptr))
    (define alcCreateContext (dlsym $ type-vptr "alcCreateContext" type-vptr type-vptr))
-   (define alcMakeContextCurrent (dlsym $ type-vptr "alcMakeContextCurrent" type-vptr))
+   (define alcMakeContextCurrent (dlsym $ type-int+ "alcMakeContextCurrent" type-vptr))
 
    (define alGenSources (dlsym $ type-vptr "alGenSources" type-int+ ALuint*))
    (define alGenBuffers (dlsym $ type-vptr "alGenBuffers" type-int+ ALuint*))
 
    (define alSourcei (dlsym $ type-void "alSourcei" type-int+ type-int+ type-int+))
+     (define AL_BUFFER      #x1009)
    (define alBufferData (dlsym $ type-void "alBufferData" type-int+ type-int+ type-vector-raw type-int+ type-int+))
 
    (define alSourcePlay (dlsym $ type-void "alSourcePlay" type-int+))
@@ -83,19 +91,14 @@
 (define context (alcCreateContext device null))
 (alcMakeContextCurrent context)
 
-(define source (vm:raw type-vector-raw '(0)))
-(alGenSources 1 source)
-(define buffer (vm:raw type-vector-raw '(0)))
+(define buffer (vm:raw type-vector-raw 4))
 (alGenBuffers 1 buffer)
-
-(print "source id: " source)
 (print "buffer id: " buffer)
-
 
 
       ; .snd parser:
       (define (syntax-fail pos info lst)
-         (print "http parser fail: " info)
+         (print "snd heared fail: " info)
          (print ">>> " pos "-" (runes->string lst) " <<<")
          '(() (())))
 
@@ -105,97 +108,98 @@
                       (b get-byte)
                       (c get-byte)
                       (d get-byte))
-            (+ (<< (+ (<< (+ (<< a 8) b) 8) c) 8) d)))
+            (+ (<< a 24)
+               (<< b 16)
+               (<< c  8)
+               d)))
 
 
       (define snd-parser
+         ; http://sox.sourceforge.net/AudioFormats-11.html
+         ; 11.2 The NeXT/Sun audio file format
          (let-parses (
-               (header get-int32-big-endian)
+               (header      get-int32-big-endian) ; ".snd", #x2E736E64
+               ; todo: add parsing depend of field "header"
                (data-offset get-int32-big-endian)
-               (len get-int32-big-endian)
-               (encoding get-int32-big-endian)
-               (sample-frequency get-int32-big-endian)
-               (num-channels get-int32-big-endian)
-               (data (get-greedy* get-byte)))
-
-            (tuple data-offset len encoding sample-frequency num-channels data))) ;(vm:raw type-vector-raw data))))
+               (data-size   get-int32-big-endian)
+               (encoding    get-int32-big-endian)
+               (sample-rate get-int32-big-endian)
+               (channels    get-int32-big-endian))
+            (tuple data-offset data-size encoding sample-rate channels)))
 
 
 (define exp_lut (tuple 0 132 396 924 1980 4092 8316 16764))
+;(define (+1 x) (+ x 1))
 
-(let ((file (file->exp-stream "waveform.snd" #f snd-parser syntax-fail)))
-   (print "data offset: " (ref (car file) 1))
-   (print "stream len: " (ref (car file) 2))
-   (print "encoding: " (ref (car file) 3))
-   (print "sample-frequency: " (ref (car file) 4))
-   (print "num-channels: " (ref (car file) 5))
-   (print (type (ref (car file) 6)))
+(snd-parser (port->byte-stream (open-input-file "waveform.snd"))
+   ; ok
+   (lambda (in backtrack file pos)
+      (print "data offset: " (ref file 1))
+      (print "stream len: "  (ref file 2))
+      (print "encoding: "    (ref file 3))
+      (print "sample-rate: " (ref file 4))
+      (print "channels: "    (ref file 5))
 
-   ; AU_ULAW_8:
-   ; (bits-per-sample 16)
+      ; if encoding = AU_ULAW_8 then bits-per-sample = 16 and codec = _alutCodecULaw
 
-   (let ((mulaw2linear
-      (map (lambda (mulawbyte)
-         (let*((mulawbyte (bxor mulawbyte #xFF))
-               (sign (band mulawbyte #x80))
-               (exponent (band (>> mulawbyte 4) #x07))
-               (mantissa (band mulawbyte #x0F))
+      (let*((data-offset (ref file 1))
+            (data-size   (ref file 2))
+            ;in (ldrop data (- data-offset (* 4 5)))
+            (data (vm:raw type-vector-raw (* data-size 2))))
 
-               (sample (+
-                          (ref exp_lut (+ exponent 1))
-                          (<< mantissa (+ exponent 3)))))
-            (if (eq? sign 0)
-               sample
-               (bor #x80 (- sample 1)))))
-         (ref (car file) 6))))
+         ; let's prepare the data:
+         ; mulaw2linear:
+         (let loop ((i 0) (j 0) (in in))
+         (if (less? i data-size)
+            (cond
+               ((null? in) in)
+               ((pair? in)
+                  (let*((byte (bxor (car in) #xFF))  ; neg byte
+                        (sign (band byte #x80))
+                        (exponent (band (>> byte 4) #x07))
+                        (mantissa (band byte #x0F))
+                        (sample (+
+                           (ref exp_lut (+ exponent 1))
+                           (<< mantissa (+ exponent 3))))
+                        (sample (if (eq? sign 0)
+                           sample
+                           (bxor (- sample 1 )#xFFFF)))) ; binary -(short)sample
 
+                     ;(print "byte: " byte)
+                     ;(print "sign: " sign)
+                     ;(print "exponent: " exponent)
+                     ;(print "mantissa: " mantissa)
+                     ;(print "sample: " sample)
 
+                     (set-ref! data j (band sample #xFF))
+                     (set-ref! data (+ j 1) (>> sample 8))
+                     (loop (+ i 1) (+ j 2) (cdr in))))
+               (else ; function?
+                  (loop i j (force in))))))
+     
+         ;(print data)
+         (print (size data))
+         (print (ref file 4))
 
-         (let ((data (vm:raw type-vector-raw (reverse
-                          (fold (lambda (state x)
-                             (cons (band x #xFF)
-                             (cons (>> x 8)
-                             state))) #null mulaw2linear)))))
+         (alBufferData (ref buffer 0) AL_FORMAT_MONO16  data  (size data)  (ref file 4))
+         (print "buffer-data error: " (alGetError))
+      #t))
 
-;             (print (vm:raw type-vector-raw buffer))
-             (print "buffer id: " (ref buffer 0))
-             ;(print "data: " data)
-             (print "data size: " (size data))
-             (print "len: " (ref (car file) 2))
-             (print "frequency: " (ref (car file) 4))
-             (alBufferData (ref buffer 0) AL_FORMAT_MONO16  data  (size data)  (ref (car file) 4))
-         ;alSetData
+   ; fail
+   (λ (pos info)
+      (print "fail"))
+   0)
 
-         )
-      #t)
+(define source (vm:raw type-vector-raw 4))
+(alGenSources 1 source)
+(print "source id: " source)
 
+(alSourcei (ref source 0) AL_BUFFER (ref buffer 0))
 
-   (print "source id: " (ref source 0))
-   (alSourcePlay (ref source 0))
-      ;...
+(alSourcePlay (ref source 0))
+(print "play error: " (alGetError))
 
-;   ; we got codec 1, let's transform it!
-;   ;mulaw2linear
-;static int16_t
-;mulaw2linear (uint8_t mulawbyte)
-;  static const int16_t exp_lut[8] = {
-;    0, 132, 396, 924, 1980, 4092, 8316, 16764
-;  };
-;  int16_t sign, exponent, mantissa, sample;
-;  mulawbyte = ~mulawbyte;
-;  sign = (mulawbyte & 0x80);
-;  exponent = (mulawbyte >> 4) & 0x07;
-;  mantissa = mulawbyte & 0x0F;
-;  sample = exp_lut[exponent] + (mantissa << (exponent + 3));
-;  if (sign != 0)
-;    {
-;      sample = -sample;
-;    }
-;  return sample;
-
-
-
-)
+(display "> ")
 (read)
 
 ;
