@@ -1,20 +1,27 @@
-#!/usr/bin/ol
-
 (define-library (lib openal)
  (import
   (otus lisp)
   (OpenAL version-1-1)
-  (otus pinvoke)
-  (owl parse) (lang sexp) (owl lazy))
+  (owl parse) (lang sexp))
 
  (export
-    (exports (OpenAL version-1-1))
+   (exports (OpenAL version-1-1))
 
       ; High level methods
       al:decode-fd
+      al:decode-file
    )
 
 (begin
+   (define AU_ULAW_8   1) ;  8-bit ISDN u-law
+   (define AU_PCM_8    2) ;  8-bit linear PCM (signed)
+   (define AU_PCM_16   3) ; 16-bit linear PCM (signed, big-endian)
+   (define AU_PCM_24   4) ; 24-bit linear PCM
+   (define AU_PCM_32   5) ; 32-bit linear PCM
+   (define AU_FLOAT_32 6) ; 32-bit IEEE floating point
+   (define AU_FLOAT_64 7) ; 64-bit IEEE floating point
+   (define AU_ALAW_8  27) ;  8-bit ISDN a-law
+
 
    ; al:decode-fd
    (define (invalid-format pos info lst)
@@ -96,8 +103,8 @@
                         (loop i j (force in))))))
            
                ;(print data)
-               (print (size data))
-               (print (ref file 4))
+               ;(print (size data))
+               ;(print (ref file 4))
       
                (alBufferData (ref buffer 0)
                   (case (ref file 5) ; channels count
@@ -111,38 +118,7 @@
             (print "fail"))
          0))
 
+   (define (al:decode-file buffer filename)
+      (al:decode-fd buffer (open-input-file filename)))
+
 ))
-
-; =================================================================================
-
-(import (lib openal))
-(import (owl parse) (lang sexp) (owl lazy))
-
-(define device (alcOpenDevice null))
-(define context (alcCreateContext device null))
-(alcMakeContextCurrent context)
-
-(print "OpenAL version: " (alGetString AL_VERSION))
-(print "OpenAL vendor: " (alGetString AL_VENDOR))
-(print "OpenAL renderer: " (alGetString AL_RENDERER))
-;(print (alGetString AL_EXTENSIONS))
-
-
-(define buffer (vm:raw type-vector-raw 4))
-(alGenBuffers 1 buffer)
-(print "buffer id: " buffer)
-
-(al:decode-fd buffer (open-input-file "waveform.snd"))
-
-(define source (vm:raw type-vector-raw 4))
-(alGenSources 1 source)
-(print "source id: " source)
-
-(alSourcei (ref source 0) AL_BUFFER (ref buffer 0))
-(alSourcei (ref source 0) AL_LOOPING 1)
-
-(alSourcePlay (ref source 0))
-(print "play error: " (alGetError))
-
-(display "> ")
-(read)
