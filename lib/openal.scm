@@ -76,31 +76,48 @@
       
                ; let's prepare the data:
                ; todo:
-               ;(case (ref file 3) ; encoding
-               ;   (1
+               (case (ref file 3) ; encoding
+                  ;mu-law
+                  (AU_ULAW_8 ; mulaw2linear:
+                     (let loop ((i 0) (j 0) (in in))
+                     (if (less? i data-size)
+                        (cond
+                           ((null? in) in)
+                           ((pair? in)
+                              (let*((byte (bxor (car in) #xFF))  ; neg byte
+                                    (sign (band byte #x80))
+                                    (exponent (band (>> byte 4) #x07))
+                                    (mantissa (band byte #x0F))
+                                    (sample (+
+                                       (ref exp_lut (+ exponent 1))
+                                       (<< mantissa (+ exponent 3))))
+                                    (sample (if (eq? sign 0)
+                                       sample
+                                       (bxor (- sample 1 )#xFFFF)))) ; binary -(short)sample
       
-               ; mulaw2linear:
-               (let loop ((i 0) (j 0) (in in))
-               (if (less? i data-size)
-                  (cond
-                     ((null? in) in)
-                     ((pair? in)
-                        (let*((byte (bxor (car in) #xFF))  ; neg byte
-                              (sign (band byte #x80))
-                              (exponent (band (>> byte 4) #x07))
-                              (mantissa (band byte #x0F))
-                              (sample (+
-                                 (ref exp_lut (+ exponent 1))
-                                 (<< mantissa (+ exponent 3))))
-                              (sample (if (eq? sign 0)
-                                 sample
-                                 (bxor (- sample 1 )#xFFFF)))) ; binary -(short)sample
+                                 (set-ref! data j (band sample #xFF))
+                                 (set-ref! data (+ j 1) (>> sample 8))
+                                 (loop (+ i 1) (+ j 2) (cdr in))))
+                           (else ; function?
+                              (loop i j (force in)))))))
+                  ; pcm-8s
+                  (AU_PCM_8
+                     (let loop ((i 0) (in in))
+                     (if (less? i data-size)
+                        (cond
+                           ((null? in) in)
+                           ((pair? in)
+                              (let*((byte (car in))
+                                    (sample (+ byte 128)))
       
-                           (set-ref! data j (band sample #xFF))
-                           (set-ref! data (+ j 1) (>> sample 8))
-                           (loop (+ i 1) (+ j 2) (cdr in))))
-                     (else ; function?
-                        (loop i j (force in))))))
+                                 (set-ref! data i (band sample #xFF)) ; band can be safely removed
+                                 (loop (+ i 1) (cdr in))))
+                           (else ; function?
+                              (loop i (force in)))))))
+                     
+
+                  (else
+                     (runtime-error "Unknown snd format" (ref file 3))))
            
                ;(print data)
                ;(print (size data))
