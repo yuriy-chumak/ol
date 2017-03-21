@@ -66,21 +66,21 @@
             (print "encoding: "    (ref file 3))
             (print "sample-rate: " (ref file 4))
             (print "channels: "    (ref file 5))
-      
+
             ; if encoding = AU_ULAW_8 then bits-per-sample = 16 and codec = _alutCodecULaw
-      
+
             (let*((data-offset (ref file 1))
                   (data-size   (ref file 2))
                   (in (ldrop in (- data-offset 24)))
                   (data (vm:raw type-vector-raw (* data-size 2))))
-      
+
                ; let's prepare the data:
                ; todo:
                (case (ref file 3) ; encoding
-                  ;mu-law
-                  (AU_ULAW_8 ; mulaw2linear:
+                  ; mu-law
+                  (AU_ULAW_8
                      (let loop ((i 0) (j 0) (in in))
-                     (if (less? i data-size)
+                     (if (less? i data-size) ; sanity check
                         (cond
                            ((null? in) in)
                            ((pair? in)
@@ -93,13 +93,43 @@
                                        (<< mantissa (+ exponent 3))))
                                     (sample (if (eq? sign 0)
                                        sample
-                                       (bxor (- sample 1 )#xFFFF)))) ; binary -(short)sample
-      
+                                       (bxor (- sample 1) #xFFFF)))) ; binary -(short)sample
+
                                  (set-ref! data j (band sample #xFF))
                                  (set-ref! data (+ j 1) (>> sample 8))
                                  (loop (+ i 1) (+ j 2) (cdr in))))
                            (else ; function?
                               (loop i j (force in)))))))
+
+                  ; a-law
+                  (AU_ALAW_8
+                     (let loop ((i 0) (j 0) (in in))
+                     (if (less? i data-size) ; sanity check
+                        (cond
+                           ((null? in) in)
+                           ((pair? in)
+                              (let*((byte (bxor (car in) #x55))
+                                    (sign (band byte #x80))
+                                    (t (<< (band byte #x0F) 4))
+                                    (seg (>> (band byte #x70) 4))
+                                    (sample
+                                       (case seg
+                                          (0
+                                             (+ t 8))
+                                          (1
+                                             (+ t #x108))
+                                          (else
+                                             (<< (+ t #x108) (- seg 1)))))
+                                    (sample (if (eq? sign 0)
+                                       sample
+                                       (bxor (- sample 1) #xFFFF)))) ; binary -(short)sample
+
+                                 (set-ref! data j (band sample #xFF))
+                                 (set-ref! data (+ j 1) (>> sample 8))
+                                 (loop (+ i 1) (+ j 2) (cdr in))))
+                           (else ; function?
+                              (loop i j (force in)))))))
+
                   ; pcm-8s
                   (AU_PCM_8
                      (let loop ((i 0) (in in))
@@ -109,12 +139,11 @@
                            ((pair? in)
                               (let*((byte (car in))
                                     (sample (+ byte 128)))
-      
+
                                  (set-ref! data i (band sample #xFF)) ; band can be safely removed
                                  (loop (+ i 1) (cdr in))))
                            (else ; function?
                               (loop i (force in)))))))
-                     
 
                   (else
                      (runtime-error "Unknown snd format" (ref file 3))))
