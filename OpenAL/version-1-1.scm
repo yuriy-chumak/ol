@@ -14,20 +14,28 @@
       AL_LIBRARY  ;internal variable
 
       ; AL base types
-      ;cl_char     ;   signed  8-bit
-      ;cl_uchar    ; unsigned  8-bit
-      ;cl_short    ;   signed 16-bit
-      ;cl_ushort   ; unsigned 16-bit
-      ;cl_int      ;   signed 32-bit
-      ;cl_uint     ; unsigned 32-bit
-      ;cl_long     ;   signed 64-bit
-      ;cl_ulong    ; unsigned 64-bit
+      ;ALboolean   ;  boolean  8-bit
+      ;ALchar      ;     char  8-bit
+      ;ALbyte      ;   signed  8-bit
+      ;ALubyte     ; unsigned  8-bit
+      ;ALshort     ;   signed 16-bit
+      ;ALushort    ; unsigned 16-bit
+      ;ALint       ;   signed 32-bit
+      ;ALuint      ; unsigned 32-bit
+      ;ALsizei     ; unsigned 32-bit
+      ;ALenum      ; unsigned 32-bit
       ;
-      ;cl_half     ; unsigned 16-bit
-      ;cl_float    ; floating 32-bit
-      ;cl_double   ; floating 64-bit
+      ;ALfloat     ; floating 32-bit
+      ;ALdouble    ; floating 64-bit
+      ;ALvoid
 
       alGetError
+
+      alGetString
+         AL_VENDOR
+         AL_VERSION
+         AL_RENDERER
+         AL_EXTENSIONS
 
       alcOpenDevice
       alcCreateContext
@@ -37,7 +45,11 @@
       alGenBuffers
 
       alSourcei
+         AL_BUFFER AL_LOOPING
+
       alBufferData
+         AL_FORMAT_MONO8 AL_FORMAT_MONO16
+         AL_FORMAT_STEREO8 AL_FORMAT_STEREO16
 
       alSourcePlay
 
@@ -59,13 +71,13 @@
 ;   (define type-int64 44)
 
    (define ALboolean type-fix+)
-   (define ALchar    type-fix+)
+   (define ALchar    type-fix+)  (define  ALchar* type-string)
    (define ALbyte    type-fix+)
    (define ALubyte   type-fix+) ;unsigned
    (define ALshort   type-fix+)
    (define ALushort  type-fix+) ;unsigned
    (define ALint     type-int+) ; signed 32-bit 2's complement integer
-   (define ALuint    type-int+)   (define ALuint*  type-vector-raw)
+   (define ALuint    type-int+)  (define ALuint*  type-vector-raw)
    (define ALsizei   type-int+) ; non-negative 32-bit binary integer size
    (define ALenum    type-int+) ; enumerated 32-bit value
    (define ALfloat   type-float)  ; 32-bit IEEE754 floating-point
@@ -81,7 +93,7 @@
    (define AL_LIBRARY (c-string
       (cond
          ((string-ci=? (ref uname 1) "Windows") "openal32")
-         ((string-ci=? (ref uname 1) "Linux")   "libAL.so")
+         ((string-ci=? (ref uname 1) "Linux")   "libopenal.so.1")
          ;"HP-UX"
          ;"SunOS"
          ;"Darwin"
@@ -97,15 +109,43 @@
       (runtime-error "Can't load OpenAL library")))
 
    ; ======================================================
+   (define AL_INVALID -1)
    (define AL_NONE 0)
    (define AL_FALSE 0)
    (define AL_TRUE 1)
 
-   ; AL_SOURCE_RELATIVE
-   ; ...
-   (define AL_LOOPING #x1007)
-   ; ...
-   ;
+   (define AL_SOURCE_RELATIVE  #x0202)
+   (define AL_CONE_INNER_ANGLE #x1001) ; in degrees
+   (define AL_CONE_OUTER_ANGLE #x1002) ; in degrees
+   (define AL_PITCH            #x1003) ; f, fv
+   (define AL_POSITION         #x1004)
+   (define AL_DIRECTION        #x1005)
+   (define AL_VELOCITY         #x1006)
+   (define AL_LOOPING          #x1007)
+   (define AL_BUFFER           #x1009)
+   (define AL_GAIN             #x100A) ; f, fv
+   (define AL_MIN_GAIN         #x100D)
+   (define AL_MAX_GAIN         #x100E)
+   (define AL_ORIENTATION      #x100F)
+   (define AL_CHANNEL_MASK     #x3000)
+
+   (define AL_SOURCE_STATE     #x1010) ; i, iv
+   (define AL_INITIAL          #x1011) ; ?
+   (define AL_PLAYING          #x1012) ; ?
+   (define AL_PAUSED           #x1013) ; ?
+   (define AL_STOPPED          #x1014) ; ?
+
+   (define AL_BUFFERS_QUEUED   #x1015)
+   (define AL_BUFFERS_PROCESSED #x1016)
+
+   (define AL_SEC_OFFSET       #x1024)
+   (define AL_SAMPLE_OFFSET    #x1025)
+   (define AL_BYTE_OFFSET      #x1026)
+
+;   (define AL_SOURCE_TYPE
+;   (define AL_STATIC
+;   (define AL_STREAMING
+;   (define AL_UNDETERMINED
 
    ; ...
    (define AU_ULAW_8 1)   ; 8-bit ISDN u-law
@@ -126,7 +166,11 @@
    ; alIsEnabled
 
    ; State retrieval
-   ; alGetString
+   (define alGetString (dlsym $ ALchar* "alGetString" ALenum))
+      (define AL_VENDOR                                 #xB001)
+      (define AL_VERSION                                #xB002)
+      (define AL_RENDERER                               #xB003)
+      (define AL_EXTENSIONS                             #xB004)
    ; alGetBooleanv
    ; alGetIntegerv
    ; alGetFloatv
@@ -158,6 +202,7 @@
    ; * Velocity     AL_VELOCITY     ALfloat[3]
    ; * Orientation  AL_ORIENTATION  ALfloat[6] (Forward then Up vectors)
    ; alListenerf
+      ; AL_GAIN AL_POSITION AL_VELOCITY AL_ORIENTATION
    ; alListener3f
    ; alListenerfv
    ; alListeneri
@@ -210,12 +255,16 @@
    ;alSource3f
    ;alSourcefv
    (define alSourcei (dlsym $ type-void "alSourcei" type-int+ type-int+ type-int+))
+
    ;alSource3i
    ;alSourceiv
 
+
    ;alGetSourcef
+      ; AL_GAIN ...
    ;alGetSource3f
    ;alGetSourcefv
+      ; AL_POSITION ...
    ;alGetSourcei
    ;alGetSource3i
    ;alGetSourceiv
@@ -258,6 +307,11 @@
             ALvoid* #|data|#
             ALsizei #|size|#
             ALsizei #|freq|#))
+      ; format:
+      (define AL_FORMAT_MONO8    #x1100)
+      (define AL_FORMAT_MONO16   #x1101)
+      (define AL_FORMAT_STEREO8  #x1102)
+      (define AL_FORMAT_STEREO16 #x1103)
 
    ;alBufferf
    ;alBuffer3f
@@ -272,6 +326,7 @@
    ;alGetBufferi
    ;alGetBuffer3i
    ;alGetBufferiv
+      ; AL_FREQUENCY AL_BITS AL_CHANNELS AL_SIZE AL_DATA
 
    ; Global Parameters
    ;alDopplerFactor

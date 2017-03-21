@@ -1,3 +1,5 @@
+#!/usr/bin/ol
+
 (define-library (lib openal)
  (import
   (otus lisp)
@@ -47,12 +49,6 @@
          (tuple data-offset data-size encoding sample-rate channels)))
 
    (define exp_lut (tuple 0 132 396 924 1980 4092 8316 16764))
-
-   (define AL_FORMAT_MONO8    #x1100)
-   (define AL_FORMAT_MONO16   #x1101)
-   (define AL_FORMAT_STEREO8  #x1102)
-   (define AL_FORMAT_STEREO16 #x1103)
-
 
    (define (al:decode-fd buffer fd)
       (snd-parser (port->byte-stream fd)
@@ -126,11 +122,17 @@
 (define context (alcCreateContext device null))
 (alcMakeContextCurrent context)
 
+(print "OpenAL version: " (alGetString AL_VERSION))
+(print "OpenAL vendor: " (alGetString AL_VENDOR))
+(print "OpenAL renderer: " (alGetString AL_RENDERER))
+;(print (alGetString AL_EXTENSIONS))
+
+
 (define buffer (vm:raw type-vector-raw 4))
 (alGenBuffers 1 buffer)
 (print "buffer id: " buffer)
 
-(al:decode-fd buffer (open-input-file "cave.snd"))
+(al:decode-fd buffer (open-input-file "waveform.snd"))
 
 (define source (vm:raw type-vector-raw 4))
 (alGenSources 1 source)
