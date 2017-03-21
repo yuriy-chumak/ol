@@ -15,10 +15,10 @@
 (begin
 
    ; al:decode-fd
-   (define (syntax-fail pos info lst)
+   (define (invalid-format pos info lst)
       (print "snd heared fail: " info)
       (print ">>> " pos "-" (runes->string lst) " <<<")
-      '(() (())))
+      #f) ;'(() (())))
 
 
    (define get-int32-big-endian
