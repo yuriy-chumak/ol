@@ -23,9 +23,11 @@
       MOVE REFI MOVE2
 
       ; types
+      ; TATOMIC+ TATOMIC- TINTEGER+ TINTEGER-
       TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX
       TPAIR TTUPLE TSTRING TSYMBOL
-      TBYTECODE TVPTR
+      TBYTECODE TPROCEDURE TCLOSURE
+      TVPTR
 
       ; primitives
       NEW RAW
@@ -107,9 +109,9 @@
       (setq type-rlist-node       14) ; reference
       (setq type-vector-dispatch  15) ; reference
 
-      (setq TBYTECODE         16) ; reference, raw     ; declared functions (?)
-      (setq type-proc             17) ; reference          ; from otus lisp bin (?)
-      (setq type-clos             18) ; reference          ; from (import smth) (?)
+      (setq TBYTECODE         16) ; reference, raw bytecode
+      (setq TPROCEDURE        17) ; reference, pure function
+      (setq TCLOSURE          18) ; reference, function with closures
 
       (setq type-vector-raw       19) ; reference, raw     ; see also TBVEC in c/ovm.c
 

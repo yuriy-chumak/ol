@@ -734,9 +734,9 @@
       (define type-rlist-node       14) ; reference
       (define type-vector-dispatch  15) ; reference
 
-      (define type-bytecode         TBYTECODE) ; reference, raw     ; declared functions (?)
-      (define type-proc             17) ; reference          ; from otus lisp bin (?)
-      (define type-clos             18) ; reference          ; from (import smth) (?)
+      (define type-bytecode         TBYTECODE)  ; reference, raw bytecode
+      (define type-proc             TPROCEDURE) ; reference, pure function
+      (define type-clos             TCLOSURE)   ; reference, function with closure(s)
 
       (define type-vector-raw       19) ; reference, raw     ; see also TBVEC in c/ovm.c
 
