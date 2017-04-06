@@ -75,20 +75,21 @@ header .popup {
  <body>
    <div class="wrapper">
       <header>
-         <h1>{{ page.title }}</h1>
-         <p><span id="main"></span>
-         <script>$("#main").html(
-            "(<a href='?ru'>rus</a>)"+
-            "(<a href='?en'>eng</a>)"
-         )
-         </script>
-         <br><small>This program is distributed under <a href="http://www.gnu.org/licenses/">GPL v2</a> licence.</small></p>
+         <h1><a href="/ol/">Ol</a> /Otus Lisp/</h1>
+         <h3>Otus Lisp is a purely* functional dialect of small, embeddable and crossplatform Lisp.</h3>
+         <p class="view">
+            <span>
+               <a href="https://github.com/yuriy-chumak/ol" target="_blank">
+               <img src="assets/view-github-project-page.svg" alt="View GitHub project page"></a>
+            </span>
+            <span style="float: right;">
+               <a href="https://gitter.im/otus-lisp/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
+               <img src="assets/chat-on-gitter.svg" alt="Live Chat"></a>
+            </span>
 
-         <p class="view"><a href="https://github.com/yuriy-chumak/ol" target="_blank">View GitHub project page</a></p>
-         <p>You can leave your opinions, project bugs, feature requests and more directly at
-             <a href="https://github.com/yuriy-chumak/ol/issues">the Issues page</a>
-            or join the live chat at <a href="https://gitter.im/otus-lisp/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge">
-               <img src="https://badges.gitter.im/otus-lisp/Lobby.svg"></a>
+         <p class="view">
+            Issues tracker can be found directly at
+             <a href="https://github.com/yuriy-chumak/ol/issues">the Issues page</a>.
 
          <p class="view">
          Remote <a href="#about-terminal" style="text-decoration: none; border-bottom: 1px dashed; cursor: help;">terminal</a> session:
@@ -135,10 +136,11 @@ header .popup {
                <p>
                   Желаю удачи в успешном знакомстве с проектом!</p>
 
-               <p><small style="float: right">Copyright (c) 2015,2016 Yuriy Chumak</small></p>
+               <p><small style="float: right">Copyright (c) 2015-2017 Yuriy Chumak</small></p>
             </div>
          </div>
-         <small style="float: right">must be available <a href="http://get.adobe.com/flashplayer/">abobe flash plugin</a> for now.&nbsp;</small>
+         <small style="float: right;">must be available <a href="http://get.adobe.com/flashplayer/">abobe flash plugin</a> for now.&nbsp;</small>
+
       </header>
       <!-- ====================================================================================== -->
       <section id="content">
@@ -148,9 +150,6 @@ header .popup {
       </section>
       <!-- ====================================================================================== -->
       <footer style="text-align:right">
-         <br><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://github.com/orderedlist" target="_blank">orderedlist</a></small>
-         <br><small>Used <a href="http://terminal.jcubic.pl/" target="_blank">JQuery Terminal Emulator</a> plugin</small>
-         <br><small>Used <a href="https://craig.is/making/rainbows" target="_blank">Rainbow</a> code syntax highlighting library</small>
       </footer>
    </div>
 

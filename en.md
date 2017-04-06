@@ -1,10 +1,10 @@
 ---
 layout: page
 title:  Summary
-date: 2016-12-01 16:16:30 UTC
 categories: en
 ---
-> Project news can be found in [russian translated](?ru) part of this site that frequently updates.
+> Any sufficiently complicated program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of Lisp.
+> <br/> <span style="float: right;">Greenspun's tenth rule</span>
 <br/>
 
    Otus Lisp is a purely[*](#pure) functional dialect of Lisp.

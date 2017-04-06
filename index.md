@@ -1,7 +1,6 @@
 ---
 layout: html
-title: Ol /Otus Lisp/
-date: 2016-12-01 16:16:30 UTC
+title:  Summary
 categories: index
 ---
 > Project news can be found in [russian translated](?ru) part of this site that frequently updates.

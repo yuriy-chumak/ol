@@ -1,10 +1,20 @@
 <span>
-         <h3> <a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>
-   {{ page.title }}
-         </h3>
+   <h3> <a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>
+      {{ page.title }}
+      <span id="main"></span>
+      <script>$("#main").html(
+         "(<a href='?ru'>rus</a>)"+
+         "(<a href='?en'>eng</a>)"
+      )
+      </script>
+   </h3>
 
 {{ content }}
 
-<small>{{ page.date }}</small>
-<small style="float: right">Copyright (c) 2015,2016 Yuriy Chumak</small>
+   <hr><small>This program is distributed under <a href="http://www.gnu.org/licenses/">GPL v2</a> licence.</small>
+   <br><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://github.com/orderedlist" target="_blank">orderedlist</a></small>
+   <br><small>Used <a href="http://terminal.jcubic.pl/" target="_blank">JQuery Terminal Emulator</a> plugin</small>
+   <br><small>Used <a href="https://craig.is/making/rainbows" target="_blank">Rainbow</a> code syntax highlighting library</small>
+
+   <br><small style="float: right">Copyright (c) 2015-2017 Yuriy Chumak</small>
 </span>
