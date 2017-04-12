@@ -78,31 +78,37 @@ clean:
 install: ol repl
 	# install executables:
 	@echo Installing main binary...
-	install -d $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 ol $(DESTDIR)/$(PREFIX)/bin/ol
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install -m 755 ol $(DESTDIR)$(PREFIX)/bin/ol
 	# install binary REPL:
 	@echo Installing REPL...
-	install -d $(DESTDIR)/$(PREFIX)/lib/ol
-	install -m 644 repl $(DESTDIR)/$(PREFIX)/lib/ol/repl
+	install -d $(DESTDIR)$(PREFIX)/lib/ol
+	install -m 644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
 	# basic libraries:
-	@echo Installing libraries...
-	@for F in r5rs otus owl lib etc scheme ;do \
+	@echo Installing common libraries...
+	@for F in r5rs lang otus owl lib etc scheme ;do \
 	   echo installing $$F libraries... ;\
-	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
-	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
+	   install -d $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
+	   install -D -m 644 $$F/* $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
 	done
 	@echo Installing OpenGL libraries...
-	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
-	@for F in OpenGL/ARB OpenGL/EGL OpenGL/ES OpenGL/EXT ;do \
+	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
+	install -D -m 644 OpenGL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
+	@for F in OpenGL/ARB OpenGL/EXT ;do \
 	   echo installing $$F libraries... ;\
-	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
-	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
+	   install -d $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
+	   install -D -m 644 $$F/* $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
 	done
-	install -D -m 644 OpenGL/*.scm $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
+	@echo Installing OpenCL libraries...
+	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
+	install -D -m 644 OpenCL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
+	@echo Installing OpenAL libraries...
+	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
+	install -D -m 644 OpenAL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
 
 uninstall:
-	-rm -f $(DESTDIR)/$(PREFIX)/bin/ol
-	-rm -rf $(DESTDIR)/$(PREFIX)/lib/ol
+	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
+	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
 
 packages: debian-amd64-package
 	@echo "done."
@@ -122,7 +128,7 @@ create-debian-package = \
 	echo Architecture: $2         >>DEBIAN/control;\
 	echo Maintainer: Yuriy Chumak >>DEBIAN/control;\
 	echo Priority: optional       >>DEBIAN/control;\
-	echo Description: Otus Lisp - a purely \(mostly\) functional dialect of Lisp \
+	echo Description: Otus Lisp - a purely* functional dialect of Lisp \
 	                              >>DEBIAN/control;\
 	\
 	fakeroot dpkg -b . ../ol_1.1_$2.deb
