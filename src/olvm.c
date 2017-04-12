@@ -4294,15 +4294,21 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	// подготовим очереди в/в
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
-
+#ifndef NAKED_VM
+	char* program = 0;
+	if (bootstrap && *bootstrap >= 0x20) {
+		program = bootstrap;
+		bootstrap = language;
+	}
+#endif
 
 	// а теперь поработаем с сериализованным образом:
 	word nwords = 0;
 	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
 	nwords += (nobjs + 2); // for ptrs
 
-	heap_t* heap = &handle->heap;
 	word *fp;
+	heap_t* heap = &handle->heap;
 
 	// выделим память машине:
 	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
@@ -4312,7 +4318,7 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
 	int required_memory_size = nwords*2 + MEMPAD;
 
-	heap->begin = (word*) malloc((required_memory_size + GCPAD(NR)) * sizeof(word)); // at least one argument string always fits
+	fp = heap->begin = (word*) malloc((required_memory_size + GCPAD(NR)) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
 		STDERR("Failed to allocate %d bytes in memory for vm", required_memory_size * sizeof(word));
 		goto fail;
@@ -4324,7 +4330,6 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты
-	fp = heap->begin;
 	word *ptrs = new(TTUPLE, nobjs+1, 0);
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
 
@@ -4334,6 +4339,31 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	// все, программа в памяти, можно освобождать исходник
 	if (release)
 		release(bootstrap);
+
+
+	// а теперь подготовим аргументы:
+	word* userdata = (word*) INULL;
+#ifndef NAKED_VM
+	if (program)
+	{
+		char* filename = tempnam(0, "ol");
+
+		FILE* fd = fopen(filename, "w"); //O_RDWR, S_IRUSR|S_IWUSR);
+		fwrite(program, strlen(program), 1, fd);
+		fclose(fd);
+
+		userdata = new_pair (new_string (filename), userdata);
+		//userdata = new_pair (new_string ("######"), userdata);
+	}
+#endif
+
+	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
+	word* R = handle->R; // регистры виртуальной машины:
+	for (ptrdiff_t i = 0; i < NR+CR; i++)
+		R[i] = IFALSE; // was: INULL, why??
+	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
+	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
+	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
 
 	heap->fp = fp;
 	return handle;
@@ -4362,7 +4392,7 @@ OL_eval(OL* handle, int argc, char** argv)
 #	endif
 
 	// подготовим аргументы:
-	word* userdata = (word*) INULL;
+	word* userdata = handle->R[4];
 	{
 		word* fp = handle->heap.fp;
 #if !EMBEDDED_VM
@@ -4376,19 +4406,10 @@ OL_eval(OL* handle, int argc, char** argv)
 			if (length > 0) // если есть что добавить
 				userdata = new_pair (new_bytevector(TSTRING, length), userdata);
 		}
-#else
-		{
-			char* filename = "-";
-			char *pos = filename;
-
-			int len = 0;
-			while (*pos++) len++;
-
-			userdata = new_pair (new_string (filename, len), userdata);
-		}
 #endif
 		handle->heap.fp = fp;
 	}
+	handle->R[4] = userdata;
 
 	// результат выполнения скрипта
 	OL* ol = handle;
@@ -4402,13 +4423,6 @@ OL_eval(OL* handle, int argc, char** argv)
 	// thinkme: может стоит искать и загружать какой-нибудь main() ?
 	word* this = (word*) ptrs[nobjs];
 
-	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
-	word* R = ol->R; // регистры виртуальной машины:
-	for (ptrdiff_t i = 0; i < NR+CR; i++)
-		R[i] = IFALSE; // was: INULL, why??
-	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
-	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
-	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
 
 	// все готово для выполнения главного цикла виртуальной машины

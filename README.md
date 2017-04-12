@@ -296,102 +296,87 @@ EMBEDDED OL
 
 (please, this section is outdated, please wait to updates)
 
-OL can be embedded in your project. More info can be found in docs.
+OL can be embedded in your project. It supports direct calls for C functions
+for 32- and 64-bit platforms with full callback support.
 
-This is usage sample:
+Please check the next code for sample usage:
 
     --- cut ---
     // embedded example
-    #include "olvm_xtra.h"
+    #include "olvm.h"
 
+    #include <stdio.h>
+
+    #if _WIN32
+    __declspec(dllexport)
+    #else
     __attribute__((__visibility__("default")))
-    word* sample_add(OL* ol, word arguments) {
-        word* fp; // memory pointer
-        fp = ol->fp;
+    #endif
+    int sample_add(int fa, int fb)
+    {
+	    // math
+	    int a = fa;    fprintf(stderr, "DEBUG: a = %d\n", a);
+	    int b = fb;    fprintf(stderr, "DEBUG: b = %d\n", b);
+	    int r = a + b; fprintf(stderr, "DEBUG: r = %d\n", r);
 
-        word* fa = (word*)car(arguments); arguments = cdr(arguments);
-        word* fb = (word*)car(arguments); arguments = cdr(arguments);
-
-        // math
-        int a = sftoi(fa);
-        int b = sftoi(fb);
-        int r = a + b;
-        // result
-        word* result = F(r);
-
-        ol->fp = fp;//
-        return result;
+	    // result
+	    return r;
     }
 
     int main(int argc, char** argv)
     {
-        return vm_new(
+        OL* ol = OL_new(
             "(import (otus pinvoke) (owl io))"
-            "(define % (dlopen))" // get own handle
-            "(define sample_add (dlsym+ % \"sample_add\"))"
+            "(define $ (dlopen))" // get own handle
+            "(define sample_add (dlsym $ type-int+ \"sample_add\" type-int+ type-int+))"
+
             "(print \"sample_add: \""
-            "   (sample_add 1 2))"
-            "(halt 1)", 0);
+            "   (sample_add 1 2))", 0);
+        OL_eval(ol, 0, 0);
+        OL_free(ol);
     }
     --- cut ---
 
-You can call your own functions from OL code.
-
-Currently this is more complecated. You need:
+You need:
 
 a. compile OL with -DHAS_DLOPEN and -DHAS_PINVOKE options
       (don't forget for -DEMBEDDED_VM)
 
-b. send to vm "(import (otus pinvoke))" (owl/pinvoke.scm must
-      be accessible from your executable)
+b. notify vm about using pinvoke library: "(import (otus pinvoke))"
+      ("otus/pinvoke.scm" file must be accessible from your executable)
 
-c) send to vm "(define me (dload))" where "me" is some
-      appropriate variable name or you can use "let, let*" or
-      any other construction you like
+c. load function exporter library as "(define any-variable (dload))" for self
+      executable or "(define any-variable (dload \"mylib.so\"))" for "mylib"
+      dynamic library (mylib.dll for windows)
 
-Now you have two variants - embed OL function or simple C function call.
+d. notify vm about function prototypes that you want to call. pinvoke mechanism
+      provides smart translation from internal OL data format into machine
+      specific that used by common languages (C in sample).
 
-For embed OL function call you must
+Pinvoke described in the [Project Page](http://yuriy-chumak.github.io/ol/?ru/pinvoke) (still in progress), so for now function interface declaration from sample in details:
 
-d. declare you function for OL like this
-      '(define myFuction (dlsym+ me "functionname"))'
-      in this code
-      *) "functionname" - function name string. you must export this
-         function from your code to make it accessible from OL
-      Now your function will receive OL* as furst parameter. This structure
-      provides memory pointer and you have low-level access to OL scructures.
-      This mechanism will help to provide you OL language native extensions, in
-      feature structure will extent by help functions.
+'(define sample_add (dlsym $ type-int+ "sample_add" type-int+ type-int+))':
 
-For normal C function call (actually platform invoke mechanism) you must
+ * sample_add - any appropriate variable name for your internal OL function name.
+      This variable will be associated with lambda that can call the native function.
+ * second argument in (dlsym) - type-int+ - is return type of native function, it
+      can be type-int+ for integers, type-string for string, etc.
+      available types you can check in otus/pinvoke.scm
+ * third argument is function name string. you must export this
+      function from your code to make it accessible from OL
+ * next dlsym args is argument types for native function, pinvoke
+      will try to convert arguments of sample_add lambda to this type.
 
-e. declare you function for OL (via vm_puts, sure) like this
-      '(define myFuction (dlsym me type-int+ "functionname" type-string type-int+))'
-      in this code
-      *) myFunction - any appropriate variable name for your function
-         internal OL script name. This variable will associated with
-         lambda that can be called in further code.
-      *) second argument in (dlsym) is return type of native function
-         available types you can check in owl/pinvoke.scm
-      *) third (dlsym) arg is function name string. you must export this
-         function from your code to make it accessible from OL
-      *) other (dlsym) args is argument types for native function, pinvoke
-         will try to convert arguments of myFunction lambda to this type.
-         available types can be checked in owl/pinvoke.scm too.
-
-Small comment for this: if you want to get number - let use type-int+,
-         if you expect SMALL number - let use type-fix+. No differences between
-         types with + and with - are present.
-   e) well, now you can freely use your native function like this for example
-      '(print (myFunction "str1" 123))'
+e) well, now you can freely use your native function like this for example
+      '(print (sample_add 1 2))'
 
 More information about pinvoke you can get in source files
     lib/sqlite.scm
-    lib/opengl.scm and OpenGL/version-X-X.scm
+    lib/opengl.scm and OpenGL/version-x-x.scm
     lib/winapi.scm
     lib/x11.scm
 
-* All embedded OL api in progress and can be changed in feature.
+* All embedded OL API in progress and can be changed in feature.
 
 
 DOCUMENTATION

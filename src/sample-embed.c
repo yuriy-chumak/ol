@@ -2,32 +2,31 @@
  * sample-embed.c
  *
  *  Created on: Jun 10, 2015
+ *  Changed at: Apr 12, 2017
  *      Author: uri
  */
+
+#include "olvm.h"
+
 #if EMBEDDED_VM
-
-#include "pinvoke.h"
-
 #include <stdio.h>
 
 // embedded example
+#if _WIN32
+__declspec(dllexport)
+#else
 __attribute__((__visibility__("default")))
-word* sample_add(struct OL* ol, word arguments) {
-	word* fp; // memory pointer
-	fp = ol->heap.fp;
+#endif
 
-	word* fa = (word*)car(arguments); arguments = cdr(arguments);
-	word* fb = (word*)car(arguments); arguments = cdr(arguments);
-
+int sample_add(int fa, int fb)
+{
 	// math
-	int a = sftoi(fa); fprintf(stderr, "DEBUG: a = %d\n", a);
-	int b = sftoi(fb); fprintf(stderr, "DEBUG: b = %d\n", b);
-	int r = a + b;     fprintf(stderr, "DEBUG: r = %d\n", r);
-	// result
-	word* result = F(r);
+	int a = fa;    fprintf(stderr, "DEBUG: a = %d\n", a);
+	int b = fb;    fprintf(stderr, "DEBUG: b = %d\n", b);
+	int r = a + b; fprintf(stderr, "DEBUG: r = %d\n", r);
 
-	ol->heap.fp = fp;
-	return result;
+	// result
+	return r;
 }
 
 
@@ -37,10 +36,13 @@ int main(int argc, char** argv)
 		printf("no options required\n");
 	}
 
-	struct OL* ol = OL_new(
+	OL* ol = OL_new(
+			// preparation steps:
 			"(import (otus pinvoke) (owl io))"
-			"(define % (dlopen))" // get own handle
-			"(define sample_add (dlsym+ % \"sample_add\"))"
+			"(define $ (dlopen))" // get own handle
+			"(define sample_add (dlsym $ type-int+ \"sample_add\" type-int+ type-int+))"
+
+			// main program body
 			"(print \"sample_add: \""
 			"   (sample_add 1 2))", 0);
 	OL_eval(ol, 0, 0);
