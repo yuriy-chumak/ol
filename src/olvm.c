@@ -1516,7 +1516,7 @@ void* runtime(OL* ol);  // главный цикл виртуальной маш
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
-#if HAS_PINVOKE
+#if HAS_DLOPEN
 	long callback(OL* ol, int id, int_t* argi
 	#if __amd64__
 		, double* argf, int_t* rest
