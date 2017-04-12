@@ -6,6 +6,8 @@
 
 (export
    char?
+   char=? char<? char>?
+   char<=? char>=?
    char->integer
    integer->char
 )
@@ -13,11 +15,26 @@
 (begin
    ; procedure:  (char? obj)
    (define (char? o) (eq? (type o) type-fix+))
+
    ; procedure:  (char=? char1 char2)
+   (define char=? eq?)
+
    ; procedure:  (char<? char1 char2)
+   (define char<? less?)
+
    ; procedure:  (char>? char1 char2)
+   (define (char>? a b)
+      (char<? b a))
+
    ; procedure:  (char<=? char1 char2)
+   (define (char<=? a b)
+      (or (eq? a b)
+          (less? a b)))
+
    ; procedure:  (char>=? char1 char2)
+   (define (char>=? a b)
+      (char<=? b a))
+
    ; library procedure:  (char-ci=? char1 char2)
    ; library procedure:  (char-ci<? char1 char2)
    ; library procedure:  (char-ci>? char1 char2)
@@ -33,9 +50,7 @@
    ; library procedure:  (char-upcase char)
    ; library procedure:  (char-downcase char)
 
-   (define self (λ (x) x))
-
-   (define char->integer self)
-   (define integer->char self)
+   (define (char->integer x) x)
+   (define (integer->char x) x)
 
 ))
