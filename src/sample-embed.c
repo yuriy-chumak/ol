@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 		printf("no options required\n");
 	}
 
-	OL* ol = OL_new(
+	OL* ol = OL_new((unsigned char*)
 			// preparation steps:
 			"(import (otus pinvoke) (owl io))"
 			"(define $ (dlopen))" // get own handle

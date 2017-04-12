@@ -211,7 +211,14 @@
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
 #define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
                       // as well as all of the ISO C facilities.
-#define _BSD_SOURCE
+
+// http://man7.org/tlpi/code/faq.html#use_default_source
+#if defined(__GNU_LIBRARY__) && ((__GLIBC__ * 100 + __GLIBC_MINOR__) >= 220)
+#	define _DEFAULT_SOURCE
+#else
+#	define _BSD_SOURCE
+#endif
+
 #define _GNU_SOURCE   // nanosleep, etc.
 
 #ifdef __NetBSD__     // make all NetBSD features available
@@ -352,6 +359,7 @@ void STDERR(char* format, ...)
 	fprintf(stderr, "\n");
 }
 
+#if !EMBEDDED_VM
 static
 void crash(int code, char* format, ...)
 {
@@ -364,6 +372,7 @@ void crash(int code, char* format, ...)
 	fprintf(stderr, "\n");
 	exit(code);
 }
+#endif
 
 // ========================================
 //  HAS_SOCKETS 1
@@ -4294,10 +4303,10 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	// подготовим очереди в/в
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
-#ifndef NAKED_VM
-	char* program = 0;
+#if EMBEDDED_VM
+	char* S = 0;
 	if (bootstrap && *bootstrap >= 0x20) {
-		program = bootstrap;
+		S = (char*)bootstrap;
 		bootstrap = language;
 	}
 #endif
@@ -4343,17 +4352,15 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 
 	// а теперь подготовим аргументы:
 	word* userdata = (word*) INULL;
-#ifndef NAKED_VM
-	if (program)
-	{
+#if EMBEDDED_VM
+	if (S) {
 		char* filename = tempnam(0, "ol");
 
-		FILE* fd = fopen(filename, "w"); //O_RDWR, S_IRUSR|S_IWUSR);
-		fwrite(program, strlen(program), 1, fd);
-		fclose(fd);
+		FILE* file = fopen(filename, "w");
+		fwrite(S, strlen(S), 1, file);
+		fclose(file);
 
 		userdata = new_pair (new_string (filename), userdata);
-		//userdata = new_pair (new_string ("######"), userdata);
 	}
 #endif
 
@@ -4392,7 +4399,7 @@ OL_eval(OL* handle, int argc, char** argv)
 #	endif
 
 	// подготовим аргументы:
-	word* userdata = handle->R[4];
+	word userdata = handle->R[4];
 	{
 		word* fp = handle->heap.fp;
 #if !EMBEDDED_VM
@@ -4404,7 +4411,7 @@ OL_eval(OL* handle, int argc, char** argv)
 				pos++;
 			int length = pos - (char*)fp - W;
 			if (length > 0) // если есть что добавить
-				userdata = new_pair (new_bytevector(TSTRING, length), userdata);
+				userdata = (word) new_pair (new_bytevector(TSTRING, length), userdata);
 		}
 #endif
 		handle->heap.fp = fp;
