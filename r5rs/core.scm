@@ -926,7 +926,7 @@
       ; procedure:  (string->symbol string) *tbd
 
 
-      ; 6.3.4. Characters
+      ; 6.3.4. Characters (r5rs characters)
       ; Characters are objects that represent printed characters such as letters and digits.
       ; Characters are written using the notation #\<character> or #\<character name>.
       ;
