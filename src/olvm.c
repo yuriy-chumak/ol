@@ -212,7 +212,14 @@
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
 #define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
                       // as well as all of the ISO C facilities.
-#define _BSD_SOURCE
+
+// http://man7.org/tlpi/code/faq.html#use_default_source
+#if defined(__GNU_LIBRARY__) && ((__GLIBC__ * 100 + __GLIBC_MINOR__) >= 220)
+#	define _DEFAULT_SOURCE
+#else
+#	define _BSD_SOURCE
+#endif
+
 #define _GNU_SOURCE   // nanosleep, etc.
 
 #ifdef __NetBSD__     // make all NetBSD features available
@@ -339,6 +346,10 @@
 // some portability issues (mainly for freebsd)
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK EAGAIN
+#endif
+
+#ifndef VMRAW_CHECK
+#define VMRAW_CHECK 1
 #endif
 
 // ========================================
@@ -2124,36 +2135,64 @@ loop:;
 	}
 
 	// todo: add numeric argument as "length" parameter
-	case VMRAW: { // (vm:raw type lst)
-		word *lst = (word*) A1;
+	case VMRAW: { // (vm:raw type list|size)
+		int type = uvtoi(A0);
 		int len = 0;
-		word* p = lst;
-		while (is_pair(p)) { // is proper list?
-			len++;
-			p = (word*)cdr (p);
-		}
+		// size or #null ?
+		if (is_value(A1)) {
+			len = (A1 == INULL)  ? 0
+				: (A1 == IFALSE) ? 0 // todo: is it required?
+				: uvtoi(A1);
+			// if there are no place for raw object:
+			if (len / sizeof(word) > heap->end - fp) {
+				int sp = ip - (unsigned char*)this;
 
-		if ((word) p == INULL && len <= MAXOBJ) { // MAXOBJ - is it required?
-			int type = uvtoi (A0);
+				heap->fp = fp; ol->this = this;
+				ol->gc(ol, len / sizeof(word));
+				fp = heap->fp; this = ol->this;
+
+				ip = (unsigned char*)this + sp;
+			}
 			word *raw = new_bytevector (type, len);
+			A2 = (word) raw;
+		}
+		// list?
+		else {
+			word *lst = (word*) A1;
 
-			unsigned char *pos;
-			pos = (unsigned char *) &raw[1];
-			p = lst;
-			while ((word) p != INULL) {
-				*pos++ = uvtoi(car(p)) & 255;
-				p = (word*)cdr(p);
+			word* p = lst;
+			while (is_pair(p)) { // check the list
+				len++;
+				p = (word*)cdr (p);
 			}
 
-			while ((word)pos % sizeof(word)) // clear the padding bytes,
-				*pos++ = 0;                  //             required!!!
-			A2 = (word)raw;
-		}
-		else
-			A2 = IFALSE;
+			if ((word) p == INULL) {
+				#if VMRAW_CHECK
+				// it's safe to trunk not rounding
+				if (len / sizeof(word) > heap->end - fp) {
+					heap->fp = fp; ol->this = this;
+					ol->gc(ol, len / sizeof(word));
+					fp = heap->fp; this = ol->this;
+				}
+				#endif
+				word *raw = new_bytevector (type, len);
 
-		ip += 3; break;
-	}
+				unsigned char *pos;
+				pos = (unsigned char *) &raw[1];
+				p = lst;
+				while ((word) p != INULL) {
+					*pos++ = uvtoi(car(p)) & 255;
+					p = (word*)cdr(p);
+				}
+
+				while ((word)pos % sizeof(word)) // clear the padding bytes,
+					*pos++ = 0;                  //             required!!!
+				A2 = (word)raw;
+			}
+			else
+				A2 = IFALSE;
+		}
+		ip += 3; break; }
 
 	case RAWQ: {  // raw? a -> r : Rr = (raw? Ra)
 		word* T = (word*) A0;

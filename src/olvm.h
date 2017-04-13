@@ -65,6 +65,7 @@ typedef struct ol_t OL;
 //#define UVTOI_CHECK(v) 1
 //#define SVTOI_CHECK(v) 1
 
+//#define VMRAW_CHECK 0
 
 // comment this to enable overflow checking in binary program decoder
 //#define OVERFLOW_KILLS(n)
