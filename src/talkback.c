@@ -147,7 +147,7 @@ char* OL_tb_eval(state_t* state, char* program, char* out, int size)
 #else
 	do {
 		pthread_yield(); // time to process data by OL
-		bytes = read(state->out[0], output, sizeof(output));
+		bytes = read(state->out[0], out, size);
 	}
 	while (bytes == -1);
 #endif
