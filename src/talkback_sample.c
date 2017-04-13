@@ -19,8 +19,10 @@ int main(int argc, char** argv)
 	void* oltb = OL_tb_start();
 
 	char output[1024];
-	printf("%d: ", OL_tb_eval(oltb, "(fold * 1 (iota 99 1 1))", output, sizeof(output)));
-	printf("%s\n", output);
+	int got = OL_tb_eval(oltb, "(fold * 1 (iota 99 1 1))", output, sizeof(output));
+
+	output[got] = 0;
+	printf("%d: %s\n", got, output);
 
 	OL_tb_stop(oltb);
 	return 0;
