@@ -27,7 +27,7 @@ CC=gcc
 
 PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
-CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s)
+CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS))
 boot.c := bootstrap~
 repl.o := src/repl.o
 
@@ -35,6 +35,11 @@ CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1)\
           $(if $(HAS_SECCOMP),, -DNO_SECCOMP)
 
+ifeq ($(ASAN), yes)
+	CFLAGS += -O0 -ggdb -lasan -fsanitize=address -fno-omit-frame-pointer
+else
+	CFLAGS += -O2 -DNDEBUG -s
+endif
 
 ifeq ($(UNAME),Linux)
 L := $(if HAS_DLOPEN, -ldl)
