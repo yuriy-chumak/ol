@@ -13,7 +13,7 @@ extern unsigned char* talkback;
 #include <pthread.h>
 
 #if _WIN32
-#include <windows.h>
+#	include <windows.h>
 
 int pipe(int* pipes)
 {
@@ -39,6 +39,8 @@ int pipe(int* pipes)
 	return 0;
 	//ConnectNamedPipe(pipe, NULL);
 }
+#else
+#	include <fcntl.h>
 #endif
 
 // embedded example
@@ -87,6 +89,14 @@ state_t* OL_tb_start()
 	pipe(&state->in);
 	pipe(&state->out);
 
+#ifndef _WIN32
+	fcntl(state->in[0], F_SETFL, fcntl(state->in[0], F_GETFL, 0) | O_NONBLOCK);
+	fcntl(state->in[1], F_SETFL, fcntl(state->in[1], F_GETFL, 0) | O_NONBLOCK);
+	fcntl(state->out[0], F_SETFL, fcntl(state->out[0], F_GETFL, 0) | O_NONBLOCK);
+	fcntl(state->out[1], F_SETFL, fcntl(state->out[1], F_GETFL, 0) | O_NONBLOCK);
+#endif
+
+
 	state->ol = ol;
 	pthread_create(&state->thread_id, &attr, &thread_start, state);
 
@@ -122,25 +132,22 @@ char* OL_tb_eval(state_t* state, char* program, char* out, int size)
 	WriteFile(state->in[1], program, len,                      &b, NULL);
 	WriteFile(state->in[1], ")))", 3,                          &c, NULL);
 #else
-	write(state->in[1], "(display-to OUT ((lambda ()", 27);
-	write(state->in[1], program, len);
-	write(state->in[1], ")))", 3);
+	write(state->in[1],     "(display-to OUT ((lambda ()", 27);
+	write(state->in[1],     program, len);
+	write(state->in[1],     ")))", 3);
 #endif
 
 	int bytes = 0;
 #ifdef _WIN32
 	do {
-		int x = ReadFile(state->out[0], out, size, &bytes, NULL);
-		int y = GetLastError();
-		if (bytes == 0)
-			Sleep(1);
+		Sleep(1); // time to process data by OL
+		ReadFile(state->out[0], out, size, &bytes, NULL);
 	}
 	while (bytes == 0);
 #else
 	do {
+		pthread_yield(); // time to process data by OL
 		bytes = read(state->out[0], output, sizeof(output));
-		if (bytes == -1)
-			pthread_yield();
 	}
 	while (bytes == -1);
 #endif
