@@ -8,6 +8,7 @@ IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
 IF "%1"=="slim" GOTO SLIM
+IF "%1"=="talkback" GOTO TALKBACK
 IF "%1"=="js" GOTO JS
 IF "%1"=="wasm" GOTO WASM
 IF "%1"=="release" GOTO RELEASE
@@ -109,6 +110,14 @@ GOTO :REPL
 :SLIM
 echo.   *** Making slim:
 vm repl src/slim.lisp >src/slim.c
+GOTO:EOF
+
+:TALKBACK
+echo.   *** Making talkback:
+vm repl src/talkback.lisp >src/talkback.repl.c
+gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -fmessage-length=0 -Wno-strict-aliasing src/olvm.c src/talkback.repl.c src/talkback.c src/talkback_sample.c -o "oltb.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
+GOTO:EOF
+
 GOTO:EOF
 
 :JS

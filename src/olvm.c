@@ -2246,10 +2246,10 @@ loop:;
 		if (is_value(T)) {
 			word val = value(T);
 			if (type == TPORT) {
-				if (val <= 2)
+				//if (val <= 2)
 					A2 = make_port(val);
-				else
-					A2 = IFALSE;
+				//else
+				//	A2 = IFALSE;
 			}
 			else
 				A2 = make_value(type, val);
@@ -2716,6 +2716,13 @@ loop:;
 			// Win32 socket workaround
 			if (got == -1 && errno == EBADF) {
 				got = recv(portfd, (char *) &fp[1], size, 0);
+	#ifdef _WIN32
+				if (got == -1 && errno == EBADF)
+					if (!ReadFile(portfd, (char *) &fp[1], size, &got, NULL)) {
+						result = (word*)ITRUE;
+						break;
+					}
+	#endif
 				if (got < 0)
 					if (WSAGetLastError() == WSAEWOULDBLOCK)
 						errno = EAGAIN;
@@ -2764,6 +2771,10 @@ loop:;
 			// Win32 socket workaround
 			if (wrote == -1 && errno == EBADF) {
 				wrote = send(portfd, (char*) &buff[1], size, 0);
+				if (wrote == -1 && errno == EBADF) {
+					if (!WriteFile(portfd, (char*) &buff[1], size, &wrote, NULL))
+						wrote = -1;
+				}
 			}
 	#endif
 
@@ -4402,7 +4413,7 @@ OL_eval(OL* handle, int argc, char** argv)
 	word userdata = handle->R[4];
 	{
 		word* fp = handle->heap.fp;
-#if !EMBEDDED_VM
+//#if !EMBEDDED_VM
 		argv += argc - 1;
 		for (ptrdiff_t i = argc; i > 1; i--, argv--) {
 			char *pos = (char*)(fp + 1);
@@ -4413,7 +4424,7 @@ OL_eval(OL* handle, int argc, char** argv)
 			if (length > 0) // если есть что добавить
 				userdata = (word) new_pair (new_bytevector(TSTRING, length), userdata);
 		}
-#endif
+//#endif
 		handle->heap.fp = fp;
 	}
 	handle->R[4] = userdata;
