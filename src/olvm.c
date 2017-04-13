@@ -347,6 +347,10 @@
 #define EWOULDBLOCK EAGAIN
 #endif
 
+#ifndef VMRAW_CHECK
+#define VMRAW_CHECK 1
+#endif
+
 // ========================================
 static
 void STDERR(char* format, ...)
@@ -2166,12 +2170,14 @@ loop:;
 			}
 
 			if ((word) p == INULL) {
-				//if (len / sizeof(word) > heap->end - fp) {
-				//	fprintf(stderr, "*** gc!\n");
-				//	heap->fp = fp; ol->this = this;
-				//	ol->gc(ol, len / sizeof(word));
-				//	fp = heap->fp; this = ol->this;
-				//}
+				#if VMRAW_CHECK
+				// it's safe to trunk not rounding
+				if (len / sizeof(word) > heap->end - fp) {
+					heap->fp = fp; ol->this = this;
+					ol->gc(ol, len / sizeof(word));
+					fp = heap->fp; this = ol->this;
+				}
+				#endif
 				word *raw = new_bytevector (type, len);
 
 				unsigned char *pos;
