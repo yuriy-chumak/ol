@@ -213,7 +213,8 @@
                       // as well as all of the ISO C facilities.
 
 // http://man7.org/tlpi/code/faq.html#use_default_source
-#if defined(__GNU_LIBRARY__) && ((__GLIBC__ * 100 + __GLIBC_MINOR__) >= 220)
+//  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
+#if defined __GLIBC__ && defined __GLIBC_MINOR__ && ((__GLIBC__ * 100 + __GLIBC_MINOR__) >= 220)
 #	define _DEFAULT_SOURCE
 #else
 #	define _BSD_SOURCE
