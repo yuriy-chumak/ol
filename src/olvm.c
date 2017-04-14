@@ -1052,24 +1052,16 @@ word *chase(word* pos) {
 	}
 }
 
-// cells - на сколько увеличить (уменьшить) кучу (в словах)
+// cells - новый размер кучи (в словах)
 static __inline__
-ptrdiff_t adjust_heap(heap_t *heap, int cells)
+ptrdiff_t resize_heap(heap_t *heap, int cells)
 {
 	if (sandboxp) /* realloc is not allowed within seccomp */
 		return 0;
 
-	// add newobj realloc + heap fixer here later
-	word nwords = heap->end - heap->begin;
-	word new_words = nwords + cells; // was: ((cells > 0xffffff) ? 0xffffff : cells); // limit heap growth speed
-	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W))) {
-		STDERR("size_t would overflow in realloc!");
-		return 0; // don't try to adjust heap if the size_t would overflow in realloc
-	}
-
 	word *old = heap->begin;
-	heap->begin = realloc(heap->begin, (new_words + GCPAD(NR)) * sizeof(word));
-	heap->end = heap->begin + new_words;
+	heap->begin = realloc(heap->begin, (cells + GCPAD(NR)) * sizeof(word));
+	heap->end = heap->begin + cells;
 
 	if (heap->begin == old) // whee, no heap slide \o/
 		return 0;
@@ -1249,26 +1241,28 @@ word gc(heap_t *heap, int query, word regs)
 
 	ptrdiff_t hsize = heap->end - heap->begin; // вся куча в словах
 	ptrdiff_t nfree = heap->end - (word*)regs; // свободно в словах
-	ptrdiff_t nused = hsize - nfree + query; // использовано слов
+	ptrdiff_t nused = hsize - nfree;           // использовано слов
+
+	nused += query; // увеличим на запрошенное количество
 	if (heap->genstart == heap->begin) {
 		// напоминаю, сюда мы попадаем только после полной(!) сборки
-		if (hsize < nused)
-			hsize = nused;
 
 		// Please grow your buffers exponentially:
 		//  https://blog.mozilla.org/nnethercote/2014/11/04/please-grow-your-buffers-exponentially/
 		//  ! https://habrahabr.ru/post/242279/
 
 		// выделим на "старое" поколение не менее 50% кучи, при этом кучу будем увеличивать на 33%
+		// !!! множитель регулярного увеличения кучи должен быть меньше золотого сечения: 1.618
 		if (nused > (hsize / 2)) {
+			if (nused < hsize)
+				nused = hsize;
 			//fprintf(stderr, ">");
-			// !!! множитель увеличения кучи должен быть меньше золотого сечения: 1.618
-			regs += adjust_heap(heap, hsize / 3) * sizeof(W);
+			regs += resize_heap(heap, nused + nused / 3) * sizeof(W);
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
 		else if (nused < (hsize / 3)) {
 			//fprintf(stderr, "<");
-			regs += adjust_heap(heap,-hsize / 9) * sizeof(W);
+			regs += resize_heap(heap, hsize - hsize / 9) * sizeof(W);
 		}
 		heap->genstart = (word*)regs; // always start new generation
 	}
@@ -1535,7 +1529,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 
 	// если места еще хватит, не будем ничего делать
 	// TODO: переделать на другую проверку
-	if (ws != 0 && fp < ol->heap.end - MEMPAD - ws) // какая-то стремная проверка...
+	if ((ws != 0) && ((fp + ws) < (ol->heap.end - MEMPAD)))
 		return 0;
 
 	word* R = ol->R;
