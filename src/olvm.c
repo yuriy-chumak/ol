@@ -600,6 +600,10 @@ OL* OL_new(unsigned char* bootstrap, void (*release)(void*));
 void OL_free(OL* ol);
 void* OL_eval(struct ol_t* ol, int argc, char** argv);
 
+typedef void (exit_t)(int status);
+exit_t* OL_atexit(struct ol_t* ol, exit_t* exit);
+
+
 // ------------------------------------------------------
 
 #define W                           sizeof (word)
@@ -1472,6 +1476,7 @@ struct ol_t
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
 	int (*gc)(OL* ol, int kb);
+	void (*exit)(int errorId);
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
@@ -1979,7 +1984,7 @@ loop:;
 			if (reg > NR) { // dummy handling for now
 				// TODO: add changing the size of R array!
 				STDERR("TOO LARGE APPLY");
-				exit(3);
+				ol->exit(3);
 			}
 			R[reg++] = car (lst);
 			lst = (word *) cdr (lst);
@@ -4381,6 +4386,10 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
 	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
 
+
+	handle->gc = OL__gc;
+	handle->exit = exit;
+
 	heap->fp = fp;
 	return handle;
 fail:
@@ -4394,6 +4403,13 @@ void OL_free(OL* ol)
 {
 	free(ol->heap.begin);
 	free(ol);
+}
+
+exit_t* OL_atexit(struct ol_t* ol, exit_t* exit)
+{
+	exit_t* current = ol->exit;
+	ol->exit = exit;
+	return current;
 }
 
 // ===============================================================
@@ -4444,8 +4460,6 @@ OL_eval(OL* handle, int argc, char** argv)
 	// все готово для выполнения главного цикла виртуальной машины
 	ol->this = this;
 	ol->arity = acc;
-
-	ol->gc = OL__gc;
 
 	return runtime(handle);
 }
