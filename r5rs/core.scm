@@ -1354,7 +1354,7 @@
 
       ;; used syscalls
       (define (exec function . args) (syscall 59 function args #f))
-      (define (yield)                (syscall 1022 0 #false #false))
+      (define (yield)                (syscall 24 #t #false #false))
 
       (define (halt n)               (syscall 60 n n n))
 

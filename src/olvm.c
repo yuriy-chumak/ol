@@ -244,6 +244,7 @@
 #ifdef __unix__
 # ifndef __asmjs__
 #	include <sys/cdefs.h>
+#	include <sched.h> // yield
 # endif
 #endif
 
@@ -1845,6 +1846,8 @@ mainloop:;
 	#		endif
 	#		define SYSCALL_IOCTL_TIOCGETA 19
 
+	#		define SYSCALL_YIELD 24
+
 	#		define SYSCALL_NANOSLEEP 35
 	#		define SYSCALL_SENDFILE 40
 
@@ -2911,6 +2914,21 @@ loop:;
 			break;
 		}
 
+		case SYSCALL_YIELD: {
+			#ifdef __EMSCRIPTEN__
+				emscripten_sleep(1);
+			#else
+			# ifdef _WIN32   // Windows
+				Sleep(1);
+			# endif
+			# ifdef __unix__ // Linux, *BSD, MacOS, etc.
+				sched_yield();
+			# endif
+			#endif
+			result = (word*) ITRUE;
+			break;
+		}
+
 		case SYSCALL_SENDFILE + SECCOMP:
 		case SYSCALL_SENDFILE: { // (syscall 40 fd file-fd size)
 			if (!is_port(a) || !is_port(b))
@@ -3969,12 +3987,6 @@ loop:;
 	#endif
 			break;
 #endif
-		case 1200:
-#ifdef __EMSCRIPTEN__
-			emscripten_sleep(1);
-#endif
-			result = (word*) ITRUE;
-			break;
 
 		case 1201:
 #ifdef __EMSCRIPTEN__
