@@ -212,14 +212,7 @@
 #define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
                       // as well as all of the ISO C facilities.
 
-// http://man7.org/tlpi/code/faq.html#use_default_source
-//  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
-#if defined __GLIBC__ && defined __GLIBC_MINOR__ && ((__GLIBC__ * 100 + __GLIBC_MINOR__) >= 220)
-#	define _DEFAULT_SOURCE
-#else
-#	define _BSD_SOURCE
-#endif
-
+#define _BSD_SOURCE
 #define _GNU_SOURCE   // nanosleep, etc.
 
 #ifdef __NetBSD__     // make all NetBSD features available
@@ -227,6 +220,10 @@
 #	define _NETBSD_SOURCE 1
 #	endif
 #endif
+
+// http://man7.org/tlpi/code/faq.html#use_default_source
+//  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
+#define _DEFAULT_SOURCE
 
 #include <stdint.h>
 
