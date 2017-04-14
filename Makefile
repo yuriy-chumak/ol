@@ -213,7 +213,7 @@ src/slim.c: repl vm src/slim.lisp
 
 recompile: boot.fasl
 boot.fasl: vm repl src/ol.scm otus/lisp.scm r5rs/*.scm lang/*.scm owl/*.scm
-	@vm repl src/ol.scm --version "`git describe`"
+	@vm repl src/ol.scm --version "`git describe --always`"
 	@if diff boot.fasl repl>/dev/null ;then\
 	   echo '\033[1;32m  `___`  \033[0m' ;\
 	   echo '\033[1;32m  (o,o)  \033[0m' ;\
