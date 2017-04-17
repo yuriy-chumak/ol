@@ -57,21 +57,9 @@ int main(int argc, char** argv)
 	OL_tb_send(oltb, "(define (f n) (fold * 1 (iota n 1 1)))");
 	printf("Ok.\n");
 	printf("Loading 'main.scm' script if exist...");
-	FILE* f = fopen("tutorial/sample-embed/main.scm", "r");
-	if (f) {
-		fseek(f, 0, SEEK_END);
-		long len = ftell(f);
-		fseek(f, 0, SEEK_SET);
 
-		char* script = (char*)malloc(len+1);   script[len] = 0;
-		fread(script, len, 1, f);
-		OL_tb_send(oltb, script);
-
-		fclose(f);
-		printf("Ok.\n");
-	}
-	else
-		printf("Not found.\n");
+	OL_tb_send(oltb, ",load \"tutorial/sample-embed/main.scm\"\n");
+	printf("Ok.\n");
 
 	int got;
 	char output[1024];

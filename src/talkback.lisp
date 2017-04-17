@@ -1,24 +1,115 @@
-(import (owl unicode))
-(import (lang eval)
-        (lang sexp)
-        (lang assemble)
+;;;
+;;; ol.scm: an Otus Lisp read-eval-print loop (REPL) binary image compiler.
+;;;
 
-        (lang env)
-        (lang ast)
-        (lang fixedpoint)
-        (lang alpha)
-        (lang cps)
-        (lang closure)
-        (lang compile)
+#| Copyright(c) 2012 Aki Helin
+ | Copyright(c) 2014 - 2017 Yuriy Chumak
+ |
+ | This program is free software;  you can redistribute it and/or
+ | modify it under the terms of the GNU General Public License as
+ | published by the Free Software Foundation; either version 2 of
+ | the License, or (at your option) any later version.
+ | 
+ | This program is distributed in the hope that it will be useful,
+ | but WITHOUT ANY WARRANTY; without even the implied warranty of
+ | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ | 
+ | You should have received a copy of the GNU GPL along with this
+ | program.           If not, see <http://www.gnu.org/licenses/>.
+ |#
 
-        (lang macro)
-        (lang thread)
-        (lang primop)
-        (lang intern))
-(import (owl parse)
-        (scheme misc))
+;(print "Loading code...")
 
-; ------------------------------------------------------------------------------
+; fixme: можно не вызывать, все равно не работает :)
+;(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
+
+(define build-start (time-ms))
+
+; forget all other libraries to have them be reloaded and rebuilt
+; (src olvm) содержит список базовых элементов языка
+(define *libraries*
+   (keep
+      (λ (lib)
+         (equal? (car lib) '(src olvm)))
+      *libraries*))
+
+(import (src vm))   ;; команды виртуальной машины
+(import (r5rs core)) ;; базовый языковый набор ol
+
+;; forget everhything except these and core values (later list also them explicitly)
+,forget-all-but (*libraries* *codes* *vm-args* wait stdin stdout stderr set-ticker-value build-start)
+
+
+;;;
+;;; Time for a new REPL
+;;;
+(import (src olvm))     ;; get special forms, primops and define-syntax (virtual library)
+
+;; this should later be just a sequence of imports followed by a fasl dump
+(import (r5rs core))    ;; get define, define-library, import, ... from the just loaded
+
+(define *include-dirs* '(".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
+(define *owl-names* #empty)
+
+
+(define *loaded* '())   ;; can be removed soon, was used by old ,load and ,require
+
+
+;; shared parameters, librarize later or remove if possible
+
+;; http://semver.org/lang/ru/
+(define *owl-version* "1.1")
+(define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
+(define max-object-size #xffff)  ; todo: change as dependent of word size
+
+
+(import (otus lisp))
+
+(import (lang intern))
+(import (owl parse))
+
+(import (lang gensym))
+(import (lang env))
+(import (lang macro))
+(import (lang sexp))
+
+(import (lang ast))
+(import (lang fixedpoint))
+(import (lang cps))
+(import (lang alpha))
+
+(import (lang thread))
+(import (lang assemble))
+(import (lang closure))
+(import (lang compile))
+
+
+(define error-tag "err")
+
+(define (error? x)
+   (and (tuple? x)
+      (eq? (ref x 1) error-tag)))
+
+(import (owl time))
+(import (owl fasl))
+(import (scheme misc))
+
+;; fixme: should sleep one round to get a timing, and then use avg of the last one(s) to make an educated guess
+(define (sleep ms)
+   (lets ((end (+ ms (time-ms))))
+      (let loop ()
+         ;(print (interop 18 1 1))
+         (let ((now (time-ms)))
+            (if (> now end)
+               now
+               (begin (interact sleeper-id 50) (loop)))))))
+
+; -> mcp gets <cont> 5 reason info
+; (run <mcp-cont> thunk quantum) -> result
+
+(define input-chunk-size  1024)
+(define output-chunk-size 4096)
+
 (define-syntax share-bindings
    (syntax-rules (defined)
       ((share-bindings) null)
@@ -28,11 +119,89 @@
                (tuple 'defined (mkval this)))
             (share-bindings . rest)))))
 
+(define (share-modules mods)
+   (for null mods
+      (λ (envl mod)
+         (append (ff->list mod) envl))))
+
+;(import (owl random))
+
+(import (owl args))
+
+(import (owl sys))
+
+;;;
+;;; Entering sandbox
+;;;
+
+;; a temporary O(n) way to get some space in the heap
+
+;; fixme: allow a faster way to allocate memory
+;; n-megs → _
+(define (ensure-free-heap-space megs)
+   #true)
+;   (if (> megs 0)
+;      (lets
+;         ((my-word-size (get-word-size)) ;; word size in bytes in the current binary (4 or 8)
+;          (blocksize 65536)              ;; want this many bytes per node in list
+;          (pairsize (* my-word-size 3))  ;; size of cons cell, being [header] [car-field] [cdr-field]
+;          (bytes                         ;; want n bytes after vector header and pair node for each block
+;            (map (λ (x) 0)
+;               (iota 0 1
+;                  (- blocksize (+ pairsize my-word-size)))))
+;          (n-blocks
+;            (ceil (/ (* megs (* 1024 1024)) blocksize))))
+;         ;; make a big data structure
+;         (map
+;            (λ (node)
+;               ;; make a freshly allocated byte vector at each node
+;               (list->byte-vector bytes))
+;            (iota 0 1 n-blocks))
+;         ;; leave it as garbage
+;         #true)))
+;
+;; enter sandbox with at least n-megs of free space in heap, or stop the world (including all other threads and io)
+(define (sandbox n-megs)
+   ;; grow some heap space work working, which is usually necessary given that we can't
+   ;; get any more memory after entering seccomp
+   (if (and n-megs (> n-megs 0))
+      (ensure-free-heap-space n-megs))
+   (or
+      (syscall 157 #false #false #false)
+      (begin
+         (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
+         (halt exit-seccomp-failed))))
+
+
+;; implementation features, used by cond-expand
+(define *features*
+   (cons
+      (string->symbol (string-append "owl-lisp-" *owl-version*))
+      '(owl-lisp r7rs exact-closed ratios exact-complex full-unicode immutable)))
+      ;;          ^
+      ;;          '-- to be a fairly large subset of at least, so adding this
+
+(import (lang eval))
+
+;; push it to libraries for sharing, replacing the old one
+(define *libraries* ; заменим старую (src olvm) на новую
+   (cons
+      (cons '(src olvm) *src-olvm*)
+      (keep (λ (x) (not (equal? (car x) '(src olvm)))) *libraries*)))
+
+;; todo: share the modules instead later
 (define shared-misc
    (share-bindings
       *features*
       *include-dirs*
       *libraries*))      ;; all currently loaded libraries
+
+;(print "Code loaded at " (- (time-ms) build-start) " ms.")
+
+;;;
+;;; MCP, master control program and the thread controller
+;;;
+
 (define shared-bindings shared-misc)
 
 (define initial-environment-sans-macros
@@ -48,15 +217,118 @@
          (λ (reason) (error "bootstrap import error: " reason))
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
 
+;
+(define *version*
+   (let loop ((args *vm-args*))
+      (if (null? args)
+         (cdr (vm:version))
+      (if (string-eq? (car args) "--version")
+         (if (null? (cdr args))
+            (runtime-error "no version in command line" args)
+            (cadr args))
+         (loop (cdr args))))))
 
 
-(define syntax-error-mark (list 'syntax-error))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; new repl image
+;;;
 
-(define (syntax-fail pos info lst)
-   (list syntax-error-mark info
-      (list ">>> " "x" " <<<")))
+;; say hi if interactive mode and fail if cannot do so (the rest are done using
+;; repl-prompt. this should too, actually)
+(define (get-main-entry symbols codes)
+   (let*((initial-names   *owl-names*)
+         (initial-version *owl-version*))
+      ; main: / entry point of the compiled image
+      (λ (vm-args)
+         ;(print "//vm-args: " vm-args)
+         ;; now we're running in the new repl
+         (start-thread-controller
+            (list ;1 thread
+               (tuple 'init
+                  (λ ()
+                     (let ((IN  (cast (string->integer (car  vm-args)) type-port))
+                           (OUT (cast (string->integer (cadr vm-args)) type-port)))
+                     (fork-server 'repl (lambda ()
+                        ;; get basic io running
+                        (io:init)
+
+                        ;; repl needs symbol etc interning, which is handled by this thread
+                        (fork-intern-interner symbols)
+                        (fork-bytecode-interner codes)
+
+                        ;; set a signal handler which stop evaluation instead of owl
+                        ;; if a repl eval thread is running
+                        (set-signal-action repl-signal-handler)
+
+                        ;; repl
+                        (exit-owl
+                           (let*(;(file (if (null? vm-args)
+                                 ;         stdin
+                                 ;         (if (string-eq? (car vm-args) "-")
+                                 ;            stdin
+                                 ;            (open-input-file (car vm-args)))))
+                                 (options
+                                    (let loop ((options #empty) (args (if (null? vm-args) null (cdr vm-args))))
+                                       (cond
+                                          ((null? args)
+                                             options)
+                                          ((string-eq? (car args) "--sandbox")
+                                             (loop (put options 'sandbox #t) (cdr args)))
+                                          ((string-eq? (car args) "--interactive")
+                                             (loop (put options 'interactive #t) (cdr args)))
+                                          ((string-eq? (car args) "--home") ; TBD
+                                             (if (null? (cdr args))
+                                                (runtime-error "no heap size in command line" args))
+                                             (loop (put options 'home (cadr args)) (cddr args)))
+                                          (else
+                                             (loop options (cdr args))))))
+
+                                 (home (or (getf options 'home)
+                                           (getenv "OL_HOME")
+                                           (cond
+                                              ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
+                                              (else "/usr/lib/ol")))) ; Linux, *BSD, etc.
+                                 (sandbox? (getf options 'sandbox))
+                                 (interactive? #false)
+;                                           (getf options 'interactive)
+;                                           (syscall 16 file 19 #f))) ; isatty()
+
+                                 (version (cons "OL" *version*))
+                                 (env (fold
+                                          (λ (env defn)
+                                             (env-set env (car defn) (cdr defn)))
+                                          initial-environment
+                                          (list
+                                             (cons '*owl-names*   initial-names)
+                                             (cons '*owl-version* initial-version)
+                                             (cons '*include-dirs* (list "." home))
+                                             (cons '*interactive* interactive?)
+                                             (cons '*vm-args* vm-args)
+                                             (cons '*version* version)
+                                            ;(cons '*scheme* 'r5rs)
+                                             (cons '*sandbox* sandbox?)
+
+                                             (cons 'IN IN)
+                                             (cons 'OUT OUT)
+                                          ))))
+                              (if sandbox?
+                                 (sandbox 1)) ;(sandbox megs) - check is memory enough
+                              (repl-trampoline env IN)))))))))
+            )))) ; no threads state
 
 
+
+;(define symbols (symbols-of get-main-entry))
+;(define codes   (codes-of   get-main-entry))
+
+;;;
+;;; Dump the new repl
+;;;
+
+;(print "Compiling ...")
+
+;--
 (define (symbols-of node)
    (define tag (list 'syms))
 
@@ -88,213 +360,44 @@
       tag null))
 
 ;--
+(define (code-refs seen obj)
+   (cond
+      ((value? obj) (values seen empty))
+      ((bytecode? obj)
+         (values seen (put empty obj 1)))
+      ((get seen obj #false) =>
+         (λ (here) (values seen here)))
+      (else
+         (let loop ((seen seen) (lst (tuple->list obj)) (here empty))
+            (if (null? lst)
+               (values (put seen obj here) here)
+               (lets ((seen this (code-refs seen (car lst))))
+                  (loop seen (cdr lst)
+                     (ff-union this here +))))))))
 (define (codes-of ob)
-
-   (define (code-refs seen obj)
-      (cond
-         ((value? obj) (values seen empty))
-         ((bytecode? obj)
-            (values seen (put empty obj 1)))
-         ((get seen obj #false) =>
-            (λ (here) (values seen here)))
-         (else
-            (let loop ((seen seen) (lst (tuple->list obj)) (here empty))
-               (if (null? lst)
-                  (values (put seen obj here) here)
-                  (lets ((seen this (code-refs seen (car lst))))
-                     (loop seen (cdr lst)
-                        (ff-union this here +))))))))
-
    (lets ((refs this (code-refs empty ob)))
       (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 
-; ==============================================================================
-;(define parser
-;   (let-parses (
-;         (line (get-greedy+ (get-rune-if (lambda (x) (not (eq? x #\newline))))))
-;         (skip (get-imm #\newline)))
-;      (runes->string line)))
+
+
+
+;(let*((path "talkback.fasl")
+;      (port ;; where to save the result
+;         (open-output-file path))
 ;
-;(define (sleep1) (syscall 1200 #f #f #f))
-
-      (define (? x) #true)
-
-      (define (repl-fail env reason) (tuple 'error reason env))
-      (define (repl-ok env value) (tuple 'ok value env))
-
-      (define (ok exp env) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
-      (define (ok? x) (eq? (ref x 1) 'ok))
-
-      (define repl-message-tag "foo")
-      (define (repl-message foo) (cons repl-message-tag foo))
-      (define (repl-message? foo) (and (pair? foo) (eq? repl-message-tag (car foo))))
-
-      (define definition?
-         (let ((pat (list 'setq symbol? ?)))
-            (λ (exp) (match pat exp))))
-
-      (define multi-definition?
-         (let ((pat (list 'setq list? ?)))
-            (λ (exp) (match pat exp))))
-
-      (define (syntax-error? x) (and (pair? x) (eq? syntax-error-mark (car x))))
-
-
-      (define (maybe-name-function env name value)
-         (if (function? value)
-            (env-set env name-tag
-               (put (env-get env name-tag empty) value name))
-            env))
-
-
-      ; ------
-
-      (define (execute exp env)
-         (apply-values (exp)
-            (lambda vals
-               (ok
-                  (cond
-                     ((null? vals) "no vals")
-                     ((null? (cdr vals)) (car vals))
-                     (else (cons 'values vals)))
-                  env))))
-
-
-      (define compiler-passes (list
-         apply-env
-         sexp->ast
-         fix-points
-         alpha-convert
-         cps
-         build-closures
-         compile
-         execute
-      ))
-
-      (define (evaluate-as exp env)
-         ; run the compiler chain in a new task
-         (let ((result
-         (call/cc
-            (λ (exit)
-               (fold
-                  (λ (state next)
-                     (if (ok? state)
-                        (begin
-                           ;(print "* " (ref state 2))
-                           (next (ref state 2) (ref state 3)))
-                        (begin
-                           ;(print "exit")
-                           (exit state))))
-                  (ok exp env)
-                  compiler-passes)))))
-            ;(print (ref result 1))
-            result))
-
-      (define (evaluate exp env)
-         (evaluate-as exp env))
-
-
-      (define (eval-repl exp env repl)
-         ;(print "eval-repl: " exp)
-         (tuple-case (macro-expand exp env)
-            ((ok exp env)
-               (cond
-                  ((definition? exp)
-                     ;(print "definition: " exp)
-                     (tuple-case (evaluate (caddr exp) env)
-                        ((ok value env2)
-                           (lets
-                              ((env (env-set env (cadr exp) value))
-                               (env (maybe-name-function env (cadr exp) value))
-                               ;(env (maybe-save-metadata env (cadr exp) value))
-                               )
-                              (ok
-                                 (repl-message
-                                    (bytes->string (render ";; Defined " (render (cadr exp) null))))
-                                 (bind-toplevel env))))
-                        ((fail reason)
-                           (fail
-                              (list "Definition of" (cadr exp) "failed because" reason)))))
-                  ((multi-definition? exp)
-                     ;(print "multi-definition: " exp)
-                     (tuple-case (evaluate (caddr exp) env)
-                        ((ok value env2)
-                           (let ((names (cadr exp)))
-                              (if (and (list? value)
-                                    (= (length value) (length names)))
-                                 (ok (repl-message ";; All defined")
-                                    (fold
-                                       (λ (env pair)
-                                          (env-set env (car pair) (cdr pair)))
-                                       env
-                                       (zip cons names value)))
-                                 (fail
-                                    (list "Didn't get expected values for definition of " names)))))
-                        ((fail reason)
-                           (fail
-                              (list "Definition of" (cadr exp) "failed because" reason)))))
-                  (else
-                     ;(print "evaluate: " exp)
-                     (evaluate exp env))))
-            ((fail reason)
-               (tuple 'fail
-                  (list "Macro expansion failed: " reason)))))
-
-;------
-(define (get-main-entry symbols codes)
-   ; main: / entry point of the REPL
-   (λ (vm-args)
-      ;; now we're running in the new repl
-      (start-thread-controller
-         (list ;1 thread
-            (tuple 'init
-               (λ ()
-                  (fork-server 'repl (lambda ()
-                     ;; get basic io running
-                     (io:init)
-
-                     ;; repl needs symbol etc interning, which is handled by this thread
-                     (fork-intern-interner symbols)
-                     (fork-bytecode-interner codes)
-
-                     ;; repl
-                     (let ((IN (cast (string->integer (car vm-args)) type-port))
-                           (OUT (cast (string->integer (cadr vm-args)) type-port)))
-                     (let loop ((env (fold
-                                          (λ (env defn)
-                                             (env-set env (car defn) (cdr defn)))
-                                          initial-environment
-                                          (list
-                                             ;(cons '*include-dirs* (list "." home))
-                                             (cons '*interactive* #true)
-                                             (cons 'IN IN)
-                                             (cons 'OUT OUT)
-                                             (cons '*vm-args* vm-args)
-                                          )))
-                                (in   (lambda () (fd->exp-stream IN "> " sexp-parser syntax-fail #false)))
-                                (last 'blank)) ; last - последний результат
-                        (cond
-                           ((pair? in)
-                              (lets ((this in (uncons in #false)))
-                                 (cond
-                                    ((eof? this)
-                                       ;(print "EOF")
-                                       (repl-ok env last))
-                                    ((syntax-error? this)
-                                       (print "SYNTAX-ERROR")
-                                       (repl-fail env (cons "This makes no sense: " (cdr this))))
-                                    (else
-                                       (tuple-case (eval-repl this env repl)
-                                          ((ok result env)
-                                             (loop env in result))
-                                          ((fail reason)
-                                             (print "FAIL!!!")
-                                             (repl-fail env reason)))))))
-                           (else
-                              (loop env (in) last)))))
-                     )))))
-               ))) ; no threads state
+;      (symbols (symbols-of get-main-entry))
+;      (codes   (codes-of   get-main-entry))
+;      (bytes ;; encode the resulting object for saving in some form
+;         (fasl-encode (get-main-entry symbols codes))))
+;   (if (not port)
+;      (begin
+;         (print "Could not open " path " for writing")
+;         #false)
+;      (begin ;; just save the fasl dump
+;         (write-bytes port bytes)
+;         (close-port port)
+;         (print "Output written at " (- (time-ms) build-start) " ms.")
+;         #true)))
 
 ; compile the web-repl:
 (let*((symbols (symbols-of get-main-entry))
