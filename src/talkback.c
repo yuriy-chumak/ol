@@ -120,9 +120,46 @@ void OL_tb_stop(state_t* state)
 	free(state);
 }
 
-// don't forget to free the answer?
 PUBLIC
-char* OL_tb_eval(state_t* state, char* program, char* out, int size)
+void OL_tb_send(state_t* state, char* program)
+{
+	int len = strlen(program);
+
+#ifdef _WIN32
+	int b;
+	WriteFile(state->in[1], program, len,                      &b, NULL);
+#else
+	write(state->in[1],     program, len);
+#endif
+
+	return;
+}
+
+PUBLIC
+int OL_tb_recv(state_t* state, char* out, int size)
+{
+	int bytes = 0;
+#ifdef _WIN32
+	do {
+		Sleep(1); // time to process data by OL
+		ReadFile(state->out[0], out, size-1, &bytes, NULL);
+	}
+	while (bytes == 0);
+#else
+	do {
+		pthread_yield(); // time to process data by OL
+		bytes = read(state->out[0], out, size-1);
+	}
+	while (bytes == -1);
+#endif
+
+	if (bytes >= 0)
+		out[bytes] = 0;
+	return bytes;
+}
+
+PUBLIC
+int OL_tb_eval(state_t* state, char* program, char* out, int size)
 {
 	int len = strlen(program);
 
@@ -137,21 +174,7 @@ char* OL_tb_eval(state_t* state, char* program, char* out, int size)
 	write(state->in[1],     ")))", 3);
 #endif
 
-	int bytes = 0;
-#ifdef _WIN32
-	do {
-		Sleep(1); // time to process data by OL
-		ReadFile(state->out[0], out, size, &bytes, NULL);
-	}
-	while (bytes == 0);
-#else
-	do {
-		pthread_yield(); // time to process data by OL
-		bytes = read(state->out[0], out, size);
-	}
-	while (bytes == -1);
-#endif
-
-	return bytes;
+	return
+	OL_tb_recv(state, out, size);
 }
 #endif

@@ -1617,8 +1617,10 @@ void* runtime(OL* ol)
 	long acc = ol->arity;
 
 	word* R = ol->R;   // регистры виртуальной машины
-	word *fp = heap->fp; // memory allocation pointer
 
+	register
+	word *fp = heap->fp; // memory allocation pointer
+	register
 	unsigned char *ip = 0; // указатель на инструкции
 
 	int breaked = 0;
@@ -2059,7 +2061,7 @@ loop:;
 		ip += 1; break;
 	}
 	case LD: // (5%)
-		A1 = F(ip[0]);
+		A1 = F(ip[0]); // R[ip[1]]
 		ip += 2; break;
 
 
