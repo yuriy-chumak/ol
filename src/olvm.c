@@ -60,7 +60,8 @@
 #include "olvm.h"
 #endif
 
-//
+// https://msdn.microsoft.com/en-us/library/b0084kay.aspx
+// WIN32: Defined for applications for Win32 and Win64. Always defined.
 #ifdef _WIN32
 #	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
 #	define SYSCALL_GETRLIMIT 0
@@ -2713,8 +2714,8 @@ loop:;
 				fp = heap->fp; // не забывать про изменение fp в процессе сборки!
 			}
 
-			int got;
 	#ifdef _WIN32
+			DWORD got;
 			if (!_isatty(portfd) || _kbhit()) { // we don't get hit by kb in pipe
 				got = read(portfd, (char *) &fp[1], size);
 			} else {
@@ -2724,9 +2725,9 @@ loop:;
 			// Win32 socket workaround
 			if (got == -1 && errno == EBADF) {
 				got = recv(portfd, (char *) &fp[1], size, 0);
-	#ifdef _WIN32
+	#if 1 // temporary pipes solution
 				if (got == -1 && errno == EBADF)
-					if (!ReadFile(portfd, (char *) &fp[1], size, &got, NULL)) {
+					if (!ReadFile((HANDLE)(size_t)portfd, (char *) &fp[1], size, &got, NULL)) {
 						result = (word*)ITRUE;
 						break;
 					}
@@ -2736,6 +2737,7 @@ loop:;
 						errno = EAGAIN;
 			}
 	#else
+			int got;
 			got = read(portfd, (char *) &fp[1], size);
 	#endif
 
@@ -2771,7 +2773,7 @@ loop:;
 			if (size > length || size == 0)
 				size = length;
 
-			int wrote;
+			unsigned long wrote;
 
 			wrote = write(portfd, (char*)&buff[1], size);
 
@@ -2780,7 +2782,7 @@ loop:;
 			if (wrote == -1 && errno == EBADF) {
 				wrote = send(portfd, (char*) &buff[1], size, 0);
 				if (wrote == -1 && errno == EBADF) {
-					if (!WriteFile(portfd, (char*) &buff[1], size, &wrote, NULL))
+					if (!WriteFile((HANDLE)(size_t)portfd, (char*) &buff[1], size, &wrote, NULL))
 						wrote = -1;
 				}
 			}

@@ -1,6 +1,6 @@
-;;;
-;;; ol.scm: an Otus Lisp read-eval-print loop (REPL) binary image compiler.
-;;;
+;;
+;; an Otus Lisp read-eval-print loop (REPL) binary image compiler
+;;
 
 #| Copyright(c) 2012 Aki Helin
  | Copyright(c) 2014 - 2017 Yuriy Chumak
@@ -18,11 +18,6 @@
  | program.           If not, see <http://www.gnu.org/licenses/>.
  |#
 
-;(print "Loading code...")
-
-; fixme: можно не вызывать, все равно не работает :)
-;(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
-
 (define build-start (time-ms))
 
 ; forget all other libraries to have them be reloaded and rebuilt
@@ -35,6 +30,7 @@
 
 (import (src vm))   ;; команды виртуальной машины
 (import (r5rs core)) ;; базовый языковый набор ol
+
 
 ;; forget everhything except these and core values (later list also them explicitly)
 ,forget-all-but (*libraries* *codes* *vm-args* wait stdin stdout stderr set-ticker-value build-start)
@@ -50,8 +46,6 @@
 
 (define *include-dirs* '(".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
-
-
 (define *loaded* '())   ;; can be removed soon, was used by old ,load and ,require
 
 
@@ -127,51 +121,7 @@
 ;(import (owl random))
 
 (import (owl args))
-
 (import (owl sys))
-
-;;;
-;;; Entering sandbox
-;;;
-
-;; a temporary O(n) way to get some space in the heap
-
-;; fixme: allow a faster way to allocate memory
-;; n-megs → _
-(define (ensure-free-heap-space megs)
-   #true)
-;   (if (> megs 0)
-;      (lets
-;         ((my-word-size (get-word-size)) ;; word size in bytes in the current binary (4 or 8)
-;          (blocksize 65536)              ;; want this many bytes per node in list
-;          (pairsize (* my-word-size 3))  ;; size of cons cell, being [header] [car-field] [cdr-field]
-;          (bytes                         ;; want n bytes after vector header and pair node for each block
-;            (map (λ (x) 0)
-;               (iota 0 1
-;                  (- blocksize (+ pairsize my-word-size)))))
-;          (n-blocks
-;            (ceil (/ (* megs (* 1024 1024)) blocksize))))
-;         ;; make a big data structure
-;         (map
-;            (λ (node)
-;               ;; make a freshly allocated byte vector at each node
-;               (list->byte-vector bytes))
-;            (iota 0 1 n-blocks))
-;         ;; leave it as garbage
-;         #true)))
-;
-;; enter sandbox with at least n-megs of free space in heap, or stop the world (including all other threads and io)
-(define (sandbox n-megs)
-   ;; grow some heap space work working, which is usually necessary given that we can't
-   ;; get any more memory after entering seccomp
-   (if (and n-megs (> n-megs 0))
-      (ensure-free-heap-space n-megs))
-   (or
-      (syscall 157 #false #false #false)
-      (begin
-         (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
-         (halt exit-seccomp-failed))))
-
 
 ;; implementation features, used by cond-expand
 (define *features*
@@ -196,7 +146,7 @@
       *include-dirs*
       *libraries*))      ;; all currently loaded libraries
 
-;(print "Code loaded at " (- (time-ms) build-start) " ms.")
+
 
 ;;;
 ;;; MCP, master control program and the thread controller
@@ -217,7 +167,6 @@
          (λ (reason) (error "bootstrap import error: " reason))
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
 
-;
 (define *version*
    (let loop ((args *vm-args*))
       (if (null? args)
@@ -227,6 +176,9 @@
             (runtime-error "no version in command line" args)
             (cadr args))
          (loop (cdr args))))))
+
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -253,47 +205,21 @@
                         ;; get basic io running
                         (io:init)
 
-                        ;; repl needs symbol etc interning, which is handled by this thread
+                        ;; repl needs symbol and bytecode interning,
+                        ;;  which is handled by this threads
                         (fork-intern-interner symbols)
                         (fork-bytecode-interner codes)
 
                         ;; set a signal handler which stop evaluation instead of owl
                         ;; if a repl eval thread is running
-                        (set-signal-action repl-signal-handler)
+                        (set-signal-action repl-signal-handler) ; TODO: change
 
                         ;; repl
                         (exit-owl
-                           (let*(;(file (if (null? vm-args)
-                                 ;         stdin
-                                 ;         (if (string-eq? (car vm-args) "-")
-                                 ;            stdin
-                                 ;            (open-input-file (car vm-args)))))
-                                 (options
-                                    (let loop ((options #empty) (args (if (null? vm-args) null (cdr vm-args))))
-                                       (cond
-                                          ((null? args)
-                                             options)
-                                          ((string-eq? (car args) "--sandbox")
-                                             (loop (put options 'sandbox #t) (cdr args)))
-                                          ((string-eq? (car args) "--interactive")
-                                             (loop (put options 'interactive #t) (cdr args)))
-                                          ((string-eq? (car args) "--home") ; TBD
-                                             (if (null? (cdr args))
-                                                (runtime-error "no heap size in command line" args))
-                                             (loop (put options 'home (cadr args)) (cddr args)))
-                                          (else
-                                             (loop options (cdr args))))))
-
-                                 (home (or (getf options 'home)
-                                           (getenv "OL_HOME")
+                           (let*((home (or (getenv "OL_HOME")
                                            (cond
                                               ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
                                               (else "/usr/lib/ol")))) ; Linux, *BSD, etc.
-                                 (sandbox? (getf options 'sandbox))
-                                 (interactive? #false)
-;                                           (getf options 'interactive)
-;                                           (syscall 16 file 19 #f))) ; isatty()
-
                                  (version (cons "OL" *version*))
                                  (env (fold
                                           (λ (env defn)
@@ -303,20 +229,16 @@
                                              (cons '*owl-names*   initial-names)
                                              (cons '*owl-version* initial-version)
                                              (cons '*include-dirs* (list "." home))
-                                             (cons '*interactive* interactive?)
+                                             (cons '*interactive* #false)
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* version)
-                                            ;(cons '*scheme* 'r5rs)
-                                             (cons '*sandbox* sandbox?)
+                                             (cons '*sandbox* #false)
 
                                              (cons 'IN IN)
                                              (cons 'OUT OUT)
                                           ))))
-                              (if sandbox?
-                                 (sandbox 1)) ;(sandbox megs) - check is memory enough
                               (repl-trampoline env IN)))))))))
             )))) ; no threads state
-
 
 
 ;(define symbols (symbols-of get-main-entry))
@@ -325,8 +247,6 @@
 ;;;
 ;;; Dump the new repl
 ;;;
-
-;(print "Compiling ...")
 
 ;--
 (define (symbols-of node)
@@ -380,26 +300,7 @@
 
 
 
-
-;(let*((path "talkback.fasl")
-;      (port ;; where to save the result
-;         (open-output-file path))
-;
-;      (symbols (symbols-of get-main-entry))
-;      (codes   (codes-of   get-main-entry))
-;      (bytes ;; encode the resulting object for saving in some form
-;         (fasl-encode (get-main-entry symbols codes))))
-;   (if (not port)
-;      (begin
-;         (print "Could not open " path " for writing")
-;         #false)
-;      (begin ;; just save the fasl dump
-;         (write-bytes port bytes)
-;         (close-port port)
-;         (print "Output written at " (- (time-ms) build-start) " ms.")
-;         #true)))
-
-; compile the web-repl:
+; compile the talkback:
 (let*((symbols (symbols-of get-main-entry))
       (codes   (codes-of   get-main-entry))
       (entry   (get-main-entry symbols codes))

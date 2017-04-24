@@ -12,6 +12,10 @@ extern unsigned char* talkback;
 #include <stdio.h>
 #include <pthread.h>
 
+/** PIPING *********************************/
+int pipe(int* pipes); // create the pipe
+//int emptyq(int pipe); // check is pipe empty
+
 #if _WIN32
 #	include <windows.h>
 
@@ -19,7 +23,7 @@ int pipe(int* pipes)
 {
 	static int id = 0;
 	char name[128];
-	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id);
+	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id);//__sync_fetch_and_add(&id, 1));
 
 	HANDLE pipe1 = CreateNamedPipe(name,
 			PIPE_ACCESS_DUPLEX|WRITE_DAC,
@@ -33,14 +37,29 @@ int pipe(int* pipes)
 			NULL);
 
 
-	pipes[0] = pipe1;
-	pipes[1] = pipe2;
+	pipes[0] = (int)(size_t)pipe1; // may loss bits!
+	pipes[1] = (int)(size_t)pipe2;
 
 	return 0;
 	//ConnectNamedPipe(pipe, NULL);
 }
+
+int emptyq(int pipe)
+{
+	DWORD bytesRead;
+	DWORD totalBytesAvail;
+	DWORD bytesLeftThisMessage;
+	PeekNamedPipe((HANDLE)(size_t)pipe, NULL, 0,
+			&bytesRead, &totalBytesAvail, &bytesLeftThisMessage);
+
+	return totalBytesAvail == 0;
+}
 #else
 #	include <fcntl.h>
+
+/*int emptyq(int pipe) {
+	return poll(&(struct pollfd){ .fd = fd, .events = POLLIN }, 1, 0)==1) == 0);
+}*/
 #endif
 
 // embedded example
@@ -86,8 +105,8 @@ state_t* OL_tb_start()
 	pthread_attr_init(&attr);
 
 	state_t* state = (state_t*)malloc(sizeof(state_t));
-	pipe(&state->in);
-	pipe(&state->out);
+	pipe((int*)&state->in);
+	pipe((int*)&state->out);
 
 #ifndef _WIN32
 	fcntl(state->in[0], F_SETFL, fcntl(state->in[0], F_GETFL, 0) | O_NONBLOCK);
@@ -107,8 +126,8 @@ PUBLIC
 void OL_tb_stop(state_t* state)
 {
 #if _WIN32
-	int a;
-	WriteFile(state->in[1], "(exit-owl 1)", 12, &a, NULL);
+	DWORD a;
+	WriteFile((HANDLE)(size_t)state->in[1], "(exit-owl 1)", 12, &a, NULL);
 #else
 	write(state->in[1], "(exit-owl 1)", 12);
 #endif
@@ -126,8 +145,8 @@ void OL_tb_send(state_t* state, char* program)
 	int len = strlen(program);
 
 #ifdef _WIN32
-	int b;
-	WriteFile(state->in[1], program, len,                      &b, NULL);
+	DWORD b;
+	WriteFile((HANDLE)(size_t)state->in[1], program, len,                      &b, NULL);
 #else
 	write(state->in[1],     program, len);
 #endif
@@ -138,14 +157,15 @@ void OL_tb_send(state_t* state, char* program)
 PUBLIC
 int OL_tb_recv(state_t* state, char* out, int size)
 {
-	int bytes = 0;
 #ifdef _WIN32
+	DWORD bytes = 0;
 	do {
 		Sleep(1); // time to process data by OL
-		ReadFile(state->out[0], out, size-1, &bytes, NULL);
+		ReadFile((HANDLE)(size_t)state->out[0], out, size-1, &bytes, NULL);
 	}
 	while (bytes == 0);
 #else
+	int bytes = 0;
 	do {
 		pthread_yield(); // time to process data by OL
 		bytes = read(state->out[0], out, size-1);
@@ -164,10 +184,10 @@ int OL_tb_eval(state_t* state, char* program, char* out, int size)
 	int len = strlen(program);
 
 #ifdef _WIN32
-	int a,b,c;
-	WriteFile(state->in[1], "(display-to OUT ((lambda ()", 27, &a, NULL);
-	WriteFile(state->in[1], program, len,                      &b, NULL);
-	WriteFile(state->in[1], ")))", 3,                          &c, NULL);
+	DWORD a,b,c;
+	WriteFile((HANDLE)(size_t)state->in[1], "(display-to OUT ((lambda ()", 27, &a, NULL);
+	WriteFile((HANDLE)(size_t)state->in[1], program, len,                      &b, NULL);
+	WriteFile((HANDLE)(size_t)state->in[1], ")))", 3,                          &c, NULL);
 #else
 	write(state->in[1],     "(display-to OUT ((lambda ()", 27);
 	write(state->in[1],     program, len);
