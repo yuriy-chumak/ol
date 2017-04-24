@@ -17,7 +17,7 @@
       evaluate
       *src-olvm*
       ; 6.5 Eval
-      eval
+      eval eval-repl
       ;scheme-report-environment null-environment
       interaction-environment)
 

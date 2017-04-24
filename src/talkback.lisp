@@ -178,7 +178,82 @@
          (loop (cdr args))))))
 
 
+;(define (next-newline-distance lst)
+;   (let loop ((lst lst) (pos 0))
+;      (cond
+;         ((null? lst) (values pos lst))
+;         ((eq? (car lst) 10) (values (+ pos 1) (cdr lst)))
+;         (else (loop (cdr lst) (+ pos 1))))))
+;
+;(define (find-line data error-pos)
+;   ;(print " - find-line")
+;   (let loop ((data data) (pos 0))
+;      ;(print* (list "data " data " pos " pos  " error-pos " error-pos))
+;      (lets ((next datap (next-newline-distance data)))
+;         (cond
+;            ((<= error-pos next)
+;               (runes->string (take data (- next 1)))) ; take this line
+;            ((null? data)
+;               "(end of input)")
+;            (else
+;               (loop datap next))))))
 
+(define syntax-error-mark (list 'syntax-error))
+(define (syntax-fail pos info lst)
+   (list syntax-error-mark info
+      (list ">>> " #|(find-line lst pos)|# " <<<")))
+(define (syntax-error? x) (and (pair? x) (eq? syntax-error-mark (car x))))
+
+
+(define (repl-ok env value) (tuple 'ok value env))
+(define (repl-fail env reason)
+   (let ((seterrno (env-get env 'seterrno #f)))
+      ;(print-to stderr "\nseterrno: " seterrno))
+      (if seterrno (seterrno)))
+    (tuple 'error reason env))
+
+
+
+
+
+(define (repl env in)
+   (let loop ((env env) (in in) (last 'blank)) ; last - последний результат
+      (cond
+         ((null? in)
+            (repl-ok env last))
+         ((pair? in)
+            (lets ((this in (uncons in #false)))
+               (cond
+                  ((eof? this)
+                     (repl-ok env last))
+                  ((syntax-error? this)
+                     (repl-fail env (cons "This makes no sense: " (cdr this))))
+                  (else
+                     (tuple-case (eval-repl this env repl)
+                        ((ok result env)
+                           (loop env in result))
+                        ((fail reason)
+                           (repl-fail env reason)))))))
+         (else
+            (loop env (in) last)))))
+
+(define (repl-trampoline env in out)
+   (let boing ((env env))
+      (let ((env (bind-toplevel env)))
+         (tuple-case (repl env (fd->exp-stream in "" sexp-parser syntax-fail #false))
+            ((ok val env)
+               (halt 0))
+            ((error reason env)
+               ; better luck next time
+               (cond
+                  ((list? reason)
+                     (print-to out reason)
+                     (boing env))
+                  (else
+                     (print-to out reason)
+                     (boing env))))
+            (else is foo
+               (boing env))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -237,7 +312,33 @@
                                              (cons 'IN IN)
                                              (cons 'OUT OUT)
                                           ))))
-                              (repl-trampoline env IN)))))))))
+                              (repl-trampoline env IN OUT)
+                              ;(let boing ((env env))
+                              ;   (let ((env (bind-toplevel env)))
+                              ;      (tuple-case (repl-port env IN)
+                              ;         ((ok val env)
+                              ;            ;; bye-bye
+                              ;            (halt 0))
+                              ;         ((error reason renv)
+                              ;            ;(print-to stderr ">" (env-get env 'seterrno #false))
+                              ;            ; notify error:
+                              ;            (error env "error :)")
+                              ;            ;(let ((seterrno (env-get env 'seterrno #false)))
+                              ;            ;   ;(print-to stderr "seterrno: " seterrno)
+                              ;            ;   (if seterrno (seterrno))) ;(print "###### seterrno!")))
+                              ;            ; post error text in output buffer
+                              ;            (cond
+                              ;               ((list? reason)
+                              ;                  (print-to OUT "1")
+                              ;                  ;(print-to OUT reason)
+                              ;                  (boing renv))
+                              ;               (else
+                              ;                  (print-to OUT "2")
+                              ;                  ;(print-to OUT reason)
+                              ;                  (boing renv))))
+                              ;         (else is foo
+                              ;            (boing env)))))
+                              ))))))))
             )))) ; no threads state
 
 
