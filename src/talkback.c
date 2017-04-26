@@ -78,6 +78,8 @@ typedef struct state_t
 	int out[2];
 } state_t;
 
+static int (*do_load_library)(const char* thename, char** output);
+
 static void *
 thread_start(void *arg)
 {
@@ -197,4 +199,31 @@ int OL_tb_eval(state_t* state, char* program, char* out, int size)
 	return
 	OL_tb_recv(state, out, size);
 }
+
+#if _WIN32
+__declspec(dllexport)
+#else
+__attribute__((__visibility__("default")))
+#endif
+__attribute__((used))
+char* OL_tb_hook_import(char* file)
+{
+	char* lib = 0;
+	if (do_load_library(file, &lib) == 0)
+		return lib;
+	return 0;
+}
+
+void OL_tb_set_import_hook(state_t* state, int (*hook)(const char* thename, char** output))
+{
+	do_load_library = hook;
+
+	// make hook:
+	OL_tb_send(state,
+	        "(import (otus pinvoke))"
+	        "(define $ (dlopen))"
+	        "(define hook:import (dlsym $ type-string \"OL_tb_hook_import\" type-string))"
+	);
+}
+
 #endif

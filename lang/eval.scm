@@ -46,6 +46,7 @@
       (lang sexp)
       (owl parse)
       (owl equal)
+      (owl string)
       (scheme misc)
       (owl lazy)
       (lang macro)
@@ -573,6 +574,17 @@
                         (cons #\/ tl))))
             null iset)))
 
+
+      ;; 
+      (define (library-file->list env file)
+         ;(print-to stderr "library-file->list " file)
+         (let ((hook (env-get env 'hook:import #f)))
+            (if hook (or
+                        (let ((content (hook (c-string file))))
+                           (if (string? content) (string->list content) #f))
+                        (file->list file))
+               (file->list file))))
+
       ;; try to find and parse contents of <path> and wrap to (begin ...) or call fail
       (define (repl-include env path fail)
 ;        (print "repl-include path: " path)
@@ -581,7 +593,7 @@
                        (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path)))))
                        (env-get env includes-key null)))
 ;             (_ (print "paths: " paths))
-             (datas (lmap file->list paths))
+             (datas (lmap (lambda (file) (library-file->list env file)) paths))
              (data (first (λ (x) x) datas #false)))
             (if data
                (let ((exps (list->sexps data "library fail" path)))

@@ -24,6 +24,8 @@ void OL_tb_send(void* state, char* program);
 int  OL_tb_recv(void* state, char* out, int size);
 int  OL_tb_eval(void* oltb, char* program, char* out, int size);
 
+void OL_tb_set_import_hook(void* state, int (*do_load_library)(const char* thename, char** output));
+
 // error processing extension:
 // errno
 static int OL_tb_error = 0;
@@ -43,6 +45,8 @@ int OL_tb_seterror(void)
 {
 	return ++OL_tb_error;
 }
+
+
 
 // .
 
@@ -86,16 +90,52 @@ int b(int arg) {
 	return 0;
 }
 
+/* IMPORT handler example */
+static char* imports[] =
+{ "./private/library1.scm",
+    "(define-library (private library1)"
+    "   (export function1)"
+    "   (import (r5rs core) (owl math))"
+    "(begin"
+    "    (define (function1 x) (+ x 2))"
+    "))",
+  "./private/library2.scm",
+    "(define-library (private library2)"
+    "   (export function2)"
+    "   (import (r5rs core))"
+    "(begin"
+    "    (define (function2 x) (- x 2))"
+    "))",
+  0
+};
+
+int do_load_library(const char* thename, char** output)
+{
+	char** imp = imports;
+	while (*imp != 0) {
+		if (strcmp(*imp++, thename) == 0) {
+			*output = *imp;
+			return 0;
+		}
+		imp++;
+	};
+	return 1;
+}
 
 int main(int argc, char** argv)
 {
 	oltb = OL_tb_start();
+	OL_tb_set_import_hook(oltb, do_load_library);
 
 	printf("Compiling script...");
-	OL_tb_send(oltb, "(import (otus pinvoke) (owl io))"
+	OL_tb_send(oltb, "(import (otus pinvoke))"
 	                 "(define $ (dlopen))" // get own handle
 	                 "(define add (dlsym $ type-int+ \"add_ii\" type-int+ type-int+))"
 	                 "(define seterrno (dlsym $ type-int+ \"OL_tb_seterror\"))"
+
+	                 "(define *debug-import* #t)"
+
+	                 "(import (private library1))" // load internal library
 	);
 
 	OL_tb_send(oltb, "(define (a n) (add n 17))");
@@ -104,7 +144,9 @@ int main(int argc, char** argv)
 	printf("Ok.\n");
 	printf("Loading 'main.scm' script if exist...");
 
-	OL_tb_send(oltb, ",load \"tutorial/sample-embed/main.scm\"\n");
+	//OL_tb_send(oltb, ",load \"tutorial/sample-embed/main.scm\"\n");
+	OL_tb_send(oltb, "(import (tutorial sample-embed main-lib))");
+
 
 	int got;
 	char output[1024];
@@ -115,12 +157,19 @@ int main(int argc, char** argv)
 	printf("result of 'a(12)' function: %d\n", a(12));
 	printf("result of 'b(72)' function: %d\n", b(72));
 
+	printf("calling 'function1(42)' /imported/ function... ");
+	got = eval(oltb, "(function1 42)", output, sizeof(output));
+	if (OL_tb_errno())
+		printf("failed. Error: %s\n", output);
+	else
+		printf("ok. Len: %d, value [%s]\n", got, output);
+
 	printf("calling 'sum-factorsx(72)' /not existent/ function... ");
 	got = eval(oltb, "(sum-factorsx 72)", output, sizeof(output));
 	if (OL_tb_errno())
 		printf("failed. Error: %s\n", output);
 	else
-		printf("ok. Len: %d, value %s\n", got, output);
+		printf("ok. Len: %d, value [%s]\n", got, output);
 
 	// calling "f" function
 	printf("result of 'f(42)' function... ");
@@ -128,7 +177,7 @@ int main(int argc, char** argv)
 	if (OL_tb_errno())
 		printf("failed. Error: %s\n", output);
 	else
-		printf("ok. Len: %d, value %s\n", got, output);
+		printf("ok. Len: %d, value [%s]\n", got, output);
 
 	printf("result of 'a(12)' function: %d\n", a(12));
 	printf("result of 'b(72)' function: %d\n", b(72));
