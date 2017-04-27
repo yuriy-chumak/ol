@@ -1006,7 +1006,7 @@ word* p = new_bytevector(TSTRING, length);\
 	char* ptr = (char*)&p[1];\
 	while (size--)\
 		*ptr++ = *data++;\
-	*ptr = '\0'; \
+	/* *ptr = '\0'; <- bug! or use length+1 */ \
 	/*return*/ p;\
 })
 
@@ -3244,12 +3244,12 @@ loop:;
 				fp = ol->heap.fp;
 
 				// а вдруг вызвали gc?
-//				int sub
-//				= ip - (unsigned char *) &this[1];
+				int sub
+				= ip - (unsigned char *) &this[1];
 				this = ol->this;
-//				ip = (unsigned char *) &this[sub];
+				ip = (unsigned char *) &this[1] + sub;
 
-				// todo: проверить, но похожу что этот выхов всегда сопровождается вызовом RET
+				// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
 				// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
 				break;
 			}
