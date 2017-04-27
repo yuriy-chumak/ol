@@ -8,6 +8,7 @@
 
 #if EMBEDDED_VM
 #include <stdio.h>
+#include <stdarg.h>
 
 #if _WIN32
 #define TALKBACK_API __declspec(dllexport)
@@ -122,6 +123,13 @@ int do_load_library(const char* thename, char** output)
 	return 1;
 }
 
+// do publicly declared memcpy found
+TALKBACK_API
+void *MEMCPY(void *dest, const void *src, size_t n)
+{
+	memcpy(dest, src, n);
+}
+
 int main(int argc, char** argv)
 {
 	oltb = OL_tb_start();
@@ -133,24 +141,37 @@ int main(int argc, char** argv)
 	                 "(define add (dlsym $ type-int+ \"add_ii\" type-int+ type-int+))"
 	                 "(define seterrno (dlsym $ type-int+ \"OL_tb_seterror\"))"
 
-	                 "(define *debug-import* #t)"
-
 	                 "(import (private library1))" // load internal library
 	);
 
-	OL_tb_send(oltb, "(define (a n) (add n 17))");
-	OL_tb_send(oltb, "(define (b n) (* n 17))");
-	OL_tb_send(oltb, "(define (f n) (fold * 1 (iota n 1 1)))");
-	printf("Ok.\n");
-	printf("Loading 'main.scm' script if exist...");
-
-	//OL_tb_send(oltb, ",load \"tutorial/sample-embed/main.scm\"\n");
-	OL_tb_send(oltb, "(import (tutorial sample-embed main-lib))");
-
-
 	int got;
 	char output[1024];
-	got = eval(oltb, "1", output, sizeof(output)); // let's wait for full loading
+
+	void send(void* oltb, char* format, ...) {
+		char buff[256];
+		va_list args;
+		va_start(args, format);
+		vsnprintf(buff, sizeof(buff), format, args);
+		va_end(args);
+
+		OL_tb_send(oltb, buff);
+	}
+
+
+
+	send(oltb, "(define (a n) (add n 17))");
+	send(oltb, "(define (b n) (* n 17))");
+	send(oltb, "(define (f n) (fold * 1 (iota n 1 1)))");
+	eval(oltb, "#t", output, sizeof(output)); // wait for VM
+	if (OL_tb_errno() == 0)
+		printf("Ok.");
+
+	printf("\nLoading 'main.scm' script if exist...");
+
+	//OL_tb_send(oltb, ",load \"tutorial/sample-embed/main.scm\"\n"); <-- direct FS access
+	OL_tb_send(oltb, "(import (tutorial sample-embed main-lib))"); // can be overloaded
+
+	got = eval(oltb, "#t", output, sizeof(output)); // let's wait for full loading
 	printf("Ok.\n");
 
 	// calling "a" function
@@ -181,6 +202,42 @@ int main(int argc, char** argv)
 
 	printf("result of 'a(12)' function: %d\n", a(12));
 	printf("result of 'b(72)' function: %d\n", b(72));
+
+
+	printf("\n\n\nbuffers example:\n");
+	send(oltb, "(define memcpy-pi (dlsym $ type-int+ \"MEMCPY\" type-vector-raw type-int+ type-int+))");
+	send(oltb, "(define memcpy-ip (dlsym $ type-int+ \"MEMCPY\" type-int+ type-vector-raw type-int+))");
+
+	eval(oltb, "memcpy-pi", output, sizeof(output)); // wait for finish
+
+
+	// So, Let's do the simple operation: copy LONG array to the OLVM and back increased one
+	char input[] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+	printf("input: %d", input[0]);
+	for (int i = 1; i < sizeof(input)/sizeof(*input); i++)
+		printf(", %d", input[i]);
+	printf("\n");
+
+	printf("Let's apply 'map (lambda (x) (* x x))' to the vector: ");
+
+	int len = sizeof(input);
+	send(oltb, "(define buffer (vm:raw type-vector-raw %d)) (memcpy-pi buffer %d %d)", len, input, len);
+	send(oltb, "(define new-buffer (list->vector (map (lambda (x) (* x x)) (vector->list buffer))))");
+	send(oltb, "(memcpy-ip %d new-buffer %d)", input, len);
+
+	got = eval(oltb, "memcpy-pi", output, sizeof(output)); // wait for finish
+	if (OL_tb_errno())
+		printf("failed. Error: %s\n", output);
+	else {
+		printf("ok.\n");
+
+		printf("output: %d", input[0]);
+		for (int i = 1; i < sizeof(input)/sizeof(*input); i++)
+			printf(", %d", input[i]);
+		printf("\n");
+	}
+
+
 	OL_tb_stop(oltb);
 	return 0;
 }
