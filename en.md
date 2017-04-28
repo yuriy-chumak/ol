@@ -56,6 +56,39 @@ which is another way of
    I'm working for add more prebuilts.
 
 ### Project news
+
+
+* Thr 27 Apr 2017
+  * in talkback sample added sending to OL and receiving from the byte buffer
+  * thinking about moving the talkback into separate library
+
+* Wed 26 Apr 2017
+  * added hook for imports to the OL, after testing will merge in mainline - now import behaviour can be changed at user level
+
+* Mon 24 Apr 2017
+  * added error handling to the talkback - now talkback returns error code with error description
+
+* Fri 21 Apr 2017
+  * more samples (added coroutine sample)
+
+* Mon 17 Apr 2017
+  * extent talkback sample
+  * talkback now can do "import" and ",load"
+  * warnings cleanup
+
+* Fri 14 Apr 2017
+  * fixed warning for new glibc
+  * another memory manager fix related to the large objects allocation
+  * added hook for exit() that gives ability to catch the OL exiting appilcation - use by OL_atexit()
+  * seems to fixed bug with 100% resources usage in idle mode
+
+* Thr 13 Apr 2017
+  * first implementation of experimental talkback interface - linkage C and OL modules, that helps to easily run OL scripts from C
+  * fixed bug with possible heap corruption when requested a very large object via vm:raw
+
+* Wed 12 Apr 2017
+  * small fixes for embed functionality
+
 * Wed 12 Apr 2017
   * huh, got first thirdparty tickets!
   * fixed embed docs and functionality

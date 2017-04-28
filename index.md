@@ -57,6 +57,58 @@ which is another way of
 
 ### Project news
 
+
+* Thr 27 Apr 2017
+  * in talkback sample added sending to OL and receiving from the byte buffer
+  * thinking about moving the talkback into separate library
+
+* Wed 26 Apr 2017
+  * added hook for imports to the OL, after testing will merge in mainline - now import behaviour can be changed at user level
+
+* Mon 24 Apr 2017
+  * added error handling to the talkback - now talkback returns error code with error description
+
+* Fri 21 Apr 2017
+  * more samples (added coroutine sample)
+
+* Mon 17 Apr 2017
+  * extent talkback sample
+  * talkback now can do "import" and ",load"
+  * warnings cleanup
+
+* Fri 14 Apr 2017
+  * fixed warning for new glibc
+  * another memory manager fix related to the large objects allocation
+  * added hook for exit() that gives ability to catch the OL exiting appilcation - use by OL_atexit()
+  * seems to fixed bug with 100% resources usage in idle mode
+
+* Thr 13 Apr 2017
+  * first implementation of experimental talkback interface - linkage C and OL modules, that helps to easily run OL scripts from C
+  * fixed bug with possible heap corruption when requested a very large object via vm:raw
+
+* Wed 12 Apr 2017
+  * small fixes for embed functionality
+
+* Wed 12 Apr 2017
+  * huh, got first thirdparty tickets!
+  * fixed embed docs and functionality
+  * fixed master branch error for ol recompiling
+
+* Tue 28 Mar 2017
+  * more win32 sysinfo
+
+* Tue 21 Mar 2017
+  * more openal (pcm, a-law decoders)
+
+* Mon 20 Mar 2017
+  * changes set-ref! primop
+  * fixed vm:raw primop, added to vm:raw more parameter - now vm:raw can allocate required space without initializing
+  * added new vm command endianness that returns 1 for little- and 2 for big- system endianness
+  * openal functionality moved from samples to the library
+
+* Fri 17 Mar 2017
+  * added basic OpenAL example.
+
 * Thr 16 Mar 2017
   * map speedup and r5rs compliant fold
 
@@ -81,16 +133,16 @@ which is another way of
 
 * Wed 22 Feb 2017
   * trying to implement fork for win32, no so happy
-  
+
 * Mon 20 Feb 2017
   * khe-khe, we got own brainf**k interpreter!, simultaneously updated [rosetta code](http://rosettacode.org/wiki/Category:Ol) page.
   * fixed set-ref and set-ref!, now they correcly works with signed numbers
   * bf works - tested with bf self interpreter
-  
+
 * Fri 17 Feb 2017
   * added compatible with r5rs (r5rs characters) module
   * updated license text in ol.scm
-  
+
 * Mon 13 Feb 2017
   * from this point will post news without time
   * JF2 renamed to JAF (Jump if Arity Failed)
@@ -98,7 +150,7 @@ which is another way of
   * Tue 07 Feb 2017 18:19 CET
     * released project works and works fine.
     * ol ported under web, so it can run under web-browsers and run fast.
-  
+
   * Fri 30 Dec 2016 17:06 EET
     * release 1.1 ready to download.
 
