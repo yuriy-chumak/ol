@@ -4229,6 +4229,20 @@ int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
 
+#if	HAS_SOCKETS && defined(_WIN32)
+	WSADATA wsaData;
+	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
+	if (sock_init  != 0) {
+		STDERR("WSAStartup failed with error: %d", sock_init);
+		return 1;
+	}
+	AllocConsole();
+#endif
+
+#ifdef DO_UNIT_TESTING
+#include "vmtests.h"
+	return 0;
+#endif
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
@@ -4292,16 +4306,6 @@ int main(int argc, char** argv)
 #endif
 
 	//set_signal_handler();
-
-#if	HAS_SOCKETS && defined(_WIN32)
-	WSADATA wsaData;
-	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
-	if (sock_init  != 0) {
-		STDERR("WSAStartup failed with error: %d", sock_init);
-		return 1;
-	}
-	AllocConsole();
-#endif
 
 	OL* olvm =
 		OL_new(bootstrap, bootstrap != language ? free : NULL);
