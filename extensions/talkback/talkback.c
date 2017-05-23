@@ -54,12 +54,28 @@ int emptyq(int pipe)
 
 	return totalBytesAvail == 0;
 }
+
+int cleanup(int* pipes)
+{
+	CloseHandle(pipes[0]);
+	CloseHandle(pipes[1]);
+
+	return 0;
+}
 #else
 #	include <fcntl.h>
 
 /*int emptyq(int pipe) {
 	return poll(&(struct pollfd){ .fd = fd, .events = POLLIN }, 1, 0)==1) == 0);
 }*/
+int cleanup(int* pipes)
+{
+	close(pipes[0]);
+	close(pipes[1]);
+
+	return 0;
+}
+
 #endif
 
 // embedded example
@@ -136,6 +152,9 @@ void OL_tb_stop(state_t* state)
 
 	pthread_cancel(state->thread_id);
 	pthread_join(state->thread_id, 0);
+
+	cleanup((int*)&state->in);
+	cleanup((int*)&state->out);
 
 	OL_free(state->ol);
 	free(state);
