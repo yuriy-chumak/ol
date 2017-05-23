@@ -209,11 +209,10 @@ olvm.js: src/olvm.c src/olvm.h src/slim.c
 	emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O2 --llvm-opts "['-O2']" --memory-init-file 0 -v
 
 
-oltb: src/olvm.c src/talkback.repl.c src/talkback.c src/talkback_sample.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
-	   -DEMBEDDED_VM src/talkback.repl.c src/talkback.c src/talkback_sample.c -pthread \
+talkback: src/olvm.c extensions/talkback/boot.c extensions/talkback/talkback.c extensions/talkback/sample.c
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DDEMBEDDED_VM -DHAS_PINVOKE=1 -o $@ -I src \
+	   extensions/talkback/boot.c extensions/talkback/talkback.c extensions/talkback/sample.c -pthread \
 	   -Xlinker --export-dynamic $(L)
-
 
 
 src/repl.o: repl

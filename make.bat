@@ -114,8 +114,11 @@ GOTO:EOF
 
 :TALKBACK
 echo.   *** Making talkback:
-vm repl src/talkback.lisp >src/talkback.repl.c
-gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -fmessage-length=0 -Wno-strict-aliasing src/olvm.c src/talkback.repl.c src/talkback.c src/talkback_sample.c -o "oltb.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
+vm repl extensions/talkback/talkback.lisp >extensions/talkback/boot.c
+gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DHAS_PINVOKE=1 ^
+    -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    src/olvm.c extensions/talkback/boot.c extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
+    -lws2_32 -O2 -g2
 GOTO:EOF
 
 GOTO:EOF
