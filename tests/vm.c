@@ -1,5 +1,4 @@
-#ifdef DO_UNIT_TESTING
-#include "olvm.h"
+#include <olvm.h>
 
 #include <stdio.h>
 #include <unistd.h>
@@ -58,5 +57,3 @@ int main(int argc, char** argv)
 	///
 	return (failed != 0);
 }
-
-#endif
