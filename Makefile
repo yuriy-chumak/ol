@@ -210,7 +210,7 @@ olvm.js: src/olvm.c src/olvm.h src/slim.c
 
 
 talkback: src/olvm.c extensions/talkback/boot.c extensions/talkback/talkback.c extensions/talkback/sample.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DDEMBEDDED_VM -DHAS_PINVOKE=1 -o $@ -I src \
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DEMBEDDED_VM -DHAS_PINVOKE=1 -o $@ -I src \
 	   extensions/talkback/boot.c extensions/talkback/talkback.c extensions/talkback/sample.c -pthread \
 	   -Xlinker --export-dynamic $(L)
 
