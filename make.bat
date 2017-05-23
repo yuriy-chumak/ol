@@ -165,7 +165,7 @@ GOTO:EOF
 
 
 :TESTS
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM -DDO_UNIT_TESTING src/olvm.c -o "tests.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM -DEMBEDDED_VM -DDO_UNIT_TESTING src/olvm.c src/vm-functional-tests.c -o "tests.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
 tests.exe
 if errorlevel 1 goto fail
 

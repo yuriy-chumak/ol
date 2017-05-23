@@ -4239,10 +4239,6 @@ int main(int argc, char** argv)
 	AllocConsole();
 #endif
 
-#ifdef DO_UNIT_TESTING
-#include "vmtests.h"
-	return 0;
-#endif
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
