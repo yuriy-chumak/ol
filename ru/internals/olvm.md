@@ -179,4 +179,17 @@ categories: ru, olvm
  * **41** (ff:red?)
  * **37** (ff:right?)
 
+##### Сводная таблица команд виртуальной машины
+
+|   #  | o0        | o1        | o2     | o3   | o4       | o5     | o6     | o7    |
+|:-----|:---------:|:---------:|:------:|:----:|:--------:|:------:|:------:|:-----:|
+|**0o**|    ---    |    REFI   |  GOTO  |OCL-C |OCL-P     | MOV2   |CL1-C   |CL1-P  |
+|**1o**| JEQ       |    MOVE   |set-ref!|      |          | LDI    | LD     | type  |
+|**2o**| JP        |ARITY-ERROR|        |      | apply    |        | cast   | NEW   |
+|**3o**| RET       |    JAF    | DIV    | SYS  |endianness|wordsize|fxmax   |xmbits |
+|**4o**|tuple-apply|           |        |unreel| size     |FFRIGHTQ| ADD    | MUL   |
+|**5o**| SUB       | FFREDQ    |MKBLACK |MKRED | less?    |set-ref |FFTOGGLE| ref   |
+|**6o**| raw?      | ff-apply  | RUN    | cons | car      |cdr     | EQ     | AND   |
+|**7o**| LOR       |    XOR    | SHR    | SHL  | RAW      |clock   |version |syscall|
+
 TBD.
