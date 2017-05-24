@@ -4023,6 +4023,15 @@ loop:;
 		ip += 5; break;
 	}
 
+	// this is free to use commands:
+	case 11:
+	case 12:
+	case 18:
+	case 19:
+	case 21:
+	case 33:
+	case 34:
+
 	default:
 		ERROR(op, new_string("Invalid opcode"), ITRUE);
 		break;
