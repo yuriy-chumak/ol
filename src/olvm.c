@@ -2128,7 +2128,7 @@ loop:;
 	//	смотреть "owl/primop.scm" и "lang/assemble.scm"
 
 	// make object
-	case VMNEW: { // mkt t s f1 .. fs r
+	case VMNEW: { // new t f1 .. fs r
 		word type = *ip++;
 		word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0 length objects
 		word *p = new (type, size+1), i = 0; // s fields + header
@@ -2140,7 +2140,6 @@ loop:;
 		ip += size+1; break;
 	}
 
-	// todo: add numeric argument as "length" parameter
 	case VMRAW: { // (vm:raw type list|size)
 		int type = uvtoi(A0);
 		int len = 0;
@@ -2175,7 +2174,7 @@ loop:;
 			if ((word) p == INULL) {
 				#if VMRAW_CHECK
 				// it's safe to trunk not rounding
-				if (len / sizeof(word) > heap->end - fp) {
+				if (len / sizeof(word) > heap->end - fp) { // is it required?
 					heap->fp = fp; ol->this = this;
 					ol->gc(ol, len / sizeof(word));
 					fp = heap->fp; this = ol->this;
@@ -2191,8 +2190,9 @@ loop:;
 					p = (word*)cdr(p);
 				}
 
-				while ((word)pos % sizeof(word)) // clear the padding bytes,
-					*pos++ = 0;                  //             required!!!
+				// clear the padding bytes, don't remove!
+				while ((word)pos % sizeof(word))
+					*pos++ = 0;
 				A2 = (word)raw;
 			}
 			else
