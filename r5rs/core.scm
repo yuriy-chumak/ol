@@ -151,6 +151,17 @@
       (assert (if (less? 2 3) 'yes 'no)               ===>  yes)
       (assert (if (less? 3 2) 'yes 'no)               ===>  no)
 
+      ; syntax:  unless <test> <consequent> <alternate> * ol specific
+      ; syntax:  unless <test> <consequent> * ol specific
+      (define-syntax unless
+         (syntax-rules ()
+            ((unless val then)      (if val #false then))
+            ((unless val then else) (if val else then))))
+
+      (assert (unless (less? 2 3) 'yes 'no)               ===>  no)
+      (assert (unless (less? 3 2) 'yes 'no)               ===>  yes)
+
+
       ; ------------------
       ; 4.1.6  Assignments
       ; syntax: set! <variable> <expression>  * not supported
@@ -1379,7 +1390,7 @@
       λ
       syntax-error assert error runtime-error
 
-      if cond case and or
+      if unless cond case and or
       letrec letrec* let let* let*-values lets
       begin do
       delay force
