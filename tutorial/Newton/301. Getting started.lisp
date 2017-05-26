@@ -37,7 +37,7 @@
 (NewtonDestroy world)
 
 ; ==================
-(runtime-error "." #f)
+(runtime-error "." '())
 
 
 ; создадим "пол"

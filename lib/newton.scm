@@ -279,7 +279,7 @@
    (begin
 
 (define $ (or
-   ;(dlopen "libNewton.so")
+   (dlopen "libNewton.so")
    (dlopen "newton.dll")
    (runtime-error "Can't load newton library" #f)))
 (define (make-cb p l)
