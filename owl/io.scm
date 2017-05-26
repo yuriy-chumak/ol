@@ -44,7 +44,7 @@
       lines             ;; fd → null | ll of string, read error is just null, each [\r]\n removed
 
       system-print system-println system-stderr
-      take-nap
+      ;take-nap
       fasl-save         ;; obj path → done?
       fasl-load         ;; path default → done?
 
@@ -199,8 +199,8 @@
                   (cons (car ls)
                      (find-bed ls id (- n this))))))) ;; wake some time after this one
 
-      (define (add-sleeper ls env)
-         (lets ((from n env))
+      (define (add-sleeper ls envelope)
+         (lets ((from n envelope))
             (if (eq? (type n) type-fix+)
                (find-bed ls from n)
                (find-bed ls from 10))))   ;; silent fix
@@ -237,8 +237,8 @@
             ((null? ls)
                (sleeper (add-sleeper ls (wait-mail))))
             ((check-mail) =>
-               (λ (env)
-                  (sleeper (add-sleeper ls env))))
+               (λ (envelope)
+                  (sleeper (add-sleeper ls envelope))))
             (else
                (sleep-for (caar ls))
                (mail (cdar ls) 'awake) ;; 'awake have no meaning, this is simply "wake up" the thread ((n . id) ...)
@@ -508,9 +508,8 @@
                (port->byte-stream fd)
                #false)))
 
-      (define (take-nap)
-         (syscall 1200 #f #f #f))
-         ;(interact sid 5))
+;      (define (take-nap)
+;         (interact sid 5))
 
       (define (fasl-save obj path)
          (vector->file

@@ -8,6 +8,7 @@ IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
 IF "%1"=="slim" GOTO SLIM
+IF "%1"=="talkback" GOTO TALKBACK
 IF "%1"=="js" GOTO JS
 IF "%1"=="wasm" GOTO WASM
 IF "%1"=="release" GOTO RELEASE
@@ -111,6 +112,17 @@ echo.   *** Making slim:
 vm repl src/slim.lisp >src/slim.c
 GOTO:EOF
 
+:TALKBACK
+echo.   *** Making talkback:
+vm repl extensions/talkback/talkback.lisp >extensions/talkback/boot.c
+gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DHAS_PINVOKE=1 ^
+    -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    src/olvm.c extensions/talkback/boot.c extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
+    -lws2_32 -O2 -g2
+GOTO:EOF
+
+GOTO:EOF
+
 :JS
 echo.   *** Making virtual machine on js:
 @set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
@@ -156,6 +168,12 @@ GOTO:EOF
 
 
 :TESTS
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    -DNAKED_VM -DEMBEDDED_VM -DHAS_PINVOKE=1 ^
+    src/olvm.c tests/vm.c -o "tests.exe" -lws2_32 -O2 -g2 -m64
+tests.exe
+if errorlevel 1 goto fail
+
 call :TEST tests\apply.scm
 call :TEST tests\banana.scm
 call :TEST tests\callcc.scm

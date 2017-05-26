@@ -33,6 +33,8 @@ struct
 ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
 void  OL_free(struct ol_t* ol);
 void* OL_eval(struct ol_t* ol, int argc, char** argv);
+void(*OL_atexit(struct ol_t* ol, void (*exit)(int status)))(int status);
+
 
 // c++ interface:
 #ifdef __cplusplus

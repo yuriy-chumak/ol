@@ -51,7 +51,7 @@
                      (do (cdr stat)))))
             (print "data sent")
             (mail sender #t))))
-   (yield)
+   (yield) ; is it required?
    (let ((ss (time #false #f)))
       (if (> (- ss seconds) 2)
          (let ((mem (mem-stats)))

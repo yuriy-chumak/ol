@@ -60,7 +60,8 @@
 #include "olvm.h"
 #endif
 
-//
+// https://msdn.microsoft.com/en-us/library/b0084kay.aspx
+// WIN32: Defined for applications for Win32 and Win64. Always defined.
 #ifdef _WIN32
 #	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
 #	define SYSCALL_GETRLIMIT 0
@@ -212,13 +213,7 @@
 #define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
                       // as well as all of the ISO C facilities.
 
-// http://man7.org/tlpi/code/faq.html#use_default_source
-#if defined(__GNU_LIBRARY__) && ((__GLIBC__ * 100 + __GLIBC_MINOR__) >= 220)
-#	define _DEFAULT_SOURCE
-#else
-#	define _BSD_SOURCE
-#endif
-
+#define _BSD_SOURCE
 #define _GNU_SOURCE   // nanosleep, etc.
 
 #ifdef __NetBSD__     // make all NetBSD features available
@@ -226,6 +221,10 @@
 #	define _NETBSD_SOURCE 1
 #	endif
 #endif
+
+// http://man7.org/tlpi/code/faq.html#use_default_source
+//  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
+#define _DEFAULT_SOURCE
 
 #include <stdint.h>
 
@@ -246,6 +245,7 @@
 #ifdef __unix__
 # ifndef __asmjs__
 #	include <sys/cdefs.h>
+#	include <sched.h> // yield
 # endif
 #endif
 
@@ -601,6 +601,10 @@ struct __attribute__ ((aligned(sizeof(word)), packed)) object_t
 OL* OL_new(unsigned char* bootstrap, void (*release)(void*));
 void OL_free(OL* ol);
 void* OL_eval(struct ol_t* ol, int argc, char** argv);
+
+typedef void (exit_t)(int status);
+exit_t* OL_atexit(struct ol_t* ol, exit_t* exit);
+
 
 // ------------------------------------------------------
 
@@ -1002,7 +1006,7 @@ word* p = new_bytevector(TSTRING, length);\
 	char* ptr = (char*)&p[1];\
 	while (size--)\
 		*ptr++ = *data++;\
-	*ptr = '\0'; \
+	/* *ptr = '\0'; <- bug! or use length+1 */ \
 	/*return*/ p;\
 })
 
@@ -1054,24 +1058,16 @@ word *chase(word* pos) {
 	}
 }
 
-// cells - на сколько увеличить (уменьшить) кучу (в словах)
+// cells - новый размер кучи (в словах)
 static __inline__
-ptrdiff_t adjust_heap(heap_t *heap, int cells)
+ptrdiff_t resize_heap(heap_t *heap, int cells)
 {
 	if (sandboxp) /* realloc is not allowed within seccomp */
 		return 0;
 
-	// add newobj realloc + heap fixer here later
-	word nwords = heap->end - heap->begin;
-	word new_words = nwords + cells; // was: ((cells > 0xffffff) ? 0xffffff : cells); // limit heap growth speed
-	if (((cells > 0) && (new_words*W < nwords*W)) || ((cells < 0) && (new_words*W > nwords*W))) {
-		STDERR("size_t would overflow in realloc!");
-		return 0; // don't try to adjust heap if the size_t would overflow in realloc
-	}
-
 	word *old = heap->begin;
-	heap->begin = realloc(heap->begin, (new_words + GCPAD(NR)) * sizeof(word));
-	heap->end = heap->begin + new_words;
+	heap->begin = realloc(heap->begin, (cells + GCPAD(NR)) * sizeof(word));
+	heap->end = heap->begin + cells;
 
 	if (heap->begin == old) // whee, no heap slide \o/
 		return 0;
@@ -1251,26 +1247,28 @@ word gc(heap_t *heap, int query, word regs)
 
 	ptrdiff_t hsize = heap->end - heap->begin; // вся куча в словах
 	ptrdiff_t nfree = heap->end - (word*)regs; // свободно в словах
-	ptrdiff_t nused = hsize - nfree + query; // использовано слов
+	ptrdiff_t nused = hsize - nfree;           // использовано слов
+
+	nused += query; // увеличим на запрошенное количество
 	if (heap->genstart == heap->begin) {
 		// напоминаю, сюда мы попадаем только после полной(!) сборки
-		if (hsize < nused)
-			hsize = nused;
 
 		// Please grow your buffers exponentially:
 		//  https://blog.mozilla.org/nnethercote/2014/11/04/please-grow-your-buffers-exponentially/
 		//  ! https://habrahabr.ru/post/242279/
 
 		// выделим на "старое" поколение не менее 50% кучи, при этом кучу будем увеличивать на 33%
+		// !!! множитель регулярного увеличения кучи должен быть меньше золотого сечения: 1.618
 		if (nused > (hsize / 2)) {
+			if (nused < hsize)
+				nused = hsize;
 			//fprintf(stderr, ">");
-			// !!! множитель увеличения кучи должен быть меньше золотого сечения: 1.618
-			regs += adjust_heap(heap, hsize / 3) * sizeof(W);
+			regs += resize_heap(heap, nused + nused / 3) * sizeof(W);
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
 		else if (nused < (hsize / 3)) {
 			//fprintf(stderr, "<");
-			regs += adjust_heap(heap,-hsize / 9) * sizeof(W);
+			regs += resize_heap(heap, hsize - hsize / 9) * sizeof(W);
 		}
 		heap->genstart = (word*)regs; // always start new generation
 	}
@@ -1480,6 +1478,7 @@ struct ol_t
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
 	int (*gc)(OL* ol, int kb);
+	void (*exit)(int errorId);
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
@@ -1527,7 +1526,7 @@ void* runtime(OL* ol);  // главный цикл виртуальной маш
 	#endif
 	);
 
-#	include "olni.c"
+#	include "callback.c"
 #endif
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
@@ -1537,7 +1536,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 
 	// если места еще хватит, не будем ничего делать
 	// TODO: переделать на другую проверку
-	if (ws != 0 && fp < ol->heap.end - MEMPAD - ws) // какая-то стремная проверка...
+	if ((ws != 0) && ((fp + ws) < (ol->heap.end - MEMPAD)))
 		return 0;
 
 	word* R = ol->R;
@@ -1619,8 +1618,10 @@ void* runtime(OL* ol)
 	long acc = ol->arity;
 
 	word* R = ol->R;   // регистры виртуальной машины
-	word *fp = heap->fp; // memory allocation pointer
 
+	register
+	word *fp = heap->fp; // memory allocation pointer
+	register
 	unsigned char *ip = 0; // указатель на инструкции
 
 	int breaked = 0;
@@ -1848,6 +1849,8 @@ mainloop:;
 	#		endif
 	#		define SYSCALL_IOCTL_TIOCGETA 19
 
+	#		define SYSCALL_YIELD 24
+
 	#		define SYSCALL_NANOSLEEP 35
 	#		define SYSCALL_SENDFILE 40
 
@@ -1987,7 +1990,7 @@ loop:;
 			if (reg > NR) { // dummy handling for now
 				// TODO: add changing the size of R array!
 				STDERR("TOO LARGE APPLY");
-				exit(3);
+				ol->exit(3);
 			}
 			R[reg++] = car (lst);
 			lst = (word *) cdr (lst);
@@ -2059,7 +2062,7 @@ loop:;
 		ip += 1; break;
 	}
 	case LD: // (5%)
-		A1 = F(ip[0]);
+		A1 = F(ip[0]); // R[ip[1]]
 		ip += 2; break;
 
 
@@ -2252,10 +2255,10 @@ loop:;
 		if (is_value(T)) {
 			word val = value(T);
 			if (type == TPORT) {
-				if (val <= 2)
+				//if (val <= 2)
 					A2 = make_port(val);
-				else
-					A2 = IFALSE;
+				//else
+				//	A2 = IFALSE;
 			}
 			else
 				A2 = make_value(type, val);
@@ -2711,8 +2714,8 @@ loop:;
 				fp = heap->fp; // не забывать про изменение fp в процессе сборки!
 			}
 
-			int got;
 	#ifdef _WIN32
+			DWORD got;
 			if (!_isatty(portfd) || _kbhit()) { // we don't get hit by kb in pipe
 				got = read(portfd, (char *) &fp[1], size);
 			} else {
@@ -2722,11 +2725,19 @@ loop:;
 			// Win32 socket workaround
 			if (got == -1 && errno == EBADF) {
 				got = recv(portfd, (char *) &fp[1], size, 0);
+	#if 1 // temporary pipes solution
+				if (got == -1 && errno == EBADF)
+					if (!ReadFile((HANDLE)(size_t)portfd, (char *) &fp[1], size, &got, NULL)) {
+						result = (word*)ITRUE;
+						break;
+					}
+	#endif
 				if (got < 0)
 					if (WSAGetLastError() == WSAEWOULDBLOCK)
 						errno = EAGAIN;
 			}
 	#else
+			int got;
 			got = read(portfd, (char *) &fp[1], size);
 	#endif
 
@@ -2762,7 +2773,7 @@ loop:;
 			if (size > length || size == 0)
 				size = length;
 
-			int wrote;
+			unsigned long wrote;
 
 			wrote = write(portfd, (char*)&buff[1], size);
 
@@ -2770,6 +2781,10 @@ loop:;
 			// Win32 socket workaround
 			if (wrote == -1 && errno == EBADF) {
 				wrote = send(portfd, (char*) &buff[1], size, 0);
+				if (wrote == -1 && errno == EBADF) {
+					if (!WriteFile((HANDLE)(size_t)portfd, (char*) &buff[1], size, &wrote, NULL))
+						wrote = -1;
+				}
 			}
 	#endif
 
@@ -2900,6 +2915,21 @@ loop:;
 					break;
 				}
 			}
+			break;
+		}
+
+		case SYSCALL_YIELD: {
+			#ifdef __EMSCRIPTEN__
+				emscripten_sleep(1);
+			#else
+			# ifdef _WIN32   // Windows
+				Sleep(1);
+			# endif
+			# ifdef __unix__ // Linux, *BSD, MacOS, etc.
+				sched_yield();
+			# endif
+			#endif
+			result = (word*) ITRUE;
 			break;
 		}
 
@@ -3214,12 +3244,12 @@ loop:;
 				fp = ol->heap.fp;
 
 				// а вдруг вызвали gc?
-//				int sub
-//				= ip - (unsigned char *) &this[1];
+				int sub
+				= ip - (unsigned char *) &this[1];
 				this = ol->this;
-//				ip = (unsigned char *) &this[sub];
+				ip = (unsigned char *) &this[1] + sub;
 
-				// todo: проверить, но похожу что этот выхов всегда сопровождается вызовом RET
+				// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
 				// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
 				break;
 			}
@@ -3961,12 +3991,6 @@ loop:;
 	#endif
 			break;
 #endif
-		case 1200:
-#ifdef __EMSCRIPTEN__
-			emscripten_sleep(1);
-#endif
-			result = (word*) ITRUE;
-			break;
 
 		case 1201:
 #ifdef __EMSCRIPTEN__
@@ -3998,6 +4022,15 @@ loop:;
 		A4 = (word) result;
 		ip += 5; break;
 	}
+
+	// this is free to use commands:
+	case 11:
+	case 12:
+	case 18:
+	case 19:
+	case 21:
+	case 33:
+	case 34:
 
 	default:
 		ERROR(op, new_string("Invalid opcode"), ITRUE);
@@ -4205,6 +4238,16 @@ int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
 
+#if	HAS_SOCKETS && defined(_WIN32)
+	WSADATA wsaData;
+	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
+	if (sock_init  != 0) {
+		STDERR("WSAStartup failed with error: %d", sock_init);
+		return 1;
+	}
+	AllocConsole();
+#endif
+
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin
@@ -4268,16 +4311,6 @@ int main(int argc, char** argv)
 #endif
 
 	//set_signal_handler();
-
-#if	HAS_SOCKETS && defined(_WIN32)
-	WSADATA wsaData;
-	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
-	if (sock_init  != 0) {
-		STDERR("WSAStartup failed with error: %d", sock_init);
-		return 1;
-	}
-	AllocConsole();
-#endif
 
 	OL* olvm =
 		OL_new(bootstrap, bootstrap != language ? free : NULL);
@@ -4378,6 +4411,10 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
 	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
 
+
+	handle->gc = OL__gc;
+	handle->exit = exit;
+
 	heap->fp = fp;
 	return handle;
 fail:
@@ -4391,6 +4428,13 @@ void OL_free(OL* ol)
 {
 	free(ol->heap.begin);
 	free(ol);
+}
+
+exit_t* OL_atexit(struct ol_t* ol, exit_t* exit)
+{
+	exit_t* current = ol->exit;
+	ol->exit = exit;
+	return current;
 }
 
 // ===============================================================
@@ -4408,7 +4452,7 @@ OL_eval(OL* handle, int argc, char** argv)
 	word userdata = handle->R[4];
 	{
 		word* fp = handle->heap.fp;
-#if !EMBEDDED_VM
+//#if !EMBEDDED_VM
 		argv += argc - 1;
 		for (ptrdiff_t i = argc; i > 1; i--, argv--) {
 			char *pos = (char*)(fp + 1);
@@ -4419,7 +4463,7 @@ OL_eval(OL* handle, int argc, char** argv)
 			if (length > 0) // если есть что добавить
 				userdata = (word) new_pair (new_bytevector(TSTRING, length), userdata);
 		}
-#endif
+//#endif
 		handle->heap.fp = fp;
 	}
 	handle->R[4] = userdata;
@@ -4441,8 +4485,6 @@ OL_eval(OL* handle, int argc, char** argv)
 	// все готово для выполнения главного цикла виртуальной машины
 	ol->this = this;
 	ol->arity = acc;
-
-	ol->gc = OL__gc;
 
 	return runtime(handle);
 }

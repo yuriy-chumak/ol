@@ -22,6 +22,8 @@
       LD LDE LDN LDT LDF
       MOVE REFI MOVE2
 
+      ; todo: change TFIX to TSHORT, TINT to TLONG
+      ; or to TINTEGER, TBIGNUM
       ; types
       ; TATOMIC+ TATOMIC- TINTEGER+ TINTEGER-
       TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX
