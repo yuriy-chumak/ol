@@ -1,0 +1,9 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+    "editor.fontFamily": "'Anonymous Pro', 'Droid Sans Mono', monospace, 'Droid Sans Fallback'",
+    "editor.tabSize": 3,
+    "editor.cursorStyle": "underline",
+    "editor.wrappingColumn": 0,
+    "files.trimTrailingWhitespace": true,
+    "window.zoomLevel": 1
+}
