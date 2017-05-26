@@ -1826,8 +1826,8 @@ mainloop:;
 	#	define SETREFE 10
 
 		// ?
-	#	define EQ    54
-	#	define LESS  44
+	#	define EQQ   54
+	#	define LESSQ 44
 
 	#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 
@@ -2379,11 +2379,11 @@ loop:;
 
 		ip += 4; break; }
 
-	case EQ: // (eq? a b)
+	case EQQ: // (eq? a b)
 		A2 = (A0 == A1) ? ITRUE : IFALSE;
 		ip += 3; break;
 
-	case LESS: { // (less? a b)
+	case LESSQ: { // (less? a b)
 		word a = A0;
 		word b = A1;
 
