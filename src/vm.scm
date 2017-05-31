@@ -153,7 +153,7 @@
 
       ; load
       (setq LD   14)  ; ld a, t:        Rt = a, signed byte
-      (setq LDE  13)  ; (+ 13 (<< 0 6))) ; 77
+      (setq LDE  13)  ; (+ 13 (<< 0 6))) ; 13
       (setq LDN  77)  ; (+ 13 (<< 1 6))) ; 77
       (setq LDT  141) ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
       (setq LDF  205) ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
