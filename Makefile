@@ -282,6 +282,8 @@ tests: \
    tests/vector-rand.scm\
    tests/numbers.scm
 	@rm -f $(FAILED)
+	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm $(L)
+	@./tests-vm
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
 	   if ./vm repl <$$F | diff - $$F.ok >/dev/null ;then\
