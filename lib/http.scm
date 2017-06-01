@@ -6,12 +6,10 @@
   (import (r5rs core) (owl parse)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (lang intern) string->symbol)
+      (only (lang sexp) fd->exp-stream)
      )
 
 (begin
-  ;(define *debug* #t)
-  ;(print "\e[1;1H\e[2J")
-
    (define (upper-case? x) (<= #\A x #\Z))
    (define (lower-case? x) (<= #\a x #\z))
    (define (alpha-char? x)
@@ -22,6 +20,7 @@
       (or (<= 0 x 31)
           (= x 127)))
 
+; unique session id:
 (fork-server 'IDs (lambda ()
 (let this ((id 1))
 (let* ((envelope (wait-mail))
@@ -35,12 +34,6 @@
 
 (define (timestamp) (syscall 201 "%c" #f #f))
 (define (set-ticker-value n) (syscall 1022 n #false #false))
-
-
-;(define (send fd . args)
-;   (for-each (lambda (arg)
-;      (display-to fd arg)) args))
-
 
 ; parser
       (define (syntax-fail pos info lst)
