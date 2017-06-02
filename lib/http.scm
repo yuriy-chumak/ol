@@ -96,16 +96,13 @@
                   (map (lambda (d) (cons d (- d 55))) (lrange 65 1 71))  ;; A-F
                   (map (lambda (d) (cons d (- d 87))) (lrange 97 1 103)) ;; a-f
                   ))))
-      (define (bytes->number digits base)
-         (fold
-            (λ (n digit)
-               (let ((d (get digit-values digit #false)))
-                  (cond
-                     ((or (not d) (>= d base))
-                        (runtime-error "bad digit " digit))
-                     (else
-                        (+ (* n base) d)))))
-            0 digits))
+
+      (define hex-table
+         (list->ff (fold append '() (list
+            (zip cons (iota 10 #\0) (iota 10 0))     ; 0-9
+            (zip cons (iota  6 #\a) (iota 6 10))     ; a-f
+            (zip cons (iota  6 #\A) (iota 6 10)))))) ; A-F
+
 
       (define get-rest-of-line
          (let-parses
@@ -238,13 +235,30 @@
          (loop (cdr u) (cons (car u) key))))))
 
 (define (get-value u)
-(let loop ((u u) (value #null))
-   (if (null? u)
-      (values (runes->string (reverse value)) u)
-      (if (eq? (car u) #\&)
-         (values (runes->string (reverse value)) (cdr u))
-         ;else
-         (loop (cdr u) (cons (car u) value))))))
+   (define (rev-loop a b)
+      (if (null? a)
+         b
+         (if (and
+               (eq? (car a) #\%)
+               (not (null? b))
+               (not (null? (cdr b))))
+            ; % encoded character
+            (let ((c (bor (<< (get hex-table (car b) 0) 4)
+                              (get hex-table (cadr b) 0))))
+               (if (null? (cdr a))
+                  (cons c (cddr b))
+                  (rev-loop (cddr a) (cons
+                                        (cadr a)
+                                        (cons c (cddr b))))))
+            ; regular case
+            (rev-loop (cdr a) (cons (car a) b)))))
+   (let loop ((u u) (value #null))
+      (if (null? u)
+         (values (runes->string (rev-loop value #null)) u)
+         (if (eq? (car u) #\&)
+            (values (runes->string (rev-loop value #null)) (cdr u))
+            ;else
+            (loop (cdr u) (cons (car u) value))))))
 
 (define (get-keyvalue u)
 (let*((key u (get-key u)))
