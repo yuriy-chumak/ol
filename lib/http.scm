@@ -2,7 +2,8 @@
 ; HTTP/1.0 - https://tools.ietf.org/html/rfc1945
 (define-library (lib http)
   (export
-    http:run)
+    http:run
+    http:parse-url)
   (import (r5rs core) (r5rs srfi-1)
       (owl parse)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
@@ -165,20 +166,19 @@
                      (display-to fd arg)) args) #t)))
 
       (let loop ((request (fd->exp-stream fd "" http-parser syntax-fail #f)))
-         (print id " loop:" request)
+         ;(print id " loop:" request)
          (if (call/cc (lambda (close)
                          (if (null? request)
                             #t
-                            (let ((Request-Line (car (car request)))
-                                  (Headers-Line (cdr (car request))))
-                               ;(print "Request-Line: " Request-Line)
-                               ;(print "Headers-Line: " Headers-Line)
+                            (let ((Request-Line (ref (car request) 1))
+                                  (Headers-Line (ref (car request) 2)))
+                               (print id " Request-Line: " Request-Line)
+                               (print id " Headers-Line: " Headers-Line)
                                (if (null? Request-Line)
                                   (close (send "HTTP/1.0 400 Bad Request\r\n\r\n400"))
                                   (onRequest fd Request-Line Headers-Line send close))
                             (print "ok.")
-                            #f)) #|(close #t)|# ))
-               
+                            #f)) ))
             (begin
                (display id)
                (display (if (syscall 3 fd #f #f) " socket closed, " " can't close socket, ")))
@@ -188,6 +188,7 @@
       (let*((ss2 ms2 (clock)))
          (print id " # " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
 
+   ; workaround for tasker, should be removed soon.
    (let sleep ((x 1000))
       (set-ticker-value 0)
       (if (> x 0)
@@ -215,9 +216,52 @@
       (set-ticker-value 0)
       (loop))))
 
+; -=( parse url )=-------------------------------------
+(define (get-path url)
+(let loop ((u url) (path #null))
+   (cond
+      ((null? u)
+         (values (runes->string (reverse path)) u))
+      ((eq? (car u) #\?)
+         (values (runes->string (reverse path)) (cdr u)))
+      (else
+         (loop (cdr u) (cons (car u) path))))))
+
+(define (get-key u)
+(let loop ((u u) (key #null))
+   (if (null? u)
+      (values (runes->string (reverse key)) u)
+      (if (or (eq? (car u) #\=)
+              (eq? (car u) #\&))
+         (values (runes->string (reverse key)) u)
+         ;else
+         (loop (cdr u) (cons (car u) key))))))
+
+(define (get-value u)
+(let loop ((u u) (value #null))
+   (if (null? u)
+      (values (runes->string (reverse value)) u)
+      (if (eq? (car u) #\&)
+         (values (runes->string (reverse value)) (cdr u))
+         ;else
+         (loop (cdr u) (cons (car u) value))))))
+
+(define (get-keyvalue u)
+(let*((key u (get-key u)))
+   (if (null? u)
+      (values (cons key #null) u)
+      (if (eq? (car u) #\&)
+         (values (cons key #null) (cdr u))
+         (let*((value u (get-value (cdr u))))
+            (values (cons key value) u))))))
+
 
 (define (http:parse-url url)
-   #f)
+(let*((path u (get-path (string->runes url))))
+   (let loop ((args #empty) (u u))
+      (if (null? u) (tuple path args)
+         (let*((kv u (get-keyvalue u)))
+            (loop (put args (string->symbol (car kv)) (cdr kv)) u))))))
 
 
 
