@@ -2946,9 +2946,18 @@ loop:;
 			ssize_t wrote;
 			while (size > 0) {
 				wrote = sendfile(socket, filefd, &offset, size);
-				if (wrote < 0)
-					break;
-				size -= wrote;
+				if (wrote < 0) {
+					if (errno != EAGAIN)
+						break;
+					# ifdef _WIN32   // Windows
+						Sleep(1);
+					# endif
+					# ifdef __unix__ // Linux, *BSD, MacOS, etc.
+						sched_yield();
+					# endif
+				}
+				else
+					size -= wrote;
 			}
 			if (wrote < 0)
 				break;
