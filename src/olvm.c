@@ -378,6 +378,19 @@ void crash(int code, char* format, ...)
 }
 #endif
 
+void yield()
+{
+#ifdef __EMSCRIPTEN__
+	emscripten_sleep(1);
+#else
+# ifdef _WIN32   // Windows
+	Sleep(1);
+# endif
+# ifdef __unix__ // Linux, *BSD, MacOS, etc.
+	sched_yield();
+# endif
+#endif
+}
 // ========================================
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
@@ -2919,16 +2932,7 @@ loop:;
 		}
 
 		case SYSCALL_YIELD: {
-			#ifdef __EMSCRIPTEN__
-				emscripten_sleep(1);
-			#else
-			# ifdef _WIN32   // Windows
-				Sleep(1);
-			# endif
-			# ifdef __unix__ // Linux, *BSD, MacOS, etc.
-				sched_yield();
-			# endif
-			#endif
+			yield();
 			result = (word*) ITRUE;
 			break;
 		}
@@ -2949,12 +2953,7 @@ loop:;
 				if (wrote < 0) {
 					if (errno != EAGAIN)
 						break;
-					# ifdef _WIN32   // Windows
-						Sleep(1);
-					# endif
-					# ifdef __unix__ // Linux, *BSD, MacOS, etc.
-						sched_yield();
-					# endif
+					yield();
 				}
 				else
 					size -= wrote;
