@@ -2942,11 +2942,18 @@ loop:;
 			int filefd = port(b);
 			int size = svtoi (c);
 
-			int wrote = sendfile(socket, filefd, NULL, size);
+			off_t offset = 0;
+			ssize_t wrote;
+			while (size > 0) {
+				wrote = sendfile(socket, filefd, &offset, size);
+				if (wrote < 0)
+					break;
+				size -= wrote;
+			}
 			if (wrote < 0)
 				break;
 
-			result = itoun(wrote);
+			result = (word*)ITRUE;
 			break;
 		}
 
