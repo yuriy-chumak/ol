@@ -3,7 +3,8 @@
 (define-library (lib http)
   (export
     http:run)
-  (import (r5rs core) (owl parse)
+  (import (r5rs core) (r5rs srfi-1)
+      (owl parse)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (lang intern) string->symbol)
       (only (lang sexp) fd->exp-stream)
@@ -35,22 +36,22 @@
 (define (timestamp) (syscall 201 "%c" #f #f))
 (define (set-ticker-value n) (syscall 1022 n #false #false))
 
-; parser
-      (define (syntax-fail pos info lst)
-         (print "http parser fail: " info)
-         (print ">>> " pos "-" (runes->string lst) " <<<")
-         '(() (())))
+; http parser
+   (define (syntax-fail pos info lst)
+      (print-to stderr "http parser fail: " info)
+      (print-to stderr ">>> " pos "-" (runes->string lst) " <<<")
+      '(() (())))
 
-      (define quoted-values
-         (list->ff
-            '((#\a . #x0007)
-              (#\b . #x0008)
-              (#\t . #x0009)
-              (#\n . #x000a)
-              (#\r . #x000d)
-              (#\e . #x001B)
-              (#\" . #x0022) ;"
-              (#\\ . #x005c))))
+      (define HT #\tab)      ; 9
+      (define CTL (append (iota 32) '(127))) ; 0 .. 31, 127
+      (define CR #\return)   ; 13
+      (define LF #\newline)  ; 10
+      (define SP #\space)    ; 32
+      (define tspecials '(#\( #\) #\< #\> #\@ #\, #\; #\: #\\ #\" #\/ #\[ #\] #\? #\= #\{ #\} #\space #\tab))
+
+      (define (token-char? x)
+         (and (less? 31 x) (not (eq? 127 x))    ; not CTL
+              (not (has? tspecials x))))
 
       (define (a-z? x)
          (<= #\a x #\z))
@@ -60,7 +61,7 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)
-             (has? '(#\/ #\: #\. #\& #\? #\- #\+ #\= #\< #\> #\@ #\# #\_ #\% #\, #\; #\' #\!) x)))
+             (has? '(#\/ #\: #\. #\& #\? #\- #\+ #\= #\< #\> #\@ #\# #\_ #\% #\, #\; #\' #\!) x))) ; todo: optimize using ff
       (define (xml? x)
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
@@ -78,10 +79,6 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)))
-      (define (url-char? x)
-         (or (<= #\0 x #\9)
-             (<= #\A x #\Z)
-             (<= #\a x #\z)))
 
       (define (header-char? x)
          (or (<= #\A x #\Z)
@@ -94,7 +91,7 @@
          (list->ff
             (foldr append null
                (list
-                  (map (lambda (d) (cons d (- d 48))) (lrange #\0 1 #\9))  ;; 0-9
+                  (map (lambda (d) (cons d (- d 48))) (lrange 48 1 58))  ;; 0-9
                   (map (lambda (d) (cons d (- d 55))) (lrange 65 1 71))  ;; A-F
                   (map (lambda (d) (cons d (- d 87))) (lrange 97 1 103)) ;; a-f
                   ))))
@@ -108,12 +105,6 @@
                      (else
                         (+ (* n base) d)))))
             0 digits))
-
-;               ((head (get-rune-if symbol-lead-char?))
-;                (tail (get-greedy* (get-rune-if symbol-char?)))
-;                (next (peek get-byte))
-;                (foo (assert (lambda (b) (not (symbol-char? b))) next))) ; avoid useless backtracking
-;               (string->uninterned-symbol (runes->string (cons head tail))))
 
       (define get-rest-of-line
          (let-parses
@@ -131,46 +122,35 @@
       (define maybe-whitespace (get-kleene* get-a-whitespace))
 
       (define get-request-line
-         (let-parses (
-             (method (get-greedy+ (get-rune-if A-Z?)))
-             (skip        (get-imm #\space))
-             (uri    (get-greedy+ (get-rune-if uri?)))
-             (skip        (get-imm #\space))
-             (proto  (get-greedy+ (get-rune-if uri?))) ; todo:
-             (skip (get-imm #\return)) (skip (get-imm #\newline)))
+         (let-parses ((method  (get-greedy+ (get-rune-if A-Z?))) ; GET/POST/etc.
+                      (-          (get-imm #\space))
+                      (uri     (get-greedy+ (get-rune-if uri?))) ; URI
+                      (-          (get-imm #\space))
+                      (version (get-greedy+ (get-rune-if uri?))) ; HTTP/x.x
+                      (-          (get-imm #\return)) (skip (get-imm #\newline))) ; end of request line
             (tuple
                (runes->string method)
                (runes->string uri)
-               (runes->string proto))))
+               (runes->string version))))
 
       (define get-header-line
-         (let-parses (
-             (name (get-greedy+ (get-rune-if header-char?)))
-             (skip (get-imm #\:))
-             (skip (get-byte-if space-char?))
-             (value (get-greedy+ (get-rune-if (lambda (x) (not (eq? x #\return))))))
-             (skip (get-imm #\return)) (skip (get-imm #\newline)))
+         (let-parses ((name  (get-greedy+ (get-rune-if token-char?)))
+                      (-        (get-imm #\:))
+                      (-        (get-rune-if space-char?)) ; todo: should be LWS
+                      (value (get-greedy+ (get-rune-if (lambda (x) (not (eq? x CR)))))) ; until CRLF
+                      (- (get-imm CR)) (- (get-imm LF)))   ; CRLF
             (cons
                (string->symbol (runes->string name))
-;               (string->uninterned-symbol (runes->string name))
                (runes->string value))))
 
 
       (define http-parser
-;         (get-any-of       ;process "GET /smth HTTP/1.1"
-            (let-parses (
-                  (request-line get-request-line)
-                  (headers-array (get-greedy* get-header-line))
-                  (skip (get-imm #\return)) (skip (get-imm #\newline))) ; final \r\n
-               (cons
-                  request-line (list->ff headers-array)))
-;            (let-parses ( ; process '<policy-file-request/>\0' request:
-;                  (request (get-greedy+ (get-rune-if xml?))))
-;;                  (skip    (get-imm 0)))
-;               (cons
-;                  (tuple (runes->string request)) #empty))
-;                  )
-)
+         (let-parses ((request-line get-request-line)
+                      (headers-array (get-greedy* get-header-line))
+                      (- (get-imm CR)) (- (get-imm LF)))   ; final CRLF
+            (tuple
+               request-line (list->ff headers-array))))
+;)
 
 
 ; todo: use atomic counter to check count of clients and do appropriate timeout on select
@@ -178,6 +158,7 @@
 
 (define (on-accept id fd onRequest)
 (lambda ()
+   (print "an-accept " id)
    (let*((ss1 ms1 (clock))
          (send (lambda args
                   (for-each (lambda (arg)
@@ -233,4 +214,11 @@
             (fork (on-accept (generate-unique-id) fd onRequest))))
       (set-ticker-value 0)
       (loop))))
+
+
+(define (http:parse-url url)
+   #f)
+
+
+
 ))
