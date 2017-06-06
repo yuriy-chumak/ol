@@ -1851,6 +1851,7 @@ mainloop:;
 	#		define SYSCALL_OPEN 2
 	#		define SYSCALL_CLOSE 3
 	#		define SYSCALL_STAT 4 // same for fstat and lstat
+	#		define SYSCALL_UNLINK 87
 	// 5, 6 - free
 	//#		define SYSCALL_POLL 7
 	// 12 - reserved for memory functions
@@ -2890,6 +2891,17 @@ loop:;
 					itoun(st.st_mtime),  // время последней модификации (в секундах)
 					itoun(st.st_ctime)   // время последнего изменения (в секундах)
 			);
+			break;
+		}
+
+		// delete the file
+		// filename should be the c-string!
+		case SYSCALL_UNLINK: { //
+			CHECK(is_string(a), a, SYSCALL);
+			word* s = & car(a);
+
+			if (unlink((char*)s) == 0)
+				result = (word*)ITRUE;
 			break;
 		}
 
