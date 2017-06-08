@@ -32,7 +32,7 @@
     make-sqlite3 make-sqlite3-stmt
 
   ; constants
-    SQLITE-OK SQLITE-ERROR SQLITE-BUSY SQLITE-LOCKED
+    SQLITE-OK SQLITE-ERROR SQLITE-BUSY SQLITE-LOCKED SQLITE-CONSTRAINT
     SQLITE-DONE SQLITE-ROW
     SQLITE-STATIC SQLITE-TRANSIENT
     SQLITE-INTEGER SQLITE-FLOAT SQLITE-BLOB SQLITE-NULL SQLITE-TEXT
@@ -80,7 +80,7 @@
 (define win32? (string-ci=? (ref uname 1) "Windows"))
 (define linux? (string-ci=? (ref uname 1) "Linux"))
 
-(define (new-void*) (vm:raw type-void* '(0)))
+(define (new-void*) (vm:raw type-void* 1)) ;(vm:wordsize)))
 
 (define % (dlopen (cond
    (win32? "sqlite3")
@@ -92,7 +92,7 @@
       (win32?
          "Download dll from http://www.sqlite.org/download.html")
       (linux?
-         "Use, for example, sudo apt-get install sqlite3"))))
+         "Use, for example, sudo apt-get install libsqlite3-dev"))))
 
 ; all sqlite imports are __cdecl under all OS
 ; olvm correctly processes cdecl and stdcall both, so no more need to special
@@ -121,6 +121,7 @@
 (define SQLITE-ERROR 1)
 (define SQLITE-BUSY 5)
 (define SQLITE-LOCKED 6)
+(define SQLITE-CONSTRAINT 19)
 
 (define SQLITE-DONE 101)
 (define SQLITE-ROW 100)
