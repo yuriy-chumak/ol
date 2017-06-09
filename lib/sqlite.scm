@@ -31,14 +31,21 @@
    (export
     make-sqlite3 make-sqlite3-stmt
 
-  ; constants
-    SQLITE-OK SQLITE-ERROR SQLITE-BUSY SQLITE-LOCKED SQLITE-CONSTRAINT
-    SQLITE-DONE SQLITE-ROW
+  ; constants/errors
+    SQLITE_OK SQLITE_ERROR SQLITE_INTERNAL SQLITE_PERM SQLITE_ABORT SQLITE_BUSY
+    SQLITE_LOCKED SQLITE_NOMEM SQLITE_READONLY SQLITE_INTERRUPT SQLITE_IOERR
+    SQLITE_CORRUPT SQLITE_NOTFOUND SQLITE_FULL SQLITE_CANTOPEN SQLITE_PROTOCOL
+    SQLITE_EMPTY SQLITE_SCHEMA SQLITE_TOOBIG SQLITE_CONSTRAINT SQLITE_MISMATCH
+    SQLITE_MISUSE SQLITE_NOLFS SQLITE_AUTH SQLITE_FORMAT SQLITE_RANGE
+    SQLITE_NOTADB SQLITE_NOTICE SQLITE_WARNING
+
+    SQLITE_DONE SQLITE_ROW
+
     SQLITE-STATIC SQLITE-TRANSIENT
     SQLITE-INTEGER SQLITE-FLOAT SQLITE-BLOB SQLITE-NULL SQLITE-TEXT
 
   ; creation/destruction
-    sqlite3-open
+    sqlite3_open
     sqlite3-close
 
   ; statement management
@@ -117,14 +124,38 @@
 (define sqlite3_value type-fix+)
 (define sqlite3_int64 type-vector-raw)
 
-(define SQLITE-OK 0)
-(define SQLITE-ERROR 1)
-(define SQLITE-BUSY 5)
-(define SQLITE-LOCKED 6)
-(define SQLITE-CONSTRAINT 19)
+(define SQLITE_OK 0)
+(define SQLITE_ERROR 1)
+(define SQLITE_INTERNAL 2)
+(define SQLITE_PERM 3)
+(define SQLITE_ABORT 4)
+(define SQLITE_BUSY 5)
+(define SQLITE_LOCKED 6)
+(define SQLITE_NOMEM 7)
+(define SQLITE_READONLY 8)
+(define SQLITE_INTERRUPT 9)
+(define SQLITE_IOERR 10)
+(define SQLITE_CORRUPT 11)
+(define SQLITE_NOTFOUND 12)
+(define SQLITE_FULL 13)
+(define SQLITE_CANTOPEN 14)
+(define SQLITE_PROTOCOL 15)
+(define SQLITE_EMPTY 16)
+(define SQLITE_SCHEMA 17)
+(define SQLITE_TOOBIG 18)
+(define SQLITE_CONSTRAINT 19)
+(define SQLITE_MISMATCH 20)
+(define SQLITE_MISUSE 21)
+(define SQLITE_NOLFS 22)
+(define SQLITE_AUTH 23)
+(define SQLITE_FORMAT 24)
+(define SQLITE_RANGE 25)
+(define SQLITE_NOTADB 26)
+(define SQLITE_NOTICE 27)
+(define SQLITE_WARNING 28)
 
-(define SQLITE-DONE 101)
-(define SQLITE-ROW 100)
+(define SQLITE_ROW 100)
+(define SQLITE_DONE 101)
 
 (define SQLITE-STATIC 0)
 (define SQLITE-TRANSIENT -1)
@@ -140,7 +171,7 @@
 
 ; https://www.sqlite.org/c3ref/open.html
 ; ex: file:data.db?mode=ro&cache=private
-(define sqlite3-open  (dlsym % type-fix+ "sqlite3_open"  type-string sqlite3**))
+(define sqlite3_open  (dlsym % type-fix+ "sqlite3_open"  type-string sqlite3**))
 (define sqlite3-close (dlsym % type-fix+ "sqlite3_close" sqlite3*))
 
 (define sqlite3-prepare-v2 (dlsym % type-fix+ "sqlite3_prepare_v2" sqlite3* type-string type-fix+ sqlite3_stmt** char**)) ; проблема с крайним параметром (char**) - надо этот результат сконвертировать снова в строку, новую

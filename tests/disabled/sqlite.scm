@@ -12,9 +12,9 @@
 
 ; todo: move this test into separate script (tests/sqlite3.scm)
 (define database (make-sqlite3))
-(print "open: "     (sqlite3-open (c-string ":memory:") database))
+(print "open: "     (sqlite3_open (c-string ":memory:") database))
 (print "close: "    (sqlite3-close database))
-(print "open: "     (sqlite3-open (c-string "x.sqlite") database))
+(print "open: "     (sqlite3_open (c-string "x.sqlite") database))
 
 
 
@@ -52,7 +52,7 @@
       (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
          (runtime-error "error query preparation" query))
       (let loop ((x null))
-         (if (= (sqlite3-step statement) SQLITE-ROW)
+         (if (= (sqlite3-step statement) SQLITE_ROW)
             (loop (handler statement))))
       (sqlite3-finalize statement)))
 
@@ -72,7 +72,7 @@
 
 
 (let ((db (make-sqlite3)))
-   (sqlite3-open (c-string "db.sqlite") db)
+   (sqlite3_open (c-string "db.sqlite") db)
    (sqlite:exec db "CREATE TABLE IF NOT EXISTS T (id INTEGER PRIMARY KEY, text STRING)")
    (sqlite:exec db "INSERT INTO T (text) VALUES (?)" "one")
    (sqlite:exec db "INSERT INTO T (text) VALUES (?)" "two")
