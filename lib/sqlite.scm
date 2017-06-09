@@ -61,6 +61,7 @@
     sqlite3-bind-int
     sqlite3-bind-double
     sqlite3-bind-text
+    sqlite3_bind_null
 
   ; result set
     sqlite3_column_type
@@ -194,6 +195,7 @@
 (define sqlite3-bind-int    (dlsym % type-fix+ "sqlite3_bind_int"    sqlite3_stmt* type-int+ type-int+))
 (define sqlite3-bind-double (dlsym % type-fix+ "sqlite3_bind_double" sqlite3_stmt* type-int+ type-double))
 (define sqlite3-bind-text   (dlsym % type-fix+ "sqlite3_bind_text"   sqlite3_stmt* type-int+ type-string type-fix+ type-void*))
+(define sqlite3_bind_null   (dlsym % type-fix+ "sqlite3_bind_null"   sqlite3_stmt* type-int+))
 
 (define sqlite3_column_type  (dlsym % type-fix+   "sqlite3_column_type" sqlite3_stmt* type-fix+))
 (define sqlite3_column_count (dlsym % type-fix+   "sqlite3_column_count" sqlite3_stmt*))
