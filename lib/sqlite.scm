@@ -47,6 +47,7 @@
   ; creation/destruction
     sqlite3_open
     sqlite3-close
+    sqlite3_errmsg
 
   ; statement management
     sqlite3-prepare-v2
@@ -176,6 +177,7 @@
 ; ex: file:data.db?mode=ro&cache=private
 (define sqlite3_open  (dlsym % type-fix+ "sqlite3_open"  type-string sqlite3**))
 (define sqlite3-close (dlsym % type-fix+ "sqlite3_close" sqlite3*))
+(define sqlite3_errmsg(dlsym % type-string "sqlite3_errmsg" sqlite3*))
 
 (define sqlite3-prepare-v2 (dlsym % type-fix+ "sqlite3_prepare_v2" sqlite3* type-string type-fix+ sqlite3_stmt** char**)) ; проблема с крайним параметром (char**) - надо этот результат сконвертировать снова в строку, новую
 (define sqlite3-sql      (dlsym % type-string "sqlite3_sql"        sqlite3_stmt*))
