@@ -69,7 +69,8 @@ GOTO:EOF
 
 :VM
 echo.   *** Making virtual machine:
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -o "vm.exe" -lws2_32 -DHAS_PINVOKE=1 -m64 -DNDEBUG -s
 GOTO:EOF
 
 :VM32

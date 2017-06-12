@@ -27,7 +27,7 @@ CC=gcc
 
 PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
-CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s)
+CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s -fno-exceptions)
 boot.c := bootstrap~
 repl.o := src/repl.o
 

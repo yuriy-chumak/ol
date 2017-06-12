@@ -3,8 +3,8 @@
 
    (export
       (exports (r5rs core))
-      (exports (r5rs srfi-1))
-      (exports (r5rs srfi-87)) ; * builtin (r5rs core)
+      (exports (r5rs srfi-1))  ; * List Library
+      (exports (r5rs srfi-87)) ; * => in case clauses ; builtin (r5rs core)
       (exports (r5rs characters))
 
       (exports (owl list))
@@ -38,7 +38,7 @@
       (r5rs srfi-87)
       (r5rs characters)
 
-      (lang sexp)
+      (only (lang sexp) read)
 
       (owl list)
       (owl rlist)
