@@ -57,6 +57,54 @@ which is another way of
 
 ### Project news
 
+* Thr 22 Jun 2017
+  * started process of integration in OL inrational (inexact) numbers.
+
+* Fri 12 Jun 2017
+  * started new project with based on OL backend, this will help me improve the ol vm and libraries, but i'll spent less time to the ol. but will see)
+
+* Fri 12 Jun 2017
+  * fixed function (read)
+
+* Thr 11 Jun 2017
+  * now sqlite can print error text
+
+* Wed 10 Jun 2017
+  * now http parser can parse vectors in query line
+  * added null setter to the sqlite
+
+* Tue 9 Jun 2017
+  * more error codes in sqlite
+  * new json printer
+  * into sqlite library added complex function sqlite:query from test project, will see
+
+* Mon 8 Jun 2017
+  * added constraints support into sqlite library
+
+* Sat 6 Jun 2017
+  * new syscall "unlink", now ol can remove files
+
+* Tue 2 Jun 2017
+  * changed http parser, now it can parse command line and create hash-table with pair key-value
+  * fix for syscall "sendfile", now sendfile works proper
+  * new function yield
+
+* Wed 31 May 2017
+  * vm unit-tests enabled, added to common automation testing place
+
+* Fri 26 May 2017
+  * common project cleanup, disabled and invalid tests moved to "disabled" folder, etc.
+
+* Wed 24 May 2017
+  * create vm codes table
+
+* Tue 23 May 2017
+  * talkback interface moved to "extensions" folder
+  * cleanup of callback support code
+  * fixed ticket "OLVM doesn't close file descriptors after error" (talkback related)
+
+* Mon 22 May 2017
+  * added unit-tests (stubs) to virtual machine
 
 * Thr 27 Apr 2017
   * in talkback sample added sending to OL and receiving from the byte buffer
