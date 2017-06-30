@@ -56,6 +56,8 @@ which is another way of
    I'm working for add more prebuilts.
 
 ### Project news
+* Fri 30 Jun 2017
+  * added support of [Minoca OS](https://www.minocacorp.com/) - interesting small OS for connected devices
 
 * Thr 22 Jun 2017
   * started process of integration in OL inrational (inexact) numbers.
