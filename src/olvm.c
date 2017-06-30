@@ -197,10 +197,6 @@
 #define HAS_DLOPEN 1  // dlopen/dlsym support
 #endif
 
-#ifndef HAS_PINVOKE
-#define HAS_PINVOKE 1 // pinvoke (for dlopen/dlsym) support
-#endif
-
 #ifndef HAS_STRFTIME
 #define HAS_STRFTIME 1
 #endif
@@ -231,6 +227,21 @@
 // possible data types: LP64 ILP64 LLP64 ILP32 LP32
 // http://www.unix.org/version2/whatsnew/lp64_wp.html
 // http://stackoverflow.com/questions/384502/what-is-the-bit-size-of-long-on-64-bit-windows
+// http://ru.cppreference.com/w/cpp/language/types
+
+// LP32 или 2/4/4 (int — 16 бит, long и указатель — 32 бита)
+//	Win16 AP
+// ILP32 или 4/4/4 (int, long и указатель — 32 бита)
+//	Win32 API
+//	Unix и Unix-подобные системы (Linux, Mac OS X)
+// LLP64 или 4/4/8 (int и long — 32 бита, указатель — 64 бита)
+//	Win64 API
+// LP64 или 4/8/8 (int — 32 бита, long и указатель — 64 бита)
+//	Unix и Unix-подобные системы (Linux, Mac OS X)
+// Другие модели очень редки. Например, ILP64 (8/8/8: int, long и указатель — 64 бита) появилась
+// только в некоторых ранних 64-битных Unix-системах (н-р, Unicos на компьютерах Cray).
+
+
 #if INTPTR_MAX == INT64_MAX
 #define MATH_64BIT 1
 #else
@@ -242,7 +253,7 @@
 #include <features.h>
 #endif
 
-#ifdef __unix__
+#ifdef __linux__
 # ifndef __asmjs__
 #	include <sys/cdefs.h>
 #	include <sched.h> // yield
@@ -331,6 +342,17 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
+
+
+// callbacks support
+#ifndef HAS_CALLBACKS
+#define HAS_CALLBACKS HAS_DLOPEN
+#endif
+
+#ifndef HAS_PINVOKE
+#define HAS_PINVOKE HAS_DLOPEN // pinvoke (for dlopen/dlsym) support
+#endif
+
 
 // additional defines:
 #ifndef O_BINARY
@@ -1428,7 +1450,7 @@ void set_signal_handler()
 }
 
 #if HAS_SOCKETS
-# ifndef __linux__
+# ifdef _WIN32
 
 size_t
 sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
@@ -1532,7 +1554,7 @@ void* runtime(OL* ol);  // главный цикл виртуальной маш
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
-#if HAS_DLOPEN
+#if HAS_CALLBACKS
 	long callback(OL* ol, int id, int_t* argi
 	#if __amd64__
 		, double* argf, int_t* rest
@@ -3867,6 +3889,7 @@ loop:;
 				result = new_string(error);
 			break;
 		}
+		#if HAS_CALLBACKS
 		case SYSCALL_MKCB: {
 			// TCALLBACK
 			int c;
@@ -4003,6 +4026,7 @@ loop:;
 			result = new_callback(ptr);
 			break;
 		}
+		#endif// HAS_CALLBACKS
 	#endif// HAS_DLOPEN
 
 		// https://www.mindcollapse.com/blog/processes-isolation.html
