@@ -31,8 +31,8 @@ CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s -fno
 boot.c := bootstrap~
 repl.o := src/repl.o
 
-CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1)\
-          $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1)\
+CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
+          $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
           $(if $(HAS_SECCOMP),, -DNO_SECCOMP)
 
 

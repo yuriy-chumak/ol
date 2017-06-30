@@ -328,8 +328,11 @@
 #		include <linux/seccomp.h>
 #	endif
 
-#	include <sys/mman.h>
 #	include <sys/sendfile.h>
+#endif
+
+#ifdef __unix__
+#	include <sys/mman.h>
 #endif
 
 #ifdef _WIN32
@@ -408,7 +411,10 @@ void yield()
 # ifdef _WIN32   // Windows
 	Sleep(1);
 # endif
-# ifdef __unix__ // Linux, *BSD, MacOS, etc.
+# ifdef __linux__ // Linux
+	sched_yield();
+# endif
+# if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 	sched_yield();
 # endif
 #endif
@@ -2980,6 +2986,9 @@ loop:;
 			break;
 		}
 
+		#if defined(_WIN32) || defined(__linux__)
+		// todo: enable sendfile to the BSD
+		// todo: add sendfile() for __unix__ (like for _WIN32)
 		case SYSCALL_SENDFILE + SECCOMP:
 		case SYSCALL_SENDFILE: { // (syscall 40 fd file-fd size)
 			if (!is_port(a) || !is_port(b))
@@ -3007,6 +3016,7 @@ loop:;
 			result = (word*)ITRUE;
 			break;
 		}
+		#endif
 
 
 		// directories
