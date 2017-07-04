@@ -217,9 +217,9 @@ talkback: src/olvm.c extensions/talkback/boot.c extensions/talkback/talkback.c e
 
 src/repl.o: repl
 	objcopy -B i386 -I binary -O default repl src/repl.o
-src/boot.c: repl vm src/boot.lisp
+src/boot.c: repl src/boot.lisp
 	vm repl <src/boot.lisp >src/boot.c
-src/slim.c: repl vm src/slim.lisp
+src/slim.c: repl src/slim.lisp
 	vm repl <src/slim.lisp >src/slim.c
 
 
