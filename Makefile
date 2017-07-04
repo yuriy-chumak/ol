@@ -21,7 +21,7 @@ HAS_SOCKETS := $(call exists, <stdlib.h>, socket)
 # body
 .PHONY: all config recompile install uninstall clean tests
 
-CC=gcc
+CC ?= gcc
 
 # http://ptspts.blogspot.com/2013/12/how-to-make-smaller-c-and-c-binaries.html
 
