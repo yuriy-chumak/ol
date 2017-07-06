@@ -9,7 +9,7 @@ categories: index
 
 Otus Lisp (произносится как [\`отэс лисп]), или сокращенно Ol ([\`ол]) - чисто функциональный[*](#pure) диалект языка Lisp. Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Маленький, встраиваемый и кроссплатформенный.
 
-Вы можете использовать Ol на Linux (CentOS, Debian, Fedora, RHEL, SLE, SL, Uninvention, openSUSE, Ubuntu, и другие), Windows, BSD (FreeBSD, OpenBSD, NewBSD), Android, webOS, Odroid. Ol работает под x86, arm, mips, ppc архитектурами на 32- и 64-битных платформах.
+Вы можете использовать Ol на Linux (CentOS, Debian, Fedora, RHEL, SLE, SL, Uninvention, openSUSE, Ubuntu, и другие), Windows, BSD (FreeBSD, OpenBSD, NewBSD), Android, webOS, Odroid. Ol работает под x86, arm, aarch64, mips, ppc архитектурами на 32- и 64-битных платформах.
 
 
 ### Последние новости
@@ -77,6 +77,9 @@ Otus Lisp распространяется в виде двух исполняе
 
 
 ### Новости проекта <a name="news"></a>
+* Thr 6 Jul 2017
+  * потестил ol под aarch64 и arm versatile, работает, можно добавлять в описание.
+  
 * Fri 30 Jun 2017
   * добавил поддержку [Minoca OS](https://www.minocacorp.com/) - интересной маленькой ОСи для всякого эмбеддеда
 

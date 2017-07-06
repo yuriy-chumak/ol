@@ -10,7 +10,7 @@ categories: en
    Otus Lisp is a purely[*](#pure) functional dialect of Lisp.
 It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It is small, embeddable and crossplatform.
 
-   You can use it on Linux (CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu, etc.), Windows, *BSD, Android, webOS, Odroid. It runs on x86, arm, mips, ppc architectures with 32- and 64-bit platforms.
+   You can use it on Linux (CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu, etc.), Windows, *BSD, Android, webOS, Odroid. It runs on x86, arm, aarch64, mips, ppc architectures with 32- and 64-bit platforms.
 
 
 ### Breaking news
@@ -56,6 +56,9 @@ which is another way of
    I'm working for add more prebuilts.
 
 ### Project news
+* Thr 6 Jul 2017
+  * tested ol under aarch64 and arm versatile, it works
+
 * Fri 30 Jun 2017
   * added support of [Minoca OS](https://www.minocacorp.com/) - interesting small OS for connected devices
 
