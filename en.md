@@ -13,10 +13,44 @@ It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Do
    You can use it on Linux (CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu, etc.), Windows, *BSD, Android, webOS, Odroid. It runs on x86, arm, aarch64, mips, ppc architectures with 32- and 64-bit platforms.
 
 
-### Breaking news
+### News
 
-   Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
+Preparing the release 1.2
+   
+Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
 
+### Tested platforms
+
+ * (/) aarch64:
+   * cortex-a53 (/), cortex-a57 (/)
+ * ( ) arm:
+   * little-endian: arm920t (?), arm926t (?), arm1136 (?), cortex-a7 (?), cortex-a9 (?), cortex-a15 (?), cortex-m3 (?), cortex-m4 (?) 
+ * ( ) m68k
+   * mcf5208evb: m68040 (?), m5208 (?)
+ * ( ) microblaze
+   * TBD.
+ * ( ) mips32
+   * TBD.
+ * ( ) mips64
+   * TBD.
+ * ( ) or1k
+   * TBD.
+ * ( ) ppc
+   * TBD.
+ * ( ) ppc64
+   * TBD.
+ * ( ) sh4
+   * TBD.
+ * ( ) spark
+   * TBD.
+ * ( ) spark64
+   * TBD.
+ * ( ) x86
+   * TBD.
+ * ( ) x86_64
+   * TBD.
+ * ( ) ztensa
+   * TBD.
 
 ### Summary (continue)
 

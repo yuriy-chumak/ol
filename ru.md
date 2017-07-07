@@ -11,10 +11,44 @@ Otus Lisp (произносится как [\`отэс лисп]), или сок
 
 Вы можете использовать Ol на Linux (CentOS, Debian, Fedora, RHEL, SLE, SL, Uninvention, openSUSE, Ubuntu, и другие), Windows, BSD (FreeBSD, OpenBSD, NewBSD), Android, webOS, Odroid. Ol работает под x86, arm, aarch64, mips, ppc архитектурами на 32- и 64-битных платформах.
 
-
 ### Последние новости
 
+Готовится в выпуску релиз 1.2
+
 Релиз **1.1** вышел и готов к [скачиванию](https://github.com/yuriy-chumak/ol/releases). Приятного лиспинга!
+
+### Протестированные платформы
+
+ * (/) aarch64:
+   * cortex-a53 (/), cortex-a57 (/)
+ * ( ) arm:
+   * little-endian: arm920t (?), arm926t (?), arm1136 (?), cortex-a7 (?), cortex-a9 (?), cortex-a15 (?), cortex-m3 (?), cortex-m4 (?) 
+ * ( ) m68k
+   * mcf5208evb: m68040 (?), m5208 (?)
+ * ( ) microblaze
+   * TBD.
+ * ( ) mips32
+   * TBD.
+ * ( ) mips64
+   * TBD.
+ * ( ) or1k
+   * TBD.
+ * ( ) ppc
+   * TBD.
+ * ( ) ppc64
+   * TBD.
+ * ( ) sh4
+   * TBD.
+ * ( ) spark
+   * TBD.
+ * ( ) spark64
+   * TBD.
+ * ( ) x86
+   * TBD.
+ * ( ) x86_64
+   * TBD.
+ * ( ) ztensa
+   * TBD.
 
 
 ### О проекте (продолжение)
