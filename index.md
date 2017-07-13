@@ -21,35 +21,35 @@ Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/relea
 
 ### Tested platforms
 
- * (/) aarch64:
-   * cortex-a53 (/), cortex-a57 (/)
- * ( ) arm:
-   * little-endian: arm920t (?), arm926t (?), arm1136 (?), cortex-a7 (?), cortex-a9 (?), cortex-a15 (?), cortex-m3 (?), cortex-m4 (?) 
- * ( ) m68k
-   * mcf5208evb: m68040 (?), m5208 (?)
- * ( ) microblaze
+ *  :heavy_check_mark: aarch64:
+   * cortex-a53 :heavy_check_mark:, cortex-a57 :heavy_check_mark:
+ *  :grey_question: arm:
+   * arm920t :heavy_check_mark:, arm926t :grey_question:, arm1136 :grey_question:, cortex-a7 :grey_question:, cortex-a9 :grey_question:, cortex-a15 :grey_question:, cortex-m3 :grey_question:, cortex-m4 :grey_question: 
+ *  :grey_question: m68k
+   * mcf5208evb: m68040 :grey_question:, m5208 :grey_question:
+ *  :grey_question: microblaze
    * TBD.
- * ( ) mips32
+ *  :grey_question: mips32
    * TBD.
- * ( ) mips64
+ *  :grey_question: mips64
    * TBD.
- * ( ) or1k
+ *  :grey_question: or1k
    * TBD.
- * ( ) ppc
+ *  :grey_question: ppc
    * TBD.
- * ( ) ppc64
+ *  :grey_question: ppc64
    * TBD.
- * ( ) sh4
+ *  :grey_question: sh4
    * TBD.
- * ( ) spark
+ *  :grey_question: spark
    * TBD.
- * ( ) spark64
+ *  :grey_question: spark64
    * TBD.
- * ( ) x86
+ *  :grey_question: x86
    * TBD.
- * ( ) x86_64
+ *  :grey_question: x86_64
    * TBD.
- * ( ) ztensa
+ *  :grey_question: ztensa
    * TBD.
 
 ### Summary (continue)
