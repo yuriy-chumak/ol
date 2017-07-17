@@ -23,8 +23,12 @@
       (otus pinvoke))
 (begin
 
-   (define TCL (dlopen "tcl86.dll"))
-   (define TK (dlopen "tk86.dll"))
+   (define TCL (or
+      (dlopen "tcl86.dll")
+      (dlopen "libtcl8.6.so")))
+   (define TK (or
+      (dlopen "tk86.dll")
+      (dlopen "libtk8.6.so")))
 
    (define Tcl_Interp* type-vptr)
    (define TclCommand type-vptr)

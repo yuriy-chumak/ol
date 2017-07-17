@@ -1,20 +1,10 @@
 #!/usr/bin/ol
 
-(import (lib winapi))
-
-(MessageBox #f "aпbривет" "hello" 0)
-
-(print "привет")
-(print (string->runes "привет"))
-(print (string-length "a-привет"))
-
-,quit
-
-
 (import (lib tcl-tk))
 
 (define tcl (Tcl_CreateInterp))
 (Tcl_Init tcl)
+
 
 
 ;typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
