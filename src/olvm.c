@@ -2735,6 +2735,7 @@ loop:;
 	//	CHECK(is_fixed(A0) && thetype (A0) == TFIX, A0, SYSCALL);
 		word op = uvtoi (A0);
 		word a = A1, b = A2, c = A3;
+		word*r = &A4;
 
 		switch (op + sandboxp) {
 
@@ -3307,15 +3308,14 @@ loop:;
 	//					assert ((word)C == IFALSE);
 				word* (*function)(OL*, word*) = (word* (*)(OL*, word*)) car(A);  assert (function);
 
-				ol->heap.fp = fp;  ol->this = this;
+				//int sub = ip - (unsigned char *) &this[1]; // save ip for possible gc call
+
+				ol->heap.fp = fp; ol->this = this;
 				result = function(ol, B);
-				fp = ol->heap.fp;
+				fp = ol->heap.fp; this = ol->this;
 
 				// а вдруг вызвали gc?
-				int sub
-				= ip - (unsigned char *) &this[1];
-				this = ol->this;
-				ip = (unsigned char *) &this[1] + sub;
+				// ip = (unsigned char *) &this[1] + sub;
 
 				// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
 				// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
@@ -4089,7 +4089,7 @@ loop:;
 
 		}// case
 
-		A4 = (word) result;
+		*r = (word) result;
 		ip += 5; break;
 	}
 

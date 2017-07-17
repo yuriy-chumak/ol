@@ -44,6 +44,9 @@
     SQLITE-STATIC SQLITE-TRANSIENT
     SQLITE-INTEGER SQLITE-FLOAT SQLITE-BLOB SQLITE-NULL SQLITE-TEXT
 
+  ; text encodings
+    SQLITE_UTF8
+
   ; creation/destruction
     sqlite3_open
     sqlite3-close
@@ -64,6 +67,11 @@
     sqlite3-bind-text
     sqlite3_bind_null
 
+  ; extensions
+    sqlite3_create_function_v2
+    sqlite3_result_int
+    ;sqlite3_result_text
+
   ; result set
     sqlite3_column_type
     sqlite3_column_count
@@ -78,6 +86,7 @@
     sqlite:exec
 
     sqlite:query
+    sqlite:value
    )
 
    (import
@@ -123,6 +132,7 @@
 (define sqlite3** type-void**)
 (define sqlite3_stmt*  type-void*)
 (define sqlite3_stmt** type-void**)
+(define sqlite3_context* type-void*)
 (define char** type-vector-raw)
 
 (define sqlite3_value type-fix+)
@@ -172,6 +182,8 @@
 
 (define SQLITE-MISUSE 21)
 
+(define SQLITE_UTF8 1)
+
 
 ; https://www.sqlite.org/c3ref/open.html
 ; ex: file:data.db?mode=ro&cache=private
@@ -198,6 +210,10 @@
 (define sqlite3-bind-double (dlsym % type-fix+ "sqlite3_bind_double" sqlite3_stmt* type-int+ type-double))
 (define sqlite3-bind-text   (dlsym % type-fix+ "sqlite3_bind_text"   sqlite3_stmt* type-int+ type-string type-fix+ type-void*))
 (define sqlite3_bind_null   (dlsym % type-fix+ "sqlite3_bind_null"   sqlite3_stmt* type-int+))
+
+(define sqlite3_create_function_v2 (dlsym % type-fix+ "sqlite3_create_function_v2"   sqlite3* type-string type-int+ type-int+ type-void* type-callback type-callback type-callback type-vptr))
+(define sqlite3_result_int  (dlsym % type-void "sqlite3_result_int" sqlite3_context* type-int+))
+
 
 (define sqlite3_column_type  (dlsym % type-fix+   "sqlite3_column_type" sqlite3_stmt* type-fix+))
 (define sqlite3_column_count (dlsym % type-fix+   "sqlite3_column_count" sqlite3_stmt*))

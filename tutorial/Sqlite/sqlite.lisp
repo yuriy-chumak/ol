@@ -94,6 +94,6 @@
 (sqlite:for-each "SELECT * FROM test" (lambda (statement)
    (print "value: " (sqlite3_column_int statement 0))))
 
-(print "finalize: " (sqlite3-finalize statement))
+;(print "finalize: " (sqlite3-finalize statement))
 (print "close: "    (sqlite3-close database))
 

@@ -894,11 +894,15 @@ word* pinvoke(OL* self, word* arguments)
 		#endif
 
 		case TCALLBACK: {
-			if (is_callback(arg)) {
-				args[i] = (word)car(arg);
+			if ((word)arg == INULL || (word)arg == IFALSE)
+				args[i] = (word) (void*)0;
+			else {
+				if (is_callback(arg)) {
+					args[i] = (word)car(arg);
+				}
+				else
+					STDERR("invalid parameter values (requested callback)");
 			}
-			else
-				STDERR("invalid parameter values (requested callback)");
 			break;
 		}
 /*
