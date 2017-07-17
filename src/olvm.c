@@ -4126,10 +4126,11 @@ done:;
 
 	ol->heap.fp = fp;
 
-	if (is_number(R[3]))
+/*	if (is_number(R[3]))
 		return (void*)untoi(R[3]);
 	else
-		return (R[3] == IFALSE) ? (void*)0 : (void*)1;
+		return (R[3] == IFALSE) ? (void*)0 : (void*)1;*/
+	return R[3];
 }
 
 // ======================================================================
@@ -4381,17 +4382,22 @@ int main(int argc, char** argv)
 #endif
 
 	//set_signal_handler();
+	void* r = 0;
 
 	OL* olvm =
 		OL_new(bootstrap, bootstrap != language ? free : NULL);
 
-	void* r = OL_eval(olvm, argc, argv);
-	OL_free(olvm);
+	if (olvm) {
+		r = OL_eval(olvm, argc, argv);
+		OL_free(olvm);
+	}
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSACleanup();
 #endif
 
+	if (is_value(r))
+		return uvtoi(r);
 	return (int)(word)r;
 }
 #endif
