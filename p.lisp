@@ -10,7 +10,7 @@
 ;typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
 ;	int argc, CONST84 char *argv[]);
 
-;(define add (syscall 175 (cons
+;(define add (syscall 85 (cons
 ;   ; arguments ; no return type yet
 ;
 ;   (list type-vptr type-vptr type-int+ (list type-string type-string type-string))
@@ -23,7 +23,7 @@
 ;      ;
 ;)) #f #f))
 
-(define calculate (syscall 175 (cons
+(define calculate (syscall 85 (cons
    (list type-vptr type-vptr type-int+ (list type-string type-string))
    (lambda (userdata tcl argc argv)
       (let ((argv (reverse argv)))

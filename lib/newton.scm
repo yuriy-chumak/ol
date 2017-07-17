@@ -283,7 +283,7 @@
    (dlopen "newton.dll")
    (runtime-error "Can't load newton library" #f)))
 (define (make-cb p l)
-   (syscall 175 (cons p l) #f #f))
+   (syscall 85 (cons p l) #f #f))
 
 (define type-callback 61)
 (define type-float* (vm:or type-float #x40))

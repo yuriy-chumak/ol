@@ -6,7 +6,7 @@
 (Tcl_Init tcl)
 
 ; let's declare function
-(define calculate (syscall 175 (cons
+(define calculate (syscall 85 (cons
    (cons type-vptr (list type-vptr type-int+ (list type-string type-string)))
    (lambda (userdata tcl argc argv)
       (let ((argv (reverse argv)))

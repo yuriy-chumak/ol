@@ -9,7 +9,7 @@
 (sqlite3_open (c-string ":memory:") database)
 
 ; create extension function
-(define calculate (syscall 175 (cons
+(define calculate (syscall 85 (cons
    (list sqlite3_context* type-int+ (list type-vptr))
    (lambda (context argc argv)
       (print "argc: " argc)

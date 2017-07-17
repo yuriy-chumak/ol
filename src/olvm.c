@@ -2108,7 +2108,7 @@ mainloop:;
 	#		define SYSCALL_DLCLOSE 176
 	#		define SYSCALL_DLSYM 177
 	#		define SYSCALL_DLERROR 178
-	#		define SYSCALL_MKCB 175
+	#		define SYSCALL_MKCB 85
 
 		// tuples, trees
 	#	define UNREEL 35   // list -> typed tuple
