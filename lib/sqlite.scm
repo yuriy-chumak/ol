@@ -69,6 +69,8 @@
 
   ; extensions
     sqlite3_create_function_v2
+
+    sqlite3_value_int
     sqlite3_result_int
     ;sqlite3_result_text
 
@@ -132,6 +134,7 @@
 (define sqlite3** type-void**)
 (define sqlite3_stmt*  type-void*)
 (define sqlite3_stmt** type-void**)
+(define sqlite3_value* type-void*)
 (define sqlite3_context* type-void*)
 (define char** type-vector-raw)
 
@@ -212,7 +215,9 @@
 (define sqlite3_bind_null   (dlsym % type-fix+ "sqlite3_bind_null"   sqlite3_stmt* type-int+))
 
 (define sqlite3_create_function_v2 (dlsym % type-fix+ "sqlite3_create_function_v2"   sqlite3* type-string type-int+ type-int+ type-void* type-callback type-callback type-callback type-vptr))
-(define sqlite3_result_int  (dlsym % type-void "sqlite3_result_int" sqlite3_context* type-int+))
+
+(define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
+(define sqlite3_result_int (dlsym % type-void "sqlite3_result_int" sqlite3_context* type-int+))
 
 
 (define sqlite3_column_type  (dlsym % type-fix+   "sqlite3_column_type" sqlite3_stmt* type-fix+))

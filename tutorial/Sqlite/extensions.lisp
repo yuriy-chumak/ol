@@ -15,7 +15,12 @@
       (print "argc: " argc)
       (print "argv: " argv)
 
-      (sqlite3_result_int context 777))
+      (let ((v (sqlite3_value_int (car argv))))
+         (print "source value: " v)
+         (let ((r (* v 777)))
+            (print "mul by 777: " r)
+
+            (sqlite3_result_int context r))))
 ) #f #f))
 
 (sqlite3_create_function_v2 database (c-string "compress") 1 SQLITE_UTF8 #f calculate #f #f #f)
@@ -23,7 +28,7 @@
 
 ; sample table
 (sqlite:exec database "CREATE TABLE test (id INTEGER)")
-(sqlite:exec database "INSERT INTO test VALUES (1)")
+(sqlite:exec database "INSERT INTO test VALUES (3)")
 
 (print "for simple select: "
    (sqlite:value database "SELECT id FROM test"))

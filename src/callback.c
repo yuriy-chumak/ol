@@ -177,13 +177,16 @@ long callback(OL* ol, int id, int_t* argi
 			if (is_pair(car(types))) {
 				//int l = llen(car(types));
 				word tail = INULL;
-				char** strings = (char**)value;
+				void** values = (void**)value;
 
 				word argv = car(types);
 				while (argv != INULL) {
 					switch (car (argv)) {
 					case F(TSTRING):
-						tail = (word) new_pair(new_string(*strings++), tail);
+						tail = (word) new_pair(new_string(*values++), tail);
+						break;
+					case F(TVPTR):
+						tail = (word) new_pair(new_vptr(*values++), tail);
 						break;
 					}
 					argv = cdr (argv);
