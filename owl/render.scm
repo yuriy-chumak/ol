@@ -108,7 +108,7 @@
                ((tuple? obj)
                   (ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
 
-               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render "#port" (cons #\] tl))))
+               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (cast obj type-fix+) (cons #\] tl))))
 
 
                ((eq? (type obj) type-const)
