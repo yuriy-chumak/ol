@@ -2073,6 +2073,9 @@ mainloop:;
 	#		endif
 	#		define SYSCALL_IOCTL_TIOCGETA 19
 
+	#		ifndef SYSCALL_PIPE
+	#		define SYSCALL_PIPE 22
+	#		endif
 	#		define SYSCALL_YIELD 24
 
 	#		define SYSCALL_NANOSLEEP 35
@@ -3255,10 +3258,44 @@ loop:;
 
 
 		// PIPE
-		case 22: {
-			// TBD.
+		#if SYSCALL_PIPE
+		case SYSCALL_PIPE: {
+			int pipefd[2];
+		#	ifdef _WIN32
+			int pipe(int* pipes)
+			{
+				static int id = 0;
+				char name[64];
+				snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id); //todo: __sync_fetch_and_add(&id, 1));
+
+				HANDLE pipe1 = CreateNamedPipe(name,
+						PIPE_ACCESS_DUPLEX|WRITE_DAC,
+						PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
+						2, 1024, 1024, 2000, NULL);
+
+				HANDLE pipe2 = CreateFile(name,
+						GENERIC_WRITE, 0,
+						NULL,
+						OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+						NULL);
+
+				pipes[0] = (int)(size_t)pipe1; // may loss bits
+				pipes[1] = (int)(size_t)pipe2;
+				return 0;
+			}
+		#	endif
+
+			pipe(pipefd);
+
+		#	ifndef _WIN32
+			fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
+			fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
+		#	endif
+
+			result = new_pair(make_port(pipefd[0]), make_port(pipefd[1]));
 			break;
 		}
+		#endif
 
 
 		// ==================================================
