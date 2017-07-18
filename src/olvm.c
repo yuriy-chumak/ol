@@ -900,7 +900,7 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 #define TINTN                       (41)  // type-int-
 #define TRATIONAL                   (42)
 #define TCOMPLEX                    (43)
-//efine TINEXACT                    (44)  // float or double, depends on machine bitness
+#define TINEXACT                    (44)  // IEEE-754
 
 // pinvoke types:
 #define TVOID                       (48)
@@ -1849,7 +1849,7 @@ void* runtime(OL* ol)
 
 	int breaked = 0;
 	int ticker = TICKS; // any initial value ok
-	int bank = 0;  // ticks deposited at interop
+	int bank = 0; // ticks deposited at interop
 
 apply:;
 	if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
@@ -1978,8 +1978,8 @@ apply:;
 			ol->gc(ol, 1);
 			fp = heap->fp; this = ol->this;
 
-			word heapsize = (word) heap->end - (word) heap->begin;
-			if ((heapsize / (1024*1024)) >= ol->max_heap_size)
+			word heapsize = (word)heap->end - (word)heap->begin;
+			if ((heapsize / (1024 * 1024)) >= ol->max_heap_size)
 				breaked |= 8; // will be passed over to mcp at thread switch
 		}
 
@@ -2374,13 +2374,14 @@ loop:;
 				: uvtoi(A1);
 			// if there are no place for raw object:
 			if (len / sizeof(word) > heap->end - fp) {
-				int sp = ip - (unsigned char*)this;
+				ptrdiff_t dp;
+				dp = ip - (unsigned char*)this;
 
 				heap->fp = fp; ol->this = this;
 				ol->gc(ol, len / sizeof(word));
 				fp = heap->fp; this = ol->this;
 
-				ip = (unsigned char*)this + sp;
+				ip = (unsigned char*)this + dp;
 			}
 			word *raw = new_bytevector (type, len);
 			A2 = (word) raw;
@@ -2399,9 +2400,14 @@ loop:;
 				#if VMRAW_CHECK
 				// it's safe to trunk not rounding
 				if (len / sizeof(word) > heap->end - fp) { // is it required?
+					ptrdiff_t dp;
+					dp = ip - (unsigned char*)this;
+
 					heap->fp = fp; ol->this = this;
 					ol->gc(ol, len / sizeof(word));
 					fp = heap->fp; this = ol->this;
+
+					ip = (unsigned char*)this + dp;
 				}
 				#endif
 				word *raw = new_bytevector (type, len);
@@ -2908,16 +2914,16 @@ loop:;
 	// этот case должен остаться тут - как последний из кейсов
 	// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
 	// https://filippo.io/linux-syscall-table/
-	case SYSCALL: { // sys-call (was sys-prim) op arg1 arg2 arg3  r1
+	case SYSCALL: { // syscall (was sys-prim) op arg1 arg2 arg3  r1
 		// main link: http://man7.org/linux/man-pages/man2/syscall.2.html
 		//            http://man7.org/linux/man-pages/dir_section_2.html
 		// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 		//                     http://www.x86-64.org/documentation/abi.pdf
 		word* result = (word*)IFALSE;  // default returned value is #false
-	//	CHECK(is_fixed(A0) && thetype (A0) == TFIX, A0, SYSCALL);
+
 		word op = uvtoi (A0);
 		word a = A1, b = A2, c = A3;
-		word*r = &A4;
+		word *r = &A4;
 
 		switch (op + sandboxp) {
 
@@ -2935,8 +2941,14 @@ loop:;
 				size = (heap->end - fp);
 			else
 			if (size > (heap->end - fp)) {
+				ptrdiff_t dp;
+				dp = ip - (unsigned char*)this;
+
+				heap->fp = fp; ol->this = this;
 				ol->gc(ol, size);
-				fp = heap->fp; // не забывать про изменение fp в процессе сборки!
+				fp = heap->fp; this = ol->this;
+
+				ip = (unsigned char*)this + dp;
 			}
 
 			int got;
@@ -3790,9 +3802,17 @@ loop:;
 
 		// =- 1000+ -===========================================================================
 		// other internal commands
-		case 1000:
-			ol->gc(ol, 0);
+		case 1000: {
+			ptrdiff_t dp;
+			dp = ip - (unsigned char*)this;
+
+			heap->fp = fp; ol->this = this;
+			ol->gc(ol, 0); // full gc
+			fp = heap->fp; this = ol->this;
+
+			ip = (unsigned char*)this + dp;
 			break;
+		}
 		case 1001: // is raw object?
 			if (is_reference(a)) {
 				word hdr = *(word*)a;
@@ -4135,7 +4155,7 @@ done:;
 		return (void*)untoi(R[3]);
 	else
 		return (R[3] == IFALSE) ? (void*)0 : (void*)1;*/
-	return R[3];
+	return (void*)R[3];
 }
 
 // ======================================================================
