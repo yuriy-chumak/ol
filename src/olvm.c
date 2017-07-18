@@ -108,11 +108,6 @@
 #define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
-#ifdef NO_SECCOMP
-#	define SYSCALL_PRCTL 0
-#endif
-
-
 // http://man7.org/linux/man-pages/man7/posixoptions.7.html
 
 // максимальные атомарные числа для элементарной математики:
@@ -199,6 +194,14 @@
 
 #ifndef HAS_STRFTIME
 #define HAS_STRFTIME 1
+#endif
+
+#ifndef HAS_SANDBOX
+#define HAS_SANDBOX 1
+#endif
+
+#ifndef HAS_UNSAFES
+#define HAS_UNSAFES 1
 #endif
 
 #ifndef EMBEDDED_VM   // use as embedded vm in project
@@ -993,6 +996,7 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 // https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt
 #define SECCOMP                     10000 // todo: change to x1000 или что-то такое
 static int sandboxp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
+static int unsafesp = 1;     /* are we in seccomp? а также дельта для оптимизации syscall's */
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
 //static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
@@ -2104,6 +2108,7 @@ mainloop:;
 	#		ifndef SYSCALL_PRCTL
 	#		define SYSCALL_PRCTL 157
 	#		endif
+	#		define SYSCALL_ARCHPRCTL 158
 	#		define SYSCALL_KILL 62
 	#		define SYSCALL_TIME 201
 
@@ -4103,7 +4108,7 @@ loop:;
 
 		// https://www.mindcollapse.com/blog/processes-isolation.html
 		// http://outflux.net/teach-seccomp/
-		#if SYSCALL_PRCTL
+		#if HAS_SANDBOX && SYSCALL_PRCTL
 		case SYSCALL_PRCTL:
 			//seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
 			/*struct sock_filter filter[] = {
@@ -4115,6 +4120,14 @@ loop:;
 			}
 			break;
 		#endif
+
+		#if HAS_UNSAFES
+		case SYSCALL_ARCHPRCTL:
+			unsafesp = 0;
+			result = (word*)ITRUE;
+			break;
+		#endif
+
 
 		case SYSCALL_KILL:
 	#ifndef _WIN32
