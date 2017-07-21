@@ -307,9 +307,9 @@
 
       ;; make bytecode and intern it (to improve sharing, not mandatory)
       (define (bytes->bytecode bytes)
-         ;(vm:raw type-bytecode bytes)) ; more memory, less cpu
+         ;(vm:new-raw-object type-bytecode bytes)) ; more memory, less cpu
          (interact bytecode-server      ; more cpu, less memory
-            (vm:raw type-bytecode bytes)))
+            (vm:new-raw-object type-bytecode bytes)))
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont

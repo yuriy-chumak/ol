@@ -10,8 +10,8 @@
 (define x11Display (XOpenDisplay null))
 (define eglDisplay (eglGetDisplay x11Display))
 
-(define egl-major (vm:raw type-vector-raw '(0 0 0 0)))
-(define egl-minor (vm:raw type-vector-raw '(0 0 0 0)))
+(define egl-major (vm:new-raw-object type-vector-raw '(0 0 0 0)))
+(define egl-minor (vm:new-raw-object type-vector-raw '(0 0 0 0)))
 (eglInitialize eglDisplay egl-major egl-minor)
 
 (print "EGL version: " (refb egl-major 0) "." (refb egl-minor 0))
@@ -33,7 +33,7 @@
 (XStoreName display window "1. Creating an OpenGL Window")
 
 (define vi (glXChooseVisual display screen
-   (vm:raw type-vector-raw '(
+   (vm:new-raw-object type-vector-raw '(
       4 0 0 0 ; GLX_RGBA
       5 0 0 0  1 0 0 0 ; GLX_DOUBLEBUFFER
       8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
@@ -58,7 +58,7 @@
 
 
 ;(loop)
-(let ((XEvent (vm:raw type-vector-raw (repeat 0 192))))
+(let ((XEvent (vm:new-raw-object type-vector-raw (repeat 0 192))))
 (let loop ()
    (let process-events ()
       (if (> (XPending display) 0)

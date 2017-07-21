@@ -12,14 +12,14 @@
 ;(print (alGetString AL_EXTENSIONS))
 
 
-(define buffer (vm:raw type-vector-raw 4))
+(define buffer (vm:new-raw-object type-vector-raw 4))
 (alGenBuffers 1 buffer)
 (print "buffer id: " buffer)
 
 (al:decode-file buffer "helloworld.snd")
 ;al:decode-fd buffer (open-input-file "helloworld.snd");
 
-(define source (vm:raw type-vector-raw 4))
+(define source (vm:new-raw-object type-vector-raw 4))
 (alGenSources 1 source)
 (print "source id: " source)
 

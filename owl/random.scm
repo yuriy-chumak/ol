@@ -460,7 +460,7 @@
       (define (random-bvec rs n)
          (let loop ((rs rs) (out null) (n n))
             (if (eq? n 0)
-               (values rs (vm:raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
+               (values rs (vm:new-raw-object type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
                (lets
                   ((d rs (uncons rs 0))
                    (n _ (vm:sub n 1)))

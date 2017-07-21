@@ -66,7 +66,7 @@
                   null ; no menu
                   null ; instance
                   null))
-               (pfd (vm:raw type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
+               (pfd (vm:new-raw-object type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
                                                           00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
                (hDC (GetDC window))
                (PixelFormat (ChoosePixelFormat hDC pfd)))
@@ -140,7 +140,7 @@
             (GetMessage       (dlsym user32 type-fix+ "GetMessageA"      type-void* type-void* type-int+ type-int+))
             (DispatchMessage  (dlsym user32 type-int+ "DispatchMessageA" type-void*)))
       (lambda (context)
-         (let ((MSG (vm:raw type-vector-raw (repeat 0 48)))) ; 28 for win32
+         (let ((MSG (vm:new-raw-object type-vector-raw (repeat 0 48)))) ; 28 for win32
          (let loop ()
             (if (= 1 (PeekMessage MSG '() 0 0 1))
                (let*((w (vm:wordsize))
@@ -163,7 +163,7 @@
       (let ((XPending  (dlsym libx11 type-int+ "XPending"   type-void*))
             (XNextEvent(dlsym libx11 type-int+ "XNextEvent" type-void* type-void*)))
       (lambda (context)
-         (let ((XEvent (vm:raw type-vector-raw (repeat 0 192)))
+         (let ((XEvent (vm:new-raw-object type-vector-raw (repeat 0 192)))
                (display (ref context 1)))
          (let loop ()
             (if (> (XPending display) 0)
@@ -235,7 +235,7 @@
 ;   (print args)))
 
 ;         (gl:ProcessEvents context)
-;      (let ((XEvent (vm:raw type-void* (repeat 0 192))))
+;      (let ((XEvent (vm:new-raw-object type-void* (repeat 0 192))))
 ;         (let process-events ((unused 0))
 ;            (if (> (XPending display) 0)
 ;               (process-events (XNextEvent display XEvent))))

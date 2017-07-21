@@ -180,24 +180,25 @@
       ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
 
       (setq NEW 23)      ; no real vm:new command required, check rtl-primitive in (lang compile)
-      (setq RAW 60)      (setq vm:raw  (vm:raw TBYTECODE '(60 4 5 6  24 6)))  ; was: '(JAF 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
-      (setq UNREEL 35)   (setq unreel  (vm:raw TBYTECODE '(35 4 5 6  24 6)))
-      (setq SYS 27)      (setq vm:sys  (vm:raw TBYTECODE '(27 4 5 6 7 8  24 8)))
+      (setq RAW 60)      (setq vm:new-raw-object  (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))  ; was: '(JAF 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
+      (setq UNREEL 35)   (setq unreel  (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
 
-      (setq RAW? 48)     (setq raw?    (vm:raw TBYTECODE '(48 4 5    24 5)))
-      (setq CAST 22)     (setq cast    (vm:raw TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+      (setq SYS 27)      (setq vm:sys  (vm:new-raw-object TBYTECODE '(27 4 5 6 7 8  24 8)))
+
+      (setq RAW? 48)     (setq raw?    (vm:new-raw-object TBYTECODE '(48 4 5    24 5)))
+      (setq CAST 22)     (setq cast    (vm:new-raw-object TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
 
       ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/apply-values
-      (setq ADD 38)      (setq vm:add  (vm:raw TBYTECODE '(38 4 5       6 7)))
-      (setq MUL 39)      (setq vm:mul  (vm:raw TBYTECODE '(39 4 5       6 7)))
-      (setq SUB 40)      (setq vm:sub  (vm:raw TBYTECODE '(40 4 5       6 7)))
-      (setq DIV 26)      (setq vm:div  (vm:raw TBYTECODE '(26 4 5 6     7 8 9)))
-      (setq SHR 58)      (setq vm:shr  (vm:raw TBYTECODE '(58 4 5       6 7)))
-      (setq SHL 59)      (setq vm:shl  (vm:raw TBYTECODE '(59 4 5       6 7)))
+      (setq ADD 38)      (setq vm:add  (vm:new-raw-object TBYTECODE '(38 4 5       6 7)))
+      (setq MUL 39)      (setq vm:mul  (vm:new-raw-object TBYTECODE '(39 4 5       6 7)))
+      (setq SUB 40)      (setq vm:sub  (vm:new-raw-object TBYTECODE '(40 4 5       6 7)))
+      (setq DIV 26)      (setq vm:div  (vm:new-raw-object TBYTECODE '(26 4 5 6     7 8 9)))
+      (setq SHR 58)      (setq vm:shr  (vm:new-raw-object TBYTECODE '(58 4 5       6 7)))
+      (setq SHL 59)      (setq vm:shl  (vm:new-raw-object TBYTECODE '(59 4 5       6 7)))
 
-      (setq AND 55)      (setq vm:and  (vm:raw TBYTECODE '(55 4 5 6  24 6)))
-      (setq OR 56)       (setq vm:or   (vm:raw TBYTECODE '(56 4 5 6  24 6)))
-      (setq XOR 57)      (setq vm:xor  (vm:raw TBYTECODE '(57 4 5 6  24 6)))
+      (setq AND 55)      (setq vm:and  (vm:new-raw-object TBYTECODE '(55 4 5 6  24 6)))
+      (setq OR 56)       (setq vm:or   (vm:new-raw-object TBYTECODE '(56 4 5 6  24 6)))
+      (setq XOR 57)      (setq vm:xor  (vm:new-raw-object TBYTECODE '(57 4 5 6  24 6)))
 
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
@@ -208,53 +209,53 @@
       ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
       ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
       ; names for these functions, the old terms are still in use.
-      (setq CONS 51)     (setq cons    (vm:raw TBYTECODE '(51 4 5 6  24 6)))
+      (setq CONS 51)     (setq cons    (vm:new-raw-object TBYTECODE '(51 4 5 6  24 6)))
 
-      (setq CAR 52)      (setq car     (vm:raw TBYTECODE '(52 4 5    24 5)))
-      (setq CDR 53)      (setq cdr     (vm:raw TBYTECODE '(53 4 5    24 5)))
-      (setq REF 47)      (setq ref     (vm:raw TBYTECODE '(47 4 5 6  24 6)))
+      (setq CAR 52)      (setq car     (vm:new-raw-object TBYTECODE '(52 4 5    24 5)))
+      (setq CDR 53)      (setq cdr     (vm:new-raw-object TBYTECODE '(53 4 5    24 5)))
+      (setq REF 47)      (setq ref     (vm:new-raw-object TBYTECODE '(47 4 5 6  24 6)))
       
-      (setq TYPE 15)     (setq type    (vm:raw TBYTECODE '(15 4 5    24 5))) ;; get just the type bits (new)
-      (setq SIZE 36)     (setq size    (vm:raw TBYTECODE '(36 4 5    24 5))) ;; get object size (- 1)
+      (setq TYPE 15)     (setq type    (vm:new-raw-object TBYTECODE '(15 4 5    24 5))) ;; get just the type bits (new)
+      (setq SIZE 36)     (setq size    (vm:new-raw-object TBYTECODE '(36 4 5    24 5))) ;; get object size (- 1)
 
-      (setq SET-REF 45)  (setq set-ref  (vm:raw TBYTECODE '(45 4 5 6 7  24 7)))
-      (setq SET-REF! 10) (setq set-ref! (vm:raw TBYTECODE '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
+      (setq SET-REF 45)  (setq set-ref  (vm:new-raw-object TBYTECODE '(45 4 5 6 7  24 7)))
+      (setq SET-REF! 10) (setq set-ref! (vm:new-raw-object TBYTECODE '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
 
-      (setq EQ? 54)      (setq eq?     (vm:raw TBYTECODE '(54 4 5 6  24 6)))
-      (setq LESS? 44)    (setq less?   (vm:raw TBYTECODE '(44 4 5 6  24 6)))
+      (setq EQ? 54)      (setq eq?     (vm:new-raw-object TBYTECODE '(54 4 5 6  24 6)))
+      (setq LESS? 44)    (setq less?   (vm:new-raw-object TBYTECODE '(44 4 5 6  24 6)))
 
-      ;(define vm:run  (vm:raw type-bytecode '(50 4 5)))
+      ;(define vm:run  (vm:new-raw-object type-bytecode '(50 4 5)))
 
 
       ; deprecated:
-      ;(define clock   (vm:raw type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
+      ;(define clock   (vm:new-raw-object type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
       ; primitives
       (setq TUPLE-APPLY 32)
-      (setq FF-APPLY 49) (setq ff-apply  (vm:raw TBYTECODE '(49 4)))
+      (setq FF-APPLY 49) (setq ff-apply  (vm:new-raw-object TBYTECODE '(49 4)))
 
-      ;(define ff:red     (vm:raw type-bytecode '(43 4 5 6 7  8  24 8)))
-      ;(define ff:black   (vm:raw type-bytecode '(42 4 5 6 7  8  24 8)))
-      ;(define ff:toggle  (vm:raw type-bytecode '(46 4        5  24 5)))
-      ;(define ff:red?    (vm:raw type-bytecode '(41 4        5  24 5)))
-      ;(define ff:right?  (vm:raw type-bytecode '(37 4        5  24 5)))
+      ;(define ff:red     (vm:new-raw-object type-bytecode '(43 4 5 6 7  8  24 8)))
+      ;(define ff:black   (vm:new-raw-object type-bytecode '(42 4 5 6 7  8  24 8)))
+      ;(define ff:toggle  (vm:new-raw-object type-bytecode '(46 4        5  24 5)))
+      ;(define ff:red?    (vm:new-raw-object type-bytecode '(41 4        5  24 5)))
+      ;(define ff:right?  (vm:new-raw-object type-bytecode '(37 4        5  24 5)))
 
-      ;(define syscall (vm:raw type-bytecode '(63 4 5 6 7 8  24 8)))
+      ;(define syscall (vm:new-raw-object type-bytecode '(63 4 5 6 7 8  24 8)))
 
-      ;(define vm:version  (vm:raw type-bytecode '(62 4)))
-      ;(define fxmax       (vm:raw type-bytecode '(33 4)))
-      ;(define fxmbits     (vm:raw type-bytecode '(31 4)))
-      ;(define vm:wordsize (vm:raw type-bytecode '(29 4)))
+      ;(define vm:version  (vm:new-raw-object type-bytecode '(62 4)))
+      ;(define fxmax       (vm:new-raw-object type-bytecode '(33 4)))
+      ;(define fxmbits     (vm:new-raw-object type-bytecode '(31 4)))
+      ;(define vm:wordsize (vm:new-raw-object type-bytecode '(29 4)))
 
-      (setq vm:endianness (vm:raw TBYTECODE '(28 4)))
+      (setq vm:endianness (vm:new-raw-object TBYTECODE '(28 4)))
 
 
       (setq primops
          ; аллокаторы
-         ; vm:raw создает бинарную последовательность, vm:new - последовательность объектов, cons - просто пару
+         ; vm:new-raw-object создает бинарную последовательность, vm:new - последовательность объектов, cons - просто пару
          (cons (vm:new TTUPLE 'vm:new   NEW 'any 1   #f)   ; create reference object (vm:new type v1 .. vn)
-         (cons (vm:new TTUPLE 'vm:raw   RAW  2 1 vm:raw)   ; create raw reference object (vm:raw type '(v0 .. vn))
-                                                           ; create sized raw reference object (vm:raw type size)
+         (cons (vm:new TTUPLE 'vm:new-raw-object RAW  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn))
+                                                                               ; create sized raw reference object (vm:new-raw-object type size)
          (cons (vm:new TTUPLE 'unreel   UNREEL 2 1 unreel) ; аналог vm:new, but with list as (unreel type '(v1 .. vn))
 
          (cons (vm:new TTUPLE 'vm:sys   SYS  4 1 vm:sys)
@@ -263,9 +264,9 @@
          (cons (vm:new TTUPLE 'cons     CONS 2 1 cons)
 
          ; геттеры
-         (cons (vm:new TTUPLE 'car      CAR  1 1 car)   ; (vm:raw type-bytecode '(52 4 5    24 5))
-         (cons (vm:new TTUPLE 'cdr      CDR  1 1 cdr)   ; (vm:raw type-bytecode '(53 4 5    24 5))
-         (cons (vm:new TTUPLE 'ref      REF  2 1 ref)   ; (vm:raw type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
+         (cons (vm:new TTUPLE 'car      CAR  1 1 car)   ; (vm:new-raw-object type-bytecode '(52 4 5    24 5))
+         (cons (vm:new TTUPLE 'cdr      CDR  1 1 cdr)   ; (vm:new-raw-object type-bytecode '(53 4 5    24 5))
+         (cons (vm:new TTUPLE 'ref      REF  2 1 ref)   ; (vm:new-raw-object type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
 
          (cons (vm:new TTUPLE 'type     TYPE  1 1 type)  ;; get just the type bits
          (cons (vm:new TTUPLE 'size     SIZE  1 1 size)  ;; get object size (- 1)

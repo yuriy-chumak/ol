@@ -11,7 +11,7 @@
       ; ifeq ifary ol:let
 
       ;; virtual machine primitives:
-      ; vm:new vm:raw unreel
+      ; vm:new vm:new-raw-object unreel
       ; cons car cdr ref type size cast raw? set set! eq? less?
       ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
       ; clock syscall vm:version fxmax fxmbits vm:wordsize
@@ -121,7 +121,7 @@
       (define-syntax case-lambda
          (syntax-rules ()
             ((case-lambda)
-               (lambda () (vm:raw TBYTECODE `(,ARITY-ERROR)))) ; arity-error (todo: change to runtime-error)
+               (lambda () (vm:new-raw-object TBYTECODE `(,ARITY-ERROR)))) ; arity-error (todo: change to runtime-error)
             ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
             ((case-lambda (formals . body))
                ;; downgrade to a run-of-the-mill lambda
@@ -1035,7 +1035,7 @@
       (assert (procedure? 'car)                   ===> #f)
 
       ; procedure:  (apply proc arg1 ... args)  * builtin
-      (define apply (vm:raw TBYTECODE `(,APPLY)))
+      (define apply (vm:new-raw-object TBYTECODE `(,APPLY)))
 
       ; library procedure:  (map proc list1 list2 ...)
       ; The dynamic order in which proc is applied to the elements of the lists is unspecified.
@@ -1070,7 +1070,7 @@
 
        ; procedure:  (call-with-current-continuation proc)
        ; Continuation - http://en.wikipedia.org/wiki/Continuation
-       (define apply/cc (vm:raw TBYTECODE `(,APPLY/CC)))
+       (define apply/cc (vm:new-raw-object TBYTECODE `(,APPLY/CC)))
        (define call-with-current-continuation
           ('_sans_cps
              (λ (k f)

@@ -221,7 +221,7 @@ int main(int argc, char** argv)
 	printf("Let's apply 'map (lambda (x) (* x x))' to the vector: ");
 
 	int len = sizeof(input);
-	send(oltb, "(define buffer (vm:raw type-vector-raw %d)) (memcpy-pi buffer %d %d)", len, input, len);
+	send(oltb, "(define buffer (vm:new-raw-object type-vector-raw %d)) (memcpy-pi buffer %d %d)", len, input, len);
 	send(oltb, "(define new-buffer (list->vector (map (lambda (x) (* x x)) (vector->list buffer))))");
 	send(oltb, "(memcpy-ip %d new-buffer %d)", input, len);
 

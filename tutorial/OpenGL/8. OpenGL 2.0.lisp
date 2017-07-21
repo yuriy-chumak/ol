@@ -31,7 +31,7 @@
          gl_Position = gl_Vertex;
       }")) null)
    (glCompileShader vs)
-   (let ((isCompiled (vm:raw type-vector-raw '(0))))
+   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
       (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
 
       (if (= (ref isCompiled 0) 0)
@@ -119,7 +119,7 @@
 
       }")) null))
    (glCompileShader fs)
-   (let ((isCompiled (vm:raw type-vector-raw '(0))))
+   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
       (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
 
       (if (= (ref isCompiled 0) 0)

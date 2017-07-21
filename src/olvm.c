@@ -2369,7 +2369,7 @@ loop:;
 		ip += size+1; break;
 	}
 
-	case VMRAW: { // (vm:raw type list|size)
+	case VMRAW: { // (vm:new-raw-object type list|size)
 		int type = uvtoi(A0);
 		int len = 0;
 		// size or #null ?

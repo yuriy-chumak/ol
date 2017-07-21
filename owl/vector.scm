@@ -217,10 +217,10 @@
       ; note, a blank vector must use a raw one, since there are no such things as 0-tuples
 
       (define empty-vector
-         (vm:raw type-vector-raw null))
+         (vm:new-raw-object type-vector-raw null))
 
       (define (list->byte-vector bs)
-         (vm:raw type-vector-raw bs))
+         (vm:new-raw-object type-vector-raw bs))
 
       (define (make-leaf rvals raw?)
          (let ((vals (reverse rvals)))
