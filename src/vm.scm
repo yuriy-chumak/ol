@@ -53,29 +53,6 @@
 ;            ((list a . b)
 ;               (cons a (list . b)))))
 
-;          итак, процесс замены кода операции на другой:
-;          1. заводим новую операцию (например, как я сделал с raw)
-;           (tuple 'raw2       62  2 1 (raw2 type-bytecode (list JAF 2 0 6  62 4 5 6 24 6  17)))
-;          2. добавляем ее код в виртуальную машину
-;          3. добавляем ее в список *src-olvm* в lang/eval.scm
-;          4. пересобираем boot
-;          5. переименовываем все вхождения старой команды в новую
-;          6. пересобираем boot
-;          7. меняем код старой команды на новый, пересобираем виртуальную машину
-;          8. полностью(!) удаляем старую команду (из lang/eval.scm тоже)
-;          9. пересобираем boot два раза
-;          A. добавляем старую команду как новую, пересобираем, меняем raw2 на raw, пересобираем, удаляем raw2 полностью
-
-;           пример добавления новой функции:
-;           параметры: код функции, in параметров, out параметров, непосредственно код
-;             код предваряется опкодом JAF для проверки арности и (если не входит в список multiple-return-variable-primops)
-;             возвратом результата и выводом ошибки при неправильной арности
-;            (tuple 'cons       51  2 1 (raw (list JAF 3 0 6  51 4 5 6  RET 6  17) type-bytecode #false))  ;; 17 == ARITY-ERROR
-;           вот еще несколько примеров
-;            (tuple 'clock      61  0 2 (raw (list JAF 2 0 3  61 4 5           17) type-bytecode #false))  ;; must add 61 to the multiple-return-variable-primops list
-;            (primop 'raw       '(60 4 5 6    7  24 7)  3 1)
-;            (primop 'sys       '(27 4 5 6 7  8  24 8)  4 1)
-;
 ;           пример выполнение raw-кода прямо в интерпретаторе:
 ;            > (define construct (raw type-bytecode (list 51 4 5 6 24 6)))
 ;            ;; Defined construct
@@ -331,13 +308,13 @@
       ; для этих команд НЕ вставляется аргументом длина списка команд
       (setq multiple-return-variable-primops
          (cons FF-APPLY
-         (cons 38 ; fx+, fx*, fx-, fx/, fx>>, fx<<
-         (cons 39
-         (cons 40
-         (cons 26
-         (cons 58
-         (cons 59
-         (cons 61 ; (clock)
+         (cons ADD
+         (cons MUL
+         (cons SUB
+         (cons DIV
+         (cons SHR
+         (cons SHL
+         (cons 61  ; (clock)
          #null)))))))))
 
       (setq variable-input-arity-primops
