@@ -12,7 +12,7 @@
 
       ;; virtual machine primitives:
       ; vm:new vm:new-raw-object vm:new-object
-      ; cons car cdr ref type size cast raw? set set! eq? less?
+      ; cons car cdr ref type size cast vm:raw? set set! eq? less?
       ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
       ; clock syscall vm:version fxmax fxmbits vm:wordsize
       ; tuple-apply ff-apply
@@ -513,7 +513,7 @@
 ;                        (let ((ta (type a)))
 ;                           ; check equal types
 ;                           (if (eq? ta (type b))
-;                              (if (raw? a)
+;                              (if (vm:raw? a)
 ;                                 ; equal raw objects, check bytes
 ;                                 (lets
 ;                                    ((ea (size a)) ; raw objects may have padding bytes, so recheck the sizes
@@ -563,7 +563,7 @@
 ;                        (let ((ta (type a)))
 ;                           ; check equal types
 ;                           (if (eq? ta (type b))
-;                              (if (raw? a)
+;                              (if (vm:raw? a)
 ;                                 ; equal raw objects, check bytes
 ;                                 (lets
 ;                                    ((ea (size a)) ; raw objects may have padding bytes, so recheck the sizes
@@ -1246,19 +1246,6 @@
 
       (define (value? obj) (eq? #false (size obj)))
       (define reference? size)
-      ;(define (raw? o) (syscall 1001 o #f #f))
-;         (case (type o)
-;            (type-string #t)
-;            (type-string-wide #t)
-;            (type-bytecode #t)
-;            (type-port #t)
-;            (type-vector-raw #t)
-;
-;         ))
-
-
-
-
 
 
       ; 3.2. Disjointness of types
@@ -1452,7 +1439,7 @@
       ; 6.3
       not boolean? pair? symbol? vector? port? procedure? null? eof?
 
-      value? raw? reference?
+      value? reference?
 
       ; ol extension:
       bytecode? function? ff?

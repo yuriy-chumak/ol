@@ -2034,8 +2034,8 @@ mainloop:;
 	#	define VMNEW 23      // fast make small object
 	#	define VMNEW_OBJECT 35     // make object
 	#	define VMNEW_RAWOBJECT 60  // make raw object
+	#	define VMRAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 
-	#	define RAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 	#	define CONS  51
 
 	#	define TYPE  15
@@ -2460,7 +2460,7 @@ loop:;
 		ip += 3; break; }
 
 
-	case RAWQ: {  // raw? a -> r : Rr = (raw? Ra)
+	case VMRAWQ: {  // vm:raw? a -> r : Rr = (vm:raw? Ra)
 		word* T = (word*) A0;
 		if (is_reference(T) && is_rawobject(*T))
 			A1 = ITRUE;

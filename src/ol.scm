@@ -334,7 +334,7 @@
             (let ((trail (put trail node 1)))
                (put trail tag
                   (cons node (get trail tag null)))))
-         ((raw? node)
+         ((vm:raw? node)
             (cond
                ((eq? (type node) type-bytecode) #t)
                ((eq? (type node) type-string) #t)

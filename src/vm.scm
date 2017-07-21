@@ -185,7 +185,7 @@
 
       (setq SYS 27)      (setq vm:sys  (vm:new-raw-object TBYTECODE '(27 4 5 6 7 8  24 8)))
 
-      (setq RAW? 48)     (setq raw?    (vm:new-raw-object TBYTECODE '(48 4 5    24 5)))
+      (setq RAW? 48)     (setq vm:raw? (vm:new-raw-object TBYTECODE '(48 4 5    24 5)))
       (setq CAST 22)     (setq cast    (vm:new-raw-object TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
 
       ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/apply-values
@@ -270,7 +270,7 @@
          (cons (vm:new TTUPLE 'type     TYPE  1 1 type)  ;; get just the type bits
          (cons (vm:new TTUPLE 'size     SIZE  1 1 size)  ;; get object size (- 1)
          (cons (vm:new TTUPLE 'cast     CAST  2 1 cast)  ;; cast object type (works for immediates and allocated)
-         (cons (vm:new TTUPLE 'raw?     RAW?  1 1 raw?)  ;; временное решение, пока не придумаю как удалить совсем
+         (cons (vm:new TTUPLE 'vm:raw?  RAW?  1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем
 
          ; сеттеры
          (cons (vm:new TTUPLE 'set-ref  SET-REF  3 1 set-ref)
