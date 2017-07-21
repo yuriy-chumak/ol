@@ -2033,6 +2033,7 @@ mainloop:;
 		// примитивы языка:
 	#	define VMNEW 23    // make object
 	#	define VMRAW 60    // make raw object
+	#	define UNREEL 35   // list -> typed object
 	#	define RAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 
 	#	define CONS  51
@@ -2116,7 +2117,6 @@ mainloop:;
 	#		define SYSCALL_MKCB 85
 
 		// tuples, trees
-	#	define UNREEL 35   // list -> typed tuple
 	#	define TUPLEAPPLY 32
 	#	define FFAPPLY 49
 
@@ -2434,6 +2434,29 @@ loop:;
 				A2 = IFALSE;
 		}
 		ip += 3; break; }
+
+	// make typed reference from list
+	case UNREEL: { // (vm:something type list)
+		word type = uvtoi (A0);
+		word list = A1;
+
+		// think: проверку можно убрать ради скорости
+		if (is_pair(list)) {
+			word *ptr = fp;
+			A2 = (word)ptr;
+
+			word* me = ptr;
+			while (list != INULL) {
+				*++fp = car (list);
+				list = cdr (list);
+			}
+			*me = make_header(type, ++fp - ptr);
+		}
+		else {
+			A2 = IFALSE;
+		}
+		ip += 3; break;
+	}
 
 	case RAWQ: {  // raw? a -> r : Rr = (raw? Ra)
 		word* T = (word*) A0;
@@ -2765,30 +2788,6 @@ loop:;
 		}
 		ip += 4; break;
 	}*/
-	// make typed reference from list
-	case UNREEL: {
-		word type = uvtoi (A0);
-		word list = A1;
-
-		// think: проверку можно убрать ради скорости
-		if (is_pair(list)) {
-			word *ptr = fp;
-			A2 = (word)ptr;
-
-			word* me = ptr;
-			while (list != INULL) {
-				*++fp = car (list);
-				list = cdr (list);
-			}
-			*me = make_header(type, ++fp - ptr);
-		}
-		else {
-			A2 = IFALSE;
-		}
-		ip += 3; break;
-	}
-
-
 
 	// bind tuple to registers, todo: rename to bind-t or bindt or bnt
 	case TUPLEAPPLY: { /* bind <tuple > <n> <r0> .. <rn> */
