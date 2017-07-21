@@ -199,9 +199,9 @@
                       (c d (split null l q))
                       (subs (map finish-string (list a b c d)))
                       (len (fold + 0 (map string-length subs))))
-                     (unreel type-string-dispatch (cons len subs))))
+                     (vm:new-object type-string-dispatch (cons len subs))))
                (else
-                  (unreel type-string-dispatch ;(+ n 1)
+                  (vm:new-object type-string-dispatch ;(+ n 1)
                      (cons (fold + 0 (map string-length chunks)) chunks))))))
 
       (define (make-chunk rcps ascii?)
@@ -210,7 +210,7 @@
                (if str
                   str
                   (runtime-error "Failed to make string: " rcps)))
-            (unreel type-string-wide (reverse rcps))))
+            (vm:new-object type-string-wide (reverse rcps))))
 
       ;; ll|list out n ascii? chunk → string | #false
       (define (stringify runes out n ascii? chu)

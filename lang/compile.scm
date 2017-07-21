@@ -548,7 +548,7 @@
          (map (λ (lit) (rtl-literal rtl-procedure lit)) lits))
 
       (define (list->proc lst)
-         (unreel type-proc lst))
+         (vm:new-object type-proc lst))
 
       ;; rtl-procedure now passes the intended new form here - replace it later in the AST node also
       (define (rtl-plain-lambda rtl exp clos literals tail)

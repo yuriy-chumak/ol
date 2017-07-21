@@ -11,7 +11,7 @@
       ; ifeq ifary ol:let
 
       ;; virtual machine primitives:
-      ; vm:new vm:new-raw-object unreel
+      ; vm:new vm:new-raw-object vm:new-object
       ; cons car cdr ref type size cast raw? set set! eq? less?
       ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
       ; clock syscall vm:version fxmax fxmbits vm:wordsize

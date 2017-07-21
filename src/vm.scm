@@ -31,8 +31,8 @@
       TBYTECODE TPROCEDURE TCLOSURE
       TVPTR
 
-      ; primitives
-      NEW RAW
+      ; public primitives
+      NEW ; used by (lang compile)
       CONS CAR CDR REF
       SET-REF SET-REF!
       EQ? LESS?
@@ -179,9 +179,9 @@
       ;(setq GOTO-PROC 19) ; not used for now, check (fn-type)
       ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
 
-      (setq NEW 23)      ; no real vm:new command required, check rtl-primitive in (lang compile)
-      (setq RAW 60)      (setq vm:new-raw-object  (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))  ; was: '(JAF 2 0 6  60 4 5 6  RET 6  ARITY-ERROR)
-      (setq UNREEL 35)   (setq unreel  (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
+      (setq NEW 23)        ; no real vm:new command required, check rtl-primitive in (lang compile)
+      (setq NEW-OBJECT 35) (setq vm:new-object     (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
+      (setq RAW-OBJECT 60) (setq vm:new-raw-object (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))
 
       (setq SYS 27)      (setq vm:sys  (vm:new-raw-object TBYTECODE '(27 4 5 6 7 8  24 8)))
 
@@ -252,11 +252,10 @@
 
       (setq primops
          ; аллокаторы
-         ; vm:new-raw-object создает бинарную последовательность, vm:new - последовательность объектов, cons - просто пару
-         (cons (vm:new TTUPLE 'vm:new   NEW 'any 1   #f)   ; create reference object (vm:new type v1 .. vn)
-         (cons (vm:new TTUPLE 'vm:new-raw-object RAW  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn))
-                                                                               ; create sized raw reference object (vm:new-raw-object type size)
-         (cons (vm:new TTUPLE 'unreel   UNREEL 2 1 unreel) ; аналог vm:new, but with list as (unreel type '(v1 .. vn))
+         (cons (vm:new TTUPLE 'vm:new-object     NEW-OBJECT  2 1 vm:new-object)       ; create reference object (vm:new-object type '(v1 .. vn))
+         (cons (vm:new TTUPLE 'vm:new-raw-object RAW-OBJECT  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn)) or (vm:new-raw-object type size)
+
+         (cons (vm:new TTUPLE 'vm:new   NEW 'any 1   #f)   ; fast creation of small (less than 255 elements) reference object (vm:new type v1 .. vn)
 
          (cons (vm:new TTUPLE 'vm:sys   SYS  4 1 vm:sys)
          ;cons (vm:new TTUPLE 'vm:run   RUN  ...)

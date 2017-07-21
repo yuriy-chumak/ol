@@ -1052,8 +1052,8 @@ word*p = NEW (size);\
 
 // -= ports =-------------------------------------------
 // создает порт, НЕ аллоцирует память
-#define make_port(a)               ({ assert ((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
-#define port(o)                     value(o)
+#define make_port(a) ({ assert ((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
+#define port(o)      value(o)
 
 // -= new_pair =----------------------------------------
 
