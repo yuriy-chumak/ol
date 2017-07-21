@@ -33,6 +33,9 @@
  *
  */
 
+#define __OLVM_NAME__ "OL"
+#define __OLVM_VERSION__ "1.1"
+
 // gcc profiling:
 // 1) gcc --coverage
 // 2) gcov -b olvm.c
@@ -85,7 +88,7 @@
 #endif
 
 #ifdef __asmjs__
-#	define NO_SECCOMP
+#	define SYSCALL_PRCTL 0
 
 #	define HAS_SOCKETS 0
 #	define HAS_DLOPEN  0
@@ -100,12 +103,13 @@
 
 // android supports seccomp only for Lollipop and Nougat
 // https://security.googleblog.com/2016/07/protecting-android-with-more-linux.html
-#	if __ANDROID_API__<15
-#		define NO_SECCOMP
+#	if __ANDROID_API__ < 15
+#		define SYSCALL_PRCTL 0
 #	endif
 #	define SYSCALL_SYSINFO 0
 #	define SYSCALL_GETRLIMIT 0
-#define PUBLIC __attribute__ ((__visibility__("default")))
+
+#	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
 // http://man7.org/linux/man-pages/man7/posixoptions.7.html
@@ -180,9 +184,6 @@
 
 // http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
 
-#define __OLVM_NAME__ "OL"
-#define __OLVM_VERSION__ "1.1"
-
 // defaults. please don't change. use -DOPTIONSYMBOL gcc command line defines instead
 #ifndef HAS_SOCKETS
 #define HAS_SOCKETS 1 // system sockets support
@@ -227,7 +228,7 @@
 
 #include <stdint.h>
 
-// possible data types: LP64 ILP64 LLP64 ILP32 LP32
+// possible data models: LP64 ILP64 LLP64 ILP32 LP32
 // http://www.unix.org/version2/whatsnew/lp64_wp.html
 // http://stackoverflow.com/questions/384502/what-is-the-bit-size-of-long-on-64-bit-windows
 // http://ru.cppreference.com/w/cpp/language/types
@@ -343,6 +344,9 @@
 #	include <windows.h>
 
 #	include <malloc.h>
+
+#	include <conio.h>
+#	undef ERROR // macro redefinition
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -426,7 +430,6 @@ void yield()
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
 
-// headers
 #ifdef __linux__
 #	include <sys/socket.h>
 #	include <netinet/in.h>
@@ -437,17 +440,11 @@ void yield()
 #ifdef _WIN32
 #	include <winsock2.h>
 #	include <ws2tcpip.h>
-#endif
 
-#ifdef _WIN32
-#	include <conio.h>
 	typedef unsigned long in_addr_t;
-
 #	ifndef EWOULDBLOCK
 #	define EWOULDBLOCK WSAEWOULDBLOCK
 #	endif
-
-#	undef ERROR // due to macro redefinition
 #endif
 
 #ifdef __unix__
