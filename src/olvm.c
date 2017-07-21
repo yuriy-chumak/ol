@@ -967,8 +967,6 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 #define cdar(o)                     cdr(car(o))
 #define cddr(o)                     cdr(cdr(o))
 
-#define port(o)                     value(o)
-
 
 // набор макросов - проверок для команд
 // car, cdr:
@@ -1020,9 +1018,6 @@ typedef struct heap_t
 
 
 // -= new =--------------------------------------------
-// создает порт, НЕ аллоцирует память
-#define make_port(a)               ({ assert ((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
-
 // выделить блок памяти, unsafe
 #define NEW(size) ({\
 	word* addr = fp;\
@@ -1054,6 +1049,11 @@ word*p = NEW (size);\
 
 // -= new_value =---------------------------------------
 #define new_value(a) ((word*)F(a)) // same as make_value(TFIX, a)
+
+// -= ports =-------------------------------------------
+// создает порт, НЕ аллоцирует память
+#define make_port(a)               ({ assert ((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
+#define port(o)                     value(o)
 
 // -= new_pair =----------------------------------------
 
