@@ -2019,23 +2019,23 @@ mainloop:;
 	// 6, 7: CLOSE1
 
 		// список команд смотреть в assembly.scm
-	#	define LDI   13       // LDE (13), LDN (77), LDT (141), LDF (205)
+	#	define LDI   13      // LDE (13), LDN (77), LDT (141), LDF (205)
 	#	define LD    14
 
-	#	define REFI   1       // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
-	#	define MOVE   9       //
-	#	define MOV2   5       //
+	#	define REFI   1      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
+	#	define MOVE   9      //
+	#	define MOV2   5      //
 
-	#	define JEQ    8       // jeq
-	#	define JP    16       // JZ (16), JN (80), JT (144), JF (208)
-	#	define JAF   25       // jafx (89)
+	#	define JEQ    8      // jeq
+	#	define JP    16      // JZ (16), JN (80), JT (144), JF (208)
+	#	define JAF   25      // jafx (89)
 
 		// примитивы языка:
-	#	define VMNEW 23    // make object
-	#	define VMRAW 60    // make raw object
-	#	define UNREEL 35   // list -> typed object
-	#	define RAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
+	#	define VMNEW 23      // fast make small object
+	#	define VMNEW_OBJECT 35     // make object
+	#	define VMNEW_RAWOBJECT 60  // make raw object
 
+	#	define RAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 	#	define CONS  51
 
 	#	define TYPE  15
@@ -2369,7 +2369,31 @@ loop:;
 		ip += size+1; break;
 	}
 
-	case VMRAW: { // (vm:new-raw-object type list|size)
+	// make typed reference from list
+	case VMNEW_OBJECT: { // (vm:something type list)
+		word type = uvtoi (A0);
+		word list = A1;
+
+		// think: проверку можно убрать ради скорости
+		if (is_pair(list)) {
+			word *ptr = fp;
+			A2 = (word)ptr;
+
+			word* me = ptr;
+			while (list != INULL) {
+				*++fp = car (list);
+				list = cdr (list);
+			}
+			*me = make_header(type, ++fp - ptr);
+		}
+		else {
+			A2 = IFALSE;
+		}
+		ip += 3; break;
+	}
+
+	// make raw reference object
+	case VMNEW_RAWOBJECT: { // (vm:new-raw-object type list|size)
 		int type = uvtoi(A0);
 		int len = 0;
 		// size or #null ?
@@ -2435,28 +2459,6 @@ loop:;
 		}
 		ip += 3; break; }
 
-	// make typed reference from list
-	case UNREEL: { // (vm:something type list)
-		word type = uvtoi (A0);
-		word list = A1;
-
-		// think: проверку можно убрать ради скорости
-		if (is_pair(list)) {
-			word *ptr = fp;
-			A2 = (word)ptr;
-
-			word* me = ptr;
-			while (list != INULL) {
-				*++fp = car (list);
-				list = cdr (list);
-			}
-			*me = make_header(type, ++fp - ptr);
-		}
-		else {
-			A2 = IFALSE;
-		}
-		ip += 3; break;
-	}
 
 	case RAWQ: {  // raw? a -> r : Rr = (raw? Ra)
 		word* T = (word*) A0;
