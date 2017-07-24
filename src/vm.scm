@@ -32,7 +32,6 @@
       TVPTR
 
       ; public primitives
-      NEW ; used by (lang compile)
       CONS CAR CDR REF
       SET-REF SET-REF!
       EQ? LESS?
@@ -40,28 +39,21 @@
       SHR SHL
       AND OR XOR
 
+      NEW    ; used by (lang compile)
+      vm:run ; used by (lang thread)
+
       FF-APPLY
-
-
-      TUPLE-APPLY
-      )
+      TUPLE-APPLY)
 
    (begin
-;      (define-syntax list
-;         (syntax-rules ()
-;            ((list) '())
-;            ((list a . b)
-;               (cons a (list . b)))))
+;     пример выполнение raw-кода прямо в интерпретаторе:
+;     создадим альтернативную "native" команду cons
+;      > (define construct (raw type-bytecode (list 51 4 5 6 24 6)))
+;      ;; Defined construct
+;      > (construct 1 2)
+;      '(1 . 2)
+;      >
 
-;           пример выполнение raw-кода прямо в интерпретаторе:
-;            > (define construct (raw type-bytecode (list 51 4 5 6 24 6)))
-;            ;; Defined construct
-;            > (construct 1 2)
-;            '(1 . 2)
-;            >
-      ;ff-apply
-
-      ; todo: rename to TPAIR, TTUPLE, etc.
       (setq TFIX+              0) ; value
       (setq TFIX-             32) ; value
       (setq TINT+             40) ; reference
@@ -111,6 +103,7 @@
       ;30
 
       (setq type-thread-state     31) ; reference
+
       (setq TVPTR             49) ; reference,  raw
 
 
@@ -119,7 +112,6 @@
       (setq APPLY 20)
       (setq APPLY/CC 84)
       (setq RET   24)
-      (setq RUN   50)
 
       (setq ARITY-ERROR 17)
 
@@ -160,7 +152,9 @@
       (setq NEW-OBJECT 35) (setq vm:new-object     (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
       (setq RAW-OBJECT 60) (setq vm:new-raw-object (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))
 
+
       (setq SYS 27)      (setq vm:sys  (vm:new-raw-object TBYTECODE '(27 4 5 6 7 8  24 8)))
+      (setq RUN 50)      (setq vm:run  (vm:new-raw-object TBYTECODE '(50 4 5)))
 
       (setq RAW? 48)     (setq vm:raw? (vm:new-raw-object TBYTECODE '(48 4 5    24 5)))
       (setq CAST 22)     (setq cast    (vm:new-raw-object TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
@@ -201,9 +195,6 @@
       (setq EQ? 54)      (setq eq?     (vm:new-raw-object TBYTECODE '(54 4 5 6  24 6)))
       (setq LESS? 44)    (setq less?   (vm:new-raw-object TBYTECODE '(44 4 5 6  24 6)))
 
-      ;(define vm:run  (vm:new-raw-object type-bytecode '(50 4 5)))
-
-
       ; deprecated:
       ;(define clock   (vm:new-raw-object type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
@@ -233,11 +224,11 @@
          (cons (vm:new TTUPLE 'vm:new-raw-object RAW-OBJECT  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn)) or (vm:new-raw-object type size)
 
          (cons (vm:new TTUPLE 'vm:new   NEW 'any 1   #f)   ; fast creation of small (less than 255 elements) reference object (vm:new type v1 .. vn)
+         (cons (vm:new TTUPLE 'vm:sys   SYS  4 1  vm:sys)  ; 
 
-         (cons (vm:new TTUPLE 'vm:sys   SYS  4 1 vm:sys)
-         ;cons (vm:new TTUPLE 'vm:run   RUN  ...)
-
+         ; конструкторы
          (cons (vm:new TTUPLE 'cons     CONS 2 1 cons)
+         (cons (vm:new TTUPLE 'cast     CAST 2 1 cast)  ;; cast object type (works for immediates and allocated)
 
          ; геттеры
          (cons (vm:new TTUPLE 'car      CAR  1 1 car)   ; (vm:new-raw-object type-bytecode '(52 4 5    24 5))
@@ -246,8 +237,6 @@
 
          (cons (vm:new TTUPLE 'type     TYPE  1 1 type)  ;; get just the type bits
          (cons (vm:new TTUPLE 'size     SIZE  1 1 size)  ;; get object size (- 1)
-         (cons (vm:new TTUPLE 'cast     CAST  2 1 cast)  ;; cast object type (works for immediates and allocated)
-         (cons (vm:new TTUPLE 'vm:raw?  RAW?  1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем
 
          ; сеттеры
          (cons (vm:new TTUPLE 'set-ref  SET-REF  3 1 set-ref)
@@ -256,6 +245,9 @@
          ; компараторы
          (cons (vm:new TTUPLE 'eq?      EQ?   2 1 eq?)
          (cons (vm:new TTUPLE 'less?    LESS? 2 1 less?)
+
+         ; предикат
+         (cons (vm:new TTUPLE 'vm:raw?  RAW?  1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
 
          ; базовая арифметика
          (cons (vm:new TTUPLE 'vm:add   ADD  2 2 vm:add)
@@ -285,7 +277,7 @@
          ; todo: add macro for call-with-tuple in r5rs
          (cons (vm:new TTUPLE 'tuple-apply 32 1 #false tuple-apply)
 
-         ; поддержка red-black деревьев
+         ; поддержка finite functions (как red-black деревьев)
          (cons (vm:new TTUPLE 'ff-apply   49 1 #f  ff-apply)
 
          (cons (vm:new TTUPLE 'ff:red     43 4  1  ff:red)
