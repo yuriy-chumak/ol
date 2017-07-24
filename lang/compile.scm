@@ -258,7 +258,7 @@
                                     (tuple 'var (car formals) this)
                                     regs)))))
                      (else
-                        ; bind or ff-bind, or arithmetic
+                        ; bind or ff-apply, or arithmetic
                         (tuple-apply (rtl-bind regs formals)
                            (λ (selected regs)
                               (tuple 'prim op args selected

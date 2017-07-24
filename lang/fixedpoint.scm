@@ -373,7 +373,7 @@
                   (grow (deps-of node) deps)))
             deps))
 
-      ; walk the term and translate all ol:let's to lambdas
+      ; walk the term and translate all bind's to lambdas
       (define (unletrec exp env)
          (define (unletrec-list exps)
             (map (lambda (exp) (unletrec exp env)) exps))
@@ -390,7 +390,7 @@
             ((lambda-var fixed? formals body)
                (mkvarlambda formals
                   (unletrec body (env-bind env formals))))
-            ((ol:let names values body)
+            ((bind names values body)
                (let*((env (env-bind env names))
                      (handle (lambda (exp) (unletrec exp env)))
                      (values (map handle values))

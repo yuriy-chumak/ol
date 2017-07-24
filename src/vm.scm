@@ -59,7 +59,7 @@
 ;            > (construct 1 2)
 ;            '(1 . 2)
 ;            >
-      ;ff-bind
+      ;ff-apply
 
       ; todo: rename to TPAIR, TTUPLE, etc.
       (setq TFIX+              0) ; value

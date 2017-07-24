@@ -293,7 +293,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #endif
 
 // компилятор otus-lisp поддерживает несколько специальных форм:
-//	quote, lambda, receive, values, ol:let, ifeq, setq, ol:ifa, (env.scm)
+//	quote, lambda, receive, values, bind, ifeq, setq, ifa, (env.scm)
 //	все остальное - макросы или функции/процедуры
 
 #include <assert.h>

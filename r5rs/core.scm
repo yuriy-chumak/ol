@@ -8,7 +8,7 @@
       ;; special forms:
       ; quote lambda setq
       ; values values-apply
-      ; ifeq ifary ol:let
+      ; ifeq ifary bind
 
       ;; virtual machine primitives:
       ; vm:new vm:new-raw-object vm:new-object
@@ -284,7 +284,7 @@
       ; library syntax:  (letrec <bindings> <body>)
       (define-syntax letrec
          (syntax-rules ()
-            ((letrec ((?var ?val) ...) ?body) (ol:let (?var ...) (?val ...) ?body))
+            ((letrec ((?var ?val) ...) ?body) (bind (?var ...) (?val ...) ?body))
             ((letrec vars body ...) (letrec vars (begin body ...)))))
 
       ; library syntax:  (letrec* ...) - extension
@@ -302,7 +302,7 @@
          (syntax-rules ()
             ((let ((var val) ...) exp . rest)
                ((lambda (var ...) exp . rest) val ...))
-               ;why not (ol:let (var ...) (val ...) exp . rest)) ???
+               ;why not (bind (var ...) (val ...) exp . rest)) ???
             ((let keyword ((var init) ...) exp . rest)
                (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
 
@@ -434,11 +434,11 @@
                (define op
                   (letrec ((op (lambda args body))) op)))
             ((define name (lambda (var ...) . body))
-               (setq name (ol:let (name) ((lambda (var ...) . body)) name)))
+               (setq name (bind (name) ((lambda (var ...) . body)) name)))
             ((define op val)
                (setq op val))))
 
-;      ;; not defining directly because ol:let doesn't yet do variable arity
+;      ;; not defining directly because bind doesn't yet do variable arity
 ;      ;(define list ((lambda (x) x) (lambda x x)))
 ;
 ;      ;; fixme, should use a print-limited variant for debugging
@@ -1118,7 +1118,7 @@
       ; replace this with typed destructuring compare later on
 
       (define-syntax tuple-case
-         (syntax-rules (else _ is eq? bind div)
+         (syntax-rules (else _ is eq? div)
             ((tuple-case (op . args) . rest)
                (let ((foo (op . args)))
                   (tuple-case foo . rest)))
@@ -1281,9 +1281,9 @@
 ;               (define op
 ;                  (letrec ((op (lambda args body))) op)))
 ;            ((define name (lambda (var ...) . body))
-;               (setq name (ol:let (name) ((lambda (var ...) . body)) name)))
+;               (setq name (bind (name) ((lambda (var ...) . body)) name)))
 ;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
-;               (setq name (ol:let (name) ((lambda (var ...) . body)) name)))
+;               (setq name (bind (name) ((lambda (var ...) . body)) name)))
 ;            ((define op val)
 ;               (setq op val))))
 

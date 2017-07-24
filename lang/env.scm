@@ -161,14 +161,14 @@
                               ((walker (env-bind env (cadr exp)) fail)
                                  (caddr exp)))
                            (fail (list "funny lambda " exp))))
-                     ((ol:let)
+                     ((bind)
                         (if (and (= (length exp) 4) (formals-cool? exp))
                            (let ((walk (walker (env-bind env (cadr exp)) fail)))
-                              (list 'ol:let
+                              (list 'bind
                                  (cadr exp)
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
-                           (fail (list "funny ol:let " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
+                           (fail (list "funny bind " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
                      ((values values-apply ifary ifeq)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
@@ -210,7 +210,7 @@
                (cons 'lambda  (tuple 'special 'lambda))
 
                (cons 'setq    (tuple 'special 'setq))
-               (cons 'ol:let  (tuple 'special 'ol:let)) ; 'letrec
+               (cons 'bind    (tuple 'special 'bind))
                (cons 'ifary   (tuple 'special 'ifary))
                (cons 'ifeq    (tuple 'special 'ifeq))
 
