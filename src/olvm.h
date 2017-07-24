@@ -16,6 +16,8 @@
 	extern "C" {
 #endif
 
+#include <stdint.h>
+
 // (игра слов)
 // OL:
 //	* сокращение от названия проекта - Otus Lisp (вырос из Owl Lisp'а),

@@ -804,7 +804,7 @@ struct __attribute__ ((aligned(sizeof(word)), packed)) object_t
 
 // ------------------------------------------------------
 
-OL*  OL_new (unsigned char* bootstrap);
+OL*  OL_new (unsigned char* bootstrap, void (*release)(void*));
 void OL_free(OL* ol);
 word OL_run(struct ol_t* ol, int argc, char** argv);
 
@@ -1724,7 +1724,7 @@ struct ol_t
 };
 
 static //__attribute__((aligned(8)))
-void* runtime(OL* ol);  // главный цикл виртуальной машины
+word runtime(OL* ol);  // главный цикл виртуальной машины
 // требует полностью вализную структуру ol_t
 
 #define TICKS                       10000 // # of function calls in a thread quantum
@@ -1844,7 +1844,7 @@ word get(word *ff, word key, word def)
 #define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 static //__attribute__((aligned(8)))
-void* runtime(OL* ol)
+word runtime(OL* ol)
 {
 	heap_t* heap = &ol->heap;
 
@@ -4213,7 +4213,7 @@ done:;
 		return (void*)untoi(R[3]);
 	else
 		return (R[3] == IFALSE) ? (void*)0 : (void*)1;*/
-	return (void*)R[3];
+	return R[3];
 }
 
 // ======================================================================
