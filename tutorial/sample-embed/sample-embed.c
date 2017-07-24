@@ -45,7 +45,8 @@ int main(int argc, char** argv)
 			// main program body
 			"(print \"sample_add: \""
 			"   (sample_add 1 2))", 0);
-	OL_eval(ol, 0, 0);
+	OL_run(ol, 0, 0);
+
 	OL_free(ol);
 }
 

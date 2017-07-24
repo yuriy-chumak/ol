@@ -29,11 +29,42 @@ struct ol_t;
 // internal option
 //#define NO_SECCOMP
 
-struct
-ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
-void  OL_free(struct ol_t* ol);
-void* OL_eval(struct ol_t* ol, int argc, char** argv);
-void(*OL_atexit(struct ol_t* ol, void (*exit)(int status)))(int status);
+/**
+ * Create new OL virtual machine (olvm)
+ *
+ * \param[in] bootstrap Binary code to be executed by olvm.
+ * \param[in] release Optional function to release the bootstrap (if not 0)
+ * \return Created olvm instance
+ */
+struct ol_t*
+OL_new(unsigned char* bootstrap, void (*release)(void*));
+
+/**
+ * Release the OL virtual machine (olvm)
+ *
+ * \param[in] ol Valid olvm instance
+ */
+void
+OL_free(struct ol_t* ol);
+
+/**
+ * Run the OL virtual machine (olvm)
+ *
+ * \param[in] ol Valid olvm instance
+ * \param[in] argc Arguments count
+ * \param[in] argv Arguments array
+ */
+uintptr_t
+OL_run(struct ol_t* ol, int argc, char** argv);
+
+/**
+ * Register a function to be called at olvm termination
+ *
+ * \param[in] ol Valid olvm instance
+ * \param[in] function Function to be called
+ */
+void
+(*OL_atexit(struct ol_t* ol, void (*function)(int status))) (int status);
 
 
 // c++ interface:
@@ -42,13 +73,14 @@ class OL
 {
 private:
 	ol_t* vm;
+
 public:
 	OL(unsigned char* language) { vm = ol_new(language, 0); }
 	virtual ~OL() { OL_free(vm); }
 
 
-	int eval(int argc, char** argv) {
-		return (int)OL_eval(argc, argv);
+	int run(int argc, char** argv) {
+		return (int)OL_run(argc, argv);
 	}
 };
 #else
@@ -57,8 +89,8 @@ typedef struct ol_t OL;
 
 // ------------------------------------------------------------------
 // -=( Error Checking )=---------------------------------------------
-//                         to disable (to increase speed for example)
-//                         check remove comment corresponded #define.
+//                  to disable (to increase speed, for example) check
+//                        please uncomment corresponded #define macro
 //                                  (doesn't increase speed for real)
 
 //#define CAR_CHECK(arg) 1
@@ -73,9 +105,8 @@ typedef struct ol_t OL;
 //#define OVERFLOW_KILLS(n)
 
 
-/* tips and tricks: */
-
-// uncomment next linex to remove correspondent syscall from vm,
+// -=( tips and tricks )=--------------------------------------------
+//      uncomment next linex to remove correspondent syscall from vm,
 // or change in to any number (except 0) to assign new syscall number
 
 // #define SYSCALL_IOCTL 0
@@ -84,6 +115,7 @@ typedef struct ol_t OL;
 
 // #define HAS_UNSAFES 0
 // #define HAS_SANDBOX 0
+// #define HAS_CALLBACKS 0
 
 //-- end of header
 #ifdef __cplusplus

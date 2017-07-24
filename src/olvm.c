@@ -69,7 +69,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #endif
 
 
-// http://man7.org/linux/man-pages/man7/posixoptions.7.html
 #ifdef __unix__
 
 // FreeBSD, NetBSD, OpenBSD, MacOS, etc.
@@ -189,7 +188,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 
 // http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
 
-// defaults. please don't change. use -DOPTIONSYMBOL gcc command line defines instead
+// defaults. please don't change! use -D{OPTION}={0|1} command line instead
+//           or use -DHAS_CONFIG=1 and change your local copy of the olvm.h
 #ifndef HAS_SOCKETS
 #define HAS_SOCKETS 1 // system sockets support
 #endif
@@ -198,26 +198,29 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #define HAS_DLOPEN 1  // dlopen/dlsym support
 #endif
 
+#ifndef HAS_SANDBOX
+#define HAS_SANDBOX 1 // allows sandboxing
+#endif
+
+#ifndef HAS_UNSAFES
+#define HAS_UNSAFES 1 // allows "unsafe" memory access operations
+#endif
+
+#ifndef EMBEDDED_VM   // use as embedded vm in your project
+#define EMBEDDED_VM 0
+#endif
+
+
 #ifndef HAS_STRFTIME
 #define HAS_STRFTIME 1
 #endif
 
-#ifndef HAS_SANDBOX
-#define HAS_SANDBOX 1
-#endif
-
-#ifndef HAS_UNSAFES
-#define HAS_UNSAFES 1
-#endif
-
-#ifndef EMBEDDED_VM   // use as embedded vm in project
-#define EMBEDDED_VM 0
-#endif
 
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
 #define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
                       // as well as all of the ISO C facilities.
 
+// http://man7.org/linux/man-pages/man7/posixoptions.7.html
 #define _BSD_SOURCE
 #define _GNU_SOURCE   // nanosleep, etc.
 
@@ -232,31 +235,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #define _DEFAULT_SOURCE
 
 #include <stdint.h>
-
-// possible data models: LP64 ILP64 LLP64 ILP32 LP32
-// http://www.unix.org/version2/whatsnew/lp64_wp.html
-// http://stackoverflow.com/questions/384502/what-is-the-bit-size-of-long-on-64-bit-windows
-// http://ru.cppreference.com/w/cpp/language/types
-
-// LP32 или 2/4/4 (int — 16 бит, long и указатель — 32 бита)
-//	Win16 AP
-// ILP32 или 4/4/4 (int, long и указатель — 32 бита)
-//	Win32 API
-//	Unix и Unix-подобные системы (Linux, Mac OS X)
-// LLP64 или 4/4/8 (int и long — 32 бита, указатель — 64 бита)
-//	Win64 API
-// LP64 или 4/8/8 (int — 32 бита, long и указатель — 64 бита)
-//	Unix и Unix-подобные системы (Linux, Mac OS X)
-// Другие модели очень редки. Например, ILP64 (8/8/8: int, long и указатель — 64 бита) появилась
-// только в некоторых ранних 64-битных Unix-системах (н-р, Unicos на компьютерах Cray).
-
-
-#if INTPTR_MAX == INT64_MAX
-#define MATH_64BIT 1
-#else
-#define MATH_64BIT 0
-#endif
-
 
 #ifdef __linux__
 #include <features.h>
@@ -826,16 +804,15 @@ struct __attribute__ ((aligned(sizeof(word)), packed)) object_t
 
 // ------------------------------------------------------
 
-OL* OL_new(unsigned char* bootstrap, void (*release)(void*));
+OL*  OL_new (unsigned char* bootstrap);
 void OL_free(OL* ol);
-void* OL_eval(struct ol_t* ol, int argc, char** argv);
+word OL_run(struct ol_t* ol, int argc, char** argv);
 
 typedef void (exit_t)(int status);
-exit_t* OL_atexit(struct ol_t* ol, exit_t* exit);
-
+exit_t*
+      OL_atexit(struct ol_t* ol, exit_t* exit);
 
 // ------------------------------------------------------
-
 #define W                           sizeof (word)
 #define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIX, val)
 
@@ -844,15 +821,6 @@ exit_t* OL_atexit(struct ol_t* ol, exit_t* exit);
 #define FMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 // todo: remove MAXOBJ!
 #define MAXOBJ                      0xffff         // max words in tuple including header
-
-// http://www.delorie.com/gnu/docs/gcc/gccint_53.html
-#if MATH_64BIT
-typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
-typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
-#else
-typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
-typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
-#endif
 
 #define RAWBIT                      (1 << RPOS)
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
@@ -990,6 +958,43 @@ typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 #define MEMPAD                     (1024) // резервируемое место для работы apply в памяти
 // 1024 - некое магическое число, подразумевающее количество
 // памяти, используемой между вызовами apply. мои тесты пока показывают максимальное число 32
+
+
+// possible data models: LP64 ILP64 LLP64 ILP32 LP32
+// http://www.unix.org/version2/whatsnew/lp64_wp.html
+// http://stackoverflow.com/questions/384502/what-is-the-bit-size-of-long-on-64-bit-windows
+// http://ru.cppreference.com/w/cpp/language/types
+
+// LP32 or 2/4/4: int — 16 bits, long and pointer - 32 bits
+//	Win16 AP (not supported)
+// ILP32 or 4/4/4: int, long and pointer — 32 bits
+//	Win32 API (supported)
+//	Unix and Unix-like systems (Linux, Mac OS X) (supported)
+// LLP64 or 4/4/8: int and long — 32 bits, pointer — 64 bits
+//	Win64 API (supported)
+// LP64 or 4/8/8: int — 32 bits, long and pointer — 64 bits
+//	Unix and Unix-like systems (Linux, Mac OS X) (supported)
+
+// Other models are rare. For example, ILP64 or 8/8/8: int, long and pointer — 64 bits)
+//  only in some older 64-bit Unix-systems (Unicos for Cray, etc.)
+
+
+#if UINTPTR_MAX == 0xffffffffffffffff
+#define MATH_64BIT 1
+#else
+#define MATH_64BIT 0
+#endif
+
+// http://www.delorie.com/gnu/docs/gcc/gccint_53.html
+#if MATH_64BIT
+typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
+typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
+#else
+typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
+typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
+#endif
+
+
 
 // http://outflux.net/teach-seccomp/
 // http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
@@ -2432,7 +2437,7 @@ loop:;
 
 			if ((word) p == INULL) {
 				#if VMRAW_CHECK
-				// it's safe to trunk not rounding
+				// it's safe to trunc not rounding
 				if (len / sizeof(word) > heap->end - fp) { // is it required?
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
@@ -4460,13 +4465,11 @@ int main(int argc, char** argv)
 #endif
 
 	//set_signal_handler();
-	void* r = 0;
+	word r = 0;
 
-	OL* olvm =
-		OL_new(bootstrap, bootstrap != language ? free : NULL);
-
+	OL* olvm = OL_new(bootstrap, bootstrap != language ? free : NULL);
 	if (olvm) {
-		r = OL_eval(olvm, argc, argv);
+		r = OL_run(olvm, argc, argv);
 		OL_free(olvm);
 	}
 
@@ -4476,7 +4479,7 @@ int main(int argc, char** argv)
 
 	if (is_value(r))
 		return uvtoi(r);
-	return (int)(word)r;
+	return (int) r;
 }
 #endif
 
@@ -4592,8 +4595,8 @@ exit_t* OL_atexit(struct ol_t* ol, exit_t* exit)
 }
 
 // ===============================================================
-void*
-OL_eval(OL* handle, int argc, char** argv)
+word
+OL_run(OL* handle, int argc, char** argv)
 {
 #	ifndef _WIN32
 //	setvbuf(stderr, (void*)0, _IONBF, 0);

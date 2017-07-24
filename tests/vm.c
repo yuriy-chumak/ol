@@ -14,7 +14,7 @@ typedef uintptr_t word;
 #define EVAL(...) \
 	unsigned char bootstrap[] = __VA_ARGS__; \
 	OL* olvm = OL_new(bootstrap, 0); \
-	word output = (word)OL_eval(olvm, 0, 0);
+	word output = (word) OL_run(olvm, 0, 0);
 
 #define ASSERT(...) \
 	if (__VA_ARGS__) { \

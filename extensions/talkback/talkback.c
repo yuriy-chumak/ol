@@ -109,7 +109,7 @@ thread_start(void *arg)
 	snprintf(out, sizeof(out), "%d", state->out[1]);
 
 	char* args[3] = { "-", in, out };
-	OL_eval(ol, 3, args);
+	OL_run(ol, 3, args);
 
 	return 0;
 }
