@@ -68,7 +68,7 @@
             ((value val) max)
             ((values vals)
                (fold (lambda (max exp) (max-ast-id exp max)) max vals))
-            ((apply-values op fn)
+            ((values-apply op fn)
                (max-ast-id op
                   (max-ast-id fn max)))
             ((ifeq a b then else)

@@ -165,7 +165,7 @@
       (setq RAW? 48)     (setq vm:raw? (vm:new-raw-object TBYTECODE '(48 4 5    24 5)))
       (setq CAST 22)     (setq cast    (vm:new-raw-object TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
 
-      ; арифметические операции, некоторые возвращают пару(тройку) значений, использовать через let*/apply-values
+      ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
       (setq ADD 38)      (setq vm:add  (vm:new-raw-object TBYTECODE '(38 4 5       6 7)))
       (setq MUL 39)      (setq vm:mul  (vm:new-raw-object TBYTECODE '(39 4 5       6 7)))
       (setq SUB 40)      (setq vm:sub  (vm:new-raw-object TBYTECODE '(40 4 5       6 7)))

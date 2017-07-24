@@ -16,7 +16,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * How to build:
+ * Building:
  *   make; make install
  *
  * Project page:
@@ -27,7 +27,8 @@
  *   https://code.google.com/p/owl-lisp/
  *
  * Related:
- *   http://people.csail.mit.edu/jaffer/Scheme (r5rs)
+ *   http://people.csail.mit.edu/jaffer/Scheme
+ *   http://srfi.schemers.org/
  *   http://groups.csail.mit.edu/mac/projects/scheme/
  *   http://www.s48.org/
  *
@@ -35,6 +36,10 @@
 
 #define __OLVM_NAME__ "OL"
 #define __OLVM_VERSION__ "1.1"
+#ifndef lint
+__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
+#endif//lint
+
 
 // gcc profiling:
 // 1) gcc --coverage
@@ -45,13 +50,13 @@
 
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
-#	warning "This code must be compiled by Gnu C compiler"
+#	warning "This code should be compiled by Gnu C compiler"
 #else
 #	define GCC_VERSION (__GNUC__ * 10000 \
 	                  + __GNUC_MINOR__ * 100 \
 	                  + __GNUC_PATCHLEVEL__)
 #	if GCC_VERSION < 30200
-#		error "Required gcc version > 3.2"
+#		error "Required gcc version 3.2+"
 #	endif
 
 #	if __STDC_VERSION__ < 199901L
@@ -63,17 +68,8 @@
 #include "olvm.h"
 #endif
 
-// https://msdn.microsoft.com/en-us/library/b0084kay.aspx
-// WIN32: Defined for applications for Win32 and Win64. Always defined.
-#ifdef _WIN32
-#	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
-#	define SYSCALL_GETRLIMIT 0
-#	define PUBLIC __declspec(dllexport)
-// qemu for windows: https://qemu.weilnetz.de/
-// images for qemu: http://4pda.ru/forum/index.php?showtopic=318284
-#endif
 
-// todo: use __unix__ instead both __FreeBSD__ and __NetBSD__ ?
+// http://man7.org/linux/man-pages/man7/posixoptions.7.html
 #ifdef __unix__
 
 // FreeBSD, NetBSD, OpenBSD, MacOS, etc.
@@ -96,7 +92,6 @@
 #	define HAS_STRFTIME 0 // why?
 #endif
 
-
 #ifdef __ANDROID__
 // gdb for android: https://dan.drown.org/android/howto/gdb.html
 // http://resources.infosecinstitute.com/android-hacking-and-security-part-20-debugging-apps-on-android-emulator-using-gdb/
@@ -112,14 +107,24 @@
 #	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
-// http://man7.org/linux/man-pages/man7/posixoptions.7.html
+// https://msdn.microsoft.com/en-us/library/b0084kay.aspx
+// WIN32: Defined for applications for Win32 and Win64. Always defined.
+#ifdef _WIN32
+#	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
+#	define SYSCALL_GETRLIMIT 0
+#	define PUBLIC __declspec(dllexport)
+// qemu for windows: https://qemu.weilnetz.de/
+// linux for qemu:   https://buildroot.uclibc.org/
+// images for qemu:  https://4pda.ru/forum/index.php?showtopic=318284
+#endif
+
 
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
 
-// математику считать так: (receive (vm:add (fxmax) 1) (lambda (n carry) (list carry n)))
-//                   либо: (let* ((n carry (fx+ (fxmax) 1))) (...))
+// математику считать так: (values-apply (vm:add (fxmax) 1) (lambda (n carry) (list carry n)))
+//                   либо: (let* ((n carry (vm:add (fxmax) 1))) (...))
 // при превышении выдает, естественно, мусор
 //
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
@@ -2189,7 +2194,7 @@ loop:;
 	//		goto invoke;
 
 	// apply
-	// todo:? include apply-tuple, apply-values and apply-ff to the APPLY
+	// todo:? include apply-tuple, apply-values? and apply-ff to the APPLY
 	case APPLY: { // (0%)
 		int reg, arity;
 		if (op == APPLY) { // normal apply: cont=r3, fn=r4, a0=r5,

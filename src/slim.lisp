@@ -150,7 +150,7 @@
       ; ------
 
       (define (execute exp env)
-         (apply-values (exp)
+         (values-apply (exp)
             (lambda vals
                (ok
                   (cond

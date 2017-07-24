@@ -59,7 +59,7 @@
                ((value val) found)
                ((values vals)
                   (walk-list vals bound found))
-               ((apply-values op fn) 
+               ((values-apply op fn)
                   (walk op bound
                      (walk fn bound found)))
                (else
@@ -157,8 +157,8 @@
                   (tuple 'ifeq (walk a) (walk b) (walk then) (walk else)))
                ((values vals) 
                   (tuple 'values (map walk vals)))
-               ((apply-values op fn)
-                  (tuple 'apply-values (walk op) (walk fn)))
+               ((values-apply op fn)
+                  (tuple 'values-apply (walk op) (walk fn)))
                ((value val) exp)
                ((var sym)
                   (if (eq? sym name)
@@ -221,11 +221,11 @@
             ((values vals)
                (tuple 'values
                   (map (lambda (exp) (carry-bindings exp env)) vals)))
-            ((apply-values op fn)
+            ((values-apply op fn)
                (let
                   ((op (carry-bindings op env))
                    (fn (carry-bindings fn env)))
-                  (tuple 'apply-values op fn)))
+                  (tuple 'values-apply op fn)))
             (else
                (runtime-error "carry-bindings: strage expression: " exp))))
 
@@ -408,8 +408,8 @@
             ((values vals)
                (tuple 'values
                   (unletrec-list vals)))
-            ((apply-values op fn)
-               (tuple 'apply-values (unletrec op env) (unletrec fn env)))
+            ((values-apply op fn)
+               (tuple 'values-apply (unletrec op env) (unletrec fn env)))
             ((ifeq a b then else)
                (let
                   ((a (unletrec a env))
