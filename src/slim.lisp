@@ -1,20 +1,20 @@
 (import (owl unicode))
 (import (lang eval)
         (lang sexp)
-        (lang assemble)
+        (lang threading)
+        (lang intern)
 
         (lang env)
+        (lang macro)
+        (lang sexp)
+
         (lang ast)
         (lang fixedpoint)
         (lang alpha)
         (lang cps)
         (lang closure)
-        (lang compile)
-
-        (lang macro)
-        (lang thread)
-        (lang primop)
-        (lang intern))
+        (lang assemble)
+        (lang compile))
 (import (owl parse))
 
 ; ------------------------------------------------------------------------------

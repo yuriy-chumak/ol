@@ -66,6 +66,8 @@
 (import (otus lisp))
 
 (import (lang intern))
+(import (lang threading))
+
 (import (owl parse))
 
 (import (lang gensym))
@@ -75,17 +77,15 @@
 
 (import (lang ast))
 (import (lang fixedpoint))
-(import (lang cps))
 (import (lang alpha))
-
-(import (lang thread))
-(import (lang assemble))
+(import (lang cps))
 (import (lang closure))
+(import (lang assemble))
 (import (lang compile))
 
 
-(define error-tag "err")
 
+(define error-tag "err")
 (define (error? x)
    (and (tuple? x)
       (eq? (ref x 1) error-tag)))

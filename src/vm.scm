@@ -40,7 +40,7 @@
       AND OR XOR
 
       NEW    ; used by (lang compile)
-      vm:run ; used by (lang thread)
+      vm:run ; used by (lang threading)
 
       FF-APPLY
       TUPLE-APPLY)

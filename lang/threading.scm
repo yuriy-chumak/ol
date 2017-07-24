@@ -10,7 +10,7 @@
 
 ;; todo: make it a bug to send mail to a thread having no inbox.
 
-(define-library (lang thread)
+(define-library (lang threading)
 
    (export
       start-thread-controller
@@ -109,11 +109,16 @@
 
       (define return-value-tag "rval") ; a unique key if thread state ff
 
-      ; mcp syscalls grab the functions from here to transform the state
-
-      ;; syscalls used when profiler is running
       (define mcp-syscalls
          (tuple
+            ; id: name of thread
+            ; a: 
+            ; b: 
+            ; c:
+            ; todo:
+            ; done:
+            ; state:
+            ; tc:
 
             ; 1, runnig and time slice exhausted (the usual suspect, handled directly in scheduler)
             (λ (id a b c todo done state tc)
