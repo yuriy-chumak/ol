@@ -287,8 +287,8 @@ which is another way of
     * released project works and works fine.
     * ol ported under web, so it can run under web-browsers and run fast.
 
-  * Fri 30 Dec 2016 17:06 EET
-    * release 1.1 ready to download.
+  * *Fri 30 Dec 2016 17:06 EET*
+    * *release 1.1 ready to download.*
 
   * Wed 28 Dec 2016 18:15 EET
     * preparing the release 1.1
@@ -302,34 +302,7 @@ which is another way of
 
   * Wed 30 Nov 2016 17:19 EET
     * added full android support to the ol, now full list of supported platforms is armeabi, armeabi-v7a, arm64-v8a, mips, mips64, x86, x86-64
-    * successfully tested sockets under android armeabi, it works fine:
-<pre><code>
-C:\>adb shell
-# cd /data/local/tmp
-# ./ol
-You see a prompt.
-Type ',help' to help, ',quit' to end session
-> (import (lib http))
-> ;; Library (lib http) added
-> ;; Imported (lib http)
-> (http:run 8080 (lambda (fd request headers send close)
-   (print ":: " (syscall 51 fd #f #f))
-   (send "HTTP/1.0 200 OK\n"
-         "Connection: close\n"
-         "Content-Type: text/html; charset=UTF-8\n"
-         "Server: " (car *version*) "/" (cdr *version*)
-         "\n\n"
-         "200: OK")
-   (close #t)
-))
-Server binded to 8080
-
-
-# Wed Nov 30 16:56:01 2016 : new request from (10.0.2.2 . 53275)
-:: (10.0.2.2 . 53275)
-socket closed, on-accept done.
-# Wed Nov 30 16:56:02 2016 : request processed in 772ms.
-</code></pre>
+    * successfully tested sockets under android armeabi
   * Mon 28 Nov 2016 17:32 EET
     * changed assembler code for the x86 and x86-64 pinvoke mechanism, decreased side and increased speed. for testing use neton-dynamics and opengl libraries
       ![screenshot 1](assets/newton3.png)
