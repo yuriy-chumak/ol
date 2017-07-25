@@ -68,6 +68,17 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #include "olvm.h"
 #endif
 
+// additional gcc staff
+#if GCC_VERSION < 40300
+#	define static_assert(condition, comment) \
+			do { switch(0) { case 0: case condition: ; } } while (0)
+#else
+#	ifndef static_assert
+#	define static_assert _Static_assert
+#	endif
+#endif
+
+
 
 #ifdef __unix__
 
@@ -1460,7 +1471,7 @@ word gc(heap_t *heap, int query, word regs)
 		fp = sweep(fp, heap);
 		regs = root[0];
 
-		// todo: add diagnostik callback "if(heap->oncb) heap->oncb(heap, deltatime)"
+		// todo: add diagnostic callback "if (heap->oncb) heap->oncb(heap, deltatime)"
 		#if DEBUG_GC
 			gctime += (1000 * clock()) / CLOCKS_PER_SEC;
 			struct tm tm = *localtime(&(time_t){time(NULL)});
@@ -1882,7 +1893,7 @@ apply:;
 
 		R[0] = IFALSE; // set mcp yes?
 		R[4] = R[3];
-		R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls-during-profiling) in lang/thread.scm
+		R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
 		R[5] = IFALSE;
 		R[6] = IFALSE;
 		breaked = 0;
@@ -2984,7 +2995,9 @@ loop:;
 					HANDLE handle = (HANDLE)(intptr_t)(unsigned)portfd;
 					fprintf(stderr, "%p:%d\n", handle, portfd);
 
-					if (!ReadFile(handle, (char *) &fp[1], size, &got, NULL)) {
+					static_assert (sizeof(DWORD) == sizeof(got),
+							"passing argument from incompatible pointer type");
+					if (!ReadFile(handle, (char *) &fp[1], size, (LPDWORD)&got, NULL)) {
 						result = (word*)ITRUE;
 						break;
 					}
@@ -3042,8 +3055,10 @@ loop:;
 				// win32 pipes workaround
 				if (wrote == -1 && errno == EBADF) {
 					HANDLE handle = (HANDLE)(intptr_t)(unsigned)portfd;
-					fprintf(stderr, "%p:%d\n", handle, portfd);
-					if (!WriteFile(handle, (char*) &buff[1], size, &wrote, NULL))
+
+					static_assert (sizeof(DWORD) == sizeof(wrote),
+							"passing argument from incompatible pointer type");
+					if (!WriteFile(handle, (char*) &buff[1], size, (LPDWORD)&wrote, NULL))
 						wrote = -1;
 				}
 	#	endif
@@ -3596,7 +3611,7 @@ loop:;
 						}
 
 						exit(execve(command, args, 0));
-						assert(0);
+						assert(0); // should not be reached
 					}
 					else if (child > 0)
 						result = (word*)ITRUE;
