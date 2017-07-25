@@ -46,9 +46,9 @@ Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/relea
  *  :grey_question: spark64
    * TBD.
  *  :grey_question: x86
-   * TBD.
+   * :heavy_check_mark:
  *  :grey_question: x86_64
-   * TBD.
+   * :heavy_check_mark:
  *  :grey_question: ztensa
    * TBD.
 
@@ -90,6 +90,42 @@ which is another way of
    I'm working for add more prebuilts.
 
 ### Project news
+* Mon 25 Jul 2017
+  * added internal pinvoke test
+
+* Mon 24 Jul 2017
+  * basic API changed!!!
+    * apply-value changed to values-apply, to the right name
+    * ol:let changed to bind
+  * public API changed!!!
+    * OL_eval changed to OL_run
+  * vm:run moved from lang/thread to basic library src/vm
+  * lang/thread renamed to lang/threading
+
+* Fri 21 Jul 2017
+  * fix for broken library support test
+  * small code refactoring, clenaup, less magic numbers
+  * basic API changed!!!
+    * vm:raw renamed to vm:new-raw-object
+    * unreel renamed to vm:new-object
+    * raw? renamed to vm:raw?
+
+* Tue 18 Jul 2017
+  * small gc changes, increased gc stability
+  * added system call pipe (for win32 too)
+  * now ol prints the port number like #[fd 123]
+  * small sandbox logic changes in source code (not the logic, only source code)
+
+* Mon 17 Jul 2017
+  * basic tcl/tk bindings now for linux too
+  * changes public API!!!
+    * OL_eval returns raw data, now caller can analyze the result by itself
+  * added more internal VM tests
+  * added sqlite extensions support, now it can be written in ol
+  * added example of sqlite extension in ol
+  * internal API changed!!!
+    * callback creation syscall number changed from 175 to 85
+
 * Thr 6 Jul 2017
   * tested ol under aarch64 and arm versatile, it works
 
