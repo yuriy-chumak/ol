@@ -169,12 +169,30 @@ GOTO:EOF
 
 
 :TESTS
+:: Prepare the binaries
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
-    -DNAKED_VM -DEMBEDDED_VM -DHAS_PINVOKE=1 ^
-    src/olvm.c tests/vm.c -o "tests.exe" -lws2_32 -O2 -g2 -m64
-tests.exe
+    -DNAKED_VM -DEMBEDDED_VM ^
+    src/olvm.c tests/vm.c -o "test-vm.exe" -lws2_32 -O2 -g2 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    -DHAS_PINVOKE=1 ^
+    src/olvm.c src/boot.c tests/pinvoke.c -o "test-pinvoke.exe" -lws2_32 -O2 -g2 -m64
+
+
+:: VM internal tests
+test-vm.exe
 if errorlevel 1 goto fail
 
+:: PInvoke tests
+echo|set /p=Testing tests\pinvoke.scm ...
+test-pinvoke.exe tests/pinvoke.scm > C:\TEMP\out
+fc C:\TEMP\out tests/pinvoke.scm.ok > nul
+if errorlevel 1 (
+   echo. Failed.
+   goto fail
+)
+echo. Ok.
+
+:: Other tests
 call :TEST tests\apply.scm
 call :TEST tests\banana.scm
 call :TEST tests\callcc.scm
