@@ -19,41 +19,34 @@ Otus Lisp (произносится как [\`отэс лисп]), или сок
 
 ### Протестированные платформы
 
- *  :heavy_check_mark: x86
-   * 80486 :heavy_check_mark:,
-     pentium :heavy_check_mark:, pentium mmx :grey_question:, pentium pro :grey_question:,
-     pentium 2 :heavy_check_mark:, pentium 3 :heavy_check_mark:
- *  :heavy_check_mark: x86_64
-   * TBD.
- *  :heavy_check_mark: aarch64:
-   * cortex-a53 :heavy_check_mark:, cortex-a57 :heavy_check_mark:
- *  :heavy_check_mark: arm:
-   * arm920t :heavy_check_mark:, arm926t :grey_question:,
-     arm1136 :grey_question:,
-     cortex-a7 :grey_question:, cortex-a9 :grey_question:, cortex-a15 :grey_question:,
-     cortex-m3 :grey_question:, cortex-m4 :grey_question: 
- *  :grey_question: m68k
-   * mcf5208evb: m68040 :grey_question:, m5208 :grey_question:
- *  :grey_question: microblaze
-   * TBD.
- *  :grey_question: mips32
-   * TBD.
- *  :grey_question: mips64
-   * TBD.
- *  :grey_question: or1k
-   * TBD.
- *  :grey_question: ppc
-   * TBD.
- *  :grey_question: ppc64
-   * TBD.
- *  :grey_question: sh4
-   * TBD.
- *  :grey_question: spark
-   * TBD.
- *  :grey_question: spark64
-   * TBD.
- *  :grey_question: ztensa
-   * TBD.
+ *  :heavy_check_mark: **x86** (
+       :white_check_mark: 80486,
+       :white_check_mark: pentium,
+       :white_large_square: pentium mmx, :white_large_square: pentium pro,
+       :white_check_mark: pentium 2, :white_check_mark: pentium 3,
+       TBD)
+ *  :heavy_check_mark: **x86_64** (
+       :white_check_mark: core i3,
+       TBD.)
+ *  :heavy_check_mark: **aarch64** (
+       :white_check_mark: cortex-a53, :white_check_mark: cortex-a57)
+ *  :heavy_check_mark: **arm** (
+       :white_check_mark: arm920t, :white_large_square: arm926t,
+       :white_large_square: arm1136,
+       :white_large_square: cortex-a7, :white_large_square: cortex-a9, :white_large_square: cortex-a15,
+       :white_large_square: cortex-m3, :white_large_square: cortex-m4) 
+ *  :grey_question: **m68k** mcf5208evb (
+       :white_large_square: m5208, :white_large_square: m68040)
+ *  :grey_question: **microblaze**
+ *  :grey_question: **mips32**
+ *  :grey_question: **mips64**
+ *  :grey_question: **or1k**
+ *  :grey_question: **ppc**
+ *  :grey_question: **ppc64**
+ *  :grey_question: **sh4**
+ *  :grey_question: **spark**
+ *  :grey_question: **spark64**
+ *  :grey_question: **ztensa**
 
 
 ### О проекте (продолжение)
