@@ -21,10 +21,19 @@ Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/relea
 
 ### Tested platforms
 
+ *  :heavy_check_mark: x86
+   * 80486 :heavy_check_mark:,
+     pentium :heavy_check_mark:, pentium mmx :grey_question:, pentium pro :grey_question:,
+     pentium 2 :heavy_check_mark:, pentium 3 :heavy_check_mark:
+ *  :heavy_check_mark: x86_64
+   * TBD.
  *  :heavy_check_mark: aarch64:
    * cortex-a53 :heavy_check_mark:, cortex-a57 :heavy_check_mark:
- *  :grey_question: arm:
-   * arm920t :heavy_check_mark:, arm926t :grey_question:, arm1136 :grey_question:, cortex-a7 :grey_question:, cortex-a9 :grey_question:, cortex-a15 :grey_question:, cortex-m3 :grey_question:, cortex-m4 :grey_question: 
+ *  :heavy_check_mark: arm:
+   * arm920t :heavy_check_mark:, arm926t :grey_question:,
+     arm1136 :grey_question:,
+     cortex-a7 :grey_question:, cortex-a9 :grey_question:, cortex-a15 :grey_question:,
+     cortex-m3 :grey_question:, cortex-m4 :grey_question: 
  *  :grey_question: m68k
    * mcf5208evb: m68040 :grey_question:, m5208 :grey_question:
  *  :grey_question: microblaze
@@ -45,10 +54,6 @@ Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/relea
    * TBD.
  *  :grey_question: spark64
    * TBD.
- *  :grey_question: x86
-   * :heavy_check_mark:
- *  :grey_question: x86_64
-   * :heavy_check_mark:
  *  :grey_question: ztensa
    * TBD.
 
@@ -194,19 +199,6 @@ which is another way of
 * Fri 21 Apr 2017
   * more samples (added coroutine sample)
 
-* Thr 27 Apr 2017
-  * in talkback sample added sending to OL and receiving from the byte buffer
-  * thinking about moving the talkback into separate library
-
-* Wed 26 Apr 2017
-  * added hook for imports to the OL, after testing will merge in mainline - now import behaviour can be changed at user level
-
-* Mon 24 Apr 2017
-  * added error handling to the talkback - now talkback returns error code with error description
-
-* Fri 21 Apr 2017
-  * more samples (added coroutine sample)
-
 * Mon 17 Apr 2017
   * extent talkback sample
   * talkback now can do "import" and ",load"
@@ -283,33 +275,36 @@ which is another way of
   * from this point will post news without time
   * JF2 renamed to JAF (Jump if Arity Failed)
 
-  * Tue 07 Feb 2017 18:19 CET
-    * released project works and works fine.
-    * ol ported under web, so it can run under web-browsers and run fast.
+* Tue 07 Feb 2017 18:19 CET
+  * released project works and works fine.
+  * ol ported under web, so it can run under web-browsers and run fast.
 
-  * *Fri 30 Dec 2016 17:06 EET*
-    * *release 1.1 ready to download.*
+* *Fri 30 Dec 2016 17:06 EET*
+  * *release 1.1 ready to download.*
 
-  * Wed 28 Dec 2016 18:15 EET
-    * preparing the release 1.1
-    * made great work with decreasing memory usage by three-five times and twise boost of execution speed (thanks to new gc memory management strategy).
+* Wed 28 Dec 2016 18:15 EET
+  * preparing the release 1.1
+  * made great work with decreasing memory usage by three-five times and twise boost of execution speed (thanks to new gc memory management strategy).
 
-  * Thr 01 Dec 2016 18:06 EET
-    * [build.opensuse.org](https://build.opensuse.org/package/show/home:yuriy-chumak/ol) works again, you can get prepared packages for the x86 CentOS 6, x86 Debian 7, x86 Debian 8, x86 Fedora 22, x86 Fedora 23, x86 RHEL 5, x86 RHEL 6, x86 ScientificLinux 6, x86 openSUSE 13.1, x86 openSUSE 13.2, armv7l openSUSE Factory, aarch64 openSUSE Factory, x86 Ubuntu 12.04, x86 Ubuntu 14.04, x86 Ubuntu 16.04
+* Thr 01 Dec 2016 18:06 EET
+  * [build.opensuse.org](https://build.opensuse.org/package/show/home:yuriy-chumak/ol) works again, you can get prepared packages for the x86 CentOS 6, x86 Debian 7, x86 Debian 8, x86 Fedora 22, x86 Fedora 23, x86 RHEL 5, x86 RHEL 6, x86 ScientificLinux 6, x86 openSUSE 13.1, x86 openSUSE 13.2, armv7l openSUSE Factory, aarch64 openSUSE Factory, x86 Ubuntu 12.04, x86 Ubuntu 14.04, x86 Ubuntu 16.04
 
-  * Wed 30 Nov 2016 21:53 EET
-    * ol recompiled for odroid (please remember that ol works in "wild" under the odroid c1+ platform and provides web access to the server with remote terminal support)
+* Wed 30 Nov 2016 21:53 EET
+  * ol recompiled for odroid (please remember that ol works in "wild" under the odroid c1+ platform and provides web access to the server with remote terminal support)
 
-  * Wed 30 Nov 2016 17:19 EET
-    * added full android support to the ol, now full list of supported platforms is armeabi, armeabi-v7a, arm64-v8a, mips, mips64, x86, x86-64
-    * successfully tested sockets under android armeabi
-  * Mon 28 Nov 2016 17:32 EET
-    * changed assembler code for the x86 and x86-64 pinvoke mechanism, decreased side and increased speed. for testing use neton-dynamics and opengl libraries
+* Wed 30 Nov 2016 17:19 EET
+  * added full android support to the ol, now full list of supported platforms is armeabi, armeabi-v7a, arm64-v8a, mips, mips64, x86, x86-64
+  * successfully tested sockets under android armeabi, it works fine:
+
+* Mon 28 Nov 2016 17:32 EET
+  * changed assembler code for the x86 and x86-64 pinvoke mechanism, decreased side and increased speed. for testing use neton-dynamics and opengl libraries
       ![screenshot 1](assets/newton3.png)
-    * now "native" function can return float and double values, ol understands it and correctly receives
-  * Thr 10 Nov 2016 19:23 EET
-    * nothing happend, i'm continuing the project, simply no time to the commenting all steps
-  * Previous news records can be found in [russian translated](?ru) part of this site
+  * now "native" function can return float and double values, ol understands it and correctly receives
+
+* Thr 10 Nov 2016 19:23 EET
+  * nothing happend, i'm continuing the project, simply no time to the commenting all steps
+  
+* Previous news records can be found in [russian translated](?ru) part of this site
 
 ### Learn
 
@@ -317,4 +312,4 @@ which is another way of
 
    I'm writing docs right now. It will be available very soon. You can check <b><a href="?en/examples">SAMPLES</a></b> for now.
 
-<small style="float: right">Copyright (c) 2016 Yuriy Chumak</small>
+<small style="float: right">Copyright (c) 2016, 2017 Yuriy Chumak</small>

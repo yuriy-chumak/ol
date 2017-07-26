@@ -19,10 +19,19 @@ Otus Lisp (произносится как [\`отэс лисп]), или сок
 
 ### Протестированные платформы
 
+ *  :heavy_check_mark: x86
+   * 80486 :heavy_check_mark:,
+     pentium :heavy_check_mark:, pentium mmx :grey_question:, pentium pro :grey_question:,
+     pentium 2 :heavy_check_mark:, pentium 3 :heavy_check_mark:
+ *  :heavy_check_mark: x86_64
+   * TBD.
  *  :heavy_check_mark: aarch64:
    * cortex-a53 :heavy_check_mark:, cortex-a57 :heavy_check_mark:
- *  :grey_question: arm:
-   * arm920t :heavy_check_mark:, arm926t :grey_question:, arm1136 :grey_question:, cortex-a7 :grey_question:, cortex-a9 :grey_question:, cortex-a15 :grey_question:, cortex-m3 :grey_question:, cortex-m4 :grey_question: 
+ *  :heavy_check_mark: arm:
+   * arm920t :heavy_check_mark:, arm926t :grey_question:,
+     arm1136 :grey_question:,
+     cortex-a7 :grey_question:, cortex-a9 :grey_question:, cortex-a15 :grey_question:,
+     cortex-m3 :grey_question:, cortex-m4 :grey_question: 
  *  :grey_question: m68k
    * mcf5208evb: m68040 :grey_question:, m5208 :grey_question:
  *  :grey_question: microblaze
@@ -43,10 +52,6 @@ Otus Lisp (произносится как [\`отэс лисп]), или сок
    * TBD.
  *  :grey_question: spark64
    * TBD.
- *  :grey_question: x86
-   * :heavy_check_mark:
- *  :grey_question: x86_64
-   * :heavy_check_mark:
  *  :grey_question: ztensa
    * TBD.
 
@@ -554,6 +559,7 @@ socket closed, on-accept done.
 
 ### Мои заметки
 * [О бинарных пакетах в NetBSD](?blog/2016.03.17-13.06)
+* [Тестируем на 80486](?blog/2017.07.26-15.51)
 
 
 
