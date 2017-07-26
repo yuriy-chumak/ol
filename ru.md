@@ -24,6 +24,7 @@ Otus Lisp (произносится как [\`отэс лисп]), или сок
        :white_check_mark: pentium,
        :white_large_square: pentium mmx, :white_large_square: pentium pro,
        :white_check_mark: pentium 2, :white_check_mark: pentium 3,
+       :white_check_mark: athlon,
        TBD)
  *  :heavy_check_mark: **x86_64** (
        :white_check_mark: core i3,
@@ -37,16 +38,16 @@ Otus Lisp (произносится как [\`отэс лисп]), или сок
        :white_large_square: cortex-m3, :white_large_square: cortex-m4) 
  *  :grey_question: **m68k** mcf5208evb (
        :white_large_square: m5208, :white_large_square: m68040)
- *  :grey_question: **microblaze**
- *  :grey_question: **mips32**
- *  :grey_question: **mips64**
- *  :grey_question: **or1k**
- *  :grey_question: **ppc**
- *  :grey_question: **ppc64**
- *  :grey_question: **sh4**
- *  :grey_question: **spark**
- *  :grey_question: **spark64**
- *  :grey_question: **ztensa**
+ *  :grey_question: **microblaze** (TBD.)
+ *  :grey_question: **mips32** (TBD.)
+ *  :grey_question: **mips64** (TBD.)
+ *  :grey_question: **or1k** (TBD.)
+ *  :grey_question: **ppc** (TBD.)
+ *  :grey_question: **ppc64** (TBD.)
+ *  :grey_question: **sh4** (TBD.)
+ *  :grey_question: **spark** (TBD.)
+ *  :grey_question: **spark64** (TBD.)
+ *  :grey_question: **ztensa** (TBD.)
 
 
 ### О проекте (продолжение)
