@@ -27,6 +27,8 @@ Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/relea
        :white_large_square: pentium mmx, :white_large_square: pentium pro,
        :white_check_mark: pentium 2, :white_check_mark: pentium 3,
        :white_check_mark: athlon,
+       :white_check_mark: core i3,
+       :white_check_mark: core i7,
        TBD)
  *  :heavy_check_mark: **x86_64** (
        :white_check_mark: core i3,
