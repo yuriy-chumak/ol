@@ -12,7 +12,7 @@
 
       ;; virtual machine primitives:
       ; vm:new vm:new-raw-object vm:new-object
-      ; cons car cdr ref type size cast vm:raw? set set! eq? less?
+      ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
       ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
       ; clock syscall vm:version fxmax fxmbits vm:wordsize
       ; tuple-apply ff-apply

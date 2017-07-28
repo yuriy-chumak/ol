@@ -834,14 +834,15 @@ exit_t*
 #define RAWBIT                      (1 << RPOS)
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
 
-#define make_value(type, value)        ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
-#define make_header(type, size)        (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
-#define make_raw_header(type, size, p) (( (word)(size) << SPOS) | ((type) << TPOS) | (RAWBIT) | ((p) << 8) | 2)
+#define make_value(type, value)        (2 | (((word)value) << IPOS) | ((type) << TPOS))
+#define make_header(type, size)        (2 | ( (word)(size) << SPOS) | ((type) << TPOS))
+#define make_raw_header(type, size, p) (2 | ( (word)(size) << SPOS) | ((type) << TPOS) | ((p) << 8) | RAWBIT)
 // p is padding
 
 // два главных класса аргументов:
 #define is_value(x)                 (((word)(x)) & 2)
 #define is_reference(x)             (!is_value(x))
+
 #define is_rawobject(x)             (((word)(x)) & RAWBIT)
 
 // всякая всячина:
@@ -2519,44 +2520,48 @@ loop:;
 		ip += 2; break;
 	}
 
-	// todo: переделать! и вообще, найти как от этой команды избавиться!
+	// todo: переделать!
+	// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
+	// это лучше сделать тут, наверное, а не отдельной командой
 	case CAST: { // cast obj type -> result
 		if (!is_value(A1))
-			break;
+			ERROR(CAST, this, A1);
 		word T = A0;
 		word type = uvtoi(A1) & 63;
 
-	//			if (type == TPORT && thetype(T) == TINT) {
-	//				A2 = IFALSE;
-	//			}
-		// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
-		// это лучше сделать тут, наверное, а не отдельной командой
-		if (is_value(T)) {
-			word val = value(T);
-			if (type == TPORT) {
+		switch (type) {
+		case TPORT:
+			if (is_value(T)) {
+				word val = value(T);
 				//if (val <= 2)
 					A2 = make_port(val);
 				//else
 				//	A2 = IFALSE;
 			}
 			else
+				ERROR(CAST, this, T);
+			break;
+		default:
+			if (is_value(T)) {
+				word val = value(T);
 				A2 = make_value(type, val);
+			}
+			else
+			{
+				// make a clone of more desired type
+				word* ob = (word*)T;
+				word hdr = *ob++;
+				int size = hdrsize(hdr);
+				word *newobj = new (size);
+				word *res = newobj;
+				/* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
+				//*newobj++ = (hdr&(~2040))|(type<<TPOS);
+				*newobj++ = (hdr & (~252)) | (type << TPOS); /* <- hardcoded ...111100000011 */
+				wordcopy(ob, newobj, size-1);
+				A2 = (word)res;
+			}
+			break;
 		}
-		else
-		{
-			// make a clone of more desired type
-			word* ob = (word*)T;
-			word hdr = *ob++;
-			int size = hdrsize(hdr);
-			word *newobj = new (size);
-			word *res = newobj;
-			/* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
-			//*newobj++ = (hdr&(~2040))|(type<<TPOS);
-			*newobj++ = (hdr & (~252)) | (type << TPOS); /* <- hardcoded ...111100000011 */
-			wordcopy(ob, newobj, size-1);
-			A2 = (word)res;
-		}
-
 		ip += 3; break;
 	}
 
@@ -3311,14 +3316,19 @@ loop:;
 			}
 		#	endif
 
-			pipe(pipefd);
+			if (pipe(pipefd) == 0) {
+				result = new_pair(make_port(pipefd[0]), make_port(pipefd[1]));
 
-		#	ifndef _WIN32
-			fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
-			fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
-		#	endif
+				#ifndef _WIN32
+				{
+					fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
+					fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
+				}
+				#endif
+			}
+			else
+				result = (word*)IFALSE;
 
-			result = new_pair(make_port(pipefd[0]), make_port(pipefd[1]));
 			break;
 		}
 		#endif

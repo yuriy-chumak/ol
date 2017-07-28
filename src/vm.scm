@@ -157,7 +157,7 @@
       (setq RUN 50)      (setq vm:run  (vm:new-raw-object TBYTECODE '(50 4 5)))
 
       (setq RAW? 48)     (setq vm:raw? (vm:new-raw-object TBYTECODE '(48 4 5    24 5)))
-      (setq CAST 22)     (setq cast    (vm:new-raw-object TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+      (setq CAST 22)     (setq vm:cast (vm:new-raw-object TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
 
       ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
       (setq ADD 38)      (setq vm:add  (vm:new-raw-object TBYTECODE '(38 4 5       6 7)))
@@ -223,12 +223,14 @@
          (cons (vm:new TTUPLE 'vm:new-object     NEW-OBJECT  2 1 vm:new-object)       ; create reference object (vm:new-object type '(v1 .. vn))
          (cons (vm:new TTUPLE 'vm:new-raw-object RAW-OBJECT  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn)) or (vm:new-raw-object type size)
 
-         (cons (vm:new TTUPLE 'vm:new   NEW 'any 1   #f)   ; fast creation of small (less than 255 elements) reference object (vm:new type v1 .. vn)
-         (cons (vm:new TTUPLE 'vm:sys   SYS  4 1  vm:sys)  ; 
+         (cons (vm:new TTUPLE 'vm:new   NEW 'any 1 #f)   ; fast creation of small (less than 128 elements) reference object (vm:new type v1 .. vn)
+         (cons (vm:new TTUPLE 'vm:sys   SYS  4 1 vm:sys) ; 
+
+         (cons (vm:new TTUPLE 'vm:raw?  RAW? 1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
+         (cons (vm:new TTUPLE 'vm:cast  CAST 2 1 vm:cast)  ;; cast object type (works for immediates and allocated)
 
          ; конструкторы
          (cons (vm:new TTUPLE 'cons     CONS 2 1 cons)
-         (cons (vm:new TTUPLE 'cast     CAST 2 1 cast)  ;; cast object type (works for immediates and allocated)
 
          ; геттеры
          (cons (vm:new TTUPLE 'car      CAR  1 1 car)   ; (vm:new-raw-object type-bytecode '(52 4 5    24 5))
@@ -245,9 +247,6 @@
          ; компараторы
          (cons (vm:new TTUPLE 'eq?      EQ?   2 1 eq?)
          (cons (vm:new TTUPLE 'less?    LESS? 2 1 less?)
-
-         ; предикат
-         (cons (vm:new TTUPLE 'vm:raw?  RAW?  1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
 
          ; базовая арифметика
          (cons (vm:new TTUPLE 'vm:add   ADD  2 2 vm:add)

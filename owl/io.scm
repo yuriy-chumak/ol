@@ -71,9 +71,9 @@
    (begin
 
       ;; standard io ports
-      (define stdin  (cast 0 type-port))
-      (define stdout (cast 1 type-port))
-      (define stderr (cast 2 type-port))
+      (define stdin  (vm:cast 0 type-port))
+      (define stdout (vm:cast 1 type-port))
+      (define stderr (vm:cast 2 type-port))
 
       (define (sys:read fd maxlen)         (syscall 0 fd maxlen #false))
       (define (sys:write fd buffer length) (syscall 1 fd buffer length))
@@ -90,7 +90,7 @@
          (syscall 3 fd #false #false)) ; 1002
 
       ;; use fd 65535 as the unique sleeper thread name.
-      (define sid (cast 65536 type-port)) ; ?? or 65535?
+      (define sid (vm:cast 65536 type-port)) ; ?? or 65535?
       (define sleeper-id sid)
 
       ;;; Writing

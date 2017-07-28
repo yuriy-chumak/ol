@@ -351,7 +351,7 @@
                      (get-word "true"  #true)    ;; get the longer ones first if present
                      (get-word "null"  #null)
                      (get-word "empty" #empty)
-                     (get-word "eof"   #eof)     ; (cast 4 13))
+                     (get-word "eof"   #eof)     ; (vm:cast 4 13))
                      ; сокращения
                      (get-word "t"     #true)
                      (get-word "f"     #false)

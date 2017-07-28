@@ -108,11 +108,11 @@
                ((tuple? obj)
                   (ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
 
-               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (cast obj type-fix+) (cons #\] tl))))
+               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (vm:cast obj type-fix+) (cons #\] tl))))
 
 
                ((eq? (type obj) type-const)
-                  (render-number (cast obj type-fix+) tl 16))
+                  (render-number (vm:cast obj type-fix+) tl 16))
 
                (else
                   (append (string->list "#<WTF>") tl)))) ;; What This Format?

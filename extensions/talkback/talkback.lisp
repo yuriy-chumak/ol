@@ -274,8 +274,8 @@
             (list ;1 thread
                (tuple 'init
                   (λ ()
-                     (let ((IN  (cast (string->integer (car  vm-args)) type-port))
-                           (OUT (cast (string->integer (cadr vm-args)) type-port)))
+                     (let ((IN  (vm:cast (string->integer (car  vm-args)) type-port))
+                           (OUT (vm:cast (string->integer (cadr vm-args)) type-port)))
                      (fork-server 'repl (lambda ()
                         ;; get basic io running
                         (io:init)

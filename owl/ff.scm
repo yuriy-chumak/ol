@@ -167,7 +167,7 @@
 ;      (define-syntax ff-toggle
 ;         (syntax-rules ()
 ;            ((ff-toggle node)
-;               (cast node (vm:xor (type node) redness)))))
+;               (vm:cast node (vm:xor (type node) redness)))))
 
       ;; FIXME: misleading names!
 ;      (define-syntax color-black (syntax-rules () ((color-black x) (ff:toggle x))))

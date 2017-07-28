@@ -190,7 +190,7 @@
 ; для результата, что превышает x00FFFFFF надо использовать type-handle
 ; 44 - is socket but will be free
 ;(define type-handle 45)
-; todo: (cast type-constant) and start from number 1?
+; todo: (vm:cast type-constant) and start from number 1?
 (define type-float  46)
 (define type-double 47)
 (define type-void   48)

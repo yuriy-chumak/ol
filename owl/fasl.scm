@@ -110,7 +110,7 @@
       (define (enc-immediate val tail)
          (cons 0
             (cons (type-byte-of val)
-               (send-number (cast val 0) tail))))
+               (send-number (vm:cast val 0) tail))))
 
       (define (partial-object-closure root pred)
          (define (clos seen obj)
@@ -273,7 +273,7 @@
          (lets
             ((ll type (grab ll fail))
              (ll val  (get-nat ll fail 0)))
-            (values ll (cast val type))))
+            (values ll (vm:cast val type))))
 
       (define nan "not here") ; eq?-unique
 
