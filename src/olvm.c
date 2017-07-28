@@ -830,8 +830,6 @@ exit_t*
 #define FBITS                       ((sizeof (word) * 8) - 8) // bits in value (short number)
 #define HIGHBIT                     ((int_t)1 << FBITS) // maximum value value + 1
 #define FMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
-// todo: remove MAXOBJ!
-#define MAXOBJ                      0xffff         // max words in tuple including header
 
 #define RAWBIT                      (1 << RPOS)
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
