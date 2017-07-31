@@ -589,6 +589,7 @@
       (define type-int-             41) ; reference
       (define type-rational         42) ; reference
       (define type-complex          43) ; reference
+      (define type-inexact          44) ; reference
 
       ; 6.2.1  Numerical types
       ; 6.2.2  Exactness
@@ -643,7 +644,7 @@
       (define exact? number?)
 
       ; procedure:  (inexact? z)
-      (define (inexact? a) #false)
+      (define (inexact? a) (eq? (type a) type-inexact))
 
       ; *** declared in (r5rs math), (r5rs math-extra)
       ; procedure:  (= z1 z2 z3 ...) <- (r5rs math)
@@ -1397,6 +1398,7 @@
       type-int-
       type-rational
       type-complex
+      type-inexact
 
       integer? rational? complex? real? number? exact? inexact?
       exact->inexact inexact->exact

@@ -226,6 +226,11 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #define HAS_STRFTIME 1
 #endif
 
+// todo: rename to INEXACTS_ENABLED (or similar) and rename all HAS_... relevant to this source code
+#ifndef HAS_INEXACTS
+#define HAS_INEXACTS 1
+#endif
+
 
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
 #define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
@@ -313,6 +318,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #endif
 
 #include <time.h>
+#include <math.h>
 
 #ifdef __unix__
 #	include <sys/utsname.h>
@@ -2541,6 +2547,149 @@ loop:;
 			else
 				ERROR(CAST, this, T);
 			break;
+		// todo: add define HAS_INEXACTS
+		case TINEXACT: {
+			double ol2d(word arg) {
+				if (is_value(arg)) {
+					assert (valuetype(arg) == TFIX || valuetype(arg) == TFIXN);
+					printf("ol2d	: %f\n", svtoi(arg)); fflush(stdout);
+					return svtoi(arg);
+				}
+
+				assert (reftype(arg) == TINT || reftype(arg) == TINTN);
+				double v = 0;
+				double m = 1;
+				word p = arg;
+				while (p != INULL) {
+					v += uvtoi(car(p)) * m;
+					m *= HIGHBIT;
+					p = cdr(p);
+				}
+				printf("ol2d	: %f\n", v * (reftype(arg) == TINT ? 1 : -1)); fflush(stdout);
+				return v * (reftype(arg) == TINT ? 1 : -1);
+			}
+
+			// integer->inexact
+			if (is_value(T) || reftype(T) == TINT || reftype(T) == TINTN) {
+				A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+				*(double*)&car(A2) = (double) ol2d(T);
+			}
+			// rational->inexact
+			else if (reftype(T) == TRATIONAL) {
+				A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+				*(double*)&car(A2) = ol2d(car(T)) / ol2d(cdr(T));
+			}
+			// unsupported
+			else
+				ERROR(CAST, this, T); // todo: add long numbers
+			break; }
+
+		case TRATIONAL:
+			// во избежание переполнений ограничим точность конверсии чисел
+
+			//word i2to(double arg)
+			/*word d2to(double arg) {
+				return 0;
+			}*/
+			// inexact->integer
+			if (is_reference(T) && reftype(T) == TINEXACT) {
+				double v = *(double*)&car(T);
+				printf("inexact->integer: %f\n", v); fflush(stdout);
+
+				// рациональные числа
+				word a, b = INULL;
+				double i;
+				if (modf(v, &i) != 0) {
+					word* p = fp;
+					word m = 1;
+					for (int t = 0; t < 1024; t++) { // ограничим точность снизу
+						double i, f = modf(v, &i);
+						if (f == 0) {
+							*++p = F(m & FMAX);
+							break;
+						}
+						v *= 10;
+						if (m & HIGHBIT) {
+							*++p = F(0);
+							m >>= FBITS;
+						}
+						m *= 10;
+					}
+					// если все-таки что-то после запятой было, то
+					if (p != fp) {
+						modf(v, &v); // отбросим все после запятой
+
+						size_t len = (p - fp);
+						new_bytevector(TBVEC, sizeof(word) * len); // dummy
+						              // will be destroyed during next gc()
+						word* m = fp;
+
+						if (len == 1)
+							b = *--m;
+						else
+							for (size_t i = 0; i < len; i++)
+								b = new_pair(TINT, *--m, b);
+					}
+				}
+
+				// word a = INULL;
+				// число целое?
+				// числа должны лежать в обратном порядке, как мы их и получаем
+				// но в память то мы их кладем в обратном! так что нужен реверс
+				// todo: проверка выхода за границы кучи!!!
+				if (1) {
+					if (fabs(v) < (double)HIGHBIT)
+						a = itosv(v);
+					else {
+						int negative = v < 0; v = fabs(v);
+						word* p = fp;
+						do {
+							*++p = F((long long)v & FMAX);
+							modf(v / (double)HIGHBIT, &v);
+						}
+						while (v > 0);
+
+						size_t len = (p - fp);
+						new_bytevector(TBVEC, sizeof(word) * len); // dummy
+						              // will be destroyed during next gc()
+						word* m = fp;
+						p = (word*)INULL;
+						for (size_t i = 0; i < len - 1; i++)
+							p = new_pair(TINT, *--m, p);
+						p = new_pair(negative ? TINTN : TINT, *--m, p);
+
+						A2 = p;
+					}
+				}
+				if (b == INULL)
+					A2 = a;
+				else
+					A2 = new_pair(TRATIONAL, a, b);
+
+				// целые числа:
+				// 12340000000.0
+/*
+
+
+				word p = INULL;
+				for (;;) {
+					double a = v / (double)HIGHBIT;
+					double i, f = modf(a, &i);
+					if (f != 0)
+						break;
+					p = new_pair(TRATIONAL, F(0), p);
+					v = a;
+				}
+
+				A2 = new_pair()
+				A2 = p;
+
+				// 123.400000000
+				// 0.00000001234
+*/
+				break;
+			}
+			// else continue to default
 		default:
 			if (is_value(T)) {
 				word val = value(T);
@@ -2687,6 +2836,9 @@ loop:;
 
 	// АЛУ (арифметическо-логическое устройство)
 	case ADDITION: { // vm:add a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
+		if (value(A0) == FMAX) {
+			printf("*\n");
+		}
 		int_t r = value(A0) + value(A1);
 		A2 = F(r & FMAX);
 		A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?

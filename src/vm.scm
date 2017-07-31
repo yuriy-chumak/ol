@@ -26,7 +26,7 @@
       ; or to TINTEGER, TBIGNUM
       ; types
       ; TATOMIC+ TATOMIC- TINTEGER+ TINTEGER-
-      TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX
+      TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
       TPAIR TTUPLE TSTRING TSYMBOL
       TBYTECODE TPROCEDURE TCLOSURE
       TVPTR
@@ -60,6 +60,7 @@
       (setq TINT-             41) ; reference
       (setq TRATIONAL         42) ; reference
       (setq TCOMPLEX          43) ; reference
+      (setq TINEXACT          44) ; reference, machine dependent size
 
       (setq TPAIR              1) ; reference
       (setq TTUPLE             2) ; reference
