@@ -2552,7 +2552,6 @@ loop:;
 			double ol2d(word arg) {
 				if (is_value(arg)) {
 					assert (valuetype(arg) == TFIX || valuetype(arg) == TFIXN);
-					printf("ol2d	: %f\n", svtoi(arg)); fflush(stdout);
 					return svtoi(arg);
 				}
 
@@ -2565,7 +2564,6 @@ loop:;
 					m *= HIGHBIT;
 					p = cdr(p);
 				}
-				printf("ol2d	: %f\n", v * (reftype(arg) == TINT ? 1 : -1)); fflush(stdout);
 				return v * (reftype(arg) == TINT ? 1 : -1);
 			}
 
@@ -2594,7 +2592,6 @@ loop:;
 			// inexact->integer
 			if (is_reference(T) && reftype(T) == TINEXACT) {
 				double v = *(double*)&car(T);
-				printf("inexact->integer: %f\n", v); fflush(stdout);
 
 				// рациональные числа
 				word a, b = INULL;
@@ -2656,9 +2653,7 @@ loop:;
 						p = (word*)INULL;
 						for (size_t i = 0; i < len - 1; i++)
 							p = new_pair(TINT, *--m, p);
-						p = new_pair(negative ? TINTN : TINT, *--m, p);
-
-						A2 = p;
+						a = new_pair(negative ? TINTN : TINT, *--m, p);
 					}
 				}
 				if (b == INULL)
@@ -2666,27 +2661,6 @@ loop:;
 				else
 					A2 = new_pair(TRATIONAL, a, b);
 
-				// целые числа:
-				// 12340000000.0
-/*
-
-
-				word p = INULL;
-				for (;;) {
-					double a = v / (double)HIGHBIT;
-					double i, f = modf(a, &i);
-					if (f != 0)
-						break;
-					p = new_pair(TRATIONAL, F(0), p);
-					v = a;
-				}
-
-				A2 = new_pair()
-				A2 = p;
-
-				// 123.400000000
-				// 0.00000001234
-*/
 				break;
 			}
 			// else continue to default
