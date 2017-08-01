@@ -105,10 +105,9 @@ long callback(OL* ol, int id, int_t* argi
 			#else
 				value =   *(float*) &argi[i++];
 			#endif
-			long n = value * 10000; // todo: change to something like ftosn
-			long d = 10000;
-			// максимальная читабельность?
-			R[a] = (word)new_pair(TRATIONAL, itosv(n), itouv(d));
+			ol->heap.fp = fp;
+			R[a] = d2ol(ol, value);
+			fp = ol->heap.fp;
 			break;
 		}
 		case F(TDOUBLE): {
@@ -128,10 +127,9 @@ long callback(OL* ol, int id, int_t* argi
 			#else
 				value =   *(double*) &argi[i++]; i++;
 			#endif
-			long n = value * 10000; // todo: change to something like ftosn
-			long d = 10000;
-			// максимальная читабельность?
-			R[a] = (word)new_pair(TRATIONAL, itosv(n), itouv(d));
+			ol->heap.fp = fp;
+			R[a] = d2ol(ol, value);
+			fp = ol->heap.fp;
 			break;
 		}
 		case F(TSTRING): {

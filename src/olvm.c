@@ -1538,76 +1538,6 @@ word gc(heap_t *heap, int query, word regs)
 }
 
 
-// MATH
-// todo: потом переделать в трюк
-// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
-// алгоритмические трюки:
-// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
-// signed fix to int
-
-// i - machine integer
-// ui - unsigned, si - signed
-// v - value number (internal, that fits in one register), type-fix
-//  or small numbers,
-//  or short numbers
-// uv, sv - unsigned/signed respectively.
-// Z - mножество целых чисел.
-
-// работа с numeric value типами
-#ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
-#endif
-#define uvtoi(v)  (int_t)({ word x1 = (word)(v); UVTOI_CHECK(x1); (word) (x1 >> IPOS); })
-#define itouv(i)  (word) ({ word x2 = (word)(i);                  (word) (x2 << IPOS) | 2; })
-		// (((struct value_t*)(&v))->payload);
-
-// todo: add overflow checking...
-#ifndef SVTOI_CHECK
-#define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
-#endif
-#define svtoi(v) \
-	({ \
-		word x3 = (word)(v); SVTOI_CHECK(x3); \
-		int_t y = (x3 >> IPOS); \
-		(x3 & 0x80) ? -y : y; \
-	})
-
-#define itosv(i)  (word)({ int_t x4 = (int_t)(i);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2; })
-// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
-
-// арифметика целых (возможно больших)
-// прошу внимания!
-//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-#define untoi(num)  ({\
-	is_value(num) ? uvtoi(num)\
-		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; \
-	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
-
-// something wrong: looks like __builtin_choose_expr doesn't work as expected!
-#define itoun(val)  ({\
-	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)itouv(val),\
-		(word*)({ \
-			int_t x5 = (int_t)(val); \
-			x5 <= FMAX ? \
-					(word)itouv(x5): \
-					(word)new_list(TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
-		})); \
-	})
-#define itosn(val)  ({\
-	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)itosv(val),\
-		(word*)({ \
-			int_t x5 = (int_t)(val); \
-			x5 <= FMAX ? \
-					(word)itosv(x5): \
-					(word)new_list(x5 < 0 ? TINTN : TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
-		})); \
-	})
-
-#define make_integer(val) itoun(val)
-
-
 
 /*** OS Interaction and Helpers ***/
 static
@@ -1739,6 +1669,190 @@ struct ol_t
 	long arity;
 };
 
+// -=( ol ffi )--------------------------------------
+
+// MATH
+// todo: потом переделать в трюк
+// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
+// алгоритмические трюки:
+// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
+// signed fix to int
+
+// i - machine integer
+// ui - unsigned, si - signed
+// v - value number (internal, that fits in one register), type-fix
+//  or small numbers,
+//  or short numbers
+// uv, sv - unsigned/signed respectively.
+// Z - mножество целых чисел.
+
+// работа с numeric value типами
+#ifndef UVTOI_CHECK
+#define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
+#endif
+#define uvtoi(v)  (int_t)({ word x1 = (word)(v); UVTOI_CHECK(x1); (word) (x1 >> IPOS); })
+#define itouv(i)  (word) ({ word x2 = (word)(i);                  (word) (x2 << IPOS) | 2; })
+		// (((struct value_t*)(&v))->payload);
+
+// todo: add overflow checking...
+#ifndef SVTOI_CHECK
+#define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
+#endif
+#define svtoi(v) \
+	({ \
+		word x3 = (word)(v); SVTOI_CHECK(x3); \
+		int_t y = (x3 >> IPOS); \
+		(x3 & 0x80) ? -y : y; \
+	})
+
+#define itosv(i)  (word)({ int_t x4 = (int_t)(i);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2; })
+// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
+
+// арифметика целых (возможно больших)
+// прошу внимания!
+//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
+#define untoi(num)  ({\
+	is_value(num) ? uvtoi(num)\
+		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; \
+	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
+
+// something wrong: looks like __builtin_choose_expr doesn't work as expected!
+#define itoun(val)  ({\
+	__builtin_choose_expr(sizeof(val) < sizeof(word), \
+		(word*)itouv(val),\
+		(word*)({ \
+			int_t x5 = (int_t)(val); \
+			x5 <= FMAX ? \
+					(word)itouv(x5): \
+					(word)new_list(TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+		})); \
+	})
+#define itosn(val)  ({\
+	__builtin_choose_expr(sizeof(val) < sizeof(word), \
+		(word*)itosv(val),\
+		(word*)({ \
+			int_t x5 = (int_t)(val); \
+			x5 <= FMAX ? \
+					(word)itosv(x5): \
+					(word)new_list(x5 < 0 ? TINTN : TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+		})); \
+	})
+
+#define make_integer(val) itoun(val)
+
+
+// internal functions:
+#if HAS_INEXACTS
+double ol2d(word arg) {
+	double convert(word p) {
+		double v = 0;
+		double m = 1;
+		while (p != INULL) {
+			v += uvtoi(car(p)) * m;
+			m *= HIGHBIT;
+			p = cdr(p);
+		}
+		return v;
+	}
+
+	if (is_value(arg)) {
+		assert (valuetype(arg) == TFIX || valuetype(arg) == TFIXN);
+		return svtoi(arg);
+	}
+
+	switch (reftype(arg)) {
+	case TINT:
+		return +convert(arg);
+	case TINTN:
+		return -convert(arg);
+	case TRATIONAL:
+		return ol2d(car(arg)) / ol2d(cdr(arg));
+	case TCOMPLEX:
+		return ol2d(car(arg));
+	default:
+		assert(0);
+		return 0.;
+	}
+}
+
+// TODO: add memory checking
+word d2ol(struct ol_t* ol, double v) {
+	word* fp = ol->heap.fp;
+
+	word a, b = INULL;
+	double i;
+	if (modf(v, &i) != 0) {
+		word* p = fp;
+		word m = 1;
+		for (int t = 0; t < 1024; t++) { // ограничим точность снизу
+			double i, f = modf(v, &i);
+			if (f == 0) {
+				*++p = F(m & FMAX);
+				break;
+			}
+			v *= 10;
+			if (m & HIGHBIT) {
+				*++p = F(0);
+				m >>= FBITS;
+			}
+			m *= 10;
+		}
+		// если все-таки что-то после запятой было, то
+		if (p != fp) {
+			modf(v, &v); // отбросим все после запятой
+
+			size_t len = (p - fp);
+			new_bytevector(TBVEC, sizeof(word) * len); // dummy
+			              // will be destroyed during next gc()
+			word* m = fp;
+
+			if (len == 1)
+				b = *--m;
+			else
+				for (size_t i = 0; i < len; i++)
+					b = (word)new_pair(TINT, *--m, b);
+		}
+	}
+
+	// word a = INULL;
+	// число целое?
+	// числа должны лежать в обратном порядке, как мы их и получаем
+	// но в память то мы их кладем в обратном! так что нужен реверс
+	// todo: проверка выхода за границы кучи!!!
+	if (1) {
+		if (fabs(v) < (double)HIGHBIT)
+			a = itosv(v);
+		else {
+			int negative = v < 0; v = fabs(v);
+			word* p = fp;
+			do {
+				*++p = F((long long)v & FMAX);
+				modf(v / (double)HIGHBIT, &v);
+			}
+			while (v > 0);
+
+			size_t len = (p - fp);
+			new_bytevector(TBVEC, sizeof(word) * len); // dummy
+			              // will be destroyed during next gc()
+			word* m = fp;
+			p = (word*)INULL;
+			for (size_t i = 0; i < len - 1; i++)
+				p = new_pair(TINT, *--m, p);
+			a = (word)new_pair(negative ? TINTN : TINT, *--m, p);
+		}
+	}
+	word* r;
+	if (b == INULL)
+		r = a;
+	else
+		r = (word)new_pair(TRATIONAL, a, b);
+
+	ol->heap.fp = fp;
+	return r;
+}
+#endif
+
+
 static //__attribute__((aligned(8)))
 word runtime(OL* ol);  // главный цикл виртуальной машины
 // требует полностью вализную структуру ol_t
@@ -1770,13 +1884,14 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
 #if HAS_CALLBACKS
-	long callback(OL* ol, int id, int_t* argi
+
+long callback(OL* ol, int id, int_t* argi
 	#if __amd64__
 		, double* argf, int_t* rest
 	#endif
 	);
+#include "callback.c"
 
-#	include "callback.c"
 #endif
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
@@ -1878,6 +1993,7 @@ word runtime(OL* ol)
 	int ticker = TICKS; // any initial value ok
 	int bank = 0; // ticks deposited at interop
 
+	// runtime entry
 apply:;
 	if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
 		this = (word *) R[3];              /* call cont */
@@ -2547,123 +2663,26 @@ loop:;
 			else
 				ERROR(CAST, this, T);
 			break;
-		// todo: add define HAS_INEXACTS
-		case TINEXACT: {
-			double ol2d(word arg) {
-				if (is_value(arg)) {
-					assert (valuetype(arg) == TFIX || valuetype(arg) == TFIXN);
-					return svtoi(arg);
-				}
 
-				assert (reftype(arg) == TINT || reftype(arg) == TINTN);
-				double v = 0;
-				double m = 1;
-				word p = arg;
-				while (p != INULL) {
-					v += uvtoi(car(p)) * m;
-					m *= HIGHBIT;
-					p = cdr(p);
-				}
-				return v * (reftype(arg) == TINT ? 1 : -1);
-			}
-
+		#if HAS_INEXACTS
+		case TINEXACT:
 			// integer->inexact
-			if (is_value(T) || reftype(T) == TINT || reftype(T) == TINTN) {
-				A2 = (word) new_bytevector(TINEXACT, sizeof(double));
-				*(double*)&car(A2) = (double) ol2d(T);
-			}
-			// rational->inexact
-			else if (reftype(T) == TRATIONAL) {
-				A2 = (word) new_bytevector(TINEXACT, sizeof(double));
-				*(double*)&car(A2) = ol2d(car(T)) / ol2d(cdr(T));
-			}
-			// unsupported
-			else
-				ERROR(CAST, this, T); // todo: add long numbers
-			break; }
-
+			A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+			*(double*)&car(A2) = ol2d(T);
+			break;
 		case TRATIONAL:
 			// во избежание переполнений ограничим точность конверсии чисел
-
-			//word i2to(double arg)
-			/*word d2to(double arg) {
-				return 0;
-			}*/
 			// inexact->integer
 			if (is_reference(T) && reftype(T) == TINEXACT) {
 				double v = *(double*)&car(T);
 
-				// рациональные числа
-				word a, b = INULL;
-				double i;
-				if (modf(v, &i) != 0) {
-					word* p = fp;
-					word m = 1;
-					for (int t = 0; t < 1024; t++) { // ограничим точность снизу
-						double i, f = modf(v, &i);
-						if (f == 0) {
-							*++p = F(m & FMAX);
-							break;
-						}
-						v *= 10;
-						if (m & HIGHBIT) {
-							*++p = F(0);
-							m >>= FBITS;
-						}
-						m *= 10;
-					}
-					// если все-таки что-то после запятой было, то
-					if (p != fp) {
-						modf(v, &v); // отбросим все после запятой
-
-						size_t len = (p - fp);
-						new_bytevector(TBVEC, sizeof(word) * len); // dummy
-						              // will be destroyed during next gc()
-						word* m = fp;
-
-						if (len == 1)
-							b = *--m;
-						else
-							for (size_t i = 0; i < len; i++)
-								b = new_pair(TINT, *--m, b);
-					}
-				}
-
-				// word a = INULL;
-				// число целое?
-				// числа должны лежать в обратном порядке, как мы их и получаем
-				// но в память то мы их кладем в обратном! так что нужен реверс
-				// todo: проверка выхода за границы кучи!!!
-				if (1) {
-					if (fabs(v) < (double)HIGHBIT)
-						a = itosv(v);
-					else {
-						int negative = v < 0; v = fabs(v);
-						word* p = fp;
-						do {
-							*++p = F((long long)v & FMAX);
-							modf(v / (double)HIGHBIT, &v);
-						}
-						while (v > 0);
-
-						size_t len = (p - fp);
-						new_bytevector(TBVEC, sizeof(word) * len); // dummy
-						              // will be destroyed during next gc()
-						word* m = fp;
-						p = (word*)INULL;
-						for (size_t i = 0; i < len - 1; i++)
-							p = new_pair(TINT, *--m, p);
-						a = new_pair(negative ? TINTN : TINT, *--m, p);
-					}
-				}
-				if (b == INULL)
-					A2 = a;
-				else
-					A2 = new_pair(TRATIONAL, a, b);
-
+				ol->heap.fp = fp;
+				A2 = d2ol(ol, v);
+				fp = ol->heap.fp;
 				break;
 			}
 			// else continue to default
+		#endif
 		default:
 			if (is_value(T)) {
 				word val = value(T);

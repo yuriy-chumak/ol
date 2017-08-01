@@ -537,11 +537,9 @@ word* pinvoke(OL* self, word* arguments)
 
 		switch (reftype(arg)) {
 		case TINT:
-			return (float)+from_int(arg);
 		case TINTN:
-			return (float)-from_int(arg);
 		case TRATIONAL:
-			return (float) from_rational(arg);
+			return (float) ol2d(arg);
 		case TCOMPLEX:
 			return to_float(car(arg)); // return real part of value
 		}
