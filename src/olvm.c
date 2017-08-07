@@ -1743,18 +1743,18 @@ struct ol_t
 
 // internal functions:
 #if HAS_INEXACTS
-double ol2d(word arg) {
-	double convert(word p) {
-		double v = 0;
-		double m = 1;
-		while (p != INULL) {
-			v += uvtoi(car(p)) * m;
-			m *= HIGHBIT;
-			p = cdr(p);
-		}
-		return v;
+double ol2d_convert(word p) {
+	double v = 0;
+	double m = 1;
+	while (p != INULL) {
+		v += uvtoi(car(p)) * m;
+		m *= HIGHBIT;
+		p = cdr(p);
 	}
+	return v;
+}
 
+double ol2d(word arg) {
 	if (is_value(arg)) {
 		assert (valuetype(arg) == TFIX || valuetype(arg) == TFIXN);
 		return svtoi(arg);
@@ -1762,13 +1762,15 @@ double ol2d(word arg) {
 
 	switch (reftype(arg)) {
 	case TINT:
-		return +convert(arg);
+		return +ol2d_convert(arg);
 	case TINTN:
-		return -convert(arg);
+		return -ol2d_convert(arg);
 	case TRATIONAL:
 		return ol2d(car(arg)) / ol2d(cdr(arg));
 	case TCOMPLEX:
 		return ol2d(car(arg));
+	case TINEXACT:
+		return *(double*)&car(arg);
 	default:
 		assert(0);
 		return 0.;
@@ -1841,7 +1843,7 @@ word d2ol(struct ol_t* ol, double v) {
 			a = (word)new_pair(negative ? TINTN : TINT, *--m, p);
 		}
 	}
-	word* r;
+	word r;
 	if (b == INULL)
 		r = a;
 	else
@@ -2177,12 +2179,12 @@ mainloop:;
 	#	define VMNEW_OBJECT 35     // make object
 	#	define VMNEW_RAWOBJECT 60  // make raw object
 	#	define VMRAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
+	#	define VMCAST  22
 
 	#	define CONS  51
 
 	#	define TYPE  15
 	#	define SIZE  36
-	#	define CAST  22
 
 	#	define CAR   52
 	#	define CDR   53
@@ -2645,9 +2647,9 @@ loop:;
 	// todo: переделать!
 	// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
 	// это лучше сделать тут, наверное, а не отдельной командой
-	case CAST: { // cast obj type -> result
+	case VMCAST: { // cast obj type -> result
 		if (!is_value(A1))
-			ERROR(CAST, this, A1);
+			ERROR(VMCAST, this, A1);
 		word T = A0;
 		word type = uvtoi(A1) & 63;
 
@@ -2661,12 +2663,12 @@ loop:;
 				//	A2 = IFALSE;
 			}
 			else
-				ERROR(CAST, this, T);
+				ERROR(VMCAST, this, T);
 			break;
 
 		#if HAS_INEXACTS
 		case TINEXACT:
-			// integer->inexact
+			// exact->inexact
 			A2 = (word) new_bytevector(TINEXACT, sizeof(double));
 			*(double*)&car(A2) = ol2d(T);
 			break;
@@ -4344,14 +4346,89 @@ loop:;
 		ip += 5; break;
 	}
 
+	// FPU extensions
+	case 33: { // 1 argument
+		word fnc = value(A0);
+		assert(is_reference(A1));
+		double a = ol2d(A1);
+
+		A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+		switch (fnc) {
+		case 0: // fsqrt
+			*(double*)&car(A2) = sqrt(a);
+			break;
+		case 1: // fsin
+			*(double*)&car(A2) = sin(a);
+			break;
+		case 2: // fcos
+			*(double*)&car(A2) = cos(a);
+			break;
+		default:
+			A2 = IFALSE;
+			break;
+		}
+		ip += 3; break;
+	}
+	case 34: { // 2 arguments
+		// fadd/fiadd
+		// fmul/fimul
+		// fcom/ficom
+		// fsub/fisub
+		// fdiv/fidiv
+		// FPREM
+		// FYL2XP
+		// FSQRT +
+		// FSINCOS
+		// FRNDIN
+		// FSCALE
+		// FSIN
+		// FCOS
+		// F2XM1
+		// FYL2X
+		// FPTAN
+		// FPATAN
+		// FXTRAC
+		// FPREM1
+		// FLD1
+		// FLDL2T
+		// FLDL2E
+		// FLDPI
+		// FLDLG2
+		// FLDLN2
+		// FLDZ
+		word fnc = value(A0);
+		assert(is_reference(A1) && is_reference(A2));
+		double a = ol2d(A1);
+		double b = ol2d(A2);
+
+		A3 = (word) new_bytevector(TINEXACT, sizeof(double));
+		switch (fnc) {
+		case 0: // fadd
+			*(double*)&car(A3) = a + b;
+			break;
+		case 1: // fmul
+			*(double*)&car(A3) = a * b;
+			break;
+		case 2: // fsub
+			*(double*)&car(A3) = a - b;
+			break;
+		case 3: // fdiv
+			*(double*)&car(A3) = a / b;
+			break;
+		default:
+			A3 = IFALSE;
+			break;
+		}
+		ip += 4; break;
+	}
+
+
 	// this is free to use commands:
 	case 11:
 	case 12:
 	case 18:
 	case 19:
 	case 21:
-	case 33:
-	case 34:
 
 	default:
 		ERROR(op, new_string("Invalid opcode"), ITRUE);

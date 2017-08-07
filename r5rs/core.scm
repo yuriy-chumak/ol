@@ -699,10 +699,10 @@
       ; procedure: angle z
 
       ; procedure: exact->inexact z
-      (define (exact->inexact n) n)
+      (define (exact->inexact n) (vm:cast n type-inexact))
 
       ; procedure: inexact->exact z
-      (define (inexact->exact n) n)
+      (define (inexact->exact n) (vm:cast n type-rational))
 
       ; ---------------------------------
       ; 6.2.6  Numerical input and output

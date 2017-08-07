@@ -42,6 +42,8 @@
       NEW    ; used by (lang compile)
       vm:run ; used by (lang threading)
 
+      vm:fpu1 vm:fpu2
+
       FF-APPLY
       TUPLE-APPLY)
 
@@ -218,6 +220,9 @@
 
       (setq vm:endianness (vm:new-raw-object TBYTECODE '(28 4)))
 
+      (setq vm:fpu1 (vm:new-raw-object TBYTECODE '(33 4 5 6    24 6)))
+      (setq vm:fpu2 (vm:new-raw-object TBYTECODE '(34 4 5 6 7  24 7)))
+
 
       (setq primops
          ; аллокаторы
@@ -262,6 +267,9 @@
          (cons (vm:new TTUPLE 'vm:or    OR   2 1 vm:or)
          (cons (vm:new TTUPLE 'vm:xor   XOR  2 1 vm:xor)
 
+         (cons (vm:new TTUPLE 'vm:fpu1  33  2 1 vm:fpu1)
+         (cons (vm:new TTUPLE 'vm:fpu2  34  3 1 vm:fpu2)
+
          ; системный таймер
          (cons (vm:new TTUPLE 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
          ; системные вызовы
@@ -285,7 +293,7 @@
          (cons (vm:new TTUPLE 'ff:toggle  46 1  1  ff:toggle)
          (cons (vm:new TTUPLE 'ff:red?    41 1  1  ff:red?)
          (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
-         #null))))))))))))))))))))))))))))))))))))))))
+         #null))))))))))))))))))))))))))))))))))))))))))
       ;(define *primitives* primops)
 
 
