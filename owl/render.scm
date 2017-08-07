@@ -77,6 +77,7 @@
                   ;      (render "#<function>" tl))))
 
                ((tuple? obj)
+                 ;(ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
                   (ilist #\# #\[
                      (render (ref obj 1)
                         (fold
@@ -104,11 +105,22 @@
                ((eq? obj #empty) (ilist #\# #\e #\m #\p #\t #\y tl)) ;; don't print as #()
                ((eq? obj #eof)   (ilist #\# #\e #\o #\f tl))
 
-; unused?
-               ((tuple? obj)
-                  (ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
-
                ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (vm:cast obj type-fix+) (cons #\] tl))))
+
+               ; inexact numbers (render up to 4 digit numbers)
+               ((inexact? obj)
+                  (let*((obj  (inexact->exact obj))
+                        (int  (floor obj))
+                        (frac (floor (* (- obj int) 100000))))
+                     (render int (cons #\. (append (reverse
+                     (let loop ((i frac) (n 10000) (l #null))
+                        (cond
+                           ((eq? i 0)
+                              l)
+                           ((eq? n 1)
+                              (ilist #\. #\. l))
+                           (else
+                              (loop (mod i n) (/ n 10) (render-number (floor (/ i n)) l 10)))))) tl)))))
 
 
                ((eq? (type obj) type-const)
