@@ -1986,26 +1986,22 @@ word get(word *ff, word key, word def)
 static //__attribute__((aligned(8)))
 word runtime(OL* ol)
 {
-	heap_t* heap = &ol->heap;
+	heap_t* heap = &ol->heap; // global vm heap
 
-	word*this = ol->this;
-	long acc = ol->arity;
-
-	word* R = ol->R;   // регистры виртуальной машины
-
-	register
 	word *fp = heap->fp; // memory allocation pointer
-	register
-	unsigned char *ip = 0; // указатель на инструкции
+	unsigned char *ip=0;   // vm instructions pointer
+	word* R = ol->R;     // virtual machine registers
 
 	int breaked = 0;
 	int ticker = TICKS; // any initial value ok
 	int bank = 0; // ticks deposited at interop
 
+	word*this = ol->this; // context
+	long acc = ol->arity; // arity
+
 	// runtime entry
 apply:;
 
-	ol->arity = acc; // reflect possibly changed arity into vm state
 	if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
 		this = (word *) R[3];              /* call cont */
 		R[3] = (acc > 2) ? R[5] : IFALSE;  /* default arg or false if none */
@@ -2115,6 +2111,8 @@ apply:;
 			}
 		}
 
+		ol->arity = acc; // reflect possibly changed arity into vm state
+
 		// теперь проверим доступную память
 
 		// приблизительно сколько памяти может потребоваться для одного эпплая?
@@ -2144,7 +2142,7 @@ apply:;
 		ERROR(257, this, INULL); // not callable
 
 mainloop:;
-	// free numbers: 29(ncons), 30(ncar), 31(ncdr)
+	// free numbers: 11, 12, 18, 19, 21
 
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
