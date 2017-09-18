@@ -1909,10 +1909,17 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	word* R = ol->R;
 	int p = 0, N = NR+CR;
 
+	// попробуем освободить ненужные регистры?
+	for (int i = ol->arity + 3; i < NR; i++)
+		R[i] = IFALSE;
+	// fprintf(stderr, "%d", ol->arity);
+
 	// если нам не хватило магических 1024, то у нас проблема
-	//assert (fp + N + 3 < ol->heap.end);
+	// assert (fp + N + 3 < ol->heap.end);
 
 	// TODO: складывать регистры не в топе, а в heap->real-end - NR - 2
+
+	// TODO: складывать this первым, тогда можно будет копировать только ol->arity регистров
 
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = (word*) new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
@@ -1920,7 +1927,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	regs[p] = (word) ol->this;
 	// выполним сборку мусора
 	ol->heap.fp = fp;
-	regs = (word*)gc(&ol->heap, ws, (word)regs); // GC занимает 0-15 ms
+	regs = (word*)gc(&ol->heap, ws, (word)regs); // GC занимает 0-1 ms
 	// и восстановим все регистры, уже подкорректированные сборщиком
 	ol->this = (word *) regs[p];
 	while (--p >= 1) R[p-1] = regs[p];
@@ -1997,6 +2004,8 @@ word runtime(OL* ol)
 
 	// runtime entry
 apply:;
+
+	ol->arity = acc; // reflect possibly changed arity into vm state
 	if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
 		this = (word *) R[3];              /* call cont */
 		R[3] = (acc > 2) ? R[5] : IFALSE;  /* default arg or false if none */
