@@ -1245,8 +1245,20 @@
       ;;           allocated/pointers     allocated/rawdata    immediate
       ;; (size  x)         n                       n               #false
 
-      (define (value? obj) (eq? #false (size obj)))
-      (define reference? size)
+      (define (value? obj) (eq? (size obj) #false))
+      (define (reference? obj) (not (value? obj)))
+
+      (assert (value? 0)                           ===> #true)
+      (assert (value? 1)                           ===> #true)
+      (assert (value? -7)                          ===> #true)
+      (assert (value? "0")                         ===> #false)
+      (assert (value? 1.1)                         ===> #false)
+      (assert (value? #true)                       ===> #true)
+
+      (assert (reference? 0)                       ===> #false)
+      (assert (reference? "0")                     ===> #true)
+      (assert (reference? 1.1)                     ===> #true)
+      (assert (reference? #true)                   ===> #false)
 
 
       ; 3.2. Disjointness of types
