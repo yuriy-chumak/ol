@@ -13,7 +13,7 @@
       srfi-1
       first second third fourth fifth sixth seventh eighth ninth tenth
 
-      iota
+      iota filter
 )
 
 (begin
@@ -55,4 +55,24 @@
             (iota count start 1))
          ((count start step)
             (iota count start step)))))
+
+   ;; filter pred list -> list
+   ; Return all the elements of list that satisfy predicate pred.
+   ; The list is not disordered -- elements that appear in the result
+   ; list occur in the same order as they occur in the argument list.
+   ; The returned list may share a common tail with the argument list.
+   ; The dynamic order in which the various applications of pred are
+   ; made is not specified.
+   ; (filter even? '(0 7 8 8 43 -4)) => (0 8 8 -4)
+
+   (define (filter p l)
+      (foldr (lambda (x tl) (if (p x) (cons x tl) tl)) null l))
+   ;   (let loop ((l l) (o '()))
+   ;      (if (null? l)
+   ;         (reverse o)
+   ;         (let ((e (car l)))
+   ;            (loop (cdr l)
+   ;                  (if (p e)
+   ;                     (cons e o) o))))))
+
 ))
