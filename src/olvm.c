@@ -2142,14 +2142,15 @@ apply:;
 		ERROR(257, this, INULL); // not callable
 
 mainloop:;
-	// free numbers: 11, 12, 18, 19, 21
+	// free numbers: 11, 12, 18, 19
+	// todo: change 13 operation number to something else,
+	// todo: exchange NOP and APPLY operation codes
 
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
 
-	// todo: add "NOP" function (may be 0x0 ?)
 	// todo: add "HLT" function (may be 0x0 ?)
 
 	// безусловные переходы
@@ -2159,6 +2160,7 @@ mainloop:;
 	//#	define GOTO_CLOS 21   //
 
 	// управляющие команды:
+	#	define NOP   21
 	#	define APPLY 20 // apply-cont = 20+64
 	#	define RET   24
 	#	define RUN   50
@@ -2338,6 +2340,10 @@ loop:;
 	//		this = (word *) this[1];
 	//		ip = (unsigned char*) &this[1];
 	//		goto invoke;
+
+	// nop - No OPeartion
+	case NOP:
+		break;
 
 	// apply
 	// todo:? include apply-tuple, apply-values? and apply-ff to the APPLY
@@ -4435,7 +4441,6 @@ loop:;
 	case 12:
 	case 18:
 	case 19:
-	case 21:
 
 	default:
 		ERROR(op, new_string("Invalid opcode"), ITRUE);

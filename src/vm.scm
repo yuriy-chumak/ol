@@ -16,7 +16,7 @@
 
       ; commands
       GOTO APPLY APPLY/CC RET SYS RUN ARITY-ERROR
-      JEQ JZ JE JN JF JAF JAFX
+      NOP JEQ JZ JE JN JF JAF JAFX
       CLOS0 CLOC0 CLOS1 CLOC1
 
       LD LDE LDN LDT LDF
@@ -155,6 +155,8 @@
       (setq NEW-OBJECT 35) (setq vm:new-object     (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
       (setq RAW-OBJECT 60) (setq vm:new-raw-object (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))
 
+
+      (setq NOP  21)
 
       (setq SYS 27)      (setq vm:sys  (vm:new-raw-object TBYTECODE '(27 4 5 6 7 8  24 8)))
       (setq RUN 50)      (setq vm:run  (vm:new-raw-object TBYTECODE '(50 4 5)))
