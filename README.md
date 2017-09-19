@@ -89,13 +89,14 @@ BUILD
 
 #### Linux way
 
-To build OL
-
-    $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -ldl
-
 To build only olvm (virtual machine)
 
     $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -ldl
+
+To build full OL
+
+    $ ld -r -b binary -o src/repl.o repl
+    $ gcc src/olvm.c src/repl.o  -std=c99 -O2  -o ol -ldl
 
 
 Olvm can execute only precompiled OL scripts (see BINARY SCRIPTS
@@ -106,23 +107,26 @@ fat (about 400KB executable).
 
 #### Windows way
 
-To build OL
-
-    > set PATH=%PATH%;C:\MinGW\bin
-    > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
-
 To build only olvm (virtual machine)
 
     > set PATH=%PATH%;C:\MinGW\bin
     > gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
+
+To build OL
+
+    > set PATH=%PATH%;C:\MinGW\bin
+    > ld -r -b binary -o src/repl.o repl
+    > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
 
 
 #### FreeBSD/OpenBSD/NetBSD way
 
 BSD require including "c" library instead of dl:
 
-    $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -lc
     $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -lc
+
+    $ ld -r -b binary -o src/repl.o repl
+    $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -lc
 
 
 #### Android way

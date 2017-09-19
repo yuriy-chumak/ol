@@ -4642,15 +4642,15 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 //
 
 #ifndef NAKED_VM
-extern unsigned char* language;
+extern unsigned char _binary_repl_start[];
 #else
-unsigned char* language = NULL;
+unsigned char * _binary_repl_start = NULL;
 #endif
 
 #if !EMBEDDED_VM
 int main(int argc, char** argv)
 {
-	unsigned char* bootstrap = language;
+	unsigned char* bootstrap = _binary_repl_start;
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
@@ -4727,7 +4727,7 @@ int main(int argc, char** argv)
 	//set_signal_handler();
 	word r = 0;
 
-	OL* olvm = OL_new(bootstrap, bootstrap != language ? free : NULL);
+	OL* olvm = OL_new(bootstrap, bootstrap != _binary_repl_start ? free : NULL);
 	if (olvm) {
 		r = OL_run(olvm, argc, argv);
 		OL_free(olvm);
@@ -4763,7 +4763,7 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	char* S = 0;
 	if (bootstrap && *bootstrap >= 0x20) {
 		S = (char*)bootstrap;
-		bootstrap = language;
+		bootstrap = _binary_repl_start;
 	}
 #endif
 

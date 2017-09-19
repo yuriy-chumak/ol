@@ -3,7 +3,6 @@ echo -=( building %1 )=---------------------------------------------------------
 IF "%1"==""   GOTO ALL
 IF "%1"=="vm" GOTO VM
 IF "%1"=="vm32" GOTO VM32
-IF "%1"=="boot" GOTO BOOT
 IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
@@ -26,14 +25,13 @@ GOTO:EOF
 :ALL
 for %%a in (
    vm.exe
-   src\boot.c
+   src\repl.o
    ol.exe
    src\slim.c
    olvm.js
 ) do if exist %%a erase %%a
 CALL :VM    & if not exist vm.exe goto :fail
 CALL :REPL  & fc /b repl boot.fasl > nul & if errorlevel 1 goto :fail
-CALL :BOOT  & if not exist src/boot.c goto :fail
 CALL :OL    & if not exist ol.exe goto :fail
 CALL :TESTS
 CALL :SLIM  & if not exist src/slim.c goto :fail
@@ -56,10 +54,10 @@ rem 121 - OpenBSD x64
 :HELP
 
 echo "  repl                                "
-echo "+------+  boot  +------+  ol  +------+"
-echo "| REPL |------->| BOOT |----->|  OL  |"
-echo "+------+        +------+      +------+"
-echo "                   ^              ^   "
+echo "+------+                  ol  +------+"
+echo "| REPL |--------------------->|  OL  |"
+echo "+------+           ^          +------+"
+echo "                   |              ^   "
 echo "   vm              |              |   "
 echo "+------+           |              |   "
 echo "|  VM  |-----------+--------------/   "
@@ -80,20 +78,15 @@ gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/ol
 GOTO:EOF
 
 
-:BOOT
-echo.   *** Making src/boot.c:
-vm repl <src/boot.lisp >src/boot.c
-GOTO:EOF
-
 :OL
 echo.   *** Making Otus Lisp:
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
 GOTO:EOF
 
 :OL32
 echo.   *** Making 32-bit Otus Lisp:
 set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
 GOTO:EOF
 
 :REPL
@@ -103,6 +96,7 @@ vm repl - --version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again
+ld -r -b binary -o src/repl.o repl
 GOTO:EOF
 :again
 copy boot.fasl repl
@@ -139,7 +133,7 @@ GOTO:EOF
 
 :RELEASE
 gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32
-gcc -std=c99 -O2 -s -Wall -fmessage-length=0 src/boot.c src/olvm.c -o "ol.exe" -lws2_32
+gcc -std=c99 -O2 -s -Wall -fmessage-length=0 src/repl.o src/olvm.c -o "ol.exe" -lws2_32
 GOTO:EOF
 
 
@@ -175,7 +169,7 @@ gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     src/olvm.c tests/vm.c -o "test-vm.exe" -lws2_32 -O2 -g2 -m64
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
-    src/olvm.c src/boot.c tests/pinvoke.c -o "test-pinvoke.exe" -lws2_32 -O2 -g2 -m64
+    src/olvm.c src/repl.o tests/pinvoke.c -o "test-pinvoke.exe" -lws2_32 -O2 -g2 -m64
 
 
 :: VM internal tests
@@ -258,7 +252,6 @@ echo Copying source files...
 call :cp 127.0.0.1 %~1 Makefile
 call :cp 127.0.0.1 %~1 src/olvm.c
 call :cp 127.0.0.1 %~1 src/olvm.h
-call :cp 127.0.0.1 %~1 src/boot.c
 call :cp 127.0.0.1 %~1 repl
 
 echo Running make...

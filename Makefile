@@ -64,8 +64,8 @@ DESTDIR?=
 #main
 all:ol
 
-#debug: src/olvm.c src/boot.c
-#	$(CC) -std=c99 -O0 -g  src/olvm.c src/boot.c -o ol \
+#debug: src/olvm.c src/repl.o
+#	$(CC) -std=c99 -O0 -g  src/olvm.c src/repl.o -o ol \
 #	   -Xlinker --export-dynamic -ldl
 #	@echo Ok.
 
@@ -138,8 +138,8 @@ debian-amd64-package:
 
 
 # http://mackyle.github.io/blocksruntime/
-#clang: src/olvm.c src/boot.c
-#	clang-3.5 -fblocks src/olvm.c src/boot.c -ldl -lBlocksRuntime -o ol-c
+#clang: src/olvm.c src/repl.o
+#	clang-3.5 -fblocks src/olvm.c src/repl.o -ldl -lBlocksRuntime -o ol-c
 
 
 # this is only container for config targets
@@ -193,8 +193,8 @@ config/XVisualInfo:
 
 
 # ol
-ol: src/olvm.c src/olvm.h src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ \
+ol: src/olvm.c src/olvm.h src/repl.o
+	$(CC) $(CFLAGS) src/olvm.c src/repl.o -o $@ \
 	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
 
@@ -216,9 +216,7 @@ talkback: src/olvm.c extensions/talkback/boot.c extensions/talkback/talkback.c e
 
 
 src/repl.o: repl
-	objcopy -B i386 -I binary -O default repl src/repl.o
-src/boot.c: repl src/boot.lisp
-	vm repl <src/boot.lisp >src/boot.c
+	ld -r -b binary -o src/repl.o repl
 src/slim.c: repl src/slim.lisp
 	vm repl <src/slim.lisp >src/slim.c
 
@@ -297,5 +295,5 @@ tests: \
 	@echo "passed!"
 
 sample-embed:
-	gcc src/sample-embed.c src/olvm.c src/boot.c -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
+	gcc src/sample-embed.c src/olvm.c src/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
 	-Xlinker --export-dynamic
