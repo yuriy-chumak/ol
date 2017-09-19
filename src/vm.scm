@@ -328,43 +328,6 @@
          (cons FF-APPLY
          #null)))
 
-;; Список sys-prim'ов
-; поэтапный перевод sys-prim'ов в syscall'ы
-; 1. добавить 100 к старым номерам
-; 2. завести правильные новые
-; 3. удалить старые
-
-;      (define (__fsend) (sys-prim 0 #false #false #false))
-;      1 __fopen
-;      2 __close
-;      3 __sopen
-;      4 __accept
-
-;      5 __fread
-;      +6 __exit
-;      +7 __set-memory-limit
-;      +8 __get-machine-word-size
-;      +9 __get-memory-limit
-;      +10 __enter-linux-seccomp
-;      +22 __set-ticker-value
-
-;      30 __dlopen
-;      31 __dlsym
-;      32 __pinvoke
-;      33 __gc ; TEMP
-
-;      11 __sys-open-dir
-;      12 __sys-read-dir
-;      13 __sys-closedir
-;      14 __set-ticks
-;      15 __fsocksend
-;      16 __getenv
-;      17 __exec[v]
-;      20 __chdir
-;      19 wait <pid> <respair>
-;      18 fork
-;      21 kill
-
 ;      ;; special things exposed by the vm
 ;      (define (set-memory-limit n) (sys-prim 12 n #f #f))
 ;      (define (get-word-size)      (sys-prim 1008 #false #false #false))
