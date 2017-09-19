@@ -117,7 +117,7 @@ thread_start(void *arg)
 PUBLIC
 state_t* OL_tb_start()
 {
-	OL* ol = OL_new(talkback, 0);
+	OL* ol = OL_new(talkback);
 
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);

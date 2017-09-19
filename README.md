@@ -335,7 +335,7 @@ Please check the next code for sample usage:
             "(define sample_add (dlsym $ type-int+ \"sample_add\" type-int+ type-int+))"
 
             "(print \"sample_add: \""
-            "   (sample_add 1 2))", 0);
+            "   (sample_add 1 2))");
         OL_run(ol, 0, 0);
 
         OL_free(ol);

@@ -35,11 +35,10 @@ struct ol_t;
  * Create new OL virtual machine (olvm)
  *
  * \param[in] bootstrap Binary code to be executed by olvm.
- * \param[in] release Optional function to release the bootstrap (if not 0)
  * \return Created olvm instance
  */
 struct ol_t*
-OL_new(unsigned char* bootstrap, void (*release)(void*));
+OL_new(unsigned char* bootstrap);
 
 /**
  * Release the OL virtual machine (olvm)

@@ -824,7 +824,7 @@ struct __attribute__ ((aligned(sizeof(word)), packed)) object_t
 
 // ------------------------------------------------------
 
-OL*  OL_new (unsigned char* bootstrap, void (*release)(void*));
+OL*  OL_new (unsigned char* bootstrap);
 void OL_free(OL* ol);
 word OL_run(struct ol_t* ol, int argc, char** argv);
 
@@ -4701,7 +4701,7 @@ int main(int argc, char** argv)
 		}
 		else {
 			// иначе загрузим его
-			unsigned char* ptr = (unsigned char*)malloc(st.st_size);
+			unsigned char* ptr = (unsigned char*) malloc(st.st_size);
 			if (ptr == NULL)
 				crash(3, "Can't alloc memory");	// опа, не смогли выделить память...
 
@@ -4727,9 +4727,14 @@ int main(int argc, char** argv)
 	//set_signal_handler();
 	word r = 0;
 
-	OL* olvm = OL_new(bootstrap, bootstrap != _binary_repl_start ? free : NULL);
+	OL* olvm = OL_new(bootstrap);
+	if (bootstrap != _binary_repl_start) // was previously malloc'ed
+		free(bootstrap);
+
+	// so, let's rock?
 	if (olvm) {
 		r = OL_run(olvm, argc, argv);
+
 		OL_free(olvm);
 	}
 
@@ -4744,7 +4749,7 @@ int main(int argc, char** argv)
 #endif
 
 OL*
-OL_new(unsigned char* bootstrap, void (*release)(void*))
+OL_new(unsigned char* bootstrap)
 {
 	// если отсутствует исполнимый образ
 	if (bootstrap == 0) {
@@ -4801,11 +4806,6 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	if (fp == 0)
 		goto fail;
 
-	// все, программа в памяти, можно освобождать исходник
-	if (release)
-		release(bootstrap);
-
-
 	// а теперь подготовим аргументы:
 	word* userdata = (word*) INULL;
 #if EMBEDDED_VM
@@ -4835,8 +4835,6 @@ OL_new(unsigned char* bootstrap, void (*release)(void*))
 	heap->fp = fp;
 	return handle;
 fail:
-	if (release)
-		release(bootstrap);
 	OL_free(handle);
 	return 0;
 }

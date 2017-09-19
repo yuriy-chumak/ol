@@ -13,7 +13,7 @@ typedef uintptr_t word;
 
 #define EVAL(...) \
 	unsigned char bootstrap[] = __VA_ARGS__; \
-	OL* olvm = OL_new(bootstrap, 0); \
+	OL* olvm = OL_new(bootstrap); \
 	word output = (word) OL_run(olvm, 0, 0);
 
 #define ASSERT(...) \

@@ -4,7 +4,7 @@ int total = 0;
 
 {
 	unsigned char* test = { 1, 2, 3, 0 };
-	OL* olvm = OL_new(test, NULL);
+	OL* olvm = OL_new(test);
 
 	void* r = OL_run(olvm, argc, argv);
 	OL_free(olvm);
