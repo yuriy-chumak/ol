@@ -301,7 +301,7 @@ EMBEDDED OL
 (please, this section is outdated, please wait to updates)
 
 OL can be embedded in your project. It supports direct calls for C functions
-for 32- and 64-bit platforms with full callback support.
+for 32- and 64-bit platforms with full callables support.
 
 Please check the next code for sample usage:
 

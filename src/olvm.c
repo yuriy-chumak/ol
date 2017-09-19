@@ -356,13 +356,13 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #endif
 
 
-// callbacks support
-#ifndef HAS_CALLBACKS
-#define HAS_CALLBACKS HAS_DLOPEN
+// FFI support:
+#ifndef OLVM_FFI
+#define OLVM_FFI HAS_DLOPEN // ffi (have no sense without dlopen/dlsym)
 #endif
 
-#ifndef OLVM_FFI
-#define OLVM_FFI HAS_DLOPEN // ffi (for dlopen/dlsym) support
+#ifndef OLVM_CALLABLES
+#define OLVM_CALLABLES OLVM_FFI
 #endif
 
 
@@ -913,7 +913,7 @@ postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 // todo: сделать два типа колбеков - короткий (такой как я сейчас сделаю)
 //       и "длинный", который будет запускать отдельный поток (сопрограмму) и позволит в это же время
 //       работать остальным сопрограммам.
-#define TCALLBACK                   (61) // type-callback, receives '(description . callback-lambda)
+#define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
 #define TANY                        (63) //
 
 // constants:
@@ -943,7 +943,7 @@ postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 #define is_tuple(ob)                (is_reference(ob) &&   reftype (ob) == TTUPLE)
 
 #define is_vptr(ob)                 (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
-#define is_callback(ob)             (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TCALLBACK, 2, 0))
+#define is_callable(ob)             (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TCALLABLE, 2, 0))
 
 #define is_number(ob)               (is_fix(ob) || is_npair(ob))
 #define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
@@ -973,7 +973,7 @@ postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 #endif
 
 
-#define CR                          16 // available callbacks
+#define CR                          16 // available callables
 #define NR                          256 // see n-registers in register.scm
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
@@ -1290,9 +1290,9 @@ word data = (word) a;\
 	/*return*/me;\
 })
 
-#define new_callback(a) ({\
+#define new_callable(a) ({\
 word data = (word) a;\
-	word* me = new (TCALLBACK, 2, 0);\
+	word* me = new (TCALLABLE, 2, 0);\
 	me[1] = data;\
 	/*return*/me;\
 })
@@ -1478,7 +1478,7 @@ word gc(heap_t *heap, int query, word regs)
 		// непосредственно сам процесс сборки
 		root[0] = regs;
 		mark(root, fp, heap);        // assert (root > fp)
-		// todo: проверить о очистить callbacks перед sweep
+		// todo: проверить и очистить callables перед sweep
 		fp = sweep(fp, heap);
 		regs = root[0];
 
@@ -1891,7 +1891,7 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
-#if HAS_CALLBACKS
+#if OLVM_CALLABLES
 static
 long callback(OL* ol, int id, int_t* argi
 	#if __amd64__
@@ -4162,9 +4162,9 @@ loop:;
 				result = new_string(error);
 			break;
 		}
-		#if HAS_CALLBACKS
+		#if OLVM_CALLABLES
 		case SYSCALL_MKCB: {
-			// TCALLBACK
+			// TCALLABLE
 			int c;
 			// TODO: увеличить heap->CR если маловато колбеков!
 			for (c = 4; c < CR; c++) {
@@ -4296,10 +4296,10 @@ loop:;
 			#endif
 #endif
 
-			result = new_callback(ptr);
+			result = new_callable(ptr);
 			break;
 		}
-		#endif// HAS_CALLBACKS
+		#endif// OLVM_CALLABLES
 	#endif// HAS_DLOPEN
 
 		// https://www.mindcollapse.com/blog/processes-isolation.html
@@ -4915,6 +4915,6 @@ OL_run(OL* handle, int argc, char** argv)
 }
 
 // Foreign Function Interface support code
-#if OLVM_FFI || HAS_CALLBACKS
+#if OLVM_FFI || OLVM_CALLABLES
 #	include "ffi.c"
 #endif

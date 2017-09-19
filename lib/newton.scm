@@ -285,7 +285,6 @@
 (define (make-cb p l)
    (syscall 85 (cons p l) #f #f))
 
-(define type-callback 61)
 (define type-float* (vm:or type-float #x40))
 
 (define NewtonMesh* type-vptr)
@@ -307,7 +306,7 @@
 (define NewtonCreate  (dlsym $ NewtonWorld* "NewtonCreate"))
 (define NewtonDestroy (dlsym $ type-void "NewtonDestroy" NewtonWorld*))
 (define NewtonDestroyAllBodies (dlsym $ type-void "NewtonDestroyAllBodies" NewtonWorld*))
-(define NewtonWorldSetDestructorCallback (dlsym $ type-void "NewtonWorldSetDestructorCallback" NewtonWorld* type-callback))
+(define NewtonWorldSetDestructorCallback (dlsym $ type-void "NewtonWorldSetDestructorCallback" NewtonWorld* type-callable))
 
 ;
 (define NewtonCreateNull (dlsym $ NewtonCollision* "NewtonCreateNull" NewtonWorld*))
@@ -324,7 +323,7 @@
 (define NewtonCreateDynamicBody (dlsym $ NewtonBody* "NewtonCreateDynamicBody" NewtonWorld* NewtonCollision* dFloat*))
 (define NewtonDestroyBody (dlsym $ type-void "NewtonDestroyBody" NewtonBody*))
 
-(define NewtonBodySetForceAndTorqueCallback (dlsym $ type-void "NewtonBodySetForceAndTorqueCallback" type-vptr type-callback))
+(define NewtonBodySetForceAndTorqueCallback (dlsym $ type-void "NewtonBodySetForceAndTorqueCallback" type-vptr type-callable))
 (define NewtonBodySetMassProperties (dlsym $ type-void "NewtonBodySetMassProperties" type-vptr type-float type-vptr))
 (define NewtonDestroyCollision (dlsym $ type-void "NewtonDestroyCollision" type-vptr))
 

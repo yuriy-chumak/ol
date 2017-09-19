@@ -48,7 +48,7 @@
    (define Tcl_FindExecutable (dlsym TCL type-string "Tcl_FindExecutable" type-string))
    (define Tcl_GetStringResult (dlsym TCL type-string "Tcl_GetStringResult"))
 
-   (define Tcl_CreateCommand (dlsym TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callback type-userdata Tcl_CmdDeleteProc*))
+   (define Tcl_CreateCommand (dlsym TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callable type-userdata Tcl_CmdDeleteProc*))
    (define Tcl_DeleteCommand (dlsym TCL TclCommand "Tcl_DeleteCommand" Tcl_Interp* type-string))
    (define Tcl_SetResult (dlsym TCL type-void "Tcl_SetResult" Tcl_Interp* type-string Tcl_FreeProc*))
 

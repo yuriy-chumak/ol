@@ -78,7 +78,7 @@
 
       type-void type-void* type-void**
 
-      type-callback
+      type-callable
       type-any
 
 
@@ -209,7 +209,7 @@
 
 (define type-userdata 62)
 
-(define type-callback 61)
+(define type-callable 61)
 (define type-any 63)
 
 

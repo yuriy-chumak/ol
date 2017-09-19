@@ -900,15 +900,15 @@ word* ffi(OL* self, word* arguments)
 			break;
 		#endif
 
-		case TCALLBACK: {
+		case TCALLABLE: {
 			if ((word)arg == INULL || (word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else {
-				if (is_callback(arg)) {
+				if (is_callable(arg)) {
 					args[i] = (word)car(arg);
 				}
 				else
-					STDERR("invalid parameter values (requested callback)");
+					STDERR("invalid parameter values (requested callable)");
 			}
 			break;
 		}
@@ -975,7 +975,7 @@ word* ffi(OL* self, word* arguments)
 
 	self->R[128 + 1] = (word)B;
 	self->R[128 + 2] = (word)C;
-	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
+	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
 
 //	if (floatsmask == 15)
 //		__asm__("int $3");
@@ -1158,9 +1158,9 @@ word* ffi(OL* self, word* arguments)
 #endif//OLVM_FFI
 
 
-// --=( CALLBACKS support )=-----------------------------
+// --=( CALLABLES support )=-----------------------------
 // --
-#if HAS_CALLBACKS
+#if OLVM_CALLABLES
 //long long callback(OL* ol, int id, word* args) // win32
 //long long callback(OL* ol, int id, long long* argi, double* argf, long long* others) // linux
 static
@@ -1188,7 +1188,7 @@ long callback(OL* ol, int id, int_t* argi
 	R[NR + 3] = R[3]; // continuation
 
 	// вызовем колбек:
-	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callback функций
+	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callable функций
 	R[3] = IRETURN; // команда выхода из колбека
 	ol->arity = 1;
 
@@ -1383,4 +1383,4 @@ long callback(OL* ol, int id, int_t* argi
 
 	return 0;
 }
-#endif
+#endif//OLVM_CALLABLES

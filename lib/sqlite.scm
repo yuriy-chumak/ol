@@ -214,7 +214,7 @@
 (define sqlite3-bind-text   (dlsym % type-fix+ "sqlite3_bind_text"   sqlite3_stmt* type-int+ type-string type-fix+ type-void*))
 (define sqlite3_bind_null   (dlsym % type-fix+ "sqlite3_bind_null"   sqlite3_stmt* type-int+))
 
-(define sqlite3_create_function_v2 (dlsym % type-fix+ "sqlite3_create_function_v2"   sqlite3* type-string type-int+ type-int+ type-void* type-callback type-callback type-callback type-vptr))
+(define sqlite3_create_function_v2 (dlsym % type-fix+ "sqlite3_create_function_v2"   sqlite3* type-string type-int+ type-int+ type-void* type-callable type-callable type-callable type-vptr))
 
 (define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
 (define sqlite3_result_int (dlsym % type-void "sqlite3_result_int" sqlite3_context* type-int+))
