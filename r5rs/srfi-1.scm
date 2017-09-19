@@ -11,13 +11,33 @@
 
    (export
       srfi-1
+
+      xcons iota
+
       first second third fourth fifth sixth seventh eighth ninth tenth
 
-      iota filter
+       filter
 )
 
 (begin
    (define srfi-1 #true)
+
+   ; cons a d -> pair   *[r5rs]
+   ;(cons 'a '())        => (a))
+   ;(cons '(a) '(b c d)) => ((a) b c d)
+   ;(cons "a" '(b c))    => ("a" b c)
+   ;(cons 'a 3)          => (a . 3)
+   ;(cons '(a b) 'c)     => ((a b) . c)
+
+   ; list object ... -> list   *[r5rs]
+   ;(list 'a (+ 3 4) 'c) =>  (a 7 c)
+   ;(list)               =>  ()
+
+   ; xcons d a -> pair
+   ;;; Occasionally useful as a value to be passed to a fold or other
+   ;;; higher-order procedure.
+   (define (xcons d a) (cons a d))
+
 
    (define (first li)
       (car li))
