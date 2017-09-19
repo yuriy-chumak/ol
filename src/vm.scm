@@ -222,8 +222,8 @@
 
       (setq vm:endianness (vm:new-raw-object TBYTECODE '(28 4)))
 
-      (setq vm:fpu1 (vm:new-raw-object TBYTECODE '(33 4 5 6    24 6)))
-      (setq vm:fpu2 (vm:new-raw-object TBYTECODE '(34 4 5 6 7  24 7)))
+      (setq FPU1 33) (setq vm:fpu1 (vm:new-raw-object TBYTECODE '(33 4 5 6    24 6)))
+      (setq FPU2 34) (setq vm:fpu2 (vm:new-raw-object TBYTECODE '(34 4 5 6 7  24 7)))
 
 
       (setq primops
@@ -269,8 +269,8 @@
          (cons (vm:new TTUPLE 'vm:or    OR   2 1 vm:or)
          (cons (vm:new TTUPLE 'vm:xor   XOR  2 1 vm:xor)
 
-         (cons (vm:new TTUPLE 'vm:fpu1  33  2 1 vm:fpu1)
-         (cons (vm:new TTUPLE 'vm:fpu2  34  3 1 vm:fpu2)
+         (cons (vm:new TTUPLE 'vm:fpu1  FPU1 2 1 vm:fpu1)
+         (cons (vm:new TTUPLE 'vm:fpu2  FPU2 3 1 vm:fpu2)
 
          ; системный таймер
          (cons (vm:new TTUPLE 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
