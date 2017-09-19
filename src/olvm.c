@@ -228,9 +228,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #define HAS_STRFTIME 1
 #endif
 
-// todo: rename to INEXACTS_ENABLED (or similar) and rename all HAS_... relevant to this source code
-#ifndef HAS_INEXACTS
-#define HAS_INEXACTS 1
+// floating point numbers (inexact numbers in terms of lisp) support
+#ifndef OLVM_INEXACTS
+#define OLVM_INEXACTS 1
 #endif
 
 
@@ -1748,7 +1748,7 @@ struct ol_t
 
 
 // internal functions:
-#if HAS_INEXACTS
+#if OLVM_INEXACTS
 double ol2d_convert(word p) {
 	double v = 0;
 	double m = 1;
@@ -2684,7 +2684,7 @@ loop:;
 				ERROR(VMCAST, this, T);
 			break;
 
-		#if HAS_INEXACTS
+		#if OLVM_INEXACTS
 		case TINEXACT:
 			// exact->inexact
 			A2 = (word) new_bytevector(TINEXACT, sizeof(double));
@@ -4365,12 +4365,13 @@ loop:;
 	}
 
 	// FPU extensions
-	case 33: { // 1 argument
+	#if OLVM_INEXACTS
+	case 33: { // with 1 argument
 		word fnc = value(A0);
-		assert(is_reference(A1));
-		double a = ol2d(A1);
-
+		assert (is_reference(A1) && reftype(A1) == TINEXACT);
+		double a = *(double*)&car(A1);
 		A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+
 		switch (fnc) {
 		case 0: // fsqrt
 			*(double*)&car(A2) = sqrt(a);
@@ -4387,7 +4388,7 @@ loop:;
 		}
 		ip += 3; break;
 	}
-	case 34: { // 2 arguments
+	case 34: { // with 2 arguments
 		// fadd/fiadd
 		// fmul/fimul
 		// fcom/ficom
@@ -4415,9 +4416,10 @@ loop:;
 		// FLDLN2
 		// FLDZ
 		word fnc = value(A0);
-		assert(is_reference(A1) && is_reference(A2));
-		double a = ol2d(A1);
-		double b = ol2d(A2);
+		assert (is_reference(A1) && reftype(A1) == TINEXACT);
+		double a = *(double*)&car(A1);
+		assert (is_reference(A2) && reftype(A2) == TINEXACT);
+		double b = *(double*)&car(A2);
 
 		A3 = (word) new_bytevector(TINEXACT, sizeof(double));
 		switch (fnc) {
@@ -4439,6 +4441,7 @@ loop:;
 		}
 		ip += 4; break;
 	}
+	#endif//OLVM_INEXACTS
 
 
 	// this is free to use commands:

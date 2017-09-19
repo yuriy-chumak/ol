@@ -1,5 +1,5 @@
 ;;;
-;;; Owl math module, first iteration
+;;; Basic math library
 ;;;
 
 ;; todo: split this to separate libraries for fixnums, integers, rationals etc?
