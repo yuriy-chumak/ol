@@ -2212,6 +2212,9 @@ mainloop:;
 	#	define EQQ   54
 	#	define LESSQ 44
 
+	#	define FP1 33
+	#	define FP2 34
+
 	#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 
 	#	define SYSCALL 63
@@ -4366,7 +4369,7 @@ loop:;
 
 	// FPU extensions
 	#if OLVM_INEXACTS
-	case 33: { // with 1 argument
+	case FP1: { // with 1 argument
 		word fnc = value(A0);
 		assert (is_reference(A1) && reftype(A1) == TINEXACT);
 		double a = *(double*)&car(A1);
@@ -4388,7 +4391,7 @@ loop:;
 		}
 		ip += 3; break;
 	}
-	case 34: { // with 2 arguments
+	case FP2: { // with 2 arguments
 		// fadd/fiadd
 		// fmul/fimul
 		// fcom/ficom
