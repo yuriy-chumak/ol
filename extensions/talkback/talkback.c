@@ -239,7 +239,7 @@ void OL_tb_set_import_hook(state_t* state, int (*hook)(const char* thename, char
 
 	// make hook:
 	OL_tb_send(state,
-	        "(import (otus pinvoke))"
+	        "(import (otus ffi))"
 	        "(define $ (dlopen))"
 	        "(define hook:import (dlsym $ type-string \"OL_tb_hook_import\" type-string))"
 	);

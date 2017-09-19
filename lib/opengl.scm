@@ -1,6 +1,6 @@
 (define-library (lib opengl)
  (import
-  (otus lisp) (otus pinvoke)
+  (otus lisp) (otus ffi)
   (OpenGL version-1-0))
 
  (export

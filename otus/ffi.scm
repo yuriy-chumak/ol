@@ -1,4 +1,4 @@
-;;; Copyright (c) 2014 - 2016 Yuriy Chumak
+;;; Copyright (c) 2014 - 2017 Yuriy Chumak
 ;;; All rights reserved.
 ;;;
 ;;; Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,8 @@
 
 
 ; usage example:
-;(import (otus pinvoke))
+;; win32:
+;(import (otus ffi))
 ;(define user32 (dlopen "user32"))
 ;  (define IDOK 1)
 ;  (define IDCANCEL 2)
@@ -41,17 +42,18 @@
 ;  IDOK)
 ;    (print "OK")
 ;    (print "CANCEL"))
+;; linux:
+;TBD.
 
 
 ;; todo: date handling
 
-(define-library (otus pinvoke)
+(define-library (otus ffi)
    (export
       dlopen
       dlclose
       dlsym dlsym+
-      pinvoke exec
-      uname
+      ffi uname
 
       RTLD_LAZY
       RTLD_NOW
@@ -133,7 +135,7 @@
    (()          (syscall 174 '()                                      RTLD_LAZY #false))))
 (define (dlclose module) (syscall 176 module #f #f))
 
-(define pinvoke (syscall 177 (dlopen) "pinvoke" #f))
+(define ffi (syscall 177 (dlopen) "ffi" #f))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать
 (define (dlsym+ dll name)
@@ -143,7 +145,6 @@
          (exec function args #false)))))
 
 (define (dlsym  dll type name . prototype)
-;  (print "dlsym: " name)
    ; todo: add arguments to the call of function and use as types
    ; должно быть так: если будет явное преобразование типа в аргументе функции, то пользовать его
    ; иначе использовать указанное в arguments; обязательно выводить предупреждение, если количество аргументов не
@@ -152,7 +153,7 @@
          (function (syscall 177 dll (c-string name) #false)))
       (if function
       (lambda args
-         (exec pinvoke  function rtty args)))))
+         (exec ffi  function rtty args)))))
 
 (define (load-dynamic-library name)
    (let ((dll (dlopen name)))
@@ -162,7 +163,7 @@
                   (function (syscall 177 dll (c-string name) #f))) ; todo: избавиться от (c-string)
                (if function
                   (lambda args
-                     (exec pinvoke  function rtty args))))))))
+                     (exec ffi  function rtty args))))))))
 
 
 ;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
@@ -176,7 +177,7 @@
 ;;         (syscall 59 (cdr function) (car function) args))))
 
 ; Calling Conventions
-; default call is __stdcall for windows and __cdecl for linux
+; default call is __stdcall for windows and __cdecl for linux (for x32)
 ; you can directly provide required calling convention:
 (define (__cdecl    arg) (+ arg #b01000000))
 (define (__stdcall  arg) (+ arg #b10000000))

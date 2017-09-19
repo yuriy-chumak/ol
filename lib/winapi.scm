@@ -56,7 +56,7 @@
   (import
       (r5rs core) (owl io)
       (owl list) (owl string)
-      (owl math) (otus pinvoke))
+      (owl math) (otus ffi))
   (begin
 
 (define INTEGER type-int+)

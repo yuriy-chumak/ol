@@ -1,6 +1,6 @@
-(import (otus pinvoke))
+(import (otus ffi))
 
-; testing the pinvoke:
+; testing the ffi:
 ; f: floats
 ; i: ints
 ; d: doubles

@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 	OL_tb_set_import_hook(oltb, do_load_library);
 
 	printf("Compiling script...");
-	OL_tb_send(oltb, "(import (otus pinvoke))"
+	OL_tb_send(oltb, "(import (otus ffi))"
 	                 "(define $ (dlopen))" // get own handle
 	                 "(define add (dlsym $ type-int+ \"add_ii\" type-int+ type-int+))"
 	                 "(define seterrno (dlsym $ type-int+ \"OL_tb_seterror\"))"

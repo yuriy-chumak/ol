@@ -26,7 +26,7 @@
 (define-library (lib newton)
    (import
       (otus lisp)
-      (otus pinvoke))
+      (otus ffi))
    (export
       NewtonWorld*
       NewtonCollision*

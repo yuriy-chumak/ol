@@ -9,7 +9,7 @@
 
 ;  (define isCompiled (list->byte-vector '(0 0 0 0)))
 ;  (syscall 1033 isCompiled #false #false)
-(import (owl pinvoke))
+(import (owl ffi))
 (import (lib windows))
 (import (OpenGL version-2-1))
 

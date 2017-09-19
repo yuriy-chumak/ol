@@ -21,7 +21,7 @@
    )
    (import
       (r5rs core)
-      (otus pinvoke))
+      (otus ffi))
 (begin
 
    (define TCL (or

@@ -93,7 +93,7 @@
 
    (import
       (otus lisp)
-      (otus pinvoke))
+      (otus ffi))
 
 (begin
 

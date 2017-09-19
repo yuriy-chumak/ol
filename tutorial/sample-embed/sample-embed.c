@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 
 	OL* ol = OL_new((unsigned char*)
 			// preparation steps:
-			"(import (otus pinvoke) (owl io))"
+			"(import (otus ffi) (owl io))"
 			"(define $ (dlopen))" // get own handle
 			"(define sample_add (dlsym $ type-int+ \"sample_add\" type-int+ type-int+))"
 

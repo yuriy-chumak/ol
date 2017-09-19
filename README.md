@@ -191,12 +191,12 @@ Linux from command line additionally.
 Please note that external libraries (like opengl, sqlite, etc.)
 support require HAS_DLOPEN enabled.
 
-To disable pinvoke (Platform Invoke mechanism) support you can add
--DHAS_PINVOKE=0 to gcc command line or set appropriate define in
+To disable ffi (Foreign Function Interface) support you can add
+-DOLVM_FFI=0 to gcc command line or set appropriate define in
 src/olvm.h to 0.
 
 Please note that external libraries (like opengl, sqlite, etc.)
-support require HAS_PINVOKE enabled.
+support require OLVM_FFI enabled.
 
 For embedding OL into your project check the EMBEDDED OL section.
 
@@ -330,7 +330,7 @@ Please check the next code for sample usage:
     int main(int argc, char** argv)
     {
         OL* ol = OL_new(
-            "(import (otus pinvoke) (owl io))"
+            "(import (otus ffi) (owl io))"
             "(define $ (dlopen))" // get own handle
             "(define sample_add (dlsym $ type-int+ \"sample_add\" type-int+ type-int+))"
 
@@ -344,21 +344,22 @@ Please check the next code for sample usage:
 
 You need:
 
-a. compile OL with -DHAS_DLOPEN and -DHAS_PINVOKE options
+a. compile OL with -DHAS_DLOPEN and -DOLVM_FFI options
       (don't forget for -DEMBEDDED_VM)
 
-b. notify vm about using pinvoke library: "(import (otus pinvoke))"
-      ("otus/pinvoke.scm" file must be accessible from your executable)
+b. notify vm about using ffi library: "(import (otus ffi))"
+      "otus/ffi.scm" file must be accessible from your executable or from
+      default library search path
 
 c. load function exporter library as "(define any-variable (dload))" for self
-      executable or "(define any-variable (dload \"mylib.so\"))" for "mylib"
-      dynamic library (mylib.dll for windows)
+      executable or "(define any-variable (dload \"libmy.so\"))" for "my"
+      dynamic library (my.dll for windows)
 
-d. notify vm about function prototypes that you want to call. pinvoke mechanism
+d. notify vm about function prototypes that you want to call. ffi support mechanism
       provides smart translation from internal OL data format into machine
       specific that used by common languages (C in sample).
 
-Pinvoke described in the [Project Page](http://yuriy-chumak.github.io/ol/?ru/pinvoke) (still in progress), so for now function interface declaration from sample in details:
+FFI described in the [Project Page](http://yuriy-chumak.github.io/ol/?ru/ffi) (still in progress), so for now function interface declaration from sample in details:
 
 '(define sample_add (dlsym $ type-int+ "sample_add" type-int+ type-int+))':
 
@@ -366,16 +367,16 @@ Pinvoke described in the [Project Page](http://yuriy-chumak.github.io/ol/?ru/pin
       This variable will be associated with lambda that can call the native function.
  * second argument in (dlsym) - type-int+ - is return type of native function, it
       can be type-int+ for integers, type-string for string, etc.
-      available types you can check in otus/pinvoke.scm
+      available types you can check in otus/ffi.scm
  * third argument is function name string. you must export this
       function from your code to make it accessible from OL
- * next dlsym args is argument types for native function, pinvoke
+ * next dlsym args is argument types for native function, ffi
       will try to convert arguments of sample_add lambda to this type.
 
 e) well, now you can freely use your native function like this for example
       '(print (sample_add 1 2))'
 
-More information about pinvoke you can get in source files
+More information about ffi you can get in source files
     lib/sqlite.scm
     lib/opengl.scm and OpenGL/version-x-x.scm
     lib/winapi.scm

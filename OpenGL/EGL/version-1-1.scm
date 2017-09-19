@@ -167,7 +167,7 @@
       (r5rs core) (owl io) (owl string)
       (OpenGL ES version-1-0)
 
-      (otus pinvoke) (lib platform) (lib x11)
+      (otus ffi) (lib platform) (lib x11)
       (owl interop) (owl list))
 
 (begin
@@ -211,7 +211,7 @@
 ;         (function (GetProcAddress (c-string name))))
 ;      (if function
 ;      (lambda args
-;         (exec pinvoke function rtty args)))))
+;         (exec ffi function rtty args)))))
 ;
 
 

@@ -98,8 +98,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 
 #	define HAS_SOCKETS 0
 #	define HAS_DLOPEN  0
-#	define HAS_PINVOKE 0
 #	define HAS_STRFTIME 0 // why?
+
+// turn off ffi features for web
+#	define OLVM_FFI 0
 #endif
 
 #ifdef __ANDROID__
@@ -359,8 +361,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #define HAS_CALLBACKS HAS_DLOPEN
 #endif
 
-#ifndef HAS_PINVOKE
-#define HAS_PINVOKE HAS_DLOPEN // pinvoke (for dlopen/dlsym) support
+#ifndef OLVM_FFI
+#define OLVM_FFI HAS_DLOPEN // ffi (for dlopen/dlsym) support
 #endif
 
 
@@ -895,10 +897,10 @@ postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 #define TCOMPLEX                    (43)
 #define TINEXACT                    (44)  // IEEE-754
 
-// pinvoke types:
+// ffi types:
 #define TVOID                       (48)
 #define TVPTR                       (49) // void*, only RAW, can't be 0
-#define TUSERDATA                   (62) // only for pinvoke, must be RAW, can have 0
+#define TUSERDATA                   (62) // only for ffi, must be RAW, can have 0
 #define TLONG                       (50) // 32 for 32-bit architecture, 64 for 64-bit
 
 #define TINT16                      (51)
@@ -1890,13 +1892,12 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
 #if HAS_CALLBACKS
-
+static
 long callback(OL* ol, int id, int_t* argi
 	#if __amd64__
 		, double* argf, int_t* rest
 	#endif
 	);
-#include "callback.c"
 
 #endif
 
@@ -2311,7 +2312,7 @@ loop:;
 		goto apply; // ???
 
 	// free commands
-	#ifdef HAS_PINVOKE
+	#ifdef OLVM_FFI
 	/*		case 33: { // IN ref-atom, len
 		int len = untoi(A1);
 		word* address = car (A0);
@@ -4876,7 +4877,7 @@ OL_run(OL* handle, int argc, char** argv)
 	word userdata = handle->R[4];
 	{
 		word* fp = handle->heap.fp;
-//#if !EMBEDDED_VM
+
 		argv += argc - 1;
 		for (ptrdiff_t i = argc; i > 1; i--, argv--) {
 			char *pos = (char*)(fp + 1);
@@ -4887,7 +4888,7 @@ OL_run(OL* handle, int argc, char** argv)
 			if (length > 0) // если есть что добавить
 				userdata = (word) new_pair (new_bytevector(TSTRING, length), userdata);
 		}
-//#endif
+
 		handle->heap.fp = fp;
 	}
 	handle->R[4] = userdata;
@@ -4900,19 +4901,20 @@ OL_run(OL* handle, int argc, char** argv)
 	word* ptrs = (word*) heap->begin;
 	int nobjs = hdrsize(ptrs[0]) - 1;
 
-	// точка входа в программу - это последняя лямбда загруженного образа (λ (args))
+	// точка входа в программу - последняя лямбда загруженного образа (λ (args))
 	// thinkme: может стоит искать и загружать какой-нибудь main() ?
 	word* this = (word*) ptrs[nobjs];
 
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
 
-	// все готово для выполнения главного цикла виртуальной машины
+	// теперь все готово для запуска главного цикла виртуальной машины
 	ol->this = this;
 	ol->arity = acc;
 
 	return runtime(handle);
 }
 
-#if HAS_PINVOKE
-#	include "pinvoke.c"
+// Foreign Function Interface support code
+#if OLVM_FFI || HAS_CALLBACKS
+#	include "ffi.c"
 #endif

@@ -76,7 +76,7 @@ private:
 	ol_t* vm;
 
 public:
-	OL(unsigned char* language) { vm = ol_new(language, 0); }
+	OL(unsigned char* language) { vm = OL_new(language); }
 	virtual ~OL() { OL_free(vm); }
 
 
@@ -116,7 +116,9 @@ typedef struct ol_t OL;
 
 // #define HAS_UNSAFES 0
 // #define HAS_SANDBOX 0
-// #define HAS_CALLBACKS 0
+
+// #define OLVM_FFI 0
+// #define OLVM_CALLABLES 0
 
 //-- end of header
 #ifdef __cplusplus

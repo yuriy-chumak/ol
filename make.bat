@@ -169,7 +169,7 @@ gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     src/olvm.c tests/vm.c -o "test-vm.exe" -lws2_32 -O2 -g2 -m64
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
-    src/olvm.c src/repl.o tests/pinvoke.c -o "test-pinvoke.exe" -lws2_32 -O2 -g2 -m64
+    src/olvm.c src/repl.o tests/ffi.c -o "test-ffi.exe" -lws2_32 -O2 -g2 -m64
 
 
 :: VM internal tests
@@ -177,9 +177,9 @@ test-vm.exe
 if errorlevel 1 goto fail
 
 :: PInvoke tests
-echo|set /p=Testing tests\pinvoke.scm ...
-test-pinvoke.exe tests/pinvoke.scm > C:\TEMP\out
-fc C:\TEMP\out tests/pinvoke.scm.ok > nul
+echo|set /p=Testing tests\ffi.scm ...
+test-ffi.exe tests/ffi.scm > C:\TEMP\out
+fc C:\TEMP\out tests/ffi.scm.ok > nul
 if errorlevel 1 (
    echo. Failed.
    goto fail

@@ -2,7 +2,7 @@
 
 (import (lib opengl))
 (import (otus random!))
-(import (otus pinvoke))
+(import (otus ffi))
 (import (lib newton))
 
 (define (gettimeofday) (syscall 96 #f #f #f))

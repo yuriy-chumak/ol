@@ -3,7 +3,7 @@
    (import (r5rs core)
            (owl string)
            (owl math) (owl io) (owl list) (owl list-extra)
-           (otus pinvoke))
+           (otus ffi))
    (export
       ; colors:
       BLACK BLUE GREEN CYAN RED MAGENTA BROWN GREY DARKGREY LIGHTBLUE LIGHTGREEN LIGHTCYAN LIGHTRED LIGHTMAGENTA YELLOW WHITE

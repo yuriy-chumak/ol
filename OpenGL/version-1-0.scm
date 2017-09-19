@@ -2,7 +2,7 @@
 
 ; OpenGL base profile implementation
 (define-library (OpenGL version-1-0)
- (import (otus lisp) (otus pinvoke))
+ (import (otus lisp) (otus ffi))
  (export
 
    GL_VERSION_1_0
@@ -905,7 +905,7 @@
    GL_LINE GL_FILL GL_POINT
 
    (exports (otus lisp))
-   (exports (otus pinvoke))
+   (exports (otus ffi))
 )
 ; ============================================================================
 ; == implementation ==========================================================
@@ -1772,7 +1772,7 @@
       (if function
       (lambda args
          ;(print "> " name)
-         (exec pinvoke function rtty args)))))
+         (exec ffi function rtty args)))))
 
 ; Ð¾ÑÑ‚Ð°Ð»ÑŒÐ½Ñ‹Ðµ WGL/GLX/... Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸
 (define Display* type-void*)
