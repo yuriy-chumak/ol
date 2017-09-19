@@ -7,7 +7,7 @@
 (define a (exact->inexact 1))
 (define b (exact->inexact 7))
 
-(print "a + 7 = " (fadd a b))
-(print "a - 7 = " (fsub a b))
-(print "a * 7 = " (fmul a b))
-(print "a / 7 = " (fdiv a b))
+(print "1 + 7 = " (fadd a b))
+(print "1 - 7 = " (fsub a b))
+(print "1 * 7 = " (fmul a b))
+(print "1 / 7 = " (fdiv a b))

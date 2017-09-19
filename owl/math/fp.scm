@@ -5,6 +5,7 @@
 (define-library (owl math fp)
    (export 
       fsqrt fsin fcos
+      ffloor fceil ffrac
 
       fadd fmul fsub fdiv
       )
@@ -16,6 +17,9 @@
       (define (fsqrt num) (vm:fpu1 0 num))
       (define (fsin num)  (vm:fpu1 1 num))
       (define (fcos num)  (vm:fpu1 2 num))
+      (define (ffloor num) (vm:fpu1 3 num))
+      (define (fceil num) (vm:fpu1 4 num))
+      (define (ffrac num) (vm:fpu1 5 num))
            
       (define (fadd a b) (vm:fpu2 0 a b))
       (define (fmul a b) (vm:fpu2 1 a b))

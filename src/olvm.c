@@ -4385,6 +4385,17 @@ loop:;
 		case 2: // fcos
 			*(double*)&car(A2) = cos(a);
 			break;
+		case 3: // ffloor
+			*(double*)&car(A2) = floor(a);
+			break;
+		case 4: // fceil
+			*(double*)&car(A2) = ceil(a);
+			break;
+		case 5: { // ffrac
+			double i;;
+			*(double*)&car(A2) = modf(a, &i);
+			break;
+		}
 		default:
 			A2 = IFALSE;
 			break;

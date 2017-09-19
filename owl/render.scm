@@ -14,7 +14,7 @@
       (owl rlist)
       (owl interop)
       (owl lazy)
-      (owl math)
+      (owl math) (owl math fp)
       (only (owl fasl) sub-objects)
       (only (owl vector) byte-vector? vector? vector->list)
       (only (owl math) render-number number?)
@@ -109,9 +109,8 @@
 
                ; inexact numbers (render up to 4 digit numbers)
                ((inexact? obj)
-                  (let*((obj  (inexact->exact obj))
-                        (int  (floor obj))
-                        (frac (floor (* (- obj int) 100000))))
+                  (let*((int  (inexact->exact (ffloor obj)))
+                        (frac (inexact->exact (ffloor (fmul (ffrac obj) (exact->inexact 100000))))))
                      (render int (cons #\. (append (reverse
                      (let loop ((i frac) (n 10000) (l #null))
                         (cond
