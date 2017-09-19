@@ -4773,9 +4773,9 @@ OL_new(unsigned char* bootstrap)
 #endif
 
 	// а теперь поработаем с сериализованным образом:
-	word nwords = 0;
-	word nobjs = count_fasl_objects(&nwords, bootstrap); // подсчет количества слов и объектов в образе
-	nwords += (nobjs + 2); // for ptrs
+	word words = 0;
+	word nobjs = count_fasl_objects(&words, bootstrap); // подсчет количества слов и объектов в образе
+	words += (nobjs + 2); // for ptrs
 
 	word *fp;
 	heap_t* heap = &handle->heap;
@@ -4786,7 +4786,7 @@ OL_new(unsigned char* bootstrap)
 
 	// в соответствии со стратегией сборки 50*1.3-33*0.9, и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
-	int required_memory_size = nwords*2 + MEMPAD;
+	int required_memory_size = words*2 + MEMPAD;
 
 	fp = heap->begin = (word*) malloc((required_memory_size + GCPAD(NR)) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
