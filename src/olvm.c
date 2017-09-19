@@ -750,8 +750,7 @@ typedef struct ol_t OL;
 typedef uintptr_t word;
 
 // descriptor format
-// заголовок объекта, то, что лежит у него в ob[0] (*ob)
-// object headers are further
+// заголовок объекта, то, что лежит у него в ob[0] (*ob):
 //  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1 (почему?, а для GC!)
 //   '----------| '--||'-| '----|
 //              |    ||  |      '-----> object type
@@ -759,17 +758,15 @@ typedef uintptr_t word;
 //              |    |'---------------> rawness bit (raw objects have no decriptors(pointers) in them)
 //              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
 //              '---------------------> object size in words
-//  первый бит тага я заберу, наверное, для объектров, которые указывают слева направо, нарушая
-//	общий порядок. чтобы можно было их корректно перемещать в памяти при gc()
 //
-// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект
+// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект:
 //                       .------------> 24-bit payload if immediate
 //                       |      .-----> type tag if immediate
 //                       |      |.----> immediateness
 //   .-------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
 //  [... pppppppp pppppppp tttttti0]
-//   '--------------------------|
-//                              '-----> 4- or 8-byte aligned pointer if not immediate
+//   '----------------------------|
+//                                '-----> 4- or 8-byte aligned pointer if not immediate
 //      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
@@ -823,14 +820,18 @@ struct __attribute__ ((aligned(sizeof(word)), packed)) object_t
 };
 
 // ------------------------------------------------------
+// PUBLIC API: (please, checkout the olvm.h)
 
 OL*  OL_new (unsigned char* bootstrap);
 void OL_free(OL* ol);
 word OL_run(struct ol_t* ol, int argc, char** argv);
 
+// notification interface:
 typedef void (exit_t)(int status);
-exit_t*
-      OL_atexit(struct ol_t* ol, exit_t* exit);
+exit_t* OL_atexit(struct ol_t* ol, exit_t* exit);
+
+typedef void (postgc_t)(int status);
+postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 
 // ------------------------------------------------------
 #define W                           sizeof (word)
@@ -4851,6 +4852,14 @@ exit_t* OL_atexit(struct ol_t* ol, exit_t* exit)
 	ol->exit = exit;
 	return current;
 }
+
+postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc)
+{
+	postgc_t* current = ol->exit;
+//	ol->postgc = postgc;
+	return current;
+}
+
 
 // ===============================================================
 word
