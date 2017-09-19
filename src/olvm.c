@@ -499,6 +499,7 @@ void *dlopen(const char *filename, int mode/*unused*/)
 	// Do not let Windows display the critical-error-handler message box */
 	// UINT uMode = SetErrorMode( SEM_FAILCRITICALERRORS );
 
+	UINT errorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 	if (filename == 0) {
 		hModule = GetModuleHandle(NULL);
 	}
@@ -508,10 +509,12 @@ void *dlopen(const char *filename, int mode/*unused*/)
 		 * to UNIX's search paths (start with system folders instead of current
 		 * folder).
 		 */
+		SetErrorMode(errorMode | SEM_FAILCRITICALERRORS);
 		hModule = LoadLibraryEx((LPSTR)filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 	}
 
 	dlerrno = GetLastError();
+	SetErrorMode(errorMode);
 	return hModule;
 }
 
