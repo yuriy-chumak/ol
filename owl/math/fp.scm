@@ -8,6 +8,7 @@
       ffloor fceil ffrac
 
       fadd fmul fsub fdiv
+      fmax fmin
       )
 
    (import 
@@ -25,4 +26,6 @@
       (define (fmul a b) (vm:fpu2 1 a b))
       (define (fsub a b) (vm:fpu2 2 a b))
       (define (fdiv a b) (vm:fpu2 3 a b))
+      (define (fmax a b) (vm:fpu2 4 a b))
+      (define (fmin a b) (vm:fpu2 5 a b))
 ))

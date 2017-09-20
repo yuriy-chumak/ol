@@ -14,7 +14,7 @@
       (owl rlist)
       (owl interop)
       (owl lazy)
-      (owl math) (owl math fp)
+      (owl math)
       (only (owl fasl) sub-objects)
       (only (owl vector) byte-vector? vector? vector->list)
       (only (owl math) render-number number?)
@@ -31,6 +31,12 @@
 
       (define lp #\()
       (define rp #\))
+
+      ; hack: do not include full (owl math fp) library and save 1k for image
+      ;       we use only this three functions:
+      (define (fmul a b) (vm:fpu2 1 a b))
+      (define (ffloor num) (vm:fpu1 3 num))
+      (define (ffrac num) (vm:fpu1 5 num))
 
       ;; this could be removed?
       (define (make-renderer meta)
@@ -109,6 +115,7 @@
 
                ; inexact numbers (render up to 4 digit numbers)
                ((inexact? obj)
+                  ; todo: move this into (owl math) library
                   (let*((int  (inexact->exact (ffloor obj)))
                         (frac (inexact->exact (ffloor (fmul (ffrac obj) (exact->inexact 100000))))))
                      (render int (cons #\. (append (reverse

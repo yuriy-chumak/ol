@@ -4449,6 +4449,12 @@ loop:;
 		case 3: // fdiv
 			*(double*)&car(A3) = a / b;
 			break;
+		case 4: //fmax
+			*(double*)&car(A3) = max(a, b);
+			break;
+		case 5: //fmin
+			*(double*)&car(A3) = max(a, b);
+			break;
 		default:
 			A3 = IFALSE;
 			break;
