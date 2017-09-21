@@ -355,6 +355,17 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #include <emscripten.h>
 #endif
 
+// avoiding "undefined reference to `max'/`min' on some systems"
+#if OLVM_INEXACTS
+#	ifndef min
+#	define min(a,b)  (((a) < (b)) ? (a) : (b))
+#	endif
+
+#	ifndef max
+#	define max(a,b)  (((a) > (b)) ? (a) : (b))
+#	endif
+#endif
+
 
 // FFI support:
 #ifndef OLVM_FFI
