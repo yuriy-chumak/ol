@@ -7,8 +7,7 @@
    (export call? var? value-of sexp->ast mkcall mklambda mkvarlambda mkvar mkval)
 
    (import
-      (r5rs core)
-      (r5rs srfi-1)
+      (r5rs full)
 
       (owl list-extra)
       (owl math)

@@ -30,6 +30,6 @@
    srfi-87)
 
 (begin
-   (define srfi-87 #true)
+   (setq srfi-87 #true)
    
 ))

@@ -20,7 +20,7 @@
 )
 
 (begin
-   (define srfi-1 #true)
+   (setq srfi-1 #true)
 
    ; cons a d -> pair   *[r5rs]
    ;(cons 'a '())        => (a))
