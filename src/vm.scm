@@ -8,11 +8,13 @@
 
 (define-library (src vm)
    (export
+      ; todo: move primops table to lang/primops deu to this is compiler related staff
       primops
       multiple-return-variable-primops
       variable-input-arity-primops
       special-bind-primops
 
+      apply apply/cc arity-error
 
       ; commands
       GOTO APPLY APPLY/CC RET SYS RUN ARITY-ERROR
@@ -45,7 +47,9 @@
       vm:fpu1 vm:fpu2
 
       FF-APPLY
-      TUPLE-APPLY)
+      TUPLE-APPLY
+
+      call-with-current-continuation)
 
    (begin
 ;     пример выполнение raw-кода прямо в интерпретаторе:
@@ -361,4 +365,16 @@
 ;               (eq? t type-fix+)
 ;               (eq? t type-fix-)
 ;               )))
+
+
+      (setq call-with-current-continuation
+         ('_sans_cps (lambda (k f)
+                        (f k (lambda (c . x) (apply/cc k x))))))
+                        ; speeduped version:
+                        ;(f k
+                        ;   (ifary (lambda (c a) (k a))
+                        ;   (ifary (lambda (c a b) (k a b))
+                        ;   (ifary (lambda (c . x) (apply/cc k x))
+                        ;   (lambda () (arity-error)))))))))
+
 ))

@@ -18,7 +18,8 @@
       )
 
    (import
-      (r5rs full)
+      (r5rs core)
+      (r5rs srfi-1)
 
       (owl parse)
       (owl math)

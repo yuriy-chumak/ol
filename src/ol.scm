@@ -33,7 +33,10 @@
          (equal? (car lib) '(src olvm)))
       *libraries*))
 
+; надо предварительно загрузить все зависимости r5rs core,
+; иначе импорт сбойнет
 (import (src vm))   ;; команды виртуальной машины
+(import (r5rs srfi-16))   ;; case-lambda для core
 (import (r5rs core)) ;; базовый языковый набор ol
 
 ;; forget everhything except these and core values (later list also them explicitly)

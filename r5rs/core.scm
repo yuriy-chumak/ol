@@ -1,6 +1,8 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
 (define-library (r5rs core)
-   (import (src vm))
+   (import
+      (src vm) ; virtual machine codes
+      (r5rs srfi-16)) ; case-lambda
    (begin
 
       ; basic Otus Lisp elements:
@@ -18,8 +20,7 @@
       ; tuple-apply ff-apply
       ; ff:red ff:black ff:toggle ff:red? ff:right?
 
-
-
+      ; todo: rename "ifary" to "either"
 
       ; ========================================================================================================
       ; Scheme
@@ -37,6 +38,10 @@
       ; 1.3  Notation and terminology
       ; 1.3.1  Primitive, library, and optional features
       ; 1.3.2  Error situations and unspecified behavior
+
+      (setq runtime-error (lambda (reason info)
+         (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
+
       (define-syntax syntax-error        ; * ol specific
          (syntax-rules (runtime-error)
             ((syntax-error . stuff)
@@ -48,8 +53,9 @@
             ((assert expression ===> expectation)
                (ifeq ((lambda (x) x) expression) (quote expectation)
                   #true
-                  ;else runtime-error:
-                  (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
+                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
+
+      (setq error runtime-error)
 
       ; 1.3.3  Entry format
       ; 1.3.4  Evaluation examples
@@ -114,24 +120,6 @@
 
       ;(assert ((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6))
       ;(assert ((lambda (x y . z) z) 3 4 5 6)          ===>  (5 6))
-
-
-      ; http://srfi.schemers.org/srfi-16/srfi-16.html
-      ; srfi syntex: (case-lambda ...
-      (define-syntax case-lambda
-         (syntax-rules ()
-            ((case-lambda)
-               (lambda () (vm:new-raw-object TBYTECODE `(,ARITY-ERROR)))) ; arity-error (todo: change to runtime-error)
-            ; ^ should use syntax-error instead, but not yet sure if this will be used before error is defined
-            ((case-lambda (formals . body))
-               ;; downgrade to a run-of-the-mill lambda
-               (lambda formals . body))
-            ((case-lambda (formals . body) . rest)
-               ;; make a list of options to be compiled to a chain of code bodies w/ jumps
-               ;; note, could also merge to a jump table + sequence of codes, but it doesn't really matter
-               ;; because speed-sensitive stuff will be compiled to C where this won't matter
-               (ifary (lambda formals . body)
-                  (case-lambda . rest)))))
 
       ; -------------------
       ; 4.1.5  Conditionals
@@ -879,8 +867,7 @@
             (if (null? l)
                n
                (values-apply (vm:add n 1) ; use internal vm math, not math library
-                  (lambda (n carry)
-                     ;(if carry (runtime-error "Too long list to fit in fixnum"))
+                  (lambda (n carry) ; theoretically impossible case: (if carry (runtime-error "Too long list to fit in fixnum"))
                      (loop n (cdr l)))))))
 
       (assert (length '(a b c))                      ===>  3)
@@ -1039,7 +1026,7 @@
       (assert (procedure? 'car)                   ===> #f)
 
       ; procedure:  (apply proc arg1 ... args)  * builtin
-      (define apply (vm:new-raw-object TBYTECODE `(,APPLY)))
+      (define apply apply) ;(vm:new-raw-object TBYTECODE `(,APPLY)))
 
       ; library procedure:  (map proc list1 list2 ...)
       ; The dynamic order in which proc is applied to the elements of the lists is unspecified.
@@ -1072,19 +1059,9 @@
        ; library procedure:  (for-each proc list1 list2 ...)
        ; library procedure:  (force promise)
 
-       ; procedure:  (call-with-current-continuation proc)
-       ; Continuation - http://en.wikipedia.org/wiki/Continuation
-       (define apply/cc (vm:new-raw-object TBYTECODE `(,APPLY/CC)))
-       (define call-with-current-continuation
-          ('_sans_cps
-             (λ (k f)
-                (f k (case-lambda
-                        ((c a) (k a))
-                        ((c a b) (k a b))
-                        ((c . x) (apply/cc k x)))))))
-
-       (define call/cc call-with-current-continuation)
-
+      ; procedure:  (call-with-current-continuation proc)  * builtin
+      (define call-with-current-continuation call-with-current-continuation)
+      (define call/cc call-with-current-continuation)
 
        ; procedure:  (values obj ...)
        ; procedure:  (call-with-values producer consumer)
@@ -1361,11 +1338,6 @@
                (if (not (equal? expression (quote result)))
                   (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
 
-      (define (runtime-error reason info)
-         (call/cc (λ (resume) (vm:sys resume 5 reason info))))
-      (define error runtime-error)
-
-
       ;; used syscalls
       (define (exec function . args) (syscall 59 function args #f))
       (define (yield)                (syscall 24 #t #false #false))
@@ -1391,7 +1363,7 @@
 ; ---------------------------
    (export
       λ
-      syntax-error assert error runtime-error
+      syntax-error assert runtime-error error
 
       if unless cond case and or
       letrec letrec* let let* let*-values lets
@@ -1403,7 +1375,7 @@
       list length append reverse
       ilist tuple tuple-case
       call-with-values define-library
-      case-lambda
+      (exports (r5rs srfi-16)) ;case-lambda
       define-values
 
       ; 6.2 (numbers)
