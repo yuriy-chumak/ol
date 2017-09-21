@@ -37,7 +37,7 @@ CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
 
 
 ifeq ($(UNAME),Linux)
-L := $(if HAS_DLOPEN, -ldl)
+L := $(if HAS_DLOPEN, -ldl -lm)
 endif
 
 ifeq ($(UNAME),FreeBSD)
