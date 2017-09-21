@@ -4,7 +4,6 @@
       lref lset ldel length
       led ledn lins
       take drop lrange; iota
-      list-ref
       list-tail
       repeat
       split ;; lst n → head tail
@@ -17,13 +16,7 @@
       (owl interop))
 
    (begin
-      (define (lref lst pos)
-         (cond
-            ((null? lst) (runtime-error "lref: out of list" pos))
-            ((eq? pos 0) (car lst))
-            (else (lref (cdr lst) (- pos 1)))))
-
-      (define list-ref lref)
+      (define lref list-ref)
 
       (define (lset lst pos val)
          (cond

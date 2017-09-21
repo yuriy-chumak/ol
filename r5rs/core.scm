@@ -832,8 +832,14 @@
       (assert (pair? '#(a b))                        ===>  #f)
 
       ; procedure:  (cons obj1 obj2)    * builtin
+      (define cons cons)
+
       ; procedure:  (car pair)          * builtin
+      (define car car)
+
       ; procedure:  (cdr pair)          * builtin
+      (define cdr cdr)
+
       ; procedure:  (set-car! pair obj)
       (define (set-car! o v)
          (set-ref! o 1 v))
@@ -867,13 +873,14 @@
                (cons a (list . b)))))
 
       ; library procedure:  (length list)
+      ;  olvm notes: always returning fixnum, so can be checked by eq?, not =
       (define (length l)
          (let loop ((n 0) (l l))
             (if (null? l)
                n
-               (values-apply (vm:add n 1)
+               (values-apply (vm:add n 1) ; use internal vm math, not math library
                   (lambda (n carry)
-;                     (if carry (runtime-error ...))
+                     ;(if carry (runtime-error "Too long list to fit in fixnum"))
                      (loop n (cdr l)))))))
 
       (assert (length '(a b c))                      ===>  3)
@@ -883,16 +890,6 @@
 
 
       ; library procedure:  (append list ...)
-;      (define (app a b app)
-;         (if (null? a)
-;            b
-;            (cons (car a) (app (cdr a) b app))))
-;
-;      (define (appl l appl)
-;         (if (null? (cdr l))
-;            (car l)
-;            (app (car l) (appl (cdr l) appl) app)))
-
       (define append
          (let*((app (lambda (a b app)
                   (if (null? a)
@@ -911,12 +908,18 @@
       ; library procedure:  (reverse list)
       (define (reverse l)
          (let rev-loop ((a l) (b '()))
-         (if (null? a)
-            b
-            (rev-loop (cdr a) (cons (car a) b)))))
+            (if (null? a)
+               b
+               (rev-loop (cdr a) (cons (car a) b)))))
 
       ; library procedure:  (list-tail list k)
       ; library procedure:  (list-ref list k)
+      (define (list-ref lst pos)
+         (cond
+            ((null? lst) #false) ; temporary instead of (syntax-error "lref: out of list" pos))
+            ((eq? pos 0) (car lst))   ; use internal vm math, not math library
+            (else (list-ref (cdr lst) (values-apply (vm:sub pos 1) (lambda (n carry) n))))))
+
 
       ; library procedure:  (memq obj list)
       ; library procedure:  (memv obj list)
@@ -1454,6 +1457,9 @@
       not boolean? pair? symbol? vector? port? procedure? null? eof?
 
       value? reference?
+
+      ; 6.3.2 (pairs and lists)
+      list-ref
 
       ; ol extension:
       bytecode? function? ff?
