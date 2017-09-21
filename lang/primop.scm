@@ -1,3 +1,4 @@
+;todo: move primops from src/vm to lang/primop
 (define-library (lang primop)
 
 (export
