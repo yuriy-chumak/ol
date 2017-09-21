@@ -163,6 +163,7 @@ GOTO:EOF
 
 
 :TESTS
+call :OL
 :: Prepare the binaries
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DNAKED_VM -DEMBEDDED_VM ^
@@ -176,7 +177,7 @@ gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
 test-vm.exe
 if errorlevel 1 goto fail
 
-:: PInvoke tests
+:: FFI tests
 echo|set /p=Testing tests\ffi.scm ...
 test-ffi.exe tests/ffi.scm > C:\TEMP\out
 fc C:\TEMP\out tests/ffi.scm.ok > nul
