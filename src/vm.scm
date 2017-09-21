@@ -60,13 +60,16 @@
 ;      '(1 . 2)
 ;      >
 
+      ; -------------------------------------------
+      ;; Список типов данных вирутальной машины
+
       (setq TFIX+              0) ; value
       (setq TFIX-             32) ; value
       (setq TINT+             40) ; reference
       (setq TINT-             41) ; reference
       (setq TRATIONAL         42) ; reference
       (setq TCOMPLEX          43) ; reference
-      (setq TINEXACT          44) ; reference, machine dependent size
+      (setq TINEXACT          44) ; reference, IEEE 754 64-bit binary
 
       (setq TPAIR              1) ; reference
       (setq TTUPLE             2) ; reference
@@ -75,34 +78,34 @@
       ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
       ; 6
       ; 7
-      (setq type-ff-black-leaf     8) ; reference ; TODO: move to 28
+      (setq type-ff-black-leaf 8) ; reference ; TODO: move to 28
       ; 9
 
-      (setq type-rlist-spine      10) ; reference
-      (setq type-vector-leaf      11) ; reference
+      (setq type-rlist-spine  10) ; reference
+      (setq type-vector-leaf  11) ; reference
 
       (setq TPORT             12) ; value
       (setq TCONST            13) ; value
 
-      (setq type-rlist-node       14) ; reference
-      (setq type-vector-dispatch  15) ; reference
+      (setq type-rlist-node   14) ; reference
+      (setq type-vector-dispatch 15) ; reference
 
       (setq TBYTECODE         16) ; reference, raw bytecode
       (setq TPROCEDURE        17) ; reference, pure function
       (setq TCLOSURE          18) ; reference, function with closures
 
-      (setq type-vector-raw       19) ; reference, raw     ; see also TBVEC in c/ovm.c
+      (setq type-vector-raw   19) ; reference, raw     ; see also TBVEC in c/ovm.c
 
       ; 20
-      (setq type-string-dispatch  21) ; reference
-      (setq TSTRINGWIDE           22) ; reference, raw
+      (setq type-string-dispatch 21) ; reference
+      (setq TSTRINGWIDE       22) ; reference, raw
       ; 23
 
       ;; transitional trees or future ffs
-      (setq type-ff               24) ; reference
-      (setq type-ff-r             25) ; reference
-      (setq type-ff-red           26) ; reference
-      (setq type-ff-red-r         27) ; reference
+      (setq type-ff           24) ; reference
+      (setq type-ff-r         25) ; reference
+      (setq type-ff-red       26) ; reference
+      (setq type-ff-red-r     27) ; reference
       ; + type-ff-red, type-ff-right
 
       ;28
@@ -114,13 +117,14 @@
       (setq TVPTR             49) ; reference,  raw
 
 
+      ; -------------------------------------------
       ;; Список кодов виртуальной машины:
-      (setq GOTO   2)
-      (setq APPLY 20)
-      (setq APPLY/CC 84)
-      (setq RET   24)
 
-      (setq ARITY-ERROR 17)
+      (setq GOTO 2) ; jmp a, nargs    call Ra with nargs args
+      ;(setq GOTO-CODE 18) ; not used for now, check (fn-type)
+      ;(setq GOTO-PROC 19) ; not used for now, check (fn-type)
+      ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
+      (setq RET   24)
 
       ; set
       (setq MOVE  9) ; move a, t:      Ra -> Rt
@@ -149,37 +153,45 @@
       (setq JAF  25)  ; jump if arity failed
       (setq JAFX 89)  ; (+ JAF (<< 1 6))) ; JAF with extra flag
 
-      ; executions
-      (setq GOTO 2) ; jmp a, nargs    call Ra with nargs args
-      ;(setq GOTO-CODE 18) ; not used for now, check (fn-type)
-      ;(setq GOTO-PROC 19) ; not used for now, check (fn-type)
-      ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
 
+      ; -------------------------------------------
+      ;; Примитивные операции/операторы
+
+      ; memory allocators
       (setq NEW 23)        ; no real vm:new command required, check rtl-primitive in (lang compile)
-      (setq NEW-OBJECT 35) (setq vm:new-object     (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
       (setq RAW-OBJECT 60) (setq vm:new-raw-object (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))
+      (setq NEW-OBJECT 35) (setq vm:new-object     (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
+                           (setq vm:new-bytecode   (lambda (bytecode) (vm:new-raw-object TBYTECODE bytecode)))
 
+      ; 
+      (setq APPLY 20)       (setq apply (vm:new-bytecode '(20)))
+      (setq ARITY-ERROR 17) (setq arity-error (vm:new-bytecode '(17)))
 
-      (setq NOP  21)
+      ; other instructions
+      (setq NOP 21)
+      (setq SYS 27)      (setq vm:sys  (vm:new-bytecode '(27 4 5 6 7 8  24 8)))
+      (setq RUN 50)      (setq vm:run  (vm:new-bytecode '(50 4 5)))
 
-      (setq SYS 27)      (setq vm:sys  (vm:new-raw-object TBYTECODE '(27 4 5 6 7 8  24 8)))
-      (setq RUN 50)      (setq vm:run  (vm:new-raw-object TBYTECODE '(50 4 5)))
-
-      (setq RAW? 48)     (setq vm:raw? (vm:new-raw-object TBYTECODE '(48 4 5    24 5)))
-      (setq CAST 22)     (setq vm:cast (vm:new-raw-object TBYTECODE '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+      (setq RAW? 48)     (setq vm:raw? (vm:new-bytecode '(48 4 5    24 5)))
+      (setq CAST 22)     (setq vm:cast (vm:new-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
 
       ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
-      (setq ADD 38)      (setq vm:add  (vm:new-raw-object TBYTECODE '(38 4 5       6 7)))
-      (setq MUL 39)      (setq vm:mul  (vm:new-raw-object TBYTECODE '(39 4 5       6 7)))
-      (setq SUB 40)      (setq vm:sub  (vm:new-raw-object TBYTECODE '(40 4 5       6 7)))
-      (setq DIV 26)      (setq vm:div  (vm:new-raw-object TBYTECODE '(26 4 5 6     7 8 9)))
-      (setq SHR 58)      (setq vm:shr  (vm:new-raw-object TBYTECODE '(58 4 5       6 7)))
-      (setq SHL 59)      (setq vm:shl  (vm:new-raw-object TBYTECODE '(59 4 5       6 7)))
+      (setq ADD 38)      (setq vm:add  (vm:new-bytecode '(38 4 5       6 7)))
+      (setq MUL 39)      (setq vm:mul  (vm:new-bytecode '(39 4 5       6 7)))
+      (setq SUB 40)      (setq vm:sub  (vm:new-bytecode '(40 4 5       6 7)))
+      (setq DIV 26)      (setq vm:div  (vm:new-bytecode '(26 4 5 6     7 8 9)))
+      (setq SHR 58)      (setq vm:shr  (vm:new-bytecode '(58 4 5       6 7)))
+      (setq SHL 59)      (setq vm:shl  (vm:new-bytecode '(59 4 5       6 7)))
 
-      (setq AND 55)      (setq vm:and  (vm:new-raw-object TBYTECODE '(55 4 5 6  24 6)))
-      (setq OR 56)       (setq vm:or   (vm:new-raw-object TBYTECODE '(56 4 5 6  24 6)))
-      (setq XOR 57)      (setq vm:xor  (vm:new-raw-object TBYTECODE '(57 4 5 6  24 6)))
+      (setq AND 55)      (setq vm:and  (vm:new-bytecode '(55 4 5 6  24 6)))
+      (setq OR 56)       (setq vm:or   (vm:new-bytecode '(56 4 5 6  24 6)))
+      (setq XOR 57)      (setq vm:xor  (vm:new-bytecode '(57 4 5 6  24 6)))
 
+      ; инструкции поддержки арифметики с плавающей точкой (inexact math)
+      (setq FPU1 33)     (setq vm:fpu1 (vm:new-bytecode '(33 4 5 6    24 6)))
+      (setq FPU2 34)     (setq vm:fpu2 (vm:new-bytecode '(34 4 5 6 7  24 7)))
+
+      ; cons:
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
       ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
@@ -189,27 +201,28 @@
       ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
       ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
       ; names for these functions, the old terms are still in use.
-      (setq CONS 51)     (setq cons    (vm:new-raw-object TBYTECODE '(51 4 5 6  24 6)))
+      (setq CONS 51)     (setq cons    (vm:new-bytecode '(51 4 5 6  24 6)))
 
-      (setq CAR 52)      (setq car     (vm:new-raw-object TBYTECODE '(52 4 5    24 5)))
-      (setq CDR 53)      (setq cdr     (vm:new-raw-object TBYTECODE '(53 4 5    24 5)))
-      (setq REF 47)      (setq ref     (vm:new-raw-object TBYTECODE '(47 4 5 6  24 6)))
+      (setq CAR 52)      (setq car     (vm:new-bytecode '(52 4 5    24 5)))
+      (setq CDR 53)      (setq cdr     (vm:new-bytecode '(53 4 5    24 5)))
+      (setq REF 47)      (setq ref     (vm:new-bytecode '(47 4 5 6  24 6)))
       
-      (setq TYPE 15)     (setq type    (vm:new-raw-object TBYTECODE '(15 4 5    24 5))) ;; get just the type bits (new)
-      (setq SIZE 36)     (setq size    (vm:new-raw-object TBYTECODE '(36 4 5    24 5))) ;; get object size (- 1)
+      (setq TYPE 15)     (setq type    (vm:new-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
+      (setq SIZE 36)     (setq size    (vm:new-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
 
-      (setq SET-REF 45)  (setq set-ref  (vm:new-raw-object TBYTECODE '(45 4 5 6 7  24 7)))
-      (setq SET-REF! 10) (setq set-ref! (vm:new-raw-object TBYTECODE '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
+      (setq SET-REF 45)  (setq set-ref  (vm:new-bytecode '(45 4 5 6 7  24 7)))
+      (setq SET-REF! 10) (setq set-ref! (vm:new-bytecode '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
 
-      (setq EQ? 54)      (setq eq?     (vm:new-raw-object TBYTECODE '(54 4 5 6  24 6)))
-      (setq LESS? 44)    (setq less?   (vm:new-raw-object TBYTECODE '(44 4 5 6  24 6)))
+      (setq EQ? 54)      (setq eq?     (vm:new-bytecode '(54 4 5 6  24 6)))
+      (setq LESS? 44)    (setq less?   (vm:new-bytecode '(44 4 5 6  24 6)))
 
       ; deprecated:
       ;(define clock   (vm:new-raw-object type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
       ; primitives
       (setq TUPLE-APPLY 32)
-      (setq FF-APPLY 49) (setq ff-apply  (vm:new-raw-object TBYTECODE '(49 4)))
+      (setq FF-APPLY 49) (setq ff-apply (vm:new-bytecode '(49 4)))
+      (setq APPLY/CC 84) (setq apply/cc (vm:new-bytecode '(84)))
 
       ;(define ff:red     (vm:new-raw-object type-bytecode '(43 4 5 6 7  8  24 8)))
       ;(define ff:black   (vm:new-raw-object type-bytecode '(42 4 5 6 7  8  24 8)))
@@ -224,11 +237,7 @@
       ;(define fxmbits     (vm:new-raw-object type-bytecode '(31 4)))
       ;(define vm:wordsize (vm:new-raw-object type-bytecode '(29 4)))
 
-      (setq vm:endianness (vm:new-raw-object TBYTECODE '(28 4)))
-
-      (setq FPU1 33) (setq vm:fpu1 (vm:new-raw-object TBYTECODE '(33 4 5 6    24 6)))
-      (setq FPU2 34) (setq vm:fpu2 (vm:new-raw-object TBYTECODE '(34 4 5 6 7  24 7)))
-
+      (setq vm:endianness (vm:new-bytecode '(28 4)))
 
       (setq primops
          ; аллокаторы

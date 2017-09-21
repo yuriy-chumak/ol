@@ -899,6 +899,7 @@ postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 #define TTHREAD                     (31) // type-thread-state
 
 // numbers (value type)
+// A FIXNUM is an exact integer that is small enough to fit in a machine word.
 #define TFIX                         (0)  // type-fix+ // todo: rename to TSHORT or TSMALL
 #define TFIXN                       (32)  // type-fix-
 // numbers (reference type)
