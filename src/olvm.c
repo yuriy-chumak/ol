@@ -900,10 +900,11 @@ postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 
 // numbers (value type)
 // A FIXNUM is an exact integer that is small enough to fit in a machine word.
-#define TFIX                         (0)  // type-fix+ // todo: rename to TSHORT or TSMALL
+// todo: rename TFIX to TSHORT or TSMALLINT, TINT to TLARGE or TLARGEINT
+#define TFIX                         (0)  // type-fix+ // small integer
 #define TFIXN                       (32)  // type-fix-
 // numbers (reference type)
-#define TINT                        (40)  // type-int+ // todo: rename to TINTEGER (?)
+#define TINT                        (40)  // type-int+ // large integer
 #define TINTN                       (41)  // type-int-
 #define TRATIONAL                   (42)
 #define TCOMPLEX                    (43)
@@ -945,17 +946,17 @@ postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 
 #define is_fix(ob)                  (is_value(ob)     && valuetype (ob) == TFIX)
 #define is_fixn(ob)                 (is_value(ob)     && valuetype (ob) == TFIXN)
-#define is_pair(ob)                 (is_reference(ob) &&  (*(word*)(ob)) == make_header(TPAIR,     3))
-#define is_npair(ob)                (is_reference(ob) &&  (*(word*)(ob)) == make_header(TINT,      3))
-#define is_npairn(ob)               (is_reference(ob) &&  (*(word*)(ob)) == make_header(TINTN,     3))
-#define is_rational(ob)             (is_reference(ob) &&  (*(word*)(ob)) == make_header(TRATIONAL, 3))
-#define is_complex(ob)              (is_reference(ob) &&  (*(word*)(ob)) == make_header(TCOMPLEX,  3))
+#define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TPAIR,     3))
+#define is_npair(ob)                (is_reference(ob) && (*(word*) (ob)) == make_header(TINT,      3))
+#define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
+#define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
+#define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
 
 #define is_string(ob)               (is_reference(ob) &&   reftype (ob) == TSTRING)
 #define is_tuple(ob)                (is_reference(ob) &&   reftype (ob) == TTUPLE)
 
-#define is_vptr(ob)                 (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TVPTR, 2, 0))
-#define is_callable(ob)             (is_reference(ob) &&  (*(word*)(ob)) == make_raw_header(TCALLABLE, 2, 0))
+#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_raw_header(TVPTR,     2, 0))
+#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_raw_header(TCALLABLE, 2, 0))
 
 #define is_number(ob)               (is_fix(ob) || is_npair(ob))
 #define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
@@ -2325,18 +2326,6 @@ loop:;
 			ERROR(258, F(op), ITRUE);
 		}
 		goto apply; // ???
-
-	// free commands
-	#ifdef OLVM_FFI
-	/*		case 33: { // IN ref-atom, len
-		int len = untoi(A1);
-		word* address = car (A0);
-		A2 = new_bytevector (TBVEC, len);
-		bytecopy(address, &car(A2), len);
-
-		ip += 3; break;
-	}*/
-	#endif
 
 	case GOTO: // (10%)
 		this = (word *)A0;

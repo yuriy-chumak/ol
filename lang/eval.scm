@@ -63,11 +63,6 @@
       (define (interactive? env) (env-get env '*interactive* #false))
 
 
-      (define (name->func name)
-         (some
-            (λ (x) (if (eq? (ref x 1) name) (ref x 5) #false))
-            primops))
-
       (define (debug env . msg)
          (if (env-get env '*debug* #false)
             (print* msg)))

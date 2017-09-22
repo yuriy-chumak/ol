@@ -481,103 +481,23 @@
       ;; ---------------------------
       ;; 6.1  Equivalence predicates
 
-      ; procedure:  (eqv? obj1 obj2)
-      (define (eqv? a b)
-         (cond
-            ((eq? a b)
-               #true)
-;            ((symbol? a) #false) ; would have been eq?, because they are interned
-;            ((pair? a)
-;               (if (pair? b)
-;                  (and (equal? (car a) (car b)) (equal? (cdr a) (cdr b)))
-;                  #false))
-;            (else
-;               (let ((sa (size a)))
-;                  (cond
-;                     ; a is immediate -> would have been eq?
-;                     ((not sa)   #false)
-;                     ; same size
-;                     ((eq? sa (size b))
-;                        (let ((ta (type a)))
-;                           ; check equal types
-;                           (if (eq? ta (type b))
-;                              (if (vm:raw? a)
-;                                 ; equal raw objects, check bytes
-;                                 (lets
-;                                    ((ea (size a)) ; raw objects may have padding bytes, so recheck the sizes
-;                                     (eb (size b)))
-;                                    (if (eq? ea eb)
-;                                       (if (eq? ea 0)
-;                                          #true
-;                                          (eq-bytes a b (- ea 1)))
-;                                       #false))
-;                                 ; equal ntuples, check fields
-;                                 (eq-fields a b equal? sa))
-;                              #false)))
-;                     (else #false))))))
-            (else #false)))
-      ; tbd.
+      ; procedure:  (eqv? obj1 obj2)  * (owl equal)
 
-
-      ; --------------------------
-      ; procedure: (eq? obj1 obj2)    * builtin
-      ;
-      ; Rationale: It will usually be possible to implement `eq?' much more efficiently than `eqv?',
-      ; for example, as a simple pointer comparison instead of as some more complicated operation.
-      ; One reason is that it may not be possible to compute `eqv?' of two numbers in constant time,
-      ; whereas `eq?' implemented as pointer comparison will always finish in constant time. `Eq?'
-      ; may be used like `eqv?' in applications using procedures to implement objects with state
-      ; since it obeys the same constraints as `eqv?'.
-
-      ; library procedure: (equal? obj1 obj2)
-      ;
-
-;      (define-syntax (eqv? a b)
-;         (cond
-;            ((eq? a b)
-;               #true)
-;;            ((symbol? a) #false) ; would have been eq?, because they are interned
-;            ((pair? a)
-;               (if (pair? b)
-;                  (and (equal? (car a) (car b)) (equal? (cdr a) (cdr b)))
-;                  #false))
-;            (else
-;               (let ((sa (size a)))
-;                  (cond
-;                     ; a is immediate -> would have been eq?
-;                     ((not sa)   #false)
-;                     ; same size
-;                     ((eq? sa (size b))
-;                        (let ((ta (type a)))
-;                           ; check equal types
-;                           (if (eq? ta (type b))
-;                              (if (vm:raw? a)
-;                                 ; equal raw objects, check bytes
-;                                 (lets
-;                                    ((ea (size a)) ; raw objects may have padding bytes, so recheck the sizes
-;                                     (eb (size b)))
-;                                    (if (eq? ea eb)
-;                                       (if (eq? ea 0)
-;                                          #true
-;                                          (eq-bytes a b (- ea 1)))
-;                                       #false))
-;                                 ; equal ntuples, check fields
-;                                 (eq-fields a b equal? sa))
-;                              #false)))
-;                     (else #false))))))
-;            (else #false)))
+      ; procedure:  (eq? obj1 obj2)   * builtin
+      
+      ; library procedure:  (equal? obj1 obj2)  * (owl equal)
 
       ;; 6.2  Numbers
       ; -------------------------------
       ; This data types related to olvm
       ;     - not a part of r5rs -
-      (define type-fix+              0) ; value
-      (define type-fix-             32) ; value
-      (define type-int+             40) ; reference
-      (define type-int-             41) ; reference
-      (define type-rational         42) ; reference
-      (define type-complex          43) ; reference
-      (define type-inexact          44) ; reference
+      (define type-fix+             TFIX+)
+      (define type-fix-             TFIX-)
+      (define type-int+             TINT+)
+      (define type-int-             TINT-)
+      (define type-rational         TRATIONAL)
+      (define type-complex          TCOMPLEX)
+      (define type-inexact          TINEXACT)
 
       ; 6.2.1  Numerical types
       ; 6.2.2  Exactness
@@ -612,10 +532,22 @@
                 (type-complex #true))))
 
       ; procedure:  (real? obj)
-      (define real? complex?)
+      (define (real? a)
+         (complex? a))
+
+      ; procedure:  (exact? z)
+      (define (exact? a)
+         (real? a))
+
+      ; procedure:  (inexact? z)
+      (define (inexact? a)
+         (case (type a)
+            (type-inexact #true)))
 
       ; procedure:  (number? obj)
-      (define number? real?)
+      (define (number? a)
+         (or (exact? a) (inexact? a)))
+
 
       (assert (complex? 3+4i)                        ===>  #t)
       (assert (complex? 3)                           ===>  #t)
@@ -627,12 +559,6 @@
       (assert (integer? 3+0i)                        ===>  #t)
       (assert (integer? 3.0)                         ===>  #t)
       (assert (integer? 8/4)                         ===>  #t)
-
-      ; procedure:  (exact? z)
-      (define exact? number?)
-
-      ; procedure:  (inexact? z)
-      (define (inexact? a) (eq? (type a) type-inexact))
 
       ; *** declared in (r5rs math), (r5rs math-extra)
       ; procedure:  (= z1 z2 z3 ...) <- (r5rs math)
@@ -1059,14 +985,30 @@
        ; library procedure:  (for-each proc list1 list2 ...)
        ; library procedure:  (force promise)
 
-      ; procedure:  (call-with-current-continuation proc)  * builtin
-      (define call-with-current-continuation call-with-current-continuation)
+      ; procedure:  (call-with-current-continuation proc)
+      (define call-with-current-continuation
+         ('_sans_cps (lambda (k f)
+                        ;(f k (lambda (c . x) (apply/cc k x))))))
+                        ; speeduped version:
+                        (f k (case-lambda
+                           ((c a) (k a))
+                           ((c a b) (k a b))
+                           ((c . x) (apply/cc k x)))))))
+
       (define call/cc call-with-current-continuation)
 
-       ; procedure:  (values obj ...)
-       ; procedure:  (call-with-values producer consumer)
-       ; procedure:  (dynamic-wind before thunk after)
-       ;
+      ; procedure:  (values obj ...)          * builtin /special
+
+      ; procedure:  (call-with-values producer consumer)
+      (define-syntax call-with-values
+         (syntax-rules ()
+            ((call-with-values (lambda () exp) (lambda (arg ...) body))
+               (values-apply exp (lambda (arg ...) body)))
+            ((call-with-values thunk (lambda (arg ...) body))
+               (values-apply (thunk) (lambda (arg ...) body)))))
+
+      ; procedure:  (dynamic-wind before thunk after)
+      ;
 
       ;; 6.5  Eval
       ; ...
@@ -1166,18 +1108,6 @@
             ((ilist a) a)
             ((ilist a . b)
                (cons a (ilist . b)))))
-
-
-      (define-syntax call-with-values
-         (syntax-rules ()
-            ((call-with-values (lambda () exp) (lambda (arg ...) body))
-               (values-apply exp (lambda (arg ...) body)))
-            ((call-with-values thunk (lambda (arg ...) body))
-               (values-apply (thunk) (lambda (arg ...) body)))))
-
-
-
-
 
 
       (define-syntax define-library
