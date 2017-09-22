@@ -2,7 +2,7 @@
 (define-library (lang primop)
 
 (export
-      verbose-vm-error primop-of primitive?
+      primop-of primitive?
       primop-name ;; primop → symbol | primop
       special-bind-primop? variable-input-arity?
       multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?
@@ -95,26 +95,5 @@
                   ((eq? in n) #true)
                   ((eq? in 'any) #true)
                   (else #false)))))
-
-
-      (define (verbose-vm-error opcode a b)
-         (cons "error: "
-         (if (eq? opcode ARITY-ERROR)  ;; arity error, could be variable
-               ; this is either a call, in which case it has an implicit continuation,
-               ; or a return from a function which doesn't have it. it's usually a call,
-               ; so -1 to not count continuation. there is no way to differentiate the
-               ; two, since there are no calls and returns, just jumps.
-            `(function ,a got did not want ,(- b 1) arguments)
-         (if (eq? opcode CAR)
-            `(trying to get car of a non-pair ,a)
-         (if (eq? opcode CDR)
-            `(trying to get cdr of a non-pair ,a)
-         `(,(primop-name opcode) reported error ": " ,a " " ,b)
-         )))))
-         ;   ;((eq? opcode 52)
-         ;   ;   `(trying to get car of a non-pair ,a))
-         ;   (else
-         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
-
 
 ))

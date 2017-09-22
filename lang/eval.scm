@@ -67,6 +67,26 @@
          (if (env-get env '*debug* #false)
             (print* msg)))
 
+      (define (verbose-vm-error opcode a b)
+         (cons "error: "
+            (case opcode
+               (ARITY-ERROR  ;; arity error, could be variable
+                              ; this is either a call, in which case it has an implicit continuation,
+                              ; or a return from a function which doesn't have it. it's usually a call,
+                              ; so -1 to not count continuation. there is no way to differentiate the
+                              ; two, since there are no calls and returns, just jumps.
+                  `(function ,a got did not want ,(- b 1) arguments))
+               (CAR
+                  `(trying to get car of a non-pair ,a))
+               (CDR
+                  `(trying to get cdr of a non-pair ,a))
+               (else
+                  `(,(primop-name opcode) reported error ": " ,a " " ,b)))))
+         ;   ;((eq? opcode 52)
+         ;   ;   `(trying to get car of a non-pair ,a))
+         ;   (else
+         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
+
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
       (define *src-olvm*
          (fold
