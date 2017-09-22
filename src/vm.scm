@@ -1,4 +1,4 @@
-;; vm rimops
+;; vm primops
 
 ;; todo: convert tuple to variable arity
 ;; todo: convert arity checks 17 -> 25
@@ -8,13 +8,12 @@
 
 (define-library (src vm)
    (export
-      ; todo: move primops table to lang/primops deu to this is compiler related staff
-      primops
-      multiple-return-variable-primops
-      variable-input-arity-primops
-      special-bind-primops
-
       apply apply/cc arity-error
+
+      *primops* ; global list of primitive operations with parameters
+      multiple-return-variable-primops
+      variable-input-arity-primops special-bind-primops
+
 
       ; commands
       GOTO APPLY APPLY/CC RET SYS RUN ARITY-ERROR
@@ -27,7 +26,6 @@
       ; todo: change TFIX to TSHORT, TINT to TLONG
       ; or to TINTEGER, TBIGNUM
       ; types
-      ; TATOMIC+ TATOMIC- TINTEGER+ TINTEGER-
       TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
       TPAIR TTUPLE TSTRING TSYMBOL
       TBYTECODE TPROCEDURE TCLOSURE
@@ -41,13 +39,16 @@
       SHR SHL
       AND OR XOR
 
+      CAST TYPE SIZE FPU1 FPU2
+
       NEW    ; used by (lang compile)
-      vm:run ; used by (lang threading)
+      RAW-OBJECT NEW-OBJECT
+      RAW?
 
-      vm:fpu1 vm:fpu2
+      ; internal, don't act as primop
+      vm:run vm:sys
 
-      FF-APPLY
-      TUPLE-APPLY
+      FF-APPLY TUPLE-APPLY
 
       call-with-current-continuation)
 
@@ -239,7 +240,7 @@
 
       (setq vm:endianness (vm:new-bytecode '(28 4)))
 
-      (setq primops
+      (setq *primops*
          ; аллокаторы
          (cons (vm:new TTUPLE 'vm:new-object     NEW-OBJECT  2 1 vm:new-object)       ; create reference object (vm:new-object type '(v1 .. vn))
          (cons (vm:new TTUPLE 'vm:new-raw-object RAW-OBJECT  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn)) or (vm:new-raw-object type size)
@@ -309,15 +310,6 @@
          (cons (vm:new TTUPLE 'ff:red?    41 1  1  ff:red?)
          (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
          #null))))))))))))))))))))))))))))))))))))))))))
-      ;(define *primitives* primops)
-
-
-;      (define (get-primitive name)
-;         (let loop ((p primops))
-;            (if (eq? (ref (car p) 1) name)
-;                (car p)
-;                (loop (cdr p)))))
-
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд
@@ -341,41 +333,8 @@
          (cons FF-APPLY
          #null)))
 
-;      ;; special things exposed by the vm
-;      (define (set-memory-limit n) (sys-prim 12 n #f #f))
-;      (define (get-word-size)      (sys-prim 1008 #false #false #false))
-;      (define (get-memory-limit)   (sys-prim 12 #false #false #false))
-;      (define (start-seccomp)      (sys-prim 1010 #false #false #false)) ; not enabled by defa
-;
-;      ;; stop the vm *immediately* without flushing input or anything else with return value n
-;      (define (halt n)             (sys-prim 60 n n n))
-;      ;; make thread sleep for a few thread scheduler rounds
-;      (define (set-ticker-value n) (sys-prim 1022 n #false #false))
-;      (define (wait n)
-;         (if (eq? n 0)
-;            n
-;            (let* ((n _ (fx- n 1)))
-;               (set-ticker-value 0)
-;               (wait n))))
 
-
-
-; проверку типов вынесем на уровень компилятора!
-; можно и в отдельный файл
-;      ; from interop.scm
-;      (define (interop op a b)
-;         (call/cc (λ (resume) (sys resume op a b))))
-;      (define (error reason info)
-;         (interop 5 reason info))
-;      (define (pair? x) (eq? type-pair (type x))) ; list.scm
-;      (define (fixnum? x)
-;         (let ((t (type x)))
-;            (or
-;               (eq? t type-fix+)
-;               (eq? t type-fix-)
-;               )))
-
-
+      ; the best place for call/cc is here :(
       (setq call-with-current-continuation
          ('_sans_cps (lambda (k f)
                         (f k (lambda (c . x) (apply/cc k x))))))
