@@ -5,19 +5,16 @@
       primop-of primitive?
       primop-name ;; primop → symbol | primop
       special-bind-primop? variable-input-arity?
-      multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?
-      )
+      multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?)
 
    (import
-      (r5rs core)
-      (owl list) (owl ff) (owl math)
-      (src vm))
+      (r5rs core) (src vm)
+      (owl list) (owl ff) (owl math))
 
    (begin
-
       ;; ff of opcode → wrapper
       (define prim-opcodes ;; ff of wrapper-fn → opcode
-         (for empty primops
+         (for empty *primops*
             (λ (ff node)
                (put ff (ref node 5) (ref node 2)))))
 ;      (define opcode->wrapper
@@ -43,7 +40,7 @@
          (let ((pop (vm:and pop #x3F))) ; ignore top bits which sometimes have further data
             (or
                (instruction-name pop)
-               (let loop ((primops primops))
+               (let loop ((primops *primops*))
                   (cond
                      ((null? primops) pop)
                      ((eq? pop (ref (car primops) 2))
@@ -69,7 +66,7 @@
             (λ (ff node)
                (lets ((name op in out wrapper node))
                   (put ff op (cons in out))))
-            empty primops))
+            empty *primops*))
 
       (define (opcode-arity-ok? op in out)
          (let ((node (getf primop-arities op)))
@@ -85,7 +82,7 @@
             ((node
                (some
                   (λ (x) (if (eq? (ref x 2) op) x #false))
-                  primops)))
+                  *primops*)))
             (if node node (runtime-error "Unknown primop: " op))))
 
       (define (opcode-arity-ok-2? op n)

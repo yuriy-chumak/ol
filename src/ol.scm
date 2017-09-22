@@ -19,22 +19,18 @@
  |#
 
 (print "Loading code...")
-
-; fixme: можно не вызывать, все равно не работает :)
-;(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
-
 (define build-start (time-ms))
 
 ; forget all other libraries to have them be reloaded and rebuilt
-; (src olvm) содержит список базовых элементов языка
+; виртуальная (src olvm) содержит список базовых элементов языка
 (define *libraries*
    (keep
       (λ (lib)
          (equal? (car lib) '(src olvm)))
       *libraries*))
 
-; надо предварительно загрузить все зависимости r5rs core,
-; иначе импорт сбойнет
+; предварительная загрузка зависимостей r5rs core,
+; (иначе импорт сбойнет)
 (import (src vm))   ;; команды виртуальной машины
 (import (r5rs srfi-16))   ;; case-lambda для core
 (import (r5rs core)) ;; базовый языковый набор ol
