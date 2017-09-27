@@ -47,5 +47,5 @@
                               (recursive-eq a b equal? sa)))))))))
 
    (define ≡ equal?)
-   (define eqv? equal?)
+   (define eqv? equal?) ; todo: shoule not compare the nestede lists!!!
 ))

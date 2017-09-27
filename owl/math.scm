@@ -138,6 +138,7 @@
       ;;; COMPARISON
       ;;;
 
+      ; looks like big-digits-equal? === equal?
       (define (big-digits-equal? a b)
          (cond
             ((eq? a b) #true)      ; shared tail or both empty
