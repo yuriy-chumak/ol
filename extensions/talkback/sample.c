@@ -9,6 +9,7 @@
 #if EMBEDDED_VM
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h> // memcpy
 
 #if _WIN32
 #define TALKBACK_API __declspec(dllexport)
@@ -127,7 +128,7 @@ int do_load_library(const char* thename, char** output)
 TALKBACK_API
 void *MEMCPY(void *dest, const void *src, size_t n)
 {
-	memcpy(dest, src, n);
+	return memcpy(dest, src, n);
 }
 
 int main(int argc, char** argv)

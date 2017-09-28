@@ -1,93 +1,25 @@
-;;
-;; an Otus Lisp read-eval-print loop (REPL) binary image compiler
-;;
+;(import (owl unicode))
+(import (lang eval)
+        (lang sexp)
+        (lang threading)
+        (lang intern)
 
-#| Copyright(c) 2012 Aki Helin
- | Copyright(c) 2014 - 2017 Yuriy Chumak
- |
- | This program is free software;  you can redistribute it and/or
- | modify it under the terms of the GNU General Public License as
- | published by the Free Software Foundation; either version 2 of
- | the License, or (at your option) any later version.
- | 
- | This program is distributed in the hope that it will be useful,
- | but WITHOUT ANY WARRANTY; without even the implied warranty of
- | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- | 
- | You should have received a copy of the GNU GPL along with this
- | program.           If not, see <http://www.gnu.org/licenses/>.
- |#
+        (lang env)
+        (lang macro)
+        (lang sexp)
 
-(define build-start (time-ms))
-
-; forget all other libraries to have them be reloaded and rebuilt
-; (src olvm) содержит список базовых элементов языка
-(define *libraries*
-   (keep
-      (λ (lib)
-         (equal? (car lib) '(src olvm)))
-      *libraries*))
-
-(import (src vm))   ;; команды виртуальной машины
-(import (r5rs core)) ;; базовый языковый набор ol
+        (lang ast)
+        (lang fixedpoint)
+        (lang alpha)
+        (lang cps)
+        (lang closure)
+        (lang assemble)
+        (lang compile))
+(import (owl parse)
+        (scheme misc))
 
 
-;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*libraries* *codes* *vm-args* wait stdin stdout stderr set-ticker-value build-start)
-
-
-;;;
-;;; Time for a new REPL
-;;;
-(import (src olvm))     ;; get special forms, primops and define-syntax (virtual library)
-
-;; this should later be just a sequence of imports followed by a fasl dump
-(import (r5rs core))    ;; get define, define-library, import, ... from the just loaded
-
-(define *include-dirs* '(".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
-(define *owl-names* #empty)
-(define *loaded* '())   ;; can be removed soon, was used by old ,load and ,require
-
-
-;; shared parameters, librarize later or remove if possible
-
-;; http://semver.org/lang/ru/
-(define *owl-version* "1.1")
-(define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
-(define max-object-size #xffff)  ; todo: change as dependent of word size
-
-
-(import (otus lisp))
-
-(import (lang intern))
-(import (owl parse))
-
-(import (lang gensym))
-(import (lang env))
-(import (lang macro))
-(import (lang sexp))
-
-(import (lang ast))
-(import (lang fixedpoint))
-(import (lang cps))
-(import (lang alpha))
-
-(import (lang thread))
-(import (lang assemble))
-(import (lang closure))
-(import (lang compile))
-
-
-(define error-tag "err")
-
-(define (error? x)
-   (and (tuple? x)
-      (eq? (ref x 1) error-tag)))
-
-(import (owl time))
-(import (owl fasl))
-(import (scheme misc))
-
+; ==============================================================================
 ;; fixme: should sleep one round to get a timing, and then use avg of the last one(s) to make an educated guess
 (define (sleep ms)
    (lets ((end (+ ms (time-ms))))
