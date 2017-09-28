@@ -235,7 +235,7 @@ GOTO:EOF
 :: ====================================================================================
 
 :ANDROID
-D:\Projects\Mobile\android-ndk-r10e\ndk-build.cmd
+C:\android-ndk-r10e\ndk-build.cmd
 GOTO:EOF
 
 :REMOTE

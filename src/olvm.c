@@ -111,7 +111,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 // android supports seccomp only for Lollipop and Nougat
 // https://security.googleblog.com/2016/07/protecting-android-with-more-linux.html
 #	if __ANDROID_API__ < 15
-#		define SYSCALL_PRCTL 0
+#		define HAS_SANDBOX 0
+#	endif
+#	if __mips__
+#		define HAS_SANDBOX 0
 #	endif
 #	define SYSCALL_SYSINFO 0
 #	define SYSCALL_GETRLIMIT 0
@@ -239,8 +242,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
                       // as well as all of the ISO C facilities.
 
 // http://man7.org/linux/man-pages/man7/posixoptions.7.html
-#define _BSD_SOURCE
-#define _GNU_SOURCE   // nanosleep, etc.
+#define _BSD_SOURCE 1
+#define _GNU_SOURCE 1  // nanosleep, etc.
 
 #ifdef __NetBSD__     // make all NetBSD features available
 #	ifndef _NETBSD_SOURCE
@@ -329,7 +332,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #ifdef __linux__
 #	include <sys/utsname.h> // uname
 #	include <sys/resource.h>// getrusage
-#	ifndef NO_SECCOMP
+#	if HAS_SANDBOX
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
 #	endif
