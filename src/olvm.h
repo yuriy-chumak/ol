@@ -81,7 +81,7 @@ public:
 
 
 	int run(int argc, char** argv) {
-		return (int)OL_run(argc, argv);
+		return (int)OL_run(vm, argc, argv);
 	}
 };
 #else
