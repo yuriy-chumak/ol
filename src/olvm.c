@@ -849,6 +849,8 @@ exit_t* OL_atexit(struct ol_t* ol, exit_t* exit);
 typedef void (postgc_t)(int status);
 postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
 
+int OL_setstd(struct ol_t* ol, int id, int fd);
+
 // ------------------------------------------------------
 #define W                           sizeof (word)
 #define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIX, val)
@@ -1681,6 +1683,7 @@ struct ol_t
 	// возвращает 1, если была проведена сборка
 	int (*gc)(OL* ol, int kb);
 	void (*exit)(int errorId);
+	int std[3]; // стандартные порты в/в
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
@@ -3138,6 +3141,9 @@ loop:;
 			int portfd = port(a);
 			int size = svtoi (b); // в байтах
 
+			// возможный редирект портов в/в
+			portfd = portfd < 3 ? ol->std[portfd] : portfd;
+
 			size = ((size + W - 1) / W) + 1; // в словах
 			if (size < 0)
 				size = (heap->end - fp);
@@ -3210,10 +3216,12 @@ loop:;
 	//				int portfd = is_port(a) ? car (a) : uvtoi(a);
 			int size = svtoi (c);
 
+			// возможный редирект портов в/в
+			portfd = portfd < 3 ? ol->std[portfd] : portfd;
+
 			word *buff = (word *) b;
 			if (is_value(buff))
 				break;
-
 			int length = (hdrsize(*buff) - 1) * sizeof(word); // todo: pads!
 			if (size > length || size == 0)
 				size = length;
@@ -4790,6 +4798,10 @@ OL_new(unsigned char* bootstrap)
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
+	handle->std[0] = STDIN_FILENO;
+	handle->std[1] = STDOUT_FILENO;
+	handle->std[2] = STDERR_FILENO;
+
 	// подготовим очереди в/в
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
@@ -4885,6 +4897,15 @@ postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc)
 {
 	postgc_t* current = ol->exit;
 //	ol->postgc = postgc;
+	return current;
+}
+
+int OL_setstd(struct ol_t* ol, int id, int fd)
+{
+	if (id > 2)
+		return -1;
+	int current = ol->std[id];
+	ol->std[id] = fd;
 	return current;
 }
 

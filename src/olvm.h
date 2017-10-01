@@ -67,6 +67,8 @@ OL_run(struct ol_t* ol, int argc, char** argv);
 void
 (*OL_atexit(struct ol_t* ol, void (*function)(int status))) (int status);
 
+int OL_setstd(struct ol_t* ol, int id, int fd);
+
 
 // c++ interface:
 #ifdef __cplusplus
