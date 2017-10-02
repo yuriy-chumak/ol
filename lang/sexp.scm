@@ -32,6 +32,7 @@
       (owl lazy)
       (owl io) ; testing
       (owl unicode)
+      (only (owl interop) interact)
       (only (lang intern) intern-symbols string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 
@@ -457,7 +458,7 @@
                ((not chunk) ;; read error in port
                   (values rchunks #true))
                ((eq? chunk #true) ;; would block
-                  (yield) ;; interact with sleeper thread to let cpu sleep
+                  (interact sleeper-id 5) ;; interact with sleeper thread to let cpu sleep
                   (values rchunks #false))
                ((eof? chunk) ;; normal end if input, no need to call me again
                   (values rchunks #true))

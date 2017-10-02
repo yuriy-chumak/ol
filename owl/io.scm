@@ -171,17 +171,17 @@
                                  (values eof-seen?
                                     (bvec-append this tail)))))))))))
 
-      ;;; TCP connections
+      ;;; -----------------------------------------------------------
       ;;; Sleeper thread
 
       ;; todo: later probably sleeper thread and convert it to a interop
 
       ;; run thread scheduler for n rounds between possibly calling vm sleep()
-      (define sleep-check-rounds 10)
+      ;(define sleep-check-rounds 10)
 
-      ;; number of milliseconds to sleep for real at a time when no threads are running but
+      ;; number of microseconds to sleep for real at a time when no threads are running but
       ;; they want to sleep, typically waiting for input or output
-      (define ns-per-round 10000000)
+      (define us-per-round 10000) ; 10 ms
 
       ;; IO is closely tied to sleeping in owl now, because instead of the poll there are
       ;; several threads doing their own IO with their own fds. the ability to sleep well
@@ -214,7 +214,7 @@
                rounds)
             ((single-thread?)
                ;; note: could make this check every n rounds or ms
-               (if (syscall 35 (* ns-per-round rounds) #f #f) ;; sleep really for a while
+               (if (syscall 35 (* us-per-round rounds) #f #f) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
                   (set-ticker-value 0)))
             (else

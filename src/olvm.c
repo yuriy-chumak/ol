@@ -3711,7 +3711,7 @@ loop:;
 
 		// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
 		// TODO: change to "select" call (?)
-		case SYSCALL_NANOSLEEP: { // time-in-micro(!)seconds
+		case SYSCALL_NANOSLEEP: { // time in micro(!)seconds
 			CHECK(is_number(a), a, SYSCALL);
 			int_t us = untoi (a);
 
