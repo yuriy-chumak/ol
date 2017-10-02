@@ -23,7 +23,7 @@
  *   http://yuriy-chumak.github.io/ol/
  *
  * The parent project - Owl Lisp:
- *   https://github.com/aoh/owl-lisp
+ *   https://github.com/aoh/owl-lisp/
  *   https://code.google.com/p/owl-lisp/
  *
  * Related:
@@ -31,7 +31,7 @@
  *   http://srfi.schemers.org/
  *   http://groups.csail.mit.edu/mac/projects/scheme/
  *   http://www.s48.org/
- *
+ *   http://www.call-cc.org/
  */
 
 #define __OLVM_NAME__ "OL"
@@ -69,6 +69,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #endif
 
 // additional gcc staff
+// http://www.pixelbeat.org/programming/gcc/static_assert.html
 #if GCC_VERSION < 40300
 #	define static_assert(condition, comment) \
 			do { switch(0) { case 0: case condition: ; } } while (0)
