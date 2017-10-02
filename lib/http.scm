@@ -185,12 +185,8 @@
       (let*((ss2 ms2 (clock)))
          (print id " # " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
 
-   ; workaround for tasker, should be removed soon.
-   (let sleep ((x 1000))
-      (set-ticker-value 0)
-      (if (> x 0)
-         (sleep (- x 1))))
-   ))
+   ; workaround for tasker.
+   (interact sleeper-id 5)))
 
 
 (define (http:run port onRequest)
