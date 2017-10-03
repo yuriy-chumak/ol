@@ -5,13 +5,9 @@ categories: index
 ---
 > Any sufficiently complicated program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of some Lisp dialect.
 > <br/> <span style="float: right;">Greenspun's tenth rule</span>
-
-<noscript>
-> Please, enable JavaScript for full project site functionality.
-</noscript>
 <br/>
 
-**Otus Lisp** is a purely[*](#pure) functional dialect of Lisp. It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It's small (only 42kb), embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on Linux, Windows, Unix, Android and many other operation systems with various (i.e. x86, x86_64, arm, aarch64, mips, ppc) architectures.
+**Otus Lisp** (Ol in short) is a purely[*](#pure) functional dialect of Lisp. It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It's small (only 42kb[*](#42kb)), embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on Linux, Windows, Unix, Android and many other operation systems with various (i.e. x86, x86_64, arm, aarch64, mips, ppc) architectures.
 
 
 ### Downloads
@@ -20,22 +16,50 @@ Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/relea
 Release 1.2 on the way.
 
 ### Already tested platforms
-- [x] **x86**: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7.
-- [x] **x86_64**: core 2 quad, core i3, core i5, core i7.
-- [x] **aarch64**: cortex-a53, cortex-a57.
-- [x] **arm**: arm920t.
+- [x] x86: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7.
+- [x] x86_64: core 2 quad, core i3, core i5, core i7.
+- [x] aarch64: cortex-a53, cortex-a57.
+- [x] arm: arm920t, snapdragon 801.
   - nearly planned, but not yet tested: arm926t, arm1136, cortex-a7, cortex-a9, cortex-a15, cortex-m3, cortex-m4.
-- [ ] fully supported, but not yet tested: **m68k**, **microblaze**, **mips32**, **mips64**, **or1k**, **ppc**, **ppc64**, **sh4**, **spark**, **spark64**, **ztensa**.
+- fully supported, but not yet tested: m68k, microblaze, mips32, mips64, or1k, ppc, ppc64, sh4, spark, spark64, ztensa.
 
 ### Tested operation systems/devices
-- [x] **Linux**: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
-- [x] **Windows**: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.
-- [x] **Unix**: OpenBSD, FreeBSD, NetBSD.
-- [x] **Android**: all versions up to Nougat.
-- [x] **webOS**: 2.0.
-- [x] **Odroid**: C1.
+- [x] Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
+- [x] Windows: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.
+- [x] Unix: OpenBSD, FreeBSD, NetBSD.
+- [x] Android: all versions up to Nougat.
+- [x] webOS: 2.0.
+- [x] Odroid: C1.
 
-### Development status
+
+### About project
+Distributed under [LGPLv3](https://github.com/yuriy-chumak/ol/blob/master/COPYING) license.
+
+This is incomplete list of Ol features:
+
+* small and fast virtual machine (only 42kb[*](#42kb) in binary code)
+* high efficient (thanks for pure language functionality) garbage collector
+* cross-platform (Linux, Windows, Unix, different BSD flavors, Android, etc.)
+* cross-architecture (i586, amd64, arm, mips, etc.)
+* 32- and 64-bit platforms support
+* text scripts can be compiled into binary form; can execute this binaries directly by virtual machine
+* dynamic calls of "native" functions (from system libraries or other languages); can be invoked from this functions using transparent callback mechanism
+* can work in own sandbox
+* full range of interesting and useful features from function world:
+  * continuations
+  * tail recursion
+  * subprograms
+  * function as first class objects
+* limited mutators as small pleasant addition from imperative world
+* and, at least, it's real Lisp!
+
+You can immediately try Otus Lisp in the provided terminal on the left of this page without downloading and installing any binaries. For the more information please refer to the "Learn" paragraph at the bottom of this page.
+
+
+### Development status <a name="news"></a>
+* Mon 3 Oct 2017
+  * license changed from GPLv3 to LGPLv3
+
 * Mon 2 Oct 2017
   * major bug fix: resource consumption decreased, it was blocking issue before release 1.2, so let's prepare the 1.2 release
 
@@ -284,6 +308,7 @@ Release 1.2 on the way.
 
 * Previous news records can be found in [russian translated](?ru) part of this site
 
+
 ### Learn
 
    You can immediately try Otus Lisp (ol) in the provided terminal on the left of this page. For example, type
@@ -312,9 +337,10 @@ which is another way of
 >
 </code></pre>
 
+
 ### p.s.
 
 * <a name="pure"></a>In fact, Otus Lisp is slightly extended towards traditional imperative programming, namely, limited mutators have been introduced. It helps to organize non-repetitive random number generator and to speed-up some imperative-oriented operations.
-* Real virtual machine size depends on parget platform and enabled features. 42kb is typical size for linux without including debug information, ffi and experimental inexact library, but including couple of internal safe checks, sockets, native library calls and sandbox. For other operation systems size can be as bigger as lesser.
+* <a name="42kb"></a>Real virtual machine size depends on parget platform and enabled features. 42kb is typical size for linux without including debug information, ffi and experimental inexact library, but including couple of internal safe checks, sockets, native library calls and sandbox. For other operation systems size can be as bigger as lesser (i.e. 79kb for win64 x86_64, 30kb for ubuntu64 armhf).
 
 <small style="float: right">Copyright (c) 2016, 2017 Yuriy Chumak</small>
