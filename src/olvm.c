@@ -83,7 +83,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 
 #ifdef __unix__
 
-// FreeBSD, NetBSD, OpenBSD, MacOS, etc.
+// FreeBSD, NetBSD, OpenBSD, macOS, etc.
 # ifndef __linux__
 #	define SYSCALL_PRCTL 0
 #	define SYSCALL_SYSINFO 0
@@ -2860,9 +2860,6 @@ loop:;
 
 	// АЛУ (арифметическо-логическое устройство)
 	case ADDITION: { // vm:add a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
-		if (value(A0) == FMAX) {
-			printf("*\n");
-		}
 		int_t r = value(A0) + value(A1);
 		A2 = F(r & FMAX);
 		A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
@@ -3175,7 +3172,6 @@ loop:;
 				// win32 pipes workaround
 				if (got == -1 && errno == EBADF) {
 					HANDLE handle = (HANDLE)(intptr_t)(unsigned)portfd;
-					fprintf(stderr, "%p:%d\n", handle, portfd);
 
 					static_assert (sizeof(DWORD) == sizeof(got),
 							"passing argument from incompatible pointer type");
@@ -4682,6 +4678,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 #ifndef NAKED_VM
 extern unsigned char _binary_repl_start[];
 #else
+static
 unsigned char * _binary_repl_start = NULL;
 #endif
 
@@ -4806,7 +4803,7 @@ OL_new(unsigned char* bootstrap)
 	// подготовим очереди в/в
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
-#if EMBEDDED_VM
+#ifdef EMBEDDED_VM
 	char* S = 0;
 	if (bootstrap && *bootstrap >= 0x20) {
 		S = (char*)bootstrap;
