@@ -5,6 +5,7 @@
                          Grew out of the Owl Lisp by Aki Helin
 
                          at https://yuriy-chumak.github.io/ol/
+
 [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 VERSION 1.1
@@ -13,7 +14,7 @@ LICENSE
 --------------------------------------------------------------
 This program is free software;  you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of
+published by the Free Software Foundation; either version 3 of
 the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -23,33 +24,38 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 You should have received a copy of the GNU GPL along with this
 program.           If not, see <http://www.gnu.org/licenses/>.
 
+Additionally, Lesser GNU General Public License is applicable.
+
 RELATED
 --------------------------------------------------------------
-              http://people.csail.mit.edu/jaffer/Scheme (r5rs)
               http://groups.csail.mit.edu/mac/projects/scheme/
+              http://people.csail.mit.edu/jaffer/Scheme (r5rs)
 
               Original Owl Lisp project can be found at
-              https://code.google.com/p/owl-lisp/
               https://github.com/aoh/owl-lisp
 
 
 OVERVIEW
 --------
 
-Otus Lisp is a purely\* functional dialect of Lisp.
-It implements an extended subset of R5RS Scheme. It
-is small, embeddable and crossplatform. It can call
-and be called by native applications and libraries.
+Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
+It implements an extended subset of R5RS Scheme including, but
+not limited to, some of the SRFI. It's small (42kb), embeddable
+and crossplatform; can run in own sandbox; provides a portable,
+highlevel way for calling the code written in another languages.
+You can use Otus Lisp on Linux, Windows, Unix, Android and many
+other operation systems with various (x86, x86_64, arm, aarch64,
+mips, ppc, etc.) architectures.
 
 
 REQUIREMENTS
 ------------
 
-For un*x you should have GCC >3.2 installed.
+For unix you should have GCC >3.2 installed.
 
 For windows you should have MINGW installed.
 
-For un*x you maybe want MAKE installed also.
+For unix you maybe want MAKE installed also.
 
 
 DOWNLOAD / INSTALLATION
