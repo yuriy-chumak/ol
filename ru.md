@@ -35,7 +35,7 @@ Ol реализован как расширенное подмножество S
 
 
 ### О проекте
-Otus Lisp распространяется по лицензии [LGPL v3](https://github.com/yuriy-chumak/ol/blob/master/COPYING).
+Otus Lisp распространяется по лицензии [LGPL v3](https://github.com/yuriy-chumak/ol/blob/master/COPYING.LESSER).
 
 Вот неполный список того, что может вам предоставить Ol:
 

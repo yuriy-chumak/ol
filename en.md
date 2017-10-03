@@ -35,7 +35,7 @@ Release 1.2 on the way.
 
 
 ### About project
-Distributed under [LGPLv3](https://github.com/yuriy-chumak/ol/blob/master/COPYING) license.
+Distributed under [LGPLv3](https://github.com/yuriy-chumak/ol/blob/master/COPYING.LESSER) license.
 
 This is incomplete list of Ol features:
 
