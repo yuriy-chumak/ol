@@ -3,69 +3,76 @@ layout: html
 title:  Summary
 categories: index
 ---
-> Project news can be found in [russian translated](?ru) part of this site that frequently updates.
-> Please, enable JavaScript to full project site functionality.
+> Any sufficiently complicated program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of some Lisp dialect.
+> <br/> <span style="float: right;">Greenspun's tenth rule</span>
+
+<noscript>
+> Please, enable JavaScript for full project site functionality.
+</noscript>
 <br/>
 
-   Otus Lisp is a purely[*](#pure) functional dialect of Lisp.
-It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It is small, embeddable and crossplatform.
-
-   You can use it on Linux (CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu, etc.), Windows, *BSD, Android, webOS, Odroid. It runs on x86, arm, aarch64, mips, ppc architectures with 32- and 64-bit platforms.
+**Otus Lisp** is a purely[*](#pure) functional dialect of Lisp. It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It's small (only 42kb), embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on Linux, Windows, Unix, Android and many other operation systems with various (i.e. x86, x86_64, arm, aarch64, mips, ppc) architectures.
 
 
-### News
-
-Preparing the release **1.2**.
-
+### Downloads
 Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
 
-### Supported platforms
+Release 1.2 on the way.
 
-- [x] **x86**: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7
-- [x] **x86_64**: core 2 quad, core i3, core i5, core i7
-- [x] **aarch64**: cortex-a53, cortex-a57
-- [x] **arm**: arm920t
-  - not yet tested: arm926t, arm1136, cortex-a7, cortex-a9, cortex-a15, cortex-m3, cortex-m4
-- fully supported, but not yet tested: **m68k**, **microblaze**, **mips32**, **mips64**, **or1k**, **ppc**, **ppc64**, **sh4**, **spark**, **spark64**, **ztensa**
+### Already tested platforms
+- [x] **x86**: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7.
+- [x] **x86_64**: core 2 quad, core i3, core i5, core i7.
+- [x] **aarch64**: cortex-a53, cortex-a57.
+- [x] **arm**: arm920t.
+  - nearly planned, but not yet tested: arm926t, arm1136, cortex-a7, cortex-a9, cortex-a15, cortex-m3, cortex-m4.
+- [ ] fully supported, but not yet tested: **m68k**, **microblaze**, **mips32**, **mips64**, **or1k**, **ppc**, **ppc64**, **sh4**, **spark**, **spark64**, **ztensa**.
 
-### Summary (continue)
+### Tested operation systems/devices
+- [x] **Linux**: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
+- [x] **Windows**: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.
+- [x] **Unix**: OpenBSD, FreeBSD, NetBSD.
+- [x] **Android**: all versions up to Nougat.
+- [x] **webOS**: 2.0.
+- [x] **Odroid**: C1.
 
-   You can immediately try Otus Lisp (ol) in the provided terminal on the left of this page. For example, type
-<pre><code id="sample1" data-language="scheme">(+ 1 2 3 4 5 6 7)</code><button class="doit" onclick="doit(sample1.textContent)">send to the terminal</button></pre>
-   After pressing "Enter" button you will receive *28*.
+### Development status
+* Mon 2 Oct 2017
+  * major bug fix: resource consumption decreased, it was blocking issue before release 1.2, so let's prepare the 1.2 release
 
-   Or you can try more interesting example
-<pre><code id="sample2" data-language="scheme">(fold * 1 (iota 99 1 1))</code><button class="doit" onclick="doit(sample2.textContent)">send to the terminal</button></pre>
-which is another way of
-<pre><code id="sample3" data-language="scheme">(let factorial ((n 99))
-   (if (= n 0)
-      1
-      (* n (factorial (- n 1)))))</code><button class="doit" onclick="doit(sample3.textContent)">send to the terminal</button></pre>
+* Sun 1 Oct 2017
+  * c++ interface fix
+  * new std handles changing mechanism
 
-   This will produce factorial of 99 for you
-<pre><code>> (let factorial ((n 99))
-   (if (= n 0)
-      1
-      (* n (factorial (- n 1)))))
-933262154439441526816992388562667004
-907159682643816214685929638952175999
-932299156089414639761565182862536979
-208272237582511852109168640000000000
-000000000000
+* Thr 28 Sep 2017
+  * updated android compatibility
 
->
-</code></pre>
+* Thr 21 Sep 2017
+  * (list-ref) now a part of (r5rs core) library
+  * couple of code cleanups and function movings
 
-### Download
+* Wed 20 Sep 2017
+  * more inexact functions - fmax fmin
 
-   Available binary builds for:
+* Tue 19 Sep 2017
+  * now dlopen works silently under windows
+  * removed src/boot.c file from repository, this will require one more step to compile ol, but save 1,5M in repository every time that language was changed. why I do not do this at project begin?
+  * new srfi-1 (xcons) implementation
+  * native api change: removed optional destructor from OL_new() call
+  * pinvoke renamed to more usual ffi, good by c# associations :)
+  * additionally type-callback renamed to type-callable, this is more convenient name, sure
+  * couple of inexact numbers support fixes
 
-  * CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Univention, OpenSUSE, Ubuntu: from [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
+* Mon 18 Sep 2017
+  * GC improvement (gc clears the used registers, that allows to free additionally up to 1.5% of freed memory)
+  * new srfi-1 (filter) implementation
 
+* Mon 7 Aug 2017
+  * added inexact fsqrt, fsin, fcos, fadd, fsub, fmul, fdiv functions
+  * ol can print inexact numbers in human readable format (limited functionality)
 
-   I'm working for add more prebuilts.
+* Mon 31 Jul 2017
+  * added basic inexact numbers support, enabling using OLVM_INEXACTS=1 define
 
-### Project news
 * Mon 25 Jul 2017
   * added internal pinvoke test
 
@@ -279,8 +286,35 @@ which is another way of
 
 ### Learn
 
-   Current news can be found in [russian translated](?ru) part of this site that frequently updates.
+   You can immediately try Otus Lisp (ol) in the provided terminal on the left of this page. For example, type
+<pre><code id="sample1" data-language="scheme">(+ 1 2 3 4 5 6 7)</code><button class="doit" onclick="doit(sample1.textContent)">send to the terminal</button></pre>
+   After pressing "Enter" button you will receive *28*.
 
-   I'm writing docs right now. It will be available very soon. You can check <b><a href="?en/examples">SAMPLES</a></b> for now.
+   Or you can try more interesting example
+<pre><code id="sample2" data-language="scheme">(fold * 1 (iota 99 1 1))</code><button class="doit" onclick="doit(sample2.textContent)">send to the terminal</button></pre>
+which is another way of
+<pre><code id="sample3" data-language="scheme">(let factorial ((n 99))
+   (if (= n 0)
+      1
+      (* n (factorial (- n 1)))))</code><button class="doit" onclick="doit(sample3.textContent)">send to the terminal</button></pre>
+
+   This will produce factorial of 99 for you
+<pre><code>> (let factorial ((n 99))
+   (if (= n 0)
+      1
+      (* n (factorial (- n 1)))))
+933262154439441526816992388562667004
+907159682643816214685929638952175999
+932299156089414639761565182862536979
+208272237582511852109168640000000000
+000000000000
+
+>
+</code></pre>
+
+### p.s.
+
+* <a name="pure"></a>In fact, Otus Lisp is slightly extended towards traditional imperative programming, namely, limited mutators have been introduced. It helps to organize non-repetitive random number generator and to speed-up some imperative-oriented operations.
+* Real virtual machine size depends on parget platform and enabled features. 42kb is typical size for linux without including debug information, ffi and experimental inexact library, but including couple of internal safe checks, sockets, native library calls and sandbox. For other operation systems size can be as bigger as lesser.
 
 <small style="float: right">Copyright (c) 2016, 2017 Yuriy Chumak</small>
