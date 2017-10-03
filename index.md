@@ -15,44 +15,18 @@ It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Do
 
 ### News
 
-Preparing the release 1.2
+Preparing the release **1.2**.
 
 Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
 
-### Tested platforms
+### Supported platforms
 
- *  :heavy_check_mark: **x86** (
-       :white_check_mark: 80486,
-       :white_check_mark: pentium,
-       :white_large_square: pentium mmx, :white_large_square: pentium pro,
-       :white_check_mark: pentium 2, :white_check_mark: pentium 3,
-       :white_check_mark: athlon,
-       :white_check_mark: core i3,
-       :white_check_mark: core i7,
-       TBD)
- *  :heavy_check_mark: **x86_64** (
-       :white_check_mark: core i3,
-       :white_check_mark: core i7,
-       TBD.)
- *  :heavy_check_mark: **aarch64** (
-       :white_check_mark: cortex-a53, :white_check_mark: cortex-a57)
- *  :heavy_check_mark: **arm** (
-       :white_check_mark: arm920t, :white_large_square: arm926t,
-       :white_large_square: arm1136,
-       :white_large_square: cortex-a7, :white_large_square: cortex-a9, :white_large_square: cortex-a15,
-       :white_large_square: cortex-m3, :white_large_square: cortex-m4) 
- *  :grey_question: **m68k** mcf5208evb (
-       :white_large_square: m5208, :white_large_square: m68040)
- *  :grey_question: **microblaze** (TBD.)
- *  :grey_question: **mips32** (TBD.)
- *  :grey_question: **mips64** (TBD.)
- *  :grey_question: **or1k** (TBD.)
- *  :grey_question: **ppc** (TBD.)
- *  :grey_question: **ppc64** (TBD.)
- *  :grey_question: **sh4** (TBD.)
- *  :grey_question: **spark** (TBD.)
- *  :grey_question: **spark64** (TBD.)
- *  :grey_question: **ztensa** (TBD.)
+- [x] **x86**: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7
+- [x] **x86_64**: core 2 quad, core i3, core i5, core i7
+- [x] **aarch64**: cortex-a53, cortex-a57
+- [x] **arm**: arm920t
+  - not yet tested: arm926t, arm1136, cortex-a7, cortex-a9, cortex-a15, cortex-m3, cortex-m4
+- fully supported, but not yet tested: **m68k**, **microblaze**, **mips32**, **mips64**, **or1k**, **ppc**, **ppc64**, **sh4**, **spark**, **spark64**, **ztensa**
 
 ### Summary (continue)
 
@@ -300,7 +274,7 @@ which is another way of
 
 * Thr 10 Nov 2016 19:23 EET
   * nothing happend, i'm continuing the project, simply no time to the commenting all steps
-  
+
 * Previous news records can be found in [russian translated](?ru) part of this site
 
 ### Learn
