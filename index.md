@@ -7,7 +7,9 @@ categories: index
 > <br/> <span style="float: right;">Greenspun's tenth rule</span>
 <br/>
 
-**Otus Lisp** (Ol in short) is a purely[*](#pure) functional dialect of Lisp. It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It's small (only 42kb[*](#42kb)), embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on Linux, Windows, Unix, Android and many other operation systems with various (i.e. x86, x86_64, arm, aarch64, mips, ppc) architectures.
+**Otus Lisp** (Ol in short) is a purely[\*](#pure) functional dialect of Lisp.
+
+It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It's small (only 42kb[\*](#42kb)), embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on Linux, Windows, Unix, Android and many other operation systems with various (i.e. x86, x86_64, arm, aarch64, mips, ppc) architectures.
 
 
 ### Downloads
@@ -37,7 +39,7 @@ Distributed under [LGPLv3](https://github.com/yuriy-chumak/ol/blob/master/COPYIN
 
 This is incomplete list of Ol features:
 
-* small and fast virtual machine (only 42kb[*](#42kb) in binary code)
+* small and fast virtual machine (only 42kb[\*](#42kb) in binary code)
 * high efficient (thanks for pure language functionality) garbage collector
 * cross-platform (Linux, Windows, Unix, different BSD flavors, Android, etc.)
 * cross-architecture (i586, amd64, arm, mips, etc.)
