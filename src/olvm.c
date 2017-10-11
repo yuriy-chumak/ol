@@ -79,8 +79,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #	endif
 #endif
 
-
-
 #ifdef __unix__
 
 // FreeBSD, NetBSD, OpenBSD, macOS, etc.
@@ -94,7 +92,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
-#ifdef __asmjs__
+#ifdef __EMSCRIPTEN__
 #	define SYSCALL_PRCTL 0
 
 #	define HAS_SOCKETS 0
@@ -263,7 +261,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #endif
 
 #ifdef __linux__
-# ifndef __asmjs__
+# ifndef __EMSCRIPTEN__
 #	include <sys/cdefs.h>
 #	include <sched.h> // yield
 # endif
@@ -412,7 +410,6 @@ void STDERR(char* format, ...)
 	fprintf(stderr, "\n");
 }
 
-#if !EMBEDDED_VM
 static
 void crash(int code, char* format, ...)
 {
@@ -425,7 +422,6 @@ void crash(int code, char* format, ...)
 	fprintf(stderr, "\n");
 	exit(code);
 }
-#endif
 
 void yield()
 {
@@ -571,6 +567,60 @@ char* dlerror() {
 #if _WIN32
 
 #endif
+
+// --------------------------------------------------------
+// -=( i/o )=----------------------------------------------
+// os independent i/o implementations
+
+// open
+#define os_open open
+
+// read
+#if _WIN32
+ssize_t os_read(int fd, void *buf, size_t size)
+{
+	int got;
+
+	// regular reading
+	if (!_isatty(fd) || _kbhit()) { // we don't get hit by kb in pipe
+		got = read(fd, (char *) buf, size);
+	} else {
+		errno = EAGAIN;
+		return -1;
+	}
+
+	// sockets workaround
+	if (got == -1 && errno == EBADF) {
+		got = recv(fd, (char *) &buf, size, 0);
+
+		// pipes workaround
+		if (got == -1 && errno == EBADF) {
+			HANDLE handle = (HANDLE)(intptr_t)(unsigned)fd;
+
+			// на всякий случай, а то мало ли что МС придумает в будущем
+			static_assert (sizeof(DWORD) == sizeof(got),
+					"passing argument from incompatible pointer type");
+			if (!ReadFile(handle, (char *) buf, size, (LPDWORD)&got, NULL)) {
+				errno = EAGAIN;
+				return -1;
+			}
+		}
+
+		if (got < 0)
+			if (WSAGetLastError() == WSAEWOULDBLOCK)
+				errno = EAGAIN;
+	}
+	return got;
+}
+#else // assume all other oses are posix compliant
+#	define os_read read
+#endif
+
+// write
+#define os_write write
+
+// close
+#define os_close close
 
 // --------------------------------------------------------
 // -=( uname )=--------------------------------------------
@@ -1373,7 +1423,6 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		return delta;
 	} else {
 		crash(101, "adjust_heap failed.\n"); // crash
-		exit(101);
 		#if GCC_VERSION > 40500
 		__builtin_unreachable();
 		#endif
@@ -1676,7 +1725,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
  */
 struct ol_t
 {
-	struct heap_t heap; // must be first member
+	struct heap_t heap; // MUST be first member
 	word max_heap_size; // max heap size in MB
 
 	// вызвать GC если в памяти мало места в словах
@@ -1684,6 +1733,14 @@ struct ol_t
 	// возвращает 1, если была проведена сборка
 	int (*gc)(OL* ol, int kb);
 	void (*exit)(int errorId);
+
+	// i/o
+	int (*open)(const char *pathname, int flags, ...);
+	ssize_t (*read)(int fd, void *buf, size_t count);
+	int (*write)(int fd, const void *buf, unsigned int count);
+	int (*close)(int fd);
+
+	// deprecated
 	int std[3]; // стандартные порты в/в
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
@@ -3158,36 +3215,7 @@ loop:;
 			}
 
 			int got;
-	#ifdef _WIN32
-			if (!_isatty(portfd) || _kbhit()) { // we don't get hit by kb in pipe
-				got = read(portfd, (char *) &fp[1], size);
-			} else {
-				got = -1;
-				errno = EAGAIN;
-			}
-			// win32 socket workaround
-			if (got == -1 && errno == EBADF) {
-				got = recv(portfd, (char *) &fp[1], size, 0);
-	#	if EMBEDDED_VM
-				// win32 pipes workaround
-				if (got == -1 && errno == EBADF) {
-					HANDLE handle = (HANDLE)(intptr_t)(unsigned)portfd;
-
-					static_assert (sizeof(DWORD) == sizeof(got),
-							"passing argument from incompatible pointer type");
-					if (!ReadFile(handle, (char *) &fp[1], size, (LPDWORD)&got, NULL)) {
-						result = (word*)ITRUE;
-						break;
-					}
-				}
-	#	endif
-				if (got < 0)
-					if (WSAGetLastError() == WSAEWOULDBLOCK)
-						errno = EAGAIN;
-			}
-	#else
-			got = read(portfd, (char *) &fp[1], size);
-	#endif
+			got = ol->read(portfd, (char *) &fp[1], size);
 
 			if (got > 0) {
 				// todo: обработать когда приняли не все,
@@ -3253,7 +3281,6 @@ loop:;
 			break;
 		}
 
-#ifndef __asmjs__
 		// (OPEN "path" mode)
 		// http://man7.org/linux/man-pages/man2/open.2.html
 		case SYSCALL_OPEN: {
@@ -3262,7 +3289,7 @@ loop:;
 			int mode = uvtoi (b);
 			mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
 
-			int file = open((char*)s, mode, (S_IRUSR | S_IWUSR));
+			int file = os_open((char*)s, mode, (S_IRUSR | S_IWUSR));
 			if (file < 0)
 				break;
 
@@ -3700,8 +3727,7 @@ loop:;
 
 			break;
 		}
-
-	#endif
+	#endif// HAS_SOCKETS
 		// ==================================================
 
 
@@ -3765,7 +3791,7 @@ loop:;
 				// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
 				break;
 			}
-	#endif
+	#endif //HAS_DLOPEN
 			// if a is string:
 			// todo: add case (cons program environment)
 			if (is_string(a)) {
@@ -4343,7 +4369,6 @@ loop:;
 				result = (word*) ITRUE;
 	#endif
 			break;
-#endif
 
 		case 1201:
 #ifdef __EMSCRIPTEN__
@@ -4847,7 +4872,7 @@ OL_new(unsigned char* bootstrap)
 
 	// а теперь подготовим аргументы:
 	word* userdata = (word*) INULL;
-#if EMBEDDED_VM
+#ifdef EMBEDDED_VM
 	if (S) {
 		char* filename = tempnam(0, "ol");
 
@@ -4870,6 +4895,11 @@ OL_new(unsigned char* bootstrap)
 
 	handle->gc = OL__gc;
 	handle->exit = exit;
+
+	handle->open = os_open;
+	handle->close = os_close;
+	handle->read = os_read;
+	handle->write = os_write;
 
 	heap->fp = fp;
 	return handle;
