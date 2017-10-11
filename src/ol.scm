@@ -279,12 +279,9 @@
                                              (loop (put options 'home (cadr args)) (cddr args)))
                                           (else
                                              (loop options (cdr args))))))
-
                                  (home (or (getf options 'home)
                                            (getenv "OL_HOME")
-                                           (cond
-                                              ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
-                                              (else "/usr/lib/ol")))) ; Linux, *BSD, etc.
+                                           "/usr/lib/ol")) ; Linux, *BSD, etc.
                                  (sandbox? (getf options 'sandbox))
                                  (interactive? (or
                                            (getf options 'interactive)
