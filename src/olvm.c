@@ -1372,7 +1372,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		}
 		return delta;
 	} else {
-		fprintf(stderr, "adjust_heap failed.\n"); // crash
+		crash(101, "adjust_heap failed.\n"); // crash
 		exit(101);
 		#if GCC_VERSION > 40500
 		__builtin_unreachable();

@@ -6,6 +6,7 @@ IF "%1"=="vm32" GOTO VM32
 IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
+IF "%1"=="boot" GOTO BOOT
 IF "%1"=="slim" GOTO SLIM
 IF "%1"=="talkback" GOTO TALKBACK
 IF "%1"=="js" GOTO JS
@@ -65,6 +66,10 @@ echo "+------+                              "
 echo:
 GOTO:EOF
 
+:BOOT
+vm repl <src/to-c.scm >src/boot.c
+GOTO:EOF
+
 :VM
 echo.   *** Making virtual machine:
 gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
@@ -102,6 +107,10 @@ GOTO:EOF
 copy boot.fasl repl
 GOTO :REPL
 
+:REPL32
+ld -r -b binary -o src/repl.o -m32 repl
+GOTO:EOF
+
 :SLIM
 echo.   *** Making slim:
 vm repl src/slim.lisp >src/slim.c
@@ -109,10 +118,9 @@ GOTO:EOF
 
 :TALKBACK
 echo.   *** Making talkback:
-vm repl extensions/talkback/talkback.lisp >extensions/talkback/boot.c
-gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DHAS_PINVOKE=1 ^
+gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DOLVM_FFI=1 ^
     -fmessage-length=0 -Wno-strict-aliasing -I src ^
-    src/olvm.c extensions/talkback/boot.c extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
+    src/olvm.c src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
     -lws2_32 -O2 -g2
 GOTO:EOF
 
@@ -121,7 +129,10 @@ GOTO:EOF
 :JS
 echo.   *** Making virtual machine on js:
 @set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
-call emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O1 --memory-init-file 0 --llvm-opts "['-O2']"
+call emcc src/olvm.c src/slim.c -o olvm.js -s ASYNCIFY=1 -Oz ^
+     -s NO_EXIT_RUNTIME=1 ^
+     -fno-exceptions -fno-rtti ^
+     --memory-init-file 0 --llvm-opts "['-O3']"
 GOTO:EOF
 
 :WASM
