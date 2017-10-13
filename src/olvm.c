@@ -580,7 +580,9 @@ char* dlerror() {
 #define os_open open
 
 // read
-#if _WIN32
+#ifdef _WIN32
+// win32 does not allow to detect handle type - is it regular handle,
+//  or socket, or pipe. so, unfortunately, we should try to read sequentally
 ssize_t os_read(int fd, void *buf, size_t size)
 {
 	int got;
@@ -603,7 +605,7 @@ ssize_t os_read(int fd, void *buf, size_t size)
 
 			// на всякий случай, а то мало ли что МС придумает в будущем
 			static_assert (sizeof(DWORD) == sizeof(got),
-					"passing argument from incompatible pointer type");
+			        "passing argument from incompatible pointer type");
 			if (!ReadFile(handle, (char *) buf, size, (LPDWORD)&got, NULL)) {
 				errno = EAGAIN;
 				return -1;
@@ -621,7 +623,34 @@ ssize_t os_read(int fd, void *buf, size_t size)
 #endif
 
 // write
-#define os_write write
+#ifdef _WIN32
+ssize_t os_write(int fd, const void *buf, size_t size)
+{
+	int wrote;
+
+	// regular writing
+	wrote = write(fd, (const void*)&buf[1], size);
+
+	// sockets workaround
+	if (wrote == -1 && errno == EBADF) {
+		wrote = send(fd, (char*) &buf[1], size, 0);
+
+		// pipes workaround
+		if (wrote == -1 && errno == EBADF) {
+			HANDLE handle = (HANDLE)(intptr_t)(unsigned)fd;
+
+			// на всякий случай, а то мало ли что МС придумает в будущем
+			static_assert (sizeof(DWORD) == sizeof(wrote),
+			        "passing argument from incompatible pointer type");
+			if (!WriteFile(handle, (char*) &buf[1], size, (LPDWORD)&wrote, NULL))
+				wrote = -1;
+		}
+	}
+	return wrote;
+}
+#else
+#	define os_write write
+#endif
 
 // close
 #define os_close close
@@ -3284,26 +3313,7 @@ loop:;
 				size = length;
 
 			int wrote;
-
-			wrote = write(portfd, (char*)&buff[1], size);
-
-	#ifdef _WIN32
-			// win32 socket workaround
-			if (wrote == -1 && errno == EBADF) {
-				wrote = send(portfd, (char*) &buff[1], size, 0);
-	#	if EMBEDDED_VM
-				// win32 pipes workaround
-				if (wrote == -1 && errno == EBADF) {
-					HANDLE handle = (HANDLE)(intptr_t)(unsigned)portfd;
-
-					static_assert (sizeof(DWORD) == sizeof(wrote),
-							"passing argument from incompatible pointer type");
-					if (!WriteFile(handle, (char*) &buff[1], size, (LPDWORD)&wrote, NULL))
-						wrote = -1;
-				}
-	#	endif
-			}
-	#endif
+			wrote = ol->write(portfd, (char*)&buff[1], size);
 
 			if (wrote > 0)
 				result = (word*) itoun (wrote);
