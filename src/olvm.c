@@ -3,10 +3,10 @@
  *
  * Version 1.1
  *
- * Copyright (c) 2014 Aki Helin
- * Copyright (c) 2014- 2017 Yuriy Chumak
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * Copyright(c) 2014 Aki Helin
+ * Copyright(c) 2014 - 2017 Yuriy Chumak
  *
+ * -------------------------------------
  * This program is free software;  you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of
@@ -16,6 +16,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
+ * --------------------------------------------------------------
  * Building:
  *   make; make install
  *
@@ -32,6 +33,9 @@
  *   http://groups.csail.mit.edu/mac/projects/scheme/
  *   http://www.s48.org/
  *   http://www.call-cc.org/
+ *
+ * \mainpage Otus Lisp
+ * \file
  */
 
 #define __OLVM_NAME__ "OL"
@@ -1737,7 +1741,7 @@ struct ol_t
 	// i/o
 	int (*open)(const char *pathname, int flags, ...);
 	ssize_t (*read)(int fd, void *buf, size_t count);
-	int (*write)(int fd, const void *buf, unsigned int count);
+	ssize_t (*write)(int fd, const void *buf, size_t count);
 	int (*close)(int fd);
 
 	// deprecated
@@ -3059,7 +3063,7 @@ loop:;
 		break;
 	}
 
-	/** ff's ---------------------------------------------------
+	/* ff's ---------------------------------------------------
 	 *
 	 */
 	// bind ff to registers
@@ -3171,6 +3175,13 @@ loop:;
 		ip += 2; break;
 	}
 
+	/*! \section Otus Lisp Syscalls
+	 * \brief (syscall number a b c) -> val|ref
+	 *
+	 * Otus Lisp provides access to the some of operation system functions.
+	 *
+	 * \par
+	 */
 	// этот case должен остаться тут - как последний из кейсов
 	// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
 	// https://filippo.io/linux-syscall-table/
@@ -3187,9 +3198,20 @@ loop:;
 
 		switch (op + sandboxp) {
 
-		// (READ fd count) -> buf
-		// http://linux.die.net/man/2/read
-		// count<0 means read all
+		/*! \subsection read
+		 * \brief (read port count) -> ref|#f|#eof
+		 *
+		 * Attempts to read up to count bytes from input port
+		 *
+		 * \param port input port
+		 * \param count count less than 0 means "all available"
+		 *
+		 * \return raw object if success,
+		 *         #eof if file was ended,
+		 *         #false if file not ready
+		 *
+		 * http://linux.die.net/man/2/read
+		 */
 		case SYSCALL_READ + SECCOMP:
 		case SYSCALL_READ: {
 			CHECK(is_port(a), a, SYSCALL);
@@ -3229,10 +3251,20 @@ loop:;
 			break;
 		}
 
-		// (WRITE fd buffer size) -> wrote
-		// http://linux.die.net/man/2/write
-		// size<0 means write all
-		// n if wrote, 0 if busy, #false if error (argument or write)
+		/*! \subsection write
+		 * \brief (write port buffer size) -> int|#f
+		 *
+		 * Writes object content to the output stream
+		 *
+		 * \param port
+		 * \param buffer
+		 * \param size size less than 0 means "all buffer"
+		 *
+		 * \return count of written data if success,
+		 *         0 if file busy, #false if error
+		 *
+		 * http://linux.die.net/man/2/write
+		 */
 		case SYSCALL_WRITE + SECCOMP:
 		case SYSCALL_WRITE: {
 			CHECK(is_port(a), a, SYSCALL);
@@ -3248,7 +3280,7 @@ loop:;
 			if (is_value(buff))
 				break;
 			int length = (hdrsize(*buff) - 1) * sizeof(word); // todo: pads!
-			if (size > length || size == 0)
+			if (size > length || size < 0)
 				size = length;
 
 			int wrote;
