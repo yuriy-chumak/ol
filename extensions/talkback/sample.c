@@ -6,7 +6,7 @@
  *      Author: uri
  */
 
-#if EMBEDDED_VM
+#ifdef EMBEDDED_VM
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h> // memcpy
@@ -17,40 +17,18 @@
 #define TALKBACK_API __attribute__((__visibility__("default")))
 #endif
 
-
+// -------------------------
 // OL talkback interface:
-void* OL_tb_start();
+void*OL_tb_start();
 void OL_tb_stop(void* oltb);
 
 void OL_tb_send(void* state, char* program);
 int  OL_tb_recv(void* state, char* out, int size);
 int  OL_tb_eval(void* oltb, char* program, char* out, int size);
 
+int  OL_tb_get_failed(void* state);
+
 void OL_tb_set_import_hook(void* state, int (*do_load_library)(const char* thename, char** output));
-
-// error processing extension:
-// errno
-static int OL_tb_error = 0;
-int OL_tb_errno(void)
-{
-	return OL_tb_error;
-}
-
-int eval(void* oltb, char* program, char* out, int size) {
-	OL_tb_error = 0;
-	return OL_tb_eval(oltb, program, out, size);
-}
-
-
-TALKBACK_API
-int OL_tb_seterror(void)
-{
-	return ++OL_tb_error;
-}
-
-
-
-// .
 
 void* oltb; // OL talkback handle
 
@@ -72,7 +50,7 @@ int a(int arg) {
 	char output[256];
 
 	snprintf(buffer, sizeof(buffer), "(a %d)", arg);
-	if (eval(oltb, buffer, output, sizeof(output)) > 0) {
+	if (OL_tb_eval(oltb, buffer, output, sizeof(output)) > 0) {
 		int out;
 		sscanf(output, "%d", &out);
 		return out;
@@ -84,7 +62,7 @@ int b(int arg) {
 	char output[256];
 
 	snprintf(buffer, sizeof(buffer), "(b %d)", arg);
-	if (eval(oltb, buffer, output, sizeof(output)) > 0) {
+	if (OL_tb_eval(oltb, buffer, output, sizeof(output)) > 0) {
 		int out;
 		sscanf(output, "%d", &out);
 		return out;
@@ -138,11 +116,8 @@ int main(int argc, char** argv)
 
 	printf("Compiling script...");
 	OL_tb_send(oltb, "(import (otus ffi))"
-	                 "(define $ (dlopen))" // get own handle
-	                 "(define add (dlsym $ type-int+ \"add_ii\" type-int+ type-int+))"
-	                 "(define seterrno (dlsym $ type-int+ \"OL_tb_seterror\"))"
 
-	                 "(import (private library1))" // load internal library
+	                 //"(import (private library1))" // load internal library
 	);
 
 	int got;
@@ -158,13 +133,11 @@ int main(int argc, char** argv)
 		OL_tb_send(oltb, buff);
 	}
 
-
-
 	send(oltb, "(define (a n) (add n 17))");
 	send(oltb, "(define (b n) (* n 17))");
 	send(oltb, "(define (f n) (fold * 1 (iota n 1 1)))");
-	eval(oltb, "#t", output, sizeof(output)); // wait for VM
-	if (OL_tb_errno() == 0)
+	OL_tb_eval(oltb, "#t", output, sizeof(output)); // wait for VM
+	if (OL_tb_get_failed(oltb) == 0)
 		printf("Ok.");
 
 	printf("\nLoading 'main.scm' script if exist...");
@@ -172,7 +145,7 @@ int main(int argc, char** argv)
 	//OL_tb_send(oltb, ",load \"tutorial/sample-embed/main.scm\"\n"); <-- direct FS access
 	OL_tb_send(oltb, "(import (tutorial sample-embed main-lib))"); // can be overloaded
 
-	got = eval(oltb, "#t", output, sizeof(output)); // let's wait for full loading
+	got = OL_tb_eval(oltb, "#t", output, sizeof(output)); // let's wait for full loading
 	printf("Ok.\n");
 
 	// calling "a" function
@@ -180,23 +153,23 @@ int main(int argc, char** argv)
 	printf("result of 'b(72)' function: %d\n", b(72));
 
 	printf("calling 'function1(42)' /imported/ function... ");
-	got = eval(oltb, "(function1 42)", output, sizeof(output));
-	if (OL_tb_errno())
+	got = OL_tb_eval(oltb, "(function1 42)", output, sizeof(output));
+	if (OL_tb_get_failed(oltb))
 		printf("failed. Error: %s\n", output);
 	else
 		printf("ok. Len: %d, value [%s]\n", got, output);
 
 	printf("calling 'sum-factorsx(72)' /not existent/ function... ");
-	got = eval(oltb, "(sum-factorsx 72)", output, sizeof(output));
-	if (OL_tb_errno())
+	got = OL_tb_eval(oltb, "(sum-factorsx 72)", output, sizeof(output));
+	if (OL_tb_get_failed(oltb))
 		printf("failed. Error: %s\n", output);
 	else
 		printf("ok. Len: %d, value [%s]\n", got, output);
 
 	// calling "f" function
 	printf("result of 'f(42)' function... ");
-	got = eval(oltb, "(f 42)", output, sizeof(output));
-	if (OL_tb_errno())
+	got = OL_tb_eval(oltb, "(f 42)", output, sizeof(output));
+	if (OL_tb_get_failed(oltb))
 		printf("failed. Error: %s\n", output);
 	else
 		printf("ok. Len: %d, value [%s]\n", got, output);
@@ -209,7 +182,7 @@ int main(int argc, char** argv)
 	send(oltb, "(define memcpy-pi (dlsym $ type-int+ \"MEMCPY\" type-vector-raw type-int+ type-int+))");
 	send(oltb, "(define memcpy-ip (dlsym $ type-int+ \"MEMCPY\" type-int+ type-vector-raw type-int+))");
 
-	eval(oltb, "memcpy-pi", output, sizeof(output)); // wait for finish
+	OL_tb_eval(oltb, "memcpy-pi", output, sizeof(output)); // wait for finish
 
 
 	// So, Let's do the simple operation: copy LONG array to the OLVM and back increased one
@@ -226,8 +199,8 @@ int main(int argc, char** argv)
 	send(oltb, "(define new-buffer (list->vector (map (lambda (x) (* x x)) (vector->list buffer))))");
 	send(oltb, "(memcpy-ip %d new-buffer %d)", input, len);
 
-	got = eval(oltb, "memcpy-pi", output, sizeof(output)); // wait for finish
-	if (OL_tb_errno())
+	got = OL_tb_eval(oltb, "memcpy-pi", output, sizeof(output)); // wait for finish
+	if (OL_tb_get_failed(oltb))
 		printf("failed. Error: %s\n", output);
 	else {
 		printf("ok.\n");

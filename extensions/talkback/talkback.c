@@ -5,21 +5,21 @@
  *  Created on: Apr 13, 2017
  *      Author: uri
  */
-#include <olvm.h>
+#include "olvm.h"
 
-//#if EMBEDDED_VM
+#ifdef EMBEDDED_VM
 #include <stdio.h>
 #include <pthread.h>
-#include <inttypes.h>
+#include <malloc.h>
 
-extern unsigned char* talkback;
-
-/*#if _WIN32
-#define PUBLIC __declspec(dllexport)
-#else
-#define PUBLIC __attribute__((__visibility__("default")))
-#endif*/
 #define PUBLIC
+#if _WIN32
+#define TALKBACK_API __declspec(dllexport)
+#else
+#define TALKBACK_API __attribute__((__visibility__("default")))
+#endif
+
+
 
 /** PIPING *********************************/
 #if _WIN32
@@ -72,6 +72,7 @@ int cleanup(PIPE* pipes)
 }
 #else
 #	include <fcntl.h>
+#	include <signal.h>
 
 #	define PIPE int
 
@@ -97,7 +98,29 @@ typedef struct state_t
 	pthread_t thread_id;
 	PIPE in[2];
 	PIPE out[2];
+
+	read_t* read;
+	write_t* write;
+
+	int errno;
 } state_t;
+
+static
+ssize_t os_read(int fd, void *buf, size_t size, state_t* state)
+{
+	if (fd == 0) // change stdin to our pipe
+		fd = state->in[0];
+	return state->read(fd, buf, size, state);
+}
+
+static
+ssize_t os_write(int fd, void *buf, size_t size, state_t* state)
+{
+	if (fd == 1 || fd == 2)
+		fd = state->out[1]; // write stdout and stderr in same port
+	return state->write(fd, buf, size, state);
+}
+
 
 static int (*do_load_library)(const char* thename, char** output);
 
@@ -107,32 +130,24 @@ thread_start(void *arg)
 	state_t* state = (state_t*)arg;
 	OL* ol = state->ol;
 
-	char in[12];
-	char out[12];
+	OL_userdata(ol, state); // set new OL userdata
+	state->read = OL_set_read(ol, os_read);
+	state->write = OL_set_write(ol, os_write);
 
-	#if _WIN32
-	# if UINTPTR_MAX == 0xffffffffffffffff
-		snprintf(in, sizeof(in), "%"PRIu64, (unsigned long long)state->in[0]);
-		snprintf(out, sizeof(out), "%"PRIu64, (unsigned long long)state->out[1]);
-	# else
-		snprintf(in, sizeof(in), "%lu", (unsigned long)state->in[0]);
-		snprintf(out, sizeof(out), "%lu", (unsigned long)state->out[1]);
-	#endif
-	#else
-		snprintf(in, sizeof(in), "%ud", (unsigned)state->in[0]);
-		snprintf(out, sizeof(out), "%ud", (unsigned)state->out[1]);
-	#endif
-
-	char* args[3] = { "-", in, out };
-	OL_run(ol, 3, args);
+	// let's finally start!
+	char* args[1] = { "-" };
+	OL_run(ol, 1, args);
 
 	return 0;
 }
 
+extern unsigned char _binary_repl_start[];
+
 PUBLIC
 state_t* OL_tb_start()
 {
-	OL* ol = OL_new(talkback);
+	unsigned char* bootstrap = _binary_repl_start;
+	OL*ol = OL_new(bootstrap);
 
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
@@ -164,7 +179,7 @@ void OL_tb_stop(state_t* state)
 	write(state->in[1],     "(exit-owl 1)", 12);
 #endif
 
-	pthread_cancel(state->thread_id);
+	pthread_kill(state->thread_id, SIGSTOP);
 	pthread_join(state->thread_id, 0);
 
 	cleanup(&state->in);
@@ -202,7 +217,7 @@ int OL_tb_recv(state_t* state, char* out, int size)
 #else
 	int bytes = 0;
 	do {
-		pthread_yield(); // time to process data by OL
+		sched_yield(); // time to process data by OL
 		bytes = read(state->out[0], out, size-1);
 	}
 	while (bytes == -1);
@@ -218,13 +233,14 @@ int OL_tb_eval(state_t* state, char* program, char* out, int size)
 {
 	int len = strlen(program);
 
+	state->errno = 0; // clear error mark
 #ifdef _WIN32
 	DWORD a,b,c;
-	WriteFile(state->in[1], "(display-to OUT ((lambda ()", 27, &a, NULL);
-	WriteFile(state->in[1], program, len,                      &b, NULL);
-	WriteFile(state->in[1], ")))", 3,                          &c, NULL);
+	WriteFile(state->in[1], "(display ((lambda ()", 20, &a, NULL);
+	WriteFile(state->in[1], program, len,               &b, NULL);
+	WriteFile(state->in[1], ")))", 3,                   &c, NULL);
 #else
-	write(state->in[1],     "(display-to OUT ((lambda ()", 27);
+	write(state->in[1],     "(display ((lambda ()", 20);
 	write(state->in[1],     program, len);
 	write(state->in[1],     ")))", 3);
 #endif
@@ -234,17 +250,30 @@ int OL_tb_eval(state_t* state, char* program, char* out, int size)
 }
 
 // additional features:
+PUBLIC
+int OL_tb_get_istream(state_t* state)
+{
+	return state->in[1];
+}
+
+PUBLIC
+int OL_tb_get_ostream(state_t* state)
+{
+	return state->out[0];
+}
+
+PUBLIC
+int OL_tb_get_failed(state_t* state)
+{
+	return state->errno;
+}
+
 
 // -----------------------
 // custom library loader
 
-#if _WIN32
-__declspec(dllexport)
-#else
-__attribute__((__visibility__("default")))
-#endif
-
 __attribute__((used))
+TALKBACK_API
 char* OL_tb_hook_import(char* file)
 {
 	char* lib = 0;
@@ -252,6 +281,15 @@ char* OL_tb_hook_import(char* file)
 		return lib;
 	return 0;
 }
+
+__attribute__((used))
+TALKBACK_API
+void OL_tb_hook_fail(void* userdata, const char* error)
+{
+	state_t* state = (state_t*)userdata;
+	++state->errno;
+}
+
 
 void OL_tb_set_import_hook(state_t* state, int (*hook)(const char* thename, char** output))
 {
@@ -262,7 +300,8 @@ void OL_tb_set_import_hook(state_t* state, int (*hook)(const char* thename, char
 	        "(import (otus ffi))"
 	        "(define $ (dlopen))"
 	        "(define hook:import (dlsym $ type-string \"OL_tb_hook_import\" type-string))"
+			"(define hook:fail   (dlsym $ type-string \"OL_tb_hook_fail\" type-userdata type-string))"
 	);
 }
 
-//#endif
+#endif

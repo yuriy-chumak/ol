@@ -580,10 +580,13 @@ char* dlerror() {
 #define os_open open
 
 // read
+typedef ssize_t (read_t)(int fd, void *buf, size_t count, void* userdata);
+
 #ifdef _WIN32
 // win32 does not allow to detect handle type - is it regular handle,
 //  or socket, or pipe. so, unfortunately, we should try to read sequentally
-ssize_t os_read(int fd, void *buf, size_t size)
+static
+ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
 {
 	int got;
 
@@ -619,12 +622,20 @@ ssize_t os_read(int fd, void *buf, size_t size)
 	return got;
 }
 #else // assume all other oses are posix compliant
-#	define os_read read
+
+static __inline__
+ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
+{
+	return read(fd, buf, size);
+}
 #endif
 
 // write
+typedef ssize_t (write_t)(int fd, const void *buf, size_t count, void* userdata);
+
 #ifdef _WIN32
-ssize_t os_write(int fd, const void *buf, size_t size)
+static
+ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
 {
 	int wrote;
 
@@ -649,7 +660,11 @@ ssize_t os_write(int fd, const void *buf, size_t size)
 	return wrote;
 }
 #else
-#	define os_write write
+static __inline__
+ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
+{
+	return write(fd, buf, size);
+}
 #endif
 
 // close
@@ -920,11 +935,19 @@ struct __attribute__ ((aligned(sizeof(word)), packed)) object_t
 };
 
 // ------------------------------------------------------
-// PUBLIC API: (please, checkout the olvm.h)
+// PUBLIC API: (please, check out the olvm.h)
 
 OL*  OL_new (unsigned char* bootstrap);
-void OL_free(OL* ol);
-word OL_run(struct ol_t* ol, int argc, char** argv);
+void OL_free(struct ol_t* ol);
+word OL_run (struct ol_t* ol, int argc, char** argv);
+
+void*
+OL_userdata (struct ol_t* ol, void* userdata);
+
+read_t* OL_set_read(struct ol_t* ol, read_t read);
+write_t* OL_set_write(struct ol_t* ol, write_t read);
+
+
 
 // notification interface:
 typedef void (exit_t)(int status);
@@ -3266,7 +3289,7 @@ loop:;
 			}
 
 			int got;
-			got = ol->read(portfd, (char *) &fp[1], size);
+			got = ol->read(portfd, (char *) &fp[1], size, ol->userdata);
 
 			if (got > 0) {
 				// todo: обработать когда приняли не все,
@@ -3298,8 +3321,6 @@ loop:;
 		case SYSCALL_WRITE: {
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
-	//				CHECK(is_port(a) || (is_value(a) && (uvtoi(a) <= 2)), a, SYSCALL);
-	//				int portfd = is_port(a) ? car (a) : uvtoi(a);
 			int size = svtoi (c);
 
 			// возможный редирект портов в/в
@@ -3313,7 +3334,7 @@ loop:;
 				size = length;
 
 			int wrote;
-			wrote = ol->write(portfd, (char*)&buff[1], size);
+			wrote = ol->write(portfd, (char*)&buff[1], size, ol->userdata);
 
 			if (wrote > 0)
 				result = (word*) itoun (wrote);

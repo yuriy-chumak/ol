@@ -17,6 +17,7 @@
 #endif
 
 #include <stdint.h>
+#include <unistd.h>
 
 // (игра слов)
 // OL:
@@ -58,6 +59,9 @@ OL_free(struct ol_t* ol);
 uintptr_t
 OL_run(struct ol_t* ol, int argc, char** argv);
 
+void*
+OL_userdata(struct ol_t* ol, void* userdata);
+
 /**
  * Register a function to be called at olvm termination
  *
@@ -69,6 +73,14 @@ void
 
 int OL_setstd(struct ol_t* ol, int id, int fd);
 
+// handle read
+typedef size_t (read_t)(int fd, void *buf, size_t count, void* userdata);
+read_t* OL_set_read(struct ol_t* ol, read_t read);
+
+typedef size_t (write_t)(int fd, void *buf, size_t count, void* userdata);
+write_t* OL_set_write(struct ol_t* ol, write_t read);
+
+// handle write
 
 // c++ interface:
 #ifdef __cplusplus
@@ -81,9 +93,13 @@ public:
 	OL(unsigned char* language) { vm = OL_new(language); }
 	virtual ~OL() { OL_free(vm); }
 
-
 	int run(int argc, char** argv) {
 		return (int)OL_run(vm, argc, argv);
+	}
+	
+	void* userdata(void* userdata)
+	{
+	   return OL_userdata(vm, userdata);
 	}
 };
 #else

@@ -80,6 +80,7 @@
 
       type-callable
       type-any
+      type-userdata
 
 
       load-dynamic-library
