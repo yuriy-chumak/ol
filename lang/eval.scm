@@ -286,10 +286,7 @@
       (define (syntax-error? x) (and (pair? x) (eq? syntax-error-mark (car x))))
 
       (define (repl-ok env value) (tuple 'ok value env))
-      (define (repl-fail env reason)
-         (let ((hook:fail (env-get env 'hook:fail #f)))
-            (if hook:fail (hook:fail reason (syscall 1001 #f #f #f))))
-         (tuple 'error reason env))
+      (define (repl-fail env reason) (tuple 'error reason env))
 
 
       ;; just be quiet
@@ -928,8 +925,10 @@
                            (print-repl-error reason)
                            (boing env))
                         (else
-                           (print reason)
-                           (boing env))))
+                           (boing env)))
+                     ; notify hooker about error
+                     (let ((hook:fail (env-get env 'hook:fail #f)))
+                        (if hook:fail (hook:fail reason (syscall 1002 #f #f #f)))))
                   (else is foo
                      (print "Repl is rambling: " foo) ; what is this?
                      (boing env))))))

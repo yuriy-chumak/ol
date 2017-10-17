@@ -795,6 +795,7 @@ word* ffi(OL* self, word* arguments)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
+			case TUSERDATA:
 			case TVPTR:
 				args[i] = car(arg);
 				break;

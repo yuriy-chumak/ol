@@ -24,29 +24,33 @@
 /** PIPING *********************************/
 #if _WIN32
 #	include <windows.h>
+#	include <io.h>
+#	include <fcntl.h>
 
 #	define PIPE HANDLE
 
-int pipe(PIPE* pipes)
+int new_pipe(PIPE* pipes)
 {
 	static int id = 0;
 	char name[128];
 	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id);//__sync_fetch_and_add(&id, 1));
 
-	PIPE pipe1 = CreateNamedPipe(name,
+	HANDLE pipe1 = CreateNamedPipe(name,
 			PIPE_ACCESS_DUPLEX|WRITE_DAC,
 			PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
 			2, 1024, 1024, 2000, NULL);
 
-	PIPE pipe2 = CreateFile(name,
+	HANDLE pipe2 = CreateFile(name,
 			GENERIC_WRITE, 0,
 			NULL,
 			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
 			NULL);
 
 
-	pipes[0] = pipe1;
-	pipes[1] = pipe2;
+	pipes[0] = _open_osfhandle((intptr_t)pipe1, _O_APPEND | _O_RDONLY);
+	pipes[1] = _open_osfhandle((intptr_t)pipe2, _O_APPEND | _O_WRONLY);
+
+	// todo: https://stackoverflow.com/questions/7369445/is-there-a-windows-equivalent-to-fdopen-for-handles
 
 	return 0;
 	//ConnectNamedPipe(pipe, NULL);
@@ -65,8 +69,8 @@ int pipe(PIPE* pipes)
 
 int cleanup(PIPE* pipes)
 {
-	CloseHandle(pipes[0]);
-	CloseHandle(pipes[1]);
+	_close(pipes[0]);
+	_close(pipes[1]);
 
 	return 0;
 }
@@ -76,8 +80,12 @@ int cleanup(PIPE* pipes)
 
 #	define PIPE int
 
+int new_pipe(int* pipes) // create the pipe
+{
+	pipe(pipes);
+}
 
-int pipe(PIPE* pipes); // create the pipe
+int pipe(PIPE* pipes);
 /*int emptyq(int pipe) {
 	return poll(&(struct pollfd){ .fd = fd, .events = POLLIN }, 1, 0)==1) == 0);
 }*/
@@ -96,13 +104,15 @@ typedef struct state_t
 {
 	OL* ol;
 	pthread_t thread_id;
-	PIPE in[2];
-	PIPE out[2];
+	int in[2];
+	int out[2];
+
+	FILE* inf;
 
 	read_t* read;
 	write_t* write;
 
-	int errno;
+	int failed;
 } state_t;
 
 static
@@ -131,8 +141,12 @@ thread_start(void *arg)
 	OL* ol = state->ol;
 
 	OL_userdata(ol, state); // set new OL userdata
-	state->read = OL_set_read(ol, os_read);
+	state->read  = OL_set_read(ol, os_read);
 	state->write = OL_set_write(ol, os_write);
+
+	OL_setstd(ol, 0, state->in[0]);
+	OL_setstd(ol, 1, state->out[1]);
+	OL_setstd(ol, 2, state->out[1]);
 
 	// let's finally start!
 	char* args[1] = { "-" };
@@ -163,8 +177,16 @@ state_t* OL_tb_start()
 	fcntl(state->out[1], F_SETFL, fcntl(state->out[1], F_GETFL, 0) | O_NONBLOCK);
 #endif
 
+	state->inf = fdopen(state->in[1], "w");
+
 	state->ol = ol;
 	pthread_create(&state->thread_id, &attr, &thread_start, state);
+
+	OL_tb_send(state,
+	        "(import (otus ffi))"
+	        "(define $ (dlopen))"
+	        "(define hook:fail   (dlsym $ type-void \"OL_tb_hook_fail\" type-string type-userdata))"
+	);
 
 	return state;
 }
@@ -172,12 +194,7 @@ state_t* OL_tb_start()
 PUBLIC
 void OL_tb_stop(state_t* state)
 {
-#if _WIN32
-	DWORD a;
-	WriteFile(state->in[1], "(exit-owl 1)", 12, &a, NULL);
-#else
-	write(state->in[1],     "(exit-owl 1)", 12);
-#endif
+	fprintf(state->inf, "%s", "(exit-owl 1)");
 
 	pthread_kill(state->thread_id, SIGSTOP);
 	pthread_join(state->thread_id, 0);
@@ -192,15 +209,8 @@ void OL_tb_stop(state_t* state)
 PUBLIC
 void OL_tb_send(state_t* state, char* program)
 {
-	int len = strlen(program);
-
-#ifdef _WIN32
-	DWORD b;
-	WriteFile(state->in[1], program, len, &b, NULL);
-#else
-	write(state->in[1],     program, len);
-#endif
-
+	fprintf(state->inf, "%s", program);
+	fflush(state->inf);
 	return;
 }
 
@@ -213,14 +223,14 @@ int OL_tb_recv(state_t* state, char* out, int size)
 		Sleep(1); // time to process data by OL
 		ReadFile(state->out[0], out, size-1, &bytes, NULL);
 	}
-	while (bytes == 0);
+	while ((bytes == 0) && !state->failed);
 #else
 	int bytes = 0;
 	do {
 		sched_yield(); // time to process data by OL
 		bytes = read(state->out[0], out, size-1);
 	}
-	while (bytes == -1);
+	while ((bytes == -1) && !state->failed);
 #endif
 
 	if (bytes >= 0)
@@ -231,29 +241,18 @@ int OL_tb_recv(state_t* state, char* out, int size)
 PUBLIC
 int OL_tb_eval(state_t* state, char* program, char* out, int size)
 {
-	int len = strlen(program);
+	state->failed = 0; // clear error mark
+	fprintf(state->inf, "(display ((lambda () %s )))", program);
+	fflush(state->inf);
 
-	state->errno = 0; // clear error mark
-#ifdef _WIN32
-	DWORD a,b,c;
-	WriteFile(state->in[1], "(display ((lambda ()", 20, &a, NULL);
-	WriteFile(state->in[1], program, len,               &b, NULL);
-	WriteFile(state->in[1], ")))", 3,                   &c, NULL);
-#else
-	write(state->in[1],     "(display ((lambda ()", 20);
-	write(state->in[1],     program, len);
-	write(state->in[1],     ")))", 3);
-#endif
-
-	return
-	OL_tb_recv(state, out, size);
+	return OL_tb_recv(state, out, size);
 }
 
 // additional features:
 PUBLIC
-int OL_tb_get_istream(state_t* state)
+FILE* OL_tb_get_istream(state_t* state)
 {
-	return state->in[1];
+	return state->inf;
 }
 
 PUBLIC
@@ -265,7 +264,7 @@ int OL_tb_get_ostream(state_t* state)
 PUBLIC
 int OL_tb_get_failed(state_t* state)
 {
-	return state->errno;
+	return state->failed;
 }
 
 
@@ -284,10 +283,10 @@ char* OL_tb_hook_import(char* file)
 
 __attribute__((used))
 TALKBACK_API
-void OL_tb_hook_fail(void* userdata, const char* error)
+void OL_tb_hook_fail(const char* error, void* userdata)
 {
 	state_t* state = (state_t*)userdata;
-	++state->errno;
+	++state->failed;
 }
 
 
@@ -300,7 +299,6 @@ void OL_tb_set_import_hook(state_t* state, int (*hook)(const char* thename, char
 	        "(import (otus ffi))"
 	        "(define $ (dlopen))"
 	        "(define hook:import (dlsym $ type-string \"OL_tb_hook_import\" type-string))"
-			"(define hook:fail   (dlsym $ type-string \"OL_tb_hook_fail\" type-userdata type-string))"
 	);
 }
 

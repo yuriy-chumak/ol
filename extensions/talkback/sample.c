@@ -116,6 +116,7 @@ int main(int argc, char** argv)
 
 	printf("Compiling script...");
 	OL_tb_send(oltb, "(import (otus ffi))"
+			"(syscall 1002 #f #f #f)"
 
 	                 //"(import (private library1))" // load internal library
 	);
@@ -146,7 +147,10 @@ int main(int argc, char** argv)
 	OL_tb_send(oltb, "(import (tutorial sample-embed main-lib))"); // can be overloaded
 
 	got = OL_tb_eval(oltb, "#t", output, sizeof(output)); // let's wait for full loading
-	printf("Ok.\n");
+	if (OL_tb_get_failed(oltb))
+		printf("failed. Error: %s\n", output);
+	else
+		printf("ok. Len: %d, value [%s]\n", got, output);
 
 	// calling "a" function
 	printf("result of 'a(12)' function: %d\n", a(12));
