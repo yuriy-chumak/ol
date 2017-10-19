@@ -2970,23 +2970,37 @@ loop:;
 					: IFALSE;
 		ip += 3; break; }
 
+#if 0
+#define DEBUG(...) fprintf(stderr, ##__VA_ARGS__)
+#else
+#define DEBUG(...)
+#endif
 
 	// АЛУ (арифметическо-логическое устройство)
 	case ADDITION: { // vm:add a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
 		int_t r = value(A0) + value(A1);
 		A2 = F(r & FMAX);
 		A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
+		DEBUG("ADDITION   : %016llx + %016llx -> %016llx %d\n",
+		        (word)(A0 >> IPOS), (word)(A1 >> IPOS),
+		        (word)(A2 >> IPOS), A3 == ITRUE ? 1 : 0);
 		ip += 4; break; }
 	case SUBTRACTION: { // vm:sub a b  r u, args prechecked, signs ignored
 		int_t r = (value(A0) | HIGHBIT) - value(A1);
 		A2 = F(r & FMAX);
 		A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
+		DEBUG("SUBTRACTION: %016llx - %016llx -> %016llx %d\n",
+		        (word)(A0 >> IPOS), (word)(A1 >> IPOS),
+		        (word)(A2 >> IPOS), A3 == ITRUE ? 1 : 0);
 		ip += 4; break; }
 
 	case MULTIPLICATION: { // vm:mul a b l h
 		big_t r = (big_t) value(A0) * (big_t) value(A1);
 		A2 = F(r & FMAX);
 		A3 = F(r>>FBITS); //  & FMAX)
+		DEBUG("MULTIPLICATION: %016llx * %016llx -> %016llx %016llx\n",
+		        (word)(A0 >> IPOS), (word)(A1 >> IPOS),
+		        (word)(A2 >> IPOS), (word)(A3 >> IPOS));
 		ip += 4; break; }
 	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fix-es
 		big_t a = (big_t) value(A1) | (((big_t) value(A0)) << FBITS);
@@ -3000,6 +3014,9 @@ loop:;
 		A4 = F(q & FMAX);
 		A5 = F(r);
 
+		DEBUG("DIVISION   : %016llx %016llx / %016llx -> %016llx %016llx %% %016llx\n",
+		        (word)(A0 >> IPOS), (word)(A1 >> IPOS), (word)(A2 >> IPOS),
+		        (word)(A3 >> IPOS), (word)(A4 >> IPOS), (word)(A5 >> IPOS));
 		ip += 6; break; }
 
 
@@ -3018,11 +3035,17 @@ loop:;
 		big_t r = ((big_t) value(A0)) << (FBITS - value(A1));
 		A2 = F(r>>FBITS);
 		A3 = F(r & FMAX);
+		DEBUG("SHIFT_RIGHT: %016llx >> %d -> %016llx %016llx\n",
+		        (word)(A0 >> IPOS), (int) (A1 >> IPOS),
+		        (word)(A2 >> IPOS), (word)(A3 >> IPOS));
 		ip += 4; break; }
 	case SHIFT_LEFT: { // vm:shl a b hi lo
 		big_t r = ((big_t) value(A0)) << (value(A1));
 		A2 = F(r>>FBITS);
 		A3 = F(r & FMAX);
+		DEBUG("SHIFT_LEFT : %016llx << %d -> %016llx %016llx\n",
+		        (word)(A0 >> IPOS), (int) (A1 >> IPOS),
+		        (word)(A2 >> IPOS), (word)(A3 >> IPOS));
 		ip += 4; break; }
 
 
