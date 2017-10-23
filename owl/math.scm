@@ -1530,9 +1530,10 @@
 
       ; O(1), shift focus bit
       (define (gcd-drop n)
-         (let ((s (car n)))
+         (let*((s (car n))
+               (z _ (vm:shr (fxmax) 1)))
             (cond
-               ((eq? s #x800000)
+               ((eq? s z) ; (>> fxmax 1)
                   (let ((n (cdr n)))
                      ; drop a digit or zero
                      (if (eq? (type n) type-fix+)
@@ -1550,7 +1551,10 @@
       (define gcd-shifts
          (list->ff
             (map (lambda (x) (cons (<< 1 x) x))
-               '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23))))
+               '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+                 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43
+                 44 45 46 47 48 49 50 51 52 53 54 55 56)))); (- fxmax 8) bits
+                 ; maybe 56 is not required in this list
 
       (define (lazy-gcd a b n)
          (let ((av (cdr a)) (bv (cdr b)))
@@ -1628,6 +1632,7 @@
          (cond
             ((eq? (type b) type-fix-) (divide (negate a) (negate b)))
             ((eq? (type b) type-int-) (divide (negate a) (negate b)))
+            ; todo: change next one to (and (eq? (type b) type-fix+) (eq?...)
             ((divide-simple a b) => (lambda (x) x))
             (else
                (let ((f (gcd a b)))

@@ -853,7 +853,7 @@ int uname(struct utsname* out) {
 
 
 // ----------
-// -=( OL )=----------------------------------------------------------------------
+// -=( OL )=--------------------------------------------------------------------
 // --
 //
 // виртуальная машина:
@@ -870,7 +870,7 @@ typedef uintptr_t word;
 //   '----------| '--||'-| '----|
 //              |    ||  |      '-----> object type
 //              |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
-//              |    |'---------------> rawness bit (raw objects have no decriptors(pointers) in them)
+//              |    |'---------------> rawness bit (raw objects have no descriptors(pointers) in them)
 //              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
 //              '---------------------> object size in words
 //
@@ -898,7 +898,8 @@ typedef uintptr_t word;
 
 #define IPOS      8  // === offsetof (struct direct, payload)
 
-struct __attribute__ ((aligned(sizeof(word)), packed)) value_t
+__attribute__ ((aligned(sizeof(word)), packed))
+struct value_t
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
 	unsigned i    : 1;    // for directs always 1
@@ -913,7 +914,8 @@ struct __attribute__ ((aligned(sizeof(word)), packed)) value_t
 #define TPOS      2  // === offsetof (struct header, type)
 #define RPOS     11  // === offsetof (struct header, rawness)
 
-struct __attribute__ ((aligned(sizeof(word)), packed)) header_t
+__attribute__ ((aligned(sizeof(word)), packed))
+struct header_t
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
 	unsigned i    : 1;    // for headers always 1
@@ -926,7 +928,8 @@ struct __attribute__ ((aligned(sizeof(word)), packed)) header_t
 	word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
 
-struct __attribute__ ((aligned(sizeof(word)), packed)) object_t
+__attribute__ ((aligned(sizeof(word)), packed))
+struct object_t
 {
 	union {
 		struct header_t header;
@@ -1135,6 +1138,7 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 // http://www.delorie.com/gnu/docs/gcc/gccint_53.html
 #if MATH_64BIT
 typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
+//typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
 typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
 #else
 typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
@@ -1790,10 +1794,12 @@ struct ol_t
 	int (*gc)(OL* ol, int kb);
 	void (*exit)(int errorId);
 
-	// i/o
+	void* userdata; // user data
+
+	// i/o polymorphism
 	int (*open)(const char *pathname, int flags, ...);
-	ssize_t (*read)(int fd, void *buf, size_t count);
-	ssize_t (*write)(int fd, const void *buf, size_t count);
+	ssize_t (*read)(int fd, void *buf, size_t count, void* userdata);
+	ssize_t (*write)(int fd, const void *buf, size_t count, void* userdata);
 	int (*close)(int fd);
 
 	// deprecated
@@ -2970,37 +2976,22 @@ loop:;
 					: IFALSE;
 		ip += 3; break; }
 
-#if 0
-#define DEBUG(...) fprintf(stderr, ##__VA_ARGS__)
-#else
-#define DEBUG(...)
-#endif
-
 	// АЛУ (арифметическо-логическое устройство)
 	case ADDITION: { // vm:add a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
-		int_t r = value(A0) + value(A1);
+		word r = value(A0) + value(A1);
 		A2 = F(r & FMAX);
 		A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
-		DEBUG("ADDITION   : %016llx + %016llx -> %016llx %d\n",
-		        (word)(A0 >> IPOS), (word)(A1 >> IPOS),
-		        (word)(A2 >> IPOS), A3 == ITRUE ? 1 : 0);
 		ip += 4; break; }
 	case SUBTRACTION: { // vm:sub a b  r u, args prechecked, signs ignored
-		int_t r = (value(A0) | HIGHBIT) - value(A1);
+		word r = (value(A0) | HIGHBIT) - value(A1);
 		A2 = F(r & FMAX);
 		A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
-		DEBUG("SUBTRACTION: %016llx - %016llx -> %016llx %d\n",
-		        (word)(A0 >> IPOS), (word)(A1 >> IPOS),
-		        (word)(A2 >> IPOS), A3 == ITRUE ? 1 : 0);
 		ip += 4; break; }
 
 	case MULTIPLICATION: { // vm:mul a b l h
 		big_t r = (big_t) value(A0) * (big_t) value(A1);
 		A2 = F(r & FMAX);
 		A3 = F(r>>FBITS); //  & FMAX)
-		DEBUG("MULTIPLICATION: %016llx * %016llx -> %016llx %016llx\n",
-		        (word)(A0 >> IPOS), (word)(A1 >> IPOS),
-		        (word)(A2 >> IPOS), (word)(A3 >> IPOS));
 		ip += 4; break; }
 	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fix-es
 		big_t a = (big_t) value(A1) | (((big_t) value(A0)) << FBITS);
@@ -3014,16 +3005,12 @@ loop:;
 		A4 = F(q & FMAX);
 		A5 = F(r);
 
-		DEBUG("DIVISION   : %016llx %016llx / %016llx -> %016llx %016llx %% %016llx\n",
-		        (word)(A0 >> IPOS), (word)(A1 >> IPOS), (word)(A2 >> IPOS),
-		        (word)(A3 >> IPOS), (word)(A4 >> IPOS), (word)(A5 >> IPOS));
 		ip += 6; break; }
 
 
 	case BINARY_AND: // vm:and a b r, prechecked
 		A2 = (A0 & A1);
 		ip += 3; break;
-	// disjunction
 	case BINARY_OR:  // vm:or a b r, prechecked
 		A2 = (A0 | A1);
 		ip += 3; break;
@@ -3035,17 +3022,11 @@ loop:;
 		big_t r = ((big_t) value(A0)) << (FBITS - value(A1));
 		A2 = F(r>>FBITS);
 		A3 = F(r & FMAX);
-		DEBUG("SHIFT_RIGHT: %016llx >> %d -> %016llx %016llx\n",
-		        (word)(A0 >> IPOS), (int) (A1 >> IPOS),
-		        (word)(A2 >> IPOS), (word)(A3 >> IPOS));
 		ip += 4; break; }
 	case SHIFT_LEFT: { // vm:shl a b hi lo
 		big_t r = ((big_t) value(A0)) << (value(A1));
 		A2 = F(r>>FBITS);
 		A3 = F(r & FMAX);
-		DEBUG("SHIFT_LEFT : %016llx << %d -> %016llx %016llx\n",
-		        (word)(A0 >> IPOS), (int) (A1 >> IPOS),
-		        (word)(A2 >> IPOS), (word)(A3 >> IPOS));
 		ip += 4; break; }
 
 
@@ -3081,7 +3062,7 @@ loop:;
 				new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
 		ip += 1; break;
 
-	/*	case 11: { // (set-car! pair value)
+/*	case 11: { // (set-car! pair value)
 		word *pair = (word *)A0;
 		word cargo = A1;
 
@@ -3106,22 +3087,6 @@ loop:;
 
 		A2 = A0;
 		ip += 3; break;
-	}*/
-
-
-	/*	case LISTUPLE: { // listuple type size lst to
-		word type = uvtoi (A0);
-		word size = uvtoi (A1);
-		word list = A2;
-		word *p = new (size+1);
-		A3 = (word) p;
-		*p++ = make_header(type, size+1);
-		while (size--) {
-			CHECK(is_pair(list), list, LISTUPLE);
-			*p++ = car (list);
-			list = cdr (list);
-		}
-		ip += 4; break;
 	}*/
 
 	// bind tuple to registers, todo: rename to bind-t or bindt or bnt
@@ -3478,6 +3443,9 @@ loop:;
 
 			int portfd = port(a);
 			int ioctl = uvtoi(b);
+
+			// возможный редирект портов в/в
+			portfd = portfd < 3 ? ol->std[portfd] : portfd;
 
 			switch (ioctl + sandboxp) {
 				case SYSCALL_IOCTL_TIOCGETA: {
@@ -4182,6 +4150,10 @@ loop:;
 					result = (word*)ITRUE;
 			}
 			break;
+		case 1002: // return userdata
+			result = new_userdata(ol->userdata);
+			break;
+
 		case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 			result = itoun (ol->max_heap_size);
 			ol->max_heap_size = uvtoi (a);
@@ -5000,6 +4972,13 @@ void OL_free(OL* ol)
 	free(ol);
 }
 
+void* OL_userdata(OL* ol, void* userdata)
+{
+	void* old_userdata = ol->userdata;
+	ol->userdata = userdata;
+	return old_userdata;
+}
+
 exit_t* OL_atexit(struct ol_t* ol, exit_t* exit)
 {
 	exit_t* current = ol->exit;
@@ -5023,6 +5002,20 @@ int OL_setstd(struct ol_t* ol, int id, int fd)
 	return current;
 }
 
+// i/o polymorphism
+read_t* OL_set_read(struct ol_t* ol, read_t read)
+{
+	read_t *old_read = ol->read;
+	ol->read = read;
+	return old_read;
+}
+
+write_t* OL_set_write(struct ol_t* ol, write_t write)
+{
+	write_t *old_write = ol->write;
+	ol->write = write;
+	return old_write;
+}
 
 // ===============================================================
 word
