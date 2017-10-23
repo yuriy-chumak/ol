@@ -1104,7 +1104,7 @@
                            (if (eq? b-lead (fxmax))
                               (if (eq? n 0)
                                  0
-                                 (shift-local-down (ncar a) *pre-max-fixnum* (subi n 1)))
+                                 (shift-local-down (ncar a) (*pre-max-fixnum*) (subi n 1)))
                               (let ((aa (ncar a)) (bb (add b-lead 1)))
                                  ; increment b to ensure b'000.. > b....
                                  (cond
@@ -1530,10 +1530,9 @@
 
       ; O(1), shift focus bit
       (define (gcd-drop n)
-         (let*((s (car n))
-               (z _ (vm:shr (fxmax) 1)))
+         (let ((s (car n)))
             (cond
-               ((eq? s z) ; (>> fxmax 1)
+               ((eq? s (*pre-max-fixnum*)) ; (>> fxmax 1)
                   (let ((n (cdr n)))
                      ; drop a digit or zero
                      (if (eq? (type n) type-fix+)

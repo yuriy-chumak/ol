@@ -898,8 +898,8 @@ typedef uintptr_t word;
 
 #define IPOS      8  // === offsetof (struct direct, payload)
 
-__attribute__ ((aligned(sizeof(word)), packed))
-struct value_t
+struct __attribute__ ((aligned(sizeof(word)), packed))
+value_t
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
 	unsigned i    : 1;    // for directs always 1
@@ -914,8 +914,8 @@ struct value_t
 #define TPOS      2  // === offsetof (struct header, type)
 #define RPOS     11  // === offsetof (struct header, rawness)
 
-__attribute__ ((aligned(sizeof(word)), packed))
-struct header_t
+struct __attribute__ ((aligned(sizeof(word)), packed))
+header_t
 {
 	unsigned mark : 1;    // mark bit (can only be 1 during gc)
 	unsigned i    : 1;    // for headers always 1
@@ -928,8 +928,8 @@ struct header_t
 	word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
 
-__attribute__ ((aligned(sizeof(word)), packed))
-struct object_t
+struct __attribute__ ((aligned(sizeof(word)), packed))
+object_t
 {
 	union {
 		struct header_t header;
@@ -4597,30 +4597,40 @@ done:;
 //       загрузчик скомпилированного образа и его десериализатор
 //
 
+// temp
+//extern unsigned char binary_repl_start[];
+
 // fasl decoding
 // tbd: comment
 // todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
 //	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
-static __inline__
+static //__inline__
 word get_nat(unsigned char** hp)
 {
-	word nat = 0;
+	big_t nat = 0;
 	char i;
 
 	#ifndef OVERFLOW_KILLS
-	#define OVERFLOW_KILLS(n) exit(n)
+	#define OVERFLOW_KILLS(n) { fprintf(stderr, "overflow!!!\n"); exit(n); }
 	#endif
 	do {
 		long long underflow = nat; // can be removed for release
 		nat <<= 7;
-		if (nat >> 7 != underflow) // can be removed for release
-			OVERFLOW_KILLS(9);     // can be removed for release
+		if ((nat & 0xFFFFFFFF) >> 7 != underflow) // can be removed for release
+			//OVERFLOW_KILLS(9);     // can be removed for release
+		{
+			//fprintf(stderr, "overflow!!! - %llu\n", nat);
+			//fprintf(stderr, "0x%08x - 0x%08x = %d", *hp, &binary_repl_start, (unsigned char*)&binary_repl_start - (unsigned char*)*hp);
+			//exit(9);
+		}
 		i = *(*hp)++;
 		nat = nat + (i & 127);
 	} while (i & 128); // (1 << 7)
-	return nat;
+	if (nat > FMAX)
+		fprintf(stderr, "%llu\n", nat);
+	return (word)nat;
 }
-static __inline__
+static //__inline__
 void decode_field(unsigned char** hp, word *ptrs, int pos, word** fp) {
 	if (*(*hp) == 0) { // fixnum
 		(*hp)++;
@@ -4757,18 +4767,23 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
 //
+#if UINTPTR_MAX == 0xffffffffffffffff // 64-bit gcc platform
+#define language _binary_repl_start
+#else
+#define language binary_repl_start
+#endif
 
 #ifndef NAKED_VM
 extern unsigned char _binary_repl_start[];
 #else
 static
-unsigned char * _binary_repl_start = NULL;
+unsigned char * language = NULL;
 #endif
 
 #if !EMBEDDED_VM
 int main(int argc, char** argv)
 {
-	unsigned char* bootstrap = _binary_repl_start;
+	unsigned char* bootstrap = language;
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
@@ -4846,7 +4861,7 @@ int main(int argc, char** argv)
 	word r = 0;
 
 	OL* olvm = OL_new(bootstrap);
-	if (bootstrap != _binary_repl_start) // was previously malloc'ed
+	if (bootstrap != language) // was previously malloc'ed
 		free(bootstrap);
 
 	// so, let's rock?
@@ -4890,7 +4905,7 @@ OL_new(unsigned char* bootstrap)
 	char* S = 0;
 	if (bootstrap && *bootstrap >= 0x20) {
 		S = (char*)bootstrap;
-		bootstrap = _binary_repl_start;
+		bootstrap = language;
 	}
 #endif
 
