@@ -640,11 +640,11 @@ ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
 	int wrote;
 
 	// regular writing
-	wrote = write(fd, (const void*)&buf[1], size);
+	wrote = write(fd, buf, size);
 
 	// sockets workaround
 	if (wrote == -1 && errno == EBADF) {
-		wrote = send(fd, (char*) &buf[1], size, 0);
+		wrote = send(fd, buf, size, 0);
 
 		// pipes workaround
 		if (wrote == -1 && errno == EBADF) {
@@ -653,7 +653,7 @@ ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
 			// на всякий случай, а то мало ли что МС придумает в будущем
 			static_assert (sizeof(DWORD) == sizeof(wrote),
 			        "passing argument from incompatible pointer type");
-			if (!WriteFile(handle, (char*) &buf[1], size, (LPDWORD)&wrote, NULL))
+			if (!WriteFile(handle, buf, size, (LPDWORD)&wrote, NULL))
 				wrote = -1;
 		}
 	}
