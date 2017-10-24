@@ -475,7 +475,7 @@
       ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
 
       (define (fd->exp-stream fd prompt parse fail re-entry?) ; re-entry? unused
-         (let loop ((old-data null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
+         (let loop ((old-data #null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
             (lets
                ((rchunks end?
                   (if finished?
