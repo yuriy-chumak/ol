@@ -247,8 +247,7 @@
             (else #false)))
 
       ; pass fail to cps later and exit via it on errors
-
-      (define (cps exp env)
+      (define (cps exp env) ; continuation-passing style
          (or
             (call/cc
                (lambda (fail)
@@ -270,5 +269,4 @@
                               (mklambda (list cont-sym) exp)
                               env))))))
             (fail "cps failed")))
-   ))
-
+))
