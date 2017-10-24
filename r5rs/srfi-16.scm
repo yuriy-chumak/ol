@@ -1,7 +1,6 @@
 (define-library (r5rs srfi-16)
 ; http://srfi.schemers.org/srfi-16/srfi-16.html
 
-
 ;; Abstract
 ;
 ; CASE-LAMBDA, a syntax for procedures with  a variable number of arguments, is introduced.
@@ -18,7 +17,7 @@
 
 
 ; NOTES: srfi-16 fully included into r5rs core profile, you should not include it manually!
-
+; -----
 (export
    srfi-16
    

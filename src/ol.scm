@@ -32,7 +32,8 @@
 ; предварительная загрузка зависимостей r5rs core,
 ; (иначе импорт сбойнет)
 (import (src vm))   ;; команды виртуальной машины
-(import (r5rs srfi-16))   ;; case-lambda для core
+(import (r5rs srfi-16))   ;; case-lambda for core
+(import (r5rs srfi-87))   ;; "=>" clauses in case
 (import (r5rs core)) ;; базовый языковый набор ol
 
 ;; forget everhything except these and core values (later list also them explicitly)
