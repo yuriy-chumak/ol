@@ -198,7 +198,7 @@
                      (tuple 'lambda-var fixed? formals body-cps)
                      free)))
             (else
-               (runtime-error "cps-apply-apply: receiver is not a lambda. " semi-cont))))
+               (runtime-error "values-apply: receiver is not a lambda. " semi-cont))))
 
       ;; translate a chain of lambdas as if they were at operator position
       ;; note! also cars are handled as the same jump, which is silly
@@ -214,7 +214,7 @@
             ((lambda-var fixed? formals body)
                (cps-just-lambda cps formals fixed? body env free))
             (else
-               (runtime-error "cps-either: what is " node))))
+               (runtime-error "either: " (list node "argument should be function")))))
 
       (define (cps-exp exp env cont free)
          (tuple-case exp
