@@ -17,8 +17,6 @@
 (print "d_d = " (d_d 1.1))
 
 
-,quit
-
 (define fii (dlsym (dlopen) type-float "fii" type-float type-int+ type-int+))
 (print "fii = " (fii 1.1 2 3))
 (define fi (dlsym (dlopen) type-float "fi" type-float type-int+))
@@ -45,4 +43,3 @@
 ;(print (test4 1 2 3 4))
 ;(print (test5 1 2 3 4 5))
 ;(print "test5 = " (test5 1 2 3 4 5))
-,quit
