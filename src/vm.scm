@@ -9,17 +9,16 @@
 (define-library (src vm)
    (export
       apply apply/cc arity-error
+      call-with-current-continuation
 
       *primops* ; global list of primitive operations with parameters
       multiple-return-variable-primops
       variable-input-arity-primops special-bind-primops
 
-
-      ; commands
-      GOTO APPLY APPLY/CC RET SYS RUN ARITY-ERROR
-      NOP JEQ JZ JE JN JF JAF JAFX
+      ; low level commands (used by assemply etc.)
+      GOTO RET ARITY-ERROR
+      JEQ JZ JE JN JF JAF JAFX
       CLOS0 CLOC0 CLOS1 CLOC1
-
       LD LDE LDN LDT LDF
       MOVE REFI MOVE2
 
@@ -32,25 +31,10 @@
       TVPTR
 
       ; public primitives
-      CONS CAR CDR REF
-      SET-REF SET-REF!
-      EQ? LESS?
-      ADD MUL SUB DIV
-      SHR SHL
-      AND OR XOR
+      CAR CDR NEW    ; used by (lang compile) and (lang eval)
 
-      CAST TYPE SIZE FPU1 FPU2
-
-      NEW    ; used by (lang compile)
-      RAW-OBJECT NEW-OBJECT
-      RAW?
-
-      ; internal, don't act as primop
-      vm:run vm:sys
-
-      FF-APPLY TUPLE-APPLY
-
-      call-with-current-continuation)
+      ; internal commands, don't act as primop
+      vm:run vm:sys)
 
    (begin
 ;     пример выполнение raw-кода прямо в интерпретаторе:
@@ -160,37 +144,40 @@
 
       ; memory allocators
       (setq NEW 23)        ; no real vm:new command required, check rtl-primitive in (lang compile)
-      (setq RAW-OBJECT 60) (setq vm:new-raw-object (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))
-      (setq NEW-OBJECT 35) (setq vm:new-object     (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
-                           (setq vm:new-bytecode   (lambda (bytecode) (vm:new-raw-object TBYTECODE bytecode)))
+      (setq RAW-OBJECT 60) ;(setq vm:new-raw-object (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))
+      (setq NEW-OBJECT 35) ;(setq vm:new-object     (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
+                            (setq vm:new-bytecode   (lambda (bytecode) (vm:new-raw-object TBYTECODE bytecode)))
 
       ; 
       (setq APPLY 20)       (setq apply (vm:new-bytecode '(20)))
       (setq ARITY-ERROR 17) (setq arity-error (vm:new-bytecode '(17)))
+      (setq APPLY/CC 84)    (setq apply/cc (vm:new-bytecode '(84)))
 
       ; other instructions
       (setq NOP 21)
       (setq SYS 27)      (setq vm:sys  (vm:new-bytecode '(27 4 5 6 7 8  24 8)))
       (setq RUN 50)      (setq vm:run  (vm:new-bytecode '(50 4 5)))
 
-      (setq RAW? 48)     (setq vm:raw? (vm:new-bytecode '(48 4 5    24 5)))
-      (setq CAST 22)     (setq vm:cast (vm:new-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+      ; primops:
+
+      (setq RAW? 48)     ;(setq vm:raw? (vm:new-bytecode '(48 4 5    24 5)))
+      (setq CAST 22)     ;(setq vm:cast (vm:new-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
 
       ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
-      (setq ADD 38)      (setq vm:add  (vm:new-bytecode '(38 4 5       6 7)))
-      (setq MUL 39)      (setq vm:mul  (vm:new-bytecode '(39 4 5       6 7)))
-      (setq SUB 40)      (setq vm:sub  (vm:new-bytecode '(40 4 5       6 7)))
-      (setq DIV 26)      (setq vm:div  (vm:new-bytecode '(26 4 5 6     7 8 9)))
-      (setq SHR 58)      (setq vm:shr  (vm:new-bytecode '(58 4 5       6 7)))
-      (setq SHL 59)      (setq vm:shl  (vm:new-bytecode '(59 4 5       6 7)))
+      (setq ADD 38)      ;(setq vm:add  (vm:new-bytecode '(38 4 5       6 7)))
+      (setq MUL 39)      ;(setq vm:mul  (vm:new-bytecode '(39 4 5       6 7)))
+      (setq SUB 40)      ;(setq vm:sub  (vm:new-bytecode '(40 4 5       6 7)))
+      (setq DIV 26)      ;(setq vm:div  (vm:new-bytecode '(26 4 5 6     7 8 9)))
+      (setq SHR 58)      ;(setq vm:shr  (vm:new-bytecode '(58 4 5       6 7)))
+      (setq SHL 59)      ;(setq vm:shl  (vm:new-bytecode '(59 4 5       6 7)))
 
-      (setq AND 55)      (setq vm:and  (vm:new-bytecode '(55 4 5 6  24 6)))
-      (setq OR 56)       (setq vm:or   (vm:new-bytecode '(56 4 5 6  24 6)))
-      (setq XOR 57)      (setq vm:xor  (vm:new-bytecode '(57 4 5 6  24 6)))
+      (setq AND 55)      ;(setq vm:and  (vm:new-bytecode '(55 4 5 6  24 6)))
+      (setq OR 56)       ;(setq vm:or   (vm:new-bytecode '(56 4 5 6  24 6)))
+      (setq XOR 57)      ;(setq vm:xor  (vm:new-bytecode '(57 4 5 6  24 6)))
 
       ; инструкции поддержки арифметики с плавающей точкой (inexact math)
-      (setq FPU1 33)     (setq vm:fpu1 (vm:new-bytecode '(33 4 5 6    24 6)))
-      (setq FPU2 34)     (setq vm:fpu2 (vm:new-bytecode '(34 4 5 6 7  24 7)))
+      (setq FPU1 33)     ;(setq vm:fpu1 (vm:new-bytecode '(33 4 5 6    24 6)))
+      (setq FPU2 34)     ;(setq vm:fpu2 (vm:new-bytecode '(34 4 5 6 7  24 7)))
 
       ; cons:
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
@@ -202,43 +189,42 @@
       ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
       ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
       ; names for these functions, the old terms are still in use.
-      (setq CONS 51)     (setq cons    (vm:new-bytecode '(51 4 5 6  24 6)))
+      (setq CONS 51)     ;(setq cons    (vm:new-bytecode '(51 4 5 6  24 6)))
 
-      (setq CAR 52)      (setq car     (vm:new-bytecode '(52 4 5    24 5)))
-      (setq CDR 53)      (setq cdr     (vm:new-bytecode '(53 4 5    24 5)))
-      (setq REF 47)      (setq ref     (vm:new-bytecode '(47 4 5 6  24 6)))
+      (setq CAR 52)      ;(setq car     (vm:new-bytecode '(52 4 5    24 5)))
+      (setq CDR 53)      ;(setq cdr     (vm:new-bytecode '(53 4 5    24 5)))
+      (setq REF 47)      ;(setq ref     (vm:new-bytecode '(47 4 5 6  24 6)))
       
-      (setq TYPE 15)     (setq type    (vm:new-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
-      (setq SIZE 36)     (setq size    (vm:new-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
+      (setq TYPE 15)     ;(setq type    (vm:new-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
+      (setq SIZE 36)     ;(setq size    (vm:new-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
 
-      (setq SET-REF 45)  (setq set-ref  (vm:new-bytecode '(45 4 5 6 7  24 7)))
-      (setq SET-REF! 10) (setq set-ref! (vm:new-bytecode '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
-
-      (setq EQ? 54)      (setq eq?     (vm:new-bytecode '(54 4 5 6  24 6)))
-      (setq LESS? 44)    (setq less?   (vm:new-bytecode '(44 4 5 6  24 6)))
+      (setq EQ? 54)      ;(setq eq?     (vm:new-bytecode '(54 4 5 6  24 6)))
+      (setq LESS? 44)    ;(setq less?   (vm:new-bytecode '(44 4 5 6  24 6)))
 
       ; deprecated:
       ;(define clock   (vm:new-raw-object type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
+      (setq SET-REF 45)  ;(setq set-ref  (vm:new-bytecode '(45 4 5 6 7  24 7)))
+      (setq SET-REF! 10) ;(setq set-ref! (vm:new-bytecode '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
+
       ; primitives
       (setq TUPLE-APPLY 32)
-      (setq FF-APPLY 49) (setq ff-apply (vm:new-bytecode '(49 4)))
-      (setq APPLY/CC 84) (setq apply/cc (vm:new-bytecode '(84)))
+      (setq FF-APPLY 49) ;(setq ff-apply (vm:new-bytecode '(49 4)))
 
-      ;(define ff:red     (vm:new-raw-object type-bytecode '(43 4 5 6 7  8  24 8)))
-      ;(define ff:black   (vm:new-raw-object type-bytecode '(42 4 5 6 7  8  24 8)))
-      ;(define ff:toggle  (vm:new-raw-object type-bytecode '(46 4        5  24 5)))
-      ;(define ff:red?    (vm:new-raw-object type-bytecode '(41 4        5  24 5)))
-      ;(define ff:right?  (vm:new-raw-object type-bytecode '(37 4        5  24 5)))
+      ;;(define ff:red     (vm:new-raw-object type-bytecode '(43 4 5 6 7  8  24 8)))
+      ;;(define ff:black   (vm:new-raw-object type-bytecode '(42 4 5 6 7  8  24 8)))
+      ;;(define ff:toggle  (vm:new-raw-object type-bytecode '(46 4        5  24 5)))
+      ;;(define ff:red?    (vm:new-raw-object type-bytecode '(41 4        5  24 5)))
+      ;;(define ff:right?  (vm:new-raw-object type-bytecode '(37 4        5  24 5)))
 
-      ;(define syscall (vm:new-raw-object type-bytecode '(63 4 5 6 7 8  24 8)))
+      ;(setq syscall (vm:new-bytecode '(63 4 5 6 7 8  24 8)))
 
-      ;(define vm:version  (vm:new-raw-object type-bytecode '(62 4)))
-      ;(define fxmax       (vm:new-raw-object type-bytecode '(33 4)))
-      ;(define fxmbits     (vm:new-raw-object type-bytecode '(31 4)))
-      ;(define vm:wordsize (vm:new-raw-object type-bytecode '(29 4)))
+      ;(setq vm:endianness (vm:new-bytecode '(28 4)))
+      ;(setq vm:wordsize   (vm:new-bytecode '(29 4)))
+      ;(setq vm:valuewidth (vm:new-bytecode '(31 4)))
+      ;(setq vm:maxvalue   (vm:new-bytecode '(30 4)))
 
-      (setq vm:endianness (vm:new-bytecode '(28 4)))
+      ;(setq vm:version    (vm:new-bytecode '(62 4)))
 
       (setq *primops*
          ; аллокаторы
@@ -246,7 +232,6 @@
          (cons (vm:new TTUPLE 'vm:new-raw-object RAW-OBJECT  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn)) or (vm:new-raw-object type size)
 
          (cons (vm:new TTUPLE 'vm:new   NEW 'any 1 #f)   ; fast creation of small (less than 128 elements) reference object (vm:new type v1 .. vn)
-         (cons (vm:new TTUPLE 'vm:sys   SYS  4 1 vm:sys) ; 
 
          (cons (vm:new TTUPLE 'vm:raw?  RAW? 1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
          (cons (vm:new TTUPLE 'vm:cast  CAST 2 1 vm:cast)  ;; cast object type (works for immediates and allocated)
@@ -292,11 +277,12 @@
          (cons (vm:new TTUPLE 'syscall  63  4 1 syscall)
 
          ; vm-specific constants
-         (cons (vm:new TTUPLE 'vm:version    62  0 1 vm:version)
-         (cons (vm:new TTUPLE 'fxmax         30  0 1 fxmax)   ; todo: rename :may be vm:aimv - "atomic integer maximal value"?
-         (cons (vm:new TTUPLE 'fxmbits       31  0 1 fxmbits) ; todo: rename :may be vm:aimvl - "atomic integer maximal value length in bits"?
-         (cons (vm:new TTUPLE 'vm:wordsize   29  0 1 vm:wordsize)
          (cons (vm:new TTUPLE 'vm:endianness 28  0 1 vm:endianness)
+         (cons (vm:new TTUPLE 'vm:wordsize   29  0 1 vm:wordsize)
+         (cons (vm:new TTUPLE 'vm:maxvalue   30  0 1 vm:maxvalue)
+         (cons (vm:new TTUPLE 'vm:valuewidth 31  0 1 vm:valuewidth)
+
+         (cons (vm:new TTUPLE 'vm:version    62  0 1 vm:version)
 
          ; todo: add macro for call-with-tuple in r5rs
          (cons (vm:new TTUPLE 'tuple-apply 32 1 #false tuple-apply)
@@ -309,7 +295,7 @@
          (cons (vm:new TTUPLE 'ff:toggle  46 1  1  ff:toggle)
          (cons (vm:new TTUPLE 'ff:red?    41 1  1  ff:red?)
          (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
-         #null))))))))))))))))))))))))))))))))))))))))))
+         #null)))))))))))))))))))))))))))))))))))))))))
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд

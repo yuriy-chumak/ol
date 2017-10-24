@@ -66,24 +66,24 @@
 ;               (if (eq? o 0)
 ;                  (loop f)
 ;                  f))))
-;      now changed to vm call (fxmax)
+;      now changed to vm call (vm:maxvalue)
 
       ;; biggest before highest bit is set (needed in some bignum ops)
       (define (*pre-max-fixnum*)
          (let*
-            ((f o (vm:shr (fxmax) 1)))
+            ((f o (vm:shr (vm:maxvalue) 1)))
             f))
 
 ;      ;; count the number of bits in *max-fixnum*
 ;      (define (*fixnum-bits*)
-;         (let loop ((f (fxmax)) (n 0))
+;         (let loop ((f (vm:maxvalue)) (n 0))
 ;            (if (eq? f 0)
 ;               n
 ;               (lets
 ;                  ((f _ (vm:shr f 1))
 ;                   (n _ (vm:add n 1)))
 ;                  (loop f n)))))
-;      now changed to vm call (fxmbits)
+;      now changed to vm call (vm:valuewidth)
 
       (define *big-one*
          (ncons 1 null))
@@ -266,12 +266,12 @@
          (let ((t (type n)))
             (cond
                ((eq? t type-fix+)
-                  (if (eq? n (fxmax))
+                  (if (eq? n (vm:maxvalue))
                      *first-bignum*
                      (lets ((n x (vm:add n 1))) n)))
                ((eq? t type-int+)
                   (let ((lo (ncar n)))
-                     (if (eq? lo (fxmax))
+                     (if (eq? lo (vm:maxvalue))
                         (ncons 0 (nat-succ (ncdr n)))
                         (lets ((lo x (vm:add lo 1)))
                            (ncons lo (ncdr n))))))
@@ -585,7 +585,7 @@
       (define (>> a b)
          (case (type b)
             (type-fix+
-               (lets ((_ wor bits (vm:div 0 b (fxmbits))))
+               (lets ((_ wor bits (vm:div 0 b (vm:valuewidth))))
                   (if (eq? wor 0)
                      (case (type a)
                         (type-fix+ (values-apply (vm:shr a bits) (lambda (hi lo) hi)))
@@ -605,7 +605,7 @@
                ;; todo, use digit multiples instead or drop each digit
                (if (eq? a 0)
                   0 ;; terminate early if out of bits
-                  (>> (ncdr a) (subi b (fxmbits)))))
+                  (>> (ncdr a) (subi b (vm:valuewidth)))))
             (else
                (big-bad-args '>> a b))))
 
@@ -633,7 +633,7 @@
          (cond
             ((eq? a 0) 0)
             ((eq? (type b) type-fix+)
-               (lets ((_ words bits (vm:div 0 b (fxmbits))))
+               (lets ((_ words bits (vm:div 0 b (vm:valuewidth))))
                   (case (type a)
                      (type-fix+
                         (lets ((hi lo (vm:shl a bits)))
@@ -666,7 +666,7 @@
                         (big-bad-args '<< a b)))))
             ((eq? (type b) type-int+)
                ;; not likely to happen though
-               (<< (<< a (fxmax)) (subi b (fxmax))))
+               (<< (<< a (vm:maxvalue)) (subi b (vm:maxvalue))))
             (else
                ;; could allow negative shift left to mean a shift right, but that is
                ;; probably more likely an accident than desired behavior, so failing here
@@ -1101,7 +1101,7 @@
                   ((null? na)
                      (if (null? nb)
                         (let ((b-lead (ncar b)))
-                           (if (eq? b-lead (fxmax))
+                           (if (eq? b-lead (vm:maxvalue))
                               (if (eq? n 0)
                                  0
                                  (shift-local-down (ncar a) (*pre-max-fixnum*) (subi n 1)))
@@ -1115,7 +1115,7 @@
                         ; divisor is larger
                         0))
                   ((null? nb)
-                     (div-shift (ncdr a) b (add n (fxmbits))))
+                     (div-shift (ncdr a) b (add n (vm:valuewidth))))
                   (else
                      (div-shift (ncdr a) (ncdr b) n))))))
 
@@ -1184,7 +1184,7 @@
                   (cond
                      ((null? dr) (values tl dr)) ; failed below
                      (dr
-                        (let ((d (subi d 1))) ; int- (of was -fxmax), fix- or fix+
+                        (let ((d (subi d 1))) ; int- (of was -vm:maxvalue), fix- or fix+
                            (if (negative? d)
                               (values (ncons (add d *first-bignum*) tl) #true) ; borrow
                               (values (ncons d tl) #false))))
@@ -1268,7 +1268,7 @@
             (lets ((rb (nrev b)))
                (if (less? #b000000111111111111111111 (ncar rb))
                   ; scale them to get a more fitting head for b
-                  ; and also get rid of the special case where it is fxmax
+                  ; and also get rid of the special case where it is vm:maxvalue
                   (>> (nat-rem-reverse (<< a 12) (<< b 12)) 12)
                   (let ((r (rrem (nrev a) rb)))
                      (cond
@@ -1308,7 +1308,7 @@
       ; b is usually shorter, so shift b right and then substract instead
       ; of moving a by s
 
-      (define last-bit (subi (fxmbits) 1))
+      (define last-bit (subi (vm:valuewidth) 1))
 
       (define (divex bit bp a b out)
          (cond
@@ -1532,7 +1532,7 @@
       (define (gcd-drop n)
          (let ((s (car n)))
             (cond
-               ((eq? s (*pre-max-fixnum*)) ; (>> fxmax 1)
+               ((eq? s (*pre-max-fixnum*)) ; (>> vm:maxvalue 1)
                   (let ((n (cdr n)))
                      ; drop a digit or zero
                      (if (eq? (type n) type-fix+)
@@ -1552,7 +1552,7 @@
             (map (lambda (x) (cons (<< 1 x) x))
                '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
                  24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43
-                 44 45 46 47 48 49 50 51 52 53 54 55 56)))); (- fxmax 8) bits
+                 44 45 46 47 48 49 50 51 52 53 54 55 56)))) ;(vm:valuewidth) items
                  ; maybe 56 is not required in this list
 
       (define (lazy-gcd a b n)
@@ -2038,7 +2038,7 @@
       (define (log2-big n digs)
          (let ((tl (ncdr n)))
             (if (null? tl)
-               (add (log2-msd (ncar n)) (mul digs (fxmbits)))
+               (add (log2-msd (ncar n)) (mul digs (vm:valuewidth)))
                (log2-big tl (add digs 1)))))
 
       (define (log2 n)

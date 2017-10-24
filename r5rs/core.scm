@@ -17,7 +17,7 @@
       ; vm:new vm:new-object vm:new-raw-object
       ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
       ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
-      ; clock syscall vm:version fxmax fxmbits vm:wordsize
+      ; clock syscall vm:version vm:maxvalue vm:valuewidth
       ; tuple-apply ff-apply
       ; ff:red ff:black ff:toggle ff:red? ff:right?
 
@@ -951,7 +951,7 @@
       (assert (procedure? 'car)                   ===> #f)
 
       ; procedure:  (apply proc arg1 ... args)  * builtin
-      (define apply apply) ;(vm:new-raw-object TBYTECODE `(,APPLY)))
+      (define apply apply)
 
       ; library procedure:  (map proc list1 list2 ...)
       ; The dynamic order in which proc is applied to the elements of the lists is unspecified.
@@ -1269,7 +1269,7 @@
          (syntax-rules (===>)
             ((assert expression ===> result)
                (if (not (equal? expression (quote result)))
-                  (vm:sys #false 5 "assertion error: " (cons (quote expression) (cons "must be" (cons (quote result) #null))))))))
+                  (vm:sys #false 5 "assertion error: " (list (quote expression) "must be" (quote result)))))))
 
       ;; used syscalls
       (define (exec function . args) (syscall 59 function args #f))

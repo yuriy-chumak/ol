@@ -141,8 +141,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
 
-// математику считать так: (values-apply (vm:add (fxmax) 1) (lambda (n carry) (list carry n)))
-//                   либо: (let* ((n carry (vm:add (fxmax) 1))) (...))
+// математику считать так: (values-apply (vm:add (vm:maxvalue) 1) (lambda (n carry) (list carry n)))
+//                   либо: (let* ((n carry (vm:add (vm:maxvalue) 1))) (...))
 // при превышении выдает, естественно, мусор
 //
 // Z80: http://www.emuverse.ru/wiki/Zilog_Z80/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4
@@ -3031,7 +3031,7 @@ loop:;
 
 
 	// todo: add the instruction name
-	case 28: {// (vm:endianness)
+	case 28: { // (vm:endianness)
 		union
 		{
 			int_t l;
@@ -3048,10 +3048,10 @@ loop:;
 	case 29: // (vm:wordsize)
 		A0 = F(W);
 		ip += 1; break;
-	case 30: // (fxmax)
+	case 30: // (vm:maxvalue)
 		A0 = F(FMAX);
 		ip += 1; break;
-	case 31: // (fxmbits)
+	case 31: // (vm:valuewidth)
 		A0 = F(FBITS);
 		ip += 1; break;
 
@@ -4692,7 +4692,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			unsigned char *wp = (unsigned char*) &car(new (type, words+1, pads));
 			while (size--)
 				*wp++ = *hp++;
-			while (pads--)
+			while (pads--) // not required, but will be usefull
 				*wp++ = 0;
 			break;
 		}
