@@ -161,14 +161,14 @@
                               ((walker (env-bind env (cadr exp)) fail)
                                  (caddr exp)))
                            (fail (list "funny lambda " exp))))
-                     ((bind)
+                     ((evaluate)
                         (if (and (= (length exp) 4) (formals-cool? exp))
                            (let ((walk (walker (env-bind env (cadr exp)) fail)))
-                              (list 'bind
+                              (list 'evaluate
                                  (cadr exp)
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
-                           (fail (list "funny bind " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
+                           (fail (list "funny evaluate " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
                      ((values values-apply either ifeq)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
@@ -206,16 +206,16 @@
       (define *special-forms*
          (list->ff
             (list
-               (cons 'quote   (tuple 'special 'quote))
-               (cons 'lambda  (tuple 'special 'lambda))
+               (cons 'quote    (tuple 'special 'quote))
+               (cons 'lambda   (tuple 'special 'lambda))
 
-               (cons 'either  (tuple 'special 'either))
+               (cons 'either   (tuple 'special 'either))
 
-               (cons 'setq    (tuple 'special 'setq))
-               (cons 'bind    (tuple 'special 'bind)) ; todo: rename 'bind' to 'evaluate'?
-               (cons 'ifeq    (tuple 'special 'ifeq))
+               (cons 'setq     (tuple 'special 'setq))
+               (cons 'evaluate (tuple 'special 'evaluate))
+               (cons 'ifeq     (tuple 'special 'ifeq))
 
-               (cons 'values  (tuple 'special 'values))
+               (cons 'values   (tuple 'special 'values))
                (cons 'values-apply  (tuple 'special 'values-apply))
             )))
 

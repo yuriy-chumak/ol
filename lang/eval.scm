@@ -14,7 +14,6 @@
       print-repl-error
       bind-toplevel
       library-import                ; env exps fail-cont → env' | (fail-cont <reason>)
-      evaluate
       *src-olvm*
       ; 6.5 Eval
       eval eval-repl
@@ -167,7 +166,7 @@
             (else is foo
                (fail (list "Funny result for compiler " foo)))))
 
-      (define (evaluate exp env)
+      (define (repl-evaluate exp env)
          (evaluate-as exp env 'repl-eval))
 
       ;; toplevel variable to which loaded libraries are added
@@ -774,7 +773,7 @@
                                        (cons ";; Imported " (cdr exp)))))
                               envp))))
                   ((definition? exp)
-                     (tuple-case (evaluate (caddr exp) env)
+                     (tuple-case (repl-evaluate (caddr exp) env)
                         ((ok value env2)
                            (lets
                               ((env (env-set env (cadr exp) value))
@@ -789,7 +788,7 @@
                            (fail
                               (list "Definition of" (cadr exp) "failed because" reason)))))
                   ((multi-definition? exp)
-                     (tuple-case (evaluate (caddr exp) env)
+                     (tuple-case (repl-evaluate (caddr exp) env)
                         ((ok value env2)
                            (let ((names (cadr exp)))
                               (if (and (list? value)
@@ -847,7 +846,7 @@
                               (fail
                                  (list "Library" name "failed to load because" reason))))))
                   (else
-                     (evaluate exp env))))
+                     (repl-evaluate exp env))))
             ((fail reason)
                (tuple 'fail
                   (list "Macro expansion failed: " reason)))))

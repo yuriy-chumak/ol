@@ -10,9 +10,8 @@
       ;; special forms:
       ; quote lambda setq
       ; values values-apply
-      ; ifeq either bind
+      ; ifeq either evaluate
       ;
-
       ;; virtual machine primitives:
       ; vm:new vm:new-raw-object vm:new-object
       ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
@@ -271,7 +270,7 @@
       ; library syntax:  (letrec <bindings> <body>)
       (define-syntax letrec
          (syntax-rules ()
-            ((letrec ((?var ?val) ...) ?body) (bind (?var ...) (?val ...) ?body))
+            ((letrec ((?var ?val) ...) ?body) (evaluate (?var ...) (?val ...) ?body))
             ((letrec vars body ...) (letrec vars (begin body ...)))))
 
       ; library syntax:  (letrec* ...) - extension
@@ -289,7 +288,7 @@
          (syntax-rules ()
             ((let ((var val) ...) exp . rest)
                ((lambda (var ...) exp . rest) val ...))
-               ;why not (bind (var ...) (val ...) exp . rest)) ???
+               ;why not (evaluate (var ...) (val ...) exp . rest)) ???
             ((let keyword ((var init) ...) exp . rest)
                (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
 
@@ -421,11 +420,11 @@
                (define op
                   (letrec ((op (lambda args body))) op)))
             ((define name (lambda (var ...) . body))
-               (setq name (bind (name) ((lambda (var ...) . body)) name)))
+               (setq name (evaluate (name) ((lambda (var ...) . body)) name)))
             ((define op val)
                (setq op val))))
 
-;      ;; not defining directly because bind doesn't yet do variable arity
+;      ;; not defining directly because evaluate doesn't yet do variable arity
 ;      ;(define list ((lambda (x) x) (lambda x x)))
 ;
 ;      ;; fixme, should use a print-limited variant for debugging
@@ -1011,6 +1010,10 @@
 
       ;; 6.5  Eval
       ; ...
+      ; procedure:  (eval expression environment-specifier)  * (lang eval)
+      ; procedure:  (scheme-report-environment version)      * (lang eval)
+      ; procedure:  (null-environment version)               * (lang eval)
+      ; optional procedure:  (interaction-environment)       * (lang eval)
 
       ;; 6.6
       ; ...
@@ -1203,9 +1206,9 @@
 ;               (define op
 ;                  (letrec ((op (lambda args body))) op)))
 ;            ((define name (lambda (var ...) . body))
-;               (setq name (bind (name) ((lambda (var ...) . body)) name)))
+;               (setq name (evaluate (name) ((lambda (var ...) . body)) name)))
 ;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
-;               (setq name (bind (name) ((lambda (var ...) . body)) name)))
+;               (setq name (evaluate (name) ((lambda (var ...) . body)) name)))
 ;            ((define op val)
 ;               (setq op val))))
 
