@@ -332,13 +332,13 @@
                                        free)))
                               ((ifeq)
                                  (expand-list exp env free))
-                              ((ifary)
+                              ((either)
                                  (if (or (null? (cdr exp)) (null? (cddr exp)))
-                                    (abort (list "Bad ifary: " exp))
+                                    (abort (list "Bad either: " exp))
                                     (lets
                                        ((first free (expand (cadr exp)  env free abort))
                                         (rest  free (expand (caddr exp) env free abort)))
-                                       (values (list 'ifary first rest) free))))
+                                       (values (list 'either first rest) free))))
 
                               ((values)
                                  (expand-list exp env free))

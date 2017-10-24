@@ -338,11 +338,11 @@
       (setq call-with-current-continuation
          ('_sans_cps (lambda (k f)
                         (f k (lambda (c . x) (apply/cc k x))))))
-                        ; speeduped version:
+                        ; accelerated version:
                         ;(f k
-                        ;   (ifary (lambda (c a) (k a))
-                        ;   (ifary (lambda (c a b) (k a b))
-                        ;   (ifary (lambda (c . x) (apply/cc k x))
-                        ;   (lambda () (arity-error)))))))))
+                        ;   (either (lambda (c a) (k a))
+                        ;   (either (lambda (c a b) (k a b))
+                        ;   (either (lambda (c . x) (apply/cc k x))
+                        ;           (lambda () (arity-error)))))))))
 
 ))

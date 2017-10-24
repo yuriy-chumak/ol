@@ -84,11 +84,11 @@
                   (values
                      (tuple 'ifeq a b then else)
                      free)))
-            ((ifary then else)
+            ((either then else)
                (lets
                   ((then free (alpha then env free))
                    (else free (alpha else env free)))
-                  (values (tuple 'ifary then else) free)))
+                  (values (tuple 'either then else) free)))
             (else
                (runtime-error "alpha: unknown AST node: " exp))))
 

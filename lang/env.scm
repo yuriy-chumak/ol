@@ -169,7 +169,7 @@
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
                            (fail (list "funny bind " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((values values-apply ifary ifeq)
+                     ((values values-apply either ifeq)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
                         (map walk exp))))
@@ -209,9 +209,10 @@
                (cons 'quote   (tuple 'special 'quote))
                (cons 'lambda  (tuple 'special 'lambda))
 
+               (cons 'either  (tuple 'special 'either))
+
                (cons 'setq    (tuple 'special 'setq))
-               (cons 'bind    (tuple 'special 'bind))
-               (cons 'ifary   (tuple 'special 'ifary))
+               (cons 'bind    (tuple 'special 'bind)) ; todo: rename 'bind' to 'evaluate'?
                (cons 'ifeq    (tuple 'special 'ifeq))
 
                (cons 'values  (tuple 'special 'values))

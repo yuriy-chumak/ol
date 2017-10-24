@@ -136,12 +136,12 @@
                               (translate then env fail)
                               (translate else env fail)))
                         (fail (list "Bad ifeq " exp))))
-                  ((ifary) ; (ifary (lambda-ok) (lambda-fail))
+                  ((either) ; (either (lambda-ok) (lambda-else))
                      (if (= (length exp) 3)
-                        (tuple 'ifary
+                        (tuple 'either
                            (translate (second exp) env fail)
                            (translate (third exp) env fail))
-                        (fail (list "Bad ifary node: " exp))))
+                        (fail (list "Bad either node: " exp))))
 
                   ((values)
                      (tuple 'values

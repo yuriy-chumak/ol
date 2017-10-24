@@ -36,7 +36,7 @@
          ((case-lambda (formals . body))
             (lambda formals . body))
          ((case-lambda (formals . body) . rest)
-            (ifary (lambda formals . body)
+            (either (lambda formals . body)
                (case-lambda . rest)))))
 
 ))

@@ -50,7 +50,7 @@
                   (walk body (union formals bound) found))
                ((ifeq a b then else)
                   (walk-list (list a b then else) bound found))
-               ((ifary fn else)
+               ((either fn else)
                   (walk fn bound
                      (walk else bound found)))
                ((call rator rands)
@@ -417,8 +417,8 @@
                    (then (unletrec then env))
                    (else (unletrec else env)))
                   (tuple 'ifeq a b then else)))
-            ((ifary func else)
-               (tuple 'ifary
+            ((either func else)
+               (tuple 'either
                   (unletrec func env)
                   (unletrec else env)))
             (else

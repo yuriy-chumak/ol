@@ -10,7 +10,8 @@
       ;; special forms:
       ; quote lambda setq
       ; values values-apply
-      ; ifeq ifary bind
+      ; ifeq either bind
+      ;
 
       ;; virtual machine primitives:
       ; vm:new vm:new-raw-object vm:new-object
@@ -19,8 +20,6 @@
       ; clock syscall vm:version fxmax fxmbits vm:wordsize
       ; tuple-apply ff-apply
       ; ff:red ff:black ff:toggle ff:red? ff:right?
-
-      ; todo: rename "ifary" to "either"
 
       ; ========================================================================================================
       ; Scheme

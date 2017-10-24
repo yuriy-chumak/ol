@@ -74,7 +74,7 @@
             ((ifeq a b then else)
                (max-ast-id a (max-ast-id b
                   (max-ast-id then (max-ast-id else max)))))
-            ((ifary fn else)
+            ((either fn else)
                (max-ast-id fn
                   (max-ast-id else max)))
             (else
