@@ -1528,55 +1528,53 @@
 
       ;; lazy gcd
 
+      (define (pre-m)
+         (let* ((value carry (vm:sub (vm:valuewidth) 1)))
+            value))
+
       ; O(1), shift focus bit
       (define (gcd-drop n)
          (let ((s (car n)))
             (cond
-               ((eq? s (*pre-max-fixnum*)) ; (>> vm:maxvalue 1)
+               ((eq? s (pre-m))
                   (let ((n (cdr n)))
                      ; drop a digit or zero
                      (if (eq? (type n) type-fix+)
-                        (cons 1 0)
+                        (cons 0 0)
                         (let ((tl (ncdr n)))
                            (if (null? (ncdr tl))
-                              (cons 1 (ncar tl))
-                              (cons 1 tl))))))
+                              (cons 0 (ncar tl))
+                              (cons 0 tl))))))
                (else
-                  (lets ((hi lo (vm:shl s 1)))
-                     (cons lo (cdr n)))))))
-
-      ;; FIXME - consider carrying these instead
-      ;; FIXME depends on fixnum size
-      (define gcd-shifts
-         (list->ff
-            (map (lambda (x) (cons (<< 1 x) x))
-               '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
-                 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43
-                 44 45 46 47 48 49 50 51 52 53 54 55 56)))) ;(vm:valuewidth) items
-                 ; maybe 56 is not required in this list
+                  (let* ((value carry (vm:add s 1)))
+                     (cons value (cdr n)))))))
 
       (define (lazy-gcd a b n)
-         (let ((av (cdr a)) (bv (cdr b)))
+         (let ((av (cdr a)) (bv (cdr b))
+               (a1 (let* ((c v (vm:shl 1 (car a)))) v))
+               (b1 (let* ((c v (vm:shl 1 (car b)))) v)))
             (cond
                ((eq? av 0) (<< bv n))
                ((eq? bv 0) (<< av n))
-               ((eq? (band av (car a)) 0) ; a even
-                  (if (eq? (band bv (car b)) 0) ; a and b even
-                     (lazy-gcd (gcd-drop a) (gcd-drop b) (add n 1))
-                     (lazy-gcd (gcd-drop a) b n)))
-               ((eq? (band bv (car b)) 0) ; a is odd, u is even
+               ((eq? (band av a1) 0) ; a even
+                  (if (eq? (band bv b1) 0) ; a and b even
+                     (begin
+                        (lazy-gcd (gcd-drop a) (gcd-drop b) (add n 1)))
+                     (begin
+                        (lazy-gcd (gcd-drop a) b n))))
+               ((eq? (band bv b1) 0) ; a is odd, u is even
                   (lazy-gcd a (gcd-drop b) n))
                (else
                   (lets
-                     ((av (>> av (get gcd-shifts (car a) 0)))
-                      (bv (>> bv (get gcd-shifts (car b) 0)))
+                     ((av (>> av (car a)))
+                      (bv (>> bv (car b)))
                       (x (subi av bv)))
                      (if (negative? x)
-                        (lazy-gcd (cons 2 (negate x)) (cons 1 av) n)
-                        (lazy-gcd (cons 2 x) (cons 1 bv) n)))))))
+                        (lazy-gcd (cons 1 (negate x)) (cons 0 av) n)
+                        (lazy-gcd (cons 1 x) (cons 0 bv) n)))))))
 
       ;; why are the bit values consed to head of numbers?
-      (define (nat-gcd a b) (lazy-gcd (cons 1 a) (cons 1 b) 0)) ;; FIXME - does not yet work with variable fixnum size
+      (define (nat-gcd a b) (lazy-gcd (cons 0 a) (cons 0 b) 0)) ;; FIXME - does not yet work with variable fixnum size (?)
       ;(define nat-gcd gcd-euclid)
 
       ;; signed wrapper for nat-gcd
