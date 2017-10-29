@@ -932,10 +932,9 @@
       ;"MINGW32_NT-5.2"
       ;...
       (else   (runtime-error "Unknown platform" uname)))))
-
 (define $ (or
    (dlopen GL_LIBRARY)
-   (runtime-error "Can't load OpenGL library")))
+   (runtime-error "Can't load OpenGL library" GL_LIBRARY)))
 (define WGL $)
 (define GLX (if linux? (dlopen "libGLX.so")))
 (define GDI (if win32? (dlopen "gdi32.dll")))
