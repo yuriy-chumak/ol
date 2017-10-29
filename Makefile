@@ -203,6 +203,14 @@ vm: src/olvm.c src/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
 	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
+vm32: src/olvm.c src/olvm.h
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
+	   -Xlinker --export-dynamic $(L) -m32
+	@echo Ok.
+vm64: src/olvm.c src/olvm.h
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
+	   -Xlinker --export-dynamic $(L) -m64
+	@echo Ok.
 
 
 olvm.js: src/olvm.c src/olvm.h src/slim.c
@@ -280,11 +288,18 @@ tests: \
    tests/vector-rand.scm\
    tests/numbers.scm
 	@rm -f $(FAILED)
-	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm $(L)
-	@./tests-vm
+	@echo "Internal VM testing:"
+	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm64 $(L) -m64
+	@echo "64-bit:"
+	@./tests-vm64
+	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm32 $(L) -m32
+	@echo "32-bit:"
+	@./tests-vm32
+	@echo "Common:"
+	@make vm32 vm64
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
-	   if ./vm repl <$$F | diff - $$F.ok >/dev/null ;then\
+	   if ./vm32 repl <$$F | diff - $$F.ok >/dev/null && ./vm64 repl <$$F | diff - $$F.ok >/dev/null;then\
 	      echo "Ok." ;\
 	   else \
 	      echo "\033[0;31mFailed!\033[0m" ;\
