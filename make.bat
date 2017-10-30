@@ -1,4 +1,8 @@
 @echo off
+set PATH~=%PATH%
+set MINGW32=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\
+set MINGW64=C:\mingw-w64\x86_64-6.1.0-posix-seh-rt_v5-rev1\mingw64\bin\
+
 echo -=( building %1 )=-------------------------------------------------------------------
 IF "%1"==""   GOTO ALL
 IF "%1"=="vm" GOTO VM
@@ -6,6 +10,7 @@ IF "%1"=="vm32" GOTO VM32
 IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
+IF "%1"=="repl32" GOTO REPL32
 IF "%1"=="boot" GOTO BOOT
 IF "%1"=="slim" GOTO SLIM
 IF "%1"=="talkback" GOTO TALKBACK
@@ -70,28 +75,66 @@ GOTO:EOF
 vm repl <src/to-c.scm >src/boot.c
 GOTO:EOF
 
+:: ======================================
 :VM
 echo.   *** Making virtual machine:
 gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -o "vm.exe" -lws2_32 -DHAS_PINVOKE=1 -m64 -DNDEBUG -s
+   src/olvm.c -o "vm.exe" -lws2_32 -DHAS_PINVOKE=1 -DNDEBUG -s
 GOTO:EOF
 
+:: ======================================
 :VM32
 echo.   *** Making 32-bit virtual machine:
-set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
-gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -g2 -DNDEBUG -DHAS_PINVOKE=1 -m32
+set PATH=%MINGW32%;%PATH%
+
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -o "vm32.exe" -lws2_32 -DHAS_PINVOKE=1 -m32 -DNDEBUG -s
+
+set PATH=%PATH~%
+GOTO:EOF
+
+:: ======================================
+:VM64
+echo.   *** Making 64-bit virtual machine:
+set PATH=%MINGW64%;%PATH%
+
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -o "vm64.exe" -lws2_32 -DHAS_PINVOKE=1 -m64 -DNDEBUG -s
+
+set PATH=%PATH~%
+GOTO:EOF
+
+
+:REPL32
+set PATH=%MINGW32%;%PATH%
+ld -r -b binary -o src/repl32.o repl
+set PATH=%PATH~%
+GOTO:EOF
+
+:REPL64
+set PATH=%MINGW64%;%PATH%
+ld -r -b binary -o src/repl32.o repl
+set PATH=%PATH~%
 GOTO:EOF
 
 
 :OL
 echo.   *** Making Otus Lisp:
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
 GOTO:EOF
 
 :OL32
 echo.   *** Making 32-bit Otus Lisp:
-set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
+set PATH=%MINGW32%;%PATH%
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
+set PATH=%PATH~%
+GOTO:EOF
+
+:OL64
+echo.   *** Making 32-bit Otus Lisp:
+set PATH=%MINGW64%;%PATH%
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+set PATH=%PATH~%
 GOTO:EOF
 
 :REPL
@@ -108,7 +151,15 @@ copy boot.fasl repl
 GOTO :REPL
 
 :REPL32
-ld -r -b binary -o src/repl.o -m32 repl
+set PATH=%MINGW32%;%PATH%
+ld -r -b binary -o src/repl32.o -m32 repl
+set PATH=%PATH~%
+GOTO:EOF
+
+:REPL64
+set PATH=%MINGW64%;%PATH%
+ld -r -b binary -o src/repl64.o -m32 repl
+set PATH=%PATH~%
 GOTO:EOF
 
 :SLIM
@@ -129,7 +180,8 @@ GOTO:EOF
 :JS
 echo.   *** Making virtual machine on js:
 @set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
-call emcc src/olvm.c src/slim.c -o olvm.js -s ASYNCIFY=1 -Oz ^
+ol src/to-c.scm >src/repl.c
+call emcc src/olvm.c src/repl.c -o olvm.js -s ASYNCIFY=1 -Oz ^
      -s NO_EXIT_RUNTIME=1 ^
      -fno-exceptions -fno-rtti ^
      --memory-init-file 0 --llvm-opts "['-O3']"
@@ -162,9 +214,14 @@ GOTO:EOF
 
 :TEST
 echo|set /p=Testing %1 ...
-ol.exe %1 >C:\TEMP\out
+vm32.exe repl %1 >C:\TEMP\out
 fc C:\TEMP\out %1.ok > nul
 if errorlevel 1 goto fail1
+
+vm64.exe repl %1 >C:\TEMP\out
+fc C:\TEMP\out %1.ok > nul
+if errorlevel 1 goto fail1
+
 echo. Ok.
 GOTO:EOF
 :fail1
@@ -172,31 +229,63 @@ echo. Failed.
 GOTO:EOF
 
 
-
+:: let's do full package testing (32- and 64-bit binaries)
 :TESTS
-call :OL
-:: Prepare the binaries
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
-    -DNAKED_VM -DEMBEDDED_VM ^
-    src/olvm.c tests/vm.c -o "test-vm.exe" -lws2_32 -O2 -g2 -m64
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
-    -DHAS_PINVOKE=1 ^
-    src/olvm.c src/repl.o tests/ffi.c -o "test-ffi.exe" -lws2_32 -O2 -g2 -m64
 
+call :VM32
+call :VM64
+call :REPL32
+call :REPL64
 
-:: VM internal tests
-test-vm.exe
+:: internal
+set PATH=%MINGW32%;%PATH%
+echo 32-bit internal test:
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c tests/vm.c -o "test-vm32.exe" -lws2_32 -DEMBEDDED_VM=1 -m32 -DNDEBUG -s -Isrc
+test-vm32.exe
 if errorlevel 1 goto fail
 
-:: FFI tests
-echo|set /p=Testing tests\ffi.scm ...
-test-ffi.exe tests/ffi.scm > C:\TEMP\out
+set PATH=%PATH~%
+set PATH=%MINGW64%;%PATH%
+echo 64-bit internal test:
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c tests/vm.c -o "test-vm64.exe" -lws2_32 -DEMBEDDED_VM=1 -m64 -DNDEBUG -s -Isrc
+test-vm64.exe
+if errorlevel 1 goto fail
+
+set PATH=%PATH~%
+
+:: ffi
+set PATH=%MINGW32%;%PATH%
+echo|set /p=32-bit ffi testing ...
+ld -r -b binary -o src/repl32.o repl
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    -DHAS_PINVOKE=1 ^
+    src/olvm.c src/repl32.o tests/ffi.c -o "test-ffi32.exe" -lws2_32 -O2 -g2 -m32
+::test-ffi32.exe tests/ffi.scm > C:\TEMP\out
+::fc C:\TEMP\out tests/ffi.scm.ok > nul
+::if errorlevel 1 (
+::   echo. Failed.
+::   goto fail
+::)
+echo. Ok.
+
+set PATH=%PATH~%
+set PATH=%MINGW64%;%PATH%
+echo|set /p=64-bit ffi testing ...
+ld -r -b binary -o src/repl64.o repl
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    -DHAS_PINVOKE=1 ^
+    src/olvm.c src/repl64.o tests/ffi.c -o "test-ffi64.exe" -lws2_32 -O2 -g2 -m64
+test-ffi64.exe tests/ffi.scm > C:\TEMP\out
 fc C:\TEMP\out tests/ffi.scm.ok > nul
 if errorlevel 1 (
    echo. Failed.
    goto fail
 )
 echo. Ok.
+
+set PATH=%PATH~%
 
 :: Other tests
 call :TEST tests\apply.scm
