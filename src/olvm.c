@@ -4604,33 +4604,26 @@ done:;
 // tbd: comment
 // todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
 //	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
-static //__inline__
+static __inline__
 word get_nat(unsigned char** hp)
 {
-	big_t nat = 0;
+	word nat = 0;
 	char i;
 
 	#ifndef OVERFLOW_KILLS
 	#define OVERFLOW_KILLS(n) { fprintf(stderr, "overflow!!!\n"); exit(n); }
 	#endif
 	do {
-		long long underflow = nat; // can be removed for release
+		word underflow = nat; // can be removed for release
 		nat <<= 7;
-		if ((nat & 0xFFFFFFFF) >> 7 != underflow) // can be removed for release
-			//OVERFLOW_KILLS(9);     // can be removed for release
-		{
-			//fprintf(stderr, "overflow!!! - %llu\n", nat);
-			//fprintf(stderr, "0x%08x - 0x%08x = %d", *hp, &binary_repl_start, (unsigned char*)&binary_repl_start - (unsigned char*)*hp);
-			//exit(9);
-		}
+		if ((nat >> 7) != underflow) // can be removed for release
+			OVERFLOW_KILLS(9);       // can be removed for release
 		i = *(*hp)++;
 		nat = nat + (i & 127);
 	} while (i & 128); // (1 << 7)
-	if (nat > FMAX)
-		fprintf(stderr, "%llu\n", nat);
 	return (word)nat;
 }
-static //__inline__
+static __inline__
 void decode_field(unsigned char** hp, word *ptrs, int pos, word** fp) {
 	if (*(*hp) == 0) { // fixnum
 		(*hp)++;
@@ -4767,14 +4760,19 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
 //
-#if UINTPTR_MAX == 0xffffffffffffffff // 64-bit gcc platform
-#define language _binary_repl_start
+// Temporary:
+#ifdef _WIN32
+#	if UINTPTR_MAX == 0xffffffffffffffff // 64-bit gcc platform?
+#		define language _binary_repl_start
+#	else
+#		define language binary_repl_start
+#	endif
 #else
-#define language binary_repl_start
+#	define language _binary_repl_start
 #endif
 
 #ifndef NAKED_VM
-extern unsigned char _binary_repl_start[];
+extern unsigned char language[];
 #else
 static
 unsigned char * language = NULL;
