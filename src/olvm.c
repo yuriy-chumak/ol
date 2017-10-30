@@ -670,6 +670,30 @@ ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
 // close
 #define os_close close
 
+#ifdef _WIN32
+int pipe(int* pipes)
+{
+	static int id = 0;
+	char name[64];
+	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id); //todo: __sync_fetch_and_add(&id, 1));
+
+	HANDLE pipe1 = CreateNamedPipe(name,
+			PIPE_ACCESS_DUPLEX|WRITE_DAC,
+			PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
+			2, 1024, 1024, 2000, NULL);
+
+	HANDLE pipe2 = CreateFile(name,
+			GENERIC_WRITE, 0,
+			NULL,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+			NULL);
+
+	pipes[0] = _open_osfhandle((intptr_t)pipe1, _O_APPEND | _O_RDONLY);
+	pipes[1] = _open_osfhandle((intptr_t)pipe2, _O_APPEND | _O_WRONLY);
+	return 0;
+}
+#endif
+
 // --------------------------------------------------------
 // -=( uname )=--------------------------------------------
 
@@ -3550,38 +3574,13 @@ loop:;
 		#if SYSCALL_PIPE
 		case SYSCALL_PIPE: {
 			int pipefd[2];
-		#	ifdef _WIN32
-			int pipe(int* pipes)
-			{
-				static int id = 0;
-				char name[64];
-				snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id); //todo: __sync_fetch_and_add(&id, 1));
-
-				HANDLE pipe1 = CreateNamedPipe(name,
-						PIPE_ACCESS_DUPLEX|WRITE_DAC,
-						PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
-						2, 1024, 1024, 2000, NULL);
-
-				HANDLE pipe2 = CreateFile(name,
-						GENERIC_WRITE, 0,
-						NULL,
-						OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-						NULL);
-
-				pipes[0] = (int)(size_t)pipe1; // may loss bits
-				pipes[1] = (int)(size_t)pipe2;
-				return 0;
-			}
-		#	endif
 
 			if (pipe(pipefd) == 0) {
 				result = new_pair(make_port(pipefd[0]), make_port(pipefd[1]));
 
 				#ifndef _WIN32
-				{
-					fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
-					fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
-				}
+				fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
+				fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
 				#endif
 			}
 			else
