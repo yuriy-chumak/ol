@@ -99,7 +99,6 @@ int_t gcd(int_t a, int_t b)
 #define NEWLINE(x) x "\n\t"
 #define __ASM__(...) __asm__(EVAL(MAP(NEWLINE, __VA_ARGS__)))
 
-
 // platform defines:
 // https://sourceforge.net/p/predef/wiki/Architectures/
 //
@@ -320,7 +319,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 //
 // В нашем случае мы так или иначе восстанавливаем указатель стека, так что
 // функция x86_call у нас будет универсальная cdecl/stdcall
-long x86_call(word argv[], long i, void* function, long type);
+long long x86_call(word argv[], long i, void* function, long type);
 
 __ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
@@ -376,7 +375,6 @@ word* ffi(OL* self, word* arguments)
 	// pascal(OS/2, MsWin 3.x, Delphi), stdcall(Win32),
 	// fastcall(ms), vectorcall(ms), safecall(delphi),
 	// thiscall(ms)
-	typedef long long ret_t;
 
 		// todo: ограничиться количеством функций поменьше
 		//	а можно сделать все в одной switch:
@@ -972,7 +970,7 @@ word* ffi(OL* self, word* arguments)
 	}
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	ret_t got = 0;   // результат вызова функции
+	long long got = 0; // результат вызова функции (64 бита для возможного double)
 
 	self->R[128 + 1] = (word)B;
 	self->R[128 + 2] = (word)C;
@@ -1010,17 +1008,20 @@ word* ffi(OL* self, word* arguments)
 			x86_call(args, i, function, returntype & 0x3F);
 // arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
 #elif __arm__
+	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
 	got = call(args, i, function, returntype & 0x3F);
 #elif __aarch64__
+	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
 	got = call(args, i, function, returntype & 0x3F);
 #elif __mips__
 	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
+	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
@@ -1050,6 +1051,7 @@ word* ffi(OL* self, word* arguments)
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}*/
+	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}

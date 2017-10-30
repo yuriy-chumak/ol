@@ -6,21 +6,29 @@
 ; d: doubles
 ; result of function should be sum of all arguments
 
+(define (assert text result value)
+   (print text " = "
+      (if (< (abs (- result value)) 0.0001) "ok." result)))
 
 (define i_i (dlsym (dlopen) type-int+ "i_i" type-int+))
 (define f_f (dlsym (dlopen) type-float "f_f" type-float))
 (define d_d (dlsym (dlopen) type-double "d_d" type-double))
 
-
-(print "i_i = " (i_i 1))
-(print "f_f = " (f_f 1.1))
-(print "d_d = " (d_d 1.1))
-
-
-(define fii (dlsym (dlopen) type-float "fii" type-float type-int+ type-int+))
-(print "fii = " (fii 1.1 2 3))
 (define fi (dlsym (dlopen) type-float "fi" type-float type-int+))
-(print "fi = " (fi 1.1 2))
+(define fii (dlsym (dlopen) type-float "fii" type-float type-int+ type-int+))
+(define fiiii (dlsym (dlopen) type-float "fiiii" type-float type-int+ type-int+ type-int+ type-int+))
+(define ifiii (dlsym (dlopen) type-float "ifiii" type-int+ type-float type-int+ type-int+ type-int+))
+(define iiiif (dlsym (dlopen) type-float "iiiif" type-int+ type-int+ type-int+ type-int+ type-float))
+(define fiiif (dlsym (dlopen) type-float "fiiif" type-float type-int+ type-int+ type-int+ type-float))
+
+
+(assert "i_i" (i_i 1)   1)
+(assert "f_f" (f_f 1.1) 1.1)
+(assert "d_d" (d_d 2.2) 2.2)
+
+
+(assert "fi" (fi 1.1 2) 3.1)
+(assert "fii" (fii 1.1 2 3) 6.1)
 
 (print "> " (- (fi 1.1 2) (fii 1.1 2 3)))
 
