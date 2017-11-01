@@ -1954,34 +1954,33 @@ word d2ol(struct ol_t* ol, double v) {
 	double i;
 	if (modf(v, &i) != 0) {
 		word* p = fp;
+
 		word m = 1;
 		for (int t = 0; t < 1024; t++) { // ограничим точность снизу
 			double i, f = modf(v, &i);
 			if (f == 0) {
-				*++p = F(m & FMAX);
+				*++p = F(m);
 				break;
 			}
-			v *= 10;
-			if (m & HIGHBIT) {
+			v *= 2;
+			if (m & ~FMAX) {
 				*++p = F(0);
 				m >>= FBITS;
 			}
-			m *= 10;
+			m *= 2;
 		}
 		// если все-таки что-то после запятой было, то
 		if (p != fp) {
 			modf(v, &v); // отбросим все после запятой
 
 			size_t len = (p - fp);
-			new_bytevector(TBVEC, sizeof(word) * len); // dummy
-			              // will be destroyed during next gc()
-			word* m = fp;
+			p = new(TTUPLE, len+1) + len; // temp, will be destroyed during next gc()
 
 			if (len == 1)
-				b = *--m;
+				b = *p--;
 			else
 				for (size_t i = 0; i < len; i++)
-					b = (word)new_pair(TINT, *--m, b);
+					b = (word) new_pair(TINT, *p--, b);
 		}
 	}
 

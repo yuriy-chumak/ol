@@ -19,28 +19,7 @@
 
 #if OLVM_FFI
 
-int_t gcd(int_t a, int_t b)
-{
-	int_t c;
-	while (a) {
-		c = a; a = b % a; b = c;
-	}
-	return b;
-}
-
-#define ftosn(f) ({\
-	double v = f; \
-	int_t n = v * FMAX; \
-	int_t d = FMAX; \
-	int_t g = gcd(n, d); \
-\
-	(g == d) ? \
-		(word*) itosv(v) : \
-	(g == 1) ? \
-		new_pair(TRATIONAL, itosv(n), itouv(d)) :\
-		new_pair(TRATIONAL, itosv(n / g), itosv(d / g)); \
-	})
-
+word d2ol(struct ol_t* ol, double v); // declared in olvm.c
 
 // C preprocessor trick, some kind of "map"
 // http://jhnet.co.uk/articles/cpp_magic !!
@@ -1150,7 +1129,10 @@ word* ffi(OL* self, word* arguments)
 		case TFLOAT:
 		case TDOUBLE: {
 			double value = *(double*)&got;
-			result = ftosn(value);
+
+			heap->fp = fp;
+			result = (word*) d2ol(self, value);
+			fp = heap->fp;
 			break;
 		}
 	}

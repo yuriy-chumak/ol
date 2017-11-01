@@ -262,12 +262,12 @@ ld -r -b binary -o src/repl32.o repl
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
     src/olvm.c src/repl32.o tests/ffi.c -o "test-ffi32.exe" -lws2_32 -O2 -g2 -m32
-::test-ffi32.exe tests/ffi.scm > C:\TEMP\out
-::fc C:\TEMP\out tests/ffi.scm.ok > nul
-::if errorlevel 1 (
-::   echo. Failed.
-::   goto fail
-::)
+test-ffi32.exe tests/ffi.scm > C:\TEMP\out
+fc C:\TEMP\out tests/ffi.scm.ok > nul
+if errorlevel 1 (
+   echo. Failed.
+   goto fail
+)
 echo. Ok.
 
 set PATH=%PATH~%

@@ -55,7 +55,7 @@ float fiiii(float f, int a, int b, int c, int d)
 	LOG("c=%d\n", c);
 	LOG("d=%d\n", d);
 
-	return (a+b+c+d + f);
+	return (f + a+b+c+d);
 }
 
 PUBLIC
@@ -71,7 +71,7 @@ float iffiiiifi(int i, float f, float g, int j, int k, int l, int m, float h, in
 	LOG("h=%f\n", h);
 	LOG("n=%d\n", n);
 
-	return (i+j+k+l+m+n + f+g+h);
+	return (f+g+h + i+j+k+l+m+n);
 }
 
 PUBLIC
@@ -104,7 +104,7 @@ float iffiiiifiiffffff(int i, float f, float g, int j, int k, int l, int m, floa
 	LOG("o=%d\n", o);
 	LOG("%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
 
-	return (i+j+k+l+m+n + f+g+h);
+	return (f+g+h + i+j+k+l+m+n);
 }
 
 PUBLIC
@@ -114,7 +114,7 @@ float fii(float f, int a, int b)
 	LOG("a=%d\n", a);
 	LOG("b=%d\n", b);
 
-	return (a+b + f);
+	return (f + a+b);
 }
 
 PUBLIC
@@ -123,7 +123,7 @@ float fi(float f, int a)
 	LOG("f=%f\n", f);
 	LOG("a=%d\n", a);
 
-	return (a + f);
+	return (f + a);
 }
 
 PUBLIC
@@ -135,7 +135,7 @@ float ifiii(int a, float f, int b, int c, int d)
 	LOG("c=%d\n", c);
 	LOG("d=%d\n", d);
 
-	return (a+b+c+d + f);
+	return (f + a+b+c+d);
 }
 
 PUBLIC
@@ -147,7 +147,7 @@ float iiiif(int a, int b, int c, int d, float f)
 	LOG("d=%d\n", d);
 	LOG("f=%f\n", f);
 
-	return (a+b+c+d + f);
+	return (f + a+b+c+d);
 }
 
 PUBLIC
@@ -159,7 +159,7 @@ float fiiif(float f, int a, int b, int c, float g)
 	LOG("c=%d\n", c);
 	LOG("g=%f\n", g);
 
-	return (a+b+c + f+g);
+	return (f+g + a+b+c);
 }
 
 PUBLIC
