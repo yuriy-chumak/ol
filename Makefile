@@ -214,7 +214,10 @@ vm64: src/olvm.c src/olvm.h
 
 
 olvm.js: src/olvm.c src/olvm.h src/slim.c
-	emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O2 --llvm-opts "['-O2']" --memory-init-file 0 -v
+	emcc src/olvm.c src/slim.c -o olvm.js -s ASYNCIFY=1 -Oz \
+	   -s NO_EXIT_RUNTIME=1 \
+	   -fno-exceptions -fno-rtti \
+	   --memory-init-file 0 --llvm-opts "['-O3']" -v
 
 
 talkback: src/olvm.c src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c
@@ -289,17 +292,35 @@ tests: \
    tests/numbers.scm
 	@rm -f $(FAILED)
 	@echo "Internal VM testing:"
-	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm64 $(L) -m64
-	@echo "64-bit:"
-	@./tests-vm64
-	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm32 $(L) -m32
+	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm64 $(L) -m64
+	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm32 $(L) -m32
+	@echo ""
 	@echo "32-bit:"
-	@./tests-vm32
-	@echo "Common:"
+	@echo "-------"
+	   @./tests-vm32
+	@echo ""
+	@echo "64-bit:"
+	@echo "-------"
+	   @./tests-vm64
+	@echo ""
+	@echo "ffi tests (32- and 64-bit):"
+	@echo "---------------------------------------"
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -o ffi32 $(L) -m32 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -o ffi64 $(L) -m64 -Xlinker --export-dynamic
+	   @echo -n "Testing ffi ... "
+	   @if ./ffi32 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null && ./ffi64 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
+	      echo "Ok.";\
+	   else \
+	      echo "failed." ;\
+	      touch $(FAILED);\
+	   fi
+	@echo ""
+	@echo "common (32- and 64-bit simulatenously):"
+	@echo "---------------------------------------"
 	@make vm32 vm64
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
-	   if ./vm32 repl <$$F | diff - $$F.ok >/dev/null && ./vm64 repl <$$F | diff - $$F.ok >/dev/null;then\
+	   if ./vm32 repl <$$F | diff - $$F.ok >/dev/null && ./vm64 repl <$$F | diff - $$F.ok >/dev/null; then\
 	      echo "Ok." ;\
 	   else \
 	      echo "\033[0;31mFailed!\033[0m" ;\

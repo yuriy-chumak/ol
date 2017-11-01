@@ -4595,11 +4595,7 @@ done:;
 //       загрузчик скомпилированного образа и его десериализатор
 //
 
-// temp
-//extern unsigned char binary_repl_start[];
-
 // fasl decoding
-// tbd: comment
 // todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
 //	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 static __inline__
@@ -4609,26 +4605,26 @@ word get_nat(unsigned char** hp)
 	char i;
 
 	#ifndef OVERFLOW_KILLS
-	#define OVERFLOW_KILLS(n) { fprintf(stderr, "overflow!!!\n"); exit(n); }
+	#define OVERFLOW_KILLS(n) { STDERR("invalid nat"); }
 	#endif
 	do {
 		word underflow = nat; // can be removed for release
 		nat <<= 7;
-		if ((nat >> 7) != underflow) // can be removed for release
-			OVERFLOW_KILLS(9);       // can be removed for release
+		if (nat >> 7 != underflow) // can be removed for release
+			OVERFLOW_KILLS(9);     // can be removed for release
 		i = *(*hp)++;
 		nat = nat + (i & 127);
-	} while (i & 128); // (1 << 7)
-	return (word)nat;
+	} while (i & (1 << 7)); // 128
+	return nat;
 }
 static __inline__
 void decode_field(unsigned char** hp, word *ptrs, int pos, word** fp) {
-	if (*(*hp) == 0) { // fixnum
+	if (*(*hp) == 0) { // value
 		(*hp)++;
 		unsigned char type = *(*hp)++;
 		word val = make_value(type, get_nat(hp));
 		*(*fp)++ = val;
-	} else {
+	} else {           // reference
 		word diff = get_nat(hp);
 		*(*fp)++ = ptrs[pos-diff];
 	}
@@ -4639,8 +4635,6 @@ static
 word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
 	unsigned char* hp = bootstrap;
-//	if (*hp == '#') // этот код не нужен, так как сюда приходит уже без шабанга
-//		while (*hp++ != '\n') continue;
 
 /*	word (^get_nat_x)() = ^()
 	{
@@ -4680,15 +4674,15 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			int words = (size + W - 1) / W;
 			int pads = words * W - size;//(W - (size % W));
 
-			unsigned char *wp = (unsigned char*) &car(new (type, words+1, pads));
+			unsigned char *p = (unsigned char*)&car(new (type, words+1, pads));
 			while (size--)
-				*wp++ = *hp++;
+				*p++ = *hp++;
 			while (pads--) // not required, but will be usefull
-				*wp++ = 0;
+				*p++ = 0;
 			break;
 		}
 		default:
-			puts("Bad object in heap");
+			fprintf(stderr, "Bad object in heap at %p", (void*)(hp-bootstrap));
 			return 0;
 		}
 	}
