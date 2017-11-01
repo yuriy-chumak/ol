@@ -44,7 +44,7 @@
       lines             ;; fd → null | ll of string, read error is just null, each [\r]\n removed
 
       system-print system-println system-stderr
-      take-nap
+      ;take-nap
       fasl-save         ;; obj path → done?
       fasl-load         ;; path default → done?
 
@@ -71,9 +71,9 @@
    (begin
 
       ;; standard io ports
-      (define stdin  (cast 0 type-port))
-      (define stdout (cast 1 type-port))
-      (define stderr (cast 2 type-port))
+      (define stdin  (vm:cast 0 type-port))
+      (define stdout (vm:cast 1 type-port))
+      (define stderr (vm:cast 2 type-port))
 
       (define (sys:read fd maxlen)         (syscall 0 fd maxlen #false))
       (define (sys:write fd buffer length) (syscall 1 fd buffer length))
@@ -90,14 +90,14 @@
          (syscall 3 fd #false #false)) ; 1002
 
       ;; use fd 65535 as the unique sleeper thread name.
-      (define sid (cast 65536 type-port)) ; ?? or 65535?
+      (define sid (vm:cast 65536 type-port)) ; ?? or 65535?
       (define sleeper-id sid)
 
       ;;; Writing
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
       (define (bvec-tail bvec n)
-         (vm:raw type-vector-raw (map (lambda (p) (ref bvec p)) (lrange n 1 (size bvec)))))
+         (vm:new-raw-object type-vector-raw (map (lambda (p) (ref bvec p)) (lrange n 1 (size bvec)))))
 
       (define (try-write-block fd bvec len)
          (if (port? fd) (sys:write fd bvec len) #false))
@@ -171,17 +171,17 @@
                                  (values eof-seen?
                                     (bvec-append this tail)))))))))))
 
-      ;;; TCP connections
+      ;;; -----------------------------------------------------------
       ;;; Sleeper thread
 
       ;; todo: later probably sleeper thread and convert it to a interop
 
       ;; run thread scheduler for n rounds between possibly calling vm sleep()
-      (define sleep-check-rounds 10)
+      ;(define sleep-check-rounds 10)
 
-      ;; number of milliseconds to sleep for real at a time when no threads are running but
+      ;; number of microseconds to sleep for real at a time when no threads are running but
       ;; they want to sleep, typically waiting for input or output
-      (define ns-per-round 10000000)
+      (define us-per-round 10000) ; 10 ms
 
       ;; IO is closely tied to sleeping in owl now, because instead of the poll there are
       ;; several threads doing their own IO with their own fds. the ability to sleep well
@@ -199,8 +199,8 @@
                   (cons (car ls)
                      (find-bed ls id (- n this))))))) ;; wake some time after this one
 
-      (define (add-sleeper ls env)
-         (lets ((from n env))
+      (define (add-sleeper ls envelope)
+         (lets ((from n envelope))
             (if (eq? (type n) type-fix+)
                (find-bed ls from n)
                (find-bed ls from 10))))   ;; silent fix
@@ -214,7 +214,7 @@
                rounds)
             ((single-thread?)
                ;; note: could make this check every n rounds or ms
-               (if (syscall 35 (* ns-per-round rounds) #f #f) ;; sleep really for a while
+               (if (syscall 35 (* us-per-round rounds) #f #f) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
                   (set-ticker-value 0)))
             (else
@@ -237,8 +237,8 @@
             ((null? ls)
                (sleeper (add-sleeper ls (wait-mail))))
             ((check-mail) =>
-               (λ (env)
-                  (sleeper (add-sleeper ls env))))
+               (λ (envelope)
+                  (sleeper (add-sleeper ls envelope))))
             (else
                (sleep-for (caar ls))
                (mail (cdar ls) 'awake) ;; 'awake have no meaning, this is simply "wake up" the thread ((n . id) ...)
@@ -304,10 +304,10 @@
          (cond
             ((eq? len output-buffer-size)
                (and
-                  (write-really (vm:raw type-vector-raw (reverse out)) fd)
+                  (write-really (vm:new-raw-object type-vector-raw (reverse out)) fd)
                   (printer lst 0 null fd)))
             ((null? lst)
-               (write-really (vm:raw type-vector-raw (reverse out)) fd))
+               (write-really (vm:new-raw-object type-vector-raw (reverse out)) fd))
             (else
                ;; avoid dependency on generic math in IO
                (lets ((len _ (vm:add len 1)))
@@ -508,8 +508,8 @@
                (port->byte-stream fd)
                #false)))
 
-      (define (take-nap)
-         (interact sid 5))
+;      (define (take-nap)
+;         (interact sid 5))
 
       (define (fasl-save obj path)
          (vector->file

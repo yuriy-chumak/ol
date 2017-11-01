@@ -44,36 +44,36 @@
 			(else (rand-bits rst 32)))))
 
 (define (nat-nz rst) ; nonzero
-	(apply-values (nat rst)
+	(values-apply (nat rst)
 		(lambda (rst n)
 			(if (= n 0)
 				(nat-nz rst)
 				(values rst n)))))
 
 (define (int rst)
-	(apply-values (rand rst 2)
+	(values-apply (rand rst 2)
 		(lambda (rst s)
-			(apply-values (nat rst)
+			(values-apply (nat rst)
 				(lambda (rst n)
 					(values rst
 						(if (eq? s 0) n (- 0 n))))))))
 
 (define (int-nz rst) ; nonzero
-	(apply-values (int rst)
+	(values-apply (int rst)
 		(lambda (rst n)
 			(if (= n 0)
 				(int-nz rst)
 				(values rst n)))))
 
 (define (rat rst)
-	(apply-values (int rst)
+	(values-apply (int rst)
 		(lambda (rst a)
-			(apply-values (int-nz rst)
+			(values-apply (int-nz rst)
 				(lambda (rst b)
 					(values rst (/ a b)))))))
 
 (define (rat-nz rst) ; nonzero
-	(apply-values (int rst)
+	(values-apply (int rst)
 		(lambda (rst n)
 			(if (= n 0)
 				(rat-nz rst)
@@ -183,7 +183,7 @@
 					(= (<< a b) (* a (expt 2 b))))))
 		(tuple 'binary int int-nz 'quotrem=quot-rem	
 			(lambda (a b) 
-				(apply-values (quotrem a b)
+				(values-apply (quotrem a b)
 					(lambda (q r)
 						(and (= q (div a b)) (= r (rem a b)))))))
 		(tuple 'binary nat nat 'xor-trans
@@ -244,7 +244,7 @@
 	;(mail stdout 42) (flush-port 1)
 	(tuple-case test
 		((unary gen-a name test)
-			(apply-values (gen-a rst)
+			(values-apply (gen-a rst)
 				(lambda (rst a)
 					;(print (list name a))
 					(if (test a) 

@@ -1,11 +1,11 @@
 #!./ol
-(import (owl pinvoke))
+(import (owl ffi))
 
 (define width 640)
 (define height 480)
 
-(import (owl pinvoke) (lib x11)
-   (owl io) (OpenGL version-2-0))
+(import (lib x11) (owl io)
+   (OpenGL version-2-0))
 
 (define OR (lambda args (fold bor 0 args)))
 

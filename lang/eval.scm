@@ -14,10 +14,9 @@
       print-repl-error
       bind-toplevel
       library-import                ; env exps fail-cont → env' | (fail-cont <reason>)
-      evaluate
       *src-olvm*
       ; 6.5 Eval
-      eval
+      eval eval-repl
       ;scheme-report-environment null-environment
       interaction-environment)
 
@@ -46,6 +45,7 @@
       (lang sexp)
       (owl parse)
       (owl equal)
+      (owl string)
       (scheme misc)
       (owl lazy)
       (lang macro)
@@ -62,14 +62,29 @@
       (define (interactive? env) (env-get env '*interactive* #false))
 
 
-      (define (name->func name)
-         (some
-            (λ (x) (if (eq? (ref x 1) name) (ref x 5) #false))
-            primops))
-
       (define (debug env . msg)
          (if (env-get env '*debug* #false)
             (print* msg)))
+
+      (define (verbose-vm-error opcode a b)
+         (cons "error: "
+            (case opcode
+               (ARITY-ERROR  ;; arity error, could be variable
+                              ; this is either a call, in which case it has an implicit continuation,
+                              ; or a return from a function which doesn't have it. it's usually a call,
+                              ; so -1 to not count continuation. there is no way to differentiate the
+                              ; two, since there are no calls and returns, just jumps.
+                  `(function ,a did not want ,(- b 1) arguments))
+               (CAR
+                  `(trying to get car of a non-pair ,a))
+               (CDR
+                  `(trying to get cdr of a non-pair ,a))
+               (else
+                  `(,(primop-name opcode) reported error ": " ,a " " ,b)))))
+         ;   ;((eq? opcode 52)
+         ;   ;   `(trying to get car of a non-pair ,a))
+         ;   (else
+         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
 
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
       (define *src-olvm*
@@ -88,10 +103,10 @@
                       (quote syntax-operation add #false
                         (keyword literals (pattern ...)
                         (template ...)))) )))
-            primops))
+            *primops*))
 
       (define (execute exp env)
-         (apply-values (exp)
+         (values-apply (exp)
             (lambda vals
                (ok
                   (cond
@@ -151,7 +166,7 @@
             (else is foo
                (fail (list "Funny result for compiler " foo)))))
 
-      (define (evaluate exp env)
+      (define (repl-evaluate exp env)
          (evaluate-as exp env 'repl-eval))
 
       ;; toplevel variable to which loaded libraries are added
@@ -269,8 +284,9 @@
 
       (define (syntax-error? x) (and (pair? x) (eq? syntax-error-mark (car x))))
 
-      (define (repl-fail env reason) (tuple 'error reason env))
       (define (repl-ok env value) (tuple 'ok value env))
+      (define (repl-fail env reason) (tuple 'error reason env))
+
 
       ;; just be quiet
       (define repl-load-prompt
@@ -573,6 +589,17 @@
                         (cons #\/ tl))))
             null iset)))
 
+
+      ;; 
+      (define (library-file->list env file)
+         ;(print-to stderr "library-file->list " file)
+         (let ((hook (env-get env 'hook:import #f)))
+            (if hook (or
+                        (let ((content (hook (c-string file))))
+                           (if (string? content) (string->list content) #f))
+                        (file->list file))
+               (file->list file))))
+
       ;; try to find and parse contents of <path> and wrap to (begin ...) or call fail
       (define (repl-include env path fail)
 ;        (print "repl-include path: " path)
@@ -581,7 +608,7 @@
                        (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path)))))
                        (env-get env includes-key null)))
 ;             (_ (print "paths: " paths))
-             (datas (lmap file->list paths))
+             (datas (lmap (lambda (file) (library-file->list env file)) paths))
              (data (first (λ (x) x) datas #false)))
             (if data
                (let ((exps (list->sexps data "library fail" path)))
@@ -746,7 +773,7 @@
                                        (cons ";; Imported " (cdr exp)))))
                               envp))))
                   ((definition? exp)
-                     (tuple-case (evaluate (caddr exp) env)
+                     (tuple-case (repl-evaluate (caddr exp) env)
                         ((ok value env2)
                            (lets
                               ((env (env-set env (cadr exp) value))
@@ -761,7 +788,7 @@
                            (fail
                               (list "Definition of" (cadr exp) "failed because" reason)))))
                   ((multi-definition? exp)
-                     (tuple-case (evaluate (caddr exp) env)
+                     (tuple-case (repl-evaluate (caddr exp) env)
                         ((ok value env2)
                            (let ((names (cadr exp)))
                               (if (and (list? value)
@@ -819,7 +846,7 @@
                               (fail
                                  (list "Library" name "failed to load because" reason))))))
                   (else
-                     (evaluate exp env))))
+                     (repl-evaluate exp env))))
             ((fail reason)
                (tuple 'fail
                   (list "Macro expansion failed: " reason)))))
@@ -897,8 +924,10 @@
                            (print-repl-error reason)
                            (boing env))
                         (else
-                           (print reason)
-                           (boing env))))
+                           (boing env)))
+                     ; notify hooker about error
+                     (let ((hook:fail (env-get env 'hook:fail #f)))
+                        (if hook:fail (hook:fail reason (syscall 1002 #f #f #f)))))
                   (else is foo
                      (print "Repl is rambling: " foo) ; what is this?
                      (boing env))))))

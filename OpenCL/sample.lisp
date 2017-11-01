@@ -5,8 +5,8 @@
 (define *include-dirs* (cons ".." *include-dirs*))
 (import (OpenCL version-1-0))
 
-(define (new-size_t) (vm:raw type-vector-raw (repeat 0 (vm:wordsize))))
-(define (new-int)    (vm:raw type-vector-raw '(0 0 0 0)))
+(define (new-size_t) (vm:new-raw-object type-vector-raw (repeat 0 (vm:wordsize))))
+(define (new-int)    (vm:new-raw-object type-vector-raw '(0 0 0 0)))
 
 (define (vector->ptr vector delta)
    (let ((wordsize (vm:wordsize)))
@@ -33,23 +33,23 @@
       (<< (ref vector 3) 24)))
 
 
-(define n (vm:raw type-vector-raw '(0 0 0 0)))
+(define n (vm:new-raw-object type-vector-raw '(0 0 0 0)))
 (check
    (clGetPlatformIDs 0 null n))
 (define n (->int n))
 (print "Number of available platforms: " n)
 
-(define platforms (vm:raw type-vector-raw (repeat 0 (* n (vm:wordsize)))))
+(define platforms (vm:new-raw-object type-vector-raw (repeat 0 (* n (vm:wordsize)))))
 (check
    (clGetPlatformIDs n platforms null))
 (define platform (vector->ptr platforms 0))
 (print "Platform id: " platform)
 
 (define (cl:GetPlatformInfo platform name)
-   (let*((length (vm:raw type-vector-raw '(0 0 0 0)))
+   (let*((length (vm:new-raw-object type-vector-raw '(0 0 0 0)))
          (_ (check (clGetPlatformInfo platform name 0 null length)))
          (length (->int length))
-         (info (vm:raw type-string (repeat 0 length)))
+         (info (vm:new-raw-object type-string (repeat 0 length)))
          (_ (check (clGetPlatformInfo platform name length info null))))
       info))
 
@@ -60,13 +60,13 @@
 (print "Extensions: " (cl:GetPlatformInfo platform CL_PLATFORM_EXTENSIONS) "\n")
 
 
-(define devices-count (vm:raw type-vector-raw '(0 0 0 0)))
+(define devices-count (vm:new-raw-object type-vector-raw '(0 0 0 0)))
 (check ;"clGetDeviceIDs: "
    (clGetDeviceIDs platform CL_DEVICE_TYPE_GPU 0 '() devices-count))
 (define devices-count (->int devices-count))
 (print "devices count: " devices-count)
 
-(define devices (vm:raw type-vector-raw (repeat 0 (* devices-count (vm:wordsize)))))
+(define devices (vm:new-raw-object type-vector-raw (repeat 0 (* devices-count (vm:wordsize)))))
 (check
    (clGetDeviceIDs platform CL_DEVICE_TYPE_ALL devices-count devices null))
 (define device (vector->ptr devices 0))
@@ -74,10 +74,10 @@
 
 
 (define (cl:GetDeviceInfoString device name)
-   (let*((length (vm:raw type-vector-raw '(0 0 0 0)))
+   (let*((length (vm:new-raw-object type-vector-raw '(0 0 0 0)))
          (_ (check (clGetDeviceInfo device name 0 null length)))
          (length (->int length))
-         (info (vm:raw type-string (repeat 0 length)))
+         (info (vm:new-raw-object type-string (repeat 0 length)))
          (_ (check (clGetDeviceInfo device name length info null))))
       info))
 
@@ -90,7 +90,7 @@
 ;(define devices-count (->int devices-count))
 
 (print "devices: " devices)
-(define error (vm:raw type-vector-raw '(0 0 0 0)))
+(define error (vm:new-raw-object type-vector-raw '(0 0 0 0)))
 (define context (clCreateContext null 1 devices null null error))
 
 (print "clCreateContext: error = " error ", context:" context)
@@ -113,7 +113,7 @@
 ;(if (not (eq? CL_SUCCESS built))
 ;   (begin
 ;      (define sizeof-log 256)
-;      (define log (vm:raw type-string (repeat 0 sizeof-log)))
+;      (define log (vm:new-raw-object type-string (repeat 0 sizeof-log)))
 ;      (clGetProgramBuildInfo program device CL_PROGRAM_BUILD_LOG sizeof-log log null)
 ;      (print "CL Compilation failed: " log)))
 

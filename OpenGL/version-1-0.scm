@@ -2,7 +2,7 @@
 
 ; OpenGL base profile implementation
 (define-library (OpenGL version-1-0)
- (import (otus lisp) (otus pinvoke))
+ (import (otus lisp) (otus ffi))
  (export
 
    GL_VERSION_1_0
@@ -905,7 +905,7 @@
    GL_LINE GL_FILL GL_POINT
 
    (exports (otus lisp))
-   (exports (otus pinvoke))
+   (exports (otus ffi))
 )
 ; ============================================================================
 ; == implementation ==========================================================
@@ -932,10 +932,9 @@
       ;"MINGW32_NT-5.2"
       ;...
       (else   (runtime-error "Unknown platform" uname)))))
-
 (define $ (or
    (dlopen GL_LIBRARY)
-   (runtime-error "Can't load OpenGL library")))
+   (runtime-error "Can't load OpenGL library" GL_LIBRARY)))
 (define WGL $)
 (define GLX (if linux? (dlopen "libGLX.so")))
 (define GDI (if win32? (dlopen "gdi32.dll")))
@@ -1772,7 +1771,7 @@
       (if function
       (lambda args
          ;(print "> " name)
-         (exec pinvoke function rtty args)))))
+         (exec ffi function rtty args)))))
 
 ; Ð¾ÑÑ‚Ð°Ð»ÑŒÐ½Ñ‹Ðµ WGL/GLX/... Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸
 (define Display* type-void*)
@@ -1826,7 +1825,7 @@
 ;                     0 0 640 480  1
 ;                     (XBlackPixel display screen) (XWhitePixel display screen))))
 ;   (let*((vi (glXChooseVisual display screen
-;                     (vm:raw type-vector-raw '(
+;                     (vm:new-raw-object type-vector-raw '(
 ;                        4 0 0 0 ; GLX_RGBA
 ;                        8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
 ;                        9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
@@ -1884,7 +1883,7 @@
 ;                     0 0 640 480  1
 ;                     (XBlackPixel display screen) (XWhitePixel display screen))))
 ;            (let*((vi (glXChooseVisual display screen
-;                           (vm:raw type-vector-raw '(
+;                           (vm:new-raw-object type-vector-raw '(
 ;                              4 0 0 0 ; GLX_RGBA
 ;                              8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
 ;                              9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE

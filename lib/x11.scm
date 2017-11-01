@@ -34,7 +34,7 @@
       (r5rs core) (owl io)
       (owl list) (owl string)
       (owl math)
-      (otus pinvoke))
+      (otus ffi))
   (begin
 
 (define X11 (dlopen "libX11.so"))

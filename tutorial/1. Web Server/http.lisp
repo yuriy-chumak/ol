@@ -11,7 +11,7 @@
          "\n\n"
 
          "<h1>200: OK</h1>"
-         (ref request 1) ": " (ref request 2)
+         (ref request 1) ": " (ref request 2) " &gt; " (http:parse-url (ref request 2))
          "<hr><small>" headers
          "</small>")
    (close #t)

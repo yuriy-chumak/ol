@@ -1,6 +1,6 @@
 (define-library (lib curl)
    (import (r5rs core)
-           (otus pinvoke))
+           (otus ffi))
    (export
       curl_easy_init
       curl_easy_setopt

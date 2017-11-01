@@ -16,6 +16,9 @@
 	extern "C" {
 #endif
 
+#include <stdint.h>
+#include <unistd.h>
+
 // (игра слов)
 // OL:
 //	* сокращение от названия проекта - Otus Lisp (вырос из Owl Lisp'а),
@@ -29,10 +32,55 @@ struct ol_t;
 // internal option
 //#define NO_SECCOMP
 
-struct
-ol_t* OL_new(unsigned char* bootstrap, void (*release)(void*));
-void  OL_free(struct ol_t* ol);
-void* OL_eval(struct ol_t* ol, int argc, char** argv);
+/**
+ * Create new OL virtual machine (olvm)
+ *
+ * \param[in] bootstrap Binary code to be executed by olvm.
+ * \return Created olvm instance
+ */
+struct ol_t*
+OL_new(unsigned char* bootstrap);
+
+/**
+ * Release the OL virtual machine (olvm)
+ *
+ * \param[in] ol Valid olvm instance
+ */
+void
+OL_free(struct ol_t* ol);
+
+/**
+ * Run the OL virtual machine (olvm)
+ *
+ * \param[in] ol Valid olvm instance
+ * \param[in] argc Arguments count
+ * \param[in] argv Arguments array
+ */
+uintptr_t
+OL_run(struct ol_t* ol, int argc, char** argv);
+
+void*
+OL_userdata(struct ol_t* ol, void* userdata);
+
+/**
+ * Register a function to be called at olvm termination
+ *
+ * \param[in] ol Valid olvm instance
+ * \param[in] function Function to be called
+ */
+void
+(*OL_atexit(struct ol_t* ol, void (*function)(int status))) (int status);
+
+int OL_setstd(struct ol_t* ol, int id, int fd);
+
+// handle read
+typedef size_t (read_t)(int fd, void *buf, size_t count, void* userdata);
+read_t* OL_set_read(struct ol_t* ol, read_t read);
+
+typedef size_t (write_t)(int fd, void *buf, size_t count, void* userdata);
+write_t* OL_set_write(struct ol_t* ol, write_t read);
+
+// handle write
 
 // c++ interface:
 #ifdef __cplusplus
@@ -40,13 +88,18 @@ class OL
 {
 private:
 	ol_t* vm;
+
 public:
-	OL(unsigned char* language) { vm = ol_new(language, 0); }
+	OL(unsigned char* language) { vm = OL_new(language); }
 	virtual ~OL() { OL_free(vm); }
 
-
-	int eval(int argc, char** argv) {
-		return (int)OL_eval(argc, argv);
+	int run(int argc, char** argv) {
+		return (int)OL_run(vm, argc, argv);
+	}
+	
+	void* userdata(void* userdata)
+	{
+	   return OL_userdata(vm, userdata);
 	}
 };
 #else
@@ -55,8 +108,8 @@ typedef struct ol_t OL;
 
 // ------------------------------------------------------------------
 // -=( Error Checking )=---------------------------------------------
-//                         to disable (to increase speed for example)
-//                         check remove comment corresponded #define.
+//                  to disable (to increase speed, for example) check
+//                        please uncomment corresponded #define macro
 //                                  (doesn't increase speed for real)
 
 //#define CAR_CHECK(arg) 1
@@ -71,14 +124,19 @@ typedef struct ol_t OL;
 //#define OVERFLOW_KILLS(n)
 
 
-/* tips and tricks: */
-
-// uncomment next linex to remove correspondent syscall from vm,
+// -=( tips and tricks )=--------------------------------------------
+//      uncomment next linex to remove correspondent syscall from vm,
 // or change in to any number (except 0) to assign new syscall number
 
 // #define SYSCALL_IOCTL 0
 // #define SYSCALL_SYSINFO 0
 // #define SYSCALL_GETRUSAGE 0
+
+// #define HAS_UNSAFES 0
+// #define HAS_SANDBOX 0
+
+// #define OLVM_FFI 0
+// #define OLVM_CALLABLES 0
 
 //-- end of header
 #ifdef __cplusplus

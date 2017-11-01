@@ -50,7 +50,7 @@
                   (walk body (union formals bound) found))
                ((ifeq a b then else)
                   (walk-list (list a b then else) bound found))
-               ((ifary fn else)
+               ((either fn else)
                   (walk fn bound
                      (walk else bound found)))
                ((call rator rands)
@@ -59,7 +59,7 @@
                ((value val) found)
                ((values vals)
                   (walk-list vals bound found))
-               ((apply-values op fn) 
+               ((values-apply op fn)
                   (walk op bound
                      (walk fn bound found)))
                (else
@@ -157,8 +157,8 @@
                   (tuple 'ifeq (walk a) (walk b) (walk then) (walk else)))
                ((values vals) 
                   (tuple 'values (map walk vals)))
-               ((apply-values op fn)
-                  (tuple 'apply-values (walk op) (walk fn)))
+               ((values-apply op fn)
+                  (tuple 'values-apply (walk op) (walk fn)))
                ((value val) exp)
                ((var sym)
                   (if (eq? sym name)
@@ -221,11 +221,11 @@
             ((values vals)
                (tuple 'values
                   (map (lambda (exp) (carry-bindings exp env)) vals)))
-            ((apply-values op fn)
+            ((values-apply op fn)
                (let
                   ((op (carry-bindings op env))
                    (fn (carry-bindings fn env)))
-                  (tuple 'apply-values op fn)))
+                  (tuple 'values-apply op fn)))
             (else
                (runtime-error "carry-bindings: strage expression: " exp))))
 
@@ -373,7 +373,7 @@
                   (grow (deps-of node) deps)))
             deps))
 
-      ; walk the term and translate all ol:let's to lambdas
+      ; walk the term and translate all bind's to lambdas
       (define (unletrec exp env)
          (define (unletrec-list exps)
             (map (lambda (exp) (unletrec exp env)) exps))
@@ -390,7 +390,7 @@
             ((lambda-var fixed? formals body)
                (mkvarlambda formals
                   (unletrec body (env-bind env formals))))
-            ((ol:let names values body)
+            ((letq names values body)
                (let*((env (env-bind env names))
                      (handle (lambda (exp) (unletrec exp env)))
                      (values (map handle values))
@@ -408,8 +408,8 @@
             ((values vals)
                (tuple 'values
                   (unletrec-list vals)))
-            ((apply-values op fn)
-               (tuple 'apply-values (unletrec op env) (unletrec fn env)))
+            ((values-apply op fn)
+               (tuple 'values-apply (unletrec op env) (unletrec fn env)))
             ((ifeq a b then else)
                (let
                   ((a (unletrec a env))
@@ -417,8 +417,8 @@
                    (then (unletrec then env))
                    (else (unletrec else env)))
                   (tuple 'ifeq a b then else)))
-            ((ifary func else)
-               (tuple 'ifary
+            ((either func else)
+               (tuple 'either
                   (unletrec func env)
                   (unletrec else env)))
             (else

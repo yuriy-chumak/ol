@@ -4,7 +4,10 @@
       assoc assv assq
       rationalize
       string->integer
-      string->number)
+      string->number
+      
+      ;fix:fixnum?
+      )
 
    (import
       (r5rs core)
@@ -22,7 +25,7 @@
             ((equal? x (car lst)) lst)
             (else (member x (cdr lst)))))
 
-      (define memv member)
+      (define memv member) ; should use eqv?
 
       (define (memq x lst)
          (cond
@@ -72,5 +75,9 @@
             ((eq? (type n) type-int+) n)
             ((eq? (type n) type-int-) n)
             (else #false))))
+
+   ;(define (fix:fixnum? x)
+   ;   (let ((t (type x)))
+   ;      (or (eq? t type-fix+) (eq? t type-fix-))))
 
 ))

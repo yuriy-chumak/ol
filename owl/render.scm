@@ -32,6 +32,12 @@
       (define lp #\()
       (define rp #\))
 
+      ; hack: do not include full (owl math fp) library and save 1k for image
+      ;       we use only this three functions:
+      (define (fmul a b) (vm:fpu2 1 a b))
+      (define (ffloor num) (vm:fpu1 3 num))
+      (define (ffrac num) (vm:fpu1 5 num))
+
       ;; this could be removed?
       (define (make-renderer meta)
          (define (render obj tl)
@@ -77,6 +83,7 @@
                   ;      (render "#<function>" tl))))
 
                ((tuple? obj)
+                 ;(ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
                   (ilist #\# #\[
                      (render (ref obj 1)
                         (fold
@@ -104,15 +111,26 @@
                ((eq? obj #empty) (ilist #\# #\e #\m #\p #\t #\y tl)) ;; don't print as #()
                ((eq? obj #eof)   (ilist #\# #\e #\o #\f tl))
 
-; unused?
-               ((tuple? obj)
-                  (ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
+               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (vm:cast obj type-fix+) (cons #\] tl))))
 
-               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render "#port" (cons #\] tl))))
+               ; inexact numbers (render up to 4 digit numbers)
+               ((inexact? obj)
+                  ; todo: move this into (owl math) library
+                  (let*((int  (inexact->exact (ffloor obj)))
+                        (frac (inexact->exact (ffloor (fmul (ffrac obj) (exact->inexact 100000))))))
+                     (render int (cons #\. (append (reverse
+                     (let loop ((i frac) (n 10000) (l #null))
+                        (cond
+                           ((eq? i 0)
+                              l)
+                           ((eq? n 1)
+                              (ilist #\. #\. l))
+                           (else
+                              (loop (mod i n) (/ n 10) (render-number (floor (/ i n)) l 10)))))) tl)))))
 
 
                ((eq? (type obj) type-const)
-                  (render-number (cast obj type-fix+) tl 16))
+                  (render-number (vm:cast obj type-fix+) tl 16))
 
                (else
                   (append (string->list "#<WTF>") tl)))) ;; What This Format?

@@ -110,7 +110,7 @@
       (define (enc-immediate val tail)
          (cons 0
             (cons (type-byte-of val)
-               (send-number (cast val 0) tail))))
+               (send-number (vm:cast val 0) tail))))
 
       (define (partial-object-closure root pred)
          (define (clos seen obj)
@@ -121,7 +121,7 @@
                   (λ (n) (fupd seen obj (+ n 1))))
                (else
                   (let ((seen (put seen obj 1)))
-                     (if (raw? obj)
+                     (if (vm:raw? obj)
                         seen
                         (fold clos seen (tuple->list obj)))))))
          (clos empty root))
@@ -171,9 +171,9 @@
       (define (encode-allocated clos cook)
          (λ (out val-orig pos)
             (lets
-               ( ; (val-orig (if (eq? val-orig <tochange>) (vm:raw 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
+               ( ; (val-orig (if (eq? val-orig <tochange>) (vm:new-raw-object 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
                 (val (cook val-orig)))
-               (if (raw? val)
+               (if (vm:raw? val)
                   (lets
                      ;; nuke padding bytes since the vm/decoder must fill these while loading
                      ;; (because different word size may require more/less padding)
@@ -273,7 +273,7 @@
          (lets
             ((ll type (grab ll fail))
              (ll val  (get-nat ll fail 0)))
-            (values ll (cast val type))))
+            (values ll (vm:cast val type))))
 
       (define nan "not here") ; eq?-unique
 
@@ -313,7 +313,7 @@
                            ((ll type (grab ll fail))
                             (ll size (get-nat ll fail 0))
                             (ll fields (get-fields ll got size fail null))
-                            (obj (unreel type #|size|# fields)))
+                            (obj (vm:new-object type #|size|# fields)))
                            (decoder ll (rcons obj got) fail)))
                      ((eq? kind 2) ; raw, type SIZE byte ...
                         (lets
@@ -321,7 +321,7 @@
                             (ll size (get-nat ll fail 0))
                             (foo (if (> size 65535) (fail "bad raw object size")))
                             (ll rbytes (get-bytes ll size fail null))
-                            (obj (vm:raw type (reverse rbytes))))
+                            (obj (vm:new-raw-object type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
                      ((eq? kind 0) ;; fasl stream end marker
                         ;; object done
@@ -332,7 +332,7 @@
                             (ll size (get-nat ll fail 0))
                             (foo (if (> size 65535) (fail "bad raw object size")))
                             (ll rbytes (get-bytes ll size fail null))
-                            (obj (vm:raw type (reverse rbytes))))
+                            (obj (vm:new-raw-object type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
                      (else
                         (fail (list "unknown object tag: " kind))))))

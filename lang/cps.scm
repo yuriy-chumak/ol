@@ -184,7 +184,7 @@
                      (tuple 'ifeq a b then else)
                      free)))))
 
-      (define (cps-apply-values cps exp semi-cont env cont free)
+      (define (cps-values-apply cps exp semi-cont env cont free)
          (tuple-case semi-cont
             ((lambda formals body)
                (lets ((body-cps free (cps body env cont free)))
@@ -198,23 +198,23 @@
                      (tuple 'lambda-var fixed? formals body-cps)
                      free)))
             (else
-               (runtime-error "cps-apply-apply: receiver is not a lambda. " semi-cont))))
+               (runtime-error "values-apply: receiver is not a lambda. " semi-cont))))
 
       ;; translate a chain of lambdas as if they were at operator position
       ;; note! also cars are handled as the same jump, which is silly
-      (define (cps-ifary cps node env cont free)
+      (define (cps-either cps node env cont free)
          (tuple-case node
-            ((ifary fn else)
+            ((either fn else)
                (lets 
-                  ((fn free (cps-ifary cps fn env cont free))
-                   (else free (cps-ifary cps else env cont free)))
-                  (values (tuple 'ifary fn else) free)))
+                  ((fn free (cps-either cps fn env cont free))
+                   (else free (cps-either cps else env cont free)))
+                  (values (tuple 'either fn else) free)))
             ((lambda formals body)
                (cps-just-lambda cps formals #true body env free))
             ((lambda-var fixed? formals body)
                (cps-just-lambda cps formals fixed? body env free))
             (else
-               (runtime-error "cps-ifary: what is " node))))
+               (runtime-error "either: " (list node "argument should be function")))))
 
       (define (cps-exp exp env cont free)
          (tuple-case exp
@@ -230,12 +230,12 @@
                (cps-call cps-exp rator rands env cont free))
             ((values vals)
               (cps-values cps-exp vals env cont free))
-            ((apply-values exp target)
-              (cps-apply-values cps-exp exp target env cont free))
+            ((values-apply exp target)
+              (cps-values-apply cps-exp exp target env cont free))
             ((ifeq a b then else)
                (cps-ifeq cps-exp a b then else env cont free))
-            ((ifary fn else)
-               (lets ((res free (cps-ifary cps-exp exp env cont free)))
+            ((either fn else)
+               (lets ((res free (cps-either cps-exp exp env cont free)))
                   (values (mkcall cont (list res)) free)))
             (else
                (runtime-error "CPS does not do " exp))))
@@ -247,8 +247,7 @@
             (else #false)))
 
       ; pass fail to cps later and exit via it on errors
-
-      (define (cps exp env)
+      (define (cps exp env) ; continuation-passing style
          (or
             (call/cc
                (lambda (fail)
@@ -270,5 +269,4 @@
                               (mklambda (list cont-sym) exp)
                               env))))))
             (fail "cps failed")))
-   ))
-
+))

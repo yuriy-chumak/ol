@@ -8,6 +8,7 @@
       Tcl_GetStringResult
       Tcl_FindExecutable
       Tcl_CreateCommand Tcl_SetResult
+      Tcl_DeleteCommand
 
       Tk_Init
       Tk_MainLoop
@@ -20,11 +21,15 @@
    )
    (import
       (r5rs core)
-      (otus pinvoke))
+      (otus ffi))
 (begin
 
-   (define TCL (dlopen "tcl86.dll"))
-   (define TK (dlopen "tk86.dll"))
+   (define TCL (or
+      (dlopen "tcl86.dll")
+      (dlopen "libtcl8.6.so")))
+   (define TK (or
+      (dlopen "tk86.dll")
+      (dlopen "libtk8.6.so")))
 
    (define Tcl_Interp* type-vptr)
    (define TclCommand type-vptr)
@@ -43,7 +48,8 @@
    (define Tcl_FindExecutable (dlsym TCL type-string "Tcl_FindExecutable" type-string))
    (define Tcl_GetStringResult (dlsym TCL type-string "Tcl_GetStringResult"))
 
-   (define Tcl_CreateCommand (dlsym TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callback type-userdata Tcl_CmdDeleteProc*))
+   (define Tcl_CreateCommand (dlsym TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callable type-userdata Tcl_CmdDeleteProc*))
+   (define Tcl_DeleteCommand (dlsym TCL TclCommand "Tcl_DeleteCommand" Tcl_Interp* type-string))
    (define Tcl_SetResult (dlsym TCL type-void "Tcl_SetResult" Tcl_Interp* type-string Tcl_FreeProc*))
 
    (define Tk_Init (dlsym TK int "Tk_Init" Tcl_Interp*))

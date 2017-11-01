@@ -10,7 +10,7 @@
 
 ;; todo: make it a bug to send mail to a thread having no inbox.
 
-(define-library (lang thread)
+(define-library (lang threading)
 
    (export
       start-thread-controller
@@ -19,6 +19,7 @@
 
    (import
       (r5rs core)
+      (only (src vm) vm:run)
       (owl queue)
       (owl interop)
       (owl ff)
@@ -31,11 +32,6 @@
       (owl io))
 
    (begin
-
-      ; this function require two arguments!
-      (define run (vm:raw type-bytecode '(50 4 5))) ; run requires two registers!
-      ;  and safe version of this function (but a bit more slower)
-      ;(define run (vm:raw type-bytecode '(25 3 0 3  50 4 5  17)))
 
       (define (bad-interop id a b c todo done state)
          (system-println "mcp: got bad interop")
@@ -113,11 +109,16 @@
 
       (define return-value-tag "rval") ; a unique key if thread state ff
 
-      ; mcp syscalls grab the functions from here to transform the state
-
-      ;; syscalls used when profiler is running
       (define mcp-syscalls
          (tuple
+            ; id: name of thread
+            ; a: 
+            ; b: 
+            ; c:
+            ; todo:
+            ; done:
+            ; state:
+            ; tc:
 
             ; 1, runnig and time slice exhausted (the usual suspect, handled directly in scheduler)
             (λ (id a b c todo done state tc)
@@ -416,7 +417,7 @@
                            ;; either par->single or single->value state change,
                            ;; but consumed a quantum already so handle it in next round
                            (values #false (tuple cont todo (cons state done)))))
-                     (lets ((op a b c (run state thread-quantum)))
+                     (lets ((op a b c (vm:run state thread-quantum)))
                         ;(print (list "run returns: " op a b c))
                         (cond
                            ((eq? op 1) ;; out of time, a is new state
@@ -457,7 +458,7 @@
                            ;; TODO: something failed and stp is an error code. time to crash.
                            (print "GONDOR!")
                            "GONDOR!")))
-                  (lets ((op a b c (run st thread-quantum)))
+                  (lets ((op a b c (vm:run st thread-quantum)))
                      (if (eq? op 1)
                         (thread-controller todo (cons (tuple id a) done) state)
                         ((ref mcp-syscalls op) id a b c todo done state thread-controller)))))))

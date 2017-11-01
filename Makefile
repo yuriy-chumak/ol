@@ -21,23 +21,23 @@ HAS_SOCKETS := $(call exists, <stdlib.h>, socket)
 # body
 .PHONY: all config recompile install uninstall clean tests
 
-CC=gcc
+CC ?= gcc
 
 # http://ptspts.blogspot.com/2013/12/how-to-make-smaller-c-and-c-binaries.html
 
 PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
-CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s)
+CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s -fno-exceptions)
 boot.c := bootstrap~
 repl.o := src/repl.o
 
-CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1)\
-          $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1)\
+CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
+          $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
           $(if $(HAS_SECCOMP),, -DNO_SECCOMP)
 
 
 ifeq ($(UNAME),Linux)
-L := $(if HAS_DLOPEN, -ldl)
+L := $(if HAS_DLOPEN, -ldl -lm)
 endif
 
 ifeq ($(UNAME),FreeBSD)
@@ -62,10 +62,10 @@ DESTDIR?=
 
 
 #main
-all:ol
+all: vm ol repl tests
 
-#debug: src/olvm.c src/boot.c
-#	$(CC) -std=c99 -O0 -g  src/olvm.c src/boot.c -o ol \
+#debug: src/olvm.c src/repl.o
+#	$(CC) -std=c99 -O0 -g  src/olvm.c src/repl.o -o ol \
 #	   -Xlinker --export-dynamic -ldl
 #	@echo Ok.
 
@@ -78,31 +78,37 @@ clean:
 install: ol repl
 	# install executables:
 	@echo Installing main binary...
-	install -d $(DESTDIR)/$(PREFIX)/bin
-	install -m 755 ol $(DESTDIR)/$(PREFIX)/bin/ol
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install -m 755 ol $(DESTDIR)$(PREFIX)/bin/ol
 	# install binary REPL:
 	@echo Installing REPL...
-	install -d $(DESTDIR)/$(PREFIX)/lib/ol
-	install -m 644 repl $(DESTDIR)/$(PREFIX)/lib/ol/repl
+	install -d $(DESTDIR)$(PREFIX)/lib/ol
+	install -m 644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
 	# basic libraries:
-	@echo Installing libraries...
-	@for F in r5rs otus owl lib etc scheme ;do \
+	@echo Installing common libraries...
+	@for F in r5rs lang otus owl lib etc scheme ;do \
 	   echo installing $$F libraries... ;\
-	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
-	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
+	   install -d $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
+	   install -D -m 644 $$F/* $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
 	done
 	@echo Installing OpenGL libraries...
-	install -d $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
-	@for F in OpenGL/ARB OpenGL/EGL OpenGL/ES OpenGL/EXT ;do \
+	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
+	install -D -m 644 OpenGL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
+	@for F in OpenGL/ARB OpenGL/EXT ;do \
 	   echo installing $$F libraries... ;\
-	   install -d $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
-	   install -D -m 644 $$F/* $(DESTDIR)/$(PREFIX)/lib/ol/$$F ;\
+	   install -d $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
+	   install -D -m 644 $$F/* $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
 	done
-	install -D -m 644 OpenGL/*.scm $(DESTDIR)/$(PREFIX)/lib/ol/OpenGL
+	@echo Installing OpenCL libraries...
+	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
+	install -D -m 644 OpenCL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
+	@echo Installing OpenAL libraries...
+	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
+	install -D -m 644 OpenAL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
 
 uninstall:
-	-rm -f $(DESTDIR)/$(PREFIX)/bin/ol
-	-rm -rf $(DESTDIR)/$(PREFIX)/lib/ol
+	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
+	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
 
 packages: debian-amd64-package
 	@echo "done."
@@ -122,7 +128,7 @@ create-debian-package = \
 	echo Architecture: $2         >>DEBIAN/control;\
 	echo Maintainer: Yuriy Chumak >>DEBIAN/control;\
 	echo Priority: optional       >>DEBIAN/control;\
-	echo Description: Otus Lisp - a purely \(mostly\) functional dialect of Lisp \
+	echo Description: Otus Lisp - a purely* functional dialect of Lisp \
 	                              >>DEBIAN/control;\
 	\
 	fakeroot dpkg -b . ../ol_1.1_$2.deb
@@ -132,8 +138,8 @@ debian-amd64-package:
 
 
 # http://mackyle.github.io/blocksruntime/
-#clang: src/olvm.c src/boot.c
-#	clang-3.5 -fblocks src/olvm.c src/boot.c -ldl -lBlocksRuntime -o ol-c
+#clang: src/olvm.c src/repl.o
+#	clang-3.5 -fblocks src/olvm.c src/repl.o -ldl -lBlocksRuntime -o ol-c
 
 
 # this is only container for config targets
@@ -187,8 +193,8 @@ config/XVisualInfo:
 
 
 # ol
-ol: src/olvm.c src/olvm.h src/boot.c
-	$(CC) $(CFLAGS) src/olvm.c src/boot.c -o $@ \
+ol: src/olvm.c src/olvm.h src/repl.o
+	$(CC) $(CFLAGS) src/olvm.c src/repl.o -o $@ \
 	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
 
@@ -197,17 +203,32 @@ vm: src/olvm.c src/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
 	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
+vm32: src/olvm.c src/olvm.h
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
+	   -Xlinker --export-dynamic $(L) -m32
+	@echo Ok.
+vm64: src/olvm.c src/olvm.h
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
+	   -Xlinker --export-dynamic $(L) -m64
+	@echo Ok.
 
 
 olvm.js: src/olvm.c src/olvm.h src/slim.c
-	emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O2 --llvm-opts "['-O2']" --memory-init-file 0 -v
+	emcc src/olvm.c src/slim.c -o olvm.js -s ASYNCIFY=1 -Oz \
+	   -s NO_EXIT_RUNTIME=1 \
+	   -fno-exceptions -fno-rtti \
+	   --memory-init-file 0 --llvm-opts "['-O3']" -v
+
+
+talkback: src/olvm.c src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DEMBEDDED_VM -DHAS_PINVOKE=1 -o $@ -I src \
+	   src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c -pthread \
+	   -Xlinker --export-dynamic $(L)
 
 
 src/repl.o: repl
-	objcopy -B i386 -I binary -O default repl src/repl.o
-src/boot.c: repl vm src/boot.lisp
-	vm repl <src/boot.lisp >src/boot.c
-src/slim.c: repl vm src/slim.lisp
+	ld -r -b binary -o src/repl.o repl
+src/slim.c: repl src/slim.lisp
 	vm repl <src/slim.lisp >src/slim.c
 
 
@@ -270,9 +291,36 @@ tests: \
    tests/vector-rand.scm\
    tests/numbers.scm
 	@rm -f $(FAILED)
+	@echo "Internal VM testing:"
+	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm64 $(L) -m64
+	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm32 $(L) -m32
+	@echo ""
+	@echo "32-bit:"
+	@echo "-------"
+	   @./tests-vm32
+	@echo ""
+	@echo "64-bit:"
+	@echo "-------"
+	   @./tests-vm64
+	@echo ""
+	@echo "ffi tests (32- and 64-bit):"
+	@echo "---------------------------------------"
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -o ffi32 $(L) -m32 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -o ffi64 $(L) -m64 -Xlinker --export-dynamic
+	   @echo -n "Testing ffi ... "
+	   @if ./ffi32 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null && ./ffi64 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
+	      echo "Ok.";\
+	   else \
+	      echo "failed." ;\
+	      touch $(FAILED);\
+	   fi
+	@echo ""
+	@echo "common (32- and 64-bit simulatenously):"
+	@echo "---------------------------------------"
+	@make vm32 vm64
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
-	   if ./vm repl <$$F | diff - $$F.ok >/dev/null ;then\
+	   if ./vm32 repl <$$F | diff - $$F.ok >/dev/null && ./vm64 repl <$$F | diff - $$F.ok >/dev/null; then\
 	      echo "Ok." ;\
 	   else \
 	      echo "\033[0;31mFailed!\033[0m" ;\
@@ -283,5 +331,5 @@ tests: \
 	@echo "passed!"
 
 sample-embed:
-	gcc src/sample-embed.c src/olvm.c src/boot.c -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
+	gcc src/sample-embed.c src/olvm.c src/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
 	-Xlinker --export-dynamic

@@ -1,37 +1,25 @@
 /**
- * PInvoke - Platform Invoke
- * (nsfc - Native System Function Calls)
+ * FFI - Foreign Function Interface
  *
- * а тут у нас реализация pinvoke механизма. пример в lib/opengl.scm, lib/sqlite.scm, etc.
+ * A ForeignFunctionInterface (FFI) is an interface that allows calling code written
+ * in one programming language, from another that is neither a superset nor a subset.
+ *
+ * тут у нас реализация ffi механизма. примеры в lib/opengl.scm, lib/sqlite.scm, etc
+ *
+ * FFI is Fatal Familial Insomnia too. Please, don't read this code at night...
  */
 
 // Libc and Unicode: http://www.tldp.org/HOWTO/Unicode-HOWTO-6.html
+//
 // The Plan9 operating system, a variant of Unix, uses UTF-8 as character encoding
 //   in all applications. Its wide character type is called `Rune', not `wchar_t'.
+//
+// Design Issues for Foreign Function Interfaces
+// http://autocad.xarch.at/lisp/ffis.html
 
-#if HAS_PINVOKE
+#if OLVM_FFI
 
-int_t gcd(int_t a, int_t b)
-{
-	int_t c;
-	while (a) {
-		c = a; a = b % a; b = c;
-	}
-	return b;
-}
-
-#define ftosn(f) ({\
-	double v = f; \
-	int_t n = v * FMAX; \
-	int_t d = FMAX; \
-	int_t g = gcd(n, d); \
-\
-	(g == d) ? \
-		(word*) itosv(v) : \
-	(g == 1) ? \
-		new_pair(TRATIONAL, itosv(n), itouv(d)) :\
-		new_pair(TRATIONAL, itosv(n / g), itosv(d / g)); \
-	})
+word d2ol(struct ol_t* ol, double v); // declared in olvm.c
 
 // C preprocessor trick, some kind of "map"
 // http://jhnet.co.uk/articles/cpp_magic !!
@@ -89,7 +77,6 @@ int_t gcd(int_t a, int_t b)
 
 #define NEWLINE(x) x "\n\t"
 #define __ASM__(...) __asm__(EVAL(MAP(NEWLINE, __VA_ARGS__)))
-
 
 // platform defines:
 // https://sourceforge.net/p/predef/wiki/Architectures/
@@ -311,7 +298,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 //
 // В нашем случае мы так или иначе восстанавливаем указатель стека, так что
 // функция x86_call у нас будет универсальная cdecl/stdcall
-long x86_call(word argv[], long i, void* function, long type);
+long long x86_call(word argv[], long i, void* function, long type);
 
 __ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
@@ -351,9 +338,9 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 #endif
 
 
-// Главная функция механизма pinvoke:
+// Главная функция механизма ffi:
 PUBLIC
-word* pinvoke(OL* self, word* arguments)
+word* ffi(OL* self, word* arguments)
 {
 	// get memory pointer
 	heap_t* heap = &self->heap;
@@ -367,7 +354,6 @@ word* pinvoke(OL* self, word* arguments)
 	// pascal(OS/2, MsWin 3.x, Delphi), stdcall(Win32),
 	// fastcall(ms), vectorcall(ms), safecall(delphi),
 	// thiscall(ms)
-	typedef long long ret_t;
 
 		// todo: ограничиться количеством функций поменьше
 		//	а можно сделать все в одной switch:
@@ -427,7 +413,7 @@ word* pinvoke(OL* self, word* arguments)
 			                 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
 			                            args[ 4], args[ 5], args[ 6], args[ 7], \
 			                            args[ 8], args[ 9], args[10], args[11]);\
-			default: STDERR("Unsupported parameters count for pinvoke function: %d", i);\
+			default: STDERR("Unsupported parameters count for ffi function: %d", i);\
 				return 0;\
 			};
 
@@ -445,11 +431,11 @@ word* pinvoke(OL* self, word* arguments)
 		// читаем длинное число в float формат
 		assert (is_value(car(arg)));
 		float f = (unsigned long)uvtoi(car(arg));
-		float mul = 0x1000000; // 1 << 24 //?
+		float mul = HIGHBIT;
 		while (is_reference(cdr(arg))) {
 			arg = (word*)cdr(arg);
 			f += (unsigned long)uvtoi(cdr(arg)) * mul;
-			mul *= 0x1000000;
+			mul *= HIGHBIT;
 		}
 		assert (cdr(arg) == INULL);
 
@@ -537,11 +523,9 @@ word* pinvoke(OL* self, word* arguments)
 
 		switch (reftype(arg)) {
 		case TINT:
-			return (float)+from_int(arg);
 		case TINTN:
-			return (float)-from_int(arg);
 		case TRATIONAL:
-			return (float) from_rational(arg);
+			return (float) ol2d(arg);
 		case TCOMPLEX:
 			return to_float(car(arg)); // return real part of value
 		}
@@ -788,6 +772,7 @@ word* pinvoke(OL* self, word* arguments)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
+			case TUSERDATA:
 			case TVPTR:
 				args[i] = car(arg);
 				break;
@@ -893,12 +878,16 @@ word* pinvoke(OL* self, word* arguments)
 			break;
 		#endif
 
-		case TCALLBACK: {
-			if (is_callback(arg)) {
-				args[i] = (word)car(arg);
+		case TCALLABLE: {
+			if ((word)arg == INULL || (word)arg == IFALSE)
+				args[i] = (word) (void*)0;
+			else {
+				if (is_callable(arg)) {
+					args[i] = (word)car(arg);
+				}
+				else
+					STDERR("invalid parameter values (requested callable)");
 			}
-			else
-				STDERR("invalid parameter values (requested callback)");
 			break;
 		}
 /*
@@ -933,13 +922,13 @@ word* pinvoke(OL* self, word* arguments)
 			int portfd = port(arg);
 			switch (portfd) {
 			case 0: // stdin
-				args[i] = stdin;
+				args[i] = (word) stdin;
 				break;
 			case 1: // stdout
-				args[i] = stdout;
+				args[i] = (word) stdout;
 				break;
 			case 2: // stderr
-				args[i] = stderr;
+				args[i] = (word) stderr;
 				break;
 			default:
 				args[i] = portfd;
@@ -960,11 +949,11 @@ word* pinvoke(OL* self, word* arguments)
 	}
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	ret_t got = 0;   // результат вызова функции
+	long long got = 0; // результат вызова функции (64 бита для возможного double)
 
 	self->R[128 + 1] = (word)B;
 	self->R[128 + 2] = (word)C;
-	heap->fp = fp; // сохраним, так как в call могут быть вызваны callbackи, и они попортят fp
+	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
 
 //	if (floatsmask == 15)
 //		__asm__("int $3");
@@ -998,17 +987,20 @@ word* pinvoke(OL* self, word* arguments)
 			x86_call(args, i, function, returntype & 0x3F);
 // arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
 #elif __arm__
+	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
 	got = call(args, i, function, returntype & 0x3F);
 #elif __aarch64__
+	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
 	got = call(args, i, function, returntype & 0x3F);
 #elif __mips__
 	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
+	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
@@ -1038,6 +1030,7 @@ word* pinvoke(OL* self, word* arguments)
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}*/
+	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
@@ -1136,7 +1129,10 @@ word* pinvoke(OL* self, word* arguments)
 		case TFLOAT:
 		case TDOUBLE: {
 			double value = *(double*)&got;
-			result = ftosn(value);
+
+			heap->fp = fp;
+			result = (word*) d2ol(self, value);
+			fp = heap->fp;
 			break;
 		}
 	}
@@ -1144,183 +1140,232 @@ word* pinvoke(OL* self, word* arguments)
 	heap->fp = fp;
 	return result;
 }
-#endif//HAS_PINVOKE
+#endif//OLVM_FFI
 
-#if 0
-// tests
-PUBLIC
-float fiiii(float f, int a, int b, int c, int d)
-{
-	fprintf(stderr, "f=%f\n", f);
-	fprintf(stderr, "a=%d\n", a);
-	fprintf(stderr, "b=%d\n", b);
-	fprintf(stderr, "c=%d\n", c);
-	fprintf(stderr, "d=%d\n", d);
 
-	return (a+b+c+d + f);
-}
-
-PUBLIC
-float iffiiiifi(int i, float f, float g, int j, int k, int l, int m, float h, int n)
-{
-	fprintf(stderr, "i=%d\n", i);
-	fprintf(stderr, "f=%f\n", f);
-	fprintf(stderr, "g=%f\n", g);
-	fprintf(stderr, "j=%d\n", j);
-	fprintf(stderr, "k=%d\n", k);
-	fprintf(stderr, "l=%d\n", l);
-	fprintf(stderr, "m=%d\n", m);
-	fprintf(stderr, "h=%f\n", h);
-	fprintf(stderr, "n=%d\n", n);
-
-	return (i+j+k+l+m+n + f+g+h);
-}
-
-PUBLIC
-double ddddddddd(double d1, double d2, double d3, double d4, double d5, double d6, double d7, double d8, double d9)
-{
-	fprintf(stderr, "d1=%f\n", d1);
-	fprintf(stderr, "d2=%f\n", d2);
-	fprintf(stderr, "d3=%f\n", d3);
-	fprintf(stderr, "d4=%f\n", d4);
-	fprintf(stderr, "d5=%f\n", d5);
-	fprintf(stderr, "d6=%f\n", d6);
-	fprintf(stderr, "d7=%f\n", d7);
-	fprintf(stderr, "d8=%f\n", d8);
-	fprintf(stderr, "d9=%f\n", d9);
-	return (d1+d2+d3+d4+d5+d6+d7+d8+d9);
-}
-
-PUBLIC
-float iffiiiifiiffffff(int i, float f, float g, int j, int k, int l, int m, float h, int n, int o, float f1, float f2, float f3, float f4, float f5, float f6)
-{
-	fprintf(stderr, "i=%d\n", i);
-	fprintf(stderr, "f=%f\n", f);
-	fprintf(stderr, "g=%f\n", g);
-	fprintf(stderr, "j=%d\n", j);
-	fprintf(stderr, "k=%d\n", k);
-	fprintf(stderr, "l=%d\n", l);
-	fprintf(stderr, "m=%d\n", m);
-	fprintf(stderr, "h=%f\n", h);
-	fprintf(stderr, "n=%d\n", n);
-	fprintf(stderr, "o=%d\n", o);
-	fprintf(stderr, "%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
-
-	return (i+j+k+l+m+n + f+g+h);
-}
-
-PUBLIC
-float fii(float f, int a, int b)
-{
-	fprintf(stderr, "f=%f\n", f);
-	fprintf(stderr, "a=%d\n", a);
-	fprintf(stderr, "b=%d\n", b);
-
-	return (a+b + f);
-}
-
-PUBLIC
-float fi(float f, int a)
-{
-	fprintf(stderr, "f=%f\n", f);
-	fprintf(stderr, "a=%d\n", a);
-
-	return (a + f);
-}
-
-PUBLIC
-float ifiii(int a, float f, int b, int c, int d)
-{
-	fprintf(stderr, "a=%d\n", a);
-	fprintf(stderr, "f=%f\n", f);
-	fprintf(stderr, "b=%d\n", b);
-	fprintf(stderr, "c=%d\n", c);
-	fprintf(stderr, "d=%d\n", d);
-
-	return (a+b+c+d + f);
-}
-
-PUBLIC
-float iiiif(int a, int b, int c, int d, float f)
-{
-	fprintf(stderr, "a=%d\n", a);
-	fprintf(stderr, "b=%d\n", b);
-	fprintf(stderr, "c=%d\n", c);
-	fprintf(stderr, "d=%d\n", d);
-	fprintf(stderr, "f=%f\n", f);
-
-	return (a+b+c+d + f);
-}
-
-PUBLIC
-float fiiif(float f, int a, int b, int c, float g)
-{
-	fprintf(stderr, "f=%f\n", f);
-	fprintf(stderr, "a=%d\n", a);
-	fprintf(stderr, "b=%d\n", b);
-	fprintf(stderr, "c=%d\n", c);
-	fprintf(stderr, "g=%f\n", g);
-
-	return (a+b+c + f+g);
-}
-
-PUBLIC
-int test4(int a, int b, int c, int d)
-{
-	fprintf(stderr, "a=%d\n", a);
-	fprintf(stderr, "b=%d\n", b);
-	fprintf(stderr, "c=%d\n", c);
-	fprintf(stderr, "d=%d\n", d);
-
-	return (a+b+c+d);
-}
-
-PUBLIC
-int test5(int a, int b, int c, int d, int e)
-{
-	fprintf(stderr, "a=%d\n", a);
-	fprintf(stderr, "b=%d\n", b);
-	fprintf(stderr, "c=%d\n", c);
-	fprintf(stderr, "d=%d\n", d);
-	fprintf(stderr, "e=%d\n", e);
-
-	return (a+b+c+d+e);
-}
-
-PUBLIC
-int test6(int a, int b, int c, int d, int e, int f)
-{
-	fprintf(stderr, "a=%d\n", a);
-	fprintf(stderr, "b=%d\n", b);
-	fprintf(stderr, "c=%d\n", c);
-	fprintf(stderr, "d=%d\n", d);
-	fprintf(stderr, "e=%d\n", e);
-	fprintf(stderr, "f=%d\n", f);
-
-	return (a+b+c+d+e+f);
-}
-
-PUBLIC
-int test0()
-{
-	return 7;
-}
-
-double floattest(float x, float y)
-{
-	return x+y;
-}
-
-PUBLIC
-void int3()
-{
-	__asm__("int $3");
-}
-
-PUBLIC
-int do_callback(int (dosmth)(int), int p)
-{
-	return dosmth(p*2);
-}
-
+// --=( CALLABLES support )=-----------------------------
+// --
+#if OLVM_CALLABLES
+//long long callback(OL* ol, int id, word* args) // win32
+//long long callback(OL* ol, int id, long long* argi, double* argf, long long* others) // linux
+static
+long callback(OL* ol, int id, int_t* argi
+#if __amd64__
+		, double* argf, int_t* rest //win64
 #endif
+		)
+{
+// http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
+//	__asm("int $3");
+	word* R = ol->R;
+
+	ol->this = (word*)cdr (ol->R[NR + id]); // lambda для обратного вызова
+//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, так как без потоков работаем
+//	ol->bank = 0;
+	assert (is_reference(ol->this));
+	assert (reftype (ol->this) != TTHREAD);
+
+	// надо сохранить значения, иначе их уничтожит GC
+	// todo: складывать их в память! и восстанавливать оттуда же
+	R[NR + 0] = R[0]; // mcp?
+//	R[NR + 1] = R[1]; // не надо
+//	R[NR + 2] = R[2]; // не надо
+	R[NR + 3] = R[3]; // continuation
+
+	// вызовем колбек:
+	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callable функций
+	R[3] = IRETURN; // команда выхода из колбека
+	ol->arity = 1;
+
+	word types = car(ol->R[NR + id]);
+
+	int a = 4;
+//	R[a] = IFALSE;
+
+	word* fp;
+	fp = ol->heap.fp;
+
+	int i = 0;
+#if __amd64__ && __linux__
+	int j = 0;
+#endif
+/*#if __amd64__  // !!!
+	#if _WIN64
+//	rest -= 4;
+	#else
+	rest -= 6;
+	#endif
+#endif*/
+//	int f = 0; // linux
+	while (types != INULL) {
+		switch (car(types)) {
+		case F(TVPTR): {
+			void*
+			#if __amd64__
+				#if _WIN64
+				value = i <= 4
+				        ? *(void**) &argi[i]
+				        : *(void**) &rest[i-4];
+				#else
+				value = i <= 6
+						? *(void**) &argi[i]
+						: *(void**) &rest[i-6]; // ???
+				#endif
+				i++;
+			#else
+				value =   *(void**) &argi[i++];
+			#endif
+			R[a] = (word) new_vptr(value);
+			break;
+		}
+		case F(TINT): {
+			int_t
+			#if __amd64__
+				#if _WIN64
+				value = i <= 4
+				        ? *(int_t*) &argi[i]
+				        : *(int_t*) &rest[i-4];
+				#else
+				value = i <= 6
+						? *(int_t*) &argi[i]
+						: *(int_t*) &rest[i-6]; // ???
+				#endif
+				i++;
+			#else
+				value =   *(int_t*) &argi[i++];
+			#endif
+			R[a] = F(value);
+			break;
+		}
+		case F(TFLOAT): {
+			float
+			#if __amd64__
+				#if _WIN64
+				value = i <= 4
+				        ? *(float*) &argf[i]
+				        : *(float*) &rest[i-6];
+				i++;
+				#else
+				value = j <= 8
+						? *(float*) &argf[j]
+						: *(float*) &rest[j-8]; // ???
+				j++;
+				#endif
+			#else
+				value =   *(float*) &argi[i++];
+			#endif
+			ol->heap.fp = fp;
+			R[a] = d2ol(ol, value);
+			fp = ol->heap.fp;
+			break;
+		}
+		case F(TDOUBLE): {
+			double
+			#if __amd64__
+				#if _WIN64
+				value = i <= 4
+				        ? *(double*) &argf[i]
+				        : *(double*) &rest[i-4];
+				i++;
+				#else
+				value = i <= 8
+						? *(double*) &argf[j]
+						: *(double*) &rest[j-8]; // ???
+				j++;
+				#endif
+			#else
+				value =   *(double*) &argi[i++]; i++;
+			#endif
+			ol->heap.fp = fp;
+			R[a] = d2ol(ol, value);
+			fp = ol->heap.fp;
+			break;
+		}
+		case F(TSTRING): {
+			void*
+			#if __amd64__
+				#if _WIN64
+				value = i <= 4
+				        ? *(void**) &argi[i]
+				        : *(void**) &rest[i-4];
+				#else
+				value = i <= 6
+						? *(void**) &argi[i]
+						: *(void**) &rest[i-6]; // ???
+				#endif
+				i++;
+			#else
+				value =   *(void**) &argi[i++];
+			#endif
+			R[a] = value ? (word)new_string(value) : IFALSE;
+			break;
+		}
+//		case F(TVOID):
+//			R[a] = IFALSE;
+//			i++;
+//			break;
+		default: {
+			void*
+			#if __amd64__
+				#if _WIN64
+				value = i <= 4
+				        ? *(void**) &argi[i]
+				        : *(void**) &rest[i-4];
+				#else
+				value = i <= 6
+						? *(void**) &argi[i]
+						: *(void**) &rest[i-6]; // ???
+				#endif
+				i++;
+			#else
+				value =   *(void**) &argi[i++];
+			#endif
+
+			if (is_pair(car(types))) {
+				//int l = llen(car(types));
+				word tail = INULL;
+				void** values = (void**)value;
+
+				word argv = car(types);
+				while (argv != INULL) {
+					switch (car (argv)) {
+					case F(TSTRING):
+						tail = (word) new_pair(new_string(*values++), tail);
+						break;
+					case F(TVPTR):
+						tail = (word) new_pair(new_vptr(*values++), tail);
+						break;
+					}
+					argv = cdr (argv);
+				}
+				R[a] = tail;
+				break;
+			}
+
+			// else error
+			STDERR("unknown argument type");
+			break; }
+		}
+		a++;
+		ol->arity++;
+		types = cdr(types);
+	}
+
+	ol->heap.fp = fp;
+
+	//word* r =
+	runtime(ol);
+	// возврат из колбека,
+	// R, NR могли измениться
+	R = ol->R;
+	R[3] = R[NR + 3];
+//	R[1] = R[NR + 2]; // не надо
+//	R[1] = R[NR + 1]; // не надо
+	R[0] = R[NR + 0]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
+
+	// if result must be float or double,
+	// do the __ASM__ with loading the result into fpu/xmm register
+
+	return 0;
+}
+#endif//OLVM_CALLABLES

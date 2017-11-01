@@ -2,7 +2,7 @@
 
 (import (lib curl))
 
-(define callback (syscall 175 (cons
+(define callback (syscall 85 (cons
    (list type-string type-int+ type-int+ type-vptr)
    (lambda (ptr nsize nmemb stream)
       (print ptr)

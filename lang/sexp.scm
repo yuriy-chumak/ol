@@ -32,6 +32,7 @@
       (owl lazy)
       (owl io) ; testing
       (owl unicode)
+      (only (owl interop) interact)
       (only (lang intern) intern-symbols string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 
@@ -351,7 +352,7 @@
                      (get-word "true"  #true)    ;; get the longer ones first if present
                      (get-word "null"  #null)
                      (get-word "empty" #empty)
-                     (get-word "eof"   #eof)     ; (cast 4 13))
+                     (get-word "eof"   #eof)     ; (vm:cast 4 13))
                      ; сокращения
                      (get-word "t"     #true)
                      (get-word "f"     #false)
@@ -457,7 +458,7 @@
                ((not chunk) ;; read error in port
                   (values rchunks #true))
                ((eq? chunk #true) ;; would block
-                  (take-nap) ;; interact with sleeper thread to let cpu sleep
+                  (interact sleeper-id 5) ;; interact with sleeper thread to let cpu sleep
                   (values rchunks #false))
                ((eof? chunk) ;; normal end if input, no need to call me again
                   (values rchunks #true))
@@ -474,7 +475,7 @@
       ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
 
       (define (fd->exp-stream fd prompt parse fail re-entry?) ; re-entry? unused
-         (let loop ((old-data null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
+         (let loop ((old-data #null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
             (lets
                ((rchunks end?
                   (if finished?

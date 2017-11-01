@@ -15,7 +15,7 @@
          (eq? (type x) type-tuple))
 
       (define (list->tuple lst)
-         (unreel type-tuple lst))
+         (vm:new-object type-tuple lst))
 
       (define (read-tuple tuple pos lst)
          (if (= pos 0)

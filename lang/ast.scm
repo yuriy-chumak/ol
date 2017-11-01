@@ -105,7 +105,7 @@
                                        (cons 'begin body)) env fail)))
                            (else
                               (fail (list "Bad lambda: " exp))))))
-                  ((ol:let) ;;; (ol:let formals definitions body)
+                  ((letq) ;;; (letq formals definitions body)
                      (if (= (length exp) 4)
                         (let
                            ((formals (lref exp 1))
@@ -117,13 +117,13 @@
                                  (fixed-formals-ok? formals)
                                  (= (length formals) (length values)))
                               (let ((env (env-bind env formals)))
-                                 (tuple 'ol:let formals
+                                 (tuple 'letq formals
                                     (map
                                        (lambda (x) (translate x env fail))
                                        values)
                                     (translate body env fail)))
-                              (fail (list "Bad let: " exp))))
-                        (fail (list "Bad let: " exp))))
+                              (fail (list "Bad letq: " exp))))
+                        (fail (list "Bad letq: " exp))))
                   ((ifeq) ;;; (ifeq a b then else)
                      (if (eq? (length exp) 5)
                         (let ((a (second exp))
@@ -136,18 +136,18 @@
                               (translate then env fail)
                               (translate else env fail)))
                         (fail (list "Bad ifeq " exp))))
-                  ((ifary) ; (ifary (lambda-ok) (lambda-fail))
+                  ((either) ; (either (lambda-ok) (lambda-else))
                      (if (= (length exp) 3)
-                        (tuple 'ifary
+                        (tuple 'either
                            (translate (second exp) env fail)
                            (translate (third exp) env fail))
-                        (fail (list "Bad ifary node: " exp))))
+                        (fail (list "Bad either node: " exp))))
 
                   ((values)
                      (tuple 'values
                         (map (lambda (arg) (translate arg env fail)) (cdr exp))))
-                  ((apply-values)
-                     (tuple 'apply-values
+                  ((values-apply)
+                     (tuple 'values-apply
                         (translate (lref exp 1) env fail)
                         (translate (lref exp 2) env fail)))
                   ;; FIXME pattern

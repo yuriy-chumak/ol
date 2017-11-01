@@ -167,7 +167,7 @@
       (r5rs core) (owl io) (owl string)
       (OpenGL ES version-1-0)
 
-      (otus pinvoke) (lib platform) (lib x11)
+      (otus ffi) (lib platform) (lib x11)
       (owl interop) (owl list))
 
 (begin
@@ -211,7 +211,7 @@
 ;         (function (GetProcAddress (c-string name))))
 ;      (if function
 ;      (lambda args
-;         (exec pinvoke function rtty args)))))
+;         (exec ffi function rtty args)))))
 ;
 
 
@@ -227,10 +227,10 @@
 (define EGLint* type-vector-raw) ;?
 
 
-(define EGL_DEFAULT_DISPLAY (vm:raw type-port '(0)))
-(define EGL_NO_CONTEXT (vm:raw type-port '(0)))
-(define EGL_NO_DISPLAY (vm:raw type-port '(0)))
-(define EGL_NO_SURFACE (vm:raw type-port '(0)))
+(define EGL_DEFAULT_DISPLAY (vm:new-raw-object type-port '(0)))
+(define EGL_NO_CONTEXT (vm:new-raw-object type-port '(0)))
+(define EGL_NO_DISPLAY (vm:new-raw-object type-port '(0)))
+(define EGL_NO_SURFACE (vm:new-raw-object type-port '(0)))
 
 (define EGL_VERSION_1_0 1)
 (define EGL_VERSION_1_1 1)

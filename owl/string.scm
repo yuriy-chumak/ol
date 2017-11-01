@@ -199,18 +199,18 @@
                       (c d (split null l q))
                       (subs (map finish-string (list a b c d)))
                       (len (fold + 0 (map string-length subs))))
-                     (unreel type-string-dispatch (cons len subs))))
+                     (vm:new-object type-string-dispatch (cons len subs))))
                (else
-                  (unreel type-string-dispatch ;(+ n 1)
+                  (vm:new-object type-string-dispatch ;(+ n 1)
                      (cons (fold + 0 (map string-length chunks)) chunks))))))
 
       (define (make-chunk rcps ascii?)
          (if ascii?
-            (let ((str (vm:raw type-string (reverse rcps))))
+            (let ((str (vm:new-raw-object type-string (reverse rcps))))
                (if str
                   str
                   (runtime-error "Failed to make string: " rcps)))
-            (unreel type-string-wide (reverse rcps))))
+            (vm:new-object type-string-wide (reverse rcps))))
 
       ;; ll|list out n ascii? chunk → string | #false
       (define (stringify runes out n ascii? chu)
@@ -296,11 +296,11 @@
             ;; allows bad non UTF-8 strings coming for example from command
             ;; line arguments (like paths having invalid encoding) to be used
             ;; for opening files.
-            (vm:raw type-string (str-foldr cons '(0) str))
+            (vm:new-raw-object type-string (str-foldr cons '(0) str))
             (let ((bs (str-foldr encode-point '(0) str)))
                ; check that the UTF-8 encoded version fits one raw chunk (64KB)
                (if (<= (length bs) #xffff)
-                  (vm:raw type-string bs)
+                  (vm:new-raw-object type-string bs)
                   #false))))
 
       (define null-terminate c-string)
@@ -323,7 +323,7 @@
 
       ; O(nm), but irrelevant for current use
       (define (replace-all lst pat val)
-         (letrec ((rval (lambda (val) (reverse val)))
+         (letrec ((rval (reverse val))
                   (walk (lambda (rout in)
             (cond
                ((null? in)
@@ -332,15 +332,6 @@
                   (λ (in) (walk (append rval rout) in)))
                (else
                   (walk (cons (car in) rout) (cdr in)))))))
-;         (define rval (reverse val))
-;         (define (walk rout in)
-;            (cond
-;               ((null? in)
-;                  (reverse rout))
-;               ((grab in pat) =>
-;                  (λ (in) (walk (append rval rout) in)))
-;               (else
-;                  (walk (cons (car in) rout) (cdr in)))))
          (walk null lst)))
 
       (define (str-replace str pat val)

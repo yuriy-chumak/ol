@@ -32,6 +32,7 @@
    (begin
       (define ncar car)
       (define ncdr cdr)
+
       ;;;
       ;;; SQUARE ROOTS (stub)
       ;;;
@@ -39,7 +40,7 @@
       ; work with these numerals, so i rolled my own as a quick substitute
       ; bench later
 
-      ; move elsewhere and export, useful for benchmarking
+      ; Величина  положительного числа в битах (f - сколько бит добавить, типа "перенос")
       (define (nbits n f)
          (cond
             ((eq? n 0) f)
@@ -47,11 +48,12 @@
                (lets ((hi lo (vm:shr n 1)))
                   (nbits hi (nat-succ f))))
             (else
-               (let ((tl (ncdr n)))
+               (let ((tl (cdr n)))
                   (if (null? tl)
-                     (nbits (ncar n) f)
-                     (nbits tl (add f (fxmbits))))))))
+                     (nbits (car n) f)
+                     (nbits tl (add f (vm:valuewidth))))))))
 
+      ; приблизительное значение корня "для затравки"
       (define (isqrt-init n)
          (lets
             ((nb (nbits n 0))
@@ -84,20 +86,57 @@
          (let ((sq (isqrt n)))
             (values sq (sub n (mul sq sq)))))
 
+      (define (good-enough? guess1 guess0 precision)
+         (< (abs (- guess1 guess0)) (abs (* guess0 precision))))
+      (define (better-guess guess x) (/ (+ guess (/ x guess)) 2))
+
       ;; sqrt n → m such that m^2 = n
       ;; fixme: finish sqrt after adding complex numbers
-      (define (sqrt n)
+      (define (sqrt n precision)
          (case (type n)
             (type-fix+
-               (lets ((s r (exact-integer-sqrt n)))
-                  (if (eq? r 0) s (runtime-error "sqrt: no exact solution for " n))))
+               (let*((s r (exact-integer-sqrt n))) ; r: remainder
+                  (cond
+                     ((eq? r 0)
+                        s)
+                     ((eq? precision 0)
+                        (runtime-error "sqrt: no exact solution for " n))
+                     (else
+                        (let loop ((s s))
+                           (let ((t (better-guess s n)))
+                              ;(print "s: " s ", t: t")
+                              (if (good-enough? t s precision)
+                                 t
+                                 (loop t))))))))
             (type-int+
-               (lets ((s r (exact-integer-sqrt n)))
-                  (if (eq? r 0) s (runtime-error "sqrt: no exact solution for " n))))
-            (type-fix- (complex 0 (sqrt (abs n))))
-            (type-int- (complex 0 (sqrt (abs n))))
+               (let*((s r (exact-integer-sqrt n))) ; r: remainder
+                  (cond
+                     ((eq? r 0)
+                        s)
+                     ((eq? precision 0)
+                        (runtime-error "sqrt: no exact solution for " n))
+                     (else
+                        (let loop ((s s))
+                           (let ((t (better-guess s n)))
+                              ;(print "s: " s ", t: t")
+                              (if (good-enough? t s precision)
+                                 t
+                                 (loop t))))))))
+            (type-fix- (complex 0 (sqrt (abs n) precision)))
+            (type-int- (complex 0 (sqrt (abs n) precision)))
             (else
                (runtime-error "sqrt: math too high: " n))))
+
+      ; как посчитать корень квадратный:
+      ; 1. попытаться найти целочисленный результат,
+      ; 2. если не вышло, то используя итерационный алгоритм Ньютона с указанной точностью попытаться найти более удовлетворительный
+      (define :sqrt sqrt)
+      (define sqrt
+         (case-lambda
+            ((n accuracy)
+               (:sqrt n accuracy))
+            ((n)
+               (:sqrt n 0.001)))) ; 1/1000
 
       ;;; exponentiation
 

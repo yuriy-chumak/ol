@@ -2,7 +2,7 @@
 
 (import (lib opengl))
 (import (otus random!))
-(import (otus pinvoke))
+(import (otus ffi))
 (import (lib newton))
 
 (define (gettimeofday) (syscall 96 #f #f #f))
@@ -100,7 +100,7 @@
 
 
 ; ...
-(define ApplyGravity (syscall 175 (cons
+(define ApplyGravity (syscall 85 (cons
    (list type-vptr type-float type-int+)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -4.8 0 0))

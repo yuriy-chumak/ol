@@ -5,6 +5,7 @@
                          Grew out of the Owl Lisp by Aki Helin
 
                          at https://yuriy-chumak.github.io/ol/
+
 [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 VERSION 1.1
@@ -14,7 +15,7 @@ LICENSE
 
 This program is free software;  you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of
+published by the Free Software Foundation; either version 3 of
 the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -24,33 +25,38 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 You should have received a copy of the GNU GPL along with this
 program.           If not, see <http://www.gnu.org/licenses/>.
 
+Additionally, Lesser GNU General Public License is applicable.
+
 RELATED
 --------------------------------------------------------------
-              http://people.csail.mit.edu/jaffer/Scheme (r5rs)
               http://groups.csail.mit.edu/mac/projects/scheme/
+              http://people.csail.mit.edu/jaffer/Scheme (r5rs)
 
               Original Owl Lisp project can be found at
-              https://code.google.com/p/owl-lisp/
               https://github.com/aoh/owl-lisp
 
 
 OVERVIEW
 --------
 
-Otus Lisp is a purely\* functional dialect of Lisp.
-It implements an extended subset of R5RS Scheme. It
-is small, embeddable and crossplatform. It can call
-and be called by native applications and libraries.
+Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
+It implements an extended subset of R5RS Scheme including, but
+not limited to, some of the SRFI. It's small (42kb), embeddable
+and crossplatform; can run in own sandbox; provides a portable,
+highlevel way for calling the code written in another languages.
+You can use Otus Lisp on Linux, Windows, Unix, Android and many
+other operation systems with various (x86, x86_64, arm, aarch64,
+mips, ppc, etc.) architectures.
 
 
 REQUIREMENTS
 ------------
 
-For un*x you should have GCC >3.2 installed.
+For unix you should have GCC >3.2 installed.
 
 For windows you should have MINGW installed.
 
-For un*x you maybe want MAKE installed also.
+For unix you maybe want MAKE installed also.
 
 
 DOWNLOAD / INSTALLATION
@@ -90,13 +96,14 @@ BUILD
 
 #### Linux way
 
-To build OL
-
-    $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -ldl
-
 To build only olvm (virtual machine)
 
     $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -ldl
+
+To build full OL
+
+    $ ld -r -b binary -o src/repl.o repl
+    $ gcc src/olvm.c src/repl.o  -std=c99 -O2  -o ol -ldl
 
 
 Olvm can execute only precompiled OL scripts (see BINARY SCRIPTS
@@ -107,23 +114,26 @@ fat (about 400KB executable).
 
 #### Windows way
 
-To build OL
-
-    > set PATH=%PATH%;C:\MinGW\bin
-    > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
-
 To build only olvm (virtual machine)
 
     > set PATH=%PATH%;C:\MinGW\bin
     > gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
+
+To build OL
+
+    > set PATH=%PATH%;C:\MinGW\bin
+    > ld -r -b binary -o src/repl.o repl
+    > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
 
 
 #### FreeBSD/OpenBSD/NetBSD way
 
 BSD require including "c" library instead of dl:
 
-    $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -lc
     $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -lc
+
+    $ ld -r -b binary -o src/repl.o repl
+    $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -lc
 
 
 #### Android way
@@ -188,12 +198,12 @@ Linux from command line additionally.
 Please note that external libraries (like opengl, sqlite, etc.)
 support require HAS_DLOPEN enabled.
 
-To disable pinvoke (Platform Invoke mechanism) support you can add
--DHAS_PINVOKE=0 to gcc command line or set appropriate define in
+To disable ffi (Foreign Function Interface) support you can add
+-DOLVM_FFI=0 to gcc command line or set appropriate define in
 src/olvm.h to 0.
 
 Please note that external libraries (like opengl, sqlite, etc.)
-support require HAS_PINVOKE enabled.
+support require OLVM_FFI enabled.
 
 For embedding OL into your project check the EMBEDDED OL section.
 
@@ -297,102 +307,89 @@ EMBEDDED OL
 
 (please, this section is outdated, please wait to updates)
 
-OL can be embedded in your project. More info can be found in docs.
+OL can be embedded in your project. It supports direct calls for C functions
+for 32- and 64-bit platforms with full callables support.
 
-This is usage sample:
+Please check the next code for sample usage:
 
     --- cut ---
     // embedded example
-    #include "olvm_xtra.h"
+    #include "olvm.h"
 
+    #include <stdio.h>
+
+    #if _WIN32
+    __declspec(dllexport)
+    #else
     __attribute__((__visibility__("default")))
-    word* sample_add(OL* ol, word arguments) {
-        word* fp; // memory pointer
-        fp = ol->fp;
+    #endif
+    int sample_add(int fa, int fb)
+    {
+	    // math
+	    int a = fa;    fprintf(stderr, "DEBUG: a = %d\n", a);
+	    int b = fb;    fprintf(stderr, "DEBUG: b = %d\n", b);
+	    int r = a + b; fprintf(stderr, "DEBUG: r = %d\n", r);
 
-        word* fa = (word*)car(arguments); arguments = cdr(arguments);
-        word* fb = (word*)car(arguments); arguments = cdr(arguments);
-
-        // math
-        int a = sftoi(fa);
-        int b = sftoi(fb);
-        int r = a + b;
-        // result
-        word* result = F(r);
-
-        ol->fp = fp;//
-        return result;
+	    // result
+	    return r;
     }
 
     int main(int argc, char** argv)
     {
-        return vm_new(
-            "(import (otus pinvoke) (owl io))"
-            "(define % (dlopen))" // get own handle
-            "(define sample_add (dlsym+ % \"sample_add\"))"
+        OL* ol = OL_new(
+            "(import (otus ffi) (owl io))"
+            "(define $ (dlopen))" // get own handle
+            "(define sample_add (dlsym $ type-int+ \"sample_add\" type-int+ type-int+))"
+
             "(print \"sample_add: \""
-            "   (sample_add 1 2))"
-            "(halt 1)", 0);
+            "   (sample_add 1 2))");
+        OL_run(ol, 0, 0);
+
+        OL_free(ol);
     }
     --- cut ---
 
-You can call your own functions from OL code.
+You need:
 
-Currently this is more complecated. You need:
-
-a. compile OL with -DHAS_DLOPEN and -DHAS_PINVOKE options
+a. compile OL with -DHAS_DLOPEN and -DOLVM_FFI options
       (don't forget for -DEMBEDDED_VM)
 
-b. send to vm "(import (otus pinvoke))" (owl/pinvoke.scm must
-      be accessible from your executable)
+b. notify vm about using ffi library: "(import (otus ffi))"
+      "otus/ffi.scm" file must be accessible from your executable or from
+      default library search path
 
-c) send to vm "(define me (dload))" where "me" is some
-      appropriate variable name or you can use "let, let*" or
-      any other construction you like
+c. load function exporter library as "(define any-variable (dload))" for self
+      executable or "(define any-variable (dload \"libmy.so\"))" for "my"
+      dynamic library (my.dll for windows)
 
-Now you have two variants - embed OL function or simple C function call.
+d. notify vm about function prototypes that you want to call. ffi support mechanism
+      provides smart translation from internal OL data format into machine
+      specific that used by common languages (C in sample).
 
-For embed OL function call you must
+FFI described in the [Project Page](http://yuriy-chumak.github.io/ol/?ru/ffi) (still in progress), so for now function interface declaration from sample in details:
 
-d. declare you function for OL like this
-      '(define myFuction (dlsym+ me "functionname"))'
-      in this code
-      *) "functionname" - function name string. you must export this
-         function from your code to make it accessible from OL
-      Now your function will receive OL* as furst parameter. This structure
-      provides memory pointer and you have low-level access to OL scructures.
-      This mechanism will help to provide you OL language native extensions, in
-      feature structure will extent by help functions.
+'(define sample_add (dlsym $ type-int+ "sample_add" type-int+ type-int+))':
 
-For normal C function call (actually platform invoke mechanism) you must
+ * sample_add - any appropriate variable name for your internal OL function name.
+      This variable will be associated with lambda that can call the native function.
+ * second argument in (dlsym) - type-int+ - is return type of native function, it
+      can be type-int+ for integers, type-string for string, etc.
+      available types you can check in otus/ffi.scm
+ * third argument is function name string. you must export this
+      function from your code to make it accessible from OL
+ * next dlsym args is argument types for native function, ffi
+      will try to convert arguments of sample_add lambda to this type.
 
-e. declare you function for OL (via vm_puts, sure) like this
-      '(define myFuction (dlsym me type-int+ "functionname" type-string type-int+))'
-      in this code
-      *) myFunction - any appropriate variable name for your function
-         internal OL script name. This variable will associated with
-         lambda that can be called in further code.
-      *) second argument in (dlsym) is return type of native function
-         available types you can check in owl/pinvoke.scm
-      *) third (dlsym) arg is function name string. you must export this
-         function from your code to make it accessible from OL
-      *) other (dlsym) args is argument types for native function, pinvoke
-         will try to convert arguments of myFunction lambda to this type.
-         available types can be checked in owl/pinvoke.scm too.
+e) well, now you can freely use your native function like this for example
+      '(print (sample_add 1 2))'
 
-Small comment for this: if you want to get number - let use type-int+,
-         if you expect SMALL number - let use type-fix+. No differences between
-         types with + and with - are present.
-   e) well, now you can freely use your native function like this for example
-      '(print (myFunction "str1" 123))'
-
-More information about pinvoke you can get in source files
+More information about ffi you can get in source files
     lib/sqlite.scm
-    lib/opengl.scm and OpenGL/version-X-X.scm
+    lib/opengl.scm and OpenGL/version-x-x.scm
     lib/winapi.scm
     lib/x11.scm
 
-* All embedded OL api in progress and can be changed in feature.
+* All embedded OL API in progress and can be changed in feature.
 
 
 DOCUMENTATION

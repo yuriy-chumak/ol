@@ -70,11 +70,11 @@
             ((values vals)
                (lets ((vals free (alpha-list alpha vals env free)))
                   (values (tuple 'values vals) free)))
-            ((apply-values from to)
+            ((values-apply from to)
                (lets
                   ((from free (alpha from env free))
                    (to free   (alpha to   env free)))
-                  (values (tuple 'apply-values from to) free)))
+                  (values (tuple 'values-apply from to) free)))
             ((ifeq a b then else)
                (lets
                   ((a free (alpha a env free))
@@ -84,11 +84,11 @@
                   (values
                      (tuple 'ifeq a b then else)
                      free)))
-            ((ifary then else)
+            ((either then else)
                (lets
                   ((then free (alpha then env free))
                    (else free (alpha else env free)))
-                  (values (tuple 'ifary then else) free)))
+                  (values (tuple 'either then else) free)))
             (else
                (runtime-error "alpha: unknown AST node: " exp))))
 

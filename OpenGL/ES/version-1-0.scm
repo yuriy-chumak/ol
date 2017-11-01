@@ -24,7 +24,7 @@
 
    (import
       (r5rs core) (owl io) (owl string)
-      (otus pinvoke) (lib platform) (lib x11)
+      (otus ffi) (lib platform) (lib x11)
       (owl interop) (owl list))
 
 (begin

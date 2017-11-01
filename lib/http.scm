@@ -2,16 +2,16 @@
 ; HTTP/1.0 - https://tools.ietf.org/html/rfc1945
 (define-library (lib http)
   (export
-    http:run)
-  (import (r5rs core) (owl parse)
+    http:run
+    http:parse-url)
+  (import (r5rs core) (r5rs srfi-1)
+      (owl parse) (owl vector)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (lang intern) string->symbol)
+      (only (lang sexp) fd->exp-stream)
      )
 
 (begin
-  ;(define *debug* #t)
-  ;(print "\e[1;1H\e[2J")
-
    (define (upper-case? x) (<= #\A x #\Z))
    (define (lower-case? x) (<= #\a x #\z))
    (define (alpha-char? x)
@@ -22,6 +22,7 @@
       (or (<= 0 x 31)
           (= x 127)))
 
+; unique session id:
 (fork-server 'IDs (lambda ()
 (let this ((id 1))
 (let* ((envelope (wait-mail))
@@ -36,28 +37,22 @@
 (define (timestamp) (syscall 201 "%c" #f #f))
 (define (set-ticker-value n) (syscall 1022 n #false #false))
 
+; http parser
+   (define (syntax-fail pos info lst)
+      (print-to stderr "http parser fail: " info)
+      (print-to stderr ">>> " pos "-" (runes->string lst) " <<<")
+      '(() (())))
 
-;(define (send fd . args)
-;   (for-each (lambda (arg)
-;      (display-to fd arg)) args))
+      (define HT #\tab)      ; 9
+      (define CTL (append (iota 32) '(127))) ; 0 .. 31, 127
+      (define CR #\return)   ; 13
+      (define LF #\newline)  ; 10
+      (define SP #\space)    ; 32
+      (define tspecials '(#\( #\) #\< #\> #\@ #\, #\; #\: #\\ #\" #\/ #\[ #\] #\? #\= #\{ #\} #\space #\tab))
 
-
-; parser
-      (define (syntax-fail pos info lst)
-         (print "http parser fail: " info)
-         (print ">>> " pos "-" (runes->string lst) " <<<")
-         '(() (())))
-
-      (define quoted-values
-         (list->ff
-            '((#\a . #x0007)
-              (#\b . #x0008)
-              (#\t . #x0009)
-              (#\n . #x000a)
-              (#\r . #x000d)
-              (#\e . #x001B)
-              (#\" . #x0022) ;"
-              (#\\ . #x005c))))
+      (define (token-char? x)
+         (and (less? 31 x) (not (eq? 127 x))    ; not CTL
+              (not (has? tspecials x))))
 
       (define (a-z? x)
          (<= #\a x #\z))
@@ -67,7 +62,7 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)
-             (has? '(#\/ #\: #\. #\& #\? #\- #\+ #\= #\< #\> #\@ #\# #\_ #\% #\, #\; #\' #\!) x)))
+             (has? '(#\/ #\: #\. #\& #\? #\- #\+ #\= #\< #\> #\@ #\# #\_ #\% #\, #\; #\' #\!) x))) ; todo: optimize using ff
       (define (xml? x)
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
@@ -85,10 +80,6 @@
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
              (<= #\a x #\z)))
-      (define (url-char? x)
-         (or (<= #\0 x #\9)
-             (<= #\A x #\Z)
-             (<= #\a x #\z)))
 
       (define (header-char? x)
          (or (<= #\A x #\Z)
@@ -101,26 +92,17 @@
          (list->ff
             (foldr append null
                (list
-                  (map (lambda (d) (cons d (- d 48))) (lrange #\0 1 #\9))  ;; 0-9
+                  (map (lambda (d) (cons d (- d 48))) (lrange 48 1 58))  ;; 0-9
                   (map (lambda (d) (cons d (- d 55))) (lrange 65 1 71))  ;; A-F
                   (map (lambda (d) (cons d (- d 87))) (lrange 97 1 103)) ;; a-f
                   ))))
-      (define (bytes->number digits base)
-         (fold
-            (λ (n digit)
-               (let ((d (get digit-values digit #false)))
-                  (cond
-                     ((or (not d) (>= d base))
-                        (runtime-error "bad digit " digit))
-                     (else
-                        (+ (* n base) d)))))
-            0 digits))
 
-;               ((head (get-rune-if symbol-lead-char?))
-;                (tail (get-greedy* (get-rune-if symbol-char?)))
-;                (next (peek get-byte))
-;                (foo (assert (lambda (b) (not (symbol-char? b))) next))) ; avoid useless backtracking
-;               (string->uninterned-symbol (runes->string (cons head tail))))
+      (define hex-table
+         (list->ff (fold append '() (list
+            (zip cons (iota 10 #\0) (iota 10 0))     ; 0-9
+            (zip cons (iota  6 #\a) (iota 6 10))     ; a-f
+            (zip cons (iota  6 #\A) (iota 6 10)))))) ; A-F
+
 
       (define get-rest-of-line
          (let-parses
@@ -138,46 +120,35 @@
       (define maybe-whitespace (get-kleene* get-a-whitespace))
 
       (define get-request-line
-         (let-parses (
-             (method (get-greedy+ (get-rune-if A-Z?)))
-             (skip        (get-imm #\space))
-             (uri    (get-greedy+ (get-rune-if uri?)))
-             (skip        (get-imm #\space))
-             (proto  (get-greedy+ (get-rune-if uri?))) ; todo:
-             (skip (get-imm #\return)) (skip (get-imm #\newline)))
+         (let-parses ((method  (get-greedy+ (get-rune-if A-Z?))) ; GET/POST/etc.
+                      (-          (get-imm #\space))
+                      (uri     (get-greedy+ (get-rune-if uri?))) ; URI
+                      (-          (get-imm #\space))
+                      (version (get-greedy+ (get-rune-if uri?))) ; HTTP/x.x
+                      (-          (get-imm #\return)) (skip (get-imm #\newline))) ; end of request line
             (tuple
                (runes->string method)
                (runes->string uri)
-               (runes->string proto))))
+               (runes->string version))))
 
       (define get-header-line
-         (let-parses (
-             (name (get-greedy+ (get-rune-if header-char?)))
-             (skip (get-imm #\:))
-             (skip (get-byte-if space-char?))
-             (value (get-greedy+ (get-rune-if (lambda (x) (not (eq? x #\return))))))
-             (skip (get-imm #\return)) (skip (get-imm #\newline)))
+         (let-parses ((name  (get-greedy+ (get-rune-if token-char?)))
+                      (-        (get-imm #\:))
+                      (-        (get-rune-if space-char?)) ; todo: should be LWS
+                      (value (get-greedy+ (get-rune-if (lambda (x) (not (eq? x CR)))))) ; until CRLF
+                      (- (get-imm CR)) (- (get-imm LF)))   ; CRLF
             (cons
                (string->symbol (runes->string name))
-;               (string->uninterned-symbol (runes->string name))
                (runes->string value))))
 
 
       (define http-parser
-;         (get-any-of       ;process "GET /smth HTTP/1.1"
-            (let-parses (
-                  (request-line get-request-line)
-                  (headers-array (get-greedy* get-header-line))
-                  (skip (get-imm #\return)) (skip (get-imm #\newline))) ; final \r\n
-               (cons
-                  request-line (list->ff headers-array)))
-;            (let-parses ( ; process '<policy-file-request/>\0' request:
-;                  (request (get-greedy+ (get-rune-if xml?))))
-;;                  (skip    (get-imm 0)))
-;               (cons
-;                  (tuple (runes->string request)) #empty))
-;                  )
-)
+         (let-parses ((request-line get-request-line)
+                      (headers-array (get-greedy* get-header-line))
+                      (- (get-imm CR)) (- (get-imm LF)))   ; final CRLF
+            (tuple
+               request-line (list->ff headers-array))))
+;)
 
 
 ; todo: use atomic counter to check count of clients and do appropriate timeout on select
@@ -185,26 +156,26 @@
 
 (define (on-accept id fd onRequest)
 (lambda ()
+   (print "an-accept " id)
    (let*((ss1 ms1 (clock))
          (send (lambda args
                   (for-each (lambda (arg)
                      (display-to fd arg)) args) #t)))
 
       (let loop ((request (fd->exp-stream fd "" http-parser syntax-fail #f)))
-         (print id " loop:" request)
+         ;(print id " loop:" request)
          (if (call/cc (lambda (close)
                          (if (null? request)
                             #t
-                            (let ((Request-Line (car (car request)))
-                                  (Headers-Line (cdr (car request))))
-                               ;(print "Request-Line: " Request-Line)
-                               ;(print "Headers-Line: " Headers-Line)
+                            (let ((Request-Line (ref (car request) 1))
+                                  (Headers-Line (ref (car request) 2)))
+                               (print id " Request-Line: " Request-Line)
+                               (print id " Headers-Line: " Headers-Line)
                                (if (null? Request-Line)
                                   (close (send "HTTP/1.0 400 Bad Request\r\n\r\n400"))
                                   (onRequest fd Request-Line Headers-Line send close))
                             (print "ok.")
-                            #f)) #|(close #t)|# ))
-               
+                            #f)) ))
             (begin
                (display id)
                (display (if (syscall 3 fd #f #f) " socket closed, " " can't close socket, ")))
@@ -214,11 +185,8 @@
       (let*((ss2 ms2 (clock)))
          (print id " # " (timestamp) ": request processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
 
-   (let sleep ((x 1000))
-      (set-ticker-value 0)
-      (if (> x 0)
-         (sleep (- x 1))))
-   ))
+   ; workaround for tasker.
+   (interact sleeper-id 5)))
 
 
 (define (http:run port onRequest)
@@ -240,4 +208,100 @@
             (fork (on-accept (generate-unique-id) fd onRequest))))
       (set-ticker-value 0)
       (loop))))
+
+; -=( parse url )=-------------------------------------
+(define (get-path url)
+(let loop ((u url) (path #null))
+   (cond
+      ((null? u)
+         (values (runes->string (reverse path)) u))
+      ((eq? (car u) #\?)
+         (values (runes->string (reverse path)) (cdr u)))
+      (else
+         (loop (cdr u) (cons (car u) path))))))
+
+(define (get-key u)
+(let loop ((u u) (key #null))
+   (if (null? u)
+      (values (runes->string (reverse key)) u)
+      (if (or (eq? (car u) #\=)
+              (eq? (car u) #\&))
+         (values (runes->string (reverse key)) u)
+         ;else
+         (loop (cdr u) (cons (car u) key))))))
+
+(define (get-value u)
+   (define (rev-loop a b)
+      (if (null? a)
+         b
+         (if (and
+               (eq? (car a) #\%)
+               (not (null? b))
+               (not (null? (cdr b))))
+            ; % encoded character
+            (let ((c (bor (<< (get hex-table (car b) 0) 4)
+                              (get hex-table (cadr b) 0))))
+               (if (null? (cdr a))
+                  (cons c (cddr b))
+                  (rev-loop (cddr a) (cons
+                                        (cadr a)
+                                        (cons c (cddr b))))))
+            ; regular case
+            (rev-loop (cdr a) (cons (car a) b)))))
+   (let loop ((u u) (value #null))
+      (if (null? u)
+         (values (runes->string (rev-loop value #null)) u)
+         (if (eq? (car u) #\&)
+            (values (runes->string (rev-loop value #null)) (cdr u))
+            ;else
+            (loop (cdr u) (cons (car u) value))))))
+
+(define (get-keyvalue u)
+(let*((key u (get-key u)))
+   (if (null? u)
+      (values (cons key #null) u)
+      (if (eq? (car u) #\&)
+         (values (cons key #null) (cdr u))
+         (let*((value u (get-value (cdr u))))
+            (values (cons key value) u))))))
+
+
+(define (http:parse-url url)
+(let*((path u (get-path (string->runes url))))
+   (let loop ((args #empty) (u u))
+      (if (null? u) (tuple path args)
+         (let*((kv u (get-keyvalue u)))
+            (loop (put args (string->symbol (car kv)) (cdr kv)) u))))))
+
+
+; https://en.wikipedia.org/wiki/Percent-encoding
+; '[' and ']' are reserver characters, so whell be encoded as '%5B' and '%5D'
+(define (ends-with-vector arg)
+   (if (less? (string-length arg) 6)
+      #f
+      (string-eq? (substring arg (- (string-length arg) 6) (string-length arg)) "%5B%5D")))
+
+; new version with arrays support
+(define (http:parse-url url)
+(let*((path u (get-path (string->runes url))))
+   (let loop ((args #empty) (u u))
+      (if (null? u) (tuple path args)
+         (let*((kv u (get-keyvalue u)))
+            (let ((key (car kv))
+                  (value (cdr kv)))
+               ;(print "key: " key)
+               ;(print "value: " value)
+               (if (ends-with-vector key) ; encoded as vector?
+                  ; slow and naive implementation:
+                  (let ((key (string->symbol (substring key 0 (- (string-length key) 6)))))
+                     ;(print "KEY: " key)
+                     (loop (put args key
+                              (list->vector
+                                 (if (vector? (getf args key))
+                                    (append (vector->list (getf args key)) (list value))
+                                    (list value))))
+                           u))
+                  (loop (put args (string->symbol (car kv)) (cdr kv)) u))))))))
+
+
 ))

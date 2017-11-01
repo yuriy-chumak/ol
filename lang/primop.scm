@@ -1,22 +1,20 @@
+;todo: move primops from src/vm to lang/primop
 (define-library (lang primop)
 
 (export
-      verbose-vm-error primop-of primitive?
+      primop-of primitive?
       primop-name ;; primop → symbol | primop
       special-bind-primop? variable-input-arity?
-      multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?
-      )
+      multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?)
 
    (import
-      (r5rs core)
-      (owl list) (owl ff) (owl math)
-      (src vm))
+      (r5rs core) (src vm)
+      (owl list) (owl ff) (owl math))
 
    (begin
-
       ;; ff of opcode → wrapper
       (define prim-opcodes ;; ff of wrapper-fn → opcode
-         (for empty primops
+         (for empty *primops*
             (λ (ff node)
                (put ff (ref node 5) (ref node 2)))))
 ;      (define opcode->wrapper
@@ -42,7 +40,7 @@
          (let ((pop (vm:and pop #x3F))) ; ignore top bits which sometimes have further data
             (or
                (instruction-name pop)
-               (let loop ((primops primops))
+               (let loop ((primops *primops*))
                   (cond
                      ((null? primops) pop)
                      ((eq? pop (ref (car primops) 2))
@@ -68,7 +66,7 @@
             (λ (ff node)
                (lets ((name op in out wrapper node))
                   (put ff op (cons in out))))
-            empty primops))
+            empty *primops*))
 
       (define (opcode-arity-ok? op in out)
          (let ((node (getf primop-arities op)))
@@ -84,7 +82,7 @@
             ((node
                (some
                   (λ (x) (if (eq? (ref x 2) op) x #false))
-                  primops)))
+                  *primops*)))
             (if node node (runtime-error "Unknown primop: " op))))
 
       (define (opcode-arity-ok-2? op n)
@@ -94,26 +92,5 @@
                   ((eq? in n) #true)
                   ((eq? in 'any) #true)
                   (else #false)))))
-
-
-      (define (verbose-vm-error opcode a b)
-         (cons "error: "
-         (if (eq? opcode ARITY-ERROR)  ;; arity error, could be variable
-               ; this is either a call, in which case it has an implicit continuation,
-               ; or a return from a function which doesn't have it. it's usually a call,
-               ; so -1 to not count continuation. there is no way to differentiate the
-               ; two, since there are no calls and returns, just jumps.
-            `(function ,a got did not want ,(- b 1) arguments)
-         (if (eq? opcode CAR)
-            `(trying to get car of a non-pair ,a)
-         (if (eq? opcode CDR)
-            `(trying to get cdr of a non-pair ,a)
-         `(,(primop-name opcode) reported error ": " ,a " " ,b)
-         )))))
-         ;   ;((eq? opcode 52)
-         ;   ;   `(trying to get car of a non-pair ,a))
-         ;   (else
-         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
-
 
 ))

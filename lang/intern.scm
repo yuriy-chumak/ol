@@ -18,7 +18,6 @@
       put-symbol                    ;; tree sym → tree'
       empty-symbol-tree
       intern-symbols
-      start-dummy-interner ; not used
       ;defined?
 
       fork-intern-interner
@@ -172,77 +171,10 @@
                            (mail sender 'bad-kitty)
                            (loop root)))))))))
 
-;      ;; thread with string → symbol, ...
-;      (define (interner root) ; codes)
-;         ;(debug "interner: wait")
-;         (let*((envelope (wait-mail))
-;               (sender msg envelope))
-;            (cond
-;               ; find an old symbol or make a new one
-;               ((string? msg)
-;                  ;(debug "interner: interning " msg)
-;                  (let*((root symbol (string->interned-symbol root msg)))
-;                     (mail sender symbol) ; отправим назад новый символ
-;                     (interner root))) ; codes
-;
-;;               ((tuple? msg)
-;;                  ;(debug "interner: tuple command " (ref (ref msg 1) 1)) ; avoid symbol->string
-;;                  (tuple-case msg
-;;                     ((flush) ;; clear names before boot (deprecated)
-;;                        ;(debug "interner: aroot:" aroot)
-;;                        ;(debug "interner: acodes:" acodes)
-;;                        (interner root codes))
-;;                     (else
-;;                        ;(print "unknown interner op: " msg)
-;;                        (interner root codes))))
-;;               ((null? msg) ;; get current info
-;;                  (debug "interner: info")
-;;                  (mail sender (tuple 'interner-state root codes))
-;;                  (interner root codes))
-;;               ((symbol? msg)
-;;                  (debug "interner: " msg " -> " (maybe-lookup-symbol root "something"))
-;;                  (mail sender (if (maybe-lookup-symbol root (symbol->string 'something)) #t #f))
-;;                  (interner root codes))
-;               (else
-;                  (debug "interner: bad")
-;
-;                  (mail sender 'bad-kitty)
-;                  (interner root))))) ;codes
-
       ; fixme: invalid
       ;(define-syntax defined?
       ;   (syntax-rules (*toplevel*)
       ;      ((defined? symbol)
       ;         (get *toplevel* symbol #false))))
-
-
-      ;; a placeholder interner for programs which don't need the other services
-      ;; soon to be removed
-      (define (dummy-interner) ; not used
-         (lets ((env (wait-mail))
-                (sender msg env))
-            (cond
-               ((bytecode? msg)
-                  (mail sender msg)
-                  (dummy-interner))
-               ((tuple? msg)
-                  (tuple-case msg
-                     ((get-name x)
-                        (mail sender #false)))
-                  (dummy-interner))
-               ((null? msg)
-                  (mail sender 'dummy-interner))
-               (else
-                  (runtime-error "bad interner request: " msg)))))
-
-      (define (start-dummy-interner)
-         (fork-server 'intern dummy-interner))
-
-      ;; make a thunk to be forked as the thread
-      ;; (sym ...)  ((bcode . value) ...) → thunk
-;      (define (initialize-interner symbol-list)
-;         (let
-;            ((sym-root (fold put-symbol empty-symbol-tree symbol-list)))
-;            (λ () (interner sym-root)))) ;code-root
 
 ))

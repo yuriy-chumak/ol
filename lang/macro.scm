@@ -318,7 +318,7 @@
                                     (values
                                        (list 'setq (cadr exp) value)
                                        free)))
-                              ((ol:let)
+                              ((letq)
                                  (let*((formals (second exp))    ; lref 1
                                        (definitions (third exp)) ; lref 2
                                        (body (fourth exp))       ; lref 3
@@ -328,21 +328,21 @@
                                        (body free
                                           (expand body env free abort)))
                                     (values
-                                       (list 'ol:let formals definitions body)
+                                       (list 'letq formals definitions body)
                                        free)))
                               ((ifeq)
                                  (expand-list exp env free))
-                              ((ifary)
+                              ((either)
                                  (if (or (null? (cdr exp)) (null? (cddr exp)))
-                                    (abort (list "Bad ifary: " exp))
+                                    (abort (list "Bad either: " exp))
                                     (lets
                                        ((first free (expand (cadr exp)  env free abort))
                                         (rest  free (expand (caddr exp) env free abort)))
-                                       (values (list 'ifary first rest) free))))
+                                       (values (list 'either first rest) free))))
 
                               ((values)
                                  (expand-list exp env free))
-                              ((apply-values)
+                              ((values-apply)
                                  (expand-list exp env free))
 
                               (else

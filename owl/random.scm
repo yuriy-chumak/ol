@@ -228,7 +228,7 @@
       (define (bitmask num)
          (if (eq? num 0)
             1
-            (let loop ((n (fxmax)))
+            (let loop ((n (vm:maxvalue)))
                (lets ((np _ (vm:shr n 1)))
                   (if (less? np num) ;; we lost the high bit
                      n
@@ -460,7 +460,7 @@
       (define (random-bvec rs n)
          (let loop ((rs rs) (out null) (n n))
             (if (eq? n 0)
-               (values rs (vm:raw type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
+               (values rs (vm:new-raw-object type-vector-raw (reverse out) #| #true |#)) ; reverses to keep order
                (lets
                   ((d rs (uncons rs 0))
                    (n _ (vm:sub n 1)))

@@ -19,21 +19,21 @@
  |#
 
 (print "Loading code...")
-
-; fixme: можно не вызывать, все равно не работает :)
-;(mail 'intern (tuple 'flush)) ;; ask intern to forget all symbols it knows
-
 (define build-start (time-ms))
 
 ; forget all other libraries to have them be reloaded and rebuilt
-; (src olvm) содержит список базовых элементов языка
+; виртуальная (src olvm) содержит список базовых элементов языка
 (define *libraries*
    (keep
       (λ (lib)
          (equal? (car lib) '(src olvm)))
       *libraries*))
 
+; предварительная загрузка зависимостей r5rs core,
+; (иначе импорт сбойнет)
 (import (src vm))   ;; команды виртуальной машины
+(import (r5rs srfi-16))   ;; case-lambda for core
+(import (r5rs srfi-87))   ;; "=>" clauses in case
 (import (r5rs core)) ;; базовый языковый набор ol
 
 ;; forget everhything except these and core values (later list also them explicitly)
@@ -66,6 +66,8 @@
 (import (otus lisp))
 
 (import (lang intern))
+(import (lang threading))
+
 (import (owl parse))
 
 (import (lang gensym))
@@ -75,17 +77,15 @@
 
 (import (lang ast))
 (import (lang fixedpoint))
-(import (lang cps))
 (import (lang alpha))
-
-(import (lang thread))
-(import (lang assemble))
+(import (lang cps))
 (import (lang closure))
+(import (lang assemble))
 (import (lang compile))
 
 
-(define error-tag "err")
 
+(define error-tag "err")
 (define (error? x)
    (and (tuple? x)
       (eq? (ref x 1) error-tag)))
@@ -280,12 +280,9 @@
                                              (loop (put options 'home (cadr args)) (cddr args)))
                                           (else
                                              (loop options (cdr args))))))
-
                                  (home (or (getf options 'home)
                                            (getenv "OL_HOME")
-                                           (cond
-                                              ((string-eq? (ref (uname) 1) "Windows") "C:/Program Files/OL")
-                                              (else "/usr/lib/ol")))) ; Linux, *BSD, etc.
+                                           "/usr/lib/ol")) ; Linux, *BSD, etc.
                                  (sandbox? (getf options 'sandbox))
                                  (interactive? (or
                                            (getf options 'interactive)
@@ -334,7 +331,7 @@
             (let ((trail (put trail node 1)))
                (put trail tag
                   (cons node (get trail tag null)))))
-         ((raw? node)
+         ((vm:raw? node)
             (cond
                ((eq? (type node) type-bytecode) #t)
                ((eq? (type node) type-string) #t)

@@ -12,8 +12,8 @@
    (<< (ref vector 2) 16)
    (<< (ref vector 3) 24)))
 
-(define major (vm:raw type-vector-raw '(0 0 0 0)))
-(define minor (vm:raw type-vector-raw '(0 0 0 0)))
+(define major (vm:new-raw-object type-vector-raw '(0 0 0 0)))
+(define minor (vm:new-raw-object type-vector-raw '(0 0 0 0)))
 (glGetIntegerv GL_MAJOR_VERSION major)
 (glGetIntegerv GL_MINOR_VERSION minor)
 
@@ -31,8 +31,8 @@
 
 
 (define (glx:query-version)
-   (let ((glx_major (vm:raw type-vector-raw '(0 0 0 0)))
-         (glx_minor (vm:raw type-vector-raw '(0 0 0 0))))
+   (let ((glx_major (vm:new-raw-object type-vector-raw '(0 0 0 0)))
+         (glx_minor (vm:new-raw-object type-vector-raw '(0 0 0 0))))
       (or
          (glXQueryVersion display glx_major glx_minor)
          (runtime-error "Can't get glX version" null))
@@ -46,10 +46,10 @@
 
 (define screen (XDefaultScreen display))
 
-(define num (vm:raw type-vector-raw '(0 0 0 0)))
+(define num (vm:new-raw-object type-vector-raw '(0 0 0 0)))
 (define fbc
 (glXChooseFBConfig display screen
-   (vm:raw type-vector-raw '(
+   (vm:new-raw-object type-vector-raw '(
       8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
       9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
      10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
@@ -61,7 +61,7 @@
 (print (vector->int32 num) ":" (IN fbc 4))
 
 (define vi (glXChooseVisual display screen
-   (vm:raw type-vector-raw '(
+   (vm:new-raw-object type-vector-raw '(
       4 0 0 0 ; GLX_RGBA
       5 0 0 0 ; GLX_DOUBLEBUFFER
       8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
@@ -69,7 +69,7 @@
      10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
 
       0 0 0 0)))); None
-(define fbc0 (vm:raw type-port (vector->list (IN fbc 4))))
+(define fbc0 (vm:new-raw-object type-port (vector->list (IN fbc 4))))
 (print "fbc0: " fbc0)
 
 ;(XFree fbc)
@@ -78,7 +78,7 @@
 (define glXCreateContextAttribs  (glGetProcAddress type-port (c-string "glXCreateContextAttribsARB") type-port type-port type-int+ type-int+ type-vector-raw))
 (print "glXCreateContextAttribsARB: " glXCreateContextAttribs)
 
-(define context (glXCreateContextAttribs display fbc0 0 1 (vm:raw type-vector-raw '(
+(define context (glXCreateContextAttribs display fbc0 0 1 (vm:new-raw-object type-vector-raw '(
    #x91 #x20 0 0  2 0 0 0 ; GLX_CONTEXT_MAJOR_VERSION_ARB
    #x92 #x20 0 0  1 0 0 0 ; GLX_CONTEXT_MINOR_VERSION_ARB
 ;   #x94 #x20 0 0  2 0 0 0 ; GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
@@ -113,7 +113,7 @@
 
 
 ;(loop)
-(let ((XEvent (vm:raw type-vector-raw (repeat 0 192))))
+(let ((XEvent (vm:new-raw-object type-vector-raw (repeat 0 192))))
 (let loop ()
    (let process-events ()
       (if (> (XPending display) 0)

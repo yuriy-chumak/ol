@@ -1,5 +1,5 @@
 ;;;
-;;; Owl math module, first iteration
+;;; Basic math library
 ;;;
 
 ;; todo: split this to separate libraries for fixnums, integers, rationals etc?
@@ -66,24 +66,24 @@
 ;               (if (eq? o 0)
 ;                  (loop f)
 ;                  f))))
-;      now changed to vm call (fxmax)
+;      now changed to vm call (vm:maxvalue)
 
       ;; biggest before highest bit is set (needed in some bignum ops)
       (define (*pre-max-fixnum*)
          (let*
-            ((f o (vm:shr (fxmax) 1)))
+            ((f o (vm:shr (vm:maxvalue) 1)))
             f))
 
 ;      ;; count the number of bits in *max-fixnum*
 ;      (define (*fixnum-bits*)
-;         (let loop ((f (fxmax)) (n 0))
+;         (let loop ((f (vm:maxvalue)) (n 0))
 ;            (if (eq? f 0)
 ;               n
 ;               (lets
 ;                  ((f _ (vm:shr f 1))
 ;                   (n _ (vm:add n 1)))
 ;                  (loop f n)))))
-;      now changed to vm call (fxmbits)
+;      now changed to vm call (vm:valuewidth)
 
       (define *big-one*
          (ncons 1 null))
@@ -138,6 +138,7 @@
       ;;; COMPARISON
       ;;;
 
+      ; looks like big-digits-equal? === equal?
       (define (big-digits-equal? a b)
          (cond
             ((eq? a b) #true)      ; shared tail or both empty
@@ -265,12 +266,12 @@
          (let ((t (type n)))
             (cond
                ((eq? t type-fix+)
-                  (if (eq? n (fxmax))
+                  (if (eq? n (vm:maxvalue))
                      *first-bignum*
                      (lets ((n x (vm:add n 1))) n)))
                ((eq? t type-int+)
                   (let ((lo (ncar n)))
-                     (if (eq? lo (fxmax))
+                     (if (eq? lo (vm:maxvalue))
                         (ncons 0 (nat-succ (ncdr n)))
                         (lets ((lo x (vm:add lo 1)))
                            (ncons lo (ncdr n))))))
@@ -337,7 +338,7 @@
                (lets ((r uf? (vm:sub a b)))
                   (if uf?
                      (lets ((r _ (vm:sub b a))) ;; could also fix here by adding or bitwise
-                        (cast r type-fix-))
+                        (vm:cast r type-fix-))
                      r)))))
 
       ; bignum - fixnum -> either
@@ -365,8 +366,8 @@
          (let ((res (sub-big-number b a #true)))
             ; res is either fixnum or bignum
             (case (type res)
-               (type-fix+ (cast res type-fix-))
-               (else (cast res type-int-)))))
+               (type-fix+ (vm:cast res type-fix-))
+               (else (vm:cast res type-int-)))))
 
 
       ; substract from a, which must be bigger
@@ -411,8 +412,8 @@
                (let ((neg (sub-digits b a #false #true)))
                   (cond
                      ((eq? neg 0) neg)
-                     ((eq? (type neg) type-fix+) (cast neg type-fix-))
-                     (else (cast neg type-int-)))))
+                     ((eq? (type neg) type-fix+) (vm:cast neg type-fix-))
+                     (else (vm:cast neg type-int-)))))
             (else
                (sub-digits a b #false #true))))
 
@@ -421,20 +422,20 @@
       (define (add-small->negative a b)
          (lets ((r overflow? (vm:add a b)))
             (if overflow?
-               (cast (ncons r *big-one*) type-int-)
-               (cast r type-fix-))))
+               (vm:cast (ncons r *big-one*) type-int-)
+               (vm:cast r type-fix-))))
 
 
       ; for changing the (default positive) sign of unsigned operations
       (define-syntax negative
-         (syntax-rules (imm cast if fix+)
+         (syntax-rules (imm vm:cast if fix+)
             ((negative (op . args))
                (let ((foo (op . args)))
                   (negative foo)))
             ((negative x)
                (if (eq? (type x) type-fix+)
-                  (cast x type-fix-)
-                  (cast x type-int-)))))
+                  (vm:cast x type-fix-)
+                  (vm:cast x type-int-)))))
 
       (define-syntax rational
          (syntax-rules ()
@@ -445,8 +446,8 @@
             (type-fix+
                (if (eq? num 0)
                   0
-                  (cast num type-fix-)))   ;; a  -> -a
-            (type-fix- (cast num type-fix+))   ;; -a ->  a
+                  (vm:cast num type-fix-)))   ;; a  -> -a
+            (type-fix- (vm:cast num type-fix+))   ;; -a ->  a
             (type-int+                ;;  A -> -A
                (vm:new type-int- (ncar num) (ncdr num)))
             (type-int-             ;; -A -> A
@@ -477,7 +478,7 @@
                   (type-fix+ (sub-small->pick-sign b a))         ;; -a + +b == +b + -a -> as above (no need to recurse)
                   (type-fix- (add-small->negative a b))         ;; -a + -b -> -c | -C
                   (type-int+ (sub-big-number b a #true))            ;; -a + +B == +B - +a -> sub-big-number
-                  (type-int- (cast (add-number-big a b) type-int-))   ;; -a + -B == -C == -(a + B)
+                  (type-int- (vm:cast (add-number-big a b) type-int-))   ;; -a + -B == -C == -(a + B)
                   (else (big-bad-args 'add a b))))
             (type-int+
                (case (type b)
@@ -489,9 +490,9 @@
             (type-int-
                (case (type b)
                   (type-fix+ (sub-number-big b a #true))            ;; -A + +b == +b + -A -> as above
-                  (type-fix- (cast (add-number-big b a) type-int-))      ;; -A + -b == -b + -A = -C -> as above
+                  (type-fix- (vm:cast (add-number-big b a) type-int-))      ;; -A + -b == -b + -A = -C -> as above
                   (type-int+ (sub-big b a))                     ;; -A + +B == +B + -A -> as above
-                  (type-int- (cast (add-big a b #false) type-int-))      ;; -A + -B == -(A + B)
+                  (type-int- (vm:cast (add-big a b #false) type-int-))      ;; -A + -B == -(A + B)
                   (else (big-bad-args 'add a b))))
             (else
                (big-bad-args 'add a b))))
@@ -512,7 +513,7 @@
                (case (type b)
                   (type-fix+ (add-small->negative a b))            ;; -a - +b -> as -a + -b
                   (type-fix- (sub-small->pick-sign b a))         ;; -a - -b -> as -a + +b
-                  (type-int+ (cast (add-number-big a b) type-int-))   ;; -a - +B -> as -a + -B
+                  (type-int+ (vm:cast (add-number-big a b) type-int-))   ;; -a - +B -> as -a + -B
                   (type-int- (sub-big-number b a #true))         ;; -a - -B -> as -a + +B
                   (else (big-bad-args '- a b))))
             (type-int+
@@ -524,9 +525,9 @@
                   (else (big-bad-args '- a b))))
             (type-int-
                (case (type b)
-                  (type-fix+ (cast (add-number-big b a) type-int-))      ;; -A - +b -> as -A + -b
+                  (type-fix+ (vm:cast (add-number-big b a) type-int-))      ;; -A - +b -> as -A + -b
                   (type-fix- (sub-number-big b a #true))            ;; -A - -b -> as -A + +b
-                  (type-int+ (cast (add-big a b #false) type-int-))         ;; -A - +B -> as -A + -B
+                  (type-int+ (vm:cast (add-big a b #false) type-int-))         ;; -A - +B -> as -A + -B
                   (type-int- (sub-big b a))                     ;; -A - -B -> as -A + +B
                   (else (big-bad-args '- a b))))
             (else
@@ -584,11 +585,11 @@
       (define (>> a b)
          (case (type b)
             (type-fix+
-               (lets ((_ wor bits (vm:div 0 b (fxmbits))))
+               (lets ((_ wor bits (vm:div 0 b (vm:valuewidth))))
                   (if (eq? wor 0)
                      (case (type a)
-                        (type-fix+ (apply-values (vm:shr a bits) (lambda (hi lo) hi)))
-                        (type-fix- (apply-values (vm:shr a bits) (lambda (hi lo) (if (eq? hi 0) 0 (negate hi)))))
+                        (type-fix+ (values-apply (vm:shr a bits) (lambda (hi lo) hi)))
+                        (type-fix- (values-apply (vm:shr a bits) (lambda (hi lo) (if (eq? hi 0) 0 (negate hi)))))
                         (type-int+ (shift-right a bits))
                         (type-int- (negative (shift-right a bits)))
                         (else (big-bad-args '>> a b)))
@@ -604,7 +605,7 @@
                ;; todo, use digit multiples instead or drop each digit
                (if (eq? a 0)
                   0 ;; terminate early if out of bits
-                  (>> (ncdr a) (subi b (fxmbits)))))
+                  (>> (ncdr a) (subi b (vm:valuewidth)))))
             (else
                (big-bad-args '>> a b))))
 
@@ -632,7 +633,7 @@
          (cond
             ((eq? a 0) 0)
             ((eq? (type b) type-fix+)
-               (lets ((_ words bits (vm:div 0 b (fxmbits))))
+               (lets ((_ words bits (vm:div 0 b (vm:valuewidth))))
                   (case (type a)
                      (type-fix+
                         (lets ((hi lo (vm:shl a bits)))
@@ -649,23 +650,23 @@
                         (lets ((hi lo (vm:shl a bits)))
                            (if (eq? hi 0)
                               (if (eq? words 0)
-                                 (cast lo type-fix-)
-                                 (cast
+                                 (vm:cast lo type-fix-)
+                                 (vm:cast
                                     (extend-digits (ncons lo null) words)
                                     type-int-))
-                              (cast
+                              (vm:cast
                                  (extend-digits
                                     (ncons lo (ncons hi null)) words)
                                  type-int-))))
                      (type-int+
                         (extend-digits (shift-left a bits 0) words))
                      (type-int-
-                        (cast (extend-digits (shift-left a bits 0) words) type-int-))
+                        (vm:cast (extend-digits (shift-left a bits 0) words) type-int-))
                      (else
                         (big-bad-args '<< a b)))))
             ((eq? (type b) type-int+)
                ;; not likely to happen though
-               (<< (<< a (fxmax)) (subi b (fxmax))))
+               (<< (<< a (vm:maxvalue)) (subi b (vm:maxvalue))))
             (else
                ;; could allow negative shift left to mean a shift right, but that is
                ;; probably more likely an accident than desired behavior, so failing here
@@ -817,7 +818,7 @@
       ; O(1), fixnum multiply overflowing to bignum
 
       ;(define (mult-fixnums a b)
-      ;   (apply-values (vm:mul a b)
+      ;   (values-apply (vm:mul a b)
       ;      (lambda (lo hi)
       ;         (if (eq? hi 0)
       ;            lo
@@ -967,21 +968,21 @@
                      (case (type b)
                         (type-fix+ (negative (mult-fixnums a b)))      ; -a * +b -> -c | -C
                         (type-fix- (mult-fixnums a b))                  ; -a * -b -> +c | +C
-                        (type-int+ (cast (mult-num-big a b 0) type-int-))   ; -a * +B -> -C
+                        (type-int+ (vm:cast (mult-num-big a b 0) type-int-))   ; -a * +B -> -C
                         (type-int- (mult-num-big a b 0))            ; -a * -B -> +C
                         (else (big-bad-args 'mul a b))))
                   (type-int+
                      (case (type b)
                         (type-fix+ (mult-num-big b a 0))            ; +A * +b -> +C
-                        (type-fix- (cast (mult-num-big b a 0) type-int-))    ; +A * -b -> -C
+                        (type-fix- (vm:cast (mult-num-big b a 0) type-int-))    ; +A * -b -> -C
                         (type-int+ (mult-big a b))               ; +A * +B -> +C
-                        (type-int- (cast (mult-big a b) type-int-))      ; +A * -B -> -C
+                        (type-int- (vm:cast (mult-big a b) type-int-))      ; +A * -B -> -C
                         (else (big-bad-args 'mul a b))))
                   (type-int-
                      (case (type b)
-                        (type-fix+ (cast (mult-num-big b a 0) type-int-))      ; -A * +b -> -C
+                        (type-fix+ (vm:cast (mult-num-big b a 0) type-int-))      ; -A * +b -> -C
                         (type-fix- (mult-num-big b a 0))               ; -A * -b -> +C
-                        (type-int+ (cast (mult-big a b) type-int-))      ; -A * +B -> -C
+                        (type-int+ (vm:cast (mult-big a b) type-int-))      ; -A * +B -> -C
                         (type-int- (mult-big a b))                  ; -A * -B -> +C
                         (else (big-bad-args 'mul a b))))
                   (type-rational
@@ -1100,10 +1101,10 @@
                   ((null? na)
                      (if (null? nb)
                         (let ((b-lead (ncar b)))
-                           (if (eq? b-lead (fxmax))
+                           (if (eq? b-lead (vm:maxvalue))
                               (if (eq? n 0)
                                  0
-                                 (shift-local-down (ncar a) *pre-max-fixnum* (subi n 1)))
+                                 (shift-local-down (ncar a) (*pre-max-fixnum*) (subi n 1)))
                               (let ((aa (ncar a)) (bb (add b-lead 1)))
                                  ; increment b to ensure b'000.. > b....
                                  (cond
@@ -1114,7 +1115,7 @@
                         ; divisor is larger
                         0))
                   ((null? nb)
-                     (div-shift (ncdr a) b (add n (fxmbits))))
+                     (div-shift (ncdr a) b (add n (vm:valuewidth))))
                   (else
                      (div-shift (ncdr a) (ncdr b) n))))))
 
@@ -1183,7 +1184,7 @@
                   (cond
                      ((null? dr) (values tl dr)) ; failed below
                      (dr
-                        (let ((d (subi d 1))) ; int- (of was -fxmax), fix- or fix+
+                        (let ((d (subi d 1))) ; int- (of was -vm:maxvalue), fix- or fix+
                            (if (negative? d)
                               (values (ncons (add d *first-bignum*) tl) #true) ; borrow
                               (values (ncons d tl) #false))))
@@ -1267,7 +1268,7 @@
             (lets ((rb (nrev b)))
                (if (less? #b000000111111111111111111 (ncar rb))
                   ; scale them to get a more fitting head for b
-                  ; and also get rid of the special case where it is fxmax
+                  ; and also get rid of the special case where it is vm:maxvalue
                   (>> (nat-rem-reverse (<< a 12) (<< b 12)) 12)
                   (let ((r (rrem (nrev a) rb)))
                      (cond
@@ -1307,7 +1308,7 @@
       ; b is usually shorter, so shift b right and then substract instead
       ; of moving a by s
 
-      (define last-bit (subi (fxmbits) 1))
+      (define last-bit (subi (vm:valuewidth) 1))
 
       (define (divex bit bp a b out)
          (cond
@@ -1371,13 +1372,13 @@
          (lets ((_ q r (vm:div 0 a b)))
             (if (eq? q 0)
                q
-               (cast q type-fix-))))
+               (vm:cast q type-fix-))))
 
       (define (div-big-num->negative a b)
          (lets ((q r (qr-big-small a b)))
             (case (type q)
-               (type-fix+ (cast q type-fix-))
-               (else (cast q type-int-)))))
+               (type-fix+ (vm:cast q type-fix-))
+               (else (vm:cast q type-int-)))))
 
       ; todo, drop this and use just quotrem
       (define (div a b)
@@ -1437,18 +1438,18 @@
                   (else (big-bad-args 'mod a b))))
             (type-int+
                (case (type b)
-                  (type-fix+ (apply-values (qr-big-small a b) (lambda (q r) r)))
-                  (type-fix- (apply-values (qr-big-small a b) (lambda (q r) r)))
+                  (type-fix+ (values-apply (qr-big-small a b) (lambda (q r) r)))
+                  (type-fix- (values-apply (qr-big-small a b) (lambda (q r) r)))
                   (type-int+ (nat-rem a b))
                   (type-int- (nat-rem a (negate b)))
                   (else (big-bad-args 'mod a b))))
             (type-int-
                (case (type b)
                   (type-fix+
-                     (apply-values (qr-big-small a b)
+                     (values-apply (qr-big-small a b)
                         (lambda (q r) (negate r))))
                   (type-fix-
-                     (apply-values (qr-big-small a b)
+                     (values-apply (qr-big-small a b)
                         (lambda (q r) (negate r))))
                   (type-int+ (negate (nat-rem (negate a) b)))
                   (type-int- (negate (nat-rem (negate a) (negate b))))
@@ -1476,24 +1477,24 @@
             (case (type a)
                (type-fix+
                   (case (type b)
-                     (type-fix+ (apply-values (vm:div 0 a b) (lambda (_ q r) (values q r))))
+                     (type-fix+ (values-apply (vm:div 0 a b) (lambda (_ q r) (values q r))))
                      (type-int+ (values 0 a))
-                     (type-fix- (apply-values (vm:div 0 a b) (lambda (_ q r) (values (negate q) r))))
+                     (type-fix- (values-apply (vm:div 0 a b) (lambda (_ q r) (values (negate q) r))))
                      (type-int- (values 0 a))
                      (else (big-bad-args 'quotrem a b))))
                (type-int+
                   (case (type b)
-                     (type-fix+ (apply-values (qr-big-small a b) (lambda (q r) (values q r))))
+                     (type-fix+ (values-apply (qr-big-small a b) (lambda (q r) (values q r))))
                      (type-int+ (nat-quotrem a b))
-                     (type-fix- (apply-values (qr-big-small a b) (lambda (q r) (values (negate q) r))))
-                     (type-int- (apply-values (nat-quotrem a (negate b))
+                     (type-fix- (values-apply (qr-big-small a b) (lambda (q r) (values (negate q) r))))
+                     (type-int- (values-apply (nat-quotrem a (negate b))
                               (lambda (q r) (values (negate q) r))))
                      (else (big-bad-args 'quotrem a b))))
                (type-fix-
                   (case (type b)
                      (type-fix+
-                        (apply-values (vm:div 0 a b) (lambda (_ q r) (values (negate q) (negate r)))))
-                     (type-fix- (apply-values (vm:div 0 a b) (lambda (_ q r) (values q (negate r)))))
+                        (values-apply (vm:div 0 a b) (lambda (_ q r) (values (negate q) (negate r)))))
+                     (type-fix- (values-apply (vm:div 0 a b) (lambda (_ q r) (values q (negate r)))))
                      (type-int+ (values 0 a))
                      (type-int- (values 0 a))
                      (else (big-bad-args 'quotrem a b))))
@@ -1502,10 +1503,10 @@
                      (type-fix+
                         (lets ((q r (qr-big-small a b)))
                            (values (negate q) (negate r))))
-                     (type-fix- (apply-values (qr-big-small a b) (lambda (q r) (values q (negate r)))))
-                     (type-int+ (apply-values (nat-quotrem (negate a) b)
+                     (type-fix- (values-apply (qr-big-small a b) (lambda (q r) (values q (negate r)))))
+                     (type-int+ (values-apply (nat-quotrem (negate a) b)
                               (lambda (q r) (values (negate q) (negate r)))))
-                     (type-int- (apply-values (nat-quotrem (negate a) (negate b))
+                     (type-int- (values-apply (nat-quotrem (negate a) (negate b))
                               (lambda (q r) (values q (negate r)))))
                      (else (big-bad-args 'quotrem a b))))
                (else
@@ -1527,52 +1528,53 @@
 
       ;; lazy gcd
 
+      (define (pre-m)
+         (let* ((value carry (vm:sub (vm:valuewidth) 1)))
+            value))
+
       ; O(1), shift focus bit
       (define (gcd-drop n)
          (let ((s (car n)))
             (cond
-               ((eq? s #x800000)
+               ((eq? s (pre-m))
                   (let ((n (cdr n)))
                      ; drop a digit or zero
                      (if (eq? (type n) type-fix+)
-                        (cons 1 0)
+                        (cons 0 0)
                         (let ((tl (ncdr n)))
                            (if (null? (ncdr tl))
-                              (cons 1 (ncar tl))
-                              (cons 1 tl))))))
+                              (cons 0 (ncar tl))
+                              (cons 0 tl))))))
                (else
-                  (lets ((hi lo (vm:shl s 1)))
-                     (cons lo (cdr n)))))))
-
-      ;; FIXME - consider carrying these instead
-      ;; FIXME depends on fixnum size
-      (define gcd-shifts
-         (list->ff
-            (map (lambda (x) (cons (<< 1 x) x))
-               '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23))))
+                  (let* ((value carry (vm:add s 1)))
+                     (cons value (cdr n)))))))
 
       (define (lazy-gcd a b n)
-         (let ((av (cdr a)) (bv (cdr b)))
+         (let ((av (cdr a)) (bv (cdr b))
+               (a1 (let* ((c v (vm:shl 1 (car a)))) v))
+               (b1 (let* ((c v (vm:shl 1 (car b)))) v)))
             (cond
                ((eq? av 0) (<< bv n))
                ((eq? bv 0) (<< av n))
-               ((eq? (band av (car a)) 0) ; a even
-                  (if (eq? (band bv (car b)) 0) ; a and b even
-                     (lazy-gcd (gcd-drop a) (gcd-drop b) (add n 1))
-                     (lazy-gcd (gcd-drop a) b n)))
-               ((eq? (band bv (car b)) 0) ; a is odd, u is even
+               ((eq? (band av a1) 0) ; a even
+                  (if (eq? (band bv b1) 0) ; a and b even
+                     (begin
+                        (lazy-gcd (gcd-drop a) (gcd-drop b) (add n 1)))
+                     (begin
+                        (lazy-gcd (gcd-drop a) b n))))
+               ((eq? (band bv b1) 0) ; a is odd, u is even
                   (lazy-gcd a (gcd-drop b) n))
                (else
                   (lets
-                     ((av (>> av (get gcd-shifts (car a) 0)))
-                      (bv (>> bv (get gcd-shifts (car b) 0)))
+                     ((av (>> av (car a)))
+                      (bv (>> bv (car b)))
                       (x (subi av bv)))
                      (if (negative? x)
-                        (lazy-gcd (cons 2 (negate x)) (cons 1 av) n)
-                        (lazy-gcd (cons 2 x) (cons 1 bv) n)))))))
+                        (lazy-gcd (cons 1 (negate x)) (cons 0 av) n)
+                        (lazy-gcd (cons 1 x) (cons 0 bv) n)))))))
 
       ;; why are the bit values consed to head of numbers?
-      (define (nat-gcd a b) (lazy-gcd (cons 1 a) (cons 1 b) 0)) ;; FIXME - does not yet work with variable fixnum size
+      (define (nat-gcd a b) (lazy-gcd (cons 0 a) (cons 0 b) 0)) ;; FIXME - does not yet work with variable fixnum size (?)
       ;(define nat-gcd gcd-euclid)
 
       ;; signed wrapper for nat-gcd
@@ -1627,6 +1629,7 @@
          (cond
             ((eq? (type b) type-fix-) (divide (negate a) (negate b)))
             ((eq? (type b) type-int-) (divide (negate a) (negate b)))
+            ; todo: change next one to (and (eq? (type b) type-fix+) (eq?...)
             ((divide-simple a b) => (lambda (x) x))
             (else
                (let ((f (gcd a b)))
@@ -1676,16 +1679,16 @@
                   (type-fix+ (sub-small->pick-sign b a))
                   (type-fix- (add-small->negative a b))
                   (type-int+ (sub-big-number b a #true))
-                  (type-int- (cast (add-number-big a b) type-int-))
+                  (type-int- (vm:cast (add-number-big a b) type-int-))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
                   (type-complex (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-int-
                (case (type b)
                   (type-fix+ (sub-number-big b a #true))
-                  (type-fix- (cast (add-number-big b a) type-int-))
+                  (type-fix- (vm:cast (add-number-big b a) type-int-))
                   (type-int+ (sub-big b a))
-                  (type-int- (cast (add-big a b #false) type-int-))
+                  (type-int- (vm:cast (add-big a b #false) type-int-))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
                   (type-complex (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
@@ -1737,7 +1740,7 @@
                (case (type b)
                   (type-fix+ (add-small->negative a b))
                   (type-fix- (sub-small->pick-sign b a))
-                  (type-int+ (cast (add-number-big a b) type-int-))
+                  (type-int+ (vm:cast (add-number-big a b) type-int-))
                   (type-int- (sub-big-number b a #true))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
                   (type-complex (lets ((br bi b)) (complex (sub a br) (negate bi))))
@@ -1753,9 +1756,9 @@
                   (else (big-bad-args '- a b))))
             (type-int-
                (case (type b)
-                  (type-fix+ (cast (add-number-big b a) type-int-))
+                  (type-fix+ (vm:cast (add-number-big b a) type-int-))
                   (type-fix- (sub-number-big b a #true))
-                  (type-int+ (cast (add-big a b #false) type-int-))
+                  (type-int+ (vm:cast (add-big a b #false) type-int-))
                   (type-int- (sub-big b a))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
                   (type-complex (lets ((br bi b)) (complex (sub a br) (negate bi))))
@@ -1817,7 +1820,7 @@
                   (type-fix-
                      (case (type b)
                         (type-fix+ (negative (mult-fixnums a b)))      ; -a * +b -> -c | -C
-                        (type-int+ (cast (mult-num-big a b 0) type-int-))   ; -a * +B -> -C
+                        (type-int+ (vm:cast (mult-num-big a b 0) type-int-))   ; -a * +B -> -C
                         (type-fix- (mult-fixnums a b))                  ; -a * -b -> +c | +C
                         (type-int- (mult-num-big a b 0))            ; -a * -B -> +C
                         (type-rational  (divide (mul a (ncar b)) (ncdr b)))
@@ -1829,8 +1832,8 @@
                      (case (type b)
                         (type-fix+ (mult-num-big b a 0))            ; +A * +b -> +C
                         (type-int+ (mult-big a b))               ; +A * +B -> +C
-                        (type-fix- (cast (mult-num-big b a 0) type-int-))    ; +A * -b -> -C
-                        (type-int- (cast (mult-big a b) type-int-))      ; +A * -B -> -C
+                        (type-fix- (vm:cast (mult-num-big b a 0) type-int-))    ; +A * -b -> -C
+                        (type-int- (vm:cast (mult-big a b) type-int-))      ; +A * -B -> -C
                         (type-rational  (divide (mul a (ncar b)) (ncdr b)))
                         (type-complex
                            (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
@@ -1838,8 +1841,8 @@
                         (else (big-bad-args 'mul a b))))
                   (type-int-
                      (case (type b)
-                        (type-fix+ (cast (mult-num-big b a 0) type-int-))      ; -A * +b -> -C
-                        (type-int+ (cast (mult-big a b) type-int-))      ; -A * +B -> -C
+                        (type-fix+ (vm:cast (mult-num-big b a 0) type-int-))      ; -A * +b -> -C
+                        (type-int+ (vm:cast (mult-big a b) type-int-))      ; -A * +B -> -C
                         (type-fix- (mult-num-big b a 0))               ; -A * -b -> +C
                         (type-int- (mult-big a b))                  ; -A * -B -> +C
                         (type-rational  (divide (mul a (ncar b)) (ncdr b)))
@@ -1921,7 +1924,7 @@
       (define (abs n)
          (case (type n)
             (type-fix+ n)
-            (type-fix- (cast n type-fix+))
+            (type-fix- (vm:cast n type-fix+))
             (type-int+ n)
             (type-int- (ncons (ncar n) (ncdr n)))
             (type-rational (if (negative? n) (sub 0 n) n))
@@ -2033,7 +2036,7 @@
       (define (log2-big n digs)
          (let ((tl (ncdr n)))
             (if (null? tl)
-               (add (log2-msd (ncar n)) (mul digs (fxmbits)))
+               (add (log2-msd (ncar n)) (mul digs (vm:valuewidth)))
                (log2-big tl (add digs 1)))))
 
       (define (log2 n)

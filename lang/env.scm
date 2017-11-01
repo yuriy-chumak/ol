@@ -161,15 +161,15 @@
                               ((walker (env-bind env (cadr exp)) fail)
                                  (caddr exp)))
                            (fail (list "funny lambda " exp))))
-                     ((ol:let)
+                     ((letq)
                         (if (and (= (length exp) 4) (formals-cool? exp))
                            (let ((walk (walker (env-bind env (cadr exp)) fail)))
-                              (list 'ol:let
+                              (list 'letq
                                  (cadr exp)
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
-                           (fail (list "funny ol:let " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((values apply-values ifary ifeq)
+                           (fail (list "funny letq " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
+                     ((values values-apply either ifeq)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
                         (map walk exp))))
@@ -206,16 +206,18 @@
       (define *special-forms*
          (list->ff
             (list
-               (cons 'quote   (tuple 'special 'quote))
+               (cons 'quote  (tuple 'special 'quote))
+               (cons 'values (tuple 'special 'values))
+               (cons 'lambda (tuple 'special 'lambda))
 
-               (cons 'lambda  (tuple 'special 'lambda))
-               (cons 'setq    (tuple 'special 'setq))
-               (cons 'ol:let  (tuple 'special 'ol:let)) ; 'letrec
-               (cons 'ifary   (tuple 'special 'ifary))
-               (cons 'ifeq    (tuple 'special 'ifeq))
+               (cons 'setq   (tuple 'special 'setq))
+               (cons 'letq   (tuple 'special 'letq))
 
-               (cons 'values  (tuple 'special 'values))
-               (cons 'apply-values  (tuple 'special 'apply-values)))))
+               (cons 'ifeq   (tuple 'special 'ifeq))
+               (cons 'either (tuple 'special 'either))
+
+               (cons 'values-apply  (tuple 'special 'values-apply))
+            )))
 
       ;; take a subset of env
       ;; fixme - misleading name

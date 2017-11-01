@@ -20,7 +20,6 @@
 ; http://habrahabr.ru/company/yandex/blog/265569/
 
 ; syscalls
-(define (yield) (syscall 1022 0 #false #false))
 (define (mem-stats) (syscall 1117 #f #f #f))
 (define (time format seconds) (syscall 201 format seconds #f))
 (define uname (syscall 63 0 0 0))
@@ -52,7 +51,7 @@
                      (do (cdr stat)))))
             (print "data sent")
             (mail sender #t))))
-   (yield)
+   (yield) ; is it required?
    (let ((ss (time #false #f)))
       (if (> (- ss seconds) 2)
          (let ((mem (mem-stats)))

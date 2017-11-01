@@ -53,7 +53,7 @@
 
 
 ;(loop)
-(let ((XEvent (vm:raw type-vector-raw (repeat 0 192))))
+(let ((XEvent (vm:new-raw-object type-vector-raw (repeat 0 192))))
 (let loop ()
    (let process-events ()
       (if (> (XPending display) 0)

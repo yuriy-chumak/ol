@@ -1,13 +1,19 @@
 @echo off
+set PATH~=%PATH%
+set MINGW32=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\
+set MINGW64=C:\mingw-w64\x86_64-6.1.0-posix-seh-rt_v5-rev1\mingw64\bin\
+
 echo -=( building %1 )=-------------------------------------------------------------------
 IF "%1"==""   GOTO ALL
 IF "%1"=="vm" GOTO VM
 IF "%1"=="vm32" GOTO VM32
-IF "%1"=="boot" GOTO BOOT
 IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
+IF "%1"=="repl32" GOTO REPL32
+IF "%1"=="boot" GOTO BOOT
 IF "%1"=="slim" GOTO SLIM
+IF "%1"=="talkback" GOTO TALKBACK
 IF "%1"=="js" GOTO JS
 IF "%1"=="wasm" GOTO WASM
 IF "%1"=="release" GOTO RELEASE
@@ -25,14 +31,13 @@ GOTO:EOF
 :ALL
 for %%a in (
    vm.exe
-   src\boot.c
+   src\repl.o
    ol.exe
    src\slim.c
    olvm.js
 ) do if exist %%a erase %%a
 CALL :VM    & if not exist vm.exe goto :fail
 CALL :REPL  & fc /b repl boot.fasl > nul & if errorlevel 1 goto :fail
-CALL :BOOT  & if not exist src/boot.c goto :fail
 CALL :OL    & if not exist ol.exe goto :fail
 CALL :TESTS
 CALL :SLIM  & if not exist src/slim.c goto :fail
@@ -55,10 +60,10 @@ rem 121 - OpenBSD x64
 :HELP
 
 echo "  repl                                "
-echo "+------+  boot  +------+  ol  +------+"
-echo "| REPL |------->| BOOT |----->|  OL  |"
-echo "+------+        +------+      +------+"
-echo "                   ^              ^   "
+echo "+------+                  ol  +------+"
+echo "| REPL |--------------------->|  OL  |"
+echo "+------+           ^          +------+"
+echo "                   |              ^   "
 echo "   vm              |              |   "
 echo "+------+           |              |   "
 echo "|  VM  |-----------+--------------/   "
@@ -66,32 +71,70 @@ echo "+------+                              "
 echo:
 GOTO:EOF
 
+:BOOT
+vm repl <src/to-c.scm >src/boot.c
+GOTO:EOF
+
+:: ======================================
 :VM
 echo.   *** Making virtual machine:
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -o "vm.exe" -lws2_32 -DHAS_PINVOKE=1 -DNDEBUG -s
 GOTO:EOF
 
+:: ======================================
 :VM32
 echo.   *** Making 32-bit virtual machine:
-set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
-gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -O2 -g2 -DNDEBUG -DHAS_PINVOKE=1 -m32
+set PATH=%MINGW32%;%PATH%
+
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -o "vm32.exe" -lws2_32 -DHAS_PINVOKE=1 -m32 -DNDEBUG -s
+
+set PATH=%PATH~%
+GOTO:EOF
+
+:: ======================================
+:VM64
+echo.   *** Making 64-bit virtual machine:
+set PATH=%MINGW64%;%PATH%
+
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -o "vm64.exe" -lws2_32 -DHAS_PINVOKE=1 -m64 -DNDEBUG -s
+
+set PATH=%PATH~%
 GOTO:EOF
 
 
-:BOOT
-echo.   *** Making src/boot.c:
-vm repl <src/boot.lisp >src/boot.c
+:REPL32
+set PATH=%MINGW32%;%PATH%
+ld -r -b binary -o src/repl32.o repl
+set PATH=%PATH~%
 GOTO:EOF
+
+:REPL64
+set PATH=%MINGW64%;%PATH%
+ld -r -b binary -o src/repl32.o repl
+set PATH=%PATH~%
+GOTO:EOF
+
 
 :OL
 echo.   *** Making Otus Lisp:
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
 GOTO:EOF
 
 :OL32
 echo.   *** Making 32-bit Otus Lisp:
-set PATH=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\;%PATH%
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/boot.c src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
+set PATH=%MINGW32%;%PATH%
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
+set PATH=%PATH~%
+GOTO:EOF
+
+:OL64
+echo.   *** Making 32-bit Otus Lisp:
+set PATH=%MINGW64%;%PATH%
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+set PATH=%PATH~%
 GOTO:EOF
 
 :REPL
@@ -101,20 +144,47 @@ vm repl - --version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again
+ld -r -b binary -o src/repl.o repl
 GOTO:EOF
 :again
 copy boot.fasl repl
 GOTO :REPL
+
+:REPL32
+set PATH=%MINGW32%;%PATH%
+ld -r -b binary -o src/repl32.o -m32 repl
+set PATH=%PATH~%
+GOTO:EOF
+
+:REPL64
+set PATH=%MINGW64%;%PATH%
+ld -r -b binary -o src/repl64.o -m32 repl
+set PATH=%PATH~%
+GOTO:EOF
 
 :SLIM
 echo.   *** Making slim:
 vm repl src/slim.lisp >src/slim.c
 GOTO:EOF
 
+:TALKBACK
+echo.   *** Making talkback:
+gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DOLVM_FFI=1 ^
+    -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    src/olvm.c src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
+    -lws2_32 -O2 -g2
+GOTO:EOF
+
+GOTO:EOF
+
 :JS
 echo.   *** Making virtual machine on js:
 @set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
-call emcc src/slim.c src/olvm.c -o olvm.js -s ASYNCIFY=1 -O1 --memory-init-file 0 --llvm-opts "['-O2']"
+ol src/to-c.scm >src/repl.c
+call emcc src/olvm.c src/repl.c -o olvm.js -s ASYNCIFY=1 -Oz ^
+     -s NO_EXIT_RUNTIME=1 ^
+     -fno-exceptions -fno-rtti ^
+     --memory-init-file 0 --llvm-opts "['-O3']"
 GOTO:EOF
 
 :WASM
@@ -126,7 +196,7 @@ GOTO:EOF
 
 :RELEASE
 gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32
-gcc -std=c99 -O2 -s -Wall -fmessage-length=0 src/boot.c src/olvm.c -o "ol.exe" -lws2_32
+gcc -std=c99 -O2 -s -Wall -fmessage-length=0 src/repl.o src/olvm.c -o "ol.exe" -lws2_32
 GOTO:EOF
 
 
@@ -144,9 +214,14 @@ GOTO:EOF
 
 :TEST
 echo|set /p=Testing %1 ...
-ol.exe %1 >C:\TEMP\out
+vm32.exe repl %1 >C:\TEMP\out
 fc C:\TEMP\out %1.ok > nul
 if errorlevel 1 goto fail1
+
+vm64.exe repl %1 >C:\TEMP\out
+fc C:\TEMP\out %1.ok > nul
+if errorlevel 1 goto fail1
+
 echo. Ok.
 GOTO:EOF
 :fail1
@@ -154,8 +229,65 @@ echo. Failed.
 GOTO:EOF
 
 
-
+:: let's do full package testing (32- and 64-bit binaries)
 :TESTS
+
+call :VM32
+call :VM64
+call :REPL32
+call :REPL64
+
+:: internal
+set PATH=%MINGW32%;%PATH%
+echo 32-bit internal test:
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c tests/vm.c -o "test-vm32.exe" -lws2_32 -DEMBEDDED_VM=1 -m32 -DNDEBUG -s -Isrc
+test-vm32.exe
+if errorlevel 1 goto fail
+
+set PATH=%PATH~%
+set PATH=%MINGW64%;%PATH%
+echo 64-bit internal test:
+gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c tests/vm.c -o "test-vm64.exe" -lws2_32 -DEMBEDDED_VM=1 -m64 -DNDEBUG -s -Isrc
+test-vm64.exe
+if errorlevel 1 goto fail
+
+set PATH=%PATH~%
+
+:: ffi
+set PATH=%MINGW32%;%PATH%
+echo|set /p=32-bit ffi testing ...
+ld -r -b binary -o src/repl32.o repl
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    -DHAS_PINVOKE=1 ^
+    src/olvm.c src/repl32.o tests/ffi.c -o "test-ffi32.exe" -lws2_32 -O2 -g2 -m32
+test-ffi32.exe tests/ffi.scm > C:\TEMP\out
+fc C:\TEMP\out tests/ffi.scm.ok > nul
+if errorlevel 1 (
+   echo. Failed.
+   goto fail
+)
+echo. Ok.
+
+set PATH=%PATH~%
+set PATH=%MINGW64%;%PATH%
+echo|set /p=64-bit ffi testing ...
+ld -r -b binary -o src/repl64.o repl
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+    -DHAS_PINVOKE=1 ^
+    src/olvm.c src/repl64.o tests/ffi.c -o "test-ffi64.exe" -lws2_32 -O2 -g2 -m64
+test-ffi64.exe tests/ffi.scm > C:\TEMP\out
+fc C:\TEMP\out tests/ffi.scm.ok > nul
+if errorlevel 1 (
+   echo. Failed.
+   goto fail
+)
+echo. Ok.
+
+set PATH=%PATH~%
+
+:: Other tests
 call :TEST tests\apply.scm
 call :TEST tests\banana.scm
 call :TEST tests\callcc.scm
@@ -203,7 +335,7 @@ GOTO:EOF
 :: ====================================================================================
 
 :ANDROID
-D:\Projects\Mobile\android-ndk-r10e\ndk-build.cmd
+C:\android-ndk-r10e\ndk-build.cmd
 GOTO:EOF
 
 :REMOTE
@@ -221,7 +353,6 @@ echo Copying source files...
 call :cp 127.0.0.1 %~1 Makefile
 call :cp 127.0.0.1 %~1 src/olvm.c
 call :cp 127.0.0.1 %~1 src/olvm.h
-call :cp 127.0.0.1 %~1 src/boot.c
 call :cp 127.0.0.1 %~1 repl
 
 echo Running make...

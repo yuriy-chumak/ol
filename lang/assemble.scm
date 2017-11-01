@@ -171,7 +171,7 @@
                            (append (map reg args)
                               (cons to
                                  (assemble more fail))))
-                        (fail (list "bad opcode arity for" (or (primop-name op) op) (length args) 1))))
+                        (fail (list "Bad opcode arity for" (or (primop-name op) op) (length args) 1))))
                   ((list? to)
                      (if (opcode-arity-ok? op (length args) (length to))
                         (if (multiple-return-variable-primop? op)
@@ -185,9 +185,9 @@
                                  (cons (length to)          ; <- prefix with output arity
                                     (append (map reg to)
                                        (assemble more fail))))))
-                        (fail (list "Bad opcode arity for " (list (or (primop-name op) op) (length args) (length to))))))
+                        (fail (list "Bad opcode arity for " (or (primop-name op) op) (length args) (length to)))))
                   (else
-                     (fail (list "bad case of primop in assemble: " (or (primop-name op) op))))))
+                     (fail (list "Bad case of primop in assemble: " (or (primop-name op) op))))))
             ;; fixme: closures should have just one RTL node instead of separate ones for clos-proc and clos-code
             ((clos-proc lpos offset env to more)
                ;; make a 2-level closure
@@ -307,9 +307,9 @@
 
       ;; make bytecode and intern it (to improve sharing, not mandatory)
       (define (bytes->bytecode bytes)
-         ;(vm:raw type-bytecode bytes)) ; more memory, less cpu
+         ;(vm:new-raw-object type-bytecode bytes)) ; more memory, less cpu
          (interact bytecode-server      ; more cpu, less memory
-            (vm:raw type-bytecode bytes)))
+            (vm:new-raw-object type-bytecode bytes)))
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont
