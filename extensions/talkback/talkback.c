@@ -12,6 +12,8 @@
 #include <pthread.h>
 #include <malloc.h>
 
+#include <signal.h>
+
 #define PUBLIC
 #if _WIN32
 #define TALKBACK_API __declspec(dllexport)
@@ -20,40 +22,22 @@
 #endif
 
 
-
 /** PIPING *********************************/
 #if _WIN32
 #	include <windows.h>
 #	include <io.h>
 #	include <fcntl.h>
 
-#	define PIPE HANDLE
-
-int new_pipe(PIPE* pipes)
+int pipe(int* pipes); // already implemented in olvm.c
+int cleanup(int* pipes)
 {
-	static int id = 0;
-	char name[128];
-	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id);//__sync_fetch_and_add(&id, 1));
-
-	HANDLE pipe1 = CreateNamedPipe(name,
-			PIPE_ACCESS_DUPLEX|WRITE_DAC,
-			PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
-			2, 1024, 1024, 2000, NULL);
-
-	HANDLE pipe2 = CreateFile(name,
-			GENERIC_WRITE, 0,
-			NULL,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-			NULL);
-
-
-	pipes[0] = _open_osfhandle((intptr_t)pipe1, _O_APPEND | _O_RDONLY);
-	pipes[1] = _open_osfhandle((intptr_t)pipe2, _O_APPEND | _O_WRONLY);
-
-	// todo: https://stackoverflow.com/questions/7369445/is-there-a-windows-equivalent-to-fdopen-for-handles
+	// note from MSDN: The underlying handle is also closed by a call to _close,
+	//     so it is not necessary to call the Win32 function CloseHandle on the
+	//     original handle.
+	_close(pipes[0]);
+	_close(pipes[1]);
 
 	return 0;
-	//ConnectNamedPipe(pipe, NULL);
 }
 
 /*int emptyq(PIPE pipe)
@@ -67,25 +51,9 @@ int new_pipe(PIPE* pipes)
 	return totalBytesAvail == 0;
 }*/
 
-int cleanup(PIPE* pipes)
-{
-	_close(pipes[0]);
-	_close(pipes[1]);
-
-	return 0;
-}
 #else
 #	include <fcntl.h>
-#	include <signal.h>
 
-#	define PIPE int
-
-int new_pipe(int* pipes) // create the pipe
-{
-	pipe(pipes);
-}
-
-int pipe(PIPE* pipes);
 /*int emptyq(int pipe) {
 	return poll(&(struct pollfd){ .fd = fd, .events = POLLIN }, 1, 0)==1) == 0);
 }*/
@@ -99,40 +67,41 @@ int cleanup(PIPE* pipes)
 
 #endif
 
+/* talkback ********************************/
 // talkback state
 typedef struct state_t
 {
 	OL* ol;
 	pthread_t thread_id;
-	int in[2];
-	int out[2];
+	int in[2];  // internal
+	int out[2]; // internal
 
-	FILE* inf;
+	FILE* inf;// file to send the data into vm
 
-	read_t* read;
-	write_t* write;
+	void* ok; // answer from virtual machine
+	void* error; // error from vm
 
-	int failed;
+	// sync primitives
+	pthread_mutex_t olvm_mutex;
+	pthread_cond_t olvm_condv;
+	pthread_mutex_t me_mutex;
+	pthread_cond_t me_condv;
 } state_t;
 
-static
-ssize_t os_read(int fd, void *buf, size_t size, state_t* state)
-{
-	if (fd == 0) // change stdin to our pipe
-		fd = state->in[0];
-	return state->read(fd, buf, size, state);
+#define wakeup(who) {\
+	pthread_mutex_lock(&state->who ## _mutex);\
+	pthread_cond_signal(&state->who ## _condv);\
+	pthread_mutex_unlock(&state->who ## _mutex);\
 }
-
-static
-ssize_t os_write(int fd, void *buf, size_t size, state_t* state)
-{
-	if (fd == 1 || fd == 2)
-		fd = state->out[1]; // write stdout and stderr in same port
-	return state->write(fd, buf, size, state);
+#define wait(who) {\
+	pthread_mutex_lock(&state->who ## _mutex);\
+	pthread_cond_wait(&state->who ## _condv, &state->who ## _mutex);\
+	pthread_mutex_unlock(&state->who ## _mutex);\
 }
 
 
-static int (*do_load_library)(const char* thename, char** output);
+// oltb interface:
+void OL_tb_send(state_t* state, char* program);
 
 static void *
 thread_start(void *arg)
@@ -141,19 +110,96 @@ thread_start(void *arg)
 	OL* ol = state->ol;
 
 	OL_userdata(ol, state); // set new OL userdata
-	state->read  = OL_set_read(ol, os_read);
-	state->write = OL_set_write(ol, os_write);
 
+	// replace std handles for ol:
 	OL_setstd(ol, 0, state->in[0]);
-	OL_setstd(ol, 1, state->out[1]);
-	OL_setstd(ol, 2, state->out[1]);
+//	OL_setstd(ol, 1, state->out[1]); // just print some data to the console
+//	OL_setstd(ol, 2, state->out[1]);
 
-	// let's finally start!
+	// start
 	char* args[1] = { "-" };
 	OL_run(ol, 1, args);
 
 	return 0;
 }
+
+__attribute__((used))
+TALKBACK_API
+void OL_tb_hook_fail(void* error, void* userdata)
+{
+	state_t* state = (state_t*)userdata;
+	state->error = error;
+
+	// notify main thread that we got answer from ol
+	wakeup(me);
+
+	// let's sleep and make main thread to process answer
+	// (avoiding this answer to be GC'ed)
+	wait(olvm);
+}
+
+__attribute__((used))
+TALKBACK_API
+void OL_tb_an_answer(void* answer, void* userdata)
+{
+	state_t* state = (state_t*)userdata;
+	state->ok = answer;
+
+	// notify main thread that we got answer from ol
+	wakeup(me);
+
+	// let's sleep and make main thread to process answer
+	// (avoiding this answer to be GC'ed)
+	wait(olvm);
+}
+
+// simply send some data to the vm
+PUBLIC
+void OL_tb_send(state_t* state, char* program)
+{
+	fprintf(state->inf, "%s", program);
+	fflush(state->inf);
+
+	// wakeup the ol thread (and no wait for answer)
+	wakeup(olvm);
+
+	return;
+}
+
+// wait for answer (or error)
+PUBLIC
+void* OL_tb_eval(state_t* state, char* program)
+{
+	if (state->error)
+		return 0;
+
+	if (program) {
+		fprintf(state->inf, "(an:answer (vm:new type-vptr ((lambda () %s ))) (syscall 1002 #f #f #f))", program);
+		fflush(state->inf);
+	}
+
+	state->ok = 0;
+	wakeup(olvm);
+
+	pthread_mutex_lock(&state->me_mutex);
+	if (state->error != 0) {
+		pthread_mutex_unlock(&state->me_mutex);
+		return 0;
+	}
+	if (state->ok != 0) {
+		pthread_mutex_unlock(&state->me_mutex);
+		return state->ok;
+	}
+
+	// still no answer, no error. so let's sleep
+	pthread_cond_wait(&state->me_condv, &state->me_mutex);
+	pthread_mutex_unlock(&state->me_mutex);
+
+	if (state->error)
+		return 0;
+	return state->ok;
+}
+
 
 extern unsigned char _binary_repl_start[];
 
@@ -167,8 +213,8 @@ state_t* OL_tb_start()
 	pthread_attr_init(&attr);
 
 	state_t* state = (state_t*)malloc(sizeof(state_t));
-	pipe(&state->in);
-	pipe(&state->out);
+	pipe((int*)&state->in);
+	pipe((int*)&state->out);
 
 #ifndef _WIN32
 	fcntl(state->in[0], F_SETFL, fcntl(state->in[0], F_GETFL, 0) | O_NONBLOCK);
@@ -177,15 +223,28 @@ state_t* OL_tb_start()
 	fcntl(state->out[1], F_SETFL, fcntl(state->out[1], F_GETFL, 0) | O_NONBLOCK);
 #endif
 
-	state->inf = fdopen(state->in[1], "w");
+	// let's initialize sync primitives
+	pthread_mutex_init(&state->me_mutex, 0);
+	pthread_cond_init(&state->me_condv, 0);
+	pthread_mutex_init(&state->olvm_mutex, 0);
+	pthread_cond_init(&state->olvm_condv, 0);
+	fflush(stderr);
 
+	// processing data part
+	state->inf = fdopen(state->in[1], "w");
+	state->error = 0;
+	state->ok = 0;
+
+	// finally start
 	state->ol = ol;
 	pthread_create(&state->thread_id, &attr, &thread_start, state);
 
+	// connect our 'ok' and 'fail' processors
 	OL_tb_send(state,
 	        "(import (otus ffi))"
 	        "(define $ (dlopen))"
-	        "(define hook:fail   (dlsym $ type-void \"OL_tb_hook_fail\" type-string type-userdata))"
+	        "(define hook:fail (dlsym $ type-void \"OL_tb_hook_fail\" type-vptr type-userdata))"
+			"(define an:answer (dlsym $ type-void \"OL_tb_an_answer\" type-vptr type-userdata))"
 	);
 
 	return state;
@@ -194,61 +253,20 @@ state_t* OL_tb_start()
 PUBLIC
 void OL_tb_stop(state_t* state)
 {
-	fprintf(state->inf, "%s", "(exit-owl 1)");
+	OL_tb_send(state, "(exit-owl 0)");
+	if (pthread_cancel(state->thread_id) == 0) {
+		wakeup(olvm);
+		pthread_join(state->thread_id,0);
+	}
 
-	pthread_kill(state->thread_id, SIGSTOP);
-	pthread_join(state->thread_id, 0);
-
-	cleanup(&state->in);
-	cleanup(&state->out);
+	cleanup((int*)&state->in);
+	cleanup((int*)&state->out);
 
 	OL_free(state->ol);
 	free(state);
 }
 
-PUBLIC
-void OL_tb_send(state_t* state, char* program)
-{
-	fprintf(state->inf, "%s", program);
-	fflush(state->inf);
-	return;
-}
-
-PUBLIC
-int OL_tb_recv(state_t* state, char* out, int size)
-{
-#ifdef _WIN32
-	DWORD bytes = 0;
-	do {
-		Sleep(1); // time to process data by OL
-		ReadFile(state->out[0], out, size-1, &bytes, NULL);
-	}
-	while ((bytes == 0) && !state->failed);
-#else
-	int bytes = 0;
-	do {
-		sched_yield(); // time to process data by OL
-		bytes = read(state->out[0], out, size-1);
-	}
-	while ((bytes == -1) && !state->failed);
-#endif
-
-	if (bytes >= 0)
-		out[bytes] = 0;
-	return bytes;
-}
-
-PUBLIC
-int OL_tb_eval(state_t* state, char* program, char* out, int size)
-{
-	state->failed = 0; // clear error mark
-	fprintf(state->inf, "(display ((lambda () %s )))", program);
-	fflush(state->inf);
-
-	return OL_tb_recv(state, out, size);
-}
-
-// additional features:
+/*// additional features:
 PUBLIC
 FILE* OL_tb_get_istream(state_t* state)
 {
@@ -260,16 +278,17 @@ int OL_tb_get_ostream(state_t* state)
 {
 	return state->out[0];
 }
-
+*/
 PUBLIC
-int OL_tb_get_failed(state_t* state)
+void* OL_tb_get_error(state_t* state)
 {
-	return state->failed;
+	return state->error;
 }
 
 
 // -----------------------
 // custom library loader
+static int (*do_load_library)(const char* thename, char** output);
 
 __attribute__((used))
 TALKBACK_API
@@ -280,15 +299,6 @@ char* OL_tb_hook_import(char* file)
 		return lib;
 	return 0;
 }
-
-__attribute__((used))
-TALKBACK_API
-void OL_tb_hook_fail(const char* error, void* userdata)
-{
-	state_t* state = (state_t*)userdata;
-	++state->failed;
-}
-
 
 void OL_tb_set_import_hook(state_t* state, int (*hook)(const char* thename, char** output))
 {

@@ -23,52 +23,15 @@ void*OL_tb_start();
 void OL_tb_stop(void* oltb);
 
 void OL_tb_send(void* state, char* program);
-int  OL_tb_recv(void* state, char* out, int size);
-int  OL_tb_eval(void* oltb, char* program, char* out, int size);
+void*OL_tb_eval(void* state, char* program);
 
-int  OL_tb_get_failed(void* state);
+int  OL_tb_get_error(void* state);
 
 void OL_tb_set_import_hook(void* state, int (*do_load_library)(const char* thename, char** output));
 
+
 void* oltb; // OL talkback handle
 
-TALKBACK_API
-int add_ii(int fa, int fb)
-{
-	// math
-	int a = fa;    fprintf(stderr, "DEBUG: add_ii (a) = %d\n", a);
-	int b = fb;    fprintf(stderr, "DEBUG: add_ii (b) = %d\n", b);
-	int r = a + b; fprintf(stderr, "DEBUG: add_ii (r) = %d\n", r);
-
-	// result
-	return r;
-}
-
-// few internal functions:
-int a(int arg) {
-	char buffer[256];
-	char output[256];
-
-	snprintf(buffer, sizeof(buffer), "(a %d)", arg);
-	if (OL_tb_eval(oltb, buffer, output, sizeof(output)) > 0) {
-		int out;
-		sscanf(output, "%d", &out);
-		return out;
-	}
-	return 0;
-}
-int b(int arg) {
-	char buffer[256];
-	char output[256];
-
-	snprintf(buffer, sizeof(buffer), "(b %d)", arg);
-	if (OL_tb_eval(oltb, buffer, output, sizeof(output)) > 0) {
-		int out;
-		sscanf(output, "%d", &out);
-		return out;
-	}
-	return 0;
-}
 
 /* IMPORT handler example */
 static char* imports[] =
@@ -112,19 +75,10 @@ void *MEMCPY(void *dest, const void *src, size_t n)
 int main(int argc, char** argv)
 {
 	oltb = OL_tb_start();
-	OL_tb_set_import_hook(oltb, do_load_library);
+	//OL_tb_set_import_hook(oltb, do_load_library);
 
-	printf("Compiling script...");
-	OL_tb_send(oltb, "(import (otus ffi))"
-			"(syscall 1002 #f #f #f)"
-
-	                 //"(import (private library1))" // load internal library
-	);
-
-	int got;
-	char output[1024];
-
-	void send(void* oltb, char* format, ...) {
+	// helper function to send formatted data to the olvm
+	void send(char* format, ...) {
 		char buff[256];
 		va_list args;
 		va_start(args, format);
@@ -134,29 +88,48 @@ int main(int argc, char** argv)
 		OL_tb_send(oltb, buff);
 	}
 
-	send(oltb, "(define (a n) (add n 17))");
-	send(oltb, "(define (b n) (* n 17))");
-	send(oltb, "(define (f n) (fold * 1 (iota n 1 1)))");
-	OL_tb_eval(oltb, "#t", output, sizeof(output)); // wait for VM
-	if (OL_tb_get_failed(oltb) == 0)
-		printf("Ok.");
+	// this function returns the "integer" result of called function (if any)
+	int eval(char* format, ...) {
+		char buff[256] = "#t"; // default value if no request present
+		if (format) {
+			va_list args;
+			va_start(args, format);
+			vsnprintf(buff, sizeof(buff), format, args);
+			va_end(args);
+		}
 
-	printf("\nLoading 'main.scm' script if exist...");
+		void* r = OL_tb_eval(oltb, buff);
+		if (r != 0) {
+			int out = (unsigned)r >> 8;
+			if ((((unsigned)r >> 2) & 0x3F) == 32)
+				out = -out;
+			return out;
+		}
+		return 0;
+	}
 
+
+	// let's define some demo functions
+	send("(define (a n) (* n 17))");
+	send("(define (f n) (fold * 1 (iota n 1 1)))");
+
+	// simply sure that functions was processed
+	// this function not only sends some data to the vm,
+	int got = eval("(a 15)");
+	if (got == 0)
+		printf("failed.\n");
+	else {
+		printf("ok.\n");
+	}
+
+	//printf("\nLoading 'main.scm' script if exist...");
 	//OL_tb_send(oltb, ",load \"tutorial/sample-embed/main.scm\"\n"); <-- direct FS access
-	OL_tb_send(oltb, "(import (tutorial sample-embed main-lib))"); // can be overloaded
-
-	got = OL_tb_eval(oltb, "#t", output, sizeof(output)); // let's wait for full loading
-	if (OL_tb_get_failed(oltb))
-		printf("failed. Error: %s\n", output);
-	else
-		printf("ok. Len: %d, value [%s]\n", got, output);
+	//OL_tb_send(oltb, "(import (tutorial sample-embed main-lib))"); // can be overloaded
 
 	// calling "a" function
-	printf("result of 'a(12)' function: %d\n", a(12));
-	printf("result of 'b(72)' function: %d\n", b(72));
+	printf("result of 'a(12)' function: %d\n", eval("(a %d)", 12));
 
-	printf("calling 'function1(42)' /imported/ function... ");
+/*	printf("calling 'function1(42)' /imported/ function... ");
 	got = OL_tb_eval(oltb, "(function1 42)", output, sizeof(output));
 	if (OL_tb_get_failed(oltb))
 		printf("failed. Error: %s\n", output);
@@ -215,9 +188,23 @@ int main(int argc, char** argv)
 		printf("\n");
 	}
 
-
+*/
 	OL_tb_stop(oltb);
 	return 0;
 }
 
 #endif
+
+// -----------------------------------------------------------------------------
+// public functions:
+TALKBACK_API
+int add_ii(int fa, int fb)
+{
+	// math
+	int a = fa;    fprintf(stderr, "DEBUG: add_ii (a) = %d\n", a);
+	int b = fb;    fprintf(stderr, "DEBUG: add_ii (b) = %d\n", b);
+	int r = a + b; fprintf(stderr, "DEBUG: add_ii (r) = %d\n", r);
+
+	// result
+	return r;
+}
