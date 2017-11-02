@@ -598,26 +598,29 @@ ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
 		return -1;
 	}
 
-	// sockets workaround
-	if (got == -1 && errno == EBADF) {
-		got = recv(fd, (char *) &buf, size, 0);
-
-		// pipes workaround
-		if (got == -1 && errno == EBADF) {
-			HANDLE handle = (HANDLE)(intptr_t)(unsigned)fd;
-
-			// на всякий случай, а то мало ли что МС придумает в будущем
-			static_assert (sizeof(DWORD) == sizeof(got),
-			        "passing argument from incompatible pointer type");
-			if (!ReadFile(handle, (char *) buf, size, (LPDWORD)&got, NULL)) {
+	// https://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00170.html
+	// The other failure of the non-blocking I/O on pipes test on mingw is because
+	// when read() is called on a non-blocking pipe fd with an empty buffer, it
+	// fails with EINVAL. Whereas POSIX says that it should fail with EAGAIN.
+	if (got == -1 && GetLastError() == ERROR_NO_DATA) {
+		HANDLE handle = (HANDLE)_get_osfhandle(fd);
+		// pipe or socket?
+		if (GetFileType(handle) == FILE_TYPE_PIPE) {
+			DWORD state;
+			// pipe in non-blocking mode?
+			if (GetNamedPipeHandleState (handle, &state, NULL, NULL, NULL, NULL, 0)
+		              && (state & PIPE_NOWAIT) != 0) {
 				errno = EAGAIN;
 				return -1;
 			}
+			// no? well, looks like a socket.
+			else {
+				got = recv(fd, (char *) &buf, size, 0);
+				if (got < 0)
+					if (WSAGetLastError() == WSAEWOULDBLOCK)
+						errno = EAGAIN;
+			}
 		}
-
-		if (got < 0)
-			if (WSAGetLastError() == WSAEWOULDBLOCK)
-				errno = EAGAIN;
 	}
 	return got;
 }
@@ -688,8 +691,11 @@ int pipe(int* pipes)
 			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
 			NULL);
 
+	// https://stackoverflow.com/questions/7369445/is-there-a-windows-equivalent-to-fdopen-for-handles
 	pipes[0] = _open_osfhandle((intptr_t)pipe1, _O_APPEND | _O_RDONLY);
 	pipes[1] = _open_osfhandle((intptr_t)pipe2, _O_APPEND | _O_WRONLY);
+
+	// not required: ConnectNamedPipe(pipe1, NULL);
 	return 0;
 }
 #endif
@@ -3300,6 +3306,7 @@ loop:;
 
 			int got;
 			got = ol->read(portfd, (char *) &fp[1], size, ol->userdata);
+			int err = errno;
 
 			if (got > 0) {
 				// todo: обработать когда приняли не все,
@@ -3308,7 +3315,7 @@ loop:;
 			}
 			else if (got == 0)
 				result = (word*)IEOF;
-			else if (errno == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
+			else if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
 				result = (word*)ITRUE;
 			break;
 		}
