@@ -918,16 +918,16 @@
                         (print "bye-bye :/"))
                      (halt 0))
                   ((error reason env)
+                     (let ((hook:fail (env-get env 'hook:fail #f)))
+                        (if hook:fail (hook:fail reason (syscall 1002 #f #f #f))))
                      ; better luck next time
                      (cond
                         ((list? reason)
                            (print-repl-error reason)
                            (boing env))
                         (else
-                           (boing env)))
+                           (boing env))))
                      ; notify hooker about error
-                     (let ((hook:fail (env-get env 'hook:fail #f)))
-                        (if hook:fail (hook:fail reason (syscall 1002 #f #f #f)))))
                   (else is foo
                      (print "Repl is rambling: " foo) ; what is this?
                      (boing env))))))
