@@ -1,7 +1,7 @@
 ;; todo: remove implicit UTF-8 conversion from parser and move to a separate pass
 
 (define-library (lang sexp)
-   
+
    (export 
       sexp-parser 
       read-exps-from
@@ -38,18 +38,15 @@
 
    (begin
 
-      (define (between? lo x hi)
+      (define (between? lo x hi) ; fast version of (<= lo x hi))
          (and
             (or (less? lo x)
                (eq? lo x))
             (or (less? x hi)
                (eq? x hi))))
-;         (<= lo x hi))
 
-      ; todo: rename to extended-alphabetic-chars
-;     (define special-symbol-chars (string->bytes "!$%&*+-/:<=>?@^_~")) ; dot(.) reserved for numbers, sorry.
-      (define special-initial-chars (string->runes "!$%&*+-/:<=>?^_~"))
-      (define special-subseqent-chars (string->runes "@")) ; . must be too
+      (define special-initial-chars (string->runes "!$%&*+-/:<=>?^_~")) ; dot(.) reserved for numbers and pairs, sorry.
+      (define special-subseqent-chars (string->runes "@"))
 
       (define (symbol-lead-char? n)
          (or 
@@ -144,14 +141,14 @@
       (define (get-exponent base)
          (get-either
             (let-parses
-               ((skip (get-imm 101)) ; e
+               ((skip (get-imm #\e))
                 (pow (get-integer base)))
                (expt base pow))
             (get-epsilon 1)))
 
       (define get-signer
          (let-parses ((char get-sign))
-            (if (eq? char 43)
+            (if (eq? char #\+)
                (λ (x) x)
                (λ (x) (- 0 x)))))
 
@@ -164,7 +161,7 @@
              (tail ;; optional after dot part be added
                (get-either
                   (let-parses
-                     ((skip (get-imm 46))
+                     ((skip (get-imm #\.))
                       (digits (get-greedy* (get-byte-if (digit-char? base)))))
                      (/ (bytes->number digits base)
                         (expt base (length digits))))
@@ -185,7 +182,7 @@
             ((n get-number-unit)
              (m (get-either
                   (let-parses
-                     ((skip (get-imm 47))
+                     ((skip (get-imm #\/))
                       (m get-number-unit)
                       (verify (not (eq? 0 m)) "zero denominator"))
                      m)
@@ -238,7 +235,7 @@
       (define get-a-whitespace
          (get-any-of
             ;get-hashbang   ;; actually probably better to make it a symbol as above
-            (get-byte-if (lambda (x) (has? '(9 10 32 13) x)))
+            (get-byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x)))
             (let-parses
                ((skip (get-imm #\;))
                 (skip get-rest-of-line))
@@ -254,18 +251,18 @@
 
       (define (get-list-of parser)
          (let-parses
-            ((lp (get-imm 40))
+            ((lp (get-imm #\())
              (things
                (get-kleene* parser))
              (skip maybe-whitespace)
              (tail
                (get-either
-                  (let-parses ((rp (get-imm 41))) null)
+                  (let-parses ((rp (get-imm #\)))) null)
                   (let-parses
-                     ((dot (get-imm 46))
+                     ((dot (get-imm #\.))
                       (fini parser)
                       (skip maybe-whitespace)
-                      (skip (get-imm 41)))
+                      (skip (get-imm #\))))
                      fini))))
             (if (null? tail)
                things
@@ -309,28 +306,28 @@
             (runes->string chars)))
 
       (define quotations
-         (list->ff '((39 . quote) (44 . unquote) (96 . quasiquote) (splice . unquote-splicing))))
+         (list->ff '((#\' . quote) (#\, . unquote) (#\` . quasiquote) (splice . unquote-splicing))))
 
       (define (get-quoted parser)
          (let-parses
             ((type 
                (get-either
-                  (let-parses ((_ (get-imm 44)) (_ (get-imm 64))) 'splice) ; ,@
+                  (let-parses ((_ (get-imm #\,)) (_ (get-imm #\@))) 'splice) ; ,@
                   (get-byte-if (λ (x) (get quotations x #false)))))
              (value parser))
             (list (get quotations type #false) value)))
 
       (define get-named-char
          (get-any-of
-            (get-word "null" 0)
-            (get-word "alarm" 7)
-            (get-word "backspace" 8)
-            (get-word "tab" 9)
-            (get-word "newline" 10)
-            (get-word "return" 13)
-            (get-word "escape" 27)
-            (get-word "space" 32)
-            (get-word "delete" 127)))
+            (get-word "null"      #\null)      ; 0
+            (get-word "alarm"     #\alarm)     ; 7
+            (get-word "backspace" #\backspace) ; 8
+            (get-word "tab"       #\tab)       ; 9
+            (get-word "newline"   #\newline)   ;10
+            (get-word "return"    #\return)    ;13
+            (get-word "escape"    #\escape)    ;27
+            (get-word "space"     #\space)     ;32
+            (get-word "delete"    #\delete))) ;127
 
       ;; fixme: add named characters #\newline, ...
       (define get-quoted-char
@@ -359,7 +356,6 @@
                      (get-word "T"     #true)
                      (get-word "F"     #false)
                      (get-word "e"     #empty)
-;                    (get-word "define" #define)
                      (let-parses
                         ((bang (get-imm #\!)) ; sha-bang
                          (line get-rest-of-line))
@@ -514,18 +510,18 @@
                (fd->exp-stream fd prompt parse fail #false)
                #false)))
 
-         (define (syntax-fail pos info lst)
-            (list #f info
-               (list ">>> " "x" " <<<")))
+      (define (syntax-fail pos info lst)
+         (list #f info
+            (list ">>> " "x" " <<<")))
          
-         (define (read-impl in)
-            (fd->exp-stream in "" sexp-parser syntax-fail #false))
-         
-         (define read
-            (case-lambda
-               ((in)
-                  (car (read-impl in)))
-               (()
-                  (car (read-impl stdin)))))
+      (define (read-impl in)
+         (fd->exp-stream in "" sexp-parser syntax-fail #false))
+      
+      (define read
+         (case-lambda
+            ((in)
+               (car (read-impl in)))
+            (()
+               (car (read-impl stdin)))))
 
 ))
