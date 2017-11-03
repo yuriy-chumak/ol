@@ -139,9 +139,5 @@
       ;; str → bvec | F
       (define (getenv str)
          (let ((str (c-string str)))
-            (if str
-               (let ((bvec (syscall 1016 str #false #false)))
-                  (if bvec
-                     (bytes->string (vec->list bvec))
-                     #false))
-               #false)))))
+            (syscall 1016 str #false #false)))
+))
