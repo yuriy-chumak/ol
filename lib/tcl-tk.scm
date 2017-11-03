@@ -35,8 +35,6 @@
    (define TclCommand type-vptr)
    (define int type-int+)
 
-   (define type-userdata 62)
-
    (define Tcl_FreeProc* type-void) ; todo: set to ansi C "free"
    (define Tcl_CmdDeleteProc* type-void) ; todo: same
 
@@ -48,7 +46,7 @@
    (define Tcl_FindExecutable (dlsym TCL type-string "Tcl_FindExecutable" type-string))
    (define Tcl_GetStringResult (dlsym TCL type-string "Tcl_GetStringResult"))
 
-   (define Tcl_CreateCommand (dlsym TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callable type-userdata Tcl_CmdDeleteProc*))
+   (define Tcl_CreateCommand (dlsym TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callable type-vptr Tcl_CmdDeleteProc*))
    (define Tcl_DeleteCommand (dlsym TCL TclCommand "Tcl_DeleteCommand" Tcl_Interp* type-string))
    (define Tcl_SetResult (dlsym TCL type-void "Tcl_SetResult" Tcl_Interp* type-string Tcl_FreeProc*))
 

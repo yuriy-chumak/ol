@@ -764,25 +764,28 @@ word* ffi(OL* self, word* arguments)
 			break;
 		}
 
-		// запрос порта - это запрос значения порта
-		// todo: добавить тип "указатель на порт"
-		case TUSERDATA:
+		// поинтер на данные
+		case TUNKNOWN:
+			args[i] = car(arg);
+			break;
+
+		// vptr should accept only vptr!
 		case TVPTR:
 			if ((word)arg == INULL || (word)arg == IFALSE)
 				args[i] = (word) (void*)0;
+			else if (is_reference(arg))
+				switch (reftype(arg)) {
+				case TVPTR:
+					args[i] = car(arg);
+					break;
+				case TBVEC: // TODO: remove!
+					args[i] = (word) &car(arg);
+					break;
+				default:
+					STDERR("invalid parameter value (requested vptr)");
+				}
 			else
-			switch (reftype(arg)) {
-			case TUSERDATA:
-			case TVPTR:
-				args[i] = car(arg);
-				break;
-			case TBVEC: // todo: change to is_rawdata
-			case TSTRING:
-				args[i] = (word) &car(arg);
-				break;
-			default:
 				STDERR("invalid parameter value (requested vptr)");
-			}
 			break;
 		case TVPTR + 0x40: {
 			if ((word)arg == INULL || (word)arg == IFALSE)
@@ -1105,9 +1108,6 @@ word* ffi(OL* self, word* arguments)
 			result = (word*) ITRUE;
 			break;
 
-		case TUSERDATA:
-			result = new_userdata (got);
-			break;
 		case TVPTR:
 			if (got)
 				result = new_vptr (got);

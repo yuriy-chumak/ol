@@ -78,9 +78,9 @@
 
       type-void type-void* type-void**
 
+      type-unknown
       type-callable
       type-any
-      type-userdata
 
 
       load-dynamic-library
@@ -208,8 +208,7 @@
 ;define type-int256 55)
 ;define type-int512 56)
 
-(define type-userdata 62)
-
+(define type-unknown 62)
 (define type-callable 61)
 (define type-any 63)
 

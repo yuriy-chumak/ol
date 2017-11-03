@@ -258,8 +258,8 @@ state_t* OL_tb_start()
 	OL_tb_send(state,
 	        "(import (otus ffi))"
 	        "(define $ (dlopen))"
-	        "(define hook:fail (dlsym $ type-void \"OL_tb_hook_fail\" type-vptr type-userdata))"
-			"(define an:answer (dlsym $ type-void \"OL_tb_an_answer\" type-vptr type-userdata))"
+	        "(define hook:fail (dlsym $ type-void \"OL_tb_hook_fail\" type-unknown type-vptr))"
+	        "(define an:answer (dlsym $ type-void \"OL_tb_an_answer\" type-unknown type-vptr))"
 	);
 
 	return state;

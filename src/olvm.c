@@ -1058,7 +1058,7 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 // ffi types:
 #define TVOID                       (48)
 #define TVPTR                       (49) // void*, only RAW, can't be 0
-#define TUSERDATA                   (62) // only for ffi, must be RAW, can have 0
+#define TUNKNOWN                    (62) // only for ffi, direct sending argument without processing
 #define TLONG                       (50) // 32 for 32-bit architecture, 64 for 64-bit
 
 #define TINT16                      (51)
@@ -1437,13 +1437,6 @@ word* p = new_bytevector(TSTRING, length);\
 #define new_vptr(a) ({\
 word data = (word) a;\
 	word* me = new (TVPTR, 2, 0);\
-	me[1] = data;\
-	/*return*/me;\
-})
-
-#define new_userdata(a) ({\
-word data = (word) a;\
-	word* me = new (TUSERDATA, 2, 0);\
 	me[1] = data;\
 	/*return*/me;\
 })
@@ -4155,7 +4148,7 @@ loop:;
 			}
 			break;
 		case 1002: // return userdata
-			result = new_userdata(ol->userdata);
+			result = new_vptr(ol->userdata);
 			break;
 
 		case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
