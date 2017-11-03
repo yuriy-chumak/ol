@@ -3259,8 +3259,10 @@ loop:;
 
 		switch (op + sandboxp) {
 
-		/*! \subsection read
+		/*! \subsection read(0)
 		 * \brief (read port count) -> ref|#f|#eof
+		 *
+		 * Read from a port
 		 *
 		 * Attempts to read up to count bytes from input port
 		 *
@@ -3268,10 +3270,10 @@ loop:;
 		 * \param count count less than 0 means "all available"
 		 *
 		 * \return raw object if success,
-		 *         #eof if file was ended,
-		 *         #false if file not ready
+		 *         #false if file not ready,
+		 *         #eof if file was ended
 		 *
-		 * http://linux.die.net/man/2/read
+		 * http://man7.org/linux/man-pages/man2/read.2.html
 		 */
 		case SYSCALL_READ + SECCOMP:
 		case SYSCALL_READ: {
@@ -3313,8 +3315,10 @@ loop:;
 			break;
 		}
 
-		/*! \subsection write
+		/*! \subsection write(1)
 		 * \brief (write port buffer size) -> int|#f
+		 *
+		 * Write to a port
 		 *
 		 * Writes object content to the output stream
 		 *
@@ -3325,7 +3329,7 @@ loop:;
 		 * \return count of written data if success,
 		 *         0 if file busy, #false if error
 		 *
-		 * http://linux.die.net/man/2/write
+		 * http://man7.org/linux/man-pages/man2/write.2.html
 		 */
 		case SYSCALL_WRITE + SECCOMP:
 		case SYSCALL_WRITE: {
@@ -3354,8 +3358,19 @@ loop:;
 			break;
 		}
 
-		// (OPEN "path" mode)
-		// http://man7.org/linux/man-pages/man2/open.2.html
+		/*! \subsection open(2)
+		 * \brief (open path mode) -> port|#f
+		 *
+		 * Open and possibly create a file
+		 *
+		 * \param path
+		 * \param mode
+		 *
+		 * \return port if success,
+		 *         #false if error
+		 *
+		 * http://man7.org/linux/man-pages/man2/open.2.html
+		 */
 		case SYSCALL_OPEN: {
 			CHECK(is_string(a), a, SYSCALL);
 			word* s = & car(a);
@@ -3377,7 +3392,19 @@ loop:;
 			break;
 		}
 
-		// CLOSE
+		/*! \subsection close(3)
+		 * \brief (close port) -> #t|#f
+		 *
+		 * Close a file port
+		 *
+		 * \param path
+		 * \param mode
+		 *
+		 * \return port if success,
+		 *         #false if error
+		 *
+		 * http://man7.org/linux/man-pages/man2/close.2.html
+		 */
 		case SYSCALL_CLOSE: {
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
@@ -3395,6 +3422,19 @@ loop:;
 			break;
 		}
 
+		/*! \subsection stat(4)
+		 * \brief (stat port/path mode) -> (tuple ...)|#f
+		 *
+		 * Get file status
+		 *
+		 * \param port/path
+		 * \param mode
+		 *
+		 * \return tuple if success,
+		 *         #false if error
+		 *
+		 * http://man7.org/linux/man-pages/man2/stat.2.html
+		 */
 		case SYSCALL_STAT: {
 			struct stat st;
 
@@ -3437,8 +3477,18 @@ loop:;
 			break;
 		}
 
-		// delete the file
-		// filename should be the c-string!
+		/*! \subsection unlink(87)
+		 * \brief (unlink path) -> #t|#f
+		 *
+		 * Delete a name and possibly the file it refers to
+		 *
+		 * \param path
+		 *
+		 * \return #true if success,
+		 *         #false if error
+		 *
+		 * http://man7.org/linux/man-pages/man2/unlink.2.html
+		 */
 		case SYSCALL_UNLINK: { //
 			CHECK(is_string(a), a, SYSCALL);
 			word* s = & car(a);
