@@ -78,7 +78,7 @@ void OL_tb_send(void* olvm, char* format, ...);
 void* OL_tb_eval(void* state, char* format, ...);
 
 /*!
- * \brief OL_tb_get_error(olvm) -> error
+ * \brief OL_tb_error(olvm) -> error
  *
  * Returns the error of olvm execution, if any
  *
@@ -87,7 +87,15 @@ void* OL_tb_eval(void* state, char* format, ...);
  *
  * \return execution error or 0 if no error was detected
  */
-void*OL_tb_get_error(void* olvm);
+void*OL_tb_error(void* olvm);
+
+/*!
+ * \brief OL_tb_reset(olvm) -> none
+ *
+ * Reset the olvm error state if any
+ *
+ */
+void OL_tb_reset(void* olvm);
 
 /*!
  * \brief OL_tb_set_import_hook(olvm, hook) -> none
@@ -98,8 +106,8 @@ void OL_tb_set_import_hook(void* olvm, int (*hook)(const char* thename, char** o
 // -----------------------------------------------------------------------------
 // helper functions to work with olvm values:
 
-// internal ol memory object manipulations:
-#define ref(ob, n) (void*)(((uintptr_t*)(ob))[n])
+// internal ol memory object manipulations
+#define ref(ob, n) (uintptr_t)(((uintptr_t*)(ob))[n])
 #define car(ob) ref(ob, 1)
 #define cdr(ob) ref(ob, 2)
 
@@ -143,12 +151,36 @@ void OL_tb_set_import_hook(void* olvm, int (*hook)(const char* thename, char** o
 			reftype(n) == 40 || reftype(n) == 41\
 			: 0; })
 
-//! converts OL number into C signed integer
+//! returns !0 if argument is a string
+#define is_string(x) ({ uintptr_t s = (uintptr_t)(x);\
+		is_reference(s) ?\
+			reftype(s) == 3 || reftype(s) == 22\
+		: 0; })
+
+//! returns !0 if argument is a cons (and maybe a list)
+#define is_pair(x) ({ uintptr_t s = (uintptr_t)(x);\
+		is_reference(s) ?\
+			reftype(s) == 1\
+		: 0; })
+
+
+//! returns length of ol string
+#define string_length(x) ({ uintptr_t o = (uintptr_t)(x);\
+		assert (is_string(o) && "argument should be a small number");\
+		(int)(((*(uintptr_t*)o >> 16) - 1) * sizeof(uintptr_t) -\
+		      ((*(uintptr_t*)o >> 8) & 7)); })
+//! returns address of ol string body, this is NOT null terminated string!
+#define string_value(x) ({ uintptr_t o = (uintptr_t)(x);\
+		assert (is_string(o) && "argument should be a small number");\
+		(const char*)(o+sizeof(uintptr_t)); })
+
+//! converts OL small into C signed integer
 #define ol2small(x) ({ uintptr_t m = (uintptr_t)(x);\
 		assert (is_small(m) && "argument should be a small number");\
 		int v = m >> 8;\
 		(m & 0x80) ? -v : v;})
 
+//! converts OL number into C signed integer
 #define ol2int(x) ({ uintptr_t u = (uintptr_t)(x);\
 		assert (is_number(u) && "argument should be a number");\
 		is_small(u) ? ol2small(u)\

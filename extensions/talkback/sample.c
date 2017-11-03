@@ -69,21 +69,19 @@ void *MEMCPY(void *dest, const void *src, size_t n)
 int main(int argc, char** argv)
 {
 	void* oltb; // talkback handle
-
 	oltb = OL_tb_start();
-	OL_tb_set_import_hook(oltb, do_load_library);
+
+	void* got;
 
 	// just simplification
 	#define eval(format, ...) OL_tb_eval(oltb, format, ##__VA_ARGS__)
 	#define send(format, ...) OL_tb_send(oltb, format, ##__VA_ARGS__)
 
 	// let's define some demo functions
-	char* a = "(define (a n) (* n 17))";
-	printf("deploying function %s...\n", a);
-	send(a);
-	char* f = "(define (f n) (fold * 1 (iota n 1 1)))";
-	printf("deploying function %s...\n", f);
-	send(f);
+	printf("deploying our script functions...\n");
+	send("(define (a n) (* n 17))");
+	send("(define (f n) (fold * 1 (iota n 1 1)))");
+	send("(define (s) \"this is string\")");
 
 	// simply sure that functions was processed
 	// this function not only sends some data to the vm,
@@ -91,10 +89,10 @@ int main(int argc, char** argv)
 	// safe variant of demo function "a"
 	int call(char* f, int x) {
 		void* r = OL_tb_eval(oltb, "(%s %d)", f, x);
-		if (is_number(r))
+		if (r && is_number(r))
 			return ol2int(r);
 		else
-			printf("/ got an error :( /");
+			printf("/ got an error or not an integer result :( /");
 		return 0;
 	};
 
@@ -105,9 +103,36 @@ int main(int argc, char** argv)
 	// unsafe call (without result check) of same function:
 	printf("result of 'a(%d)' function: %d\n", 12, ol2int(eval("(a %d)", 12)));
 
-
 	printf("result of 'a(%d)' function: %d\n", 3, call("a", 3));
 	printf("result of 'f(%d)' function: %d\n", 7, call("f", 7));
+
+	// working with strings:
+	got = eval("(s)");
+	if (is_string(got))
+		printf("got an string: %.*s\n", string_length(got), string_value(got));
+	else
+		printf("not a string result: %p", got);
+
+
+	// let's import internal libraries:
+	OL_tb_set_import_hook(oltb, do_load_library);
+	send("(import (private library1))");
+	eval("#t"); // simply wait for ol processing
+
+	printf("result of 'function1': %d\n", ol2int(eval("(function1 4)")));
+
+	// wirking with errors:
+	printf("calling non existent function... ");
+	got = eval("(non-existent-function 4)");
+	if (got == 0) // it should be 0 :)
+		printf("yupp, got an error.\n");
+	else // should not happen
+		printf("strange, no error:(\n");
+
+	// let's check that we successfuly can continue evaluations
+	OL_tb_reset(oltb); // clear error
+	printf("result of 'a(%d)' function: %d\n", 77, call("a", 77));
+
 
 	OL_tb_stop(oltb);
 	return 0;

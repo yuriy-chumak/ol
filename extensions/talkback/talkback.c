@@ -282,9 +282,14 @@ void OL_tb_stop(state_t* state)
 }
 
 PUBLIC
-void* OL_tb_get_error(state_t* state)
+void* OL_tb_error(state_t* state)
 {
 	return state->error;
+}
+PUBLIC
+void OL_tb_reset(state_t* state)
+{
+	state->error = 0;
 }
 
 
