@@ -6,10 +6,10 @@
  *      Author: uri
  */
 
-#ifdef EMBEDDED_VM
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h> // memcpy
+#include <assert.h>
 
 #if _WIN32
 #define TALKBACK_API __declspec(dllexport)
@@ -17,22 +17,16 @@
 #define TALKBACK_API __attribute__((__visibility__("default")))
 #endif
 
-// -------------------------
-// OL talkback interface:
-void*OL_tb_start();
-void OL_tb_stop(void* oltb);
-
-void OL_tb_send(void* state, char* program);
-void*OL_tb_eval(void* state, char* program);
-
-int  OL_tb_get_error(void* state);
-
-void OL_tb_set_import_hook(void* state, int (*do_load_library)(const char* thename, char** output));
+#include "talkback.h"
+// temporary disable "<<" warning
+#pragma GCC diagnostic ignored "-Wshift-count-overflow"
 
 
-void* oltb; // OL talkback handle
+// -----------------------------------------------------------------------------
+// helper functions to be able to process olvm data:
 
 
+// ------------------------
 /* IMPORT handler example */
 static char* imports[] =
 { "./private/library1.scm",
@@ -74,129 +68,54 @@ void *MEMCPY(void *dest, const void *src, size_t n)
 
 int main(int argc, char** argv)
 {
+	void* oltb; // talkback handle
+
 	oltb = OL_tb_start();
-	//OL_tb_set_import_hook(oltb, do_load_library);
+	OL_tb_set_import_hook(oltb, do_load_library);
 
-	// helper function to send formatted data to the olvm
-	void send(char* format, ...) {
-		char buff[256];
-		va_list args;
-		va_start(args, format);
-		vsnprintf(buff, sizeof(buff), format, args);
-		va_end(args);
-
-		OL_tb_send(oltb, buff);
-	}
-
-	// this function returns the "integer" result of called function (if any)
-	int eval(char* format, ...) {
-		char buff[256] = "#t"; // default value if no request present
-		if (format) {
-			va_list args;
-			va_start(args, format);
-			vsnprintf(buff, sizeof(buff), format, args);
-			va_end(args);
-		}
-
-		void* r = OL_tb_eval(oltb, buff);
-		if (r != 0) {
-			int out = (unsigned)r >> 8;
-			if ((((unsigned)r >> 2) & 0x3F) == 32)
-				out = -out;
-			return out;
-		}
-		return 0;
-	}
-
+	// just simplification
+	#define eval(format, ...) OL_tb_eval(oltb, format, ##__VA_ARGS__)
+	#define send(format, ...) OL_tb_send(oltb, format, ##__VA_ARGS__)
 
 	// let's define some demo functions
-	send("(define (a n) (* n 17))");
-	send("(define (f n) (fold * 1 (iota n 1 1)))");
+	char* a = "(define (a n) (* n 17))";
+	printf("deploying function %s...\n", a);
+	send(a);
+	char* f = "(define (f n) (fold * 1 (iota n 1 1)))";
+	printf("deploying function %s...\n", f);
+	send(f);
 
 	// simply sure that functions was processed
 	// this function not only sends some data to the vm,
-	int got = eval("(a 15)");
-	if (got == 0)
-		printf("failed.\n");
-	else {
-		printf("ok.\n");
-	}
 
-	//printf("\nLoading 'main.scm' script if exist...");
-	//OL_tb_send(oltb, ",load \"tutorial/sample-embed/main.scm\"\n"); <-- direct FS access
-	//OL_tb_send(oltb, "(import (tutorial sample-embed main-lib))"); // can be overloaded
-
-	// calling "a" function
-	printf("result of 'a(12)' function: %d\n", eval("(a %d)", 12));
-
-/*	printf("calling 'function1(42)' /imported/ function... ");
-	got = OL_tb_eval(oltb, "(function1 42)", output, sizeof(output));
-	if (OL_tb_get_failed(oltb))
-		printf("failed. Error: %s\n", output);
-	else
-		printf("ok. Len: %d, value [%s]\n", got, output);
-
-	printf("calling 'sum-factorsx(72)' /not existent/ function... ");
-	got = OL_tb_eval(oltb, "(sum-factorsx 72)", output, sizeof(output));
-	if (OL_tb_get_failed(oltb))
-		printf("failed. Error: %s\n", output);
-	else
-		printf("ok. Len: %d, value [%s]\n", got, output);
-
-	// calling "f" function
-	printf("result of 'f(42)' function... ");
-	got = OL_tb_eval(oltb, "(f 42)", output, sizeof(output));
-	if (OL_tb_get_failed(oltb))
-		printf("failed. Error: %s\n", output);
-	else
-		printf("ok. Len: %d, value [%s]\n", got, output);
-
-	printf("result of 'a(12)' function: %d\n", a(12));
-	printf("result of 'b(72)' function: %d\n", b(72));
+	// safe variant of demo function "a"
+	int call(char* f, int x) {
+		void* r = OL_tb_eval(oltb, "(%s %d)", f, x);
+		if (is_number(r))
+			return ol2int(r);
+		else
+			printf("/ got an error :( /");
+		return 0;
+	};
 
 
-	printf("\n\n\nbuffers example:\n");
-	send(oltb, "(define memcpy-pi (dlsym $ type-int+ \"MEMCPY\" type-vector-raw type-int+ type-int+))");
-	send(oltb, "(define memcpy-ip (dlsym $ type-int+ \"MEMCPY\" type-int+ type-vector-raw type-int+))");
+	// safe call of demo function a:
+	printf("result of 'a(%d)' function: %d\n", 12, call("a", 12));
 
-	OL_tb_eval(oltb, "memcpy-pi", output, sizeof(output)); // wait for finish
+	// unsafe call (without result check) of same function:
+	printf("result of 'a(%d)' function: %d\n", 12, ol2int(eval("(a %d)", 12)));
 
 
-	// So, Let's do the simple operation: copy LONG array to the OLVM and back increased one
-	char input[] = { 1, 2, 3, 4, 5, 6, 7, 8 };
-	printf("input: %d", input[0]);
-	for (int i = 1; i < sizeof(input)/sizeof(*input); i++)
-		printf(", %d", input[i]);
-	printf("\n");
+	printf("result of 'a(%d)' function: %d\n", 3, call("a", 3));
+	printf("result of 'f(%d)' function: %d\n", 7, call("f", 7));
 
-	printf("Let's apply 'map (lambda (x) (* x x))' to the vector: ");
-
-	int len = sizeof(input);
-	send(oltb, "(define buffer (vm:new-raw-object type-vector-raw %d)) (memcpy-pi buffer %d %d)", len, input, len);
-	send(oltb, "(define new-buffer (list->vector (map (lambda (x) (* x x)) (vector->list buffer))))");
-	send(oltb, "(memcpy-ip %d new-buffer %d)", input, len);
-
-	got = OL_tb_eval(oltb, "memcpy-pi", output, sizeof(output)); // wait for finish
-	if (OL_tb_get_failed(oltb))
-		printf("failed. Error: %s\n", output);
-	else {
-		printf("ok.\n");
-
-		printf("output: %d", input[0]);
-		for (int i = 1; i < sizeof(input)/sizeof(*input); i++)
-			printf(", %d", input[i]);
-		printf("\n");
-	}
-
-*/
 	OL_tb_stop(oltb);
 	return 0;
 }
 
-#endif
 
 // -----------------------------------------------------------------------------
-// public functions:
+// sample public functions:
 TALKBACK_API
 int add_ii(int fa, int fb)
 {

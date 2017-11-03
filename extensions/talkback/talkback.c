@@ -14,13 +14,14 @@
 
 #include <signal.h>
 
-#define PUBLIC
+
 #if _WIN32
 #define TALKBACK_API __declspec(dllexport)
 #else
 #define TALKBACK_API __attribute__((__visibility__("default")))
 #endif
 
+#define PUBLIC
 
 /** PIPING *********************************/
 #if _WIN32
@@ -101,7 +102,7 @@ typedef struct state_t
 
 
 // oltb interface:
-void OL_tb_send(state_t* state, char* program);
+void OL_tb_send(state_t* state, char* format, ...);
 
 static void *
 thread_start(void *arg)
@@ -113,7 +114,9 @@ thread_start(void *arg)
 
 	// replace std handles for ol:
 	OL_setstd(ol, 0, state->in[0]);
-//	OL_setstd(ol, 1, state->out[1]); // just print some data to the console
+
+	// to enable catching theoutput of olvm uncomment this
+//	OL_setstd(ol, 1, state->out[1]);
 //	OL_setstd(ol, 2, state->out[1]);
 
 	// start
@@ -155,10 +158,15 @@ void OL_tb_an_answer(void* answer, void* userdata)
 
 // simply send some data to the vm
 PUBLIC
-void OL_tb_send(state_t* state, char* program)
+void OL_tb_send(state_t* state, char* format, ...)
 {
-	fprintf(state->inf, "%s", program);
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(state->inf, format, args);
 	fflush(state->inf);
+
+	va_end(args);
 
 	// wakeup the ol thread (and no wait for answer)
 	wakeup(olvm);
@@ -168,14 +176,21 @@ void OL_tb_send(state_t* state, char* program)
 
 // wait for answer (or error)
 PUBLIC
-void* OL_tb_eval(state_t* state, char* program)
+void* OL_tb_eval(state_t* state, char* format, ...)
 {
 	if (state->error)
 		return 0;
 
-	if (program) {
-		fprintf(state->inf, "(an:answer (vm:new type-vptr ((lambda () %s ))) (syscall 1002 #f #f #f))", program);
+	if (format) {
+		va_list args;
+
+		va_start(args, format);
+		fprintf(state->inf, "%s", "(an:answer (vm:new type-vptr ((lambda () ");
+		vfprintf(state->inf, format, args);
+		fprintf(state->inf, "%s", " ))) (syscall 1002 #f #f #f))");
 		fflush(state->inf);
+
+		va_end(args);
 	}
 
 	state->ok = 0;
@@ -266,19 +281,6 @@ void OL_tb_stop(state_t* state)
 	free(state);
 }
 
-/*// additional features:
-PUBLIC
-FILE* OL_tb_get_istream(state_t* state)
-{
-	return state->inf;
-}
-
-PUBLIC
-int OL_tb_get_ostream(state_t* state)
-{
-	return state->out[0];
-}
-*/
 PUBLIC
 void* OL_tb_get_error(state_t* state)
 {
