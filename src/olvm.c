@@ -3246,7 +3246,7 @@ loop:;
 	// этот case должен остаться тут - как последний из кейсов
 	// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
 	// https://filippo.io/linux-syscall-table/
-	case SYSCALL: { // syscall (was sys-prim) op arg1 arg2 arg3  r1
+	case SYSCALL: {
 		// main link: http://man7.org/linux/man-pages/man2/syscall.2.html
 		//            http://man7.org/linux/man-pages/dir_section_2.html
 		// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
@@ -3259,8 +3259,8 @@ loop:;
 
 		switch (op + sandboxp) {
 
-		/*! \subsection read(0)
-		 * \brief (read port count) -> ref|#f|#eof
+		/*! \subsection read
+		 * \brief 0: (read port count) -> ref|#f|#eof
 		 *
 		 * Read from a port
 		 *
@@ -3315,8 +3315,8 @@ loop:;
 			break;
 		}
 
-		/*! \subsection write(1)
-		 * \brief (write port buffer size) -> int|#f
+		/*! \subsection write
+		 * \brief 1: (write port buffer size) -> int|#f
 		 *
 		 * Write to a port
 		 *
@@ -3358,8 +3358,8 @@ loop:;
 			break;
 		}
 
-		/*! \subsection open(2)
-		 * \brief (open path mode) -> port|#f
+		/*! \subsection open
+		 * \brief 2: (open path mode) -> port|#f
 		 *
 		 * Open and possibly create a file
 		 *
@@ -3392,8 +3392,8 @@ loop:;
 			break;
 		}
 
-		/*! \subsection close(3)
-		 * \brief (close port) -> #t|#f
+		/*! \subsection close
+		 * \brief 3: (close port) -> #t|#f
 		 *
 		 * Close a file port
 		 *
@@ -3422,8 +3422,8 @@ loop:;
 			break;
 		}
 
-		/*! \subsection stat(4)
-		 * \brief (stat port/path mode) -> (tuple ...)|#f
+		/*! \subsection stat
+		 * \brief 4: (stat port/path mode) -> (tuple ...)|#f
 		 *
 		 * Get file status
 		 *
@@ -3477,8 +3477,8 @@ loop:;
 			break;
 		}
 
-		/*! \subsection unlink(87)
-		 * \brief (unlink path) -> #t|#f
+		/*! \subsection unlink
+		 * \brief 87: (unlink path) -> #t|#f
 		 *
 		 * Delete a name and possibly the file it refers to
 		 *
@@ -3498,6 +3498,16 @@ loop:;
 			break;
 		}
 
+		/*! \subsection syscall-12
+		 * \brief 12: (syscall 12 ...) -> ...|#f
+		 *
+		 * Syscall 12
+		 *
+		 * \param
+		 *
+		 * \return #false if error
+		 *
+		 */
 		case SYSCALL_BRK: // get or set memory limit (in mb)
 			// b, c is reserved for feature use
 			result = itoun (ol->max_heap_size);
@@ -3507,7 +3517,16 @@ loop:;
 				ol->max_heap_size = uvtoi (a);
 			break;
 
-		// IOCTL (syscall 16 fd request #f)
+		/*! \subsection syscall-16
+		 * \brief 16: (syscall 16 ...) -> ...|#f
+		 *
+		 * Syscall 16
+		 *
+		 * \param
+		 *
+		 * \return #false if error
+		 *
+		 */
 		case SYSCALL_IOCTL + SECCOMP:
 		case SYSCALL_IOCTL: {
 			if (!is_port(a))
