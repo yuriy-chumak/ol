@@ -254,6 +254,17 @@ state_t* OL_tb_start()
 	state->ol = ol;
 	pthread_create(&state->thread_id, &attr, &thread_start, state);
 
+#ifdef INTEGRATED_FFI
+	// please prepare this data using 'ld -r -b binary -o ffi.o otus/ffi.scm'
+	// and linking ffi.o together with source code
+	extern char _binary_otus_ffi_scm_start;
+	extern char _binary_otus_ffi_scm_size;
+	char* value = &_binary_otus_ffi_scm_start;
+	size_t size = (size_t)&_binary_otus_ffi_scm_size;
+
+	OL_tb_send(state, "%.*s", size, value);
+#endif
+
 	// connect our 'ok' and 'fail' processors
 	OL_tb_send(state,
 	        "(import (otus ffi))"

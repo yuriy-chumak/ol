@@ -1,52 +1,14 @@
-;;; Copyright (c) 2014 - 2017 Yuriy Chumak
-;;; All rights reserved.
-;;;
-;;; Redistribution and use in source and binary forms, with or without
-;;; modification, are permitted provided that the following conditions are met:
-;;;
-;;; 1. Redistributions of source code must retain the above copyright
-;;;    notice, this list of conditions and the following disclaimer.
-;;; 2. Redistributions in binary form must reproduce the above copyright
-;;;    notice, this list of conditions and the following disclaimer in the
-;;;    documentation and/or other materials provided with the distribution.
-;;; 3. Use in source and binary forms are not permitted in projects under
-;;;    GNU General Public Licenses and its derivatives.
-;;;
-;;; THIS SOFTWARE IS PROVIDED BY ART OBREZAN ''AS IS'' AND ANY
-;;; EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-;;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-;;; DISCLAIMED. IN NO EVENT SHALL ART OBREZAN BE LIABLE FOR ANY
-;;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-;;; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-;;; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-;;; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-;;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-; usage example:
-;; win32:
-;(import (otus ffi))
-;(define user32 (dlopen "user32"))
-;  (define IDOK 1)
-;  (define IDCANCEL 2)
-;
-;  (define MessageBox (dlsym user32 type-fix+ "MessageBoxA" type-int+ type-string type-string type-int+))
-;    (define MB_OK 0)
-;    (define MB_OKCANCEL 1)
-;    (define MB_ICONASTERISK 64)
-;
-;(if (=
-;  (MessageBox 0 "Please, press OK for test pass!" (c-string "PInvoke sample use")
-;    (bor MB_OKCANCEL MB_ICONASTERISK))
-;  IDOK)
-;    (print "OK")
-;    (print "CANCEL"))
-;; linux:
-;TBD.
-
-
-;; todo: date handling
+; * Copyright(c) 2014 - 2017 Yuriy Chumak
+; *
+; * -------------------------------------
+; * This program is free software;  you can redistribute it and/or
+; * modify it under the terms of the GNU General Public License as
+; * published by the Free Software Foundation; either version 3 of
+; * the License, or (at your option) any later version.
+; *
+; * This program is distributed in the hope that it will be useful,
+; * but WITHOUT ANY WARRANTY; without even the implied warranty of
+; * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 (define-library (otus ffi)
    (export

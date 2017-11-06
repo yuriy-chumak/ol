@@ -169,9 +169,11 @@ GOTO:EOF
 
 :TALKBACK
 echo.   *** Making talkback:
+ld -r -b binary -o ffi.o otus/ffi.scm
 gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DOLVM_FFI=1 ^
     -fmessage-length=0 -Wno-strict-aliasing -I src ^
-    src/olvm.c src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
+    -D INTEGRATED_FFI ^
+    src/olvm.c src/repl.o ffi.o extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
     -lws2_32 -O2 -g2
 GOTO:EOF
 
