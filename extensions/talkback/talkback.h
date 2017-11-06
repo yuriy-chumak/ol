@@ -118,6 +118,7 @@ void OL_tb_set_import_hook(void* olvm, int (*hook)(const char* thename, char** o
 
 //! size of biggest small number in bits
 #define FBITS ((sizeof (uintptr_t) * 8) - 8)
+#define INULL (uintptr_t)((2 << 8) | (13 << 2) | 2)
 
 //! returns not 0 if argument is value
 #define is_value(x) (((uintptr_t)(x)) & 2)

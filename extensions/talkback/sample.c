@@ -86,7 +86,7 @@ int main(int argc, char** argv)
 	// simply sure that functions was processed
 	// this function not only sends some data to the vm,
 
-	// safe variant of demo function "a"
+	// safe variant of demo function
 	int call(char* f, int x) {
 		void* r = OL_tb_eval(oltb, "(%s %d)", f, x);
 		if (r && is_number(r))
@@ -121,7 +121,8 @@ int main(int argc, char** argv)
 
 	printf("result of 'function1': %d\n", ol2int(eval("(function1 4)")));
 
-	// wirking with errors:
+	// ------------------------------------------------------------------
+	//! working with errors:
 	printf("calling non existent function... ");
 	got = eval("(non-existent-function 4)");
 	if (got == 0) // it should be 0 :)
@@ -129,6 +130,22 @@ int main(int argc, char** argv)
 	else // should not happen
 		printf("strange, no error:(\n");
 
+	// so, we got an error. let's process it:
+	// typically we got errors as list, so let's iterate over it:
+	uintptr_t error = (uintptr_t)OL_tb_error(oltb);
+	if (error && is_pair(error)) { // assume that pair is head of proper list
+		printf("/ got an error: ");
+		while (error != INULL) {
+			uintptr_t part = car(error);
+			if (is_string(part))
+				printf("%.*s ", string_length(part), string_value(part));
+			error = cdr(error);
+		}
+		printf("/ ");
+	}
+
+
+	// --------------------------------------------------------
 	// let's check that we successfuly can continue evaluations
 	OL_tb_reset(oltb); // clear error
 	printf("result of 'a(%d)' function: %d\n", 77, call("a", 77));
