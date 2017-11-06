@@ -66,6 +66,43 @@ void *MEMCPY(void *dest, const void *src, size_t n)
 	return memcpy(dest, src, n);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// main
+/*
+
+Talkback interface is the interface between olvm (Otus Lisp virtual machine) and
+the external program from which olvm used.
+
+OL_tb_start() and OL_tb_stop() starts new instance of olvm and kills it
+respectively. This functions use pthread library to control of olvm execution.
+
+To send some data to olvm (and force olvm to process it) whould be called
+OL_tb_send() function. Format of this function very similar to printf(), so
+it can be easy to send complex sentences including integer numbersm float, etc.
+OL_tb_send() is non blocking function.
+
+Please be aware, that all data sent by OL_tb_send function will be evaluated
+as part of global olvm context. It means that any "(define ...)" caluses will
+be evaluated and immediately be a part of all olvm functions.
+
+To evaluate some data and receive the result of execution should be used
+OL_tb_eval() function. Format of this function very similar to printf(), too.
+This function evaluates data in LOCAL olvm context. This means that all
+sentences will be forgot by olvm directly after producing result.
+
+OL_tb_eval() is a blocking function. This means that you will be blocked until
+olvm produces result or error. In case of error function will return 0.
+
+Additionally you can check the error state using OL_tb_error() function.
+Error should be dropped before continue execution using OL_tb_reset() function.
+
+After OL_tb_eval() function olvm to prevent the returned data corruption by gc
+switches to sleeping state. To continue execution the olvm (for example to
+continue working the subprograms) you must call OL_tb_send or new OL_tb_eval().
+In fact OL_tb_send(0) will be enought.
+
+
+*/
 int main(int argc, char** argv)
 {
 	void* oltb; // talkback handle
