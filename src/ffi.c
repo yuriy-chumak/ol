@@ -766,7 +766,7 @@ word* ffi(OL* self, word* arguments)
 
 		// поинтер на данные
 		case TUNKNOWN:
-			args[i] = car(arg);
+			args[i] = arg;
 			break;
 
 		// vptr should accept only vptr!

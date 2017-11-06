@@ -185,9 +185,9 @@ void* OL_tb_eval(state_t* state, char* format, ...)
 		va_list args;
 
 		va_start(args, format);
-		fprintf(state->inf, "%s", "(an:answer (vm:new type-vptr ((lambda () ");
+		fprintf(state->inf, "%s", "(an:answer ((lambda () ");
 		vfprintf(state->inf, format, args);
-		fprintf(state->inf, "%s", " ))) (syscall 1002 #f #f #f))");
+		fprintf(state->inf, "%s", " )) (syscall 1002 #f #f #f))");
 		fflush(state->inf);
 
 		va_end(args);
