@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <string.h> // memcpy
 #include <assert.h>
+#include <stdint.h>
 
 #if _WIN32
 #define TALKBACK_API __declspec(dllexport)

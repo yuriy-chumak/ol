@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <malloc.h>
 
+#include <stdarg.h>
 #include <signal.h>
 
 
@@ -58,7 +59,7 @@ int cleanup(int* pipes)
 /*int emptyq(int pipe) {
 	return poll(&(struct pollfd){ .fd = fd, .events = POLLIN }, 1, 0)==1) == 0);
 }*/
-int cleanup(PIPE* pipes)
+int cleanup(int* pipes)
 {
 	close(pipes[0]);
 	close(pipes[1]);
