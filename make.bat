@@ -138,7 +138,7 @@ set PATH=%PATH~%
 GOTO:EOF
 
 :REPL
-set VERSION=1.1
+set VERSION=1.2
 ::for /f "delims=" %%a in ('git describe') do @set VERSION=%%a
 vm repl - --version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"

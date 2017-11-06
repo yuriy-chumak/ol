@@ -9,7 +9,7 @@
  * -------------------------------------
  * This program is free software;  you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
+ * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -583,8 +583,7 @@ char* dlerror() {
 typedef ssize_t (read_t)(int fd, void *buf, size_t count, void* userdata);
 
 #ifdef _WIN32
-// win32 does not allow to detect handle type - is it regular handle,
-//  or socket, or pipe. so, unfortunately, we should try to read sequentally
+
 static
 ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
 {
@@ -626,7 +625,7 @@ ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
 }
 #else // assume all other oses are posix compliant
 
-static __inline__
+static
 ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
 {
 	return read(fd, buf, size);

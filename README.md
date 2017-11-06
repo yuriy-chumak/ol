@@ -8,7 +8,7 @@
 
 [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-VERSION 1.1
+VERSION 1.2
 
 LICENSE
 --------------------------------------------------------------
@@ -23,7 +23,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 You should have received a copy of the GNU GPL along with this
-program.           If not, see <http://www.gnu.org/licenses/>.
+program. If not, see <http://www.gnu.org/licenses/>.
 
 Additionally, Lesser GNU General Public License is applicable.
 
@@ -40,13 +40,14 @@ OVERVIEW
 --------
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
+
 It implements an extended subset of R5RS Scheme including, but
-not limited to, some of the SRFI. It's small (42kb), embeddable
+not limited to, some of the SRFIs. It's tiny(42kb), embeddable
 and crossplatform; can run in own sandbox; provides a portable,
 highlevel way for calling the code written in another languages.
-You can use Otus Lisp on Linux, Windows, Unix, Android and many
-other operation systems with various (x86, x86_64, arm, aarch64,
-mips, ppc, etc.) architectures.
+You can use Otus Lisp on Linux, Windows, Unix, Android and lot
+of any other operation systems with various (x86, x86_64, mips,
+arm, aarch64, ppc, etc.) architectures.
 
 
 REQUIREMENTS

@@ -7,17 +7,17 @@
 ;--------------------------------
 ; Defines
 
-  !define REGISTRY_KEY "Software\Otus Lisp\1.1"
+  !define REGISTRY_KEY "Software\Otus Lisp\1.2"
 
 ;--------------------------------
 ; General
 
   ;Name and file
-  Name "Otus Lisp (Version 1.1)"
-  OutFile "setup.ol-1.1.exe"
+  Name "Otus Lisp (Version 1.2)"
+  OutFile "setup.ol-1.2.exe"
 
   ;Default installation folder
-  InstallDir "$LOCALAPPDATA\ol\1.1"
+  InstallDir "$LOCALAPPDATA\ol\1.2"
   
   ;Get installation folder from registry if available
   InstallDirRegKey HKCU "${REGISTRY_KEY}" ""
@@ -95,9 +95,9 @@ Section "Otus Lisp" SecOL
   !define env_hklm 'HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
   !define env_hkcu 'HKCU "Environment"'
   ; set variable for local machine
-  WriteRegExpandStr ${env_hklm} OL_1_1_HOME $INSTDIR
+  WriteRegExpandStr ${env_hklm} OL_HOME $INSTDIR
   ; and current user
-  WriteRegExpandStr ${env_hkcu} OL_1_1_HOME $INSTDIR
+  WriteRegExpandStr ${env_hkcu} OL_HOME $INSTDIR
   ; make sure windows knows about the change
   SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
   
@@ -135,8 +135,8 @@ Section "Uninstall"
   RMDir "$INSTDIR"
 
   ; delete variable
-  DeleteRegValue ${env_hklm} OL_1_1_HOME
-  DeleteRegValue ${env_hkcu} OL_1_1_HOME
+  DeleteRegValue ${env_hklm} OL_HOME
+  DeleteRegValue ${env_hkcu} OL_HOME
   ; make sure windows knows about the change
   SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
   
