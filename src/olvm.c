@@ -597,28 +597,30 @@ ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
 		return -1;
 	}
 
-	// https://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00170.html
-	// The other failure of the non-blocking I/O on pipes test on mingw is because
-	// when read() is called on a non-blocking pipe fd with an empty buffer, it
-	// fails with EINVAL. Whereas POSIX says that it should fail with EAGAIN.
-	if (got == -1 && GetLastError() == ERROR_NO_DATA) {
-		HANDLE handle = (HANDLE)_get_osfhandle(fd);
-		// pipe or socket?
-		if (GetFileType(handle) == FILE_TYPE_PIPE) {
-			DWORD state;
-			// pipe in non-blocking mode?
-			if (GetNamedPipeHandleState (handle, &state, NULL, NULL, NULL, NULL, 0)
-		              && (state & PIPE_NOWAIT) != 0) {
+	if (got == -1) {
+		switch (errno) {
+		case EBADF: // have we tried to read from socket?
+			got = recv(fd, (char *) buf, size, 0);
+			if (got < 0 && WSAGetLastError() == WSAEWOULDBLOCK)
 				errno = EAGAIN;
-				return -1;
+			break;
+
+		// https://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00170.html
+		// The other failure of the non-blocking I/O on pipes test on mingw is because
+		// when read() is called on a non-blocking pipe fd with an empty buffer, it
+		// fails with EINVAL. Whereas POSIX says that it should fail with EAGAIN.
+		case EINVAL: {
+			HANDLE handle = (HANDLE)_get_osfhandle(fd);
+			// pipe?
+			if (GetFileType(handle) == FILE_TYPE_PIPE) {
+				DWORD state;
+				// pipe in non-blocking mode?
+				if (GetNamedPipeHandleState (handle, &state, NULL, NULL, NULL, NULL, 0)
+						  && (state & PIPE_NOWAIT) != 0) {
+					errno = EAGAIN;
+				}
 			}
-			// no? well, looks like a socket.
-			else {
-				got = recv(fd, (char *) &buf, size, 0);
-				if (got < 0)
-					if (WSAGetLastError() == WSAEWOULDBLOCK)
-						errno = EAGAIN;
-			}
+			break; }
 		}
 	}
 	return got;
@@ -647,17 +649,6 @@ ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
 	// sockets workaround
 	if (wrote == -1 && errno == EBADF) {
 		wrote = send(fd, buf, size, 0);
-
-		// pipes workaround
-		if (wrote == -1 && errno == EBADF) {
-			HANDLE handle = (HANDLE)(intptr_t)(unsigned)fd;
-
-			// на всякий случай, а то мало ли что МС придумает в будущем
-			static_assert (sizeof(DWORD) == sizeof(wrote),
-			        "passing argument from incompatible pointer type");
-			if (!WriteFile(handle, buf, size, (LPDWORD)&wrote, NULL))
-				wrote = -1;
-		}
 	}
 	return wrote;
 }
