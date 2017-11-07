@@ -1,48 +1,31 @@
 LOCAL_PATH := $(call my-dir)
-# https://developer.android.com/ndk/guides/android_mk.html
 
-$(info $(TARGET_ARCH))
-$(info $(TARGET_ARCH_ABI))
+# elf object formats for supported architecture
+elf_format=$(or \
+   $(if $(findstring $(1),armeabi),    -B armv5te              -O elf32-littlearm)\
+   $(if $(findstring $(1),armeabi-v7a),-B arm                  -O elf32-littlearm)\
+   $(if $(findstring $(1),x86),        -B i386                 -O elf32-i386)\
+   $(if $(findstring $(1),x86_64),     -B i386:x86-64          -O elf64-x86-64)\
+   $(if $(findstring $(1),arm64-v8a),  -B aarch64              -O elf64-littleaarch64)\
+   $(if $(findstring $(1),mips),       -B mips:isa32 -O elf32-tradlittlemips)\
+   $(if $(findstring $(1),mips64),     -B mips:isa64r6 -O elf64-tradlittlemips)\
+)
+filename=$(lastword $(subst /, ,$(1)))
 
-ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
-   LOCAL_OBJ_ARCH:=aarch64
-   LOCAL_OBJ_FORMAT:=elf64-littleaarch64
-endif
-ifeq ($(TARGET_ARCH_ABI),x86_64)
-   LOCAL_OBJ_ARCH:=i386:x86-64
-   LOCAL_OBJ_FORMAT:=elf64-x86-64
-endif
-ifeq ($(TARGET_ARCH_ABI),x86)
-   LOCAL_OBJ_ARCH:=i386
-   LOCAL_OBJ_FORMAT:=elf32-i386
-endif
-ifeq ($(TARGET_ARCH_ABI),mips)
-   LOCAL_OBJ_ARCH:=elf32-tradlittlemips
-   LOCAL_OBJ_FORMAT:=mips:isa32
-endif
-ifeq ($(TARGET_ARCH_ABI),armeabi)
-   LOCAL_OBJ_ARCH:=armv5te
-   LOCAL_OBJ_FORMAT:=elf32-littlearm
-endif
+.PHONY: $(TOOLCHAIN_PREFIX)objcopy
+jni/../obj/local/$(TARGET_ARCH_ABI)/repl.o: $(TOOLCHAIN_PREFIX)objcopy jni/../obj/local/$(TARGET_ARCH_ABI)
+	@$(word 1,$^) -I binary $(call elf_format,$(call filename,$(word 2,$^))) repl $@
 
-obj/local/$(TARGET_ARCH_ABI)/objs/ol/repl.o: repl
-	@echo [$(TARGET_ARCH_ABI)] Compile        : repl.o
-	@$(TOOLCHAIN_PREFIX)objcopy -I binary -B $(LOCAL_OBJ_ARCH) -O $(LOCAL_OBJ_FORMAT) repl obj/local/$(TARGET_ARCH_ABI)/objs/ol/repl.o
-
-
+# main ol module
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := ol
-LOCAL_SRC_FILES += ../src/olvm.c repl.o
-LOCAL_CFLAGS    += -std=c99 -O2 -s
+LOCAL_SRC_FILES += ../src/olvm.c ../obj/local/$(TARGET_ARCH_ABI)/repl.c
+LOCAL_CFLAGS    += -std=c99 -O2 -s -DNAKED_VM
 LOCAL_LDFLAGS   := -Xlinker --export-dynamic
+LOCAL_LDFLAGS   += -Xlinker obj/local/$(TARGET_ARCH_ABI)/repl.o
 
-$(info $(LOCAL_SRC_FILES))
-
-# for solving the
-# "error: only position independent executables (PIE) are supported."
-# uncomment next lines:
-#LOCAL_CFLAGS    += -fPIC
-#LOCAL_LDFLAGS   += -Xlinker -pie
+jni/../obj/local/$(TARGET_ARCH_ABI)/repl.c: jni/../obj/local/$(TARGET_ARCH_ABI)/repl.o
+	@echo // This empty file required for the stupid Android build system >$@
 
 include $(BUILD_EXECUTABLE)
