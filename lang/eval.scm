@@ -903,11 +903,11 @@
       (define (repl-trampoline env in)
          (if (interactive? env)
             ; ohai:
-            (print "You see a prompt." ; todo: add version string?
+            (print "Welcome to Otus Lisp " (cdr (env-get env '*version* '(#t . "\b"))) ","
                (if (env-get env '*sandbox* #false)
-                  " You feel restricted." "")
+                  " you feel restricted;" "")
                "\n"
-               "Type ',help' to help, ',quit' to end session"))
+               "type ',help' to help, ',quit' to end session."))
 
          (let boing ((env env))
             (let ((env (bind-toplevel env)))
