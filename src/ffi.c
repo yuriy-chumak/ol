@@ -87,7 +87,7 @@ word d2ol(struct ol_t* ol, double v); // declared in olvm.c
 // https://en.wikibooks.org/wiki/Embedded_Systems/Mixed_C_and_Assembly_Programming
 
 // http://www.angelcode.com/dev/callconv/callconv.html
-#if __amd64__ // x86-64 (LP64?)
+#if __amd64__ // x86-64 (LP64/LLP64)
 
 // value returned in the rax
 # if _WIN64 // Windows
@@ -281,7 +281,7 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 // while XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6 and XMM7 are used for floats
 # endif
 
-#elif __i386__ // ILP32(?)
+#elif __i386__ // ILP32
 // value returned in the edx:eax
 
 // CDECL / STDCALL
@@ -335,6 +335,78 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"popl  %edx",
 	"jmp   9b");
 
+#else // other platforms
+
+// http://byteworm.com/2010/10/12/container/ (lambdas in c)
+
+// https://en.wikipedia.org/wiki/X86_calling_conventions
+// x86 conventions: cdecl, syscall(OS/2), optlink(IBM)
+// pascal(OS/2, MsWin 3.x, Delphi), stdcall(Win32),
+// fastcall(ms), vectorcall(ms), safecall(delphi),
+// thiscall(ms)
+
+	// todo: ограничиться количеством функций поменьше
+	//	а можно сделать все в одной switch:
+	// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
+	// todo: проанализировать частоту количества аргументов и переделать все в
+	//   бинарный if
+
+	// __attribute__((stdcall))
+/*						__stdcall // gcc style for lambdas in pure C
+	int (*stdcall[])(char*) = {
+			({ int $(char *str){ printf("Test: %s\n", str); } $; })
+	};*/
+	// http://www.agner.org/optimize/calling_conventions.pdf
+	#define CALL(conv) \
+		switch (i) {\
+		case  0: return (ret_t)(word)((conv word (*)  ())\
+						 function) ();\
+		case  1: return (ret_t)(word)((conv word (*)  (word))\
+						 function) (args[ 0]);\
+		case  2: return (ret_t)(word)((conv word (*)  (word, word))\
+		                 function) (args[ 0], args[ 1]);\
+		case  3: return (ret_t)(word)((conv word (*)  (word, word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2]);\
+		case  4: return (ret_t)(word)((conv word (*)  (word, word, word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3]);\
+		case  5: return (ret_t)(word)((conv word (*)  (word, word, word, word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+		                            args[ 4]);\
+		case  6: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+		                            args[ 4], args[ 5]);\
+		case  7: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
+		                                  word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+		                            args[ 4], args[ 5], args[ 6]);\
+		case  8: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
+		                                  word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+		                            args[ 4], args[ 5], args[ 6], args[ 7]);\
+		case  9: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
+		                                  word, word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+		                            args[ 4], args[ 5], args[ 6], args[ 7],\
+		                            args[ 8]);\
+		case 10: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
+		                                  word, word, word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+		                            args[ 4], args[ 5], args[ 6], args[ 7],\
+		                            args[ 8], args[ 9]);\
+		case 11: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
+		                                  word, word, word, word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
+		                            args[ 4], args[ 5], args[ 6], args[ 7],\
+		                            args[ 8], args[ 9], args[10]);\
+		case 12: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
+		                                  word, word, word, word, word, word))\
+		                 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
+		                            args[ 4], args[ 5], args[ 6], args[ 7], \
+		                            args[ 8], args[ 9], args[10], args[11]);\
+		default: STDERR("Unsupported parameters count for ffi function: %d", i);\
+			return 0;\
+		};
+
 #endif
 
 
@@ -346,76 +418,6 @@ word* ffi(OL* self, word* arguments)
 	heap_t* heap = &self->heap;
 	word*
 	fp = heap->fp;
-
-	// http://byteworm.com/2010/10/12/container/ (lambdas in c)
-
-	// https://en.wikipedia.org/wiki/X86_calling_conventions
-	// x86 conventions: cdecl, syscall(OS/2), optlink(IBM)
-	// pascal(OS/2, MsWin 3.x, Delphi), stdcall(Win32),
-	// fastcall(ms), vectorcall(ms), safecall(delphi),
-	// thiscall(ms)
-
-		// todo: ограничиться количеством функций поменьше
-		//	а можно сделать все в одной switch:
-		// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
-		// todo: проанализировать частоту количества аргументов и переделать все в
-		//   бинарный if
-
-		// __attribute__((stdcall))
-/*						__stdcall // gcc style for lambdas in pure C
-		int (*stdcall[])(char*) = {
-				({ int $(char *str){ printf("Test: %s\n", str); } $; })
-		};*/
-		// http://www.agner.org/optimize/calling_conventions.pdf
-		#define CALL(conv) \
-			switch (i) {\
-			case  0: return (ret_t)(word)((conv word (*)  ())\
-							 function) ();\
-			case  1: return (ret_t)(word)((conv word (*)  (word))\
-							 function) (args[ 0]);\
-			case  2: return (ret_t)(word)((conv word (*)  (word, word))\
-			                 function) (args[ 0], args[ 1]);\
-			case  3: return (ret_t)(word)((conv word (*)  (word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2]);\
-			case  4: return (ret_t)(word)((conv word (*)  (word, word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3]);\
-			case  5: return (ret_t)(word)((conv word (*)  (word, word, word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-			                            args[ 4]);\
-			case  6: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-			                            args[ 4], args[ 5]);\
-			case  7: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-			                                  word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-			                            args[ 4], args[ 5], args[ 6]);\
-			case  8: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-			                                  word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-			                            args[ 4], args[ 5], args[ 6], args[ 7]);\
-			case  9: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-			                                  word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-			                            args[ 4], args[ 5], args[ 6], args[ 7],\
-			                            args[ 8]);\
-			case 10: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-			                                  word, word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-			                            args[ 4], args[ 5], args[ 6], args[ 7],\
-			                            args[ 8], args[ 9]);\
-			case 11: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-			                                  word, word, word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-			                            args[ 4], args[ 5], args[ 6], args[ 7],\
-			                            args[ 8], args[ 9], args[10]);\
-			case 12: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-			                                  word, word, word, word, word, word))\
-			                 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-			                            args[ 4], args[ 5], args[ 6], args[ 7], \
-			                            args[ 8], args[ 9], args[10], args[11]);\
-			default: STDERR("Unsupported parameters count for ffi function: %d", i);\
-				return 0;\
-			};
 
 	// lisp->c convertors
 	long from_int(word arg) {

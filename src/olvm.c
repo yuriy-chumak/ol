@@ -33,6 +33,7 @@
  *   http://groups.csail.mit.edu/mac/projects/scheme/
  *   http://www.s48.org/
  *   http://www.call-cc.org/
+ *   http://www.scheme.com/tspl4/
  *
  * \mainpage Otus Lisp
  * \file
@@ -2205,7 +2206,7 @@ apply:;
 			R[2] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
 		else
-		if ((type & 60) == TFF) { // low bits have special meaning (95% for "no")
+		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
 			word *cont = (word *) R[3];
 			switch (acc)
