@@ -19,7 +19,7 @@ HAS_DLOPEN  := $(call exists, <stdlib.h>, dlopen, -ldl)
 HAS_SOCKETS := $(call exists, <stdlib.h>, socket)
 
 # body
-.PHONY: all config recompile install uninstall clean tests
+.PHONY: all config recompile install uninstall clean tests check
 
 CC ?= gcc
 
@@ -333,3 +333,37 @@ tests: \
 sample-embed:
 	gcc src/sample-embed.c src/olvm.c src/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
 	-Xlinker --export-dynamic
+
+# simple only target platform size tests
+check: $(wildcard tests/*.scm)
+	@rm -f $(FAILED)
+	@echo "Internal VM testing:"
+	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm-check $(L)
+	@echo ""
+	   @./vm-check
+	@echo ""
+	@echo "ffi test:"
+	@echo "---------------------------------------"
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -o ffi $(L) -Xlinker --export-dynamic
+	   @echo -n "Testing ffi ... "
+	   @if ./ffi repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
+	      echo "Ok.";\
+	   else \
+	      echo "failed." ;\
+	      touch $(FAILED);\
+	   fi
+	@echo ""
+	@echo "common:"
+	@echo "---------------------------------------"
+	@make vm
+	@for F in $^ ;do \
+	   echo -n "Testing $$F ... " ;\
+	   if ./vm repl <$$F | diff - $$F.ok >/dev/null; then\
+	      echo "Ok." ;\
+	   else \
+	      echo "\033[0;31mFailed!\033[0m" ;\
+	      touch $(FAILED) ;\
+	   fi ;\
+	done
+	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
+	@echo "passed!"
