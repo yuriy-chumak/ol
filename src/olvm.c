@@ -2297,24 +2297,19 @@ apply:;
 		ERROR(257, this, INULL); // not callable
 
 mainloop:;
-	// free numbers: 11, 12, 18, 19
-	// todo: change 13 operation number to something else,
-	// todo: exchange NOP and APPLY operation codes
-
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	// Rn - регистр машины (R[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
+	// todo: exchange NOP and APPLY operation codes
 
 	// todo: add "HLT" function (may be 0x0 ?)
+	// список команд смотреть в assembly.scm
 
-	// безусловные переходы
+	// безусловный переход
 	#	define GOTO   2       // jmp a, nargs
-	//#	define GOTO_CODE 18   //
-	//#	define GOTO_PROC 19   //
-	//#	define GOTO_CLOS 21   //
 
-	// управляющие команды:
+	// управляющие команды
 	#	define NOP   21
 	#	define APPLY 20 // apply-cont = 20+64
 	#	define RET   24
@@ -2326,7 +2321,8 @@ mainloop:;
 	// 3, 4: OCLOSE
 	// 6, 7: CLOSE1
 
-		// список команд смотреть в assembly.scm
+	#	define JAF   11
+	#	define JAFX  12
 	#	define LDI   13      // LDE (13), LDN (77), LDT (141), LDF (205)
 	#	define LD    14
 
@@ -2336,9 +2332,8 @@ mainloop:;
 
 	#	define JEQ    8      // jeq
 	#	define JP    16      // JZ (16), JN (80), JT (144), JF (208)
-	#	define JAF   25      // jafx (89)
 
-		// примитивы языка:
+	// примитивы языка:
 	#	define VMNEW 23      // fast make small object
 	#	define VMNEW_OBJECT 35     // make object
 	#	define VMNEW_RAWOBJECT 60  // make raw object
@@ -2452,7 +2447,7 @@ mainloop:;
 	int op;//operation to execute:
 loop:;
 	switch ((op = *ip++) & 0x3F) {
-	case 0: // todo: change 0 to NOP, add new code for super_dispatch
+	case 0:
 		op = (ip[0] << 8) | ip[1]; // big endian
 		// super_dispatch: run user instructions
 		switch (op) {
@@ -2468,24 +2463,6 @@ loop:;
 		this = (word *)A0;
 		acc = ip[1];
 		goto apply;
-	//	case GOTO_CODE:
-	//		this = (word *)A0; acc = ip[1];
-	//		ip = (unsigned char*) &this[1];
-	//		goto invoke;
-	//	case GOTO_PROC:
-	//		this = (word *)A0; acc = ip[1];
-	//		R1 = (word) this;
-	//		this = (word *) this[1];
-	//		ip = (unsigned char*) &this[1];
-	//		goto invoke;
-	//	case GOTO_CLOS:
-	//		this = (word *)A0; acc = ip[1];
-	//		R1 = (word) this;
-	//		this = (word *) this[1];
-	//		R2 = (word) this;
-	//		this = (word *) this[1];
-	//		ip = (unsigned char*) &this[1];
-	//		goto invoke;
 
 	// nop - No OPeartion
 	case NOP:
@@ -2609,7 +2586,7 @@ loop:;
 		A1 = A0;
 		A3 = A2;
 		ip += 4; break;
-
+	// todo: add MOV3?
 
 	// условные переходы
 	case JEQ: // (5%) jeq a b o, extended jump
@@ -2625,16 +2602,19 @@ loop:;
 		ip += 3; break;
 	}
 
-	// jmp if arity not equal (arity failed)
-	case JAF: { // (13%) jmp-nargs (>=) a hi lo
-		int arity = ip[0];
-		if (acc == arity) { // 99% for "yes"
-			if (op & 0x40) // add empty extra arg list
-				R[acc + 3] = INULL;
-		}
-		else
-		if (acc > arity && (op & 0x40)) { // JAFx
-			word tail = INULL;  // todo: no call overflow handling yet
+	// (13%) for JAF and JAFX
+	case JAF: {
+		long arity = ip[0];
+		if (acc != arity)
+			ip += (ip[1] << 8) | ip[2];
+
+		ip += 3; break;
+	}
+	// additionally packs extra arguments list
+	case JAFX: {
+		long arity = ip[0];
+		if (acc >= arity) {
+			word tail = INULL;
 			while (acc > arity) {
 				tail = (word)new_pair (R[acc + 2], tail);
 				acc--;
@@ -2646,7 +2626,6 @@ loop:;
 
 		ip += 3; break;
 	}
-
 
 	case 3: OCLOSE(TCLOS); break; //continue; (2%)
 	case 4: OCLOSE(TPROC); break; //continue; (1%)
@@ -4613,10 +4592,9 @@ loop:;
 
 
 	// this is free to use commands:
-	case 11:
-	case 12:
 	case 18:
 	case 19:
+	case 25:
 
 	default:
 		ERROR(op, new_string("Invalid opcode"), ITRUE);

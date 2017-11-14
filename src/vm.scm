@@ -135,8 +135,8 @@
       (setq JN   80)  ; (+ 16 (<< 1 6))) ; jump-imm[0] if null
       (setq JE   144) ; (+ 16 (<< 2 6))) ; jump-imm[0] if empty
       (setq JF   208) ; (+ 16 (<< 3 6))) ; jump-imm[0] if false
-      (setq JAF  25)  ; jump if arity failed
-      (setq JAFX 89)  ; (+ JAF (<< 1 6))) ; JAF with extra flag
+      (setq JAF  11)  ; jump if arity failed
+      (setq JAFX 12)  ; JAF with packing extra arguments in list
 
 
       ; -------------------------------------------
