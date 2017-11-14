@@ -335,7 +335,7 @@ sample-embed:
 	-Xlinker --export-dynamic
 
 # simple only target platform size tests
-check: $(wildcard tests/*.scm)
+check: $(filter-out tests/ffi.scm,$(wildcard tests/*.scm))
 	@rm -f $(FAILED)
 	@echo "Internal VM testing:"
 	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm-check $(L)
