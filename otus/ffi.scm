@@ -10,6 +10,7 @@
 ; * but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+; TODO: rename type-vptr to ffi-vptr, and all other types
 (define-library (otus ffi)
    (export
       dlopen
@@ -35,6 +36,7 @@
       type-int32
       type-int64 ; 64-bit integer
 
+      type-integer
       type-float
       type-double
 
@@ -50,6 +52,8 @@
       ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
       ;  пока что пусть остается так.
       __stdcall __cdecl __fastcall
+
+      int32->ol
    )
 
    (import
@@ -155,6 +159,7 @@
 ; 44 - is socket but will be free
 ;(define type-handle 45)
 ; todo: (vm:cast type-constant) and start from number 1?
+(define type-integer type-int+)
 (define type-float  46)
 (define type-double 47)
 (define type-void   48)
@@ -177,6 +182,16 @@
 
 ;; OS detection
 (define (uname) (syscall 63 #f #f #f))
+
+(define int32->ol (case (vm:endianness)
+   (1 (lambda (vector offset)
+         (+     (ref vector offset)
+            (<< (ref vector (+ offset 1)) 8)
+            (<< (ref vector (+ offset 2)) 16)
+            (<< (ref vector (+ offset 3)) 24))))
+   (else
+      (print "Unknown endianness")
+      #false)))
 
 ; see also: http://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/predef/reference/boost_os_operating_system_macros.html
 ))
