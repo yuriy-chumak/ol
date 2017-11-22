@@ -1,28 +1,63 @@
 (define *include-dirs* (cons ".." *include-dirs*))
-;(define-library (lib sdl2)
+(define-library (lib sdl2)
  (import
   (otus lisp) (otus ffi))
 
-; (export
-;   ;SDL_error
-;   SDL_GetError
-;
-;   ;SDL_main
-;   SDL_Init
-;      SDL_INIT_VIDEO
-;
-;   ;SDL_video
-;   SDL_CreateWindow
-;   )
+ (export
+   ;SDL_error
+   SDL_GetError
 
-;(begin
+   ;SDL_main
+   SDL_Init
+      SDL_INIT_VIDEO
+
+   ;SDL_surface
+   SDL_FreeSurface
+
+   ;SDL_video
+   SDL_CreateWindow
+      SDL_WINDOWPOS_UNDEFINED_MASK
+      SDL_WINDOWPOS_UNDEFINED
+      SDL_WINDOW_SHOWN
+   SDL_GetWindowSurface
+
+   ;SDL_render
+   SDL_CreateRenderer
+      SDL_RENDERER_SOFTWARE
+      SDL_RENDERER_ACCELERATED
+      SDL_RENDERER_PRESENTVSYNC
+      SDL_RENDERER_TARGETTEXTURE
+
+   SDL_RenderClear
+   SDL_RenderPresent
+   SDL_RenderCopy
+
+   SDL_CreateTextureFromSurface
+
+   ;SDL_event
+   make-SDL_Event
+
+   SDL_PollEvent
+      SDL_QUIT
+
+   ;SDL_image   
+   IMG_Init
+      IMG_INIT_JPG
+      IMG_INIT_PNG
+      IMG_INIT_TIF
+      IMG_INIT_WEBP
+
+   IMG_Load
+   )
+
+(begin
 (define uname (uname))
 
 (define win32? (string-ci=? (ref uname 1) "Windows"))
 (define linux? (string-ci=? (ref uname 1) "Linux"))
 
-(define WIDTH 1280)
-(define HEIGHT 920)
+;(define WIDTH 1280)
+;(define HEIGHT 920)
 
 (define % (dlopen (cond
    (win32? "SDL2.dll")
@@ -124,51 +159,4 @@
    (define IMG_INIT_WEBP #x00000008)
 
 (define IMG_Load (dlsym % SDL_Surface* "IMG_Load" type-string))
-
-; test:
-; ***************************************************
-(if (less? (SDL_Init SDL_INIT_VIDEO) 0)
-   (begin
-      (print "Unable to Init SDL: " (SDL_GetError))
-      (exit-owl 1)))
-
-(unless (eq? (IMG_Init IMG_INIT_PNG) IMG_INIT_PNG)
-   (begin
-      (print "Unable to init SDL png image support: " (SDL_GetError))
-      (exit-owl 1)))
-
-(define window (SDL_CreateWindow "Create SDL2 Window sample"
-   SDL_WINDOWPOS_UNDEFINED SDL_WINDOWPOS_UNDEFINED
-   640 480 SDL_WINDOW_SHOWN))
-
-;(define surface (SDL_GetWindowSurface window))
-;(define loaded-surface (IMG_Load "SDL_logo.png"))
-;(define optimized-surface (SDL_ConvertSurface 
-(define renderer (SDL_CreateRenderer window -1 (bor SDL_RENDERER_ACCELERATED SDL_RENDERER_PRESENTVSYNC)))
-
-(define picture (IMG_Load "SDL_logo.png"))
-(define texture (SDL_CreateTextureFromSurface renderer picture))
-(SDL_FreeSurface picture)
-
-(call/cc (lambda (break)
-   (let loop ()
-      (let ((event (make-SDL_Event)))
-         (let event-loop ()
-            (unless (eq? (SDL_PollEvent event) 0)
-               (let ((type (int32->ol event 0)))
-                  (case type
-                     (SDL_QUIT (break))
-                     (else
-                        #f))
-                  (event-loop)))))
-      (SDL_RenderClear renderer)
-      (SDL_RenderCopy renderer texture #f #f)
-      (SDL_RenderPresent renderer)
-      (loop))))
-
-
-;(SDL_DestroyRenderer renderer)
-;(SDL_DestroyWindow window)
-;(SDL_Quit)
-
-(print "done.")
+))
