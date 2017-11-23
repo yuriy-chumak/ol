@@ -61,7 +61,7 @@
 
 (define % (dlopen (cond
    (win32? "SDL2.dll")
-   (linux? "libsdl2.so")
+   (linux? "libSDL2.so")
    (else (runtime-error "No sdl2 library support" "Unknown platform")))))
 
 (if (not %)
@@ -69,7 +69,7 @@
       (win32?
          "Download dll from https://www.libsdl.org/download-2.0.php")
       (linux?
-         "Use, for example, sudo apt install libsdl2"))))
+         "Use, for example, sudo apt install libsdl2-2.0"))))
 
 
 ; ===================================================
@@ -142,7 +142,7 @@
 ; SDL_image
 (define % (dlopen (cond
    (win32? "SDL2_image.dll")
-   (linux? "libsdl2-image.so")
+   (linux? "libSDL2_image-2.0.so.0")
    (else (runtime-error "No sdl2 image library support" "Unknown platform")))))
 
 (if (not %)
@@ -150,7 +150,7 @@
       (win32?
          "Download dll from https://www.libsdl.org/projects/SDL_image/")
       (linux?
-         "Use, for example, sudo apt install libsdl2-image"))))
+         "Use, for example, sudo apt install libsdl2-image-2.0"))))
 
 (define IMG_Init (dlsym % type-integer "IMG_Init" type-integer))
    (define IMG_INIT_JPG #x00000001)
