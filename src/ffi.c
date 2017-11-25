@@ -722,7 +722,7 @@ word* ffi(OL* self, word* arguments)
 		case TFLOAT + 0x40: {
 			if (arg == INULL) // empty array must be interpreted as nullptr
 				break;
-			if (arg == IFALSE)// empty array must be interpreted as nullptr
+			if (arg == IFALSE)// same with non existent arrays
 				break;
 
 			int c = llen(arg);
@@ -753,7 +753,7 @@ word* ffi(OL* self, word* arguments)
 		case TDOUBLE + 0x40: {
 			if (arg == INULL) // empty array must be interpreted as nullptr
 				break;
-			if (arg == IFALSE)// empty array must be interpreted as nullptr
+			if (arg == IFALSE)// same for non existent arrays
 				break;
 
 			int c = llen(arg);
@@ -773,7 +773,7 @@ word* ffi(OL* self, word* arguments)
 
 		// vptr should accept only vptr!
 		case TVPTR:
-			if ((word)arg == INULL || (word)arg == IFALSE)
+			if ((word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else if (is_reference(arg))
 				switch (reftype(arg)) {
@@ -790,7 +790,7 @@ word* ffi(OL* self, word* arguments)
 				STDERR("invalid parameter value (requested vptr)");
 			break;
 		case TVPTR + 0x40: {
-			if ((word)arg == INULL || (word)arg == IFALSE)
+			if ((word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
@@ -807,7 +807,7 @@ word* ffi(OL* self, word* arguments)
 		// todo: change to is_rawdata
 		case TBVEC:
 		case TSTRING:
-			if ((word)arg == INULL || (word)arg == IFALSE)
+			if ((word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {
@@ -884,7 +884,7 @@ word* ffi(OL* self, word* arguments)
 		#endif
 
 		case TCALLABLE: {
-			if ((word)arg == INULL || (word)arg == IFALSE)
+			if ((word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else {
 				if (is_callable(arg)) {
@@ -897,7 +897,7 @@ word* ffi(OL* self, word* arguments)
 		}
 /*
 		case TTUPLE:
-			if ((word)arg == INULL || (word)arg == IFALSE)
+			if ((word)arg == IFALSE)
 				args[i] = (word) (void*)0;
 			else
 			switch (reftype(arg)) {

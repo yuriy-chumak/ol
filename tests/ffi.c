@@ -1,5 +1,5 @@
 #ifdef __unix__
-#	define PUBLIC __attribute__ ((__visibility__("default")))
+#	define PUBLIC __attribute__ ((__visibility__("default"))) __attribute__((used))
 #endif
 
 #ifdef _WIN32
