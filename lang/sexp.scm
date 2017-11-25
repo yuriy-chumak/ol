@@ -470,7 +470,7 @@
 
       ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
 
-      (define (fd->exp-stream fd prompt parse fail re-entry?) ; re-entry? unused
+      (define (fd->exp-stream fd prompt parse fail)
          (let loop ((old-data #null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
             (lets
                ((rchunks end?
@@ -507,7 +507,7 @@
       (define (file->exp-stream path prompt parse fail)
          (let ((fd (open-input-file path)))
             (if fd
-               (fd->exp-stream fd prompt parse fail #false)
+               (fd->exp-stream fd prompt parse fail)
                #false)))
 
       (define (syntax-fail pos info lst)
@@ -515,7 +515,7 @@
             (list ">>> " "x" " <<<")))
          
       (define (read-impl in)
-         (fd->exp-stream in "" sexp-parser syntax-fail #false))
+         (fd->exp-stream in "" sexp-parser syntax-fail))
       
       (define read
          (case-lambda

@@ -162,7 +162,7 @@
                   (for-each (lambda (arg)
                      (display-to fd arg)) args) #t)))
 
-      (let loop ((request (fd->exp-stream fd "" http-parser syntax-fail #f)))
+      (let loop ((request (fd->exp-stream fd "" http-parser syntax-fail)))
          ;(print id " loop:" request)
          (if (call/cc (lambda (close)
                          (if (null? request)
