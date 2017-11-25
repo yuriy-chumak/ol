@@ -198,6 +198,8 @@ ol: src/olvm.c src/olvm.h src/repl.o
 	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
 
+src/olvm.c: src/ffi.c
+	touch src/olvm.c
 
 vm: src/olvm.c src/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
