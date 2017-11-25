@@ -5,7 +5,7 @@
 
  (export
    ;SDL_error
-   SDL_GetError
+   SDL_GetError SDL_ClearError
 
    ;SDL_main
    SDL_Init
@@ -18,8 +18,44 @@
    SDL_CreateWindow
       SDL_WINDOWPOS_UNDEFINED_MASK
       SDL_WINDOWPOS_UNDEFINED
+
+      SDL_WINDOW_FULLSCREEN
+      SDL_WINDOW_OPENGL
       SDL_WINDOW_SHOWN
+
    SDL_GetWindowSurface
+   SDL_GL_SetAttribute
+      SDL_GL_RED_SIZE
+      SDL_GL_GREEN_SIZE
+      SDL_GL_BLUE_SIZE
+      SDL_GL_ALPHA_SIZE
+      SDL_GL_BUFFER_SIZE
+      SDL_GL_DOUBLEBUFFER
+      SDL_GL_DEPTH_SIZE
+      SDL_GL_STENCIL_SIZE
+      SDL_GL_ACCUM_RED_SIZE
+      SDL_GL_ACCUM_GREEN_SIZE
+      SDL_GL_ACCUM_BLUE_SIZE
+      SDL_GL_ACCUM_ALPHA_SIZE
+      SDL_GL_STEREO
+      SDL_GL_MULTISAMPLEBUFFERS
+      SDL_GL_MULTISAMPLESAMPLES
+      SDL_GL_ACCELERATED_VISUAL
+      SDL_GL_RETAINED_BACKING
+      SDL_GL_CONTEXT_MAJOR_VERSION
+      SDL_GL_CONTEXT_MINOR_VERSION
+      SDL_GL_CONTEXT_EGL
+      SDL_GL_CONTEXT_FLAGS
+      SDL_GL_CONTEXT_PROFILE_MASK
+      SDL_GL_SHARE_WITH_CURRENT_CONTEXT
+      SDL_GL_FRAMEBUFFER_SRGB_CAPABLE
+      SDL_GL_CONTEXT_RELEASE_BEHAVIOR
+      SDL_GL_CONTEXT_RESET_NOTIFICATION
+      SDL_GL_CONTEXT_NO_ERROR
+   ;SDL_GL_GetAttribute
+   SDL_GL_CreateContext
+   SDL_GL_SetSwapInterval
+   SDL_GL_SwapWindow
 
    ;SDL_render
    SDL_CreateRenderer
@@ -39,6 +75,9 @@
 
    SDL_PollEvent
       SDL_QUIT
+
+   ;SDL_timer
+   SDL_Delay
 
    ;SDL_image   
    IMG_Init
@@ -83,6 +122,7 @@
 ; ------------------------
 ; SDL_error
 (define SDL_GetError (dlsym % type-string "SDL_GetError"))
+(define SDL_ClearError (dlsym % type-void "SDL_ClearError"))
 
 
 ; ------------------------
@@ -100,6 +140,7 @@
 ; ------------------------
 ; SDL_video
 (define SDL_Window* type-vptr)
+(define SDL_GLContext type-vptr)
 
 (define SDL_WINDOWPOS_UNDEFINED_MASK    #x1FFF0000)
 ;(define SDL_WINDOWPOS_UNDEFINED_DISPLAY(X)  (SDL_WINDOWPOS_UNDEFINED_MASK|(X))
@@ -107,9 +148,49 @@
 
 
 (define SDL_CreateWindow (dlsym % SDL_Window* "SDL_CreateWindow" type-string type-integer type-integer type-integer type-integer type-integer))
-   (define SDL_WINDOW_SHOWN #x00000004)
+   (define SDL_WINDOW_FULLSCREEN #x00000001)
+   (define SDL_WINDOW_OPENGL     #x00000002)
+   (define SDL_WINDOW_SHOWN      #x00000004)
 
 (define SDL_GetWindowSurface (dlsym % SDL_Surface* "SDL_GetWindowSurface" SDL_Window*))
+
+(define SDL_GLattr type-int)
+   (define SDL_GL_RED_SIZE 0)
+   (define SDL_GL_GREEN_SIZE 1)
+   (define SDL_GL_BLUE_SIZE 2)
+   (define SDL_GL_ALPHA_SIZE 3)
+   (define SDL_GL_BUFFER_SIZE 4)
+   (define SDL_GL_DOUBLEBUFFER 5)
+   (define SDL_GL_DEPTH_SIZE 6)
+   (define SDL_GL_STENCIL_SIZE 7)
+   (define SDL_GL_ACCUM_RED_SIZE 8)
+   (define SDL_GL_ACCUM_GREEN_SIZE 9)
+   (define SDL_GL_ACCUM_BLUE_SIZE 10)
+   (define SDL_GL_ACCUM_ALPHA_SIZE 11)
+   (define SDL_GL_STEREO 12)
+   (define SDL_GL_MULTISAMPLEBUFFERS 13)
+   (define SDL_GL_MULTISAMPLESAMPLES 14)
+   (define SDL_GL_ACCELERATED_VISUAL 15)
+   (define SDL_GL_RETAINED_BACKING 16)
+   (define SDL_GL_CONTEXT_MAJOR_VERSION 17)
+   (define SDL_GL_CONTEXT_MINOR_VERSION 18)
+   (define SDL_GL_CONTEXT_EGL 19)
+   (define SDL_GL_CONTEXT_FLAGS 20)
+   (define SDL_GL_CONTEXT_PROFILE_MASK 21)
+   (define SDL_GL_SHARE_WITH_CURRENT_CONTEXT 22)
+   (define SDL_GL_FRAMEBUFFER_SRGB_CAPABLE 23)
+   (define SDL_GL_CONTEXT_RELEASE_BEHAVIOR 24)
+   (define SDL_GL_CONTEXT_RESET_NOTIFICATION 25)
+   (define SDL_GL_CONTEXT_NO_ERROR 26)
+
+(define SDL_GL_SetAttribute (dlsym % type-int "SDL_GL_SetAttribute" SDL_GLattr type-int))
+
+(define SDL_GL_CreateContext (dlsym % SDL_GLContext "SDL_GL_CreateContext" SDL_Window*))
+
+(define SDL_GL_SetSwapInterval (dlsym % type-int "SDL_GL_SetSwapInterval" type-int))
+
+(define SDL_GL_SwapWindow (dlsym % type-void "SDL_GL_SwapWindow" SDL_Window*))
+   
 
 ; ------------------------
 ; SDL_render
@@ -136,7 +217,10 @@
 
 (define SDL_PollEvent (dlsym % type-fix+ "SDL_PollEvent" SDL_Event*))
    (define SDL_QUIT #x100)
-;))
+
+; ------------------------
+; SDL_timer
+(define SDL_Delay (dlsym % type-void "SDL_Delay" type-int32))
 
 ; ========================
 ; SDL_image
