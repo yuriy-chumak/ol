@@ -8,7 +8,7 @@
 
 
 ;(main)
-(define display (XOpenDisplay null))
+(define display (XOpenDisplay #false))
 (define screen (XDefaultScreen display))
 (define root (XRootWindow display screen))
 
@@ -29,7 +29,7 @@
 
 
 (define cx (or
-   (glXCreateContext display vi null 1)
+   (glXCreateContext display vi #false 1)
    (runtime-error "Can't create gl context" #f)))
 
 (XFree vi)
@@ -49,7 +49,7 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
-(glXMakeCurrent display null null)
+(glXMakeCurrent display #false #false)
 
 
 ;(loop)
@@ -66,7 +66,7 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glXSwapBuffers display window)
-   (glXMakeCurrent display null null)
+   (glXMakeCurrent display #f #f)
 (loop)))
 
 ;(done)

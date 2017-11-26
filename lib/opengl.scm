@@ -40,10 +40,10 @@
 
 (define gl:Disable (cond
    (win32?  (lambda (context)
-                  (gl:MakeCurrent null null)))
+                  (gl:MakeCurrent #f #f)))
    (linux?  (lambda (context)
                (let ((display (ref context 1)))
-                  (gl:MakeCurrent display null null))))
+                  (gl:MakeCurrent display #f #f))))
    (else   (runtime-error "Unknown platform" uname))))
 
 
@@ -62,10 +62,10 @@
                   #x00040100 (c-string "#32770") (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
                   #x06cf0000 ; WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
                   0 0 WIDTH HEIGHT ; x y width height
-                  null ; no parent window
-                  null ; no menu
-                  null ; instance
-                  null))
+                  #false ; no parent window
+                  #false ; no menu
+                  #false ; instance
+                  #false))
                (pfd (vm:new-raw-object type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
                                                           00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
                (hDC (GetDC window))
@@ -102,7 +102,7 @@
             (glXChooseVisual  (dlsym libGLX type-void* "glXChooseVisual" type-void* type-int+ (vm:or type-int+ #x40)))
             (glXCreateContext (dlsym libGLX type-void* "glXCreateContext" type-void* type-void* type-int+ type-int+)))
       (lambda (title)
-         (let*((display (XOpenDisplay null))
+         (let*((display (XOpenDisplay #false))
                (screen (XDefaultScreen display))
                (window (XCreateSimpleWindow display (XRootWindow display screen)
                   0 0 WIDTH HEIGHT 1
@@ -119,7 +119,7 @@
             (XSelectInput display window  (<< 1 15)) ; ExposureMask
             (XStoreName display window title)
             (XMapWindow display window)
-            (let ((cx (gl:CreateContext display vi null 1)))
+            (let ((cx (gl:CreateContext display vi #false 1)))
                (gl:MakeCurrent display window cx)
                (print "OpenGL version: " (glGetString GL_VERSION))
                (print "OpenGL vendor: " (glGetString GL_VENDOR))

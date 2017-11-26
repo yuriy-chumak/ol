@@ -116,7 +116,7 @@
    void main() {
       gl_Position = ftransform(); // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewProjectionMatrix * gl_Vertex
       xy = normalize(gl_NormalMatrix * gl_Normal).xy / 1.0;
-      }")) null)
+      }")) #f)
    (glCompileShader vs)
    (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
       (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
@@ -139,7 +139,7 @@
    varying vec2 xy;
    void main(void) {
       gl_FragColor = vec4(xy.x, xy.y, 0, 1.0);
-   }")) null)
+   }")) #f)
 
    (glCompileShader fs)
    (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))

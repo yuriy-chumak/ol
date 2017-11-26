@@ -27,7 +27,7 @@
 
 ;(main)
 #|
-(define display (XOpenDisplay null)) ;"Couldn't open X11 display"
+(define display (XOpenDisplay #f)) ;"Couldn't open X11 display"
 
 
 (define (glx:query-version)
@@ -109,7 +109,7 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
-(glXMakeCurrent display null null)
+(glXMakeCurrent display #f #f)
 
 
 ;(loop)
@@ -126,7 +126,7 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glXSwapBuffers display window)
-   (glXMakeCurrent display null null)
+   (glXMakeCurrent display #f #f)
 (loop)))
 |#
 ;(done)

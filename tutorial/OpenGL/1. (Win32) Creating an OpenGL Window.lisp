@@ -14,10 +14,10 @@
    (c-string "1. Creating an OpenGL Window")
    (OR WS_OVERLAPPEDWINDOW WS_CLIPSIBLINGS WS_CLIPCHILDREN)
    0 0 width height ; x y width height
-   null ; no parent window
-   null ; no menu
-   null ; instance
-   null))
+   #false ; no parent window
+   #false ; no menu
+   #false ; instance
+   #false))
 
 ; PIXELFORMATDESCRIPTOR
 (define pfd (vm:new-raw-object type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00

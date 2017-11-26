@@ -29,7 +29,7 @@
                               (c-string "
       void main() {
          gl_Position = gl_Vertex;
-      }")) null)
+      }")) #f)
    (glCompileShader vs)
    (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
       (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
@@ -45,7 +45,7 @@
 
    ; fragment shader:
    (if (eq? (length *vm-args*) 2)
-      (glShaderSource fs 1 (list (c-string (runes->string (file->list (cadr *vm-args*))))) null)
+      (glShaderSource fs 1 (list (c-string (runes->string (file->list (cadr *vm-args*))))) #f)
 
       (glShaderSource fs 2 (list (c-string "#version 120 // OpenGL 2.1")
                                  (c-string "
@@ -117,7 +117,7 @@
          v=mix(vec3(length(v)),v,saturation); //color adjust
          gl_FragColor = vec4(v*.01,1.);
 
-      }")) null))
+      }")) #f))
    (glCompileShader fs)
    (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
       (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
