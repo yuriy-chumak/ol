@@ -722,7 +722,7 @@ word* ffi(OL* self, word* arguments)
 		case TFLOAT + 0x40: {
 			if (arg == INULL) // empty array must be interpreted as nullptr
 				break;
-			if (arg == IFALSE)// same with non existent arrays
+			if (arg == IFALSE)// same for non existent arrays
 				break;
 
 			int c = llen(arg);
