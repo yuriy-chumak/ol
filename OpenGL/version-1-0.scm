@@ -703,7 +703,7 @@
 ;WINGDIAPI void APIENTRY glNormal3d (GLdouble nx, GLdouble ny, GLdouble nz);
 ;WINGDIAPI void APIENTRY glNormal3dv (const GLdouble *v);
    glNormal3f ; void (GLfloat nx, GLfloat ny, GLfloat nz)
-;WINGDIAPI void APIENTRY glNormal3fv (const GLfloat *v);
+   glNormal3fv; void (const GLfloat *v);
 ;WINGDIAPI void APIENTRY glNormal3i (GLint nx, GLint ny, GLint nz);
 ;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz);
@@ -1604,8 +1604,8 @@
 ;WINGDIAPI void APIENTRY glNormal3bv (const GLbyte *v);
 ;WINGDIAPI void APIENTRY glNormal3d (GLdouble nx, GLdouble ny, GLdouble nz);
 ;WINGDIAPI void APIENTRY glNormal3dv (const GLdouble *v);
-   (define glNormal3f (dlsym $ GLvoid "glNormal3f" GLfloat GLfloat GLfloat))
-;WINGDIAPI void APIENTRY glNormal3fv (const GLfloat *v);
+   (define glNormal3f  (dlsym $ GLvoid "glNormal3f"  GLfloat GLfloat GLfloat))
+   (define glNormal3fv (dlsym $ GLvoid "glNormal3fv" GLfloat*))
 ;WINGDIAPI void APIENTRY glNormal3i (GLint nx, GLint ny, GLint nz);
 ;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz);
