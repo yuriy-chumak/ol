@@ -1999,8 +1999,8 @@
 (import (owl string))
 
 (define (gl:ExtensionSupported? extension)
-(let ((string (append '(#x20) (string->bytes (glGetString GL_EXTENSIONS)) '(#x20)))
-      (substr (append '(#x20) (string->bytes extension) '(#x20))))
+(let ((string (append '(#\space) (string->bytes (glGetString GL_EXTENSIONS)) '(#\space)))
+      (substr (append '(#\space) (string->bytes extension) '(#\space))))
 (for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support..."))
 
 (if
