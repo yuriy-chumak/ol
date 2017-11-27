@@ -346,7 +346,7 @@
       GL_CCW
 
 ;WINGDIAPI void APIENTRY glFrustum (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
-;WINGDIAPI GLuint APIENTRY glGenLists (GLsizei range);
+   glGenLists                          ; GLuint (GLsizei range)
 
    glGetBooleanv                       ; void (GLenum pname, GLboolean *params)
    glGetDoublev                        ; void (GLenum pname, GLdouble *params)
@@ -1533,7 +1533,7 @@
    (define glFogiv       (dlsym $ GLvoid "glFogiv" GLenum GLint*))
    (define glFrontFace   (dlsym $ GLvoid "glFrontFace" GLenum))
    (define glFrustum     (dlsym $ GLvoid "glFrustum" GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
-;WINGDIAPI GLuint APIENTRY glGenLists (GLsizei range);
+   (define glGenLists    (dlsym $ GLuint "glGenLists" GLsizei))
    (define glGetBooleanv (dlsym $ GLvoid "glGetBooleanv" GLenum GLboolean*))
    (define glGetDoublev  (dlsym $ GLvoid "glGetDoublev"  GLenum GLdouble*))
    (define glGetError    (dlsym $ GLenum "glGetError"))
