@@ -530,6 +530,8 @@ word* ffi(OL* self, word* arguments)
 			return (float) ol2d(arg);
 		case TCOMPLEX:
 			return to_float(car(arg)); // return real part of value
+		case TINEXACT:
+			return *(double*)&car(arg);
 		}
 		return 0;
 	}
@@ -550,6 +552,8 @@ word* ffi(OL* self, word* arguments)
 			break;
 		case TCOMPLEX:
 			return to_double(car(arg)); // return real part of value
+		case TINEXACT:
+			return *(double*)&car(arg);
 		}
 		return 0;
 	}
