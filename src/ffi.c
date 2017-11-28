@@ -452,7 +452,7 @@ word* ffi(OL* self, word* arguments)
 			a = svtoi(pa);
 		else {
 			switch (reftype(pa)) {
-			case TINT:
+			case TINTP:
 				a = +from_int_to_float(pa);
 				break;
 			case TINTN:
@@ -466,7 +466,7 @@ word* ffi(OL* self, word* arguments)
 			b = svtoi(pb);
 		else {
 			switch (reftype(pb)) {
-			case TINT:
+			case TINTP:
 				b = +from_int_to_float(pb);
 				break;
 			case TINTN:
@@ -483,7 +483,7 @@ word* ffi(OL* self, word* arguments)
 			return svtoi(arg);
 
 		switch (reftype(arg)) {
-		case TINT:
+		case TINTP:
 			return (int)+from_int(arg);
 		case TINTN:
 			return (int)-from_int(arg);
@@ -503,7 +503,7 @@ word* ffi(OL* self, word* arguments)
 			return svtoi(arg);
 
 		switch (reftype(arg)) {
-		case TINT:
+		case TINTP:
 			return (long)+from_int(arg);
 		case TINTN:
 			return (long)-from_int(arg);
@@ -524,7 +524,7 @@ word* ffi(OL* self, word* arguments)
 			return svtoi(arg);
 
 		switch (reftype(arg)) {
-		case TINT:
+		case TINTP:
 		case TINTN:
 		case TRATIONAL:
 			return (float) ol2d(arg);
@@ -541,7 +541,7 @@ word* ffi(OL* self, word* arguments)
 			return svtoi (arg);
 
 		switch (reftype(arg)) {
-		case TINT:
+		case TINTP:
 			return (double)+from_int(arg);
 			break;
 		case TINTN:
@@ -608,7 +608,7 @@ word* ffi(OL* self, word* arguments)
 
 		if (type == TANY) {
 			if (is_value(arg))
-				type = TINT;
+				type = TINTP;
 			else {
 				type = reftype (arg);
 			}
@@ -617,13 +617,13 @@ word* ffi(OL* self, word* arguments)
 		// destination type
 		switch (type) {
 		// целочисленные типы:
-		case TINT: // <-- deprecated
+		case TINTP: // <-- deprecated
 		case TLONG: // 32-bit for 32-bit arch, 64-bit for 64-bit arch
 			if (is_value(arg))
 				args[i] = (long)svtoi(arg);
 			else
 			switch (reftype(arg)) {
-			case TINT: // source type
+			case TINTP: // source type
 				args[i] = (long)+from_int(arg);
 				break;
 			case TINTN:
@@ -634,7 +634,7 @@ word* ffi(OL* self, word* arguments)
 				args[i] = 0; // todo: error
 			}
 			break;
-		case TINT + 0x40: {
+		case TINTP + 0x40: {
 			int c = llen(arg);
 			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: use new()
 			args[i] = (word)p;
@@ -656,13 +656,13 @@ word* ffi(OL* self, word* arguments)
 		}
 
 
-		case TFIX: // <-- deprecated
+		case TFIXP: // <-- deprecated
 		case TINT32:
 			if (is_value(arg))
 				args[i] = (int)svtoi(arg);
 			else
 			switch (reftype(arg)) {
-			case TINT:
+			case TINTP:
 				args[i] = (int)+from_int(arg);
 				break;
 			case TINTN:
@@ -673,7 +673,10 @@ word* ffi(OL* self, word* arguments)
 				args[i] = 0; // todo: error
 			}
 			break;
-		case TFIX + 0x40: // <-- deprecated
+		case TINT32 + 0x80:
+			has_wb = 1;
+			//no break
+		case TFIXP + 0x40: // <-- deprecated
 		case TINT32 + 0x40: { // int*
 			int c = llen(arg);
 			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: new_raw_vector()
@@ -691,7 +694,7 @@ word* ffi(OL* self, word* arguments)
 				*(long long*)&args[i] = svtoi(arg);
 			else
 			switch (reftype(arg)) {
-			case TINT: // source type
+			case TINTP: // source type
 				*(long long*)&args[i] = +from_int(arg);
 				break;
 			case TINTN:
@@ -1088,8 +1091,7 @@ word* ffi(OL* self, word* arguments)
 					l = cdr(l);
 				}
 				break;
-				}
-			}
+			} }
 
 			p = (word*) cdr(p);
 			t = (word*) cdr(t);
@@ -1100,10 +1102,10 @@ word* ffi(OL* self, word* arguments)
 
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
-		case TFIX: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
+		case TFIXP: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = (word*) itosv (got);
 			break;
-		case TINT: // type-int+
+		case TINTP: // type-int+
 			result = (word*) itoun ((long)got);
 			break;
 			// else goto case 0 (иначе вернем type-fx+)
@@ -1224,7 +1226,7 @@ long callback(OL* ol, int id, int_t* argi
 			R[a] = (word) new_vptr(value);
 			break;
 		}
-		case F(TINT): {
+		case F(TINTP): {
 			int_t
 			#if __amd64__
 				#if _WIN64

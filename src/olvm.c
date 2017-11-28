@@ -984,7 +984,7 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 
 // ------------------------------------------------------
 #define W                           sizeof (word)
-#define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIX, val)
+#define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIXP, val)
 
 #define FBITS                       ((sizeof (word) * 8) - 8) // bits in value (short number)
 #define HIGHBIT                     ((int_t)1 << FBITS) // maximum value value + 1
@@ -1037,10 +1037,10 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 // numbers (value type)
 // A FIXNUM is an exact integer that is small enough to fit in a machine word.
 // todo: rename TFIX to TSHORT or TSMALLINT, TINT to TLARGE or TLARGEINT
-#define TFIX                         (0)  // type-fix+ // small integer
+#define TFIXP                        (0)  // type-fix+ // small integer
 #define TFIXN                       (32)  // type-fix-
 // numbers (reference type)
-#define TINT                        (40)  // type-int+ // large integer
+#define TINTP                       (40)  // type-int+ // large integer
 #define TINTN                       (41)  // type-int-
 #define TRATIONAL                   (42)
 #define TCOMPLEX                    (43)
@@ -1080,10 +1080,10 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 //#define is_const(ob)                (is_value(ob)     && thetype (ob) == TCONST)
 #define is_port(ob)                 (is_value(ob)     && valuetype (ob) == TPORT)
 
-#define is_fix(ob)                  (is_value(ob)     && valuetype (ob) == TFIX)
+#define is_fix(ob)                  (is_value(ob)     && valuetype (ob) == TFIXP)
 #define is_fixn(ob)                 (is_value(ob)     && valuetype (ob) == TFIXN)
 #define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TPAIR,     3))
-#define is_npair(ob)                (is_reference(ob) && (*(word*) (ob)) == make_header(TINT,      3))
+#define is_npair(ob)                (is_reference(ob) && (*(word*) (ob)) == make_header(TINTP,     3))
 #define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
 #define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
 #define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
@@ -1229,7 +1229,7 @@ word*p = NEW (size);\
 #define new(...) NEW_MACRO(__VA_ARGS__, NEW_RAW_OBJECT, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
 
 // -= new_value =---------------------------------------
-#define new_value(a) ((word*)F(a)) // same as make_value(TFIX, a)
+#define new_value(a) ((word*)F(a)) // same as make_value(TFIXP, a)
 
 // -= ports =-------------------------------------------
 // создает порт, НЕ аллоцирует память
@@ -1846,7 +1846,7 @@ struct ol_t
 
 // работа с numeric value типами
 #ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
+#define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIXP);
 #endif
 #define uvtoi(v)  (int_t)({ word x1 = (word)(v); UVTOI_CHECK(x1); (word) (x1 >> IPOS); })
 #define itouv(i)  (word) ({ word x2 = (word)(i);                  (word) (x2 << IPOS) | 2; })
@@ -1854,7 +1854,7 @@ struct ol_t
 
 // todo: add overflow checking...
 #ifndef SVTOI_CHECK
-#define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIX);
+#define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIXP);
 #endif
 #define svtoi(v) \
 	({ \
@@ -1882,7 +1882,7 @@ struct ol_t
 			int_t x5 = (int_t)(val); \
 			x5 <= FMAX ? \
 					(word)itouv(x5): \
-					(word)new_list(TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+					(word)new_list(TINTP, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
 		})); \
 	})
 #define itosn(val)  ({\
@@ -1892,7 +1892,7 @@ struct ol_t
 			int_t x5 = (int_t)(val); \
 			x5 <= FMAX ? \
 					(word)itosv(x5): \
-					(word)new_list(x5 < 0 ? TINTN : TINT, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+					(word)new_list(x5 < 0 ? TINTN : TINTP, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
 		})); \
 	})
 
@@ -1914,12 +1914,12 @@ double ol2d_convert(word p) {
 
 double ol2d(word arg) {
 	if (is_value(arg)) {
-		assert (valuetype(arg) == TFIX || valuetype(arg) == TFIXN);
+		assert (valuetype(arg) == TFIXP || valuetype(arg) == TFIXN);
 		return svtoi(arg);
 	}
 
 	switch (reftype(arg)) {
-	case TINT:
+	case TINTP:
 		return +ol2d_convert(arg);
 	case TINTN:
 		return -ol2d_convert(arg);
@@ -1969,7 +1969,7 @@ word d2ol(struct ol_t* ol, double v) {
 				b = *p--;
 			else
 				for (size_t i = 0; i < len; i++)
-					b = (word) new_pair(TINT, *p--, b);
+					b = (word) new_pair(TINTP, *p--, b);
 		}
 	}
 
@@ -1996,8 +1996,8 @@ word d2ol(struct ol_t* ol, double v) {
 			word* m = fp;
 			p = (word*)INULL;
 			for (size_t i = 0; i < len - 1; i++)
-				p = new_pair(TINT, *--m, p);
-			a = (word)new_pair(negative ? TINTN : TINT, *--m, p);
+				p = new_pair(TINTP, *--m, p);
+			a = (word)new_pair(negative ? TINTN : TINTP, *--m, p);
 		}
 	}
 	word r;
@@ -4477,7 +4477,7 @@ loop:;
 					result = new_string(v);
 				break;
 			}
-			case TINT: {
+			case TINTP: {
 				int v = emscripten_run_script_int(string);
 				result = (word*)itosv(v);
 				break;
