@@ -11,6 +11,7 @@
 ; * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ; TODO: rename type-vptr to ffi-vptr, and all other types
+; TODO: all type-* constants should be used by vm, all fft-* only by ffi
 (define-library (otus ffi)
    (export
       dlopen
@@ -60,6 +61,15 @@
       fft-int16 fft-int16* fft-int16& ; signed 16-bit value
       fft-int32 fft-int32* fft-int32& ; signed 32-bit value
       fft-int64 fft-int64* fft-int64& ; signed 64-bit value
+
+      fft-uint16 fft-uint16* fft-uint16& ; unsigned 16-bit value
+      fft-uint32 fft-uint32* fft-uint32& ; unsigned 32-bit value
+      fft-uint64 fft-uint64* fft-uint64& ; unsigned 64-bit value
+
+      ; platform dependent defaults
+      ;fft-char  fft-signed-char  fft-unsigned-char
+      fft-short fft-signed-short fft-unsigned-short
+      fft-int   fft-signed-int   fft-unsigned-int
    )
 
    (import
@@ -165,7 +175,7 @@
 ; 44 - is socket but will be free
 ;(define type-handle 45)
 ; todo: (vm:cast type-constant) and start from number 1?
-(define type-integer type-int+)
+(define type-integer type-int+) ; deprecated
 (define type-float  46)
 (define type-double 47)
 (define type-void   48)
@@ -174,8 +184,8 @@
 
 (define type-word   50)  (define type-long  type-word)
 
-(define type-int16  51)  (define type-short type-int16)
-(define type-int32  52)  (define type-int   type-int32)
+(define type-int16  51)  (define type-short type-int16) ; deprecated
+(define type-int32  52)  (define type-int   type-int32) ; deprecated
 (define type-int64  53)
 ;define type-int128 54)
 ;define type-int256 55)
@@ -189,6 +199,20 @@
 (define fft-int16 51) (define fft-int16* (bor fft-int16 #x40)) (define fft-int16& (bor fft-int16 #x80))
 (define fft-int32 52) (define fft-int32* (bor fft-int32 #x40)) (define fft-int32& (bor fft-int32 #x80))
 (define fft-int64 53) (define fft-int64* (bor fft-int64 #x40)) (define fft-int64& (bor fft-int64 #x80))
+
+(define fft-uint16 56) (define fft-uint16* (bor fft-uint16 #x40)) (define fft-uint16& (bor fft-uint16 #x80))
+(define fft-uint32 57) (define fft-uint32* (bor fft-uint32 #x40)) (define fft-uint32& (bor fft-uint32 #x80))
+(define fft-uint64 58) (define fft-uint64* (bor fft-uint64 #x40)) (define fft-uint64& (bor fft-uint64 #x80))
+
+; platform dependent defaults
+(define fft-short fft-int16)
+(define fft-signed-short fft-short)
+(define fft-unsigned-short fft-uint16)
+
+(define fft-int fft-int32)
+(define fft-signed-int fft-int)
+(define fft-unsigned-int fft-uint16)
+
 
 
 ;; OS detection
