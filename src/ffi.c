@@ -618,7 +618,7 @@ word* ffi(OL* self, word* arguments)
 		switch (type) {
 		// целочисленные типы:
 		case TINTP: // <-- deprecated
-		case TLONG: // 32-bit for 32-bit arch, 64-bit for 64-bit arch
+		case TLONG: // 32-bit for 32-bit arch, 64-bit for 64-bit arch (but always 32 for windows) - BUG, please fix it!
 			if (is_value(arg))
 				args[i] = (long)svtoi(arg);
 			else

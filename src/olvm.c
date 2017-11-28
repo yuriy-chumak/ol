@@ -1050,7 +1050,7 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 #define TVOID                       (48)
 #define TVPTR                       (49) // void*, only RAW, can't be 0
 #define TUNKNOWN                    (62) // only for ffi, direct sending argument without processing
-#define TLONG                       (50) // 32 for 32-bit architecture, 64 for 64-bit
+#define TLONG                       (50) // 32 for 32-bit architecture, 64 for 64-bit (and always 32 for windows)
 
 #define TFLOAT                      (46) // '.' symbol
 #define TDOUBLE                     (47) // '/' symbol

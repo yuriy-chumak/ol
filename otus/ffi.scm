@@ -31,7 +31,15 @@
 
       type-short ; 16-bit integer
       type-int   ; 32-bit integer
-      type-long  ; 32 for 32-bit platform, 64 for 64-bit
+
+      ; special "variable length on different platforms" type
+      ; windows, ia32: 4 bytes
+      ; windows, ia64: 4 bytes
+      ; linux, ia32:   4 bytes
+      ; linux, ia64:   8 bytes
+      ; macosx, ia32:  4 bytes
+      ; macosx, ia64:  8 bytes
+      fft-long
 
       type-int16
       type-int32
@@ -182,7 +190,7 @@
 (define fft-void*   49)  ; same as type-vptr
 (define fft-void**  (bor fft-void* #x40))
 
-(define type-word   50)  (define type-long  type-word)
+(define fft-long    50)
 
 (define type-int16  51)  (define type-short type-int16) ; deprecated
 (define type-int32  52)  (define type-int   type-int32) ; deprecated
