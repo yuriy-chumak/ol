@@ -210,7 +210,7 @@
 ; The values of these parameters (also called "host parameter names" or "SQL parameters") can be set using the sqlite3_bind_*() routines defined here.
 (define sqlite3-bind-parameter-index (dlsym % type-fix+ "sqlite3_bind_parameter_index" sqlite3_stmt* type-string))
 (define sqlite3-bind-int    (dlsym % type-fix+ "sqlite3_bind_int"    sqlite3_stmt* type-int+ type-int+))
-(define sqlite3-bind-double (dlsym % type-fix+ "sqlite3_bind_double" sqlite3_stmt* type-int+ type-double))
+(define sqlite3-bind-double (dlsym % type-fix+ "sqlite3_bind_double" sqlite3_stmt* type-int+ fft-double))
 (define sqlite3-bind-text   (dlsym % type-fix+ "sqlite3_bind_text"   sqlite3_stmt* type-int+ type-string type-fix+ fft-void*))
 (define sqlite3_bind_null   (dlsym % type-fix+ "sqlite3_bind_null"   sqlite3_stmt* type-int+))
 
@@ -225,7 +225,7 @@
 (define sqlite3_column_name  (dlsym % type-string "sqlite3_column_name" sqlite3_stmt* type-fix+))
 (define sqlite3_column_int   (dlsym % type-int+   "sqlite3_column_int" sqlite3_stmt* type-fix+))
 (define sqlite3_column_bytes (dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-fix+))
-;(define sqlite3_column_double(dlsym % type-float+ "sqlite3_column_double" sqlite3_stmt* type-fix+))
+;(define sqlite3_column_double(dlsym % fft-double "sqlite3_column_double" sqlite3_stmt* type-fix+))
 (define sqlite3_column_text  (dlsym % type-string "sqlite3_column_text" sqlite3_stmt* type-fix+))
 ;(define sqlite3_column_blob  (dlsym % type-string "sqlite3_column_blob" sqlite3_stmt* type-fix+))
 

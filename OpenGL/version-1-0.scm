@@ -970,8 +970,8 @@
 
    (define GLfloat  fft-float)   ; typedef float GLfloat
    (define GLclampf fft-float)   ; typedef float GLclampf
-   (define GLdouble type-double) ; typedef double GLdouble
-   (define GLclampd type-double) ; typedef dluble GLclampd
+   (define GLdouble fft-double)  ; typedef double GLdouble
+   (define GLclampd fft-double)  ; typedef dluble GLclampd
 
    (define GLubyte* type-string)
 

@@ -81,7 +81,7 @@
    (define ALsizei   type-int+) ; non-negative 32-bit binary integer size
    (define ALenum    type-int+) ; enumerated 32-bit value
    (define ALfloat   fft-float)  ; 32-bit IEEE754 floating-point
-   (define ALdouble  type-double) ; 64-bit IEEE754 floating-point
+   (define ALdouble  fft-double) ; 64-bit IEEE754 floating-point
 
    (define ALvoid    fft-void)
    (define ALvoid*   type-vptr)
@@ -418,7 +418,7 @@
    (define ALCsizei   type-int+)
    (define ALCenum    type-int+)
    (define ALCfloat   fft-float)
-   (define ALCdouble  type-double)
+   (define ALCdouble  fft-double)
 
    (define ALCvoid    fft-void)
    (define ALCvoid*   type-vptr)

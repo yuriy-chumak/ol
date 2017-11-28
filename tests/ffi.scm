@@ -13,7 +13,7 @@
 
 (define i_i (dlsym (dlopen) type-int+ "i_i" type-int+))
 (define f_f (dlsym (dlopen) fft-float "f_f" fft-float))
-(define d_d (dlsym (dlopen) type-double "d_d" type-double))
+(define d_d (dlsym (dlopen) fft-double "d_d" fft-double))
 
 (define fi (dlsym (dlopen) fft-float "fi" fft-float type-int+))
 (define fii (dlsym (dlopen) fft-float "fii" fft-float type-int+ type-int+))

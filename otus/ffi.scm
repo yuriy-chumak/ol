@@ -39,7 +39,7 @@
 
       type-integer
       fft-float
-      type-double
+      fft-double
 
       fft-void fft-void* fft-void**
 
@@ -177,7 +177,7 @@
 ; todo: (vm:cast type-constant) and start from number 1?
 (define type-integer type-int+) ; deprecated
 (define fft-float   46)
-(define type-double 47)
+(define fft-double  47)
 (define fft-void    48)
 (define fft-void*   49)  ; same as type-vptr
 (define fft-void**  (bor fft-void* #x40))
