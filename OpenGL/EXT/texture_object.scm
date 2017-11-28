@@ -40,12 +40,11 @@
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_texture_object (gl:ExtensionSupported? "GL_EXT_texture_object"))
-   (define $ (dlopen GL_LIBRARY))
 
    (define glBindTexture (if EXT_texture_object
-         (dlsym $ GLvoid "glBindTexture" GLenum GLuint)))
+         (gl:GetProcAddress GLvoid "glBindTexture" GLenum GLuint)))
    ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
    (define glGenTextures (if EXT_texture_object
-         (dlsym $ GLvoid "glGenTextures" GLsizei GLuint*)))
+         (gl:GetProcAddress GLvoid "glGenTextures" GLsizei GLuint&)))
    ;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
 ))
