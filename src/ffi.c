@@ -1069,6 +1069,24 @@ word* ffi(OL* self, word* arguments)
 
 			// destination type
 			switch (type) {
+			case TINT32 + 0x80: {
+				// вот тут попробуем заполнить переменные назад
+				int c = llen(arg);
+				int* f = (int*)args[i];
+
+				word l = arg;
+				while (c--) {
+					int value = *f++;
+					int* ptr = (int*)&car(l);
+					// ограничение: принимаем только числа FIX размера!
+					// как сделать по другому надо подумать.
+					// todo: if (is_reference(x) && reftype(x)==TINT?) put long value into number
+					*ptr = F(value);
+
+					l = cdr(l);
+				}
+				break;
+			}
 			case TFLOAT + 0x80: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
