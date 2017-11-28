@@ -968,8 +968,8 @@
    (define GLuint*  fft-void*)   ; TODO: ? temporary, should be (bor type-int+ #x40)
    (define GLuint&  fft-int32&)
 
-   (define GLfloat  type-float)  ; typedef float GLfloat
-   (define GLclampf type-float)  ; typedef float GLclampf
+   (define GLfloat  fft-float)   ; typedef float GLfloat
+   (define GLclampf fft-float)   ; typedef float GLclampf
    (define GLdouble type-double) ; typedef double GLdouble
    (define GLclampd type-double) ; typedef dluble GLclampd
 

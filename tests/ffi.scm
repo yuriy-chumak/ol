@@ -12,15 +12,15 @@
       (print text " = " result " instead of " value)))
 
 (define i_i (dlsym (dlopen) type-int+ "i_i" type-int+))
-(define f_f (dlsym (dlopen) type-float "f_f" type-float))
+(define f_f (dlsym (dlopen) fft-float "f_f" fft-float))
 (define d_d (dlsym (dlopen) type-double "d_d" type-double))
 
-(define fi (dlsym (dlopen) type-float "fi" type-float type-int+))
-(define fii (dlsym (dlopen) type-float "fii" type-float type-int+ type-int+))
-(define fiiii (dlsym (dlopen) type-float "fiiii" type-float type-int+ type-int+ type-int+ type-int+))
-(define ifiii (dlsym (dlopen) type-float "ifiii" type-int+ type-float type-int+ type-int+ type-int+))
-(define iiiif (dlsym (dlopen) type-float "iiiif" type-int+ type-int+ type-int+ type-int+ type-float))
-(define fiiif (dlsym (dlopen) type-float "fiiif" type-float type-int+ type-int+ type-int+ type-float))
+(define fi (dlsym (dlopen) fft-float "fi" fft-float type-int+))
+(define fii (dlsym (dlopen) fft-float "fii" fft-float type-int+ type-int+))
+(define fiiii (dlsym (dlopen) fft-float "fiiii" fft-float type-int+ type-int+ type-int+ type-int+))
+(define ifiii (dlsym (dlopen) fft-float "ifiii" type-int+ fft-float type-int+ type-int+ type-int+))
+(define iiiif (dlsym (dlopen) fft-float "iiiif" type-int+ type-int+ type-int+ type-int+ fft-float))
+(define fiiif (dlsym (dlopen) fft-float "fiiif" fft-float type-int+ type-int+ type-int+ fft-float))
 
 
 (assert "i_i" (i_i 1)   1)
@@ -31,10 +31,10 @@
 (assert "fi" (fi 1.1 2)     (+ 1.1 2))
 (assert "fii" (fii 1.1 2 3) (+ 1.1 2 3))
 
-(define fiiii (dlsym (dlopen) type-float "fiiii" type-float type-int+ type-int+ type-int+ type-int+))
-(define ifiii (dlsym (dlopen) type-float "ifiii" type-int+ type-float type-int+ type-int+ type-int+))
-(define iiiif (dlsym (dlopen) type-float "iiiif" type-int+ type-int+ type-int+ type-int+ type-float))
-(define fiiif (dlsym (dlopen) type-float "fiiif" type-float type-int+ type-int+ type-int+ type-float))
+(define fiiii (dlsym (dlopen) fft-float "fiiii" fft-float type-int+ type-int+ type-int+ type-int+))
+(define ifiii (dlsym (dlopen) fft-float "ifiii" type-int+ fft-float type-int+ type-int+ type-int+))
+(define iiiif (dlsym (dlopen) fft-float "iiiif" type-int+ type-int+ type-int+ type-int+ fft-float))
+(define fiiif (dlsym (dlopen) fft-float "fiiif" fft-float type-int+ type-int+ type-int+ fft-float))
 
 (assert "fiiii" (fiiii 1.1 2 3 4 5)   (+ 1.1 2 3 4 5))
 (assert "ifiii" (ifiii 1 2.2 3 4 5)   (+ 1 2.2 3 4 5))
@@ -43,13 +43,13 @@
 (assert "fiiif" (fiiif 1.1 2 3 4 -1.1)(+ 1.1 2 3 4 -1.1))
 
 
-(define iffiiiifiiffffff (dlsym (dlopen) type-float "iffiiiifiiffffff"
+(define iffiiiifiiffffff (dlsym (dlopen) fft-float "iffiiiifiiffffff"
    type-int+
-   type-float type-float 
+   fft-float fft-float 
    type-int+ type-int+ type-int+ type-int+
-   type-float
+   fft-float
    type-int+ type-int+
-   type-float type-float type-float type-float type-float type-float))
+   fft-float fft-float fft-float fft-float fft-float fft-float))
 
 ;(import (otus random!))
 ;(define (ri) (rand! (vm:maxvalue)))

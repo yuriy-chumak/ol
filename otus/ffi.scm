@@ -38,7 +38,7 @@
       type-int64 ; 64-bit integer
 
       type-integer
-      type-float
+      fft-float
       type-double
 
       fft-void fft-void* fft-void**
@@ -176,7 +176,7 @@
 ;(define type-handle 45)
 ; todo: (vm:cast type-constant) and start from number 1?
 (define type-integer type-int+) ; deprecated
-(define type-float  46)
+(define fft-float   46)
 (define type-double 47)
 (define fft-void    48)
 (define fft-void*   49)  ; same as type-vptr

@@ -46,8 +46,8 @@
    (define GLuint   type-fix+)   ; typedef unsigned int
    (define GLuint*  type-vector-raw)
 
-   (define GLfloat  type-float)  ; typedef float GLfloat
-   (define GLclampf type-float)  ; typedef float GLclampf
+   (define GLfloat  fft-float)   ; typedef float GLfloat
+   (define GLclampf fft-float)   ; typedef float GLclampf
 
    (define GLubyte* type-string)
 

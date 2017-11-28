@@ -194,7 +194,7 @@
    (define cl_long   type-int64)
    (define cl_ulong  type-int64)
    (define cl_half   type-fix+) ;?
-   (define cl_float  type-float)
+   (define cl_float  fft-float)
    (define cl_double type-double)
 
    (define cl_platform_id type-int+)

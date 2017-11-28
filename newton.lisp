@@ -18,9 +18,9 @@
 ;   (runtime-error "Can't load newton library" #f)))
 
 (define type-callback 61)
-;(define type-float* (vm:or type-float #x40))
+;(define fft-float* (vm:or fft-float #x40))
 ;(define NewtonWorld* type-vptr)
-;(define dFloat* (vm:or type-float #x40))
+;(define dFloat* (vm:or fft-float #x40))
 ;
 ;(define NewtonWorldGetVersion (dlsym $ type-fix+ "NewtonWorldGetVersion"))
 ;(define NewtonWorldFloatSize  (dlsym $ type-fix+ "NewtonWorldFloatSize"))
@@ -31,27 +31,27 @@
 ;(define NewtonWorldSetDestructorCallback (dlsym $ fft-void "NewtonWorldSetDestructorCallback" type-vptr type-callback))
 ;
 ;
-;(define NewtonCreateSphere (dlsym $ type-vptr "NewtonCreateSphere" NewtonWorld* type-float type-fix+ dFloat*))
-;(define NewtonCreateBox (dlsym $ type-vptr "NewtonCreateBox" type-vptr type-float type-float type-float type-int+ type-float*))
+;(define NewtonCreateSphere (dlsym $ type-vptr "NewtonCreateSphere" NewtonWorld* fft-float type-fix+ dFloat*))
+;(define NewtonCreateBox (dlsym $ type-vptr "NewtonCreateBox" type-vptr fft-float fft-float fft-float type-int+ fft-float*))
 ;
 ;
-;(define NewtonCreateDynamicBody (dlsym $ type-vptr "NewtonCreateDynamicBody" type-vptr type-vptr type-float*))
+;(define NewtonCreateDynamicBody (dlsym $ type-vptr "NewtonCreateDynamicBody" type-vptr type-vptr fft-float*))
 ;(define NewtonBodySetForceAndTorqueCallback (dlsym $ fft-void "NewtonBodySetForceAndTorqueCallback" type-vptr type-callback))
-;(define NewtonBodySetMassProperties (dlsym $ fft-void "NewtonBodySetMassProperties" type-vptr type-float type-vptr))
+;(define NewtonBodySetMassProperties (dlsym $ fft-void "NewtonBodySetMassProperties" type-vptr fft-float type-vptr))
 ;(define NewtonDestroyCollision (dlsym $ fft-void "NewtonDestroyCollision" type-vptr))
 ;
-;(define NewtonBodySetForce (dlsym $ fft-void "NewtonBodySetForce" type-vptr type-float*))
-;(define NewtonBodySetMatrix (dlsym $ fft-void "NewtonBodySetMatrix" type-vptr (vm:or type-float #x40)))
-;(define NewtonBodyGetMatrix (dlsym $ fft-void "NewtonBodyGetMatrix" type-vptr (vm:or type-float #x80)))
+;(define NewtonBodySetForce (dlsym $ fft-void "NewtonBodySetForce" type-vptr fft-float*))
+;(define NewtonBodySetMatrix (dlsym $ fft-void "NewtonBodySetMatrix" type-vptr (vm:or fft-float #x40)))
+;(define NewtonBodyGetMatrix (dlsym $ fft-void "NewtonBodyGetMatrix" type-vptr (vm:or fft-float #x80)))
 ;
 ;(define NewtonCreateTreeCollision (dlsym $ type-vptr "NewtonCreateTreeCollision" type-vptr type-fix+))
 ;(define NewtonTreeCollisionBeginBuild (dlsym $ fft-void "NewtonTreeCollisionBeginBuild" type-vptr))
-;(define NewtonTreeCollisionAddFace (dlsym $ fft-void "NewtonTreeCollisionAddFace" type-vptr type-int+ type-float* type-fix+ type-fix+))
+;(define NewtonTreeCollisionAddFace (dlsym $ fft-void "NewtonTreeCollisionAddFace" type-vptr type-int+ fft-float* type-fix+ type-fix+))
 ;(define NewtonTreeCollisionEndBuild (dlsym $ fft-void "NewtonTreeCollisionEndBuild" type-vptr type-fix+))
 ;
 ;
 ;(define NewtonInvalidateCache (dlsym $ fft-void "NewtonInvalidateCache" type-vptr))
-;(define NewtonUpdate (dlsym $ fft-void "NewtonUpdate" type-vptr type-float))
+;(define NewtonUpdate (dlsym $ fft-void "NewtonUpdate" type-vptr fft-float))
 ;
 ;(print "NewtonWorldGetVersion = " (NewtonWorldGetVersion))
 ;(print "NewtonWorldFloatSize = "  (NewtonWorldFloatSize))
@@ -101,7 +101,7 @@
 
 ; ...
 (define ApplyGravity (syscall 85 (cons
-   (list type-vptr type-float type-int+)
+   (list type-vptr fft-float type-int+)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -4.8 0 0))
 )) #f #f))
