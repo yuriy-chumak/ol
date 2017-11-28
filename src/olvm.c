@@ -1052,12 +1052,20 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 #define TUNKNOWN                    (62) // only for ffi, direct sending argument without processing
 #define TLONG                       (50) // 32 for 32-bit architecture, 64 for 64-bit
 
-#define TINT16                      (51)
-#define TINT32                      (52)
-#define TINT64                      (53)
-
 #define TFLOAT                      (46) // '.' symbol
 #define TDOUBLE                     (47) // '/' symbol
+
+#define TINT16                      (51) // todo: add alias TSHORT
+#define TINT32                      (52) // todo: add alias TLONG
+#define TINT64                      (53)
+// 54 for 128 ?
+// 55 for 256 ?
+
+#define TUINT16                     (56)
+#define TUINT32                     (57)
+#define TUINT64                     (58)
+// 59 for 128 ?
+// 60 for 256 ?
 
 // todo: сделать два типа колбеков - короткий (такой как я сейчас сделаю)
 //       и "длинный", который будет запускать отдельный поток (сопрограмму) и позволит в это же время
