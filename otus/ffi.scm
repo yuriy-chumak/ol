@@ -54,6 +54,12 @@
       __stdcall __cdecl __fastcall
 
       int32->ol
+
+
+      ; let's intoduce new types
+      fft-int16 fft-int16* fft-int16& ; signed 16-bit value
+      fft-int32 fft-int32* fft-int32& ; signed 32-bit value
+      fft-int64 fft-int64* fft-int64& ; signed 64-bit value
    )
 
    (import
@@ -178,6 +184,11 @@
 (define type-unknown 62)
 (define type-callable 61)
 (define type-any 63)
+
+; new ffi types:
+(define fft-int16 51) (define fft-int16* (bor fft-int16 #x40)) (define fft-int16& (bor fft-int16 #x80))
+(define fft-int32 52) (define fft-int32* (bor fft-int32 #x40)) (define fft-int32& (bor fft-int32 #x80))
+(define fft-int64 53) (define fft-int64* (bor fft-int64 #x40)) (define fft-int64& (bor fft-int64 #x80))
 
 
 ;; OS detection
