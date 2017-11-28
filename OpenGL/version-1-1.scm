@@ -124,7 +124,7 @@
 ;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
-;WINGDIAPI void APIENTRY glGenTextures (GLsizei n, GLuint *textures);
+   glGenTextures ;void (GLsizei n, GLuint *textures)
 ;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
 ;WINGDIAPI void APIENTRY glArrayElement (GLint i);
 ;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
@@ -348,7 +348,7 @@
 ;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 ;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
-;WINGDIAPI void APIENTRY glGenTextures (GLsizei n, GLuint *textures);
+   (define glGenTextures (dlsym $ GLvoid "glGenTextures" GLsizei GLuint&))
 ;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
 ;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
