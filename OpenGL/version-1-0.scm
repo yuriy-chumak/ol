@@ -35,7 +35,7 @@
       GLsizei           ;   signed 32-bit (non negative)
       GLubyte  GLubyte* ; unsigned  8-bit
       GLushort          ; unsigned 16-bit
-      GLuint   GLuint*  ; unsigned 32-bit
+      GLuint   GLuint*  GLuint&  ; unsigned 32-bit
 
       GLfloat  GLfloat* ; floating 32-bit
       GLclampf          ; floating 32-bit (clamped to the range [0,1])
@@ -966,6 +966,7 @@
    (define GLushort type-fix+)   ; typedef unsigned chort
    (define GLuint   type-fix+)   ; typedef unsigned int
    (define GLuint*  fft-void*)   ; TODO: ? temporary, should be (bor type-int+ #x40)
+   (define GLuint&  fft-int32&)
 
    (define GLfloat  type-float)  ; typedef float GLfloat
    (define GLclampf type-float)  ; typedef float GLclampf

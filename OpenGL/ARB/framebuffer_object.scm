@@ -251,7 +251,7 @@
 ;    void DeleteFramebuffers(sizei n, const uint *framebuffers);
 ;    void GenFramebuffers(sizei n, uint *framebuffers);
    (define glGenFramebuffers (if ARB_framebuffer_object
-         (gl:GetProcAddress GLvoid "glGenFramebuffers" GLsizei GLuint)))
+         (gl:GetProcAddress GLvoid "glGenFramebuffers" GLsizei GLuint&)))
 ;
 ;    enum CheckFramebufferStatus(enum target);
 ;
