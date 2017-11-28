@@ -43,9 +43,9 @@
 
       fft-void fft-void* fft-void**
 
-      type-unknown
+      fft-unknown
       type-callable
-      type-any
+      fft-any
 
 
       load-dynamic-library
@@ -191,9 +191,9 @@
 ;define type-int256 55)
 ;define type-int512 56)
 
-(define type-unknown 62)
+(define fft-unknown 62)
 (define type-callable 61)
-(define type-any 63)
+(define fft-any 63)
 
 ; new ffi types:
 (define fft-int16 51) (define fft-int16* (bor fft-int16 #x40)) (define fft-int16& (bor fft-int16 #x80))
