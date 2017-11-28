@@ -41,7 +41,7 @@
       type-float
       type-double
 
-      type-void type-void* type-void**
+      fft-void fft-void* fft-void**
 
       type-unknown
       type-callable
@@ -178,9 +178,9 @@
 (define type-integer type-int+) ; deprecated
 (define type-float  46)
 (define type-double 47)
-(define type-void   48)
-(define type-void*  49)  ; same as type-vptr
-(define type-void** 113) ; 49 + #x40
+(define fft-void    48)
+(define fft-void*   49)  ; same as type-vptr
+(define fft-void**  (bor fft-void* #x40))
 
 (define type-word   50)  (define type-long  type-word)
 

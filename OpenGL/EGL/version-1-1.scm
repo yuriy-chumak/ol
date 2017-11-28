@@ -192,8 +192,8 @@
 (if (not $)
    (runtime-error "Can't load EGL library"))
 
-(define EGLDisplay type-void*)
-(define EGLNativeDisplayType type-void*)
+(define EGLDisplay type-vptr)
+(define EGLNativeDisplayType type-vptr)
 
 
 ; поддержка расширений :
@@ -217,12 +217,12 @@
 
 (define EGLBoolean type-int+) ; typedef int
 (define EGLint type-int+)     ; typedef int32_t
-(define EGLDisplay type-void*) ; typedef void *
-(define EGLConfig type-void*)  ; typedef void *
-(define EGLSurface type-void*) ; typedef void *
-(define EGLContext type-void*) ; typedef void *
+(define EGLDisplay type-vptr) ; typedef void *
+(define EGLConfig type-vptr)  ; typedef void *
+(define EGLSurface type-vptr) ; typedef void *
+(define EGLContext type-vptr) ; typedef void *
 
-(define NativeDisplayType type-void*)
+(define NativeDisplayType type-vptr)
 
 (define EGLint* type-vector-raw) ;?
 

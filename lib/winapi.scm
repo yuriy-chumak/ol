@@ -66,22 +66,22 @@
 (define DWORD     INTEGER)
 (define LPCTSTR   type-string)
 (define int       INTEGER)
-(define HWND      type-void*)
-(define HMENU     type-void*)
-(define HINSTANCE type-void*)
+(define HWND      type-vptr)
+(define HMENU     type-vptr)
+(define HINSTANCE type-vptr)
 (define LPVOID    type-vector-raw)
 (define UINT      INTEGER)
 (define BOOL      type-fix+)
 
 (define LPMSG     type-vector-raw)
 (define LRESULT   INTEGER)
-(define VOID      type-void)
+(define VOID      fft-void)
 (define SHORT     INTEGER)
 (define PBYTE     type-vector-raw)
 
-(define HDC       type-void*)
-(define HGLRC     type-void*)
-(define PROC      type-void*)
+(define HDC       type-vptr)
+(define HGLRC     type-vptr)
+(define PROC      type-vptr)
 (define LPCSTR    type-string)
 (define LPRECT    type-vector-raw)
 (define LPPOINT   type-vector-raw)
@@ -90,7 +90,7 @@
 
 ; пример, как можно получить свои собственные функции (если они экспортируются, конечно)
 (define kernel32 (dlopen (c-string "kernel32")))
-(define GetModuleHandle (dlsym kernel32 type-void* "GetModuleHandleA" LPCTSTR))
+(define GetModuleHandle (dlsym kernel32 type-vptr "GetModuleHandleA" LPCTSTR))
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda args (fold bor 0 args)))

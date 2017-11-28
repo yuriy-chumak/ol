@@ -51,8 +51,8 @@
 ; my temporary stubs for opengl (у меня пока ж нет структур и т.д.)
 
 ; real code
-(define void    type-void)
-(define GLvoid  type-void)  ; void GLvoid
+(define void    fft-void)
+(define GLvoid  fft-void)  ; void GLvoid
 (define GLenum  type-int+)  ; typedef unsigned int GLenum - fix+ значит, что это целое число
 (define GLfloat type-float) ; typedef float GLfloat (same as type-rational)
 (define GLint   type-int+)  ; typedef int GLint

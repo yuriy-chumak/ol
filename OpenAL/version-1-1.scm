@@ -83,7 +83,7 @@
    (define ALfloat   type-float)  ; 32-bit IEEE754 floating-point
    (define ALdouble  type-double) ; 64-bit IEEE754 floating-point
 
-   (define ALvoid    type-void)
+   (define ALvoid    fft-void)
    (define ALvoid*   type-vptr)
 
 
@@ -287,14 +287,14 @@
    ; * Buffers Queued (Query only)       AL_BUFFERS_QUEUED       ALint
    ; * Buffers Processed (Query only)    AL_BUFFERS_PROCESSED    ALint
 
-   (define alGenSources (dlsym $ type-void "alGenSources" ALsizei ALuint*))
-   (define alDeleteSources (dlsym $ type-void "alDeleteSources" ALsizei ALuint*))
+   (define alGenSources (dlsym $ fft-void "alGenSources" ALsizei ALuint*))
+   (define alDeleteSources (dlsym $ fft-void "alDeleteSources" ALsizei ALuint*))
    (define alIsSource (dlsym $ ALboolean "alIsSource" ALuint))
 
    ;alSourcef
    ;alSource3f
    ;alSourcefv
-   (define alSourcei (dlsym $ type-void "alSourcei" type-int+ type-int+ type-int+))
+   (define alSourcei (dlsym $ fft-void "alSourcei" type-int+ type-int+ type-int+))
 
    ;alSource3i
    ;alSourceiv
@@ -338,7 +338,7 @@
    ;alSourcePausev
 
    ; Source based playback calls
-   (define alSourcePlay (dlsym $ type-void "alSourcePlay" ALuint))
+   (define alSourcePlay (dlsym $ fft-void "alSourcePlay" ALuint))
    ;alSourceStop
    ;alSourceRewind
    ;alSourcePause
@@ -360,10 +360,10 @@
    ; * Bits (Query only)         AL_BITS           ALint
    ; * Channels (Query only)     AL_CHANNELS       ALint
 
-   (define alGenBuffers (dlsym $ type-void "alGenBuffers" ALsizei ALuint*))
+   (define alGenBuffers (dlsym $ fft-void "alGenBuffers" ALsizei ALuint*))
    ;alDeleteBuffers
    ;alIsBuffer
-   (define alBufferData (dlsym $ type-void "alBufferData"
+   (define alBufferData (dlsym $ fft-void "alBufferData"
             ALuint  #|bid|#
             ALenum  #|format|#
             ALvoid* #|data|#
@@ -420,7 +420,7 @@
    (define ALCfloat   type-float)
    (define ALCdouble  type-double)
 
-   (define ALCvoid    type-void)
+   (define ALCvoid    fft-void)
    (define ALCvoid*   type-vptr)
 
 

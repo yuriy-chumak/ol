@@ -102,7 +102,7 @@
 (define win32? (string-ci=? (ref uname 1) "Windows"))
 (define linux? (string-ci=? (ref uname 1) "Linux"))
 
-(define (new-void*) (vm:new-raw-object type-void* 1)) ;(vm:wordsize)))
+(define (new-void*) (vm:new-raw-object fft-void* 1)) ;(vm:wordsize)))
 
 (define % (dlopen (cond
    (win32? "sqlite3")
@@ -130,12 +130,12 @@
 (define (make-sqlite3-stmt) (new-void*)) ; or (list->byte-vector '(0 0 0 0)))
 
 ; todo: завести под это дело отдельный тип - что-то вроде type-int+-ref и т.д.
-(define sqlite3*  type-void*)
-(define sqlite3** type-void**)
-(define sqlite3_stmt*  type-void*)
-(define sqlite3_stmt** type-void**)
-(define sqlite3_value* type-void*)
-(define sqlite3_context* type-void*)
+(define sqlite3*  fft-void*)
+(define sqlite3** fft-void**)
+(define sqlite3_stmt*  fft-void*)
+(define sqlite3_stmt** fft-void**)
+(define sqlite3_value* fft-void*)
+(define sqlite3_context* fft-void*)
 (define char** type-vector-raw)
 
 (define sqlite3_value type-fix+)
@@ -211,13 +211,13 @@
 (define sqlite3-bind-parameter-index (dlsym % type-fix+ "sqlite3_bind_parameter_index" sqlite3_stmt* type-string))
 (define sqlite3-bind-int    (dlsym % type-fix+ "sqlite3_bind_int"    sqlite3_stmt* type-int+ type-int+))
 (define sqlite3-bind-double (dlsym % type-fix+ "sqlite3_bind_double" sqlite3_stmt* type-int+ type-double))
-(define sqlite3-bind-text   (dlsym % type-fix+ "sqlite3_bind_text"   sqlite3_stmt* type-int+ type-string type-fix+ type-void*))
+(define sqlite3-bind-text   (dlsym % type-fix+ "sqlite3_bind_text"   sqlite3_stmt* type-int+ type-string type-fix+ fft-void*))
 (define sqlite3_bind_null   (dlsym % type-fix+ "sqlite3_bind_null"   sqlite3_stmt* type-int+))
 
-(define sqlite3_create_function_v2 (dlsym % type-fix+ "sqlite3_create_function_v2"   sqlite3* type-string type-int+ type-int+ type-void* type-callable type-callable type-callable type-vptr))
+(define sqlite3_create_function_v2 (dlsym % type-fix+ "sqlite3_create_function_v2"   sqlite3* type-string type-int+ type-int+ fft-void* type-callable type-callable type-callable type-vptr))
 
 (define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
-(define sqlite3_result_int (dlsym % type-void "sqlite3_result_int" sqlite3_context* type-int+))
+(define sqlite3_result_int (dlsym % fft-void "sqlite3_result_int" sqlite3_context* type-int+))
 
 
 (define sqlite3_column_type  (dlsym % type-fix+   "sqlite3_column_type" sqlite3_stmt* type-fix+))

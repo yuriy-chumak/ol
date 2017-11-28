@@ -122,7 +122,7 @@
 ; ------------------------
 ; SDL_error
 (define SDL_GetError (dlsym % type-string "SDL_GetError"))
-(define SDL_ClearError (dlsym % type-void "SDL_ClearError"))
+(define SDL_ClearError (dlsym % fft-void "SDL_ClearError"))
 
 
 ; ------------------------
@@ -135,7 +135,7 @@
 ; SDL_surface
 (define SDL_Surface* type-vptr)
 
-(define SDL_FreeSurface (dlsym % type-void "SDL_FreeSurface" SDL_Surface*))
+(define SDL_FreeSurface (dlsym % fft-void "SDL_FreeSurface" SDL_Surface*))
 
 ; ------------------------
 ; SDL_video
@@ -189,7 +189,7 @@
 
 (define SDL_GL_SetSwapInterval (dlsym % type-int "SDL_GL_SetSwapInterval" type-int))
 
-(define SDL_GL_SwapWindow (dlsym % type-void "SDL_GL_SwapWindow" SDL_Window*))
+(define SDL_GL_SwapWindow (dlsym % fft-void "SDL_GL_SwapWindow" SDL_Window*))
    
 
 ; ------------------------
@@ -205,7 +205,7 @@
    (define SDL_RENDERER_TARGETTEXTURE #x00000008)     ;/**< The renderer supports
 
 (define SDL_RenderClear (dlsym % type-integer "SDL_RenderClear" SDL_Renderer*))
-(define SDL_RenderPresent (dlsym % type-void "SDL_RenderPresent" SDL_Renderer*))
+(define SDL_RenderPresent (dlsym % fft-void "SDL_RenderPresent" SDL_Renderer*))
 (define SDL_RenderCopy (dlsym % type-int "SDL_RenderCopy" SDL_Renderer* SDL_Texture* SDL_Rect* SDL_Rect*))
 
 (define SDL_CreateTextureFromSurface (dlsym % SDL_Texture* "SDL_CreateTextureFromSurface" SDL_Renderer* SDL_Surface*))
@@ -220,7 +220,7 @@
 
 ; ------------------------
 ; SDL_timer
-(define SDL_Delay (dlsym % type-void "SDL_Delay" type-int32))
+(define SDL_Delay (dlsym % fft-void "SDL_Delay" type-int32))
 
 ; ========================
 ; SDL_image

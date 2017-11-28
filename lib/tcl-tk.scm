@@ -35,8 +35,8 @@
    (define TclCommand type-vptr)
    (define int type-int+)
 
-   (define Tcl_FreeProc* type-void) ; todo: set to ansi C "free"
-   (define Tcl_CmdDeleteProc* type-void) ; todo: same
+   (define Tcl_FreeProc* fft-void) ; todo: set to ansi C "free"
+   (define Tcl_CmdDeleteProc* fft-void) ; todo: same
 
    (define Tcl_CreateInterp (dlsym TCL Tcl_Interp* "Tcl_CreateInterp"))
    (define Tcl_Init (dlsym TCL int "Tcl_Init" Tcl_Interp*))
@@ -48,7 +48,7 @@
 
    (define Tcl_CreateCommand (dlsym TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callable type-vptr Tcl_CmdDeleteProc*))
    (define Tcl_DeleteCommand (dlsym TCL TclCommand "Tcl_DeleteCommand" Tcl_Interp* type-string))
-   (define Tcl_SetResult (dlsym TCL type-void "Tcl_SetResult" Tcl_Interp* type-string Tcl_FreeProc*))
+   (define Tcl_SetResult (dlsym TCL fft-void "Tcl_SetResult" Tcl_Interp* type-string Tcl_FreeProc*))
 
    (define Tk_Init (dlsym TK int "Tk_Init" Tcl_Interp*))
    (define Tk_MainLoop (dlsym TK int "Tk_MainLoop"))

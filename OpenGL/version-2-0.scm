@@ -45,10 +45,10 @@ glDrawArrays
 (define GLchar** (vm:or type-string #x40))
 ;(define GLchar** type-tuple)
 
-(define GLint* type-void*)
-(define GLsizei* type-void*)
+(define GLint* fft-void*)
+(define GLsizei* fft-void*)
 (define GLchar* type-string)
-(define void* type-void*)
+(define void* fft-void*)
 
   (define glCreateShader    (gl:GetProcAddress GLuint "glCreateShader" GLenum))
     (define GL_VERTEX_SHADER   #x8B31)

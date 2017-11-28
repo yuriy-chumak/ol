@@ -30,7 +30,7 @@
 (begin
    (define GL_OES_VERSION_1_0 1)
 
-   (define GLvoid   type-void)  ; void GLvoid
+   (define GLvoid   fft-void)  ; void GLvoid
    (define GLvoid*  type-vector-raw)
 
    (define GLenum   type-fix+)   ; typedef unsigned int GLenum

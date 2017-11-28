@@ -949,23 +949,23 @@
 ;  GL_PROJECTION: Ð’Ð¸Ð´Ð¾Ð²Ñ‹Ðµ Ð¿Ñ€ÐµÐ¾Ð±Ñ€Ð°Ð·Ð¾Ð²Ð°Ð½Ð¸Ñ (Ð¿Ñ€Ð¾ÐµÐºÑ†Ð¸Ð¾Ð½Ð½Ð°Ñ Ð¼Ð°Ñ‚Ñ€Ð¸Ñ†Ð°) - Ð¿Ñ€Ð¸Ð¼ÐµÐ½ÑÑŽÑ‚ÑÑ Ðº Ñ€Ð°Ð·Ð¼ÐµÑ‰ÐµÐ½Ð¸ÑŽ Ð¸ Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð°Ñ†Ð¸Ð¸ Ñ‚Ð¾Ñ‡ÐºÐ¸ Ð¾Ð±Ð·Ð¾Ñ€Ð° (Ð½Ð°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° ÐºÐ°Ð¼ÐµÑ€Ñ‹).
 ;  GL_TEXTURE: Ð¢ÐµÐºÑÑ‚ÑƒÑ€Ð½Ñ‹Ðµ Ð¿Ñ€ÐµÐ¾Ð±Ñ€Ð°Ð·Ð¾Ð²Ð°Ð½Ð¸Ñ (Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ð½Ð°Ñ Ð¼Ð°Ñ‚Ñ€Ð¸Ñ†Ð°) - Ð¿Ñ€Ð¸Ð¼ÐµÐ½ÑÑŽÑ‚ÑÑ Ð´Ð»Ñ ÑƒÐ¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð¸Ñ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ð°Ð¼Ð¸ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ Ð¾Ð±ÑŠÐµÐºÑ‚Ð¾Ð². (?)
 
-   (define GLvoid   type-void)   ; void GLvoid
-   (define GLvoid*  type-void*)
+   (define GLvoid   fft-void)   ; void GLvoid
+   (define GLvoid*  fft-void*)
 
    (define GLenum   type-fix+)   ; typedef unsigned int GLenum
    (define GLboolean  type-fix+) ; typedef unsigned char GLboolean
-   (define GLboolean* type-void*)
+   (define GLboolean* fft-void*) ; TODO: ?
    (define GLbitfield type-fix+) ; typedef unsigned int GLbitfield
 
    (define GLbyte   type-fix+)   ; typedef signed char
    (define GLshort  type-fix+)   ; typedef short
    (define GLint    type-fix+)   ; typedef int GLint
-   (define GLint*   type-void*)
+   (define GLint*   fft-void*)   ; TODO: ?
    (define GLsizei  type-fix+)   ; typedef int GLsizei
    (define GLubyte  type-fix+)   ; typedef unsigned char
    (define GLushort type-fix+)   ; typedef unsigned chort
    (define GLuint   type-fix+)   ; typedef unsigned int
-   (define GLuint*  type-void*)
+   (define GLuint*  fft-void*)   ; TODO: ? temporary, should be (bor type-int+ #x40)
 
    (define GLfloat  type-float)  ; typedef float GLfloat
    (define GLclampf type-float)  ; typedef float GLclampf
@@ -1774,16 +1774,16 @@
          (exec ffi function rtty args)))))
 
 ; Ð¾ÑÑ‚Ð°Ð»ÑŒÐ½Ñ‹Ðµ WGL/GLX/... Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸
-(define Display* type-void*)
-(define XVisualInfo* type-void*)
+(define Display* type-vptr)
+(define XVisualInfo* type-vptr)
 ;glXChooseVisual      ChoosePixelFormat
 ;glXCopyContext       wglCopyContext
 
 ;glXCreateContext     wglCreateContext
 (define gl:CreateContext (cond
-   (win32? (dlsym WGL type-void* "wglCreateContext" type-void*))
-   (linux? (dlsym GLX type-void* "glXCreateContext" Display* XVisualInfo* type-void* type-int+))
-   ;apple? (dlsym $ type-void* "CGLCreateContext" ...)
+   (win32? (dlsym WGL type-vptr "wglCreateContext" fft-void*))
+   (linux? (dlsym GLX type-vptr "glXCreateContext" Display* XVisualInfo* fft-void* type-int+))
+   ;apple? (dlsym $ fft-void* "CGLCreateContext" ...)
    (else   (runtime-error "Unknown platform" uname))))
 
 ;glXCreateGLXPixmap  CreateDIBitmap / CreateDIBSection
@@ -1802,19 +1802,19 @@
 ;XSync   GdiFlush
 
 (define gl:MakeCurrent (cond
-   (win32? (dlsym WGL type-fix+ "wglMakeCurrent" type-void* type-void*))
-   (linux? (dlsym GLX type-int+ "glXMakeCurrent" type-void* type-void* type-void*))
+   (win32? (dlsym WGL type-fix+ "wglMakeCurrent" fft-void* fft-void*))
+   (linux? (dlsym GLX type-int+ "glXMakeCurrent" fft-void* fft-void* fft-void*))
    (else   (runtime-error "Unknown platform" uname))))
 
 
 
 (define gl:SwapBuffers (cond
    (win32?
-      (let ((SwapBuffers (dlsym GDI type-fix+ "SwapBuffers"    type-void*)))
+      (let ((SwapBuffers (dlsym GDI type-fix+ "SwapBuffers"    fft-void*)))
          (lambda (context)
             (SwapBuffers (ref context 1)))))
    (linux?
-      (let ((SwapBuffers (dlsym GLX type-vptr "glXSwapBuffers" type-void* type-void*)))
+      (let ((SwapBuffers (dlsym GLX type-vptr "glXSwapBuffers" fft-void* fft-void*)))
          (lambda (context)
             (SwapBuffers (ref context 1) (ref context 3)))))
    (else   (runtime-error "SwapBuffers: Unknown platform" uname))))
@@ -1867,7 +1867,7 @@
 ;                    (runtime-error "Unknown platform" uname))))))
 ;
 ;(let ((open-display (if win32? (lambda (name) #f)
-;                    (if linux? (dlsym lib1 type-void* "XOpenDisplay" type-string)
+;                    (if linux? (dlsym lib1 fft-void* "XOpenDisplay" type-string)
 ;                    (runtime-error "Unknown platform" uname)))))
 ;
 ;(let this ((context null))
@@ -1955,7 +1955,7 @@
    (dlopen GLU_LIBRARY)
    (runtime-error "Can't find glu library" #f)))
 
-(define GLUquadric* type-void*)
+(define GLUquadric* type-vptr)
 
    (define gluErrorString (dlsym GLU GLubyte* "gluErrorString" GLenum))
    (define gluOrtho2D     (dlsym GLU GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
@@ -1976,7 +1976,7 @@
    (define gluSphere (dlsym GLU GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
    (define gluCylinder (dlsym GLU GLvoid "gluCylinder" GLUquadric* GLdouble GLdouble GLdouble GLint GLint))
 
-(define GLUnurbs* type-void*)
+(define GLUnurbs* type-vptr)
    (define gluNewNurbsRenderer (dlsym GLU GLUnurbs* "gluNewNurbsRenderer"))
    (define gluBeginSurface (dlsym GLU GLvoid "gluBeginSurface" GLUnurbs*))
    (define gluNurbsSurface (dlsym GLU GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
