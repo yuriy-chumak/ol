@@ -1050,13 +1050,13 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 #define TVOID                       (48)
 #define TVPTR                       (49) // void*, only RAW, can't be 0
 #define TUNKNOWN                    (62) // only for ffi, direct sending argument without processing
-#define TLONG                       (50) // 32 for 32-bit architecture, 64 for 64-bit (and always 32 for windows)
 
 #define TFLOAT                      (46) // '.' symbol
 #define TDOUBLE                     (47) // '/' symbol
 
-#define TINT16                      (51) // todo: add alias TSHORT
-#define TINT32                      (52) // todo: add alias TLONG
+// 50 is free
+#define TINT16                      (51)
+#define TINT32                      (52)
 #define TINT64                      (53)
 // 54 for 128 ?
 // 55 for 256 ?
@@ -1865,8 +1865,8 @@ struct ol_t
 #define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIXP);
 #endif
 #define svtoi(v) \
-	({ \
-		word x3 = (word)(v); SVTOI_CHECK(x3); \
+	({  SVTOI_CHECK(v); \
+		word x3 = (word)(v); \
 		int_t y = (x3 >> IPOS); \
 		(x3 & 0x80) ? -y : y; \
 	})
@@ -1887,7 +1887,7 @@ struct ol_t
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
 		(word*)itouv(val),\
 		(word*)({ \
-			int_t x5 = (int_t)(val); \
+			uintptr_t x5 = (uintptr_t)(val); \
 			x5 <= FMAX ? \
 					(word)itouv(x5): \
 					(word)new_list(TINTP, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
@@ -1897,10 +1897,11 @@ struct ol_t
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
 		(word*)itosv(val),\
 		(word*)({ \
-			int_t x5 = (int_t)(val); \
-			x5 <= FMAX ? \
+			intptr_t x5 = (intptr_t)(val); \
+			intptr_t x6 = x5 < 0 ? -x5 : x5; \
+			x6 <= FMAX ? \
 					(word)itosv(x5): \
-					(word)new_list(x5 < 0 ? TINTN : TINTP, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+					(word)new_list(x5 < 0 ? TINTN : TINTP, itouv(x6 & FMAX), itouv(x6 >> FBITS)); \
 		})); \
 	})
 

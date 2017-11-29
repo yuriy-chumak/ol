@@ -420,14 +420,28 @@ word* ffi(OL* self, word* arguments)
 	fp = heap->fp;
 
 	// lisp->c convertors
-	long from_int(word arg) {
-		// так как в стек мы все равно большое сложить не сможем, то возьмем
-		// только то, что влазит (первые два члена) (временное решение!)
-//		assert (is_value(arg[1]));
-//		assert (is_reference(arg[2]));
-
+	word from_uint(word arg) {
+		assert (is_reference(arg));
+		// так как в стек мы все равно большое число сложить не сможем,
+		// то возьмем только то, что влазит (первые два члена)
 		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
 	}
+#if UINTPTR_MAX != 0xffffffffffffffff
+	long long from_ulong(word arg) {
+		assert (is_reference(arg));
+		// так как в стек мы все равно большое число сложить не сможем,
+		// то возьмем только то, что влазит (первые два члена)
+		long long v = car(arg) >> 8;
+		int shift = FBITS;
+		while (cdr(arg) != INULL) {
+			v |= ((long long)(car(cdr(arg)) >> 8) << shift);
+			shift += FBITS;
+			arg = cdr(arg);
+		}
+		return v;
+	};
+#endif
+
 
 	float from_int_to_float(word* arg) {
 		// читаем длинное число в float формат
@@ -484,9 +498,9 @@ word* ffi(OL* self, word* arguments)
 
 		switch (reftype(arg)) {
 		case TINTP:
-			return (int)+from_int(arg);
+			return (int)+from_uint(arg);
 		case TINTN:
-			return (int)-from_int(arg);
+			return (int)-from_uint(arg);
 		case TRATIONAL:
 			return (int) from_rational(arg);
 		case TCOMPLEX:
@@ -498,7 +512,7 @@ word* ffi(OL* self, word* arguments)
 		return 0;
 	}
 
-	long to_long(word arg) {
+	/*long to_long(word arg) {
 		if (is_value(arg))
 			return svtoi(arg);
 
@@ -516,7 +530,7 @@ word* ffi(OL* self, word* arguments)
 		}
 
 		return 0;
-	}
+	}*/
 
 	// todo: заменить на вызов (float)to_double(arg)
 	float to_float(word arg) {
@@ -542,10 +556,10 @@ word* ffi(OL* self, word* arguments)
 
 		switch (reftype(arg)) {
 		case TINTP:
-			return (double)+from_int(arg);
+			return (double)+from_uint(arg);
 			break;
 		case TINTN:
-			return (double)-from_int(arg);
+			return (double)-from_uint(arg);
 			break;
 		case TRATIONAL:
 			return (double) from_rational(arg);
@@ -616,70 +630,88 @@ word* ffi(OL* self, word* arguments)
 
 		// destination type
 		switch (type) {
+
 		// целочисленные типы:
-		case TINTP: // <-- deprecated
-		case TLONG: // 32-bit for 32-bit arch, 64-bit for 64-bit arch (but always 32 for windows) - BUG, please fix it!
-			if (is_value(arg))
-				args[i] = (long)svtoi(arg);
-			else
-			switch (reftype(arg)) {
-			case TINTP: // source type
-				args[i] = (long)+from_int(arg);
-				break;
-			case TINTN:
-				args[i] = (long)-from_int(arg);
-				break;
-			default:
-				STDERR("can't cast %d to int", type);
-				args[i] = 0; // todo: error
-			}
-			break;
-		case TINTP + 0x40: {
-			int c = llen(arg);
-			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: use new()
-			args[i] = (word)p;
-
-			word l = arg;
-			while (c--)
-				*p++ = to_int(car(l)), l = cdr(l);
-			break;
-		}
-		case TLONG + 0x40: { // long*
-			int c = llen(arg);
-			long* p = (long*) __builtin_alloca(c * sizeof(long)); // todo: use new()
-			args[i] = (word)p;
-
-			word l = arg;
-			while (c--)
-				*p++ = to_long(car(l)), l = cdr(l);
-			break;
-		}
-
-
 		case TFIXP: // <-- deprecated
-		case TINT32:
+		case TINTP: // <-- deprecated
+		case TINT16: case TUINT16:
+		case TINT32: case TUINT32:
+#if UINTPTR_MAX == 0xffffffffffffffff // 64-bit machines
+		case TINT64: case TUINT64:
+#endif
 			if (is_value(arg))
-				args[i] = (int)svtoi(arg);
+				args[i] = svtoi(arg);
 			else
 			switch (reftype(arg)) {
 			case TINTP:
-				args[i] = (int)+from_int(arg);
+				args[i] = +from_uint(arg);
 				break;
 			case TINTN:
-				args[i] = (int)-from_int(arg);
+				args[i] = -from_uint(arg);
+				break;
+			case TRATIONAL:
+				*(long long*)&args[i] = from_rational(arg);
+#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
+				i++;
+#endif
 				break;
 			default:
 				STDERR("can't cast %d to int", type);
 				args[i] = 0; // todo: error
 			}
 			break;
-		case TINT32 + 0x80:
+
+#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines
+			case TINT64: case TUINT64: // long long
+				if (is_value(arg))
+					*(long long*)&args[i] = svtoi(arg);
+				else
+				switch (reftype(arg)) {
+				case TINTP: // source type
+					*(long long*)&args[i] = +from_ulong(arg);
+					break;
+				case TINTN:
+					*(long long*)&args[i] = -from_ulong(arg);
+					break;
+				case TRATIONAL:
+					*(long long*)&args[i] = from_rational(arg);
+					break;
+				default:
+					STDERR("can't cast %d to int64", type);
+				}
+				#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
+					i++; // for 32-bits: long long values fills two words
+				#endif
+			break;
+#endif
+
+		//
+		case TINT16 + 0x80:
+		case TUINT16 + 0x80:
 			has_wb = 1;
 			//no break
-		case TFIXP + 0x40: // <-- deprecated
-		case TINT32 + 0x40: { // int*
+		case TINT16 + 0x40:
+		case TUINT16 + 0x40: {
+			// todo: add tuples pushing
 			int c = llen(arg);
-			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: new_raw_vector()
+			short* p = (short*) __builtin_alloca(c * sizeof(short)); // todo: new_raw_vector() ?
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = (short)to_int(car(l)), l = cdr(l);
+			break;
+		}
+
+		case TINT32 + 0x80:
+		case TUINT32 + 0x80:
+			has_wb = 1;
+			//no break
+		case TINT32 + 0x40:
+		case TUINT32 + 0x40: {
+			// todo: add tuples pushing
+			int c = llen(arg);
+			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: new_raw_vector() ?
 			args[i] = (word)p;
 
 			word l = arg;
@@ -688,30 +720,6 @@ word* ffi(OL* self, word* arguments)
 			break;
 		}
 
-
-		case TINT64: { // long long
-			if (is_value(arg))
-				*(long long*)&args[i] = svtoi(arg);
-			else
-			switch (reftype(arg)) {
-			case TINTP: // source type
-				*(long long*)&args[i] = +from_int(arg);
-				break;
-			case TINTN:
-				*(long long*)&args[i] = -from_int(arg);
-				break;
-			case TRATIONAL:
-				*(long long*)&args[i] = from_rational(arg);
-				break;
-			default:
-				STDERR("can't cast %d to long", type);
-			}
-			#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
-				i++; // for 32-bits: long long values fills two words
-			#endif
-
-			break;
-		}
 		// todo: case TINT64 + 0x40:
 
 		// с плавающей запятой:
@@ -1069,6 +1077,39 @@ word* ffi(OL* self, word* arguments)
 
 			// destination type
 			switch (type) {
+
+			// simple case - all shorts are fits as value
+			case TINT16 + 0x80: {
+				// вот тут попробуем заполнить переменные назад
+				int c = llen(arg);
+				short* f = (short*)args[i];
+
+				word l = arg;
+				while (c--) {
+					short value = *f++;
+					word* ptr = &car(l);
+
+					*ptr = itosv(value);
+					l = cdr(l);
+				}
+				break;
+			}
+			case TUINT16 + 0x80: {
+				// вот тут попробуем заполнить переменные назад
+				int c = llen(arg);
+				unsigned short* f = (unsigned short*)args[i];
+
+				word l = arg;
+				while (c--) {
+					unsigned short value = *f++;
+					word* ptr = &car(l);
+
+					*ptr = itouv(value);
+					l = cdr(l);
+				}
+				break;
+			}
+
 			case TINT32 + 0x80: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -1077,16 +1118,63 @@ word* ffi(OL* self, word* arguments)
 				word l = arg;
 				while (c--) {
 					int value = *f++;
-					int* ptr = (int*)&car(l);
-					// ограничение: принимаем только числа FIX размера!
-					// как сделать по другому надо подумать.
-					// todo: if (is_reference(x) && reftype(x)==TINT?) put long value into number
-					*ptr = F(value);
+					word* ptr = &car(l);
+
+				#if UINTPTR_MAX != 0xffffffffffffffff  // 64-bit machines
+					if (value > FMAX) {
+						if (is_value(*ptr))
+							STDERR("got too large number to store");
+						else {
+							assert (is_npair(ptr) || is_npairn(ptr));
+							if (value < 0) {
+								*ptr = make_header(value < 0 ? TINTN : TINTP, 3);
+								value = -value;
+							}
+							else
+								*ptr = make_header(TINTP, 3);
+							*(word*)&car(ptr) = itouv(value & FMAX);
+							*(word*)&cadr(ptr) = itouv(value >> FBITS);
+						}
+					}
+					else
+				#endif
+						*ptr = itosv(value);
 
 					l = cdr(l);
 				}
 				break;
 			}
+
+			case TUINT32 + 0x80: {
+				// вот тут попробуем заполнить переменные назад
+				int c = llen(arg);
+				unsigned int* f = (unsigned int*)args[i];
+
+				word l = arg;
+				while (c--) {
+					int value = *f++;
+					word* ptr = &car(l);
+
+				#if UINTPTR_MAX != 0xffffffffffffffff  // 64-bit machines
+					if (value > FMAX) {
+						if (is_value(*ptr))
+							STDERR("got too large number to store");
+						else {
+							assert (is_npair(ptr) || is_npairn(ptr));
+							*ptr = make_header(TINTP, 3);
+							*(word*)&car(ptr) = itouv(value & FMAX);
+							*(word*)&cadr(ptr) = itouv(value >> FBITS);
+						}
+					}
+					else
+				#endif
+						*ptr = itouv(value);
+
+					l = cdr(l);
+				}
+				break;
+			}
+
 			case TFLOAT + 0x80: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -1117,12 +1205,68 @@ word* ffi(OL* self, word* arguments)
 		}
 	}
 
-
 	word* result = (word*)IFALSE;
 	switch (returntype & 0x3F) {
+		// TFIXP - deprecated
 		case TFIXP: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = (word*) itosv (got);
 			break;
+
+		case TINT16:
+			result = (word*) itosn (*(short*)&got);
+			break;
+		case TINT32:
+			result = (word*) itosn (*(int*)&got);
+			break;
+		case TINT64: {
+#if UINTPTR_MAX == 0xffffffffffffffff
+			result = (word*) itosn (*(long long*)&got);
+#else
+			word* new_npair(int type, long long value) {
+				long long a = value >> FBITS;
+				word* b = (a > FMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
+				word* p = new_pair(type, F(value & FMAX), b);
+				return p;
+			}
+			word* lltosn(long long val) {
+				long long x5 = val;
+				long long x6 = x5 < 0 ? -x5 : x5;
+				int type = x5 < 0 ? TINTN : TINTP;
+				return (x6 > FMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
+			};
+
+			result = (word*) lltosn (*(long long*)&got);
+#endif
+			break;
+		}
+
+		case TUINT16:
+			result = (word*) itoun (*(unsigned short*)&got);
+			break;
+		case TUINT32:
+			result = (word*) itoun (*(unsigned int*)&got);
+			break;
+		case TUINT64: {
+#if UINTPTR_MAX == 0xffffffffffffffff
+			result = (word*) itoun (*(unsigned long long*)&got);
+#else
+			word* new_npair(int type, unsigned long long value) {
+				unsigned long long a = value >> FBITS;
+				word* b = (a > FMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
+				word* p = new_pair(type, F(value & FMAX), b);
+				return p;
+			}
+			word* ultosn(long long val) {
+				unsigned long long x5 = val;
+				return (x5 > FMAX) ? new_npair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
+			};
+
+			result = (word*) ultosn (*(unsigned long long*)&got);
+#endif
+			break;
+		}
+
+
 		case TINTP: // type-int+
 			result = (word*) itoun ((long)got);
 			break;

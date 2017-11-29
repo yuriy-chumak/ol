@@ -10,10 +10,13 @@
 #	define LOG(...)
 #else
 #	include <stdio.h>
+#	include <inttypes.h>
 #	define LOG printf
 #endif
 
 #define DONE(f)  LOG("<=" f "\n", r); return (r);
+
+#include <stdint.h>
 
 PUBLIC
 int i_i(int a)
@@ -196,4 +199,158 @@ int test6(int a, int b, int c, int d, int e, int f)
 	LOG("f=%d\n", f);
 
 	return (a+b+c+d+e+f);
+}
+
+
+PUBLIC
+short fft_16i(short i)
+{
+	LOG("%d\n", i);
+	return i;
+}
+
+PUBLIC
+unsigned short fft_16u(unsigned short i)
+{
+	LOG("%u\n", i);
+	return i;
+}
+
+PUBLIC
+int fft_32i(int i)
+{
+	LOG("%d\n", i);
+	return i;
+}
+
+PUBLIC
+unsigned int fft_32u(unsigned int i)
+{
+	LOG("%u\n", i);
+	return i;
+}
+
+typedef signed sint64 __attribute__ ((mode (DI))); // signed 64-bit
+typedef unsigned uint64 __attribute__ ((mode (DI))); // unsigned 64-bit
+
+PUBLIC
+sint64 fft_64i(sint64 i)
+{
+	LOG("%"PRId64"\n", i);
+	return i;
+}
+
+PUBLIC
+uint64 fft_64u(uint64 i)
+{
+	LOG("%"PRIu64"\n", i);
+	return i;
+}
+
+// fft-int32& test
+PUBLIC
+int fft_16pointers(int length, short* shorts)
+{
+	if (length < 6)
+		return 1;
+	LOG("0=%d\n", shorts[0]);
+	LOG("1=%d\n", shorts[1]);
+	LOG("2=%d\n", shorts[2]);
+	LOG("3=%d\n", shorts[3]);
+	LOG("4=%d\n", shorts[4]);
+	LOG("5=%d\n", shorts[5]);
+
+
+	shorts[0] = 0;
+	shorts[1] = 1;
+	shorts[2] = INT16_MAX;
+	shorts[3] = UINT16_MAX;
+	shorts[4] = -1;
+	shorts[5] = -INT16_MAX;
+
+	return -1;
+}
+
+PUBLIC
+int fft_16pointersu(int length, unsigned short* shorts)
+{
+	if (length < 6)
+		return 1;
+	LOG("0=%u\n", shorts[0]);
+	LOG("1=%u\n", shorts[1]);
+	LOG("2=%u\n", shorts[2]);
+	LOG("3=%u\n", shorts[3]);
+	LOG("4=%u\n", shorts[4]);
+	LOG("5=%u\n", shorts[5]);
+
+
+	shorts[0] = 0;
+	shorts[1] = 1;
+	shorts[2] = INT16_MAX;
+	shorts[3] = UINT16_MAX;
+	shorts[4] = -1;
+	shorts[5] = -INT16_MAX;
+
+	return -1;
+}
+
+PUBLIC
+int fft_32pointers(int length, int* ints)
+{
+	if (length < 6)
+		return 1;
+
+	LOG("0=%d\n", ints[0]);
+	LOG("1=%d\n", ints[1]);
+	LOG("2=%d\n", ints[2]);
+	LOG("3=%d\n", ints[3]);
+	LOG("4=%d\n", ints[4]);
+	LOG("5=%d\n", ints[5]);
+
+	ints[0] = 0;
+	ints[1] = 1;
+	ints[2] = INT32_MAX;
+	ints[3] = UINT32_MAX;
+	ints[4] = -1;
+	ints[5] = -INT32_MAX;
+
+	return -1;
+}
+
+PUBLIC
+int fft_32pointersu(int length, unsigned int* ints)
+{
+	if (length < 6)
+		return 1;
+
+	LOG("0=%u\n", ints[0]);
+	LOG("1=%u\n", ints[1]);
+	LOG("2=%u\n", ints[2]);
+	LOG("3=%u\n", ints[3]);
+	LOG("4=%u\n", ints[4]);
+	LOG("5=%u\n", ints[5]);
+
+	ints[0] = 0;
+	ints[1] = 1;
+	ints[2] = INT32_MAX;
+	ints[3] = UINT32_MAX;
+	ints[4] = -1;
+	ints[5] = -INT32_MAX;
+
+	return -1;
+}
+
+PUBLIC
+int fft_64pointers(int length, long long* longs)
+{
+   if (length < 6)
+      return 1;
+   longs[0] = 0;
+   longs[1] = 1;
+   longs[2] = INT64_MAX;
+   longs[3] = UINT64_MAX;
+   longs[4] = -1;
+   longs[5] = -INT64_MAX;
+
+   return -1;
 }

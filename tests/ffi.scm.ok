@@ -1,10 +1,78 @@
-i_i = ok.
-f_f = ok.
-d_d = ok.
-fi = ok.
-fii = ok.
-fiiii = ok.
-ifiii = ok.
-iiiif = ok.
-fiiif = ok.
-fiiif = ok.
+### 16-bit:
+
+*** short fft_16i(short i) ***
+(fft_16i 0):
+0
+(fft_16i 1):
+1
+(fft_16i -1):
+-1
+(fft_16i 32767):
+32767
+(fft_16i -32767):
+-32767
+
+
+*** unsigned short fft_16u(unsigned short i) ***
+(fft_16u 0):
+0
+(fft_16u 1):
+1
+(fft_16u 32767):
+32767
+(fft_16u 65535):
+65535
+
+
+### 32-bit:
+
+*** int fft_32i(int i) ***
+(fft_32i 0):
+0
+(fft_32i 1):
+1
+(fft_32i -1):
+-1
+(fft_32i 2147483647):
+2147483647
+(fft_32i -2147483647):
+-2147483647
+
+
+*** unsigned int fft_32u(unsigned int i) ***
+(fft_32u 0):
+0
+(fft_32u 1):
+1
+(fft_32u 2147483647):
+2147483647
+(for fft_32u 4294967295):
+4294967295
+
+
+### 64-bit:
+
+*** long long fft_64i(long long i) ***
+(fft_64i 0):
+0
+(fft_64i 1):
+1
+(fft_64i -1):
+-1
+(fft_64i 9223372036854775807):
+9223372036854775807
+(fft_64i -9223372036854775807):
+-9223372036854775807
+
+
+*** unsigned long long fft_64u(unsigned long long i) ***
+(fft_64u 0):
+0
+(fft_64u 1):
+1
+(fft_64u 9223372036854775807):
+9223372036854775807
+(for fft_64u 18446744073709551615):
+18446744073709551615
+
+

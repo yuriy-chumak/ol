@@ -1,5 +1,102 @@
 (import (otus ffi))
 
+; tests for 16-bit:
+(define INT16_MAX 32767)
+(define INT32_MAX 2147483647)
+(define INT64_MAX 9223372036854775807)
+
+(define UINT16_MAX 65535)
+(define UINT32_MAX 4294967295)
+(define UINT64_MAX 18446744073709551615)
+
+(define (try tag function number)
+   (print "(" tag " " number "):")
+   (print (function number)))
+
+; ----------------------------------------------------------------
+(print "### 16-bit:\n")
+(begin
+   (print "*** short fft_16i(short i) ***")
+   (define fft_16i (dlsym (dlopen) fft-int16 "fft_16i" fft-int16))
+   (try "fft_16i" fft_16i 0)
+   (try "fft_16i" fft_16i 1)
+   (try "fft_16i" fft_16i -1)
+   (try "fft_16i" fft_16i INT16_MAX)
+   (try "fft_16i" fft_16i (- INT16_MAX))
+   ;(try "incorrect call for fft_16i" fft_16i UINT16_MAX)
+   ;(try "incorrect call for fft_16i" fft_16i (- UINT16_MAX))
+   (print "\n"))
+
+(begin
+   (print "*** unsigned short fft_16u(unsigned short i) ***")
+   (define fft_16u (dlsym (dlopen) fft-uint16 "fft_16u" fft-uint16))
+   (try "fft_16u" fft_16u 0)
+   (try "fft_16u" fft_16u 1)
+   ;(try "incorrect call for fft_16u" fft_16u -1)
+   (try "fft_16u" fft_16u INT16_MAX)
+   ;(try "incorrect call for fft_16u" fft_16u (- INT16_MAX))
+   (try "fft_16u" fft_16u UINT16_MAX)
+   ;(try "incorrect call for fft_16u" fft_16u (- UINT16_MAX))
+   (print "\n"))
+
+; ----------------------------------------------------------------
+(print "### 32-bit:\n")
+
+(begin
+   (print "*** int fft_32i(int i) ***")
+   (define fft_32i (dlsym (dlopen) fft-int32 "fft_32i" fft-int32))
+   (try "fft_32i" fft_32i 0)
+   (try "fft_32i" fft_32i 1)
+   (try "fft_32i" fft_32i -1)
+   (try "fft_32i" fft_32i INT32_MAX)
+   (try "fft_32i" fft_32i (- INT32_MAX))
+   ;(try "incorrect call for fft_32i" fft_32i UINT32_MAX)
+   ;(try "incorrect call for fft_32i" fft_32i (- UINT32_MAX))
+   (print "\n"))
+
+(begin
+   (print "*** unsigned int fft_32u(unsigned int i) ***")
+   (define fft_32u (dlsym (dlopen) fft-uint32 "fft_32u" fft-uint32))
+   (try "fft_32u" fft_32u 0)
+   (try "fft_32u" fft_32u 1)
+   ;(try "incorrect call fft_32u" fft_32u -1)
+   (try "fft_32u" fft_32u INT32_MAX)
+   ;(try "incorrect call fft_32u" fft_32u (- INT32_MAX))
+   (try "for fft_32u" fft_32u UINT32_MAX)
+   ;(try "incorrect call for fft_32u" fft_32u (- UINT32_MAX))
+   (print "\n"))
+
+; ----------------------------------------------------------------
+(print "### 64-bit:\n")
+
+(begin
+   (print "*** long long fft_64i(long long i) ***")
+   (define fft_64i (dlsym (dlopen) fft-int64 "fft_64i" fft-int64))
+   (try "fft_64i" fft_64i 0)
+   (try "fft_64i" fft_64i 1)
+   (try "fft_64i" fft_64i -1)
+   (try "fft_64i" fft_64i INT64_MAX)
+   (try "fft_64i" fft_64i (- INT64_MAX))
+   ;(try "incorrect call for fft_64i" fft_64i UINT64_MAX)
+   ;(try "incorrect call for fft_64i" fft_64i (- UINT64_MAX))
+   (print "\n"))
+
+(begin
+   (print "*** unsigned long long fft_64u(unsigned long long i) ***")
+   (define fft_64u (dlsym (dlopen) fft-uint64 "fft_64u" fft-uint64))
+   (try "fft_64u" fft_64u 0)
+   (try "fft_64u" fft_64u 1)
+   ;(try "incorrect call fft_64u" fft_64u -1)
+   (try "fft_64u" fft_64u INT64_MAX)
+   ;(try "incorrect call fft_64u" fft_64u (- INT64_MAX))
+   (try "for fft_64u" fft_64u UINT64_MAX)
+   ;(try "incorrect call for fft_64u" fft_64u (- UINT64_MAX))
+   (print "\n"))
+
+,quit
+
+
+
 ; testing the ffi:
 ; f: floats
 ; i: ints

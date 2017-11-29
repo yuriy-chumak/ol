@@ -39,7 +39,6 @@
       ; linux, ia64:   8 bytes
       ; macosx, ia32:  4 bytes
       ; macosx, ia64:  8 bytes
-      fft-long
 
       type-int16
       type-int32
@@ -65,7 +64,7 @@
       int32->ol
 
 
-      ; let's intoduce new types
+      ; platforem independent types
       fft-int16 fft-int16* fft-int16& ; signed 16-bit value
       fft-int32 fft-int32* fft-int32& ; signed 32-bit value
       fft-int64 fft-int64* fft-int64& ; signed 64-bit value
@@ -74,19 +73,24 @@
       fft-uint32 fft-uint32* fft-uint32& ; unsigned 32-bit value
       fft-uint64 fft-uint64* fft-uint64& ; unsigned 64-bit value
 
-      ; platform dependent defaults
+      ; c-like defaults
       ;fft-char  fft-signed-char  fft-unsigned-char
       fft-short fft-signed-short fft-unsigned-short
       fft-int   fft-signed-int   fft-unsigned-int
+      fft-long
+
+      ; units
+      make-32bit-array
+      make-64bit-array
    )
 
    (import
-      (r5rs core)
-      (owl io)
-      (owl math)
-      (owl string))
+      (otus lisp))
 
-   (begin
+(begin
+
+;; OS detection
+(define (uname) (syscall 63 #f #f #f))
 
 ; принимаются типы:
 ; int (type-int+)
@@ -190,8 +194,6 @@
 (define fft-void*   49)  ; same as type-vptr
 (define fft-void**  (bor fft-void* #x40))
 
-(define fft-long    50)
-
 (define type-int16  51)  (define type-short type-int16) ; deprecated
 (define type-int32  52)  (define type-int   type-int32) ; deprecated
 (define type-int64  53)
@@ -221,11 +223,26 @@
 (define fft-signed-int fft-int)
 (define fft-unsigned-int fft-uint16)
 
+(define fft-long
+   (cond
+      ((eq? (vm:wordsize) 4)                   ; 32-bit platforms
+         fft-int32)
+      ((string-ci=? (ref (uname) 1) "Windows") ; 64-bit windows
+         fft-int32)
+      (else                          ; all other 64-bit platforms
+         fft-int64)))
 
+(define fft-ulong (+ fft-long 4)) ; hack
 
-;; OS detection
-(define (uname) (syscall 63 #f #f #f))
+; -- utils ----------------------------
 
+(define (make-32bit-array len)
+   (map (lambda (_) 16777216) (repeat #f len)))
+
+(define (make-64bit-array len)
+   (map (lambda (_) 72057594037927936) (repeat #f len)))
+
+; -- convertors -----------------------
 (define int32->ol (case (vm:endianness)
    (1 (lambda (vector offset)
          (+     (ref vector offset)
