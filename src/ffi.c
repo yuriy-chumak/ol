@@ -127,7 +127,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"movq  %rsp, %rbp",
 
 	"pushq %r9",
-	"andl  $-16, %esp", // выравняем стек по 16-байтовой границе
+	"andl  $-16, %esp", // выровняем стек по 16-байтовой границе
 
 	// get count of arguments
 	"xor   %rax, %rax",
