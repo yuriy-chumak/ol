@@ -223,7 +223,7 @@ olvm.js: src/olvm.c src/olvm.h src/slim.c
 
 
 talkback: src/olvm.c src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DEMBEDDED_VM -DHAS_PINVOKE=1 -o $@ -I src \
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DEMBEDDED_VM -DOLVM_FFI=1 -o $@ -I src \
 	   src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c -pthread \
 	   -Xlinker --export-dynamic $(L)
 
@@ -333,7 +333,7 @@ tests: \
 	@echo "passed!"
 
 sample-embed:
-	gcc src/sample-embed.c src/olvm.c src/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DHAS_PINVOKE=1 -o sample-embed \
+	gcc src/sample-embed.c src/olvm.c src/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o sample-embed \
 	-Xlinker --export-dynamic
 
 # simple only target platform size tests
