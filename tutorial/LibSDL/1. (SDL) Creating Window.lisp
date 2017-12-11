@@ -19,14 +19,7 @@
    SDL_WINDOWPOS_UNDEFINED SDL_WINDOWPOS_UNDEFINED
    640 480 SDL_WINDOW_SHOWN))
 
-;(define surface (SDL_GetWindowSurface window))
-;(define loaded-surface (IMG_Load "SDL_logo.png"))
-;(define optimized-surface (SDL_ConvertSurface 
 (define renderer (SDL_CreateRenderer window -1 (bor SDL_RENDERER_ACCELERATED SDL_RENDERER_PRESENTVSYNC)))
-
-(define picture (IMG_Load "SDL_logo.png"))
-(define texture (SDL_CreateTextureFromSurface renderer picture))
-(SDL_FreeSurface picture)
 
 (call/cc (lambda (break)
    (let loop ()
@@ -40,10 +33,8 @@
                         #f))
                   (event-loop)))))
       (SDL_RenderClear renderer)
-      (SDL_RenderCopy renderer texture #f #f)
       (SDL_RenderPresent renderer)
       (loop))))
-
 
 ;(SDL_DestroyRenderer renderer)
 ;(SDL_DestroyWindow window)

@@ -203,18 +203,18 @@
 ;(define WIDTH 1280)
 ;(define HEIGHT 920)
 
-(define % (dlopen (cond
+(define sdl2 (load-dynamic-library (cond
    (win32? "SDL2.dll")
    (linux? "libSDL2.so")
-   (else (runtime-error "No sdl2 library support" "Unknown platform")))))
+   (else
+      (runtime-error "sdl2: unknown platform" uname)))))
 
-(if (not %)
+(if (not sdl2)
    (runtime-error "Can't load sdl2 library." (cond
       (win32?
          "Download dll from https://www.libsdl.org/download-2.0.php")
       (linux?
          "Use, for example, sudo apt install libsdl2-2.0"))))
-
 
 ; ===================================================
 ; helper function
@@ -226,13 +226,13 @@
 
 ; ------------------------
 ; SDL_error
-(define SDL_GetError (dlsym % type-string "SDL_GetError"))
-(define SDL_ClearError (dlsym % fft-void "SDL_ClearError"))
+(define SDL_GetError (sdl2 type-string "SDL_GetError"))
+(define SDL_ClearError (sdl2 fft-void "SDL_ClearError"))
 
 
 ; ------------------------
 ; SDL_main
-(define SDL_Init  (dlsym % type-integer "SDL_Init"  type-integer))
+(define SDL_Init  (sdl2 fft-int "SDL_Init"  fft-int))
    (define SDL_INIT_VIDEO          #x00000020)
 
 
@@ -240,7 +240,7 @@
 ; SDL_surface
 (define SDL_Surface* type-vptr)
 
-(define SDL_FreeSurface (dlsym % fft-void "SDL_FreeSurface" SDL_Surface*))
+(define SDL_FreeSurface (sdl2 fft-void "SDL_FreeSurface" SDL_Surface*))
 
 ; ------------------------
 ; SDL_video
@@ -252,14 +252,14 @@
 (define SDL_WINDOWPOS_UNDEFINED         (bor SDL_WINDOWPOS_UNDEFINED_MASK 0))
 
 
-(define SDL_CreateWindow (dlsym % SDL_Window* "SDL_CreateWindow" type-string type-integer type-integer type-integer type-integer type-integer))
+(define SDL_CreateWindow (sdl2 SDL_Window* "SDL_CreateWindow" type-string fft-int fft-int fft-int fft-int fft-int))
    (define SDL_WINDOW_FULLSCREEN #x00000001)
    (define SDL_WINDOW_OPENGL     #x00000002)
    (define SDL_WINDOW_SHOWN      #x00000004)
 
-(define SDL_GetWindowSurface (dlsym % SDL_Surface* "SDL_GetWindowSurface" SDL_Window*))
+(define SDL_GetWindowSurface (sdl2 SDL_Surface* "SDL_GetWindowSurface" SDL_Window*))
 
-(define SDL_GLattr type-int)
+(define SDL_GLattr fft-int)
    (define SDL_GL_RED_SIZE 0)
    (define SDL_GL_GREEN_SIZE 1)
    (define SDL_GL_BLUE_SIZE 2)
@@ -288,13 +288,13 @@
    (define SDL_GL_CONTEXT_RESET_NOTIFICATION 25)
    (define SDL_GL_CONTEXT_NO_ERROR 26)
 
-(define SDL_GL_SetAttribute (dlsym % type-int "SDL_GL_SetAttribute" SDL_GLattr type-int))
+(define SDL_GL_SetAttribute (sdl2 fft-int "SDL_GL_SetAttribute" SDL_GLattr fft-int))
 
-(define SDL_GL_CreateContext (dlsym % SDL_GLContext "SDL_GL_CreateContext" SDL_Window*))
+(define SDL_GL_CreateContext (sdl2 SDL_GLContext "SDL_GL_CreateContext" SDL_Window*))
 
-(define SDL_GL_SetSwapInterval (dlsym % type-int "SDL_GL_SetSwapInterval" type-int))
+(define SDL_GL_SetSwapInterval (sdl2 fft-int "SDL_GL_SetSwapInterval" fft-int))
 
-(define SDL_GL_SwapWindow (dlsym % fft-void "SDL_GL_SwapWindow" SDL_Window*))
+(define SDL_GL_SwapWindow (sdl2 fft-void "SDL_GL_SwapWindow" SDL_Window*))
    
 
 ; ------------------------
@@ -303,17 +303,17 @@
 (define SDL_Texture* type-vptr)
 (define SDL_Rect* type-vptr)
 
-(define SDL_CreateRenderer (dlsym % SDL_Renderer* "SDL_CreateRenderer" SDL_Window* type-integer type-integer))
+(define SDL_CreateRenderer (sdl2 SDL_Renderer* "SDL_CreateRenderer" SDL_Window* fft-int fft-int))
    (define SDL_RENDERER_SOFTWARE #x00000001)          ;/**< The renderer is a software fallback */
    (define SDL_RENDERER_ACCELERATED #x00000002)       ;/**< The renderer uses hardware acceleration */
    (define SDL_RENDERER_PRESENTVSYNC #x00000004)      ;/**< Present is synchronized with the refresh rate */
    (define SDL_RENDERER_TARGETTEXTURE #x00000008)     ;/**< The renderer supports
 
-(define SDL_RenderClear (dlsym % type-integer "SDL_RenderClear" SDL_Renderer*))
-(define SDL_RenderPresent (dlsym % fft-void "SDL_RenderPresent" SDL_Renderer*))
-(define SDL_RenderCopy (dlsym % type-int "SDL_RenderCopy" SDL_Renderer* SDL_Texture* SDL_Rect* SDL_Rect*))
+(define SDL_RenderClear (sdl2 fft-int "SDL_RenderClear" SDL_Renderer*))
+(define SDL_RenderPresent (sdl2 fft-void "SDL_RenderPresent" SDL_Renderer*))
+(define SDL_RenderCopy (sdl2 fft-int "SDL_RenderCopy" SDL_Renderer* SDL_Texture* SDL_Rect* SDL_Rect*))
 
-(define SDL_CreateTextureFromSurface (dlsym % SDL_Texture* "SDL_CreateTextureFromSurface" SDL_Renderer* SDL_Surface*))
+(define SDL_CreateTextureFromSurface (sdl2 SDL_Texture* "SDL_CreateTextureFromSurface" SDL_Renderer* SDL_Surface*))
 
 ; ------------------------
 ; SDL_event
@@ -374,36 +374,37 @@
    (define SDL_USEREVENT    #x8000)
    (define SDL_LASTEVENT #xFFFF)
 
-(define SDL_PollEvent (dlsym % fft-int "SDL_PollEvent" SDL_Event*))
+(define SDL_PollEvent (sdl2 fft-int "SDL_PollEvent" SDL_Event*))
 
 ; ------------------------
 ; SDL_mouse
-(define SDL_GetMouseState (dlsym % fft-int "SDL_GetMouseState" type-vptr type-vptr))
+(define SDL_GetMouseState (sdl2 fft-int "SDL_GetMouseState" type-vptr type-vptr))
 
 
 ; ------------------------
 ; SDL_timer
-(define SDL_Delay (dlsym % fft-void "SDL_Delay" type-int32))
+(define SDL_Delay (sdl2 fft-void "SDL_Delay" fft-int32))
 
 ; ========================
 ; SDL_image
-(define % (dlopen (cond
+(define sdl2-image (load-dynamic-library (cond
    (win32? "SDL2_image.dll")
    (linux? "libSDL2_image-2.0.so.0")
-   (else (runtime-error "No sdl2 image library support" "Unknown platform")))))
+   (else
+      (runtime-error "sdl20-image: unknown platform" uname)))))
 
-(if (not %)
+(if (not sdl2-image)
    (runtime-error "Can't load sdl2 image library." (cond
       (win32?
          "Download dll from https://www.libsdl.org/projects/SDL_image/")
       (linux?
          "Use, for example, sudo apt install libsdl2-image-2.0"))))
 
-(define IMG_Init (dlsym % type-integer "IMG_Init" type-integer))
+(define IMG_Init (sdl2-image fft-int "IMG_Init" fft-int))
    (define IMG_INIT_JPG #x00000001)
    (define IMG_INIT_PNG #x00000002)
    (define IMG_INIT_TIF #x00000004)
    (define IMG_INIT_WEBP #x00000008)
 
-(define IMG_Load (dlsym % SDL_Surface* "IMG_Load" type-string))
+(define IMG_Load (sdl2-image SDL_Surface* "IMG_Load" type-string))
 ))
