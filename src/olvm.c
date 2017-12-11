@@ -3567,6 +3567,8 @@ loop:;
 						break;
 					yield();
 				}
+				else if (wrote == 0)
+					break;
 				else
 					size -= wrote;
 			}
