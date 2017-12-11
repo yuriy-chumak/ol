@@ -15,9 +15,8 @@
 ; TODO: all type-* constants should be used by vm, all fft-* only by ffi
 (define-library (otus ffi)
    (export
-      dlopen
-      dlclose
-      dlsym dlsym+
+      dlopen dlclose
+      dlsym+     ; TODO: rename dlsym+ to dlsym
       ffi uname
 
       RTLD_LAZY
@@ -29,41 +28,30 @@
       RTLD_LOCAL
       RTLD_NODELETE
 
+      ; olvm callable type
+      type-callable
 
-      type-short ; 16-bit integer
-      type-int   ; 32-bit integer
-
-      ; special "variable length on different platforms" type
-      ; windows, ia32: 4 bytes
-      ; windows, ia64: 4 bytes
-      ; linux, ia32:   4 bytes
-      ; linux, ia64:   8 bytes
-      ; macosx, ia32:  4 bytes
-      ; macosx, ia64:  8 bytes
-
-      type-int16
-      type-int32
-      type-int64 ; 64-bit integer
-
-      type-integer
       fft-float
       fft-double
 
       fft-void fft-void* fft-void**
 
       fft-unknown
-      type-callable
       fft-any
 
 
       load-dynamic-library
+
       ; по-поводу calling convention:
       ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
       ;  пока что пусть остается так.
       __stdcall __cdecl __fastcall
 
-      int32->ol
+      ; type and value convertors
+      fft* ; make c-like pointer from type
+      fft& ; make c-like reference from type
 
+      int32->ol   ; fft-void* -> int32 number
 
       ; platforem independent types
       fft-int16 fft-int16* fft-int16& ; signed 16-bit value
@@ -78,9 +66,19 @@
       ;fft-char  fft-signed-char  fft-unsigned-char
       fft-short fft-signed-short fft-unsigned-short
       fft-int   fft-signed-int   fft-unsigned-int
-      fft-long
 
-      ; units
+      fft-int*
+
+      ; special "variable length on different platforms" type 'long'
+      ; windows, ia32: 4 bytes
+      ; windows, ia64: 4 bytes
+      ; linux, ia32:   4 bytes
+      ; linux, ia64:   8 bytes
+      ; macosx, ia32:  4 bytes
+      ; macosx, ia64:  8 bytes
+      fft-long  fft-signed-long  fft-unsigned-long
+
+      ; fft data constructors
       make-32bit-array
       make-64bit-array
    )
@@ -104,31 +102,32 @@
 
 
 ; The MODE argument to `dlopen' contains one of the following:
-(define RTLD_LAZY       #x00001); Lazy function call binding.
-(define RTLD_NOW        #x00002); Immediate function call binding.
-(define RTLD_BINDING_MASK   #x3); Mask of binding time value.
-(define RTLD_NOLOAD     #x00004); Do not load the object.
-(define RTLD_DEEPBIND   #x00008); Use deep binding.
+(define RTLD_LAZY         #x1) ; Lazy function call binding.
+(define RTLD_NOW          #x2) ; Immediate function call binding.
+(define RTLD_BINDING_MASK #x3) ; Mask of binding time value.
+(define RTLD_NOLOAD       #x4) ; Do not load the object.
+(define RTLD_DEEPBIND     #x8) ; Use deep binding.
 
 ; If the following bit is set in the MODE argument to `dlopen',
 ; the symbols of the loaded object and its dependencies are made
 ; visible as if the object were linked directly into the program.
-(define RTLD_GLOBAL     #x00100)
+(define RTLD_GLOBAL     #x100)
 
 ; Unix98 demands the following flag which is the inverse to RTLD_GLOBAL.
 ; The implementation does this by default and so we can define the
 ; value to zero.
-(define RTLD_LOCAL      0)
+(define RTLD_LOCAL 0)
 
 ; Do not delete object when closed.
-(define RTLD_NODELETE   #x01000)
+(define RTLD_NODELETE  #x1000)
+
 
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle (type-port)
 (define dlopen (case-lambda
-   ((name flag) (syscall 174 (if (string? name) (c-string name) name) flag      #false))
-   ((name)      (syscall 174 (if (string? name) (c-string name) name) RTLD_LAZY #false))
-   (()          (syscall 174 '()                                      RTLD_LAZY #false))))
+   ((name flag) (syscall 174 (if (string? name) (c-string name) name) flag      #f))
+   ((name)      (syscall 174 (if (string? name) (c-string name) name) RTLD_LAZY #f))
+   (()          (syscall 174 #false                                   RTLD_LAZY #f))))
 (define (dlclose module) (syscall 176 module #f #f))
 
 (define ffi (syscall 177 (dlopen) "ffi" #f))
@@ -140,26 +139,19 @@
       (lambda args
          (exec function args #false)))))
 
-(define (dlsym  dll type name . prototype)
-   ; todo: add arguments to the call of function and use as types
-   ; должно быть так: если будет явное преобразование типа в аргументе функции, то пользовать его
-   ; иначе использовать указанное в arguments; обязательно выводить предупреждение, если количество аргументов не
-   ; совпадает (возможно еще во время компиляции)
-   (let ((rtty (cons type prototype))
-         (function (syscall 177 dll (c-string name) #false)))
-      (if function
-      (lambda args
-         (exec ffi  function rtty args)))))
-
 (define (load-dynamic-library name)
    (let ((dll (dlopen name)))
       (if dll
          (lambda (type name . prototype)
-            (let ((rtty (cons type prototype))
+            ; todo: add arguments to the call of function and use as types
+            ; должно быть так: если будет явное преобразование типа в аргументе функции, то пользовать его
+            ; иначе использовать указанное в arguments; обязательно выводить предупреждение, если количество аргументов не
+            ; совпадает (возможно еще во время компиляции)
+            (let ((rtti (cons type prototype))
                   (function (syscall 177 dll (c-string name) #f))) ; todo: избавиться от (c-string)
                (if function
                   (lambda args
-                     (exec ffi  function rtty args))))))))
+                     (exec ffi  function rtti args))))))))
 
 
 ;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))
@@ -175,9 +167,16 @@
 ; Calling Conventions
 ; default call is __stdcall for windows and __cdecl for linux (for x32)
 ; you can directly provide required calling convention:
-(define (__cdecl    arg) (+ arg #b01000000))
-(define (__stdcall  arg) (+ arg #b10000000))
-(define (__fastcall arg) (+ arg #b11000000))
+(define (__cdecl    arg) (vm:or arg #b01000000))
+(define (__stdcall  arg) (vm:or arg #b10000000))
+(define (__fastcall arg) (vm:or arg #b11000000))
+
+; type convertors
+(define (fft* type)
+   (vm:or type #x40))
+(define (fft& type)
+   (vm:or type #x80))
+
 
 ; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?
 ;(define (INTEGER arg) (cons 45 arg))
@@ -188,42 +187,38 @@
 ; 44 - is socket but will be free
 ;(define type-handle 45)
 ; todo: (vm:cast type-constant) and start from number 1?
-(define type-integer type-int+) ; deprecated
+(define type-callable 61)
+
 (define fft-float   46)
 (define fft-double  47)
 (define fft-void    48)
 (define fft-void*   49)  ; same as type-vptr
-(define fft-void**  (bor fft-void* #x40))
-
-(define type-int16  51)  (define type-short type-int16) ; deprecated
-(define type-int32  52)  (define type-int   type-int32) ; deprecated
-(define type-int64  53)
-;define type-int128 54)
-;define type-int256 55)
-;define type-int512 56)
+(define fft-void** (fft* fft-void*))
 
 (define fft-unknown 62)
-(define type-callable 61)
 (define fft-any 63)
 
 ; new ffi types:
-(define fft-int16 51) (define fft-int16* (bor fft-int16 #x40)) (define fft-int16& (bor fft-int16 #x80))
-(define fft-int32 52) (define fft-int32* (bor fft-int32 #x40)) (define fft-int32& (bor fft-int32 #x80))
-(define fft-int64 53) (define fft-int64* (bor fft-int64 #x40)) (define fft-int64& (bor fft-int64 #x80))
+(define fft-int16 51)  (define fft-int16* (fft* fft-int16))  (define fft-int16& (fft& fft-int16))
+(define fft-int32 52)  (define fft-int32* (fft* fft-int32))  (define fft-int32& (fft& fft-int32))
+(define fft-int64 53)  (define fft-int64* (fft* fft-int64))  (define fft-int64& (fft& fft-int64))
 
-(define fft-uint16 56) (define fft-uint16* (bor fft-uint16 #x40)) (define fft-uint16& (bor fft-uint16 #x80))
-(define fft-uint32 57) (define fft-uint32* (bor fft-uint32 #x40)) (define fft-uint32& (bor fft-uint32 #x80))
-(define fft-uint64 58) (define fft-uint64* (bor fft-uint64 #x40)) (define fft-uint64& (bor fft-uint64 #x80))
+(define fft-uint16 56) (define fft-uint16* (fft* fft-uint16)) (define fft-uint16& (fft& fft-uint16))
+(define fft-uint32 57) (define fft-uint32* (fft* fft-uint32)) (define fft-uint32& (fft& fft-uint32))
+(define fft-uint64 58) (define fft-uint64* (fft* fft-uint64)) (define fft-uint64& (fft& fft-uint64))
 
 ; platform dependent defaults
 (define fft-short fft-int16)
-(define fft-signed-short fft-short)
+(define fft-signed-short fft-int16)
 (define fft-unsigned-short fft-uint16)
 
 (define fft-int fft-int32)
-(define fft-signed-int fft-int)
+(define fft-signed-int fft-int32)
 (define fft-unsigned-int fft-uint16)
 
+(define fft-int* (fft* fft-int))
+
+; long:
 (define fft-long
    (cond
       ((eq? (vm:wordsize) 4)                   ; 32-bit platforms
@@ -232,8 +227,8 @@
          fft-int32)
       (else                          ; all other 64-bit platforms
          fft-int64)))
-
-(define fft-ulong (+ fft-long 4)) ; hack
+(define fft-signed-long fft-long)
+(define fft-unsigned-long (+ fft-long 5))
 
 ; -- utils ----------------------------
 
@@ -246,10 +241,15 @@
 ; -- convertors -----------------------
 (define int32->ol (case (vm:endianness)
    (1 (lambda (vector offset)
-         (+     (ref vector offset)
-            (<< (ref vector (+ offset 1)) 8)
+         (+     (ref vector    offset   )
+            (<< (ref vector (+ offset 1))  8)
             (<< (ref vector (+ offset 2)) 16)
             (<< (ref vector (+ offset 3)) 24))))
+   (2 (lambda (vector offset)
+         (+     (ref vector (+ offset 3))
+            (<< (ref vector (+ offset 2))  8)
+            (<< (ref vector (+ offset 1)) 16)
+            (<< (ref vector    offset   ) 24))))
    (else
       (print "Unknown endianness")
       #false)))
