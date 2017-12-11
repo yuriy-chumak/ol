@@ -73,8 +73,113 @@
    ;SDL_event
    make-SDL_Event
 
+   ; General keyboard/mouse state definitions
+   SDL_RELEASED
+   SDL_PRESSED
+
+   ; The types of events that can be delivered.
+   SDL_EventType
+      SDL_FIRSTEVENT              ; /**< Unused (do not remove) */
+
+      ; /* Application events */
+      SDL_QUIT                    ; /**< User-requested quit */
+
+      ; /* These application events have special meaning on iOS, see README-ios.md for details */
+      SDL_APP_TERMINATING         ;/**< The application is being terminated by the OS
+                                    ; Called on iOS in applicationWillTerminate()
+                                    ; Called on Android in onDestroy()
+      SDL_APP_LOWMEMORY           ;/**< The application is low on memory, free memory if possible.
+                                    ; Called on iOS in applicationDidReceiveMemoryWarning()
+                                    ; Called on Android in onLowMemory()
+      SDL_APP_WILLENTERBACKGROUND ;/**< The application is about to enter the background
+                                    ; Called on iOS in applicationWillResignActive()
+                                    ; Called on Android in onPause()
+      SDL_APP_DIDENTERBACKGROUND  ;/**< The application did enter the background and may not get CPU for some time
+                                    ; Called on iOS in applicationDidEnterBackground()
+                                    ; Called on Android in onPause()
+      SDL_APP_WILLENTERFOREGROUND ;/**< The application is about to enter the foreground
+                                    ; Called on iOS in applicationWillEnterForeground()
+                                    ; Called on Android in onResume()
+      SDL_APP_DIDENTERFOREGROUND  ;/**< The application is now interactive
+                                    ; Called on iOS in applicationDidBecomeActive()
+                                    ; Called on Android in onResume()
+
+      ; /* Window events */
+      SDL_WINDOWEVENT             ;/**< Window state change */
+      SDL_SYSWMEVENT              ;/**< System specific event */
+
+      ; /* Keyboard events */
+      SDL_KEYDOWN                 ;/**< Key pressed */
+      SDL_KEYUP                   ;/**< Key released */
+      SDL_TEXTEDITING             ;/**< Keyboard text editing (composition) */
+      SDL_TEXTINPUT               ;/**< Keyboard text input */
+      SDL_KEYMAPCHANGED           ;/**< Keymap changed due to a system event such as an
+                                    ; input language or keyboard layout change.
+
+      ; /* Mouse events */
+      SDL_MOUSEMOTION             ;/**< Mouse moved */
+      SDL_MOUSEBUTTONDOWN         ;/**< Mouse button pressed */
+      SDL_MOUSEBUTTONUP           ;/**< Mouse button released */
+      SDL_MOUSEWHEEL              ;/**< Mouse wheel motion */
+
+      ; /* Joystick events */
+      SDL_JOYAXISMOTION           ;/**< Joystick axis motion */
+      SDL_JOYBALLMOTION           ;/**< Joystick trackball motion */
+      SDL_JOYHATMOTION            ;/**< Joystick hat position change */
+      SDL_JOYBUTTONDOWN           ;/**< Joystick button pressed */
+      SDL_JOYBUTTONUP             ;/**< Joystick button released */
+      SDL_JOYDEVICEADDED          ;/**< A new joystick has been inserted into the system */
+      SDL_JOYDEVICEREMOVED        ;/**< An opened joystick has been removed */
+
+      ; /* Game controller events */
+      SDL_CONTROLLERAXISMOTION           ;/**< Game controller axis motion */
+      SDL_CONTROLLERBUTTONDOWN           ;/**< Game controller button pressed */
+      SDL_CONTROLLERBUTTONUP             ;/**< Game controller button released */
+      SDL_CONTROLLERDEVICEADDED          ;/**< A new Game controller has been inserted into the system */
+      SDL_CONTROLLERDEVICEREMOVED        ;/**< An opened Game controller has been removed */
+      SDL_CONTROLLERDEVICEREMAPPED       ;/**< The controller mapping was updated */
+
+      ; /* Touch events */
+      SDL_FINGERDOWN
+      SDL_FINGERUP
+      SDL_FINGERMOTION
+
+      ; /* Gesture events */
+      SDL_DOLLARGESTURE
+      SDL_DOLLARRECORD
+      SDL_MULTIGESTURE
+
+      ; /* Clipboard events */
+      SDL_CLIPBOARDUPDATE          ;/**< The clipboard changed */
+
+      ; /* Drag and drop events */
+      SDL_DROPFILE                  ;/**< The system requests a file open */
+      SDL_DROPTEXT                  ;/**< text/plain drag-and-drop event */
+      SDL_DROPBEGIN                 ;/**< A new set of drops is beginning (NULL filename) */
+      SDL_DROPCOMPLETE              ;/**< Current set of drops is now complete (NULL filename) */
+
+      ; /* Audio hotplug events */
+      SDL_AUDIODEVICEADDED           ;/**< A new audio device is available */
+      SDL_AUDIODEVICEREMOVED         ;/**< An audio device has been removed. */
+
+      ; /* Render events */
+      SDL_RENDER_TARGETS_RESET           ;/**< The render targets have been reset and their contents need to be updated */
+      SDL_RENDER_DEVICE_RESET  ;/**< The device has been reset and all textures need to be recreated */
+
+      ; /** Events ::SDL_USEREVENT through ::SDL_LASTEVENT are for your use,
+      ;  *  and should be allocated with SDL_RegisterEvents()
+      ;  */
+      SDL_USEREVENT
+
+      ; /**
+      ;  *  This last event is only for bounding internal arrays
+      ;  */
+      SDL_LASTEVENT
+
    SDL_PollEvent
-      SDL_QUIT
+
+   ;SDL_mouse
+   SDL_GetMouseState
 
    ;SDL_timer
    SDL_Delay
@@ -215,8 +320,66 @@
 (define SDL_Event* type-vector-raw)
 (define (make-SDL_Event) (vm:new-raw-object type-vector-raw 56))
 
-(define SDL_PollEvent (dlsym % type-fix+ "SDL_PollEvent" SDL_Event*))
-   (define SDL_QUIT #x100)
+(define SDL_RELEASED 0)
+(define SDL_PRESSED 1)
+
+(define SDL_EventType fft-int)
+   (define SDL_FIRSTEVENT 0)
+   (define SDL_QUIT             #x100)
+   (define SDL_APP_TERMINATING  #x101)
+   (define SDL_APP_LOWMEMORY    #x102)
+   (define SDL_APP_WILLENTERBACKGROUND #x103)
+   (define SDL_APP_DIDENTERBACKGROUND  #x104)
+   (define SDL_APP_WILLENTERFOREGROUND #x105)
+   (define SDL_APP_DIDENTERFOREGROUND  #x106)
+   (define SDL_WINDOWEVENT      #x200)
+   (define SDL_SYSWMEVENT       #x201)
+   (define SDL_KEYDOWN         #x300)
+   (define SDL_KEYUP           #x301)
+   (define SDL_TEXTEDITING     #x302)
+   (define SDL_TEXTINPUT       #x303)
+   (define SDL_KEYMAPCHANGED   #x304)
+   (define SDL_MOUSEMOTION     #x305)
+   (define SDL_MOUSEBUTTONDOWN #x306)
+   (define SDL_MOUSEBUTTONUP   #x307)
+   (define SDL_MOUSEWHEEL      #x308)
+   (define SDL_JOYAXISMOTION    #x600)
+   (define SDL_JOYBALLMOTION    #x601)
+   (define SDL_JOYHATMOTION     #x602)
+   (define SDL_JOYBUTTONDOWN    #x603)
+   (define SDL_JOYBUTTONUP      #x604)
+   (define SDL_JOYDEVICEADDED   #x605)
+   (define SDL_JOYDEVICEREMOVED #x606)
+   (define SDL_CONTROLLERAXISMOTION     #x650)
+   (define SDL_CONTROLLERBUTTONDOWN     #x651)
+   (define SDL_CONTROLLERBUTTONUP       #x652)
+   (define SDL_CONTROLLERDEVICEADDED    #x653)
+   (define SDL_CONTROLLERDEVICEREMOVED  #x654)
+   (define SDL_CONTROLLERDEVICEREMAPPED #x655)
+   (define SDL_FINGERDOWN   #x700)
+   (define SDL_FINGERUP     #x701)
+   (define SDL_FINGERMOTION #x702)
+   (define SDL_DOLLARGESTURE   #x800)
+   (define SDL_DOLLARRECORD    #x801)
+   (define SDL_MULTIGESTURE    #x802)
+   (define SDL_CLIPBOARDUPDATE  #x900)
+   (define SDL_DROPFILE          #x1000)
+   (define SDL_DROPTEXT          #x1001)
+   (define SDL_DROPBEGIN         #x1002)
+   (define SDL_DROPCOMPLETE      #x1003)
+   (define SDL_AUDIODEVICEADDED   #x1100)
+   (define SDL_AUDIODEVICEREMOVED #x1101)
+   (define SDL_RENDER_TARGETS_RESET #x2000)
+   (define SDL_RENDER_DEVICE_RESET  #x2001)
+   (define SDL_USEREVENT    #x8000)
+   (define SDL_LASTEVENT #xFFFF)
+
+(define SDL_PollEvent (dlsym % fft-int "SDL_PollEvent" SDL_Event*))
+
+; ------------------------
+; SDL_mouse
+(define SDL_GetMouseState (dlsym % fft-int "SDL_GetMouseState" type-vptr type-vptr))
+
 
 ; ------------------------
 ; SDL_timer
