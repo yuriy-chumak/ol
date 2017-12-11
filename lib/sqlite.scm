@@ -234,7 +234,9 @@
    ;sqlite3_activate_see
 
     sqlite:query
-    sqlite:value)
+    sqlite:value
+
+    sqlite:for-each)
 
 ; ============================================================================
 (import
@@ -429,6 +431,7 @@
 ;(define sqlite3_column_type  (dlsym % type-fix+   "sqlite3_column_type" sqlite3_stmt* type-fix+))
 
 
+; internal fast function
 (define (starts-with-ci? a string sub)
    (let loop ((a (str-iter string))
               (b (str-iter sub)))
@@ -443,91 +446,31 @@
             (loop (force (cdr a)) (force (cdr b)))))))
 
 ; ============================================================================
-; executes the statement and returns
-; last row id: in case of "insert"
-; updated rows: in case of "update" ?
-(define (sqlite:value database query . args)
-   (print "SQLITE: " query ": (" (length args) ")> " args)
-   (let ((statement (make-sqlite3_stmt)))
-      (unless (eq? 0 (sqlite3_prepare_v2 database (c-string query) -1 statement #f))
-         (runtime-error "error query preparation:" (list
-            query (sqlite3_errmsg database))))
-      ; apply arguments
-      (let loop ((n 1) (args args))
-         (unless (null? args)
-            (let ((arg (car args)))
-               (cond
-                  ((integer? arg)
-                     (sqlite3_bind_int64 statement n arg))
-                  ((rational? arg)
-                     (sqlite3_bind_double statement n arg))
-                  ((string? arg)
-                     (sqlite3_bind_text statement n arg (size arg) #f))
-                  (else
-                     (runtime-error "Unsupported parameter type" arg)))
-               (loop (+ n 1) (cdr args)))))
-      (let ((code (sqlite3_step statement)))
-      ; analyze results
-         (print "db:value result: " code)
-         (case code
-            (SQLITE_DONE
-               (print "SQLITE_DONE")
-               (cond
-                  ((starts-with-ci? query "SELECT ")
-                     (sqlite3_finalize statement)
-                     #false)
-                  ((starts-with-ci? query "INSERT ")
-                     (sqlite3_finalize statement)
-                     (let ((id (sqlite3_last_insert_rowid database)))
-                        (print "id: " id)
-                        id)) ; return inserted row id (usually: the key)
-                  ((or (starts-with-ci? query "UPDATE ")
-                       (starts-with-ci? query "DELETE "))
-                     (sqlite3_finalize statement)
-                     (let ((changes (sqlite3_changes database)))
-                        (print "changes: " changes)
-                        changes)) ; #true if one (1) row updated
-                  (else
-                     #true)))
-            (SQLITE_ROW
-               (print "SQLITE_ROW")
-               (let ((n (sqlite3_column_count statement)))
-               ;(print "n: " n)
-               (if (less? 0 n)
-                  (let ((result
-                           (let subloop ((i (- n 1)) (args '()))
-                              ;(print "args: " args)
-                              ;(print "sqlite3_column_type statement i: " (sqlite3_column_type statement i))
-                              ;(print "i: " i)
-                              ;(print "?: " (< i 0))
-                              (if (< i 0) args
-                                 (subloop (- i 1) (cons
-                                    (case (sqlite3_column_type statement i)
-                                       (SQLITE_NULL    #false)
-                                       (SQLITE_INTEGER (sqlite3_column_int statement i))
-                                       (SQLITE_FLOAT   (sqlite3_column_double statement i))
-                                       (SQLITE_TEXT    (sqlite3_column_text statement i))
-                                       (else (runtime-error "Unsupported column type " i)))
-                                    args))))))
-                     (sqlite3_finalize statement)
-                     (if (eq? n 1)
-                        (car result)
-                        result)))))
-            ; INSERT
-            (SQLITE_CONSTRAINT
-               (print "SQLITE_CONSTRAINT")
-               (sqlite3_finalize statement)
-               #false)
-            (else
-               (print "Can't execute SQL statement with err: " code)
-               (sqlite3_finalize statement)
-               (runtime-error "Can't execute SQL statement" #t))))))
 
+; internal function:
+(define (get-result-as-row statement)
+   (let ((n (sqlite3_column_count statement)))
+      ;(print "n: " n)
+      (if (less? 0 n)
+         (let subloop ((i (- n 1)) (args '()))
+            ;(print "args: " args)
+            ;(print "sqlite3_column_type statement i: " (sqlite3_column_type statement i))
+            ;(print "i: " i)
+            ;(print "?: " (< i 0))
+            (if (< i 0) args
+               (subloop (- i 1) (cons
+                  (case (sqlite3_column_type statement i)
+                     (SQLITE_NULL    #false)
+                     (SQLITE_INTEGER (sqlite3_column_int statement i))
+                     (SQLITE_FLOAT   (sqlite3_column_double statement i))
+                     (SQLITE_TEXT    (sqlite3_column_text statement i))
+                     (else (runtime-error "Unsupported column type " i)))
+                  args)))))))
 
 ; при инвалидном запросе бросает runtime исключение
 ; select multiple values
 (define (sqlite:query database query . args)
-;   (print "SQLITE: " query ": (" (length args) ")> " args)
+  ;(print "SQLITE: " query ": (" (length args) ")> " args)
    (let ((statement (make-sqlite3_stmt)))
       (unless (eq? 0 (sqlite3_prepare_v2 database (c-string query) -1 statement #f))
          (runtime-error "error query preparation:" (list
@@ -553,10 +496,64 @@
                statement)
             (SQLITE_DONE; ...
                (sqlite3_finalize statement)
-               #false) ; no query results present
+               #true) ; no query results present, but it's ok
+            (SQLITE_CONSTRAINT ; INSERT
+               (print "SQLITE_CONSTRAINT")
+               (sqlite3_finalize statement)
+               #false) ; something wrong, got error
             (else
+              ;(print "Can't execute SQL statement with err: " code)
                (sqlite3_finalize statement)
                (runtime-error "Can't execute SQL statement" (list
                   code (sqlite3_errmsg database))))))))
+
+; executes the statement and returns
+; last row id: in case of "insert"
+; updated rows: in case of "update" ?
+(define (sqlite:value database query . args)
+  ;(print "SQLITE: " query ": (" (length args) ")> " args)
+   (let ((statement (apply sqlite:query (cons database (cons query args)))))
+      (case statement
+         (#f #false) ; error :(
+         (#t         ; ok, but no data returned
+            (cond
+               ((starts-with-ci? query "SELECT ")
+                  #false)
+               ((starts-with-ci? query "INSERT ")
+                  (let ((id (sqlite3_last_insert_rowid database)))
+                        (print "id: " id) ; debug output
+                     id)) ; return inserted row id (usually: the key)
+               ((or (starts-with-ci? query "UPDATE ")
+                    (starts-with-ci? query "DELETE "))
+                  (let ((changes (sqlite3_changes database)))
+                        (print "changes: " changes) ; debug output
+                     changes))
+               (else
+                  #true)))
+         (else ; got a values!
+            (let ((result (get-result-as-row statement)))
+               (sqlite3_finalize statement)
+               (if result 
+                  (if (eq? (cdr result) #null)
+                     (car result)
+                     result)))))))
+
+(define (sqlite:for-each statement f)
+   (case statement
+      (#f #false) ; error
+      (#t #true)  ; no data available
+      (else
+         (let loop ()
+            (let ((result (get-result-as-row statement)))
+               (if result (apply f result)))
+            (case (sqlite3_step statement)
+               (SQLITE_ROW
+                  (loop))
+               (SQLITE_DONE
+                  (sqlite3_finalize statement)
+                  #true)
+               (else
+                  (sqlite3_finalize statement)
+                  (runtime-error "Can't execute SQL statement" #t)))))))
 
 ))
