@@ -252,18 +252,6 @@
 
 (define (make-void*) (vm:new-raw-object fft-void* (vm:wordsize)))
 
-(define % (dlopen (cond
-   (win32? "sqlite3")
-   (linux? "libsqlite3.so")
-   (else (runtime-error "No sqlite3 library support" "Unknown platform")))))
-
-(if (not %)
-   (runtime-error "Can't load sqlite3 library." (cond
-      (win32?
-         "Download dll from http://www.sqlite.org/download.html")
-      (linux?
-         "Use, for example, sudo apt-get install libsqlite3-dev"))))
-
 (define sqlite (load-dynamic-library (cond
    (win32? "sqlite3")
    (linux? "libsqlite3.so")
@@ -432,7 +420,7 @@
 
 
 ; internal fast function
-(define (starts-with-ci? a string sub)
+(define (starts-with-ci? string sub)
    (let loop ((a (str-iter string))
               (b (str-iter sub)))
       (cond
@@ -511,7 +499,6 @@
 ; last row id: in case of "insert"
 ; updated rows: in case of "update" ?
 (define (sqlite:value database query . args)
-  ;(print "SQLITE: " query ": (" (length args) ")> " args)
    (let ((statement (apply sqlite:query (cons database (cons query args)))))
       (case statement
          (#f #false) ; error :(
@@ -527,7 +514,7 @@
                     (starts-with-ci? query "DELETE "))
                   (let ((changes (sqlite3_changes database)))
                         (print "changes: " changes) ; debug output
-                     changes))
+                     (less? 0 changes)))
                (else
                   #true)))
          (else ; got a values!
