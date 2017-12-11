@@ -130,7 +130,7 @@
    (()          (syscall 174 #false                                   RTLD_LAZY #f))))
 (define (dlclose module) (syscall 176 module #f #f))
 
-(define ffi (syscall 177 (dlopen) "ffi" #f))
+(define ffi (syscall 177 (dlopen) "OL_ffi" #f))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать
 (define (dlsym+ dll name)

@@ -413,7 +413,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 
 // Главная функция механизма ffi:
 PUBLIC
-word* ffi(OL* self, word* arguments)
+word* OL_ffi(OL* self, word* arguments)
 {
 	// get memory pointer
 	heap_t* heap = &self->heap;
