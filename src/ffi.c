@@ -633,6 +633,7 @@ word* OL_ffi(OL* self, word* arguments)
 		// целочисленные типы:
 		case TFIXP: // <-- deprecated
 		case TINTP: // <-- deprecated
+		case TINT8:  case TUINT8:
 		case TINT16: case TUINT16:
 		case TINT32: case TUINT32:
 #if UINTPTR_MAX == 0xffffffffffffffff // 64-bit machines
@@ -1211,15 +1212,18 @@ word* OL_ffi(OL* self, word* arguments)
 			result = (word*) itosv (got);
 			break;
 
+		case TINT8:
+			result = (word*) itosn (*(char*)&got);  // TODO: change to __INT8_TYPE__
+			break;
 		case TINT16:
-			result = (word*) itosn (*(short*)&got);
+			result = (word*) itosn (*(short*)&got); // TODO: change to __INT16_TYPE__
 			break;
 		case TINT32:
-			result = (word*) itosn (*(int*)&got);
+			result = (word*) itosn (*(int*)&got);   // TODO: change to __INT32_TYPE__
 			break;
 		case TINT64: {
 #if UINTPTR_MAX == 0xffffffffffffffff
-			result = (word*) itosn (*(long long*)&got);
+			result = (word*) itosn (*(long long*)&got); // TODO: change to __INT64_TYPE__
 #else
 			word* new_npair(int type, long long value) {
 				long long a = value >> FBITS;
@@ -1227,27 +1231,30 @@ word* OL_ffi(OL* self, word* arguments)
 				word* p = new_pair(type, F(value & FMAX), b);
 				return p;
 			}
-			word* lltosn(long long val) {
+			word* ll2ol(long long val) {
 				long long x5 = val;
 				long long x6 = x5 < 0 ? -x5 : x5;
 				int type = x5 < 0 ? TINTN : TINTP;
 				return (x6 > FMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
 			};
 
-			result = (word*) lltosn (*(long long*)&got);
+			result = (word*) ll2ol (*(long long*)&got);
 #endif
 			break;
 		}
 
+		case TUINT8:
+			result = (word*) itoun (*(unsigned char*)&got); // TODO: change to __UINT8_TYPE__
+			break;
 		case TUINT16:
-			result = (word*) itoun (*(unsigned short*)&got);
+			result = (word*) itoun (*(unsigned short*)&got);// TODO: change to __UINT16_TYPE__
 			break;
 		case TUINT32:
-			result = (word*) itoun (*(unsigned int*)&got);
+			result = (word*) itoun (*(unsigned int*)&got);  // TODO: change to __UINT32_TYPE__
 			break;
 		case TUINT64: {
 #if UINTPTR_MAX == 0xffffffffffffffff
-			result = (word*) itoun (*(unsigned long long*)&got);
+			result = (word*) itoun (*(unsigned long long*)&got); // TODO: change to __UINT32_TYPE__
 #else
 			word* new_npair(int type, unsigned long long value) {
 				unsigned long long a = value >> FBITS;
@@ -1255,21 +1262,17 @@ word* OL_ffi(OL* self, word* arguments)
 				word* p = new_pair(type, F(value & FMAX), b);
 				return p;
 			}
-			word* ultosn(long long val) {
+			word* ul2ol(long long val) {
 				unsigned long long x5 = val;
 				return (x5 > FMAX) ? new_npair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
 			};
 
-			result = (word*) ultosn (*(unsigned long long*)&got);
+			result = (word*) ul2ol (*(unsigned long long*)&got);
 #endif
 			break;
 		}
 
 
-		case TINTP: // type-int+
-			result = (word*) itoun ((long)got);
-			break;
-			// else goto case 0 (иначе вернем type-fx+)
 		case TPORT:
 			result = (word*) make_port ((long)got);
 			break;

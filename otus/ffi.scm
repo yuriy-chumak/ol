@@ -54,6 +54,7 @@
       int32->ol   ; fft-void* -> int32 number
 
       ; platforem independent types
+      fft-int8  fft-int8*  fft-int8&
       fft-int16 fft-int16* fft-int16& ; signed 16-bit value
       fft-int32 fft-int32* fft-int32& ; signed 32-bit value
       fft-int64 fft-int64* fft-int64& ; signed 64-bit value
@@ -63,7 +64,7 @@
       fft-uint64 fft-uint64* fft-uint64& ; unsigned 64-bit value
 
       ; c-like defaults
-      ;fft-char  fft-signed-char  fft-unsigned-char
+      fft-char  fft-signed-char  fft-unsigned-char
       fft-short fft-signed-short fft-unsigned-short
       fft-int   fft-signed-int   fft-unsigned-int
 
@@ -199,15 +200,21 @@
 (define fft-any 63)
 
 ; new ffi types:
+(define fft-int8  50)  (define fft-int8*  type-string)       (define fft-int8&  type-string)
 (define fft-int16 51)  (define fft-int16* (fft* fft-int16))  (define fft-int16& (fft& fft-int16))
 (define fft-int32 52)  (define fft-int32* (fft* fft-int32))  (define fft-int32& (fft& fft-int32))
 (define fft-int64 53)  (define fft-int64* (fft* fft-int64))  (define fft-int64& (fft& fft-int64))
 
+(define fft-uint8  55) (define fft-uint8*  type-string)       (define fft-uint8&  type-string)
 (define fft-uint16 56) (define fft-uint16* (fft* fft-uint16)) (define fft-uint16& (fft& fft-uint16))
 (define fft-uint32 57) (define fft-uint32* (fft* fft-uint32)) (define fft-uint32& (fft& fft-uint32))
 (define fft-uint64 58) (define fft-uint64* (fft* fft-uint64)) (define fft-uint64& (fft& fft-uint64))
 
 ; platform dependent defaults
+(define fft-char fft-int8)
+(define fft-signed-char fft-int8)
+(define fft-unsigned-char fft-int8)
+
 (define fft-short fft-int16)
 (define fft-signed-short fft-int16)
 (define fft-unsigned-short fft-uint16)

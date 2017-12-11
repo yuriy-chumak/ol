@@ -1055,12 +1055,14 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 #define TDOUBLE                     (47) // '/' symbol
 
 // 50 is free
+#define TINT8                       (50)
 #define TINT16                      (51)
 #define TINT32                      (52)
 #define TINT64                      (53)
 // 54 for 128 ?
 // 55 for 256 ?
 
+#define TUINT8                      (55)
 #define TUINT16                     (56)
 #define TUINT32                     (57)
 #define TUINT64                     (58)
@@ -4256,7 +4258,7 @@ loop:;
 			// android 2.2 segfaults on dlopen(NULL, ...)
 			// http://code.google.com/p/android/issues/detail?id=5049
 			void* module;
-			if ((word) filename == INULL || (word) filename == IFALSE) {
+			if ((word) filename == IFALSE) {
 				module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
 			}
 			else if (is_reference(filename) && reftype (filename) == TSTRING) {
