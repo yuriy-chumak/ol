@@ -1,7 +1,7 @@
 /**
  * Simple purely functional Lisp, mostly
  *
- * Version 1.1
+ * Version 1.2
  *
  * Copyright(c) 2014 Aki Helin
  * Copyright(c) 2014 - 2017 Yuriy Chumak
@@ -1858,6 +1858,7 @@ struct ol_t
 #ifndef UVTOI_CHECK
 #define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIXP);
 #endif
+// todo: sv2i
 #define uvtoi(v)  (int_t)({ word x1 = (word)(v); UVTOI_CHECK(x1); (word) (x1 >> IPOS); })
 #define itouv(i)  (word) ({ word x2 = (word)(i);                  (word) (x2 << IPOS) | 2; })
 		// (((struct value_t*)(&v))->payload);
