@@ -28,7 +28,7 @@
       TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
       TPAIR TTUPLE TSTRING TSYMBOL
       TBYTECODE TPROCEDURE TCLOSURE
-      TVPTR
+      TVPTR TCALLABLE
 
       ; public primitives
       CAR CDR NEW    ; used by (lang compile) and (lang eval)
@@ -100,6 +100,7 @@
       (setq type-thread-state     31) ; reference
 
       (setq TVPTR             49) ; reference,  raw
+      (setq TCALLABLE         61) ; reference,  raw
 
 
       ; -------------------------------------------
