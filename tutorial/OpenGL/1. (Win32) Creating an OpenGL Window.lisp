@@ -40,18 +40,18 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
-(wglMakeCurrent '() '())
+(wglMakeCurrent #f #f)
 
 ;(show)
 (ShowWindow window SW_SHOW)
 (SetForegroundWindow window)
 (SetFocus window)
 
-;(loop)
-(let ((MSG (vm:new-raw-object type-vector-raw (repeat 0 28))))
+;,quit;(loop)
+(let ((MSG (vm:new-raw-object type-vector-raw 48)))
 (let loop ()
    (let process-events ()
-      (if (= 1 (PeekMessage MSG '() 0 0 PM_REMOVE))
+      (if (= 1 (PeekMessage MSG #f 0 0 PM_REMOVE))
          (begin
             (TranslateMessage MSG)
             (DispatchMessage MSG)
@@ -61,7 +61,7 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
    (SwapBuffers hDC)
-   (wglMakeCurrent '() '())
+   (wglMakeCurrent #f #f)
 (loop)))
 
 ;(done)

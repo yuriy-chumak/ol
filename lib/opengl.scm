@@ -1,24 +1,27 @@
 (define-library (lib opengl)
- (import
-  (otus lisp) (otus ffi)
-  (OpenGL version-1-0))
+   (import
+      (otus lisp) (otus ffi)
+      (OpenGL version-1-0))
 
- (export
-   (exports (OpenGL version-1-0))
+   (export
+      (exports (OpenGL version-1-0))
       gl:run
 
       gl:Create ; create window + context
       gl:Enable gl:Disable
 
       gl:SwapBuffers
-      gl:ProcessEvents
-   )
+      gl:ProcessEvents)
 
 (begin
-(define uname (syscall 63 #f #f #f))
+(define OS (ref (uname) 1))
 
-(define win32? (string-ci=? (ref uname 1) "Windows"))
-(define linux? (string-ci=? (ref uname 1) "Linux"))
+(define win32? (string-ci=? OS "Windows"))
+(define linux? (string-ci=? OS "Linux"))
+
+; check the platform
+(or win32? linux?
+   (runtime-error "Unsupported platform" OS))
 
 (define WIDTH 1280)
 (define HEIGHT 920)
@@ -31,32 +34,28 @@
                   (gl:MakeCurrent dc glrc))))
    (linux?  (lambda (context)
                (let ((display (ref context 1))
-                     ;screen  (ref context 2))
+                    ;(screen  (ref context 2))
                      (window  (ref context 3))
                      (cx      (ref context 4)))
-                  (gl:MakeCurrent display window cx))))
-   (else   (runtime-error "Unknown platform" uname))))
-
+                  (gl:MakeCurrent display window cx))))))
 
 (define gl:Disable (cond
    (win32?  (lambda (context)
                   (gl:MakeCurrent #f #f)))
    (linux?  (lambda (context)
                (let ((display (ref context 1)))
-                  (gl:MakeCurrent display #f #f))))
-   (else   (runtime-error "Unknown platform" uname))))
-
+                  (gl:MakeCurrent display #f #f))))))
 
 (define gl:Create (cond
    ; -=( win32 )=---------------------------------------------------------------------
    (win32?
-      (let ((user32 (dlopen "user32.dll"))
-            (gdi32  (dlopen "gdi32")))
-      (let ((CreateWindowEx   (dlsym user32 fft-void* "CreateWindowExA" type-int+ type-string type-string type-int+ type-int+ type-int+ type-int+ type-int+ fft-void* fft-void* fft-void* fft-void*))
-            (GetDC            (dlsym user32 fft-void* "GetDC" fft-void*))
-            (ShowWindow       (dlsym user32 type-fix+ "ShowWindow" fft-void* type-int+))
-            (ChoosePixelFormat(dlsym gdi32  type-int+ "ChoosePixelFormat" fft-void* fft-void*))
-            (SetPixelFormat   (dlsym gdi32  type-fix+ "SetPixelFormat" fft-void* type-int+ fft-void*)))
+      (let ((user32 (load-dynamic-library "user32.dll"))
+            (gdi32  (load-dynamic-library "gdi32")))
+      (let ((CreateWindowEx   (user32 fft-void* "CreateWindowExA" fft-int type-string type-string fft-int fft-int fft-int fft-int fft-int fft-void* fft-void* fft-void* fft-void*))
+            (GetDC            (user32 fft-void* "GetDC" fft-void*))
+            (ShowWindow       (user32 fft-int "ShowWindow" fft-void* fft-int))
+            (ChoosePixelFormat(gdi32  fft-int "ChoosePixelFormat" fft-void* fft-void*))
+            (SetPixelFormat   (gdi32  fft-int "SetPixelFormat" fft-void* fft-int fft-void*)))
       (lambda (title)
          (let*((window (CreateWindowEx
                   #x00040100 (c-string "#32770") (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
@@ -76,47 +75,47 @@
             (print "OpenGL version: " (glGetString GL_VERSION))
             (print "OpenGL vendor: " (glGetString GL_VENDOR))
             (print "OpenGL renderer: " (glGetString GL_RENDERER))
-            ;gl:MakeCurrent '() '())
+            ;gl:MakeCurrent #f #f)
 
             (ShowWindow window 5)
             (tuple hDC hRC window)))))))
    ; -=( linux )=---------------------------------------------------------------------
    (linux?
-      (let ((libx11 (dlopen "libX11.so"))
-            (libGLX (dlopen "libGLX.so")))
-      (let ((XOpenDisplay  (dlsym libx11 fft-void* "XOpenDisplay" type-string))
-            (XDefaultScreen(dlsym libx11 type-int+  "XDefaultScreen" fft-void*))
-            (XRootWindow   (dlsym libx11 fft-void* "XRootWindow" fft-void* type-int+))
-            (XBlackPixel   (dlsym libx11 type-int+  "XBlackPixel" fft-void* type-int+))
-            (XWhitePixel   (dlsym libx11 type-int+  "XWhitePixel" fft-void* type-int+))
-            (XCreateSimpleWindow (dlsym libx11 fft-void* "XCreateSimpleWindow"
-                              fft-void* fft-void* ; display, parent Window
-                              type-int+ type-int+ type-int+ type-int+ ; x y width height
-                              type-int+ ; border width
-                              type-int+ ; border
-                              type-int+ ; background
+      (let ((libX11 (load-dynamic-library "libX11.so"))
+            (libGLX (load-dynamic-library "libGLX.so")))
+      (let ((XOpenDisplay  (libX11 type-vptr "XOpenDisplay" type-string))
+            (XDefaultScreen(libX11 type-vptr "XDefaultScreen" type-vptr))
+            (XRootWindow   (libX11 type-vptr "XRootWindow" type-vptr fft-int))
+            (XBlackPixel   (libX11 type-vptr "XBlackPixel" type-vptr fft-int))
+            (XWhitePixel   (libX11 type-vptr "XWhitePixel" type-vptr fft-int))
+            (XCreateSimpleWindow (libX11 type-vptr "XCreateSimpleWindow"
+                              type-vptr type-vptr ; display, parent
+                              fft-int fft-int fft-unsigned-int fft-unsigned-int ; x y width height
+                              fft-unsigned-int  ; border width
+                              type-vptr ; border
+                              type-vptr ; background
                            ))
-            (XSelectInput (dlsym libx11 type-int+ "XSelectInput" fft-void* fft-void* type-int+))
-            (XMapWindow   (dlsym libx11 type-int+ "XMapWindow" fft-void* fft-void*))
-            (XStoreName   (dlsym libx11 type-int+ "XStoreName" fft-void* fft-void* type-string))
-            (glXChooseVisual  (dlsym libGLX fft-void* "glXChooseVisual" fft-void* type-int+ (vm:or type-int+ #x40)))
-            (glXCreateContext (dlsym libGLX fft-void* "glXCreateContext" fft-void* fft-void* type-int+ type-int+)))
+            (XSelectInput (libX11 fft-int "XSelectInput" type-vptr type-vptr fft-long))
+            (XMapWindow   (libX11 fft-int "XMapWindow" type-vptr type-vptr))
+            (XStoreName   (libX11 fft-int "XStoreName" type-vptr type-vptr type-string))
+            (glXChooseVisual  (libGLX type-vptr "glXChooseVisual" type-vptr fft-int fft-int*))
+            (glXCreateContext (libGLX type-vptr "glXCreateContext" type-vptr type-vptr type-vptr fft-int)))
       (lambda (title)
-         (let*((display (XOpenDisplay #false))
-               (screen (XDefaultScreen display))
-               (window (XCreateSimpleWindow display (XRootWindow display screen)
-                  0 0 WIDTH HEIGHT 1
-                  (XBlackPixel display screen) (XWhitePixel display screen)))
+         (let*((display (XOpenDisplay #f))
+               (screen  (XDefaultScreen display))
+               (window  (XCreateSimpleWindow display (XRootWindow display screen)
+                           0 0 WIDTH HEIGHT 1
+                           (XBlackPixel display screen)
+                           (XWhitePixel display screen)))
                (vi (glXChooseVisual display screen
-                     '(
-                        4 ; GLX_RGBA
-                        8  1  ; GLX_RED_SIZE
-                        9  1  ; GLX_GREEN_SIZE
-                       10  1  ; GLX_BLUE_SIZE
-                       12  1  ; GLX_DEPTH_SIZE
+                     '( 4 ; GLX_RGBA
+                        8  1 ; GLX_RED_SIZE
+                        9  1 ; GLX_GREEN_SIZE
+                       10  1 ; GLX_BLUE_SIZE
+                       12  1 ; GLX_DEPTH_SIZE
                         5 ; GLX_DOUBLEBUFFER
-                        0)))) ; None
-            (XSelectInput display window  (<< 1 15)) ; ExposureMask
+                        0)))); None
+            (XSelectInput display window 32769) ; ExposureMask
             (XStoreName display window title)
             (XMapWindow display window)
             (let ((cx (gl:CreateContext display vi #false 1)))
@@ -124,25 +123,24 @@
                (print "OpenGL version: " (glGetString GL_VERSION))
                (print "OpenGL vendor: " (glGetString GL_VENDOR))
                (print "OpenGL renderer: " (glGetString GL_RENDERER))
-               ;gl:MakeCurrent display windows '())
+               ;gl:MakeCurrent display windows #f)
 
                (tuple display screen window cx)))))))
-
    (else
-      (runtime-error "Unknown platform" uname))))
+      (runtime-error "Unknown platform" OS))))
 
 
 (define gl:ProcessEvents (cond ; todo: add "onClose" handler
    (win32?
-      (let ((user32 (dlopen "user32.dll")))
-      (let ((PeekMessage      (dlsym user32 type-fix+ "PeekMessageA"     fft-void* fft-void* type-int+ type-int+ type-int+))
-            (TranslateMessage (dlsym user32 type-fix+ "TranslateMessage" fft-void*))
-            (GetMessage       (dlsym user32 type-fix+ "GetMessageA"      fft-void* fft-void* type-int+ type-int+))
-            (DispatchMessage  (dlsym user32 type-int+ "DispatchMessageA" fft-void*)))
+      (let ((user32 (load-dynamic-library "user32.dll")))
+      (let ((PeekMessage      (user32 fft-int "PeekMessageA"     fft-void* fft-void* fft-int fft-int fft-int))
+            (TranslateMessage (user32 fft-int "TranslateMessage" fft-void*))
+            (GetMessage       (user32 fft-int "GetMessageA"      fft-void* fft-void* fft-int fft-int))
+            (DispatchMessage  (user32 fft-int "DispatchMessageA" fft-void*)))
       (lambda (context)
-         (let ((MSG (vm:new-raw-object type-vector-raw (repeat 0 48)))) ; 28 for win32
+         (let ((MSG (vm:new-raw-object type-vector-raw 48))) ; 28 for win32
          (let loop ()
-            (if (= 1 (PeekMessage MSG '() 0 0 1))
+            (if (= 1 (PeekMessage MSG #f 0 0 1))
                (let*((w (vm:wordsize))
                      (message (+ (<< (ref MSG (+ 0 (* w 1)))  0)      ; 4 for win32
                                  (<< (ref MSG (+ 1 (* w 1)))  8)
@@ -153,25 +151,26 @@
                         (eq? message 273) ; WM_COMMAND
                         (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
                                 (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam (8 for win32) , IDCANCEL
-                     2 ; EXIT
+                     24 ; EXIT
                      (begin
                         (TranslateMessage MSG)
                         (DispatchMessage MSG)
                         (loop)))))))))))
    (linux?
-      (let ((libx11 (dlopen "libX11.so")))
-      (let ((XPending  (dlsym libx11 type-int+ "XPending"   fft-void*))
-            (XNextEvent(dlsym libx11 type-int+ "XNextEvent" fft-void* fft-void*)))
+      (let ((libX11 (load-dynamic-library "libX11.so")))
+      (let ((XPending  (libX11 fft-int "XPending" type-vptr))
+            (XNextEvent(libX11 fft-int "XNextEvent" type-vptr type-vptr)))
       (lambda (context)
-         (let ((XEvent (vm:new-raw-object type-vector-raw (repeat 0 192)))
-               (display (ref context 1)))
-         (let loop ()
+         (let ((display (ref context 1)))
+         (let loop ((XEvent (vm:new-raw-object type-vector-raw 192)))
             (if (> (XPending display) 0)
-            (begin
-               (XNextEvent display XEvent)
-               (loop)))))))))
+               (begin
+                  (XNextEvent display XEvent)
+                  (if (eq? (int32->ol XEvent 0) 2)
+                     (int32->ol XEvent 84)
+                     (loop XEvent))))))))))
    (else
-      (runtime-error "Unknown platform" uname))))
+      (runtime-error "Unknown platform" OS))))
 
 ; ====================================================================================================
 (define (gl:run context init renderer)
@@ -184,7 +183,7 @@
    (call/cc (lambda (return)
    (let this ((userdata userdata))
       (let ((message (gl:ProcessEvents context)))
-         (if (eq? message 2)
+         (if (eq? message 24)
             (return message)))
 
       (gl:Enable context)
