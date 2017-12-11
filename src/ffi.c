@@ -129,7 +129,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"pushq %r9",
 	"andl  $-16, %esp", // выравняем стек по 16-байтовой границе
 
-	// get count of arguments:
+	// get count of arguments
 	"xor   %rax, %rax",
 	"movl  %edx, %eax",
 
@@ -151,7 +151,8 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"decq  %rax",
 	"jnz   1b",
 
-	// 4. заполним обычные rcx, rdx, ... не проверяя количество аргументов и их тип, так будет быстрее
+	// 4. заполним обычные rcx, rdx, ... не проверяя количество аргументов и их
+	// тип, так будет быстрее
 "4:",
 	"movq  %r8, %rax",
 	"movsd 24(%rcx), %xmm3", "mov  24(%rcx), %r9",
@@ -173,7 +174,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"cvtss2sd %xmm0, %xmm0", // float->double
 "52:",
 	"movsd %xmm0, (%rsp)",
-	"pop   %rax", // можно попать, так как уже пушнули один r9 вверху (оптимизация)
+	"pop   %rax", // можно попасть, так как уже пушнули один r9 вверху (оптимизация)
 	"jmp   9b");
 
 # else      // System V (unix, linux, osx)
@@ -429,8 +430,6 @@ word* ffi(OL* self, word* arguments)
 #if UINTPTR_MAX != 0xffffffffffffffff
 	long long from_ulong(word arg) {
 		assert (is_reference(arg));
-		// так как в стек мы все равно большое число сложить не сможем,
-		// то возьмем только то, что влазит (первые два члена)
 		long long v = car(arg) >> 8;
 		int shift = FBITS;
 		while (cdr(arg) != INULL) {
@@ -795,7 +794,7 @@ word* ffi(OL* self, word* arguments)
 				case TVPTR:
 					args[i] = car(arg);
 					break;
-				case TBVEC: // TODO: remove!
+				case TBVEC: // can be used instead of vptr
 					args[i] = (word) &car(arg);
 					break;
 				default:
@@ -1065,7 +1064,7 @@ word* ffi(OL* self, word* arguments)
 	if (has_wb) {
 		// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
 		p = (word*)C;   // сами аргументы
-		t = (word*)cdr(B); // rtty
+		t = (word*)cdr(B); // rtti
 
 		i = 0;
 		while ((word)p != INULL) { // пока есть аргументы
@@ -1078,7 +1077,7 @@ word* ffi(OL* self, word* arguments)
 			// destination type
 			switch (type) {
 
-			// simple case - all shorts are fits as value
+			// simplest case - all shorts are fits as value
 			case TINT16 + 0x80: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -1120,7 +1119,7 @@ word* ffi(OL* self, word* arguments)
 					int value = *f++;
 					word* ptr = &car(l);
 
-				#if UINTPTR_MAX != 0xffffffffffffffff  // 64-bit machines
+				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
 					if (value > FMAX) {
 						if (is_value(*ptr))
 							STDERR("got too large number to store");
@@ -1155,7 +1154,7 @@ word* ffi(OL* self, word* arguments)
 					int value = *f++;
 					word* ptr = &car(l);
 
-				#if UINTPTR_MAX != 0xffffffffffffffff  // 64-bit machines
+				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
 					if (value > FMAX) {
 						if (is_value(*ptr))
 							STDERR("got too large number to store");

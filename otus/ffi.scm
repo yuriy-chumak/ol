@@ -1,14 +1,15 @@
-; * Copyright(c) 2014 - 2017 Yuriy Chumak
-; *
-; * -------------------------------------
-; * This program is free software;  you can redistribute it and/or
-; * modify it under the terms of the GNU General Public License as
-; * published by the Free Software Foundation; either version 3 of
-; * the License, or (at your option) any later version.
-; *
-; * This program is distributed in the hope that it will be useful,
-; * but WITHOUT ANY WARRANTY; without even the implied warranty of
-; * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+;
+; Copyright(c) 2014 - 2017 Yuriy Chumak
+; --------------------------------------------------------------
+; This program is free software;  you can redistribute it and/or
+; modify it under the terms of the GNU General Public License as
+; published by the Free Software Foundation; either version 3 of
+; the License, or (at your option) any later version.
+; 
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+; --------------------------------------------------------------
 
 ; TODO: rename type-vptr to ffi-vptr, and all other types
 ; TODO: all type-* constants should be used by vm, all fft-* only by ffi
