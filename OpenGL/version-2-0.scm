@@ -6,6 +6,7 @@
    GL_VERSION_2_0
 
    gl:GetVersion
+   gl:CreateProgram
 
 glCreateShader
 GL_VERTEX_SHADER
@@ -27,6 +28,9 @@ glGetUniformLocation
 glUniform1i
 glUniform1f
 glUniform2f
+glUniform3f
+glUniform1fv
+glUniformMatrix4fv
 glEnableVertexAttribArray
 glVertexAttribPointer
 GL_FLOAT
@@ -38,16 +42,12 @@ glDrawArrays
 (begin
    (define GL_VERSION_2_0 1)
 
-   (define % (dlopen GL_LIBRARY))
-
-;  using GLchar      = System.Byte;    // char
-
-(define GLchar** (vm:or type-string #x40))
+(define GLchar* type-string)
+(define GLchar** (fft* type-string))
 ;(define GLchar** type-tuple)
 
-(define GLint* fft-void*)
-(define GLsizei* fft-void*)
-(define GLchar* type-string)
+(define GLint* (fft* GLint))
+(define GLsizei* (fft* GLsizei))
 (define void* fft-void*)
 
   (define glCreateShader    (gl:GetProcAddress GLuint "glCreateShader" GLenum))
@@ -70,6 +70,9 @@ glDrawArrays
     (define glUniform1i     (gl:GetProcAddress GLvoid "glUniform1i" GLint GLint))
     (define glUniform1f     (gl:GetProcAddress GLvoid "glUniform1f" GLint GLfloat))
     (define glUniform2f     (gl:GetProcAddress GLvoid "glUniform2f" GLint GLfloat GLfloat))
+    (define glUniform3f     (gl:GetProcAddress GLvoid "glUniform3f" GLint GLfloat GLfloat GLfloat))
+    (define glUniform1fv    (gl:GetProcAddress GLvoid "glUniform1fv" GLint GLsizei GLvoid*)) ; TEMP from GLfloat*
+    (define glUniformMatrix4fv (gl:GetProcAddress GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLvoid*)) ; TEMPORARY RENAMED FROM GLfloat*
   (define glEnableVertexAttribArray (gl:GetProcAddress GLvoid "glEnableVertexAttribArray" GLuint))
   (define glVertexAttribPointer (gl:GetProcAddress GLvoid "glVertexAttribPointer" GLuint GLint GLenum GLboolean GLsizei void*))
     (define GL_FLOAT #x1406)
@@ -78,5 +81,53 @@ glDrawArrays
 
 (define (gl:GetVersion)
    (cons 2 0))
+
+(define (gl:CreateProgram vstext fstext)
+(let ((po (glCreateProgram))
+      (vs (glCreateShader GL_VERTEX_SHADER))
+      (fs (glCreateShader GL_FRAGMENT_SHADER)))
+   (if (= po 0)
+      (runtime-error "Can't create shader program." '()))
+
+   ; пример, как можно передать в функцию массив указателей на строки:
+   ; vertex shader:
+   ; http://steps3d.narod.ru/tutorials/lighting-tutorial.html
+   (glShaderSource vs 1 (list (c-string vstext)) #false)
+   (glCompileShader vs)
+   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
+      (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
+
+      (if (= (ref isCompiled 0) 0)
+         (let*((maxLength "??")
+               (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
+               (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
+               (errorLog (make-string maxLengthValue 0))
+               (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
+            (runtime-error errorLog vs))))
+   (glAttachShader po vs)
+
+   ; fragment shader:
+   (glShaderSource fs 1 (list (c-string fstext)) #false)
+   (glCompileShader fs)
+   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
+      (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
+
+      (if (= (ref isCompiled 0) 0)
+         (let*((maxLength "??")
+               (_ (glGetShaderiv fs GL_INFO_LOG_LENGTH maxLength))
+               (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
+               (errorLog (make-string maxLengthValue 0))
+               (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
+            (runtime-error errorLog fs))))
+
+   (glAttachShader po fs)
+
+   (glLinkProgram po)
+   (glDetachShader po fs)
+   (glDetachShader po vs)
+
+   po ; return result index
+))
+
 
 ))
