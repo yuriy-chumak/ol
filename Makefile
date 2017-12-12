@@ -207,11 +207,11 @@ vm: src/olvm.c src/olvm.h
 	@echo Ok.
 vm32: src/olvm.c src/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
-	   -Xlinker --export-dynamic $(L) -m32
+	   -Xlinker --export-dynamic $(L) -m32 -DOLVM_FFI=0
 	@echo Ok.
 vm64: src/olvm.c src/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
-	   -Xlinker --export-dynamic $(L) -m64
+	   -Xlinker --export-dynamic $(L) -m64 -DOLVM_FFI=0
 	@echo Ok.
 
 
@@ -307,8 +307,8 @@ tests: \
 	@echo ""
 	@echo "ffi tests (32- and 64-bit):"
 	@echo "---------------------------------------"
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -o ffi32 $(L) -m32 -Xlinker --export-dynamic
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -o ffi64 $(L) -m64 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m64 -Xlinker --export-dynamic
 	   @echo -n "Testing ffi ... "
 	   @if ./ffi32 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null && ./ffi64 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
 	      echo "Ok.";\
