@@ -60,7 +60,7 @@ glDrawArrays
   (define glDetachShader    (gl:GetProcAddress GLvoid "glDetachShader" GLuint GLuint))
   (define glLinkProgram     (gl:GetProcAddress GLvoid "glLinkProgram" GLuint))
   (define glUseProgram      (gl:GetProcAddress GLvoid "glUseProgram" GLuint))
-  (define glGetShaderiv     (gl:GetProcAddress GLvoid "glGetShaderiv" GLuint GLenum GLint*))
+  (define glGetShaderiv     (gl:GetProcAddress GLvoid "glGetShaderiv" GLuint GLenum GLint&))
     (define GL_COMPILE_STATUS  #x8B81)
     (define GL_LINK_STATUS     #x8B82)
     (define GL_VALIDATE_STATUS #x8B83)
@@ -87,17 +87,17 @@ glDrawArrays
       (vs (glCreateShader GL_VERTEX_SHADER))
       (fs (glCreateShader GL_FRAGMENT_SHADER)))
    (if (= po 0)
-      (runtime-error "Can't create shader program." '()))
+      (runtime-error "Can't create shader program." #f))
 
    ; пример, как можно передать в функцию массив указателей на строки:
    ; vertex shader:
    ; http://steps3d.narod.ru/tutorials/lighting-tutorial.html
    (glShaderSource vs 1 (list (c-string vstext)) #false)
    (glCompileShader vs)
-   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
+   (let ((isCompiled '(0)))
       (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
 
-      (if (= (ref isCompiled 0) 0)
+      (if (eq? (car isCompiled) 0)
          (let*((maxLength "??")
                (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
                (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
@@ -109,10 +109,10 @@ glDrawArrays
    ; fragment shader:
    (glShaderSource fs 1 (list (c-string fstext)) #false)
    (glCompileShader fs)
-   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
+   (let ((isCompiled '(0)))
       (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
 
-      (if (= (ref isCompiled 0) 0)
+      (if (eq? (car isCompiled) 0)
          (let*((maxLength "??")
                (_ (glGetShaderiv fs GL_INFO_LOG_LENGTH maxLength))
                (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
