@@ -17,38 +17,13 @@
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
 
-(let ((po (glCreateProgram))
-      (vs (glCreateShader GL_VERTEX_SHADER))
-      (fs (glCreateShader GL_FRAGMENT_SHADER)))
-   (if (= po 0)
-      (runtime-error "Can't create shader program." '()))
 
-   ; пример, как можно передать в функцию массив указателей на строки:
-   ; vertex shader:
-   (glShaderSource vs 2 (list (c-string "#version 120 // OpenGL 2.1\n")
-                              (c-string "
+(let ((po (gl:CreateProgram
+"#version 120 // OpenGL 2.1
       void main() {
          gl_Position = gl_Vertex;
-      }")) #f)
-   (glCompileShader vs)
-   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
-      (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
-
-      (if (= (ref isCompiled 0) 0)
-         (let*((maxLength "??")
-               (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
-               (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
-               (errorLog (make-string maxLengthValue 0))
-               (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
-            (runtime-error errorLog vs))))
-   (glAttachShader po vs)
-
-   ; fragment shader:
-   (if (eq? (length *vm-args*) 2)
-      (glShaderSource fs 1 (list (c-string (runes->string (file->list (cadr *vm-args*))))) #f)
-
-      (glShaderSource fs 2 (list (c-string "#version 120 // OpenGL 2.1")
-                                 (c-string "
+      }"
+"#version 120 // OpenGL 2.1
          // http://glslsandbox.com/e#19102.0
          uniform float time;
 
@@ -117,25 +92,7 @@
          v=mix(vec3(length(v)),v,saturation); //color adjust
          gl_FragColor = vec4(v*.01,1.);
 
-      }")) #f))
-   (glCompileShader fs)
-   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
-      (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
-
-      (if (= (ref isCompiled 0) 0)
-         (let*((maxLength "??")
-               (_ (glGetShaderiv fs GL_INFO_LOG_LENGTH maxLength))
-               (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
-               (errorLog (make-string maxLengthValue 0))
-               (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
-            (runtime-error errorLog fs))))
-
-   (glAttachShader po fs)
-
-   (glLinkProgram po)
-   (glDetachShader po fs)
-   (glDetachShader po vs)
-
+      }")))
 
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)

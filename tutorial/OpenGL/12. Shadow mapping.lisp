@@ -101,62 +101,22 @@
 (define knots '(0 0 0 0 1 1 1 1))
 
 (define (compile-shader)
-(let ((po (glCreateProgram))
-      (vs (glCreateShader GL_VERTEX_SHADER))
-      (fs (glCreateShader GL_FRAGMENT_SHADER)))
-
-   (if (= po 0)
-      (runtime-error "Can't create shader program." '()))
-
-   ; пример, как можно передать в функцию массив указателей на строки:
-   ; vertex shader:
-   (glShaderSource vs 2 (list (c-string "#version 120 // OpenGL 2.1\n")
-                              (c-string "
+(let ((po (gl:CreateProgram
+"#version 120 // OpenGL 2.1
    varying vec2 xy;
    void main() {
       gl_Position = ftransform(); // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewProjectionMatrix * gl_Vertex
       xy = normalize(gl_NormalMatrix * gl_Normal).xy / 1.0;
-      }")) #f)
-   (glCompileShader vs)
-   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
-      (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
+      }"
 
-      (if (= (ref isCompiled 0) 0)
-         (let*((maxLength "????")
-               (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
-               (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
-               (errorLog (make-string maxLengthValue 0))
-               (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
-            (runtime-error errorLog vs))))
-   (glAttachShader po vs)
-
-   ; fragment shader:
-   (glShaderSource fs 2 (list (c-string "#version 120 // OpenGL 2.1")
-                              (c-string "
+"#version 120 // OpenGL 2.1
    // http://glslsandbox.com/e#19102.0
    uniform float time;
 
    varying vec2 xy;
    void main(void) {
       gl_FragColor = vec4(xy.x, xy.y, 0, 1.0);
-   }")) #f)
-
-   (glCompileShader fs)
-   (let ((isCompiled (vm:new-raw-object type-vector-raw '(0))))
-      (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
-
-      (if (= (ref isCompiled 0) 0)
-         (let*((maxLength "????")
-               (_ (glGetShaderiv fs GL_INFO_LOG_LENGTH maxLength))
-               (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
-               (errorLog (make-string maxLengthValue 0))
-               (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
-            (runtime-error errorLog fs))))
-   (glAttachShader po fs)
-
-   (glLinkProgram po)
-   (glDetachShader po fs)
-   (glDetachShader po vs)
+   }")))
 po))
 
 (gl:run Context
