@@ -17,7 +17,7 @@
 (print "### 16-bit:\n")
 (begin
    (print "*** short fft_16i(short i) ***")
-   (define fft_16i (dlsym (dlopen) fft-int16 "fft_16i" fft-int16))
+   (define fft_16i ((load-dynamic-library #f) fft-int16 "fft_16i" fft-int16))
    (try "fft_16i" fft_16i 0)
    (try "fft_16i" fft_16i 1)
    (try "fft_16i" fft_16i -1)
@@ -29,7 +29,7 @@
 
 (begin
    (print "*** unsigned short fft_16u(unsigned short i) ***")
-   (define fft_16u (dlsym (dlopen) fft-uint16 "fft_16u" fft-uint16))
+   (define fft_16u ((load-dynamic-library #f) fft-uint16 "fft_16u" fft-uint16))
    (try "fft_16u" fft_16u 0)
    (try "fft_16u" fft_16u 1)
    ;(try "incorrect call for fft_16u" fft_16u -1)
@@ -44,7 +44,7 @@
 
 (begin
    (print "*** int fft_32i(int i) ***")
-   (define fft_32i (dlsym (dlopen) fft-int32 "fft_32i" fft-int32))
+   (define fft_32i ((load-dynamic-library #f) fft-int32 "fft_32i" fft-int32))
    (try "fft_32i" fft_32i 0)
    (try "fft_32i" fft_32i 1)
    (try "fft_32i" fft_32i -1)
@@ -56,7 +56,7 @@
 
 (begin
    (print "*** unsigned int fft_32u(unsigned int i) ***")
-   (define fft_32u (dlsym (dlopen) fft-uint32 "fft_32u" fft-uint32))
+   (define fft_32u ((load-dynamic-library #f) fft-uint32 "fft_32u" fft-uint32))
    (try "fft_32u" fft_32u 0)
    (try "fft_32u" fft_32u 1)
    ;(try "incorrect call fft_32u" fft_32u -1)
@@ -71,7 +71,7 @@
 
 (begin
    (print "*** long long fft_64i(long long i) ***")
-   (define fft_64i (dlsym (dlopen) fft-int64 "fft_64i" fft-int64))
+   (define fft_64i ((load-dynamic-library #f) fft-int64 "fft_64i" fft-int64))
    (try "fft_64i" fft_64i 0)
    (try "fft_64i" fft_64i 1)
    (try "fft_64i" fft_64i -1)
@@ -83,7 +83,7 @@
 
 (begin
    (print "*** unsigned long long fft_64u(unsigned long long i) ***")
-   (define fft_64u (dlsym (dlopen) fft-uint64 "fft_64u" fft-uint64))
+   (define fft_64u ((load-dynamic-library #f) fft-uint64 "fft_64u" fft-uint64))
    (try "fft_64u" fft_64u 0)
    (try "fft_64u" fft_64u 1)
    ;(try "incorrect call fft_64u" fft_64u -1)
@@ -108,16 +108,16 @@
       (print text " = " "ok.")
       (print text " = " result " instead of " value)))
 
-(define i_i (dlsym (dlopen) type-int+ "i_i" type-int+))
-(define f_f (dlsym (dlopen) fft-float "f_f" fft-float))
-(define d_d (dlsym (dlopen) fft-double "d_d" fft-double))
+(define i_i ((load-dynamic-library #f) type-int+ "i_i" type-int+))
+(define f_f ((load-dynamic-library #f) fft-float "f_f" fft-float))
+(define d_d ((load-dynamic-library #f) fft-double "d_d" fft-double))
 
-(define fi (dlsym (dlopen) fft-float "fi" fft-float type-int+))
-(define fii (dlsym (dlopen) fft-float "fii" fft-float type-int+ type-int+))
-(define fiiii (dlsym (dlopen) fft-float "fiiii" fft-float type-int+ type-int+ type-int+ type-int+))
-(define ifiii (dlsym (dlopen) fft-float "ifiii" type-int+ fft-float type-int+ type-int+ type-int+))
-(define iiiif (dlsym (dlopen) fft-float "iiiif" type-int+ type-int+ type-int+ type-int+ fft-float))
-(define fiiif (dlsym (dlopen) fft-float "fiiif" fft-float type-int+ type-int+ type-int+ fft-float))
+(define fi ((load-dynamic-library #f) fft-float "fi" fft-float type-int+))
+(define fii ((load-dynamic-library #f) fft-float "fii" fft-float type-int+ type-int+))
+(define fiiii ((load-dynamic-library #f) fft-float "fiiii" fft-float type-int+ type-int+ type-int+ type-int+))
+(define ifiii ((load-dynamic-library #f) fft-float "ifiii" type-int+ fft-float type-int+ type-int+ type-int+))
+(define iiiif ((load-dynamic-library #f) fft-float "iiiif" type-int+ type-int+ type-int+ type-int+ fft-float))
+(define fiiif ((load-dynamic-library #f) fft-float "fiiif" fft-float type-int+ type-int+ type-int+ fft-float))
 
 
 (assert "i_i" (i_i 1)   1)
@@ -128,10 +128,10 @@
 (assert "fi" (fi 1.1 2)     (+ 1.1 2))
 (assert "fii" (fii 1.1 2 3) (+ 1.1 2 3))
 
-(define fiiii (dlsym (dlopen) fft-float "fiiii" fft-float type-int+ type-int+ type-int+ type-int+))
-(define ifiii (dlsym (dlopen) fft-float "ifiii" type-int+ fft-float type-int+ type-int+ type-int+))
-(define iiiif (dlsym (dlopen) fft-float "iiiif" type-int+ type-int+ type-int+ type-int+ fft-float))
-(define fiiif (dlsym (dlopen) fft-float "fiiif" fft-float type-int+ type-int+ type-int+ fft-float))
+(define fiiii ((load-dynamic-library #f) fft-float "fiiii" fft-float type-int+ type-int+ type-int+ type-int+))
+(define ifiii ((load-dynamic-library #f) fft-float "ifiii" type-int+ fft-float type-int+ type-int+ type-int+))
+(define iiiif ((load-dynamic-library #f) fft-float "iiiif" type-int+ type-int+ type-int+ type-int+ fft-float))
+(define fiiif ((load-dynamic-library #f) fft-float "fiiif" fft-float type-int+ type-int+ type-int+ fft-float))
 
 (assert "fiiii" (fiiii 1.1 2 3 4 5)   (+ 1.1 2 3 4 5))
 (assert "ifiii" (ifiii 1 2.2 3 4 5)   (+ 1 2.2 3 4 5))
@@ -140,7 +140,7 @@
 (assert "fiiif" (fiiif 1.1 2 3 4 -1.1)(+ 1.1 2 3 4 -1.1))
 
 
-(define iffiiiifiiffffff (dlsym (dlopen) fft-float "iffiiiifiiffffff"
+(define iffiiiifiiffffff ((load-dynamic-library #f) fft-float "iffiiiifiiffffff"
    type-int+
    fft-float fft-float 
    type-int+ type-int+ type-int+ type-int+
