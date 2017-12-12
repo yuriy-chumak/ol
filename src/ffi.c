@@ -620,7 +620,11 @@ word* OL_ffi(OL* self, word* arguments)
 
 		if (type == TANY) {
 			if (is_value(arg))
-				type = TINTP;
+#if UINTPTR_MAX == 0xffffffffffffffff // 64-bit machines
+				type = TINT64;
+#else
+				type = TINT32;
+#endif
 			else {
 				type = reftype (arg);
 			}
@@ -632,8 +636,6 @@ word* OL_ffi(OL* self, word* arguments)
 		switch (type) {
 
 		// целочисленные типы:
-		case TFIXP: // <-- deprecated
-		case TINTP: // <-- deprecated
 		case TINT8:  case TUINT8:
 		case TINT16: case TUINT16:
 		case TINT32: case TUINT32:
@@ -694,6 +696,9 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT16 + 0x40:
 		case TUINT16 + 0x40: {
 			// todo: add tuples pushing
+			if (arg == INULL) // empty array will be sent as nullptr
+				break;
+
 			int c = llen(arg);
 			short* p = (short*) __builtin_alloca(c * sizeof(short)); // todo: new_raw_vector() ?
 			args[i] = (word)p;
@@ -711,6 +716,9 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT32 + 0x40:
 		case TUINT32 + 0x40: {
 			// todo: add tuples pushing
+			if (arg == INULL) // empty array will be sent as nullptr
+				break;
+
 			int c = llen(arg);
 			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: new_raw_vector() ?
 			args[i] = (word)p;
