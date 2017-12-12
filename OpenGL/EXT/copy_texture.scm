@@ -1,3 +1,4 @@
+;
 ; EXT_copy_texture
 ;	Various methods to alter texture images, including image copying and sub-image replacement.
 ;
@@ -33,14 +34,22 @@
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
+
+   ;CopyTexImage1DEXT
+   ;CopyTexImage2DEXT
+   ;CopyTexSubImage1DEXT
+   ;CopyTexSubImage2DEXT
+   ;CopyTexSubImage3DEXT
    
 ; ---------------------------------------------------------------------------
 ; New Tokens
+
+   ;none
     
 )
   
 ; ---------------------------------------------------------------------------
-   (begin
+(begin
    (define EXT_copy_texture (gl:ExtensionSupported? "GL_EXT_copy_texture"))
 
 ))

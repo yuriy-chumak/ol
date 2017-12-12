@@ -61,10 +61,8 @@
 ;
 ;    enum CheckFramebufferStatus(enum target);
 ;
-;    void FramebufferTexture1D(enum target, enum attachment,
-;                              enum textarget, uint texture, int level);
-;    void FramebufferTexture2D(enum target, enum attachment,
-;                              enum textarget, uint texture, int level);
+   glFramebufferTexture1D ; void (enum target, enum attachment, enum textarget, uint texture, int level);
+   glFramebufferTexture2D ; void (enum target, enum attachment, enum textarget, uint texture, int level);
 ;    void FramebufferTexture3D(enum target, enum attachment,
 ;                              enum textarget, uint texture,
 ;                              int level, int layer);
@@ -90,9 +88,9 @@
 ;    FramebufferRenderbuffer, and
 ;    GetFramebufferAttachmentParameteriv:
 ;
-        FRAMEBUFFER                     ;0x8D40
-        READ_FRAMEBUFFER                ;0x8CA8
-        DRAW_FRAMEBUFFER                ;0x8CA9
+        GL_FRAMEBUFFER                     ;0x8D40
+        GL_READ_FRAMEBUFFER                ;0x8CA8
+        GL_DRAW_FRAMEBUFFER                ;0x8CA9
 ;
 ;    Accepted by the <target> parameter of BindRenderbuffer,
 ;    RenderbufferStorage, and GetRenderbufferParameteriv, and
@@ -165,7 +163,7 @@
 ;        COLOR_ATTACHMENT13               0x8CED
 ;        COLOR_ATTACHMENT14               0x8CEE
 ;        COLOR_ATTACHMENT15               0x8CEF
-;        DEPTH_ATTACHMENT                 0x8D00
+   GL_DEPTH_ATTACHMENT                 ; 0x8D00
 ;        STENCIL_ATTACHMENT               0x8D20
 ;        DEPTH_STENCIL_ATTACHMENT         0x821A
 ;
@@ -255,10 +253,10 @@
 ;
 ;    enum CheckFramebufferStatus(enum target);
 ;
-;    void FramebufferTexture1D(enum target, enum attachment,
-;                              enum textarget, uint texture, int level);
-;    void FramebufferTexture2D(enum target, enum attachment,
-;                              enum textarget, uint texture, int level);
+   (define glFramebufferTexture1D (if ARB_framebuffer_object
+         (gl:GetProcAddress GLvoid "FramebufferTexture1D" GLenum GLenum GLenum GLuint GLint)))
+   (define glFramebufferTexture2D (if ARB_framebuffer_object
+         (gl:GetProcAddress GLvoid "FramebufferTexture2D" GLenum GLenum GLenum GLuint GLint)))
 ;    void FramebufferTexture3D(enum target, enum attachment,
 ;                              enum textarget, uint texture,
 ;                              int level, int layer);
@@ -278,9 +276,9 @@
 ;    void GenerateMipmap(enum target);   
 
 
-   (define FRAMEBUFFER                     #x8D40)
-   (define READ_FRAMEBUFFER                #x8CA8)
-   (define DRAW_FRAMEBUFFER                #x8CA9)
+   (define GL_FRAMEBUFFER                     #x8D40)
+   (define GL_READ_FRAMEBUFFER                #x8CA8)
+   (define GL_DRAW_FRAMEBUFFER                #x8CA9)
 ;        RENDERBUFFER                    0x8D41
 ;        STENCIL_INDEX1                  0x8D46
 ;        STENCIL_INDEX4                  0x8D47
@@ -329,7 +327,7 @@
 ;        COLOR_ATTACHMENT13               0x8CED
 ;        COLOR_ATTACHMENT14               0x8CEE
 ;        COLOR_ATTACHMENT15               0x8CEF
-;        DEPTH_ATTACHMENT                 0x8D00
+   (define GL_DEPTH_ATTACHMENT                 #x8D00)
 ;        STENCIL_ATTACHMENT               0x8D20
 ;        DEPTH_STENCIL_ATTACHMENT         0x821A
 ;        MAX_SAMPLES                     0x8D57

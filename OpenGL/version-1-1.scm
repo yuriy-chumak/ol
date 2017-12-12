@@ -3,75 +3,17 @@
 ; ==========================================================================
 (define-library (OpenGL version-1-1)
 (export
-       (exports (OpenGL version-1-0))
+
    GL_VERSION_1_1
 
-   glBindTexture ; void (GLenum target, GLuint texture)
-   ; target
-       GL_TEXTURE_1D
-       GL_TEXTURE_2D
 
+ ; EXT_polygon_offset
+   ;PolygonOffsetEXT
+   ;POLYGON_OFFSET_EXT
+   ;POLYGON_OFFSET_FACTOR_EXT
+   ;POLYGON_OFFSET_BIAS_EXT
 
-;/* ClientArrayType */
-;/*      GL_VERTEX_ARRAY */
-;/*      GL_NORMAL_ARRAY */
-;/*      GL_COLOR_ARRAY */
-;/*      GL_INDEX_ARRAY */
-;/*      GL_TEXTURE_COORD_ARRAY */
-;/*      GL_EDGE_FLAG_ARRAY */
-
-;/* ColorPointerType */
-;/*      GL_BYTE */
-;/*      GL_UNSIGNED_BYTE */
-;/*      GL_SHORT */
-;/*      GL_UNSIGNED_SHORT */
-;/*      GL_INT */
-;/*      GL_UNSIGNED_INT */
-;/*      GL_FLOAT */
-;/*      GL_DOUBLE */
-
-;/* DataType */
-;#define GL_BYTE                           0x1400
-;#define GL_UNSIGNED_BYTE                  0x1401
-;#define GL_SHORT                          0x1402
-;#define GL_UNSIGNED_SHORT                 0x1403
-;#define GL_INT                            0x1404
-;#define GL_UNSIGNED_INT                   0x1405
-;#define GL_FLOAT                          0x1406
-;#define GL_2_BYTES                        0x1407
-;#define GL_3_BYTES                        0x1408
-;#define GL_4_BYTES                        0x1409
-;#define GL_DOUBLE                         0x140A
-
-
-;   ;glDisable
-;   ; mode
-;      GL_INDEX_LOGIC_OP
-;      GL_COLOR_LOGIC_OP
-;/*      GL_VERTEX_ARRAY */
-;/*      GL_NORMAL_ARRAY */
-;/*      GL_COLOR_ARRAY */
-;/*      GL_INDEX_ARRAY */
-;/*      GL_TEXTURE_COORD_ARRAY */
-;/*      GL_EDGE_FLAG_ARRAY */
-;/*      GL_POLYGON_OFFSET_POINT */
-;/*      GL_POLYGON_OFFSET_LINE */
-;/*      GL_POLYGON_OFFSET_FILL */
-
-;/* GetPointerTarget */
-;/*      GL_VERTEX_ARRAY_POINTER */
-;/*      GL_NORMAL_ARRAY_POINTER */
-;/*      GL_COLOR_ARRAY_POINTER */
-;/*      GL_INDEX_ARRAY_POINTER */
-;/*      GL_TEXTURE_COORD_ARRAY_POINTER */
-;/*      GL_EDGE_FLAG_ARRAY_POINTER */
-
-
-
-; -------------------
-
-
-    ; todo: move this to the right place
+ ; EXT_texture
       GL_ALPHA4
       GL_ALPHA8
       GL_ALPHA12
@@ -91,7 +33,8 @@
       GL_INTENSITY8
       GL_INTENSITY12
       GL_INTENSITY16
-      ;GL_RGB2
+;     GL_RGB2     ; excluded by 1.1
+      GL_R3_G3_B2 ; introduced by 1.1
       GL_RGB4
       GL_RGB5
       GL_RGB8
@@ -113,6 +56,94 @@
       GL_TEXTURE_LUMINANCE_SIZE
       GL_TEXTURE_INTENSITY_SIZE
 
+;     GL_REPLACE  ; excluded by 1.1 as duplicate
+
+;        PROXY_TEXTURE_1D_EXT             0x8063
+
+;        PROXY_TEXTURE_2D_EXT             0x8064
+
+;        TEXTURE_TOO_LARGE_EXT            0x8065
+
+ ; EXT_subtexture
+   ;TexSubImage1DEXT
+   ;TexSubImage2DEXT
+   ;TexSubImage3DEXT
+
+ ; EXT_copy_texture
+   ;CopyTexImage1DEXT
+   ;CopyTexImage2DEXT
+   ;CopyTexSubImage1DEXT
+   ;CopyTexSubImage2DEXT
+   ;CopyTexSubImage3DEXT
+
+ ; EXT_texture_object
+   ;GenTexturesEXT
+   ;DeleteTexturesEXT
+   glBindTexture ; void (GLenum target, GLuint texture)
+   ;PrioritizeTexturesEXT
+   ;AreTexturesResidentEXT
+   ;IsTextureEXT
+
+   ;TEXTURE_PRIORITY_EXT            0x8066
+   ;TEXTURE_RESIDENT_EXT            0x8067
+   ;TEXTURE_1D_BINDING_EXT          0x8068
+   ;TEXTURE_2D_BINDING_EXT          0x8069
+   ;TEXTURE_3D_BINDING_EXT          0x806A
+
+ ; EXT_vertex_array
+   ;ArrayElementEXT
+   ;DrawArraysEXT    
+   ;VertexPointerEXT
+   ;NormalPointerEXT
+   ;ColorPointerEXT
+   ;IndexPointerEXT
+   ;TexCoordPointerEXT
+   ;EdgeFlagPointerEXT
+   ;GetPointervEXT
+
+;        VERTEX_ARRAY_EXT               0x8074
+;        NORMAL_ARRAY_EXT               0x8075
+;        COLOR_ARRAY_EXT                0x8076
+;        INDEX_ARRAY_EXT                0x8077
+;        TEXTURE_COORD_ARRAY_EXT        0x8078
+;        EDGE_FLAG_ARRAY_EXT            0x8079
+
+;        DOUBLE_EXT                     0x140A
+   
+;        VERTEX_ARRAY_SIZE_EXT          0x807A
+;        VERTEX_ARRAY_TYPE_EXT          0x807B
+;        VERTEX_ARRAY_STRIDE_EXT        0x807C
+;        VERTEX_ARRAY_COUNT_EXT         0x807D
+;        NORMAL_ARRAY_TYPE_EXT          0x807E
+;        NORMAL_ARRAY_STRIDE_EXT        0x807F
+;        NORMAL_ARRAY_COUNT_EXT         0x8080
+;        COLOR_ARRAY_SIZE_EXT           0x8081
+;        COLOR_ARRAY_TYPE_EXT           0x8082
+;        COLOR_ARRAY_STRIDE_EXT         0x8083
+;        COLOR_ARRAY_COUNT_EXT          0x8084
+;        INDEX_ARRAY_TYPE_EXT           0x8085
+;        INDEX_ARRAY_STRIDE_EXT         0x8086
+;        INDEX_ARRAY_COUNT_EXT          0x8087
+;        TEXTURE_COORD_ARRAY_SIZE_EXT   0x8088
+;        TEXTURE_COORD_ARRAY_TYPE_EXT   0x8089
+;        TEXTURE_COORD_ARRAY_STRIDE_EXT 0x808A
+;        TEXTURE_COORD_ARRAY_COUNT_EXT  0x808B
+;        EDGE_FLAG_ARRAY_STRIDE_EXT     0x808C
+;        EDGE_FLAG_ARRAY_COUNT_EXT      0x808D
+
+;        VERTEX_ARRAY_POINTER_EXT       0x808E
+;        NORMAL_ARRAY_POINTER_EXT       0x808F
+;        COLOR_ARRAY_POINTER_EXT        0x8090
+;        INDEX_ARRAY_POINTER_EXT        0x8091
+;        TEXTURE_COORD_ARRAY_POINTER_EXT 0x8092
+;        EDGE_FLAG_ARRAY_POINTER_EXT    0x8093
+
+ ; EXT_blend_login_op
+
+; -------------------
+
+
+    ; todo: move this to the right place
 ;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
 ;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 ;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
@@ -124,7 +155,6 @@
 ;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
-   glGenTextures ;void (GLsizei n, GLuint *textures)
 ;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
 ;WINGDIAPI void APIENTRY glArrayElement (GLint i);
 ;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
@@ -143,22 +173,20 @@
 ;WINGDIAPI void APIENTRY glPopClientAttrib (void);
 ;WINGDIAPI void APIENTRY glPushClientAttrib (GLbitfield mask);
 
-)
+   (exports (OpenGL version-1-0)))
 
-; ---------------------------------------------------------------------------
-   (import (r5rs core)
-      (OpenGL version-1-0))
+; ============================================================================
+; == implementation ==========================================================
+(import (r5rs core)
+   (OpenGL version-1-0))
 
-; ---------------------------------------------------------------------------
 (begin
    (define GL_VERSION_1_1 1)
 
-(define $ (or
-   (dlopen GL_LIBRARY)
-   (runtime-error "Can't load OpenGL library")))
+   (define GL GL_LIBRARY)
 
-
-(define glBindTexture (dlsym $ GLvoid "glBindTexture" GLenum GLuint))
+ ; ...
+   (define glBindTexture (GL GLvoid "glBindTexture" GLenum GLuint))
 
 
 #|
@@ -348,7 +376,7 @@
 ;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 ;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
-   (define glGenTextures (dlsym $ GLvoid "glGenTextures" GLsizei GLuint&))
+   (define glGenTextures (GL GLvoid "glGenTextures" GLsizei GLuint&))
 ;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
 ;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
 ;WINGDIAPI void APIENTRY glIndexub (GLubyte c);

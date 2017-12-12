@@ -1,3 +1,4 @@
+;
 ; EXT_vertex_array
 ;     Multiple vertices may be passed to the GL with a single function call.
 ;

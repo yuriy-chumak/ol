@@ -47,22 +47,25 @@
 (SetForegroundWindow window)
 (SetFocus window)
 
-;,quit;(loop)
+;,quit;(loop) ;UINT - unsigned int
+(call/cc (lambda (break)
 (let ((MSG (vm:new-raw-object type-vector-raw 48)))
-(let loop ()
-   (let process-events ()
-      (if (= 1 (PeekMessage MSG #f 0 0 PM_REMOVE))
-         (begin
-            (TranslateMessage MSG)
-            (DispatchMessage MSG)
-            (process-events))))
 
-   (wglMakeCurrent hDC hRC)
-   (glClear GL_COLOR_BUFFER_BIT)
+   (let loop ()
+      (let process-events ()
+         (if (eq? 1 (PeekMessage MSG #f 0 0 PM_REMOVE))
+            (begin
+               (TranslateMessage MSG)
+               (DispatchMessage MSG)
+               (process-events))))
+   
+      (wglMakeCurrent hDC hRC)
+      (glClear GL_COLOR_BUFFER_BIT)
+   
+      (SwapBuffers hDC)
+      (wglMakeCurrent #f #f)
 
-   (SwapBuffers hDC)
-   (wglMakeCurrent #f #f)
-(loop)))
+      (loop)))))
 
 ;(done)
 (wglDeleteContext hRC)

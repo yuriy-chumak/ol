@@ -1,3 +1,4 @@
+;
 ; EXT_polygon_offset
 ;	Depth values may be offset on a per-primitive basis.
 ;
@@ -32,9 +33,13 @@
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
-   
+   ;PolygonOffsetEXT
+
 ; ---------------------------------------------------------------------------
 ; New Tokens
+   ;POLYGON_OFFSET_EXT
+   ;POLYGON_OFFSET_FACTOR_EXT
+   ;POLYGON_OFFSET_BIAS_EXT
     
 )
    

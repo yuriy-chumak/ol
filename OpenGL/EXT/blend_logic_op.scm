@@ -1,3 +1,4 @@
+;
 ; EXT_blend_logic_op
 ;	Fragment colors may be blended into the framebuffer using bitwise operations.
 ;
@@ -27,16 +28,17 @@
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
+
+   ; none
    
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
+   ; none
+
 )
   
 ; ---------------------------------------------------------------------------
-   (begin
-;   (gl:make-current)
+(begin
    (define EXT_blend_logic_op (gl:ExtensionSupported? "GL_EXT_blend_logic_op"))
-
-;   (gl:stop-current)
 ))

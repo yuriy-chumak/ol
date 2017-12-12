@@ -1,3 +1,4 @@
+;
 ; EXT_subtexture
 ;	Various methods to alter texture images, including image copying and sub-image replacement.
 ;
@@ -36,9 +37,15 @@
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
+
+   ;TexSubImage1DEXT
+   ;TexSubImage2DEXT
+   ;TexSubImage3DEXT
    
 ; ---------------------------------------------------------------------------
 ; New Tokens
+
+   ;none
     
 )
   

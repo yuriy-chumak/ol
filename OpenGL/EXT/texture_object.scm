@@ -1,3 +1,4 @@
+;
 ; EXT_texture_object
 ;  Texture state may be stored in a GL object, for greater efficiency.
 ;
@@ -25,15 +26,22 @@
 
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
-      glGenTextures ; void (GLsizei n, GLuint *textures)
-      ;DeleteTextures
-      glBindTexture ; void (GLenum target, GLuint texture)
-      ;PrioritizeTextures
-      ;AreTexturesResident
-      ;IsTexture
+
+   ;GenTexturesEXT
+   ;DeleteTexturesEXT
+   ;BindTextureEXT
+   ;PrioritizeTexturesEXT
+   ;AreTexturesResidentEXT
+   ;IsTextureEXT
 
 ; ---------------------------------------------------------------------------
 ; New Tokens
+
+   ;TEXTURE_PRIORITY_EXT            0x8066
+   ;TEXTURE_RESIDENT_EXT            0x8067
+   ;TEXTURE_1D_BINDING_EXT          0x8068
+   ;TEXTURE_2D_BINDING_EXT          0x8069
+   ;TEXTURE_3D_BINDING_EXT          0x806A
 
 )
 
@@ -41,10 +49,11 @@
 (begin
    (define EXT_texture_object (gl:ExtensionSupported? "GL_EXT_texture_object"))
 
-   (define glBindTexture (if EXT_texture_object
-         (gl:GetProcAddress GLvoid "glBindTexture" GLenum GLuint)))
-   ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
-   (define glGenTextures (if EXT_texture_object
-         (gl:GetProcAddress GLvoid "glGenTextures" GLsizei GLuint&)))
-   ;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
+;   (define glBindTexture (if EXT_texture_object
+;         (gl:GetProcAddress GLvoid "glBindTexture" GLenum GLuint)))
+;   ;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
+;   (define glGenTextures (if EXT_texture_object
+;         (gl:GetProcAddress GLvoid "glGenTextures" GLsizei GLuint&)))
+;   ;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
+
 ))
