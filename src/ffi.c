@@ -605,7 +605,7 @@ word* OL_ffi(OL* self, word* arguments)
 		assert (reftype(p) == TPAIR); // assert(list)
 		assert (reftype(t) == TPAIR); // assert(list)
 
-		int type = value(car(t));
+		int type = value(car(t)); // destination type
 		word arg = (word) car(p);
 
 /*		// todo: add argument overriding as PAIR as argument value
@@ -614,7 +614,6 @@ word* OL_ffi(OL* self, word* arguments)
 			arg = ((word*)p[1])[2];
 		}*/
 
-		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
 #if __amd64__ && __linux__ // LP64
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
@@ -627,7 +626,9 @@ word* OL_ffi(OL* self, word* arguments)
 			}
 		}
 
-		// destination type
+		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
+
+		if (arg != IFALSE) // #false is universal "0" value
 		switch (type) {
 
 		// целочисленные типы:
@@ -735,9 +736,7 @@ word* OL_ffi(OL* self, word* arguments)
 			has_wb = 1;
 			//no break
 		case TFLOAT + 0x40: {
-			if (arg == INULL) // empty array must be interpreted as nullptr
-				break;
-			if (arg == IFALSE)// same for non existent arrays
+			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
 			int c = llen(arg);
@@ -766,9 +765,7 @@ word* OL_ffi(OL* self, word* arguments)
 			has_wb = 1;
 			//no break
 		case TDOUBLE + 0x40: {
-			if (arg == INULL) // empty array must be interpreted as nullptr
-				break;
-			if (arg == IFALSE)// same for non existent arrays
+			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
 			int c = llen(arg);
@@ -788,9 +785,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 		// vptr should accept only vptr!
 		case TVPTR:
-			if ((word)arg == IFALSE)
-				args[i] = (word) (void*)0;
-			else if (is_reference(arg))
+			if (is_reference(arg))
 				switch (reftype(arg)) {
 				case TVPTR:
 					args[i] = car(arg);
@@ -805,9 +800,6 @@ word* OL_ffi(OL* self, word* arguments)
 				STDERR("invalid parameter value (requested vptr)");
 			break;
 		case TVPTR + 0x40: {
-			if ((word)arg == IFALSE)
-				args[i] = (word) (void*)0;
-			else
 			switch (reftype(arg)) {
 			case TVPTR:
 				args[i] = (word) &car(arg);
@@ -822,9 +814,6 @@ word* OL_ffi(OL* self, word* arguments)
 		// todo: change to is_rawdata
 		case TBVEC:
 		case TSTRING:
-			if ((word)arg == IFALSE)
-				args[i] = (word) (void*)0;
-			else
 			switch (reftype(arg)) {
 			case TBVEC:
 			case TSTRING:
@@ -857,9 +846,6 @@ word* OL_ffi(OL* self, word* arguments)
 		//    internally as UTF-16LE).
 		#ifdef _WIN32
 		case TSTRINGWIDE:
-			if ((word)arg == INULL || (word)arg == IFALSE)
-				args[i] = (word) (void*)0;
-			else
 			switch (reftype(arg)) {
 			case TBVEC:
 			case TSTRING: {
@@ -899,22 +885,14 @@ word* OL_ffi(OL* self, word* arguments)
 		#endif
 
 		case TCALLABLE: {
-			if ((word)arg == IFALSE)
-				args[i] = (word) (void*)0;
-			else {
-				if (is_callable(arg)) {
-					args[i] = (word)car(arg);
-				}
-				else
-					STDERR("invalid parameter values (requested callable)");
-			}
+			if (is_callable(arg))
+				args[i] = (word)car(arg);
+			else
+				STDERR("invalid parameter values (requested callable)");
 			break;
 		}
 /*
 		case TTUPLE:
-			if ((word)arg == IFALSE)
-				args[i] = (word) (void*)0;
-			else
 			switch (reftype(arg)) {
 			case TTUPLE: { // ?
 				// аллоцировать массив и сложить в него указатели на элементы кортежа
@@ -957,7 +935,7 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 		}
 		case TVOID:
-			args[i] = 0;
+			args[i] = 0; // do nothing, just for better readability
 			break;
 		default:
 			STDERR("can't recognize %d type", type);
@@ -1076,6 +1054,7 @@ word* OL_ffi(OL* self, word* arguments)
 			word arg = (word) car(p);
 
 			// destination type
+			if (arg != IFALSE)
 			switch (type) {
 
 			// simplest case - all shorts are fits as value
