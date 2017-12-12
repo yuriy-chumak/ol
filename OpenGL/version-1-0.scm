@@ -19,15 +19,15 @@
 
    ; GL types
    ; https://www.opengl.org/wiki/OpenGL_Type
-   GLenum            ; unsigned 32-bit
-   GLboolean GLboolean* ; unsigned byte (GL_TRUE or GL_FALSE)
-   GLbitfield        ; unsigned 32-bit
-   GLbyte            ;   signed  8-bit
-   GLshort           ;   signed 16-bit
-   GLint    GLint*   ;   signed 32-bit
-   GLsizei           ;   signed 32-bit
-   GLubyte  GLubyte* ; unsigned  8-bit
-   GLushort          ; unsigned 16-bit
+   GLenum                     ; unsigned 32-bit
+   GLboolean GLboolean*       ; unsigned byte (GL_TRUE or GL_FALSE)
+   GLbitfield                 ; unsigned 32-bit
+   GLbyte                     ;   signed  8-bit
+   GLshort                    ;   signed 16-bit
+   GLint    GLint*   GLint&   ;   signed 32-bit
+   GLsizei                    ;   signed 32-bit
+   GLubyte  GLubyte*          ; unsigned  8-bit
+   GLushort                   ; unsigned 16-bit
    GLuint   GLuint*  GLuint&  ; unsigned 32-bit
 
    GLfloat  GLfloat* ; floating 32-bit
@@ -54,8 +54,7 @@
    ;; 2.6 Begin/End Paradigm
 
    glBegin ; void (GLenum mode) +
-    ; mode
-      GL_POINTS
+      GL_POINTS ; mode
       GL_LINES
       GL_LINE_LOOP
       GL_LINE_STRIP
@@ -1070,6 +1069,7 @@
    (define GLfloat*   (fft* GLfloat))
    (define GLdouble*  (fft* GLdouble))
 
+   (define GLint&     (fft& GLint))
    (define GLuint&    (fft& GLuint))
 
 
@@ -1886,7 +1886,7 @@
 ;glXCreateContext     wglCreateContext
 (define gl:CreateContext (cond
    (win32? (WGL type-vptr "wglCreateContext" fft-void*))
-   (linux? (GLX type-vptr "glXCreateContext" Display* XVisualInfo* fft-void* type-int+))))
+   (linux? (GLX type-vptr "glXCreateContext" Display* XVisualInfo* fft-void* fft-int))))
    ;apple? (GL fft-void* "CGLCreateContext" ...)
 
 ;glXCreateGLXPixmap  CreateDIBitmap / CreateDIBSection
@@ -1905,14 +1905,14 @@
 ;XSync   GdiFlush
 
 (define gl:MakeCurrent (cond
-   (win32? (WGL type-fix+ "wglMakeCurrent" fft-void* fft-void*))
-   (linux? (GLX type-int+ "glXMakeCurrent" fft-void* fft-void* fft-void*))))
+   (win32? (WGL fft-int "wglMakeCurrent" fft-void* fft-void*))
+   (linux? (GLX fft-int "glXMakeCurrent" fft-void* fft-void* fft-void*))))
 
 
 
 (define gl:SwapBuffers (cond
    (win32?
-      (let ((SwapBuffers (GDI type-fix+ "SwapBuffers"    fft-void*)))
+      (let ((SwapBuffers (GDI fft-int "SwapBuffers"    fft-void*)))
          (lambda (context)
             (SwapBuffers (ref context 1)))))
    (linux?

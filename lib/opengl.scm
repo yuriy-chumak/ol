@@ -75,7 +75,7 @@
             (print "OpenGL version: " (glGetString GL_VERSION))
             (print "OpenGL vendor: " (glGetString GL_VENDOR))
             (print "OpenGL renderer: " (glGetString GL_RENDERER))
-            ;gl:MakeCurrent #f #f)
+           ;(gl:MakeCurrent #f #f)
 
             (ShowWindow window 5)
             (tuple hDC hRC window)))))))
@@ -84,7 +84,7 @@
       (let ((libX11 (load-dynamic-library "libX11.so"))
             (libGLX (load-dynamic-library "libGLX.so")))
       (let ((XOpenDisplay  (libX11 type-vptr "XOpenDisplay" type-string))
-            (XDefaultScreen(libX11 type-vptr "XDefaultScreen" type-vptr))
+            (XDefaultScreen(libX11 fft-int "XDefaultScreen" type-vptr))
             (XRootWindow   (libX11 type-vptr "XRootWindow" type-vptr fft-int))
             (XBlackPixel   (libX11 type-vptr "XBlackPixel" type-vptr fft-int))
             (XWhitePixel   (libX11 type-vptr "XWhitePixel" type-vptr fft-int))
@@ -123,7 +123,7 @@
                (print "OpenGL version: " (glGetString GL_VERSION))
                (print "OpenGL vendor: " (glGetString GL_VENDOR))
                (print "OpenGL renderer: " (glGetString GL_RENDERER))
-               ;gl:MakeCurrent display windows #f)
+              ;(gl:MakeCurrent display windows #f)
 
                (tuple display screen window cx)))))))
    (else
