@@ -200,9 +200,9 @@
    glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height) +
 
    glMatrixMode ; void (GLenum mode) +
-      GL_PROJECTION
+      #|GL_PROJECTION
       GL_MODELVIEW
-      GL_TEXTURE
+      GL_TEXTURE|#
 
    glLoadMatrixd  ; void (const GLdouble *m); +
    glLoadMatrixf  ; void (const GLfloat *m); +
@@ -228,7 +228,7 @@
    glPopMatrix ; void glPopMatrix (void) +
 
    glEnable ; void (GLenum cap) +
-    ; cap
+    #|; cap
       GL_FOG
       GL_LIGHTING
       GL_TEXTURE_1D
@@ -284,7 +284,7 @@
       GL_SCISSOR_TEST
       GL_COLOR_MATERIAL
       GL_NORMALIZE
-      GL_AUTO_NORMAL
+      GL_AUTO_NORMAL|#
    glDisable                           ; void (GLenum cap) +
     ; cap
       ; SAME as glEnable
@@ -298,13 +298,13 @@
 
    ;; 2.10 Clipping
    glClipPlane                         ; void (GLenum plane, const GLdouble *equation) +
-    ; plane
+    #|; plane
       GL_CLIP_PLANE0
       GL_CLIP_PLANE1
       GL_CLIP_PLANE2
       GL_CLIP_PLANE3
       GL_CLIP_PLANE4
-      GL_CLIP_PLANE5
+      GL_CLIP_PLANE5|#
 
    ;; 2.11 Current Ruster Position
    ;WINGDIAPI void APIENTRY glRasterPos2d (GLdouble x, GLdouble y); +
@@ -335,9 +335,9 @@
    ;; 2.12 Colors and Coloring
 
    glFrontFace                         ; void (GLenum direction) +
-    ; direction
+    #|; direction
       GL_CW
-      GL_CCW
+      GL_CCW|#
 
    glMaterialf  ; void (GLenum face, GLenum pname, GLfloat param) +
    glMaterialfv ; void (GLenum face, GLenum pname, const GLfloat *params) +
@@ -348,7 +348,7 @@
    glLightfv ; void (GLenum light, GLenum pname, const GLfloat *params) +
    ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param); +
    ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params); +
-    ; light +
+    #|; light +
       GL_LIGHT0
       GL_LIGHT1
       GL_LIGHT2
@@ -367,13 +367,13 @@
       GL_SPOT_CUTOFF
       GL_CONSTANT_ATTENUATION
       GL_LINEAR_ATTENUATION
-      GL_QUADRATIC_ATTENUATION
+      GL_QUADRATIC_ATTENUATION|#
 
    glLightModelf  ; void (GLenum pname, GLfloat param) +
-    ; name +
+    #|; name +
       GL_LIGHT_MODEL_AMBIENT
       GL_LIGHT_MODEL_LOCAL_VIEWER
-      GL_LIGHT_MODEL_TWO_SIDE
+      GL_LIGHT_MODEL_TWO_SIDE|#
 
     ; param
    ;WINGDIAPI void APIENTRY glLightModelfv (GLenum pname, const GLfloat *params); +
@@ -381,7 +381,7 @@
    ;WINGDIAPI void APIENTRY glLightModeliv (GLenum pname, const GLint *params); +
 
    glColorMaterial                     ; void (GLenum face, GLenum mode) +
-    ; face
+    #|; face
       GL_FRONT
       GL_BACK
       GL_FRONT_AND_BACK
@@ -392,11 +392,11 @@
       GL_SPECULAR
       GL_EMISSION
       GL_SHININESS
-      ;GL_COLOR_INDEXES ;?
+      ;GL_COLOR_INDEXES ;?|#
 
    glShadeModel ; void (GLenum model) +
-      GL_FLAT
-      GL_SMOOTH
+      #|GL_FLAT
+      GL_SMOOTH|#
 
    ; == 3 Rasterization ===
 
@@ -412,10 +412,10 @@
    ;; 3.5. Polygons
 
    glCullFace                          ; void (GLenum mode) +
-   ; mode
+   #|; mode
       GL_FRONT
       GL_BACK
-      GL_FRONT_AND_BACK
+      GL_FRONT_AND_BACK|#
 
    ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask); +
    glPolygonMode ; void (GLenum face, GLenum mode) +
@@ -431,7 +431,7 @@
    ;WINGDIAPI void APIENTRY glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values); +
    ;WINGDIAPI void APIENTRY glPixelMapuiv (GLenum map, GLsizei mapsize, const GLuint *values); +
    ;WINGDIAPI void APIENTRY glPixelMapusv (GLenum map, GLsizei mapsize, const GLushort *values); +
-   ; map
+   #|; map
       GL_PIXEL_MAP_I_TO_I
       GL_PIXEL_MAP_S_TO_S
       GL_PIXEL_MAP_I_TO_R
@@ -441,7 +441,7 @@
       GL_PIXEL_MAP_R_TO_R
       GL_PIXEL_MAP_G_TO_G
       GL_PIXEL_MAP_B_TO_B
-      GL_PIXEL_MAP_A_TO_A
+      GL_PIXEL_MAP_A_TO_A|#
 
    glDrawPixels                        ; void (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) +
 
@@ -460,11 +460,11 @@
    ;WINGDIAPI void APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params); +
    glTexParameteri ; void (GLenum target, GLenum pname, GLint param) +
    ;WINGDIAPI void APIENTRY glTexParameteriv (GLenum target, GLenum pname, const GLint *params); +
-      GL_TEXTURE_MAG_FILTER GL_TEXTURE_MIN_FILTER
+      #|GL_TEXTURE_MAG_FILTER GL_TEXTURE_MIN_FILTER
       GL_TEXTURE_WRAP_S
       GL_TEXTURE_WRAP_T
       GL_CLAMP_TO_EDGE
-      GL_NEAREST GL_LINEAR
+      GL_NEAREST GL_LINEAR|#
 
    ;WINGDIAPI void APIENTRY glTexEnvf (GLenum target, GLenum pname, GLfloat param); +
    ;WINGDIAPI void APIENTRY glTexEnvfv (GLenum target, GLenum pname, const GLfloat *params); +
@@ -477,7 +477,7 @@
    glFogfv                             ; void (GLenum pname, const GLfloat *params) +
    glFogi                              ; void (GLenum pname, GLint param) +
    glFogiv                             ; void (GLenum pname, const GLint *params) +
-   ; pname
+   #|; pname
       GL_LINEAR
       GL_EXP
       GL_EXP2
@@ -487,7 +487,7 @@
       GL_FOG_END
       GL_FOG_INDEX
       GL_FOG_MODE
-      GL_FOG_START
+      GL_FOG_START|#
 
    ; 4 Per-Fragment Operations and the Framebuffer
 
@@ -496,7 +496,7 @@
    ;WINGDIAPI void APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height); +
 
    glAlphaFunc                         ; void (GLenum func, GLclampf ref) +
-   ; func
+   #|; func
       GL_NEVER
       GL_LESS
       GL_EQUAL
@@ -505,17 +505,17 @@
       GL_NOTEQUAL
       GL_GEQUAL
       GL_ALWAYS
-   ; ref
+   ; ref|#
 
    glStencilFunc ;void (GLenum func, GLint ref, GLuint mask) +
-      GL_ALWAYS
+      #|GL_ALWAYS|#
 
    glStencilOp ; void (GLenum fail, GLenum zfail, GLenum zpass) +
-      GL_KEEP
-      GL_REPLACE
+      #|GL_KEEP
+      GL_REPLACE|#
 
    glDepthFunc                         ; void (GLenum func) +
-   ; func
+   #|; func
       GL_NEVER
       GL_LESS
       GL_EQUAL
@@ -523,10 +523,10 @@
       GL_GREATER
       GL_NOTEQUAL
       GL_GEQUAL
-      GL_ALWAYS
+      GL_ALWAYS|#
 
    glBlendFunc                         ; void (GLenum sfactor, GLenum dfactor) +
-   ; sfactor +
+   #|; sfactor +
       GL_ZERO
       GL_ONE
       GL_SRC_COLOR
@@ -544,14 +544,14 @@
       GL_SRC_ALPHA
       GL_ONE_MINUS_SRC_ALPHA
       GL_DST_ALPHA
-      GL_ONE_MINUS_DST_ALPHA
+      GL_ONE_MINUS_DST_ALPHA|#
 
    ;WINGDIAPI void APIENTRY glLogicOp (GLenum opcode); +
 
    ;; 4.2 Whole Framebuffer Operations
 
    glDrawBuffer                        ; void (GLenum mode) +
-   ; mode
+   #|; mode
       GL_NONE
       GL_FRONT_LEFT
       GL_FRONT_RIGHT
@@ -565,7 +565,7 @@
       GL_AUX0
       GL_AUX1
       GL_AUX2
-      GL_AUX3
+      GL_AUX3|#
 
    ;WINGDIAPI void APIENTRY glIndexMask (GLuint mask); +
    glColorMask     ; void (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) +
@@ -573,11 +573,11 @@
    glStencilMask   ; void (GLuint mask) +
 
    glClear                             ; void (GLbitfield mask) +
-   ; mask
+   #|; mask
       GL_COLOR_BUFFER_BIT
       GL_ACCUM_BUFFER_BIT
       GL_STENCIL_BUFFER_BIT
-      GL_DEPTH_BUFFER_BIT
+      GL_DEPTH_BUFFER_BIT|#
 
    glClearColor                        ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) +
    glClearIndex                        ; void (GLfloat c) +
@@ -586,13 +586,13 @@
    glClearAccum                        ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) +
 
    glAccum                             ; void (GLenum op, GLfloat value) +
-   ; op
+   #|; op
       GL_ACCUM
       GL_LOAD
       GL_RETURN
       GL_MULT
       GL_ADD
-   ; value
+   ; value|#
 
    ;; 4.3 Drawing, Reading, and Copying Pixels
 
@@ -639,7 +639,7 @@
    ;; 5.3. Feedback
 
    glFeedbackBuffer                    ; void (GLsizei size, GLenum type, GLfloat *buffer) +
-   ; type
+   #|; type
       GL_2D
       GL_3D
       GL_3D_COLOR
@@ -653,16 +653,16 @@
       GL_BITMAP_TOKEN
       GL_DRAW_PIXEL_TOKEN
       GL_COPY_PIXEL_TOKEN
-      GL_LINE_RESET_TOKEN
+      GL_LINE_RESET_TOKEN|#
 
    ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token); +
 
    ;; 5.4 Display Lists
 
    glNewList ; void (GLuint list, GLenum mode) +
-   ; mode
+   #|; mode
       GL_COMPILE
-      GL_COMPILE_AND_EXECUTE
+      GL_COMPILE_AND_EXECUTE|#
    glEndList ; void glEndList (void) +
    glCallList                          ; void (GLuint list) +
    glCallLists                         ; void (GLsizei n, GLenum type, const GLvoid *lists) +
@@ -679,7 +679,7 @@
    ;; 5.6 Hints
 
    glHint      ; void (GLenum target, GLenum mode) +
-      GL_DONT_CARE ; mode
+      #|GL_DONT_CARE ; mode
       GL_FASTEST
       GL_NICEST
       GL_PERSPECTIVE_CORRECTION_HINT ; target
@@ -687,7 +687,7 @@
       GL_LINE_SMOOTH_HINT
       GL_POLYGON_SMOOTH_HINT
       GL_FOG_HINT
-      ; GL_PHONG_HINT (no this constant defined, maybe bug in original headers)
+      ; GL_PHONG_HINT (no this constant defined, maybe bug in original headers)|#
 
 
    ; ==========================
@@ -697,7 +697,7 @@
    glGetIntegerv                       ; void (GLenum pname, GLint *params) +
    glGetFloatv                         ; void (GLenum pname, GLfloat *params) +
    glGetDoublev                        ; void (GLenum pname, GLdouble *params) +
-   ; pname
+   #|; pname
       GL_CURRENT_COLOR
       GL_CURRENT_INDEX
       GL_CURRENT_NORMAL
@@ -898,7 +898,7 @@
       GL_MAP2_GRID_DOMAIN
       GL_MAP2_GRID_SEGMENTS
       GL_TEXTURE_1D
-      GL_TEXTURE_2D
+      GL_TEXTURE_2D|#
 
    ;WINGDIAPI GLboolean APIENTRY glIsEnabled (GLenum cap); +
 
@@ -921,23 +921,23 @@
    ;WINGDIAPI void APIENTRY glGetMapdv (GLenum target, GLenum query, GLdouble *v); +
    ;WINGDIAPI void APIENTRY glGetMapfv (GLenum target, GLenum query, GLfloat *v); +
    ;WINGDIAPI void APIENTRY glGetMapiv (GLenum target, GLenum query, GLint *v); +
-    ; target
+    #|; target
       GL_COEFF
       GL_ORDER
-      GL_DOMAIN
+      GL_DOMAIN|#
 
    ;WINGDIAPI void APIENTRY glGetTexImage (GLenum target, GLint level, GLenum format, GLenum type, GLvoid *pixels); +
 
    ;WINGDIAPI void APIENTRY glGetPolygonStipple (GLubyte *mask); +
 
    glGetString ; GLubyte* (GLenum name) +
-      GL_VENDOR
+      #|GL_VENDOR
       GL_RENDERER
       GL_VERSION
-      GL_EXTENSIONS
+      GL_EXTENSIONS|#
 
    glPushAttrib ; void (GLbitfield mask) +
-      GL_CURRENT_BIT                   ;0x00000001
+      #|GL_CURRENT_BIT                   ;0x00000001
       GL_POINT_BIT                     ;0x00000002
       GL_LINE_BIT                      ;0x00000004
       GL_POLYGON_BIT                   ;0x00000008
@@ -957,12 +957,823 @@
       GL_LIST_BIT                      ;0x00020000
       GL_TEXTURE_BIT                   ;0x00040000
       GL_SCISSOR_BIT                   ;0x00080000
-      GL_ALL_ATTRIB_BITS               ;0x000fffff
+      GL_ALL_ATTRIB_BITS               ;0x000fffff|#
    ;WINGDIAPI void APIENTRY glPopAttrib (void); +
 
 
-   ; --- current end of specification -----------------------------------------
-   ; --------------------------------------------------------------------------
+   ; AccumOp
+   GL_ACCUM
+   GL_LOAD
+   GL_RETURN
+   GL_MULT
+   GL_ADD
+
+   ; AlphaFunction
+   GL_NEVER
+   GL_LESS
+   GL_EQUAL
+   GL_LEQUAL
+   GL_GREATER
+   GL_NOTEQUAL
+   GL_GEQUAL
+   GL_ALWAYS
+
+   ; AttribMask
+   GL_CURRENT_BIT
+   GL_POINT_BIT
+   GL_LINE_BIT
+   GL_POLYGON_BIT
+   GL_POLYGON_STIPPLE_BIT
+   GL_PIXEL_MODE_BIT
+   GL_LIGHTING_BIT
+   GL_FOG_BIT
+   GL_DEPTH_BUFFER_BIT
+   GL_ACCUM_BUFFER_BIT
+   GL_STENCIL_BUFFER_BIT
+   GL_VIEWPORT_BIT
+   GL_TRANSFORM_BIT
+   GL_ENABLE_BIT
+   GL_COLOR_BUFFER_BIT
+   GL_HINT_BIT
+   GL_EVAL_BIT
+   GL_LIST_BIT
+   GL_TEXTURE_BIT
+   GL_SCISSOR_BIT
+   GL_ALL_ATTRIB_BITS
+
+   ; BeginMode
+   GL_POINTS
+   GL_LINES
+   GL_LINE_LOOP
+   GL_LINE_STRIP
+   GL_TRIANGLES
+   GL_TRIANGLE_STRIP
+   GL_TRIANGLE_FAN
+   GL_QUADS
+   GL_QUAD_STRIP
+   GL_POLYGON
+
+   ; BlendingFactorDest
+   GL_ZERO
+   GL_ONE
+   GL_SRC_COLOR
+   GL_ONE_MINUS_SRC_COLOR
+   GL_SRC_ALPHA
+   GL_ONE_MINUS_SRC_ALPHA
+   GL_DST_ALPHA
+   GL_ONE_MINUS_DST_ALPHA
+
+   ; BlendingFactorSrc
+   ; GL_ZERO
+   ; GL_ONE
+   GL_DST_COLOR
+   GL_ONE_MINUS_DST_COLOR
+   GL_SRC_ALPHA_SATURATE
+   ; GL_SRC_ALPHA
+   ; GL_ONE_MINUS_SRC_ALPHA
+   ; GL_DST_ALPHA
+   ; GL_ONE_MINUS_DST_ALPHA
+
+   ; ClearBufferMask
+   ; GL_COLOR_BUFFER_BIT
+   ; GL_ACCUM_BUFFER_BIT
+   ; GL_STENCIL_BUFFER_BIT
+   ; GL_DEPTH_BUFFER_BIT
+
+   ; ClipPlaneName
+   GL_CLIP_PLANE0
+   GL_CLIP_PLANE1
+   GL_CLIP_PLANE2
+   GL_CLIP_PLANE3
+   GL_CLIP_PLANE4
+   GL_CLIP_PLANE5
+
+   ; ColorMaterialFace
+   ; GL_FRONT
+   ; GL_BACK
+   ; GL_FRONT_AND_BACK
+
+   ; ColorMaterialParameter
+   ; GL_AMBIENT
+   ; GL_DIFFUSE
+   ; GL_SPECULAR
+   ; GL_EMISSION
+   ; GL_AMBIENT_AND_DIFFUSE
+
+   ; ColorPointerType
+   ; GL_BYTE
+   ; GL_UNSIGNED_BYTE
+   ; GL_SHORT
+   ; GL_UNSIGNED_SHORT
+   ; GL_INT
+   ; GL_UNSIGNED_INT
+   ; GL_FLOAT
+   ; GL_DOUBLE
+
+   ; CullFaceMode
+   ; GL_FRONT
+   ; GL_BACK
+   ; GL_FRONT_AND_BACK
+
+   ; DataType
+   GL_BYTE
+   GL_UNSIGNED_BYTE
+   GL_SHORT
+   GL_UNSIGNED_SHORT
+   GL_INT
+   GL_UNSIGNED_INT
+   GL_FLOAT
+   GL_2_BYTES
+   GL_3_BYTES
+   GL_4_BYTES
+   GL_DOUBLE
+
+   ; DepthFunction
+   ; GL_NEVER
+   ; GL_LESS
+   ; GL_EQUAL
+   ; GL_LEQUAL
+   ; GL_GREATER
+   ; GL_NOTEQUAL
+   ; GL_GEQUAL
+   ; GL_ALWAYS
+
+   ; DrawBufferMode
+   GL_NONE
+   GL_FRONT_LEFT
+   GL_FRONT_RIGHT
+   GL_BACK_LEFT
+   GL_BACK_RIGHT
+   GL_FRONT
+   GL_BACK
+   GL_LEFT
+   GL_RIGHT
+   GL_FRONT_AND_BACK
+   GL_AUX0
+   GL_AUX1
+   GL_AUX2
+   GL_AUX3
+
+   ; Enable
+   ; GL_FOG
+   ; GL_LIGHTING
+   ; GL_TEXTURE_1D
+   ; GL_TEXTURE_2D
+   ; GL_LINE_STIPPLE
+   ; GL_POLYGON_STIPPLE
+   ; GL_CULL_FACE
+   ; GL_ALPHA_TEST
+   ; GL_BLEND
+   ; GL_LOGIC_OP
+   ; GL_COLOR_LOGIC_OP
+   ; GL_DITHER
+   ; GL_STENCIL_TEST
+   ; GL_DEPTH_TEST
+   ; GL_CLIP_PLANE0
+   ; GL_CLIP_PLANE1
+   ; GL_CLIP_PLANE2
+   ; GL_CLIP_PLANE3
+   ; GL_CLIP_PLANE4
+   ; GL_CLIP_PLANE5
+   ; GL_LIGHT0
+   ; GL_LIGHT1
+   ; GL_LIGHT2
+   ; GL_LIGHT3
+   ; GL_LIGHT4
+   ; GL_LIGHT5
+   ; GL_LIGHT6
+   ; GL_LIGHT7
+   ; GL_TEXTURE_GEN_S
+   ; GL_TEXTURE_GEN_T
+   ; GL_TEXTURE_GEN_R
+   ; GL_TEXTURE_GEN_Q
+   ; GL_MAP1_VERTEX_3
+   ; GL_MAP1_VERTEX_4
+   ; GL_MAP1_COLOR_4
+   ; GL_MAP1_INDEX
+   ; GL_MAP1_NORMAL
+   ; GL_MAP1_TEXTURE_COORD_1
+   ; GL_MAP1_TEXTURE_COORD_2
+   ; GL_MAP1_TEXTURE_COORD_3
+   ; GL_MAP1_TEXTURE_COORD_4
+   ; GL_MAP2_VERTEX_3
+   ; GL_MAP2_VERTEX_4
+   ; GL_MAP2_COLOR_4
+   ; GL_MAP2_INDEX
+   ; GL_MAP2_NORMAL
+   ; GL_MAP2_TEXTURE_COORD_1
+   ; GL_MAP2_TEXTURE_COORD_2
+   ; GL_MAP2_TEXTURE_COORD_3
+   ; GL_MAP2_TEXTURE_COORD_4
+   ; GL_POINT_SMOOTH
+   ; GL_LINE_SMOOTH
+   ; GL_POLYGON_SMOOTH
+   ; GL_SCISSOR_TEST
+   ; GL_COLOR_MATERIAL
+   ; GL_NORMALIZE
+   ; GL_AUTO_NORMAL
+
+   ; ErrorCode
+   GL_NO_ERROR
+   GL_INVALID_ENUM
+   GL_INVALID_VALUE
+   GL_INVALID_OPERATION
+   GL_STACK_OVERFLOW
+   GL_STACK_UNDERFLOW
+   GL_OUT_OF_MEMORY
+
+   ; FeedBackMode
+   GL_2D
+   GL_3D
+   GL_3D_COLOR
+   GL_3D_COLOR_TEXTURE
+   GL_4D_COLOR_TEXTURE
+
+   ; FeedBackToken
+   GL_PASS_THROUGH_TOKEN
+   GL_POINT_TOKEN
+   GL_LINE_TOKEN
+   GL_POLYGON_TOKEN
+   GL_BITMAP_TOKEN
+   GL_DRAW_PIXEL_TOKEN
+   GL_COPY_PIXEL_TOKEN
+   GL_LINE_RESET_TOKEN
+
+   ; FogMode
+   ; GL_LINEAR
+   GL_EXP
+   GL_EXP2
+
+   ; FogParameter
+   ; GL_FOG_COLOR
+   ; GL_FOG_DENSITY
+   ; GL_FOG_END
+   ; GL_FOG_INDEX
+   ; GL_FOG_MODE
+   ; GL_FOG_START
+
+   ; FrontFaceDirection
+   GL_CW
+   GL_CCW
+
+   ; GetMapTarget
+   GL_COEFF
+   GL_ORDER
+   GL_DOMAIN
+
+   ; GetPixelMap
+   ; GL_PIXEL_MAP_I_TO_I
+   ; GL_PIXEL_MAP_S_TO_S
+   ; GL_PIXEL_MAP_I_TO_R
+   ; GL_PIXEL_MAP_I_TO_G
+   ; GL_PIXEL_MAP_I_TO_B
+   ; GL_PIXEL_MAP_I_TO_A
+   ; GL_PIXEL_MAP_R_TO_R
+   ; GL_PIXEL_MAP_G_TO_G
+   ; GL_PIXEL_MAP_B_TO_B
+   ; GL_PIXEL_MAP_A_TO_A
+
+   ; GetTarget
+   GL_CURRENT_COLOR
+   GL_CURRENT_INDEX
+   GL_CURRENT_NORMAL
+   GL_CURRENT_TEXTURE_COORDS
+   GL_CURRENT_RASTER_COLOR
+   GL_CURRENT_RASTER_INDEX
+   GL_CURRENT_RASTER_TEXTURE_COORDS
+   GL_CURRENT_RASTER_POSITION
+   GL_CURRENT_RASTER_POSITION_VALID
+   GL_CURRENT_RASTER_DISTANCE
+   GL_POINT_SMOOTH
+   GL_POINT_SIZE
+   GL_POINT_SIZE_RANGE
+   GL_POINT_SIZE_GRANULARITY
+   GL_LINE_SMOOTH
+   GL_LINE_WIDTH
+   GL_LINE_WIDTH_RANGE
+   GL_LINE_WIDTH_GRANULARITY
+   GL_LINE_STIPPLE
+   GL_LINE_STIPPLE_PATTERN
+   GL_LINE_STIPPLE_REPEAT
+   GL_LIST_MODE
+   GL_MAX_LIST_NESTING
+   GL_LIST_BASE
+   GL_LIST_INDEX
+   GL_POLYGON_MODE
+   GL_POLYGON_SMOOTH
+   GL_POLYGON_STIPPLE
+   GL_EDGE_FLAG
+   GL_CULL_FACE
+   GL_CULL_FACE_MODE
+   GL_FRONT_FACE
+   GL_LIGHTING
+   GL_LIGHT_MODEL_LOCAL_VIEWER
+   GL_LIGHT_MODEL_TWO_SIDE
+   GL_LIGHT_MODEL_AMBIENT
+   GL_SHADE_MODEL
+   GL_COLOR_MATERIAL_FACE
+   GL_COLOR_MATERIAL_PARAMETER
+   GL_COLOR_MATERIAL
+   GL_FOG
+   GL_FOG_INDEX
+   GL_FOG_DENSITY
+   GL_FOG_START
+   GL_FOG_END
+   GL_FOG_MODE
+   GL_FOG_COLOR
+   GL_DEPTH_RANGE
+   GL_DEPTH_TEST
+   GL_DEPTH_WRITEMASK
+   GL_DEPTH_CLEAR_VALUE
+   GL_DEPTH_FUNC
+   GL_ACCUM_CLEAR_VALUE
+   GL_STENCIL_TEST
+   GL_STENCIL_CLEAR_VALUE
+   GL_STENCIL_FUNC
+   GL_STENCIL_VALUE_MASK
+   GL_STENCIL_FAIL
+   GL_STENCIL_PASS_DEPTH_FAIL
+   GL_STENCIL_PASS_DEPTH_PASS
+   GL_STENCIL_REF
+   GL_STENCIL_WRITEMASK
+   GL_MATRIX_MODE
+   GL_NORMALIZE
+   GL_VIEWPORT
+   GL_MODELVIEW_STACK_DEPTH
+   GL_PROJECTION_STACK_DEPTH
+   GL_TEXTURE_STACK_DEPTH
+   GL_MODELVIEW_MATRIX
+   GL_PROJECTION_MATRIX
+   GL_TEXTURE_MATRIX
+   GL_ATTRIB_STACK_DEPTH
+   GL_ALPHA_TEST
+   GL_ALPHA_TEST_FUNC
+   GL_ALPHA_TEST_REF
+   GL_DITHER
+   GL_BLEND_DST
+   GL_BLEND_SRC
+   GL_BLEND
+   GL_LOGIC_OP_MODE
+   GL_LOGIC_OP
+   GL_COLOR_LOGIC_OP
+   GL_AUX_BUFFERS
+   GL_DRAW_BUFFER
+   GL_READ_BUFFER
+   GL_SCISSOR_BOX
+   GL_SCISSOR_TEST
+   GL_INDEX_CLEAR_VALUE
+   GL_INDEX_WRITEMASK
+   GL_COLOR_CLEAR_VALUE
+   GL_COLOR_WRITEMASK
+   GL_INDEX_MODE
+   GL_RGBA_MODE
+   GL_DOUBLEBUFFER
+   GL_STEREO
+   GL_RENDER_MODE
+   GL_PERSPECTIVE_CORRECTION_HINT
+   GL_POINT_SMOOTH_HINT
+   GL_LINE_SMOOTH_HINT
+   GL_POLYGON_SMOOTH_HINT
+   GL_FOG_HINT
+   GL_TEXTURE_GEN_S
+   GL_TEXTURE_GEN_T
+   GL_TEXTURE_GEN_R
+   GL_TEXTURE_GEN_Q
+   GL_PIXEL_MAP_I_TO_I
+   GL_PIXEL_MAP_S_TO_S
+   GL_PIXEL_MAP_I_TO_R
+   GL_PIXEL_MAP_I_TO_G
+   GL_PIXEL_MAP_I_TO_B
+   GL_PIXEL_MAP_I_TO_A
+   GL_PIXEL_MAP_R_TO_R
+   GL_PIXEL_MAP_G_TO_G
+   GL_PIXEL_MAP_B_TO_B
+   GL_PIXEL_MAP_A_TO_A
+   GL_PIXEL_MAP_I_TO_I_SIZE
+   GL_PIXEL_MAP_S_TO_S_SIZE
+   GL_PIXEL_MAP_I_TO_R_SIZE
+   GL_PIXEL_MAP_I_TO_G_SIZE
+   GL_PIXEL_MAP_I_TO_B_SIZE
+   GL_PIXEL_MAP_I_TO_A_SIZE
+   GL_PIXEL_MAP_R_TO_R_SIZE
+   GL_PIXEL_MAP_G_TO_G_SIZE
+   GL_PIXEL_MAP_B_TO_B_SIZE
+   GL_PIXEL_MAP_A_TO_A_SIZE
+   GL_UNPACK_SWAP_BYTES
+   GL_UNPACK_LSB_FIRST
+   GL_UNPACK_ROW_LENGTH
+   GL_UNPACK_SKIP_ROWS
+   GL_UNPACK_SKIP_PIXELS
+   GL_UNPACK_ALIGNMENT
+   GL_PACK_SWAP_BYTES
+   GL_PACK_LSB_FIRST
+   GL_PACK_ROW_LENGTH
+   GL_PACK_SKIP_ROWS
+   GL_PACK_SKIP_PIXELS
+   GL_PACK_ALIGNMENT
+   GL_MAP_COLOR
+   GL_MAP_STENCIL
+   GL_INDEX_SHIFT
+   GL_INDEX_OFFSET
+   GL_RED_SCALE
+   GL_RED_BIAS
+   GL_ZOOM_X
+   GL_ZOOM_Y
+   GL_GREEN_SCALE
+   GL_GREEN_BIAS
+   GL_BLUE_SCALE
+   GL_BLUE_BIAS
+   GL_ALPHA_SCALE
+   GL_ALPHA_BIAS
+   GL_DEPTH_SCALE
+   GL_DEPTH_BIAS
+   GL_MAX_EVAL_ORDER
+   GL_MAX_LIGHTS
+   GL_MAX_CLIP_PLANES
+   GL_MAX_TEXTURE_SIZE
+   GL_MAX_PIXEL_MAP_TABLE
+   GL_MAX_ATTRIB_STACK_DEPTH
+   GL_MAX_MODELVIEW_STACK_DEPTH
+   GL_MAX_NAME_STACK_DEPTH
+   GL_MAX_PROJECTION_STACK_DEPTH
+   GL_MAX_TEXTURE_STACK_DEPTH
+   GL_MAX_VIEWPORT_DIMS
+   GL_SUBPIXEL_BITS
+   GL_INDEX_BITS
+   GL_RED_BITS
+   GL_GREEN_BITS
+   GL_BLUE_BITS
+   GL_ALPHA_BITS
+   GL_DEPTH_BITS
+   GL_STENCIL_BITS
+   GL_ACCUM_RED_BITS
+   GL_ACCUM_GREEN_BITS
+   GL_ACCUM_BLUE_BITS
+   GL_ACCUM_ALPHA_BITS
+   GL_NAME_STACK_DEPTH
+   GL_AUTO_NORMAL
+   GL_MAP1_COLOR_4
+   GL_MAP1_INDEX
+   GL_MAP1_NORMAL
+   GL_MAP1_TEXTURE_COORD_1
+   GL_MAP1_TEXTURE_COORD_2
+   GL_MAP1_TEXTURE_COORD_3
+   GL_MAP1_TEXTURE_COORD_4
+   GL_MAP1_VERTEX_3
+   GL_MAP1_VERTEX_4
+   GL_MAP2_COLOR_4
+   GL_MAP2_INDEX
+   GL_MAP2_NORMAL
+   GL_MAP2_TEXTURE_COORD_1
+   GL_MAP2_TEXTURE_COORD_2
+   GL_MAP2_TEXTURE_COORD_3
+   GL_MAP2_TEXTURE_COORD_4
+   GL_MAP2_VERTEX_3
+   GL_MAP2_VERTEX_4
+   GL_MAP1_GRID_DOMAIN
+   GL_MAP1_GRID_SEGMENTS
+   GL_MAP2_GRID_DOMAIN
+   GL_MAP2_GRID_SEGMENTS
+   GL_TEXTURE_1D
+   GL_TEXTURE_2D
+   GL_FEEDBACK_BUFFER_POINTER
+   GL_FEEDBACK_BUFFER_SIZE
+   GL_FEEDBACK_BUFFER_TYPE
+   GL_SELECTION_BUFFER_POINTER
+   GL_SELECTION_BUFFER_SIZE
+
+   ; GetTextureParameter
+   ; GL_TEXTURE_MAG_FILTER
+   ; GL_TEXTURE_MIN_FILTER
+   ; GL_TEXTURE_WRAP_S
+   ; GL_TEXTURE_WRAP_T
+   GL_TEXTURE_WIDTH
+   GL_TEXTURE_HEIGHT
+   GL_TEXTURE_COMPONENTS
+   GL_TEXTURE_BORDER_COLOR
+   GL_TEXTURE_BORDER
+
+   ; HintMode
+   GL_DONT_CARE
+   GL_FASTEST
+   GL_NICEST
+
+   ; HintTarget
+   ; GL_PERSPECTIVE_CORRECTION_HINT
+   ; GL_POINT_SMOOTH_HINT
+   ; GL_LINE_SMOOTH_HINT
+   ; GL_POLYGON_SMOOTH_HINT
+   ; GL_FOG_HINT
+   ; GL_PHONG_HINT
+
+   ; IndexPointerType
+   ; GL_SHORT
+   ; GL_INT
+   ; GL_FLOAT
+   ; GL_DOUBLE
+
+   ; LightModelParameter
+   ; GL_LIGHT_MODEL_AMBIENT
+   ; GL_LIGHT_MODEL_LOCAL_VIEWER
+   ; GL_LIGHT_MODEL_TWO_SIDE
+
+   ; LightName
+   GL_LIGHT0
+   GL_LIGHT1
+   GL_LIGHT2
+   GL_LIGHT3
+   GL_LIGHT4
+   GL_LIGHT5
+   GL_LIGHT6
+   GL_LIGHT7
+
+   ; LightParameter
+   GL_AMBIENT
+   GL_DIFFUSE
+   GL_SPECULAR
+   GL_POSITION
+   GL_SPOT_DIRECTION
+   GL_SPOT_EXPONENT
+   GL_SPOT_CUTOFF
+   GL_CONSTANT_ATTENUATION
+   GL_LINEAR_ATTENUATION
+   GL_QUADRATIC_ATTENUATION
+
+   ; ListMode
+   GL_COMPILE
+   GL_COMPILE_AND_EXECUTE
+
+   ; ListNameType
+   ; GL_BYTE
+   ; GL_UNSIGNED_BYTE
+   ; GL_SHORT
+   ; GL_UNSIGNED_SHORT
+   ; GL_INT
+   ; GL_UNSIGNED_INT
+   ; GL_FLOAT
+   ; GL_2_BYTES
+   ; GL_3_BYTES
+   ; GL_4_BYTES
+
+   ; LogicOp
+   GL_CLEAR
+   GL_AND
+   GL_AND_REVERSE
+   GL_COPY
+   GL_AND_INVERTED
+   GL_NOOP
+   GL_XOR
+   GL_OR
+   GL_NOR
+   GL_EQUIV
+   GL_INVERT
+   GL_OR_REVERSE
+   GL_COPY_INVERTED
+   GL_OR_INVERTED
+   GL_NAND
+   GL_SET
+
+   ; MapTarget
+   ; GL_MAP1_COLOR_4
+   ; GL_MAP1_INDEX
+   ; GL_MAP1_NORMAL
+   ; GL_MAP1_TEXTURE_COORD_1
+   ; GL_MAP1_TEXTURE_COORD_2
+   ; GL_MAP1_TEXTURE_COORD_3
+   ; GL_MAP1_TEXTURE_COORD_4
+   ; GL_MAP1_VERTEX_3
+   ; GL_MAP1_VERTEX_4
+   ; GL_MAP2_COLOR_4
+   ; GL_MAP2_INDEX
+   ; GL_MAP2_NORMAL
+   ; GL_MAP2_TEXTURE_COORD_1
+   ; GL_MAP2_TEXTURE_COORD_2
+   ; GL_MAP2_TEXTURE_COORD_3
+   ; GL_MAP2_TEXTURE_COORD_4
+   ; GL_MAP2_VERTEX_3
+   ; GL_MAP2_VERTEX_4
+
+   ; MaterialFace
+   ; GL_FRONT
+   ; GL_BACK
+   ; GL_FRONT_AND_BACK
+
+   ; MaterialParameter
+   GL_EMISSION
+   GL_SHININESS
+   GL_AMBIENT_AND_DIFFUSE
+   GL_COLOR_INDEXES
+   ; GL_AMBIENT
+   ; GL_DIFFUSE
+   ; GL_SPECULAR
+
+   ; MatrixMode
+   GL_MODELVIEW
+   GL_PROJECTION
+   GL_TEXTURE
+
+   ; MeshMode1
+   ; GL_POINT
+   ; GL_LINE
+
+   ; MeshMode2
+   ; GL_POINT
+   ; GL_LINE
+   ; GL_FILL
+
+   ; NormalPointerType
+   ; GL_BYTE
+   ; GL_SHORT
+   ; GL_INT
+   ; GL_FLOAT
+   ; GL_DOUBLE
+
+   ; PixelCopyType
+   GL_COLOR
+   GL_DEPTH
+   GL_STENCIL
+
+   ; PixelFormat
+   GL_COLOR_INDEX
+   GL_STENCIL_INDEX
+   GL_DEPTH_COMPONENT
+   GL_RED
+   GL_GREEN
+   GL_BLUE
+   GL_ALPHA
+   GL_RGB
+   GL_RGBA
+   GL_LUMINANCE
+   GL_LUMINANCE_ALPHA
+
+   ; PixelMap
+   ; GL_PIXEL_MAP_I_TO_I
+   ; GL_PIXEL_MAP_S_TO_S
+   ; GL_PIXEL_MAP_I_TO_R
+   ; GL_PIXEL_MAP_I_TO_G
+   ; GL_PIXEL_MAP_I_TO_B
+   ; GL_PIXEL_MAP_I_TO_A
+   ; GL_PIXEL_MAP_R_TO_R
+   ; GL_PIXEL_MAP_G_TO_G
+   ; GL_PIXEL_MAP_B_TO_B
+   ; GL_PIXEL_MAP_A_TO_A
+
+   ; PixelStore
+   ; GL_UNPACK_SWAP_BYTES
+   ; GL_UNPACK_LSB_FIRST
+   ; GL_UNPACK_ROW_LENGTH
+   ; GL_UNPACK_SKIP_ROWS
+   ; GL_UNPACK_SKIP_PIXELS
+   ; GL_UNPACK_ALIGNMENT
+   ; GL_PACK_SWAP_BYTES
+   ; GL_PACK_LSB_FIRST
+   ; GL_PACK_ROW_LENGTH
+   ; GL_PACK_SKIP_ROWS
+   ; GL_PACK_SKIP_PIXELS
+   ; GL_PACK_ALIGNMENT
+
+   ; PixelTransfer
+   ; GL_MAP_COLOR
+   ; GL_MAP_STENCIL
+   ; GL_INDEX_SHIFT
+   ; GL_INDEX_OFFSET
+   ; GL_RED_SCALE
+   ; GL_RED_BIAS
+   ; GL_GREEN_SCALE
+   ; GL_GREEN_BIAS
+   ; GL_BLUE_SCALE
+   ; GL_BLUE_BIAS
+   ; GL_ALPHA_SCALE
+   ; GL_ALPHA_BIAS
+   ; GL_DEPTH_SCALE
+   ; GL_DEPTH_BIAS
+
+   ; PixelType
+   GL_BITMAP
+   ; GL_BYTE
+   ; GL_UNSIGNED_BYTE
+   ; GL_SHORT
+   ; GL_UNSIGNED_SHORT
+   ; GL_INT
+   ; GL_UNSIGNED_INT
+   ; GL_FLOAT
+
+   ; PolygonMode
+   GL_POINT
+   GL_LINE
+   GL_FILL
+
+   ; ReadBufferMode
+   ; GL_FRONT_LEFT
+   ; GL_FRONT_RIGHT
+   ; GL_BACK_LEFT
+   ; GL_BACK_RIGHT
+   ; GL_FRONT
+   ; GL_BACK
+   ; GL_LEFT
+   ; GL_RIGHT
+   ; GL_AUX0
+   ; GL_AUX1
+   ; GL_AUX2
+   ; GL_AUX3
+
+   ; RenderingMode
+   GL_RENDER
+   GL_FEEDBACK
+   GL_SELECT
+
+   ; ShadingModel
+   GL_FLAT
+   GL_SMOOTH
+
+   ; StencilFunction
+   ; GL_NEVER
+   ; GL_LESS
+   ; GL_EQUAL
+   ; GL_LEQUAL
+   ; GL_GREATER
+   ; GL_NOTEQUAL
+   ; GL_GEQUAL
+   ; GL_ALWAYS
+
+   ; StencilOp
+   ; GL_ZERO
+   GL_KEEP
+   GL_REPLACE
+   GL_INCR
+   GL_DECR
+   ; GL_INVERT
+
+   ; StringName
+   GL_VENDOR
+   GL_RENDERER
+   GL_VERSION
+   GL_EXTENSIONS
+
+   ; TextureCoordName
+   GL_S
+   GL_T
+   GL_R
+   GL_Q
+
+   ; TexCoordPointerType
+   ; GL_SHORT
+   ; GL_INT
+   ; GL_FLOAT
+   ; GL_DOUBLE
+
+   ; TextureEnvMode
+   GL_MODULATE
+   GL_DECAL
+   ; GL_BLEND
+   ; GL_REPLACE
+
+   ; TextureEnvParameter
+   GL_TEXTURE_ENV_MODE
+   GL_TEXTURE_ENV_COLOR
+
+   ; TextureEnvTarget
+   GL_TEXTURE_ENV
+
+   ; TextureGenMode
+   GL_EYE_LINEAR
+   GL_OBJECT_LINEAR
+   GL_SPHERE_MAP
+
+   ; TextureGenParameter
+   GL_TEXTURE_GEN_MODE
+   GL_OBJECT_PLANE
+   GL_EYE_PLANE
+
+   ; TextureMagFilter
+   GL_NEAREST
+   GL_LINEAR
+
+   ;TextureMinFilter
+   ; GL_NEAREST
+   ; GL_LINEAR
+   GL_NEAREST_MIPMAP_NEAREST
+   GL_LINEAR_MIPMAP_NEAREST
+   GL_NEAREST_MIPMAP_LINEAR
+   GL_LINEAR_MIPMAP_LINEAR
+
+   ; TextureParameterName
+   GL_TEXTURE_MAG_FILTER
+   GL_TEXTURE_MIN_FILTER
+   GL_TEXTURE_WRAP_S
+   GL_TEXTURE_WRAP_T
+   ; GL_TEXTURE_BORDER_COLOR
+
+   ; TextureTarget
+   ; GL_TEXTURE_1D
+   ; GL_TEXTURE_2D
+
+   ; TextureWrapMode
+   GL_CLAMP
+   GL_REPEAT
+
+   ; --- end of OpenGL 1.0 specification ------------------------------------
+   ; ------------------------------------------------------------------------
 
    ; == GLU ===
       GLU_VERSION_1_0
@@ -1043,32 +1854,33 @@
    (define GLvoid   fft-void)   ; void GLvoid
    (define GLvoid*  fft-void*)
 
-   (define GLenum     fft-unsigned-int)   ; typedef unsigned int GLenum
-   (define GLboolean  fft-unsigned-char) ; typedef unsigned char GLboolean
-   (define GLbitfield fft-unsigned-int) ; typedef unsigned int GLbitfield
+   (define GLenum     fft-unsigned-int)
+   (define GLboolean  fft-unsigned-char)
+   (define GLbitfield fft-unsigned-int)
 
-   (define GLbyte   fft-signed-char)   ; typedef signed char
-   (define GLshort  fft-short)   ; typedef short
-   (define GLint    fft-int)   ; typedef int GLint
-   (define GLsizei  fft-int)   ; typedef int GLsizei
-   (define GLubyte  fft-unsigned-char)   ; typedef unsigned char
-   (define GLushort fft-unsigned-short)   ; typedef unsigned short
-   (define GLuint   fft-unsigned-int)   ; typedef unsigned int
+   (define GLbyte   fft-signed-char)
+   (define GLshort  fft-short)
+   (define GLint    fft-int)
+   (define GLsizei  fft-int)
+   (define GLubyte  fft-unsigned-char)
+   (define GLushort fft-unsigned-short)
+   (define GLuint   fft-unsigned-int)
 
-   (define GLfloat  fft-float)   ; typedef float GLfloat
-   (define GLclampf fft-float)   ; typedef float GLclampf
-   (define GLdouble fft-double)  ; typedef double GLdouble
-   (define GLclampd fft-double)  ; typedef dluble GLclampd
+   (define GLfloat  fft-float)
+   (define GLclampf fft-float)
+   (define GLdouble fft-double)
+   (define GLclampd fft-double)
 
    (define GLubyte* type-string) ; todo: ?
 
-; references
+   ; pointers
    (define GLboolean* (fft* GLboolean)) ; TODO: ?
    (define GLint*     (fft* GLint))
    (define GLuint*    (fft* GLuint))
    (define GLfloat*   (fft* GLfloat))
    (define GLdouble*  (fft* GLdouble))
 
+   ; references
    (define GLint&     (fft& GLint))
    (define GLuint&    (fft& GLuint))
 
@@ -1079,12 +1891,14 @@
    (define GL_TRUE  1)
    (define GL_FALSE 0)
 
+   ; AccumOp
    (define GL_ACCUM               #x0100)
    (define GL_LOAD                #x0101)
    (define GL_RETURN              #x0102)
    (define GL_MULT                #x0103)
    (define GL_ADD                 #x0104)
 
+   ; AlphaFunction
    (define GL_NEVER               #x0200)
    (define GL_LESS                #x0201)
    (define GL_EQUAL               #x0202)
@@ -1094,6 +1908,7 @@
    (define GL_GEQUAL              #x0206)
    (define GL_ALWAYS              #x0207)
 
+   ; AttribMask
    (define GL_CURRENT_BIT         #x00001)
    (define GL_POINT_BIT           #x00002)
    (define GL_LINE_BIT            #x00004)
@@ -1116,6 +1931,7 @@
    (define GL_SCISSOR_BIT         #x80000)
    (define GL_ALL_ATTRIB_BITS     #xFFFFF)
 
+   ; BeginMode
    (define GL_POINTS              #x0000)
    (define GL_LINES               #x0001)
    (define GL_LINE_LOOP           #x0002)
@@ -1127,6 +1943,7 @@
    (define GL_QUAD_STRIP          #x0008)
    (define GL_POLYGON             #x0009)
 
+   ; BlendingFactorDest
    (define GL_ZERO                0)
    (define GL_ONE                 1)
    (define GL_SRC_COLOR           #x0300)
@@ -1136,10 +1953,24 @@
    (define GL_DST_ALPHA           #x0304)
    (define GL_ONE_MINUS_DST_ALPHA #x0305)
 
+   ; BlendingFactorSrc
+   ; GL_ZERO
+   ; GL_ONE
    (define GL_DST_COLOR           #x0306)
    (define GL_ONE_MINUS_DST_COLOR #x0307)
    (define GL_SRC_ALPHA_SATURATE  #x0308)
+   ; GL_SRC_ALPHA
+   ; GL_ONE_MINUS_SRC_ALPHA
+   ; GL_DST_ALPHA
+   ; GL_ONE_MINUS_DST_ALPHA
 
+   ; ClearBufferMask
+   ; GL_COLOR_BUFFER_BIT
+   ; GL_ACCUM_BUFFER_BIT
+   ; GL_STENCIL_BUFFER_BIT
+   ; GL_DEPTH_BUFFER_BIT
+
+   ; ClipPlaneName
    (define GL_CLIP_PLANE0 #x3000)
    (define GL_CLIP_PLANE1 #x3001)
    (define GL_CLIP_PLANE2 #x3002)
@@ -1147,35 +1978,148 @@
    (define GL_CLIP_PLANE4 #x3004)
    (define GL_CLIP_PLANE5 #x3005)
 
+   ; ColorMaterialFace
+   ; GL_FRONT
+   ; GL_BACK
+   ; GL_FRONT_AND_BACK
+
+   ; ColorMaterialParameter
+   ; GL_AMBIENT
+   ; GL_DIFFUSE
+   ; GL_SPECULAR
+   ; GL_EMISSION
+   ; GL_AMBIENT_AND_DIFFUSE
+
+   ; ColorPointerType
+   ; GL_BYTE
+   ; GL_UNSIGNED_BYTE
+   ; GL_SHORT
+   ; GL_UNSIGNED_SHORT
+   ; GL_INT
+   ; GL_UNSIGNED_INT
+   ; GL_FLOAT
+   ; GL_DOUBLE
+
+   ; CullFaceMode
+   ; GL_FRONT
+   ; GL_BACK
+   ; GL_FRONT_AND_BACK
+
+   ; DataType
+   (define GL_BYTE                #x1400)
+   (define GL_UNSIGNED_BYTE       #x1401)
+   (define GL_SHORT               #x1402)
+   (define GL_UNSIGNED_SHORT      #x1403)
+   (define GL_INT                 #x1404)
+   (define GL_UNSIGNED_INT        #x1405)
+   (define GL_FLOAT               #x1406)
+   (define GL_2_BYTES             #x1407)
+   (define GL_3_BYTES             #x1408)
+   (define GL_4_BYTES             #x1409)
+   (define GL_DOUBLE              #x140A)
+
+   ; DepthFunction
+   ; GL_NEVER
+   ; GL_LESS
+   ; GL_EQUAL
+   ; GL_LEQUAL
+   ; GL_GREATER
+   ; GL_NOTEQUAL
+   ; GL_GEQUAL
+   ; GL_ALWAYS
+
+   ; DrawBufferMode
    (define GL_NONE 0)
-   (define GL_FRONT_LEFT #x0400)
-   (define GL_FRONT_RIGHT #x0401)
-   (define GL_BACK_LEFT #x0402)
-   (define GL_BACK_RIGHT #x0403)
-   (define GL_FRONT #x0404)
-   (define GL_BACK #x0405)
-   (define GL_LEFT #x0406)
-   (define GL_RIGHT #x0407)
+   (define GL_FRONT_LEFT     #x0400)
+   (define GL_FRONT_RIGHT    #x0401)
+   (define GL_BACK_LEFT      #x0402)
+   (define GL_BACK_RIGHT     #x0403)
+   (define GL_FRONT          #x0404)
+   (define GL_BACK           #x0405)
+   (define GL_LEFT           #x0406)
+   (define GL_RIGHT          #x0407)
    (define GL_FRONT_AND_BACK #x0408)
-   (define GL_AUX0 #x0409)
-   (define GL_AUX1 #x040A)
-   (define GL_AUX2 #x040B)
-   (define GL_AUX3 #x040C)
+   (define GL_AUX0           #x0409)
+   (define GL_AUX1           #x040A)
+   (define GL_AUX2           #x040B)
+   (define GL_AUX3           #x040C)
 
+   ; Enable
+   ; GL_FOG
+   ; GL_LIGHTING
+   ; GL_TEXTURE_1D
+   ; GL_TEXTURE_2D
+   ; GL_LINE_STIPPLE
+   ; GL_POLYGON_STIPPLE
+   ; GL_CULL_FACE
+   ; GL_ALPHA_TEST
+   ; GL_BLEND
+   ; GL_LOGIC_OP
+   ; GL_COLOR_LOGIC_OP
+   ; GL_DITHER
+   ; GL_STENCIL_TEST
+   ; GL_DEPTH_TEST
+   ; GL_CLIP_PLANE0
+   ; GL_CLIP_PLANE1
+   ; GL_CLIP_PLANE2
+   ; GL_CLIP_PLANE3
+   ; GL_CLIP_PLANE4
+   ; GL_CLIP_PLANE5
+   ; GL_LIGHT0
+   ; GL_LIGHT1
+   ; GL_LIGHT2
+   ; GL_LIGHT3
+   ; GL_LIGHT4
+   ; GL_LIGHT5
+   ; GL_LIGHT6
+   ; GL_LIGHT7
+   ; GL_TEXTURE_GEN_S
+   ; GL_TEXTURE_GEN_T
+   ; GL_TEXTURE_GEN_R
+   ; GL_TEXTURE_GEN_Q
+   ; GL_MAP1_VERTEX_3
+   ; GL_MAP1_VERTEX_4
+   ; GL_MAP1_COLOR_4
+   ; GL_MAP1_INDEX
+   ; GL_MAP1_NORMAL
+   ; GL_MAP1_TEXTURE_COORD_1
+   ; GL_MAP1_TEXTURE_COORD_2
+   ; GL_MAP1_TEXTURE_COORD_3
+   ; GL_MAP1_TEXTURE_COORD_4
+   ; GL_MAP2_VERTEX_3
+   ; GL_MAP2_VERTEX_4
+   ; GL_MAP2_COLOR_4
+   ; GL_MAP2_INDEX
+   ; GL_MAP2_NORMAL
+   ; GL_MAP2_TEXTURE_COORD_1
+   ; GL_MAP2_TEXTURE_COORD_2
+   ; GL_MAP2_TEXTURE_COORD_3
+   ; GL_MAP2_TEXTURE_COORD_4
+   ; GL_POINT_SMOOTH
+   ; GL_LINE_SMOOTH
+   ; GL_POLYGON_SMOOTH
+   ; GL_SCISSOR_TEST
+   ; GL_COLOR_MATERIAL
+   ; GL_NORMALIZE
+   ; GL_AUTO_NORMAL
+
+   ; ErrorCode
    (define GL_NO_ERROR 0)
-   (define GL_INVALID_ENUM #x0500)
-   (define GL_INVALID_VALUE #x0501)
+   (define GL_INVALID_ENUM      #x0500)
+   (define GL_INVALID_VALUE     #x0501)
    (define GL_INVALID_OPERATION #x0502)
-   (define GL_STACK_OVERFLOW #x0503)
-   (define GL_STACK_UNDERFLOW #x0504)
-   (define GL_OUT_OF_MEMORY #x0505)
+   (define GL_STACK_OVERFLOW    #x0503)
+   (define GL_STACK_UNDERFLOW   #x0504)
+   (define GL_OUT_OF_MEMORY     #x0505)
 
+   ; FeedBackMode
    (define GL_2D #x0600)
    (define GL_3D #x0601)
    (define GL_3D_COLOR #x0602)
    (define GL_3D_COLOR_TEXTURE #x0603)
    (define GL_4D_COLOR_TEXTURE #x0604)
 
+   ; FeedBackToken
    (define GL_PASS_THROUGH_TOKEN #x0700)
    (define GL_POINT_TOKEN #x0701)
    (define GL_LINE_TOKEN #x0702)
@@ -1185,16 +2129,41 @@
    (define GL_COPY_PIXEL_TOKEN #x0706)
    (define GL_LINE_RESET_TOKEN #x0707)
 
+   ; FogMode
+   ; GL_LINEAR
    (define GL_EXP #x0800)
    (define GL_EXP2 #x0801)
 
+   ; FogParameter
+   ; GL_FOG_COLOR
+   ; GL_FOG_DENSITY
+   ; GL_FOG_END
+   ; GL_FOG_INDEX
+   ; GL_FOG_MODE
+   ; GL_FOG_START
+
+   ; FrontFaceDirection
    (define GL_CW #x0900)
    (define GL_CCW #x0901)
 
+   ; GetMapTarget
    (define GL_COEFF #x0A00)
    (define GL_ORDER #x0A01)
    (define GL_DOMAIN #x0A02)
 
+   ; GetPixelMap
+   ; GL_PIXEL_MAP_I_TO_I
+   ; GL_PIXEL_MAP_S_TO_S
+   ; GL_PIXEL_MAP_I_TO_R
+   ; GL_PIXEL_MAP_I_TO_G
+   ; GL_PIXEL_MAP_I_TO_B
+   ; GL_PIXEL_MAP_I_TO_A
+   ; GL_PIXEL_MAP_R_TO_R
+   ; GL_PIXEL_MAP_G_TO_G
+   ; GL_PIXEL_MAP_B_TO_B
+   ; GL_PIXEL_MAP_A_TO_A
+
+   ; GetTarget
    (define GL_CURRENT_COLOR #x0B00)
    (define GL_CURRENT_INDEX #x0B01)
    (define GL_CURRENT_NORMAL #x0B02)
@@ -1275,7 +2244,8 @@
    (define GL_BLEND_SRC #x0BE1)
    (define GL_BLEND #x0BE2)
    (define GL_LOGIC_OP_MODE #x0BF0)
-   (define GL_LOGIC_OP #x0BF1) ; was: INDEX_LOGIC_OP
+   (define GL_LOGIC_OP #x0BF1)
+   (define GL_COLOR_LOGIC_OP #x0BF2)
    (define GL_AUX_BUFFERS #x0C00)
    (define GL_DRAW_BUFFER #x0C01)
    (define GL_READ_BUFFER #x0C02)
@@ -1396,17 +2366,48 @@
    (define GL_MAP2_GRID_SEGMENTS #x0DD3)
    (define GL_TEXTURE_1D #x0DE0)
    (define GL_TEXTURE_2D #x0DE1)
+   (define GL_FEEDBACK_BUFFER_POINTER #x0DF0)
+   (define GL_FEEDBACK_BUFFER_SIZE #x0DF1)
+   (define GL_FEEDBACK_BUFFER_TYPE #x0DF2)
+   (define GL_SELECTION_BUFFER_POINTER #x0DF3)
+   (define GL_SELECTION_BUFFER_SIZE #x0DF4)
 
+   ; GetTextureParameter
+   ; GL_TEXTURE_MAG_FILTER
+   ; GL_TEXTURE_MIN_FILTER
+   ; GL_TEXTURE_WRAP_S
+   ; GL_TEXTURE_WRAP_T
    (define GL_TEXTURE_WIDTH #x1000)
    (define GL_TEXTURE_HEIGHT #x1001)
-   (define GL_TEXTURE_INTERNAL_FORMAT #x1003)
+   (define GL_TEXTURE_COMPONENTS #x1003)
    (define GL_TEXTURE_BORDER_COLOR #x1004)
    (define GL_TEXTURE_BORDER #x1005)
 
+   ; HintMode
    (define GL_DONT_CARE #x1100)
    (define GL_FASTEST #x1101)
    (define GL_NICEST #x1102)
 
+   ; HintTarget
+   ; GL_PERSPECTIVE_CORRECTION_HINT
+   ; GL_POINT_SMOOTH_HINT
+   ; GL_LINE_SMOOTH_HINT
+   ; GL_POLYGON_SMOOTH_HINT
+   ; GL_FOG_HINT
+   ; GL_PHONG_HINT
+
+   ; IndexPointerType
+   ; GL_SHORT
+   ; GL_INT
+   ; GL_FLOAT
+   ; GL_DOUBLE
+
+   ; LightModelParameter
+   ; GL_LIGHT_MODEL_AMBIENT
+   ; GL_LIGHT_MODEL_LOCAL_VIEWER
+   ; GL_LIGHT_MODEL_TWO_SIDE
+
+   ; LightName
    (define GL_LIGHT0 #x4000)
    (define GL_LIGHT1 #x4001)
    (define GL_LIGHT2 #x4002)
@@ -1416,6 +2417,7 @@
    (define GL_LIGHT6 #x4006)
    (define GL_LIGHT7 #x4007)
 
+   ; LightParameter
    (define GL_AMBIENT #x1200)
    (define GL_DIFFUSE #x1201)
    (define GL_SPECULAR #x1202)
@@ -1427,20 +2429,23 @@
    (define GL_LINEAR_ATTENUATION #x1208)
    (define GL_QUADRATIC_ATTENUATION #x1209)
 
+   ; ListMode
    (define GL_COMPILE #x1300)
    (define GL_COMPILE_AND_EXECUTE #x1301)
 
-   (define GL_BYTE #x1400)
-   (define GL_UNSIGNED_BYTE #x1401)
-   (define GL_SHORT #x1402)
-   (define GL_UNSIGNED_SHORT #x1403)
-   (define GL_INT #x1404)
-   (define GL_UNSIGNED_INT #x1405)
-   (define GL_FLOAT #x1406)
-   (define GL_2_BYTES #x1407)
-   (define GL_3_BYTES #x1408)
-   (define GL_4_BYTES #x1409)
+   ; ListNameType
+   ; GL_BYTE
+   ; GL_UNSIGNED_BYTE
+   ; GL_SHORT
+   ; GL_UNSIGNED_SHORT
+   ; GL_INT
+   ; GL_UNSIGNED_INT
+   ; GL_FLOAT
+   ; GL_2_BYTES
+   ; GL_3_BYTES
+   ; GL_4_BYTES
 
+   ; LogicOp
    (define GL_CLEAR #x1500)
    (define GL_AND #x1501)
    (define GL_AND_REVERSE #x1502)
@@ -1458,19 +2463,67 @@
    (define GL_NAND #x150E)
    (define GL_SET #x150F)
 
+   ; MapTarget
+   ; GL_MAP1_COLOR_4
+   ; GL_MAP1_INDEX
+   ; GL_MAP1_NORMAL
+   ; GL_MAP1_TEXTURE_COORD_1
+   ; GL_MAP1_TEXTURE_COORD_2
+   ; GL_MAP1_TEXTURE_COORD_3
+   ; GL_MAP1_TEXTURE_COORD_4
+   ; GL_MAP1_VERTEX_3
+   ; GL_MAP1_VERTEX_4
+   ; GL_MAP2_COLOR_4
+   ; GL_MAP2_INDEX
+   ; GL_MAP2_NORMAL
+   ; GL_MAP2_TEXTURE_COORD_1
+   ; GL_MAP2_TEXTURE_COORD_2
+   ; GL_MAP2_TEXTURE_COORD_3
+   ; GL_MAP2_TEXTURE_COORD_4
+   ; GL_MAP2_VERTEX_3
+   ; GL_MAP2_VERTEX_4
+
+   ; MaterialFace
+   ; GL_FRONT
+   ; GL_BACK
+   ; GL_FRONT_AND_BACK
+
+   ; MaterialParameter
    (define GL_EMISSION #x1600)
    (define GL_SHININESS #x1601)
    (define GL_AMBIENT_AND_DIFFUSE #x1602)
    (define GL_COLOR_INDEXES #x1603)
+   ; GL_AMBIENT
+   ; GL_DIFFUSE
+   ; GL_SPECULAR
 
+   ; MatrixMode
    (define GL_MODELVIEW #x1700)
    (define GL_PROJECTION #x1701)
    (define GL_TEXTURE #x1702)
 
+   ; MeshMode1
+   ; GL_POINT
+   ; GL_LINE
+
+   ; MeshMode2
+   ; GL_POINT
+   ; GL_LINE
+   ; GL_FILL
+
+   ; NormalPointerType
+   ; GL_BYTE
+   ; GL_SHORT
+   ; GL_INT
+   ; GL_FLOAT
+   ; GL_DOUBLE
+
+   ; PixelCopyType
    (define GL_COLOR #x1800)
    (define GL_DEPTH #x1801)
    (define GL_STENCIL #x1802)
 
+   ; PixelFormat
    (define GL_COLOR_INDEX #x1900)
    (define GL_STENCIL_INDEX #x1901)
    (define GL_DEPTH_COMPONENT #x1902)
@@ -1483,69 +2536,174 @@
    (define GL_LUMINANCE #x1909)
    (define GL_LUMINANCE_ALPHA #x190A)
 
-   (define GL_BITMAP #x1A00)
+   ; PixelMap
+   ; GL_PIXEL_MAP_I_TO_I
+   ; GL_PIXEL_MAP_S_TO_S
+   ; GL_PIXEL_MAP_I_TO_R
+   ; GL_PIXEL_MAP_I_TO_G
+   ; GL_PIXEL_MAP_I_TO_B
+   ; GL_PIXEL_MAP_I_TO_A
+   ; GL_PIXEL_MAP_R_TO_R
+   ; GL_PIXEL_MAP_G_TO_G
+   ; GL_PIXEL_MAP_B_TO_B
+   ; GL_PIXEL_MAP_A_TO_A
 
+   ; PixelStore
+   ; GL_UNPACK_SWAP_BYTES
+   ; GL_UNPACK_LSB_FIRST
+   ; GL_UNPACK_ROW_LENGTH
+   ; GL_UNPACK_SKIP_ROWS
+   ; GL_UNPACK_SKIP_PIXELS
+   ; GL_UNPACK_ALIGNMENT
+   ; GL_PACK_SWAP_BYTES
+   ; GL_PACK_LSB_FIRST
+   ; GL_PACK_ROW_LENGTH
+   ; GL_PACK_SKIP_ROWS
+   ; GL_PACK_SKIP_PIXELS
+   ; GL_PACK_ALIGNMENT
+
+   ; PixelTransfer
+   ; GL_MAP_COLOR
+   ; GL_MAP_STENCIL
+   ; GL_INDEX_SHIFT
+   ; GL_INDEX_OFFSET
+   ; GL_RED_SCALE
+   ; GL_RED_BIAS
+   ; GL_GREEN_SCALE
+   ; GL_GREEN_BIAS
+   ; GL_BLUE_SCALE
+   ; GL_BLUE_BIAS
+   ; GL_ALPHA_SCALE
+   ; GL_ALPHA_BIAS
+   ; GL_DEPTH_SCALE
+   ; GL_DEPTH_BIAS
+
+   ; PixelType
+   (define GL_BITMAP #x1A00)
+   ; GL_BYTE
+   ; GL_UNSIGNED_BYTE
+   ; GL_SHORT
+   ; GL_UNSIGNED_SHORT
+   ; GL_INT
+   ; GL_UNSIGNED_INT
+   ; GL_FLOAT
+
+   ; PolygonMode
    (define GL_POINT #x1B00)
    (define GL_LINE #x1B01)
    (define GL_FILL #x1B02)
 
+   ; ReadBufferMode
+   ; GL_FRONT_LEFT
+   ; GL_FRONT_RIGHT
+   ; GL_BACK_LEFT
+   ; GL_BACK_RIGHT
+   ; GL_FRONT
+   ; GL_BACK
+   ; GL_LEFT
+   ; GL_RIGHT
+   ; GL_AUX0
+   ; GL_AUX1
+   ; GL_AUX2
+   ; GL_AUX3
+
+   ; RenderingMode
    (define GL_RENDER #x1C00)
    (define GL_FEEDBACK #x1C01)
    (define GL_SELECT #x1C02)
 
+   ; ShadingModel
    (define GL_FLAT #x1D00)
    (define GL_SMOOTH #x1D01)
 
+   ; StencilFunction
+   ; GL_NEVER
+   ; GL_LESS
+   ; GL_EQUAL
+   ; GL_LEQUAL
+   ; GL_GREATER
+   ; GL_NOTEQUAL
+   ; GL_GEQUAL
+   ; GL_ALWAYS
+
+   ; StencilOp
+   ; GL_ZERO
    (define GL_KEEP #x1E00)
    (define GL_REPLACE #x1E01)
    (define GL_INCR #x1E02)
    (define GL_DECR #x1E03)
+   ; GL_INVERT
 
+   ; StringName
    (define GL_VENDOR #x1F00)
    (define GL_RENDERER #x1F01)
    (define GL_VERSION #x1F02)
    (define GL_EXTENSIONS #x1F03)
 
+   ; TextureCoordName
    (define GL_S #x2000)
    (define GL_T #x2001)
    (define GL_R #x2002)
    (define GL_Q #x2003)
 
+   ; TexCoordPointerType
+   ; GL_SHORT
+   ; GL_INT
+   ; GL_FLOAT
+   ; GL_DOUBLE
+
+   ; TextureEnvMode
    (define GL_MODULATE #x2100)
    (define GL_DECAL #x2101)
+   ; GL_BLEND
+   ; GL_REPLACE
 
+   ; TextureEnvParameter
    (define GL_TEXTURE_ENV_MODE #x2200)
    (define GL_TEXTURE_ENV_COLOR #x2201)
 
+   ; TextureEnvTarget
    (define GL_TEXTURE_ENV #x2300)
 
+   ; TextureGenMode
    (define GL_EYE_LINEAR #x2400)
    (define GL_OBJECT_LINEAR #x2401)
    (define GL_SPHERE_MAP #x2402)
 
+   ; TextureGenParameter
    (define GL_TEXTURE_GEN_MODE #x2500)
    (define GL_OBJECT_PLANE #x2501)
    (define GL_EYE_PLANE #x2502)
 
+   ; TextureMagFilter
    (define GL_NEAREST #x2600)
    (define GL_LINEAR #x2601)
 
+   ;TextureMinFilter
+   ; GL_NEAREST
+   ; GL_LINEAR
    (define GL_NEAREST_MIPMAP_NEAREST #x2700)
    (define GL_LINEAR_MIPMAP_NEAREST #x2701)
    (define GL_NEAREST_MIPMAP_LINEAR #x2702)
    (define GL_LINEAR_MIPMAP_LINEAR #x2703)
 
+   ; TextureParameterName
    (define GL_TEXTURE_MAG_FILTER #x2800)
    (define GL_TEXTURE_MIN_FILTER #x2801)
    (define GL_TEXTURE_WRAP_S #x2802)
    (define GL_TEXTURE_WRAP_T #x2803)
+   ; GL_TEXTURE_BORDER_COLOR
 
-   (define GL_CLAMP_TO_EDGE #x812f) ; todo: find the right place
+   ; TextureTarget
+   ; GL_TEXTURE_1D
+   ; GL_TEXTURE_2D
 
+   ; TextureWrapMode
    (define GL_CLAMP #x2900)
    (define GL_REPEAT #x2901)
 
 
+   ; functions
    (define glAccum       (GL GLvoid "glAccum"      GLenum GLfloat))
    (define glAlphaFunc   (GL GLvoid "glAlphaFunc"  GLenum GLclampf))
    (define glBegin       (GL GLvoid "glBegin"      GLenum))
