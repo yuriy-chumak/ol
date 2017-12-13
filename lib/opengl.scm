@@ -1,10 +1,10 @@
 (define-library (lib opengl)
    (import
       (otus lisp) (otus ffi)
-      (OpenGL version-1-0))
+      (OpenGL version-1-1))
 
    (export
-      (exports (OpenGL version-1-0))
+      (exports (OpenGL version-1-1))
       gl:run
 
       gl:Create ; create window + context
