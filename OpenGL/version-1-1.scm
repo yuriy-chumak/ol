@@ -9,6 +9,9 @@
    GL_INDEX_LOGIC_OP          ; renamed from GL_LOGIC_OP by 1.1
    GL_TEXTURE_INTERNAL_FORMAT ; renamed from GL_TEXTURE_COMPONENTS by 1.1
 
+   ; WINGDIAPI void APIENTRY glIndexub (GLubyte c);
+   ; WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
+
    ; EnableClientState
    ; DisableClientState
    ; InterleavedArrays
@@ -109,7 +112,7 @@
    ;CopyTexImage2DEXT
    ;CopyTexSubImage1DEXT
    ;CopyTexSubImage2DEXT
-   ;CopyTexSubImage3DEXT
+   ;CopyTexSubImage3DEXT ; excluded by 1.1
 
  ; EXT_texture_object
    glGenTextures ; void ( GLsizei n, GLuint *textures )
@@ -126,15 +129,16 @@
 ;  TEXTURE_3D_BINDING ; excluded by 1.1
 
  ; EXT_vertex_array
-   ;ArrayElementEXT
-   ;DrawArraysEXT    
-   ;VertexPointerEXT
-   ;NormalPointerEXT
-   ;ColorPointerEXT
-   ;IndexPointerEXT
-   ;TexCoordPointerEXT
-   ;EdgeFlagPointerEXT
-   ;GetPointervEXT
+   ; ArrayElement
+   ; VertexPointer
+   ; NormalPointer
+   ; ColorPointer
+   ; IndexPointer
+   ; TexCoordPointer
+   ; EdgeFlagPointer
+   ; GetPointerv
+
+   ; DrawArrays
    ; DrawElements ; introduced by 1.1
 
    GL_VERTEX_ARRAY
@@ -176,36 +180,6 @@
 
    ; none
 
-; -------------------
-
-
-    ; todo: check this and to the right place
-;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
-;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
-;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
-;WINGDIAPI void APIENTRY glCopyTexImage1D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border);
-;WINGDIAPI void APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
-;WINGDIAPI void APIENTRY glCopyTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
-;WINGDIAPI void APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-;WINGDIAPI void APIENTRY glTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
-;WINGDIAPI void APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
-;WINGDIAPI void APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
-;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
-;WINGDIAPI void APIENTRY glArrayElement (GLint i);
-;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glDisableClientState (GLenum array);
-;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
-;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-;WINGDIAPI GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
-;WINGDIAPI void APIENTRY glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities);
-;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
-;WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
-
    (exports (OpenGL version-1-0)))
 
 ; ============================================================================
@@ -221,12 +195,13 @@
    (define GL_INDEX_LOGIC_OP GL_LOGIC_OP)
    (define GL_TEXTURE_INTERNAL_FORMAT GL_TEXTURE_COMPONENTS)
 
- ; ...
-   ;; 2.8 Vertex Arrays (TBD.)
 
-   ; EnableClientState
-   ; DisableClientState
-   ; InterleavedArrays
+   ;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
+   ;WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
+
+   ;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
+   ;WINGDIAPI void APIENTRY glDisableClientState (GLenum array);
+   ;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
 
    (define GL_V2F                            #x2A20)
    (define GL_V3F                            #x2A21)
@@ -315,19 +290,19 @@
    ;TexSubImage3DEXT
 
  ; EXT_copy_texture
-   ;CopyTexImage1DEXT
-   ;CopyTexImage2DEXT
-   ;CopyTexSubImage1DEXT
-   ;CopyTexSubImage2DEXT
-   ;CopyTexSubImage3DEXT
+   ;void APIENTRY glCopyTexImage1D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border);
+   ;void APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
+   ;void APIENTRY glCopyTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
+   ;void APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+
 
  ; EXT_texture_object
    (define glGenTextures (GL GLvoid "glGenTextures" GLsizei GLuint&))
    (define glDeleteTextures (GL GLvoid "glDeleteTextures" GLsizei GLuint*))
    (define glBindTexture (GL GLvoid "glBindTexture" GLenum GLuint))
-   ;PrioritizeTexturesEXT
-   ;AreTexturesResidentEXT
-   ;IsTextureEXT
+   ;WINGDIAPI void APIENTRY glPrioritizeTextures (GLsizei n, const GLuint *textures, const GLclampf *priorities);
+   ;WINGDIAPI GLboolean APIENTRY glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
+   ;WINGDIAPI GLboolean APIENTRY glIsTexture (GLuint texture);
 
    (define GL_TEXTURE_PRIORITY   #x8066)
    (define GL_TEXTURE_RESIDENT   #x8067)
@@ -335,15 +310,19 @@
    (define GL_TEXTURE_BINDING_2D #x8069)
 
  ; EXT_vertex_array
-   ;ArrayElementEXT
-   ;DrawArraysEXT    
-   ;VertexPointerEXT
-   ;NormalPointerEXT
-   ;ColorPointerEXT
-   ;IndexPointerEXT
-   ;TexCoordPointerEXT
-   ;EdgeFlagPointerEXT
-   ;GetPointervEXT
+   ;WINGDIAPI void APIENTRY glArrayElement (GLint i);
+
+   ;WINGDIAPI void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+   ;WINGDIAPI void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
+   ;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+   ;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
+   ;WINGDIAPI void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+   ;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
+
+   ;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
+
+   ;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
+   ;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 
    (define GL_VERTEX_ARRAY                   #x8074)
    (define GL_NORMAL_ARRAY                   #x8075)
