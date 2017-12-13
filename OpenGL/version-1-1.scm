@@ -105,14 +105,14 @@
  ; EXT_subtexture
    ;TexSubImage1DEXT
    ;TexSubImage2DEXT
-   ;TexSubImage3DEXT
+   ;glTexSubImage3D ; excluded by 1.1 (introduced back by 1.2)
 
  ; EXT_copy_texture
    ;CopyTexImage1DEXT
    ;CopyTexImage2DEXT
    ;CopyTexSubImage1DEXT
    ;CopyTexSubImage2DEXT
-   ;CopyTexSubImage3DEXT ; excluded by 1.1
+   ;glCopyTexSubImage3D ; excluded by 1.1 (introduced back by 1.2)
 
  ; EXT_texture_object
    glGenTextures ; void ( GLsizei n, GLuint *textures )
@@ -285,9 +285,9 @@
    (define GL_PROXY_TEXTURE_2D               #x8064)
 
  ; EXT_subtexture
-   ;TexSubImage1DEXT
-   ;TexSubImage2DEXT
-   ;TexSubImage3DEXT
+   ;glTexSubImage1D
+   ;glTexSubImage2D
+   ;glTexSubImage3D ; removed by 1.1 (introduced back by 1.2)
 
  ; EXT_copy_texture
    ;void APIENTRY glCopyTexImage1D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border);
