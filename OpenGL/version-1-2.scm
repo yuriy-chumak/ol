@@ -155,10 +155,4 @@
    (define GL_LIGHT_MODEL_COLOR_CONTROL #x81F8)
    (define GL_SINGLE_COLOR              #x81F9)
    (define GL_SEPARATE_SPECULAR_COLOR   #x81FA)
-
-; done
-
-;  ; opengl 1.2 https://www.opengl.org/registry/api/GL/glext.h
-
-   (define GLU_VERSION_1_3 1)
 ))

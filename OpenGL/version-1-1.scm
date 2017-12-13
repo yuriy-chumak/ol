@@ -355,8 +355,4 @@
 
  ; EXT_blend_login_op
    ; none
-
-(define GLU_VERSION_1_1                 1)
-; add glu functions
-
 ))
