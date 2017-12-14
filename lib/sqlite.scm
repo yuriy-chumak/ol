@@ -476,6 +476,8 @@
                         (sqlite3_bind_double statement n arg))
                      ((string? arg)
                         (sqlite3_bind_text   statement n arg (size arg) #f))
+                     ((null? arg)
+                        (sqlite3_bind_null   statement n))
                      (else
                         (runtime-error "Unsupported parameter type" arg)))
                   (sqlite3_bind_null statement n))
