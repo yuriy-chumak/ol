@@ -147,12 +147,16 @@
                                  (<< (ref MSG (+ 2 (* w 1))) 16)
                                  (<< (ref MSG (+ 3 (* w 1))) 24))))
                   ;(print message ": " MSG)
-                  (if (and
-                        (eq? message 273) ; WM_COMMAND
-                        (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
-                                (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam (8 for win32) , IDCANCEL
-                     24 ; EXIT
-                     (begin
+                  (cond
+                     ((and (eq? message 273) ; WM_COMMAND
+                           (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
+                                   (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam, IDCANCEL
+                        24) ; EXIT
+                     ((and (eq? message 256) ; WM_KEYDOWN
+                           (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
+                                   (<< (ref MSG (+ 1 (* w 2))) 8)) #x51)) ; Q key
+                        24) ;
+                     (else 
                         (TranslateMessage MSG)
                         (DispatchMessage MSG)
                         (loop)))))))))))
