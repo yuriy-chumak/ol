@@ -40,5 +40,10 @@
    (lambda (row)
       (print "values: " row)))
 
+(print
+(sqlite:map (sqlite:query database "SELECT * FROM test")
+   (lambda (row)
+      row)))
+
 (print "close: "    (sqlite3_close database))
 

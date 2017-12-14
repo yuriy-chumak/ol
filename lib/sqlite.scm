@@ -236,7 +236,8 @@
     sqlite:query
     sqlite:value
 
-    sqlite:for-each)
+    sqlite:for-each
+    sqlite:map)
 
 ; ============================================================================
 (import
@@ -533,16 +534,37 @@
       (#t #true)  ; no data available
       (else
          (let loop ()
-            (let ((result (get-result-as-row statement)))
-               (if result (apply f result)))
-            (case (sqlite3_step statement)
-               (SQLITE_ROW
-                  (loop))
-               (SQLITE_DONE
-                  (sqlite3_finalize statement)
-                  #true)
-               (else
-                  (sqlite3_finalize statement)
-                  (runtime-error "Can't execute SQL statement" #t)))))))
+            (let ((row (get-result-as-row statement)))
+               (if row
+                  (begin (apply f row)
+                     (case (sqlite3_step statement)
+                        (SQLITE_ROW
+                           (loop))
+                        (SQLITE_DONE
+                           (sqlite3_finalize statement)
+                           #true)
+                        (else
+                           (sqlite3_finalize statement)
+                           (runtime-error "Can't execute SQL statement" #t))))))))))
+
+(define (sqlite:map statement f)
+   (case statement
+      (#f #false) ; error
+      (#t #null)  ; no data available
+      (else
+         (reverse
+         (let loop ((t '()))
+            (let ((row (get-result-as-row statement)))
+               (if row
+                  (let ((v (apply f row)))
+                     (case (sqlite3_step statement)
+                        (SQLITE_ROW
+                           (loop (cons v t)))
+                        (SQLITE_DONE
+                           (sqlite3_finalize statement)
+                           (cons v t))
+                        (else
+                           (sqlite3_finalize statement)
+                           (runtime-error "Can't execute SQL statement" #t)))))))))))
 
 ))
