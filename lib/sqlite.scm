@@ -467,15 +467,17 @@
       (let loop ((n 1) (args args))
          (unless (null? args)
             (let ((arg (car args)))
-               (cond
-                  ((integer? arg)
-                     (sqlite3_bind_int64  statement n arg))
-                  ((rational? arg)
-                     (sqlite3_bind_double statement n arg))
-                  ((string? arg)
-                     (sqlite3_bind_text   statement n arg (size arg) #f))
-                  (else
-                     (runtime-error "Unsupported parameter type" arg)))
+               (if arg
+                  (cond
+                     ((integer? arg)
+                        (sqlite3_bind_int64  statement n arg))
+                     ((rational? arg)
+                        (sqlite3_bind_double statement n arg))
+                     ((string? arg)
+                        (sqlite3_bind_text   statement n arg (size arg) #f))
+                     (else
+                        (runtime-error "Unsupported parameter type" arg)))
+                  (sqlite3_bind_null statement n))
                (loop (+ n 1) (cdr args)))))
       ; analyze results:
       (let ((code (sqlite3_step statement)))
