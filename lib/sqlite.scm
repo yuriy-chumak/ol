@@ -514,12 +514,12 @@
                ((starts-with-ci? query "INSERT ")
                   (let ((id (sqlite3_last_insert_rowid database)))
                         (print "id: " id) ; debug output
-                     (less? 0 id))) ; return inserted row id (usually: the key) or #false
+                     (if (less? 0 id) id))) ; return inserted row id (usually: the key) or #false
                ((or (starts-with-ci? query "UPDATE ")
                     (starts-with-ci? query "DELETE "))
                   (let ((changes (sqlite3_changes database)))
                         (print "changes: " changes) ; debug output
-                     (less? 0 changes)))
+                     (if (less? 0 changes) changes)))
                (else
                   #true)))
          (else ; got a values!
