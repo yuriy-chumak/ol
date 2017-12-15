@@ -3,3 +3,5 @@ doc/ol.1.gz
 tmp
 =======
 Debug/
+Debug-x86/
+Debug-x64/
