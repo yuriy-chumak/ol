@@ -280,8 +280,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 // http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system#WindowswithCygwinPOSIX
 
-#ifdef __MINGW32__ // bugs in mingw
+#ifdef __MINGW32__ // mingw issues
+#ifndef _cdecl
 #define _cdecl __cdecl
+#endif
 
 #ifdef __STRICT_ANSI__
 #undef __STRICT_ANSI__
@@ -4803,22 +4805,18 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // ----------------------------------------------------------------
 // -=( virtual machine functions )=--------------------------------
 //
-// Temporary:
-#ifdef _WIN32
-#	if UINTPTR_MAX == 0xffffffffffffffff // 64-bit gcc platform?
-#		define language _binary_repl_start
-#	else
-#		define language binary_repl_start
-#	endif
-#else
-#	define language _binary_repl_start
-#endif
 
 #ifndef NAKED_VM
-extern unsigned char language[];
+	// Bug in MinGW-32
+#	if defined(_WIN32) && !defined(_WIN64)
+#		define language binary_repl_start
+#	else
+#		define language _binary_repl_start
+#	endif
+
+	extern unsigned char language[];
 #else
-static
-unsigned char * language = NULL;
+#	define language NULL
 #endif
 
 #if !EMBEDDED_VM

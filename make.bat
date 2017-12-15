@@ -11,6 +11,7 @@ IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="repl" GOTO REPL
 IF "%1"=="repl32" GOTO REPL32
+IF "%1"=="repl64" GOTO REPL64
 IF "%1"=="boot" GOTO BOOT
 IF "%1"=="slim" GOTO SLIM
 IF "%1"=="talkback" GOTO TALKBACK
@@ -25,22 +26,17 @@ IF "%1"=="101"    GOTO 101
 IF "%1"=="111"    GOTO 111
 IF "%1"=="121"    GOTO 121
 IF "%1"=="android" GOTO ANDROID
+IF "%1"=="clean" GOTO CLEAN
 GOTO:EOF
 
 
 :ALL
-for %%a in (
-   vm.exe
-   src\repl.o
-   ol.exe
-   src\slim.c
-   olvm.js
-) do if exist %%a erase %%a
+call :CLEAN
 CALL :VM    & if not exist vm.exe goto :fail
 CALL :REPL  & fc /b repl boot.fasl > nul & if errorlevel 1 goto :fail
 CALL :OL    & if not exist ol.exe goto :fail
 CALL :TESTS
-CALL :SLIM  & if not exist src/slim.c goto :fail
+CALL :SLIM  & if not exist tmp/slim.c goto :fail
 CALL :JS    & if not exist olvm.js goto :fail
 
 echo '  `___`  '
@@ -71,8 +67,28 @@ echo "+------+                              "
 echo:
 GOTO:EOF
 
+:CLEAN
+for %%a in (
+   olvm.js
+   src\repl.c
+   src\repl.o
+   src\repl32.o
+   test-ffi32.exe
+   test-ffi64.exe
+   test-vm32.exe
+   test-vm64.exe
+   tmp\repl.c
+   tmp\repl32.o
+   tmp\repl64.o
+   tmp\slim.c
+   vm.exe
+   vm32.exe
+   vm64.exe
+) do if exist %%a erase %%a
+GOTO:EOF
+
 :BOOT
-vm repl <src/to-c.scm >src/boot.c
+vm repl <tutorial/attic/to-c.scm >src/boot.c
 GOTO:EOF
 
 :: ======================================
@@ -107,13 +123,13 @@ GOTO:EOF
 
 :REPL32
 set PATH=%MINGW32%;%PATH%
-ld -r -b binary -o src/repl32.o repl
+ld -r -b binary -o tmp/repl32.o repl
 set PATH=%PATH~%
 GOTO:EOF
 
 :REPL64
 set PATH=%MINGW64%;%PATH%
-ld -r -b binary -o src/repl32.o repl
+ld -r -b binary -o tmp/repl64.o repl
 set PATH=%PATH~%
 GOTO:EOF
 
@@ -150,21 +166,9 @@ GOTO:EOF
 copy boot.fasl repl
 GOTO :REPL
 
-:REPL32
-set PATH=%MINGW32%;%PATH%
-ld -r -b binary -o src/repl32.o -m32 repl
-set PATH=%PATH~%
-GOTO:EOF
-
-:REPL64
-set PATH=%MINGW64%;%PATH%
-ld -r -b binary -o src/repl64.o -m32 repl
-set PATH=%PATH~%
-GOTO:EOF
-
 :SLIM
 echo.   *** Making slim:
-vm repl src/slim.lisp >src/slim.c
+vm repl src/slim.lisp >tmp/slim.c
 GOTO:EOF
 
 :TALKBACK
@@ -182,8 +186,8 @@ GOTO:EOF
 :JS
 echo.   *** Making virtual machine on js:
 @set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
-ol src/to-c.scm >src/repl.c
-call emcc src/olvm.c src/repl.c -o olvm.js -s ASYNCIFY=1 -Oz ^
+ol tmp/to-c.scm >tmp/repl.c
+call emcc src/olvm.c tmp/repl.c -o olvm.js -s ASYNCIFY=1 -Oz ^
      -s NO_EXIT_RUNTIME=1 ^
      -fno-exceptions -fno-rtti ^
      --memory-init-file 0 --llvm-opts "['-O3']"
@@ -192,7 +196,7 @@ GOTO:EOF
 :WASM
 echo.   *** Making virtual machine for webassembly:
 @set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
-call emcc src/slim.c src/olvm.c -o olvm.html -s ASYNCIFY=1 -s WASM=1 -O1 --memory-init-file 0 --llvm-opts "['-O2']"
+call emcc tmp/slim.c src/olvm.c -o olvm.html -s ASYNCIFY=1 -s WASM=1 -O1 --memory-init-file 0 --llvm-opts "['-O2']"
 GOTO:EOF
 
 
@@ -260,10 +264,10 @@ set PATH=%PATH~%
 :: ffi
 set PATH=%MINGW32%;%PATH%
 echo|set /p=32-bit ffi testing ...
-ld -r -b binary -o src/repl32.o repl
+ld -r -b binary -o tmp/repl32.o repl
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
-    src/olvm.c src/repl32.o tests/ffi.c -o "test-ffi32.exe" -lws2_32 -O2 -g2 -m32
+    src/olvm.c tmp/repl32.o tests/ffi.c -o "test-ffi32.exe" -lws2_32 -O2 -g2 -m32
 test-ffi32.exe tests/ffi.scm > C:\TEMP\out
 fc C:\TEMP\out tests/ffi.scm.ok > nul
 if errorlevel 1 (
@@ -275,10 +279,10 @@ echo. Ok.
 set PATH=%PATH~%
 set PATH=%MINGW64%;%PATH%
 echo|set /p=64-bit ffi testing ...
-ld -r -b binary -o src/repl64.o repl
+ld -r -b binary -o tmp/repl64.o repl
 gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
-    src/olvm.c src/repl64.o tests/ffi.c -o "test-ffi64.exe" -lws2_32 -O2 -g2 -m64
+    src/olvm.c tmp/repl64.o tests/ffi.c -o "test-ffi64.exe" -lws2_32 -O2 -g2 -m64
 test-ffi64.exe tests/ffi.scm > C:\TEMP\out
 fc C:\TEMP\out tests/ffi.scm.ok > nul
 if errorlevel 1 (
