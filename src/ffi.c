@@ -632,7 +632,31 @@ word* OL_ffi(OL* self, word* arguments)
 
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
 
-		if (arg != IFALSE) // #false is universal "0" value
+		if (arg == IFALSE) { // #false is universal "0" value
+/*			switch (type) {
+#if UINT64_MAX > SIZE_MAX
+			case TINT64: case TUINT64:
+				args[++i] = 0; 	// for 32-bits: double fills two words
+#endif
+#if __amd64__ && __linux__
+			case TFLOAT:
+				*(float*)&ad[d++] = 0;
+				floatsmask|=1; --i;
+				break;
+#endif
+			case TDOUBLE:
+				#if __amd64__ && __linux__
+					ad[d++] = 0;
+					floatsmask++; --i;
+				#endif
+				#if UINT64_MAX > SIZE_MAX
+					++i; 	// for 32-bits: double fills two words
+				#endif
+				break;
+
+			}*/
+		}
+		else
 		switch (type) {
 
 		// целочисленные типы:
