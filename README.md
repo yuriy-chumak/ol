@@ -53,16 +53,24 @@ For unix you maybe want MAKE installed also.
 DOWNLOAD / INSTALLATION
 -----------------------
 
-Installation packages for CentOS 6 (x86, amd64), CentOS 7 (amd64),
-Debian 7 (x86, amd64), Debian 8 (x86, amd64), Fedora 22 (x86, amd64),
-Fedora 23 (x86, amd64), RHEL 5 (x86, amd64), RHEL 6 (x86, amd64),
-RHEL 7 (amd64), SLE 10 (x86, amd64), SLE 11 (x86, amd64), SLE 12 (amd64),
+You can use basic Ol functionality without any installation - just copy the `ol` binary
+to any user accessible path. Basic functionality includes a rich set: lists, ff, io, lazies,
+strings, symbols, vectors, math, regex and tuples. For extended functionality you should
+install the whole Ol package.
+
+Installation packages for
+CentOS 6 (x86, amd64), CentOS 7 (amd64),
+Debian 7 (x86, amd64), Debian 8 (x86, amd64),
+Fedora 22 (x86, amd64), Fedora 23 (x86, amd64),
+RHEL 5 (x86, amd64), RHEL 6 (x86, amd64), RHEL 7 (amd64),
+SLE 10 (x86, amd64), SLE 11 (x86, amd64), SLE 12 (amd64),
 ScientificLinux 6 (x86, amd64), ScientificLinux 7 (amd64),
 Univention 3.2 (x86, amd64), Univention 4.0 (x86, amd64),
-openSUSE 13.1 (x86, amd64), openSUSE 13.2 (x86, amd64), openSUSE Factory
-(aarch64, armv7l), openSUSE Leap 42.1 (amd64), openSUSE Tumbleweed (x86, amd64),
-Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l),
-Ubuntu 16.04 (x86, amd64) can be found at
+openSUSE 13.1 (x86, amd64), openSUSE 13.2 (x86, amd64),
+openSUSE Factory (aarch64, armv7l),
+openSUSE Leap 42.1 (amd64),
+openSUSE Tumbleweed (x86, amd64),
+Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64) can be found at
 [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
 
 Installation packages for Windows (x86, amd64) on the way.
