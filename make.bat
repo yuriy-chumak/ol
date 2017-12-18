@@ -70,14 +70,12 @@ GOTO:EOF
 :CLEAN
 for %%a in (
    olvm.js
-   src\repl.c
-   src\repl.o
-   src\repl32.o
    test-ffi32.exe
    test-ffi64.exe
    test-vm32.exe
    test-vm64.exe
    tmp\repl.c
+   tmp\repl.o
    tmp\repl32.o
    tmp\repl64.o
    tmp\slim.c
@@ -88,7 +86,7 @@ for %%a in (
 GOTO:EOF
 
 :BOOT
-vm repl <tutorial/attic/to-c.scm >src/boot.c
+vm repl <tutorial/attic/to-c.scm >tmp/boot.c
 GOTO:EOF
 
 :: ======================================
@@ -136,20 +134,20 @@ GOTO:EOF
 
 :OL
 echo.   *** Making Otus Lisp:
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
 GOTO:EOF
 
 :OL32
 echo.   *** Making 32-bit Otus Lisp:
 set PATH=%MINGW32%;%PATH%
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
 set PATH=%PATH~%
 GOTO:EOF
 
 :OL64
 echo.   *** Making 32-bit Otus Lisp:
 set PATH=%MINGW64%;%PATH%
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing src/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
 set PATH=%PATH~%
 GOTO:EOF
 
@@ -160,7 +158,7 @@ vm repl - --version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again
-ld -r -b binary -o src/repl.o repl
+ld -r -b binary -o tmp/repl.o repl
 GOTO:EOF
 :again
 copy boot.fasl repl
@@ -177,7 +175,7 @@ ld -r -b binary -o ffi.o otus/ffi.scm
 gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DOLVM_FFI=1 ^
     -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -D INTEGRATED_FFI ^
-    src/olvm.c src/repl.o ffi.o extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
+    src/olvm.c tmp/repl.o ffi.o extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
     -lws2_32 -O2 -g2
 GOTO:EOF
 
@@ -202,7 +200,7 @@ GOTO:EOF
 
 :RELEASE
 gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32
-gcc -std=c99 -O2 -s -Wall -fmessage-length=0 src/repl.o src/olvm.c -o "ol.exe" -lws2_32
+gcc -std=c99 -O2 -s -Wall -fmessage-length=0 tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32
 GOTO:EOF
 
 
