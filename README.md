@@ -2,7 +2,7 @@ Otus Lisp
 =========
 
 [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby)
-[(project page)](https://yuriy-chumak.github.io/ol/)
+[![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
 Yet another pet lisp. Small, embeddable and purely functional.
 
