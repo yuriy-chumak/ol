@@ -876,14 +876,14 @@ word* OL_ffi(OL* self, word* arguments)
 		//    strings (the system codepage on the current machine, subject to
 		//    total unportability) and there are Unicode strings (stored
 		//    internally as UTF-16LE).
-		#ifdef _WIN32
+//		#ifdef _WIN32
 		case TSTRINGWIDE:
 			switch (reftype(arg)) {
 			case TBVEC:
 			case TSTRING: {
 				word hdr = reference(arg);
 				int len = (hdrsize(hdr)-1)*sizeof(word) - padsize(hdr);
-				short* unicode = (short*) __builtin_alloca(len * sizeof(short)); // todo: use new()
+				short* unicode = (short*) __builtin_alloca(len * sizeof(short));
 
 				short* p = unicode;
 				char* s = (char*)&car(arg);
@@ -914,7 +914,7 @@ word* OL_ffi(OL* self, word* arguments)
 				STDERR("invalid parameter values (requested string)");
 			}
 			break;
-		#endif
+//		#endif
 
 		case TCALLABLE: {
 			if (is_callable(arg))
@@ -1299,12 +1299,29 @@ word* OL_ffi(OL* self, word* arguments)
 		case TSTRING:
 			if (got) {
 				int l = lenn((char*)(word)got, FMAX+1);
+				/* TODO: enable again!
 				if (fp + (l/sizeof(word)) > heap->end) {
 					self->gc(self, l/sizeof(word));
 					heap = &self->heap;
 					fp = heap->fp;
-				}
+				}*/
 				result = new_string ((char*)(word)got, l);
+			}
+			break;
+		case TSTRINGWIDE:
+			if (got) {
+				int l = lenn16((short*)(word)got, FMAX+1);
+				/* TODO: enable again!
+				if (fp + (l/sizeof(word)) > heap->end) {
+					self->gc(self, l/sizeof(word));
+					heap = &self->heap;
+					fp = heap->fp;
+				}*/
+				word* p = result = new (TSTRINGWIDE, l+1);
+				unsigned short* s = (unsigned short*)(word)got;
+				while (l--) {
+					*++p = F(*s++);
+				}
 			}
 			break;
 

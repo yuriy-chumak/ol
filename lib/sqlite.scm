@@ -114,7 +114,7 @@
     sqlite3_bind_int64
     sqlite3_bind_null
     sqlite3_bind_text
-   ;sqlite3_bind_text16
+    sqlite3_bind_text16
    ;sqlite3_bind_text64
    ;sqlite3_bind_value
    ;sqlite3_bind_zeroblob
@@ -155,7 +155,7 @@
     sqlite3_column_int
     sqlite3_column_int64
     sqlite3_column_text
-   ;sqlite3_column_text16
+    sqlite3_column_text16
     sqlite3_column_type
     sqlite3_column_value
 
@@ -379,7 +379,7 @@
 (define sqlite3_bind_int64 (sqlite fft-int "sqlite3_bind_int64" sqlite3_stmt* fft-int sqlite3_int64))
 (define sqlite3_bind_null (sqlite fft-int "sqlite3_bind_null" sqlite3_stmt* fft-int))
 (define sqlite3_bind_text (sqlite fft-int "sqlite3_bind_text" sqlite3_stmt* fft-int type-string fft-int type-callable))
-   ;sqlite3_bind_text16
+(define sqlite3_bind_text16 (sqlite fft-int "sqlite3_bind_text16" sqlite3_stmt* fft-int type-string-wide fft-int type-callable))
    ;sqlite3_bind_text64
    ;sqlite3_bind_value
    ;sqlite3_bind_zeroblob
@@ -401,6 +401,7 @@
 (define sqlite3_column_int (sqlite fft-int "sqlite3_column_int" sqlite3_stmt* fft-int))
 (define sqlite3_column_int64 (sqlite sqlite3_int64 "sqlite3_column_int" sqlite3_stmt* fft-int))
 (define sqlite3_column_text (sqlite type-string "sqlite3_column_text" sqlite3_stmt* fft-int))
+(define sqlite3_column_text16 (sqlite type-string-wide "sqlite3_column_text16" sqlite3_stmt* fft-int))
 
 (define sqlite3_column_type (sqlite fft-int "sqlite3_column_type" sqlite3_stmt* fft-int))
 (define sqlite3_column_value (sqlite sqlite3_value* "sqlite3_column_value" sqlite3_stmt* fft-int))
@@ -452,7 +453,9 @@
                      (SQLITE_NULL    #false)
                      (SQLITE_INTEGER (sqlite3_column_int statement i))
                      (SQLITE_FLOAT   (sqlite3_column_double statement i))
-                     (SQLITE_TEXT    (sqlite3_column_text statement i))
+                                     ;old /potentially more compatible/ case:
+                                     ;   (bytes->string (string->runes (sqlite3_column_text statement i)))
+                     (SQLITE_TEXT    (sqlite3_column_text16 statement i))
                      (else (runtime-error "Unsupported column type " i)))
                   args)))))))
 
@@ -474,8 +477,10 @@
                         (sqlite3_bind_int64  statement n arg))
                      ((rational? arg)
                         (sqlite3_bind_double statement n arg))
-                     ((string? arg)
+                     ((eq? (type arg) type-string)
                         (sqlite3_bind_text   statement n arg (size arg) #f))
+                     ((eq? (type arg) type-string-wide)
+                        (sqlite3_bind_text16 statement n arg (* (size arg) 2) #f))
                      ((null? arg)
                         (sqlite3_bind_null   statement n))
                      (else

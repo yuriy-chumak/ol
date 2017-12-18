@@ -1737,6 +1737,12 @@ unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in
 	while (p < max && *pos++) p++;
 	return p;
 }
+static __inline__
+unsigned int lenn16(short *pos, size_t max) { // added here, strnlen was missing in win32 compile
+	unsigned int p = 0;
+	while (p < max && *pos++) p++;
+	return p;
+}
 unsigned int llen(word list)
 {
 	unsigned int p = 0;
