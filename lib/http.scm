@@ -59,10 +59,11 @@
       (define (A-Z? x)
          (<= #\A x #\Z))
       (define (uri? x)
-         (or (<= #\0 x #\9)
+         (or (<= #\a x #\z)
              (<= #\A x #\Z)
-             (<= #\a x #\z)
-             (has? '(#\/ #\: #\. #\& #\? #\- #\+ #\= #\< #\> #\@ #\# #\_ #\% #\, #\; #\' #\!) x))) ; todo: optimize using ff
+             (<= #\0 x #\9)
+             (has? '(#\- #\. #\_ #\~ #\: #\/ #\? #\# #\@ #\! #\$ #\& #\' #\( #\) #\* #\+ #\, #\; #\= #\. #\%) x)
+             (has? '(#\{ #\} #\| #\\ #\^ #\[ #\] #\`) x))) ; unwise characters are allowed but may cause problems
       (define (xml? x)
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)
@@ -212,19 +213,19 @@
 (let loop ((u url) (path #null))
    (cond
       ((null? u)
-         (values (runes->string (reverse path)) u))
+         (values (bytes->string (reverse path)) u))
       ((eq? (car u) #\?)
-         (values (runes->string (reverse path)) (cdr u)))
+         (values (bytes->string (reverse path)) (cdr u)))
       (else
          (loop (cdr u) (cons (car u) path))))))
 
 (define (get-key u)
 (let loop ((u u) (key #null))
    (if (null? u)
-      (values (runes->string (reverse key)) u)
+      (values (bytes->string (reverse key)) u)
       (if (or (eq? (car u) #\=)
               (eq? (car u) #\&))
-         (values (runes->string (reverse key)) u)
+         (values (bytes->string (reverse key)) u)
          ;else
          (loop (cdr u) (cons (car u) key))))))
 
@@ -248,9 +249,9 @@
             (rev-loop (cdr a) (cons (car a) b)))))
    (let loop ((u u) (value #null))
       (if (null? u)
-         (values (runes->string (rev-loop value #null)) u)
+         (values (bytes->string (rev-loop value #null)) u)
          (if (eq? (car u) #\&)
-            (values (runes->string (rev-loop value #null)) (cdr u))
+            (values (bytes->string (rev-loop value #null)) (cdr u))
             ;else
             (loop (cdr u) (cons (car u) value))))))
 
