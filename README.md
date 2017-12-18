@@ -1,12 +1,10 @@
-                         OL - Otus Lisp - yet another pet lisp
-                         Copyright(c) 2014 Aki Helin
-                         Copyright(c) 2014 - 2016 Yuriy Chumak
-
-                         Grew out of the Owl Lisp by Aki Helin
-
-                         at https://yuriy-chumak.github.io/ol/
+Otus Lisp
+=========
 
 [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby)
+[(project page)](https://yuriy-chumak.github.io/ol/)
+
+Yet another pet lisp. Small, embeddable and purely functional.
 
 VERSION 1.2
 
@@ -27,15 +25,6 @@ program. If not, see <http://www.gnu.org/licenses/>.
 
 Additionally, Lesser GNU General Public License is applicable.
 
-RELATED
---------------------------------------------------------------
-              http://groups.csail.mit.edu/mac/projects/scheme/
-              http://people.csail.mit.edu/jaffer/Scheme (r5rs)
-
-              Original Owl Lisp project can be found at
-              https://github.com/aoh/owl-lisp
-
-
 OVERVIEW
 --------
 
@@ -44,8 +33,9 @@ Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 It implements an extended subset of R5RS Scheme including, but
 not limited to, some of the SRFIs. It's tiny(42kb), embeddable
 and crossplatform; can run in own sandbox; provides a portable,
-highlevel way for calling the code written in another languages.
-You can use Otus Lisp on Linux, Windows, Unix, Android and lot
+highlevel way for using the code written in another languages.
+
+You can use Otus Lisp in Linux, Windows, Unix, Android and lot
 of any other operation systems with various (x86, x86_64, mips,
 arm, aarch64, ppc, etc.) architectures.
 
@@ -90,7 +80,7 @@ BUILD
 
    $ make; make install
 
-* gmake for unix and *bsd clients
+* gmake for unix clients
 
 
 ### MORE INTERESTING WAYS
@@ -109,7 +99,7 @@ To build full OL
 
 Olvm can execute only precompiled OL scripts (see BINARY SCRIPTS
 section) and is very small (about 35KB).
-Full OL with interpreter that can execute text lisp scripts more
+Full OL with interpreter, that can execute text lisp scripts, more
 fat (about 400KB executable).
 
 
@@ -400,6 +390,19 @@ Please refer to the [project page](yuriy-chumak.github.io/ol/)
 
 Or check the source codes - r5rs/core.owl
 
+RELATED
+--------------------------------------------------------------
+
+http://groups.csail.mit.edu/mac/projects/scheme/
+
+http://people.csail.mit.edu/jaffer/Scheme (r5rs)
+
+Copyright (c) 2014 Aki Helin,
+Copyright (c) 2014 - 2017 Yuriy Chumak
+
+Grew out of the Owl Lisp by Aki Helin.
+Original Owl Lisp project can be found at
+https://github.com/aoh/owl-lisp
 
 SOME NOTES
 ----------
