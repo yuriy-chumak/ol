@@ -361,8 +361,7 @@
 
       (define (system-println str)
          (system-print str)
-         (system-print "
-      "))
+         (system-print "\n"))
 
       (define (system-stderr str) ; <- str is a raw or pre-rendered string
          (sys:write stderr str (size str)))

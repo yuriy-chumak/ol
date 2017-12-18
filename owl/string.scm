@@ -248,9 +248,9 @@
       ; fixme: str-app is VERY temporary
       ; figure out how to handle balancing. 234-trees with occasional rebalance?
       (define (str-app a b)
-         (bytes->string
-            (render-string a
-               (render-string b null))))
+         (runes->string (append
+            (string->runes a)
+            (string->runes b))))
 
       (define (string-eq-walk a b)
          (cond

@@ -579,7 +579,7 @@
 
       ;; (foo bar baz) → "/foo/bar/baz.scm"
       (define (library-name->path iset)
-         (bytes->string
+         (runes->string
             (foldr
                (λ (thing tl)
                   (append

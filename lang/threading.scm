@@ -47,9 +47,9 @@
                      #false))
                ((not st) ;; no such thread, or just no inbox
                   (system-stderr "ol: dropping envelope to missing thread: ")
-                  (system-stderr (bytes->string (render to '(10))))
+                  (system-stderr (bytes->string (render to '(#\newline))))
                   (system-stderr "ol: envelope ")
-                  (system-stderr (bytes->string (render envelope '(10))))
+                  (system-stderr (bytes->string (render envelope '(#\newline))))
                   (values state #false))
                (else ;; activate the state function
                   (values
