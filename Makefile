@@ -3,7 +3,7 @@ $(shell mkdir -p config)
 
 export PATH := $(PATH):/opt/emsdk_portable:/opt/emsdk_portable/clang/fastcomp/build_master_64/bin:/opt/emsdk_portable/node/4.1.1_64bit/bin:/opt/emsdk_portable/emscripten/master
 
-#do some configure staff
+#do some configuration staff
 exists = $(shell echo "\
 	   \#include $1\n\
 	   char $2();\
@@ -54,6 +54,55 @@ endif
 ifeq ($(UNAME),MINGW32_NT-6.1)
 L := -lws2_32
 endif
+
+# Mac OS X                    Darwin
+# Cygwin 32-bit (Win-XP)      CYGWIN_NT-5.1
+# Cygwin 32-bit (Win-7 32-bit)CYGWIN_NT-6.1
+# Cygwin 32-bit (Win-7 64-bit)CYGWIN_NT-6.1-WOW64
+# Cygwin 64-bit (Win-7 64-bit)CYGWIN_NT-6.1
+# MinGW (Windows 7 32-bit)    MINGW32_NT-6.1
+# MinGW (Windows 10 64-bit)   MINGW64_NT-10.0
+# Interix (Services for UNIX) Interix
+# MSYS                        MSYS_NT-6.1
+# Android                     Linux
+# coreutils                   Linux
+# CentOS                      Linux
+# Fedora                      Linux
+# Gentoo                      Linux
+# Red Hat Linux               Linux
+# Linux Mint                  Linux
+# openSUSE                    Linux
+# Ubuntu                      Linux
+# Unity Linux                 Linux
+# Manjaro Linux               Linux
+# OpenWRT r40420              Linux
+# Debian (Linux)              Linux
+# Debian (GNU Hurd)           GNU
+# Debian (kFreeBSD)           GNU/kFreeBSD
+# FreeBSD                     FreeBSD
+# NetBSD                      NetBSD
+# DragonFlyBSD                DragonFly
+# Haiku                       Haiku
+# NonStop                     NONSTOP_KERNEL
+# QNX                         QNX
+# ReliantUNIX                 ReliantUNIX-Y
+# SINIX                       SINIX-Y
+# Tru64                       OSF1
+# Ultrix                      ULTRIX
+# IRIX 32 bits                IRIX
+# IRIX 64 bits                IRIX64
+# MINIX                       Minix
+# Solaris                     SunOS
+# UWIN (64-bit Windows 7)     UWIN-W7
+# SYS$UNIX:SH on OpenVMS      IS/WB
+# z/OS USS                    OS/390
+# Cray                        sn5176
+# (SCO) OpenServer            SCO_SV
+# (SCO) System V              SCO_SV
+# (SCO) UnixWare              UnixWare
+# IBM AIX                     AIX
+# IBM i with QSH              OS400
+# HP-UX                       HP-UX
 
 # http://www.gnu.org/prep/standards/html_node/DESTDIR.html
 # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap03.html#tag_03_266
