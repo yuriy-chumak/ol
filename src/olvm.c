@@ -4991,13 +4991,13 @@ OL_new(unsigned char* bootstrap)
 	word* userdata = (word*) INULL;
 #ifdef EMBEDDED_VM
 	if (S) {
-		char* filename = tempnam(0, "ol");
+		char template[] = "/tmp/olvmXXXXXX";
+		int file = mkstemp(template);
+		if (write(file, S, strlen(S)) == -1)
+			goto fail;
+		close(file);
 
-		FILE* file = fopen(filename, "w");
-		fwrite(S, strlen(S), 1, file);
-		fclose(file);
-
-		userdata = new_pair (new_string (filename), userdata);
+		userdata = new_pair (new_string (template), userdata);
 	}
 #endif
 
