@@ -1,5 +1,7 @@
 export PATH := .:$(PATH)
 $(shell mkdir -p config)
+true:
+	@true
 
 export PATH := $(PATH):/opt/emsdk_portable:/opt/emsdk_portable/clang/fastcomp/build_master_64/bin:/opt/emsdk_portable/node/4.1.1_64bit/bin:/opt/emsdk_portable/emscripten/master
 
@@ -14,9 +16,23 @@ exists = $(shell echo "\
 	   }" | gcc -xc - $3 -o /dev/null 2>/dev/null && echo 1)
 # features
 UNAME  := $(shell uname -s)
+LBITS  := $(shell getconf LONG_BIT)
 HAS_SECCOMP := $(call exists, <linux/seccomp.h>, prctl)
 HAS_DLOPEN  := $(call exists, <stdlib.h>, dlopen, -ldl)
 HAS_SOCKETS := $(call exists, <stdlib.h>, socket)
+HAS_CDEFS   := $(call exists, <sys/cdefs.h>,exit)
+
+ifeq ($(LBITS),64)
+vm64 = echo -n "64 " && ./vm64 repl <$$F | diff - $$F.ok
+else
+vm64 = true
+endif
+
+ifeq ($(HAS_CDEFS),1)
+vm32 = echo -n "32 " && ./vm32 repl <$$F | diff - $$F.ok
+else
+vm32 = true
+endif
 
 # body
 .PHONY: all config recompile install uninstall clean tests check
@@ -299,79 +315,100 @@ boot.fasl: vm repl src/ol.scm otus/lisp.scm r5rs/*.scm lang/*.scm owl/*.scm
 
 
 tests: \
-   tests/apply.scm\
-   tests/banana.scm\
-   tests/callcc.scm\
-   tests/case-lambda.scm\
-   tests/echo.scm\
-   tests/ellipsis.scm\
-   tests/eval.scm\
-   tests/factor-rand.scm\
-   tests/factorial.scm\
-   tests/fasl.scm\
-   tests/ff-call.scm\
-   tests/ff-del-rand.scm\
-   tests/ff-rand.scm\
-   tests/fib-rand.scm\
-   tests/hashbang.scm\
-   tests/iff-rand.scm\
-   tests/library.scm\
-   tests/macro-capture.scm\
-   tests/macro-lambda.scm\
-   tests/mail-order.scm\
-   tests/math-rand.scm\
-   tests/par-nested.scm\
-   tests/par-nested-rand.scm\
-   tests/par-rand.scm\
-   tests/perm-rand.scm\
-   tests/por-prime-rand.scm\
-   tests/por-terminate.scm\
-   tests/queue-rand.scm\
-   tests/record.scm\
-   tests/rlist-rand.scm\
-   tests/seven.scm\
-   tests/share.scm\
-   tests/stable-rand.scm\
-   tests/str-quote.scm\
-   tests/string.scm\
-   tests/suffix-rand.scm\
-   tests/theorem-rand.scm\
-   tests/toplevel-persist.scm\
-   tests/utf-8-rand.scm\
-   tests/vararg.scm\
-   tests/vector-rand.scm\
-   tests/numbers.scm
+      tests/apply.scm\
+      tests/banana.scm\
+      tests/callcc.scm\
+      tests/case-lambda.scm\
+      tests/echo.scm\
+      tests/ellipsis.scm\
+      tests/eval.scm\
+      tests/factor-rand.scm\
+      tests/factorial.scm\
+      tests/fasl.scm\
+      tests/ff-call.scm\
+      tests/ff-del-rand.scm\
+      tests/ff-rand.scm\
+      tests/fib-rand.scm\
+      tests/hashbang.scm\
+      tests/iff-rand.scm\
+      tests/library.scm\
+      tests/macro-capture.scm\
+      tests/macro-lambda.scm\
+      tests/mail-order.scm\
+      tests/math-rand.scm\
+      tests/par-nested.scm\
+      tests/par-nested-rand.scm\
+      tests/par-rand.scm\
+      tests/perm-rand.scm\
+      tests/por-prime-rand.scm\
+      tests/por-terminate.scm\
+      tests/queue-rand.scm\
+      tests/record.scm\
+      tests/rlist-rand.scm\
+      tests/seven.scm\
+      tests/share.scm\
+      tests/stable-rand.scm\
+      tests/str-quote.scm\
+      tests/string.scm\
+      tests/suffix-rand.scm\
+      tests/theorem-rand.scm\
+      tests/toplevel-persist.scm\
+      tests/utf-8-rand.scm\
+      tests/vararg.scm\
+      tests/vector-rand.scm\
+      tests/numbers.scm
 	@rm -f $(FAILED)
 	@echo "Internal VM testing:"
-	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm64 $(L) -m64
-	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o tests-vm32 $(L) -m32
-	@echo ""
+	@echo "--------------------"
+ifeq ($(HAS_CDEFS),1)
 	@echo "32-bit:"
 	@echo "-------"
-	   @./tests-vm32
+	$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
+	#./vm32d
 	@echo ""
+endif
+ifeq ($(LBITS),64)
 	@echo "64-bit:"
 	@echo "-------"
-	   @./tests-vm64
+	$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m64
+	./vm64d
 	@echo ""
-	@echo "ffi tests (32- and 64-bit):"
-	@echo "---------------------------------------"
+endif
+	@echo "ffi tests (32- and 64-bit, if possible):"
+	@echo "----------------------------------------"
+ifeq ($(HAS_CDEFS),1)
 	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m64 -Xlinker --export-dynamic
-	   @echo -n "Testing ffi ... "
-	   @if ./ffi32 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null && ./ffi64 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
+	   @echo -n "Testing 32-bit ffi ... "
+	   @if ./ffi32 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
 	      echo "Ok.";\
 	   else \
 	      echo "failed." ;\
 	      touch $(FAILED);\
 	   fi
 	@echo ""
+endif
+ifeq ($(LBITS),64)
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m64 -Xlinker --export-dynamic
+	   @echo -n "Testing 64-bit ffi ... "
+	   @if ./ffi64 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
+	      echo "Ok.";\
+	   else \
+	      echo "failed." ;\
+	      touch $(FAILED);\
+	   fi
+	@echo ""
+endif
 	@echo "common (32- and 64-bit simulatenously):"
 	@echo "---------------------------------------"
-	@make vm32 vm64
+ifeq ($(HAS_CDEFS),1)
+	@make vm32
+endif	
+ifeq ($(LBITS),64)
+	@make vm64
+endif	
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
-	   if ./vm32 repl <$$F | diff - $$F.ok >/dev/null && ./vm64 repl <$$F | diff - $$F.ok >/dev/null; then\
+	   if $(vm32) >/dev/null && $(vm64) >/dev/null; then\
 	      echo "Ok." ;\
 	   else \
 	      echo "\033[0;31mFailed!\033[0m" ;\
