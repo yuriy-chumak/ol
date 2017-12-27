@@ -1,7 +1,9 @@
 language: c
 compiler: gcc
+cache: ccache
 script: make tests
-install: true # skip the installation step entirely
+install:
+  - sudo apt-get install -y gcc-multilib
 sudo: false   # only for faster builds
 git:
   depth: 1
