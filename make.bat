@@ -140,14 +140,14 @@ GOTO:EOF
 :OL32
 echo.   *** Making 32-bit Otus Lisp:
 set PATH=%MINGW32%;%PATH%
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl32.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
 set PATH=%PATH~%
 GOTO:EOF
 
 :OL64
 echo.   *** Making 32-bit Otus Lisp:
 set PATH=%MINGW64%;%PATH%
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl64.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
 set PATH=%PATH~%
 GOTO:EOF
 

@@ -33,7 +33,7 @@ repl.o := src/repl.o
 
 CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
-          $(if $(HAS_SECCOMP),, -DNO_SECCOMP)
+          $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)
 
 
 ifeq ($(UNAME),Linux)

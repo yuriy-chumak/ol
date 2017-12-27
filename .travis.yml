@@ -1,0 +1,7 @@
+language: c
+compiler: gcc
+script: make tests
+install: true # skip the installation step entirely
+sudo: false   # only for faster builds
+git:
+  depth: 1
