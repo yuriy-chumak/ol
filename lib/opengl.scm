@@ -23,8 +23,8 @@
 (or win32? linux?
    (runtime-error "Unsupported platform" OS))
 
-(define WIDTH 1280)
-(define HEIGHT 920)
+(define WIDTH 640)
+(define HEIGHT 480)
 
 ; ===================================================
 (define gl:Enable (cond

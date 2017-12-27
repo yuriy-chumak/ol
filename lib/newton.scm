@@ -90,7 +90,7 @@
 
       ; ...
 
-      NewtonWorldSetDestructorCallback NewtonWorldDestructorCallback
+      NewtonWorldSetDestructorCallback
 
       ; ...
 
@@ -297,10 +297,6 @@
 (define dFloat fft-float)
 (define dFloat* (fft* dFloat))
 (define dFloat& (fft& dFloat))
-
-(define (NewtonWorldDestructorCallback callback)
-   (make-cb (list fft-void)
-      callback))
 
 
 (define NewtonWorldGetVersion (newton fft-int "NewtonWorldGetVersion"))
