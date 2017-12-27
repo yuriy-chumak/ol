@@ -1348,14 +1348,17 @@ word* OL_ffi(OL* self, word* arguments)
 #if OLVM_CALLABLES
 //long long callback(OL* ol, int id, word* args) // win32
 //long long callback(OL* ol, int id, long long* argi, double* argf, long long* others) // linux
+// notes:
+//	http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
+
 static
+__attribute__((used))
 long callback(OL* ol, int id, int_t* argi
 #if __amd64__
 		, double* argf, int_t* rest //win64
 #endif
 		)
 {
-// http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
 //	__asm("int $3");
 	word* R = ol->R;
 
@@ -1418,6 +1421,7 @@ long callback(OL* ol, int id, int_t* argi
 			R[a] = (word) new_vptr(value);
 			break;
 		}
+		case F(TINTN): // deprecated
 		case F(TINTP): {
 			int_t
 			#if __amd64__
