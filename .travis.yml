@@ -4,6 +4,7 @@ cache: ccache
 script: make tests
 install:
   - sudo apt-get install -y gcc-multilib
+  - sudo apt-get install -y linux-libc-dev:i386
 sudo: false   # only for faster builds
 git:
   depth: 1
