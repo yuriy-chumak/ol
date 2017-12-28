@@ -364,7 +364,7 @@ ifeq ($(HAS_CDEFS),1)
 	@echo "32-bit:"
 	@echo "-------"
 	$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
-	#./vm32d
+	./vm32d
 	@echo ""
 endif
 ifeq ($(LBITS),64)

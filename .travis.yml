@@ -1,10 +1,18 @@
 language: c
 compiler: gcc
 cache: ccache
+
 script: make tests
-install:
-  - sudo apt-get install -y gcc-multilib
-  - sudo apt-get install -y linux-libc-dev:i386
-sudo: false   # only for faster builds
+
+addons:
+  apt:
+    packages:
+        - gcc-multilib
+        - linux-libc-dev:i386
+
+sudo: false
 git:
   depth: 1
+branches:
+  only:
+    - master
