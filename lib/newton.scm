@@ -54,7 +54,8 @@
       ;NewtonSetContactMergeTolerance
 
       NewtonInvalidateCache
-      ;NewtonSetColverModel
+      NewtonSetSolverModel
+      NewtonGetSolverModel
       ;NewtonSetColverConvergenceQuality
 
       ;NewtonSetMultiThreadSolverOnSingleIsland
@@ -270,10 +271,6 @@
       NewtonTreeCollisionBeginBuild
       NewtonTreeCollisionAddFace
       NewtonTreeCollisionEndBuild
-
-      NewtonInvalidateCache
-      NewtonUpdate
-
 )
    (begin
 
@@ -310,6 +307,9 @@
 (define NewtonWorldSetDestructorCallback (newton fft-void "NewtonWorldSetDestructorCallback" NewtonWorld* NewtonWorldDestructorCallback))
 
 (define NewtonInvalidateCache (newton fft-void "NewtonInvalidateCache" NewtonWorld*))
+(define NewtonSetSolverModel (newton fft-void "NewtonSetSolverModel" NewtonWorld* fft-int)) ; model of operation n = number of iteration default value is 4.
+(define NewtonGetSolverModel (newton fft-int "NewtonGetSolverModel" NewtonWorld*))
+
 (define NewtonUpdate (newton fft-void "NewtonUpdate" NewtonWorld* dFloat))
 ;NewtonUpdateAsync
 ;NewtonWaitForUpdateToFinish

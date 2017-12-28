@@ -19,6 +19,8 @@
    (NewtonCreate)
    (runtime-error "Can't create newton world" #f)))
 
+(NewtonSetSolverModel world 1)
+
 (print "2.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 ;(NewtonWorldSetDestructorCallback world (cons
