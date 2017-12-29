@@ -1,6 +1,5 @@
 language: c
 compiler: gcc
-cache: ccache
 
 script: make tests
 

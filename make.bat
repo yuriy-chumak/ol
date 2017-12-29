@@ -9,6 +9,7 @@ IF "%1"=="vm" GOTO VM
 IF "%1"=="vm32" GOTO VM32
 IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
+IF "%1"=="ol64" GOTO OL64
 IF "%1"=="repl" GOTO REPL
 IF "%1"=="repl32" GOTO REPL32
 IF "%1"=="repl64" GOTO REPL64
@@ -140,14 +141,14 @@ GOTO:EOF
 :OL32
 echo.   *** Making 32-bit Otus Lisp:
 set PATH=%MINGW32%;%PATH%
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl32.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m32
+gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl32.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -DHAS_PINVOKE=1 -m32
 set PATH=%PATH~%
 GOTO:EOF
 
 :OL64
-echo.   *** Making 32-bit Otus Lisp:
+echo.   *** Making 64-bit Otus Lisp:
 set PATH=%MINGW64%;%PATH%
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl64.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1 -m64
+gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl64.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -DHAS_PINVOKE=1 -m64
 set PATH=%PATH~%
 GOTO:EOF
 

@@ -51,6 +51,10 @@ CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
           $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)
 
+#Debian i586 fix
+CFLAGS += -I/usr/include/$(shell gcc -print-multiarch)
+
+#
 
 ifeq ($(UNAME),Linux)
 L := $(if HAS_DLOPEN, -ldl -lm)
@@ -127,7 +131,7 @@ DESTDIR?=
 
 
 #main
-all: vm ol repl tests
+all: vm ol repl
 
 #debug: src/olvm.c src/repl.o
 #	$(CC) -std=c99 -O0 -g  src/olvm.c src/repl.o -o ol \
@@ -312,6 +316,43 @@ boot.fasl: vm repl src/ol.scm otus/lisp.scm r5rs/*.scm lang/*.scm owl/*.scm
 	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
 	   cp -b $@ repl ;make $@ ;\
 	fi
+
+test32: $(wildcard tests/*.scm)
+	@echo "-- test32 ----------"
+	@rm -f $(FAILED)
+	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
+	@./vm32d
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
+	@for F in $^ ;do \
+	   echo -n "Testing $$F ... " ;\
+	   if ./ffi32 >/dev/null; then\
+	      echo "Ok." ;\
+	   else \
+	      echo "\033[0;31mFailed!\033[0m" ;\
+	      touch $(FAILED) ;\
+	   fi ;\
+	done
+	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
+
+test64: $(wildcard tests/*.scm)
+	@echo "-- test64 ----------"
+	@rm -f $(FAILED)
+	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m32
+	@./vm64d
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m32 -Xlinker --export-dynamic
+	@for F in $^ ;do \
+	   echo -n "Testing $$F ... " ;\
+	   if ./ffi64 >/dev/null; then\
+	      echo "Ok." ;\
+	   else \
+	      echo "\033[0;31mFailed!\033[0m" ;\
+	      touch $(FAILED) ;\
+	   fi ;\
+	done
+	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
+
+test: test64
+	@echo "passed!"
 
 
 tests: \

@@ -45,7 +45,7 @@
   ;Start Menu Folder Page Configuration
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "${REGISTRY_KEY}"
-  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Otus Lisp\1.1"
+  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Otus Lisp\1.2"
   
   !insertmacro MUI_PAGE_STARTMENU Application $StartMenuFolder
   
@@ -87,6 +87,7 @@ Section "Otus Lisp" SecOL
   
   ;Store installation folder
   WriteRegStr HKCU "${REGISTRY_KEY}" "" $INSTDIR
+  WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\ol.exe" "" "$INSTDIR\ol.exe"
 
   ;; Set HOME environment variable
   ; include for some of the windows messages defines
