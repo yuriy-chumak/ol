@@ -59,6 +59,136 @@ You can immediately try Otus Lisp in the provided terminal on the left of this p
 
 
 ### Development status <a name="news"></a>
+* Mon 18 Dec 2017
+  * added badge for project page into readme, updated download/installation section
+  * added utf-8 in lib/http requests processing
+  * rebuilt repl - decreased size for 2к
+  * added unicode support to lib/sqlite
+
+* Thr 14 Dec 2017
+  * added into opengl sample exit for 'Q' key for windows
+  * now sqlite understands NULL
+  * added function sqlite:map to sqlite
+  * now sqlite returns #false in case of query fail
+
+* Wed 13 Dec 2017
+  * now #false in universal value for "i don't know" for ffi parameters
+  * lib/x11 moved to new ffi type system
+  * opengl 2.0 moved to new ffi type system
+  * added new ffi type system more tests
+  * removed ffi32 from "clean" builds vm32 and vm64
+  * cleaned up opengl/version-1-0 from opengl 1.1 content
+  * add opengl-1-1 constants declared
+  * change opengl extension loader example
+  * universal lib/opengl library moved from opengl 1.0 to opengl 1.1
+  * added opengl 1.2
+  * disabled unused tests
+  * change sqlite usage sample
+
+* Mon 11 Dec 2017
+  * continue moving project to new ffi type system
+  * renamed ffi to OL_ffi
+  * added new experimental 8-bits ffi type
+  * changed defines in build scripts
+  * large update of lib/sqlite - it moved to new ffi type system, more function, more tests
+  * added sqlite:for-each into lib/sqlite, it's very good to have an amount of lisp-like proimitives in database
+  * added gl:CreateProgram into OpenGL
+  * updated sdl2 by events
+  * and moved sdl2 to new ffi types system
+  * and moved opengl to new ffi types system
+  * slowly, accurate and carefully OpenGL/version-1-0 made official specification compliant
+
+* Wed 29 Nov 2017
+  * large ffi change - now ffi correctly works with large signed and unsigned values
+
+* Tue 28 Nov 2017
+  * large ffi change - new type system, described by using fft- (Foreing Funtion Types) prefix and new working logic.
+  * added reference type to the fft
+  * moving old types into new
+  * type-void* renamed to fft-void*
+  * type-float renamed to fft-float, type-double to fft-double, type-unkown and type-any now fft-unknown and fft-any respectively.
+
+* Mon 27 Nov 2017
+  * added inexacts into ffi - now we can directly export the floats
+  * added glGenLists into OpenGL
+
+* Sun 26 Nov 2017
+  * removed '() from type-vptr.
+  * continue removing the magic numbers
+  * added glNormal3fv to OpenGL
+
+* Sat 25 Nov 2017
+  * cleand up (fd->exp-stream), few bytes economy, few code clearness
+  * removed old checking for empty lists logic from ffi - will use #false
+
+* Fri 24 Nov 2017
+  * fix lib/sdl2 for ubuntu
+  * added basic srfi-33 (binary operation)
+
+* Wed 22 Nov 2017
+  * into lib/sdl2 added new functions to load images
+
+* Tue 21 Nov 2017
+  * added SDL2 support (lib/sdl2)
+  * continue polishing the ffi (still something wrong with it, i'm feeling)
+
+* Tue 14 Nov 2017
+  * huh, virtual machine speedup approx 5% - just splitted the JAF instruction (with branch in it) to two and without branching (JAF and JAFX).
+  * regilar project cleanup
+
+* Fri 10 Nov 2017
+  * just a break - added tick-tack-toe sample
+  * changed welcome message - now ol show the itself version in welcome
+
+* Thr 9 Nov 2017
+  * in talkback added usage sample - pacman like screen
+
+* Tue 7 Nov 2017
+  * finally update android build scripts - now it build under all supported by android platforms. can say that android.mk implementation is very shitty
+
+* Mon 6 Nov 2017
+  * synchronized license texts
+  * now ffi can be included into talkback
+  * fix for win32 sockets again. why posix sockets support works fine from the first implementation, and a lot of win32 changes required?
+  * into talkback added example of errors processing
+
+* Fri 3 Nov 2017
+  * sontinue simplifying the talkback
+  * removed from ffi type system type-userdata (as unneded), added added type-unkown (as needed) - last one type does not transform the argument, just send it value to recipient
+  * changes sys/getenv function
+  * added more doxygen commants
+  * continue removing the mugic numbers from the code
+
+* Thr 2 Nov 2017
+  * win32 fix for async pipes - win32..., win32... again
+  * talkback interface changed to the async pipes, thinking about including the talkback into main ol distibution
+
+* Sun 29 Oct 2017
+  * large math fix - now gcd not use lookup table. speed of math does not changed, but image size decreased for 2k and no more problems with 32/64 bit large math
+  * tests now can work for 32- and 64-bit simulatenously
+
+* Tue 24 Oct 2017
+  * fix for  write for Win32 - win32..., win32...
+  * renamed ifary into either and bind into letq, just check what we will have
+  * srfi-87 integrated into r5rs/core
+  * vm fxmax renamed to vm:maxvalue and fxmbits renamed to vm:valuewidth
+  * ffi tests enabled again
+
+* Mon 23 Oct 2017
+  * fir for 64-bit math
+  * more talkback changes
+
+* Wed 18 Oct 2017
+  * continue changing the talkback interface
+
+* Fri 13 Oct 2017
+  * added dosygen, hope now comments will collect into documentation (comments still in progress, sure)
+
+* Wed 11 Oct 2017
+  * updated build scripts for windows
+  * renamed C:\\Program Files\\OL from paths, now path fully gets from OL_HOME system variable
+  * returned possibility to work in browser for Ol (via asm.js)
+
 * Mon 3 Oct 2017
   * license changed from GPLv3 to LGPLv3
 
