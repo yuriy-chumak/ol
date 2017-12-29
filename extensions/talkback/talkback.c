@@ -269,9 +269,9 @@ state_t* OL_tb_start()
 	// connect our 'ok' and 'fail' processors
 	OL_tb_send(state,
 	        "(import (otus ffi))"
-	        "(define $ (dlopen))"
-	        "(define hook:fail (dlsym $ fft-void \"OL_tb_hook_fail\" fft-unknown type-vptr))"
-	        "(define an:answer (dlsym $ fft-void \"OL_tb_an_answer\" fft-unknown type-vptr))"
+	        "(define $ (load-dynamic-library #f))"
+	        "(define hook:fail ($ fft-void \"OL_tb_hook_fail\" fft-unknown type-vptr))"
+	        "(define an:answer ($ fft-void \"OL_tb_an_answer\" fft-unknown type-vptr))"
 	);
 
 	return state;
@@ -326,8 +326,8 @@ void OL_tb_set_import_hook(state_t* state, int (*hook)(const char* thename, char
 	// make hook:
 	OL_tb_send(state,
 	        "(import (otus ffi))"
-	        "(define $ (dlopen))"
-	        "(define hook:import (dlsym $ type-string \"OL_tb_hook_import\" type-string))"
+	        "(define $ (load-dynamic-library #f))"
+	        "(define hook:import ($ type-string \"OL_tb_hook_import\" type-string))"
 	);
 }
 
