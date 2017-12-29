@@ -13,9 +13,8 @@ It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Do
 
 
 ### Downloads
-Release **1.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
+Release **1.2** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
 
-Release 1.2 on the way.
 
 ### Already tested platforms
 - [x] x86: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7.

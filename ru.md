@@ -13,9 +13,8 @@ Ol реализован как расширенное подмножество S
 
 
 ### Загрузка
-Релиз **1.1** вышел и готов к [скачиванию](https://github.com/yuriy-chumak/ol/releases). Приятного ЛИСПинга!
+Релиз **1.2** вышел и готов к [скачиванию](https://github.com/yuriy-chumak/ol/releases). Приятного ЛИСПинга!
 
-Готовится в выпуску релиз 1.2
 
 ### Протестированные платформы
 - [x] x86: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7.
