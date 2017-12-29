@@ -72,7 +72,7 @@ You can immediately try Otus Lisp in the provided terminal on the left of this p
 * Mon 18 Dec 2017
   * added badge for project page into readme, updated download/installation section
   * added utf-8 in lib/http requests processing
-  * rebuilt repl - decreased size for 2ê
+  * rebuilt repl - decreased size for 2Ðº
   * added unicode support to lib/sqlite
 
 * Thr 14 Dec 2017
