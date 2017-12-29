@@ -58,6 +58,17 @@ You can immediately try Otus Lisp in the provided terminal on the left of this p
 
 
 ### Development status <a name="news"></a>
+* Thr 28 Dec 2017
+  * prepared 1.2 build!
+  * added NewtonSetSolverModel
+  * fix for talkback (moved to new ffi type system)
+
+* Wed 27 Dec 2017
+  * lib/newton moved to new ffi type system
+  * newton tutorial update
+  * added travis-ci integration, now you can see current "buildable" state
+  * removed tempnam warning
+
 * Mon 18 Dec 2017
   * added badge for project page into readme, updated download/installation section
   * added utf-8 in lib/http requests processing

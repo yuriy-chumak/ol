@@ -59,6 +59,17 @@ Otus Lisp распространяется по лицензии [LGPL v3](https
 
 
 ### Новости разработки <a name="news"></a>
+* Thr 28 Dec 2017
+  * подготовил и выложил 1.2 build - с релизом всех!
+  * фикс для толкбека (тоже перевел на новую fft)
+  * ну и добавил NewtonSetSolverModel в lib/newton
+
+* Wed 27 Dec 2017
+  * lib/newton перевел на новую ffi систему типов
+  * обновил newton tutorial
+  * добавил интеграцию travis-ci, теперь вы можете видеть текущее "билдейбл" состояние
+  * удалил tempnam warning
+
 * Mon 18 Dec 2017
   * добавил баджик для project page в ридми, поправил секцию download/installation
   * добавил utf-8 в обработку для lib/http в запросы
