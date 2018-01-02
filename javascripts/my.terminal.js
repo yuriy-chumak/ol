@@ -29,67 +29,85 @@ var inputs = [];
 var input = null;
 var input$ = 0;
 
-inputs.push(utf8.encode('(print "hello")'))
+var ol;
+var ol_loaded;
+var ol_failed;
 
+function start_ol()
+{
+   terminal.pause();
+   terminal.set_prompt('');
+   ol_failed = undefined;
+   setTimeout(function() {
+      if (ol == undefined && ol_failed == undefined)
+         terminal.echo("Please wait, it's loading...");
+   }, 3000);
+   jQuery.ajax({
+      url: "olvm.js",
+      dataType: 'script',
+      async: true,
+      success: function() {
+         ol = this;
+         if (ol_loaded != undefined)
+            ol_loaded();
+      },
+      error: function() {
+         ol_failed = true;
+         terminal.echo("Sorry, can't load ol :( Please try again a bit later.");
+         terminal.resume();
+      }
+   });
+}
+
+function doit(text)
+{
+   if (ol == undefined) {
+      terminal.echo("$ ol");
+      ol_loaded = function() {
+         if (terminal.paused()) {
+            setTimeout(ol_loaded, 500);
+         }
+         else {
+            terminal.insert(text);
+            terminal.focus();
+            ol_loaded = undefined;
+         }
+      }
+      start_ol();
+   }
+   else {
+      terminal.insert(text);
+      terminal.focus();
+   }
+}
 
 var terminal =
 $('#terminal').terminal(function(command, terminal) {
-   console.log("command: ", command)
-   inputs.push(utf8.encode(command));
-}, {
-   prompt: '> ',
-   name: 'repl',
-   greetings: '\
-OL - Otus Lisp - yet another pet lisp\n\
-Copyright(c) 2014 - 2016 Yuriy Chumak\n\
-\n\
-Grew out of the Owl Lisp by Aki Helin\n\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n',
-   height: 200,
-   enabled: false,
+   console.log("command: [" + command + "]")
 
-   onInit: function(terminal) {
-      terminal.pause();
-      terminal.echo("Loading...");
-
-/*      JSocket.init("TCP.swf", function () {
-         console.log("creating TCP socket processor");
-         socket = new JSocket({
-            connectHandler: connectHandler,
-            dataHandler:    dataHandler,
-            closeHandler:   closeHandler,
-            errorHandler:   errorHandler
-         });
-         socket.connect("iaaa.dlinkddns.com", 80);
-         console.log("Trying to connect...");
-      });
-      function connectHandler() {
-         terminal.echo("Connected.");
-         terminal.focus();
-         socket.write("EXEC /bin/ol HTTP/1.0"    + "\x0D\x0A");
-         socket.write("Host: iaaa.dlinkddns.com" + "\x0D\x0A");
-         socket.write("\x0D\x0A");
-         socket.flush();
-         terminal.resume();
+   if (ol == undefined) {
+      if (command == 'ol') {
+         start_ol();
       }
-      function dataHandler(data) {
-         if (data == "> ") // if starts from "> "
-            ; // do nothing
-         else if (data.length > 2 && data.indexOf('> ', data.length - 2) !== -1)
-            terminal.echo(data.substring(0, data.length - 2));
-         else
-            terminal.echo(data);
+      else if (command == 'help') {
+         terminal.echo("This is local terminal to instantly try provided in the ol project page samples.");
+         terminal.echo("Please run 'ol' to start the ol interpreter.");
+         terminal.echo("Anyway, it will be started automatically when you'll try to use 'send it to terminal' samples button.");
       }
-
-      function closeHandler() {
-         terminal.pause();
-         terminal.error("Disconnected.");
+      else {
+         terminal.echo("Sorry, unknown command '"+command+"'. Please try 'help' or 'ol'.");
       }
-      function errorHandler(errorstr) {
-         terminal.pause();
-         terminal.error("Error: " + errorstr);
-      }*/
    }
+   else {
+      terminal.set_prompt('');
+      inputs.push(utf8.encode(command));
+   }
+}, {
+   prompt: '$ ',
+   name: 'repl',
+   greetings: '/this is your local terminal session,\n    type "ol" to start the Otus Lisp/\n',
+   height: 200,
+   enabled: true
 });
 
 var Module = {
@@ -128,19 +146,22 @@ var Module = {
             //text = text.replace(/>/g, "&gt;");
             //text = text.replace('\n', '<br>', 'g');
 
-      console.log(text);
+      console.info(text);
+      terminal.set_prompt('> ');
+      terminal.position(1);
+      if (terminal.paused())
+         terminal.resume();
+      while (text.indexOf("> ") == 0)
+         text = text.substring(2);
       terminal.echo(text);
+      if (text == "bye-bye :/") {
+         terminal.set_prompt('$ ');
+         ol = undefined;
+      }
    },
 
    printErr: function(text) {
-      if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-      /*if (0) { // XXX disabled for safety typeof dump == 'function') {
-         dump(text + '\n'); // fast, straight to the real console
-      } else {
-         console.error(text);
-      }*/
-      console.log(text);
-      terminal.echo(text);
+      Module.print("\x1b[31;0m" + text + "\x1b[0m");
    },
 
    canvas: (function() {
@@ -158,29 +179,9 @@ var Module = {
           console.log("status: ", text)
           if (text == "Running...") {
             //terminal.echo("Connected.");
-            terminal.focus();
-            terminal.resume();
+            //terminal.focus();
+            //terminal.resume();
           }
-
-
-          /*if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
-          if (text === Module.setStatus.text) return;
-          var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-          var now = Date.now();
-          if (m && now - Date.now() < 30) return; // if this is a progress update, skip it if too soon
-          if (m) {
-            text = m[1];
-            progressElement.value = parseInt(m[2])*100;
-            progressElement.max = parseInt(m[4])*100;
-            progressElement.hidden = false;
-            spinnerElement.hidden = false;
-          } else {
-            progressElement.value = null;
-            progressElement.max = null;
-            progressElement.hidden = true;
-            if (!text) spinnerElement.style.display = 'none';
-          }
-          statusElement.innerHTML = text;*/
         },
 
         totalDependencies: 0,

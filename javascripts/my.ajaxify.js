@@ -1,9 +1,3 @@
-function doit(text)
-{
-   terminal.insert(text);
-   terminal.focus();
-}
-
 var History;
 
 function updateLink()
