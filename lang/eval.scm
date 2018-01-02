@@ -892,7 +892,7 @@
                (tuple 'error "cannot open file" env))))
 
       (define (repl-string env str)
-         (lets ((exps (try-parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
+         (let ((exps (try-parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
             ;; list of sexps
             (if exps
                (repl env exps)
@@ -920,14 +920,14 @@
                   ((error reason env)
                      (let ((hook:fail (env-get env 'hook:fail #f)))
                         (if hook:fail (hook:fail reason (syscall 1002 #f #f #f))))
+
+                     (if (list? reason)
+                        (print-repl-error reason))
                      ; better luck next time
-                     (cond
-                        ((list? reason)
-                           (print-repl-error reason)
-                           (boing env))
-                        (else
-                           (boing env))))
-                     ; notify hooker about error
+                     (boing env))
+
+                  ; notify hooker about strange error
+                  ; is this cannot be reached?
                   (else is foo
                      (print "Repl is rambling: " foo) ; what is this?
                      (boing env))))))
