@@ -48,7 +48,7 @@
 ;; this should later be just a sequence of imports followed by a fasl dump
 (import (r5rs core))    ;; get define, define-library, import, ... from the just loaded
 
-(define *include-dirs* '(".")) ;; now we can (import <libname>) and have them be autoloaded to current repl
+(define *include-dirs* '("." "libraries")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
 
 

@@ -155,25 +155,25 @@ install: ol repl
 	install -m 644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
 	# basic libraries:
 	@echo Installing common libraries...
-	@for F in r5rs lang otus owl lib etc scheme ;do \
+	@for F in r5rs lang libraries/otus libraries/owl libraries/lib libraries/etc libraries/scheme ;do \
 	   echo installing $$F libraries... ;\
 	   install -d $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
 	   install -D -m 644 $$F/* $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
 	done
 	@echo Installing OpenGL libraries...
 	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
-	install -D -m 644 OpenGL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
-	@for F in OpenGL/ARB OpenGL/EXT ;do \
+	install -D -m 644 libraries/OpenGL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
+	@for F in libraries/OpenGL/ARB libraries/OpenGL/EXT ;do \
 	   echo installing $$F libraries... ;\
 	   install -d $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
 	   install -D -m 644 $$F/* $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
 	done
 	@echo Installing OpenCL libraries...
 	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
-	install -D -m 644 OpenCL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
+	install -D -m 644 libraries/OpenCL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
 	@echo Installing OpenAL libraries...
 	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
-	install -D -m 644 OpenAL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
+	install -D -m 644 libraries/OpenAL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
 
 uninstall:
 	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
@@ -304,7 +304,7 @@ src/slim.c: repl src/slim.lisp
 
 
 recompile: boot.fasl
-boot.fasl: vm repl src/ol.scm otus/lisp.scm r5rs/*.scm lang/*.scm owl/*.scm
+boot.fasl: vm repl src/ol.scm r5rs/*.scm lang/*.scm libraries/otus/lisp.scm libraries/owl/*.scm
 	@vm repl src/ol.scm --version "`git describe --always`"
 	@if diff boot.fasl repl>/dev/null ;then\
 	   echo '\033[1;32m  `___`  \033[0m' ;\
