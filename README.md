@@ -6,7 +6,7 @@ Otus Lisp
 
 [![Travis-CI project page](https://travis-ci.org/yuriy-chumak/ol.svg)](https://travis-ci.org/yuriy-chumak/ol)
 
-Yet another pet lisp. Small, embeddable and purely functional.
+Yet another pet lisp. Small, embeddable and purely functional!
 
 VERSION 1.2
 
@@ -27,6 +27,7 @@ program. If not, see <http://www.gnu.org/licenses/>.
 
 Additionally, Lesser GNU General Public License is applicable.
 
+
 OVERVIEW
 --------
 
@@ -41,24 +42,27 @@ You can use Otus Lisp in Linux, Windows, Unix, Android and lot
 of any other operation systems with various (x86, x86_64, mips,
 arm, aarch64, ppc, etc.) architectures.
 
+You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
+Android, webOS and lot of any other operation systems based on
+various hardware architectures (x86, x86_64, arm, aarch64, ppc,
+mips, etc.).
+
 
 REQUIREMENTS
 ------------
 
-For unix you should have GCC >3.2 installed.
+For linux/unix you should have GCC >3.2 installed.
 
 For windows you should have MINGW installed.
-
-For unix you maybe want MAKE installed also.
 
 
 DOWNLOAD / INSTALLATION
 -----------------------
 
 You can use basic Ol functionality without any installation - just copy the `ol` binary
-to any user accessible path. Basic functionality includes a rich set: lists, ff, io, lazies,
-strings, symbols, vectors, math, regex and tuples. For extended functionality you should
-install the whole Ol package.
+to any user accessible path. Basic functionality includes a rich set of functions:
+lists, ff, io, lazies, strings, symbols, vectors, math, regex and tuples.
+For extended functionality you should install the whole Ol package.
 
 Installation packages for
 CentOS 6 (x86, amd64), CentOS 7 (amd64),
@@ -75,10 +79,10 @@ openSUSE Tumbleweed (x86, amd64),
 Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64) can be found at
 [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
 
-Installation packages for Windows (x86, amd64) on the way.
+Installation packages for Windows (x86, amd64) can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcment page.
 
 Precompiled binaries for Android (arm64-v8a, armeabi, armeabi-v7a,
-mips, mips64, x86, x86_64) on the way.
+mips, mips64, x86, x86_64) can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcment page.
 
 Precompiled binary for Odroid (Ubuntu 14.04, armv7l) on the way.
 
@@ -86,14 +90,14 @@ Precompiled binary for Odroid (Ubuntu 14.04, armv7l) on the way.
 BUILD
 -----
 
-### SIMPLE WAY
+### BUILD IN SIMPLE WAY
 
    $ make; make install
 
 * gmake for unix clients
 
 
-### MORE INTERESTING WAYS
+### BUILD IN MORE INTERESTING WAYS
 
 #### Linux way
 
@@ -103,8 +107,8 @@ To build only olvm (virtual machine)
 
 To build full OL
 
-    $ ld -r -b binary -o src/repl.o repl
-    $ gcc src/olvm.c src/repl.o  -std=c99 -O2  -o ol -ldl
+    $ ld -r -b binary -o tmp/repl.o repl
+    $ gcc src/olvm.c tmp/repl.o  -std=c99 -O2  -o ol -ldl
 
 
 Olvm can execute only precompiled OL scripts (see BINARY SCRIPTS
@@ -123,18 +127,18 @@ To build only olvm (virtual machine)
 To build OL
 
     > set PATH=%PATH%;C:\MinGW\bin
-    > ld -r -b binary -o src/repl.o repl
-    > gcc.exe src\olvm.c src\boot.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
+    > ld -r -b binary -o tmp/repl.o repl
+    > gcc.exe src\olvm.c tmp\repl.o -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
 
 
-#### FreeBSD/OpenBSD/NetBSD way
+#### macOS/FreeBSD/OpenBSD/NetBSD/\*BSD way
 
-BSD require including "c" library instead of dl:
+It require including "c" library instead of dl:
 
     $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -lc
 
-    $ ld -r -b binary -o src/repl.o repl
-    $ gcc src/olvm.c src/boot.c  -std=c99 -O2  -o ol -lc
+    $ ld -r -b binary -o tmp/repl.o repl
+    $ gcc src/olvm.c tmp/repl.o  -std=c99 -O2  -o ol -lc
 
 
 #### Android way
@@ -143,7 +147,7 @@ BSD require including "c" library instead of dl:
 
 #### MacOS/iOS way
 
-   tbd.
+    tbd.
 
 #### Open webOS way
 
@@ -158,7 +162,7 @@ Now you cat execute ol under webos command line or other way you
 would like.
 
 
-### VERY INTERESTING WAY
+### BUILD IN VERY INTERESTING WAY
 
 You can change OL scheme language (yes, you can) by editing sources in
 lang/ and owl/ subfolders. Additionally you can change virtual machine
@@ -206,7 +210,7 @@ src/olvm.h to 0.
 Please note that external libraries (like opengl, sqlite, etc.)
 support require OLVM_FFI enabled.
 
-For embedding OL into your project check the EMBEDDED OL section.
+For embedding OL into your project check the EMBEDDING OL section.
 
 
 RUNNING
@@ -217,8 +221,8 @@ There are few ways to execute ol
 #### Interactive mode
 
     $ ol
-    You see a prompt.
-    Type ',help' to help, ',quit' to end session
+    Welcome to Otus Lisp 1.2,
+    type ',help' to help, ',quit' to end session.
     > (+ 1 2 3)                      # now you in REPL and can play with in
     6
     > ,quit                          # this ends interactive session
@@ -242,39 +246,34 @@ OL can execute precompiled scripts. You can compile your script
 by using this code
 
     --- cut ---
-    (define (main)
-       #true ; anything you want to compile
+    (define (main . args)
+       (print "hello :)") ; anything you want to compile
     )
 
     (vector->file (list->vector (fasl-encode (lambda (args)
-       (main)))) "out.bl")
+       (apply main args)))) "out.bl")
     --- cut ---
 
 where "out.bl" your output file name
 
 As result will be create binary script, that can be executed
 directly by ol or vm:
+Now you can execute this code by Ol as full Ol or as "naked" OLvm
 
-    ---cut ---
-    0000000000: 02 10 0C 19 02 00 07 01 | 01 02 05 02 05 01 11 02
-    0000000010: 10 09 19 01 00 04 8D 04 | 18 04 11 01 11 02 02 01
-    0000000020: 00                      |
-    ---cut ---
-
-Now you can execute this code by OL as full OL or as "naked" OLvm
-
-    $ ol out.bl
+    $ ./vm out.bl
 
 
 FILES
 -----
 
+* repl  - the OL interpreter/compiler
 * src/olvm.h  - the OL virtual machine header
 * src/olvm.c  - the OL vm
-* src/boot.c  - the OL interpreter/compiler
-* lang/*.scm  - implementation of OL repl and compiler
-* owl/*.scm   - implementation of OL libraries
+* src/ffi.c src/ffi.h  - foreign functions interface implementation
+* lang/*.scm  - OL repl and compiler source codes
+* owl/*.scm   - various OL libraries
 * r5rs/*.scm  - r5rs compliant OL language part
+* lib/*.scm   - different external native libraries support (via ffi)
 * tests/*.scm - some automated tests
 
 
@@ -306,10 +305,11 @@ the command line argument list when the program is executed.
 EMBEDDED OL
 -----------
 
-(please, this section is outdated, please wait to updates)
-
 OL can be embedded in your project. It supports direct calls for C functions
 for 32- and 64-bit platforms with full callables support.
+
+For better (and complex) embedding Ol please check the "talkback" extension
+source code in "extensions/talkback" folder.
 
 Please check the next code for sample usage:
 
@@ -339,8 +339,8 @@ Please check the next code for sample usage:
     {
         OL* ol = OL_new(
             "(import (otus ffi) (owl io))"
-            "(define $ (dlopen))" // get own handle
-            "(define sample_add (dlsym $ type-int+ \"sample_add\" type-int+ type-int+))"
+            "(define $ (load-dynamic-library #f))" // get own handle
+            "(define sample_add ($ fft-int \"sample_add\" fft-int fft-int))"
 
             "(print \"sample_add: \""
             "   (sample_add 1 2))");
@@ -359,8 +359,8 @@ b. notify vm about using ffi library: "(import (otus ffi))"
       "otus/ffi.scm" file must be accessible from your executable or from
       default library search path
 
-c. load function exporter library as "(define any-variable (dload))" for self
-      executable or "(define any-variable (dload \"libmy.so\"))" for "my"
+c. load function exporter library as "(define any-variable (load-dynamic-library #f))" for self
+      executable or "(define any-variable (load-dynamic-library \"libmy.so\"))" for "my"
       dynamic library (my.dll for windows)
 
 d. notify vm about function prototypes that you want to call. ffi support mechanism
@@ -369,12 +369,12 @@ d. notify vm about function prototypes that you want to call. ffi support mechan
 
 FFI described in the [Project Page](http://yuriy-chumak.github.io/ol/?ru/ffi) (still in progress), so for now function interface declaration from sample in details:
 
-'(define sample_add (dlsym $ type-int+ "sample_add" type-int+ type-int+))':
+'(define sample_add ($ fft-int "sample_add" fft-int fft-int))':
 
  * sample_add - any appropriate variable name for your internal OL function name.
       This variable will be associated with lambda that can call the native function.
- * second argument in (dlsym) - type-int+ - is return type of native function, it
-      can be type-int+ for integers, type-string for string, etc.
+ * second argument in ($) - fft-int - is return type of native function, it
+      can be fft-int for integers, type-string for string, etc.
       available types you can check in otus/ffi.scm
  * third argument is function name string. you must export this
       function from your code to make it accessible from OL
@@ -400,19 +400,18 @@ Please refer to the [project page](yuriy-chumak.github.io/ol/)
 
 Or check the source codes - r5rs/core.owl
 
+
 RELATED
 --------------------------------------------------------------
+Copyright (c) 2014 Aki Helin,
+Copyright (c) 2014 - 2017 Yuriy Chumak
+
+Grew out of the Owl Lisp by Aki Helin: https://github.com/aoh/owl-lisp
 
 http://groups.csail.mit.edu/mac/projects/scheme/
 
 http://people.csail.mit.edu/jaffer/Scheme (r5rs)
 
-Copyright (c) 2014 Aki Helin,
-Copyright (c) 2014 - 2017 Yuriy Chumak
-
-Grew out of the Owl Lisp by Aki Helin.
-Original Owl Lisp project can be found at
-https://github.com/aoh/owl-lisp
 
 SOME NOTES
 ----------
