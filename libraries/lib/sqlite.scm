@@ -266,6 +266,11 @@
       (linux?
          "Use, for example, sudo apt-get install libsqlite3-dev"))))
 
+
+; TEMP:
+(define (runtime-error reason info)
+   (print "\e[0;31m" info "\e[0;0m;"))
+
 ; --
 ; version:
 (define sqlite3_libversion (sqlite type-string "sqlite3_libversion"))
@@ -462,7 +467,7 @@
 ; при инвалидном запросе бросает runtime исключение
 ; select multiple values
 (define (sqlite:query database query . args)
-  ;(print "SQLITE: " query ": (" (length args) ")> " args)
+   (print "SQLITE: \e[0;35m" query "\e[0;0m: (" (length args) ")> " args)
    (let ((statement (make-sqlite3_stmt)))
       (unless (eq? 0 (sqlite3_prepare_v2 database (c-string query) -1 statement #f))
          (runtime-error "error query preparation:" (list

@@ -170,7 +170,7 @@
                             #t
                             (let ((Request-Line (ref (car request) 1))
                                   (Headers-Line (ref (car request) 2)))
-                               (print id " Request-Line: " Request-Line)
+                               (print id " Request-Line: \e[0;34m" Request-Line "\e[0;0m")
                                (print id " Headers-Line: " Headers-Line)
                                (if (null? Request-Line)
                                   (close (send "HTTP/1.0 400 Bad Request\r\n\r\n400"))
