@@ -4,6 +4,7 @@ true:
 	@true
 
 export PATH := $(PATH):/opt/emsdk_portable:/opt/emsdk_portable/clang/fastcomp/build_master_64/bin:/opt/emsdk_portable/node/4.1.1_64bit/bin:/opt/emsdk_portable/emscripten/master
+export OL_HOME=libraries
 
 #do some configuration staff
 exists = $(shell echo "\
