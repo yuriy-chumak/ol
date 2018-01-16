@@ -2064,7 +2064,7 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 // ret is ret address to the caller function
 #if OLVM_CALLABLES
 static
-long callback(OL* ol, int id, int_t* argi
+long long callback(OL* ol, int id, int_t* argi
 	#if __amd64__
 		, double* argf, int_t* rest
 	#endif
@@ -2086,8 +2086,8 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	int p = 0, N = NR+CR;
 
 	// попробуем освободить ненужные регистры?
-	for (int i = ol->arity + 3; i < NR; i++)
-		R[i] = IFALSE;
+	//for (int i = ol->arity + 3; i < NR; i++)
+	//	R[i] = IFALSE;
 	// fprintf(stderr, "%d", ol->arity);
 
 	// если нам не хватило магических 1024, то у нас проблема

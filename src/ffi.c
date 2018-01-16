@@ -1353,7 +1353,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 static
 __attribute__((used))
-long callback(OL* ol, int id, int_t* argi
+long long callback(OL* ol, int id, int_t* argi
 #if __amd64__
 		, double* argf, int_t* rest //win64
 #endif
@@ -1563,7 +1563,7 @@ long callback(OL* ol, int id, int_t* argi
 	// R, NR могли измениться
 	R = ol->R;
 	R[3] = R[NR + 3];
-//	R[1] = R[NR + 2]; // не надо
+//	R[2] = R[NR + 2]; // не надо
 //	R[1] = R[NR + 1]; // не надо
 	R[0] = R[NR + 0]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
 
