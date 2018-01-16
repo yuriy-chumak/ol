@@ -11,13 +11,13 @@
 
 (begin
 
-   (define libcurl (or (dlopen "libcurl.so.4")
+   (define libcurl (or (load-dynamic-library "libcurl.so.4")
                        (runtime-error "Can't load libcurl" #f)))
 
-   (define curl_easy_init (dlsym libcurl type-vptr "curl_easy_init"))
-   (define curl_easy_setopt (dlsym libcurl fft-void "curl_easy_setopt" type-vptr type-int+ fft-any))
+   (define curl_easy_init (libcurl type-vptr "curl_easy_init"))
+   (define curl_easy_setopt (libcurl fft-void "curl_easy_setopt" type-vptr fft-int fft-any))
       (define CURLOPT_URL 10002)
       (define CURLOPT_WRITEFUNCTION 20011)
-   (define curl_easy_perform (dlsym libcurl fft-void "curl_easy_perform" type-vptr))
-   (define curl_easy_cleanup (dlsym libcurl fft-void "curl_easy_cleanup" type-vptr))
+   (define curl_easy_perform (libcurl fft-void "curl_easy_perform" type-vptr))
+   (define curl_easy_cleanup (libcurl fft-void "curl_easy_cleanup" type-vptr))
 ))
