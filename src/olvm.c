@@ -2412,6 +2412,7 @@ mainloop:;
 
 	#		define SYSCALL_EXIT 60
 	#		define SYSCALL_GETDENTS 78
+	#		define SYSCALL_CHDIR 80
 
 	#		define SYSCALL_GETTIMEOFDATE 96
 
@@ -3617,16 +3618,17 @@ loop:;
 			result = new_string(dire->d_name, len);
 			break;
 		}
-		case 1013: /* sys-closedir dirp _ _ -> ITRUE */
-			closedir((DIR *)car(a));
-			result = (word*)ITRUE;
-			break;
-		case 1020: { /* chdir path res */
+		case 1020:
+		case SYSCALL_CHDIR: {
 			char *path = ((char *)a) + W;
 			if (chdir(path) >= 0)
 				result = (word*) ITRUE;
 			break;
 		}
+		case 1013: /* sys-closedir dirp _ _ -> ITRUE */
+			closedir((DIR *)car(a));
+			result = (word*)ITRUE;
+			break;
 
 
 		// PIPE
