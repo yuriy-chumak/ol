@@ -3300,20 +3300,19 @@ loop:;
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
 			int size = svtoi (b); // в байтах
+			if (size < 0)
+				size = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
 
 			// возможный редирект портов в/в
 			portfd = portfd < 3 ? ol->std[portfd] : portfd;
 
-			size = ((size + W - 1) / W) + 1; // в словах
-			if (size < 0)
-				size = (heap->end - fp);
-			else
-			if (size > (heap->end - fp)) {
+			int words = ((size + W - 1) / W) + 1; // в словах
+			if (words > (heap->end - fp)) {
 				ptrdiff_t dp;
 				dp = ip - (unsigned char*)this;
 
 				heap->fp = fp; ol->this = this;
-				ol->gc(ol, size);
+				ol->gc(ol, words);
 				fp = heap->fp; this = ol->this;
 
 				ip = (unsigned char*)this + dp;
