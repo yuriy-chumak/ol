@@ -106,8 +106,8 @@
 ; -> mcp gets <cont> 5 reason info
 ; (run <mcp-cont> thunk quantum) -> result
 
-(define input-chunk-size  1024)
-(define output-chunk-size 4096)
+;(define input-chunk-size  1024)
+;(define output-chunk-size 4096)
 
 (define-syntax share-bindings
    (syntax-rules (defined)
