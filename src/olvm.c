@@ -1032,7 +1032,8 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 #	define FFRED                       2
 
 #define TBVEC                       (19)   // must be RAW type
-#define TSTRINGWIDE                 (22)   // must be RAW type
+#define TSTRINGWIDE                 (22)
+#define TSTRINGDISPATCH             (21)
 
 #define TTHREAD                     (31) // type-thread-state
 
@@ -1821,10 +1822,10 @@ struct ol_t
 	struct heap_t heap; // MUST be first member
 	word max_heap_size; // max heap size in MB
 
-	// вызвать GC если в памяти мало места в словах
+	// вызвать GC если в памяти мало места (в словах)
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
-	int (*gc)(OL* ol, int kb);
+	int (*gc)(OL* ol, int ws);
 	void (*exit)(int errorId);
 
 	void* userdata; // user data
@@ -2081,7 +2082,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 
 	// если места еще хватит, не будем ничего делать
 	// TODO: переделать на другую проверку
-	if ((ws != 0) && ((fp + ws) < (ol->heap.end - MEMPAD)))
+	if ((ws != 0) && ((fp + ws) < (ol->heap.end - MEMPAD))) // TODO: (-MEMPAD) - спорно!
 		return 0;
 
 	word* R = ol->R;
@@ -2665,17 +2666,19 @@ loop:;
 	// более высокоуровневые конструкции
 	//	смотреть "owl/primop.scm" и "lang/assemble.scm"
 
-	// make object
+	// make object (fastest choice)
+	//	проверка размеров тут не нужна, так как в любом случае количество аргументов,
+	//	передаваемых в функцию не превысит предусмотренных пределов
 	case VMNEW: { // new t f1 .. fs r
 		word type = *ip++;
 		word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0 length objects
 		word *p = new (type, size+1), i = 0; // s fields + header
 		while (i < size) {
-			p[i+1] = R[ip[i]];
+			p[i+1] = R[*ip++];
 			i++;
 		}
-		R[ip[i]] = (word) p;
-		ip += size+1; break;
+		R[*ip++] = (word) p;
+		break;
 	}
 
 	// make typed reference from list
