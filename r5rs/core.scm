@@ -885,10 +885,29 @@
       ; with a backslash (\), as in "The word \"recursion\" has many meanings."
       ;
       ; procedure:  (string? obj)
+
       ; procedure:  (make-string k)
       ; procedure:  (make-string k char)
+;      (define make-string
+;         (case-lambda
+;            ((char) (vm:new-object type-string ))
+;            ((a b . cs) (app a (app b (appl cs appl) app) app))
+;            ((a) a)
+;            (() '()))))
+;         ()
+;         (list->string (repeat char n)))
+
       ; library procedure:  (string char ...)
       ; procedure:  (string-length string)
+;      (define (string-length str)
+;         (case (type str)
+;            (type-string          (size str))
+;            (type-string-wide     (size str))
+;            (type-string-dispatch (ref str 1))
+;            ; todo: clarify the returning the runtime-error or simple #f
+;            (else
+;               (runtime-error "string-length: not a string: " str))))
+
       ; procedure:  (string-ref string k)
       ; procedure:  (string-set! string k char)
       ; library procedure:  (string=? string1 string2)
