@@ -1211,10 +1211,12 @@ typedef struct heap_t
 
 
 // -= new =--------------------------------------------
+#define MEMORY_CHECK // sanity check для new
 // выделить блок памяти, unsafe
 #define NEW(size) ({\
 	word* addr = fp;\
 	fp += size;\
+	MEMORY_CHECK;\
 	/*return*/ addr;\
 })
 
@@ -2175,6 +2177,9 @@ word runtime(OL* ol)
 	word*this = ol->this; // context
 	long acc = ol->arity; // arity
 
+	#undef MEMORY_CHECK
+	#define MEMORY_CHECK { if (fp > heap->end) printf("ERROR!!!\n"); }
+
 	// runtime entry
 apply:;
 
@@ -2678,8 +2683,29 @@ loop:;
 		word type = uvtoi (A0);
 		word list = A1;
 
-		// think: проверку можно убрать ради скорости
-		if (is_pair(list)) {
+		// эта проверка необходима, так как действительно можно
+		//	выйти за пределы кучи (репродюсится стабильно)
+		size_t len = 0;
+		while (is_pair(list)) {
+			++len;
+			list = cdr(list);
+		}
+
+		// if proper list:
+		if (list == INULL) {
+			// check the place for new object:
+			if (fp + len > heap->end) {
+				ptrdiff_t dp;
+				dp = ip - (unsigned char*)this;
+
+				heap->fp = fp; ol->this = this;
+				ol->gc(ol, len);
+				fp = heap->fp; this = ol->this;
+
+				ip = (unsigned char*)this + dp;
+			}
+			list = A1;
+
 			word *ptr = fp;
 			A2 = (word)ptr;
 
@@ -2690,9 +2716,9 @@ loop:;
 			}
 			*me = make_header(type, ++fp - ptr);
 		}
-		else {
+		else
 			A2 = IFALSE;
-		}
+
 		ip += 3; break;
 	}
 
@@ -4650,7 +4676,9 @@ done:;
 	else
 		return (R[3] == IFALSE) ? (void*)0 : (void*)1;*/
 	return R[3];
-}
+} // end of runtime
+#undef MEMORY_CHECK
+#define MEMORY_CHECK
 
 // ======================================================================
 //       загрузчик скомпилированного образа и его десериализатор
