@@ -2728,68 +2728,51 @@ loop:;
 	// make raw reference object
 	case VMNEW_RAWOBJECT: { // (vm:new-raw-object type list|size)
 		int type = uvtoi(A0);
-		int len = 0;
-		// size or #null ?
+		size_t len = 0;
+
+		// memory check:
 		if (is_value(A1)) {
 			len = (A1 == INULL)  ? 0
 				: (A1 == IFALSE) ? 0 // todo: is it required?
 				: uvtoi(A1);
-			// if there are no place for raw object:
-			if (len / sizeof(word) > heap->end - fp) {
-				ptrdiff_t dp;
-				dp = ip - (unsigned char*)this;
-
-				heap->fp = fp; ol->this = this;
-				ol->gc(ol, len / sizeof(word));
-				fp = heap->fp; this = ol->this;
-
-				ip = (unsigned char*)this + dp;
-			}
-			word *raw = new_bytevector (type, len);
-			A2 = (word) raw;
 		}
-		// list?
 		else {
-			word *lst = (word*) A1;
+			word list = A1;
 
-			word* p = lst;
-			while (is_pair(p)) { // check the list
-				len++;
-				p = (word*)cdr (p);
+			while (is_pair(list)) {
+				++len;
+				list = cdr(list);
 			}
-
-			if ((word) p == INULL) {
-				#if VMRAW_CHECK
-				// it's safe to trunc not rounding
-				if (len / sizeof(word) > heap->end - fp) { // is it required?
-					ptrdiff_t dp;
-					dp = ip - (unsigned char*)this;
-
-					heap->fp = fp; ol->this = this;
-					ol->gc(ol, len / sizeof(word));
-					fp = heap->fp; this = ol->this;
-
-					ip = (unsigned char*)this + dp;
-				}
-				#endif
-				word *raw = new_bytevector (type, len);
-
-				unsigned char *pos;
-				pos = (unsigned char *) &raw[1];
-				p = lst;
-				while ((word) p != INULL) {
-					*pos++ = uvtoi(car(p)) & 255;
-					p = (word*)cdr(p);
-				}
-
-				// clear the padding bytes, don't remove!
-				while ((word)pos % sizeof(word))
-					*pos++ = 0;
-				A2 = (word)raw;
-			}
-			else
-				A2 = IFALSE;
 		}
+		// if there are no place for raw object:
+		if (len / sizeof(word) > heap->end - fp) {
+			ptrdiff_t dp;
+			dp = ip - (unsigned char*)this;
+
+			heap->fp = fp; ol->this = this;
+			ol->gc(ol, len / sizeof(word));
+			fp = heap->fp; this = ol->this;
+
+			ip = (unsigned char*)this + dp;
+		}
+		word *raw = new_bytevector (type, len);
+
+		if (is_reference(A1)) {
+			word *p = (word*) A1;
+
+			unsigned char *pos;
+			pos = (unsigned char *) &raw[1];
+			while (is_pair(p)) {
+				*pos++ = uvtoi(car(p)) & 255;
+				p = (word*)cdr(p);
+			}
+
+			// clear the padding bytes, don't remove!
+			// actually not required, but sometimes very useful!
+			while ((word)pos % sizeof(word))
+				*pos++ = 0;
+		}
+		A2 = (word)raw;
 		ip += 3; break; }
 
 
