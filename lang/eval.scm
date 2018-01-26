@@ -540,7 +540,7 @@
       ;; ((a b) ...)
       (define (pairs? exp)
          (and (list? exp)
-            (all (λ (x) (and (list? x) (= (length x) 2))) exp)))
+            (all (λ (x) (and (list? x) (eq? (length x) 2))) exp)))
 
       ;; → 'ok env | 'needed name | 'circular name, non-ok exists via fail
       (define (import-set->library iset libs fail)
@@ -679,7 +679,7 @@
             ((memv req feats) #true) ;; a supported implementation feature
             ((symbol? req) #false)
             ((assv req libs) #true) ;; an available (loaded) library
-            ((and (headed? 'not req) (= (length req) 2))
+            ((and (headed? 'not req) (eq? (length req) 2))
                (not (match-feature (cadr req) feats libs fail)))
             ((headed? 'and req)
                (all (λ (req) (match-feature req feats libs fail)) (cdr req)))

@@ -201,7 +201,7 @@
                          (dict (keep (λ (node) (has? syms (car node))) dictionary))
                          (len (repetition-length dict)))
                         (let rep-loop ((dict dict) (n len))
-                           (if (= n 0)
+                           (if (eq? n 0)
                               (loop (cddr form))
                               (cons
                                  (rewrite dict (car form))

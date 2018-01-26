@@ -292,7 +292,7 @@
              (safe null)
              (n n))
             (cond
-               ((= n 0)
+               ((eq? n 0)
                   (reverse safe))
                ((has? call hp)
                   (loop (+ hp 1) safe n))
@@ -356,7 +356,7 @@
             (cond
                ;; cont is usually at 3, and usually there is
                ;; 1 return value -> special instruction
-               ((and (eq? rator a0) (= nargs 1))
+               ((and (eq? rator a0) (eq? nargs 1))
                   (tuple 'ret (car rands)))
                ;;; rator is itself in rands, and does not need rescuing
                ((has? rands rator)

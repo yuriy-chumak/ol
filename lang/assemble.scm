@@ -191,7 +191,7 @@
             ;; fixme: closures should have just one RTL node instead of separate ones for clos-proc and clos-code
             ((clos-proc lpos offset env to more)
                ;; make a 2-level closure
-               (if (= lpos 1)
+               (if (eq? lpos 1)
                   (cons CLOS1
                      (cons (+ 2 (length env))
                         ;; size of object (hdr code e0 ... en)
@@ -208,7 +208,7 @@
                                  (cons (reg to)
                                     (assemble more fail)))))))))
             ((clos-code lpos offset env to more)      ;; make a 1-level closure
-               (if (= lpos 1)
+               (if (eq? lpos 1)
                   (cons CLOC1
                      (cons (+ 2 (length env))
                         ;; size of object (hdr code e0 ... en)

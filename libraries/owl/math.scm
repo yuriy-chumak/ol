@@ -203,7 +203,7 @@
 
       ; a slightly optimized =
 
-      (define (= a b)
+      (define (= b a)
          (case (type a)
             (type-fix+ (eq? a b))
             (type-fix- (eq? a b))

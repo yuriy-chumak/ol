@@ -23,7 +23,7 @@
       (define (fail reason) (tuple 'fail reason))
 
       (define (gensyms free n)
-         (if (= n 0)
+         (if (eq? n 0)
             (values null free)
             (lets ((gens next (gensyms (gensym free) (- n 1))))
                (values (cons free gens) next))))

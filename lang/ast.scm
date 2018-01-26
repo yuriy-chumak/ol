@@ -74,13 +74,13 @@
             ((special thing)
                (case thing
                   ((quote)
-                     (if (= (length exp) 2)
+                     (if (eq? (length exp) 2)
                         (mkval (cadr exp))
                         (list "Strange quote: " exp)))
                   ((lambda)
                      (let ((len (length exp)))
                         (cond
-                           ((= len 3)
+                           ((eq? len 3)
                               (lets
                                  ((formals (cadr exp))
                                   (body (caddr exp))
@@ -106,7 +106,7 @@
                            (else
                               (fail (list "Bad lambda: " exp))))))
                   ((letq) ;;; (letq formals definitions body)
-                     (if (= (length exp) 4)
+                     (if (eq? (length exp) 4)
                         (let
                            ((formals (lref exp 1))
                             (values (lref exp 2))
@@ -137,7 +137,7 @@
                               (translate else env fail)))
                         (fail (list "Bad ifeq " exp))))
                   ((either) ; (either (lambda-ok) (lambda-else))
-                     (if (= (length exp) 3)
+                     (if (eq? (length exp) 3)
                         (tuple 'either
                            (translate (second exp) env fail)
                            (translate (third exp) env fail))

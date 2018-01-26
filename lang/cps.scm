@@ -76,7 +76,7 @@
 
       ;; fixme: check - assuming tuple exp is already cps'd
       (define (cps-bind cps rator rands env cont free)
-         (if (= (length rands) 2)
+         (if (eq? (length rands) 2)
             (tuple-case (cadr rands)
                ((lambda formals body)
                   (lets ((body free (cps body env cont free)))
@@ -258,7 +258,7 @@
                      (if (and 			
                            (call? exp) 
                            (val-eq? (ref exp 2) '_sans_cps)	
-                           (= (length (ref exp 3)) 1))
+                           (eq? (length (ref exp 3)) 1))
                         (ok
                            (mklambda (list cont-sym) 
                               (mkcall (mkvar cont-sym)
