@@ -566,6 +566,7 @@
       ; procedure:  (<= x1 x2 x3 ...)
       ; procedure:  (>= x1 x2 x3 ...)
       ; library procedure:  (zero? z)
+      (define (zero? x) (eq? x 0))
       ; library procedure:  (positive? x)
       ; library procedure:  (negative? x)
       ; library procedure:  (odd? n)
@@ -1382,6 +1383,7 @@
       not boolean? pair? symbol? vector? port? procedure? null? eof?
 
       value? reference?
+      zero?
 
       ; 6.3.2 (pairs and lists)
       list-ref

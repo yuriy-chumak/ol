@@ -36,7 +36,6 @@
       log log2
       render-number
       fx% ;; temp export until it is removed
-      zero?
       negative? positive?
       denominator numerator
       remainder modulo
@@ -90,8 +89,6 @@
 
       (define *first-bignum*
          (ncons 0 *big-one*))
-
-      (define (zero? x) (eq? x 0))
 
       (define (fixnum? x)
          (let ((t (type x)))
