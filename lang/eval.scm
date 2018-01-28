@@ -792,7 +792,7 @@
                         ((ok value env2)
                            (let ((names (cadr exp)))
                               (if (and (list? value)
-                                    (= (length value) (length names)))
+                                    (eq? (length value) (length names)))
                                  (ok (repl-message ";; All defined")
                                     (fold
                                        (λ (env pair)

@@ -250,7 +250,7 @@
                   ;; args = input registers
                   (cond
                      ;; a run-of-the-mill a0 .. an → rval -primop
-                     ((and (= (length formals) 1) (not (special-bind-primop? op)))
+                     ((and (eq? (length formals) 1) (not (special-bind-primop? op)))
                         (let ((this (next-free-register regs)))
                            (tuple 'prim op args this
                               (cont
@@ -508,7 +508,7 @@
                            (rtl-args regs rands
                               (λ (regs args)
                                  ;;; note that this is an alias thing...
-                                 (if (= (length formals) (length args))
+                                 (if (eq? (length formals) (length args))
                                     (rtl-any (create-aliases regs formals args) body)
                                     (runtime-error "Bad argument count in lambda call: " (list 'args args 'formals formals))))))
                         (else

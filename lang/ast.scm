@@ -115,7 +115,7 @@
                               (and
                                  (list? values)
                                  (fixed-formals-ok? formals)
-                                 (= (length formals) (length values)))
+                                 (eq? (length formals) (length values)))
                               (let ((env (env-bind env formals)))
                                  (tuple 'letq formals
                                     (map

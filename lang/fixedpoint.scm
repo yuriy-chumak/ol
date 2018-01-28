@@ -179,7 +179,7 @@
                   ((var sym)
                      (tuple-case (lookup env sym)
                         ((recursive formals deps)
-                           (if (not (= (length formals) (length rands)))
+                           (unless (eq? (length formals) (length rands))
                               (runtime-error 
                                  "Wrong number of arguments: "
                                  (list 'call exp 'expects formals)))
@@ -363,7 +363,7 @@
                 (new-deps
                   (fold union current
                      (map third related))))
-               (if (= (length current) (length new-deps))
+               (if (eq? (length current) (length new-deps))
                   current
                   (grow new-deps deps))))
 
