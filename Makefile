@@ -62,7 +62,7 @@ L := $(if HAS_DLOPEN, -ldl -lm)
 endif
 
 ifeq ($(UNAME),FreeBSD)
-L := $(if HAS_DLOPEN, -lc)
+L := $(if HAS_DLOPEN, -lc -lm)
 endif
 ifeq ($(UNAME),NetBSD)
 L := $(if HAS_DLOPEN, -lc)
