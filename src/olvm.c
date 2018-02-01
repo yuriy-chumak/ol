@@ -280,7 +280,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 // http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system#WindowswithCygwinPOSIX
 
-#ifdef __MINGW32__ // mingw issues
+#ifdef __MINGW32__ // mingw bug
 #ifndef _cdecl
 #define _cdecl __cdecl
 #endif
@@ -1049,34 +1049,12 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 #define TCOMPLEX                    (43)
 #define TINEXACT                    (44)  // IEEE-754
 
-// ffi types:
-#define TVOID                       (48)
 #define TVPTR                       (49) // void*, only RAW, can't be 0
-#define TUNKNOWN                    (62) // only for ffi, direct sending argument without processing
-
-#define TFLOAT                      (46) // '.' symbol
-#define TDOUBLE                     (47) // '/' symbol
-
-// 50 is free
-#define TINT8                       (50)
-#define TINT16                      (51)
-#define TINT32                      (52)
-#define TINT64                      (53)
-// 54 for 128 ?
-// 55 for 256 ?
-
-#define TUINT8                      (55)
-#define TUINT16                     (56)
-#define TUINT32                     (57)
-#define TUINT64                     (58)
-// 59 for 128 ?
-// 60 for 256 ?
 
 // todo: сделать два типа колбеков - короткий (такой как я сейчас сделаю)
 //       и "длинный", который будет запускать отдельный поток (сопрограмму) и позволит в это же время
 //       работать остальным сопрограммам.
 #define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
-#define TANY                        (63) //
 
 // constants:
 #define IFALSE                      make_value(TCONST, 0)

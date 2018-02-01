@@ -19,6 +19,40 @@
 
 #if OLVM_FFI
 
+#define TVOID                       (48)
+//efine TSTRING                      (3)
+//efine TSTRINGWIDE                 (22)
+//efine TBVEC                       (19) // todo: remove this (use fft-vptr or fft-void* is same)
+
+#define TUNKNOWN                    (62) // only for ffi, direct sending argument without processing
+#define TANY                        (63) //
+
+// ffi type system
+#define TFLOAT                      (46) // '.' symbol
+#define TDOUBLE                     (47) // '/' symbol
+
+// 50 is free
+#define TINT8                       (50)
+#define TINT16                      (51)
+#define TINT32                      (52)
+#define TINT64                      (53)
+// 54 for 128 ?
+// 55 for 256 ?
+
+#define TUINT8                      (55)
+#define TUINT16                     (56)
+#define TUINT32                     (57)
+#define TUINT64                     (58)
+// 59 for 128 ?
+// 60 for 256 ?
+
+
+#define TMASK     0x0FFF
+
+#define TCDECL    0x1000
+#define TSTDCALL  0x2000
+#define TFASTCALL 0x3000
+
 word d2ol(struct ol_t* ol, double v); // declared in olvm.c
 
 // C preprocessor trick, some kind of "map"

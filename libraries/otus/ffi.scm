@@ -168,9 +168,9 @@
 ; Calling Conventions
 ; default call is __stdcall for windows and __cdecl for linux (for x32)
 ; you can directly provide required calling convention:
-(define (__cdecl    arg) (vm:or arg #b01000000))
-(define (__stdcall  arg) (vm:or arg #b10000000))
-(define (__fastcall arg) (vm:or arg #b11000000))
+(define (__cdecl    arg) (vm:or arg #x1000))
+(define (__stdcall  arg) (vm:or arg #x2000))
+(define (__fastcall arg) (vm:or arg #x3000))
 
 ; type convertors
 (define (fft* type)
