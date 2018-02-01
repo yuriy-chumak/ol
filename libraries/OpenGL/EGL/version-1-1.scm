@@ -224,7 +224,7 @@
 
 (define NativeDisplayType type-vptr)
 
-(define EGLint* type-vector-raw) ;?
+(define EGLint* type-vptr)
 
 
 (define EGL_DEFAULT_DISPLAY (vm:new-raw-object type-port '(0)))

@@ -77,7 +77,7 @@
    (define ALshort   type-fix+)
    (define ALushort  type-fix+) ;unsigned
    (define ALint     type-int+) ; signed 32-bit 2's complement integer
-   (define ALuint    type-int+)  (define ALuint*  type-vector-raw)
+   (define ALuint    type-int+)  (define ALuint*  type-vptr)
    (define ALsizei   type-int+) ; non-negative 32-bit binary integer size
    (define ALenum    type-int+) ; enumerated 32-bit value
    (define ALfloat   fft-float)  ; 32-bit IEEE754 floating-point
@@ -413,8 +413,8 @@
    (define ALCubyte   type-fix+)
    (define ALCshort   type-fix+)
    (define ALCushort  type-fix+)
-   (define ALCint     type-int+)   (define ALCint*  type-vector-raw) ; type-vector-raw or (bor ALCint #x40)?
-   (define ALCuint    type-int+)   (define ALCuint*  type-vector-raw)
+   (define ALCint     type-int+)   (define ALCint*  type-vptr)
+   (define ALCuint    type-int+)   (define ALCuint*  type-vptr)
    (define ALCsizei   type-int+)
    (define ALCenum    type-int+)
    (define ALCfloat   fft-float)

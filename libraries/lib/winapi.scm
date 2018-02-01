@@ -87,7 +87,7 @@
 (define HMENU     HANDLE)
 (define HINSTANCE HANDLE)
 
-(define LPMSG     type-vector-raw) ; ?
+(define LPMSG     type-vptr)
 (define LRESULT   LONG_PTR)
 (define VOID      fft-void)
 (define SHORT     fft-short)
@@ -99,8 +99,8 @@
 (define HGLRC     HANDLE)
 (define PROC      type-vptr)
 (define LPCSTR    type-string)
-(define LPRECT    type-vector-raw) ; ?
-(define LPPOINT   type-vector-raw) ; ?
+(define LPRECT    type-vptr)
+(define LPPOINT   type-vptr)
 
 
 ; -= kernel32 =-----
@@ -171,7 +171,7 @@
   (define GetCursorPos        (user32 BOOL "GetCursorPos" LPPOINT))
   (define ScreenToClient      (user32 BOOL "ScreenToClient" HWND LPPOINT))
 
-(define PIXELFORMATDESCRIPTOR* type-vector-raw)
+(define PIXELFORMATDESCRIPTOR* type-vptr)
 
 (define gdi32 (load-dynamic-library "gdi32"))
   (define ChoosePixelFormat (gdi32 int  "ChoosePixelFormat" HDC PIXELFORMATDESCRIPTOR*))

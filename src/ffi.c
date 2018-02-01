@@ -879,9 +879,7 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 		}
 
-		// todo: а может объединить TBVEC и TSTRING в один тип?
 		// todo: change to is_rawdata
-		case TBVEC:
 		case TSTRING:
 			switch (reftype(arg)) {
 			case TBVEC:

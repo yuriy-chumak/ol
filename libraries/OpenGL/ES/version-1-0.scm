@@ -31,7 +31,7 @@
    (define GL_OES_VERSION_1_0 1)
 
    (define GLvoid   fft-void)  ; void GLvoid
-   (define GLvoid*  type-vector-raw)
+   (define GLvoid*  type-vptr)
 
    (define GLenum   type-fix+)   ; typedef unsigned int GLenum
    (define GLboolean  type-fix+) ; typedef unsigned char GLboolean
@@ -44,7 +44,7 @@
    (define GLubyte  type-fix+)   ; typedef unsigned char
    (define GLushort type-fix+)   ; typedef unsigned chort
    (define GLuint   type-fix+)   ; typedef unsigned int
-   (define GLuint*  type-vector-raw)
+   (define GLuint*  type-vptr)
 
    (define GLfloat  fft-float)   ; typedef float GLfloat
    (define GLclampf fft-float)   ; typedef float GLclampf

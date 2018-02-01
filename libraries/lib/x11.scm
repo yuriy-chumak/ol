@@ -69,7 +69,7 @@
 (define XSelectInput (X11 fft-int "XSelectInput" fft-void* fft-void* fft-int))
 
 (define XMapWindow (X11 fft-int "XMapWindow" fft-void* fft-void*))
-(define XNextEvent (X11 fft-int "XNextEvent" fft-void* type-vector-raw))
+(define XNextEvent (X11 fft-int "XNextEvent" fft-void* type-vptr))
 (define XPending   (X11 fft-int "XPending"   fft-void*))
 
 (define XStoreName (X11 fft-int "XStoreName" fft-void* fft-void* type-string))
@@ -87,7 +87,7 @@
 ; -=( wgl )=------------------------------------------------------------
 ; opengl: https://gist.github.com/gszauer/da038dec2a7ffc288c41
 (define GLX (load-dynamic-library "libGLX.so"))
-   (define glXQueryVersion  (GLX fft-int "glXQueryVersion" fft-void* type-vector-raw type-vector-raw))
+   (define glXQueryVersion  (GLX fft-int "glXQueryVersion" fft-void* type-vptr type-vptr))
 
    (define glXChooseVisual  (GLX fft-void* "glXChooseVisual" fft-void* int int*))
       (define GLX_RGBA         4)
@@ -100,6 +100,6 @@
    (define glXMakeCurrent   (GLX bool "glXMakeCurrent"  fft-void* fft-void* fft-void*))
    (define glXSwapBuffers   (GLX fft-int "glXSwapBuffers"  fft-void* fft-void*))
 
-   (define glXChooseFBConfig(GLX fft-void* "glXChooseFBConfig" fft-void* fft-int type-vector-raw type-vector-raw)) ; minimal 1.3
+   (define glXChooseFBConfig(GLX fft-void* "glXChooseFBConfig" fft-void* fft-int type-vptr type-vptr)) ; minimal 1.3
    (define glXGetVisualFromFBConfig (GLX fft-void* "glXGetVisualFromFBConfig" fft-void* fft-void*))
 ))

@@ -317,7 +317,7 @@
 
 ; ------------------------
 ; SDL_event
-(define SDL_Event* type-vector-raw)
+(define SDL_Event* type-vptr)
 (define (make-SDL_Event) (vm:new-raw-object type-vector-raw 56))
 
 (define SDL_RELEASED 0)

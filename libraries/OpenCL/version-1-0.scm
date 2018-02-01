@@ -189,8 +189,8 @@
    (define cl_uchar  type-fix+)
    (define cl_short  type-fix+)
    (define cl_ushort type-fix+)
-   (define cl_int    type-int+)  (define cl_int*  type-vector-raw)
-   (define cl_uint   type-int+)  (define cl_uint* type-vector-raw)
+   (define cl_int    type-int+)  (define cl_int*  type-vptr)
+   (define cl_uint   type-int+)  (define cl_uint* type-vptr)
    (define cl_long   type-int64)
    (define cl_ulong  type-int64)
    (define cl_half   type-fix+) ;?
@@ -200,8 +200,8 @@
    (define cl_platform_id type-int+)
    (define cl_device_id type-int+)
 
-   (define cl_platform_id* type-vector-raw)
-   (define cl_device_id* type-vector-raw)
+   (define cl_platform_id* type-vptr)
+   (define cl_device_id* type-vptr)
    (define cl_context type-port)
 ;   (define cl_command_queue* type-port)
 ;   (define cl_mem* type-port)
@@ -223,7 +223,7 @@
    (define cl_device_exec_capabilities cl_bitfield)
    (define cl_command_queue_properties cl_bitfield)
 
-   (define cl_context_properties* type-vector-raw)
+   (define cl_context_properties* type-vptr)
    (define cl_context_info cl_uint)
    (define cl_command_queue_info cl_uint)
    (define cl_channel_order cl_uint)
@@ -580,8 +580,8 @@
    (runtime-error "Can't load CL library"))
 
 (define char* type-string)
-(define void* type-vector-raw)
-(define size_t* type-vector-raw)
+(define void* type-vptr)
+(define size_t* type-vptr)
 (define size_t type-int+)
 (define CL_CALLBACK* type-port)
 

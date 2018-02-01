@@ -82,10 +82,10 @@
 ;(wglMakeCurrent (tuple "a" "b" "c"))
 
 (define GLchar** type-tuple)
-(define GLint* type-vector-raw)
-(define GLsizei* type-vector-raw)
+(define GLint* type-vptr)
+(define GLsizei* type-vptr)
 (define GLchar* type-string)
-(define void* type-vector-raw)
+(define void* type-vptr)
 
 
 ;  ; opengl 1.2 https://www.opengl.org/registry/api/GL/glext.h
