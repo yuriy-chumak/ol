@@ -167,7 +167,7 @@
   ; Create Or Redefine SQL Functions
    ;sqlite3_create_function
    ;sqlite3_create_function16
-   ;sqlite3_create_function_v2
+    sqlite3_create_function_v2
 
   ; Obtaining SQL Values
    ;sqlite3_value_blob
@@ -205,7 +205,7 @@
    ;sqlite3_result_error_toobig
    ;sqlite3_result_error_nomem
    ;sqlite3_result_error_code
-   ;sqlite3_result_int
+    sqlite3_result_int
    ;sqlite3_result_int64
    ;sqlite3_result_null
    ;sqlite3_result_text
@@ -417,10 +417,10 @@
 (define sqlite3_value_type (sqlite fft-int "sqlite3_value_type" sqlite3_stmt*))
 (define sqlite3_value_numeric_type (sqlite fft-int "sqlite3_value_numeric_type" sqlite3_stmt*))
 
-;(define sqlite3_create_function_v2 (dlsym % type-fix+ "sqlite3_create_function_v2"   sqlite3* type-string type-int+ type-int+ fft-void* type-callable type-callable type-callable type-vptr))
+(define sqlite3_create_function_v2 (sqlite fft-int "sqlite3_create_function_v2"   sqlite3* type-string fft-int fft-int fft-void* type-callable type-callable type-callable type-vptr))
 ;
 ;(define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
-;(define sqlite3_result_int (dlsym % fft-void "sqlite3_result_int" sqlite3_context* type-int+))
+(define sqlite3_result_int (sqlite fft-void "sqlite3_result_int" sqlite3_context* fft-int))
 ;
 ;
 ;(define sqlite3_column_type  (dlsym % type-fix+   "sqlite3_column_type" sqlite3_stmt* type-fix+))

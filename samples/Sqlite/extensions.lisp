@@ -27,8 +27,8 @@
 
 
 ; sample table
-(sqlite:exec database "CREATE TABLE test (id INTEGER)")
-(sqlite:exec database "INSERT INTO test VALUES (3)")
+(sqlite:query database "CREATE TABLE test (id INTEGER)")
+(sqlite:query database "INSERT INTO test VALUES (3)")
 
 (print "for simple select: "
    (sqlite:value database "SELECT id FROM test"))
@@ -36,4 +36,4 @@
 (print "for extension select: "
    (sqlite:value database "SELECT compress(id) FROM test"))
 
-(sqlite3-close database)
+(sqlite3_close database)
