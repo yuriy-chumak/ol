@@ -630,7 +630,7 @@
 ; ...
 
 ; Program Object APIs
-      (define char** (vm:or type-string #x40)) ; todo: change size_t* to array of integers
+      (define char** (fft* type-string)) ; todo: change size_t* to array of integers
    (define clCreateProgramWithSource (dlsym $ cl_program "clCreateProgramWithSource" cl_context cl_uint char** size_t* cl_int*))
 
    (define clBuildProgram (dlsym $ cl_int "clBuildProgram" cl_program cl_uint cl_device_id* char* CL_CALLBACK* void*))

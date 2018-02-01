@@ -52,7 +52,7 @@
    (define GLubyte* type-string)
 
    ; references
-   (define GLfloat*  (vm:or GLfloat  #x40))
+   (define GLfloat*  (fft* GLfloat))
 
 
 ))

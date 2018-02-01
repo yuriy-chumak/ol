@@ -82,7 +82,7 @@
 ;(define XSetWMProtocols (
 
 (define int  fft-int)
-(define int* (vm:or fft-int #x40))
+(define int* (fft* fft-int))
 (define bool fft-int)
 ; -=( wgl )=------------------------------------------------------------
 ; opengl: https://gist.github.com/gszauer/da038dec2a7ffc288c41

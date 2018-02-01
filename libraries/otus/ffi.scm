@@ -174,9 +174,9 @@
 
 ; type convertors
 (define (fft* type)
-   (vm:or type #x40))
+   (vm:or type #x10000))
 (define (fft& type)
-   (vm:or type #x80))
+   (vm:or type #x20000))
 
 
 ; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?

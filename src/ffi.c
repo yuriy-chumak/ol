@@ -53,6 +53,9 @@
 #define TSTDCALL  0x2000
 #define TFASTCALL 0x3000
 
+#define FFT_PTR 0x10000
+#define FFT_REF 0x20000
+
 word d2ol(struct ol_t* ol, double v); // declared in olvm.c
 
 // C preprocessor trick, some kind of "map"
@@ -747,12 +750,12 @@ word* OL_ffi(OL* self, word* arguments)
 #endif
 
 		//
-		case TINT16 + 0x80:
-		case TUINT16 + 0x80:
+		case TINT16 + FFT_REF:
+		case TUINT16 + FFT_REF:
 			has_wb = 1;
 			//no break
-		case TINT16 + 0x40:
-		case TUINT16 + 0x40: {
+		case TINT16 + FFT_PTR:
+		case TUINT16 + FFT_PTR: {
 			// todo: add tuples pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
@@ -767,12 +770,12 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 		}
 
-		case TINT32 + 0x80:
-		case TUINT32 + 0x80:
+		case TINT32 + FFT_REF:
+		case TUINT32 + FFT_REF:
 			has_wb = 1;
 			//no break
-		case TINT32 + 0x40:
-		case TUINT32 + 0x40: {
+		case TINT32 + FFT_PTR:
+		case TUINT32 + FFT_PTR: {
 			// todo: add tuples pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
@@ -787,7 +790,7 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 		}
 
-		// todo: case TINT64 + 0x40:
+		// todo: case TINT64 + FFT_PTR:
 
 		// с плавающей запятой:
 		case TFLOAT:
@@ -798,10 +801,10 @@ word* OL_ffi(OL* self, word* arguments)
 				*(float*)&args[i] = (float)to_double(arg);
 			#endif
 			break;
-		case TFLOAT + 0x80:
+		case TFLOAT + FFT_REF:
 			has_wb = 1;
 			//no break
-		case TFLOAT + 0x40: {
+		case TFLOAT + FFT_PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
@@ -827,10 +830,10 @@ word* OL_ffi(OL* self, word* arguments)
 			#endif
 			break;
 
-		case TDOUBLE + 0x80:
+		case TDOUBLE + FFT_REF:
 			has_wb = 1;
 			//no break
-		case TDOUBLE + 0x40: {
+		case TDOUBLE + FFT_PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
@@ -865,7 +868,7 @@ word* OL_ffi(OL* self, word* arguments)
 			else
 				STDERR("invalid parameter value (requested vptr)");
 			break;
-		case TVPTR + 0x40: {
+		case TVPTR + FFT_PTR: {
 			switch (reftype(arg)) {
 			case TVPTR:
 				args[i] = (word) &car(arg);
@@ -890,7 +893,7 @@ word* OL_ffi(OL* self, word* arguments)
 				STDERR("invalid parameter values (requested string)");
 			}
 			break;
-		case TSTRING + 0x40: {
+		case TSTRING + FFT_PTR: {
 			int size = llen(arg) + 1;
 
 			// TODO: check the available memory and gun GC if necessary
@@ -1124,7 +1127,7 @@ word* OL_ffi(OL* self, word* arguments)
 			switch (type) {
 
 			// simplest case - all shorts are fits as value
-			case TINT16 + 0x80: {
+			case TINT16 + FFT_REF: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				short* f = (short*)args[i];
@@ -1139,7 +1142,7 @@ word* OL_ffi(OL* self, word* arguments)
 				}
 				break;
 			}
-			case TUINT16 + 0x80: {
+			case TUINT16 + FFT_REF: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				unsigned short* f = (unsigned short*)args[i];
@@ -1155,7 +1158,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			}
 
-			case TINT32 + 0x80: {
+			case TINT32 + FFT_REF: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				int* f = (int*)args[i];
@@ -1190,7 +1193,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			}
 
-			case TUINT32 + 0x80: {
+			case TUINT32 + FFT_REF: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				unsigned int* f = (unsigned int*)args[i];
@@ -1220,7 +1223,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			}
 
-			case TFLOAT + 0x80: {
+			case TFLOAT + FFT_REF: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				float* f = (float*)args[i];
