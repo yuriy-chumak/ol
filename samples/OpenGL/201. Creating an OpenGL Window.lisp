@@ -1,7 +1,8 @@
 #!/usr/bin/ol
 (import (lib opengl))
 
-; Close the window or press 'Q' key to exit
+; Close the window by cross
+;  or press 'Q' key to exit
 (gl:run
 
    "1. Creating an OpenGL Window"
