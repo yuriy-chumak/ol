@@ -19,6 +19,8 @@
 
 #if OLVM_FFI
 
+#include <alloca.h>
+
 #define TVOID                       (48)
 //efine TSTRING                      (3)
 //efine TSTRINGWIDE                 (22)
