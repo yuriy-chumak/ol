@@ -1831,7 +1831,7 @@
       (c-string ; todo: change to library
          (cond
             (win32? "opengl32")
-            (linux? "libGL.so")
+            (linux? "libGL.so.1")
             ;"HP-UX"
             ;"SunOS"
             ;"Darwin"
@@ -1845,7 +1845,7 @@
    (define GL GL_LIBRARY)
 
    (define WGL GL)
-   (define GLX (if linux? (load-dynamic-library "libGLX.so")))
+   (define GLX (if linux? (load-dynamic-library "libGL.so.1")))
    (define GDI (if win32? (load-dynamic-library "gdi32.dll")))
   ;(define EGL ...) :TODO
 

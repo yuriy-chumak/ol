@@ -82,7 +82,7 @@
    ; -=( linux )=---------------------------------------------------------------------
    (linux?
       (let ((libX11 (load-dynamic-library "libX11.so"))
-            (libGLX (load-dynamic-library "libGLX.so")))
+            (libGLX (load-dynamic-library "libGL.so.1")))
       (let ((XOpenDisplay  (libX11 type-vptr "XOpenDisplay" type-string))
             (XDefaultScreen(libX11 fft-int "XDefaultScreen" type-vptr))
             (XRootWindow   (libX11 type-vptr "XRootWindow" type-vptr fft-int))
@@ -101,7 +101,7 @@
             (glXChooseVisual  (libGLX type-vptr "glXChooseVisual" type-vptr fft-int fft-int*))
             (glXCreateContext (libGLX type-vptr "glXCreateContext" type-vptr type-vptr type-vptr fft-int)))
       (lambda (title)
-         (let*((display (XOpenDisplay #f))
+         (let*((display (XOpenDisplay #false))
                (screen  (XDefaultScreen display))
                (window  (XCreateSimpleWindow display (XRootWindow display screen)
                            0 0 WIDTH HEIGHT 1
@@ -112,7 +112,7 @@
                         8  1 ; GLX_RED_SIZE
                         9  1 ; GLX_GREEN_SIZE
                        10  1 ; GLX_BLUE_SIZE
-                       12  1 ; GLX_DEPTH_SIZE
+                       12  24 ; GLX_DEPTH_SIZE
                         5 ; GLX_DOUBLEBUFFER
                         0)))); None
             (XSelectInput display window 32769) ; ExposureMask
@@ -123,7 +123,7 @@
                (print "OpenGL version: " (glGetString GL_VERSION))
                (print "OpenGL vendor: " (glGetString GL_VENDOR))
                (print "OpenGL renderer: " (glGetString GL_RENDERER))
-              ;(gl:MakeCurrent display windows #f)
+              ;(gl:MakeCurrent display window #f)
 
                (tuple display screen window cx)))))))
    (else

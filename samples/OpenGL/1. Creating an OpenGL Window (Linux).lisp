@@ -16,18 +16,16 @@
    (glXChooseVisual display screen (list
       GLX_RGBA
       GLX_DOUBLEBUFFER
-      GLX_RED_SIZE 8
-      GLX_GREEN_SIZE 8
-      GLX_BLUE_SIZE 8
+      GLX_RED_SIZE 1
+      GLX_GREEN_SIZE 1
+      GLX_BLUE_SIZE 1
       GLX_DEPTH_SIZE 24
       0))
    (runtime-error "Can't get visual for display" #f)))
-,quit
 
 (define window (XCreateSimpleWindow display root
    0 0 width height 1
    (XBlackPixel display screen) (XWhitePixel display screen)))
-
 
 (define cx (or
    (glXCreateContext display vi #false 1)
