@@ -1765,6 +1765,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		}
 
 		// send
+		resend:
 		numSent = send(out_fd, buf, numRead, 0);
 		if (numSent == SOCKET_ERROR) {
 			int err = WSAGetLastError();
@@ -1773,7 +1774,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 				return -1;
 
 			Sleep(1);
-			continue;
+			goto resend;
 		}
 		if (numSent == 0) {               /* Should never happen */
 			STDERR("sendfile: send() transferred 0 bytes, error: %d", WSAGetLastError());
