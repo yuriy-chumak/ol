@@ -1,4 +1,7 @@
 @echo off
+:: Note: please, use emscripten sdk-1.30.0-64bit,
+::       latest sdk is bullshit and doesn't works
+
 set PATH~=%PATH%
 set MINGW32=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\
 set MINGW64=C:\mingw-w64\x86_64-6.1.0-posix-seh-rt_v5-rev1\mingw64\bin\
@@ -184,12 +187,13 @@ GOTO:EOF
 
 :JS
 echo.   *** Making virtual machine on js:
-@set PATH=C:\Program Files\Emscripten\python\2.7.5.3_64bit\;C:\Program Files\Emscripten\emscripten\1.35.0\;%PATH%
-ol tmp/to-c.scm >tmp/repl.c
-call emcc src/olvm.c tmp/repl.c -o olvm.js -s ASYNCIFY=1 -Oz ^
-     -s NO_EXIT_RUNTIME=1 ^
-     -fno-exceptions -fno-rtti ^
-     --memory-init-file 0 --llvm-opts "['-O3']"
+call C:\emscripten\unzip_temp\emsdk_env.bat
+::ol tools/to-c.scm >tmp/repl.c
+call emcc src/olvm.c ^
+     -o olvm.js ^
+     -s ASYNCIFY=1 ^
+     --memory-init-file 0 ^
+     -D NAKED_VM=1 -Oz ^
 GOTO:EOF
 
 :WASM
