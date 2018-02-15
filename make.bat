@@ -193,7 +193,7 @@ call emcc src/olvm.c ^
      -o olvm.js ^
      -s ASYNCIFY=1 ^
      --memory-init-file 0 ^
-     -D NAKED_VM=1 -Oz ^
+     -D NAKED_VM=1 -Oz
 GOTO:EOF
 
 :WASM
