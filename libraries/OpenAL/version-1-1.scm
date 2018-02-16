@@ -55,7 +55,6 @@
 
       ; Source:
       AL_BUFFER AL_LOOPING
-
    )
 ; ============================================================================
 ; == implementation ==========================================================
@@ -68,24 +67,23 @@
    (define AL_VERSION_1_0 1)
    (define AL_VERSION_1_1 1)
 
-;   (define type-int64 44)
-
-   (define ALboolean type-fix+)
-   (define ALchar    type-fix+)  (define  ALchar* type-string)
-   (define ALbyte    type-fix+)
-   (define ALubyte   type-fix+) ;unsigned
-   (define ALshort   type-fix+)
-   (define ALushort  type-fix+) ;unsigned
-   (define ALint     type-int+) ; signed 32-bit 2's complement integer
-   (define ALuint    type-int+)  (define ALuint*  type-vptr)
-   (define ALsizei   type-int+) ; non-negative 32-bit binary integer size
-   (define ALenum    type-int+) ; enumerated 32-bit value
+   (define ALboolean fft-char)
+   (define ALchar    fft-char)  (define  ALchar* type-string)
+   (define ALbyte    fft-char)
+   (define ALubyte   fft-unsigned-char)
+   (define ALshort   fft-short)
+   (define ALushort  fft-unsigned-short)
+   (define ALint     fft-int)
+   (define ALuint    fft-unsigned-int)
+      (define ALuint* (fft* ALuint))
+      (define ALuint& (fft& ALuint))
+   (define ALsizei   fft-int)
+   (define ALenum    fft-int)
    (define ALfloat   fft-float)  ; 32-bit IEEE754 floating-point
    (define ALdouble  fft-double) ; 64-bit IEEE754 floating-point
 
    (define ALvoid    fft-void)
    (define ALvoid*   type-vptr)
-
 
    ; https://en.wikipedia.org/wiki/Uname
    (define uname (syscall 63 #f #f #f))
@@ -105,8 +103,8 @@
          (else
             (runtime-error "Unknown platform" uname))))))
 
-   (define $ (or
-      (dlopen AL_LIBRARY)
+   (define openal (or
+      (load-dynamic-library AL_LIBRARY)
       (runtime-error "Can't load OpenAL library" AL_LIBRARY)))
 
    ; ======================================================
@@ -202,7 +200,7 @@
    ; alIsEnabled
 
    ; State retrieval
-   (define alGetString (dlsym $ ALchar* "alGetString" ALenum))
+   (define alGetString (openal ALchar* "alGetString" ALenum))
       (define AL_VENDOR      #xB001)
       (define AL_VERSION     #xB002)
       (define AL_RENDERER    #xB003)
@@ -218,7 +216,7 @@
 
    ; Error support.
    ; Obtain the most recent error generated in the AL state machine.
-   (define alGetError   (dlsym $ ALenum "alGetError"))
+   (define alGetError   (openal ALenum "alGetError"))
 
    ; Extension support.
    ; Query for the presence of an extension, and obtain any appropriate
@@ -287,14 +285,14 @@
    ; * Buffers Queued (Query only)       AL_BUFFERS_QUEUED       ALint
    ; * Buffers Processed (Query only)    AL_BUFFERS_PROCESSED    ALint
 
-   (define alGenSources (dlsym $ fft-void "alGenSources" ALsizei ALuint*))
-   (define alDeleteSources (dlsym $ fft-void "alDeleteSources" ALsizei ALuint*))
-   (define alIsSource (dlsym $ ALboolean "alIsSource" ALuint))
+   (define alGenSources (openal fft-void "alGenSources" ALsizei ALuint&))
+   (define alDeleteSources (openal fft-void "alDeleteSources" ALsizei ALuint*))
+   (define alIsSource (openal ALboolean "alIsSource" ALuint))
 
    ;alSourcef
    ;alSource3f
    ;alSourcefv
-   (define alSourcei (dlsym $ fft-void "alSourcei" type-int+ type-int+ type-int+))
+   (define alSourcei (openal fft-void "alSourcei" ALuint ALenum ALint))
 
    ;alSource3i
    ;alSourceiv
@@ -338,7 +336,7 @@
    ;alSourcePausev
 
    ; Source based playback calls
-   (define alSourcePlay (dlsym $ fft-void "alSourcePlay" ALuint))
+   (define alSourcePlay (openal fft-void "alSourcePlay" ALuint))
    ;alSourceStop
    ;alSourceRewind
    ;alSourcePause
@@ -360,10 +358,10 @@
    ; * Bits (Query only)         AL_BITS           ALint
    ; * Channels (Query only)     AL_CHANNELS       ALint
 
-   (define alGenBuffers (dlsym $ fft-void "alGenBuffers" ALsizei ALuint*))
+   (define alGenBuffers (openal fft-void "alGenBuffers" ALsizei ALuint&))
    ;alDeleteBuffers
    ;alIsBuffer
-   (define alBufferData (dlsym $ fft-void "alBufferData"
+   (define alBufferData (openal fft-void "alBufferData"
             ALuint  #|bid|#
             ALenum  #|format|#
             ALvoid* #|data|#
@@ -407,16 +405,18 @@
    (define ALCdevice* type-vptr)
    (define ALCcontext* type-vptr)
 
-   (define ALCboolean type-fix+)
-   (define ALCchar    type-fix+)   (define ALCchar* type-string)
-   (define ALCbyte    type-fix+)
-   (define ALCubyte   type-fix+)
-   (define ALCshort   type-fix+)
-   (define ALCushort  type-fix+)
-   (define ALCint     type-int+)   (define ALCint*  type-vptr)
-   (define ALCuint    type-int+)   (define ALCuint*  type-vptr)
-   (define ALCsizei   type-int+)
-   (define ALCenum    type-int+)
+   (define ALCboolean fft-char)
+   (define ALCchar    fft-char)           (define ALCchar* type-string)
+   (define ALCbyte    fft-char)
+   (define ALCubyte   fft-unsigned-char)
+   (define ALCshort   fft-short)
+   (define ALCushort  fft-unsigned-short)
+   (define ALCint     fft-int)            (define ALCint*  (fft* ALCint))
+   (define ALCuint    fft-unsigned-int)
+      (define ALCuint*  (fft* ALCuint))
+      (define ALCuint&  (fft& ALCuint))
+   (define ALCsizei   fft-int)
+   (define ALCenum    fft-int)
    (define ALCfloat   fft-float)
    (define ALCdouble  fft-double)
 
@@ -430,8 +430,8 @@
 
    ; Context Management
 
-   (define alcCreateContext (dlsym $ ALCcontext* "alcCreateContext" ALCdevice* ALCint*))
-   (define alcMakeContextCurrent (dlsym $ type-int+ "alcMakeContextCurrent" ALCcontext*))
+   (define alcCreateContext (openal ALCcontext* "alcCreateContext" ALCdevice* ALCint*))
+   (define alcMakeContextCurrent (openal type-int+ "alcMakeContextCurrent" ALCcontext*))
    ;alcProcessContext
    ;alcSuspendContext
    ;alcDestroyContext
@@ -441,10 +441,10 @@
 
    ; Device Management
 
-   (define alcOpenDevice (dlsym $ ALCdevice* "alcOpenDevice" ALCchar*))
+   (define alcOpenDevice (openal ALCdevice* "alcOpenDevice" ALCchar*))
    ;alcCloseDevice
 
-   (define alcGetError (dlsym $ ALCenum "alcGetError" ALCdevice*))
+   (define alcGetError (openal ALCenum "alcGetError" ALCdevice*))
 
    ; * Extension support.
    ; * Query for the presence of an extension, and obtain any appropriate

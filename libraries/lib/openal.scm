@@ -152,7 +152,7 @@
                ;(print (size data))
                ;(print (ref file 4))
       
-               (alBufferData (ref buffer 0)
+               (alBufferData (list-ref buffer 0)
                   (case (ref file 5) ; channels count
                      (1 AL_FORMAT_MONO16)
                      (2 AL_FORMAT_STEREO16))
