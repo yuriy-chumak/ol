@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 	glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH) - 224*2) / 2,
 	                       (glutGet(GLUT_SCREEN_HEIGHT) - 288*2) / 2);
 	glutInitWindowSize(224*2, 288*2);
-	(void)glutCreateWindow("Ol'ed Pacman");
+	glutCreateWindow("Ol'ed Pacman");
 
 	init();
 
