@@ -51,7 +51,7 @@ $('#terminal').mousewheel(function(event) {
       // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
 
       var Module = {
-         arguments: ['/repl'],
+         arguments: ['/repl', '-', '--interactive'],
          //TOTAL_MEMORY: 67108864,
          preRun: function() {
             console.log("preRun");
@@ -68,9 +68,14 @@ $('#terminal').mousewheel(function(event) {
             var stderr = null;
             FS.init(stdin, stdout, stderr);
 
-            Module.FS_createDataFile("/", "repl", Module.repl, true, true);
-            console.log("repl added");
-            Module.repl = undefined;
+            Libraries.forEach( function(i) {
+               console.log("i: ", i.name);
+               if (i.path != "/")
+                  FS.createPath("/", i.path, true, true);
+               FS.createDataFile(i.path + "/", i.name, i.data, true, false);
+            });
+            // cleanup?
+            //Libraries = [];
          },
          postRun: function() {
             console.log("postRun");
@@ -117,46 +122,54 @@ $('#terminal').mousewheel(function(event) {
    </script>
 
    <script>
-      // load repl
+var Libraries = [
+      { path: "/", name: "repl", file: "repl" },
+      { path: "/otus", name: "ffi.scm", file: "otus/ffi.scm" },
+      { path: "/owl", name: "math.scm", file: "owl/math.scm" }
+   ];
+var Downloaded = 0;
+
+   Libraries.forEach( function(item) {
       $.ajax({
-         url: "repl",
+         url: item.file,
          type: 'GET',
          beforeSend: function (xhr) {
             xhr.overrideMimeType("text/plain; charset=x-user-defined");
          },
          success: function( data ) {
-            console.log("repl ok")
-            Module.repl = data; // => ['FS_createDataFile']("/", "repl", data, true, true)
+            console.log("ok: ", item.name)
+            item.data = data;
 
-      // load olvm
-      var script = document.createElement('script');
-      script.src = "../../olvm.js";
-      
-      script.addEventListener('load', function(me) {
-         terminal.echo("Loading...")
-      }, false);
-      script.addEventListener('error', function(event) {
-         terminal.echo("Can't find olvm.js. Please, build it first and try again.")
-      }, false);
-      
-      document.body.appendChild(script);
-
+            if (++Downloaded == Libraries.length) {
+               // load olvm
+               var script = document.createElement('script');
+               script.src = "../../olvm.js";
+            
+               script.addEventListener('load', function(me) {
+                  terminal.echo("Loading...")
+               }, false);
+               script.addEventListener('error', function(event) {
+                  terminal.echo("Can't find olvm.js. Please, build it first and try again.")
+               }, false);
+            
+               document.body.appendChild(script);
+            }
          }
       });
-
-      /* for release:
-      (function() {
-        var memoryInitializer = 'olvm.html.mem';
-        if (typeof Module['locateFile'] === 'function') {
-          memoryInitializer = Module['locateFile'](memoryInitializer);
-        } else if (Module['memoryInitializerPrefixURL']) {
-          memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
-        }
-        var xhr = Module['memoryInitializerRequest'] = new XMLHttpRequest();
-        xhr.open('GET', memoryInitializer, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.send(null);
-      })();//*/
+   });
+   /* for release:
+   (function() {
+     var memoryInitializer = 'olvm.html.mem';
+     if (typeof Module['locateFile'] === 'function') {
+       memoryInitializer = Module['locateFile'](memoryInitializer);
+     } else if (Module['memoryInitializerPrefixURL']) {
+       memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
+     }
+     var xhr = Module['memoryInitializerRequest'] = new XMLHttpRequest();
+     xhr.open('GET', memoryInitializer, true);
+     xhr.responseType = 'arraybuffer';
+     xhr.send(null);
+   })();//*/
    </script>
 </body>
 </html>

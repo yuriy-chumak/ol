@@ -59,6 +59,11 @@
                   (sendfile fd "application/octet-stream" url)
                   (close #t))
 
+               ((or (string-eq? url "/otus/ffi.scm")
+                    (string-eq? url "/owl/math.scm"))
+                  (sendfile fd "application/javascript" (string-append "/../../libraries" url))
+                  (close #t))
+
                (else
                   (print "Sending 404 Not Found")
                   (send "HTTP/1.0 404 Not Found\n"
