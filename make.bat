@@ -190,8 +190,11 @@ echo.   *** Making virtual machine on js:
 call C:\emscripten\unzip_temp\emsdk_env.bat
 ::ol tools/to-c.scm >tmp/repl.c
 call emcc src/olvm.c ^
+     -D NAKED_VM=1 -D HAS_DLOPEN=1 ^
      -o olvm.js ^
-     -s ASYNCIFY=1 ^
+     -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 ^
+     -s MAIN_MODULE=1 ^
+     -s EXPORTED_FUNCTIONS="['_main', '_OL_ffi']" ^
      --memory-init-file 0 ^
      -D NAKED_VM=1 -Oz
 GOTO:EOF

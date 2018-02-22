@@ -101,11 +101,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
 #	define SYSCALL_PRCTL 0
 
 #	define HAS_SOCKETS 0
-#	define HAS_DLOPEN  0
 #	define HAS_STRFTIME 0 // why?
-
-// turn off ffi features for web
-#	define OLVM_FFI 0
 #endif
 
 #ifdef __ANDROID__
