@@ -184,16 +184,14 @@
       ;"FreeBSD"
       ;"CYGWIN_NT-5.2-WOW64"
       ;"MINGW32_NT-5.2"
+      ((string-ci=? (ref uname 1) "Emscripten") #false) ; Emscripten
       ;...
       (else
          (runtime-error "Unknown platform")))))
 
-(define $ (dlopen EGL_LIBRARY))
+(define $ (load-dynamic-library EGL_LIBRARY))
 (if (not $)
    (runtime-error "Can't load EGL library"))
-
-(define EGLDisplay type-vptr)
-(define EGLNativeDisplayType type-vptr)
 
 
 ; поддержка расширений :
@@ -215,22 +213,22 @@
 ;
 
 
-(define EGLBoolean type-int+) ; typedef int
-(define EGLint type-int+)     ; typedef int32_t
-(define EGLDisplay type-vptr) ; typedef void *
-(define EGLConfig type-vptr)  ; typedef void *
-(define EGLSurface type-vptr) ; typedef void *
-(define EGLContext type-vptr) ; typedef void *
+(define EGLBoolean fft-int)
+(define EGLint fft-int)
+(define EGLDisplay type-vptr)
+(define EGLConfig type-vptr)
+(define EGLSurface type-vptr)
+(define EGLContext type-vptr)
 
-(define NativeDisplayType type-vptr)
+(define EGLNativeDisplayType type-vptr)
 
-(define EGLint* type-vptr)
+(define EGLint* (fft* EGLint))
 
 
-(define EGL_DEFAULT_DISPLAY (vm:new-raw-object type-port '(0)))
-(define EGL_NO_CONTEXT (vm:new-raw-object type-port '(0)))
-(define EGL_NO_DISPLAY (vm:new-raw-object type-port '(0)))
-(define EGL_NO_SURFACE (vm:new-raw-object type-port '(0)))
+(define EGL_DEFAULT_DISPLAY (vm:new-raw-object type-port '(0))) ;?
+(define EGL_NO_CONTEXT (vm:new-raw-object type-port '(0))) ;?
+(define EGL_NO_DISPLAY (vm:new-raw-object type-port '(0))) ;?
+(define EGL_NO_SURFACE (vm:new-raw-object type-port '(0))) ;?
 
 (define EGL_VERSION_1_0 1)
 (define EGL_VERSION_1_1 1)
@@ -330,12 +328,12 @@
 ; 0x305C-0x3FFFF reserved for future use
 
 ; ** Functions
-(define eglGetError (dlsym $ EGLint "eglGetError"))
+(define eglGetError ($ EGLint "eglGetError"))
 
-(define eglGetDisplay (dlsym $ EGLDisplay "eglGetDisplay" EGLNativeDisplayType))
-(define eglInitialize (dlsym $ EGLBoolean "eglInitialize" EGLDisplay EGLint* EGLint*))
+(define eglGetDisplay ($ EGLDisplay "eglGetDisplay" EGLNativeDisplayType))
+(define eglInitialize ($ EGLBoolean "eglInitialize" EGLDisplay EGLint* EGLint*))
 ;GLAPI EGLBoolean APIENTRY eglTerminate (EGLDisplay dpy);
-(define eglQueryString (dlsym $ type-string "eglQueryString" EGLDisplay EGLint))
+(define eglQueryString ($ type-string "eglQueryString" EGLDisplay EGLint))
 ;GLAPI void (* APIENTRY eglGetProcAddress (const char *procname))();
 
 ;GLAPI EGLBoolean APIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs, EGLint config_size, EGLint *num_config);

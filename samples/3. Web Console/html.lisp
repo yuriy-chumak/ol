@@ -59,9 +59,22 @@
                   (sendfile fd "application/octet-stream" url)
                   (close #t))
 
+               ((or (string-eq? url "/settings.js")
+                    (string-eq? url "/library_gl.js")
+                    (string-eq? url "/library_xlib.js"))
+                  (sendfile fd "application/javascript" (string-append "/static/emscripten" url))
+                  (close #t))
+
                ((or (string-eq? url "/otus/ffi.scm")
-                    (string-eq? url "/owl/math.scm"))
+                    (string-eq? url "/owl/math.scm")
+                    (string-eq? url "/OpenGL/EGL/version-1-1.scm")
+                    (string-eq? url "/OpenGL/ES/version-1-1.scm")
+                    )
                   (sendfile fd "application/javascript" (string-append "/../../libraries" url))
+                  (close #t))
+
+               ((or (string-eq? url "/egl.lisp"))
+                  (sendfile fd "application/javascript" url)
                   (close #t))
 
                (else

@@ -1,7 +1,7 @@
 ; https://www.khronos.org/registry/egl/
 (define-library (OpenGL ES version-1-0)
    (export
-      GL_OES_VERSION_1_0
+      GL_OES_VERSION_1_1
 
       ; GL types
       ; https://www.opengl.org/wiki/OpenGL_Type
@@ -23,9 +23,7 @@
 )
 
    (import
-      (r5rs core) (owl io) (owl string)
-      (otus ffi) (lib platform) (lib x11)
-      (owl interop) (owl list))
+      (r5rs core) (otus ffi))
 
 (begin
    (define GL_OES_VERSION_1_0 1)
@@ -33,23 +31,23 @@
    (define GLvoid   fft-void)  ; void GLvoid
    (define GLvoid*  type-vptr)
 
-   (define GLenum   type-fix+)   ; typedef unsigned int GLenum
-   (define GLboolean  type-fix+) ; typedef unsigned char GLboolean
-   (define GLbitfield type-fix+) ; typedef unsigned int GLbitfield
+   (define GLenum   fft-unsigned-int)
+   (define GLboolean  fft-unsigned-char)
+   (define GLbitfield fft-unsigned-int)
 
-   (define GLbyte   type-fix+)   ; typedef signed char
-   (define GLshort  type-fix+)   ; typedef short
-   (define GLint    type-fix+)   ; typedef int GLint
-   (define GLsizei  type-fix+)   ; typedef int GLsizei
-   (define GLubyte  type-fix+)   ; typedef unsigned char
-   (define GLushort type-fix+)   ; typedef unsigned chort
-   (define GLuint   type-fix+)   ; typedef unsigned int
-   (define GLuint*  type-vptr)
+   (define GLbyte   fft-signed-char)
+   (define GLshort  fft-short)
+   (define GLint    fft-int)
+   (define GLsizei  fft-int)
+   (define GLubyte  fft-unsigned-char)
+   (define GLushort fft-unsigned-short)
+   (define GLuint   fft-unsigned-int)
+   (define GLuint*  (fft* GLuint))
 
-   (define GLfloat  fft-float)   ; typedef float GLfloat
-   (define GLclampf fft-float)   ; typedef float GLclampf
+   (define GLfloat  fft-float)
+   (define GLclampf fft-float)
 
-   (define GLubyte* type-string)
+   (define GLubyte* type-string) ; ?
 
    ; references
    (define GLfloat*  (fft* GLfloat))

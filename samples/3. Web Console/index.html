@@ -10,13 +10,22 @@
    <script src="static/jquery.terminal-0.8.8.min.js"></script>
    <script src="static/jquery.mousewheel.min.js"></script>
 
+   <script src="settings.js"></script>
+   <!--
+   
+   <script src="library.js"></script>
+   <script src="utility.js"></script>-->
+
    <!--[if IE]>
    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
    <![endif]-->
 </head>
 <body style="height: 100%;" id="terminal">
+   <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
    <script>
 var stdInput = unescape(encodeURIComponent("(print \"You see a prompt.\")"));
+
+//EMTSTACKTOP = 0; // TEMP
 
 var terminal;
 $('#terminal').terminal(function(command, terminal) {
@@ -50,11 +59,26 @@ $('#terminal').mousewheel(function(event) {
    <script type='text/javascript'>
       // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
 
+      /*var LibraryManager = {};
+      function mergeInto(obj, other) {
+         for (var i in other) {
+            obj["_" + i] = other[i];
+            // asmLibraryArg["_" + i] = other[i]
+         }
+         var postset = other["$GL__postset"];
+         //if (postset != undefined) eval(postset);
+
+         return obj;
+      }*/
+
       var Module = {
-         arguments: ['/repl', '-', '--interactive'],
-         //TOTAL_MEMORY: 67108864,
+         //arguments: ['/repl', 'egl.lisp', '--interactive'],
+         arguments: ['/repl', 'egl.lisp'],
+         //dynamicLibraries: ['library_xlib.js'],
          preRun: function() {
             console.log("preRun");
+            //LibraryManager.library = Module;
+
             function stdin() {
                if (stdInput.length == 0) {
                   return undefined;
@@ -76,6 +100,11 @@ $('#terminal').mousewheel(function(event) {
             });
             // cleanup?
             //Libraries = [];
+
+
+            //loadDynamicLibrary("library_gl.js");
+            //loadDynamicLibrary("library_xlib.js");
+            //var GLctx; GL.init()
          },
          postRun: function() {
             console.log("postRun");
@@ -92,6 +121,16 @@ $('#terminal').mousewheel(function(event) {
             terminal.error(text);
             //alert(text);
          },
+         canvas: (function() {
+            var canvas = document.getElementById('canvas');
+
+            // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+            // application robust, you may want to override this behavior before shipping!
+            // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+            canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+
+            return canvas;
+         })(),
 
          setStatus: function(text) {
             console.log("status: ", text);
@@ -125,7 +164,10 @@ $('#terminal').mousewheel(function(event) {
 var Libraries = [
       { path: "/", name: "repl", file: "repl" },
       { path: "/otus", name: "ffi.scm", file: "otus/ffi.scm" },
-      { path: "/owl", name: "math.scm", file: "owl/math.scm" }
+      { path: "/owl", name: "math.scm", file: "owl/math.scm" },
+      { path: "/", name: "egl.lisp", file: "egl.lisp" },
+      { path: "/OpenGL/EGL", name: "version-1-1.scm", file: "OpenGL/EGL/version-1-1.scm" },
+      { path: "/OpenGL/ES", name: "version-1-1.scm", file: "OpenGL/ES/version-1-1.scm" }
    ];
 var Downloaded = 0;
 

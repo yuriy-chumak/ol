@@ -445,12 +445,221 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 		                 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
 		                            args[ 4], args[ 5], args[ 6], args[ 7], \
 		                            args[ 8], args[ 9], args[10], args[11]);\
-		default: STDERR("Unsupported parameters count for ffi function: %d", i);\
+		default: fprintf(stderr, "Unsupported parameters count for ffi function: %d", i);\
 			return 0;\
 		};
 
+typedef long long ret_t;
+static
+ret_t any_call(word args[], int i, void* function, int type) {
+	//printf("any_call(%p, %d, %p, %d)\n", args, i, function, type);
+	//printf("sizeof(int) = %d\n", sizeof(int));
+	//printf("sizeof(long) = %d\n", sizeof(long));
+	//printf("sizeof(long long) = %d\n", sizeof(long long));
+	CALL();
+	return 0;
+}
 #endif
 
+
+// lisp->c convertors
+static
+word from_uint(word arg) {
+	assert (is_reference(arg));
+	// так как в стек мы все равно большое число сложить не сможем,
+	// то возьмем только то, что влазит (первые два члена)
+	return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
+}
+
+#if UINTPTR_MAX != 0xffffffffffffffff
+static
+long long from_ulong(word arg) {
+	assert (is_reference(arg));
+	long long v = car(arg) >> 8;
+	int shift = FBITS;
+	while (cdr(arg) != INULL) {
+		v |= ((long long)(car(cdr(arg)) >> 8) << shift);
+		shift += FBITS;
+		arg = cdr(arg);
+	}
+	return v;
+};
+#endif
+
+static
+float from_int_to_float(word* arg) {
+	// читаем длинное число в float формат
+	assert (is_value(car(arg)));
+	float f = (unsigned long)uvtoi(car(arg));
+	float mul = HIGHBIT;
+	while (is_reference(cdr(arg))) {
+		arg = (word*)cdr(arg);
+		f += (unsigned long)uvtoi(cdr(arg)) * mul;
+		mul *= HIGHBIT;
+	}
+	assert (cdr(arg) == INULL);
+
+	return f;
+}
+
+static
+float from_rational(word arg) {
+	word* pa = (word*)car(arg);
+	word* pb = (word*)cdr(arg);
+
+	float a = 0;
+	if (is_value(pa))
+		a = svtoi(pa);
+	else {
+		switch (reftype(pa)) {
+		case TINTP:
+			a = +from_int_to_float(pa);
+			break;
+		case TINTN:
+			a = -from_int_to_float(pa);
+			break;
+		}
+	}
+
+	float b = 1;
+	if (is_value(pb))
+		b = svtoi(pb);
+	else {
+		switch (reftype(pb)) {
+		case TINTP:
+			b = +from_int_to_float(pb);
+			break;
+		case TINTN:
+			b = -from_int_to_float(pb);
+			break;
+		}
+	}
+
+	return (a / b);
+}
+
+static
+int to_int(word arg) {
+	if (is_value(arg))
+		return svtoi(arg);
+
+	switch (reftype(arg)) {
+	case TINTP:
+		return (int)+from_uint(arg);
+	case TINTN:
+		return (int)-from_uint(arg);
+	case TRATIONAL:
+		return (int) from_rational(arg);
+	case TCOMPLEX:
+		return to_int(car(arg)); // return real part of value
+	default:
+		STDERR("can't get int from %d", reftype(arg));
+	}
+
+	return 0;
+}
+
+/*
+static
+long to_long(word arg) {
+	if (is_value(arg))
+		return svtoi(arg);
+
+	switch (reftype(arg)) {
+	case TINTP:
+		return (long)+from_int(arg);
+	case TINTN:
+		return (long)-from_int(arg);
+	case TRATIONAL:
+		return (long) from_rational(arg);
+	case TCOMPLEX:
+		return to_long(car(arg)); // return real part of value
+	default:
+		STDERR("can't get int from %d", reftype(arg));
+	}
+
+	return 0;
+}*/
+
+// todo: заменить на вызов (float)to_double(arg)
+static
+float to_float(word arg) {
+	if (is_value(arg))
+		return svtoi(arg);
+
+	switch (reftype(arg)) {
+	case TINTP:
+	case TINTN:
+	case TRATIONAL:
+		return (float) ol2d(arg);
+	case TCOMPLEX:
+		return to_float(car(arg)); // return real part of value
+	case TINEXACT:
+		return *(double*)&car(arg);
+	}
+	return 0;
+}
+
+static
+double to_double(word arg) {
+	if (is_value(arg))
+		return svtoi (arg);
+
+	switch (reftype(arg)) {
+	case TINTP:
+		return (double)+from_uint(arg);
+		break;
+	case TINTN:
+		return (double)-from_uint(arg);
+		break;
+	case TRATIONAL:
+		return (double) from_rational(arg);
+		break;
+	case TCOMPLEX:
+		return to_double(car(arg)); // return real part of value
+	case TINEXACT:
+		return *(double*)&car(arg);
+	}
+	return 0;
+}
+
+
+// stupid clang does not support nested function... so let's declare it here
+/*
+#if UINTPTR_MAX == 0xffffffffffffffff
+#else
+static
+word* new_npair(int type, long long value) {
+	long long a = value >> FBITS;
+	word* b = (a > FMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
+	word* p = new_pair(type, F(value & FMAX), b);
+	return p;
+}
+static
+word* ll2ol(long long val) {
+	long long x5 = val;
+	long long x6 = x5 < 0 ? -x5 : x5;
+	int type = x5 < 0 ? TINTN : TINTP;
+	return (x6 > FMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
+};
+#endif
+
+#if UINTPTR_MAX == 0xffffffffffffffff
+#else
+static
+word* new_unpair(int type, unsigned long long value) {
+	unsigned long long a = value >> FBITS;
+	word* b = (a > FMAX) ? new_unpair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
+	word* p = new_pair(type, F(value & FMAX), b);
+	return p;
+}
+static
+word* ul2ol(long long val) {
+	unsigned long long x5 = val;
+	return (x5 > FMAX) ? new_unpair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
+};
+#endif
+*/
 
 // Главная функция механизма ffi:
 PUBLIC
@@ -460,158 +669,6 @@ word* OL_ffi(OL* self, word* arguments)
 	heap_t* heap = &self->heap;
 	word*
 	fp = heap->fp;
-
-	// lisp->c convertors
-	word from_uint(word arg) {
-		assert (is_reference(arg));
-		// так как в стек мы все равно большое число сложить не сможем,
-		// то возьмем только то, что влазит (первые два члена)
-		return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
-	}
-#if UINTPTR_MAX != 0xffffffffffffffff
-	long long from_ulong(word arg) {
-		assert (is_reference(arg));
-		long long v = car(arg) >> 8;
-		int shift = FBITS;
-		while (cdr(arg) != INULL) {
-			v |= ((long long)(car(cdr(arg)) >> 8) << shift);
-			shift += FBITS;
-			arg = cdr(arg);
-		}
-		return v;
-	};
-#endif
-
-
-	float from_int_to_float(word* arg) {
-		// читаем длинное число в float формат
-		assert (is_value(car(arg)));
-		float f = (unsigned long)uvtoi(car(arg));
-		float mul = HIGHBIT;
-		while (is_reference(cdr(arg))) {
-			arg = (word*)cdr(arg);
-			f += (unsigned long)uvtoi(cdr(arg)) * mul;
-			mul *= HIGHBIT;
-		}
-		assert (cdr(arg) == INULL);
-
-		return f;
-	}
-	float from_rational(word arg) {
-		word* pa = (word*)car(arg);
-		word* pb = (word*)cdr(arg);
-
-		float a = 0;
-		if (is_value(pa))
-			a = svtoi(pa);
-		else {
-			switch (reftype(pa)) {
-			case TINTP:
-				a = +from_int_to_float(pa);
-				break;
-			case TINTN:
-				a = -from_int_to_float(pa);
-				break;
-			}
-		}
-
-		float b = 1;
-		if (is_value(pb))
-			b = svtoi(pb);
-		else {
-			switch (reftype(pb)) {
-			case TINTP:
-				b = +from_int_to_float(pb);
-				break;
-			case TINTN:
-				b = -from_int_to_float(pb);
-				break;
-			}
-		}
-
-		return (a / b);
-	}
-
-	int to_int(word arg) {
-		if (is_value(arg))
-			return svtoi(arg);
-
-		switch (reftype(arg)) {
-		case TINTP:
-			return (int)+from_uint(arg);
-		case TINTN:
-			return (int)-from_uint(arg);
-		case TRATIONAL:
-			return (int) from_rational(arg);
-		case TCOMPLEX:
-			return to_int(car(arg)); // return real part of value
-		default:
-			STDERR("can't get int from %d", reftype(arg));
-		}
-
-		return 0;
-	}
-
-	/*long to_long(word arg) {
-		if (is_value(arg))
-			return svtoi(arg);
-
-		switch (reftype(arg)) {
-		case TINTP:
-			return (long)+from_int(arg);
-		case TINTN:
-			return (long)-from_int(arg);
-		case TRATIONAL:
-			return (long) from_rational(arg);
-		case TCOMPLEX:
-			return to_long(car(arg)); // return real part of value
-		default:
-			STDERR("can't get int from %d", reftype(arg));
-		}
-
-		return 0;
-	}*/
-
-	// todo: заменить на вызов (float)to_double(arg)
-	float to_float(word arg) {
-		if (is_value(arg))
-			return svtoi(arg);
-
-		switch (reftype(arg)) {
-		case TINTP:
-		case TINTN:
-		case TRATIONAL:
-			return (float) ol2d(arg);
-		case TCOMPLEX:
-			return to_float(car(arg)); // return real part of value
-		case TINEXACT:
-			return *(double*)&car(arg);
-		}
-		return 0;
-	}
-
-	double to_double(word arg) {
-		if (is_value(arg))
-			return svtoi (arg);
-
-		switch (reftype(arg)) {
-		case TINTP:
-			return (double)+from_uint(arg);
-			break;
-		case TINTN:
-			return (double)-from_uint(arg);
-			break;
-		case TRATIONAL:
-			return (double) from_rational(arg);
-			break;
-		case TCOMPLEX:
-			return to_double(car(arg)); // return real part of value
-		case TINEXACT:
-			return *(double*)&car(arg);
-		}
-		return 0;
-	}
-
 
 	// a - function address
 	// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
@@ -1099,11 +1156,7 @@ word* OL_ffi(OL* self, word* arguments)
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}*/
-	typedef long long ret_t;
-	inline ret_t call(word args[], int i, void* function, int type) {
-		CALL();
-	}
-	got = call(args, i, function, returntype & 0x3F);
+	got = any_call(args, i, function, returntype & 0x3F);
 #endif
 
 	// где гарантия, что C и B не поменялись?
@@ -1271,27 +1324,14 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT32:
 			result = (word*) itosn (*(int*)&got);   // TODO: change to __INT32_TYPE__
 			break;
-		case TINT64: {
+/*		case TINT64: {
 #if UINTPTR_MAX == 0xffffffffffffffff
 			result = (word*) itosn (*(long long*)&got); // TODO: change to __INT64_TYPE__
 #else
-			word* new_npair(int type, long long value) {
-				long long a = value >> FBITS;
-				word* b = (a > FMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
-				word* p = new_pair(type, F(value & FMAX), b);
-				return p;
-			}
-			word* ll2ol(long long val) {
-				long long x5 = val;
-				long long x6 = x5 < 0 ? -x5 : x5;
-				int type = x5 < 0 ? TINTN : TINTP;
-				return (x6 > FMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
-			};
-
 			result = (word*) ll2ol (*(long long*)&got);
 #endif
 			break;
-		}
+		}*/
 
 		case TUINT8:
 			result = (word*) itoun (*(unsigned char*)&got); // TODO: change to __UINT8_TYPE__
@@ -1302,25 +1342,14 @@ word* OL_ffi(OL* self, word* arguments)
 		case TUINT32:
 			result = (word*) itoun (*(unsigned int*)&got);  // TODO: change to __UINT32_TYPE__
 			break;
-		case TUINT64: {
+/*		case TUINT64: {
 #if UINTPTR_MAX == 0xffffffffffffffff
 			result = (word*) itoun (*(unsigned long long*)&got); // TODO: change to __UINT32_TYPE__
 #else
-			word* new_npair(int type, unsigned long long value) {
-				unsigned long long a = value >> FBITS;
-				word* b = (a > FMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
-				word* p = new_pair(type, F(value & FMAX), b);
-				return p;
-			}
-			word* ul2ol(long long val) {
-				unsigned long long x5 = val;
-				return (x5 > FMAX) ? new_npair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
-			};
-
 			result = (word*) ul2ol (*(unsigned long long*)&got);
 #endif
 			break;
-		}
+		}*/
 
 
 		case TPORT:
