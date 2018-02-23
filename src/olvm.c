@@ -1933,6 +1933,39 @@ double ol2d(word arg) {
 	}
 }
 
+float ol2f_convert(word p) {
+	float v = 0;
+	float m = 1;
+	while (p != INULL) {
+		v += uvtoi(car(p)) * m;
+		m *= HIGHBIT;
+		p = cdr(p);
+	}
+	return v;
+}
+float ol2f(word arg) {
+	if (is_value(arg)) {
+		assert (valuetype(arg) == TFIXP || valuetype(arg) == TFIXN);
+		return svtoi(arg);
+	}
+
+	switch (reftype(arg)) {
+	case TINTP:
+		return +ol2f_convert(arg);
+	case TINTN:
+		return -ol2f_convert(arg);
+	case TRATIONAL:
+		return ol2f(car(arg)) / ol2f(cdr(arg));
+	case TCOMPLEX:
+		return ol2f(car(arg));
+	case TINEXACT:
+		return *(float*)&car(arg);
+	default:
+		assert(0);
+		return 0.;
+	}
+}
+
 // TODO: add memory checking
 word d2ol(struct ol_t* ol, double v) {
 	word* fp = ol->heap.fp;

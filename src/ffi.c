@@ -377,6 +377,83 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"popl  %edx",
 	"jmp   9b");
 
+#elif __EMSCRIPTEN__
+
+typedef long long ret_t;
+static
+ret_t asmjs_call(word args[], int fmask, void* function, int type) {
+//	printf("asmjs_call(%p, %d, %p, %d)\n", args, fmask, function, type);
+
+	switch (fmask) {
+	case 0b1:
+		return (ret_t)(word)((word (*)  ())
+					 function) ();
+
+	case 0b10:
+		return (ret_t)(word)((word (*)  (word))
+					 function) (args[ 0]);
+
+	case 0b100:
+		return (ret_t)(word)((word (*)  (word, word))
+	                 function) (args[ 0], args[ 1]);
+	case 0b1000:
+		return (ret_t)(word)((word (*)  (word, word, word))
+	                 function) (args[ 0], args[ 1], args[ 2]);
+	case 0b10000:
+		return (ret_t)(word)((word (*)  (word, word, word, word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3]);
+	case 0b11111:
+//		printf("%f/%f/%f/%f\n", *(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
+		return (ret_t)(word)((word (*)  (float, float, float, float))
+	                 function) (*(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
+	case 0b100000:
+		return (ret_t)(word)((word (*)  (word, word, word, word, word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+	                            args[ 4]);
+	case 0b1000000:
+		return (ret_t)(word)((word (*)  (word, word, word, word, word, word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+	                            args[ 4], args[ 5]);
+	case 0b10000000:
+		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
+	                                  word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+	                            args[ 4], args[ 5], args[ 6]);
+	case 0b100000000:
+		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
+	                                  word, word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+	                            args[ 4], args[ 5], args[ 6], args[ 7]);
+	case 0b1000000000:
+		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
+	                                  word, word, word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+	                            args[ 4], args[ 5], args[ 6], args[ 7],
+	                            args[ 8]);
+	// 10:
+	case 0b10000000000:
+		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
+	                                  word, word, word, word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+	                            args[ 4], args[ 5], args[ 6], args[ 7],
+	                            args[ 8], args[ 9]);
+	case 0b100000000000:
+		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
+	                                  word, word, word, word, word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+	                            args[ 4], args[ 5], args[ 6], args[ 7],
+	                            args[ 8], args[ 9], args[10]);
+	case 0b1000000000000:
+		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
+	                                  word, word, word, word, word, word))
+	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+	                            args[ 4], args[ 5], args[ 6], args[ 7],
+	                            args[ 8], args[ 9], args[10], args[11]);
+	default: fprintf(stderr, "Unsupported parameters count for ffi function: %ud", fmask);
+		return 0;
+	};
+}
+
 #else // other platforms
 
 // http://byteworm.com/2010/10/12/container/ (lambdas in c)
@@ -449,16 +526,6 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 			return 0;\
 		};
 
-typedef long long ret_t;
-static
-ret_t any_call(word args[], int i, void* function, int type) {
-	//printf("any_call(%p, %d, %p, %d)\n", args, i, function, type);
-	//printf("sizeof(int) = %d\n", sizeof(int));
-	//printf("sizeof(long) = %d\n", sizeof(long));
-	//printf("sizeof(long long) = %d\n", sizeof(long long));
-	CALL();
-	return 0;
-}
 #endif
 
 
@@ -591,11 +658,11 @@ float to_float(word arg) {
 	case TINTP:
 	case TINTN:
 	case TRATIONAL:
-		return (float) ol2d(arg);
+		return (float) ol2f(arg);
 	case TCOMPLEX:
 		return to_float(car(arg)); // return real part of value
 	case TINEXACT:
-		return *(double*)&car(arg);
+		return *(float*)&car(arg);
 	}
 	return 0;
 }
@@ -689,6 +756,14 @@ word* OL_ffi(OL* self, word* arguments)
 
 	word args[32]; // 16 double аргументов максимум
 	int i = 0;     // актуальное количество аргументов
+
+	static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
+
+
+#ifdef __EMSCRIPTEN__
+	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
+#endif
+
 #if __amd64__ && __linux__ // LP64
 	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
 	int d = 0;     // количество аргументов для float (amd64)
@@ -859,7 +934,10 @@ word* OL_ffi(OL* self, word* arguments)
 				*(float*)&ad[d++] = (float)to_double(arg);
 				floatsmask|=1; --i;
 			#else
-				*(float*)&args[i] = (float)to_double(arg);
+				*(float*)&args[i] = to_float(arg);
+			# ifdef __EMSCRIPTEN__
+				fmask |= 1 << i;
+			# endif
 			#endif
 			break;
 		case TFLOAT + FFT_REF:
@@ -885,6 +963,7 @@ word* OL_ffi(OL* self, word* arguments)
 				floatsmask++; --i;
 			#else
 				*(double*)&args[i] = to_double(arg);
+				// no double for any call yet supported
 			#endif
 			#if UINT64_MAX > SIZE_MAX // sizeof(double) > sizeof(float) //__LP64__
 				++i; 	// for 32-bits: double fills two words
@@ -1073,6 +1152,9 @@ word* OL_ffi(OL* self, word* arguments)
 		t = (word*)cdr(t); // (cdr t)
 		i++;
 	}
+#ifdef __EMSCRIPTEN__
+	fmask |= 1 << i;
+#endif
 	assert ((word)t == INULL); // количество аргументов совпало!
 
 	long long got = 0; // результат вызова функции (64 бита для возможного double)
@@ -1131,7 +1213,8 @@ word* OL_ffi(OL* self, word* arguments)
 		CALL();
 	}
 	got = call(args, i, function, returntype & 0x3F);
-
+#elif __EMSCRIPTEN__
+	got = asmjs_call(args, fmask, function, returntype & 0x3F);
 #else // ALL other
 /*	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
 		CALL(__cdecl);
@@ -1156,7 +1239,6 @@ word* OL_ffi(OL* self, word* arguments)
 		STDERR("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}*/
-	got = any_call(args, i, function, returntype & 0x3F);
 #endif
 
 	// где гарантия, что C и B не поменялись?
