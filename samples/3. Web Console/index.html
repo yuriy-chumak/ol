@@ -10,7 +10,7 @@
    <script src="static/jquery.terminal-0.8.8.min.js"></script>
    <script src="static/jquery.mousewheel.min.js"></script>
 
-   <script src="settings.js"></script>
+   <!--<script src="settings.js"></script>-->
    <!--
    
    <script src="library.js"></script>
@@ -72,8 +72,8 @@ $('#terminal').mousewheel(function(event) {
       }*/
 
       var Module = {
-         //arguments: ['/repl', 'egl.lisp', '--interactive'],
-         arguments: ['/repl', 'egl.lisp'],
+         arguments: ['/repl', 'egl.lisp', '--interactive'],
+         //arguments: ['/repl', '-', '--interactive'],
          //dynamicLibraries: ['library_xlib.js'],
          preRun: function() {
             console.log("preRun");
@@ -165,9 +165,9 @@ var Libraries = [
       { path: "/", name: "repl", file: "repl" },
       { path: "/otus", name: "ffi.scm", file: "otus/ffi.scm" },
       { path: "/owl", name: "math.scm", file: "owl/math.scm" },
-      { path: "/", name: "egl.lisp", file: "egl.lisp" },
-      { path: "/OpenGL/EGL", name: "version-1-1.scm", file: "OpenGL/EGL/version-1-1.scm" },
-      { path: "/OpenGL/ES", name: "version-1-1.scm", file: "OpenGL/ES/version-1-1.scm" }
+      { path: "/", name: "egl.lisp", file: "egl.lisp" }
+//      { path: "/OpenGL/EGL", name: "version-1-1.scm", file: "OpenGL/EGL/version-1-1.scm" }
+//      { path: "/OpenGL/ES", name: "version-1-1.scm", file: "OpenGL/ES/version-1-1.scm" }
    ];
 var Downloaded = 0;
 

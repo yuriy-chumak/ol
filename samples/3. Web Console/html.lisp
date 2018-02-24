@@ -43,7 +43,7 @@
                   (close #t))
 
                ((string-eq? url "/olvm.js")
-                  (sendfile fd "application/javascript" "/olvm.js")
+                  (sendfile fd "application/javascript" "/../../olvm.js")
                   (close #t))
 
                ; static content
@@ -56,7 +56,7 @@
                   (sendfile fd "text/css" url) ; charset=UTF-8
                   (close #t))
                ((string-eq? url "/repl")
-                  (sendfile fd "application/octet-stream" url)
+                  (sendfile fd "application/octet-stream" (string-append "/../.." url))
                   (close #t))
 
                ((or (string-eq? url "/settings.js")

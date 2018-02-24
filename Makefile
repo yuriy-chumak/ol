@@ -285,12 +285,14 @@ vm64: src/olvm.c src/olvm.h
 	@echo Ok.
 
 
-olvm.js: src/olvm.c src/olvm.h src/slim.c
-	emcc src/olvm.c src/slim.c -o olvm.js -s ASYNCIFY=1 -Oz \
-	   -s NO_EXIT_RUNTIME=1 \
-	   -fno-exceptions -fno-rtti \
-	   --memory-init-file 0 --llvm-opts "['-O3']" -v
-
+olvm.js: src/olvm.c src/olvm.h src/ffi.c
+	emcc src/olvm.c -Oz \
+	   -D NAKED_VM=1 -D HAS_DLOPEN=1 \
+	   -o olvm.js \
+	   -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 \
+	   -s MAIN_MODULE=1 \
+	   -s EXPORTED_FUNCTIONS="['_main', '_OL_ffi']" \
+	   --memory-init-file 0
 
 talkback: src/olvm.c src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DEMBEDDED_VM -DOLVM_FFI=1 -o $@ -I src \
