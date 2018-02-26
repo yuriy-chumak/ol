@@ -4,7 +4,7 @@
  * Version 1.2
  *
  * Copyright(c) 2014 Aki Helin
- * Copyright(c) 2014 - 2017 Yuriy Chumak
+ * Copyright(c) 2014 - 2018 Yuriy Chumak
  *
  * -------------------------------------
  * This program is free software;  you can redistribute it and/or
@@ -27,7 +27,7 @@
  *   https://github.com/aoh/owl-lisp/
  *   https://code.google.com/p/owl-lisp/
  *
- * Related:
+ * Related links:
  *   http://people.csail.mit.edu/jaffer/Scheme
  *   http://srfi.schemers.org/
  *   http://groups.csail.mit.edu/mac/projects/scheme/
@@ -42,7 +42,7 @@
 #define __OLVM_NAME__ "OL"
 #define __OLVM_VERSION__ "1.2"
 #ifndef lint
-__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2017 Yuriy Chumak";
+__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #endif//lint
 
 
