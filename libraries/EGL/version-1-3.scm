@@ -2,17 +2,11 @@
 ; https://www.khronos.org/registry/egl/
 (define-library (lib EGL version-1.0)
    (export
-      EGL_LIBRARY    ; internal variable
-
       ; EGL Types
-      EGLBoolean     ; typedef unsigned int
-      EGLint         ; typedef int32_t
       EGLDisplay     ; typedef void*
       EGLConfig      ; typedef void*
       EGLSurface     ; typedef void*
       EGLContext     ; typedef void*
-
-      EGLint*
 
       ; EGL and native handle values
       EGLNativeDisplayType
@@ -123,18 +117,18 @@
       ; ** Functions
       ;GLAPI EGLint APIENTRY eglGetError (void);
 
-      eglGetDisplay ; EGLDisplay (EGLNativeDisplayType display_id)
+      eglGetDisplay          ;EGLDisplay (const char *display_id)
       ;GLAPI EGLDisplay APIENTRY eglGetDisplay (NativeDisplayType display);
-      eglInitialize ; EGLBoolean (EGLDisplay dpy, EGLint *major, EGLint *minor)
+      eglInitialize          ;EGLBoolean (EGLDisplay dpy, EGLint *major, EGLint *minor)
       ;GLAPI EGLBoolean APIENTRY eglTerminate (EGLDisplay dpy);
-      eglQueryString ; const char * eglQueryString (EGLDisplay dpy, EGLint name)
+      eglQueryString         ;const char * eglQueryString (EGLDisplay dpy, EGLint name)
       ;GLAPI void (* APIENTRY eglGetProcAddress (const char *procname))();
 
-      ;GLAPI EGLBoolean APIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs, EGLint config_size, EGLint *num_config);
-      ;GLAPI EGLBoolean APIENTRY eglChooseConfig (EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config);
+      eglGetConfigs          ;EGLBoolean  (EGLDisplay dpy, EGLConfig *configs, EGLint config_size, EGLint *num_config)
+      eglChooseConfig        ;EGLBoolean (EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config)
       ;GLAPI EGLBoolean APIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value);
 
-      ;GLAPI EGLSurface APIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config, NativeWindowType window, const EGLint *attrib_list);
+      eglCreateWindowSurface ;EGLSurface (EGLDisplay dpy, EGLConfig config, NativeWindowType window, const EGLint *attrib_list)
       ;GLAPI EGLSurface APIENTRY eglCreatePixmapSurface (EGLDisplay dpy, EGLConfig config, NativePixmapType pixmap, const EGLint *attrib_list);
       ;GLAPI EGLSurface APIENTRY eglCreatePbufferSurface (EGLDisplay dpy, EGLConfig config, const EGLint *attrib_list);
       ;GLAPI EGLBoolean APIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface);
@@ -148,9 +142,9 @@
       ;/* EGL 1.1 swap control API */
       ;GLAPI EGLBoolean APIENTRY eglSwapInterval(EGLDisplay dpy, EGLint interval);
 
-      ;GLAPI EGLContext APIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config, EGLContext share_list, const EGLint *attrib_list);
+      eglCreateContext       ;EGLContext (EGLDisplay dpy, EGLConfig config, EGLContext share_list, const EGLint *attrib_list)
       ;GLAPI EGLBoolean APIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx);
-      ;GLAPI EGLBoolean APIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx);
+      eglMakeCurrent         ;EGLBoolean (EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx)
       ;GLAPI EGLContext APIENTRY eglGetCurrentContext (void);
       ;GLAPI EGLSurface APIENTRY eglGetCurrentSurface (EGLint readdraw);
       ;GLAPI EGLDisplay APIENTRY eglGetCurrentDisplay (void);
@@ -158,7 +152,7 @@
 
       ;GLAPI EGLBoolean APIENTRY eglWaitGL (void);
       ;GLAPI EGLBoolean APIENTRY eglWaitNative (EGLint engine);
-      ;GLAPI EGLBoolean APIENTRY eglSwapBuffers (EGLDisplay dpy, EGLSurface draw);
+      eglSwapBuffers         ;EGLBoolean (EGLDisplay dpy, EGLSurface draw)
       ;GLAPI EGLBoolean APIENTRY eglCopyBuffers (EGLDisplay dpy, EGLSurface surface, NativePixmapType target);
 
 )
@@ -171,24 +165,16 @@
 (begin
 
 (define uname (syscall 63 #f #f #f))
-(define EGL_LIBRARY
-   (cond
-      ;"Windows"
-      ((string-ci=? (ref uname 1) "Linux")    "libEGL.so") ; GLESv2 for v2
-      ;"HP-UX"
-      ;"SunOS"
-      ;"Darwin"
-      ;"FreeBSD"
-      ;"CYGWIN_NT-5.2-WOW64"
-      ;"MINGW32_NT-5.2"
-      ((string-ci=? (ref uname 1) "Emscripten") #f) ; self for Emscripten
-      ;...
-      (else
-         (runtime-error "Unknown platform"))))
-
-(define $ (load-dynamic-library EGL_LIBRARY))
-(if (not $)
-   (runtime-error "Can't load EGL library"))
+(define $ (or
+   (load-dynamic-library
+      (cond
+         ; tbd: "Windows"
+         ((string-ci=? (ref uname 1) "windows")  "opengl32.dll")
+         ((string-ci=? (ref uname 1) "linux")    "libEGL.so") ; GLESv2 for v2
+         ((string-ci=? (ref uname 1) "emscripten") #f) ; self for Emscripten
+         (else
+            (runtime-error "Unknown platform" uname))))
+   (runtime-error "Can't load EGL library")))
 
 
 ; поддержка расширений :
@@ -210,25 +196,20 @@
 ;
 
 
-(define EGLBoolean fft-int)
 (define EGLint fft-int)
-(define EGLDisplay type-vptr)
-(define EGLConfig type-vptr)
-(define EGLSurface type-vptr)
-(define EGLContext type-vptr)
+(define EGLBoolean fft-unsigned-int)
+(define EGLenum fft-unsigned-int)
 
-(define EGLNativeDisplayType type-vptr)
-
-(define EGLint* (fft* EGLint))
-
-
-(define EGL_DEFAULT_DISPLAY (vm:new-raw-object type-port '(0))) ;?
-(define EGL_NO_CONTEXT (vm:new-raw-object type-port '(0))) ;?
-(define EGL_NO_DISPLAY (vm:new-raw-object type-port '(0))) ;?
-(define EGL_NO_SURFACE (vm:new-raw-object type-port '(0))) ;?
+(define EGLConfig fft-unsigned-int)  ;type-vptr
+(define EGLContext fft-unsigned-int) ;type-vptr
+(define EGLDisplay fft-unsigned-int) ;type-vptr
+(define EGLSurface fft-unsigned-int) ;type-vptr
+(define EGLClientBuffer type-vptr)
 
 (define EGL_VERSION_1_0 1)
 (define EGL_VERSION_1_1 1)
+(define EGL_VERSION_1_2 1)
+(define EGL_VERSION_1_3 1)
 
 (define EGL_FALSE 0)
 (define EGL_TRUE 1)
@@ -324,20 +305,36 @@
 
 ; 0x305C-0x3FFFF reserved for future use
 
+
+(define EGLNativeDisplayType type-vptr)
+
+(define EGLint* (fft* EGLint))
+(define EGLint& (fft& EGLint))
+
+
+(define EGL_DEFAULT_DISPLAY (vm:new-raw-object type-port '(0))) ;?
+(define EGL_NO_CONTEXT (vm:new-raw-object type-port '(0))) ;?
+(define EGL_NO_DISPLAY (vm:new-raw-object type-port '(0))) ;?
+(define EGL_NO_SURFACE (vm:new-raw-object type-port '(0))) ;?
+
+
+(define NativeWindowType fft-unsigned-int)
+
+
 ; ** Functions
 (define eglGetError ($ EGLint "eglGetError"))
 
-(define eglGetDisplay ($ EGLDisplay "eglGetDisplay" EGLNativeDisplayType))
-(define eglInitialize ($ EGLBoolean "eglInitialize" EGLDisplay EGLint* EGLint*))
+(define eglGetDisplay ($ EGLDisplay "eglGetDisplay" type-string))
+(define eglInitialize ($ EGLBoolean "eglInitialize" EGLDisplay EGLint& EGLint&))
 ;GLAPI EGLBoolean APIENTRY eglTerminate (EGLDisplay dpy);
 (define eglQueryString ($ type-string "eglQueryString" EGLDisplay EGLint))
 ;GLAPI void (* APIENTRY eglGetProcAddress (const char *procname))();
 
-;GLAPI EGLBoolean APIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs, EGLint config_size, EGLint *num_config);
-;GLAPI EGLBoolean APIENTRY eglChooseConfig (EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config);
+(define eglGetConfigs ($ EGLBoolean "eglGetConfigs" EGLDisplay type-string EGLint EGLint&)) ;temporary EGLConfig* changed to type-string
+(define eglChooseConfig ($ EGLBoolean "eglChooseConfig" EGLDisplay EGLint* type-string EGLint EGLint&)) ;temporary EGLConfig* changed to type-string
 ;GLAPI EGLBoolean APIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value);
 
-;GLAPI EGLSurface APIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config, NativeWindowType window, const EGLint *attrib_list);
+(define eglCreateWindowSurface ($ EGLSurface "eglCreateWindowSurface" EGLDisplay EGLConfig NativeWindowType EGLint*))
 ;GLAPI EGLSurface APIENTRY eglCreatePixmapSurface (EGLDisplay dpy, EGLConfig config, NativePixmapType pixmap, const EGLint *attrib_list);
 ;GLAPI EGLSurface APIENTRY eglCreatePbufferSurface (EGLDisplay dpy, EGLConfig config, const EGLint *attrib_list);
 ;GLAPI EGLBoolean APIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface);
@@ -351,9 +348,9 @@
 ;/* EGL 1.1 swap control API */
 ;GLAPI EGLBoolean APIENTRY eglSwapInterval(EGLDisplay dpy, EGLint interval);
 
-;GLAPI EGLContext APIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config, EGLContext share_list, const EGLint *attrib_list);
+(define eglCreateContext ($ EGLContext "eglCreateContext" EGLDisplay NativeWindowType EGLContext EGLint*))
 ;GLAPI EGLBoolean APIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx);
-;GLAPI EGLBoolean APIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx);
+(define eglMakeCurrent   ($ EGLBoolean "eglMakeCurrent" EGLDisplay EGLSurface EGLSurface EGLContext))
 ;GLAPI EGLContext APIENTRY eglGetCurrentContext (void);
 ;GLAPI EGLSurface APIENTRY eglGetCurrentSurface (EGLint readdraw);
 ;GLAPI EGLDisplay APIENTRY eglGetCurrentDisplay (void);
@@ -361,7 +358,7 @@
 
 ;GLAPI EGLBoolean APIENTRY eglWaitGL (void);
 ;GLAPI EGLBoolean APIENTRY eglWaitNative (EGLint engine);
-;GLAPI EGLBoolean APIENTRY eglSwapBuffers (EGLDisplay dpy, EGLSurface draw);
+(define eglSwapBuffers   ($ EGLBoolean "eglSwapBuffers" EGLDisplay EGLSurface))
 ;GLAPI EGLBoolean APIENTRY eglCopyBuffers (EGLDisplay dpy, EGLSurface surface, NativePixmapType target);
 
 ))
