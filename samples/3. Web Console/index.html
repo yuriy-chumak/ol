@@ -23,7 +23,7 @@
 <body style="height: 100%;" id="terminal">
    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
    <script>
-var stdInput = unescape(encodeURIComponent("(print \"You see a prompt.\")"));
+var stdInput = unescape(encodeURIComponent(",load \"init.lisp\""));
 
 //EMTSTACKTOP = 0; // TEMP
 
@@ -72,8 +72,8 @@ $('#terminal').mousewheel(function(event) {
       }*/
 
       var Module = {
-         arguments: ['/repl', 'egl.lisp', '--interactive'],
-         //arguments: ['/repl', '-', '--interactive'],
+         //arguments: ['/repl', 'test.lisp', '--interactive'],
+         arguments: ['/repl', '-', '--interactive'],
          //dynamicLibraries: ['library_xlib.js'],
          preRun: function() {
             console.log("preRun");
@@ -162,12 +162,13 @@ $('#terminal').mousewheel(function(event) {
 
    <script>
 var Libraries = [
-      { path: "/", name: "repl", file: "repl" },
       { path: "/otus", name: "ffi.scm", file: "otus/ffi.scm" },
-      { path: "/owl", name: "math.scm", file: "owl/math.scm" },
-      { path: "/", name: "egl.lisp", file: "egl.lisp" }
-//      { path: "/OpenGL/EGL", name: "version-1-1.scm", file: "OpenGL/EGL/version-1-1.scm" }
-//      { path: "/OpenGL/ES", name: "version-1-1.scm", file: "OpenGL/ES/version-1-1.scm" }
+      { path: "/lib",  name: "opengl.scm", file: "lib/opengl.scm" },
+
+      { path: "/EGL",  name: "version-1-3.scm", file: "EGL/version-1-3.scm" },
+
+      { path: "/", name: "init.lisp", file: "init.lisp" },
+      { path: "/", name: "repl", file: "repl" }
    ];
 var Downloaded = 0;
 

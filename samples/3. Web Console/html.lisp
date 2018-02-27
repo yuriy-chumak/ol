@@ -66,15 +66,17 @@
                   (close #t))
 
                ((or (string-eq? url "/otus/ffi.scm")
-                    (string-eq? url "/owl/math.scm")
-                    (string-eq? url "/OpenGL/EGL/version-1-1.scm")
-                    (string-eq? url "/OpenGL/ES/version-1-1.scm")
-                    )
-                  (sendfile fd "application/javascript" (string-append "/../../libraries" url))
+                    (string-eq? url "/EGL/version-1-3.scm"))
+                  (sendfile fd "application/octet-stream" (string-append "/../../libraries" url))
                   (close #t))
 
-               ((or (string-eq? url "/egl.lisp"))
-                  (sendfile fd "application/javascript" url)
+               ; заменитель стандартной библиотеки (lib opengl)
+               ((or (string-eq? url "/lib/opengl.scm"))
+                  (sendfile fd "application/octet-stream" url)
+                  (close #t))
+
+               ((or (string-eq? url "/init.lisp"))
+                  (sendfile fd "application/octet-stream" url)
                   (close #t))
 
                (else

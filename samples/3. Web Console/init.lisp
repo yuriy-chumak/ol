@@ -52,16 +52,16 @@
 (define glClearColor (egl fft-void "glClearColor" fft-float fft-float fft-float fft-float))
 (define glClear (egl fft-void "glClear" fft-int))
 
-;(glClearColor 0 0.4 1 1)
-;(glClear #x00004000)
+(glClearColor 0.1 0.1 0.1 1)
+(glClear #x00004000)
 
-(let loop ((color 0))
-   (if (> color 1)
-      (loop 0)
-      (begin
-         (glClearColor color 0 0 1)
-         (glClear #x00004000)
-         (eglSwapBuffers display surface)
-         (syscall 24 0 0 0) ; (yield) - prevent web freezing
-         (loop (+ color 0.01)))))
+;(let loop ((color 0))
+;   (if (> color 1)
+;      (loop 0)
+;      (begin
+;         (glClearColor color 0 0 1)
+;         (glClear #x00004000)
+;         (eglSwapBuffers display surface)
+;         (syscall 24 0 0 0) ; (yield) - prevent web freezing
+;         (loop (+ color 0.01)))))
 

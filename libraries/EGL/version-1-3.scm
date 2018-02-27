@@ -1,6 +1,6 @@
 ; July 23, 2003
 ; https://www.khronos.org/registry/egl/
-(define-library (OpenGL EGL version-1-1)
+(define-library (lib EGL version-1.0)
    (export
       EGL_LIBRARY    ; internal variable
 
@@ -15,7 +15,7 @@
       EGLint*
 
       ; EGL and native handle values
-      NativeDisplayType
+      EGLNativeDisplayType
 
       EGL_DEFAULT_DISPLAY
       EGL_NO_CONTEXT
@@ -164,17 +164,14 @@
 )
 
    (import
-      (r5rs core) (owl io) (owl string)
-      (OpenGL ES version-1-0)
+      (r5rs core) (owl string)
 
-      (otus ffi) (lib platform) (lib x11)
-      (owl interop) (owl list))
+      (otus ffi))
 
 (begin
 
 (define uname (syscall 63 #f #f #f))
 (define EGL_LIBRARY
-   (c-string
    (cond
       ;"Windows"
       ((string-ci=? (ref uname 1) "Linux")    "libEGL.so") ; GLESv2 for v2
@@ -184,10 +181,10 @@
       ;"FreeBSD"
       ;"CYGWIN_NT-5.2-WOW64"
       ;"MINGW32_NT-5.2"
-      ((string-ci=? (ref uname 1) "Emscripten") #false) ; Emscripten
+      ((string-ci=? (ref uname 1) "Emscripten") #f) ; self for Emscripten
       ;...
       (else
-         (runtime-error "Unknown platform")))))
+         (runtime-error "Unknown platform"))))
 
 (define $ (load-dynamic-library EGL_LIBRARY))
 (if (not $)
