@@ -972,7 +972,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 		case TDOUBLE + FFT_REF:
 			has_wb = 1;
-			//no break
+			// no break
 		case TDOUBLE + FFT_PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
@@ -1008,13 +1008,22 @@ word* OL_ffi(OL* self, word* arguments)
 			else
 				STDERR("invalid parameter value (requested vptr)");
 			break;
+		case TVPTR + FFT_REF:
+			has_wb = 1;
+			// no break
 		case TVPTR + FFT_PTR: {
-			switch (reftype(arg)) {
-			case TVPTR:
-				args[i] = (word) &car(arg);
+			if (arg == INULL) // empty array will be sent as nullptr
 				break;
-			default:
-				STDERR("invalid parameter value (requested vptr)");
+			if (reftype(arg) == TVPTR) // deprecated: single vptr value
+				args[i] = (word) &car(arg);
+			else {
+				int c = llen(arg);
+				void** p = (void**) __builtin_alloca(c * sizeof(void*)); // todo: use new()
+				args[i] = (word)p;
+
+				word l = arg;
+				while (c--) // todo: add type check
+					*p++ = (void*)car(l), l = cdr(l);
 			}
 			break;
 		}
@@ -1378,6 +1387,22 @@ word* OL_ffi(OL* self, word* arguments)
 					// максимальная точность (fixme: пока не работает как надо)
 					//car(num) = itosv(value * FMAX);
 					//cdr(num) = F(FMAX);
+
+					l = cdr(l);
+				}
+				break;
+			}
+
+			case TVPTR + FFT_REF: {
+				int c = llen(arg);
+				void** f = (void**)args[i];
+
+				word l = arg;
+				while (c--) {
+					void* value = *f++;
+					word num = car(l);
+					assert (reftype(num) == TVPTR);
+					*(void**)&car(num) = value;
 
 					l = cdr(l);
 				}

@@ -82,6 +82,7 @@
       ; fft data constructors
       make-32bit-array
       make-64bit-array
+      make-vptr-array
    )
 
    (import
@@ -244,6 +245,9 @@
 
 (define (make-64bit-array len)
    (map (lambda (_) 72057594037927936) (repeat #f len)))
+
+(define (make-vptr-array len)
+   (map (lambda (_) (vm:cast 0 type-vptr)) (repeat #f len)))
 
 ; -- convertors -----------------------
 (define int32->ol (case (vm:endianness)

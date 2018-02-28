@@ -2832,18 +2832,23 @@ loop:;
 			ERROR(VMCAST, this, A1);
 		word T = A0;
 		word type = uvtoi(A1) & 63;
+		A2 = IFALSE;
 
 		switch (type) {
 		case TPORT:
 			if (is_value(T)) {
 				word val = value(T);
-				//if (val <= 2)
+				// safe limitation (todo: make macro to on/off)
+				if (val <= 2)
 					A2 = make_port(val);
-				//else
-				//	A2 = IFALSE;
 			}
 			else
 				ERROR(VMCAST, this, T);
+			break;
+		case TVPTR:
+			// safe limitation (todo: make macro to on/off)
+			if (is_value(T) && value(T) == 0)
+				A2 = (word)new_vptr(0);
 			break;
 
 		#if OLVM_INEXACTS
