@@ -1,19 +1,7 @@
-(import (otus ffi))
-(define egl (load-dynamic-library #f))
+(import (lib opengl))
+(print)
+
 (define NULL #false)
-
-(print "uname: " (syscall 63 0 0 0))
-
-(define eglGetDisplay (egl fft-int "eglGetDisplay" type-vptr))
-(define eglInitialize (egl fft-int "eglInitialize" fft-int (fft& fft-int) (fft& fft-int)))
-(define eglGetConfigs (egl fft-int "eglGetConfigs" fft-int type-string fft-int (fft& fft-int)))
-(define eglChooseConfig (egl fft-int "eglChooseConfig" fft-int (fft* fft-int) type-string fft-int (fft& fft-int)))
-(define eglCreateWindowSurface (egl fft-int "eglCreateWindowSurface" fft-int fft-unsigned-int fft-int (fft* fft-int))) ; temp "unsigned int" instead of void*
-(define eglCreateContext (egl fft-int "eglCreateContext" fft-int fft-unsigned-int fft-int (fft* fft-int))); temp "unsigned int" instead of void*
-
-(define eglMakeCurrent (egl fft-int "eglMakeCurrent" fft-int fft-int fft-int fft-int))
-(define eglSwapBuffers (egl fft-int "eglSwapBuffers" fft-int fft-int))
-
 (define major '(0))
 (define minor '(0))
 
@@ -34,34 +22,17 @@
    #x3032 1 ; sample buffers
    #x3038 ; EGL_NONE
 ))
-(define config (vm:new-raw-object type-vector-raw '(0 0 0 0)))
+(define config (make-vptr-array 1))
 
-(print "eglChooseConfig: " (eglChooseConfig display attribList config 1 numConfigs))
-(define surface (eglCreateWindowSurface display (int32->ol config 0) 2 NULL))                 ; temp "2" instead of XCreateWindow
+(print "eglChooseConfig: " (eglChooseConfig display attribList config (car numConfigs) numConfigs))
 
+(define surface (eglCreateWindowSurface display (car config) 2 NULL))                 ; temp "2" instead of XCreateWindow
 (define contextAttribs '(
      #x3098 2 #x3038 #x3038 ; EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE
 ))
 
-(define context (eglCreateContext display (int32->ol config 0) 0 contextAttribs))           ; 0 == EGL_NO_CONTEXT
+(define context (eglCreateContext display (car config) EGL_NO_CONTEXT contextAttribs))
 
-
-(print "eglMakeCurrent: " (eglMakeCurrent display surface surface context))
-
-
-(define glClearColor (egl fft-void "glClearColor" fft-float fft-float fft-float fft-float))
-(define glClear (egl fft-void "glClear" fft-int))
-
-(glClearColor 0.1 0.1 0.1 1)
-(glClear #x00004000)
-
-;(let loop ((color 0))
-;   (if (> color 1)
-;      (loop 0)
-;      (begin
-;         (glClearColor color 0 0 1)
-;         (glClear #x00004000)
-;         (eglSwapBuffers display surface)
-;         (syscall 24 0 0 0) ; (yield) - prevent web freezing
-;         (loop (+ color 0.01)))))
-
+; --
+(glClearColor 0.3 0.3 0.3 1)
+(glClear GL_COLOR_BUFFER_BIT)

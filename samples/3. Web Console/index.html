@@ -93,7 +93,7 @@ $('#terminal').mousewheel(function(event) {
             FS.init(stdin, stdout, stderr);
 
             Libraries.forEach( function(i) {
-               console.log("i: ", i.name);
+               console.log("i: ", i.path + "/" + i.name);
                if (i.path != "/")
                   FS.createPath("/", i.path, true, true);
                FS.createDataFile(i.path + "/", i.name, i.data, true, false);
@@ -162,10 +162,11 @@ $('#terminal').mousewheel(function(event) {
 
    <script>
 var Libraries = [
-      { path: "/otus", name: "ffi.scm", file: "otus/ffi.scm" },
+      { path: "/otus", name: "ffi.scm",    file: "otus/ffi.scm" },
       { path: "/lib",  name: "opengl.scm", file: "lib/opengl.scm" },
 
-      { path: "/EGL",  name: "version-1-3.scm", file: "EGL/version-1-3.scm" },
+      { path: "/EGL",       name: "version-1-1.scm", file: "EGL/version-1-1.scm" },
+      { path: "/OpenGL/ES", name: "version-1-1.scm", file: "OpenGL/ES/version-1-1.scm" },
 
       { path: "/", name: "init.lisp", file: "init.lisp" },
       { path: "/", name: "repl", file: "repl" }
