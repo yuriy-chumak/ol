@@ -19,11 +19,42 @@
    <!--[if IE]>
    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
    <![endif]-->
+
+   <style type="text/css">
+      .emscripten {
+         position: absolute;
+         height: 100vh;
+         width: 100vw;
+         top: 0;
+         left: 0;
+         background-color: black;
+      }
+   </style>
 </head>
-<body style="height: 100%;" id="terminal">
+<body style="height: 100%; margin: 0">
    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+
+   <div id="terminal"></div>
    <script>
-var stdInput = unescape(encodeURIComponent(",load \"init.lisp\""));
+   $(document).keydown(function(e) {
+      if (e.keyCode === 27/*192*/) {
+         if ($("#terminal").is(":visible")) {
+            $("#terminal").hide();
+            terminal.pause();
+         }
+         else {
+            $("#terminal").show();
+            terminal.resume();
+         }
+
+         e.preventDefault();
+      }
+   });
+   </script>
+
+
+   <script>
+var stdInput = ""; //unescape(encodeURIComponent(",load \"init.lisp\"")); // loading the script with initial code
 
 //EMTSTACKTOP = 0; // TEMP
 
@@ -39,9 +70,11 @@ Copyright(c) 2014 Aki Helin\n\
 Copyright(c) 2014 - 2017 Yuriy Chumak\n\
 ~~~~~~~~~~~~~~~~~\n',
    enabled: false,
+   height: 200,
 
    onInit: function(term) {
       terminal = term;
+      terminal.ready = false;
    }
 });
 
@@ -58,7 +91,6 @@ $('#terminal').mousewheel(function(event) {
    <!-- Ol loader ----------------------------------------------------------- -->
    <script type='text/javascript'>
       // https://kripken.github.io/emscripten-site/docs/api_reference/module.html
-
       /*var LibraryManager = {};
       function mergeInto(obj, other) {
          for (var i in other) {
@@ -110,16 +142,25 @@ $('#terminal').mousewheel(function(event) {
             console.log("postRun");
             terminal.focus();
             terminal.resume();
+
+            terminal.exec(",load \"init.lisp\"");
          },
 
          print: function(text) {
             terminal.echo(text);
             //document.write(text); document.write("\n");
+
+            if (!terminal.ready && text=="> ") {
+               terminal.ready = true;
+               $("#terminal").hide();
+               terminal.pause();
+            }
          },
          printErr: function(text) {
             console.log("error: ", text);
             terminal.error(text);
-            //alert(text);
+
+            $("#terminal").show();
          },
          canvas: (function() {
             var canvas = document.getElementById('canvas');
@@ -128,7 +169,6 @@ $('#terminal').mousewheel(function(event) {
             // application robust, you may want to override this behavior before shipping!
             // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
             canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
-
             return canvas;
          })(),
 
