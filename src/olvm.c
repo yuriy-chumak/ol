@@ -2845,11 +2845,11 @@ loop:;
 			else
 				ERROR(VMCAST, this, T);
 			break;
-		case TVPTR:
+		/*case TVPTR:
 			// safe limitation (todo: make macro to on/off)
 			if (is_value(T) && value(T) == 0)
 				A2 = (word)new_vptr(0);
-			break;
+			break;*/
 
 		#if OLVM_INEXACTS
 		case TINEXACT:
