@@ -61,6 +61,9 @@ var stdInput = ""; //unescape(encodeURIComponent(",load \"init.lisp\"")); // loa
 var terminal;
 $('#terminal').terminal(function(command, terminal) {
    stdInput += unescape(encodeURIComponent(command));
+
+   // let's clear prompt up to got response
+   terminal.set_prompt('');
 }, {
    prompt: '> ',
    name: 'repl',
@@ -147,9 +150,18 @@ $('#terminal').mousewheel(function(event) {
          },
 
          print: function(text) {
-            terminal.echo(text);
-            //document.write(text); document.write("\n");
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
 
+            // let's process OL's prompt:
+            terminal.set_prompt('> ');
+            terminal.position(1);
+            if (terminal.paused())
+               terminal.resume();
+            while (text.indexOf("> ") == 0)
+               text = text.substring(2);
+            terminal.echo(text);
+
+            // this: hide terminal when first empty line received
             if (!terminal.ready && text=="> ") {
                terminal.ready = true;
                $("#terminal").hide();
