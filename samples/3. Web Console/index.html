@@ -70,7 +70,7 @@ $('#terminal').terminal(function(command, terminal) {
    greetings: '\
 OL - Otus Lisp - yet another pet lisp\n\
 Copyright(c) 2014 Aki Helin\n\
-Copyright(c) 2014 - 2017 Yuriy Chumak\n\
+Copyright(c) 2014 - 2018 Yuriy Chumak\n\
 ~~~~~~~~~~~~~~~~~\n',
    enabled: false,
    height: 200,
@@ -155,14 +155,12 @@ $('#terminal').mousewheel(function(event) {
             // let's process OL's prompt:
             terminal.set_prompt('> ');
             terminal.position(1);
-            if (terminal.paused())
-               terminal.resume();
             while (text.indexOf("> ") == 0)
                text = text.substring(2);
             terminal.echo(text);
 
             // this: hide terminal when first empty line received
-            if (!terminal.ready && text=="> ") {
+            if (!terminal.ready && text=="") {
                terminal.ready = true;
                $("#terminal").hide();
                terminal.pause();
