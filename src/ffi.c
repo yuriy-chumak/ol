@@ -691,43 +691,6 @@ double to_double(word arg) {
 }
 
 
-// stupid clang does not support nested function... so let's declare it here
-/*
-#if UINTPTR_MAX == 0xffffffffffffffff
-#else
-static
-word* new_npair(int type, long long value) {
-	long long a = value >> FBITS;
-	word* b = (a > FMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
-	word* p = new_pair(type, F(value & FMAX), b);
-	return p;
-}
-static
-word* ll2ol(long long val) {
-	long long x5 = val;
-	long long x6 = x5 < 0 ? -x5 : x5;
-	int type = x5 < 0 ? TINTN : TINTP;
-	return (x6 > FMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
-};
-#endif
-
-#if UINTPTR_MAX == 0xffffffffffffffff
-#else
-static
-word* new_unpair(int type, unsigned long long value) {
-	unsigned long long a = value >> FBITS;
-	word* b = (a > FMAX) ? new_unpair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
-	word* p = new_pair(type, F(value & FMAX), b);
-	return p;
-}
-static
-word* ul2ol(long long val) {
-	unsigned long long x5 = val;
-	return (x5 > FMAX) ? new_unpair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
-};
-#endif
-*/
-
 // Главная функция механизма ffi:
 PUBLIC
 word* OL_ffi(OL* self, word* arguments)
@@ -1431,14 +1394,29 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT32:
 			result = (word*) itosn (*(int*)&got);   // TODO: change to __INT32_TYPE__
 			break;
-/*		case TINT64: {
+		case TINT64: {
 #if UINTPTR_MAX == 0xffffffffffffffff
 			result = (word*) itosn (*(long long*)&got); // TODO: change to __INT64_TYPE__
 #else
+#	ifndef __EMSCRIPTEN__
+			word* new_npair(int type, long long value) {
+				long long a = value >> FBITS;
+				word* b = (a > FMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
+				word* p = new_pair(type, F(value & FMAX), b);
+				return p;
+			}
+			word* ll2ol(long long val) {
+				long long x5 = val;
+				long long x6 = x5 < 0 ? -x5 : x5;
+				int type = x5 < 0 ? TINTN : TINTP;
+				return (x6 > FMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
+			};
+
 			result = (word*) ll2ol (*(long long*)&got);
+#	endif
 #endif
 			break;
-		}*/
+		}
 
 		case TUINT8:
 			result = (word*) itoun (*(unsigned char*)&got); // TODO: change to __UINT8_TYPE__
@@ -1449,14 +1427,27 @@ word* OL_ffi(OL* self, word* arguments)
 		case TUINT32:
 			result = (word*) itoun (*(unsigned int*)&got);  // TODO: change to __UINT32_TYPE__
 			break;
-/*		case TUINT64: {
+		case TUINT64: {
 #if UINTPTR_MAX == 0xffffffffffffffff
 			result = (word*) itoun (*(unsigned long long*)&got); // TODO: change to __UINT32_TYPE__
 #else
+#	ifndef __EMSCRIPTEN__
+			word* new_unpair(int type, unsigned long long value) {
+				unsigned long long a = value >> FBITS;
+				word* b = (a > FMAX) ? new_unpair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
+				word* p = new_pair(type, F(value & FMAX), b);
+				return p;
+			}
+			word* ul2ol(long long val) {
+				unsigned long long x5 = val;
+				return (x5 > FMAX) ? new_unpair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
+			};
+
 			result = (word*) ul2ol (*(unsigned long long*)&got);
+#	endif
 #endif
 			break;
-		}*/
+		}
 
 
 		case TPORT:
