@@ -67,7 +67,7 @@
 
                ((or (string-eq? url "/otus/ffi.scm")
                     (string-eq? url "/EGL/version-1-1.scm")
-                    (string-eq? url "/OpenGL/ES/version-1-1.scm"))
+                    (string-eq? url "/OpenGL/ES/version-2-0.scm"))
                   (sendfile fd "text/plain" (string-append "/../../libraries" url))
                   (close #t))
 

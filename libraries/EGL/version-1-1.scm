@@ -285,7 +285,7 @@
 (define $ (or
    (load-dynamic-library
       (cond
-         ; tbd: "Windows"
+         ((string-ci=? (ref uname 1) "windows")  "libEGL.dll")
          ((string-ci=? (ref uname 1) "linux")    "libEGL.so") ; GLESv2 for v2
          ((string-ci=? (ref uname 1) "emscripten") #f)  ; self for Emscripten
          (else

@@ -33,7 +33,7 @@
       ;GL_LINES
       ;GL_LINE_LOOP
       ;GL_LINE_STRIP
-      ;GL_TRIANGLES
+      GL_TRIANGLES
       ;GL_TRIANGLE_STRIP
       ;GL_TRIANGLE_FAN
       ;GL_NEVER
@@ -80,9 +80,9 @@
       ;GL_COLOR_MATERIAL
       ;GL_NORMALIZE
       ;GL_RESCALE_NORMAL
-      ;GL_VERTEX_ARRAY
-      ;GL_NORMAL_ARRAY
-      ;GL_COLOR_ARRAY
+      GL_VERTEX_ARRAY
+      GL_NORMAL_ARRAY
+      GL_COLOR_ARRAY
       ;GL_TEXTURE_COORD_ARRAY
       ;GL_MULTISAMPLE
       ;GL_SAMPLE_ALPHA_TO_COVERAGE
@@ -212,7 +212,7 @@
       ;GL_UNSIGNED_BYTE
       ;GL_SHORT
       ;GL_UNSIGNED_SHORT
-      ;GL_FLOAT
+      GL_FLOAT
       ;GL_FIXED
       ;GL_CLEAR
       ;GL_AND
@@ -409,7 +409,7 @@
       ;glColor4ub ; void (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha);
       ;glColor4x ; void (GLfixed red, GLfixed green, GLfixed blue, GLfixed alpha);
       ;glColorMask ; void (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-      ;glColorPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
+      glColorPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
       ;glCompressedTexImage2D ; void (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
       ;glCompressedTexSubImage2D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data);
       ;glCopyTexImage2D ; void (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
@@ -422,10 +422,10 @@
       ;glDepthRangex ; void (GLfixed n, GLfixed f);
       ;glDisable ; void (GLenum cap);
       ;glDisableClientState ; void (GLenum array);
-      ;glDrawArrays ; void (GLenum mode, GLint first, GLsizei count);
+      glDrawArrays ; void (GLenum mode, GLint first, GLsizei count);
       ;glDrawElements ; void (GLenum mode, GLsizei count, GLenum type, const void *indices);
       ;glEnable ; void (GLenum cap);
-      ;glEnableClientState ; void (GLenum array);
+      glEnableClientState ; void (GLenum array);
       ;glFinish ; void (void);
       ;glFlush ; void (void);
       ;glFogx ; void (GLenum pname, GLfixed param);
@@ -497,14 +497,14 @@
       ;glTexParameterxv ; void (GLenum target, GLenum pname, const GLfixed *params);
       ;glTexSubImage2D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
       ;glTranslatex ; void (GLfixed x, GLfixed y, GLfixed z);
-      ;glVertexPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
+      glVertexPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
       ;glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height);
 
 )
 
    (import
       (r5rs core) (otus ffi)
-      (owl string))
+      (owl string) (owl io))
 
 (begin
    (define GL_VERSION_ES_CM_1_0 1)
@@ -545,7 +545,7 @@
 ; #define GL_LINES                          0x0001
 ; #define GL_LINE_LOOP                      0x0002
 ; #define GL_LINE_STRIP                     0x0003
-; #define GL_TRIANGLES                      0x0004
+   (define GL_TRIANGLES                      #x0004)
 ; #define GL_TRIANGLE_STRIP                 0x0005
 ; #define GL_TRIANGLE_FAN                   0x0006
 ; #define GL_NEVER                          0x0200
@@ -592,9 +592,9 @@
 ; #define GL_COLOR_MATERIAL                 0x0B57
 ; #define GL_NORMALIZE                      0x0BA1
 ; #define GL_RESCALE_NORMAL                 0x803A
-; #define GL_VERTEX_ARRAY                   0x8074
-; #define GL_NORMAL_ARRAY                   0x8075
-; #define GL_COLOR_ARRAY                    0x8076
+   (define GL_VERTEX_ARRAY                   #x8074)
+   (define GL_NORMAL_ARRAY                   #x8075)
+   (define GL_COLOR_ARRAY                    #x8076)
 ; #define GL_TEXTURE_COORD_ARRAY            0x8078
 ; #define GL_MULTISAMPLE                    0x809D
 ; #define GL_SAMPLE_ALPHA_TO_COVERAGE       0x809E
@@ -724,7 +724,7 @@
 ; #define GL_UNSIGNED_BYTE                  0x1401
 ; #define GL_SHORT                          0x1402
 ; #define GL_UNSIGNED_SHORT                 0x1403
-; #define GL_FLOAT                          0x1406
+   (define GL_FLOAT                          #x1406)
 ; #define GL_FIXED                          0x140C
 ; #define GL_CLEAR                          0x1500
 ; #define GL_AND                            0x1501
@@ -872,7 +872,6 @@
 (define ES (or
    (load-dynamic-library
       (cond
-         ; tbd: "Windows"
          ((string-ci=? (ref uname 1) "linux")    "libEGL.so") ; GLESv2 for v2
          ((string-ci=? (ref uname 1) "emscripten") #f)  ; self for Emscripten
          (else
@@ -934,7 +933,16 @@
 ; GL_API void GL_APIENTRY glColor4ub (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha);
 ; GL_API void GL_APIENTRY glColor4x (GLfixed red, GLfixed green, GLfixed blue, GLfixed alpha);
 ; GL_API void GL_APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-; GL_API void GL_APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const void *pointer);
+(define glColorPointerf (ES GLvoid "glColorPointer" GLint GLenum GLsizei GLfloat*))
+(define (glColorPointer size type stride pointer)
+   (print "type: " type)
+   (case type
+      (GL_FLOAT
+         (glColorPointerf size type stride pointer))
+      (else
+         (runtime-error "oops" type))))
+
+
 ; GL_API void GL_APIENTRY glCompressedTexImage2D (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
 ; GL_API void GL_APIENTRY glCompressedTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data);
 ; GL_API void GL_APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
@@ -947,10 +955,10 @@
 ; GL_API void GL_APIENTRY glDepthRangex (GLfixed n, GLfixed f);
 ; GL_API void GL_APIENTRY glDisable (GLenum cap);
 ; GL_API void GL_APIENTRY glDisableClientState (GLenum array);
-; GL_API void GL_APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
+(define glDrawArrays (ES GLvoid "glDrawArrays" GLenum GLint GLsizei))
 ; GL_API void GL_APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indices);
 ; GL_API void GL_APIENTRY glEnable (GLenum cap);
-; GL_API void GL_APIENTRY glEnableClientState (GLenum array);
+(define glEnableClientState (ES GLvoid "glEnableClientState" GLenum))
 ; GL_API void GL_APIENTRY glFinish (void);
 ; GL_API void GL_APIENTRY glFlush (void);
 ; GL_API void GL_APIENTRY glFogx (GLenum pname, GLfixed param);
@@ -1022,7 +1030,15 @@
 ; GL_API void GL_APIENTRY glTexParameterxv (GLenum target, GLenum pname, const GLfixed *params);
 ; GL_API void GL_APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
 ; GL_API void GL_APIENTRY glTranslatex (GLfixed x, GLfixed y, GLfixed z);
-; GL_API void GL_APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const void *pointer);
+
+(define glVertexPointerf (ES GLvoid "glVertexPointer" GLint GLenum GLsizei GLfloat*))
+(define (glVertexPointer size type stride pointer)
+   (case type
+      (GL_FLOAT
+         (glVertexPointerf size type stride pointer))
+      (else
+         (runtime-error "oops" type))))
+
 ; GL_API void GL_APIENTRY glViewport (GLint x, GLint y, GLsizei width, GLsizei height);
 
 ))

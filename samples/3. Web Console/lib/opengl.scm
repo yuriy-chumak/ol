@@ -1,7 +1,7 @@
 (define-library (lib opengl)
    (export
       (exports (EGL version-1-1))
-      (exports (OpenGL ES version-1-1))
+      (exports (OpenGL ES version-2-0))
       (exports (otus ffi))
 
       opengl:init)
@@ -9,7 +9,7 @@
    (import
       (r5rs core)
       (EGL version-1-1)
-      (OpenGL ES version-1-1)
+      (OpenGL ES version-2-0)
       (owl interop) (owl ff) (owl io)
       (otus ffi))
 
