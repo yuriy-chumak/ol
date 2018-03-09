@@ -14,7 +14,6 @@
       flush-port              ;; fd → _
       close-port              ;; fd → _
       sleeper-id              ;; id of sleeper thread
-      start-io-sleeper-thread ;; start sleeper thread
       wait-write              ;; fd → ? (no failure handling yet)
 
       ;; stream-oriented blocking (for the writing thread) io
@@ -200,7 +199,7 @@
                      (find-bed ls id (- n this))))))) ;; wake some time after this one
 
       (define (add-sleeper ls envelope)
-         (lets ((from n envelope))
+         (let*((from n envelope))
             (if (eq? (type n) type-fix+)
                (find-bed ls from n)
                (find-bed ls from 10))))   ;; silent fix
@@ -231,28 +230,22 @@
                (wake-neighbours (cdr l)))
             (else l)))
 
-      ;; ls = queue of ((rounds . id) ...), sorted and only storing deltas
-      (define (sleeper ls)
-         (cond
-            ((null? ls)
-               (sleeper (add-sleeper ls (wait-mail))))
-            ((check-mail) =>
-               (λ (envelope)
-                  (sleeper (add-sleeper ls envelope))))
-            (else
-               (sleep-for (caar ls))
-               (mail (cdar ls) 'awake) ;; 'awake have no meaning, this is simply "wake up" the thread ((n . id) ...)
-               (sleeper (wake-neighbours (cdr ls)))))) ;; wake up all the ((0 . id) ...) after it, if any
-
-      ;; start a (global) sleeper thread
-      (define (start-sleeper)
-         (fork-server sid
-            (λ () (sleeper null))))
-
-      ;; start normally mandatory threads (apart form meta which will be removed later)
+      ;; start a global sleeper thread
       (define (start-io-sleeper-thread)
-         (start-sleeper) ;; <- could also be removed later
-         (wait 1))
+         (fork-server sid
+            (λ ()
+               (let sleeper ((ls '())) ;; ls = queue of ((rounds . id) ...), sorted and only storing deltas
+                  (cond
+                     ((null? ls) ; очередь пуста? спим до появления первого сообщения
+                        (sleeper (add-sleeper ls (wait-mail))))
+                     ((check-mail) =>
+                        (λ (envelope) ; '(thread n-times)
+                           (sleeper (add-sleeper ls envelope))))
+                     (else
+                        (sleep-for (caar ls))
+                        (mail (cdar ls) 'awake) ;; 'awake have no meaning, this is simply "wake up" the thread ((n . id) ...)
+                        (sleeper (wake-neighbours (cdr ls)))))))) ;; wake up all the ((0 . id) ...) after it, if any
+         (wait 1)) ; is it required?
 
       ;; deprecated
       (define (flush-port fd)
@@ -522,6 +515,7 @@
                fail-val)))
 
 
+      ; global io subsystem initializer
       (define (io:init)
          (start-io-sleeper-thread))
 ))

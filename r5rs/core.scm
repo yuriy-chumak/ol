@@ -1059,7 +1059,7 @@
       (define-syntax tuple
          (syntax-rules ()
             ((tuple a . bs) ;; there are no such things as 0-tuples
-               (vm:new 2 a . bs))))
+               (vm:new type-tuple a . bs))))
 
       ; replace this with typed destructuring compare later on
 

@@ -2369,6 +2369,7 @@ mainloop:;
 	#	define JP    16      // JZ (16), JN (80), JT (144), JF (208)
 
 	// примитивы языка:
+	// todo: rename vm:new to vm:make or vm:mk ?
 	#	define VMNEW 23      // fast make small object
 	#	define VMNEW_OBJECT 35     // make object
 	#	define VMNEW_RAWOBJECT 60  // make raw object
@@ -2421,7 +2422,7 @@ mainloop:;
 	#		endif
 	#		define SYSCALL_YIELD 24
 
-	#		define SYSCALL_NANOSLEEP 35
+	#		define SYSCALL_SLEEP 35
 	#		define SYSCALL_SENDFILE 40
 
 	#		define SYSCALL_EXIT 60
@@ -3126,7 +3127,7 @@ loop:;
 		ip += 3; break;
 	}*/
 
-	// bind tuple to registers, todo: rename to bind-t or bindt or bnt
+	// bind tuple to registers
 	case TUPLEAPPLY: { /* bind <tuple > <n> <r0> .. <rn> */
 		word *tuple = (word *) R[*ip++];
 		//CHECK(is_reference(tuple), tuple, BIND);
@@ -3871,7 +3872,7 @@ loop:;
 
 		// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
 		// TODO: change to "select" call (?)
-		case SYSCALL_NANOSLEEP: { // time in micro(!)seconds
+		case SYSCALL_SLEEP: { // time in micro(!)seconds
 			CHECK(is_number(a), a, SYSCALL);
 			int_t us = untoi (a);
 
