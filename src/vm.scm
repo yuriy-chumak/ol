@@ -286,7 +286,7 @@
          (cons (vm:new TTUPLE 'vm:version    62  0 1 vm:version)
 
          ; todo: add macro for call-with-tuple in r5rs
-         (cons (vm:new TTUPLE 'tuple-apply 32 1 #false tuple-apply)
+         (cons (vm:new TTUPLE 'tuple-apply   32 1 #f tuple-apply)
 
          ; поддержка finite functions (как red-black деревьев)
          (cons (vm:new TTUPLE 'ff-apply   49 1 #f  ff-apply)

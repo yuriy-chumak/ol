@@ -96,8 +96,10 @@ GOTO:EOF
 :: ======================================
 :VM
 echo.   *** Making virtual machine:
+set PATH=%MINGW64%;%PATH%
 gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -o "vm.exe" -lws2_32 -DHAS_PINVOKE=1 -DNDEBUG -s
+   src/olvm.c -o "vm64.exe" -lws2_32 -m64 -DNDEBUG -s
+set PATH=%PATH~%
 GOTO:EOF
 
 :: ======================================
@@ -106,7 +108,7 @@ echo.   *** Making 32-bit virtual machine:
 set PATH=%MINGW32%;%PATH%
 
 gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -o "vm32.exe" -lws2_32 -DHAS_PINVOKE=1 -m32 -DNDEBUG -s
+   src/olvm.c -o "vm32.exe" -lws2_32 -m32 -DNDEBUG -s
 
 set PATH=%PATH~%
 GOTO:EOF
@@ -117,7 +119,7 @@ echo.   *** Making 64-bit virtual machine:
 set PATH=%MINGW64%;%PATH%
 
 gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -o "vm64.exe" -lws2_32 -DHAS_PINVOKE=1 -m64 -DNDEBUG -s
+   src/olvm.c -o "vm64.exe" -lws2_32 -m64 -DNDEBUG -s
 
 set PATH=%PATH~%
 GOTO:EOF
