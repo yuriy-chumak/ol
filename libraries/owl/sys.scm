@@ -107,7 +107,7 @@
             (cond
                ((not res) res)
                ((eq? res #true)
-                  (interact sleeper-id 6) ;; sleep using the associated IO thread
+                  (sleep 6) ;; sleep using the associated IO thread
                   (wait pid))
                (else
                   ;; pair of (<exittype> . <result>)

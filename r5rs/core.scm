@@ -1302,7 +1302,7 @@
       (define (set-ticker-value n) (syscall 1022 n #false #false))
       (define (wait n)
          (if (eq? n 0)
-            n
+            0
             (let* ((n _ (vm:sub n 1)))
                (set-ticker-value 0)
                (wait n))))

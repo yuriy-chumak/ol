@@ -6,6 +6,7 @@
 
   (export
       fopen fclose
+      sleep                   ;; sleep a thread n rounds
 
       ;; thread-oriented non-blocking io
       open-output-file        ;; path → fd | #false
@@ -13,7 +14,6 @@
       port?                   ;; _ → bool
       flush-port              ;; fd → _
       close-port              ;; fd → _
-      sleeper-id              ;; id of sleeper thread
       wait-write              ;; fd → ? (no failure handling yet)
 
       ;; stream-oriented blocking (for the writing thread) io
@@ -43,7 +43,6 @@
       lines             ;; fd → null | ll of string, read error is just null, each [\r]\n removed
 
       system-print system-println system-stderr
-      ;take-nap
       fasl-save         ;; obj path → done?
       fasl-load         ;; path default → done?
 
@@ -88,10 +87,6 @@
       (define (fclose fd)
          (syscall 3 fd #false #false)) ; 1002
 
-      ;; use fd 65535 as the unique sleeper thread name.
-      (define sid (vm:cast 65536 type-port)) ; ?? or 65535?
-      (define sleeper-id sid)
-
       ;;; Writing
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
@@ -111,7 +106,7 @@
                      (cond
                         ((eq? wrote end) #true) ;; ok, wrote the whole chunk
                         ((eq? wrote 0) ;; 0 = EWOULDBLOCK
-                           (interact sid 2) ;; fixme: adjustable delay rounds
+                           (interact 'io 2) ;; fixme: adjustable delay rounds
                            (loop))
                         (wrote ;; partial write
                            (write-really (bvec-tail bvec wrote) fd))
@@ -133,7 +128,7 @@
             (if (eq? res #true) ;; would block
                (if block?
                   (begin
-                     (interact sid 5)
+                     (interact 'io 5)
                      (try-get-block fd block-size #true))
                   res)
                res))) ;; is #false, eof or bvec
@@ -215,11 +210,10 @@
                ;; note: could make this check every n rounds or ms
                (if (syscall 35 (* us-per-round rounds) #f #f) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
-                  (set-ticker-value 0)))
+                  (set-ticker-value 0))) ; fixme: maybe better to move this up, before syscall?
             (else
-               (lets
-                  ((a (wait 1))
-                   (rounds _ (vm:sub rounds 1)))
+               (set-ticker-value 0)
+               (let* ((rounds _ (vm:sub rounds 1)))
                   (sleep-for rounds)))))
 
       (define (wake-neighbours l)
@@ -232,7 +226,7 @@
 
       ;; start a global sleeper thread
       (define (start-io-sleeper-thread)
-         (fork-server sid
+         (fork-server 'io
             (λ ()
                (let sleeper ((ls '())) ;; ls = queue of ((rounds . id) ...), sorted and only storing deltas
                   (cond
@@ -246,6 +240,8 @@
                         (mail (cdar ls) 'awake) ;; 'awake have no meaning, this is simply "wake up" the thread ((n . id) ...)
                         (sleeper (wake-neighbours (cdr ls)))))))) ;; wake up all the ((0 . id) ...) after it, if any
          (wait 1)) ; is it required?
+
+      (define (sleep n) (interact 'io n))
 
       ;; deprecated
       (define (flush-port fd)
@@ -499,9 +495,6 @@
             (if fd
                (port->byte-stream fd)
                #false)))
-
-;      (define (take-nap)
-;         (interact sid 5))
 
       (define (fasl-save obj path)
          (vector->file
