@@ -37,7 +37,7 @@
 (import (r5rs core)) ;; базовый языковый набор ol
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*libraries* *codes* *vm-args* wait stdin stdout stderr set-ticker-value build-start)
+,forget-all-but (*libraries* *codes* *vm-args* stdin stdout stderr set-ticker-value build-start)
 
 
 ;;;

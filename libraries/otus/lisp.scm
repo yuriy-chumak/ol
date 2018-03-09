@@ -27,18 +27,15 @@
       (exports (owl math))
       (exports (owl tuple))
 
-      read
+      read)
 
       ;defined? ; todo: move to right library
-      wait)    ; todo: move to right library
 
    (import
       (r5rs core)
       (r5rs srfi-1)
       (r5rs srfi-87)
       (r5rs characters)
-
-      (only (lang sexp) read)
 
       (owl list)
       (owl rlist)
@@ -59,4 +56,6 @@
       (owl render)
       (owl interop)
       (owl math)
+
+      (only (lang sexp) read)
 ))

@@ -55,7 +55,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
-#	warning "This code should be compiled by Gnu C compiler"
+#	warning "This code is prepared for compilation by Gnu C compiler"
 #else
 #	define GCC_VERSION (__GNUC__ * 10000 \
 	                  + __GNUC_MINOR__ * 100 \

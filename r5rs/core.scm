@@ -1300,7 +1300,7 @@
       ;; stop the vm *immediately* without flushing input or anything else with return value n
       ;; make thread sleep for a few thread scheduler rounds
       (define (set-ticker-value n) (syscall 1022 n #false #false))
-      (define (wait n)
+      (define (wait n) ; is it required?
          (if (eq? n 0)
             0
             (let* ((n _ (vm:sub n 1)))

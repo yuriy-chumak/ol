@@ -11,7 +11,6 @@
       dir-fold
       dir->list
       exec
-      wait
       chdir
       kill
       uname
@@ -101,17 +100,6 @@
             (if (and path (all (λ (x) x) args))
                (syscall 1017 path args #false)
                (cons path args))))
-
-      (define (wait pid)
-         (let ((res (syscall 1019 pid (cons #false #false) #false)))
-            (cond
-               ((not res) res)
-               ((eq? res #true)
-                  (sleep 6) ;; sleep using the associated IO thread
-                  (wait pid))
-               (else
-                  ;; pair of (<exittype> . <result>)
-                  res))))
 
       (define sighup   1)      ; hangup from controlling terminal or proces
       (define signint  2)      ; interrupt (keyboard)

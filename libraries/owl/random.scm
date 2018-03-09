@@ -410,7 +410,7 @@
       '(let loop ((rs (seed->rands (expt (time-ms) (+ 1 (band (time-ms) 7))))))
          (lets ((rs n (rand rs 100000000)))
             (print " => " n)
-            (wait 100)
+            ;(wait 100)
             (loop rs)))
 
       ;; shuffling (random permutations)
