@@ -140,8 +140,8 @@
       ;GL_UNSIGNED_SHORT_4_4_4_4
       ;GL_UNSIGNED_SHORT_5_5_5_1
       ;GL_UNSIGNED_SHORT_5_6_5
-      ;GL_FRAGMENT_SHADER
-      ;GL_VERTEX_SHADER
+      GL_FRAGMENT_SHADER
+      GL_VERTEX_SHADER
       ;GL_MAX_VERTEX_ATTRIBS
       ;GL_MAX_VERTEX_UNIFORM_VECTORS
       ;GL_MAX_VARYING_VECTORS
@@ -259,8 +259,8 @@
       ;GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING
       ;GL_IMPLEMENTATION_COLOR_READ_TYPE
       ;GL_IMPLEMENTATION_COLOR_READ_FORMAT
-      ;GL_COMPILE_STATUS
-      ;GL_INFO_LOG_LENGTH
+      GL_COMPILE_STATUS
+      GL_INFO_LOG_LENGTH
       ;GL_SHADER_SOURCE_LENGTH
       ;GL_SHADER_COMPILER
       ;GL_SHADER_BINARY_FORMATS
@@ -306,7 +306,7 @@
       ;GL_INVALID_FRAMEBUFFER_OPERATION
 
       ;glActiveTexture ;void (GLenum texture)
-      ;glAttachShader ;void (GLuint program, GLuint shader)
+      glAttachShader ;void (GLuint program, GLuint shader)
       ;glBindAttribLocation ;void (GLuint program, GLuint index, const GLchar *name)
       ;glBindBuffer ;void (GLenum target, GLuint buffer)
       ;glBindFramebuffer ;void (GLenum target, GLuint framebuffer)
@@ -325,13 +325,13 @@
       ;glClearDepthf ;void (GLfloat d)
       ;glClearStencil ;void (GLint s)
       ;glColorMask ;void (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
-      ;glCompileShader ;void (GLuint shader)
+      glCompileShader ;void (GLuint shader)
       ;glCompressedTexImage2D ;void (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data)
       ;glCompressedTexSubImage2D ;void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data)
       ;glCopyTexImage2D ;void (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
       ;glCopyTexSubImage2D ;void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
-      ;glCreateProgram ;GLuint (void)
-      ;glCreateShader ;GLuint (GLenum type)
+      glCreateProgram ;GLuint (void)
+      glCreateShader ;GLuint (GLenum type)
       ;glCullFace ;void (GLenum mode)
       ;glDeleteBuffers ;void (GLsizei n, const GLuint *buffers)
       ;glDeleteFramebuffers ;void (GLsizei n, const GLuint *framebuffers)
@@ -342,7 +342,7 @@
       ;glDepthFunc ;void (GLenum func)
       ;glDepthMask ;void (GLboolean flag)
       ;glDepthRangef ;void (GLfloat n, GLfloat f)
-      ;glDetachShader ;void (GLuint program, GLuint shader)
+      glDetachShader ;void (GLuint program, GLuint shader)
       ;glDisable ;void (GLenum cap)
       ;glDisableVertexAttribArray ;void (GLuint index)
       ;glDrawArrays ;void (GLenum mode, GLint first, GLsizei count)
@@ -372,8 +372,8 @@
       ;glGetProgramiv ;void (GLuint program, GLenum pname, GLint *params)
       ;glGetProgramInfoLog ;void (GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
       ;glGetRenderbufferParameteriv ;void (GLenum target, GLenum pname, GLint *params)
-      ;glGetShaderiv ;void (GLuint shader, GLenum pname, GLint *params)
-      ;glGetShaderInfoLog ;void (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
+      glGetShaderiv ;void (GLuint shader, GLenum pname, GLint *params)
+      glGetShaderInfoLog ;void (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
       ;glGetShaderPrecisionFormat ;void (GLenum shadertype, GLenum precisiontype, GLint *range, GLint *precision)
       ;glGetShaderSource ;void (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source)
       ;glGetString ;const GLubyte* (GLenum name);
@@ -394,7 +394,7 @@
       ;glIsShader ;GLboolean (GLuint shader)
       ;glIsTexture ;GLboolean (GLuint texture)
       ;glLineWidth ;void (GLfloat width)
-      ;glLinkProgram ;void (GLuint program)
+      glLinkProgram ;void (GLuint program)
       ;glPixelStorei ;void (GLenum pname, GLint param)
       ;glPolygonOffset ;void (GLfloat factor, GLfloat units)
       ;glReadPixels ;void (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels)
@@ -403,7 +403,7 @@
       ;glSampleCoverage ;void (GLfloat value, GLboolean invert)
       ;glScissor ;void (GLint x, GLint y, GLsizei width, GLsizei height)
       ;glShaderBinary ;void (GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length)
-      ;glShaderSource ;void (GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length)
+      glShaderSource ;void (GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length)
       ;glStencilFunc ;void (GLenum func, GLint ref, GLuint mask)
       ;glStencilFuncSeparate ;void (GLenum face, GLenum func, GLint ref, GLuint mask)
       ;glStencilMask ;void (GLuint mask)
@@ -620,8 +620,8 @@
 ;#define GL_UNSIGNED_SHORT_4_4_4_4         0x8033
 ;#define GL_UNSIGNED_SHORT_5_5_5_1         0x8034
 ;#define GL_UNSIGNED_SHORT_5_6_5           0x8363
-;#define GL_FRAGMENT_SHADER                0x8B30
-;#define GL_VERTEX_SHADER                  0x8B31
+(define GL_FRAGMENT_SHADER                #x8B30)
+(define GL_VERTEX_SHADER                  #x8B31)
 ;#define GL_MAX_VERTEX_ATTRIBS             0x8869
 ;#define GL_MAX_VERTEX_UNIFORM_VECTORS     0x8DFB
 ;#define GL_MAX_VARYING_VECTORS            0x8DFC
@@ -739,8 +739,8 @@
 ;#define GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING 0x889F
 ;#define GL_IMPLEMENTATION_COLOR_READ_TYPE 0x8B9A
 ;#define GL_IMPLEMENTATION_COLOR_READ_FORMAT 0x8B9B
-;#define GL_COMPILE_STATUS                 0x8B81
-;#define GL_INFO_LOG_LENGTH                0x8B84
+(define GL_COMPILE_STATUS                 #x8B81)
+(define GL_INFO_LOG_LENGTH                #x8B84)
 ;#define GL_SHADER_SOURCE_LENGTH           0x8B88
 ;#define GL_SHADER_COMPILER                0x8DFA
 ;#define GL_SHADER_BINARY_FORMATS          0x8DF8
@@ -797,8 +797,14 @@
             (runtime-error "Unknown platform" uname))))
    (runtime-error "Can't load EGL library")))
 
+(define GLchar* type-string)
+(define GLchar** (fft* GLchar*))
+(define GLint* (fft* GLint))
+(define GLint& (fft& GLint))
+(define GLsizei* (fft* GLsizei))
+
 ;GL_APICALL void GL_APIENTRY glActiveTexture (GLenum texture);
-;GL_APICALL void GL_APIENTRY glAttachShader (GLuint program, GLuint shader);
+(define glAttachShader (ES GLvoid "glAttachShader" GLuint GLuint))
 ;GL_APICALL void GL_APIENTRY glBindAttribLocation (GLuint program, GLuint index, const GLchar *name);
 ;GL_APICALL void GL_APIENTRY glBindBuffer (GLenum target, GLuint buffer);
 ;GL_APICALL void GL_APIENTRY glBindFramebuffer (GLenum target, GLuint framebuffer);
@@ -817,13 +823,13 @@
 ;GL_APICALL void GL_APIENTRY glClearDepthf (GLfloat d);
 ;GL_APICALL void GL_APIENTRY glClearStencil (GLint s);
 ;GL_APICALL void GL_APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-;GL_APICALL void GL_APIENTRY glCompileShader (GLuint shader);
+(define glCompileShader (ES GLvoid "glCompileShader" GLuint))
 ;GL_APICALL void GL_APIENTRY glCompressedTexImage2D (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
 ;GL_APICALL void GL_APIENTRY glCompressedTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data);
 ;GL_APICALL void GL_APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
 ;GL_APICALL void GL_APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-;GL_APICALL GLuint GL_APIENTRY glCreateProgram (void);
-;GL_APICALL GLuint GL_APIENTRY glCreateShader (GLenum type);
+(define glCreateProgram (ES GLuint "glCreateProgram"))
+(define glCreateShader (ES GLuint "glCreateShader" GLenum))
 ;GL_APICALL void GL_APIENTRY glCullFace (GLenum mode);
 ;GL_APICALL void GL_APIENTRY glDeleteBuffers (GLsizei n, const GLuint *buffers);
 ;GL_APICALL void GL_APIENTRY glDeleteFramebuffers (GLsizei n, const GLuint *framebuffers);
@@ -834,7 +840,7 @@
 ;GL_APICALL void GL_APIENTRY glDepthFunc (GLenum func);
 ;GL_APICALL void GL_APIENTRY glDepthMask (GLboolean flag);
 ;GL_APICALL void GL_APIENTRY glDepthRangef (GLfloat n, GLfloat f);
-;GL_APICALL void GL_APIENTRY glDetachShader (GLuint program, GLuint shader);
+(define glDetachShader (ES GLvoid "glDetachShader" GLuint GLuint))
 ;GL_APICALL void GL_APIENTRY glDisable (GLenum cap);
 ;GL_APICALL void GL_APIENTRY glDisableVertexAttribArray (GLuint index);
 ;GL_APICALL void GL_APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
@@ -864,8 +870,8 @@
 ;GL_APICALL void GL_APIENTRY glGetProgramiv (GLuint program, GLenum pname, GLint *params);
 ;GL_APICALL void GL_APIENTRY glGetProgramInfoLog (GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog);
 ;GL_APICALL void GL_APIENTRY glGetRenderbufferParameteriv (GLenum target, GLenum pname, GLint *params);
-;GL_APICALL void GL_APIENTRY glGetShaderiv (GLuint shader, GLenum pname, GLint *params);
-;GL_APICALL void GL_APIENTRY glGetShaderInfoLog (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog);
+(define glGetShaderiv (ES GLvoid "glGetShaderiv" GLuint GLenum GLint&))
+(define glGetShaderInfoLog (ES GLvoid "glGetShaderInfoLog" GLuint GLsizei GLsizei* GLchar*))
 ;GL_APICALL void GL_APIENTRY glGetShaderPrecisionFormat (GLenum shadertype, GLenum precisiontype, GLint *range, GLint *precision);
 ;GL_APICALL void GL_APIENTRY glGetShaderSource (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source);
 ;GL_APICALL const GLubyte *GL_APIENTRY glGetString (GLenum name);
@@ -886,7 +892,7 @@
 ;GL_APICALL GLboolean GL_APIENTRY glIsShader (GLuint shader);
 ;GL_APICALL GLboolean GL_APIENTRY glIsTexture (GLuint texture);
 ;GL_APICALL void GL_APIENTRY glLineWidth (GLfloat width);
-;GL_APICALL void GL_APIENTRY glLinkProgram (GLuint program);
+(define glLinkProgram (ES GLvoid "glLinkProgram" GLuint))
 ;GL_APICALL void GL_APIENTRY glPixelStorei (GLenum pname, GLint param);
 ;GL_APICALL void GL_APIENTRY glPolygonOffset (GLfloat factor, GLfloat units);
 ;GL_APICALL void GL_APIENTRY glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels);
@@ -896,6 +902,8 @@
 ;GL_APICALL void GL_APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height);
 ;GL_APICALL void GL_APIENTRY glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length);
 ;GL_APICALL void GL_APIENTRY glShaderSource (GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length);
+(define glShaderSource    (ES GLvoid "glShaderSource" GLuint GLsizei GLchar** GLint*))
+
 ;GL_APICALL void GL_APIENTRY glStencilFunc (GLenum func, GLint ref, GLuint mask);
 ;GL_APICALL void GL_APIENTRY glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask);
 ;GL_APICALL void GL_APIENTRY glStencilMask (GLuint mask);

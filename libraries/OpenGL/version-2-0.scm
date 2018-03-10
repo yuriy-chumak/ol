@@ -43,7 +43,7 @@ glDrawArrays
    (define GL_VERSION_2_0 1)
 
 (define GLchar* type-string)
-(define GLchar** (fft* type-string))
+(define GLchar** (fft* GLchar*))
 ;(define GLchar** type-tuple)
 
 (define GLint* (fft* GLint))
