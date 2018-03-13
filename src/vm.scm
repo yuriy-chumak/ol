@@ -227,6 +227,13 @@
 
       ;(setq vm:version    (vm:new-bytecode '(62 4)))
 
+      ; todo: план по слиянию new-object и new-raw-object, с одновременным
+      ;       внесением бита "rawness" в числовое значение типа
+      ;  1. добавить параметр "rawness" к аргументам new-object
+      ;  2. удалить new-raw-object
+      ;  3. изменить нумерацию типов
+      ;  4. удалить параметр rawness
+      ;  5. переименовать vm:new-object в vm:make
       (setq *primops*
          ; аллокаторы
          (cons (vm:new TTUPLE 'vm:new-object     NEW-OBJECT  2 1 vm:new-object)       ; create reference object (vm:new-object type '(v1 .. vn))
