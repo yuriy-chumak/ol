@@ -190,16 +190,22 @@ GOTO:EOF
 :JS
 echo.   *** Making virtual machine on js:
 call C:\emscripten\unzip_temp\emsdk_env.bat
-::ol tools/to-c.scm >tmp/repl.c
+if not exist emscripten.js ^
+call emcc extensions/asmjsify/asmjsify.c -Iinclude ^
+     -o emscripten.js ^
+     -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 -s ASSERTIONS=1 ^
+     -s SIDE_MODULE=1 ^
+     --memory-init-file 0 -O0
+
 call emcc src/olvm.c ^
      -D NAKED_VM=1 -D HAS_DLOPEN=1 ^
      -o olvm.js ^
      -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 ^
      -s MAIN_MODULE=1 ^
      -s EXPORTED_FUNCTIONS="['_main', '_OL_ffi']" ^
-     --memory-init-file 0 ^
-     -D NAKED_VM=1 -Oz
+     --memory-init-file 0 -O2
 GOTO:EOF
+::, '_OL_new', '_OL_run', '_OL_free'
 
 :WASM
 echo.   *** Making virtual machine for webassembly:
@@ -255,7 +261,7 @@ call :REPL64
 set PATH=%MINGW32%;%PATH%
 echo 32-bit internal test:
 gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c tests/vm.c -o "test-vm32.exe" -lws2_32 -DEMBEDDED_VM=1 -m32 -DNDEBUG -s -Isrc
+   src/olvm.c tests/vm.c -o "test-vm32.exe" -lws2_32 -DEMBEDDED_VM=1 -m32 -DNDEBUG -s -Iinclude
 test-vm32.exe
 if errorlevel 1 goto fail
 
@@ -263,7 +269,7 @@ set PATH=%PATH~%
 set PATH=%MINGW64%;%PATH%
 echo 64-bit internal test:
 gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c tests/vm.c -o "test-vm64.exe" -lws2_32 -DEMBEDDED_VM=1 -m64 -DNDEBUG -s -Isrc
+   src/olvm.c tests/vm.c -o "test-vm64.exe" -lws2_32 -DEMBEDDED_VM=1 -m64 -DNDEBUG -s -Iinclude
 test-vm64.exe
 if errorlevel 1 goto fail
 

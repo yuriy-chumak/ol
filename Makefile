@@ -1,7 +1,6 @@
 export PATH := .:$(PATH)
 $(shell mkdir -p config)
-true:
-	@true
+all: vm ol repl
 
 export PATH := $(PATH):/opt/emsdk_portable:/opt/emsdk_portable/clang/fastcomp/build_master_64/bin:/opt/emsdk_portable/node/4.1.1_64bit/bin:/opt/emsdk_portable/emscripten/master
 export OL_HOME=libraries
@@ -132,8 +131,6 @@ DESTDIR?=
 
 
 #main
-all: vm ol repl
-
 #debug: src/olvm.c src/repl.o
 #	$(CC) -std=c99 -O0 -g  src/olvm.c src/repl.o -o ol \
 #	   -Xlinker --export-dynamic -ldl
