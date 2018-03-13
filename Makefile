@@ -45,7 +45,7 @@ PREFIX ?= /usr
 FAILED := $(shell mktemp -u)
 CFLAGS += -std=c99 $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s -fno-exceptions)
 boot.c := bootstrap~
-repl.o := src/repl.o
+repl.o := tmp/repl.o
 
 CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
@@ -131,8 +131,8 @@ DESTDIR?=
 
 
 #main
-#debug: src/olvm.c src/repl.o
-#	$(CC) -std=c99 -O0 -g  src/olvm.c src/repl.o -o ol \
+#debug: src/olvm.c tmp/repl.o
+#	$(CC) -std=c99 -O0 -g  src/olvm.c tmp/repl.o -o ol \
 #	   -Xlinker --export-dynamic -ldl
 #	@echo Ok.
 
@@ -205,8 +205,8 @@ debian-amd64-package:
 
 
 # http://mackyle.github.io/blocksruntime/
-#clang: src/olvm.c src/repl.o
-#	clang-3.5 -fblocks src/olvm.c src/repl.o -ldl -lBlocksRuntime -o ol-c
+#clang: src/olvm.c tmp/repl.o
+#	clang-3.5 -fblocks src/olvm.c tmp/repl.o -ldl -lBlocksRuntime -o ol-c
 
 
 # this is only container for config targets
@@ -260,29 +260,29 @@ config/XVisualInfo:
 
 
 # ol
-ol: src/olvm.c src/olvm.h src/repl.o
-	$(CC) $(CFLAGS) src/olvm.c src/repl.o -o $@ \
+ol: src/olvm.c include/olvm.h tmp/repl.o
+	$(CC) $(CFLAGS) src/olvm.c tmp/repl.o -o $@ \
 	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
 
 src/olvm.c: src/ffi.c
 	touch src/olvm.c
 
-vm: src/olvm.c src/olvm.h
+vm: src/olvm.c include/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
 	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
-vm32: src/olvm.c src/olvm.h
+vm32: src/olvm.c include/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
 	   -Xlinker --export-dynamic $(L) -m32 -DOLVM_FFI=0
 	@echo Ok.
-vm64: src/olvm.c src/olvm.h
+vm64: src/olvm.c include/olvm.h
 	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -o $@ \
 	   -Xlinker --export-dynamic $(L) -m64 -DOLVM_FFI=0
 	@echo Ok.
 
 
-olvm.js: src/olvm.c src/olvm.h src/ffi.c
+olvm.js: src/olvm.c include/olvm.h src/ffi.c
 	emcc src/olvm.c -Oz \
 	   -D NAKED_VM=1 -D HAS_DLOPEN=1 \
 	   -o olvm.js \
@@ -291,14 +291,14 @@ olvm.js: src/olvm.c src/olvm.h src/ffi.c
 	   -s EXPORTED_FUNCTIONS="['_main', '_OL_ffi']" \
 	   --memory-init-file 0
 
-talkback: src/olvm.c src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DEMBEDDED_VM -DOLVM_FFI=1 -o $@ -I src \
-	   src/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c -pthread \
+talkback: src/olvm.c tmp/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DEMBEDDED_VM -DOLVM_FFI=1 -o $@ -Iinclude \
+	   tmp/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c -pthread \
 	   -Xlinker --export-dynamic $(L)
 
 
-src/repl.o: repl
-	ld -r -b binary -o src/repl.o repl
+tmp/repl.o: repl
+	ld -r -b binary -o tmp/repl.o repl
 src/slim.c: repl src/slim.lisp
 	vm repl <src/slim.lisp >src/slim.c
 
@@ -320,9 +320,9 @@ boot.fasl: vm repl src/ol.scm r5rs/*.scm lang/*.scm libraries/otus/lisp.scm libr
 test32: $(wildcard tests/*.scm)
 	@echo "-- test32 ----------"
 	@rm -f $(FAILED)
-	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
+	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
 	@./vm32d
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
 	   if ./ffi32 >/dev/null; then\
@@ -337,9 +337,9 @@ test32: $(wildcard tests/*.scm)
 test64: $(wildcard tests/*.scm)
 	@echo "-- test64 ----------"
 	@rm -f $(FAILED)
-	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m32
+	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m32
 	@./vm64d
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m32 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m32 -Xlinker --export-dynamic
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
 	   if ./ffi64 >/dev/null; then\
@@ -404,21 +404,21 @@ tests: \
 ifeq ($(HAS_CDEFS),1)
 	@echo "32-bit:"
 	@echo "-------"
-	$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
+	$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
 	./vm32d
 	@echo ""
 endif
 ifeq ($(LBITS),64)
 	@echo "64-bit:"
 	@echo "-------"
-	$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m64
+	$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m64
 	./vm64d
 	@echo ""
 endif
 	@echo "ffi tests (32- and 64-bit, if possible):"
 	@echo "----------------------------------------"
 ifeq ($(HAS_CDEFS),1)
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
 	   @echo -n "Testing 32-bit ffi ... "
 	   @if ./ffi32 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
 	      echo "Ok.";\
@@ -429,7 +429,7 @@ ifeq ($(HAS_CDEFS),1)
 	@echo ""
 endif
 ifeq ($(LBITS),64)
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m64 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m64 -Xlinker --export-dynamic
 	   @echo -n "Testing 64-bit ffi ... "
 	   @if ./ffi64 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
 	      echo "Ok.";\
@@ -460,20 +460,20 @@ endif
 	@echo "passed!"
 
 sample-embed:
-	gcc src/sample-embed.c src/olvm.c src/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o sample-embed \
+	gcc src/sample-embed.c src/olvm.c tmp/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o sample-embed \
 	-Xlinker --export-dynamic
 
 # simple only target platform size tests
 check: $(filter-out tests/ffi.scm,$(wildcard tests/*.scm))
 	@rm -f $(FAILED)
 	@echo "Internal VM testing:"
-	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -I src -DNAKED_VM -DEMBEDDED_VM -o vm-check $(L)
+	   @$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm-check $(L)
 	@echo ""
 	   @./vm-check
 	@echo ""
 	@echo "ffi test:"
 	@echo "---------------------------------------"
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -I src -DNAKED_VM -o ffi $(L) -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -o ffi $(L) -Xlinker --export-dynamic
 	   @echo -n "Testing ffi ... "
 	   @if ./ffi repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
 	      echo "Ok.";\
