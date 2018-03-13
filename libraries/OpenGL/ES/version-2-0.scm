@@ -8,13 +8,13 @@
       GL_COLOR_BUFFER_BIT
       GL_FALSE
       GL_TRUE
-      ;GL_POINTS
-      ;GL_LINES
-      ;GL_LINE_LOOP
-      ;GL_LINE_STRIP
-      ;GL_TRIANGLES
-      ;GL_TRIANGLE_STRIP
-      ;GL_TRIANGLE_FAN
+      GL_POINTS
+      GL_LINES
+      GL_LINE_LOOP
+      GL_LINE_STRIP
+      GL_TRIANGLES
+      GL_TRIANGLE_STRIP
+      GL_TRIANGLE_FAN
       ;GL_ZERO
       ;GL_ONE
       ;GL_SRC_COLOR
@@ -41,13 +41,13 @@
       ;GL_CONSTANT_ALPHA
       ;GL_ONE_MINUS_CONSTANT_ALPHA
       ;GL_BLEND_COLOR
-      ;GL_ARRAY_BUFFER
+      GL_ARRAY_BUFFER
       ;GL_ELEMENT_ARRAY_BUFFER
       ;GL_ARRAY_BUFFER_BINDING
       ;GL_ELEMENT_ARRAY_BUFFER_BINDING
-      ;GL_STREAM_DRAW
-      ;GL_STATIC_DRAW
-      ;GL_DYNAMIC_DRAW
+      GL_STREAM_DRAW
+      GL_STATIC_DRAW
+      GL_DYNAMIC_DRAW
       ;GL_BUFFER_SIZE
       ;GL_BUFFER_USAGE
       ;GL_CURRENT_VERTEX_ATTRIB
@@ -129,8 +129,8 @@
       ;GL_UNSIGNED_SHORT
       ;GL_INT
       ;GL_UNSIGNED_INT
-      ;GL_FLOAT
-      ;GL_FIXED
+      GL_FLOAT
+      GL_FIXED
       ;GL_DEPTH_COMPONENT
       ;GL_ALPHA
       ;GL_RGB
@@ -308,7 +308,7 @@
       ;glActiveTexture ;void (GLenum texture)
       glAttachShader ;void (GLuint program, GLuint shader)
       ;glBindAttribLocation ;void (GLuint program, GLuint index, const GLchar *name)
-      ;glBindBuffer ;void (GLenum target, GLuint buffer)
+      glBindBuffer ;void (GLenum target, GLuint buffer)
       ;glBindFramebuffer ;void (GLenum target, GLuint framebuffer)
       ;glBindRenderbuffer ;void (GLenum target, GLuint renderbuffer)
       ;glBindTexture ;void (GLenum target, GLuint texture)
@@ -317,7 +317,7 @@
       ;glBlendEquationSeparate ;void (GLenum modeRGB, GLenum modeAlpha)
       ;glBlendFunc ;void (GLenum sfactor, GLenum dfactor)
       ;glBlendFuncSeparate ;void (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha)
-      ;glBufferData ;void (GLenum target, GLsizeiptr size, const void *data, GLenum usage)
+      glBufferData ;void (GLenum target, GLsizeiptr size, const void *data, GLenum usage)
       ;glBufferSubData ;void (GLenum target, GLintptr offset, GLsizeiptr size, const void *data)
       ;glCheckFramebufferStatus ;GLenum (GLenum target)
       glClear ;void (GLbitfield mask)
@@ -345,16 +345,16 @@
       glDetachShader ;void (GLuint program, GLuint shader)
       ;glDisable ;void (GLenum cap)
       ;glDisableVertexAttribArray ;void (GLuint index)
-      ;glDrawArrays ;void (GLenum mode, GLint first, GLsizei count)
+      glDrawArrays ;void (GLenum mode, GLint first, GLsizei count)
       ;glDrawElements ;void (GLenum mode, GLsizei count, GLenum type, const void *indices)
       ;glEnable ;void (GLenum cap)
-      ;glEnableVertexAttribArray ;void (GLuint index)
+      glEnableVertexAttribArray ;void (GLuint index)
       ;glFinish ;void (void)
       ;glFlush ;void (void)
       ;glFramebufferRenderbuffer ;void (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
       ;glFramebufferTexture2D ;void (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
       ;glFrontFace ;void (GLenum mode)
-      ;glGenBuffers ;void (GLsizei n, GLuint *buffers)
+      glGenBuffers ;void (GLsizei n, GLuint *buffers)
       ;glGenerateMipmap ;void (GLenum target)
       ;glGenFramebuffers ;void (GLsizei n, GLuint *framebuffers)
       ;glGenRenderbuffers ;void (GLsizei n, GLuint *renderbuffers)
@@ -362,7 +362,7 @@
       ;glGetActiveAttrib ;void (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name)
       ;glGetActiveUniform ;void (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name)
       ;glGetAttachedShaders ;void (GLuint program, GLsizei maxCount, GLsizei *count, GLuint *shaders)
-      ;glGetAttribLocation ;GLint (GLuint program, const GLchar *name)
+      glGetAttribLocation ;GLint (GLuint program, const GLchar *name)
       ;glGetBooleanv ;void (GLenum pname, GLboolean *data)
       ;glGetBufferParameteriv ;void (GLenum target, GLenum pname, GLint *params)
       ;glGetError ;GLenum (void)
@@ -435,7 +435,7 @@
       ;glUniformMatrix2fv ;void (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
       ;glUniformMatrix3fv ;void (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
       ;glUniformMatrix4fv ;void (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-      ;glUseProgram ;void (GLuint program)
+      glUseProgram ;void (GLuint program)
       ;glValidateProgram ;void (GLuint program)
       ;glVertexAttrib1f ;void (GLuint index, GLfloat x)
       ;glVertexAttrib1fv ;void (GLuint index, const GLfloat *v)
@@ -445,7 +445,7 @@
       ;glVertexAttrib3fv ;void (GLuint index, const GLfloat *v)
       ;glVertexAttrib4f ;void (GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
       ;glVertexAttrib4fv ;void (GLuint index, const GLfloat *v)
-      ;glVertexAttribPointer ;void (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer)
+      glVertexAttribPointer ;void (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer)
       ;glViewport ;void (GLint x, GLint y, GLsizei width, GLsizei height)
 
 )
@@ -467,10 +467,12 @@
    (define GLint64    fft-int64)
    (define GLuint64   fft-uint64)
    (define GLenum     fft-unsigned-int)
-   (define GLuint     fft-unsigned-int)
+   (define GLuint     fft-unsigned-int)   (define GLuint* (fft* GLuint))  (define GLuint& (fft& GLuint))
    (define GLchar     fft-int8)
    (define GLfloat    fft-float)
-;typedef khronos_ssize_t GLsizeiptr;
+   (define GLsizeiptr (if (eq? (vm:wordsize) 8)
+                        fft-int64
+                        fft-long)) ; khronos_ssize_t
 ;typedef khronos_intptr_t GLintptr;
    (define GLbitfield fft-unsigned-int)
    (define GLint      fft-int)
@@ -488,13 +490,13 @@
    (define GL_COLOR_BUFFER_BIT               #x00004000)
    (define GL_FALSE                          0)
    (define GL_TRUE                           1)
-;#define GL_POINTS                         0x0000
-;#define GL_LINES                          0x0001
-;#define GL_LINE_LOOP                      0x0002
-;#define GL_LINE_STRIP                     0x0003
-;#define GL_TRIANGLES                      0x0004
-;#define GL_TRIANGLE_STRIP                 0x0005
-;#define GL_TRIANGLE_FAN                   0x0006
+   (define GL_POINTS                         #x0000)
+   (define GL_LINES                          #x0001)
+   (define GL_LINE_LOOP                      #x0002)
+   (define GL_LINE_STRIP                     #x0003)
+   (define GL_TRIANGLES                      #x0004)
+   (define GL_TRIANGLE_STRIP                 #x0005)
+   (define GL_TRIANGLE_FAN                   #x0006)
 ;#define GL_ZERO                           0
 ;#define GL_ONE                            1
 ;#define GL_SRC_COLOR                      0x0300
@@ -521,13 +523,13 @@
 ;#define GL_CONSTANT_ALPHA                 0x8003
 ;#define GL_ONE_MINUS_CONSTANT_ALPHA       0x8004
 ;#define GL_BLEND_COLOR                    0x8005
-;#define GL_ARRAY_BUFFER                   0x8892
+(define GL_ARRAY_BUFFER                   #x8892)
 ;#define GL_ELEMENT_ARRAY_BUFFER           0x8893
 ;#define GL_ARRAY_BUFFER_BINDING           0x8894
 ;#define GL_ELEMENT_ARRAY_BUFFER_BINDING   0x8895
-;#define GL_STREAM_DRAW                    0x88E0
-;#define GL_STATIC_DRAW                    0x88E4
-;#define GL_DYNAMIC_DRAW                   0x88E8
+(define GL_STREAM_DRAW                    #x88E0)
+(define GL_STATIC_DRAW                    #x88E4)
+(define GL_DYNAMIC_DRAW                   #x88E8)
 ;#define GL_BUFFER_SIZE                    0x8764
 ;#define GL_BUFFER_USAGE                   0x8765
 ;#define GL_CURRENT_VERTEX_ATTRIB          0x8626
@@ -609,8 +611,8 @@
 ;#define GL_UNSIGNED_SHORT                 0x1403
 ;#define GL_INT                            0x1404
 ;#define GL_UNSIGNED_INT                   0x1405
-;#define GL_FLOAT                          0x1406
-;#define GL_FIXED                          0x140C
+(define GL_FLOAT                          #x1406)
+(define GL_FIXED                          #x140C)
 ;#define GL_DEPTH_COMPONENT                0x1902
 ;#define GL_ALPHA                          0x1906
 ;#define GL_RGB                            0x1907
@@ -806,7 +808,7 @@
 ;GL_APICALL void GL_APIENTRY glActiveTexture (GLenum texture);
 (define glAttachShader (ES GLvoid "glAttachShader" GLuint GLuint))
 ;GL_APICALL void GL_APIENTRY glBindAttribLocation (GLuint program, GLuint index, const GLchar *name);
-;GL_APICALL void GL_APIENTRY glBindBuffer (GLenum target, GLuint buffer);
+(define glBindBuffer (ES GLvoid "glBindBuffer" GLenum GLuint))
 ;GL_APICALL void GL_APIENTRY glBindFramebuffer (GLenum target, GLuint framebuffer);
 ;GL_APICALL void GL_APIENTRY glBindRenderbuffer (GLenum target, GLuint renderbuffer);
 ;GL_APICALL void GL_APIENTRY glBindTexture (GLenum target, GLuint texture);
@@ -815,7 +817,7 @@
 ;GL_APICALL void GL_APIENTRY glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha);
 ;GL_APICALL void GL_APIENTRY glBlendFunc (GLenum sfactor, GLenum dfactor);
 ;GL_APICALL void GL_APIENTRY glBlendFuncSeparate (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
-;GL_APICALL void GL_APIENTRY glBufferData (GLenum target, GLsizeiptr size, const void *data, GLenum usage);
+(define glBufferData (ES GLvoid "glBufferData" GLenum GLsizeiptr GLfloat* GLenum)) ; NOTE: const GLvoid * changed to GLfloat*
 ;GL_APICALL void GL_APIENTRY glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const void *data);
 ;GL_APICALL GLenum GL_APIENTRY glCheckFramebufferStatus (GLenum target);
 (define glClear (ES GLvoid "glClear" GLbitfield))
@@ -843,16 +845,16 @@
 (define glDetachShader (ES GLvoid "glDetachShader" GLuint GLuint))
 ;GL_APICALL void GL_APIENTRY glDisable (GLenum cap);
 ;GL_APICALL void GL_APIENTRY glDisableVertexAttribArray (GLuint index);
-;GL_APICALL void GL_APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
+(define glDrawArrays (ES GLvoid "glDrawArrays" GLenum GLint GLsizei))
 ;GL_APICALL void GL_APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indices);
 ;GL_APICALL void GL_APIENTRY glEnable (GLenum cap);
-;GL_APICALL void GL_APIENTRY glEnableVertexAttribArray (GLuint index);
+(define glEnableVertexAttribArray (ES GLvoid "glEnableVertexAttribArray" GLuint))
 ;GL_APICALL void GL_APIENTRY glFinish (void);
 ;GL_APICALL void GL_APIENTRY glFlush (void);
 ;GL_APICALL void GL_APIENTRY glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 ;GL_APICALL void GL_APIENTRY glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 ;GL_APICALL void GL_APIENTRY glFrontFace (GLenum mode);
-;GL_APICALL void GL_APIENTRY glGenBuffers (GLsizei n, GLuint *buffers);
+(define glGenBuffers (ES GLvoid "glGenBuffers" GLsizei GLuint&))
 ;GL_APICALL void GL_APIENTRY glGenerateMipmap (GLenum target);
 ;GL_APICALL void GL_APIENTRY glGenFramebuffers (GLsizei n, GLuint *framebuffers);
 ;GL_APICALL void GL_APIENTRY glGenRenderbuffers (GLsizei n, GLuint *renderbuffers);
@@ -860,7 +862,7 @@
 ;GL_APICALL void GL_APIENTRY glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name);
 ;GL_APICALL void GL_APIENTRY glGetActiveUniform (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name);
 ;GL_APICALL void GL_APIENTRY glGetAttachedShaders (GLuint program, GLsizei maxCount, GLsizei *count, GLuint *shaders);
-;GL_APICALL GLint GL_APIENTRY glGetAttribLocation (GLuint program, const GLchar *name);
+(define glGetAttribLocation (ES GLint "glGetAttribLocation" GLuint GLchar*))
 ;GL_APICALL void GL_APIENTRY glGetBooleanv (GLenum pname, GLboolean *data);
 ;GL_APICALL void GL_APIENTRY glGetBufferParameteriv (GLenum target, GLenum pname, GLint *params);
 ;GL_APICALL GLenum GL_APIENTRY glGetError (void);
@@ -935,7 +937,7 @@
 ;GL_APICALL void GL_APIENTRY glUniformMatrix2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 ;GL_APICALL void GL_APIENTRY glUniformMatrix3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 ;GL_APICALL void GL_APIENTRY glUniformMatrix4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-;GL_APICALL void GL_APIENTRY glUseProgram (GLuint program);
+(define glUseProgram (ES GLvoid "glUseProgram" GLuint))
 ;GL_APICALL void GL_APIENTRY glValidateProgram (GLuint program);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib1f (GLuint index, GLfloat x);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib1fv (GLuint index, const GLfloat *v);
@@ -945,7 +947,7 @@
 ;GL_APICALL void GL_APIENTRY glVertexAttrib3fv (GLuint index, const GLfloat *v);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib4f (GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib4fv (GLuint index, const GLfloat *v);
-;GL_APICALL void GL_APIENTRY glVertexAttribPointer (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
+(define glVertexAttribPointer (ES GLvoid "glVertexAttribPointer" GLuint GLint GLenum GLboolean GLsizei GLfloat*)) ; TEMP: GLvoid* changed to GLfloat*
 ;GL_APICALL void GL_APIENTRY glViewport (GLint x, GLint y, GLsizei width, GLsizei height);
 
 ))

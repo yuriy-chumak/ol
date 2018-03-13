@@ -2,6 +2,7 @@
 (opengl:init "test!")
 
 ; --
+; https://github.com/kripken/emscripten/blob/master/tests/glbook/Chapter_2/Hello_Triangle/Hello_Triangle.c
 (glClearColor 0.3 0.3 0.3 1)
 (glClear GL_COLOR_BUFFER_BIT)
 
@@ -62,7 +63,27 @@
 "  precision mediump float;
    void main()
    {
-      gl_FragColor = vec4 ( 1.0, 0.0, 0.0, 1.0 );
+      gl_FragColor = vec4( 0.0, 0.3, 0.0, 1.0 );
    }"))
 
 (print "program: " program)
+
+(define pos (glGetAttribLocation program "vPosition"))
+(print "pos: " pos)
+
+(define vpo '(0))
+(glGenBuffers 1 vpo)
+(print "vpo: " vpo)
+(glBindBuffer GL_ARRAY_BUFFER (car vpo))
+
+(define vertices '(0.0 0.5  -0.5 -0.5  0.5 -0.5))
+(glBufferData GL_ARRAY_BUFFER (* 4 (length vertices)) vertices GL_STATIC_DRAW)
+
+
+(glUseProgram program)
+(glBindBuffer GL_ARRAY_BUFFER (car vpo))
+(glVertexAttribPointer pos 2 GL_FLOAT GL_FALSE 0 #false)
+(glEnableVertexAttribArray pos)
+(glDrawArrays GL_TRIANGLES 0 3)
+
+(print "ok.")
