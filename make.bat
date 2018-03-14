@@ -203,7 +203,7 @@ call emcc src/olvm.c ^
      -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 ^
      -s MAIN_MODULE=1 ^
      -s EXPORTED_FUNCTIONS="['_main', '_OL_ffi']" ^
-     --memory-init-file 0 -O2
+     --memory-init-file 0 -Os
 GOTO:EOF
 ::, '_OL_new', '_OL_run', '_OL_free'
 
