@@ -915,20 +915,26 @@ typedef uintptr_t word;
 //	(идея: просто останавливаться на таких объектах, как на generation линии)
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
-#define IPOS      8  // === offsetof (struct direct, payload)
+// values and references:
 
+#define IPOS      8  // === offsetof (struct direct, payload)
 struct __attribute__ ((aligned(sizeof(word)), packed))
 value_t
 {
-	unsigned mark : 1;    // mark bit (can only be 1 during gc)
-	unsigned i    : 1;    // for directs always 1
-	unsigned type : 5;    // object type
-	unsigned sign : 1;    // sign
+	unsigned mark : 1;    // mark bit (can be 1 only during gc)
+	unsigned i    : 1;    // for values always 1
+	unsigned type : 6;    // value type
 
-	word  payload : 8 * sizeof(word) - (1+1+5+1);
+	word  payload : 8 * sizeof(word) - (1+1+6);
 };
 
+struct __attribute__ ((aligned(sizeof(word)), packed))
+reference_t
+{
+	uintptr_t ptr;
+};
 
+// objects structure:
 #define SPOS     16  // === offsetof (struct header, size)
 #define TPOS      2  // === offsetof (struct header, type)
 #define RPOS     11  // === offsetof (struct header, rawness)
@@ -936,8 +942,8 @@ value_t
 struct __attribute__ ((aligned(sizeof(word)), packed))
 header_t
 {
-	unsigned mark : 1;    // mark bit (can only be 1 during gc)
-	unsigned i    : 1;    // for headers always 1
+	unsigned mark : 1;    // mark bit (can be 1 only during gc)
+	unsigned i    : 1;    // for headers always 1 ()
 	unsigned type : 6;    // object type
 
 	unsigned padding : 3; // number of padding (unused) bytes at end of object
@@ -982,7 +988,6 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 
 // ------------------------------------------------------
 #define W                           sizeof (word)
-#define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIXP, val)
 
 #define FBITS                       ((sizeof (word) * 8) - 8) // bits in value (short number)
 #define HIGHBIT                     ((int_t)1 << FBITS) // maximum value value + 1
@@ -995,6 +1000,9 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 #define make_header(type, size)        (2 | ( (word)(size) << SPOS) | ((type) << TPOS))
 #define make_raw_header(type, size, p) (2 | ( (word)(size) << SPOS) | ((type) << TPOS) | ((p) << 8) | RAWBIT)
 // p is padding
+
+#define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIXP, val)
+//#define F(val)                      make_value(TFIXP, val)
 
 // два главных класса аргументов:
 #define is_value(x)                 (((word)(x)) & 2)

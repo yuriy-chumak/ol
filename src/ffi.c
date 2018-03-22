@@ -23,42 +23,42 @@
 #include <alloca.h>
 #endif
 
-#define TVOID                       (48)
-//efine TSTRING                      (3)
-//efine TSTRINGWIDE                 (22)
-//efine TBVEC                       (19) // todo: remove this (use fft-vptr or fft-void* is same)
+#define TVOID         (48)
+//efine TSTRING       (3)
+//efine TSTRINGWIDE   (22)
+//efine TBVEC         (19) // todo: remove this (use fft-vptr or fft-void* is same)
 
-#define TUNKNOWN                    (62) // only for ffi, direct sending argument without processing
-#define TANY                        (63) //
+#define TUNKNOWN      (62) // only for ffi, direct sending argument without processing
+#define TANY          (63) //
 
 // ffi type system
-#define TFLOAT                      (46) // '.' symbol
-#define TDOUBLE                     (47) // '/' symbol
+#define TFLOAT        (46) // '.' symbol
+#define TDOUBLE       (47) // '/' symbol
 
 // 50 is free
-#define TINT8                       (50)
-#define TINT16                      (51)
-#define TINT32                      (52)
-#define TINT64                      (53)
+#define TINT8         (50)
+#define TINT16        (51)
+#define TINT32        (52)
+#define TINT64        (53)
 // 54 for 128 ?
 // 55 for 256 ?
 
-#define TUINT8                      (55)
-#define TUINT16                     (56)
-#define TUINT32                     (57)
-#define TUINT64                     (58)
+#define TUINT8        (55)
+#define TUINT16       (56)
+#define TUINT32       (57)
+#define TUINT64       (58)
 // 59 for 128 ?
 // 60 for 256 ?
 
 
-#define TMASK     0x0FFF
+#define TMASK      0x0FFF
 
-#define TCDECL    0x1000
-#define TSTDCALL  0x2000
-#define TFASTCALL 0x3000
+#define TCDECL     0x1000
+#define TSTDCALL   0x2000
+#define TFASTCALL  0x3000
 
-#define FFT_PTR 0x10000
-#define FFT_REF 0x20000
+#define FFT_PTR   0x10000
+#define FFT_REF   0x20000
 
 word d2ol(struct ol_t* ol, double v); // declared in olvm.c
 
@@ -395,25 +395,25 @@ ret_t asmjs_call(word args[], int fmask, void* function, int type) {
 
 	case 0b100:
 		return (ret_t)(word)((word (*)  (word, word))
-	                 function) (args[ 0], args[ 1]);
+		             function) (args[ 0], args[ 1]);
 	case 0b1000:
 		return (ret_t)(word)((word (*)  (word, word, word))
-	                 function) (args[ 0], args[ 1], args[ 2]);
+		             function) (args[ 0], args[ 1], args[ 2]);
 	case 0b10000:
 		return (ret_t)(word)((word (*)  (word, word, word, word))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3]);
+		             function) (args[ 0], args[ 1], args[ 2], args[ 3]);
 	case 0b11111:
 //		printf("%f/%f/%f/%f\n", *(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
 		return (ret_t)(word)((word (*)  (float, float, float, float))
-	                 function) (*(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
+		             function) (*(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
 	case 0b100000:
 		return (ret_t)(word)((word (*)  (word, word, word, word, word))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-	                            args[ 4]);
+		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
+		                        args[ 4]);
 	case 0b1000000:
 		return (ret_t)(word)((word (*)  (word, word, word, word, word, word))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-	                            args[ 4], args[ 5]);
+		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
+		                        args[ 4], args[ 5]);
 	case 0b10000000:
 		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
 	                                  word))
