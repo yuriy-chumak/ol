@@ -420,19 +420,6 @@ void STDERR(char* format, ...)
 	fprintf(stderr, "\n");
 }
 
-static
-void crash(int code, char* format, ...)
-{
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
-	fprintf(stderr, "\n");
-	exit(code);
-}
-
 void yield()
 {
 #ifdef __EMSCRIPTEN__
@@ -4883,16 +4870,16 @@ int main(int argc, char** argv)
 		struct stat st;
 
 		if (stat(argv[1], &st) || st.st_size == 0)
-			crash(errno, "File not found or empty");	// не найден файл или он пустой
+			goto file_not_found_or_empty;		// не найден файл или он пустой
 
 		char bom;
 		int bin = open(argv[1], O_RDONLY | O_BINARY, (S_IRUSR | S_IWUSR));
 		if (!bin)
-			crash(errno, "Can't open file");	// не смогли файл открыть
+			goto can_not_open_file;				// не смогли файл открыть
 
 		int pos = read(bin, &bom, 1); // прочитаем один байт
 		if (pos < 1)
-			crash(errno, "Can't read file");	// не смогли файл прочитать
+			goto can_not_read_file;				// не смогли файл прочитать
 
 		// переделать
 		if (bom == '#') { // skip possible hashbang
@@ -4900,13 +4887,13 @@ int main(int argc, char** argv)
 				st.st_size--;
 			st.st_size--;
 			if (read(bin, &bom, 1) < 0)
-				crash(errno, "Can't read file");
+				goto can_not_read_file;
 			st.st_size--;
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
 #ifdef NAKED_VM
-			crash(6, "Invalid binary script"); // некому проинтерпретировать скрипт
+			goto invalid_binary_script;
 #else
 			close(bin); // todo: сместить аргументы на 1 вперед
 #endif
@@ -4915,13 +4902,13 @@ int main(int argc, char** argv)
 			// иначе загрузим его
 			unsigned char* ptr = (unsigned char*) malloc(st.st_size);
 			if (ptr == NULL)
-				crash(3, "Can't alloc memory");	// опа, не смогли выделить память...
+				goto can_not_allocate_memory;	// опа, не смогли выделить память...
 
 			ptr[0] = bom;
 			while (pos < st.st_size) {
 				int n = read(bin, &ptr[pos], st.st_size - pos);
 				if (n < 0)
-					crash(errno, "Can't read file"); // не смогли прочитать
+					goto can_not_read_file;		// не смогли прочитать
 				pos += n;
 			}
 			close(bin);
@@ -4931,7 +4918,7 @@ int main(int argc, char** argv)
 	}
 #ifdef NAKED_VM
 	else
-		crash(7, "Invalid binary script");
+		goto invalid_binary_script; // некому проинтерпретировать скрипт
 
 	argc--; argv++;
 #endif
@@ -4966,6 +4953,32 @@ int main(int argc, char** argv)
 	if (is_value(r))
 		return uvtoi(r);
 	return (int) r;
+
+// FAILS:
+	char* error;
+file_not_found_or_empty:
+	error = "File not found or empty\n";
+	goto fail;
+can_not_open_file:
+	error = "Can't open file\n";
+	goto fail;
+can_not_read_file:
+	error = "Can't read file\n";
+	goto fail;
+#ifdef NAKED_VM
+invalid_binary_script:
+	errno = 7;
+	error = "Invalid binary script\n";
+	goto fail;
+#endif
+can_not_allocate_memory:
+	errno = 3;
+	error = "Can't alloc memory\n";
+	goto fail;
+fail:;
+	int e = errno;
+	write(STDOUT_FILENO, error, strlen(error));
+	return e;
 }
 #endif
 
