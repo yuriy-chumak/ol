@@ -1197,6 +1197,8 @@ typedef struct heap_t
 	word *genstart;  // new generation begin pointer
 	// new (size) === *(size*)fp++
 	word *fp;        // allocation pointer
+
+	jmp_buf fail;
 } heap_t;
 
 
@@ -1499,8 +1501,9 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		}
 		return delta;
 	} else {
-		crash(101, "adjust_heap failed.\n"); // crash
-		__builtin_unreachable();
+		char error[] = "Heap adjusting failed.\n";
+		write(STDERR_FILENO, error, sizeof(error));
+		longjmp(heap->fail, IFALSE);
 	}
 	return 0;
 }
@@ -5121,12 +5124,23 @@ write_t* OL_set_write(struct ol_t* ol, write_t write)
 word
 OL_run(OL* handle, int argc, char** argv)
 {
+	// TODO: get blocking!
 #	ifndef _WIN32
 //	setvbuf(stderr, (void*)0, _IONBF, 0);
 //	setvbuf(stdout, (void*)0, _IONBF, 0);
 	set_blocking(STDOUT_FILENO, 0);
 	set_blocking(STDERR_FILENO, 0);
 #	endif
+
+	int r = setjmp(handle->heap.fail);
+	if (r != 0) {
+		// TODO: restore old values
+#	ifndef _WIN32
+		set_blocking(STDOUT_FILENO, 1);
+		set_blocking(STDERR_FILENO, 1);
+#	endif
+		return r;
+	}
 
 	// подготовим аргументы:
 	word userdata = handle->R[4];
@@ -5166,7 +5180,8 @@ OL_run(OL* handle, int argc, char** argv)
 	ol->this = this;
 	ol->arity = acc;
 
-	return runtime(handle);
+	longjmp(ol->heap.fail,
+		(int)runtime(handle));
 }
 
 // Foreign Function Interface support code
