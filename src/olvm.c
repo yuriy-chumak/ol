@@ -410,15 +410,61 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 // ========================================
 static
-void STDERR(char* format, ...)
+void E(char* format, ...)
 {
 	va_list args;
-
 	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-	fprintf(stderr, "\n");
+	int fd = STDERR_FILENO;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+
+	for(;;)
+	switch (*format++) {
+	case 0: { // exit
+		char newline[] = "\n";
+		write(fd, newline, sizeof(newline));
+		// fsync(fd);
+		va_end(args);
+		return;
+	}
+	case '%': { // mask
+		switch (*format++) {
+		case 0:
+			--format;
+			continue;
+		case 's': {
+			char* s = va_arg(args, char*);
+			write(fd, s, strlen(s));
+			break;
+		}
+		case 'd': {
+			int d = va_arg(args, int);
+			if (d < 0) {
+				write(fd, "-", 1);
+				d = -d;
+			}
+			for (int i = 30; d && i; --i, d /= 10)
+				write(fd, "0123456789abcdef" + (d % 10), 1);
+			break;
+		}
+		default:
+			write(fd, format-1, sizeof(char));
+		}
+		continue;
+	}
+	default:
+		write(fd, format-1, sizeof(char));
+	}
+
+#pragma GCC diagnostic pop
 }
+
+#ifdef NDEBUG
+#	define D(...)
+#else
+#	define D(...) E(__VA_ARGS__)
+#endif
 
 void yield()
 {
@@ -1488,8 +1534,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		}
 		return delta;
 	} else {
-		char error[] = "Heap adjusting failed.\n";
-		write(STDERR_FILENO, error, sizeof(error));
+		E("Heap adjustment failed");
 		longjmp(heap->fail, IFALSE);
 	}
 	return 0;
@@ -1619,7 +1664,8 @@ word gc(heap_t *heap, int query, word regs)
 			gctime += (1000 * clock()) / CLOCKS_PER_SEC;
 			struct tm tm = *localtime(&(time_t){time(NULL)});
 			char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
-			STDERR("%s, GC done in %d ms (use: %7d from %8d bytes - %2d%%): (%6d).", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+			fprintf(stderr,
+					"%s, GC done in %d ms (use: %7d from %8d bytes - %2d%%): (%6d).\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
 					buff/*asctime(&tm)*/, gctime,
 					((regs - (word)heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
 					((regs - (word)heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)),
@@ -1694,7 +1740,7 @@ void set_blocking(int sock, int blockp) {
 #ifndef _WIN32
 static
 void signal_handler(int signal) {
-	STDERR("signal %d!", signal);
+	E("signal %d!", signal);
 	switch(signal) {
 //      case SIGINT:
 //        breaked |= 2; break;
@@ -1754,11 +1800,11 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		// read
 		numRead = read(in_fd, buf, toRead);
 		if (numRead == -1) {
-			STDERR("sendfile: read() returns -1, error: %d", errno);
+			E("sendfile: read() returns -1, error: %d", errno);
 			return -1;
 		}
 		if (numRead == 0) {
-			STDERR("sendfile: read() returns 0, error: %d", errno);
+			E("sendfile: read() returns 0, error: %d", errno);
 			break;                      /* EOF */
 		}
 
@@ -1767,7 +1813,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		numSent = send(out_fd, buf, numRead, 0);
 		if (numSent == SOCKET_ERROR) {
 			int err = WSAGetLastError();
-			STDERR("sendfile: send() returns -1, error: %d", err);
+			E("sendfile: send() returns -1, error: %d", err);
 			if (err != WSAEWOULDBLOCK)
 				return -1;
 
@@ -1775,7 +1821,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 			goto resend;
 		}
 		if (numSent == 0) {               /* Should never happen */
-			STDERR("sendfile: send() transferred 0 bytes, error: %d", WSAGetLastError());
+			E("sendfile: send() transferred 0 bytes, error: %d", WSAGetLastError());
 			return 0;
 		}
 
@@ -1783,7 +1829,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 		totSent += numSent;
 	}
 	if (shutdown(out_fd, SD_SEND) == SOCKET_ERROR) {
-		STDERR("sendfile: shutdown() returns -1, error: %d", WSAGetLastError());
+		E("sendfile: shutdown() returns -1, error: %d", WSAGetLastError());
 		return -1;
 	}
 	return totSent;
@@ -2150,7 +2196,7 @@ word get(word *ff, word key, word def)
 				ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
 			break;
 		default:
-			STDERR("assert! hdrsize(hdr) == %d", (int)hdrsize(hdr));
+			E("assert! hdrsize(hdr) == %d", (int)hdrsize(hdr));
 			assert (0);
 			//ff = (word *) ((key < this) ? ff[3] : ff[4]);
 		}
@@ -2164,7 +2210,7 @@ word get(word *ff, word key, word def)
 #endif
 #define ERROR(opcode, a, b) \
 	{ \
-		STDERR("ERROR: %s/%d", __FILE__, __LINE__); /* TEMP */\
+		D("SOURCE: %s:%d", __FILE__, __LINE__); /* TEMP */\
 		R[4] = F (opcode);\
 		R[5] = (word) (a);\
 		R[6] = (word) (b);\
@@ -2537,7 +2583,7 @@ loop:;
 			// todo: исправить с помощью динамического количества регистров!
 			if (reg > NR) { // dummy handling for now
 				// TODO: add changing the size of R array!
-				STDERR("TOO LARGE APPLY");
+				E("TOO LARGE APPLY");
 				ol->exit(3);
 			}
 			R[reg++] = car (lst);
@@ -3940,7 +3986,7 @@ loop:;
 				#ifdef __unix__
 					int child = fork();
 					if (child == 0) {
-						STDERR("forking %s", command);
+						E("forking %s", command);
 						if (is_pair (c)) {
 							const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
 							for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
@@ -4336,7 +4382,7 @@ loop:;
 			if (function)
 				result = new_vptr(function);
 			else
-				STDERR("dlsym failed: %s", dlerror());
+				E("dlsym failed: %s", dlerror());
 			break;
 		}
 		case SYSCALL_DLERROR: { // (dlerror)
@@ -4375,7 +4421,7 @@ loop:;
 				HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
 						0, sizeof(bytecode), NULL);
 				if (!mh)
-					STDERR("Can't create memory mapped object");
+					E("Can't create memory mapped object");
 				ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS,
 						0, 0, sizeof(bytecode));
 				CloseHandle(mh);
@@ -4425,7 +4471,7 @@ loop:;
 			HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
 					0, sizeof(bytecode), NULL);
 			if (!mh)
-				STDERR("Can't create memory mapped object");
+				E("Can't create memory mapped object");
 			ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE,
 					0, 0, sizeof(bytecode));
 			CloseHandle(mh);
@@ -4663,7 +4709,7 @@ error:; // R4-R6 set, and call mcp (if any)
 		acc = 4;
 		goto apply;
 	}
-	STDERR("invoke_mcp failed");
+	E("invoke_mcp failed");
 	goto done; // no mcp to handle error (fail in it?), so nonzero exit
 
 done:;
@@ -4695,7 +4741,7 @@ word get_nat(unsigned char** hp)
 	char i;
 
 	#ifndef OVERFLOW_KILLS
-	#define OVERFLOW_KILLS(n) { STDERR("invalid nat"); }
+	#define OVERFLOW_KILLS(n) { E("invalid nat"); }
 	#endif
 	do {
 		word underflow = nat; // can be removed for release
@@ -4929,7 +4975,7 @@ int main(int argc, char** argv)
 	WSADATA wsaData;
 	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
 	if (sock_init  != 0) {
-		STDERR("WSAStartup failed with error: %d", sock_init);
+		E("WSAStartup failed with error: %d", sock_init);
 		return 1;
 	}
 #	ifndef NDEBUG
@@ -4957,29 +5003,35 @@ int main(int argc, char** argv)
 	return (int) r;
 
 // FAILS:
-	char* error;
-file_not_found_or_empty:
-	error = "File not found or empty\n";
+	char* message;
+
+	file_not_found_or_empty:
+	message = "File not found or empty";
 	goto fail;
-can_not_open_file:
-	error = "Can't open file\n";
+
+	can_not_open_file:
+	message = "Can't open file";
 	goto fail;
-can_not_read_file:
-	error = "Can't read file\n";
+
+	can_not_read_file:
+	message = "Can't read file";
 	goto fail;
-#ifdef NAKED_VM
-invalid_binary_script:
-	errno = 7;
-	error = "Invalid binary script\n";
+
+#	ifdef NAKED_VM
+	invalid_binary_script:
+	errno = EILSEQ;
+	message = "Invalid binary script";
 	goto fail;
-#endif
-can_not_allocate_memory:
-	errno = 3;
-	error = "Can't alloc memory\n";
+#	endif
+
+	can_not_allocate_memory:
+	errno = ENOMEM;
+	message = "Can't alloc memory";
 	goto fail;
+
 fail:;
 	int e = errno;
-	write(STDOUT_FILENO, error, strlen(error));
+	E("%s (errno: %d)", message, errno);
 	return e;
 }
 #endif
@@ -5030,7 +5082,7 @@ OL_new(unsigned char* bootstrap)
 
 	fp = heap->begin = (word*) malloc((required_memory_size + GCPAD(NR)) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
-		STDERR("Failed to allocate %d bytes in memory for vm", required_memory_size * sizeof(word));
+		E("Failed to allocate %d bytes in memory for vm", required_memory_size * sizeof(word));
 		goto fail;
 	}
 	// ok

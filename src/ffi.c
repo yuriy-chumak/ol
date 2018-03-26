@@ -620,7 +620,7 @@ int to_int(word arg) {
 	case TCOMPLEX:
 		return to_int(car(arg)); // return real part of value
 	default:
-		STDERR("can't get int from %d", reftype(arg));
+		E("can't get int from %d", reftype(arg));
 	}
 
 	return 0;
@@ -642,7 +642,7 @@ long to_long(word arg) {
 	case TCOMPLEX:
 		return to_long(car(arg)); // return real part of value
 	default:
-		STDERR("can't get int from %d", reftype(arg));
+		E("can't get int from %d", reftype(arg));
 	}
 
 	return 0;
@@ -819,7 +819,7 @@ word* OL_ffi(OL* self, word* arguments)
 #endif
 				break;
 			default:
-				STDERR("can't cast %d to int", type);
+				E("can't cast %d to int", type);
 				args[i] = 0; // todo: error
 			}
 			break;
@@ -840,7 +840,7 @@ word* OL_ffi(OL* self, word* arguments)
 					*(long long*)&args[i] = from_rational(arg);
 					break;
 				default:
-					STDERR("can't cast %d to int64", type);
+					E("can't cast %d to int64", type);
 				}
 				#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
 					i++; // for 32-bits: long long values fills two words
@@ -966,10 +966,10 @@ word* OL_ffi(OL* self, word* arguments)
 					args[i] = (word) &car(arg);
 					break;
 				default:
-					STDERR("invalid parameter value (requested vptr)");
+					E("invalid parameter value (requested vptr)");
 				}
 			else
-				STDERR("invalid parameter value (requested vptr)");
+				E("invalid parameter value (requested vptr)");
 			break;
 		case TVPTR + FFT_REF:
 			has_wb = 1;
@@ -1000,7 +1000,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			// todo: TSTRINGWIDE
 			default:
-				STDERR("invalid parameter values (requested string)");
+				E("invalid parameter values (requested string)");
 			}
 			break;
 		case TSTRING + FFT_PTR: {
@@ -1058,7 +1058,7 @@ word* OL_ffi(OL* self, word* arguments)
 			}
 				break;
 			default:
-				STDERR("invalid parameter values (requested string)");
+				E("invalid parameter values (requested string)");
 			}
 			break;
 //		#endif
@@ -1067,7 +1067,7 @@ word* OL_ffi(OL* self, word* arguments)
 			if (is_callable(arg))
 				args[i] = (word)car(arg);
 			else
-				STDERR("invalid parameter values (requested callable)");
+				E("invalid parameter values (requested callable)");
 			break;
 		}
 /*
@@ -1117,7 +1117,7 @@ word* OL_ffi(OL* self, word* arguments)
 			args[i] = 0; // do nothing, just for better readability
 			break;
 		default:
-			STDERR("can't recognize %d type", type);
+			E("can't recognize %d type", type);
 		}
 
 		p = (word*)cdr(p); // (cdr p)
@@ -1160,7 +1160,7 @@ word* OL_ffi(OL* self, word* arguments)
 	// THISCALL: (4)
 	// ...
 	default:
-		STDERR("Unsupported calling convention %d", returntype >> 6);
+		E("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}*/
 	got =
@@ -1208,7 +1208,7 @@ word* OL_ffi(OL* self, word* arguments)
 	// THISCALL: (4)
 	// ...
 	default:
-		STDERR("Unsupported calling convention %d", returntype >> 6);
+		E("Unsupported calling convention %d", returntype >> 6);
 		break;
 	}*/
 #endif
@@ -1280,7 +1280,7 @@ word* OL_ffi(OL* self, word* arguments)
 				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
 					if (value > FMAX) {
 						if (is_value(*ptr))
-							STDERR("got too large number to store");
+							E("got too large number to store");
 						else {
 							assert (is_npair(ptr) || is_npairn(ptr));
 							if (value < 0) {
@@ -1315,7 +1315,7 @@ word* OL_ffi(OL* self, word* arguments)
 				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
 					if (value > FMAX) {
 						if (is_value(*ptr))
-							STDERR("got too large number to store");
+							E("got too large number to store");
 						else {
 							assert (is_npair(ptr) || is_npairn(ptr));
 							*ptr = make_header(TINTP, 3);
@@ -1713,7 +1713,7 @@ long long callback(OL* ol, int id, int_t* argi
 			}
 
 			// else error
-			STDERR("unknown argument type");
+			E("unknown argument type");
 			break; }
 		}
 		a++;
