@@ -84,6 +84,13 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #	endif
 #endif
 
+#if GCC_VERSION < 40500
+#	define __builtin_unreachable() do { \
+		char s[] = "I saw the dragons!\n"; \
+		write(STDOUT_FILENO, s, sizeof(s)); abort(); \
+	} while(0)
+#endif
+
 #ifdef __unix__
 
 // FreeBSD, NetBSD, OpenBSD, macOS, etc.
@@ -1493,10 +1500,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		return delta;
 	} else {
 		crash(101, "adjust_heap failed.\n"); // crash
-		#if GCC_VERSION > 40500
 		__builtin_unreachable();
-		#endif
-		//breaked |= 8; // will be passed over to mcp at thread switch
 	}
 	return 0;
 }
