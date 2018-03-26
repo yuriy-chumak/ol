@@ -4932,7 +4932,9 @@ int main(int argc, char** argv)
 		STDERR("WSAStartup failed with error: %d", sock_init);
 		return 1;
 	}
+#	ifndef NDEBUG
 	AllocConsole();
+#	endif
 #endif
 
 	OL* olvm = OL_new(bootstrap);

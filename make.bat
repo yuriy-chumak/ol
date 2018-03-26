@@ -97,8 +97,8 @@ GOTO:EOF
 :VM
 echo.   *** Making virtual machine:
 set PATH=%MINGW64%;%PATH%
-gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -o "vm64.exe" -lws2_32 -m64 -DNDEBUG -s
+gcc -std=c99 -g2 -O0 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -o "vm.exe" -lws2_32 -m64
 set PATH=%PATH~%
 GOTO:EOF
 
@@ -215,8 +215,8 @@ GOTO:EOF
 
 
 :RELEASE
-gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32
-gcc -std=c99 -O2 -s -Wall -fmessage-length=0 tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32
+gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -g0 -DNDEBUG -Wl,-subsystem,windows
+gcc -std=c99 -O2 -s -Wall -fmessage-length=0 tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32 -g0 -DNDEBUG -Wl,-subsystem,windows
 GOTO:EOF
 
 
