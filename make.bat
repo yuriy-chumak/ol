@@ -90,7 +90,7 @@ for %%a in (
 GOTO:EOF
 
 :BOOT
-vm repl <tutorial/attic/to-c.scm >tmp/boot.c
+vm repl <samples/attic/to-c.scm >tmp/boot.c
 GOTO:EOF
 
 :: ======================================
