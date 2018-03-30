@@ -5,6 +5,7 @@
 set PATH~=%PATH%
 set MINGW32=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\
 set MINGW64=C:\mingw-w64\x86_64-6.1.0-posix-seh-rt_v5-rev1\mingw64\bin\
+set CC=gcc
 
 echo -=( building %1 )=-------------------------------------------------------------------
 IF "%1"==""   GOTO ALL
@@ -97,8 +98,8 @@ GOTO:EOF
 :VM
 echo.   *** Making virtual machine:
 set PATH=%MINGW64%;%PATH%
-gcc -std=c99 -g2 -O0 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -o "vm.exe" -lws2_32 -m64
+%CC% -std=c99 -g2 -O0 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -Iwin32 -o "vm.exe" -lws2_32 -m64
 set PATH=%PATH~%
 GOTO:EOF
 
@@ -107,8 +108,8 @@ GOTO:EOF
 echo.   *** Making 32-bit virtual machine:
 set PATH=%MINGW32%;%PATH%
 
-gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -o "vm32.exe" -lws2_32 -m32 -DNDEBUG -s
+%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -Iwin32 -o "vm32.exe" -lws2_32 -m32 -DNDEBUG -s
 
 set PATH=%PATH~%
 GOTO:EOF
@@ -118,8 +119,8 @@ GOTO:EOF
 echo.   *** Making 64-bit virtual machine:
 set PATH=%MINGW64%;%PATH%
 
-gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -o "vm64.exe" -lws2_32 -m64 -DNDEBUG -s
+%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -Iwin32 -o "vm64.exe" -lws2_32 -m64 -DNDEBUG -s
 
 set PATH=%PATH~%
 GOTO:EOF
@@ -140,20 +141,20 @@ GOTO:EOF
 
 :OL
 echo.   *** Making Otus Lisp:
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
+%CC% -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
 GOTO:EOF
 
 :OL32
 echo.   *** Making 32-bit Otus Lisp:
 set PATH=%MINGW32%;%PATH%
-gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl32.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -DHAS_PINVOKE=1 -m32
+%CC% -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl32.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -O2 -DHAS_PINVOKE=1 -m32
 set PATH=%PATH~%
 GOTO:EOF
 
 :OL64
 echo.   *** Making 64-bit Otus Lisp:
 set PATH=%MINGW64%;%PATH%
-gcc -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl64.o src/olvm.c -o "ol.exe" -lws2_32 -O2 -DHAS_PINVOKE=1 -m64
+%CC% -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl64.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -O2 -DHAS_PINVOKE=1 -m64
 set PATH=%PATH~%
 GOTO:EOF
 
@@ -178,11 +179,11 @@ GOTO:EOF
 :TALKBACK
 echo.   *** Making talkback:
 ld -r -b binary -o ffi.o otus/ffi.scm
-gcc -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DOLVM_FFI=1 ^
+%CC% -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DOLVM_FFI=1 ^
     -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -D INTEGRATED_FFI ^
     src/olvm.c tmp/repl.o ffi.o extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
-    -lws2_32 -O2 -g2
+    -Iwin32 -lws2_32 -O2 -g2
 GOTO:EOF
 
 GOTO:EOF
@@ -215,8 +216,8 @@ GOTO:EOF
 
 
 :RELEASE
-gcc -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -o "vm.exe" -lws2_32 -g0 -DNDEBUG -Wl,-subsystem,windows
-gcc -std=c99 -O2 -s -Wall -fmessage-length=0 tmp/repl.o src/olvm.c -o "ol.exe" -lws2_32 -g0 -DNDEBUG -Wl,-subsystem,windows
+%CC% -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -Iwin32 -o "vm.exe" -lws2_32 -g0 -DNDEBUG -Wl,-subsystem,windows
+%CC% -std=c99 -O2 -s -Wall -fmessage-length=0 tmp/repl.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -g0 -DNDEBUG -Wl,-subsystem,windows
 GOTO:EOF
 
 
@@ -260,16 +261,16 @@ call :REPL64
 :: internal
 set PATH=%MINGW32%;%PATH%
 echo 32-bit internal test:
-gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c tests/vm.c -o "test-vm32.exe" -lws2_32 -DEMBEDDED_VM=1 -m32 -DNDEBUG -s -Iinclude
+%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c tests/vm.c -Iwin32 -o "test-vm32.exe" -lws2_32 -DEMBEDDED_VM=1 -m32 -DNDEBUG -s -Iinclude
 test-vm32.exe
 if errorlevel 1 goto fail
 
 set PATH=%PATH~%
 set PATH=%MINGW64%;%PATH%
 echo 64-bit internal test:
-gcc -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c tests/vm.c -o "test-vm64.exe" -lws2_32 -DEMBEDDED_VM=1 -m64 -DNDEBUG -s -Iinclude
+%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c tests/vm.c -Iwin32 -o "test-vm64.exe" -lws2_32 -DEMBEDDED_VM=1 -m64 -DNDEBUG -s -Iinclude
 test-vm64.exe
 if errorlevel 1 goto fail
 
@@ -279,9 +280,9 @@ set PATH=%PATH~%
 set PATH=%MINGW32%;%PATH%
 echo|set /p=32-bit ffi testing ...
 ld -r -b binary -o tmp/repl32.o repl
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+%CC% -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
-    src/olvm.c tmp/repl32.o tests/ffi.c -o "test-ffi32.exe" -lws2_32 -O2 -g2 -m32
+    src/olvm.c tmp/repl32.o tests/ffi.c -Iwin32 -o "test-ffi32.exe" -lws2_32 -O2 -g2 -m32
 test-ffi32.exe tests/ffi.scm > C:\TEMP\out
 fc C:\TEMP\out tests/ffi.scm.ok > nul
 if errorlevel 1 (
@@ -294,9 +295,9 @@ set PATH=%PATH~%
 set PATH=%MINGW64%;%PATH%
 echo|set /p=64-bit ffi testing ...
 ld -r -b binary -o tmp/repl64.o repl
-gcc -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+%CC% -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
-    src/olvm.c tmp/repl64.o tests/ffi.c -o "test-ffi64.exe" -lws2_32 -O2 -g2 -m64
+    src/olvm.c tmp/repl64.o tests/ffi.c -Iwin32 -o "test-ffi64.exe" -lws2_32 -O2 -g2 -m64
 test-ffi64.exe tests/ffi.scm > C:\TEMP\out
 fc C:\TEMP\out tests/ffi.scm.ok > nul
 if errorlevel 1 (
@@ -355,7 +356,10 @@ GOTO:EOF
 :: ====================================================================================
 
 :ANDROID
-C:\android-ndk-r10e\ndk-build.cmd
+set PATH=%PATH%;C:\android-ndk-r10e\;C:\android-sdk-windows\platform-tools\
+call ndk-build
+::call adb push libs/armeabi/ol /data/local/tmp/ol
+::call adb shell chmod 755 /data/local/tmp/ol
 GOTO:EOF
 
 :REMOTE

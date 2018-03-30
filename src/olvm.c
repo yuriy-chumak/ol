@@ -329,18 +329,20 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 #ifdef _WIN32
 #	define lstat stat
+int pipe(int pipes[2]);
 #endif
 
 #include <time.h>
 #include <math.h>
 
-#ifdef __unix__
-#	include <sys/utsname.h>
+#include <sys/utsname.h> // have own win32 implementation
+
+#if HAS_DLOPEN
+#	include <dlfcn.h>    // have own win32 implementation
 #endif
 
 #ifdef __linux__
-#	include <sys/utsname.h> // uname
-#	include <sys/resource.h>// getrusage
+#	include <sys/resource.h> // getrusage
 #	if HAS_SANDBOX
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
@@ -409,6 +411,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #endif
 
 // ========================================
+// -=( logger )=---------------------------
 static
 void E(char* format, ...)
 {
@@ -456,7 +459,6 @@ void E(char* format, ...)
 	default:
 		write(fd, format-1, sizeof(char));
 	}
-
 #pragma GCC diagnostic pop
 }
 
@@ -466,15 +468,17 @@ void E(char* format, ...)
 #	define D(...) E(__VA_ARGS__)
 #endif
 
+// --------------------------------------------------
+// -=( yield )=------------------------
 void yield()
 {
 #ifdef __EMSCRIPTEN__
 	emscripten_sleep(1);
 #else
-# ifdef _WIN32   // Windows
+# ifdef _WIN32
 	Sleep(1);
 # endif
-# ifdef __linux__ // Linux
+# ifdef __linux__
 	sched_yield();
 # endif
 # if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
@@ -482,6 +486,7 @@ void yield()
 # endif
 #endif
 }
+
 // ========================================
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
@@ -489,8 +494,9 @@ void yield()
 #ifdef __linux__
 #	include <sys/socket.h>
 #	include <netinet/in.h>
-#	include <netdb.h>     // for gethostbyname()
+
 #	include <arpa/inet.h> // for inet_addr()
+#	include <netdb.h>     // for gethostbyname()
 #endif
 
 #ifdef _WIN32
@@ -540,376 +546,38 @@ void yield()
 #endif
 
 // --------------------------------------------------------
-// -=( dl )=-----------------------------------------------
-#if HAS_DLOPEN
-// интерфейс к динамическому связыванию системных библиотек
-
-#ifdef _WIN32
-// seen at https://github.com/dlfcn-win32/dlfcn-win32/blob/master/dlfcn.c
-
-static DWORD dlerrno = 0;
-static
-void *dlopen(const char *filename, int mode/*unused*/)
-{
-	HMODULE hModule;
-	// Do not let Windows display the critical-error-handler message box */
-	// UINT uMode = SetErrorMode( SEM_FAILCRITICALERRORS );
-
-	UINT errorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
-	if (filename == 0) {
-		hModule = GetModuleHandle(NULL);
-	}
-	else {
-		/* POSIX says the search path is implementation-defined.
-		 * LOAD_WITH_ALTERED_SEARCH_PATH is used to make it behave more closely
-		 * to UNIX's search paths (start with system folders instead of current
-		 * folder).
-		 */
-		SetErrorMode(errorMode | SEM_FAILCRITICALERRORS);
-		hModule = LoadLibraryEx((LPSTR)filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-	}
-
-	dlerrno = GetLastError();
-	SetErrorMode(errorMode);
-	return hModule;
-}
-
-static
-int dlclose(void *handle)
-{
-	return FreeLibrary((HMODULE)handle);
-}
-
-static
-void *dlsym(void *handle, const char *name)
-{
-	FARPROC function;
-
-	function = GetProcAddress((HANDLE)handle, name);
-	return function;
-}
-
-static
-char* dlerror() {
-//	size_t size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, dlerrno, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT))
-	return "description unavailable";
-}
-
-#else
-#	include <dlfcn.h>
-#endif
-
-#endif //HAS_DLOPEN
-
-
-// --------------------------------------------------------
 // -=( fork )=---------------------------------------------
 // sample implementation can be found at
 // https://github.com/jonclayden/multicore/blob/master/src/forknt.c
 // originally from: "Windows NT/2000 native API reference" ISBN 1-57870-199-6.
 #if _WIN32
 
+// TBD.
+
 #endif
 
 // --------------------------------------------------------
 // -=( i/o )=----------------------------------------------
 // os independent i/o implementations
-
-// open
-#define os_open open
-
-// read
-typedef ssize_t (read_t)(int fd, void *buf, size_t count, void* userdata);
-
-#ifdef _WIN32
-
-static
-ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
-{
-	int got;
-
-	// regular reading
-	if (!_isatty(fd) || _kbhit()) { // we don't get hit by kb in pipe
-		got = read(fd, (char *) buf, size);
-	} else {
-		errno = EAGAIN;
-		return -1;
-	}
-
-	if (got == -1) {
-		switch (errno) {
-		case EBADF: // have we tried to read from socket?
-			got = recv(fd, (char *) buf, size, 0);
-			if (got < 0 && WSAGetLastError() == WSAEWOULDBLOCK)
-				errno = EAGAIN;
-			break;
-
-		// https://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00170.html
-		// The other failure of the non-blocking I/O on pipes test on mingw is because
-		// when read() is called on a non-blocking pipe fd with an empty buffer, it
-		// fails with EINVAL. Whereas POSIX says that it should fail with EAGAIN.
-		case EINVAL: {
-			HANDLE handle = (HANDLE)_get_osfhandle(fd);
-			// pipe?
-			if (GetFileType(handle) == FILE_TYPE_PIPE) {
-				DWORD state;
-				// pipe in non-blocking mode?
-				if (GetNamedPipeHandleState (handle, &state, NULL, NULL, NULL, NULL, 0)
-						  && (state & PIPE_NOWAIT) != 0) {
-					errno = EAGAIN;
-				}
-			}
-			break; }
-		}
-	}
-	return got;
-}
-#else // assume all other oses are posix compliant
-
-static
-ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
-{
-	return read(fd, buf, size);
-}
-#endif
-
-// write
+// notes: 64-bit versions of Windows use 32-bit handles for
+//	interoperability. When sharing a handle between 32-bit
+//	and 64-bit applications, only the lower 32 bits are
+//	significant, so it is safe to truncate the handle (when
+//	passing it from 64-bit to 32-bit) or sign-extend the
+//	handle (when passing it from 32-bit to 64-bit).
+typedef int     (open_t) (const char *filename, int flags, int mode, void* userdata);
+typedef int     (close_t)(int fd, void* userdata);
+typedef ssize_t (read_t) (int fd, void *buf, size_t count, void* userdata);
 typedef ssize_t (write_t)(int fd, const void *buf, size_t count, void* userdata);
 
-#ifdef _WIN32
-static
-ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
-{
-	int wrote;
+typedef int     (stat_t) (const char *filename, struct stat *st);
+typedef int		(fstat_t)(int fd, struct stat *st);
 
-	// regular writing
-	wrote = write(fd, buf, size);
-
-	// sockets workaround
-	if (wrote == -1 && errno == EBADF) {
-		wrote = send(fd, buf, size, 0);
-	}
-	return wrote;
-}
-#else
-static __inline__
-ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
-{
-	return write(fd, buf, size);
-}
-#endif
-
-// close
-#define os_close close
-
-#ifdef _WIN32
-int pipe(int* pipes)
-{
-	static int id = 0;
-	char name[64];
-	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id); //todo: __sync_fetch_and_add(&id, 1));
-
-	HANDLE pipe1 = CreateNamedPipe(name,
-			PIPE_ACCESS_DUPLEX|WRITE_DAC,
-			PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
-			2, 1024, 1024, 2000, NULL);
-
-	HANDLE pipe2 = CreateFile(name,
-			GENERIC_WRITE, 0,
-			NULL,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-			NULL);
-
-	// https://stackoverflow.com/questions/7369445/is-there-a-windows-equivalent-to-fdopen-for-handles
-	pipes[0] = _open_osfhandle((intptr_t)pipe1, _O_APPEND | _O_RDONLY);
-	pipes[1] = _open_osfhandle((intptr_t)pipe2, _O_APPEND | _O_WRONLY);
-
-	// not required: ConnectNamedPipe(pipe1, NULL);
-	return 0;
-}
-#endif
-
-// --------------------------------------------------------
-// -=( uname )=--------------------------------------------
-
-#ifdef _WIN32
-struct utsname
-{
-	char sysname[65];  //
-	char nodename[65];
-	char release[65];
-	char version[65];
-	char machine[65];
-};
-
-static
-int uname(struct utsname* out) {
-	DWORD nodenamesize = sizeof(out->nodename);
-	GetComputerNameA(out->nodename, &nodenamesize);
-
-	SYSTEM_INFO si;
-	VOID (WINAPI *GetNativeSystemInfo)(LPSYSTEM_INFO) = (VOID (WINAPI*)(LPSYSTEM_INFO))
-			GetProcAddress(GetModuleHandle("kernel32.dll"), "GetNativeSystemInfo");
-	if (GetNativeSystemInfo)
-		GetNativeSystemInfo(&si);
-	else
-		GetSystemInfo(&si); // todo: make as getprocaddress
-
-	OSVERSIONINFOEXA oi;
-	oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXA);
-	if (!GetVersionExA((OSVERSIONINFOA*)&oi)) {
-		DWORD dwVersion = GetVersion();
-		oi.dwMajorVersion = (DWORD)(LOBYTE(LOWORD(dwVersion)));
-		oi.dwMinorVersion = (DWORD)(HIBYTE(LOWORD(dwVersion)));
-
-		if (dwVersion < 0x80000000)
-			oi.dwBuildNumber = (DWORD)(HIWORD(dwVersion));
-		else
-			oi.dwBuildNumber = 0;
-	}
-
-	strncpy(out->sysname, "Windows", sizeof(out->sysname));
-	if (oi.dwPlatformId < VER_PLATFORM_WIN32_NT) {
-		oi.dwBuildNumber = (DWORD)LOWORD(oi.dwBuildNumber);
-		if (oi.dwMinorVersion == 0) {
-			strcat(out->sysname, " 95");
-			if (oi.dwBuildNumber >= 1111) {
-				strcat(out->sysname, ", OSR2");
-				if (oi.dwBuildNumber >= 1212) strcat(out->sysname, ".5");
-			}
-		}
-		else if (oi.dwMinorVersion == 0x90) {
-			strcat(out->sysname, " Me");
-		}
-		else {
-			strcat(out->sysname, " 98");
-			if (oi.dwBuildNumber >= 2222) strcat(out->sysname, ", Second Edition");
-		}
-	}
-	else {
-		if (oi.dwMajorVersion <= 4) {
-			strcat(out->sysname, " NT");
-			itoa(oi.dwMajorVersion, &out->sysname[strlen(out->sysname)], 10);
-			strcat(out->sysname, ".");
-			itoa(oi.dwMinorVersion, &out->sysname[strlen(out->sysname)], 10);
-			if (oi.dwMajorVersion >= 4) {
-				switch (oi.wProductType) {
-				case VER_NT_WORKSTATION:       strcat(out->sysname, ", Workstation");       break;
-				case VER_NT_DOMAIN_CONTROLLER: strcat(out->sysname, ", Domain Controller"); break;
-				case VER_NT_SERVER:            strcat(out->sysname, ", Server");            break;
-				}
-			}
-		}
-		else {
-			switch (0x100 * oi.dwMajorVersion + oi.dwMinorVersion) {
-			case 0x500:
-				strcat(out->sysname, " 2000");
-				if      (oi.wProductType == VER_NT_WORKSTATION) strcat(out->sysname, " Professional");
-				else if (oi.wSuiteMask & VER_SUITE_DATACENTER ) strcat(out->sysname, " Datacenter Server");
-				else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE ) strcat(out->sysname, " Advanced Server");
-				else strcat(out->sysname, " Server");
-				break;
-
-			case 0x501:
-				strcat(out->sysname, " XP");
-				if (oi.wSuiteMask & VER_SUITE_PERSONAL)
-					strcat(out->sysname, " Home Edition");
-				else
-					strcat(out->sysname, " Professional");
-				break;
-
-			case 0x502: {
-				#ifndef VER_SUITE_WH_SERVER
-					#define VER_SUITE_WH_SERVER 0x00008000
-				#endif
-
-				char *name, *type;
-
-				if (GetSystemMetrics(SM_SERVERR2))
-					name = "Server 2003 R2";
-				else if (oi.wSuiteMask == VER_SUITE_STORAGE_SERVER)
-					name = "Storage Server 2003";
-				else if (oi.wSuiteMask == VER_SUITE_WH_SERVER)
-					name = "Home Server";
-				else if (oi.wProductType == VER_NT_WORKSTATION && si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
-					name = "XP"; type = "Professional x64 Edition";
-				}
-				else
-					name = "Server 2003";
-
-				if (oi.wProductType != VER_NT_WORKSTATION) {
-					if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_IA64) {
-						if (oi.wSuiteMask & VER_SUITE_DATACENTER)
-							type = "Datacenter Edition for Itanium-based Systems";
-						else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE)
-							type = "Enterprise Edition for Itanium-based Systems";
-					}
-					else if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64) {
-						if (oi.wSuiteMask & VER_SUITE_DATACENTER)
-							type = "Datacenter x64 Edition";
-						else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE)
-							type = "Enterprise x64 Edition";
-						else
-							type = "Standard x64 Edition";
-					}
-					else {
-						if (oi.wSuiteMask & VER_SUITE_COMPUTE_SERVER)  type = "Compute Cluster Edition";
-						else if (oi.wSuiteMask & VER_SUITE_DATACENTER) type = "Datacenter Edition";
-						else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE) type = "Enterprise Edition";
-						else if (oi.wSuiteMask & VER_SUITE_BLADE)      type = "Web Edition";
-						else                                           type = "Standard Edition";
-					}
-				}
-				snprintf(out->sysname, sizeof(out->sysname), "Windows %s, %s", name, type);
-				break;
-			}
-
-			case 0x600: case 0x601: {
-			//	const char* ps1;
-
-			//	if (oi.wProductType == VER_NT_WORKSTATION)
-			//		ps1 = oi.dwMinorVersion == 0 ? "Vista" : "7";
-			//	else
-			//		ps1 = oi.dwMinorVersion == 0 ? "Server 2008" : "Server 2008 R2";
-
-			//   DWORD dwType = PRODUCT_UNDEFINED;
-			//   if (NULL != (u.f=get_func("GetProductInfo"))) u.GetProductInfo(oi.dwMajorVersion,oi.dwMinorVersion,0,0,&dwType);
-			//   switch( dwType ) {
-			//	  case PRODUCT_ULTIMATE:          ps2 = "Ultimate Edition";       break;
-			//	  case PRODUCT_HOME_PREMIUM:      ps2 = "Home Premium Edition";   break;
-			//	  case PRODUCT_HOME_BASIC:        ps2 = "Home Basic Edition";     break;
-			//	  case PRODUCT_ENTERPRISE:        ps2 = "Enterprise Edition";     break;
-			//	  case PRODUCT_BUSINESS:          ps2 = "Business Edition";       break;
-			//	  case PRODUCT_STARTER:           ps2 = "Starter Edition";        break;
-			//	  case PRODUCT_CLUSTER_SERVER:    ps2 = "Cluster Server Edition"; break;
-			//	  case PRODUCT_DATACENTER_SERVER: ps2 = "Datacenter Edition";     break;
-			//	  case PRODUCT_DATACENTER_SERVER_CORE: ps2 = "Datacenter Edition (core installation)"; break;
-			//	  case PRODUCT_ENTERPRISE_SERVER: ps2 = "Enterprise Edition";     break;
-			//	  case PRODUCT_ENTERPRISE_SERVER_CORE: ps2 = "Enterprise Edition (core installation)"; break;
-			//	  case PRODUCT_ENTERPRISE_SERVER_IA64: ps2 = "Enterprise Edition for Itanium-based Systems"; break;
-			//	  case PRODUCT_SMALLBUSINESS_SERVER: ps2 = "Small Business Server"; break;
-			//	  case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM: ps2 = "Small Business Server Premium Edition"; break;
-			//	  case PRODUCT_STANDARD_SERVER:   ps2 = "Standard Edition";       break;
-			//	  case PRODUCT_STANDARD_SERVER_CORE: ps2 = "Standard Edition (core installation)"; break;
-			//	  case PRODUCT_WEB_SERVER:        ps2 = "Web Server Edition";     break;
-			//   }
-				break;
-			}
-			default:
-				break;
-			}
-		}
-	}
-//					   add_sp(os, oi.szCSDVersion);//*/
-
-
-	strncpy(out->release, "", sizeof(out->release)); // oi.dwMajorVersion, oi.dwMinorVersion, oi.dwBuildNumber
-	strncpy(out->version, "", sizeof(out->version)); // kernel + " " + release
-	strncpy(out->machine, "", sizeof(out->machine));
-	return 0;
-};
-#endif
-
+static int     os_open (const char *filename, int flags, int mode, void* userdata);
+static int     os_close(int fd, void* userdata);
+static ssize_t os_read (int fd, void *buf, size_t size, void* userdata);
+static ssize_t os_write(int fd, const void *buf, size_t size, void* userdata);
+// os_stat
 
 // ----------
 // -=( OL )=--------------------------------------------------------------------
@@ -1854,10 +1522,11 @@ struct ol_t
 	void* userdata; // user data
 
 	// i/o polymorphism
-	int (*open)(const char *pathname, int flags, ...);
-	ssize_t (*read)(int fd, void *buf, size_t count, void* userdata);
-	ssize_t (*write)(int fd, const void *buf, size_t count, void* userdata);
-	int (*close)(int fd);
+	open_t  *open;
+	close_t *close;
+	read_t  *read;
+	write_t *write;
+//	stat_t  *stat;
 
 	// deprecated
 	int std[3]; // стандартные порты в/в
@@ -3441,7 +3110,7 @@ loop:;
 			int mode = uvtoi (b);
 			mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
 
-			int file = os_open((char*)s, mode, (S_IRUSR | S_IWUSR));
+			int file = os_open((char*)s, mode, (S_IRUSR | S_IWUSR), ol);
 			if (file < 0)
 				break;
 
@@ -5253,5 +4922,114 @@ OL_run(OL* handle, int argc, char** argv)
 
 // Foreign Function Interface support code
 #if OLVM_FFI || OLVM_CALLABLES
-#	include "ffi.c"
+#	include "../extensions/ffi.c"
 #endif
+
+// ---------------------------------------
+// read/write/open/close
+
+static
+int os_open (const char *filename, int flags, int mode, void* userdata)
+{
+	return open(filename, flags, mode);
+}
+static
+int os_close(int fd, void* userdata)
+{
+	return close(fd);
+}
+
+
+static
+ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
+{
+#ifdef _WIN32
+	int got;
+
+	// regular reading
+	if (!_isatty(fd) || _kbhit()) { // we don't get hit by kb in pipe
+		got = read(fd, (char *) buf, size);
+	} else {
+		errno = EAGAIN;
+		return -1;
+	}
+
+	if (got == -1) {
+		switch (errno) {
+		case EBADF: // have we tried to read from socket?
+			got = recv(fd, (char *) buf, size, 0);
+			if (got < 0 && WSAGetLastError() == WSAEWOULDBLOCK)
+				errno = EAGAIN;
+			break;
+
+		// https://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00170.html
+		// The other failure of the non-blocking I/O on pipes test on mingw is because
+		// when read() is called on a non-blocking pipe fd with an empty buffer, it
+		// fails with EINVAL. Whereas POSIX says that it should fail with EAGAIN.
+		case EINVAL: {
+			HANDLE handle = (HANDLE)_get_osfhandle(fd);
+			// pipe?
+			if (GetFileType(handle) == FILE_TYPE_PIPE) {
+				DWORD state;
+				// pipe in non-blocking mode?
+				if (GetNamedPipeHandleState (handle, &state, NULL, NULL, NULL, NULL, 0)
+						  && (state & PIPE_NOWAIT) != 0) {
+					errno = EAGAIN;
+				}
+			}
+			break; }
+		}
+	}
+	return got;
+#else // assume all other oses are posix compliant
+	return read(fd, buf, size);
+#endif
+}
+
+static
+ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
+{
+#if _WIN32
+	int wrote;
+
+	// regular writing
+	wrote = write(fd, buf, size);
+
+	// sockets workaround
+	if (wrote == -1 && errno == EBADF) {
+		wrote = send(fd, buf, size, 0);
+	}
+	return wrote;
+#else
+	return write(fd, buf, size);
+#endif
+}
+
+#ifdef _WIN32
+int pipe(int pipes[2])
+{
+	static int id = 0;
+	char name[64];
+	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id); //todo: __sync_fetch_and_add(&id, 1));
+
+	HANDLE pipe1 = CreateNamedPipe(name,
+			PIPE_ACCESS_DUPLEX|WRITE_DAC,
+			PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
+			2, 1024, 1024, 2000, NULL);
+
+	HANDLE pipe2 = CreateFile(name,
+			GENERIC_WRITE, 0,
+			NULL,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+			NULL);
+
+	// https://stackoverflow.com/questions/7369445/is-there-a-windows-equivalent-to-fdopen-for-handles
+	pipes[0] = _open_osfhandle((intptr_t)pipe1, _O_APPEND | _O_RDONLY);
+	pipes[1] = _open_osfhandle((intptr_t)pipe2, _O_APPEND | _O_WRONLY);
+
+	// not required: ConnectNamedPipe(pipe1, NULL);
+	return 0;
+}
+#endif
+
+// ...

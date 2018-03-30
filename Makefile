@@ -265,7 +265,7 @@ ol: src/olvm.c include/olvm.h tmp/repl.o
 	   -Xlinker --export-dynamic $(L)
 	@echo Ok.
 
-src/olvm.c: src/ffi.c
+src/olvm.c: extensions/ffi.c
 	touch src/olvm.c
 
 vm: src/olvm.c include/olvm.h
@@ -282,7 +282,7 @@ vm64: src/olvm.c include/olvm.h
 	@echo Ok.
 
 
-olvm.js: src/olvm.c include/olvm.h src/ffi.c
+olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
 	emcc src/olvm.c -Oz \
 	   -D NAKED_VM=1 -D HAS_DLOPEN=1 \
 	   -o olvm.js \
