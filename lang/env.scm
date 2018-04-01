@@ -130,8 +130,11 @@
                   (else is funny
                      (fail (list "funny defined value: " funny)))))
             ((undefined)
-               (fail (list "What is"
-                  (bytes->string (foldr render '() (list "'" exp "'?"))))))
+               (fail
+               (let ((error (bytes->string (foldr render '() (list "'" exp "'?")))))
+                  (if (has? '(q quit exit stop ret) exp)
+                     (list "What is " error " \n/if you want to quit just write ,quit (with comma!)/")
+                     (list "What is " error)))))
             (else is bad
                (fail (list "The symbol" exp "has a funny value: '" bad "'")))))
 
