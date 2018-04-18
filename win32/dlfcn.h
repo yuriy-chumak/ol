@@ -2,9 +2,6 @@
 #ifdef _WIN32
 // seen at https://github.com/dlfcn-win32/dlfcn-win32/blob/master/dlfcn.c
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
 static DWORD dlerrno = 0;
 static
 void *dlopen(const char *filename, int mode/*unused*/)

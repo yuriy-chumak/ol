@@ -325,17 +325,17 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #include <sys/stat.h>
 
 #ifdef _WIN32
-#	define lstat stat
-int pipe(int pipes[2]);
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #endif
 
 #include <time.h>
 #include <math.h>
 
-#include <sys/utsname.h> // have own win32 implementation
+#include <sys/utsname.h> // own win32 implementation
 
 #if HAS_DLOPEN
-#	include <dlfcn.h>    // have own win32 implementation
+#	include <dlfcn.h>    // own win32 implementation
 #endif
 
 #ifdef __linux__
@@ -353,13 +353,16 @@ int pipe(int pipes[2]);
 #endif
 
 #ifdef _WIN32
-#	define WIN32_LEAN_AND_MEAN
-#	include <windows.h>
-
 #	include <malloc.h>
 
 #	include <conio.h>
 #	undef ERROR // macro redefinition
+
+# ifdef HAS_SOCKETS
+#	include <winsock2.h>
+# endif
+#include "unistd-ext.h"  // own win32 implementation
+
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -472,14 +475,16 @@ void yield()
 #ifdef __EMSCRIPTEN__
 	emscripten_sleep(1);
 #else
+# if defined(__linux__) ||\
+     defined(__FreeBSD__) ||\
+     defined(__NetBSD__) ||\
+     defined(__OpenBSD__) ||\
+     defined(__DragonFly__)
+
+	sched_yield();
+# endif
 # ifdef _WIN32
 	Sleep(1);
-# endif
-# ifdef __linux__
-	sched_yield();
-# endif
-# if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
-	sched_yield();
 # endif
 #endif
 }
@@ -488,28 +493,12 @@ void yield()
 //  HAS_SOCKETS 1
 #if HAS_SOCKETS
 
-#ifdef __linux__
-#	include <sys/socket.h>
-#	include <netinet/in.h>
-
-#	include <arpa/inet.h> // for inet_addr()
-#	include <netdb.h>     // for gethostbyname()
-#endif
-
-#ifdef _WIN32
-#	include <winsock2.h>
-#	include <ws2tcpip.h>
-
-	typedef unsigned long in_addr_t;
-#	ifndef EWOULDBLOCK
-#	define EWOULDBLOCK WSAEWOULDBLOCK
-#	endif
-#endif
-
 #ifdef __unix__
 #	include <sys/socket.h>
 #	include <netinet/in.h>
+# ifndef __linux__
 #	include <sys/select.h>
+# endif
 
 #	include <arpa/inet.h> // for inet_addr()
 #	include <netdb.h>     // for gethostbyname()
@@ -523,9 +512,15 @@ void yield()
 #	endif
 #endif
 
-//#ifdef __ANDROID__
-//	typedef unsigned long in_addr_t;
-//#endif
+#ifdef _WIN32
+#	include <winsock2.h>
+#	include <ws2tcpip.h>
+
+	typedef unsigned long in_addr_t;
+#	ifndef EWOULDBLOCK
+#	define EWOULDBLOCK WSAEWOULDBLOCK
+#	endif
+#endif
 
 #ifdef __APPLE__
 #	include "TargetConditionals.h"
@@ -539,6 +534,10 @@ void yield()
     // Unsupported platform
 #	endif
 #endif
+
+//#ifdef __ANDROID__
+//	typedef unsigned long in_addr_t;
+//#endif
 
 #endif
 
@@ -574,7 +573,7 @@ static int     os_open (const char *filename, int flags, int mode, void* userdat
 static int     os_close(int fd, void* userdata);
 static ssize_t os_read (int fd, void *buf, size_t size, void* userdata);
 static ssize_t os_write(int fd, const void *buf, size_t size, void* userdata);
-// os_stat
+// todo: os_stat
 
 // ----------
 // -=( OL )=--------------------------------------------------------------------
@@ -937,6 +936,13 @@ word*p = NEW (size);\
 
 // -= ports =-------------------------------------------
 // создает порт, НЕ аллоцирует память
+
+// it's safe under linux (posix uses int as io handles)
+// it's safe under Windows (handles is 24-bit width):
+//	https://msdn.microsoft.com/en-us/library/ms724485(VS.85).aspx
+//	Kernel object handles are process specific. That is, a process must
+//	either create the object or open an existing object to obtain a kernel
+//	object handle. The per-process limit on kernel handles is 2^24.
 #define make_port(a) ({ assert ((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
 #define port(o)      value(o)
 
@@ -4058,7 +4064,7 @@ loop:;
 			break;
 		}
 		#if OLVM_CALLABLES
-		case SYSCALL_MKCB: {
+		case SYSCALL_MKCB: { // make-callable
 			// TCALLABLE
 			int c;
 			// TODO: увеличить heap->CR если маловато колбеков!
@@ -4940,47 +4946,7 @@ int os_close(int fd, void* userdata)
 static
 ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
 {
-#ifdef _WIN32
-	int got;
-
-	// regular reading
-	if (!_isatty(fd) || _kbhit()) { // we don't get hit by kb in pipe
-		got = read(fd, (char *) buf, size);
-	} else {
-		errno = EAGAIN;
-		return -1;
-	}
-
-	if (got == -1) {
-		switch (errno) {
-		case EBADF: // have we tried to read from socket?
-			got = recv(fd, (char *) buf, size, 0);
-			if (got < 0 && WSAGetLastError() == WSAEWOULDBLOCK)
-				errno = EAGAIN;
-			break;
-
-		// https://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00170.html
-		// The other failure of the non-blocking I/O on pipes test on mingw is because
-		// when read() is called on a non-blocking pipe fd with an empty buffer, it
-		// fails with EINVAL. Whereas POSIX says that it should fail with EAGAIN.
-		case EINVAL: {
-			HANDLE handle = (HANDLE)_get_osfhandle(fd);
-			// pipe?
-			if (GetFileType(handle) == FILE_TYPE_PIPE) {
-				DWORD state;
-				// pipe in non-blocking mode?
-				if (GetNamedPipeHandleState (handle, &state, NULL, NULL, NULL, NULL, 0)
-						  && (state & PIPE_NOWAIT) != 0) {
-					errno = EAGAIN;
-				}
-			}
-			break; }
-		}
-	}
-	return got;
-#else // assume all other oses are posix compliant
 	return read(fd, buf, size);
-#endif
 }
 
 static
@@ -5001,32 +4967,4 @@ ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
 	return write(fd, buf, size);
 #endif
 }
-
-#ifdef _WIN32
-int pipe(int pipes[2])
-{
-	static int id = 0;
-	char name[64];
-	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id); //todo: __sync_fetch_and_add(&id, 1));
-
-	HANDLE pipe1 = CreateNamedPipe(name,
-			PIPE_ACCESS_DUPLEX|WRITE_DAC,
-			PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
-			2, 1024, 1024, 2000, NULL);
-
-	HANDLE pipe2 = CreateFile(name,
-			GENERIC_WRITE, 0,
-			NULL,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-			NULL);
-
-	// https://stackoverflow.com/questions/7369445/is-there-a-windows-equivalent-to-fdopen-for-handles
-	pipes[0] = _open_osfhandle((intptr_t)pipe1, _O_APPEND | _O_RDONLY);
-	pipes[1] = _open_osfhandle((intptr_t)pipe2, _O_APPEND | _O_WRONLY);
-
-	// not required: ConnectNamedPipe(pipe1, NULL);
-	return 0;
-}
-#endif
-
 // ...
