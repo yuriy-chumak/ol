@@ -30,13 +30,7 @@ int pipe(int pipes[2])
 	return 0;
 }
 
-
-static __inline__
-ssize_t posix_read(int fd, void *buf, size_t count)
-{
-	return read(fd, buf, count);
-}
-
+// read workaround:
 static
 ssize_t readEx(int fd, void *buf, size_t size)
 {
@@ -44,7 +38,7 @@ ssize_t readEx(int fd, void *buf, size_t size)
 
 	// regular reading
 	if (!_isatty(fd) || _kbhit()) { // we don't get hit by kb in pipe
-		got = posix_read(fd, (char *) buf, size);
+		got = read(fd, (char *) buf, size);
 	} else {
 		errno = EAGAIN;
 		return -1;
@@ -80,6 +74,23 @@ ssize_t readEx(int fd, void *buf, size_t size)
 	}
 	return got;
 }
-
 #define read readEx
+
+// write workaround:
+static
+ssize_t writeEx(int fd, void *buf, size_t size)
+{
+	int wrote;
+
+	// regular writing (files and pipes)
+	wrote = write(fd, buf, size);
+
+	// sockets workaround
+	if (wrote == -1 && errno == EBADF) {
+		wrote = send(fd, buf, size, 0);
+	}
+	return wrote;
+}
+#define write writeEx
+
 #endif

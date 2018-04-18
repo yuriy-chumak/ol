@@ -564,7 +564,7 @@ void yield()
 typedef int     (open_t) (const char *filename, int flags, int mode, void* userdata);
 typedef int     (close_t)(int fd, void* userdata);
 typedef ssize_t (read_t) (int fd, void *buf, size_t count, void* userdata);
-typedef ssize_t (write_t)(int fd, const void *buf, size_t count, void* userdata);
+typedef ssize_t (write_t)(int fd, void *buf, size_t count, void* userdata);
 
 typedef int     (stat_t) (const char *filename, struct stat *st);
 typedef int		(fstat_t)(int fd, struct stat *st);
@@ -572,7 +572,7 @@ typedef int		(fstat_t)(int fd, struct stat *st);
 static int     os_open (const char *filename, int flags, int mode, void* userdata);
 static int     os_close(int fd, void* userdata);
 static ssize_t os_read (int fd, void *buf, size_t size, void* userdata);
-static ssize_t os_write(int fd, const void *buf, size_t size, void* userdata);
+static ssize_t os_write(int fd, void *buf, size_t size, void* userdata);
 // todo: os_stat
 
 // ----------
@@ -4949,21 +4949,8 @@ ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
 }
 
 static
-ssize_t os_write(int fd, const void *buf, size_t size, void* userdata)
+ssize_t os_write(int fd, void *buf, size_t size, void* userdata)
 {
-#if _WIN32
-	int wrote;
-
-	// regular writing
-	wrote = write(fd, buf, size);
-
-	// sockets workaround
-	if (wrote == -1 && errno == EBADF) {
-		wrote = send(fd, buf, size, 0);
-	}
-	return wrote;
-#else
 	return write(fd, buf, size);
-#endif
 }
 // ...
