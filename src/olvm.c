@@ -621,7 +621,6 @@ typedef uintptr_t word;
 
 // values and references:
 
-#define IPOS      8  // === offsetof (struct direct, payload)
 struct __attribute__ ((aligned(sizeof(word)), packed))
 value_t
 {
@@ -631,6 +630,7 @@ value_t
 
 	word  payload : 8 * sizeof(word) - (1+1+6);
 };
+#define IPOS      8  // === offsetof (struct direct, payload)
 
 struct __attribute__ ((aligned(sizeof(word)), packed))
 reference_t
@@ -639,10 +639,6 @@ reference_t
 };
 
 // objects structure:
-#define SPOS     16  // === offsetof (struct header, size)
-#define TPOS      2  // === offsetof (struct header, type)
-#define RPOS     11  // === offsetof (struct header, rawness)
-
 struct __attribute__ ((aligned(sizeof(word)), packed))
 header_t
 {
@@ -656,6 +652,9 @@ header_t
 
 	word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
+#define TPOS      2  // === offsetof (struct header, type)
+#define RPOS     11  // === offsetof (struct header, rawness)
+#define SPOS     16  // === offsetof (struct header, size)
 
 struct __attribute__ ((aligned(sizeof(word)), packed))
 object_t
@@ -1368,12 +1367,12 @@ word gc(heap_t *heap, int query, word regs)
 			if (nused < hsize)
 				nused = hsize;
 			//fprintf(stderr, ">");
-			regs += resize_heap(heap, nused + nused / 3) * sizeof(W);
+			regs += resize_heap(heap, nused + nused / 3) * W;
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
 		else if (nused < (hsize / 3)) {
 			//fprintf(stderr, "<");
-			regs += resize_heap(heap, hsize - hsize / 9) * sizeof(W);
+			regs += resize_heap(heap, hsize - hsize / 9) * W;
 		}
 		heap->genstart = (word*)regs; // always start new generation
 	}
@@ -2566,11 +2565,11 @@ loop:;
 			else
 				ERROR(VMCAST, this, T);
 			break;
-		/*case TVPTR:
+		case TVPTR:
 			// safe limitation (todo: make macro to on/off)
 			if (is_value(T) && value(T) == 0)
 				A2 = (word)new_vptr(0);
-			break;*/
+			break;
 
 		#if OLVM_INEXACTS
 		case TINEXACT:
