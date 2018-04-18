@@ -91,7 +91,7 @@ for %%a in (
 GOTO:EOF
 
 :BOOT
-vm repl <samples/attic/to-c.scm >tmp/boot.c
+vm repl <samples/attic/to-c.scm >src/repl.c
 GOTO:EOF
 
 :: ======================================
