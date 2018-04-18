@@ -3,8 +3,8 @@
 ::       latest sdk is bullshit and doesn't works
 
 set PATH~=%PATH%
-set MINGW32=C:\mingw\i686-6.2.0-posix-dwarf-rt_v5-rev1\mingw32\bin\
-set MINGW64=C:\mingw-w64\x86_64-6.1.0-posix-seh-rt_v5-rev1\mingw64\bin\
+set MINGW32=C:\MinGW\i686-7.3.0-posix-dwarf-rt_v5-rev0\mingw32\bin\
+set MINGW64=C:\MinGW\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin\
 set CC=gcc
 
 echo -=( building %1 )=-------------------------------------------------------------------
