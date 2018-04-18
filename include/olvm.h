@@ -29,13 +29,10 @@
 // Otus - совка (англ) - подтип сов, создание (фин).
 struct ol_t;
 
-// internal option
-//#define NO_SECCOMP
-
 /**
  * Create new OL virtual machine (olvm)
  *
- * \param[in] bootstrap Binary code to be executed by olvm.
+ * \param[in] Bootstrap binary code to be executed by olvm.
  * \return Created olvm instance
  */
 struct ol_t*
