@@ -598,13 +598,13 @@ typedef uintptr_t word;
 //              '---------------------> object size in words
 //
 // а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект:
-//                       .------------> 24-bit payload if immediate
+//                       .------------> payload if immediate
 //                       |      .-----> type tag if immediate
 //                       |      |.----> immediateness
 //   .-------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
 //  [... pppppppp pppppppp tttttti0]
 //   '----------------------------|
-//                                '-----> 4- or 8-byte aligned pointer if not immediate
+//                                '-----> word aligned pointer if not immediate (4- or 8-byte)
 //      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
@@ -615,8 +615,8 @@ typedef uintptr_t word;
 
 // todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
 //	и ptr на функцию, что делает финализацию.
-// todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC !!!
-//	(идея: просто останавливаться на таких объектах, как на generation линии)
+// todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
+//	(идея: просто останавливаться на таких объектах, как на generation линии?)
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
 // values and references:
@@ -692,20 +692,17 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 // ------------------------------------------------------
 #define W                           sizeof (word)
 
-#define FBITS                       ((sizeof (word) * 8) - 8) // bits in value (short number)
-#define HIGHBIT                     ((int_t)1 << FBITS) // maximum value value + 1
-#define FMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
+#define VBITS                       ((sizeof (word) * 8) - 8) // bits in value (short number)
+#define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
+#define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 
 #define RAWBIT                      (1 << RPOS)
-#define RAWH(t)                     (t | (RAWBIT >> TPOS))
+#define RAWQ(t)                     (t | (RAWBIT >> TPOS))
 
-#define make_value(type, value)        (2 | (((word)value) << IPOS) | ((type) << TPOS))
-#define make_header(type, size)        (2 | ( (word)(size) << SPOS) | ((type) << TPOS))
-#define make_raw_header(type, size, p) (2 | ( (word)(size) << SPOS) | ((type) << TPOS) | ((p) << 8) | RAWBIT)
+#define make_value(type, value)        (2 | ((word)(value) << IPOS) | ((type) << TPOS))
+#define make_header(type, size)        (2 | ((word) (size) << SPOS) | ((type) << TPOS))
+#define make_raw_header(type, size, p) (2 | ((word) (size) << SPOS) | ((type) << TPOS) | ((p) << 8) | RAWBIT)
 // p is padding
-
-#define F(val)                      (((word)(val) << IPOS) | 2) // same as make_value(TFIXP, val)
-//#define F(val)                      make_value(TFIXP, val)
 
 // два главных класса аргументов:
 #define is_value(x)                 (((word)(x)) & 2)
@@ -713,13 +710,20 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 
 #define is_rawobject(x)             (((word)(x)) & RAWBIT)
 
+// makes olvm reference from system pointer (just sanity check)
+//assert ((val && ~(W-1)) == 0);
+#define R(v) ({\
+		word reference = (word)(v);\
+		assert (!(reference & (W-1)) && "olvm references must be aligned to word boundary");\
+		(word*) reference; })
+
 // всякая всячина:
 #define hdrsize(x)                  (((word)x) >> SPOS)
 #define padsize(x)                  (unsigned char)((((word)(x)) >> IPOS) & 7)
 
 #define thetype(x)                  (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
 #define valuetype(x)                (thetype (x) & 0x1F)
-#define reftype(x)                  (thetype (*(word*)(x)))
+#define reftype(x)                  (thetype (*R(x)))
 
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
@@ -795,12 +799,15 @@ int OL_setstd(struct ol_t* ol, int id, int fd);
 #define is_number(ob)               (is_fix(ob) || is_npair(ob))
 #define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
 
+// makes positive olvm integer value from int
+#define I(val) \
+		(make_value(0, val))  // === (value << IPOS) | 2
 
 // взять значение аргумента:
 #define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
 #define reference(v)                ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
 
-#define ref(ob, n)                  (((word*)(ob))[n])
+#define ref(ob, n)                  ((R(ob))[n])
 #define car(ob)                     ref(ob, 1)
 #define cdr(ob)                     ref(ob, 2)
 
@@ -926,12 +933,9 @@ word*p = NEW (size);\
 
 // new(size) - allocate memory, without type
 // new(type, size) - allocate object, with type
-// new(type, size, pads) - allocate RAW object, with RAWH(type)
+// new(type, size, pads) - allocate RAW object, with RAWQ(type)
 #define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
 #define new(...) NEW_MACRO(__VA_ARGS__, NEW_RAW_OBJECT, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
-
-// -= new_value =---------------------------------------
-#define new_value(a) ((word*)F(a)) // same as make_value(TFIXP, a)
 
 // -= ports =-------------------------------------------
 // создает порт, НЕ аллоцирует память
@@ -1154,14 +1158,14 @@ word data = (word) a;\
 
 // возвращается по цепочке "flagged" указателей назад
 static __inline__
-word *chase(word* pos) {
+word* chase(word* pos) {
 	//	assert(pos IS flagged)
-	word* ppos;
+	word* p_pos;
 	while (1) {
-		ppos = *(word**) ((word)pos & ~1);      // ppos = *pos; ~ = bitwise NOT, (корректное разименование указателя, без учета бита mark)
-		if (!is_reference(ppos) || !is_flagged(ppos)) // ppos & 0x3 == 0x1
+		p_pos = *(word**) ((word)pos & ~1);      // p_pos = *pos; ~ = bitwise NOT, (корректное разименование указателя, без учета бита mark)
+		if (!is_reference(p_pos) || !is_flagged(p_pos)) // p_pos & 0x3 == 0x1
 			return (word*)((word)pos & ~1);
-		pos = ppos;
+		pos = p_pos;
 	}
 }
 
@@ -1587,8 +1591,8 @@ struct ol_t
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 #define untoi(num)  ({\
 	is_value(num) ? uvtoi(num)\
-		: uvtoi(car(num)) | uvtoi(cadr(num)) << FBITS; \
-	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << FBITS : 0); })
+		: uvtoi(car(num)) | uvtoi(cadr(num)) << VBITS; \
+	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
 
 // something wrong: looks like __builtin_choose_expr doesn't work as expected!
 #define itoun(val)  ({\
@@ -1596,9 +1600,9 @@ struct ol_t
 		(word*)itouv(val),\
 		(word*)({ \
 			uintptr_t x5 = (uintptr_t)(val); \
-			x5 <= FMAX ? \
+			x5 <= VMAX ? \
 					(word)itouv(x5): \
-					(word)new_list(TINTP, itouv(x5 & FMAX), itouv(x5 >> FBITS)); \
+					(word)new_list(TINTP, itouv(x5 & VMAX), itouv(x5 >> VBITS)); \
 		})); \
 	})
 #define itosn(val)  ({\
@@ -1607,9 +1611,9 @@ struct ol_t
 		(word*)({ \
 			intptr_t x5 = (intptr_t)(val); \
 			intptr_t x6 = x5 < 0 ? -x5 : x5; \
-			x6 <= FMAX ? \
+			x6 <= VMAX ? \
 					(word)itosv(x5): \
-					(word)new_list(x5 < 0 ? TINTN : TINTP, itouv(x6 & FMAX), itouv(x6 >> FBITS)); \
+					(word)new_list(x5 < 0 ? TINTN : TINTP, itouv(x6 & VMAX), itouv(x6 >> VBITS)); \
 		})); \
 	})
 
@@ -1698,13 +1702,13 @@ word d2ol(struct ol_t* ol, double v) {
 		for (int t = 0; t < 1024; t++) { // ограничим точность снизу
 			double i, f = modf(v, &i);
 			if (f == 0) {
-				*++p = F(m);
+				*++p = I(m);
 				break;
 			}
 			v *= 2;
-			if (m & ~FMAX) {
-				*++p = F(0);
-				m >>= FBITS;
+			if (m & ~VMAX) {
+				*++p = I(0);
+				m >>= VBITS;
 			}
 			m *= 2;
 		}
@@ -1735,7 +1739,7 @@ word d2ol(struct ol_t* ol, double v) {
 			int negative = v < 0; v = fabs(v);
 			word* p = fp;
 			do {
-				*++p = F((long long)v & FMAX);
+				*++p = I((long long)v & VMAX);
 				modf(v / (double)HIGHBIT, &v);
 			}
 			while (v > 0);
@@ -1828,7 +1832,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	// TODO: складывать this первым, тогда можно будет копировать только ol->arity регистров
 
 	// создадим в топе временный объект со значениями всех регистров
-	word *regs = (word*) new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
+	word *regs = new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
 	while (++p <= N) regs[p] = R[p-1];
 	regs[p] = (word) ol->this;
 	// выполним сборку мусора
@@ -1882,7 +1886,7 @@ word get(word *ff, word key, word def)
 #define ERROR(opcode, a, b) \
 	{ \
 		D("SOURCE: %s:%d", __FILE__, __LINE__); /* TEMP */\
-		R[4] = F (opcode);\
+		R[4] = I (opcode);\
 		R[5] = (word) (a);\
 		R[6] = (word) (b);\
 		goto error; \
@@ -1930,7 +1934,7 @@ apply:;
 
 		R[0] = IFALSE; // set mcp yes?
 		R[4] = R[3];
-		R[3] = F(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
+		R[3] = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
 		R[5] = IFALSE;
 		R[6] = IFALSE;
 		breaked = 0;
@@ -1948,7 +1952,6 @@ apply:;
 
 	// ...
 	if (is_reference(this)) { // если это аллоцированный объект
-		//word hdr = *this & 0x0FFF; // cut size out, take just header info
 		word type = reftype (this);
 		if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc (58% for "yes")
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
@@ -1995,7 +1998,7 @@ apply:;
 
 				word *thread;
 
-				thread = (word*) new (TTHREAD, acc);
+				thread = new (TTHREAD, acc);
 				for (ptrdiff_t pos = 1; pos < acc-1; pos++)
 					thread[pos] = R[pos];
 
@@ -2008,9 +2011,9 @@ apply:;
 				// 1 - runnig and time slice exhausted
 				// 10: breaked - call signal handler
 				// 14: memory limit was exceeded
-				R[3] = breaked ? ((breaked & 8) ? F(14) : F(10)) : F(1); // fixme - handle also different signals via one handler
+				R[3] = breaked ? ((breaked & 8) ? I(14) : I(10)) : I(1); // fixme - handle also different signals via one handler
 				R[4] = (word) thread; // thread state
-				R[5] = F(breaked); // сюда можно передать userdata из потока
+				R[5] = I(breaked); // сюда можно передать userdata из потока
 				R[6] = IFALSE;
 				acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
 				breaked = 0;
@@ -2211,7 +2214,7 @@ loop:;
 		// TODO: JIT!
 		//	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
 		default:
-			ERROR(258, F(op), ITRUE);
+			ERROR(258, I(op), ITRUE);
 		}
 		goto apply; // ???
 
@@ -2313,7 +2316,7 @@ loop:;
 	// ошибка арности
 	case ARITY_ERROR: // (0%)
 		// TODO: добавить в .scm вывод ошибки четности
-		ERROR(17, this, F(acc));
+		ERROR(17, this, I(acc));
 		break;
 
 
@@ -2327,7 +2330,7 @@ loop:;
 		ip += 1; break;
 	}
 	case LD: // (5%)
-		A1 = F(ip[0]); // R[ip[1]]
+		A1 = I(ip[0]); // R[ip[1]]
 		ip += 2; break;
 
 
@@ -2352,7 +2355,7 @@ loop:;
 
 	case JP: { // (10%) JZ, JN, JT, JF a hi lo
 		static
-		const word I[] = { F(0), INULL, IEMPTY, IFALSE };
+		const word I[] = { I(0), INULL, IEMPTY, IFALSE };
 		if (A0 == I[op>>6]) // 49% for "yes"
 			ip += (ip[2] << 8) + ip[1]; // little-endian
 		ip += 3; break;
@@ -2523,13 +2526,13 @@ loop:;
 		word T = A0;
 		if (is_reference(T))
 			T = *((word *) (T)); // todo: add RAWNESS to this (?)
-		A1 = F(thetype (T));
+		A1 = I(thetype (T));
 		ip += 2; break;
 	}
 
 	case SIZE: { // size o -> r
 	//			word T = A0;
-	//			A1 = is_value(T) ? IFALSE : F(hdrsize(*(word*)T) - 1);
+	//			A1 = is_value(T) ? IFALSE : I(hdrsize(*(word*)T) - 1);
 	//
 		word* T = (word*) A0;
 		if (is_value(T))
@@ -2537,9 +2540,9 @@ loop:;
 		else {
 			word hdr = *T;
 			if (is_rawobject(hdr))
-				A1 = F((hdrsize(hdr)-1)*W - padsize(hdr));
+				A1 = I((hdrsize(hdr)-1)*W - padsize(hdr));
 			else
-				A1 = F(hdrsize(*(word*)T) - 1);
+				A1 = I(hdrsize(*(word*)T) - 1);
 		}
 		ip += 2; break;
 	}
@@ -2641,7 +2644,7 @@ loop:;
 				if (pos >= size)
 					A2 = IFALSE;
 				else
-					A2 = F(((unsigned char *) p)[pos+W]);
+					A2 = I(((unsigned char *) p)[pos+W]);
 			}
 			else {
 				word pos = uvtoi (A1);
@@ -2736,31 +2739,31 @@ loop:;
 	// АЛУ (арифметическо-логическое устройство)
 	case ADDITION: { // vm:add a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
 		word r = value(A0) + value(A1);
-		A2 = F(r & FMAX);
+		A2 = I(r & VMAX);
 		A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
 		ip += 4; break; }
 	case SUBTRACTION: { // vm:sub a b  r u, args prechecked, signs ignored
 		word r = (value(A0) | HIGHBIT) - value(A1);
-		A2 = F(r & FMAX);
+		A2 = I(r & VMAX);
 		A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
 		ip += 4; break; }
 
 	case MULTIPLICATION: { // vm:mul a b l h
 		big_t r = (big_t) value(A0) * (big_t) value(A1);
-		A2 = F(r & FMAX);
-		A3 = F(r>>FBITS); //  & FMAX)
+		A2 = I(r & VMAX);
+		A3 = I(r>>VBITS); //  & VMAX)
 		ip += 4; break; }
 	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fix-es
-		big_t a = (big_t) value(A1) | (((big_t) value(A0)) << FBITS);
+		big_t a = (big_t) value(A1) | (((big_t) value(A0)) << VBITS);
 		big_t b = (big_t) value(A2);
 
 		// http://stackoverflow.com/questions/7070346/c-best-way-to-get-integer-division-and-remainder
 		big_t q = a / b;
 		big_t r = a % b;
 
-		A3 = F(q>>FBITS);
-		A4 = F(q & FMAX);
-		A5 = F(r);
+		A3 = I(q>>VBITS);
+		A4 = I(q & VMAX);
+		A5 = I(r);
 
 		ip += 6; break; }
 
@@ -2772,18 +2775,18 @@ loop:;
 		A2 = (A0 | A1);
 		ip += 3; break;
 	case BINARY_XOR: // vm:xor a b r, prechecked
-		A2 = (A0 ^ (A1 & (FMAX << IPOS))); // inherit a's type info
+		A2 = (A0 ^ (A1 & (VMAX << IPOS))); // inherit a's type info
 		ip += 3; break;
 
 	case SHIFT_RIGHT: { // vm:shr a b hi lo
-		big_t r = ((big_t) value(A0)) << (FBITS - value(A1));
-		A2 = F(r>>FBITS);
-		A3 = F(r & FMAX);
+		big_t r = ((big_t) value(A0)) << (VBITS - value(A1));
+		A2 = I(r>>VBITS);
+		A3 = I(r & VMAX);
 		ip += 4; break; }
 	case SHIFT_LEFT: { // vm:shl a b hi lo
 		big_t r = ((big_t) value(A0)) << (value(A1));
-		A2 = F(r>>FBITS);
-		A3 = F(r & FMAX);
+		A2 = I(r>>VBITS);
+		A3 = I(r & VMAX);
 		ip += 4; break; }
 
 
@@ -2800,16 +2803,16 @@ loop:;
 		    (u.c[0] == 1) ? 1 :                  // little-endian
 		    (u.c[sizeof (int_t) - 1] == 1) ? 2 : // big-endian
 		    (0);                                 // unknown
-		A0 = F(endianess);
+		A0 = I(endianess);
 		ip += 1; break; }
 	case 29: // (vm:wordsize)
-		A0 = F(W);
+		A0 = I(W);
 		ip += 1; break;
 	case 30: // (vm:maxvalue)
-		A0 = F(FMAX);
+		A0 = I(VMAX);
 		ip += 1; break;
 	case 31: // (vm:valuewidth)
-		A0 = F(FBITS);
+		A0 = I(VBITS);
 		ip += 1; break;
 
 	// (vm:version)
@@ -3246,7 +3249,7 @@ loop:;
 		case SYSCALL_BRK: // get or set memory limit (in mb)
 			// b, c is reserved for feature use
 			result = itoun (ol->max_heap_size);
-			//if (a == F(0))
+			//if (a == I(0))
 			//	ol->gc(0);
 			if (is_number(a))
 				ol->max_heap_size = uvtoi (a);
@@ -3356,8 +3359,8 @@ loop:;
 
 			// todo: check the heap overflow!
 			unsigned int len;
-			len = lenn(dire->d_name, FMAX+1);
-			if (len == FMAX+1)
+			len = lenn(dire->d_name, VMAX+1);
+			if (len == VMAX+1)
 				break; /* false for errors, like too long file names */
 			result = new_string(dire->d_name, len);
 			break;
@@ -3556,7 +3559,7 @@ loop:;
 			char* ipaddress = inet_ntoa(((struct sockaddr_in *)&peer)->sin_addr);
 			unsigned short port = ntohs(((struct sockaddr_in *)&peer)->sin_port);
 
-			result = new_pair(new_string(ipaddress), F(port));
+			result = new_pair(new_string(ipaddress), I(port));
 
 	#else
 			unsigned short port;
@@ -3567,7 +3570,7 @@ loop:;
 				struct sockaddr_in *s = (struct sockaddr_in *)&peer;
 				port = ntohs(s->sin_port);
 				inet_ntop(AF_INET, &s->sin_addr, ipaddress, sizeof ipaddress);
-				result = new_pair(new_string(ipaddress), F(port));
+				result = new_pair(new_string(ipaddress), I(port));
 			}
 			/* temporary disable IP_v6, todo: return back
 			else
@@ -3577,7 +3580,7 @@ loop:;
 				struct sockaddr_in6 *s = (struct sockaddr_in6 *)&peer;
 				port = ntohs(s->sin6_port);
 				inet_ntop(AF_INET6, &s->sin6_addr, ipaddress, sizeof ipaddress);
-				result = new_pair(new_string(ipaddress), F(port));
+				result = new_pair(new_string(ipaddress), I(port));
 			}*/
 			else
 				break;
@@ -3987,7 +3990,7 @@ loop:;
 			if (is_string(name)) {
 				char* env = getenv((char*)&name[1]);
 				if (env)
-					result = new_string(env, lenn(env, FMAX));
+					result = new_string(env, lenn(env, VMAX));
 			}
 			break;
 		}
@@ -4002,7 +4005,7 @@ loop:;
 			int g = heap->genstart - heap->begin;
 			int f = fp - heap->begin;
 			int t = heap->end - heap->begin;
-			result = new_tuple(F(g), F(f), F(t));
+			result = new_tuple(I(g), I(f), I(t));
 			break;
 		}
 
@@ -4375,7 +4378,7 @@ loop:;
 error:; // R4-R6 set, and call mcp (if any)
 	this = (word *) R[0];
 	R[0] = IFALSE;
-	R[3] = F(3); // vm thrown error
+	R[3] = I(3); // vm thrown error
 	if (is_reference(this)) {
 		acc = 4;
 		goto apply;

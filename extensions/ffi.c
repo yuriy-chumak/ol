@@ -535,7 +535,7 @@ word from_uint(word arg) {
 	assert (is_reference(arg));
 	// так как в стек мы все равно большое число сложить не сможем,
 	// то возьмем только то, что влазит (первые два члена)
-	return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << FBITS);
+	return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << VBITS);
 }
 
 #if UINTPTR_MAX != 0xffffffffffffffff
@@ -543,10 +543,10 @@ static
 long long from_ulong(word arg) {
 	assert (is_reference(arg));
 	long long v = car(arg) >> 8;
-	int shift = FBITS;
+	int shift = VBITS;
 	while (cdr(arg) != INULL) {
 		v |= ((long long)(car(cdr(arg)) >> 8) << shift);
-		shift += FBITS;
+		shift += VBITS;
 		arg = cdr(arg);
 	}
 	return v;
@@ -1278,7 +1278,7 @@ word* OL_ffi(OL* self, word* arguments)
 					word* ptr = &car(l);
 
 				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
-					if (value > FMAX) {
+					if (value > VMAX) {
 						if (is_value(*ptr))
 							E("got too large number to store");
 						else {
@@ -1289,8 +1289,8 @@ word* OL_ffi(OL* self, word* arguments)
 							}
 							else
 								*ptr = make_header(TINTP, 3);
-							*(word*)&car(ptr) = itouv(value & FMAX);
-							*(word*)&cadr(ptr) = itouv(value >> FBITS);
+							*(word*)&car(ptr) = itouv(value & VMAX);
+							*(word*)&cadr(ptr) = itouv(value >> VBITS);
 						}
 					}
 					else
@@ -1313,14 +1313,14 @@ word* OL_ffi(OL* self, word* arguments)
 					word* ptr = &car(l);
 
 				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
-					if (value > FMAX) {
+					if (value > VMAX) {
 						if (is_value(*ptr))
 							E("got too large number to store");
 						else {
 							assert (is_npair(ptr) || is_npairn(ptr));
 							*ptr = make_header(TINTP, 3);
-							*(word*)&car(ptr) = itouv(value & FMAX);
-							*(word*)&cadr(ptr) = itouv(value >> FBITS);
+							*(word*)&car(ptr) = itouv(value & VMAX);
+							*(word*)&cadr(ptr) = itouv(value >> VBITS);
 						}
 					}
 					else
@@ -1348,8 +1348,8 @@ word* OL_ffi(OL* self, word* arguments)
 					car(num) = itosv(n);
 					cdr(num) = itosv(d);
 					// максимальная точность (fixme: пока не работает как надо)
-					//car(num) = itosv(value * FMAX);
-					//cdr(num) = F(FMAX);
+					//car(num) = itosv(value * VMAX);
+					//cdr(num) = I(VMAX);
 
 					l = cdr(l);
 				}
@@ -1400,16 +1400,16 @@ word* OL_ffi(OL* self, word* arguments)
 #else
 #	ifndef __EMSCRIPTEN__
 			word* new_npair(int type, long long value) {
-				long long a = value >> FBITS;
-				word* b = (a > FMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
-				word* p = new_pair(type, F(value & FMAX), b);
+				long long a = value >> VBITS;
+				word* b = (a > VMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
+				word* p = new_pair(type, I(value & VMAX), b);
 				return p;
 			}
 			word* ll2ol(long long val) {
 				long long x5 = val;
 				long long x6 = x5 < 0 ? -x5 : x5;
 				int type = x5 < 0 ? TINTN : TINTP;
-				return (x6 > FMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
+				return (x6 > VMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
 			};
 
 			result = (word*) ll2ol (*(long long*)&got);
@@ -1433,14 +1433,14 @@ word* OL_ffi(OL* self, word* arguments)
 #else
 #	ifndef __EMSCRIPTEN__
 			word* new_unpair(int type, unsigned long long value) {
-				unsigned long long a = value >> FBITS;
-				word* b = (a > FMAX) ? new_unpair(TPAIR, a) : new_pair(TPAIR, F(a & FMAX), INULL);
-				word* p = new_pair(type, F(value & FMAX), b);
+				unsigned long long a = value >> VBITS;
+				word* b = (a > VMAX) ? new_unpair(TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
+				word* p = new_pair(type, I(value & VMAX), b);
 				return p;
 			}
 			word* ul2ol(long long val) {
 				unsigned long long x5 = val;
-				return (x5 > FMAX) ? new_unpair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
+				return (x5 > VMAX) ? new_unpair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
 			};
 
 			result = (word*) ul2ol (*(unsigned long long*)&got);
@@ -1464,7 +1464,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 		case TSTRING:
 			if (got) {
-				int l = lenn((char*)(word)got, FMAX+1);
+				int l = lenn((char*)(word)got, VMAX+1);
 				/* TODO: enable again!
 				if (fp + (l/sizeof(word)) > heap->end) {
 					self->gc(self, l/sizeof(word));
@@ -1476,7 +1476,7 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 		case TSTRINGWIDE:
 			if (got) {
-				int l = lenn16((short*)(word)got, FMAX+1);
+				int l = lenn16((short*)(word)got, VMAX+1);
 				/* TODO: enable again!
 				if (fp + (l/sizeof(word)) > heap->end) {
 					self->gc(self, l/sizeof(word));
@@ -1486,7 +1486,7 @@ word* OL_ffi(OL* self, word* arguments)
 				word* p = result = new (TSTRINGWIDE, l+1);
 				unsigned short* s = (unsigned short*)(word)got;
 				while (l--) {
-					*++p = F(*s++);
+					*++p = I(*s++);
 				}
 			}
 			break;
@@ -1568,7 +1568,7 @@ long long callback(OL* ol, int id, int_t* argi
 //	int f = 0; // linux
 	while (types != INULL) {
 		switch (car(types)) {
-		case F(TVPTR): {
+		case I(TVPTR): {
 			void*
 			#if __amd64__
 				#if _WIN64
@@ -1587,8 +1587,8 @@ long long callback(OL* ol, int id, int_t* argi
 			R[a] = (word) new_vptr(value);
 			break;
 		}
-		case F(TINTN): // deprecated
-		case F(TINTP): {
+		case I(TINTN): // deprecated
+		case I(TINTP): {
 			int_t
 			#if __amd64__
 				#if _WIN64
@@ -1604,10 +1604,10 @@ long long callback(OL* ol, int id, int_t* argi
 			#else
 				value =   *(int_t*) &argi[i++];
 			#endif
-			R[a] = F(value);
+			R[a] = I(value);
 			break;
 		}
-		case F(TFLOAT): {
+		case I(TFLOAT): {
 			float
 			#if __amd64__
 				#if _WIN64
@@ -1629,7 +1629,7 @@ long long callback(OL* ol, int id, int_t* argi
 			fp = ol->heap.fp;
 			break;
 		}
-		case F(TDOUBLE): {
+		case I(TDOUBLE): {
 			double
 			#if __amd64__
 				#if _WIN64
@@ -1651,7 +1651,7 @@ long long callback(OL* ol, int id, int_t* argi
 			fp = ol->heap.fp;
 			break;
 		}
-		case F(TSTRING): {
+		case I(TSTRING): {
 			void*
 			#if __amd64__
 				#if _WIN64
@@ -1670,7 +1670,7 @@ long long callback(OL* ol, int id, int_t* argi
 			R[a] = value ? (word)new_string(value) : IFALSE;
 			break;
 		}
-//		case F(TVOID):
+//		case I(TVOID):
 //			R[a] = IFALSE;
 //			i++;
 //			break;
@@ -1699,10 +1699,10 @@ long long callback(OL* ol, int id, int_t* argi
 				word argv = car(types);
 				while (argv != INULL) {
 					switch (car (argv)) {
-					case F(TSTRING):
+					case I(TSTRING):
 						tail = (word) new_pair(new_string(*values++), tail);
 						break;
-					case F(TVPTR):
+					case I(TVPTR):
 						tail = (word) new_pair(new_vptr(*values++), tail);
 						break;
 					}
