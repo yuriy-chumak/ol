@@ -108,8 +108,8 @@ GOTO:EOF
 echo.   *** Making 32-bit virtual machine:
 set PATH=%MINGW32%;%PATH%
 
-%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -Iwin32 -o "vm32.exe" -lws2_32 -m32 -DNDEBUG -s
+%CC% -std=c99 -g3 -O0 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -Iwin32 -o "vm32.exe" -lws2_32 -m32
 
 set PATH=%PATH~%
 GOTO:EOF
@@ -119,8 +119,8 @@ GOTO:EOF
 echo.   *** Making 64-bit virtual machine:
 set PATH=%MINGW64%;%PATH%
 
-%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c -Iwin32 -o "vm64.exe" -lws2_32 -m64 -DNDEBUG -s
+%CC% -std=c99 -g3 -O0 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c -Iwin32 -o "vm64.exe" -lws2_32 -m64
 
 set PATH=%PATH~%
 GOTO:EOF
@@ -141,20 +141,21 @@ GOTO:EOF
 
 :OL
 echo.   *** Making Otus Lisp:
-%CC% -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -O2 -g2 -DHAS_PINVOKE=1
+%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -DHAS_PINVOKE=1 ^
+     -DNDEBUG -s
 GOTO:EOF
 
 :OL32
 echo.   *** Making 32-bit Otus Lisp:
 set PATH=%MINGW32%;%PATH%
-%CC% -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl32.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -O2 -DHAS_PINVOKE=1 -m32
+%CC% -std=c99 -g3 -O0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl32.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -DHAS_PINVOKE=1 -m32
 set PATH=%PATH~%
 GOTO:EOF
 
 :OL64
 echo.   *** Making 64-bit Otus Lisp:
 set PATH=%MINGW64%;%PATH%
-%CC% -std=c99 -g0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl64.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -O2 -DHAS_PINVOKE=1 -m64
+%CC% -std=c99 -g3 -O0 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl64.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -DHAS_PINVOKE=1 -m64
 set PATH=%PATH~%
 GOTO:EOF
 
@@ -261,16 +262,16 @@ call :REPL64
 :: internal
 set PATH=%MINGW32%;%PATH%
 echo 32-bit internal test:
-%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c tests/vm.c -Iwin32 -o "test-vm32.exe" -lws2_32 -DEMBEDDED_VM=1 -m32 -DNDEBUG -s -Iinclude
+%CC% -std=c99 -g3 -O0 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c tests/vm.c -Iwin32 -o "test-vm32.exe" -lws2_32 -DEMBEDDED_VM=1 -m32 -DNDEBUG -Iinclude
 test-vm32.exe
 if errorlevel 1 goto fail
 
 set PATH=%PATH~%
 set PATH=%MINGW64%;%PATH%
 echo 64-bit internal test:
-%CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
-   src/olvm.c tests/vm.c -Iwin32 -o "test-vm64.exe" -lws2_32 -DEMBEDDED_VM=1 -m64 -DNDEBUG -s -Iinclude
+%CC% -std=c99 -g3 -O0 -Wall -fmessage-length=0 -fno-exceptions -Wno-strict-aliasing -DNAKED_VM ^
+   src/olvm.c tests/vm.c -Iwin32 -o "test-vm64.exe" -lws2_32 -DEMBEDDED_VM=1 -m64 -DNDEBUG -Iinclude
 test-vm64.exe
 if errorlevel 1 goto fail
 
@@ -280,9 +281,9 @@ set PATH=%PATH~%
 set PATH=%MINGW32%;%PATH%
 echo|set /p=32-bit ffi testing ...
 ld -r -b binary -o tmp/repl32.o repl
-%CC% -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+%CC% -std=c99 -g3 -O0 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
-    src/olvm.c tmp/repl32.o tests/ffi.c -Iwin32 -o "test-ffi32.exe" -lws2_32 -O2 -g2 -m32
+    src/olvm.c tmp/repl32.o tests/ffi.c -Iwin32 -o "test-ffi32.exe" -lws2_32 -m32
 test-ffi32.exe tests/ffi.scm > C:\TEMP\out
 fc C:\TEMP\out tests/ffi.scm.ok > nul
 if errorlevel 1 (
@@ -295,9 +296,9 @@ set PATH=%PATH~%
 set PATH=%MINGW64%;%PATH%
 echo|set /p=64-bit ffi testing ...
 ld -r -b binary -o tmp/repl64.o repl
-%CC% -std=c99 -g3 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
+%CC% -std=c99 -g3 -O0 -Wall -fmessage-length=0 -Wno-strict-aliasing -I src ^
     -DHAS_PINVOKE=1 ^
-    src/olvm.c tmp/repl64.o tests/ffi.c -Iwin32 -o "test-ffi64.exe" -lws2_32 -O2 -g2 -m64
+    src/olvm.c tmp/repl64.o tests/ffi.c -Iwin32 -o "test-ffi64.exe" -lws2_32 -m64
 test-ffi64.exe tests/ffi.scm > C:\TEMP\out
 fc C:\TEMP\out tests/ffi.scm.ok > nul
 if errorlevel 1 (
