@@ -197,7 +197,7 @@
          (print "Server binded to " port)))
    ; listen
    (if (not (syscall 50 socket #f #f)) ; listen
-      (exit-owl (print "Can't listen")))
+      (shutdown (print "Can't listen")))
 
    ; accept
    (let loop ()

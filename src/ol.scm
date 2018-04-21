@@ -259,7 +259,7 @@
                         (set-signal-action repl-signal-handler)
 
                         ;; repl
-                        (exit-owl
+                        (shutdown
                            (let*((file (if (null? vm-args)
                                           stdin
                                           (if (string-eq? (car vm-args) "-")

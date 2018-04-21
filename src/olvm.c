@@ -3797,12 +3797,9 @@ loop:;
 		// http://linux.die.net/man/2/exit
 		// exit - cause normal process termination, function does not return.
 		case 60: {
-			if (!sandboxp)
-				free(heap->begin); // освободим занятую память
-			heap->begin = 0;
+			this = (word *) R[3];
 			R[3] = a;
 			goto done;
-			//was: exit(svtoi(a));
 		}
 
 		// UNAME (uname)
@@ -4392,11 +4389,7 @@ done:;
 
 	ol->heap.fp = fp;
 
-/*	if (is_number(R[3]))
-		return (void*)untoi(R[3]);
-	else
-		return (R[3] == IFALSE) ? (void*)0 : (void*)1;*/
-	return R[3];
+	return 1; // ok
 } // end of runtime
 #undef MEMORY_CHECK
 #define MEMORY_CHECK
@@ -4812,8 +4805,11 @@ fail:
 
 void OL_free(OL* ol)
 {
-	free(ol->heap.begin);
-	free(ol);
+	if (!sandboxp)
+		free(ol->heap.begin);
+	ol->heap.begin = 0;
+	if (!sandboxp)
+		free(ol);
 }
 
 void* OL_userdata(OL* ol, void* userdata)
@@ -4880,7 +4876,7 @@ OL_run(OL* handle, int argc, char** argv)
 		set_blocking(STDOUT_FILENO, 1);
 		set_blocking(STDERR_FILENO, 1);
 #	endif
-		return r;
+		return handle->R[3]; // returned value
 	}
 
 	// подготовим аргументы:

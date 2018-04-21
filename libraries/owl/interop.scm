@@ -2,9 +2,9 @@
 
    (export
       interact fork accept-mail wait-mail check-mail
-      exit-owl release-thread catch-thread set-signal-action
+      release-thread catch-thread set-signal-action
       single-thread? kill mail fork-linked-server fork-server
-      return-mails fork-server fork-linked fork-named exit-thread exit-owl
+      return-mails fork-server fork-linked fork-named exit-thread shutdown
       poll-mail-from running-threads par*
       start-nested-parallel-computation wrap-the-whole-world-to-a-thunk ; ??
       par por* por interop)
@@ -60,7 +60,7 @@
       (define (release-thread thread)
          (interop 17 #false thread))
 
-      (define (exit-owl value)
+      (define (shutdown value)
          (interop 19 value value) ;; set exit value proposal in thread scheduler
          (exit-thread value))     ;; stop self and leave the rest (io etc) running to completion
 
