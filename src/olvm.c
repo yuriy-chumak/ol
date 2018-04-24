@@ -266,8 +266,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #endif
 
 #ifdef __linux__
-# ifndef __EMSCRIPTEN__
+# if !defined ( __EMSCRIPTEN__ ) && HAS_CDEFS
 #	include <sys/cdefs.h>
+# endif
+# if !defined ( __EMSCRIPTEN__ )
 #	include <sched.h> // yield
 # endif
 #endif
