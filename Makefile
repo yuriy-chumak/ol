@@ -13,14 +13,16 @@ exists = $(shell echo "\
 	   int main() {\
 	      return $2();\
 	      return 0;\
-	   }" | gcc -xc - $3 -o /dev/null 2>/dev/null && echo 1)
+	   }" | $(CC) -xc - $3 -o /dev/null 2>/dev/null && echo 1)
+
 # features
-UNAME  := $(shell uname -s)
-LBITS  := $(shell getconf LONG_BIT)
-HAS_SECCOMP := $(call exists, <linux/seccomp.h>, prctl)
-HAS_DLOPEN  := $(call exists, <stdlib.h>, dlopen, -ldl)
-HAS_SOCKETS := $(call exists, <stdlib.h>, socket)
-HAS_CDEFS   := $(call exists, <sys/cdefs.h>,exit)
+UNAME  ?= $(shell uname -s)
+LBITS  ?= $(shell getconf LONG_BIT)
+HAS_SECCOMP ?= $(call exists, <linux/seccomp.h>, prctl)
+HAS_DLOPEN  ?= $(call exists, <stdlib.h>, dlopen, -ldl)
+HAS_SOCKETS ?= $(call exists, <stdlib.h>, socket)
+# HAS_CDEFS   ?= $(call exists, <sys/cdefs.h>,exit)
+HAS_CDEFS = 0
 
 ifeq ($(LBITS),64)
 vm64 = echo -n "64 " && ./vm64 repl <$$F | diff - $$F.ok
@@ -52,8 +54,9 @@ CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)
 
 #Debian i586 fix
+ifeq ($(CC),gcc)
 CFLAGS += -I/usr/include/$(shell gcc -print-multiarch)
-
+endif
 #
 
 ifeq ($(UNAME),Linux)
@@ -223,7 +226,7 @@ existsW = \
 	   int main() {\
 	      return $2();\
 	      return 0;\
-	   }" | gcc -xc - $3 -o /dev/null 2>/dev/null; then\
+	   }" | $(CC) -xc - $3 -o /dev/null 2>/dev/null; then\
 		echo "Ok.";\
 		printf 1 > $@;\
 	else\
@@ -243,7 +246,7 @@ sizeof = \
 	   \#include $1\n\
 	   int main() {\
 	      return (int)sizeof($2);\
-	   }" | gcc -xc - $3 -o /tmp/$2.$$$$; then\
+	   }" | $(CC) -xc - $3 -o /tmp/$2.$$$$; then\
 		echo "Ok."; \
 		chmod u+x /tmp/$2.$$$$;\
 		/tmp/$2.$$$$; printf "(define sizeof:$2 %d)" $$? >$@;\
@@ -460,7 +463,7 @@ endif
 	@echo "passed!"
 
 sample-embed:
-	gcc src/sample-embed.c src/olvm.c tmp/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o sample-embed \
+	$(CC) src/sample-embed.c src/olvm.c tmp/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o sample-embed \
 	-Xlinker --export-dynamic
 
 # simple only target platform size tests
