@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <sys/time.h>
+#include <assert.h>
 
 GLuint loadTexture(const char* filename, int *width, int *height);
 
