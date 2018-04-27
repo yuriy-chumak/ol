@@ -54,21 +54,21 @@ struct ol_t
 #define car(ob)                     ((R(ob))[1])
 #define cdr(ob)                     ((R(ob))[2])
 
-#define make_raw_header(type, size, p) (2 | ((word) (size) << 16) | ((type) << 2) | ((p) << 8) | (1 << 11))
+#define make_value(type, value)        (2 | ((word)(value) << 8) | ((type) << 2))
+#define make_raw_header(type, size, p) (2 | ((word) (size) <<16) | ((type) << 2) | ((p) << 8) | (1 << 11))
 
-static void* new_string(void* olvm, char* data)
+static void* new_buffer(void* olvm, int type, char* data, int size)
 {
 	word* fp;
 	fp = ((OL*)olvm)->heap.fp;
 
-	int size = strlen(data);
 	int words = (size + W - 1) / W;
 	int pads = (words * W - size);
 	++words; // include header size
 
 	word*p = fp;
 	fp += words;
-	*p = make_raw_header(3, words, pads); // type-string
+	*p = make_raw_header(type, words, pads); // type-string
 	char* ptr = (char*)&p[1];
 	while (size--)\
 		*ptr++ = *data++;
@@ -76,6 +76,17 @@ static void* new_string(void* olvm, char* data)
 	((OL*)olvm)->heap.fp = fp;
 	return p;
 }
+
+static void* new_string(void* olvm, char* data)
+{
+	int size = strlen(data);
+	return new_buffer(olvm, 3, data, size);
+}
+
+#define IFALSE                      make_value(13, 0) // #false
+
+
+
 
 
 // ------------------------
@@ -125,27 +136,32 @@ extern unsigned char _binary_repl_start[];
 static char* bs_code =
 		// todo: decode and evaluate the expression
 		"(import (lang eval))"
-		"(define eval (lambda (args) "
-		""
-		"(halt (apply"
-		"			(lambda (expression env)"
-		"				(tuple-case (repl-string env expression)"
+		"(define (eval args) "
+//		"	(print \"(cdr args): \" (cdr args))"
+//		"	(print \"(length args): \" (length args))"
+		"	(let ((expression "
+		"		(apply"
+		"			(lambda (env expression)"
+//		"				(print \"expression: \" expression)"
+		"				(tuple-case (eval-string env expression)"
 		"					((ok value env)"
-		"						(cons value env))" // and return pair (result . new-environment)
+		"						(cons value (cons eval env)))" // and return pair (result . new-environment)
 		"					(else"
-		"						#false)))"
-		"			args))))"	// no "else" clause for now
+		"						#false)))"	// currently after fail we broke the environment
+		"			(take args 2))))"		// TODO: change this to recovering,
+//		"	(print \"(car expression): \" (car expression))"
+//		"	(print \"(cddr args): \" (cddr args))"
+		"	(halt"
+		"		(if (eq? (length args) 2)"	//  (just create some flag like 'ok and 'failed)
+		"			expression"				// no additional steps required
+		"			(cons (apply (car expression) (cddr args))"
+		"				(cdr expression))))))"
+		// return compiled "eval" function with current environment
 		"(halt (cons eval *toplevel*))";
 
-//"		(type-bytecode"	// just execute bytecode
-//"			(lambda (bytecode . args)"
-//"				(apply bytecode args)))"
 
-//		"	(case (type (car args))"
-//		"		(type-string"	// if string evaluate string
 
-//		"	(print \"args: \" (car args))"
-//		"))"
+//"	)"
 
 static
 ssize_t read0(int fd, void *buf, size_t count, void* userdata)
@@ -167,31 +183,75 @@ ssize_t read0(int fd, void *buf, size_t count, void* userdata)
 	return written;
 }
 
+static
+void *eval, *env;
+
 int main(int argc, char** argv)
 {
 	void* olvm; // talkback handle
 	unsigned char* bootstrap = _binary_repl_start;
 	olvm = OL_new(bootstrap);
-//	read_t old_reader =
 	OL_set_read(olvm, read0);
 
-	void* eval = 0;
-	void* env = 0;
+	void *r; // just variables
 
-	void* r = (void*) OL_run(olvm, 0, 0);
-	eval = car(r);
-	env = cdr(r);
+	r = (void*) OL_run(olvm, 0, 0);
+	// well, we have our "smart" script prepared,
+	//  now save both of eval and env variables
+	assert (r != IFALSE);
+	eval = car(r);  env = cdr(r);
 
-	// let's save eval for feature use
-	void* x[] = { eval, new_string(olvm, "12"), env };
-	OL_continue(olvm, 3, (void**)x);
+	// about our arguments
+	//	if eval receives only one expression, then simply calculate and return it
+	//	if expression with argments, the additionally apply this arguments to expression
+	//	Note: if you want to call expression, but you have not arguments, just use
+	//		parenthesis, like "(print)" instead of "print"
 
-//	void* y[] = { eval, I(22), env };
-//	OL_continue(olvm, 3, (void**)y);
+	// simple string evaluator example:
+	{
+		void* args[] = { eval, env,
+				new_string(olvm, "+"), I(1), I(2), I(3)
+		};
+		r = OL_continue(olvm, 6, (void**)args);
+		// better use sizeof(args)/sizeof(*args) instead of 6
+		if (r != IFALSE) { // it's ok?
+			assert (car(r) >> 8  ==  6);
+		}
+		//	additionally, save the new environment for feature
+		//	calls. It's very important because old saved pointers
+		//	can be invalidated during vm execution by GC.
+		eval = car(cdr(r)); env = cdr(cdr(r));
+	}
 
-	// let's execute precompiled string
+	// Well. Let's define new function
+	{
+		void *args[] = { eval, env,
+				new_string(olvm, "(define (plus a b) (+ a b))")
+		};
+		r = OL_continue(olvm, 3, (void**)args);
+		if (r == IFALSE) { // it's ok?
+			assert (0 && "something wrong");
+		}
 
+		//	again, don;t forget to update eval and env1
+		//	don't play games with GC
+		eval = car(cdr(r)); env = cdr(cdr(r));
+	}
 
+	// Now, call our new function
+	{
+		void *args[] = { eval, env,
+				new_string(olvm, "plus"), I(7), I(35)
+		};
+		r = OL_continue(olvm, 5, (void**)args);
+		assert (r != IFALSE && "something wrong");
+
+		assert (car(r) == I(42) && "7+35 must be equal to 42");
+
+		eval = car(cdr(r)); env = cdr(cdr(r));
+	}
+
+	// done. free resources (and kill olvm)
 	OL_free(olvm);
 	return 0;
 }

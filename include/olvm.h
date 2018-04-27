@@ -56,6 +56,9 @@ OL_free(struct ol_t* ol);
 uintptr_t
 OL_run(struct ol_t* ol, int argc, char** argv);
 
+uintptr_t
+OL_continue(struct ol_t* ol, int argc, void** argv);
+
 void*
 OL_userdata(struct ol_t* ol, void* userdata);
 

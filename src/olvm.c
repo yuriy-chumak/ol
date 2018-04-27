@@ -671,6 +671,8 @@ object_t
 OL*  OL_new (unsigned char* bootstrap);
 void OL_free(struct ol_t* ol);
 word OL_run (struct ol_t* ol, int argc, char** argv);
+word OL_continue(struct ol_t* ol, int argc, void** argv);
+
 
 void*
 OL_userdata (struct ol_t* ol, void* userdata);
@@ -1910,7 +1912,14 @@ word runtime(OL* ol)
 	long acc = ol->arity; // arity
 
 	#undef MEMORY_CHECK
-	#define MEMORY_CHECK { if (fp > heap->end) printf("ERROR!!!\n"); }
+	#define MEMORY_CHECK { if (fp > heap->end) E("ERROR!!!\n"); }
+
+#	ifndef _WIN32
+//	setvbuf(stderr, (void*)0, _IONBF, 0);
+//	setvbuf(stdout, (void*)0, _IONBF, 0);
+	set_blocking(STDOUT_FILENO, 0);
+	set_blocking(STDERR_FILENO, 0);
+#	endif
 
 	// runtime entry
 apply:;
@@ -4389,6 +4398,10 @@ done:;
 
 	ol->heap.fp = fp;
 
+#	ifndef _WIN32
+		set_blocking(STDOUT_FILENO, 1);
+		set_blocking(STDERR_FILENO, 1);
+#	endif
 	return 1; // ok
 } // end of runtime
 #undef MEMORY_CHECK
@@ -4805,11 +4818,11 @@ fail:
 
 void OL_free(OL* ol)
 {
-	if (!sandboxp)
-		free(ol->heap.begin);
-	ol->heap.begin = 0;
-	if (!sandboxp)
-		free(ol);
+	if (sandboxp)
+		return;
+
+	free(ol->heap.begin);
+	free(ol);
 }
 
 void* OL_userdata(OL* ol, void* userdata)
@@ -4861,21 +4874,10 @@ write_t* OL_set_write(struct ol_t* ol, write_t write)
 word
 OL_run(OL* handle, int argc, char** argv)
 {
-	// TODO: get blocking!
-#	ifndef _WIN32
-//	setvbuf(stderr, (void*)0, _IONBF, 0);
-//	setvbuf(stdout, (void*)0, _IONBF, 0);
-	set_blocking(STDOUT_FILENO, 0);
-	set_blocking(STDERR_FILENO, 0);
-#	endif
-
 	int r = setjmp(handle->heap.fail);
 	if (r != 0) {
 		// TODO: restore old values
-#	ifndef _WIN32
-		set_blocking(STDOUT_FILENO, 1);
-		set_blocking(STDERR_FILENO, 1);
-#	endif
+		// TODO: if IFALSE - it's error
 		return handle->R[3]; // returned value
 	}
 
@@ -4919,6 +4921,42 @@ OL_run(OL* handle, int argc, char** argv)
 
 	longjmp(ol->heap.fail,
 		(int)runtime(handle));
+}
+
+word
+OL_continue(OL* ol, int argc, void** argv)
+{
+	int r = setjmp(ol->heap.fail);
+	if (r != 0) {
+		return ol->R[3];
+	}
+
+	// точка входа в программу
+	word* this = argv[0];
+	unsigned short acc = 2;
+
+	// подготовим аргументы:
+	word userdata = INULL;
+	{
+		word* fp = ol->heap.fp;
+
+		argv += argc - 1;
+		for (ptrdiff_t i = argc; i > 1; i--, argv--) {
+			char *v = *argv;
+			userdata = (word) new_pair (v, userdata);
+		}
+
+		ol->heap.fp = fp;
+	}
+	ol->R[3] = (word) ol->this; // continuation (?)
+	ol->R[4] = (word) userdata;
+
+	// теперь все готово для запуска главного цикла виртуальной машины
+	ol->this = this;
+	ol->arity = acc;
+
+	longjmp(ol->heap.fail,
+		(int)runtime(ol));
 }
 
 // Foreign Function Interface support code
