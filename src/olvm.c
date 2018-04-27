@@ -1855,7 +1855,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 //  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
 
 static
-word get(word *ff, word key, word def)
+word get(word *ff, word key, word def, jmp_buf fail)
 {
 	while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
 		word this = ff[1], hdr;
@@ -1873,8 +1873,9 @@ word get(word *ff, word key, word def)
 				ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
 			break;
 		default:
-			E("assert! hdrsize(hdr) == %d", (int)hdrsize(hdr));
-			assert (0);
+			E("assert! hdrsize(ff) == %d", (int)hdrsize(hdr));
+			longjmp(fail, IFALSE); // todo: return error code
+			assert (0); // should not be reached
 			//ff = (word *) ((key < this) ? ff[3] : ff[4]);
 		}
 	}
@@ -1977,12 +1978,12 @@ apply:;
 			switch (acc)
 			{
 			case 2:
-				R[3] = get(this, R[4],    0);
+				R[3] = get(this, R[4],    0, heap->fail);
 				if (!R[3])
 					ERROR(260, this, R[4]);
 				break;
 			case 3:
-				R[3] = get(this, R[4], R[5]);
+				R[3] = get(this, R[4], R[5], heap->fail);
 				break;
 			default:
 				ERROR(259, this, INULL);
@@ -4498,7 +4499,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			break;
 		}
 		default:
-			fprintf(stderr, "Bad object in heap at %p", (void*)(hp-bootstrap));
+			D("Bad object in heap at %d", (void*)(hp-bootstrap));
 			return 0;
 		}
 	}
