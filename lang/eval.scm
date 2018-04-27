@@ -8,7 +8,7 @@
    (export
       repl-file
       repl-port
-      repl-string
+      repl-string eval-string
       repl-trampoline
       repl
       print-repl-error
@@ -136,22 +136,25 @@
             execute         ;; call the resulting code
             ))
 
+      (define (evaluate exp env)
+         (call/cc
+            (λ (exit)
+               (fold
+                  (λ (state next)
+                     (if (ok? state)
+                        (begin
+                           (debug env " * " (ref state 2))
+                           (next (ref state 2) (ref state 3)))
+                        (exit state)))
+                  (ok exp env)
+                  compiler-passes))))
+
       ; run the code in its own thread
       (define (evaluate-as exp env task)
          ; run the compiler chain in a new task
          (fork-linked task
             (λ ()
-               (call/cc
-                  (λ (exit)
-                     (fold
-                        (λ (state next)
-                           (if (ok? state)
-                              (begin
-                                 (debug env " * " (ref state 2))
-                                 (next (ref state 2) (ref state 3)))
-                              (exit state)))
-                        (ok exp env)
-                        compiler-passes)))))
+               (evaluate exp env)))
          ; grab the result
          (tuple-case (ref (accept-mail (λ (env) (eq? (ref env 1) task))) 2)
             ((finished result not used)
@@ -755,7 +758,7 @@
             (put (env-get env meta-tag empty) value
                `(defined in ,(env-get env current-library-key 'repl)))))
 
-      (define (eval-repl exp env repl)
+      (define (eval-repl exp env repl evaluator)
          (debug env "Evaling " exp)
          (tuple-case (macro-expand exp env)
             ((ok exp env)
@@ -773,7 +776,7 @@
                                        (cons ";; Imported " (cdr exp)))))
                               envp))))
                   ((definition? exp)
-                     (tuple-case (repl-evaluate (caddr exp) env)
+                     (tuple-case (evaluator (caddr exp) env)
                         ((ok value env2)
                            (lets
                               ((env (env-set env (cadr exp) value))
@@ -788,7 +791,7 @@
                            (fail
                               (list "Definition of" (cadr exp) "failed because" reason)))))
                   ((multi-definition? exp)
-                     (tuple-case (repl-evaluate (caddr exp) env)
+                     (tuple-case (evaluator (caddr exp) env)
                         ((ok value env2)
                            (let ((names (cadr exp)))
                               (if (and (list? value)
@@ -846,14 +849,18 @@
                               (fail
                                  (list "Library" name "failed to load because" reason))))))
                   (else
-                     (repl-evaluate exp env))))
+                     (evaluator exp env))))
             ((fail reason)
                (tuple 'fail
                   (list "Macro expansion failed: " reason)))))
 
-      ; (repl env in) -> #(ok value env) | #(error reason env)
 
-      (define (repl env in)
+      ; !
+      ; in this repl changed from (repl env in) to (repl env in evaluator)
+      ; (repl env in) -> #(ok value env) | #(error reason env)
+      (define (repl env in evaluator)
+         (define repl__ (lambda (env in)
+                           (repl env in evaluator)))
          (if (interactive? env) (display "> ")) ; это сообщение выводится в самом начале и при ошибках
          (let loop ((env env) (in in) (last 'blank)) ; last - последний результат
             (cond
@@ -867,9 +874,9 @@
                         ((syntax-error? this)
                            (repl-fail env (cons "This makes no sense: " (cdr this))))
                         ((repl-op? this)
-                           (repl-op repl (cadr this) in env))
+                           (repl-op repl__ (cadr this) in env))
                         (else
-                           (tuple-case (eval-repl this env repl)
+                           (tuple-case (eval-repl this env repl__ evaluator)
                               ((ok result env)
                                  (prompt env result)
                                  (if (interactive? env) (display "> "))
@@ -883,7 +890,8 @@
          (repl env
             (if (eq? fd stdin)
                (λ () (fd->exp-stream stdin "$ " sexp-parser syntax-fail)) ; а это выводится если все ок
-               (fd->exp-stream fd "" sexp-parser syntax-fail))))
+               (fd->exp-stream fd "" sexp-parser syntax-fail))
+            repl-evaluate))
 
       (define (repl-file env path)
          (let ((fd (open-input-file path)))
@@ -895,7 +903,14 @@
          (let ((exps (try-parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
             ;; list of sexps
             (if exps
-               (repl env exps)
+               (repl env exps repl-evaluate)
+               (tuple 'error "not parseable" env))))
+
+      (define (eval-string env str)
+         (let ((exps (try-parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
+            ;; list of sexps
+            (if exps
+               (repl env exps evaluate)
                (tuple 'error "not parseable" env))))
 
 
