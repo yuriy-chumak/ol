@@ -448,7 +448,7 @@ void E(char* format, ...)
 				d = -d;
 			}
 			for (int i = 30; d && i; --i, d /= 10)
-				write(fd, "0123456789abcdef" + (d % 10), 1);
+				write(fd, "0123456789" + (d % 10), 1);
 			break;
 		}
 		default:
