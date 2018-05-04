@@ -1423,7 +1423,7 @@ void signal_handler(int signal) {
       case SIGPIPE: break; // can cause loop when reporting errors
       default:
          // printf("vm: signal %d\n", signal);
-         breaked |= 4;
+         // breaked |= 4;
    }
 }
 #endif
@@ -1905,7 +1905,7 @@ word runtime(OL* ol)
 	unsigned char *ip=0;   // vm instructions pointer
 	word* R = ol->R;     // virtual machine registers
 
-	int breaked = 0;
+//	int breaked = 0;
 	int ticker = TICKS; // any initial value ok
 	int bank = 0; // ticks deposited at interop
 
@@ -1947,7 +1947,7 @@ apply:;
 		R[3] = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
 		R[5] = IFALSE;
 		R[6] = IFALSE;
-		breaked = 0;
+//		breaked = 0;
 		ticker = TICKS;// ?
 		bank = 0;
 		acc = 4;
@@ -2021,12 +2021,12 @@ apply:;
 				// 1 - runnig and time slice exhausted
 				// 10: breaked - call signal handler
 				// 14: memory limit was exceeded
-				R[3] = breaked ? ((breaked & 8) ? I(14) : I(10)) : I(1); // fixme - handle also different signals via one handler
+				R[3] = I(1); // breaked ? ((breaked & 8) ? I(14) : I(10)) : I(1); // fixme - handle also different signals via one handler
 				R[4] = (word) thread; // thread state
-				R[5] = I(breaked); // сюда можно передать userdata из потока
+				R[5] = I(0); // I(breaked); // сюда можно передать userdata из потока
 				R[6] = IFALSE;
 				acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
-				breaked = 0;
+				// breaked = 0;
 
 				// reapply new thread
 				goto apply;
@@ -2052,9 +2052,10 @@ apply:;
 			ol->gc(ol, 1);
 			fp = heap->fp; this = ol->this;
 
-			word heapsize = (word)heap->end - (word)heap->begin;
-			if ((heapsize / (1024 * 1024)) >= ol->max_heap_size)
-				breaked |= 8; // will be passed over to mcp at thread switch
+			// temporary removed:
+			//word heapsize = (word)heap->end - (word)heap->begin;
+			//if ((heapsize / (1024 * 1024)) >= ol->max_heap_size)
+			//	breaked |= 8; // will be passed over to mcp at thread switch
 		}
 
 		ip = (unsigned char *) &this[1];
