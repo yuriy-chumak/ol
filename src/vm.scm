@@ -328,7 +328,7 @@
          #null)))
 
 
-      ; the best place for call/cc is here :(
+      ; the best place for call/cc is here
       (setq call-with-current-continuation
          ('_sans_cps (lambda (k f)
                         (f k (lambda (c . x) (apply/cc k x))))))

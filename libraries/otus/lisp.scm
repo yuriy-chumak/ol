@@ -5,6 +5,7 @@
       (exports (r5rs core))
       (exports (r5rs srfi-1))  ; * List Library
       (exports (r5rs srfi-87)) ; * => in case clauses ; builtin (r5rs core)
+;      (exports (scheme r5rs iteration)) ; 4.2.4 Iteration (do)
       (exports (r5rs characters))
 
       (exports (owl list))

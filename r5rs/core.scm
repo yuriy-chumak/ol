@@ -21,55 +21,123 @@
       ; tuple-apply ff-apply
       ; ff:red ff:black ff:toggle ff:red? ff:right?
 
-      ; ========================================================================================================
+      ; =================================================================
       ; Scheme
       ;
       ; Revised(5) Report on the Algorithmic Language Scheme
       ;                  Dedicated to the Memory of ALGOL 60
       ;
-      ; ========================================================================================================
+      ; =================================================================
 
+      ;                      DESCRIPTION OF THE LANGUAGE
+
+      ;;; ---------------------------------------------------------------
       ;;; Chapter 1
       ;;; Overview of Scheme
+
       ; 1.1  Semantics
+      ;
+      ; This section gives an overview of Scheme’s semantics. A
+      ; detailed informal semantics is the subject of chapters 3
+      ; through 6. For reference purposes, section 7.2 provides a
+      ; formal semantics of Scheme.
+      ;
+      ; Following Algol, Scheme is a statically scoped programming
+      ; language. Each use of a variable is associated with a
+      ; lexically apparent binding of that variable.
+      ;
+      ; Scheme has latent ..................
+      ; ......
+
       ; 1.2  Syntax
+      ;
+      ; Scheme, like most dialects of Lisp, employs .....
+      ; ......
 
       ; 1.3  Notation and terminology
+      ;
       ; 1.3.1  Primitive, library, and optional features
-      ; 1.3.2  Error situations and unspecified behavior
+      ;
+      ; It is required that every implementation of Scheme support
+      ; all features that are not marked as being optional. ......
+      ; ...
 
+      ; 1.3.2  Error situations and unspecified behavior
+      ;
+      ; When speaking of an error situation, this report .......
+      ; ....
+
+      ; * ol specific
       (setq runtime-error (lambda (reason info)
          (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
 
+      ; * ol specific
       (define-syntax syntax-error        ; * ol specific
          (syntax-rules (runtime-error)
             ((syntax-error . stuff)
                (runtime-error "Syntax error: " (quote stuff)))))
 
-      ; this is internal simlified 'assert' that use 'eq?', please be careful!
+      ; * inernal
+      ; note: this is simplified 'assert' that uses 'eq?'. please be careful!
       (define-syntax assert
          (syntax-rules (===>)
             ((assert expression ===> expectation)
                (ifeq ((lambda (x) x) expression) (quote expectation)
                   #true
                   (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
-
-      (setq error runtime-error)
+      
+      ; * ol specific
+      (setq error runtime-error) ; [yc] is it required?
 
       ; 1.3.3  Entry format
+      ;
+      ; Chapters 4 and 6 are organized into entries. Each ....
+      ; ........
+
       ; 1.3.4  Evaluation examples
+      ; 
+      ; The symbol "==>" used in program examples should be
+      ; read "evaluates to." ...
+      ; ....
+
       ; 1.3.5  Naming conventions
+      ;
+      ; By convention, the names of procedures that always return
+      ; a boolean value usually end in “?”. Such procedures are
+      ; called predicates.
+      ;
+      ; By convention, the names of procedures that store values
+      ; into previously allocated locations (see section 3.4) usually
+      ; end in "!". Such procedures are called mutation procedures.
+      ; By convention, the value returned by a mutation
+      ; procedure is unspecified.
+      ;
+      ; By convention, "->"" appears within the names of procedures
+      ; that take an object of one type and return an analogous
+      ; object of another type. For example, list->vector
+      ; takes a list and returns a vector whose elements are the
+      ; same as those of the list.
 
 
+      ;;; ---------------------------------------------------------------
       ;;; Chapter 2
       ;;; Lexical conventions
       ;
-      ; This section gives an informal account of some of the lexical conventions used in writing Scheme
-      ; programs. For a formal syntax of Scheme, see section 7.1.
-      ; Upper and lower case forms of a letter are never distinguished except within character and string
-      ; constants. For example, Foo is the same identifier as FOO, and #x1AB is the same number as #X1ab.
+      ; This section gives an informal account of some of the lexical
+      ; conventions used in writing Scheme programs. For a formal
+      ; syntax of Scheme, see section 7.1.
       ;
+      ; Upper and lower case forms of a letter are never distin-
+      ; guished except within character and string constants. For
+      ; example, Foo is the same identifier as FOO, and #x1AB is
+      ; the same number as #X1ab.
+
       ; 2.1  Identifiers
+      ;
+      ; Most identifiers allowed by other .......
+      ; ....
+      ;
+      ; Here are some examples of identifiers:
       ;
       ; lambda        q
       ; list->vector  soup
@@ -82,46 +150,93 @@
       ;
       ; ! $ % & * + - . / : < = > ? @ ^ _ ~
       ;
+      ; ...................................
 
       ; 2.2  Whitespace and comments
+      ;
+      ; Whitespace characters are spaces and newlines. .........
+      ; ..........
+
       ; 2.3  Other notations
+      ;
+      ; For a description of ........
+      ; ..........
 
 
+      ;;; ---------------------------------------------------------------
       ;;; Chapter 3
       ;;; Basic concepts
+
       ; 3.1  Variables, syntactic keywords, and regions
+      ;
+      ; An identifier may name a type of syntax, or ...
+      ; ..
+
       ; 3.2  Disjointness of types
+      ;
+      ; No object satisfies more than one ...
+      ; ..
+
       ; 3.3  External representations
+      ;
+      ; An important concept in Scheme (and Lisp) is that ...
+      ; ..
+
       ; 3.4  Storage model
+      ; Variables and objects such as pairs, vectors, and ...
+      ; .........
+
       ; 3.5  Proper tail recursion
+      ; Implementations of Scheme are required to be ...
+      ; ...............
 
 
+      ;;; ---------------------------------------------------------------
       ;;; Chapter 4
       ;;; Expressions
+      ;
+      ; Expression types are categorized as primitive or derived.
+      ; Primitive expression types include variables and procedure
+      ; calls. Derived expression types are not semantically primitive,
+      ; but can instead be defined as macros. With the exception
+      ; of quasiquote, whose macro definition is complex,
+      ; the derived expressions are classified as library features.
+      ; Suitable definitions are given in section 7.3.
+
       ; 4.1  Primitive expression types
 
       ; 4.1.1  Variable references
+      ;
       ; syntax:  <variable>
+      ;
+      ; An expression consisting of a variable (section 3.1) is a
+      ; variable reference. The value of the variable reference is
+      ; the value stored in the location to which the variable is
+      ; bound. It is an error to reference an unbound variable.
 
       ; 4.1.2  Literal expressions
+      ;
       ; syntax:  quote <datum>                * builtin
       ; syntax:  '<datum>                     * builtin
       ; syntax:  <constant>                   * builtin
 
       ; 4.1.3  Procedure calls
+      ;
       ; syntax:  (<operator> <operand1> ...)  * builtin
 
       ; 4.1.4  Procedures
+      ;
       ; syntax:  (lambda <formals> <body>)    * builtin
-      (define-syntax λ
+
+      (define-syntax λ                  ; * ol specific
          (syntax-rules ()
             ((λ . x) (lambda . x))))
 
       ;(assert ((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6))
       ;(assert ((lambda (x y . z) z) 3 4 5 6)          ===>  (5 6))
 
-      ; -------------------
       ; 4.1.5  Conditionals
+      ;
       ; syntax:  if <test> <consequent> <alternate>
       ; syntax:  if <test> <consequent>
       (define-syntax if
@@ -148,18 +263,21 @@
       (assert (unless (less? 2 3) 'yes 'no)               ===>  no)
       (assert (unless (less? 3 2) 'yes 'no)               ===>  yes)
 
-
-      ; ------------------
       ; 4.1.6  Assignments
+      ;
       ; syntax: set! <variable> <expression>  * not supported
 
-      ;; 4.2  Derived expression types
-      ; The constructs in this section are hygienic, as discussed in section 4.3. For reference purposes,
-      ; section 7.3 gives macro definitions that will convert most of the constructs described in this
-      ; section into the primitive constructs described in the previous section.
 
-      ; -------------------
+      ; 4.2  Derived expression types
+      ;
+      ; The constructs in this section are hygienic, as discussed
+      ; in section 4.3. For reference purposes, section 7.3 gives
+      ; macro definitions that will convert most of the constructs
+      ; described in this section into the primitive constructs de-
+      ; scribed in the previous section.
+
       ; 4.2.1  Conditionals
+      ;
       ; library syntax:  (cond <clause1> <clause2> ...)
       (define-syntax cond
          (syntax-rules (else =>)
@@ -258,15 +376,18 @@
       (assert (or #f #f #f)                               ===> #false)
       (assert (or #f 'c #f)                               ===> c)
 
-      ; -------------------------
       ; 4.2.2  Binding constructs
-
-      ; The three binding constructs let, let*, and letrec give Scheme a block structure, like Algol 60.
-      ; The syntax of the three constructs is identical, but they differ in the regions they establish
-      ; for their variable bindings. In a let expression, the initial values are computed before any of
-      ; the variables become bound; in a let* expression, the bindings and evaluations are performed
-      ; sequentially; while in a letrec expression, all the bindings are in effect while their initial
-      ; values are being computed, thus allowing mutually recursive definitions.
+      ;
+      ; The three binding constructs let, let*, and letrec give
+      ; Scheme a block structure, like Algol 60. The syntax of the
+      ; three constructs is identical, but they differ in the regions
+      ; they establish for their variable bindings. In a let ex-
+      ; pression, the initial values are computed before any of the
+      ; variables become bound; in a let* expression, the bind-
+      ; ings and evaluations are performed sequentially; while in a
+      ; letrec expression, all the bindings are in effect while their
+      ; initial values are being computed, thus allowing mutually
+      ; recursive definitions.
 
       ; library syntax:  (letrec <bindings> <body>)
       (define-syntax letrec
@@ -274,14 +395,14 @@
             ((letrec ((?var ?val) ...) ?body) (letq (?var ...) (?val ...) ?body))
             ((letrec vars body ...) (letrec vars (begin body ...)))))
 
-      ; library syntax:  (letrec* ...) - extension
-      (define-syntax letrec*
-         (syntax-rules ()
-            ((letrec () . body)
-               (begin . body))
-            ((letrec* ((var val) . rest) . body)
-               (letrec ((var val))
-                  (letrec* rest . body)))))
+      ; library syntax:  (letrec* ...) - r7rs
+      ;(define-syntax letrec*
+      ;   (syntax-rules ()
+      ;      ((letrec () . body)
+      ;         (begin . body))
+      ;      ((letrec* ((var val) . rest) . body)
+      ;         (letrec ((var val))
+      ;            (letrec* rest . body)))))
 
       ; library syntax:  (let <bindings> <body>)
       ;                  (let keyword <bindings> <body>) named let, from 4.2.4 Iteration
@@ -322,9 +443,8 @@
          (syntax-rules ()
             ((lets . stuff) (let* . stuff))))
 
-
-      ; -----------------
       ; 4.2.3  Sequencing
+      ;
       ; library syntax:  (begin <expression1> <expression2> ...)
       (define-syntax begin
          (syntax-rules (define letrec define-values let*-values letrec) ; todo: rename define-values to define*
@@ -350,21 +470,10 @@
             ((begin first . rest)
                ((lambda (free) (begin . rest))  first))))
 
+      ; 4.2.4  Iteration       * moved to (scheme r5rs iteration)
 
-      ; ----------------
-      ; 4.2.4  Iteration
-      ; library syntax: do ((<variable1> <init1> <step1>) ...) (<test> <expression> ...) <command> ...
-      (define-syntax do ; ?
-         (syntax-rules ()
-            ((do ((var init step) ...) (test expr ...) command ...)
-               (let loop ((var init) ...)
-                  (if test
-                     (begin expr ...)
-                     (loop step ...))))))
-
-
-      ; -------------------------
       ; 4.2.5  Delayed evaluation
+      ;
       ; library syntax:  delay <expression>
       (define-syntax delay
          (syntax-rules ()
@@ -372,9 +481,8 @@
                (lambda () (op . args)))
             ((delay value) value)))
 
-
-      ; ---------------------
       ; 4.2.6  Quasiquotation
+      ;
       ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
       ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
       (define-syntax quasiquote
@@ -402,15 +510,34 @@
                (quasiquote _work () . stuff))))
 
 
-      ;; 4.3  Macros
+      ; 4.3  Macros
+      ;
+      ; Scheme programs can define and use .......
+      ; ......
+
       ; 4.3.1  Binding constructs for syntactic keywords
+      ;
+      ; syntax: (let-syntax ...
+      ; syntax: (letrec-syntax ...
+
       ; 4.3.2  Pattern language
+      ;
+      ; (syntax-rules
 
 
+      ;;; ---------------------------------------------------------------
       ;;; Chapter 5
       ;;; Program structure
-      ;; 5.1  Programs
-      ;; 5.2  Definitions
+
+      ; 5.1  Programs
+      ; A Scheme program consists of a sequence ........
+      ; ........
+
+      ; 5.2  Definitions
+      ;
+      ; Definitions are valid in some, but not all, contexts .......
+      ; ...........
+
       (define-syntax define
          (syntax-rules (lambda) ;λ
             ((define op a b . c)
@@ -458,13 +585,26 @@
             ((let*-values () . rest)
                (begin . rest))))
 
-
-
       ; 5.2.1  Top level definitions
+      ;
+      ; At the top level of a program ........
+      ; ......
+
       ; 5.2.2  Internal definitions
+      ; 
+      ; Definitions may occur at the beginning .......
+      ; ...........
+      
+
       ; 5.3  Syntax definitions
+      ;
+      ; Syntax definitions are valid only at the top .......
+      ; ......
+      ;
+      ; (define-syntax <keyword> <transformer spec>)
 
 
+      ;;; ---------------------------------------------------------------
       ;;; Chapter 6
       ;;; Standard procedures
       ;
@@ -477,19 +617,26 @@
       ; identified as ``library procedures''.
       ;
 
-      ;; ---------------------------
-      ;; 6.1  Equivalence predicates
+      ; 6.1  Equivalence predicates
+      ;
+      ; A predicate is a procedure that always returns .......
+      ; ...........
 
-      ; procedure:  (eqv? obj1 obj2)  * (owl equal)
+      ; procedure:  (eqv? obj1 obj2)  * in (owl equal) (todo: update)
 
       ; procedure:  (eq? obj1 obj2)   * builtin
       
-      ; library procedure:  (equal? obj1 obj2)  * (owl equal)
+      ; library procedure:  (equal? obj1 obj2)  * in (owl equal) (todo: update)
 
-      ;; 6.2  Numbers
-      ; -------------------------------
+      
+      ; 6.2  Numbers
+      ; 
+      ; Numerical computation has traditionally been .......
+      ; .........
+
       ; This data types related to olvm
       ;     - not a part of r5rs -
+      ; todo: move to (src vm) ?
       (define type-fix+             TFIX+)
       (define type-fix-             TFIX-)
       (define type-int+             TINT+)
@@ -499,53 +646,71 @@
       (define type-inexact          TINEXACT)
 
       ; 6.2.1  Numerical types
+      ;
+      ; Mathematically, numbers may be arranged ........
+      ; ..............
+
       ; 6.2.2  Exactness
       ;
-      ; Otus Lisp numbers are always exact.
+      ; Scheme numbers are either exact or inexact. .......
+      ; ......
+      ;
+      ; note: implementation of inexact numbers in Otus Lisp are not finished
+      ;       and in progress
 
       ; 6.2.3  Implementation restrictions
-      ; 6.2.4  Syntax of numerical constants
+      ;
+      ; Implementations of Scheme are not required to .........
+      ; ...............
 
-      ; ---------------------------
+      ; 6.2.4  Syntax of numerical constants
+      ;
+      ; The syntax of the written representations ........
+      ; ... 
+
       ; 6.2.5  Numerical operations
       ;
+      ; The reader is referred to section .......
+      ; ...
+      ; todo: move fully to (scheme r5rs numerical)
+
       ; procedure:  (integer? obj)
       (define (integer? a)
          (case (type a)
             (type-fix+ #true)
             (type-fix- #true)
             (type-int+ #true)
-            (type-int- #true)
-            (else #false)))
+            (type-int- #true)))
 
       ; procedure:  (rational? obj)
       (define (rational? a)
-         (or (integer? a)
-             (case (type a)
-                (type-rational #true))))
+      (or
+         (integer? a)
+         (eq? (type a) type-rational)))
 
-      ; procedure:  (complex? obj)
-      (define (complex? a)
-         (or (rational? a)
-             (case (type a)
-                (type-complex #true))))
+      ; procedure:  (inexact? z)
+      (define (inexact? a)
+         (eq? (type a) type-inexact))
 
       ; procedure:  (real? obj)
       (define (real? a)
-         (complex? a))
+      (or
+         (rational? a)
+         (inexact? a)))
+
+      ; procedure:  (complex? obj)
+      (define (complex? a)
+      (or
+         (real? a)
+         (eq? (type a) type-complex)))
 
       ; procedure:  (exact? z)
       (define (exact? a)
          (real? a))
 
-      ; procedure:  (inexact? z)
-      (define (inexact? a)
-         (case (type a)
-            (type-inexact #true)))
-
       ; procedure:  (number? obj)
       (define (number? a)
-         (or (exact? a) (inexact? a)))
+         (complex? a))
 
 
       (assert (complex? 3+4i)                        ===>  #t)
@@ -560,11 +725,6 @@
       (assert (integer? 8/4)                         ===>  #t)
 
       ; *** declared in (r5rs math), (r5rs math-extra)
-      ; procedure:  (= z1 z2 z3 ...) <- (r5rs math)
-      ; procedure:  (< x1 x2 x3 ...)
-      ; procedure:  (> x1 x2 x3 ...)
-      ; procedure:  (<= x1 x2 x3 ...)
-      ; procedure:  (>= x1 x2 x3 ...)
       ; library procedure:  (zero? z)
       (define (zero? x) (eq? x 0))
       ; library procedure:  (positive? x)
@@ -573,6 +733,11 @@
       ; library procedure:  (even? n)
       ; library procedure:  (max x1 x2 ...)
       ; library procedure:  (min x1 x2 ...)
+      ; procedure:  (= z1 z2 z3 ...)
+      ; procedure:  (< x1 x2 x3 ...)
+      ; procedure:  (> x1 x2 x3 ...)
+      ; procedure:  (<= x1 x2 x3 ...)
+      ; procedure:  (>= x1 x2 x3 ...)
       ; procedure:  (+ z1 ...)
       ; procedure:  (* z1 ...)
       ; procedure:  (- z1 z2)
@@ -618,8 +783,8 @@
       ; procedure: inexact->exact z
       (define (inexact->exact n) (vm:cast n type-rational))
 
-      ; ---------------------------------
       ; 6.2.6  Numerical input and output
+      ;
       ; procedure:  (number->string z) <- (r5rs strings?)
       ; procedure:  (number->string z radix) <- (r5rs strings?)
 ;      (define (number->string n base)
@@ -632,11 +797,11 @@
 ;         (str        (list->number (string->list str) 10))))
 
 
-      ;; *********************
-      ;; 6.3  Other data types
+      ; 6.3  Other data types
       ;
-      ;  This section describes operations on some of Scheme's non-numeric data types: booleans, pairs,
-      ;  lists, symbols, characters, strings and vectors.
+      ; This section describes operations on some of Scheme's non-
+      ; numeric data types: booleans, pairs, lists, symbols, char-
+      ; acters, strings and vectors.
       ;
       ; -------------------------------
       ; This data types related to olvm
@@ -685,7 +850,6 @@
       (define type-thread-state     31) ; reference
       (define type-vptr             49) ; reference,  raw
 
-      ; ---------------
       ; 6.3.1  Booleans
       ;
       ; Of all the standard Scheme values, only #f counts as false in conditional expressions.
@@ -723,18 +887,16 @@
       (assert (boolean? 0)                           ===>  #f)
       (assert (boolean? '())                         ===>  #f)
 
+      ; todo: Оставить здесь только самые базово необходимые вещи, все остальное переместить в:
+      ;   6.3.2 -> (scheme r5rs lists)
+      ;   6.3.3 -> (scheme r5rs symbols)
+      ;   6.3.4 -> (scheme r5rs characters)
+      ;   6.3.5 -> (scheme r5rs strings)
+      ;   6.3.6 -> (scheme r5rs vectors)
 
-      ; Оставить здесь только самые абзово необходимые вещи, все остальное переместить в:
-      ;   6.3.2 -> (r5rs lists)
-      ;   6.3.3 -> (r5rs symbols)
-      ;   6.3.4 -> (r5rs characters)
-      ;   6.3.5 -> (r5rs strings)
-      ;   6.3.6 -> (r5rs vectors)
-      ;
-      ;
-
-      ; ----------------------
-      ; 6.3.2. Pairs and lists
+      ; 6.3.2  Pairs and lists
+      ; A pair (sometimes called a dotted pair) is a record ......
+      ; ......
 
       ; procedure:  (pair? obj)
       (define (pair? o)
@@ -800,8 +962,6 @@
       (assert (length '(a (b) (c d e)))              ===>  3)
       (assert (length '())                           ===>  0)
 
-
-
       ; library procedure:  (append list ...)
       (define append
          (let*((app (lambda (a b app)
@@ -825,7 +985,8 @@
                b
                (rev-loop (cdr a) (cons (car a) b)))))
 
-      ; library procedure:  (list-tail list k)
+      ; library procedure:  (list-tail list k)   * todo
+
       ; library procedure:  (list-ref list k)
       (define (list-ref lst pos)
          (cond
@@ -833,8 +994,7 @@
             ((eq? pos 0) (car lst))   ; use internal vm math, not math library
             (else (list-ref (cdr lst) (values-apply (vm:sub pos 1) (lambda (n carry) n))))))
 
-
-      ; library procedure:  (memq obj list)
+      ; library procedure:  (memq obj list)   * todo
       ; library procedure:  (memv obj list)
       ; library procedure:  (member obj list)
 
@@ -842,9 +1002,10 @@
       ; library procedure:  (assv obj alist)
       ; library procedure:  (assoc obj alist)
 
-
-      ; --------------
-      ; 6.3.3. Symbols
+      ; 6.3.3  Symbols
+      ;
+      ; Symbols are objects whose usefulness rests on the fact .......
+      ; .......
 
       ; procedure:  (symbol? obj)
       (define (symbol? o)
@@ -853,8 +1014,7 @@
       ; procedure:  (symbol->string symbol) *tbd
       ; procedure:  (string->symbol string) *tbd
 
-
-      ; 6.3.4. Characters (r5rs characters)
+      ; 6.3.4  Characters   * moved to (r5rs characters)
       ; Characters are objects that represent printed characters such as letters and digits.
       ; Characters are written using the notation #\<character> or #\<character name>.
       ;
@@ -1315,12 +1475,13 @@
 )
 ; ---------------------------
    (export
-      λ
+      λ ; ol extension
       syntax-error assert runtime-error error
 
+      ; 
       if unless cond case and or
-      letrec letrec* let let* let*-values lets
-      begin do
+      letrec let let*            lets ; lets - ol specific, let*-values - r7rs
+      begin                      ;do ; todo: move do to (scheme r5rs iteration)
       delay force
 
       quasiquote
@@ -1330,7 +1491,7 @@
       call-with-values define-library
       (exports (r5rs srfi-16)) ;case-lambda
       (exports (r5rs srfi-87)) ;=> in cases
-      define-values
+      define-values ; ol specific
 
       ; 6.2 (numbers)
       type-fix+
