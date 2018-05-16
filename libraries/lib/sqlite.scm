@@ -2,7 +2,7 @@
 ;;; https://github.com/yuriy-chumak/ol
 ;;; http://www.sqlite.org
 
-;;; Copyright (c) 2014, 2016, 2017 Yuriy Chumak
+;;; Copyright (c) 2014, 2016, 2017, 2018 Yuriy Chumak
 ;;; All rights reserved.
 ;;;
 ;;; --------------------------------------------------------------

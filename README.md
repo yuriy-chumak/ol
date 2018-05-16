@@ -38,10 +38,6 @@ not limited to, some of the SRFIs. It's tiny(42kb), embeddable
 and crossplatform; can run in own sandbox; provides a portable,
 highlevel way for using the code written in another languages.
 
-You can use Otus Lisp in Linux, Windows, Unix, Android and lot
-of any other operation systems with various (x86, x86_64, mips,
-arm, aarch64, ppc, etc.) architectures.
-
 You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
 Android, webOS and lot of any other operation systems based on
 various hardware architectures (x86, x86_64, arm, aarch64, ppc,
@@ -51,9 +47,8 @@ mips, etc.).
 REQUIREMENTS
 ------------
 
-For linux/unix you should have GCC >3.2 installed.
-
-For windows you should have MINGW installed.
+You should have GCC >3.2 or CLANG >3.5 installed.
+For Windows you should have MINGW installed.
 
 
 DOWNLOAD / INSTALLATION
@@ -113,7 +108,7 @@ To build full OL
 
 Olvm can execute only precompiled OL scripts (see BINARY SCRIPTS
 section) and is very small (about 35KB).
-Full OL with interpreter, that can execute text lisp scripts, more
+Full OL with interpreter, that can execute text lisp scripts is more
 fat (about 400KB executable).
 
 
