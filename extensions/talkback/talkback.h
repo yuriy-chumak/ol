@@ -29,7 +29,7 @@ extern "C" {
  *
  * \return olvm instance
  */
-void*OL_tb_start();
+void* OL_tb_start();
 
 /*!
  * \brief OL_tb_stop(olvm) -> none
