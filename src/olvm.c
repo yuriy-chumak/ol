@@ -1414,23 +1414,6 @@ void set_blocking(int sock, int blockp) {
 #endif
 }
 
-#if 0
-#ifndef _WIN32
-static
-void signal_handler(int signal) {
-	E("signal %d!", signal);
-	switch(signal) {
-//      case SIGINT:
-//        breaked |= 2; break;
-      case SIGPIPE: break; // can cause loop when reporting errors
-      default:
-         // printf("vm: signal %d\n", signal);
-         // breaked |= 4;
-   }
-}
-#endif
-#endif
-
 /* small functions defined locally after hitting some portability issues */
 //static __inline__ void bytecopy(char *from, char *to, int n) { while (n--) *to++ = *from++; }
 static __inline__ void wordcopy(word *from, word *to, int n) { while (n--) *to++ = *from++; }
@@ -1458,7 +1441,7 @@ void set_signal_handler()
 {
 #ifndef _WIN32
 //	signal(SIGINT, signal_handler);
-	signal(SIGPIPE, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);	// do not break on sigpipe
 #endif
 }
 
@@ -4653,7 +4636,7 @@ int main(int argc, char** argv)
 	argc--; argv++;
 #endif
 
-	//set_signal_handler();
+	set_signal_handler();
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
