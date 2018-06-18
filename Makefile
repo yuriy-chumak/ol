@@ -9,21 +9,23 @@ CC ?= gcc
 
 #do some configuration staff
 exists = $(shell echo "\
-	   \#include $1\n\
-	   char $2();\
+	   \#include $2\n\
+	   char $3();\
 	   \
 	   int main() {\
-	      return $2();\
+	      return $3();\
 	      return 0;\
-	   }" | $(CC) -xc - $3 -o /dev/null 2>/dev/null && echo 1)
+	   }" | $(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
 
 # features
 UNAME  ?= $(shell uname -s)
 LBITS  ?= $(shell getconf LONG_BIT)
-HAS_SECCOMP ?= $(call exists, <linux/seccomp.h>, prctl)
-HAS_DLOPEN  ?= $(call exists, <stdlib.h>, dlopen, -ldl)
-HAS_SOCKETS ?= $(call exists, <stdlib.h>, socket)
-HAS_CDEFS   ?= $(call exists, <sys/cdefs.h>,exit)
+HAS_SECCOMP ?= $(call exists,,<linux/seccomp.h>, prctl)
+HAS_DLOPEN  ?= $(call exists,,<stdlib.h>, dlopen, -ldl)
+HAS_SOCKETS ?= $(call exists,,<stdlib.h>, socket)
+HAS_CDEFS   ?= $(call exists,,<sys/cdefs.h>,exit)
+
+HAS_32CDEFS   ?= $(call exists,-m32,<sys/cdefs.h>,exit)
 
 ifeq ($(LBITS),64)
 vm64 = echo -n "64 " && ./vm64 repl <$$F | diff - $$F.ok
@@ -403,13 +405,16 @@ tests: \
 	@rm -f $(FAILED)
 	@echo "Internal VM testing:"
 	@echo "--------------------"
-ifeq ($(HAS_CDEFS),1)
 	@echo "32-bit:"
 	@echo "-------"
+ifeq ($(HAS_32CDEFS),1)
 	$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
 	./vm32d
-	@echo ""
+else
+	@echo "No 32-bit support enabled."
+	@echo "For ubuntu you can type, for example, 'sudo apt install libc6-dev-i386'"
 endif
+	@echo ""
 ifeq ($(LBITS),64)
 	@echo "64-bit:"
 	@echo "-------"
@@ -419,7 +424,7 @@ ifeq ($(LBITS),64)
 endif
 	@echo "ffi tests (32- and 64-bit, if possible):"
 	@echo "----------------------------------------"
-ifeq ($(HAS_CDEFS),1)
+ifeq ($(HAS_32CDEFS),1)
 	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
 	   @echo -n "Testing 32-bit ffi ... "
 	   @if ./ffi32 repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
@@ -443,7 +448,7 @@ ifeq ($(LBITS),64)
 endif
 	@echo "common (32- and 64-bit simulatenously):"
 	@echo "---------------------------------------"
-ifeq ($(HAS_CDEFS),1)
+ifeq ($(HAS_32CDEFS),1)
 	@make vm32
 endif	
 ifeq ($(LBITS),64)
