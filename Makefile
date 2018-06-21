@@ -466,9 +466,9 @@ endif
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
 	@echo "passed!"
 
-sample-embed:
-	$(CC) src/sample-embed.c src/olvm.c tmp/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o sample-embed \
-	-Xlinker --export-dynamic
+embed: extensions/embed/sample.c
+	$(CC) extensions/embed/sample.c src/olvm.c tmp/repl.o -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
+	-Xlinker --export-dynamic -Iinclude -lm
 
 # simple only target platform size tests
 check: $(filter-out tests/ffi.scm,$(wildcard tests/*.scm))

@@ -183,12 +183,45 @@ ssize_t read0(int fd, void *buf, size_t count, void* userdata)
 	return written;
 }
 
+void* olvm; // otus lisp virtual machine instance
 static
 void *eval, *env;
 
+void* embed_eval(char* format, ...)
+{
+	va_list vl;
+	va_start(vl, format);
+
+	int count = strlen(format);
+	void** args = __builtin_alloca(count * sizeof(void*));
+
+	args[0] = eval;
+	args[1] = env;
+
+	int i = 1;
+	while (++i) // eternal loop
+	switch (*format++)
+	{
+		case 's':
+			args[i] = new_string(olvm, va_arg(vl, char*));
+			continue;
+		case 'i':
+			args[i] = I(va_arg(vl, int));
+			continue;
+		case 0:
+			goto end;
+	}
+end:
+	va_end(vl);
+
+	void* r = OL_continue(olvm, count+2, (void**)args);
+	eval = car(cdr(r)); env = cdr(cdr(r));
+
+	return (void*) car(r);
+}
+
 int main(int argc, char** argv)
 {
-	void* olvm; // talkback handle
 	unsigned char* bootstrap = _binary_repl_start;
 	olvm = OL_new(bootstrap);
 	OL_set_read(olvm, read0);
@@ -247,9 +280,13 @@ int main(int argc, char** argv)
 		assert (r != IFALSE && "something wrong");
 
 		assert (car(r) == I(42) && "7+35 must be equal to 42");
+		printf("ok.\n");
 
 		eval = car(cdr(r)); env = cdr(cdr(r));
+
 	}
+
+	embed_eval("sii", "plus", 12, 23);
 
 	// done. free resources (and kill olvm)
 	OL_free(olvm);
