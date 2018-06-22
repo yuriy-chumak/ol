@@ -205,7 +205,7 @@
 
 (define sdl2 (load-dynamic-library (cond
    (win32? "SDL2.dll")
-   (linux? "libSDL2.so")
+   (linux? "libSDL2-2.0.so.0") ;libSDL2-2.0.so.0 
    (else
       (runtime-error "sdl2: unknown platform" uname)))))
 
