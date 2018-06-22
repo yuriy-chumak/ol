@@ -41,22 +41,24 @@ highlevel way for using the code written in another languages.
 You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
 Android, webOS and lot of any other operation systems based on
 various hardware architectures (x86, x86_64, arm, aarch64, ppc,
-mips, etc.).
+mips, etc).
 
 
 REQUIREMENTS
 ------------
 
 You should have GCC >3.2 or CLANG >3.5 installed.
-For Windows you should have MINGW installed.
+For Windows you should have MINGW.
 
 
 DOWNLOAD / INSTALLATION
 -----------------------
 
-You can use basic Ol functionality without any installation - just copy the `ol` binary
-to any user accessible path. Basic functionality includes a rich set of functions:
-lists, ff, io, lazies, strings, symbols, vectors, math, regex and tuples.
+You can use basic Ol functionality without any installation -
+just copy the `ol` binary to any user accessible path. Basic
+functionality includes a rich set of functions: lists, ff, io,
+lazies, strings, symbols, vectors, math, regex and tuples.
+
 For extended functionality you should install the whole Ol package.
 
 Installation packages for
@@ -303,8 +305,10 @@ EMBEDDED OL
 OL can be embedded in your project. It supports direct calls for C functions
 for 32- and 64-bit platforms with full callables support.
 
-For better (and complex) embedding Ol please check the "talkback" extension
-source code in "extensions/talkback" folder.
+# deprecated:
+# For better (and complex) embedding Ol please check the "talkback" extension
+# source code in "extensions/talkback" folder.
+Talkback interface was been changed to "embed" extension
 
 Please check the next code for sample usage:
 

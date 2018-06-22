@@ -1,41 +1,38 @@
+/*
+ * This sample demonstrates embedding the Otus Lisp into C projects.
+ *
+ * We draw the simple movable pacman (using C for rendering and pacman move),
+ * and Otus Lisp as blinky "brain" that blinky next moves using A* path finding algorithm.
+ */
+
 #include <GL/glut.h>
-#include <../../extensions/talkback/talkback.h>
+#include <../extensions/embed/embed.h>
 
 #include <stdio.h>
 #include <sys/time.h>
 #include <assert.h>
 
+// texturing
 GLuint loadTexture(const char* filename, int *width, int *height);
 
 GLuint background, point, pacman;
 GLuint blinky;
 
+// pacman position
 unsigned mainx = 1, mainy = 1;
 
-struct timeval timestamp = {0, 0};
+// timers
+struct timeval timestamp = {0, 0}; // for fps
+struct timeval blinkytimestamp = {0, 0}; // for fps
 unsigned frames = 0;
+// unsigned ticks = 0; // todo: up every 100 ms
 
 
-// talkback:
-void* brain;
-// just simplification
-#define eval(format, ...) OL_tb_eval(brain, format, ##__VA_ARGS__)
-#define send(format, ...) OL_tb_send(brain, format, ##__VA_ARGS__)
-void check_error()
-{
-	void* error = OL_tb_error(brain);
-	if (error && is_pair(error)) { // assume that pair is head of proper list
-		printf("got an error: ");
-		while (error != INULL) {
-			uintptr_t part = car(error);
-			if (is_string(part))
-				printf("%.*s ", string_length(part), string_value(part));
-			error = cdr(error);
-		}
-		fflush(stdout);
-		exit(1);
-	}
-}
+// olvm:
+embed_t olvm;
+
+// just code simplification
+#define eval(...) embed_eval(&olvm, ##__VA_ARGS__)
 
 
 
@@ -60,10 +57,9 @@ void drawPoint(int x, int y)
 	glTexCoord2d(0, 1); glVertex2f(x+1, y);
 	glEnd();
 }
+
 void draw(void)
 {
-	if (timestamp.tv_sec == 0)
-		gettimeofday(&timestamp, NULL);
 	frames++;
 
 	// Background color
@@ -75,12 +71,11 @@ void draw(void)
 	drawBackground();
 
 	glBindTexture(GL_TEXTURE_2D, point);
-	void* points = eval("points");                                check_error();
+	word points = eval("points");                                assert(is_reference(points));
 	for (int y = 0; y < 31; y++) {
-		// points is an object vector, so should start from 1
-		uintptr_t line = ref(points, y+1);
+		uintptr_t line = ref(points, y);
 		for (int x = 0; x < 28; x++) {
-			if (ol2small(ref(line, x+1)) == 1)
+			if (ol2int(ref(line, x)) == 1)
 				drawPoint(x, y);
 		}
 	}
@@ -90,9 +85,9 @@ void draw(void)
 
 	glBindTexture(GL_TEXTURE_2D, blinky);
 	{
-		void* ps = eval("blinky");                                check_error();
-		int x = ol2small(car(ps));
-		int y = ol2small(cdr(ps)) + 3;
+		word ps = eval("blinky");                                assert(is_pair(ps));
+		int x = ol2int(car(ps));
+		int y = ol2int(cdr(ps)) + 3;
 		float emoji = rand() % 4 / 4.0;
 		glBegin(GL_QUADS);
 		glTexCoord2d(1, emoji + 0.25); glVertex2f(x, y);
@@ -102,6 +97,7 @@ void draw(void)
 		glEnd();
 	}
 
+	// show fps
 	struct timeval now;
 	gettimeofday(&now, NULL);
 
@@ -124,17 +120,26 @@ void init(void)
 
 	glEnable(GL_TEXTURE_2D);
 	background = loadTexture("resources/background.png", 0, 0);
-	point = loadTexture("resources/point.png", 0, 0);
-	pacman = loadTexture("resources/pacman.png", 0, 0);
-	blinky = loadTexture("resources/blinky.png", 0, 0);
+	point =      loadTexture("resources/point.png", 0, 0);
+	pacman =     loadTexture("resources/pacman.png", 0, 0);
+	blinky =     loadTexture("resources/blinky.png", 0, 0);
 
-	send(",load \"%s\"\n", "main.lisp");
-	send("(eat-the-point %d %d)", mainx, mainy);
+	// initial vm communication
+	eval("(import (main))");
+	eval("eat-the-point", mainx, mainy);
 }
 
 void idle() {
 	// think here
-	eval("(blinky-move %d %d)", mainx, mainy);                    check_error();
+	struct timeval now;
+	gettimeofday(&now, NULL);
+
+	int sec = now.tv_sec - blinkytimestamp.tv_sec;
+	int usec = now.tv_usec - blinkytimestamp.tv_usec;
+	if (usec + sec * 1000000 > 1000000/3) { // 3 times per second
+		blinkytimestamp = now;
+		eval("blinky-move", mainx, mainy);                    //check_error();
+	}
 
 	glutPostRedisplay();   // Post a re-paint request to activate display()
 }
@@ -158,13 +163,11 @@ void keys(int key, int x, int y) {
 		return;
 	}
 
-	void* p = eval("(get-level %d %d)", mainx+dx, mainy+dy);      check_error();
-	if (is_small(p)) {
-		if (ol2small(p) == 1) {
-			mainx += dx;
-			mainy += dy;
-			eval("(eat-the-point %d %d)", mainx, mainy);          check_error();
-		}
+	word p = eval("get-level", mainx+dx, mainy+dy);      assert(is_small(p));
+	if (ol2small(p) == 1) {
+		mainx += dx;
+		mainy += dy;
+		eval("eat-the-point", mainx, mainy);
 	}
 	glutPostRedisplay();
 }
@@ -173,7 +176,11 @@ void keys(int key, int x, int y) {
 //Main program
 int main(int argc, char **argv)
 {
-	brain = OL_tb_start();
+	embed_new(&olvm); // ol creation
+
+#if 1 // eclipse
+	chdir("samples/pacman");
+#endif
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE);
@@ -187,8 +194,14 @@ int main(int argc, char **argv)
 	glutDisplayFunc(draw);
 	glutIdleFunc(idle);
 	glutSpecialFunc(keys);
+
+	// init timers
+	gettimeofday(&timestamp, NULL);
+	gettimeofday(&blinkytimestamp, NULL);
+
+	// let's go
 	glutMainLoop();
 
-	OL_tb_stop(brain);
+	//embed_delete(olvm);
 	return 0;
 }

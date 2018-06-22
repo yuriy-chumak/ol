@@ -74,7 +74,7 @@ void
 int OL_setstd(struct ol_t* ol, int id, int fd);
 
 // handle read
-typedef size_t (read_t)(int fd, void *buf, size_t count, void* userdata);
+typedef ssize_t (read_t)(int fd, void *buf, size_t count, void* userdata);
 read_t* OL_set_read(struct ol_t* ol, read_t read);
 
 typedef size_t (write_t)(int fd, void *buf, size_t count, void* userdata);

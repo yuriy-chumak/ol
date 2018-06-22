@@ -19,7 +19,6 @@ IF "%1"=="repl32" GOTO REPL32
 IF "%1"=="repl64" GOTO REPL64
 IF "%1"=="boot" GOTO BOOT
 IF "%1"=="slim" GOTO SLIM
-IF "%1"=="talkback" GOTO TALKBACK
 IF "%1"=="js" GOTO JS
 IF "%1"=="wasm" GOTO WASM
 IF "%1"=="release" GOTO RELEASE
@@ -175,18 +174,6 @@ GOTO :REPL
 :SLIM
 echo.   *** Making slim:
 vm repl src/slim.lisp >tmp/slim.c
-GOTO:EOF
-
-:TALKBACK
-echo.   *** Making talkback:
-ld -r -b binary -o ffi.o otus/ffi.scm
-%CC% -std=c99 -g3 -Wall -DEMBEDDED_VM -DNAKED_VM -DOLVM_FFI=1 ^
-    -fmessage-length=0 -Wno-strict-aliasing -I src ^
-    -D INTEGRATED_FFI ^
-    src/olvm.c tmp/repl.o ffi.o extensions/talkback/talkback.c extensions/talkback/sample.c -o "talkback.exe" ^
-    -Iwin32 -lws2_32 -O2 -g2
-GOTO:EOF
-
 GOTO:EOF
 
 :JS

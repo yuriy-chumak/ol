@@ -4,5 +4,5 @@ ld -r -b binary -o repl.o ../../repl
 gcc main.c texturing.c -I. -lGL -lglut -lpng \
    -I../../include -DNAKED_VM -DEMBEDDED_VM -DNDEBUG \
    -D_binary_repl_start=_binary_______repl_start \
-   ../../src/olvm.c ../../extensions/talkback/talkback.c repl.o -ldl -lm -pthread \
+   ../../src/olvm.c repl.o -ldl -lm -pthread \
    -Xlinker --export-dynamic
