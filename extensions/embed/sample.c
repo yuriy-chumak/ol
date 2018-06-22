@@ -8,9 +8,29 @@
 
 #include "embed.h"
 
+// olvm:
+ol_t ol;
+
+// just code simplification (magic):
+// we automatically will call new_string and make_integer depends on argument
+// but in general case you should manually do this. or not.
+#define _Q(x) \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), char[]), \
+		new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), char*), \
+		new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), int), \
+		make_integer((int)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), unsigned), \
+		make_integer((int)(uintptr_t)x), \
+	/*else*/ \
+		IFALSE))))
+
+#define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
+
+
 int main(int argc, char** argv)
 {
-	embed_t ol; // otus lisp instance
 	word r; // result of ol functions
 
 	// let's create new olvm
@@ -24,11 +44,12 @@ int main(int argc, char** argv)
 	// let's demonstrate it:
 
 	// new function declaration:
-	r = embed_eval(&ol, "(define (plus a b) (+ a b))");
+	r = eval("(define (plus a b) (+ a b))");
 
 	// call the function with arguments
-	r = embed_eval(&ol, "plus", 7, 11);
-	assert (r == I(18)); // and check the result
+	r = eval("plus", 7, 11);
+
+	assert (r == make_integer(18)); // and check the result
 
 	return 0;
 }

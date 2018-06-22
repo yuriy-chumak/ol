@@ -29,11 +29,26 @@ unsigned frames = 0;
 
 
 // olvm:
-embed_t olvm;
+ol_t ol;
 
-// just code simplification
-#define eval(...) embed_eval(&olvm, ##__VA_ARGS__)
+// just code simplification, some kind of magic to not manually write 'new_string' and 'make_integer':
+// we automatically will call new_string and make_integer depends on argument type
+// but in general case you should do this manually. or not.
+#define _Q(x) \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), char[]), \
+		new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), char*), \
+		new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), int), \
+		make_integer((int)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), unsigned), \
+		make_integer((int)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), long), \
+		make_integer((int)(uintptr_t)x), \
+	/*else*/ \
+		IFALSE)))))
 
+#define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
 
 
 //Drawing funciton
@@ -176,7 +191,8 @@ void keys(int key, int x, int y) {
 //Main program
 int main(int argc, char **argv)
 {
-	embed_new(&olvm); // ol creation
+	embed_new(&ol); // ol creation
+	eval("print", "do some logs: ", 42);
 
 #if 1 // eclipse
 	chdir("samples/pacman");

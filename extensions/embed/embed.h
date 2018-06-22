@@ -19,26 +19,27 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#ifndef OLVM_EMBED_PREFIX
-#define OLVM_EMBED_PREFIX // olvm_
-#endif
+//#ifndef OLVM_EMBED_PREFIX
+//#define OLVM_EMBED_PREFIX embed_
+//#endif
 
 // basic ol data type ('all is the words')
 #include "olvm.h"
 typedef uintptr_t word;
 
 // extension structure
-typedef struct embed_t
+#define olvm_t ol_t
+typedef struct ol_t
 {
-	struct ol_t* olvm; // otus lisp virtual machine instance
+	struct olvm_t* vm; // otus lisp virtual machine instance
+
 	// environment and eval function (can be changed after internal GC call)
 	word eval, env;
-
 	char* bs_pos; // bootstrap code position
-} embed_t;
+} ol_t;
 
 
-// otus lisp binary (please, build and link tmp/repl.o)
+// otus lisp binary (please, build and link repl.o)
 extern unsigned char _binary_repl_start[];
 
 //#pragma GCC diagnostic push
@@ -67,13 +68,13 @@ extern unsigned char _binary_repl_start[];
 
 // --------------------------------------------
 
-static word new_buffer(void* olvm, int type, char* data, int size)
+static word new_buffer(ol_t* ol, int type, char* data, int size)
 {
 	int words = (size + sizeof(word) - 1) / sizeof(word);
 	int pads = (words * sizeof(word) - size);
 	++words; // include header size
 
-	word*p = (word*)OL_allocate(olvm, words);
+	word* p = (word*)OL_allocate(ol->vm, words);
 	// #define make_raw_header(type, size, p) (2 | ((word) (size) << 16) | ((type) << 2) | ((p) << 8) | (1 << 11))
 	// *p = make_raw_header(type, words, pads); // type-string
 	*p = (2 | ((word) (words) << 16) | ((type) << 2) | ((pads) << 8) | (1 << 11));
@@ -84,10 +85,10 @@ static word new_buffer(void* olvm, int type, char* data, int size)
 	return (word)p;
 }
 
-static word new_string(void* olvm, char* data)
+static word new_string(ol_t* ol, char* data)
 {
 	int size = strlen(data);
-	return new_buffer(olvm, 3, data, size);
+	return new_buffer(ol, 3, data, size);
 }
 
 
@@ -97,28 +98,28 @@ ssize_t read0(int fd, void *buf, size_t count, void* userdata)
 	if (fd != 0) // skip if not stdin
 		return read(fd, buf, count);
 
-	embed_t* embed = (embed_t*)userdata;
+	ol_t* ol = (ol_t*)userdata;
 
 	// no more read
-	if (!*embed->bs_pos)
+	if (!*ol->bs_pos)
 		return read(fd, buf, count); // let's read real stdin
 
 	// read stub code
 	int written = 1;
 	char* out = buf;
-	while (count-- && (*out++ = *embed->bs_pos++))
+	while (count-- && (*out++ = *ol->bs_pos++))
 		++written;
 	return written;
 }
 
 //public
-void embed_new(embed_t* embed)
+void embed_new(ol_t* embed)
 {
 	unsigned char* bootstrap = _binary_repl_start;
 
-	embed->olvm = OL_new(bootstrap);
-	OL_set_read(embed->olvm, read0);
-	OL_userdata(embed->olvm, embed);
+	embed->vm = OL_new(bootstrap);
+	OL_set_read(embed->vm, read0);
+	OL_userdata(embed->vm, embed);
 
 	// embed boot code (prepares eval and env)
 	static
@@ -153,9 +154,9 @@ void embed_new(embed_t* embed)
 	embed->bs_pos = bs_code;
 
 	word r; // execution result
-	r = OL_run(embed->olvm, 0, 0);
+	r = OL_run(embed->vm, 0, 0);
 	// well, we have our "smart" script prepared,
-	//  now save both of eval and env variables
+	//  now save both eval and env variables
 	assert (r != IFALSE);
 	embed->eval = car(r);  embed->env = cdr(r);
 }
@@ -196,65 +197,31 @@ void embed_new(embed_t* embed)
 #define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 // */  end of C preprocessor trick
 
-#define _s(x) 's', x
-#define _i(x) 'i', x
-
-#define _q(x) \
-	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), char[]), \
-		's', \
-	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), char*), \
-		's', \
-	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), int), \
-		'i', \
-	__builtin_choose_expr( __builtin_types_compatible_p (typeof(x), unsigned), \
-		'i', \
-	/*else*/ \
-		'e')))), x
-
-word embed_eval(embed_t* embed, ...)
+word embed_eval(ol_t* ol, ...)
 {
+
 	va_list vl;
-	va_start(vl, embed);
-
-	int count = 10; // probably, no more that 10 arguments will be?
-	word* args = __builtin_alloca(count * sizeof(void*));
-
-	args[0] = embed->eval;
-	args[1] = embed->env;
-
-	int i = 1;
-	while (++i) {
-		if (i > count) {
-			word* temp = __builtin_alloca((count + 10) * sizeof(void*));
-			memcpy(temp, args, count);
-			args = temp;
-		}
-		switch (va_arg(vl, int))
-		{
-			case 's':
-				args[i] = new_string(embed->olvm, va_arg(vl, char*));
-				continue;
-			case 'i':
-				args[i] = make_integer(va_arg(vl, int));
-				continue;
-			case 'e':
-				printf ("no automatic conversion for type");
-				assert (0); break;
-			case 0:
-				goto end;
-		}
-	}
-end:
+	va_start(vl, ol);
+	int count = 0;
+	while (va_arg(vl, void*) != 0)
+		count++;
 	va_end(vl);
 
-	word r = OL_continue(embed->olvm, i, (void**)args);
-	embed->eval = car(cdr(r)); embed->env = cdr(cdr(r));
+	va_start(vl, ol);
+	uintptr_t* args = __builtin_alloca((count+1) * sizeof(uintptr_t)); // just one for sanity zero
+
+	args[0] = ol->eval;
+	args[1] = ol->env;
+	int i = 1;
+
+	while ((args[++i] = (uintptr_t)va_arg(vl, void*)) != 0) ;
+	va_end(vl);
+
+	word r = OL_continue(ol->vm, i, (void**)args);
+	ol->eval = car(cdr(r)); ol->env = cdr(cdr(r));
 
 	return car(r);
 }
-
-#define _embed_eval embed_eval
-#define embed_eval(f, ...) _embed_eval(f, MAP_LIST(_q, __VA_ARGS__), 0)
 
 // ====================================================================
 
@@ -272,6 +239,7 @@ end:
 		assert (is_value(p) && "argument should be value");\
 		thetype(p) & 0x1F; })
 
+//! returns the type of provided ol reference
 #define reftype(x) ({ uintptr_t p = (uintptr_t)(x);\
 		assert (is_reference(p) && "argument should be reference");\
 		thetype(*(uintptr_t*)(p)); })
@@ -283,20 +251,20 @@ end:
 			valuetype(s) == 0 || valuetype(s) == 32\
 		: 0; })
 
-//! returns !0 if argument is a number
+//! returns not 0 if argument is a number
 #define is_number(x) ({ uintptr_t n = (uintptr_t)(x);\
 		is_small(n) ? 1 \
 		: is_reference(n) ? \
 			reftype(n) == 40 || reftype(n) == 41\
 			: 0; })
 
-//! returns !0 if argument is a string
+//! returns not 0 if argument is a string
 #define is_string(x) ({ uintptr_t s = (uintptr_t)(x);\
 		is_reference(s) ?\
 			reftype(s) == 3 || reftype(s) == 22\
 		: 0; })
 
-//! returns !0 if argument is a cons (and maybe a list)
+//! returns not 0 if argument is a cons (and maybe a list)
 #define is_pair(x) ({ uintptr_t s = (uintptr_t)(x);\
 		is_reference(s) ?\
 			reftype(s) == 1\
@@ -308,6 +276,7 @@ end:
 		assert (is_string(o) && "argument should be a small number");\
 		(int)(((*(uintptr_t*)o >> 16) - 1) * sizeof(uintptr_t) -\
 		      ((*(uintptr_t*)o >> 8) & 7)); })
+
 //! returns address of ol string body, this is NOT null terminated string!
 #define string_value(x) ({ uintptr_t o = (uintptr_t)(x);\
 		assert (is_string(o) && "argument should be a small number");\
