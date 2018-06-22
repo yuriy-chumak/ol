@@ -89,6 +89,15 @@ OL_continue(struct ol_t* ol, int argc, void** argv);
 void*
 OL_userdata(struct ol_t* ol, void* userdata);
 
+/**
+ * Allocate new object in olvm heap
+ */
+void*
+OL_allocate(struct ol_t* ol, unsigned words);
+
+//void*
+//OL_allocate(struct ol_t* ol, int wordscount);
+
 
 // handle read
 typedef ssize_t (read_t)(int fd, void *buf, size_t count, void* userdata);

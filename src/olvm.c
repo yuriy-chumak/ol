@@ -678,6 +678,9 @@ word OL_continue(struct ol_t* ol, int argc, void** argv);
 
 void*
 OL_userdata (struct ol_t* ol, void* userdata);
+void*
+OL_allocate (struct ol_t* ol, unsigned words);
+
 
 read_t* OL_set_read(struct ol_t* ol, read_t read);
 write_t* OL_set_write(struct ol_t* ol, write_t read);
@@ -4795,6 +4798,17 @@ void* OL_userdata(OL* ol, void* userdata)
 	ol->userdata = userdata;
 	return old_userdata;
 }
+void* OL_allocate(OL* ol, unsigned words)
+{
+	word* fp;
+	
+	fp = ol->heap.fp;
+	word* r = new(words);
+	ol->heap.fp = fp;
+
+	return (void*)r;
+}
+
 
 // i/o polymorphism
 read_t* OL_set_read(struct ol_t* ol, read_t read)
@@ -4813,19 +4827,19 @@ write_t* OL_set_write(struct ol_t* ol, write_t write)
 
 // ===============================================================
 word
-OL_run(OL* handle, int argc, char** argv)
+OL_run(OL* ol, int argc, char** argv)
 {
-	int r = setjmp(handle->heap.fail);
+	int r = setjmp(ol->heap.fail);
 	if (r != 0) {
 		// TODO: restore old values
 		// TODO: if IFALSE - it's error
-		return handle->R[3]; // returned value
+		return ol->R[3]; // returned value
 	}
 
 	// подготовим аргументы:
-	word userdata = handle->R[4];
+	word userdata = ol->R[4];
 	{
-		word* fp = handle->heap.fp;
+		word* fp = ol->heap.fp;
 
 		argv += argc - 1;
 		for (ptrdiff_t i = argc; i > 1; i--, argv--) {
@@ -4838,12 +4852,11 @@ OL_run(OL* handle, int argc, char** argv)
 				userdata = (word) new_pair (new_bytevector(TSTRING, length), userdata);
 		}
 
-		handle->heap.fp = fp;
+		ol->heap.fp = fp;
 	}
-	handle->R[4] = userdata;
+	ol->R[4] = userdata;
 
 	// результат выполнения скрипта
-	OL* ol = handle;
 	heap_t* heap = &ol->heap;
 	sandboxp = 0;    // static variable
 
@@ -4861,7 +4874,7 @@ OL_run(OL* handle, int argc, char** argv)
 	ol->arity = acc;
 
 	longjmp(ol->heap.fail,
-		(int)runtime(handle));
+		(int)runtime(ol));
 }
 
 word
@@ -4900,7 +4913,7 @@ OL_continue(OL* ol, int argc, void** argv)
 		(int)runtime(ol));
 }
 
-// Foreign Function Interface support code
+// Foreign Function Interface code
 #if OLVM_FFI || OLVM_CALLABLES
 #	include "../extensions/ffi.c"
 #endif
@@ -4918,7 +4931,6 @@ int os_close(int fd, void* userdata)
 {
 	return close(fd);
 }
-
 
 static
 ssize_t os_read(int fd, void *buf, size_t size, void* userdata)

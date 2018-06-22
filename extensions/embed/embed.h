@@ -27,16 +27,6 @@
 #include "olvm.h"
 typedef uintptr_t word;
 
-// internal olvm instance structure
-// needed for fast object allocating
-struct ol_t
-{
-	word *begin, *end, *gs;
-	word *fp;        // allocation pointer
-	// ... and
-	// a lot of undocumented internal data (you don't need it, really)
-};
-
 // extension structure
 typedef struct embed_t
 {
@@ -79,15 +69,11 @@ extern unsigned char _binary_repl_start[];
 
 static word new_buffer(void* olvm, int type, char* data, int size)
 {
-	word* fp;
-	fp = ((OL*)olvm)->fp;
-
 	int words = (size + sizeof(word) - 1) / sizeof(word);
 	int pads = (words * sizeof(word) - size);
 	++words; // include header size
 
-	word*p = fp;
-	fp += words;
+	word*p = (word*)OL_allocate(olvm, words);
 	// #define make_raw_header(type, size, p) (2 | ((word) (size) << 16) | ((type) << 2) | ((p) << 8) | (1 << 11))
 	// *p = make_raw_header(type, words, pads); // type-string
 	*p = (2 | ((word) (words) << 16) | ((type) << 2) | ((pads) << 8) | (1 << 11));
@@ -95,7 +81,6 @@ static word new_buffer(void* olvm, int type, char* data, int size)
 	while (size--)\
 		*ptr++ = *data++;
 
-	((OL*)olvm)->fp = fp;
 	return (word)p;
 }
 
