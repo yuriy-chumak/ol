@@ -4,9 +4,10 @@
  * A ForeignFunctionInterface (FFI) is an interface that allows calling code written
  * in one programming language, from another that is neither a superset nor a subset.
  *
- * тут у нас реализация ffi механизма. примеры в lib/opengl.scm, lib/sqlite.scm, etc
+ * Тут у нас реализация ffi механизма. Примеры в lib/opengl.scm, lib/sqlite.scm, etc
  *
- * FFI is Fatal Familial Insomnia too. Please, don't read this code at night...
+ * FFI is Fatal Familial Insomnia too.
+ *  Please, don't try to understand this code at night...
  */
 
 // Libc and Unicode: http://www.tldp.org/HOWTO/Unicode-HOWTO-6.html
@@ -29,13 +30,12 @@
 //efine TBVEC         (19) // todo: remove this (use fft-vptr or fft-void* is same)
 
 #define TUNKNOWN      (62) // only for ffi, direct sending argument without processing
-#define TANY          (63) //
+#define TANY          (63) // automatic conversion based on actual argument type
 
 // ffi type system
-#define TFLOAT        (46) // '.' symbol
-#define TDOUBLE       (47) // '/' symbol
+#define TFLOAT        (46)
+#define TDOUBLE       (47)
 
-// 50 is free
 #define TINT8         (50)
 #define TINT16        (51)
 #define TINT32        (52)
@@ -51,19 +51,26 @@
 // 60 for 256 ?
 
 
-#define TMASK      0x0FFF
+#define TMASK     0x00FFF
 
-#define TCDECL     0x1000
-#define TSTDCALL   0x2000
-#define TFASTCALL  0x3000
+#define TCDECL    0x01000
+#define TSTDCALL  0x02000
+#define TFASTCALL 0x03000
 
 #define FFT_PTR   0x10000
 #define FFT_REF   0x20000
 
+// https://en.wikipedia.org/wiki/Double-precision_floating-point_format
+// However, on modern standard computers (i.e., implementing IEEE 754), one may
+// in practice safely assume that the endianness is the same for floating-point
+// numbers as for integers, making the conversion straightforward regardless of
+// data type.
+// (Small embedded systems using special floating-point formats may be another
+// matter however.)
 word d2ol(struct ol_t* ol, double v); // declared in olvm.c
 
-// C preprocessor trick, some kind of "map"
-// http://jhnet.co.uk/articles/cpp_magic !!
+// C preprocessor trick, some kind of "map":
+// http://jhnet.co.uk/articles/cpp_magic
 // http://stackoverflow.com/questions/319328/writing-a-while-loop-in-the-c-preprocessor
 #define FIRST(a, ...) a
 #define SECOND(a, b, ...) b
@@ -115,6 +122,7 @@ word d2ol(struct ol_t* ol, double v); // declared in olvm.c
     DEFER2(_MAP)()(m, __VA_ARGS__)   \
   )()
 #define _MAP() MAP
+// end of C preprocessor trick
 
 #define NEWLINE(x) x "\n\t"
 #define __ASM__(...) __asm__(EVAL(MAP(NEWLINE, __VA_ARGS__)))
@@ -529,7 +537,7 @@ ret_t asmjs_call(word args[], int fmask, void* function, int type) {
 #endif
 
 
-// lisp->c convertors
+// ol->c convertors
 static
 word from_uint(word arg) {
 	assert (is_reference(arg));

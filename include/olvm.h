@@ -10,8 +10,22 @@
 **/
 #pragma once
 
-#ifndef __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
-#define __OLVM_H__0F78631C_47C6_11E4_BBBE_64241D5D46B0__
+/**
+ * Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
+ * 
+ * It implements an extended subset of R5RS Scheme including, but
+ * not limited to, some of the SRFIs. It's tiny(42kb), embeddable
+ * and crossplatform; can run in own sandbox; provides a portable,
+ * highlevel way for using the code written in another languages.
+ * 
+ * You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
+ * Android, webOS and lot of any other operation systems based on
+ * various hardware architectures (x86, x86_64, arm, aarch64, ppc,
+ * mips, etc).
+**/
+
+#ifndef __OLVM_H__65374DBFFB460CF7E3F765DF2A1F3A24__
+#define __OLVM_H__65374DBFFB460CF7E3F765DF2A1F3A24__
 #ifdef __cplusplus
 	extern "C" {
 #endif
@@ -22,11 +36,11 @@
 // (игра слов)
 // OL:
 //	* сокращение от названия проекта - Otus Lisp (вырос из Owl Lisp'а),
-//	* нулевой порог вхождения (0L - число 0, L - level) (Lisp - ОЧЕНЬ простой язык),
+//	* низкий порог вхождения (0L - число 0, L - level) (Lisp - ОЧЕНЬ простой язык),
 //	* тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков),
 //	* ol' - сокращение от old (старый), отсылка к тому, что lisp - один из старейших языков.
 //  * А еще, в корейском похожий иероглиф (이) переводится как "Это", "This".
-// Otus - совка (англ) - подтип сов, создание (фин).
+// Otus (англ) - совка, подтип сов; создание (фин).
 struct ol_t;
 
 /**
@@ -52,36 +66,39 @@ OL_free(struct ol_t* ol);
  * \param[in] ol Valid olvm instance
  * \param[in] argc Arguments count
  * \param[in] argv Arguments array
+ *
  */
 uintptr_t
 OL_run(struct ol_t* ol, int argc, char** argv);
 
+/**
+ * Continue OL vm after stop (if possible)
+ * 
+ * \param[in] ol Valid olvm instance
+ * \param[in] argc Arguments count
+ * \param[in] argv Arguments array
+ * 
+ * \note First argument must be valid olvm runnable object (function, bytecode, etc.)
+ */
 uintptr_t
 OL_continue(struct ol_t* ol, int argc, void** argv);
 
+/**
+ * Set and return userdata associated with olvm instance
+ */
 void*
 OL_userdata(struct ol_t* ol, void* userdata);
 
-/**
- * Register a function to be called at olvm termination
- *
- * \param[in] ol Valid olvm instance
- * \param[in] function Function to be called
- */
-void
-(*OL_atexit(struct ol_t* ol, void (*function)(int status))) (int status);
-
-int OL_setstd(struct ol_t* ol, int id, int fd);
 
 // handle read
 typedef ssize_t (read_t)(int fd, void *buf, size_t count, void* userdata);
 read_t* OL_set_read(struct ol_t* ol, read_t read);
 
+// handle write
 typedef size_t (write_t)(int fd, void *buf, size_t count, void* userdata);
 write_t* OL_set_write(struct ol_t* ol, write_t read);
 
-// handle write
-
+// =================================================
 // c++ interface:
 #ifdef __cplusplus
 class OL
@@ -108,7 +125,7 @@ typedef struct ol_t OL;
 
 // ------------------------------------------------------------------
 // -=( Error Checking )=---------------------------------------------
-//                  to disable (to increase speed, for example) check
+//                 to disable (to increase speed, for example) checks
 //                        please uncomment corresponded #define macro
 //                                  (doesn't increase speed for real)
 

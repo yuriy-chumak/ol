@@ -3,6 +3,7 @@
 #include <png.h>
 
 #include <string.h>
+#include <stdlib.h>
 
 #define TEXTURE_LOAD_ERROR 0
 

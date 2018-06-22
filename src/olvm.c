@@ -83,7 +83,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 #if GCC_VERSION < 40500
 #	define __builtin_unreachable() do { \
-		char s[] = "I saw the dragons!\n"; \
+		char s[] = "I saw a dragon!\n"; \
 		write(STDOUT_FILENO, s, sizeof(s)); abort(); \
 	} while(0)
 #endif
@@ -527,13 +527,13 @@ void yield()
 #ifdef __APPLE__
 #	include "TargetConditionals.h"
 #	if TARGET_IPHONE_SIMULATOR
-     // iOS Simulator
+	// iOS Simulator
 #	elif TARGET_OS_IPHONE
-    // iOS device
+	// iOS device
 #	elif TARGET_OS_MAC
-    // Other kinds of Mac OS
+	// Other kinds of Mac OS
 #	else
-    // Unsupported platform
+	// Unsupported platform
 #	endif
 #endif
 
@@ -681,17 +681,6 @@ OL_userdata (struct ol_t* ol, void* userdata);
 
 read_t* OL_set_read(struct ol_t* ol, read_t read);
 write_t* OL_set_write(struct ol_t* ol, write_t read);
-
-
-
-// notification interface:
-typedef void (exit_t)(int status);
-exit_t* OL_atexit(struct ol_t* ol, exit_t* exit);
-
-typedef void (postgc_t)(int status);
-postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc);
-
-int OL_setstd(struct ol_t* ol, int id, int fd);
 
 // ------------------------------------------------------
 #define W                           sizeof (word)
@@ -1510,19 +1499,16 @@ struct ol_t
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
 	int (*gc)(OL* ol, int ws);
-	void (*exit)(int errorId);
+//	void (*exit)(int errorId);	// deprecated
 
 	void* userdata; // user data
 
 	// i/o polymorphism
-	open_t  *open;
-	close_t *close;
-	read_t  *read;
-	write_t *write;
-//	stat_t  *stat;
-
-	// deprecated
-	int std[3]; // стандартные порты в/в
+	open_t*  open;
+	close_t* close;
+	read_t*  read;
+	write_t* write;
+//	stat_t*  stat;
 
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
@@ -1561,14 +1547,15 @@ struct ol_t
 
 // todo: add overflow checking...
 #ifndef SVTOI_CHECK
-#define SVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIXP);
+#define SVTOI_CHECK(v) assert (is_value(v) && (valuetype(v) == TFIXP)); // valuetype makes TFIXP from TFIXP and TFIXN
 #endif
 #define svtoi(v) \
-	({  SVTOI_CHECK(v); \
-		word x3 = (word)(v); \
-		int_t y = (x3 >> IPOS); \
-		(x3 & 0x80) ? -y : y; \
+	({  word x = (word)(v);           \
+		SVTOI_CHECK(x);               \
+		int_t y = (x >> IPOS);        \
+		thetype(x) == TFIXN ? -y : y; \
 	})
+//		(x & 0x80) ? -y : y;
 
 #define itosv(i)  (word)({ int_t x4 = (int_t)(i);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2; })
 // todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
@@ -1609,6 +1596,7 @@ struct ol_t
 
 // internal functions:
 #if OLVM_INEXACTS
+static
 double ol2d_convert(word p) {
 	double v = 0;
 	double m = 1;
@@ -1622,10 +1610,10 @@ double ol2d_convert(word p) {
 
 double ol2d(word arg) {
 	if (is_value(arg)) {
-		assert (valuetype(arg) == TFIXP || valuetype(arg) == TFIXN);
+		assert (thetype(arg) == TFIXP || thetype(arg) == TFIXN); // shorter: valuetype(arg) == TFIXP
 		return svtoi(arg);
 	}
-
+	assert (is_reference(arg));
 	switch (reftype(arg)) {
 	case TINTP:
 		return +ol2d_convert(arg);
@@ -1643,6 +1631,7 @@ double ol2d(word arg) {
 	}
 }
 
+static
 float ol2f_convert(word p) {
 	float v = 0;
 	float m = 1;
@@ -1655,10 +1644,10 @@ float ol2f_convert(word p) {
 }
 float ol2f(word arg) {
 	if (is_value(arg)) {
-		assert (valuetype(arg) == TFIXP || valuetype(arg) == TFIXN);
+		assert (thetype(arg) == TFIXP || thetype(arg) == TFIXN); // shorter: valuetype(arg) == TFIXP
 		return svtoi(arg);
 	}
-
+	assert (is_reference(arg));
 	switch (reftype(arg)) {
 	case TINTP:
 		return +ol2f_convert(arg);
@@ -1666,7 +1655,7 @@ float ol2f(word arg) {
 		return -ol2f_convert(arg);
 	case TRATIONAL:
 		return ol2f(car(arg)) / ol2f(cdr(arg));
-	case TCOMPLEX:
+	case TCOMPLEX: // use only real part of complex number
 		return ol2f(car(arg));
 	case TINEXACT:
 		return *(float*)&car(arg);
@@ -1732,8 +1721,8 @@ word d2ol(struct ol_t* ol, double v) {
 			while (v > 0);
 
 			size_t len = (p - fp);
-			new_bytevector(TBVEC, sizeof(word) * len); // dummy
-			              // will be destroyed during next gc()
+			new_bytevector(TBVEC, sizeof(word) * len); // dummy,
+			               // will be destroyed during next gc()
 			word* m = fp;
 			p = (word*)INULL;
 			for (size_t i = 0; i < len - 1; i++)
@@ -1755,7 +1744,7 @@ word d2ol(struct ol_t* ol, double v) {
 
 static //__attribute__((aligned(8)))
 word runtime(OL* ol);  // главный цикл виртуальной машины
-// требует полностью вализную структуру ol_t
+// требует полностью валидную структуру ol_t
 
 #define TICKS                       10000 // # of function calls in a thread quantum
 
@@ -2253,8 +2242,7 @@ loop:;
 			// todo: исправить с помощью динамического количества регистров!
 			if (reg > NR) { // dummy handling for now
 				// TODO: add changing the size of R array!
-				E("TOO LARGE APPLY");
-				ol->exit(3);
+				ERROR(APPLY, new_string("Too large apply"), ITRUE);
 			}
 			R[reg++] = car (lst);
 			lst = (word *) cdr (lst);
@@ -3018,9 +3006,6 @@ loop:;
 			if (size < 0)
 				size = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
 
-			// возможный редирект портов в/в
-			portfd = portfd < 3 ? ol->std[portfd] : portfd;
-
 			int words = ((size + W - 1) / W) + 1; // в словах
 			if (words > (heap->end - fp)) {
 				ptrdiff_t dp;
@@ -3070,9 +3055,6 @@ loop:;
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
 			int size = svtoi (c);
-
-			// возможный редирект портов в/в
-			portfd = portfd < 3 ? ol->std[portfd] : portfd;
 
 			word *buff = (word *) b;
 			if (is_value(buff))
@@ -3268,9 +3250,6 @@ loop:;
 
 			int portfd = port(a);
 			int ioctl = uvtoi(b);
-
-			// возможный редирект портов в/в
-			portfd = portfd < 3 ? ol->std[portfd] : portfd;
 
 			switch (ioctl + sandboxp) {
 				case SYSCALL_IOCTL_TIOCGETA: {
@@ -4541,8 +4520,8 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		}
 
 		default:
-			puts("Bad object in heap");
-			exit(42);
+			D("Ol: bad object in heap");
+			return 0;
 		}
 
 		n++;
@@ -4716,10 +4695,6 @@ OL_new(unsigned char* bootstrap)
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
-	handle->std[0] = STDIN_FILENO;
-	handle->std[1] = STDOUT_FILENO;
-	handle->std[2] = STDERR_FILENO;
-
 	// подготовим очереди в/в
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
@@ -4734,6 +4709,8 @@ OL_new(unsigned char* bootstrap)
 	// а теперь поработаем с сериализованным образом:
 	word words = 0;
 	word nobjs = count_fasl_objects(&words, bootstrap); // подсчет количества слов и объектов в образе
+	if (nobjs == 0)
+		goto fail;
 	words += (nobjs + 2); // for ptrs
 
 	word *fp;
@@ -4789,7 +4766,7 @@ OL_new(unsigned char* bootstrap)
 
 
 	handle->gc = OL__gc;
-	handle->exit = exit;
+//	handle->exit = exit;
 
 	handle->open = os_open;
 	handle->close = os_close;
@@ -4817,29 +4794,6 @@ void* OL_userdata(OL* ol, void* userdata)
 	void* old_userdata = ol->userdata;
 	ol->userdata = userdata;
 	return old_userdata;
-}
-
-exit_t* OL_atexit(struct ol_t* ol, exit_t* exit)
-{
-	exit_t* current = ol->exit;
-	ol->exit = exit;
-	return current;
-}
-
-postgc_t* OL_atpostgc(struct ol_t* ol, postgc_t* postgc)
-{
-	postgc_t* current = ol->exit;
-//	ol->postgc = postgc;
-	return current;
-}
-
-int OL_setstd(struct ol_t* ol, int id, int fd)
-{
-	if (id > 2)
-		return -1;
-	int current = ol->std[id];
-	ol->std[id] = fd;
-	return current;
 }
 
 // i/o polymorphism
@@ -4879,7 +4833,7 @@ OL_run(OL* handle, int argc, char** argv)
 			char *v = *argv;
 			while ((*pos = *v++) != 0)
 				pos++;
-			int length = pos - (char*)fp - W;
+			int length = pos - (char*)(fp + 1);
 			if (length > 0) // если есть что добавить
 				userdata = (word) new_pair (new_bytevector(TSTRING, length), userdata);
 		}
