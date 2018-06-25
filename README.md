@@ -305,91 +305,54 @@ EMBEDDED OL
 OL can be embedded in your project. It supports direct calls for C functions
 for 32- and 64-bit platforms with full callables support.
 
-# deprecated:
-# For better (and complex) embedding Ol please check the "talkback" extension
-# source code in "extensions/talkback" folder.
-Talkback interface was been changed to "embed" extension
-
-Please check the next code for sample usage:
+Please check the next code as a sample:
 
     --- cut ---
-    // embedded example
-    #include "olvm.h"
+    // embedded olvm usage example
+    #include "embed.h"
 
-    #include <stdio.h>
+    // embed.h header provides few simplified macroses and functions
+    // to easy work with ol virtual machine.
+    // For example, make_integer(x) converts C integers into internal
+    // olvm format. For other cases please check enbed.h header.
 
-    #if _WIN32
-    __declspec(dllexport)
-    #else
-    __attribute__((__visibility__("default")))
-    #endif
-    int sample_add(int fa, int fb)
-    {
-	    // math
-	    int a = fa;    fprintf(stderr, "DEBUG: a = %d\n", a);
-	    int b = fb;    fprintf(stderr, "DEBUG: b = %d\n", b);
-	    int r = a + b; fprintf(stderr, "DEBUG: r = %d\n", r);
-
-	    // result
-	    return r;
-    }
+    // olvm embed instance
+    ol_t ol;
 
     int main(int argc, char** argv)
     {
-        OL* ol = OL_new(
-            "(import (otus ffi) (owl io))"
-            "(define $ (load-dynamic-library #f))" // get own handle
-            "(define sample_add ($ fft-int \"sample_add\" fft-int fft-int))"
+        // result of ol functions call
+        uintptr_t r;
+        // create new embedded olvm instance
+        embed_new(&ol);
 
-            "(print \"sample_add: \""
-            "   (sample_add 1 2))");
-        OL_run(ol, 0, 0);
+        // our embed extension can work in two manner:
+        // if eval got only one parameter it returns the value of parameter
+        // in other case it makes apply the arguments to first parameter
+        // Note: if you want to call expression, but you have not arguments,
+        // just use parenthesis, like "(print)" instead of "print"
 
-        OL_free(ol);
+        // new function declaration:
+        r = eval("(define (plus a b) (+ a b))");
+
+        // call the function with arguments
+        r = eval("plus", 7, 11);
+
+        assert (r == make_integer(18)); // and check the result
+
+        return 0;
     }
     --- cut ---
 
-You need:
+Just compile with -DEMBEDDED_VM and link with repl binary.
 
-a. compile OL with -DHAS_DLOPEN and -DOLVM_FFI options
-      (don't forget for -DEMBEDDED_VM)
+The complex sample can be found in samples/pacman.
 
-b. notify vm about using ffi library: "(import (otus ffi))"
-      "otus/ffi.scm" file must be accessible from your executable or from
-      default library search path
 
-c. load function exporter library as "(define any-variable (load-dynamic-library #f))" for self
-      executable or "(define any-variable (load-dynamic-library \"libmy.so\"))" for "my"
-      dynamic library (my.dll for windows)
+EMBEDDED OL IN DETAIL
+---------------------
 
-d. notify vm about function prototypes that you want to call. ffi support mechanism
-      provides smart translation from internal OL data format into machine
-      specific that used by common languages (C in sample).
-
-FFI described in the [Project Page](http://yuriy-chumak.github.io/ol/?ru/ffi) (still in progress), so for now function interface declaration from sample in details:
-
-'(define sample_add ($ fft-int "sample_add" fft-int fft-int))':
-
- * sample_add - any appropriate variable name for your internal OL function name.
-      This variable will be associated with lambda that can call the native function.
- * second argument in ($) - fft-int - is return type of native function, it
-      can be fft-int for integers, type-string for string, etc.
-      available types you can check in otus/ffi.scm
- * third argument is function name string. you must export this
-      function from your code to make it accessible from OL
- * next dlsym args is argument types for native function, ffi
-      will try to convert arguments of sample_add lambda to this type.
-
-e) well, now you can freely use your native function like this for example
-      '(print (sample_add 1 2))'
-
-More information about ffi you can get in source files
-    lib/sqlite.scm
-    lib/opengl.scm and OpenGL/version-x-x.scm
-    lib/winapi.scm
-    lib/x11.scm
-
-* All embedded OL API in progress and can be changed in feature.
+TBD.
 
 
 DOCUMENTATION
@@ -402,6 +365,7 @@ Or check the source codes - r5rs/core.owl
 
 RELATED
 --------------------------------------------------------------
+
 Copyright (c) 2014 Aki Helin,
 Copyright (c) 2014 - 2017 Yuriy Chumak
 
