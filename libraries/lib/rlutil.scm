@@ -104,13 +104,13 @@
 (define cls (cond
    (win32?
       ; Based on https://msdn.microsoft.com/en-us/library/windows/desktop/ms682022%28v=vs.85%29.aspx
-      (let*((kernel32 (dlopen "kernel32.dll"))
+      (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (dlsym kernel32 type-vptr "GetStdHandle" type-fix+))
-            (GetConsoleScreenBufferInfo (dlsym kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (FillConsoleOutputCharacter (dlsym kernel32 type-vptr "FillConsoleOutputCharacterW" type-vptr type-fix+ type-int+ type-int+ type-vptr))
-            (FillConsoleOutputAttribute (dlsym kernel32 type-vptr "FillConsoleOutputAttribute" type-vptr type-int+ type-int+ type-int+ type-vptr))
-            (SetConsoleCursorPosition   (dlsym kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-int+)))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-fix+))
+            (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
+            (FillConsoleOutputCharacter (kernel32 type-vptr "FillConsoleOutputCharacterW" type-vptr type-fix+ type-int+ type-int+ type-vptr))
+            (FillConsoleOutputAttribute (kernel32 type-vptr "FillConsoleOutputAttribute" type-vptr type-int+ type-int+ type-int+ type-vptr))
+            (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-int+)))
       (lambda ()
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
                (csbi (vm:new-raw-object type-vector-raw 22)) ; CONSOLE_SCREEN_BUFFER_INFO
@@ -130,10 +130,10 @@
 
 (define locate (cond
    (win32?
-      (let*((kernel32 (dlopen "kernel32.dll"))
+      (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (dlsym kernel32 type-vptr "GetStdHandle" type-fix+))
-            (SetConsoleCursorPosition   (dlsym kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-int+)))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-fix+))
+            (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-int+)))
       (lambda (x y)
          (let ((COORD (+ (band (- x 1) #xFFFF)
                          (<< (band (- y 1) #xFFFF) 16))))
@@ -145,11 +145,11 @@
 
 (define set-color (cond
    (win32?
-      (let*((kernel32 (dlopen "kernel32.dll"))
+      (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (dlsym kernel32 type-vptr "GetStdHandle" type-fix+))
-            (GetConsoleScreenBufferInfo (dlsym kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (SetConsoleTextAttribute (dlsym kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-fix+))
+            (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
+            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
       (lambda (color)
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
                (csbi (vm:new-raw-object type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
@@ -162,11 +162,11 @@
 
 (define set-background-color (cond
    (win32?
-      (let*((kernel32 (dlopen "kernel32.dll"))
+      (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (dlsym kernel32 type-vptr "GetStdHandle" type-fix+))
-            (GetConsoleScreenBufferInfo (dlsym kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (SetConsoleTextAttribute (dlsym kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-fix+))
+            (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
+            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
       (lambda (color)
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
                (csbi (vm:new-raw-object type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
@@ -180,11 +180,11 @@
 
 (define reset-color (cond ; something wrong!
    (win32?
-      (let*((kernel32 (dlopen "kernel32.dll"))
+      (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (dlsym kernel32 type-vptr "GetStdHandle" type-fix+))
-            (GetConsoleScreenBufferInfo (dlsym kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (SetConsoleTextAttribute (dlsym kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-fix+))
+            (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
+            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+))
 
             (hConsole (GetStdHandle STD_OUTPUT_HANDLE))
             (csbi (vm:new-raw-object type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
@@ -200,9 +200,9 @@
 
 (define set-console-title (cond
    (win32?
-      (let*((kernel32 (dlopen "kernel32.dll"))
-            (SetConsoleTitleA (dlsym kernel32 type-vptr "SetConsoleTitleA" type-string))
-            (SetConsoleTitleW (dlsym kernel32 type-vptr "SetConsoleTitleW" type-string-wide)))
+      (let*((kernel32 (load-dynamic-library "kernel32.dll"))
+            (SetConsoleTitleA (kernel32 type-vptr "SetConsoleTitleA" type-string))
+            (SetConsoleTitleW (kernel32 type-vptr "SetConsoleTitleW" type-string-wide)))
       (lambda (title)
          (case (type title)
             (type-string
