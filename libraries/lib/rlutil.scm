@@ -11,6 +11,7 @@
       cls locate
       set-color set-background-color reset-color
       set-console-title
+      key-pressed
       )
 (begin
    (define uname (syscall 63 #f #f #f))                 ; uname -a
@@ -215,4 +216,23 @@
          (display title)
          (display ANSI_CONSOLE_TITLE_POST)))))
 
+(define key-pressed (cond
+   (win32?
+      (lambda () #f))
+   (linux?
+      (let*((x11 (load-dynamic-library "libX11.so"))
+            (XOpenDisplay (x11 fft-void* "XOpenDisplay" type-string))
+            (XCloseDisplay (x11 fft-void "XCloseDisplay" type-vptr))
+            (XQueryKeymap (x11 fft-void "XQueryKeymap" type-vptr type-string))
+            (XKeysymToKeycode (x11 fft-int "XKeysymToKeycode" type-vptr fft-int))
+            (keys (list->string (repeat 0 32))))
+      (lambda (key)
+         (let ((display (XOpenDisplay #f)))
+            (XQueryKeymap display keys)
+            (let ((code (XKeysymToKeycode display key)))
+               (XCloseDisplay display)
+               ;(print code)
+               (not (zero?
+                  (band (<< 1 (band code #x7))
+                        (ref keys (>> code 3))))))))))))
 ))
