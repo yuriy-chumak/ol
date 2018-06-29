@@ -2684,22 +2684,26 @@ loop:;
 		ip += 4; break; }
 
 	case SETREFE: { // (set-ref! variable position value)
-		word *p = (word *)A0;
+		word *v = (word *)A0;
 		word pos = uvtoi (A1);
+		word value = A2;
 
-		CHECK(is_value(A2), A2, 10001); // todo: move to silent return IFALSE
+		// CHECK(is_value(A2), A2, 10001); // todo: move to silent return IFALSE
 
 		A3 = IFALSE;
-		if (is_reference(p)) {
-			if (is_rawobject(*p)) {
-				if (pos < (hdrsize(*p)-1)*W - padsize(*p) + 1)
-					((char*)&car(p))[pos] = (char) svtoi(A2);
-				A3 = (word) p;
+		if (is_reference(v)) {
+			if (is_rawobject(*v)) {
+				if (is_value(value) && (pos < (hdrsize(*v)-1)*W - padsize(*v) + 1)) {
+					((char*)&car(v))[pos] = (char) svtoi(A2);
+					A3 = (word) v;
+				}
 			}
 			else
-			if (pos >= 1 && pos <= hdrsize(*p)) {
-				p[pos] = A2;
-				A3 = (word) p;
+			if (pos >= 1 && pos <= hdrsize(*v)) {
+				if (is_value(value) || (is_reference(value) && (word*)value < v)) {
+					v[pos] = A2;
+					A3 = (word) v;
+				}
 			}
 		}
 
