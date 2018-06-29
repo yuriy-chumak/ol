@@ -67,7 +67,9 @@
 // data type.
 // (Small embedded systems using special floating-point formats may be another
 // matter however.)
-word d2ol(struct ol_t* ol, double v); // declared in olvm.c
+word d2ol(struct ol_t* ol, double v);        // declared in olvm.c
+double ol2d(word arg); float ol2f(word arg); // declared in olvm.c
+
 
 // C preprocessor trick, some kind of "map":
 // http://jhnet.co.uk/articles/cpp_magic
@@ -546,7 +548,7 @@ word from_uint(word arg) {
 	return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << VBITS);
 }
 
-#if UINTPTR_MAX != 0xffffffffffffffff
+#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit platform math
 static
 long long from_ulong(word arg) {
 	assert (is_reference(arg));
@@ -562,50 +564,43 @@ long long from_ulong(word arg) {
 #endif
 
 static
-float from_int_to_float(word* arg) {
-	// читаем длинное число в float формат
-	assert (is_value(car(arg)));
-	float f = (unsigned long)uvtoi(car(arg));
-	float mul = HIGHBIT;
-	while (is_reference(cdr(arg))) {
-		arg = (word*)cdr(arg);
-		f += (unsigned long)uvtoi(cdr(arg)) * mul;
-		mul *= HIGHBIT;
-	}
-	assert (cdr(arg) == INULL);
-
-	return f;
-}
-
-static
-float from_rational(word arg) {
+#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines
+long
+#endif
+long from_rational(word arg) {
 	word* pa = (word*)car(arg);
 	word* pb = (word*)cdr(arg);
 
-	float a = 0;
+	#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines
+	long
+	#endif
+	long a = 0;
 	if (is_value(pa))
 		a = svtoi(pa);
 	else {
 		switch (reftype(pa)) {
 		case TINTP:
-			a = +from_int_to_float(pa);
+			a = +untoi(pa);
 			break;
 		case TINTN:
-			a = -from_int_to_float(pa);
+			a = -untoi(pa);
 			break;
 		}
 	}
 
-	float b = 1;
+	#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines
+	long
+	#endif
+	long b = 1;
 	if (is_value(pb))
 		b = svtoi(pb);
 	else {
 		switch (reftype(pb)) {
 		case TINTP:
-			b = +from_int_to_float(pb);
+			b = +untoi(pb);
 			break;
 		case TINTN:
-			b = -from_int_to_float(pb);
+			b = -untoi(pb);
 			break;
 		}
 	}
@@ -655,49 +650,6 @@ long to_long(word arg) {
 
 	return 0;
 }*/
-
-// todo: заменить на вызов (float)to_double(arg)
-static
-float to_float(word arg) {
-	if (is_value(arg))
-		return svtoi(arg);
-
-	switch (reftype(arg)) {
-	case TINTP:
-	case TINTN:
-	case TRATIONAL:
-		return (float) ol2f(arg);
-	case TCOMPLEX:
-		return to_float(car(arg)); // return real part of value
-	case TINEXACT:
-		return *(float*)&car(arg);
-	}
-	return 0;
-}
-
-static
-double to_double(word arg) {
-	if (is_value(arg))
-		return svtoi (arg);
-
-	switch (reftype(arg)) {
-	case TINTP:
-		return (double)+from_uint(arg);
-		break;
-	case TINTN:
-		return (double)-from_uint(arg);
-		break;
-	case TRATIONAL:
-		return (double) from_rational(arg);
-		break;
-	case TCOMPLEX:
-		return to_double(car(arg)); // return real part of value
-	case TINEXACT:
-		return *(double*)&car(arg);
-	}
-	return 0;
-}
-
 
 // Главная функция механизма ffi:
 PUBLIC
@@ -902,10 +854,10 @@ word* OL_ffi(OL* self, word* arguments)
 		// с плавающей запятой:
 		case TFLOAT:
 			#if __amd64__ && __linux__
-				*(float*)&ad[d++] = (float)to_double(arg);
+				*(float*)&ad[d++] = ol2f(arg);
 				floatsmask|=1; --i;
 			#else
-				*(float*)&args[i] = to_float(arg);
+				*(float*)&args[i] = ol2f(arg);
 			# ifdef __EMSCRIPTEN__
 				fmask |= 1 << i;
 			# endif
@@ -924,16 +876,16 @@ word* OL_ffi(OL* self, word* arguments)
 
 			word l = arg;
 			while (c--)
-				*f++ = to_float(car(l)), l = cdr(l);
+				*f++ = ol2f(car(l)), l = cdr(l);
 			break;
 		}
 
 		case TDOUBLE:
 			#if __amd64__ && __linux__
-				ad[d++] = to_double(arg);
+				ad[d++] = ol2d(arg);
 				floatsmask++; --i;
 			#else
-				*(double*)&args[i] = to_double(arg);
+				*(double*)&args[i] = ol2d(arg);
 				// no double for any call yet supported
 			#endif
 			#if UINT64_MAX > SIZE_MAX // sizeof(double) > sizeof(float) //__LP64__
@@ -954,7 +906,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 			word l = arg;
 			while (c--)
-				*p++ = to_double(car(l)), l = cdr(l);
+				*p++ = ol2d(car(l)), l = cdr(l);
 			break;
 		}
 
@@ -1240,7 +1192,7 @@ word* OL_ffi(OL* self, word* arguments)
 			word arg = (word) car(p);
 
 			// destination type
-			if (arg != IFALSE)
+			//if (arg != IFALSE) - излишен
 			switch (type) {
 
 			// simplest case - all shorts are fits as value
@@ -1341,6 +1293,7 @@ word* OL_ffi(OL* self, word* arguments)
 			}
 
 			case TFLOAT + FFT_REF: {
+				// todo: перепроверить!
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				float* f = (float*)args[i];
