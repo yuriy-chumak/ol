@@ -423,7 +423,9 @@ void E(char* format, ...)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
+#ifdef __clang__
 #pragma GCC diagnostic ignored "-Wstring-plus-int"
+#endif
 
 	for(;;)
 	switch (*format++) {
