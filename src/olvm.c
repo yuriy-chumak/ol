@@ -1555,6 +1555,7 @@ struct ol_t
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && (valuetype(v) == TFIXP)); // valuetype makes TFIXP from TFIXP and TFIXN
 #endif
+// todo: rename to sv2i (signed value TO integer)
 #define svtoi(v) \
 	({  word x = (word)(v);           \
 		SVTOI_CHECK(x);               \
@@ -1569,6 +1570,7 @@ struct ol_t
 // арифметика целых (возможно больших)
 // прошу внимания!
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
+// todo: rename to sn2i (signed number /value or long number/ TO integer)
 #define untoi(num)  ({\
 	is_value(num) ? uvtoi(num)\
 		: uvtoi(car(num)) | uvtoi(cadr(num)) << VBITS; \
@@ -1602,6 +1604,7 @@ struct ol_t
 
 // internal functions:
 #if OLVM_INEXACTS
+// todo: add disabling ol2d (for machines without doubles), or better reusing as ol2f
 static
 double ol2d_convert(word p) {
 	double v = 0;
@@ -4048,6 +4051,9 @@ loop:;
 			break;
 		}
 		#if OLVM_CALLABLES
+		// todo: add commands vm:pin, vm:unpin, vm:deref
+		// (закрепить данные и вернуть номер пина, освободить пин и вернуть данные по номеру пина)
+		// todo: соответственно удалить userdata api за ненадобностью (?) и использовать пин-api
 		case SYSCALL_MKCB: { // make-callable
 			// TCALLABLE
 			int c;
