@@ -6,7 +6,7 @@
     GL_VERSION_4_4
    )
 
-   (import (r5rs core)
+   (import (scheme core)
       (OpenGL version-4-3))
    (begin
    (define GL_VERSION_4_4 1)

@@ -10,7 +10,7 @@
 
 )
 
-   (import (r5rs core)
+   (import (scheme core)
       (OpenGL version-1-0))
 
 (begin

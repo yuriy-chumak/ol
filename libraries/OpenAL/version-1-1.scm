@@ -59,7 +59,7 @@
 ; ============================================================================
 ; == implementation ==========================================================
    (import
-      (r5rs core) (owl math) (owl io) (owl string)
+      (scheme core) (owl math) (owl io) (owl string)
       (otus ffi)
       (owl interop) (owl list))
 

@@ -1,5 +1,5 @@
 (define-library (lib curl)
-   (import (r5rs core)
+   (import (scheme core)
            (otus ffi))
    (export
       curl_easy_init

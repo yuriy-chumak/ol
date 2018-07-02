@@ -503,7 +503,7 @@
 )
 
    (import
-      (r5rs core) (otus ffi)
+      (scheme core) (otus ffi)
       (owl string) (owl io))
 
 (begin

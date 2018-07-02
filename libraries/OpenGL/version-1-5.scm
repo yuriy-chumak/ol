@@ -7,7 +7,7 @@
 
   )
   
-   (import (r5rs core)
+   (import (scheme core)
       (OpenGL version-1-4))
    (begin
    (define GL_VERSION_1_5 1)

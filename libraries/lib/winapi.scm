@@ -54,7 +54,7 @@
   )
 
   (import
-      (r5rs core) (owl io)
+      (scheme core) (owl io)
       (owl list) (owl string)
       (owl math) (otus ffi))
 (begin

@@ -82,7 +82,7 @@
    (exports (OpenGL version-1-2)))
 ; ============================================================================
 ; == implementation ==========================================================
-(import (r5rs core)
+(import (scheme core)
    (OpenGL version-1-2))
 
 (begin

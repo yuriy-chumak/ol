@@ -20,7 +20,7 @@
       TCL_CONTINUE
    )
    (import
-      (r5rs core)
+      (scheme core)
       (otus ffi))
 (begin
 

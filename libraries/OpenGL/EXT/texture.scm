@@ -39,7 +39,7 @@
 ; Dependencies
 ;	None
    (import
-      (r5rs core) (owl io)
+      (scheme core) (owl io)
       (OpenGL version-1-0))
       
 ; ---------------------------------------------------------------------------

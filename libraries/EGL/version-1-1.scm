@@ -130,7 +130,7 @@
       ;eglCopyBuffers (EGLDisplay dpy, EGLSurface surface, NativePixmapType target);
    )
    (import
-      (r5rs core) (owl string)
+      (scheme core) (owl string)
       (owl io)
 
       (otus ffi))

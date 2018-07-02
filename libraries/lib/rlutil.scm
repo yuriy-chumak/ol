@@ -1,6 +1,6 @@
 ; https://github.com/yuriy-chumak/rlutil
 (define-library (lib rlutil)
-   (import (r5rs core)
+   (import (scheme core)
            (owl string)
            (owl math) (owl io) (owl list) (owl list-extra)
            (otus ffi))

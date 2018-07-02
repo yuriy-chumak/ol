@@ -4,7 +4,7 @@
   (export
     http:run
     http:parse-url)
-  (import (r5rs core) (r5rs srfi-1)
+  (import (scheme core) (r5rs srfi-1)
       (owl parse) (owl vector)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (lang intern) string->symbol)

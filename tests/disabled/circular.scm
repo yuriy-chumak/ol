@@ -1,6 +1,6 @@
 (define-library (tests circular)
    (import
-      (r5rs core)
+      (scheme core)
       (tests circular))
    (export bad-kitty)
    (begin

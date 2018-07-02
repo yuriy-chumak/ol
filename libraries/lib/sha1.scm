@@ -5,7 +5,7 @@
     sha1:digest
     base64:encode)
     
-  (import (r5rs core)
+  (import (scheme core)
       (owl math) (owl list) (owl string) (owl list-extra))
 (begin
 

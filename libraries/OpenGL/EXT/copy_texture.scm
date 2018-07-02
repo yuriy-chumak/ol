@@ -21,7 +21,7 @@
 ;	SGIS_texture_filter4 affects the definition of this extension.
 ;	EXT_subtexture affects the definition of this extension.
    (import
-      (r5rs core) (owl io)
+      (scheme core) (owl io)
       (OpenGL version-1-0))
 
 ;	EXT_texture is required.
