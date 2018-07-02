@@ -1,4 +1,4 @@
-(define-library (r5rs srfi-16)
+(define-library (scheme case-lambda)
 ; http://srfi.schemers.org/srfi-16/srfi-16.html
 
 ;; Abstract
@@ -19,13 +19,9 @@
 ; NOTES: srfi-16 fully included into r5rs core profile, you should not include it manually!
 ; -----
 (export
-   srfi-16
-   
    case-lambda)
 
 (begin
-   (setq srfi-16 #true)
-
    ; makes a list of options to be compiled to a chain of code bodies w/ jumps
    ; note, could also merge to a jump table + sequence of codes
    (define-syntax case-lambda

@@ -2,7 +2,7 @@
 (define-library (r5rs core)
    (import
       (src vm) ; virtual machine codes
-      (r5rs srfi-16)  ; case-lambda
+      (scheme case-lambda)  ; case-lambda
       (r5rs srfi-87)) ; <= in cases
    (begin
 
@@ -1489,7 +1489,7 @@
       list length append reverse
       ilist tuple tuple-case
       call-with-values define-library
-      (exports (r5rs srfi-16)) ;case-lambda
+      (exports (scheme case-lambda)) ;case-lambda
       (exports (r5rs srfi-87)) ;=> in cases
       define-values ; ol specific
 
