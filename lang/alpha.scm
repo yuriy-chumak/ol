@@ -10,7 +10,7 @@
    (export alpha-convert)
 
    (import
-      (r5rs core)
+      (scheme core)
       (lang gensym)
       (lang ast)
       (owl math)

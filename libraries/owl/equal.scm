@@ -1,7 +1,7 @@
 (define-library (owl equal)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl string)
       (owl symbol)
       (owl list)

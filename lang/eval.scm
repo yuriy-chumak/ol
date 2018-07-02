@@ -21,7 +21,7 @@
       interaction-environment)
 
    (import
-      (r5rs core)
+      (scheme core)
 
       (owl list)
       (lang compile)

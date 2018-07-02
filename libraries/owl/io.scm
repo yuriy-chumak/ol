@@ -50,7 +50,7 @@
    )
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl interop)
       (owl queue)
       (owl string)

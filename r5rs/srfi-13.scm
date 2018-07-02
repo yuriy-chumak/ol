@@ -98,7 +98,7 @@
    ;make-kmp-restart-vector kmp-step string-kmp-partial-search
    )
 (import
-   (r5rs core))
+   (scheme core))
 
 (begin
    (setq srfi-13 #true)

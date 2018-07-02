@@ -36,7 +36,7 @@
       )
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl math)
       (owl lazy)
       (owl list)

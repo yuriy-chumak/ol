@@ -9,7 +9,7 @@
       fork-bytecode-interner)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl ff)
       (owl list)
       (owl math)

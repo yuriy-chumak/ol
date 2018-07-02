@@ -4,7 +4,7 @@
 (define-library (owl render)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl string)
       (owl list)
       (owl list-extra)

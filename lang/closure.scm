@@ -9,7 +9,7 @@
       uncompiled-closure?)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl list)
       (lang ast)
       (owl math)

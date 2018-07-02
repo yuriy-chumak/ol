@@ -8,7 +8,7 @@
       multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?)
 
    (import
-      (r5rs core) (src vm)
+      (scheme core) (src vm)
       (owl list) (owl ff) (owl math))
 
    (begin

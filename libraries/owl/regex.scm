@@ -33,7 +33,7 @@
       )
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl parse)
       (owl ff)
       (owl list)

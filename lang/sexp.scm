@@ -18,7 +18,7 @@
       )
 
    (import
-      (r5rs core)
+      (scheme core)
       (r5rs srfi-1)
 
       (owl parse)

@@ -63,7 +63,7 @@
       )
 
    (import
-      (r5rs core)
+      (scheme core)
 
       (owl vector)
       (owl math)

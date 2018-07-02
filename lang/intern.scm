@@ -24,7 +24,7 @@
       )
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl string)
       (owl interop)
       (owl list)

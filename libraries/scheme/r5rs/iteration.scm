@@ -4,7 +4,7 @@
    (export
       do)
    (import
-      (r5rs core))
+      (scheme core))
 (begin
 
 ; library syntax: do ((<variable1> <init1> <step1>) ...) (<test> <expression> ...) <command> ...

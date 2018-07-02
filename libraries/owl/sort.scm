@@ -6,7 +6,7 @@
    (export sort isort quicksort mergesort)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl math)
       (owl list))
 

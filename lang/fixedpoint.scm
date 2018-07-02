@@ -6,7 +6,7 @@
    (export fix-points)
 
    (import
-      (r5rs core)
+      (scheme core)
       (lang ast)
       (owl math)
       (owl list)

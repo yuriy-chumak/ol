@@ -4,7 +4,7 @@
    (export gensym)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl symbol)
       (owl string)
       (owl list)

@@ -2,7 +2,7 @@
 
 (define-library (r5rs characters)
 (import
-   (r5rs core))
+   (scheme core))
 
 (export
    char?

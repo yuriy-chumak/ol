@@ -41,7 +41,7 @@
       )
 
    (import
-      (r5rs core))
+      (scheme core))
 
    (begin
       (define o (λ (f g) (λ (x) (f (g x))))) ; wtf???

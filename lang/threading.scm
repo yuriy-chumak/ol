@@ -18,7 +18,7 @@
       repl-signal-handler)
 
    (import
-      (r5rs core)
+      (scheme core)
       (only (src vm) vm:run)
       (owl queue)
       (owl interop)

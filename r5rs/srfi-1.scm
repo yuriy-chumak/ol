@@ -5,7 +5,7 @@
 ; reference code at
 ;   https://github.com/scheme-requests-for-implementation/srfi-1/blob/master/srfi-1-reference.scm
 (import
-   (r5rs core)
+   (scheme core)
    (owl math)
    (owl list))
 

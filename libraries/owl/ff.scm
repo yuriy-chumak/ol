@@ -34,7 +34,7 @@
       getf)       ; (getf ff key) == (get ff key #false)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl list))
 
    (begin

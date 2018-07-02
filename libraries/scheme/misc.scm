@@ -10,7 +10,7 @@
       )
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl equal)
       (owl list)
       (owl string)

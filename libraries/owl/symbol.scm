@@ -8,7 +8,7 @@
    (export symbol->string)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl string))
 
    (begin

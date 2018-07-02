@@ -19,7 +19,7 @@
       compile)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl math)
       (owl list)
       (owl symbol)

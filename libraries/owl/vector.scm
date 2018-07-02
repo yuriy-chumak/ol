@@ -79,7 +79,7 @@
       *vec-leaf-size*)     ; needed for vector IO
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl lazy)
       (owl list)
       (owl list-extra)

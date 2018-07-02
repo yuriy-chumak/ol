@@ -1,9 +1,10 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
-(define-library (r5rs core)
+(define-library (scheme core)
    (import
-      (src vm) ; virtual machine codes
+      (src vm) ; virtual machine codes and primitives
+      ; 
       (scheme case-lambda)  ; case-lambda
-      (r5rs srfi-87)) ; <= in cases
+      (r5rs srfi-87))       ; <= in cases
    (begin
 
       ; basic Otus Lisp elements:

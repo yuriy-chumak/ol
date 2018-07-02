@@ -5,7 +5,7 @@
       read-tuple)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl list-extra)
       (owl list) 
       (owl math))

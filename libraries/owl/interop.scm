@@ -10,7 +10,7 @@
       par por* por interop)
 
    (import
-      (r5rs core))
+      (scheme core))
 
    (begin
       ;; спецоперация для общения с менеджером внутренних потоков

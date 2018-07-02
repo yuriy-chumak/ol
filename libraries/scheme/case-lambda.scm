@@ -16,7 +16,7 @@
 ; Scheme, it admits considerable implementation-specific optimization. 
 
 
-; NOTES: srfi-16 fully included into r5rs core profile, you should not include it manually!
+; NOTE: srfi-16 fully included into scheme core profile, you should not include it manually!
 ; -----
 (export
    case-lambda)

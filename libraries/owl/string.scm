@@ -52,7 +52,7 @@
       char-ci=?          ; cp cp → bool (temp)
       )
 
-   (import (r5rs core))
+   (import (scheme core))
 
    (import (owl iff))
    (import (owl unicode))

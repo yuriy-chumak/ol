@@ -29,12 +29,12 @@
          (equal? (car lib) '(src olvm)))
       *libraries*))
 
-; предварительная загрузка зависимостей r5rs core,
+; предварительная загрузка зависимостей scheme core,
 ; (иначе импорт сбойнет)
 (import (src vm))   ;; команды виртуальной машины
 (import (scheme case-lambda))
 (import (r5rs srfi-87))   ;; "=>" clauses in case
-(import (r5rs core)) ;; базовый языковый набор ol
+(import (scheme core)) ;; базовый языковый набор ol
 
 ;; forget everhything except these and core values (later list also them explicitly)
 ,forget-all-but (*libraries* *codes* *vm-args* stdin stdout stderr set-ticker-value build-start)
@@ -46,7 +46,7 @@
 (import (src olvm))     ;; get special forms, primops and define-syntax (virtual library)
 
 ;; this should later be just a sequence of imports followed by a fasl dump
-(import (r5rs core))    ;; get define, define-library, import, ... from the just loaded
+(import (scheme core))  ;; get define, define-library, import, ... from the just loaded
 
 (define *include-dirs* '("." "libraries")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)

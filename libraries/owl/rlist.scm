@@ -4,7 +4,7 @@
 
 ;; todo: the owl version seems nicer and iirc doesn't have the drawback of not being able contain internal nodes as values. switch to it later.
 
-;; todo: use types from (r5rs core)
+;; todo: use types from (scheme core)
 ;; todo: rins, rdel
 
 (define-library (owl rlist)
@@ -39,7 +39,7 @@
    ; major abstraction violation anyway).
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl list)
       (owl math)
       (owl equal))

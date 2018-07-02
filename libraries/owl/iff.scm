@@ -10,7 +10,7 @@
    (export iget iput ifold iff->list)
    
    (import 
-      (r5rs core)
+      (scheme core)
       (owl ff)
       (owl list))
 

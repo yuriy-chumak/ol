@@ -14,7 +14,7 @@
       n-registers)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl ff)
       (owl math)
       (owl list-extra)

@@ -43,7 +43,7 @@
       rational complex)
 
    (import
-      (r5rs core)
+      (scheme core)
       (owl list)
       (owl interop)
       (owl ff))

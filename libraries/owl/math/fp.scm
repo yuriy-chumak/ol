@@ -12,7 +12,7 @@
       )
 
    (import 
-      (r5rs core))
+      (scheme core))
 
    (begin
       (define (fsqrt num) (vm:fpu1 0 num))

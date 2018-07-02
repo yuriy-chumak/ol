@@ -13,7 +13,7 @@
 ; of key, the let can't be saved. For an easy example, suppose we want the following:
 
 
-; NOTES: srfi-87 fully included into r5rs core profile, you should not include it manually!
+; NOTES: srfi-87 fully included into scheme core profile, you should not include it manually!
 ; -----
 (export
    srfi-87)

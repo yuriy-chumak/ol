@@ -19,7 +19,7 @@
       )
 
    (import
-      (r5rs core)
+      (scheme core)
       (lang primop)
       (owl ff)
       (owl list)
