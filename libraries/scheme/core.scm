@@ -1,8 +1,15 @@
 ; http://www.schemers.org/Documents/Standards/R5RS/HTML/
 (define-library (scheme core)
    (import
-      (src vm) ; virtual machine codes and primitives
-      ; 
+      (src vm) ; virtual machine codes and primitives:
+      ; vm:new vm:new-object vm:new-raw-object
+      ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
+      ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
+      ; clock syscall vm:version vm:maxvalue vm:valuewidth
+      ; tuple-apply ff-apply
+      ; ff:red ff:black ff:toggle ff:red? ff:right?
+      ; apply apply/cc arity-error
+      ; call-with-current-continuation
       (scheme case-lambda)  ; case-lambda
       (r5rs srfi-87))       ; <= in cases
    (begin
@@ -14,14 +21,6 @@
       ; quote values lambda setq
       ; letq ifeq either values-apply
       ;
-      ;; virtual machine primitives:
-      ; vm:new vm:new-object vm:new-raw-object
-      ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
-      ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
-      ; clock syscall vm:version vm:maxvalue vm:valuewidth
-      ; tuple-apply ff-apply
-      ; ff:red ff:black ff:toggle ff:red? ff:right?
-
       ; =================================================================
       ; Scheme
       ;
@@ -43,9 +42,15 @@
       ; through 6. For reference purposes, section 7.2 provides a
       ; formal semantics of Scheme.
       ;
-      ; Following Algol, Scheme is a statically scoped programming
-      ; language. Each use of a variable is associated with a
-      ; lexically apparent binding of that variable.
+      ; Scheme is a statically scoped programming language. Each
+      ; use of a variable is associated with a lexically apparent
+      ; binding of that variable.
+      ;
+      ; Scheme is a dynamically typed language. Types are asso-
+      ; ciated with values (also called objects) rather than with
+      ; variables. Statically typed languages, by contrast, asso-
+      ; ciate types with variables and expressions as well as with
+      ; values.
       ;
       ; Scheme has latent ..................
       ; ......
@@ -128,11 +133,6 @@
       ; conventions used in writing Scheme programs. For a formal
       ; syntax of Scheme, see section 7.1.
       ;
-      ; Upper and lower case forms of a letter are never distin-
-      ; guished except within character and string constants. For
-      ; example, Foo is the same identifier as FOO, and #x1AB is
-      ; the same number as #X1ab.
-
       ; 2.1  Identifiers
       ;
       ; Most identifiers allowed by other .......
@@ -146,10 +146,14 @@
       ; <=?           a34kTMNs
       ; the-word-recursion-has-many-meanings
       ;
-      ; Extended alphabetic characters may be used within identifiers as if they were letters. The
-      ; following are extended alphabetic characters:
+      ; All implementations of Scheme must support the following
+      ; extended identifier characters:
       ;
       ; ! $ % & * + - . / : < = > ? @ ^ _ ~
+      ;
+      ; Alternatively, an identifier can be represented by a se-
+      ; quence of zero or more characters enclosed within vertical
+      ; lines (|), analogous to string literals.
       ;
       ; ...................................
 

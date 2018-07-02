@@ -3,7 +3,6 @@
 ;; todo: convert tuple to variable arity
 ;; todo: convert arity checks 17 -> 25
 
-;; todo: maybe move ncar, and other "n" to the normal but with macroses on top level with type checking.
 ;; todo: переделать так, чтобы регистр возврата был самый первый, тогда можно будет обойтись без RET
 
 (define-library (src vm)
