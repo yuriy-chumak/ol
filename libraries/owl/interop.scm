@@ -10,15 +10,13 @@
       par por* por interop)
 
    (import
+      (src vm)
       (scheme core))
 
    (begin
-      ;; спецоперация для общения с менеджером внутренних потоков
-      (define sys (vm:new-raw-object type-bytecode '(27 4 5 6 7 8  24 8)))
-
-
+      ; list of interop codes can be found in lang/threading as mcp-syscalls
       (define (interop op a b)
-         (call/cc (λ (resume) (sys resume op a b))))
+         (call/cc (λ (resume) (vm:sys resume op a b))))
 
       (define (exit-thread value)
          (interop 2 value value))
