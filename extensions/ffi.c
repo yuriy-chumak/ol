@@ -70,7 +70,6 @@
 word d2ol(struct ol_t* ol, double v);        // declared in olvm.c
 double ol2d(word arg); float ol2f(word arg); // declared in olvm.c
 
-
 // C preprocessor trick, some kind of "map":
 // http://jhnet.co.uk/articles/cpp_magic
 // http://stackoverflow.com/questions/319328/writing-a-while-loop-in-the-c-preprocessor
@@ -988,7 +987,7 @@ word* OL_ffi(OL* self, word* arguments)
 			switch (reftype(arg)) {
 			case TBVEC:
 			case TSTRING: {
-				word hdr = reference(arg);
+				word hdr = deref(arg);
 				int len = (hdrsize(hdr)-1)*sizeof(word) - padsize(hdr);
 				short* unicode = (short*) __builtin_alloca(len * sizeof(short));
 
@@ -1002,7 +1001,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			}
 			case TSTRINGWIDE: {
-				int len = hdrsize(reference(arg));
+				int len = hdrsize(deref(arg));
 				short* unicode = (short*) __builtin_alloca(len * sizeof(short));
 				// todo: use new()
 				// check the available memory in the heap
@@ -1473,6 +1472,144 @@ word* OL_ffi(OL* self, word* arguments)
 // --=( CALLABLES support )=-----------------------------
 // --
 #if OLVM_CALLABLES
+
+// todo: удалить userdata api за ненадобностью (?) и использовать пин-api
+PUBLIC
+word* OL_mkcb(OL* self, int pin)
+{
+	char* ptr = 0;
+#ifdef __i386__ // x86
+	// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
+	static char bytecode[] =
+			"\x90"  // nop
+			"\x8D\x44\x24\x04" // lea eax, [esp+4]
+			"\x50"     // push eax
+			// 6
+			"\x68----" // push $0
+			"\x68----" // push ol
+			"\xB8----" // mov eax, ...
+			"\xFF\xD0" // call eax
+			"\x83\xC4\x0C" // add esp, 3*4
+			"\xC3"; // ret
+	#ifdef _WIN32
+		HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
+				0, sizeof(bytecode), NULL);
+		if (!mh)
+			E("Can't create memory mapped object");
+		ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS,
+				0, 0, sizeof(bytecode));
+		CloseHandle(mh);
+	#else
+		ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
+				MAP_PRIVATE, -1, 0);
+	#endif
+
+	memcpy(ptr, &bytecode, sizeof(bytecode));
+	*(long*)&ptr[ 7] = pin;
+	*(long*)&ptr[12] = (long)self;
+	*(long*)&ptr[17] = (long)&callback;
+#elif __amd64__
+	// Windows x64
+	#ifdef _WIN32
+	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+	static char bytecode[] =
+			"\x90" // nop
+			"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
+			"\x55"                  // push rbp
+			"\x48\x89\xE5"          // mov ebp, rsp
+			"\x41\x51"              // push r9
+			"\x41\x50"              // push r8
+			"\x52"                  // push rdx
+			"\x51"                  // push rcx
+			"\x49\x89\xE0"          // mov r8, esp         // argi
+			// 19
+			"\x48\x83\xEC\x20"      // sub esp, 32
+			"\x67\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
+			"\x67\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
+			"\x67\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
+			"\x67\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
+			"\x49\x89\xE1"          // mov r9, esp         // argf
+			// 54
+			"\x48\xBA--------"      // mov rdx, 0          // id
+			"\x48\xB9--------"      // mov rcx, 0          // ol
+			// 74
+			"\x50"	                // push rax // dummy
+			"\x50"                  // push rax            // rest
+			"\x48\x83\xEC\x20"      // sub rsp, 32         // free space
+			// 80
+			"\x48\xB8--------"      // mov rax, callback
+			"\xFF\xD0"              // call rax
+			"\xC9"                  // leave
+			"\xC3";                 // ret
+
+	HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
+			0, sizeof(bytecode), NULL);
+	if (!mh)
+		E("Can't create memory mapped object");
+	ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE,
+			0, 0, sizeof(bytecode));
+	CloseHandle(mh);
+
+	memcpy(ptr, &bytecode, sizeof(bytecode));
+	*(long long*)&ptr[56] = pin;
+	*(long long*)&ptr[66] = (long long)self;
+	*(long long*)&ptr[82] = (long long)&callback;
+	#else
+
+	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+	static char bytecode[] =
+			"\x90" // nop
+			"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
+			"\x55"                  // push rbp
+			"\x48\x89\xE5"          // mov rbp, rsp
+			"\x41\x51"              // push r9
+			"\x41\x50"              // push r8
+			"\x51"                  // push rcx
+			"\x52"                  // push rdx
+			"\x56"                  // push rsi
+			"\x57"                  // push rdi
+			"\x48\x89\xE2"          // mov rdx, rsp         // argi
+			// 21
+			"\x48\x83\xEC\x40"      // sub rsp, 8*8
+			"\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
+			"\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
+			"\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
+			"\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
+			"\xF2\x0F\x11\x54\x24\x20"    // movsd [esp+32], xmm4
+			"\xF2\x0F\x11\x6C\x24\x28"    // movsd [esp+40], xmm5
+			"\xF2\x0F\x11\x74\x24\x30"    // movsd [esp+48], xmm6
+			"\xF2\x0F\x11\x7C\x24\x38"    // movsd [esp+56], xmm7
+			"\x48\x89\xE1"          // mov rcx, rsp         // argf
+			// 76
+			"\x48\xBE--------"      // mov rsi, 0          // id
+			// 86
+			"\x48\xBF--------"      // mov rdi, 0          // ol
+			// 96
+			"\x48\xB8--------"      // mov rax, callback
+			"\xFF\xD0"              // call rax
+			"\xC9"                  // leave
+			"\xC3";                 // ret
+	ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
+			MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+
+	memcpy(ptr, &bytecode, sizeof(bytecode));
+	*(long long*)&ptr[78] = pin;
+	*(long long*)&ptr[88] = (long long)self;
+	*(long long*)&ptr[98] = (long long)&callback;
+	#endif
+#endif
+
+	heap_t* heap = &self->heap;
+	word*
+	fp = heap->fp;
+
+	word* result = new_callable(ptr);
+	
+	heap->fp = fp;
+	return result;
+}
+
+
 //long long callback(OL* ol, int id, word* args) // win32
 //long long callback(OL* ol, int id, long long* argi, double* argf, long long* others) // linux
 // notes:
@@ -1699,4 +1836,5 @@ long long callback(OL* ol, int id, int_t* argi
 
 	return 0;
 }
+
 #endif//OLVM_CALLABLES

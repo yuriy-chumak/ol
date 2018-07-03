@@ -804,7 +804,7 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 
 // взять значение аргумента:
 #define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
-#define reference(v)                ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
+#define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
 
 #define ref(ob, n)                  ((R(ob))[n])
 #define car(ob)                     ref(ob, 1)
@@ -2092,6 +2092,10 @@ mainloop:;
 	#	define VMRAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 	#	define VMCAST  22
 
+	#	define VMPIN   18
+	#	define VMUNPIN 19
+	#	define VMDEREF 25
+
 	#	define CONS  51
 
 	#	define TYPE  15
@@ -2173,7 +2177,6 @@ mainloop:;
 	#		define SYSCALL_DLCLOSE 176
 	#		define SYSCALL_DLSYM 177
 	#		define SYSCALL_DLERROR 178
-	#		define SYSCALL_MKCB 85
 
 		// tuples, trees
 	#	define TUPLEAPPLY 32
@@ -4050,147 +4053,6 @@ loop:;
 				result = new_string(error);
 			break;
 		}
-		#if OLVM_CALLABLES
-		// todo: add commands vm:pin, vm:unpin, vm:deref
-		// (закрепить данные и вернуть номер пина, освободить пин и вернуть данные по номеру пина)
-		// todo: соответственно удалить userdata api за ненадобностью (?) и использовать пин-api
-		case SYSCALL_MKCB: { // make-callable
-			// TCALLABLE
-			int c;
-			// TODO: увеличить heap->CR если маловато колбеков!
-			for (c = 4; c < CR; c++) {
-				if (R[NR+c] == IFALSE) {
-					R[NR+c] = a;
-					break;
-				}
-			}
-
-			char* ptr = 0;
-#ifdef __i386__ // x86
-			// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
-			static char bytecode[] =
-					"\x90"  // nop
-					"\x8D\x44\x24\x04" // lea eax, [esp+4]
-					"\x50"     // push eax
-					// 6
-					"\x68----" // push $0
-					"\x68----" // push ol
-					"\xB8----" // mov eax, ...
-					"\xFF\xD0" // call eax
-					"\x83\xC4\x0C" // add esp, 3*4
-					"\xC3"; // ret
-			#ifdef _WIN32
-				HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
-						0, sizeof(bytecode), NULL);
-				if (!mh)
-					E("Can't create memory mapped object");
-				ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS,
-						0, 0, sizeof(bytecode));
-				CloseHandle(mh);
-			#else
-				ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
-						MAP_PRIVATE, -1, 0);
-			#endif
-
-			memcpy(ptr, &bytecode, sizeof(bytecode));
-			*(long*)&ptr[ 7] = c;
-			*(long*)&ptr[12] = (long)ol;
-			*(long*)&ptr[17] = (long)&callback;
-#elif __amd64__
-			// Windows x64
-			#ifdef _WIN32
-			//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
-			static char bytecode[] =
-					"\x90" // nop
-					"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
-					"\x55"                  // push rbp
-					"\x48\x89\xE5"          // mov ebp, rsp
-					"\x41\x51"              // push r9
-					"\x41\x50"              // push r8
-					"\x52"                  // push rdx
-					"\x51"                  // push rcx
-					"\x49\x89\xE0"          // mov r8, esp         // argi
-					// 19
-					"\x48\x83\xEC\x20"      // sub esp, 32
-					"\x67\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
-					"\x67\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
-				    "\x67\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
-				    "\x67\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
-					"\x49\x89\xE1"          // mov r9, esp         // argf
-					// 54
-					"\x48\xBA--------"      // mov rdx, 0          // id
-					"\x48\xB9--------"      // mov rcx, 0          // ol
-					// 74
-					"\x50"	                // push rax // dummy
-					"\x50"                  // push rax            // rest
-					"\x48\x83\xEC\x20"      // sub rsp, 32         // free space
-					// 80
-					"\x48\xB8--------"      // mov rax, callback
-					"\xFF\xD0"              // call rax
-					"\xC9"                  // leave
-					"\xC3";                 // ret
-
-			HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
-					0, sizeof(bytecode), NULL);
-			if (!mh)
-				E("Can't create memory mapped object");
-			ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE,
-					0, 0, sizeof(bytecode));
-			CloseHandle(mh);
-
-			memcpy(ptr, &bytecode, sizeof(bytecode));
-			*(long long*)&ptr[56] = c;
-			*(long long*)&ptr[66] = (long long)ol;
-			*(long long*)&ptr[82] = (long long)&callback;
-			#else
-
-			//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
-			static char bytecode[] =
-					"\x90" // nop
-					"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
-					"\x55"                  // push rbp
-					"\x48\x89\xE5"          // mov rbp, rsp
-					"\x41\x51"              // push r9
-					"\x41\x50"              // push r8
-					"\x51"                  // push rcx
-					"\x52"                  // push rdx
-					"\x56"                  // push rsi
-					"\x57"                  // push rdi
-					"\x48\x89\xE2"          // mov rdx, rsp         // argi
-					// 21
-					"\x48\x83\xEC\x40"      // sub rsp, 8*8
-					"\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
-					"\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
-				    "\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
-				    "\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
-				    "\xF2\x0F\x11\x54\x24\x20"    // movsd [esp+32], xmm4
-				    "\xF2\x0F\x11\x6C\x24\x28"    // movsd [esp+40], xmm5
-				    "\xF2\x0F\x11\x74\x24\x30"    // movsd [esp+48], xmm6
-				    "\xF2\x0F\x11\x7C\x24\x38"    // movsd [esp+56], xmm7
-					"\x48\x89\xE1"          // mov rcx, rsp         // argf
-					// 76
-					"\x48\xBE--------"      // mov rsi, 0          // id
-					// 86
-					"\x48\xBF--------"      // mov rdi, 0          // ol
-					// 96
-					"\x48\xB8--------"      // mov rax, callback
-					"\xFF\xD0"              // call rax
-					"\xC9"                  // leave
-					"\xC3";                 // ret
-			ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
-					MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-
-			memcpy(ptr, &bytecode, sizeof(bytecode));
-			*(long long*)&ptr[78] = c;
-			*(long long*)&ptr[88] = (long long)ol;
-			*(long long*)&ptr[98] = (long long)&callback;
-			#endif
-#endif
-
-			result = new_callable(ptr);
-			break;
-		}
-		#endif// OLVM_CALLABLES
 	#endif// HAS_DLOPEN
 
 		// https://www.mindcollapse.com/blog/processes-isolation.html
@@ -4351,10 +4213,46 @@ loop:;
 	#endif//OLVM_INEXACTS
 
 
-	// this is free to use commands:
-	case 18:
-	case 19:
-	case 25:
+	case VMPIN: {  // (vm:pin object) /pin object/ => pin id
+		word object = A0;
+		// TCALLABLE
+		int id;
+		// TODO: увеличить heap->CR если маловато колбеков!
+		for (id = 4; id < CR; id++) {
+			if (R[NR+id] == IFALSE) {
+				R[NR+id] = object;
+				break;
+			}
+		}
+
+		A1 = itouv(id);
+		ip += 2; break;
+	}
+	case VMUNPIN: { // vm:unpin => old pin value
+		word pin = A0;
+		CHECK (is_value(pin), pin, VMUNPIN);
+
+		int id = value(pin);
+		if (id > 3 && id < CR) {
+			A1 = R[NR+id]; // is it required? we can use (deref .)
+			R[NR+id] = IFALSE;
+		}
+		else
+			A1 = IFALSE;
+		ip += 2; break;
+	}
+
+	case VMDEREF: {// vm:deref /get pinned object value/
+		word pin = A0;
+		CHECK (is_value(pin), pin, VMUNPIN);
+
+		int id = value(pin);
+		if (id > 3 && id < CR)
+			A1 = R[NR+id];
+		else
+			A1 = IFALSE;
+		ip += 2; break;
+	}
 
 	default:
 		ERROR(op, new_string("Invalid opcode"), ITRUE);

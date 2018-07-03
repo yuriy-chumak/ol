@@ -217,10 +217,14 @@
       ;;(define ff:red?    (vm:new-raw-object type-bytecode '(41 4        5  24 5)))
       ;;(define ff:right?  (vm:new-raw-object type-bytecode '(37 4        5  24 5)))
 
+      ;(setq vm:pin    (vm:new-bytecode '(18 4 5  24 5)))
+      ;(setq vm:unpin  (vm:new-bytecode '(19 4 5  24 5)))
+      ;(setq vm:deref  (vm:new-bytecode '(25 4 5  24 5)))
+
       ;(setq syscall (vm:new-bytecode '(63 4 5 6 7 8  24 8)))
 
-      ;(setq vm:endianness (vm:new-bytecode '(28 4)))
-      ;(setq vm:wordsize   (vm:new-bytecode '(29 4)))
+      ;(setq vm:endianness (vm:new-bytecode '(28 4))) ; TODO: remove from commands
+      ;(setq vm:wordsize   (vm:new-bytecode '(29 4))) ; TODO: merge next three commands into one
       ;(setq vm:valuewidth (vm:new-bytecode '(31 4)))
       ;(setq vm:maxvalue   (vm:new-bytecode '(30 4)))
 
@@ -302,7 +306,11 @@
          (cons (vm:new TTUPLE 'ff:toggle  46 1  1  ff:toggle)
          (cons (vm:new TTUPLE 'ff:red?    41 1  1  ff:red?)
          (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
-         #null)))))))))))))))))))))))))))))))))))))))))
+
+         (cons (vm:new TTUPLE 'vm:pin    18 1  1  vm:pin)
+         (cons (vm:new TTUPLE 'vm:unpin  19 1  1  vm:unpin)
+         (cons (vm:new TTUPLE 'vm:deref  25 1  1  vm:deref)
+         #null))))))))))))))))))))))))))))))))))))))))))))
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд
