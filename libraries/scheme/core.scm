@@ -1,4 +1,4 @@
-; http://www.schemers.org/Documents/Standards/R5RS/HTML/
+; minimal set of Scheme (Ol subset)
 (define-library (scheme core)
    (import
       (src vm) ; virtual machine codes and primitives:
@@ -10,13 +10,13 @@
       ; ff:red ff:black ff:toggle ff:red? ff:right?
       ; apply apply/cc arity-error
       ; call-with-current-continuation
+      
       (scheme case-lambda)  ; case-lambda
       (r5rs srfi-87))       ; <= in cases
    (begin
-
       ; basic Otus Lisp elements:
 
-      ;; special forms:
+      ;; special forms: (declared in lang/env.scm)
       ;
       ; quote values lambda setq
       ; letq ifeq either values-apply
@@ -24,10 +24,19 @@
       ; =================================================================
       ; Scheme
       ;
-      ; Revised(5) Report on the Algorithmic Language Scheme
+      ; Revised(7) Report on the Algorithmic Language Scheme
       ;                  Dedicated to the Memory of ALGOL 60
       ;
       ; =================================================================
+
+      ; Programming languages should be designed not by piling feature on
+      ; top of feature, but by removing the weaknesses and restrictions
+      ; that make additional features appear necessary. Scheme demonstrates
+      ; that a very small number of rules for forming expressions, with no
+      ; restrictions on how they are composed, suffice to form a practical
+      ; and efficient programming language that is flexible enough to support
+      ; most of the major programming paradigms in use today.
+
 
       ;                      DESCRIPTION OF THE LANGUAGE
 
@@ -36,11 +45,6 @@
       ;;; Overview of Scheme
 
       ; 1.1  Semantics
-      ;
-      ; This section gives an overview of Scheme’s semantics. A
-      ; detailed informal semantics is the subject of chapters 3
-      ; through 6. For reference purposes, section 7.2 provides a
-      ; formal semantics of Scheme.
       ;
       ; Scheme is a statically scoped programming language. Each
       ; use of a variable is associated with a lexically apparent
