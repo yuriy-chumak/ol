@@ -10,7 +10,6 @@
 (define Context (gl:Create "7. Newton"))
 
 
-(define type-callback 61)
 (print "1.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 
@@ -57,13 +56,13 @@
 (NewtonDestroyCollision collision)
 
 
-; ...
-(define ApplyGravity (syscall 85 (cons
+; apply-gravity callback
+(define ApplyGravity (vm:pin (cons
    (list type-vptr fft-float type-int+)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -4.8 0 0))
-)) #f #f))
-
+))))
+(define ApplyGravityCallback (make-callback ApplyGravity))
 
 ; добавим один куб
 (define collision (or
@@ -88,7 +87,7 @@
    (iota 100)))
 (for-each (lambda (cube)
    (NewtonBodySetMassProperties cube 1.0 collision)
-   (NewtonBodySetForceAndTorqueCallback cube ApplyGravity)
+   (NewtonBodySetForceAndTorqueCallback cube ApplyGravityCallback)
 ) cubes)
 (NewtonDestroyCollision collision)
 
@@ -114,7 +113,7 @@
 ;   (iota 50)))
 ;(for-each (lambda (sphere)
 ;   (NewtonBodySetMassProperties sphere 1.0 collision)
-;   (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
+;   (NewtonBodySetForceAndTorqueCallback sphere ApplyGravityCallback)
 ;) spheres)
 ; we need this collision for feature use
 ;(NewtonDestroyCollision collision)
@@ -146,8 +145,8 @@
 ;(NewtonBodySetMassProperties rigidBody 1.0 collision)
 ;(NewtonBodySetMassProperties rigidBody2 1.0 collision)
 ;
-;(NewtonBodySetForceAndTorqueCallback rigidBody ApplyGravity)
-;(NewtonBodySetForceAndTorqueCallback rigidBody2 ApplyGravity)
+;(NewtonBodySetForceAndTorqueCallback rigidBody ApplyGravityCallback)
+;(NewtonBodySetForceAndTorqueCallback rigidBody2 ApplyGravityCallback)
 ;(print "To rigid body added callback")
 
 
@@ -364,7 +363,7 @@
                      1       ; posit
                    ))))
                (NewtonBodySetMassProperties sphere 1.0 collision)
-               (NewtonBodySetForceAndTorqueCallback sphere ApplyGravity)
+               (NewtonBodySetForceAndTorqueCallback sphere ApplyGravityCallback)
                (print "objects count: " (length spheres) ", memory used for: " (NewtonGetMemoryUsed))
                (cons sphere spheres)))
    ; return new parameter list:

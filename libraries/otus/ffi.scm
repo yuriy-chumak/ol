@@ -19,6 +19,8 @@
       dlsym+     ; TODO: rename dlsym+ to dlsym
       ffi uname
 
+      make-callback
+
       RTLD_LAZY
       RTLD_NOW
       RTLD_BINDING_MASK
@@ -154,6 +156,11 @@
                (if function
                   (lambda args
                      (exec ffi  function rtti args))))))))
+
+
+(define mkcb (syscall 177 (dlopen) "OL_mkcb" #f))
+(define (make-callback pinned-object)
+   (exec mkcb pinned-object))
 
 
 ;(define (dlsym+ dll type name . prototype) (dlsym dll type name 44 prototype))

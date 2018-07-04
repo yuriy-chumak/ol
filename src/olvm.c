@@ -45,6 +45,7 @@
 __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #endif//lint
 
+#define unless(...) if (! (__VA_ARGS__))
 
 // gcc profiling:
 // 1) gcc --coverage
@@ -4017,6 +4018,10 @@ loop:;
 
 			if (module)
 				result = new_vptr(module);
+			#if 1 // debug
+			else
+				D("dlerror: %s\n", dlerror());
+			#endif
 			break;
 		}
 

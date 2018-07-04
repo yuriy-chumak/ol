@@ -1022,7 +1022,7 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 //		#endif
 
-		case TCALLABLE: {
+		case TCALLABLE: { // todo: maybe better to merge type-callable and type-vptr ?
 			if (is_callable(arg))
 				args[i] = (word)car(arg);
 			else
@@ -1475,8 +1475,15 @@ word* OL_ffi(OL* self, word* arguments)
 
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
 PUBLIC
-word* OL_mkcb(OL* self, int pin)
+word* OL_mkcb(OL* self, word* arguments)
 {
+	word* A = (word*)car(arguments);
+
+	unless (is_value(A))
+		return (word*) IFALSE;
+
+	int pin = untoi(A);
+
 	char* ptr = 0;
 #ifdef __i386__ // x86
 	// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
