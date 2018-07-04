@@ -1,20 +1,22 @@
 #!/usr/bin/ol
 
-(import (OpenGL EGL version-1-1)
-   (lib x11) (owl io))
+(import (EGL version-1-1)
+   (lib x11) (owl io)
+   (otus ffi))
 
 (define width 640)
 (define height 480)
 
 ;(main)
-(define x11Display (XOpenDisplay null))
+(define x11Display (XOpenDisplay #f))
 (define eglDisplay (eglGetDisplay x11Display))
 
-(define egl-major (vm:new-raw-object type-vector-raw '(0 0 0 0)))
-(define egl-minor (vm:new-raw-object type-vector-raw '(0 0 0 0)))
+(define egl-major (make-32bit-array 1))
+(define egl-minor (make-32bit-array 1))
 (eglInitialize eglDisplay egl-major egl-minor)
 
-(print "EGL version: " (refb egl-major 0) "." (refb egl-minor 0))
+(print "egl version: " (car egl-major) "." (car egl-minor))
+
 (print "EGL_VERSION: " (eglQueryString eglDisplay EGL_VERSION))
 (print "EGL_VENDOR: " (eglQueryString eglDisplay EGL_VENDOR))
 (print "EGL_EXTENSIONS: " (eglQueryString eglDisplay EGL_EXTENSIONS))

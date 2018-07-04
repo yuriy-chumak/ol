@@ -285,21 +285,17 @@ vm64: src/olvm.c include/olvm.h
 	   -Xlinker --export-dynamic $(L) -m64 -DOLVM_FFI=0
 	@echo Ok.
 
-
+# please, use emscripten version 1.37.40, because
+# fockin' emscripten team broke all again!
 olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
-	emcc src/olvm.c -Oz \
+	emcc src/olvm.c -Oz -m32 \
 	   -D NAKED_VM=1 -D HAS_DLOPEN=1 \
 	   -o olvm.js \
 	   -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 \
 	   -s MAIN_MODULE=1 \
-	   -s EXPORTED_FUNCTIONS="['_main', '_OL_ffi']" \
+	   -s BINARYEN_METHOD='asmjs' \
+	   -s EXPORTED_FUNCTIONS="['_main', '_OL_ffi', '_OL_mkcb']" \
 	   --memory-init-file 0
-
-talkback: src/olvm.c tmp/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DEMBEDDED_VM -DOLVM_FFI=1 -o $@ -Iinclude \
-	   tmp/repl.o extensions/talkback/talkback.c extensions/talkback/sample.c -pthread \
-	   -Xlinker --export-dynamic $(L)
-
 
 tmp/repl.o: repl
 	ld -r -b binary -o tmp/repl.o repl

@@ -140,15 +140,15 @@
 ; Types and resources
 
 (define EGLBoolean fft-int)
-(define EGLint fft-long) (define EGLint* (fft* EGLint)) (define EGLint& (fft& EGLint))
+(define EGLint fft-int) (define EGLint* (fft* EGLint)) (define EGLint& (fft& EGLint))
 
 (define EGLDisplay fft-int)
 (define EGLConfig  type-vptr)  (define EGLConfig* (fft* EGLConfig))   (define EGLConfig& (fft& EGLConfig))
 (define EGLSurface fft-int)
 (define EGLContext fft-int)
-(define NativeDisplayType fft-int)
-(define NativeWindowType  fft-int)
-(define NativePixmapType  fft-int)
+(define NativeDisplayType fft-void*)
+(define NativeWindowType  fft-void*)
+(define NativePixmapType  fft-void*)
 
 
 ; EGL and native handle values
