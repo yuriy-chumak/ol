@@ -177,10 +177,10 @@
 
 ; EGL and native handle values
 
-(define EGL_DEFAULT_DISPLAY 0) ;NativeDisplayType
-(define EGL_NO_CONTEXT  0) ;EGLContext //?
-(define EGL_NO_DISPLAY  0) ;EGLDisplay
-(define EGL_NO_SURFACE  0) ;EGLSurface //?
+(define EGL_DEFAULT_DISPLAY (vm:cast 0 NativeDisplayType))
+(define EGL_NO_CONTEXT  (vm:cast 0 EGLContext)) ;EGLContext //?
+(define EGL_NO_DISPLAY  (vm:cast 0 EGLDisplay)) ;EGLDisplay
+(define EGL_NO_SURFACE  (vm:cast 0 EGLSurface)) ;EGLSurface //?
 
 
 ; Versioning and extensions
