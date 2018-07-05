@@ -140,23 +140,47 @@
 ; Types and resources
 
 (define EGLBoolean fft-int)
-(define EGLint fft-int) (define EGLint* (fft* EGLint)) (define EGLint& (fft& EGLint))
+(define EGLint fft-int32) (define EGLint* (fft* EGLint)) (define EGLint& (fft& EGLint))
 
-(define EGLDisplay fft-int)
-(define EGLConfig  type-vptr)  (define EGLConfig* (fft* EGLConfig))   (define EGLConfig& (fft& EGLConfig))
-(define EGLSurface fft-int)
-(define EGLContext fft-int)
-(define NativeDisplayType fft-void*)
-(define NativeWindowType  fft-void*)
-(define NativePixmapType  fft-void*)
+(define EGLDisplay fft-void*)
+(define EGLConfig  fft-void*)  (define EGLConfig* (fft* EGLConfig))   (define EGLConfig& (fft& EGLConfig))
+(define EGLSurface fft-void*)
+(define EGLContext fft-void*)
+
+; foreign (i.e. x11) types
+   (setq OS (ref (uname) 1))
+(define win32? (string-ci=? OS "Windows"))
+(define asmjs? (string-ci=? OS "Emscripten"))
+(define linux? (string-ci=? OS "Linux"))
+
+(define NativeDisplayType (cond
+   (win32? fft-void*) ; HDC
+   (asmjs? fft-int)   ; int
+   ; ...
+   (linux? fft-void*) ; Display*
+))
+
+(define NativeWindowType  (cond
+   (win32? fft-void*) ; HBITMAP
+   (asmjs? fft-int)   ; int
+   ; ...
+   (linux? fft-void*) ; Pixmap
+))
+
+(define NativePixmapType  (cond
+   (win32? fft-void*) ; HWND
+   (asmjs? fft-int)   ; int
+   ; ...
+   (linux? fft-void*) ; Window
+))
 
 
 ; EGL and native handle values
 
 (define EGL_DEFAULT_DISPLAY 0) ;NativeDisplayType
-(define EGL_NO_CONTEXT  0) ;EGLContext
+(define EGL_NO_CONTEXT  0) ;EGLContext //?
 (define EGL_NO_DISPLAY  0) ;EGLDisplay
-(define EGL_NO_SURFACE  0) ;EGLSurface
+(define EGL_NO_SURFACE  0) ;EGLSurface //?
 
 
 ; Versioning and extensions
@@ -282,7 +306,7 @@
 ; --------------------------------
 (define uname (syscall 63 #f #f #f))
 
-(define $ (or
+(define EGL (or
    (load-dynamic-library
       (cond
          ((string-ci=? (ref uname 1) "windows")  "libEGL.dll")
@@ -293,19 +317,19 @@
    (runtime-error "Can't load EGL library")))
 
 
-(define eglGetError ($ EGLint "eglGetError"))
+(define eglGetError (EGL EGLint "eglGetError"))
 
-(define eglGetDisplay ($ EGLDisplay "eglGetDisplay" NativeDisplayType))
-(define eglInitialize ($ EGLBoolean "eglInitialize" EGLDisplay EGLint& EGLint&))
+(define eglGetDisplay (EGL EGLDisplay "eglGetDisplay" NativeDisplayType))
+(define eglInitialize (EGL EGLBoolean "eglInitialize" EGLDisplay EGLint& EGLint&))
 ;GLAPI EGLBoolean APIENTRY eglTerminate (EGLDisplay dpy);
-(define eglQueryString ($ type-string "eglQueryString" EGLDisplay EGLint))
+(define eglQueryString (EGL type-string "eglQueryString" EGLDisplay EGLint))
 ;GLAPI void (* APIENTRY eglGetProcAddress (const char *procname))();
 
-(define eglGetConfigs ($ EGLBoolean "eglGetConfigs" EGLDisplay EGLConfig& EGLint EGLint&))
-(define eglChooseConfig ($ EGLBoolean "eglChooseConfig" EGLDisplay EGLint* EGLConfig* EGLint EGLint&))
+(define eglGetConfigs (EGL EGLBoolean "eglGetConfigs" EGLDisplay EGLConfig& EGLint EGLint&))
+(define eglChooseConfig (EGL EGLBoolean "eglChooseConfig" EGLDisplay EGLint* EGLConfig* EGLint EGLint&))
 ;GLAPI EGLBoolean APIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value);
 
-(define eglCreateWindowSurface ($ EGLSurface "eglCreateWindowSurface" EGLDisplay EGLConfig NativeWindowType EGLint*))
+(define eglCreateWindowSurface (EGL EGLSurface "eglCreateWindowSurface" EGLDisplay EGLConfig NativeWindowType EGLint*))
 ;GLAPI EGLSurface APIENTRY eglCreatePixmapSurface (EGLDisplay dpy, EGLConfig config, NativePixmapType pixmap, const EGLint *attrib_list);
 ;GLAPI EGLSurface APIENTRY eglCreatePbufferSurface (EGLDisplay dpy, EGLConfig config, const EGLint *attrib_list);
 ;GLAPI EGLBoolean APIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface);
@@ -319,9 +343,9 @@
 ;/* EGL 1.1 swap control API */
 ;GLAPI EGLBoolean APIENTRY eglSwapInterval(EGLDisplay dpy, EGLint interval);
 
-(define eglCreateContext ($ EGLContext "eglCreateContext" EGLDisplay EGLConfig EGLContext EGLint*))
+(define eglCreateContext (EGL EGLContext "eglCreateContext" EGLDisplay EGLConfig EGLContext EGLint*))
 ;GLAPI EGLBoolean APIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx);
-(define eglMakeCurrent   ($ EGLBoolean "eglMakeCurrent" EGLDisplay EGLSurface EGLSurface EGLContext))
+(define eglMakeCurrent   (EGL EGLBoolean "eglMakeCurrent" EGLDisplay EGLSurface EGLSurface EGLContext))
 ;GLAPI EGLContext APIENTRY eglGetCurrentContext (void);
 ;GLAPI EGLSurface APIENTRY eglGetCurrentSurface (EGLint readdraw);
 ;GLAPI EGLDisplay APIENTRY eglGetCurrentDisplay (void);
@@ -329,7 +353,7 @@
 ;
 ;GLAPI EGLBoolean APIENTRY eglWaitGL (void);
 ;GLAPI EGLBoolean APIENTRY eglWaitNative (EGLint engine);
-(define eglSwapBuffers   ($ EGLBoolean "eglSwapBuffers" EGLDisplay EGLSurface))
+(define eglSwapBuffers   (EGL EGLBoolean "eglSwapBuffers" EGLDisplay EGLSurface))
 ;GLAPI EGLBoolean APIENTRY eglCopyBuffers (EGLDisplay dpy, EGLSurface surface, NativePixmapType target);
 
 ))
