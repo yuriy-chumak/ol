@@ -35,44 +35,53 @@
       (otus ffi))
 (begin
 
+; x11 types
+(define Display* fft-void*)
+(define Window fft-void*)
+(define Visual* fft-void*)
+(define XSetWindowAttributes* fft-void*)
+(define XEvent* fft-void*)
+
 (define X11 (load-dynamic-library "libX11.so"))
-(define XOpenDisplay  (X11 fft-void* "XOpenDisplay" type-string))
-(define XDefaultScreen (X11 fft-int "XDefaultScreen" fft-void*))
-(define XRootWindow   (X11 fft-void* "XRootWindow" fft-void* fft-int))
-(define XFree (X11 fft-int "XFree" fft-void*))
 
-(define XBlackPixel (X11 fft-int "XBlackPixel" fft-void* fft-int))
-(define XWhitePixel (X11 fft-int "XWhitePixel" fft-void* fft-int))
+; functions
+(define XOpenDisplay  (X11 Display* "XOpenDisplay" type-string))
+(define XDefaultScreen(X11 fft-int "XDefaultScreen" Display*))
+(define XRootWindow   (X11 Window "XRootWindow" Display* fft-int))
+(define XFree         (X11 fft-int "XFree" fft-void*))
 
-(define XCreateWindow (X11 fft-void* "XCreateWindow"
-   fft-void* ; display
-   fft-void* ; parent Window
-   fft-int fft-int fft-int fft-int ; x y width height
-   fft-int ; border width
+(define XBlackPixel (X11 fft-unsigned-long "XBlackPixel" Display* fft-int))
+(define XWhitePixel (X11 fft-unsigned-long "XWhitePixel" Display* fft-int))
+
+(define XCreateWindow (X11 Window "XCreateWindow"
+   Display* ; display
+   Window ; parent Window
+   fft-int fft-int fft-unsigned-int fft-unsigned-int ; x y width height
+   fft-unsigned-int ; border width
    fft-int ; depth
-   fft-int ; class
-   fft-void* ; visual
-   fft-int ; valuemask
-   fft-void* ; attributes
+   fft-unsigned-int ; class
+   Visual* ; visual
+   fft-unsigned-long ; valuemask
+   XSetWindowAttributes* ; attributes
    ))
 (define XCreateSimpleWindow (X11 fft-void* "XCreateSimpleWindow"
-   fft-void* fft-void* ; display, parent Window
-   fft-int fft-int fft-int fft-int ; x y width height
-   fft-int ; border width
-   fft-int ; border
-   fft-int ; background
+   Display* Window ; display, parent Window
+   fft-int fft-int fft-unsigned-int fft-unsigned-int ; x y width height
+   fft-unsigned-int ; border width
+   fft-unsigned-long ; border
+   fft-unsigned-long ; background
    ))
 
 ; http://tronche.com/gui/x/xlib/events/mask.html
 (define ExposureMask (<< 1 15))
 (define KeyPressMask (<< 1 0))
-(define XSelectInput (X11 fft-int "XSelectInput" fft-void* fft-void* fft-int))
+(define XSelectInput (X11 fft-int "XSelectInput" Display* Window fft-long))
 
-(define XMapWindow (X11 fft-int "XMapWindow" fft-void* fft-void*))
-(define XNextEvent (X11 fft-int "XNextEvent" fft-void* type-vptr))
-(define XPending   (X11 fft-int "XPending"   fft-void*))
+(define XMapWindow (X11 fft-int "XMapWindow" Display* Window))
+(define XNextEvent (X11 fft-int "XNextEvent" Display* XEvent*))
+(define XPending   (X11 fft-int "XPending"   Display*))
 
-(define XStoreName (X11 fft-int "XStoreName" fft-void* fft-void* type-string))
+(define XStoreName (X11 fft-int "XStoreName" Display* Window type-string))
 
 ;(define Colormap fft-void*)
 ;(define XCreateColormap (X11 Colormap "XCreateColormap" fft-void* fft-void* fft-void* fft-int))

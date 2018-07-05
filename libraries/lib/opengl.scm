@@ -18,6 +18,7 @@
 
 (define win32? (string-ci=? OS "Windows"))
 (define linux? (string-ci=? OS "Linux"))
+(define x32? (eq? (vm:wordsize) 4))
 
 ; check the platform
 (or win32? linux?
@@ -138,11 +139,11 @@
             (GetMessage       (user32 fft-int "GetMessageA"      fft-void* fft-void* fft-int fft-int))
             (DispatchMessage  (user32 fft-int "DispatchMessageA" fft-void*)))
       (lambda (context)
-         (let ((MSG (vm:new-raw-object type-vector-raw 48))) ; 28 for win32
+         (let ((MSG (vm:new-raw-object type-vector-raw 48))) ; 28 for x32
          (let loop ()
             (if (= 1 (PeekMessage MSG #f 0 0 1))
                (let*((w (vm:wordsize))
-                     (message (+ (<< (ref MSG (+ 0 (* w 1)))  0)      ; 4 for win32
+                     (message (+ (<< (ref MSG (+ 0 (* w 1)))  0)      ; 4 for x32
                                  (<< (ref MSG (+ 1 (* w 1)))  8)
                                  (<< (ref MSG (+ 2 (* w 1))) 16)
                                  (<< (ref MSG (+ 3 (* w 1))) 24))))
@@ -166,12 +167,12 @@
             (XNextEvent(libX11 fft-int "XNextEvent" type-vptr type-vptr)))
       (lambda (context)
          (let ((display (ref context 1)))
-         (let loop ((XEvent (vm:new-raw-object type-vector-raw 192)))
+         (let loop ((XEvent (vm:new-raw-object type-vector-raw 192))) ; 96 for x32
             (if (> (XPending display) 0)
                (begin
                   (XNextEvent display XEvent)
-                  (if (eq? (int32->ol XEvent 0) 2)
-                     (int32->ol XEvent 84)
+                  (if (eq? (int32->ol XEvent 0) 2) ; KeyPress
+                     (int32->ol XEvent (if x32? 52 84)) ; offsetof(XKeyEvent, keycode)
                      (loop XEvent))))))))))
    (else
       (runtime-error "Unknown platform" OS))))
