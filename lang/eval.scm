@@ -743,7 +743,8 @@
          (list
             library-key     ;; loaded libraries
             includes-key    ;; where to load libraries from
-            features-key))  ;; implementation features
+            features-key
+            '*vm-args*))    ;; implementation features
 
       ;; update *owl-names* (used by renderer of repl prompt) if the defined value is a function
       (define (maybe-name-function env name value)

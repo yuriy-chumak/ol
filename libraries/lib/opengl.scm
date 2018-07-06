@@ -5,7 +5,9 @@
 
    (export
       (exports (OpenGL version-1-2))
-      gl:run
+      gl:set-renderer
+      gl:set-window-title
+      gl:finish ; if renderer exists - wait for window close, else just glFinish
 
       gl:Create ; create window + context
       gl:Enable gl:Disable
@@ -77,6 +79,8 @@
             (print "OpenGL vendor: " (glGetString GL_VENDOR))
             (print "OpenGL renderer: " (glGetString GL_RENDERER))
            ;(gl:MakeCurrent #f #f)
+            (mail 'opengl (tuple 'set-context (tuple 'hDC hRC window)))
+            (interact 'opengl (tuple 'get-context)) ; синхронизация
 
             (ShowWindow window 5)
             (tuple hDC hRC window)))))))
@@ -110,9 +114,9 @@
                            (XWhitePixel display screen)))
                (vi (glXChooseVisual display screen
                      '( 4 ; GLX_RGBA
-                        8  1 ; GLX_RED_SIZE
-                        9  1 ; GLX_GREEN_SIZE
-                       10  1 ; GLX_BLUE_SIZE
+                        8  5 ; GLX_RED_SIZE
+                        9  6 ; GLX_GREEN_SIZE
+                       10  5 ; GLX_BLUE_SIZE
                        12  24 ; GLX_DEPTH_SIZE
                         5 ; GLX_DOUBLEBUFFER
                         0)))); None
@@ -124,7 +128,9 @@
                (print "OpenGL version: " (glGetString GL_VERSION))
                (print "OpenGL vendor: " (glGetString GL_VENDOR))
                (print "OpenGL renderer: " (glGetString GL_RENDERER))
-              ;(gl:MakeCurrent display window #f)
+
+               (mail 'opengl (tuple 'set-context (tuple display screen window cx)))
+               (interact 'opengl (tuple 'get-context)) ; синхронизация
 
                (tuple display screen window cx)))))))
    (else
@@ -177,26 +183,140 @@
    (else
       (runtime-error "Unknown platform" OS))))
 
+; internal function
+(define gl:SetWindowTitle (cond
+   (win32?
+      (let ((user32 (load-dynamic-library "user32.dll")))
+      (let ((SetWindowText   (user32 fft-int "SetWindowTextW"   fft-void* type-string-wide)))
+         (lambda (context title)
+            (let ((window (ref context 3)))
+               (SetWindowText window title))))))
+   (linux?
+      (let ((libX11 (load-dynamic-library "libX11.so")))
+      (let ((XStoreName   (libX11 fft-int "XStoreName" type-vptr type-vptr type-string)))
+         (lambda (context title)
+            (let ((display (ref context 1))
+                  ;(screen  (ref context 2))
+                  (window  (ref context 3))
+                  (cx      (ref context 4)))
+               (XStoreName display window title))))))))
+
+; =============================================
+; automation
+(fork-server 'opengl (lambda ()
+(let this ((dictionary #empty))
+(cond
+   ; блок обработки сообщений
+   ((check-mail) => (lambda (e) ; can be (and (eq? something 0) (check-mail)) =>
+      (let*((sender msg e))
+         ;(print "envelope: " envelope)
+         (tuple-case msg
+            ((debug)
+               (mail sender dictionary)
+               (this dictionary))
+
+            ;; ((swap-buffers) ; вывести все введенное на экран
+            ;;    (unless (get dictionary 'renderer #f)
+            ;;       (gl:SwapBuffers (get dictionary 'context #f)))
+            ;;    (this dictionary))
+            ((finish)  ; wait for OpenGL window closing (just no answer for interact)
+               (glFinish)
+               ; если нету рендерера, то надо вывести все, что юзер понавводил на экран
+               (unless (get dictionary 'renderer #f)
+                  (mail sender 'ok))
+               (this (put dictionary 'customer sender)))
+
+            ; context
+            ((set-context context)
+               (this (put dictionary 'context context)))
+            ((get-context)
+               (mail sender (get dictionary 'context #f))
+               (this dictionary))
+
+            ; set-window-title
+            ((set-window-title title)
+               (gl:SetWindowTitle (get dictionary 'context #f) title)
+               (this dictionary))
+
+            ; (renderer . args)
+            ((set-renderer renderer)
+               (this (put dictionary 'renderer renderer)))
+            ((get-renderer)
+               (mail sender (get dictionary 'renderer #f))
+               (this dictionary))
+
+            (else
+               (print-to stderr "Unknown opengl server command " msg)
+               (this dictionary))))))
+   ; блок непосредственно рабочего цикла окна
+   (else
+      ; обработаем сообщения (todo: не более чем N за раз)
+      (let ((context (get dictionary 'context #f)))
+         (if context ; todo: добавить обработку кнопок
+            (gl:ProcessEvents context)))
+      ; проделаем все действия
+      (let*((dictionary
+            ; 1. draw (if renderer exists)
+            (or (call/cc (lambda (return)
+                  (let ((renderer (get dictionary 'renderer #f)))
+                     (if renderer
+                        ; есть чем рисовать - рисуем
+                        (let ((userdata (apply renderer (get dictionary 'userdata #null))))
+                           (gl:SwapBuffers (get dictionary 'context #f))
+                           (return
+                              (put dictionary 'userdata userdata)))))))
+               dictionary))
+            (dictionary
+            ; 2. think (if thinker exists)
+            (or (call/cc (lambda (return)
+                  (let ((thinker (get dictionary 'thinker #f)))
+                     (if thinker
+                        dictionary))))
+               dictionary))
+            )
+         ; done.
+         (sleep 1)
+         (this dictionary)))))))
+
+; force create window. please, change the window behaviour using exported functions
+(gl:Create "Ol: OpenGL window")
+
+; -----------------------------
+(define (gl:set-userdata . userdata)
+   (mail 'opengl (tuple 'set-userdata userdata)))
+
+(define (gl:set-renderer renderer)
+   (mail 'opengl (tuple 'set-renderer renderer)))
+
+(define (gl:set-window-title title)
+   (mail 'opengl (tuple 'set-window-title title)))
+
+(define (gl:finish)
+   ; hack:
+   (if (or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
+      #true ; do nothing in interactive mode
+      (interact 'opengl (tuple 'finish))))
+
 ; ====================================================================================================
-(define (gl:run context init renderer)
-(let ((context (if (string? context) (gl:Create context) context)))
+;; (define (gl:run context init renderer)
+;; (let ((context (if (string? context) (gl:Create context) context)))
 
-   (gl:Enable context)
-   (let ((userdata (init)))
-   (gl:Disable context)
+;;    (gl:Enable context)
+;;    (let ((userdata (init)))
+;;    (gl:Disable context)
 
-   (call/cc (lambda (return)
-   (let this ((userdata userdata))
-      (let ((message (gl:ProcessEvents context)))
-         (if (eq? message 24)
-            (return message)))
+;;    (call/cc (lambda (return)
+;;    (let this ((userdata userdata))
+;;       (let ((message (gl:ProcessEvents context)))
+;;          (if (eq? message 24)
+;;             (return message)))
 
-      (gl:Enable context)
-      (let ((userdata (if renderer (apply renderer userdata) userdata)))
-      (gl:SwapBuffers context)
-      (gl:Disable context)
+;;       (gl:Enable context)
+;;       (let ((userdata (if renderer (apply renderer userdata) userdata)))
+;;       (gl:SwapBuffers context)
+;;       (gl:Disable context)
 
-      (this userdata))))))))
+;;       (this userdata))))))))
 
 ;(define gl:run (lambda args
 ;   (let run ((title #f) (init #f) (draw #f) (args args) (selector #f))
@@ -215,25 +335,25 @@
 ;                  (run title (car args) draw (cdr args) (lambda (title init draw args)
 ;                     (run title init (car args) (cdr args) #f))))))))))))))
 
-(define gl:run (lambda args
-   (let run ((title #f) (init #f) (draw #f) (args args))
-      (if (null? args)
-         (gl:run title init draw)
-      (cond
-      ((eq? (car args) 'init)
-         (run title (cadr args) draw (cddr args)))
-      ((eq? (car args) 'draw)
-         (run title init (cadr args) (cddr args)))
-      (else (cond
-         ((eq? title #f)
-            (run (car args) init draw (cdr args)))
-         ((eq? init #f)
-            (run title (car args) draw (cdr args)))
-         ((eq? draw #f)
-            (run title init (car args) (cdr args))))))))))
+;;  (lambda args
+;;    (let run ((title #f) (init #f) (draw #f) (args args))
+;;       (if (null? args)
+;;         (gl:run title init draw)
+;;       (cond
+;;       ((eq? (car args) 'init)
+;;          (run title (cadr args) draw (cddr args)))
+;;       ((eq? (car args) 'draw)
+;;          (run title init (cadr args) (cddr args)))
+;;       (else (cond
+;;          ((eq? title #f)
+;;             (run (car args) init draw (cdr args)))
+;;          ((eq? init #f)
+;;             (run title (car args) draw (cdr args)))
+;;          ((eq? draw #f)
+;;             (run title init (car args) (cdr args))))))))))
+
 
 ))
-
 
 ;(define gl:run2 (lambda args
 ;   (print args)))
@@ -243,3 +363,132 @@
 ;         (let process-events ((unused 0))
 ;            (if (> (XPending display) 0)
 ;               (process-events (XNextEvent display XEvent))))
+
+#| Working single-buffer X11 example:
+
+#include <iostream>
+using namespace std;
+ 
+#include <X11/Xlib.h>
+#include <GL/glx.h>
+ 
+Display* g_display;
+ 
+int main(int argc, char* argv[])
+{
+  g_display = XOpenDisplay(NULL);
+  if(g_display == NULL)
+  {
+    cerr << "Failed to open display" << endl;
+    return 1;
+  }
+ 
+  int errorBase, eventBase;
+  if(!glXQueryExtension(g_display, &errorBase, &eventBase))
+  {
+    cerr << "Failed to query glx" << endl;
+    return 1;
+  }
+ 
+  int major, minor;
+  if(!glXQueryVersion(g_display, &major, &minor)
+      || major < 1 || (major == 1 && minor < 3))
+  {
+    cerr << "glx 1.3 required, only " << major << "."
+         << minor << " found." << endl;
+    return 1;
+  }
+ 
+  int num;
+  int attribs[] = { GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+                    GLX_DOUBLEBUFFER, False,
+                    //GLX_X_RENDERABLE, True,
+                    //GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
+                    GLX_RENDER_TYPE, GLX_RGBA_BIT,
+                    None };
+ 
+  GLXFBConfig* configs = glXChooseFBConfig(g_display,
+      XDefaultScreen(g_display), attribs, &num);
+  if(configs == NULL || num < 1)
+  {
+    cerr << "No config found" << endl;
+    return 1;
+  }
+  GLXFBConfig config = configs[0];
+  XFree(configs);
+ 
+  XVisualInfo* vis = glXGetVisualFromFBConfig(g_display, config);
+  if(vis == NULL)
+  {
+    cerr << "Couldn't get visual" << endl;
+    return 1;
+  }
+ 
+ 
+  int x = 100, y = 100, wid = 640, hyt = 150;
+  XSetWindowAttributes swa;
+  swa.event_mask = ExposureMask | StructureNotifyMask;
+//  Visual* t = XDefaultVisual(g_display, 0);
+
+
+  swa.colormap = XCreateColormap(g_display, XRootWindow(g_display, vis->screen),
+      vis->visual, AllocNone); //XDefaultColormap(g_display, vis->screen);
+  Visual* t = XDefaultVisual(g_display, 0);
+  //Window win = XCreateWindow(g_display, XRootWindow(g_display, vis->screen),
+  //    x, y, wid, hyt, 0, vis->depth, InputOutput, vis->visual,
+  //    CWEventMask, &swa);
+  Window win = XCreateWindow(g_display, XRootWindow(g_display, vis->screen),
+      x, y, wid, hyt, 0, 24, InputOutput, vis->visual, //CopyFromParent,
+     CWEventMask | CWColormap, &swa);
+
+//  Window win = XCreateWindow(g_display, XRootWindow(g_display, vis->screen),
+//      x, y, wid, hyt, 0, vis->depth, InputOutput, vis->visual,
+//      CWEventMask, &swa);
+ 
+  GLXWindow glXWin = glXCreateWindow(g_display, config, win, NULL);
+ 
+  GLXContext glXContext = glXCreateNewContext(g_display, config,
+      GLX_RGBA_TYPE, NULL, True);
+  if(glXContext == NULL)
+  {
+    cerr << "Failed to create glXContext" << endl;
+    return 1;
+  }
+ 
+ 
+  XMapWindow(g_display, win);
+  glXMakeContextCurrent(g_display, glXWin, glXWin, glXContext);
+ 
+  Atom a = XInternAtom(g_display, "WM_DELETE_WINDOW", False);
+  XSetWMProtocols(g_display, win, &a, 1);
+ 
+
+   glClearColor(1, 0, 1, 1);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glFlush();
+//        glXSwapBuffers(g_display, glXWin);
+ 
+  bool done = false;
+  XEvent event;
+  while(!done)
+  {
+    XNextEvent(g_display, &event);
+    switch(event.type)
+    {
+      case Expose:
+        if(event.xexpose.count > 1)
+          break;
+        break;
+      case ClientMessage:
+        done = true;
+        break;
+    }
+  }
+ 
+  glXMakeContextCurrent(g_display, None, None, NULL);
+  glXDestroyContext(g_display, glXContext);
+  glXDestroyWindow(g_display, glXWin);
+  XCloseDisplay(g_display);
+}
+
+|#

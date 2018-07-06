@@ -1,16 +1,14 @@
 #!/usr/bin/ol
 (import (lib opengl))
-(gl:run
 
-   "2. Drawing simple triangle"
+(gl:set-window-title "2. Drawing simple triangle")
 
 ; init
-(lambda ()
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1))
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
 ; draw
-(lambda ()
+(gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glColor3f 0.2 0.5 0.2)
@@ -24,3 +22,5 @@
       (glColor3f 0 0 1)
       (glVertex2f -0.0 +0.7)
    (glEnd)))
+
+(gl:finish)
