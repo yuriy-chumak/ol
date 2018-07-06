@@ -7,6 +7,7 @@
       (exports (OpenGL version-1-2))
       gl:set-renderer
       gl:set-window-title
+      gl:set-userdata
       gl:finish ; if renderer exists - wait for window close, else just glFinish
 
       gl:Create ; create window + context
@@ -238,11 +239,18 @@
                (gl:SetWindowTitle (get dictionary 'context #f) title)
                (this dictionary))
 
-            ; (renderer . args)
+            ; renderer
             ((set-renderer renderer)
                (this (put dictionary 'renderer renderer)))
             ((get-renderer)
                (mail sender (get dictionary 'renderer #f))
+               (this dictionary))
+
+            ; userdata
+            ((set-userdata userdata)
+               (this (put dictionary 'userdata userdata)))
+            ((get-userdata)
+               (mail sender (get dictionary 'userdata #f))
                (this dictionary))
 
             (else
