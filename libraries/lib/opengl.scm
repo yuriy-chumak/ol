@@ -216,15 +216,17 @@
                (mail sender dictionary)
                (this dictionary))
 
-            ;; ((swap-buffers) ; вывести все введенное на экран
-            ;;    (unless (get dictionary 'renderer #f)
-            ;;       (gl:SwapBuffers (get dictionary 'context #f)))
-            ;;    (this dictionary))
             ((finish)  ; wait for OpenGL window closing (just no answer for interact)
-               (glFinish)
-               ; если нету рендерера, то надо вывести все, что юзер понавводил на экран
+               ;(glFinish)
+               (gl:SwapBuffers (get dictionary 'context #f))
+
+               ; возможно надо вернуть управление юзеру?
                (unless (get dictionary 'renderer #f)
-                  (mail sender 'ok))
+                  ; нечего ждать к отрисовке, рендерера то нет
+                  (mail sender 'ok)
+                  ; рендерер есть, но режим интерактивный?
+                  (if (or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
+                     (mail sender 'ok)))
                (this (put dictionary 'customer sender)))
 
             ; context
@@ -300,10 +302,7 @@
    (mail 'opengl (tuple 'set-window-title title)))
 
 (define (gl:finish)
-   ; hack:
-   (if (or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
-      #true ; do nothing in interactive mode
-      (interact 'opengl (tuple 'finish))))
+   (interact 'opengl (tuple 'finish)))
 
 ; ====================================================================================================
 ;; (define (gl:run context init renderer)
@@ -442,9 +441,6 @@ int main(int argc, char* argv[])
   swa.colormap = XCreateColormap(g_display, XRootWindow(g_display, vis->screen),
       vis->visual, AllocNone); //XDefaultColormap(g_display, vis->screen);
   Visual* t = XDefaultVisual(g_display, 0);
-  //Window win = XCreateWindow(g_display, XRootWindow(g_display, vis->screen),
-  //    x, y, wid, hyt, 0, vis->depth, InputOutput, vis->visual,
-  //    CWEventMask, &swa);
   Window win = XCreateWindow(g_display, XRootWindow(g_display, vis->screen),
       x, y, wid, hyt, 0, 24, InputOutput, vis->visual, //CopyFromParent,
      CWEventMask | CWColormap, &swa);
