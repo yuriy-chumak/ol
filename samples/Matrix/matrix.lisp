@@ -180,12 +180,9 @@
          (setx! glows x y 0)))))))
 
 
-(gl:run
-
-   "Digital Rain"
+(gl:set-window-title "Digital Rain")
 
 ; init
-(lambda ()
    (glShadeModel GL_SMOOTH)
    (glClearColor 0 0 0 1.0)
 
@@ -205,11 +202,12 @@
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
 
+(gl:set-userdata
    (let* ((time _ (clock)))
-      (list time))
-)
+      (list time)))
 
 ; draw
+(gl:set-renderer
 (lambda (oldtime)
    (let* ((time _ (clock)))
 
@@ -344,3 +342,5 @@
    (glEnd)
 
    (list time))))
+
+(gl:finish)
