@@ -55,7 +55,7 @@
 
       NewtonInvalidateCache
       NewtonSetSolverModel
-      NewtonGetSolverModel
+      ;-NewtonGetSolverModel
       ;NewtonSetColverConvergenceQuality
 
       ;NewtonSetMultiThreadSolverOnSingleIsland
@@ -308,7 +308,7 @@
 
 (define NewtonInvalidateCache (newton fft-void "NewtonInvalidateCache" NewtonWorld*))
 (define NewtonSetSolverModel (newton fft-void "NewtonSetSolverModel" NewtonWorld* fft-int)) ; model of operation n = number of iteration default value is 4.
-(define NewtonGetSolverModel (newton fft-int "NewtonGetSolverModel" NewtonWorld*))
+;-(define NewtonGetSolverModel (newton fft-int "NewtonGetSolverModel" NewtonWorld*))
 
 (define NewtonUpdate (newton fft-void "NewtonUpdate" NewtonWorld* dFloat))
 ;NewtonUpdateAsync

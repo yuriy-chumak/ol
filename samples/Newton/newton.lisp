@@ -7,7 +7,8 @@
 
 (define (gettimeofday) (syscall 96 #f #f #f))
 
-(define Context (gl:Create "7. Newton"))
+(gl:set-window-title "7. Newton")
+;(define Context (gl:Create "7. Newton"))
 
 
 (print "1.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
@@ -231,12 +232,12 @@
 
 
 
-(gl:run
-
-   Context
+;(gl:run
+;
+;   Context
 
 ; init
-(lambda ()
+;(lambda ()
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
 
@@ -260,9 +261,11 @@
 
    ; return parameter list:
    (let ((oldtime (gettimeofday)))
-   (list oldtime 1 cubes spheres)))
+   (gl:set-userdata
+      oldtime 1 cubes spheres))
 
 ; draw
+(gl:set-renderer
 (lambda (oldtime i cubes spheres)
 (let ((newtime (gettimeofday)))
    ; обновим мир
@@ -368,8 +371,9 @@
                (cons sphere spheres)))
    ; return new parameter list:
       (list
-         newtime (+ i 1) cubes spheres)))
-))
+         newtime (+ i 1) cubes spheres)))))
+
+(gl:finish)
 
 (NewtonDestroy world)
 (print "4.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
