@@ -842,7 +842,7 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 // http://ru.cppreference.com/w/cpp/language/types
 
 // LP32 or 2/4/4: int — 16 bits, long and pointer - 32 bits
-//	Win16 AP (not supported)
+//	Win16 API (not supported)
 // ILP32 or 4/4/4: int, long and pointer — 32 bits
 //	Win32 API (supported)
 //	Unix and Unix-like systems (Linux, Mac OS X) (supported)
@@ -946,8 +946,8 @@ word*p = NEW (size);\
 //	Kernel object handles are process specific. That is, a process must
 //	either create the object or open an existing object to obtain a kernel
 //	object handle. The per-process limit on kernel handles is 2^24.
-#define make_port(a) ({ assert ((((word)(a)) << IPOS) >> IPOS == (word)(a)); make_value(TPORT, a); })
-#define port(o)      value(o)
+#define make_port(a) ({ word p = (word)a; assert (((word)p << IPOS) >> IPOS == (word)p); make_value(TPORT, p); })
+#define port(o)      ({ word p = (word)o; assert (is_port(p)); value(p); })
 
 // -= new_pair =----------------------------------------
 
