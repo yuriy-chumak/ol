@@ -14,7 +14,9 @@
       gl:Enable gl:Disable
 
       gl:SwapBuffers
-      gl:ProcessEvents)
+      gl:ProcessEvents
+      
+      gl:Color)
 
 (begin
 (define OS (ref (uname) 1))
@@ -116,7 +118,7 @@
             (XWhitePixel   (libX11 type-vptr "XWhitePixel" type-vptr fft-int))
             (XCreateColormap (libX11 type-vptr "XCreateColormap" type-vptr fft-int type-vptr fft-int))
             (XCreateSimpleWindow (libX11 type-vptr "XCreateSimpleWindow"
-                              type-vptr type-vptr ; display, parent
+                              type-vptr fft-int ; display, parent
                               fft-int fft-int fft-unsigned-int fft-unsigned-int ; x y width height
                               fft-unsigned-int  ; border width
                               type-vptr ; border
@@ -133,71 +135,57 @@
             (XSelectInput (libX11 fft-int "XSelectInput" type-vptr type-vptr fft-long))
             (XMapWindow   (libX11 fft-int "XMapWindow" type-vptr type-vptr))
             (XStoreName   (libX11 fft-int "XStoreName" type-vptr type-vptr type-string))
-            ; memcpy (hack)
-            (memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-int))
-            (memcpy2 ((load-dynamic-library #false) fft-void "memcpy" (fft* fft-void*) fft-void* fft-int))
             ; glx
             (glXQueryExtension(libGLX fft-int "glXQueryExtension" type-vptr fft-int* fft-int*))
             (glXChooseVisual  (libGLX type-vptr "glXChooseVisual" type-vptr fft-int fft-int*))
             (glXCreateContext (libGLX type-vptr "glXCreateContext" type-vptr type-vptr type-vptr fft-int)))
       (lambda (title)
-         ;; Double Buffer Solution:
-         ;; (let*((display (XOpenDisplay #false))
-         ;;       (screen  (XDefaultScreen display))
-         ;;       (window  (XCreateSimpleWindow display (XRootWindow display screen)
-         ;;                   0 0 WIDTH HEIGHT 1
-         ;;                   (XBlackPixel display screen)
-         ;;                   (XWhitePixel display screen)))
-         ;;       (vi (glXChooseVisual display screen
-         ;;             '( 4 ; GLX_RGBA
-         ;;                8  5 ; GLX_RED_SIZE
-         ;;                9  6 ; GLX_GREEN_SIZE
-         ;;               10  5 ; GLX_BLUE_SIZE
-         ;;               12  24 ; GLX_DEPTH_SIZE
-         ;;                5 ; GLX_DOUBLEBUFFER
-         ;;                0)))); None
-         ;;    (XSelectInput display window 32769) ; ExposureMask
-         ;;    (XStoreName display window title)
-         ;;    (XMapWindow display window)
-         ;;    (let ((cx (gl:CreateContext display vi #false 1)))
-         ;;       (gl:MakeCurrent display window cx)
-         ;;       (print "OpenGL version: " (glGetString GL_VERSION))
-         ;;       (print "OpenGL vendor: " (glGetString GL_VENDOR))
-         ;;       (print "OpenGL renderer: " (glGetString GL_RENDERER))
-
-         ;;       (mail 'opengl (tuple 'set-context (tuple display screen window cx)))
-         ;;       (interact 'opengl (tuple 'get-context)) ; синхронизация
-
-         ;;       (tuple display screen window cx)))))))
          (let*((display (XOpenDisplay #false))
                (screen  (XDefaultScreen display))
                ; (unless (glxQueryExtension display #f #f) (halt "X server has no OpenGL GLX extension")
+               ;; ; Single Buffer Solution:
+               ;; (vi (glXChooseVisual display screen
+               ;;       '( 4 ; GLX_RGBA
+               ;;          8  1 ; GLX_RED_SIZE
+               ;;          9  1 ; GLX_GREEN_SIZE
+               ;;         10  1 ; GLX_BLUE_SIZE
+               ;;         12  24 ; GLX_DEPTH_SIZE
+               ;;          0))); None
+               ;; (XVisualInfo (vptr->vector vi 64)) ; sizeof(XVisualInfo) = 64
+               ;; ; *unless (eq? 4 (class (int32->ol XVisualInfo 24))) (halt "TrueColor visual required for this program") ; offsetof(XVisualInfo, class)
+               ;; ;(cx (gl:CreateContext display vi #false 1))
+
+               ;; (visual (vector->vptr XVisualInfo 0)) ;
+               ;; (root (XRootWindow display screen))
+               ;; (colormap (XCreateColormap display root visual 0)) ; 0 == AllocNone
+
+               ;; ; ...
+               ;; (XSetWindowAttributes (list->vector (repeat 0 112))) ; sizeof(XSetWindowAttributes)
+               ;; (_ (vector-set-vptr! XSetWindowAttributes 96 colormap))
+               ;; (_ (vector-set-int!  XSetWindowAttributes 24 0)) ; border_pixel
+               ;; (_ (vector-set-int!  XSetWindowAttributes 72 163844)); event_mask (ExposureMask | ButtonPressMask | StructureNotifyMask)
+
+               ;; (window (XCreateWindow display root
+               ;;             0 0 WIDTH HEIGHT 0
+               ;;             24 1; vi->depth InputOutput 
+               ;;             visual
+               ;;             10248 ; CWBorderPixel | CWColormap | CWEventMask
+               ;;             XSetWindowAttributes)))
+               ; Double Buffer Solution
+               (window  (XCreateSimpleWindow display (XRootWindow display screen)
+                           0 0 WIDTH HEIGHT 1
+                           (XBlackPixel display screen)
+                           (XWhitePixel display screen)))
                (vi (glXChooseVisual display screen
                      '( 4 ; GLX_RGBA
-                        8  1 ; GLX_RED_SIZE
-                        9  1 ; GLX_GREEN_SIZE
-                       10  1 ; GLX_BLUE_SIZE
+                        8  5 ; GLX_RED_SIZE
+                        9  6 ; GLX_GREEN_SIZE
+                       10  5 ; GLX_BLUE_SIZE
                        12  24 ; GLX_DEPTH_SIZE
-                        0))); None
-               (XVisualInfo (vptr->vector vi 64)) ; sizeof(XVisualInfo) = 64
-               ; *unless (eq? 4 (class (int32->ol XVisualInfo 24))) (halt "TrueColor visual required for this program") ; offsetof(XVisualInfo, class)
+                        5 ; GLX_DOUBLEBUFFER
+                        0)))); None
 
-               (visual (vector->vptr XVisualInfo 0)) ;
-               (root (XRootWindow display screen))
-               (colormap (XCreateColormap display root visual 0)) ; 0 == AllocNone
-
-               ; ...
-               (XSetWindowAttributes (list->vector (repeat 0 112))) ; sizeof(XSetWindowAttributes)
-               (_ (vector-set-vptr! XSetWindowAttributes 96 colormap))
-               (_ (vector-set-int!  XSetWindowAttributes 24 0)) ; border_pixel
-               (_ (vector-set-int!  XSetWindowAttributes 72 163844)); event_mask (ExposureMask | ButtonPressMask | StructureNotifyMask)
-
-               (window (XCreateWindow display root
-                           0 0 WIDTH HEIGHT 0
-                           24 1; vi->depth InputOutput 
-                           visual
-                           10248 ; CWBorderPixel | CWColormap | CWEventMask
-                           XSetWindowAttributes)))
+            ; common code
             (XSelectInput display window 32769) ; ExposureMask
             (XStoreName display window title)
             (XMapWindow display window)
@@ -381,195 +369,8 @@
 (define (gl:finish)
    (interact 'opengl (tuple 'finish)))
 
-; ====================================================================================================
-;; (define (gl:run context init renderer)
-;; (let ((context (if (string? context) (gl:Create context) context)))
-
-;;    (gl:Enable context)
-;;    (let ((userdata (init)))
-;;    (gl:Disable context)
-
-;;    (call/cc (lambda (return)
-;;    (let this ((userdata userdata))
-;;       (let ((message (gl:ProcessEvents context)))
-;;          (if (eq? message 24)
-;;             (return message)))
-
-;;       (gl:Enable context)
-;;       (let ((userdata (if renderer (apply renderer userdata) userdata)))
-;;       (gl:SwapBuffers context)
-;;       (gl:Disable context)
-
-;;       (this userdata))))))))
-
-;(define gl:run (lambda args
-;   (let run ((title #f) (init #f) (draw #f) (args args) (selector #f))
-;      (if (null? args)
-;         (gl:run title init draw)
-;      (cond
-;      ((eq? (car args) 'init)
-;         (run title (cadr args) draw (cddr args) selector))
-;      ((eq? (car args) 'draw)
-;         (run title init (cadr args) (cddr args) selector))
-;      (else
-;         (if selector
-;            (selector title init draw args)
-;            (run title init draw args (lambda (title init draw args)
-;               (run (car args) init draw (cdr args) (lambda (title init draw args)
-;                  (run title (car args) draw (cdr args) (lambda (title init draw args)
-;                     (run title init (car args) (cdr args) #f))))))))))))))
-
-;;  (lambda args
-;;    (let run ((title #f) (init #f) (draw #f) (args args))
-;;       (if (null? args)
-;;         (gl:run title init draw)
-;;       (cond
-;;       ((eq? (car args) 'init)
-;;          (run title (cadr args) draw (cddr args)))
-;;       ((eq? (car args) 'draw)
-;;          (run title init (cadr args) (cddr args)))
-;;       (else (cond
-;;          ((eq? title #f)
-;;             (run (car args) init draw (cdr args)))
-;;          ((eq? init #f)
-;;             (run title (car args) draw (cdr args)))
-;;          ((eq? draw #f)
-;;             (run title init (car args) (cdr args))))))))))
-
-
+; -----------------------------
+(define gl:Color (case-lambda
+   ((r g b)
+      (glColor3f r g b))))
 ))
-
-;(define gl:run2 (lambda args
-;   (print args)))
-
-;         (gl:ProcessEvents context)
-;      (let ((XEvent (vm:new-raw-object fft-void* (repeat 0 192))))
-;         (let process-events ((unused 0))
-;            (if (> (XPending display) 0)
-;               (process-events (XNextEvent display XEvent))))
-
-#| Working single-buffer X11 example:
-
-#include <iostream>
-using namespace std;
- 
-#include <X11/Xlib.h>
-#include <GL/glx.h>
- 
-Display* g_display;
- 
-int main(int argc, char* argv[])
-{
-  g_display = XOpenDisplay(NULL);
-  if(g_display == NULL)
-  {
-    cerr << "Failed to open display" << endl;
-    return 1;
-  }
- 
-  int errorBase, eventBase;
-  if(!glXQueryExtension(g_display, &errorBase, &eventBase))
-  {
-    cerr << "Failed to query glx" << endl;
-    return 1;
-  }
- 
-  int major, minor;
-  if(!glXQueryVersion(g_display, &major, &minor)
-      || major < 1 || (major == 1 && minor < 3))
-  {
-    cerr << "glx 1.3 required, only " << major << "."
-         << minor << " found." << endl;
-    return 1;
-  }
- 
-  int num;
-  int attribs[] = { GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-                    GLX_DOUBLEBUFFER, False,
-                    //GLX_X_RENDERABLE, True,
-                    //GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
-                    GLX_RENDER_TYPE, GLX_RGBA_BIT,
-                    None };
- 
-  GLXFBConfig* configs = glXChooseFBConfig(g_display,
-      XDefaultScreen(g_display), attribs, &num);
-  if(configs == NULL || num < 1)
-  {
-    cerr << "No config found" << endl;
-    return 1;
-  }
-  GLXFBConfig config = configs[0];
-  XFree(configs);
- 
-  XVisualInfo* vis = glXGetVisualFromFBConfig(g_display, config);
-  if(vis == NULL)
-  {
-    cerr << "Couldn't get visual" << endl;
-    return 1;
-  }
- 
- 
-  int x = 100, y = 100, wid = 640, hyt = 150;
-  XSetWindowAttributes swa;
-  swa.event_mask = ExposureMask | StructureNotifyMask;
-//  Visual* t = XDefaultVisual(g_display, 0);
-
-
-  swa.colormap = XCreateColormap(g_display, XRootWindow(g_display, vis->screen),
-      vis->visual, AllocNone); //XDefaultColormap(g_display, vis->screen);
-  Visual* t = XDefaultVisual(g_display, 0);
-  Window win = XCreateWindow(g_display, XRootWindow(g_display, vis->screen),
-      x, y, wid, hyt, 0, 24, InputOutput, vis->visual, //CopyFromParent,
-     CWEventMask | CWColormap, &swa);
-
-//  Window win = XCreateWindow(g_display, XRootWindow(g_display, vis->screen),
-//      x, y, wid, hyt, 0, vis->depth, InputOutput, vis->visual,
-//      CWEventMask, &swa);
- 
-  GLXWindow glXWin = glXCreateWindow(g_display, config, win, NULL);
- 
-  GLXContext glXContext = glXCreateNewContext(g_display, config,
-      GLX_RGBA_TYPE, NULL, True);
-  if(glXContext == NULL)
-  {
-    cerr << "Failed to create glXContext" << endl;
-    return 1;
-  }
- 
- 
-  XMapWindow(g_display, win);
-  glXMakeContextCurrent(g_display, glXWin, glXWin, glXContext);
- 
-  Atom a = XInternAtom(g_display, "WM_DELETE_WINDOW", False);
-  XSetWMProtocols(g_display, win, &a, 1);
- 
-
-   glClearColor(1, 0, 1, 1);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glFlush();
-//        glXSwapBuffers(g_display, glXWin);
- 
-  bool done = false;
-  XEvent event;
-  while(!done)
-  {
-    XNextEvent(g_display, &event);
-    switch(event.type)
-    {
-      case Expose:
-        if(event.xexpose.count > 1)
-          break;
-        break;
-      case ClientMessage:
-        done = true;
-        break;
-    }
-  }
- 
-  glXMakeContextCurrent(g_display, None, None, NULL);
-  glXDestroyContext(g_display, glXContext);
-  glXDestroyWindow(g_display, glXWin);
-  XCloseDisplay(g_display);
-}
-
-|#
