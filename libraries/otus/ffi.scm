@@ -30,6 +30,8 @@
       RTLD_LOCAL
       RTLD_NODELETE
 
+      NULL
+
       ; olvm callable type
       type-callable
 
@@ -85,6 +87,10 @@
       make-32bit-array
       make-64bit-array
       make-vptr-array
+
+      ; fft data manipulation helpers
+      vptr->vector vptr->string
+      
    )
 
    (import
@@ -245,6 +251,8 @@
 (define fft-signed-long fft-long)
 (define fft-unsigned-long (+ fft-long 5))
 
+
+(define NULL (vm:cast 0 fft-void*))
 ; -- utils ----------------------------
 
 (define (make-32bit-array len)
@@ -271,6 +279,32 @@
    (else
       (print "Unknown endianness")
       #false)))
+
+(define vptr->vector (cond
+   ((string-ci=? (ref (uname) 1) "Windows")
+      (lambda (vptr sizeof)
+         (let ((vector (vm:new-raw-object type-vector-raw sizeof)))
+            ; ...
+            vector)))
+   ((string-ci=? (ref (uname) 1) "Linux")
+      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-int)))
+         (lambda (vptr sizeof)
+            (let ((vector (vm:new-raw-object type-vector-raw sizeof)))
+               (memcpy vector vptr sizeof)
+               vector))))
+   (else
+      (print "Unknown OS"))))
+
+(define (vptr->string vptr)
+   (fold string-append "#x"
+      (map (lambda (i)
+            (let ((hex "0123456789abcdef"))
+               (list->string (list
+                  (ref hex (>> (ref vptr i) 4))
+                  (ref hex (band (ref vptr i) 15))))))
+         (reverse (iota (vm:wordsize)))))) ; todo: use (vm:endiannes)
+
+
 
 ; see also: http://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/predef/reference/boost_os_operating_system_macros.html
 ))

@@ -27,6 +27,26 @@
 (or win32? linux?
    (runtime-error "Unsupported platform" OS))
 
+; -- some debug staff -----
+(define (vector->vptr vec offset)
+   (let ((vptr (vm:cast 0 type-vptr)))
+      (for-each (lambda (i)
+            (set-ref! vptr i (ref vec (+ i offset))))
+         (iota (vm:wordsize)))
+      vptr))
+(define (vector-set-int! vec offset int)
+   (for-each (lambda (i)
+         (set-ref! vec (+ offset i) (band #xFF (>> int (* i 8)))))
+      (iota (vm:wordsize)))
+   vec)
+(define (vector-set-vptr! vec offset vptr)
+   (for-each (lambda (i)
+         (set-ref! vec (+ offset i) (ref vptr i)))
+      (iota (vm:wordsize)))
+   vec)
+
+; --
+
 (define WIDTH 640)
 (define HEIGHT 480)
 
@@ -91,9 +111,10 @@
             (libGLX (load-dynamic-library "libGL.so.1")))
       (let ((XOpenDisplay  (libX11 type-vptr "XOpenDisplay" type-string))
             (XDefaultScreen(libX11 fft-int "XDefaultScreen" type-vptr))
-            (XRootWindow   (libX11 type-vptr "XRootWindow" type-vptr fft-int))
+            (XRootWindow   (libX11 fft-int "XRootWindow" type-vptr fft-int))
             (XBlackPixel   (libX11 type-vptr "XBlackPixel" type-vptr fft-int))
             (XWhitePixel   (libX11 type-vptr "XWhitePixel" type-vptr fft-int))
+            (XCreateColormap (libX11 type-vptr "XCreateColormap" type-vptr fft-int type-vptr fft-int))
             (XCreateSimpleWindow (libX11 type-vptr "XCreateSimpleWindow"
                               type-vptr type-vptr ; display, parent
                               fft-int fft-int fft-unsigned-int fft-unsigned-int ; x y width height
@@ -101,26 +122,82 @@
                               type-vptr ; border
                               type-vptr ; background
                            ))
+            (XCreateWindow (libX11 type-vptr "XCreateWindow"
+                              type-vptr fft-int ; display, parent
+                              fft-int fft-int fft-unsigned-int fft-unsigned-int ; x y width height
+                              fft-unsigned-int  fft-int ; border_width, depth
+                              fft-unsigned-int type-vptr ; class, visual
+                              fft-unsigned-long ; valuemask
+                              type-vptr)) ; XSetWindowAttributes* attributes
+
             (XSelectInput (libX11 fft-int "XSelectInput" type-vptr type-vptr fft-long))
             (XMapWindow   (libX11 fft-int "XMapWindow" type-vptr type-vptr))
             (XStoreName   (libX11 fft-int "XStoreName" type-vptr type-vptr type-string))
+            ; memcpy (hack)
+            (memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-int))
+            (memcpy2 ((load-dynamic-library #false) fft-void "memcpy" (fft* fft-void*) fft-void* fft-int))
+            ; glx
+            (glXQueryExtension(libGLX fft-int "glXQueryExtension" type-vptr fft-int* fft-int*))
             (glXChooseVisual  (libGLX type-vptr "glXChooseVisual" type-vptr fft-int fft-int*))
             (glXCreateContext (libGLX type-vptr "glXCreateContext" type-vptr type-vptr type-vptr fft-int)))
       (lambda (title)
+         ;; Double Buffer Solution:
+         ;; (let*((display (XOpenDisplay #false))
+         ;;       (screen  (XDefaultScreen display))
+         ;;       (window  (XCreateSimpleWindow display (XRootWindow display screen)
+         ;;                   0 0 WIDTH HEIGHT 1
+         ;;                   (XBlackPixel display screen)
+         ;;                   (XWhitePixel display screen)))
+         ;;       (vi (glXChooseVisual display screen
+         ;;             '( 4 ; GLX_RGBA
+         ;;                8  5 ; GLX_RED_SIZE
+         ;;                9  6 ; GLX_GREEN_SIZE
+         ;;               10  5 ; GLX_BLUE_SIZE
+         ;;               12  24 ; GLX_DEPTH_SIZE
+         ;;                5 ; GLX_DOUBLEBUFFER
+         ;;                0)))); None
+         ;;    (XSelectInput display window 32769) ; ExposureMask
+         ;;    (XStoreName display window title)
+         ;;    (XMapWindow display window)
+         ;;    (let ((cx (gl:CreateContext display vi #false 1)))
+         ;;       (gl:MakeCurrent display window cx)
+         ;;       (print "OpenGL version: " (glGetString GL_VERSION))
+         ;;       (print "OpenGL vendor: " (glGetString GL_VENDOR))
+         ;;       (print "OpenGL renderer: " (glGetString GL_RENDERER))
+
+         ;;       (mail 'opengl (tuple 'set-context (tuple display screen window cx)))
+         ;;       (interact 'opengl (tuple 'get-context)) ; синхронизация
+
+         ;;       (tuple display screen window cx)))))))
          (let*((display (XOpenDisplay #false))
                (screen  (XDefaultScreen display))
-               (window  (XCreateSimpleWindow display (XRootWindow display screen)
-                           0 0 WIDTH HEIGHT 1
-                           (XBlackPixel display screen)
-                           (XWhitePixel display screen)))
+               ; (unless (glxQueryExtension display #f #f) (halt "X server has no OpenGL GLX extension")
                (vi (glXChooseVisual display screen
                      '( 4 ; GLX_RGBA
-                        8  5 ; GLX_RED_SIZE
-                        9  6 ; GLX_GREEN_SIZE
-                       10  5 ; GLX_BLUE_SIZE
+                        8  1 ; GLX_RED_SIZE
+                        9  1 ; GLX_GREEN_SIZE
+                       10  1 ; GLX_BLUE_SIZE
                        12  24 ; GLX_DEPTH_SIZE
-                        5 ; GLX_DOUBLEBUFFER
-                        0)))); None
+                        0))); None
+               (XVisualInfo (vptr->vector vi 64)) ; sizeof(XVisualInfo) = 64
+               ; *unless (eq? 4 (class (int32->ol XVisualInfo 24))) (halt "TrueColor visual required for this program") ; offsetof(XVisualInfo, class)
+
+               (visual (vector->vptr XVisualInfo 0)) ;
+               (root (XRootWindow display screen))
+               (colormap (XCreateColormap display root visual 0)) ; 0 == AllocNone
+
+               ; ...
+               (XSetWindowAttributes (list->vector (repeat 0 112))) ; sizeof(XSetWindowAttributes)
+               (_ (vector-set-vptr! XSetWindowAttributes 96 colormap))
+               (_ (vector-set-int!  XSetWindowAttributes 24 0)) ; border_pixel
+               (_ (vector-set-int!  XSetWindowAttributes 72 163844)); event_mask (ExposureMask | ButtonPressMask | StructureNotifyMask)
+
+               (window (XCreateWindow display root
+                           0 0 WIDTH HEIGHT 0
+                           24 1; vi->depth InputOutput 
+                           visual
+                           10248 ; CWBorderPixel | CWColormap | CWEventMask
+                           XSetWindowAttributes)))
             (XSelectInput display window 32769) ; ExposureMask
             (XStoreName display window title)
             (XMapWindow display window)

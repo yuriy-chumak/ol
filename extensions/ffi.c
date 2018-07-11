@@ -936,7 +936,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TVPTR + FFT_PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
-			if (reftype(arg) == TVPTR) // deprecated: single vptr value
+			if (reftype(arg) == TVPTR || reftype(arg) == TBVEC) // single vptr value or bytevector
 				args[i] = (word) &car(arg);
 			else {
 				int c = llen(arg);
