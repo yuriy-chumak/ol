@@ -7,12 +7,10 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
-; draw
+; draw loop
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)))
 
-; wait
-; Close the window by cross
-;  or press 'Q' key to exit
+; wait for window closing
 (gl:finish)
-(print "bye-bye.")
+
