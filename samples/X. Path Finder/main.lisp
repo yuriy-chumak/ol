@@ -95,8 +95,7 @@
    (glTexCoord2f (+ u 1/8)    v)
    (glVertex2f (+ x 1) y))
 
-
-(define Context (gl:Create "Pathfinder sample"))
+(gl:set-window-title "Pathfinder sample")
 (import (OpenGL EXT bgra))
 
 
@@ -222,12 +221,7 @@
 ; окно - рисовалка
 ; ---------------------------------------------------------------------------
 
-(gl:run
-   Context
-
 ; init
-(lambda ()
-
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity) ; тут надо зеркально отразить карту сверху вниз
    (glOrtho -1 (+ WIDTH 1) (+ HEIGHT 3) -3  -1 1)
@@ -250,11 +244,10 @@
       0 GL_BGR GL_UNSIGNED_BYTE (file->vector "tileset.rgb"))
 
    ;(glEnable GL_BLEND)
-
-   (list #empty))
+(gl:set-userdata #empty)
 
 ; draw
-(lambda (userdata)
+(gl:set-renderer (lambda (userdata)
 (let*((x (get userdata 'x 14))
       (y (get userdata 'y 1))
       (old-time (get userdata 'old-time 0)))
@@ -369,6 +362,8 @@
             userdata)
             ; send new
          'old-time new-time))))))
+
+(gl:finish)
 
    ; пол (как травку)
 ;   (BindTexture grass-texture)
