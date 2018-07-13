@@ -40,7 +40,9 @@
  */
 
 #define __OLVM_NAME__ "OL"
-#define __OLVM_VERSION__ "1.2"
+#ifndef __OLVM_VERSION__
+#define __OLVM_VERSION__ "1.3 alpha"
+#endif
 #ifndef lint
 __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #endif//lint
@@ -67,9 +69,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #	endif
 #endif
 
-#if	HAS_CONFIG
+//#if	HAS_CONFIG
 #include "olvm.h"
-#endif
+//#endif
 
 // additional gcc staff
 // http://www.pixelbeat.org/programming/gcc/static_assert.html
@@ -243,8 +245,14 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
-#define _POSIX_SOURCE // enable functionality from the POSIX.1 standard (IEEE Standard 1003.1),
-                      // as well as all of the ISO C facilities.
+// http://man7.org/linux/man-pages/man7/feature_test_macros.7.html
+//#define _POSIX_C_SOURCE // Obsolette. Enables functionality from the POSIX.1 standard (IEEE Standard 1003.1),
+//                      //            as well as all of the ISO C facilities.
+
+#define _XOPEN_SOURCE 600 // (Since glibc 2.2) The value 600 or greater additionally
+                  // exposes definitions for SUSv3 (UNIX 03; i.e., the
+                  // POSIX.1-2001 base specification plus the XSI extension)
+                  // and C99 definitions.
 
 // http://man7.org/linux/man-pages/man7/posixoptions.7.html
 #define _BSD_SOURCE 1
@@ -260,6 +268,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 //  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
 #define _DEFAULT_SOURCE
 
+#include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #include <stdint.h>
 
 #ifdef __linux__
@@ -305,7 +314,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 //	все остальное - макросы или функции/процедуры
 
 #include <assert.h>
-#include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -3177,14 +3185,15 @@ loop:;
 			}
 			else
 			if (is_string(a)) {
+				/* temporary removed (up to check for which OSes it's work)
 				if (b == ITRUE) {
 					if (lstat((char*) &car (a), &st) < 0)
 						break;
 				}
-				else {
+				else {*/
 					if (stat((char*) &car (a), &st) < 0)
 						break;
-				}
+				//}
 			}
 			else
 				break;

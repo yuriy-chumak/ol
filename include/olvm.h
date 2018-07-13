@@ -104,7 +104,7 @@ typedef ssize_t (read_t)(int fd, void *buf, size_t count, void* userdata);
 read_t* OL_set_read(struct ol_t* ol, read_t read);
 
 // handle write
-typedef size_t (write_t)(int fd, void *buf, size_t count, void* userdata);
+typedef ssize_t (write_t)(int fd, void *buf, size_t count, void* userdata);
 write_t* OL_set_write(struct ol_t* ol, write_t read);
 
 // =================================================
@@ -138,13 +138,13 @@ typedef struct ol_t OL;
 //                        please uncomment corresponded #define macro
 //                                  (doesn't increase speed for real)
 
-//#define CAR_CHECK(arg) 1
-//#define CDR_CHECK(arg) 1
+#define CAR_CHECK(arg) 1
+#define CDR_CHECK(arg) 1
 
-//#define UVTOI_CHECK(v) 1
-//#define SVTOI_CHECK(v) 1
+#define UVTOI_CHECK(v) 1
+#define SVTOI_CHECK(v) 1
 
-//#define VMRAW_CHECK 0
+#define VMRAW_CHECK 0
 
 // comment this to enable overflow checking in binary program decoder
 //#define OVERFLOW_KILLS(n)
@@ -158,11 +158,11 @@ typedef struct ol_t OL;
 // #define SYSCALL_SYSINFO 0
 // #define SYSCALL_GETRUSAGE 0
 
-// #define HAS_UNSAFES 0
-// #define HAS_SANDBOX 0
+#define HAS_UNSAFES 0
+#define HAS_SANDBOX 0
 
-// #define OLVM_FFI 0
-// #define OLVM_CALLABLES 0
+#define OLVM_FFI 0
+#define OLVM_CALLABLES 0
 
 //-- end of header
 #ifdef __cplusplus
