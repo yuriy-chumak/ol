@@ -15,6 +15,8 @@ It implements an extended subset of [R<sup>5</sup>RS](http://www.schemers.org/Do
 ### Downloads
 Release **1.2** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
 
+Preparing version **2.0** which moving to r7rs with changes in ffi and embed.
+
 
 ### Already tested platforms
 - [x] x86: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7.
@@ -58,6 +60,9 @@ You can immediately try Otus Lisp in the provided terminal on the left of this p
 
 
 ### Development status <a name="news"></a>
+* 2018
+  * a lot of changes, full list can be obtained [on github](https://github.com/yuriy-chumak/ol/commits/master).
+
 * Thr 28 Dec 2017
   * prepared 1.2 build!
   * added NewtonSetSolverModel
