@@ -69,9 +69,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #	endif
 #endif
 
-//#if	HAS_CONFIG
+#if	HAS_CONFIG
 #include "olvm.h"
-//#endif
+#endif
 
 // additional gcc staff
 // http://www.pixelbeat.org/programming/gcc/static_assert.html
