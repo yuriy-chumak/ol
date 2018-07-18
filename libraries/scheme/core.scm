@@ -1155,20 +1155,30 @@
       ; experimental syntax for map for variable count of arguments
       ;  can be changed to map used (apply f (map car .)) and (map cdr .))
       ; todo: test and change map to this version
-      (define map (case-lambda
-         ((f a)     (let loop ((a a))
-                        (if (null? a)
-                           #null
-                           (cons (f (car a)) (loop (cdr a))))))
-         ((f a b)   (let loop ((a a)(b b))
+      (define map
+         (let ((map1 (lambda (f a)
+                        (let loop ((a a))
+                           (if (null? a)
+                              #null
+                              (cons (f (car a)) (loop (cdr a))))))))
+
+      (case-lambda
+         ((f a)      (map1 f a))
+         ((f a b)    (let loop ((a a)(b b)) ; map2
                         (if (null? a)
                            #null
                            (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
-         ((f a b c) (let loop ((a a)(b b)(c c))
-                        (if (null? a)
+         ((f a b . c) ; mapN
+                     (let loop ((args (cons a (cons b c))))
+                        (if (null? (car args)) ; закончились
                            #null
-                           (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
-         (() #f)))
+                           (cons (apply f (map1 car args)) (loop (map1 cdr args))))))
+
+;         ((f a b c) (let loop ((a a)(b b)(c c))
+;                        (if (null? a)
+;                           #null
+;                           (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
+         (() #f))))
 
        ; library procedure:  (for-each proc list1 list2 ...)
        ; library procedure:  (force promise)
