@@ -333,7 +333,7 @@
       glCreateProgram ;GLuint (void)
       glCreateShader ;GLuint (GLenum type)
       ;glCullFace ;void (GLenum mode)
-      ;glDeleteBuffers ;void (GLsizei n, const GLuint *buffers)
+      glDeleteBuffers ;void (GLsizei n, const GLuint *buffers)
       ;glDeleteFramebuffers ;void (GLsizei n, const GLuint *framebuffers)
       ;glDeleteProgram ;void (GLuint program)
       ;glDeleteRenderbuffers ;void (GLsizei n, const GLuint *renderbuffers)
@@ -833,7 +833,7 @@
 (define glCreateProgram (ES GLuint "glCreateProgram"))
 (define glCreateShader (ES GLuint "glCreateShader" GLenum))
 ;GL_APICALL void GL_APIENTRY glCullFace (GLenum mode);
-;GL_APICALL void GL_APIENTRY glDeleteBuffers (GLsizei n, const GLuint *buffers);
+(define glDeleteBuffers (ES GLvoid "glDeleteBuffers" GLsizei GLuint*))
 ;GL_APICALL void GL_APIENTRY glDeleteFramebuffers (GLsizei n, const GLuint *framebuffers);
 ;GL_APICALL void GL_APIENTRY glDeleteProgram (GLuint program);
 ;GL_APICALL void GL_APIENTRY glDeleteRenderbuffers (GLsizei n, const GLuint *renderbuffers);
