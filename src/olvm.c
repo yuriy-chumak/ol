@@ -167,8 +167,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 // check the libuv https://github.com/libuv/libuv
 
-// pinned objects - если это будут просто какие-то равки, то можно их размещать ДО основной памяти,
-//	при этом основную память при переполнении pinned размера можно сдвигать вверх.
+// Несколько замечаний по WIN32::ThreadProc
+//  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
+//  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
 
 // todo: support ALL of this OS
 // http://sourceforge.net/p/predef/wiki/OperatingSystems/
@@ -494,7 +495,6 @@ void yield()
      defined(__NetBSD__) ||\
      defined(__OpenBSD__) ||\
      defined(__DragonFly__)
-
 	sched_yield();
 # endif
 # ifdef _WIN32
@@ -1507,7 +1507,7 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
  */
 struct ol_t
 {
-	struct heap_t heap; // MUST be first member
+	struct heap_t heap; // MUST be first(!)
 	word max_heap_size; // max heap size in MB
 
 	// вызвать GC если в памяти мало места (в словах)
@@ -1553,13 +1553,14 @@ struct ol_t
 
 // работа с numeric value типами
 #ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v) assert (is_value(v) && valuetype(v) == TFIXP);
+#define UVTOI_CHECK(v)  assert (is_value(v) && thetype(v) == TFIXP);
 #endif
-// todo: sv2i
+// todo: uv2i
 #define uvtoi(v)  (int_t)({ word x1 = (word)(v); UVTOI_CHECK(x1); (word) (x1 >> IPOS); })
 #define itouv(i)  (word) ({ word x2 = (word)(i);                  (word) (x2 << IPOS) | 2; })
 		// (((struct value_t*)(&v))->payload);
 
+// todo: sv2i
 // todo: add overflow checking...
 #ifndef SVTOI_CHECK
 #define SVTOI_CHECK(v) assert (is_value(v) && (valuetype(v) == TFIXP)); // valuetype makes TFIXP from TFIXP and TFIXN
@@ -1573,6 +1574,7 @@ struct ol_t
 	})
 //		(x & 0x80) ? -y : y;
 
+// todo: i2sv
 #define itosv(i)  (word)({ int_t x4 = (int_t)(i);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2; })
 // todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 
@@ -1639,7 +1641,7 @@ double ol2d(word arg) {
 		return -ol2d_convert(arg);
 	case TRATIONAL:
 		return ol2d(car(arg)) / ol2d(cdr(arg));
-	case TCOMPLEX:
+	case TCOMPLEX: // only real part of complex number
 		return ol2d(car(arg));
 	case TINEXACT:
 		return *(double*)&car(arg);
@@ -1841,10 +1843,6 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 
 	return 1;
 }
-
-// Несколько замечаний по WIN32::ThreadProc
-//  http://msdn.microsoft.com/en-us/library/windows/desktop/ms686736(v=vs.85).aspx
-//  The return value should never be set to STILL_ACTIVE (259), as noted in GetExitCodeThread.
 
 static
 word get(word *ff, word key, word def, jmp_buf fail)
