@@ -381,7 +381,7 @@
       ;glGetTexParameteriv ;void (GLenum target, GLenum pname, GLint *params)
       ;glGetUniformfv ;void (GLuint program, GLint location, GLfloat *params)
       ;glGetUniformiv ;void (GLuint program, GLint location, GLint *params)
-      ;glGetUniformLocation ;GLint (GLuint program, const GLchar *name)
+      glGetUniformLocation ;GLint (GLuint program, const GLchar *name)
       ;glGetVertexAttribfv ;void (GLuint index, GLenum pname, GLfloat *params)
       ;glGetVertexAttribiv ;void (GLuint index, GLenum pname, GLint *params)
       ;glGetVertexAttribPointerv ;void (GLuint index, GLenum pname, void **pointer)
@@ -434,7 +434,7 @@
       ;glUniform4iv ;void (GLint location, GLsizei count, const GLint *value)
       ;glUniformMatrix2fv ;void (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
       ;glUniformMatrix3fv ;void (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-      ;glUniformMatrix4fv ;void (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+      glUniformMatrix4fv ;void (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
       glUseProgram ;void (GLuint program)
       ;glValidateProgram ;void (GLuint program)
       ;glVertexAttrib1f ;void (GLuint index, GLfloat x)
@@ -881,7 +881,7 @@
 ;GL_APICALL void GL_APIENTRY glGetTexParameteriv (GLenum target, GLenum pname, GLint *params);
 ;GL_APICALL void GL_APIENTRY glGetUniformfv (GLuint program, GLint location, GLfloat *params);
 ;GL_APICALL void GL_APIENTRY glGetUniformiv (GLuint program, GLint location, GLint *params);
-;GL_APICALL GLint GL_APIENTRY glGetUniformLocation (GLuint program, const GLchar *name);
+(define glGetUniformLocation (ES GLint "glGetUniformLocation" GLuint type-string))
 ;GL_APICALL void GL_APIENTRY glGetVertexAttribfv (GLuint index, GLenum pname, GLfloat *params);
 ;GL_APICALL void GL_APIENTRY glGetVertexAttribiv (GLuint index, GLenum pname, GLint *params);
 ;GL_APICALL void GL_APIENTRY glGetVertexAttribPointerv (GLuint index, GLenum pname, void **pointer);
@@ -936,7 +936,7 @@
 ;GL_APICALL void GL_APIENTRY glUniform4iv (GLint location, GLsizei count, const GLint *value);
 ;GL_APICALL void GL_APIENTRY glUniformMatrix2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 ;GL_APICALL void GL_APIENTRY glUniformMatrix3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-;GL_APICALL void GL_APIENTRY glUniformMatrix4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+(define glUniformMatrix4fv (ES GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLfloat*))
 (define glUseProgram (ES GLvoid "glUseProgram" GLuint))
 ;GL_APICALL void GL_APIENTRY glValidateProgram (GLuint program);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib1f (GLuint index, GLfloat x);
