@@ -147,35 +147,16 @@ clean:
 	rm -rf ./config
 
 install: ol repl
-	# install executables:
+	# install Ol executable to $(DESTDIR)$(PREFIX)/bin:
 	@echo Installing main binary...
 	install -d $(DESTDIR)$(PREFIX)/bin
-	install -m 755 ol $(DESTDIR)$(PREFIX)/bin/ol
-	# install binary REPL:
+	install -m755 ol $(DESTDIR)$(PREFIX)/bin/ol
+	# install Ol binary REPL to $(DESTDIR)$(PREFIX)/lib/ol:
 	@echo Installing REPL...
 	install -d $(DESTDIR)$(PREFIX)/lib/ol
-	install -m 644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
-	# basic libraries:
-	@echo Installing common libraries...
-	@for F in r5rs lang libraries/otus libraries/owl libraries/lib libraries/etc libraries/scheme ;do \
-	   echo installing $$F libraries... ;\
-	   install -d $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
-	   install -D -m 644 $$F/* $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
-	done
-	@echo Installing OpenGL libraries...
-	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
-	install -D -m 644 libraries/OpenGL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenGL
-	@for F in libraries/OpenGL/ARB libraries/OpenGL/EXT ;do \
-	   echo installing $$F libraries... ;\
-	   install -d $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
-	   install -D -m 644 $$F/* $(DESTDIR)$(PREFIX)/lib/ol/$$F ;\
-	done
-	@echo Installing OpenCL libraries...
-	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
-	install -D -m 644 libraries/OpenCL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenCL
-	@echo Installing OpenAL libraries...
-	install -d $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
-	install -D -m 644 libraries/OpenAL/*.scm $(DESTDIR)$(PREFIX)/lib/ol/OpenAL
+	install -m644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
+	# and libraries to $(DESTDIR)$(PREFIX)/lib/ol:
+	find libraries -type f -exec bash -c 'install -Dm644 "$$0" "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
 
 uninstall:
 	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
