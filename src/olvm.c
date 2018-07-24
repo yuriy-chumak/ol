@@ -3671,7 +3671,7 @@ loop:;
 				#ifdef __unix__
 					int child = fork();
 					if (child == 0) {
-						E("forking %s", command);
+						D("forking %s", command);
 						if (is_pair (c)) {
 							const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
 							for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
@@ -3694,7 +3694,7 @@ loop:;
 						}
 
 						exit(execv(command, args));
-						assert(0); // should not be reached
+						assert (0); // should not be reached
 					}
 					else if (child > 0)
 						result = (word*)ITRUE;
