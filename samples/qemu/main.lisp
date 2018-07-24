@@ -252,13 +252,14 @@
    (loop ff)))))
 
 ; ---
-(hide-cursor)
+(hide-cursor) (cls)
 (interact 'code 'show)
 (interact 'registers 'show)
 
 (define progressbar "-\\|/")
 (let loop ((progress 0))
-   (locate 1 20) (set-color GREY) (print (string (ref progressbar (mod progress (size progressbar)))) " ")
+   (locate 58 1) (set-color GREY) (display (string (ref progressbar (mod progress (size progressbar)))))
+   (locate 1 20) (display " ")
    (cond
       ; https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
       ((key-pressed #xffc3) ; F6
