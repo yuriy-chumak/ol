@@ -1991,6 +1991,18 @@ apply:;
 		if (--ticker < 0) {
 			// время потока вышло, переключим на следующий
 			ticker = TICKS;
+
+#			ifdef __EMSCRIPTEN__
+			{
+				static int cntr = 100; // magic number for counter
+				if (cntr-- == 0) {
+					emscripten_sleep(1);
+					cntr = 100;
+				}
+			}
+#			endif
+
+
 			if (R[0] != IFALSE) { // if mcp present:
 				// save vm state and enter mcp cont at R0!
 				bank = 0;
