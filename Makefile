@@ -366,6 +366,7 @@ tests: \
       tests/por-terminate.scm\
       tests/queue-rand.scm\
       tests/record.scm\
+      tests/regex.scm\
       tests/rlist-rand.scm\
       tests/seven.scm\
       tests/share.scm\
