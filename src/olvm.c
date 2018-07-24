@@ -3693,7 +3693,7 @@ loop:;
 							*arg = 0;
 						}
 
-						exit(execve(command, args, 0));
+						exit(execv(command, args));
 						assert(0); // should not be reached
 					}
 					else if (child > 0)
