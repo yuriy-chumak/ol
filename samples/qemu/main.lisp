@@ -148,6 +148,9 @@
             (sender msg envelope)) ; TBD: msg is '(message-to output-parser)
          ;(print "msg: " msg)
          ;(print "(cdr msg): " (cdr msg))
+
+         ; it's good idea to free the input buffer...
+         (syscall 0 (car Out) 1024 #f)
          (unless (null? (cdr msg)) (begin
             ;(print "sending " msg)
             (for-each (lambda (x) (display-to (cdr In) x)) (cdr msg))
