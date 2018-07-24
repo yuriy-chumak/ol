@@ -11,6 +11,9 @@
 (syscall 1017 (c-string "killall qemu-system-i386") #f #f)
 (syscall 1017 (c-string "killall gdb") #f #f)
 
+(define (hide-cursor) (display "\x1B;[?25l"))
+(define (show-cursor) (display "\x1B;[?25h"))
+
 ;; #qemu-img create -f qcow2 win7.qcow2.hd 3G
 ;; qemu-system-i386 -enable-kvm -m 512 -cdrom /home/uri/Downloads/W7-Super-Lite-x86-Install-2017.iso -boot d -monitor stdio win7.qcow2.hd -s -S
 
@@ -30,6 +33,8 @@
       ((chars (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\newline))))))
        (skip  (get-imm #\newline))) ;; <- note that this won't match if line ends to eof
       chars))
+(define get-whitespaces
+   (get-greedy* (get-byte-if (lambda (x) (has? (list #\space #\tab) x)))))
 
 (define ff-digit-values
    (list->ff
@@ -90,16 +95,41 @@
 (define gdb-si-answer-parser
    (let-parses((ip (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\space))))))
                (skip (get-word " in " #t))
-               (skip get-rest-of-line)
-               (prompt gdb-prompt-parser))
+               (skip get-rest-of-line))
+;               (prompt gdb-prompt-parser))
       ip))
 (define gdb-p-x-answer-parser
    (let-parses((skip (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\space))))))
                (skip (get-word " = 0x" #t))
-               (value get-rest-of-line)
-               (prompt gdb-prompt-parser))
+               (value get-rest-of-line))
+;               (prompt gdb-prompt-parser))
       value))
 
+(define gdb-x-i-answer-parser
+   (let-parses((lines (get-greedy+
+                  (let-parses((skip (get-any-of (get-word "=> " #t)
+                                                (get-word "   " #t)))
+                              (skip get-whitespaces)
+                              (address (get-greedy+ (get-byte-if (lambda (x) (not (eq? x #\:))))))
+                              (skip (get-imm #\:))
+                              (skip get-whitespaces)
+                              (instruction get-rest-of-line))
+                     (cons (bytes->number (cddr address) 16) instruction)))))
+;               (prompt gdb-prompt-parser))
+      lines))
+
+(define gdb-x-x-answer-parser
+   (let-parses((lines (get-greedy+
+                  (let-parses((skip (get-any-of (get-word "=> " #t)
+                                                (get-word "   " #t)))
+                              (skip get-whitespaces)
+                              (address (get-greedy+ (get-byte-if (lambda (x) (not (eq? x #\:))))))
+                              (skip (get-imm #\:))
+                              (skip get-whitespaces)
+                              (instruction get-rest-of-line))
+                     (cons (bytes->number (cddr address) 16) instruction)))))
+;               (prompt gdb-prompt-parser))
+      lines))
 
 
 ; =============================================================================================
@@ -108,7 +138,6 @@
 (fork-server name (lambda ()
    (define In (syscall 22 #f #f #f)) ; create input/output pipes: '(read-pipe . write-pipe)
    (define Out (syscall 22 #f #f #f))
-   (print In ", " Out)
    (syscall 59 (c-string (car arguments)) ; (syscall:fork)
       (map c-string arguments)
       (list (car In) (cdr Out) stderr))
@@ -151,14 +180,17 @@
 (define ip (bytes->string
 (gdb gdb-target-connected-parser "target remote localhost:1234")))
 
-(print "Current IP is " ip)
-(print "Press [Ctrl+C]...")
+(print "Machine started with IP " ip)
 
-; let's do few steps to leave the initial "bios" zeros at 0xfff0
-;; (let loop ()
-;;    (let ((ip (gdb gdb-si-answer-parser "si")))
-;;       (if (< (bytes->number (cddr ip) 16) #x00010000)
-;;          (loop))))
+(if (string-eq? ip "0x0000fff0") (begin
+   (display "Executing bootstrap, please wait...")
+   ; let's do few steps to leave the initial "bios" zeros at 0xfff0
+   (let loop ()
+      (let ((ip (gdb gdb-si-answer-parser "si")))
+         (if (< (bytes->number (cddr ip) 16) #x00010000)
+            (loop))))
+   (print "Ok.")))
+(print "Your EQMU-GDB session ready to work")
 ; Looks like our machine ready to start:
 
 ; окошко с регистрами. обновляет, добывает, рисует
@@ -170,6 +202,11 @@
          (ebx (bytes->number (gdb gdb-p-x-answer-parser "p/x $ebx") 16))
          (ecx (bytes->number (gdb gdb-p-x-answer-parser "p/x $ecx") 16))
          (edx (bytes->number (gdb gdb-p-x-answer-parser "p/x $edx") 16))
+         (esp (bytes->number (gdb gdb-p-x-answer-parser "p/x $esp") 16))
+         (ebp (bytes->number (gdb gdb-p-x-answer-parser "p/x $ebp") 16))
+         (esi (bytes->number (gdb gdb-p-x-answer-parser "p/x $esi") 16))
+         (edi (bytes->number (gdb gdb-p-x-answer-parser "p/x $edi") 16))
+         (eip (bytes->number (gdb gdb-p-x-answer-parser "p/x $eip") 16))
          (show (lambda (x y reg value)
             (locate x y)
             (set-color DARKGREY)
@@ -181,31 +218,76 @@
       (show 60 2 'ebx ebx)
       (show 60 3 'ecx ecx)
       (show 60 4 'edx edx)
+      (show 60 5 'esp esp)
+      (show 60 6 'ebp ebp)
+      (show 60 7 'esi esi)
+      (show 60 8 'edi edi)
+
+      (show 60 10 'eip eip)
 
       (mail sender 'ok)
       (loop (fold (lambda (ff v)
                      (put ff (car v) (cdr v)))
                ff `(
-                  (eax . ,eax)
-                  (ebx . ,ebx)
-                  (ecx . ,ecx)
-                  (edx . ,edx)
+                  (eax . ,eax) (ebx . ,ebx) (ecx . ,ecx) (edx . ,edx)
+                  (esp . ,esp) (ebp . ,ebp) (esi . ,esi) (edi . ,edi)
+                  (eip . ,eip)
                ))))))))
 
-; numeric utils
+(fork-server 'code (lambda ()
+(let loop ((ff #empty))
+(let*((envelope (wait-mail))
+      (sender msg envelope))
+   (let ((code (gdb gdb-x-i-answer-parser "x/11i $pc")))
+      (locate 1 1) (set-color GREY)
+      (for-each (lambda (ai)
+            (display "                                                           \x1B;[1000D")
+            (print "0x" ($reg->string (car ai)) "   " (bytes->string (cdr ai)))
+            #true)
+         code))
+   (mail sender 'ok)
+   (loop ff)))))
+
 ; ---
+(hide-cursor)
+(interact 'code 'show)
+(interact 'registers 'show)
 
-(let loop ()
-   (interact 'registers 'show)
+(define progressbar "-\\|/")
+(let loop ((progress 0))
+   (locate 1 20) (set-color GREY) (print (string (ref progressbar (mod progress (size progressbar)))) " ")
+   (cond
+      ; https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
+      ((key-pressed #xffc3) ; F6
+         (gdb get-rest-of-line "si")
+         (interact 'code 'show)
+         (interact 'registers 'show))
+      ((key-pressed #xffc4) ; F7
+         (let ((code (gdb gdb-x-i-answer-parser "x/2i $pc")))
+            ;(caar code) <= current ip
+            ;(caadr code) <= next ip
+            (print "  " ($reg->string (caadr code)))
+            (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
+         (gdb get-rest-of-line "c") ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
+         (interact 'code 'show)
+         (interact 'registers 'show))
 
-;   (locate 1 60) (for-each display (list
-;      "eax " (bytes->string ))
+      ; ...
+      ((key-pressed #x002f) ; XK_slash
+         (locate 1 20) (set-color GREY) (display "> /")
+         (show-cursor)
+         (let ((r (read)))
+            #true))
+      ;; ((key-pressed #x0020) ; XK_space
+         ;; (let ((answer (gdb gdb-x-i-answer-parser "x/7i $pc")))
+         ;;    (cls)
+         ;;    (locate 1 1) (set-color GREY)
+         ;;    (for-each (lambda (ai)
+         ;;          (print "0x" ($reg->string (car ai)) "   " (bytes->string (cdr ai)))
+         ;;          #true)
+         ;;       answer))
+         ;;    (interact 'registers 'show))
 
-
-   (locate 1 20) (set-color GREY) (display "> ")
-   (let ((r (read)))
-      (cond
-         ((eq? r 's)
-            ;(gdb get-rest-of-line "si")
-            (print "Ok"))))
-   (loop))
+      (else
+         (yield)))
+   (loop (+ 1 progress))))
