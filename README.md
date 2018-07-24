@@ -76,10 +76,8 @@ openSUSE Tumbleweed (x86, amd64),
 Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64) can be found at
 [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
 
-Installation packages for Windows (x86, amd64) can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcment page.
-
-Precompiled binaries for Android (arm64-v8a, armeabi, armeabi-v7a,
-mips, mips64, x86, x86_64) can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcment page.
+Installation packages for Windows (x86, amd64) and for Android (arm64-v8a, armeabi, armeabi-v7a,
+mips, mips64, x86, x86_64) can be found at the [![Releases](https://img.shields.io/github/downloads/yuriy-chumak/ol/total.svg)](https://github.com/yuriy-chumak/ol/releases) announcment page.
 
 Precompiled binary for Odroid (Ubuntu 14.04, armv7l) on the way.
 
