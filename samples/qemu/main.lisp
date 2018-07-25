@@ -116,6 +116,19 @@
 ;               (prompt gdb-prompt-parser))
       value))
 
+;; ;Program received signal SIGINT, Interrupt.
+;; ;0x0000d5b4 in ?? ()
+;; (define gdb-ctrl-c-answer-parser
+;;    (let-parses((skip get-rest-of-line)
+;;                (skip (get-word "0x" #t))
+;;                ($pc get-hex)
+;;                (skip get-rest-of-line))
+;; ;               (prompt gdb-prompt-parser))
+;;       $pc))
+(define gdb-ctrl-c-answer-parser
+   (get-word "Quit" #t))
+
+
 ; disassembler
 (define gdb-x-i-answer-parser
    (let-parses((lines (get-greedy+
@@ -166,21 +179,16 @@
          ; it's good idea to free the input buffer
          (syscall 0 (car Out) 1024 #f) ; 1024 would be enought, i think...
 
-;         (if (equal? msg '(SIGINT)) ; SIGINT = 2
-;            (syscall 62 Pid 2 #f)
-
          (let*((parser command
                   (if (string? (car msg))
                      (values #false msg)
                      (values (car msg) (cdr msg)))))
-            ;(locate 40 18) (print "parser: " parser)
-            ;(locate 40 19) (print "command: " command)
-         (unless (null? command) (begin
-            ;(print "sending " msg)
-            (for-each (lambda (x) (display-to (cdr In) x)) command)
-            (display-to (cdr In) "\n")))
+            (unless (null? command) 
+               (if (equal? command '(stop))
+                  (syscall 62 Pid 2 #f) ; SIGINT
+                  (for-each (lambda (x) (display-to (cdr In) x)) (append command '("\n")))))
          
-         (mail sender (if parser (car (fd->exp-stream (car Out) "" (car msg) syntax-fail)) #true))))
+            (mail sender (if parser (car (fd->exp-stream (car Out) "" (car msg) syntax-fail)) #true))))
       (loop)))))
 
 ; qemu instance
@@ -309,7 +317,10 @@
                  (key-pressed #xffc3) ; F6
                  (key-pressed #xffc4) ; F7
                  (key-pressed #xffc5)); F8
-               (gdb gdb-prompt-parser "monitor stop")
+               ;(gdb gdb-prompt-parser "monitor stop")
+               (gdb gdb-ctrl-c-answer-parser 'stop)
+               ;(read)
+
                ; и выполним одну команду, чтобы gdb засинхронизировался с qemu
                (gdb gdb-si-answer-parser "si")
                (main #true #true 0))
@@ -336,7 +347,8 @@
                   ;(caadr code) <= next ip
                   (print "  " ($reg->string (caadr code)))
                   (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
-               (gdb get-rest-of-line "c") ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
+               (print (bytes->string
+               (gdb get-rest-of-line "continue"))) ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
 
                (main #true interactive 0))
 
