@@ -2144,6 +2144,8 @@ mainloop:;
 	#		define SYSCALL_OPEN 2
 	#		define SYSCALL_CLOSE 3
 	#		define SYSCALL_STAT 4 // same for fstat and lstat
+	#		define SYSCALL_LSEEK 8
+	#		define SYSCALL_FSYNC 74
 	#		define SYSCALL_UNLINK 87
 	// 5, 6 - free
 	//#		define SYSCALL_POLL 7
@@ -3229,6 +3231,43 @@ loop:;
 			break;
 		}
 
+		/*! \subsection lseek
+		 * \brief 4: (lseek port offset whence) -> offset|#f
+		 *
+		 * Reposition read/write file offset
+		 *
+		 * \param port
+		 * \param offset
+		 * \param whence
+		 *
+		 * \return resulting offset location as measured in bytes
+		 *         from the beginning of the file
+		 *
+		 * http://man7.org/linux/man-pages/man2/lseek.2.html
+		 */
+		case SYSCALL_LSEEK: {
+			if (!is_port(a))
+				break;
+				
+			off_t offset = lseek(port (a), value(b), value(c));
+			if (offset < 0)
+				break;
+
+			result = itoun(offset);
+			break;
+		}
+
+		case SYSCALL_FSYNC: {
+			if (!is_port(a))
+				break;
+				
+			if (fsync(port (a)) < 0)
+				break;
+
+			result = (word*)ITRUE;
+			break;
+		}
+
 		/*! \subsection unlink
 		 * \brief 87: (unlink path) -> #t|#f
 		 *
@@ -3697,7 +3736,7 @@ loop:;
 						assert (0); // should not be reached
 					}
 					else if (child > 0)
-						result = (word*)ITRUE;
+						result = (word*) itoun(child);
 				#endif
 				#ifdef _WIN32
 					STARTUPINFO si;
