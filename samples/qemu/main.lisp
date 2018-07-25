@@ -14,6 +14,7 @@
 (define (hide-cursor) (display "\x1B;[?25l"))
 (define (show-cursor) (display "\x1B;[?25h"))
 
+,load "config.lisp"
 ;; #qemu-img create -f qcow2 win7.qcow2.hd 3G
 ;; qemu-system-i386 -enable-kvm -m 512 -cdrom /home/uri/Downloads/W7-Super-Lite-x86-Install-2017.iso -boot d -monitor stdio win7.qcow2.hd -s -S
 
@@ -225,19 +226,60 @@
 
 ,load "registers.lisp"
 
+; helper functions:
+
+
+; code window
 (fork-server 'code (lambda ()
 (let loop ((ff #empty))
 (let*((envelope (wait-mail))
       (sender msg envelope))
-   (let ((code (gdb gdb-x-i-answer-parser "x/11i $eip")))
+   (locate 1 13)
+   (let*(($eip (bytes->number (gdb gdb-p-x-answer-parser "p/x $pc") 16))
+         (reuse-pc (let loop ((found #false) (n 0) (lines (get ff 'code '())))
+                        (cond
+                           ((null? lines)
+                              found)
+                           (found
+                              found)
+                           (else
+                              ;; (print $eip ": " (caar lines))
+                              (loop (if (eq? $eip (caar lines)) n) (+ n 1) (cdr lines))))))
+         (code (gdb gdb-x-i-answer-parser
+                  "x/8i "
+                  (if reuse-pc
+                     ; ok, нашел
+                     (string-append "0x" ($reg->string (get ff 'eip $eip)))
+                     ; else
+                     "$pc"))))
       (locate 1 1) (set-color GREY)
       (for-each (lambda (ai)
             (display "                                                           \x1B;[1000D")
-            (print "0x" ($reg->string (car ai)) "   " (bytes->string (cdr ai)))
+            ; address 
+            (display "0x")
+            (display ($reg->string (car ai)))
+            (display (if (eq? $eip (car ai)) " * " "   "))
+            
+            (display (bytes->string (cdr ai)))
+            (print)
             #true)
-         code))
-   (mail sender 'ok)
-   (loop ff)))))
+         code)
+      (mail sender 'ok)
+
+      ;(print code)
+      (let ((pc (cond
+                  ; такой ip у нас не числится
+                  ((not reuse-pc)
+                     $eip)
+                  ; мы слишком далеко зашли, надо скорольнуться
+                  ((> reuse-pc (- (length code) 3))
+                     (caadr code))
+                  ; ну или ничего не менять
+                  (else
+                     (get ff 'eip $eip)))))
+         (loop (put
+            (put ff 'eip pc)
+            'code code))))))))
 
 ; ---
 ; почистим окно
@@ -307,6 +349,16 @@
                (gdb "monitor cont")
                (main #false #false #false)) ; уходим в режим выполнения машины
 
+            ; Quit
+            ((key-pressed #x0051) ; Q
+               (locate 1 20) (set-color GREEN) (display "> quitting...") (set-color GREY)
+               (qemu "quit") (gdb "quit")
+
+               (print "ok.")
+               (show-cursor)
+               (syscall 1017 (c-string "stty echo") #f #f)
+               (halt 1)) ; for now - just exit
+
             ; ручные команды
             ((key-pressed #xff0d) ; XK_Return
                (locate 1 20) (set-color GREEN) (display "> ") (set-color GREY)
@@ -319,9 +371,6 @@
                (locate 3 20)
                (show-cursor)
                (syscall 1017 (c-string "stty echo") #f #f)
-
-               (qemu "quit") (gdb "quit")
-               (halt 1) ; for now - just exit
 
                (let ((command (read)))
                   (cond
@@ -348,3 +397,15 @@
             (else
                (yield)
                (main #f interactive (+ 1 progress)))))))
+
+; прикол в экране загрузки WinXP: пустой цикл.
+;; 0x806f1d50 * sub    $0x1,%eax                            | $eax 00008987
+;; 0x806f1d53   jne    0x806f1d50                             $ebx 00000000
+;; 0x806f1d55   mov    0x806fc0d0,%eax                        $ecx ff800000
+;; 0x806f1d5a   call   *%eax                                  $edx 00000000
+;; 0x806f1d5c   sub    %esi,%eax                              $esp f9e631fc
+;; 0x806f1d5e   sbb    %ebx,%edx                              $ebp f9e6320c
+;; 0x806f1d60   je     0x806f1d67                             $esi 00f05998
+;; 0x806f1d62   mov    $0x7fffffff,%eax                       $edi 00000003
+
+;;                                                            $eip 806f1d50
