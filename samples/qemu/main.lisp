@@ -138,9 +138,11 @@
 (fork-server name (lambda ()
    (define In (syscall 22 #f #f #f)) ; create input/output pipes: '(read-pipe . write-pipe)
    (define Out (syscall 22 #f #f #f))
-   (syscall 59 (c-string (car arguments)) ; (syscall:fork)
-      (map c-string arguments)
-      (list (car In) (cdr Out) stderr))
+   (define Pid
+      (syscall 59 (c-string (car arguments)) ; (syscall:fork)
+         (map c-string arguments)
+         (list (car In) (cdr Out) stderr)))
+   (print "forked " name " with id " Pid)
 
    ; main loop:
    (let loop ()
@@ -149,14 +151,24 @@
          ;(print "msg: " msg)
          ;(print "(cdr msg): " (cdr msg))
 
-         ; it's good idea to free the input buffer...
-         (syscall 0 (car Out) 1024 #f)
-         (unless (null? (cdr msg)) (begin
+         ; it's good idea to free the input buffer
+         (syscall 0 (car Out) 1024 #f) ; 1024 would be enought, i think...
+
+;         (if (equal? msg '(SIGINT)) ; SIGINT = 2
+;            (syscall 62 Pid 2 #f)
+
+         (let*((parser command
+                  (if (string? (car msg))
+                     (values #false msg)
+                     (values (car msg) (cdr msg)))))
+            ;(locate 40 18) (print "parser: " parser)
+            ;(locate 40 19) (print "command: " command)
+         (unless (null? command) (begin
             ;(print "sending " msg)
-            (for-each (lambda (x) (display-to (cdr In) x)) (cdr msg))
+            (for-each (lambda (x) (display-to (cdr In) x)) command)
             (display-to (cdr In) "\n")))
          
-         (mail sender (car (fd->exp-stream (car Out) "" (car msg) syntax-fail))))
+         (mail sender (if parser (car (fd->exp-stream (car Out) "" (car msg) syntax-fail)) #true))))
       (loop)))))
 
 ; qemu instance
@@ -173,28 +185,32 @@
 (print (bytes->string
 (gdb gdb-greeting-parser))) ; wait for gdb
 
-; minimize popupped QEMU window (for now, debug reasons)
+; minimize popupped QEMU window (for now, just debug reasons)
 (syscall 1017 (c-string "xdotool windowminimize $(xdotool getactivewindow)") #f #f)
 ; or use `wmctrl -r "windowname" -b toggle,shaded`
 
-; =========================
+; сконфигурируем gdb
+(gdb "set confirm off")
+
+
+; ================================================================
 ; = main ==================
 ; подсоединим gdb к qemu
-(define ip (bytes->string
-(gdb gdb-target-connected-parser "target remote localhost:1234")))
+(define pc (bytes->string
+   (gdb gdb-target-connected-parser "target remote localhost:1234")))
 
-(print "Machine started with IP " ip)
+(print "QEmu machine started with PC " pc)
 
-(if (string-eq? ip "0x0000fff0") (begin
+(if (string-eq? pc "0x0000fff0") (begin
    (display "Executing bootstrap, please wait...")
    ; let's do few steps to leave the initial "bios" zeros at 0xfff0
    (let loop ()
-      (let ((ip (gdb gdb-si-answer-parser "si")))
-         (if (< (bytes->number (cddr ip) 16) #x00010000)
+      (let ((pc (gdb gdb-si-answer-parser "si")))
+         (if (< (bytes->number (cddr pc) 16) #x00010000)
             (loop))))
    (print "Ok.")))
-(print "Your EQMU-GDB session ready to work")
-; Looks like our machine ready to start:
+(print "Your QEmu session ready to debug")
+; Looks like our machine ready to start, ok.
 
 ; окошко с регистрами. обновляет, добывает, рисует
 (fork-server 'registers (lambda ()
@@ -252,46 +268,105 @@
    (loop ff)))))
 
 ; ---
-(hide-cursor) (cls)
-(interact 'code 'show)
-(interact 'registers 'show)
-
+; почистим окно
+(cls)
 (define progressbar "-\\|/")
-(let loop ((progress 0))
-   (locate 58 1) (set-color GREY) (display (string (ref progressbar (mod progress (size progressbar)))))
-   (locate 1 20) (display " ")
-   (cond
-      ; https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
-      ((key-pressed #xffc3) ; F6
-         (gdb get-rest-of-line "si")
-         (interact 'code 'show)
-         (interact 'registers 'show))
-      ((key-pressed #xffc4) ; F7
-         (let ((code (gdb gdb-x-i-answer-parser "x/2i $pc")))
-            ;(caar code) <= current ip
-            ;(caadr code) <= next ip
-            (print "  " ($reg->string (caadr code)))
-            (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
-         (gdb get-rest-of-line "c") ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
-         (interact 'code 'show)
-         (interact 'registers 'show))
 
-      ; ...
-      ((key-pressed #x002f) ; XK_slash
-         (locate 1 20) (set-color GREY) (display "> /")
-         (show-cursor)
-         (let ((r (read)))
-            #true))
-      ;; ((key-pressed #x0020) ; XK_space
-         ;; (let ((answer (gdb gdb-x-i-answer-parser "x/7i $pc")))
-         ;;    (cls)
-         ;;    (locate 1 1) (set-color GREY)
-         ;;    (for-each (lambda (ai)
-         ;;          (print "0x" ($reg->string (car ai)) "   " (bytes->string (cdr ai)))
-         ;;          #true)
-         ;;       answer))
-         ;;    (interact 'registers 'show))
+; main loop
+(let main ((dirty #true) (interactive #true) (progress 0))
+   (hide-cursor)
+   (locate 58 1) (set-color GREY)
+   (if progress
+      (display (string (ref progressbar (mod progress (size progressbar)))))
+      (display "*"))
 
-      (else
-         (yield)))
-   (loop (+ 1 progress))))
+   (if dirty (begin
+      (interact 'code 'show)
+      (interact 'registers 'show)))
+
+   (locate 1 20) (set-color DARKGREY) (display ">                                                                 ")
+   (locate 3 20) (set-color DARKGREY)
+
+   (case interactive
+      ; машина выполняется, нужна только одна кнопка на стоп
+      (#false
+         (cond
+            ((or (key-pressed #xffc2) ; F5
+                 (key-pressed #xffc3) ; F6
+                 (key-pressed #xffc4) ; F7
+                 (key-pressed #xffc5)); F8
+               (gdb "monitor stop")
+
+               (main #true #false 0))
+
+            ; тут надо проверить, а не пришло ли нам какое событие от дебаггера.
+            ; например, а не сработал ли брекпоинт
+            (else
+               (main #f interactive #false))))
+
+      ; интерактивный режим
+      (#true
+         (cond
+            ; https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
+
+            ; Step In
+            ((key-pressed #xffc2) ; F5
+               (gdb get-rest-of-line "si")
+               (main #true interactive 0))
+
+            ; Step Over
+            ((key-pressed #xffc3) ; F6
+               (let ((code (gdb gdb-x-i-answer-parser "x/2i $pc")))
+                  ;(caar code) <= current ip
+                  ;(caadr code) <= next ip
+                  (print "  " ($reg->string (caadr code)))
+                  (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
+               (gdb get-rest-of-line "c") ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
+
+               (main #true interactive 0))
+
+            ; Nothing, just refresh
+            ((key-pressed #xffc5) ; F8
+               (main #true interactive 0))
+
+            ; Continue
+            ((key-pressed #xffc6) ; F9
+               (gdb "monitor cont")
+               (main #false #false #false)) ; уходим в режим выполнения машины
+
+            ; ручные команды
+            ((key-pressed #xff0d) ; XK_Return
+               (locate 1 20) (set-color GREEN) (display "> ") (set-color GREY)
+               ; почистим входной буфер
+               (let loop ()
+                  (let ((in (syscall 0 stdin 1024 #f)))
+                     (if (or (eq? in #true) (eq? in 1024))
+                        (loop))))
+
+               (locate 3 20)
+               (show-cursor)
+               (let ((command (read)))
+                  (cond
+                     ((eq? command 'save)
+                        (qemu "savevm snapshot"))
+                     ((eq? command 'load)
+                        (qemu "loadvm snapshot"))
+                     ((eq? command 'quit)
+                        (print "quit?"))
+                     (else
+                        (print "Unknown command: " command))))
+                  
+               (main #true interactive 0))
+            ;; ((key-pressed #x0020) ; XK_space
+               ;; (let ((answer (gdb gdb-x-i-answer-parser "x/7i $pc")))
+               ;;    (cls)
+               ;;    (locate 1 1) (set-color GREY)
+               ;;    (for-each (lambda (ai)
+               ;;          (print "0x" ($reg->string (car ai)) "   " (bytes->string (cdr ai)))
+               ;;          #true)
+               ;;       answer))
+               ;;    (interact 'registers 'show))
+
+            (else
+               (yield)
+               (main #f interactive (+ 1 progress)))))))
