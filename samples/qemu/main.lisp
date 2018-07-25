@@ -28,15 +28,7 @@
    (print-to stderr ">>> " pos "-" (runes->string lst) " <<<")
    '(() (())))
 
-(define get-rest-of-line
-   (let-parses
-      ((chars (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\newline))))))
-       (skip  (get-imm #\newline))) ;; <- note that this won't match if line ends to eof
-      chars))
-(define get-whitespaces
-   (get-greedy* (get-byte-if (lambda (x) (has? (list #\space #\tab) x)))))
-
-(define ff-digit-values
+(define ff-digit-to-value
    (list->ff
       (foldr append null
          (list
@@ -44,20 +36,38 @@
             (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
             (map (lambda (d i) (cons d i)) (iota  6 #\A) (iota 6 10))  ;; A-F
             (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
-            ; и обратно
+            ))))
+(define ff-value-to-digit
+   (list->ff
+      (foldr append null
+         (list
             (map (lambda (d i) (cons d i)) (iota 10 0) (iota 10 #\0))  ;; 0-9
             (map (lambda (d i) (cons d i)) (iota 6 10) (iota  6 #\a))  ;; a-f
             ))))
+(define whitespaces (list #\space #\tab #\return #\newline))
 
-; assert (eq? (car bytes) #\0)
-; assert (eq? (cadr bytes) #\x)
+(define get-rest-of-line
+   (let-parses
+      ((chars (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\newline))))))
+       (skip  (get-imm #\newline))) ;; <- note that this won't match if line ends to eof
+      chars))
+
+(define get-whitespaces
+   (get-greedy+ (get-byte-if (lambda (x) (has? whitespaces x)))))
+
+(define maybe-whitespaces
+   (get-greedy* (get-byte-if (lambda (x) (has? whitespaces x)))))
+
+(define get-hex
+   (get-greedy+ (get-byte-if (lambda (x) (get ff-digit-to-value x #false)))))
+
 (define (bytes->number bytes base)
-   (fold (lambda (f x) (+ (* f base) (get ff-digit-values x 0)))
+   (fold (lambda (f x) (+ (* f base) (get ff-digit-to-value x 0)))
       0 bytes))
 (define ($reg->string $reg)
    (bytes->string
       (map (lambda (i)
-         (get ff-digit-values (band (>> $reg (* i 4)) #b1111) #\?))
+         (get ff-value-to-digit (band (>> $reg (* i 4)) #b1111) #\?))
          (reverse (iota 8 0)))))
 
 ; ================================================================================
@@ -105,14 +115,15 @@
 ;               (prompt gdb-prompt-parser))
       value))
 
+; disassembler
 (define gdb-x-i-answer-parser
    (let-parses((lines (get-greedy+
                   (let-parses((skip (get-any-of (get-word "=> " #t)
                                                 (get-word "   " #t)))
-                              (skip get-whitespaces)
+                              (skip maybe-whitespaces)
                               (address (get-greedy+ (get-byte-if (lambda (x) (not (eq? x #\:))))))
                               (skip (get-imm #\:))
-                              (skip get-whitespaces)
+                              (skip maybe-whitespaces)
                               (instruction get-rest-of-line))
                      (cons (bytes->number (cddr address) 16) instruction)))))
 ;               (prompt gdb-prompt-parser))
@@ -122,10 +133,10 @@
    (let-parses((lines (get-greedy+
                   (let-parses((skip (get-any-of (get-word "=> " #t)
                                                 (get-word "   " #t)))
-                              (skip get-whitespaces)
+                              (skip maybe-whitespaces)
                               (address (get-greedy+ (get-byte-if (lambda (x) (not (eq? x #\:))))))
                               (skip (get-imm #\:))
-                              (skip get-whitespaces)
+                              (skip maybe-whitespaces)
                               (instruction get-rest-of-line))
                      (cons (bytes->number (cddr address) 16) instruction)))))
 ;               (prompt gdb-prompt-parser))
@@ -141,7 +152,7 @@
    (define Pid
       (syscall 59 (c-string (car arguments)) ; (syscall:fork)
          (map c-string arguments)
-         (list (car In) (cdr Out) stderr)))
+         (list (car In) (cdr Out) (cdr Out))))
    (print "forked " name " with id " Pid)
 
    ; main loop:
@@ -212,52 +223,13 @@
 (print "Your QEmu session ready to debug")
 ; Looks like our machine ready to start, ok.
 
-; окошко с регистрами. обновляет, добывает, рисует
-(fork-server 'registers (lambda ()
-(let loop ((ff #empty))
-(let*((envelope (wait-mail))
-      (sender msg envelope))
-   (let ((eax (bytes->number (gdb gdb-p-x-answer-parser "p/x $eax") 16))
-         (ebx (bytes->number (gdb gdb-p-x-answer-parser "p/x $ebx") 16))
-         (ecx (bytes->number (gdb gdb-p-x-answer-parser "p/x $ecx") 16))
-         (edx (bytes->number (gdb gdb-p-x-answer-parser "p/x $edx") 16))
-         (esp (bytes->number (gdb gdb-p-x-answer-parser "p/x $esp") 16))
-         (ebp (bytes->number (gdb gdb-p-x-answer-parser "p/x $ebp") 16))
-         (esi (bytes->number (gdb gdb-p-x-answer-parser "p/x $esi") 16))
-         (edi (bytes->number (gdb gdb-p-x-answer-parser "p/x $edi") 16))
-         (eip (bytes->number (gdb gdb-p-x-answer-parser "p/x $eip") 16))
-         (show (lambda (x y reg value)
-            (locate x y)
-            (set-color DARKGREY)
-            (for-each display (list "$" reg " "))
-            (set-color (if (eq? value (get ff reg -1)) GREY RED))
-            (display ($reg->string value)))))
-
-      (show 60 1 'eax eax)
-      (show 60 2 'ebx ebx)
-      (show 60 3 'ecx ecx)
-      (show 60 4 'edx edx)
-      (show 60 5 'esp esp)
-      (show 60 6 'ebp ebp)
-      (show 60 7 'esi esi)
-      (show 60 8 'edi edi)
-
-      (show 60 10 'eip eip)
-
-      (mail sender 'ok)
-      (loop (fold (lambda (ff v)
-                     (put ff (car v) (cdr v)))
-               ff `(
-                  (eax . ,eax) (ebx . ,ebx) (ecx . ,ecx) (edx . ,edx)
-                  (esp . ,esp) (ebp . ,ebp) (esi . ,esi) (edi . ,edi)
-                  (eip . ,eip)
-               ))))))))
+,load "registers.lisp"
 
 (fork-server 'code (lambda ()
 (let loop ((ff #empty))
 (let*((envelope (wait-mail))
       (sender msg envelope))
-   (let ((code (gdb gdb-x-i-answer-parser "x/11i $pc")))
+   (let ((code (gdb gdb-x-i-answer-parser "x/11i $eip")))
       (locate 1 1) (set-color GREY)
       (for-each (lambda (ai)
             (display "                                                           \x1B;[1000D")
@@ -269,7 +241,7 @@
 
 ; ---
 ; почистим окно
-(cls)
+(cls)(syscall 1017 (c-string "stty -echo") #f #f)
 (define progressbar "-\\|/")
 
 ; main loop
@@ -295,9 +267,10 @@
                  (key-pressed #xffc3) ; F6
                  (key-pressed #xffc4) ; F7
                  (key-pressed #xffc5)); F8
-               (gdb "monitor stop")
-
-               (main #true #false 0))
+               (gdb gdb-prompt-parser "monitor stop")
+               ; и выполним одну команду, чтобы gdb засинхронизировался с qemu
+               (gdb gdb-si-answer-parser "si")
+               (main #true #true 0))
 
             ; тут надо проверить, а не пришло ли нам какое событие от дебаггера.
             ; например, а не сработал ли брекпоинт
@@ -316,7 +289,7 @@
 
             ; Step Over
             ((key-pressed #xffc3) ; F6
-               (let ((code (gdb gdb-x-i-answer-parser "x/2i $pc")))
+               (let ((code (gdb gdb-x-i-answer-parser "x/2i $eip")))
                   ;(caar code) <= current ip
                   ;(caadr code) <= next ip
                   (print "  " ($reg->string (caadr code)))
@@ -345,6 +318,11 @@
 
                (locate 3 20)
                (show-cursor)
+               (syscall 1017 (c-string "stty echo") #f #f)
+
+               (qemu "quit") (gdb "quit")
+               (halt 1) ; for now - just exit
+
                (let ((command (read)))
                   (cond
                      ((eq? command 'save)
