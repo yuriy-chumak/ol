@@ -266,7 +266,7 @@
    (mail 'gdb-breaker #f))
 
 (define (step-over)
-   (notify "Step Over..."
+   (notify "Step Over...")
    (let ((code (gdb gdb-x-i-answer-parser "x/2i $eip")))
       ;(caar code) <= current ip
       ;(caadr code) <= next ip
@@ -283,6 +283,8 @@
    (run-gdb-breaker)
    (notify (bytes->string
       (gdb gdb-continue-answer-parser "continue")))
+   (mail 'gdb-breaker #f))
+(define (stop)
    (mail 'gdb-breaker #f))
 
 (define (quit)
