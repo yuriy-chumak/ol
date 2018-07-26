@@ -3,6 +3,7 @@
 (import
    (lib rlutil)
    (only (lang sexp) fd->exp-stream)
+   (only (lang eval) eval-repl evaluate)
    (only (scheme misc) string->number memv)
    (owl parse))
 (cls)
@@ -11,8 +12,8 @@
 (syscall 1017 (c-string "killall qemu-system-i386") #f #f)
 (syscall 1017 (c-string "killall gdb") #f #f)
 
-(define (hide-cursor) #f);(display "\x1B;[?25l")) ; temporary disabled
-(define (show-cursor) #f);(display "\x1B;[?25h")) ; temporary disabled
+(define (hide-cursor) (display "\x1B;[?25l")) ; temporary disabled
+(define (show-cursor) (display "\x1B;[?25h")) ; temporary disabled
 
 ,load "config.lisp"
 ;; #qemu-img create -f qcow2 win7.qcow2.hd 3G
@@ -230,19 +231,6 @@
                   (syscall 62 (interact 'config (tuple 'get 'gdb)) 2 #f)) ; SIGIN
                (this (sleep 1))))))))
 
-
-
-;; (fork-server 'gdb-breaker (lambda ()
-;;    (let this ((enabled #false))
-;;       (unless (check-mail)
-;;          (if (or (key-pressed #xffbe) ; f1
-;;                   (key-pressed #xffbf)); f2
-;;             (begin (sleep 1)
-;;             (display "wanna stop!")) ;(gdb #t 'stop)
-;;             (begin (sleep 1)
-;;             (this)))))))
-
-
 ; ================================================================
 ; = main ==================
 ; подсоединим gdb к qemu
@@ -264,9 +252,7 @@
 
 ,load "registers.lisp"
 
-; helper functions:
-
-
+; ================================
 ; code window
 (fork-server 'code (lambda ()
 (let loop ((ff #empty))
@@ -321,7 +307,7 @@
 
 ; ---
 ; почистим окно
-(cls);(syscall 1017 (c-string "stty -echo") #f #f) ; temporary disabled
+(cls);(syscall 1017 (c-string "stty -echo") #f #f)
 (define progressbar "----\\\\\\\\||||////")
 
 (define (notify . args)
@@ -330,6 +316,23 @@
    (locate 3 21)
    (for-each display args))
 
+
+; ============================================
+; запустим вычислитель, это надо сделать здесь
+; чтобы захватить все предыдущие дефайны
+(fork-server 'evaluator (lambda ()
+(let loop ((env *toplevel*))
+(let*((envelope (wait-mail))
+      (sender msg envelope))
+   (tuple-case (eval-repl msg env #false evaluate)
+      ((ok answer env)
+         (mail sender answer)
+         (loop env))
+      (else is error
+         (mail sender #false)
+         (loop env)))))))
+
+; и главный цикл обработки событий клавиатуры
 ; main loop
 (let main ((dirty #true) (progress 0))
    (hide-cursor)
@@ -408,15 +411,17 @@
          (syscall 1017 (c-string "stty echo") #f #f)
 
          (let ((command (read)))
-            (cond
-               ((eq? command 'save)
-                  (qemu "savevm snapshot"))
-               ((eq? command 'load)
-                  (qemu "loadvm snapshot"))
-               ((eq? command 'quit)
-                  (print "quit?"))
-               (else
-                  (print "Unknown command: " command))))
+            (print "eval: "
+               (interact 'evaluator command)))
+            ;; (cond
+            ;;    ((eq? command 'save)
+            ;;       (qemu "savevm snapshot"))
+            ;;    ((eq? command 'load)
+            ;;       (qemu "loadvm snapshot"))
+            ;;    ((eq? command 'quit)
+            ;;       (print "quit?"))
+            ;;    (else
+            ;;       (print "Unknown command: " command))))
             
          (main #true 0))
       ;; ((key-pressed #x0020) ; XK_space

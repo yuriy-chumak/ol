@@ -138,6 +138,15 @@
             (set-color (if (eq? value (get ff reg -1)) GREY RED))
             (display (if (string? value) value ($reg->string value))))))
 
+      ; внимание, надо отправить в вычислитель новые значения регистров
+      ; чтобы можно было использовать переменные непосредственно в скриптах
+      (for-each (lambda (i)
+         (interact 'evaluator (list 'setq (car i) (cdr i))))
+         `(($eax . ,eax)
+           ($ebx . ,ebx)
+           ($ecx . ,ecx)
+           ($edx . ,edx)))
+
       (show 60 1 'eax eax)
       (show 60 2 'ebx ebx)
       (show 60 3 'ecx ecx)
