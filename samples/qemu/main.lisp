@@ -289,7 +289,13 @@
 
    (mail 'config (tuple 'set reg value)))
 
-
+; get memory value
+(define (x address count)
+   (map (lambda (x) (bytes->number x 16))
+      (gdb gdb-monitor-x-answer-parser "monitor x /" count "b " address)))
+(define (xp address count)
+   (map (lambda (x) (bytes->number x 16))
+      (gdb gdb-monitor-x-answer-parser "monitor xp /" count "b " address)))
 
 ; gdb commands
 (define (step-into)
@@ -432,8 +438,6 @@
 
       ; Nothing, just refresh
       ((key-pressed #xffc5) ; F8
-         (notify
-            (gdb gdb-monitor-x-answer-parser "monitor x /32b 0"))
          (main #true 0))
 
       ; Continue
