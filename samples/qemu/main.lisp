@@ -112,6 +112,11 @@
 (define gdb-target-connected-parser
    (let-parses((skip (get-word "Remote debugging using " #t))
                (target get-rest-of-line)
+               (skip (get-kleene*
+                  (let-parses((skip (get-word "warning:" #t))
+                              (skip get-rest-of-line)
+                              (skip get-rest-of-line))
+                     #true)))
                (ip (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\space))))))
                (skip (get-word " in " #t))
                (skip get-rest-of-line)
@@ -252,7 +257,7 @@
 ; = main ==================
 ; подсоединим gdb к qemu
 (define pc (bytes->string
-   (gdb gdb-target-connected-parser "target remote localhost:1234")))
+   (gdb gdb-target-connected-parser "target remote 127.0.0.1:1234")))
 
 (print "QEmu machine started with PC " pc)
 
