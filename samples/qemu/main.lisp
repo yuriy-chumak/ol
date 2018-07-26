@@ -15,6 +15,13 @@
 (define (hide-cursor) (display "\x1B;[?25l")) ; temporary disabled
 (define (show-cursor) (display "\x1B;[?25h")) ; temporary disabled
 
+; window utils
+(define (notify . args)
+   (locate 1 21) (set-color DARKGREY)
+   (display ":                                                                 ")
+   (locate 3 21)
+   (for-each display args))
+
 ,load "config.lisp"
 ;; #qemu-img create -f qcow2 win7.qcow2.hd 3G
 ;; qemu-system-i386 -enable-kvm -m 512 -cdrom /home/uri/Downloads/W7-Super-Lite-x86-Install-2017.iso -boot d -monitor stdio win7.qcow2.hd -s -S
@@ -113,8 +120,8 @@
 (define gdb-si-answer-parser
    (let-parses((ip (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\space))))))
                (skip (get-word " in " #t))
-               (skip get-rest-of-line))
-;               (prompt gdb-prompt-parser))
+               (skip get-rest-of-line)
+               (prompt gdb-prompt-parser))
       ip))
 (define gdb-p-x-answer-parser
    (let-parses((skip (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\space))))))
@@ -224,10 +231,7 @@
       (let this ((unused #f))
          (unless (check-mail)
             (begin
-               (if (or (key-pressed #xffc2) ; f5
-                       (key-pressed #xffc3) ; f6
-                       (key-pressed #xffc4) ; f7
-                       (key-pressed #xffc5)); f8
+               (if (key-pressed #xffbf) ; f2
                   (syscall 62 (interact 'config (tuple 'get 'gdb)) 2 #f)) ; SIGIN
                (this (sleep 1))))))))
 
@@ -251,6 +255,44 @@
 ; Looks like our machine ready to start, ok.
 
 ,load "registers.lisp"
+
+; ================================
+; gdb commands
+(define (step-into)
+   (notify "Step Into...")
+   (run-gdb-breaker)
+   (notify (bytes->string
+      (gdb gdb-si-answer-parser "si")))
+   (mail 'gdb-breaker #f))
+
+(define (step-over)
+   (notify "Step Over..."
+   (let ((code (gdb gdb-x-i-answer-parser "x/2i $eip")))
+      ;(caar code) <= current ip
+      ;(caadr code) <= next ip
+      (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
+
+   (run-gdb-breaker)
+   (notify (bytes->string
+      (gdb gdb-continue-answer-parser "continue"))) ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
+   (mail 'gdb-breaker #f))
+
+(define (run)
+   (notify "Continue...")
+
+   (run-gdb-breaker)
+   (notify (bytes->string
+      (gdb gdb-continue-answer-parser "continue")))
+   (mail 'gdb-breaker #f))
+
+(define (quit)
+   (locate 1 20) (set-color GREEN) (display "> quitting...") (set-color GREY)
+   (qemu "quit") (gdb "quit")
+
+   (print "ok.")
+   (show-cursor)
+   (syscall 1017 (c-string "stty echo") #f #f) ; enable terminal echo
+   (halt 1))
 
 ; ================================
 ; code window
@@ -310,13 +352,6 @@
 (cls);(syscall 1017 (c-string "stty -echo") #f #f)
 (define progressbar "----\\\\\\\\||||////")
 
-(define (notify . args)
-   (locate 1 21) (set-color DARKGREY)
-   (display ":                                                                 ")
-   (locate 3 21)
-   (for-each display args))
-
-
 ; ============================================
 ; запустим вычислитель, это надо сделать здесь
 ; чтобы захватить все предыдущие дефайны
@@ -351,25 +386,12 @@
 
       ; Step In
       ((key-pressed #xffc2) ; F5
-         (notify "Step Info, "
-            (bytes->string
-               (gdb get-rest-of-line "si")))
+         (step-into)
          (main #true 0))
 
       ; Step Over
       ((key-pressed #xffc3) ; F6
-         (let ((code (gdb gdb-x-i-answer-parser "x/2i $eip")))
-            ;(caar code) <= current ip
-            ;(caadr code) <= next ip
-            ;(print "  " ($reg->string (caadr code)))
-            (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
-
-         (run-gdb-breaker)
-         (notify "Step Over, "
-            (bytes->string
-               (gdb gdb-continue-answer-parser "continue"))) ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
-         (mail 'gdb-breaker #f)
-
+         (step-over)
          (main #true 0))
 
       ; Nothing, just refresh
@@ -378,24 +400,13 @@
 
       ; Continue
       ((key-pressed #xffc6) ; F9
-         (notify "Continue...")
-         (run-gdb-breaker)
-
-         (notify (bytes->string 
-            (gdb gdb-continue-answer-parser "continue")))
-         (mail 'gdb-breaker #true)
-         (print "done.")
+         (run)
          (main #true 0)) ; уходим в режим выполнения машины
 
       ; Quit
       ((key-pressed #x0051) ; Q
-         (locate 1 20) (set-color GREEN) (display "> quitting...") (set-color GREY)
-         (qemu "quit") (gdb "quit")
-
-         (print "ok.")
-         (show-cursor)
-         (syscall 1017 (c-string "stty echo") #f #f) ; enable terminal echo
-         (halt 1)) ; exit
+         (quit) ; exit
+         (main #true 0)) ; just loop optimization
 
       ; ручные команды
       ((key-pressed #xff0d) ; XK_Return
@@ -413,26 +424,7 @@
          (let ((command (read)))
             (print "eval: "
                (interact 'evaluator command)))
-            ;; (cond
-            ;;    ((eq? command 'save)
-            ;;       (qemu "savevm snapshot"))
-            ;;    ((eq? command 'load)
-            ;;       (qemu "loadvm snapshot"))
-            ;;    ((eq? command 'quit)
-            ;;       (print "quit?"))
-            ;;    (else
-            ;;       (print "Unknown command: " command))))
-            
          (main #true 0))
-      ;; ((key-pressed #x0020) ; XK_space
-         ;; (let ((answer (gdb gdb-x-i-answer-parser "x/7i $pc")))
-         ;;    (cls)
-         ;;    (locate 1 1) (set-color GREY)
-         ;;    (for-each (lambda (ai)
-         ;;          (print "0x" ($reg->string (car ai)) "   " (bytes->string (cdr ai)))
-         ;;          #true)
-         ;;       answer))
-         ;;    (interact 'registers 'show))
 
       (else
          (yield)
