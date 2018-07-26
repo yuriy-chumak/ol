@@ -3,7 +3,7 @@
 (import
    (lib rlutil)
    (only (lang sexp) fd->exp-stream)
-   (only (scheme misc) string->number)
+   (only (scheme misc) string->number memv)
    (owl parse))
 (cls)
 
@@ -11,8 +11,8 @@
 (syscall 1017 (c-string "killall qemu-system-i386") #f #f)
 (syscall 1017 (c-string "killall gdb") #f #f)
 
-(define (hide-cursor) (display "\x1B;[?25l"))
-(define (show-cursor) (display "\x1B;[?25h"))
+(define (hide-cursor) #f);(display "\x1B;[?25l")) ; temporary disabled
+(define (show-cursor) #f);(display "\x1B;[?25h")) ; temporary disabled
 
 ,load "config.lisp"
 ;; #qemu-img create -f qcow2 win7.qcow2.hd 3G
@@ -49,8 +49,8 @@
 
 (define get-rest-of-line
    (let-parses
-      ((chars (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\newline))))))
-       (skip  (get-imm #\newline))) ;; <- note that this won't match if line ends to eof
+      ((chars (get-greedy* (get-byte-if (lambda (x) (not (has? '( #\newline #\return) x))))))
+       (skip  (get-greedy+ (get-byte-if (lambda (x) (has? '( #\newline #\return) x))))))
       chars))
 
 (define get-whitespaces
@@ -92,6 +92,12 @@
    (let-parses((info (get-greedy+ get-rest-of-line))
                (prompt gdb-prompt-parser))
       info))
+
+(define gdb-continue-answer-parser
+   (let-parses((skip (get-word "Continuing." #t))
+               (skip get-rest-of-line)
+               (answer get-rest-of-line)) ; Program received signal SIGINT, Interrupt.
+      answer))
 
 ; Remote debugging using localhost:1234
 ; 0x0000fff0 in ?? ()
@@ -167,28 +173,26 @@
       (syscall 59 (c-string (car arguments)) ; (syscall:fork)
          (map c-string arguments)
          (list (car In) (cdr Out) (cdr Out))))
+   (mail 'config (tuple 'set name Pid)) ; save pid in config (for kill, for example, or other stats)
+
    (print "forked " name " with id " Pid)
 
    ; main loop:
    (let loop ()
       (let*((envelope (wait-mail))
             (sender msg envelope)) ; TBD: msg is '(message-to output-parser)
-         ;(print "msg: " msg)
-         ;(print "(cdr msg): " (cdr msg))
-
-         ; it's good idea to free the input buffer
-         (syscall 0 (car Out) 1024 #f) ; 1024 would be enought, i think...
-
          (let*((parser command
-                  (if (string? (car msg))
-                     (values #false msg)
-                     (values (car msg) (cdr msg)))))
-            (unless (null? command) 
-               (if (equal? command '(stop))
-                  (syscall 62 Pid 2 #f) ; SIGINT
-                  (for-each (lambda (x) (display-to (cdr In) x)) (append command '("\n")))))
-         
-            (mail sender (if parser (car (fd->exp-stream (car Out) "" (car msg) syntax-fail)) #true))))
+                  (if (function? (car msg))
+                     (values (car msg) (cdr msg))
+                     (values #false msg))))
+            ; it's good idea to free the input buffer
+            (syscall 0 (car Out) 1024 #f) ; 1024 would be enought, i think...
+            ; send command (if any) with newline
+            (unless (null? command)
+               (for-each (lambda (x) (display-to (cdr In) x)) (append command '("\n"))))
+            ; process answer, if requested
+            (mail sender (if parser
+                  (car (fd->exp-stream (car Out) "" (car msg) syntax-fail)) #f))))
       (loop)))))
 
 ; qemu instance
@@ -211,6 +215,32 @@
 
 ; сконфигурируем gdb
 (gdb "set confirm off")
+
+; прерыватель gdb "по требованию" (отправляет Ctrl+C)
+; любое сообщение этой сопрограмме заканчивает ее
+(define (run-gdb-breaker)
+   (fork-server 'gdb-breaker (lambda ()
+      (let this ((unused #f))
+         (unless (check-mail)
+            (begin
+               (if (or (key-pressed #xffc2) ; f5
+                       (key-pressed #xffc3) ; f6
+                       (key-pressed #xffc4) ; f7
+                       (key-pressed #xffc5)); f8
+                  (syscall 62 (interact 'config (tuple 'get 'gdb)) 2 #f)) ; SIGIN
+               (this (sleep 1))))))))
+
+
+
+;; (fork-server 'gdb-breaker (lambda ()
+;;    (let this ((enabled #false))
+;;       (unless (check-mail)
+;;          (if (or (key-pressed #xffbe) ; f1
+;;                   (key-pressed #xffbf)); f2
+;;             (begin (sleep 1)
+;;             (display "wanna stop!")) ;(gdb #t 'stop)
+;;             (begin (sleep 1)
+;;             (this)))))))
 
 
 ; ================================================================
@@ -291,124 +321,117 @@
 
 ; ---
 ; почистим окно
-(cls)(syscall 1017 (c-string "stty -echo") #f #f)
-(define progressbar "-\\|/")
+(cls);(syscall 1017 (c-string "stty -echo") #f #f) ; temporary disabled
+(define progressbar "----\\\\\\\\||||////")
+
+(define (notify . args)
+   (locate 1 21) (set-color DARKGREY)
+   (display ":                                                                 ")
+   (locate 3 21)
+   (for-each display args))
 
 ; main loop
-(let main ((dirty #true) (interactive #true) (progress 0))
+(let main ((dirty #true) (progress 0))
    (hide-cursor)
    (locate 58 1) (set-color GREY)
-   (if progress
-      (display (string (ref progressbar (mod progress (size progressbar)))))
-      (display "*"))
+   (display (string (ref progressbar (mod progress (size progressbar)))))
 
    (if dirty (begin
       (interact 'code 'show)
-      (interact 'registers 'show)))
-
-   (locate 1 20) (set-color DARKGREY) (display ">                                                                 ")
+      (interact 'registers 'show)
+      
+      (locate 1 20) (set-color GREY) (display ">                                                                 ")))
    (locate 3 20) (set-color DARKGREY)
 
-   (case interactive
-      ; машина выполняется, нужна только одна кнопка на стоп
-      (#false
-         (cond
-            ((or (key-pressed #xffc2) ; F5
-                 (key-pressed #xffc3) ; F6
-                 (key-pressed #xffc4) ; F7
-                 (key-pressed #xffc5)); F8
-               ;(gdb gdb-prompt-parser "monitor stop")
-               (gdb gdb-ctrl-c-answer-parser 'stop)
-               ;(read)
+   ; https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
+   (cond
 
-               ; и выполним одну команду, чтобы gdb засинхронизировался с qemu
-               (gdb gdb-si-answer-parser "si")
-               (main #true #true 0))
+      ; Step In
+      ((key-pressed #xffc2) ; F5
+         (notify "Step Info, "
+            (bytes->string
+               (gdb get-rest-of-line "si")))
+         (main #true 0))
 
-            ; тут надо проверить, а не пришло ли нам какое событие от дебаггера.
-            ; например, а не сработал ли брекпоинт
-            (else
-               (main #f interactive #false))))
+      ; Step Over
+      ((key-pressed #xffc3) ; F6
+         (let ((code (gdb gdb-x-i-answer-parser "x/2i $eip")))
+            ;(caar code) <= current ip
+            ;(caadr code) <= next ip
+            ;(print "  " ($reg->string (caadr code)))
+            (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
 
-      ; интерактивный режим
-      (#true
-         (cond
-            ; https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
+         (run-gdb-breaker)
+         (notify "Step Over, "
+            (bytes->string
+               (gdb gdb-continue-answer-parser "continue"))) ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
+         (mail 'gdb-breaker #f)
 
-            ; Step In
-            ((key-pressed #xffc2) ; F5
-               (gdb get-rest-of-line "si")
-               (main #true interactive 0))
+         (main #true 0))
 
-            ; Step Over
-            ((key-pressed #xffc3) ; F6
-               (let ((code (gdb gdb-x-i-answer-parser "x/2i $eip")))
-                  ;(caar code) <= current ip
-                  ;(caadr code) <= next ip
-                  (print "  " ($reg->string (caadr code)))
-                  (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
-               (print (bytes->string
-               (gdb get-rest-of-line "continue"))) ; Continuing. #\newline Temporary breakpoint ?, 0x??? in ?? ()
+      ; Nothing, just refresh
+      ((key-pressed #xffc5) ; F8
+         (main #true 0))
 
-               (main #true interactive 0))
+      ; Continue
+      ((key-pressed #xffc6) ; F9
+         (notify "Continue...")
+         (run-gdb-breaker)
 
-            ; Nothing, just refresh
-            ((key-pressed #xffc5) ; F8
-               (main #true interactive 0))
+         (notify (bytes->string 
+            (gdb gdb-continue-answer-parser "continue")))
+         (mail 'gdb-breaker #true)
+         (print "done.")
+         (main #true 0)) ; уходим в режим выполнения машины
 
-            ; Continue
-            ((key-pressed #xffc6) ; F9
-               (gdb "monitor cont")
-               (main #false #false #false)) ; уходим в режим выполнения машины
+      ; Quit
+      ((key-pressed #x0051) ; Q
+         (locate 1 20) (set-color GREEN) (display "> quitting...") (set-color GREY)
+         (qemu "quit") (gdb "quit")
 
-            ; Quit
-            ((key-pressed #x0051) ; Q
-               (locate 1 20) (set-color GREEN) (display "> quitting...") (set-color GREY)
-               (qemu "quit") (gdb "quit")
+         (print "ok.")
+         (show-cursor)
+         (syscall 1017 (c-string "stty echo") #f #f) ; enable terminal echo
+         (halt 1)) ; exit
 
-               (print "ok.")
-               (show-cursor)
-               (syscall 1017 (c-string "stty echo") #f #f)
-               (halt 1)) ; for now - just exit
+      ; ручные команды
+      ((key-pressed #xff0d) ; XK_Return
+         (locate 1 20) (set-color GREEN) (display "> ") (set-color GREY)
+         ; почистим входной буфер
+         (let loop ()
+            (let ((in (syscall 0 stdin 1024 #f)))
+               (if (or (eq? in #true) (eq? in 1024))
+                  (loop))))
 
-            ; ручные команды
-            ((key-pressed #xff0d) ; XK_Return
-               (locate 1 20) (set-color GREEN) (display "> ") (set-color GREY)
-               ; почистим входной буфер
-               (let loop ()
-                  (let ((in (syscall 0 stdin 1024 #f)))
-                     (if (or (eq? in #true) (eq? in 1024))
-                        (loop))))
+         (locate 3 20)
+         (show-cursor)
+         (syscall 1017 (c-string "stty echo") #f #f)
 
-               (locate 3 20)
-               (show-cursor)
-               (syscall 1017 (c-string "stty echo") #f #f)
+         (let ((command (read)))
+            (cond
+               ((eq? command 'save)
+                  (qemu "savevm snapshot"))
+               ((eq? command 'load)
+                  (qemu "loadvm snapshot"))
+               ((eq? command 'quit)
+                  (print "quit?"))
+               (else
+                  (print "Unknown command: " command))))
+            
+         (main #true 0))
+      ;; ((key-pressed #x0020) ; XK_space
+         ;; (let ((answer (gdb gdb-x-i-answer-parser "x/7i $pc")))
+         ;;    (cls)
+         ;;    (locate 1 1) (set-color GREY)
+         ;;    (for-each (lambda (ai)
+         ;;          (print "0x" ($reg->string (car ai)) "   " (bytes->string (cdr ai)))
+         ;;          #true)
+         ;;       answer))
+         ;;    (interact 'registers 'show))
 
-               (let ((command (read)))
-                  (cond
-                     ((eq? command 'save)
-                        (qemu "savevm snapshot"))
-                     ((eq? command 'load)
-                        (qemu "loadvm snapshot"))
-                     ((eq? command 'quit)
-                        (print "quit?"))
-                     (else
-                        (print "Unknown command: " command))))
-                  
-               (main #true interactive 0))
-            ;; ((key-pressed #x0020) ; XK_space
-               ;; (let ((answer (gdb gdb-x-i-answer-parser "x/7i $pc")))
-               ;;    (cls)
-               ;;    (locate 1 1) (set-color GREY)
-               ;;    (for-each (lambda (ai)
-               ;;          (print "0x" ($reg->string (car ai)) "   " (bytes->string (cdr ai)))
-               ;;          #true)
-               ;;       answer))
-               ;;    (interact 'registers 'show))
-
-            (else
-               (yield)
-               (main #f interactive (+ 1 progress)))))))
+      (else
+         (yield)
+         (main #f (+ 1 progress)))))
 
 ; прикол в экране загрузки WinXP: пустой цикл.
 ;; 0x806f1d50 * sub    $0x1,%eax                            | $eax 00008987
