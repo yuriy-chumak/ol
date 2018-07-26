@@ -257,6 +257,15 @@
 ,load "registers.lisp"
 
 ; ================================
+; qemu commands
+(define save (case-lambda
+   ((vm) (gdb gdb-prompt-parser "monitor savevm " vm))
+   (() (gdb gdb-prompt-parser "monitor savevm my"))))
+(define load (case-lambda
+   ((vm) (gdb gdb-prompt-parser "monitor loadvm " vm))
+   (() (gdb gdb-prompt-parser "monitor loadvm my"))))
+
+
 ; gdb commands
 (define (step-into)
    (notify "Step Into...")
