@@ -73,7 +73,7 @@
 (define (bytes->number bytes base)
    (fold (lambda (f x) (+ (* f base) (get ff-digit-to-value x 0)))
       0 bytes))
-(define ($reg->string $reg)
+(define (%reg->string $reg)
    (bytes->string
       (map (lambda (i)
          (get ff-value-to-digit (band (>> $reg (* i 4)) #b1111) #\?))
@@ -170,6 +170,19 @@
 ;               (prompt gdb-prompt-parser))
       lines))
 
+(define gdb-monitor-x-answer-parser
+   (let-parses((value (get-greedy+
+                  (let-parses((skip get-hex)
+                              (skip (get-imm #\:))
+                              (skip get-whitespaces)
+                              (bytes (get-greedy+
+                                 (let-parses((skip (get-word "0x" #t))
+                                             (byte get-hex)
+                                             (skip maybe-whitespaces))
+                                    byte))))
+                     bytes)))
+               (skip gdb-prompt-parser))
+      (fold append '() value)))
 
 ; =============================================================================================
 ; ==
@@ -266,6 +279,18 @@
    (() (gdb gdb-prompt-parser "monitor loadvm my"))))
 
 
+; конфигурационные всякие штуки...
+; эта функция устанавливает глобальное значение переменной
+(define (set reg value)
+   ; а заодно, если надо, то и регистры подправит...
+   (cond
+      ((has? '(eax ebx ecx edx esp ebp esi edi eip efl) reg)
+         (gdb gdb-prompt-parser "set $" reg " = 0x" (%reg->string value))))
+
+   (mail 'config (tuple 'set reg value)))
+
+
+
 ; gdb commands
 (define (step-into)
    (notify "Step Into...")
@@ -279,7 +304,7 @@
    (let ((code (gdb gdb-x-i-answer-parser "x/2i $eip")))
       ;(caar code) <= current ip
       ;(caadr code) <= next ip
-      (gdb get-rest-of-line "tbreak *0x" ($reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
+      (gdb get-rest-of-line "tbreak *0x" (%reg->string (caadr code)))) ; <= Temporary breakpoint ? at 0x??
 
    (run-gdb-breaker)
    (notify (bytes->string
@@ -326,7 +351,7 @@
                   "x/8i "
                   (if reuse-pc
                      ; ok, нашел
-                     (string-append "0x" ($reg->string (get ff 'eip $eip)))
+                     (string-append "0x" (%reg->string (get ff 'eip $eip)))
                      ; else
                      "$pc"))))
       (locate 1 1) (set-color GREY)
@@ -334,7 +359,7 @@
             (display "                                                           \x1B;[1000D")
             ; address 
             (display "0x")
-            (display ($reg->string (car ai)))
+            (display (%reg->string (car ai)))
             (display (if (eq? $eip (car ai)) " * " "   "))
             
             (display (bytes->string (cdr ai)))
@@ -407,6 +432,8 @@
 
       ; Nothing, just refresh
       ((key-pressed #xffc5) ; F8
+         (notify
+            (gdb gdb-monitor-x-answer-parser "monitor x /32b 0"))
          (main #true 0))
 
       ; Continue
