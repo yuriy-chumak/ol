@@ -176,7 +176,7 @@
       lines))
 
 (define gdb-monitor-x-answer-parser
-   (let-parses((value (get-greedy+
+   (let-parses((value (get-greedy*
                   (let-parses((skip get-hex)
                               (skip (get-imm #\:))
                               (skip get-whitespaces)
@@ -188,6 +188,18 @@
                      bytes)))
                (skip gdb-prompt-parser))
       (fold append '() value)))
+
+(define gdb-monitor-info-mem-parser
+   (let-parses((value (get-greedy*
+                  (let-parses((start get-hex)
+                              (skip (get-imm #\-))
+                              (end   get-hex)
+                              (skip (get-imm #\space))
+                              (len   get-hex)
+                              (skip (get-imm #\space))
+                              (attr  get-rest-of-line))
+                     (tuple start end len attr)))))
+      value))
 
 ; =============================================================================================
 ; ==
@@ -298,6 +310,7 @@
 (define (x address count)
    (map (lambda (x) (bytes->number x 16))
       (gdb gdb-monitor-x-answer-parser "monitor x /" count "b " address)))
+
 (define (xp address count)
    (map (lambda (x) (bytes->number x 16))
       (gdb gdb-monitor-x-answer-parser "monitor xp /" count "b " address)))
@@ -340,6 +353,22 @@
    (show-cursor)
    (syscall 1017 (c-string "stty echo") #f #f) ; enable terminal echo
    (halt 1))
+
+(define (find-kernel-address)
+   #x804d7000)
+   ;; (let ((mem (gdb gdb-monitor-info-mem-parser "monitor info mem")))
+   ;;    (print "(length mem): " (length mem))
+   ;;    (let ((out (keep (lambda (l)
+   ;;                      (let ((m (x (bytes->number (ref l 1) 16) 2)))
+   ;;                         ;(locate 80 1) (display (bytes->number (ref l 1) 16))
+   ;;                         (equal? m '( #x4d #x5a ))))
+   ;;                   mem)))
+   ;;    (print "rest: " (length out))
+   ;;    out
+   ;;    )))
+
+; todo: отловить запуск пользовательского приложения
+; цитата: Распознать начало 64-х битного стека легко - он, в отличие от 32-х битного всегда начитается с ntdll!LdrInitializeThunk. Эта функция - первое что выполняет нить после первого переключения из режима ядра. ntdll!LdrInitializeThunk завершает инициализацию нити и, поскольку нить выполняется в Wow64, переключается с 32-х режим и рекусривно вызывает ntdll!LdrInitializeThunk - на этот раз из 32-х битный ntdll.dll. Кадры стека, соответсвующие этому переходу - wow64!Wow64LdrpInitialize и wow64cpu!RunCpuSimulation. В отличие от Wow64, “нормальные” нити после завершения инициализации прыгают (с помощью nt!NtContinue) на ntdll!RtlUserThreadStart. Указатель стека при этом сбрасывается в начало, так что ntdll!RtlUserThreadStart становится первым кадром 32-х битного стека.
 
 ; ================================
 ; code window
@@ -416,6 +445,7 @@
 
 ; и главный цикл обработки событий клавиатуры
 ; main loop
+   (load 0) ; временно
 (let main ((dirty #true) (progress 0))
    (hide-cursor)
    (locate 58 1) (set-color GREY)
@@ -443,6 +473,7 @@
 
       ; Nothing, just refresh
       ((key-pressed #xffc5) ; F8
+         (find-kernel-address)
          (main #true 0))
 
       ; Continue
