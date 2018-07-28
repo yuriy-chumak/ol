@@ -68,7 +68,7 @@ ifeq ($(UNAME),FreeBSD)
 L := $(if HAS_DLOPEN, -lc -lm)
 endif
 ifeq ($(UNAME),NetBSD)
-L := $(if HAS_DLOPEN, -lc)
+L := $(if HAS_DLOPEN, -lc -lm)
 endif
 ifeq ($(UNAME),OpenBSD)
 L := $(if HAS_DLOPEN, -lc -ftrampolines)
@@ -306,7 +306,7 @@ test32: $(wildcard tests/*.scm)
 	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
-	   if ./ffi32 >/dev/null; then\
+	   if OL_HOME=`pwd`/libraries ./ffi32 repl $$F >/dev/null; then\
 	      echo "Ok." ;\
 	   else \
 	      echo "\033[0;31mFailed!\033[0m" ;\
@@ -318,12 +318,12 @@ test32: $(wildcard tests/*.scm)
 test64: $(wildcard tests/*.scm)
 	@echo "-- test64 ----------"
 	@rm -f $(FAILED)
-	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m32
+	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m64
 	@./vm64d
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m32 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m64 -Xlinker --export-dynamic
 	@for F in $^ ;do \
 	   echo -n "Testing $$F ... " ;\
-	   if ./ffi64 >/dev/null; then\
+	   if OL_HOME=`pwd`/libraries ./ffi64 repl $$F >/dev/null; then\
 	      echo "Ok." ;\
 	   else \
 	      echo "\033[0;31mFailed!\033[0m" ;\

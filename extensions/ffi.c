@@ -20,10 +20,6 @@
 
 #if OLVM_FFI
 
-#ifndef _WIN32
-#include <alloca.h>
-#endif
-
 #define TVOID         (48)
 //efine TSTRING       (3)
 //efine TSTRINGWIDE   (22)
@@ -679,7 +675,8 @@ word* OL_ffi(OL* self, word* arguments)
 	word args[32]; // 16 double аргументов максимум
 	int i = 0;     // актуальное количество аргументов
 
-	static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
+	// note: not working under netbsd. should be fixed.
+	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
 
 
 #ifdef __EMSCRIPTEN__

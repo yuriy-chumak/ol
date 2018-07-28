@@ -424,18 +424,18 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 // ========================================
 // -=( logger )=---------------------------
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wstring-plus-int"
+#endif
+
 static
 void E(char* format, ...)
 {
 	va_list args;
 	va_start(args, format);
 	int fd = STDERR_FILENO;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wstring-plus-int"
-#endif
 
 	for(;;)
 	switch (*format++) {
@@ -474,8 +474,8 @@ void E(char* format, ...)
 	default:
 		write(fd, format-1, sizeof(char));
 	}
-#pragma GCC diagnostic pop
 }
+#pragma GCC diagnostic pop
 
 #ifdef NDEBUG
 #	define D(...)
