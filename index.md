@@ -24,10 +24,11 @@ Preparing version **2.0** which moving to r7rs with changes in ffi and embed.
 - [x] aarch64: cortex-a53, cortex-a57.
 - [x] arm: arm920t, snapdragon 801.
   - nearly planned, but not yet tested: arm926t, arm1136, cortex-a7, cortex-a9, cortex-a15, cortex-m3, cortex-m4.
-- fully supported, but not yet tested: m68k, microblaze, mips32, mips64, or1k, ppc, ppc64, sh4, spark, spark64, ztensa.
+- [x] mips32: algor (P-5064)
+- fully supported, but not yet tested: m68k, microblaze, mips64, or1k, ppc, ppc64, sh4, spark, spark64, ztensa.
 
 ### Tested operation systems/devices
-- [x] Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
+- [x] GNU/Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
 - [x] Windows: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.
 - [x] Unix: OpenBSD, FreeBSD, NetBSD.
 - [x] Android: all versions up to Nougat.

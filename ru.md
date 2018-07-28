@@ -7,7 +7,7 @@ categories: index
 > <br/> <span style="float: right;">Десятое правило Гринспена</span>
 <br/>
 
-Otus Lisp (произносится как [\`отэс лисп]), или сокращенно Ol ([\`ол]) - чисто[\*](#pure) функциональный диалект языка Lisp.
+**Otus Lisp** (произносится как [\`отэс лисп]), или сокращенно Ol ([\`ол]) - чисто[\*](#pure) функциональный диалект языка Lisp.
 
 Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Маленький, встраиваемый и кроссплатформенный; может работать в песочнице (в системах, где песочница поддерживается); предоставляет портабельный, высокоуровневый путь для вызова написанного на других языках кода. Вы можете использовать его под Linux, Windows, Unix, Android и многих других операционных системах на разных (например, x86, arm, aarch64, mips, ppc) архитектурах.
 
@@ -24,10 +24,11 @@ Ol реализован как расширенное подмножество S
 - [x] aarch64: cortex-a53, cortex-a57.
 - [x] arm: arm920t, snapdragon 801.
   - nearly planned, but not yet tested: arm926t, arm1136, cortex-a7, cortex-a9, cortex-a15, cortex-m3, cortex-m4.
-- fully supported, but not yet tested: m68k, microblaze, mips32, mips64, or1k, ppc, ppc64, sh4, spark, spark64, ztensa.
+- [x] mips32: algor (P-5064)
+- fully supported, but not yet tested: m68k, microblaze, mips64, or1k, ppc, ppc64, sh4, spark, spark64, ztensa.
 
 ### Протестированные операционные системы/устройства
-- [x] Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
+- [x] GNU/Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
 - [x] Windows: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.
 - [x] Unix: OpenBSD, FreeBSD, NetBSD.
 - [x] Android: all versions up to Nougat.
