@@ -443,9 +443,20 @@
          (mail sender #false)
          (loop env)))))))
 
+; и еще немного синтаксического сахара:
+; пускай символы регистра вычисляются сами в себя (тоже синтаксический сахар)
+; аналог (setq eax 'eax)
+(for-each (lambda (i)
+            (interact 'evaluator (list 'define (car i) (cdr i))))
+   `((eax . 'eax) (ebx . 'ebx) (ecx . 'ecx) (edx . 'edx)
+     (esp . 'esp) (ebp . 'ebp) (esi . 'esi) (edi . 'edi)
+
+     (eip . 'eip) (efl . 'efl)))
+
+
 ; и главный цикл обработки событий клавиатуры
 ; main loop
-   (load 0) ; временно
+(load 0) ; временно
 (let main ((dirty #true) (progress 0))
    (hide-cursor)
    (locate 58 1) (set-color GREY)
@@ -453,6 +464,8 @@
 
    (if dirty (begin
       (interact 'code 'show)
+
+      (info-registers) ; обновим регистры
       (interact 'registers 'show)
       
       (locate 1 20) (set-color GREY) (display ">                                                                 ")))

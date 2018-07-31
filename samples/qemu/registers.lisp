@@ -120,7 +120,7 @@
 (define (% reg)
    (interact 'config (tuple 'get reg)))
 
-; обновлятор регистров
+; обновлятор регистров (актуальное состояние, из qemu)
 (define (info-registers)
    (let ((registers (gdb gdb-monitor-info-registers-parser "monitor info registers")))
    (let ((eax (get registers 'eax "?"))
@@ -144,6 +144,8 @@
          ))
 
       ; ну и для удобства, просто так, заведем их как глобальные
+      ; тоже синтаксический сахар
+      ; но надо помнить, что в функциях их использовать нельзя
       (for-each (lambda (i)
          (interact 'evaluator (list 'setq (car i) (cdr i))))
          `((%eax . ,eax) (%ebx . ,ebx) (%ecx . ,ecx) (%edx . ,edx)
@@ -154,40 +156,48 @@
       registers))
 
 ; окошко с регистрами. обновляет, добывает, рисует
+(define (display-reg reg value)
+   (display (if value (%reg->string value) "????????")))
+
+(define layout (list->ff `(
+   (eax . (60  1 ,display-reg))
+   (ecx . (60  2 ,display-reg))
+   (edx . (60  3 ,display-reg))
+   (ebx . (60  4 ,display-reg))
+
+   (esp . (60  5 ,display-reg))
+   (ebp . (60  6 ,display-reg))
+   (esi . (60  7 ,display-reg))
+   (edi . (60  8 ,display-reg))
+
+   (eip . (60 10 ,display-reg))
+   (efl . (60 11 ,display-reg))
+
+)))
+
+
+
 (fork-server 'registers (lambda ()
 (let loop ((ff #empty))
 (let*((envelope (wait-mail))
       (sender msg envelope))
-
-   (let ((registers (info-registers))
-         ; выводилка
-         (show (lambda (x y reg)
-            (let ((value (% reg)))
-               (locate x y)
-               (set-color DARKGREY)
-               (for-each display (list "$" reg " "))
-               (set-color (if (eq? value (get ff reg -1)) GREY RED))
-               (display (if (string? value) value (%reg->string value)))))))
-
-      ; ну и выведем их на экран, угу?
-      (show 60 1 'eax)
-      (show 60 2 'ebx)
-      (show 60 3 'ecx)
-      (show 60 4 'edx)
-      (show 60 5 'esp)
-      (show 60 6 'ebp)
-      (show 60 7 'esi)
-      (show 60 8 'edi)
-
-      (show 60 10 'eip)
-
-      (mail sender 'ok)
-      (loop registers))))))
-      
-      ;; (fold (lambda (ff v)
-      ;;                (put ff (car v) (cdr v)))
-      ;;          ff `(
-      ;;             (eax . ,eax) (ebx . ,ebx) (ecx . ,ecx) (edx . ,edx)
-      ;;             (esp . ,esp) (ebp . ,ebp) (esi . ,esi) (edi . ,edi)
-      ;;             (eip . ,eip)
-      ;;          )))))))))
+   (let show ((L (ff-iter layout)))
+      (unless (null? L)
+         (let ((reg (caar L))
+               (layout (cdar L)))
+         (let ((value (% reg)))
+            (locate (car layout) (cadr layout))
+            (set-color DARKGREY)
+            (for-each display (list "$" reg " "))
+            (set-color (if (eq? (get ff reg #f) value)
+               GREY
+               RED))
+            ((caddr layout) reg value)
+            (show (force (cdr L)))))))
+   (mail sender 'ok)
+   (loop (fold (lambda (ff key)
+                  (put ff key (% key)))
+            ff '(eax ecx edx ebx
+                 esp ebp esi edi
+                 eip efl
+            )))))))
