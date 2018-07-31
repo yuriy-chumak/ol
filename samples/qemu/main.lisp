@@ -190,15 +190,17 @@
       (fold append '() value)))
 
 (define gdb-monitor-info-mem-parser
-   (let-parses((value (get-greedy*
-                  (let-parses((start get-hex)
-                              (skip (get-imm #\-))
-                              (end   get-hex)
-                              (skip (get-imm #\space))
-                              (len   get-hex)
-                              (skip (get-imm #\space))
-                              (attr  get-rest-of-line))
-                     (tuple start end len attr)))))
+   (let-parses((value (get-any-of
+                  (get-word "PG disabled" #false) ; no memory information available
+                  (get-greedy* ; normal memory table
+                     (let-parses((start get-hex)
+                                 (skip (get-imm #\-))
+                                 (end   get-hex)
+                                 (skip (get-imm #\space))
+                                 (len   get-hex)
+                                 (skip (get-imm #\space))
+                                 (attr  get-rest-of-line))
+                        (tuple start end len attr))))))
       value))
 
 ; =============================================================================================
@@ -354,18 +356,22 @@
    (syscall 1017 (c-string "stty echo") #f #f) ; enable terminal echo
    (halt 1))
 
+; find kernel address
 (define (find-kernel-address)
-   #x804d7000)
-   ;; (let ((mem (gdb gdb-monitor-info-mem-parser "monitor info mem")))
-   ;;    (print "(length mem): " (length mem))
-   ;;    (let ((out (keep (lambda (l)
-   ;;                      (let ((m (x (bytes->number (ref l 1) 16) 2)))
-   ;;                         ;(locate 80 1) (display (bytes->number (ref l 1) 16))
-   ;;                         (equal? m '( #x4d #x5a ))))
-   ;;                   mem)))
-   ;;    (print "rest: " (length out))
-   ;;    out
-   ;;    )))
+   (let ((mem (gdb gdb-monitor-info-mem-parser "monitor info mem")))
+;      (print "(length mem): " (length mem))
+      (let ((out (keep (lambda (l)
+                        (eq? (bytes->number (ref l 3) 16) #x400000)) ; todo: use > 0x100000
+                     mem)))
+         (print "rest: " (length out))
+      ; kernel memory block:
+      (car out) ; todo: check MZ, PE and module name others...
+      )))
+
+; todo: find all module exports (parse MZ)
+(define (load-module-exports)
+   #f
+)
 
 ; todo: отловить запуск пользовательского приложения
 ; цитата: Распознать начало 64-х битного стека легко - он, в отличие от 32-х битного всегда начитается с ntdll!LdrInitializeThunk. Эта функция - первое что выполняет нить после первого переключения из режима ядра. ntdll!LdrInitializeThunk завершает инициализацию нити и, поскольку нить выполняется в Wow64, переключается с 32-х режим и рекусривно вызывает ntdll!LdrInitializeThunk - на этот раз из 32-х битный ntdll.dll. Кадры стека, соответсвующие этому переходу - wow64!Wow64LdrpInitialize и wow64cpu!RunCpuSimulation. В отличие от Wow64, “нормальные” нити после завершения инициализации прыгают (с помощью nt!NtContinue) на ntdll!RtlUserThreadStart. Указатель стека при этом сбрасывается в начало, так что ntdll!RtlUserThreadStart становится первым кадром 32-х битного стека.
