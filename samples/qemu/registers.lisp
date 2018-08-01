@@ -88,12 +88,36 @@
          (efl . ,(bytes->number %efl 16))
 
          ; сегментные регистры (селекторы)
-         (es . ,%es) ;,(bytes->number $es 16))
-         (cs . ,%cs)
-         (ss . ,%ss)
-         (ds . ,%ds)
-         (fs . ,%fs)
-         (gs . ,%gs)
+         (es . ,(tuple
+                  (bytes->number (ref %es 1) 16) ; selector value
+                  (bytes->number (ref %es 2) 16) ; base
+                  (bytes->number (ref %es 3) 16) ; limit
+                  (bytes->number (ref %es 4) 16))); flags
+         (cs . ,(tuple
+                  (bytes->number (ref %cs 1) 16)
+                  (bytes->number (ref %cs 2) 16)
+                  (bytes->number (ref %cs 3) 16)
+                  (bytes->number (ref %cs 4) 16)))
+         (ss . ,(tuple
+                  (bytes->number (ref %ss 1) 16)
+                  (bytes->number (ref %ss 2) 16)
+                  (bytes->number (ref %ss 3) 16)
+                  (bytes->number (ref %ss 4) 16)))
+         (ds . ,(tuple
+                  (bytes->number (ref %ds 1) 16)
+                  (bytes->number (ref %ds 2) 16)
+                  (bytes->number (ref %ds 3) 16)
+                  (bytes->number (ref %ds 4) 16)))
+         (fs . ,(tuple
+                  (bytes->number (ref %fs 1) 16)
+                  (bytes->number (ref %fs 2) 16)
+                  (bytes->number (ref %fs 3) 16)
+                  (bytes->number (ref %fs 4) 16)))
+         (gs . ,(tuple
+                  (bytes->number (ref %gs 1) 16)
+                  (bytes->number (ref %gs 2) 16)
+                  (bytes->number (ref %gs 3) 16)
+                  (bytes->number (ref %gs 4) 16)))
 
          ; дескрипторы таблиц
          (ldt . ,%ldt)
@@ -120,19 +144,39 @@
 (define (% reg)
    (interact 'config (tuple 'get reg)))
 
+; селектор
+(define (selector-value selector)
+   (ref selector 1))
+(define (selector-base selector)
+   (ref selector 2))
+(define (selector-limit selector)
+   (ref selector 3))
+(define (selector-flags selector)
+   (ref selector 4))
+
+
 ; обновлятор регистров (актуальное состояние, из qemu)
 (define (info-registers)
    (let ((registers (gdb gdb-monitor-info-registers-parser "monitor info registers")))
-   (let ((eax (get registers 'eax "?"))
-         (ebx (get registers 'ebx "?"))
-         (ecx (get registers 'ecx "?"))
-         (edx (get registers 'edx "?"))
-         (esp (get registers 'esp "?"))
-         (ebp (get registers 'ebp "?"))
-         (esi (get registers 'esi "?"))
-         (edi (get registers 'edi "?"))
-         (eip (get registers 'eip "?"))
-         (efl (get registers 'efl "?")))
+   (let (; регистры общего назначения
+         (eax (get registers 'eax #f))
+         (ebx (get registers 'ebx #f))
+         (ecx (get registers 'ecx #f))
+         (edx (get registers 'edx #f))
+         (esp (get registers 'esp #f))
+         (ebp (get registers 'ebp #f))
+         (esi (get registers 'esi #f))
+         (edi (get registers 'edi #f))
+         (eip (get registers 'eip #f))
+         (efl (get registers 'efl #f))
+         ; селекторы
+         (es  (get registers 'es #false))
+         (cs  (get registers 'cs #false))
+         (ss  (get registers 'ss #false))
+         (ds  (get registers 'ds #false))
+         (fs  (get registers 'fs #false))
+         (gs  (get registers 'gs #false))
+        )
 
       ; запомним значения регистров, чтобы к ним могли обращаться отовсюду (и даже из скриптов)
       (for-each (lambda (i)
@@ -141,6 +185,9 @@
            (esp . ,esp) (ebp . ,ebp) (esi . ,esi) (edi . ,edi)
 
            (eip . ,eip) (efl . ,efl)
+
+           (es . ,es) (cs . ,cs) (ss . ,ss) (ds . ,ds)
+           (fs . ,fs) (gs . ,gs)
          ))
 
       ; ну и для удобства, просто так, заведем их как глобальные
@@ -148,30 +195,53 @@
       ; но надо помнить, что в функциях их использовать нельзя
       (for-each (lambda (i)
          (interact 'evaluator (list 'setq (car i) (cdr i))))
-         `((%eax . ,eax) (%ebx . ,ebx) (%ecx . ,ecx) (%edx . ,edx)
-           (%esp . ,esp) (%ebp . ,ebp) (%esi . ,esi) (%edi . ,edi)
+         `(
+            (%eax . ,eax) (%ebx . ,ebx) (%ecx . ,ecx) (%edx . ,edx)
+            (%esp . ,esp) (%ebp . ,ebp) (%esi . ,esi) (%edi . ,edi)
 
-           (%eip . ,eip) (%efl . ,efl)
+            (%eip . ,eip) (%efl . ,efl)
+
+            (%es . ,es) (%cs . ,cs) (%ss . ,ss) (%ds . ,ds)
+            (%fs . ,fs) (%gs . ,gs)
          )))
       registers))
 
 ; окошко с регистрами. обновляет, добывает, рисует
 (define (display-reg reg value)
-   (display (if value (%reg->string value) "????????")))
+   (display (value->string value "????????")))
+
+(define (display-seg seg value)
+   (for-each display
+      (list
+         ; все это неправильно. переделать!
+         (value->string (ref value 1) "????")     ; value, 16-bit
+         " "
+         (value->string (ref value 2) "????????") ; base, 32-bit
+         "("
+         (value->string (ref value 3) "????????") ; limit, 20-bit (?)
+         ")"
+         (value->string (ref value 4) "??????")))); flags, 24-bit
 
 (define layout (list->ff `(
-   (eax . (60  1 ,display-reg))
-   (ecx . (60  2 ,display-reg))
-   (edx . (60  3 ,display-reg))
-   (ebx . (60  4 ,display-reg))
+   (eax . (60 1 ,display-reg))
+   (ecx . (60 2 ,display-reg))
+   (edx . (60 3 ,display-reg))
+   (ebx . (60 4 ,display-reg))
 
-   (esp . (60  5 ,display-reg))
-   (ebp . (60  6 ,display-reg))
-   (esi . (60  7 ,display-reg))
-   (edi . (60  8 ,display-reg))
+   (esp . (60 5 ,display-reg))
+   (ebp . (60 6 ,display-reg))
+   (esi . (60 7 ,display-reg))
+   (edi . (60 8 ,display-reg))
 
-   (eip . (60 10 ,display-reg))
-   (efl . (60 11 ,display-reg))
+   (eip .(60 10 ,display-reg))
+   (efl .(60 11 ,display-reg))
+
+   (es . (65 13 ,display-seg))
+   (cs . (65 14 ,display-seg))
+   (ss . (65 15 ,display-seg))
+   (ds . (65 16 ,display-seg))
+   (fs . (65 17 ,display-seg))
+   (gs . (65 18 ,display-seg))
 
 )))
 
@@ -188,7 +258,7 @@
          (let ((value (% reg)))
             (locate (car layout) (cadr layout))
             (set-color DARKGREY)
-            (for-each display (list "$" reg " "))
+            (for-each display (list "%" reg " "))
             (set-color (if (eq? (get ff reg #f) value)
                GREY
                RED))

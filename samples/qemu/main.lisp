@@ -73,11 +73,26 @@
 (define (bytes->number bytes base)
    (fold (lambda (f x) (+ (* f base) (get ff-digit-to-value x 0)))
       0 bytes))
-(define (%reg->string $reg)
+(define (%reg->string reg) ; deprecated
    (bytes->string
       (map (lambda (i)
-         (get ff-value-to-digit (band (>> $reg (* i 4)) #b1111) #\?))
+         (get ff-value-to-digit (band (>> reg (* i 4)) #b1111) #\?))
          (reverse (iota 8 0)))))
+(define (%seg->string seg) ; deprecated
+   (bytes->string
+      (map (lambda (i)
+         (get ff-value-to-digit (band (>> seg (* i 4)) #b1111) #\?))
+         (reverse (iota 4 0)))))
+
+; if default - number, then default is "base"
+; else it's default value with hex width
+(define (value->string value default)
+   (if value
+      (bytes->string
+         (map (lambda (i)
+            (get ff-value-to-digit (band (>> value (* i 4)) #b1111) #\?))
+            (reverse (iota (string-length default) 0))))
+      default))
 
 ; ================================================================================
 (define gdb-prompt-parser
