@@ -69,7 +69,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #	endif
 #endif
 
-#if	HAS_CONFIG
+#if	HAS_CONFIG // todo: change olvm.h to config.h (?)
 #include "olvm.h"
 #endif
 
@@ -139,7 +139,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 // linux for qemu:   https://buildroot.uclibc.org/
 // images for qemu:  https://4pda.ru/forum/index.php?showtopic=318284
 #endif
-
 
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
@@ -212,7 +211,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 // http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
 
-// defaults. please don't change! use -D{OPTION}={0|1} command line instead
+// DEFAULTS. please don't change! use -D{OPTION}={0|1} command line instead
 //           or use -DHAS_CONFIG=1 and change your local copy of the olvm.h
 #ifndef HAS_SOCKETS
 #define HAS_SOCKETS 1 // system sockets support
@@ -421,6 +420,32 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #ifndef VMRAW_CHECK
 #define VMRAW_CHECK 1
 #endif
+
+
+// ========================================
+// -=( features )=-------------------------
+
+// tip: HAS_xxx and OLVM_xxx should be checked using "#if"
+
+#if HAS_DLOPEN
+#	define FEATURE_DLOPEN_BIT   0b00000001
+#endif
+#if HAS_SOCKETS
+#	define FEATURE_SOCKETS_BIT  0b00000010
+#endif
+
+#ifdef HAS_UNSAFES
+#endif
+#ifdef HAS_SANDBOX
+#endif
+
+#if OLVM_FFI
+#endif
+#if OLVM_CALLABLES
+#endif
+#if OLVM_INEXACTS
+#endif
+
 
 // ========================================
 // -=( logger )=---------------------------
@@ -3176,7 +3201,7 @@ loop:;
 		}
 
 		/*! \subsection stat
-		 * \brief 4: (stat port/path mode) -> (tuple ...)|#f
+		 * \brief 4: (stat port/path) -> (tuple ...)|#f
 		 *
 		 * Get file status
 		 *

@@ -9,7 +9,7 @@
 (cls)
 
 ; TEMP. will kill all previously forked qemu and gdb
-(syscall 1017 (c-string "killall qemu-system-i386") #f #f)
+;(syscall 1017 (c-string "killall qemu-system-i386") #f #f)
 (syscall 1017 (c-string "killall gdb") #f #f)
 
 (define (hide-cursor) (display "\x1B;[?25l")) ; temporary disabled
@@ -251,11 +251,11 @@
       (loop)))))
 
 ; qemu instance
-(fork 'qemu "/usr/bin/qemu-system-i386" "-m" "256" "-hda" "winxp.img" "-monitor" "stdio" "-s" "-S")
-(define (qemu . args)
-   (interact 'qemu args))
-(print (bytes->string
-(qemu get-rest-of-line)))
+;; (fork 'qemu "/usr/bin/qemu-system-i386" "-m" "256" "-hda" "winxp.img" "-monitor" "stdio" "-s" "-S")
+;; (define (qemu . args)
+;;    (interact 'qemu args))
+;; (print (bytes->string
+;; (qemu get-rest-of-line)))
 
 ; gdb instance
 (fork 'gdb "/usr/bin/gdb")
@@ -265,7 +265,7 @@
 (gdb gdb-greeting-parser))) ; wait for gdb
 
 ; minimize popupped QEMU window (for now, just debug reasons)
-(syscall 1017 (c-string "xdotool windowminimize $(xdotool getactivewindow)") #f #f)
+;; (syscall 1017 (c-string "xdotool windowminimize $(xdotool getactivewindow)") #f #f)
 ; or use `wmctrl -r "windowname" -b toggle,shaded`
 
 ; сконфигурируем gdb
@@ -279,7 +279,7 @@
          (unless (check-mail)
             (begin
                (if (key-pressed #xffbf) ; f2
-                  (syscall 62 (interact 'config (tuple 'get 'gdb)) 2 #f)) ; SIGIN
+                  (syscall 62 (interact 'config (tuple 'get 'gdb)) 2 #f)) ; SIGINT
                (this (sleep 1))))))))
 
 ; ================================================================
@@ -301,6 +301,17 @@
 (print "Your QEmu session ready to debug")
 ; Looks like our machine ready to start, ok.
 
+
+; -- синтаксический сахар
+; пускай символы регистра вычисляются сами в себя (тоже синтаксический сахар)
+(define eax 'eax) (define ecx 'ecx) (define edx 'edx) (define ebx 'ebx)
+(define esp 'esp) (define ebp 'ebp) (define esi 'esi) (define edi 'edi)
+(define eip 'eip) (define efl 'efl)
+
+(define es 'es) (define cs 'cs) (define ss 'ss) (define ds 'ds)
+(define fs 'fs) (define gs 'gs)
+
+; --------------------
 ,load "registers.lisp"
 
 ; ================================
@@ -316,6 +327,7 @@
 ; конфигурационные всякие штуки...
 ; эта функция устанавливает глобальное значение переменной
 (define (set reg value)
+
    ; а заодно, если надо, то и регистры подправит...
    (cond
       ((has? '(eax ebx ecx edx esp ebp esi edi eip efl) reg)
@@ -325,8 +337,19 @@
 
 ; get memory value
 (define (x address count)
-   (map (lambda (x) (bytes->number x 16))
-      (gdb gdb-monitor-x-answer-parser "monitor x /" count "b " address)))
+   (list->vector
+      (map (lambda (x) (bytes->number x 16))
+         (gdb gdb-monitor-x-answer-parser "monitor x /" count "b " address))))
+(define (u8 vector offset)
+   (ref vector offset))
+(define (u16 vector offset)
+   (+ (<< (ref vector (+ offset 0))  0)
+      (<< (ref vector (+ offset 1))  8)))
+(define (u32 vector offset)
+   (+ (<< (ref vector (+ offset 0))  0)
+      (<< (ref vector (+ offset 1))  8)
+      (<< (ref vector (+ offset 2)) 16)
+      (<< (ref vector (+ offset 3)) 24)))
 
 (define (xp address count)
    (map (lambda (x) (bytes->number x 16))
@@ -364,7 +387,7 @@
 
 (define (quit)
    (locate 1 20) (set-color GREEN) (display "> quitting...") (set-color GREY)
-   (qemu "quit") (gdb "quit")
+   #|(qemu "quit")|# (gdb "quit")
 
    (print "ok.")
    (show-cursor)
@@ -373,15 +396,39 @@
 
 ; find kernel address
 (define (find-kernel-address)
-   (let ((mem (gdb gdb-monitor-info-mem-parser "monitor info mem")))
-;      (print "(length mem): " (length mem))
-      (let ((out (keep (lambda (l)
-                        (eq? (bytes->number (ref l 3) 16) #x400000)) ; todo: use > 0x100000
-                     mem)))
-         (print "rest: " (length out))
-      ; kernel memory block:
-      (car out) ; todo: check MZ, PE and module name others...
-      )))
+(call/cc (lambda (return)
+   (for-each (lambda (block)  ; large memory block
+               (let ((start (+ (bytes->number (ref block 1) 16) #x60000)) ; temporary add #x60000 (testing purposes)
+                     (len   (- (bytes->number (ref block 3) 16) #x60000)))
+                  ; temp
+                  (for-each (lambda (addr)
+                              (define address (* addr #x1000)) ; step
+                              (if (equal? #(#\M #\Z) (x (+ start address) 2))
+                                 (let ((e_lfanew (u32 (x (+ start address #x3C) 4) 0)))
+                                    (if (equal? #(#\P #\E 0 0) (x (+ start address e_lfanew) 4)) ; IMAGE_NT_SIGNATURE
+                                       ;; (let ((IMAGE_FILE_HEADER (x (+ start address e_lfanew #x18))))
+                                       ;;    (let ((NumberOfSections (u16 (x (+ start address e_lfanew #x02) 2))))
+                                       ; IMAGE_FILE_HEADER:
+                                       (return (+ start address))
+
+
+                                       ))))
+                     (iota (floor (/ len #x1000)) 0))))
+      (keep (lambda (block)
+               (eq? (bytes->number (ref block 3) 16) #x400000)) ; todo: use > 0x100000
+         (gdb gdb-monitor-info-mem-parser "monitor info mem"))))))
+
+
+;(print (bytes->number (ref (find-kernel-address) 1) 16) "(" (bytes->number (ref (find-kernel-address) 3) 16) ")")
+
+;; (define (find-kernel-address)
+;;    (call/cc (lambda (return)
+;;       (define PPEB (u32 (x (+ (selector-base (% fs)) #x30) 4) 0))
+;;       (if (eq? PPEB #xFFFFFFFF)
+;;          (return #false))
+;;       (define PPEB_LDR_Data (u32 (x (+ PPEB #x0C) 4) 0))
+
+;;       (return PPEB))))
 
 ; todo: find all module exports (parse MZ)
 (define (load-module-exports)
@@ -463,17 +510,6 @@
       (else is error
          (mail sender #false)
          (loop env)))))))
-
-; и еще немного синтаксического сахара:
-; пускай символы регистра вычисляются сами в себя (тоже синтаксический сахар)
-; аналог (setq eax 'eax)
-(for-each (lambda (i)
-            (interact 'evaluator (list 'define (car i) (cdr i))))
-   `((eax . 'eax) (ebx . 'ebx) (ecx . 'ecx) (edx . 'edx)
-     (esp . 'esp) (ebp . 'ebp) (esi . 'esi) (edi . 'edi)
-
-     (eip . 'eip) (efl . 'efl)))
-
 
 ; и главный цикл обработки событий клавиатуры
 ; main loop

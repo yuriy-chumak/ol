@@ -259,7 +259,7 @@
             (locate (car layout) (cadr layout))
             (set-color DARKGREY)
             (for-each display (list "%" reg " "))
-            (set-color (if (eq? (get ff reg #f) value)
+            (set-color (if (equal? (get ff reg #f) value)
                GREY
                RED))
             ((caddr layout) reg value)
@@ -270,4 +270,5 @@
             ff '(eax ecx edx ebx
                  esp ebp esi edi
                  eip efl
+                 es cs ss ds fs gs
             )))))))
