@@ -1,0 +1,33 @@
+# additional features
+
+ifndef MAKEFILE_MAIN
+$(error Use toplevel Makefile, please.)
+else
+
+packages: debian-amd64-package
+	@echo "done."
+
+# echo '(display (cdr *version*))' | ./ol
+# example: http://lxr.free-electrons.com/source/scripts/package/Makefile
+# howto: https://www.debian.org/doc/manuals/distribute-deb/distribute-deb.html
+create-debian-package = \
+	@printf "Creating $1 DEBIAN package... ";\
+	make install DESTDIR=$1/$2;\
+	cd $1/$2 ;\
+	mkdir DEBIAN;\
+	find .$(PREFIX) -type f       > DEBIAN/conffiles;\
+	\
+	echo Package: ol              > DEBIAN/control;\
+	echo Version: 1.3             >>DEBIAN/control;\
+	echo Architecture: $2         >>DEBIAN/control;\
+	echo Maintainer: Yuriy Chumak >>DEBIAN/control;\
+	echo Priority: optional       >>DEBIAN/control;\
+	echo Description: Otus Lisp - a purely* functional dialect of Lisp \
+	                              >>DEBIAN/control;\
+	\
+	fakeroot dpkg -b . ../ol_1.3_$2.deb
+
+debian-amd64-package:
+	$(call create-debian-package,Build,amd64)
+
+endif
