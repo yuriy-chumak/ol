@@ -81,13 +81,14 @@
       (setq runtime-error (lambda (reason info)
          (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
 
-      ; * ol specific
-      (define-syntax syntax-error        ; * ol specific
+      ; 4.3.3. Signaling errors in macro transformers
+      ;
+      (define-syntax syntax-error
          (syntax-rules (runtime-error)
             ((syntax-error . stuff)
-               (runtime-error "Syntax error: " (quote stuff)))))
+               (runtime-error "syntax error: " (quote stuff)))))
 
-      ; * inernal
+      ; * internal testing staff
       ; note: this is simplified 'assert' that uses 'eq?'. please be careful!
       (define-syntax assert
          (syntax-rules (===>)
@@ -839,6 +840,7 @@
       (define type-clos             TCLOSURE)   ; reference, function with closure(s)
 
       (define type-vector-raw       19) ; reference, raw     ; see also TBVEC in c/ovm.c
+      (define type-bytevector       19) ; reference, raw     ; same as type-vector-raw
 
       ; 20
       (define type-string-dispatch  21) ; reference
@@ -1532,6 +1534,7 @@
       type-vector-dispatch
       type-vector-leaf
       type-vector-raw
+      type-bytevector
       type-ff-black-leaf
       type-tuple
       type-symbol
