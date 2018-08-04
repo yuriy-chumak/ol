@@ -1,14 +1,23 @@
-Otus Lisp
-=========
+```
+     `___`  
+     (o,o)  
+     \)  )  
+   ___"_"___
+   Otus Lisp
 
+```
 [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby)
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
-
 [![Travis-CI project page](https://travis-ci.org/yuriy-chumak/ol.svg)](https://travis-ci.org/yuriy-chumak/ol)
 
-Yet another pet lisp. Small, embeddable and purely functional!
+
+Otus Lisp aka Ol
+================
+
+Yet another pet Lisp. Small, embeddable and purely functional!
 
 VERSION 1.2
+
 
 LICENSE
 --------------------------------------------------------------
@@ -57,27 +66,35 @@ DOWNLOAD / INSTALLATION
 You can use basic Ol functionality without any installation -
 just copy the `ol` binary to any user accessible path. Basic
 functionality includes a rich set of functions: lists, ff, io,
-lazies, strings, symbols, vectors, math, regex and tuples.
+lazies, strings, symbols, vectors, math, regex, tuples etc.
 
 For extended functionality you should install the whole Ol package.
 
 Installation packages for
-CentOS 6 (x86, amd64), CentOS 7 (amd64),
-Debian 7 (x86, amd64), Debian 8 (x86, amd64),
-Fedora 22 (x86, amd64), Fedora 23 (x86, amd64),
-RHEL 5 (x86, amd64), RHEL 6 (x86, amd64), RHEL 7 (amd64),
-SLE 10 (x86, amd64), SLE 11 (x86, amd64), SLE 12 (amd64),
-ScientificLinux 6 (x86, amd64), ScientificLinux 7 (amd64),
-Univention 3.2 (x86, amd64), Univention 4.0 (x86, amd64),
-openSUSE 13.1 (x86, amd64), openSUSE 13.2 (x86, amd64),
-openSUSE Factory (aarch64, armv7l),
-openSUSE Leap 42.1 (amd64),
-openSUSE Tumbleweed (x86, amd64),
-Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64) can be found at
+
+* CentOS 6 (x86, amd64), CentOS 7 (amd64)
+* Debian 7 (x86, amd64), Debian 8 (x86, amd64),
+* Fedora 22 (x86, amd64), Fedora 23 (x86, amd64),
+* RHEL 5 (x86, amd64), RHEL 6 (x86, amd64), RHEL 7 (amd64),
+* SLE 10 (x86, amd64), SLE 11 (x86, amd64), SLE 12 (amd64),
+* ScientificLinux 6 (x86, amd64), ScientificLinux 7 (amd64),
+* Univention 3.2 (x86, amd64), Univention 4.0 (x86, amd64),
+* openSUSE 13.1 (x86, amd64), openSUSE 13.2 (x86, amd64),
+  openSUSE Factory (aarch64, armv7l),
+  openSUSE Leap 42.1 (amd64),
+  openSUSE Tumbleweed (x86, amd64),
+* Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64)
+
+can be found at
 [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol)
 
-Installation packages for Windows (x86, amd64) and for Android (arm64-v8a, armeabi, armeabi-v7a,
-mips, mips64, x86, x86_64) can be found at the [![Releases](https://img.shields.io/github/downloads/yuriy-chumak/ol/total.svg)](https://github.com/yuriy-chumak/ol/releases) announcment page.
+Installation packages for
+
+* Windows (x86, amd64)
+* Android (arm64-v8a, armeabi, armeabi-v7a,
+mips, mips64, x86, x86_64)
+
+can be found at the [![Releases](https://img.shields.io/github/downloads/yuriy-chumak/ol/total.svg)](https://github.com/yuriy-chumak/ol/releases) announcment page.
 
 Precompiled binary for Odroid (Ubuntu 14.04, armv7l) on the way.
 
@@ -380,3 +397,16 @@ SOME NOTES
 * env *special-forms* list of all special forms
 * vm *primitives* list of all primitives
 * lang *owl-core* basic OL language elements
+
+
+```
+Have a nice day,
+
+   U  ___ u   _      
+    \/"_ \/  |"|     
+    | | | |U | | u   
+.-,_| |_| | \| |/__  
+ \_)-\___/   |_____| 
+      \\     //  \\  
+     (__)   (_")("_) 
+```
