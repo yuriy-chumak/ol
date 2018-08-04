@@ -1,4 +1,4 @@
-;#!/usr/bin/ol
+#!/usr/bin/ol
 
 ; coroutines used by "fork-server", "mail", "wait-mail" and "interact" functions
 

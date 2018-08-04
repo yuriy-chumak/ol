@@ -28,12 +28,9 @@
       (if (eq? n 3)
          #true))))
 
-(gl:run
+(gl:set-window-title 
+   "Convey's The game of Life")
 
-   "Convey's The game of Life"
-
-'init
-(lambda ()
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
    (glOrtho 0 WIDTH 0 HEIGHT 0 1)
@@ -42,8 +39,7 @@
 ;   (list->ff (map (lambda (i) (let ((x (rand2! WIDTH)) (y (rand2! HEIGHT)))
 ;                                 (cons (hash x y) 1))) (iota 1200)))))
 
-
-   (list
+(gl:set-userdata
    (let ((initial (file->vector "initial.bmp")))
    (list->ff (map (lambda (p) (cons (hash (car p) (cdr p)) 1))
       (fold (lambda (st p)
@@ -51,10 +47,10 @@
          (if (eq? (vector-ref initial n) 0)
             (cons (cons (mod p 64) (div p 64)) st) st)))
       null
-      (iota (- (size initial) #x436))))))))
+      (iota (- (size initial) #x436)))))))
 
-;'draw
-(lambda (generation)
+
+(gl:set-renderer (lambda (generation)
    (glClear GL_COLOR_BUFFER_BIT)
 
 ;   (let ((min-x (ff-fold (lambda (st key value)
@@ -112,3 +108,5 @@
                      (cons    x    (+ y 1))
                      (cons (+ x 1) (+ y 1))))))
          #empty generation))))
+
+(gl:finish)
