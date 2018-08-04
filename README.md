@@ -373,7 +373,7 @@ TBD.
 DOCUMENTATION
 -------------
 
-Please refer to the [project page](yuriy-chumak.github.io/ol/)
+Please refer to the [project page](https://yuriy-chumak.github.io/ol/)
 
 Or check the source codes - r5rs/core.owl
 
