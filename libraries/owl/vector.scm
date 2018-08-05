@@ -45,7 +45,7 @@
 (define-library (owl vector)
 
    (export
-      vector              ; v0, .., vn → vector
+      (exports (scheme vectors))
       byte-vector?
       vec-len             ; v → n
       vec-ref             ; v x p → v[p] | error
@@ -69,7 +69,6 @@
       ;vec-render         ; v x tail → tail'
 
       merge-chunks          ; exported for use in lib-io (may be moved later)
-      make-vector           ; n elem → #(elem ...)
       leaf-data vec-leaf-of
       vector-ref
       vector-length
@@ -80,6 +79,7 @@
 
    (import
       (scheme core)
+      (scheme vectors)
       (owl lazy)
       (owl list)
       (owl list-extra)
@@ -552,19 +552,19 @@
          (list->vector
             (vec-iterr a)))
 
-      ;; fixme: make-vector does not share the nodes despite most being equal
-      (define (make-vector n elem)
-         (list->vector (repeat elem n)))
+;      ;; fixme: make-vector does not share the nodes despite most being equal
+;      (define (make-vector n elem)
+;         (list->vector (repeat elem n)))
 
       ;;;
       ;;; Vector construction
       ;;;
 
-      ;; todo: start adding Vector-style constructors at some point
-      (define-syntax vector
-         (syntax-rules ()
-            ((vector . things)
-               (list->vector (list . things)))))
+;      ;; todo: start adding Vector-style constructors at some point
+;      (define-syntax vector
+;         (syntax-rules ()
+;            ((vector . things)
+;               (list->vector (list . things)))))
 
       (define vector-length vec-len)
       (define vector-ref vec-ref)

@@ -91,6 +91,7 @@
 
       ; * internal testing staff
       ; note: this is simplified 'assert' that uses 'eq?'. please be careful!
+      ; todo: make assert check values recursively!!!
       (define-syntax assert
          (syntax-rules (===>)
             ((assert expression ===> expectation)
@@ -1103,21 +1104,7 @@
 
 
       ; (r7rs) 6.8  Vectors
-      ;
-      ; Vectors are heterogeneous structures whose elements are
-      ; indexed by integers. A vector typically occupies less space
-      ; than a list of the same length, and the average time needed
-      ; to access a randomly chosen element is typically less for the
-      ; vector than for the list.      
-      ;
-      ; (vector? obj) procedure
-      (define (vector? o) ; == raw or a variant of major type 11?
-         (case (type o)
-            (type-vector-raw #true)
-            (type-vector-leaf #true)
-            (type-vector-dispatch #true)
-            (else #false)))
-
+      ; moved to (scheme vectors)
 
       ;; *********************
       ;; 6.4  Control features
@@ -1571,7 +1558,7 @@
       call-with-current-continuation call/cc lets/cc
 
       ; 6.3
-      not boolean? pair? symbol? vector? port? procedure? null? eof?
+      not boolean? pair? symbol? port? procedure? null? eof?
 
       value? reference?
       zero?
