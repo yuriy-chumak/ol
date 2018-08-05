@@ -45,7 +45,7 @@
 (define-library (owl vector)
 
    (export
-      (exports (scheme vectors))
+      (exports (scheme vector))
       byte-vector?
       vec-len             ; v → n
       vec-ref             ; v x p → v[p] | error
@@ -79,7 +79,7 @@
 
    (import
       (scheme core)
-      (scheme vectors)
+      (scheme vector)
       (owl lazy)
       (owl list)
       (owl list-extra)

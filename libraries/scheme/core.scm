@@ -1104,7 +1104,7 @@
 
 
       ; (r7rs) 6.8  Vectors
-      ; moved to (scheme vectors)
+      ; moved to (scheme vector)
 
       ;; *********************
       ;; 6.4  Control features
