@@ -19,7 +19,7 @@
       )
 
    (import
-      (scheme core)
+      (scheme base)
       (lang primop)
       (owl ff)
       (owl list)

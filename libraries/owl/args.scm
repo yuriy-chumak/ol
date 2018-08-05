@@ -11,7 +11,7 @@
       cl-rules)            ;; sexp → cl-rules
 
    (import
-      (scheme core)
+      (scheme base)
       (owl symbol)
       (owl list-extra)
       (owl lazy)

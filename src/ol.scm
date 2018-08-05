@@ -32,9 +32,10 @@
 ; предварительная загрузка зависимостей scheme core,
 ; (иначе импорт сбойнет)
 (import (src vm))   ;; команды виртуальной машины
-(import (scheme case-lambda))
+(import (scheme case-lambda)) ;; case-lambda :)
 (import (r5rs srfi-87))   ;; "=>" clauses in case
-(import (scheme core)) ;; базовый языковый набор ol
+(import (scheme core))    ;; базовый языковый ...
+(import (scheme base))    ;; ... набор ol
 
 ;; forget everhything except these and core values (later list also them explicitly)
 ,forget-all-but (*libraries* *codes* *vm-args* stdin stdout stderr set-ticker-value build-start)

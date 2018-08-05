@@ -22,7 +22,7 @@
       interaction-environment)
 
    (import
-      (scheme core)
+      (scheme base)
       (scheme cxr)
 
       (owl list)

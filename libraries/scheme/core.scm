@@ -969,17 +969,6 @@
       ; procedure:  (cddr pair)
       (define (cddr pair) (cdr (cdr pair)))
 
-      ; due to frequent use, moved from (scheme cxr) to (scheme core)
-      ; todo: move to scheme base
-      (define (caaar x) (car (car (car x))))
-      (define (caadr x) (car (car (cdr x))))
-      (define (cadar x) (car (cdr (car x))))
-      (define (caddr x) (car (cdr (cdr x))))
-      (define (cdaar x) (cdr (car (car x))))
-      (define (cdadr x) (cdr (car (cdr x))))
-      (define (cddar x) (cdr (cdr (car x))))
-      (define (cdddr x) (cdr (cdr (cdr x))))
-
       ; cxr library procedure:  (caaaar pair)  <- (scheme cxr)
       ; cxr library procedure:  (caaadr pair)  <- (scheme cxr)
       ; ...
@@ -1672,11 +1661,10 @@
       list-ref
 
       ; (r7rs) 6.4 Pairs and Lists
+      ; todo: move some staff to (scheme base)
       pair? cons car cdr
       set-car! set-cdr!
       caar cadr cdar cddr
-      caaar caadr cadar caddr ; moved from (scheme cxr)
-      cdaar cdadr cddar cdddr ; moved from (scheme cxr)
       null? list?
       make-list list length
       append reverse list-tail list-ref list-set!

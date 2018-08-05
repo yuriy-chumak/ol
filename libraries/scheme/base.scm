@@ -1,6 +1,10 @@
 (define-library (scheme base)
-   (export 
-      (exports (scheme core)) )
+(export 
+   (exports (scheme core))
+
+      caaar caadr cadar caddr ; moved from (scheme cxr)
+      cdaar cdadr cddar cdddr ; moved from (scheme cxr)
+   )
 
    #| todo: this library should export these keywords:
       *
@@ -240,11 +244,20 @@
       write-bytevector
       write-string
       zero?
-   #|
+   |#
    (import
       (scheme core)
       (owl math))
 
    (begin
-      #true
+
+      ; due to frequent use, moved from (scheme cxr) to (scheme base)
+      (define (caaar x) (car (car (car x))))
+      (define (caadr x) (car (car (cdr x))))
+      (define (cadar x) (car (cdr (car x))))
+      (define (caddr x) (car (cdr (cdr x))))
+      (define (cdaar x) (cdr (car (car x))))
+      (define (cdadr x) (cdr (car (cdr x))))
+      (define (cddar x) (cdr (cdr (car x))))
+      (define (cdddr x) (cdr (cdr (cdr x))))
 ))

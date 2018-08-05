@@ -6,7 +6,7 @@
    (export macro-expand match make-transformer)
 
    (import
-      (scheme core)
+      (scheme base)
       (r5rs srfi-1)
       (owl list)
       (owl equal)
