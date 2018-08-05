@@ -39,6 +39,15 @@
       ; most of the major programming paradigms in use today.
 
 
+      ; internal: (-1 obj), (+1 obj) * please, don't use: this works only with fix+ numbers
+      ; note: todo: add theoretically impossible case:
+      ;       (if carry (runtime-error "Too long list to fit in fixnum"))
+
+      (setq |-1| (lambda (n) ; *internal
+         (values-apply (vm:sub n 1) (lambda (n carry) n))))
+      (setq |+1| (lambda (n) ; *internal
+         (values-apply (vm:add n 1) (lambda (n carry) n))))
+
       ;                      DESCRIPTION OF THE LANGUAGE
 
       ;;; ---------------------------------------------------------------
@@ -631,16 +640,207 @@
 
       ; 6.1  Equivalence predicates
       ;
-      ; A predicate is a procedure that always returns .......
-      ; ...........
+      ; A predicate is a procedure that always returns a boolean
+      ; value (#t or #f). An equivalence predicate is the compu-
+      ; tational analogue of a mathematical equivalence relation;
+      ; it is symmetric, reflexive, and transitive. Of the equiva-
+      ; lence predicates described in this section, eq? is the finest
+      ; or most discriminating, equal? is the coarsest, and eqv?
+      ; is slightly less discriminating than eq?.
 
-      ; procedure:  (eqv? obj1 obj2)  * in (owl equal) (todo: update)
+      ; (r7rs) procedure:  (eq? obj1 obj2)   * builtin
+      (define eq? eq?)
 
-      ; procedure:  (eq? obj1 obj2)   * builtin
+      ; (r7rs) procedure:  (eqv? obj1 obj2)
+      ;
+      ; The eqv? procedure defines a useful equivalence relation on
+      ; objects. Briefly, it returns #t if obj 1 and obj 2 are normally
+      ; regarded as the same object. This relation is left slightly
+      ; open to interpretation, but the following partial specifica-
+      ; tion of eqv? holds for all implementations of Scheme.
+      (define (eqv? a b)
+
+      ;  * obj 1 and obj 2 are both #t or both #f.
+      ;  * obj 1 and obj 2 are both symbols and are the same sym-
+      ;    bol according to the symbol=? procedure
+      ;  * obj 1 and obj 2 are both characters and are the same
+      ;    character according to the char=? procedure
+      ;  * obj 1 and obj 2 are both the empty list
+      ;  * obj 1 and obj 2 are pairs, vectors, bytevectors, records,
+      ;    or strings that denote the same location in the store
+      ;  * obj 1 and obj 2 are procedures whose location tags are
+      ;    equal
+         (if (eq? a b)
+            #true
+      ;  * obj 1 and obj 2 are both exact numbers and are numer-
+      ;    ically equal (in the sense of =)
+         (let ((type-a (type a)))
+         (if (or (eq? type-a TINT+)
+                 (eq? type-a TINT-)
+                 (eq? type-a TRATIONAL)
+                 (eq? type-a TCOMPLEX))
+            (and
+               (eq? (type a) (type b))
+               (eqv? (car a) (car b))
+               (eqv? (cdr a) (cdr b)))
+      ;  * obj 1 and obj 2 are both inexact numbers such that they
+      ;    are numerically equal (in the sense of =) and they yield
+      ;    the same results (in the sense of eqv?) when passed as
+      ;    arguments to any other procedure that can be defined
+      ;    as a finite composition of Scheme’s standard arith-
+      ;    metic procedures, provided it does not result in a NaN
+      ;    value.
+         (if (eq? type-a TINEXACT)
+            (and
+               (eq? (type a) (type b))
+               (let loop ((n (size a)))
+                  (if (eq? n -1)
+                     #true
+                     (if (eq? (ref a n) (ref b n))
+                        (loop (|-1| n))))))
+         ; else
+         #false)))))
+
+      (assert (eqv? 'a 'a)                  ===> #true)
+      (assert (eqv? '() '())                ===> #true)
+      (assert (eqv? 2 2)                    ===> #true) ; atomic number
+      (assert (eqv? 72057594037927936
+                    72057594037927936)      ===> #true) ; not an atomic numbers
+      (assert (eqv? 0.33 0.33)              ===> #true)
+      (assert (eqv? 7/3 14/6)               ===> #true)
+      (assert (eqv? 2+3i 2+3i)              ===> #true)
+      (assert (let ((p (lambda (x) x)))
+                 (eqv? p p))                ===> #true)
+      (assert (let ((x '(a)))
+                 (eqv? x x))                ===> #true)
+
+      ; The eqv? procedure returns #f if:
+
+      ;  * obj 1 and obj 2 are of different types
+      (assert (eqv? 'a 12)                  ===> #false)
+      (assert (eqv? #f 'nil)                ===> #false)
+
+      ;  * one of obj 1 and obj 2 is #t but the other is #f
+      (assert (eqv? #t #f)                  ===> #false)
+
+      ;  * obj 1 and obj 2 are symbols but are not the same symbol
+      ;    according to the symbol=? procedure
+      (assert (eqv? 'a 'b)                  ===> #false)
+
+      ;  * one of obj 1 and obj 2 is an exact number but the other
+      ;    is an inexact number
+      (assert (eqv? 2 (vm:cast 2 TINEXACT)) ===> #false)
+
+      ;  * obj 1 and obj 2 are both exact numbers and are numer-
+      ;    ically unequal
+      (assert (eqv? 2 3)                    ===> #false) ; atomic number
+      (assert (eqv? 72057594037927936
+                    82057594037927936)      ===> #false) ; not an atomic numbers
+
+      ;  * obj 1 and obj 2 are both inexact numbers such that ei-
+      ;    ther they are numerically unequal (in the sense of =),
+      ;    or they do not yield the same results (in the sense
+      ;    of eqv?) when passed as arguments to any other pro-
+      ;    cedure that can be defined as a finite composition of
+      ;    Scheme’s standard arithmetic procedures, provided it
+      ;    does not result in a NaN value. As an exception, the
+      ;    behavior of eqv? is unspecified when both obj 1 and
+      ;    obj 2 are NaN
+      (assert (eqv? (vm:cast 2 TINEXACT)
+                    (vm:cast 3 TINEXACT))   ===> #false)
+           ; todo: more examples
+
+      ;  * obj 1 and obj 2 are characters for which the char=? pro-
+      ;    cedure returns #f           
+      (assert (eqv? #\a #\A)                ===> #false)
+
+      ;  * one of obj 1 and obj 2 is the empty list but the other is
+      ;    not
+      (assert (eqv? '() '(a))               ===> #false)
+
+      ;  * obj 1 and obj 2 are pairs, vectors, bytevectors, records,
+      ;    or strings that denote distinct locations
+      (assert (eqv? (cons 1 2) (cons 1 2))  ===> #false)
+
+      ;  * obj 1 and obj 2 are procedures that would behave dif-
+      ;    ferently (return different values or have different side
+      ;    effects) for some arguments
+      (assert (eqv? (lambda () 1)
+                    (lambda () 2))          ===> #false)
+      (assert (letrec ((f (lambda () (if (eqv? f g) 'f 'both)))
+                       (g (lambda () (if (eqv? f g) 'g 'both))))
+                 (eqv? f g))                ===> #false)
+
+      ; The following examples illustrate cases in which the above
+      ; rules do not fully specify the behavior of eqv?. All that
+      ; can be said about such cases is that the value returned by
+      ; eqv? must be a boolean
+
+      ;assert (eqv? "" "")                  ===> unspecified
+      ;assert (eqv? '#() '#())              ===> unspecified
+      ;assert (eqv? (lambda (x) x)
+      ;             (lambda (x) x))         ===> unspecified
+      ;assert (eqv? (lambda (x) x)
+      ;             (lambda (y) y))         ===> unspecified
+      ;assert (eqv? 1.0e0 1.0f0)            ===> unspecified
+      ;assert (eqv? +nan.0 +nan.0)          ===> unspecified
+
+      ;assert (eqv? '(a) '(a))              ===> unspecified
+      ;assert (eqv? "a" "a")                ===> unspecified
+      ;assert (eqv? '(b) (cdr '(a b)))      ===> unspecified
+      ;assert (letrec ((f (lambda () (if (eqv? f g) ’both ’f)))
+      ;                (g (lambda () (if (eqv? f g) ’both ’g))))
+      ;          (eqv? f g))                ===> unspecified
       
-      ; library procedure:  (equal? obj1 obj2)  * in (owl equal) (todo: update)
 
-      
+      ; (r7rs) procedure:  (equal? obj1 obj2)
+      ;
+      ; The equal? procedure, when applied to pairs, vectors,
+      ; strings and bytevectors, recursively compares them, return-
+      ; ing #t when the unfoldings of its arguments into (possibly
+      ; infinite) trees are equal (in the sense of equal?) as ordered
+      ; trees, and #f otherwise. It returns the same as eqv? when
+      ; applied to booleans, symbols, numbers, characters, ports,
+      ; procedures, and the empty list. If two objects are eqv?,
+      ; they must be equal? as well. In all other cases, equal?
+      ; may return either #t or #f.
+      (define (equal? a b)
+         (if (eqv? a b)
+            #true
+
+         (let ((type-a (type a)))
+         ; comparing blobs
+         (if (or (eq? type-a TSTRING)
+                 (eq? type-a 19)) ; type-vector-raw (todo: change to type-bytevector)
+            (and
+               (eq? (type a) (type b))
+               (eq? (size a) (size b))
+               (let loop ((n (size a)))
+                  (if (eq? n -1)
+                     #true
+                     (if (eq? (ref a n) (ref b n))
+                        (loop (|-1| n))))))
+         
+         ; recursive comparing objects:
+         (if (or (eq? type-a TPAIR)  ; pairs (lists)
+                 (eq? type-a TTUPLE) ; tuples (ol specific)
+                 (eq? type-a TSTRINGWIDE) ; unicode strings
+                 (eq? type-a 11))    ; type-vector-leaf
+            (and
+               (eq? (type a) (type b))
+               (eq? (size a) (size b))
+               (let loop ((n (size a)))
+                  (if (eq? n 0)
+                     #true
+                     (if (equal? (ref a n) (ref b n))
+                        (loop (|-1| n))))))
+         ; todo: compare type-string-dispatch
+         ; todo: compare type-vector-dispatch
+         ; todo: ?
+
+         ; else
+         #false)))))
+
       ; 6.2  Numbers
       ; 
       ; Numerical computation has traditionally been .......
@@ -917,14 +1117,6 @@
       ; set-car! and set-cdr!.
       ; ......
 
-      ; internal: (-1 obj), (+1 obj) * please, don't use: this works only with fix+ numbers
-      ; note: todo: add theoretically impossible case: (if carry (runtime-error "Too long list to fit in fixnum"))
-
-      (define (|-1| n) ; *internal
-         (values-apply (vm:sub n 1) (lambda (n carry) n)))
-      (define (|+1| n) ; *internal
-         (values-apply (vm:add n 1) (lambda (n carry) n)))
-
       ; procedure:  (pair? obj)
       (define (pair? o)
          (eq? (type o) type-pair))
@@ -1090,9 +1282,35 @@
             (if (pair? tail)
                (set-car! tail obj))))
 
-      ; library procedure:  (memq obj list)   * todo
-      ; library procedure:  (memv obj list)
-      ; library procedure:  (member obj list)
+      ; procedure:  (memq obj list)
+      ; procedure:  (memv obj list)
+      ; procedure:  (member obj list)
+      ; procedure:  (member obj list compare)
+      ;
+      ; These procedures return the first sublist of list whose car
+      ; is obj , where the sublists of list are the non-empty lists
+      ; returned by (list-tail list k ) for k less than the length
+      ; of list. If obj does not occur in list, then #f (not the empty
+      ; list) is returned. The memq procedure uses eq? to compare
+      ; obj with the elements of list, while memv uses eqv? and
+      ; member uses compare, if given, and equal? otherwise.
+      (define (make-mem* comparer)
+         (letrec ((mem (lambda (obj list)
+                        (cond
+                           ((null? list) #false)
+                           ((comparer obj (car list)) list)
+                           (else (mem obj (cdr list)))))))
+            mem))
+
+      (define memq (make-mem* eq?))
+      (define memv (make-mem* eqv?))
+      (define member
+         (let ((memequal (make-mem* equal?)))
+         (case-lambda 
+            ((obj list)
+               (memequal obj list))
+            ((obj list compare)
+               ((make-mem* compare) obj list)))))
 
       ; library procedure:  (assq obj alist)
       ; library procedure:  (assv obj alist)
@@ -1652,6 +1870,9 @@
       apply
       call-with-current-continuation call/cc lets/cc
 
+      ; (r7rs) 6.1  Equivalence predicates
+      eq? eqv? equal?
+
       ; 6.3
       not boolean? symbol? port? procedure? eof?
 
@@ -1668,7 +1889,7 @@
       null? list?
       make-list list length
       append reverse list-tail list-ref list-set!
-;      memq memv member
+      memq memv member
 ;      assq assv assoc
       list-copy
 

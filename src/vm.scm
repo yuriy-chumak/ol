@@ -28,6 +28,7 @@
       TPAIR TTUPLE TSTRING TSYMBOL
       TBYTECODE TPROCEDURE TCLOSURE
       TVPTR TCALLABLE
+      TSTRINGWIDE
 
       ; public primitives
       CAR CDR NEW    ; used by (lang compile) and (lang eval)

@@ -15,7 +15,6 @@
       (owl tuple)
       (owl list)
       (owl symbol)
-      (owl equal)
       (owl io) ; for display
       (lang env))
 

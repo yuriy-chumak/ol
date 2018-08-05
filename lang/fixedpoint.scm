@@ -10,7 +10,6 @@
       (lang ast)
       (owl math)
       (owl list)
-      (owl equal)
       (owl list-extra)
       (owl io)
       (lang env))

@@ -32,7 +32,6 @@
 
       (owl string)
       (owl math)
-      (owl equal)
       (owl io)
       (owl interop)
       (owl list)

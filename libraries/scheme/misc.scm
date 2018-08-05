@@ -11,7 +11,6 @@
 
    (import
       (scheme core)
-      (owl equal)
       (owl list)
       (owl string)
       (only (lang sexp) list->number)

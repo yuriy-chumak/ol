@@ -19,7 +19,6 @@
       (owl math)
       (owl list-extra)
       (owl io)
-      (owl equal)
       (owl list)
       (scheme misc))
 

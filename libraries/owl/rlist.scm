@@ -41,8 +41,7 @@
    (import
       (scheme core)
       (owl list)
-      (owl math)
-      (owl equal))
+      (owl math))
 
    (begin
       (define rnull? null?)

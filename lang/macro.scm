@@ -9,7 +9,6 @@
       (scheme base)
       (r5rs srfi-1)
       (owl list)
-      (owl equal)
       (owl list-extra)
       (owl math)
       (owl io)

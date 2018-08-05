@@ -56,7 +56,6 @@
       (owl string)
       (owl list-extra)
       (owl ff)
-      (owl equal)
       (owl vector)
       (owl render)
       (owl list)

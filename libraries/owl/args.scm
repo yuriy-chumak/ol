@@ -21,7 +21,6 @@
       (owl render)
       (owl list)
       (owl string)
-      (owl equal)
       (owl ff)) ;; MODULE OUTPUT DOWNGRADED
 
    (begin

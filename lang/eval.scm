@@ -46,7 +46,6 @@
       (owl string)
       (lang sexp)
       (owl parse)
-      (owl equal)
       (owl string)
       (scheme misc)
       (owl lazy)
