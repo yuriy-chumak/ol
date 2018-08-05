@@ -100,7 +100,7 @@
 
       ; * internal testing staff
       ; note: this is simplified 'assert' that uses 'eq?'. please be careful!
-      ; todo: make assert check values recursively!!!
+      ; note: will be changed to "equal?" version in chapter 6
       (define-syntax assert
          (syntax-rules (===>)
             ((assert expression ===> expectation)
@@ -357,15 +357,7 @@
                (if (eq? thing atom)
                   ((lambda () . then)) ; means (begin . body)
                   (case thing . clauses)))))
-
-      ;no memv yet to check this asserts
-      ;(assert (case 6
-      ;          ((2 3 5 7) 'prime)
-      ;          ((1 4 6 8 9) 'composite))                 ===> composite)
-      ;(assert (case (car '(c d))
-      ;          ((a e i o u) 'vowel)
-      ;          ((w y) 'semivowel)
-      ;          (else 'consonant))                        ===>  consonant)
+      ; please, check asserts for memv
 
       ; library syntax:  (and <test1> ...)
       (define-syntax and
@@ -841,6 +833,15 @@
          ; else
          #false)))))
 
+      ; * internal testing staff
+      ; note: this is full featured version, changed from simplest earlier.
+      (define-syntax assert
+         (syntax-rules (===>)
+            ((assert expression ===> expectation)
+               (unless (equal? expression (quote expectation))
+                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
+
+
       ; 6.2  Numbers
       ; 
       ; Numerical computation has traditionally been .......
@@ -1311,6 +1312,14 @@
                (memequal obj list))
             ((obj list compare)
                ((make-mem* compare) obj list)))))
+
+      (assert (case 6
+                 ((2 3 5 7) 'prime)
+                 ((1 4 6 8 9) 'composite))                 ===> composite)
+      (assert (case (car '(c d))
+                 ((a e i o u) 'vowel)
+                 ((w y) 'semivowel)
+                 (else 'consonant))                        ===> consonant)
 
       ; library procedure:  (assq obj alist)
       ; library procedure:  (assv obj alist)
