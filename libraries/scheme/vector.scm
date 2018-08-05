@@ -34,7 +34,7 @@
    ; to be quoted in programs.
 
    ;
-   ; procedure: (vector? obj)
+   ; procedure:  (vector? obj)
    ; Returns #t if obj is a vector; otherwise returns #f.
 
    (define (vector? o) ; == raw or a variant of major type 11?
@@ -44,8 +44,8 @@
          (type-vector-dispatch #true)
          (else #false)))
 
-   ; procedure: (make-vector k)
-   ; procedure: (make-vector k fill)
+   ; procedure:  (make-vector k)
+   ; procedure:  (make-vector k fill)
    ;
    ; Returns a newly allocated vector of k elements. If a second
    ; argument is given, then each element is initialized to fill .
@@ -59,7 +59,7 @@
          ((k fill)
             (vm:make type-vector-leaf k fill))))
 
-   ; procedure: (vector obj . . . )
+   ; procedure:  (vector obj . . . )
    ;
    ; Returns a newly allocated vector whose elements contain
    ; the given arguments. It is analogous to list.
