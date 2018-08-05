@@ -88,9 +88,6 @@
       (define (opcode-arity-ok-2? op n)
          (tuple-apply (opcode->primop op)
             (λ (name op in out fn)
-               (cond
-                  ((eq? in n) #true)
-                  ((eq? in 'any) #true)
-                  (else #false)))))
+               (or (eq? in n) (eq? in 'any)))))
 
 ))

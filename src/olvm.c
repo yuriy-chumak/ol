@@ -1841,8 +1841,8 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	int p = 0, N = NR+CR;
 
 	// попробуем освободить ненужные регистры?
-	//for (int i = ol->arity + 3; i < NR; i++)
-	//	R[i] = IFALSE;
+	for (int i = ol->arity + 3; i < NR; i++)
+		R[i] = IFALSE;
 	// fprintf(stderr, "%d", ol->arity);
 
 	// если нам не хватило магических 1024, то у нас проблема
@@ -2131,12 +2131,12 @@ mainloop:;
 	// примитивы языка:
 	// todo: rename vm:new to vm:make or vm:mk ?
 	#	define VMNEW 23      // fast make small object
-	#	define VMNEW_OBJECT 35     // make object
+	#	define VMMAKE 18     // make object
 	#	define VMNEW_RAWOBJECT 60  // make raw object
 	#	define VMRAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 	#	define VMCAST  22
 
-	#	define VMPIN   18
+	#	define VMPIN   35
 	#	define VMUNPIN 19
 	#	define VMDEREF 25
 
@@ -2444,7 +2444,7 @@ loop:;
 	//	передаваемых в функцию не превысит предусмотренных пределов
 	case VMNEW: { // new t f1 .. fs r
 		word type = *ip++;
-		word size = *ip++ + 1; // the argument is n-1 to allow making a 256-tuple with 255, and avoid 0 length objects
+		word size = *ip++ + 1; // the argument is n-1 to allow making a 255-tuple with 255, and avoid 0 length objects
 		word *p = new (type, size+1), i = 0; // s fields + header
 		while (i < size) {
 			p[i+1] = R[*ip++];
@@ -2455,47 +2455,68 @@ loop:;
 	}
 
 	// make typed reference from list
-	case VMNEW_OBJECT: { // (vm:something type list)
+	// (vm:make type list-of-values) ; length is list length
+	// (vm:make type length) ; default value is equal to #false
+	// (vm:make type length default-value)
+	case VMMAKE: {
+	 	word size = *ip++;
 		word type = uvtoi (A0);
-		word list = A1;
+		word value = A1;
 
-		// эта проверка необходима, так как действительно можно
-		//	выйти за пределы кучи (репродюсится стабильно)
-		size_t len = 0;
-		while (is_pair(list)) {
-			++len;
-			list = cdr(list);
+		word el = IFALSE;
+		switch (size) {
+			case 3:
+				el = A2;
+				//no break
+			case 2: {
+				size_t len = 0;
+				word list = value;
+				if (is_number(value))
+					len = untoi(value);
+				else
+				while (is_pair(list)) {
+					++len;
+					list = cdr(list);
+				}
+
+				// эта проверка необходима, так как действительно можно
+				//	выйти за пределы кучи (репродюсится стабильно)
+				if (fp + len > heap->end) {
+					ptrdiff_t dp;
+					dp = ip - (unsigned char*)this;
+
+					heap->fp = fp; ol->this = this;
+					ol->gc(ol, len);
+					fp = heap->fp; this = ol->this;
+
+					ip = (unsigned char*)this + dp;
+				}
+
+				word *ptr = fp;
+				R[ip[size]] = (word)ptr; // result register
+
+				if (is_number(value)) { // no list, just
+					for (int i = 0; i < len; i++)
+						*++fp = el;
+					*ptr = make_header(type, ++fp - ptr);
+				}
+				else
+				if (is_pair(value) && list == INULL) { // proper list?
+					while (value != INULL) {
+						*++fp = car (value);
+						value = cdr (value);
+					}
+					*ptr = make_header(type, ++fp - ptr);
+				}
+				else
+					R[ip[size]] = IFALSE;
+				break;
+			}
+			default:
+				ERROR(17, this, I(size));
 		}
 
-		// if proper list:
-		if (list == INULL) {
-			// check the place for new object:
-			if (fp + len > heap->end) {
-				ptrdiff_t dp;
-				dp = ip - (unsigned char*)this;
-
-				heap->fp = fp; ol->this = this;
-				ol->gc(ol, len);
-				fp = heap->fp; this = ol->this;
-
-				ip = (unsigned char*)this + dp;
-			}
-			list = A1;
-
-			word *ptr = fp;
-			A2 = (word)ptr;
-
-			word* me = ptr;
-			while (list != INULL) {
-				*++fp = car (list);
-				list = cdr (list);
-			}
-			*me = make_header(type, ++fp - ptr);
-		}
-		else
-			A2 = IFALSE;
-
-		ip += 3; break;
+	 	ip += size + 1; break;
 	}
 
 	// make raw reference object
@@ -4299,7 +4320,6 @@ loop:;
 		ip += 4; break;
 	}
 	#endif//OLVM_INEXACTS
-
 
 	case VMPIN: {  // (vm:pin object) /pin object/ => pin id
 		word object = A0;

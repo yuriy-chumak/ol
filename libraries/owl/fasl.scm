@@ -313,7 +313,7 @@
                            ((ll type (grab ll fail))
                             (ll size (get-nat ll fail 0))
                             (ll fields (get-fields ll got size fail null))
-                            (obj (vm:new-object type #|size|# fields)))
+                            (obj (vm:make type #|size|# fields)))
                            (decoder ll (rcons obj got) fail)))
                      ((eq? kind 2) ; raw, type SIZE byte ...
                         (lets

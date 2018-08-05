@@ -142,11 +142,13 @@
       ; -------------------------------------------
       ;; Примитивные операции/операторы
 
-      ; memory allocators
+      ; memory allocators (no default bytecode exists, should generate on-the-fly)
       (setq NEW 23)        ; no real vm:new command required, check rtl-primitive in (lang compile)
       (setq RAW-OBJECT 60) ;(setq vm:new-raw-object (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))
-      (setq NEW-OBJECT 35) ;(setq vm:new-object     (vm:new-raw-object TBYTECODE '(35 4 5 6  24 6)))
+      (setq MAKE 18)
                             (setq vm:new-bytecode   (lambda (bytecode) (vm:new-raw-object TBYTECODE bytecode)))
+      ; vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements length
+      ; vm:make - smarter allocator, can create objects with size and default element
 
       ; 
       (setq APPLY 20)       (setq apply (vm:new-bytecode '(20)))
@@ -154,7 +156,7 @@
       (setq APPLY/CC 84)    (setq apply/cc (vm:new-bytecode '(84)))
 
       ; other instructions
-      (setq NOP 21)
+      (setq NOP 21)      (setq vm:nop  (vm:new-bytecode '(21)))
       (setq SYS 27)      (setq vm:sys  (vm:new-bytecode '(27 4 5 6 7 8  24 8)))
       (setq RUN 50)      (setq vm:run  (vm:new-bytecode '(50 4 5)))
 
@@ -217,9 +219,9 @@
       ;;(define ff:red?    (vm:new-raw-object type-bytecode '(41 4        5  24 5)))
       ;;(define ff:right?  (vm:new-raw-object type-bytecode '(37 4        5  24 5)))
 
-      ;(setq vm:pin    (vm:new-bytecode '(18 4 5  24 5)))
-      ;(setq vm:unpin  (vm:new-bytecode '(19 4 5  24 5)))
-      ;(setq vm:deref  (vm:new-bytecode '(25 4 5  24 5)))
+      (setq vm:pin    (vm:new-bytecode '(35 4 5  24 5)))
+      (setq vm:unpin  (vm:new-bytecode '(19 4 5  24 5)))
+      (setq vm:deref  (vm:new-bytecode '(25 4 5  24 5)))
 
       ;(setq syscall (vm:new-bytecode '(63 4 5 6 7 8  24 8)))
 
@@ -237,12 +239,13 @@
       ;  3. изменить нумерацию типов
       ;  4. удалить параметр rawness
       ;  5. переименовать vm:new-object в vm:make
+
       (setq *primops*
          ; аллокаторы
-         (cons (vm:new TTUPLE 'vm:new-object     NEW-OBJECT  2 1 vm:new-object)       ; create reference object (vm:new-object type '(v1 .. vn))
-         (cons (vm:new TTUPLE 'vm:new-raw-object RAW-OBJECT  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn)) or (vm:new-raw-object type size)
+         (cons (vm:new TTUPLE 'vm:new   NEW  'any 1 #f)   ; fast creation of small (less than 256 elements) reference object (vm:new type v1 .. vn)
 
-         (cons (vm:new TTUPLE 'vm:new   NEW 'any 1 #f)   ; fast creation of small (less than 128 elements) reference object (vm:new type v1 .. vn)
+         (cons (vm:new TTUPLE 'vm:make  MAKE 'any 1 vm:nop) ; create reference object (vm:new-make type '(v1 .. vn))
+         (cons (vm:new TTUPLE 'vm:new-raw-object RAW-OBJECT  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn)) or (vm:new-raw-object type size)
 
          (cons (vm:new TTUPLE 'vm:raw?  RAW? 1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
          (cons (vm:new TTUPLE 'vm:cast  CAST 2 1 vm:cast)  ;; cast object type (works for immediates and allocated)
@@ -307,7 +310,7 @@
          (cons (vm:new TTUPLE 'ff:red?    41 1  1  ff:red?)
          (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
 
-         (cons (vm:new TTUPLE 'vm:pin    18 1  1  vm:pin)
+         (cons (vm:new TTUPLE 'vm:pin    35 1  1  vm:pin)
          (cons (vm:new TTUPLE 'vm:unpin  19 1  1  vm:unpin)
          (cons (vm:new TTUPLE 'vm:deref  25 1  1  vm:deref)
          #null))))))))))))))))))))))))))))))))))))))))))))
@@ -325,9 +328,11 @@
          (cons 61  ; (clock)
          #null)))))))))
 
+      ; todo: check this and opcode-arity-ok-2? - maybe should merge this entities?
       (setq variable-input-arity-primops
          (cons NEW
-         #null))
+         (cons MAKE
+         #null)))
 
       (setq special-bind-primops
          (cons TUPLE-APPLY

@@ -1,15 +1,16 @@
-; minimal set of Scheme (Ol subset)
+; minimal set of Scheme (with Ol subset)
 (define-library (scheme core)
    (import
       (src vm) ; virtual machine codes and primitives:
-      ; vm:new vm:new-object vm:new-raw-object
-      ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
-      ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
-      ; clock syscall vm:version vm:maxvalue vm:valuewidth
-      ; tuple-apply ff-apply
-      ; ff:red ff:black ff:toggle ff:red? ff:right?
-      ; apply apply/cc arity-error
-      ; call-with-current-continuation
+               ; vm:new vm:make vm:new-raw-object
+               ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
+               ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
+               ; clock syscall vm:version vm:maxvalue vm:valuewidth
+               ; tuple-apply ff-apply
+               ; ff:red ff:black ff:toggle ff:red? ff:right?
+               ;
+               ; apply apply/cc arity-error
+               ; call-with-current-continuation
       
       (scheme case-lambda)  ; case-lambda
       (r5rs srfi-87))       ; <= in cases
@@ -1062,8 +1063,8 @@
       ; procedure:  (make-string k char)
 ;      (define make-string
 ;         (case-lambda
-;            ((char) (vm:new-object type-string ))
-;            ((a b . cs) (app a (app b (appl cs appl) app) app))
+;            ((k) (vm:make-blob type-string k))
+;            ((k char) (app a (app b (appl cs appl) app) app))
 ;            ((a) a)
 ;            (() '()))))
 ;         ()
@@ -1101,8 +1102,15 @@
 
 
 
-      ; 6.3.6. Vectors
-      ;; (vector? obj) procedure
+      ; (r7rs) 6.8  Vectors
+      ;
+      ; Vectors are heterogeneous structures whose elements are
+      ; indexed by integers. A vector typically occupies less space
+      ; than a list of the same length, and the average time needed
+      ; to access a randomly chosen element is typically less for the
+      ; vector than for the list.      
+      ;
+      ; (vector? obj) procedure
       (define (vector? o) ; == raw or a variant of major type 11?
          (case (type o)
             (type-vector-raw #true)

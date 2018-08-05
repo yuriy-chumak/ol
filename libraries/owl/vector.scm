@@ -228,7 +228,7 @@
                ;; the leaf contains only fixnums 0-255, so make a compact leaf
                (list->byte-vector vals) ;; make node and reverse
                ;; the leaf contains other values, so need full 4/8-byte descriptors
-               (vm:new-object type-vector-leaf vals))))
+               (vm:make type-vector-leaf vals))))
 
       (define (byte? val)
          (and
@@ -269,7 +269,7 @@
             (else
                (lets ((these s (grab s *vec-leaf-size*)))
                   (cons
-                     (vm:new-object type-vector-dispatch (cons (car l) these))
+                     (vm:make type-vector-dispatch (cons (car l) these))
                      (merge-each (cdr l) s))))))
 
       (define (merger l n)
@@ -322,7 +322,7 @@
                         (lets ((here below (cut-at below *vec-leaf-size* null)))
                            ;; attach up to 256 subtrees to this leaf
                            (cons
-                              (vm:new-object type-vector-dispatch (cons (car this) here))
+                              (vm:make type-vector-dispatch (cons (car this) here))
                               (loop below (cdr this))))))))
             null (levels lst *vec-leaf-max*)))
 
@@ -342,7 +342,7 @@
                   ((low (car ll))                  ;; first leaf data, places 0-255
                    (fields (cdr ll))    ;; fill in the length of the vector at dispatch position 0
                    (subtrees (merge-levels fields))) ;; construct the subtrees
-                  (vm:new-object type-vector-dispatch (ilist low len subtrees))))))
+                  (vm:make type-vector-dispatch (ilist low len subtrees))))))
 
 
       (define (list->vector l)
