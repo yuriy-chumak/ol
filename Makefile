@@ -176,7 +176,8 @@ olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
 	   --memory-init-file 0
 
 recompile: boot.fasl
-boot.fasl: vm repl src/ol.scm lang/*.scm libraries/scheme/*.scm libraries/scheme/r5rs/*.scm libraries/otus/lisp.scm libraries/owl/*.scm libraries/owl/*.scm
+boot.fasl: CFLAGS += $(CFLAGS_RELEASE) # will rebuild in release, for speed
+boot.fasl: vm repl src/*.scm lang/*.scm libraries/scheme/*.scm libraries/scheme/r5rs/*.scm libraries/otus/lisp.scm libraries/owl/*.scm
 	@vm repl src/ol.scm --version "`git describe --always`"
 	@if diff boot.fasl repl>/dev/null ;then\
 	   echo '\033[1;32m  `___`  \033[0m' ;\
