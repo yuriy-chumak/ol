@@ -1,10 +1,9 @@
 (define-library (owl list-extra)
 
    (export 
-      lref lset ldel length
+      lref lset ldel
       led ledn lins
       take drop lrange; iota
-      list-tail
       repeat
       split ;; lst n → head tail
       )
@@ -59,9 +58,6 @@
                (lets ((hd tl lst))
                   (cons hd (lins tl (- pos 1) val))))))
 
-      (define (length lst)
-         (fold (λ (n v) (+ n 1)) 0 lst))
-
       ; take at n (or less) elemts from list l
 
       (define (take l n)
@@ -101,17 +97,8 @@
             (else 
                (runtime-error "bad lrange: " (list 'lrange from step to)))))
 
-
-      (define (list-tail lst n)
-         (if (eq? n 0)
-            lst
-            (list-tail (cdr lst) (- n 1))))
-
       (define (repeat thing n)
-         (let loop ((n n) (out null))
-            (if (eq? n 0)
-               out
-               (loop (- n 1) (cons thing out)))))
+         (make-list n thing))
 
       (define (split l n)  
          (let loop ((l l) (o null) (n n))

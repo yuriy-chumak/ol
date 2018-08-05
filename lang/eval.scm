@@ -23,6 +23,7 @@
 
    (import
       (scheme core)
+      (scheme cxr)
 
       (owl list)
       (lang compile)

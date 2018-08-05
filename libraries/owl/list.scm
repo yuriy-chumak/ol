@@ -3,42 +3,19 @@
    ; todo: move fold to srfi-1
    (export 
       null
-      caar cadr cdar cddr
-      caaar caadr cadar caddr 
-      cdaar cdadr cddar cdddr
       zip for fold foldr for-each
       has? getq last drop-while
       mem
       fold-map foldr-map
-      append reverse keep remove 
+      keep remove 
       all some
       smap unfold
       take-while                ;; pred, lst -> as, bs
       fold2
       first
       halve
-      ╯°□°╯
       
-      diff union intersect 
-
-      ;; and now for something fairly different
-      caaaar
-      caaadr
-      caadar
-      caaddr
-      cadaar
-      cadadr
-      caddar
-      cadddr
-      cdaaar
-      cdaadr
-      cdadar
-      cdaddr
-      cddaar
-      cddadr
-      cdddar
-      cddddr
-      )
+      diff union intersect)
 
    (import
       (scheme core))
@@ -47,44 +24,12 @@
       (define o (λ (f g) (λ (x) (f (g x))))) ; wtf???
 
       ;; constants are always inlined, so you pay just one byte of source for readability
-
-      (define null '())
+      (define null #null)
 
       (define-syntax withcc
          (syntax-rules ()
             ((withcc name proc)
                (call/cc (λ (name) proc)))))
-
-      (define (caar x) (car (car x)))
-      (define (cadr x) (car (cdr x)))
-      (define (cdar x) (cdr (car x)))
-      (define (cddr x) (cdr (cdr x)))
-
-      (define (caaar x) (car (car (car x))))
-      (define (caadr x) (car (car (cdr x))))
-      (define (cadar x) (car (cdr (car x))))
-      (define (caddr x) (car (cdr (cdr x))))
-      (define (cdaar x) (cdr (car (car x))))
-      (define (cdadr x) (cdr (car (cdr x))))
-      (define (cddar x) (cdr (cdr (car x))))
-      (define (cdddr x) (cdr (cdr (cdr x))))
-
-      (define (caaaar x) (car (car (car (car x)))))
-      (define (caaadr x) (car (car (car (cdr x)))))
-      (define (caadar x) (car (car (cdr (car x)))))
-      (define (caaddr x) (car (car (cdr (cdr x)))))
-      (define (cadaar x) (car (cdr (car (car x)))))
-      (define (cadadr x) (car (cdr (car (cdr x)))))
-      (define (caddar x) (car (cdr (cdr (car x)))))
-      (define (cadddr x) (car (cdr (cdr (cdr x)))))
-      (define (cdaaar x) (cdr (car (car (car x)))))
-      (define (cdaadr x) (cdr (car (car (cdr x)))))
-      (define (cdadar x) (cdr (car (cdr (car x)))))
-      (define (cdaddr x) (cdr (car (cdr (cdr x)))))
-      (define (cddaar x) (cdr (cdr (car (car x)))))
-      (define (cddadr x) (cdr (cdr (car (cdr x)))))
-      (define (cdddar x) (cdr (cdr (cdr (car x)))))
-      (define (cddddr x) (cdr (cdr (cdr (cdr x)))))
 
       (define (zip op a b)
          (cond
@@ -161,34 +106,6 @@
             ((null? lst) #false)
             ((cmp (car lst) elem) lst)
             (else (mem cmp (cdr lst) elem))))
-
-      ;(define (append a b) (foldr cons b a))
-
-      (define (app a b app)
-         (if (null? a)
-            b
-            (cons (car a) (app (cdr a) b app))))
-      
-      (define (appl l appl)
-         (if (null? (cdr l))
-            (car l)
-            (app (car l) (appl (cdr l) appl) app)))
-
-      (define append
-         (case-lambda 
-            ((a b) (app a b app))
-            ((a b . cs) (app a (app b (appl cs appl) app) app))
-            ((a) a)
-            (() null)))
-
-      ;(define (reverse l) (fold (λ (r a) (cons a r)) null l))
-
-      (define (rev-loop a b)
-         (if (null? a)
-            b
-            (rev-loop (cdr a) (cons (car a) b))))
-
-      (define (reverse l) (rev-loop l null))   
 
       ;; misc
 
@@ -288,8 +205,5 @@
                   (if (null? h)
                      (values (reverse (cons (car t) out)) (cdr t))
                      (walk (cdr t) (cdr h) (cons (car t) out)))))))
-
-
-   (define ╯°□°╯ reverse)     
 
 ))

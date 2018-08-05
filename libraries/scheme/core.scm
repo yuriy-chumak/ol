@@ -907,9 +907,23 @@
       ;   6.3.5 -> (scheme r5rs strings)
       ;   6.3.6 -> (scheme r5rs vectors)
 
-      ; 6.3.2  Pairs and lists
-      ; A pair (sometimes called a dotted pair) is a record ......
+      ; (r7rs) 6.4  Pairs and lists
+      ;
+      ; A pair (sometimes called a dotted pair) is a record structure
+      ; with two fields called the car and cdr fields (for historical
+      ; reasons). Pairs are created by the procedure cons. The
+      ; car and cdr fields are accessed by the procedures car and
+      ; cdr. The car and cdr fields are assigned by the procedures
+      ; set-car! and set-cdr!.
       ; ......
+
+      ; internal: (-1 obj), (+1 obj) * please, don't use: this works only with fix+ numbers
+      ; note: todo: add theoretically impossible case: (if carry (runtime-error "Too long list to fit in fixnum"))
+
+      (define (|-1| n) ; *internal
+         (values-apply (vm:sub n 1) (lambda (n carry) n)))
+      (define (|+1| n) ; *internal
+         (values-apply (vm:add n 1) (lambda (n carry) n)))
 
       ; procedure:  (pair? obj)
       (define (pair? o)
@@ -930,52 +944,99 @@
       (define cdr cdr)
 
       ; procedure:  (set-car! pair obj)
+      ;
+      ; Stores obj in the car field of pair .
+      ; Note: (ol specific) returns #F if attempt was failed
       (define (set-car! o v)
          (set-ref! o 1 v))
 
       ; procedure:  (set-cdr! pair obj)
+      ;
+      ; Stores obj in the cdr field of pair .
+      ; Note: (ol specific) returns #F if attempt was failed
       (define (set-cdr! o v)
          (set-ref! o 2 v))
 
-      ; library procedure:  (caar pair) <- (r5rs lists)
-      ; library procedure:  (cadr pair) <- (r5rs lists)
-      ; ...
-      ; library procedure:  (cdddar pair) <- (r5rs lists)
-      ; library procedure:  (cddddr pair) <- (r5rs lists)
+      ; procedure:  (caar pair)
+      (define (caar pair) (car (car pair)))
 
-      ; library procedure:  (null? obj)
+      ; procedure:  (cadr pair)
+      (define (cadr pair) (car (cdr pair)))
+
+      ; procedure:  (cdar pair)
+      (define (cdar pair) (cdr (car pair)))
+
+      ; procedure:  (cddr pair)
+      (define (cddr pair) (cdr (cdr pair)))
+
+      ; due to frequent use, moved from (scheme cxr) to (scheme core)
+      ; todo: move to scheme base
+      (define (caaar x) (car (car (car x))))
+      (define (caadr x) (car (car (cdr x))))
+      (define (cadar x) (car (cdr (car x))))
+      (define (caddr x) (car (cdr (cdr x))))
+      (define (cdaar x) (cdr (car (car x))))
+      (define (cdadr x) (cdr (car (cdr x))))
+      (define (cddar x) (cdr (cdr (car x))))
+      (define (cdddr x) (cdr (cdr (cdr x))))
+
+      ; cxr library procedure:  (caaaar pair)  <- (scheme cxr)
+      ; cxr library procedure:  (caaadr pair)  <- (scheme cxr)
+      ; ...
+      ; cxr library procedure:  (cdddar pair) <- (scheme cxr)
+      ; cxr library procedure:  (cddddr pair) <- (scheme cxr)
+
+      ; procedure:  (null? obj)
       (define (null? x)
          (eq? x #null))
 
-      ; library procedure:  (list? obj)
+      ; procedure:  (list? obj)
       (define (list? l)
          (cond
             ((null? l) #true)
             ((pair? l) (list? (cdr l)))
             (else #false)))
 
-      ; library procedure:  (list obj ...)
+      ; procedure:  (make-list k)
+      ; procedure:  (make-list k fill)
+      ;
+      ; Returns a newly allocated list of k elements. If a second
+      ; argument is given, then each element is initialized to fill .
+      ; Otherwise the initial contents of each element is unspeci-
+      ; fied.
+      (define make-list
+         (let ((make (lambda (n fill)
+                        (let loop ((n n) (out '()))
+                           (if (eq? n 0)
+                              out
+                              (loop (|-1| n) (cons fill out)))))))
+         (case-lambda
+            ((k)
+               (make k #false))
+            ((k fill)
+               (make k fill)))))
+
+
+      ; procedure:  (list obj ...)
       (define-syntax list
          (syntax-rules ()
             ((list) '())
             ((list a . b)
                (cons a (list . b)))))
 
-      ; library procedure:  (length list)
-      ;  olvm notes: always returning fixnum, so can be checked by eq?, not =
+      ; procedure:  (length list)
+      ;  olvm notes: always returning fixnum, so can be checked by eq?, not only =
       (define (length l)
          (let loop ((n 0) (l l))
             (if (null? l)
                n
-               (values-apply (vm:add n 1) ; use internal vm math, not math library
-                  (lambda (n carry) ; theoretically impossible case: (if carry (runtime-error "Too long list to fit in fixnum"))
-                     (loop n (cdr l)))))))
+               (loop (|+1| n) (cdr l)))))
 
       (assert (length '(a b c))                      ===>  3)
       (assert (length '(a (b) (c d e)))              ===>  3)
       (assert (length '())                           ===>  0)
 
-      ; library procedure:  (append list ...)
+      ; procedure:  (append list ...)
       (define append
          (let*((app (lambda (a b app)
                   (if (null? a)
@@ -990,22 +1051,55 @@
             ((a b . cs) (app a (app b (appl cs appl) app) app))
             ((a) a)
             (() '()))))
+      ; todo: asserts!
+      ;; (append ’(x) ’(y))
+      ;; (append ’(a) ’(b c d))
+      ;; (append ’(a (b)) ’((c))) =⇒
+      ;; =⇒
+      ;; =⇒ (x y)
+      ;; (a b c d)
+      ;; (a (b) (c))
+      ;; (append ’(a b) ’(c . d))
+      ;; (append ’() ’a) =⇒
+      ;; =⇒ (a b c . d)
+      ;; a
 
-      ; library procedure:  (reverse list)
-      (define (reverse l)
-         (let rev-loop ((a l) (b '()))
-            (if (null? a)
-               b
-               (rev-loop (cdr a) (cons (car a) b)))))
+      ; procedure:  (reverse list)
+      (define (reverse list)
+         (let loop ((old list) (new '()))
+            (if (null? old)
+               new
+               (loop (cdr old) (cons (car old) new)))))
 
-      ; library procedure:  (list-tail list k)   * todo
+      ; procedure:  (list-tail list k)
+      ;
+      ; It is an error if list has fewer than k elements.
+      ; Returns the sublist of list obtained by omitting the first k
+      ; elements.
+      (define (list-tail list k)
+         (if (eq? k 0)
+            list
+            (list-tail (cdr list) (|-1| k))))
 
-      ; library procedure:  (list-ref list k)
-      (define (list-ref lst pos)
+      ; procedure:  (list-ref list k)
+      ;
+      ; The list argument can be circular, but it is an error if list has
+      ; k or fewer elements.
+      (define (list-ref list k)
          (cond
-            ((null? lst) #false) ; temporary instead of (syntax-error "lref: out of list" pos))
-            ((eq? pos 0) (car lst))   ; use internal vm math, not math library
-            (else (list-ref (cdr lst) (values-apply (vm:sub pos 1) (lambda (n carry) n))))))
+            ((null? list) #false) ; temporary instead of (syntax-error "lref: out of list" pos))
+            ((eq? k 0) (car list))   ; use internal vm math, not math library
+            (else (list-ref (cdr list) (|-1| k)))))
+
+      ; procedure:  (list-set! list k obj)
+      ;
+      ; It is an error if k is not a valid index of list.
+      ; The list-set! procedure stores obj in element k of
+      ; list.
+      (define (list-set! list k obj)
+         (let ((tail (list-tail list k)))
+            (if (pair? tail)
+               (set-car! tail obj))))
 
       ; library procedure:  (memq obj list)   * todo
       ; library procedure:  (memv obj list)
@@ -1014,6 +1108,18 @@
       ; library procedure:  (assq obj alist)
       ; library procedure:  (assv obj alist)
       ; library procedure:  (assoc obj alist)
+
+      ; procedure:  (list-copy obj)
+      ;
+      ; Returns a newly allocated copy of the given obj if it is a
+      ; list. Only the pairs themselves are copied; the cars of the
+      ; result are the same (in the sense of eqv?) as the cars of list.
+      ; If obj is an improper list, so is the result, and the final cdrs
+      ; are the same in the sense of eqv?. An obj which is not a
+      ; list is returned unchanged. It is an error if obj is a circular
+      ; list.
+      (define (list-copy obj)
+         (reverse (reverse obj)))
 
       ; 6.3.3  Symbols
       ;
@@ -1558,13 +1664,25 @@
       call-with-current-continuation call/cc lets/cc
 
       ; 6.3
-      not boolean? pair? symbol? port? procedure? null? eof?
+      not boolean? symbol? port? procedure? eof?
 
       value? reference?
       zero?
 
-      ; 6.3.2 (pairs and lists)
       list-ref
+
+      ; (r7rs) 6.4 Pairs and Lists
+      pair? cons car cdr
+      set-car! set-cdr!
+      caar cadr cdar cddr
+      caaar caadr cadar caddr ; moved from (scheme cxr)
+      cdaar cdadr cddar cdddr ; moved from (scheme cxr)
+      null? list?
+      make-list list length
+      append reverse list-tail list-ref list-set!
+;      memq memv member
+;      assq assv assoc
+      list-copy
 
       ; ol extension:
       bytecode? function? ff?
