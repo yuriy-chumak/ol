@@ -666,11 +666,11 @@
             #true
       ;  * obj 1 and obj 2 are both exact numbers and are numer-
       ;    ically equal (in the sense of =)
-         (let ((type-a (type a)))
-         (if (or (eq? type-a TINT+)
-                 (eq? type-a TINT-)
-                 (eq? type-a TRATIONAL)
-                 (eq? type-a TCOMPLEX))
+         (let ((typea (type a)))
+         (if (or (eq? typea TINT+)
+                 (eq? typea TINT-)
+                 (eq? typea TRATIONAL)
+                 (eq? typea TCOMPLEX))
             (and
                (eq? (type a) (type b))
                (eqv? (car a) (car b))
@@ -682,13 +682,13 @@
       ;    as a finite composition of Scheme’s standard arith-
       ;    metic procedures, provided it does not result in a NaN
       ;    value.
-         (if (eq? type-a TINEXACT)
+         (if (eq? typea TINEXACT)
             (and
                (eq? (type a) (type b))
-               (let loop ((n (size a)))
-                  (if (eq? n -1)
-                     #true
-                     (if (eq? (ref a n) (ref b n))
+               (let loop ((n (|-1| (size a))))
+                  (if (eq? (ref a n) (ref b n))
+                     (if (eq? n 0)
+                        #true
                         (loop (|-1| n))))))
          ; else
          #false)))))
@@ -799,39 +799,26 @@
       (define (equal? a b)
          (if (eqv? a b)
             #true
-
-         (let ((type-a (type a)))
-         ; comparing blobs
-         (if (or (eq? type-a TSTRING)
-                 (eq? type-a 19)) ; type-vector-raw (todo: change to type-bytevector)
-            (and
-               (eq? (type a) (type b))
-               (eq? (size a) (size b))
-               (let loop ((n (size a)))
-                  (if (eq? n -1)
-                     #true
+         (let ((sa (size a)))
+            (if (and sa
+                     (eq? (type a) (type b))
+                     (eq? (size b) sa))
+               (if (eq? 0 sa)
+                  #true
+               ; (> sa 0)
+               (if (vm:raw? a)
+                  ; comparing blobs
+                  (let loop ((n (|-1| sa)))
                      (if (eq? (ref a n) (ref b n))
-                        (loop (|-1| n))))))
-         
-         ; recursive comparing objects:
-         (if (or (eq? type-a TPAIR)  ; pairs (lists)
-                 (eq? type-a TTUPLE) ; tuples (ol specific)
-                 (eq? type-a TSTRINGWIDE) ; unicode strings
-                 (eq? type-a 11))    ; type-vector-leaf
-            (and
-               (eq? (type a) (type b))
-               (eq? (size a) (size b))
-               (let loop ((n (size a)))
-                  (if (eq? n 0)
-                     #true
-                     (if (equal? (ref a n) (ref b n))
-                        (loop (|-1| n))))))
-         ; todo: compare type-string-dispatch
-         ; todo: compare type-vector-dispatch
-         ; todo: ?
-
-         ; else
-         #false)))))
+                        (if (eq? n 0)
+                           #true
+                           (loop (|-1| n)))))
+                  ; recursive comparing objects
+                  (let loop ((n sa))
+                     (if (eq? n 0)
+                        #true
+                        (if (equal? (ref a n) (ref b n))
+                           (loop (|-1| n)))))))))))
 
       ; * internal testing staff
       ; note: this is full featured version, changed from simplest earlier.
