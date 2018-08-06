@@ -734,14 +734,17 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 #define BINARY                      (RAWBIT >> TPOS)
 
 #define make_value(type, value)        (2 | ((word)(value) << IPOS) | ((type) << TPOS))
-#define make_header(type, size)        (2 | ((word) (size) << SPOS) | ((type) << TPOS))
-#define header(type, size, padding)    (2 | ((word) (size) << SPOS) | ((type) << TPOS) | ((padding) << 8))
-// p is padding
+
+#define header3(type, size, padding)   (2 | ((size) << SPOS) | ((type) << TPOS) | ((padding) << 8))
+#define header2(type, size)            header3(type, size, 0)
+
+#define HEADER_MACRO(_1, _2, _3, NAME, ...) NAME
+#define header(...) HEADER_MACRO(__VA_ARGS__, header3, header2, NOTHING, NOTHING)(__VA_ARGS__)
+
 
 // два главных класса аргументов:
 #define is_value(x)                 (((word)(x)) & 2)
 #define is_reference(x)             (!is_value(x))
-
 #define is_blob(x)                  ((*(word*)x) & (BINARY << TPOS))
 
 // makes olvm reference from system pointer (just sanity check)
@@ -818,17 +821,17 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 
 #define is_fix(ob)                  (is_value(ob)     && valuetype (ob) == TFIXP)
 #define is_fixn(ob)                 (is_value(ob)     && valuetype (ob) == TFIXN)
-#define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TPAIR,     3))
-#define is_npair(ob)                (is_reference(ob) && (*(word*) (ob)) == make_header(TINTP,     3))
-#define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
-#define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
-#define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
+#define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(TPAIR,     3))
+#define is_npair(ob)                (is_reference(ob) && (*(word*) (ob)) == header(TINTP,     3))
+#define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == header(TINTN,     3))
+#define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == header(TRATIONAL, 3))
+#define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == header(TCOMPLEX,  3))
 
 #define is_string(ob)               (is_reference(ob) &&   reftype (ob) == TSTRING)
 #define is_tuple(ob)                (is_reference(ob) &&   reftype (ob) == TTUPLE)
 
-#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TVPTR,     2, 0))
-#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TCALLABLE, 2, 0))
+#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TVPTR,     2))
+#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TCALLABLE, 2))
 
 #define is_number(ob)               (is_fix(ob) || is_npair(ob))
 #define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
@@ -1355,7 +1358,7 @@ word gc(heap_t *heap, int query, word regs)
 	word *fp;
 	fp = heap->fp;
 	{
-		*fp = make_header(TTUPLE, 2); // этого можно не делать
+		*fp = header(TTUPLE, 2); // этого можно не делать
 		word *root = &fp[1];
 	//	word *root = fp + 1; // same
 
@@ -1984,11 +1987,11 @@ apply:;
 	// ...
 	if (is_reference(this)) { // если это аллоцированный объект
 		word type = reftype (this);
-		if (type == TPROC) { //hdr == make_header(TPROC, 0)) { // proc (58% for "yes")
+		if (type == TPROC) { //hdr == header(TPROC, 0)) { // proc (58% for "yes")
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
 		else
-		if (type == TCLOS) { //hdr == make_header(TCLOS, 0)) { // clos (66% for "yes")
+		if (type == TCLOS) { //hdr == header(TCLOS, 0)) { // clos (66% for "yes")
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 			R[2] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
@@ -2504,7 +2507,7 @@ loop:;
 				if (is_number(value)) { // no list, just
 					for (int i = 0; i < len; i++)
 						*++fp = el;
-					*ptr = make_header(type, ++fp - ptr);
+					*ptr = header(type, ++fp - ptr);
 				}
 				else
 				if (is_pair(value) && list == INULL) { // proper list?
@@ -2512,7 +2515,7 @@ loop:;
 						*++fp = car (value);
 						value = cdr (value);
 					}
-					*ptr = make_header(type, ++fp - ptr);
+					*ptr = header(type, ++fp - ptr);
 				}
 				else
 					R[ip[size]] = IFALSE;
@@ -4470,7 +4473,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		case 1: {
 			int type = *hp++;
 			int size = get_nat(&hp);
-			*fp++ = make_header(type, size+1); // +1 to include header in size
+			*fp++ = header(type, size+1); // +1 to include header in size
 			while (size--)
 				decode_field(&hp, ptrs, me, &fp);
 			break;

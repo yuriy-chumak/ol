@@ -71,14 +71,14 @@ struct OL
 
 #define NEW(size) ({\
 	word* addr = self->heap.fp;\
-	self->heap.fp += size;\
+	self->heap.fp += size+1;\
 	/*return*/ addr;\
 })
 
 // аллоцировать новый объект (указанного типа)
 #define NEW_OBJECT(size, type) ({\
 word*p = NEW (size);\
-	*p = make_header(size, type);\
+	*p = make_header(size+1, type);\
 	/*return*/ p;\
 })
 
@@ -86,18 +86,10 @@ word*p = NEW (size);\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (3, TPAIR);\
+word*p = NEW_OBJECT (2, TPAIR);\
 	p[1] = data1;\
 	p[2] = data2;\
 	/*return*/ p;\
-})
-
-// создать новый порт
-#define new_port(a) ({\
-word value = (word) a;\
-	word* me = NEW_OBJECT (2, RAWH(TPORT));\
-	me[1] = value;\
-	/*return*/ me;\
 })
 
 #define uftoi(fix)  ({ ((word)fix >> IPOS); })
