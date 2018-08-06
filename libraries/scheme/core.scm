@@ -1008,9 +1008,9 @@
       ;     - not a part of r5rs -
       (define type-pair              TPAIR)   ; reference
       (define type-tuple             TTUPLE)  ; reference
-      (define type-string            TSTRING) ; reference, raw -> 35 (#b100000 + 3)?
+      (define type-string            TSTRING) ; reference, blob -> 35 (#b100000 + 3)?
       (define type-symbol            TSYMBOL) ; reference
-      ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
+      ; 5   TODO(?): (define type-string-wide      5) ; reference, blob
       ; 6
       ; 7
       (define type-ff-black-leaf     8) ; reference ; TODO: move to 28
@@ -1025,14 +1025,14 @@
       (define type-rlist-node       14) ; reference
       (define type-vector-dispatch  15) ; reference
 
-      (define type-bytecode         TBYTECODE)  ; reference, raw bytecode
+      (define type-bytecode         TBYTECODE)  ; reference, blob bytecode
       (define type-proc             TPROCEDURE) ; reference, pure function
       (define type-clos             TCLOSURE)   ; reference, function with closure(s)
-      (define type-bytevector       19) ; reference, raw
+      (define type-bytevector       19) ; reference, blob
 
       ; 20
       (define type-string-dispatch  21) ; reference
-      (define type-string-wide      22) ; reference, raw
+      (define type-string-wide      22) ; reference
       ; 23
 
       ;; transitional trees or future ffs
@@ -1047,7 +1047,7 @@
       ;30
 
       (define type-thread-state     31) ; reference
-      (define type-vptr             49) ; reference,  raw
+      (define type-vptr             49) ; reference,  blob
 
       ; 6.3.1  Booleans
       ;
