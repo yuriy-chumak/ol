@@ -25,11 +25,11 @@
 (begin
 
    (define TCL (or
-      (dlopen "tcl86.dll")
-      (dlopen "libtcl8.6.so")))
+      (load-dynamic-library "tcl86.dll")
+      (load-dynamic-library "libtcl8.6.so")))
    (define TK (or
-      (dlopen "tk86.dll")
-      (dlopen "libtk8.6.so")))
+      (load-dynamic-library "tk86.dll")
+      (load-dynamic-library "libtk8.6.so")))
 
    (define Tcl_Interp* type-vptr)
    (define TclCommand type-vptr)
@@ -38,20 +38,20 @@
    (define Tcl_FreeProc* fft-void) ; todo: set to ansi C "free"
    (define Tcl_CmdDeleteProc* fft-void) ; todo: same
 
-   (define Tcl_CreateInterp (dlsym TCL Tcl_Interp* "Tcl_CreateInterp"))
-   (define Tcl_Init (dlsym TCL int "Tcl_Init" Tcl_Interp*))
-   (define Tcl_Eval (dlsym TCL int "Tcl_Eval" Tcl_Interp* type-string))
-   (define Tcl_EvalFile (dlsym TCL int "Tcl_EvalFile" Tcl_Interp* type-string))
+   (define Tcl_CreateInterp (TCL Tcl_Interp* "Tcl_CreateInterp"))
+   (define Tcl_Init (TCL int "Tcl_Init" Tcl_Interp*))
+   (define Tcl_Eval (TCL int "Tcl_Eval" Tcl_Interp* type-string))
+   (define Tcl_EvalFile (TCL int "Tcl_EvalFile" Tcl_Interp* type-string))
 
-   (define Tcl_FindExecutable (dlsym TCL type-string "Tcl_FindExecutable" type-string))
-   (define Tcl_GetStringResult (dlsym TCL type-string "Tcl_GetStringResult"))
+   (define Tcl_FindExecutable (TCL type-string "Tcl_FindExecutable" type-string))
+   (define Tcl_GetStringResult (TCL type-string "Tcl_GetStringResult"))
 
-   (define Tcl_CreateCommand (dlsym TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callable type-vptr Tcl_CmdDeleteProc*))
-   (define Tcl_DeleteCommand (dlsym TCL TclCommand "Tcl_DeleteCommand" Tcl_Interp* type-string))
-   (define Tcl_SetResult (dlsym TCL fft-void "Tcl_SetResult" Tcl_Interp* type-string Tcl_FreeProc*))
+   (define Tcl_CreateCommand (TCL TclCommand "Tcl_CreateCommand" Tcl_Interp* type-string type-callable type-vptr Tcl_CmdDeleteProc*))
+   (define Tcl_DeleteCommand (TCL TclCommand "Tcl_DeleteCommand" Tcl_Interp* type-string))
+   (define Tcl_SetResult (TCL fft-void "Tcl_SetResult" Tcl_Interp* type-string Tcl_FreeProc*))
 
-   (define Tk_Init (dlsym TK int "Tk_Init" Tcl_Interp*))
-   (define Tk_MainLoop (dlsym TK int "Tk_MainLoop"))
+   (define Tk_Init (TK int "Tk_Init" Tcl_Interp*))
+   (define Tk_MainLoop (TK int "Tk_MainLoop"))
 
    (define TCL_OK 0)
    (define TCL_ERROR 1)
