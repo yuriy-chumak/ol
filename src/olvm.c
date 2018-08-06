@@ -1850,8 +1850,8 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	int p = 0, N = NR+CR;
 
 	// попробуем освободить ненужные регистры?
-	// for (int i = ol->arity + 3; i < NR; i++)
-	// 	R[i] = IFALSE;
+	for (int i = ol->arity + 3; i < NR; i++)
+		R[i] = IFALSE;
 	// fprintf(stderr, "%d", ol->arity);
 
 	// если нам не хватило магических 1024, то у нас проблема
