@@ -121,7 +121,7 @@
                   (λ (n) (fupd seen obj (+ n 1))))
                (else
                   (let ((seen (put seen obj 1)))
-                     (if (vm:raw? obj)
+                     (if (blob? obj)
                         seen
                         (fold clos seen (tuple->list obj)))))))
          (clos empty root))
@@ -173,7 +173,7 @@
             (lets
                ( ; (val-orig (if (eq? val-orig <tochange>) (make-blob 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
                 (val (cook val-orig)))
-               (if (vm:raw? val)
+               (if (blob? val)
                   (lets
                      ;; nuke padding bytes since the vm/decoder must fill these while loading
                      ;; (because different word size may require more/less padding)

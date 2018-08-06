@@ -2141,10 +2141,10 @@ mainloop:;
 	// todo: rename vm:new to vm:make or vm:mk ?
 	#	define VMNEW 23      // fast make small object
 	#	define VMMAKE 18     // make object
-	#	define MAKEBLOB 19   // make a typed blob (raw object)
-	// deprecated
-	#	define VMRAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 	#	define VMCAST  22
+
+	#	define MAKEBLOB 19   // make a typed blob (raw object)
+	#	define BLOBQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 
 	#	define VMPIN   35
 	#	define VMUNPIN 60
@@ -2601,7 +2601,7 @@ loop:;
 	 	ip += size + 1; break;
 	}
 
-	case VMRAWQ: {  // vm:raw? a -> r : Rr = (vm:raw? Ra)
+	case BLOBQ: {  // blob? a -> r : Rr = (blob? Ra)
 		word* T = (word*) A0;
 		if (is_reference(T) && is_blob(T))
 			A1 = ITRUE;

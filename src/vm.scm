@@ -168,7 +168,7 @@
 
       ; primops:
 
-      (setq RAW? 48)     ;(setq vm:raw? (new-bytecode '(48 4 5    24 5)))
+      (setq RAW? 48)     ;(setq blob? (new-bytecode '(48 4 5    24 5)))
       (setq CAST 22)     ;(setq vm:cast (new-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
 
       ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
@@ -247,14 +247,13 @@
       ;  5. переименовать vm:new-object в vm:make
 
       (setq *primops*
-         ; аллокаторы
+         ; прямые аллокаторы
          (cons (vm:new TTUPLE 'vm:new    23 'any 1 (new-bytecode '(23)))
          (cons (vm:new TTUPLE 'vm:make   18 'any 1 (new-bytecode '(18)))
+         (cons (vm:new TTUPLE 'vm:cast   22  2 1 vm:cast)  ;; cast object type (works for immediates and allocated)
+
          (cons (vm:new TTUPLE 'make-blob 19 'any 1 (new-bytecode '(19)))
-
-         (cons (vm:new TTUPLE 'vm:cast   CAST 2 1 vm:cast)  ;; cast object type (works for immediates and allocated)
-
-         (cons (vm:new TTUPLE 'vm:raw?  RAW? 1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
+         (cons (vm:new TTUPLE 'blob?     48  1 1 blob?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
 
          ; конструкторы
          (cons (vm:new TTUPLE 'cons     CONS 2 1 cons)

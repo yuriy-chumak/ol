@@ -2,8 +2,8 @@
 (define-library (scheme core)
    (import
       (src vm) ; virtual machine codes and primitives:
-               ; vm:new vm:make make-blob
-               ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
+               ; vm:new vm:make vm:cast make-blob blob?
+               ; cons car cdr ref type size set set! eq? less?
                ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
                ; clock syscall vm:version vm:maxvalue vm:valuewidth
                ; tuple-apply ff-apply
@@ -806,7 +806,7 @@
                (if (eq? 0 sa)
                   #true
                ; (> sa 0)
-               (if (vm:raw? a)
+               (if (blob? a)
                   ; comparing blobs
                   (let loop ((n (|-1| sa)))
                      (if (eq? (ref a n) (ref b n))
