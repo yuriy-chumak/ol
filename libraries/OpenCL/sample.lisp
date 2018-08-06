@@ -5,8 +5,8 @@
 (define *include-dirs* (cons ".." *include-dirs*))
 (import (OpenCL version-1-0))
 
-(define (new-size_t) (make-blob type-vector-raw (vm:wordsize)))
-(define (new-int)    (make-blob type-vector-raw '(0 0 0 0)))
+(define (new-size_t) (make-bytevector (vm:wordsize)))
+(define (new-int)    (make-bytevector '(0 0 0 0)))
 
 (define (vector->ptr vector delta)
    (let ((wordsize (vm:wordsize)))
@@ -33,20 +33,20 @@
       (<< (ref vector 3) 24)))
 
 
-(define n (make-blob type-vector-raw '(0 0 0 0)))
+(define n (make-bytevector '(0 0 0 0)))
 (check
    (clGetPlatformIDs 0 null n))
 (define n (->int n))
 (print "Number of available platforms: " n)
 
-(define platforms (make-blob type-vector-raw (repeat 0 (* n (vm:wordsize)))))
+(define platforms (make-bytevector (repeat 0 (* n (vm:wordsize)))))
 (check
    (clGetPlatformIDs n platforms null))
 (define platform (vector->ptr platforms 0))
 (print "Platform id: " platform)
 
 (define (cl:GetPlatformInfo platform name)
-   (let*((length (make-blob type-vector-raw '(0 0 0 0)))
+   (let*((length (make-bytevector '(0 0 0 0)))
          (_ (check (clGetPlatformInfo platform name 0 null length)))
          (length (->int length))
          (info (make-blob type-string (repeat 0 length)))
@@ -60,13 +60,13 @@
 (print "Extensions: " (cl:GetPlatformInfo platform CL_PLATFORM_EXTENSIONS) "\n")
 
 
-(define devices-count (make-blob type-vector-raw '(0 0 0 0)))
+(define devices-count (make-bytevector '(0 0 0 0)))
 (check ;"clGetDeviceIDs: "
    (clGetDeviceIDs platform CL_DEVICE_TYPE_GPU 0 '() devices-count))
 (define devices-count (->int devices-count))
 (print "devices count: " devices-count)
 
-(define devices (make-blob type-vector-raw (repeat 0 (* devices-count (vm:wordsize)))))
+(define devices (make-bytevector (repeat 0 (* devices-count (vm:wordsize)))))
 (check
    (clGetDeviceIDs platform CL_DEVICE_TYPE_ALL devices-count devices null))
 (define device (vector->ptr devices 0))
@@ -74,7 +74,7 @@
 
 
 (define (cl:GetDeviceInfoString device name)
-   (let*((length (make-blob type-vector-raw '(0 0 0 0)))
+   (let*((length (make-bytevector '(0 0 0 0)))
          (_ (check (clGetDeviceInfo device name 0 null length)))
          (length (->int length))
          (info (make-blob type-string (repeat 0 length)))
@@ -90,7 +90,7 @@
 ;(define devices-count (->int devices-count))
 
 (print "devices: " devices)
-(define error (make-blob type-vector-raw '(0 0 0 0)))
+(define error (make-bytevector '(0 0 0 0)))
 (define context (clCreateContext null 1 devices null null error))
 
 (print "clCreateContext: error = " error ", context:" context)

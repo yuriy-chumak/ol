@@ -52,7 +52,7 @@
 
 
 ;(loop)
-(let ((XEvent (make-blob type-vector-raw 192)))
+(let ((XEvent (make-bytevector 192)))
 (let loop ()
    (let process-events ()
       (if (> (XPending display) 0)

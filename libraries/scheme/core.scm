@@ -1028,9 +1028,7 @@
       (define type-bytecode         TBYTECODE)  ; reference, raw bytecode
       (define type-proc             TPROCEDURE) ; reference, pure function
       (define type-clos             TCLOSURE)   ; reference, function with closure(s)
-
-      (define type-vector-raw       19) ; reference, raw     ; see also TBVEC in c/ovm.c
-      (define type-bytevector       19) ; reference, raw     ; same as type-vector-raw
+      (define type-bytevector       19) ; reference, raw
 
       ; 20
       (define type-string-dispatch  21) ; reference
@@ -1414,6 +1412,33 @@
 
       ; (r7rs) 6.8  Vectors
       ; moved to (scheme vector)
+
+      ; (r7rs) 6.9  Bytevectors
+      ;
+      ; procedure: (bytevector? obj)
+      (define (bytevector? obj)
+         (eq? (type obj) type-bytevector))
+
+      ; procedure: (make-bytevector k)
+      ; procedure: (make-bytevector k byte)
+      (define make-bytevector
+         (case-lambda
+            ((k)
+               (make-blob type-bytevector k))
+            ((k byte)
+               (make-blob type-bytevector k byte))))
+
+      ; procedure: (bytevector byte ...)
+      (define (bytevector . bytes)
+         (make-blob type-bytevector bytes))
+
+      ; tbd.
+
+      ; Bytevectors represent blocks of binary data. They are
+      ; fixed-length sequences of bytes, where a byte is an exact
+      ; integer in the range from 0 to 255 inclusive. A bytevector
+      ; is typically more space-efficient than a vector containing
+      ; the same values.
 
       ;; *********************
       ;; 6.4  Control features
@@ -1837,7 +1862,6 @@
       type-pair
       type-vector-dispatch
       type-vector-leaf
-      type-vector-raw
       type-bytevector
       type-ff-black-leaf
       type-tuple
@@ -1888,6 +1912,11 @@
       memq memv member
 ;      assq assv assoc
       list-copy
+
+      ; (r7rs) 6.9  Bytevectors
+      bytevector?
+      make-bytevector
+      bytevector
 
       ; ol extension:
       bytecode? function? ff?

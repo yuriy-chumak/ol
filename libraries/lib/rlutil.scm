@@ -114,8 +114,8 @@
             (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-int+)))
       (lambda ()
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
-               (csbi (make-blob type-vector-raw 22)) ; CONSOLE_SCREEN_BUFFER_INFO
-               (cCharsWritten (make-blob type-vector-raw 4))) ; DWORD
+               (csbi (make-bytevector 22)) ; CONSOLE_SCREEN_BUFFER_INFO
+               (cCharsWritten (make-bytevector 4))) ; DWORD
             (GetConsoleScreenBufferInfo hConsole csbi)
             (let*((dwSizeX (+ (ref csbi 0) (<< (ref csbi 1) 8)))
                   (dwSizeY (+ (ref csbi 2) (<< (ref csbi 3) 8)))
@@ -153,7 +153,7 @@
             (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
       (lambda (color)
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
-               (csbi (make-blob type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
+               (csbi (make-bytevector 22))) ; CONSOLE_SCREEN_BUFFER_INFO
             (GetConsoleScreenBufferInfo hConsole csbi)
             (let ((wAttrib (+ (ref csbi 4) (<< (ref csbi 5) 8))))
                (SetConsoleTextAttribute hConsole (bor (band wAttrib #xFFF0) color)))))))
@@ -170,7 +170,7 @@
             (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
       (lambda (color)
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
-               (csbi (make-blob type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
+               (csbi (make-bytevector 22))) ; CONSOLE_SCREEN_BUFFER_INFO
             (GetConsoleScreenBufferInfo hConsole csbi)
             (let ((wAttrib (+ (ref csbi 4) (<< (ref csbi 5) 8))))
                (SetConsoleTextAttribute hConsole (bor (band wAttrib #xFF0F) (<< color 4))))))))
@@ -188,7 +188,7 @@
             (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+))
 
             (hConsole (GetStdHandle STD_OUTPUT_HANDLE))
-            (csbi (make-blob type-vector-raw 22))) ; CONSOLE_SCREEN_BUFFER_INFO
+            (csbi (make-bytevector 22))) ; CONSOLE_SCREEN_BUFFER_INFO
          (GetConsoleScreenBufferInfo hConsole csbi)
       (let ((wAttrib (+ (ref csbi 4) (<< (ref csbi 5) 8))))
       (lambda ()

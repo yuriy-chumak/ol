@@ -35,7 +35,7 @@
 (XStoreName display window "1. Creating an OpenGL Window")
 
 (define vi (glXChooseVisual display screen
-   (make-blob type-vector-raw '(
+   (make-blob type-bytevector '(
       4 0 0 0 ; GLX_RGBA
       5 0 0 0  1 0 0 0 ; GLX_DOUBLEBUFFER
       8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
@@ -60,7 +60,7 @@
 
 
 ;(loop)
-(let ((XEvent (make-blob type-vector-raw 192)))
+(let ((XEvent (make-bytevector 192)))
 (let loop ()
    (let process-events ()
       (if (> (XPending display) 0)

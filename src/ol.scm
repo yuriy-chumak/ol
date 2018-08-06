@@ -337,7 +337,7 @@
                ((eq? (type node) type-bytecode) #t)
                ((eq? (type node) type-string) #t)
                ((eq? (type node) type-port) #t)
-               ((eq? (type node) type-vector-raw) #t)
+               ((eq? (type node) type-bytevector) #t)
                (else (print "unknown raw object: " node)))
             trail)
          (else

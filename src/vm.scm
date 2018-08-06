@@ -78,8 +78,7 @@
       (setq TBYTECODE         16) ; reference, raw bytecode
       (setq TPROCEDURE        17) ; reference, pure function
       (setq TCLOSURE          18) ; reference, function with closures
-
-      (setq type-vector-raw   19) ; reference, raw     ; see also TBVEC in c/ovm.c
+      (setq TBYTEVECTOR       19) ; reference, blob    ; see also TBVEC in c/ovm.c
 
       ; 20
       (setq type-string-dispatch 21) ; reference

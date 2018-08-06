@@ -91,8 +91,8 @@
                   #false ; no menu
                   #false ; instance
                   #false))
-               (pfd (make-blob type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
-                                                 00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
+               (pfd (make-bytevector '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
+                                       00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
                (hDC (GetDC window))
                (PixelFormat (ChoosePixelFormat hDC pfd)))
             (SetPixelFormat hDC PixelFormat pfd)
@@ -211,7 +211,7 @@
             (GetMessage       (user32 fft-int "GetMessageA"      fft-void* fft-void* fft-int fft-int))
             (DispatchMessage  (user32 fft-int "DispatchMessageA" fft-void*)))
       (lambda (context)
-         (let ((MSG (make-blob type-vector-raw 48))) ; 28 for x32
+         (let ((MSG (make-bytevector 48))) ; 28 for x32
          (let loop ()
             (if (= 1 (PeekMessage MSG #f 0 0 1))
                (let*((w (vm:wordsize))
@@ -239,7 +239,7 @@
             (XNextEvent(libX11 fft-int "XNextEvent" type-vptr type-vptr)))
       (lambda (context)
          (let ((display (ref context 1)))
-         (let loop ((XEvent (make-blob type-vector-raw 192))) ; 96 for x32
+         (let loop ((XEvent (make-bytevector 192))) ; 96 for x32
             (if (> (XPending display) 0)
                (begin
                   (XNextEvent display XEvent)

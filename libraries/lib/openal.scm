@@ -72,7 +72,7 @@
             (let*((data-offset (ref file 1))
                   (data-size   (ref file 2))
                   (in (ldrop in (- data-offset 24)))
-                  (data (make-blob type-vector-raw (* data-size 2))))
+                  (data (make-bytevector (* data-size 2))))
 
                ; let's prepare the data:
                ; todo:

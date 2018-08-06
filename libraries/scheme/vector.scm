@@ -39,9 +39,9 @@
 
    (define (vector? o) ; == raw or a variant of major type 11?
       (case (type o)
-         (type-vector-raw #true)
          (type-vector-leaf #true)
          (type-vector-dispatch #true)
+         (type-bytevector #true) ; bytevectors is vectors too?
          (else #false)))
 
    ; procedure:  (make-vector k)
