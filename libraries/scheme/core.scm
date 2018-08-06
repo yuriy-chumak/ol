@@ -797,7 +797,7 @@
       ; they must be equal? as well. In all other cases, equal?
       ; may return either #t or #f.
       (define (equal? a b)
-         (if (eqv? a b)
+         (if (eq? a b)
             #true
          (let ((sa (size a)))
             (if (and sa
