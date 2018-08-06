@@ -41,23 +41,24 @@
 
 
 
-(gl:run
-
-   "4. Rotations"
+(gl:set-window-title
+   "4. Rotations")
 
 ; init
-(lambda ()
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (gluPerspective 45 (/ 640 480) 0.1 100)
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity)
+(gluPerspective 45 (/ 640 480) 0.1 100)
 
-   (glEnable GL_DEPTH_TEST)
-   (list 1 0.02 3 0.03))
+(glEnable GL_DEPTH_TEST)
+
+(gl:set-userdata
+   1 0.02 3 0.03)
 
 ; draw
+(gl:set-renderer
 (lambda (x   dx y   dy)
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
@@ -152,9 +153,6 @@
 
    (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
          (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
-      (list (+ x nx) nx (+ y ny) ny))
-   ;(list (if (< a 628/100)
-   ;         (+ a 7/100)
-   ;         0))
-;   (list (+ a 7/100))
-))
+      (list (+ x nx) nx (+ y ny) ny))))
+
+(gl:finish)
