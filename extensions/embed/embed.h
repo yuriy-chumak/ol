@@ -72,11 +72,12 @@ static word new_buffer(ol_t* ol, int type, char* data, int size)
 {
 	int words = (size + sizeof(word) - 1) / sizeof(word);
 	int pads = (words * sizeof(word) - size);
-	++words; // include header size
 
 	word* p = (word*)OL_allocate(ol->vm, words);
+
 	// #define make_raw_header(type, size, p) (2 | ((word) (size) << 16) | ((type) << 2) | ((p) << 8) | (1 << 11))
 	// *p = make_raw_header(type, words, pads); // type-string
+	++words; // include header size
 	*p = (2 | ((word) (words) << 16) | ((type) << 2) | ((pads) << 8) | (1 << 11));
 	char* ptr = (char*)&p[1];
 	while (size--)\

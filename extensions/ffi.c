@@ -963,7 +963,7 @@ word* OL_ffi(OL* self, word* arguments)
 			int size = llen(arg) + 1;
 
 			// TODO: check the available memory and gun GC if necessary
-			word* p = new (TBVEC, size, 0);
+			word* p = new (TBVEC, size-1, 0);
 			args[i] = (word)++p;
 
 			word src = arg;
@@ -985,7 +985,7 @@ word* OL_ffi(OL* self, word* arguments)
 			case TBVEC:
 			case TSTRING: {
 				word hdr = deref(arg);
-				int len = (hdrsize(hdr)-1)*sizeof(word) - padsize(hdr);
+				int len = (header_size(hdr)-1)*sizeof(word) - header_pads(hdr);
 				short* unicode = (short*) __builtin_alloca(len * sizeof(short));
 
 				short* p = unicode;
@@ -998,7 +998,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			}
 			case TSTRINGWIDE: {
-				int len = hdrsize(deref(arg));
+				int len = header_size(deref(arg));
 				short* unicode = (short*) __builtin_alloca(len * sizeof(short));
 				// todo: use new()
 				// check the available memory in the heap
@@ -1440,7 +1440,7 @@ word* OL_ffi(OL* self, word* arguments)
 					heap = &self->heap;
 					fp = heap->fp;
 				}*/
-				word* p = result = new (TSTRINGWIDE, l+1);
+				word* p = result = new (TSTRINGWIDE, l);
 				unsigned short* s = (unsigned short*)(word)got;
 				while (l--) {
 					*++p = I(*s++);

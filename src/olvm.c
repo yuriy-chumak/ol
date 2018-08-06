@@ -731,17 +731,18 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 
 #define RAWBIT                      (1 << RPOS)
 #define RAWQ(t)                     (t | (RAWBIT >> TPOS))
+#define BINARY                      (RAWBIT >> TPOS)
 
 #define make_value(type, value)        (2 | ((word)(value) << IPOS) | ((type) << TPOS))
 #define make_header(type, size)        (2 | ((word) (size) << SPOS) | ((type) << TPOS))
-#define make_raw_header(type, size, p) (2 | ((word) (size) << SPOS) | ((type) << TPOS) | ((p) << 8) | RAWBIT)
+#define header(type, size, padding)    (2 | ((word) (size) << SPOS) | ((type) << TPOS) | ((padding) << 8))
 // p is padding
 
 // два главных класса аргументов:
 #define is_value(x)                 (((word)(x)) & 2)
 #define is_reference(x)             (!is_value(x))
 
-#define is_rawobject(x)             (((word)(x)) & RAWBIT)
+#define is_blob(x)                  ((*(word*)x) & (BINARY << TPOS))
 
 // makes olvm reference from system pointer (just sanity check)
 //assert ((val && ~(W-1)) == 0);
@@ -751,8 +752,8 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 		(word*) reference; })
 
 // всякая всячина:
-#define hdrsize(x)                  (((word)x) >> SPOS)
-#define padsize(x)                  (unsigned char)((((word)(x)) >> IPOS) & 7)
+#define header_size(x)              (((word)x) >> SPOS) // header_t(x).size
+#define header_pads(x)              (unsigned char)((((word)(x)) >> IPOS) & 7) // header_t(x).padding
 
 #define thetype(x)                  (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
 #define valuetype(x)                (thetype (x) & 0x1F)
@@ -826,8 +827,8 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 #define is_string(ob)               (is_reference(ob) &&   reftype (ob) == TSTRING)
 #define is_tuple(ob)                (is_reference(ob) &&   reftype (ob) == TTUPLE)
 
-#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_raw_header(TVPTR,     2, 0))
-#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_raw_header(TCALLABLE, 2, 0))
+#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TVPTR,     2, 0))
+#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TCALLABLE, 2, 0))
 
 #define is_number(ob)               (is_fix(ob) || is_npair(ob))
 #define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
@@ -939,36 +940,40 @@ typedef struct heap_t
 
 
 // -= new =--------------------------------------------
-#define MEMORY_CHECK // sanity check для new
 // выделить блок памяти, unsafe
+// size is payload size, not a size of whole object
+// so really we allocating (size+1) words
 #define NEW(size) ({\
 	word* addr = fp;\
-	fp += size;\
-	MEMORY_CHECK;\
+	fp += (size) + 1;\
 	/*return*/ addr;\
 })
 
 // аллоцировать новый объект (указанного типа)
+// temporarily make_header use real object size, not with payload (todo: change this)
 #define NEW_OBJECT(type, size) ({\
 word*p = NEW (size);\
-	*p = make_header(type, size);\
+	*p = header(type, size+1, 0);\
 	/*return*/ p;\
 })
 
 // аллоцировать новый "сырой" объект (указанного типа),
 //  данные объекта не проверяются сборщиком мусора и не
 //  должны содержать другие объекты!
-#define NEW_RAW_OBJECT(type, size, pads) ({\
+// todo: same as new_object
+#define NEW_BLOB(type, size, pads) ({\
 word*p = NEW (size);\
-	*p = make_raw_header(type, size, pads);\
+	*p = header(BINARY|type, size+1, pads);\
 	/*return*/ p;\
 })
 
-// new(size) - allocate memory, without type
+// new(size) - allocate memory, without type;
+//             size is payload size, not whole object with header size
+//             so, we can't create real 0-sized invalid objects
 // new(type, size) - allocate object, with type
-// new(type, size, pads) - allocate RAW object, with RAWQ(type)
+// new(type, size, pads) - allocate BLOB, with type, size in words and pads
 #define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new(...) NEW_MACRO(__VA_ARGS__, NEW_RAW_OBJECT, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_BLOB, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
 
 // -= ports =-------------------------------------------
 // создает порт, НЕ аллоцирует память
@@ -990,7 +995,7 @@ word*p = NEW (size);\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
-word*p = NEW_OBJECT (type, 3);\
+word*p = NEW_OBJECT (type, 2);\
 	p[1] = data1;\
 	p[2] = data2;\
 	/*return*/ p;\
@@ -1038,7 +1043,7 @@ word*p = NEW_OBJECT (type, 3);\
 #define new_tuple1(a1) ({\
 	word data1 = (word) a1;\
 	/* точка следования */ \
-word*p = new (TTUPLE, 1+1);\
+word*p = new (TTUPLE, 1);\
 	p[1] = data1;\
 	/*return*/ p;\
 })
@@ -1046,7 +1051,7 @@ word*p = new (TTUPLE, 1+1);\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	/* точка следования */ \
-word*p = new (TTUPLE, 2+1);\
+word*p = new (TTUPLE, 2);\
 	p[1] = data1;\
 	p[2] = data2;\
 	/*return*/ p;\
@@ -1056,7 +1061,7 @@ word*p = new (TTUPLE, 2+1);\
 	word data2 = (word) a2;\
 	word data3 = (word) a3;\
 	/* точка следования */ \
-word*p = new (TTUPLE, 3+1);\
+word*p = new (TTUPLE, 3);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -1069,7 +1074,7 @@ word*p = new (TTUPLE, 3+1);\
 	word data4 = (word) a4;\
 	word data5 = (word) a5;\
 	/* точка следования */ \
-word*p = new (TTUPLE, 5+1);\
+word*p = new (TTUPLE, 5);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -1088,7 +1093,7 @@ word*p = new (TTUPLE, 5+1);\
 	word data8 = (word) a8;\
 	word data9 = (word) a9;\
 	/* точка следования */ \
-word*p = new (TTUPLE, 9+1);\
+word*p = new (TTUPLE, 9);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -1115,7 +1120,7 @@ word*p = new (TTUPLE, 9+1);\
 	word data12 = (word) a12;\
 	word data13 = (word) a13;\
 	/* точка следования */ \
-word*p = new (TTUPLE, 13+1);\
+word*p = new (TTUPLE, 13);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -1145,7 +1150,7 @@ word*p = new (TTUPLE, 13+1);\
 	int words = (size + W - 1) / W;\
 	int pads = (words * W - size);\
 	\
-word* p = new (type, words + 1, pads);\
+word* p = new (type, words, pads);\
 	/*return*/ p;\
 })
 
@@ -1173,14 +1178,14 @@ word* p = new_bytevector(TSTRING, length);\
 
 #define new_vptr(a) ({\
 word data = (word) a;\
-	word* me = new (TVPTR, 2, 0);\
+	word* me = new (TVPTR, 1, 0);\
 	me[1] = data;\
 	/*return*/me;\
 })
 
 #define new_callable(a) ({\
 word data = (word) a;\
-	word* me = new (TCALLABLE, 2, 0);\
+	word* me = new (TCALLABLE, 1, 0);\
 	me[1] = data;\
 	/*return*/me;\
 })
@@ -1226,8 +1231,8 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		// fix_pointers
 		while (pos < end) {
 			word hdr = *pos;
-			int sz = hdrsize(hdr);
-			if (is_rawobject(hdr))
+			int sz = header_size(hdr);
+			if (is_blob(pos))
 				pos += sz; // no pointers in raw objects
 			else {
 				pos++, sz--;
@@ -1277,7 +1282,7 @@ void mark(word *pos, word *end, heap_t* heap)
 				if (hdr & (RAWBIT|1))
 					pos--;
 				else
-					pos = ((word *) val) + (hdrsize(hdr)-1);
+					pos = ((word *) val) + (header_size(hdr)-1);
 			}
 		}
 		else
@@ -1312,7 +1317,7 @@ word *sweep(word* end, heap_t* heap)
 				val = *newobject;
 			}
 
-			word h = hdrsize(val);
+			word h = header_size(val);
 			if (old == newobject) {
 				old += h;
 				newobject += h;
@@ -1325,7 +1330,7 @@ word *sweep(word* end, heap_t* heap)
 			}
 		}
 		else
-			old += hdrsize(*old);
+			old += header_size(*old);
 	}
 	return newobject;
 }
@@ -1738,7 +1743,7 @@ word d2ol(struct ol_t* ol, double v) {
 			modf(v, &v); // отбросим все после запятой
 
 			size_t len = (p - fp);
-			p = new(TTUPLE, len+1) + len; // temp, will be destroyed during next gc()
+			p = new(TTUPLE, len) + len; // temp, will be destroyed during next gc()
 
 			if (len == 1)
 				b = *p--;
@@ -1793,12 +1798,13 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 
 #define TICKS                       10000 // # of function calls in a thread quantum
 
+// todo: check this! I'm not sure about new (proctype, size)
 #define OCLOSE(proctype)            { \
-	word size = *ip++, tmp; word *T = new (proctype, size); \
+	word size = *ip++, tmp; word *T = new (proctype, size-1); \
 	tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 #define CLOSE1(proctype)            { \
-	word size = *ip++, tmp; word *T = new (proctype, size); \
+	word size = *ip++, tmp; word *T = new (proctype, size-1); \
 	tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 
@@ -1853,7 +1859,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	// TODO: складывать this первым, тогда можно будет копировать только ol->arity регистров
 
 	// создадим в топе временный объект со значениями всех регистров
-	word *regs = new (TTUPLE, N + 2); // N for regs, 1 for this, and 1 for header
+	word *regs = new (TTUPLE, N + 1); // N for regs, 1 for this
 	while (++p <= N) regs[p] = R[p-1];
 	regs[p] = (word) ol->this;
 	// выполним сборку мусора
@@ -1877,7 +1883,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 		if (this == key)
 			return ff[2];
 		hdr = ff[0];
-		switch (hdrsize(hdr)) {
+		switch (header_size(hdr)) {
 		case 5: ff = (word *) ((key < this) ? ff[3] : ff[4]);
 			break;
 		case 3: return def;
@@ -1888,7 +1894,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 				ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
 			break;
 		default:
-			E("assert! hdrsize(ff) == %d", (int)hdrsize(hdr));
+			E("assert! header_size(ff) == %d", (int)header_size(hdr));
 			longjmp(fail, IFALSE); // todo: return error code
 			assert (0); // should not be reached
 			//ff = (word *) ((key < this) ? ff[3] : ff[4]);
@@ -2035,7 +2041,7 @@ apply:;
 
 				word *thread;
 
-				thread = new (TTHREAD, acc);
+				thread = new (TTHREAD, acc-1);
 				for (ptrdiff_t pos = 1; pos < acc-1; pos++)
 					thread[pos] = R[pos];
 
@@ -2341,7 +2347,7 @@ loop:;
 
 		word hdr = *this;
 		if (thetype (hdr) == TTHREAD) {
-			int pos = hdrsize(hdr) - 1;
+			int pos = header_size(hdr) - 1;
 			word code = this[pos];
 			acc = pos - 3;
 			while (--pos)
@@ -2445,7 +2451,7 @@ loop:;
 	case VMNEW: { // new t f1 .. fs r
 		word type = *ip++;
 		word size = *ip++ + 1; // the argument is n-1 to allow making a 255-tuple with 255, and avoid 0 length objects
-		word *p = new (type, size+1), i = 0; // s fields + header
+		word *p = new (type, size), i = 0; // s fields + header
 		while (i < size) {
 			p[i+1] = R[*ip++];
 			i++;
@@ -2572,7 +2578,7 @@ loop:;
 
 	case VMRAWQ: {  // vm:raw? a -> r : Rr = (vm:raw? Ra)
 		word* T = (word*) A0;
-		if (is_reference(T) && is_rawobject(*T))
+		if (is_reference(T) && is_blob(T))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
@@ -2595,17 +2601,17 @@ loop:;
 
 	case SIZE: { // size o -> r
 	//			word T = A0;
-	//			A1 = is_value(T) ? IFALSE : I(hdrsize(*(word*)T) - 1);
+	//			A1 = is_value(T) ? IFALSE : I(header_size(*(word*)T) - 1);
 	//
 		word* T = (word*) A0;
 		if (is_value(T))
 			A1 = IFALSE;
 		else {
 			word hdr = *T;
-			if (is_rawobject(hdr))
-				A1 = I((hdrsize(hdr)-1)*W - padsize(hdr));
+			if (is_blob(T))
+				A1 = I((header_size(hdr)-1)*W - header_pads(hdr));
 			else
-				A1 = I(hdrsize(*(word*)T) - 1);
+				A1 = I(header_size(*(word*)T) - 1);
 		}
 		ip += 2; break;
 	}
@@ -2666,13 +2672,13 @@ loop:;
 				// make a clone of more desired type
 				word* ob = (word*)T;
 				word hdr = *ob++;
-				int size = hdrsize(hdr);
+				int size = header_size(hdr)-1; // (-1) for header
 				word *newobj = new (size);
 				word *res = newobj;
 				/* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
 				//*newobj++ = (hdr&(~2040))|(type<<TPOS);
 				*newobj++ = (hdr & (~252)) | (type << TPOS); /* <- hardcoded ...111100000011 */
-				wordcopy(ob, newobj, size-1);
+				wordcopy(ob, newobj, size);
 				A2 = (word)res;
 			}
 			break;
@@ -2701,9 +2707,9 @@ loop:;
 			A2 = IFALSE;
 		else {
 			word hdr = *p;
-			if (is_rawobject(hdr)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
+			if (is_blob(p)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
 				word pos = uvtoi (A1);
-				word size = ((hdrsize(hdr)-1)*W) - padsize(hdr);
+				word size = ((header_size(hdr)-1)*W) - header_pads(hdr);
 				if (pos >= size)
 					A2 = IFALSE;
 				else
@@ -2711,7 +2717,7 @@ loop:;
 			}
 			else {
 				word pos = uvtoi (A1);
-				word size = hdrsize(hdr);
+				word size = header_size(hdr);
 				if (!pos || size <= pos) // tuples are indexed from 1
 					A2 = IFALSE;
 				else
@@ -2729,27 +2735,27 @@ loop:;
 		if (!is_reference(p))
 			A3 = IFALSE;
 		else
-		if (is_rawobject(*p)) {
+		if (is_blob(p)) {
 			CHECK(is_value(A2), A2, 10001)
 			word hdr = *p;
-			word size = hdrsize (hdr);
+			word size = header_size (hdr) - 1; // -1 for header
 			word *newobj = new (size);
-			for (ptrdiff_t i = 0; i < size; i++)
+			for (ptrdiff_t i = 0; i <= size; i++)
 				newobj[i] = p[i];
-			if (pos < (size-1)*sizeof(word) - padsize(hdr) + 1)
+			if (pos < size * sizeof(word) - header_pads(hdr) + 1)
 				((char*)&car(newobj))[pos] = (char)svtoi(A2);
 			A3 = (word)newobj;
 		}
 		else
-		if (hdrsize(*p) < pos || !pos)
+		if (header_size(*p) < pos || !pos)
 			A3 = IFALSE;
 		else {
 			//if (is_tuple(p)) {
 			word hdr = *p;
-			word size = hdrsize (hdr);
+			word size = header_size (hdr) - 1;
 			word *newobj = new (size);
 			word val = A2;
-			for (ptrdiff_t i = 0; i < size; i++)
+			for (ptrdiff_t i = 0; i <= size; i++)
 				newobj[i] = p[i];
 			newobj[pos] = val;
 			A3 = (word)newobj;
@@ -2765,14 +2771,14 @@ loop:;
 
 		A3 = IFALSE;
 		if (is_reference(v)) {
-			if (is_rawobject(*v)) {
-				if (is_value(value) && (pos < (hdrsize(*v)-1)*W - padsize(*v) + 1)) {
+			if (is_blob(v)) {
+				if (is_value(value) && (pos < (header_size(*v)-1)*W - header_pads(*v) + 1)) {
 					((char*)&car(v))[pos] = (char) svtoi(A2);
 					A3 = (word) v;
 				}
 			}
 			else
-			if (pos >= 1 && pos <= hdrsize(*v)) {
+			if (pos >= 1 && pos <= header_size(*v)) {
 				if (is_value(value) || (is_reference(value) && (word*)value < v)) {
 					v[pos] = A2;
 					A3 = (word) v;
@@ -2923,7 +2929,7 @@ loop:;
 
 		word pos = 1, n = *ip++;
 		//word hdr = *tuple;
-		//CHECK(!(is_raw(hdr) || hdrsize(hdr)-1 != n), tuple, BIND);
+		//CHECK(!(is_raw(hdr) || header_size(hdr)-1 != n), tuple, BIND);
 		while (n--)
 			R[*ip++] = tuple[pos++];
 
@@ -2939,7 +2945,7 @@ loop:;
 		word hdr = *ff++;
 		A2 = *ff++; // key
 		A3 = *ff++; // value
-		switch (hdrsize(hdr)) {
+		switch (header_size(hdr)) {
 		case 3: A1 = A4 = IEMPTY; break;
 		case 4:
 			if (hdr & (1 << TPOS)) // has right?
@@ -2964,19 +2970,19 @@ loop:;
 		word *me;
 		if (l == IEMPTY) {
 			if (r == IEMPTY)
-				me = new (t, 3);
+				me = new (t, 2);
 			else {
-				me = new (t|FFRIGHT, 4);
+				me = new (t|FFRIGHT, 3);
 				me[3] = r;
 			}
 		}
 		else
 		if (r == IEMPTY) {
-			me = new (t, 4);
+			me = new (t, 3);
 			me[3] = l;
 		}
 		else {
-			me = new (t, 5);
+			me = new (t, 4);
 			me[3] = l;
 			me[4] = r;
 		}
@@ -2997,7 +3003,7 @@ loop:;
 
 		word h = *node++;
 		*p++ = (h ^ (FFRED << TPOS));
-		switch (hdrsize(h)) {
+		switch (header_size(h)) {
 			case 5:  *p++ = *node++;
 			case 4:  *p++ = *node++;
 			default: *p++ = *node++;
@@ -3142,7 +3148,7 @@ loop:;
 			word *buff = (word *) b;
 			if (is_value(buff))
 				break;
-			int length = (hdrsize(*buff) - 1) * sizeof(word); // todo: pads!
+			int length = (header_size(*buff) - 1) * sizeof(word); // todo: pads!
 			if (size > length || size < 0)
 				size = length;
 
@@ -4044,11 +4050,8 @@ loop:;
 			break;
 		}
 		case 1001: // is raw object?
-			if (is_reference(a)) {
-				word hdr = *(word*)a;
-				if (is_rawobject(hdr))
-					result = (word*)ITRUE;
-			}
+			if (is_reference(a) && is_blob(a))
+				result = (word*)ITRUE;
 			break;
 		case 1002: // return userdata
 			result = new_vptr(ol->userdata);
@@ -4478,7 +4481,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			int words = (size + W - 1) / W;
 			int pads = words * W - size;//(W - (size % W));
 
-			unsigned char *p = (unsigned char*)&car(new (type, words+1, pads));
+			unsigned char *p = (unsigned char*)&car(new (type, words, pads));
 			while (size--)
 				*p++ = *hp++;
 			while (pads--) // not required, but will be usefull
@@ -4758,7 +4761,7 @@ OL_new(unsigned char* bootstrap)
 	handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты
-	word *ptrs = new(TTUPLE, nobjs+1, 0);
+	word *ptrs = new(TTUPLE, nobjs, 0);
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
 
 	if (fp == 0)
@@ -4880,7 +4883,7 @@ OL_run(OL* ol, int argc, char** argv)
 	sandboxp = 0;    // static variable
 
 	word* ptrs = (word*) heap->begin;
-	int nobjs = hdrsize(ptrs[0]) - 1;
+	int nobjs = header_size(ptrs[0]) - 1;
 
 	// точка входа в программу - последняя лямбда загруженного образа (λ (args))
 	// thinkme: может стоит искать и загружать какой-нибудь main() ?
