@@ -309,7 +309,7 @@
       (define (bytes->bytecode bytes)
          ;(vm:new-raw-object type-bytecode bytes)) ; more memory, less cpu
          (interact bytecode-server      ; more cpu, less memory
-            (vm:new-raw-object type-bytecode bytes)))
+            (make-blob type-bytecode bytes)))
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont

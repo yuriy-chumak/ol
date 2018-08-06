@@ -2141,6 +2141,8 @@ mainloop:;
 	// todo: rename vm:new to vm:make or vm:mk ?
 	#	define VMNEW 23      // fast make small object
 	#	define VMMAKE 18     // make object
+	#	define MAKEBLOB 19   // make a typed blob (raw object)
+	// deprecated
 	#	define VMNEW_RAWOBJECT 60  // make raw object
 	#	define VMRAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 	#	define VMCAST  22
@@ -2516,6 +2518,76 @@ loop:;
 						value = cdr (value);
 					}
 					*ptr = header(type, ++fp - ptr);
+				}
+				else
+					R[ip[size]] = IFALSE;
+				break;
+			}
+			default:
+				ERROR(17, this, I(size));
+		}
+
+	 	ip += size + 1; break;
+	}
+
+	// make raw reference object
+	case MAKEBLOB: { // (make-blob type list|size {default})
+		word size = *ip++;
+		word type = uvtoi (A0);
+		word value = A1;
+
+		unsigned char el = 0;  // default is 0
+		switch (size) {
+			case 3:
+				el = (unsigned char) value(A2);
+				// no break
+			case 2: {
+				size_t len = 0;
+				word list = value;
+				if (is_number(value))
+					len = untoi(value);
+				else
+				while (is_pair(list)) {
+					++len;
+					list = cdr(list);
+				}
+
+				// эта проверка необходима, так как действительно можно
+				//	выйти за пределы кучи (репродюсится стабильно)
+				if (len / sizeof(word) > heap->end - fp) {
+					ptrdiff_t dp;
+					dp = ip - (unsigned char*)this;
+
+					heap->fp = fp; ol->this = this;
+					ol->gc(ol, len);
+					fp = heap->fp; this = ol->this;
+
+					ip = (unsigned char*)this + dp;
+				}
+
+				word *ptr = new_bytevector (type, len);
+				R[ip[size]] = (word)ptr; // result register
+
+				if (is_number(value)) {
+					unsigned char* wp = (unsigned char*)&ptr[1];
+					for (int i = 0; i < len; i++)
+						*wp++ = el;
+					// clear the padding bytes, don't remove!
+					// actually not required, but sometimes very useful!
+					while ((word)wp % sizeof(word))
+						*wp++ = 0;
+				}
+				else
+				if (is_pair(value) && list == INULL) { // proper list?
+					unsigned char* wp = (unsigned char*)&ptr[1];
+					while (value != INULL) {
+						*wp++ = uvtoi(car(value)) & 255;
+						value = cdr (value);
+					}
+					// clear the padding bytes, don't remove!
+					// actually not required, but sometimes very useful!
+					while ((word)wp % sizeof(word))
+						*wp++ = 0;
 				}
 				else
 					R[ip[size]] = IFALSE;
@@ -4342,19 +4414,19 @@ loop:;
 		A1 = itouv(id);
 		ip += 2; break;
 	}
-	case VMUNPIN: { // vm:unpin => old pin value
-		word pin = A0;
-		CHECK (is_value(pin), pin, VMUNPIN);
+	// case VMUNPIN: { // vm:unpin => old pin value
+	// 	word pin = A0;
+	// 	CHECK (is_value(pin), pin, VMUNPIN);
 
-		int id = value(pin);
-		if (id > 3 && id < CR) {
-			A1 = R[NR+id]; // is it required? we can use (deref .)
-			R[NR+id] = IFALSE;
-		}
-		else
-			A1 = IFALSE;
-		ip += 2; break;
-	}
+	// 	int id = value(pin);
+	// 	if (id > 3 && id < CR) {
+	// 		A1 = R[NR+id]; // is it required? we can use (deref .)
+	// 		R[NR+id] = IFALSE;
+	// 	}
+	// 	else
+	// 		A1 = IFALSE;
+	// 	ip += 2; break;
+	// }
 
 	case VMDEREF: {// vm:deref /get pinned object value/
 		word pin = A0;
