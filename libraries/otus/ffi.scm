@@ -283,13 +283,13 @@
 (define vptr->vector (cond
    ((string-ci=? (ref (uname) 1) "Windows")
       (lambda (vptr sizeof)
-         (let ((vector (vm:new-raw-object type-vector-raw sizeof)))
+         (let ((vector (make-blob type-vector-raw sizeof)))
             ; ...
             vector)))
    ((string-ci=? (ref (uname) 1) "Linux")
       (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-int)))
          (lambda (vptr sizeof)
-            (let ((vector (vm:new-raw-object type-vector-raw sizeof)))
+            (let ((vector (make-blob type-vector-raw sizeof)))
                (memcpy vector vptr sizeof)
                vector))))
    (else

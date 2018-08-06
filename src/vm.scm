@@ -143,7 +143,7 @@
       ; -------------------------------------------
       ;; Примитивные операции/операторы
       ; internal helper
-      (setq new-bytecode   (lambda (bytecode) (vm:new-raw-object TBYTECODE bytecode)))
+      (setq new-bytecode   (lambda (bytecode) (make-blob TBYTECODE bytecode)))
 
       ; memory allocators (no default bytecode exists, should generate on-the-fly)
       (setq NEW 23)        ; no real (vm:new) command required, check rtl-primitive in (lang compile)
@@ -151,7 +151,7 @@
       (setq MAKE-BLOB 19)  (setq make-blob (new-bytecode '(19))) ; fake command for (prim-opcodes)
 
       ; deprecated
-      (setq RAW-OBJECT 60) ;(setq vm:new-raw-object (vm:new-raw-object TBYTECODE '(60 4 5 6  24 6)))
+      (setq RAW-OBJECT 60) ;(setq make-blob (make-blob TBYTECODE '(60 4 5 6  24 6)))
 
       ; vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements length
       ; vm:make - smarter allocator, can create objects with size and default element
@@ -210,7 +210,7 @@
       (setq LESS? 44)    ;(setq less?   (new-bytecode '(44 4 5 6  24 6)))
 
       ; deprecated:
-      ;(define clock   (vm:new-raw-object type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
+      ;(define clock   (make-blob type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
       (setq SET-REF 45)  ;(setq set-ref  (new-bytecode '(45 4 5 6 7  24 7)))
       (setq SET-REF! 10) ;(setq set-ref! (new-bytecode '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
@@ -219,11 +219,11 @@
       (setq TUPLE-APPLY 32)
       (setq FF-APPLY 49) ;(setq ff-apply (new-bytecode '(49 4)))
 
-      ;;(define ff:red     (vm:new-raw-object type-bytecode '(43 4 5 6 7  8  24 8)))
-      ;;(define ff:black   (vm:new-raw-object type-bytecode '(42 4 5 6 7  8  24 8)))
-      ;;(define ff:toggle  (vm:new-raw-object type-bytecode '(46 4        5  24 5)))
-      ;;(define ff:red?    (vm:new-raw-object type-bytecode '(41 4        5  24 5)))
-      ;;(define ff:right?  (vm:new-raw-object type-bytecode '(37 4        5  24 5)))
+      ;;(define ff:red     (make-blob type-bytecode '(43 4 5 6 7  8  24 8)))
+      ;;(define ff:black   (make-blob type-bytecode '(42 4 5 6 7  8  24 8)))
+      ;;(define ff:toggle  (make-blob type-bytecode '(46 4        5  24 5)))
+      ;;(define ff:red?    (make-blob type-bytecode '(41 4        5  24 5)))
+      ;;(define ff:right?  (make-blob type-bytecode '(37 4        5  24 5)))
 
       (setq vm:pin    (new-bytecode '(35 4 5  24 5)))
       (setq vm:unpin  (new-bytecode '(19 4 5  24 5)))
@@ -254,18 +254,15 @@
 
          (cons (vm:new TTUPLE 'vm:cast   CAST 2 1 vm:cast)  ;; cast object type (works for immediates and allocated)
 
-         ; deprecated:
-         (cons (vm:new TTUPLE 'vm:new-raw-object RAW-OBJECT  2 1 vm:new-raw-object)   ; create raw reference object (vm:new-raw-object type '(v0 .. vn)) or (vm:new-raw-object type size)
-
          (cons (vm:new TTUPLE 'vm:raw?  RAW? 1 1 vm:raw?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
 
          ; конструкторы
          (cons (vm:new TTUPLE 'cons     CONS 2 1 cons)
 
          ; геттеры
-         (cons (vm:new TTUPLE 'car      CAR  1 1 car)   ; (vm:new-raw-object type-bytecode '(52 4 5    24 5))
-         (cons (vm:new TTUPLE 'cdr      CDR  1 1 cdr)   ; (vm:new-raw-object type-bytecode '(53 4 5    24 5))
-         (cons (vm:new TTUPLE 'ref      REF  2 1 ref)   ; (vm:new-raw-object type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
+         (cons (vm:new TTUPLE 'car      CAR  1 1 car)   ; (make-blob type-bytecode '(52 4 5    24 5))
+         (cons (vm:new TTUPLE 'cdr      CDR  1 1 cdr)   ; (make-blob type-bytecode '(53 4 5    24 5))
+         (cons (vm:new TTUPLE 'ref      REF  2 1 ref)   ; (make-blob type-bytecode '(47 4 5 6  24 6))   ; op47 = ref t o r = prim_ref(A0, A1)
 
          (cons (vm:new TTUPLE 'type     TYPE  1 1 type)  ;; get just the type bits
          (cons (vm:new TTUPLE 'size     SIZE  1 1 size)  ;; get object size (- 1)
@@ -320,7 +317,7 @@
          (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
 
          (cons (vm:new TTUPLE 'vm:pin    35 1  1  vm:pin)
-;         (cons (vm:new TTUPLE 'vm:unpin  19 1  1  vm:unpin)
+         (cons (vm:new TTUPLE 'vm:unpin  60 1  1  vm:unpin)
          (cons (vm:new TTUPLE 'vm:deref  25 1  1  vm:deref)
          #null))))))))))))))))))))))))))))))))))))))))))))
 

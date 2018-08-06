@@ -20,8 +20,8 @@
    #false))
 
 ; PIXELFORMATDESCRIPTOR
-(define pfd (vm:new-raw-object type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
-                                               00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
+(define pfd (make-blob type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
+                                           00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
 (define hDC (GetDC window))
 (define PixelFormat (ChoosePixelFormat hDC pfd))
 (print "PixelFormat = " PixelFormat)
@@ -49,7 +49,7 @@
 
 ;,quit;(loop) ;UINT - unsigned int
 (call/cc (lambda (break)
-(let ((MSG (vm:new-raw-object type-vector-raw 48)))
+(let ((MSG (make-blob type-vector-raw 48)))
 
    (let loop ()
       (let process-events ()

@@ -251,7 +251,7 @@
 (define win32? (string-ci=? (ref uname 1) "Windows"))
 (define linux? (string-ci=? (ref uname 1) "Linux"))
 
-(define (make-void*) (vm:new-raw-object fft-void* (vm:wordsize)))
+(define (make-void*) (make-blob fft-void* (vm:wordsize)))
 
 (define sqlite (load-dynamic-library (cond
    (win32? "sqlite3")

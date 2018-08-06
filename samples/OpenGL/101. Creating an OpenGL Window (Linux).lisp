@@ -52,7 +52,7 @@
 
 
 ;(loop)
-(let ((XEvent (vm:new-raw-object type-vector-raw (repeat 0 192))))
+(let ((XEvent (make-blob type-vector-raw 192)))
 (let loop ()
    (let process-events ()
       (if (> (XPending display) 0)

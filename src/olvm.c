@@ -2143,12 +2143,11 @@ mainloop:;
 	#	define VMMAKE 18     // make object
 	#	define MAKEBLOB 19   // make a typed blob (raw object)
 	// deprecated
-	#	define VMNEW_RAWOBJECT 60  // make raw object
 	#	define VMRAWQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 	#	define VMCAST  22
 
 	#	define VMPIN   35
-	#	define VMUNPIN 19
+	#	define VMUNPIN 60
 	#	define VMDEREF 25
 
 	#	define CONS  51
@@ -2566,7 +2565,7 @@ loop:;
 				}
 
 				word *ptr = new_bytevector (type, len);
-				R[ip[size]] = (word)ptr; // result register
+				R[ip[size]] = (word)ptr; // result
 
 				if (is_number(value)) {
 					unsigned char* wp = (unsigned char*)&ptr[1];
@@ -2590,7 +2589,9 @@ loop:;
 						*wp++ = 0;
 				}
 				else
+				if (value != INULL) // we definitely accepts 0-sized blobs
 					R[ip[size]] = IFALSE;
+
 				break;
 			}
 			default:
@@ -2599,57 +2600,6 @@ loop:;
 
 	 	ip += size + 1; break;
 	}
-
-	// make raw reference object
-	case VMNEW_RAWOBJECT: { // (vm:new-raw-object type list|size)
-		int type = uvtoi(A0);
-		size_t len = 0;
-
-		// memory check:
-		if (is_value(A1)) {
-			len = (A1 == INULL)  ? 0
-				: (A1 == IFALSE) ? 0 // todo: is it required?
-				: uvtoi(A1);
-		}
-		else {
-			word list = A1;
-
-			while (is_pair(list)) {
-				++len;
-				list = cdr(list);
-			}
-		}
-		// if there are no place for raw object:
-		if (len / sizeof(word) > heap->end - fp) {
-			ptrdiff_t dp;
-			dp = ip - (unsigned char*)this;
-
-			heap->fp = fp; ol->this = this;
-			ol->gc(ol, len / sizeof(word));
-			fp = heap->fp; this = ol->this;
-
-			ip = (unsigned char*)this + dp;
-		}
-		word *raw = new_bytevector (type, len);
-
-		if (is_reference(A1)) {
-			word *p = (word*) A1;
-
-			unsigned char *pos;
-			pos = (unsigned char *) &raw[1];
-			while (is_pair(p)) {
-				*pos++ = uvtoi(car(p)) & 255;
-				p = (word*)cdr(p);
-			}
-
-			// clear the padding bytes, don't remove!
-			// actually not required, but sometimes very useful!
-			while ((word)pos % sizeof(word))
-				*pos++ = 0;
-		}
-		A2 = (word)raw;
-		ip += 3; break; }
-
 
 	case VMRAWQ: {  // vm:raw? a -> r : Rr = (vm:raw? Ra)
 		word* T = (word*) A0;
@@ -4414,19 +4364,19 @@ loop:;
 		A1 = itouv(id);
 		ip += 2; break;
 	}
-	// case VMUNPIN: { // vm:unpin => old pin value
-	// 	word pin = A0;
-	// 	CHECK (is_value(pin), pin, VMUNPIN);
+	case VMUNPIN: { // vm:unpin => old pin value
+		word pin = A0;
+		CHECK (is_value(pin), pin, VMUNPIN);
 
-	// 	int id = value(pin);
-	// 	if (id > 3 && id < CR) {
-	// 		A1 = R[NR+id]; // is it required? we can use (deref .)
-	// 		R[NR+id] = IFALSE;
-	// 	}
-	// 	else
-	// 		A1 = IFALSE;
-	// 	ip += 2; break;
-	// }
+		int id = value(pin);
+		if (id > 3 && id < CR) {
+			A1 = R[NR+id]; // is it required? we can use (deref .)
+			R[NR+id] = IFALSE;
+		}
+		else
+			A1 = IFALSE;
+		ip += 2; break;
+	}
 
 	case VMDEREF: {// vm:deref /get pinned object value/
 		word pin = A0;

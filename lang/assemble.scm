@@ -307,7 +307,7 @@
 
       ;; make bytecode and intern it (to improve sharing, not mandatory)
       (define (bytes->bytecode bytes)
-         ;(vm:new-raw-object type-bytecode bytes)) ; more memory, less cpu
+         ;(make-blob type-bytecode bytes)) ; more memory, less cpu
          (interact bytecode-server      ; more cpu, less memory
             (make-blob type-bytecode bytes)))
 

@@ -2,7 +2,7 @@
 (define-library (scheme core)
    (import
       (src vm) ; virtual machine codes and primitives:
-               ; vm:new vm:make vm:new-raw-object
+               ; vm:new vm:make make-blob
                ; cons car cdr ref type size vm:cast vm:raw? set set! eq? less?
                ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
                ; clock syscall vm:version vm:maxvalue vm:valuewidth

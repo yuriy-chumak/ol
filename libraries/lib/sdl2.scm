@@ -318,7 +318,7 @@
 ; ------------------------
 ; SDL_event
 (define SDL_Event* type-vptr)
-(define (make-SDL_Event) (vm:new-raw-object type-vector-raw 56))
+(define (make-SDL_Event) (make-blob type-vector-raw 56))
 
 (define SDL_RELEASED 0)
 (define SDL_PRESSED 1)
