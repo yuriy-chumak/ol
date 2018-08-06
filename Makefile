@@ -2,7 +2,7 @@ export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
 
-.PHONY: all debug release config recompile install uninstall clean tests check rosettacode
+.PHONY: all debug release slim config recompile install uninstall clean tests check rosettacode
 
 all: release
 
@@ -143,6 +143,8 @@ debug: vm repl ol
 release: CFLAGS += $(CFLAGS_RELEASE)
 release: vm repl ol
 
+slim: CFLAGS += -DOLVM_FFI=0 
+slim: release
 
 # ol
 vm: src/olvm.c include/olvm.h
