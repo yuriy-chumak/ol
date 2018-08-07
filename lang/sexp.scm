@@ -93,7 +93,7 @@
       (define (digit-char? base)
          (if (eq? base 10)
             (λ (n) (between? #\0 n #\9))
-            (λ (n) (< (get digit-values n 100) base))))
+            (λ (n) (< (get digit-values n 100) base)))) ; base should be less than 100
 
       (define (bytes->number digits base)
          (fold
@@ -177,17 +177,27 @@
             val))
 
       ;; anything up to a rational
+      (setq |+inf.0| (vm:fp2 3 1 0)) ; 1/0 = +infin
+      (setq |-inf.0| (vm:fp1 6 0))   ; log(0) = -infin
+      (setq |+nan.0| (vm:fp1 0 -1))  ; sqrt(-1) = NaN
+
       (define get-rational
          (let-parses
-            ((n get-number-unit)
-             (m (get-either
-                  (let-parses
-                     ((skip (get-imm #\/))
-                      (m get-number-unit)
-                      (verify (not (eq? 0 m)) "zero denominator"))
-                     m)
-                  (get-epsilon 1))))
-            (/ n m)))
+            ((val (get-any-of
+                     (get-word "+inf.0" |+inf.0|) ; (vm:fp2 3 1 0)) ; todo: move below
+                     (get-word "-inf.0" |-inf.0|) ; (vm:fp1 6 0))
+                     (get-word "+nan.0" |+nan.0|) ; (vm:fp1 0 -1))
+                     (let-parses
+                           ((n get-number-unit)
+                            (m (get-either
+                                 (let-parses
+                                       ((skip (get-imm #\/))
+                                       (m get-number-unit)
+                                       (verify (not (eq? 0 m)) "zero denominator")) ; todo: remove verifier
+                                    m)
+                                 (get-epsilon 1))))
+                        (/ n m)))))
+            val))
 
       (define get-imaginary-part
          (let-parses

@@ -177,13 +177,13 @@
                   (lets
                      ;; nuke padding bytes since the vm/decoder must fill these while loading
                      ;; (because different word size may require more/less padding)
-                     ((t (vm:and (type-byte-of val) #b11111))
+                     ((t (type val))
                       (bs (size val)))
                      (ilist 2 t
                         (send-number bs
                            (copy-bytes out val (- bs 1)))))
                   (lets
-                     ((t (type-byte-of val))
+                     ((t (type val))
                       (s (size val)))
                      ; options for optimization
                      ;  t and s fit in 6 bits -> pack (seems to be only about 1/20 compression)

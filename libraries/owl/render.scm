@@ -18,7 +18,7 @@
       (only (owl fasl) sub-objects)
       (only (owl vector) byte-vector? vector? vector->list)
       (only (owl math) render-number number?)
-      (only (owl string) render-string string?))
+      (only (owl string) render-string string? string->list))
 
    (export
       make-serializer    ;; names → ((obj tl) → (byte ... . tl))
@@ -42,7 +42,6 @@
       (define (make-renderer meta)
          (define (render obj tl)
             (cond
-
                ((null? obj)
                   (ilist #\( #\) tl))
 
@@ -67,8 +66,7 @@
                ((symbol? obj)
                   (render (symbol->string obj) tl))
 
-               ;; these are a subclass of vectors in owl
-               ((byte-vector? obj)
+               ((bytevector? obj)
                   (ilist #\# #\u #\8 (render (vector->list obj) tl)))
 
                ((vector? obj)
@@ -112,22 +110,6 @@
                ((eq? obj #eof)   (ilist #\# #\e #\o #\f tl))
 
                ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (vm:cast obj type-fix+) (cons #\] tl))))
-
-               ; inexact numbers (render up to 4 digit numbers)
-               ((inexact? obj)
-                  ; todo: move this into (owl math) library
-                  (let*((int  (inexact->exact (ffloor obj)))
-                        (frac (inexact->exact (ffloor (fmul (ffrac obj) (exact->inexact 100000))))))
-                     (render int (cons #\. (append (reverse
-                     (let loop ((i frac) (n 10000) (l #null))
-                        (cond
-                           ((eq? i 0)
-                              l)
-                           ((eq? n 1)
-                              (ilist #\. #\. l))
-                           (else
-                              (loop (mod i n) (/ n 10) (render-number (floor (/ i n)) l 10)))))) tl)))))
-
 
                ((eq? (type obj) type-const)
                   (render-number (vm:cast obj type-fix+) tl 16))

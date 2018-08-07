@@ -758,9 +758,8 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 #define header_size(x)              (((word)x) >> SPOS) // header_t(x).size
 #define header_pads(x)              (unsigned char)((((word)(x)) >> IPOS) & 7) // header_t(x).padding
 
-#define thetype(x)                  (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
-#define valuetype(x)                (thetype (x) & 0x1F)
-#define reftype(x)                  (thetype (*R(x)))
+#define valuetype(x)                (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
+#define reftype(x)                  (valuetype (*R(x)))
 
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
@@ -819,10 +818,11 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 //#define is_const(ob)                (is_value(ob)     && thetype (ob) == TCONST)
 #define is_port(ob)                 (is_value(ob)     && valuetype (ob) == TPORT)
 
-#define is_fix(ob)                  (is_value(ob)     && valuetype (ob) == TFIXP)
+#define is_fixp(ob)                 (is_value(ob)     && valuetype (ob) == TFIXP)
 #define is_fixn(ob)                 (is_value(ob)     && valuetype (ob) == TFIXN)
+#define is_fix(ob)                  (is_fixp(ob) || is_fixn(ob))
 #define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(TPAIR,     3))
-#define is_npair(ob)                (is_reference(ob) && (*(word*) (ob)) == header(TINTP,     3))
+#define is_npairp(ob)               (is_reference(ob) && (*(word*) (ob)) == header(TINTP,     3))
 #define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == header(TINTN,     3))
 #define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == header(TRATIONAL, 3))
 #define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == header(TCOMPLEX,  3))
@@ -833,8 +833,9 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 #define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TVPTR,     2))
 #define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TCALLABLE, 2))
 
-#define is_number(ob)               (is_fix(ob) || is_npair(ob))
+#define is_numberp(ob)              (is_fixp(ob) || is_npairp(ob))
 #define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
+#define is_number(ob)               (is_numberp(ob) || is_numbern(ob))
 
 // makes positive olvm integer value from int
 #define I(val) \
@@ -857,10 +858,18 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 // набор макросов - проверок для команд
 // car, cdr:
 #ifndef CAR_CHECK
-#define CAR_CHECK(arg) is_pair(T) || is_npair(T) || is_npairn(T) || is_rational(T) || is_complex(T)
+#ifndef NDEBUG
+#	define CAR_CHECK(arg) is_pair(T) || is_npairp(T) || is_npairn(T) || is_rational(T) || is_complex(T)
+#else
+#	define CAR_CHECK(arg) 1
+#endif
 #endif
 #ifndef CDR_CHECK
-#define CDR_CHECK(arg) is_pair(T) || is_npair(T) || is_npairn(T) || is_rational(T) || is_complex(T)
+#ifndef NDEBUG
+#	define CDR_CHECK(arg) is_pair(T) || is_npairp(T) || is_npairn(T) || is_rational(T) || is_complex(T)
+#else
+#	define CDR_CHECK(arg) 1
+#endif
 #endif
 
 
@@ -1586,7 +1595,7 @@ struct ol_t
 
 // работа с numeric value типами
 #ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v)  assert (is_value(v) && thetype(v) == TFIXP);
+#define UVTOI_CHECK(v)  assert (is_value(v) && valuetype(v) == TFIXP);
 #endif
 // todo: uv2i
 #define uvtoi(v)  (int_t)({ word x1 = (word)(v); UVTOI_CHECK(x1); (word) (x1 >> IPOS); })
@@ -1596,14 +1605,14 @@ struct ol_t
 // todo: sv2i
 // todo: add overflow checking...
 #ifndef SVTOI_CHECK
-#define SVTOI_CHECK(v) assert (is_value(v) && (valuetype(v) == TFIXP)); // valuetype makes TFIXP from TFIXP and TFIXN
+#define SVTOI_CHECK(v) assert (is_value(v) && ((valuetype(v) & 0x1F) == TFIXP)); // makes TFIXP from TFIXP and TFIXN
 #endif
 // todo: rename to sv2i (signed value TO integer)
 #define svtoi(v) \
 	({  word x = (word)(v);           \
 		SVTOI_CHECK(x);               \
 		int_t y = (x >> IPOS);        \
-		thetype(x) == TFIXN ? -y : y; \
+		valuetype(x) == TFIXN ? -y : y; \
 	})
 //		(x & 0x80) ? -y : y;
 
@@ -1663,7 +1672,7 @@ double ol2d_convert(word p) {
 
 double ol2d(word arg) {
 	if (is_value(arg)) {
-		assert (thetype(arg) == TFIXP || thetype(arg) == TFIXN); // shorter: valuetype(arg) == TFIXP
+		assert (valuetype(arg) == TFIXP || valuetype(arg) == TFIXN); // shorter: valuetype(arg) == TFIXP
 		return svtoi(arg);
 	}
 	assert (is_reference(arg));
@@ -1697,7 +1706,7 @@ float ol2f_convert(word p) {
 }
 float ol2f(word arg) {
 	if (is_value(arg)) {
-		assert (thetype(arg) == TFIXP || thetype(arg) == TFIXN); // shorter: valuetype(arg) == TFIXP
+		assert (valuetype(arg) == TFIXP || valuetype(arg) == TFIXN); // shorter: valuetype(arg) == TFIXP
 		return svtoi(arg);
 	}
 	assert (is_reference(arg));
@@ -1720,6 +1729,10 @@ float ol2f(word arg) {
 
 // TODO: add memory checking
 word d2ol(struct ol_t* ol, double v) {
+	// check for non representable numbers:
+	if (v == INFINITY || v == -INFINITY || v == NAN)
+		return IFALSE;
+
 	word* fp = ol->heap.fp;
 
 	word a, b = INULL;
@@ -2350,7 +2363,7 @@ loop:;
 		CHECK(is_reference(this), this, RUN);
 
 		word hdr = *this;
-		if (thetype (hdr) == TTHREAD) {
+		if (valuetype (hdr) == TTHREAD) {
 			int pos = header_size(hdr) - 1;
 			word code = this[pos];
 			acc = pos - 3;
@@ -2481,7 +2494,7 @@ loop:;
 			case 2: {
 				size_t len = 0;
 				word list = value;
-				if (is_number(value))
+				if (is_numberp(value))
 					len = untoi(value);
 				else
 				while (is_pair(list)) {
@@ -2505,7 +2518,7 @@ loop:;
 				word *ptr = fp;
 				R[ip[size]] = (word)ptr; // result register
 
-				if (is_number(value)) { // no list, just
+				if (is_numberp(value)) { // no list, just
 					for (int i = 0; i < len; i++)
 						*++fp = el;
 					*ptr = header(type, ++fp - ptr);
@@ -2543,7 +2556,7 @@ loop:;
 			case 2: {
 				size_t len = 0;
 				word list = value;
-				if (is_number(value))
+				if (is_numberp(value))
 					len = untoi(value);
 				else
 				while (is_pair(list)) {
@@ -2567,7 +2580,7 @@ loop:;
 				word *ptr = new_bytevector (type, len);
 				R[ip[size]] = (word)ptr; // result
 
-				if (is_number(value)) {
+				if (is_numberp(value)) {
 					unsigned char* wp = (unsigned char*)&ptr[1];
 					for (int i = 0; i < len; i++)
 						*wp++ = el;
@@ -2618,9 +2631,8 @@ loop:;
 
 	case TYPE: { // type o -> r
 		word T = A0;
-		if (is_reference(T))
-			T = *((word *) (T)); // todo: add RAWNESS to this (?)
-		A1 = I(thetype (T));
+		// todo: how about RAWNESS?
+		A1 = I(is_reference(T) ? reftype(T) : valuetype(T));
 		ip += 2; break;
 	}
 
@@ -3043,7 +3055,7 @@ loop:;
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((thetype (node) & (0x3C | FFRED)) == (TFF|FFRED))
+		if ((valuetype (node) & (0x3C | FFRED)) == (TFF|FFRED))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
@@ -3055,7 +3067,7 @@ loop:;
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((thetype (node) & (0x3C | FFRIGHT)) == (TFF|FFRIGHT))
+		if ((valuetype (node) & (0x3C | FFRIGHT)) == (TFF|FFRIGHT))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
@@ -3381,7 +3393,7 @@ loop:;
 			result = itoun (ol->max_heap_size);
 			//if (a == I(0))
 			//	ol->gc(0);
-			if (is_number(a))
+			if (is_numberp(a))
 				ol->max_heap_size = uvtoi (a);
 			break;
 
@@ -3655,7 +3667,7 @@ loop:;
 		case 23: { // (select sockfd)
 			CHECK(is_port(a), a, SYSCALL);
 			int sockfd = port(a);
-			int timeus = is_number(b) ? untoi (b) : 100000;
+			int timeus = is_numberp(b) ? untoi (b) : 100000;
 			// todo: timeout as "b"
 
 			fd_set fds;
@@ -3722,7 +3734,7 @@ loop:;
 		// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
 		// TODO: change to "select" call (?)
 		case SYSCALL_SLEEP: { // time in micro(!)seconds
-			CHECK(is_number(a), a, SYSCALL);
+			CHECK(is_numberp(a), a, SYSCALL);
 			int_t us = untoi (a);
 
 			result = (word*) ITRUE;
@@ -3897,7 +3909,7 @@ loop:;
 			time_t seconds;
 			if ((word) B == IFALSE)
 				seconds = time (0);
-			else if (is_number(B))
+			else if (is_numberp(B))
 				seconds = untoi(B);
 			else
 				break;
@@ -4256,12 +4268,11 @@ loop:;
 	// FPU extensions
 	#if OLVM_INEXACTS
 	case FP1: { // with 1 argument
-		word fnc = value(A0);
-		assert (is_reference(A1) && reftype(A1) == TINEXACT);
-		double a = *(double*)&car(A1);
-		A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+		word fn = value(A0);
+		double a = ol2d(A1);
 
-		switch (fnc) {
+		A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+		switch (fn) {
 		case 0: // fsqrt
 			*(double*)&car(A2) = sqrt(a);
 			break;
@@ -4281,6 +4292,21 @@ loop:;
 			double i;;
 			*(double*)&car(A2) = modf(a, &i);
 			break;
+		//acos
+		//asin
+		//cosh
+		//sinh
+		//atan
+		//exp
+		//fabs
+		case 6: { // log
+			*(double*)&car(A2) = log(a);
+			break;
+		}
+		//log10
+		//tan
+		//tanh
+
 		}
 		default:
 			A2 = IFALSE;
@@ -4315,14 +4341,17 @@ loop:;
 		// FLDLG2
 		// FLDLN2
 		// FLDZ
-		word fnc = value(A0);
-		assert (is_reference(A1) && reftype(A1) == TINEXACT);
-		double a = *(double*)&car(A1);
-		assert (is_reference(A2) && reftype(A2) == TINEXACT);
-		double b = *(double*)&car(A2);
+		// atan2
+		// frexp
+		// ldexp
+		// pow
+
+		word fn = value(A0);
+		double a = ol2d(A1);
+		double b = ol2d(A2);
 
 		A3 = (word) new_bytevector(TINEXACT, sizeof(double));
-		switch (fnc) {
+		switch (fn) {
 		case 0: // fadd
 			*(double*)&car(A3) = a + b;
 			break;
@@ -4335,12 +4364,17 @@ loop:;
 		case 3: // fdiv
 			*(double*)&car(A3) = a / b;
 			break;
-		case 4: //fmax
+		case 4: // fmax
 			*(double*)&car(A3) = max(a, b);
 			break;
-		case 5: //fmin
-			*(double*)&car(A3) = max(a, b);
+		case 5: // fmin
+			*(double*)&car(A3) = min(a, b);
 			break;
+		case 6: // eq
+			if (a == b)
+				A3 = ITRUE;
+			else
+				A3 = IFALSE;
 		default:
 			A3 = IFALSE;
 			break;
@@ -4501,7 +4535,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			break;
 		}
 		case 2: {
-			int type = *hp++ & 31; /* low 5 bits, the others are pads */
+			int type = *hp++; assert (!(type & ~0x3F)); // & 0x3F; // type is 6 bits long
 			int size = get_nat(&hp);
 			int words = (size + W - 1) / W;
 			int pads = words * W - size;//(W - (size % W));

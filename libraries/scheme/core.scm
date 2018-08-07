@@ -869,11 +869,17 @@
       ; The syntax of the written representations ........
       ; ... 
 
-      ; 6.2.5  Numerical operations
+      ; (r7rs) 6.2.6  Numerical operations
       ;
-      ; The reader is referred to section .......
-      ; ...
-      ; todo: move fully to (scheme r5rs numerical)
+      ; These numerical type predicates can be applied to any kind
+      ; of argument, including non-numbers. They return #t if the
+      ; object is of the named type, and otherwise they return #f.
+      ; In general, if a type predicate is true of a number then
+      ; all higher type predicates are also true of that number.
+      ; Consequently, if a type predicate is false of a number, then
+      ; all lower type predicates are also false of that number.
+
+         (setq |0.0| (vm:fp1 3 0)) ; *internal
 
       ; procedure:  (integer? obj)
       (define (integer? a)
@@ -889,15 +895,15 @@
          (integer? a)
          (eq? (type a) type-rational)))
 
-      ; procedure:  (inexact? z)
-      (define (inexact? a)
-         (eq? (type a) type-inexact))
-
       ; procedure:  (real? obj)
       (define (real? a)
       (or
          (rational? a)
-         (inexact? a)))
+         (eq? (type a) type-inexact)
+      ;  (and (eq? (type a) type-complex) (zero? (cdr a)) ; not required, cause math lib casts such complex numbers to real
+         (equal? a +inf.0)
+         (equal? a -inf.0)
+         (equal? a +nan.0)))
 
       ; procedure:  (complex? obj)
       (define (complex? a)
@@ -905,13 +911,29 @@
          (real? a)
          (eq? (type a) type-complex)))
 
-      ; procedure:  (exact? z)
-      (define (exact? a)
-         (real? a))
-
+      ; Note: In many implementations the complex? procedure will
+      ; be the same as number?, but unusual implementations may rep-
+      ; resent some irrational numbers exactly or may extend the num-
+      ; ber system to support some kind of non-complex numbers.
+      ;
       ; procedure:  (number? obj)
       (define (number? a)
          (complex? a))
+
+
+      ; procedure:  (exact? z)
+      (define (exact? a)
+         (rational? a))
+
+      ; procedure:  (inexact? z)
+      (define (inexact? a)
+         (and (complex? a)
+            (eq? (rational? a) #f))) ; not rational
+
+      ; procedure:  (exact-integer? z)
+      (define (exact-integer? z)
+         (integer? z))
+
 
 
       (assert (complex? 3+4i)                        ===>  #t)
@@ -927,7 +949,10 @@
 
       ; *** declared in (r5rs math), (r5rs math-extra)
       ; library procedure:  (zero? z)
-      (define (zero? x) (eq? x 0))
+      (define (zero? x)
+      (or
+         (eq? x 0)
+         (equal? x |0.0|))) ; supports inexact numbers
       ; library procedure:  (positive? x)
       ; library procedure:  (negative? x)
       ; library procedure:  (odd? n)

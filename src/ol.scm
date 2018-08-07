@@ -338,6 +338,7 @@
                ((eq? (type node) type-string) #t)
                ((eq? (type node) type-port) #t)
                ((eq? (type node) type-bytevector) #t)
+               ((eq? (type node) type-inexact) #t)
                (else (print "unknown raw object: " node)))
             trail)
          (else

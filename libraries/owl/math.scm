@@ -44,6 +44,7 @@
 
    (import
       (scheme core)
+      (owl math fp)
       (owl list)
       (owl interop)
       (owl ff))
@@ -2103,6 +2104,26 @@
                            (cons #\+
                               (render-number imag (cons #\i tl) base))))
                      base)))
+            ((eq? (type num) type-inexact)
+               (cond
+                  ((equal? num +inf.0) (ilist #\+ #\i #\n #\f #\. #\0 tl))
+                  ((equal? num -inf.0) (ilist #\- #\i #\n #\f #\. #\0 tl))
+                  ((equal? num +nan.0) (ilist #\+ #\n #\a #\n #\. #\0 tl))
+                  (else
+                     (let*((int  (inexact->exact (ffloor num)))
+                           (frac (inexact->exact (ffloor (fmul (ffrac num) (exact->inexact 100000))))))
+                        (render-digits int
+                           (cons #\. (append (reverse
+                              (let loop ((i frac) (n 10000) (l #null))
+                                 (cond
+                                    ((eq? i 0)
+                                       l)
+                                    ((eq? n 1)
+                                       (ilist #\. #\. l))
+                                    (else
+                                       (loop (mod i n) (/ n 10) (render-digits (floor (/ i n)) l 10)))))) tl))
+                           base)))))
+
             ((< num 0)
                (cons 45
                   (render-number (sub 0 num) tl base)))
