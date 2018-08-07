@@ -79,8 +79,7 @@
                   ((eq? res is-less)
                      (lookup-code l bytecode))
                   (else
-                     (lookup-code r bytecode))))
-            #false))
+                     (lookup-code r bytecode))))))
 
       ;; codes bcode → codes(') bcode(')
       (define (intern-code codes bytecode)

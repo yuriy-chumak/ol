@@ -162,11 +162,9 @@
                         (sender msg envelope))
                      (cond
                         ((string? msg)
-                           ;(debug "interner: interning bytecode")
                            (let*((root symbol (string->interned-symbol root msg)))
                               (mail sender symbol)
                               (loop root)))
-                        ; todo: simplify this
                         (else
                            (mail sender 'bad-kitty)
                            (loop root)))))))))
