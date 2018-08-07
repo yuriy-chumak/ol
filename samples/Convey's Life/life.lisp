@@ -73,7 +73,7 @@
 ;   (glLoadIdentity)
 ;   (glOrtho min-x max-x min-y max-y 0 1))
 
-   (glPointSize (/ 1280 WIDTH))
+   (glPointSize (/ 640 WIDTH))
    (glColor3f 0.2 0.5 0.2)
    (glBegin GL_POINTS)
       (ff-fold (lambda (st key value)
@@ -95,7 +95,7 @@
                (y (div key 65536)))
             (fold (lambda (st key)
                      (let ((x (car key))
-                          (y (cdr key)))
+                           (y (cdr key)))
                         (if (alive generation x y) (put st (hash x y) 1) st)))
                (if (alive generation x y) (put st (hash x y) 1) st) ; the cell
                (list (cons (- x 1) (- y 1)) ; possible cell neighbors
