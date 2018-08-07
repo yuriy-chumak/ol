@@ -723,9 +723,9 @@ read_t* OL_set_read(struct ol_t* ol, read_t read);
 write_t* OL_set_write(struct ol_t* ol, write_t read);
 
 // ------------------------------------------------------
-#define W                           sizeof (word)
+#define W                           sizeof (word) // todo: change to WSIZE
 
-#define VBITS                       ((sizeof (word) * 8) - 8) // bits in value (short number)
+#define VBITS                       ((sizeof (word) * 8) - 8) // bits in value (short, or 'atomic' number)
 #define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
 #define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 
