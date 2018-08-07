@@ -1730,7 +1730,7 @@
                         (if (eq? i 0) r (complex r i))))
                   (type-inexact
                      (let*((ar ai a))
-                        (complex (add (inexact ar) b) ai)))
+                        (complex (fadd (inexact ar) b) ai)))
                   (else
                      ;; A+ai + B = A+B + ai
                      (let*((ar ai a))
@@ -1747,7 +1747,8 @@
                   (type-int+ (sub-number-big a b #true))
                   (type-int- (add-number-big a b))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
-                  (type-complex (lets ((br bi b)) (complex (sub a br) (negate bi))))
+                  (type-inexact  (fsub (inexact a) (inexact b)))
+                  (type-complex  (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
             (type-fix-
                (case (type b)
@@ -1756,7 +1757,8 @@
                   (type-int+ (vm:cast (add-number-big a b) type-int-))
                   (type-int- (sub-big-number b a #true))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
-                  (type-complex (lets ((br bi b)) (complex (sub a br) (negate bi))))
+                  (type-inexact  (fsub (inexact a) (inexact b)))
+                  (type-complex  (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
             (type-int+
                (case (type b)
@@ -1765,7 +1767,8 @@
                   (type-int+ (sub-big a b))
                   (type-int- (add-big a b #false))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
-                  (type-complex (lets ((br bi b)) (complex (sub a br) (negate bi))))
+                  (type-inexact  (fsub (inexact a) (inexact b)))
+                  (type-complex  (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
             (type-int-
                (case (type b)
@@ -1774,7 +1777,8 @@
                   (type-int+ (vm:cast (add-big a b #false) type-int-))
                   (type-int- (sub-big b a))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
-                  (type-complex (lets ((br bi b)) (complex (sub a br) (negate bi))))
+                  (type-inexact  (fsub (inexact a) (inexact b)))
+                  (type-complex  (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
             (type-rational
                (case (type b)
@@ -1788,23 +1792,28 @@
                               (divide
                                  (subi (muli an bd) (muli bn ad))
                                  (muli ad bd))))))
+                  (type-inexact  (fsub (inexact a) (inexact b)))
                   (type-complex
                      (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else
                      ; a'/a" - b = (a'-ba")/a"
                      (rational (subi (ncar a) (muli b (ncdr a))) (ncdr a)))))
+            (type-inexact
+               (fsub a (inexact b))) ; casting inexact -> inexact is ok
             (type-complex
-               (if (eq? (type b) type-complex)
-                  (lets
-                     ((ar ai a)
-                      (br bi b)
-                      (r (sub ar br))
-                      (i (sub ai bi)))
-                     (if (eq? i 0)
-                        r
-                        (complex r i)))
-                  (lets ((ar ai a))
-                     (complex (sub ar b) ai))))
+               (case (type b)
+                  (type-complex
+                     (let*((ar ai a)
+                           (br bi b)
+                           (r (sub ar br))
+                           (i (sub ai bi)))
+                        (if (eq? i 0) r (complex r i))))
+                  (type-inexact
+                     (let*((ar ai a))
+                        (complex (fsub (inexact ar) b) ai)))
+                  (else
+                     (let*((ar ai a))
+                        (complex (sub ar b) ai)))))
             (else
                (big-bad-args '- a b))))
 
