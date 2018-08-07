@@ -1683,8 +1683,8 @@ double ol2d(word arg) {
 		return -ol2d_convert(arg);
 	case TRATIONAL:
 		return ol2d(car(arg)) / ol2d(cdr(arg));
-	case TCOMPLEX: // only real part of complex number
-		return ol2d(car(arg));
+//	case TCOMPLEX: // only real part of complex number
+//		return ol2d(car(arg));
 	case TINEXACT:
 		return *(double*)&car(arg);
 	default:
@@ -1717,8 +1717,8 @@ float ol2f(word arg) {
 		return -ol2f_convert(arg);
 	case TRATIONAL:
 		return ol2f(car(arg)) / ol2f(cdr(arg));
-	case TCOMPLEX: // use only real part of complex number
-		return ol2f(car(arg));
+//	case TCOMPLEX: // use only real part of complex number
+//		return ol2f(car(arg));
 	case TINEXACT:
 		return *(float*)&car(arg);
 	default:
@@ -1728,6 +1728,7 @@ float ol2f(word arg) {
 }
 
 // TODO: add memory checking
+// TODO: добавить сокращение до правильной дроби!
 word d2ol(struct ol_t* ol, double v) {
 	// check for non representable numbers:
 	if (v == INFINITY || v == -INFINITY || v == NAN)
@@ -4370,11 +4371,6 @@ loop:;
 		case 5: // fmin
 			*(double*)&car(A3) = min(a, b);
 			break;
-		case 6: // eq
-			if (a == b)
-				A3 = ITRUE;
-			else
-				A3 = IFALSE;
 		default:
 			A3 = IFALSE;
 			break;
