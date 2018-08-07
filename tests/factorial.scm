@@ -24,6 +24,6 @@
 
 (for-each print
    (map 
-      (λ (op) (op 100))
+      (λ (op) (op 3000))
       (list ! fakt fakti faktr faktl)))
 
