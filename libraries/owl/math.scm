@@ -1655,6 +1655,7 @@
       ;; generic addition, switching from most common type (?) to more complex ones (no pun untended)
 
       ;; rational case: a/b + c, gcd(a,b) = 1 => gcd(a+bc, b) = 1 -> no need to renormalize
+      ;; please, be aware thet abover we have another (simpler) version of "add"
       (define (add a b)
          (case (type a)
             (type-fix+
@@ -1663,7 +1664,8 @@
                   (type-int+  (add-number-big a b))
                   (type-fix-  (sub-small->pick-sign a b))
                   (type-int-  (sub-number-big a b #true))
-                  (type-rational   (lets ((x z b)) (rational (add (muli a z) x) z)))
+                  (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
+                  (type-inexact  (fadd (inexact a) (inexact b)))
                   (type-complex  (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-int+
@@ -1673,7 +1675,8 @@
                   (type-fix- (sub-big-number a b #true))
                   (type-int- (sub-big a b))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
-                  (type-complex (lets ((x y b)) (complex (add a x) y)))
+                  (type-inexact  (fadd (inexact a) (inexact b)))
+                  (type-complex  (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-fix-
                (case (type b)
@@ -1682,7 +1685,8 @@
                   (type-int+ (sub-big-number b a #true))
                   (type-int- (vm:cast (add-number-big a b) type-int-))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
-                  (type-complex (lets ((x y b)) (complex (add a x) y)))
+                  (type-inexact  (fadd (inexact a) (inexact b)))
+                  (type-complex  (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-int-
                (case (type b)
@@ -1691,7 +1695,8 @@
                   (type-int+ (sub-big b a))
                   (type-int- (vm:cast (add-big a b #false) type-int-))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
-                  (type-complex (lets ((x y b)) (complex (add a x) y)))
+                  (type-inexact  (fadd (inexact a) (inexact b)))
+                  (type-complex  (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-rational
                (case (type b)
@@ -1705,24 +1710,31 @@
                               (divide
                                  (add (muli an bd) (muli bn ad))
                                  (muli ad bd))))))
+                  (type-inexact  (fadd (inexact a) (inexact b)))
                   (type-complex
                      (lets ((br bi b))
                         (complex (add a br) bi)))
                   (else
                      ; a'/a" + b = (a'+ba")/a"
                      (rational (add (ncar a) (muli b (ncdr a))) (ncdr a)))))
+            (type-inexact
+               (fadd a (inexact b))) ; casting inexact -> inexact is ok
             (type-complex
-               (if (eq? (type b) type-complex)
-                  ;; A+ai + B+bi = A+B + (a+b)i
-                  (lets
-                     ((ar ai a)
-                      (br bi b)
-                      (r (add ar br))
-                      (i (add ai bi)))
-                     (if (eq? i 0) r (complex r i)))
-                  (lets
-                     ((ar ai a))
-                     (complex (add ar b) ai))))
+               (case (type b)
+                  (type-complex
+                     ;; A+ai + B+bi = A+B + (a+b)i
+                     (let*((ar ai a)
+                           (br bi b)
+                           (r (add ar br))
+                           (i (add ai bi)))
+                        (if (eq? i 0) r (complex r i))))
+                  (type-inexact
+                     (let*((ar ai a))
+                        (complex (add (inexact ar) b) ai)))
+                  (else
+                     ;; A+ai + B = A+B + ai
+                     (let*((ar ai a))
+                        (complex (add ar b) ai)))))
             (else
                (big-bad-args '+ a b))))
 
