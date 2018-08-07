@@ -464,7 +464,7 @@
       ;;; Addition and substraction generics
       ;;;
 
-      (define (add a b)
+      (define (addi a b)
          (case (type a)
             (type-fix+ ; a signed fixnum
                (case (type b)
@@ -848,7 +848,7 @@
       ; a + (b << ex*16)
       (define (add-ext a b ex)
          (cond
-            ((eq? ex 0) (if (null? a) (bigen b) (add a b)))
+            ((eq? ex 0) (if (null? a) (bigen b) (addi a b)))
             ((null? a)
                (ncons 0
                   (add-ext #null b (subi ex 1))))
@@ -872,7 +872,7 @@
             (lets ((digit (ncar a))
                 (head (ncons 0 (mul-simple (ncdr a) b)))
                 (this (mult-num-big digit b 0)))
-               (add head this))))
+               (addi head this))))
 
       ; downgrade to fixnum if length 1
       (define (fix n)
@@ -935,10 +935,10 @@
                         ((z2 (kara ah bh))
                          (z0 (kara at bt))
                          (z1a
-                           (lets ((a (add ah at)) (b (add bh bt)))
+                           (lets ((a (addi ah at)) (b (addi bh bt)))
                               (kara a b)))
                          ; 2O(n)
-                         (z1 (subi z1a (add z2 z0)))
+                         (z1 (subi z1a (addi z2 z0)))
                          ; two more below
                          (x (if (eq? z1 0) z0 (add-ext z0 z1 atl))))
                         (if (eq? z2 0)
@@ -1106,7 +1106,7 @@
                               (if (eq? n 0)
                                  0
                                  (shift-local-down (ncar a) (*pre-max-fixnum*) (subi n 1)))
-                              (let ((aa (ncar a)) (bb (add b-lead 1)))
+                              (let ((aa (ncar a)) (bb (addi b-lead 1)))
                                  ; increment b to ensure b'000.. > b....
                                  (cond
                                     ((less? aa bb)
@@ -1116,7 +1116,7 @@
                         ; divisor is larger
                         0))
                   ((null? nb)
-                     (div-shift (ncdr a) b (add n (vm:valuewidth))))
+                     (div-shift (ncdr a) b (addi n (vm:valuewidth))))
                   (else
                      (div-shift (ncdr a) (ncdr b) n))))))
 
@@ -1136,7 +1136,7 @@
                      (nat-quotrem-finish a b out))
                   (else
                      (let ((this (<< b s)))
-                        (loop (subi a this) (add out (<< 1 s)))))))))
+                        (loop (subi a this) (addi out (<< 1 s)))))))))
 
       (define (div-big->negative a b)
          (lets ((q r (nat-quotrem a b)))
@@ -1187,10 +1187,10 @@
                      (dr
                         (let ((d (subi d 1))) ; int- (of was -vm:maxvalue), fix- or fix+
                            (if (negative? d)
-                              (values (ncons (add d *first-bignum*) tl) #true) ; borrow
+                              (values (ncons (addi d *first-bignum*) tl) #true) ; borrow
                               (values (ncons d tl) #false))))
                      ((eq? (type d) type-fix-) ; borrow
-                        (values (ncons (add d *first-bignum*) tl) #true))
+                        (values (ncons (addi d *first-bignum*) tl) #true))
                      (else
                         (values (ncons d tl) #false)))))))
 
@@ -1560,7 +1560,7 @@
                ((eq? (band av a1) 0) ; a even
                   (if (eq? (band bv b1) 0) ; a and b even
                      (begin
-                        (lazy-gcd (gcd-drop a) (gcd-drop b) (add n 1)))
+                        (lazy-gcd (gcd-drop a) (gcd-drop b) (addi n 1)))
                      (begin
                         (lazy-gcd (gcd-drop a) b n))))
                ((eq? (band bv b1) 0) ; a is odd, u is even
@@ -1655,7 +1655,8 @@
       ;; generic addition, switching from most common type (?) to more complex ones (no pun untended)
 
       ;; rational case: a/b + c, gcd(a,b) = 1 => gcd(a+bc, b) = 1 -> no need to renormalize
-      ;; please, be aware thet abover we have another (simpler) version of "add"
+
+      ;; todo: check and change all possible "add" to "addi"
       (define (add a b)
          (case (type a)
             (type-fix+
@@ -1820,8 +1821,7 @@
       ;; todo: complex construction should be a macro that checks for the nonimaginary part
       ;; todo: no different multiplication for known up to rational etc
 
-      (define mul muli)
-
+      ;; todo: analyze the places for change mul to muli
       (define (mul a b)
          (cond
             ((eq? a 0) 0)
@@ -1833,7 +1833,7 @@
                         (type-fix+ (mult-fixnums a b))                 ; +a * +b
                         (type-int+ (mult-num-big a b 0))               ; +a * +B
                         (type-fix- (negative (mult-fixnums a b)))      ; +a * -b
-                        (type-int- (negative (mult-num-big a b 0)))    ; +a * -b
+                        (type-int- (negative (mult-num-big a b 0)))    ; +a * -B
                         (type-rational  (divide (mul a (ncar b)) (ncdr b)))
                         (type-complex
                            (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
