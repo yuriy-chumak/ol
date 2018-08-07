@@ -14,14 +14,24 @@
       
       (scheme case-lambda)  ; case-lambda
       (r5rs srfi-87))       ; <= in cases
-   (begin
-      ; basic Otus Lisp elements:
 
+   (begin
       ;; special forms: (declared in lang/env.scm)
       ;
       ; quote values lambda setq
       ; letq ifeq either values-apply
       ;
+
+      ; internal: (-1 obj), (+1 obj) * please, don't use: this works only with fix+ numbers
+      ; note: todo: add theoretically impossible case:
+      ;       (if carry (runtime-error "Too long list to fit in fixnum"))
+
+      (setq |-1| (lambda (n) ; *internal
+         (values-apply (vm:sub n 1) (lambda (n carry) n))))
+      (setq |+1| (lambda (n) ; *internal
+         (values-apply (vm:add n 1) (lambda (n carry) n))))
+
+
       ; =================================================================
       ; Scheme
       ;
@@ -37,19 +47,10 @@
       ; restrictions on how they are composed, suffice to form a practical
       ; and efficient programming language that is flexible enough to support
       ; most of the major programming paradigms in use today.
-
-
-      ; internal: (-1 obj), (+1 obj) * please, don't use: this works only with fix+ numbers
-      ; note: todo: add theoretically impossible case:
-      ;       (if carry (runtime-error "Too long list to fit in fixnum"))
-
-      (setq |-1| (lambda (n) ; *internal
-         (values-apply (vm:sub n 1) (lambda (n carry) n))))
-      (setq |+1| (lambda (n) ; *internal
-         (values-apply (vm:add n 1) (lambda (n carry) n))))
-
+      ;
+      ;
       ;                      DESCRIPTION OF THE LANGUAGE
-
+      ;
       ;;; ---------------------------------------------------------------
       ;;; Chapter 1
       ;;; Overview of Scheme
@@ -87,7 +88,7 @@
       ; When speaking of an error situation, this report .......
       ; ....
 
-      ; * ol specific
+      ; * ol specific: (runtime-error reason info)
       (setq runtime-error (lambda (reason info)
          (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
 
