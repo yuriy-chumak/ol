@@ -166,16 +166,13 @@
          (case (type a)
             (type-fix+
                (case (type b)
-                  (type-fix+   (less? a b))
+                  (type-fix+ (less? a b))
                   (type-int+ #true)
                   (else #false)))
             (type-fix-
                (case (type b)
                   (type-fix+ #true)
-                  (type-fix-
-                     (if (eq? a b)
-                        #false
-                        (less? b a)))
+                  (type-fix- (less? b a))
                   (type-int+ #true)
                   (else #false)))
             (type-int+
@@ -184,6 +181,7 @@
                   (else #false)))
             (type-int-
                (case (type b)
+                  ; todo: rewrite
                   (type-int-
                      (if (big-less a b #false) #false #true))
                   (else #true)))
@@ -207,10 +205,12 @@
             (type-int+
                (case (type b)
                   (type-int+ (big-digits-equal? a b))
+                  (type-inexact (equal? (inexact a) b))
                   (else #false)))
             (type-int-
                (case (type b)
                   (type-int- (big-digits-equal? a b))
+                  (type-inexact (equal? (inexact a) b))
                   (else #false)))
             (type-rational
                (case (type b)
@@ -219,12 +219,17 @@
                      (if (= (ncar a) (ncar b))
                         (= (ncdr a) (ncdr b))
                         #false))
+                  (type-inexact (equal? (inexact a) b))
                   (else #false)))
             (type-complex
                (if (eq? (type b) type-complex)
                   (and (= (ref a 1) (ref b 1))
                        (= (ref a 2) (ref b 2)))
                   #false))
+            (type-inexact
+               ; complex means "have an 'i'", so it's definitely not equal
+               (unless (eq? (type b) type-complex)
+                  (equal? a (inexact b))))
             (else
                (big-bad-args '= a b))))
 
@@ -243,15 +248,13 @@
                   (type-int+ #false)
                   (type-int- #true)
                   (else (runtime-error "Bad number: " a))))
+            (type-inexact
+               (eq? a -inf.0))
             (else (runtime-error 'negative? a))))
 
-      (define positive?
-         (o not negative?))
-
-      ;; RnRS compat
-      (define real? number?)
-      (define complex? number?)
-      (define rational? number?)
+      (define (positive? a)
+         (unless (negative? a)
+            (not (eq? a +nan.0))))
 
 
 
@@ -1028,12 +1031,13 @@
       (define (minl as) (fold min (car as) (cdr as)))
       (define (maxl as) (fold max (car as) (cdr as)))
 
+
+
+
+
       ;;;
       ;;; DIVISION
       ;;;
-
-
-
       ; walk down a and compute each digit of quotient using the top 2 digits of a
       (define (qr-bs-loop a1 as b out)
          (if (null? as)

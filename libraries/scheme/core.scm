@@ -1004,10 +1004,12 @@
       ; procedure: angle z
 
       ; procedure: exact->inexact z
-      (define (exact->inexact n) (vm:cast n type-inexact))
+      (define (inexact n) (vm:cast n type-inexact))
+      (define exact->inexact inexact) ; r5rs
 
       ; procedure: inexact->exact z
-      (define (inexact->exact n) (vm:cast n type-rational))
+      (define (exact n) (vm:cast n type-rational))
+      (define inexact->exact exact)
 
       ; 6.2.6  Numerical input and output
       ;
@@ -1879,7 +1881,7 @@
       type-inexact
 
       integer? rational? complex? real? number? exact? inexact?
-      exact->inexact inexact->exact
+      inexact exact exact->inexact inexact->exact
 
       ; 6.3 (other data types)
       type-bytecode
