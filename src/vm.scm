@@ -146,11 +146,9 @@
 
       ; memory allocators (no default bytecode exists, should generate on-the-fly)
       (setq NEW 23)        ; no real (vm:new) command required, check rtl-primitive in (lang compile)
-      (setq MAKE 18)       (setq vm:make   (new-bytecode '(18))) ; fake command for (prim-opcodes)
-      (setq MAKE-BLOB 19)  (setq make-blob (new-bytecode '(19))) ; fake command for (prim-opcodes)
-
-      ; deprecated
-      (setq RAW-OBJECT 60) ;(setq make-blob (make-blob TBYTECODE '(60 4 5 6  24 6)))
+      (setq MAKE 18)       ;(setq vm:make   (new-bytecode '(18))) ; fake command for (prim-opcodes)
+      (setq MAKE-BLOB 19)  ;(setq make-blob (new-bytecode '(19))) ; fake command for (prim-opcodes)
+      (setq CAST 22)       ;(setq vm:cast   (new-bytecode '(22 4 5 6  24 6))) ; cast object type (works for immediates and allocated)
 
       ; vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements length
       ; vm:make - smarter allocator, can create objects with size and default element
@@ -167,8 +165,7 @@
 
       ; primops:
 
-      (setq RAW? 48)     ;(setq blob? (new-bytecode '(48 4 5    24 5)))
-      (setq CAST 22)     ;(setq vm:cast (new-bytecode '(22 4 5 6  24 6))) ;; cast object type (works for immediates and allocated)
+      (setq BLOB? 48)     ;(setq blob? (new-bytecode '(48 4 5    24 5)))
 
       ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
       (setq ADD 38)      ;(setq vm:add  (new-bytecode '(38 4 5       6 7)))
@@ -183,8 +180,8 @@
       (setq XOR 57)      ;(setq vm:xor  (new-bytecode '(57 4 5 6  24 6)))
 
       ; инструкции поддержки арифметики с плавающей точкой (inexact math)
-      (setq FP1 33)      (setq vm:fp1 (new-bytecode '(33 4 5 6    24 6)))
-      (setq FP2 34)      (setq vm:fp2 (new-bytecode '(34 4 5 6 7  24 7)))
+      (setq FP1 33)      ;(setq vm:fp1 (new-bytecode '(33 4 5 6    24 6)))
+      (setq FP2 34)      ;(setq vm:fp2 (new-bytecode '(34 4 5 6 7  24 7)))
 
       ; cons:
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
