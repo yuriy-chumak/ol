@@ -34,9 +34,9 @@
 
       ; hack: do not include full (owl math fp) library and save 1k for image
       ;       we use only this three functions:
-      (define (fmul a b) (vm:fpu2 1 a b))
-      (define (ffloor num) (vm:fpu1 3 num))
-      (define (ffrac num) (vm:fpu1 5 num))
+      (define (fmul a b) (vm:fp2 1 a b))
+      (define (ffloor num) (vm:fp1 3 num))
+      (define (ffrac num) (vm:fp1 5 num))
 
       ;; this could be removed?
       (define (make-renderer meta)

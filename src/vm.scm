@@ -183,8 +183,8 @@
       (setq XOR 57)      ;(setq vm:xor  (new-bytecode '(57 4 5 6  24 6)))
 
       ; инструкции поддержки арифметики с плавающей точкой (inexact math)
-      (setq FPU1 33)     ;(setq vm:fpu1 (new-bytecode '(33 4 5 6    24 6)))
-      (setq FPU2 34)     ;(setq vm:fpu2 (new-bytecode '(34 4 5 6 7  24 7)))
+      (setq FP1 33)      (setq vm:fp1 (new-bytecode '(33 4 5 6    24 6)))
+      (setq FP2 34)      (setq vm:fp2 (new-bytecode '(34 4 5 6 7  24 7)))
 
       ; cons:
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
@@ -286,8 +286,8 @@
          (cons (vm:new TTUPLE 'vm:or    OR   2 1 vm:or)
          (cons (vm:new TTUPLE 'vm:xor   XOR  2 1 vm:xor)
 
-         (cons (vm:new TTUPLE 'vm:fpu1  FPU1 2 1 vm:fpu1)
-         (cons (vm:new TTUPLE 'vm:fpu2  FPU2 3 1 vm:fpu2)
+         (cons (vm:new TTUPLE 'vm:fp1   FP1 2 1 vm:fp1)
+         (cons (vm:new TTUPLE 'vm:fp2   FP2 3 1 vm:fp2)
 
          ; системный таймер
          (cons (vm:new TTUPLE 'clock    61  0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
