@@ -3,10 +3,9 @@
 (define seed (time-ms))
 
 (define (test n max)
-   (lets
-      ((rs (seed->rands seed))
-       (rs nums (random-numbers rs max n))
-       (vec (list->vector nums)))
+   (let*((rs (seed->rands seed))
+         (rs nums (random-numbers rs max n))
+         (vec (list->vector nums)))
       (print (list (if (equal? (vector->list vec) nums) 'ok 'fail) 'n n 'max max))))
             
 
