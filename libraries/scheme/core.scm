@@ -288,7 +288,8 @@
       ; 4.1.6  Assignments
       ;
       ; syntax: set! <variable> <expression>  * not supported
-
+      (setq set! (lambda (variable expression)
+         (runtime-error "No set! is allowed." "(sometimes you can use set-ref!, check the docs.)")))
 
       ; 4.2  Derived expression types
       ;
@@ -1856,6 +1857,10 @@
       λ ; ol extension
       syntax-error assert runtime-error error
 
+      apply
+      call-with-current-continuation
+      call/cc lets/cc
+
       ; 
       if unless cond case and or
       letrec let let*            lets ; lets - ol specific, let*-values - r7rs
@@ -1870,6 +1875,9 @@
       (exports (scheme case-lambda)) ;case-lambda
       (exports (r5rs srfi-87)) ;=> in cases
       define-values ; ol specific
+
+      ; 4.1
+      set!
 
       ; 6.2 (numbers)
       type-fix+
@@ -1914,9 +1922,6 @@
       ;; k v r, k v l r+    -- type-ff-right
       ;; k v l, k v l+ r    -- type-ff-leftc
 
-
-      apply
-      call-with-current-continuation call/cc lets/cc
 
       ; (r7rs) 6.1  Equivalence predicates
       eq? eqv? equal?
