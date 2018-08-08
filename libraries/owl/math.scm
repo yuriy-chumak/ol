@@ -1823,6 +1823,9 @@
       ;; todo: analyze the places for change mul to muli
       ;; removed optimization (mul 0) => 0
       (define (mul a b)
+         (if (or (eq? a 0) (eq? b 0))
+            0 ; don't remove. required.
+         ;else
          (case (type a)
             (type-fix+
                (case (type b)
@@ -1902,14 +1905,14 @@
                            (i (mul ai b)))
                         (if (eq? i 0) r (complex r i))))))
             (else
-               (big-bad-args '* a b))))
+               (big-bad-args '* a b)))))
 
       ;; todo: division lacks short circuits
       (define (/ a b)
+         (if (eq? b 0)
+            (runtime-error "division by zero " (list '/ a b))
+         ; else
          (cond
-            ((eq? b 0)
-               ; todo: maybe better to return +nan.0 ?
-               (runtime-error "division by zero " (list '/ a b)))
             ((eq? (type a) type-complex)
                (if (eq? (type b) type-complex)
                   (lets
@@ -1944,7 +1947,7 @@
                ; a / b'/b" = ab"/n
                (divide (mul a (ncdr b)) (ncar b)))
             (else
-               (divide a b))))
+               (divide a b)))))
 
 
       ;;;
