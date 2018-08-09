@@ -84,6 +84,12 @@ uintptr_t
 OL_continue(struct ol_t* ol, int argc, void** argv);
 
 /**
+ * Returns pinned object by id
+ */
+uintptr_t
+OL_deref(struct ol_t* ol, uintptr_t id);
+
+/**
  * Set and return userdata associated with olvm instance
  */
 void*
@@ -161,8 +167,13 @@ typedef struct ol_t OL;
 #define HAS_UNSAFES 0
 #define HAS_SANDBOX 0
 
-#define OLVM_FFI 0
-#define OLVM_CALLABLES 0
+#ifndef OLVM_FFI
+#   define OLVM_FFI 0
+#endif
+
+#ifndef OLVM_CALLABLES
+#   define OLVM_CALLABLES OLVM_FFI
+#endif
 
 //-- end of header
 #ifdef __cplusplus

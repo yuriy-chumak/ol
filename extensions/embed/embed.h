@@ -32,9 +32,8 @@ typedef uintptr_t word;
 typedef struct ol_t
 {
 	struct olvm_t* vm; // otus lisp virtual machine instance
+	uintptr_t eval; // embed pinned 'eval' function id
 
-	// environment and eval function (can be changed after internal GC call)
-	word eval, env;
 	char* bs_pos; // bootstrap code position
 } ol_t;
 
@@ -92,6 +91,11 @@ static word new_string(ol_t* ol, char* data)
 	return new_buffer(ol, 3, data, size);
 }
 
+static word new_bytevector(ol_t* ol, char* data, int size)
+{
+	return new_buffer(ol, 19, data, size);
+}
+
 
 static
 ssize_t read0(int fd, void *buf, size_t count, void* userdata)
@@ -125,33 +129,34 @@ void embed_new(ol_t* embed)
 	// embed boot code (prepares eval and env)
 	static
 	char* bs_code =
-			// todo: decode and evaluate the expression
-			"(import (lang eval))"
 			"(define *interactive* #f)" // disable debugging
-			"(define (eval args) "
-	//		"	(print \"(cdr args): \" (cdr args))"
-	//		"	(print \"(length args): \" (length args))"
-			"	(let ((expression "
-			"		(apply"
-			"			(lambda (env expression)"
-	//		"				(print \"expression: \" expression)"
-			"				(tuple-case (eval-string env expression)"
-			"					((ok value env)"
-			"						(cons value (cons eval env)))" // and return pair (result . new-environment)
-			"					(else"
-			"						#false)))"	// currently after fail we broke the environment
-			"			(take args 2))))"		// TODO: change this to recovering,
-	//		"	(print \"(car expression): \" (car expression))"
-	//		"	(print \"(cddr args): \" (cddr args))"
-			"	(halt"
-			"		(if (eq? (length args) 2)"	//  (just create some flag like 'ok and 'failed)
-			"			expression"				// no additional steps required
-			"			(cons (apply (car expression) (cddr args))"
-			"				(cdr expression))))))"
-			// return compiled "eval" function with current environment
-			"(halt (cons eval *toplevel*))";
-
-	//"	)"
+			"(import (lang eval)"
+			"        (owl fasl))"
+			"(halt (list (vm:pin"
+			"(let*((this (cons (vm:pin *toplevel*) 0))" // internal function state (env . 0)
+			"      (eval (lambda (exp args)"              // expression processor
+			"               (tuple-case exp"
+			"                  ((ok value env)"
+			"                     (vm:unpin (car this))"     // release old env
+			"                     (set-car! this (vm:pin env))"  // new env
+			"                     (if (null? args)"
+			"                        value"
+			"                        (apply value args)))"
+			"               (else is error"
+			"                  (print-to stderr \"error: \" error)"
+			"                  #false)))))"
+			"   (lambda (expression) (halt"
+			"      (let*((env (vm:deref (car this)))"
+			"            (exp args (uncons expression #f)))"
+			"      (case (type exp)"
+			"         (type-string type-string-wide"
+            "            (eval (eval-string env exp) args))"
+			"         (type-fix+"
+			"            (eval (eval-repl (vm:deref exp) env #f evaluate) args))"
+			"         (type-bytevector"
+			"            (eval (eval-repl (fasl-decode (vector->list exp) #f) (vm:deref (car this)) #f evaluate) args))"
+			"         (else"
+			"            (print \"Unprocessible expression type \" (type exp)))))))))))";
 	embed->bs_pos = bs_code;
 
 	word r; // execution result
@@ -159,48 +164,14 @@ void embed_new(ol_t* embed)
 	// well, we have our "smart" script prepared,
 	//  now save both eval and env variables
 	assert (r != IFALSE);
-	embed->eval = car(r);  embed->env = cdr(r);
+	embed->eval = car(r);
+
 }
 ///////////////////////////////////////////////////////////////////////////////
 // main
 
-// C preprocessor trick, some kind of "map":
-// https://github.com/swansontec/map-macro
-// /*
-#define EVAL0(...) __VA_ARGS__
-#define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
-#define EVAL2(...) EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
-#define EVAL3(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
-#define EVAL4(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
-#define EVAL(...)  EVAL4(EVAL4(EVAL4(__VA_ARGS__)))
-
-#define MAP_END(...)
-#define MAP_OUT
-#define MAP_COMMA ,
-
-#define MAP_GET_END2() 0, MAP_END
-#define MAP_GET_END1(...) MAP_GET_END2
-#define MAP_GET_END(...) MAP_GET_END1
-#define MAP_NEXT0(test, next, ...) next MAP_OUT
-#define MAP_NEXT1(test, next) MAP_NEXT0(test, next, 0)
-#define MAP_NEXT(test, next)  MAP_NEXT1(MAP_GET_END test, next)
-
-#define MAP0(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP1)(f, peek, __VA_ARGS__)
-#define MAP1(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP0)(f, peek, __VA_ARGS__)
-
-#define MAP_LIST_NEXT1(test, next) MAP_NEXT0(test, MAP_COMMA next, 0)
-#define MAP_LIST_NEXT(test, next)  MAP_LIST_NEXT1(MAP_GET_END test, next)
-
-#define MAP_LIST0(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST1)(f, peek, __VA_ARGS__)
-#define MAP_LIST1(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST0)(f, peek, __VA_ARGS__)
-
-#define MAP(f, ...) EVAL(MAP1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
-#define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
-// */  end of C preprocessor trick
-
 word embed_eval(ol_t* ol, ...)
 {
-
 	va_list vl;
 	va_start(vl, ol);
 	int count = 0;
@@ -211,17 +182,17 @@ word embed_eval(ol_t* ol, ...)
 	va_start(vl, ol);
 	uintptr_t* args = __builtin_alloca((count+1) * sizeof(uintptr_t)); // just one for sanity zero
 
-	args[0] = ol->eval;
-	args[1] = ol->env;
-	int i = 1;
-
+	args[0] = OL_deref(ol->vm, ol->eval); // deref right now, cause GC possibly moved the object
+	int i = 0;
 	while ((args[++i] = (uintptr_t)va_arg(vl, void*)) != 0) ;
 	va_end(vl);
 
-	word r = OL_continue(ol->vm, i, (void**)args);
-	ol->eval = car(cdr(r)); ol->env = cdr(cdr(r));
+    // while (count--) {
+    //     args[++i] = (uintptr_t)va_arg(vl, void*);
+    // }
 
-	return car(r);
+	word r = OL_continue(ol->vm, i, (void**)args);
+	return r;
 }
 
 // ====================================================================
@@ -264,24 +235,33 @@ word embed_eval(ol_t* ol, ...)
 		is_reference(s) ?\
 			reftype(s) == 3 || reftype(s) == 22\
 		: 0; })
+//! returns length of ol string
+#define string_length(x) ({ uintptr_t o = (uintptr_t)(x);\
+		assert (is_string(o) && "argument should be a string");\
+		(int)(((*(uintptr_t*)o >> 16) - 1) * sizeof(uintptr_t) -\
+		      ((*(uintptr_t*)o >> 8) & 7)); })
+//! returns address of ol string body, this is NOT null terminated string!
+#define string_value(x) ({ uintptr_t o = (uintptr_t)(x);\
+		assert (is_string(o) && "argument should be a string");\
+		(const char*)(o+sizeof(uintptr_t)); })
+
+#define is_bytevector(x) ({ uintptr_t s = (uintptr_t)(x);\
+		is_reference(s) ?\
+			reftype(s) == 19\
+		: 0; })
+#define bytevector_length(x) ({ uintptr_t o = (uintptr_t)(x);\
+		assert (is_bytevector(o) && "argument should be a bytevector");\
+		(int)(((*(uintptr_t*)o >> 16) - 1) * sizeof(uintptr_t) -\
+		      ((*(uintptr_t*)o >> 8) & 7)); })
+#define bytevector_value(x) ({ uintptr_t o = (uintptr_t)(x);\
+		assert (is_bytevector(o) && "argument should be a bytevector");\
+		(const char*)(o+sizeof(uintptr_t)); })
 
 //! returns not 0 if argument is a cons (and maybe a list)
 #define is_pair(x) ({ uintptr_t s = (uintptr_t)(x);\
 		is_reference(s) ?\
 			reftype(s) == 1\
 		: 0; })
-
-
-//! returns length of ol string
-#define string_length(x) ({ uintptr_t o = (uintptr_t)(x);\
-		assert (is_string(o) && "argument should be a small number");\
-		(int)(((*(uintptr_t*)o >> 16) - 1) * sizeof(uintptr_t) -\
-		      ((*(uintptr_t*)o >> 8) & 7)); })
-
-//! returns address of ol string body, this is NOT null terminated string!
-#define string_value(x) ({ uintptr_t o = (uintptr_t)(x);\
-		assert (is_string(o) && "argument should be a small number");\
-		(const char*)(o+sizeof(uintptr_t)); })
 
 //! converts OL small into C signed integer
 #define ol2small(x) ({ uintptr_t m = (uintptr_t)(x);\

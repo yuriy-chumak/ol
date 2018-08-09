@@ -712,11 +712,14 @@ void OL_free(struct ol_t* ol);
 word OL_run (struct ol_t* ol, int argc, char** argv);
 word OL_continue(struct ol_t* ol, int argc, void** argv);
 
+// embed supporting function
+word OL_deref(struct ol_t* ol, word ref);
 
 void*
 OL_userdata (struct ol_t* ol, void* userdata);
 void*
 OL_allocate (struct ol_t* ol, unsigned words);
+
 
 
 read_t* OL_set_read(struct ol_t* ol, read_t read);
@@ -4400,7 +4403,7 @@ loop:;
 
 		int id = value(pin);
 		if (id > 3 && id < CR) {
-			A1 = R[NR+id]; // is it required? we can use (deref .)
+			A1 = ITRUE;
 			R[NR+id] = IFALSE;
 		}
 		else
@@ -4988,6 +4991,16 @@ OL_continue(OL* ol, int argc, void** argv)
 
 	longjmp(ol->heap.fail,
 		(int)runtime(ol));
+}
+
+word OL_deref(struct ol_t* ol, word ref)
+{
+	assert (is_fixp(ref));
+	int id = value(ref);
+	if (id > 3 && id < CR)
+		return ol->R[NR + id];
+	else
+		return IFALSE;
 }
 
 // Foreign Function Interface code
