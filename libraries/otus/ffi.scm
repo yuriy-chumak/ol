@@ -239,7 +239,7 @@
 
 (define fft-int fft-int32)
 (define fft-signed-int fft-int32)
-(define fft-unsigned-int fft-uint16)
+(define fft-unsigned-int fft-uint32)
 
 (define fft-int* (fft* fft-int))
 
