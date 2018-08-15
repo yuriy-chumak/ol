@@ -692,6 +692,7 @@ header_t
 	word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
 #define TPOS      2  // === offsetof (struct header, type)
+#define PPOS      8  // === offsetof (struct header, padding)
 #define RPOS     11  // === offsetof (struct header, rawness)
 #define SPOS     16  // === offsetof (struct header, size)
 
@@ -738,7 +739,7 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 
 #define make_value(type, value)        (2 | ((word)(value) << IPOS) | ((type) << TPOS))
 
-#define header3(type, size, padding)   (2 | ((size) << SPOS) | ((type) << TPOS) | ((padding) << 8))
+#define header3(type, size, padding)   (2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
 #define header2(type, size)            header3(type, size, 0)
 
 #define HEADER_MACRO(_1, _2, _3, NAME, ...) NAME
