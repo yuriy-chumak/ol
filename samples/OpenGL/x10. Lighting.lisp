@@ -111,39 +111,28 @@
 (define knots '(0 0 0 0 1 1 1 1))
 
 
-(gl:run
-
-   "6. Teapot"
+(gl:set-window-title "6. Teapot")
 
 ; init
-(lambda ()
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (gluPerspective 45 (/ 640 480) 0.1 100)
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity)
+(gluPerspective 45 (/ 640 480) 0.1 100)
 
-   (glEnable GL_DEPTH_TEST)
+(glEnable GL_DEPTH_TEST)
 
-   ; http://www.glprogramming.com/red/chapter12.html
-   (glEnable GL_LIGHTING)
-   (glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
-   (glEnable GL_NORMALIZE)
+; http://www.glprogramming.com/red/chapter12.html
+(glEnable GL_LIGHTING)
+(glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
+(glEnable GL_NORMALIZE)
 
+(glEnable GL_LIGHT0)
+(glLightfv GL_LIGHT0 GL_DIFFUSE '(0.7 0.7 0.2))
 
-   (glEnable GL_LIGHT0)
-   (glLightfv GL_LIGHT0 GL_DIFFUSE '(0.7 0.7 0.2))
+#|
 
-   (let ((teapot (gluNewNurbsRenderer)))
-      (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_FILL)
-;      (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
-;      (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_PATCH)
-   (let ((sphere (gluNewQuadric)))
-      (gluQuadricDrawStyle sphere GLU_FILL)
-      (gluQuadricOrientation sphere GLU_OUTSIDE)
-
-   #|
    (glNewList 1 GL_COMPILE)
    (let ((render (lambda (surface)
                      (let ((points (foldr append '() (map (lambda (n) (nth vertices n)) surface))))
@@ -175,11 +164,18 @@
    (glEndList)
    |#
 
-
-   (list 3 0.02 -8 0.02  teapot sphere))))
+(let ((teapot (gluNewNurbsRenderer)))
+      (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_FILL)
+;      (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
+;      (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_PATCH)
+(let ((sphere (gluNewQuadric)))
+      (gluQuadricDrawStyle sphere GLU_FILL)
+      (gluQuadricOrientation sphere GLU_OUTSIDE)
+   (gl:set-userdata
+      3 0.02 -8 0.02  teapot sphere)))
 
 ; draw
-(lambda (x   dx y   dy  teapot sphere)
+(gl:set-renderer (lambda (x   dx y   dy  teapot sphere)
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glMatrixMode GL_MODELVIEW)
@@ -247,5 +243,6 @@
 
    (let ((nx (if (or (> x 7) (< x -7)) (- dx) dx))
          (ny (if (or (> y 9) (< y -9)) (- dy) dy)))
-      (list (+ x nx) nx (+ y ny) ny teapot sphere))
-))
+      (list (+ x nx) nx (+ y ny) ny teapot sphere))))
+
+(gl:finish)

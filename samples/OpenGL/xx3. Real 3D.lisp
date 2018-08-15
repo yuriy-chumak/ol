@@ -1,22 +1,19 @@
 #!/usr/bin/ol
 (import (lib opengl))
-(gl:run
-
-   "3. Real 3D"
+(gl:set-window-title "3. Real 3D")
 
 ; init
-(lambda ()
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (gluPerspective 45 (/ 640 480) 0.1 100)
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity)
+(gluPerspective 45 (/ 640 480) 0.1 100)
 
-   (glEnable GL_DEPTH_TEST))
+(glEnable GL_DEPTH_TEST)
 
 ; draw
-(lambda ()
+(gl:set-renderer (lambda ()
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glMatrixMode GL_MODELVIEW)
@@ -97,3 +94,5 @@
       (glVertex3f -1 -1  1)
 
    (glEnd)))
+
+(gl:finish)

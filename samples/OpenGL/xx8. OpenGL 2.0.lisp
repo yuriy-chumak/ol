@@ -5,42 +5,39 @@
 
 (import (OpenGL version-2-0))
 
-(define width 1280)
-(define height 920)
+;(define width 1280)
+;(define height 920)
 
-(gl:run
-
-   Context
+(gl:set-window-title "7. OpenGL 2.0")
 
 ; init
-(lambda ()
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
 
-(let ((po (gl:CreateProgram
+(define po (gl:CreateProgram
 "#version 120 // OpenGL 2.1
-      void main() {
-         gl_Position = gl_Vertex;
-      }"
+   void main() {
+      gl_Position = gl_Vertex;
+   }"
 "#version 120 // OpenGL 2.1
-         // http://glslsandbox.com/e#19102.0
-         uniform float time;
+   // http://glslsandbox.com/e#19102.0
+   uniform float time;
 
-         #define iterations 14
-         #define formuparam 0.530
+   #define iterations 14
+   #define formuparam 0.530
 
-      #define volsteps 18
-      #define stepsize 0.2
+   #define volsteps 18
+   #define stepsize 0.2
 
-      #define zoom   0.800
-      #define tile   0.850
-      #define speed  0.0001
+   #define zoom   0.800
+   #define tile   0.850
+   #define speed  0.0001
 
-      #define brightness 0.0015
-      #define darkmatter 0.400
-      #define distfading 0.760
-      #define saturation 0.800
+   #define brightness 0.0015
+   #define darkmatter 0.400
+   #define distfading 0.760
+   #define saturation 0.800
 
       void main(void) {
          vec2 viewport = vec2(1280, 720);
@@ -92,19 +89,20 @@
          v=mix(vec3(length(v)),v,saturation); //color adjust
          gl_FragColor = vec4(v*.01,1.);
 
-      }")))
+   }"))
 
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity)
 
-   (let* ((ss ms (clock)))
-   (list po ss ms))))
+(let* ((ss ms (clock)))
+   (gl:set-userdata ss ms))
 
 ; draw
-(lambda (po ss ms)
+(gl:set-renderer
+(lambda (ss ms)
    (let ((time (glGetUniformLocation po (c-string "time")))
          (resolution (glGetUniformLocation po (c-string "resolution"))))
 
@@ -116,7 +114,7 @@
    (let* ((s2 m2 (clock)))
       (glUniform1f time (+ (/ (- m2 ms) 1000) (- s2 ss)))) ; раз в час будем сбрасывать период
    (if (> resolution 0)
-      (glUniform2f resolution width height))
+      (glUniform2f resolution 640 480)) ;width height
 
    (glBegin GL_TRIANGLE_STRIP)
       (glVertex2f -1 -1)
@@ -125,4 +123,7 @@
       (glVertex2f +1 +1)
    (glEnd))
 
-(list po ss ms)))
+(list ss ms)))
+
+(gl:finish)
+

@@ -1,9 +1,8 @@
 #!/usr/bin/ol
 (import (lib opengl))
-
-(define Context (gl:Create "12. Shadow mapping"))
-
 (import (OpenGL version-2-0))
+
+
 
 (define width 640)
 (define height 480)
@@ -119,16 +118,17 @@
    }")))
 po))
 
-(gl:run Context
+(gl:set-window-title "12. Shadow mapping")
 
 ; init
-(lambda ()
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
-   (glEnable GL_DEPTH_TEST)
-   (glEnable GL_AUTO_NORMAL)
+(glEnable GL_DEPTH_TEST)
+(glEnable GL_AUTO_NORMAL)
 
+; initial arguments
+(gl:set-userdata
    (let ((po (compile-shader))
          (teapot (gluNewNurbsRenderer)))
       ;(gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
@@ -136,6 +136,7 @@ po))
    (list 1 0.02 3 0.03  po teapot)))
 
 ; draw
+(gl:set-renderer
 (lambda (x   dx y   dy  po teapot)
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
    (glUseProgram po)
@@ -179,3 +180,6 @@ po))
    (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
          (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
       (list (+ x nx) nx (+ y ny) ny  po teapot))))
+
+(gl:finish)
+
