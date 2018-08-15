@@ -1600,10 +1600,6 @@ struct ol_t
 #ifndef UVTOI_CHECK
 #define UVTOI_CHECK(v)  assert (is_value(v) && valuetype(v) == TFIXP);
 #endif
-// todo: uv2i
-#define uvtoi(v)  (int_t)({ word x1 = (word)(v); UVTOI_CHECK(x1); (word) (x1 >> IPOS); })
-#define itouv(i)  (word) ({ word x2 = (word)(i);                  (word) (x2 << IPOS) | 2; })
-		// (((struct value_t*)(&v))->payload);
 
 // todo: sv2i
 // todo: add overflow checking...
@@ -1628,19 +1624,19 @@ struct ol_t
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 // todo: rename to sn2i (signed number /value or long number/ TO integer)
 #define untoi(num)  ({\
-	is_value(num) ? uvtoi(num)\
-		: uvtoi(car(num)) | uvtoi(cadr(num)) << VBITS; \
+	is_value(num) ? value(num)\
+		: value(car(num)) | value(cadr(num)) << VBITS; \
 	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
 
 // something wrong: looks like __builtin_choose_expr doesn't work as expected!
 #define itoun(val)  ({\
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)itouv(val),\
+		(word*)I(val),\
 		(word*)({ \
 			uintptr_t x5 = (uintptr_t)(val); \
 			x5 <= VMAX ? \
-					(word)itouv(x5): \
-					(word)new_list(TINTP, itouv(x5 & VMAX), itouv(x5 >> VBITS)); \
+					(word)I(x5): \
+					(word)new_list(TINTP, I(x5 & VMAX), I(x5 >> VBITS)); \
 		})); \
 	})
 #define itosn(val)  ({\
@@ -1651,11 +1647,17 @@ struct ol_t
 			intptr_t x6 = x5 < 0 ? -x5 : x5; \
 			x6 <= VMAX ? \
 					(word)itosv(x5): \
-					(word)new_list(x5 < 0 ? TINTN : TINTP, itouv(x6 & VMAX), itouv(x6 >> VBITS)); \
+					(word)new_list(x5 < 0 ? TINTN : TINTP, I(x6 & VMAX), I(x6 >> VBITS)); \
 		})); \
 	})
 
-#define make_integer(val) itoun(val)
+#define make_number(val) itosn(val)
+
+// todo: should be ol2s (ol -> signed)
+#define number(num)  ({\
+	is_value(num) ? value(num)\
+		: value(car(num)) | value(cadr(num)) << VBITS; \
+	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
 
 
 // internal functions:
@@ -1666,7 +1668,7 @@ double ol2d_convert(word p) {
 	double v = 0;
 	double m = 1;
 	while (p != INULL) {
-		v += uvtoi(car(p)) * m;
+		v += value(car(p)) * m;
 		m *= HIGHBIT;
 		p = cdr(p);
 	}
@@ -1701,7 +1703,7 @@ float ol2f_convert(word p) {
 	float v = 0;
 	float m = 1;
 	while (p != INULL) {
-		v += uvtoi(car(p)) * m;
+		v += value(car(p)) * m;
 		m *= HIGHBIT;
 		p = cdr(p);
 	}
@@ -2361,11 +2363,13 @@ loop:;
 		goto apply;
 
 	case RUN: { // (1%) run thunk quantum
+	// the type of quantum is ignored, for now.
+	// todo: add quantum type checking
 	//			if (ip[0] != 4 || ip[1] != 5)
 	//				STDERR("run R[%d], R[%d]", ip[0], ip[1]);
 		this = (word *) A0;
 		R[0] = R[3];
-		ticker = bank ? bank : uvtoi (A1);
+		ticker = bank ? bank : value (A1);
 		bank = 0;
 		CHECK(is_reference(this), this, RUN);
 
@@ -2660,7 +2664,7 @@ loop:;
 		if (!is_value(A1))
 			ERROR(VMCAST, this, A1);
 		word T = A0;
-		word type = uvtoi(A1) & 63;
+		word type = value(A1) & 63; // maybe better add type checking? todo: add and measure time
 		A2 = IFALSE;
 
 		switch (type) {
@@ -2810,7 +2814,7 @@ loop:;
 		if (is_reference(p) && is_fix(A1)) {
 			word hdr = *p;
 			word size = header_size (hdr) - 1; // -1 for header
-			result = p;
+			result = (word) p;
 			if (is_blob(p)) {
 				CHECK(is_fixp(A2), A2, 10001)
 				size = size * sizeof(word) - header_pads(hdr);
@@ -3106,11 +3110,12 @@ loop:;
 		//            http://man7.org/linux/man-pages/dir_section_2.html
 		// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 		//                     http://www.x86-64.org/documentation/abi.pdf
-		word* result = (word*)IFALSE;  // default returned value is #false
+		CHECK(is_fixp(A0), A0, SYSCALL);
+		word op = value (A0);
 
-		word op = uvtoi (A0);
 		word a = A1, b = A2, c = A3;
 		word *r = &A4;
+		word* result = (word*)IFALSE;  // default returned value is #false
 
 		switch (op + sandboxp) {
 
@@ -3222,7 +3227,7 @@ loop:;
 		case SYSCALL_OPEN: {
 			CHECK(is_string(a), a, SYSCALL);
 			word* s = & car(a);
-			int mode = uvtoi (b);
+			int mode = value (b);
 			mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
 
 			int file = os_open((char*)s, mode, (S_IRUSR | S_IWUSR), ol);
@@ -3419,7 +3424,7 @@ loop:;
 				break;
 
 			int portfd = port(a);
-			int ioctl = uvtoi(b);
+			int ioctl = value(b);
 
 			switch (ioctl + sandboxp) {
 				case SYSCALL_IOCTL_TIOCGETA: {
@@ -3572,7 +3577,7 @@ loop:;
 			CHECK(is_port(a), a, SYSCALL);
 			int sockfd = port(a);
 			word* host = (word*) b; // todo: check for string type
-			int port = uvtoi (c);
+			int port = value (c);
 
 			struct sockaddr_in addr;
 			addr.sin_family = AF_INET;
@@ -3611,7 +3616,7 @@ loop:;
 		case 49: { //  (socket, port, #false) // todo: c for options
 			CHECK(is_port(a), a, SYSCALL);
 			int sockfd = port(a);
-			int port = uvtoi (b);
+			int port = value (b);
 
 			// todo: assert on argument types
 			struct sockaddr_in interface;
@@ -3970,7 +3975,7 @@ loop:;
 		case SYSCALL_GETRLIMIT: {
 			struct rlimit r;
 			// arguments currently ignored. used RUSAGE_SELF
-			if (getrlimit(uvtoi(a), &r) == 0)
+			if (getrlimit(value(a), &r) == 0)
 				result = new_tuple(
 						itoun(r.rlim_cur),
 						itoun(r.rlim_max));
@@ -4102,7 +4107,7 @@ loop:;
 
 		case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 			result = itoun (ol->max_heap_size);
-			ol->max_heap_size = uvtoi (a);
+			ol->max_heap_size = value (a);
 			break;
 		case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
 			result = itoun (ol->max_heap_size);
@@ -4116,7 +4121,7 @@ loop:;
 
 		case 1022: // set ticker
 			result = itoun (ticker);
-			ticker = uvtoi (a);
+			ticker = value (a);
 			break;
 	//		case 1014: { /* set-ticks n _ _ -> old */
 	//			result = itoun (ol->slice);
@@ -4152,7 +4157,7 @@ loop:;
 		// -=( dlopen )=-------------------------------------------------
 		case SYSCALL_DLOPEN: { // (dlopen filename mode #false)
 			word *filename = (word*)a;
-			int mode = (int) uvtoi(b);
+			int mode = (int) value(b);
 
 			// android 2.2 segfaults on dlopen(NULL, ...)
 			// http://code.google.com/p/android/issues/detail?id=5049
@@ -4235,7 +4240,7 @@ loop:;
 
 		case SYSCALL_KILL:
 	#ifndef _WIN32
-			if (kill(uvtoi (a), uvtoi (b)) >= 0)
+			if (kill(value (a), value (b)) >= 0)
 				result = (word*) ITRUE;
 	#endif
 			break;
@@ -4396,7 +4401,7 @@ loop:;
 			}
 		}
 
-		A1 = itouv(id);
+		A1 = I(id);
 		ip += 2; break;
 	}
 	case VMUNPIN: { // vm:unpin => old pin value
@@ -4729,8 +4734,8 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	if (is_value(r))
-		return uvtoi(r);
+	if (is_number(r))
+		return number(r);
 	return (int) r;
 
 // FAILS:

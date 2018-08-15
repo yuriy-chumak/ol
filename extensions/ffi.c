@@ -1255,7 +1255,7 @@ word* OL_ffi(OL* self, word* arguments)
 					unsigned short value = *f++;
 					word* ptr = &car(l);
 
-					*ptr = itouv(value);
+					*ptr = I(value);
 					l = cdr(l);
 				}
 				break;
@@ -1283,8 +1283,8 @@ word* OL_ffi(OL* self, word* arguments)
 							}
 							else
 								*ptr = header(TINTP, 3);
-							*(word*)&car(ptr) = itouv(value & VMAX);
-							*(word*)&cadr(ptr) = itouv(value >> VBITS);
+							*(word*)&car(ptr) = I(value & VMAX);
+							*(word*)&cadr(ptr) = I(value >> VBITS);
 						}
 					}
 					else
@@ -1313,13 +1313,13 @@ word* OL_ffi(OL* self, word* arguments)
 						else {
 							assert (is_npairp(ptr) || is_npairn(ptr));
 							*ptr = header(TINTP, 3);
-							*(word*)&car(ptr) = itouv(value & VMAX);
-							*(word*)&cadr(ptr) = itouv(value >> VBITS);
+							*(word*)&car(ptr) = I(value & VMAX);
+							*(word*)&cadr(ptr) = I(value >> VBITS);
 						}
 					}
 					else
 				#endif
-						*ptr = itouv(value);
+						*ptr = I(value);
 
 					l = cdr(l);
 				}
@@ -1515,25 +1515,25 @@ word OL_sizeof(OL* self, word arguments)
 	switch (value(arguments))
 	{
 		case TINT8: case TUINT8:
-			return itouv(1);
+			return I(1);
 			break;
 		case TINT16: case TUINT16:
-			return itouv(2);
+			return I(2);
 			break;
 		case TINT32: case TUINT32:
-			return itouv(4);
+			return I(4);
 			break;
 		case TINT64: case TUINT64:
-			return itouv(8);
+			return I(8);
 			break;
 		case TFLOAT:
-			return itouv(sizeof(float));
+			return I(sizeof(float));
 			break;
 		case TDOUBLE:
-			return itouv(sizeof(double));
+			return I(sizeof(double));
 			break;
 		case TVPTR:
-			return itouv(sizeof(void*));
+			return I(sizeof(void*));
 			break;
 		// todo: add recursive algo with calculating the total size of structure description
 		//case TPAIR:
