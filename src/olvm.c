@@ -2736,90 +2736,94 @@ loop:;
 		ip += 2; break;
 	}
 
+	// general (ref a n)
+	// works with objects and blobs both
+	// objects referenced from 1, blobs from 0
 	case REF: {  // ref t o -> r
 		word *p = (word *) A0;
-		if (!is_reference(p) || !is_fix(A1))
-			A2 = IFALSE;
-		else {
+		if (is_reference(p) && is_fix(A1)) {
 			word hdr = *p;
 			if (is_blob(p)) {
 				word size = ((header_size(hdr) - 1) * W) - header_pads(hdr);
 				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
-				if (pos >= size) // blobs are indexed from 0
-					A2 = IFALSE;
-				else
+				if (pos < size) // blobs are indexed from 0
 					A2 = I(((unsigned char *) p)[pos+W]);
+				else
+					A2 = IFALSE;
 			}
 			else {
 				word size = header_size(hdr);
 				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
-				if (!pos || pos >= size) // objects are indexed from 1
-					A2 = IFALSE;
-				else
+				if (pos && pos < size) // objects are indexed from 1
 					A2 = p[pos];
+				else
+					A2 = IFALSE;
 			}
 		}
+		else
+			A2 = IFALSE;
 		ip += 3; break;
 	}
 
-
-	case SETREF: { // (set-ref object position value), position starts from 1
+	// if position out of bounds will return unchanged object
+	case SETREF: { // (set-ref object position value), position starts from 1 to objects and 0 to blobs
 		word *p = (word *)A0;
-		word pos = uvtoi(A1);
+		word result = IFALSE;
 
-		if (!is_reference(p))
-			A3 = IFALSE;
-		else
-		if (is_blob(p)) {
-			CHECK(is_value(A2), A2, 10001)
+		if (is_reference(p) && is_fix(A1)) {
 			word hdr = *p;
 			word size = header_size (hdr) - 1; // -1 for header
 			word *newobj = new (size);
 			for (ptrdiff_t i = 0; i <= size; i++)
 				newobj[i] = p[i];
-			if (pos < size * sizeof(word) - header_pads(hdr) + 1)
-				((char*)&car(newobj))[pos] = (char)svtoi(A2);
-			A3 = (word)newobj;
+			result = (word)newobj;
+
+			if (is_blob(p)) {
+				CHECK(is_fixp(A2), A2, 10001)
+				size = size * sizeof(word) - header_pads(hdr);
+				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				if (pos < size) // will add [0..255] numbers
+					((unsigned char*)&car(newobj))[pos] = svtoi(A2) & 0xFF;
+			}
+			else {
+				++size;
+				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				if (pos && pos < size) // objects are indexed from 1
+					newobj[pos] = A2;
+			}
+			A3 = result;
 		}
 		else
-		if (header_size(*p) < pos || !pos)
 			A3 = IFALSE;
-		else {
-			//if (is_tuple(p)) {
-			word hdr = *p;
-			word size = header_size (hdr) - 1;
-			word *newobj = new (size);
-			word val = A2;
-			for (ptrdiff_t i = 0; i <= size; i++)
-				newobj[i] = p[i];
-			newobj[pos] = val;
-			A3 = (word)newobj;
-		}
 		ip += 4; break; }
 
 	case SETREFE: { // (set-ref! variable position value)
-		word *v = (word *)A0;
-		word pos = uvtoi (A1);
-		word value = A2;
+		word *p = (word *)A0;
+		word result = IFALSE;
 
-		// CHECK(is_value(A2), A2, 10001); // todo: move to silent return IFALSE
-
-		A3 = IFALSE;
-		if (is_reference(v)) {
-			if (is_blob(v)) {
-				if (is_value(value) && (pos < (header_size(*v)-1)*W - header_pads(*v) + 1)) {
-					((char*)&car(v))[pos] = (char) svtoi(A2);
-					A3 = (word) v;
-				}
+		// this code is same as set-ref
+		// todo: merge it into one function
+		if (is_reference(p) && is_fix(A1)) {
+			word hdr = *p;
+			word size = header_size (hdr) - 1; // -1 for header
+			result = p;
+			if (is_blob(p)) {
+				CHECK(is_fixp(A2), A2, 10001)
+				size = size * sizeof(word) - header_pads(hdr);
+				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				if (pos < size) // will add [0..255] numbers
+					((unsigned char*)&car(p))[pos] = svtoi(A2) & 0xFF;
 			}
-			else
-			if (pos >= 1 && pos <= header_size(*v)) {
-				if (is_value(value) || (is_reference(value) && (word*)value < v)) {
-					v[pos] = A2;
-					A3 = (word) v;
-				}
+			else {
+				++size;
+				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				if (pos && pos < size) // objects are indexed from 1
+					p[pos] = A2;
 			}
+			A3 = result;
 		}
+		else
+			A3 = IFALSE;
 
 		ip += 4; break; }
 
