@@ -954,12 +954,20 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 		}
 
-		// vptr is a very simple type,
-		// should receive only tvptr or tvptr(0)
-		case TVPTR:
-		tvptr:
-			if (is_reference(arg) && reftype(arg) == TVPTR)
-				args[i] = car(arg);
+		// vptr should accept only vptr!
+		case TVPTR: tvptr:
+			// temporary. please, change to "if (is_reference(arg) && reftype(arg) == TVPTR)"
+			if (is_reference(arg))
+				switch (reftype(arg)) {
+				case TVPTR:
+					args[i] = car(arg);
+					break;
+				case TBVEC: // can be used instead of vptr
+					args[i] = (word) &car(arg);
+					break;
+				default:
+					E("invalid parameter value (requested vptr)");
+				}
 			else
 				E("invalid parameter value (requested vptr)");
 			break;
