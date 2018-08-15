@@ -2744,22 +2744,22 @@ loop:;
 
 	case REF: {  // ref t o -> r
 		word *p = (word *) A0;
-		if (!is_reference(p))
+		if (!is_reference(p) || !is_fix(A1))
 			A2 = IFALSE;
 		else {
 			word hdr = *p;
-			if (is_blob(p)) { // raw data is #[hdrbyte{W} b0 .. bn 0{0,W-1}]
-				word pos = uvtoi (A1);
-				word size = ((header_size(hdr)-1)*W) - header_pads(hdr);
-				if (pos >= size)
+			if (is_blob(p)) {
+				word size = ((header_size(hdr) - 1) * W) - header_pads(hdr);
+				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				if (pos >= size) // blobs are indexed from 0
 					A2 = IFALSE;
 				else
 					A2 = I(((unsigned char *) p)[pos+W]);
 			}
 			else {
-				word pos = uvtoi (A1);
 				word size = header_size(hdr);
-				if (!pos || size <= pos) // tuples are indexed from 1
+				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				if (!pos || pos >= size) // objects are indexed from 1
 					A2 = IFALSE;
 				else
 					A2 = p[pos];
