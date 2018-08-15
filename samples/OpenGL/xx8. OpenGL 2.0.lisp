@@ -1,8 +1,5 @@
 #!/usr/bin/ol
 (import (lib opengl))
-
-(define Context (gl:Create "7. OpenGL 2.0"))
-
 (import (OpenGL version-2-0))
 
 ;(define width 1280)
