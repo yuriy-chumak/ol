@@ -3,7 +3,7 @@
 (define-library (OpenGL version-1-3)
 (export
 
-    GL_VERSION_1_3
+   GL_VERSION_1_3
 
  ; ARB_multitexture
 ;glActiveTextureARB( texture )

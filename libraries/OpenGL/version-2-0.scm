@@ -2,7 +2,7 @@
 
 (define-library (OpenGL version-2-0)
 (export
-       (exports (OpenGL version-1-5))
+
    GL_VERSION_2_0
 
    gl:GetVersion
@@ -35,7 +35,8 @@ glEnableVertexAttribArray
 glVertexAttribPointer
 GL_FLOAT
 glDrawArrays
-)
+
+    (exports (OpenGL version-1-5)))
 
    (import (otus lisp)
       (OpenGL version-1-5))

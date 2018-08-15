@@ -12,8 +12,8 @@
    ; WINGDIAPI void APIENTRY glIndexub (GLubyte c);
    ; WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
 
-   ; EnableClientState
-   ; DisableClientState
+   glEnableClientState ; void (GLenum array)
+   glDisableClientState ; void (GLenum array)
    ; InterleavedArrays
 
    GL_V2F
@@ -130,16 +130,17 @@
 
  ; EXT_vertex_array
    ; ArrayElement
-   ; VertexPointer
-   ; NormalPointer
-   ; ColorPointer
-   ; IndexPointer
-   ; TexCoordPointer
-   ; EdgeFlagPointer
+   glVertexPointer ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+   glNormalPointer ; void (GLenum type, GLsizei stride, const GLvoid *pointer)
+   glColorPointer ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+   glIndexPointer ; void (GLenum type, GLsizei stride, const GLvoid *pointer)
+   glTexCoordPointer ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+   glEdgeFlagPointer ; void (GLsizei stride, const GLvoid *pointer)
    ; GetPointerv
 
    ; DrawArrays
-   ; DrawElements ; introduced by 1.1
+   ; introduced by 1.1
+   glDrawElements ; void (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 
    GL_VERTEX_ARRAY
    GL_NORMAL_ARRAY
@@ -199,8 +200,8 @@
    ;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
    ;WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
 
-   ;WINGDIAPI void APIENTRY glEnableClientState (GLenum array);
-   ;WINGDIAPI void APIENTRY glDisableClientState (GLenum array);
+   (define glEnableClientState (GL GLvoid "glEnableClientState" GLenum))
+   (define glDisableClientState (GL GLvoid "glDisableClientState" GLenum))
    ;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
 
    (define GL_V2F                            #x2A20)
@@ -312,17 +313,17 @@
  ; EXT_vertex_array
    ;WINGDIAPI void APIENTRY glArrayElement (GLint i);
 
-   ;WINGDIAPI void APIENTRY glVertexPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-   ;WINGDIAPI void APIENTRY glNormalPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
-   ;WINGDIAPI void APIENTRY glColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-   ;WINGDIAPI void APIENTRY glIndexPointer (GLenum type, GLsizei stride, const GLvoid *pointer);
-   ;WINGDIAPI void APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-   ;WINGDIAPI void APIENTRY glEdgeFlagPointer (GLsizei stride, const GLvoid *pointer);
+   (define glVertexPointer (GL GLvoid "glVertexPointer" GLint GLenum GLsizei fft-any))
+   (define glNormalPointer (GL GLvoid "glNormalPointer" GLenum GLsizei fft-any))
+   (define glColorPointer (GL GLvoid "glColorPointer" GLint GLenum GLsizei fft-any))
+   (define glIndexPointer (GL GLvoid "glIndexPointer" GLenum GLsizei fft-any))
+   (define glTexCoordPointer (GL GLvoid "glTexCoordPointer" GLint GLenum GLsizei fft-any))
+   (define glEdgeFlagPointer (GL GLvoid "glEdgeFlagPointer" GLsizei fft-any))
 
    ;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
 
    ;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
-   ;WINGDIAPI void APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
+   (define glDrawElements (GL GLvoid "glDrawElements" GLenum GLsizei GLenum fft-any))
 
    (define GL_VERTEX_ARRAY                   #x8074)
    (define GL_NORMAL_ARRAY                   #x8075)

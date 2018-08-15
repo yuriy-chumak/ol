@@ -415,7 +415,7 @@
       ;glCopyTexImage2D ; void (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
       ;glCopyTexSubImage2D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
       ;glCullFace ; void (GLenum mode);
-      ;glDeleteBuffers ; void (GLsizei n, const GLuint *buffers);
+      glDeleteBuffers ; void (GLsizei n, const GLuint *buffers);
       ;glDeleteTextures ; void (GLsizei n, const GLuint *textures);
       ;glDepthFunc ; void (GLenum func);
       ;glDepthMask ; void (GLboolean flag);
@@ -935,7 +935,6 @@
 ; GL_API void GL_APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 (define glColorPointerf (ES GLvoid "glColorPointer" GLint GLenum GLsizei GLfloat*))
 (define (glColorPointer size type stride pointer)
-   (print "type: " type)
    (case type
       (GL_FLOAT
          (glColorPointerf size type stride pointer))
@@ -948,7 +947,7 @@
 ; GL_API void GL_APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
 ; GL_API void GL_APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
 ; GL_API void GL_APIENTRY glCullFace (GLenum mode);
-; GL_API void GL_APIENTRY glDeleteBuffers (GLsizei n, const GLuint *buffers);
+(define glDeleteBuffers (ES GLvoid "glDeleteBuffers" GLsizei GLuint*)) ; GL_API void GL_APIENTRY  (GLsizei n, const GLuint *buffers);
 ; GL_API void GL_APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
 ; GL_API void GL_APIENTRY glDepthFunc (GLenum func);
 ; GL_API void GL_APIENTRY glDepthMask (GLboolean flag);
