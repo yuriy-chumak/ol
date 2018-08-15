@@ -2490,7 +2490,7 @@ loop:;
 	// (vm:make type length default-value)
 	case VMMAKE: {
 	 	word size = *ip++;
-		word type = uvtoi (A0);
+		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
 		word value = A1;
 
 		word el = IFALSE;
@@ -2511,7 +2511,7 @@ loop:;
 
 				// эта проверка необходима, так как действительно можно
 				//	выйти за пределы кучи (репродюсится стабильно)
-				if (fp + len > heap->end) {
+				if (fp + len > heap->end - MEMPAD) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
@@ -2520,6 +2520,7 @@ loop:;
 					fp = heap->fp; this = ol->this;
 
 					ip = (unsigned char*)this + dp;
+					value = A1; // update value to actual
 				}
 
 				word *ptr = fp;
@@ -2552,7 +2553,7 @@ loop:;
 	// make raw reference object
 	case MAKEBLOB: { // (make-blob type list|size {default})
 		word size = *ip++;
-		word type = uvtoi (A0);
+		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
 		word value = A1;
 
 		unsigned char el = 0;  // default is 0
@@ -2573,7 +2574,7 @@ loop:;
 
 				// эта проверка необходима, так как действительно можно
 				//	выйти за пределы кучи (репродюсится стабильно)
-				if (len / sizeof(word) > heap->end - fp) {
+				if (fp + len / sizeof(word) > heap->end - MEMPAD) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
@@ -2582,6 +2583,7 @@ loop:;
 					fp = heap->fp; this = ol->this;
 
 					ip = (unsigned char*)this + dp;
+					value = A1; // update value to actual
 				}
 
 				word *ptr = new_bytevector (type, len);
@@ -2600,7 +2602,7 @@ loop:;
 				if (is_pair(value) && list == INULL) { // proper list?
 					unsigned char* wp = (unsigned char*)&ptr[1];
 					while (value != INULL) {
-						*wp++ = uvtoi(car(value)) & 255;
+						*wp++ = value(car(value)) & 255;
 						value = cdr (value);
 					}
 					// clear the padding bytes, don't remove!
