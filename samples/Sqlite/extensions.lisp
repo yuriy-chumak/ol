@@ -1,5 +1,6 @@
 #!/usr/bin/ol
 (import (lib sqlite))
+(import (otus ffi))
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define (OR . args) (fold bor 0 args))
@@ -9,7 +10,7 @@
 (sqlite3_open (c-string ":memory:") database)
 
 ; create extension function
-(define calculate (syscall 85 (cons
+(define calculate (vm:pin (cons
    (list sqlite3_context* type-int+ (list type-vptr))
    (lambda (context argc argv)
       (print "argc: " argc)
@@ -20,10 +21,10 @@
          (let ((r (* v 777)))
             (print "mul by 777: " r)
 
-            (sqlite3_result_int context r))))
-) #f #f))
+            (sqlite3_result_int context r)))))))
+(define calculate-callback (make-callback calculate))
 
-(sqlite3_create_function_v2 database (c-string "compress") 1 SQLITE_UTF8 #f calculate #f #f #f)
+(sqlite3_create_function_v2 database (c-string "compress") 1 SQLITE_UTF8 #f calculate-callback #f #f #f)
 
 
 ; sample table
