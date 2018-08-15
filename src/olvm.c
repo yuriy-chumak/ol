@@ -783,6 +783,7 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 #	define FFRED                       2
 
 #define TBVEC                       (19)   // must be RAW type
+#define TBYTEVECTOR                 (19)
 #define TSTRINGWIDE                 (22)
 #define TSTRINGDISPATCH             (21)
 
@@ -1689,6 +1690,15 @@ double ol2d(word arg) {
 		return -ol2d_convert(arg);
 	case TRATIONAL:
 		return ol2d(car(arg)) / ol2d(cdr(arg));
+	case TBYTEVECTOR:
+		switch ((header_size(*(word*)arg)-1) * sizeof(word) - header_pads(*(word*)arg)) {
+			case sizeof(float):
+				return *(float*)&car(arg);
+			case sizeof(double):
+				return *(float*)&car(arg);
+		}
+		assert(0);
+		return 0.;
 //	case TCOMPLEX: // only real part of complex number
 //		return ol2d(car(arg));
 	case TINEXACT:
@@ -2681,8 +2691,9 @@ loop:;
 			break;
 		case TVPTR:
 			// safe limitation (todo: make macro to on/off)
-			if (is_value(T) && value(T) == 0)
-				A2 = (word)new_vptr(0);
+			// if (is_value(T) && value(T) == 0)
+			// 	A2 = (word)new_vptr(0);
+			A2 = (word)new_vptr(untoi(T));
 			break;
 
 		#if OLVM_INEXACTS
