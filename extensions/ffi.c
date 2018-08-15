@@ -870,7 +870,7 @@ word* OL_ffi(OL* self, word* arguments)
 		}
 
 		case TDOUBLE:
-		tdoubleref:
+		tdouble:
 			#if __amd64__ && __linux__
 				ad[d++] = ol2d(arg);
 				floatsmask++; --i;
@@ -908,7 +908,8 @@ word* OL_ffi(OL* self, word* arguments)
 
 		// automatically change the type to argument type, if fft-any
 		case TANY: {
-			// если передали какое-либо число, то отправляем число
+			// если передали какое-либо число, то автоматически надо привести к размеру
+			// машинного слова (того, что будет лежать в стеке)
 			if (is_number(arg))
 				goto tint;
 			else
