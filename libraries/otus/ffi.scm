@@ -17,7 +17,7 @@
    (export
       dlopen dlclose
       dlsym+     ; TODO: rename dlsym+ to dlsym
-      ffi uname
+      ffi sizeof uname
 
       make-callback
 
@@ -141,6 +141,10 @@
 (define (dlclose module) (syscall 176 module #f #f))
 
 (define ffi (syscall 177 (dlopen) "OL_ffi" #f))
+(define sizeof
+   (let ((function (syscall 177 (dlopen) "OL_sizeof" #f)))
+      (lambda (arg)
+         (exec function arg))))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать
 (define (dlsym+ dll name)
