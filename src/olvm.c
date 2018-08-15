@@ -2722,6 +2722,7 @@ loop:;
 	}
 
 
+	// speed version of (ref a 1)
 	case CAR: {  // car a -> r
 		word T = A0;
 		CHECK(CAR_CHECK(T), T, CAR);
@@ -2729,6 +2730,7 @@ loop:;
 		ip += 2; break;
 	}
 
+	// speed version of (ref a 2)
 	case CDR: {  // cdr a -> r
 		word T = A0;
 		CHECK(CDR_CHECK(T), T, CDR);
