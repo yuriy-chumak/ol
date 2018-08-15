@@ -30,7 +30,7 @@
       RTLD_LOCAL
       RTLD_NODELETE
 
-      NULL
+      NULL nullptr
 
       ; olvm callable type
       type-callable
@@ -257,6 +257,7 @@
 
 
 (define NULL (vm:cast 0 fft-void*))
+(define nullptr NULL)
 ; -- utils ----------------------------
 
 (define (make-32bit-array len)
