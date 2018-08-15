@@ -710,21 +710,9 @@ word* OL_ffi(OL* self, word* arguments)
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
-		if (type == TANY) {
-			if (is_value(arg))
-#if UINTPTR_MAX == 0xffffffffffffffff // 64-bit machines
-				type = TINT64;
-#else
-				type = TINT32;
-#endif
-			else {
-				type = reftype (arg);
-			}
-		}
-
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
-
 		if (arg == IFALSE) { // #false is universal "0" value
+		// is not working for floats and doubles!
 /*			switch (type) {
 #if UINT64_MAX > SIZE_MAX
 			case TINT64: case TUINT64:
@@ -758,6 +746,7 @@ word* OL_ffi(OL* self, word* arguments)
 #if UINTPTR_MAX == 0xffffffffffffffff // 64-bit machines
 		case TINT64: case TUINT64:
 #endif
+		tint:
 			if (is_value(arg))
 				args[i] = svtoi(arg);
 			else
@@ -768,7 +757,7 @@ word* OL_ffi(OL* self, word* arguments)
 			case TINTN:
 				args[i] = -from_uint(arg);
 				break;
-			case TRATIONAL:
+			case TRATIONAL: //?
 				*(long long*)&args[i] = from_rational(arg);
 #if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
 				i++;
@@ -810,7 +799,8 @@ word* OL_ffi(OL* self, word* arguments)
 			has_wb = 1;
 			//no break
 		case TINT16 + FFT_PTR:
-		case TUINT16 + FFT_PTR: {
+		case TUINT16 + FFT_PTR:
+		tint16ptr: {
 			// todo: add tuples pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
@@ -830,7 +820,8 @@ word* OL_ffi(OL* self, word* arguments)
 			has_wb = 1;
 			//no break
 		case TINT32 + FFT_PTR:
-		case TUINT32 + FFT_PTR: {
+		case TUINT32 + FFT_PTR:
+		tint32ptr: {
 			// todo: add tuples pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
@@ -860,9 +851,11 @@ word* OL_ffi(OL* self, word* arguments)
 			#endif
 			break;
 		case TFLOAT + FFT_REF:
+		tfloatref:
 			has_wb = 1;
 			//no break
-		case TFLOAT + FFT_PTR: {
+		case TFLOAT + FFT_PTR:
+		tfloatptr: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
@@ -877,6 +870,7 @@ word* OL_ffi(OL* self, word* arguments)
 		}
 
 		case TDOUBLE:
+		tdoubleref:
 			#if __amd64__ && __linux__
 				ad[d++] = ol2d(arg);
 				floatsmask++; --i;
@@ -892,7 +886,8 @@ word* OL_ffi(OL* self, word* arguments)
 		case TDOUBLE + FFT_REF:
 			has_wb = 1;
 			// no break
-		case TDOUBLE + FFT_PTR: {
+		case TDOUBLE + FFT_PTR:
+		tdoubleptr: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
@@ -911,19 +906,60 @@ word* OL_ffi(OL* self, word* arguments)
 			args[i] = arg;
 			break;
 
-		// vptr should accept only vptr!
-		case TVPTR:
-			if (is_reference(arg))
-				switch (reftype(arg)) {
-				case TVPTR:
-					args[i] = car(arg);
-					break;
-				case TBVEC: // can be used instead of vptr
-					args[i] = (word) &car(arg);
-					break;
-				default:
-					E("invalid parameter value (requested vptr)");
+		// automatically change the type to argument type, if fft-any
+		case TANY: {
+			// если передали какое-либо число, то отправляем число
+			if (is_number(arg))
+				goto tint;
+			else
+			switch (reftype(arg)) {
+			case TVPTR: // value of vptr
+				args[i] = car(arg);
+				break;
+			case TBVEC: // address of bytevector data (no copying to stack)
+				args[i] = (word) &car(arg);
+				break;
+			case TPAIR: // sending type override
+				if (is_fixp(car(arg))) // should be positive fix number
+				switch (value(car(arg))) {
+					// (cons fft-int16 '(...))
+					case TINT16 + FFT_PTR:
+					case TUINT16 + FFT_PTR:
+						arg = cdr(arg);
+						goto tint16ptr;
+					// (cons fft-int32 '(...))
+					case TINT32 + FFT_PTR:
+					case TUINT32 + FFT_PTR:
+						arg = cdr(arg);
+						goto tint32ptr;
+					// (cons fft-float '(...))
+					case TFLOAT + FFT_PTR:
+						arg = cdr(arg);
+						goto tfloatptr;
+					// TBD.
+					// todo: add list with custom types and a function with
+					// pushing structures
+					// case TPAIR: ...
+					default:
+						E("unsupported list types for void*");
 				}
+				else
+					E("No type conversion selected");
+				break;
+			case TSTRING:
+				goto tstring;
+			// case TSTRINGWIDE:
+			// 	goto tstringwide;
+			}
+			break;
+		}
+
+		// vptr is a very simple type,
+		// should receive only tvptr or tvptr(0)
+		case TVPTR:
+		tvptr:
+			if (is_reference(arg) && reftype(arg) == TVPTR)
+				args[i] = car(arg);
 			else
 				E("invalid parameter value (requested vptr)");
 			break;
@@ -949,6 +985,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 		// todo: change to is_rawdata
 		case TSTRING:
+		tstring:
 			switch (reftype(arg)) {
 			case TBVEC:
 			case TSTRING:
@@ -981,6 +1018,7 @@ word* OL_ffi(OL* self, word* arguments)
 		//    internally as UTF-16LE).
 //		#ifdef _WIN32
 		case TSTRINGWIDE:
+		tstringwide:
 			switch (reftype(arg)) {
 			case TBVEC:
 			case TSTRING: {
