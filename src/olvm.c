@@ -2161,7 +2161,6 @@ mainloop:;
 	#	define VMCAST  22
 
 	#	define MAKEBLOB 19   // make a typed blob (raw object)
-	#	define BLOBQ  48    // raw? (временное решение пока не придумаю как от него совсем избавиться)
 
 	#	define VMPIN   35
 	#	define VMUNPIN 60
@@ -2287,6 +2286,10 @@ loop:;
 			ERROR(258, I(op), ITRUE);
 		}
 		goto apply; // ???
+	// unused numbers:
+	case 48:
+		ERROR(op, new_string("Unused opcode"), ITRUE);
+		break;
 
 	case GOTO: // (10%)
 		this = (word *)A0;
@@ -2616,15 +2619,6 @@ loop:;
 		}
 
 	 	ip += size + 1; break;
-	}
-
-	case BLOBQ: {  // blob? a -> r : Rr = (blob? Ra)
-		word* T = (word*) A0;
-		if (is_reference(T) && is_blob(T))
-			A1 = ITRUE;
-		else
-			A1 = IFALSE;
-		ip += 2; break;
 	}
 
 	// операции посложнее

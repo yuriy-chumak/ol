@@ -332,7 +332,7 @@
             (let ((trail (put trail node 1)))
                (put trail tag
                   (cons node (get trail tag null)))))
-         ((blob? node)
+         ((ref node 0) ; (ref 0) works only for blobs
             (cond
                ((eq? (type node) type-bytecode) #t)
                ((eq? (type node) type-string) #t)

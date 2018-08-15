@@ -165,8 +165,6 @@
 
       ; primops:
 
-      (setq BLOB? 48)     ;(setq blob? (new-bytecode '(48 4 5    24 5)))
-
       ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
       (setq ADD 38)      ;(setq vm:add  (new-bytecode '(38 4 5       6 7)))
       (setq MUL 39)      ;(setq vm:mul  (new-bytecode '(39 4 5       6 7)))
@@ -249,7 +247,6 @@
          (cons (vm:new TTUPLE 'vm:cast   22  2 1 vm:cast)  ;; cast object type (works for immediates and allocated)
 
          (cons (vm:new TTUPLE 'make-blob 19 'any 1 (new-bytecode '(19)))
-         (cons (vm:new TTUPLE 'blob?     48  1 1 blob?)  ;; временное решение, пока не придумаю как удалить совсем ; todo: change to rawq?
 
          ; конструкторы
          (cons (vm:new TTUPLE 'cons     CONS 2 1 cons)
@@ -314,7 +311,7 @@
          (cons (vm:new TTUPLE 'vm:pin    35 1  1  vm:pin)
          (cons (vm:new TTUPLE 'vm:unpin  60 1  1  vm:unpin)
          (cons (vm:new TTUPLE 'vm:deref  25 1  1  vm:deref)
-         #null))))))))))))))))))))))))))))))))))))))))))))
+         #null)))))))))))))))))))))))))))))))))))))))))))
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд
