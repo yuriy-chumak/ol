@@ -3395,12 +3395,12 @@ loop:;
 		 *
 		 */
 		case SYSCALL_BRK: // get or set memory limit (in mb)
-			// b, c is reserved for feature use
-			result = itoun (ol->max_heap_size);
-			//if (a == I(0))
-			//	ol->gc(0);
-			if (is_numberp(a))
-				ol->max_heap_size = uvtoi (a);
+			// // b, c is reserved for feature use
+			// result = itoun (ol->max_heap_size);
+			// //if (a == I(0))
+			// //	ol->gc(0);
+			// if (is_numberp(a))
+			// 	ol->max_heap_size = uvtoi (a);
 			break;
 
 		/*! \subsection syscall-16
