@@ -90,7 +90,7 @@
 
       ; fft data manipulation helpers
       vptr->vector vptr->string
-      
+      extract-void*
    )
 
    (import
@@ -284,6 +284,16 @@
    (else
       (print "Unknown endianness")
       #false)))
+(define int64->ol (case (vm:endianness)
+   (1 (lambda (vector offset)
+         (+     (ref vector    offset   )
+            (<< (ref vector (+ offset 1))  8)
+            (<< (ref vector (+ offset 2)) 16)
+            (<< (ref vector (+ offset 3)) 24)
+            (<< (ref vector (+ offset 4)) 32)
+            (<< (ref vector (+ offset 5)) 40)
+            (<< (ref vector (+ offset 6)) 48)
+            (<< (ref vector (+ offset 7)) 56))))))
 
 (define vptr->vector (cond
    ((string-ci=? (ref (uname) 1) "Windows")
@@ -299,6 +309,9 @@
                vector))))
    (else
       (print "Unknown OS"))))
+
+(define (extract-void* bvec offset)
+   (vm:cast (int64->ol bvec offset) type-vptr))
 
 (define (vptr->string vptr)
    (fold string-append "#x"
