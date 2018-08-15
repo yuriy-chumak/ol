@@ -1736,7 +1736,7 @@ float ol2f(word arg) {
 //	case TCOMPLEX: // use only real part of complex number
 //		return ol2f(car(arg));
 	case TINEXACT:
-		return *(float*)&car(arg);
+		return *(double*)&car(arg); // inexact numbers is doubles! not floats.
 	default:
 		assert(0);
 		return 0.;
