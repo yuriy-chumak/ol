@@ -931,6 +931,9 @@
                (tuple-case (repl-port env in)
                   ((ok val env)
                      ;; bye-bye
+                     (let ((atexit (env-get env '*atexit* #false)))
+                        (if (function? atexit)
+                           (atexit)))
                      (if (interactive? env)
                         (print "bye-bye :/"))
                      (halt 0))
