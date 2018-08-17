@@ -296,12 +296,21 @@
             (<< (ref vector (+ offset 7)) 56))))))
 
 (define vptr->vector (cond
+   ; linux:
+   ((string-ci=? (ref (uname) 1) "Linux")
+      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-int)))
+         (lambda (vptr sizeof)
+            (let ((vector (make-bytevector sizeof)))
+               (memcpy vector vptr sizeof)
+               vector))))
+   ; win:
    ((string-ci=? (ref (uname) 1) "Windows")
       (lambda (vptr sizeof)
          (let ((vector (make-bytevector sizeof)))
             ; ...
             vector)))
-   ((string-ci=? (ref (uname) 1) "Linux")
+   ; asm.js:
+   ((string-ci=? (ref (uname) 1) "emscripten")
       (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-int)))
          (lambda (vptr sizeof)
             (let ((vector (make-bytevector sizeof)))
