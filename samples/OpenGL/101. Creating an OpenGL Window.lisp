@@ -11,6 +11,5 @@
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)))
 
-; wait for window closing
-(gl:finish)
+; automatically waits for window closing
 

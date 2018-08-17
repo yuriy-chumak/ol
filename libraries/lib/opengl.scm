@@ -4,7 +4,6 @@
       (OpenGL version-1-2))
 
    (export
-      (exports (OpenGL version-1-2))
       gl:set-renderer
       gl:set-window-title
       gl:set-userdata
@@ -16,7 +15,10 @@
       gl:SwapBuffers
       gl:ProcessEvents
       
-      gl:Color)
+      gl:Color
+
+      *atexit*
+      (exports (OpenGL version-1-2)))
 
 (begin
 (define OS (ref (uname) 1))
@@ -283,13 +285,11 @@
 
             ((finish)  ; wait for OpenGL window closing (just no answer for interact)
                ;(glFinish)
-               (gl:SwapBuffers (get dictionary 'context #f))
 
-               ; возможно надо вернуть управление юзеру?
                (unless (get dictionary 'renderer #f)
-                  ; нечего ждать к отрисовке, рендерера то нет
-                  (mail sender 'ok)
-                  ; рендерер есть, но режим интерактивный?
+                  ; рендерера нет, значит оновим буфер
+                  (gl:SwapBuffers (get dictionary 'context #f))
+                  ; рендерер есть, но режим интерактивный? тогда вернем управление юзеру
                   (if (or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
                      (mail sender 'ok)))
                (this (put dictionary 'customer sender)))
@@ -368,6 +368,8 @@
 
 (define (gl:finish)
    (interact 'opengl (tuple 'finish)))
+
+(define *atexit* gl:finish)
 
 ; -----------------------------
 (define gl:Color (case-lambda
