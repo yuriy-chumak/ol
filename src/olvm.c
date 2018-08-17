@@ -787,6 +787,9 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 #define TSTRINGWIDE                 (22)
 #define TSTRINGDISPATCH             (21)
 
+#define TVECTOR                     (11)
+#define TVECTORDISPATCH             (15) // type-vector-dispatch
+
 #define TTHREAD                     (31) // type-thread-state
 
 // numbers (value type)
@@ -1863,7 +1866,6 @@ long long callback(OL* ol, int id, int_t* argi
 		, double* argf, int_t* rest
 	#endif
 	);
-
 #endif
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
@@ -1892,7 +1894,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	// TODO: складывать this первым, тогда можно будет копировать только ol->arity регистров
 
 	// создадим в топе временный объект со значениями всех регистров
-	word *regs = new (TTUPLE, N + 1); // N for regs, 1 for this
+	word *regs = new (TVECTOR, N + 1); // N for regs, 1 for this
 	while (++p <= N) regs[p] = R[p-1];
 	regs[p] = (word) ol->this;
 	// выполним сборку мусора
