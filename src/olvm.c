@@ -101,7 +101,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #	define SYSCALL_GETRLIMIT 0
 # endif
 
-#	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -125,8 +124,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #	endif
 #	define SYSCALL_SYSINFO 0
 #	define SYSCALL_GETRLIMIT 0
-
-#	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
 // https://msdn.microsoft.com/en-us/library/b0084kay.aspx
@@ -134,7 +131,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #ifdef _WIN32
 #	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
 #	define SYSCALL_GETRLIMIT 0
-#	define PUBLIC __declspec(dllexport)
 // qemu for windows: https://qemu.weilnetz.de/
 // linux for qemu:   https://buildroot.uclibc.org/
 // images for qemu:  https://4pda.ru/forum/index.php?showtopic=318284
@@ -343,10 +339,12 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #include <time.h>
 #include <math.h>
 
-#include <sys/utsname.h> // own win32 implementation
-
+#include <sys/utsname.h> // we have own win32 implementation
 #if HAS_DLOPEN
-#	include <dlfcn.h>    // own win32 implementation
+#	include <dlfcn.h>    // we have own win32 implementation
+#endif
+#if !defined(SYSCALL_SYSINFO) || (defined(SYSCALL_SYSINFO) && SYSCALL_SYSINFO != 0)
+#	include <sys/sysinfo.h> // we have own win32 implementation
 #endif
 
 #ifdef __linux__
@@ -2247,11 +2245,6 @@ mainloop:;
 	#		ifndef SYSCALL_SYSINFO
 	#		define SYSCALL_SYSINFO 99
 	#		endif
-	#		if SYSCALL_SYSINFO
-	#		 ifndef _WIN32 // win32 does not have sysinfo
-	#			include <sys/sysinfo.h>
-	#		 endif
-	#		endif
 
 	#		ifndef SYSCALL_PRCTL
 	#		define SYSCALL_PRCTL 157
@@ -3818,7 +3811,6 @@ loop:;
 			}
 	#endif //HAS_DLOPEN
 			// if a is string:
-			// todo: add case (cons program environment)
 			if (is_string(a)) {
 				char* command = (char*)&car(a);
 				#ifdef __unix__
@@ -4051,31 +4043,6 @@ loop:;
 		#if SYSCALL_SYSINFO
 		// SYSINFO (sysinfo)
 		case SYSCALL_SYSINFO: {
-			#ifdef _WIN32
-			struct sysinfo
-			{
-				long uptime;             /* Seconds since boot */
-				unsigned long loads[3];  /* 1, 5, and 15 minute load averages */
-				unsigned long totalram;  /* Total usable main memory size */
-				unsigned long freeram;   /* Available memory size */
-				unsigned long sharedram; /* Amount of shared memory */
-				unsigned long bufferram; /* Memory used by buffers */
-				unsigned long totalswap; /* Total swap space size */
-				unsigned long freeswap;  /* Swap space still available */
-				unsigned short procs;    /* Number of current processes */
-				unsigned long totalhigh; /* Total high memory size */
-				unsigned long freehigh;  /* Available high memory size */
-				unsigned int mem_unit;   /* Memory unit size in bytes */
-				char _f[20-2*sizeof(long)-sizeof(int)];
-			};
-
-			int sysinfo(struct sysinfo *info) {
-				ZeroMemory(info, sizeof(*info));
-				info->uptime = GetTickCount() / 1000;
-				return 0;
-			}
-			#endif
-
 			struct sysinfo info;
 			if (sysinfo(&info) == 0)
 				result = new_tuple(

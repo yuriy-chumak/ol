@@ -20,6 +20,11 @@
 
 #if OLVM_FFI
 
+// todo: check emscripten versions:
+//#define __EMSCRIPTEN_major__ 1
+//#define __EMSCRIPTEN_minor__ 37
+
+
 #define TVOID         (48)
 //efine TSTRING       (3)
 //efine TSTRINGWIDE   (22)
@@ -55,6 +60,17 @@
 
 #define FFT_PTR   0x10000
 #define FFT_REF   0x20000
+
+
+#if defined(_WIN32)
+#	define PUBLIC __declspec(dllexport)
+#elif defined(__EMSCRIPTEN__)
+#	define PUBLIC EMSCRIPTEN_KEEPALIVE
+#elif defined(__unix__)
+#	define PUBLIC __attribute__ ((__visibility__("default")))
+#endif
+
+
 
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 // However, on modern standard computers (i.e., implementing IEEE 754), one may
@@ -123,6 +139,11 @@ double ol2d(word arg); float ol2f(word arg); // declared in olvm.c
 
 #define NEWLINE(x) x "\n\t"
 #define __ASM__(...) __asm__(EVAL(MAP(NEWLINE, __VA_ARGS__)))
+
+#ifndef __GNUC__
+#define __asm__ asm
+#endif
+
 
 // platform defines:
 // https://sourceforge.net/p/predef/wiki/Architectures/

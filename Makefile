@@ -168,13 +168,13 @@ $(repl.o): repl
 # please, use emscripten version 1.37.40, because
 # fockin' emscripten team broke all again!
 olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
-	emcc src/olvm.c -Oz -m32 \
+	emcc src/olvm.c -Os -m32 \
 	   -D NAKED_VM=1 -D HAS_DLOPEN=1 \
 	   -o olvm.js \
 	   -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 \
 	   -s MAIN_MODULE=1 \
 	   -s BINARYEN_METHOD='asmjs' \
-	   -s EXPORTED_FUNCTIONS="['_main', '_OL_ffi', '_OL_mkcb']" \
+	   -s EXPORTED_FUNCTIONS="['_main']" \
 	   --memory-init-file 0
 
 recompile: boot.fasl
