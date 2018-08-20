@@ -3814,6 +3814,11 @@ loop:;
 			if (is_string(a)) {
 				char* command = (char*)&car(a);
 				#ifdef __unix__
+				# ifdef __EMSCRIPTEN__
+					emscripten_run_script(command);
+					result = (void*)ITRUE;
+				# else
+					// todo: add case (cons program environment)
 					int child = fork();
 					if (child == 0) {
 						D("forking %s", command);
@@ -3843,6 +3848,7 @@ loop:;
 					}
 					else if (child > 0)
 						result = (word*) itoun(child);
+				# endif
 				#endif
 				#ifdef _WIN32
 					STARTUPINFO si;
