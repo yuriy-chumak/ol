@@ -108,5 +108,3 @@
                      (cons    x    (+ y 1))
                      (cons (+ x 1) (+ y 1))))))
          #empty generation))))
-
-(gl:finish)
