@@ -96,8 +96,8 @@
       ;
       (define-syntax syntax-error
          (syntax-rules (runtime-error)
-            ((syntax-error . stuff)
-               (runtime-error "syntax error: " (quote stuff)))))
+            ((syntax-error . staff)
+               (runtime-error "syntax error: " (quote staff)))))
 
       ; * internal testing staff
       ; note: this is simplified 'assert' that uses 'eq?'. please be careful!

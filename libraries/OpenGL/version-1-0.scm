@@ -37,7 +37,7 @@
 
    GLvoid   GLvoid*
 
-   GL_TRUE GL_FALSE                 ; 1, 0
+   GL_TRUE GL_FALSE           ; 1, 0
 
 
    ;; 2.5 GL Errors
