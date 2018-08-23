@@ -1,7 +1,7 @@
 language: c
 compiler: gcc
 
-script: make tests
+script: make tests rosettacode
 
 addons:
   apt:

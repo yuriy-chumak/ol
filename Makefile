@@ -2,7 +2,7 @@ export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
 
-.PHONY: all debug release slim config recompile install uninstall clean tests check rosettacode
+.PHONY: all debug release slim config recompile install uninstall clean check
 
 all: release
 
@@ -177,6 +177,7 @@ olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
 	   -s EXPORTED_FUNCTIONS="['_main']" \
 	   --memory-init-file 0
 
+# compiling the Ol language
 recompile: boot.fasl
 boot.fasl: CFLAGS += $(CFLAGS_RELEASE) # will rebuild in release, for speed
 boot.fasl: vm repl src/*.scm lang/*.scm libraries/scheme/*.scm libraries/scheme/r5rs/*.scm libraries/otus/lisp.scm libraries/owl/*.scm
@@ -192,12 +193,13 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/scheme/*.scm libraries/scheme/
 	   cp -b $@ repl ;make $@ ;\
 	fi
 
+#embed sample
 embed: extensions/embed/sample.c
 	$(CC) extensions/embed/sample.c src/olvm.c $(repl.o) -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
-	-Xlinker --export-dynamic -Iinclude -lm
+	-Xlinker --export-dynamic -Iinclude -lm $(CFLAGS_DEBUG)
 
 # additional targets (like packaging, tests, etc.)
 MAKEFILE_MAIN=1
 -include tests/Makefile
--include tests/rosetta-code/Makefile
+-include tests/rosettacode/Makefile
 -include config/Makefile

@@ -1,3 +1,5 @@
+.PHONY: tests testing-binaries
+
 ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
 else
@@ -158,8 +160,27 @@ vm-release-64: bits=64
 vm-release-64: vm-release
 endif
 
-.SUFFIXES: .scm .scm.ok
-.scm.scm.ok:
+testing-binaries:
+ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
+	@echo -n "Building test binaries (debug and release, 32-bit and 64-bit versions both)... "
+ifeq ($(HAS_32CDEFS),1)
+	@$(MAKE) -s vm-debug-32
+	@$(MAKE) -s vm-release-32
+endif
+ifeq ($(HAS_64CDEFS),1)
+	@$(MAKE) -s vm-debug-64
+	@$(MAKE) -s vm-release-64
+endif
+	@echo "built."
+else
+	@echo -n "Building test binaries (debug and release versions both)... "
+	@$(MAKE) -s vm-debug
+	@$(MAKE) -s vm-release
+	@echo "Built."
+endif
+
+
+%.scm.ok: %.scm
 	@echo -n "Testing $^ ..."
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
@@ -214,8 +235,10 @@ endif
 
 
 # -=( tests )=-------------------------------------
+tests: testing-binaries
 tests: $(wildcard tests/*.scm)
 	@rm -f $(FAILED)
+	@echo " "
 	@echo "Internal vm testing"
 	@echo "---------------------------------------"
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
@@ -250,20 +273,7 @@ endif
 	@echo " "
 	@echo "common tests"
 	@echo "---------------------------------------"
-ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
-ifeq ($(HAS_32CDEFS),1)
-	@$(MAKE) -s vm-debug-32
-	@$(MAKE) -s vm-release-32
-endif
-ifeq ($(HAS_64CDEFS),1)
-	@$(MAKE) -s vm-debug-64
-	@$(MAKE) -s vm-release-64
-endif
-else
-	@$(MAKE) -s vm-debug
-	@$(MAKE) -s vm-release
-endif
-	@for F in $(filter-out tests/ffi.scm, $^) ;do \
+	@for F in $(filter-out tests/ffi.scm, $(filter %.scm,$^)) ;do \
 	   $(MAKE) -s -B $$F.ok ;\
 	done
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
