@@ -200,8 +200,8 @@
 
       (define (= b a)
          (case (type a)
-            (type-fix+ (eq? a b))
-            (type-fix- (eq? a b))
+            (type-fix+ (unless (eq? (type b) type-inexact) (eq? a b) (equal? (inexact a) b)))
+            (type-fix- (unless (eq? (type b) type-inexact) (eq? a b) (equal? (inexact a) b)))
             (type-int+
                (case (type b)
                   (type-int+ (big-digits-equal? a b))
@@ -249,12 +249,12 @@
                   (type-int- #true)
                   (else (runtime-error "Bad number: " a))))
             (type-inexact
-               (eq? a -inf.0))
+               (equal? a -inf.0))
             (else (runtime-error 'negative? a))))
 
       (define (positive? a)
          (unless (negative? a)
-            (not (eq? a +nan.0))))
+            (not (equal? a +nan.0))))
 
 
 
@@ -1665,7 +1665,7 @@
                   (type-fix-  (sub-small->pick-sign a b))
                   (type-int-  (sub-number-big a b #true))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
-                  (type-inexact  (fadd (inexact a) b))
+                  (type-inexact  (fadd a b))
                   (type-complex  (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-int+
@@ -1675,7 +1675,7 @@
                   (type-fix- (sub-big-number a b #true))
                   (type-int- (sub-big a b))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
-                  (type-inexact  (fadd (inexact a) b))
+                  (type-inexact  (fadd a b))
                   (type-complex  (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-fix-
@@ -1685,7 +1685,7 @@
                   (type-int+ (sub-big-number b a #true))
                   (type-int- (vm:cast (add-number-big a b) type-int-))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
-                  (type-inexact  (fadd (inexact a) b))
+                  (type-inexact  (fadd a b))
                   (type-complex  (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-int-
@@ -1695,7 +1695,7 @@
                   (type-int+ (sub-big b a))
                   (type-int- (vm:cast (add-big a b #false) type-int-))
                   (type-rational  (lets ((x z b)) (rational (add (muli a z) x) z)))
-                  (type-inexact  (fadd (inexact a) b))
+                  (type-inexact  (fadd a b))
                   (type-complex  (lets ((x y b)) (complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
             (type-rational
@@ -1710,7 +1710,7 @@
                               (divide
                                  (add (muli an bd) (muli bn ad))
                                  (muli ad bd))))))
-                  (type-inexact  (fadd (inexact a) b))
+                  (type-inexact  (fadd a b))
                   (type-complex
                      (lets ((br bi b))
                         (complex (add a br) bi)))
@@ -1718,7 +1718,7 @@
                      ; a'/a" + b = (a'+ba")/a"
                      (rational (add (ncar a) (muli b (ncdr a))) (ncdr a)))))
             (type-inexact
-               (fadd a (inexact b))) ; casting inexact -> inexact is ok
+               (fadd a b)) ; casting inexact -> inexact is ok
             (type-complex
                (case (type b)
                   (type-complex
@@ -1730,7 +1730,7 @@
                         (if (eq? i 0) r (complex r i))))
                   (type-inexact
                      (let*((ar ai a))
-                        (complex (fadd (inexact ar) b) ai)))
+                        (complex (fadd ar b) ai)))
                   (else
                      ;; A+ai + B = A+B + ai
                      (let*((ar ai a))
@@ -1747,7 +1747,7 @@
                   (type-int+ (sub-number-big a b #true))
                   (type-int- (add-number-big a b))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
-                  (type-inexact  (fsub (inexact a) b))
+                  (type-inexact  (fsub a b))
                   (type-complex  (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
             (type-fix-
@@ -1757,7 +1757,7 @@
                   (type-int+ (vm:cast (add-number-big a b) type-int-))
                   (type-int- (sub-big-number b a #true))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
-                  (type-inexact  (fsub (inexact a) b))
+                  (type-inexact  (fsub a b))
                   (type-complex  (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
             (type-int+
@@ -1767,7 +1767,7 @@
                   (type-int+ (sub-big a b))
                   (type-int- (add-big a b #false))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
-                  (type-inexact  (fsub (inexact a) b))
+                  (type-inexact  (fsub a b))
                   (type-complex  (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
             (type-int-
@@ -1777,7 +1777,7 @@
                   (type-int+ (vm:cast (add-big a b #false) type-int-))
                   (type-int- (sub-big b a))
                   (type-rational  (let ((bl (ncdr b))) (sub (rational (muli a bl) bl) b)))
-                  (type-inexact  (fsub (inexact a) b))
+                  (type-inexact  (fsub a b))
                   (type-complex  (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
             (type-rational
@@ -1792,14 +1792,14 @@
                               (divide
                                  (subi (muli an bd) (muli bn ad))
                                  (muli ad bd))))))
-                  (type-inexact  (fsub (inexact a) b))
+                  (type-inexact  (fsub a b))
                   (type-complex
                      (lets ((br bi b)) (complex (sub a br) (negate bi))))
                   (else
                      ; a'/a" - b = (a'-ba")/a"
                      (rational (subi (ncar a) (muli b (ncdr a))) (ncdr a)))))
             (type-inexact
-               (fsub a (inexact b))) ; casting inexact -> inexact is ok
+               (fsub a b)) ; casting inexact -> inexact is ok
             (type-complex
                (case (type b)
                   (type-complex
@@ -1810,7 +1810,7 @@
                         (if (eq? i 0) r (complex r i))))
                   (type-inexact
                      (let*((ar ai a))
-                        (complex (fsub (inexact ar) b) ai)))
+                        (complex (fsub ar b) ai)))
                   (else
                      (let*((ar ai a))
                         (complex (sub ar b) ai)))))
@@ -1834,7 +1834,7 @@
                   (type-fix- (negative (mult-fixnums a b)))      ; +a * -b
                   (type-int- (negative (mult-num-big a b 0)))    ; +a * -B
                   (type-rational  (divide (mul a (ncar b)) (ncdr b)))
-                  (type-inexact  (fmul (inexact a) b))
+                  (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
                         (if (eq? i 0) r (complex r i))))
@@ -1846,7 +1846,7 @@
                   (type-fix- (mult-fixnums a b))                  ; -a * -b -> +c | +C
                   (type-int- (mult-num-big a b 0))            ; -a * -B -> +C
                   (type-rational  (divide (mul a (ncar b)) (ncdr b)))
-                  (type-inexact  (fmul (inexact a) b))
+                  (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
                         (if (eq? i 0) r (complex r i))))
@@ -1858,7 +1858,7 @@
                   (type-fix- (vm:cast (mult-num-big b a 0) type-int-))    ; +A * -b -> -C
                   (type-int- (vm:cast (mult-big a b) type-int-))      ; +A * -B -> -C
                   (type-rational  (divide (mul a (ncar b)) (ncdr b)))
-                  (type-inexact  (fmul (inexact a) b))
+                  (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
                         (if (eq? i 0) r (complex r i))))
@@ -1870,7 +1870,7 @@
                   (type-fix- (mult-num-big b a 0))               ; -A * -b -> +C
                   (type-int- (mult-big a b))                  ; -A * -B -> +C
                   (type-rational  (divide (mul a (ncar b)) (ncdr b)))
-                  (type-inexact  (fmul (inexact a) b))
+                  (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
                         (if (eq? i 0) r (complex r i))))
@@ -1879,14 +1879,14 @@
                (case (type b)
                   (type-rational
                      (divide (mul (ncar a) (ncar b)) (mul (ncdr a) (ncdr b))))
-                  (type-inexact  (fmul (inexact a) b))
+                  (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
                         (if (eq? i 0) r (complex r i))))
                   (else
                      (divide (mul (ncar a) b) (ncdr a)))))
             (type-inexact
-               (fmul a (inexact b))) ; casting inexact -> inexact is ok
+               (fmul a b)) ; casting inexact -> inexact is ok
             (type-complex
                (case (type b)
                   (type-complex
@@ -1897,8 +1897,8 @@
                         (if (eq? i 0) r (complex r i))))
                   (type-inexact
                      (let*((ar ai a))
-                        (complex (fmul (inexact ar) b)
-                                 (fmul (inexact ai) b))))
+                        (complex (fmul ar b)
+                                 (fmul ai b))))
                   (else
                      (let*((ar ai a)
                            (r (mul ar b))
@@ -2145,22 +2145,30 @@
                   ((equal? num -inf.0) (ilist #\- #\i #\n #\f #\. #\0 tl))
                   ((equal? num +nan.0) (ilist #\+ #\n #\a #\n #\. #\0 tl))
                   (else
-                     (let*((int  (inexact->exact (ffloor num)))
-                           (frac (inexact->exact (ffloor (fmul (ffrac num) (exact->inexact 100000))))))
-                        (render-digits int
-                           (cons #\. (append (reverse
-                              (let loop ((i frac) (n 10000) (l #null))
-                                 (cond
-                                    ((eq? i 0)
-                                       l)
-                                    ((eq? n 1)
-                                       (ilist #\. #\. l))
-                                    (else
-                                       (loop (mod i n) (/ n 10) (render-digits (floor (/ i n)) l 10)))))) tl))
-                           base)))))
-
+                     (cond
+                        ((fless? 1000 (fabs num))
+                           (ilist #\B #\I #\G #\. tl))
+                        ((fless? (fabs num) 0.001)
+                           (ilist #\. #\S #\M #\A #\L #\L tl))
+                        (else
+                           (let*((sign (fless? num 0))
+                                 (int  (exact (ffloor num)))
+                                 (num  (fabs num))
+                                 (frac (exact (ffloor (fmul (ffrac num) (exact->inexact 100000)))))
+                                 (number (append (reverse
+                                       ; 
+                                       (let loop ((i frac) (n 10000) (l #null))
+                                          (cond
+                                             ((eq? i 0)
+                                                l)
+                                             ((eq? n 1)
+                                                (ilist #\. #\. l))
+                                             (else
+                                                (loop (mod i n) (/ n 10) (render-digits (floor (/ i n)) l 10)))))) tl)))
+                              (render-number int
+                                    (cons #\. number) base)))))))
             ((< num 0)
-               (cons 45
+               (cons #\-
                   (render-number (sub 0 num) tl base)))
             ((< num base)
                (cons (char-of num) tl))

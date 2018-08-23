@@ -4265,6 +4265,7 @@ loop:;
 
 	// FPU extensions
 	#if OLVM_INEXACTS
+	// todo: remove sin, cos, etc. from VM and move it to ffi
 	case FP1: { // with 1 argument
 		word fn = value(A0);
 		double a = ol2d(A1);
@@ -4290,6 +4291,7 @@ loop:;
 			double i;;
 			*(double*)&car(A2) = modf(a, &i);
 			break;
+		}
 		//acos
 		//asin
 		//cosh
@@ -4297,15 +4299,17 @@ loop:;
 		//atan
 		//exp
 		//fabs
-		case 6: { // log
+		case 6: // log
 			*(double*)&car(A2) = log(a);
 			break;
-		}
-		//log10
+		case 7: // flog10
+			*(double*)&car(A2) = log10(a);
+			break;
+		case 8: // fabs
+			*(double*)&car(A2) = fabs(a);
+			break;
 		//tan
 		//tanh
-
-		}
 		default:
 			A2 = IFALSE;
 			break;
@@ -4367,6 +4371,9 @@ loop:;
 			break;
 		case 5: // fmin
 			*(double*)&car(A3) = min(a, b);
+			break;
+		case 6: // fless?
+			A3 = (a < b) ? ITRUE : IFALSE;
 			break;
 		default:
 			A3 = IFALSE;
