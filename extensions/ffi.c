@@ -880,13 +880,30 @@ word* OL_ffi(OL* self, word* arguments)
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
-			int c = llen(arg);
-			float* f = (float*) __builtin_alloca(c * sizeof(float));
-			args[i] = (word)f;
+			switch (reftype(arg)) {
+				case TPAIR: {
+					int c = llen(arg);
+					float* f = (float*) __builtin_alloca(c * sizeof(float));
+					args[i] = (word)f;
 
-			word l = arg;
-			while (c--)
-				*f++ = ol2f(car(l)), l = cdr(l);
+					word l = arg;
+					while (c--)
+						*f++ = ol2f(car(l)), l = cdr(l);
+					break;
+				}
+				case TTUPLE: // let's support not only lists as float*
+				case TVECTOR: {
+					int c = header_size(arg);
+					float* f = (float*) __builtin_alloca(c * sizeof(float));
+					args[i] = (word)f;
+
+					word* l = &car(arg);
+					while (c--)
+						*f++ = *l++;
+					break;
+				}
+			}
+
 			break;
 		}
 
