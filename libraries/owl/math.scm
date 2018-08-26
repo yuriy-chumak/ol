@@ -35,7 +35,6 @@
       numerator denumerator
       log log2
       render-number
-      fx% ;; temp export until it is removed
       negative? positive?
       denominator numerator
       remainder modulo
