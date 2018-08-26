@@ -20,13 +20,12 @@
 (define-library (owl math)
 
    (export
-      fixnum?
       + - * = /
       << < <= = >= > >>
       band bor bxor
       div ediv rem mod quotrem mod divmod
       add nat-succ sub mul big-bad-args negate
-      even? odd?
+      even? odd? fix+?
       gcd gcdl lcm
       min max minl maxl
       quotient quot
@@ -89,13 +88,8 @@
       (define *first-bignum*
          (ncons 0 *big-one*))
 
-      (define (fixnum? x)
-         (let ((t (type x)))
-            (or
-               (eq? t type-fix+)
-               ;(eq? t type-fix-) ;; <- FIXME - breaks build, someone isn't expecting negative fixnums
-               ; TODO: исправить!
-               )))
+      (define (fix+? x)
+         (eq? (type x) type-fix+))
 
       ;; deprecated primop
       ;(define-syntax fxdivmod

@@ -89,7 +89,7 @@
                            (rtl-rename more op target fail)
                            (tuple 'move a b (rtl-rename more op target fail)))))))
             ((prim opcode args to more)
-               (if (fixnum? to)
+               (if (fix+? to)
                   (if (bad? to target op)
                      (fail)
                      (tuple 'prim opcode
@@ -220,7 +220,7 @@
                         (tuple 'prim op args to more)
                         (fold reg-touch (del uses to) args)))))
                   (cond
-                     ((fixnum? to)
+                     ((fix+? to)
                         ; retarget the sole argument if possible
                         (let ((good (use-list uses to)))
                            (retarget-first more to good uses

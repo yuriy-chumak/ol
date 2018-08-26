@@ -164,7 +164,7 @@
                            (append (map reg args)
                               (cons (reg to)
                                  (assemble more fail))))))
-                  ((fixnum? to)
+                  ((fix+? to)
                      (if (opcode-arity-ok? op (length args) 1)
                         (cons op
                            (append (map reg args)
@@ -238,9 +238,9 @@
                   ((eq? val #empty)
                      (ilist LDE (reg to)
                         (assemble cont fail)))
-                  ((fixnum? val)
+                  ((fix+? val)
                      (let ((code (assemble cont fail)))
-                        (if (or (> val 126) (< val -126)) ; would be a bug
+                        (if (> val 126) ;(or (> val 126) (< val -126)) ; would be a bug
                            (fail (list "ld: big value: " val)))
                         (ilist LD
                            (if (< val 0) (+ 256 val) val)

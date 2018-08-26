@@ -27,8 +27,8 @@
          (or
             (eq? val #true)
             (eq? val #false)
-            (and (fixnum? val) (>= val -127) (< val 127))
-            (eq? val null)))
+            (and (fix+? val) (< val 127))
+            (eq? val #null)))
 
       (define (value-primop val)
          (and (tuple? val)

@@ -44,7 +44,7 @@
             (eq? val #null)
             (eq? val #true)
             (eq? val #false)
-            (and (fixnum? val) (>= val -127) (< val 127))))
+            (and (fix+? val) (>= val -127) (< val 127))))
 
       (define (ok exp env) (tuple 'ok exp env))
       (define (fail reason) (tuple 'fail reason))
@@ -121,7 +121,7 @@
       (define (rtl-value regs val cont)
          (let ((position (find-value regs val)))
             (cond
-               ((fixnum? position)
+               ((fix+? position)
                   (cont regs position))
                ((small-value? val)
                   (load-small-value regs val
@@ -129,7 +129,7 @@
                         (cont regs pos))))
                ((not position)
                   (runtime-error "rtl-value: cannot make a load for a " val))
-               ((fixnum? (cdr position))
+               ((fix+? (cdr position))
                   (let ((this (next-free-register regs)))
                      (tuple 'refi (car position) (cdr position) this
                         (cont (cons (tuple 'val val this) regs) this))))
@@ -139,11 +139,11 @@
       (define (rtl-variable regs sym cont)
          (let ((position (find-variable regs sym)))
             (cond
-               ((fixnum? position)
+               ((fix+? position)
                   (cont regs position))
                ((not position)
                   (runtime-error "rtl-variable: cannot find the variable " sym))
-               ((fixnum? (cdr position))
+               ((fix+? (cdr position))
                   (let ((this (next-free-register regs)))
                      (tuple 'refi (car position) (cdr position) this
                         (cont (cons (tuple 'var sym this) regs) this))))
