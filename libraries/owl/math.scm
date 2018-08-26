@@ -1909,10 +1909,14 @@
 
       ;; todo: division lacks short circuits
       (define (/ a b)
-         (if (eq? b 0)
-            (runtime-error "division by zero " (list '/ a b))
-         ; else
          (cond
+            ; any inexact division always produces inexact number
+            ((eq? (type a) type-inexact)
+               (fdiv a b))
+            ((eq? (type b) type-inexact)
+               (fdiv a b))
+            ((eq? b 0)
+               (runtime-error "division by zero " (list '/ a b)))
             ((eq? (type a) type-complex)
                (if (eq? (type b) type-complex)
                   (lets
@@ -1947,7 +1951,7 @@
                ; a / b'/b" = ab"/n
                (divide (mul a (ncdr b)) (ncar b)))
             (else
-               (divide a b)))))
+               (divide a b))))
 
 
       ;;;
