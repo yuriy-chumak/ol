@@ -5,11 +5,11 @@
 (define *include-dirs* (cons ".." *include-dirs*))
 (import (OpenCL version-1-0))
 
-(define (new-size_t) (make-bytevector (vm:wordsize)))
+(define (new-size_t) (make-bytevector (size nullptr)))
 (define (new-int)    (make-bytevector '(0 0 0 0)))
 
 (define (vector->ptr vector delta)
-   (let ((wordsize (vm:wordsize)))
+   (let ((wordsize (size nullptr)))
    (let loop ((int 0) (n 0) (b 0))
 ;     (print int "-" n "-" b ":" (refb vector 0))
       (if (< n wordsize)
@@ -39,7 +39,7 @@
 (define n (->int n))
 (print "Number of available platforms: " n)
 
-(define platforms (make-bytevector (repeat 0 (* n (vm:wordsize)))))
+(define platforms (make-bytevector (repeat 0 (* n (size nullptr)))))
 (check
    (clGetPlatformIDs n platforms null))
 (define platform (vector->ptr platforms 0))
@@ -66,7 +66,7 @@
 (define devices-count (->int devices-count))
 (print "devices count: " devices-count)
 
-(define devices (make-bytevector (repeat 0 (* devices-count (vm:wordsize)))))
+(define devices (make-bytevector (repeat 0 (* devices-count (size nullptr)))))
 (check
    (clGetDeviceIDs platform CL_DEVICE_TYPE_ALL devices-count devices null))
 (define device (vector->ptr devices 0))

@@ -2296,6 +2296,7 @@ loop:;
 		goto apply; // ???
 	// unused numbers:
 	case 28:
+	case 29:
 	case 48:
 		ERROR(op, new_string("Unused opcode"), ITRUE);
 		break;
@@ -2918,9 +2919,6 @@ loop:;
 		ip += 4; break; }
 
 
-	case 29: // (vm:wordsize)
-		A0 = I(W);
-		ip += 1; break;
 	case 30: // (vm:maxvalue)
 		A0 = I(VMAX);
 		ip += 1; break;

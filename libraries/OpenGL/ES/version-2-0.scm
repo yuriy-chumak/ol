@@ -470,7 +470,7 @@
    (define GLuint     fft-unsigned-int)   (define GLuint* (fft* GLuint))  (define GLuint& (fft& GLuint))
    (define GLchar     fft-int8)
    (define GLfloat    fft-float)
-   (define GLsizeiptr (if (eq? (vm:wordsize) 8)
+   (define GLsizeiptr (if (eq? (size nullptr) 8)
                         fft-int64
                         fft-long)) ; khronos_ssize_t
 ;typedef khronos_intptr_t GLintptr;

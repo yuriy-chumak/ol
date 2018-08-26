@@ -196,7 +196,6 @@
 (define (fft& type)
    (vm:or type #x20000))
 
-
 ; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?
 ;(define (INTEGER arg) (cons 45 arg))
 ;(define (FLOAT arg)   (cons 46 arg))
@@ -216,6 +215,10 @@
 
 (define fft-unknown 62)
 (define fft-any 63)
+
+; basic fft constants
+(define NULL (vm:cast 0 fft-void*))
+(define nullptr NULL)
 
 ; new ffi types:
 (define fft-int8  50)  (define fft-int8*  type-string)       (define fft-int8&  type-string)
@@ -244,9 +247,10 @@
 (define fft-int* (fft* fft-int))
 
 ; long:
+(setq wordsize (size nullptr))
 (define fft-long
    (cond
-      ((eq? (vm:wordsize) 4)                   ; 32-bit platforms
+      ((eq? wordsize 4)              ; 32-bit platforms
          fft-int32)
       ((string-ci=? (ref (uname) 1) "Windows") ; 64-bit windows
          fft-int32)
@@ -255,9 +259,6 @@
 (define fft-signed-long fft-long)
 (define fft-unsigned-long (+ fft-long 5))
 
-
-(define NULL (vm:cast 0 fft-void*))
-(define nullptr NULL)
 ; -- utils ----------------------------
 
 (define (make-32bit-array len)
@@ -270,7 +271,7 @@
    (map (lambda (_) (vm:cast 0 fft-void*)) (repeat #f len)))
 
 ; -- convertors -----------------------
-(define (endianness)
+(setq endianness
    (let ((x (vm:cast 1 type-vptr)))
       (cond
          ((eq? (ref x 0) 1)
@@ -279,7 +280,7 @@
             2)))) ; todo: fix THIS
 
 
-(define int32->ol (case (endianness)
+(define int32->ol (case endianness
    ('little-endian (lambda (vector offset)
          (+     (ref vector    offset   )
             (<< (ref vector (+ offset 1))  8)
@@ -291,7 +292,7 @@
             (<< (ref vector (+ offset 1)) 16)
             (<< (ref vector    offset   ) 24))))))
 
-(define int64->ol (case (endianness)
+(define int64->ol (case endianness
    ('little-endian (lambda (vector offset)
          (+     (ref vector    offset   )
             (<< (ref vector (+ offset 1))  8)
@@ -336,7 +337,7 @@
                (list->string (list
                   (ref hex (>> (ref vptr i) 4))
                   (ref hex (band (ref vptr i) 15))))))
-         (reverse (iota (vm:wordsize)))))) ; todo: use (vm:endiannes)
+         (reverse (iota wordsize))))) ; todo: use (vm:endiannes)
 
 
 

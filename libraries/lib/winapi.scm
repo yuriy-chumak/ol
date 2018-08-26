@@ -66,7 +66,7 @@
 
 (define LONG_PTR
    (cond
-      ((eq? (vm:wordsize) 4) ; 32-bit windows
+      ((eq? (size nullptr) 4); 32-bit windows
          fft-int32)
       (else                  ; 64-bit windows
          fft-int64)))

@@ -128,12 +128,11 @@ po))
 (glEnable GL_AUTO_NORMAL)
 
 ; initial arguments
-(gl:set-userdata
-   (let ((po (compile-shader))
-         (teapot (gluNewNurbsRenderer)))
+(let ((po (compile-shader))
+      (teapot (gluNewNurbsRenderer)))
       ;(gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
-
-   (list 1 0.02 3 0.03  po teapot)))
+   (gl:set-userdata
+      1 0.02 3 0.03  po teapot))
 
 ; draw
 (gl:set-renderer
@@ -180,6 +179,3 @@ po))
    (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
          (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
       (list (+ x nx) nx (+ y ny) ny  po teapot))))
-
-(gl:finish)
-

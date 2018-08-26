@@ -25,7 +25,7 @@
 
 (define win32? (string-ci=? OS "Windows"))
 (define linux? (string-ci=? OS "Linux"))
-(define x32? (eq? (vm:wordsize) 4))
+(define x32? (eq? (size nullptr) 4))
 
 ; check the platform
 (or win32? linux?
@@ -36,17 +36,17 @@
    (let ((vptr (vm:cast 0 type-vptr)))
       (for-each (lambda (i)
             (set-ref! vptr i (ref vec (+ i offset))))
-         (iota (vm:wordsize)))
+         (iota (size nullptr)))
       vptr))
 (define (vector-set-int! vec offset int)
    (for-each (lambda (i)
          (set-ref! vec (+ offset i) (band #xFF (>> int (* i 8)))))
-      (iota (vm:wordsize)))
+      (iota (size nullptr)))
    vec)
 (define (vector-set-vptr! vec offset vptr)
    (for-each (lambda (i)
          (set-ref! vec (+ offset i) (ref vptr i)))
-      (iota (vm:wordsize)))
+      (iota (size nullptr)))
    vec)
 
 ; --
@@ -216,7 +216,7 @@
          (let ((MSG (make-bytevector 48))) ; 28 for x32
          (let loop ()
             (if (= 1 (PeekMessage MSG #f 0 0 1))
-               (let*((w (vm:wordsize))
+               (let*((w (size nullptr))
                      (message (+ (<< (ref MSG (+ 0 (* w 1)))  0)      ; 4 for x32
                                  (<< (ref MSG (+ 1 (* w 1)))  8)
                                  (<< (ref MSG (+ 2 (* w 1))) 16)
