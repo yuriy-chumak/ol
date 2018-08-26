@@ -995,6 +995,10 @@
       ;; todo: rational comparison is dumb.. first one should check the signs, then whether log_2(ab') < log_2(ba'), which is way faster than multiplication, and only as a last resort do the actual multiplication. also, more common comparisons should be inlined here.
       (define (< a b)
          (cond
+            ((eq? (type a) type-inexact)
+               (fless? a b))
+            ((eq? (type b) type-inexact)
+               (fless? a b))
             ; add short type paths here later
             ((eq? (type a) type-rational)
                (if (eq? (type b) type-rational)
@@ -2126,7 +2130,7 @@
          (cond
             ((eq? (type num) type-rational)
                (render-number (ref num 1)
-                  (cons 47
+                  (cons #\/
                      (render-number (ref num 2) tl base))
                   base))
             ((eq? (type num) type-complex)
