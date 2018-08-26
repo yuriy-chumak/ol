@@ -2295,6 +2295,7 @@ loop:;
 		}
 		goto apply; // ???
 	// unused numbers:
+	case 28:
 	case 48:
 		ERROR(op, new_string("Unused opcode"), ITRUE);
 		break;
@@ -2917,21 +2918,6 @@ loop:;
 		ip += 4; break; }
 
 
-	// todo: add the instruction name
-	case 28: { // (vm:endianness)
-		union
-		{
-			int_t l;
-			char c[sizeof (int_t)];
-		} u;
-
-		u.l = 1;
-		int endianess =
-		    (u.c[0] == 1) ? 1 :                  // little-endian
-		    (u.c[sizeof (int_t) - 1] == 1) ? 2 : // big-endian
-		    (0);                                 // unknown
-		A0 = I(endianess);
-		ip += 1; break; }
 	case 29: // (vm:wordsize)
 		A0 = I(W);
 		ip += 1; break;

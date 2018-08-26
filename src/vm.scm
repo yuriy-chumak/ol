@@ -289,7 +289,6 @@
          (cons (vm:new TTUPLE 'syscall  63  4 1 syscall)
 
          ; vm-specific constants
-         (cons (vm:new TTUPLE 'vm:endianness 28  0 1 vm:endianness)
          (cons (vm:new TTUPLE 'vm:wordsize   29  0 1 vm:wordsize)
          (cons (vm:new TTUPLE 'vm:maxvalue   30  0 1 vm:maxvalue)
          (cons (vm:new TTUPLE 'vm:valuewidth 31  0 1 vm:valuewidth)
@@ -311,7 +310,7 @@
          (cons (vm:new TTUPLE 'vm:pin    35 1  1  vm:pin)
          (cons (vm:new TTUPLE 'vm:unpin  60 1  1  vm:unpin)
          (cons (vm:new TTUPLE 'vm:deref  25 1  1  vm:deref)
-         #null)))))))))))))))))))))))))))))))))))))))))))
+         #null))))))))))))))))))))))))))))))))))))))))))
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд

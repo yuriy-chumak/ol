@@ -270,22 +270,29 @@
    (map (lambda (_) (vm:cast 0 fft-void*)) (repeat #f len)))
 
 ; -- convertors -----------------------
-(define int32->ol (case (vm:endianness)
-   (1 (lambda (vector offset)
+(define (endianness)
+   (let ((x (vm:cast 1 type-vptr)))
+      (cond
+         ((eq? (ref x 0) 1)
+            'little-endian)
+         (else
+            2)))) ; todo: fix THIS
+
+
+(define int32->ol (case (endianness)
+   ('little-endian (lambda (vector offset)
          (+     (ref vector    offset   )
             (<< (ref vector (+ offset 1))  8)
             (<< (ref vector (+ offset 2)) 16)
             (<< (ref vector (+ offset 3)) 24))))
-   (2 (lambda (vector offset)
+   (else (lambda (vector offset)
          (+     (ref vector (+ offset 3))
             (<< (ref vector (+ offset 2))  8)
             (<< (ref vector (+ offset 1)) 16)
-            (<< (ref vector    offset   ) 24))))
-   (else
-      (print "Unknown endianness")
-      #false)))
-(define int64->ol (case (vm:endianness)
-   (1 (lambda (vector offset)
+            (<< (ref vector    offset   ) 24))))))
+
+(define int64->ol (case (endianness)
+   ('little-endian (lambda (vector offset)
          (+     (ref vector    offset   )
             (<< (ref vector (+ offset 1))  8)
             (<< (ref vector (+ offset 2)) 16)
