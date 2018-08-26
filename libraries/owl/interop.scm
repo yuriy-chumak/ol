@@ -7,7 +7,7 @@
       return-mails fork-server fork-linked fork-named exit-thread shutdown
       poll-mail-from running-threads par*
       start-nested-parallel-computation wrap-the-whole-world-to-a-thunk ; ??
-      par por* por interop)
+      par por* por)
 
    (import
       (src vm)
@@ -15,62 +15,63 @@
 
    (begin
       ; list of interop codes can be found in lang/threading as mcp-syscalls
-      (define (interop op a b)
+      (define (mcp op a b)
          (call/cc (λ (resume) (vm:sys resume op a b))))
 
       (define (exit-thread value)
-         (interop 2 value value))
+         (mcp 2 value value))
 
       ;; 3 = vm thrown error
       (define (fork-named name thunk)
-         (interop 4 (list name) thunk))
+         (mcp 4 (list name) thunk))
 
       (define (fork-linked name thunk)
-         (interop 4 (list name 'link) thunk))
+         (mcp 4 (list name 'link) thunk))
 
       (define (fork-server name handler)
-         (interop 4 (list name 'mailbox) handler))
+         (mcp 4 (list name 'mailbox) handler))
 
       (define (return-mails rmails)
-         (interop 6 rmails rmails))
+         (mcp 6 rmails rmails))
 
       (define (fork-linked-server name handler)
-         (interop 4 (list name 'mailbox 'link) handler))
+         (mcp 4 (list name 'mailbox 'link) handler))
 
       (define (running-threads)
-         (interop 8 #false #false))
+         (mcp 8 #false #false))
 
       (define (mail id msg)
-         (interop 9 id msg))
+         (mcp 9 id msg))
 
       (define (kill id)
-         (interop 15 id #false))
+         (mcp 15 id #false))
 
       (define (single-thread?)
-         (interop 7 #true #true))
+         (mcp 7 #true #true))
 
       (define (set-signal-action choice)
-         (interop 12 choice #false))
+         (mcp 12 choice #false))
 
       (define (catch-thread id)
-         (interop 17 #true id))
+         (mcp 17 #true id))
 
       (define (release-thread thread)
-         (interop 17 #false thread))
+         (mcp 17 #false thread))
 
       (define (shutdown value)
-         (interop 19 value value) ;; set exit value proposal in thread scheduler
+         (mcp 19 value value) ;; set exit value proposal in thread scheduler
          (exit-thread value))     ;; stop self and leave the rest (io etc) running to completion
 
       ;; (executable ...) → (first-value . rest-ll) | (), or crash if something crashes in them
       (define (par* ts)
-         (interop 22 ts '()))
+         (mcp 22 ts '()))
 
 
       (define (wrap-the-whole-world-to-a-thunk a b)
-         (interop 16 a b))
+         (mcp 16 a b))
       (define (start-nested-parallel-computation a b)
-         (interop 22 a b))
+         (mcp 22 a b))
+
       ;; macro for calling from code directly
       (define-syntax par
          (syntax-rules ()
@@ -89,8 +90,8 @@
             ((por exp ...)
                (por* (list (λ () exp) ...)))))
 
-      (define (wait-mail)           (interop 13 #false #false))
-      (define (check-mail)          (interop 13 #false #true))
+      (define (wait-mail)           (mcp 13 #false #false))
+      (define (check-mail)          (mcp 13 #false #true))
 
       (define (accept-mail pred)
          (let loop ((this (wait-mail)) (rev-spam '()))
