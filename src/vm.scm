@@ -146,17 +146,17 @@
 
       ; memory allocators (no default bytecode exists, should generate on-the-fly)
       (setq NEW 23)        ; no real (vm:new) command required, check rtl-primitive in (lang compile)
-      (setq MAKE 18)       ;(setq vm:make   (new-bytecode '(18))) ; fake command for (prim-opcodes)
-      (setq MAKE-BLOB 19)  ;(setq make-blob (new-bytecode '(19))) ; fake command for (prim-opcodes)
+      (setq MAKE 18)       ;(setq vm:make   (new-bytecode '(18))) ; stub for (prim-opcodes)
+      (setq MAKE-BLOB 19)  ;(setq make-blob (new-bytecode '(19))) ; stub for (prim-opcodes)
       (setq CAST 22)       ;(setq vm:cast   (new-bytecode '(22 4 5 6  24 6))) ; cast object type (works for immediates and allocated)
 
       ; vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements length
       ; vm:make - smarter allocator, can create objects with size and default element
 
       ; 
-      (setq APPLY 20)       (setq apply (new-bytecode '(20)))
-      (setq ARITY-ERROR 17) (setq arity-error (new-bytecode '(17)))
-      (setq APPLY/CC 84)    (setq apply/cc (new-bytecode '(84)))
+      (setq APPLY 20)       (setq apply (new-bytecode '(20))) ; stub for (prim-opcodes)
+      (setq ARITY-ERROR 17) (setq arity-error (new-bytecode '(17))) ; stub for (prim-opcodes)
+      (setq APPLY/CC 84)    (setq apply/cc (new-bytecode '(84))) ; stub for (prim-opcodes)
 
       ; other instructions
       (setq NOP 21)      (setq vm:nop  (new-bytecode '(21)))
@@ -184,6 +184,8 @@
       ; cons:
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
+      (setq CONS 51)     ;(setq cons    (new-bytecode '(51 4 5 6  24 6)))
+
       ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
       ; the phrase `Contents of the Address part of the Register'; and cdr (pronounced `could-er') is an
       ; acronym from the phrase `Contents of the Decrement part of the Register'. These phrases refer to
@@ -191,14 +193,12 @@
       ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
       ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
       ; names for these functions, the old terms are still in use.
-      (setq CONS 51)     ;(setq cons    (new-bytecode '(51 4 5 6  24 6)))
-
       (setq CAR 52)      ;(setq car     (new-bytecode '(52 4 5    24 5)))
       (setq CDR 53)      ;(setq cdr     (new-bytecode '(53 4 5    24 5)))
       (setq REF 47)      ;(setq ref     (new-bytecode '(47 4 5 6  24 6)))
       
       (setq TYPE 15)     ;(setq type    (new-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
-      (setq SIZE 36)     ;(setq size    (new-bytecode '(36 4 5    24 5))) ;; get object size (- 1)
+      (setq SIZE 36)     ;(setq size    (new-bytecode '(36 4 5    24 5))) ;; get object data size (- hdr)
 
       (setq EQ? 54)      ;(setq eq?     (new-bytecode '(54 4 5 6  24 6)))
       (setq LESS? 44)    ;(setq less?   (new-bytecode '(44 4 5 6  24 6)))
