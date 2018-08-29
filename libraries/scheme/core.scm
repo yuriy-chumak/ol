@@ -13,7 +13,7 @@
                ; call-with-current-continuation
       
       (scheme case-lambda)  ; case-lambda
-      (r5rs srfi-87))       ; <= in cases
+      (scheme srfi-87))     ; <= in cases
 
    (begin
       ;; special forms: (declared in lang/env.scm)
@@ -1873,7 +1873,7 @@
       ilist tuple tuple-case
       call-with-values define-library
       (exports (scheme case-lambda)) ;case-lambda
-      (exports (r5rs srfi-87)) ;=> in cases
+      (exports (scheme srfi-87)) ;=> in cases
       define-values ; ol specific
 
       ; 4.1

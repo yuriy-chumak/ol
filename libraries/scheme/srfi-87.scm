@@ -1,4 +1,4 @@
-(define-library (r5rs srfi-87)
+(define-library (scheme srfi-87)
 ; http://srfi.schemers.org/srfi-87/srfi-87.html
 
 ;; Abstract

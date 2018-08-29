@@ -33,7 +33,7 @@
 ; (иначе импорт сбойнет)
 (import (src vm))   ;; команды виртуальной машины
 (import (scheme case-lambda)) ;; case-lambda :)
-(import (r5rs srfi-87))   ;; "=>" clauses in case
+(import (scheme srfi-87)) ;; "=>" clauses in case
 (import (scheme core))    ;; базовый языковый ...
 (import (scheme base))    ;; ... набор ol
 
