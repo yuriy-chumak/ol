@@ -150,7 +150,7 @@ void embed_new(ol_t* embed)
 			"            (exp args (uncons expression #f)))"
 			"      (case (type exp)"
 			"         (type-string type-string-wide"
-            "            (eval (eval-string env exp) args))"
+			"            (eval (eval-string env exp) args))"
 			"         (type-fix+"
 			"            (eval (eval-repl (vm:deref exp) env #f evaluate) args))"
 			"         (type-bytevector"
@@ -187,9 +187,9 @@ word embed_eval(ol_t* ol, ...)
 	while ((args[++i] = (uintptr_t)va_arg(vl, void*)) != 0) ;
 	va_end(vl);
 
-    // while (count--) {
-    //     args[++i] = (uintptr_t)va_arg(vl, void*);
-    // }
+	// while (count--) {
+	//     args[++i] = (uintptr_t)va_arg(vl, void*);
+	// }
 
 	word r = OL_continue(ol->vm, i, (void**)args);
 	return r;
