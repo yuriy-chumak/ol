@@ -1,16 +1,28 @@
 ; minimal set of Scheme (with Ol subset)
 (define-library (scheme core)
    (import
-      (src vm) ; virtual machine codes and primitives:
-               ; vm:new vm:make vm:cast make-blob
-               ; cons car cdr ref type size set set! eq? less?
-               ; vm:add vm:sub vm:mul vm:div vm:shr vm:shl vm:and vm:or vm:xor
-               ; clock syscall vm:version vm:maxvalue vm:valuewidth
-               ; tuple-apply ff-apply
-               ; ff:red ff:black ff:toggle ff:red? ff:right?
+      (src vm) ; Otus Lisp Virtual Machine codes and primitives:
                ;
-               ; apply apply/cc arity-error
-               ; call-with-current-continuation
+               ; object creation/modification
+               ;   vm:new vm:make vm:cast make-blob
+               ;   cons car cdr ref type size set set! eq? less?
+               ; basic math primitives:
+               ;   integer:
+               ;     vm:add vm:sub vm:mul vm:div vm:shr vm:shl
+               ;   floating-point (if built with OLVM_INEXACTS)
+               ;     vm:fp1 (0 sqrt, 6 log2), vm:fp2 (44 fless?, 38 fadd, 50 fsub, 39 fmul, 26 fdiv)
+               ;   binary:
+               ;     vm:and vm:or vm:xor
+               ; vm info:
+               ;     vm:version vm:maxvalue vm:valuewidth
+               ; etc.
+               ;   clock syscall 
+               ; hash tables support:
+               ;   ff:red ff:black ff:toggle ff:red? ff:right?
+               ; execution flow:
+               ;   apply apply/cc arity-error
+               ;   call-with-current-continuation
+               ;   tuple-apply ff-apply
       
       (scheme case-lambda)  ; case-lambda
       (scheme srfi-87))     ; <= in cases
