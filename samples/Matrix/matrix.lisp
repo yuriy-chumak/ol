@@ -342,5 +342,3 @@
    (glEnd)
 
    (list time))))
-
-(gl:finish)
