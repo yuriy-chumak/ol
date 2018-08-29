@@ -1793,10 +1793,10 @@ word d2ol(struct ol_t* ol, double v) {
 	// но в память то мы их кладем в обратном! так что нужен реверс
 	// todo: проверка выхода за границы кучи!!!
 	if (1) {
-		if (fabs(v) < (double)HIGHBIT)
-			a = itosv(v);
+		int negative = v < 0; v = fabs(v);
+		if (v < (double)HIGHBIT)
+			a = negative ? make_value(TFIXN, v) : make_value(TFIXP, v);
 		else {
-			int negative = v < 0; v = fabs(v);
 			word* p = fp;
 			do {
 				*++p = I((long long)v & VMAX);
@@ -4249,115 +4249,42 @@ loop:;
 
 	// FPU extensions
 	#if OLVM_INEXACTS
-	// todo: remove sin, cos, etc. from VM and move it to ffi
 	case FP1: { // with 1 argument
 		word fn = value(A0);
 		double a = ol2d(A1);
 
 		A2 = (word) new_bytevector(TINEXACT, sizeof(double));
 		switch (fn) {
-		case 0: // fsqrt
+		case 0:
 			*(double*)&car(A2) = sqrt(a);
 			break;
-		case 1: // fsin
-			*(double*)&car(A2) = sin(a);
-			break;
-		case 2: // fcos
-			*(double*)&car(A2) = cos(a);
-			break;
-		case 3: // ffloor
-			*(double*)&car(A2) = floor(a);
-			break;
-		case 4: // fceil
-			*(double*)&car(A2) = ceil(a);
-			break;
-		case 5: { // ffrac
-			double i;;
-			*(double*)&car(A2) = modf(a, &i);
-			break;
-		}
-		//acos
-		//asin
-		//cosh
-		//sinh
-		//atan
-		//exp
-		//fabs
-		case 6: // log
-			*(double*)&car(A2) = log(a);
-			break;
-		case 7: // flog10
-			*(double*)&car(A2) = log10(a);
-			break;
-		case 8: // fabs
-			*(double*)&car(A2) = fabs(a);
-			break;
-		//tan
-		//tanh
-		default:
-			A2 = IFALSE;
+		case 6:
+			*(double*)&car(A2) = log2(a);
 			break;
 		}
 		ip += 3; break;
 	}
 	case FP2: { // with 2 arguments
-		// fadd/fiadd
-		// fmul/fimul
-		// fcom/ficom
-		// fsub/fisub
-		// fdiv/fidiv
-		// FPREM
-		// FYL2XP
-		// FSQRT +
-		// FSINCOS
-		// FRNDIN
-		// FSCALE
-		// FSIN
-		// FCOS
-		// F2XM1
-		// FYL2X
-		// FPTAN
-		// FPATAN
-		// FXTRAC
-		// FPREM1
-		// FLD1
-		// FLDL2T
-		// FLDL2E
-		// FLDPI
-		// FLDLG2
-		// FLDLN2
-		// FLDZ
-		// atan2
-		// frexp
-		// ldexp
-		// pow
-
 		word fn = value(A0);
 		double a = ol2d(A1);
 		double b = ol2d(A2);
 
 		A3 = (word) new_bytevector(TINEXACT, sizeof(double));
 		switch (fn) {
-		case 0: // fadd
+		case 44: // fless?
+			A3 = (a < b) ? ITRUE : IFALSE;
+			break;
+		case 38: // fadd
 			*(double*)&car(A3) = a + b;
 			break;
-		case 1: // fmul
-			*(double*)&car(A3) = a * b;
-			break;
-		case 2: // fsub
+		case 40: // fsub
 			*(double*)&car(A3) = a - b;
 			break;
-		case 3: // fdiv
+		case 39: // fmul
+			*(double*)&car(A3) = a * b;
+			break;
+		case 26: // fdiv
 			*(double*)&car(A3) = a / b;
-			break;
-		case 4: // fmax
-			*(double*)&car(A3) = max(a, b);
-			break;
-		case 5: // fmin
-			*(double*)&car(A3) = min(a, b);
-			break;
-		case 6: // fless?
-			A3 = (a < b) ? ITRUE : IFALSE;
 			break;
 		default:
 			A3 = IFALSE;

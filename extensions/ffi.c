@@ -1534,6 +1534,7 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
+		case TRATIONAL: // means "we want exact number"
 		case TFLOAT:
 		case TDOUBLE: {
 			double value = *(double*)&got;
@@ -1541,6 +1542,12 @@ word* OL_ffi(OL* self, word* arguments)
 			heap->fp = fp;
 			result = (word*) d2ol(self, value);
 			fp = heap->fp;
+			break;
+		}
+		case TINEXACT: { // means "we want inexact number"
+			double value = *(double*)&got;
+			result = new_bytevector(TINEXACT, sizeof(double));
+			*(double*)&car(result) = value;
 			break;
 		}
 	}

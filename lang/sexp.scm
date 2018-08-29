@@ -177,7 +177,7 @@
             val))
 
       ;; anything up to a rational
-      (setq |+inf.0| (vm:fp2 3 1 0)) ; 1/0 = +infin
+      (setq |+inf.0| (vm:fp2 26 1 0)); 1/0 = +infin
       (setq |-inf.0| (vm:fp1 6 0))   ; log(0) = -infin
       (setq |+nan.0| (vm:fp1 0 -1))  ; sqrt(-1) = NaN
 

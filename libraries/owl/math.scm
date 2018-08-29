@@ -2146,6 +2146,9 @@
                   ((equal? num -inf.0) (ilist #\- #\i #\n #\f #\. #\0 tl))
                   ((equal? num +nan.0) (ilist #\+ #\n #\a #\n #\. #\0 tl))
                   (else
+                     (letrec ((fabs (lambda (f) (if (fless? f 0) (fsub 0 f) f)))
+                              (ffloor (lambda (f) (inexact (floor (exact f)))))
+                              (ffrac (lambda (f) (fsub f (ffloor f)))))
                      (cond
                         ((fless? 1000 (fabs num))
                            (ilist #\B #\I #\G #\. tl))
@@ -2167,7 +2170,7 @@
                                              (else
                                                 (loop (mod i n) (/ n 10) (render-digits (floor (/ i n)) l 10)))))) tl)))
                               (render-number int
-                                    (cons #\. number) base)))))))
+                                    (cons #\. number) base))))))))
             ((< num 0)
                (cons #\-
                   (render-number (sub 0 num) tl base)))
