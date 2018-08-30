@@ -4248,23 +4248,19 @@ loop:;
 	}
 
 	// FPU extensions
-	#if OLVM_INEXACTS
 	case FP1: { // with 1 argument
+	#if OLVM_INEXACTS
 		word fn = value(A0);
 		double a = ol2d(A1);
 
-		A2 = (word) new_bytevector(TINEXACT, sizeof(double));
-		switch (fn) {
-		case 0:
-			*(double*)&car(A2) = sqrt(a);
-			break;
-		case 6:
-			*(double*)&car(A2) = log2(a);
-			break;
-		}
+		A2 = IFALSE;
+	#else
+		A2 = IFALSE;
+	#endif
 		ip += 3; break;
 	}
 	case FP2: { // with 2 arguments
+	#if OLVM_INEXACTS
 		word fn = value(A0);
 		double a = ol2d(A1);
 		double b = ol2d(A2);
@@ -4290,9 +4286,11 @@ loop:;
 			A3 = IFALSE;
 			break;
 		}
+	#else
+		A3 = IFALSE;
+	#endif
 		ip += 4; break;
 	}
-	#endif//OLVM_INEXACTS
 
 	case VMPIN: {  // (vm:pin object) /pin object/ => pin id
 		word object = A0;

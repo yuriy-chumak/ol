@@ -35,7 +35,7 @@ CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)
 
 ifeq ($(UNAME),Linux)
-L := $(if HAS_DLOPEN, -ldl) -lm
+L := $(if HAS_DLOPEN, -ldl)
 
 #Debian i586 fix
 ifeq ($(CC),gcc)

@@ -4,16 +4,12 @@
 
 (define-library (owl math fp)
    (export
-      fsqrt flog2
       fless? fadd fsub fmul fdiv) ; 44 38 40 39 26
 
    (import 
       (scheme core))
 
    (begin
-      (define (fsqrt a)  (vm:fp1 0 a))
-      (define (flog2 a)  (vm:fp1 6 a))
-
       (define (fless? a b)(vm:fp2 44 a b))
 
       (define (fadd a b)  (vm:fp2 38 a b))
