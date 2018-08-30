@@ -2106,6 +2106,23 @@
             a
             (div (abs (mul a b)) (gcd a b))))
 
+      (define (mod a b)
+         (if (negative? a)
+            (if (negative? b)
+               (remainder a b)
+               (let ((r (remainder a b)))
+                  (if (eq? r 0)
+                     r
+                     (add b r))))
+            (if (negative? b)
+               (let ((r (remainder a b)))
+                  (if (eq? r 0)
+                     r
+                     (add b r)))
+               (remainder a b))))
+
+      (define modulo mod)
+
 
       ;;;
       ;;; Rendering numbers
@@ -2148,27 +2165,26 @@
                   (else
                      (letrec ((fabs (lambda (f) (if (fless? f 0) (fsub 0 f) f)))
                               (ffloor (lambda (f) (inexact (floor (exact f)))))
-                              (ffrac (lambda (f) (fsub f (ffloor f)))))
+                              (ffrac (lambda (f) (fsub f (ffloor f))))
+                              (- sub) (* mul))
                      (cond
-                        ((fless? 1000 (fabs num))
+                        ((fless? 100000000 (fabs num))
                            (ilist #\B #\I #\G #\. tl))
-                        ((fless? (fabs num) 0.001)
+                        ((fless? (fabs num) 0.00000001)
                            (ilist #\. #\S #\M #\A #\L #\L tl))
                         (else
-                           (let*((sign (fless? num 0))
-                                 (int  (exact (ffloor num)))
-                                 (num  (fabs num))
-                                 (frac (exact (ffloor (fmul (ffrac num) (exact->inexact 100000)))))
+                           (let*((sign num (if (fless? num 0)
+                                    (values #true (negate (exact num))) ; negative
+                                    (values #false (exact num)))) ; positive
+                                 (int  (floor num))
+                                 (frac (- num int))
                                  (number (append (reverse
-                                       ; 
-                                       (let loop ((i frac) (n 10000) (l #null))
-                                          (cond
-                                             ((eq? i 0)
-                                                l)
-                                             ((eq? n 1)
-                                                (ilist #\. #\. l))
-                                             (else
-                                                (loop (mod i n) (/ n 10) (render-digits (floor (/ i n)) l 10)))))) tl)))
+                                    (let loop ((i (* frac 10)) (n (sub 10 (log 10 int))) (l #null))
+                                       (cond
+                                          ((eq? n 1) l)
+                                          ((< i 0.00000001) (if (null? l) '(#\0) l))
+                                          (else
+                                             (loop (* (- i (floor i)) 10) (- n 1) (cons (char-of (floor i)) l)))))) tl)))
                               (render-number int
                                     (cons #\. number) base))))))))
             ((< num 0)
@@ -2178,23 +2194,6 @@
                (cons (char-of num) tl))
             (else
                (render-digits num tl base))))
-
-      (define (mod a b)
-         (if (negative? a)
-            (if (negative? b)
-               (remainder a b)
-               (let ((r (remainder a b)))
-                  (if (eq? r 0)
-                     r
-                     (add b r))))
-            (if (negative? b)
-               (let ((r (remainder a b)))
-                  (if (eq? r 0)
-                     r
-                     (add b r)))
-               (remainder a b))))
-
-      (define modulo mod)
 
 
       ;;;
