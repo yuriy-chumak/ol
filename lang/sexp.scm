@@ -15,6 +15,8 @@
 
       ; io
       read
+      ; parser
+      get-number
       )
 
    (import
@@ -81,14 +83,19 @@
 ;            (between? #\A x #\F)
 ;            (between? #\a x #\f)))
 
-      (define digit-values
-         (list->ff
+      (define digit-values (list->ff
             (foldr append null
                (list
                   (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
                   (map (lambda (d i) (cons d i)) (iota  6 #\A) (iota 6 10))  ;; A-F
                   (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
                   ))))
+
+      (define bases (list->ff '(
+         (#\b . 2)
+         (#\o . 8)
+         (#\d .10)
+         (#\x .16))))
 
       (define (digit-char? base)
          (if (eq? base 10)
@@ -108,113 +115,103 @@
 
       (define get-sign
          (get-any-of (get-imm #\+) (get-imm #\-) (get-epsilon #\+)))
-        
-      (define bases
-         (list->ff
-            (list
-               (cons #\b  2)
-               (cons #\o  8)
-               (cons #\d 10)
-               (cons #\x 16))))
+      (define get-signer
+         (let-parses
+               ((char get-sign))
+            (if (eq? char #\+)
+               (λ (x) x)
+               negate)))
 
-      ; fixme, # and cooked later
-      (define get-base 
-         (get-any-of
-            (let-parses
-               ((skip (get-imm #\#))
-                (char (get-byte-if (λ (x) (getf bases x)))))
-               (getf bases char))
-            (get-epsilon 10)))
 
       (define (get-natural base)
          (let-parses
-            ((digits (get-greedy+ (get-byte-if (digit-char? base)))))
+               ((digits (get-greedy+ (get-byte-if (digit-char? base)))))
             (bytes->number digits base)))
 
       (define (get-integer base)
          (let-parses
-            ((sign-char get-sign) ; + / -, default +
-             (n (get-natural base)))
-            (if (eq? sign-char #\-) n (- n))))
+               ((sign get-signer)
+                (n (get-natural base)))
+            (sign n)))
 
       ;; → n, to multiply with
-      (define (get-exponent base)
+      ; r7rs accepts only exponent in base 10
+      (define get-exponent
          (get-either
             (let-parses
-               ((skip (get-imm #\e))
-                (pow (get-integer base)))
-               (expt base pow))
+                  ((skip (get-imm #\e))
+                   (pow (get-integer 10)))
+               (expt 10 pow))
             (get-epsilon 1)))
-
-      (define get-signer
-         (let-parses ((char get-sign))
-            (if (eq? char #\+)
-               (λ (x) x)
-               (λ (x) (- 0 x)))))
-
 
       ;; separate parser with explicitly given base for string->number
       (define (get-number-in-base base)
          (let-parses
-            ((sign get-signer) ;; default + <- could allow also an optional base here
-             (num (get-natural base))
-             (tail ;; optional after dot part be added
-               (get-either
-                  (let-parses
-                     ((skip (get-imm #\.))
-                      (digits (get-greedy* (get-byte-if (digit-char? base)))))
-                     (/ (bytes->number digits base)
-                        (expt base (length digits))))
-                  (get-epsilon 0)))
-             (pow (get-exponent base)))
+               ((sign get-signer) ;; default + <- could allow also an optional base here
+                (num (get-integer base))
+                (tail(get-either ;; optional after dot part be added
+                        (let-parses
+                              ((skip (get-imm #\.))
+                               (digits (get-greedy* (get-byte-if (digit-char? base)))))
+                           (/ (bytes->number digits base)
+                              (expt base (length digits))))
+                        (get-epsilon 0)))
+                (pow get-exponent))
             (sign (* (+ num tail) pow))))
 
       ;; a sub-rational (other than as decimal notation) number
+      (define get-base
+         (get-any-of
+            (let-parses
+                  ((skip (get-imm #\#))
+                   (char (get-byte-if (λ (x) (getf bases x)))))
+               (getf bases char))
+            (get-epsilon 10)))
+
       (define get-number-unit
          (let-parses
-            ((base get-base) ;; default 10
-             (val (get-number-in-base base)))
+               ((base get-base) ;; default 10
+                (val (get-number-in-base base)))
             val))
 
       ;; anything up to a rational
-      (setq |+inf.0| (vm:fp2 26 1 0)); 1/0 = +infin
-      (setq |-inf.0| (vm:fp2 26 -1 0)); -1/0 = -infin
-      (setq |+nan.0| (vm:fp2 26 0 0)); 0/0 = NaN
-
       (define get-rational
          (let-parses
-            ((val (get-any-of
-                     (get-word "+inf.0" |+inf.0|) ; (vm:fp2 3 1 0)) ; todo: move below
-                     (get-word "-inf.0" |-inf.0|) ; (vm:fp1 6 0))
-                     (get-word "+nan.0" |+nan.0|) ; (vm:fp1 0 -1))
-                     (let-parses
-                           ((n get-number-unit)
-                            (m (get-either
-                                 (let-parses
-                                       ((skip (get-imm #\/))
-                                       (m get-number-unit)
-                                       (verify (not (eq? 0 m)) "zero denominator")) ; todo: remove verifier
-                                    m)
-                                 (get-epsilon 1))))
-                        (/ n m)))))
+               ((val (let-parses
+                     ((n get-number-unit)
+                      (m (get-either
+                           (let-parses
+                                 ((skip (get-imm #\/))
+                                 (m get-number-unit)
+                                 (verify (not (eq? 0 m)) "zero denominator")) ; todo: remove verifier
+                              m)
+                           (get-epsilon 1))))
+                  (/ n m))))
             val))
 
       (define get-imaginary-part
          (let-parses
-            ((sign (get-either (get-imm #\+) (get-imm #\-)))
-             (imag (get-either get-rational (get-epsilon 1))) ; we also want 0+i
-             (skip (get-imm #\i)))
-            (if (eq? sign #\+)
-               imag
-               (- 0 imag))))
+               ((sign get-signer)
+                (imag (get-either get-rational (get-epsilon 1))) ; we also want 0+i
+                (skip (get-imm #\i)))
+            (sign imag)))
+
+      (setq |+inf.0| (vm:fp2 26 1 0)); 1/0 = +infin
+      (setq |-inf.0| (vm:fp2 26 -1 0)); -1/0 = -infin
+      (setq |+nan.0| (vm:fp2 26 0 0)); 0/0 = NaN
 
       (define get-number
-         (let-parses
-            ((real get-rational) ;; typically this is it
-             (imag (get-either get-imaginary-part (get-epsilon 0))))
-            (if (eq? imag 0)
-               real
-               (complex real imag))))
+         (get-any-of
+            (get-word "+inf.0" |+inf.0|) ; (vm:fp2 3 1 0)) ; todo: move below
+            (get-word "-inf.0" |-inf.0|) ; (vm:fp1 6 0))
+            (get-word "+nan.0" |+nan.0|) ; (vm:fp1 0 -1))
+            (let-parses
+                  ((real get-rational) ;; typically this is it
+                   (imag (get-either get-imaginary-part (get-epsilon 0))))
+               (if (eq? imag 0)
+                  real
+                  (complex real imag)))))
+
 
       (define get-rest-of-line
          (let-parses
