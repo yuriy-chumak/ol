@@ -14,7 +14,8 @@
       gl:SwapBuffers
 
       gl:GetVersion
-      gl:ExtensionSupported?
+      gl:QueryExtension
+      gl:ExtensionSupported? ; deprecated, same as gl:QueryExtension
 
 
    ; GL types
@@ -3255,26 +3256,44 @@
 (define GLU_U_STEP                      100206)
 (define GLU_V_STEP                      100207)
 
-; поддержка расширений:
+; поддержка расширений (включая GLX):
 (import (owl string))
 
-(define (gl:ExtensionSupported? extension)
-(let ((string (append '(#\space) (string->bytes (glGetString GL_EXTENSIONS)) '(#\space)))
-      (substr (append '(#\space) (string->bytes extension) '(#\space))))
-(for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support..."))
+(define (gl:QueryExtension extension)
+   (let ((extensions (cond
+                        ; GLX, Linux
+                        ((and (> (size extension) 3) (string-eq? (substring extension 0 4) "GLX_"))
+                           (let ((libX11 (load-dynamic-library "libX11.so")))
+                           (let ((XOpenDisplay  (if libX11 (libX11 type-vptr "XOpenDisplay" type-string)))
+                                 (XDefaultScreen(if libX11 (libX11 fft-int "XDefaultScreen" type-vptr)))
+                                 (glXQueryExtensionsString(if GLX (GLX type-string "glXQueryExtensionsString" type-vptr fft-int))))
+                           (unless glXQueryExtensionsString
+                              "-" ; no extensions list available
+                              (let*((display (XOpenDisplay #false))
+                                    (screen  (XDefaultScreen display)))
+                                 (glXQueryExtensionsString display screen))))))
+                        ; WGL, Windows
+                        ; (( tbd.
+                        (else
+                           (or (glGetString GL_EXTENSIONS) "-")))))
 
-(if
-(let iter ((string string))
-   (or
-      (let loop ((one string) (two substr))
-         (if (null? two)
-            #true
-            (if (not (null? one))
-               (if (eq? (car one) (car two))
-                  (loop (cdr one) (cdr two))))))
-      (if (not (null? string))
-         (iter (cdr string)))))
-(begin (print " ok.") #true)
-(begin (print " not found.") #false))))
+   (let ((string (append '(#\space) (string->bytes extensions) '(#\space)))
+         (substr (append '(#\space) (string->bytes extension) '(#\space))))
+   (for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support...")) ; debug info
+   (if
+   (let iter ((string string))
+      (or
+         (let loop ((one string) (two substr))
+            (if (null? two)
+               #true
+               (if (not (null? one))
+                  (if (eq? (car one) (car two))
+                     (loop (cdr one) (cdr two))))))
+         (if (not (null? string))
+            (iter (cdr string)))))
+   (begin (print " ok.") #true)
+   (begin (print " not found.") #false)))))
 
+
+(define gl:ExtensionSupported? gl:QueryExtension)
 ))
