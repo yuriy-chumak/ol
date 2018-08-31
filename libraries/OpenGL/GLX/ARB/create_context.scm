@@ -15,8 +15,8 @@
 ;     None
 (import
    (scheme core)
-   (OpenGL version-1-0)
-   (OpenGL GLX ARB get_proc_address))
+   (OpenGL GLX ARB get_proc_address)
+   (OpenGL version-1-0))
 
 ; --------------------------------------------------------------------------
 (export GLX_ARB_create_context

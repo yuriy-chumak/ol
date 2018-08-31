@@ -8,6 +8,8 @@
    GL_MAJOR_VERSION
    GL_MINOR_VERSION
 
+   gl:CreateContextAttribs
+
    (exports (OpenGL version-1-0)))
 
 (import (scheme core)
@@ -21,6 +23,8 @@
    (define GL_MAJOR_VERSION                  #x821B)
    (define GL_MINOR_VERSION                  #x821C)
 
-;   (define (gl:CreateContext)
+   (define gl:CreateContextAttribs (cond
+      (glXCreateContextAttribsARB glXCreateContextAttribsARB)
+      (wglCreateContextAttribsARB wglCreateContextAttribsARB)))
 
 ))
