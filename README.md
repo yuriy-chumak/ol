@@ -44,7 +44,7 @@ mips, etc).
 REQUIREMENTS
 ------------
 
-You should have GCC >3.2 or CLANG >3.5 installed.
+You should have GCC >3.2 or CLANG >3.5 or TCC installed.
 For Windows you should have MinGW.
 
 

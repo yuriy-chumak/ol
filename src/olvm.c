@@ -55,7 +55,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
-#	warning "This code is prepared for compilation by Gnu C compiler"
+#	warning "This code is mainly prepared for compilation by Gnu C compiler"
 #else
 #	define GCC_VERSION (__GNUC__ * 10000 \
 	                  + __GNUC_MINOR__ * 100 \
@@ -316,8 +316,12 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #include <signal.h>
 #include <dirent.h>
 #include <string.h>
-// no <alloca.h>, use http://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
 #include <setjmp.h>
+
+// no <alloca.h>, use http://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+#ifndef __GNUC__
+#define __builtin_alloca alloca
+#endif
 
 #include <errno.h>
 #include <stdio.h>
@@ -1632,6 +1636,10 @@ struct ol_t
 	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
 
 // something wrong: looks like __builtin_choose_expr doesn't work as expected!
+#ifndef __GNUC__
+#define __builtin_choose_expr(const_exp, exp1, exp2) (const_exp) ? (exp1) : (exp2)
+#endif
+
 #define itoun(val)  ({\
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
 		(word*)I(val),\
@@ -1793,7 +1801,7 @@ word d2ol(struct ol_t* ol, double v) {
 	// но в память то мы их кладем в обратном! так что нужен реверс
 	// todo: проверка выхода за границы кучи!!!
 	if (1) {
-		int negative = v < 0; v = fabs(v);
+		int negative = v < 0;  v = v < 0 ? -v : v;
 		if (v < (double)HIGHBIT)
 			a = negative ? make_value(TFIXN, v) : make_value(TFIXP, v);
 		else {
@@ -4136,7 +4144,7 @@ loop:;
 			if ((word) filename == IFALSE) {
 				module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
 			}
-			else if (is_reference(filename) && reftype (filename) == TSTRING) {
+			else if (is_string(filename)) {
 				module = dlopen((char*) &filename[1], mode);
 			}
 			else
