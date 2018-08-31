@@ -11,15 +11,16 @@
    (exports (OpenGL version-1-0)))
 
 (import (scheme core)
+   (OpenGL GLX ARB create_context)
+   (OpenGL WGL ARB create_context)
    (OpenGL version-1-0))
 
 (begin
    (define GL_VERSION_3_0 1)
 
-(define GL_MAJOR_VERSION                  #x821B)
-(define GL_MINOR_VERSION                  #x821C)
+   (define GL_MAJOR_VERSION                  #x821B)
+   (define GL_MINOR_VERSION                  #x821C)
 
-
-; GLX context creation:
+;   (define (gl:CreateContext)
 
 ))
