@@ -141,10 +141,6 @@
 (define (dlclose module) (syscall 176 module #f #f))
 
 (define ffi (syscall 177 (dlopen) "OL_ffi" #f))
-(define sizeof
-   (let ((function (syscall 177 (dlopen) "OL_sizeof" #f)))
-      (lambda (arg)
-         (exec function arg))))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать
 (define (dlsym+ dll name)
@@ -258,6 +254,18 @@
          fft-int64)))
 (define fft-signed-long fft-long)
 (define fft-unsigned-long (+ fft-long 5))
+
+; -- sizeof ---------------------------
+(define (sizeof type)
+   (case type
+      ((fft-int8  fft-uint8)   1)
+      ((fft-int16 fft-uint16)  2)
+      ((fft-int32 fft-uint32)  4)
+      ((fft-int64 fft-uint64)  8)
+      (fft-float 4)
+      (fft-double 8)
+      (fft-void* (size nullptr)))
+)
 
 ; -- utils ----------------------------
 

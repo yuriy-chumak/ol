@@ -1556,47 +1556,6 @@ word* OL_ffi(OL* self, word* arguments)
 	return result;
 }
 
-PUBLIC
-word OL_sizeof(OL* self, word arguments)
-{
-	// if (is_value(arguments))
-	// 	return IFALSE;
-	if (reftype(arguments) != TPAIR)
-		return IFALSE;
-	arguments = car(arguments);
-
-	if (is_value(arguments))
-	switch (value(arguments))
-	{
-		case TINT8: case TUINT8:
-			return I(1);
-			break;
-		case TINT16: case TUINT16:
-			return I(2);
-			break;
-		case TINT32: case TUINT32:
-			return I(4);
-			break;
-		case TINT64: case TUINT64:
-			return I(8);
-			break;
-		case TFLOAT:
-			return I(sizeof(float));
-			break;
-		case TDOUBLE:
-			return I(sizeof(double));
-			break;
-		case TVPTR:
-			return I(sizeof(void*));
-			break;
-		// todo: add recursive algo with calculating the total size of structure description
-		//case TPAIR:
-	}
-
-	// heap->fp = fp;
-	return IFALSE;
-}
-
 #endif//OLVM_FFI
 
 
