@@ -4144,10 +4144,8 @@ loop:;
 
 			if (module)
 				result = new_vptr(module);
-			#if 1 // debug
 			else
 				D("dlerror: %s\n", dlerror());
-			#endif
 			break;
 		}
 
