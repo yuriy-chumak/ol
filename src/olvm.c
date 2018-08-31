@@ -4144,8 +4144,6 @@ loop:;
 
 			if (module)
 				result = new_vptr(module);
-			else
-				D("dlerror: %s\n", dlerror());
 			break;
 		}
 

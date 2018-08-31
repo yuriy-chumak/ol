@@ -15,4 +15,6 @@
 (begin
    (define GL_VERSION_1_4 1)
 
+   (define GL GL_LIBRARY)
+
 ))

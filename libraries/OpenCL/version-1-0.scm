@@ -575,8 +575,8 @@
       (else
          (runtime-error "Unknown platform")))))
 
-(define $ (dlopen CL_LIBRARY))
-(if (not $)
+(define CL (load-dynamic-library CL_LIBRARY))
+(if (not CL)
    (runtime-error "Can't load CL library"))
 
 (define char* type-string)
@@ -585,13 +585,13 @@
 (define size_t type-int+)
 (define CL_CALLBACK* type-port)
 
-   (define clGetPlatformIDs     (dlsym $ cl_int "clGetPlatformIDs" cl_uint cl_platform_id* cl_uint*))
-   (define clGetPlatformInfo    (dlsym $ cl_int "clGetPlatformInfo" cl_platform_id cl_platform_info type-int+ void* size_t*))
-   (define clGetDeviceIDs       (dlsym $ cl_int "clGetDeviceIDs" cl_platform_id cl_device_type cl_uint cl_device_id* cl_uint*))
-   (define clGetDeviceInfo      (dlsym $ cl_int "clGetDeviceInfo" cl_device_id cl_device_info size_t void* size_t*))
+   (define clGetPlatformIDs     (CL cl_int "clGetPlatformIDs" cl_uint cl_platform_id* cl_uint*))
+   (define clGetPlatformInfo    (CL cl_int "clGetPlatformInfo" cl_platform_id cl_platform_info type-int+ void* size_t*))
+   (define clGetDeviceIDs       (CL cl_int "clGetDeviceIDs" cl_platform_id cl_device_type cl_uint cl_device_id* cl_uint*))
+   (define clGetDeviceInfo      (CL cl_int "clGetDeviceInfo" cl_device_id cl_device_info size_t void* size_t*))
 
 ; Context APIs
-   (define clCreateContext      (dlsym $ cl_context "clCreateContext" cl_context_properties* cl_uint cl_device_id* CL_CALLBACK* void* cl_int*))
+   (define clCreateContext      (CL cl_context "clCreateContext" cl_context_properties* cl_uint cl_device_id* CL_CALLBACK* void* cl_int*))
 ;extern CL_API_ENTRY cl_context CL_API_CALL
 ;clCreateContext(const cl_context_properties * /* properties */,
 ;                cl_uint                       /* num_devices */,

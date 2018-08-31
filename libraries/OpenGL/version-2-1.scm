@@ -1,17 +1,16 @@
 ; OpenGL 2.1 (2006)
 
 (define-library (OpenGL version-2-1)
-   (export
-      (exports (OpenGL version-2-0))
+(export
+
     GL_VERSION_2_1
 
-  )
+   (exports (OpenGL version-2-0)))
   
-   (import (scheme core)
-      (OpenGL version-2-0))
-   (begin
-   (define GL_VERSION_2_1 1)
+(import (scheme core)
+   (OpenGL version-2-0))
 
-   (define % (dlopen GL_LIBRARY RTLD_LAZY))
+(begin
+   (define GL_VERSION_2_1 1)
 
 ))
