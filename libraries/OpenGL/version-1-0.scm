@@ -1865,7 +1865,7 @@
    (define GLubyte* type-string) ; todo: ?
 
    ; pointers
-   (define GLboolean* (fft* GLboolean)) ; TODO: ?
+   (define GLboolean* (fft* GLboolean))
    (define GLint*     (fft* GLint))
    (define GLuint*    (fft* GLuint))
    (define GLfloat*   (fft* GLfloat))
@@ -2782,11 +2782,11 @@
    (define glFrontFace   (GL GLvoid "glFrontFace" GLenum))
    (define glFrustum     (GL GLvoid "glFrustum" GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
    (define glGenLists    (GL GLuint "glGenLists" GLsizei))
-   (define glGetBooleanv (GL GLvoid "glGetBooleanv" GLenum GLboolean*))
-   (define glGetDoublev  (GL GLvoid "glGetDoublev"  GLenum GLdouble*))
+   (define glGetBooleanv (GL GLvoid "glGetBooleanv" GLenum (fft& GLboolean)))
+   (define glGetDoublev  (GL GLvoid "glGetDoublev"  GLenum (fft& GLdouble)))
    (define glGetError    (GL GLenum "glGetError"))
-   (define glGetFloatv   (GL GLvoid "glGetFloatv"   GLenum GLfloat*))
-   (define glGetIntegerv (GL GLvoid "glGetIntegerv" GLenum GLint*))
+   (define glGetFloatv   (GL GLvoid "glGetFloatv"   GLenum (fft& GLfloat)))
+   (define glGetIntegerv (GL GLvoid "glGetIntegerv" GLenum GLint&))
 ;WINGDIAPI void APIENTRY glGetClipPlane (GLenum plane, GLdouble *equation);
 ;WINGDIAPI void APIENTRY glGetLightfv (GLenum light, GLenum pname, GLfloat *params);
 ;WINGDIAPI void APIENTRY glGetLightiv (GLenum light, GLenum pname, GLint *params);
