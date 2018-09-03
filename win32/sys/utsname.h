@@ -22,6 +22,8 @@ int uname(struct utsname* out) {
 	else
 		GetSystemInfo(&si); // todo: make as getprocaddress
 
+	strncpy(out->sysname, "Windows", sizeof(out->sysname));
+
 	OSVERSIONINFOEXA oi;
 	oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXA);
 	if (!GetVersionExA((OSVERSIONINFOA*)&oi)) {
@@ -35,54 +37,54 @@ int uname(struct utsname* out) {
 			oi.dwBuildNumber = 0;
 	}
 
-	strncpy(out->sysname, "Windows", sizeof(out->sysname));
+	strncpy(out->version, "Windows", sizeof(out->version));
 	if (oi.dwPlatformId < VER_PLATFORM_WIN32_NT) {
 		oi.dwBuildNumber = (DWORD)LOWORD(oi.dwBuildNumber);
 		if (oi.dwMinorVersion == 0) {
-			strcat(out->sysname, " 95");
+			strcat(out->version, " 95");
 			if (oi.dwBuildNumber >= 1111) {
-				strcat(out->sysname, ", OSR2");
-				if (oi.dwBuildNumber >= 1212) strcat(out->sysname, ".5");
+				strcat(out->version, ", OSR2");
+				if (oi.dwBuildNumber >= 1212) strcat(out->version, ".5");
 			}
 		}
 		else if (oi.dwMinorVersion == 0x90) {
-			strcat(out->sysname, " Me");
+			strcat(out->version, " Me");
 		}
 		else {
-			strcat(out->sysname, " 98");
-			if (oi.dwBuildNumber >= 2222) strcat(out->sysname, ", Second Edition");
+			strcat(out->version, " 98");
+			if (oi.dwBuildNumber >= 2222) strcat(out->version, ", Second Edition");
 		}
 	}
 	else {
 		if (oi.dwMajorVersion <= 4) {
-			strcat(out->sysname, " NT");
-			itoa(oi.dwMajorVersion, &out->sysname[strlen(out->sysname)], 10);
-			strcat(out->sysname, ".");
-			itoa(oi.dwMinorVersion, &out->sysname[strlen(out->sysname)], 10);
+			strcat(out->version, " NT");
+			itoa(oi.dwMajorVersion, &out->version[strlen(out->version)], 10);
+			strcat(out->version, ".");
+			itoa(oi.dwMinorVersion, &out->version[strlen(out->version)], 10);
 			if (oi.dwMajorVersion >= 4) {
 				switch (oi.wProductType) {
-				case VER_NT_WORKSTATION:       strcat(out->sysname, ", Workstation");       break;
-				case VER_NT_DOMAIN_CONTROLLER: strcat(out->sysname, ", Domain Controller"); break;
-				case VER_NT_SERVER:            strcat(out->sysname, ", Server");            break;
+				case VER_NT_WORKSTATION:       strcat(out->version, ", Workstation");       break;
+				case VER_NT_DOMAIN_CONTROLLER: strcat(out->version, ", Domain Controller"); break;
+				case VER_NT_SERVER:            strcat(out->version, ", Server");            break;
 				}
 			}
 		}
 		else {
 			switch (0x100 * oi.dwMajorVersion + oi.dwMinorVersion) {
 			case 0x500:
-				strcat(out->sysname, " 2000");
-				if      (oi.wProductType == VER_NT_WORKSTATION) strcat(out->sysname, " Professional");
-				else if (oi.wSuiteMask & VER_SUITE_DATACENTER ) strcat(out->sysname, " Datacenter Server");
-				else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE ) strcat(out->sysname, " Advanced Server");
-				else strcat(out->sysname, " Server");
+				strcat(out->version, " 2000");
+				if      (oi.wProductType == VER_NT_WORKSTATION) strcat(out->version, " Professional");
+				else if (oi.wSuiteMask & VER_SUITE_DATACENTER ) strcat(out->version, " Datacenter Server");
+				else if (oi.wSuiteMask & VER_SUITE_ENTERPRISE ) strcat(out->version, " Advanced Server");
+				else strcat(out->version, " Server");
 				break;
 
 			case 0x501:
-				strcat(out->sysname, " XP");
+				strcat(out->version, " XP");
 				if (oi.wSuiteMask & VER_SUITE_PERSONAL)
-					strcat(out->sysname, " Home Edition");
+					strcat(out->version, " Home Edition");
 				else
-					strcat(out->sysname, " Professional");
+					strcat(out->version, " Professional");
 				break;
 
 			case 0x502: {
@@ -127,7 +129,7 @@ int uname(struct utsname* out) {
 						else                                           type = "Standard Edition";
 					}
 				}
-				snprintf(out->sysname, sizeof(out->sysname), "Windows %s, %s", name, type);
+				snprintf(out->version, sizeof(out->version), "Windows %s, %s", name, type);
 				break;
 			}
 
@@ -171,7 +173,6 @@ int uname(struct utsname* out) {
 
 
 	strncpy(out->release, "", sizeof(out->release)); // oi.dwMajorVersion, oi.dwMinorVersion, oi.dwBuildNumber
-	strncpy(out->version, "", sizeof(out->version)); // kernel + " " + release
 	strncpy(out->machine, "", sizeof(out->machine));
 	return 0;
 };
