@@ -1,5 +1,5 @@
 #!/usr/bin/ol
-(import (lib opengl) (otus random!))
+(import (lib gl) (otus random!))
 (import (OpenGL version-1-1))
 
 (define WIDTH  (/ 64 1)) ;(floor (/ 640 GLYPH_WIDTH))) ; /14 = 45.7
