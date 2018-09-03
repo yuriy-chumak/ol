@@ -93,4 +93,27 @@ ssize_t writeEx(int fd, void *buf, size_t size)
 }
 #define write writeEx
 
+int fsync(int fd)
+{
+	HANDLE h = (HANDLE) _get_osfhandle(fd);
+
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+	if (!FlushFileBuffers(h)) {
+		switch (GetLastError()) {
+			case ERROR_ACCESS_DENIED:
+				return 0;
+			case ERROR_INVALID_HANDLE: // fsync a tty?
+				errno = EINVAL;
+				break;
+			default:
+				errno = EIO;
+		}
+		return -1;
+	}
+	return 0;
+}
+
 #endif
