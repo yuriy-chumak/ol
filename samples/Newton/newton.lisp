@@ -1,6 +1,6 @@
 #!/usr/bin/ol
 
-(import (lib opengl))
+(import (lib gl))
 (import (otus random!))
 (import (otus ffi))
 (import (lib newton))
@@ -8,6 +8,7 @@
 (define (gettimeofday) (syscall 96 #f #f #f))
 
 (gl:set-window-title "7. Newton")
+(import (OpenGL version-1-0))
 ;(define Context (gl:Create "7. Newton"))
 
 
@@ -270,7 +271,7 @@
 (let ((newtime (gettimeofday)))
    ; обновим мир
    (let ((ms (* (+ (- (car newtime) (car oldtime)) (/ (- (cdr newtime) (cdr oldtime)) 1000000)) 2)))
-      (NewtonUpdate world (if (> ms 0.006) 0.006 ms)))
+      (NewtonUpdate world (if (> ms 0.01) 0.01 ms)))
 
    ; и нарисуем его
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))

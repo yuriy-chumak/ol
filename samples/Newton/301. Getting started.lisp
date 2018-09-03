@@ -1,7 +1,10 @@
 #!/usr/bin/ol
 ;(import (otus ffi))
 (import (lib newton))
-(import (lib opengl))
+(import (lib gl) (otus ffi))
+
+(gl:set-window-title "301. Getting started")
+(import (OpenGL version-1-0))
 
 (define (gettimeofday) (syscall 96 #f #f #f))
 
@@ -32,11 +35,12 @@
       (NewtonDestroyCollision sphere)
       body))
 
-(define ApplyGravity (syscall 85 (cons
+(define ApplyGravity (vm:pin (cons
    (list type-vptr fft-float type-int+)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -9.8 0 0))
-)) #f #f))
+))))
+(define ApplyGravityCallback (make-callback ApplyGravity))
 
 
 ; ====================================================================
@@ -47,24 +51,17 @@
 (CreateBackgroundBody world) ; create the "table"
 
 (define body1 (CreateFreeFallBall world 50))
-(NewtonBodySetForceAndTorqueCallback body1 ApplyGravity)
+(NewtonBodySetForceAndTorqueCallback body1 ApplyGravityCallback)
 (define body2 (CreateFreeFallBall world 90))
-(NewtonBodySetForceAndTorqueCallback body2 ApplyGravity)
+(NewtonBodySetForceAndTorqueCallback body2 ApplyGravityCallback)
 
 (NewtonInvalidateCache world) ; say "world construction finished"
 
-(define Context (gl:Create "301. Getting started"))
 (define gl-sphere (gluNewQuadric))
 (gluQuadricDrawStyle gl-sphere GLU_FILL)
 
 
 
-(gl:run
-
-   Context
-
-; init
-(lambda ()
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
 
@@ -95,14 +92,15 @@
    (glColorMaterial GL_FRONT GL_DIFFUSE)
 
    ; return parameter list:
-   (list (gettimeofday)))
+(gl:set-userdata
+   (gettimeofday))
 
 ; draw
-(lambda (oldtime)
+(gl:set-renderer (lambda (oldtime)
 (let ((newtime (gettimeofday)))
    ; обновим мир
    (let ((ms (* (+ (- (car newtime) (car oldtime)) (/ (- (cdr newtime) (cdr oldtime)) 1000000)) 2)))
-      (NewtonUpdate world (if (> ms 0.006) 0.006 ms)))
+      (NewtonUpdate world (if (> ms 0.01) 0.01 ms)))
 
    ; и нарисуем его
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
@@ -129,6 +127,7 @@
    ; return new parameter list:
    (list newtime))
 ))
+(gl:finish)
 
-(NewtonWorldSetDestructorCallback world destructor)
+;(NewtonWorldSetDestructorCallback world destructor)
 (NewtonDestroy world)
