@@ -1,6 +1,6 @@
 #!/usr/bin/ol
 (import (lib gl))
-(gl:set-window-title "1. Creating an OpenGL 2.0 Window")
+(gl:set-window-title "1. Creating an OpenGL 2.1 Window")
 
 (import (OpenGL version-2-0))
 
