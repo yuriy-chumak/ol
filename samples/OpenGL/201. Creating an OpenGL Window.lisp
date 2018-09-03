@@ -2,7 +2,7 @@
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL 2.1 Window")
 
-(import (OpenGL version-2-0))
+(import (OpenGL version-2-1))
 
 ; init
 (glShadeModel GL_SMOOTH)

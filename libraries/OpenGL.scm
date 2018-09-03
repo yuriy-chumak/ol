@@ -19,7 +19,7 @@
       GL_EXTENSIONS
 
    ; internal variables
-   GL_LIBRARY GLX WGL GDI EGL
+   GL_LIBRARY GL GLX WGL GDI EGL
 
    (exports (otus lisp))
    (exports (otus ffi)))
