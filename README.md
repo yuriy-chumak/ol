@@ -433,7 +433,7 @@ RELATED
 Copyright (c) 2014 Aki Helin,
 Copyright (c) 2014 - 2018 Yuriy Chumak
 
-Grew out of the Owl Lisp by Aki Helin: https://github.com/aoh/owl-lisp
+Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
 
 http://groups.csail.mit.edu/mac/projects/scheme/
 
