@@ -2,16 +2,7 @@
 ;;;; Алгоритм ориентирования и поиска пути в сложном лабиринте
 (import
    (owl ff) (otus random!)
-   (lib opengl)
-   (OpenGL version-1-1)
-)
-
-(define (quad x y)
-   (glVertex2f x y)
-   (glVertex2f x (+ y 1))
-   (glVertex2f (+ x 1) (+ y 1))
-   (glVertex2f (+ x 1) y))
-
+   (lib gl))
 
 (define (nth list n)
    (if (= n 0) (car list)
@@ -79,6 +70,11 @@
 (define me (new-creature 1 1))
 ;(mail me (tuple 'update-fov scheme))
 
+(gl:set-window-title "Pathfinder sample")
+(import (OpenGL version-1-1))
+(import (OpenGL EXT bgra))
+
+
 (define (quad x y)
    (glVertex2f x y)
    (glVertex2f x (+ y 1))
@@ -95,8 +91,6 @@
    (glTexCoord2f (+ u 1/8)    v)
    (glVertex2f (+ x 1) y))
 
-(gl:set-window-title "Pathfinder sample")
-(import (OpenGL EXT bgra))
 
 
 (define (draw-map-cell x y cell alpha)
@@ -363,8 +357,6 @@
             ; send new
          'old-time new-time))))))
 
-(gl:finish)
-
    ; пол (как травку)
 ;   (BindTexture grass-texture)
 ;   (glBegin GL_QUADS)
@@ -548,4 +540,3 @@
 ;      (return (put userdata 'mouse (to-map-from-screen (cons x y))))))
 ;   userdata)))))
 
-(print "bye.")

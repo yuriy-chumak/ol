@@ -18,12 +18,10 @@
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;  None
-   (import
-      (OpenGL version-1-0))
+(import (OpenGL))
 
 ; ---------------------------------------------------------------------------
-   (export
-    EXT_bgra
+(export EXT_bgra
 
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
@@ -41,9 +39,9 @@
 
 ; ---------------------------------------------------------------------------
 (begin
-   (define EXT_bgra (gl:ExtensionSupported? "GL_EXT_bgra"))
+   (define EXT_bgra (gl:QueryExtension "GL_EXT_bgra"))
 
-   (define GL_BGR                 #x80E0)
-   (define GL_BGRA                #x80E1)
+(define GL_BGR                 #x80E0)
+(define GL_BGRA                #x80E1)
 
 ))

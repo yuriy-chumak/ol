@@ -1,9 +1,10 @@
 #!/usr/bin/ol
-(import (lib opengl)
+(import (lib gl)
    (lib rlutil)
    (scheme misc) (otus random!))
 
 (gl:set-window-title "Tetris")
+(import (OpenGL version-1-0))
 
 ; -- фигуры -----------------------
 (define схеми (list->ff `(
@@ -294,5 +295,3 @@
    (glEnd)
 
   `(,s2))))
-
-(gl:finish)

@@ -1,5 +1,5 @@
 #!/usr/bin/ol
-(import (lib opengl))
+(import (lib gl))
 (import (otus random!))
 
 (define WIDTH 128)  ;128
@@ -28,8 +28,8 @@
       (if (eq? n 3)
          #true))))
 
-(gl:set-window-title 
-   "Convey's The game of Life")
+(gl:set-window-title "Convey's The game of Life")
+(import (OpenGL version-1-0))
 
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
