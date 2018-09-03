@@ -36,7 +36,7 @@ glVertexAttribPointer
 GL_FLOAT
 glDrawArrays
 
-    (exports (OpenGL version-1-5)))
+   (exports (OpenGL version-1-5)))
 
    (import (otus lisp)
       (OpenGL version-1-5))

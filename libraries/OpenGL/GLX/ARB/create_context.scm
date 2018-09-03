@@ -57,10 +57,9 @@
 (begin
    (define GLX_ARB_create_context (gl:QueryExtension "GLX_ARB_create_context"))
 
+   (setq Display* fft-void*) ; X11
    (setq GLXContext fft-void*)
-   (setq Display* fft-int)
    (setq GLXFBConfig fft-void*)
-   (setq GLXContext fft-void*)
 
    (define glXCreateContextAttribsARB (if GLX_ARB_create_context
       (glXGetProcAddressARB GLXContext "glXCreateContextAttribsARB"

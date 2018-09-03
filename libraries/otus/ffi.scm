@@ -75,7 +75,7 @@
       fft-short fft-signed-short fft-unsigned-short
       fft-int   fft-signed-int   fft-unsigned-int
 
-      fft-int*
+      fft-int*  fft-int&
 
       ; special "variable length on different platforms" type 'long'
       ; windows, ia32: 4 bytes
@@ -90,6 +90,9 @@
       make-32bit-array
       make-64bit-array
       make-vptr-array
+
+      ; function for boxing and unboxing single values
+      box unbox
 
       ; fft data manipulation helpers
       vptr->vector vptr->string
@@ -245,6 +248,7 @@
 (define fft-unsigned-int fft-uint32)
 
 (define fft-int* (fft* fft-int))
+(define fft-int& (fft& fft-int))
 
 ; long:
 (setq wordsize (size nullptr))
@@ -315,6 +319,13 @@
             (<< (ref vector (+ offset 6)) 48)
             (<< (ref vector (+ offset 7)) 56))))))
 
+; boxing/unboxing
+(define (box value)
+   (list value))
+(define (unbox list)
+   (car list))
+
+;(vptr->vector vptr sizeof-in-bytes)
 (define vptr->vector (cond
    ; linux:
    ((string-ci=? (ref (uname) 1) "Linux")
@@ -339,8 +350,12 @@
    (else
       (print "Unknown OS"))))
 
-(define (extract-void* bvec offset)
-   (vm:cast (int64->ol bvec offset) type-vptr))
+(define (extract-void* vector offset)
+   (vm:cast
+      (fold (lambda (val offs)
+               (+ (<< val 8) (ref vector offs)))
+         0 (reverse (iota (size nullptr) offset)))
+      type-vptr))
 
 (define (vptr->string vptr)
    (fold string-append "#x"

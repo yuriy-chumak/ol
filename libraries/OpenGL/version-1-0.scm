@@ -6,18 +6,6 @@
 
    GL_VERSION_1_0
 
-      ; WGL/GLX/CGL universal functions
-      gl:GetProcAddress
-
-      gl:CreateContext
-      gl:MakeCurrent
-      gl:SwapBuffers
-
-      gl:GetVersion
-      gl:QueryExtension
-      gl:ExtensionSupported? ; deprecated, same as gl:QueryExtension
-
-
    ; GL types
    ; https://www.opengl.org/wiki/OpenGL_Type
    GLenum                     ; unsigned 32-bit
@@ -1811,12 +1799,14 @@
    ; internal variables
    GL_LIBRARY
 
+   (exports (OpenGL))
    (exports (otus lisp))
    (exports (otus ffi)))
 
 ; ============================================================================
 ; == implementation ==========================================================
 (import (otus lisp) (otus ffi))
+(import (OpenGL)) ; platform independent primitives
 
 (begin
    (define GL_VERSION_1_0 1)
@@ -3008,194 +2998,6 @@
 ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
    (define glViewport (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
-
-; WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
-; GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
-
-;(define lib1 (cond
-;   (win32? (dlopen "kernel32.dll"))
-;   (linux? (dlopen "libX11.so"))
-;   (else (runtime-error "Unknown platform" OS))))
-;
-;(define lib2 (cond
-;   (win32? (dlopen "opengl32.dll"))
-;   (linux? (dlopen "libX11.so"))
-;   (else   (runtime-error "Unknown platform" OS))))
-
-; Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ° Ñ€Ð°ÑÑˆÐ¸Ñ€ÐµÐ½Ð¸Ð¹ :
-(define GetProcAddress (cond ; internal function
-   (win32? (WGL type-vptr "wglGetProcAddress" type-string))
-   (linux? (GLX type-vptr "glXGetProcAddress" type-string))))
-
-(define (gl:GetProcAddress type name . prototype)
-   (let ((rtty (cons type prototype))
-         (function (GetProcAddress (c-string name))))
-      ;(print name ": " function)
-      (if function
-      (lambda args
-         ;(print "> " name)
-         (exec ffi function rtty args)))))
-
-; Ð¾ÑÑ‚Ð°Ð»ÑŒÐ½Ñ‹Ðµ WGL/GLX/... Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸
-(define Display* type-vptr)
-(define XVisualInfo* type-vptr)
-;glXChooseVisual      ChoosePixelFormat
-;glXCopyContext       wglCopyContext
-
-;glXCreateContext     wglCreateContext
-(define gl:CreateContext (cond
-   (win32? (WGL type-vptr "wglCreateContext" fft-void*))
-   (linux? (GLX type-vptr "glXCreateContext" Display* XVisualInfo* fft-void* fft-int))))
-   ;apple? (GL fft-void* "CGLCreateContext" ...)
-
-;glXCreateGLXPixmap  CreateDIBitmap / CreateDIBSection
-;glXDestroyContext   wglDeleteContext
-;glXDestroyGLXPixmap DeleteObject
-;glXGetConfig  DescribePixelFormat
-;glXGetCurrentContext   wglGetCurrentContext
-;glXGetCurrentDrawable  wglGetCurrentDC
-;glXMakeCurrent   wglMakeCurrent
-;glXQueryExtension   GetVersion
-;glXQueryVersion  GetVersion
-;glXSwapBuffers   SwapBuffers
-;glXUseXFont   wglUseFontBitmaps / wglUseFontOutlines
-;XGetVisualInfo   GetPixelFormat
-;XCreateWindow CreateWindow / CreateWindowEx and GetDC / BeginPaint
-;XSync   GdiFlush
-
-(define gl:MakeCurrent (cond
-   (win32? (WGL fft-int "wglMakeCurrent" fft-void* fft-void*))
-   (linux? (GLX fft-int "glXMakeCurrent" fft-void* fft-void* fft-void*))))
-
-
-
-(define gl:SwapBuffers (cond
-   (win32?
-      (let ((SwapBuffers (GDI fft-int "SwapBuffers"    fft-void*)))
-         (lambda (context)
-            (SwapBuffers (ref context 1)))))
-   (linux?
-      (let ((SwapBuffers (GLX type-vptr "glXSwapBuffers" fft-void* fft-void*)))
-         (lambda (context)
-            (SwapBuffers (ref context 1) (ref context 3)))))
-   (else   (runtime-error "SwapBuffers: Unknown platform" OS))))
-
-;   (let*((display (XOpenDisplay null))
-;         (screen  (XDefaultScreen display))
-;         (window  (XCreateSimpleWindow display (XRootWindow display screen)
-;                     0 0 640 480  1
-;                     (XBlackPixel display screen) (XWhitePixel display screen))))
-;   (let*((vi (glXChooseVisual display screen
-;                     (make-bytevector '(
-;                        4 0 0 0 ; GLX_RGBA
-;                        8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
-;                        9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
-;                       10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
-;                       12 0 0 0  1 0 0 0 ; GLX_DEPTH_SIZE
-;                        0 0 0 0)))); None
-;            (cx (glXCreateContext display vi 0 1)))
-;      (XStoreName display window (c-string title))
-;      (XSelectInput display window ExposureMask)
-;      (XMapWindow display window)
-;
-;      (glXMakeCurrent display window cx)
-;      (print "OpenGL version: " (glGetString GL_VERSION))
-;      (print "OpenGL vendor: " (glGetString GL_VENDOR))
-;      (print "OpenGL renderer: " (glGetString GL_RENDERER))
-;      (glXMakeCurrent display null null)
-;
-;      (tuple display screen window cx))))
-
-
-
-; GLX versions 1.0 and 1.1 supported
-;(let .....
-;   (init GLX context etc.
-;)
-;define (glx:create-context major minor)
-
-
-
-;(import (lib platform))
-;
-;; todo: "(if (defined? parameters...)
-;(fork-server 'GL (lambda ()
-;(let ((win32? (string-ci=? OS "Windows"))
-;      (linux? (string-ci=? OS "Linux")))
-;
-;(let ((lib1 (dlopen (if win32? "user32.dll"
-;                    (if linux? "libX11.so"
-;                    (runtime-error "Unknown platform" OS))))))
-;
-;(let ((open-display (if win32? (lambda (name) #f)
-;                    (if linux? (dlsym lib1 fft-void* "XOpenDisplay" type-string)
-;                    (runtime-error "Unknown platform" OS)))))
-;
-;(let this ((context null))
-;   ; Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸Ðº ÐºÐ¾Ð¼Ð°Ð½Ð´ ÑÐµÑ€Ð²ÐµÑ€Ð° GL
-;   (let* ((envelope (wait-mail))
-;          (sender message envelope))
-;      (tuple-case message
-;         ; ÑÐ¾Ð·Ð´Ð°Ñ‚ÑŒ Ð¾ÐºÐ½Ð¾ Ð´Ð»Ñ Ñ€ÐµÐ½Ð´ÐµÑ€Ð¸Ð½Ð³Ð°, Ð¿Ñ€Ð¾Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ Ð² Ð½ÐµÐ¼ GL ÐºÐ¾Ð½Ñ‚ÐµÐºÑÑ‚
-;         ((create-gl-context)
-;            (let*((display (open-display null))
-;                  (screen  (XDefaultScreen display))
-;                  (window  (XCreateSimpleWindow display (XRootWindow display screen)
-;                     0 0 640 480  1
-;                     (XBlackPixel display screen) (XWhitePixel display screen))))
-;            (let*((vi (glXChooseVisual display screen
-;                           (make-bytevector '(
-;                              4 0 0 0 ; GLX_RGBA
-;                              8 0 0 0  1 0 0 0 ; GLX_RED_SIZE
-;                              9 0 0 0  1 0 0 0 ; GLX_GREEN_SIZE
-;                             10 0 0 0  1 0 0 0 ; GLX_BLUE_SIZE
-;                             12 0 0 0  1 0 0 0 ; GLX_DEPTH_SIZE
-;                              0 0 0 0)))); None
-;                  (cx (glXCreateContext display vi 0 1)))
-;            (glXMakeCurrent display window cx)
-;            (print "OpenGL version: " (glGetString GL_VERSION))
-;            (print "OpenGL vendor: " (glGetString GL_VENDOR))
-;            (print "OpenGL renderer: " (glGetString GL_RENDERER))
-;            (glXMakeCurrent display null null)
-;
-;            (this (tuple display screen window cx)))))
-;         ((get-context)
-;            (mail sender context)
-;            (this context))
-;         ((make-current)
-;            (let ((display (ref context 1))
-;                  (screen  (ref context 2))
-;                  (window  (ref context 3))
-;                  (cx      (ref context 4)))
-;               (glXMakeCurrent display window cx))
-;               (mail sender #true)
-;            (this context))
-;         ((stop-current)
-;            (let ((display (ref context 1)))
-;               (glXMakeCurrent display null null))
-;               (mail sender #true)
-;            (this context))
-;;         ((create-new-window title)
-;;            (let ((display (ref context 1))
-;;                  (window  (ref context 3)))
-;;               (XSelectInput display window ExposureMask)
-;;               (XMapWindow display window)
-;;               (XStoreName display window (c-string title)))
-;;            (this context))
-;         (else
-;            (runtime-error "Unknown GL server command" message))))))))))
-;
-;(mail 'GL (tuple 'create-gl-context))
-;
-;(define (gl:make-current)
-;   (interact 'GL (tuple 'make-current)))
-;(define (gl:stop-current)
-;   (interact 'GL (tuple 'stop-current)))
-
-
-(define (gl:GetVersion)
-   (cons 1 0))
-
 ; GLU
 (define GLU_VERSION_1_0 1)
 (define GLU_VERSION_1_1 1)
@@ -3256,44 +3058,4 @@
 (define GLU_U_STEP                      100206)
 (define GLU_V_STEP                      100207)
 
-; поддержка расширений (включая GLX):
-(import (owl string))
-
-(define (gl:QueryExtension extension)
-   (let ((extensions (cond
-                        ; GLX, Linux
-                        ((and (> (size extension) 3) (string-eq? (substring extension 0 4) "GLX_"))
-                           (let ((libX11 (load-dynamic-library "libX11.so")))
-                           (let ((XOpenDisplay  (if libX11 (libX11 type-vptr "XOpenDisplay" type-string)))
-                                 (XDefaultScreen(if libX11 (libX11 fft-int "XDefaultScreen" type-vptr)))
-                                 (glXQueryExtensionsString(if GLX (GLX type-string "glXQueryExtensionsString" type-vptr fft-int))))
-                           (unless glXQueryExtensionsString
-                              "-" ; no extensions list available
-                              (let*((display (XOpenDisplay #false))
-                                    (screen  (XDefaultScreen display)))
-                                 (glXQueryExtensionsString display screen))))))
-                        ; WGL, Windows
-                        ; (( tbd.
-                        (else
-                           (or (glGetString GL_EXTENSIONS) "-")))))
-
-   (let ((string (append '(#\space) (string->bytes extensions) '(#\space)))
-         (substr (append '(#\space) (string->bytes extension) '(#\space))))
-   (for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support...")) ; debug info
-   (if
-   (let iter ((string string))
-      (or
-         (let loop ((one string) (two substr))
-            (if (null? two)
-               #true
-               (if (not (null? one))
-                  (if (eq? (car one) (car two))
-                     (loop (cdr one) (cdr two))))))
-         (if (not (null? string))
-            (iter (cdr string)))))
-   (begin (print " ok.") #true)
-   (begin (print " not found.") #false)))))
-
-
-(define gl:ExtensionSupported? gl:QueryExtension)
 ))
