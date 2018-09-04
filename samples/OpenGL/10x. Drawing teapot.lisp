@@ -1,5 +1,6 @@
 #!/usr/bin/ol
-(import (lib opengl))
+(import (lib gl))
+(import (OpenGL version-1-1))
 
 ;(teapot)
 (define vertices '(
@@ -94,12 +95,9 @@
 (define knots '(0 0 0 0 1 1 1 1))
 
 
-(gl:run
-
-   "6. Teapot"
+(gl:set-window-title "6. Teapot")
 
 ; init
-(lambda ()
    (glShadeModel GL_SMOOTH)
    (glClearColor 0.11 0.11 0.11 1)
 
@@ -109,13 +107,15 @@
 
    (glEnable GL_DEPTH_TEST)
 
-   (let ((teapot (gluNewNurbsRenderer)))
-      (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
+   (define teapot (gluNewNurbsRenderer))
+   (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
 
-   (list 1 0.02 3 0.03  teapot)))
+   (gl:set-userdata
+	1 0.02 3 0.03)
 
 ; draw
-(lambda (x   dx y   dy  teapot)
+(gl:set-renderer
+(lambda (x   dx y   dy)
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glMatrixMode GL_MODELVIEW)
@@ -152,5 +152,5 @@
 
    (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
          (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
-      (list (+ x nx) nx (+ y ny) ny teapot))
+      (list (+ x nx) nx (+ y ny) ny))
 ))
