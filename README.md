@@ -41,8 +41,16 @@ various hardware architectures (x86, x86_64, arm, aarch64, ppc,
 mips, etc).
 
 
-REQUIREMENTS
-------------
+LEARNING
+--------
+
+You can find Ol samples at:
+* [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
+* [Samples](https://github.com/yuriy-chumak/ol/tree/master/samples) repository folder.
+
+
+BUILD REQUIREMENTS
+------------------
 
 You should have GCC >3.2 or CLANG >3.5 or TCC installed.
 For Windows you should have MinGW.
