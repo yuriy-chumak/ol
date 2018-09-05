@@ -1,5 +1,5 @@
 ;
-; EXT_texture_object
+; EXT_texture_object (included in OpenGL 1.1)
 ;  Texture state may be stored in a GL object, for greater efficiency.
 ;
 ;  https://www.opengl.org/registry/specs/EXT/texture_object.txt

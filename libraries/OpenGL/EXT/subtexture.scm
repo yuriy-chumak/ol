@@ -1,5 +1,5 @@
 ;
-; EXT_subtexture
+; EXT_subtexture (included in OpenGL 1.1)
 ;	Various methods to alter texture images, including image copying and sub-image replacement.
 ;
 ;	https://www.opengl.org/registry/specs/EXT/subtexture.txt

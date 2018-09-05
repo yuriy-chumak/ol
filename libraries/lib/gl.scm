@@ -258,7 +258,7 @@
       (let ((SetWindowText   (user32 fft-int "SetWindowTextW"   fft-void* type-string-wide)))
          (lambda (context title)
             (let ((window (ref context 3)))
-               (SetWindowText window title))))))
+               (SetWindowText window (c-string title)))))))
    (linux?
       (let ((libX11 (load-dynamic-library "libX11.so")))
       (let ((XStoreName   (libX11 fft-int "XStoreName" type-vptr type-vptr type-string)))
@@ -267,7 +267,7 @@
                   ;(screen  (ref context 2))
                   (window  (ref context 3))
                   (cx      (ref context 4)))
-               (XStoreName display window title))))))))
+               (XStoreName display window (c-string title)))))))))
 
 ; =============================================
 ; automation

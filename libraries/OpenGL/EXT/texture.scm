@@ -1,5 +1,5 @@
 ;
-; EXT_texture
+; EXT_texture (included in OpenGL 1.1)
 ;	Various texturing improvements, including proxy textures and sized internal formats.
 ;
 ;	http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture.txt

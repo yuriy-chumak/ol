@@ -1,5 +1,5 @@
 ;
-; EXT_polygon_offset
+; EXT_polygon_offset (included in OpenGL 1.1)
 ;	Depth values may be offset on a per-primitive basis.
 ;
 ;	https://www.opengl.org/registry/specs/EXT/polygon_offset.txt

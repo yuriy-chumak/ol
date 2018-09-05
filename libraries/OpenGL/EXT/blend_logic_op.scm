@@ -1,5 +1,5 @@
 ;
-; EXT_blend_logic_op
+; EXT_blend_logic_op (included in OpenGL 1.1)
 ;	Fragment colors may be blended into the framebuffer using bitwise operations.
 ;
 ;	https://www.opengl.org/registry/specs/EXT/blend_logic_op.txt

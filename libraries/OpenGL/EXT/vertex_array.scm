@@ -1,5 +1,5 @@
 ;
-; EXT_vertex_array
+; EXT_vertex_array (included in OpenGL 1.1)
 ;     Multiple vertices may be passed to the GL with a single function call.
 ;
 ;     https://www.opengl.org/registry/specs/EXT/vertex_array.txt

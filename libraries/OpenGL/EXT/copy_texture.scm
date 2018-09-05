@@ -1,5 +1,5 @@
 ;
-; EXT_copy_texture
+; EXT_copy_texture (included in OpenGL 1.1)
 ;	Various methods to alter texture images, including image copying and sub-image replacement.
 ;
 ;	https://www.opengl.org/registry/specs/EXT/copy_texture.txt

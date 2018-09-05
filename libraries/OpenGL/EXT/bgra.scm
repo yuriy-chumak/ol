@@ -1,5 +1,5 @@
 ; ===========================================================================
-; EXT_bgra
+; EXT_bgra (included in OpenGL 1.2)
 ;  Pixel data may be specified in BGR or BGRA order, to match the pixel format of Windows bitmaps.
 ;
 ;  https://www.opengl.org/registry/specs/EXT/bgra.txt
