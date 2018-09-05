@@ -74,4 +74,22 @@
    (define glUniformMatrix4x2fv (GL GLvoid "glUniformMatrix4x2fv" GLint GLsizei GLboolean GLfloat*))
    (define glUniformMatrix3x4fv (GL GLvoid "glUniformMatrix3x4fv" GLint GLsizei GLboolean GLfloat*))
    (define glUniformMatrix4x3fv (GL GLvoid "glUniformMatrix4x3fv" GLint GLsizei GLboolean GLfloat*))
+
+   ; notes:
+   ; These are useful extensions when targeting GL 2.1 hardware.
+   ;; GL_ARB_vertex_array_object
+   ;; GL_ARB_framebuffer_object
+   ;;      If not this, you get very similar functionality from these:
+   ;;      GL_EXT_framebuffer_object
+   ;;      GL_EXT_framebuffer_blit
+   ;;      GL_EXT_framebuffer_multisample
+   ;;      GL_EXT_packed_depth_stencil.
+   ;;  GL_ARB_map_buffer_range
+   ;;  GL_ARB_copy_buffer
+   ;;  GL_ARB_texture_rectangle
+   ;;  GL_ARB_color_buffer_float
+   ;;  GL_ARB_half_float_pixel
+   ;;  GL_ARB_sync
+
+
 ))
