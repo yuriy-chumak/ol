@@ -229,9 +229,13 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"subq $32, %rsp", // extra free space for call
 	"call *%rax",
 	// вернем результат
+	"cmpl $42, -8(%rbp)", // TRATIONAL
+	"je   52f",
 	"cmpl $46, -8(%rbp)", // TFLOAT
 	"je   51f",
 	"cmpl $47, -8(%rbp)", // TDOUBLE
+	"je   52f",
+	"cmpl $44, -8(%rbp)", // TINEXACT
 	"je   52f",
 "9:",
 	"leave",
@@ -254,7 +258,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 // 16(rbp): type
 long long x64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
 
-__ASM__("x64_call:_x64_call:", //"int $3",
+__ASM__("x64_call:_x64_call:", // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
@@ -330,9 +334,13 @@ __ASM__("x64_call:_x64_call:", //"int $3",
 	"callq *-8(%rbp)",
 
 	// вернем результат
+	"cmpl $42, 16(%rbp)", // TRATIONAL
+	"je   6f",
 	"cmpl $46, 16(%rbp)", // TFLOAT
 	"je   5f",
 	"cmpl $47, 16(%rbp)", // TDOUBLE
+	"je   6f",
+	"cmpl $44, 16(%rbp)", // TINEXACT
 	"je   6f",
 "9:",
 	"leave",
@@ -386,9 +394,13 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"call  *16(%ebp)",
 
 	"movl  20(%ebp), %ecx", // проверка возвращаемого типа
+	"cmpl  $42, %ecx",      // TRATIONAL
+	"je    3f",
 	"cmpl  $46, %ecx",      // TFLOAT
 	"je    3f",
 	"cmpl  $47, %ecx",      // TDOUBLE
+	"je    3f",
+	"cmpl  $44, %ecx",      // TINEXACT
 	"je    3f",
 "9:",
 	"leave",
