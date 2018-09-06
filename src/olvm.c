@@ -2674,8 +2674,6 @@ loop:;
 	}
 
 	// todo: переделать!
-	// todo: добавить каст с конверсией. например, из большого целого числа в handle или float
-	// это лучше сделать тут, наверное, а не отдельной командой
 	case VMCAST: { // cast obj type -> result
 		if (!is_value(A1))
 			ERROR(VMCAST, this, A1);
