@@ -1,8 +1,9 @@
+; ===========================================================================
+; EXT_texture_object                                 (included in OpenGL 1.1)
 ;
-; EXT_texture_object (included in OpenGL 1.1)
 ;  Texture state may be stored in a GL object, for greater efficiency.
 ;
-;  https://www.opengl.org/registry/specs/EXT/texture_object.txt
+;  https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture_object.txt
 ;
 ; Version
 ;  $Date: 1995/10/03 05:39:56 $ $Revision: 1.27 $
@@ -17,12 +18,10 @@
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;  EXT_texture3D affects the definition of this extension
-   (import
-      (OpenGL version-1-0))
+(import (scheme core) (OpenGL))
 
 ; ---------------------------------------------------------------------------
-   (export
-    EXT_texture_object
+(export EXT_texture_object
 
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
@@ -47,7 +46,7 @@
 
 ; ---------------------------------------------------------------------------
 (begin
-   (define EXT_texture_object (gl:ExtensionSupported? "GL_EXT_texture_object"))
+   (define EXT_texture_object (gl:QueryExtension "GL_EXT_texture_object"))
 
 ;   (define glBindTexture (if EXT_texture_object
 ;         (gl:GetProcAddress GLvoid "glBindTexture" GLenum GLuint)))

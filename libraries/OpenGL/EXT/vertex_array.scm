@@ -1,8 +1,9 @@
+; ===========================================================================
+; EXT_vertex_array                                   (included in OpenGL 1.1)
 ;
-; EXT_vertex_array (included in OpenGL 1.1)
 ;     Multiple vertices may be passed to the GL with a single function call.
 ;
-;     https://www.opengl.org/registry/specs/EXT/vertex_array.txt
+;     https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_vertex_array.txt
 ;
 ; Version
 ;     $Date: 1995/10/03 05:39:58 $ $Revision: 1.16 $  FINAL
@@ -25,12 +26,10 @@
 ; --------------------------------------------------------------------------
 ; Dependencies
 ;     None
-   (import
-      (scheme core) (owl io)
-      (OpenGL version-1-0))
+(import (scheme core) (OpenGL))
 
 ; --------------------------------------------------------------------------
-   (export  EXT_vertex_array
+(export EXT_vertex_array
 
 ; --------------------------------------------------------------------------
 ; New Procedures and Functions
@@ -96,50 +95,7 @@
 )
 
 ; --------------------------------------------------------------------------
-   (begin
-;   (gl:make-current)
-   (define EXT_vertex_array (gl:ExtensionSupported? "GL_EXT_vertex_array"))
+(begin
+   (define EXT_vertex_array (gl:QueryExtension "GL_EXT_vertex_array"))
 
-		(define GL_VERTEX_ARRAY #x8074)
-		(define GL_NORMAL_ARRAY #x8075)
-		(define GL_COLOR_ARRAY #x8076)
-		(define GL_INDEX_ARRAY #x8077)
-		(define GL_TEXTURE_COORD_ARRAY #x8078)
-		(define GL_EDGE_FLAG_ARRAY #x8079)
-		(define GL_VERTEX_ARRAY_SIZE #x807A)
-		(define GL_VERTEX_ARRAY_TYPE #x807B)
-		(define GL_VERTEX_ARRAY_STRIDE #x807C)
-		(define GL_NORMAL_ARRAY_TYPE #x807E)
-		(define GL_NORMAL_ARRAY_STRIDE #x807F)
-		(define GL_COLOR_ARRAY_SIZE #x8081)
-		(define GL_COLOR_ARRAY_TYPE #x8082)
-		(define GL_COLOR_ARRAY_STRIDE #x8083)
-		(define GL_INDEX_ARRAY_TYPE #x8085)
-		(define GL_INDEX_ARRAY_STRIDE #x8086)
-		(define GL_TEXTURE_COORD_ARRAY_SIZE #x8088)
-		(define GL_TEXTURE_COORD_ARRAY_TYPE #x8089)
-		(define GL_TEXTURE_COORD_ARRAY_STRIDE #x808A)
-		(define GL_EDGE_FLAG_ARRAY_STRIDE #x808C)
-		(define GL_VERTEX_ARRAY_POINTER #x808E)
-		(define GL_NORMAL_ARRAY_POINTER #x808F)
-		(define GL_COLOR_ARRAY_POINTER #x8090)
-		(define GL_INDEX_ARRAY_POINTER #x8091)
-		(define GL_TEXTURE_COORD_ARRAY_POINTER #x8092)
-		(define GL_EDGE_FLAG_ARRAY_POINTER #x8093)
-		(define GL_V2F #x2A20)
-		(define GL_V3F #x2A21)
-		(define GL_C4UB_V2F #x2A22)
-		(define GL_C4UB_V3F #x2A23)
-		(define GL_C3F_V3F #x2A24)
-		(define GL_N3F_V3F #x2A25)
-		(define GL_C4F_N3F_V3F #x2A26)
-		(define GL_T2F_V3F #x2A27)
-		(define GL_T4F_V4F #x2A28)
-		(define GL_T2F_C4UB_V3F #x2A29)
-		(define GL_T2F_C3F_V3F #x2A2A)
-		(define GL_T2F_N3F_V3F #x2A2B)
-		(define GL_T2F_C4F_N3F_V3F #x2A2C)
-		(define GL_T4F_C4F_N3F_V4F #x2A2D)
-
-;   (gl:stop-current)
 ))

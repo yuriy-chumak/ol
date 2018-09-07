@@ -1,8 +1,10 @@
 ; ===========================================================================
-; EXT_bgra (included in OpenGL 1.2)
-;  Pixel data may be specified in BGR or BGRA order, to match the pixel format of Windows bitmaps.
+; EXT_bgra                                           (included in OpenGL 1.2)
 ;
-;  https://www.opengl.org/registry/specs/EXT/bgra.txt
+;  Pixel data may be specified in BGR or BGRA order,
+;  to match the pixel format of Windows bitmaps.
+;
+;  https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_bgra.txt
 ;
 ; Version
 ;  Microsoft revision 1.0, May 19, 1997 (drewb)
@@ -18,7 +20,7 @@
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;  None
-(import (OpenGL))
+(import (scheme core) (OpenGL))
 
 ; ---------------------------------------------------------------------------
 (export EXT_bgra

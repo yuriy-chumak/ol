@@ -1,8 +1,8 @@
-;
+; ===========================================================================
 ; EXT_copy_texture (included in OpenGL 1.1)
 ;	Various methods to alter texture images, including image copying and sub-image replacement.
 ;
-;	https://www.opengl.org/registry/specs/EXT/copy_texture.txt
+;	https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_copy_texture.txt
 ;
 ; Version
 ;	$Date: 1995/06/17 03:33:42 $ $Revision: 1.21 $
@@ -20,17 +20,13 @@
 ;	EXT_texture3D affects the definition of this extension.
 ;	SGIS_texture_filter4 affects the definition of this extension.
 ;	EXT_subtexture affects the definition of this extension.
-   (import
-      (scheme core) (owl io)
-      (OpenGL version-1-0))
+(import (scheme core) (OpenGL))
 
 ;	EXT_texture is required.
-   (import
-      (OpenGL EXT texture))
+(import (OpenGL EXT texture))
 
 ; ---------------------------------------------------------------------------
-   (export
-    EXT_copy_texture
+(export EXT_copy_texture
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
@@ -43,13 +39,12 @@
    
 ; ---------------------------------------------------------------------------
 ; New Tokens
-
-   ;none
+;  None
     
 )
   
 ; ---------------------------------------------------------------------------
 (begin
-   (define EXT_copy_texture (gl:ExtensionSupported? "GL_EXT_copy_texture"))
+   (define EXT_copy_texture (gl:QueryExtension "GL_EXT_copy_texture"))
 
 ))

@@ -1,8 +1,9 @@
+; ===========================================================================
+; EXT_subtexture                                     (included in OpenGL 1.1)
 ;
-; EXT_subtexture (included in OpenGL 1.1)
 ;	Various methods to alter texture images, including image copying and sub-image replacement.
 ;
-;	https://www.opengl.org/registry/specs/EXT/subtexture.txt
+;	https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_subtexture.txt
 ;
 ; Version
 ;	$Date: 1995/10/03 05:39:55 $ $Revision: 1.17 $
@@ -23,13 +24,10 @@
 ; Dependencies
 ;	EXT_abgr affects the definition of this extension
 ;	EXT_texture3D affects the definition of this extension
-   (import
-      (scheme core) (owl io)
-      (OpenGL version-1-0))
+(import (scheme core) (OpenGL))
 
 ;	EXT_texture is required.
-   (import
-      (OpenGL EXT texture))
+(import (OpenGL EXT texture))
 
 ; ---------------------------------------------------------------------------
    (export

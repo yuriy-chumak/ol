@@ -1,26 +1,26 @@
 ; ==========================================================================
 ; ARB_depth_buffer_float
 ;
-;     https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_depth_buffer_float.txt
+; https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_depth_buffer_float.txt
+;
+; Version
+;
+; Overview
 ;
 (define-library (OpenGL ARB depth_buffer_float)
 
 ; --------------------------------------------------------------------------
 ; Dependencies
-;     None
-   (import
-      (scheme core) (owl io)
-      (OpenGL version-1-0))
+(import (scheme core) (OpenGL))
 
 ; --------------------------------------------------------------------------
-   (export  ARB_depth_buffer_float
+(export ARB_depth_buffer_float
 
 ; --------------------------------------------------------------------------
 ; New Procedures and Functions
    
 ; --------------------------------------------------------------------------
 ; New Tokens
-;
 
 ;    Accepted by the <internalformat> parameter of TexImage1D, TexImage2D,
 ;    TexImage3D, CopyTexImage1D, CopyTexImage2D, and RenderbufferStorageEXT,

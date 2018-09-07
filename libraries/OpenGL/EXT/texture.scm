@@ -1,9 +1,9 @@
+; ===========================================================================
+; EXT_texture                                        (included in OpenGL 1.1)
 ;
-; EXT_texture (included in OpenGL 1.1)
 ;	Various texturing improvements, including proxy textures and sized internal formats.
 ;
-;	http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture.txt
-;	https://www.opengl.org/registry/specs/EXT/texture.txt
+;	https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture.txt
 ;
 ; Version
 ;	$Date: 1996/04/05 19:17:03 $ $Revision: 1.21 $
@@ -38,18 +38,14 @@
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;	None
-   (import
-      (scheme core) (owl io)
-      (OpenGL version-1-0))
+(import (scheme core) (OpenGL))
       
 ; ---------------------------------------------------------------------------
-   (export
-    EXT_texture
+(export EXT_texture
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
-
-   ;none   
+;  None
 
 ; ---------------------------------------------------------------------------
 ; New Tokens
@@ -126,11 +122,9 @@
 
     
 )
-  
+
 ; ---------------------------------------------------------------------------
-   (begin
-;   (gl:make-current)
-   (define EXT_texture (gl:ExtensionSupported? "GL_EXT_texture"))
+(begin
+   (define EXT_texture (gl:QueryExtension "GL_EXT_texture"))
    
-;   (gl:stop-current)
 ))

@@ -1,8 +1,9 @@
+; ===========================================================================
+; EXT_polygon_offset                                 (included in OpenGL 1.1)
 ;
-; EXT_polygon_offset (included in OpenGL 1.1)
 ;	Depth values may be offset on a per-primitive basis.
 ;
-;	https://www.opengl.org/registry/specs/EXT/polygon_offset.txt
+;	https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_polygon_offset.txt
 ;
 ; Version
 ;	$Date: 1995/06/17 03:34:49 $ $Revision: 1.12 $
@@ -24,12 +25,10 @@
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;	None
-   (import
-      (scheme core) (owl io)
-      (OpenGL version-1-0))
+(import (scheme core) (OpenGL))
 
 ; ---------------------------------------------------------------------------
-   (export  EXT_polygon_offset
+(export EXT_polygon_offset
     
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
@@ -44,10 +43,7 @@
 )
    
 ; ---------------------------------------------------------------------------
-   (begin
-;   (gl:make-current)
+(begin
+   (define EXT_polygon_offset (gl:QueryExtension "GL_EXT_polygon_offset"))
 
-   (define EXT_polygon_offset (gl:ExtensionSupported? "GL_EXT_polygon_offset"))
-
-;   (gl:stop-current)
 ))

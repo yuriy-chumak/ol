@@ -7,7 +7,7 @@
 
 ; init
 (glShadeModel GL_SMOOTH)
-(glClearColor 0.11 0.11 0.11 1)
+(glClearColor 0.3 0.3 0.3 1)
 
 ; draw loop
 (gl:set-renderer (lambda ()
