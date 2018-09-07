@@ -1,10 +1,10 @@
 (define-library (lib gl)
 (import
    (otus lisp) (otus ffi)
-   (OpenGL))
+   (OpenGL) (lib gl config))
 
 (export
-   gl:set-window-title
+   gl:set-window-title gl:set-window-size
    gl:set-context-version ; recreate OpenGL with version
    gl:set-userdata
    gl:set-renderer
@@ -45,9 +45,9 @@
 
 ; --
 
-(define WIDTH 640)
-(define HEIGHT 480)
-(define CONFIG (list->ff '(
+(define WIDTH (get config 'width 640))
+(define HEIGHT (get config 'height 480))
+(define CONFIG (list->ff '( ; todo: move to config
    (red .    8)
    (green .  8)
    (blue .   8)
@@ -269,6 +269,17 @@
                   (cx      (ref context 4)))
                (XStoreName display window (c-string title)))))))))
 
+(define gl:SetWindowSize (cond
+   (win32?
+      #true)
+   (linux?
+      (let ((libX11 (load-dynamic-library "libX11.so")))
+      (let ((XResizeWindow (libX11 fft-int "XResizeWindow" type-vptr type-vptr fft-int fft-int)))
+         (lambda (context width height)
+            (let ((display (ref context 1))
+                  (window  (ref context 3)))
+               (XResizeWindow display window width height))))))))
+
 ; =============================================
 ; automation
 (fork-server 'opengl (lambda ()
@@ -304,6 +315,11 @@
             ; set-window-title
             ((set-window-title title)
                (gl:SetWindowTitle (get dictionary 'context #f) title)
+               (this dictionary))
+
+            ; set-window-size
+            ((set-window-size width height)
+               (gl:SetWindowSize (get dictionary 'context #f) width height)
                (this dictionary))
 
             ; renderer
@@ -366,6 +382,9 @@
 
 (define (gl:set-window-title title)
    (mail 'opengl (tuple 'set-window-title title)))
+
+(define (gl:set-window-size width height)
+   (mail 'opengl (tuple 'set-window-size width height)))
 
 (define (gl:finish)
    (interact 'opengl (tuple 'finish)))
