@@ -1,5 +1,5 @@
 ; ===========================================================================
-; EXT_texture_sRGB                                   (included in OpenGL 2.0)
+; EXT_texture_sRGB                                   (included in OpenGL 2.1)
 ;
 ;	https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture_sRGB.txt
 ;

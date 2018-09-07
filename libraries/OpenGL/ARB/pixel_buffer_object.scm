@@ -1,5 +1,5 @@
 ; ===========================================================================
-; ARB_pixel_buffer_object                            (included in OpenGL 2.0)
+; ARB_pixel_buffer_object                            (included in OpenGL 2.1)
 ;
 ;	https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_pixel_buffer_object.txt
 ;
