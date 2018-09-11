@@ -17,7 +17,7 @@
 
 (define window (SDL_CreateWindow "Create SDL2 Window sample"
    SDL_WINDOWPOS_UNDEFINED SDL_WINDOWPOS_UNDEFINED
-   640 480 SDL_WINDOW_SHOWN))
+   854 480 SDL_WINDOW_SHOWN))
 
 (define renderer (SDL_CreateRenderer window -1 (bor SDL_RENDERER_ACCELERATED SDL_RENDERER_PRESENTVSYNC)))
 

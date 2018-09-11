@@ -36,7 +36,7 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glUseProgram po)
-   (glUniform2f (glGetUniformLocation po (c-string "resolution")) 640 480)
+   (glUniform2f (glGetUniformLocation po (c-string "resolution")) 854 480)
 
    (glColor3f 1 1 1)
    (glBegin GL_TRIANGLES)

@@ -2,8 +2,8 @@
 (import (lib gl))
 (import (otus random!))
 
-(define WIDTH 128)  ;128
-(define HEIGHT 96) ;96)
+(define WIDTH 170) ;was: 128
+(define HEIGHT 96) ;96
 
 (define (hash x y)
    (let ((x (mod (+ x WIDTH) WIDTH))
@@ -73,7 +73,7 @@
 ;   (glLoadIdentity)
 ;   (glOrtho min-x max-x min-y max-y 0 1))
 
-   (glPointSize (/ 640 WIDTH))
+   (glPointSize (/ 854 WIDTH))
    (glColor3f 0.2 0.5 0.2)
    (glBegin GL_POINTS)
       (ff-fold (lambda (st key value)

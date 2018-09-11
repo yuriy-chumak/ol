@@ -155,6 +155,8 @@
 
 ; -- main -------------------------
 ; 640 x 480
+(gl:set-window-size 640 480)
+(glViewport 0 0 640 480)
 
 ; init
 (glShadeModel GL_SMOOTH)

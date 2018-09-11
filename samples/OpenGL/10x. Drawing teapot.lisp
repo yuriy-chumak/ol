@@ -103,7 +103,7 @@
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
-   (gluPerspective 45 (/ 640 480) 0.1 100)
+   (gluPerspective 45 (/ 854 480) 0.1 100)
 
    (glEnable GL_DEPTH_TEST)
 

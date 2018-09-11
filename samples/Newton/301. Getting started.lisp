@@ -67,7 +67,7 @@
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
-   (gluPerspective 45 (/ 640 480) 0.1 1000)
+   (gluPerspective 45 (/ 854 480) 0.1 1000)
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
