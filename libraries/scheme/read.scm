@@ -1,9 +1,10 @@
 (define-library (scheme read)
    (export 
-      (exports (scheme core)) )
+      read)
 
    (import
-      (scheme core))
+      (scheme core)
+      (only (lang sexp) read))
 
    (begin
       #true
