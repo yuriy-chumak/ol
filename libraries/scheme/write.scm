@@ -1,10 +1,19 @@
 (define-library (scheme write)
-   (export 
-      (exports (scheme core)) )
+   (export
+      display
+      write
+      write-shared
+      write-simple)
 
    (import
-      (scheme core))
+      (scheme core)
+      (only (owl io) display write))
 
    (begin
-      #true
+
+(define (write-shared . args)
+   (runtime-error "Not implemented: " 'write-shared))
+(define (write-simple . args)
+   (runtime-error "Not implemented: " 'write-simple))
+
 ))
