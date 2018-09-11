@@ -45,12 +45,12 @@
 
 ; --
 
-(define WIDTH (get config 'width 640))
+(define WIDTH  (get config 'width  854))
 (define HEIGHT (get config 'height 480))
 (define CONFIG (list->ff '( ; todo: move to config
-   (red .    8)
+   (red   .  8)
    (green .  8)
-   (blue .   8)
+   (blue  .  8)
    (depth . 24)
 )))
 
