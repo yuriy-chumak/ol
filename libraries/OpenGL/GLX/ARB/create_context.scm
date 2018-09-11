@@ -27,7 +27,7 @@
    ;;                  Display *dpy, GLXFBConfig config,
    ;;                  GLXContext share_context, Bool direct,
    ;;                  const int *attrib_list);
-   
+
 ; --------------------------------------------------------------------------
 ; New Tokens
 ;

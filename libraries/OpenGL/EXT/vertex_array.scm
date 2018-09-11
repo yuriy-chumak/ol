@@ -34,7 +34,7 @@
 ; --------------------------------------------------------------------------
 ; New Procedures and Functions
    ;ArrayElementEXT
-   ;DrawArraysEXT    
+   ;DrawArraysEXT
    ;VertexPointerEXT
    ;NormalPointerEXT
    ;ColorPointerEXT
@@ -42,7 +42,7 @@
    ;TexCoordPointerEXT
    ;EdgeFlagPointerEXT
    ;GetPointervEXT
-   
+
 ; --------------------------------------------------------------------------
 ; New Tokens
 ;
@@ -82,7 +82,7 @@
 ;        TEXTURE_COORD_ARRAY_COUNT_EXT  0x808B
 ;        EDGE_FLAG_ARRAY_STRIDE_EXT     0x808C
 ;        EDGE_FLAG_ARRAY_COUNT_EXT      0x808D
-        
+
 ;	Accepted by the <pname> parameter of GetPointervEXT:
 ;        VERTEX_ARRAY_POINTER_EXT       0x808E
 ;        NORMAL_ARRAY_POINTER_EXT       0x808F

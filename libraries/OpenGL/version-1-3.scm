@@ -7,7 +7,7 @@
 
  ; ARB_multitexture
 ;glActiveTextureARB( texture )
-;glClientActiveTextureARB( texture ) 
+;glClientActiveTextureARB( texture )
 ;glMultiTexCoord1dARB( target , s )
 ;glMultiTexCoord1dvARB( target , v )
 ;glMultiTexCoord1fARB( target , s )
@@ -39,7 +39,7 @@
 ;glMultiTexCoord4iARB( target , s , t , r , q )
 ;glMultiTexCoord4ivARB( target , v )
 ;glMultiTexCoord4sARB( target , s , t , r , q )
-;glMultiTexCoord4svARB( target , v ) 
+;glMultiTexCoord4svARB( target , v )
 
 ;#define GL_TEXTURE0_ARB                   0x84C0
 ;#define GL_TEXTURE1_ARB                   0x84C1
@@ -77,7 +77,7 @@
 ;#define GL_CLIENT_ACTIVE_TEXTURE_ARB      0x84E1
 ;#define GL_MAX_TEXTURE_UNITS_ARB          0x84E2
 
- ; 
+ ;
 
    (exports (OpenGL version-1-2)))
 ; ============================================================================

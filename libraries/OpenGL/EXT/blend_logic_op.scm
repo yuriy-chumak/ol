@@ -21,20 +21,20 @@
 ; Dependencies
 ;	EXT_blend_minmax affects the definition of this extension
 (import (scheme core) (OpenGL))
-      
+
 ; ---------------------------------------------------------------------------
 (export EXT_blend_logic_op
-    
+
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
 ;	None
-   
+
 ; ---------------------------------------------------------------------------
 ; New Tokens
 ;	None
 
 )
-  
+
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_blend_logic_op (gl:QueryExtension "GL_EXT_blend_logic_op"))

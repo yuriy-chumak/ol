@@ -35,7 +35,7 @@
 ; --------------------------------------------------------------------------
 ; New Procedures and Functions
    ;ArrayElementEXT
-   ;DrawArraysEXT    
+   ;DrawArraysEXT
    ;VertexPointerEXT
    ;NormalPointerEXT
    ;ColorPointerEXT
@@ -43,7 +43,7 @@
    ;TexCoordPointerEXT
    ;EdgeFlagPointerEXT
    ;GetPointervEXT
-   
+
 ; --------------------------------------------------------------------------
 ; New Tokens
 ;

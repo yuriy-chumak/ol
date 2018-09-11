@@ -530,7 +530,7 @@
    (define GLsizei    fft-int)
    (define GLclampx   fft-int32)
 
-  
+
    (define GLvoid*  type-vptr)
    (define GLuint*  (fft* GLuint))
    (define GLubyte* type-string) ; ?

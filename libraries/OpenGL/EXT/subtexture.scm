@@ -32,25 +32,25 @@
 ; ---------------------------------------------------------------------------
    (export
     EXT_subtexture
-    
+
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
 
    ;TexSubImage1DEXT
    ;TexSubImage2DEXT
    ;TexSubImage3DEXT
-   
+
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
    ;none
-    
+
 )
-  
+
 ; ---------------------------------------------------------------------------
    (begin
 ;   (gl:make-current)
    (define EXT_subtexture (gl:ExtensionSupported? "GL_EXT_subtexture"))
-   
+
 ;   (gl:stop-current)
 ))

@@ -6,7 +6,7 @@
 
    GL_VERSION_1_2
    GL_VERSION_1_2_1
-  
+
  ; removed by 1.1 (introduced back by 1.2)
    ;glTexSubImage3D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels)
    ;glCopyTexSubImage3D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height)
@@ -26,7 +26,7 @@
    GL_SMOOTH_LINE_WIDTH_RANGE
    GL_SMOOTH_LINE_WIDTH_GRANULARITY
    GL_ALIASED_LINE_WIDTH_RANGE
-   GL_ALIASED_POINT_SIZE_RANGE
+   GL_ALIASED_POINT_SIZE_RANGE ; GL_VERSION_1_2_DEPRECATED
 
 
  ; EXT_texture3D
@@ -55,7 +55,7 @@
    GL_TEXTURE_MAX_LEVEL
 
  ; EXT_rescale_normal
-   GL_RESCALE_NORMAL
+   GL_RESCALE_NORMAL ; GL_VERSION_1_2_DEPRECATED
 
  ; SGIS_texture_edge_clamp
    GL_CLAMP_TO_EDGE
@@ -71,9 +71,9 @@
    GL_BGRA
 
  ; EXT_separate_specular_color
-   GL_LIGHT_MODEL_COLOR_CONTROL
-   GL_SINGLE_COLOR
-   GL_SEPARATE_SPECULAR_COLOR
+   GL_LIGHT_MODEL_COLOR_CONTROL ; GL_VERSION_1_2_DEPRECATED
+   GL_SINGLE_COLOR              ; GL_VERSION_1_2_DEPRECATED
+   GL_SEPARATE_SPECULAR_COLOR   ; GL_VERSION_1_2_DEPRECATED
 
    (exports (OpenGL version-1-1)))
 

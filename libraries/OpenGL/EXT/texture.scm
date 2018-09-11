@@ -39,10 +39,10 @@
 ; Dependencies
 ;	None
 (import (scheme core) (OpenGL))
-      
+
 ; ---------------------------------------------------------------------------
 (export EXT_texture
-    
+
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
 ;  None
@@ -120,11 +120,11 @@
 ;
 ;        TEXTURE_TOO_LARGE_EXT            0x8065
 
-    
+
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_texture (gl:QueryExtension "GL_EXT_texture"))
-   
+
 ))

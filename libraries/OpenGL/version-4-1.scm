@@ -4,7 +4,7 @@
 (export
 
    GL_VERSION_4_1
-   
+
    (exports (OpenGL version-4-0)))
 
 (import (scheme core)

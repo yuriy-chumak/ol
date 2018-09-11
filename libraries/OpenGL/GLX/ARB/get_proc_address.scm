@@ -20,7 +20,7 @@
 ; --------------------------------------------------------------------------
 ; New Procedures and Functions
    glXGetProcAddressARB ; void (*glXGetProcAddressARB(const GLubyte *procName))(...)
-   
+
 ; --------------------------------------------------------------------------
 ; New Tokens
 ;

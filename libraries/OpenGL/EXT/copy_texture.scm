@@ -27,7 +27,7 @@
 
 ; ---------------------------------------------------------------------------
 (export EXT_copy_texture
-    
+
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
 
@@ -36,13 +36,13 @@
    ;CopyTexSubImage1DEXT
    ;CopyTexSubImage2DEXT
    ;CopyTexSubImage3DEXT
-   
+
 ; ---------------------------------------------------------------------------
 ; New Tokens
 ;  None
-    
+
 )
-  
+
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_copy_texture (gl:QueryExtension "GL_EXT_copy_texture"))

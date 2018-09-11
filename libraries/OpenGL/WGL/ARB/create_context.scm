@@ -26,7 +26,7 @@
    wglCreateContextAttribsARB
    ;; HGLRC wglCreateContextAttribsARB(HDC hDC, HGLRC hShareContext,
    ;;                                   const int *attribList)
-   
+
 ; --------------------------------------------------------------------------
 ; New Tokens
 ;

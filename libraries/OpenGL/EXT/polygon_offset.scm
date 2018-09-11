@@ -29,7 +29,7 @@
 
 ; ---------------------------------------------------------------------------
 (export EXT_polygon_offset
-    
+
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
    ;PolygonOffsetEXT
@@ -39,9 +39,9 @@
    ;POLYGON_OFFSET_EXT
    ;POLYGON_OFFSET_FACTOR_EXT
    ;POLYGON_OFFSET_BIAS_EXT
-    
+
 )
-   
+
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_polygon_offset (gl:QueryExtension "GL_EXT_polygon_offset"))

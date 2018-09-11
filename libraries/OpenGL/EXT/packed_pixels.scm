@@ -20,18 +20,18 @@
 ;    SGIS_texture4D affects the definition of this extension
 ;    EXT_cmyka affects the definition of this extension
 (import (scheme core) (OpenGL))
-      
+
 ; ---------------------------------------------------------------------------
 (export EXT_packed_pixels
-    
+
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
-   
+
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
 )
-  
+
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_packed_pixels (gl:QueryExtension "GL_EXT_packed_pixels"))

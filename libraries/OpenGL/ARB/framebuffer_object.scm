@@ -79,7 +79,7 @@
 ;                         int dstX0, int dstY0, int dstX1, int dstY1,
 ;                         bitfield mask, enum filter);
 ;
-;    void GenerateMipmap(enum target);   
+;    void GenerateMipmap(enum target);
 ; --------------------------------------------------------------------------
 ; New Tokens
 ;
@@ -273,7 +273,7 @@
 ;                         int dstX0, int dstY0, int dstX1, int dstY1,
 ;                         bitfield mask, enum filter);
 ;
-;    void GenerateMipmap(enum target);   
+;    void GenerateMipmap(enum target);
 
 
    (define GL_FRAMEBUFFER                     #x8D40)

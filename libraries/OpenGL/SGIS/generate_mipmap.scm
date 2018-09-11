@@ -15,7 +15,7 @@
 
 ; ---------------------------------------------------------------------------
 (export SGIS_generate_mipmap
-    
+
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
 
@@ -23,7 +23,7 @@
 ; New Tokens
 
 )
-  
+
 ; ---------------------------------------------------------------------------
 (begin
    (define SGIS_generate_mipmap (gl:QueryExtension "GL_SGIS_generate_mipmap"))

@@ -37,7 +37,7 @@
    glUniformMatrix4x3fv ;void (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
 
    (exports (OpenGL version-2-0)))
-  
+
 (import (scheme core)
    (OpenGL version-2-0))
 

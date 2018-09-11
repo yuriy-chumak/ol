@@ -2,9 +2,9 @@
 
 (define-library (OpenGL version-4-4)
 (export
-   
+
    GL_VERSION_4_4
-   
+
    (exports (OpenGL version-4-3)))
 
 (import (scheme core)
