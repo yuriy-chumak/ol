@@ -1708,8 +1708,8 @@ double ol2d(word arg) {
 		}
 		assert(0);
 		return 0.;
-//	case TCOMPLEX: // only real part of complex number
-//		return ol2d(car(arg));
+	case TCOMPLEX: // only real part of complex number
+		return ol2d(car(arg));
 	case TINEXACT:
 		return *(double*)&car(arg);
 	default:
@@ -1742,8 +1742,8 @@ float ol2f(word arg) {
 		return -ol2f_convert(arg);
 	case TRATIONAL:
 		return ol2f(car(arg)) / ol2f(cdr(arg));
-//	case TCOMPLEX: // use only real part of complex number
-//		return ol2f(car(arg));
+	case TCOMPLEX: // use only real part of complex number
+		return ol2f(car(arg));
 	case TINEXACT:
 		return *(double*)&car(arg); // inexact numbers is doubles! not floats.
 	default:
