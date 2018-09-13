@@ -1,6 +1,6 @@
 #!/usr/bin/ol
 (import (lib gl))
-(gl:set-window-title "2. Drawing simple triangle")
+(gl:set-window-title "2. Point, line, triangle, quad, polygon")
 
 (import (OpenGL version-1-0))
 (import (lib math))
