@@ -905,13 +905,13 @@ word* OL_ffi(OL* self, word* arguments)
 				}
 				case TTUPLE: // let's support not only lists as float*
 				case TVECTOR: {
-					int c = header_size(arg);
+					int c = header_size(*(word*)arg) - 1;
 					float* f = (float*) __builtin_alloca(c * sizeof(float));
 					args[i] = (word)f;
 
 					word* l = &car(arg);
 					while (c--)
-						*f++ = *l++;
+						*f++ = ol2f(*l++);
 					break;
 				}
 			}
