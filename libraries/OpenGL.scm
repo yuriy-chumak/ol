@@ -137,19 +137,19 @@
    (let ((string (append '(#\space) (string->bytes extensions) '(#\space)))
          (substr (append '(#\space) (string->bytes extension) '(#\space))))
    (for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support...")) ; debug info
-   (if
-   (let iter ((string string))
-      (or
-         (let loop ((one string) (two substr))
-            (if (null? two)
-               #true
-               (if (not (null? one))
-                  (if (eq? (car one) (car two))
-                     (loop (cdr one) (cdr two))))))
-         (if (not (null? string))
-            (iter (cdr string)))))
-   (begin (print " ok.") #true)
-   (begin (print " not found.") #false)))))
+   (if ; fasl manual findstr implementation
+      (let iter ((string string))
+         (or
+            (let loop ((one string) (two substr))
+               (if (null? two)
+                  #true
+                  (if (not (null? one))
+                     (if (eq? (car one) (car two))
+                        (loop (cdr one) (cdr two))))))
+            (if (not (null? string))
+               (iter (cdr string)))))
+      (begin (print " ok.") #true)
+      (begin (print " not found.") #false)))))
 
 
 (define gl:ExtensionSupported? gl:QueryExtension)
