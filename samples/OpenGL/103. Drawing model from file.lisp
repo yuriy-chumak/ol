@@ -6,6 +6,7 @@
 
 (import (OpenGL version-2-1))
 
+(import (lib math))
 
 ; load the model
 (import (lang sexp))
@@ -81,7 +82,7 @@
 (glEnable GL_NORMALIZE)
 
 (glEnable GL_LIGHT0)
-(glLightfv GL_LIGHT0 GL_DIFFUSE '(0.7 0.7 0.7))
+;(glLightfv GL_LIGHT0 GL_DIFFUSE '(0.7 0.7 0.7))
 
 (glEnable GL_LIGHTING)
 (glLightfv GL_LIGHT0 GL_POSITION '(7.0 7.0 7.0 0.0))
@@ -92,12 +93,26 @@
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
-   (gluLookAt 6 6 6
+   (gluLookAt 6 9 6
       1 3 0
       0 1 0)
 
-   (glLightfv GL_LIGHT0 GL_POSITION '(0 7 7 0))
+   ; show lighting point
+   (let*((ss ms (clock))
+         (x (* 3 (sin (+ ss (/ ms 1000)))))
+         (y (+ 4 (* 3 (sin (/ (+ ss (/ ms 1000)) 8)))))
+         (z (* 3 (cos (+ ss (/ ms 1000))))))
+      (glDisable GL_LIGHTING)
+      (glPointSize 5)
+      (glBegin GL_POINTS)
+      (glColor3f #xff/255 #xbf/255 0)
+      (glVertex3f x y z)
+      (glEnd)
 
+      (glEnable GL_LIGHTING)
+      (glLightfv GL_LIGHT0 GL_POSITION (list x y z 0)))
+
+   ; show model
    (for-each (lambda (o)
          (let ((diffuse-color (get (cdr o) 'kd #f)))
             (glLightfv GL_LIGHT0 GL_DIFFUSE diffuse-color))
