@@ -1323,10 +1323,11 @@
       ; member uses compare, if given, and equal? otherwise.
       (define (make-mem* comparer)
          (letrec ((mem (lambda (obj list)
-                        (cond
-                           ((null? list) #false)
-                           ((comparer obj (car list)) list)
-                           (else (mem obj (cdr list)))))))
+                        (unless (null? list)
+                           (if (pair? list)
+                              (unless (comparer obj (car list))
+                                 (mem obj (cdr list))
+                                 list)))))) ; found
             mem))
 
       (define memq (make-mem* eq?))
