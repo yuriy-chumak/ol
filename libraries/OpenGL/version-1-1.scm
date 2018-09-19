@@ -111,7 +111,7 @@
    ;CopyTexImage1DEXT
    ;CopyTexImage2DEXT
    ;CopyTexSubImage1DEXT
-   ;CopyTexSubImage2DEXT
+   glCopyTexSubImage2D ;void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
    ;glCopyTexSubImage3D ; excluded by 1.1 (introduced back by 1.2)
 
  ; EXT_texture_object
@@ -294,7 +294,7 @@
    ;void APIENTRY glCopyTexImage1D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border);
    ;void APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
    ;void APIENTRY glCopyTexSubImage1D (GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
-   ;void APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+   (define glCopyTexSubImage2D (GL GLvoid "glCopyTexSubImage2D" GLenum GLint GLint GLint GLint GLint GLsizei GLsizei))
 
 
  ; EXT_texture_object

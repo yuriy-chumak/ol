@@ -1395,16 +1395,27 @@ word* OL_ffi(OL* self, word* arguments)
 				while (c--) {
 					float value = *f++;
 					word num = car(l);
-					assert (reftype(num) == TRATIONAL);
-					// максимальная читабельность (todo: change like fto..)
-					long n = value * 10000;
-					long d = 10000;
-					car(num) = itosv(n);
-					cdr(num) = itosv(d);
-					// максимальная точность (fixme: пока не работает как надо)
-					//car(num) = itosv(value * VMAX);
-					//cdr(num) = I(VMAX);
-
+					switch (reftype(num)) {
+						case TRATIONAL: {
+							// максимальная читабельность (todo: change like fto..)
+							long n = value * 10000;
+							long d = 10000;
+							car(num) = itosv(n);
+							cdr(num) = itosv(d);
+							// максимальная точность (fixme: пока не работает как надо)
+							//car(num) = itosv(value * VMAX);
+							//cdr(num) = I(VMAX);
+							break;
+						}
+						case TINEXACT: {
+							double* d = (double*)&car(num);
+							*(double*)&car(num) = value;
+							break;
+						}
+						default:
+							assert (0 && "Invalid return variables.");
+							break;
+					}
 					l = cdr(l);
 				}
 				break;

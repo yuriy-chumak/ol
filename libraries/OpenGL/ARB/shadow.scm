@@ -22,10 +22,26 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
+;    Accepted by the <pname> parameter of TexParameterf, TexParameteri,
+;    TexParameterfv, TexParameteriv, GetTexParameterfv, and GetTexParameteriv:
+
+    GL_TEXTURE_COMPARE_MODE_ARB
+    GL_TEXTURE_COMPARE_FUNC_ARB
+
+;    Accepted by the <param> parameter of TexParameterf, TexParameteri,
+;    TexParameterfv, and TexParameteriv when the <pname> parameter is
+;    TEXTURE_COMPARE_MODE_ARB:
+
+    GL_COMPARE_R_TO_TEXTURE_ARB
+
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define ARB_shadow (gl:QueryExtension "GL_ARB_shadow"))
+
+   (define GL_TEXTURE_COMPARE_MODE_ARB    #x884C)
+   (define GL_TEXTURE_COMPARE_FUNC_ARB    #x884D)
+   (define GL_COMPARE_R_TO_TEXTURE_ARB    #x884E)
 
 ))

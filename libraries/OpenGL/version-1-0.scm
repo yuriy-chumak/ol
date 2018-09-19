@@ -281,8 +281,8 @@
    ;WINGDIAPI void APIENTRY glTexGend (GLenum coord, GLenum pname, GLdouble param); +
    ;WINGDIAPI void APIENTRY glTexGendv (GLenum coord, GLenum pname, const GLdouble *params); +
    ;WINGDIAPI void APIENTRY glTexGenf (GLenum coord, GLenum pname, GLfloat param); +
-   ;WINGDIAPI void APIENTRY glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params); +
-   ;WINGDIAPI void APIENTRY glTexGeni (GLenum coord, GLenum pname, GLint param); +
+   glTexGenfv ; void glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params); +
+   glTexGeni  ; void glTexGeni (GLenum coord, GLenum pname, GLint param); +
    ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params); +
 
    ;; 2.10 Clipping
@@ -2961,8 +2961,8 @@
 ;WINGDIAPI void APIENTRY glTexGend (GLenum coord, GLenum pname, GLdouble param);
 ;WINGDIAPI void APIENTRY glTexGendv (GLenum coord, GLenum pname, const GLdouble *params);
 ;WINGDIAPI void APIENTRY glTexGenf (GLenum coord, GLenum pname, GLfloat param);
-;WINGDIAPI void APIENTRY glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params);
-;WINGDIAPI void APIENTRY glTexGeni (GLenum coord, GLenum pname, GLint param);
+   (define glTexGenfv (GL GLvoid "glTexGenfv" GLenum GLenum GLfloat*))
+   (define glTexGeni (GL GLvoid "glTexGeni" GLenum GLenum GLint))
 ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
    (define glTexImage1D (GL GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum GLvoid*))
    (define glTexImage2D (GL GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum GLvoid*))
