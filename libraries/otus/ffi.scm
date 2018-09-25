@@ -266,10 +266,14 @@
 ; -- sizeof ---------------------------
 (define (sizeof type)
    (case type
-      ((fft-int8  fft-uint8)   1)
-      ((fft-int16 fft-uint16)  2)
-      ((fft-int32 fft-uint32)  4)
-      ((fft-int64 fft-uint64)  8)
+      (fft-int8  1)
+      (fft-uint8  1)
+      (fft-int16 2)
+      (fft-uint16 2)
+      (fft-int32 4)
+      (fft-uint32 4)
+      (fft-int64 8)
+      (fft-uint64 8)
       (fft-float 4)
       (fft-double 8)
       (fft-void* (size nullptr)))

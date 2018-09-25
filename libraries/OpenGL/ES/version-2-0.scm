@@ -328,7 +328,7 @@
       glCompileShader ;void (GLuint shader)
       ;glCompressedTexImage2D ;void (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data)
       ;glCompressedTexSubImage2D ;void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data)
-      ;glCopyTexImage2D ;void (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+      glCopyTexImage2D ;void (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
       ;glCopyTexSubImage2D ;void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
       glCreateProgram ;GLuint (void)
       glCreateShader ;GLuint (GLenum type)

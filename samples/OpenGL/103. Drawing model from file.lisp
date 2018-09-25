@@ -82,7 +82,6 @@
 (glEnable GL_NORMALIZE)
 
 (glEnable GL_LIGHT0)
-;(glLightfv GL_LIGHT0 GL_DIFFUSE '(0.7 0.7 0.7))
 
 (glEnable GL_LIGHTING)
 (glLightfv GL_LIGHT0 GL_POSITION '(7.0 7.0 7.0 0.0))
@@ -98,19 +97,20 @@
       0 1 0)
 
    ; show lighting point
+   (glDisable GL_LIGHTING)
    (let*((ss ms (clock))
          (x (* 3 (sin (+ ss (/ ms 1000)))))
          (y (+ 4 (* 3 (sin (/ (+ ss (/ ms 1000)) 8)))))
          (z (* 3 (cos (+ ss (/ ms 1000))))))
-      (glDisable GL_LIGHTING)
       (glPointSize 5)
       (glBegin GL_POINTS)
       (glColor3f #xff/255 #xbf/255 0)
       (glVertex3f x y z)
       (glEnd)
-
+      
+      (glLightfv GL_LIGHT0 GL_POSITION (list x y z 1)))
       (glEnable GL_LIGHTING)
-      (glLightfv GL_LIGHT0 GL_POSITION (list x y z 0)))
+      
 
    ; show model
    (for-each (lambda (o)

@@ -457,7 +457,7 @@
 
    ;WINGDIAPI void APIENTRY glTexEnvf (GLenum target, GLenum pname, GLfloat param); +
    ;WINGDIAPI void APIENTRY glTexEnvfv (GLenum target, GLenum pname, const GLfloat *params); +
-   ;WINGDIAPI void APIENTRY glTexEnvi (GLenum target, GLenum pname, GLint param); +
+   glTexEnvi ; void (GLenum target, GLenum pname, GLint param); +
    ;WINGDIAPI void APIENTRY glTexEnviv (GLenum target, GLenum pname, const GLint *params); +
 
    ;; 3.9. Fog
@@ -947,7 +947,7 @@
       GL_TEXTURE_BIT                   ;0x00040000
       GL_SCISSOR_BIT                   ;0x00080000
       GL_ALL_ATTRIB_BITS               ;0x000fffff|#
-   ;WINGDIAPI void APIENTRY glPopAttrib (void); +
+   glPopAttrib ; void glPopAttrib (void) +
 
 
    ; AccumOp
@@ -2870,7 +2870,7 @@
    (define glPointSize (GL GLvoid "glPointSize" GLfloat))
    (define glPolygonMode (GL GLvoid "glPolygonMode" GLenum GLenum)) ; GL 1.1 ?
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
-;WINGDIAPI void APIENTRY glPopAttrib (void);
+   (define glPopAttrib (GL GLvoid "glPopAttrib"))
 ;WINGDIAPI void APIENTRY glPopMatrix (void);
    (define glPopMatrix  (GL GLvoid "glPopMatrix"))
 ;WINGDIAPI void APIENTRY glPopName (void);
@@ -2956,7 +2956,7 @@
 ;WINGDIAPI void APIENTRY glTexCoord4sv (const GLshort *v);
 ;WINGDIAPI void APIENTRY glTexEnvf (GLenum target, GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glTexEnvfv (GLenum target, GLenum pname, const GLfloat *params);
-;WINGDIAPI void APIENTRY glTexEnvi (GLenum target, GLenum pname, GLint param);
+   (define glTexEnvi (GL GLvoid "glTexEnvi" GLenum GLenum GLint))
 ;WINGDIAPI void APIENTRY glTexEnviv (GLenum target, GLenum pname, const GLint *params);
 ;WINGDIAPI void APIENTRY glTexGend (GLenum coord, GLenum pname, GLdouble param);
 ;WINGDIAPI void APIENTRY glTexGendv (GLenum coord, GLenum pname, const GLdouble *params);

@@ -6,9 +6,9 @@
    GL_VERSION_1_3
 
  ; ARB_multitexture
-;glActiveTextureARB( texture )
+glActiveTextureARB
 ;glClientActiveTextureARB( texture )
-;glMultiTexCoord1dARB( target , s )
+;   glMultiTexCoord1dARB ;( target , s )
 ;glMultiTexCoord1dvARB( target , v )
 ;glMultiTexCoord1fARB( target , s )
 ;glMultiTexCoord1fvARB( target , v )
@@ -40,6 +40,9 @@
 ;glMultiTexCoord4ivARB( target , v )
 ;glMultiTexCoord4sARB( target , s , t , r , q )
 ;glMultiTexCoord4svARB( target , v )
+
+   GL_TEXTURE0_ARB
+   GL_TEXTURE1_ARB
 
 ;#define GL_TEXTURE0_ARB                   0x84C0
 ;#define GL_TEXTURE1_ARB                   0x84C1
@@ -90,6 +93,9 @@
 
    (define GL GL_LIBRARY)
 
-   ;...
+   (define glActiveTextureARB (GL GLvoid "glActiveTextureARB" GLenum))
+
+   (define GL_TEXTURE0_ARB                   #x84C0)
+   (define GL_TEXTURE1_ARB                   #x84C1)
 
 ))

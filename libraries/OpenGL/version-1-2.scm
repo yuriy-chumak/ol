@@ -155,4 +155,7 @@
    (define GL_LIGHT_MODEL_COLOR_CONTROL #x81F8)
    (define GL_SINGLE_COLOR              #x81F9)
    (define GL_SEPARATE_SPECULAR_COLOR   #x81FA)
+
+ ; ARB_multitexture (todo: check is it included in 1.2.1 or 1.3)
+
 ))
