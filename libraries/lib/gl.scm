@@ -111,7 +111,7 @@
             (tuple hDC hRC window)))))))
    ; -=( linux )=---------------------------------------------------------------------
    (linux?
-      (let ((libX11 (load-dynamic-library "libX11.so"))
+      (let ((libX11 (load-dynamic-library "libX11.so.6"))
             (libGLX (load-dynamic-library "libGL.so.1")))
       (let ((XOpenDisplay  (libX11 type-vptr "XOpenDisplay" type-string))
             (XDefaultScreen(libX11 fft-int "XDefaultScreen" type-vptr))
@@ -236,7 +236,7 @@
                         (DispatchMessage MSG)
                         (loop)))))))))))
    (linux?
-      (let ((libX11 (load-dynamic-library "libX11.so")))
+      (let ((libX11 (load-dynamic-library "libX11.so.6")))
       (let ((XPending  (libX11 fft-int "XPending" type-vptr))
             (XNextEvent(libX11 fft-int "XNextEvent" type-vptr type-vptr)))
       (lambda (context)
@@ -260,7 +260,7 @@
             (let ((window (ref context 3)))
                (SetWindowText window (c-string title)))))))
    (linux?
-      (let ((libX11 (load-dynamic-library "libX11.so")))
+      (let ((libX11 (load-dynamic-library "libX11.so.6")))
       (let ((XStoreName   (libX11 fft-int "XStoreName" type-vptr type-vptr type-string)))
          (lambda (context title)
             (let ((display (ref context 1))
@@ -273,7 +273,7 @@
    (win32?
       #true)
    (linux?
-      (let ((libX11 (load-dynamic-library "libX11.so")))
+      (let ((libX11 (load-dynamic-library "libX11.so.6")))
       (let ((XResizeWindow (libX11 fft-int "XResizeWindow" type-vptr type-vptr fft-int fft-int)))
          (lambda (context width height)
             (let ((display (ref context 1))

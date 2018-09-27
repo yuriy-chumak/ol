@@ -220,7 +220,7 @@
    (win32?
       (lambda () #f))
    (linux?
-      (let*((x11 (load-dynamic-library "libX11.so"))
+      (let*((x11 (load-dynamic-library "libX11.so.6"))
             (XOpenDisplay (x11 fft-void* "XOpenDisplay" type-string))
             (XCloseDisplay (x11 fft-void "XCloseDisplay" type-vptr))
             (XQueryKeymap (x11 fft-void "XQueryKeymap" type-vptr type-string))

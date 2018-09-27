@@ -197,7 +197,7 @@
 (begin
    (setq Display* fft-void*)
    (setq X11 (or
-      (load-dynamic-library "libX11.so")
+      (load-dynamic-library "libX11.so.6")
       (lambda args #false)))
    (setq XOpenDisplay (if X11 (X11 Display* "XOpenDisplay" type-string)))
 
@@ -253,7 +253,7 @@
 ;; (define XSetWindowAttributes* fft-void*)
 ;; (define XEvent* fft-void*)
 
-;; (define X11 (load-dynamic-library "libX11.so"))
+;; (define X11 (load-dynamic-library "libX11.so.6"))
 
 ;; ; functions
 ;; (define XOpenDisplay  (X11 Display* "XOpenDisplay" type-string))

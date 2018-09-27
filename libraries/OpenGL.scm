@@ -39,7 +39,7 @@
    (setq GL_LIBRARY (load-dynamic-library
       (cond
          (win32? "opengl32")
-         (linux? "libGL.so")
+         (linux? "libGL.so.1")
          ;"HP-UX"
          ;"SunOS"
          ;"Darwin"
@@ -120,7 +120,7 @@
             (cond
                ; GLX, Linux
                ((and (> (size extension) 3) (string-eq? (substring extension 0 4) "GLX_"))
-                  (let ((libX11 (load-dynamic-library "libX11.so")))
+                  (let ((libX11 (load-dynamic-library "libX11.so.6")))
                   (let ((XOpenDisplay  (if libX11 (libX11 type-vptr "XOpenDisplay" type-string)))
                         (XDefaultScreen(if libX11 (libX11 fft-int "XDefaultScreen" type-vptr)))
                         (glXQueryExtensionsString(if GLX (GLX type-string "glXQueryExtensionsString" type-vptr fft-int))))

@@ -3005,7 +3005,7 @@
 (define GLU_LIBRARY
    (cond
       (win32? "glu32")
-      (linux? "libGLU.so")
+      (linux? "libGLU.so.1")
       ;"HP-UX"
       ;"SunOS"
       ;"Darwin"
