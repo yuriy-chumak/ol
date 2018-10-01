@@ -27,6 +27,10 @@ $("a[href^='http://'], a[href^='https://']").each(function() {
 function show(page)
 {
    page = page || "?en";  // :default page
+   ga('send', { // google analytics
+      'hitType': 'pageview',
+      'page': page.substr(1) + ".html"
+    });
    $("#content").load(page.substr(1) + ".html", function() {
       $("html, body").animate({ scrollTop: 0 });
       $("#content a[href^='?']").each(updateLink);
