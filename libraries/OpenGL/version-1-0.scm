@@ -6,28 +6,7 @@
 
    GL_VERSION_1_0
 
-   ; GL types
-   ; https://www.opengl.org/wiki/OpenGL_Type
-   GLenum                     ; unsigned 32-bit
-   GLboolean GLboolean*       ; unsigned byte (GL_TRUE or GL_FALSE)
-   GLbitfield                 ; unsigned 32-bit
-   GLbyte                     ;   signed  8-bit
-   GLshort                    ;   signed 16-bit
-   GLint    GLint*   GLint&   ;   signed 32-bit
-   GLsizei                    ;   signed 32-bit
-   GLubyte  GLubyte*          ; unsigned  8-bit
-   GLushort                   ; unsigned 16-bit
-   GLuint   GLuint*  GLuint&  ; unsigned 32-bit
-
-   GLfloat  GLfloat* ; floating 32-bit
-   GLclampf          ; floating 32-bit (clamped to the range [0,1])
-   GLdouble          ; floating 64-bit
-   GLclampd          ; floating 64-bit (clamped to the range [0,1])
-
-   GLvoid   GLvoid*
-
    GL_TRUE GL_FALSE           ; 1, 0
-
 
    ;; 2.5 GL Errors
 
@@ -1839,42 +1818,6 @@
    (define GLX (if linux? (load-dynamic-library "libGL.so.1")))
    (define GDI (if win32? (load-dynamic-library "gdi32.dll")))
   ;(define EGL ...) :TODO
-
-   ; -------------------------------------------------------------------------
-
-   (define GLvoid   fft-void)   ; void GLvoid
-   (define GLvoid*  fft-void*)
-
-   (define GLenum     fft-unsigned-int)
-   (define GLboolean  fft-unsigned-char)
-   (define GLbitfield fft-unsigned-int)
-
-   (define GLbyte   fft-signed-char)
-   (define GLshort  fft-short)
-   (define GLint    fft-int)
-   (define GLsizei  fft-int)
-   (define GLubyte  fft-unsigned-char)
-   (define GLushort fft-unsigned-short)
-   (define GLuint   fft-unsigned-int)
-
-   (define GLfloat  fft-float)
-   (define GLclampf fft-float)
-   (define GLdouble fft-double)
-   (define GLclampd fft-double)
-
-   (define GLubyte* type-string) ; todo: ?
-
-   ; pointers
-   (define GLboolean* (fft* GLboolean))
-   (define GLint*     (fft* GLint))
-   (define GLuint*    (fft* GLuint))
-   (define GLfloat*   (fft* GLfloat))
-   (define GLdouble*  (fft* GLdouble))
-
-   ; references
-   (define GLint&     (fft& GLint))
-   (define GLuint&    (fft& GLuint))
-
 
    ; -------------------------------------------------------------------------
    ; constants

@@ -2,24 +2,44 @@
 (define-library (OpenGL)
 (export
 
-   ; WGL/GLX/CGL universal functions
-   gl:GetProcAddress
+   ; GL types
+   ; https://www.opengl.org/wiki/OpenGL_Type
+   GLenum                     ; unsigned 32-bit
+   GLboolean GLboolean*       ; unsigned byte (GL_TRUE or GL_FALSE)
+   GLbitfield                 ; unsigned 32-bit
+   GLbyte                     ;   signed  8-bit
+   GLshort                    ;   signed 16-bit
+   GLint    GLint*   GLint&   ;   signed 32-bit
+   GLsizei                    ;   signed 32-bit
+   GLubyte  GLubyte*          ; unsigned  8-bit
+   GLushort GLshort*          ; unsigned 16-bit
+   GLuint   GLuint*  GLuint&  ; unsigned 32-bit
 
-   gl:CreateContext ; create context
-   gl:MakeCurrent
-   gl:SwapBuffers
+   GLfloat  GLfloat*  ; floating 32-bit
+   GLclampf           ; floating 32-bit (clamped to the range [0,1])
+   GLdouble GLdouble* ; floating 64-bit
+   GLclampd           ; floating 64-bit (clamped to the range [0,1])
 
-   gl:QueryExtension
-   gl:ExtensionSupported? ; deprecated, same as gl:QueryExtension
+   GLvoid   GLvoid*       ; void, void*
 
+   ; minimal GL function set
    glGetString
       GL_VENDOR
       GL_RENDERER
       GL_VERSION
       GL_EXTENSIONS
 
+   ; WGL/GLX/CGL/EGL/... universal functions
+   gl:GetProcAddress
+
+   gl:CreateContext ; context creation
+   gl:MakeCurrent
+   gl:SwapBuffers
+   gl:QueryExtension
+
    ; internal variables
-   GL_LIBRARY GL GLX WGL GDI EGL
+   GL GLX WGL GDI EGL
+   GL_LIBRARY ; deprecated
 
    (exports (otus lisp))
    (exports (otus ffi)))
@@ -50,15 +70,52 @@
          (else
             (runtime-error "Unsupported platform" OS)))))
 
-   (setq GL GL_LIBRARY)
+   (define GL GL_LIBRARY)
 
    (define GLX (if linux? GL_LIBRARY))
    (define WGL (if win32? GL_LIBRARY))
    (define GDI (if win32? (load-dynamic-library "gdi32.dll")))
    (define EGL #false) ;TODO
 
+   ; -------------------------------------------------------------------------
+   ; -- types
+   (define GLvoid   fft-void)
+   (define GLvoid*  fft-void*)
+
+   (define GLenum     fft-unsigned-int)
+   (define GLboolean  fft-unsigned-char)
+   (define GLbitfield fft-unsigned-int)
+
+   (define GLbyte   fft-signed-char)
+   (define GLshort  fft-short)
+   (define GLint    fft-int)
+   (define GLsizei  fft-int)
+   (define GLubyte  fft-unsigned-char)
+   (define GLushort fft-unsigned-short)
+   (define GLuint   fft-unsigned-int)
+
+   (define GLfloat  fft-float)
+   (define GLclampf fft-float)
+   (define GLdouble fft-double)
+   (define GLclampd fft-double)
+
+   (define GLubyte* type-string) ; todo: ?
+
+   ; pointers
+   (define GLboolean* (fft* GLboolean))
+   (define GLshort*   (fft* GLshort))
+   (define GLint*     (fft* GLint))
+   (define GLuint*    (fft* GLuint))
+   (define GLfloat*   (fft* GLfloat))
+   (define GLdouble*  (fft* GLdouble))
+
+   ; references
+   (define GLint&     (fft& GLint))
+   (define GLuint&    (fft& GLuint))
+   ; -------------------------------------------------------------------------
+
    ; Strings GL_VENDOR and GL_RENDERER together uniquely specify a platform.
-   ; They do not change from release to release and should be used by platform-recognition algorithms. 
+   ; They do not change from release to release and    ; should be used by platform-recognition algorithms.
    (define GL_VENDOR     #x1F00)
    (define GL_RENDERER   #x1F01)
    (define GL_VERSION    #x1F02)

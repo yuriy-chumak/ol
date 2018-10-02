@@ -1,12 +1,17 @@
 /**
- * Simple purely functional Lisp, mostly
+ *         Simple purely functional Lisp, mostly.
  *
- * Version 1.2
- *
- * Copyright(c) 2014 Aki Helin
- * Copyright(c) 2014 - 2018 Yuriy Chumak
- *
- * -------------------------------------
+ *                  `___`           `___`  
+ *                  (o,o)           (o,o)  
+ *                  \)  )  L I S P  (  /(  
+ * =================="="============="="======================== *
+ *                                                               *
+ *   Version 2.0                                                 *
+ *                                                               *
+ *  Copyright(c) 2014 Aki Helin                                  *
+ *  Copyright(c) 2014 - 2018 Yuriy Chumak                        *
+ *                                                               *
+ * ------------------------------------------------------------- *
  * This program is free software;  you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
@@ -16,7 +21,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * --------------------------------------------------------------
  * Building:
  *   make; make install
  *
@@ -41,7 +45,7 @@
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
-#define __OLVM_VERSION__ "1.3 alpha"
+#define __OLVM_VERSION__ "2.0 alpha"
 #endif
 #ifndef lint
 __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
@@ -2037,8 +2041,7 @@ apply:;
 		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
 			word *cont = (word *) R[3];
-			switch (acc)
-			{
+			switch (acc) {
 			case 2:
 				R[3] = get(this, R[4],    0, heap->fail);
 				if (!R[3])
@@ -2939,32 +2942,6 @@ loop:;
 				new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
 		ip += 1; break;
 
-/*	case 11: { // (set-car! pair value)
-		word *pair = (word *)A0;
-		word cargo = A1;
-
-		// we can't set ref as part of pair due to gc specific
-		CHECK(is_pair(pair), pair, 11);
-		CHECK(is_value(cargo), cargo, 11);
-
-		car(pair) = cargo;
-
-		A2 = A0;
-		ip += 3; break;
-	}
-	case 12: { // (set-cdr! pair cargo)
-		word *pair = (word *)A0;
-		word cargo = A1;
-
-		// case as (set-car!)
-		CHECK(is_pair(pair), pair, 12);
-		CHECK(is_value(cargo), cargo, 12);
-
-		cdr(pair) = cargo;
-
-		A2 = A0;
-		ip += 3; break;
-	}*/
 
 	// bind tuple to registers
 	case TUPLEAPPLY: { /* bind <tuple > <n> <r0> .. <rn> */
