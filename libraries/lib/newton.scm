@@ -1,4 +1,6 @@
 ; About Newton Dynamics
+; =====
+;
 ; Newton Dynamics is a cross-platform life-like physics simulation library.
 ; It can easily be integrated into game engines and other applications and
 ; provides top of it's class performance and simulation stability. Ongoing
@@ -278,8 +280,6 @@
    (load-dynamic-library "libNewton.so")
    (load-dynamic-library "newton.dll")
    (runtime-error "Can't load newton library" '())))
-(define (make-cb p l)
-   (syscall 85 (cons p l) #f #f))
 
 (define fft-float* (fft* fft-float))
 
