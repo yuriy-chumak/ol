@@ -196,15 +196,16 @@
                 (skip (get-imm #\i)))
             (sign imag)))
 
-      (setq |+inf.0| (vm:fp2 26 1 0)); 1/0 = +infin
-      (setq |-inf.0| (vm:fp2 26 -1 0)); -1/0 = -infin
-      (setq |+nan.0| (vm:fp2 26 0 0)); 0/0 = NaN
+      ; https://srfi.schemers.org/srfi-77/srfi-77.html
+      (setq |+inf.0| (vm:fp2 26 1 0)) ; 1 / 0 = +infin
+      (setq |-inf.0| (vm:fp2 26 -1 0));-1 / 0 = -infin
+      (setq |+nan.0| (vm:fp2 26 0 0)) ; 0 / 0 = NaN
 
       (define get-number
          (get-any-of
-            (get-word "+inf.0" |+inf.0|) ; (vm:fp2 3 1 0)) ; todo: move below
-            (get-word "-inf.0" |-inf.0|) ; (vm:fp1 6 0))
-            (get-word "+nan.0" |+nan.0|) ; (vm:fp1 0 -1))
+            (get-word "+inf.0" |+inf.0|)
+            (get-word "-inf.0" |-inf.0|)
+            (get-word "+nan.0" |+nan.0|)
             (let-parses
                   ((real get-rational) ;; typically this is it
                    (imag (get-either get-imaginary-part (get-epsilon 0))))
