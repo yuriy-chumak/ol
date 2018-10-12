@@ -2,125 +2,141 @@
 (import (otus random!))
 (define (randint a b) (+ a (rand! (- b a -1)))) ; a <= x <= b
 
-(define WIDTH 64)
-(define HEIGHT 64)
+(import (lib rlutil))
+
+(define WIDTH 127) ; should be odd
+(define HEIGHT 49) ; should be odd
+(define max_rooms 7)
+
 
 (define width WIDTH)
 (define height HEIGHT)
-(define max_rooms 15)
-(define min_room_xy 5)
-(define max_room_xy 10)
+(define room_margin 5)
+(define min_room_width 5)
+(define max_room_width 15)
+(define min_room_height 5)
+(define max_room_height 15)
+
+(define max_room_x 10)
+(define min_room_x 5)
+(define max_room_x 10)
 (define rooms_overlap #false)
 (define random_connections 1)
 (define random_spurs 3)
 
+
+; make the random room
 (define (make-room unused)
-   (let*((w (randint min_room_xy max_room_xy))
-         (h (randint min_room_xy max_room_xy))
-         (x (randint 1 (- width w 1)))
-         (y (randint 1 (- height h 1))))
-      (list x y w h)))
+   (let*((w (randint min_room_width max_room_width))
+         (h (randint min_room_height max_room_height))
+         (x (randint room_margin (- width w 1)))
+         (y (randint room_margin (- height h 1))))
+      (tuple x y w h)))
 
-;; (define (corridor_between_points x1 y1 x2 y2 join_type) ; default join_type = 'either
-;;    ;(print "corridor_between_points: " x1 " " y1 " - " x2 " " y2 " : " join_type)
-;;    (if (or (= x1 x2) (= y1 y2))
-;;       (list (cons x1 x2) (cons y1 y2))
-;;       (let ((join (if (eq? join_type 'either)
-;;                      (cond
-;;                         ((not (null? (intersect '(0 1) (list x1 x2 y1 y2))))
-;;                            'bottom)
-;;                         ((not (null? (intersect (list (- width 1) (- width 2)) (list x1 x2))))
-;;                            'top)
-;;                         ((not (null? (intersect (list (- height 1) (- height 2)) (list y1 y2))))
-;;                            'top)
-;;                         (else
-;;                            (list-ref (list 'top 'bottom) (rand! 2))))
-;;                      join_type)))
-;;          (cond
-;;             ((eq? join 'top)
-;;                (list (cons x1 y1) (cons x1 y2) (cons x2 y2)))
-;;             ((eq? join 'bottom)
-;;                (list (cons x1 y1) (cons x2 y1) (cons x2 y2)))
-;;             (else
-;;                (print "error corridor creation"))))))
+; пустой уровень (заполненный скальными породами)
+(define level (map
+   (lambda (?)
+      (make-bytevector WIDTH #\#))
+   (iota HEIGHT)))
 
-;; (define (join_rooms room1 room2 join_type) ; default join_type = 'either
-;;    ; resort rooms
-;;    (let*((room1 room2 (if (> (list-ref room1 0) (list-ref room2 0)) (values room2 room1) (values room1 room2))))
-;;       (let ((x1 (lref room1 0))
-;;             (y1 (lref room1 1))
-;;             (w1 (lref room1 2))
-;;             (h1 (lref room1 3))
+; нагененинуем несколько комнат
+(define rooms
+   (map make-room (iota max_rooms)))
 
-;;             (x2 (lref room2 0))
-;;             (y2 (lref room2 1))
-;;             (w2 (lref room2 2))
-;;             (h2 (lref room2 3)))
+; и сразу отрисуем их на карте, конечно же
+(for-each (lambda (room)
+            (let ((x (ref room 1))
+                  (y (ref room 2))
+                  (w (ref room 3))
+                  (h (ref room 4)))
+               (for-each (lambda (y)
+                     (for-each (lambda (x)
+                           (set-ref! (lref level y) x #\space))
+                        (iota w x)))
+                  (iota h y))))
+   rooms)
 
-;;       (let ((x1_2 (+ x1 w1 -1))
-;;             (y1_2 (+ y1 h1 -1))
-;;             (x2_2 (+ x2 w2 -1))
-;;             (y2_2 (+ y2 h2 -1)))
-;;          (cond
-;;             ; overlapping on x
-;;             ((and
-;;                (< x1 (+ x2 w2))
-;;                (< x2 (+ x1 w1)))
-;;                (let*((jx1 (randint x2 x1_2))
-;;                      (jx2 jx1)
-;;                      (tmp (sort < (list y1 y2 y1_2 y2_2)))
-;;                      (jy1 (+ (lref tmp 1) 1))
-;;                      (jy2 (- (lref tmp 2) 1)))
-;;                   (corridor_between_points jx1 jy1 jx2 jy2 'either)))
-;;             ; overlapping on y
-;;             ((and
-;;                (< y1 (+ y2 h2))
-;;                (< y2 (+ y1 h1)))
-;;                (let*((jy1 (if (> y2 y1)
-;;                                  (randint y2 y1_2)
-;;                                  (randint y1 y2_2)))
-;;                      (jy2 jy1)
-;;                      (tmp (sort < (list x1 x2 x1_2 x2_2)))
-;;                      (jx1 (+ (lref tmp 1) 1))
-;;                      (jx2 (- (lref tmp 2) 1)))
-;;                   (corridor_between_points jx1 jy1 jx2 jy2 'either)))
-;;             ; no overlap
-;;             (else
-;;                (let ((join (if (eq? join_type 'either)
-;;                               (list-ref (list 'top 'bottom) (rand! 2))
-;;                               join_type)))
-;;                   (cond
-;;                      ((eq? join 'top)
-;;                         (if (> y2 y1)
-;;                            (let ((jx1 (+ x1_2 1))
-;;                                  (jy1 (randint y1 y1_2))
-;;                                  (jx2 (randint x2 x2_2))
-;;                                  (jy2 (- y2 1)))
-;;                               (corridor_between_points jx1 jy1 jx2 jy2 'bottom))
-;;                            (let ((jx1 (randint x1 x1_2))
-;;                                  (jy1 (- y1 1))
-;;                                  (jx2 (- x2 1))
-;;                                  (jy2 (randint y2 y2_2)))
-;;                               (corridor_between_points jx1 jy1 jx2 jy2 'top))))
-;;                      ((eq? join 'bottom)
-;;                         (if (> y2 y1)
-;;                            (let ((jx1 (randint x1 x1_2))
-;;                                  (jy1 (+ y1_2 1))
-;;                                  (jx2 (- x2 1))
-;;                                  (jy2 (randint x2 x2_2)))
-;;                               (corridor_between_points jx1 jy1 jx2 jy2 'top))
-;;                            (let ((jx1 (+ x1_2 1))
-;;                                  (jy1 (randint y1 y1_2))
-;;                                  (jx2 (randint x2 x2_2))
-;;                                  (jy2 (+ y2_2 1)))
-;;                               (corridor_between_points jx1 jy1 jx2 jy2 'bottom))))
-;;                      (else
-;;                         (print "invalid direction"))))))))))
+; лабиринт!
+(define (unvisited? x y)
+   (if (and (< 0 x WIDTH) (< 0 y HEIGHT))
+      (eq? (ref (lref level y) x) #\#)))
+;                         left      top       right     bottom
+(define neighbors (tuple '(-2 . 0) '(0 . -2) '(+2 . 0) '(0 . +2)))
+(define (shuffle! o)
+   (for-each (lambda (i)
+         (let ((a (ref o i))
+               (j (+ 1 (rand! i))))
+            (set-ref! o i (ref o j))
+            (set-ref! o j a)))
+      (reverse (iota (size o) 1)))
+   o)
 
+(for-each (lambda (y)
+      (for-each (lambda (x)
+            (if (unvisited? x y)
+               (let loop ((x x) (y y))
+                  
+                  ; make current cell "visited"
+                  (set-ref! (lref level y) x #\.)
+                  (for-each (lambda (neighbor)
+                        (if (unvisited? (+ x (car neighbor)) (+ y (cdr neighbor)))
+                           (begin
+                              (set-ref! (lref level (+ y (/ (cdr neighbor) 2))) (+ x (/ (car neighbor) 2)) #\.)
+                              (loop (+ x (car neighbor)) (+ y (cdr neighbor))))))
+                     (tuple->list (shuffle! neighbors))))))
+         (iota (floor (/ WIDTH 2)) 1 2)))
+   (iota (floor (/ HEIGHT 2)) 1 2))
+   ; assert this cell is visited
+
+; добавим каждой комнате по одному "выходу" (или по несколько)
+; естественно, рандомно
+(for-each (lambda (room)
+            (let ((x (ref room 1)) (y (ref room 2))
+                  (w (ref room 3)) (h (ref room 4)))
+               (for-each (lambda (r)
+                     (case (rand! 4)
+                        (0 ; left
+                           (set-ref! (lref level (+ y (rand! h))) (- x 1) #\space))
+                        (1 ; top
+                           (set-ref! (lref level (- y 1)) (+ x (rand! w)) #\space))
+                        (2 ; right
+                           (set-ref! (lref level (+ y (rand! h))) (+ x w) #\space))
+                        (3 ; bottom
+                           (set-ref! (lref level (+ y h)) (+ x (rand! w)) #\space))
+                        (else
+                           #false)))
+                  (iota (rand! 4)))))
+   rooms)
+
+; уберем тупики
+; todo
+
+
+;; (for-each (lambda (y)
+;;       (for-each (lambda (x)
+;;             ; если отсюда можно начать строить лабиринт - надо построить
+
+
+;;             (set-ref! (lref level y) x #\.))
+;;          (iota w x)))
+;;    (iota h y))))
+
+
+
+; show the map
+(cls)
+(for-each (lambda (v) (print (vm:cast v type-string))) level)
+
+
+,quit
 ; generate the level with rooms and corridors
 (define (gen_level)
    (define rooms
-      (map make-room (iota (* max_rooms 5))))
+      (map make-room (iota (* max_rooms 2))))
+
+
+
+
    ;(print "rooms: " rooms)
    (define joints #null)
       ;; (let loop ((joints #null) (rooms rooms))
@@ -140,8 +156,15 @@
 ;
 (define rooms (gen_level))
 
+(define corridors
+   (let loop ((rooms (car rooms)) (corridors #null))
+      (if (null? (cdr rooms))
+         rooms
+         (loop (cdr rooms) (cons (make-corridor (car rooms) (cadr rooms)) corridors)))))
+(print "corridors: " corridors)
+
+
 ; debug output:
-(import (lib rlutil))
 
 ; make level
 (define level (map
