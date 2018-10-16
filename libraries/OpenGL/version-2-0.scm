@@ -95,13 +95,13 @@ glDrawArrays
    ; http://steps3d.narod.ru/tutorials/lighting-tutorial.html
    (glShaderSource vs 1 (list (c-string vstext)) #false)
    (glCompileShader vs)
-   (let ((isCompiled '(0)))
+   (let ((isCompiled (box 0)))
       (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
 
-      (if (eq? (car isCompiled) 0)
-         (let*((maxLength "??")
+      (if (eq? (unbox isCompiled) 0)
+         (let*((maxLength (box 0))
                (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
-               (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
+               (maxLengthValue (unbox maxLength))
                (errorLog (make-string maxLengthValue 0))
                (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
             (runtime-error errorLog vs))))
@@ -113,12 +113,12 @@ glDrawArrays
    (let ((isCompiled '(0)))
       (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
 
-      (if (eq? (car isCompiled) 0)
-         (let*((maxLength "??")
-               (_ (glGetShaderiv fs GL_INFO_LOG_LENGTH maxLength))
-               (maxLengthValue (+ (ref maxLength 0) (* (ref maxLength 1) 256)))
+      (if (eq? (unbox isCompiled) 0)
+         (let*((maxLength (box 0))
+               (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
+               (maxLengthValue (unbox maxLength))
                (errorLog (make-string maxLengthValue 0))
-               (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
+               (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
             (runtime-error errorLog fs))))
 
    (glAttachShader po fs)
@@ -127,8 +127,6 @@ glDrawArrays
    (glDetachShader po fs)
    (glDetachShader po vs)
 
-   po ; return result index
-))
-
+   po)) ; return program
 
 ))

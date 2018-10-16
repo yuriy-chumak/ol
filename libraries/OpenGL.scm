@@ -167,11 +167,8 @@
             (SwapBuffers (ref context 1) (ref context 3)))))
    (else   (runtime-error "SwapBuffers: Unknown platform" OS))))
 
-;(define gl:GetString glGetString)
-
 ; поддержка расширений (включая GLX):
 (import (owl string))
-
 (define (gl:QueryExtension extension)
    (let ((extensions
             (cond

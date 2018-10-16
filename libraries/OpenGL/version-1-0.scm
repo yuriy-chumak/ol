@@ -1779,7 +1779,6 @@
    GL_LIBRARY
 
    (exports (OpenGL))
-   (exports (otus lisp))
    (exports (otus ffi)))
 
 ; ============================================================================
