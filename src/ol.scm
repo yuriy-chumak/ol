@@ -32,14 +32,14 @@
 ; предварительная загрузка зависимостей scheme core,
 ; (иначе импорт сбойнет)
 (import (src vm))   ;; команды виртуальной машины
-(import (scheme case-lambda)) ;; case-lambda :)
+(import (scheme case-lambda)) ;; case-lambda
 (import (scheme srfi-87)) ;; "=>" clauses in case
+(import (scheme srfi-71))
 (import (scheme core))    ;; базовый языковый ...
 (import (scheme base))    ;; ... набор ol
 
 ;; forget everhything except these and core values (later list also them explicitly)
 ,forget-all-but (*libraries* *codes* *vm-args* stdin stdout stderr set-ticker-value build-start)
-
 
 ;;;
 ;;; Time for a new REPL
@@ -49,25 +49,29 @@
 ;; this should later be just a sequence of imports followed by a fasl dump
 (import (scheme core))  ;; get define, define-library, import, ... from the just loaded
 
+(define *features* '( ;; implementation features, used by cond-expand
+   r7rs
+   srfi-16 ; case-lambda
+   srfi-87 ; <= in cases
+   srfi-71 ; extended LET-syntax for multiple values
+   otus-lisp
+   owl-lisp)) ; backward compatibility
+
 (define *include-dirs* '("." "libraries")) ;; now we can (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
-
+(define *ol-version* "2.0") ;; http://semver.org/lang/ru/
 
 (define *loaded* '())   ;; can be removed soon, was used by old ,load and ,require
+
+(import (otus lisp))
+(import (lang intern))
+(import (lang threading))
 
 
 ;; shared parameters, librarize later or remove if possible
 
-;; http://semver.org/lang/ru/
-(define *owl-version* "1.1")
 (define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
 (define max-object-size #xffff)  ; todo: change as dependent of word size
-
-
-(import (otus lisp))
-
-(import (lang intern))
-(import (lang threading))
 
 (import (owl parse))
 
@@ -83,6 +87,25 @@
 (import (lang closure))
 (import (lang assemble))
 (import (lang compile))
+
+
+(define *version*
+   (let loop ((args *vm-args*))
+      (if (null? args)
+         *ol-version*
+         (if (string-eq? (car args) "--version")
+            (if (null? (cdr args))
+               (runtime-error "no version in command line" args)
+               (cadr args))
+            (loop (cdr args))))))
+
+(define *features* (append *features* `(
+   ,(string->symbol (string-append "ol-" *version*))
+   exact-closed
+   ratios
+   exact-complex
+   full-unicode
+   immutable)))
 
 
 
@@ -172,15 +195,6 @@
          (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
          (halt exit-seccomp-failed))))
 
-
-;; implementation features, used by cond-expand
-(define *features*
-   (cons
-      (string->symbol (string-append "owl-lisp-" *owl-version*))
-      '(owl-lisp r7rs exact-closed ratios exact-complex full-unicode immutable)))
-      ;;          ^
-      ;;          '-- to be a fairly large subset of at least, so adding this
-
 (import (lang eval))
 
 ;; push it to libraries for sharing, replacing the old one
@@ -217,18 +231,6 @@
          (λ (reason) (error "bootstrap import error: " reason))
          (λ (env exp) (error "bootstrap import requires repl: " exp)))))
 
-;
-(define *version*
-   (let loop ((args *vm-args*))
-      (if (null? args)
-         (cdr (vm:version))
-      (if (string-eq? (car args) "--version")
-         (if (null? (cdr args))
-            (runtime-error "no version in command line" args)
-            (cadr args))
-         (loop (cdr args))))))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; new repl image
@@ -237,8 +239,7 @@
 ;; say hi if interactive mode and fail if cannot do so (the rest are done using
 ;; repl-prompt. this should too, actually)
 (define (get-main-entry symbols codes)
-   (let*((initial-names   *owl-names*)
-         (initial-version *owl-version*))
+   (let*((initial-names *owl-names*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
          ;(print "//vm-args: " vm-args)
@@ -247,14 +248,14 @@
             (list ;1 thread
                (tuple 'init
                   (λ ()
+                     ;; get basic io running
+                     (io:init)
+
+                     ;; repl needs symbol etc interning, which is handled by this thread
+                     (fork-intern-interner symbols)
+                     (fork-bytecode-interner codes)
+
                      (fork-server 'repl (lambda ()
-                        ;; get basic io running
-                        (io:init)
-
-                        ;; repl needs symbol etc interning, which is handled by this thread
-                        (fork-intern-interner symbols)
-                        (fork-bytecode-interner codes)
-
                         ;; set a signal handler which stop evaluation instead of owl
                         ;; if a repl eval thread is running
                         (set-signal-action repl-signal-handler)
@@ -296,7 +297,6 @@
                                           initial-environment
                                           (list
                                              (cons '*owl-names*   initial-names)
-                                             (cons '*owl-version* initial-version)
                                              (cons '*include-dirs* (list "." home))
                                              (cons '*interactive* interactive?)
                                              (cons '*vm-args* vm-args)

@@ -23,9 +23,10 @@
                ;   apply apply/cc arity-error
                ;   call-with-current-continuation
                ;   tuple-apply ff-apply
-      
+
       (scheme case-lambda)  ; case-lambda
-      (scheme srfi-87))     ; <= in cases
+      (scheme srfi-87)      ; <= in cases
+      (scheme srfi-71))     ; (let* ((a b (values..
 
    (begin
       ;; special forms: (declared in lang/env.scm)
@@ -1646,6 +1647,15 @@
                   (tuple-case 42 tuple type case ...)))))
 
 
+      ;; 6.14. System interface
+      ; ...
+
+      ; procedure: (features)
+      (define-syntax features
+         (syntax-rules (*features*)
+            ((features)
+               *features*)))
+
 
 
       ;; note, no let-values yet, so using let*-values in define-values
@@ -1963,6 +1973,9 @@
       bytevector?
       make-bytevector
       bytevector
+
+      ; 6.14
+      features
 
       ; ol extension:
       bytecode? function? ff?
