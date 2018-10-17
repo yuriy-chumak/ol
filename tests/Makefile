@@ -179,6 +179,9 @@ else
 	@echo "Built."
 endif
 
+testing-embed: embed
+	@echo -n "Testing embed... "
+	@./embed
 
 %.scm.ok: %.scm
 	@echo -n "Testing $^ ..."
@@ -236,6 +239,7 @@ endif
 
 # -=( tests )=-------------------------------------
 tests: testing-binaries
+tests: testing-embed
 tests: $(wildcard tests/*.scm)
 	@rm -f $(FAILED)
 	@echo " "

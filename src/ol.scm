@@ -238,7 +238,7 @@
 
 ;; say hi if interactive mode and fail if cannot do so (the rest are done using
 ;; repl-prompt. this should too, actually)
-(define (get-main-entry symbols codes)
+(define (make-main-entry symbols codes)
    (let*((initial-names *owl-names*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
@@ -276,6 +276,8 @@
                                              (loop (put options 'sandbox #t) (cdr args)))
                                           ((string-eq? (car args) "--interactive")
                                              (loop (put options 'interactive #t) (cdr args)))
+                                          ((string-eq? (car args) "--no-interactive")
+                                             (loop (put options 'interactive #f) (cdr args)))
                                           ((string-eq? (car args) "--home") ; TBD
                                              (if (null? (cdr args))
                                                 (runtime-error "no heap size in command line" args))
@@ -286,9 +288,7 @@
                                            (getenv "OL_HOME")
                                            "/usr/lib/ol")) ; Linux, *BSD, etc.
                                  (sandbox? (getf options 'sandbox))
-                                 (interactive? (or
-                                           (getf options 'interactive)
-                                           (syscall 16 file 19 #f))) ; isatty()
+                                 (interactive? (get options 'interactive (syscall 16 file 19 #f))) ; isatty()
 
                                  (version (cons "OL" *version*))
                                  (env (fold
@@ -311,8 +311,8 @@
 
 
 
-;(define symbols (symbols-of get-main-entry))
-;(define codes   (codes-of   get-main-entry))
+;(define symbols (symbols-of make-main-entry))
+;(define codes   (codes-of   make-main-entry))
 
 ;;;
 ;;; Dump the new repl
@@ -378,10 +378,10 @@
       (port ;; where to save the result
          (open-output-file path))
 
-      (symbols (symbols-of get-main-entry))
-      (codes   (codes-of   get-main-entry))
+      (symbols (symbols-of make-main-entry))
+      (codes   (codes-of   make-main-entry))
       (bytes ;; encode the resulting object for saving in some form
-         (fasl-encode (get-main-entry symbols codes))))
+         (fasl-encode (make-main-entry symbols codes))))
    (if (not port)
       (begin
          (print "Could not open " path " for writing")

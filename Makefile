@@ -194,9 +194,9 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/scheme/*.scm libraries/scheme/
 	fi
 
 #embed sample
-embed: extensions/embed/sample.c
-	$(CC) extensions/embed/sample.c src/olvm.c $(repl.o) -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
-	-Xlinker --export-dynamic -Iinclude -lm $(CFLAGS_DEBUG)
+embed: tests/embed.c src/olvm.c extensions/embed.h $(repl.o)
+	$(CC) tests/embed.c src/olvm.c $(repl.o) -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
+	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
 
 # additional targets (like packaging, tests, etc.)
 MAKEFILE_MAIN=1

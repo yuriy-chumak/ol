@@ -110,7 +110,7 @@ ssize_t read0(int fd, void *buf, size_t count, void* userdata)
 		return read(fd, buf, count); // let's read real stdin
 
 	// read stub code
-	int written = 1;
+	int written = 0;
 	char* out = buf;
 	while (count-- && (*out++ = *ol->bs_pos++))
 		++written;
@@ -156,11 +156,12 @@ void embed_new(ol_t* embed)
 			"         (type-bytevector"
 			"            (eval (eval-repl (fasl-decode (vector->list exp) #f) (vm:deref (car this)) #f evaluate) args))"
 			"         (else"
-			"            (print \"Unprocessible expression type \" (type exp)))))))))))";
+			"            (print \"Unprocessible expression type \" (type exp)))))))))))\0";
 	embed->bs_pos = bs_code;
 
 	word r; // execution result
-	r = OL_run(embed->vm, 0, 0);
+	char* args[] = { "#", "-", "--no-interactive" }; // ol execution arguments
+	r = OL_run(embed->vm, sizeof(args) / sizeof(*args), args);
 	// well, we have our "smart" script prepared,
 	//  now save both eval and env variables
 	assert (r != IFALSE);
