@@ -482,9 +482,8 @@
       (define (_ x) #true)
 
       (define import?  ; toplevel import using the new library system
-         (let
-            ((patternp `(import . ,(λ (x) #true))))
-            (λ (exp) (match patternp exp))))
+         (let ((patternp `(import . ,(λ (x) #true))))
+            (lambda (exp) (match patternp exp))))
 
       (define (library-definition? x)
          (and (pair? x) (list? x) (eq? (car x) '_define-library)))
@@ -587,7 +586,12 @@
             (foldr
                (λ (thing tl)
                   (append
-                     (string->list (symbol->string thing))
+                     (string->list (cond
+                                    ((symbol? thing) (symbol->string thing))
+                                    ((string? thing) thing)
+                                    ((number? thing) (list->string (render-number thing #null 10)))
+                                    (else
+                                       (runtime-error "Invalid library name part" thing))))
                      (if (null? tl)
                         (string->list ".scm")
                         (cons #\/ tl))))

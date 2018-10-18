@@ -1,6 +1,5 @@
 
 ;; tests for (beginnings of) R7RS-style library support
-
 (define-library (foo test)
    (export bar)
    (import (otus lisp))
@@ -171,3 +170,14 @@
 (import (except (foo bar) b))
 
 (print (list a '_ b))
+
+(define-library (not-existent 5050)
+   (export something)
+   (import (scheme core))
+   (begin
+      (define something 211)))
+
+(import (config 50))
+(print something)
+(import (not-existent 5050)) ; not existent in tests/config forlder
+(print something)
