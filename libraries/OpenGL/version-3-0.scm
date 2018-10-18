@@ -122,87 +122,6 @@
 ;; /* reuse GL_DEPTH_COMPONENT32F */
 ;; /* reuse GL_DEPTH32F_STENCIL8 */
 ;; /* reuse GL_FLOAT_32_UNSIGNED_INT_24_8_REV */
-;; /* Reuse tokens from ARB_framebuffer_object */
-;; /* reuse GL_INVALID_FRAMEBUFFER_OPERATION */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE */
-;; /* reuse GL_FRAMEBUFFER_DEFAULT */
-;; /* reuse GL_FRAMEBUFFER_UNDEFINED */
-;; /* reuse GL_DEPTH_STENCIL_ATTACHMENT */
-;; /* reuse GL_INDEX */
-;; /* reuse GL_MAX_RENDERBUFFER_SIZE */
-;; /* reuse GL_DEPTH_STENCIL */
-;; /* reuse GL_UNSIGNED_INT_24_8 */
-;; /* reuse GL_DEPTH24_STENCIL8 */
-;; /* reuse GL_TEXTURE_STENCIL_SIZE */
-;; /* reuse GL_TEXTURE_RED_TYPE */
-;; /* reuse GL_TEXTURE_GREEN_TYPE */
-;; /* reuse GL_TEXTURE_BLUE_TYPE */
-;; /* reuse GL_TEXTURE_ALPHA_TYPE */
-;; /* reuse GL_TEXTURE_LUMINANCE_TYPE */
-;; /* reuse GL_TEXTURE_INTENSITY_TYPE */
-;; /* reuse GL_TEXTURE_DEPTH_TYPE */
-;; /* reuse GL_UNSIGNED_NORMALIZED */
-;; /* reuse GL_FRAMEBUFFER_BINDING */
-;; /* reuse GL_DRAW_FRAMEBUFFER_BINDING */
-;; /* reuse GL_RENDERBUFFER_BINDING */
-;; /* reuse GL_READ_FRAMEBUFFER */
-;; /* reuse GL_DRAW_FRAMEBUFFER */
-;; /* reuse GL_READ_FRAMEBUFFER_BINDING */
-;; /* reuse GL_RENDERBUFFER_SAMPLES */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER */
-;; /* reuse GL_FRAMEBUFFER_COMPLETE */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER */
-;; /* reuse GL_FRAMEBUFFER_UNSUPPORTED */
-;; /* reuse GL_MAX_COLOR_ATTACHMENTS */
-;; /* reuse GL_COLOR_ATTACHMENT0 */
-;; /* reuse GL_COLOR_ATTACHMENT1 */
-;; /* reuse GL_COLOR_ATTACHMENT2 */
-;; /* reuse GL_COLOR_ATTACHMENT3 */
-;; /* reuse GL_COLOR_ATTACHMENT4 */
-;; /* reuse GL_COLOR_ATTACHMENT5 */
-;; /* reuse GL_COLOR_ATTACHMENT6 */
-;; /* reuse GL_COLOR_ATTACHMENT7 */
-;; /* reuse GL_COLOR_ATTACHMENT8 */
-;; /* reuse GL_COLOR_ATTACHMENT9 */
-;; /* reuse GL_COLOR_ATTACHMENT10 */
-;; /* reuse GL_COLOR_ATTACHMENT11 */
-;; /* reuse GL_COLOR_ATTACHMENT12 */
-;; /* reuse GL_COLOR_ATTACHMENT13 */
-;; /* reuse GL_COLOR_ATTACHMENT14 */
-;; /* reuse GL_COLOR_ATTACHMENT15 */
-;; /* reuse GL_DEPTH_ATTACHMENT */
-;; /* reuse GL_STENCIL_ATTACHMENT */
-;; /* reuse GL_FRAMEBUFFER */
-;; /* reuse GL_RENDERBUFFER */
-;; /* reuse GL_RENDERBUFFER_WIDTH */
-;; /* reuse GL_RENDERBUFFER_HEIGHT */
-;; /* reuse GL_RENDERBUFFER_INTERNAL_FORMAT */
-;; /* reuse GL_STENCIL_INDEX1 */
-;; /* reuse GL_STENCIL_INDEX4 */
-;; /* reuse GL_STENCIL_INDEX8 */
-;; /* reuse GL_STENCIL_INDEX16 */
-;; /* reuse GL_RENDERBUFFER_RED_SIZE */
-;; /* reuse GL_RENDERBUFFER_GREEN_SIZE */
-;; /* reuse GL_RENDERBUFFER_BLUE_SIZE */
-;; /* reuse GL_RENDERBUFFER_ALPHA_SIZE */
-;; /* reuse GL_RENDERBUFFER_DEPTH_SIZE */
-;; /* reuse GL_RENDERBUFFER_STENCIL_SIZE */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE */
-;; /* reuse GL_MAX_SAMPLES */
 ;; /* Reuse tokens from ARB_framebuffer_sRGB */
 ;; /* reuse GL_FRAMEBUFFER_SRGB */
 ;; /* Reuse tokens from ARB_half_float_vertex */
@@ -242,67 +161,170 @@
 ;; /* reuse GL_RG16UI */
 ;; /* reuse GL_RG32I */
 ;; /* reuse GL_RG32UI */
-;; /* Reuse tokens from ARB_vertex_array_object */
-;; /* reuse GL_VERTEX_ARRAY_BINDING */
 
-;; GLAPI void APIENTRY glColorMaski (GLuint, GLboolean, GLboolean, GLboolean, GLboolean);
-;; GLAPI void APIENTRY glGetBooleani_v (GLenum, GLuint, GLboolean *);
-;; GLAPI void APIENTRY glGetIntegeri_v (GLenum, GLuint, GLint *);
-;; GLAPI void APIENTRY glEnablei (GLenum, GLuint);
-;; GLAPI void APIENTRY glDisablei (GLenum, GLuint);
-;; GLAPI GLboolean APIENTRY glIsEnabledi (GLenum, GLuint);
-;; GLAPI void APIENTRY glBeginTransformFeedback (GLenum);
-;; GLAPI void APIENTRY glEndTransformFeedback (void);
-;; GLAPI void APIENTRY glBindBufferRange (GLenum, GLuint, GLuint, GLintptr, GLsizeiptr);
-;; GLAPI void APIENTRY glBindBufferBase (GLenum, GLuint, GLuint);
-;; GLAPI void APIENTRY glTransformFeedbackVaryings (GLuint, GLsizei, const GLchar* *, GLenum);
-;; GLAPI void APIENTRY glGetTransformFeedbackVarying (GLuint, GLuint, GLsizei, GLsizei *, GLsizei *, GLenum *, GLchar *);
-;; GLAPI void APIENTRY glClampColor (GLenum, GLenum);
-;; GLAPI void APIENTRY glBeginConditionalRender (GLuint, GLenum);
-;; GLAPI void APIENTRY glEndConditionalRender (void);
-;; GLAPI void APIENTRY glVertexAttribI1i (GLuint, GLint);
-;; GLAPI void APIENTRY glVertexAttribI2i (GLuint, GLint, GLint);
-;; GLAPI void APIENTRY glVertexAttribI3i (GLuint, GLint, GLint, GLint);
-;; GLAPI void APIENTRY glVertexAttribI4i (GLuint, GLint, GLint, GLint, GLint);
-;; GLAPI void APIENTRY glVertexAttribI1ui (GLuint, GLuint);
-;; GLAPI void APIENTRY glVertexAttribI2ui (GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glVertexAttribI3ui (GLuint, GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glVertexAttribI4ui (GLuint, GLuint, GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glVertexAttribI1iv (GLuint, const GLint *);
-;; GLAPI void APIENTRY glVertexAttribI2iv (GLuint, const GLint *);
-;; GLAPI void APIENTRY glVertexAttribI3iv (GLuint, const GLint *);
-;; GLAPI void APIENTRY glVertexAttribI4iv (GLuint, const GLint *);
-;; GLAPI void APIENTRY glVertexAttribI1uiv (GLuint, const GLuint *);
-;; GLAPI void APIENTRY glVertexAttribI2uiv (GLuint, const GLuint *);
-;; GLAPI void APIENTRY glVertexAttribI3uiv (GLuint, const GLuint *);
-;; GLAPI void APIENTRY glVertexAttribI4uiv (GLuint, const GLuint *);
-;; GLAPI void APIENTRY glVertexAttribI4bv (GLuint, const GLbyte *);
-;; GLAPI void APIENTRY glVertexAttribI4sv (GLuint, const GLshort *);
-;; GLAPI void APIENTRY glVertexAttribI4ubv (GLuint, const GLubyte *);
-;; GLAPI void APIENTRY glVertexAttribI4usv (GLuint, const GLushort *);
-;; GLAPI void APIENTRY glVertexAttribIPointer (GLuint, GLint, GLenum, GLsizei, const GLvoid *);
-;; GLAPI void APIENTRY glGetVertexAttribIiv (GLuint, GLenum, GLint *);
-;; GLAPI void APIENTRY glGetVertexAttribIuiv (GLuint, GLenum, GLuint *);
-;; GLAPI void APIENTRY glGetUniformuiv (GLuint, GLint, GLuint *);
-;; GLAPI void APIENTRY glBindFragDataLocation (GLuint, GLuint, const GLchar *);
-;; GLAPI GLint APIENTRY glGetFragDataLocation (GLuint, const GLchar *);
-;; GLAPI void APIENTRY glUniform1ui (GLint, GLuint);
-;; GLAPI void APIENTRY glUniform2ui (GLint, GLuint, GLuint);
-;; GLAPI void APIENTRY glUniform3ui (GLint, GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glUniform4ui (GLint, GLuint, GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glUniform1uiv (GLint, GLsizei, const GLuint *);
-;; GLAPI void APIENTRY glUniform2uiv (GLint, GLsizei, const GLuint *);
-;; GLAPI void APIENTRY glUniform3uiv (GLint, GLsizei, const GLuint *);
-;; GLAPI void APIENTRY glUniform4uiv (GLint, GLsizei, const GLuint *);
-;; GLAPI void APIENTRY glTexParameterIiv (GLenum, GLenum, const GLint *);
-;; GLAPI void APIENTRY glTexParameterIuiv (GLenum, GLenum, const GLuint *);
-;; GLAPI void APIENTRY glGetTexParameterIiv (GLenum, GLenum, GLint *);
-;; GLAPI void APIENTRY glGetTexParameterIuiv (GLenum, GLenum, GLuint *);
-;; GLAPI void APIENTRY glClearBufferiv (GLenum, GLint, const GLint *);
-;; GLAPI void APIENTRY glClearBufferuiv (GLenum, GLint, const GLuint *);
-;; GLAPI void APIENTRY glClearBufferfv (GLenum, GLint, const GLfloat *);
-;; GLAPI void APIENTRY glClearBufferfi (GLenum, GLint, GLfloat, GLint);
-;; GLAPI const GLubyte * APIENTRY glGetStringi (GLenum, GLuint);
+   glColorMaski; GLAPI void APIENTRY  (GLuint, GLboolean, GLboolean, GLboolean, GLboolean)
+   glGetBooleani_v; GLAPI void APIENTRY  (GLenum, GLuint, GLboolean *)
+   glGetIntegeri_v; GLAPI void APIENTRY  (GLenum, GLuint, GLint *)
+   glEnablei; GLAPI void APIENTRY  (GLenum, GLuint)
+   glDisablei; GLAPI void APIENTRY  (GLenum, GLuint)
+   glIsEnabledi; GLAPI GLboolean APIENTRY  (GLenum, GLuint)
+   glBeginTransformFeedback; GLAPI void APIENTRY  (GLenum)
+   glEndTransformFeedback; GLAPI void APIENTRY  (void)
+   glBindBufferRange; GLAPI void APIENTRY  (GLenum, GLuint, GLuint, GLintptr, GLsizeiptr)
+   glBindBufferBase; GLAPI void APIENTRY  (GLenum, GLuint, GLuint)
+   glTransformFeedbackVaryings; GLAPI void APIENTRY  (GLuint, GLsizei, const GLchar* *, GLenum)
+   glGetTransformFeedbackVarying; GLAPI void APIENTRY  (GLuint, GLuint, GLsizei, GLsizei *, GLsizei *, GLenum *, GLchar *)
+   glClampColor; GLAPI void APIENTRY  (GLenum, GLenum)
+   glBeginConditionalRender; GLAPI void APIENTRY  (GLuint, GLenum)
+   glEndConditionalRender; GLAPI void APIENTRY  (void)
+   glVertexAttribI1i; GLAPI void APIENTRY  (GLuint, GLint)
+   glVertexAttribI2i; GLAPI void APIENTRY  (GLuint, GLint, GLint)
+   glVertexAttribI3i; GLAPI void APIENTRY  (GLuint, GLint, GLint, GLint)
+   glVertexAttribI4i; GLAPI void APIENTRY  (GLuint, GLint, GLint, GLint, GLint)
+   glVertexAttribI1ui; GLAPI void APIENTRY  (GLuint, GLuint)
+   glVertexAttribI2ui; GLAPI void APIENTRY  (GLuint, GLuint, GLuint)
+   glVertexAttribI3ui; GLAPI void APIENTRY  (GLuint, GLuint, GLuint, GLuint)
+   glVertexAttribI4ui; GLAPI void APIENTRY  (GLuint, GLuint, GLuint, GLuint, GLuint)
+   glVertexAttribI1iv; GLAPI void APIENTRY  (GLuint, const GLint *)
+   glVertexAttribI2iv; GLAPI void APIENTRY  (GLuint, const GLint *)
+   glVertexAttribI3iv; GLAPI void APIENTRY  (GLuint, const GLint *)
+   glVertexAttribI4iv; GLAPI void APIENTRY  (GLuint, const GLint *)
+   glVertexAttribI1uiv; GLAPI void APIENTRY  (GLuint, const GLuint *)
+   glVertexAttribI2uiv; GLAPI void APIENTRY  (GLuint, const GLuint *)
+   glVertexAttribI3uiv; GLAPI void APIENTRY  (GLuint, const GLuint *)
+   glVertexAttribI4uiv; GLAPI void APIENTRY  (GLuint, const GLuint *)
+   glVertexAttribI4bv; GLAPI void APIENTRY  (GLuint, const GLbyte *)
+   glVertexAttribI4sv; GLAPI void APIENTRY  (GLuint, const GLshort *)
+   glVertexAttribI4ubv; GLAPI void APIENTRY  (GLuint, const GLubyte *)
+   glVertexAttribI4usv; GLAPI void APIENTRY  (GLuint, const GLushort *)
+   glVertexAttribIPointer; GLAPI void APIENTRY  (GLuint, GLint, GLenum, GLsizei, const GLvoid *)
+   glGetVertexAttribIiv; GLAPI void APIENTRY  (GLuint, GLenum, GLint *)
+   glGetVertexAttribIuiv; GLAPI void APIENTRY  (GLuint, GLenum, GLuint *)
+   glGetUniformuiv; GLAPI void APIENTRY  (GLuint, GLint, GLuint *)
+   glBindFragDataLocation; GLAPI void APIENTRY  (GLuint, GLuint, const GLchar *)
+   glGetFragDataLocation; GLAPI GLint APIENTRY  (GLuint, const GLchar *)
+   glUniform1ui; GLAPI void APIENTRY  (GLint, GLuint)
+   glUniform2ui; GLAPI void APIENTRY  (GLint, GLuint, GLuint)
+   glUniform3ui; GLAPI void APIENTRY  (GLint, GLuint, GLuint, GLuint)
+   glUniform4ui; GLAPI void APIENTRY  (GLint, GLuint, GLuint, GLuint, GLuint)
+   glUniform1uiv; GLAPI void APIENTRY  (GLint, GLsizei, const GLuint *)
+   glUniform2uiv; GLAPI void APIENTRY  (GLint, GLsizei, const GLuint *)
+   glUniform3uiv; GLAPI void APIENTRY  (GLint, GLsizei, const GLuint *)
+   glUniform4uiv; GLAPI void APIENTRY  (GLint, GLsizei, const GLuint *)
+   glTexParameterIiv; GLAPI void APIENTRY  (GLenum, GLenum, const GLint *)
+   glTexParameterIuiv; GLAPI void APIENTRY  (GLenum, GLenum, const GLuint *)
+   glGetTexParameterIiv; GLAPI void APIENTRY  (GLenum, GLenum, GLint *)
+   glGetTexParameterIuiv; GLAPI void APIENTRY  (GLenum, GLenum, GLuint *)
+   glClearBufferiv; GLAPI void APIENTRY  (GLenum, GLint, const GLint *)
+   glClearBufferuiv; GLAPI void APIENTRY  (GLenum, GLint, const GLuint *)
+   glClearBufferfv; GLAPI void APIENTRY  (GLenum, GLint, const GLfloat *)
+   glClearBufferfi; GLAPI void APIENTRY  (GLenum, GLint, GLfloat, GLint)
+   glGetStringi; GLAPI const GLubyte * APIENTRY (GLenum, GLuint)
+
+ ; ARB_vertex_array_object
+   GL_ARB_vertex_array_object
+   GL_VERTEX_ARRAY_BINDING
+
+   glBindVertexArray; GLAPI void APIENTRY (GLuint)
+   glDeleteVertexArrays; GLAPI void APIENTRY (GLsizei, const GLuint *)
+   glGenVertexArrays; GLAPI void APIENTRY (GLsizei, GLuint *)
+   glIsVertexArray; GLAPI GLboolean APIENTRY (GLuint)
+   
+ ; ARB_framebuffer_object
+   GL_ARB_framebuffer_object
+   GL_INVALID_FRAMEBUFFER_OPERATION
+   GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING
+   GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE
+   GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE
+   GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE
+   GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE
+   GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE
+   GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE
+   GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE
+   GL_FRAMEBUFFER_DEFAULT
+   GL_FRAMEBUFFER_UNDEFINED
+   GL_DEPTH_STENCIL_ATTACHMENT
+   GL_INDEX
+   GL_MAX_RENDERBUFFER_SIZE
+   GL_DEPTH_STENCIL
+   GL_UNSIGNED_INT_24_8
+   GL_DEPTH24_STENCIL8
+   GL_TEXTURE_STENCIL_SIZE
+   GL_FRAMEBUFFER_BINDING
+   GL_DRAW_FRAMEBUFFER_BINDING
+   GL_RENDERBUFFER_BINDING
+   GL_READ_FRAMEBUFFER
+   GL_DRAW_FRAMEBUFFER
+   GL_READ_FRAMEBUFFER_BINDING
+   GL_RENDERBUFFER_SAMPLES
+   GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE
+   GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME
+   GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL
+   GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE
+   GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER
+   GL_FRAMEBUFFER_COMPLETE
+   GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT
+   GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT
+   GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER
+   GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER
+   GL_FRAMEBUFFER_UNSUPPORTED
+   GL_MAX_COLOR_ATTACHMENTS
+   GL_COLOR_ATTACHMENT0
+   GL_COLOR_ATTACHMENT1
+   GL_COLOR_ATTACHMENT2
+   GL_COLOR_ATTACHMENT3
+   GL_COLOR_ATTACHMENT4
+   GL_COLOR_ATTACHMENT5
+   GL_COLOR_ATTACHMENT6
+   GL_COLOR_ATTACHMENT7
+   GL_COLOR_ATTACHMENT8
+   GL_COLOR_ATTACHMENT9
+   GL_COLOR_ATTACHMENT10
+   GL_COLOR_ATTACHMENT11
+   GL_COLOR_ATTACHMENT12
+   GL_COLOR_ATTACHMENT13
+   GL_COLOR_ATTACHMENT14
+   GL_COLOR_ATTACHMENT15
+   GL_DEPTH_ATTACHMENT
+   GL_STENCIL_ATTACHMENT
+   GL_FRAMEBUFFER
+   GL_RENDERBUFFER
+   GL_RENDERBUFFER_WIDTH
+   GL_RENDERBUFFER_HEIGHT
+   GL_RENDERBUFFER_INTERNAL_FORMAT
+   GL_STENCIL_INDEX1
+   GL_STENCIL_INDEX4
+   GL_STENCIL_INDEX8
+   GL_STENCIL_INDEX16
+   GL_RENDERBUFFER_RED_SIZE
+   GL_RENDERBUFFER_GREEN_SIZE
+   GL_RENDERBUFFER_BLUE_SIZE
+   GL_RENDERBUFFER_ALPHA_SIZE
+   GL_RENDERBUFFER_DEPTH_SIZE
+   GL_RENDERBUFFER_STENCIL_SIZE
+   GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE
+   GL_MAX_SAMPLES
+      
+   glIsRenderbuffer; GLAPI GLboolean (GLuint)
+   glBindRenderbuffer; GLAPI void (GLenum, GLuint)
+   glDeleteRenderbuffers; GLAPI void (GLsizei, const GLuint *)
+   glGenRenderbuffers; GLAPI void (GLsizei, GLuint *)
+   glRenderbufferStorage; GLAPI void (GLenum, GLenum, GLsizei, GLsizei)
+   glGetRenderbufferParameteriv; GLAPI void (GLenum, GLenum, GLint *)
+   glIsFramebuffer; GLAPI GLboolean (GLuint)
+   glBindFramebuffer; GLAPI void (GLenum, GLuint)
+   glDeleteFramebuffers; GLAPI void (GLsizei, const GLuint *)
+   glGenFramebuffers; GLAPI void (GLsizei, GLuint *)
+   glCheckFramebufferStatus; GLAPI GLenum (GLenum)
+   glFramebufferTexture1D; GLAPI void (GLenum, GLenum, GLenum, GLuint, GLint)
+   glFramebufferTexture2D; GLAPI void (GLenum, GLenum, GLenum, GLuint, GLint)
+   glFramebufferTexture3D; GLAPI void (GLenum, GLenum, GLenum, GLuint, GLint, GLint)
+   glFramebufferRenderbuffer; GLAPI void (GLenum, GLenum, GLenum, GLuint)
+   glGetFramebufferAttachmentParameteriv; GLAPI void (GLenum, GLenum, GLenum, GLint *)
+   glGenerateMipmap; GLAPI void (GLenum)
+   glBlitFramebuffer; GLAPI void (GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum)
+   glRenderbufferStorageMultisample; GLAPI void (GLenum, GLsizei, GLenum, GLsizei, GLsizei)
+   glFramebufferTextureLayer; GLAPI void (GLenum, GLenum, GLuint, GLint, GLint)
 
    (exports (OpenGL version-2-1)))
 
@@ -320,13 +342,13 @@
    (define GL_VERSION_3_0 1)
 
    (define GL_COMPARE_REF_TO_TEXTURE         #x884E) ; GL_COMPARE_R_TO_TEXTURE_ARB (GL_ARB_shadow)
-   (define GL_CLIP_DISTANCE0                 #x3000) ; GL_CLIP_PLANE0
-   (define GL_CLIP_DISTANCE1                 #x3001) ; GL_CLIP_PLANE1
-   (define GL_CLIP_DISTANCE2                 #x3002) ; GL_CLIP_PLANE2
-   (define GL_CLIP_DISTANCE3                 #x3003) ; GL_CLIP_PLANE3
-   (define GL_CLIP_DISTANCE4                 #x3004) ; GL_CLIP_PLANE4
-   (define GL_CLIP_DISTANCE5                 #x3005) ; GL_CLIP_PLANE5
-   (define GL_MAX_CLIP_DISTANCES             #x0D32) ; GL_MAX_CLIP_PLANES
+   (define GL_CLIP_DISTANCE0                 GL_CLIP_PLANE0)
+   (define GL_CLIP_DISTANCE1                 GL_CLIP_PLANE1)
+   (define GL_CLIP_DISTANCE2                 GL_CLIP_PLANE2)
+   (define GL_CLIP_DISTANCE3                 GL_CLIP_PLANE3)
+   (define GL_CLIP_DISTANCE4                 GL_CLIP_PLANE4)
+   (define GL_CLIP_DISTANCE5                 GL_CLIP_PLANE5)
+   (define GL_MAX_CLIP_DISTANCES             GL_MAX_CLIP_PLANES)
    (define GL_MAJOR_VERSION                  #x821B)
    (define GL_MINOR_VERSION                  #x821C)
    (define GL_NUM_EXTENSIONS                 #x821D)
@@ -431,87 +453,6 @@
 ;; /* reuse GL_DEPTH_COMPONENT32F */
 ;; /* reuse GL_DEPTH32F_STENCIL8 */
 ;; /* reuse GL_FLOAT_32_UNSIGNED_INT_24_8_REV */
-;; /* Reuse tokens from ARB_framebuffer_object */
-;; /* reuse GL_INVALID_FRAMEBUFFER_OPERATION */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE */
-;; /* reuse GL_FRAMEBUFFER_DEFAULT */
-;; /* reuse GL_FRAMEBUFFER_UNDEFINED */
-;; /* reuse GL_DEPTH_STENCIL_ATTACHMENT */
-;; /* reuse GL_INDEX */
-;; /* reuse GL_MAX_RENDERBUFFER_SIZE */
-;; /* reuse GL_DEPTH_STENCIL */
-;; /* reuse GL_UNSIGNED_INT_24_8 */
-;; /* reuse GL_DEPTH24_STENCIL8 */
-;; /* reuse GL_TEXTURE_STENCIL_SIZE */
-;; /* reuse GL_TEXTURE_RED_TYPE */
-;; /* reuse GL_TEXTURE_GREEN_TYPE */
-;; /* reuse GL_TEXTURE_BLUE_TYPE */
-;; /* reuse GL_TEXTURE_ALPHA_TYPE */
-;; /* reuse GL_TEXTURE_LUMINANCE_TYPE */
-;; /* reuse GL_TEXTURE_INTENSITY_TYPE */
-;; /* reuse GL_TEXTURE_DEPTH_TYPE */
-;; /* reuse GL_UNSIGNED_NORMALIZED */
-;; /* reuse GL_FRAMEBUFFER_BINDING */
-;; /* reuse GL_DRAW_FRAMEBUFFER_BINDING */
-;; /* reuse GL_RENDERBUFFER_BINDING */
-;; /* reuse GL_READ_FRAMEBUFFER */
-;; /* reuse GL_DRAW_FRAMEBUFFER */
-;; /* reuse GL_READ_FRAMEBUFFER_BINDING */
-;; /* reuse GL_RENDERBUFFER_SAMPLES */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE */
-;; /* reuse GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER */
-;; /* reuse GL_FRAMEBUFFER_COMPLETE */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER */
-;; /* reuse GL_FRAMEBUFFER_UNSUPPORTED */
-;; /* reuse GL_MAX_COLOR_ATTACHMENTS */
-;; /* reuse GL_COLOR_ATTACHMENT0 */
-;; /* reuse GL_COLOR_ATTACHMENT1 */
-;; /* reuse GL_COLOR_ATTACHMENT2 */
-;; /* reuse GL_COLOR_ATTACHMENT3 */
-;; /* reuse GL_COLOR_ATTACHMENT4 */
-;; /* reuse GL_COLOR_ATTACHMENT5 */
-;; /* reuse GL_COLOR_ATTACHMENT6 */
-;; /* reuse GL_COLOR_ATTACHMENT7 */
-;; /* reuse GL_COLOR_ATTACHMENT8 */
-;; /* reuse GL_COLOR_ATTACHMENT9 */
-;; /* reuse GL_COLOR_ATTACHMENT10 */
-;; /* reuse GL_COLOR_ATTACHMENT11 */
-;; /* reuse GL_COLOR_ATTACHMENT12 */
-;; /* reuse GL_COLOR_ATTACHMENT13 */
-;; /* reuse GL_COLOR_ATTACHMENT14 */
-;; /* reuse GL_COLOR_ATTACHMENT15 */
-;; /* reuse GL_DEPTH_ATTACHMENT */
-;; /* reuse GL_STENCIL_ATTACHMENT */
-;; /* reuse GL_FRAMEBUFFER */
-;; /* reuse GL_RENDERBUFFER */
-;; /* reuse GL_RENDERBUFFER_WIDTH */
-;; /* reuse GL_RENDERBUFFER_HEIGHT */
-;; /* reuse GL_RENDERBUFFER_INTERNAL_FORMAT */
-;; /* reuse GL_STENCIL_INDEX1 */
-;; /* reuse GL_STENCIL_INDEX4 */
-;; /* reuse GL_STENCIL_INDEX8 */
-;; /* reuse GL_STENCIL_INDEX16 */
-;; /* reuse GL_RENDERBUFFER_RED_SIZE */
-;; /* reuse GL_RENDERBUFFER_GREEN_SIZE */
-;; /* reuse GL_RENDERBUFFER_BLUE_SIZE */
-;; /* reuse GL_RENDERBUFFER_ALPHA_SIZE */
-;; /* reuse GL_RENDERBUFFER_DEPTH_SIZE */
-;; /* reuse GL_RENDERBUFFER_STENCIL_SIZE */
-;; /* reuse GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE */
-;; /* reuse GL_MAX_SAMPLES */
 ;; /* Reuse tokens from ARB_framebuffer_sRGB */
 ;; /* reuse GL_FRAMEBUFFER_SRGB */
 ;; /* Reuse tokens from ARB_half_float_vertex */
@@ -551,70 +492,180 @@
 ;; /* reuse GL_RG16UI */
 ;; /* reuse GL_RG32I */
 ;; /* reuse GL_RG32UI */
-;; /* Reuse tokens from ARB_vertex_array_object */
-;; /* reuse GL_VERTEX_ARRAY_BINDING */
 
-;; GLAPI void APIENTRY glColorMaski (GLuint, GLboolean, GLboolean, GLboolean, GLboolean);
-;; GLAPI void APIENTRY glGetBooleani_v (GLenum, GLuint, GLboolean *);
-;; GLAPI void APIENTRY glGetIntegeri_v (GLenum, GLuint, GLint *);
-;; GLAPI void APIENTRY glEnablei (GLenum, GLuint);
-;; GLAPI void APIENTRY glDisablei (GLenum, GLuint);
-;; GLAPI GLboolean APIENTRY glIsEnabledi (GLenum, GLuint);
-;; GLAPI void APIENTRY glBeginTransformFeedback (GLenum);
-;; GLAPI void APIENTRY glEndTransformFeedback (void);
-;; GLAPI void APIENTRY glBindBufferRange (GLenum, GLuint, GLuint, GLintptr, GLsizeiptr);
-;; GLAPI void APIENTRY glBindBufferBase (GLenum, GLuint, GLuint);
-;; GLAPI void APIENTRY glTransformFeedbackVaryings (GLuint, GLsizei, const GLchar* *, GLenum);
-;; GLAPI void APIENTRY glGetTransformFeedbackVarying (GLuint, GLuint, GLsizei, GLsizei *, GLsizei *, GLenum *, GLchar *);
-;; GLAPI void APIENTRY glClampColor (GLenum, GLenum);
-;; GLAPI void APIENTRY glBeginConditionalRender (GLuint, GLenum);
-;; GLAPI void APIENTRY glEndConditionalRender (void);
-;; GLAPI void APIENTRY glVertexAttribI1i (GLuint, GLint);
-;; GLAPI void APIENTRY glVertexAttribI2i (GLuint, GLint, GLint);
-;; GLAPI void APIENTRY glVertexAttribI3i (GLuint, GLint, GLint, GLint);
-;; GLAPI void APIENTRY glVertexAttribI4i (GLuint, GLint, GLint, GLint, GLint);
-;; GLAPI void APIENTRY glVertexAttribI1ui (GLuint, GLuint);
-;; GLAPI void APIENTRY glVertexAttribI2ui (GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glVertexAttribI3ui (GLuint, GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glVertexAttribI4ui (GLuint, GLuint, GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glVertexAttribI1iv (GLuint, const GLint *);
-;; GLAPI void APIENTRY glVertexAttribI2iv (GLuint, const GLint *);
-;; GLAPI void APIENTRY glVertexAttribI3iv (GLuint, const GLint *);
-;; GLAPI void APIENTRY glVertexAttribI4iv (GLuint, const GLint *);
-;; GLAPI void APIENTRY glVertexAttribI1uiv (GLuint, const GLuint *);
-;; GLAPI void APIENTRY glVertexAttribI2uiv (GLuint, const GLuint *);
-;; GLAPI void APIENTRY glVertexAttribI3uiv (GLuint, const GLuint *);
-;; GLAPI void APIENTRY glVertexAttribI4uiv (GLuint, const GLuint *);
-;; GLAPI void APIENTRY glVertexAttribI4bv (GLuint, const GLbyte *);
-;; GLAPI void APIENTRY glVertexAttribI4sv (GLuint, const GLshort *);
-;; GLAPI void APIENTRY glVertexAttribI4ubv (GLuint, const GLubyte *);
-;; GLAPI void APIENTRY glVertexAttribI4usv (GLuint, const GLushort *);
-;; GLAPI void APIENTRY glVertexAttribIPointer (GLuint, GLint, GLenum, GLsizei, const GLvoid *);
-;; GLAPI void APIENTRY glGetVertexAttribIiv (GLuint, GLenum, GLint *);
-;; GLAPI void APIENTRY glGetVertexAttribIuiv (GLuint, GLenum, GLuint *);
-;; GLAPI void APIENTRY glGetUniformuiv (GLuint, GLint, GLuint *);
-;; GLAPI void APIENTRY glBindFragDataLocation (GLuint, GLuint, const GLchar *);
-;; GLAPI GLint APIENTRY glGetFragDataLocation (GLuint, const GLchar *);
-;; GLAPI void APIENTRY glUniform1ui (GLint, GLuint);
-;; GLAPI void APIENTRY glUniform2ui (GLint, GLuint, GLuint);
-;; GLAPI void APIENTRY glUniform3ui (GLint, GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glUniform4ui (GLint, GLuint, GLuint, GLuint, GLuint);
-;; GLAPI void APIENTRY glUniform1uiv (GLint, GLsizei, const GLuint *);
-;; GLAPI void APIENTRY glUniform2uiv (GLint, GLsizei, const GLuint *);
-;; GLAPI void APIENTRY glUniform3uiv (GLint, GLsizei, const GLuint *);
-;; GLAPI void APIENTRY glUniform4uiv (GLint, GLsizei, const GLuint *);
-;; GLAPI void APIENTRY glTexParameterIiv (GLenum, GLenum, const GLint *);
-;; GLAPI void APIENTRY glTexParameterIuiv (GLenum, GLenum, const GLuint *);
-;; GLAPI void APIENTRY glGetTexParameterIiv (GLenum, GLenum, GLint *);
-;; GLAPI void APIENTRY glGetTexParameterIuiv (GLenum, GLenum, GLuint *);
-;; GLAPI void APIENTRY glClearBufferiv (GLenum, GLint, const GLint *);
-;; GLAPI void APIENTRY glClearBufferuiv (GLenum, GLint, const GLuint *);
-;; GLAPI void APIENTRY glClearBufferfv (GLenum, GLint, const GLfloat *);
-;; GLAPI void APIENTRY glClearBufferfi (GLenum, GLint, GLfloat, GLint);
-;; GLAPI const GLubyte * APIENTRY glGetStringi (GLenum, GLuint);
+   (define GLbyte* (fft* GLbyte))
+   (define GLushort* (fft* GLushort))
+   (define GLchar* type-string)
+
+   (define glColorMaski (GL GLvoid "glColorMaski" GLuint GLboolean GLboolean GLboolean GLboolean))
+   (define glGetBooleani_v (GL GLvoid "glGetBooleani_v" GLenum GLuint GLboolean*))
+   (define glGetIntegeri_v (GL GLvoid "glGetIntegeri_v" GLenum GLuint GLint*))
+   (define glEnablei (GL GLvoid "glEnablei" GLenum GLuint))
+   (define glDisablei (GL GLvoid "glDisablei" GLenum GLuint))
+   (define glIsEnabledi (GL GLboolean "glIsEnabledi" GLenum GLuint))
+   (define glBeginTransformFeedback (GL GLvoid "glBeginTransformFeedback" GLenum))
+   (define glEndTransformFeedback (GL GLvoid "glEndTransformFeedback"))
+   (define glBindBufferRange (GL GLvoid "glBindBufferRange" GLenum GLuint GLuint GLintptr GLsizeiptr))
+   (define glBindBufferBase (GL GLvoid "glBindBufferBase" GLenum GLuint GLuint))
+   (define glTransformFeedbackVaryings (GL GLvoid "glTransformFeedbackVaryings" GLuint GLsizei (fft* GLchar*) GLenum)) ; todo: check this
+   (define glGetTransformFeedbackVarying (GL GLvoid "glGetTransformFeedbackVarying" GLuint GLuint GLsizei (fft& GLsizei) (fft& GLsizei) (fft& GLenum) type-string)) ; todo: check this
+   (define glClampColor (GL GLvoid "glClampColor" GLenum GLenum))
+   (define glBeginConditionalRender (GL GLvoid "glBeginConditionalRender" GLuint GLenum))
+   (define glEndConditionalRender (GL GLvoid "glEndConditionalRender"))
+   (define glVertexAttribI1i (GL GLvoid "glVertexAttribI1i" GLuint GLint))
+   (define glVertexAttribI2i (GL GLvoid "glVertexAttribI2i" GLuint GLint GLint))
+   (define glVertexAttribI3i (GL GLvoid "glVertexAttribI3i" GLuint GLint GLint GLint))
+   (define glVertexAttribI4i (GL GLvoid "glVertexAttribI4i" GLuint GLint GLint GLint GLint))
+   (define glVertexAttribI1ui (GL GLvoid "glVertexAttribI1ui" GLuint GLuint))
+   (define glVertexAttribI2ui (GL GLvoid "glVertexAttribI2ui" GLuint GLuint GLuint))
+   (define glVertexAttribI3ui (GL GLvoid "glVertexAttribI3ui" GLuint GLuint GLuint GLuint))
+   (define glVertexAttribI4ui (GL GLvoid "glVertexAttribI4ui" GLuint GLuint GLuint GLuint GLuint))
+   (define glVertexAttribI1iv (GL GLvoid "glVertexAttribI1iv" GLuint GLint*))
+   (define glVertexAttribI2iv (GL GLvoid "glVertexAttribI2iv" GLuint GLint*))
+   (define glVertexAttribI3iv (GL GLvoid "glVertexAttribI3iv" GLuint GLint*))
+   (define glVertexAttribI4iv (GL GLvoid "glVertexAttribI4iv" GLuint GLint*))
+   (define glVertexAttribI1uiv (GL GLvoid "glVertexAttribI1uiv" GLuint GLuint*))
+   (define glVertexAttribI2uiv (GL GLvoid "glVertexAttribI2uiv" GLuint GLuint*))
+   (define glVertexAttribI3uiv (GL GLvoid "glVertexAttribI3uiv" GLuint GLuint*))
+   (define glVertexAttribI4uiv (GL GLvoid "glVertexAttribI4uiv" GLuint GLuint*))
+   (define glVertexAttribI4bv (GL GLvoid "glVertexAttribI4bv" GLuint GLbyte*))
+   (define glVertexAttribI4sv (GL GLvoid "glVertexAttribI4sv" GLuint GLshort*))
+   (define glVertexAttribI4ubv (GL GLvoid "glVertexAttribI4ubv" GLuint GLubyte*))
+   (define glVertexAttribI4usv (GL GLvoid "glVertexAttribI4usv" GLuint GLushort*))
+   (define glVertexAttribIPointer (GL GLvoid "glVertexAttribIPointer" GLuint GLint GLenum GLsizei GLvoid*))
+   (define glGetVertexAttribIiv (GL GLvoid "glGetVertexAttribIiv" GLuint GLenum GLint*))
+   (define glGetVertexAttribIuiv (GL GLvoid "glGetVertexAttribIuiv" GLuint GLenum GLuint*))
+   (define glGetUniformuiv (GL GLvoid "glGetUniformuiv" GLuint GLint GLuint*))
+   (define glBindFragDataLocation (GL GLvoid "glBindFragDataLocation" GLuint GLuint GLchar*))
+   (define glGetFragDataLocation (GL GLint "glGetFragDataLocation" GLuint GLchar*))
+   (define glUniform1ui (GL GLvoid "glUniform1ui" GLint GLuint))
+   (define glUniform2ui (GL GLvoid "glUniform2ui" GLint GLuint GLuint))
+   (define glUniform3ui (GL GLvoid "glUniform3ui" GLint GLuint GLuint GLuint))
+   (define glUniform4ui (GL GLvoid "glUniform4ui" GLint GLuint GLuint GLuint GLuint))
+   (define glUniform1uiv (GL GLvoid "glUniform1uiv" GLint GLsizei GLuint*))
+   (define glUniform2uiv (GL GLvoid "glUniform2uiv" GLint GLsizei GLuint*))
+   (define glUniform3uiv (GL GLvoid "glUniform3uiv" GLint GLsizei GLuint*))
+   (define glUniform4uiv (GL GLvoid "glUniform4uiv" GLint GLsizei GLuint*))
+   (define glTexParameterIiv (GL GLvoid "glTexParameterIiv" GLenum GLenum GLint*))
+   (define glTexParameterIuiv (GL GLvoid "glTexParameterIuiv" GLenum GLenum GLuint*))
+   (define glGetTexParameterIiv (GL GLvoid "glGetTexParameterIiv" GLenum GLenum GLint*))
+   (define glGetTexParameterIuiv (GL GLvoid "glGetTexParameterIuiv" GLenum GLenum GLuint*))
+   (define glClearBufferiv (GL GLvoid "glClearBufferiv" GLenum GLint GLint*))
+   (define glClearBufferuiv (GL GLvoid "glClearBufferuiv" GLenum GLint GLuint*))
+   (define glClearBufferfv (GL GLvoid "glClearBufferfv" GLenum GLint GLfloat*))
+   (define glClearBufferfi (GL GLvoid "glClearBufferfi" GLenum GLint GLfloat GLint))
+   (define glGetStringi (GL GLubyte* "glGetStringi" GLenum GLuint))
 
 ;; /* OpenGL 3.0 also reuses entry points from these extensions: */
 ;; /* ARB_framebuffer_object */
 ;; /* ARB_map_buffer_range */ ??? NOT IN REGISTRY
 ;; /* ARB_vertex_array_object */
+
+ ; ARB_vertex_array_object
+   (define GL_ARB_vertex_array_object 1)
+   
+   (define GL_VERTEX_ARRAY_BINDING #x85B5)
+
+   (define glBindVertexArray (GL GLvoid "glBindVertexArray" GLuint))
+   (define glDeleteVertexArrays (GL GLvoid "glDeleteVertexArrays" GLsizei GLuint*))
+   (define glGenVertexArrays (GL GLvoid "glGenVertexArrays" GLsizei GLuint*))
+   (define glIsVertexArray (GL GLboolean "glIsVertexArray" GLuint))
+   
+ ; ARB_framebuffer_object
+   (define GL_ARB_framebuffer_object 1)
+
+   (define GL_INVALID_FRAMEBUFFER_OPERATION  #x0506)
+   (define GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING #x8210)
+   (define GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE #x8211)
+   (define GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE #x8212)
+   (define GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE #x8213)
+   (define GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE #x8214)
+   (define GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE #x8215)
+   (define GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE #x8216)
+   (define GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE #x8217)
+   (define GL_FRAMEBUFFER_DEFAULT            #x8218)
+   (define GL_FRAMEBUFFER_UNDEFINED          #x8219)
+   (define GL_DEPTH_STENCIL_ATTACHMENT       #x821A)
+   (define GL_INDEX                          #x8222)
+   (define GL_MAX_RENDERBUFFER_SIZE          #x84E8)
+   (define GL_DEPTH_STENCIL                  #x84F9)
+   (define GL_UNSIGNED_INT_24_8              #x84FA)
+   (define GL_DEPTH24_STENCIL8               #x88F0)
+   (define GL_TEXTURE_STENCIL_SIZE           #x88F1)
+   (define GL_FRAMEBUFFER_BINDING            #x8CA6)
+   (define GL_DRAW_FRAMEBUFFER_BINDING       GL_FRAMEBUFFER_BINDING)
+   (define GL_RENDERBUFFER_BINDING           #x8CA7)
+   (define GL_READ_FRAMEBUFFER               #x8CA8)
+   (define GL_DRAW_FRAMEBUFFER               #x8CA9)
+   (define GL_READ_FRAMEBUFFER_BINDING       #x8CAA)
+   (define GL_RENDERBUFFER_SAMPLES           #x8CAB)
+   (define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE #x8CD0)
+   (define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME #x8CD1)
+   (define GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL #x8CD2)
+   (define GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE #x8CD3)
+   (define GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER #x8CD4)
+   (define GL_FRAMEBUFFER_COMPLETE           #x8CD5)
+   (define GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT #x8CD6)
+   (define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT #x8CD7)
+   (define GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER #x8CDB)
+   (define GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER #x8CDC)
+   (define GL_FRAMEBUFFER_UNSUPPORTED        #x8CDD)
+   (define GL_MAX_COLOR_ATTACHMENTS          #x8CDF)
+   (define GL_COLOR_ATTACHMENT0              #x8CE0)
+   (define GL_COLOR_ATTACHMENT1              #x8CE1)
+   (define GL_COLOR_ATTACHMENT2              #x8CE2)
+   (define GL_COLOR_ATTACHMENT3              #x8CE3)
+   (define GL_COLOR_ATTACHMENT4              #x8CE4)
+   (define GL_COLOR_ATTACHMENT5              #x8CE5)
+   (define GL_COLOR_ATTACHMENT6              #x8CE6)
+   (define GL_COLOR_ATTACHMENT7              #x8CE7)
+   (define GL_COLOR_ATTACHMENT8              #x8CE8)
+   (define GL_COLOR_ATTACHMENT9              #x8CE9)
+   (define GL_COLOR_ATTACHMENT10             #x8CEA)
+   (define GL_COLOR_ATTACHMENT11             #x8CEB)
+   (define GL_COLOR_ATTACHMENT12             #x8CEC)
+   (define GL_COLOR_ATTACHMENT13             #x8CED)
+   (define GL_COLOR_ATTACHMENT14             #x8CEE)
+   (define GL_COLOR_ATTACHMENT15             #x8CEF)
+   (define GL_DEPTH_ATTACHMENT               #x8D00)
+   (define GL_STENCIL_ATTACHMENT             #x8D20)
+   (define GL_FRAMEBUFFER                    #x8D40)
+   (define GL_RENDERBUFFER                   #x8D41)
+   (define GL_RENDERBUFFER_WIDTH             #x8D42)
+   (define GL_RENDERBUFFER_HEIGHT            #x8D43)
+   (define GL_RENDERBUFFER_INTERNAL_FORMAT   #x8D44)
+   (define GL_STENCIL_INDEX1                 #x8D46)
+   (define GL_STENCIL_INDEX4                 #x8D47)
+   (define GL_STENCIL_INDEX8                 #x8D48)
+   (define GL_STENCIL_INDEX16                #x8D49)
+   (define GL_RENDERBUFFER_RED_SIZE          #x8D50)
+   (define GL_RENDERBUFFER_GREEN_SIZE        #x8D51)
+   (define GL_RENDERBUFFER_BLUE_SIZE         #x8D52)
+   (define GL_RENDERBUFFER_ALPHA_SIZE        #x8D53)
+   (define GL_RENDERBUFFER_DEPTH_SIZE        #x8D54)
+   (define GL_RENDERBUFFER_STENCIL_SIZE      #x8D55)
+   (define GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE #x8D56)
+   (define GL_MAX_SAMPLES                    #x8D57)
+      
+   (define glIsRenderbuffer (GL GLboolean "glIsRenderbuffer" GLuint))
+   (define glBindRenderbuffer (GL GLvoid "glBindRenderbuffer" GLenum GLuint))
+   (define glDeleteRenderbuffers (GL GLvoid "glDeleteRenderbuffers" GLsizei GLuint*))
+   (define glGenRenderbuffers (GL GLvoid "glGenRenderbuffers" GLsizei GLuint*))
+   (define glRenderbufferStorage (GL GLvoid "glRenderbufferStorage" GLenum GLenum GLsizei GLsizei))
+   (define glGetRenderbufferParameteriv (GL GLvoid "glGetRenderbufferParameteriv" GLenum GLenum GLint*))
+   (define glIsFramebuffer (GL GLboolean "glIsFramebuffer" GLuint))
+   (define glBindFramebuffer (GL GLvoid "glBindFramebuffer" GLenum GLuint))
+   (define glDeleteFramebuffers (GL GLvoid "glDeleteFramebuffers" GLsizei GLuint*))
+   (define glGenFramebuffers (GL GLvoid "glGenFramebuffers" GLsizei GLuint*))
+   (define glCheckFramebufferStatus (GL GLenum "glCheckFramebufferStatus" GLenum))
+   (define glFramebufferTexture1D (GL GLvoid "glFramebufferTexture1D" GLenum GLenum GLenum GLuint GLint))
+   (define glFramebufferTexture2D (GL GLvoid "glFramebufferTexture2D" GLenum GLenum GLenum GLuint GLint))
+   (define glFramebufferTexture3D (GL GLvoid "glFramebufferTexture3D" GLenum GLenum GLenum GLuint GLint GLint))
+   (define glFramebufferRenderbuffer (GL GLvoid "glFramebufferRenderbuffer" GLenum GLenum GLenum GLuint))
+   (define glGetFramebufferAttachmentParameteriv (GL GLvoid "glGetFramebufferAttachmentParameteriv" GLenum GLenum GLenum GLint*))
+   (define glGenerateMipmap (GL GLvoid "glGenerateMipmap" GLenum))
+   (define glBlitFramebuffer (GL GLvoid "glBlitFramebuffer" GLint GLint GLint GLint GLint GLint GLint GLint GLbitfield GLenum))
+   (define glRenderbufferStorageMultisample (GL GLvoid "glRenderbufferStorageMultisample" GLenum GLsizei GLenum GLsizei GLsizei))
+   (define glFramebufferTextureLayer (GL GLvoid "glFramebufferTextureLayer" GLenum GLenum GLuint GLint GLint))
+
 ))
