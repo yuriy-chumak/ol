@@ -106,10 +106,10 @@ int main(int argc, char** argv)
 #define _Q(x) \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),   new_string(&ol, (char*)(uintptr_t)x), \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),    new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), int),      make_integer((int)(uintptr_t)x), \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned), make_integer((int)(uintptr_t)x), \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
 	IFALSE))))))
 #define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
 

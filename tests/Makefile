@@ -179,9 +179,73 @@ else
 	@echo "Built."
 endif
 
-testing-embed: embed
-	@echo -n "Testing embed... "
-	@./embed
+testing-embed: tests/embed.c src/olvm.c extensions/embed.h repl
+	@echo -n "Testing embed ... "
+ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
+ifeq ($(HAS_32CDEFS),1)
+	@ld -r -b binary -o tmp/repl32 repl -m elf_i386
+	@echo -n ", debug-32: "
+	@$(CC) tests/embed.c src/olvm.c tmp/repl32 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embed32d \
+	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m32
+	@if tmp/embed32d >/dev/null; then\
+	   echo -n "ok" ;\
+	else \
+	   echo -n "\033[0;31mfailed\033[0m" ;\
+	   touch $(FAILED) ;\
+	fi
+	@echo -n ", release-32: "
+	@$(CC) tests/embed.c src/olvm.c tmp/repl32 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embed32r \
+	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m32
+	@if tmp/embed32r >/dev/null; then\
+	   echo -n "ok" ;\
+	else \
+	   echo -n "\033[0;31mfailed\033[0m" ;\
+	   touch $(FAILED) ;\
+	fi
+endif
+ifeq ($(HAS_64CDEFS),1)
+	@ld -r -b binary -o tmp/repl64 repl -m elf_x86_64
+	@echo -n ", debug-64: "
+	@$(CC) tests/embed.c src/olvm.c tmp/repl64 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embed64d \
+	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m64
+	@if tmp/embed64d >/dev/null; then\
+	   echo -n "ok" ;\
+	else \
+	   echo -n "\033[0;31mfailed\033[0m" ;\
+	   touch $(FAILED) ;\
+	fi
+	@echo -n ", release-64: "
+	@$(CC) tests/embed.c src/olvm.c tmp/repl64 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embed64r \
+	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m64
+	@if tmp/embed64r >/dev/null; then\
+	   echo -n "ok" ;\
+	else \
+	   echo -n "\033[0;31mfailed\033[0m" ;\
+	   touch $(FAILED) ;\
+	fi
+endif
+else
+	@ld -r -b binary -o tmp/repl repl -m elf_x86_64
+	@echo -n ", debug: "
+	@$(CC) tests/embed.c src/olvm.c tmp/repl64 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embedd \
+	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
+	@if tmp/embedd >/dev/null; then\
+	   echo -n "ok" ;\
+	else \
+	   echo -n "\033[0;31mfailed\033[0m" ;\
+	   touch $(FAILED) ;\
+	fi
+	@echo -n ", release: "
+	@$(CC) tests/embed.c src/olvm.c tmp/repl64 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embedr \
+	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_RELEASE)
+	@if tmp/embedr >/dev/null; then\
+	   echo -n "ok" ;\
+	else \
+	   echo -n "\033[0;31mfailed\033[0m" ;\
+	   touch $(FAILED) ;\
+	fi
+endif
+	@echo "."
 
 %.scm.ok: %.scm
 	@echo -n "Testing $^ ..."
