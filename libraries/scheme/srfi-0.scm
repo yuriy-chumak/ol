@@ -1,20 +1,20 @@
-(define-library (scheme srfi-71)
-; http://srfi.schemers.org/srfi-71/srfi-71.html
+(define-library (scheme srfi-0)
+; http://srfi.schemers.org/srfi-0/srfi-0.html
 
 ;; Abstract
 ;
-; This SRFI is a proposal for extending let, let*, and letrec for receiving multiple
-; values. The syntactic extension is fully compatible with the existing syntax.
+; It is desirable that programs which depend on additions to standard Scheme name
+; those additions. SRFIs provide the specifications of these additions ("features"),
+; and SRFI 0 provides the means to actually check that these features are present
+; in the Scheme system by means of the cond-expand construct.
 
-; NOTES: srfi-71 fully included into scheme core profile, you should not include it manually!
+; NOTES: srfi-0 fully included into lang/eval.scm profile
 ; -----
 (export
-   srfi-71)
+   srfi-0)
+(import
+   (scheme core))
 
 (begin
-   (setq srfi-71 #true)
-
-   ; todo: rename current uncons to something new
-   ; todo: implement uncons, unlist, unvector
-
+   (setq srfi-0 #true)
 ))

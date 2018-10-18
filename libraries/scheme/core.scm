@@ -24,9 +24,9 @@
                ;   call-with-current-continuation
                ;   tuple-apply ff-apply
 
-      (scheme case-lambda)  ; case-lambda
-      (scheme srfi-87)      ; <= in cases
-      (scheme srfi-71))     ; (let* ((a b (values..
+      (scheme srfi-16)   ; case-lambda
+      (scheme srfi-87)   ; <= in cases
+      (scheme srfi-71))  ; (let* ((a b (values..
 
    (begin
       ;; special forms: (declared in lang/env.scm)
@@ -1895,12 +1895,13 @@
       list length append reverse
       ilist tuple tuple-case
       call-with-values define-library
-      (exports (scheme case-lambda)) ;case-lambda
-      (exports (scheme srfi-87)) ;=> in cases
       define-values ; ol specific
 
       ; 4.1
       set!
+
+      ; 4.2.9
+      case-lambda ; declared in srfi-16
 
       ; 6.2 (numbers)
       type-fix+

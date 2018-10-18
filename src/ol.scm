@@ -32,9 +32,9 @@
 ; предварительная загрузка зависимостей scheme core,
 ; (иначе импорт сбойнет)
 (import (src vm))   ;; команды виртуальной машины
-(import (scheme case-lambda)) ;; case-lambda
+(import (scheme srfi-16)) ;; case-lambda
 (import (scheme srfi-87)) ;; "=>" clauses in case
-(import (scheme srfi-71))
+(import (scheme srfi-71)) ;; extended LET-syntax for multiple values
 (import (scheme core))    ;; базовый языковый ...
 (import (scheme base))    ;; ... набор ol
 
@@ -196,6 +196,7 @@
          (halt exit-seccomp-failed))))
 
 (import (lang eval))
+(define *features* (append *features* '(srfi-0))) ; cond-expand
 
 ;; push it to libraries for sharing, replacing the old one
 (define *libraries* ; заменим старую (src olvm) на новую

@@ -24,6 +24,7 @@
    (import
       (scheme base)
       (scheme cxr)
+      (scheme srfi-0)
 
       (owl list)
       (lang compile)
