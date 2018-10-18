@@ -1,13 +1,22 @@
 ;;;; random number generator
 (define-library (otus random!)
+(export
+   ; (rand! n)
+   ; generate random number in range [0 .. n) - from 0 to n-1
+   rand!
 
-   (export
-      rand!)
+   ; (rand-range! a b)
+   ; generate random number in range [a .. b) - from a to b-1
+   rand-range!
 
-   (import
-      (scheme core)
-      (owl math)
-      (owl time))
+   ; (shuffle! t)
+   ; shuffle a tuple, list (destructive)
+   shuffle!
+
+   
+)
+
+(import (otus lisp))
 
 (begin
 
@@ -35,6 +44,28 @@
             (set-cdr! seed (band (>> next 24) #xffffff))
 
             (mod (mod (floor (/ next 65536)) 32768) limit)))))
+
+(define (rand-range! lo hi)
+   (if (< lo hi)
+      (lets ((o (rand! (- hi lo))))
+         (+ o lo))
+      (runtime-error "rnd-range: bad range: " (list lo hi))))
+
+(define (shuffle! o) ; перемешивалка для tuple
+   (cond
+      ((tuple? o)
+         (for-each (lambda (i)
+               (let ((a (ref o i))
+                     (j (+ 1 (rand! i))))
+                  (set-ref! o i (ref o j))
+                  (set-ref! o j a)))
+            (reverse (iota (size o) 1)))
+         o)
+      ((list? o)
+         (tuple->list (shuffle! (list->tuple o))))
+      ((string? o)
+         (runes->string (shuffle! (string->runes o))))))
+
 
 ; based on Marsaglia's letter: http://www.cse.yorku.ca/~oz/marsaglia-rng.html
 
