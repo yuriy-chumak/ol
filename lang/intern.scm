@@ -7,21 +7,20 @@
 ;  - bytes->bytecode (where returned bytecode may use spacial primops)
 ; (- intern-char     -> x → x')
 
+; this module makes unique symbols table, so same symbols must have same address.
+; e.g. (eq? 'sym1 'sym1) => #true
 (define-library (lang intern)
    (export
-      bytes->symbol
       string->symbol
       symbol->string
       ;initialize-interner
       string->uninterned-symbol
-      string->interned-symbol       ;; tree string → tree' symbol
-      put-symbol                    ;; tree sym → tree'
-      empty-symbol-tree
-      intern-symbols
+      ;string->interned-symbol       ;; tree string → tree' symbol
+      ;put-symbol                    ;; tree sym → tree'
+      ;empty-symbol-tree
       ;defined?
 
-      fork-intern-interner
-      )
+      fork-intern-interner)
 
    (import
       (scheme core)
@@ -79,9 +78,7 @@
       (define (string->symbol str)
          (interact 'intern str))
 
-
       ; lookup node str sym -> node' sym'
-
       (define (maybe-lookup-symbol node str)
          (if node
             (lets
@@ -121,27 +118,6 @@
                (let ((new (string->uninterned-symbol str)))
                   (values (put-symbol root new) new)))))
 
-      ;;;
-      ;;; BYTECODE INTERNING
-      ;;;
-
-      ; this will be forked as 'interner
-      ; to bootstrap, collect all symbols from the entry procedure, intern
-      ; them, and then make the intial threads with an up-to-date interner
-
-      (define (bytes->symbol bytes)
-         (string->symbol
-            (runes->string
-               (reverse bytes))))
-
-      (define (intern-symbols sexp)
-         (cond
-            ((symbol? sexp)
-               (string->symbol (ref sexp 1)))
-            ((pair? sexp)
-               (cons (intern-symbols (car sexp)) (intern-symbols (cdr sexp))))
-            (else sexp)))
-
       ;; obj → bytecode | #false
       (define (bytecode-of func)
          (cond
@@ -153,7 +129,7 @@
          (apply print-to (cons stderr args))
          42)
 
-      ;
+      ; call before
       (define (fork-intern-interner symbols)
          (let ((root (fold put-symbol empty-symbol-tree symbols)))
             (fork-server 'intern (lambda ()
@@ -174,5 +150,4 @@
       ;   (syntax-rules (*toplevel*)
       ;      ((defined? symbol)
       ;         (get *toplevel* symbol #false))))
-
 ))

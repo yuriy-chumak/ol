@@ -35,7 +35,7 @@
       (owl io) ; testing
       (owl unicode)
       (only (owl interop) interact)
-      (only (lang intern) intern-symbols string->uninterned-symbol)
+      (only (lang intern) string->symbol string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 
    (begin
@@ -369,6 +369,14 @@
                          (line get-rest-of-line))
                         (list 'quote (list 'hashbang (list->string line)))))))
                val)))
+
+      (define (intern-symbols sexp)
+         (cond
+            ((symbol? sexp)
+               (string->symbol (ref sexp 1)))
+            ((pair? sexp)
+               (cons (intern-symbols (car sexp)) (intern-symbols (cdr sexp))))
+            (else sexp)))
 
       (define (get-vector-of parser)
          (let-parses
