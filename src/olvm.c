@@ -872,18 +872,10 @@ write_t* OL_set_write(struct ol_t* ol, write_t read);
 // набор макросов - проверок для команд
 // car, cdr:
 #ifndef CAR_CHECK
-#ifndef NDEBUG
 #	define CAR_CHECK(arg) is_pair(T) || is_npairp(T) || is_npairn(T) || is_rational(T) || is_complex(T)
-#else
-#	define CAR_CHECK(arg) 1
-#endif
 #endif
 #ifndef CDR_CHECK
-#ifndef NDEBUG
 #	define CDR_CHECK(arg) is_pair(T) || is_npairp(T) || is_npairn(T) || is_rational(T) || is_complex(T)
-#else
-#	define CDR_CHECK(arg) 1
-#endif
 #endif
 
 
