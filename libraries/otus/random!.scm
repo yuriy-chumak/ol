@@ -13,7 +13,7 @@
    ; shuffle a tuple, list (destructive)
    shuffle!
 
-   
+
 )
 
 (import (otus lisp))
@@ -49,7 +49,7 @@
    (if (< lo hi)
       (lets ((o (rand! (- hi lo))))
          (+ o lo))
-      (runtime-error "rnd-range: bad range: " (list lo hi))))
+      (runtime-error "rand-range! bad range: " (list lo hi))))
 
 (define (shuffle! o) ; перемешивалка для tuple
    (cond
