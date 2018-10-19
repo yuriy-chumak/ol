@@ -242,6 +242,32 @@
                      info)
                   (display "\n")))))
 
+      (define (function->name env function)
+         (call/cc (lambda (return)
+            (let loop ((kvs (ff-iter env)))
+               (cond
+                  ((null? kvs) (return "#<function>"))
+                  ((pair? kvs)
+                     (let ((k (caar kvs))
+                           (v (cdar kvs)))
+                        (let ((v (ref v 2)))
+                           (if (function? v)
+                              (if (eq? v function)
+                                 (return (symbol->string k)))
+                              (let ((v (ref v 2)))
+                                 (if (function? v)
+                                    (if (eq? v function)
+                                       (return (symbol->string k))))))))
+                     (loop (cdr kvs)))
+                  (else (loop (kvs))))))))
+      (define (decode-value env l)
+         (cond
+            ((function? l)
+               (fold string-append "#<" (list (function->name env l) ">")))
+            ((list? l)
+               (map (lambda (r) (unless (function? r) r (decode-value env r))) l))
+            (else l)))
+
       ;; render the value if isatty?, and print as such (or not at all) if it is a repl-message
       ;; if interactive mode and output fails, the error is fatal
       (define (prompt env val)
@@ -291,7 +317,6 @@
 
       (define (repl-ok env value) (tuple 'ok value env))
       (define (repl-fail env reason) (tuple 'error reason env))
-
 
       ;; just be quiet
       (define repl-load-prompt
@@ -920,26 +945,6 @@
                (repl env exps evaluate)
                (tuple 'error "not parseable" env))))
 
-      (define (function->name env function)
-         (call/cc (lambda (return)
-            (let loop ((kvs (ff-iter env)))
-               (cond
-                  ((null? kvs) (return "#<function>"))
-                  ((pair? kvs)
-                     (let ((k (caar kvs))
-                           (v (cdar kvs)))
-                        (let ((v (ref v 2)))
-                           (if (function? v)
-                              (if (eq? v function)
-                                 (return (symbol->string k)))
-                              (let ((v (ref v 2)))
-                                 (if (function? v)
-                                    (if (eq? v function)
-                                       (return (symbol->string k))))))))
-                     (loop (cdr kvs)))
-                  (else (loop (kvs))))))))
-
-
       ;; run the repl on a fresh input stream, report errors and catch exit
       (define (repl-trampoline env in)
          (if (interactive? env)
@@ -966,11 +971,8 @@
                         (if hook:fail (hook:fail reason (syscall 1002 #f #f #f))))
 
                      (if (list? reason)
-                        (print-repl-error (map (lambda (r)
-                              (if (function? r)
-                                 (fold string-append "#<" (list (function->name env r) ">"))
-                                 r))
-                           reason)))
+                        (print-repl-error (decode-value env reason)))
+
                      ; better luck next time
                      (boing env))
 
