@@ -215,7 +215,7 @@ void embed_new(ol_t* embed)
 			"         (type-bytevector"
 			"            (eval (eval-repl (fasl-decode (vector->list exp) #f) (vm:deref (car this)) #f evaluate) args))"
 			"         (else"
-			"            (print \"Unprocessible expression type \" (type exp)))))))))))\0";
+			"            (print \"Unprocessible expression type \" (type exp)))))))))))";
 	embed->bs_pos = bs_code;
 
 	word r; // execution result
