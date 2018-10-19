@@ -226,6 +226,10 @@
             (else
                (big-bad-args '= a b))))
 
+      ; assert (= +inf.0 +inf.0)
+      ; assert (not (= -inf.0 +inf.0))
+      ; assert (= -inf.0 -inf.0)
+
       ; later just, is major type X
 
       (define (negative? a)

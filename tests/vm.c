@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 	/// MOVE
 	TESTCASE("MOVE", == 0x202,
 		//lambda(x)  LD  2>[6]  MOVE [6]>[7]  RET[7]
-		{ 2, 16, 8,  14, 2, 6,  9, 6, 7,      24, 7,  0 }
+		{ 2, 16, 8,  14, 2, 6,  9,    6,  7,  24, 7,  0 }
 	);
 
 
