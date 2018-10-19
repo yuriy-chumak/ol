@@ -199,16 +199,16 @@
          (define (format-error lst ind)
             (cond
                ((and (pair? lst) (null? (cdr lst)) (list? (car lst)))
-                  (cons 10
+                  (cons #\newline
                      (let ((ind (+ ind 2)))
                         (append (map (λ (x) 32) (lrange 0 1 ind))
                            (format-error (car lst) ind)))))
                ((pair? lst)
                   (render (car lst)
-                     (cons 32
+                     (cons #\space
                         (format-error (cdr lst) ind))))
-               ((null? lst) '(10))
-               (else (render lst '(10)))))
+               ((null? lst) '( #\newline ))
+               (else (render lst '( #\newline )))))
          (write-bytes error-port
             (format-error lst 0)))
 
@@ -920,6 +920,25 @@
                (repl env exps evaluate)
                (tuple 'error "not parseable" env))))
 
+      (define (function->name env function)
+         (call/cc (lambda (return)
+            (let loop ((kvs (ff-iter env)))
+               (cond
+                  ((null? kvs) (return "#<function>"))
+                  ((pair? kvs)
+                     (let ((k (caar kvs))
+                           (v (cdar kvs)))
+                        (let ((v (ref v 2)))
+                           (if (function? v)
+                              (if (eq? v function)
+                                 (return (symbol->string k)))
+                              (let ((v (ref v 2)))
+                                 (if (function? v)
+                                    (if (eq? v function)
+                                       (return (symbol->string k))))))))
+                     (loop (cdr kvs)))
+                  (else (loop (kvs))))))))
+
 
       ;; run the repl on a fresh input stream, report errors and catch exit
       (define (repl-trampoline env in)
@@ -947,7 +966,11 @@
                         (if hook:fail (hook:fail reason (syscall 1002 #f #f #f))))
 
                      (if (list? reason)
-                        (print-repl-error reason))
+                        (print-repl-error (map (lambda (r)
+                              (if (function? r)
+                                 (fold string-append "#<" (list (function->name env r) ">"))
+                                 r))
+                           reason)))
                      ; better luck next time
                      (boing env))
 
