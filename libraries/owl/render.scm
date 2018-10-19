@@ -16,7 +16,7 @@
       (owl lazy)
       (owl math)
       (only (owl fasl) sub-objects)
-      (only (owl vector) byte-vector? vector? vector->list)
+      (only (owl vector) vector? vector->list)
       (only (owl math) render-number number?)
       (only (owl string) render-string string? string->list))
 

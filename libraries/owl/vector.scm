@@ -46,7 +46,6 @@
 
    (export
       (exports (scheme vector))
-      byte-vector?
       vec-len             ; v → n
       vec-ref             ; v x p → v[p] | error
       list->vector
@@ -95,9 +94,6 @@
 
       (define *vec-leaf-size* (<< 1 *vec-bits*))
       (define *vec-leaf-max* (- *vec-leaf-size* 1))
-
-      (define (byte-vector? x)
-         (eq? (type x) type-bytevector))
 
       ;;;
       ;;; Vector search
