@@ -109,10 +109,10 @@
 
 
 
-(define error-tag "err")
-(define (error? x)
-   (and (tuple? x)
-      (eq? (ref x 1) error-tag)))
+;; (define error-tag "err")
+;; (define (error? x)
+;;    (and (tuple? x)
+;;       (eq? (ref x 1) error-tag)))
 
 (import (owl time))
 (import (owl fasl))
