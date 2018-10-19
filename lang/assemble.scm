@@ -56,18 +56,18 @@
       ;; fixme: should occasionally balance the tree
 
       ;; codes bcode value → codes'
-      (define (insert-code codes bcode value)
+      (define (insert-code codes bytecode value)
          (if codes
             (let*((l k v r codes)
-                  (res (compare-code k bcode)))
+                  (res (compare-code k bytecode)))
                (cond
                   ((eq? res is-equal)
-                     (tuple l bcode value r))
+                     (tuple l bytecode value r))
                   ((eq? res is-less)
-                     (tuple (insert-code l bcode value) k v r))
+                     (tuple (insert-code l bytecode value) k v r))
                   (else
-                     (tuple l k v (insert-code r bcode value)))))
-            (tuple #false bcode value #false)))
+                     (tuple l k v (insert-code r bytecode value)))))
+            (tuple #false bytecode value #false)))
 
       (define (lookup-code codes bytecode)
          (if codes
@@ -75,7 +75,7 @@
                   (res (compare-code k bytecode)))
                (cond
                   ((eq? res is-equal)
-                     v)
+                     k)
                   ((eq? res is-less)
                      (lookup-code l bytecode))
                   (else
@@ -86,7 +86,7 @@
          (let ((res (lookup-code codes bytecode)))
             (if res
                (values codes res)
-               (values (insert-code codes bytecode bytecode) bytecode))))
+               (values (insert-code codes bytecode #false) bytecode)))) ; value removed for feature use
 
       ; start internal assembly interner
       (define (fork-bytecode-interner bytecodes)
@@ -105,17 +105,6 @@
                         (else
                            (mail sender 'bad-kitty)
                            (loop codes)))))))))
-
-;              (igoto . 26)   ; indirect goto
-;              (mk   . 9)      ; mk n, a0, ..., an, t, size up to 256
-;              (mki  . 11)     ; mki size, type, v1, ..., vn, to
-;              (ref  . 12)     ; ref a, p, t     Rt = Ra[p] + checks, unsigned
-
-;              (set-ref . 25)     ; set-ref a, p, b     Ra[Rp] = Rb
-;              (jbf . 26)     ; jump-binding tuple n f offset ... r1 ... rn
-
-              ;; ldi = 13                                                                                    ;+
-;              (movh . 13)       ;                                                                            ;+
 
       (define (reg a)
          (if (eq? (type a) type-fix+)
@@ -306,7 +295,10 @@
 
       ;; make bytecode and intern it (to improve sharing, not mandatory)
       (define (bytes->bytecode bytes)
-         ;(make-blob type-bytecode bytes)) ; more memory, less cpu
+         ; fastest:
+         ; (make-blob type-bytecode bytes)) ; more memory, less cpu
+         ; middle case: intern only bytecode larger than x
+         ; slowest but memory best case:
          (interact bytecode-server      ; more cpu, less memory
             (make-blob type-bytecode bytes)))
 
