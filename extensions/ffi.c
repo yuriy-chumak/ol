@@ -445,58 +445,89 @@ long long armhf_call(word argv[], float af[], double ad[],
 //	temporarly will not support more than 16 floats, ok?
 
 __ASM__("armhf_call:_armhf_call:", // todo: int3
-	"str fp, [sp, #-4]!",
-	"add fp, sp, #0",
-	"sub sp, sp, #20",
+	"push {r4, lr}",
+	"ldr r3, [sp, #8]", // function
+	"mov r0, #1",
+	"mov lr, pc", // ?
+	"bx r3", // call function
 
-	// "ldr r3, [fp, #-8]", // argv[0]
-	// "ldr r3, [r3]",
-
-	// "ldr r3, [fp, #-8]", // argv[1]
-	// "add r3, r3, #4",
-	// "ldr r3, [r3]",
-
-	// "ldr r3, [fp, #-12]",// af[0]
-	// "ldr r3, [r3] @ float",
-	// "vmov s15, r3",
-
-	// "ldr r3, [fp, #-12]",// af[1]
-	// "ldr r3, [r3, #4] @ float",
-	// "vmov s15, r3",
-
-	// "ldr r3, [fp, #-16]",// ad[0]
-	// "vldr.64 d0, [r3]",
-
-	// "ldr r3, [fp, #-16]",// ad[1]
-	// "ldr r3, [r3, #8]",
-	// "vldr.64 d0, [r3]",
-
-	// "ldr r3, [fp, #-20]",// i
-	// "ldr r3, [fp, #4]",  // function
-	// "ldr r3, [fp, #8]",  // type
-
-	// 1. если есть флоаты, то заполним их
-"1:",
-//	временно заполним все флоатами
-	"ldr r3, [fp, #-12]",// af
-	"ldr r0, [r3] @ float", // af[0]
-	"vmov s0, r0",
-	"add r3, r3, #4",
-	"ldr r0, [r3] @ float", // af[1]
-	"vmov s1, r0",
-	"add r3, r3, #4",
-	"ldr r0, [r3] @ float", // af[2]
-	"vmov s2, r0",
-	"add r3, r3, #4",
-	"ldr r0, [r3] @ float", // af[3]
-	"vmov s3, r0",
-	// 2. если есть даблы, то заполним их
-"2:",
-//	временно заполним все даблами
-	"ldr r3, [fp, #-16]",// ad[0]
-	"vldr.64 d0, [r3]",
-	"vldr.64 d1, [r3, #4]"
+"9:",
+	"pop {r4, lr}",
+//	"mov r0, #8",
+//	"mov r1, #0",
+	"bx lr"
 );
+// 	//"str fp, [sp, #-4]!",
+// 	//"add fp, sp, #0",
+// 	//"sub sp, sp, #20",
+
+// 	// "ldr r3, [fp, #-8]", // argv[0]
+// 	// "ldr r3, [r3]",
+
+// 	// "ldr r3, [fp, #-8]", // argv[1]
+// 	// "add r3, r3, #4",
+// 	// "ldr r3, [r3]",
+
+// 	// "ldr r3, [fp, #-12]",// af[0]
+// 	// "ldr r3, [r3] @ float",
+// 	// "vmov s15, r3",
+
+// 	// "ldr r3, [fp, #-12]",// af[1]
+// 	// "ldr r3, [r3, #4] @ float",
+// 	// "vmov s15, r3",
+
+// 	// "ldr r3, [fp, #-16]",// ad[0]
+// 	// "vldr.64 d0, [r3]",
+
+// 	// "ldr r3, [fp, #-16]",// ad[1]
+// 	// "ldr r3, [r3, #8]",
+// 	// "vldr.64 d0, [r3]",
+
+// 	// "ldr r3, [fp, #-20]",// i
+// 	// "ldr r3, [fp, #4]",  // function
+// 	// "ldr r3, [fp, #8]",  // type
+
+// 	// 1. если есть флоаты, то заполним их
+// "1:",
+// //	временно заполним все флоатами
+// 	"ldr r3, [fp, #-12]",// af
+// 	"ldr r0, [r3] @ float", // af[0]
+// 	"vmov s0, r0",
+// 	"add r3, r3, #4",
+// 	"ldr r0, [r3] @ float", // af[1]
+// 	"vmov s1, r0",
+// 	"add r3, r3, #4",
+// 	"ldr r0, [r3] @ float", // af[2]
+// 	"vmov s2, r0",
+// 	"add r3, r3, #4",
+// 	"ldr r0, [r3] @ float", // af[3]
+// 	"vmov s3, r0",
+// 	// 2. если есть даблы, то заполним их
+// "2:",
+// //	временно заполним все даблами
+// 	"ldr r3, [fp, #-16]",// ad[0]
+// 	"vldr.64 d0, [r3]",
+// 	"vldr.64 d1, [r3, #4]",
+
+// "3:", // целочисленные аргументы
+// 	"ldr r0, [fp, #-8]", // argv[3]
+// 	"ldr r3, [r0, #12]",
+// 	"ldr r2, [r0, #8]",
+// 	"ldr r1, [r0, #4]",
+// 	"ldr r0, [r0]",
+
+// 	// call
+// 	"ldr r4, [fp, #4]"
+// 	"bx r4"
+
+// 	// "ldr r3, [fp, #-8]", // argv[1]
+// 	// "add r3, r3, #4",
+// 	// "ldr r3, [r3]",
+// "9:", // finish
+// 	"sub sp, fp, #0",
+// 	"ldr fp, [sp], #4",
+// 	"bx lr"
+// );
 #elif __EMSCRIPTEN__
 
 typedef long long ret_t;
@@ -805,7 +836,7 @@ word* OL_ffi(OL* self, word* arguments)
 	long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
 #elif __arm__
 	// арм int, float и doubel складывает в разные регистры (r?, s?, d?)
-	double af[18]; // для флоатов отдельный массив
+	float af[18]; // для флоатов отдельный массив
 	int f = 0;     // количество аргументов для af
 	double ad[18]; // для даблов отдельный массив
 	int d = 0;     // количество аргументов для ad
@@ -1289,9 +1320,9 @@ word* OL_ffi(OL* self, word* arguments)
 //	if (floatsmask == 15)
 //		__asm__("int $3");
 
-#if __linux__ && __amd64__
+#if  __linux__ && __amd64__
 	got = x64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
-#elif __linux__ //__i386__
+#elif __linux__ && __i386__
 	got = x86_call(args, i, function, returntype & 0x3F);
 #elif _WIN64
 	got = x64_call(args, i, function, returntype & 0x3F);
@@ -1300,9 +1331,11 @@ word* OL_ffi(OL* self, word* arguments)
 	got = x86_call(args, i, function, returntype & 0x3F);
 #elif __arm__
 	// arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
+	fprintf("i: %d\n", i);
 	got = armhf_call(args, af, ad,
 		        i, // d, floatsmask,
 		        function, returntype & 0x3F);
+	fprintf("got: %d\n", (int)got);
 #elif __aarch64__
 	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
