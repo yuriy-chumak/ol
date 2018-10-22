@@ -10,7 +10,7 @@
 
    ;; 2.5 GL Errors
 
-   glGetError ; GLenum GetError (void) +
+   glGetError ; GLenum GetError () +
       GL_NO_ERROR
       GL_INVALID_ENUM
       GL_INVALID_VALUE
@@ -45,25 +45,25 @@
    glVertex2f ; void (GLfloat x, GLfloat y) +
    glVertex2fv; void (const GLfloat *v) +
    glVertex2i ; void (GLint x, GLint y) +
-   ;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y); +
-   ;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v); +
+   glVertex2iv; void (const GLint *v); +
+   glVertex2s ; void (GLshort x, GLshort y); +
+   glVertex2sv; void (const GLshort *v); +
    glVertex3d ; void (GLdouble x, GLdouble y, GLdouble z) +
-   ;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v); +
+   glVertex3dv; void (const GLdouble *v); +
    glVertex3f ; void (GLfloat x, GLfloat y, GLfloat z) +
    glVertex3fv; void (const GLfloat *v) +
    glVertex3i ; void (GLint x, GLint y, GLint z) +
-   ;WINGDIAPI void APIENTRY glVertex3iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glVertex3s (GLshort x, GLshort y, GLshort z); +
-   ;WINGDIAPI void APIENTRY glVertex3sv (const GLshort *v); +
-   ;WINGDIAPI void APIENTRY glVertex4d (GLdouble x, GLdouble y, GLdouble z, GLdouble w); +
-   ;WINGDIAPI void APIENTRY glVertex4dv (const GLdouble *v); +
-   ;WINGDIAPI void APIENTRY glVertex4f (GLfloat x, GLfloat y, GLfloat z, GLfloat w); +
-   ;WINGDIAPI void APIENTRY glVertex4fv (const GLfloat *v); +
-   ;WINGDIAPI void APIENTRY glVertex4i (GLint x, GLint y, GLint z, GLint w); +
-   ;WINGDIAPI void APIENTRY glVertex4iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glVertex4s (GLshort x, GLshort y, GLshort z, GLshort w); +
-   ;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v); +
+   glVertex3iv; void (const GLint *v); +
+   glVertex3s ; void (GLshort x, GLshort y, GLshort z); +
+   glVertex3sv; void (const GLshort *v); +
+   glVertex4d ; void (GLdouble x, GLdouble y, GLdouble z, GLdouble w); +
+   glVertex4dv; void (const GLdouble *v); +
+   glVertex4f ; void (GLfloat x, GLfloat y, GLfloat z, GLfloat w); +
+   glVertex4fv; void (const GLfloat *v); +
+   glVertex4i ; void (GLint x, GLint y, GLint z, GLint w); +
+   glVertex4iv; void (const GLint *v); +
+   glVertex4s ; void (GLshort x, GLshort y, GLshort z, GLshort w); +
+   glVertex4sv; void (const GLshort *v); +
 
    ;WINGDIAPI void APIENTRY glTexCoord1d (GLdouble s); +
    ;WINGDIAPI void APIENTRY glTexCoord1dv (const GLdouble *v); +
@@ -2912,33 +2912,34 @@
 
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
    (define glTranslatef (GL GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
+
+   ;; 2.7 Vertex Specification
    (define glVertex2d  (GL GLvoid "glVertex2d"  GLdouble GLdouble))
    (define glVertex2dv (GL GLvoid "glVertex2dv" GLdouble*))
    (define glVertex2f  (GL GLvoid "glVertex2f"  GLfloat GLfloat))
    (define glVertex2fv (GL GLvoid "glVertex2fv" GLfloat*))
-           ;(define (glVertex2f a b) (glVertex2fv (list a b)))
-   (define glVertex2i (GL GLvoid "glVertex2i" GLint GLint))
-;WINGDIAPI void APIENTRY glVertex2iv (const GLint *v);
-;WINGDIAPI void APIENTRY glVertex2s (GLshort x, GLshort y);
-;WINGDIAPI void APIENTRY glVertex2sv (const GLshort *v);
-   (define glVertex3d (GL GLvoid "glVertex3d" GLdouble GLdouble GLdouble))
-;WINGDIAPI void APIENTRY glVertex3dv (const GLdouble *v);
+   (define glVertex2i  (GL GLvoid "glVertex2i"  GLint GLint))
+   (define glVertex2iv (GL GLvoid "glVertex2iv" GLint*))
+   (define glVertex2s  (GL GLvoid "glVertex2s"  GLshort GLshort))
+   (define glVertex2sv (GL GLvoid "glVertex2sv" GLshort*))
+   (define glVertex3d  (GL GLvoid "glVertex3d"  GLdouble GLdouble GLdouble))
+   (define glVertex3dv (GL GLvoid "glVertex3dv" GLdouble*))
    (define glVertex3f  (GL GLvoid "glVertex3f"  GLfloat GLfloat GLfloat))
    (define glVertex3fv (GL GLvoid "glVertex3fv" GLfloat*))
-;WINGDIAPI void APIENTRY glVertex3fv (const GLfloat *v);
-   (define glVertex3i (GL GLvoid "glVertex3i" GLint GLint GLint))
-;WINGDIAPI void APIENTRY glVertex3iv (const GLint *v);
-;WINGDIAPI void APIENTRY glVertex3s (GLshort x, GLshort y, GLshort z);
-;WINGDIAPI void APIENTRY glVertex3sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glVertex4d (GLdouble x, GLdouble y, GLdouble z, GLdouble w);
-;WINGDIAPI void APIENTRY glVertex4dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glVertex4f (GLfloat x, GLfloat y, GLfloat z, GLfloat w);
-;WINGDIAPI void APIENTRY glVertex4fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glVertex4i (GLint x, GLint y, GLint z, GLint w);
-;WINGDIAPI void APIENTRY glVertex4iv (const GLint *v);
-;WINGDIAPI void APIENTRY glVertex4s (GLshort x, GLshort y, GLshort z, GLshort w);
-;WINGDIAPI void APIENTRY glVertex4sv (const GLshort *v);
-   (define glViewport (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+   (define glVertex3i  (GL GLvoid "glVertex3i"  GLint GLint GLint))
+   (define glVertex3iv (GL GLvoid "glVertex3iv" GLint*))
+   (define glVertex3s  (GL GLvoid "glVertex3s"  GLshort GLshort GLshort))
+   (define glVertex3sv (GL GLvoid "glVertex3sv" GLshort*))
+   (define glVertex4d  (GL GLvoid "glVertex4d"  GLdouble GLdouble GLdouble GLdouble))
+   (define glVertex4dv (GL GLvoid "glVertex4dv" GLdouble*))
+   (define glVertex4f  (GL GLvoid "glVertex4f"  GLfloat GLfloat GLfloat GLfloat))
+   (define glVertex4fv (GL GLvoid "glVertex4fv" GLfloat*))
+   (define glVertex4i  (GL GLvoid "glVertex4i"  GLint GLint GLint GLint))
+   (define glVertex4iv (GL GLvoid "glVertex4iv" GLint*))
+   (define glVertex4s  (GL GLvoid "glVertex4s"  GLshort GLshort GLshort GLshort))
+   (define glVertex4sv (GL GLvoid "glVertex4sv" GLshort*))
+
+   (define glViewport  (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
 ; GLU
 (define GLU_VERSION_1_0 1)
