@@ -78,9 +78,9 @@
                               ; two, since there are no calls and returns, just jumps.
                   `(function ,a did not want ,(- b 1) arguments))
                (CAR
-                  `(trying to get car of a non-pair ,a))
+                  `(trying to get ,car of a non-pair ,a))
                (CDR
-                  `(trying to get cdr of a non-pair ,a))
+                  `(trying to get ,cdr of a non-pair ,a))
                (else
                   `(,(primop-name opcode) reported error ": " ,a " " ,b)))))
          ;   ;((eq? opcode 52)
@@ -275,12 +275,12 @@
             (if (repl-message? val)
                (begin
                   (if (cdr val)
-                     (print (cdr val))))
+                     (print (decode-value env (cdr val)))))
                   ;(display "> "))
                (begin
                   (maybe-show-metadata env val)
                   ((writer-to (env-get env name-tag empty))
-                     stdout val)
+                     stdout (decode-value env val))
                   (display "\n"))))) ;>
 
 
