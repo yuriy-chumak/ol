@@ -198,6 +198,17 @@ embed: tests/embed.c src/olvm.c extensions/embed.h $(repl.o)
 	$(CC) tests/embed.c src/olvm.c $(repl.o) -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
 
+arm: src/olvm.c include/olvm.h
+	arm-linux-gnueabihf-gcc-5 src/olvm.c -DNAKED_VM -o $@ \
+	   -Xlinker --export-dynamic $(L) \
+	   -march=armv7-a \
+	   $(CFLAGS)
+	@echo Ok.
+
+#-mcpu=cortex-m3
+#	   -mfpu=vfp \
+ #-mthumb -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m3-ldrd \
+
 # additional targets (like packaging, tests, etc.)
 MAKEFILE_MAIN=1
 -include tests/Makefile

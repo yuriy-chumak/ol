@@ -415,6 +415,88 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"popl  %edx",
 	"jmp   9b");
 
+#elif __arm__
+// todo: merge af and ad, and use mask - 0 is float, 1 is double
+long long armhf_call(word argv[], float af[], double ad[],
+                     long i, // long f, long d, long fmask, long dmask,
+					 void* function, long type);
+// calling conventions:
+//	integers - r0, r1, r2, r3, [sp], [sp+4], [sp+8]
+//	mov r0, #1
+//	mov r1, #2
+//	mov r2, #3
+//	mov r4, #4
+//	mov r0, #5; str r0, [sp]
+//	mov r0, #6; str r0, [sp, #4]
+//	mov r0, #7; str r0, [sp, #8]
+
+//	floats - s0, s1, s2, s3, s4, s5, s6, ..., s15, [sp], [sp+4], [sp+8]
+//	ldr r3, .L21+8 -> address of variable
+//	vldr.32 s0, [r3]
+//	vldr.32 s1, [r3, #4]
+//	vldr.32 s2, [r3, #8]
+//	temporarly will not support more than 16 floats, ok?
+
+//	double - d0, d1, d2, d3, d4, d5, d6, ..., d15, ...
+//	ldr r3, .L21+8 -> address of variable
+//	vldr.64 d0, [r3]
+//	vldr.64 d0, [r3, #4]
+//	vldr.64 d0, [r3, #8]
+//	temporarly will not support more than 16 floats, ok?
+
+__ASM__("armhf_call:_armhf_call:", // todo: int3
+	"str fp, [sp, #-4]!",
+	"add fp, sp, #0",
+	"sub sp, sp, #20",
+
+	// "ldr r3, [fp, #-8]", // argv[0]
+	// "ldr r3, [r3]",
+
+	// "ldr r3, [fp, #-8]", // argv[1]
+	// "add r3, r3, #4",
+	// "ldr r3, [r3]",
+
+	// "ldr r3, [fp, #-12]",// af[0]
+	// "ldr r3, [r3] @ float",
+	// "vmov s15, r3",
+
+	// "ldr r3, [fp, #-12]",// af[1]
+	// "ldr r3, [r3, #4] @ float",
+	// "vmov s15, r3",
+
+	// "ldr r3, [fp, #-16]",// ad[0]
+	// "vldr.64 d0, [r3]",
+
+	// "ldr r3, [fp, #-16]",// ad[1]
+	// "ldr r3, [r3, #8]",
+	// "vldr.64 d0, [r3]",
+
+	// "ldr r3, [fp, #-20]",// i
+	// "ldr r3, [fp, #4]",  // function
+	// "ldr r3, [fp, #8]",  // type
+
+	// 1. если есть флоаты, то заполним их
+"1:",
+//	временно заполним все флоатами
+	"ldr r3, [fp, #-12]",// af
+	"ldr r0, [r3] @ float", // af[0]
+	"vmov s0, r0",
+	"add r3, r3, #4",
+	"ldr r0, [r3] @ float", // af[1]
+	"vmov s1, r0",
+	"add r3, r3, #4",
+	"ldr r0, [r3] @ float", // af[2]
+	"vmov s2, r0",
+	"add r3, r3, #4",
+	"ldr r0, [r3] @ float", // af[3]
+	"vmov s3, r0",
+	// 2. если есть даблы, то заполним их
+"2:",
+//	временно заполним все даблами
+	"ldr r3, [fp, #-16]",// ad[0]
+	"vldr.64 d0, [r3]",
+	"vldr.64 d1, [r3, #4]"
+);
 #elif __EMSCRIPTEN__
 
 typedef long long ret_t;
@@ -716,10 +798,21 @@ word* OL_ffi(OL* self, word* arguments)
 	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
 #endif
 
-#if __amd64__ && __linux__ // LP64
-	double ad[18]; // и для флоатов отдельный массив (amd64 specific)
-	int d = 0;     // количество аргументов для float (amd64)
+#if __linux__ && __amd64__ // LP64
+	// для x64 отдельный массив чисел с плавающей запятой
+	double ad[18];
+	int d = 0;     // количество аргументов для ad
 	long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
+#elif __arm__
+	// арм int, float и doubel складывает в разные регистры (r?, s?, d?)
+	double af[18]; // для флоатов отдельный массив
+	int f = 0;     // количество аргументов для af
+	double ad[18]; // для даблов отдельный массив
+	int d = 0;     // количество аргументов для ad
+
+	// long floatsmask = 0; // маска для флоатов
+#elif _WIN32
+	// nothing special for Windows (both x32 and x64)
 #endif
 
 	word* p = (word*)C;   // сами аргументы
@@ -739,8 +832,9 @@ word* OL_ffi(OL* self, word* arguments)
 			arg = ((word*)p[1])[2];
 		}*/
 
-#if __amd64__ && __linux__ // LP64
+#if __linux__ && __amd64__  // LP64
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
+		// todo: add same for __arm__
 #endif
 
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
@@ -873,9 +967,11 @@ word* OL_ffi(OL* self, word* arguments)
 
 		// с плавающей запятой:
 		case TFLOAT:
-			#if __amd64__ && __linux__
-				*(float*)&ad[d++] = ol2f(arg);
-				floatsmask|=1; --i;
+			#if __linux__ && __amd64__
+				*(float*)&ad[d++] = ol2f(arg); --i;
+				floatsmask|=1;
+			#elif __arm__
+				*(float*)&af[f++] = ol2f(arg); --i;
 			#else
 				*(float*)&args[i] = ol2f(arg);
 			# ifdef __EMSCRIPTEN__
@@ -921,9 +1017,11 @@ word* OL_ffi(OL* self, word* arguments)
 
 		case TDOUBLE:
 		tdouble:
-			#if __amd64__ && __linux__
-				ad[d++] = ol2d(arg);
-				floatsmask++; --i;
+			#if __linux__ && __amd64__
+				*(double*)&ad[d++] = ol2d(arg); --i;
+				floatsmask++;
+			#elif __arm__
+				*(double*)&ad[d++] = ol2d(arg); --i;
 			#else
 				*(double*)&args[i] = ol2d(arg);
 				// no double for any call yet supported
@@ -1191,40 +1289,20 @@ word* OL_ffi(OL* self, word* arguments)
 //	if (floatsmask == 15)
 //		__asm__("int $3");
 
-#if __amd64__
-	got =
-	#	if __linux__
-			x64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
-	#	else
-			x64_call(args, i, function, returntype & 0x3F);
-	#	endif
-
-#elif __i386__
-/*	// cdecl and stdcall in our case are same, so...
-	switch (returntype >> 6) {
-	case 0:
-	case 1:
-	case 2:
-		//was: got = call(returntype, function, args, i);
-		got = x86_call(args, i, function, returntype & 0x3F);
-		break;
-	// FASTCALL: (3)
-	case 3:
-	// THISCALL: (4)
-	// ...
-	default:
-		E("Unsupported calling convention %d", returntype >> 6);
-		break;
-	}*/
-	got =
-			x86_call(args, i, function, returntype & 0x3F);
-// arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
+#if __linux__ && __amd64__
+	got = x64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
+#elif __linux__ //__i386__
+	got = x86_call(args, i, function, returntype & 0x3F);
+#elif _WIN64
+	got = x64_call(args, i, function, returntype & 0x3F);
+#elif _WIN32
+	// cdecl and stdcall in our case are same, so...
+	got = x86_call(args, i, function, returntype & 0x3F);
 #elif __arm__
-	typedef long long ret_t;
-	inline ret_t call(word args[], int i, void* function, int type) {
-		CALL();
-	}
-	got = call(args, i, function, returntype & 0x3F);
+	// arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
+	got = armhf_call(args, af, ad,
+		        i, // d, floatsmask,
+		        function, returntype & 0x3F);
 #elif __aarch64__
 	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
