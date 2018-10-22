@@ -6,7 +6,7 @@
  */
 
 #include <GL/glut.h>
-#include <../extensions/embed/embed.h>
+#include <../extensions/embed.h>
 
 #include <stdio.h>
 #include <sys/time.h>
