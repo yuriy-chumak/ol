@@ -510,14 +510,14 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	// sending integer values
 	"mov r4, sp", // save sp
 	"cmp r3, 3",  // if (i > 3)
-	"ble .L2",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
-".L1:", // push argv[i]
+	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
+".Lextraregs:", // push argv[i]
 	"add r5, r0, r3, asl #2",
 	"push {r5}",
 	"sub r3, r3, #1",
 	"cmp r3, 3",
-	"bgt .L1",
-".L2:",
+	"bgt .Lextraregs",
+".Lnoextraregs:",
 	"ldr r3, [r0,#12]", // save all 4 registers without checking
 	"ldr r2, [r0, #8]",
 	"ldr r1, [r0, #4]",
