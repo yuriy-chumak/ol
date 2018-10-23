@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #ifdef __unix__
 #	define PUBLIC __attribute__ ((__visibility__("default"))) __attribute__((used))
 #endif
@@ -18,13 +20,88 @@
 
 #include <stdint.h>
 
+// new pack of ffi test functions
+// c: char
+// C: signed char
+// s: short
+// S: signed short
+// i: int
+// I: signed int
+// l: long
+// L: signed long
+// q: long long (quadword)
+// Q: signed long long (quadword)
+// f: float
+// d: double
+
+// simple type->type mirroring functions
+#define x2x(index, p, type) PUBLIC type index##2##index(type x) { type y = x; printf(" [" p " => " p "] ", x, y); fflush(stdout); return y; }
+
+x2x(c, "%u", unsigned char)
+x2x(C, "%d", signed char)
+x2x(s, "%u", unsigned short)
+x2x(S, "%d", signed short)
+x2x(i, "%u", unsigned int)
+x2x(I, "%d", signed int)
+x2x(l, "%lu", unsigned long)
+x2x(L, "%ld", signed long)
+x2x(q, "%llu", unsigned long long)
+x2x(Q, "%lld", signed long long)
+x2x(f, "%f", float)
+x2x(d, "%f", double)
+
+#define xxxxxxxxxxxxxxxx2x(index, P, type) PUBLIC type \
+index##index##index##index##index##index##index##index##index##index##index##index##index##index##index##index##2##index \
+		(type a, type b, type c, type d, type e, type f, type g, type h, type i, type j, type k, type l, type m, type n, type o, type p) \
+{ \
+	type y = a+b+c+d+e+f+g+h+i+j+k+l+m+n+o+p; \
+	printf(" [" P ", " P ", " P ", " P \
+	       ", " P ", " P ", " P ", " P \
+	       ", " P ", " P ", " P ", " P \
+	       ", " P ", " P ", " P ", " P " => " P "] ", \
+	       a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, y); \
+	fflush(stdout); \
+	return y; }
+
+xxxxxxxxxxxxxxxx2x(c, "%u", unsigned char)
+xxxxxxxxxxxxxxxx2x(s, "%u", unsigned short)
+xxxxxxxxxxxxxxxx2x(i, "%u", unsigned int)
+xxxxxxxxxxxxxxxx2x(l, "%lu", unsigned long)
+xxxxxxxxxxxxxxxx2x(q, "%llu", unsigned long long)
+
+xxxxxxxxxxxxxxxx2x(C, "%d", signed char)
+xxxxxxxxxxxxxxxx2x(S, "%d", signed short)
+xxxxxxxxxxxxxxxx2x(I, "%d", signed int)
+xxxxxxxxxxxxxxxx2x(L, "%ld", signed long)
+xxxxxxxxxxxxxxxx2x(Q, "%lld", signed long long)
+
+xxxxxxxxxxxxxxxx2x(f, "%f", float)
+xxxxxxxxxxxxxxxx2x(d, "%f", double)
+
+#ifdef SELFTEST
+int main() {
+	printf("i2i: %d\n", i2i(1));
+	printf("I2I: %d\n", I2I(1));
+	printf("s2s: %d\n", s2s(1));
+	printf("S2S: %d\n", S2S(1));
+	printf("l2l: %d\n", l2l(1));
+	printf("L2L: %d\n", L2L(1));
+	printf("q2q: %lld\n", q2q(1));
+	printf("Q2Q: %lld\n", Q2Q(1));
+	printf("f2f: %f\n", f2f(1.1));
+	printf("d2d: %f\n", d2d(1.1));
+
+	return 0;
+}
+#endif
+
+
 PUBLIC
 int i_i(int a)
 {
 	LOG("a=%d\n", a);
 
-	int r = (int)a;
-	DONE("%d")
+	return a;
 }
 
 PUBLIC
@@ -32,8 +109,7 @@ float f_f(float a)
 {
 	LOG("a=%f\n", a);
 
-	float r = (float)a;
-	DONE("%f")
+	return a;
 }
 
 PUBLIC
@@ -41,8 +117,7 @@ double d_d(double a)
 {
 	LOG("a=%f\n", a);
 
-	double r = (double)a;
-	DONE("%f")
+	return a;
 }
 
 
@@ -201,13 +276,6 @@ int test6(int a, int b, int c, int d, int e, int f)
 	return (a+b+c+d+e+f);
 }
 
-
-PUBLIC
-short fft_16i(short i)
-{
-	LOG("%d\n", i);
-	return i;
-}
 
 PUBLIC
 unsigned short fft_16u(unsigned short i)

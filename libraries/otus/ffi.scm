@@ -85,6 +85,7 @@
       ; macosx, ia32:  4 bytes
       ; macosx, ia64:  8 bytes
       fft-long  fft-signed-long  fft-unsigned-long
+      fft-long-long fft-signed-long-long fft-unsigned-long-long
 
       ; fft data constructors
       make-32bit-array
@@ -262,6 +263,10 @@
          fft-int64)))
 (define fft-signed-long fft-long)
 (define fft-unsigned-long (+ fft-long 5))
+
+(define fft-long-long fft-int64)
+(define fft-signed-long-long fft-int64)
+(define fft-unsigned-long-long fft-uint64)
 
 ; -- sizeof ---------------------------
 (define (sizeof type)

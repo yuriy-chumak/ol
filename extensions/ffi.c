@@ -479,17 +479,40 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	"vldr.32 s15, [r1, #60]",
 ".Lnofloats:",
 
-	"ldr r5, [sp, #16]",
+	"ldr r5, [sp, #16]", // r5: d (count of doubles)
 	"cmp r5, 0",
 	"beq .Lnodoubles",
+	// будем заполнять регистры с плавающей запятой по 4 (в целях оптимизации)
+	"vldr.64 d0, [r2]",
+	"vldr.64 d1, [r2, #4]",
+	"vldr.64 d2, [r2, #8]",
+	"vldr.64 d3, [r2, #12]",
+	"cmp r5, 4",
+	"blt .Lnofloats",
+	"vldr.64 d4, [r2, #16]",
+	"vldr.64 d5, [r2, #20]",
+	"vldr.64 d6, [r2, #24]",
+	"vldr.64 d7, [r2, #28]",
+	"cmp r5, 8",
+	"blt .Lnofloats",
+	"vldr.64 d8, [r2, #32]",
+	"vldr.64 d9, [r2, #36]",
+	"vldr.64 d10, [r2, #40]",
+	"vldr.64 d11, [r2, #44]",
+	"cmp r5, 12",
+	"blt .Lnofloats",
+	"vldr.64 d12, [r2, #48]",
+	"vldr.64 d13, [r2, #52]",
+	"vldr.64 d14, [r2, #56]",
+	"vldr.64 d15, [r2, #60]",
 ".Lnodoubles:",
 
-
+	// sending integer values
 	"mov r4, sp", // save sp
 	"cmp r3, 3",  // if (i > 3)
 	"ble .L2",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
-".L1:",
-	"add r5, r0, r3, asl #2", // push argv[i]
+".L1:", // push argv[i]
+	"add r5, r0, r3, asl #2",
 	"push {r5}",
 	"sub r3, r3, #1",
 	"cmp r3, 3",
@@ -504,7 +527,8 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	"blx r5", // call this function
 	"mov sp, r4", // restore sp
 
-//".L9:",
+	// ret
+	// all values: int, long, float and double returns in r0+r1
 	"ldmfd   sp!, {r4, r5, pc}",
 );
 // 	//"str fp, [sp, #-4]!",
