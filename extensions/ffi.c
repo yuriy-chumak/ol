@@ -416,10 +416,6 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"jmp   9b");
 
 #elif __arm__
-// todo: merge af and ad, and use mask - 0 is float, 1 is double
-long long armhf_call(word argv[], float af[], double ad[],
-                     long i, // long f, long d, long fmask, long dmask,
-					 void* function, long type);
 // calling conventions:
 //	integers - r0, r1, r2, r3, [sp], [sp+4], [sp+8]
 //	mov r0, #1
@@ -444,18 +440,72 @@ long long armhf_call(word argv[], float af[], double ad[],
 //	vldr.64 d0, [r3, #8]
 //	temporarly will not support more than 16 floats, ok?
 
+// todo: merge af and ad, and use mask - 0 is float, 1 is double
+long long armhf_call(word argv[], float af[], double ad[],
+                     long i, long f, long d, //long fmask, long dmask,
+					 void* function, long type);
 __ASM__("armhf_call:_armhf_call:", // todo: int3
-	"push {r4, lr}",
-	"ldr r3, [sp, #8]", // function
-	"mov r0, #1",
-	"mov lr, pc", // ?
-	"bx r3", // call function
+	// r0: argv, r1: af, r2: ad, r3: i, f: [sp, #12], g: [sp, #16]
+	// r4: saved sp
+	// r5: temporary
+	"stmfd   sp!, {r4, r5, lr}",
 
-"9:",
-	"pop {r4, lr}",
-//	"mov r0, #8",
-//	"mov r1, #0",
-	"bx lr"
+	// check floats
+	"ldr r5, [sp, #12]", // r5: f (count of floats)
+	"cmp r5, 0",
+	"beq .Lnofloats",
+	// будем заполнять регистры с плавающей запятой по 4 (в целях оптимизации)
+	"vldr.32 s0, [r1]",
+	"vldr.32 s1, [r1, #4]",
+	"vldr.32 s2, [r1, #8]",
+	"vldr.32 s3, [r1, #12]",
+	"cmp r5, 4",
+	"blt .Lnofloats",
+	"vldr.32 s4, [r1, #16]",
+	"vldr.32 s5, [r1, #20]",
+	"vldr.32 s6, [r1, #24]",
+	"vldr.32 s7, [r1, #28]",
+	"cmp r5, 8",
+	"blt .Lnofloats",
+	"vldr.32 s8, [r1, #32]",
+	"vldr.32 s9, [r1, #36]",
+	"vldr.32 s10, [r1, #40]",
+	"vldr.32 s11, [r1, #44]",
+	"cmp r5, 12",
+	"blt .Lnofloats",
+	"vldr.32 s12, [r1, #48]",
+	"vldr.32 s13, [r1, #52]",
+	"vldr.32 s14, [r1, #56]",
+	"vldr.32 s15, [r1, #60]",
+".Lnofloats:",
+
+	"ldr r5, [sp, #16]",
+	"cmp r5, 0",
+	"beq .Lnodoubles",
+".Lnodoubles:",
+
+
+	"mov r4, sp", // save sp
+	"cmp r3, 3",  // if (i > 3)
+	"ble .L2",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
+".L1:",
+	"add r5, r0, r3, asl #2", // push argv[i]
+	"push {r5}",
+	"sub r3, r3, #1",
+	"cmp r3, 3",
+	"bgt .L1",
+".L2:",
+	"ldr r3, [r0,#12]", // save all 4 registers without checking
+	"ldr r2, [r0, #8]",
+	"ldr r1, [r0, #4]",
+	"ldr r0, [r0, #0]",
+	// call the function
+	"ldr r5, [r4,#20]", // function
+	"blx r5", // call this function
+	"mov sp, r4", // restore sp
+
+//".L9:",
+	"ldmfd   sp!, {r4, r5, pc}",
 );
 // 	//"str fp, [sp, #-4]!",
 // 	//"add fp, sp, #0",
@@ -1331,11 +1381,9 @@ word* OL_ffi(OL* self, word* arguments)
 	got = x86_call(args, i, function, returntype & 0x3F);
 #elif __arm__
 	// arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
-	fprintf("i: %d\n", i);
 	got = armhf_call(args, af, ad,
-		        i, // d, floatsmask,
+		        i, f, d,
 		        function, returntype & 0x3F);
-	fprintf("got: %d\n", (int)got);
 #elif __aarch64__
 	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
