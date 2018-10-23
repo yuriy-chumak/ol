@@ -130,11 +130,20 @@
                                                   fft-float fft-float fft-float fft-float))
    (try "16 floats" summ 0.0 1.1 2.2 3.3 4.4 5.5 6.6 7.7 8.8 9.9 10.10 11.11 12.12 13.13 14.14 15.15)
    (try "16 floats" summ 15.15 14.14 13.13 12.12 11.11 10.10 9.9 8.8 7.7 6.6 5.5 4.4 3.3 2.2 1.1 0.0)
-   (try "16 floats" summ (inexact 1.1) (inexact 2.2) (inexact 3.3) (inexact 4.4)
-                         (inexact 5.5) (inexact 6.6) (inexact 7.7) (inexact 8.8)
-                         (inexact 9.9) (inexact 10.10) (inexact 11.11) (inexact 12.12)
-                         (inexact 13.13) (inexact 14.14) (inexact 15.15) (inexact 16.16))
+   ;; (try "16 floats" summ (inexact 1.1) (inexact 2.2) (inexact 3.3) (inexact 4.4)
+   ;;                       (inexact 5.5) (inexact 6.6) (inexact 7.7) (inexact 8.8)
+   ;;                       (inexact 9.9) (inexact 10.10) (inexact 11.11) (inexact 12.12)
+   ;;                       (inexact 13.13) (inexact 14.14) (inexact 15.15) (inexact 16.16))
 
+; ----------------------------------------------------------------
+(print "12 mixed type variables test:")
+(define summ (this fft-double "cCsSiIlLqQfd2d" fft-signed-char fft-unsigned-char fft-signed-short fft-unsigned-short
+                                               fft-signed-int fft-unsigned-int fft-signed-long fft-unsigned-long
+                                               fft-signed-long-long fft-unsigned-long-long
+                                               fft-float fft-double))
+   (try "12 arguments" summ 0 1 2 3 4 5 6 7 8 9 1234.56789 123456.789)
+
+(print "done.")
 ,quit
 
 ;; (define fiiii ((load-dynamic-library #f) fft-float "fiiii" fft-float type-int+ type-int+ type-int+ type-int+))

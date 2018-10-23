@@ -78,6 +78,23 @@ xxxxxxxxxxxxxxxx2x(Q, "%lld", signed long long)
 xxxxxxxxxxxxxxxx2x(f, "%f", float)
 xxxxxxxxxxxxxxxx2x(d, "%f", double)
 
+
+PUBLIC
+double cCsSiIlLqQfd2d(unsigned char c, signed char C,
+                      unsigned short s, signed short S,
+				      unsigned int i, signed int I,
+				      unsigned long l, signed long L,
+				      unsigned long long q, signed long long Q,
+				      float f, double d)
+{
+	double y = c+C+s+S+i+I+l+L+q+Q+f+d;
+	printf(" [%u, %d, %u, %d, %u, %d, %lu, %ld, %llu, %lld, %f, %f => %f] ",
+			   c,  C,  s,  S,  i,  I,  l,   L,   q,    Q,    f,  d,    y);
+	fflush(stdout);
+	return y;
+}
+
+
 #ifdef SELFTEST
 int main() {
 	printf("i2i: %d\n", i2i(1));
