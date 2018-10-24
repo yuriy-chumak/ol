@@ -508,16 +508,18 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 
 	"mov r4, sp", // save sp
 	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
-	"sub r5, sp, r2, asl #2",// try to predict stack alighnment (к текущему стеку прибавим количество аргументов * размер слова)
-	"and r5, r5, #4", // попадает ли стек на границу слова?
-	"sub sp, sp, r5", // если да, то на слово его и опустим
+	"sub r1, sp, r2, asl #2",// try to predict stack alighnment (к текущему стеку прибавим количество аргументов * размер слова)
+	"and r1, r1, #4", // попадает ли стек на границу слова?
+	"sub sp, sp, r1", // если да, то на слово его и опустим
 	// finally, sending regular (integer) arguments
 	"cmp r2, 3",  // if (i > 3)
 	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
+	"add r1, r0, r2, asl #2",
 ".Lextraregs:", // push argv[i]
-	"add r5, r0, r2, asl #2",
-	"push {r5}",
+	"ldr r3, [r1]",
+	"push {r3}",
 	"sub r2, r2, #1",
+	"sub r1, r1, #4",
 	"cmp r2, 3",
 	"bgt .Lextraregs",
 	// todo: arrange stack pointer to dword
