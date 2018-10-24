@@ -75,7 +75,8 @@ test: test64
 
 # -=( ffi )=----------------------------------------
 test-ffi:
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o $(ffi)$(affix)$(bits) $(L) -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o $(ffi)$(affix)$(bits) $(L) -Xlinker --export-dynamic \
+	   -fsigned-char # for ffi tests we should use char as signed by default
 	   @echo -n "Testing $(ffi)$(affix)$(bits) ... "
 	   @if $(ffi)$(affix)$(bits) repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
 	      echo "Ok.";\

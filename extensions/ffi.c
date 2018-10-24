@@ -70,7 +70,7 @@
 #	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
-
+ 
 
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 // However, on modern standard computers (i.e., implementing IEEE 754), one may
@@ -441,9 +441,16 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 //	temporarly will not support more than 16 floats, ok?
 
 // todo: merge af and ad, and use mask - 0 is float, 1 is double
-long long armhf_call(word argv[], float af[], double ad[],
-                     long i, long f, long d, //long fmask, long dmask,
-					 void* function, long type);
+
+// http://ru.osdev.wikia.com/wiki/Категория:Архитектура_ARM
+// https://msdn.microsoft.com/ru-ru/library/dn736986.aspx - Обзор соглашений ABI ARM (Windows)
+
+// Procedure Call Standard for the ARM®  Architecture
+//  http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
+unsigned
+long long armhf_call(word argv[], float af[],
+                     long i, long f, //
+                     void* function);
 __ASM__("armhf_call:_armhf_call:", // todo: int3
 	// r0: argv, r1: af, r2: ad, r3: i, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
@@ -451,80 +458,76 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	"stmfd   sp!, {r4, r5, lr}",
 
 	// check floats
-	"ldr r5, [sp, #12]", // r5: f (count of floats)
-	"cmp r5, 0",
+	"cmp r3, 0",  // f (count of floats)
 	"beq .Lnofloats",
-	// будем заполнять регистры с плавающей запятой по 4 (в целях оптимизации)
+	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
 	// https://developer.arm.com/technologies/floating-point
 	"vldr.32 s0, [r1]",
 	"vldr.32 s1, [r1, #4]",
 	"vldr.32 s2, [r1, #8]",
 	"vldr.32 s3, [r1, #12]",
-	"cmp r5, 4",
+	"cmp r3, 4",
 	"blt .Lnofloats",
 	"vldr.32 s4, [r1, #16]",
 	"vldr.32 s5, [r1, #20]",
 	"vldr.32 s6, [r1, #24]",
 	"vldr.32 s7, [r1, #28]",
-	"cmp r5, 8",
+	"cmp r3, 8",
 	"blt .Lnofloats",
 	"vldr.32 s8, [r1, #32]",
 	"vldr.32 s9, [r1, #36]",
 	"vldr.32 s10, [r1, #40]",
 	"vldr.32 s11, [r1, #44]",
-	"cmp r5, 12",
+	"vldr.32 s12, [r1, #48]",
+	"vldr.32 s13, [r1, #52]",
+	"vldr.32 s14, [r1, #56]",
+	"vldr.32 s15, [r1, #60]",
+	// todo: s16-s32 must be preserved across subroutine calls (ARM ABI)!
+	//  save this situation as flag and restore this regs after function call if so
+	"cmp r3, 16",
 	"blt .Lnofloats",
+	"vldr.32 s12, [r1, #48]",
+	"vldr.32 s13, [r1, #52]",
+	"vldr.32 s14, [r1, #56]",
+	"vldr.32 s15, [r1, #60]",
+	"vldr.32 s12, [r1, #48]",
+	"vldr.32 s13, [r1, #52]",
+	"vldr.32 s14, [r1, #56]",
+	"vldr.32 s15, [r1, #60]",
+	"cmp r3, 24",
+	"blt .Lnofloats",
+	"vldr.32 s12, [r1, #48]",
+	"vldr.32 s13, [r1, #52]",
+	"vldr.32 s14, [r1, #56]",
+	"vldr.32 s15, [r1, #60]",
 	"vldr.32 s12, [r1, #48]",
 	"vldr.32 s13, [r1, #52]",
 	"vldr.32 s14, [r1, #56]",
 	"vldr.32 s15, [r1, #60]",
 ".Lnofloats:",
 
-	"ldr r5, [sp, #16]", // r5: d (count of doubles)
-	"cmp r5, 0",
-	"beq .Lnodoubles",
-	// будем заполнять регистры с плавающей запятой по 4 (в целях оптимизации)
-	"vldr.64 d0, [r2]",
-	"vldr.64 d1, [r2, #4]",
-	"vldr.64 d2, [r2, #8]",
-	"vldr.64 d3, [r2, #12]",
-	"cmp r5, 4",
-	"blt .Lnodoubles",
-	"vldr.64 d4, [r2, #16]",
-	"vldr.64 d5, [r2, #20]",
-	"vldr.64 d6, [r2, #24]",
-	"vldr.64 d7, [r2, #28]",
-	"cmp r5, 8",
-	"blt .Lnodoubles",
-	"vldr.64 d8, [r2, #32]",
-	"vldr.64 d9, [r2, #36]",
-	"vldr.64 d10, [r2, #40]",
-	"vldr.64 d11, [r2, #44]",
-	"cmp r5, 12",
-	"blt .Lnodoubles",
-	"vldr.64 d12, [r2, #48]",
-	"vldr.64 d13, [r2, #52]",
-	"vldr.64 d14, [r2, #56]",
-	"vldr.64 d15, [r2, #60]",
-".Lnodoubles:",
-
-	// sending integer values
 	"mov r4, sp", // save sp
-	"cmp r3, 3",  // if (i > 3)
+	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
+	"sub r5, sp, r2, asl #2",// try to predict stack alighnment (к текущему стеку прибавим количество аргументов * размер слова)
+	"and r5, r5, #4", // попадает ли стек на границу слова?
+	"sub sp, sp, r5", // если да, то на слово его и опустим
+	// finally, sending regular (integer) arguments
+	"cmp r2, 3",  // if (i > 3)
 	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
 ".Lextraregs:", // push argv[i]
-	"add r5, r0, r3, asl #2",
+	"add r5, r0, r2, asl #2",
 	"push {r5}",
-	"sub r3, r3, #1",
-	"cmp r3, 3",
+	"sub r2, r2, #1",
+	"cmp r2, 3",
 	"bgt .Lextraregs",
+	// todo: arrange stack pointer to dword
 ".Lnoextraregs:",
 	"ldr r3, [r0,#12]", // save all 4 registers without checking
 	"ldr r2, [r0, #8]",
 	"ldr r1, [r0, #4]",
 	"ldr r0, [r0, #0]",
 	// call the function
-	"ldr r5, [r4,#20]", // function
+	"ldr r5, [r4,#12]", // function
 	"blx r5", // call this function
 	"mov sp, r4", // restore sp
 
@@ -532,77 +535,6 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	// all values: int, long, float and double returns in r0+r1
 	"ldmfd   sp!, {r4, r5, pc}",
 );
-// 	//"str fp, [sp, #-4]!",
-// 	//"add fp, sp, #0",
-// 	//"sub sp, sp, #20",
-
-// 	// "ldr r3, [fp, #-8]", // argv[0]
-// 	// "ldr r3, [r3]",
-
-// 	// "ldr r3, [fp, #-8]", // argv[1]
-// 	// "add r3, r3, #4",
-// 	// "ldr r3, [r3]",
-
-// 	// "ldr r3, [fp, #-12]",// af[0]
-// 	// "ldr r3, [r3] @ float",
-// 	// "vmov s15, r3",
-
-// 	// "ldr r3, [fp, #-12]",// af[1]
-// 	// "ldr r3, [r3, #4] @ float",
-// 	// "vmov s15, r3",
-
-// 	// "ldr r3, [fp, #-16]",// ad[0]
-// 	// "vldr.64 d0, [r3]",
-
-// 	// "ldr r3, [fp, #-16]",// ad[1]
-// 	// "ldr r3, [r3, #8]",
-// 	// "vldr.64 d0, [r3]",
-
-// 	// "ldr r3, [fp, #-20]",// i
-// 	// "ldr r3, [fp, #4]",  // function
-// 	// "ldr r3, [fp, #8]",  // type
-
-// 	// 1. если есть флоаты, то заполним их
-// "1:",
-// //	временно заполним все флоатами
-// 	"ldr r3, [fp, #-12]",// af
-// 	"ldr r0, [r3] @ float", // af[0]
-// 	"vmov s0, r0",
-// 	"add r3, r3, #4",
-// 	"ldr r0, [r3] @ float", // af[1]
-// 	"vmov s1, r0",
-// 	"add r3, r3, #4",
-// 	"ldr r0, [r3] @ float", // af[2]
-// 	"vmov s2, r0",
-// 	"add r3, r3, #4",
-// 	"ldr r0, [r3] @ float", // af[3]
-// 	"vmov s3, r0",
-// 	// 2. если есть даблы, то заполним их
-// "2:",
-// //	временно заполним все даблами
-// 	"ldr r3, [fp, #-16]",// ad[0]
-// 	"vldr.64 d0, [r3]",
-// 	"vldr.64 d1, [r3, #4]",
-
-// "3:", // целочисленные аргументы
-// 	"ldr r0, [fp, #-8]", // argv[3]
-// 	"ldr r3, [r0, #12]",
-// 	"ldr r2, [r0, #8]",
-// 	"ldr r1, [r0, #4]",
-// 	"ldr r0, [r0]",
-
-// 	// call
-// 	"ldr r4, [fp, #4]"
-// 	"bx r4"
-
-// 	// "ldr r3, [fp, #-8]", // argv[1]
-// 	// "add r3, r3, #4",
-// 	// "ldr r3, [r3]",
-// "9:", // finish
-// 	"sub sp, fp, #0",
-// 	"ldr fp, [sp], #4",
-// 	"bx lr"
-// );
 #elif __EMSCRIPTEN__
 
 typedef long long ret_t;
@@ -780,7 +712,7 @@ long long from_ulong(word arg) {
 #endif
 
 static
-#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines
+#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines (__SIZEOF_PTRDIFF_T__ == 4)
 long
 #endif
 long from_rational(word arg) {
@@ -910,13 +842,9 @@ word* OL_ffi(OL* self, word* arguments)
 	int d = 0;     // количество аргументов для ad
 	long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
 #elif __arm__
-	// арм int, float и doubel складывает в разные регистры (r?, s?, d?)
+	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив
 	int f = 0;     // количество аргументов для af
-	double ad[18]; // для даблов отдельный массив
-	int d = 0;     // количество аргументов для ad
-
-	// long floatsmask = 0; // маска для флоатов
 #elif _WIN32
 	// nothing special for Windows (both x32 and x64)
 #endif
@@ -1127,7 +1055,7 @@ word* OL_ffi(OL* self, word* arguments)
 				*(double*)&ad[d++] = ol2d(arg); --i;
 				floatsmask++;
 			#elif __arm__
-				*(double*)&ad[d++] = ol2d(arg); --i;
+				*(double*)&af[f++] = ol2d(arg); --i; f++;
 			#else
 				*(double*)&args[i] = ol2d(arg);
 				// no double for any call yet supported
@@ -1386,7 +1314,7 @@ word* OL_ffi(OL* self, word* arguments)
 #endif
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	long long got = 0; // результат вызова функции (64 бита для возможного double)
+	unsigned long long got = 0; // результат вызова функции (64 бита для возможного double)
 
 	self->R[128 + 1] = (word)B;
 	self->R[128 + 2] = (word)C;
@@ -1406,9 +1334,9 @@ word* OL_ffi(OL* self, word* arguments)
 	got = x86_call(args, i, function, returntype & 0x3F);
 #elif __arm__
 	// arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
-	got = armhf_call(args, af, ad,
-		        i, f, d,
-		        function, returntype & 0x3F);
+	got = armhf_call(args, af,
+		        i, f,
+		        function);
 #elif __aarch64__
 	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
@@ -1635,6 +1563,7 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 
 		case TINT8:
+			// little-endian:
 			result = (word*) itosn (*(char*)&got);  // TODO: change to __INT8_TYPE__
 			break;
 		case TINT16:
