@@ -415,49 +415,26 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"popl  %edx",
 	"jmp   9b");
 
-#elif __arm__
-// calling conventions:
-//	integers - r0, r1, r2, r3, [sp], [sp+4], [sp+8]
-//	mov r0, #1
-//	mov r1, #2
-//	mov r2, #3
-//	mov r4, #4
-//	mov r0, #5; str r0, [sp]
-//	mov r0, #6; str r0, [sp, #4]
-//	mov r0, #7; str r0, [sp, #8]
-
-//	floats - s0, s1, s2, s3, s4, s5, s6, ..., s15, [sp], [sp+4], [sp+8]
-//	ldr r3, .L21+8 -> address of variable
-//	vldr.32 s0, [r3]
-//	vldr.32 s1, [r3, #4]
-//	vldr.32 s2, [r3, #8]
-//	temporarly will not support more than 16 floats, ok?
-
-//	double - d0, d1, d2, d3, d4, d5, d6, ..., d15, ...
-//	ldr r3, .L21+8 -> address of variable
-//	vldr.64 d0, [r3]
-//	vldr.64 d0, [r3, #4]
-//	vldr.64 d0, [r3, #8]
-//	temporarly will not support more than 16 floats, ok?
-
-// todo: merge af and ad, and use mask - 0 is float, 1 is double
+#elif __ARM_EABI__
+// gcc-arm-linux-gnueabi: -mfloat-abi=soft or -mfloat-abi=softfp options
+// gcc-arm-linux-gnueabihf: -mfloat-abi=hard and -D__ARM_PCS_VFP options
 
 // http://ru.osdev.wikia.com/wiki/Категория:Архитектура_ARM
 // https://msdn.microsoft.com/ru-ru/library/dn736986.aspx - Обзор соглашений ABI ARM (Windows)
-
 // Procedure Call Standard for the ARM®  Architecture
 //  http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
 unsigned
-long long armhf_call(word argv[], float af[],
-                     long i, long f, //
-                     void* function);
-__ASM__("armhf_call:_armhf_call:", // todo: int3
+long long arm32_call(word argv[], float af[],
+                     long i, long f,
+                     void* function, long type);
+__ASM__("arm32_call:_arm32_call:",
 	// r0: argv, r1: af, r2: ad, r3: i, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
 	// r5: temporary
 	"stmfd   sp!, {r4, r5, lr}",
 
 	// check floats
+#ifdef __ARM_PCS_VFP // gnueabihf, -mfloat-abi=hard
 	"cmp r3, 0",  // f (count of floats)
 	"beq .Lnofloats",
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
@@ -467,13 +444,13 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	"vldr.32 s2, [r1, #8]",
 	"vldr.32 s3, [r1, #12]",
 	"cmp r3, 4",
-	"blt .Lnofloats",
+	"ble .Lnofloats",
 	"vldr.32 s4, [r1, #16]",
 	"vldr.32 s5, [r1, #20]",
 	"vldr.32 s6, [r1, #24]",
 	"vldr.32 s7, [r1, #28]",
 	"cmp r3, 8",
-	"blt .Lnofloats",
+	"ble .Lnofloats",
 	"vldr.32 s8, [r1, #32]",
 	"vldr.32 s9, [r1, #36]",
 	"vldr.32 s10, [r1, #40]",
@@ -484,27 +461,26 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	"vldr.32 s15, [r1, #60]",
 	// todo: s16-s32 must be preserved across subroutine calls (ARM ABI)!
 	//  save this situation as flag and restore this regs after function call if so
-	"cmp r3, 16",
-	"blt .Lnofloats",
-	"vldr.32 s12, [r1, #48]",
-	"vldr.32 s13, [r1, #52]",
-	"vldr.32 s14, [r1, #56]",
-	"vldr.32 s15, [r1, #60]",
-	"vldr.32 s12, [r1, #48]",
-	"vldr.32 s13, [r1, #52]",
-	"vldr.32 s14, [r1, #56]",
-	"vldr.32 s15, [r1, #60]",
-	"cmp r3, 24",
-	"blt .Lnofloats",
-	"vldr.32 s12, [r1, #48]",
-	"vldr.32 s13, [r1, #52]",
-	"vldr.32 s14, [r1, #56]",
-	"vldr.32 s15, [r1, #60]",
-	"vldr.32 s12, [r1, #48]",
-	"vldr.32 s13, [r1, #52]",
-	"vldr.32 s14, [r1, #56]",
-	"vldr.32 s15, [r1, #60]",
+	// "cmp r3, 16",
+	// "ble .Lnofloats",
+	// "vldr.32 s16, [r1, #48]",
+	// "vldr.32 s17, [r1, #52]",
+	// "vldr.32 s18, [r1, #56]",
+	// "vldr.32 s19, [r1, #60]",
+	// "vldr.32 s20, [r1, #48]",
+	// "vldr.32 s21, [r1, #52]",
+	// "vldr.32 s22, [r1, #56]",
+	// "vldr.32 s23, [r1, #60]",
+	// "vldr.32 s24, [r1, #48]",
+	// "vldr.32 s25, [r1, #52]",
+	// "vldr.32 s26, [r1, #56]",
+	// "vldr.32 s27, [r1, #60]",
+	// "vldr.32 s28, [r1, #48]",
+	// "vldr.32 s29, [r1, #52]",
+	// "vldr.32 s30, [r1, #56]",
+	// "vldr.32 s31, [r1, #60]",
 ".Lnofloats:",
+#endif
 
 	"mov r4, sp", // save sp
 	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
@@ -512,15 +488,16 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	"and r1, r1, #4", // попадает ли стек на границу слова?
 	"sub sp, sp, r1", // если да, то на слово его и опустим
 	// finally, sending regular (integer) arguments
-	"cmp r2, 3",  // if (i > 3)
+	"cmp r2, 4",  // if (i > 4)
 	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
 	"add r1, r0, r2, asl #2",
+	"sub r1, r1, #4",
 ".Lextraregs:", // push argv[i]
 	"ldr r3, [r1]",
 	"push {r3}",
 	"sub r2, r2, #1",
 	"sub r1, r1, #4",
-	"cmp r2, 3",
+	"cmp r2, 4",
 	"bgt .Lextraregs",
 	// todo: arrange stack pointer to dword
 ".Lnoextraregs:",
@@ -533,7 +510,22 @@ __ASM__("armhf_call:_armhf_call:", // todo: int3
 	"blx r5", // call this function
 	"mov sp, r4", // restore sp
 
-	// ret
+#ifdef __ARM_PCS_VFP
+	"ldr r5, [r4,#16]", // return type
+//	"cmp r5, #42",          // TRATIONAL - deprecated
+//	"beq .Lfconv",
+	"cmp r5, #46",          // TFLOAT
+	"beq .Lfconv",
+	"cmp r5, #47",          // TDOUBLE
+	"beq .Lfconv",
+	"cmp r5, #44",          // TINEXACT (which inexact - float or double?). todo: check this
+	"bne .Lret",
+".Lfconv:",
+	"vmov r0, s0",
+	"vmov r1, s1",
+#endif
+
+".Lret:",
 	// all values: int, long, float and double returns in r0+r1
 	"ldmfd   sp!, {r4, r5, pc}",
 );
@@ -843,7 +835,7 @@ word* OL_ffi(OL* self, word* arguments)
 	double ad[18];
 	int d = 0;     // количество аргументов для ad
 	long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
-#elif __arm__
+#elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив
 	int f = 0;     // количество аргументов для af
@@ -870,7 +862,6 @@ word* OL_ffi(OL* self, word* arguments)
 
 #if __linux__ && __amd64__  // LP64
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
-		// todo: add same for __arm__
 #endif
 
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
@@ -1006,7 +997,7 @@ word* OL_ffi(OL* self, word* arguments)
 			#if __linux__ && __amd64__
 				*(float*)&ad[d++] = ol2f(arg); --i;
 				floatsmask|=1;
-			#elif __arm__
+			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard
 				*(float*)&af[f++] = ol2f(arg); --i;
 			#else
 				*(float*)&args[i] = ol2f(arg);
@@ -1056,7 +1047,7 @@ word* OL_ffi(OL* self, word* arguments)
 			#if __linux__ && __amd64__
 				*(double*)&ad[d++] = ol2d(arg); --i;
 				floatsmask++;
-			#elif __arm__
+			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard
 				*(double*)&af[f++] = ol2d(arg); --i; f++;
 			#else
 				*(double*)&args[i] = ol2d(arg);
@@ -1334,11 +1325,17 @@ word* OL_ffi(OL* self, word* arguments)
 #elif _WIN32
 	// cdecl and stdcall in our case are same, so...
 	got = x86_call(args, i, function, returntype & 0x3F);
-#elif __arm__
-	// arm calling http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
-	got = armhf_call(args, af,
+#elif __ARM_EABI__
+	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
+# ifdef __ARM_PCS_VFP
+	got = arm32_call(args, af,
 		        i, f,
-		        function);
+		        function, returntype & 0x3F);
+# else
+	got = arm32_call(args, NULL,
+		        i, 0,
+		        function, returntype & 0x3F);
+# endif
 #elif __aarch64__
 	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
@@ -1673,7 +1670,14 @@ word* OL_ffi(OL* self, word* arguments)
 
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
 		case TRATIONAL: // means "we want exact number"
-		case TFLOAT:
+		case TFLOAT: {
+			float value = *(float*)&got;
+
+			heap->fp = fp;
+			result = (word*) d2ol(self, value);
+			fp = heap->fp;
+			break;
+		}
 		case TDOUBLE: {
 			double value = *(double*)&got;
 
