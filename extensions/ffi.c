@@ -79,8 +79,8 @@
 // data type.
 // (Small embedded systems using special floating-point formats may be another
 // matter however.)
-word d2ol(struct ol_t* ol, double v);        // declared in olvm.c
-double ol2d(word arg); float ol2f(word arg); // declared in olvm.c
+word d2ol(struct ol_t* ol, double v);        // implemented in olvm.c
+double ol2d(word arg); float ol2f(word arg); // implemented in olvm.c
 
 // C preprocessor trick, some kind of "map":
 // http://jhnet.co.uk/articles/cpp_magic
@@ -245,7 +245,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"cvtss2sd %xmm0, %xmm0", // float->double
 "52:",
 	"movsd %xmm0, (%rsp)",
-	"pop   %rax", // можно попасть, так как уже пушнули один r9 вверху (оптимизация)
+	"pop   %rax", // можно попать, так как уже пушнули один r9 вверху (оптимизация)
 	"jmp   9b");
 
 # else      // System V (unix, linux, osx)
