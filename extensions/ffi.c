@@ -70,7 +70,7 @@
 #	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
- 
+
 
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 // However, on modern standard computers (i.e., implementing IEEE 754), one may
@@ -423,6 +423,11 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 // https://msdn.microsoft.com/ru-ru/library/dn736986.aspx - Обзор соглашений ABI ARM (Windows)
 // Procedure Call Standard for the ARM®  Architecture
 //  http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
+
+// __ARM_PCS_VFP, __ARM_PCS
+// __ARM_ARCH_7A__
+//
+
 unsigned
 long long arm32_call(word argv[], float af[],
                      long i, long f,
@@ -435,7 +440,7 @@ __ASM__("arm32_call:_arm32_call:",
 
 	// check floats
 #ifdef __ARM_PCS_VFP // gnueabihf, -mfloat-abi=hard
-	"cmp r3, 0",  // f (count of floats)
+	"cmp r3, #0",  // f (count of floats)
 	"beq .Lnofloats",
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
 	// https://developer.arm.com/technologies/floating-point
@@ -443,13 +448,13 @@ __ASM__("arm32_call:_arm32_call:",
 	"vldr.32 s1, [r1, #4]",
 	"vldr.32 s2, [r1, #8]",
 	"vldr.32 s3, [r1, #12]",
-	"cmp r3, 4",
+	"cmp r3, #4",
 	"ble .Lnofloats",
 	"vldr.32 s4, [r1, #16]",
 	"vldr.32 s5, [r1, #20]",
 	"vldr.32 s6, [r1, #24]",
 	"vldr.32 s7, [r1, #28]",
-	"cmp r3, 8",
+	"cmp r3, #8",
 	"ble .Lnofloats",
 	"vldr.32 s8, [r1, #32]",
 	"vldr.32 s9, [r1, #36]",
@@ -488,7 +493,7 @@ __ASM__("arm32_call:_arm32_call:",
 	"and r1, r1, #4", // попадает ли стек на границу слова?
 	"sub sp, sp, r1", // если да, то на слово его и опустим
 	// finally, sending regular (integer) arguments
-	"cmp r2, 4",  // if (i > 4)
+	"cmp r2, #4",  // if (i > 4)
 	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
 	"add r1, r0, r2, asl #2",
 	"sub r1, r1, #4",
@@ -497,9 +502,10 @@ __ASM__("arm32_call:_arm32_call:",
 	"push {r3}",
 	"sub r2, r2, #1",
 	"sub r1, r1, #4",
-	"cmp r2, 4",
+	"cmp r2, #4",
 	"bgt .Lextraregs",
 	// todo: arrange stack pointer to dword
+
 ".Lnoextraregs:",
 	"ldr r3, [r0,#12]", // save all 4 registers without checking
 	"ldr r2, [r0, #8]",
@@ -507,7 +513,12 @@ __ASM__("arm32_call:_arm32_call:",
 	"ldr r0, [r0, #0]",
 	// call the function
 	"ldr r5, [r4,#12]", // function
+#ifdef __ARM_ARCH_4T__ // armv4t
+	"mov lr, pc",
+	"bx r5",
+#else
 	"blx r5", // call this function
+#endif
 	"mov sp, r4", // restore sp
 
 #ifdef __ARM_PCS_VFP
@@ -1843,7 +1854,7 @@ word* OL_mkcb(OL* self, word* arguments)
 	fp = heap->fp;
 
 	word* result = new_callable(ptr);
-	
+
 	heap->fp = fp;
 	return result;
 }
