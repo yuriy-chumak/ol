@@ -168,9 +168,9 @@
    glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height) +
 
    glMatrixMode ; void (GLenum mode) +
-      #|GL_PROJECTION
-      GL_MODELVIEW
-      GL_TEXTURE|#
+      ;GL_PROJECTION ; mode
+      ;GL_MODELVIEW
+      ;GL_TEXTURE
 
    glLoadMatrixd  ; void (const GLdouble *m); +
    glLoadMatrixf  ; void (const GLfloat *m); +
@@ -196,66 +196,64 @@
    glPopMatrix ; void glPopMatrix (void) +
 
    glEnable ; void (GLenum cap) +
-    #|; cap
-      GL_FOG
-      GL_LIGHTING
-      GL_TEXTURE_1D
-      GL_TEXTURE_2D
-      GL_LINE_STIPPLE
-      GL_POLYGON_STIPPLE
-      GL_CULL_FACE
-      GL_ALPHA_TEST
-      GL_BLEND
-      GL_LOGIC_OP
-      GL_DITHER
-      GL_STENCIL_TEST
-      GL_DEPTH_TEST
-      GL_CLIP_PLANE0
-      GL_CLIP_PLANE1
-      GL_CLIP_PLANE2
-      GL_CLIP_PLANE3
-      GL_CLIP_PLANE4
-      GL_CLIP_PLANE5
-      GL_LIGHT0
-      GL_LIGHT1
-      GL_LIGHT2
-      GL_LIGHT3
-      GL_LIGHT4
-      GL_LIGHT5
-      GL_LIGHT6
-      GL_LIGHT7
-      GL_TEXTURE_GEN_S
-      GL_TEXTURE_GEN_T
-      GL_TEXTURE_GEN_R
-      GL_TEXTURE_GEN_Q
-      GL_MAP1_VERTEX_3
-      GL_MAP1_VERTEX_4
-      GL_MAP1_COLOR_4
-      GL_MAP1_INDEX
-      GL_MAP1_NORMAL
-      GL_MAP1_TEXTURE_COORD_1
-      GL_MAP1_TEXTURE_COORD_2
-      GL_MAP1_TEXTURE_COORD_3
-      GL_MAP1_TEXTURE_COORD_4
-      GL_MAP2_VERTEX_3
-      GL_MAP2_VERTEX_4
-      GL_MAP2_COLOR_4
-      GL_MAP2_INDEX
-      GL_MAP2_NORMAL
-      GL_MAP2_TEXTURE_COORD_1
-      GL_MAP2_TEXTURE_COORD_2
-      GL_MAP2_TEXTURE_COORD_3
-      GL_MAP2_TEXTURE_COORD_4
-      GL_POINT_SMOOTH
-      GL_LINE_SMOOTH
-      GL_POLYGON_SMOOTH
-      GL_SCISSOR_TEST
-      GL_COLOR_MATERIAL
-      GL_NORMALIZE
-      GL_AUTO_NORMAL|#
+      ;GL_FOG ; cap
+      ;GL_LIGHTING
+      ;GL_TEXTURE_1D
+      ;GL_TEXTURE_2D
+      ;GL_LINE_STIPPLE
+      ;GL_POLYGON_STIPPLE
+      ;GL_CULL_FACE
+      ;GL_ALPHA_TEST
+      ;GL_BLEND
+      ;GL_LOGIC_OP
+      ;GL_DITHER
+      ;GL_STENCIL_TEST
+      ;GL_DEPTH_TEST
+      ;GL_CLIP_PLANE0
+      ;GL_CLIP_PLANE1
+      ;GL_CLIP_PLANE2
+      ;GL_CLIP_PLANE3
+      ;GL_CLIP_PLANE4
+      ;GL_CLIP_PLANE5
+      ;GL_LIGHT0
+      ;GL_LIGHT1
+      ;GL_LIGHT2
+      ;GL_LIGHT3
+      ;GL_LIGHT4
+      ;GL_LIGHT5
+      ;GL_LIGHT6
+      ;GL_LIGHT7
+      ;GL_TEXTURE_GEN_S
+      ;GL_TEXTURE_GEN_T
+      ;GL_TEXTURE_GEN_R
+      ;GL_TEXTURE_GEN_Q
+      ;GL_MAP1_VERTEX_3
+      ;GL_MAP1_VERTEX_4
+      ;GL_MAP1_COLOR_4
+      ;GL_MAP1_INDEX
+      ;GL_MAP1_NORMAL
+      ;GL_MAP1_TEXTURE_COORD_1
+      ;GL_MAP1_TEXTURE_COORD_2
+      ;GL_MAP1_TEXTURE_COORD_3
+      ;GL_MAP1_TEXTURE_COORD_4
+      ;GL_MAP2_VERTEX_3
+      ;GL_MAP2_VERTEX_4
+      ;GL_MAP2_COLOR_4
+      ;GL_MAP2_INDEX
+      ;GL_MAP2_NORMAL
+      ;GL_MAP2_TEXTURE_COORD_1
+      ;GL_MAP2_TEXTURE_COORD_2
+      ;GL_MAP2_TEXTURE_COORD_3
+      ;GL_MAP2_TEXTURE_COORD_4
+      ;GL_POINT_SMOOTH
+      ;GL_LINE_SMOOTH
+      ;GL_POLYGON_SMOOTH
+      ;GL_SCISSOR_TEST
+      ;GL_COLOR_MATERIAL
+      ;GL_NORMALIZE
+      ;GL_AUTO_NORMAL
    glDisable                           ; void (GLenum cap) +
-    ; cap
-      ; SAME as glEnable
+      ; cap SAME as glEnable
 
    ;WINGDIAPI void APIENTRY glTexGend (GLenum coord, GLenum pname, GLdouble param); +
    ;WINGDIAPI void APIENTRY glTexGendv (GLenum coord, GLenum pname, const GLdouble *params); +
@@ -266,13 +264,12 @@
 
    ;; 2.10 Clipping
    glClipPlane                         ; void (GLenum plane, const GLdouble *equation) +
-    #|; plane
-      GL_CLIP_PLANE0
-      GL_CLIP_PLANE1
-      GL_CLIP_PLANE2
-      GL_CLIP_PLANE3
-      GL_CLIP_PLANE4
-      GL_CLIP_PLANE5|#
+      ;GL_CLIP_PLANE0 ; plane
+      ;GL_CLIP_PLANE1
+      ;GL_CLIP_PLANE2
+      ;GL_CLIP_PLANE3
+      ;GL_CLIP_PLANE4
+      ;GL_CLIP_PLANE5
 
    ;; 2.11 Current Ruster Position
    ;WINGDIAPI void APIENTRY glRasterPos2d (GLdouble x, GLdouble y); +
@@ -1783,7 +1780,7 @@
 
 ; ============================================================================
 ; == implementation ==========================================================
-(import (otus lisp) (otus ffi))
+(import (scheme core) (otus ffi))
 (import (OpenGL)) ; platform independent primitives
 
 (begin
@@ -1797,19 +1794,18 @@
    (define apple? (string-ci=? OS "Darwin"))
 
    (define GL_LIBRARY (load-dynamic-library
-      (c-string ; todo: change to library
-         (cond
-            (win32? "opengl32")
-            (linux? "libGL.so.1")
-            ;"HP-UX"
-            ;"SunOS"
-            ;"Darwin"
-            ;"FreeBSD"
-            ;"CYGWIN_NT-5.2-WOW64"
-            ;"MINGW32_NT-5.2"
-            ;...
-            (else
-               (runtime-error "Unsupported platform" OS))))))
+      (cond
+         (win32? "opengl32.dll")
+         (linux? "libGL.so.1")
+         ;"HP-UX"
+         ;"SunOS"
+         ;"Darwin"
+         ;"FreeBSD"
+         ;"CYGWIN_NT-5.2-WOW64"
+         ;"MINGW32_NT-5.2"
+         ;...
+         (else
+            (runtime-error "Unsupported platform" OS)))))
 
    (define GL GL_LIBRARY)
 
@@ -2947,7 +2943,7 @@
 
 (define GLU_LIBRARY
    (cond
-      (win32? "glu32")
+      (win32? "glu32.dll")
       (linux? "libGLU.so.1")
       ;"HP-UX"
       ;"SunOS"

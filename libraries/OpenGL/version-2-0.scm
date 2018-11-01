@@ -38,7 +38,7 @@ glDrawArrays
 
    (exports (OpenGL version-1-5)))
 
-   (import (otus lisp)
+   (import (scheme core)
       (OpenGL version-1-5))
 (begin
    (define GL_VERSION_2_0 1)

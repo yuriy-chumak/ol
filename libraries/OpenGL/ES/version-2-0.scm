@@ -451,8 +451,7 @@
 )
 
    (import
-      (scheme core) (otus ffi)
-      (owl string) (owl io))
+      (scheme core) (otus ffi))
 
 (begin
    (define GL_ES_VERSION_2_0 1)

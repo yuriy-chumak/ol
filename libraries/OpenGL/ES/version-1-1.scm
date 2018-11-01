@@ -503,8 +503,7 @@
 )
 
    (import
-      (scheme core) (otus ffi)
-      (owl string) (owl io))
+      (scheme core) (otus ffi))
 
 (begin
    (define GL_VERSION_ES_CM_1_0 1)
