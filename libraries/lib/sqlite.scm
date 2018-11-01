@@ -92,7 +92,7 @@
    ;sqlite3_extended_errcode
     sqlite3_errmsg ; const char* (sqlite3*)
    ;sqlite3_errmsg16
-    sqlite3_errstr ; const char* (int)
+   ;sqlite3_errstr ; const char* (int) ; not existent at large distibs
 
   ; Run-time Limits
    ;sqlite3_limit
@@ -356,7 +356,7 @@
 (define sqlite3_close (sqlite fft-int "sqlite3_close" sqlite3*))
 (define sqlite3_errcode (sqlite fft-int "sqlite3_errcode" sqlite3*))
 (define sqlite3_errmsg (sqlite type-string "sqlite3_errmsg" sqlite3*))
-(define sqlite3_errstr (sqlite type-string "sqlite3_errstr" fft-int))
+;(define sqlite3_errstr (sqlite type-string "sqlite3_errstr" fft-int))
 
 
 ; sqlite3_prepare
@@ -535,7 +535,7 @@
          (else ; got a values!
             (let ((result (get-result-as-row statement)))
                (sqlite3_finalize statement)
-               (if result 
+               (if result
                   (if (eq? (cdr result) #null)
                      (car result)
                      result)))))))
