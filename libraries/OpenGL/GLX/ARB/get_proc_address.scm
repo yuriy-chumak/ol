@@ -43,7 +43,7 @@
    (define GLX_ARB_get_proc_address (gl:QueryExtension "GLX_ARB_get_proc_address"))
 
    (setq GLX (load-dynamic-library "libGL.so.1"))
-   (setq GetProcAddress (GLX type-vptr "glXGetProcAddressARB" type-string))
+   (setq GetProcAddress (if GLX_ARB_get_proc_address (GLX type-vptr "glXGetProcAddressARB" type-string)))
 
    (define (glXGetProcAddressARB type name . prototype)
       (let ((rtty (cons type prototype))

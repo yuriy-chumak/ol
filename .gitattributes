@@ -14,3 +14,7 @@
 # Denote all files that are truly binary and should not be modified.
 *.png binary
 *.jpg binary
+
+# Wavefront text 3d models
+*.obj text eol=lf
+*.mtl text eol=lf

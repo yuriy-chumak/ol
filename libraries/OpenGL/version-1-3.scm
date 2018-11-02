@@ -91,9 +91,7 @@ glActiveTextureARB
 (begin
    (define GL_VERSION_1_3 1)
 
-   (define GL GL_LIBRARY)
-
-   (define glActiveTextureARB (GL GLvoid "glActiveTextureARB" GLenum))
+   (define glActiveTextureARB (gl:GetProcAddress GLvoid "glActiveTextureARB" GLenum))
 
    (define GL_TEXTURE0_ARB                   #x84C0)
    (define GL_TEXTURE1_ARB                   #x84C1)

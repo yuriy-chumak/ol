@@ -86,8 +86,6 @@
    (define GL_VERSION_1_2 1)
    (define GL_VERSION_1_2_1 1)
 
-   (define GL GL_LIBRARY)
-
    ;GLAPI void APIENTRY glTexSubImage3D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels);
    ;GLAPI void APIENTRY glCopyTexSubImage3D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
 

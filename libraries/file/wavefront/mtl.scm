@@ -1,3 +1,4 @@
+; http://paulbourke.net/dataformats/mtl/
 (define-library (file wavefront mtl)
 
 (export

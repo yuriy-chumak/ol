@@ -255,13 +255,13 @@
 (define gl:SetWindowTitle (cond
    (win32?
       (let ((user32 (load-dynamic-library "user32.dll")))
-      (let ((SetWindowText   (user32 fft-int "SetWindowTextW"   fft-void* type-string-wide)))
+      (let ((SetWindowText (user32 fft-int "SetWindowTextW" fft-void* type-string-wide)))
          (lambda (context title)
             (let ((window (ref context 3)))
                (SetWindowText window (c-string title)))))))
    (linux?
       (let ((libX11 (load-dynamic-library "libX11.so.6")))
-      (let ((XStoreName   (libX11 fft-int "XStoreName" type-vptr type-vptr type-string)))
+      (let ((XStoreName (libX11 fft-int "XStoreName" type-vptr type-vptr type-string)))
          (lambda (context title)
             (let ((display (ref context 1))
                   ;(screen  (ref context 2))
@@ -271,7 +271,14 @@
 
 (define gl:SetWindowSize (cond
    (win32?
-      #true)
+      (let ((user32 (load-dynamic-library "user32.dll")))
+      (let ((GetWindowRect (user32 fft-int "MoveWindow" fft-void* (fft& fft-int)))
+            (MoveWindow (user32 fft-int "MoveWindow" fft-void* fft-int fft-int fft-int fft-int fft-int)))
+         (lambda (context width height)
+            (let ((window (ref context 3))
+                  (rect '(0 0 0 0)))
+               (GetWindowRect window rect)
+               (MoveWindow window (list-ref rect 0) (list-ref rect 1) width height 0))))))
    (linux?
       (let ((libX11 (load-dynamic-library "libX11.so.6")))
       (let ((XResizeWindow (libX11 fft-int "XResizeWindow" type-vptr type-vptr fft-int fft-int)))
