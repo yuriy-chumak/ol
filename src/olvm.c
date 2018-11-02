@@ -1,9 +1,9 @@
 /**
  *         Simple purely functional Lisp, mostly.
  *
- *                  `___`           `___`  
- *                  (o,o)           (o,o)  
- *                  \)  )  L I S P  (  /(  
+ *                  `___`           `___`
+ *                  (o,o)           (o,o)
+ *                  \)  )  L I S P  (  /(
  * =================="="============="="======================== *
  *                                                               *
  *   Version 2.0                                                 *
@@ -3314,7 +3314,7 @@ loop:;
 		case SYSCALL_LSEEK: {
 			if (!is_port(a))
 				break;
-				
+
 			off_t offset = lseek(port (a), value(b), value(c));
 			if (offset < 0)
 				break;
@@ -3326,7 +3326,7 @@ loop:;
 		case SYSCALL_FSYNC: {
 			if (!is_port(a))
 				break;
-				
+
 			if (fsync(port (a)) < 0)
 				break;
 
@@ -4762,7 +4762,7 @@ void* OL_userdata(OL* ol, void* userdata)
 void* OL_allocate(OL* ol, unsigned words)
 {
 	word* fp;
-	
+
 	fp = ol->heap.fp;
 	word* r = new(words);
 	ol->heap.fp = fp;

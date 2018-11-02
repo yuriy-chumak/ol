@@ -16,7 +16,7 @@
                ; vm info:
                ;     vm:version vm:maxvalue vm:valuewidth
                ; etc.
-               ;   clock syscall 
+               ;   clock syscall
                ; hash tables support:
                ;   ff:red ff:black ff:toggle ff:red? ff:right?
                ; execution flow:
@@ -121,7 +121,7 @@
                (ifeq ((lambda (x) x) expression) (quote expectation)
                   #true
                   (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
-      
+
       ; * ol specific
       (setq error runtime-error) ; [yc] is it required?
 
@@ -131,7 +131,7 @@
       ; ........
 
       ; 1.3.4  Evaluation examples
-      ; 
+      ;
       ; The symbol "==>" used in program examples should be
       ; read "evaluates to." ...
       ; ....
@@ -619,10 +619,10 @@
       ; ......
 
       ; 5.2.2  Internal definitions
-      ; 
+      ;
       ; Definitions may occur at the beginning .......
       ; ...........
-      
+
 
       ; 5.3  Syntax definitions
       ;
@@ -758,7 +758,7 @@
            ; todo: more examples
 
       ;  * obj 1 and obj 2 are characters for which the char=? pro-
-      ;    cedure returns #f           
+      ;    cedure returns #f
       (assert (eqv? #\a #\A)                ===> #false)
 
       ;  * one of obj 1 and obj 2 is the empty list but the other is
@@ -798,7 +798,7 @@
       ;assert (letrec ((f (lambda () (if (eqv? f g) ’both ’f)))
       ;                (g (lambda () (if (eqv? f g) ’both ’g))))
       ;          (eqv? f g))                ===> unspecified
-      
+
 
       ; (r7rs) procedure:  (equal? obj1 obj2)
       ;
@@ -845,7 +845,7 @@
 
 
       ; 6.2  Numbers
-      ; 
+      ;
       ; Numerical computation has traditionally been .......
       ; .........
 
@@ -881,7 +881,7 @@
       ; 6.2.4  Syntax of numerical constants
       ;
       ; The syntax of the written representations ........
-      ; ... 
+      ; ...
 
       ; (r7rs) 6.2.6  Numerical operations
       ;
@@ -1335,7 +1335,7 @@
       (define memv (make-mem* eqv?))
       (define member
          (let ((memequal (make-mem* equal?)))
-         (case-lambda 
+         (case-lambda
             ((obj list)
                (memequal obj list))
             ((obj list compare)
@@ -1884,7 +1884,7 @@
       call-with-current-continuation
       call/cc lets/cc
 
-      ; 
+      ;
       if unless cond case and or
       letrec let let*            lets ; lets - ol specific, let*-values - r7rs
       begin                      ;do ; todo: move do to (scheme r5rs iteration)

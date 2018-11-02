@@ -6,7 +6,7 @@
    (export
       fless? fadd fsub fmul fdiv) ; 44 38 40 39 26
 
-   (import 
+   (import
       (scheme core))
 
    (begin

@@ -2,8 +2,8 @@
 
 (define-library (lang sexp)
 
-   (export 
-      sexp-parser 
+   (export
+      sexp-parser
       read-exps-from
       list->number
       get-sexps       ;; greedy* get-sexp
@@ -51,7 +51,7 @@
       (define special-subseqent-chars (string->runes "@"))
 
       (define (symbol-lead-char? n)
-         (or 
+         (or
             (between? #\a n #\z)
             (between? #\A n #\Z)
             (has? special-initial-chars n)
@@ -65,7 +65,7 @@
 
       (define get-symbol
          (get-either
-            (let-parses 
+            (let-parses
                ((head (get-rune-if symbol-lead-char?))
                 (tail (get-greedy* (get-rune-if symbol-char?)))
                 (next (peek get-byte))
@@ -227,7 +227,7 @@
              (bang (get-imm #\!))
              (line get-rest-of-line))
             (list 'quote (list 'hashbang (list->string line)))))
-      
+
       ;; skip everything up to |#
       (define (get-block-comment)
          (get-either
@@ -290,7 +290,7 @@
       (define get-quoted-string-char
          (let-parses
             ((skip (get-imm #\\))
-             (char 
+             (char
                (get-either
                   (let-parses
                      ((char (get-byte-if (λ (byte) (getf quoted-values byte)))))
@@ -318,7 +318,7 @@
 
       (define (get-quoted parser)
          (let-parses
-            ((type 
+            ((type
                (get-either
                   (let-parses ((_ (get-imm #\,)) (_ (get-imm #\@))) 'splice) ; ,@
                   (get-byte-if (λ (x) (get quotations x #false)))))
@@ -410,7 +410,7 @@
       (define (ok exp env) (tuple 'ok exp env))
       (define (fail reason) (tuple 'fail reason))
 
-      (define sexp-parser 
+      (define sexp-parser
          (let-parses
             ((sexp (get-sexp))
              (foo maybe-whitespace))
@@ -422,9 +422,9 @@
       ;; fixme: new error message info ignored, and this is used for loading causing the associated issue
       (define (read-exps-from data done fail)
          (lets/cc ret  ;; <- not needed if fail is already a cont
-            ((data 
-               (utf8-decoder data 
-                  (λ (self line data) 
+            ((data
+               (utf8-decoder data
+                  (λ (self line data)
                      (ret (fail (list "Bad UTF-8 data on line " line ": " (ltake line 10))))))))
             (sexp-parser data
                (λ (data drop val pos)
@@ -444,9 +444,9 @@
       (define (string->sexp str fail)
          (try-parse (get-sexp) (str-iter str) #false #false fail))
 
-      ;; parse all contents of vector to a list of sexps, or fail with 
-      ;; fail-val and print error message with further info if errmsg 
-      ;; is non-false 
+      ;; parse all contents of vector to a list of sexps, or fail with
+      ;; fail-val and print error message with further info if errmsg
+      ;; is non-false
 
       (define (vector->sexps vec fail errmsg)
          ; try-parse parser data maybe-path maybe-error-msg fail-val
@@ -529,10 +529,10 @@
       (define (syntax-fail pos info lst)
          (list #f info
             (list ">>> " "x" " <<<")))
-         
+
       (define (read-impl in)
          (fd->exp-stream in "" sexp-parser syntax-fail))
-      
+
       (define read
          (case-lambda
             ((in)
