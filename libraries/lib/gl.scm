@@ -104,7 +104,7 @@
             (print "OpenGL vendor: " (glGetString GL_VENDOR))
             (print "OpenGL renderer: " (glGetString GL_RENDERER))
            ;(gl:MakeCurrent #f #f)
-            (mail 'opengl (tuple 'set-context (tuple 'hDC hRC window)))
+            (mail 'opengl (tuple 'set-context (tuple hDC hRC window)))
             (interact 'opengl (tuple 'get-context)) ; синхронизация
 
             (ShowWindow window 5)
@@ -169,7 +169,7 @@
 
                ;; (window (XCreateWindow display root
                ;;             0 0 WIDTH HEIGHT 0
-               ;;             24 1; vi->depth InputOutput 
+               ;;             24 1; vi->depth InputOutput
                ;;             visual
                ;;             10248 ; CWBorderPixel | CWColormap | CWEventMask
                ;;             XSetWindowAttributes)))
@@ -231,7 +231,7 @@
                            (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
                                    (<< (ref MSG (+ 1 (* w 2))) 8)) #x51)) ; Q key
                         24) ;
-                     (else 
+                     (else
                         (TranslateMessage MSG)
                         (DispatchMessage MSG)
                         (loop)))))))))))
