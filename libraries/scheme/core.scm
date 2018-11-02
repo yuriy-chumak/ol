@@ -10,7 +10,7 @@
                ;   integer:
                ;     vm:add vm:sub vm:mul vm:div vm:shr vm:shl
                ;   floating-point (if built with OLVM_INEXACTS)
-               ;     vm:fp1 (0 sqrt, 6 log2), vm:fp2 (44 fless?, 38 fadd, 50 fsub, 39 fmul, 26 fdiv)
+               ;     vm:fp1 (), vm:fp2 (217 fless?, 193 fadd, 233 fsub, 201 fmul, 249 fdiv)
                ;   binary:
                ;     vm:and vm:or vm:xor
                ; vm info:

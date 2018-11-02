@@ -197,9 +197,9 @@
             (sign imag)))
 
       ; https://srfi.schemers.org/srfi-77/srfi-77.html
-      (setq |+inf.0| (vm:fp2 26 1 0)) ; 1 / 0 = +infin
-      (setq |-inf.0| (vm:fp2 26 -1 0));-1 / 0 = -infin
-      (setq |+nan.0| (vm:fp2 26 0 0)) ; 0 / 0 = NaN
+      (setq |+inf.0| (vm:fp2 #xF9 1 0)) ; 1 / 0 = +infin
+      (setq |-inf.0| (vm:fp2 #xF9 -1 0));-1 / 0 = -infin
+      (setq |+nan.0| (vm:fp2 #xF9 0 0)) ; 0 / 0 = NaN
 
       (define get-number
          (get-any-of

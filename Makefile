@@ -170,6 +170,7 @@ $(repl.o): repl
 olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
 	emcc src/olvm.c -Os -m32 \
 	   -D NAKED_VM=1 -D HAS_DLOPEN=1 \
+	   -D OLVM_BUILTIN_FMATH=1 \
 	   -o olvm.js \
 	   -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 \
 	   -s MAIN_MODULE=1 \

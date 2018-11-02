@@ -242,6 +242,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #ifndef OLVM_INEXACTS
 #define OLVM_INEXACTS 1
 #endif
+#ifndef OLVM_BUILTIN_FMATH // builtin olvm math functions (vm:fp1)
+#define OLVM_BUILTIN_FMATH 0
+#endif
 
 
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
@@ -4220,11 +4223,23 @@ loop:;
 
 	// FPU extensions
 	case FP1: { // with 1 argument
-	#if OLVM_INEXACTS
+	#if OLVM_INEXACTS && OLVM_BUILTIN_FMATH
 		word fn = value(A0);
 		double a = ol2d(A1);
 
-		A2 = IFALSE;
+		A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+		switch (fn) {
+		case 0xFE: // fsin
+			*(double*)&car(A2) = __builtin_sin(a);
+			break;
+		case 0xFF: // fcos
+			*(double*)&car(A2) = __builtin_cos(a);
+			break;
+		// f2 - tan, f3 - atan, fa - sqrt,
+		default:
+			A2 = IFALSE;
+			break;
+		}
 	#else
 		A2 = IFALSE;
 	#endif
@@ -4238,19 +4253,19 @@ loop:;
 
 		A3 = (word) new_bytevector(TINEXACT, sizeof(double));
 		switch (fn) {
-		case 44: // fless?
+		case 0xD9: // fless?
 			A3 = (a < b) ? ITRUE : IFALSE;
 			break;
-		case 38: // fadd
+		case 0xC1: // fadd
 			*(double*)&car(A3) = a + b;
 			break;
-		case 40: // fsub
+		case 0xE9: // fsub
 			*(double*)&car(A3) = a - b;
 			break;
-		case 39: // fmul
+		case 0xC9: // fmul
 			*(double*)&car(A3) = a * b;
 			break;
-		case 26: // fdiv
+		case 0xF9: // fdiv
 			*(double*)&car(A3) = a / b;
 			break;
 		default:
