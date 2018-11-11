@@ -1,11 +1,15 @@
 (define-library (lib soil)
-   (import (r5rs core)
+   (import (scheme core)
            (otus ffi))
    (export
+      SOIL_last_result
       SOIL_load_OGL_texture
       
       SOIL_LOAD_AUTO
+      SOIL_LOAD_RGBA
       SOIL_CREATE_NEW_ID
+
+      SOIL_FLAG_INVERT_Y
    )
 (begin
 
@@ -25,7 +29,7 @@
    ;SOIL_FLAG_MIPMAPS = 2,
    ;SOIL_FLAG_TEXTURE_REPEATS = 4,
    ;SOIL_FLAG_MULTIPLY_ALPHA = 8,
-   ;SOIL_FLAG_INVERT_Y = 16,
+   (define SOIL_FLAG_INVERT_Y 16)
    ;SOIL_FLAG_COMPRESS_TO_DXT = 32,
    ;SOIL_FLAG_DDS_LOAD_DIRECT = 64,
    ;SOIL_FLAG_NTSC_SAFE_RGB = 128,
@@ -41,6 +45,8 @@
    ;SOIL_HDR_RGBE = 0,
    ;SOIL_HDR_RGBdivA = 1,
    ;SOIL_HDR_RGBdivA2 = 2
+
+   (define SOIL_last_result (libsoil type-string "SOIL_last_result"))
    
    (define SOIL_load_OGL_texture (libsoil fft-unsigned-int "SOIL_load_OGL_texture" type-string fft-int fft-unsigned-int fft-unsigned-int))
    (define SOIL_load_OGL_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_cubemap" type-string type-string type-string type-string type-string type-string fft-int fft-unsigned-int fft-unsigned-int))

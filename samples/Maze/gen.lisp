@@ -16,8 +16,9 @@
 
 (import (lib rlutil))
 
-(define WIDTH 127) ; should be odd
-(define HEIGHT 49) ; should be odd
+(define WIDTH 47) ; should be odd
+(define HEIGHT 29) ; should be odd
+(define FILLING 0.4)
 
 (define (shuffle! o) ; перемешивалка tuple
    (for-each (lambda (i)
@@ -36,14 +37,14 @@
 
 (define neighbors (tuple '(-1 . 0) '(0 . -1) '(+1 . 0) '(0 . +1)))
 
-(let loop ((x (floor (/ WIDTH 2))) (y (floor (/ HEIGHT 2))) (n (floor (* 0.2 WIDTH HEIGHT))))
+(let loop ((x (floor (/ WIDTH 2))) (y (floor (/ HEIGHT 2))) (n (floor (* FILLING WIDTH HEIGHT))))
    (set-ref! (lref level y) x #\ )
    (if (> n 0)
       (let*((neighbor (ref neighbors (randint 1 4)))
             (nx (+ x (car neighbor)))
             (ny (+ y (cdr neighbor))))
-         (if (and (<= 3 nx (- WIDTH 3)) (<= 3 ny (- HEIGHT 3)))
-            (loop nx ny (- n 1))
+         (if (and (<= 1 nx (- WIDTH 2)) (<= 1 ny (- HEIGHT 2)))
+            (loop nx ny (if (eq? (ref (lref level ny) nx) #\#) (- n 1) n))
             (loop x y n)))))
 
 ; рисуем
