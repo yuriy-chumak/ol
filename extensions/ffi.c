@@ -1682,7 +1682,11 @@ word* OL_ffi(OL* self, word* arguments)
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
 		case TRATIONAL: // means "we want exact number"
 		case TFLOAT: {
+			#if __amd64__ || __i386__
+			float value = *(double*)&got;
+			#else
 			float value = *(float*)&got;
+			#endif
 
 			heap->fp = fp;
 			result = (word*) d2ol(self, value);
