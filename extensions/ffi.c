@@ -229,13 +229,9 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"subq $32, %rsp", // extra free space for call
 	"call *%rax",
 	// вернем результат
-	"cmpl $42, -8(%rbp)", // TRATIONAL
-	"je   52f",
 	"cmpl $46, -8(%rbp)", // TFLOAT
 	"je   51f",
 	"cmpl $47, -8(%rbp)", // TDOUBLE
-	"je   52f",
-	"cmpl $44, -8(%rbp)", // TINEXACT
 	"je   52f",
 "9:",
 	"leave",
@@ -334,13 +330,9 @@ __ASM__("x64_call:_x64_call:", // "int $3",
 	"callq *-8(%rbp)",
 
 	// вернем результат
-	"cmpl $42, 16(%rbp)", // TRATIONAL
-	"je   6f",
 	"cmpl $46, 16(%rbp)", // TFLOAT
 	"je   5f",
 	"cmpl $47, 16(%rbp)", // TDOUBLE
-	"je   6f",
-	"cmpl $44, 16(%rbp)", // TINEXACT
 	"je   6f",
 "9:",
 	"leave",
@@ -394,13 +386,9 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"call  *16(%ebp)",
 
 	"movl  20(%ebp), %ecx", // проверка возвращаемого типа
-	"cmpl  $42, %ecx",      // TRATIONAL
-	"je    3f",
 	"cmpl  $46, %ecx",      // TFLOAT
 	"je    3f",
 	"cmpl  $47, %ecx",      // TDOUBLE
-	"je    3f",
-	"cmpl  $44, %ecx",      // TINEXACT
 	"je    3f",
 "9:",
 	"leave",
@@ -523,14 +511,10 @@ __ASM__("arm32_call:_arm32_call:",
 
 #ifdef __ARM_PCS_VFP
 	"ldr r5, [r4,#16]", // return type
-//	"cmp r5, #42",          // TRATIONAL - deprecated
-//	"beq .Lfconv",
 	"cmp r5, #46",          // TFLOAT
 	"beq .Lfconv",
 	"cmp r5, #47",          // TDOUBLE
 	"beq .Lfconv",
-	"cmp r5, #44",          // TINEXACT (which inexact - float or double?). todo: check this
-	"bne .Lret",
 ".Lfconv:",
 	"vmov r0, s0",
 	"vmov r1, s1",
@@ -1680,31 +1664,13 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
-		case TRATIONAL: // means "we want exact number"
-		case TFLOAT: {
-			#if __amd64__ || __i386__
-			float value = *(double*)&got;
-			#else
-			float value = *(float*)&got;
-			#endif
-
-			heap->fp = fp;
-			result = (word*) d2ol(self, value);
-			fp = heap->fp;
-			break;
-		}
+		case TFLOAT:
 		case TDOUBLE: {
 			double value = *(double*)&got;
 
 			heap->fp = fp;
 			result = (word*) d2ol(self, value);
 			fp = heap->fp;
-			break;
-		}
-		case TINEXACT: { // means "we want inexact number"
-			double value = *(double*)&got;
-			result = new_bytevector(TINEXACT, sizeof(double));
-			*(double*)&car(result) = value;
 			break;
 		}
 	}

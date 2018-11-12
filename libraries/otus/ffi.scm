@@ -5,7 +5,7 @@
 ; modify it under the terms of the GNU General Public License as
 ; published by the Free Software Foundation; either version 3 of
 ; the License, or (at your option) any later version.
-; 
+;
 ; This program is distributed in the hope that it will be useful,
 ; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -107,16 +107,6 @@
 
 ;; OS detection
 (define (uname) (syscall 63 #f #f #f))
-
-; принимаются типы:
-; int (type-int+)
-; float (type-rational)
-; char* (type-string)
-; void** (type-tuple)
-; handle (новый тип type-handle)
-;(define INTEGER type-int+)     ; todo: rename to the TINTEGER or similar
-;(define FLOAT   type-rational) ; todo: same
-
 
 ; The MODE argument to `dlopen' contains one of the following:
 (define RTLD_LAZY         #x1) ; Lazy function call binding.
