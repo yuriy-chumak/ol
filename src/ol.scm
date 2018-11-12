@@ -44,10 +44,8 @@
 ;;;
 ;;; Time for a new REPL
 ;;;
-(import (src olvm))     ;; get special forms, primops and define-syntax (virtual library)
-
-;; this should later be just a sequence of imports followed by a fasl dump
-(import (scheme core))  ;; get define, define-library, import, ... from the just loaded
+(import (src olvm))     ;; vm primitives and basic special forms
+(import (scheme core))  ;; core scheme functions and primitives
 
 (define *features* '( ;; implementation features, used by cond-expand
    r7rs
@@ -57,7 +55,7 @@
    otus-lisp
    owl-lisp)) ; backward compatibility
 
-(define *include-dirs* '("." "libraries")) ;; now we can (import <libname>) and have them be autoloaded to current repl
+(define *include-dirs* '("." "libraries")) ;; now we can do (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
 (define *ol-version* "2.0") ;; http://semver.org/lang/ru/
 
