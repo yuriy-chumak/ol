@@ -36,12 +36,15 @@ Ol реализован как расширенное подмножество S
 - [x] Unix: OpenBSD, FreeBSD, NetBSD.
 - [x] Android: all versions up to Nougat.
 - [x] webOS: 2.0.
-- [x] Odroid: C1.
+- [x] Odroid: [C1+](https://www.hardkernel.com/main/products/prdt_info.php?g_code=G143703355573).
+- [x] Minoca [OS](https://www.minocacorp.com/product/).
 - [x] [LattePanda](https://www.lattepanda.com/)
 
 
 ### О проекте
-Otus Lisp распространяется по лицензии [LGPL v3](https://github.com/yuriy-chumak/ol/blob/master/COPYING.LESSER).
+Otus Lisp досупен под двумя лицензиями:
+[MIT License](https://github.com/yuriy-chumak/ol/blob/master/LICENSE) и
+[GNU ](https://github.com/yuriy-chumak/ol/blob/master/COPYING)([L](https://github.com/yuriy-chumak/ol/blob/master/COPYING.LESSER))[GPLv3 License](https://github.com/yuriy-chumak/ol/blob/master/COPYING).
 
 Вот неполный список того, что может вам предоставить Ol:
 

@@ -35,12 +35,15 @@ Preparing version **2.0** which moving to r7rs with changes in ffi and embed.
 - [x] Unix: OpenBSD, FreeBSD, NetBSD.
 - [x] Android: all versions up to Nougat.
 - [x] webOS: 2.0.
-- [x] Odroid: C1.
+- [x] Odroid: [C1+](https://www.hardkernel.com/main/products/prdt_info.php?g_code=G143703355573).
+- [x] Minoca [OS](https://www.minocacorp.com/product/).
 - [x] [LattePanda](https://www.lattepanda.com/)
 
 
 ### About project
-Distributed under [GPLv3](https://github.com/yuriy-chumak/ol/blob/master/COPYING) license, also [LGPLv3](https://github.com/yuriy-chumak/ol/blob/master/COPYING.LESSER) applicable.
+Otus Lisp is available under 2 licenses:
+[MIT License](https://github.com/yuriy-chumak/ol/blob/master/LICENSE) and
+[GNU ](https://github.com/yuriy-chumak/ol/blob/master/COPYING)([L](https://github.com/yuriy-chumak/ol/blob/master/COPYING.LESSER))[GPLv3 License](https://github.com/yuriy-chumak/ol/blob/master/COPYING).
 
 This is incomplete list of Ol features:
 
