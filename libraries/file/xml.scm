@@ -8,9 +8,12 @@
    xml-parse-file
 
    xml-get-root-element
+   xml-get-attributes
    xml-get-name
    xml-get-attribute
    xml-get-value
+
+   xml-print
 )
 
 ; parsed xml is:
@@ -88,7 +91,7 @@
                   (list->ff attributes)
                   body)))
          (let-parses (
-               (body (get-greedy* (get-rune-if (lambda (x) (not (eq? x #\<)))))))
+               (body (get-kleene* (get-rune-if (lambda (x) (not (eq? x #\<)))))))
             (if body (runes->string body)))))
 
    (define xml-parser
@@ -120,4 +123,38 @@
 
    (define (xml-get-attribute root name default-value)
       (get (xml-get-attributes root) name default-value))
+
+
+   ; printing the xml:
+   (define (xml-print xml)
+      ; header
+      (display "<?xml")
+      (ff-fold (lambda (? key value)
+            (for-each display (list " " key "=\"" value "\"")))
+         #f (xml-get-attributes xml))
+      (display "?>\n")
+      ; tags
+      (let loop ((root (xml-get-root-element xml)) (indent ""))
+         (display indent)
+         (display "<")
+         (display (xml-get-name root))
+         (ff-fold (lambda (? key value)
+               (for-each display (list " " key "=\"" value "\"")))
+            #f (xml-get-attributes root))
+
+         (if (null? (xml-get-value root))
+            (display "/>\n")
+            (let ((value (xml-get-value root)))
+               (display ">")
+               (if (string? value)
+                  (display value)
+                  (begin
+                     (display "\n")
+                     (for-each (lambda (child)
+                           (loop child (string-append "   " indent)))
+                        value)
+                     (display indent)))
+               (display "</")
+               (display (xml-get-name root))
+               (display ">\n")))))
 ))
