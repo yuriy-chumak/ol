@@ -372,7 +372,7 @@
    ;; 3.4 Line
 
    glLineWidth ; void (GLfloat width) +
-   ;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern); +
+   glLineStipple ; void (GLint factor, GLushort pattern) +
 
    ;; 3.5. Polygons
 
@@ -2763,7 +2763,7 @@
    (define glLightfv (GL GLvoid "glLightfv" GLenum GLenum GLfloat*))
 ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
-;WINGDIAPI void APIENTRY glLineStipple (GLint factor, GLushort pattern);
+   (define glLineStipple (GL GLvoid "glLineStipple" GLint GLushort))
    (define glLineWidth (GL GLvoid "glLineWidth" GLfloat))
 ;WINGDIAPI void APIENTRY glListBase (GLuint base);
    (define glLoadIdentity (GL GLvoid "glLoadIdentity"))

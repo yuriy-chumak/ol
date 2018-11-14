@@ -13,6 +13,9 @@
    xml-get-attribute
    xml-get-value
 
+   xml-get-subtags
+   xml-get-subtag
+
    xml-print
 )
 
@@ -124,6 +127,13 @@
    (define (xml-get-attribute root name default-value)
       (get (xml-get-attributes root) name default-value))
 
+   (define (xml-get-subtags root name)
+      (filter (lambda (tag) (eq? (xml-get-name tag) name)) (xml-get-value root)))
+
+   (define (xml-get-subtag root name)
+      (let ((subtags (xml-get-subtags root name)))
+         (unless (null? subtags)
+            (car subtags))))
 
    ; printing the xml:
    (define (xml-print xml)
