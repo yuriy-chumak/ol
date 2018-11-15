@@ -1668,9 +1668,13 @@ word* OL_ffi(OL* self, word* arguments)
 		case TDOUBLE: {
 			double value = *(double*)&got;
 
+#if OLVM_INEXACTS
+			result = new_inexact(value);
+#else
 			heap->fp = fp;
 			result = (word*) d2ol(self, value);
 			fp = heap->fp;
+#endif
 			break;
 		}
 	}

@@ -403,7 +403,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 
 // FFI support:
 #ifndef OLVM_FFI
-#define OLVM_FFI HAS_DLOPEN // ffi (have no sense without dlopen/dlsym)
+#define OLVM_FFI HAS_DLOPEN // ffi have no sense without dlopen/dlsym
 #endif
 
 #ifndef OLVM_CALLABLES
@@ -736,7 +736,7 @@ read_t* OL_set_read(struct ol_t* ol, read_t read);
 write_t* OL_set_write(struct ol_t* ol, write_t read);
 
 // ------------------------------------------------------
-#define W                           sizeof (word) // todo: change to WSIZE
+#define W                           (sizeof (word)) // todo: change to WSIZE
 
 #define VBITS                       ((sizeof (word) * 8) - 8) // bits in value (short, or 'atomic' number)
 #define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
@@ -1210,6 +1210,15 @@ word data = (word) a;\
 	me[1] = data;\
 	/*return*/me;\
 })
+
+#ifdef OLVM_INEXACTS
+#define new_inexact(a) ({\
+double d = (double) a;\
+	word* me = new_bytevector (TINEXACT, sizeof(d));\
+	*(double*)&me[1] = d;\
+	/*return*/me;\
+})
+#endif
 
 // -= gc implementation =-----------
 #define is_flagged(x) (((word)(x)) & 1)  // mark for GC
@@ -1810,8 +1819,9 @@ word d2ol(struct ol_t* ol, double v) {
 				modf(v / (double)HIGHBIT, &v);
 			}
 			while (v > 0);
-
 			size_t len = (p - fp);
+
+			//word* m = (word*) __builtin_alloca(len * sizeof(word)) + len;
 			new_bytevector(TBVEC, sizeof(word) * len); // dummy,
 			               // will be destroyed during next gc()
 			word* m = fp;
