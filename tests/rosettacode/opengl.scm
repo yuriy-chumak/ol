@@ -1,3 +1,4 @@
+; http://www.rosettacode.org/wiki/OpenGL
 (import (lib gl))
 (gl:set-window-title "Rosettacode OpenGL example")
 

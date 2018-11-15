@@ -1,0 +1,12 @@
+if-then: equal
+if-then-else: equal
+if-then-else: i don't know
+unless: i don't know
+unless: equal
+unless: i don't know
+case: 4
+cond: equal
+tuple-case: selector 1, 2, 3
+1, -, -
+1, 2, -
+1, 2, 3
