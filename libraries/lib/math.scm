@@ -2,7 +2,7 @@
    (import (scheme core)
            (otus ffi))
    (export
-      sin cos
+      sin cos sqrt
 )
 
 (begin
@@ -11,6 +11,10 @@
                     (load-dynamic-library "ntdll.dll")
                     (runtime-error "Can't load libm" #f)))
 
-   (define sin (libm type-inexact "sin" fft-double))
-   (define cos (libm type-inexact "cos" fft-double))
+   ; sin / cos
+   (define sin (libm fft-double "sin" fft-double))
+   (define cos (libm fft-double "cos" fft-double))
+
+   ; sqrt
+   (define sqrt (libm fft-double "sqrt" fft-double))
 ))
