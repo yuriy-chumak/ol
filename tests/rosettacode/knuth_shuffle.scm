@@ -1,19 +1,5 @@
 ; http://www.rosettacode.org/wiki/Knuth_shuffle
-
-;(import (otus random!))
-; no real random for deterministic testing purposes
-(define rand!
-   (let* ((ss ms (values 1234 5678))
-          (seed (band (+ ss ms) #xffffffff))
-          (seed (cons (band seed #xffffff) (>> seed 24))))
-      (lambda (limit)
-         (let*((next (+ (car seed) (<< (cdr seed) 24)))
-               (next (+ (* next 1103515245) 12345)))
-            (set-car! seed (band     next     #xffffff))
-            (set-cdr! seed (band (>> next 24) #xffffff))
-
-            (mod (mod (floor (/ next 65536)) 32768) limit)))))
-
+(import (otus random!))
 
 (define items (tuple 1 2 3 4 5 6 7 8 9))
 
