@@ -1,0 +1,10 @@
+; http://www.rosettacode.org/wiki/Pathological_floating_point_problems
+
+(define (v n)
+   (case n
+      (1 2)
+      (2 -4)
+      (else
+         (+ 111 (/ -1130 (v (- n 1)) (/ 3000 (v (- n 2))))))))
+
+(for-each print (map v '(3 4 5 6 7 8 20))); 20 30 50 100)))

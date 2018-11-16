@@ -1,0 +1,18 @@
+; http://www.rosettacode.org/wiki/Monte_Carlo_methods
+(import (otus random!))
+
+; let 1000 tries
+(define tries 10000)
+;     10000 radius of circle
+(define r 100000)
+(define d (* r 2))
+
+(print
+(let loop ((inside 0) (outside 0) (n tries))
+   (if (zero? n)
+      (* 4 (/ inside outside))
+      (let ((dx (- r (rand! r)))
+            (dy (- r (rand! r))))
+         (if (<= (+ (* dx dx) (* dy dy)) (* r r))
+            (loop (+ inside 1) outside (- n 1))
+            (loop inside (+ outside 1) (- n 1)))))))
