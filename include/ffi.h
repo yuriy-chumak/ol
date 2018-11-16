@@ -37,30 +37,30 @@ struct OL
 	void (*gc)(int kb);
 };
 
-// парочка полезных макросов
-#define IPOS                        8  // offset of immediate payload
+// константы виртуальной машины и парочка макросов
+#define IPOS                         8 // offset of immediate payload
 #define SPOS                        16 // offset of size bits in header
-#define TPOS                        2  // offset of type bits in header
+#define TPOS                         2 // offset of type bits in header
 #define RPOS                        11 // offset of RAW bit in header (IPOS+3)
 
-#define TPAIR                       (1)
-#define TTUPLE                      (2)
-#define TSTRING                     (3)
+#define TPAIR                        1
+#define TTUPLE                       2
+#define TSTRING                      3
 
-#define TPORT                       (12)
-#define TCONST                      (13)
+#define TPORT                       12
+#define TCONST                      13
 
-#define make_immediate(value, type) ((((word)value) << IPOS) | ((type) << TPOS)                         | 2)
-#define make_header(size, type)     (( (word)(size) << SPOS) | ((type) << TPOS)                         | 2)
-#define F(val)                      (((word)(val) << IPOS) | 2)
+#define make_immediate(value, type) (((word)(value) << IPOS) | ((type) << TPOS) | 2)
+#define make_header(size, type)     (((word) (size) << SPOS) | ((type) << TPOS) | 2)
+#define F(value)                    (((word)(value) << IPOS) | 2)
 
-#define RAWBIT                      ((1 << RPOS))
+#define RAWBIT                      (1 << RPOS)
 #define RAWH(t)                     (t | (RAWBIT >> TPOS))
 
 #define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in fixnum
 #define HIGHBIT                     ((unsigned long)1 << FBITS) // high long bit set
-#define FMAX                        (((long)1 << FBITS)-1) // maximum fixnum (and most negative fixnum)
-#define MAXOBJ                      0xffff         // max words in tuple including header
+#define FMAX                        (((long)1 << FBITS) - 1) // maximum fixnum (and most negative fixnum)
+#define MAXOBJ                      0xFFFF // max words in tuple including header
 
 
 #define IFALSE                      make_immediate(0, TCONST)
