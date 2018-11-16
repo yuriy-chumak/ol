@@ -1,4 +1,5 @@
 ; http://www.rosettacode.org/wiki/Loops/Break
+(define *include-dirs* (cons "tests/rosettacode" *include-dirs*))
 (import (otus random!))
 
 (call/cc (lambda (break)

@@ -1,4 +1,5 @@
 ; http://www.rosettacode.org/wiki/Maze_generation
+(define *include-dirs* (cons "tests/rosettacode" *include-dirs*))
 (import (otus random!))
 
 (define WIDTH 70)
