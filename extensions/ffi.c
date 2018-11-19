@@ -10,6 +10,10 @@
  *  Please, don't try to understand this code at night...
  */
 
+/**
+ * \file
+ */
+
 // Libc and Unicode: http://www.tldp.org/HOWTO/Unicode-HOWTO-6.html
 //
 // The Plan9 operating system, a variant of Unix, uses UTF-8 as character encoding

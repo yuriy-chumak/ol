@@ -1,17 +1,18 @@
+/*
+ *                  `___`           `___`
+ *                  (o,o)           (O,O)
+ *                  \)  )  L I S P  (  /(
+ * =================="="============="="========================
+ */
+
 /**
  *         Simple purely functional Lisp, mostly.
  *
- *                  `___`           `___`
- *                  (o,o)           (o,o)
- *                  \)  )  L I S P  (  /(
- * =================="="============="="======================== *
- *                                                               *
- *   Version 2.0                                                 *
- *                                                               *
- *  Copyright(c) 2014 Aki Helin                                  *
- *  Copyright(c) 2014 - 2018 Yuriy Chumak                        *
- *                                                               *
- * ------------------------------------------------------------- *
+ *   Version 2.0
+ *
+ *  Copyright(c) 2014 - 2018 Yuriy Chumak
+ *
+ * -------------------------------------------------------------
  * This program is free software;  you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
@@ -20,25 +21,34 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * -------------------------------------------------------------
  *
- * Building:
+ * ## Installing
+ *   Precompile binaries for various platforms and architectures can
+ * be found at [project page](http://yuriy-chumak.github.io/ol/) and
+ * OpenSUSE [build service](https://bit.ly/2RUjjtS).
+ *
+ * ## Manual building:
  *   make; make install
  *
- * Project page:
+ * ## Project page:
  *   http://yuriy-chumak.github.io/ol/
  *
- * The parent project - Owl Lisp:
- *   https://github.com/aoh/owl-lisp/
- *   https://code.google.com/p/owl-lisp/
+ * ### The parent project - Owl Lisp:
+ *   https://gitlab.com/owl-lisp/owl (actual) \n
+ *   https://github.com/owl-lisp/owl (interesting for historic reason) \n
+ *   https://code.google.com/p/owl-lisp (same as above)
  *
- * Related links:
- *   http://people.csail.mit.edu/jaffer/Scheme
- *   http://srfi.schemers.org/
- *   http://groups.csail.mit.edu/mac/projects/scheme/
- *   http://www.s48.org/
- *   http://www.call-cc.org/
- *   http://www.scheme.com/tspl4/
- *
+ * ## Related links:
+ *   http://people.csail.mit.edu/jaffer/Scheme            \n
+ *   http://srfi.schemers.org/                            \n
+ *   http://groups.csail.mit.edu/mac/projects/scheme/     \n
+ *   http://www.s48.org/                                  \n
+ *   http://www.call-cc.org/                              \n
+ *   http://www.scheme.com/tspl4/                         \n
+ */
+
+/**
  * \mainpage Otus Lisp
  * \file
  */
@@ -3101,14 +3111,12 @@ loop:;
 		/*! \subsection read
 		 * \brief 0: (read port count) -> ref|#f|#eof
 		 *
-		 * Read from a port
-		 *
-		 * Attempts to read up to count bytes from input port
+		 * Attempt to read up to *count* bytes from input port *port*
 		 *
 		 * \param port input port
 		 * \param count count less than 0 means "all available"
 		 *
-		 * \return raw object if success,
+		 * \return bytevector if success,
 		 *         #false if file not ready,
 		 *         #eof if file was ended
 		 *
@@ -3153,16 +3161,20 @@ loop:;
 		/*! \subsection write
 		 * \brief 1: (write port buffer size) -> int|#f
 		 *
-		 * Write to a port
+		 * Write object content to the output port
 		 *
-		 * Writes object content to the output stream
-		 *
-		 * \param port
-		 * \param buffer
+		 * \param port output port
+		 * \param buffer object to write
 		 * \param size size less than 0 means "all buffer"
 		 *
 		 * \return count of written data if success,
-		 *         0 if file busy, #false if error
+		 *         0 if file busy,
+		 *         #false if error
+		 *
+		 * \note please be aware that this function does not
+		 *       check the size of valid data in blob object
+		 *       (it can be less than object size in memory)
+		 *       and can write garbage to the end of output.
 		 *
 		 * http://man7.org/linux/man-pages/man2/write.2.html
 		 */
@@ -3191,12 +3203,12 @@ loop:;
 		}
 
 		/*! \subsection open
-		 * \brief 2: (open path mode) -> port|#f
+		 * \brief 2: (open pathname mode) -> port|#f
 		 *
-		 * Open and possibly create a file
+		 * Open port to the file (and possibly create a file)
 		 *
-		 * \param path
-		 * \param mode
+		 * \param pathname filename with/without path
+		 * \param mode open mode
 		 *
 		 * \return port if success,
 		 *         #false if error
@@ -3227,10 +3239,9 @@ loop:;
 		/*! \subsection close
 		 * \brief 3: (close port) -> #t|#f
 		 *
-		 * Close a file port
+		 * Close a port
 		 *
-		 * \param path
-		 * \param mode
+		 * \param port valid port
 		 *
 		 * \return port if success,
 		 *         #false if error
@@ -3260,7 +3271,6 @@ loop:;
 		 * Get file status
 		 *
 		 * \param port/path
-		 * \param mode
 		 *
 		 * \return tuple if success,
 		 *         #false if error
@@ -3348,11 +3358,11 @@ loop:;
 		}
 
 		/*! \subsection unlink
-		 * \brief 87: (unlink path) -> #t|#f
+		 * \brief 87: (unlink pathname) -> #t|#f
 		 *
 		 * Delete a name and possibly the file it refers to
 		 *
-		 * \param path
+		 * \param pathname
 		 *
 		 * \return #true if success,
 		 *         #false if error
@@ -3371,7 +3381,7 @@ loop:;
 		/*! \subsection syscall-12
 		 * \brief 12: (syscall 12 ...) -> ...|#f
 		 *
-		 * Syscall 12
+		 * TODO: Syscall 12
 		 *
 		 * \param
 		 *
