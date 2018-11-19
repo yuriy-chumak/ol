@@ -1,5 +1,11 @@
 ; minimal set of Scheme (with Ol subset)
 (define-library (scheme core)
+   (version 2.0)
+   (license MIT/LGPL3)
+   (keywords (scheme core ol))
+   (description "
+      Core Otus-Lisp scheme library.")
+
    (import
       (src vm) ; Otus Lisp Virtual Machine codes and primitives:
                ;
@@ -1696,8 +1702,20 @@
 
 
       (define-syntax define-library
-         (syntax-rules (export import begin _define-library define-library)
-            ;; push export to the end (should syntax-error on multiple exports before this)
+         (syntax-rules (export import begin _define-library define-library
+                        version license keywords description)
+            ; remove version, license, keywords, author and description as comments
+            ((define-library x ... (version . ?) . tl)
+               (define-library x ... . tl))
+            ((define-library x ... (license . ?) . tl)
+               (define-library x ... . tl))
+            ((define-library x ... (keywords . ?) . tl)
+               (define-library x ... . tl))
+            ((define-library x ... (description . ?) . tl)
+               (define-library x ... . tl))
+
+
+            ;; push export to the end (should syntax-error on multiple exports before this) ?
             ((define-library x ... (export . e) term . tl)
              (define-library x ... term (export . e) . tl))
 
