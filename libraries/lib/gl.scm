@@ -8,6 +8,8 @@
    gl:set-context-version ; recreate OpenGL with version
    gl:set-userdata
    gl:set-renderer
+   gl:set-mouse-handler
+   gl:set-keyboard-handler
    gl:finish ; if renderer exists - wait for window close, else just glFinish
 
    ; this library automatically creates window
@@ -189,7 +191,7 @@
                         0)))); None
 
             ; common code
-            (XSelectInput display window 32769) ; ExposureMask
+            (XSelectInput display window 32773) ; ExposureMask | KeyPressMask | ButtonPressMask
             (XStoreName display window title)
             (XMapWindow display window)
             (let ((cx (gl:CreateContext display vi #false 1)))
@@ -212,7 +214,7 @@
             (TranslateMessage (user32 fft-int "TranslateMessage" fft-void*))
             (GetMessage       (user32 fft-int "GetMessageA"      fft-void* fft-void* fft-int fft-int))
             (DispatchMessage  (user32 fft-int "DispatchMessageA" fft-void*)))
-      (lambda (context)
+      (lambda (context handler)
          (let ((MSG (make-bytevector 48))) ; 28 for x32
          (let loop ()
             (if (= 1 (PeekMessage MSG #f 0 0 1))
@@ -239,15 +241,23 @@
       (let ((libX11 (load-dynamic-library "libX11.so.6")))
       (let ((XPending  (libX11 fft-int "XPending" type-vptr))
             (XNextEvent(libX11 fft-int "XNextEvent" type-vptr type-vptr)))
-      (lambda (context)
+      (lambda (context handler)
          (let ((display (ref context 1)))
          (let loop ((XEvent (make-bytevector 192))) ; 96 for x32
             (if (> (XPending display) 0)
                (begin
                   (XNextEvent display XEvent)
-                  (if (eq? (int32->ol XEvent 0) 2) ; KeyPress
-                     (int32->ol XEvent (if x32? 52 84)) ; offsetof(XKeyEvent, keycode)
-                     (loop XEvent))))))))))
+                  (case (int32->ol XEvent 0)
+                     (2 ; KeyPress
+                        (handler (tuple 'keyboard (int32->ol XEvent (if x32? 52 84))))) ; offsetof(XKeyEvent, keycode)
+                     (4 ; ButtonPress
+                        (let ((x (int32->ol XEvent (if x32? 32 64)))
+                              (y (int32->ol XEvent (if x32? 36 68)))
+                              (button (int32->ol XEvent (if x32? 52 84))))
+                           (handler (tuple 'mouse button x y))))
+                     (else ;
+                        (print ".event.")))
+                  (loop XEvent)))))))))
    (else
       (runtime-error "Unknown platform" OS))))
 
@@ -297,6 +307,12 @@
       (let*((sender msg e))
          ;(print "envelope: " envelope)
          (tuple-case msg
+            ; low level interface:
+            ((set key value)
+               (this (put dictionary key value)))
+            ((get key)
+               (mail sender (get dictionary key #false))
+               (this dictionary))
             ((debug)
                (mail sender dictionary)
                (this dictionary))
@@ -351,7 +367,14 @@
       ; обработаем сообщения (todo: не более чем N за раз)
       (let ((context (get dictionary 'context #f)))
          (if context ; todo: добавить обработку кнопок
-            (gl:ProcessEvents context)))
+            (gl:ProcessEvents context (lambda (event)
+               (tuple-case event
+                  ((keyboard key)
+                     ((get dictionary 'keyboard-handler (lambda (x) #f)) key))
+                  ((mouse button x y)
+                     ((get dictionary 'mouse-handler (lambda (x) #f)) button x y))
+                  (else
+                     (print "unknown event: " event)))))))
       ; проделаем все действия
       (let*((dictionary
             ; 1. draw (if renderer exists)
@@ -453,4 +476,13 @@
 ;; (define gl:Color (case-lambda
 ;;    ((r g b)
 ;;       (glColor3f r g b))))
+
+
+(define (gl:set-mouse-handler handler)
+   (mail 'opengl (tuple 'set 'mouse-handler handler)))
+
+(define (gl:set-keyboard-handler handler)
+   (mail 'opengl (tuple 'set 'keyboard-handler handler)))
+
+
 ))
