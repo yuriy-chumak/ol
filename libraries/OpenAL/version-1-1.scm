@@ -47,11 +47,17 @@
       alSourcei
          AL_BUFFER AL_LOOPING
 
+      alGetSourcei
+         AL_BUFFERS_QUEUED AL_BUFFERS_PROCESSED
+
+
       alBufferData
          AL_FORMAT_MONO8 AL_FORMAT_MONO16
          AL_FORMAT_STEREO8 AL_FORMAT_STEREO16
 
       alSourcePlay
+      alSourceQueueBuffers
+      alSourceUnqueueBuffers
 
       ; Source:
       AL_BUFFER AL_LOOPING
@@ -74,6 +80,8 @@
    (define ALshort   fft-short)
    (define ALushort  fft-unsigned-short)
    (define ALint     fft-int)
+      (define ALint*  (fft* ALint))
+      (define ALint&  (fft& ALint))
    (define ALuint    fft-unsigned-int)
       (define ALuint* (fft* ALuint))
       (define ALuint& (fft& ALuint))
@@ -301,7 +309,7 @@
    ;alGetSourcef
    ;alGetSource3f
    ;alGetSourcefv
-   ;alGetSourcei
+   (define alGetSourcei (openal fft-void "alGetSourcei" ALuint ALenum ALint&))
    ;alGetSource3i
    ;alGetSourceiv
 
@@ -342,8 +350,8 @@
    ;alSourcePause
 
    ; Source Queuing
-   ;alSourceQueueBuffers
-   ;alSourceUnqueueBuffers
+   (define alSourceQueueBuffers (openal fft-void "alSourceQueueBuffers" ALuint ALsizei ALuint*))
+   (define alSourceUnqueueBuffers (openal fft-void "alSourceUnqueueBuffers" ALuint ALsizei ALuint&))
 
 
    ; * BUFFER
