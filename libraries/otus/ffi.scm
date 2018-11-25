@@ -21,8 +21,9 @@
       load-dynamic-library
 
 
-      ffi sizeof uname
+      ffi sizeof uname *uname*
 
+      make-vptr
       make-callback
 
       RTLD_LAZY
@@ -87,6 +88,8 @@
       fft-long  fft-signed-long  fft-unsigned-long
       fft-long-long fft-signed-long-long fft-unsigned-long-long
 
+      fft-enum
+
       ; fft data constructors
       make-32bit-array
       make-64bit-array
@@ -98,6 +101,7 @@
       ; fft data manipulation helpers
       vptr->vector vptr->string
       extract-void*
+      extract-number
    )
 
    (import
@@ -107,6 +111,7 @@
 
 ;; OS detection
 (define (uname) (syscall 63 #f #f #f))
+(define *uname* (syscall 63 #f #f #f))
 
 ; The MODE argument to `dlopen' contains one of the following:
 (define RTLD_LAZY         #x1) ; Lazy function call binding.
@@ -171,6 +176,7 @@
                   (lambda args
                      (exec ffi function rtti args))))))))
 
+(define (make-vptr) (vm:cast 0 type-vptr))
 
 (define mkcb (syscall 177 (dlopen) "OL_mkcb" #f))
 (define (make-callback pinned-object)
@@ -258,6 +264,8 @@
 (define fft-signed-long-long fft-int64)
 (define fft-unsigned-long-long fft-uint64)
 
+(define fft-enum fft-int)
+
 ; -- sizeof ---------------------------
 (define (sizeof type)
    (case type
@@ -271,8 +279,9 @@
       (fft-uint64 8)
       (fft-float 4)
       (fft-double 8)
-      (fft-void* (size nullptr)))
-)
+      (fft-void* (size nullptr))
+      (else (if (list? type)
+               (fold (lambda (f el) (+ f (sizeof el))) 0 type)))))
 
 ; -- utils ----------------------------
 
@@ -327,21 +336,21 @@
 ;(vptr->vector vptr sizeof-in-bytes)
 (define vptr->vector (cond
    ; linux:
-   ((string-ci=? (ref (uname) 1) "Linux")
-      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-int)))
+   ((string-ci=? (ref *uname* 1) "Linux")
+      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int)))
          (lambda (vptr sizeof)
             (let ((vector (make-bytevector sizeof)))
                (memcpy vector vptr sizeof)
                vector))))
    ; win:
-   ((string-ci=? (ref (uname) 1) "Windows")
+   ((string-ci=? (ref *uname* 1) "Windows")
       (lambda (vptr sizeof)
          (let ((vector (make-bytevector sizeof)))
             ; ...
             vector)))
    ; asm.js:
-   ((string-ci=? (ref (uname) 1) "emscripten")
-      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-int)))
+   ((string-ci=? (ref *uname* 1) "emscripten")
+      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int)))
          (lambda (vptr sizeof)
             (let ((vector (make-bytevector sizeof)))
                (memcpy vector vptr sizeof)
@@ -350,11 +359,24 @@
       (print "Unknown OS"))))
 
 (define (extract-void* vector offset)
+   ;; TODO:
+   ;; (let ((void* (make-vptr)))
+   ;;    (map (lambda (i j) ; for-each
+   ;;          (print (ref vector j)))
+   ;;          ;(set-ref! void* i (ref vector j)))
+   ;;       (iota (size void*) 0)
+   ;;       (iota (size void*) offset))
+   ;;    void*))
    (vm:cast
       (fold (lambda (val offs)
                (+ (<< val 8) (ref vector offs)))
          0 (reverse (iota (size nullptr) offset)))
       type-vptr))
+
+(define (extract-number vector offset length)
+   (fold (lambda (val offs)
+            (+ (<< val 8) (ref vector offs)))
+      0 (reverse (iota length offset))))
 
 (define (vptr->string vptr)
    (fold string-append "#x"
