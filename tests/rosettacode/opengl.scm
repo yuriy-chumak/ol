@@ -10,7 +10,7 @@
 (glLoadIdentity)
 (glOrtho -30.0 30.0 -30.0 30.0 -30.0 30.0)
 
-(gl:set-renderer (lambda ()
+(gl:set-renderer (lambda (mouse)
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
    (glTranslatef -15.0 -15.0 0.0)

@@ -9,7 +9,7 @@
 (glClearColor 0.3 0.3 0.3 1)
 
 ; draw
-(gl:set-renderer (lambda ()
+(gl:set-renderer (lambda (mouse)
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glColor3f 0.2 0.5 0.2)

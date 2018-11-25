@@ -87,7 +87,7 @@
 (glLightfv GL_LIGHT0 GL_POSITION '(7.0 7.0 7.0 0.0))
 
 ; draw
-(gl:set-renderer (lambda ()
+(gl:set-renderer (lambda (mouse)
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glMatrixMode GL_MODELVIEW)

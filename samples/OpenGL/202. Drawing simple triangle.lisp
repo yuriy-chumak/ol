@@ -32,7 +32,7 @@
 	}"))
 
 ; draw
-(gl:set-renderer (lambda ()
+(gl:set-renderer (lambda (mouse)
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glUseProgram po)

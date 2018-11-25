@@ -6,11 +6,13 @@
 (export
    gl:set-window-title gl:set-window-size
    gl:set-context-version ; recreate OpenGL with version
-   gl:set-userdata
+   gl:set-userdata gl:get-userdata
    gl:set-renderer
    gl:set-mouse-handler
    gl:set-keyboard-handler
    gl:finish ; if renderer exists - wait for window close, else just glFinish
+
+   gl:hide-cursor
 
    ; this library automatically creates window
    gl:enable-context gl:disable-context
@@ -297,6 +299,53 @@
                   (window  (ref context 3)))
                (XResizeWindow display window width height))))))))
 
+(define gl:HideCursor (cond
+   (win32?
+      #false)
+   (linux?
+      (let ((libX11 (load-dynamic-library "libX11.so.6")))
+      (let ((XDefineCursor (libX11 fft-void "XDefineCursor" type-vptr type-vptr type-vptr))
+            (XDefaultColormap (libX11 fft-int "XDefaultColormap" type-vptr fft-int))
+            (XAllocNamedColor (libX11 fft-void "XAllocNamedColor" type-vptr fft-int type-string type-vptr type-vptr))
+            (XCreateBitmapFromData (libX11 type-vptr "XCreateBitmapFromData" type-vptr type-vptr type-vptr fft-unsigned-int fft-unsigned-int))
+            (XCreatePixmapCursor (libX11 type-vptr "XCreatePixmapCursor" type-vptr type-vptr type-vptr type-vptr type-vptr fft-unsigned-int fft-unsigned-int))
+            (XFreeCursor (libX11 type-vptr "XFreeCursor" type-vptr type-vptr))
+            (XFreePixmap (libX11 type-vptr "XFreePixmap" type-vptr type-vptr)))
+         (lambda (context)
+            (let*((bm_no_data '(0 0 0 0 0 0 0 0))
+                  (cmap (XDefaultColormap (ref context 1) (ref context 2)))
+                  ; sizeof XColor is 12 for x64 and 9 for x86
+                  (black (make-bytevector 12))
+                  (dummy (make-bytevector 12))
+                  ;(? (XAllocNamedColor (ref context 1) cmap (c-string "black") black dummy))
+                  (bm_no (XCreateBitmapFromData (ref context 1) (ref context 3) black 8 8))
+                  (cursor (XCreatePixmapCursor (ref context 1) bm_no bm_no black black 0 0)))
+               (XDefineCursor (ref context 1) (ref context 3) cursor)
+               (XFreeCursor (ref context 1) cursor)
+               (XFreePixmap (ref context 1) bm_no))))))))
+
+(define (gl:hide-cursor)
+   (gl:HideCursor (interact 'opengl (tuple 'get 'context))))
+
+; internal:
+(define gl:GetMousePos (cond
+   (win32?
+      #false)
+   (linux?
+      (let ((libX11 (load-dynamic-library "libX11.so.6")))
+      (let ((XGetInputFocus (libX11 fft-void "XGetInputFocus" type-vptr (fft* type-vptr) (fft& fft-int)))
+            (XQueryPointer (libX11 fft-int "XQueryPointer" type-vptr type-vptr (fft* type-vptr) (fft* type-vptr) (fft& fft-int) (fft& fft-int) (fft& fft-int) (fft& fft-int) (fft& fft-unsigned-int))))
+         (lambda (context)
+            (let ((window (make-vptr))
+                  (revert_to_return (box 0)))
+               (XGetInputFocus (ref context 1) window revert_to_return)
+               (if (equal? window (ref context 3))
+                  (let ((root (make-vptr))
+                        (child (make-vptr))
+                        (root_x (box 0)) (root_y (box 0))
+                        (x (box 0)) (y (box 0)) (mask (box 0)))
+                     (if (eq? 1 (XQueryPointer (ref context 1) (ref context 3) root child root_x root_y x y mask))
+                        (cons (unbox x) (unbox y))))))))))))
 ; =============================================
 ; automation
 (fork-server 'opengl (lambda ()
@@ -376,36 +425,65 @@
                   (else
                      (print "unknown event: " event)))))))
       ; проделаем все действия
-      (let*((dictionary
-            ; 1. draw (if renderer exists)
-            (or (call/cc (lambda (return)
-                  (let ((renderer (get dictionary 'renderer #f)))
-                     (if renderer
-                        ; есть чем рисовать - рисуем
-                        (let ((userdata (apply renderer (get dictionary 'userdata #null))))
-                           (gl:SwapBuffers (get dictionary 'context #f))
-                           (return
-                              (put dictionary 'userdata userdata)))))))
-               dictionary))
-            (dictionary
-            ; 2. think (if thinker exists)
-            (or (call/cc (lambda (return)
-                  (let ((thinker (get dictionary 'thinker #f)))
-                     (if thinker
-                        dictionary))))
-               dictionary))
-            )
+      (let ((renderer (get dictionary 'renderer #f)))
+         (if renderer (begin
+            ;; (print "renderer: " renderer)
+            ;; (print "context: " (get dictionary 'context #f))
+            ;; (print "mouse: " (gl:GetMousePos (ref (get dictionary 'context #f) 3)))
+            (renderer (gl:GetMousePos (get dictionary 'context #f)))
+            (gl:SwapBuffers (get dictionary 'context #f)))))
+      ;; (let*((dictionary
+      ;;       ; 1. draw (if renderer exists)
+      ;;       (or (call/cc (lambda (return)
+      ;;             (let ((renderer (get dictionary 'renderer #f)))
+      ;;                (if renderer
+      ;;                   ; есть чем рисовать - рисуем
+      ;;                   (let ((userdata (apply renderer (get dictionary 'userdata #null))))
+      ;;                      (gl:SwapBuffers (get dictionary 'context #f))
+      ;;                      (return
+      ;;                         (put dictionary 'userdata userdata)))))))
+      ;;          dictionary))
+      ;;       (dictionary
+      ;;       ; 2. think (if thinker exists)
+      ;;       (or (call/cc (lambda (return)
+      ;;             (let ((thinker (get dictionary 'thinker #f)))
+      ;;                (if thinker
+      ;;                   dictionary))))
+      ;;          dictionary))
+      ;;       )
+
          ; done.
          (sleep 1)
-         (this dictionary)))))))
+         (this dictionary))))))
+
+; userdata
+(fork-server 'opengl-userdata (lambda ()
+(let this ((dictionary #empty))
+   (let*((envelope (wait-mail))
+         (sender msg envelope))
+      (tuple-case msg
+         ; low level interaction interface
+         ((set key data)
+            (this (put dictionary key data)))
+         ((get key)
+            (mail sender (getf dictionary key))
+            (this dictionary))
+         ((debug) ; *debug interface
+            (mail sender dictionary)
+            (this dictionary))
+         (else
+            (print-to stderr "opengl-userdata: unknown message " msg)
+            (this dictionary)))))))
 
 ; -=( main )=--------------------------
 ; force window creation.
 (gl:create-context "Ol: OpenGL window")
 
 ; -----------------------------
-(define (gl:set-userdata . userdata)
-   (mail 'opengl (tuple 'set-userdata userdata)))
+(define (gl:set-userdata userdata)
+   (mail 'opengl-userdata (tuple 'set 'userdata userdata)))
+(define (gl:get-userdata)
+   (interact 'opengl-userdata (tuple 'get 'userdata)))
 
 (define (gl:set-renderer renderer)
    (mail 'opengl (tuple 'set-renderer renderer)))

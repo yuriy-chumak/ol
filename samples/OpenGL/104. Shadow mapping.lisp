@@ -164,7 +164,7 @@
 (define pr (make-mat4x4))
 
 ; draw
-(gl:set-renderer (lambda ()
+(gl:set-renderer (lambda (mouse)
    (let*((ss ms (clock))
          (x (* 3 (sin (+ ss (/ ms 1000)))))
          (y (+ 8 (* 1 (sin (/ (+ ss (/ ms 1000)) 8)))))
