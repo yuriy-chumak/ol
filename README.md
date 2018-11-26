@@ -1,18 +1,22 @@
 ```
-                    `___`  
-                    (o,o)  
-                    \)  )  
-                  ___"_"___
-               O t u s L i s p
-   Small, embeddable and purely functional!
-             -------------------
+                  Small,
+       `___`          Embeddalbe
+       (o,o)              and
+       \)  )           Purely
+     ---"-"---     Functional!
+  O t u s L i s p
+
 ```
-[![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby)
+
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 [![Travis-CI project page](https://travis-ci.org/yuriy-chumak/ol.svg)](https://travis-ci.org/yuriy-chumak/ol)
 
+Online support:
+[![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby)
+and [Freenode](https://webchat.freenode.net) channel #otus-lisp.
 
-Otus Lisp, Version 1.2
+
+Otus Lisp, Version 2.0
 ======================
 
 LICENSE
@@ -22,6 +26,7 @@ Otus Lisp is available under 2 licenses:
 [MIT License](LICENSE) and
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
 
+Copyright (c) 2014 Aki Helin
 Copyright (c) 2014-2018 Yuriy Chumak
 
 
@@ -451,11 +456,11 @@ http://people.csail.mit.edu/jaffer/Scheme (r5rs)
 ```
 Have a nice day,
 
-                                                               U  ___ u   _      
-                                                                \/"_ \/  |"|     
-                                                                | | | |U | | u   
-                                                            .-,_| |_| | \| |/__  
-                                                             \_)-\___/   |_____| 
-                                                                  \\     //  \\  
-                                                                 (__)   (_")("_) 
+                                                               U  ___ u   _
+                                                                \/"_ \/  |"|
+                                                                | | | |U | | u
+                                                            .-,_| |_| | \| |/__
+                                                             \_)-\___/   |_____|
+                                                                  \\     //  \\
+                                                                 (__)   (_")("_)
 ```
