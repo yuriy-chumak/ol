@@ -266,8 +266,8 @@
       oldtime 1 cubes spheres))
 
 ; draw
-(gl:set-renderer
-(lambda (oldtime i cubes spheres)
+(gl:set-renderer (lambda (mouse)
+(apply (lambda (oldtime i cubes spheres)
 (let ((newtime (gettimeofday)))
    ; обновим мир
    (let ((ms (* (+ (- (car newtime) (car oldtime)) (/ (- (cdr newtime) (cdr oldtime)) 1000000)) 2)))

@@ -96,8 +96,9 @@
    (gettimeofday))
 
 ; draw
-(gl:set-renderer (lambda (oldtime)
-(let ((newtime (gettimeofday)))
+(gl:set-renderer (lambda (mouse)
+(let ((oldtime (gl:get-userdata))
+      (newtime (gettimeofday)))
    ; обновим мир
    (let ((ms (* (+ (- (car newtime) (car oldtime)) (/ (- (cdr newtime) (cdr oldtime)) 1000000)) 2)))
       (NewtonUpdate world (if (> ms 0.01) 0.01 ms)))
@@ -125,7 +126,7 @@
       (list body1 body2))
 
    ; return new parameter list:
-   (list newtime))
+   (gl:set-userdata newtime))
 ))
 (gl:finish)
 
