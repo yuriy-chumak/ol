@@ -202,14 +202,8 @@
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
 
-(gl:set-userdata
-   (let* ((time _ (clock)))
-      (list time)))
-
 ; draw
-(gl:set-renderer
-(lambda (oldtime)
-   (let* ((time _ (clock)))
+(gl:set-renderer (lambda (mouse)
 
    (if #t ;(not (= oldtime time))
    (begin
@@ -341,4 +335,4 @@
 
    (glEnd)
 
-   (list time))))
+   #false))
