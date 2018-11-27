@@ -11,13 +11,18 @@
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 [![Travis-CI project page](https://travis-ci.org/yuriy-chumak/ol.svg)](https://travis-ci.org/yuriy-chumak/ol)
 
-Online support:
-[![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby)
-and [Freenode](https://webchat.freenode.net) channel #otus-lisp.
-
-
 Otus Lisp, Version 2.0
 ======================
+
+
+SUPPORT
+-------
+
+Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby), additionally [Freenode](https://webchat.freenode.net) channel *#otus-lisp* is available.
+
+Leave your propositions, Ol bugs and issues at [the issues](https://github.com/yuriy-chumak/ol/issues) page.
+
+
 
 LICENSE
 -------
@@ -451,16 +456,3 @@ Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
 http://groups.csail.mit.edu/mac/projects/scheme/
 
 http://people.csail.mit.edu/jaffer/Scheme (r5rs)
-
-
-```
-Have a nice day,
-
-                                                               U  ___ u   _
-                                                                \/"_ \/  |"|
-                                                                | | | |U | | u
-                                                            .-,_| |_| | \| |/__
-                                                             \_)-\___/   |_____|
-                                                                  \\     //  \\
-                                                                 (__)   (_")("_)
-```
