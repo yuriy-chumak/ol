@@ -50,7 +50,8 @@
       (iota (- (size initial) #x436)))))))
 
 
-(gl:set-renderer (lambda (generation)
+(gl:set-renderer (lambda (mouse)
+(let ((generation (gl:get-userdata)))
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glPointSize (/ 854 WIDTH))
@@ -69,7 +70,7 @@
       generation))
 
 
-   (list ; generation)))
+   (gl:set-userdata
       (ff-fold (lambda (st key value)
          (let ((x (mod key 65536))
                (y (div key 65536)))
@@ -87,4 +88,4 @@
                      (cons (- x 1) (+ y 1))
                      (cons    x    (+ y 1))
                      (cons (+ x 1) (+ y 1))))))
-         #empty generation))))
+         #empty generation)))))

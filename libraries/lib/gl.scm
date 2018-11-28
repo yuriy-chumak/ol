@@ -401,13 +401,6 @@
                (mail sender (get dictionary 'renderer #f))
                (this dictionary))
 
-            ; userdata
-            ((set-userdata userdata)
-               (this (put dictionary 'userdata userdata)))
-            ((get-userdata)
-               (mail sender (get dictionary 'userdata #f))
-               (this dictionary))
-
             (else
                (print-to stderr "Unknown opengl server command " msg)
                (this dictionary))))))
