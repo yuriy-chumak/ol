@@ -104,7 +104,7 @@
 
  ; EXT_subtexture
    ;TexSubImage1DEXT
-   ;TexSubImage2DEXT
+   glTexSubImage2D
    ;glTexSubImage3D ; excluded by 1.1 (introduced back by 1.2)
 
  ; EXT_copy_texture
@@ -287,7 +287,7 @@
 
  ; EXT_subtexture
    ;glTexSubImage1D
-   ;glTexSubImage2D
+   (define glTexSubImage2D (GL GLvoid "glTexSubImage2D" GLenum GLint GLint GLint GLsizei GLsizei GLenum GLenum fft-any))
    ;glTexSubImage3D ; removed by 1.1 (introduced back by 1.2)
 
  ; EXT_copy_texture

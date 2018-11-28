@@ -388,7 +388,7 @@
    ;; 3.6. Pixel Rectangles
 
    ;WINGDIAPI void APIENTRY glPixelStoref (GLenum pname, GLfloat param); +
-   ;WINGDIAPI void APIENTRY glPixelStorei (GLenum pname, GLint param); +
+   glPixelStorei ; void (GLenum pname, GLint param); +
 
    ;WINGDIAPI void APIENTRY glPixelTransferf (GLenum pname, GLfloat param); +
    ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param); +
@@ -2806,8 +2806,11 @@
 ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
 ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
    (define glPointSize (GL GLvoid "glPointSize" GLfloat))
-   (define glPolygonMode (GL GLvoid "glPolygonMode" GLenum GLenum)) ; GL 1.1 ?
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
+   (define glPolygonMode (GL GLvoid "glPolygonMode" GLenum GLenum)) ; GL 1.1 ?
+
+   (define glPixelStorei (GL GLvoid "glPixelStorei" GLenum GLint))
+
    (define glPopAttrib (GL GLvoid "glPopAttrib"))
 ;WINGDIAPI void APIENTRY glPopMatrix (void);
    (define glPopMatrix  (GL GLvoid "glPopMatrix"))
