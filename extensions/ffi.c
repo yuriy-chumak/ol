@@ -266,8 +266,8 @@ __ASM__("x64_call:_x64_call:", // "int $3",
 	"andq  $-16, %rsp",
 	// 1. если есть флоаты, то заполним их
 "1:",
-//	"testq %rcx, %rcx",
-//	"jz    2f",
+	"testq %rcx, %rcx",
+	"jz    2f",
 	"movsd  0(%rsi), %xmm0",
 	"movsd  8(%rsi), %xmm1",
 	"movsd 16(%rsi), %xmm2",
@@ -1152,7 +1152,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TVPTR + FFT_PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
-			if (reftype(arg) == TVPTR || reftype(arg) == TBVEC) // single vptr value or bytevector
+			if (reftype(arg) == TVPTR || reftype(arg) == TBVEC) // single vptr value or bytevector (todo: add bytevector size check)
 				args[i] = (word) &car(arg);
 			else {
 				int c = llen(arg);

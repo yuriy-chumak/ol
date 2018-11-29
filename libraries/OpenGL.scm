@@ -8,11 +8,11 @@
    GLboolean GLboolean*       ; unsigned byte (GL_TRUE or GL_FALSE)
    GLbitfield                 ; unsigned 32-bit
    GLbyte                     ;   signed  8-bit
-   GLshort                    ;   signed 16-bit
+   GLshort  GLshort*          ;   signed 16-bit
    GLint    GLint*   GLint&   ;   signed 32-bit
    GLsizei                    ;   signed 32-bit
    GLubyte  GLubyte*          ; unsigned  8-bit
-   GLushort GLshort*          ; unsigned 16-bit
+   GLushort GLushort*         ; unsigned 16-bit
    GLuint   GLuint*  GLuint&  ; unsigned 32-bit
 
    GLfloat  GLfloat*  ; floating 32-bit
@@ -104,6 +104,7 @@
    ; pointers
    (define GLboolean* (fft* GLboolean))
    (define GLshort*   (fft* GLshort))
+   (define GLushort*  (fft* GLushort))
    (define GLint*     (fft* GLint))
    (define GLuint*    (fft* GLuint))
    (define GLfloat*   (fft* GLfloat))

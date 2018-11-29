@@ -393,9 +393,9 @@
    ;WINGDIAPI void APIENTRY glPixelTransferf (GLenum pname, GLfloat param); +
    ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param); +
 
-   ;WINGDIAPI void APIENTRY glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values); +
-   ;WINGDIAPI void APIENTRY glPixelMapuiv (GLenum map, GLsizei mapsize, const GLuint *values); +
-   ;WINGDIAPI void APIENTRY glPixelMapusv (GLenum map, GLsizei mapsize, const GLushort *values); +
+   glPixelMapfv ; void glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values); +
+   glPixelMapuiv ; void glPixelMapuiv (GLenum map, GLsizei mapsize, const GLuint *values); +
+   glPixelMapusv ; void glPixelMapusv (GLenum map, GLsizei mapsize, const GLushort *values); +
    #|; map
       GL_PIXEL_MAP_I_TO_I
       GL_PIXEL_MAP_S_TO_S
@@ -410,7 +410,7 @@
 
    glDrawPixels                        ; void (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) +
 
-   ;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor); +
+   glPixelZoom                         ; void (GLfloat xfactor, GLfloat yfactor)
 
    ;; 3.7. Bitmaps
 
@@ -2799,12 +2799,12 @@
 ;WINGDIAPI void APIENTRY glOrtho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
    (define glOrtho (GL GLvoid "glOrtho" GLdouble GLdouble  GLdouble GLdouble  GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token);
-;WINGDIAPI void APIENTRY glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values);
-;WINGDIAPI void APIENTRY glPixelMapuiv (GLenum map, GLsizei mapsize, const GLuint *values);
-;WINGDIAPI void APIENTRY glPixelMapusv (GLenum map, GLsizei mapsize, const GLushort *values);
+   (define glPixelMapfv (GL GLvoid "glPixelMapfv" GLenum GLsizei GLfloat*))
+   (define glPixelMapuiv (GL GLvoid "glPixelMapuiv" GLenum GLsizei GLuint*))
+   (define glPixelMapusv (GL GLvoid "glPixelMapusv" GLenum GLsizei GLushort*))
 ;WINGDIAPI void APIENTRY glPixelTransferf (GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
-;WINGDIAPI void APIENTRY glPixelZoom (GLfloat xfactor, GLfloat yfactor);
+   (define glPixelZoom (GL GLvoid "glPixelZoom" GLfloat GLfloat))
    (define glPointSize (GL GLvoid "glPointSize" GLfloat))
 ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
    (define glPolygonMode (GL GLvoid "glPolygonMode" GLenum GLenum)) ; GL 1.1 ?
