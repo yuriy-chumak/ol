@@ -22,12 +22,13 @@
 
    GLvoid   GLvoid*       ; void, void*
 
-   ; minimal GL function set
+   ; minimal required GL function set
    glGetString
       GL_VENDOR
       GL_RENDERER
       GL_VERSION
       GL_EXTENSIONS
+   glViewport
 
    ; WGL/GLX/CGL/EGL/... universal functions
    gl:GetProcAddress
@@ -122,6 +123,7 @@
    (define GL_VERSION    #x1F02)
    (define GL_EXTENSIONS #x1F03)
    (define glGetString (GL type-string "glGetString" fft-unsigned-int))
+   (define glViewport (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
 ; -------------------------------------------------------------------------
 ; WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
