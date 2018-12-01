@@ -458,7 +458,7 @@
 
    ;; 4.1 Per-Fragment Operations
 
-   ;WINGDIAPI void APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height); +
+   glScissor ; void glScissor (GLint x, GLint y, GLsizei width, GLsizei height); +
 
    glAlphaFunc                         ; void (GLenum func, GLclampf ref) +
    #|; func
@@ -2858,6 +2858,7 @@
    (define glRotatef (GL GLvoid "glRotatef" GLfloat GLfloat GLfloat GLfloat))
 ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
    (define glScalef (GL GLvoid "glScalef" GLfloat GLfloat GLfloat))
+   (define glScissor (GL GLvoid "glScissor" GLint GLint GLsizei GLsizei))
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
    (define glShadeModel (GL GLvoid "glShadeModel" GLenum))
    (define glStencilFunc (GL GLvoid "glStencilFunc" GLenum GLint GLuint))
