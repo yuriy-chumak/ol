@@ -10,6 +10,10 @@
    gl:set-renderer
    gl:set-mouse-handler
    gl:set-keyboard-handler
+      vkEnter vkEsc vkUp vkDown vkLeft vkRight
+      vkQ vkW vkE vkR vkT vkY vkU vkI vkO vkP
+      vkA vkS vkD vkF vkG vkH vkJ vkK vkL
+      vkZ vkX vkC vkV vkB vkN vkM
    gl:finish ; if renderer exists - wait for window close, else just glFinish
 
    gl:hide-cursor
@@ -258,7 +262,7 @@
                               (button (int32->ol XEvent (if x32? 52 84))))
                            (handler (tuple 'mouse button x y))))
                      (else ;
-                        (print ".event.")))
+                        (print "Unknown window event: " (int32->ol XEvent 0))))
                   (loop XEvent)))))))))
    (else
       (runtime-error "Unknown platform" OS))))
@@ -392,6 +396,8 @@
             ; set-window-size
             ((set-window-size width height)
                (gl:SetWindowSize (get dictionary 'context #f) width height)
+               ; сразу выставим вьюпорт в размер окна
+               (glViewport 0 0 width height)
                (this dictionary))
 
             ; renderer
@@ -554,6 +560,12 @@
 
 (define (gl:set-keyboard-handler handler)
    (mail 'opengl (tuple 'set 'keyboard-handler handler)))
+(define vkEnter 36) (define vkEsc 9)
+(define vkAlt 64) (define vkShift 62)
+(define vkUp 111) (define vkDown 116) (define vkLeft 113) (define vkRight 114)
+(define vkQ 24) (define vkW 25) (define vkE 26) (define vkR 27) (define vkT 28) (define vkY 29) (define vkU 30) (define vkI 31) (define vkO 32) (define vkP 33)
+(define vkA 38) (define vkS 39) (define vkD 40) (define vkF 41) (define vkG 42) (define vkH 43) (define vkJ 44)(define vkK 45) (define vkL 46)
+(define vkZ 52) (define vkX 53) (define vkC 54) (define vkV 55) (define vkB 56) (define vkN 57) (define vkM 58)
 
 
 ))
