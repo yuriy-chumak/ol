@@ -947,6 +947,27 @@ word* OL_ffi(OL* self, word* arguments)
 #endif
 
 		//
+		case TINT8 + FFT_REF:
+		case TUINT8 + FFT_REF:
+			has_wb = 1;
+			//no break
+		case TINT8 + FFT_PTR:
+		case TUINT8 + FFT_PTR:
+		tint8ptr: {
+			// todo: add tuples pushing
+			if (arg == INULL) // empty array will be sent as nullptr
+				break;
+
+			int c = llen(arg);
+			char* p = (char*) __builtin_alloca(c * sizeof(char)); // todo: new_raw_vector() ?
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = (char)to_int(car(l)), l = cdr(l);
+			break;
+		}
+
 		case TINT16 + FFT_REF:
 		case TUINT16 + FFT_REF:
 			has_wb = 1;
@@ -1097,6 +1118,11 @@ word* OL_ffi(OL* self, word* arguments)
 			case TPAIR: // sending type override
 				if (is_fixp(car(arg))) // should be positive fix number
 				switch (value(car(arg))) {
+					// (cons fft-int8 '(...))
+					case TINT8 + FFT_PTR:
+					case TUINT8 + FFT_PTR:
+						arg = cdr(arg);
+						goto tint8ptr;
 					// (cons fft-int16 '(...))
 					case TINT16 + FFT_PTR:
 					case TUINT16 + FFT_PTR:
