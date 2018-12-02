@@ -374,9 +374,14 @@
       type-vptr))
 
 (define (extract-number vector offset length)
-   (fold (lambda (val offs)
-            (+ (<< val 8) (ref vector offs)))
-      0 (reverse (iota length offset))))
+   (let ((number
+            (fold (lambda (val offs)
+                     (+ (<< val 8) (ref vector offs)))
+               0 (reverse (iota length offset))))
+         (max (<< 1 (* 8 length))))
+      (if (<= number (>> max 1))
+         number
+         (- number max))))
 
 (define (vptr->string vptr)
    (fold string-append "#x"
