@@ -1,7 +1,9 @@
 (define-library (lib gl console)
    (import (otus lisp)
       (lib gl)
+      (lib soil)
       (OpenGL version-1-4)
+      ;; (OpenGL ARB clear_texture)
       (lib freetype))
 
    (export
@@ -42,16 +44,71 @@
    ; slot for character bitmaps
    (define slot (face->glyph face))
 
-   (setq error (FT_Set_Pixel_Sizes face 0 16))
+   ; скомпилируем текстурный атлас
+   (define atlas '(0))
+   (glGenTextures 1 atlas)
+   (glBindTexture GL_TEXTURE_2D (car atlas))
+   (glPixelStorei GL_UNPACK_ALIGNMENT 1)
+   ;; (glPixelStorei GL_PACK_ALIGNMENT 1)
 
+   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+
+   ; создадим текстуру
+   (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA 320 512 0 GL_LUMINANCE GL_UNSIGNED_BYTE #f)
+
+   ; задаем символы, которые будут в нашем атласе
+   (display "Compiling character set... ")
+
+   ; здесь мы модифицируем поведение glTexSubImage2D так, что бы точки шрифта всегда были засвечены
+   (glPixelTransferf GL_RED_BIAS 1)
+   (glPixelTransferf GL_GREEN_BIAS 1)
+   (glPixelTransferf GL_BLUE_BIAS 1)
+   ; почистим нашу текстуру, так как может попасть мусор (не надо?)
+   ;; (if glClearTexImage
+   ;;    (glClearTexImage (car atlas) 0 GL_LUMINANCE_ALPHA GL_UNSIGNED_BYTE (bytevector 250)))
+
+   ; словарь буква -> текстура
+   (define charset
+   (let ((symbols (fold append #null (list
+            (iota (- 127 #\space) #\space)
+            (string->runes "АБВГҐДЕЁЄЖЗИІЇЙКЛМНОПРСТУЎФХЦЧШЩЪЫЬЭЮЯ")
+            (string->runes "абвгґдеёєжзиіїйклмнопрстуўфхцчшщъыьэюя")))))
+      ; пускай знакоместо будет 16 в высоту (что дает нам 32 строки) и 9(10) в ширину (32 колонки) - итого, 1024 символов; 1 лишняя точка для того, чтобы символы не накладывались
+
+      ; зададим размер символов
+      (FT_Set_Pixel_Sizes face 0 16)
+
+      (list->ff
+         (map (lambda (char i)
+               (FT_Load_Char face char FT_LOAD_RENDER)
+               (let ((x (+ (* 10 (mod i 32)) 1)) ; 113
+                     (y (+ (* 16 (div i 32)) -3))
+                     (bitmap (glyph->bitmap slot)))
+                  (glTexSubImage2D GL_TEXTURE_2D 0
+                     (+ x (ref bitmap 1)) ; x
+                     (+ y (- 16 (ref bitmap 3))) ; y
+                     (ref bitmap 2) (ref bitmap 4) ; width, height
+                     GL_ALPHA GL_UNSIGNED_BYTE (ref bitmap 5))
+                  (cons char (tuple (/ (mod i 32) 32) (/ (div i 32) 32)))))
+            symbols
+            (iota (length symbols) 0)))))
+
+   (glPixelTransferf GL_RED_BIAS 0)
+   (glPixelTransferf GL_GREEN_BIAS 0)
+   (glPixelTransferf GL_BLUE_BIAS 0)
+   (print "ok.")
+
+
+
+   ; -----------------------------
    (define (set-color rgb)
-      (glPixelMapusv GL_PIXEL_MAP_I_TO_R 256 (repeat (lref rgb 0) 256))
-      (glPixelMapusv GL_PIXEL_MAP_I_TO_G 256 (repeat (lref rgb 1) 256))
-      (glPixelMapusv GL_PIXEL_MAP_I_TO_B 256 (repeat (lref rgb 2) 256))
-      (glPixelMapusv GL_PIXEL_MAP_I_TO_A 256 (iota 256 0 256)))
+      (apply glColor3ub rgb))
 
    ; яркостные компоненты палитры
-   (setq q 21845) (setq a 45690) (setq f 65535)
+   (setq q #x55) (setq a #xAA) (setq f #xFF)
    ; full CGA 16-color palette
    (define BLACK (list 0 0 0))
    (define BLUE (list 0 0 a))
@@ -79,10 +136,6 @@
 
    ; internal function
    (define (write . text)
-      (glPixelStorei GL_UNPACK_ALIGNMENT 1)
-      (glPixelZoom 1 -1)
-      (define viewport '(0 0 0 0))
-      (glGetIntegerv GL_VIEWPORT viewport)
       (for-each (lambda (text)
             (define (echo text)
                (let do ((x (+ (ref drawing-area 1) (car cursor)))
@@ -98,13 +151,19 @@
                            (#\newline
                               (do (ref drawing-area 1) (+ y 1) (cdr text)))
                            (else
-                              (FT_Load_Char face char FT_LOAD_RENDER)
-                              (let ((bitmap (glyph->bitmap slot)))
-                                 (glWindowPos2iv (list
-                                    (+ (* x 9) (ref bitmap 1))
-                                    (- (- (lref viewport 3) (* y 16)) (- 16 (ref bitmap 3) 4)))) ; 4 - поправочный коэффициент в вертикальном позиционировании
-                                 (glDrawPixels (ref bitmap 2) (ref bitmap 4) GL_COLOR_INDEX GL_UNSIGNED_BYTE (ref bitmap 5))
-                                 (do (+ x 1) y (cdr text)))))))))
+                              (let ((uv (getf charset char)))
+                                 (if uv
+                                    (let ((u (ref uv 1))
+                                          (v (ref uv 2)))
+                                       (glTexCoord2f u (+ v 1/32))
+                                       (glVertex2f x (+ y 1))
+                                       (glTexCoord2f (+ u 9/320) (+ v 1/32))
+                                       (glVertex2f (+ x 1) (+ y 1))
+                                       (glTexCoord2f (+ u 9/320) v)
+                                       (glVertex2f (+ x 1) y)
+                                       (glTexCoord2f u v)
+                                       (glVertex2f x y))))
+                              (do (+ x 1) y (cdr text))))))))
 
             (cond
                ; строка - текст
@@ -179,6 +238,8 @@
                      ))
                      (loop (force (cdr ff))))))))))
 
+
+   ; сопрограмма - главный обработчик графической консоли
    (fork-server 'windows (lambda ()
       (let this ((itself #empty))
          (let*((envelope (wait-mail))
@@ -217,35 +278,47 @@
                ((draw)
                   (glEnable GL_BLEND)
                   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
-                  (glEnable GL_SCISSOR_TEST)
+
+                  (glLoadIdentity)
+                  (glOrtho 0 80 25 0 0 1)
+
+                  (glEnable GL_TEXTURE_2D)
+                  (glBindTexture GL_TEXTURE_2D (car atlas))
+                  (glColor3f 1 1 1)
+
                   ; цикл по всем окнам
                   (let loop ((ff (ff-iter itself)))
                      (unless (null? ff)
                         (let*((window (cdar ff))
                               (writer (if window (ref window 5)))
                               (background (if window (ref window 6))))
+                           (if background (begin
+                              (glDisable GL_TEXTURE_2D)
+                              (apply glColor3f background)
+                              (glBegin GL_QUADS)
+                              (let ((x (ref window 1))
+                                    (y (ref window 2))
+                                    (w (ref window 3))
+                                    (h (ref window 4)))
+                                 (glVertex2f x y)
+                                 (glVertex2f x (+ y h))
+                                 (glVertex2f (+ x w) (+ y h))
+                                 (glVertex2f (+ x w) y))
+                              (glEnd)
+                              (glEnable GL_TEXTURE_2D)))
                            (if writer
-                              (let ((vp '(0 0 0 0))) ; оригинальный вьюпорт
-                                 (glGetIntegerv GL_VIEWPORT vp) ; save viewport
-                                 (if background (begin
-                                    (glScissor
-                                       (* (ref window 1) (car config:cell-size))
-                                       (- (lref vp 3)
-                                          (* (ref window 2) (cdr config:cell-size))
-                                          (* (ref window 4) (cdr config:cell-size)))
-                                       (* (ref window 3) (car config:cell-size))
-                                       (* (ref window 4) (cdr config:cell-size)))
-                                    (glClearColor (lref background 0) (lref background 1) (lref background 2) 1)
-                                    (glClear GL_COLOR_BUFFER_BIT)))
-                                 (glViewport (lref vp 0) (lref vp 1) (lref vp 2) (lref vp 3)) ; restore viewport
-
+                              (begin
                                  (set-ref! drawing-area 1 (ref window 1))
                                  (set-ref! drawing-area 2 (ref window 2))
                                  ; и наконец выведем на экран текст
                                  (move-to 0 0)
-                                 (writer write)))
+                                 (glBegin GL_QUADS)
+                                    (writer write)
+                                 (glEnd)))
                            (loop (force (cdr ff))))))
-                  (glDisable GL_SCISSOR_TEST)
+
+                  (glDisable GL_TEXTURE_2D)
+                  (glDisable GL_BLEND)
                   (mail sender 'ok)
                   (this itself))
 
