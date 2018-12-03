@@ -7,25 +7,24 @@
       (lib freetype))
 
    (export
-      move-to
-      write-at
+      move-to ; x y, передвинуть курсор в координаты x,y внутри текущего окна
 
-      set-color
+      set-color ; '(R G B), установить екущий цвет в терминах RGB палитры
       BLACK BLUE GREEN CYAN RED MAGENTA BROWN GRAY YELLOW WHITE
       LIGHTGRAY LIGHTBLUE LIGHTGREEN LIGHTCYAN LIGHTRED LIGHTMAGENTA
 
-      create-window
-      set-window-writer
-      set-window-background
+      create-window ; x y width height, создать новое окно
+      set-window-background set-window-border
+      set-window-writer ; (lambda (w) ...), задать обработчик контента окна
 
-      render-windows
-      windows-make-selection
+      render-windows ; глобальная функция отрисовки всех окон
+      windows-make-selection ; вернуть привязанную к знакоместу метаинформацию
    )
    ; ...
 
 (begin
-   (setq cursor '(0 . 0)) ; текущее положение курсора, пока не используется
-   (setq fcolor '(0)) ; текущий цвет, тоже пока не используется
+   (setq cursor '(0 . 0)) ; текущее положение курсора
+   ;(setq fcolor '(0)) ; текущий цвет, тоже пока не используется
    (setq config:cell-size '(9 . 16)) ; размер знакоместа, пока не используется
    (setq drawing-area (tuple 0 0 0 0))
 
@@ -59,9 +58,6 @@
    ; создадим текстуру
    (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA 320 512 0 GL_LUMINANCE GL_UNSIGNED_BYTE #f)
 
-   ; задаем символы, которые будут в нашем атласе
-   (display "Compiling character set... ")
-
    ; здесь мы модифицируем поведение glTexSubImage2D так, что бы точки шрифта всегда были засвечены
    (glPixelTransferf GL_RED_BIAS 1)
    (glPixelTransferf GL_GREEN_BIAS 1)
@@ -70,6 +66,7 @@
    ;; (if glClearTexImage
    ;;    (glClearTexImage (car atlas) 0 GL_LUMINANCE_ALPHA GL_UNSIGNED_BYTE (bytevector 250)))
 
+   ; задаем символы, которые будут в нашем атласе
    ; словарь буква -> текстура
    (define charset
    (let ((symbols (fold append #null (list
@@ -79,7 +76,7 @@
       ; пускай знакоместо будет 16 в высоту (что дает нам 32 строки) и 9(10) в ширину (32 колонки) - итого, 1024 символов; 1 лишняя точка для того, чтобы символы не накладывались
 
       ; зададим размер символов
-      (FT_Set_Pixel_Sizes face 0 16)
+      (FT_Set_Pixel_Sizes face 0 (cdr config:cell-size))
 
       (list->ff
          (map (lambda (char i)
@@ -99,9 +96,7 @@
    (glPixelTransferf GL_RED_BIAS 0)
    (glPixelTransferf GL_GREEN_BIAS 0)
    (glPixelTransferf GL_BLUE_BIAS 0)
-   (print "ok.")
-
-
+   ; atlas creation finished
 
    ; -----------------------------
    (define (set-color rgb)
@@ -117,7 +112,7 @@
    (define RED (list a 0 0))
    (define MAGENTA (list a 0 a))
    (define BROWN (list a q 0))
-   (define GRAY (list a a a))
+   (define GRAY (list q q q))
    (define YELLOW (list f f q))
    (define WHITE (list f f f))
    (define LIGHTGRAY (list a a a))
@@ -177,9 +172,10 @@
                ((number? text)
                   ; TODO: вывести на экран число
                   #false)
-               
+
                ((symbol? text) #t) ; игнорировать, символы обратавывает другая функция
-               
+               ((function? text) #t) ; аналогично
+
                (else
                   #false)))
          text))
@@ -217,6 +213,8 @@
                                                 (return (car selection)))
                                              (do (+ x 1) y (cdr text))))))))
                            ((symbol? text)
+                              (set-car! selection text))
+                           ((function? text)
                               (set-car! selection text))
                            ((eq? text #false)
                               (set-car! selection #false))
@@ -261,7 +259,8 @@
                         (itself (put itself 'id (+ id 1)))
                         (writer #false) ; 5
                         (background #false) ; 6
-                        (itself (put itself id (tuple x y width height writer background))))
+                        (border #false) ; 7
+                        (itself (put itself id (tuple x y width height writer background border))))
                      (mail sender id)
                      (this itself)))
                ((set-window-writer id writer)
@@ -274,6 +273,11 @@
                         (itself (unless window itself
                            (put itself id (set-ref window 6 color)))))
                      (this itself)))
+               ((set-window-border id color)
+                  (let*((window (get itself id #false))
+                        (itself (unless window itself
+                           (put itself id (set-ref window 7 color)))))
+                     (this itself)))
 
                ((draw)
                   (glEnable GL_BLEND)
@@ -284,37 +288,53 @@
 
                   (glEnable GL_TEXTURE_2D)
                   (glBindTexture GL_TEXTURE_2D (car atlas))
-                  (glColor3f 1 1 1)
 
                   ; цикл по всем окнам
                   (let loop ((ff (ff-iter itself)))
                      (unless (null? ff)
-                        (let*((window (cdar ff))
-                              (writer (if window (ref window 5)))
-                              (background (if window (ref window 6))))
-                           (if background (begin
-                              (glDisable GL_TEXTURE_2D)
-                              (apply glColor3f background)
-                              (glBegin GL_QUADS)
-                              (let ((x (ref window 1))
-                                    (y (ref window 2))
-                                    (w (ref window 3))
-                                    (h (ref window 4)))
-                                 (glVertex2f x y)
-                                 (glVertex2f x (+ y h))
-                                 (glVertex2f (+ x w) (+ y h))
-                                 (glVertex2f (+ x w) y))
-                              (glEnd)
-                              (glEnable GL_TEXTURE_2D)))
-                           (if writer
-                              (begin
+                        (let ((window (cdar ff)))
+                           (if (tuple? window) (tuple-apply window
+                              (lambda (x y width height writer background border)
                                  (set-ref! drawing-area 1 (ref window 1))
                                  (set-ref! drawing-area 2 (ref window 2))
-                                 ; и наконец выведем на экран текст
-                                 (move-to 0 0)
-                                 (glBegin GL_QUADS)
-                                    (writer write)
-                                 (glEnd)))
+                                 (move-to 0 0) ; курсор в начало окна, полюбому
+
+                                 ; отрисовка фона окна
+                                 (if background (begin
+                                    (glDisable GL_TEXTURE_2D)
+                                    (apply glColor3ub background)
+                                    (glBegin GL_QUADS)
+                                    (let ((x (ref window 1))
+                                          (y (ref window 2))
+                                          (w (ref window 3))
+                                          (h (ref window 4)))
+                                       (glVertex2f x y)
+                                       (glVertex2f x (+ y h))
+                                       (glVertex2f (+ x w) (+ y h))
+                                       (glVertex2f (+ x w) y))
+                                    (glEnd)
+                                    (glEnable GL_TEXTURE_2D)))
+
+                                 ; содержание окна
+                                 (if writer (begin
+                                    (apply glColor3ub WHITE) ; сбросим цвет на дефолтный
+                                    (glBegin GL_QUADS)
+                                       (writer write)
+                                    (glEnd)))
+
+                                 ; рамка
+                                 (if border (begin
+                                    (glDisable GL_TEXTURE_2D)
+                                    (apply glColor3ub border)
+                                    (glBegin GL_LINE_LOOP)
+                                    (glVertex2f x y)
+                                    (glVertex2f (+ x width 1/9) y)
+                                    (glVertex2f (+ x width 1/9) (+ y height 1/16))
+                                    (glVertex2f x (+ y height 1/16))
+                                    (glEnd)
+                                    (glEnable GL_TEXTURE_2D)))
+
+                                 #true)))
                            (loop (force (cdr ff))))))
 
                   (glDisable GL_TEXTURE_2D)
@@ -337,9 +357,12 @@
 
    (define (set-window-writer id writer)
       (mail 'windows (tuple 'set-window-writer id writer)))
-   
+
    (define (set-window-background id color)
       (mail 'windows (tuple 'set-window-background id color)))
+
+   (define (set-window-border id color)
+      (mail 'windows (tuple 'set-window-border id color)))
 
    (define (render-windows)
       (interact 'windows (tuple 'draw)))
