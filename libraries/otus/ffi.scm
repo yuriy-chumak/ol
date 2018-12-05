@@ -59,7 +59,7 @@
       fft* ; make c-like pointer from type
       fft& ; make c-like reference from type
 
-      int32->ol   ; fft-void* -> int32 number
+      int32->ol   ; fft-void* -> int32 number ; temp
 
       ; platforem independent types
       fft-int8  fft-int8*  fft-int8&
@@ -336,7 +336,9 @@
 ;(vptr->vector vptr sizeof-in-bytes)
 (define vptr->vector (cond
    ; linux:
-   ((string-ci=? (ref *uname* 1) "Linux")
+   ((or
+      (string-ci=? (ref *uname* 1) "Linux")
+      (string-ci=? (ref *uname* 1) "Android"))
       (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int)))
          (lambda (vptr sizeof)
             (let ((vector (make-bytevector sizeof)))

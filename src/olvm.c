@@ -3954,7 +3954,11 @@ loop:;
 				break;
 
 			result = new_tuple(
+				#ifdef __ANDROID__
+				new_string("Android"),
+				#else
 				new_string(name.sysname),
+				#endif
 				new_string(name.nodename),
 				new_string(name.release),
 				new_string(name.version),
