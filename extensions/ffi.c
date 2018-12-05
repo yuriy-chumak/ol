@@ -986,7 +986,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			case TRATIONAL: //?
 				*(long long*)&args[i] = from_rational(arg);
-#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
+#if __SIZEOF_LONG_LONG__ > __SIZEOF_PTRDIFF_T__ // sizeof(long long) > sizeof(word) //__LP64__
 				i++;
 #endif
 				break;
@@ -996,7 +996,7 @@ word* OL_ffi(OL* self, word* arguments)
 			}
 			break;
 
-#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines
+#if UINTPTR_MAX == 0xffffffff // 32-bit machines
 			case TINT64: case TUINT64: // long long
 				if (is_value(arg))
 					*(long long*)&args[i] = svtoi(arg);
@@ -1145,10 +1145,9 @@ word* OL_ffi(OL* self, word* arguments)
 				*(double*)&af[f++] = ol2d(arg); --i; f++;
 			#else
 				*(double*)&args[i] = ol2d(arg);
-				// no double for any call yet supported
-			#endif
-			#if UINT64_MAX > SIZE_MAX // sizeof(double) > sizeof(float) //__LP64__
+			# if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__ // UINT64_MAX > SIZE_MAX // sizeof(double) > sizeof(float) //__LP64__
 				++i; 	// for 32-bits: double fills two words
+			# endif
 			#endif
 			break;
 
