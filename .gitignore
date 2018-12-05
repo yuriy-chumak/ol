@@ -1,6 +1,6 @@
 bin/
 doc/ol.1.gz
-tmp
+tmp/
 =======
 Debug/
 Debug-x86/
