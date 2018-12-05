@@ -222,12 +222,12 @@
 (define nullptr NULL)
 
 ; new ffi types:
-(define fft-int8  50)  (define fft-int8*  type-string)       (define fft-int8&  type-string)
-(define fft-int16 51)  (define fft-int16* (fft* fft-int16))  (define fft-int16& (fft& fft-int16))
-(define fft-int32 52)  (define fft-int32* (fft* fft-int32))  (define fft-int32& (fft& fft-int32))
-(define fft-int64 53)  (define fft-int64* (fft* fft-int64))  (define fft-int64& (fft& fft-int64))
+(define fft-int8  50)  (define fft-int8*  (fft* fft-int8))    (define fft-int8&  (fft& fft-int8))
+(define fft-int16 51)  (define fft-int16* (fft* fft-int16))   (define fft-int16& (fft& fft-int16))
+(define fft-int32 52)  (define fft-int32* (fft* fft-int32))   (define fft-int32& (fft& fft-int32))
+(define fft-int64 53)  (define fft-int64* (fft* fft-int64))   (define fft-int64& (fft& fft-int64))
 
-(define fft-uint8  55) (define fft-uint8*  type-string)       (define fft-uint8&  type-string)
+(define fft-uint8  55) (define fft-uint8*  (fft* fft-uint8))  (define fft-uint8&  (fft& fft-uint8))
 (define fft-uint16 56) (define fft-uint16* (fft* fft-uint16)) (define fft-uint16& (fft& fft-uint16))
 (define fft-uint32 57) (define fft-uint32* (fft* fft-uint32)) (define fft-uint32& (fft& fft-uint32))
 (define fft-uint64 58) (define fft-uint64* (fft* fft-uint64)) (define fft-uint64& (fft& fft-uint64))
