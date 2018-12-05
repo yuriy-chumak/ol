@@ -145,6 +145,7 @@
 (define (dlerror)        (syscall 178 #false #f #f))
 
 (define ffi (syscall 177 (dlopen) "OL_ffi" #f))
+(define ffi:sizeof (syscall 177 (dlopen) "OL_sizeof" #f))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать
 ; внимание! приведение типов к С-like НЕ ПРОИЗВОДИТСЯ!
@@ -197,15 +198,10 @@
 (define (fft& type)
    (vm:or type #x20000))
 
-; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?
-;(define (INTEGER arg) (cons 45 arg))
-;(define (FLOAT arg)   (cons 46 arg))
-;(define (DOUBLE arg)  '(47 arg))
-
-; для результата, что превышает x00FFFFFF надо использовать type-handle
-; 44 - is socket but will be free
-;(define type-handle 45)
-; todo: (vm:cast type-constant) and start from number 1?
+; ? для результата, что превышает x00FFFFFF надо использовать type-handle
+; ? 44 - is socket but will be free
+; ? (define type-handle 45)
+; ? todo: (vm:cast type-constant) and start from number 1?
 (define type-callable 61)
 
 (define fft-float   46)
@@ -233,56 +229,54 @@
 (define fft-uint64 58) (define fft-uint64* (fft* fft-uint64)) (define fft-uint64& (fft& fft-uint64))
 
 ; platform dependent defaults
-(define fft-char fft-int8)
+(define fft-char fft-int8)               (assert (exec ffi:sizeof 1) ===> 1) ; sizeof(char) == 1
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-int8)
 
-(define fft-short fft-int16)
+(define fft-short fft-int16)             (assert (exec ffi:sizeof 2) ===> 2) ; sizeof(short) == 2
 (define fft-signed-short fft-int16)
 (define fft-unsigned-short fft-uint16)
 
-(define fft-int fft-int32)
+(define fft-int fft-int32)               (assert (exec ffi:sizeof 3) ===> 4) ; sizeof(int) == 4
 (define fft-signed-int fft-int32)
 (define fft-unsigned-int fft-uint32)
 
-(define fft-int* (fft* fft-int))
-(define fft-int& (fft& fft-int))
-
-; long:
-(setq wordsize (size nullptr))
-(define fft-long
-   (cond
-      ((eq? wordsize 4)              ; 32-bit platforms
-         fft-int32)
-      ((string-ci=? (ref (uname) 1) "Windows") ; 64-bit windows
-         fft-int32)
-      (else                          ; all other 64-bit platforms
-         fft-int64)))
-(define fft-signed-long fft-long)
-(define fft-unsigned-long (+ fft-long 5))
-
-(define fft-long-long fft-int64)
+(define fft-long-long fft-int64)         (assert (exec ffi:sizeof 4) ===> 8) ; sizeof(long long) == 8
 (define fft-signed-long-long fft-int64)
 (define fft-unsigned-long-long fft-uint64)
 
+
+; size of long depends on OS and machine word size:
+; ia32/amd64: https://software.intel.com/en-us/articles/size-of-long-integer-type-on-different-architecture-and-os
+; arm32/64: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/ch08s02.html
+(define fft-long (if (eq? (exec ffi:sizeof 9) 4) fft-int32 fft-int64))
+(define fft-signed-long fft-long)
+(define fft-unsigned-long (+ fft-long 5))
+
 (define fft-enum fft-int)
 
+; ...
+(define fft-int* (fft* fft-int))
+(define fft-int& (fft& fft-int))
+
 ; -- sizeof ---------------------------
-(define (sizeof type)
-   (case type
-      (fft-int8  1)
-      (fft-uint8  1)
-      (fft-int16 2)
-      (fft-uint16 2)
-      (fft-int32 4)
-      (fft-uint32 4)
-      (fft-int64 8)
-      (fft-uint64 8)
-      (fft-float 4)
-      (fft-double 8)
-      (fft-void* (size nullptr))
-      (else (if (list? type)
-               (fold (lambda (f el) (+ f (sizeof el))) 0 type)))))
+(define (sizeof fft)
+   (cond
+      ((value? fft)
+         (case fft ; todo: rework
+            (fft-int8  1)
+            (fft-uint8  1)
+            (fft-int16 2)
+            (fft-uint16 2)
+            (fft-int32 4)
+            (fft-uint32 4)
+            (fft-int64 8)
+            (fft-uint64 8)
+            (fft-float 4)
+            (fft-double 8)
+            (fft-void* (size nullptr))))
+      ((list? fft)
+         (fold (lambda (f el) (+ f (sizeof el))) 0 type))))
 
 ; -- utils ----------------------------
 
@@ -385,6 +379,8 @@
       (if (<= number (>> max 1))
          number
          (- number max))))
+
+(setq wordsize (size nullptr))
 
 (define (vptr->string vptr)
    (fold string-append "#x"

@@ -1788,6 +1788,37 @@ word* OL_ffi(OL* self, word* arguments)
 	return result;
 }
 
+/** This function returns size of variable:
+ * 1 - char, 2 - short, 3 - int, 4 - long long, ... , 9 - long
+ * 10 - float, 11 - double
+ * 20 - void*
+ */
+PUBLIC
+word OL_sizeof(OL* self, word* arguments)
+{
+	word* A = (word*)car(arguments); // type
+	switch (value(A)) {
+		// primitive integer types
+		case 1: return I(sizeof(char));
+		case 2: return I(sizeof(short));
+		case 3: return I(sizeof(int));
+		case 4: return I(sizeof(long long));
+
+		case 9: return I(sizeof(long));
+
+		// floating point types
+		case 10: return I(sizeof(float));
+		case 11: return I(sizeof(double));
+		// general types:
+		case 20: return I(sizeof(void*));
+
+		// fft types:
+		case TINT8: case TUINT8:
+		default:
+			return IFALSE;
+	}
+}
+
 #endif//OLVM_FFI
 
 
