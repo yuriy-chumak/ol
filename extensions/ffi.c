@@ -414,18 +414,85 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"jmp   9b");
 
 #elif __ARM_EABI__
-// gcc-arm-linux-gnueabi: -mfloat-abi=soft or -mfloat-abi=softfp options
-// gcc-arm-linux-gnueabihf: -mfloat-abi=hard and -D__ARM_PCS_VFP options
-
 // http://ru.osdev.wikia.com/wiki/Категория:Архитектура_ARM
 // https://msdn.microsoft.com/ru-ru/library/dn736986.aspx - Обзор соглашений ABI ARM (Windows)
 // Procedure Call Standard for the ARM®  Architecture
 //  http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
 
+# ifndef __ARM_PCS_VFP
+// gcc-arm-linux-gnueabi: -mfloat-abi=softfp options (and -mfloat-abi=soft ?)
+
+__attribute__((naked))
+unsigned
+long long arm32_call(word argv[], long i,
+                     void* function)
+{
+					//  {
+					// 	 return 133;
+					//  }
+__ASM__(
+	"push {r4, r5, fp, lr}",
+
+	"mov r4, sp", // save sp
+
+	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
+	// "sub r3, sp, r2, asl #2",// try to predict stack alighnment (к текущему стеку прибавим количество аргументов * размер слова)
+	// "and r3, r1, #4", // попадает ли стек на границу слова?
+	// "sub sp, sp, r3", // если да, то на слово его и опустим
+	// finally, sending regular (integer) arguments
+	"cmp r1, #4",  // if (i > 4)
+	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
+
+	"add r5, r0, r1, asl #2",
+	"sub r5, r5, #4",
+".Lextraregs:", // push argv[i]
+	"ldr r3, [r5]",
+	//"rev16 r3, r3",
+	"push {r3}",
+	"sub r1, r1, #1",
+	"sub r5, r5, #4",
+	"cmp r1, #4",
+	"bgt .Lextraregs",
+
+// 	"mov r5, r0",
+// ".Lextraregs:", // push argv[i]
+// 	"mov r3, 0",
+// 	"push {r3}",
+// 	"sub r1, r1, #1",
+// 	"add r5, r5, #4",
+// 	"cmp r1, #4",
+// 	"bgt .Lextraregs",
+
+".Lnoextraregs:",
+	"mov r5, r2", // function
+
+	"ldr r3, [r0,#12]", // save all 4 registers without checking
+	"ldr r2, [r0, #8]",
+	"ldr r1, [r0, #4]",
+	"ldr r0, [r0, #0]",
+	// call the function
+
+#ifdef __ARM_ARCH_4T__ // armv4t
+	"mov lr, pc",
+	"bx r5",
+#else
+	"blx r5",
+#endif
+	"mov sp, r4", // restore sp
+
+	// all values: int, long, float and double returning in r0+r1
+	"pop {r4, r5, fp, lr}",
+	"bx lr");
+}
+
+# else
+// gcc-arm-linux-gnueabihf: -mfloat-abi=hard and -D__ARM_PCS_VFP options
+
 // __ARM_PCS_VFP, __ARM_PCS
 // __ARM_ARCH_7A__
 //
 
+__attribute__((naked))
 unsigned
 long long arm32_call(word argv[], float af[],
                      long i, long f,
@@ -534,6 +601,7 @@ __ASM__("arm32_call:_arm32_call:",
 	// all values: int, long, float and double returns in r0+r1
 	"ldmfd   sp!, {r4, r5, pc}",
 );
+# endif
 #elif __EMSCRIPTEN__
 
 typedef long long ret_t;
@@ -840,7 +908,7 @@ word* OL_ffi(OL* self, word* arguments)
 	double ad[18];
 	int d = 0;     // количество аргументов для ad
 	long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
-#elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard
+#elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив
 	int f = 0;     // количество аргументов для af
@@ -1023,7 +1091,7 @@ word* OL_ffi(OL* self, word* arguments)
 			#if __linux__ && __amd64__
 				*(float*)&ad[d++] = ol2f(arg); --i;
 				floatsmask|=1;
-			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard
+			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
 				*(float*)&af[f++] = ol2f(arg); --i;
 			#else
 				*(float*)&args[i] = ol2f(arg);
@@ -1073,7 +1141,7 @@ word* OL_ffi(OL* self, word* arguments)
 			#if __linux__ && __amd64__
 				*(double*)&ad[d++] = ol2d(arg); --i;
 				floatsmask++;
-			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard
+			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
 				*(double*)&af[f++] = ol2d(arg); --i; f++;
 			#else
 				*(double*)&args[i] = ol2d(arg);
@@ -1358,14 +1426,12 @@ word* OL_ffi(OL* self, word* arguments)
 	got = x86_call(args, i, function, returntype & 0x3F);
 #elif __ARM_EABI__
 	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
-# ifdef __ARM_PCS_VFP
-	got = arm32_call(args, af,
-		        i, f,
-		        function, returntype & 0x3F);
-# else
+# ifndef __ARM_PCS_VFP
+	got = arm32_call(args, i, function);
+# else // (?)
 	got = arm32_call(args, NULL,
-		        i, 0,
-		        function, returntype & 0x3F);
+	        i, 0,
+	        function, returntype & 0x3F); //(?)
 # endif
 #elif __aarch64__
 	typedef long long ret_t;
