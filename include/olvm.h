@@ -12,12 +12,12 @@
 
 /**
  * Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
- * 
+ *
  * It implements an extended subset of R5RS Scheme including, but
  * not limited to, some of the SRFIs. It's tiny(42kb), embeddable
  * and crossplatform; can run in own sandbox; provides a portable,
  * highlevel way for using the code written in another languages.
- * 
+ *
  * You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
  * Android, webOS and lot of any other operation systems based on
  * various hardware architectures (x86, x86_64, arm, aarch64, ppc,
@@ -73,11 +73,11 @@ OL_run(struct ol_t* ol, int argc, char** argv);
 
 /**
  * Continue OL vm after stop (if possible)
- * 
+ *
  * \param[in] ol Valid olvm instance
  * \param[in] argc Arguments count
  * \param[in] argv Arguments array
- * 
+ *
  * \note First argument must be valid olvm runnable object (function, bytecode, etc.)
  */
 uintptr_t
@@ -119,10 +119,6 @@ read_t* OL_set_read(struct ol_t* ol, read_t read);
 typedef ssize_t (write_t)(int fd, void *buf, size_t count, void* userdata);
 write_t* OL_set_write(struct ol_t* ol, write_t read);
 
-#ifdef __ANDROID__
-void OL_set_1010data(void* data);
-#endif
-
 // =================================================
 // c++ interface:
 #ifdef __cplusplus
@@ -138,7 +134,7 @@ public:
 	int run(int argc, char** argv) {
 		return (int)OL_run(vm, argc, argv);
 	}
-	
+
 	void* userdata(void* userdata)
 	{
 	   return OL_userdata(vm, userdata);

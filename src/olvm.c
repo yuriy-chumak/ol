@@ -1522,14 +1522,6 @@ void set_signal_handler()
 #endif
 }
 
-#ifdef __ANDROID__
-static void* _1010data;
-void OL_set_1010data(void* data)
-{
-	_1010data = data;
-}
-#endif
-
 #if HAS_SOCKETS
 # ifdef _WIN32
 
@@ -4081,7 +4073,7 @@ loop:;
 			ip = (unsigned char*)this + dp;
 			break;
 		}
-		case 1001: // is raw object?
+		case 1001: // is raw object? DEPRECATED
 			if (is_reference(a) && is_blob(a))
 				result = (word*)ITRUE;
 			break;
@@ -4099,12 +4091,6 @@ loop:;
 		case 1008: /* get machine word size (in bytes) */ // todo: переделать на другой номер
 			result = itoun (sizeof (word));
 			break;
-
-#ifdef __ANDROID__
-		case 1010: // OL_get_1010data
-			result = new_vptr(_1010data);
-			break;
-#endif
 
 		// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 		//  остальное можно спокойно оформлять отдельными функциями

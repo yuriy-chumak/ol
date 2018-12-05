@@ -1,0 +1,5 @@
+#!/bin/bash
+
+adb shell ps | grep name.yuriy_chumak.ol | awk '{print $2}' | xargs adb shell kill
+adb push assets /sdcard
+adb shell monkey -p name.yuriy_chumak.ol -c android.intent.category.LAUNCHER 1
