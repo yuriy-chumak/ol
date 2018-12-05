@@ -306,6 +306,8 @@
                                                                                           (cons 'little-endian *features*))
                                                                                        ((eq? (ref one (- (size one) 1)) 1)
                                                                                           (cons 'big-endian *features*))
+                                                                                       ((eq? (ref one 1) 1)
+                                                                                          (cons 'middle-endian *features*))
                                                                                        (else
                                                                                           *features*))))
                                                                      (*features* (let ((uname (syscall 63 0 0 0)))
