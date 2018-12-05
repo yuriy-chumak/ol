@@ -9,11 +9,11 @@
  | modify it under the terms of the GNU General Public License as
  | published by the Free Software Foundation; either version 2 of
  | the License, or (at your option) any later version.
- | 
+ |
  | This program is distributed in the hope that it will be useful,
  | but WITHOUT ANY WARRANTY; without even the implied warranty of
  | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- | 
+ |
  | You should have received a copy of the GNU GPL along with this
  | program.           If not, see <http://www.gnu.org/licenses/>.
  |#
@@ -285,7 +285,7 @@
                                              (loop options (cdr args))))))
                                  (home (or (getf options 'home)
                                            (getenv "OL_HOME")
-                                           "/usr/lib/ol")) ; Linux, *BSD, etc.
+                                           "/usr/lib/ol")) ; default posix ol libraries location
                                  (sandbox? (getf options 'sandbox))
                                  (interactive? (get options 'interactive (syscall 16 file 19 #f))) ; isatty()
 
@@ -300,14 +300,25 @@
                                              (cons '*interactive* interactive?)
                                              (cons '*vm-args* vm-args)
                                              (cons '*version* version)
-                                             (cons '*features* (let ((uname (syscall 63 0 0 0)))
-                                                                  (if (tuple? uname)
-                                                                     (cons (string->symbol (ref uname 1))
-                                                                           *features*)
-                                                                     *features*)))
+                                             (cons '*features* (let*((*features* (let ((one (vm:cast 1 type-vptr)))
+                                                                                    (cond
+                                                                                       ((eq? (ref one 0) 1)
+                                                                                          (cons 'little-endian *features*))
+                                                                                       ((eq? (ref one (- (size one) 1)) 1)
+                                                                                          (cons 'big-endian *features*))
+                                                                                       (else
+                                                                                          *features*))))
+                                                                     (*features* (let ((uname (syscall 63 0 0 0)))
+                                                                                    (if (tuple? uname)
+                                                                                       (append (list
+                                                                                             (string->symbol (ref uname 1))  ; OS
+                                                                                             (string->symbol (ref uname 5))) ; Platform
+                                                                                          *features*)
+                                                                                       *features*))))
+                                                                  *features*))
                                             ;(cons '*scheme* 'r5rs)
                                              (cons '*sandbox* sandbox?)
-                                          ))))
+                                       ))))
                               (if sandbox?
                                  (sandbox 1)) ;(sandbox megs) - check is memory enough
                               (repl-trampoline env file))))))))

@@ -1075,15 +1075,15 @@ word*p = NEW_OBJECT (type, 2);\
 
 // кортеж:
 #define new_tuple1(a1) ({\
-	word data1 = (word) a1;\
+	word data1 = (word) (a1);\
 	/* точка следования */ \
 word*p = new (TTUPLE, 1);\
 	p[1] = data1;\
 	/*return*/ p;\
 })
 #define new_tuple2(a1,a2) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
+	word data1 = (word) (a1);\
+	word data2 = (word) (a2);\
 	/* точка следования */ \
 word*p = new (TTUPLE, 2);\
 	p[1] = data1;\
@@ -1091,9 +1091,9 @@ word*p = new (TTUPLE, 2);\
 	/*return*/ p;\
 })
 #define new_tuple3(a1,a2,a3) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	word data3 = (word) a3;\
+	word data1 = (word) (a1);\
+	word data2 = (word) (a2);\
+	word data3 = (word) (a3);\
 	/* точка следования */ \
 word*p = new (TTUPLE, 3);\
 	p[1] = data1;\
@@ -1102,11 +1102,11 @@ word*p = new (TTUPLE, 3);\
 	/*return*/ p;\
 })
 #define new_tuple5(a1,a2,a3,a4,a5) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	word data3 = (word) a3;\
-	word data4 = (word) a4;\
-	word data5 = (word) a5;\
+	word data1 = (word) (a1);\
+	word data2 = (word) (a2);\
+	word data3 = (word) (a3);\
+	word data4 = (word) (a4);\
+	word data5 = (word) (a5);\
 	/* точка следования */ \
 word*p = new (TTUPLE, 5);\
 	p[1] = data1;\
@@ -3957,16 +3957,15 @@ loop:;
 				break;
 
 			result = new_tuple(
-				#ifdef __ANDROID__
+			#ifdef __ANDROID__
 				new_string("Android"),
-				#else
-				new_string(name.sysname),
-				#endif
+			#else
+				({name.sysname ? (word)new_string(name.sysname) : IFALSE;}),
+			#endif
 				new_string(name.nodename),
 				new_string(name.release),
 				new_string(name.version),
-				new_string(name.machine)
-			);
+				({name.machine ? (word)new_string(name.machine) : IFALSE;}));
 
 			break;
 		}

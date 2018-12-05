@@ -105,6 +105,7 @@
    )
 
    (import
+      (src vm)
       (otus lisp))
 
 (begin
