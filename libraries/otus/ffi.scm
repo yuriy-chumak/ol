@@ -180,9 +180,9 @@
 
 (define (make-vptr) (vm:cast 0 type-vptr))
 
-(define mkcb (syscall 177 (dlopen) "OL_mkcb" #f))
+(define ffi:mkcb (syscall 177 (dlopen) "OL_mkcb" #f))
 (define (make-callback pinned-object)
-   (exec mkcb pinned-object))
+   (exec ffi:mkcb pinned-object))
 
 
 ; Calling Conventions
@@ -280,80 +280,86 @@
 
 ; -- utils ----------------------------
 
-(define (make-32bit-array len)
-   (map (lambda (_) 16777216) (repeat #f len)))
+   ; boxing/unboxing
+   (define (box value)
+      (list value))
+   (define (unbox list)
+      (car list))
 
-(define (make-64bit-array len)
-   (map (lambda (_) 72057594037927936) (repeat #f len)))
+   ; makers
+   (define (make-32bit-array len)
+      (map (lambda (_) 16777216) (repeat #f len)))
 
-(define (make-vptr-array len)
-   (map (lambda (_) (vm:cast 0 fft-void*)) (repeat #f len)))
+   (define (make-64bit-array len)
+      (map (lambda (_) 72057594037927936) (repeat #f len)))
 
-; -- convertors -----------------------
-(setq endianness
-   (let ((x (vm:cast 1 type-vptr)))
-      (cond
-         ((eq? (ref x 0) 1)
-            'little-endian)
-         (else
-            2)))) ; todo: fix THIS
+   (define (make-vptr-array len)
+      (map (lambda (_) (make-vptr)) (repeat #f len)))
 
+)
 
-(define int32->ol (case endianness
-   ('little-endian (lambda (vector offset)
-         (+     (ref vector    offset   )
-            (<< (ref vector (+ offset 1))  8)
-            (<< (ref vector (+ offset 2)) 16)
-            (<< (ref vector (+ offset 3)) 24))))
-   (else (lambda (vector offset)
-         (+     (ref vector (+ offset 3))
-            (<< (ref vector (+ offset 2))  8)
-            (<< (ref vector (+ offset 1)) 16)
-            (<< (ref vector    offset   ) 24))))))
+; ---------------------------------
+; endianness dependent functions
+(cond-expand
+   (little-endian
+      (begin
+         (define (int32->ol vector offset)
+            (+     (ref vector    offset   )
+               (<< (ref vector (+ offset 1))  8)
+               (<< (ref vector (+ offset 2)) 16)
+               (<< (ref vector (+ offset 3)) 24)))
+         (define (int64->ol vector offset)
+            (+     (ref vector    offset   )
+               (<< (ref vector (+ offset 1))  8)
+               (<< (ref vector (+ offset 2)) 16)
+               (<< (ref vector (+ offset 3)) 24)
+               (<< (ref vector (+ offset 4)) 32)
+               (<< (ref vector (+ offset 5)) 40)
+               (<< (ref vector (+ offset 6)) 48)
+               (<< (ref vector (+ offset 7)) 56)))
+      ))
 
-(define int64->ol (case endianness
-   ('little-endian (lambda (vector offset)
-         (+     (ref vector    offset   )
-            (<< (ref vector (+ offset 1))  8)
-            (<< (ref vector (+ offset 2)) 16)
-            (<< (ref vector (+ offset 3)) 24)
-            (<< (ref vector (+ offset 4)) 32)
-            (<< (ref vector (+ offset 5)) 40)
-            (<< (ref vector (+ offset 6)) 48)
-            (<< (ref vector (+ offset 7)) 56))))))
+   (big-endian
+      (begin
+         (define (int32->ol vector offset)
+            (+     (ref vector (+ offset 3))
+               (<< (ref vector (+ offset 2))  8)
+               (<< (ref vector (+ offset 1)) 16)
+               (<< (ref vector    offset   ) 24)))
+         ; tbd.
+      ))
 
-; boxing/unboxing
-(define (box value)
-   (list value))
-(define (unbox list)
-   (car list))
-
-;(vptr->vector vptr sizeof-in-bytes)
-(define vptr->vector (cond
-   ; linux:
-   ((or
-      (string-ci=? (ref *uname* 1) "Linux")
-      (string-ci=? (ref *uname* 1) "Android"))
-      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int)))
-         (lambda (vptr sizeof)
-            (let ((vector (make-bytevector sizeof)))
-               (memcpy vector vptr sizeof)
-               vector))))
-   ; win:
-   ((string-ci=? (ref *uname* 1) "Windows")
-      (lambda (vptr sizeof)
-         (let ((vector (make-bytevector sizeof)))
-            ; ...
-            vector)))
-   ; asm.js:
-   ((string-ci=? (ref *uname* 1) "emscripten")
-      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int)))
-         (lambda (vptr sizeof)
-            (let ((vector (make-bytevector sizeof)))
-               (memcpy vector vptr sizeof)
-               vector))))
    (else
-      (print "Unknown OS"))))
+      (runtime-error "ffi: unknown platform endianness" *uname*)))
+
+; -----------------------------
+; OS dependent functions
+(cond-expand
+   ((or Linux Android Emscripten)
+      (begin
+         (setq memcpy ((load-dynamic-library #f) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int))
+
+         (define (vptr->vector vptr sizeof)
+            (let ((vector (make-bytevector sizeof)))
+               (memcpy vector vptr sizeof)
+               vector))
+      ))
+   (Windows
+      (begin
+         (setq MoveMemory ((load-dynamic-library "kernel32.dll") fft-void "MoveMemory" fft-void* fft-void* fft-unsigned-int))
+
+         (define (vptr->vector vptr sizeof)
+            (let ((vector (make-bytevector sizeof)))
+               (MoveMemory vector vptr sizeof)
+               vector))
+      ))
+
+   (else
+      (runtime-error "ffi: unknown platform OS" *uname*)))
+
+(begin
+
+; TODO: change this
 
 (define (extract-void* vector offset)
    ;; TODO:
