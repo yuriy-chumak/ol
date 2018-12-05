@@ -225,7 +225,7 @@
 
 ; --------------------------------------------------------------------------
 (begin
-   (define ARB_framebuffer_object (gl:ExtensionSupported? "GL_ARB_framebuffer_object"))
+   (define ARB_framebuffer_object (gl:QueryExtension "GL_ARB_framebuffer_object"))
 
 ;    boolean IsRenderbuffer(uint renderbuffer);
    (define glIsRenderbuffer (if ARB_framebuffer_object

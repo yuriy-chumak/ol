@@ -70,6 +70,6 @@
 
 ; --------------------------------------------------------------------------
    (begin
-   (define ARB_shader_object (gl:ExtensionSupported? "GL_ARB_shader_object"))
+   (define ARB_shader_object (gl:QueryExtension "GL_ARB_shader_object"))
 
 ))

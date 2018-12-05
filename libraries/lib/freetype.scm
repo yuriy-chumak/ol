@@ -29,8 +29,8 @@
    (otus ffi))
 (begin
 
-   (define (make-FT_Library) (vm:cast 0 type-vptr))
-   (define (make-FT_Face) (vm:cast 0 type-vptr))
+   (define (make-FT_Library) (make-vptr))
+   (define (make-FT_Face) (make-vptr))
 
    (setq FT_Error fft-int)
    (setq FT_Library fft-void*) (setq FT_Library* (fft* FT_Library))

@@ -11,7 +11,7 @@
 
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL))
+(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export SGIS_texture_lod

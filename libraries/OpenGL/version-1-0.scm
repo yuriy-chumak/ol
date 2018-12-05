@@ -1775,13 +1775,13 @@
    ; internal variables
    GL_LIBRARY
 
-   (exports (OpenGL))
+   (exports (OpenGL platform))
    (exports (otus ffi)))
 
 ; ============================================================================
 ; == implementation ==========================================================
 (import (scheme core) (otus ffi))
-(import (OpenGL)) ; platform independent primitives
+(import (OpenGL platform)) ; platform independent primitives
 
 (begin
    (define GL_VERSION_1_0 1)
@@ -1811,7 +1811,7 @@
 
    (define WGL GL)
    (define GLX (if linux? (load-dynamic-library "libGL.so.1")))
-   (define GDI (if win32? (load-dynamic-library "gdi32.dll")))
+  ;(define GDI (if win32? (load-dynamic-library "gdi32.dll")))
   ;(define EGL ...) :TODO
 
    ; -------------------------------------------------------------------------

@@ -50,7 +50,7 @@
 ; ---------------------------------------------------------------------------
    (begin
 ;   (gl:make-current)
-   (define EXT_subtexture (gl:ExtensionSupported? "GL_EXT_subtexture"))
+   (define EXT_subtexture (gl:QueryExtension "GL_EXT_subtexture"))
 
 ;   (gl:stop-current)
 ))

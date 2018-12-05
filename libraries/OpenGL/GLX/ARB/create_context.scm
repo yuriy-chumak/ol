@@ -15,7 +15,7 @@
 ;     None
 (import
    (scheme core)
-   (OpenGL)
+   (OpenGL platform)
    (OpenGL GLX ARB get_proc_address))
 
 ; --------------------------------------------------------------------------

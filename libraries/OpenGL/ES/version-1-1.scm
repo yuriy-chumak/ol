@@ -6,6 +6,8 @@
       GL_VERSION_ES_CM_1_1
       GL_VERSION_ES_CL_1_1
 
+      GLES
+
       ; GL types
       ; https://www.opengl.org/wiki/OpenGL_Type
       GLenum            ; unsigned 32-bit
@@ -24,8 +26,8 @@
 
       GLvoid   GLvoid*
 
-      ;GL_DEPTH_BUFFER_BIT
-      ;GL_STENCIL_BUFFER_BIT
+      GL_DEPTH_BUFFER_BIT
+      GL_STENCIL_BUFFER_BIT
       GL_COLOR_BUFFER_BIT
       ;GL_FALSE
       ;GL_TRUE
@@ -71,7 +73,7 @@
       ;GL_ALPHA_TEST
       ;GL_BLEND
       ;GL_COLOR_LOGIC_OP
-      ;GL_DITHER
+      GL_DITHER
       ;GL_STENCIL_TEST
       ;GL_DEPTH_TEST
       ;GL_POINT_SMOOTH
@@ -189,9 +191,9 @@
       ;GL_NUM_COMPRESSED_TEXTURE_FORMATS
       ;GL_COMPRESSED_TEXTURE_FORMATS
       ;GL_DONT_CARE
-      ;GL_FASTEST
-      ;GL_NICEST
-      ;GL_PERSPECTIVE_CORRECTION_HINT
+      GL_FASTEST
+      GL_NICEST
+      GL_PERSPECTIVE_CORRECTION_HINT
       ;GL_POINT_SMOOTH_HINT
       ;GL_LINE_SMOOTH_HINT
       ;GL_FOG_HINT
@@ -246,8 +248,8 @@
       ;GL_UNSIGNED_SHORT_4_4_4_4
       ;GL_UNSIGNED_SHORT_5_5_5_1
       ;GL_UNSIGNED_SHORT_5_6_5
-      ;GL_FLAT
-      ;GL_SMOOTH
+      GL_FLAT
+      GL_SMOOTH
       ;GL_KEEP
       ;GL_REPLACE
       ;GL_INCR
@@ -420,7 +422,7 @@
       ;glDepthFunc ; void (GLenum func);
       ;glDepthMask ; void (GLboolean flag);
       ;glDepthRangex ; void (GLfixed n, GLfixed f);
-      ;glDisable ; void (GLenum cap);
+      glDisable ; void (GLenum cap);
       ;glDisableClientState ; void (GLenum array);
       glDrawArrays ; void (GLenum mode, GLint first, GLsizei count);
       ;glDrawElements ; void (GLenum mode, GLsizei count, GLenum type, const void *indices);
@@ -448,7 +450,7 @@
       ;glGetTexEnvxv ; void (GLenum target, GLenum pname, GLfixed *params);
       ;glGetTexParameteriv ; void (GLenum target, GLenum pname, GLint *params);
       ;glGetTexParameterxv ; void (GLenum target, GLenum pname, GLfixed *params);
-      ;glHint ; void (GLenum target, GLenum mode);
+      glHint ; void (GLenum target, GLenum mode);
       ;glIsBuffer ; GLboolean (GLuint buffer);
       ;glIsEnabled ; GLboolean (GLenum cap);
       ;glIsTexture ; GLboolean (GLuint texture);
@@ -481,7 +483,7 @@
       ;glSampleCoveragex ; void (GLclampx value, GLboolean invert);
       ;glScalex ; void (GLfixed x, GLfixed y, GLfixed z);
       ;glScissor ; void (GLint x, GLint y, GLsizei width, GLsizei height);
-      ;glShadeModel ; void (GLenum mode);
+      glShadeModel ; void (GLenum mode);
       ;glStencilFunc ; void (GLenum func, GLint ref, GLuint mask);
       ;glStencilMask ; void (GLuint mask);
       ;glStencilOp ; void (GLenum fail, GLenum zfail, GLenum zpass);
@@ -503,7 +505,8 @@
 )
 
    (import
-      (scheme core) (otus ffi))
+      (scheme core) (otus ffi) (owl io)
+      (owl string))
 
 (begin
    (define GL_VERSION_ES_CM_1_0 1)
@@ -535,8 +538,8 @@
    (define GLubyte* type-string) ; ?
    (define GLfloat*  (fft* GLfloat))
 
-; #define GL_DEPTH_BUFFER_BIT               0x00000100
-; #define GL_STENCIL_BUFFER_BIT             0x00000400
+   (define GL_DEPTH_BUFFER_BIT               #x00000100)
+   (define GL_STENCIL_BUFFER_BIT             #x00000400)
    (define GL_COLOR_BUFFER_BIT               #x00004000)
 ; #define GL_FALSE                          0
 ; #define GL_TRUE                           1
@@ -582,7 +585,7 @@
 ; #define GL_ALPHA_TEST                     0x0BC0
 ; #define GL_BLEND                          0x0BE2
 ; #define GL_COLOR_LOGIC_OP                 0x0BF2
-; #define GL_DITHER                         0x0BD0
+   (define GL_DITHER                         #x0BD0)
 ; #define GL_STENCIL_TEST                   0x0B90
 ; #define GL_DEPTH_TEST                     0x0B71
 ; #define GL_POINT_SMOOTH                   0x0B10
@@ -700,9 +703,9 @@
 ; #define GL_NUM_COMPRESSED_TEXTURE_FORMATS 0x86A2
 ; #define GL_COMPRESSED_TEXTURE_FORMATS     0x86A3
 ; #define GL_DONT_CARE                      0x1100
-; #define GL_FASTEST                        0x1101
-; #define GL_NICEST                         0x1102
-; #define GL_PERSPECTIVE_CORRECTION_HINT    0x0C50
+   (define GL_FASTEST                        #x1101)
+   (define GL_NICEST                         #x1102)
+   (define GL_PERSPECTIVE_CORRECTION_HINT    #x0C50)
 ; #define GL_POINT_SMOOTH_HINT              0x0C51
 ; #define GL_LINE_SMOOTH_HINT               0x0C52
 ; #define GL_FOG_HINT                       0x0C54
@@ -757,8 +760,8 @@
 ; #define GL_UNSIGNED_SHORT_4_4_4_4         0x8033
 ; #define GL_UNSIGNED_SHORT_5_5_5_1         0x8034
 ; #define GL_UNSIGNED_SHORT_5_6_5           0x8363
-; #define GL_FLAT                           0x1D00
-; #define GL_SMOOTH                         0x1D01
+   (define GL_FLAT                           #x1D00)
+   (define GL_SMOOTH                         #x1D01)
 ; #define GL_KEEP                           0x1E00
 ; #define GL_REPLACE                        0x1E01
 ; #define GL_INCR                           0x1E02
@@ -866,19 +869,23 @@
 ; #define GL_DOT3_RGB                       0x86AE
 ; #define GL_DOT3_RGBA                      0x86AF
 
-(define uname (syscall 63 #f #f #f))
+)
+(cond-expand
+   (Android
+      (begin
+         (define GLES (or
+            (load-dynamic-library "libGLESv1_CM.so")
+            (runtime-error "No GLESv1 library found." #f)))))
+   (Emscripten
+      (begin
+         (define GLES (load-dynamic-library #f))))
+   (else
+      (begin (runtime-error "1Unsupported platform:" *uname*))))
 
-(define ES (or
-   (load-dynamic-library
-      (cond
-         ((string-ci=? (ref uname 1) "linux")    "libEGL.so") ; GLESv2 for v2
-         ((string-ci=? (ref uname 1) "emscripten") #f)  ; self for Emscripten
-         (else
-            (runtime-error "Unknown platform" uname))))
-   (runtime-error "Can't load EGL library")))
+(begin
 
 ; GL_API void GL_APIENTRY glAlphaFunc (GLenum func, GLfloat ref);
-(define glClearColor (ES GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
+(define glClearColor (GLES GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
 ; GL_API void GL_APIENTRY glClearDepthf (GLfloat d);
 ; GL_API void GL_APIENTRY glClipPlanef (GLenum p, const GLfloat *eqn);
 ; GL_API void GL_APIENTRY glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
@@ -923,7 +930,7 @@
 ; GL_API void GL_APIENTRY glBufferData (GLenum target, GLsizeiptr size, const void *data, GLenum usage);
 ; GL_API void GL_APIENTRY glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const void *data);
 ; GL_API void GL_APIENTRY glClear (GLbitfield mask);
-(define glClear (ES GLvoid "glClear" GLbitfield))
+(define glClear (GLES GLvoid "glClear" GLbitfield))
 ; GL_API void GL_APIENTRY glClearColorx (GLfixed red, GLfixed green, GLfixed blue, GLfixed alpha);
 ; GL_API void GL_APIENTRY glClearDepthx (GLfixed depth);
 ; GL_API void GL_APIENTRY glClearStencil (GLint s);
@@ -932,7 +939,7 @@
 ; GL_API void GL_APIENTRY glColor4ub (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha);
 ; GL_API void GL_APIENTRY glColor4x (GLfixed red, GLfixed green, GLfixed blue, GLfixed alpha);
 ; GL_API void GL_APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-(define glColorPointerf (ES GLvoid "glColorPointer" GLint GLenum GLsizei GLfloat*))
+(define glColorPointerf (GLES GLvoid "glColorPointer" GLint GLenum GLsizei GLfloat*))
 (define (glColorPointer size type stride pointer)
    (case type
       (GL_FLOAT
@@ -946,17 +953,17 @@
 ; GL_API void GL_APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
 ; GL_API void GL_APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
 ; GL_API void GL_APIENTRY glCullFace (GLenum mode);
-(define glDeleteBuffers (ES GLvoid "glDeleteBuffers" GLsizei GLuint*)) ; GL_API void GL_APIENTRY  (GLsizei n, const GLuint *buffers);
+(define glDeleteBuffers (GLES GLvoid "glDeleteBuffers" GLsizei GLuint*)) ; GL_API void GL_APIENTRY  (GLsizei n, const GLuint *buffers);
 ; GL_API void GL_APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
 ; GL_API void GL_APIENTRY glDepthFunc (GLenum func);
 ; GL_API void GL_APIENTRY glDepthMask (GLboolean flag);
 ; GL_API void GL_APIENTRY glDepthRangex (GLfixed n, GLfixed f);
-; GL_API void GL_APIENTRY glDisable (GLenum cap);
+(define glDisable (GLES GLvoid "glDisable" GLenum))
 ; GL_API void GL_APIENTRY glDisableClientState (GLenum array);
-(define glDrawArrays (ES GLvoid "glDrawArrays" GLenum GLint GLsizei))
+(define glDrawArrays (GLES GLvoid "glDrawArrays" GLenum GLint GLsizei))
 ; GL_API void GL_APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indices);
 ; GL_API void GL_APIENTRY glEnable (GLenum cap);
-(define glEnableClientState (ES GLvoid "glEnableClientState" GLenum))
+(define glEnableClientState (GLES GLvoid "glEnableClientState" GLenum))
 ; GL_API void GL_APIENTRY glFinish (void);
 ; GL_API void GL_APIENTRY glFlush (void);
 ; GL_API void GL_APIENTRY glFogx (GLenum pname, GLfixed param);
@@ -979,7 +986,7 @@
 ; GL_API void GL_APIENTRY glGetTexEnvxv (GLenum target, GLenum pname, GLfixed *params);
 ; GL_API void GL_APIENTRY glGetTexParameteriv (GLenum target, GLenum pname, GLint *params);
 ; GL_API void GL_APIENTRY glGetTexParameterxv (GLenum target, GLenum pname, GLfixed *params);
-; GL_API void GL_APIENTRY glHint (GLenum target, GLenum mode);
+(define glHint (GLES GLvoid "glHint" GLenum GLenum))
 ; GL_API GLboolean GL_APIENTRY glIsBuffer (GLuint buffer);
 ; GL_API GLboolean GL_APIENTRY glIsEnabled (GLenum cap);
 ; GL_API GLboolean GL_APIENTRY glIsTexture (GLuint texture);
@@ -1012,7 +1019,7 @@
 ; GL_API void GL_APIENTRY glSampleCoveragex (GLclampx value, GLboolean invert);
 ; GL_API void GL_APIENTRY glScalex (GLfixed x, GLfixed y, GLfixed z);
 ; GL_API void GL_APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height);
-; GL_API void GL_APIENTRY glShadeModel (GLenum mode);
+(define glShadeModel (GLES GLvoid "glShadeModel" GLenum))
 ; GL_API void GL_APIENTRY glStencilFunc (GLenum func, GLint ref, GLuint mask);
 ; GL_API void GL_APIENTRY glStencilMask (GLuint mask);
 ; GL_API void GL_APIENTRY glStencilOp (GLenum fail, GLenum zfail, GLenum zpass);
@@ -1029,7 +1036,7 @@
 ; GL_API void GL_APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
 ; GL_API void GL_APIENTRY glTranslatex (GLfixed x, GLfixed y, GLfixed z);
 
-(define glVertexPointerf (ES GLvoid "glVertexPointer" GLint GLenum GLsizei GLfloat*))
+(define glVertexPointerf (GLES GLvoid "glVertexPointer" GLint GLenum GLsizei GLfloat*))
 (define (glVertexPointer size type stride pointer)
    (case type
       (GL_FLOAT
