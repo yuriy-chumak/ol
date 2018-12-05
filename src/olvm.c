@@ -3221,7 +3221,7 @@ loop:;
 			int mode = value (b);
 			mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
 
-			int file = os_open((char*)s, mode, (S_IRUSR | S_IWUSR), ol);
+			int file = ol->open((char*)s, mode, (S_IRUSR | S_IWUSR), ol);
 			if (file < 0)
 				break;
 
@@ -3252,7 +3252,7 @@ loop:;
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
 
-			if (close(portfd) == 0)
+			if (ol->close(portfd, ol) == 0)
 				result = (word*)ITRUE;
 	#ifdef _WIN32
 			// Win32 socket workaround
@@ -4807,20 +4807,19 @@ void* OL_allocate(OL* ol, unsigned words)
 
 
 // i/o polymorphism
-read_t* OL_set_read(struct ol_t* ol, read_t read)
-{
-	read_t *old_read = ol->read;
-	ol->read = read;
-	return old_read;
+#define override(name) \
+name##_t* OL_set_##name(struct ol_t* ol, name##_t name) {\
+	name##_t *old_##name = ol->name;\
+	ol->name = name;\
+	return old_##name;\
 }
 
-write_t* OL_set_write(struct ol_t* ol, write_t write)
-{
-	write_t *old_write = ol->write;
-	ol->write = write;
-	return old_write;
-}
+override(open)
+override(read)
+override(write)
+override(close)
 
+#undef override
 // ===============================================================
 word
 OL_run(OL* ol, int argc, char** argv)

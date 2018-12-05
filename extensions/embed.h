@@ -23,7 +23,7 @@
 //#define OLVM_EMBED_PREFIX embed_
 //#endif
 
-#include "olvm.h"
+#include <olvm.h>
 
 // basic ol data type ('all is the words')
 typedef uintptr_t word;

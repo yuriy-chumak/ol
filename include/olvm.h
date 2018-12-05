@@ -105,6 +105,12 @@ OL_allocate(struct ol_t* ol, unsigned words);
 //OL_allocate(struct ol_t* ol, int wordscount);
 
 
+// handle open/close
+typedef int (open_t) (const char *filename, int flags, int mode, void* userdata);
+open_t* OL_set_open(struct ol_t* ol, open_t open);
+typedef int (close_t)(int fd, void* userdata);
+close_t* OL_set_close(struct ol_t* ol, close_t close);
+
 // handle read
 typedef ssize_t (read_t)(int fd, void *buf, size_t count, void* userdata);
 read_t* OL_set_read(struct ol_t* ol, read_t read);
