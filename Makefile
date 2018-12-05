@@ -2,7 +2,7 @@ export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
 
-.PHONY: all debug release slim config recompile install uninstall clean check
+.PHONY: all debug release slim config recompile install uninstall clean check android
 
 all: release
 
@@ -143,8 +143,12 @@ debug: vm repl ol
 release: CFLAGS += $(CFLAGS_RELEASE)
 release: vm repl ol
 
-slim: CFLAGS += -DOLVM_FFI=0 
+slim: CFLAGS += -DOLVM_FFI=0
 slim: release
+
+NDK_ROOT?=/opt/android/ndk
+android: jni/*.c
+	$(NDK_ROOT)/ndk-build
 
 # ol
 vm: src/olvm.c include/olvm.h
