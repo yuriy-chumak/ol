@@ -234,15 +234,15 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"call *%rax",
 	// вернем результат
 	"cmpl $46, -8(%rbp)", // TFLOAT
-	"je   51f",
+	"je   52f",
 	"cmpl $47, -8(%rbp)", // TDOUBLE
 	"je   52f",
 "9:",
 	"leave",
 	"ret",
 
-"51:",
-	"cvtss2sd %xmm0, %xmm0", // float->double
+// "51:",
+// 	"cvtss2sd %xmm0, %xmm0", // float->double
 "52:",
 	"movsd %xmm0, (%rsp)",
 	"pop   %rax", // можно попать, так как уже пушнули один r9 вверху (оптимизация)
@@ -335,15 +335,15 @@ __ASM__("x64_call:_x64_call:", // "int $3",
 
 	// вернем результат
 	"cmpl $46, 16(%rbp)", // TFLOAT
-	"je   5f",
+	"je   6f",
 	"cmpl $47, 16(%rbp)", // TDOUBLE
 	"je   6f",
 "9:",
 	"leave",
 	"ret",
 
-"5:",
-	"cvtss2sd %xmm0, %xmm0", // float->double
+// "5:",
+// 	"cvtss2sd %xmm0, %xmm0", // float->double
 "6:",
 	"movsd %xmm0, (%rsp)",
 	"popq  %rax", // corresponded push not required (we already pushed %r9)
@@ -393,13 +393,19 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"cmpl  $46, %ecx",      // TFLOAT
 	"je    3f",
 	"cmpl  $47, %ecx",      // TDOUBLE
-	"je    3f",
+	"je    4f",
 "9:",
 	"leave",
 	"ret",
 
-// с плавающей точкой мы всегда возвращаем double
+// с плавающей точкой float
 "3:", // double
+	"pushl %eax",
+	"fstp (%esp)",
+	"popl  %eax",
+	"jmp   9b",
+// с плавающей точкой double
+"4:", // double
 	"pushl %edx",
 	"pushl %eax",
 	"fstpl (%esp)",
@@ -1580,7 +1586,8 @@ word* OL_ffi(OL* self, word* arguments)
 	}
 
 	word* result = (word*)IFALSE;
-	switch (returntype & 0x3F) {
+	returntype &= 0x3F;
+	switch (returntype) {
 		// TFIXP - deprecated
 		case TFIXP: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = (word*) itosv (got);
@@ -1696,7 +1703,10 @@ word* OL_ffi(OL* self, word* arguments)
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
 		case TFLOAT:
 		case TDOUBLE: {
-			double value = *(double*)&got;
+			double value =
+				(returntype == TFLOAT)
+					? *(float* )&got
+					: *(double*)&got;
 
 #if OLVM_INEXACTS
 			result = new_inexact(value);
