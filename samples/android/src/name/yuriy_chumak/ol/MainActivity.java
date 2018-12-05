@@ -19,7 +19,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.main);

@@ -1,6 +1,7 @@
 #!/usr/bin/ol
 
-(import (lib gl2))
+(print *features*)
+(import (lib gl))
 
 ;; (print (syscall 63 #f #f #f))
 
@@ -22,7 +23,7 @@
 (glShadeModel GL_SMOOTH)
 
 (gl:set-renderer (lambda (mouse)
-   (glClearColor 1 0 0 0)
+   (glClearColor 0 1 0 0)
    (glClear GL_COLOR_BUFFER_BIT)
 ))
 

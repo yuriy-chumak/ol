@@ -59,7 +59,7 @@
       fft* ; make c-like pointer from type
       fft& ; make c-like reference from type
 
-      int32->ol   ; fft-void* -> int32 number
+      int32->ol   ; fft-void* -> int32 number ; temp
 
       ; platforem independent types
       fft-int8  fft-int8*  fft-int8&
@@ -105,6 +105,7 @@
    )
 
    (import
+      (src vm)
       (otus lisp))
 
 (begin
@@ -144,6 +145,7 @@
 (define (dlerror)        (syscall 178 #false #f #f))
 
 (define ffi (syscall 177 (dlopen) "OL_ffi" #f))
+(define ffi:sizeof (syscall 177 (dlopen) "OL_sizeof" #f))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать
 ; внимание! приведение типов к С-like НЕ ПРОИЗВОДИТСЯ!
@@ -178,9 +180,9 @@
 
 (define (make-vptr) (vm:cast 0 type-vptr))
 
-(define mkcb (syscall 177 (dlopen) "OL_mkcb" #f))
+(define ffi:mkcb (syscall 177 (dlopen) "OL_mkcb" #f))
 (define (make-callback pinned-object)
-   (exec mkcb pinned-object))
+   (exec ffi:mkcb pinned-object))
 
 
 ; Calling Conventions
@@ -196,15 +198,10 @@
 (define (fft& type)
    (vm:or type #x20000))
 
-; а тут система типов функций, я так думаю, что проверку аргументов надо забабахать сюда?
-;(define (INTEGER arg) (cons 45 arg))
-;(define (FLOAT arg)   (cons 46 arg))
-;(define (DOUBLE arg)  '(47 arg))
-
-; для результата, что превышает x00FFFFFF надо использовать type-handle
-; 44 - is socket but will be free
-;(define type-handle 45)
-; todo: (vm:cast type-constant) and start from number 1?
+; ? для результата, что превышает x00FFFFFF надо использовать type-handle
+; ? 44 - is socket but will be free
+; ? (define type-handle 45)
+; ? todo: (vm:cast type-constant) and start from number 1?
 (define type-callable 61)
 
 (define fft-float   46)
@@ -221,144 +218,148 @@
 (define nullptr NULL)
 
 ; new ffi types:
-(define fft-int8  50)  (define fft-int8*  type-string)       (define fft-int8&  type-string)
-(define fft-int16 51)  (define fft-int16* (fft* fft-int16))  (define fft-int16& (fft& fft-int16))
-(define fft-int32 52)  (define fft-int32* (fft* fft-int32))  (define fft-int32& (fft& fft-int32))
-(define fft-int64 53)  (define fft-int64* (fft* fft-int64))  (define fft-int64& (fft& fft-int64))
+(define fft-int8  50)  (define fft-int8*  (fft* fft-int8))    (define fft-int8&  (fft& fft-int8))
+(define fft-int16 51)  (define fft-int16* (fft* fft-int16))   (define fft-int16& (fft& fft-int16))
+(define fft-int32 52)  (define fft-int32* (fft* fft-int32))   (define fft-int32& (fft& fft-int32))
+(define fft-int64 53)  (define fft-int64* (fft* fft-int64))   (define fft-int64& (fft& fft-int64))
 
-(define fft-uint8  55) (define fft-uint8*  type-string)       (define fft-uint8&  type-string)
+(define fft-uint8  55) (define fft-uint8*  (fft* fft-uint8))  (define fft-uint8&  (fft& fft-uint8))
 (define fft-uint16 56) (define fft-uint16* (fft* fft-uint16)) (define fft-uint16& (fft& fft-uint16))
 (define fft-uint32 57) (define fft-uint32* (fft* fft-uint32)) (define fft-uint32& (fft& fft-uint32))
 (define fft-uint64 58) (define fft-uint64* (fft* fft-uint64)) (define fft-uint64& (fft& fft-uint64))
 
 ; platform dependent defaults
-(define fft-char fft-int8)
+(define fft-char fft-int8)               (assert (exec ffi:sizeof 1) ===> 1) ; sizeof(char) == 1
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-int8)
 
-(define fft-short fft-int16)
+(define fft-short fft-int16)             (assert (exec ffi:sizeof 2) ===> 2) ; sizeof(short) == 2
 (define fft-signed-short fft-int16)
 (define fft-unsigned-short fft-uint16)
 
-(define fft-int fft-int32)
+(define fft-int fft-int32)               (assert (exec ffi:sizeof 3) ===> 4) ; sizeof(int) == 4
 (define fft-signed-int fft-int32)
 (define fft-unsigned-int fft-uint32)
 
-(define fft-int* (fft* fft-int))
-(define fft-int& (fft& fft-int))
-
-; long:
-(setq wordsize (size nullptr))
-(define fft-long
-   (cond
-      ((eq? wordsize 4)              ; 32-bit platforms
-         fft-int32)
-      ((string-ci=? (ref (uname) 1) "Windows") ; 64-bit windows
-         fft-int32)
-      (else                          ; all other 64-bit platforms
-         fft-int64)))
-(define fft-signed-long fft-long)
-(define fft-unsigned-long (+ fft-long 5))
-
-(define fft-long-long fft-int64)
+(define fft-long-long fft-int64)         (assert (exec ffi:sizeof 4) ===> 8) ; sizeof(long long) == 8
 (define fft-signed-long-long fft-int64)
 (define fft-unsigned-long-long fft-uint64)
 
+
+; size of long depends on OS and machine word size:
+; ia32/amd64: https://software.intel.com/en-us/articles/size-of-long-integer-type-on-different-architecture-and-os
+; arm32/64: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/ch08s02.html
+(define fft-long (if (eq? (exec ffi:sizeof 9) 4) fft-int32 fft-int64))
+(define fft-signed-long fft-long)
+(define fft-unsigned-long (+ fft-long 5))
+
 (define fft-enum fft-int)
 
+; ...
+(define fft-int* (fft* fft-int))
+(define fft-int& (fft& fft-int))
+
 ; -- sizeof ---------------------------
-(define (sizeof type)
-   (case type
-      (fft-int8  1)
-      (fft-uint8  1)
-      (fft-int16 2)
-      (fft-uint16 2)
-      (fft-int32 4)
-      (fft-uint32 4)
-      (fft-int64 8)
-      (fft-uint64 8)
-      (fft-float 4)
-      (fft-double 8)
-      (fft-void* (size nullptr))
-      (else (if (list? type)
-               (fold (lambda (f el) (+ f (sizeof el))) 0 type)))))
+(define (sizeof fft)
+   (cond
+      ((value? fft)
+         (case fft ; todo: rework
+            (fft-int8  1)
+            (fft-uint8  1)
+            (fft-int16 2)
+            (fft-uint16 2)
+            (fft-int32 4)
+            (fft-uint32 4)
+            (fft-int64 8)
+            (fft-uint64 8)
+            (fft-float 4)
+            (fft-double 8)
+            (fft-void* (size nullptr))))
+      ((list? fft)
+         (fold (lambda (f el) (+ f (sizeof el))) 0 type))))
 
 ; -- utils ----------------------------
 
-(define (make-32bit-array len)
-   (map (lambda (_) 16777216) (repeat #f len)))
+   ; boxing/unboxing
+   (define (box value)
+      (list value))
+   (define (unbox list)
+      (car list))
 
-(define (make-64bit-array len)
-   (map (lambda (_) 72057594037927936) (repeat #f len)))
+   ; makers
+   (define (make-32bit-array len)
+      (map (lambda (_) 16777216) (repeat #f len)))
 
-(define (make-vptr-array len)
-   (map (lambda (_) (vm:cast 0 fft-void*)) (repeat #f len)))
+   (define (make-64bit-array len)
+      (map (lambda (_) 72057594037927936) (repeat #f len)))
 
-; -- convertors -----------------------
-(setq endianness
-   (let ((x (vm:cast 1 type-vptr)))
-      (cond
-         ((eq? (ref x 0) 1)
-            'little-endian)
-         (else
-            2)))) ; todo: fix THIS
+   (define (make-vptr-array len)
+      (map (lambda (_) (make-vptr)) (repeat #f len)))
 
+)
 
-(define int32->ol (case endianness
-   ('little-endian (lambda (vector offset)
-         (+     (ref vector    offset   )
-            (<< (ref vector (+ offset 1))  8)
-            (<< (ref vector (+ offset 2)) 16)
-            (<< (ref vector (+ offset 3)) 24))))
-   (else (lambda (vector offset)
-         (+     (ref vector (+ offset 3))
-            (<< (ref vector (+ offset 2))  8)
-            (<< (ref vector (+ offset 1)) 16)
-            (<< (ref vector    offset   ) 24))))))
+; ---------------------------------
+; endianness dependent functions
+(cond-expand
+   (little-endian
+      (begin
+         (define (int32->ol vector offset)
+            (+     (ref vector    offset   )
+               (<< (ref vector (+ offset 1))  8)
+               (<< (ref vector (+ offset 2)) 16)
+               (<< (ref vector (+ offset 3)) 24)))
+         (define (int64->ol vector offset)
+            (+     (ref vector    offset   )
+               (<< (ref vector (+ offset 1))  8)
+               (<< (ref vector (+ offset 2)) 16)
+               (<< (ref vector (+ offset 3)) 24)
+               (<< (ref vector (+ offset 4)) 32)
+               (<< (ref vector (+ offset 5)) 40)
+               (<< (ref vector (+ offset 6)) 48)
+               (<< (ref vector (+ offset 7)) 56)))
+      ))
 
-(define int64->ol (case endianness
-   ('little-endian (lambda (vector offset)
-         (+     (ref vector    offset   )
-            (<< (ref vector (+ offset 1))  8)
-            (<< (ref vector (+ offset 2)) 16)
-            (<< (ref vector (+ offset 3)) 24)
-            (<< (ref vector (+ offset 4)) 32)
-            (<< (ref vector (+ offset 5)) 40)
-            (<< (ref vector (+ offset 6)) 48)
-            (<< (ref vector (+ offset 7)) 56))))))
+   (big-endian
+      (begin
+         (define (int32->ol vector offset)
+            (+     (ref vector (+ offset 3))
+               (<< (ref vector (+ offset 2))  8)
+               (<< (ref vector (+ offset 1)) 16)
+               (<< (ref vector    offset   ) 24)))
+         ; tbd.
+      ))
 
-; boxing/unboxing
-(define (box value)
-   (list value))
-(define (unbox list)
-   (car list))
-
-;(vptr->vector vptr sizeof-in-bytes)
-(define vptr->vector (cond
-   ; linux:
-   ((or
-      (string-ci=? (ref *uname* 1) "Linux")
-      (string-ci=? (ref *uname* 1) "Android"))
-      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int)))
-         (lambda (vptr sizeof)
-            (let ((vector (make-bytevector sizeof)))
-               (memcpy vector vptr sizeof)
-               vector))))
-   ; win:
-   ((string-ci=? (ref *uname* 1) "Windows")
-      (lambda (vptr sizeof)
-         (let ((vector (make-bytevector sizeof)))
-            ; ...
-            vector)))
-   ; asm.js:
-   ((string-ci=? (ref *uname* 1) "emscripten")
-      (let ((memcpy ((load-dynamic-library #false) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int)))
-         (lambda (vptr sizeof)
-            (let ((vector (make-bytevector sizeof)))
-               (memcpy vector vptr sizeof)
-               vector))))
    (else
-      (print "Unknown OS"))))
+      (runtime-error "ffi: unknown platform endianness" *uname*)))
+
+; -----------------------------
+; OS dependent functions
+(cond-expand
+   ((or Linux Android Emscripten)
+      (begin
+         (setq memcpy ((load-dynamic-library #f) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int))
+
+         (define (vptr->vector vptr sizeof)
+            (let ((vector (make-bytevector sizeof)))
+               (memcpy vector vptr sizeof)
+               vector))
+      ))
+   (Windows
+      (begin
+         (setq MoveMemory ((load-dynamic-library "kernel32.dll") fft-void "MoveMemory" fft-void* fft-void* fft-unsigned-int))
+
+         (define (vptr->vector vptr sizeof)
+            (let ((vector (make-bytevector sizeof)))
+               (MoveMemory vector vptr sizeof)
+               vector))
+      ))
+
+   (else
+      (runtime-error "ffi: unknown platform OS" *uname*)))
+
+(begin
+
+; TODO: change this
 
 (define (extract-void* vector offset)
    ;; TODO:
@@ -384,6 +385,8 @@
       (if (<= number (>> max 1))
          number
          (- number max))))
+
+(setq wordsize (size nullptr))
 
 (define (vptr->string vptr)
    (fold string-append "#x"

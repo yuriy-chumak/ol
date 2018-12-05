@@ -6,6 +6,8 @@
       GL_VERSION_ES_CM_1_1
       GL_VERSION_ES_CL_1_1
 
+      GLES
+
       ; GL types
       ; https://www.opengl.org/wiki/OpenGL_Type
       GLenum            ; unsigned 32-bit
@@ -867,17 +869,20 @@
 ; #define GL_DOT3_RGB                       0x86AE
 ; #define GL_DOT3_RGBA                      0x86AF
 
-(define uname (syscall 63 #f #f #f))
-(print "uname: " uname)
+)
+(cond-expand
+   (Android
+      (begin
+         (define GLES (or
+            (load-dynamic-library "libGLESv1_CM.so")
+            (runtime-error "No GLESv1 library found." #f)))))
+   (Emscripten
+      (begin
+         (define GLES (load-dynamic-library #f))))
+   (else
+      (begin (runtime-error "1Unsupported platform:" *uname*))))
 
-(define GLES (or
-   (load-dynamic-library
-      (cond
-         ((string-ci=? (ref uname 1) "Android")    "libGLESv1_CM.so") ; GLESv2 for v2
-         ((string-ci=? (ref uname 1) "emscripten") #f)  ; self for Emscripten
-         (else
-            (runtime-error "Unknown platform" uname))))
-   (runtime-error "Can't load EGL library")))
+(begin
 
 ; GL_API void GL_APIENTRY glAlphaFunc (GLenum func, GLfloat ref);
 (define glClearColor (GLES GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
