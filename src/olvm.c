@@ -256,6 +256,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #define OLVM_BUILTIN_FMATH 0
 #endif
 
+#ifndef OLVM_LIBRARY_SO_NAME
+#  define OLVM_LIBRARY_SO_NAME NULL
+#endif
 
 // http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
 // http://man7.org/linux/man-pages/man7/feature_test_macros.7.html
@@ -4136,7 +4139,7 @@ loop:;
 			// http://code.google.com/p/android/issues/detail?id=5049
 			void* module;
 			if ((word) filename == IFALSE) {
-				module = dlopen(NULL, mode); // If filename is NULL, then the returned handle is for the main program.
+				module = dlopen(OLVM_LIBRARY_SO_NAME, mode); // If filename is NULL, then the returned handle is for the main program.
 			}
 			else if (is_string(filename)) {
 				module = dlopen((char*) &filename[1], mode);

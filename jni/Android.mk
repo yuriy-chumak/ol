@@ -23,14 +23,16 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := ol
 LOCAL_SRC_FILES += ../src/olvm.c ../obj/local/$(TARGET_ARCH_ABI)/repl.c
-LOCAL_CFLAGS    += -std=c99 -O2 -s -DNAKED_VM
+LOCAL_CFLAGS    += -std=c99 -O2 -s -DNAKED_VM -Iinclude
 LOCAL_LDFLAGS   := -Xlinker --export-dynamic
 LOCAL_LDFLAGS   += -Xlinker obj/local/$(TARGET_ARCH_ABI)/repl.o
+
+LOCAL_CFLAGS    += -DOLVM_LIBRARY_SO_NAME="\"libol.so\""
 
 jni/../obj/local/$(TARGET_ARCH_ABI)/repl.c: jni/../obj/local/$(TARGET_ARCH_ABI)/repl.o
 	@echo // This empty file required by the stupid Android build system >$@
 
-include $(BUILD_EXECUTABLE)
+include $(BUILD_SHARED_LIBRARY)
 
 # NOTES:
 #
