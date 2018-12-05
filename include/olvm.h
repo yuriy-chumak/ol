@@ -119,6 +119,10 @@ read_t* OL_set_read(struct ol_t* ol, read_t read);
 typedef ssize_t (write_t)(int fd, void *buf, size_t count, void* userdata);
 write_t* OL_set_write(struct ol_t* ol, write_t read);
 
+#ifdef __ANDROID__
+void OL_set_1010data(void* data);
+#endif
+
 // =================================================
 // c++ interface:
 #ifdef __cplusplus
