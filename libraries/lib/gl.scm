@@ -157,12 +157,17 @@
             (define context (tuple display surface window ctx))
 
             (gl:MakeCurrent context)
+            (print-to stderr "OpenGL ES version: " (glGetString GL_VERSION))
+            (print-to stderr "OpenGL ES vendor: " (glGetString GL_VENDOR))
+            (print-to stderr "OpenGL ES renderer: " (glGetString GL_RENDERER))
 
             (define width '(0))
             (define height '(0))
             (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
             (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
             (print "window: " width "x" height)
+
+            (glViewport 0 0 (car width) (car height))
 
             (mail 'opengl (tuple 'set-context context)))
 
@@ -272,9 +277,9 @@
                (XMapWindow display window)
                (let ((cx (gl:CreateContext display vi #false 1)))
                   (gl:MakeCurrent display window cx)
-                  (print "OpenGL version: " (glGetString GL_VERSION))
-                  (print "OpenGL vendor: " (glGetString GL_VENDOR))
-                  (print "OpenGL renderer: " (glGetString GL_RENDERER))
+                  (print-to stderr "OpenGL version: " (glGetString GL_VERSION))
+                  (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))
+                  (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
                   ;(gl:MakeCurrent display #f #f)
                   (mail 'opengl (tuple 'set-context (tuple display screen window cx))) ; notify opengl server
                   ;(interact 'opengl (tuple 'get-context)) ; синхронизация (не нужна, вроде)
@@ -404,9 +409,9 @@
                (SetPixelFormat hDC PixelFormat pfd)
                (let ((hRC (gl:CreateContext hDC)))
                   (gl:MakeCurrent hDC hRC)
-                  (print "OpenGL version: " (glGetString GL_VERSION))
-                  (print "OpenGL vendor: " (glGetString GL_VENDOR))
-                  (print "OpenGL renderer: " (glGetString GL_RENDERER))
+                  (print-to stderr "OpenGL version: " (glGetString GL_VERSION))
+                  (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))
+                  (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
                ;(gl:MakeCurrent #f #f)
                   (mail 'opengl (tuple 'set-context (tuple hDC hRC window)))
                   (interact 'opengl (tuple 'get-context)) ; синхронизация

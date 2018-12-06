@@ -1,5 +1,9 @@
 #!/bin/bash
 
+mkdir -p assets/lib/gl
+mkdir -p assets/otus
+mkdir -p assets/OpenGL/ES
+mkdir -p assets/OpenGL/OES
 cp ../../libraries/lib/gl/config.scm assets/lib/gl/config.scm
 cp ../../libraries/lib/gl.scm assets/lib/gl.scm
 cp ../../libraries/otus/lisp.scm assets/otus/lisp.scm
@@ -7,6 +11,7 @@ cp ../../libraries/otus/random!.scm assets/otus/random!.scm
 cp ../../libraries/otus/ffi.scm assets/otus/ffi.scm
 cp ../../libraries/OpenGL/ES/version-1-1.scm assets/OpenGL/ES/version-1-1.scm
 cp ../../libraries/OpenGL/ES/platform.scm assets/OpenGL/ES/platform.scm
+cp ../../libraries/OpenGL/OES/* assets/OpenGL/OES/
 
 adb shell ps | grep name.yuriy_chumak.ol | awk '{print $2}' | xargs adb shell kill
 adb push assets /sdcard
