@@ -9,28 +9,37 @@
       GLES
 
       ; GL types
-      ; https://www.opengl.org/wiki/OpenGL_Type
-      GLenum            ; unsigned 32-bit
-      GLboolean         ; unsigned 1+-bit (GL_TRUE or GL_FALSE)
-      GLbitfield        ; unsigned 32-bit
-      GLbyte            ;   signed  8-bit
-      GLshort           ;   signed 16-bit
-      GLint             ;   signed 32-bit
-      GLsizei           ;   signed 32-bit (non negative)
-      GLubyte  GLubyte* ; unsigned  8-bit
-      GLushort          ; unsigned 16-bit
-      GLuint   GLuint*  ; unsigned 32-bit
-
-      GLfloat  GLfloat* ; floating 32-bit
-      GLclampf          ; floating 32-bit (clamped to the range [0,1])
-
+      ; /usr/include/GLES/gl.h
       GLvoid   GLvoid*
+      GLchar
+      GLenum
+      GLboolean
+      GLbitfield
+      GLbyte
+      GLshort
+      GLint
+      GLsizei
+      GLubyte  GLubyte*
+      GLushort
+      GLuint   GLuint*   GLuint&
+      GLfloat  GLfloat*
+      GLclampf
+      GLfixed
+      GLclampx
 
+      GLintptr
+      GLsizeiptr
+
+      ; ClearBufferMask
       GL_DEPTH_BUFFER_BIT
       GL_STENCIL_BUFFER_BIT
       GL_COLOR_BUFFER_BIT
+
+      ; Boolean
       ;GL_FALSE
       ;GL_TRUE
+
+      ; BeginMode
       ;GL_POINTS
       ;GL_LINES
       ;GL_LINE_LOOP
@@ -38,6 +47,8 @@
       GL_TRIANGLES
       ;GL_TRIANGLE_STRIP
       ;GL_TRIANGLE_FAN
+
+      ; AlphaFunction
       ;GL_NEVER
       ;GL_LESS
       ;GL_EQUAL
@@ -46,6 +57,8 @@
       ;GL_NOTEQUAL
       ;GL_GEQUAL
       ;GL_ALWAYS
+
+      ; BlendingFactorDest
       ;GL_ZERO
       ;GL_ONE
       ;GL_SRC_COLOR
@@ -54,18 +67,53 @@
       ;GL_ONE_MINUS_SRC_ALPHA
       ;GL_DST_ALPHA
       ;GL_ONE_MINUS_DST_ALPHA
+
+      ; BlendingFactorSrc
+      ;GL_ZERO
+      ;GL_ONE
       ;GL_DST_COLOR
       ;GL_ONE_MINUS_DST_COLOR
       ;GL_SRC_ALPHA_SATURATE
+      ;GL_SRC_ALPHA
+      ;GL_ONE_MINUS_SRC_ALPHA
+      ;GL_DST_ALPHA
+      ;GL_ONE_MINUS_DST_ALPHA
+
+      ; ClipPlaneName
       ;GL_CLIP_PLANE0
       ;GL_CLIP_PLANE1
       ;GL_CLIP_PLANE2
       ;GL_CLIP_PLANE3
       ;GL_CLIP_PLANE4
       ;GL_CLIP_PLANE5
+
+      ; ColorMaterialFace
+      ;GL_FRONT_AND_BACK
+
+      ; ColorMaterialParameter
+      ;GL_AMBIENT_AND_DIFFUSE
+
+      ; ColorPointerType
+      ;GL_UNSIGNED_BYTE
+      ;GL_FLOAT
+      ;GL_FIXED
+
+      ; CullFaceMode
       ;GL_FRONT
       ;GL_BACK
       ;GL_FRONT_AND_BACK
+
+      ; DepthFunction
+;; /*      GL_NEVER */
+;; /*      GL_LESS */
+;; /*      GL_EQUAL */
+;; /*      GL_LEQUAL */
+;; /*      GL_GREATER */
+;; /*      GL_NOTEQUAL */
+;; /*      GL_GEQUAL */
+;; /*      GL_ALWAYS */
+
+      ; EnableCap
       ;GL_FOG
       ;GL_LIGHTING
       ;GL_TEXTURE_2D
@@ -76,6 +124,14 @@
       GL_DITHER
       ;GL_STENCIL_TEST
       ;GL_DEPTH_TEST
+;; /*      GL_LIGHT0 */
+;; /*      GL_LIGHT1 */
+;; /*      GL_LIGHT2 */
+;; /*      GL_LIGHT3 */
+;; /*      GL_LIGHT4 */
+;; /*      GL_LIGHT5 */
+;; /*      GL_LIGHT6 */
+;; /*      GL_LIGHT7 */
       ;GL_POINT_SMOOTH
       ;GL_LINE_SMOOTH
       ;GL_SCISSOR_TEST
@@ -90,6 +146,8 @@
       ;GL_SAMPLE_ALPHA_TO_COVERAGE
       ;GL_SAMPLE_ALPHA_TO_ONE
       ;GL_SAMPLE_COVERAGE
+
+      ; ErrorCode
       ;GL_NO_ERROR
       ;GL_INVALID_ENUM
       ;GL_INVALID_VALUE
@@ -97,15 +155,24 @@
       ;GL_STACK_OVERFLOW
       ;GL_STACK_UNDERFLOW
       ;GL_OUT_OF_MEMORY
+
+      ; FogMode
+      ;GL_LINEAR
       ;GL_EXP
       ;GL_EXP2
+
+      ; FogParameter
       ;GL_FOG_DENSITY
       ;GL_FOG_START
       ;GL_FOG_END
       ;GL_FOG_MODE
       ;GL_FOG_COLOR
+
+      ; FrontFaceDirection
       ;GL_CW
       ;GL_CCW
+
+      ; GetPName
       ;GL_CURRENT_COLOR
       ;GL_CURRENT_NORMAL
       ;GL_CURRENT_TEXTURE_COORDS
@@ -188,18 +255,33 @@
       ;GL_SAMPLES
       ;GL_SAMPLE_COVERAGE_VALUE
       ;GL_SAMPLE_COVERAGE_INVERT
+
+      ; GetTextureParameter
+;; /*      GL_TEXTURE_MAG_FILTER */
+;; /*      GL_TEXTURE_MIN_FILTER */
+;; /*      GL_TEXTURE_WRAP_S */
+;; /*      GL_TEXTURE_WRAP_T */
+
       ;GL_NUM_COMPRESSED_TEXTURE_FORMATS
       ;GL_COMPRESSED_TEXTURE_FORMATS
+
+      ; HintMode
       ;GL_DONT_CARE
       GL_FASTEST
       GL_NICEST
+
+      ; HintTarget
       GL_PERSPECTIVE_CORRECTION_HINT
       ;GL_POINT_SMOOTH_HINT
       ;GL_LINE_SMOOTH_HINT
       ;GL_FOG_HINT
       ;GL_GENERATE_MIPMAP_HINT
+
+      ; LightModelParameter
       ;GL_LIGHT_MODEL_AMBIENT
       ;GL_LIGHT_MODEL_TWO_SIDE
+
+      ; LightParameter
       ;GL_AMBIENT
       ;GL_DIFFUSE
       ;GL_SPECULAR
@@ -210,12 +292,16 @@
       ;GL_CONSTANT_ATTENUATION
       ;GL_LINEAR_ATTENUATION
       ;GL_QUADRATIC_ATTENUATION
+
+      ; DataType
       ;GL_BYTE
       ;GL_UNSIGNED_BYTE
       ;GL_SHORT
       ;GL_UNSIGNED_SHORT
       GL_FLOAT
       ;GL_FIXED
+
+      ; LogicOp
       ;GL_CLEAR
       ;GL_AND
       ;GL_AND_REVERSE
@@ -232,49 +318,117 @@
       ;GL_OR_INVERTED
       ;GL_NAND
       ;GL_SET
+
+      ; MaterialFace
+      ;GL_FRONT_AND_BACK
+
+      ; MaterialParameter
       ;GL_EMISSION
       ;GL_SHININESS
       ;GL_AMBIENT_AND_DIFFUSE
+      ;GL_AMBIENT
+      ;GL_DIFFUSE
+      ;GL_SPECULAR
+
+      ; MatrixMode
       ;GL_MODELVIEW
       ;GL_PROJECTION
       ;GL_TEXTURE
+
+      ; NormalPointerType
+      ;GL_BYTE
+      ;GL_SHORT
+      ;GL_FLOAT
+      ;GL_FIXED
+
+      ; PixelFormat
       ;GL_ALPHA
       ;GL_RGB
       ;GL_RGBA
       ;GL_LUMINANCE
       ;GL_LUMINANCE_ALPHA
+
+      ; PixelStoreParameter
       ;GL_UNPACK_ALIGNMENT
       ;GL_PACK_ALIGNMENT
+
+      ; PixelType
+      ;GL_UNSIGNED_BYTE
       ;GL_UNSIGNED_SHORT_4_4_4_4
       ;GL_UNSIGNED_SHORT_5_5_5_1
       ;GL_UNSIGNED_SHORT_5_6_5
+
+      ; ShadingModel
       GL_FLAT
       GL_SMOOTH
+
+      ; StencilFunction
+;; /*      GL_NEVER */
+;; /*      GL_LESS */
+;; /*      GL_EQUAL */
+;; /*      GL_LEQUAL */
+;; /*      GL_GREATER */
+;; /*      GL_NOTEQUAL */
+;; /*      GL_GEQUAL */
+;; /*      GL_ALWAYS */
+
+      ; StencilOp
+      ;GL_ZERO
       ;GL_KEEP
       ;GL_REPLACE
       ;GL_INCR
       ;GL_DECR
+      ;GL_INVERT
+
+      ; StringName
       ;GL_VENDOR
       ;GL_RENDERER
       ;GL_VERSION
       ;GL_EXTENSIONS
+
+      ; TexCoordPointerType
+;; /*      GL_SHORT */
+;; /*      GL_FLOAT */
+;; /*      GL_FIXED */
+;; /*      GL_BYTE */
+
+      ; TextureEnvMode
       ;GL_MODULATE
       ;GL_DECAL
+      ;GL_BLEND
       ;GL_ADD
+      ;GL_REPLACE
+
+      ; TextureEnvParameter
       ;GL_TEXTURE_ENV_MODE
       ;GL_TEXTURE_ENV_COLOR
+
+      ; TextureEnvTarget
       ;GL_TEXTURE_ENV
+
+      ; TextureMagFilter
+      ;GL_NEAREST
+      ;GL_LINEAR
+
+      ; TextureMinFilter
       ;GL_NEAREST
       ;GL_LINEAR
       ;GL_NEAREST_MIPMAP_NEAREST
       ;GL_LINEAR_MIPMAP_NEAREST
       ;GL_NEAREST_MIPMAP_LINEAR
       ;GL_LINEAR_MIPMAP_LINEAR
+
+      ; TextureParameterName
       ;GL_TEXTURE_MAG_FILTER
       ;GL_TEXTURE_MIN_FILTER
       ;GL_TEXTURE_WRAP_S
       ;GL_TEXTURE_WRAP_T
       ;GL_GENERATE_MIPMAP
+
+      ; TextureTarget
+      ; GL_TEXTURE_2D
+
+      ; TextureUnit
       ;GL_TEXTURE0
       ;GL_TEXTURE1
       ;GL_TEXTURE2
@@ -309,8 +463,18 @@
       ;GL_TEXTURE31
       ;GL_ACTIVE_TEXTURE
       ;GL_CLIENT_ACTIVE_TEXTURE
+
+      ; TextureWrapMode
       ;GL_REPEAT
       ;GL_CLAMP_TO_EDGE
+
+      ; VertexPointerType
+      ;GL_SHORT
+      ;GL_FLOAT
+      ;GL_FIXED
+      ;GL_BYTE
+
+      ; LightName
       ;GL_LIGHT0
       ;GL_LIGHT1
       ;GL_LIGHT2
@@ -319,18 +483,25 @@
       ;GL_LIGHT5
       ;GL_LIGHT6
       ;GL_LIGHT7
+
+      ; Buffer Objects
       ;GL_ARRAY_BUFFER
       ;GL_ELEMENT_ARRAY_BUFFER
+
       ;GL_ARRAY_BUFFER_BINDING
       ;GL_ELEMENT_ARRAY_BUFFER_BINDING
       ;GL_VERTEX_ARRAY_BUFFER_BINDING
       ;GL_NORMAL_ARRAY_BUFFER_BINDING
       ;GL_COLOR_ARRAY_BUFFER_BINDING
       ;GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING
+
       ;GL_STATIC_DRAW
       ;GL_DYNAMIC_DRAW
+
       ;GL_BUFFER_SIZE
       ;GL_BUFFER_USAGE
+
+      ; Texture combine + dot3
       ;GL_SUBTRACT
       ;GL_COMBINE
       ;GL_COMBINE_RGB
@@ -347,25 +518,34 @@
       ;GL_OPERAND0_ALPHA
       ;GL_OPERAND1_ALPHA
       ;GL_OPERAND2_ALPHA
+
       ;GL_ALPHA_SCALE
+
       ;GL_SRC0_RGB
       ;GL_SRC1_RGB
       ;GL_SRC2_RGB
       ;GL_SRC0_ALPHA
       ;GL_SRC1_ALPHA
       ;GL_SRC2_ALPHA
+
       ;GL_DOT3_RGB
       ;GL_DOT3_RGBA
+
+      ; required OES extension tokens
+      ;GL_OES_read_format
+      ;GL_OES_compressed_paletted_texture
+      ;GL_OES_point_size_array
+      ;GL_OES_point_sprite
 
       ;glAlphaFunc ; void (GLenum func, GLfloat ref);
       glClearColor ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
       ;glClearDepthf ; void (GLfloat d);
-      ;glClipPlanef ; void (GLenum p, const GLfloat *eqn);
-      ;glColor4f ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+      glClipPlanef ; void (GLenum p, const GLfloat *eqn);
+      glColor4f ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
       ;glDepthRangef ; void (GLfloat n, GLfloat f);
       ;glFogf ; void (GLenum pname, GLfloat param);
       ;glFogfv ; void (GLenum pname, const GLfloat *params);
-      ;glFrustumf ; void (GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f);
+      glFrustumf ; void (GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f);
       ;glGetClipPlanef ; void (GLenum plane, GLfloat *equation);
       ;glGetFloatv ; void (GLenum pname, GLfloat *data);
       ;glGetLightfv ; void (GLenum light, GLenum pname, GLfloat *params);
@@ -376,14 +556,14 @@
       ;glLightModelfv ; void (GLenum pname, const GLfloat *params);
       ;glLightf ; void (GLenum light, GLenum pname, GLfloat param);
       ;glLightfv ; void (GLenum light, GLenum pname, const GLfloat *params);
-      ;glLineWidth ; void (GLfloat width);
-      ;glLoadMatrixf ; void (const GLfloat *m);
+      glLineWidth ; void (GLfloat width);
+      glLoadMatrixf ; void (const GLfloat *m);
       ;glMaterialf ; void (GLenum face, GLenum pname, GLfloat param);
       ;glMaterialfv ; void (GLenum face, GLenum pname, const GLfloat *params);
       ;glMultMatrixf ; void (const GLfloat *m);
       ;glMultiTexCoord4f ; void (GLenum target, GLfloat s, GLfloat t, GLfloat r, GLfloat q);
-      ;glNormal3f ; void (GLfloat nx, GLfloat ny, GLfloat nz);
-      ;glOrthof ; void (GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f);
+      glNormal3f ; void (GLfloat nx, GLfloat ny, GLfloat nz);
+      glOrthof ; void (GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f);
       ;glPointParameterf ; void (GLenum pname, GLfloat param);
       ;glPointParameterfv ; void (GLenum pname, const GLfloat *params);
       ;glPointSize ; void (GLfloat size);
@@ -395,6 +575,8 @@
       ;glTexParameterf ; void (GLenum target, GLenum pname, GLfloat param);
       ;glTexParameterfv ; void (GLenum target, GLenum pname, const GLfloat *params);
       ;glTranslatef ; void (GLfloat x, GLfloat y, GLfloat z);
+
+      ; Available in both Common and Common-Lite profiles
       ;glActiveTexture ; void (GLenum texture);
       ;glAlphaFuncx ; void (GLenum func, GLfixed ref);
       ;glBindBuffer ; void (GLenum target, GLuint buffer);
@@ -414,22 +596,22 @@
       glColorPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
       ;glCompressedTexImage2D ; void (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
       ;glCompressedTexSubImage2D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data);
-      ;-glCopyTexImage2D ; void (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
+      ;glCopyTexImage2D ; void (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
       ;glCopyTexSubImage2D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
       ;glCullFace ; void (GLenum mode);
       glDeleteBuffers ; void (GLsizei n, const GLuint *buffers);
-      ;glDeleteTextures ; void (GLsizei n, const GLuint *textures);
+      glDeleteTextures ; void (GLsizei n, const GLuint *textures);
       ;glDepthFunc ; void (GLenum func);
       ;glDepthMask ; void (GLboolean flag);
       ;glDepthRangex ; void (GLfixed n, GLfixed f);
       glDisable ; void (GLenum cap);
       ;glDisableClientState ; void (GLenum array);
       glDrawArrays ; void (GLenum mode, GLint first, GLsizei count);
-      ;glDrawElements ; void (GLenum mode, GLsizei count, GLenum type, const void *indices);
-      ;glEnable ; void (GLenum cap);
+      glDrawElements ; void (GLenum mode, GLsizei count, GLenum type, const void *indices);
+      glEnable ; void (GLenum cap);
       glEnableClientState ; void (GLenum array);
-      ;glFinish ; void (void);
-      ;glFlush ; void (void);
+      glFinish ; void (void);
+      glFlush ; void (void);
       ;glFogx ; void (GLenum pname, GLfixed param);
       ;glFogxv ; void (GLenum pname, const GLfixed *param);
       ;glFrontFace ; void (GLenum mode);
@@ -437,15 +619,15 @@
       ;glGetBooleanv ; void (GLenum pname, GLboolean *data);
       ;glGetBufferParameteriv ; void (GLenum target, GLenum pname, GLint *params);
       ;glGetClipPlanex ; void (GLenum plane, GLfixed *equation);
-      ;glGenBuffers ; void (GLsizei n, GLuint *buffers);
-      ;glGenTextures ; void (GLsizei n, GLuint *textures);
-      ;glGetError ; GLenum (void);
+      glGenBuffers ; void (GLsizei n, GLuint *buffers);
+      glGenTextures ; void (GLsizei n, GLuint *textures);
+      glGetError ; GLenum (void);
       ;glGetFixedv ; void (GLenum pname, GLfixed *params);
       ;glGetIntegerv ; void (GLenum pname, GLint *data);
       ;glGetLightxv ; void (GLenum light, GLenum pname, GLfixed *params);
       ;glGetMaterialxv ; void (GLenum face, GLenum pname, GLfixed *params);
       ;glGetPointerv ; void (GLenum pname, void **params);
-      ;glGetString ; const GLubyte* (GLenum name);
+      glGetString ; const GLubyte* (GLenum name);
       ;glGetTexEnviv ; void (GLenum target, GLenum pname, GLint *params);
       ;glGetTexEnvxv ; void (GLenum target, GLenum pname, GLfixed *params);
       ;glGetTexParameteriv ; void (GLenum target, GLenum pname, GLint *params);
@@ -459,7 +641,7 @@
       ;glLightx ; void (GLenum light, GLenum pname, GLfixed param);
       ;glLightxv ; void (GLenum light, GLenum pname, const GLfixed *params);
       ;glLineWidthx ; void (GLfixed width);
-      ;glLoadIdentity ; void (void);
+      glLoadIdentity ; void (void);
       ;glLoadMatrixx ; void (const GLfixed *m);
       ;glLogicOp ; void (GLenum opcode);
       ;glMaterialx ; void (GLenum face, GLenum pname, GLfixed param);
@@ -470,13 +652,13 @@
       ;glNormal3x ; void (GLfixed nx, GLfixed ny, GLfixed nz);
       ;glNormalPointer ; void (GLenum type, GLsizei stride, const void *pointer);
       ;glOrthox ; void (GLfixed l, GLfixed r, GLfixed b, GLfixed t, GLfixed n, GLfixed f);
-      ;glPixelStorei ; void (GLenum pname, GLint param);
+      glPixelStorei ; void (GLenum pname, GLint param);
       ;glPointParameterx ; void (GLenum pname, GLfixed param);
       ;glPointParameterxv ; void (GLenum pname, const GLfixed *params);
       ;glPointSizex ; void (GLfixed size);
       ;glPolygonOffsetx ; void (GLfixed factor, GLfixed units);
-      ;glPopMatrix ; void (void);
-      ;glPushMatrix ; void (void);
+      glPopMatrix ; void (void);
+      glPushMatrix ; void (void);
       ;glReadPixels ; void (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels);
       ;glRotatex ; void (GLfixed angle, GLfixed x, GLfixed y, GLfixed z);
       ;glSampleCoverage ; void (GLfloat value, GLboolean invert);
@@ -492,20 +674,21 @@
       ;glTexEnvx ; void (GLenum target, GLenum pname, GLfixed param);
       ;glTexEnviv ; void (GLenum target, GLenum pname, const GLint *params);
       ;glTexEnvxv ; void (GLenum target, GLenum pname, const GLfixed *params);
-      ;glTexImage2D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
-      ;glTexParameteri ; void (GLenum target, GLenum pname, GLint param);
+      glTexImage2D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
+      glTexParameteri ; void (GLenum target, GLenum pname, GLint param);
       ;glTexParameterx ; void (GLenum target, GLenum pname, GLfixed param);
       ;glTexParameteriv ; void (GLenum target, GLenum pname, const GLint *params);
       ;glTexParameterxv ; void (GLenum target, GLenum pname, const GLfixed *params);
       ;glTexSubImage2D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
       ;glTranslatex ; void (GLfixed x, GLfixed y, GLfixed z);
       glVertexPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
-      ;glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height);
+      glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height);
 
 )
 
    (import
-      (scheme core) (otus ffi) (owl io)
+      (scheme core) (otus ffi); (owl io)
+      (OpenGL ES platform)
       (owl string))
 
 (begin
@@ -513,6 +696,29 @@
    (define GL_VERSION_ES_CL_1_0 1)
    (define GL_VERSION_ES_CM_1_1 1)
    (define GL_VERSION_ES_CL_1_1 1)
+
+   (define GLvoid      fft-void)
+   (define GLchar      fft-char)
+   (define GLenum      fft-unsigned-int)
+   (define GLboolean   fft-unsigned-int)
+   (define GLbitfield  fft-unsigned-int)
+   (define GLbyte      khronos_int8_t)
+   (define GLshort     fft-short)
+   (define GLint       fft-int)
+   (define GLsizei     fft-int)
+   (define GLubyte     khronos_uint8_t)
+   (define GLushort    fft-unsigned-int)
+   (define GLuint      fft-unsigned-int) (define GLuint* (fft* GLuint)) (define GLuint& (fft& GLuint))
+   (define GLfloat     khronos_float_t)
+   (define GLclampf    khronos_float_t)
+   (define GLfixed     khronos_int32_t)
+   (define GLclampx    khronos_int32_t)
+
+   (define GLintptr    khronos_intptr_t)
+   (define GLsizeiptr  khronos_ssize_t)
+
+
+
 
    (define GLbyte     fft-signed-char)
    (define GLclampf   fft-float)
@@ -887,12 +1093,12 @@
 ; GL_API void GL_APIENTRY glAlphaFunc (GLenum func, GLfloat ref);
 (define glClearColor (GLES GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
 ; GL_API void GL_APIENTRY glClearDepthf (GLfloat d);
-; GL_API void GL_APIENTRY glClipPlanef (GLenum p, const GLfloat *eqn);
-; GL_API void GL_APIENTRY glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+(define glClipPlanef (GLES GLvoid "glClipPlanef" GLenum GLfloat*))
+(define glColor4f (GLES GLvoid "glColor4f" GLfloat GLfloat GLfloat GLfloat))
 ; GL_API void GL_APIENTRY glDepthRangef (GLfloat n, GLfloat f);
 ; GL_API void GL_APIENTRY glFogf (GLenum pname, GLfloat param);
 ; GL_API void GL_APIENTRY glFogfv (GLenum pname, const GLfloat *params);
-; GL_API void GL_APIENTRY glFrustumf (GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f);
+(define glFrustumf (GLES GLvoid "glFrustumf" GLfloat GLfloat GLfloat GLfloat GLfloat GLfloat))
 ; GL_API void GL_APIENTRY glGetClipPlanef (GLenum plane, GLfloat *equation);
 ; GL_API void GL_APIENTRY glGetFloatv (GLenum pname, GLfloat *data);
 ; GL_API void GL_APIENTRY glGetLightfv (GLenum light, GLenum pname, GLfloat *params);
@@ -903,14 +1109,14 @@
 ; GL_API void GL_APIENTRY glLightModelfv (GLenum pname, const GLfloat *params);
 ; GL_API void GL_APIENTRY glLightf (GLenum light, GLenum pname, GLfloat param);
 ; GL_API void GL_APIENTRY glLightfv (GLenum light, GLenum pname, const GLfloat *params);
-; GL_API void GL_APIENTRY glLineWidth (GLfloat width);
-; GL_API void GL_APIENTRY glLoadMatrixf (const GLfloat *m);
+(define glLineWidth (GLES GLvoid "glLineWidth" GLfloat))
+(define glLoadMatrixf (GLES GLvoid "glLoadMatrixf" GLfloat*))
 ; GL_API void GL_APIENTRY glMaterialf (GLenum face, GLenum pname, GLfloat param);
 ; GL_API void GL_APIENTRY glMaterialfv (GLenum face, GLenum pname, const GLfloat *params);
 ; GL_API void GL_APIENTRY glMultMatrixf (const GLfloat *m);
 ; GL_API void GL_APIENTRY glMultiTexCoord4f (GLenum target, GLfloat s, GLfloat t, GLfloat r, GLfloat q);
-; GL_API void GL_APIENTRY glNormal3f (GLfloat nx, GLfloat ny, GLfloat nz);
-; GL_API void GL_APIENTRY glOrthof (GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f);
+(define glNormal3f (GLES GLvoid "glNormal3f" GLfloat GLfloat GLfloat))
+(define glOrthof (GLES GLvoid "glOrthof" GLfloat GLfloat GLfloat GLfloat GLfloat GLfloat))
 ; GL_API void GL_APIENTRY glPointParameterf (GLenum pname, GLfloat param);
 ; GL_API void GL_APIENTRY glPointParameterfv (GLenum pname, const GLfloat *params);
 ; GL_API void GL_APIENTRY glPointSize (GLfloat size);
@@ -922,6 +1128,7 @@
 ; GL_API void GL_APIENTRY glTexParameterf (GLenum target, GLenum pname, GLfloat param);
 ; GL_API void GL_APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params);
 ; GL_API void GL_APIENTRY glTranslatef (GLfloat x, GLfloat y, GLfloat z);
+
 ; GL_API void GL_APIENTRY glActiveTexture (GLenum texture);
 ; GL_API void GL_APIENTRY glAlphaFuncx (GLenum func, GLfixed ref);
 ; GL_API void GL_APIENTRY glBindBuffer (GLenum target, GLuint buffer);
@@ -939,13 +1146,13 @@
 ; GL_API void GL_APIENTRY glColor4ub (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha);
 ; GL_API void GL_APIENTRY glColor4x (GLfixed red, GLfixed green, GLfixed blue, GLfixed alpha);
 ; GL_API void GL_APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-(define glColorPointerf (GLES GLvoid "glColorPointer" GLint GLenum GLsizei GLfloat*))
-(define (glColorPointer size type stride pointer)
-   (case type
-      (GL_FLOAT
-         (glColorPointerf size type stride pointer))
-      (else
-         (runtime-error "oops" type))))
+(define glColorPointer (GLES GLvoid "glColorPointer" GLint GLenum GLsizei GLfloat*))
+;; (define (glColorPointer size type stride pointer)
+;;    (case type
+;;       (GL_FLOAT
+;;          (glColorPointerf size type stride pointer))
+;;       (else
+;;          (runtime-error "oops" type))))
 
 
 ; GL_API void GL_APIENTRY glCompressedTexImage2D (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
@@ -953,19 +1160,19 @@
 ; GL_API void GL_APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
 ; GL_API void GL_APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
 ; GL_API void GL_APIENTRY glCullFace (GLenum mode);
-(define glDeleteBuffers (GLES GLvoid "glDeleteBuffers" GLsizei GLuint*)) ; GL_API void GL_APIENTRY  (GLsizei n, const GLuint *buffers);
-; GL_API void GL_APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures);
+(define glDeleteBuffers (GLES GLvoid "glDeleteBuffers" GLsizei GLuint*))
+(define glDeleteTextures (GLES GLvoid "glDeleteTextures" GLsizei GLuint*))
 ; GL_API void GL_APIENTRY glDepthFunc (GLenum func);
 ; GL_API void GL_APIENTRY glDepthMask (GLboolean flag);
 ; GL_API void GL_APIENTRY glDepthRangex (GLfixed n, GLfixed f);
 (define glDisable (GLES GLvoid "glDisable" GLenum))
 ; GL_API void GL_APIENTRY glDisableClientState (GLenum array);
 (define glDrawArrays (GLES GLvoid "glDrawArrays" GLenum GLint GLsizei))
-; GL_API void GL_APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indices);
-; GL_API void GL_APIENTRY glEnable (GLenum cap);
+(define glDrawElements (GLES GLvoid "glDrawElements" GLenum GLsizei GLenum fft-any))
+(define glEnable (GLES GLvoid "glEnable" GLenum))
 (define glEnableClientState (GLES GLvoid "glEnableClientState" GLenum))
-; GL_API void GL_APIENTRY glFinish (void);
-; GL_API void GL_APIENTRY glFlush (void);
+(define glFinish (GLES GLvoid "glFinish"))
+(define glFlush (GLES GLvoid "glFlush"))
 ; GL_API void GL_APIENTRY glFogx (GLenum pname, GLfixed param);
 ; GL_API void GL_APIENTRY glFogxv (GLenum pname, const GLfixed *param);
 ; GL_API void GL_APIENTRY glFrontFace (GLenum mode);
@@ -973,15 +1180,15 @@
 ; GL_API void GL_APIENTRY glGetBooleanv (GLenum pname, GLboolean *data);
 ; GL_API void GL_APIENTRY glGetBufferParameteriv (GLenum target, GLenum pname, GLint *params);
 ; GL_API void GL_APIENTRY glGetClipPlanex (GLenum plane, GLfixed *equation);
-; GL_API void GL_APIENTRY glGenBuffers (GLsizei n, GLuint *buffers);
-; GL_API void GL_APIENTRY glGenTextures (GLsizei n, GLuint *textures);
-; GL_API GLenum GL_APIENTRY glGetError (void);
+(define glGenBuffers (GLES GLvoid "glGenBuffers" GLsizei GLuint&))
+(define glGenTextures (GLES GLvoid "glGenTextures" GLsizei GLuint&))
+(define glGetError (GLES GLenum "glGetError"))
 ; GL_API void GL_APIENTRY glGetFixedv (GLenum pname, GLfixed *params);
 ; GL_API void GL_APIENTRY glGetIntegerv (GLenum pname, GLint *data);
 ; GL_API void GL_APIENTRY glGetLightxv (GLenum light, GLenum pname, GLfixed *params);
 ; GL_API void GL_APIENTRY glGetMaterialxv (GLenum face, GLenum pname, GLfixed *params);
 ; GL_API void GL_APIENTRY glGetPointerv (GLenum pname, void **params);
-; GL_API const GLubyte *GL_APIENTRY glGetString (GLenum name);
+(define glGetString (GLES type-string "glGetString" GLenum))
 ; GL_API void GL_APIENTRY glGetTexEnviv (GLenum target, GLenum pname, GLint *params);
 ; GL_API void GL_APIENTRY glGetTexEnvxv (GLenum target, GLenum pname, GLfixed *params);
 ; GL_API void GL_APIENTRY glGetTexParameteriv (GLenum target, GLenum pname, GLint *params);
@@ -995,7 +1202,7 @@
 ; GL_API void GL_APIENTRY glLightx (GLenum light, GLenum pname, GLfixed param);
 ; GL_API void GL_APIENTRY glLightxv (GLenum light, GLenum pname, const GLfixed *params);
 ; GL_API void GL_APIENTRY glLineWidthx (GLfixed width);
-; GL_API void GL_APIENTRY glLoadIdentity (void);
+(define glLoadIdentity (GLES GLvoid "glLoadIdentity"))
 ; GL_API void GL_APIENTRY glLoadMatrixx (const GLfixed *m);
 ; GL_API void GL_APIENTRY glLogicOp (GLenum opcode);
 ; GL_API void GL_APIENTRY glMaterialx (GLenum face, GLenum pname, GLfixed param);
@@ -1006,13 +1213,13 @@
 ; GL_API void GL_APIENTRY glNormal3x (GLfixed nx, GLfixed ny, GLfixed nz);
 ; GL_API void GL_APIENTRY glNormalPointer (GLenum type, GLsizei stride, const void *pointer);
 ; GL_API void GL_APIENTRY glOrthox (GLfixed l, GLfixed r, GLfixed b, GLfixed t, GLfixed n, GLfixed f);
-; GL_API void GL_APIENTRY glPixelStorei (GLenum pname, GLint param);
+(define glPixelStorei (GLES GLvoid "glPixelStorei" GLenum GLint))
 ; GL_API void GL_APIENTRY glPointParameterx (GLenum pname, GLfixed param);
 ; GL_API void GL_APIENTRY glPointParameterxv (GLenum pname, const GLfixed *params);
 ; GL_API void GL_APIENTRY glPointSizex (GLfixed size);
 ; GL_API void GL_APIENTRY glPolygonOffsetx (GLfixed factor, GLfixed units);
-; GL_API void GL_APIENTRY glPopMatrix (void);
-; GL_API void GL_APIENTRY glPushMatrix (void);
+(define glPopMatrix (GLES GLvoid "glPopMatrix"))
+(define glPushMatrix (GLES GLvoid "glPushMatrix"))
 ; GL_API void GL_APIENTRY glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels);
 ; GL_API void GL_APIENTRY glRotatex (GLfixed angle, GLfixed x, GLfixed y, GLfixed z);
 ; GL_API void GL_APIENTRY glSampleCoverage (GLfloat value, GLboolean invert);
@@ -1028,22 +1235,21 @@
 ; GL_API void GL_APIENTRY glTexEnvx (GLenum target, GLenum pname, GLfixed param);
 ; GL_API void GL_APIENTRY glTexEnviv (GLenum target, GLenum pname, const GLint *params);
 ; GL_API void GL_APIENTRY glTexEnvxv (GLenum target, GLenum pname, const GLfixed *params);
-; GL_API void GL_APIENTRY glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
-; GL_API void GL_APIENTRY glTexParameteri (GLenum target, GLenum pname, GLint param);
+(define glTexImage2D (GLES GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum fft-any))
+(define glTexParameteri (GLES GLvoid "glTexParameteri" GLenum GLenum GLint))
 ; GL_API void GL_APIENTRY glTexParameterx (GLenum target, GLenum pname, GLfixed param);
 ; GL_API void GL_APIENTRY glTexParameteriv (GLenum target, GLenum pname, const GLint *params);
 ; GL_API void GL_APIENTRY glTexParameterxv (GLenum target, GLenum pname, const GLfixed *params);
 ; GL_API void GL_APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
 ; GL_API void GL_APIENTRY glTranslatex (GLfixed x, GLfixed y, GLfixed z);
 
-(define glVertexPointerf (GLES GLvoid "glVertexPointer" GLint GLenum GLsizei GLfloat*))
-(define (glVertexPointer size type stride pointer)
-   (case type
-      (GL_FLOAT
-         (glVertexPointerf size type stride pointer))
-      (else
-         (runtime-error "oops" type))))
+(define glVertexPointer (GLES GLvoid "glVertexPointer" GLint GLenum GLsizei GLfloat*))
+;; (define (glVertexPointer size type stride pointer)
+;;    (case type
+;;       (GL_FLOAT
+;;          (glVertexPointerf size type stride pointer))
+;;       (else
+;;          (runtime-error "oops" type))))
 
-; GL_API void GL_APIENTRY glViewport (GLint x, GLint y, GLsizei width, GLsizei height);
-
+(define glViewport (GLES GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 ))

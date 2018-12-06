@@ -100,7 +100,6 @@
 
          (setq eglCreateWindowSurface (EGL EGLSurface "eglCreateWindowSurface" EGLDisplay EGLConfig NativeWindowType EGLint*))
          (setq eglCreateContext (EGL EGLContext "eglCreateContext" EGLDisplay EGLConfig EGLContext EGLint*))
-         (setq eglMakeCurrent   (EGL EGLBoolean "eglMakeCurrent" EGLDisplay EGLSurface EGLSurface EGLContext))
 
          (setq eglQuerySurface (EGL EGLBoolean "eglQuerySurface" EGLDisplay EGLSurface EGLint EGLint&))
 
@@ -153,9 +152,11 @@
 
             ; common part again:
             (define surface (eglCreateWindowSurface display config window #f))
-            (define context (eglCreateContext display config #false #false))
+            (define ctx (eglCreateContext display config #false #false))
 
-            (eglMakeCurrent display surface surface context)
+            (define context (tuple display surface window ctx))
+
+            (gl:MakeCurrent context)
 
             (define width '(0))
             (define height '(0))
@@ -163,7 +164,7 @@
             (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
             (print "window: " width "x" height)
 
-            (mail 'opengl (tuple 'set-context (tuple display surface window context))))
+            (mail 'opengl (tuple 'set-context context)))
 
          (define (native:enable-context context)
             (print "unimplemented: enable-context"))
