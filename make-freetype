@@ -1,0 +1,17 @@
+#!/bin/bash
+
+[ -d "/opt/android/ndk/toolchains/standalone-9" ] || /opt/android/ndk/build/tools/make-standalone-toolchain.sh \
+   --platform=android-9 \
+   --install-dir=/opt/android/ndk/toolchains/standalone-9
+
+PATH=/opt/android/ndk/toolchains/standalone-9/bin:$PATH
+ROOT=`pwd`
+
+cd jni/freetype2
+./autogen.sh
+
+CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/freetype \
+  --without-zlib --without-png
+make
+
+#make install $ROOT/libs/ft

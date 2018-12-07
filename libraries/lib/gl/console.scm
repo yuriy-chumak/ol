@@ -1,10 +1,19 @@
 (define-library (lib gl console)
    (import (otus lisp)
       (lib gl)
-      (lib soil)
-      (OpenGL version-1-4)
+;      (lib soil)
       ;; (OpenGL ARB clear_texture)
       (lib freetype))
+
+   (cond-expand
+      (Android
+         (import (OpenGL ES version-1-1))
+         (begin
+            (setq FONT "/sdcard/fonts/Anonymous Pro Minus.ttf")))
+      (else
+         (import (OpenGL version-1-4))
+         (begin
+            (setq FONT "fonts/Anonymous Pro.ttf"))))
 
    (export
       move-to ; x y, передвинуть курсор в координаты x,y внутри текущего окна
@@ -30,17 +39,25 @@
 
    ; let's preparte the font
    (define ft (make-FT_Library))
+   (print "ft: " (vm:cast ft type-bytevector))
    (setq error (FT_Init_FreeType ft))
    (unless (eq? error 0)
       (runtime-error "Can't access freetype library" error))
+   (print "ft: " (vm:cast ft type-bytevector))
 
    ; load font
    (define face (make-FT_Face))
-   (setq error (FT_New_Face ft (c-string "fonts/Anonymous Pro.ttf") 0 face))
+   (print "face: " (vm:cast face type-bytevector))
+   (print "try top load font " FONT)
+   (setq error (FT_New_Face ft (c-string FONT) 0 face))
    (unless (eq? error 0)
       (runtime-error "Can't load Anonymous Pro font" error))
+   (print "face: " (vm:cast face type-bytevector))
 
    ; slot for character bitmaps
+   (print (vptr->vector face 132))
+   ;(extract-void*
+
    (define slot (face->glyph face))
 
    ; скомпилируем текстурный атлас
@@ -59,9 +76,9 @@
    (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA 320 512 0 GL_LUMINANCE GL_UNSIGNED_BYTE #f)
 
    ; здесь мы модифицируем поведение glTexSubImage2D так, что бы точки шрифта всегда были засвечены
-   (glPixelTransferf GL_RED_BIAS 1)
-   (glPixelTransferf GL_GREEN_BIAS 1)
-   (glPixelTransferf GL_BLUE_BIAS 1)
+   ;(glPixelTransferf GL_RED_BIAS 1)
+   ;(glPixelTransferf GL_GREEN_BIAS 1)
+   ;(glPixelTransferf GL_BLUE_BIAS 1)
    ; почистим нашу текстуру, так как может попасть мусор (не надо?)
    ;; (if glClearTexImage
    ;;    (glClearTexImage (car atlas) 0 GL_LUMINANCE_ALPHA GL_UNSIGNED_BYTE (bytevector 250)))
@@ -88,22 +105,22 @@
                      (+ x (ref bitmap 1)) ; x
                      (+ y (- 16 (ref bitmap 3))) ; y
                      (ref bitmap 2) (ref bitmap 4) ; width, height
-                     GL_ALPHA GL_UNSIGNED_BYTE (ref bitmap 5))
+                     GL_LUMINANCE GL_UNSIGNED_BYTE (ref bitmap 5)) ; was GL_ALPHA
                   (cons char (tuple (/ (mod i 32) 32) (/ (div i 32) 32)))))
             symbols
             (iota (length symbols) 0)))))
 
-   (glPixelTransferf GL_RED_BIAS 0)
-   (glPixelTransferf GL_GREEN_BIAS 0)
-   (glPixelTransferf GL_BLUE_BIAS 0)
+   ;(glPixelTransferf GL_RED_BIAS 0)
+   ;(glPixelTransferf GL_GREEN_BIAS 0)
+   ;(glPixelTransferf GL_BLUE_BIAS 0)
    ; atlas creation finished
 
    ; -----------------------------
    (define (set-color rgb)
-      (apply glColor3ub rgb))
+      (apply glColor3f rgb))
 
    ; яркостные компоненты палитры
-   (setq q #x55) (setq a #xAA) (setq f #xFF)
+   (setq q #x55/255) (setq a #xAA/255) (setq f #xFF/255)
    ; full CGA 16-color palette
    (define BLACK (list 0 0 0))
    (define BLUE (list 0 0 a))
@@ -156,6 +173,11 @@
                                        (glVertex2f (+ x 1) (+ y 1))
                                        (glTexCoord2f (+ u 9/320) v)
                                        (glVertex2f (+ x 1) y)
+
+                                       (glTexCoord2f u (+ v 1/32))
+                                       (glVertex2f x (+ y 1))
+                                       (glTexCoord2f (+ u 9/320) v)
+                                       (glVertex2f (+ x 1) y)
                                        (glTexCoord2f u v)
                                        (glVertex2f x y))))
                               (do (+ x 1) y (cdr text))))))))
@@ -172,7 +194,7 @@
                ((number? text)
                   ; TODO: вывести на экран число
                   #false)
-               
+
                ((symbol? text) #t) ; игнорировать, символы обратавывает другая функция
                ((function? text) #t) ; аналогично
 
@@ -302,8 +324,8 @@
                                  ; отрисовка фона окна
                                  (if background (begin
                                     (glDisable GL_TEXTURE_2D)
-                                    (apply glColor3ub background)
-                                    (glBegin GL_QUADS)
+                                    (apply glColor3f background)
+                                    (glBegin GL_TRIANGLES)
                                     (let ((x (ref window 1))
                                           (y (ref window 2))
                                           (w (ref window 3))
@@ -311,21 +333,24 @@
                                        (glVertex2f x y)
                                        (glVertex2f x (+ y h))
                                        (glVertex2f (+ x w) (+ y h))
+
+                                       (glVertex2f x y)
+                                       (glVertex2f (+ x w) (+ y h))
                                        (glVertex2f (+ x w) y))
                                     (glEnd)
                                     (glEnable GL_TEXTURE_2D)))
 
                                  ; содержание окна
                                  (if writer (begin
-                                    (apply glColor3ub WHITE) ; сбросим цвет на дефолтный
-                                    (glBegin GL_QUADS)
+                                    (apply glColor3f WHITE) ; сбросим цвет на дефолтный
+                                    (glBegin GL_TRIANGLES)
                                        (writer write)
                                     (glEnd)))
 
                                  ; рамка
                                  (if border (begin
                                     (glDisable GL_TEXTURE_2D)
-                                    (apply glColor3ub border)
+                                    (apply glColor3f border)
                                     (glBegin GL_LINE_LOOP)
                                     (glVertex2f x y)
                                     (glVertex2f (+ x width 1/9) y)

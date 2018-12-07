@@ -152,16 +152,47 @@
    ;;    ;...
    ;; )))
 
-   (define (face->glyph face)
-      (extract-void* (vptr->vector face 248) 152)) ; 132 and 84 for x86
+)
+(cond-expand
+   (Android
+      (begin
+         (define (face->glyph face)
+            ; sizeof(FT_FaceRec) = 132
+            ; offsetof(FT_FaceRec, glyph) = 84
+            (extract-void* (vptr->vector face 132) 84))
 
-   (define (glyph->bitmap glyph*)
-      (let ((bitmap (list->vector (drop (vector->list (vptr->vector glyph* 304)) 152))))
-         (let ((height (extract-number bitmap 0 4)) ; 80 for x86
-               (width (extract-number bitmap 4 4))
-               (pitch (extract-number bitmap 8 4))
-               (buffer* (extract-void* bitmap 16))
-               (left (extract-number bitmap 40 4))
-               (top (extract-number bitmap 44 4)))
-            (tuple left width top height buffer*))))
-))
+         (define (glyph->bitmap glyph*)
+            ; sizeof(FT_GlyphSlotRec) = 160
+            ; offsetof(FT_GlyphSlotRec, bitmap) = 76
+            ; offsetof(FT_GlyphSlotRec, bitmap_left) = 100
+            ; offsetof(FT_GlyphSlotRec, bitmap_top) = 104
+
+            ; sizeof(FT_Bitmap) = 24
+            ; offsetof(FT_Bitmap, rows) = 0
+            ; offsetof(FT_Bitmap, width) = 4
+            ; offsetof(FT_Bitmap, pitch) = 8
+            ; offsetof(FT_Bitmap, buffer) = 12
+            (let ((bitmap (list->vector (drop (vector->list (vptr->vector glyph* 160)) 76))))
+               (let ((height (extract-number bitmap 0 4))
+                     (width (extract-number bitmap 4 4))
+                     (pitch (extract-number bitmap 8 4))
+                     (buffer* (extract-void* bitmap 12))
+                     (left (extract-number bitmap 24 4)) ; 100-76
+                     (top (extract-number bitmap 28 4))) ; 104-76
+                  (tuple left width top height buffer*))))
+      ))
+   (else
+      (begin
+         (define (face->glyph face)
+            (extract-void* (vptr->vector face 248) 152)) ; 132 and 84 for x86
+
+         (define (glyph->bitmap glyph*)
+            (let ((bitmap (list->vector (drop (vector->list (vptr->vector glyph* 304)) 152))))
+               (let ((height (extract-number bitmap 0 4)) ; 80 for x86
+                     (width (extract-number bitmap 4 4))
+                     (pitch (extract-number bitmap 8 4))
+                     (buffer* (extract-void* bitmap 16))
+                     (left (extract-number bitmap 40 4))
+                     (top (extract-number bitmap 44 4)))
+                  (tuple left width top height buffer*)))))))
+)

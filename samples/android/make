@@ -3,6 +3,7 @@
 ANDROID_SDK_ROOT=/opt/android/sdk
 # A Simple Script to build a simple APK without ant/gradle
 # Copyright 2016 Wanghong Lin
+# Copyright 2018 Yuriy Chumak
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,11 +19,7 @@ ANDROID_SDK_ROOT=/opt/android/sdk
 #
 
 # BASED ON: https://github.com/WanghongLin/miscellaneous/blob/master/tools/build-apk-manually.sh
-#
-# create a simple Android application to test this script
-#
 # $ android create project -n MyApplication -p MyApplication -k com.example -a MainActivity --target 8
-#
 # copy this script to the root of your Android project and run
 
 [ x$ANDROID_SDK_ROOT == x ] && {
@@ -45,7 +42,7 @@ _AAPT=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/aapt
 _DX=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/dx
 _ZIPALIGN=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/zipalign
 _ADB=adb #$ANDROID_SDK_ROOT/platform-tools/adb
-_INTERMEDIATE="bin gen ${_APK_BASENAME}.apk.unaligned"
+_INTERMEDIATE="bin gen lib ${_APK_BASENAME}.apk.unaligned"
 
 printf "\e[32mBuild with configuration: \n"
 printf "\tbuild tools version: $_BUILD_TOOLS_VERSION \n"
@@ -53,6 +50,7 @@ printf "\tplatform: $_PLATORM\e[0m\n"
 
 rm -rf $_INTERMEDIATE
 mkdir bin gen
+cp -r ../../libs lib
 
 $_AAPT package -f -m -J gen -M AndroidManifest.xml -S res -I $_ANDROID_CP
 
@@ -98,7 +96,7 @@ jarsigner -keystore ./debug.keystore -sigalg SHA1withRSA -digestalg SHA1 -storep
 #
 $_ADB get-state 1>/dev/null 2>&1 && $_ADB install -r ${_APK_BASENAME}-debug.apk || printf '\e[31mNo Android device attach\e[30m\n'
 
-$_ADB push assets /sdcard
-$_ADB shell monkey -p name.yuriy_chumak.ol -c android.intent.category.LAUNCHER 1
-
+. up
+#$_ADB push assets /sdcard
+#$_ADB shell monkey -p name.yuriy_chumak.ol -c android.intent.category.LAUNCHER 1
 #adb install -r wnd-debug.apk

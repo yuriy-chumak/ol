@@ -26,7 +26,6 @@
 (define fft-unsigned-short* (fft* fft-unsigned-short))
 (define fft-float* (fft* fft-float))
 
-
 (import (OpenGL ES version-1-1))
 
 (glDisable GL_DITHER)
@@ -73,17 +72,30 @@
 (define started (time-ms))
 (define ms '(0))
 
+(import (lib gl console))
+; libfreetype
+
+
 (gl:set-renderer (lambda (mouse)
    (glClearColor 0.2 0.2 0.2 1)
    (glClear GL_COLOR_BUFFER_BIT)
 
-   (glEnableClientState GL_VERTEX_ARRAY)
-   (glEnableClientState GL_COLOR_ARRAY)
+   (glBegin GL_TRIANGLES)
+      (glColor3f 0 1 0)
 
-   (glDrawArrays GL_TRIANGLES 0 3)
+      (glVertex2f 0 0)
+      (glVertex2f 0.5 0.7)
+      (glVertex2f 1 0)
+   (glEnd)
 
-   (glDisableClientState GL_VERTEX_ARRAY)
-   (glDisableClientState GL_COLOR_ARRAY)
+
+   ;; (glEnableClientState GL_VERTEX_ARRAY)
+   ;; (glEnableClientState GL_COLOR_ARRAY)
+
+   ;; (glDrawArrays GL_TRIANGLES 0 3)
+
+   ;; (glDisableClientState GL_VERTEX_ARRAY)
+   ;; (glDisableClientState GL_COLOR_ARRAY)
 
    ;; ;(glLoadIdentity)
    ;; ;(glTranslatef 0 0 -6)

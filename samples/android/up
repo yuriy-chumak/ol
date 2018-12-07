@@ -6,6 +6,8 @@ mkdir -p assets/OpenGL/ES
 mkdir -p assets/OpenGL/OES
 cp ../../libraries/lib/gl/config.scm assets/lib/gl/config.scm
 cp ../../libraries/lib/gl.scm assets/lib/gl.scm
+cp ../../libraries/lib/freetype.scm assets/lib/freetype.scm
+cp ../../libraries/lib/gl/console.scm assets/lib/gl/console.scm
 cp ../../libraries/otus/lisp.scm assets/otus/lisp.scm
 cp ../../libraries/otus/random!.scm assets/otus/random!.scm
 cp ../../libraries/otus/ffi.scm assets/otus/ffi.scm

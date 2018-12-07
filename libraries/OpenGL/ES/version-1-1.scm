@@ -38,25 +38,25 @@
       ;GL_ALWAYS
 
       ; BlendingFactorDest
-      ;GL_ZERO
-      ;GL_ONE
-      ;GL_SRC_COLOR
-      ;GL_ONE_MINUS_SRC_COLOR
-      ;GL_SRC_ALPHA
-      ;GL_ONE_MINUS_SRC_ALPHA
-      ;GL_DST_ALPHA
-      ;GL_ONE_MINUS_DST_ALPHA
+      GL_ZERO
+      GL_ONE
+      GL_SRC_COLOR
+      GL_ONE_MINUS_SRC_COLOR
+      GL_SRC_ALPHA
+      GL_ONE_MINUS_SRC_ALPHA
+      GL_DST_ALPHA
+      GL_ONE_MINUS_DST_ALPHA
 
       ; BlendingFactorSrc
-      ;GL_ZERO
-      ;GL_ONE
-      ;GL_DST_COLOR
-      ;GL_ONE_MINUS_DST_COLOR
-      ;GL_SRC_ALPHA_SATURATE
-      ;GL_SRC_ALPHA
-      ;GL_ONE_MINUS_SRC_ALPHA
-      ;GL_DST_ALPHA
-      ;GL_ONE_MINUS_DST_ALPHA
+      GL_ZERO
+      GL_ONE
+      GL_DST_COLOR
+      GL_ONE_MINUS_DST_COLOR
+      GL_SRC_ALPHA_SATURATE
+      GL_SRC_ALPHA
+      GL_ONE_MINUS_SRC_ALPHA
+      GL_DST_ALPHA
+      GL_ONE_MINUS_DST_ALPHA
 
       ; ClipPlaneName
       ;GL_CLIP_PLANE0
@@ -73,9 +73,9 @@
       ;GL_AMBIENT_AND_DIFFUSE
 
       ; ColorPointerType
-      ;GL_UNSIGNED_BYTE
-      ;GL_FLOAT
-      ;GL_FIXED
+      GL_UNSIGNED_BYTE
+      GL_FLOAT
+      GL_FIXED
 
       ; CullFaceMode
       ;GL_FRONT
@@ -95,10 +95,10 @@
       ; EnableCap
       ;GL_FOG
       ;GL_LIGHTING
-      ;GL_TEXTURE_2D
+      GL_TEXTURE_2D
       ;GL_CULL_FACE
       ;GL_ALPHA_TEST
-      ;GL_BLEND
+      GL_BLEND
       ;GL_COLOR_LOGIC_OP
       GL_DITHER
       ;GL_STENCIL_TEST
@@ -236,10 +236,10 @@
       ;GL_SAMPLE_COVERAGE_INVERT
 
       ; GetTextureParameter
-      ;; /*      GL_TEXTURE_MAG_FILTER */
-      ;; /*      GL_TEXTURE_MIN_FILTER */
-      ;; /*      GL_TEXTURE_WRAP_S */
-      ;; /*      GL_TEXTURE_WRAP_T */
+      GL_TEXTURE_MAG_FILTER
+      GL_TEXTURE_MIN_FILTER
+      GL_TEXTURE_WRAP_S
+      GL_TEXTURE_WRAP_T
 
       ;GL_NUM_COMPRESSED_TEXTURE_FORMATS
       ;GL_COMPRESSED_TEXTURE_FORMATS
@@ -321,21 +321,21 @@
       ;GL_FIXED
 
       ; PixelFormat
-      ;GL_ALPHA
-      ;GL_RGB
-      ;GL_RGBA
-      ;GL_LUMINANCE
-      ;GL_LUMINANCE_ALPHA
+      GL_ALPHA
+      GL_RGB
+      GL_RGBA
+      GL_LUMINANCE
+      GL_LUMINANCE_ALPHA
 
       ; PixelStoreParameter
-      ;GL_UNPACK_ALIGNMENT
-      ;GL_PACK_ALIGNMENT
+      GL_UNPACK_ALIGNMENT
+      GL_PACK_ALIGNMENT
 
       ; PixelType
-      ;GL_UNSIGNED_BYTE
-      ;GL_UNSIGNED_SHORT_4_4_4_4
-      ;GL_UNSIGNED_SHORT_5_5_5_1
-      ;GL_UNSIGNED_SHORT_5_6_5
+      GL_UNSIGNED_BYTE
+      GL_UNSIGNED_SHORT_4_4_4_4
+      GL_UNSIGNED_SHORT_5_5_5_1
+      GL_UNSIGNED_SHORT_5_6_5
 
       ; ShadingModel
       GL_FLAT
@@ -386,26 +386,26 @@
       ;GL_TEXTURE_ENV
 
       ; TextureMagFilter
-      ;GL_NEAREST
-      ;GL_LINEAR
+      GL_NEAREST
+      GL_LINEAR
 
       ; TextureMinFilter
-      ;GL_NEAREST
-      ;GL_LINEAR
-      ;GL_NEAREST_MIPMAP_NEAREST
-      ;GL_LINEAR_MIPMAP_NEAREST
-      ;GL_NEAREST_MIPMAP_LINEAR
-      ;GL_LINEAR_MIPMAP_LINEAR
+      GL_NEAREST
+      GL_LINEAR
+      GL_NEAREST_MIPMAP_NEAREST
+      GL_LINEAR_MIPMAP_NEAREST
+      GL_NEAREST_MIPMAP_LINEAR
+      GL_LINEAR_MIPMAP_LINEAR
 
       ; TextureParameterName
-      ;GL_TEXTURE_MAG_FILTER
-      ;GL_TEXTURE_MIN_FILTER
-      ;GL_TEXTURE_WRAP_S
-      ;GL_TEXTURE_WRAP_T
-      ;GL_GENERATE_MIPMAP
+      GL_TEXTURE_MAG_FILTER
+      GL_TEXTURE_MIN_FILTER
+      GL_TEXTURE_WRAP_S
+      GL_TEXTURE_WRAP_T
+      GL_GENERATE_MIPMAP
 
       ; TextureTarget
-      ; GL_TEXTURE_2D
+      GL_TEXTURE_2D
 
       ; TextureUnit
       ;GL_TEXTURE0
@@ -444,8 +444,8 @@
       ;GL_CLIENT_ACTIVE_TEXTURE
 
       ; TextureWrapMode
-      ;GL_REPEAT
-      ;GL_CLAMP_TO_EDGE
+      GL_REPEAT
+      GL_CLAMP_TO_EDGE
 
       ; VertexPointerType
       ;GL_SHORT
@@ -559,8 +559,8 @@
       ;glActiveTexture ; void (GLenum texture);
       ;glAlphaFuncx ; void (GLenum func, GLfixed ref);
       glBindBuffer ; void (GLenum target, GLuint buffer);
-      ;glBindTexture ; void (GLenum target, GLuint texture);
-      ;glBlendFunc ; void (GLenum sfactor, GLenum dfactor);
+      glBindTexture ; void (GLenum target, GLuint texture);
+      glBlendFunc ; void (GLenum sfactor, GLenum dfactor);
       glBufferData ; void (GLenum target, GLsizeiptr size, const void *data, GLenum usage);
       ;glBufferSubData ; void (GLenum target, GLintptr offset, GLsizeiptr size, const void *data);
       glClear ; void (GLbitfield mask);
@@ -658,19 +658,24 @@
       ;glTexParameterx ; void (GLenum target, GLenum pname, GLfixed param);
       ;glTexParameteriv ; void (GLenum target, GLenum pname, const GLint *params);
       ;glTexParameterxv ; void (GLenum target, GLenum pname, const GLfixed *params);
-      ;glTexSubImage2D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
+      glTexSubImage2D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
       ;glTranslatex ; void (GLfixed x, GLfixed y, GLfixed z);
       glVertexPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
       glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height);
 
       ; TODO: rename or move to appropriate place
       ;gl:CreateProgram
+
+      glBegin glEnd
+      glVertex2f glColor3f
+      glTexCoord2f
+      glOrtho
 )
 
    (import
       (scheme core) (otus ffi); (owl io)
       (OpenGL ES platform)
-      (owl string))
+      (owl string) (owl interop))
 
 (begin
    (define GL_VERSION_ES_CM_1_0 1)
@@ -1067,11 +1072,10 @@
    ; GL_API void GL_APIENTRY glActiveTexture (GLenum texture);
    ; GL_API void GL_APIENTRY glAlphaFuncx (GLenum func, GLfixed ref);
    (define glBindBuffer (GLES GLvoid "glBindBuffer" GLenum GLuint))
-   ; GL_API void GL_APIENTRY glBindTexture (GLenum target, GLuint texture);
-   ; GL_API void GL_APIENTRY glBlendFunc (GLenum sfactor, GLenum dfactor);
+   (define glBindTexture (GLES GLvoid "glBindTexture" GLenum GLuint))
+   (define glBlendFunc (GLES GLvoid "glBlendFunc" GLenum GLenum))
    (define glBufferData (GLES GLvoid "glBufferData" GLenum GLsizeiptr fft-any GLenum))
    ; GL_API void GL_APIENTRY glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const void *data);
-   ; GL_API void GL_APIENTRY glClear (GLbitfield mask);
    (define glClear (GLES GLvoid "glClear" GLbitfield))
    ; GL_API void GL_APIENTRY glClearColorx (GLfixed red, GLfixed green, GLfixed blue, GLfixed alpha);
    ; GL_API void GL_APIENTRY glClearDepthx (GLfixed depth);
@@ -1175,7 +1179,7 @@
    ; GL_API void GL_APIENTRY glTexParameterx (GLenum target, GLenum pname, GLfixed param);
    ; GL_API void GL_APIENTRY glTexParameteriv (GLenum target, GLenum pname, const GLint *params);
    ; GL_API void GL_APIENTRY glTexParameterxv (GLenum target, GLenum pname, const GLfixed *params);
-   ; GL_API void GL_APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
+   (define glTexSubImage2D (GLES GLvoid "glTexSubImage2D" GLenum GLint GLint GLint GLsizei GLsizei GLenum GLenum fft-any))
    ; GL_API void GL_APIENTRY glTranslatex (GLfixed x, GLfixed y, GLfixed z);
 
    (define glVertexPointer (GLES GLvoid "glVertexPointer" GLint GLenum GLsizei fft-any))
@@ -1187,6 +1191,9 @@
    ;;          (runtime-error "oops" type))))
 
    (define glViewport (GLES GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+
+   ; ========================================================================
+   ; additional OpenGL simulation layer
 
 ;; (define (gl:CreateProgram vstext fstext)
 ;; (let ((po (glCreateProgram))
@@ -1233,5 +1240,116 @@
 ;;    (glDetachShader po vs)
 
 ;;    po)) ; return program
+
+   ; additional glBegin/glEnd compatibility functions
+   (define fft-float* (fft* fft-float))
+
+   (fork-server 'opengl-compat (lambda ()
+      ; some internal staff
+      (define default-color '(1 1 1 1))
+
+   (print "starting 'opengl-compat coroutine...")
+   ; main loop
+   (let this ((dictionary #empty))
+   (let* ((envelope (wait-mail))
+         (sender msg envelope))
+      (tuple-case msg
+         ((debug)
+            (mail sender dictionary)
+            (this dictionary))
+
+         ; drawing
+         ((glBegin mode)
+            (let*((dictionary (put dictionary 'mode mode))
+                  (dictionary (put dictionary 'vertices #null))
+                  (dictionary (put dictionary 'colors #null))
+                  (dictionary (put dictionary 'vbos ((lambda ()
+                                 (define vbo '(0))
+                                 (glGenBuffers 1 vbo)
+                                 (define cbo '(0))
+                                 (glGenBuffers 1 cbo)
+                                 (list (car vbo) (car cbo)))))))
+;               (print "glBegin: buffers " (getf dictionary 'vbos))
+               (this dictionary)))
+         ((glColor r g b a)
+            (let ((dictionary (put dictionary 'color (list r g b a))))
+               (this dictionary)))
+         ((glVertex x y z)
+            (let*((dictionary (put dictionary 'vertices (append
+                                 (get dictionary 'vertices '())
+                                 (list x y z))))
+                  (dictionary (put dictionary 'colors (append
+                                 (get dictionary 'colors '())
+                                 (get dictionary 'color default-color)))))
+               (this dictionary)))
+
+         ((glEnd)
+            (let ((vbos (get dictionary 'vbos '(0 0)))
+                  (mode (get dictionary 'mode GL_TRIANGLES))
+                  (vertices (get dictionary 'vertices '()))
+                  (colors (get dictionary 'colors '())))
+
+;;                   ;(vPosition (glGetAttribLocation (get dictionary 'program 0) "vPosition"))
+;;                   ;(vColor    (glGetAttribLocation (get dictionary 'program 0) "vColor")))
+               (glBindBuffer GL_ARRAY_BUFFER (list-ref vbos 0))
+               (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length vertices)) (cons fft-float* vertices) GL_STATIC_DRAW)
+               (glVertexPointer 3 GL_FLOAT 0 #f)
+
+               (glBindBuffer GL_ARRAY_BUFFER (list-ref vbos 1))
+               (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length colors)) (cons fft-float* colors) GL_STATIC_DRAW)
+               (glColorPointer 4 GL_FLOAT 0 #f)
+
+               (glEnableClientState GL_VERTEX_ARRAY)
+               (glEnableClientState GL_COLOR_ARRAY)
+
+               (glDrawArrays mode 0 (/ (length vertices)
+                  (case mode
+                     (GL_TRIANGLES 3))))
+
+               (glDisableClientState GL_VERTEX_ARRAY)
+               (glDisableClientState GL_COLOR_ARRAY)
+
+
+
+;;                ;; ;(glUseProgram (get dictionary 'program 0))
+;;                ;; ; matrices
+;;                ;; ;; (glUniformMatrix4fv (glGetUniformLocation (get dictionary 'program 0) (c-string "uModelViewMatrix"))
+;;                ;; ;;    1 GL_FALSE (apply append (get dictionary GL_MODELVIEW_MATRIX identity-matrix)))
+;;                ;; ;; (glUniformMatrix4fv (glGetUniformLocation (get dictionary 'program 0) (c-string "uProjectionMatrix"))
+;;                ;; ;;    1 GL_FALSE (apply append (get dictionary GL_PROJECTION_MATRIX identity-matrix)))
+;;                ;; ; vertices
+;;                ;; (glBindBuffer GL_ARRAY_BUFFER (list-ref vbos 0))
+;;                ;; (glVertexAttribPointer vPosition 3 GL_FLOAT GL_FALSE 0 #false)
+;;                ;; (glEnableVertexAttribArray vPosition)
+;;                ;; ; colors
+;;                ;; (glBindBuffer GL_ARRAY_BUFFER (list-ref vbos 1))
+;;                ;; (glVertexAttribPointer vColor 4 GL_FLOAT GL_FALSE 0 #false)
+;;                ;; (glEnableVertexAttribArray vColor)
+;;                ;; (glDrawArrays mode 0 (/ (length vertices) 3))
+
+;;                ; free resources
+               (glDeleteBuffers (length vbos) vbos))
+            (mail sender 'ok)
+            (this dictionary))
+
+         (else
+            (print-to stderr "Unknown opengl server command " msg)
+            (this dictionary)))))))
+
+   (define (glBegin mode)
+      (mail 'opengl-compat (tuple 'glBegin mode)))
+   (define (glEnd)
+      (interact 'opengl-compat (tuple 'glEnd)))
+
+   (define (glVertex2f x y)
+      (mail 'opengl-compat (tuple 'glVertex x y 0)))
+
+   (define (glColor3f x y z)
+      (mail 'opengl-compat (tuple 'glColor x y z 1)))
+
+   (define (glTexCoord2f s t)
+      (mail 'opengl-compat (tuple 'glTexCoord s t)))
+
+   (define glOrtho glOrthof)
 
 ))

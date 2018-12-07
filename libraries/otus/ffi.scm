@@ -337,7 +337,8 @@
 (cond-expand
    ((or Linux Android Emscripten)
       (begin
-         (setq memcpy ((load-dynamic-library #f) fft-void "memcpy" fft-void* fft-void* fft-unsigned-int))
+         (setq memcpy ((load-dynamic-library #f) fft-void "OL_memcpy" fft-void* fft-void* fft-unsigned-int))
+         (print "***** memcpy: " memcpy)
 
          (define (vptr->vector vptr sizeof)
             (let ((vector (make-bytevector sizeof)))
@@ -357,24 +358,44 @@
    (else
       (runtime-error "ffi: unknown platform OS" *uname*)))
 
+;; (cond-expand
+;;    (little-endian
+;;       (begin
+;;             ;; (vm:cast
+;;             ;;    (fold (lambda (val offs)
+;;             ;;             (+ (<< val 8) (ref vector offs)))
+;;             ;;       0 (reverse (iota (size nullptr) offset)))
+;;             ;;    type-vptr))
+
+;;       ))
+
 (begin
+
+   (define (extract-void* vector offset)
+      (let ((void* (make-vptr)))
+         (map (lambda (i j) ; for-each
+               (set-ref! void* i (ref vector j)))
+            (iota (size void*) 0)
+            (iota (size void*) offset))
+         void*))
+
 
 ; TODO: change this
 
-(define (extract-void* vector offset)
-   ;; TODO:
-   ;; (let ((void* (make-vptr)))
-   ;;    (map (lambda (i j) ; for-each
-   ;;          (print (ref vector j)))
-   ;;          ;(set-ref! void* i (ref vector j)))
-   ;;       (iota (size void*) 0)
-   ;;       (iota (size void*) offset))
-   ;;    void*))
-   (vm:cast
-      (fold (lambda (val offs)
-               (+ (<< val 8) (ref vector offs)))
-         0 (reverse (iota (size nullptr) offset)))
-      type-vptr))
+;; (define (extract-void* vector offset)
+;;    ;; TODO:
+;;    ;; (let ((void* (make-vptr)))
+;;    ;;    (map (lambda (i j) ; for-each
+;;    ;;          (print (ref vector j)))
+;;    ;;          ;(set-ref! void* i (ref vector j)))
+;;    ;;       (iota (size void*) 0)
+;;    ;;       (iota (size void*) offset))
+;;    ;;    void*))
+;;    (vm:cast
+;;       (fold (lambda (val offs)
+;;                (+ (<< val 8) (ref vector offs)))
+;;          0 (reverse (iota (size nullptr) offset)))
+;;       type-vptr))
 
 (define (extract-number vector offset length)
    (let ((number

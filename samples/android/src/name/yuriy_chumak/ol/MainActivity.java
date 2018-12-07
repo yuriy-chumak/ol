@@ -15,87 +15,92 @@ import android.content.pm.PackageManager.NameNotFoundException;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback
 {
-    private static String TAG = "Otus Lisp";
+	private static String TAG = "Otus Lisp";
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.main);
+		setContentView(R.layout.main);
 
-        SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceview);
-        surfaceView.getHolder().addCallback(this);
-        surfaceView.setOnClickListener(new OnClickListener() {
-                public void onClick(View view) {
-                    MainActivity.this.finish();
-                    System.exit(0);
-                    // Toast toast = Toast.makeText(MainActivity.this,
-                    //                              "This demo combines Java UI and native EGL + OpenGL renderer",
-                    //                              Toast.LENGTH_LONG);
-                    // toast.show();
-                }});
+		SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceview);
+		surfaceView.getHolder().addCallback(this);
+		surfaceView.setOnClickListener(new OnClickListener() {
+				public void onClick(View view) {
+					MainActivity.this.finish();
+					System.exit(0);
+					// Toast toast = Toast.makeText(MainActivity.this,
+					//							  "This demo combines Java UI and native EGL + OpenGL renderer",
+					//							  Toast.LENGTH_LONG);
+					// toast.show();
+				}});
 
-        String apkLocation;
-        ApplicationInfo appInfo = null;
-        PackageManager packMgmr = this.getPackageManager();
-        try {
-            appInfo = packMgmr.getApplicationInfo("name.yuriy_chumak.ol", 0);
-        } catch (NameNotFoundException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Unable to locate APK...");
-        }
+		String apkLocation;
+		ApplicationInfo appInfo = null;
+		PackageManager packMgmr = this.getPackageManager();
+		try {
+			appInfo = packMgmr.getApplicationInfo("name.yuriy_chumak.ol", 0);
+		} catch (NameNotFoundException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Unable to locate APK...");
+		}
 
-        apkLocation = appInfo.sourceDir;
-        nativeSetApkLocation(apkLocation);
-    }
+		apkLocation = appInfo.sourceDir;
+		nativeSetApkLocation(apkLocation);
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Log.i(TAG, "onStart()");
-        nativeOnStart();
-    }
+		nativeSetOlHome("/sdcard");
+	}
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.i(TAG, "onResume()");
-        nativeOnResume();
-    }
+	@Override
+	protected void onStart() {
+		super.onStart();
+		Log.i(TAG, "onStart()");
+		nativeOnStart();
+	}
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Log.i(TAG, "onPause()");
-        nativeOnPause();
-    }
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.i(TAG, "onResume()");
+		nativeOnResume();
+	}
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        Log.i(TAG, "onStop()");
-        nativeOnStop();
-    }
+	@Override
+	protected void onPause() {
+		super.onPause();
+		Log.i(TAG, "onPause()");
+		nativeOnPause();
+	}
 
-    public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-        nativeSetSurface(holder.getSurface());
-    }
-    public void surfaceCreated(SurfaceHolder holder) {
-    }
+	@Override
+	protected void onStop() {
+		super.onStop();
+		Log.i(TAG, "onStop()");
+		nativeOnStop();
+	}
 
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        nativeSetSurface(null);
-    }
+	public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+		nativeSetSurface(holder.getSurface());
+	}
+	public void surfaceCreated(SurfaceHolder holder) {
+	}
 
-    public static native void nativeOnStart();
-    public static native void nativeOnResume();
-    public static native void nativeOnPause();
-    public static native void nativeOnStop();
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		nativeSetSurface(null);
+	}
 
-    public static native void nativeSetSurface(Surface surface);
-    public static native void nativeSetApkLocation(String location);
+	public static native void nativeOnStart();
+	public static native void nativeOnResume();
+	public static native void nativeOnPause();
+	public static native void nativeOnStop();
 
-    static {
-        System.loadLibrary("ol");
-    }
+	public static native void nativeSetSurface(Surface surface);
+	public static native void nativeSetApkLocation(String location);
+	public static native void nativeSetOlHome(String home);
+
+	static {
+		System.loadLibrary("c");
+		System.loadLibrary("freetype");
+		System.loadLibrary("ol");
+	}
 }

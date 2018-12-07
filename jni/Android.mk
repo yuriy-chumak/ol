@@ -13,6 +13,13 @@ elf_format=$(or \
 filename=$(lastword $(subst /, ,$(1)))
 
 
+include $(CLEAR_VARS)
+LOCAL_MODULE            := freetype2
+LOCAL_SRC_FILES         := freetype2/objs/.libs/libfreetype.so #$(TARGET_ARCH_ABI)/libprebuilt-static-lib.a
+# The header files should be located in the following dir relative to jni/ dir
+LOCAL_EXPORT_C_INCLUDES := freetype2/include
+include $(PREBUILT_SHARED_LIBRARY)
+
 # https://balau82.wordpress.com/2012/02/19/linking-a-binary-blob-with-gcc/
 .PHONY: $(TOOLCHAIN_PREFIX)objcopy
 jni/../obj/local/$(TARGET_ARCH_ABI)/repl.o: $(TOOLCHAIN_PREFIX)objcopy jni/../obj/local/$(TARGET_ARCH_ABI)
@@ -30,6 +37,8 @@ LOCAL_LDFLAGS   += -Xlinker obj/local/$(TARGET_ARCH_ABI)/repl.o
 
 LOCAL_CFLAGS    += -DOLVM_LIBRARY_SO_NAME="\"lib$(LOCAL_MODULE).so\""
 LOCAL_LDLIBS    += -llog -landroid
+
+LOCAL_CFLAGS    += -Ijni/freetype2/include
 
 jni/../obj/local/$(TARGET_ARCH_ABI)/repl.c: jni/../obj/local/$(TARGET_ARCH_ABI)/repl.o
 	@echo // This empty file required by the stupid Android build system >$@

@@ -1,0 +1,3 @@
+[submodule "jni/freetype2"]
+	path = jni/freetype2
+	url = git://git.sv.nongnu.org/freetype/freetype2.git
