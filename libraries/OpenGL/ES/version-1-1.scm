@@ -120,7 +120,7 @@
       GL_VERTEX_ARRAY
       GL_NORMAL_ARRAY
       GL_COLOR_ARRAY
-      ;GL_TEXTURE_COORD_ARRAY
+      GL_TEXTURE_COORD_ARRAY
       ;GL_MULTISAMPLE
       ;GL_SAMPLE_ALPHA_TO_COVERAGE
       ;GL_SAMPLE_ALPHA_TO_ONE
@@ -648,7 +648,7 @@
       ;glStencilFunc ; void (GLenum func, GLint ref, GLuint mask);
       ;glStencilMask ; void (GLuint mask);
       ;glStencilOp ; void (GLenum fail, GLenum zfail, GLenum zpass);
-      ;glTexCoordPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
+      glTexCoordPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
       ;glTexEnvi ; void (GLenum target, GLenum pname, GLint param);
       ;glTexEnvx ; void (GLenum target, GLenum pname, GLfixed param);
       ;glTexEnviv ; void (GLenum target, GLenum pname, const GLint *params);
@@ -1169,7 +1169,7 @@
    ; GL_API void GL_APIENTRY glStencilFunc (GLenum func, GLint ref, GLuint mask);
    ; GL_API void GL_APIENTRY glStencilMask (GLuint mask);
    ; GL_API void GL_APIENTRY glStencilOp (GLenum fail, GLenum zfail, GLenum zpass);
-   ; GL_API void GL_APIENTRY glTexCoordPointer (GLint size, GLenum type, GLsizei stride, const void *pointer);
+   (define glTexCoordPointer (GLES GLvoid "glTexCoordPointer" GLint GLenum GLsizei fft-any))
    ; GL_API void GL_APIENTRY glTexEnvi (GLenum target, GLenum pname, GLint param);
    ; GL_API void GL_APIENTRY glTexEnvx (GLenum target, GLenum pname, GLfixed param);
    ; GL_API void GL_APIENTRY glTexEnviv (GLenum target, GLenum pname, const GLint *params);
@@ -1248,7 +1248,6 @@
       ; some internal staff
       (define default-color '(1 1 1 1))
 
-   (print "starting 'opengl-compat coroutine...")
    ; main loop
    (let this ((dictionary #empty))
    (let* ((envelope (wait-mail))
@@ -1263,13 +1262,11 @@
             (let*((dictionary (put dictionary 'mode mode))
                   (dictionary (put dictionary 'vertices #null))
                   (dictionary (put dictionary 'colors #null))
+                  (dictionary (put dictionary 'texcoords #null))
                   (dictionary (put dictionary 'vbos ((lambda ()
-                                 (define vbo '(0))
-                                 (glGenBuffers 1 vbo)
-                                 (define cbo '(0))
-                                 (glGenBuffers 1 cbo)
-                                 (list (car vbo) (car cbo)))))))
-;               (print "glBegin: buffers " (getf dictionary 'vbos))
+                                 (define vbos '(0 0 0))
+                                 (glGenBuffers 3 vbos)
+                                 vbos)))))
                (this dictionary)))
          ((glColor r g b a)
             (let ((dictionary (put dictionary 'color (list r g b a))))
@@ -1282,32 +1279,44 @@
                                  (get dictionary 'colors '())
                                  (get dictionary 'color default-color)))))
                (this dictionary)))
+         ((glTexCoord s t)
+            (let*((dictionary (put dictionary 'texcoords (append
+                                 (get dictionary 'texcoords '())
+                                 (list s t)))))
+               (this dictionary)))
 
          ((glEnd)
             (let ((vbos (get dictionary 'vbos '(0 0)))
                   (mode (get dictionary 'mode GL_TRIANGLES))
                   (vertices (get dictionary 'vertices '()))
+                  (texcoords (get dictionary 'texcoords #f))
                   (colors (get dictionary 'colors '())))
 
 ;;                   ;(vPosition (glGetAttribLocation (get dictionary 'program 0) "vPosition"))
 ;;                   ;(vColor    (glGetAttribLocation (get dictionary 'program 0) "vColor")))
-               (glBindBuffer GL_ARRAY_BUFFER (list-ref vbos 0))
+               (glBindBuffer GL_ARRAY_BUFFER (lref vbos 0))
                (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length vertices)) (cons fft-float* vertices) GL_STATIC_DRAW)
                (glVertexPointer 3 GL_FLOAT 0 #f)
+               (glEnableClientState GL_VERTEX_ARRAY)
 
-               (glBindBuffer GL_ARRAY_BUFFER (list-ref vbos 1))
+               (glBindBuffer GL_ARRAY_BUFFER (lref vbos 1))
                (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length colors)) (cons fft-float* colors) GL_STATIC_DRAW)
                (glColorPointer 4 GL_FLOAT 0 #f)
-
-               (glEnableClientState GL_VERTEX_ARRAY)
                (glEnableClientState GL_COLOR_ARRAY)
 
-               (glDrawArrays mode 0 (/ (length vertices)
-                  (case mode
-                     (GL_TRIANGLES 3))))
+               (unless (null? texcoords) (begin
+                  (glBindBuffer GL_ARRAY_BUFFER (lref vbos 2))
+                  (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length texcoords)) (cons fft-float* texcoords) GL_STATIC_DRAW)
+                  (glTexCoordPointer 2 GL_FLOAT 0 #f)
+                  (glEnableClientState GL_TEXTURE_COORD_ARRAY)
+               ))
 
-               (glDisableClientState GL_VERTEX_ARRAY)
-               (glDisableClientState GL_COLOR_ARRAY)
+               (glDrawArrays mode 0 (/ (length vertices) 3))
+
+               (unless (null? texcoords)
+                  (glDisableClientState GL_TEXTURE_COORD_ARRAY)) ; optional
+               (glDisableClientState GL_COLOR_ARRAY) ; mandatory
+               (glDisableClientState GL_VERTEX_ARRAY) ; mandatory
 
 
 

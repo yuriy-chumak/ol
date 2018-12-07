@@ -39,25 +39,17 @@
 
    ; let's preparte the font
    (define ft (make-FT_Library))
-   (print "ft: " (vm:cast ft type-bytevector))
    (setq error (FT_Init_FreeType ft))
    (unless (eq? error 0)
       (runtime-error "Can't access freetype library" error))
-   (print "ft: " (vm:cast ft type-bytevector))
 
    ; load font
    (define face (make-FT_Face))
-   (print "face: " (vm:cast face type-bytevector))
-   (print "try top load font " FONT)
    (setq error (FT_New_Face ft (c-string FONT) 0 face))
    (unless (eq? error 0)
       (runtime-error "Can't load Anonymous Pro font" error))
-   (print "face: " (vm:cast face type-bytevector))
 
    ; slot for character bitmaps
-   (print (vptr->vector face 132))
-   ;(extract-void*
-
    (define slot (face->glyph face))
 
    ; скомпилируем текстурный атлас
@@ -73,7 +65,7 @@
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
 
    ; создадим текстуру
-   (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA 320 512 0 GL_LUMINANCE GL_UNSIGNED_BYTE #f)
+   (glTexImage2D GL_TEXTURE_2D 0 GL_ALPHA 320 512 0 GL_ALPHA GL_UNSIGNED_BYTE #f)
 
    ; здесь мы модифицируем поведение glTexSubImage2D так, что бы точки шрифта всегда были засвечены
    ;(glPixelTransferf GL_RED_BIAS 1)
@@ -88,6 +80,7 @@
    (define charset
    (let ((symbols (fold append #null (list
             (iota (- 127 #\space) #\space)
+            ; additional latin capital, todo.
             (string->runes "АБВГҐДЕЁЄЖЗИІЇЙКЛМНОПРСТУЎФХЦЧШЩЪЫЬЭЮЯ")
             (string->runes "абвгґдеёєжзиіїйклмнопрстуўфхцчшщъыьэюя")))))
       ; пускай знакоместо будет 16 в высоту (что дает нам 32 строки) и 9(10) в ширину (32 колонки) - итого, 1024 символов; 1 лишняя точка для того, чтобы символы не накладывались
@@ -105,7 +98,7 @@
                      (+ x (ref bitmap 1)) ; x
                      (+ y (- 16 (ref bitmap 3))) ; y
                      (ref bitmap 2) (ref bitmap 4) ; width, height
-                     GL_LUMINANCE GL_UNSIGNED_BYTE (ref bitmap 5)) ; was GL_ALPHA
+                     GL_ALPHA GL_UNSIGNED_BYTE (ref bitmap 5)) ; was GL_ALPHA
                   (cons char (tuple (/ (mod i 32) 32) (/ (div i 32) 32)))))
             symbols
             (iota (length symbols) 0)))))
@@ -253,7 +246,6 @@
                            (set-ref! drawing-area 2 (ref window 2))
                            ; а тут проведем тест на попадание мышки в выводимое знакоместо
                            (move-to 0 0)
-                           ;(print window " - " X ", " Y)
                            (writer write)
                      ))
                      (loop (force (cdr ff))))))))))

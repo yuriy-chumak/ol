@@ -54,28 +54,24 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 	@Override
 	protected void onStart() {
 		super.onStart();
-		Log.i(TAG, "onStart()");
 		nativeOnStart();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		Log.i(TAG, "onResume()");
 		nativeOnResume();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		Log.i(TAG, "onPause()");
 		nativeOnPause();
 	}
 
 	@Override
 	protected void onStop() {
 		super.onStop();
-		Log.i(TAG, "onStop()");
 		nativeOnStop();
 	}
 
@@ -99,7 +95,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 	public static native void nativeSetOlHome(String home);
 
 	static {
-		System.loadLibrary("c");
 		System.loadLibrary("freetype");
 		System.loadLibrary("ol");
 	}
