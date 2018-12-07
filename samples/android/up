@@ -16,5 +16,5 @@ cp ../../libraries/OpenGL/ES/platform.scm assets/OpenGL/ES/platform.scm
 cp ../../libraries/OpenGL/OES/* assets/OpenGL/OES/
 
 adb shell ps | grep name.yuriy_chumak.ol | awk '{print $2}' | xargs adb shell kill
-adb push assets /sdcard
+adb push assets /sdcard/WnD
 adb shell monkey -p name.yuriy_chumak.ol -c android.intent.category.LAUNCHER 1

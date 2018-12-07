@@ -9,7 +9,7 @@
       (Android
          (import (OpenGL ES version-1-1))
          (begin
-            (setq FONT "/sdcard/fonts/Anonymous Pro Minus.ttf")))
+            (setq FONT "/sdcard/WnD/fonts/Anonymous Pro Minus.ttf")))
       (else
          (import (OpenGL version-1-4))
          (begin

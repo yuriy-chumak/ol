@@ -36,6 +36,20 @@
 (import (lib gl console))
 (import (otus random!))
 
+; Cross-os trick (use different opengl's for different OSes):
+(define-library (lib gl common)
+   (import (scheme core))
+   (export version)
+   (cond-expand
+      (Android
+         (import (OpenGL ES version-1-1))
+         (export (exports (OpenGL ES version-1-1))))
+      (else
+         (import (OpenGL version-1-1))
+         (export (exports (OpenGL version-1-1)))))
+   (begin (define version "1.0")))
+(import (lib gl common))
+
 ; временное окно дебага (покажем fps):
 (define fps (create-window 70 24 10 1))
 (define started (time-ms)) (define time (list 0))
@@ -146,7 +160,6 @@
    )
 ))
 
-(import (OpenGL ES version-1-1))
 ; рендерер:
 (gl:set-renderer (lambda (mouse)
    (glClearColor 0.2 0.2 0.2 1)

@@ -48,7 +48,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 		apkLocation = appInfo.sourceDir;
 		nativeSetApkLocation(apkLocation);
 
-		nativeSetOlHome("/sdcard");
+		nativeSetOlHome("/sdcard/WnD");
 	}
 
 	@Override

@@ -641,8 +641,7 @@
 (define (gl:finish)
    (interact 'opengl (tuple 'finish)))
 
-(define *atexit* gl:finish)
-)
+(define *atexit* gl:finish))
 
 ; -=( 3.0+ )=-------------------------
 ; Higher OpenGL versions support
