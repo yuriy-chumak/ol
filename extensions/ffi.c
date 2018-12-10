@@ -1732,7 +1732,7 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 
 		case TVPTR:
-			if (got)
+			if ((word)got)
 				result = new_vptr (got);
 			break;
 
