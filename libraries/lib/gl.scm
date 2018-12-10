@@ -81,6 +81,7 @@
 
          ;(setq ANativeWindow_setBuffersGeometry (android fft-void "ANativeWindow_setBuffersGeometry" fft-void* fft-int fft-int fft-int))
          (setq ANativeWindow_setBuffersGeometry (lambda args #false))
+         (setq pop_event (self type-vptr "pop_event"))
 
          (setq EGL (load-dynamic-library "libEGL.so"))
          (setq EGLBoolean fft-int)
@@ -176,7 +177,29 @@
          (define (native:disable-context context)
             (print "unimplemented: disable-context"))
          (define (native:process-events context handler)
-            #false)
+            (let loop ((event (pop_event)))
+               (if event
+                  (let ((struct (vptr->vector event 12)))
+                     (define button (extract-number struct 0 4))
+                     (define x (extract-number struct 4 4))
+                     (define y (extract-number struct 8 4))
+                     (handler (tuple 'mouse button x y))
+                  (loop (pop_event))))))
+
+               ;; (if (> (XPending display) 0)
+               ;;    (begin
+               ;;       (XNextEvent display XEvent)
+               ;;       (case (int32->ol XEvent 0)
+               ;;          (2 ; KeyPress
+               ;;             (handler (tuple 'keyboard (int32->ol XEvent (if x32? 52 84))))) ; offsetof(XKeyEvent, keycode)
+               ;;          (4 ; ButtonPress
+               ;;             (let ((x (int32->ol XEvent (if x32? 32 64)))
+               ;;                   (y (int32->ol XEvent (if x32? 36 68)))
+               ;;                   (button (int32->ol XEvent (if x32? 52 84))))
+               ;;                (handler (tuple 'mouse button x y))))
+               ;;          (else ;
+               ;;             (print "Unknown window event: " (int32->ol XEvent 0))))
+               ;;       (loop XEvent))))))
 
          (define (gl:SetWindowTitle context title)
             #false)

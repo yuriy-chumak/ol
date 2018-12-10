@@ -235,6 +235,7 @@
          (print "unhandled key: " key)))))
 
 (gl:set-mouse-handler (lambda (button x y)
+   (print "MOUSE!~!!: " x ", " y)
    (let ((selection (windows-make-selection x y)))
       (cond
          ((symbol? selection)

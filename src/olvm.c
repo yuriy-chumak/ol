@@ -630,6 +630,9 @@ typedef ssize_t (write_t)(int fd, void *buf, size_t count, void* userdata);
 typedef int     (stat_t) (const char *filename, struct stat *st);
 typedef int		(fstat_t)(int fd, struct stat *st);
 
+typedef void    (idle_t) (void* userdata);
+
+// iternal wrappers for open/close/read and write functions:
 static int     os_open (const char *filename, int flags, int mode, void* userdata);
 static int     os_close(int fd, void* userdata);
 static ssize_t os_read (int fd, void *buf, size_t size, void* userdata);
@@ -744,9 +747,10 @@ void*
 OL_allocate (struct ol_t* ol, unsigned words);
 
 
-
-read_t* OL_set_read(struct ol_t* ol, read_t read);
-write_t* OL_set_write(struct ol_t* ol, write_t read);
+read_t*  OL_set_read (struct ol_t* ol, read_t  read);
+write_t* OL_set_write(struct ol_t* ol, write_t write);
+open_t*  OL_set_open (struct ol_t* ol, open_t  open);
+close_t* OL_set_close(struct ol_t* ol, close_t close);
 
 // ------------------------------------------------------
 #define W                           (sizeof (word)) // todo: change to WSIZE
@@ -1598,6 +1602,9 @@ struct ol_t
 	write_t* write;
 //	stat_t*  stat;
 
+	// callback when OL task ready to switch
+	idle_t* idle;
+
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
 	word R[NR + CR];   // регистры виртуальной машины
@@ -2122,6 +2129,9 @@ apply:;
 				R[6] = IFALSE;
 				acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
 				// breaked = 0;
+
+				if (ol->idle)
+					ol->idle(ol->userdata);
 
 				// reapply new thread
 				goto apply;
