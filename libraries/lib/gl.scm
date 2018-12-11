@@ -27,6 +27,8 @@
       vkZ vkX vkC vkV vkB vkN vkM
    gl:finish ; if renderer exists - wait for window close, else just glFinish
 
+   gl:window-dimensions
+
    gl:hide-cursor
    *atexit*)
 
@@ -69,7 +71,9 @@
    (green .  8)
    (blue  .  8)
    (depth . 24)
-))))
+)))
+
+(define gl:window-dimensions (tuple 0 0 WIDTH HEIGHT))); x y width height
 
 ; ===================================================
 (cond-expand
@@ -79,9 +83,9 @@
          (setq self (load-dynamic-library #f))
          (setq android (load-dynamic-library "libandroid.so"))
 
-         ;(setq ANativeWindow_setBuffersGeometry (android fft-void "ANativeWindow_setBuffersGeometry" fft-void* fft-int fft-int fft-int))
-         (setq ANativeWindow_setBuffersGeometry (lambda args #false))
-         (setq pop_event (self type-vptr "pop_event"))
+         (setq ANativeWindow_setBuffersGeometry (android fft-void "ANativeWindow_setBuffersGeometry" fft-void* fft-int fft-int fft-int))
+         (setq androidGetWindow (self type-vptr "androidGetWindow"))
+         (setq androidPopEvent (self type-vptr "androidPopEvent"))
 
          (setq EGL (load-dynamic-library "libEGL.so"))
          (setq EGLBoolean fft-int)
@@ -109,7 +113,7 @@
 
             (define major '(0)) (define minor '(0))
             (eglInitialize display major minor)
-            (print "EGL version: " (car major) "." (car minor))
+            (print-to stderr "EGL version: " (car major) "." (car minor))
 
             (define attribs (list
                #x3033 #x04 ; EGL_SURFACE_TYPE EGL_WINDOW_BIT
@@ -123,33 +127,10 @@
 
             (define format '(0))
             (eglGetConfigAttrib display config #x302E format) ; EGL_NATIVE_VISUAL_ID
-            (print "format: " format)
 
             ; Android:
-            (define window (syscall 1002 #f #f #f))
+            (define window (androidGetWindow))
             (ANativeWindow_setBuffersGeometry window 0 0 (car format))
-            ; Linux:
-            ;; (define libX11 (load-dynamic-library "libX11.so.6"))
-            ;; (define XOpenDisplay  (libX11 type-vptr "XOpenDisplay" type-string))
-            ;; (define XDefaultScreen(libX11 fft-int "XDefaultScreen" type-vptr))
-            ;; (define XRootWindow   (libX11 fft-int "XRootWindow" type-vptr fft-int))
-            ;; (define XBlackPixel   (libX11 type-vptr "XBlackPixel" type-vptr fft-int))
-            ;; (define XWhitePixel   (libX11 type-vptr "XWhitePixel" type-vptr fft-int))
-            ;; (define XCreateColormap (libX11 type-vptr "XCreateColormap" type-vptr fft-int type-vptr fft-int))
-            ;; (define XCreateSimpleWindow (libX11 type-vptr "XCreateSimpleWindow"
-            ;;                      type-vptr fft-int ; display, parent
-            ;;                      fft-int fft-int fft-unsigned-int fft-unsigned-int ; x y width height
-            ;;                      fft-unsigned-int  ; border width
-            ;;                      type-vptr ; border
-            ;;                      type-vptr ; background
-            ;;                   ))
-            ;; (define display (XOpenDisplay #false))
-            ;; (define screen  (XDefaultScreen display))
-            ;; (define window  (XCreateSimpleWindow display (XRootWindow display screen)
-            ;;                0 0 WIDTH HEIGHT 1
-            ;;                (XBlackPixel display screen)
-            ;;                (XWhitePixel display screen)))
-            ;; (print "window: " window)
 
             ; common part again:
             (define surface (eglCreateWindowSurface display config window #f))
@@ -166,7 +147,9 @@
             (define height '(0))
             (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
             (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
-            (print "window: " width "x" height)
+
+            (set-ref! gl:window-dimensions 3 (car width))
+            (set-ref! gl:window-dimensions 4 (car height))
 
             (glViewport 0 0 (car width) (car height))
 
@@ -177,29 +160,14 @@
          (define (native:disable-context context)
             (print "unimplemented: disable-context"))
          (define (native:process-events context handler)
-            (let loop ((event (pop_event)))
+            (let loop ((event (androidPopEvent)))
                (if event
                   (let ((struct (vptr->vector event 12)))
                      (define button (extract-number struct 0 4))
                      (define x (extract-number struct 4 4))
                      (define y (extract-number struct 8 4))
                      (handler (tuple 'mouse button x y))
-                  (loop (pop_event))))))
-
-               ;; (if (> (XPending display) 0)
-               ;;    (begin
-               ;;       (XNextEvent display XEvent)
-               ;;       (case (int32->ol XEvent 0)
-               ;;          (2 ; KeyPress
-               ;;             (handler (tuple 'keyboard (int32->ol XEvent (if x32? 52 84))))) ; offsetof(XKeyEvent, keycode)
-               ;;          (4 ; ButtonPress
-               ;;             (let ((x (int32->ol XEvent (if x32? 32 64)))
-               ;;                   (y (int32->ol XEvent (if x32? 36 68)))
-               ;;                   (button (int32->ol XEvent (if x32? 52 84))))
-               ;;                (handler (tuple 'mouse button x y))))
-               ;;          (else ;
-               ;;             (print "Unknown window event: " (int32->ol XEvent 0))))
-               ;;       (loop XEvent))))))
+                  (loop (androidPopEvent))))))
 
          (define (gl:SetWindowTitle context title)
             #false)

@@ -338,8 +338,6 @@
    ((or Linux Android Emscripten)
       (begin
          (setq memcpy ((load-dynamic-library #f) fft-void "OL_memcpy" fft-void* fft-void* fft-unsigned-int))
-         (print "***** memcpy: " memcpy)
-
          (define (vptr->vector vptr sizeof)
             (let ((vector (make-bytevector sizeof)))
                (memcpy vector vptr sizeof)
@@ -348,7 +346,6 @@
    (Windows
       (begin
          (setq MoveMemory ((load-dynamic-library "kernel32.dll") fft-void "MoveMemory" fft-void* fft-void* fft-unsigned-int))
-
          (define (vptr->vector vptr sizeof)
             (let ((vector (make-bytevector sizeof)))
                (MoveMemory vector vptr sizeof)

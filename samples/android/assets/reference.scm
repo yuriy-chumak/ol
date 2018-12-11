@@ -55,6 +55,7 @@
 (define started (time-ms)) (define time (list 0))
 (define frames '(0 . 0))
 
+(set-window-border fps YELLOW)
 (set-window-writer fps (lambda (type)
    (set-car! frames (+ (car frames) 1))
    (let ((now (time-ms)))
@@ -63,7 +64,7 @@
             (set-cdr! frames (car frames))
             (set-car! frames 0)
             (set-car! time (- now started)))))
-   (type GRAY (cdr frames) " fps")
+   (type WHITE (cdr frames) " fps")
 ))
 
 ; -----------------
@@ -235,16 +236,8 @@
          (print "unhandled key: " key)))))
 
 (gl:set-mouse-handler (lambda (button x y)
-   (print "MOUSE!~!!: " x ", " y)
    (let ((selection (windows-make-selection x y)))
       (cond
-         ((symbol? selection)
-            (case selection
-               ('male
-                  (print "male"))
-               ('female
-                  (print "female"))
-            ))
          ((function? selection)
             (selection))))))
 

@@ -752,6 +752,8 @@ write_t* OL_set_write(struct ol_t* ol, write_t write);
 open_t*  OL_set_open (struct ol_t* ol, open_t  open);
 close_t* OL_set_close(struct ol_t* ol, close_t close);
 
+idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
+
 // ------------------------------------------------------
 #define W                           (sizeof (word)) // todo: change to WSIZE
 
@@ -4834,8 +4836,10 @@ override(open)
 override(read)
 override(write)
 override(close)
+override(idle)
 
 #undef override
+
 // ===============================================================
 word
 OL_run(OL* ol, int argc, char** argv)

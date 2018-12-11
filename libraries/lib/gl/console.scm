@@ -361,8 +361,8 @@
 
                ((make-selection x y)
                   (mail sender (make-selection itself
-                     (floor (/ x (car config:cell-size)))
-                     (floor (/ y (cdr config:cell-size)))))
+                     (floor (* x (/ 80 (ref gl:window-dimensions 3))))
+                     (floor (* y (/ 24 (ref gl:window-dimensions 4))))))
                   (this itself))
 
                (else
