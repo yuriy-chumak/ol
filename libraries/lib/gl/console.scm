@@ -23,6 +23,7 @@
       LIGHTGRAY LIGHTBLUE LIGHTGREEN LIGHTCYAN LIGHTRED LIGHTMAGENTA
 
       create-window ; x y width height, создать новое окно
+      show-window hide-window
       set-window-background set-window-border
       set-window-writer ; (lambda (w) ...), задать обработчик контента окна
 
@@ -274,7 +275,8 @@
                         (writer #false) ; 5
                         (background #false) ; 6
                         (border #false) ; 7
-                        (itself (put itself id (tuple x y width height writer background border))))
+                        (visible #true) ; 8
+                        (itself (put itself id (tuple x y width height writer background border visible))))
                      (mail sender id)
                      (this itself)))
                ((set-window-writer id writer)
@@ -292,11 +294,17 @@
                         (itself (unless window itself
                            (put itself id (set-ref window 7 color)))))
                      (this itself)))
+               ((set-window-visibility id visibility)
+                  (let*((window (get itself id #false))
+                        (itself (unless window itself
+                           (put itself id (set-ref window 8 visibility)))))
+                     (this itself)))
 
                ((draw)
                   (glEnable GL_BLEND)
                   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
 
+                  (glPushMatrix)
                   (glLoadIdentity)
                   (glOrtho 0 80 25 0 0 1)
 
@@ -307,8 +315,8 @@
                   (let loop ((ff (ff-iter itself)))
                      (unless (null? ff)
                         (let ((window (cdar ff)))
-                           (if (tuple? window) (tuple-apply window
-                              (lambda (x y width height writer background border)
+                           (if (and (tuple? window) (ref window 8)) (tuple-apply window
+                              (lambda (x y width height writer background border visible)
                                  (set-ref! drawing-area 1 (ref window 1))
                                  (set-ref! drawing-area 2 (ref window 2))
                                  (move-to 0 0) ; курсор в начало окна, полюбому
@@ -354,8 +362,10 @@
                                  #true)))
                            (loop (force (cdr ff))))))
 
+                  (glPopMatrix)
                   (glDisable GL_TEXTURE_2D)
                   (glDisable GL_BLEND)
+
                   (mail sender 'ok)
                   (this itself))
 
@@ -371,6 +381,10 @@
 
    (define (create-window x y width height)
       (interact 'windows (tuple 'create x y width height)))
+   (define (show-window id)
+      (mail 'windows (tuple 'set-window-visibility id #true)))
+   (define (hide-window id)
+      (mail 'windows (tuple 'set-window-visibility id #false)))
 
    (define (set-window-writer id writer)
       (mail 'windows (tuple 'set-window-writer id writer)))
