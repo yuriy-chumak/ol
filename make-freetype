@@ -9,9 +9,17 @@ ROOT=`pwd`
 
 cd jni/freetype2
 ./autogen.sh
+mkdir libs
 
+mkdir libs/armeabi
 CFLAGS="-std=gnu99" ./configure --host=arm-linux-androideabi --prefix=/freetype \
   --without-zlib --without-png
 make
+cp objs/.libs/libfreetype.so libs/armeabi
 
-#make install $ROOT/libs/ft
+mkdir libs/armeabi-v7a
+CFLAGS="-std=gnu99 -march=armv7-a -mfloat-abi=softfp" ./configure --host=arm-linux-androideabi --prefix=/freetype \
+  --without-zlib --without-png
+make
+cp objs/.libs/libfreetype.so libs/armeabi-v7a
+

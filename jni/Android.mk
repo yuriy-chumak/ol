@@ -15,7 +15,7 @@ filename=$(lastword $(subst /, ,$(1)))
 
 include $(CLEAR_VARS)
 LOCAL_MODULE            := freetype2
-LOCAL_SRC_FILES         := freetype2/objs/.libs/libfreetype.so #$(TARGET_ARCH_ABI)/libprebuilt-static-lib.a
+LOCAL_SRC_FILES         := freetype2/libs/$(TARGET_ARCH_ABI)/libfreetype.so
 # The header files should be located in the following dir relative to jni/ dir
 LOCAL_EXPORT_C_INCLUDES := freetype2/include
 include $(PREBUILT_SHARED_LIBRARY)
@@ -25,7 +25,7 @@ include $(PREBUILT_SHARED_LIBRARY)
 jni/../obj/local/$(TARGET_ARCH_ABI)/repl.o: $(TOOLCHAIN_PREFIX)objcopy jni/../obj/local/$(TARGET_ARCH_ABI)
 	@$(word 1,$^) -I binary $(call elf_format,$(call filename,$(word 2,$^))) repl $@
 
-# main ol module
+# ol module
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := ol

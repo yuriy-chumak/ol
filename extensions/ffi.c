@@ -431,7 +431,7 @@ long long arm32_call(word argv[], long i,
 					// 	 return 133;
 					//  }
 __ASM__(
-	"push {r4, r5, fp, lr}",
+	"push {r4, r5, lr}",
 
 	"mov r4, sp", // save sp
 
@@ -443,7 +443,9 @@ __ASM__(
 	"cmp r1, #4",  // if (i > 4)
 	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
 
-	"add r5, r0, r1, asl #2",
+	// "add r5, r0, r1, asl #2",
+	"lsl r5, r1, #2",
+	"add r5, r0, r5",
 	"sub r5, r5, #4",
 ".Lextraregs:", // push argv[i]
 	"ldr r3, [r5]",
@@ -481,8 +483,8 @@ __ASM__(
 	"mov sp, r4", // restore sp
 
 	// all values: int, long, float and double returning in r0+r1
-	"pop {r4, r5, fp, lr}",
-	"bx lr");
+	"pop {r4, r5, pc}");
+//	"bx lr");
 }
 
 # else
