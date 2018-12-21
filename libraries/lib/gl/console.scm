@@ -7,11 +7,15 @@
 
    (cond-expand
       (Android
-         (import (OpenGL ES version-1-1))
+         (import
+            (OpenGL ES version-1-1)
+            (OpenGL ARB clear_texture))
          (begin
             (setq FONT "/sdcard/WnD/fonts/Anonymous Pro Minus.ttf")))
       (else
-         (import (OpenGL version-1-4))
+         (import
+            (OpenGL version-1-4)
+            (OpenGL ARB clear_texture))
          (begin
             (setq FONT "fonts/Anonymous Pro.ttf"))))
 
@@ -72,18 +76,18 @@
    ;(glPixelTransferf GL_RED_BIAS 1)
    ;(glPixelTransferf GL_GREEN_BIAS 1)
    ;(glPixelTransferf GL_BLUE_BIAS 1)
-   ; почистим нашу текстуру, так как может попасть мусор (не надо?)
-   ;; (if glClearTexImage
-   ;;    (glClearTexImage (car atlas) 0 GL_LUMINANCE_ALPHA GL_UNSIGNED_BYTE (bytevector 250)))
+   ; почистим нашу текстуру, так как может попасть мусор
+   (if glClearTexImage
+      (glClearTexImage (car atlas) 0 GL_ALPHA GL_UNSIGNED_BYTE (bytevector 0)))
 
    ; задаем символы, которые будут в нашем атласе
    ; словарь буква -> текстура
    (define charset
    (let ((symbols (fold append #null (list
-            (iota (- 127 #\space) #\space)
-            ; additional latin capital, todo.
+            (iota (- 127 #\space) #\space) ; весь английский алфавит
             (string->runes "АБВГҐДЕЁЄЖЗИІЇЙКЛМНОПРСТУЎФХЦЧШЩЪЫЬЭЮЯ")
-            (string->runes "абвгґдеёєжзиіїйклмнопрстуўфхцчшщъыьэюя")))))
+            (string->runes "абвгґдеёєжзиіїйклмнопрстуўфхцчшщъыьэюя")
+            ))))
       ; пускай знакоместо будет 16 в высоту (что дает нам 32 строки) и 9(10) в ширину (32 колонки) - итого, 1024 символов; 1 лишняя точка для того, чтобы символы не накладывались
 
       ; зададим размер символов
