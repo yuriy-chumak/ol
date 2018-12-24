@@ -296,11 +296,11 @@
       ;; make bytecode and intern it (to improve sharing, not mandatory)
       (define (bytes->bytecode bytes)
          ; fastest:
-         ; (make-blob type-bytecode bytes)) ; more memory, less cpu
+         ; (vm:makeb type-bytecode bytes)) ; more memory, less cpu
          ; middle case: intern only bytecode larger than x
          ; slowest but memory best case:
          (interact bytecode-server      ; more cpu, less memory
-            (make-blob type-bytecode bytes)))
+            (vm:makeb type-bytecode bytes))) ; make blob
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont

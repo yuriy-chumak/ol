@@ -206,7 +206,7 @@
 
       (define (make-chunk rcps ascii?)
          (if ascii?
-            (let ((str (make-blob type-string (reverse rcps))))
+            (let ((str (vm:makeb type-string (reverse rcps))))
                (if str
                   str
                   (runtime-error "Failed to make string: " rcps)))
@@ -296,11 +296,11 @@
             ;; allows bad non UTF-8 strings coming for example from command
             ;; line arguments (like paths having invalid encoding) to be used
             ;; for opening files.
-            (make-blob type-string (str-foldr cons '(0) str))
+            (vm:makeb type-string (str-foldr cons '(0) str))
             (let ((bs (str-foldr encode-point '(0) str)))
                ; check that the UTF-8 encoded version fits one raw chunk (64KB)
                (if (<= (length bs) #xffff)
-                  (make-blob type-string bs)
+                  (vm:makeb type-string bs)
                   #false))))
 
       (define null-terminate c-string)

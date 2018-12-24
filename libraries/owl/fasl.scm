@@ -171,7 +171,7 @@
       (define (encode-allocated clos cook)
          (λ (out val-orig pos)
             (lets
-               ( ; (val-orig (if (eq? val-orig <tochange>) (make-blob 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
+               ( ; (val-orig (if (eq? val-orig <tochange>) (vm:makeb 0 '(<new bytecode>)) val-orig))  ; <- for changing special primops
                 (val (cook val-orig)))
                (if (ref val 0) ; ==(blob? val), 0 in ref works only for blobs
                   (lets
@@ -321,7 +321,7 @@
                             (ll size (get-nat ll fail 0))
                             (foo (if (> size 65535) (fail "bad raw object size")))
                             (ll rbytes (get-bytes ll size fail null))
-                            (obj (make-blob type (reverse rbytes))))
+                            (obj (vm:makeb type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
                      ((eq? kind 0) ;; fasl stream end marker
                         ;; object done
@@ -332,7 +332,7 @@
                             (ll size (get-nat ll fail 0))
                             (foo (if (> size 65535) (fail "bad raw object size")))
                             (ll rbytes (get-bytes ll size fail null))
-                            (obj (make-blob type (reverse rbytes))))
+                            (obj (vm:makeb type (reverse rbytes))))
                            (decoder ll (rcons obj got) fail)))
                      (else
                         (fail (list "unknown object tag: " kind))))))

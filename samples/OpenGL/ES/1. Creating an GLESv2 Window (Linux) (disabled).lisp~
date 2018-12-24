@@ -35,7 +35,7 @@
 (XStoreName display window "1. Creating an OpenGL Window")
 
 (define vi (glXChooseVisual display screen
-   (make-blob type-bytevector '(
+   (vm:makeb type-bytevector '(
       4 0 0 0 ; GLX_RGBA
       5 0 0 0  1 0 0 0 ; GLX_DOUBLEBUFFER
       8 0 0 0  1 0 0 0 ; GLX_RED_SIZE

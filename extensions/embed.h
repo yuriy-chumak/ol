@@ -188,7 +188,7 @@ void embed_new(ol_t* embed)
 	// embed boot code (prepares eval and env)
 	static
 	char* bs_code =
-			"(define *interactive* #f)" // disable debugging
+			//"(define *interactive* #f)" // disable debugging
 			"(import (lang eval)"
 			"        (owl fasl))"
 			"(halt (list (vm:pin"

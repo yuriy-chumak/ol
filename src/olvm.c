@@ -2159,11 +2159,10 @@ mainloop:;
 
 	// примитивы языка:
 	// todo: rename vm:new to vm:make or vm:mk ?
-	#	define VMNEW 23      // fast make small object
-	#	define VMMAKE 18     // make object
-	#	define VMCAST  22
-
-	#	define MAKEBLOB 19   // make a typed blob (raw object)
+	#	define VMNEW 23     // fast make a small object
+	#	define VMMAKE 18    // make a typed object
+	#	define VMMAKEB 19   // make a typed blob (formerly raw object)
+	#	define VMCAST 22
 
 	#	define VMPIN   35
 	#	define VMUNPIN 60
@@ -2555,7 +2554,7 @@ loop:;
 	}
 
 	// make raw reference object
-	case MAKEBLOB: { // (make-blob type list|size {default})
+	case VMMAKEB: { // (vm:makeb type list|size {default})
 		word size = *ip++;
 		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
 		word value = A1;

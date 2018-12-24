@@ -10,7 +10,7 @@
       (src vm) ; Otus Lisp Virtual Machine codes and primitives:
                ;
                ; object creation/modification
-               ;   vm:new vm:make vm:cast make-blob
+               ;   vm:new vm:make vm:cast vm:makeb
                ;   cons car cdr ref type size set set! eq? less?
                ; basic math primitives:
                ;   integer:
@@ -1420,7 +1420,7 @@
       ; procedure:  (make-string k char)
 ;      (define make-string
 ;         (case-lambda
-;            ((k) (vm:make-blob type-string k))
+;            ((k) (vm:vm:makeb type-string k))
 ;            ((k char) (app a (app b (appl cs appl) app) app))
 ;            ((a) a)
 ;            (() '()))))
@@ -1473,13 +1473,13 @@
       (define make-bytevector
          (case-lambda
             ((k)
-               (make-blob type-bytevector k))
+               (vm:makeb type-bytevector k))
             ((k byte)
-               (make-blob type-bytevector k byte))))
+               (vm:makeb type-bytevector k byte))))
 
       ; procedure: (bytevector byte ...)
       (define (bytevector . bytes)
-         (make-blob type-bytevector bytes))
+         (vm:makeb type-bytevector bytes))
 
       ; tbd.
 

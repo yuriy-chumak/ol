@@ -142,13 +142,13 @@
       ; -------------------------------------------
       ;; Примитивные операции/операторы
       ; internal helper
-      (setq new-bytecode   (lambda (bytecode) (make-blob TBYTECODE bytecode)))
+      (setq new-bytecode   (lambda (bytecode) (vm:makeb TBYTECODE bytecode)))
 
       ; memory allocators (no default bytecode exists, should generate on-the-fly)
       (setq NEW 23)        ; no real (vm:new) command required, check rtl-primitive in (lang compile)
-      (setq MAKE 18)       ;(setq vm:make   (new-bytecode '(18))) ; stub for (prim-opcodes)
-      (setq MAKE-BLOB 19)  ;(setq make-blob (new-bytecode '(19))) ; stub for (prim-opcodes)
-      (setq CAST 22)       ;(setq vm:cast   (new-bytecode '(22 4 5 6  24 6))) ; cast object type (works for immediates and allocated)
+      (setq MAKE 18)       ;(setq vm:make  (fake-bytecode '(18))) ; stub for (prim-opcodes)
+      (setq MAKEB 19)      ;(setq vm:makeb (fake-bytecode '(19))) ; stub for (prim-opcodes)
+      (setq CAST 22)       ;(setq vm:cast  (new-bytecode '(22 4 5 6  24 6))) ; cast object type (works for immediates and allocated)
 
       ; vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements length
       ; vm:make - smarter allocator, can create objects with size and default element
@@ -204,7 +204,7 @@
       (setq LESS? 44)    ;(setq less?   (new-bytecode '(44 4 5 6  24 6)))
 
       ; deprecated:
-      ;(define clock   (make-blob type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
+      ;(define clock   (vm:makeb type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
 
       (setq SET-REF 45)  ;(setq set-ref  (new-bytecode '(45 4 5 6 7  24 7)))
       (setq SET-REF! 10) ;(setq set-ref! (new-bytecode '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
@@ -238,14 +238,18 @@
       ;  3. изменить нумерацию типов
       ;  4. удалить параметр rawness
       ;  5. переименовать vm:new-object в vm:make
+      (setq primop (lambda (name in out code) 
+         (vm:new TTUPLE name  (ref code 0)  in out  code)))
+      (setq fake-bytecode (lambda (n)
+         (new-bytecode n)))
 
       (setq *primops*
          ; прямые аллокаторы
-         (cons (vm:new TTUPLE 'vm:new    23 'any 1 (new-bytecode '(23)))
-         (cons (vm:new TTUPLE 'vm:make   18 'any 1 (new-bytecode '(18)))
-         (cons (vm:new TTUPLE 'vm:cast   22  2 1 vm:cast)  ;; cast object type (works for immediates and allocated)
+         (cons (primop 'vm:new   'any 1 (fake-bytecode '(23)))
+         (cons (primop 'vm:make  'any 1 (fake-bytecode '(18))) ; make object
+         (cons (primop 'vm:makeb 'any 1 (fake-bytecode '(19))) ; make blob object
 
-         (cons (vm:new TTUPLE 'make-blob 19 'any 1 (new-bytecode '(19)))
+         (cons (primop 'vm:cast    2 1 vm:cast)
 
          ; конструкторы
          (cons (vm:new TTUPLE 'cons     CONS 2 1 cons)
@@ -324,10 +328,11 @@
          #null)))))))))
 
       ; todo: check this and opcode-arity-ok-2? - maybe should merge this entities?
+      ; todo: dynamically generate based on *primops*
       (setq variable-input-arity-primops ; todo: move to other module
          (cons NEW
          (cons MAKE
-         (cons MAKE-BLOB
+         (cons MAKEB
          #null))))
 
       (setq special-bind-primops
