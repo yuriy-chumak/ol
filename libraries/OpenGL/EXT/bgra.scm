@@ -20,7 +20,7 @@
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;  None
-(import (scheme core) (OpenGL))
+(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_bgra

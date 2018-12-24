@@ -20,7 +20,7 @@
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;	EXT_blend_minmax affects the definition of this extension
-(import (scheme core) (OpenGL))
+(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_blend_logic_op

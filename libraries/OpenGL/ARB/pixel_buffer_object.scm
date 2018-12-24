@@ -11,7 +11,7 @@
 
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL))
+(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export ARB_pixel_buffer_object

@@ -20,7 +20,7 @@
 ;	EXT_texture3D affects the definition of this extension.
 ;	SGIS_texture_filter4 affects the definition of this extension.
 ;	EXT_subtexture affects the definition of this extension.
-(import (scheme core) (OpenGL))
+(import (scheme core) (OpenGL platform))
 
 ;	EXT_texture is required.
 (import (OpenGL EXT texture))

@@ -19,7 +19,7 @@
 ;    SGI_color_table affects the definition of this extension
 ;    SGIS_texture4D affects the definition of this extension
 ;    EXT_cmyka affects the definition of this extension
-(import (scheme core) (OpenGL))
+(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_packed_pixels

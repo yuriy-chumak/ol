@@ -11,7 +11,7 @@
 
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL))
+(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_secondary_color

@@ -11,7 +11,7 @@
 
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL))
+(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export ARB_shading_language_100
