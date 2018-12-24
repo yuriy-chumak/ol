@@ -216,33 +216,34 @@
 ; ---------------------------------------------------------------------------
 
 ; init
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity) ; тут надо зеркально отразить карту сверху вниз
-   (glOrtho -1 (+ WIDTH 1) (+ HEIGHT 3) -3  -1 1)
-   (glMatrixMode GL_MODELVIEW)
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity) ; тут надо зеркально отразить карту сверху вниз
+(glOrtho -1 (+ WIDTH 1) (+ HEIGHT 3) -3  -1 1)
+(glMatrixMode GL_MODELVIEW)
 
-   (glBindTexture GL_TEXTURE_2D 0)
-   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-   (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
-      16 16
-      0 GL_BGR GL_UNSIGNED_BYTE (file->vector "ground.rgb"))
-   (glDisable GL_TEXTURE_2D)
+(glBindTexture GL_TEXTURE_2D 0)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+(glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
+   16 16
+   0 GL_BGR GL_UNSIGNED_BYTE (file->vector "ground.rgb"))
+(glDisable GL_TEXTURE_2D)
 
-   (glEnable GL_TEXTURE_2D)
-   (glBindTexture GL_TEXTURE_2D 1)
-   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-   (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
-      128 128
-      0 GL_BGR GL_UNSIGNED_BYTE (file->vector "tileset.rgb"))
+(glEnable GL_TEXTURE_2D)
+(glBindTexture GL_TEXTURE_2D 1)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+(glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
+   128 128
+   0 GL_BGR GL_UNSIGNED_BYTE (file->vector "tileset.rgb"))
 
-   ;(glEnable GL_BLEND)
+;(glEnable GL_BLEND)
 (gl:set-userdata #empty)
 
 ; draw
-(gl:set-renderer (lambda (userdata)
-(let*((x (get userdata 'x 14))
+(gl:set-renderer (lambda (mouse)
+(let*((userdata (gl:get-userdata))
+      (x (get userdata 'x 14))
       (y (get userdata 'y 1))
       (old-time (get userdata 'old-time 0)))
 
@@ -346,7 +347,7 @@
       (mail me (tuple 'move (ref step 1) (ref step 2)))
 
    ; вернем модифицированные параметры
-      (list (put
+      (gl:set-userdata (put
          (if (and (eq? (ref step 1) 0) (eq? (ref step 2) 0) (> new-time old-time))
             (let do ((x (rand! WIDTH))
                      (y (rand! HEIGHT)))
