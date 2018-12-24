@@ -8,7 +8,7 @@
    (export
       repl-file
       repl-port
-      repl-string eval-string
+      eval-string
       repl-trampoline
       repl
       print-repl-error
@@ -930,13 +930,6 @@
             (if fd
                (repl-port env fd)
                (tuple 'error "cannot open file" env))))
-
-      (define (repl-string env str)
-         (let ((exps (try-parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
-            ;; list of sexps
-            (if exps
-               (repl env exps repl-evaluate)
-               (tuple 'error "not parseable" env))))
 
       (define (eval-string env str)
          (let ((exps (try-parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
