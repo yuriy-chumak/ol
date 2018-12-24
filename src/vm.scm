@@ -220,8 +220,9 @@
       (setq ff:red?   (new-bytecode '(41  4        5  24 5)))
       (setq ff:right? (new-bytecode '(37  4        5  24 5)))
 
+      ; pinned objects
       (setq vm:pin    (new-bytecode '(35 4 5  24 5)))
-      (setq vm:unpin  (new-bytecode '(19 4 5  24 5)))
+      (setq vm:unpin  (new-bytecode '(60 4 5  24 5)))
       (setq vm:deref  (new-bytecode '(25 4 5  24 5)))
 
       ;(setq syscall (new-bytecode '(63 4 5 6 7 8  24 8)))
