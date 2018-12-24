@@ -371,14 +371,16 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #	include <sys/sysinfo.h> // we have own win32 implementation
 #endif
 
+#if HAS_SOCKETS
+#	include <sys/sendfile.h>
+#endif
+
 #ifdef __linux__
 #	include <sys/resource.h> // getrusage
 #	if HAS_SANDBOX
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
 #	endif
-
-#	include <sys/sendfile.h>
 #endif
 
 #ifdef __unix__
@@ -1527,59 +1529,6 @@ void set_signal_handler()
 	signal(SIGPIPE, SIG_IGN);	// do not break on sigpipe
 #endif
 }
-
-#if HAS_SOCKETS
-# ifdef _WIN32
-
-size_t
-sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
-{
-	char buf[2*4096];
-	size_t toRead, numRead, numSent, totSent;
-
-	totSent = 0;
-	while (count > 0) {
-		toRead = (sizeof(buf) < count) ? sizeof(buf) : count;
-
-		// read
-		numRead = read(in_fd, buf, toRead);
-		if (numRead == -1) {
-			E("sendfile: read() returns -1, error: %d", errno);
-			return -1;
-		}
-		if (numRead == 0) {
-			E("sendfile: read() returns 0, error: %d", errno);
-			break;                      /* EOF */
-		}
-
-		// send
-		resend:
-		numSent = send(out_fd, buf, numRead, 0);
-		if (numSent == SOCKET_ERROR) {
-			int err = WSAGetLastError();
-			E("sendfile: send() returns -1, error: %d", err);
-			if (err != WSAEWOULDBLOCK)
-				return -1;
-
-			Sleep(1);
-			goto resend;
-		}
-		if (numSent == 0) {               /* Should never happen */
-			E("sendfile: send() transferred 0 bytes, error: %d", WSAGetLastError());
-			return 0;
-		}
-
-		count -= numSent;
-		totSent += numSent;
-	}
-	if (shutdown(out_fd, SD_SEND) == SOCKET_ERROR) {
-		E("sendfile: shutdown() returns -1, error: %d", WSAGetLastError());
-		return -1;
-	}
-	return totSent;
-}
-# endif
-#endif
 
 /***********************************************************************************
  * OL
