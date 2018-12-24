@@ -309,13 +309,23 @@
 
          ; ---
          (setq XStoreName (libX11 fft-int "XStoreName" type-vptr type-vptr type-string))
+         (setq XInternAtom (libX11 type-vptr "XInternAtom" type-vptr type-string fft-int))
+         (setq XChangeProperty (libX11 fft-void "XChangeProperty" type-vptr type-vptr type-vptr type-vptr fft-int fft-int (fft* fft-unsigned-char) fft-int))
 
          (define (gl:SetWindowTitle context title)
             (let ((display (ref context 1))
                   ;(screen  (ref context 2))
                   (window  (ref context 3))
                   (cx      (ref context 4)))
-               (XStoreName display window (c-string title))))
+               (case (type title)
+                  (type-string
+                     (XStoreName display window (c-string title)))
+                  (type-string-wide (let ((title (string->bytes title)))
+                     (XChangeProperty display window
+                        (XInternAtom display (c-string "_NET_WM_NAME") 0)
+                        (XInternAtom display (c-string "UTF8_STRING") 0)
+                        8 0 ;PropModeReplace
+                        title (length title)))))))
 
          ; ---
          (setq XResizeWindow (libX11 fft-int "XResizeWindow" type-vptr type-vptr fft-int fft-int))
