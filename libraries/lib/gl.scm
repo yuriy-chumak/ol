@@ -4,11 +4,9 @@
    (lib gl config))
 
 (cond-expand
-   (Android ; TODO: dev only, please rename to Android
+   (Android
       (import (OpenGL ES platform)))
-   (Linux
-      (import (OpenGL platform))) ; temp ES for tests
-   (Windows
+   ((or Linux Windows)
       (import (OpenGL platform)))
    (else
       (begin (runtime-error "Unsupported platform:" *uname*))))
