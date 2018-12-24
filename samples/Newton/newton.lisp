@@ -7,13 +7,10 @@
 
 (define (gettimeofday) (syscall 96 #f #f #f))
 
-(gl:set-window-title "7. Newton")
+(gl:set-window-title "Newton-dynamics library usage example")
 (import (OpenGL version-1-0))
-;(define Context (gl:Create "7. Newton"))
 
-
-(print "1.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
-
+(print "NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 ; создадим "мир"
 (define world (or
@@ -22,7 +19,7 @@
 
 (NewtonSetSolverModel world 1)
 
-(print "2.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
+(print "NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 ;(NewtonWorldSetDestructorCallback world (cons
 ;   (list type-vptr)
@@ -99,62 +96,11 @@
    (runtime-error "Can't create box" #f)))
 (NewtonDestroyCollision collision)
 
-(define spheres null);(map
-;   (lambda (id)
-;      (NewtonCreateDynamicBody world collision
-;         `(;x y z w
-;            1 0 0 0 ; front
-;            0 1 0 0 ; up
-;            0 0 1 0 ; right
-;
-;            ,(/ (- (rand! 400) 200) 100) ; x
-;            ,(+ (/ id 3) 1)             ; y
-;            ,(/ (- (rand! 400) 200) 100) ; z
-;            1       ; posit
-;          )))
-;   (iota 50)))
-;(for-each (lambda (sphere)
-;   (NewtonBodySetMassProperties sphere 1.0 collision)
-;   (NewtonBodySetForceAndTorqueCallback sphere ApplyGravityCallback)
-;) spheres)
-; we need this collision for feature use
-;(NewtonDestroyCollision collision)
-
-
-;
-;
-;(define rigidBody (or
-;   (NewtonCreateDynamicBody world collision
-;      '(;x y z w
-;         1 0 0 0 ; front
-;         0 1 0 0 ; up
-;         0 0 1 0 ; right
-;         0 20 0 1 ; posit
-;      ))
-;   (runtime-error "Can't create rigid body" #f)))
-;(define rigidBody2 (or
-;   (NewtonCreateDynamicBody world collision
-;      '(;x y z w
-;         1 0 0 0 ; front
-;         0 1 0 0 ; up
-;         0 0 1 0 ; right
-;         0.8 0 0 1 ; posit
-;      ))
-;   (runtime-error "Can't create rigid body" #f)))
-;
-;(print "Created rigid body")
-;
-;(NewtonBodySetMassProperties rigidBody 1.0 collision)
-;(NewtonBodySetMassProperties rigidBody2 1.0 collision)
-;
-;(NewtonBodySetForceAndTorqueCallback rigidBody ApplyGravityCallback)
-;(NewtonBodySetForceAndTorqueCallback rigidBody2 ApplyGravityCallback)
-;(print "To rigid body added callback")
-
+(define spheres null)
 
 (NewtonInvalidateCache world) ; say "world construction finished"
 
-(print "3.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
+(print "NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 (define (glCube)
    (glColor3f 0.7 0.7 0.7)
@@ -226,44 +172,34 @@
 
 
 (define collision (or
-   ;(NewtonCreateCone world  0.5 1  0 #f)
    (NewtonCreateSphere world  0.5  0  #f)
    (runtime-error "Can't create box" #f)))
 
-
-
-
-;(gl:run
-;
-;   Context
-
 ; init
-;(lambda ()
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (gluPerspective 45 (/ 854 480) 0.1 1000)
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity)
+(gluPerspective 45 (/ 854 480) 0.1 1000)
 
-   (glEnable GL_DEPTH_TEST)
+(glEnable GL_DEPTH_TEST)
 
-   ; http://www.glprogramming.com/red/chapter12.html
-   (glEnable GL_LIGHTING)
-   (glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
-   (glEnable GL_NORMALIZE)
+; http://www.glprogramming.com/red/chapter12.html
+(glEnable GL_LIGHTING)
+(glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
+(glEnable GL_NORMALIZE)
 
-   ; http://compgraphics.info/OpenGL/lighting/light_sources.php
-   (glEnable GL_LIGHT0)
-   (glLightfv GL_LIGHT0 GL_DIFFUSE '(0.7 0.7 0.7 1.0))
+; http://compgraphics.info/OpenGL/lighting/light_sources.php
+(glEnable GL_LIGHT0)
+(glLightfv GL_LIGHT0 GL_DIFFUSE '(0.7 0.7 0.7 1.0))
 
-   (glEnable GL_COLOR_MATERIAL)
+(glEnable GL_COLOR_MATERIAL)
 
-
-   ; return parameter list:
-   (let ((oldtime (gettimeofday)))
-   (gl:set-userdata
-      oldtime 1 cubes spheres))
+; parameters list
+(let ((oldtime (gettimeofday)))
+   (gl:set-userdata (list
+      oldtime 1 cubes spheres)))
 
 ; draw
 (gl:set-renderer (lambda (mouse)
@@ -351,30 +287,33 @@
          ;(glCone)
          (glPopMatrix)) spheres))
 
-   (if (and (> i 1000)
-            (eq? (mod i 100) 0))
-      (list
-         newtime (+ i 1) cubes
-            (let ((sphere (NewtonCreateDynamicBody world collision
-                  `(;x y z w
-                     1 0 0 0 ; front
-                     0 1 0 0 ; up
-                     0 0 1 0 ; right
+   ; update userdata
+   (gl:set-userdata (list
+      newtime (+ i 1) cubes
+      (if (and (> i 1000)
+               (eq? (mod i 100) 0))
+         (let ((sphere (NewtonCreateDynamicBody world collision
+               `(;x y z w
+                  1 0 0 0 ; front
+                  0 1 0 0 ; up
+                  0 0 1 0 ; right
 
-                     ,(/ (- (rand! 200) 100) 100) ; x
-                     ,8             ; y
-                     ,(/ (- (rand! 200) 100) 100) ; z
-                     1       ; posit
-                   ))))
-               (NewtonBodySetMassProperties sphere 1.0 collision)
-               (NewtonBodySetForceAndTorqueCallback sphere ApplyGravityCallback)
-               (print "objects count: " (length spheres) ", memory used for: " (NewtonGetMemoryUsed))
-               (cons sphere spheres)))
-   ; return new parameter list:
-      (list
-         newtime (+ i 1) cubes spheres)))))
+                  ,(/ (- (rand! 200) 100) 100) ; x
+                  ,8             ; y
+                  ,(/ (- (rand! 200) 100) 100) ; z
+                  1       ; posit
+                  ))))
+            (NewtonBodySetMassProperties sphere 1.0 collision)
+            (NewtonBodySetForceAndTorqueCallback sphere ApplyGravityCallback)
+            (print "objects count: " (length spheres) ", memory used for: " (NewtonGetMemoryUsed))
+            (cons sphere spheres))
+         ;else
+         spheres)))
+)) (gl:get-userdata))))
 
+; wait for window closing
 (gl:finish)
 
 (NewtonDestroy world)
-(print "4.NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
+(print "NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
+(print "bye-bye.")
