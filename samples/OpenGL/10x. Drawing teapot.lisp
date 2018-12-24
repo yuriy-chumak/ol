@@ -95,27 +95,27 @@
 (define knots '(0 0 0 0 1 1 1 1))
 
 
-(gl:set-window-title "6. Teapot")
+(gl:set-window-title "Teapot")
 
 ; init
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (gluPerspective 45 (/ 854 480) 0.1 100)
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity)
+(gluPerspective 45 (/ 854 480) 0.1 100)
 
-   (glEnable GL_DEPTH_TEST)
+(glEnable GL_DEPTH_TEST)
 
-   (define teapot (gluNewNurbsRenderer))
-   (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
+(define teapot (gluNewNurbsRenderer))
+(gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
 
-   (gl:set-userdata
-	1 0.02 3 0.03)
+(gl:set-userdata (list
+   1 0.02 3 0.03))
 
 ; draw
-(gl:set-renderer
-(lambda (x   dx y   dy)
+(gl:set-renderer (lambda (mouse)
+(apply (lambda (x dx y dy)
    (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glMatrixMode GL_MODELVIEW)
@@ -150,7 +150,8 @@
       (for-each render Handle:)
       (for-each render Spout:))
 
-   (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
-         (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
-      (list (+ x nx) nx (+ y ny) ny))
-))
+   (gl:set-userdata
+      (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
+            (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
+         (list (+ x nx) nx (+ y ny) ny)))
+) (gl:get-userdata))))
