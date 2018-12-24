@@ -163,13 +163,14 @@
 (glClearColor 0.11 0.11 0.11 1)
 (glOrtho -9 +19  -1 +21  -1 1)
 
-(gl:set-userdata ticks)
+(gl:set-userdata (ticks))
 
 ; draw
-(gl:set-renderer (lambda (ss)
+(gl:set-renderer (lambda (mouse)
    (glClear GL_COLOR_BUFFER_BIT)
 
-   (let ((s2 (ticks)))
+   (let ((ss (gl:get-userdata))
+         (s2 (ticks)))
       (unless (or (eq? ss s2) (car програв))
          (begin
             ; 0. удалить текущую фигуру из стакана
@@ -296,4 +297,4 @@
          (iota 11))
    (glEnd)
 
-  `(,s2))))
+   (gl:set-userdata s2))))
