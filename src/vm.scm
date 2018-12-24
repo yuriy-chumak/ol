@@ -213,11 +213,12 @@
       (setq TUPLE-APPLY 32)
       (setq FF-APPLY 49) ;(setq ff-apply (new-bytecode '(49 4)))
 
-      ;;(define ff:red     (make-blob type-bytecode '(43 4 5 6 7  8  24 8)))
-      ;;(define ff:black   (make-blob type-bytecode '(42 4 5 6 7  8  24 8)))
-      ;;(define ff:toggle  (make-blob type-bytecode '(46 4        5  24 5)))
-      ;;(define ff:red?    (make-blob type-bytecode '(41 4        5  24 5)))
-      ;;(define ff:right?  (make-blob type-bytecode '(37 4        5  24 5)))
+      ; associative array
+      (setq ff:red    (new-bytecode '(106 4 5 6 7  8  24 8))) ;106 = 42+(1<<6)
+      (setq ff:black  (new-bytecode '(42  4 5 6 7  8  24 8)))
+      (setq ff:toggle (new-bytecode '(46  4        5  24 5)))
+      (setq ff:red?   (new-bytecode '(41  4        5  24 5)))
+      (setq ff:right? (new-bytecode '(37  4        5  24 5)))
 
       (setq vm:pin    (new-bytecode '(35 4 5  24 5)))
       (setq vm:unpin  (new-bytecode '(19 4 5  24 5)))
@@ -298,11 +299,11 @@
          ; поддержка finite functions (как red-black деревьев)
          (cons (vm:new TTUPLE 'ff-apply   49 1 #f  ff-apply)
 
-         (cons (vm:new TTUPLE 'ff:red     43 4  1  ff:red)
-         (cons (vm:new TTUPLE 'ff:black   42 4  1  ff:black)
-         (cons (vm:new TTUPLE 'ff:toggle  46 1  1  ff:toggle)
-         (cons (vm:new TTUPLE 'ff:red?    41 1  1  ff:red?)
-         (cons (vm:new TTUPLE 'ff:right?  37 1  1  ff:right?)
+         (cons (vm:new TTUPLE 'ff:black    42 4  1  ff:black)
+         (cons (vm:new TTUPLE 'ff:red     106 4  1  ff:red)
+         (cons (vm:new TTUPLE 'ff:toggle   46 1  1  ff:toggle)
+         (cons (vm:new TTUPLE 'ff:red?     41 1  1  ff:red?)
+         (cons (vm:new TTUPLE 'ff:right?   37 1  1  ff:right?)
 
          (cons (vm:new TTUPLE 'vm:pin    35 1  1  vm:pin)
          (cons (vm:new TTUPLE 'vm:unpin  60 1  1  vm:unpin)

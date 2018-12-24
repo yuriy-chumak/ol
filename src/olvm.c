@@ -809,8 +809,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define TCLOS                       (18)
 
 #define TFF                         (24) // // 26,27 same
-#	define FFRIGHT                     1 // flags for TFF
-#	define FFRED                       2
+#	define TRIGHT                     1 // flags for TFF
+#	define TRED                       2
 
 #define TBVEC                       (19)   // must be RAW type
 #define TBYTEVECTOR                 (19)
@@ -2252,11 +2252,12 @@ mainloop:;
 	#	define TUPLEAPPLY 32
 	#	define FFAPPLY 49
 
-	#	define MKRED    43
-	#	define MKBLACK  42
-	#	define FFTOGGLE 46
-	#	define FFREDQ   41
-	#	define FFRIGHTQ 37
+	#	define FFLEAF   42 // make ff leaf
+	#	define FFBLACK  FFLEAF
+	#	define FFRED   (FFLEAF + (1<<6))
+	#	define FFTOGGLE 46 // toggle ff leaf color
+	#	define FFREDQ   41 // is ff leaf read?
+	#	define FFRIGHTQ 37 // if ff leaf right?
 
 		// ALU
 	#	define ADDITION       38
@@ -2287,6 +2288,7 @@ loop:;
 	// unused numbers:
 	case 28:
 	case 29:
+	case 43:
 	case 48:
 		ERROR(op, new_string("Unused opcode"), ITRUE);
 		break;
@@ -2961,9 +2963,8 @@ loop:;
 	}
 
 	// create red/black node
-	case MKBLACK: // ff:black l k v r t
-	case MKRED: { // ff:red l k v r t
-		word t = op == MKBLACK ? TFF : TFF|FFRED;
+	case FFLEAF: { // {ff:black|ff:red} l k v r t
+		word t = TFF| (op == FFRED ? TRED : 0);
 		word l = A0;
 		word r = A3;
 
@@ -2972,7 +2973,7 @@ loop:;
 			if (r == IEMPTY)
 				me = new (t, 2);
 			else {
-				me = new (t|FFRIGHT, 3);
+				me = new (t|TRIGHT, 3);
 				me[3] = r;
 			}
 		}
@@ -3002,7 +3003,7 @@ loop:;
 		A1 = (word)p;
 
 		word h = *node++;
-		*p++ = (h ^ (FFRED << TPOS));
+		*p++ = (h ^ (TRED << TPOS));
 		switch (header_size(h)) {
 			case 5:  *p++ = *node++;
 			case 4:  *p++ = *node++;
@@ -3018,7 +3019,7 @@ loop:;
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((valuetype (node) & (0x3C | FFRED)) == (TFF|FFRED))
+		if ((valuetype (node) & (0x3C | TRED)) == (TFF|TRED))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
@@ -3030,7 +3031,7 @@ loop:;
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((valuetype (node) & (0x3C | FFRIGHT)) == (TFF|FFRIGHT))
+		if ((valuetype (node) & (0x3C | TRIGHT)) == (TFF|TRIGHT))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
