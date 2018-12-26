@@ -129,7 +129,7 @@
       (setq LDT 141)  ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
       (setq LDF 205)  ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
 
-      ; 
+      ;
       (setq CLOS0 3) ; clos lp, o, nenv, e0 ... en, t:
       (setq CLOC0 4) ; cloc lp, o, nenv, e0 ... en, t:
       (setq CLOS1 6)
@@ -159,7 +159,7 @@
       ; vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements length
       ; vm:make - smarter allocator, can create objects with size and default element
 
-      ; 
+      ;
       (setq APPLY 20)       (setq apply (make-bytecode '(20))) ; stub for (prim-opcodes)
       (setq ARITY-ERROR 17) (setq arity-error (make-bytecode '(17))) ; stub for (prim-opcodes)
       (setq APPLY/CC 84)    (setq apply/cc (make-bytecode '(84))) ; stub for (prim-opcodes)
@@ -202,7 +202,7 @@
       (setq CAR 52)      ;(setq car     (make-bytecode '(52 4 5    24 5)))
       (setq CDR 53)      ;(setq cdr     (make-bytecode '(53 4 5    24 5)))
       (setq REF 47)      ;(setq ref     (make-bytecode '(47 4 5 6  24 6)))
-      
+
       (setq TYPE 15)     ;(setq type    (make-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
       (setq SIZE 36)     ;(setq size    (make-bytecode '(36 4 5    24 5))) ;; get object data size (- hdr)
 
@@ -236,7 +236,8 @@
       ;(setq vm:valuewidth (make-bytecode '(31 4)))
       ;(setq vm:maxvalue   (make-bytecode '(30 4)))
 
-      ;(setq vm:version    (make-bytecode '(62 4)))
+      (setq vm:version    (make-bytecode '(28 4)))
+      (setq vm:features   (make-bytecode '(29 4)))
 
       ; todo: план по слиянию new-object и new-raw-object, с одновременным
       ;       внесением бита "rawness" в числовое значение типа
@@ -303,6 +304,7 @@
          (cons (primop 'vm:valuewidth 0 1 vm:valuewidth)
 
          (cons (primop 'vm:version    0 1 vm:version)
+         (cons (primop 'vm:features   0 1 vm:features)
 
          ; todo: add macro for call-with-tuple in r5rs
          (cons (primop 'tuple-apply   1 #f tuple-apply)
@@ -319,7 +321,7 @@
          (cons (primop 'vm:pin    1 1 vm:pin)
          (cons (primop 'vm:unpin  1 1 vm:unpin)
          (cons (primop 'vm:deref  1 1 vm:deref)
-         #null)))))))))))))))))))))))))))))))))))))))))
+         #null))))))))))))))))))))))))))))))))))))))))))
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд

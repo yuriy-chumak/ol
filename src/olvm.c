@@ -2281,10 +2281,9 @@ loop:;
 		}
 		goto apply; // ???
 	// unused numbers:
-	case 28:
-	case 29:
 	case 43:
 	case 48:
+	case 62:
 		ERROR(op, new_string("Unused opcode"), ITRUE);
 		break;
 
@@ -2904,20 +2903,69 @@ loop:;
 		ip += 4; break; }
 
 
+	case 28: // (vm:version)
+		A0 = (word) new_pair(TPAIR,
+				new_string(__OLVM_NAME__,    sizeof(__OLVM_NAME__)   -1),
+				new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
+		ip += 1; break;
+	case 29: // (vm:features)
+		A0 = I(0
+		// general build options
+		#if NAKED_VM
+			| 000000001
+		#endif
+		#if EMBEDDED_VM
+			| 000000002
+		#endif
+		#if OLVM_FFI
+			| 000000004
+		#endif
+		#if OLVM_CALLABLES
+			| 000000010
+		#endif
+		#if OLVM_INEXACTS
+			| 000000020
+		#endif
+		#if OLVM_BUILTIN_FMATH
+			| 000000040
+		#endif
+		// syscalls
+		#if SYSCALL_SYSINFO
+			| 000000100
+		#endif
+		#if SYSCALL_PIPE
+			| 000000200
+		#endif
+		#if SYSCALL_GETRLIMIT
+			| 000000400
+		#endif
+		#if SYSCALL_GETRUSAGE
+			| 000001000
+		#endif
+		// has's
+		#if HAS_DLOPEN
+			| 000010000
+		#endif
+		#if HAS_SOCKETS
+			| 000020000
+		#endif
+		#if HAS_UNSAFES
+			| 000040000
+		#endif
+		#if HAS_SANDBOX
+			| 000100000
+		#endif
+		#if HAS_STRFTIME
+			| 000200000
+		#endif
+		);
+		ip += 1; break;
 	case 30: // (vm:maxvalue)
 		A0 = I(VMAX);
 		ip += 1; break;
 	case 31: // (vm:valuewidth)
 		A0 = I(VBITS);
 		ip += 1; break;
-
-	// (vm:version)
-	case 62: // get virtual machine info
-		A0 = (word) new_pair(TPAIR,
-				new_string(__OLVM_NAME__,    sizeof(__OLVM_NAME__)   -1),
-				new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
-		ip += 1; break;
-
 
 	// bind tuple to registers
 	case TUPLEAPPLY: { /* bind <tuple > <n> <r0> .. <rn> */
