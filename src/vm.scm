@@ -220,11 +220,11 @@
       (setq FF-APPLY 49) ;(setq ff-apply (make-bytecode '(49 4)))
 
       ; associative array
-      (setq ff:red    (make-bytecode '(106 4 5 6 7  8  24 8))) ;106 = 42+(1<<6)
       (setq ff:black  (make-bytecode '(42  4 5 6 7  8  24 8)))
+      (setq ff:red    (make-bytecode '(106 4 5 6 7  8  24 8))) ;106 = 42+(1<<6)
       (setq ff:toggle (make-bytecode '(46  4        5  24 5)))
       (setq ff:red?   (make-bytecode '(41  4        5  24 5)))
-      (setq ff:right? (make-bytecode '(37  4        5  24 5)))
+      (setq ff:right? (make-bytecode '(105 4        5  24 5))) ;105 = 41+(1<<6)
 
       ; pinned objects
       (setq vm:pin    (make-bytecode '(35 4 5  24 5)))

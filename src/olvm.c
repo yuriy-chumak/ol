@@ -2252,7 +2252,7 @@ mainloop:;
 	#	define FFRED   (FFLEAF + (1<<6))
 	#	define FFTOGGLE 46 // toggle ff leaf color
 	#	define FFREDQ   41 // is ff leaf read?
-	#	define FFRIGHTQ 37 // if ff leaf right?
+	#	define FFRIGHTQ (FFREDQ + (1<<6)) // if ff leaf right?
 
 		// ALU
 	#	define ADDITION       38
@@ -2281,6 +2281,7 @@ loop:;
 		}
 		goto apply; // ???
 	// unused numbers:
+	case 37:
 	case 43:
 	case 48:
 	case 62:
@@ -3007,7 +3008,7 @@ loop:;
 
 	// create red/black node
 	case FFLEAF: { // {ff:black|ff:red} l k v r t
-		word t = TFF| (op == FFRED ? TRED : 0);
+		word t = (op == FFRED ? TRED : 0) |TFF;
 		word l = A0;
 		word r = A3;
 
@@ -3057,30 +3058,18 @@ loop:;
 		ip += 2; break;
 	}
 
-	// is node red predicate
-	case FFREDQ: { // ff:red? node r
+	// is node red/right predicate?
+	case FFREDQ: { // ff:red?|ff:right? node r
+		word t = (op == FFREDQ ? TRED : TRIGHT);
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((valuetype (node) & (0x3C | TRED)) == (TFF|TRED))
+		if ((valuetype (node) & (0x3C | t)) == (t|TFF))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
 		ip += 2; break;
 	}
-
-	// is node right predicate?
-	case FFRIGHTQ: { // ff:right? node r
-		word node = A0;
-		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
-			node = *(word*)node;
-		if ((valuetype (node) & (0x3C | TRIGHT)) == (TFF|TRIGHT))
-			A1 = ITRUE;
-		else
-			A1 = IFALSE;
-		ip += 2; break;
-	}
-
 
 	// ---------------------------------------------------------
 	case CLOCK: { // clock <secs> <ticks>
