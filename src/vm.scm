@@ -152,8 +152,8 @@
 
       ; memory allocators (no default bytecode exists, should generate on-the-fly)
       (setq NEW 23)        ; no real (vm:new) command required, check rtl-primitive in (lang compile)
-      (setq MAKE 18)       ;(setq vm:make  (fake-bytecode '(18))) ; stub for (prim-opcodes)
-      (setq MAKEB 19)      ;(setq vm:makeb (fake-bytecode '(19))) ; stub for (prim-opcodes)
+      (setq MAKE 18)
+      (setq MAKEB 19)
       (setq CAST 22)       ;(setq vm:cast  (make-bytecode '(22 4 5 6  24 6))) ; cast object type (works for immediates and allocated)
 
       ; vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements length
@@ -236,8 +236,8 @@
       ;(setq vm:valuewidth (make-bytecode '(31 4)))
       ;(setq vm:maxvalue   (make-bytecode '(30 4)))
 
-      (setq vm:version    (make-bytecode '(28 4)))
-      (setq vm:features   (make-bytecode '(29 4)))
+      ;(setq vm:version    (make-bytecode '(28 4)))
+      ;(setq vm:features   (make-bytecode '(29 4)))
 
       ; todo: план по слиянию new-object и new-raw-object, с одновременным
       ;       внесением бита "rawness" в числовое значение типа
@@ -246,81 +246,84 @@
       ;  3. изменить нумерацию типов
       ;  4. удалить параметр rawness
       ;  5. переименовать vm:new-object в vm:make
-      (setq primop (lambda (name in out code)
-         (vm:new TTUPLE name  (ref code 0)  in out code)))
+      (setq primop (lambda (name in out code tail)
+         (cons
+            (vm:new TTUPLE name  (ref code 0)  in out code) tail)))
       (setq fake-bytecode (lambda (n)
          (make-bytecode n)))
 
+      ; список примитивных операций виртуальной машины:
       (setq *primops*
          ; прямые аллокаторы
-         (cons (primop 'vm:new   'any 1 (fake-bytecode '(23)))
-         (cons (primop 'vm:make  'any 1 (fake-bytecode '(18))) ; make object
-         (cons (primop 'vm:makeb 'any 1 (fake-bytecode '(19))) ; make blob object
+         (primop 'vm:new   'any 1 #(23) ; make new object, simplest and fastest allocator
+         (primop 'vm:make  'any 1 #(18) ; make object
+         (primop 'vm:makeb 'any 1 #(19) ; make blob (binary, raw) object
+         ; косвенные аллокаторы
+         (primop 'vm:cast     2 1 vm:cast
+         (primop 'set-ref     3 1 set-ref
 
-         (cons (primop 'vm:cast     2 1 vm:cast)
+         ; ну и мутатор сюда же добавим
+         (primop 'set-ref!    3 1 set-ref!
+
+         ; описатели
+         (primop 'type   1 1 type  ;; get just the type bits
+         (primop 'size   1 1 size  ;; get object size (without header)
 
          ; конструкторы
-         (cons (primop 'cons     2 1 cons)
+         (primop 'cons   2 1 cons
 
          ; геттеры
-         (cons (primop 'car      1 1 car)
-         (cons (primop 'cdr      1 1 cdr)
-         (cons (primop 'ref      2 1 ref)
-
-         (cons (primop 'type     1 1 type)  ;; get just the type bits
-         (cons (primop 'size     1 1 size)  ;; get object size (- 1)
-
-         ; сеттеры
-         (cons (primop 'set-ref  3 1 set-ref)
-         (cons (primop 'set-ref! 3 1 set-ref!)
+         (primop 'car    1 1 car
+         (primop 'cdr    1 1 cdr
+         (primop 'ref    2 1 ref
 
          ; компараторы
-         (cons (primop 'eq?      2 1 eq?)
-         (cons (primop 'less?    2 1 less?)
+         (primop 'eq?    2 1 eq?
+         (primop 'less?  2 1 less?
 
          ; базовая арифметика
-         (cons (primop 'vm:add   2 2 vm:add)
-         (cons (primop 'vm:mul   2 2 vm:mul)
-         (cons (primop 'vm:sub   2 2 vm:sub)
-         (cons (primop 'vm:div   3 3 vm:div) ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
+         (primop 'vm:add   2 2 vm:add
+         (primop 'vm:mul   2 2 vm:mul
+         (primop 'vm:sub   2 2 vm:sub
+         (primop 'vm:div   3 3 vm:div ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
          ; сдвиги
-         (cons (primop 'vm:shr   2 2 vm:shr)
-         (cons (primop 'vm:shl   2 2 vm:shl)
+         (primop 'vm:shr   2 2 vm:shr
+         (primop 'vm:shl   2 2 vm:shl
          ; бинарная арифметика
-         (cons (primop 'vm:and   2 1 vm:and)
-         (cons (primop 'vm:or    2 1 vm:or)
-         (cons (primop 'vm:xor   2 1 vm:xor)
+         (primop 'vm:and   2 1 vm:and
+         (primop 'vm:or    2 1 vm:or
+         (primop 'vm:xor   2 1 vm:xor
 
-         (cons (primop 'vm:fp1   2 1 vm:fp1)
-         (cons (primop 'vm:fp2   3 1 vm:fp2)
+         (primop 'vm:fp1   2 1 vm:fp1
+         (primop 'vm:fp2   3 1 vm:fp2
 
-         ; системный таймер
-         (cons (primop 'clock    0 2 clock) ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
+         ; системный таймер (deprecated, но остается как пример операции не принимающей параметров м возвращающей values)
+         (primop 'clock    0 2 clock ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
          ; системные вызовы
-         (cons (primop 'syscall  4 1 syscall)
+         (primop 'syscall  4 1 syscall
 
          ; vm-specific constants
-         (cons (primop 'vm:maxvalue   0 1 vm:maxvalue)
-         (cons (primop 'vm:valuewidth 0 1 vm:valuewidth)
+         (primop 'vm:maxvalue   0 1 vm:maxvalue
+         (primop 'vm:valuewidth 0 1 vm:valuewidth
 
-         (cons (primop 'vm:version    0 1 vm:version)
-         (cons (primop 'vm:features   0 1 vm:features)
+         (primop 'vm:version    0 1 vm:version
+         (primop 'vm:features   0 1 vm:features
 
          ; todo: add macro for call-with-tuple in r5rs
-         (cons (primop 'tuple-apply   1 #f tuple-apply)
+         (primop 'tuple-apply   1 #f tuple-apply
 
          ; поддержка finite functions (как red-black деревьев)
-         (cons (primop 'ff-apply      1 #f  ff-apply)
+         (primop 'ff-apply      1 #f  ff-apply
 
-         (cons (primop 'ff:black  4 1 ff:black)
-         (cons (primop 'ff:red    4 1 ff:red)
-         (cons (primop 'ff:toggle 1 1 ff:toggle)
-         (cons (primop 'ff:red?   1 1 ff:red?)
-         (cons (primop 'ff:right? 1 1 ff:right?)
+         (primop 'ff:black  4 1 ff:black
+         (primop 'ff:red    4 1 ff:red
+         (primop 'ff:toggle 1 1 ff:toggle
+         (primop 'ff:red?   1 1 ff:red?
+         (primop 'ff:right? 1 1 ff:right?
 
-         (cons (primop 'vm:pin    1 1 vm:pin)
-         (cons (primop 'vm:unpin  1 1 vm:unpin)
-         (cons (primop 'vm:deref  1 1 vm:deref)
+         (primop 'vm:pin    1 1 vm:pin
+         (primop 'vm:unpin  1 1 vm:unpin
+         (primop 'vm:deref  1 1 vm:deref
          #null))))))))))))))))))))))))))))))))))))))))))
 
       ;; fixme: handle multiple return value primops sanely (now a list)
