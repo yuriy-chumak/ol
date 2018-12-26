@@ -32,6 +32,7 @@ Otus Lisp is available under 2 licenses:
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
 
 Copyright (c) 2014 Aki Helin
+
 Copyright (c) 2014-2018 Yuriy Chumak
 
 
@@ -40,15 +41,10 @@ OVERVIEW
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
-It implements an extended subset of R7RS Scheme including, but
-not limited to, some of the SRFIs. It's tiny(42kb), embeddable
-and crossplatform; can run in own sandbox; provides a portable,
-highlevel way for using the code written in another languages.
+It implements an extended subset of R<sup>7</sup>RS Scheme including, but not limited to, some of the SRFIs.
+It's tiny(42kb), embeddable and crossplatform; provides a portable, highlevel way to call code written in other languages.
 
-You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
-Android, webOS and lot of any other operation systems based on
-various hardware architectures (x86, x86_64, arm, aarch64, ppc,
-mips, etc).
+You can use Ol in GNU/Linux, Windows, Unixes (macOS, Solaris, kinds of BSD), Android, webOS, Minoca and lot of any other operation systems based on various hardware architectures (x86/x86_64, arm, aarch64, ppc, mips, etc).
 
 
 LEARNING
@@ -63,21 +59,21 @@ BUILD REQUIREMENTS
 ------------------
 
 You should have GCC >3.2 or CLANG >3.5 or TCC installed.
-For Windows you should have MinGW.
+For Windows you should have MinGW (with GCC installed).
 
 
 DOWNLOAD / INSTALLATION
 -----------------------
 
 You can use basic Ol functionality without any installation -
-just copy the `ol` (ol.exe for Windows) binary to any user
+just copy the `ol` (`ol.exe` for Windows) binary to any user
 accessible path. Basic functionality includes a rich set of
-functions: lists, ffs (builtin hash tables), io, lazies,
-strings, symbols, vectors, math, regex, tuples etc.
+functions: lists, ffs (builtin associative arrays), i/o, lazies,
+strings, symbols, vectors, math, regex, tuples, etc.
 
-For extended functionality you should install the whole Ol package.
+Extended functionality (i.e. OpenGL support) requires whole Ol package installation.
 
-Installation packages next patforms can be found at
+Next platforms installation packages can be found at
 [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol):
 
 * CentOS 6 (x86, amd64), CentOS 7 (amd64),
@@ -94,7 +90,7 @@ Installation packages next patforms can be found at
 * Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64)
 
 
-Installation packages for next platforms can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcment page:
+Next platforms installation packages can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcment page:
 
 * Windows (x86, amd64)
 * Android (arm64-v8a, armeabi, armeabi-v7a,
@@ -105,19 +101,28 @@ mips, mips64, x86, x86_64)
 BUILD
 -----
 
-### SIMPLE WAY
+### SIMPLEST WAY
 
 ```bash
 $ make; make install
 ```
 > gmake for unix clients
 
+#### asm.js way
 
-### MORE INTERESTING WAYS
+If you want to have an asm.js binary that can be executed by web browsers you should have emscripten v 1.37.40,
+
+```bash
+$ source {your-emsdk-path}/emsdk_env.sh
+$ make olvm.js
+```
+
+
+### INTERESTING WAY
 
 #### Linux way
 
-To build only olvm (virtual machine)
+To build only olvm (ol virtual machine)
 
 ```bash
 $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -ldl
@@ -135,7 +140,6 @@ Olvm can execute only precompiled OL scripts (see BINARY SCRIPTS
 section) and is very small (about 35KB).
 Full OL with interpreter, that can execute text lisp scripts is more
 fat (about 400KB executable).
-
 
 #### Windows way
 
@@ -190,31 +194,55 @@ Now you cat execute ol under webos command line or other way you
 would like.
 
 
-### BUILD IN VERY INTERESTING WAY
+### CASTOMIZATION WAY
 
-You can change OL scheme language (yes, you can) by editing sources in
+If you want to disable/enable some olvm features you can use -Dxxx or -Dxxx=y gcc syntax. This is a list of customizations:
+
+|Variable      |Value           |Meaning |
+|--------------|----------------|--------|
+|NAKED_VM      | 1\|0, default 0|Disables including of REPL into binary|
+|EMBEDDED_VM   | 1\|0, default 0|Disables 'main' function, makes olvm embed|
+|OLVM_FFI      | 1\|0, default 1|Enables FFI support|
+|OLVM_CALLABLES| 1\|0, default 1|Enables FFI callbacks support|
+|OLVM_INEXACTS | 1\|0, default 1|Enables inexact math support|
+|OLVM_BUILTIN_FMATH| 1\|0, default 1|Enables builtin vm floating-point math|
+|CAR_CHECK     | 1\|0, default 1|Enables car arguments check|
+|CDR_CHECK     | 1\|0, default 1|Enables cdr arguments check|
+
+|Variable      |Value           |Meaning |
+|--------------|----------------|--------|
+|HAS_DLOPEN    | 1\|0, default 1|Enables dlopen/dlsym functions support|
+|HAS_SOCKETS   | 1\|0, default 1|Enables socket functions support|
+|HAS_UNSAFES   | 1\|0, default 1|Enables "unsafe" functions|
+|HAS_SANDBOX   | 1\|0, default 1|Enables internal sandbox support (depends on OS kernel)|
+|HAS_STRFTIME  | 1\|0, default 1|Enables strftime function support|
+
+You can disable next olvm features by setting valiable to 0 (-Dxxx=0)
+
+|Variable|Meaning|
+|--------|-------|
+|SYSCALL_SYSINFO | sysinfo() function|
+|SYSCALL_PIPE    | pipe() function|
+|SYSCALL_GETRLIMIT| getrlimit() function|
+|SYSCALL_GETRUSAGE| getrusage() function|
+
+
+### LANGUAGE CHANGING
+
+You can change Ol language (yes, you can) by editing sources in
 lang/ and owl/ subfolders. Additionally you can change virtual machine
 by editing src/vm.scm and src/olvm.c source files.
 
-To build OL language (not OL virtual machine)
+To build Ol language (not Ol virtual machine)
 
 ```bash
 $ make recompile
 ```
 
-This will create new (in successfull way) repl binary that contains ol
-interpreter code
+This will create new (in successfull way) REPL binary that contains ol
+interpreter code.
 
 Few words about OL can be found in documentation on the project page.
-
-
-SPEEDUP
--------
-
-You can disable most internal checks for speedup by editing the olvm.h
-header file - for example you can uncomment "#define CAR_CHECK(arg) 1"
-macro to disable the virtual machine internal checks for car validness.
-Please, be aware - this can make olvm less stable!
 
 
 ADDITIONAL OL VM FEATURES
@@ -304,12 +332,12 @@ FILES
 -----
 
 * repl  - the compiled OL binary interpreter/compiler
-* src/olvm.h  - the OL virtual machine header
-* src/olvm.c  - the OL vm
-* src/ffi.c src/ffi.h  - foreign functions interface implementation
-* lang/*.scm  - OL repl and compiler source codes
-* library/**.scm - various OL libraries
-* tests/**.scm - some automated tests
+* src/olvm.c  - the OL vm source code (in C)
+* include/olvm.h  - the OL virtual machine header (not required by compiler)
+* extensions/ffi.c include/ffi.h  - FFI implementation
+* lang/*.scm  - OL repl and compiler source codes (in Lisp)
+* library/**.scm - various OL libraries (in Lisp)
+* tests/**.scm - some automation tests (in Lisp)
 
 
 TRICKS
@@ -324,7 +352,7 @@ assoc .bl=OLisp.Binary.File
 ftype OLisp.Binary.File=ol "%1" %*
 ```
 
-Register interpreter in the linux:
+Register interpreter in the linux: start you script with
 
 ```
 #!/usr/bin/ol
@@ -334,18 +362,18 @@ Register interpreter in the linux:
 USAGE
 -----
 
-OL (Otus Lisp) can be used either interactively, or to interpret code
+Ol (Otus Lisp) can be used either interactively, or to interpret code
 from files, or compile programs to fasl-images. The difference between
 an ol program and a plain script is that the program should just have
 a function of one argument as the last value, which will be called with
 the command line argument list when the program is executed.
 
 
-EMBEDDED OL
------------
+EMBEDDING OL
+------------
 
-OL can be embedded in your project. It supports direct calls for C functions
-for 32- and 64-bit platforms with full callables support.
+Ol can be embed in your project. It supports direct calls of external
+C functions for 32- and 64-bit platforms with full callables support.
 
 Please check the next code as a sample:
 
@@ -356,7 +384,7 @@ Please check the next code as a sample:
 // embed.h header provides few simplified macroses and functions
 // to easy work with ol virtual machine.
 // For example, make_integer(x) converts C integers into internal
-// olvm format. For other cases please check enbed.h header.
+// olvm format. Other cases please check in embed.h header.
 
 // olvm embed instance
 ol_t ol;

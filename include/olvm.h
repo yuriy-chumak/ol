@@ -13,10 +13,10 @@
 /**
  * Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
  *
- * It implements an extended subset of R5RS Scheme including, but
+ * It implements an extended subset of R7RS Scheme including, but
  * not limited to, some of the SRFIs. It's tiny(42kb), embeddable
- * and crossplatform; can run in own sandbox; provides a portable,
- * highlevel way for using the code written in another languages.
+ * and crossplatform;  provides a portable, highlevel way to call
+ * code written in other languages.
  *
  * You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
  * Android, webOS and lot of any other operation systems based on
@@ -36,7 +36,7 @@
 // (игра слов)
 // OL:
 //	* сокращение от названия проекта - Otus Lisp (вырос из Owl Lisp'а),
-//	* низкий порог вхождения (0L - число 0, L - level) (Lisp - ОЧЕНЬ простой язык),
+//	* низкий порог вхождения (0L - число 0, L - level): Lisp - ОЧЕНЬ простой язык,
 //	* тег нумерованного списка в html - (еще одна отсылка к lisp - языку обработки списков),
 //	* ol' - сокращение от old (старый), отсылка к тому, что lisp - один из старейших языков.
 //  * А еще, в корейском похожий иероглиф (이) переводится как "Это", "This".
