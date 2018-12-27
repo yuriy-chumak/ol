@@ -161,7 +161,7 @@ set PATH=%PATH~%
 GOTO:EOF
 
 :REPL
-set VERSION=1.2
+set VERSION=2.0
 set PATH=%MINGW64%;%PATH%
 ::for /f "delims=" %%a in ('git describe') do @set VERSION=%%a
 vm repl - --version %VERSION% < src/ol.scm

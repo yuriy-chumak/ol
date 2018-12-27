@@ -55,7 +55,7 @@
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
-#define __OLVM_VERSION__ "2.0 alpha"
+#define __OLVM_VERSION__ "2.0"
 #endif
 #ifndef lint
 __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
