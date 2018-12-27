@@ -367,10 +367,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #	include <sys/sysinfo.h> // we have own win32 implementation
 #endif
 
-#if HAS_SOCKETS
-#	include <sys/sendfile.h>
-#endif
-
 #ifdef __linux__
 #	include <sys/resource.h> // getrusage
 #	if HAS_SANDBOX
@@ -384,16 +380,18 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
 #endif
 
 #ifdef _WIN32
+#	include <conio.h>
 #	include <malloc.h>
 
-#	include <conio.h>
-#	undef ERROR // macro redefinition
+#	if HAS_SOCKETS
+#		include <winsock2.h>
+#	endif
+#	include "unistd-ext.h"  // own win32 implementation
+#	include "stdlib-ext.h"  // own win32 implementation
+#endif
 
-# ifdef HAS_SOCKETS
-#	include <winsock2.h>
-# endif
-#include "unistd-ext.h"  // own win32 implementation
-
+#if HAS_SOCKETS
+#	include <sys/sendfile.h>
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -1921,10 +1919,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 }
 
 
-#ifdef ERROR
-#undef ERROR
-#endif
-#define ERROR(opcode, a, b) \
+#define FAIL(opcode, a, b) \
 	{ \
 		D("SOURCE: %s:%d", __FILE__, __LINE__); /* TEMP */\
 		R[4] = I (opcode);\
@@ -1932,7 +1927,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 		R[6] = (word) (b);\
 		goto error; \
 	}
-#define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
+#define CHECK(exp,val,errorcode)    if (!(exp)) FAIL(errorcode, val, ITRUE);
 
 static //__attribute__((aligned(8)))
 word runtime(OL* ol)
@@ -1949,9 +1944,6 @@ word runtime(OL* ol)
 
 	word*this = ol->this; // context
 	long acc = ol->arity; // arity
-
-	#undef MEMORY_CHECK
-	#define MEMORY_CHECK { if (fp > heap->end) E("ERROR!!!\n"); }
 
 #	ifndef _WIN32
 //	setvbuf(stderr, (void*)0, _IONBF, 0);
@@ -2017,13 +2009,13 @@ apply:;
 			case 2:
 				R[3] = get(this, R[4],    0, heap->fail);
 				if (!R[3])
-					ERROR(260, this, R[4]);
+					FAIL(260, this, R[4]);
 				break;
 			case 3:
 				R[3] = get(this, R[4], R[5], heap->fail);
 				break;
 			default:
-				ERROR(259, this, INULL);
+				FAIL(259, this, INULL);
 			}
 			this = cont;
 			acc = 1;
@@ -2032,7 +2024,7 @@ apply:;
 		}
 		else
 			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE)
-				ERROR(259, this, INULL);
+				FAIL(258, this, INULL);
 
 		// А не стоит ли нам переключить поток?
 		if (--ticker < 0) {
@@ -2114,7 +2106,7 @@ apply:;
 		goto mainloop; // let's execute
 	}
 	else
-		ERROR(257, this, INULL); // not callable
+		FAIL(261, this, INULL); // not callable
 
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
@@ -2277,7 +2269,7 @@ loop:;
 		// TODO: JIT!
 		//	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
 		default:
-			ERROR(258, I(op), ITRUE);
+			FAIL(262, I(op), ITRUE);
 		}
 		goto apply; // ???
 	// unused numbers:
@@ -2285,7 +2277,7 @@ loop:;
 	case 43:
 	case 48:
 	case 62:
-		ERROR(op, new_string("Unused opcode"), ITRUE);
+		FAIL(op, new_string("Invalid opcode"), ITRUE);
 		break;
 
 	case GOTO: // (10%)
@@ -2327,7 +2319,7 @@ loop:;
 			// todo: исправить с помощью динамического количества регистров!
 			if (reg > NR) { // dummy handling for now
 				// TODO: add changing the size of R array!
-				ERROR(APPLY, new_string("Too large apply"), ITRUE);
+				FAIL(APPLY, new_string("Too large apply"), ITRUE);
 			}
 			R[reg++] = car (lst);
 			lst = (word *) cdr (lst);
@@ -2387,7 +2379,7 @@ loop:;
 	// ошибка арности
 	case ARITY_ERROR: // (0%)
 		// TODO: добавить в .scm вывод ошибки четности
-		ERROR(17, this, I(acc));
+		FAIL(ARITY_ERROR, this, I(acc));
 		break;
 
 
@@ -2543,7 +2535,7 @@ loop:;
 				break;
 			}
 			default:
-				ERROR(17, this, I(size));
+				FAIL(VMMAKE, this, I(size));
 		}
 
 	 	ip += size + 1; break;
@@ -2616,7 +2608,7 @@ loop:;
 				break;
 			}
 			default:
-				ERROR(17, this, I(size));
+				FAIL(VMMAKEB, this, I(size));
 		}
 
 	 	ip += size + 1; break;
@@ -2655,7 +2647,7 @@ loop:;
 	// todo: переделать!
 	case VMCAST: { // cast obj type -> result
 		if (!is_value(A1))
-			ERROR(VMCAST, this, A1);
+			FAIL(VMCAST, this, A1);
 		word T = A0;
 		word type = value(A1) & 63; // maybe better add type checking? todo: add and measure time
 		A2 = IFALSE;
@@ -2669,7 +2661,7 @@ loop:;
 					A2 = make_port(val);
 			}
 			else
-				ERROR(VMCAST, this, T);
+				FAIL(VMCAST, this, T);
 			break;
 		case TVPTR:
 			// safe limitation (todo: make macro to on/off)
@@ -4169,7 +4161,7 @@ loop:;
 			if (function)
 				result = new_vptr(function);
 			else
-				E("dlsym failed: %s", dlerror());
+				D("dlsym failed: %s", dlerror());
 			break;
 		}
 		case SYSCALL_DLERROR: { // (dlerror)
@@ -4340,7 +4332,7 @@ loop:;
 	}
 
 	default:
-		ERROR(op, new_string("Invalid opcode"), ITRUE);
+		FAIL(op, new_string("Invalid opcode"), ITRUE);
 		break;
 	}
 	goto loop;
@@ -4369,8 +4361,6 @@ done:;
 #	endif
 	return 1; // ok
 } // end of runtime
-#undef MEMORY_CHECK
-#define MEMORY_CHECK
 
 // ======================================================================
 //       загрузчик скомпилированного образа и его десериализатор

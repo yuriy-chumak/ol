@@ -384,7 +384,7 @@
          (setq gdi32  (load-dynamic-library "gdi32"))
 
          (setq CreateWindowEx   (user32 fft-void* "CreateWindowExW"
-                                 fft-int type-wide-string type-wide-string
+                                 fft-int type-string-wide type-string-wide
                                  fft-int fft-int fft-int fft-int fft-int
                                  fft-void* fft-void* fft-void* fft-void*))
          (setq GetDC            (user32 fft-void* "GetDC" fft-void*))

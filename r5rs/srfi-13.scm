@@ -118,7 +118,7 @@
 
 
    (define make-string (case-lambda
-      ((len char) (runtime-error "Not implemented yet" 'make-string)) ;was: (list->string (repeat char n))), should be depndent of char, if it's rune - then type-wide-string otherwise type-string
+      ((len char) (runtime-error "Not implemented yet" 'make-string)) ;was: (list->string (repeat char n))), should be depndent of char, if it's rune - then type-string-wide otherwise type-string
       ((len) (vm:makeb type-string len))))
 
 ))
