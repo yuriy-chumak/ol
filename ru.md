@@ -6,17 +6,14 @@ categories: index
 > Любая достаточно сложная программа содержит заново написанную, неспецифицированную, глючную и медленную реализацию половины какого-либо из диалектов Lisp.
 > <br/> <span style="float: right;">Десятое правило Гринспена</span>
 
-<br/>
 
 **Otus Lisp** (произносится как [\`отэс лисп]), или сокращенно Ol ([\`ол]) - чисто[\*](#pure) функциональный диалект языка Lisp.
 
-Ol реализован как расширенное подмножество Scheme [R<sup>5</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](http://srfi.schemers.org/). Маленький, встраиваемый и кроссплатформенный; может работать в песочнице (в системах, где песочница поддерживается); предоставляет портабельный, высокоуровневый путь для вызова написанного на других языках кода. Вы можете использовать его под Linux, Windows, Unix, Android и многих других операционных системах на разных (например, x86, arm, aarch64, mips, ppc) архитектурах.
+Ol реализован как расширенное подмножество Scheme [R<sup>7</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторыми из [SRFI](https://r7rs.org). Маленький, встраиваемый и кроссплатформенный; может работать в собственной песочнице (в системах, где песочница поддерживается); предоставляет портабельный, высокоуровневый путь для вызова написанного на других языках кода. Вы можете использовать его под GNU/Linux, Windows, всевозможных Unix, разных BSD, Android и многих других операционных системах на различных (например, x86/x86_64, arm, aarch64, mips, ppc) архитектурах.
 
 
 ### Загрузка
-Релиз **1.2** вышел и готов к [скачиванию](https://github.com/yuriy-chumak/ol/releases). Приятного ЛИСПинга!
-
-Готовится к выпуску значительный релиз **2.0**, характеризующийся переходом на r7rs, изменением Native и Embed интерфейсов с переработкой большей части библиотек.
+Релиз **2.0** вышел и готов к [скачиванию](https://github.com/yuriy-chumak/ol/releases). Приятного ЛИСПинга!
 
 
 ### Протестированные платформы
@@ -34,7 +31,7 @@ Ol реализован как расширенное подмножество S
 - [x] GNU/Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
 - [x] Windows: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.
 - [x] Unix: OpenBSD, FreeBSD, NetBSD.
-- [x] Android: all versions up to Nougat.
+- [x] Android: all versions up to Nougat (должны поддерживать все, включая последнюю)
 - [x] webOS: 2.0.
 - [x] Odroid: [C1+](https://www.hardkernel.com/main/products/prdt_info.php?g_code=G143703355573).
 - [x] Minoca [OS](https://www.minocacorp.com/product/).

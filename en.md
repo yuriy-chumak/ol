@@ -9,13 +9,11 @@ categories: en
 
 **Otus Lisp** (Ol in short) is a purely[\*](#pure) functional dialect of Lisp.
 
-It implements an extended subset of R<sup>5</sup>RS (currently near at and Ol migrating to [R<sup>7</sup>RS](http://www.r7rs.org)) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It's small, embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on GNU/Linux, Windows, Unix, Android and many other operation systems with various (i.e. x86, x86_64, arm, aarch64, mips, ppc) architectures.
+It implements an extended subset of [R<sup>7</sup>RS](https://www.r7rs.org) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/). It's small, embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on GNU/Linux, Windows, different Unixes and BSDs, Android and many other operation systems with various (i.e. x86/x86_64, arm, aarch64, mips, ppc) architectures.
 
 
 ### Downloads
-Release **1.2** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
-
-Preparing version **2.0** which moving to r7rs with changes in ffi and embed.
+Release **2.0** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
 
 
 ### Already tested platforms
