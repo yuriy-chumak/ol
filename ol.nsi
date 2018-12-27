@@ -13,8 +13,8 @@
 ; General
 
   ;Name and file
-  Name "Otus Lisp (Version 2.0)"
-  OutFile "setup.ol-2.0.exe"
+  Name "Otus Lisp 2.0"
+  OutFile "ol-2.0.setup.exe"
 
   ;Default installation folder
   InstallDir "$LOCALAPPDATA\ol\2.0"
@@ -38,7 +38,7 @@
 ;--------------------------------
 ;Pages
 
-  !insertmacro MUI_PAGE_LICENSE "LICENCE"
+  !insertmacro MUI_PAGE_LICENSE "LICENSE"
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
   
@@ -69,21 +69,14 @@ Section "Otus Lisp" SecOL
   File "repl"
   File "ol.exe"
 
+  SetOutPath "$INSTDIR\lang"
+  File /r lang\*.scm
+  SetOutPath "$INSTDIR\libraries"
+  File /r libraries\**
   SetOutPath "$INSTDIR\r5rs"
   File /r r5rs\*.scm
-  SetOutPath "$INSTDIR\otus"
-  File /r otus\*.scm
-  SetOutPath "$INSTDIR\owl"
-  File /r owl\*.scm
-  SetOutPath "$INSTDIR\lib"
-  File /r lib\*.scm
-  SetOutPath "$INSTDIR\etc"
-  File /r etc\*.scm
-  SetOutPath "$INSTDIR\scheme"
-  File /r scheme\*.scm
-
-  SetOutPath "$INSTDIR\OpenGL"
-  File /r OpenGL\*.scm
+  SetOutPath "$INSTDIR\tests"
+  File /r tests
   
   ;Store installation folder
   WriteRegStr HKCU "${REGISTRY_KEY}" "" $INSTDIR
@@ -96,9 +89,9 @@ Section "Otus Lisp" SecOL
   !define env_hklm 'HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
   !define env_hkcu 'HKCU "Environment"'
   ; set variable for local machine
-  WriteRegExpandStr ${env_hklm} OL_HOME $INSTDIR
+  WriteRegExpandStr ${env_hklm} OL_HOME $INSTDIR\libraries
   ; and current user
-  WriteRegExpandStr ${env_hkcu} OL_HOME $INSTDIR
+  WriteRegExpandStr ${env_hkcu} OL_HOME $INSTDIR\libraries
   ; make sure windows knows about the change
   SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
   

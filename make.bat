@@ -140,8 +140,10 @@ GOTO:EOF
 
 :OL
 echo.   *** Making Otus Lisp:
+set PATH=%MINGW64%;%PATH%
 %CC% -std=c99 -g0 -O2 -Wall -fmessage-length=0 -Wno-strict-aliasing tmp/repl.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -DHAS_PINVOKE=1 ^
      -DNDEBUG -s
+set PATH=%PATH~%
 GOTO:EOF
 
 :OL32
@@ -160,12 +162,14 @@ GOTO:EOF
 
 :REPL
 set VERSION=1.2
+set PATH=%MINGW64%;%PATH%
 ::for /f "delims=" %%a in ('git describe') do @set VERSION=%%a
 vm repl - --version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again
 ld -r -b binary -o tmp/repl.o repl
+set PATH=%PATH~%
 GOTO:EOF
 :again
 copy boot.fasl repl
