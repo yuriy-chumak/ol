@@ -131,6 +131,10 @@
       ; * ol specific
       (setq error runtime-error) ; [yc] is it required?
 
+      ; * ol some warnings
+      (setq error:please-import-langintern (lambda ()
+         (runtime-error "Please, import (lang intern) to get the function.")))
+
       ; 1.3.3  Entry format
       ;
       ; Chapters 4 and 6 are organized into entries. Each ....
@@ -1331,24 +1335,23 @@
       ; list) is returned. The memq procedure uses eq? to compare
       ; obj with the elements of list, while memv uses eqv? and
       ; member uses compare, if given, and equal? otherwise.
-      (define (make-mem* comparer)
-         (letrec ((mem (lambda (obj list)
+      (define (make-mem* comparer) ; helper
+         (letrec ((f (lambda (obj list)
                         (unless (null? list)
                            (if (pair? list)
                               (unless (comparer obj (car list))
-                                 (mem obj (cdr list))
+                                 (f obj (cdr list))
                                  list)))))) ; found
-            mem))
+            f))
 
       (define memq (make-mem* eq?))
       (define memv (make-mem* eqv?))
       (define member
-         (let ((memequal (make-mem* equal?)))
          (case-lambda
             ((obj list)
-               (memequal obj list))
+               ((make-mem* equal?) obj list))
             ((obj list compare)
-               ((make-mem* compare) obj list)))))
+               ((make-mem* compare) obj list))))
 
       (assert (case 6
                  ((2 3 5 7) 'prime)
@@ -1358,9 +1361,52 @@
                  ((w y) 'semivowel)
                  (else 'consonant))                        ===> consonant)
 
-      ; library procedure:  (assq obj alist)
-      ; library procedure:  (assv obj alist)
-      ; library procedure:  (assoc obj alist)
+      (assert (memq 'a '(a b c))                ===> (a b c))
+      (assert (memq 'b '(a b c))                ===> (b c))
+      (assert (memq 'd '(a b c))                ===> #false)
+      (assert (memq '(a) '(b (a) c))            ===> #false)
+      (assert (member '(a) '(b (a) c))          ===> ((a) c))
+      (assert (member "a" '(3 "b" "c") less?)   ===> ("b" "c"))
+      (assert (memq 101 '(100 101 102))         ===> (101 102)) ; * ol specific, (but in r7rs unspecified)
+      (assert (memv 101 '(100 101 102))         ===> (101 102))
+
+      ; procedure:  (assq obj alist)
+      ; procedure:  (assv obj alist)
+      ; procedure:  (assoc obj alist)
+      ; procedure:  (assoc obj alist compare)
+
+      ; These procedures find the first pair in alist whose car field
+      ; is obj , and returns that pair. If no pair in alist has obj
+      ; as its car, then #f (not the empty list) is returned.  The
+      ; assq procedure uses eq? to compare obj with the car fields
+      ; of the pairs in alist, while assv uses eqv? and assoc uses
+      ; compare if given and equal? otherwise.
+      (define (make-ass* comparer) ; helper
+         (letrec ((f (lambda (obj list)
+                        (unless (null? list)
+                           (if (comparer (caar list) obj)
+                              (car list)
+                              (f obj (cdr list)))))))
+            f))
+      (define assq (make-ass* eq?))
+      (define assv (make-ass* eqv?))
+      (define assoc
+         (case-lambda
+            ((obj list)
+               ((make-ass* equal?) obj list))
+            ((obj list compare)
+               ((make-ass* compare) obj list))))
+
+      (assert (assoc 'oak
+         '((pine . cones) (oak . acorns) (maple . seeds)))  ===> (oak . acorns))
+      (assert (assoc 'birch '((pine . cones)))              ===> #false)
+
+      (assert (assq 'a '((a 1) (b 2) (c 3)))                ===> (a 1))
+      (assert (assq 'b '((a 1) (b 2) (c 3)))                ===> (b 2))
+      (assert (assq 'd '((a 1) (b 2) (c 3)))                ===> #false)
+      (assert (assq '(a) '(((a)) ((b)) ((c))))              ===> #false)
+      (assert (assq 5 '((2 3) (5 7) (11 13)))               ===> (5 7)) ; * ol specific, (but in r7rs unspecified)
+      (assert (assv 5 '((2 3) (5 7) (11 13)))               ===> (5 7))
 
       ; procedure:  (list-copy obj)
       ;
@@ -1371,7 +1417,7 @@
       ; are the same in the sense of eqv?. An obj which is not a
       ; list is returned unchanged. It is an error if obj is a circular
       ; list.
-      (define (list-copy obj)
+      (define (list-copy obj) ; BUG: does not fit to documentation
          (reverse (reverse obj)))
 
       ; 6.5  Symbols
@@ -1391,8 +1437,13 @@
                   #true
                   (and (equal? (car os) (car o)) (loop (cdr o)))))))
 
-      ; procedure:  (symbol->string symbol) *(lang eval)
-      ; procedure:  (string->symbol string) *(lang eval)
+      ; procedure:  (symbol->string symbol)
+      (define (symbol->string . args)
+         (error:please-import-langintern)) ; * (lang eval)
+
+      ; procedure:  (string->symbol string)
+      (define (string->symbol . args)
+         (error:please-import-langintern)) ; * (lang eval)
 
       ; 6.3.4  Characters   * moved to (r5rs characters)
       ; Characters are objects that represent printed characters such as letters and digits.
@@ -1983,22 +2034,23 @@
       not boolean? symbol? port? procedure? eof?
       symbol=?
 
-      value? reference?
-      zero?
-
-      list-ref
-
-      ; (r7rs) 6.4 Pairs and Lists
-      ; todo: move some staff to (scheme base)
+      ; (r7rs) 6.4. Pairs and lists
       pair? cons car cdr
       set-car! set-cdr!
       caar cadr cdar cddr
       null? list?
       make-list list length
       append reverse list-tail list-ref list-set!
-      memq memv member
-;      assq assv assoc
+      memq memv member assq assv assoc
       list-copy
+
+      ; (r7rs) 6.5. Symbols
+      symbol? symbol=? symbol->string string->symbol
+
+      value? reference?
+      zero?
+
+      list-ref
 
       ; (r7rs) 6.9  Bytevectors
       bytevector?
