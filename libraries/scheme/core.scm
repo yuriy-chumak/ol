@@ -515,7 +515,10 @@
                (lambda () (op . args)))
             ((delay value) value)))
 
-      ; 4.2.6  Quasiquotation
+      ; 4.2.6. Dynamic bindings
+      ; * declared in (scheme dynamic-bindings)
+
+      ; 4.2.?  Quasiquotation
       ;
       ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
       ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
