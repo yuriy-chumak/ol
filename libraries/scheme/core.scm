@@ -1374,17 +1374,25 @@
       (define (list-copy obj)
          (reverse (reverse obj)))
 
-      ; 6.3.3  Symbols
+      ; 6.5  Symbols
       ;
-      ; Symbols are objects whose usefulness rests on the fact .......
+      ; Symbols are objects whose usefulness rests on the fact ...
       ; .......
 
       ; procedure:  (symbol? obj)
       (define (symbol? o)
          (eq? (type o) type-symbol))
 
-      ; procedure:  (symbol->string symbol) *tbd
-      ; procedure:  (string->symbol string) *tbd
+      ; procedure:  (symbol=? symbol1 symbol2 symbol3 ...)
+      (define (symbol=? . os)
+         (unless (null? os)
+            (let loop ((o (cdr os)))
+               (if (null? o)
+                  #true
+                  (and (equal? (car os) (car o)) (loop (cdr o)))))))
+
+      ; procedure:  (symbol->string symbol) *(lang eval)
+      ; procedure:  (string->symbol string) *(lang eval)
 
       ; 6.3.4  Characters   * moved to (r5rs characters)
       ; Characters are objects that represent printed characters such as letters and digits.
@@ -1973,6 +1981,7 @@
 
       ; 6.3
       not boolean? symbol? port? procedure? eof?
+      symbol=?
 
       value? reference?
       zero?
