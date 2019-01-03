@@ -103,7 +103,7 @@
                               (loop codes)))
                         ; todo: simplify this
                         (else
-                           (mail sender 'bad-kitty)
+                           (mail sender #false)
                            (loop codes)))))))))
 
       (define (reg a)

@@ -75,8 +75,7 @@
       (define (sys:read fd maxlen)         (syscall 0 fd maxlen #false))
       (define (sys:write fd buffer length) (syscall 1 fd buffer length))
 
-      ;; use type 12 for fds
-
+      ; low-level file open/close functions
       (define (fopen path mode)
          (cond
             ((c-string path) =>
@@ -84,7 +83,7 @@
             (else #false)))
 
       (define (fclose fd)
-         (syscall 3 fd #false #false)) ; 1002
+         (syscall 3 fd #false #false))
 
 
       ;;; -----------------------------------------------------------
@@ -164,10 +163,10 @@
 ;         (sleep 1)) ; is it required?
 
       (define (sleep n) (interact 'io n))
-      
-      
-      
-      
+
+
+
+
       ;;; Writing
 
       ;; #[0 1 .. n .. m] n → #[n .. m]

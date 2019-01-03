@@ -131,19 +131,19 @@
 
       ; call before
       (define (fork-intern-interner symbols)
-         (let ((root (fold put-symbol empty-symbol-tree symbols)))
+         (let ((codes (fold put-symbol empty-symbol-tree symbols)))
             (fork-server 'intern (lambda ()
-               (let loop ((root root))
+               (let loop ((codes codes))
                   (let*((envelope (wait-mail))
                         (sender msg envelope))
                      (cond
                         ((string? msg)
-                           (let*((root symbol (string->interned-symbol root msg)))
+                           (let*((codes symbol (string->interned-symbol codes msg)))
                               (mail sender symbol)
-                              (loop root)))
+                              (loop codes)))
                         (else
-                           (mail sender 'bad-kitty)
-                           (loop root)))))))))
+                           (mail sender #false)
+                           (loop codes)))))))))
 
       ; fixme: invalid
       ;(define-syntax defined?
