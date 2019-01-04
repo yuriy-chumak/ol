@@ -861,7 +861,7 @@
       ; .........
 
       ; This data types related to olvm
-      ;     - not a part of r5rs -
+      ;     - not a part of r7rs -
       ; todo: move to (src vm) ?
       (define type-fix+             TFIX+)
       (define type-fix-             TFIX-)
@@ -961,14 +961,20 @@
 
       (assert (complex? 3+4i)                        ===>  #t)
       (assert (complex? 3)                           ===>  #t)
+      (assert (complex? 3.4)                         ===>  #t)
       (assert (real? 3)                              ===>  #t)
+      (assert (real? 3.4)                            ===>  #t)
       (assert (real? -2.5+0.0i)                      ===>  #t)
       (assert (real? 1e10)                           ===>  #t)
       (assert (rational? 6/10)                       ===>  #t)
       (assert (rational? 6/3)                        ===>  #t)
+      (assert (rational? 3+4i)                       ===>  #f)
       (assert (integer? 3+0i)                        ===>  #t)
+      (assert (integer? 3+4i)                        ===>  #f)
       (assert (integer? 3.0)                         ===>  #t)
+      (assert (integer? 3.4)                         ===>  #f)
       (assert (integer? 8/4)                         ===>  #t)
+      (assert (integer? 8/5)                         ===>  #f)
 
       ; *** declared in (r5rs math), (r5rs math-extra)
       ; library procedure:  (zero? z)
