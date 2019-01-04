@@ -52,6 +52,7 @@
          (values-apply (vm:sub n 1) (lambda (n carry) n))))
       (setq |+1| (lambda (n) ; * internal
          (values-apply (vm:add n 1) (lambda (n carry) n))))
+      (setq |0.0| (vm:fp2 #xC9 42 0)) ; * internal
 
       ; * ol specific: (runtime-error reason info)
       (setq runtime-error (lambda (reason info)
@@ -903,8 +904,6 @@
       ; Consequently, if a type predicate is false of a number, then
       ; all lower type predicates are also false of that number.
 
-         (setq |0.0| (vm:fp1 3 0)) ; *internal
-
       ; procedure:  (integer? obj)
       (define (integer? a)
          (case (type a)
@@ -977,6 +976,12 @@
       (or
          (eq? x 0)
          (equal? x |0.0|))) ; supports inexact numbers
+
+      (assert (zero? 0)                              ===>  #t)
+      (assert (zero? 4)                              ===>  #f)
+      (assert (zero? (vm:fp2 #xE9 7 7))              ===>  #t)
+      (assert (zero? (vm:fp2 #xC1 7 7))              ===>  #f)
+
       ; library procedure:  (positive? x)
       ; library procedure:  (negative? x)
       ; library procedure:  (odd? n)
