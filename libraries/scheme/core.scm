@@ -382,7 +382,6 @@
                (if (eq? thing atom)
                   ((lambda () . then)) ; means (begin . body)
                   (case thing . clauses)))))
-      ; please, check asserts for memv
 
       ; library syntax:  (and <test1> ...)
       (define-syntax and
@@ -1355,58 +1354,25 @@
 
       (assert (case 6
                  ((2 3 5 7) 'prime)
-                 ((1 4 6 8 9) 'composite))                 ===> composite)
+                 ((1 4 6 8 9) 'composite))     ===> composite)
       (assert (case (car '(c d))
                  ((a e i o u) 'vowel)
                  ((w y) 'semivowel)
-                 (else 'consonant))                        ===> consonant)
+                 (else 'consonant))            ===> consonant)
 
-      (assert (memq 'a '(a b c))                ===> (a b c))
-      (assert (memq 'b '(a b c))                ===> (b c))
-      (assert (memq 'd '(a b c))                ===> #false)
-      (assert (memq '(a) '(b (a) c))            ===> #false)
-      (assert (member '(a) '(b (a) c))          ===> ((a) c))
-      (assert (member "a" '(3 "b" "c") less?)   ===> ("b" "c"))
-      (assert (memq 101 '(100 101 102))         ===> (101 102)) ; * ol specific, (but in r7rs unspecified)
-      (assert (memv 101 '(100 101 102))         ===> (101 102))
+      (assert (memq 'a '(a b c))               ===> (a b c))
+      (assert (memq 'b '(a b c))               ===> (b c))
+      (assert (memq 'd '(a b c))               ===> #false)
+      (assert (memq '(a) '(b (a) c))           ===> #false)
+      (assert (member '(a) '(b (a) c))         ===> ((a) c))
+      (assert (member "a" '(3 "b" "c") less?)  ===> ("b" "c"))
+      (assert (memq 101 '(100 101 102))        ===> (101 102)) ; * ol specific, (in r7rs unspecified)
+      (assert (memv 101 '(100 101 102))        ===> (101 102))
 
-      ; procedure:  (assq obj alist)
-      ; procedure:  (assv obj alist)
-      ; procedure:  (assoc obj alist)
-      ; procedure:  (assoc obj alist compare)
-
-      ; These procedures find the first pair in alist whose car field
-      ; is obj , and returns that pair. If no pair in alist has obj
-      ; as its car, then #f (not the empty list) is returned.  The
-      ; assq procedure uses eq? to compare obj with the car fields
-      ; of the pairs in alist, while assv uses eqv? and assoc uses
-      ; compare if given and equal? otherwise.
-      (define (make-ass* comparer) ; helper
-         (letrec ((f (lambda (obj list)
-                        (unless (null? list)
-                           (if (comparer (caar list) obj)
-                              (car list)
-                              (f obj (cdr list)))))))
-            f))
-      (define assq (make-ass* eq?))
-      (define assv (make-ass* eqv?))
-      (define assoc
-         (case-lambda
-            ((obj list)
-               ((make-ass* equal?) obj list))
-            ((obj list compare)
-               ((make-ass* compare) obj list))))
-
-      (assert (assoc 'oak
-         '((pine . cones) (oak . acorns) (maple . seeds)))  ===> (oak . acorns))
-      (assert (assoc 'birch '((pine . cones)))              ===> #false)
-
-      (assert (assq 'a '((a 1) (b 2) (c 3)))                ===> (a 1))
-      (assert (assq 'b '((a 1) (b 2) (c 3)))                ===> (b 2))
-      (assert (assq 'd '((a 1) (b 2) (c 3)))                ===> #false)
-      (assert (assq '(a) '(((a)) ((b)) ((c))))              ===> #false)
-      (assert (assq 5 '((2 3) (5 7) (11 13)))               ===> (5 7)) ; * ol specific, (but in r7rs unspecified)
-      (assert (assv 5 '((2 3) (5 7) (11 13)))               ===> (5 7))
+      ; procedure:  (assq obj alist)           * moved to (scheme base)
+      ; procedure:  (assv obj alist)           * moved to (scheme base)
+      ; procedure:  (assoc obj alist)          * moved to (scheme base)
+      ; procedure:  (assoc obj alist compare)  * moved to (scheme base)
 
       ; procedure:  (list-copy obj)
       ;
@@ -2041,7 +2007,7 @@
       null? list?
       make-list list length
       append reverse list-tail list-ref list-set!
-      memq memv member assq assv assoc
+      memq memv member
       list-copy
 
       ; (r7rs) 6.5. Symbols
