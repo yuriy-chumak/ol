@@ -17,7 +17,7 @@ Otus Lisp, Version 2.0
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
 It implements an extended subset of R<sup>7</sup>RS Scheme including, but not limited to, some of the SRFIs.
-It's tiny (~42kb), embeddable and crossplatform; provides a portable, highlevel way to call a code written in other languages.
+It's tiny (~42kb), embeddable and crossplatform; provides a portable, high-level way to call code written in other languages.
 
 You can use Ol in GNU/Linux, Windows, Unixes (macOS, Solaris, kinds of BSD), Android, webOS, Minoca and lot of any other operation systems based on various hardware architectures (x86/x86_64, arm, aarch64, ppc, mips, etc).
 
@@ -47,16 +47,7 @@ LEARNING
 
 You can find Ol samples at:
 * [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
-* [Samples](https://github.com/yuriy-chumak/ol/tree/master/samples) repository folder.
-* [Tests](https://github.com/yuriy-chumak/ol/tree/master/tests) repository folder.
-
-
-BUILD REQUIREMENTS
-------------------
-
-You should have GCC >3.2 or CLANG >3.5 or TCC installed.
-For Windows you should have MinGW (with GCC).
-If you want to compile asm.js binary (is not required by regular build) you should have Emscripten ver. 1.37.40.
+* [Samples](https://github.com/yuriy-chumak/ol/tree/master/samples) ans [Tests](https://github.com/yuriy-chumak/ol/tree/master/tests) repository folders.
 
 
 DOWNLOAD / INSTALLATION
@@ -92,6 +83,24 @@ Next platforms installation packages can be found at the [Releases](https://gith
 * Windows (x86, amd64)
 * Android (arm64-v8a, armeabi, armeabi-v7a,
 mips, mips64, x86, x86_64)
+
+
+BUILD REQUIREMENTS
+------------------
+
+You should have GCC >3.2 or CLANG >3.5 or TCC installed.
+For Windows you should have MinGW (with GCC).
+If you want to compile asm.js binary (is not required by regular build) you should have Emscripten ver. 1.37.40.
+
+### R<sup>7</sup>RS DIFFERENCES
+
+* 6.1.  Equivalence predicates
+  * (eqv? '#() '#()) is #true, but unspecified in Scheme
+  * (eqv? +nan.0 +nan.0) is #true, but unspecified in Scheme
+* 6.2.5. Syntax of numerical constants
+  * NUMBERS WITHOUT PRECISION consdered to be 'exact' in Ol, but 'inexact' in Scheme. Inexactness can be disabled by compiler features or/and can be unsupported by platform and we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).
+* 6.4. Pairs and lists
+  * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully specified in Ol, but unspecified in Scheme.
 
 
 BUILD

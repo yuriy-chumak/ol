@@ -4,13 +4,14 @@
    (license MIT/LGPL3)
    (keywords (scheme core ol))
    (description "
-      Core Otus-Lisp scheme library.")
+      Core Otus-Lisp Scheme library.")
 
    (import
-      (src vm) ; Otus Lisp Virtual Machine codes and primitives:
+      (src vm) ;; Codes and primitives of the Otus Lisp Virtual Machine that
+               ;;  do not need to be exported by libraries.
                ;
-               ; object creation/modification
-               ;   vm:new vm:make vm:cast vm:makeb
+               ; object creation/modification:
+               ;   vm:new vm:make vm:makeb vm:cast
                ;   cons car cdr ref type size set set! eq? less?
                ; basic math primitives:
                ;   integer:
@@ -23,42 +24,63 @@
                ;     vm:version vm:maxvalue vm:valuewidth
                ; etc.
                ;   clock syscall
-               ; hash tables support:
+               ; associative arrays support:
                ;   ff:red ff:black ff:toggle ff:red? ff:right?
                ; execution flow:
                ;   apply apply/cc arity-error
                ;   call-with-current-continuation
                ;   tuple-apply ff-apply
+               ;
+               ;; special forms: (declared in lang/env.scm)
+               ;
+               ; quote values lambda setq
+               ; letq ifeq either values-apply
+               ;
 
       (scheme srfi-16)   ; case-lambda
       (scheme srfi-87)   ; <= in cases
       (scheme srfi-71))  ; (let* ((a b (values..
 
+   ; -----------------------------------------------------------------
+   ; special staff
    (begin
-      ;; special forms: (declared in lang/env.scm)
-      ;
-      ; quote values lambda setq
-      ; letq ifeq either values-apply
-      ;
-
-      ; internal: (-1 obj), (+1 obj) * please, don't use: this works only with fix+ numbers
+      ; internal: (-1 obj), (+1 obj)
       ; note: todo: add theoretically impossible case:
       ;       (if carry (runtime-error "Too long list to fit in fixnum"))
 
-      (setq |-1| (lambda (n) ; *internal
+      (setq |-1| (lambda (n) ; * internal
          (values-apply (vm:sub n 1) (lambda (n carry) n))))
-      (setq |+1| (lambda (n) ; *internal
+      (setq |+1| (lambda (n) ; * internal
          (values-apply (vm:add n 1) (lambda (n carry) n))))
 
+      ; * ol specific: (runtime-error reason info)
+      (setq runtime-error (lambda (reason info)
+         (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
+
+      ; * temporary, allows basic assert implementation
+      (setq equal? (lambda (a b)
+         (ifeq a b #true #false)))
+
+      ; * internal automation testing staff
+      ; note: please be careful!
+      ;       this is simplified 'assert' that uses 'eq?' before real 'equal?' be implemented in chapter 6
+      (define-syntax assert
+         (syntax-rules (===>)
+            ((assert expression ===> expectation)
+               (ifeq (equal? ((lambda (x) x) expression) (quote expectation)) #true
+                  #true
+                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
+   )
+
+   ; =================================================================
+   ; Scheme
+   ;
+   ; Revised(7) Report on the Algorithmic Language Scheme
+   ;                  Dedicated to the Memory of ALGOL 60
+   ;
+   (begin
 
       ; =================================================================
-      ; Scheme
-      ;
-      ; Revised(7) Report on the Algorithmic Language Scheme
-      ;                  Dedicated to the Memory of ALGOL 60
-      ;
-      ; =================================================================
-
       ; Programming languages should be designed not by piling feature on
       ; top of feature, but by removing the weaknesses and restrictions
       ; that make additional features appear necessary. Scheme demonstrates
@@ -107,26 +129,12 @@
       ; When speaking of an error situation, this report .......
       ; ....
 
-      ; * ol specific: (runtime-error reason info)
-      (setq runtime-error (lambda (reason info)
-         (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
-
       ; 4.3.3. Signaling errors in macro transformers
       ;
       (define-syntax syntax-error
          (syntax-rules (runtime-error)
             ((syntax-error . staff)
                (runtime-error "syntax error: " (quote staff)))))
-
-      ; * internal testing staff
-      ; note: this is simplified 'assert' that uses 'eq?'. please be careful!
-      ; note: will be changed to "equal?" version in chapter 6
-      (define-syntax assert
-         (syntax-rules (===>)
-            ((assert expression ===> expectation)
-               (ifeq ((lambda (x) x) expression) (quote expectation)
-                  #true
-                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
 
       ; * ol specific
       (setq error runtime-error) ; [yc] is it required?
@@ -387,8 +395,6 @@
       (define-syntax and
          (syntax-rules ()
             ((and) #true)
-;            ((and (a . b) . c)
-;               ((lambda (x) (and x . c))  (a . b)))
             ((and a) a)
             ((and a . b)
                (if a (and . b) #false))))
@@ -402,7 +408,7 @@
       (define-syntax or
          (syntax-rules ()
             ((or) #false)
-            ((or (a . b) . c)
+            ((or (a . b) . c) ; additional optimization
                ((lambda (x) (or x . c))  (a . b)))
             ((or a) a)
             ((or a . b)
@@ -722,7 +728,7 @@
 
       (assert (eqv? 'a 'a)                  ===> #true)
       (assert (eqv? '() '())                ===> #true)
-      (assert (eqv? 2 2)                    ===> #true) ; atomic number
+      (assert (eqv? 2 2)                    ===> #true) ; atomic numbers
       (assert (eqv? 72057594037927936
                     72057594037927936)      ===> #true) ; not an atomic numbers
       (assert (eqv? 0.33 0.33)              ===> #true)
@@ -795,16 +801,16 @@
       ; can be said about such cases is that the value returned by
       ; eqv? must be a boolean
 
-      ;assert (eqv? "" "")                  ===> unspecified
-      ;assert (eqv? '#() '#())              ===> unspecified
+      ;(assert (eqv? "" "")                  ===> #false) ; * ol specific, (in r7rs unspecified)
+      (assert (eqv? '#() '#())              ===> #true)  ; * ol specific, (in r7rs unspecified)
       ;assert (eqv? (lambda (x) x)
-      ;             (lambda (x) x))         ===> unspecified
+      ;             (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? (lambda (x) x)
-      ;             (lambda (y) y))         ===> unspecified
+      ;             (lambda (y) y))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? 1.0e0 1.0f0)            ===> unspecified
-      ;assert (eqv? +nan.0 +nan.0)          ===> unspecified
+      (assert (eqv? +nan.0 +nan.0)          ===> #true)  ; * ol specific, (in r7rs unspecified)
 
-      ;assert (eqv? '(a) '(a))              ===> unspecified
+      ;(assert (eqv? '(a) '(a))              ===> #false) ; * ol specific, (in r7rs unspecified)
       ;assert (eqv? "a" "a")                ===> unspecified
       ;assert (eqv? '(b) (cdr '(a b)))      ===> unspecified
       ;assert (letrec ((f (lambda () (if (eqv? f g) ’both ’f)))
@@ -846,14 +852,6 @@
                         #true
                         (if (equal? (ref a n) (ref b n))
                            (loop (|-1| n)))))))))))
-
-      ; * internal testing staff
-      ; note: this is full featured version, changed from simplest earlier.
-      (define-syntax assert
-         (syntax-rules (===>)
-            ((assert expression ===> expectation)
-               (unless (equal? expression (quote expectation))
-                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
 
 
       ; 6.2  Numbers

@@ -37,19 +37,19 @@
       vm:run vm:sys)
 
    (begin
-;     пример выполнение raw-кода прямо в интерпретаторе:
-;     создадим альтернативную "native" команду cons
-;      > (define construct (vm:makeb type-bytecode '(51 4 5  6  24 6)))
-;        ; notes:
-;        ; 51 - command bytecode
-;        ; 4 5 - two registers for input values
-;        ; 6 - register to store result
-;        ; 24 6 - RET 6, where 6 is results register
-;
-;      ;; Defined construct
-;      > (construct 1 2)
-;      '(1 . 2)
-;      >
+      ; the sample of creation the raw bytecode directly in ol interpreter:
+      ;  let's create the alternative to CONS bytecode function named CONSTRUCT
+      ;
+      ;> (define construct (vm:makeb type-bytecode '(51 4 5  6  24 6)))
+      ;; notes:
+      ;; 51 - command bytecode
+      ;; 4 5 - two registers for input values
+      ;; 6 - register to store result
+      ;; 24 6 - RET 6, where 6 is results register
+      ;
+      ;> (construct 1 2)
+      ;'(1 . 2)
+      ;>
 
       ; -------------------------------------------
       ;; Список типов данных вирутальной машины
@@ -72,20 +72,20 @@
       (setq type-ff-black-leaf 8) ; reference ; TODO: move to 28
       ; 9
 
-      (setq type-rlist-spine  10) ; reference
+      ;(setq type-rlist-spine  10) ; reference, used by rlist (not retested)
       (setq type-vector-leaf  11) ; reference
 
       (setq TPORT             12) ; value
       (setq TCONST            13) ; value
 
-      (setq type-rlist-node   14) ; reference
+      ;(setq type-rlist-node   14) ; reference, used by rlist (not retested)
       (setq type-vector-dispatch 15) ; reference
 
       (setq TBYTECODE         16) ; reference, raw bytecode
       (setq TPROCEDURE        17) ; reference, pure function
       (setq TCLOSURE          18) ; reference, function with closures
-      (setq TBYTEVECTOR       19) ; reference, bytevector
 
+      (setq TBYTEVECTOR       19) ; reference, bytevector
       ; 20
       (setq type-string-dispatch 21) ; reference
       (setq TSTRINGWIDE       22) ; reference, raw
@@ -102,14 +102,15 @@
       ;29
       ;30
 
-      (setq type-thread-state     31) ; reference
+      (setq type-thread-state 31) ; reference
 
-      (setq TVPTR             49) ; reference,  blob
-      (setq TCALLABLE         61) ; reference,  blob
+      (setq TVPTR             49) ; reference, blob
+      (setq TCALLABLE         61) ; reference, blob
 
 
       ; -------------------------------------------
-      ;; Список кодов виртуальной машины:
+      ;; Список кодов виртуальной машины, используемых
+      ;;  компилятором
 
       (setq GOTO 2) ; jmp a, nargs    call Ra with nargs args
       ;(setq GOTO-CODE 18) ; not used for now, check (fn-type)
@@ -220,11 +221,11 @@
       (setq FF-APPLY 49) ;(setq ff-apply (make-bytecode '(49 4)))
 
       ; associative array
-      (setq ff:black  (make-bytecode '(42  4 5 6 7  8  24 8)))
-      (setq ff:red    (make-bytecode '(106 4 5 6 7  8  24 8))) ;106 = 42+(1<<6)
-      (setq ff:toggle (make-bytecode '(46  4        5  24 5)))
-      (setq ff:red?   (make-bytecode '(41  4        5  24 5)))
-      (setq ff:right? (make-bytecode '(105 4        5  24 5))) ;105 = 41+(1<<6)
+      ;(setq ff:black  (make-bytecode '(42  4 5 6 7  8  24 8)))
+      ;(setq ff:red    (make-bytecode '(106 4 5 6 7  8  24 8))) ;106 = 42+(1<<6)
+      ;(setq ff:toggle (make-bytecode '(46  4        5  24 5)))
+      ;(setq ff:red?   (make-bytecode '(41  4        5  24 5)))
+      ;(setq ff:right? (make-bytecode '(105 4        5  24 5))) ;105 = 41+(1<<6)
 
       ; pinned objects
       (setq vm:pin    (make-bytecode '(35 4 5  24 5)))
