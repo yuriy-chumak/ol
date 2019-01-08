@@ -69,7 +69,7 @@
       ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
       ; 6
       ; 7
-      (setq type-ff-black-leaf 8) ; reference ; TODO: move to 28
+      ;(setq type-ff-black-leaf 8) ; reference ; TODO: move to 28
       ; 9
 
       ;(setq type-rlist-spine  10) ; reference, used by rlist (not retested)
@@ -110,7 +110,7 @@
 
       ; -------------------------------------------
       ;; Список кодов виртуальной машины, используемых
-      ;;  компилятором
+      ;;  компилятором, не экспозятся на сам язык
 
       (setq GOTO 2) ; jmp a, nargs    call Ra with nargs args
       ;(setq GOTO-CODE 18) ; not used for now, check (fn-type)
@@ -148,50 +148,115 @@
 
       ; -------------------------------------------
       ;; Примитивные операции/операторы
-      ; internal helper
-      (setq make-bytecode (lambda (bytecode) (vm:makeb TBYTECODE bytecode)))
-
-      ; memory allocators (no default bytecode exists, should generate on-the-fly)
-      (setq NEW 23)        ; no real (vm:new) command required, check rtl-primitive in (lang compile)
-      (setq MAKE 18)
-      (setq MAKEB 19)
-      (setq CAST 22)       ;(setq vm:cast  (make-bytecode '(22 4 5 6  24 6))) ; cast object type (works for immediates and allocated)
-
-      ; vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements length
-      ; vm:make - smarter allocator, can create objects with size and default element
-
-      ;
-      (setq APPLY 20)       (setq apply (make-bytecode '(20))) ; stub for (prim-opcodes)
-      (setq ARITY-ERROR 17) (setq arity-error (make-bytecode '(17))) ; stub for (prim-opcodes)
-      (setq APPLY/CC 84)    (setq apply/cc (make-bytecode '(84))) ; stub for (prim-opcodes)
-
-      ; other instructions
-      (setq NOP 21)      (setq vm:nop  (make-bytecode '(21)))
-      (setq SYS 27)      (setq vm:sys  (make-bytecode '(27 4 5 6 7 8  24 8)))
-      (setq RUN 50)      (setq vm:run  (make-bytecode '(50 4 5)))
-
-      ; primops:
-
-      ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
-      (setq ADD 38)      ;(setq vm:add  (make-bytecode '(38 4 5       6 7)))
-      (setq MUL 39)      ;(setq vm:mul  (make-bytecode '(39 4 5       6 7)))
-      (setq SUB 40)      ;(setq vm:sub  (make-bytecode '(40 4 5       6 7)))
-      (setq DIV 26)      ;(setq vm:div  (make-bytecode '(26 4 5 6     7 8 9)))
-      (setq SHR 58)      ;(setq vm:shr  (make-bytecode '(58 4 5       6 7)))
-      (setq SHL 59)      ;(setq vm:shl  (make-bytecode '(59 4 5       6 7)))
-
-      (setq AND 55)      ;(setq vm:and  (make-bytecode '(55 4 5 6  24 6)))
-      (setq OR 56)       ;(setq vm:or   (make-bytecode '(56 4 5 6  24 6)))
-      (setq XOR 57)      ;(setq vm:xor  (make-bytecode '(57 4 5 6  24 6)))
-
-      ; инструкции поддержки арифметики с плавающей точкой (inexact math)
-      (setq FP1 33)      ;(setq vm:fp1 (make-bytecode '(33 4 5 6    24 6)))
-      (setq FP2 34)      ;(setq vm:fp2 (make-bytecode '(34 4 5 6 7  24 7)))
+      (setq make-bytecode (lambda (bytecode) (vm:makeb TBYTECODE bytecode))) ; * internal
 
       ; cons:
       ; https://www.gnu.org/software/emacs/manual/html_node/eintr/Strange-Names.html#Strange-Names
       ; The name of the cons function is not unreasonable: it is an abbreviation of the word `construct'.
-      (setq CONS 51)     ;(setq cons    (make-bytecode '(51 4 5 6  24 6)))
+      (setq cons (make-bytecode '(51 4 5 6  24 6)))
+
+      ; ----------
+      ; todo: план по слиянию new-object и new-raw-object, с одновременным
+      ;       внесением бита "rawness" в числовое значение типа
+      ;  1. добавить параметр "rawness" к аргументам new-object
+      ;  2. удалить new-raw-object
+      ;  3. изменить нумерацию типов
+      ;  4. удалить параметр rawness
+      (setq primop (lambda (name in out code tail) ; * internal
+         (cons
+            (vm:new TTUPLE name  (ref code 0)  in out code) tail)))
+
+      ; список примитивных операций виртуальной машины:
+      ;  эти операции не надо экспортировать из модуля, они как бы "вшиты" в базовый язык
+      ;  кроме них вшитыми являются quote, values, lambda, setq, letq, ifeq, either and values-apply
+      (setq *primops*
+         ; прямые аллокаторы
+         (primop 'vm:new   'any 1 #(23) ; make new object, simplest and fastest allocator
+         (primop 'vm:make  'any 1 #(18) ; make object
+         (primop 'vm:makeb 'any 1 #(19) ; make blob (binary, raw) object
+         ; косвенные аллокаторы
+         (primop 'vm:cast     2 1 (make-bytecode '(22 4 5 6    24 6))
+         (primop 'set-ref     3 1 (make-bytecode '(45 4 5 6 7  24 7))
+
+         ; ну и мутатор сюда же добавим
+         (primop 'set-ref!    3 1 (make-bytecode '(10 4 5 6 7  24 7))
+
+         ; описатели
+         (primop 'type   1 1 type ; (make-bytecode '(15 4 5    24 5))  ;; get type bits
+         (primop 'size   1 1 size ; (make-bytecode '(36 4 5    24 5))  ;; get object size (without header)
+
+         ; конструкторы
+         (primop 'cons   2 1 cons ; (make-bytecode '(51 4 5 6  24 6))
+
+         ; геттеры
+         (primop 'car    1 1 car  ; (make-bytecode '(52 4 5    24 5))
+         (primop 'cdr    1 1 cdr  ; (make-bytecode '(53 4 5    24 5))
+         (primop 'ref    2 1 ref  ; (make-bytecode '(47 4 5 6  24 6))
+
+         ; компараторы
+         (primop 'eq?    2 1 eq?  ; (make-bytecode '(54 4 5 6  24 6))
+         (primop 'less?  2 1 less?; (make-bytecode '(44 4 5 6  24 6))
+
+         ; базовая арифметика
+         ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
+         (primop 'vm:add   2 2 (make-bytecode '(38 4 5     6 7))  ; vm:add
+         (primop 'vm:mul   2 2 (make-bytecode '(39 4 5     6 7))  ; vm:mul
+         (primop 'vm:sub   2 2 (make-bytecode '(40 4 5     6 7))  ; vm:sub
+         (primop 'vm:div   3 3 (make-bytecode '(26 4 5 6   7 8 9)); vm:div ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
+         ; сдвиги
+         (primop 'vm:shr   2 2 (make-bytecode '(58 4 5     6 7))  ; vm:shr
+         (primop 'vm:shl   2 2 (make-bytecode '(59 4 5     6 7))  ; vm:shl
+         ; бинарная арифметика
+         (primop 'vm:and   2 1 (make-bytecode '(55 4 5 6      24 6)) ; vm:and
+         (primop 'vm:or    2 1 (make-bytecode '(56 4 5 6      24 6)) ; vm:or
+         (primop 'vm:xor   2 1 (make-bytecode '(57 4 5 6      24 6)) ; vm:xor
+
+         ; инструкции поддержки арифметики с плавающей точкой (inexact math)
+         (primop 'vm:fp1   2 1 (make-bytecode '(33 4 5 6      24 6)) ; vm:fp1
+         (primop 'vm:fp2   3 1 (make-bytecode '(34 4 5 6 7    24 7)) ; vm:fp2
+
+         ; системный таймер  (deprecated, но остается как пример операции не принимающей параметров м возвращающей values)
+         (primop 'clock    0 2 (make-bytecode '(61 4 5)) ; clock, todo: удалить
+         ; системные вызовы
+         (primop 'syscall  4 1 (make-bytecode '(63 4 5 6 7 8  24 8))
+
+         ; vm-specific constants
+         (primop 'vm:maxvalue   0 1 (make-bytecode '(30 4))
+         (primop 'vm:valuewidth 0 1 (make-bytecode '(31 4))
+
+         (primop 'vm:version    0 1 (make-bytecode '(28 4))
+         (primop 'vm:features   0 1 (make-bytecode '(29 4))
+
+
+         (primop 'tuple-apply  1 #f (make-bytecode '(32 4))
+         (primop 'ff-apply     1 #f (make-bytecode '(49 4))
+
+         ; associative array
+         (primop 'ff:black  4 1 (make-bytecode '(42  4 5 6 7  8  24 8))
+         (primop 'ff:red    4 1 (make-bytecode '(106 4 5 6 7  8  24 8)) ; 106 = 42+(1<<6)
+         (primop 'ff:toggle 1 1 (make-bytecode '(46  4        5  24 5))
+         (primop 'ff:red?   1 1 (make-bytecode '(41  4        5  24 5))
+         (primop 'ff:right? 1 1 (make-bytecode '(105 4        5  24 5)) ; 105 = 41+(1<<6)
+
+         ; pinned objects
+         (primop 'vm:pin    1 1 (make-bytecode '(35 4 5  24 5))
+         (primop 'vm:unpin  1 1 (make-bytecode '(60 4 5  24 5))
+         (primop 'vm:deref  1 1 (make-bytecode '(25 4 5  24 5))
+
+         #null))))))))))))))))))))))))))))))))))))))))))
+
+      ; get primop opcode by name
+      (setq opcode (lambda (op) ; * internal
+         (letq (do) ((lambda (l)
+                        (ifeq l #null #false
+                           (ifeq (ref (car l) 1) op (ref (car l) 2) (do (cdr l))))))
+            (do *primops*))))
+
+      ; notes:
+      ;  vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements
+      ;  vm:make - smarter allocator, can create objects with size and default element
+      ;  vm:makeb - same, but for binary (raw, blob) objects
+      (setq NEW (opcode 'vm:new))        ; no real (vm:new) command required, check rtl-primitive in (lang compile)
 
       ; The origins of the names for car and cdr, on the other hand, are esoteric: car is an acronym from
       ; the phrase `Contents of the Address part of the Register'; and cdr (pronounced `could-er') is an
@@ -200,157 +265,44 @@
       ; Besides being obsolete, the phrases have been completely irrelevant for more than 25 years to anyone
       ; thinking about Lisp. Nonetheless, although a few brave scholars have begun to use more reasonable
       ; names for these functions, the old terms are still in use.
-      (setq CAR 52)      ;(setq car     (make-bytecode '(52 4 5    24 5)))
-      (setq CDR 53)      ;(setq cdr     (make-bytecode '(53 4 5    24 5)))
-      (setq REF 47)      ;(setq ref     (make-bytecode '(47 4 5 6  24 6)))
+      (setq CAR (opcode 'car))
+      (setq CDR (opcode 'cdr))
 
-      (setq TYPE 15)     ;(setq type    (make-bytecode '(15 4 5    24 5))) ;; get just the type bits (new)
-      (setq SIZE 36)     ;(setq size    (make-bytecode '(36 4 5    24 5))) ;; get object data size (- hdr)
+      ; additional
+      (setq apply (make-bytecode '(20))) ; stub for (prim-opcodes)
+      (setq arity-error (make-bytecode '(17))) ; stub for (prim-opcodes)
+      (setq apply/cc (make-bytecode '(84))) ; stub for (prim-opcodes)
 
-      (setq EQ? 54)      ;(setq eq?     (make-bytecode '(54 4 5 6  24 6)))
-      (setq LESS? 44)    ;(setq less?   (make-bytecode '(44 4 5 6  24 6)))
+      ; other instructions
+      (setq vm:nop  (make-bytecode '(21)))
+      (setq vm:sys  (make-bytecode '(27 4 5 6 7 8  24 8)))
+      (setq vm:run  (make-bytecode '(50 4 5)))
 
-      ; deprecated:
-      ;(define clock   (vm:makeb type-bytecode '(61 4 5)))            ;; must add 61 to the multiple-return-variable-primops list
-
-      (setq SET-REF 45)  ;(setq set-ref  (make-bytecode '(45 4 5 6 7  24 7)))
-      (setq SET-REF! 10) ;(setq set-ref! (make-bytecode '(10 4 5 6 7  24 7))) ; todo: change to like set-ref
-
-      ; primitives
-      (setq TUPLE-APPLY 32)
-      (setq FF-APPLY 49) ;(setq ff-apply (make-bytecode '(49 4)))
-
-      ; associative array
-      ;(setq ff:black  (make-bytecode '(42  4 5 6 7  8  24 8)))
-      ;(setq ff:red    (make-bytecode '(106 4 5 6 7  8  24 8))) ;106 = 42+(1<<6)
-      ;(setq ff:toggle (make-bytecode '(46  4        5  24 5)))
-      ;(setq ff:red?   (make-bytecode '(41  4        5  24 5)))
-      ;(setq ff:right? (make-bytecode '(105 4        5  24 5))) ;105 = 41+(1<<6)
-
-      ; pinned objects
-      (setq vm:pin    (make-bytecode '(35 4 5  24 5)))
-      (setq vm:unpin  (make-bytecode '(60 4 5  24 5)))
-      (setq vm:deref  (make-bytecode '(25 4 5  24 5)))
-
-      ;(setq syscall (make-bytecode '(63 4 5 6 7 8  24 8)))
-
-      ;(setq vm:valuewidth (make-bytecode '(31 4)))
-      ;(setq vm:maxvalue   (make-bytecode '(30 4)))
-
-      ;(setq vm:version    (make-bytecode '(28 4)))
-      ;(setq vm:features   (make-bytecode '(29 4)))
-
-      ; todo: план по слиянию new-object и new-raw-object, с одновременным
-      ;       внесением бита "rawness" в числовое значение типа
-      ;  1. добавить параметр "rawness" к аргументам new-object
-      ;  2. удалить new-raw-object
-      ;  3. изменить нумерацию типов
-      ;  4. удалить параметр rawness
-      ;  5. переименовать vm:new-object в vm:make
-      (setq primop (lambda (name in out code tail)
-         (cons
-            (vm:new TTUPLE name  (ref code 0)  in out code) tail)))
-      (setq fake-bytecode (lambda (n)
-         (make-bytecode n)))
-
-      ; список примитивных операций виртуальной машины:
-      (setq *primops*
-         ; прямые аллокаторы
-         (primop 'vm:new   'any 1 #(23) ; make new object, simplest and fastest allocator
-         (primop 'vm:make  'any 1 #(18) ; make object
-         (primop 'vm:makeb 'any 1 #(19) ; make blob (binary, raw) object
-         ; косвенные аллокаторы
-         (primop 'vm:cast     2 1 vm:cast
-         (primop 'set-ref     3 1 set-ref
-
-         ; ну и мутатор сюда же добавим
-         (primop 'set-ref!    3 1 set-ref!
-
-         ; описатели
-         (primop 'type   1 1 type  ;; get just the type bits
-         (primop 'size   1 1 size  ;; get object size (without header)
-
-         ; конструкторы
-         (primop 'cons   2 1 cons
-
-         ; геттеры
-         (primop 'car    1 1 car
-         (primop 'cdr    1 1 cdr
-         (primop 'ref    2 1 ref
-
-         ; компараторы
-         (primop 'eq?    2 1 eq?
-         (primop 'less?  2 1 less?
-
-         ; базовая арифметика
-         (primop 'vm:add   2 2 vm:add
-         (primop 'vm:mul   2 2 vm:mul
-         (primop 'vm:sub   2 2 vm:sub
-         (primop 'vm:div   3 3 vm:div ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
-         ; сдвиги
-         (primop 'vm:shr   2 2 vm:shr
-         (primop 'vm:shl   2 2 vm:shl
-         ; бинарная арифметика
-         (primop 'vm:and   2 1 vm:and
-         (primop 'vm:or    2 1 vm:or
-         (primop 'vm:xor   2 1 vm:xor
-
-         (primop 'vm:fp1   2 1 vm:fp1
-         (primop 'vm:fp2   3 1 vm:fp2
-
-         ; системный таймер (deprecated, но остается как пример операции не принимающей параметров м возвращающей values)
-         (primop 'clock    0 2 clock ;; todo: удалить            must add 61 to the multiple-return-variable-primops list
-         ; системные вызовы
-         (primop 'syscall  4 1 syscall
-
-         ; vm-specific constants
-         (primop 'vm:maxvalue   0 1 vm:maxvalue
-         (primop 'vm:valuewidth 0 1 vm:valuewidth
-
-         (primop 'vm:version    0 1 vm:version
-         (primop 'vm:features   0 1 vm:features
-
-         ; todo: add macro for call-with-tuple in r5rs
-         (primop 'tuple-apply   1 #f tuple-apply
-
-         ; поддержка finite functions (как red-black деревьев)
-         (primop 'ff-apply      1 #f  ff-apply
-
-         (primop 'ff:black  4 1 ff:black
-         (primop 'ff:red    4 1 ff:red
-         (primop 'ff:toggle 1 1 ff:toggle
-         (primop 'ff:red?   1 1 ff:red?
-         (primop 'ff:right? 1 1 ff:right?
-
-         (primop 'vm:pin    1 1 vm:pin
-         (primop 'vm:unpin  1 1 vm:unpin
-         (primop 'vm:deref  1 1 vm:deref
-         #null))))))))))))))))))))))))))))))))))))))))))
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд
       (setq multiple-return-variable-primops
-         (cons FF-APPLY
-         (cons ADD
-         (cons MUL
-         (cons SUB
-         (cons DIV
-         (cons SHR
-         (cons SHL
-         (cons 61  ; (clock)
+         (cons (opcode 'ff-apply) ;FF-APPLY
+         (cons (opcode 'vm:add) ;ADD
+         (cons (opcode 'vm:mul) ;MUL
+         (cons (opcode 'vm:sub) ;SUB
+         (cons (opcode 'vm:div) ;DIV
+         (cons (opcode 'vm:shr) ;SHR
+         (cons (opcode 'vm:shl) ;SHL
+         (cons (opcode 'clock)  ;61, clock
          #null)))))))))
 
       ; todo: check this and opcode-arity-ok-2? - maybe should merge this entities?
       ; todo: dynamically generate based on *primops*
       (setq variable-input-arity-primops ; todo: move to other module
-         (cons NEW
-         (cons MAKE
-         (cons MAKEB
+         (cons (opcode 'vm:new)
+         (cons (opcode 'vm:make)
+         (cons (opcode 'vm:makeb)
          #null))))
 
       (setq special-bind-primops
-         (cons TUPLE-APPLY
-         (cons FF-APPLY
+         (cons (opcode 'tuple-apply)
+         (cons (opcode 'ff-apply)
          #null)))
 
 
@@ -364,5 +316,7 @@
                         ;   (either (lambda (c a b) (k a b))
                         ;   (either (lambda (c . x) (apply/cc k x))
                         ;           (lambda () (arity-error)))))))))
+
+      (setq ARITY-ERROR (opcode 'arity-error))
 
 ))
