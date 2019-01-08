@@ -186,7 +186,7 @@ olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
 recompile: boot.fasl
 boot.fasl: CFLAGS += $(CFLAGS_RELEASE) # will rebuild in release, for speed
 boot.fasl: vm repl src/*.scm lang/*.scm libraries/scheme/*.scm libraries/scheme/r5rs/*.scm libraries/otus/lisp.scm libraries/owl/*.scm
-	@vm repl src/ol.scm --version "`git describe --always`"
+	@vm repl src/ol.scm --version "`git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`"
 	@if diff boot.fasl repl>/dev/null ;then\
 	   echo '\033[1;32m  `___`  \033[0m' ;\
 	   echo '\033[1;32m  (o,o)  \033[0m' ;\
