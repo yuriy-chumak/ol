@@ -376,7 +376,7 @@
                ((make-selection x y)
                   (mail sender (make-selection itself
                      (floor (* x (/ 80 (ref gl:window-dimensions 3))))
-                     (floor (* y (/ 24 (ref gl:window-dimensions 4))))))
+                     (floor (* y (/ 25 (ref gl:window-dimensions 4))))))
                   (this itself))
 
                (else
