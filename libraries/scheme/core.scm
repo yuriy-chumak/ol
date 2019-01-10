@@ -1254,6 +1254,13 @@
             ((list a . b)
                (cons a (list . b)))))
 
+      ; very interesting question:
+      ;  why macro, not a function?
+      ; answer:
+      ;  the function unwraps to LD/LD/LD/LD/LD/MOV2/MOV2/MOV2/GOTO/JAFX sequnce,
+      ;  but macro unwraps to LD/CONS/LD/CONS/LD/CONS. So, we have a goot speedup in case of
+      ;  list as macro.
+
       ; procedure:  (length list)
       ;  olvm notes: always returning fixnum, so can be checked by eq?, not only =
       (define (length l)

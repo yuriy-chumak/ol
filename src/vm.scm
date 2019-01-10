@@ -138,17 +138,17 @@
 
       ; internal helpers
       (setq primop (lambda (name in out code)
-         (vm:new TTUPLE name  (ref code 0)  in out code))) ; * makes primop record
+         (vm:new TTUPLE name (ref code 0) in out code))) ; * makes primop record
       (setq make-bytecode (lambda (bytecode)
          (vm:makeb TBYTECODE bytecode))) ; * makes bytecode from list
       (setq alist (lambda args args))
 
       ; -----------------------------------------------------------------------
-      ; we already have (out of the box)     У нас изначально есть (из коробки)
+      ; we already have (out of the box):    У нас изначально есть (из коробки):
       ;  quote lambda values either           quote lambda values either
       ;  setq letq ifeq values-apply          setq letq ifeq values-apply
 
-      ; список примитивных операций виртуальной машины:
+      ; Список примитивных операций виртуальной машины:
       ;  эти операции не надо экспортировать из модуля, они как бы "вшиты" в базовый язык
       (setq *primops* (alist
          ; прямые аллокаторы
