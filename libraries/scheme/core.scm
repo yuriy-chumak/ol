@@ -1076,7 +1076,7 @@
       ; 5   TODO(?): (define type-string-wide      5) ; reference, blob
       ; 6
       ; 7
-      (define type-ff-black-leaf     8) ; reference ; TODO: move to 28
+      ;(define type-ff-black-leaf     8) ; reference ; TODO: move to 28
       ; 9
 
       (define type-rlist-spine      10) ; reference
@@ -1978,7 +1978,7 @@
       type-vector-dispatch
       type-vector-leaf
       type-bytevector
-      type-ff-black-leaf
+      ;type-ff-black-leaf
       type-tuple
       type-symbol
       type-const
