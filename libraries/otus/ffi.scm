@@ -345,7 +345,7 @@
       ))
    (Windows
       (begin
-         (setq MoveMemory ((load-dynamic-library "kernel32.dll") fft-void "MoveMemory" fft-void* fft-void* fft-unsigned-int))
+         (setq MoveMemory ((load-dynamic-library "kernel32.dll") fft-void "RtlMoveMemory" fft-void* fft-void* fft-unsigned-int))
          (define (vptr->vector vptr sizeof)
             (let ((vector (make-bytevector sizeof)))
                (MoveMemory vector vptr sizeof)
