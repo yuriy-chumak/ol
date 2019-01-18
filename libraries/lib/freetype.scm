@@ -44,7 +44,7 @@
    (setq FT_GlyphSlot fft-void*)
    (setq FT_Render_Mode fft-int)
 
-   (setq freetype (load-dynamic-library "libfreetype.so"))
+   (setq freetype (load-dynamic-library "libfreetype.so.6"))
 
    (define FT_Init_FreeType (freetype FT_Error "FT_Init_FreeType" FT_Library*))
    (define FT_Done_FreeType (freetype FT_Error "FT_Done_FreeType" FT_Library))
