@@ -10,7 +10,7 @@
  *
  *   Version 2.0
  *
- *  Copyright(c) 2014 - 2018 Yuriy Chumak
+ *  Copyright(c) 2014 - 2019 Yuriy Chumak
  *
  * -------------------------------------------------------------
  * This program is free software;  you can redistribute it and/or
@@ -58,7 +58,7 @@
 #define __OLVM_VERSION__ "2.0"
 #endif
 #ifndef lint
-__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2018 Yuriy Chumak";
+__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 #endif//lint
 
 #define unless(...) if (! (__VA_ARGS__))
