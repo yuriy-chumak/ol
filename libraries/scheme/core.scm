@@ -12,24 +12,28 @@
                ;
                ; object creation/modification:
                ;   vm:new vm:make vm:makeb vm:cast
-               ;   cons car cdr ref type size set set! eq? less?
+               ;   cons car cdr ref type size set-ref set-ref! eq? less?
                ; basic math primitives:
                ;   integer:
                ;     vm:add vm:sub vm:mul vm:div vm:shr vm:shl
                ;   floating-point (if built with OLVM_INEXACTS)
-               ;     vm:fp1 (), vm:fp2 (217 fless?, 193 fadd, 233 fsub, 201 fmul, 249 fdiv)
+               ;     vm:fp1 (xFE: fsin, xFF: fcos),
+               ;     vm:fp2 (xD9: <, xC1: +, xE9: -, xC9: *, xF9: /)
                ;   binary:
                ;     vm:and vm:or vm:xor
+               ; special:
+               ;   vm:pin, vm:unpin, vm:deref
+               ;   clock, syscall
                ; vm info:
-               ;     vm:version vm:maxvalue vm:valuewidth
-               ; etc.
-               ;   clock syscall
+               ;   vm:version vm:maxvalue vm:valuewidth vm:features
                ; associative arrays support:
                ;   ff:red ff:black ff:toggle ff:red? ff:right?
                ; execution flow:
+               ;   ff-apply tuple-apply
+               ;
+               ; exported functions:
                ;   apply apply/cc arity-error
                ;   call-with-current-continuation
-               ;   tuple-apply ff-apply
                ;
                ;; special forms: (declared in lang/env.scm)
                ;
@@ -1907,13 +1911,6 @@
                (syntax-error "let/cc: continuation name cannot be " (quote (om . nom))))
             ((lets/cc var . body)
                (call/cc (λ (var) (lets . body))))))
-
-      ; real assert. differs from temporary by using equal? instead of eq?
-      (define-syntax assert
-         (syntax-rules (===>)
-            ((assert expression ===> result)
-               (if (not (equal? expression (quote result)))
-                  (vm:sys #false 5 "assertion error: " (list (quote expression) "must be" (quote result)))))))
 
       ;; used syscalls
       (define (exec function . args) (syscall 59 function args #f))
