@@ -29,17 +29,12 @@
 
       (define primitive? primop-of)
 
-      ;; non-primop instructions that can report errors
-      (define (instruction-name op)
-         (cond
-            ((eq? op 17) 'arity-error)
-            (else #false)))
-
       ; используется в выводе сообщений "инструкция такая-то сфейлила"
       (define (primop-name pop)
          (let ((pop (vm:and pop #x3F))) ; ignore top bits which sometimes have further data
-            (or
-               (instruction-name pop)
+            (if (eq? pop 17)
+               'arity-error ;; non-primop instruction that can report errors
+               ;else
                (let loop ((primops *primops*))
                   (cond
                      ((null? primops) pop)
