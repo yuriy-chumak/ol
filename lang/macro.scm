@@ -399,7 +399,7 @@
       ;; bug: exported macros do not preserve bindinds
 
       (define (macro-expand exp env)
-         (lets/cc exit
+         (let*/cc exit
             ((abort (lambda (why) (exit (fail why))))
              (free (gensym exp))
              (exp free (expand exp env free abort)))

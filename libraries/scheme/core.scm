@@ -529,10 +529,27 @@
                (lambda () (op . args)))
             ((delay value) value)))
 
+      ; library syntax:  delay-force <expression>
+      ; todo.
+
+      ; library syntax:  force <expression>
+      (setq force (lambda (thunk) (thunk)))
+
+      ; (promise? obj )
+      ; todo.
+
+      ; (make-promise obj )
+      ; todo.
+
+
       ; 4.2.6. Dynamic bindings
       ; * declared in (scheme dynamic-bindings)
 
-      ; 4.2.?  Quasiquotation
+      ; 4.2.7. Exception handling
+      ; * declared in (scheme exceptions) ; todo
+      ; guard, raise
+
+      ; 4.2.8. Quasiquotation
       ;
       ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
       ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
@@ -560,6 +577,8 @@
             ((quasiquote . stuff)
                (quasiquote _work () . stuff))))
 
+      ; 4.2.9. Case-lambda
+      ; * declared in (scheme srfi-16)
 
       ; 4.3  Macros
       ;
@@ -1881,18 +1900,6 @@
       ;; (not obj) library procedure
 
 
-      ;
-      ;
-
-      ; 6.4 Control features
-
-      ;; force is effectively unnecessary in Ol, so might as well signal a
-      ;; warning if this is used, because the code probably assumes
-      ;; mutable state.
-
-      (define (force thunk) (thunk))
-
-
       ;(assert #t (procedure? car))
       ;(assert #f (procedure? 'car))
       ;(assert #t (procedure? (lambda (x) x)))
@@ -1905,12 +1912,12 @@
       ;; procedure: call-with-current-continuation proc
 
       ; non standard, owl extension
-      (define-syntax lets/cc
+      (define-syntax let*/cc
          (syntax-rules (call/cc)
-            ((lets/cc (om . nom) . fail)
-               (syntax-error "let/cc: continuation name cannot be " (quote (om . nom))))
-            ((lets/cc var . body)
-               (call/cc (λ (var) (lets . body))))))
+            ((let*/cc (var) . tail)
+               (syntax-error "let/cc: continuation name cannot be empty"))
+            ((let*/cc var . body)
+               (call/cc (λ (var) (let* . body))))))
 
       ;; used syscalls
       (define (exec function . args) (syscall 59 function args #f))
@@ -1937,19 +1944,35 @@
 ; ---------------------------
    (export
       λ ; ol extension
-      syntax-error assert runtime-error error
+      syntax-error runtime-error
+      assert error
 
-      apply
+      apply ;apply/cc
       call-with-current-continuation
-      call/cc lets/cc
+      call/cc let*/cc
 
-      ;
-      if unless cond case and or
+      ; not required to be exported:
+      ;  quote values lambda setq
+      ;  letq ifeq either values-apply
+      ;  cons car cdr ref type size set-ref set-ref! eq? less?
+      ;  clock, syscall
+      ;  ff:red ff:black ff:toggle ff:red? ff:right?
+      ;  ff-apply tuple-apply
+
+      ; 4.1.5  Conditionals
+      if unless cond case and or set!
+      ; 4.2.2  Binding constructs
       letrec let let*            lets ; lets - ol specific, let*-values - r7rs
-      begin                      ;do ; todo: move do to (scheme r5rs iteration)
+      ; 4.2.3  Sequencing
+      begin ; do
+      ; 4.2.5  Delayed evaluation
       delay force
-
+      ; 4.2.8. Quasiquotation
       quasiquote
+      ; 4.2.9. Case-lambda
+      (exports (scheme srfi-16))
+
+      ; ---------------------------------------------------------
       define ;define*
       list length append reverse
       ilist tuple tuple-case
@@ -1957,10 +1980,6 @@
       define-values ; ol specific
 
       ; 4.1
-      set!
-
-      ; 4.2.9
-      case-lambda ; declared in srfi-16
 
       ; 6.2 (numbers)
       type-fix+
@@ -2011,7 +2030,6 @@
 
       ; 6.3
       not boolean? symbol? port? procedure? eof?
-      symbol=?
 
       ; (r7rs) 6.4. Pairs and lists
       pair? cons car cdr

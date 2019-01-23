@@ -421,7 +421,7 @@
 
       ;; fixme: new error message info ignored, and this is used for loading causing the associated issue
       (define (read-exps-from data done fail)
-         (lets/cc ret  ;; <- not needed if fail is already a cont
+         (let*/cc ret  ;; <- not needed if fail is already a cont
             ((data
                (utf8-decoder data
                   (λ (self line data)

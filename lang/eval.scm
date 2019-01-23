@@ -704,7 +704,7 @@
 
       ;; temporary toplevel import doing what library-import does within libraries
       (define (toplevel-library-import env exps repl)
-         (lets/cc ret
+         (let*/cc ret
             ((fail (λ (x) (ret (cons "Import failed because" x)))))
             (library-import env exps fail repl)))
 
@@ -845,7 +845,7 @@
                   ((library-definition? exp)
                      ;; evaluate libraries in a blank *src-olvm* env (only primops, specials and define-syntax)
                      ;; include just loaded *libraries* and *include-paths* from the current one to share them
-                     (lets/cc ret
+                     (let*/cc ret
                         ((exps (map cadr (cdr exp))) ;; drop the quotes
                          (name exps (uncons exps #false))
                          (libs (env-get env library-key null))

@@ -313,7 +313,7 @@
                (let* ((insts (allocate-registers insts)))
                   (if (not insts)
                      (runtime-error "failed to allocate registers" "")
-                     (lets/cc ret
+                     (let*/cc ret
                         ((fail (λ (why) (runtime-error "Error in bytecode assembly: " why) #false))
                          (bytes (assemble insts fail))
                          (len (length bytes)))
