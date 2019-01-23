@@ -13,18 +13,15 @@
 ; on the number of arguments. CASE-LAMBDA is available in some Scheme systems.
 ;
 ; While CASE-LAMBDA can  be implemented as a macro  using only facilities available in R5RS
-; Scheme, it admits considerable implementation-specific optimization. 
+; Scheme, it admits considerable implementation-specific optimization.
 
 
 ; NOTE: srfi-16 fully included into scheme core profile, you should not include it manually!
 ; -----
 (export
-   srfi-16
    case-lambda)
 
 (begin
-   (setq srfi-16 #true)
-
    ; makes a list of options to be compiled to a chain of code bodies w/ jumps
    ; note, could also merge to a jump table + sequence of codes
    (define-syntax case-lambda
