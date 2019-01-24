@@ -610,17 +610,16 @@
 
       (define-syntax define
          (syntax-rules (lambda) ;λ
-            ((define op a b . c)
-               (define op (begin a b . c)))
-            ((define ((op . args) . more) . body)
-               (define (op . args) (lambda more . body)))
-            ((define (op . args) body)
-               (define op
-                  (letrec ((op (lambda args body))) op)))
+            ((define ((name . args) . more) . body)
+               (define (name . args) (lambda more . body)))
+            ((define (name . args) . body)
+               (setq name (letq (name) ((lambda args . body)) name)))
             ((define name (lambda (var ...) . body))
                (setq name (letq (name) ((lambda (var ...) . body)) name)))
-            ((define op val)
-               (setq op val))))
+            ((define name val)
+               (setq name val))
+            ((define name a b . c)
+               (define name (begin a b . c)))))
 
 ;      ;; not defining directly because letq doesn't yet do variable arity
 ;      ;(define list ((lambda (x) x) (lambda x x)))
