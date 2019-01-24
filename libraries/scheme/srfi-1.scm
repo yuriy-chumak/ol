@@ -1,4 +1,4 @@
-(define-library (r5rs srfi-1)
+(define-library (scheme srfi-1)
 
 ; http://srfi.schemers.org/srfi-1/srfi-1.html
 
@@ -10,8 +10,6 @@
    (owl list))
 
    (export
-      srfi-1
-
       xcons iota
 
       first second third fourth fifth sixth seventh eighth ninth tenth
@@ -20,8 +18,6 @@
 )
 
 (begin
-   (setq srfi-1 #true)
-
    ; cons a d -> pair   *[r5rs]
    ;(cons 'a '())        => (a))
    ;(cons '(a) '(b c d)) => ((a) b c d)

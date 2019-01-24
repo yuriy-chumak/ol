@@ -21,7 +21,7 @@
 
    (import
       (scheme core)
-      (r5rs srfi-1)
+      (scheme srfi-1)
 
       (owl parse)
       (owl math)

@@ -2,10 +2,10 @@
 (define-library (otus lisp)
 
    (export
-      (exports (r5rs srfi-1))  ; * List Library
+      (exports (scheme srfi-1))  ; * List Library
 ;      (exports (r5rs srfi-87)) ; * => in case clauses ; builtin (scheme core)
 ;      (exports (scheme r5rs iteration)) ; 4.2.4 Iteration (do)
-      (exports (r5rs characters))
+      (exports (scheme characters))
       (exports (scheme base))
 
       (exports (owl list))
@@ -33,9 +33,9 @@
 
    (import
       (scheme core)
-      (r5rs srfi-1)
+      (scheme srfi-1)
       (scheme srfi-87)
-      (r5rs characters)
+      (scheme characters)
       (scheme base)
 
       (owl list)

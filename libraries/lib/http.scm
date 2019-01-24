@@ -4,7 +4,7 @@
   (export
     http:run
     http:parse-url)
-  (import (scheme core) (r5rs srfi-1)
+  (import (scheme core) (scheme srfi-1)
       (owl parse) (owl vector)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (lang intern) string->symbol)
@@ -274,7 +274,7 @@
 
 
 ; https://en.wikipedia.org/wiki/Percent-encoding
-; '[' and ']' are reserver characters, so whell be encoded as '%5B' and '%5D'
+; '[' and ']' are reserver characters, so should be encoded as '%5B' and '%5D'
 (define (ends-with-vector arg)
    (if (less? (string-length arg) 6)
       #f

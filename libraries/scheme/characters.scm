@@ -1,6 +1,6 @@
 ;;;; 6.3.4  Characters
 
-(define-library (r5rs characters)
+(define-library (scheme characters)
 (import
    (scheme core))
 
