@@ -302,8 +302,8 @@
             ((if val       then)      (if val then #false))
             ((if (not val) then else) (if val else then))
             ((if (eq? a b) then else) (ifeq a b then else))
-            ((if (null? test)  then else) (if (eq? test #null) then else))  ; boot image size and compilation speed optimization
-            ((if (a . b)   then else) ((lambda (x) (if x then else)) (a . b)))
+            ((if (null? t) then else) (if (eq? t #null) then else))  ; boot image size and compilation speed optimization
+            ((if (a . b)   then else) (letq (x) ((a . b)) (if x then else)))
             ((if #true     then else)  then)
             ((if #false    then else)  else)
             ((if t         then else) (ifeq t #false else then))))
