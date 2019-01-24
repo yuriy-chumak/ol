@@ -92,15 +92,21 @@ You should have GCC >3.2 or CLANG >3.5 or TCC installed.
 For Windows you should have MinGW (with GCC).
 If you want to compile asm.js binary (is not required by regular build) you should have Emscripten ver. 1.37.40.
 
-### R<sup>7</sup>RS DIFFERENCES
+
+R<sup>7</sup>RS DIFFERENCES
+---------------------------
 
 * 6.1.  Equivalence predicates
-  * (eqv? '#() '#()) is #true, but unspecified in Scheme
-  * (eqv? +nan.0 +nan.0) is #true, but unspecified in Scheme
+  * (eqv? '#() '#()) is #true, but *unspecified* in Scheme
+  * (eqv? +nan.0 +nan.0) is #true, but *unspecified* in Scheme
 * 6.2.5. Syntax of numerical constants
-  * NUMBERS WITHOUT PRECISION consdered to be 'exact' in Ol, but 'inexact' in Scheme. Inexactness can be disabled by compiler features or/and can be unsupported by platform and we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).
+  * NUMBERS WITHOUT PRECISION consdered to be exact in Ol, but *inexact* in Scheme. Inexactness can be disabled by compiler features or/and can be unsupported by platform and we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).
 * 6.4. Pairs and lists
-  * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully specified in Ol, but unspecified in Scheme.
+  * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully specified in Ol, but *unspecified* in Scheme.
+* 4.2.7. Exception handling
+  * No GUARD and RAISE in Ol
+
+
 
 
 BUILD
