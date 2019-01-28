@@ -6,15 +6,22 @@
 (define (bits n hold)
    (let loop ((hold hold))
       (tuple-apply hold (lambda (v i l)
-         (unless (less? i n)
-            (values (band v (- (<< 1 n) 1)) (tuple (>> v n) (- i n) l))
-            ; если же не хватает бит, втянем из потока
-            (loop (tuple
-               (bor v (<< (car l) i))
-               (+ i 8)
-               (cdr l))))))))
+         (cond
+            ((null? l)
+               (print-to stderr "END OF STREAM"))
+            ((pair? l)
+               (unless (less? i n)
+                  (values (band v (- (<< 1 n) 1)) (tuple (>> v n) (- i n) l))
+                  ; если же не хватает бит, втянем из потока
+                  (loop (tuple
+                     (bor v (<< (car l) i))
+                     (+ i 8)
+                     (cdr l)))))
+            (else
+               (loop (tuple v i (l)))))))))
 
 ; code - huffman table (from make-huffman-table), hold - binary stream
+; декодер входного потока по таблице хафмана
 (define (huffman codes hold)
    (let loop ((code 1) (hold hold))
       (let*((bit hold (bits 1 hold))
@@ -24,10 +31,7 @@
             (values value hold)
             (loop code hold)))))
 
-; converts lengths array to code->value huffman ff
-; вот по таким правилам:
-;  [если воспринимать коды как числа, у которых первый бит кода это старший разряд, то] все коды одной длины должны быть последовательными значениями, упорядоченными так же, как символы, которые они кодируют
-;  [если воспринимать коды как строки бит, то] коды меньшей длины лексикографически предшествуют кодам большей длины
+; конвертируем массив длин в таблицу хафмана
 (define (make-huffman-table lengths)
    (let loop  ((codes #empty)
                (pairs (sort (lambda (a b) (< (car a) (car b))) ; отсортированный и
@@ -68,74 +72,76 @@
             ; else (done, no more codes required)
             (values lengths hold))))
 
+; эта функция возвращает поток в виде ленивого списка переменной длины
+; где последний элемент списка либо лямбда на создание следующего списка, либо #null
 (define (inflate l)
-   (define hold (tuple 0 0 l))
-   (let*((BFINAL hold (bits 1 hold))
-         (BTYPE hold (bits 2 hold)))
-      (print "BFINAL: " BFINAL)
-      (print "BTYPE: " BTYPE)
+   ; задаем буфер для декодированных даных
+   ; максимальное смещение равняется 32768, максимальная длина блока - 258
+   (define history (make-bytevector #x8000 0))
 
-   (if (eq? BTYPE #b10)
-      (let*((HLIT hold (bits 5 hold))   ; nlen = (hold & 31) + 257
-            (HDIST hold (bits 5 hold))  ; ndist = (hold & 31) + 1
-            (HCLEN hold (bits 4 hold))) ; ncode = (hold & 15) + 4;
-         (define nlen (+ HLIT 257)) ;(print "nlen: " nlen)
-         (define ndist (+ HDIST 1)) ;(print "ndist: " ndist)
-         (define nlens (+ HCLEN 4)) ;(print "nlens: " nlens)
-         ;(print "HLIT: " HLIT)
-         ;(print "HDIST: " HDIST)
-         ;(print "HCLEN: " HCLEN)
+   ; декодер блока
+   (define (make-block-decoder i hold)
+      (lambda ()
+      ; декодируем заголовок блока
+      (let*((BFINAL hold (bits 1 hold))
+            (BTYPE hold (bits 2 hold))
+            (literal-or-shift-huffman shift-huffman hold (cond
+               ((eq? BTYPE #b10)
+                  (let*((HLIT hold (bits 5 hold))   ; nlen = (hold & 31) + 257
+                        (HDIST hold (bits 5 hold))  ; ndist = (hold & 31) + 1
+                        (HCLEN hold (bits 4 hold))) ; ncode = (hold & 15) + 4
+                     (define nlen (+ HLIT 257))
+                     (define ndist (+ HDIST 1))
+                     (define nlens (+ HCLEN 4))
 
-         (define order '(16 17 18 0 8 7 9 6 10 5 11 4 12 3 13 2 14 1 15))
-         (define lens (make-bytevector (length order))) ; default is 0
-         ; читаем 19 кодов хаффмана для декодирования главной таблицы хаффмана
-         (let ((hold (fold (lambda (hold index)
-                              (let*((len hold (bits 3 hold)))
-                                 (set-ref! lens index len)
-                                 hold))
-                        hold
-                        (take order nlens)))) ; order
-         (define codes (make-huffman-table lens))
+                     (define order '(16 17 18 0 8 7 9 6 10 5 11 4 12 3 13 2 14 1 15))
+                     (define lens (make-bytevector (length order))) ; default is 0
+                     ; читаем 19 кодов хаффмана для декодирования главной таблицы хаффмана
+                     (let ((hold (fold (lambda (hold index)
+                                          (let*((len hold (bits 3 hold)))
+                                             (set-ref! lens index len)
+                                             hold))
+                                    hold
+                                    (take order nlens)))) ; order
+                     (define codes (make-huffman-table lens))
 
-         ; декодирование таблицы литералов-и-длин
-         (let*((lengths hold (decode-huffman-lengths nlen hold codes)))
-            (define literal-or-shift-huffman (make-huffman-table lengths))
-         ;(print "literal-or-shift-huffman: " literal-or-shift-huffman)
+                           ; декодирование таблицы литералов-и-длин
+                     (let*((lengths hold (decode-huffman-lengths nlen hold codes))
+                           (literal-or-shift-huffman (make-huffman-table lengths))
+                           ; декодирование таблицы сдвигов
+                           (lengths hold (decode-huffman-lengths ndist hold codes))
+                           (shift-huffman (make-huffman-table lengths)))
 
-         ; декодирование таблицы сдвигов
-         (let*((lengths hold (decode-huffman-lengths ndist hold codes)))
-            (define shift-huffman (make-huffman-table lengths))
-         ;(print "shift-huffman: " shift-huffman)
+                     (values literal-or-shift-huffman shift-huffman hold)))))
+               ; статическая таблица хаффмана (todo: вынести вовне как константу)
+               ((eq? BTYPE #b01)
+                  (let ((lengths (make-bytevector 288)))
+                     (for-each (lambda (i) (set-ref! lengths i 8)) (iota 143 0))
+                     (for-each (lambda (i) (set-ref! lengths i 9)) (iota 112 144))
+                     (for-each (lambda (i) (set-ref! lengths i 7)) (iota 24 256))
+                     (for-each (lambda (i) (set-ref! lengths i 8)) (iota 8 280))
+                     (define literal-or-shift-huffman (make-huffman-table lengths))
 
+                  (let ((lengths (make-bytevector 32 5)))
+                     (define shift-huffman (make-huffman-table lengths))
 
-         ;(shutdown 1)
-         ;(print "hold: " hold)
+                     (values literal-or-shift-huffman shift-huffman hold))))
+               (else
+                  (print-to stderr "UNKNOWN BLOCK!!!")))))
 
-         ;(set-car! huffman-debug #t)
-         ;(shutdown 1233)
-
+         ; и вот теперь, собственно
          ; декодирование основного потока
-         (define output (make-bytevector 65536 0))
-         ;(print "hold: "hold)
-         (let loop ((i 0) (hold hold))
-            (let*((code hold (huffman literal-or-shift-huffman hold))
-                  (copy (lambda (shift n hold)
-                           (let copy ((i i) (p (- i shift)) (n n))
-                              (if (eq? n 0)
-                                 (loop i hold)
-                                 (begin
-                                    (set-ref! output i (ref output p))
-                                    (copy (+ i 1) (+ p 1) (- n 1))))))))
+         (let loop ((i i) (hold hold))
+            (let*((code hold (huffman literal-or-shift-huffman hold)))
                (cond
                   ((less? code 256)
-                     (set-ref! output i code)
-                     (loop (+ i 1) hold))
+                     (set-ref! history i code)
+                     (cons code (lambda ()
+                        (loop (band (+ i 1) #x7FFF) hold))))
                   ((eq? code 256) ; end of block
-                     ; вернем декодироанный поток в виде списка
-                     (let loop ((i i) (out #null))
-                        (if (eq? i 0)
-                           out
-                           (loop (- i 1) (cons (ref output (- i 1)) out)))))
+                     (if (eq? BFINAL 1)
+                        #null
+                        (make-block-decoder i hold)))
 
                   ((less? code 286) ; 257-264, ..., 285
                      (let*((length (- code 257)) ; +3
@@ -156,20 +162,65 @@
                                           65 97  129 193  257 385 ; 5, 6, 7 bits pairs
                                           513 769  1025 1537      ; 8, 9
                                           2049 3073  4097 6145    ; 10, 11 / and 12, 13
-                                          8193 12289  16285 24577) shift))
+                                          8193 12289  16385 24577) shift))
                            ; декодированное смещение
-                           (shift (+ delta clarf)))
-                        (copy shift length hold)))
+                           (shift (+ delta clarf))
+                           (shift (- shift)))
+                        ; lz77, копируем строку
+                        (let copy ((i i) (p (band (+ i #x10000 shift) #x7FFF)) (n length) (out #null))
+                           (if (eq? n 0)
+                              ; вернем скопированную строку в виде '(c c c ... c c . lambda)
+                              (let reverse ((old out) (new (lambda () (loop i hold))))
+                                 (if (null? old)
+                                    new
+                                    (reverse (cdr old) (cons (car old) new))))
+                              ; скопируем строку в историю и продоллжим копирование
+                              (let ((code (ref history p)))
+                                 (set-ref! history i code)
+                                 (copy (band (+ i 1) #x7FFF) (band (+ p 1) #x7FFF) (- n 1) (cons code out)))))))
                   ; temp
                   (else
-                     (print "DECODER ERROR")
-                     ; вернем декодироанный поток в виде списка
-                     (let loop ((i i) (out #null))
-                        (if (eq? i 0)
-                           out
-                           (loop (- i 1) (cons (ref output (- i 1)) out)))))))))))))))
+                     (print-to stderr "INVALID STREAM DETECTED")
+                     #null)))))))
 
-;; (define stream (file->list "1_0"))
+   ; вернем поток с декодированным первым байтом
+   (force
+      (make-block-decoder 0 (tuple 0 0 l))))
+
+
+;; (define port (fopen "15_0.lanim" 0)) ;stdin)
+;; (define out (fopen "15_0.i.out" 1))
+;; (define stream (port->byte-stream port))
+;; (let loop ((s (inflate (ldrop stream 10))))
+;;    (cond
+;;       ((null? s)
+;;          (print "\nEND."))
+;;       ((pair? s)
+;;          ;(display (string (car s)))
+;;          (write-bytes out (list (car s)))
+;;          (loop (cdr s)))
+;;       (else
+;;          (loop (force s)))))
+
+
+;; (define port (fopen "hello" 0))
+;; (define stream (port->byte-stream port))
+;; (let loop ((s (inflate (ldrop stream 10))))
+;;    ;(print "s: " s)
+;;    ;(set-car! num (+ (car num) 1))
+;;    ;(if (eq? (car num) 170) (shutdown 1))
+;;    (cond
+;;       ((null? s)
+;;          (print "\nEND."))
+;;       ((pair? s)
+;;          ;(for-each display (list "[" (string (car s)) "]"))
+;;          (display (string (car s)))
+;;          (loop (cdr s)))
+;;       (else
+;;          (loop (force s)))))
+
+;; (print "ok.")
+;; (define stream (file->list "99"))
 
 ;; (let*((ID1 (car stream))
 ;;       (stream (cdr stream))
@@ -184,13 +235,12 @@
 ;;       (stream (cdr stream))
 ;;       (OS (car stream))
 ;;       (stream (cdr stream)))
-;;       ;(stream (drop stream 8)))
-;;    (print "ID1: " ID1)
-;;    (print "ID2: " ID2)
-;;    (print "CM: " CM)
-;;    (print "FLG: " FLG)
-;;    (print "XFL: " XFL)
-;;    (print "OS: " OS)
+;;    ;; (print "ID1: " ID1)
+;;    ;; (print "ID2: " ID2)
+;;    ;; (print "CM: " CM)
+;;    ;; (print "FLG: " FLG)
+;;    ;; (print "XFL: " XFL)
+;;    ;; (print "OS: " OS)
 
 ;;    (print (list->string (inflate stream))))
 
@@ -217,3 +267,17 @@
 ;; ;;    (print "FLEVEL: " FLEVEL)
 ;; ;; (let*((stream (cddr stream)))
 ;; ;;    #t))
+
+
+;; (define port stdin)
+;; (define stream (port->byte-stream port))
+;; (let loop ((s (inflate (ldrop stream 10))))
+;;    (cond
+;;       ((null? s)
+;;          (print "\nEND."))
+;;       ((pair? s)
+;;          ;(display (string (car s)))
+;;          (write-bytes stdout (list (car s)))
+;;          (loop (cdr s)))
+;;       (else
+;;          (loop (force s)))))
