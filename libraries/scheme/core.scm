@@ -546,8 +546,8 @@
       ; * declared in (scheme dynamic-bindings)
 
       ; 4.2.7. Exception handling
-      ; * declared in (scheme exceptions) ; todo
-      ; guard, raise
+      ; todo: * declared in (scheme exceptions)
+      ; todo: guard, raise
 
       ; 4.2.8. Quasiquotation
       ;

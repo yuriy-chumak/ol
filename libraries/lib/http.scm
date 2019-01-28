@@ -40,7 +40,7 @@
 ; http parser
    (define (syntax-fail pos info lst)
       (print-to stderr "http parser fail: " info)
-      (print-to stderr ">>> " pos "-" (runes->string lst) " <<<")
+      ;(print-to stderr ">>> " pos "-" (runes->string lst) " <<<")
       '(() (())))
 
       (define HT #\tab)      ; 9
@@ -63,7 +63,7 @@
              (<= #\A x #\Z)
              (<= #\0 x #\9)
              (has? '(#\- #\. #\_ #\~ #\: #\/ #\? #\# #\@ #\! #\$ #\& #\' #\( #\) #\* #\+ #\, #\; #\= #\. #\%) x)
-             (has? '(#\{ #\} #\| #\\ #\^ #\[ #\] #\`) x))) ; unwise characters are allowed but may cause problems
+             (has? '(#\{ #\} #\| #\\ #\^ #\[ #\] #\`) x))) ;unwise characters are allowed but may cause problems
       (define (xml? x)
          (or (<= #\0 x #\9)
              (<= #\A x #\Z)

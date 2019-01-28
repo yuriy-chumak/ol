@@ -207,7 +207,6 @@
          (primop 'vm:version    0 1 (make-bytecode '(28 4)))
          (primop 'vm:features   0 1 (make-bytecode '(29 4)))
 
-
          (primop 'tuple-apply  1 #f (make-bytecode '(32 4)))
          (primop 'ff-apply     1 #f (make-bytecode '(49 4)))
 

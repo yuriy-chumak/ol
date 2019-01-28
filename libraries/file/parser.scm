@@ -43,12 +43,13 @@
                         ;fail
                         fail
                         pos))
-                     ;(loop (cdr ll) (cons (car ll) rvals) (+ pos 1) (- n 1))))
-                  (else (loop (ll) rvals pos n)))))))
+                  (else
+                     (loop (ll) rvals pos n)))))))
 
    (define get-string
-      (let-parses((len get-uint16)
-                  (value (get-n-times len get-byte)))
+      (let-parses (
+            (len get-uint16)
+            (value (get-n-times len get-byte)))
          (bytes->string value)))
 
    (define get-float ; 4-bytes float -> inexact

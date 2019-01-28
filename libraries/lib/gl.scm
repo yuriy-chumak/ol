@@ -667,11 +667,11 @@
                   #x8010    1 ; GLX_DRAWABLE_TYPE GLX_WINDOW_BIT
                   #x22 #x8002 ; GLX_X_VISUAL_TYPE GLX_TRUE_COLOR
                   #x8011    1 ; GLX_RENDER_TYPE GLX_RGBA_BIT
-                  8  (get CONFIG 'red 5) ; GLX_RED_SIZE
-                  9  (get CONFIG 'green 5) ; GLX_GREEN_SIZE
-                  10  (get CONFIG 'blue 5) ; GLX_BLUE_SIZE
-                  12  (get CONFIG 'depth 24) ; GLX_DEPTH_SIZE
-                  5        1 ; GLX_DOUBLEBUFFER
+                  8  (get CONFIG 'red 5)    ; GLX_RED_SIZE
+                  9  (get CONFIG 'green 5)  ; GLX_GREEN_SIZE
+                  10  (get CONFIG 'blue 5)  ; GLX_BLUE_SIZE
+                  12  (get CONFIG 'depth 24); GLX_DEPTH_SIZE
+                  5         1 ; GLX_DOUBLEBUFFER
                   0))
 
                (define fbcount (box 0))
