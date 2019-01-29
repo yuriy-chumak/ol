@@ -1,20 +1,20 @@
 (define-library (owl list)
 
    ; todo: move fold to srfi-1
-   (export 
+   (export
       null
-      zip for fold foldr for-each
+      zip for fold foldr
       has? getq last drop-while
       mem
       fold-map foldr-map
-      keep remove 
+      keep remove
       all some
       smap unfold
       take-while                ;; pred, lst -> as, bs
       fold2
       first
       halve
-      
+
       diff union intersect)
 
    (import
@@ -40,7 +40,7 @@
                   (cons hd (zip op (cdr a) (cdr b)))))))
 
       ; (for st l op) == (fold op st l)
-      ; just usually less indentation clutter 
+      ; just usually less indentation clutter
 
       (define (for st l op)
          (if (null? l)
@@ -79,13 +79,6 @@
             (op (car lst)
                (foldr op st (cdr lst)))))
 
-      (define (for-each op lst)
-         (if (null? lst)
-            null
-            (begin
-               (op (car lst))
-               (for-each op (cdr lst)))))
-
       (define (has? lst x)
          (cond
             ((null? lst) #false)
@@ -99,7 +92,7 @@
             (else (getq (cdr lst) k))))
 
       (define (last l def)
-         (fold (λ (a b) b) def l)) 
+         (fold (λ (a b) b) def l))
 
       (define (mem cmp lst elem)
          (cond
@@ -133,7 +126,7 @@
          (withcc ret
             (fold (λ (ok x) (if (pred x) ok (ret #false))) #true lst)))
 
-      (define (some pred lst) 
+      (define (some pred lst)
          (withcc ret
             (fold (λ (_ x) (let ((v (pred x))) (if v (ret v) #false))) #false lst)))
 

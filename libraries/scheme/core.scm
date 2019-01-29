@@ -1580,45 +1580,60 @@
       ; procedure:  (apply proc arg1 ... args)  * builtin
       (define apply apply)
 
-      ; library procedure:  (map proc list1 list2 ...)
-      ; The dynamic order in which proc is applied to the elements of the lists is unspecified.
-;      (define (map fn lst)
-;         (if (null? lst)
-;            '()
-;            (let*
-;               ((head tail lst)
-;                (head (fn head))) ;; compute head first
-;               (cons head (map fn tail)))))
-
-      ; experimental syntax for map for variable count of arguments
-      ;  can be changed to map used (apply f (map car .)) and (map cdr .))
-      ; todo: test and change map to this version
-      (define map
-         (let ((map1 (lambda (f a)
-                        (let loop ((a a))
-                           (if (null? a)
-                              #null
-                              (cons (f (car a)) (loop (cdr a))))))))
-
-      (case-lambda
-         ((f a)      (map1 f a))
+      ; procedure:  (map proc list1 list2 ...)
+      (define map (lambda (f a)
+         (let loop ((a a))
+            (if (null? a)
+               #null
+               (cons (f (car a)) (loop (cdr a)))))))
+      (define map (case-lambda
+         ((f a)      (map f a))
          ((f a b)    (let loop ((a a)(b b)) ; map2
                         (if (null? a)
                            #null
                            (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
+         ; possible speedup:
+         ;((f a b c) (let loop ((a a)(b b)(c c))
+         ;              (if (null? a)
+         ;                 #null
+         ;                 (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
          ((f a b . c) ; mapN
                      (let loop ((args (cons a (cons b c))))
                         (if (null? (car args)) ; закончились
                            #null
-                           (cons (apply f (map1 car args)) (loop (map1 cdr args))))))
+                           (cons (apply f (map car args)) (loop (map cdr args))))))
+         ((f ) #null)))
+
+         (assert (map cadr '((a b) (d e) (g h)))  ===> (b e h))
+
+      ; library procedure:  (for-each proc list1 list2 ...)
+      (define for-each (lambda (f a)
+         (let loop ((a a))
+            (unless (null? a)
+               (begin
+                  (f (car a))
+                  (loop (cdr a)))))))
+      (define for-each (case-lambda
+         ((f a)      (for-each f a))
+         ((f a b)    (let loop ((a a)(b b)) ; map2
+                        (unless (null? a)
+                           (begin
+                              (f a b)
+                              (loop (cdr a) (cdr b))))))
+         ((f a b . c) ; mapN
+                     (let loop ((a (cons a (cons b c))))
+                        (unless (null? (car a)) ; закончились
+                           (begin
+                              (apply f (map car a))
+                              (loop (map cdr a))))))
 
 ;         ((f a b c) (let loop ((a a)(b b)(c c))
 ;                        (if (null? a)
 ;                           #null
 ;                           (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
-         (() #f))))
+         ((f) #f)))
 
-       ; library procedure:  (for-each proc list1 list2 ...)
+
        ; library procedure:  (force promise)
 
       ; procedure:  (call-with-current-continuation proc)
@@ -2051,7 +2066,7 @@
       ; ol extension:
       bytecode? function? ff?
 
-      map list?
+      map list? for-each
 
       exec yield
       halt wait
