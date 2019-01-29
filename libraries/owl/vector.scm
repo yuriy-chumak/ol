@@ -212,9 +212,6 @@
 
       ; note, a blank vector must use a raw one, since there are no such things as 0-tuples
 
-      (define empty-vector
-         (vm:makeb type-bytevector null))
-
       (define (list->byte-vector bs)
          (vm:makeb type-bytevector bs))
 
@@ -327,7 +324,7 @@
          (cond
             ((null? ll)
                ;; no leaves, no data
-               empty-vector)
+               #0)
             ((null? (cdr ll))
                ;; just one leaf, so it is also the vector
                (car ll))
@@ -344,7 +341,7 @@
       (define (list->vector l)
          (cond
             ((null? l)
-               empty-vector)
+               #0)
             (else
                ;; leaves are chunked specially, so do that in a separate pass. also
                ;; compute length to avoid possibly forcing a computation twice.

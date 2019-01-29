@@ -349,25 +349,25 @@
       (define get-funny-word
          (get-any-of
             (get-word "..." '...)
-            (let-parses
-               ((skip (get-imm #\#))
-                (val
-                  (get-any-of
-                     (get-word "false" #false)
-                     (get-word "true"  #true)    ;; get the longer ones first if present
-                     (get-word "null"  #null)
-                     (get-word "empty" #empty)
-                     (get-word "eof"   #eof)     ; (vm:cast 4 13))
-                     ; сокращения
-                     (get-word "t"     #true)
-                     (get-word "f"     #false)
-                     (get-word "T"     #true)
-                     (get-word "F"     #false)
-                     (get-word "e"     #empty)
-                     (let-parses
-                        ((bang (get-imm #\!)) ; sha-bang
-                         (line get-rest-of-line))
-                        (list 'quote (list 'hashbang (list->string line)))))))
+            (let-parses (
+                  (skip (get-imm #\#))
+                  (val (get-any-of
+                        (get-word "false" #false)
+                        (get-word "true"  #true)
+                        (get-word "null"  #null)    ; empty list (system constant)
+                        (get-word "empty" #empty)   ; empty association array (system constant)
+                        (get-word "eof"   #eof)     ; (vm:cast 4 13))
+                        ; сокращения
+                        (get-word "0"     #0)       ; empty vector, unique (vm:makeb type-bytevector #null)
+                        (get-word "t"     #true)
+                        (get-word "f"     #false)
+                        (get-word "T"     #true)
+                        (get-word "F"     #false)
+                        (get-word "e"     #empty)
+                        (let-parses (
+                              (bang (get-imm #\!)) ; sha-bang
+                              (line get-rest-of-line))
+                           (list 'quote (list 'hashbang (list->string line)))))))
                val)))
 
       (define (intern-symbols sexp)
