@@ -744,22 +744,26 @@
                   (if (eq? (ref a n) (ref b n))
                      (if (eq? n 0)
                         #true
-                        (loop (|-1| n))))))
-         ; else
-         #false)))))
+                        (loop (|-1| n)))))))))))
 
-      (assert (eqv? 'a 'a)                  ===> #true)
-      (assert (eqv? '() '())                ===> #true)
-      (assert (eqv? 2 2)                    ===> #true) ; atomic numbers
+      (assert (eqv? 'a 'a)                  ===> #true) ; symbols
+      (assert (eqv? '() '())                ===> #true) ; empty lists
+      (assert (eqv? 2 2)                    ===> #true) ; atomic integer numbers
       (assert (eqv? 72057594037927936
-                    72057594037927936)      ===> #true) ; not an atomic numbers
-      (assert (eqv? 0.33 0.33)              ===> #true)
-      (assert (eqv? 7/3 14/6)               ===> #true)
-      (assert (eqv? 2+3i 2+3i)              ===> #true)
+                    72057594037927936)      ===> #true) ; long (not atomic) integer numbers
+      (assert (eqv? 0.33 0.33)              ===> #true) ; rational numbers
+      (assert (eqv? 7/3 14/6)               ===> #true) ; rational numbers
+      (assert (eqv? 2+3i 2+3i)              ===> #true) ; complex numbers
+      (assert (eqv? (vm:cast 2 TINEXACT)
+                    (vm:cast 2 TINEXACT))   ===> #true) ; inexact numbers
+      (assert (eqv? +nan.0 +nan.0)          ===> #true) ; inexact NaNs
       (assert (let ((p (lambda (x) x)))
-                 (eqv? p p))                ===> #true)
+                 (eqv? p p))                ===> #true) ; same lambda
       (assert (let ((x '(a)))
-                 (eqv? x x))                ===> #true)
+                 (eqv? x x))                ===> #true) ; same list
+
+      ; * ol specific cases (in r7rs unspecified)
+      (assert (eqv? "" "")                  ===> #false); * ol specific, (in r7rs unspecified)
 
       ; The eqv? procedure returns #f if:
 
@@ -823,10 +827,9 @@
       ; can be said about such cases is that the value returned by
       ; eqv? must be a boolean
 
-      ;(assert (eqv? "" "")                  ===> #false) ; * ol specific, (in r7rs unspecified)
-      (assert (eqv? '#() '#())              ===> #true)  ; * ol specific, (in r7rs unspecified)
-      ;assert (eqv? (lambda (x) x)
-      ;             (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
+      (assert (eqv? #() #())              ===> #true)  ; * ol specific, (in r7rs unspecified)
+      (assert (eqv? (lambda (x) x)
+                    (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? (lambda (x) x)
       ;             (lambda (y) y))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? 1.0e0 1.0f0)            ===> unspecified
