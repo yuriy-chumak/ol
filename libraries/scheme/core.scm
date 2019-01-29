@@ -636,8 +636,7 @@
 ;            ((define* name (lambda (arg ...) . body))
 ;               (define* (name arg ...) . body))))
 
-      ; EXTENSION, maybe unused!
-      ; the internal one is handled by begin. this is just for toplevel.
+      ; * ol specific
       (define-syntax define-values
          (syntax-rules (list)
             ((define-values (val ...) . body)
