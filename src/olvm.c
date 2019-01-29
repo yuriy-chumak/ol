@@ -2543,7 +2543,7 @@ loop:;
 
 	// make raw reference object
 	case VMMAKEB: { // (vm:makeb type list|size {default})
-		word size = *ip++;
+		word size = *ip++; // arguments count
 		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
 		word value = A1;
 

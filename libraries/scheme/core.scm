@@ -46,7 +46,7 @@
       (scheme srfi-71))  ; (let* ((a b (values..
 
    ; -----------------------------------------------------------------
-   ; special staff
+   ; internal staff
    (begin
       ; internal: (-1 obj), (+1 obj)
       ; note: todo: add theoretically impossible case:
@@ -707,7 +707,6 @@
       ; open to interpretation, but the following partial specifica-
       ; tion of eqv? holds for all implementations of Scheme.
       (define (eqv? a b)
-
       ;  * obj 1 and obj 2 are both #t or both #f.
       ;  * obj 1 and obj 2 are both symbols and are the same sym-
       ;    bol according to the symbol=? procedure
@@ -1066,20 +1065,10 @@
 
       ; procedure: inexact->exact z
       (define (exact n) (vm:cast n type-rational))
-      (define inexact->exact exact)
+      (define inexact->exact exact)   ; r5rs
 
-      ; 6.2.6  Numerical input and output
-      ;
-      ; procedure:  (number->string z) <- (r5rs strings?)
-      ; procedure:  (number->string z radix) <- (r5rs strings?)
-;      (define (number->string n base)
-;         (list->string (render-number n null base)))
-
-      ; procedure:  (string->number string) <- (lang s-exp?)
-      ; procedure:  (string->number string radix) <- (lang s-exp?)
-;      (define string->number (case-lambda
-;         ((str base) (list->number (string->list str) base))
-;         (str        (list->number (string->list str) 10))))
+      ; 6.2.7  Numerical input and output
+      ; * included in (scheme numerical-io)
 
 
       ; 6.3  Other data types
@@ -1556,7 +1545,7 @@
       ; the same values.
 
       ;; *********************
-      ;; 6.4  Control features
+      ;; 6.10  Control features
       ;
       ; This chapter describes various primitive procedures which control the flow of program
       ; execution in special ways. The procedure? predicate is also described here.
