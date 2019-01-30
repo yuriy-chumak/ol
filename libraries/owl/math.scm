@@ -2146,6 +2146,7 @@
             (unfold (λ (n) (lets ((q r (quotrem n base))) (values (char-of r) q))) num zero?)))
 
       ;; move to math.scm
+      (define i-zero (inexact 0))
 
       (define (render-number num tl base)
          (cond
@@ -2170,37 +2171,37 @@
             ((eq? (type num) type-inexact)
                (cond ; for inf and nan should use equal?, because
                      ;  this numbers can be returned from ffi
+                  ((equal? num i-zero) (ilist #\0 #\. #\0 tl))
                   ((equal? num +inf.0) (ilist #\+ #\i #\n #\f #\. #\0 tl))
                   ((equal? num -inf.0) (ilist #\- #\i #\n #\f #\. #\0 tl))
                   ((equal? num +nan.0) (ilist #\+ #\n #\a #\n #\. #\0 tl))
                   (else
-                     (letrec ((fabs (lambda (f) (if (fless? f 0) (fsub 0 f) f)))
-                              (ffloor (lambda (f) (inexact (floor (exact f)))))
-                              (ffrac (lambda (f) (fsub f (ffloor f))))
-                              (- sub) (* mul))
+                     (let*((- sub) (* mul)
+                           (sign num (if (fless? num 0)
+                              (values #t (negate (exact num)))
+                              (values #f (exact num)))))
                      (cond
-                        ((fless? 100000000 (fabs num))
-                           (ilist #\B #\I #\G #\. tl))
-                        ((fless? (fabs num) 0.00000001)
-                           (ilist #\. #\S #\M #\A #\L #\L tl))
+                        ((< 1000000000 num)
+                           (let ((number (ilist #\B #\I #\G #\. tl)))
+                              (if sign (cons #\- number) number)))
+                        ((< num 0.00000001)
+                           (let ((number (ilist #\. #\S #\M #\A #\L #\L tl)))
+                              (if sign (cons #\- number) number)))
                         (else
-                           (let*((sign num (if (fless? num 0)
-                                    (values #true (negate (exact num))) ; negative
-                                    (values #false (exact num)))) ; positive
-                                 (int  (floor num))
+                           (let*((int (floor num))
                                  (frac (- num int))
-                                 (number (append (reverse
-                                    (let loop ((i (* frac 10)) (n (sub 10 (log 10 int))) (l #null))
+                                 (number (reverse
+                                    (let loop ((i (* frac 10)) (n (subi 10 (log 10 int))) (l #null))
                                        (cond
                                           ((eq? n 1) l)
                                           ((< i 0.00000001) (if (null? l) '(#\0) l))
                                           (else
-                                             (loop (* (- i (floor i)) 10) (- n 1) (cons (char-of (floor i)) l)))))) tl)))
-                              (render-number int
-                                    (cons #\. number) base))))))))
+                                             (loop (* (- i (floor i)) 10) (- n 1) (cons (char-of (floor i)) l)))))))
+                                 (number (render-number int (cons #\. (append number tl)) base)))
+                              (if sign (cons #\- number) number))))))))
             ((< num 0)
                (cons #\-
-                  (render-number (sub 0 num) tl base)))
+                  (render-number (negate num) tl base)))
             ((< num base)
                (cons (char-of num) tl))
             (else
