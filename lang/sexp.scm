@@ -197,15 +197,16 @@
             (sign imag)))
 
       ; https://srfi.schemers.org/srfi-77/srfi-77.html
-      (setq |+inf.0| (vm:fp2 #xF9 1 0)) ; 1 / 0 = +infin
-      (setq |-inf.0| (vm:fp2 #xF9 -1 0));-1 / 0 = -infin
-      (setq |+nan.0| (vm:fp2 #xF9 0 0)) ; 0 / 0 = NaN
+      ; this defines not neede enymore
+      ;(setq |+inf.0| (vm:fp2 #xF9 1 0)) ; 1 / 0 = +infin
+      ;(setq |-inf.0| (vm:fp2 #xF9 -1 0));-1 / 0 = -infin
+      ;(setq |+nan.0| (vm:fp2 #xF9 0 0)) ; 0 / 0 = NaN
 
       (define get-number
          (get-any-of
-            (get-word "+inf.0" |+inf.0|)
-            (get-word "-inf.0" |-inf.0|)
-            (get-word "+nan.0" |+nan.0|)
+            (get-word "+inf.0" +inf.0)
+            (get-word "-inf.0" -inf.0)
+            (get-word "+nan.0" +nan.0)
             (let-parses
                   ((real get-rational) ;; typically this is it
                    (imag (get-either get-imaginary-part (get-epsilon 0))))
