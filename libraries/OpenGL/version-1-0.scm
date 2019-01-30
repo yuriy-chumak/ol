@@ -2854,9 +2854,9 @@
 ;WINGDIAPI void APIENTRY glRects (GLshort x1, GLshort y1, GLshort x2, GLshort y2);
 ;WINGDIAPI void APIENTRY glRectsv (const GLshort *v1, const GLshort *v2);
 ;WINGDIAPI GLint APIENTRY glRenderMode (GLenum mode);
-;WINGDIAPI void APIENTRY glRotated (GLdouble angle, GLdouble x, GLdouble y, GLdouble z);
+   (define glRotated (GL GLvoid "glRotated" GLdouble GLdouble GLdouble GLdouble))
    (define glRotatef (GL GLvoid "glRotatef" GLfloat GLfloat GLfloat GLfloat))
-;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z);
+   (define glScaled (GL GLvoid "glScaled" GLdouble GLdouble GLdouble))
    (define glScalef (GL GLvoid "glScalef" GLfloat GLfloat GLfloat))
    (define glScissor (GL GLvoid "glScissor" GLint GLint GLsizei GLsizei))
 ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
