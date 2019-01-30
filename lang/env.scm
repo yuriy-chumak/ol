@@ -33,8 +33,27 @@
       (scheme misc))
 
    (begin
+      ;;; these cannot be in primop since they use lists and ffs
 
-      (define empty-env empty) ;; will change with ff impl
+      ;; only special forms supported by the compiler, no primops etc
+      ;; fixme: should use distinct identifiers like #:foo for these, since these can unintentionally clash with formals
+      (define *special-forms*
+         (list->ff
+            (list
+               (cons 'quote  (tuple 'special 'quote))
+               (cons 'values (tuple 'special 'values))
+               (cons 'lambda (tuple 'special 'lambda))
+
+               (cons 'setq   (tuple 'special 'setq))
+               (cons 'letq   (tuple 'special 'letq))
+
+               (cons 'ifeq   (tuple 'special 'ifeq))
+               (cons 'either (tuple 'special 'either))
+
+               (cons 'values-apply  (tuple 'special 'values-apply))
+            )))
+
+      (define empty-env #empty) ;; will change with ff impl
 
       (define env-del del)
       (define poll-tag "mcp/polls")
@@ -200,26 +219,6 @@
       (define env-fold ff-fold)
 
       (define env-del del)
-
-      ;;; these cannot be in primop since they use lists and ffs
-
-      ;; only special forms supported by the compiler, no primops etc
-      ;; fixme: should use distinct identifiers like #:foo for these, since these can unintentionally clash with formals
-      (define *special-forms*
-         (list->ff
-            (list
-               (cons 'quote  (tuple 'special 'quote))
-               (cons 'values (tuple 'special 'values))
-               (cons 'lambda (tuple 'special 'lambda))
-
-               (cons 'setq   (tuple 'special 'setq))
-               (cons 'letq   (tuple 'special 'letq))
-
-               (cons 'ifeq   (tuple 'special 'ifeq))
-               (cons 'either (tuple 'special 'either))
-
-               (cons 'values-apply  (tuple 'special 'values-apply))
-            )))
 
       ;; take a subset of env
       ;; fixme - misleading name

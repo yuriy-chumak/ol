@@ -46,10 +46,11 @@
       (scheme srfi-71))  ; (let* ((a b (values..
 
    ; -----------------------------------------------------------------
-   ; internal staff
+   ; internal Ol staff
    (begin
-      ; internal: (-1 obj), (+1 obj)
-      ; note: todo: add theoretically impossible case:
+      ; fast internal functions (-1 obj) and (+1 obj),
+      ;  limitation - obj is atomic numbers,
+      ;  note: todo: add theoretically impossible case:
       ;       (if carry (runtime-error "Too long list to fit in fixnum"))
 
       (setq |-1| (lambda (n) ; * internal

@@ -2162,7 +2162,8 @@
                               (render-number imag (cons #\i tl) base))))
                      base)))
             ((eq? (type num) type-inexact)
-               (cond
+               (cond ; for inf and nan should use equal?, because
+                     ;  this numbers can be returned from ffi
                   ((equal? num +inf.0) (ilist #\+ #\i #\n #\f #\. #\0 tl))
                   ((equal? num -inf.0) (ilist #\- #\i #\n #\f #\. #\0 tl))
                   ((equal? num +nan.0) (ilist #\+ #\n #\a #\n #\. #\0 tl))
