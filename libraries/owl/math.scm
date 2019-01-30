@@ -1917,7 +1917,13 @@
             ((eq? (type b) type-inexact)
                (fdiv a b))
             ((eq? b 0)
-               (runtime-error "division by zero " (list '/ a b)))
+               (cond ; old: (runtime-error "division by zero " (list '/ a b)))
+                  ((or (eq? a 0) (eqv? a +nan.0))
+                     +nan.0)
+                  ((< a 0)
+                     -inf.0)
+                  (else
+                     +inf.0)))
             ((eq? (type a) type-complex)
                (if (eq? (type b) type-complex)
                   (lets

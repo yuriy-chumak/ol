@@ -16,8 +16,7 @@
       ; io
       read
       ; parser
-      get-number
-      )
+      get-number)
 
    (import
       (scheme core)
@@ -42,10 +41,8 @@
 
       (define (between? lo x hi) ; fast version of (<= lo x hi))
          (and
-            (or (less? lo x)
-               (eq? lo x))
-            (or (less? x hi)
-               (eq? x hi))))
+            (or (less? lo x) (eq? lo x))
+            (or (less? x hi) (eq? x hi))))
 
       (define special-initial-chars (string->runes "!$%&*+-/:<=>?^_~")) ; dot(.) reserved for numbers and pairs, sorry.
       (define special-subseqent-chars (string->runes "@"))
@@ -84,12 +81,12 @@
 ;            (between? #\a x #\f)))
 
       (define digit-values (list->ff
-            (foldr append null
-               (list
-                  (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
-                  (map (lambda (d i) (cons d i)) (iota  6 #\A) (iota 6 10))  ;; A-F
-                  (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
-                  ))))
+         (foldr append null
+            (list
+               (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
+               (map (lambda (d i) (cons d i)) (iota  6 #\A) (iota 6 10))  ;; A-F
+               (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
+               ))))
 
       (define bases (list->ff '(
          (#\b . 2)
@@ -100,12 +97,12 @@
       (define (digit-char? base)
          (if (eq? base 10)
             (λ (n) (between? #\0 n #\9))
-            (λ (n) (< (get digit-values n 100) base)))) ; base should be less than 100
+            (λ (n) (< (digit-values n 100) base)))) ; base should be less than 100
 
       (define (bytes->number digits base)
          (fold
             (λ (n digit)
-               (let ((d (get digit-values digit #false)))
+               (let ((d (digit-values digit #false)))
                   (cond
                      ((or (not d) (>= d base))
                         (runtime-error "bad digit " digit))
@@ -176,18 +173,15 @@
 
       ;; anything up to a rational
       (define get-rational
-         (let-parses
-               ((val (let-parses
-                     ((n get-number-unit)
-                      (m (get-either
-                           (let-parses
-                                 ((skip (get-imm #\/))
-                                 (m get-number-unit)
-                                 (verify (not (eq? 0 m)) "zero denominator")) ; todo: remove verifier
-                              m)
-                           (get-epsilon 1))))
-                  (/ n m))))
-            val))
+         (let-parses (
+               (n get-number-unit)
+               (m (get-either
+                     (let-parses (
+                           (skip (get-imm #\/))
+                           (m get-number-unit))
+                        (/ n m))
+                     (get-epsilon n))))
+            m))
 
       (define get-imaginary-part
          (let-parses
