@@ -13,8 +13,8 @@
 (define-library (owl ff)
 
    (export
-      get         ; O(log2 n), ff x key x default-value -> value | default-value
-      put         ; O(log2 n), ff x key x value -> ff'
+      get         ; O(log2 n), ff x key default-value -> value | default-value
+      put put!    ; O(log2 n), ff x key value -> ff'
       del         ; O(log2 n), ff x key -> ff'
       keys        ; O(n), ff → (key ...)
       ff-update   ; O(log2 n), ff x key x value -> ff' | fail if key not in ff
@@ -283,6 +283,30 @@
                            (if (right? ff)
                               (get (ref ff 3) key def)
                               def))))))))
+
+      ; true if shanged
+      (define (put! ff key value)
+         (unless (eq? ff #empty)
+            (let ((this-k (ref ff 1)))
+               (cond
+                  ((eq? this-k key)
+                     (set-ref! ff 2 value))
+                  ((less? key this-k)
+                     ;; go left if possible
+                     (case (size ff)
+                        (4 (put! (ref ff 3) key value))
+                        (2 #false)
+                        (else
+                           (unless (right? ff)
+                              (put! (ref ff 3) key value)))))
+                  (else
+                     ;; go right if possible
+                     (case (size ff)
+                        (4 (put! (ref ff 4) key value))
+                        (2 #false)
+                        (else
+                           (if (right? ff)
+                              (put! (ref ff 3) key value)))))))))
 
       ;; primitive get via vm
       ;(define (get ff key def) (ff key def))
