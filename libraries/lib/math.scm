@@ -6,10 +6,15 @@
       exp log sin cos tan
       asin acos atan sqrt)
 
+(cond-expand
+   (Linux (begin
+      (setq libm (load-dynamic-library "libm.so.6"))))
+   (Windows (begin
+      (setq libm (load-dynamic-library "ntdll.dll"))))
+)
+
 (begin
-   (define libm (or (load-dynamic-library "libm.so.6")
-                    (load-dynamic-library "ntdll.dll")
-                    (runtime-error "Can't load libm" #f)))
+   (unless libm (runtime-error "Can't load libm" #f))
 
    (define exp (libm fft-double "exp" fft-double))
    (define log (libm fft-double "log" fft-double))
@@ -27,6 +32,7 @@
       (if (< x 0)
          (complex 0 (_sqrt (- x)))
          (_sqrt x)))
+
    ; procedure: expt z1 z2
    ; procedure: make-rectangular x1 x2
    ; procedure: make-polar x3 x4
