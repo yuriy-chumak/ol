@@ -1680,7 +1680,7 @@ double ol2d(word arg) {
 			case sizeof(float):
 				return *(float*)&car(arg);
 			case sizeof(double):
-				return *(float*)&car(arg);
+				return *(double*)&car(arg);
 		}
 		assert(0);
 		return 0.;
