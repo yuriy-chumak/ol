@@ -90,7 +90,7 @@
          (fold (lambda (ff v x)
                   (if (eq? v #\space) ff (put ff (hash x y) v)))
             ff v (iota (length v))))
-   #empty (cdr xpm3) (iota (length (cdr xpm3)))))
+   #empty (reverse (cdr xpm3)) (iota (length (cdr xpm3)))))
 
 ; main game loop
 (gl:set-renderer (lambda (mouse)
@@ -131,4 +131,6 @@
             (else
                ff)))
       #empty generation))
+
+   (sleep 5)
 )))
