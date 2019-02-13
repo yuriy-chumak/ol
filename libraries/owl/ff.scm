@@ -1,6 +1,6 @@
 ;;;
 ;;; Finite functions (or red-black key-value maps)
-;;; Хеш-таблица с прямой адресацией.
+;;; ассоциативный массив с прямой адресацией.
 
 ;; fixme: ff unit tests went missing at some point. add with lib-compare vs naive alists.
 ;; fixme: ffc[ad]r are no longer needed as primitives
