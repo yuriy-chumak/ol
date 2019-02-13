@@ -1,0 +1,21 @@
+/* XPM */
+static char *sample[] = {
+/* columns rows colors chars-per-pixel */
+"24 11 4 1 ",
+"  c white",
+"o c yellow",
+"H c blue",
+"T c red",
+/* pixels */
+"                        ",
+"   THooooTH             ",
+"  o        oooooo       ",
+"   oooooooo      o      ",
+"                oooo    ",
+"                o  ooooo",
+"                oooo    ",
+"   THoooooo      o      ",
+"  o        oooooo       ",
+"   oooHTooo             ",
+"                        ",
+};
