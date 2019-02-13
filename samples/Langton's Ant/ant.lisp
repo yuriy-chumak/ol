@@ -19,7 +19,7 @@
 
 ; ---------------
 (import (lib gl2))
-(gl:set-window-title "Convey's The game of Life")
+(gl:set-window-title "Langton's Ant")
 
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
@@ -69,14 +69,3 @@
 
 
 )))
-      ;; ; next cells generation
-      ;; (ff-fold (lambda (st key value)
-      ;;    (let ((x (mod key MAX))
-      ;;          (y (div key MAX)))
-      ;;       (fold (lambda (st key)
-      ;;                (let ((x (+ x (car key)))
-      ;;                      (y (+ y (cdr key))))
-      ;;                   (if (alive generation x y) (put st (hash x y) 1) st)))
-      ;;          (if (alive generation x y) (put st (hash x y) 1) st) ; the cell
-      ;;          neighbors)))
-      ;;    #empty generation)))))
