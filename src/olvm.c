@@ -3208,12 +3208,12 @@ loop:;
 		case SYSCALL_OPEN: {
 			CHECK(is_string(a), a, SYSCALL);
 			char* s = string (a);
-			int mode = value (b);
-			int flags = c == IFALSE
+			int flags = value(b) | O_RDWR; // todo: update this flag in lisp codes
+			int mode = c == IFALSE
 				? S_IRUSR | S_IWUSR
 				: value (c);
 
-			int file = ol->open(s, mode, flags, ol);
+			int file = ol->open(s, flags, mode, ol);
 			if (file < 0)
 				break;
 
