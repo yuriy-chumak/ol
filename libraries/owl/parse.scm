@@ -28,7 +28,7 @@
       )
 
    (import
-      (scheme core)
+      (scheme base)
 
       (owl lazy)
       (owl math)

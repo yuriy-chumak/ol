@@ -2041,7 +2041,7 @@
       ; ol extension:
       bytecode? function? ff?
 
-      map list? for-each
+      list?
 
       exec yield
       halt wait
