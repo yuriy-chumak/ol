@@ -24,12 +24,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *
- * ## Installing
+ * ## Install
  * Precompiled binaries for various platforms and architectures can
  * be found at [project page](http://yuriy-chumak.github.io/ol) and
  * OpenSUSE [build service](https://bit.ly/2RUjjtS).
  *
- * ## Manual building:
+ * ## Manual build
  *   make; make install
  *
  * ## Project page:
@@ -3101,12 +3101,13 @@ loop:;
 		switch (op + sandboxp) {
 
 		/*! \subsection read
-		 * \brief 0: (read port count) -> ref|#f|#eof
+		 * \brief (syscall **0** port count .) --> bytevector | #false | #eof
 		 *
-		 * Attempt to read up to *count* bytes from input port *port*
+		 * Attempts to read up to *count* bytes from input port *port*
+		 * into the bytevector.
 		 *
 		 * \param port input port
-		 * \param count count less than 0 means "all available"
+		 * \param count count, negative value means "all available"
 		 *
 		 * \return bytevector if success,
 		 *         #false if file not ready,
@@ -3140,7 +3141,7 @@ loop:;
 
 			if (got > 0) {
 				// todo: обработать когда приняли не все,
-				//	     вызвать gc() и допринять. и т.д.
+				//	     вызвать gc() и допринять. и т.д. (?)
 				result = new_bytevector (TBVEC, got);
 			}
 			else if (got == 0)
@@ -3228,13 +3229,13 @@ loop:;
 		}
 
 		/*! \subsection close
-		 * \brief 3: (close port) -> #t|#f
+		 * \brief (syscall **3** port . .) -> #true | #false
 		 *
-		 * Close a port
+		 * Closes a port, so that it no longer refers to any file and may be used.
 		 *
 		 * \param port valid port
 		 *
-		 * \return port if success,
+		 * \return #true if success,
 		 *         #false if error
 		 *
 		 * http://man7.org/linux/man-pages/man2/close.2.html
