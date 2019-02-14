@@ -1212,6 +1212,8 @@ word* p = new_bytevector(TSTRING, length);\
 #define NEW_STRING_MACRO(_1, _2, NAME, ...) NAME
 #define new_string(...) NEW_STRING_MACRO(__VA_ARGS__, NEW_STRING2, NEW_STRING, NOTHING)(__VA_ARGS__)
 
+#define string(o)   ({ word p = (word)o; assert (is_string(p)); (char*) ((word*)p + 1); })
+
 
 #define new_vptr(a) ({\
 word data = (word) a;\
@@ -3204,13 +3206,13 @@ loop:;
 		 */
 		case SYSCALL_OPEN: {
 			CHECK(is_string(a), a, SYSCALL);
-			word* s = & car(a);
+			char* s = string (a);
 			int mode = value (b);
 			int flags = c == IFALSE
 				? S_IRUSR | S_IWUSR
 				: value (c);
 
-			int file = ol->open((char*)s, mode, flags, ol);
+			int file = ol->open(s, mode, flags, ol);
 			if (file < 0)
 				break;
 
@@ -3281,7 +3283,7 @@ loop:;
 						break;
 				}
 				else {*/
-					if (stat((char*) &car (a), &st) < 0)
+					if (stat(string(a), &st) < 0)
 						break;
 				//}
 			}
@@ -3360,10 +3362,10 @@ loop:;
 		 */
 		case SYSCALL_UNLINK: { //
 			CHECK(is_string(a), a, SYSCALL);
-			word* s = & car(a);
+			char* s = string (a);
 
-			if (unlink((char*)s) == 0)
-				result = (word*)ITRUE;
+			if (unlink(s) == 0)
+				result = (word*) ITRUE;
 			break;
 		}
 
@@ -3553,17 +3555,17 @@ loop:;
 		// CONNECT
 		case 42: { // (connect sockfd host port)
 			CHECK(is_port(a), a, SYSCALL);
-			int sockfd = port(a);
-			word* host = (word*) b; // todo: check for string type
+			int sockfd = port (a);
+			char* host = string (b); // todo: check for string type
 			int port = value (c);
 
 			struct sockaddr_in addr;
 			addr.sin_family = AF_INET;
-			addr.sin_addr.s_addr = inet_addr((char *) &host[1]);
+			addr.sin_addr.s_addr = inet_addr(host);
 			addr.sin_port = htons(port);
 
 			if (addr.sin_addr.s_addr == INADDR_NONE) {
-				struct hostent *he = gethostbyname((char *) &host[1]);
+				struct hostent *he = gethostbyname(host);
 				if (he != NULL)
 					memcpy(&addr.sin_addr, he->h_addr_list[0], sizeof(addr.sin_addr));
 			}
@@ -3783,7 +3785,7 @@ loop:;
 	#endif //HAS_DLOPEN
 			// if a is string:
 			if (is_string(a)) {
-				char* command = (char*)&car(a);
+				char* command = string(a);
 				#ifdef __unix__
 				# ifdef __EMSCRIPTEN__
 					emscripten_run_script(command);
@@ -3843,7 +3845,7 @@ loop:;
 					}
 
 					// черновой вариант
-					char* args = (char*) &car (fp);
+					char* args = string (fp);
 					// todo: add length check!
 					sprintf(args, "\"%s\"", command);
 
@@ -3851,7 +3853,7 @@ loop:;
 						word p = b;
 						while (p != INULL) {
 							strcat(args, " ");
-							strcat(args, (char*)&caar(p)); p = cdr(p);
+							strcat(args, string(car(p))); p = cdr(p);
 						}
 					}
 
@@ -3915,9 +3917,9 @@ loop:;
 					break;
 				// The environment variables TZ and LC_TIME are used!
 				size_t len = strftime(
-						(char*) &(fp[1]),
+						string (fp),
 						(size_t) (heap->end - fp - 1) * sizeof(word),
-						(char*) &(A[1]), timeinfo);
+						string (A), timeinfo);
 				result = new_bytevector(TSTRING, len);
 			}
 			else
@@ -4093,14 +4095,14 @@ loop:;
 		case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
 			word *name = (word *)a;
 			if (is_string(name)) {
-				char* env = getenv((char*)&name[1]);
+				char* env = getenv(string(name));
 				if (env)
 					result = new_string(env, lenn(env, VMAX));
 			}
 			break;
 		}
 		case 1017: { // system (char*) // todo: remove this
-			int r = system((char*)&car (a));
+			int r = system(string(a));
 			if (r >= 0)
 				result = itoun(r);
 			break;
@@ -4127,7 +4129,7 @@ loop:;
 				module = dlopen(OLVM_LIBRARY_SO_NAME, mode); // If filename is NULL, then the returned handle is for the main program.
 			}
 			else if (is_string(filename)) {
-				module = dlopen((char*) &filename[1], mode);
+				module = dlopen(string(filename), mode);
 			}
 			else
 				break; // invalid filename, return #false
@@ -4206,7 +4208,7 @@ loop:;
 #ifdef __EMSCRIPTEN__
 			CHECK(is_number(a), a, SYSCALL);
 			CHECK(is_string(b), b, SYSCALL);
-			char* string = (char*)&car(b);
+			char* string = string(b);
 
 			switch (value(a)) {
 			case TSTRING: {
