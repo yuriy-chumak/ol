@@ -12,7 +12,8 @@
  *
  *  Copyright(c) 2014 - 2019 Yuriy Chumak
  *
- * -------------------------------------------------------------
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ * ### LICENSE
  * This program is free software;  you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
@@ -21,11 +22,11 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * -------------------------------------------------------------
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *
  * ## Installing
- *   Precompile binaries for various platforms and architectures can
- * be found at [project page](http://yuriy-chumak.github.io/ol/) and
+ * Precompiled binaries for various platforms and architectures can
+ * be found at [project page](http://yuriy-chumak.github.io/ol) and
  * OpenSUSE [build service](https://bit.ly/2RUjjtS).
  *
  * ## Manual building:
@@ -3144,26 +3145,22 @@ loop:;
 				result = (word*)IEOF;
 			else if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
 				result = (word*)ITRUE;
+
 			break;
 		}
 
 		/*! \subsection write
-		 * \brief 1: (write port buffer size) -> int|#f
+		 * \brief (syscall **1** port object count) -> number | #false
 		 *
-		 * Write object content to the output port
+		 * Writes up to *count* bytes from the binary *object* to the output port *port*.
 		 *
 		 * \param port output port
-		 * \param buffer object to write
-		 * \param size size less than 0 means "all buffer"
+		 * \param object binary object data to write
+		 * \param count count bytes to write, negative value means "whole object"
 		 *
-		 * \return count of written data if success,
+		 * \return count of written data bytes if success,
 		 *         0 if file busy,
 		 *         #false if error
-		 *
-		 * \note please be aware that this function does not
-		 *       check the size of valid data in blob object
-		 *       (it can be less than object size in memory)
-		 *       and can write garbage to the end of output.
 		 *
 		 * http://man7.org/linux/man-pages/man2/write.2.html
 		 */
@@ -3171,22 +3168,22 @@ loop:;
 		case SYSCALL_WRITE: {
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
-			int size = svtoi (c);
+			int count = svtoi(c);
 
 			word *buff = (word *) b;
-			if (is_value(buff))
+			if (!is_blob(buff))
 				break;
-			int length = (header_size(*buff) - 1) * sizeof(word); // todo: pads!
-			if (size > length || size < 0)
-				size = length;
+			int length = (header_size(*buff)-1) * sizeof(word) - header_pads(*buff);
+			if (count > length || count < 0)
+				count = length;
 
 			int wrote;
-			wrote = ol->write(portfd, (char*)&buff[1], size, ol->userdata);
+			wrote = ol->write(portfd, (char*)&buff[1], count, ol->userdata);
 
 			if (wrote > 0)
 				result = (word*) itoun (wrote);
 			else if (errno == EAGAIN || errno == EWOULDBLOCK)
-				result = (word*) itoun (0);
+				result = (word*) I(0);
 
 			break;
 		}
