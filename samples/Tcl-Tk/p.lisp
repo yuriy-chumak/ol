@@ -21,7 +21,7 @@
          (let*((feets (string->number (cadr argv) 10))
                (meters (* feets 0.3048))
                (result
-                  (fold string-append "" (list "{" (number->string meters) "}"))))
+                  (fold string-append "" (list "{" (number->string (inexact meters)) "}"))))
             (print "result: " result)
             (Tcl_SetResult tcl (c-string result) #f)))
       TCL_OK
