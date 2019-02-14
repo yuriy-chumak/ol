@@ -196,7 +196,7 @@
       (define output-buffer-size 4096)
 
       (define (open-input-file path) (fopen path 0))
-      (define (open-output-file path) (fopen path 1))
+      (define (open-output-file path) (fopen path #o100)) ; O_CREAT
 
       ;;; Reading
 

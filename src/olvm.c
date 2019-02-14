@@ -3189,12 +3189,13 @@ loop:;
 		}
 
 		/*! \subsection open
-		 * \brief 2: (open pathname mode) -> port|#f
+		 * \brief (syscall **2** pathname mode flags) -> port | #false
 		 *
-		 * Open port to the file (and possibly create a file)
+		 * Opens port to the file specified by *pathname* (and, possibly, creates it) using specified *mode*.
 		 *
-		 * \param pathname filename with/without path
-		 * \param mode open mode
+		 * \param pathname filename with/without path, c-like string
+		 * \param mode open mode (0 for read, #o100 for write, for example)
+		 * \param flags additional flags in POSIX sence
 		 *
 		 * \return port if success,
 		 *         #false if error
@@ -3205,9 +3206,11 @@ loop:;
 			CHECK(is_string(a), a, SYSCALL);
 			word* s = & car(a);
 			int mode = value (b);
-			mode |= O_BINARY | ((mode > 0) ? O_CREAT | O_TRUNC : 0);
+			int flags = c == IFALSE
+				? S_IRUSR | S_IWUSR
+				: value (c);
 
-			int file = ol->open((char*)s, mode, (S_IRUSR | S_IWUSR), ol);
+			int file = ol->open((char*)s, mode, flags, ol);
 			if (file < 0)
 				break;
 
