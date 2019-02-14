@@ -1607,6 +1607,32 @@
          (assert (map cadr '((a b) (d e) (g h)))  ===> (b e h))
 
       ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
+      (define for-each (lambda (f a)
+         (let loop ((a a))
+            (unless (null? a)
+               (begin
+                  (f (car a))
+                  (loop (cdr a)))))))
+      (define for-each (case-lambda
+         ((f a)      (for-each f a))
+         ((f a b)    (let loop ((a a)(b b)) ; map2
+                        (unless (null? a)
+                           (begin
+                              (f a b)
+                              (loop (cdr a) (cdr b))))))
+         ((f a b . c) ; mapN
+                     (let loop ((a (cons a (cons b c))))
+                        (unless (null? (car a)) ; закончились
+                           (begin
+                              (apply f (map car a))
+                              (loop (map cdr a))))))
+
+;         ((f a b c) (let loop ((a a)(b b)(c c))
+;                        (if (null? a)
+;                           #null
+;                           (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
+         ((f) #f)))
+
       ; procedure:  (force promise)
       ; procedure:  (call-with-current-continuation proc)
       (define call-with-current-continuation
@@ -2033,7 +2059,7 @@
       bytevector
 
       ; (r7rs) 6.10.  Control features
-      map
+      map for-each
 
       ; 6.14
       features
