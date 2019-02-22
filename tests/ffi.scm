@@ -143,6 +143,20 @@
                                                fft-float fft-double))
    (try "12 arguments" summ 0 1 2 3 4 5 6 7 8 9 1234.56789 123456.789)
 
+; ---------------------------------------------------------------
+; callbacks
+(define cb1 (vm:pin (cons
+   (list fft-int fft-int)
+   (lambda (i)
+      (for-each display (list "[" i "]"))
+      (* i i)))))
+
+(define callback_call_i ((load-dynamic-library #f) fft-void "callback_call_i" type-callable))
+
+;(try "callback_call_i 1" callback_call_i (make-callback cb1))
+;(callback_call_i (make-callback cb1))
+
+; ============
 (print "done.")
 ,quit
 
@@ -191,7 +205,7 @@
 
 (define iffiiiifiiffffff ((load-dynamic-library #f) fft-float "iffiiiifiiffffff"
    type-int+
-   fft-float fft-float 
+   fft-float fft-float
    type-int+ type-int+ type-int+ type-int+
    fft-float
    type-int+ type-int+

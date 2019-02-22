@@ -439,3 +439,14 @@ int fft_64pointers(int length, long long* longs)
 
    return -1;
 }
+
+// callbacks
+PUBLIC
+void callback_call_i(int (*callback) (int))
+{
+	printf("callback_call_i(1): %d\n", callback(1));
+	printf("callback_call_i(-1): %d\n", callback(-1));
+	printf("callback_call_i(0): %d\n", callback(0));
+	printf("callback_call_i(999999): %d\n", callback(999999));
+	printf("callback_call_i(-999999): %d\n", callback(-999999));
+}
