@@ -20,7 +20,7 @@
       blocks->port            ;; ll fd → ll' n-bytes-written, don't close fd
       closing-blocks->port    ;; ll fd → ll' n-bytes-written, close fd
 
-      file->vector            ;; vector io, may be moved elsewhere later
+      fd->vector file->vector            ;; vector io, may be moved elsewhere later
       file->list              ;; list io, may be moved elsewhere later
       vector->file
       write-vector            ;; vec port
@@ -407,15 +407,15 @@
             #true
             (close-port port)))
 
+      (define (fd->vector port) ; path -> vec | #false
+         (if port
+            (let ((data (read-blocks port null)))
+               (maybe-close-port port)
+               data)))
+
       (define (file->vector path) ; path -> vec | #false
          (let ((port (maybe-open-file path)))
-            (if port
-               (let ((data (read-blocks port null)))
-                  (maybe-close-port port)
-                  data)
-               (begin
-                  ;(print "file->vector: cannot open " path)
-                  #false))))
+            (fd->vector port)))
 
       (define (file->list path) ; path -> vec | #false
          (let ((port (maybe-open-file path)))

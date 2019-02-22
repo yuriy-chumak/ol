@@ -759,7 +759,6 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 
 #define RAWBIT                      (1 << RPOS)
-#define RAWQ(t)                     (t | (RAWBIT >> TPOS))
 #define BINARY                      (RAWBIT >> TPOS)
 
 #define make_value(type, value)        (2 | ((word)(value) << IPOS) | ((type) << TPOS))
@@ -773,8 +772,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 
 // два главных класса аргументов:
 #define is_value(x)                 (((word)(x)) & 2)
-#define is_reference(x)             (!is_value(x))
-#define is_blob(x)                  ((*(word*)x) & (BINARY << TPOS))
+#define is_reference(x)             (! is_value(x))
+#define is_blob(x)                  ((*(word*)(x)) & RAWBIT)
 
 // makes olvm reference from system pointer (just sanity check)
 //assert ((val && ~(W-1)) == 0);
@@ -784,14 +783,14 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 		(word*) reference; })
 
 // всякая всячина:
-#define header_size(x)              (((word)x) >> SPOS) // header_t(x).size
-#define header_pads(x)              (unsigned char)((((word)(x)) >> IPOS) & 7) // header_t(x).padding
+#define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size
+#define header_pads(x)              (unsigned char) ((((word)(x)) >> IPOS) & 7) // header_t(x).padding
 
-#define reference_size(x)           ((header_size(*x)))
-#define blob_size(x)                ((header_size(*x) - 1) * sizeof(word) - header_pads(*x))
-
-#define value_type(x)               (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
+#define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
 #define reference_type(x)           (value_type (*R(x)))
+
+#define reference_size(x)           ((header_size(*R(x)) - 1))
+#define blob_size(x)                ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
 
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
@@ -863,8 +862,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == header(TRATIONAL, 3))
 #define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == header(TCOMPLEX,  3))
 
-#define is_string(ob)               (is_reference(ob) &&   reftype (ob) == TSTRING)
-#define is_tuple(ob)                (is_reference(ob) &&   reftype (ob) == TTUPLE)
+#define is_string(ob)               (is_reference(ob) &&   reference_type (ob) == TSTRING)
+#define is_tuple(ob)                (is_reference(ob) &&   reference_type (ob) == TTUPLE)
 
 #define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TVPTR,     2))
 #define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TCALLABLE, 2))
@@ -1671,7 +1670,7 @@ double ol2d(word arg) {
 		return svtoi(arg);
 	}
 	assert (is_reference(arg));
-	switch (reftype(arg)) {
+	switch (reference_type(arg)) {
 	case TINTP:
 		return +ol2d_convert(arg);
 	case TINTN:
@@ -1679,7 +1678,7 @@ double ol2d(word arg) {
 	case TRATIONAL:
 		return ol2d(car(arg)) / ol2d(cdr(arg));
 	case TBYTEVECTOR:
-		switch ((header_size(*(word*)arg)-1) * sizeof(word) - header_pads(*(word*)arg)) {
+		switch (blob_size(arg)) {
 			case sizeof(float):
 				return *(float*)&car(arg);
 			case sizeof(double):
@@ -1714,7 +1713,7 @@ float ol2f(word arg) {
 		return svtoi(arg);
 	}
 	assert (is_reference(arg));
-	switch (reftype(arg)) {
+	switch (reference_type(arg)) {
 	case TINTP:
 		return +ol2f_convert(arg);
 	case TINTN:
@@ -1998,7 +1997,7 @@ apply:;
 
 	// ...
 	if (is_reference(this)) { // если это аллоцированный объект
-		word type = reftype (this);
+		word type = reference_type (this);
 		if (type == TPROC) { //hdr == header(TPROC, 0)) { // proc (58% for "yes")
 			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
 		}
@@ -2629,7 +2628,7 @@ loop:;
 	case TYPE: { // type o -> r
 		word T = A0;
 		// todo: how about RAWNESS?
-		A1 = I(is_reference(T) ? reftype(T) : value_type(T));
+		A1 = I(is_reference(T) ? reference_type(T) : value_type(T));
 		ip += 2; break;
 	}
 
@@ -2643,7 +2642,7 @@ loop:;
 		else {
 			word hdr = *T;
 			if (is_blob(T))
-				A1 = I((header_size(hdr)-1)*W - header_pads(hdr));
+				A1 = I(blob_size(T));
 			else
 				A1 = I(header_size(*(word*)T) - 1);
 		}
@@ -2685,7 +2684,7 @@ loop:;
 		case TRATIONAL:
 			// во избежание переполнений ограничим точность конверсии чисел
 			// inexact->integer
-			if (is_reference(T) && reftype(T) == TINEXACT) {
+			if (is_reference(T) && reference_type(T) == TINEXACT) {
 				double v = *(double*)&car(T);
 
 				ol->heap.fp = fp;
@@ -2744,7 +2743,7 @@ loop:;
 		if (is_reference(p) && is_fix(A1)) {
 			word hdr = *p;
 			if (is_blob(p)) {
-				word size = ((header_size(hdr) - 1) * W) - header_pads(hdr);
+				word size = blob_size(p);
 				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // blobs are indexed from 0
 					A2 = I(((unsigned char *) p)[pos+W]);
@@ -3179,7 +3178,7 @@ loop:;
 			word *buff = (word *) b;
 			if (!is_blob(buff))
 				break;
-			int length = (header_size(*buff)-1) * sizeof(word) - header_pads(*buff);
+			int length = blob_size(buff);
 			if (count > length || count < 0)
 				count = length;
 
@@ -3261,9 +3260,9 @@ loop:;
 		}
 
 		/*! \subsection stat
-		 * \brief 4: (stat port/path) -> (tuple ...)|#f
+		 * \brief (syscall **4** port/path . .) -> (tuple ...) | #false
 		 *
-		 * Get file status
+		 * Returns information about a file or port.
 		 *
 		 * \param port/path
 		 *
@@ -4158,7 +4157,7 @@ loop:;
 
 			word* symbol = (word*) b;
 			// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
-			if (!(is_value(symbol) || reftype (symbol) == TSTRING))
+			if (!(is_value(symbol) || reference_type (symbol) == TSTRING))
 				break;
 
 			word function = (word)dlsym(module, is_value(symbol)

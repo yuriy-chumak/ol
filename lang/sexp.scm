@@ -4,14 +4,16 @@
 
    (export
       sexp-parser
-      read-exps-from
+      ;read-exps-from
       list->number
-      get-sexps       ;; greedy* get-sexp
+      ;get-sexps       ;; greedy* get-sexp
       string->sexp
       vector->sexps
       list->sexps
       fd->exp-stream
       file->exp-stream
+
+      stdin->exp-stream
 
       ; io
       read
@@ -436,8 +438,8 @@
       (define (list->number lst base)
          (try-parse (get-number-in-base base) lst #false #false #false))
 
-      (define (string->sexp str fail)
-         (try-parse (get-sexp) (str-iter str) #false #false fail))
+      (define (string->sexp str fail errmsg)
+         (try-parse (get-sexp) (str-iter str) #false errmsg fail))
 
       ;; parse all contents of vector to a list of sexps, or fail with
       ;; fail-val and print error message with further info if errmsg
@@ -446,11 +448,11 @@
       (define (vector->sexps vec fail errmsg)
          ; try-parse parser data maybe-path maybe-error-msg fail-val
          (let ((lst (vector->list vec)))
-            (try-parse get-sexps lst #false errmsg #false)))
+            (try-parse get-sexps lst #false errmsg fail)))
 
       (define (list->sexps lst fail errmsg)
          ; try-parse parser data maybe-path maybe-error-msg fail-val
-         (try-parse get-sexps lst #false errmsg #false))
+         (try-parse get-sexps lst #false errmsg fail))
 
 
       ; exp streams reader
@@ -481,13 +483,48 @@
 
       ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
 
-      (define (fd->exp-stream fd prompt parse fail)
+
+      (define (fd->exp-stream fd prompt parser fail)
+         ;; (try-parse parser (vec-iter (fd->vector fd)) #false "fd parsing error" fail))
          (let loop ((old-data #null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
             (lets
                ((rchunks end?
                   (if finished?
                      (values null #true)
                      (maybe-get-input null fd (or (null? old-data) block?)
+                        (if (null? old-data) prompt "|   "))))
+                (data (push-chunks old-data rchunks)))
+               (if (null? data)
+                  (if end? null (loop data #true #false))
+                  (parser data
+                     (λ (data-tail backtrack val pos)
+                        (pair val
+                           (if (and finished? (null? data-tail))
+                              null
+                              (loop data-tail (null? data-tail) end?))))
+                     (λ (pos info)
+                        (cond
+                           (end?
+                              ; parse failed and out of data -> must be a parse error, like unterminated string
+                              (list (fail pos info data)))
+                           ((= pos (length data))
+                              ; parse error at eof and not all read -> get more data
+                              (loop data #true end?))
+                           (else
+                              (list (fail pos info data)))))
+                     0)))))
+
+      ;; (define (fd->exp-stream2 fd parser fail)
+      ;;    (try-parse parser (vec-iter (fd->vector fd)) #false "fd parsing error" fail))
+
+      ; interactive parser (with prompt)
+      (define (stdin->exp-stream prompt parse fail)
+         (let loop ((old-data #null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
+            (lets
+               ((rchunks end?
+                  (if finished?
+                     (values null #true)
+                     (maybe-get-input null stdin (or (null? old-data) block?)
                         (if (null? old-data) prompt "|   "))))
                 (data (push-chunks old-data rchunks)))
                (if (null? data)
@@ -510,16 +547,14 @@
                               (list (fail pos info data)))))
                      0)))))
 
-
    ; (parser ll ok fail pos)
    ;      -> (ok ll' fail' val pos)
    ;      -> (fail fail-pos fail-msg')
 
-      (define (file->exp-stream path prompt parse fail)
+      (define (file->exp-stream path prompt parser fail)
          (let ((fd (open-input-file path)))
             (if fd
-               (fd->exp-stream fd prompt parse fail)
-               #false)))
+               (fd->exp-stream fd "" parser fail))))
 
       (define (syntax-fail pos info lst)
          (list #f info

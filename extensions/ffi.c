@@ -795,7 +795,7 @@ long from_rational(word arg) {
 	if (is_value(pa))
 		a = svtoi(pa);
 	else {
-		switch (reftype(pa)) {
+		switch (reference_type(pa)) {
 		case TINTP:
 			a = +untoi(pa);
 			break;
@@ -812,7 +812,7 @@ long from_rational(word arg) {
 	if (is_value(pb))
 		b = svtoi(pb);
 	else {
-		switch (reftype(pb)) {
+		switch (reference_type(pb)) {
 		case TINTP:
 			b = +untoi(pb);
 			break;
@@ -830,7 +830,7 @@ int to_int(word arg) {
 	if (is_value(arg))
 		return svtoi(arg);
 
-	switch (reftype(arg)) {
+	switch (reference_type(arg)) {
 	case TINTP:
 		return (int)+from_uint(arg);
 	case TINTN:
@@ -840,7 +840,7 @@ int to_int(word arg) {
 	case TCOMPLEX:
 		return to_int(car(arg)); // return real part of value
 	default:
-		E("can't get int from %d", reftype(arg));
+		E("can't get int from %d", reference_type(arg));
 	}
 
 	return 0;
@@ -852,7 +852,7 @@ long to_long(word arg) {
 	if (is_value(arg))
 		return svtoi(arg);
 
-	switch (reftype(arg)) {
+	switch (reference_type(arg)) {
 	case TINTP:
 		return (long)+from_int(arg);
 	case TINTN:
@@ -862,7 +862,7 @@ long to_long(word arg) {
 	case TCOMPLEX:
 		return to_long(car(arg)); // return real part of value
 	default:
-		E("can't get int from %d", reftype(arg));
+		E("can't get int from %d", reference_type(arg));
 	}
 
 	return 0;
@@ -885,8 +885,8 @@ word* OL_ffi(OL* self, word* arguments)
 	word* C = (word*)car(arguments); arguments = (word*)cdr(arguments); // args
 
 	assert (is_vptr(A));
-	assert ((word)B != INULL && (is_reference(B) && reftype(B) == TPAIR));
-	assert ((word)C == INULL || (is_reference(B) && reftype(C) == TPAIR));
+	assert ((word)B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
+	assert ((word)C == INULL || (is_reference(B) && reference_type(C) == TPAIR));
 	// C[1] = return-type
 	// C[2] = argument-types
 
@@ -923,8 +923,8 @@ word* OL_ffi(OL* self, word* arguments)
 	int has_wb = 0; // has write-back in arguments (speedup)
 
 	while ((word)p != INULL) { // пока есть аргументы
-		assert (reftype(p) == TPAIR); // assert(list)
-		assert (reftype(t) == TPAIR); // assert(list)
+		assert (reference_type(p) == TPAIR); // assert(list)
+		assert (reference_type(t) == TPAIR); // assert(list)
 
 		int type = value(car(t)); // destination type
 		word arg = (word) car(p);
@@ -979,7 +979,7 @@ word* OL_ffi(OL* self, word* arguments)
 			if (is_value(arg))
 				args[i] = svtoi(arg);
 			else
-			switch (reftype(arg)) {
+			switch (reference_type(arg)) {
 			case TINTP:
 				args[i] = +from_uint(arg);
 				break;
@@ -1003,7 +1003,7 @@ word* OL_ffi(OL* self, word* arguments)
 				if (is_value(arg))
 					*(long long*)&args[i] = svtoi(arg);
 				else
-				switch (reftype(arg)) {
+				switch (reference_type(arg)) {
 				case TINTP: // source type
 					*(long long*)&args[i] = +from_ulong(arg);
 					break;
@@ -1111,7 +1111,7 @@ word* OL_ffi(OL* self, word* arguments)
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
-			switch (reftype(arg)) {
+			switch (reference_type(arg)) {
 				case TPAIR: {
 					int c = llen(arg);
 					float* f = (float*) __builtin_alloca(c * sizeof(float));
@@ -1183,7 +1183,7 @@ word* OL_ffi(OL* self, word* arguments)
 			if (is_number(arg))
 				goto tint;
 			else
-			switch (reftype(arg)) {
+			switch (reference_type(arg)) {
 			case TVPTR: // value of vptr
 				args[i] = car(arg);
 				break;
@@ -1232,9 +1232,9 @@ word* OL_ffi(OL* self, word* arguments)
 
 		// vptr should accept only vptr!
 		case TVPTR: tvptr:
-			// temporary. please, change to "if (is_reference(arg) && reftype(arg) == TVPTR)"
+			// temporary. please, change to "if (is_reference(arg) && reference_type(arg) == TVPTR)"
 			if (is_reference(arg))
-				switch (reftype(arg)) {
+				switch (reference_type(arg)) {
 				case TVPTR:
 					args[i] = car(arg);
 					break;
@@ -1253,7 +1253,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TVPTR + FFT_PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
-			if (reftype(arg) == TVPTR || reftype(arg) == TBVEC) // single vptr value or bytevector (todo: add bytevector size check)
+			if (reference_type(arg) == TVPTR || reference_type(arg) == TBVEC) // single vptr value or bytevector (todo: add bytevector size check)
 				args[i] = (word) &car(arg);
 			else {
 				int c = llen(arg);
@@ -1270,7 +1270,7 @@ word* OL_ffi(OL* self, word* arguments)
 		// todo: change to is_rawdata
 		case TSTRING:
 		tstring:
-			switch (reftype(arg)) {
+			switch (reference_type(arg)) {
 			case TBVEC:
 			case TSTRING:
 				args[i] = (word) &car(arg);
@@ -1303,7 +1303,7 @@ word* OL_ffi(OL* self, word* arguments)
 //		#ifdef _WIN32
 		case TSTRINGWIDE:
 		tstringwide:
-			switch (reftype(arg)) {
+			switch (reference_type(arg)) {
 			case TBVEC:
 			case TSTRING: {
 				word hdr = deref(arg);
@@ -1350,7 +1350,7 @@ word* OL_ffi(OL* self, word* arguments)
 		}
 /*
 		case TTUPLE:
-			switch (reftype(arg)) {
+			switch (reference_type(arg)) {
 			case TTUPLE: { // ?
 				// аллоцировать массив и сложить в него указатели на элементы кортежа
 				int size = hdrsize(*(word*)arg);
@@ -1487,8 +1487,8 @@ word* OL_ffi(OL* self, word* arguments)
 
 		i = 0;
 		while ((word)p != INULL) { // пока есть аргументы
-			assert (reftype(p) == TPAIR); // assert(list)
-			assert (reftype(t) == TPAIR); // assert(list)
+			assert (reference_type(p) == TPAIR); // assert(list)
+			assert (reference_type(t) == TPAIR); // assert(list)
 
 			int type = value(car(t));
 			word arg = (word) car(p);
@@ -1604,7 +1604,7 @@ word* OL_ffi(OL* self, word* arguments)
 				while (c--) {
 					float value = *f++;
 					word num = car(l);
-					switch (reftype(num)) {
+					switch (reference_type(num)) {
 						case TRATIONAL: {
 							// максимальная читабельность (todo: change like fto..)
 							long n = value * 10000;
@@ -1638,7 +1638,7 @@ word* OL_ffi(OL* self, word* arguments)
 				while (c--) {
 					void* value = *f++;
 					word num = car(l);
-					assert (reftype(num) == TVPTR);
+					assert (reference_type(num) == TVPTR);
 					*(void**)&car(num) = value;
 
 					l = cdr(l);
@@ -1998,7 +1998,7 @@ long long callback(OL* ol, int id, int_t* argi
 //	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, так как без потоков работаем
 //	ol->bank = 0;
 	assert (is_reference(ol->this));
-	assert (reftype (ol->this) != TTHREAD);
+	assert (reference_type(ol->this) != TTHREAD);
 
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же

@@ -921,7 +921,7 @@
       (define (repl-port env fd)
          (repl env
             (if (eq? fd stdin)
-               (λ () (fd->exp-stream stdin "$ " sexp-parser syntax-fail)) ; а это выводится если все ок
+               (stdin->exp-stream "$ " sexp-parser syntax-fail) ; а это выводится если все ок
                (fd->exp-stream fd "" sexp-parser syntax-fail))
             repl-evaluate))
 
