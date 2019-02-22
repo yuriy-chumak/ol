@@ -1669,16 +1669,33 @@
       ;; 6.6
       ; ...
 
-      ;; 6.6.2 Input
-      ; library procedure:  (read)
-      ; library procedure:  (read port)
+      ;; 6.13.2. Input
+      ; procedure:  (read)
+      ; procedure:  (read port)
       ; procedure:  (read-char)
       ; procedure:  (read-char port)
       ; procedure:  (peek-char)
       ; procedure:  (peek-char port)
-      ; procedure:  (eof-object? obj)
+      ; procedure:  (read-line)
+      ; procedure:  (read-line port)
+      ; procedure:  (eof-object? obj)  * (scheme base)
+      ; procedure:  (eof-object)       * (scheme base)
       ; procedure:  (char-ready?)
       ; procedure:  (char-ready? port)
+      ; procedure:  (read-string k)
+      ; procedure:  (read-string k port)
+      ; procedure:  (read-u8)
+      ; procedure:  (read-u8 port)
+      ; procedure:  (peek-u8)
+      ; procedure:  (peek-u8 port)
+      ; procedure:  (u8-ready?)
+      ; procedure:  (u8-ready? port)
+      ; procedure:  (read-bytevector k)
+      ; procedure:  (read-bytevector k port)
+      ; procedure:  (read-bytevector! bytevector)
+      ; procedure:  (read-bytevector! bytevector port)
+      ; procedure:  (read-bytevector! bytevector port start)
+      ; procedure:  (read-bytevector! bytevector port start end)
 
       (define (eof? o) (eq? o #eof))
 

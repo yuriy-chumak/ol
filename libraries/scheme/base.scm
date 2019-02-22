@@ -86,7 +86,7 @@
       do
       dynamic-wind
       else
-      eof-object?
+      + eof-object?
       equal?
       error
       error-object-message
@@ -145,7 +145,7 @@
       string->number
       string->utf8
       string-append
-      eof-object
+      + eof-object
       eq?
       eqv?
       error-object-irritants
