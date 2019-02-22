@@ -787,8 +787,11 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define header_size(x)              (((word)x) >> SPOS) // header_t(x).size
 #define header_pads(x)              (unsigned char)((((word)(x)) >> IPOS) & 7) // header_t(x).padding
 
-#define valuetype(x)                (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
-#define reftype(x)                  (valuetype (*R(x)))
+#define reference_size(x)           ((header_size(*x)))
+#define blob_size(x)                ((header_size(*x) - 1) * sizeof(word) - header_pads(*x))
+
+#define value_type(x)               (unsigned char)((((word)(x)) >> TPOS) & 0x3F)
+#define reference_type(x)           (value_type (*R(x)))
 
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
@@ -849,10 +852,10 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
 //#define is_const(ob)                (is_value(ob)     && thetype (ob) == TCONST)
-#define is_port(ob)                 (is_value(ob)     && valuetype (ob) == TPORT)
+#define is_port(ob)                 (is_value(ob)     && value_type (ob) == TPORT)
 
-#define is_fixp(ob)                 (is_value(ob)     && valuetype (ob) == TFIXP)
-#define is_fixn(ob)                 (is_value(ob)     && valuetype (ob) == TFIXN)
+#define is_fixp(ob)                 (is_value(ob)     && value_type (ob) == TFIXP)
+#define is_fixn(ob)                 (is_value(ob)     && value_type (ob) == TFIXN)
 #define is_fix(ob)                  (is_fixp(ob) || is_fixn(ob))
 #define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(TPAIR,     3))
 #define is_npairp(ob)               (is_reference(ob) && (*(word*) (ob)) == header(TINTP,     3))
@@ -1581,20 +1584,20 @@ struct ol_t
 
 // работа с numeric value типами
 #ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v)  assert (is_value(v) && valuetype(v) == TFIXP);
+#define UVTOI_CHECK(v)  assert (is_value(v) && value_type(v) == TFIXP);
 #endif
 
 // todo: sv2i
 // todo: add overflow checking...
 #ifndef SVTOI_CHECK
-#define SVTOI_CHECK(v) assert (is_value(v) && ((valuetype(v) & 0x1F) == TFIXP)); // makes TFIXP from TFIXP and TFIXN
+#define SVTOI_CHECK(v) assert (is_value(v) && ((value_type(v) & 0x1F) == TFIXP)); // makes TFIXP from TFIXP and TFIXN
 #endif
 // todo: rename to sv2i (signed value TO integer)
 #define svtoi(v) \
 	({  word x = (word)(v);           \
 		SVTOI_CHECK(x);               \
 		int_t y = (x >> IPOS);        \
-		valuetype(x) == TFIXN ? -y : y; \
+		value_type(x) == TFIXN ? -y : y; \
 	})
 //		(x & 0x80) ? -y : y;
 
@@ -1664,7 +1667,7 @@ double ol2d_convert(word p) {
 
 double ol2d(word arg) {
 	if (is_value(arg)) {
-		assert (valuetype(arg) == TFIXP || valuetype(arg) == TFIXN); // shorter: valuetype(arg) == TFIXP
+		assert (value_type(arg) == TFIXP || value_type(arg) == TFIXN); // shorter: value_type(arg) == TFIXP
 		return svtoi(arg);
 	}
 	assert (is_reference(arg));
@@ -1707,7 +1710,7 @@ float ol2f_convert(word p) {
 }
 float ol2f(word arg) {
 	if (is_value(arg)) {
-		assert (valuetype(arg) == TFIXP || valuetype(arg) == TFIXN); // shorter: valuetype(arg) == TFIXP
+		assert (value_type(arg) == TFIXP || value_type(arg) == TFIXN); // shorter: value_type(arg) == TFIXP
 		return svtoi(arg);
 	}
 	assert (is_reference(arg));
@@ -2364,7 +2367,7 @@ loop:;
 		CHECK(is_reference(this), this, RUN);
 
 		word hdr = *this;
-		if (valuetype (hdr) == TTHREAD) {
+		if (value_type (hdr) == TTHREAD) {
 			int pos = header_size(hdr) - 1;
 			word code = this[pos];
 			acc = pos - 3;
@@ -2626,7 +2629,7 @@ loop:;
 	case TYPE: { // type o -> r
 		word T = A0;
 		// todo: how about RAWNESS?
-		A1 = I(is_reference(T) ? reftype(T) : valuetype(T));
+		A1 = I(is_reference(T) ? reftype(T) : value_type(T));
 		ip += 2; break;
 	}
 
@@ -3059,7 +3062,7 @@ loop:;
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((valuetype (node) & (0x3C | t)) == (t|TFF))
+		if ((value_type (node) & (0x3C | t)) == (t|TFF))
 			A1 = ITRUE;
 		else
 			A1 = IFALSE;
