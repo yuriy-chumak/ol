@@ -2189,8 +2189,8 @@ long long callback(OL* ol, int id, int_t* argi
 
 	ol->heap.fp = fp;
 
-	//word* r =
 	runtime(ol);
+	word r = R[3]; // callback result
 	// возврат из колбека,
 	// R, NR могли измениться
 	R = ol->R;
@@ -2201,7 +2201,20 @@ long long callback(OL* ol, int id, int_t* argi
 
 	// if result must be float or double,
 	// do the __ASM__ with loading the result into fpu/xmm register
-
+	if (is_value (r))
+		return value(r);
+	else
+	switch (reference_type (r)) {
+		case TVPTR:
+			return r;
+		// return type override
+		case TPAIR: ;
+			//switch (value_type (car(r))) {
+			//	case TFLOAT:
+			//	case TDOUBLE:
+			//}
+	}
+	// default:
 	return 0;
 }
 
