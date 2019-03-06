@@ -10,10 +10,8 @@
       string->sexp
       vector->sexps
       list->sexps
-      fd->exp-stream
-      file->exp-stream
 
-      stdin->exp-stream
+      ;fd->sexp
 
       ; io
       read
@@ -386,21 +384,20 @@
                   (list->vector fields)))))
 
       (define (get-sexp)
-         (let-parses
-            ((skip maybe-whitespace)
-             (val
-               (get-any-of
-                  ;get-hashbang
-                  get-number         ;; more than a simple integer
-                  get-sexp-regex     ;; must be before symbols, which also may start with /
-                  get-symbol
-                  get-string
-                  get-funny-word
-                  (get-list-of (get-sexp))
-                  (get-vector-of (get-sexp))
-                  (get-quoted (get-sexp))
-                  (get-byte-if eof?)
-                  get-quoted-char)))
+         (let-parses (
+               (skip maybe-whitespace)
+               (val (get-any-of
+                     ;get-hashbang
+                     get-number         ;; more than a simple integer
+                     get-sexp-regex     ;; must be before symbols, which also may start with /
+                     get-symbol
+                     get-string
+                     get-funny-word
+                     (get-list-of (get-sexp))
+                     (get-vector-of (get-sexp))
+                     (get-quoted (get-sexp))
+                     (get-byte-if eof?)
+                     get-quoted-char)))
             val))
 
       (define (ok? x) (eq? (ref x 1) 'ok))
@@ -455,113 +452,12 @@
          (try-parse get-sexps lst #false errmsg fail))
 
 
-      ; exp streams reader
-      ;; todo: fd->exp-stream could easily keep track of file name and line number to show also those in syntax error messages
-
-      ; rchunks fd block? -> rchunks' end?
-      ;; bug: maybe-get-input should now use in-process mail queuing using return-mails interop at the end if necessary
-      (define (maybe-get-input rchunks fd block? prompt)
-         (let ((chunk (try-get-block fd 1024 #false)))
-            ;; handle received input
-            (cond
-               ((not chunk) ;; read error in port
-                  (values rchunks #true))
-               ((eq? chunk #true) ;; would block
-                  (sleep 5) ;; interact with sleeper thread to let cpu sleep
-                  (values rchunks #false))
-               ((eof? chunk) ;; normal end if input, no need to call me again
-                  (values rchunks #true))
-               (else
-                  (maybe-get-input (cons chunk rchunks) fd #false prompt)))))
-
-      (define (push-chunks data rchunks)
-         (if (null? rchunks)
-            data
-            (append data
-               (foldr append null
-                  (map vec->list (reverse rchunks))))))
-
-      ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
-
-
-      (define (fd->exp-stream fd prompt parser fail)
-         ;; (try-parse parser (vec-iter (fd->vector fd)) #false "fd parsing error" fail))
-         (let loop ((old-data #null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
-            (lets
-               ((rchunks end?
-                  (if finished?
-                     (values null #true)
-                     (maybe-get-input null fd (or (null? old-data) block?)
-                        (if (null? old-data) prompt "|   "))))
-                (data (push-chunks old-data rchunks)))
-               (if (null? data)
-                  (if end? null (loop data #true #false))
-                  (parser data
-                     (λ (data-tail backtrack val pos)
-                        (pair val
-                           (if (and finished? (null? data-tail))
-                              null
-                              (loop data-tail (null? data-tail) end?))))
-                     (λ (pos info)
-                        (cond
-                           (end?
-                              ; parse failed and out of data -> must be a parse error, like unterminated string
-                              (list (fail pos info data)))
-                           ((= pos (length data))
-                              ; parse error at eof and not all read -> get more data
-                              (loop data #true end?))
-                           (else
-                              (list (fail pos info data)))))
-                     0)))))
-
-      ;; (define (fd->exp-stream2 fd parser fail)
-      ;;    (try-parse parser (vec-iter (fd->vector fd)) #false "fd parsing error" fail))
-
-      ; interactive parser (with prompt)
-      (define (stdin->exp-stream prompt parse fail)
-         (let loop ((old-data #null) (block? #true) (finished? #false)) ; old-data not successfullt parseable (apart from epsilon)
-            (lets
-               ((rchunks end?
-                  (if finished?
-                     (values null #true)
-                     (maybe-get-input null stdin (or (null? old-data) block?)
-                        (if (null? old-data) prompt "|   "))))
-                (data (push-chunks old-data rchunks)))
-               (if (null? data)
-                  (if end? null (loop data #true #false))
-                  (parse data
-                     (λ (data-tail backtrack val pos)
-                        (pair val
-                           (if (and finished? (null? data-tail))
-                              null
-                              (loop data-tail (null? data-tail) end?))))
-                     (λ (pos info)
-                        (cond
-                           (end?
-                              ; parse failed and out of data -> must be a parse error, like unterminated string
-                              (list (fail pos info data)))
-                           ((= pos (length data))
-                              ; parse error at eof and not all read -> get more data
-                              (loop data #true end?))
-                           (else
-                              (list (fail pos info data)))))
-                     0)))))
-
-   ; (parser ll ok fail pos)
-   ;      -> (ok ll' fail' val pos)
-   ;      -> (fail fail-pos fail-msg')
-
-      (define (file->exp-stream path prompt parser fail)
-         (let ((fd (open-input-file path)))
-            (if fd
-               (fd->exp-stream fd "" parser fail))))
-
       (define (syntax-fail pos info lst)
          (list #f info
             (list ">>> " "x" " <<<")))
 
       (define (read-impl in)
-         (fd->exp-stream in "" sexp-parser syntax-fail))
+         (try-parse get-sexps in #false "error" #f))
 
       (define read
          (case-lambda
@@ -569,5 +465,8 @@
                (car (read-impl in)))
             (()
                (car (read-impl stdin)))))
+
+      (define (fd->sexp fd parser fail)
+         (try-parse parser (vec-iter (fd->vector fd)) #false "fd parsing error" fail))
 
 ))

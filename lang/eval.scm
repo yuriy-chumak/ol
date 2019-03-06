@@ -40,6 +40,7 @@
       (owl interop)
       (owl time) ;; for testing metadata
       (owl symbol)
+      (owl vector)
       (owl io)
       (owl math)
       (owl list-extra)
@@ -171,8 +172,75 @@
             (else is foo
                (fail (list "Funny result for compiler " foo)))))
 
-      (define (repl-evaluate exp env)
-         (evaluate-as exp env 'repl-eval))
+      ; ----------------------------------
+      ; exp streams reader (with prompt)
+      ;; todo: fd->exp-stream could easily keep track of file name and line number to show also those in syntax error messages
+
+      ; rchunks fd block? -> rchunks' end?
+      ;; bug: maybe-get-input should now use in-process mail queuing using return-mails interop at the end if necessary
+      (define (maybe-get-input rchunks fd block?)
+         (let ((chunk (try-get-block fd 1024 #false)))
+            ;; handle received input
+            (cond
+               ((not chunk) ;; read error in port
+                  (values rchunks #true))
+               ((eq? chunk #true) ;; would block
+                  (sleep 5) ;; interact with sleeper thread to let cpu sleep
+                  (values rchunks #false))
+               ((eof? chunk) ;; normal end if input, no need to call me again
+                  (values rchunks #true))
+               (else
+                  (maybe-get-input (cons chunk rchunks) fd #false)))))
+
+      (define (push-chunks data rchunks)
+         (if (null? rchunks)
+            data
+            (append data
+               (foldr append null
+                  (map vec->list (reverse rchunks))))))
+
+      ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
+
+      ; interactive parser (with prompt)
+      (define (fd->exp-stream fd prompt parse fail)
+         (let loop ((old-data #null) (block? #true) (finished? #false) (display-prompt #true)) ; old-data not successfullt parseable (apart from epsilon)
+            (let*((rchunks end?
+                     (if finished?
+                        (values null #true)
+                        (maybe-get-input null fd (or (null? old-data) block?))))
+                  (data (if (null? rchunks) old-data (push-chunks old-data rchunks))))
+
+               (if (and display-prompt prompt) (display prompt))
+
+               (if (null? data)
+                  (if end? null (loop data #true #false #false))
+                  (parse data
+                     (λ (data-tail backtrack val pos) ; ok
+                        (pair val
+                           (if (and finished? (null? data-tail))
+                              null
+                              (loop data-tail (null? data-tail) end? (null? data-tail)))))
+                     (λ (pos info) ; fail
+                        (cond
+                           (end?
+                              ; parse failed and out of data -> must be a parse error, like unterminated string
+                              (list (fail pos info data)))
+                           ((= pos (length data))
+                              ; parse error at eof and not all read -> get more data
+                              (loop data #true end? #false))
+                           (else
+                              (list (fail pos info data)))))
+                     0)))))
+
+   ; (parser ll ok fail pos)
+   ;      -> (ok ll' fail' val pos)
+   ;      -> (fail fail-pos fail-msg')
+
+      (define (file->exp-stream path prompt parser fail)
+         (let ((fd (open-input-file path)))
+            (if fd
+               (fd->exp-stream fd #false parser fail))))
+
 
       ;; toplevel variable to which loaded libraries are added
 
@@ -321,6 +389,9 @@
       ;; just be quiet
       (define repl-load-prompt
          (λ (val result?) null))
+
+      (define (repl-evaluate exp env)
+         (evaluate-as exp env 'repl-eval))
 
       ;; load and save path to *loaded*
 
@@ -893,8 +964,7 @@
       (define (repl env in evaluator)
          (define repl__ (lambda (env in)
                            (repl env in evaluator)))
-         (if (interactive? env) (display "> ")) ; это сообщение выводится в самом начале и при ошибках
-         (let loop ((env env) (in in) (last 'blank)) ; last - последний результат
+         (let loop ((env env) (in in) (last #false)) ; last - последний результат
             (cond
                ((null? in)
                   (repl-ok env last))
@@ -906,12 +976,11 @@
                         ((syntax-error? this)
                            (repl-fail env (cons "This makes no sense: " (cdr this))))
                         ((repl-op? this)
-                           (repl-op repl__ (cadr this) in env))
+                           (repl-op repl__ (cadr this) in env)) ; todo: add last
                         (else
                            (tuple-case (eval-repl this env repl__ evaluator)
                               ((ok result env)
                                  (prompt env result)
-                                 (if (interactive? env) (display "> "))
                                  (loop env in result))
                               ((fail reason)
                                  (repl-fail env reason)))))))
@@ -920,9 +989,7 @@
 
       (define (repl-port env fd)
          (repl env
-            (if (eq? fd stdin)
-               (stdin->exp-stream "$ " sexp-parser syntax-fail) ; а это выводится если все ок
-               (fd->exp-stream fd "" sexp-parser syntax-fail))
+            (fd->exp-stream fd (if (and (eq? fd stdin) (interactive? env)) "> ") sexp-parser syntax-fail)
             repl-evaluate))
 
       (define (repl-file env path)
