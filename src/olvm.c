@@ -4555,8 +4555,12 @@ int main(int argc, char** argv)
 		// todo: use mmap()
 		struct stat st;
 
-		if (stat(argv[1], &st) || st.st_size == 0)
-			goto file_not_found_or_empty;		// не найден файл или он пустой
+		if (stat(argv[1], &st))
+			goto can_not_stat_file;		// не найден файл или он пустой
+#ifdef NAKED_VM
+		if (st.st_size == 0)
+			goto invalid_binary_script;
+#endif
 
 		char bom;
 		int bin = open(argv[1], O_RDONLY | O_BINARY, (S_IRUSR | S_IWUSR));
@@ -4645,8 +4649,8 @@ int main(int argc, char** argv)
 // FAILS:
 	char* message;
 
-	file_not_found_or_empty:
-	message = "File not found or empty";
+	can_not_stat_file:
+	message = "File inaccessible or not found";
 	goto fail;
 
 	can_not_open_file:
@@ -4666,7 +4670,7 @@ int main(int argc, char** argv)
 
 	can_not_allocate_memory:
 	errno = ENOMEM;
-	message = "Can't alloc memory";
+	message = "Can't allocate memory";
 	goto fail;
 
 fail:;
