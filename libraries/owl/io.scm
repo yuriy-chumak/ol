@@ -196,8 +196,8 @@
       ;; how many bytes (max) to add to output buffer before flushing it to the fd
       (define output-buffer-size 4096)
 
-      (define (open-input-file path) (fopen path 0))
-      (define (open-output-file path) (fopen path #o100)) ; O_CREAT
+      (define (open-input-file path) (fopen path #o000)) ; O_RDONLY
+      (define (open-output-file path) (fopen path #o102)) ; O_CREAT|O_RDWR
 
       ;;; Reading
 

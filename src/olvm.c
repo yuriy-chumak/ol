@@ -3210,7 +3210,7 @@ loop:;
 		case SYSCALL_OPEN: {
 			CHECK(is_string(a), a, SYSCALL);
 			char* s = string (a);
-			int flags = value(b) | O_RDWR; // todo: update this flag in lisp codes
+			int flags = value(b);
 			int mode = c == IFALSE
 				? S_IRUSR | S_IWUSR
 				: value (c);
