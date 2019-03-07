@@ -25,6 +25,7 @@
       vector->file
       write-vector            ;; vec port
       port->byte-stream       ;; fd → (byte ...) | thunk
+      file->byte-stream
 
       stdin stdout stderr
       display-to        ;; port val → bool
