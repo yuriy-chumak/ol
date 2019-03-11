@@ -27,6 +27,7 @@
       LIGHTGRAY LIGHTBLUE LIGHTGREEN LIGHTCYAN LIGHTRED LIGHTMAGENTA
 
       create-window ; x y width height, создать новое окно
+      destroy-window ; window, удалить созданное окно
       show-window hide-window
       set-window-background set-window-border
       set-window-writer ; (lambda (w) ...), задать обработчик контента окна
@@ -283,6 +284,8 @@
                         (itself (put itself id (tuple x y width height writer background border visible))))
                      (mail sender id)
                      (this itself)))
+               ((destroy window)
+                  (this (del itself window)))
                ((set-window-writer id writer)
                   (let*((window (get itself id #false))
                         (itself (unless window itself
@@ -385,6 +388,9 @@
 
    (define (create-window x y width height)
       (interact 'windows (tuple 'create x y width height)))
+   (define (destroy-window window)
+      (mail 'windows (tuple 'destroy window)))
+
    (define (show-window id)
       (mail 'windows (tuple 'set-window-visibility id #true)))
    (define (hide-window id)
