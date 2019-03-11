@@ -23,6 +23,7 @@
       vkQ vkW vkE vkR vkT vkY vkU vkI vkO vkP
       vkA vkS vkD vkF vkG vkH vkJ vkK vkL
       vkZ vkX vkC vkV vkB vkN vkM
+      vkStar vkPlus vkMinus vkEqual
    gl:finish ; if renderer exists - wait for window close, else just glFinish
 
    gl:window-dimensions
@@ -720,6 +721,7 @@
 (define vkQ 24) (define vkW 25) (define vkE 26) (define vkR 27) (define vkT 28) (define vkY 29) (define vkU 30) (define vkI 31) (define vkO 32) (define vkP 33)
 (define vkA 38) (define vkS 39) (define vkD 40) (define vkF 41) (define vkG 42) (define vkH 43) (define vkJ 44)(define vkK 45) (define vkL 46)
 (define vkZ 52) (define vkX 53) (define vkC 54) (define vkV 55) (define vkB 56) (define vkN 57) (define vkM 58)
+(define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
 
 
 ))
