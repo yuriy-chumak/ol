@@ -2552,20 +2552,22 @@ loop:;
 		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
 		word value = A1;
 
-		unsigned char el = 0;  // default is 0
+		size_t el = 0;  // default is 0
 		switch (size) {
 			case 3:
-				el = (unsigned char) value(A2);
+				el = (size_t) value(A2);
 				// no break
 			case 2: {
-				size_t len = 0;
-				word list = value;
+				size_t len = el;
 				if (is_numberp(value))
 					len = untoi(value);
 				else
-				while (is_pair(list)) {
-					++len;
-					list = cdr(list);
+				if (!el) {
+					word list = value;
+					while (is_pair(list)) {
+						++len;
+						list = cdr(list);
+					}
 				}
 
 				// эта проверка необходима, так как действительно можно
@@ -2588,26 +2590,25 @@ loop:;
 				if (is_numberp(value)) {
 					unsigned char* wp = (unsigned char*)&ptr[1];
 					for (int i = 0; i < len; i++)
-						*wp++ = el;
+						*wp++ = (unsigned char) el;
 					// clear the padding bytes, don't remove!
 					// actually not required, but sometimes very useful!
 					while ((word)wp % sizeof(word))
 						*wp++ = 0;
 				}
 				else
-				if (is_pair(value) && list == INULL) { // proper list?
+				if (is_pair(value) || value == INULL) {
 					unsigned char* wp = (unsigned char*)&ptr[1];
-					while (value != INULL) {
+					while (is_pair(value) && len--) {
 						*wp++ = value(car(value)) & 255;
 						value = cdr (value);
 					}
 					// clear the padding bytes, don't remove!
-					// actually not required, but sometimes very useful!
+					while (len-- > 0) *wp++ = 0;
 					while ((word)wp % sizeof(word))
 						*wp++ = 0;
 				}
 				else
-				if (value != INULL) // we definitely accepts 0-sized blobs
 					R[ip[size]] = IFALSE;
 
 				break;
