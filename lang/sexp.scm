@@ -3,7 +3,7 @@
 (define-library (lang sexp)
 
    (export
-      sexp-parser
+      sexp-parser get-sexp
       ;read-exps-from
       list->number
       ;get-sexps       ;; greedy* get-sexp
@@ -191,7 +191,7 @@
             (sign imag)))
 
       ; https://srfi.schemers.org/srfi-77/srfi-77.html
-      ; this defines not neede enymore
+      ; this defines not needed anymore
       ;(setq |+inf.0| (vm:fp2 #xF9 1 0)) ; 1 / 0 = +infin
       ;(setq |-inf.0| (vm:fp2 #xF9 -1 0));-1 / 0 = -infin
       ;(setq |+nan.0| (vm:fp2 #xF9 0 0)) ; 0 / 0 = NaN
@@ -397,7 +397,8 @@
                      (get-vector-of (get-sexp))
                      (get-quoted (get-sexp))
                      (get-byte-if eof?)
-                     get-quoted-char)))
+                     get-quoted-char))
+               (skip maybe-whitespace))
             val))
 
       (define (ok? x) (eq? (ref x 1) 'ok))
