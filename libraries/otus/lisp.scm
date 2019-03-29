@@ -7,6 +7,7 @@
 ;      (exports (scheme r5rs iteration)) ; 4.2.4 Iteration (do)
       (exports (scheme characters))
       (exports (scheme base))
+      (exports (scheme read))
 
       (exports (owl list))
       (exports (owl rlist))
@@ -25,11 +26,7 @@
       (exports (owl regex))
       (exports (owl math-extra))
       (exports (owl math))
-      (exports (owl tuple))
-
-      read)
-
-      ;defined? ; todo: move to right library
+      (exports (owl tuple)))
 
    (import
       (scheme core)
@@ -37,6 +34,7 @@
       (scheme srfi-87)
       (scheme characters)
       (scheme base)
+      (scheme read)
 
       (owl list)
       (owl rlist)
@@ -55,7 +53,5 @@
       (owl regex)
       (owl render)
       (owl interop)
-      (owl math)
-
-      (only (lang sexp) read)
-))
+      (owl math))
+)

@@ -1,7 +1,6 @@
 ;; todo: remove implicit UTF-8 conversion from parser and move to a separate pass
 
 (define-library (lang sexp)
-
    (export
       sexp-parser get-sexp
       ;read-exps-from
@@ -11,10 +10,6 @@
       vector->sexps
       list->sexps
 
-      ;fd->sexp
-
-      ; io
-      read
       ; parser
       get-number)
 
@@ -451,23 +446,4 @@
       (define (list->sexps lst fail errmsg)
          ; try-parse parser data maybe-path maybe-error-msg fail-val
          (try-parse get-sexps lst #false errmsg fail))
-
-
-      (define (syntax-fail pos info lst)
-         (list #f info
-            (list ">>> " "x" " <<<")))
-
-      (define (read-impl in)
-         (try-parse get-sexps in #false "error" #f))
-
-      (define read
-         (case-lambda
-            ((in)
-               (car (read-impl in)))
-            (()
-               (car (read-impl stdin)))))
-
-      (define (fd->sexp fd parser fail)
-         (try-parse parser (vec-iter (fd->vector fd)) #false "fd parsing error" fail))
-
 ))
