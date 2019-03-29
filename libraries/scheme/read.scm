@@ -14,18 +14,20 @@
    ; math + simplification (hope we not use larger than max number of bytes files?)
    (define (+ n x)
       (values-apply (vm:add n x) (lambda (n carry) n)))
+   (define (<< n x)
+      (values-apply (vm:shl n x) (lambda (overflow n) n)))
 
    (define (read-impl port)
       (define server (tuple 'read))
       (fork-server server (lambda ()
-         (let this ((cache #()) (pos 0))
+         (let this ((cache #(0 0 0 0 0)) (pos 0))
             (let*((envelope (wait-mail))
                   (sender msg envelope))
                (if msg ; #false to stop the thread, else - number of character
                   (let loop ((cache cache) (pos pos))
                      (cond
                         ((eq? pos (size cache)) ; надо ли увеличить размер кеша?
-                           (let ((cache (vm:makeb type-bytevector (vector->list cache) (+ pos 128))))
+                           (let ((cache (vm:makeb type-bytevector (vector->list cache) (<< (size cache) 1))))
                               (loop cache pos)))
                         ((less? msg pos)
                            (mail sender (ref cache msg)))
