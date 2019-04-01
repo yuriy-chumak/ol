@@ -46,7 +46,6 @@
 ))
 
 (import (file xpm))
-(import (only (lang sexp) fd->exp-stream))
 
 (define (syntax-fail pos info lst)
    (print-to stderr "parser fail: " info)
@@ -56,12 +55,10 @@
 ; --------------------------
 ; skeletal-animation library
 (define filename "sample.xpm")
-(define xpm3
-   (let*((file (fopen "sample.xpm" 0))
-         (xpm3 (fd->exp-stream file "" xpm3-parser syntax-fail)))
-      ;(print "xpm3: " xpm3)
-      (fclose file)
-      (car xpm3)))
+(define xpm3 (xpm3-parser (file->list "sample.xpm")
+   (lambda (data fail value pos) value)
+   (lambda (pos reason) reason)
+   0))
 
 (define MAX 65536)  ; should be power of two
 ; size of game board (should be less than MAX)
