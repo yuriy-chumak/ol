@@ -34,7 +34,7 @@ uintptr_t get_level;
 ol_t ol;
 
 // just code simplification, some kind of magic to not manually write 'new_string' and 'make_integer':
-// we automatically will call new_string and make_integer depends on argument type
+// we automatically call new_string or make_integer dependly on argument type
 // but in general case you should do this manually. or not.
 // C preprocessor trick, some kind of "map":
 // https://github.com/swansontec/map-macro
@@ -73,16 +73,20 @@ ol_t ol;
 #define _Q(x) \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),   new_string(&ol, (char*)(uintptr_t)x), \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),    new_string(&ol, (char*)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), int),      make_integer((int)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned), make_integer((int)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed char),    make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned char),  make_integer((unsigned)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed short),   make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned short), make_integer((unsigned)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed int),     make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned int),   make_integer((unsigned)(uintptr_t)x), \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
-	IFALSE))))))
+	IFALSE))))))))))
 
 #define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
 
 
-//Drawing funciton
+// Drawing functions
 void drawBackground()
 {
 	glBindTexture(GL_TEXTURE_2D, background);
@@ -131,7 +135,7 @@ void draw(void)
 
 	glBindTexture(GL_TEXTURE_2D, blinky);
 	{
-		word ps = eval("blinky");                                assert(is_pair(ps));
+		word ps = eval("(get-blinky)");                        assert(is_pair(ps));
 		int x = ol2int(car(ps));
 		int y = ol2int(cdr(ps)) + 3;
 		float emoji = rand() % 4 / 4.0;
@@ -148,7 +152,9 @@ void draw(void)
 	gettimeofday(&now, NULL);
 
 	if (now.tv_sec != timestamp.tv_sec) {
-		printf("fps: %d\n", frames);
+		int total = ol2int(eval("(ref (syscall 1117 #f #f #f) 3)"));
+		int used = ol2int(eval("(ref (syscall 1117 #f #f #f) 1)"));
+		printf("fps: %d, memory used: %d/%d (%d%%)\n", frames, total, used, (used * 100) / total);
 		timestamp = now;
 		frames = 0;
 	}

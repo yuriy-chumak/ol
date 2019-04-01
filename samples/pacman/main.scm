@@ -4,7 +4,8 @@
    (export
       points
       get-point eat-the-point get-level
-      blinky A* blinky-move)
+      set-blinky get-blinky
+      A* blinky-move)
 (begin
 
 (define points (tuple 
@@ -80,23 +81,35 @@
 (define WIDTH (size (ref points 1)))
 (define HEIGHT (size points))
 
-(define blinky (cons 13 18))
-(define (set-blinky! x y)
-   (set-car! blinky x)
-   (set-cdr! blinky y))
+;(define blinky 'blinky)
+(fork-server 'blinky (lambda ()
+   (let this ((x 13) (y 18))
+      (let*((envelope (wait-mail))
+            (sender msg envelope))
+         (tuple-case msg
+            ((set x y)
+               (this x y))
+            ((get)
+               (mail sender (cons x y))
+               (this x y)))))))
+
+(define (set-blinky x y)
+   (mail 'blinky (tuple 'set x y)))
+(define (get-blinky)
+   (interact 'blinky (tuple 'get)))
 
 (define (A* to-x to-y)
-(let ((xy blinky)
+(let*((xy (get-blinky))
       (hash (lambda (xy)
          (+ (<< (car xy) 8) (cdr xy)))) ; хеш клетки для ускорения работы
       (floor? (lambda (x y) (eq? (get-level x y) 1))) ; можно ли в эту клетку зайти
-      (x (car blinky))
-      (y (cdr blinky)))
+      (x (car xy))
+      (y (cdr xy)))
 
-      ; отправить назад результат работы алгоритма
-      (if (and (= x to-x) (= y to-y)) ; уже пришли
-         (cons 0 0) ; вернуть
-         (let step1 ((n 999); количество шагов поиска
+      ; отправить назад результат работы алгоритма:
+      (if (and (= x to-x) (= y to-y)) ; уже пришли?
+         (cons 0 0) ; вернуть "никуда идти не надо"
+         (let step1 ((n 99) ; максимальное количество шагов поиска
                      (c-list-set #empty)
                      (o-list-set (put #empty (hash xy)  (tuple xy #f  0 0 0))))
             (if (eq? o-list-set #empty)
@@ -107,7 +120,7 @@
                                     (if (< (ref value 5) (car s))
                                        (cons (ref value 5) value)
                                        s))
-                           (cons 9999 #f) o-list-set))
+                           (cons 99999 #f) o-list-set))
                      ;(_ (print "next: " f))
                      (xy (ref (cdr f) 1)) ; положение клетки с минимальным весом '(x.y)
                      ; перенесем ее из открытого в закрытый список
@@ -118,22 +131,24 @@
                         (and
                            (eq? (car xy) to-x)
                            (eq? (cdr xy) to-y)))
-                     ; дошли
+                     ; дошли:
                      (let rev ((xy xy))
                         ; обратный проход по найденному пути, вернуть только первый шаг
                         ;  в сторону предполагаемого маршрута
-                        (let*((parent (ref (get c-list-set (hash xy) #f) 2)) ; todo: переделать
+                        (let*((parent (ref (get c-list-set (hash xy) #f) 2)) ; todo: переделать (?)
                               (parent-of-parent (ref (get c-list-set (hash parent) #f) 2)))
-                           (if parent-of-parent (rev parent)
+                           (if parent-of-parent
+                              (rev parent)
                               (tuple
                                  (- (car xy) (car parent))
                                  (- (cdr xy) (cdr parent))
                                  ))))
 
-                     ; 5: Проверяем все соседние клетки.
-                     ;  Игнорируем те, которые находятся в закрытом списке или непроходимы
+                     ; пока не дошли:
+                     ; проверяем все соседние клетки.
+                     ;  игнорируем те, которые находятся в закрытом списке или непроходимы
                      ;  (поверхность со стенами, водой), остальные добавляем в открытый список,
-                     ;  если они там еще не находятся. Делаем выбранную клетку "родительской"
+                     ;  если они там еще не находятся. делаем выбранную клетку "родительской"
                      ;  для всех этих клеток.
                      (let*((x (car xy))
                            (y (cdr xy))
@@ -145,21 +160,26 @@
                                                    ; H calculated by "Manhattan method"
                                                    ; http://www2.in.tu-clausthal.de/~zach/teaching/info_literatur/A_Star/A_star_tutorial/heuristics.htm.html
                                                    (H (* (+ (abs (- (car v) to-x))
-                                                         (abs (- (cdr v) to-y))) 2))
-                                                   ; 6: Если соседняя клетка уже находится в открытом списке
+                                                            (abs (- (cdr v) to-y)))
+                                                         2))
+                                                   ; соседняя клетка уже находится в открытом списке?
                                                    (got (get o-list-set (hash v) #f)))
 
-                                                ; если эта клетка уже в списке
+                                                ; если эта клетка уже в списке..
                                                 (if got
-                                                   (if (< G (ref got 3)) ; но наш путь короче
+                                                   (if (< G (ref got 3)) ; ..но наш путь короче
                                                       (put n (hash v)  (tuple v xy  G H (+ G H)))
-                                                      ;else ничего не делаем
+                                                      ;иначе ничего не делаем
                                                       n)
-                                                   ; else
+                                                   ; а если не в списке - добавим
                                                    (put n (hash v)  (tuple v xy  G H (+ G H)))))
                                              n))
-                                          o-list-set (list
+                                          o-list-set (list ; куда (теоретически) можно двигаться
                                                          (cons x (- y 1))
+                                                         ;(cons (- x 1) (- y 1)) ;; а это если хотим двгаться под углом
+                                                         ;(cons (+ x 1) (+ y 1))
+                                                         ;(cons (- x 1) (+ y 1))
+                                                         ;(cons (+ x 1) (- y 1))
                                                          (cons x (+ y 1))
                                                          (cons (- x 1) y)
                                                          (cons (+ x 1) y)))))
@@ -167,8 +187,9 @@
 
 
 (define (blinky-move x y)
-   (let ((way (A* x y)))
-      (set-blinky! (+ (car blinky) (ref way 1)) (+ (cdr blinky) (ref way 2)))))
+   (let ((way (A* x y))
+         (blinky (get-blinky)))
+      (set-blinky (+ (car blinky) (ref way 1)) (+ (cdr blinky) (ref way 2)))))
 
 (define (eat-the-point x y)
    (set-ref! (ref points (+ 1 y)) (+ 1 x) 0))

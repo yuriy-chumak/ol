@@ -2002,13 +2002,13 @@ long long callback(OL* ol, int id, int_t* argi
 
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же
-	R[NR + 0] = R[0]; // mcp?
+//	R[NR + 0] = R[0]; // не надо, mcp
 //	R[NR + 1] = R[1]; // не надо
 //	R[NR + 2] = R[2]; // не надо
-	R[NR + 3] = R[3]; // continuation
+	R[NR + 3] = R[3]; // continuation/result
 
 	// вызовем колбек:
-	R[0] = IFALSE;  // отключим mcp, мы пока не работаем с потоками из callable функций
+//	R[0] = IFALSE;  // не надо, продолжаем использовать mcp
 	R[3] = IRETURN; // команда выхода из колбека
 	ol->arity = 1;
 
@@ -2197,10 +2197,8 @@ long long callback(OL* ol, int id, int_t* argi
 	R[3] = R[NR + 3];
 //	R[2] = R[NR + 2]; // не надо
 //	R[1] = R[NR + 1]; // не надо
-	R[0] = R[NR + 0]; // ??? может лучше IFALSE, ведь прежний R0 уже мог стать недействительным?
+//	R[0] = R[NR + 0]; // не надо, продолжаем использовать MCP
 
-	// if result must be float or double,
-	// do the __ASM__ with loading the result into fpu/xmm register
 	if (is_value (r))
 		return value(r);
 	else
@@ -2209,6 +2207,8 @@ long long callback(OL* ol, int id, int_t* argi
 			return r;
 		// return type override
 		case TPAIR: ;
+			// if expected float or double result,
+			// do the __ASM__ with loading the result into fpu/xmm register
 			//switch (value_type (car(r))) {
 			//	case TFLOAT:
 			//	case TDOUBLE:
