@@ -1959,7 +1959,7 @@
 
       ;; special things exposed by the vm
       (define (set-memory-limit n) (syscall 12 n #f #f))
-      (define (get-word-size)      (syscall 1008 #false #false #false))
+      ; (define (get-word-size)      (syscall 1008 #false #false #false)) removed, please use ffi
       (define (get-memory-limit)   (syscall 12 #f #f #f))
 )
 ; ---------------------------
@@ -2089,7 +2089,7 @@
       exec yield
       halt wait
       set-ticker-value
-      set-memory-limit get-word-size get-memory-limit
+      set-memory-limit get-memory-limit
 
       set-car! set-cdr!
 ))
