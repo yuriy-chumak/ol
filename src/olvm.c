@@ -4064,10 +4064,6 @@ loop:;
 			ip = (unsigned char*)this + dp;
 			break;
 		}
-		case 1001: // is raw object? DEPRECATED
-			if (is_reference(a) && is_blob(a))
-				result = (word*)ITRUE;
-			break;
 		case 1002: // return userdata
 			result = new_vptr(ol->userdata);
 			break;
