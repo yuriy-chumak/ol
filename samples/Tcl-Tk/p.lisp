@@ -12,7 +12,8 @@
 
 ; let's declare function
 (define calculate (vm:pin (cons
-   (cons type-vptr (list type-vptr type-int+ (list type-string type-string)))
+   ;     userdata  tcl       argc       argv in reverse order
+   (list type-vptr type-vptr type-int+  (list type-string type-string))
    (lambda (userdata tcl argc argv)
       (let ((argv (reverse argv)))
          (print "argc: " argc)
