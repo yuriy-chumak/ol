@@ -26,6 +26,7 @@ struct timeval timestamp = {0, 0}; // for fps
 struct timeval blinkytimestamp = {0, 0}; // for fps
 unsigned frames = 0;
 // unsigned ticks = 0; // todo: up every 100 ms
+unsigned rotation = 0;
 
 uintptr_t eat_the_point;
 uintptr_t get_level;
@@ -107,6 +108,18 @@ void drawPoint(int x, int y)
 	glTexCoord2d(0, 1); glVertex2f(x+1, y);
 	glEnd();
 }
+void drawPacman(int x, int y)
+{
+	static double coords[] = { 1, 1, 1, 0, 0, 0, 0, 1 };
+	y += 3;
+	int r = rotation * 2; int m = sizeof(coords) / sizeof(coords[0]);
+	glBegin(GL_QUADS);
+	glTexCoord2dv(&coords[r]); glVertex2f(x, y);   r = (r + 2) % m;
+	glTexCoord2dv(&coords[r]); glVertex2f(x, y+1);   r = (r + 2) % m;
+	glTexCoord2dv(&coords[r]); glVertex2f(x+1, y+1);   r = (r + 2) % m;
+	glTexCoord2dv(&coords[r]); glVertex2f(x+1, y);   r = (r + 2) % m;
+	glEnd();
+}
 
 void draw(void)
 {
@@ -121,7 +134,7 @@ void draw(void)
 	drawBackground();
 
 	glBindTexture(GL_TEXTURE_2D, point);
-	word points = eval("points");                                assert(is_reference(points));
+	word points = eval("points");                              assert(is_reference(points));
 	for (int y = 0; y < 31; y++) {
 		uintptr_t line = ref(points, y);
 		for (int x = 0; x < 28; x++) {
@@ -131,7 +144,7 @@ void draw(void)
 	}
 
 	glBindTexture(GL_TEXTURE_2D, pacman);
-	drawPoint(mainx, mainy);
+	drawPacman(mainx, mainy);
 
 	glBindTexture(GL_TEXTURE_2D, blinky);
 	{
@@ -206,16 +219,16 @@ void keys(int key, int x, int y) {
 	int dx = 0, dy = 0;
 	switch (key) {
 	case GLUT_KEY_UP:
-		dy = -1;
+		dy = -1; rotation = 3;
 		break;
 	case GLUT_KEY_DOWN:
-		dy = +1;
+		dy = +1; rotation = 1;
 		break;
 	case GLUT_KEY_LEFT:
-		dx = -1;
+		dx = -1; rotation = 2;
 		break;
 	case GLUT_KEY_RIGHT:
-		dx = +1;
+		dx = +1; rotation = 0;
 		break;
 	default:
 		return;
