@@ -851,8 +851,9 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
 //#define is_const(ob)                (is_value(ob)     && thetype (ob) == TCONST)
-#define is_port(ob)                 (is_value(ob)     && value_type (ob) == TPORT)
-
+#define is_port(ob)                 (\
+									(is_value(ob)     && value_type (ob) == TPORT) || \
+									(is_reference(ob) && reference_type (ob) == TPORT))
 #define is_fixp(ob)                 (is_value(ob)     && value_type (ob) == TFIXP)
 #define is_fixn(ob)                 (is_value(ob)     && value_type (ob) == TFIXN)
 #define is_fix(ob)                  (is_fixp(ob) || is_fixn(ob))
@@ -1024,7 +1025,15 @@ word*p = NEW (size);\
 //	either create the object or open an existing object to obtain a kernel
 //	object handle. The per-process limit on kernel handles is 2^24.
 #define make_port(a) ({ word p = (word)a; assert (((word)p << IPOS) >> IPOS == (word)p); make_value(TPORT, p); })
-#define port(o)      ({ word p = (word)o; assert (is_port(p)); value(p); })
+#define port(o)      ({ word p = (word)o; is_value(p) ? value(p) : car(p); })
+
+#define new_port(a1) ({\
+	word data1 = (word) (a1);\
+	/* точка следования */ \
+word*p = new (TPORT, 1, 0);\
+	p[1] = data1;\
+	/*return*/ p;\
+})
 
 // -= new_pair =----------------------------------------
 
@@ -3211,22 +3220,28 @@ loop:;
 		case SYSCALL_OPEN: {
 			CHECK(is_string(a), a, SYSCALL);
 			char* s = string (a);
-			int flags = value(b);
+			int flags = value(b); // 0 - read, 2 - write
 			int mode = c == IFALSE
 				? S_IRUSR | S_IWUSR
 				: value (c);
 
 			int file = ol->open(s, flags, mode, ol);
-			if (file < 0)
+			if (file == -1)
 				break;
 
-			struct stat sb;
-			if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
-				close(file);
-				break;
+			// regular file?
+			if ((unsigned)file <= VMAX) {
+				struct stat sb;
+				if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
+					close(file);
+					break;
+				}
+
+				set_blocking(file, 0);
+				result = (word*) make_port(file);
 			}
-			set_blocking(file, 0);
-			result = (word*)make_port(file);
+			else
+				result = (word*) new_port(file);
 
 			break;
 		}
