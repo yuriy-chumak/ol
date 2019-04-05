@@ -86,7 +86,7 @@ extern unsigned char _binary_repl_start[];
  *
  * Allocates new memory buffer in olvm heap, invokes GC
  * if required
- * 
+ *
  * \param ol embed ol instance
  * \param type buffer type
  *        (this list of types you can find in "scheme/core.scm")

@@ -23,12 +23,12 @@ ANDROID_SDK_ROOT=/opt/android/sdk
 # copy this script to the root of your Android project and run
 
 [ x$ANDROID_SDK_ROOT == x ] && {
-    printf '\e[31mANDROID_SDK_ROOT not set\e[30m\n'
+   printf '\e[31mANDROID_SDK_ROOT not set\e[30m\n'
    exit 1
 }
 
 [ ! -d $ANDROID_SDK_ROOT ] && {
-    printf "\e[31mInvalid ANDROID_SDK_ROOT ---> $ANDROID_SDK_ROOT\e[30m\n"
+   printf "\e[31mInvalid ANDROID_SDK_ROOT ---> $ANDROID_SDK_ROOT\e[30m\n"
    exit 1
 }
 
@@ -69,7 +69,7 @@ test -e "classes.dex" || exit 1
 $_AAPT package -f -M AndroidManifest.xml -S res -I $_ANDROID_CP -F ${_APK_BASENAME}.apk.unaligned
 
 $_AAPT add ${_APK_BASENAME}.apk.unaligned classes.dex
-#$_AAPT add ${_APK_BASENAME}.apk.unaligned `find assets/ -type f`
+$_AAPT add ${_APK_BASENAME}.apk.unaligned `find assets/ -type f`
 $_AAPT add ${_APK_BASENAME}.apk.unaligned `find lib/ -type f`
 
 # creating debug keystore:

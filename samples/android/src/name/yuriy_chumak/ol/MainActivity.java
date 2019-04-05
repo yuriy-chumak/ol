@@ -14,20 +14,69 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.view.MotionEvent;
 import android.view.View.OnTouchListener;
+import android.content.res.AssetManager;
 
-public class MainActivity extends Activity implements SurfaceHolder.Callback
+import android.content.Context;
+
+import android.opengl.GLSurfaceView;
+import javax.microedition.khronos.opengles.GL10;
+import javax.microedition.khronos.egl.EGLConfig;
+import android.opengl.GLES20;
+
+public class MainActivity extends Activity // implements SurfaceHolder.Callback
 {
-	private static String TAG = "Otus Lisp";
+	private static String TAG = "ol";
+    private GLSurfaceView glView;
+
+	class MyGLSurfaceView extends GLSurfaceView {
+
+		private final MyGLRenderer renderer;
+
+		public MyGLSurfaceView(Context context){
+			super(context);
+
+			// Create an OpenGL ES 2.0 context
+			setEGLContextClientVersion(2);
+
+			renderer = new MyGLRenderer();
+
+			// Set the Renderer for drawing on the GLSurfaceView
+			setRenderer(renderer);
+			setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+		}
+	}
+	public class MyGLRenderer implements GLSurfaceView.Renderer {
+		public void onSurfaceCreated(GL10 unused, EGLConfig config) {
+			// Set the background frame color
+			GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+			//eval("(print (glGetString GL_VERSION))");
+		}
+
+		public void onDrawFrame(GL10 unused) {
+			// Redraw background color
+			// GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+			eval("(renderer)");
+		}
+
+		public void onSurfaceChanged(GL10 unused, int width, int height) {
+			GLES20.glViewport(0, 0, width, height);
+		}
+	}
+
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.main);
+		glView = new MyGLSurfaceView(this);
+		//setContentView(R.layout.main); // glView
+		setContentView(glView);
 
-		SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceview);
-		surfaceView.getHolder().addCallback(this);
-		surfaceView.setOnTouchListener(new OnTouchListener() {
+		// // surfaceView.getHolder().addCallback(this);
+		//SurfaceView surfaceView = (SurfaceView)findViewById(R.id.surfaceview);
+		glView.setOnTouchListener(new OnTouchListener() {
 			public boolean onTouch(View view, MotionEvent event) {
 				if(event.getAction() == MotionEvent.ACTION_DOWN) {
 					float x = event.getX();
@@ -38,7 +87,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 			}
 		});
 
-		String apkLocation;
 		ApplicationInfo appInfo = null;
 		PackageManager packMgmr = this.getPackageManager();
 		try {
@@ -48,18 +96,21 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 			throw new RuntimeException("Unable to locate APK...");
 		}
 
-		apkLocation = appInfo.sourceDir;
+		String apkLocation = appInfo.sourceDir;
+        AssetManager assetManager = getApplication().getAssets();
+
 		nativeSetApkLocation(apkLocation);
 		nativeSetOlHome("/sdcard/WnD");
-		nativeSetExecutable("/sdcard/WnD/reference.scm");
+        nativeSetAssetManager(assetManager);
 	}
-
 
 
 	@Override
 	protected void onStart() {
 		super.onStart();
 		nativeOnStart();
+
+        load("reference.scm");
 	}
 
 	@Override
@@ -81,13 +132,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 	}
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-		nativeSetSurface(holder.getSurface());
+		//nativeSetSurface(holder.getSurface());
 	}
 	public void surfaceCreated(SurfaceHolder holder) {
 	}
 
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		nativeSetSurface(null);
+		//nativeSetSurface(null);
 	}
 
 	public static native void nativeOnStart();
@@ -95,13 +146,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 	public static native void nativeOnPause();
 	public static native void nativeOnStop();
 
-	public static native void nativeSetSurface(Surface surface);
 	public static native void nativeSetApkLocation(String location);
 	public static native void nativeSetOlHome(String home);
-	public static native void nativeSetExecutable(String home);
+    public static native void nativeSetAssetManager(AssetManager am);
 	public static native void nativePostEvent(int button, int x, int y);
 
+	public static native Object eval(Object... array);
+    public static void load(String filename) {
+        eval(",load " + "\"" + filename + "\"");
+    }
+
 	static {
+		System.loadLibrary("z");
 		System.loadLibrary("freetype");
 		System.loadLibrary("ol");
 	}

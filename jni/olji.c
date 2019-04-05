@@ -1,92 +1,122 @@
 // Otus Lisp Java (Android) Interface
+#include <jni.h>
+#include <android/log.h>
+#include <android/asset_manager_jni.h>
 
 #include <stdint.h>
-#include <stdlib.h>
-#include <jni.h>
-#include <android/native_window.h> // requires ndk r5 or newer
-#include <android/native_window_jni.h> // requires ndk r5 or newer
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <strings.h>
-#include <android/log.h>
-#include <pthread.h>
 
-#include <olvm.h>
+#include <../extensions/embed.h>
+
 #include <fcntl.h>
-
 #include <unistd.h>
 
-#include <EGL/eglplatform.h>
 // #include <zip.h>
-
 extern unsigned char _binary_repl_start[]; // otus lisp binary (please, build and link repl.o)
 
-#define LOGD(...) //__android_log_print(ANDROID_LOG_DEBUG, "ol", __VA_ARGS__)
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "ol", __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ol", __VA_ARGS__)
 
-struct vm_t {
-	struct ol_t* ol;
-	pthread_t thread;
+// ------------------------------------------------------------------------
+// olvm:
+ol_t ol;
+// just code simplification, some kind of magic to not manually write 'new_string' and 'make_integer':
+// we automatically call new_string or make_integer dependly on argument type
+// but in general case you should do this manually. or not.
+// C preprocessor trick, some kind of "map":
+// https://github.com/swansontec/map-macro
+///*
+#define EVAL0(...) __VA_ARGS__
+#define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
+#define EVAL2(...) EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
+#define EVAL3(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
+#define EVAL4(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
+#define EVAL(...)  EVAL4(EVAL4(EVAL4(__VA_ARGS__)))
 
-	pthread_mutex_t mutex;
-	pthread_cond_t barrier;
-	int suspended;
-	int please_stop;
-} vm;
+#define MAP_END(...)
+#define MAP_OUT
+#define MAP_COMMA ,
 
-struct event_t {
-	int button;
-	int x;
-	int y;
-} events[128];
-int event_head = 0;
-int event_tail = 0;
+#define MAP_GET_END2() 0, MAP_END
+#define MAP_GET_END1(...) MAP_GET_END2
+#define MAP_GET_END(...) MAP_GET_END1
+#define MAP_NEXT0(test, next, ...) next MAP_OUT
+#define MAP_NEXT1(test, next) MAP_NEXT0(test, next, 0)
+#define MAP_NEXT(test, next)  MAP_NEXT1(MAP_GET_END test, next)
 
-void push_event(int button, int x, int y)
+#define MAP0(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP1)(f, peek, __VA_ARGS__)
+#define MAP1(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP0)(f, peek, __VA_ARGS__)
+
+#define MAP_LIST_NEXT1(test, next) MAP_NEXT0(test, MAP_COMMA next, 0)
+#define MAP_LIST_NEXT(test, next)  MAP_LIST_NEXT1(MAP_GET_END test, next)
+
+#define MAP_LIST0(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST1)(f, peek, __VA_ARGS__)
+#define MAP_LIST1(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST0)(f, peek, __VA_ARGS__)
+
+#define MAP(f, ...) EVAL(MAP1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+#define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+//*/  end of C preprocessor trick
+
+#define _Q(x) \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),   new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),    new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed char),    make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned char),  make_integer((unsigned)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed short),   make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned short), make_integer((unsigned)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed int),     make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned int),   make_integer((unsigned)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
+	IFALSE))))))))))
+
+#define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
+// ------------------------------------------------------------------------
+
+char* apk_location = NULL;
+char* ol_home = NULL;
+static jobject java_asset_manager = NULL;
+static AAssetManager* asset_manager = NULL;
+
+int assets_open(const char *filename, int flags, int mode, void* userdata)
 {
-	int tail = event_tail;
-	events[tail].button = button;
-	events[tail].x = x;
-	events[tail].y = y;
-
-	event_tail = (tail+1) % (sizeof(events)/sizeof(events[0]));
-}
-
-void idler(void* userdata)
-{
-	// this is safe to call pthread mutex at this point
-	// because this point executes not so often
-	//sched_yield();
-
-	if (vm.please_stop > 0)
-		pthread_exit(0);
-
-	// while (__sync_sub_and_fetch(&vm.suspended, 0) > 0) {
-	// 	pthread_mutex_lock(&vm.mutex);
-	// 	pthread_cond_wait(&vm.barrier, &vm.mutex);
-	// 	pthread_mutex_unlock(&vm.mutex);
-	// }
-}
-
-//pthread_mutex_t _mutex;
-
-char* apk_location = 0;
-char* ol_home = 0;
-char* executable = 0;
-
-// struct zip_t *apk;
-int openx(const char *filename, int flags, int mode, void* userdata)
-{
-	LOGD("open0: %s", filename);
-	//int error = zip_entry_open(apk, filename);
+	//LOGD("open0: %s", filename);
 	int file = open(filename, flags, mode);
-	LOGI("open0: %s(%d)", filename, file);
+	//LOGI("open0: %s(%d)", filename, file);
+	if (file == -1) {
+		if (filename[0] == '.' && filename[1] == '/')
+			filename += 2;
+		AAsset* asset = AAssetManager_open(asset_manager, filename, 0);
+		//LOGI("open0: %s(%x)", filename, asset);
+		if (asset) {
+			file = asset;
+		}
+	}
 	return file;
+}
+int assets_close(int fd, void* userdata)
+{
+	int done = close(fd);
+	if (done != -1)
+		return done;
+ 	AAsset_close((AAsset*)fd);
+	return 0;
+}
+
+ssize_t assets_read(int fd, void *buf, size_t count, void* userdata)
+{
+	int done = read(fd, buf, count);
+	if (done != -1)
+		return done;
+	return AAsset_read((AAsset*)fd, buf, count);
 }
 
 // redirect stdout/stderr to logcat
-ssize_t logx(int fd, void *buf, size_t count, void* userdata)
+ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
 {
 	if (fd == 1) { // stdout
 		LOGI("%.*s", count, (char*)buf);
@@ -99,69 +129,13 @@ ssize_t logx(int fd, void *buf, size_t count, void* userdata)
 	return write(fd, buf, count);
 }
 
-// ---------------------------------------
-void* threadStartCallback(void* userdata)
-{
-	unsigned char* bootstrap = _binary_repl_start;
-
-	pthread_mutex_init(&vm.mutex, 0);
-	pthread_cond_init(&vm.barrier, 0);
-
-	if (ol_home)
-		setenv("OL_HOME", ol_home, 1);
-
-	struct ol_t* ol;
-
-	ol = OL_new(bootstrap);
-	OL_set_write(ol, logx); // redirects to logcat
-	OL_set_open(ol, openx); // todo: add reading zip archive
-
-	OL_set_idle(ol, idler); // todo: add reading zip archive
-
-	vm.ol = ol;
-	vm.suspended = 1; // initially suspended
-	vm.please_stop = 0;
-
-	char* args[] = { "#", executable };
-	uintptr_t r = OL_run(ol, sizeof(args)/sizeof(args[0]), args);
-
-	pthread_cond_destroy(&vm.barrier);
-	pthread_mutex_destroy(&vm.mutex);
-
-	if (apk_location) free(apk_location);
-	if (ol_home) free(ol_home);
-	if (executable) free(executable);
-	pthread_exit(0);
-}
-
-// ---------------------------------------
-// support functions:
-static ANativeWindow *window = 0;
-
-JNIEXPORT EGLNativeWindowType androidGetWindow()
-{
-	LOGI("window = %p", window);
-	return window;
-}
-
-JNIEXPORT struct event_t* androidPopEvent()
-{
-	if (event_head == event_tail)
-		return NULL;
-	int head = event_head;
-	LOGI("androidPopEvent(): has event %d,%d", events[head].x, events[head].y);
-	event_head = (head+1) % (sizeof(events)/sizeof(events[0]));
-	return &events[head];
-}
-
 #include <ft2build.h>
 #include <freetype/freetype.h>
 // ---------------------------------------
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnStart(JNIEnv* jenv, jobject obj)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnStart(JNIEnv* jenv, jobject class)
 {
 	LOGI("nativeOnStart");
-	//pthread_mutex_init(&_mutex, 0);
 
 	LOGI("sizeof(FT_FaceRec): %d", sizeof(FT_FaceRec));
 	LOGI("offsetof(FT_FaceRec, glyph): %d", offsetof(FT_FaceRec, glyph));
@@ -177,70 +151,57 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnStart(JNI
 	LOGI("offsetof(FT_Bitmap, buffer): %d", offsetof(FT_Bitmap, buffer));
 
 	// let's start our application
-	pthread_create(&vm.thread, 0, threadStartCallback, 0);
+	embed_new(&ol); // ol creation
+
+	OL_set_open(ol.vm, assets_open);
+	OL_set_close(ol.vm, assets_close);
+	OL_set_read(ol.vm, assets_read);
+	OL_set_write(ol.vm, assets_write); // redirects stdout/atderr to logcat
 	return;
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnResume(JNIEnv* jenv, jobject obj)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnResume(JNIEnv* jenv, jobject jobj)
 {
 	LOGI("nativeOnResume");
-
-	// resume:
-	if (__sync_sub_and_fetch(&vm.suspended, 1) == 0) {
-		pthread_mutex_lock(&vm.mutex);
-		pthread_cond_signal(&vm.barrier);
-		pthread_mutex_unlock(&vm.mutex);
-	}
-
+	// не обрабатываем, так как не нужен
 	return;
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnPause(JNIEnv* jenv, jobject obj)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnPause(JNIEnv* jenv, jobject jobj)
 {
 	LOGI("nativeOnPause");
-
-	// // pause:
-	__sync_add_and_fetch(&vm.suspended, 1);
+	// не обрабатываем, так как не нужен
 	return;
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnStop(JNIEnv* jenv, jobject obj)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnStop(JNIEnv* jenv, jobject jobj)
 {
 	LOGI("nativeOnStop");
-	vm.please_stop = 1;
 
-	pthread_kill(vm.thread, SIGKILL); // stop the thread
-	pthread_join(vm.thread, 0);
-	return;
-}
-
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetSurface(JNIEnv* jenv, jobject obj, jobject surface)
-{
-	if (surface != 0) {
-		window = ANativeWindow_fromSurface(jenv, surface);
-		LOGI("Received new window %p", window);
-	} else {
-		LOGI("Releasing window %p", window);
-		ANativeWindow_release(window);
-	}
+	// embed_delete(&ol);
+    if (java_asset_manager) {
+        (*jenv)->DeleteGlobalRef(jenv, java_asset_manager);
+        java_asset_manager = NULL;
+    }
 
 	return;
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetApkLocation(JNIEnv* jenv, jobject obj, jstring apkLocation)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetApkLocation(JNIEnv* jenv, jobject jobj, jstring apkLocation)
 {
 	const char *string = (*jenv)->GetStringUTFChars(jenv, apkLocation, 0);
 	LOGI("nativeSetApkLocation: %s", string);
 	apk_location = strdup(string);
 	(*jenv)->ReleaseStringUTFChars(jenv, apkLocation, string);
-
-	// int errorp = 0;
-	// apk = zip_open(apk_location, 0, 'r');
-	// if (errorp)
-	// 	LOGE("Can't open apk (%s) file to read", apk_location);
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetOlHome(JNIEnv* jenv, jobject obj, jstring olHome)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetAssetManager(JNIEnv* jenv, jobject jobj, jobject assetManager)
+{
+	java_asset_manager = (*jenv)->NewGlobalRef(jenv, assetManager);
+	asset_manager = AAssetManager_fromJava(jenv, java_asset_manager);
+}
+
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetOlHome(JNIEnv* jenv, jobject jobj, jstring olHome)
 {
 	const char *string = (*jenv)->GetStringUTFChars(jenv, olHome, 0);
 	LOGI("nativeSetOlHome: %s", string);
@@ -248,16 +209,78 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetOlHome(J
 	(*jenv)->ReleaseStringUTFChars(jenv, olHome, string);
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetExecutable(JNIEnv* jenv, jobject obj, jstring olHome)
-{
-	const char *string = (*jenv)->GetStringUTFChars(jenv, olHome, 0);
-	LOGI("nativeSetExecutable: %s", string);
-	executable = strdup(string);
-	(*jenv)->ReleaseStringUTFChars(jenv, olHome, string);
-}
+// JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetExecutable(JNIEnv* jenv, jobject jobj, jstring olHome)
+// {
+// 	const char *string = (*jenv)->GetStringUTFChars(jenv, olHome, 0);
+// 	LOGI("nativeSetExecutable: %s", string);
+// 	executable = strdup(string);
+// 	(*jenv)->ReleaseStringUTFChars(jenv, olHome, string);
+// }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativePostEvent(JNIEnv* jenv, jobject obj, jint button, jint x, jint y)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativePostEvent(JNIEnv* jenv, jobject jobj, jint button, jint x, jint y)
 {
 	LOGI("nativePostEvent: %d,%d", x, y);
-	push_event(button, x, y);
+}
+
+JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* jenv, jobject jobj, jarray args)
+{
+	jint argc = (*jenv)->GetArrayLength(jenv, args);
+//	LOGI("argumets count: %d", argc);
+
+	jclass Integer = (*jenv)->FindClass(jenv, "java/lang/Integer");
+	jclass String = (*jenv)->FindClass(jenv, "java/lang/String");
+
+	uintptr_t* values = __builtin_alloca((argc+1) * sizeof(uintptr_t));
+	values[0] = OL_deref(ol.vm, ol.eval);
+	for (int i = 0; i < argc; i++) {
+		jobject arg = (*jenv)->GetObjectArrayElement(jenv, args, i);
+		// if((*env)->ExceptionOccurred(env)) {
+		// 	break;
+		// }
+		if ((*jenv)->IsInstanceOf(jenv, arg, Integer)) {
+			jmethodID intValue = (*jenv)->GetMethodID(jenv, Integer, "intValue", "()I");
+			jint value = (*jenv)->CallIntMethod(jenv, arg, intValue);
+
+			values[i+1] = make_integer(value);
+		}
+		else
+		if ((*jenv)->IsInstanceOf(jenv, arg, String)) {
+			char* value = (char*) (*jenv)->GetStringUTFChars(jenv, arg, 0);
+			values[i+1] = new_string(&ol, value); // no release "value" required?
+		}
+		else
+			values[i+1] = IFALSE;
+	}
+
+	word r = OL_continue(ol.vm, argc+1, (void**)values);
+	if (r == ITRUE) {
+		jclass Boolean = (*jenv)->FindClass(jenv, "java/lang/Boolean");
+		jfieldID TRUE = (*jenv)->GetStaticFieldID(jenv, Boolean, "TRUE", "Ljava/lang/Boolean;");
+    	return (*jenv)->GetStaticObjectField(jenv, Boolean, TRUE);
+	}
+	if (is_number(r)) { // type-fix+, type-fix-, type-int+, type-int-
+		jmethodID valueOf = (*jenv)->GetStaticMethodID(jenv, Integer, "valueOf", "(I)Ljava/lang/Integer;");
+		return (*jenv)->CallStaticObjectMethod(jenv, Integer, valueOf, ol2int(r));
+	}
+	if (is_string(r)) {
+		size_t len = string_length(r);
+		char* value = string_value(r);
+		jchar* chars = __builtin_alloca((len + 1) * sizeof(jchar));
+		if (reftype(r) == 3) { // type-string
+			for (int i = 0; i < len; i++)
+				chars[i] = value[i];
+		}
+		if (reftype(r) == 22) { // type-string-wide
+			for (int i = 0; i < len; i++)
+				chars[i] = ol2int(((uintptr_t*)value)[i]);
+		}
+		chars[len] = 0;
+		return (*jenv)->NewString(jenv, chars, len);
+	}
+	//	LOGI("arg1: %s", (char*)(*jenv)->GetObjectArrayElement(jenv, args, 1));
+
+	// all other cases: false
+	jclass Boolean = (*jenv)->FindClass(jenv, "java/lang/Boolean");
+	jfieldID FALSE = (*jenv)->GetStaticFieldID(jenv, Boolean, "FALSE", "Ljava/lang/Boolean;");
+	return (*jenv)->GetStaticObjectField(jenv, Boolean, FALSE);
 }
