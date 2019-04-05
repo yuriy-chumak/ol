@@ -8,10 +8,10 @@
    (cond-expand
       (Android
          (import
-            (OpenGL ES version-1-1)
-            (OpenGL ARB clear_texture))
+            (OpenGL ES version-1-1))
          (begin
-            (setq FONT "/sdcard/WnD/fonts/Anonymous Pro Minus.ttf")))
+            (setq FONT "/sdcard/Anonymous_Pro_Minus.ttf")
+            (define glClearTexImage #false)))
       (else
          (import
             (OpenGL version-1-4)

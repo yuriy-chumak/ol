@@ -66,6 +66,9 @@ $_DX --dex --output=classes.dex bin
 
 test -e "classes.dex" || exit 1
 
+rm -f ${_APK_BASENAME}.apk.unaligned
+rm -f ${_APK_BASENAME}-debug.apk
+
 $_AAPT package -f -M AndroidManifest.xml -S res -I $_ANDROID_CP -F ${_APK_BASENAME}.apk.unaligned
 
 $_AAPT add ${_APK_BASENAME}.apk.unaligned classes.dex

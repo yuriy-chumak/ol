@@ -77,8 +77,6 @@ ol_t ol;
 #define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
 // ------------------------------------------------------------------------
 
-char* apk_location = NULL;
-char* ol_home = NULL;
 static jobject java_asset_manager = NULL;
 static AAssetManager* asset_manager = NULL;
 
@@ -133,10 +131,8 @@ ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
 #include <freetype/freetype.h>
 // ---------------------------------------
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnStart(JNIEnv* jenv, jobject class)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv* jenv, jobject class)
 {
-	LOGI("nativeOnStart");
-
 	LOGI("sizeof(FT_FaceRec): %d", sizeof(FT_FaceRec));
 	LOGI("offsetof(FT_FaceRec, glyph): %d", offsetof(FT_FaceRec, glyph));
 
@@ -157,69 +153,23 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnStart(JNI
 	OL_set_close(ol.vm, assets_close);
 	OL_set_read(ol.vm, assets_read);
 	OL_set_write(ol.vm, assets_write); // redirects stdout/atderr to logcat
+
 	return;
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnResume(JNIEnv* jenv, jobject jobj)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeDelete(JNIEnv* jenv, jobject class)
 {
-	LOGI("nativeOnResume");
-	// не обрабатываем, так как не нужен
-	return;
-}
-
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnPause(JNIEnv* jenv, jobject jobj)
-{
-	LOGI("nativeOnPause");
-	// не обрабатываем, так как не нужен
-	return;
-}
-
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeOnStop(JNIEnv* jenv, jobject jobj)
-{
-	LOGI("nativeOnStop");
-
 	// embed_delete(&ol);
     if (java_asset_manager) {
         (*jenv)->DeleteGlobalRef(jenv, java_asset_manager);
         java_asset_manager = NULL;
     }
-
-	return;
-}
-
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetApkLocation(JNIEnv* jenv, jobject jobj, jstring apkLocation)
-{
-	const char *string = (*jenv)->GetStringUTFChars(jenv, apkLocation, 0);
-	LOGI("nativeSetApkLocation: %s", string);
-	apk_location = strdup(string);
-	(*jenv)->ReleaseStringUTFChars(jenv, apkLocation, string);
 }
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetAssetManager(JNIEnv* jenv, jobject jobj, jobject assetManager)
 {
 	java_asset_manager = (*jenv)->NewGlobalRef(jenv, assetManager);
 	asset_manager = AAssetManager_fromJava(jenv, java_asset_manager);
-}
-
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetOlHome(JNIEnv* jenv, jobject jobj, jstring olHome)
-{
-	const char *string = (*jenv)->GetStringUTFChars(jenv, olHome, 0);
-	LOGI("nativeSetOlHome: %s", string);
-	ol_home = strdup(string);
-	(*jenv)->ReleaseStringUTFChars(jenv, olHome, string);
-}
-
-// JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetExecutable(JNIEnv* jenv, jobject jobj, jstring olHome)
-// {
-// 	const char *string = (*jenv)->GetStringUTFChars(jenv, olHome, 0);
-// 	LOGI("nativeSetExecutable: %s", string);
-// 	executable = strdup(string);
-// 	(*jenv)->ReleaseStringUTFChars(jenv, olHome, string);
-// }
-
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativePostEvent(JNIEnv* jenv, jobject jobj, jint button, jint x, jint y)
-{
-	LOGI("nativePostEvent: %d,%d", x, y);
 }
 
 JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* jenv, jobject jobj, jarray args)

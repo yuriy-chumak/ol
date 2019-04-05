@@ -11,7 +11,7 @@
         android:targetSdkVersion="10" />
 
     <uses-feature
-        android:glEsVersion="0x00020000"
+        android:glEsVersion="0x00010000"
         android:required="true" />
 
     <application

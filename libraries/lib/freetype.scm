@@ -43,8 +43,16 @@
    (setq FT_F26Dot6 fft-signed-long)
    (setq FT_GlyphSlot fft-void*)
    (setq FT_Render_Mode fft-int)
+)
+(cond-expand
+   (Android
+      (begin
+         (setq freetype (load-dynamic-library #false)))) ; "libfreetype.so"
+   (else
+      (begin
+         (setq freetype (load-dynamic-library "libfreetype.so.6")))))
 
-   (setq freetype (load-dynamic-library "libfreetype.so.6"))
+(begin
 
    (define FT_Init_FreeType (freetype FT_Error "FT_Init_FreeType" FT_Library*))
    (define FT_Done_FreeType (freetype FT_Error "FT_Done_FreeType" FT_Library))

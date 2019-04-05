@@ -77,96 +77,30 @@
 ; ===================================================
 (cond-expand
    ; -=( Android )=------------------------------------------
-   (Android ; TODO: dev only, rename to Android
+   (Android
       (begin
-         (setq self (load-dynamic-library #f))
-         (setq android (load-dynamic-library "libandroid.so"))
-
-         (setq ANativeWindow_setBuffersGeometry (android fft-void "ANativeWindow_setBuffersGeometry" fft-void* fft-int fft-int fft-int))
-         (setq androidGetWindow (self type-vptr "androidGetWindow"))
-         (setq androidPopEvent (self type-vptr "androidPopEvent"))
-
-         (setq EGL (load-dynamic-library "libEGL.so"))
-         (setq EGLBoolean fft-int)
-         (setq EGLint fft-int32) (setq EGLint* (fft* EGLint)) (setq EGLint& (fft& EGLint))
-
-         (setq EGLDisplay fft-void*)
-         (setq EGLConfig  fft-void*)  (setq EGLConfig* (fft* EGLConfig))   (setq EGLConfig& (fft& EGLConfig))
-         (setq EGLSurface fft-void*)
-         (setq EGLContext fft-void*)
-         (setq NativeDisplayType fft-void*) ; fft-int for asm.js
-         (setq NativeWindowType fft-void*) ; fft-int for asm.js
-
-         (setq eglGetDisplay (EGL EGLDisplay "eglGetDisplay" NativeDisplayType))
-         (setq eglInitialize (EGL EGLBoolean "eglInitialize" EGLDisplay EGLint& EGLint&))
-         (setq eglChooseConfig (EGL EGLBoolean "eglChooseConfig" EGLDisplay EGLint* EGLConfig* EGLint EGLint&))
-         (setq eglGetConfigAttrib (EGL EGLBoolean "eglGetConfigAttrib" EGLDisplay EGLConfig EGLint EGLint&))
-
-         (setq eglCreateWindowSurface (EGL EGLSurface "eglCreateWindowSurface" EGLDisplay EGLConfig NativeWindowType EGLint*))
-         (setq eglCreateContext (EGL EGLContext "eglCreateContext" EGLDisplay EGLConfig EGLContext EGLint*))
-
-         (setq eglQuerySurface (EGL EGLBoolean "eglQuerySurface" EGLDisplay EGLSurface EGLint EGLint&))
-
          (define (native:create-context title)
-            (define display (eglGetDisplay (vm:cast 0 NativeDisplayType))) ;EGL_DEFAULT_DISPLAY
-
-            (define major '(0)) (define minor '(0))
-            (eglInitialize display major minor)
-            (print-to stderr "EGL version: " (car major) "." (car minor))
-
-            (define attribs (list
-               #x3033 #x04 ; EGL_SURFACE_TYPE EGL_WINDOW_BIT
-               #x3022 8    ; EGL_BLUE_SIZE 8
-               #x3023 8    ; EGL_GREEN_SIZE 8
-               #x3024 8    ; EGL_RED_SIZE 8
-               #x3038))    ; EGL_NONE
-            (define config (make-vptr))
-            (define numConfigs '(0))
-            (eglChooseConfig display attribs config 1 numConfigs)
-
-            (define format '(0))
-            (eglGetConfigAttrib display config #x302E format) ; EGL_NATIVE_VISUAL_ID
-
-            ; Android:
-            (define window (androidGetWindow))
-            (ANativeWindow_setBuffersGeometry window 0 0 (car format))
-
-            ; common part again:
-            (define surface (eglCreateWindowSurface display config window #f))
-            (define ctx (eglCreateContext display config #false #false))
-
-            (define context (tuple display surface window ctx))
-
-            (gl:MakeCurrent context)
             (print-to stderr "OpenGL ES version: " (glGetString GL_VERSION))
             (print-to stderr "OpenGL ES vendor: " (glGetString GL_VENDOR))
             (print-to stderr "OpenGL ES renderer: " (glGetString GL_RENDERER))
+            (print-to stderr "OpenGL ES extensions: " (glGetString GL_EXTENSIONS))
 
-            (define width '(0))
-            (define height '(0))
-            (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
-            (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
+            (define width '(1184))
+            (define height '(672))
+            ;; (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
+            ;; (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
 
             (set-ref! gl:window-dimensions 3 (car width))
             (set-ref! gl:window-dimensions 4 (car height))
 
-            (glViewport 0 0 (car width) (car height))
-
-            (mail 'opengl (tuple 'set-context context)))
+            (glViewport 0 0 (car width) (car height)))
 
          (define (native:enable-context context)
-            (print "unimplemented: enable-context"))
+            #false)
          (define (native:disable-context context)
-            (print "unimplemented: disable-context"))
+            #false)
          (define (native:process-events context handler)
-            (let loop ((event (androidPopEvent)))
-               (if event
-                  (let ((struct (vptr->vector event 12)))
-                     (define button (extract-number struct 0 4))
-                     (define x (extract-number struct 4 4))
-                     (define y (extract-number struct 8 4))
-                     (handler (tuple 'mouse button x y))
-                  (loop (androidPopEvent))))))
+            #false)
 
          (define (gl:SetWindowTitle context title)
             #false)
@@ -176,7 +110,6 @@
             #false)
          (define (gl:GetMousePos context)
             #false)
-
    ))
 
    ; -=( Linux )=------------------------------------------
@@ -494,112 +427,142 @@
 (define (gl:hide-cursor)
    (gl:HideCursor (interact 'opengl (tuple 'get 'context))))
 
+)
 
-; =============================================
-; automation
-(fork-server 'opengl (lambda ()
-(let this ((dictionary #empty))
-(cond
-   ; блок обработки сообщений
-   ((check-mail) => (lambda (e) ; can be (and (eq? something 0) (check-mail)) =>
-      (let*((sender msg e))
-         ;(print "envelope: " envelope)
-         (tuple-case msg
-            ; low level interface:
-            ((set key value)
-               (this (put dictionary key value)))
-            ((get key)
-               (mail sender (get dictionary key #false))
-               (this dictionary))
-            ((debug)
-               (mail sender dictionary)
-               (this dictionary))
+; -=( opengl coroutine )=------------------------------------
+(cond-expand
+   (Android
+      (begin
+         (fork-server 'opengl (lambda ()
+            (print "starting 'opengl coroutine")
+         (let this ((dictionary #empty))
+            (let*((envelope (wait-mail))
+                  (sender msg envelope))
+               (tuple-case msg
+                  ; low level interface:
+                  ((set key value)
+                     (this (put dictionary key value)))
+                  ((get key)
+                     (mail sender (get dictionary key #false))
+                     (this dictionary))
+                  ((debug)
+                     (mail sender dictionary)
+                     (this dictionary))
 
-            ((finish)  ; wait for OpenGL window closing (just no answer for interact)
-               ;(glFinish)
-
-               (unless (get dictionary 'renderer #f)
-                  ; рендерера нет, значит оновим буфер
-                  (gl:SwapBuffers (get dictionary 'context #f))
-                  ; рендерер есть, но режим интерактивный? тогда вернем управление юзеру
-                  (if (or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
-                     (mail sender 'ok)))
-               (this (put dictionary 'customer sender)))
-
-            ; context
-            ((set-context context)
-               (this (put dictionary 'context context)))
-            ((get-context)
-               (mail sender (get dictionary 'context #f))
-               (this dictionary))
-
-            ; set-window-title
-            ((set-window-title title)
-               (gl:SetWindowTitle (get dictionary 'context #f) title)
-               (this dictionary))
-
-            ; set-window-size
-            ((set-window-size width height)
-               (gl:SetWindowSize (get dictionary 'context #f) width height)
-               ; сразу выставим вьюпорт в размер окна
-               (glViewport 0 0 width height)
-               (this dictionary))
-
-            ; renderer
-            ((set-renderer renderer)
-               (this (put dictionary 'renderer renderer)))
-            ((get-renderer)
-               (mail sender (get dictionary 'renderer #f))
-               (this dictionary))
-
-            (else
-               (print-to stderr "Unknown opengl server command " msg)
-               (this dictionary))))))
-   ; блок непосредственно рабочего цикла окна
+                  ((set-renderer renderer)
+                     (this (put dictionary 'renderer renderer)))
+                  ((get-renderer)
+                     (mail sender (get dictionary 'renderer #f))
+                     (this dictionary))
+               )))))))
    (else
-      ; обработаем сообщения (todo: не более чем N за раз)
-      (let ((context (get dictionary 'context #f)))
-         (if context ; todo: добавить обработку кнопок
-            (native:process-events context (lambda (event)
-               (tuple-case event
-                  ((keyboard key)
-                     ((get dictionary 'keyboard-handler (lambda (x) #f)) key))
-                  ((mouse button x y)
-                     ((get dictionary 'mouse-handler (lambda (x) #f)) button x y))
-                  (else
-                     (print "unknown event: " event)))))))
-      ; проделаем все действия
-      (let ((renderer (get dictionary 'renderer #f)))
-         (if renderer (begin
-            ;; (print "renderer: " renderer)
-            ;; (print "context: " (get dictionary 'context #f))
-            ;; (print "mouse: " (gl:GetMousePos (ref (get dictionary 'context #f) 3)))
-            (renderer (gl:GetMousePos (get dictionary 'context #f)))
-            (gl:SwapBuffers (get dictionary 'context #f)))))
-      ;; (let*((dictionary
-      ;;       ; 1. draw (if renderer exists)
-      ;;       (or (call/cc (lambda (return)
-      ;;             (let ((renderer (get dictionary 'renderer #f)))
-      ;;                (if renderer
-      ;;                   ; есть чем рисовать - рисуем
-      ;;                   (let ((userdata (apply renderer (get dictionary 'userdata #null))))
-      ;;                      (gl:SwapBuffers (get dictionary 'context #f))
-      ;;                      (return
-      ;;                         (put dictionary 'userdata userdata)))))))
-      ;;          dictionary))
-      ;;       (dictionary
-      ;;       ; 2. think (if thinker exists)
-      ;;       (or (call/cc (lambda (return)
-      ;;             (let ((thinker (get dictionary 'thinker #f)))
-      ;;                (if thinker
-      ;;                   dictionary))))
-      ;;          dictionary))
-      ;;       )
+      (begin
+         ; =============================================
+         ; automation
+         (fork-server 'opengl (lambda ()
+         (let this ((dictionary #empty))
+         (cond
+            ; блок обработки сообщений
+            ((check-mail) => (lambda (e) ; can be (and (eq? something 0) (check-mail)) =>
+               (let*((sender msg e))
+                  ;(print "envelope: " envelope)
+                  (tuple-case msg
+                     ; low level interface:
+                     ((set key value)
+                        (this (put dictionary key value)))
+                     ((get key)
+                        (mail sender (get dictionary key #false))
+                        (this dictionary))
+                     ((debug)
+                        (mail sender dictionary)
+                        (this dictionary))
 
-         ; done.
-         (sleep 1)
-         (this dictionary))))))
+                     ((finish)  ; wait for OpenGL window closing (just no answer for interact)
+                        ;(glFinish)
 
+                        (unless (get dictionary 'renderer #f)
+                           ; рендерера нет, значит оновим буфер
+                           (gl:SwapBuffers (get dictionary 'context #f))
+                           ; рендерер есть, но режим интерактивный? тогда вернем управление юзеру
+                           (if (or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
+                              (mail sender 'ok)))
+                        (this (put dictionary 'customer sender)))
+
+                     ; context
+                     ((set-context context)
+                        (this (put dictionary 'context context)))
+                     ((get-context)
+                        (mail sender (get dictionary 'context #f))
+                        (this dictionary))
+
+                     ; set-window-title
+                     ((set-window-title title)
+                        (gl:SetWindowTitle (get dictionary 'context #f) title)
+                        (this dictionary))
+
+                     ; set-window-size
+                     ((set-window-size width height)
+                        (gl:SetWindowSize (get dictionary 'context #f) width height)
+                        ; сразу выставим вьюпорт в размер окна
+                        (glViewport 0 0 width height)
+                        (this dictionary))
+
+                     ; renderer
+                     ((set-renderer renderer)
+                        (this (put dictionary 'renderer renderer)))
+                     ((get-renderer)
+                        (mail sender (get dictionary 'renderer #f))
+                        (this dictionary))
+
+                     (else
+                        (print-to stderr "Unknown opengl server command " msg)
+                        (this dictionary))))))
+            ; блок непосредственно рабочего цикла окна
+            (else
+               ; обработаем сообщения (todo: не более чем N за раз)
+               (let ((context (get dictionary 'context #f)))
+                  (if context ; todo: добавить обработку кнопок
+                     (native:process-events context (lambda (event)
+                        (tuple-case event
+                           ((keyboard key)
+                              ((get dictionary 'keyboard-handler (lambda (x) #f)) key))
+                           ((mouse button x y)
+                              ((get dictionary 'mouse-handler (lambda (x) #f)) button x y))
+                           (else
+                              (print "unknown event: " event)))))))
+               ; проделаем все действия
+               (let ((renderer (get dictionary 'renderer #f)))
+                  (if renderer (begin
+                     ;; (print "renderer: " renderer)
+                     ;; (print "context: " (get dictionary 'context #f))
+                     ;; (print "mouse: " (gl:GetMousePos (ref (get dictionary 'context #f) 3)))
+                     (renderer (gl:GetMousePos (get dictionary 'context #f)))
+                     (gl:SwapBuffers (get dictionary 'context #f)))))
+               ;; (let*((dictionary
+               ;;       ; 1. draw (if renderer exists)
+               ;;       (or (call/cc (lambda (return)
+               ;;             (let ((renderer (get dictionary 'renderer #f)))
+               ;;                (if renderer
+               ;;                   ; есть чем рисовать - рисуем
+               ;;                   (let ((userdata (apply renderer (get dictionary 'userdata #null))))
+               ;;                      (gl:SwapBuffers (get dictionary 'context #f))
+               ;;                      (return
+               ;;                         (put dictionary 'userdata userdata)))))))
+               ;;          dictionary))
+               ;;       (dictionary
+               ;;       ; 2. think (if thinker exists)
+               ;;       (or (call/cc (lambda (return)
+               ;;             (let ((thinker (get dictionary 'thinker #f)))
+               ;;                (if thinker
+               ;;                   dictionary))))
+               ;;          dictionary))
+               ;;       )
+
+                  ; done.
+                  (sleep 1)
+                  (this dictionary)))))))))
+
+(begin
 ; userdata
 (fork-server 'opengl-userdata (lambda ()
 (let this ((dictionary #empty))
