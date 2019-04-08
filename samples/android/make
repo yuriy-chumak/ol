@@ -72,7 +72,7 @@ rm -f ${_APK_BASENAME}-debug.apk
 $_AAPT package -f -M AndroidManifest.xml -S res -I $_ANDROID_CP -F ${_APK_BASENAME}.apk.unaligned
 
 $_AAPT add ${_APK_BASENAME}.apk.unaligned classes.dex
-$_AAPT add ${_APK_BASENAME}.apk.unaligned `find assets/ -type f`
+$_AAPT add ${_APK_BASENAME}.apk.unaligned `find assets/ -type f \( ! -name "* *" \)`
 $_AAPT add ${_APK_BASENAME}.apk.unaligned `find lib/ -type f`
 
 # creating debug keystore:

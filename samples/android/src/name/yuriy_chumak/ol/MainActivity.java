@@ -2,21 +2,14 @@ package name.yuriy_chumak.ol;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.Toast;
-import android.view.Surface;
-import android.view.SurfaceView;
-import android.view.SurfaceHolder;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.util.Log;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
+
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.View.OnTouchListener;
-import android.content.res.AssetManager;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 
 import android.opengl.GLSurfaceView;
 import javax.microedition.khronos.opengles.GL10;
@@ -25,18 +18,16 @@ import android.opengl.GLES20;
 
 public class MainActivity extends Activity
     implements GLSurfaceView.Renderer
- // implements SurfaceHolder.Callback
 {
 	private static String TAG = "ol";
-    private GLSurfaceView glView;
-
-    java.util.Queue mouseEvents = new java.util.LinkedList();
+	private GLSurfaceView glView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-        nativeNew();
+		// setContentView(R.layout.main);
 
+        nativeNew();
         AssetManager assetManager = getApplication().getAssets();
         nativeSetAssetManager(assetManager);
 
@@ -49,7 +40,7 @@ public class MainActivity extends Activity
         glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         //glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
-		this.setContentView(glView);
+		setContentView(glView);
 
 		glView.setOnTouchListener(new OnTouchListener() {
 			public boolean onTouch(View view, MotionEvent event) {
@@ -58,10 +49,10 @@ public class MainActivity extends Activity
 					final float y = event.getY();
                     MainActivity.this.runOnUiThread(new Runnable() {
                         public void run() {
-                            mouseEvents.add(new MouseEvent((int)x, (int)y));
+				            eval("(let ((mouse-handler (interact 'opengl (tuple 'get 'mouse-handler)))) (if mouse-handler (mouse-handler 1 " + x + " " + y + ")))");
                             glView.requestRender();
                         }
-                    });                    
+                    });
 				}
 				return true;
 			}
@@ -74,12 +65,6 @@ public class MainActivity extends Activity
     }
 
     public void onDrawFrame(GL10 unused) {
-        MouseEvent mouseEvent;
-        while ((mouseEvent = (MouseEvent)mouseEvents.poll()) != null) {
-            int x = mouseEvent.x;
-            int y = mouseEvent.y;
-            eval("(let ((mouse-handler (interact 'opengl (tuple 'get 'mouse-handler)))) (if mouse-handler (mouse-handler 1 " + x + " " + y + ")))");
-        }
         eval("(let ((renderer (interact 'opengl (tuple 'get 'renderer)))) (if renderer (renderer #false)))");
     }
 
@@ -98,18 +83,8 @@ public class MainActivity extends Activity
     }
 
 	static {
-		System.loadLibrary("z");
+		// System.loadLibrary("z");
 		System.loadLibrary("freetype");
 		System.loadLibrary("ol");
 	}
-}
-class MouseEvent {
-    public int x;
-    public int y;
-
-    public MouseEvent(int x, int y)
-    {
-        this.x = x;
-        this.y = y;
-    }
 }
