@@ -1,9 +1,9 @@
 ```
                   Small,
-       `___`          Embeddalbe
-       (o,o)              and
-       \)  )           Purely
-     ---"-"---     Functional!
+       `___`         Embeddable
+       (o,o)            and
+       \)  )          Purely
+     ---"-"---      Functional!
   O t u s L i s p
 
 ```
@@ -17,7 +17,7 @@ Otus Lisp, Version 2.0
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
 It implements an extended subset of R<sup>7</sup>RS Scheme including, but not limited to, some of the SRFIs.
-It's tiny (~42kb), embeddable and crossplatform; provides a portable, high-level way to call code written in other languages.
+It's tiny (~42kb), embeddable and cross-platform; provides a portable, high-level way to call code written in other languages.
 
 You can use Ol in GNU/Linux, Windows, Unixes (macOS, Solaris, kinds of BSD), Android, webOS, Minoca and lot of any other operation systems based on various hardware architectures (x86/x86_64, arm, aarch64, ppc, mips, etc).
 
@@ -31,7 +31,7 @@ Otus Lisp is available under 2 licenses:
 
 Copyright (c) 2014 Aki Helin
 
-Copyright (c) 2014-2018 Yuriy Chumak
+Copyright (c) 2014-2019 Yuriy Chumak
 
 
 SUPPORT
@@ -59,7 +59,8 @@ accessible path. Basic functionality includes a rich set of
 functions: lists, ffs (builtin associative arrays), i/o, lazies,
 strings, symbols, vectors, math, regex, tuples, etc.
 
-Extended functionality (i.e. OpenGL support) requires whole Ol package installation.
+Extended functionality (i.e. OpenGL support) requires full Ol package installation.
+Additionally, you can copy desired [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory.
 
 Next platforms installation packages can be found at
 [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol):
@@ -78,11 +79,10 @@ Next platforms installation packages can be found at
 * Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64)
 
 
-Next platforms installation packages can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcment page:
+Next platforms installation packages can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page:
 
 * Windows (x86, amd64)
-* Android (arm64-v8a, armeabi, armeabi-v7a,
-mips, mips64, x86, x86_64)
+* Android (arm64-v8a, armeabi, armeabi-v7a, mips, mips64, x86, x86_64)
 
 
 BUILD REQUIREMENTS
@@ -90,22 +90,21 @@ BUILD REQUIREMENTS
 
 You should have GCC >3.2 or CLANG >3.5 or TCC installed.
 For Windows you should have MinGW (with GCC).
-If you want to compile asm.js binary (is not required by regular build) you should have Emscripten ver. 1.37.40.
+If you want to compile asm.js binary (is not required by regular build) you should have Emscripten v.1.37.40.
 
 
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 
-* 6.1.  Equivalence predicates
+* 6.1. Equivalence predicates (EQV?)
   * (eqv? '#() '#()) is #true, but *unspecified* in Scheme
   * (eqv? +nan.0 +nan.0) is #true, but *unspecified* in Scheme
 * 6.2.5. Syntax of numerical constants
-  * NUMBERS WITHOUT PRECISION consdered to be exact in Ol, but *inexact* in Scheme. Inexactness can be disabled by compiler features or/and can be unsupported by platform and we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).
+  * NUMBERS WITHOUT PRECISION considered to be exact in Ol, but *inexact* in Scheme. Inexactness can be disabled by compiler features or/and can be unsupported by platform and we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).
 * 6.4. Pairs and lists
   * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully specified in Ol, but *unspecified* in Scheme.
 * 4.2.7. Exception handling
   * No GUARD and RAISE in Ol
-
 
 
 
@@ -191,8 +190,8 @@ tbd.
 
 #### Open webOS way
 
-Put toolchain/ol.bb bitbake receipe into any place of open webOs
-receipes folder (i.e. ./meta-oe/) and run "make ol" from root
+Put toolchain/ol.bb bitbake recipe into any place of open webOs
+recipes folder (i.e. ./meta-oe/) and run "make ol" from root
 open webOs folder.
 
 Upload ol executable from BUILD/work/<build-name>/ol/1.0.0-1-r0/build
@@ -247,7 +246,7 @@ To build Ol language (not Ol virtual machine)
 $ make recompile
 ```
 
-This will create new (in successfull way) REPL binary that contains ol
+This will create new (in successful way) REPL binary that contains ol
 interpreter code.
 
 Few words about OL can be found in documentation on the project page.
@@ -485,10 +484,10 @@ RELATED
 --------------------------------------------------------------
 
 Copyright (c) 2014 Aki Helin,
-Copyright (c) 2014 - 2018 Yuriy Chumak
+Copyright (c) 2014 - 2019 Yuriy Chumak
 
 Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
 
-http://groups.csail.mit.edu/mac/projects/scheme/
-
-http://people.csail.mit.edu/jaffer/Scheme (r5rs)
+* http://groups.csail.mit.edu/mac/projects/scheme/
+* http://people.csail.mit.edu/jaffer/Scheme
+* http://r7rs.org
