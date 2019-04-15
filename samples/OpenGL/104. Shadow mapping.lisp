@@ -18,7 +18,7 @@
 (define (make-mat4x4) (map (lambda (_) (inexact 0)) (iota 16)))
 
 ; load the model
-(import (lang sexp))
+(import (owl parse))
 (import (file wavefront obj))
 (import (file wavefront mtl))
 
@@ -26,22 +26,10 @@
    (list 'fail info '()))
 
 (define obj-filename "obj/Palm_Tree.obj")
-(define object (wavefront-obj-parser (file->list obj-filename)
-         (lambda (data fail val pos)
-            val)
-         (lambda (pos reason)
-            (print "fail")
-            reason)
-         0))
+(define object (parse wavefront-obj-parser (file->list obj-filename) obj-filename #true #empty))
 
 (define mtl-filename (string-append "obj/" (get object 'mtllib "")))
-(define materials (wavefront-mtl-parser (file->list mtl-filename)
-         (lambda (data fail val pos)
-            val)
-         (lambda (pos reason)
-            (print "fail")
-            reason)
-         0))
+(define materials (parse wavefront-mtl-parser (file->list mtl-filename) mtl-filename #t #empty))
 
 (define materials
    (fold (lambda (o material)
@@ -199,16 +187,16 @@
 
    (glGetFloatv GL_MODELVIEW_MATRIX mv)
    (glGetFloatv GL_PROJECTION_MATRIX pr)
- 
+
    ; //Draw the scene
    (glDisable GL_TEXTURE_2D)
    (glDisable GL_LIGHTING)
    (DrawScene)
- 
+
    ; //Read the depth buffer into the shadow map texture
    (glBindTexture GL_TEXTURE_2D shadowMapTexture)
    (glCopyTexImage2D GL_TEXTURE_2D 0 GL_DEPTH_COMPONENT 0 0 shadowMapSize shadowMapSize 0)
- 
+
    ; //restore states
    (glDisable GL_POLYGON_OFFSET_FILL)
    (glColorMask GL_TRUE GL_TRUE GL_TRUE GL_TRUE)

@@ -297,7 +297,7 @@
                   (if (or maybe-path (has-newline? data))
                      (print-row-syntax-error
                         (or maybe-path "input")
-                        maybe-error-msg data pos)
+                        (if (eq? maybe-error-msg #true) reason maybe-error-msg) data pos)
                      (print-syntax-error (if (eq? maybe-error-msg #true) reason maybe-error-msg) data (- pos 1)))) ; is the one from preceding newlines?
                fail-val)
             0))
