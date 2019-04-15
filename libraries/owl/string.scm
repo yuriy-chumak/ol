@@ -409,12 +409,12 @@
                      (pair cp (upcase ll))))
                null)))
 
-      (define char=? =)
+      (define char=? eq?)
 
       ; fixme: incomplete, added because needed for ascii range elsewhere
       (define (char-ci=? a b)
          (or (eq? a b)
-            (=
+            (eq?
                (iget char-fold-iff a a)
                (iget char-fold-iff b b))))
 
