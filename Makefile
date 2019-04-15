@@ -198,6 +198,17 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/scheme/*.scm libraries/scheme/
 	   cp -b $@ repl ;make $@ ;\
 	fi
 
+# compiling unicode table
+libraries/owl/unicode-char-folds.scm:
+	echo "(define char-folds '(" >libraries/owl/unicode-char-folds.scm
+	curl https://www.unicode.org/Public/12.1.0/ucd/CaseFolding-12.1.0d2.txt |\
+	   grep "[0-9A-F]* [SFC]; " |\
+	   sed -re 's/ #.*//' -e 's/( [SFC])?;//g' -e 's/^/ /' -e 's/ / #x/g' -e 's/ /(/' -e 's/$$/)/' |\
+	   tr "[A-F]" "[a-f]" >> libraries/owl/unicode-char-folds.scm
+	echo '))' >>libraries/owl/unicode-char-folds.scm
+
+
+
 #embed sample
 embed: tests/embed.c src/olvm.c extensions/embed.h $(repl.o)
 	$(CC) tests/embed.c src/olvm.c $(repl.o) -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
