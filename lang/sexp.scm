@@ -11,7 +11,9 @@
       list->sexps
 
       ; parser
-      get-number)
+      get-number
+      get-symbol
+      )
 
    (import
       (scheme core)
@@ -57,16 +59,14 @@
 
       (define get-symbol
          (get-either
-            (let-parses
-               ((head (get-rune-if symbol-lead-char?))
-                (tail (get-greedy* (get-rune-if symbol-char?)))
-                (next (peek get-byte))
-                (foo (assert (lambda (b) (not (symbol-char? b))) next))) ; avoid useless backtracking
+            (let-parses (
+                  (head (get-rune-if symbol-lead-char?))
+                  (tail (get-greedy* (get-rune-if symbol-char?))))
                (string->uninterned-symbol (runes->string (cons head tail))))
-            (let-parses
-               ((skip (get-imm #\|))
-                (chars (get-greedy+ (get-rune-if (λ (x) (not (eq? x #\|))))))
-                (skip (get-imm #\|)))
+            (let-parses (
+                  (skip (get-imm #\|))
+                  (chars (get-greedy+ (get-rune-if (λ (x) (not (eq? x #\|))))))
+                  (skip (get-imm #\|)))
                (string->uninterned-symbol (runes->string chars)))))
 
 ;      (define (digit-char? x)
