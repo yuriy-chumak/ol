@@ -429,21 +429,21 @@
                0)))
 
       (define (list->number lst base)
-         (try-parse (get-number-in-base base) lst #false #false #false))
+         (parse (get-number-in-base base) lst #false #false #false))
 
       (define (string->sexp str fail errmsg)
-         (try-parse (get-sexp) (str-iter str) #false errmsg fail))
+         (parse (get-sexp) (str-iter str) #false errmsg fail))
 
       ;; parse all contents of vector to a list of sexps, or fail with
       ;; fail-val and print error message with further info if errmsg
       ;; is non-false
 
       (define (vector->sexps vec fail errmsg)
-         ; try-parse parser data maybe-path maybe-error-msg fail-val
+         ; parse parser data maybe-path maybe-error-msg fail-val
          (let ((lst (vector->list vec)))
-            (try-parse get-sexps lst #false errmsg fail)))
+            (parse get-sexps lst #false errmsg fail)))
 
       (define (list->sexps lst fail errmsg)
-         ; try-parse parser data maybe-path maybe-error-msg fail-val
-         (try-parse get-sexps lst #false errmsg fail))
+         ; parse parser data maybe-path maybe-error-msg fail-val
+         (parse get-sexps lst #false errmsg fail))
 ))

@@ -933,15 +933,15 @@
 
       ;; str -> rex|#false, for conversion of strings to complete matchers
       (define (string->complete-match-regex str)
-         (try-parse get-body-regex (str-iter str) #false #false #false))
+         (parse get-body-regex (str-iter str) #false #false #false))
 
       ;; str → rex|#false, same as is used in owl parser
       (define (string->extended-regexp str)
-         (try-parse get-sexp-regex (str-iter str) #false #false #false))
+         (parse get-sexp-regex (str-iter str) #false #false #false))
 
       ;; testing
       (define (string->replace-regex str)
-         (try-parse get-replace-regex (str-iter str) #false #false #false))
+         (parse get-replace-regex (str-iter str) #false #false #false))
 
       ;; POSIX (ERE)
       (define string->regex

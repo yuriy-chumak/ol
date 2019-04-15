@@ -5,27 +5,26 @@
 (define-library (owl parse)
 
    (export
-      let-parses
-      get-byte
-      get-imm
-      get-epsilon
-      assert
+      let-parses ; parser constructor
+
+      get-byte   ; elementary parsers
       get-byte-if
+      get-epsilon
       get-rune
       get-rune-if
-      get-one-of
+      get-imm
       get-word
       get-word-ci       ; placeholder
+      get-one-of
       get-either
       get-any-of
       get-kleene*
       get-kleene+
       get-greedy*
       get-greedy+
-      try-parse         ; parser x ll x path|#false x errmsg|#false x fail-val
-      peek
-      null-stream?
-      )
+
+      parse try-parse         ; full stream and partial stream parsers. x ll x path|#false x errmsg|#false x fail-val
+      peek)
 
    (import
       (scheme base)
@@ -42,35 +41,11 @@
       (owl interop))
 
    (begin
+
+      ; parser format:
       ; (parser ll ok fail pos)
       ;      -> (ok ll' fail' val pos)
       ;      -> (fail fail-pos fail-msg')
-      (define (null-stream? ll)
-         (cond
-            ((null? ll) #true)
-            ((pair? ll) #false)
-            (else (null-stream? (ll)))))
-
-      (define eof-error "end of input")
-
-      (define (get-byte ll ok fail pos)
-         (cond
-            ((null? ll) (fail pos eof-error)) ; will always be the largest value
-            ((pair? ll) (ok (cdr ll) fail (car ll) (+ pos 1)))
-            (else (get-byte (ll) ok fail pos))))
-
-      ; read nothing, succeed with val
-      (define (get-epsilon val)
-         (λ (ll ok fail pos)
-            (ok ll fail val pos)))
-
-      ;; todo: in addition to assert would be useful to have compute (returns the value) and check <predicate>
-      (define (assert pred val) ; fixme: should have a error message to throw when no luck
-         (λ (ll ok fail pos)
-            (let ((res (pred val)))
-               (if res
-                  (ok ll fail val pos)
-                  (fail pos "parser assert blocked")))))
 
       (define-syntax let-parses
          (syntax-rules (verify eval)
@@ -91,17 +66,27 @@
                (λ (ll ok fail pos)
                   (let-parses 42 ok fail ll pos ((a . b) ...) body)))))
 
-      ;; testing a slower one to check assertions
+      ; read nothing, succeed with val
+      (define (get-epsilon val)
+         (λ (ll ok fail pos)
+            (ok ll fail val pos)))
+
+      ; read a byte
+      (define (get-byte ll ok fail pos)
+         (cond
+            ((null? ll) (fail pos "end of input")) ; will always be the largest value
+            ((pair? ll) (ok (cdr ll) fail (car ll) (+ pos 1)))
+            (else (get-byte (ll) ok fail pos))))
+
+      ; read a byte by predicate
       (define (get-byte-if pred)
-         (let-parses
-            ((b get-byte)
-             (verify (pred b) "bad byte")
-             ;(_ (assert pred b))
-             )
+         (let-parses (
+               (b get-byte)
+               (verify (pred b) `(bad byte ,b)))
             b))
 
-      (define peek-mark "loltron")
-      (define (peek-val? x) (if (pair? x) (eq? (car x) peek-mark) #false))
+      ;; (define peek-mark "loltron")
+      ;; (define (peek-val? x) (if (pair? x) (eq? (car x) peek-mark) #false))
 
       ; make sure the next thing is *not* accepted by parser (unfortunate name, change later)
       (define (peek parser) ; fixme, add error message
@@ -116,13 +101,10 @@
                pos)))
 
       (define (get-imm n)
-         (let-parses
-            ((a get-byte)
-             (verify (eq? a n) '(expected n)))
+         (let-parses (
+               (a get-byte)
+               (verify (eq? a n) '(expected n)))
             a))
-
-      (define (get-one-of bytes)
-         (get-byte-if (λ (x) (has? bytes x))))
 
       (define (get-word str val)
          (let ((bytes (string->runes str)))
@@ -150,6 +132,9 @@
                               (loop (cdr bytes) lst fail pos)
                               (fail pos (list "expected next '" (runes->string bytes) "'"))))
                         fail pos))))))
+
+      (define (get-one-of bytes)
+         (get-byte-if (λ (x) (has? bytes x))))
 
       (define (get-either a b)
          (λ (lst ok fail pos)
@@ -234,9 +219,9 @@
                (four-byte-point a b c d))))
 
       (define (get-rune-if pred)
-         (let-parses
-            ((rune get-rune)
-             (rune (assert pred rune)))
+         (let-parses (
+               (rune get-rune)
+               (verify (pred rune) "invalid rune"))
             rune))
 
 
@@ -258,8 +243,8 @@
       (define (print-syntax-error reason bytes posn)
          (print-to stderr reason)
          (write-bytes stderr '(#\space #\space #\space)) ; indent by 3 spaces
-         (write-bytes stderr (cons #\` (append (force-ll bytes) '(#\' #\newline))))
-         (write-bytes stderr (map (λ (x) #\space) (lrange 0 1 (+ posn 4)))) ; move to right position
+         (write-bytes stderr (cons #\' (append (force-ll bytes) '(#\' #\newline))))
+         (write-bytes stderr (repeat #\space (+ posn 4))) ; move to right position
          (write-bytes stderr '(#\^ #\newline)))
 
       ; find the row where the error occurs
@@ -295,10 +280,10 @@
             ((pair? ll) #false)
             (else (null-ll? (ll)))))
 
+
       ; try to parse all of data with given parser, or return fail-val
       ; printing a nice error message if maybe-error-msg is given
-
-      (define (try-parse parser data maybe-path maybe-error-msg fail-val)
+      (define (parse parser data maybe-path maybe-error-msg fail-val)
          (parser data
             (λ (data fail val pos)
                (if (null-ll? data)
@@ -315,5 +300,17 @@
                         maybe-error-msg data pos)
                      (print-syntax-error (if (eq? maybe-error-msg #true) reason maybe-error-msg) data (- pos 1)))) ; is the one from preceding newlines?
                fail-val)
+            0))
+
+      ; returns pair (parsed-value . rest-of-stream) or #false if error
+      (define (try-parse parser data show-error)
+         (parser data
+            (λ (data fail val pos)
+               (cons val data))
+            (λ (pos reason)
+               ; print error if maybe-error-msg is given
+               (if show-error
+                  (print-syntax-error reason data (- pos 1)))
+               #false)
             0))
 ))

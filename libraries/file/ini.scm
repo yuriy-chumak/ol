@@ -62,7 +62,7 @@
    (define (ini-parse-file filename)
       (let ((file (open-input-file filename)))
          (if file
-            (let ((o (try-parse ini-parser (port->byte-stream file) filename "ini parse error" #false)))
+            (let ((o (parse ini-parser (port->byte-stream file) filename "ini parse error" #false)))
                (if o o
                   (begin (close-port file) #false)))))) ; no automatic port closing on error
 ))
