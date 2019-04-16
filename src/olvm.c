@@ -2030,8 +2030,9 @@ apply:;
 			goto apply;
 		}
 		else
-			if ((type & 63) != TBYTECODE) //((hdr >> TPOS) & 63) != TBYTECODE)
-				FAIL(258, this, INULL);
+		if (type != TBYTECODE)
+			FAIL(258, this, INULL);
+
 
 		// А не стоит ли нам переключить поток?
 		if (--ticker < 0) {
@@ -2047,7 +2048,6 @@ apply:;
 				}
 			}
 #			endif
-
 
 			if (R[0] != IFALSE) { // if mcp present:
 				// save vm state and enter mcp cont at R0!
@@ -2246,11 +2246,11 @@ mainloop:;
 	#	define TUPLEAPPLY 32
 	#	define FFAPPLY 49
 
-	#	define FFLEAF   42 // make ff leaf
-	#	define FFBLACK  FFLEAF
-	#	define FFRED   (FFLEAF + (1<<6))
-	#	define FFTOGGLE 46 // toggle ff leaf color
-	#	define FFREDQ   41 // is ff leaf read?
+	#	define FFLEAF    42 // make ff leaf
+	#	define FFBLACK   FFLEAF
+	#	define FFRED    (FFLEAF + (1<<6))
+	#	define FFTOGGLE  46 // toggle ff leaf color
+	#	define FFREDQ    41 // is ff leaf read?
 	#	define FFRIGHTQ (FFREDQ + (1<<6)) // if ff leaf right?
 
 		// ALU
