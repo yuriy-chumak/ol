@@ -92,7 +92,7 @@ extern unsigned char _binary_repl_start[];
  *        (this list of types you can find in "scheme/core.scm")
  * \param data source data pointer
  * \param size source data size (and buffer size, sure)
- */ 
+ */
 static word new_buffer(ol_t* ol, int type, char* data, int size)
 {
 	int words = (size + sizeof(word) - 1) / sizeof(word);
@@ -113,7 +113,7 @@ static word new_buffer(ol_t* ol, int type, char* data, int size)
  *
  * Allocates new ANSI/UTF-8 string in olvm heap, invokes GC
  * if required
- * 
+ *
  * \param ol embed ol instance
  * \param data zero-terminating source string
  */
@@ -127,7 +127,7 @@ static word new_string(ol_t* ol, char* data)
  *
  * Allocates new bytevector in olvm heap, invokes GC
  * if required
- * 
+ *
  * \param ol embed ol instance
  * \param data source data pointer
  * \param size source data size (and buffer size, sure)
@@ -142,7 +142,7 @@ static word new_bytevector(ol_t* ol, char* data, int size)
  *
  * Used to inject any bootstrap code to be executed
  * by olvm before any other reading
- * 
+ *
  * \param fd file to be read
  * \param buf output buffer for read data
  * \param count size of output buffer
@@ -174,7 +174,7 @@ ssize_t read0(int fd, void *buf, size_t count, void* userdata)
 /* \brief create new embed ol instance
  *
  * Creates new embed ol instance
- * 
+ *
  * \param embed pointer to store instance data
  */
 void embed_new(ol_t* embed)
@@ -229,7 +229,7 @@ void embed_new(ol_t* embed)
 /* \brief evaluate ol expression
  *
  * Evaluates expression by embed ol instance
- * 
+ *
  * There are few different manners to call this function:
  * 1. if first argument is string and no more agruments, then evaluator
  *    simply returns value of argument. It means that for "1" it will return make_integer(1),
@@ -245,7 +245,7 @@ void embed_new(ol_t* embed)
  *    removed as "not referenced by anyone" (gc does not knows anything about your native application)
  * 4. and at last if evaluator received bytevector it tries to decode it as fasl object
  *    and evaluate it like 2 or 3.
- *    
+ *
  * \param ol embed ol instance
  */
 word embed_eval(ol_t* ol, ...)
