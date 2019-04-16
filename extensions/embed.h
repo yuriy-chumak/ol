@@ -303,7 +303,7 @@ word embed_eval(ol_t* ol, ...)
 //! returns not 0 if argument is a string (type-string or type-string-wide)
 #define is_string(x) ({ uintptr_t s = (uintptr_t)(x);\
 		is_reference(s) ?\
-			reftype(s) == 3 || reftype(s) == 22\
+			reftype(s) == 3 || reftype(s) == 5\
 		: 0; })
 //! returns length of ol string
 #define string_length(x) ({ uintptr_t o = (uintptr_t)(x);\

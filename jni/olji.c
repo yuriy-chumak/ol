@@ -220,7 +220,7 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* j
 			for (int i = 0; i < len; i++)
 				chars[i] = value[i];
 		}
-		if (reftype(r) == 22) { // type-string-wide
+		if (reftype(r) == 5) { // type-string-wide
 			for (int i = 0; i < len; i++)
 				chars[i] = ol2int(((uintptr_t*)value)[i]);
 		}

@@ -797,6 +797,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define TTUPLE                       (2)
 #define TSTRING                      (3)
 #define TSYMBOL                      (4)
+#define TSTRINGWIDE                  (5)
 
 #define TPORT                       (12)
 #define TCONST                      (13)
@@ -811,7 +812,6 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 
 #define TBVEC                       (19)   // must be RAW type
 #define TBYTEVECTOR                 (19)
-#define TSTRINGWIDE                 (22)
 #define TSTRINGDISPATCH             (21)
 
 #define TVECTOR                     (11)

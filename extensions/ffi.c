@@ -31,7 +31,7 @@
 
 #define TVOID         (48)
 //efine TSTRING       (3)
-//efine TSTRINGWIDE   (22)
+//efine TSTRINGWIDE   (5)
 //efine TBVEC         (19) // todo: remove this (use fft-vptr or fft-void* is same)
 
 #define TUNKNOWN      (62) // only for ffi, direct sending argument without processing

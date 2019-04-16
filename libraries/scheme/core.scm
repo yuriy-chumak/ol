@@ -1085,12 +1085,13 @@
       ;     - not a part of r5rs -
       (define type-pair              TPAIR)   ; reference
       (define type-tuple             TTUPLE)  ; reference
-      (define type-string            TSTRING) ; reference, blob -> 35 (#b100000 + 3)?
+      (define type-string            TSTRING) ; reference, blob / todo: -> 35 (#b100000 + 3)?
       (define type-symbol            TSYMBOL) ; reference
-      ; 5   TODO(?): (define type-string-wide      5) ; reference, blob
+
+      (define type-string-wide       TSTRINGWIDE) ; reference
       ; 6
       ; 7
-      ;(define type-ff-black-leaf     8) ; reference ; TODO: move to 28
+      ;(define type-ff-black-leaf     8) ; reference ; todo: move to 28 ?
       ; 9
 
       (define type-rlist-spine      10) ; reference
@@ -1109,7 +1110,7 @@
 
       ; 20
       (define type-string-dispatch  21) ; reference
-      (define type-string-wide      22) ; reference
+      ; 22
       ; 23
 
       ;; transitional trees or future ffs

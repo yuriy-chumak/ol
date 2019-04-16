@@ -33,9 +33,10 @@
 
       ; types
       TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
-      TPAIR TTUPLE TSTRING TSYMBOL
+      TPAIR TSYMBOL TTUPLE
+      TSTRING TSTRINGWIDE
       TBYTECODE TPROCEDURE TCLOSURE
-      TVPTR TCALLABLE TSTRINGWIDE)
+      TVPTR TCALLABLE)
 
    (begin
       ; -----------------------------------------------------------------------
@@ -53,6 +54,7 @@
       (setq TTUPLE             2) ; reference
       (setq TSTRING            3) ; reference, raw -> 35 (#b100000 + 3)?
       (setq TSYMBOL            4) ; reference
+      (setq TSTRINGWIDE        5) ; reference, raw
       ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
       ; 6
       ; 7
@@ -75,7 +77,6 @@
       (setq TBYTEVECTOR       19) ; reference, bytevector
       ; 20
       (setq type-string-dispatch 21) ; reference
-      (setq TSTRINGWIDE       22) ; reference, raw
       ; 23
 
       ;; transitional trees or future ffs

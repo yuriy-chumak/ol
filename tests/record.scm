@@ -1,4 +1,4 @@
-(define type-record            5) ; reference, ?
+(define type-record            22) ; reference, ?
 
 
       (define (record? x) (eq? type-record (type x)))
