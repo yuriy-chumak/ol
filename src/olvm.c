@@ -831,11 +831,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define TCOMPLEX                    (43)
 #define TINEXACT                    (44)  // IEEE-754
 
-#define TVPTR                       (49) // void*, only RAW, can't be 0
-
-// todo: сделать два типа колбеков - короткий (такой как я сейчас сделаю)
-//       и "длинный", который будет запускать отдельный поток (сопрограмму) и позволит в это же время
-//       работать остальным сопрограммам.
+#define TVPTR                       (49) // void*, only RAW
 #define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
 
 // constants:
@@ -1980,11 +1976,8 @@ apply:;
 	if ((word)this == IHALT) {
 		// a thread or mcp is calling the final continuation
 		this = (word *) R[0];
-		if (!is_reference(this)) {
-			// no, this is expected exit!
-			// STDERR("Unexpected virtual machine exit");
-			goto done;
-		}
+		if (!is_reference(this))
+			goto done; // expected exit
 
 		R[0] = IFALSE; // set mcp yes?
 		R[4] = R[3];
