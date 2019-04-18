@@ -24,6 +24,7 @@
       vkA vkS vkD vkF vkG vkH vkJ vkK vkL
       vkZ vkX vkC vkV vkB vkN vkM
       vkStar vkPlus vkMinus vkEqual
+   gl:set-expose-handler
    gl:finish ; if renderer exists - wait for window close, else just glFinish
 
    gl:window-dimensions
@@ -65,13 +66,21 @@
 
 (define WIDTH  (get config 'width  854))
 (define HEIGHT (get config 'height 480))
-(define CONFIG (list->ff '( ; todo: move to config
-   (red   .  8)
-   (green .  8)
-   (blue  .  8)
-   (depth . 24)
-)))
 
+;; (define CONFIG (list->ff '( ; todo: move to config
+;;    (red   .  8)
+;;    (green .  8)
+;;    (blue  .  8)
+;;    (depth . 24)
+;;    ;
+;;    ; alpha
+;;    ; stencil
+;;    ; version?
+;; )))
+
+; assume that window size can not be large than 16777215 for x32 build
+;                                  and 72057594037927935 for x64 build.
+(define STATE [0 0 WIDTH HEIGHT]) ; current window state
 (define gl:window-dimensions (tuple 0 0 WIDTH HEIGHT))); x y width height
 
 ; ===================================================
@@ -110,6 +119,8 @@
             #false)
          (define (gl:GetMousePos context)
             #false)
+
+         ;(set-ref! )
    ))
 
    ; -=( Linux )=------------------------------------------
@@ -187,10 +198,10 @@
                   (vi (glXChooseVisual display screen
                         (list
                            4 ; GLX_RGBA
-                           8  (get CONFIG 'red 5) ; GLX_RED_SIZE
-                           9  (get CONFIG 'green 5) ; GLX_GREEN_SIZE
-                          10  (get CONFIG 'blue 5) ; GLX_BLUE_SIZE
-                          12  (get CONFIG 'depth 24) ; GLX_DEPTH_SIZE
+                           8  (get config 'red 5) ; GLX_RED_SIZE
+                           9  (get config 'green 6) ; GLX_GREEN_SIZE
+                          10  (get config 'blue 5) ; GLX_BLUE_SIZE
+                          12  (get config 'depth 24) ; GLX_DEPTH_SIZE
                            5 ; GLX_DOUBLEBUFFER
                            0)))); None
 
@@ -225,18 +236,27 @@
 
          (define (native:process-events context handler)
             (let ((display (ref context 1)))
-            (let loop ((XEvent (make-bytevector 192))) ; 96 for x32
+            (let loop ((XEvent (make-bytevector (if x32? 96 192)))) ; 96 for x32
                (if (> (XPending display) 0)
                   (begin
                      (XNextEvent display XEvent)
                      (case (int32->ol XEvent 0)
                         (2 ; KeyPress
                            (handler (tuple 'keyboard (int32->ol XEvent (if x32? 52 84))))) ; offsetof(XKeyEvent, keycode)
+                        (3 #f) ; KeyRelease
                         (4 ; ButtonPress
                            (let ((x (int32->ol XEvent (if x32? 32 64)))
                                  (y (int32->ol XEvent (if x32? 36 68)))
                                  (button (int32->ol XEvent (if x32? 52 84))))
                               (handler (tuple 'mouse button x y))))
+                        (5 #f) ; ButtonRelease
+                        (12; Expose
+                           (let ((x (int32->ol XEvent (if x32? 20 40)))
+                                 (y (int32->ol XEvent (if x32? 24 44)))
+                                 (w (int32->ol XEvent (if x32? 28 48)))
+                                 (h (int32->ol XEvent (if x32? 32 52))))
+                              ;(print "x: " x ", y: " y ", width: " w ", height: " h)
+                              (handler (tuple 'expose x y w h))))
                         (else ;
                            (print "Unknown window event: " (int32->ol XEvent 0))))
                      (loop XEvent))))))
@@ -460,7 +480,8 @@
          ; =============================================
          ; automation
          (fork-server 'opengl (lambda ()
-         (let this ((dictionary #empty))
+         (let this ((dictionary (list->ff `(
+               (expose-handler . ,glViewport)))))
          (cond
             ; блок обработки сообщений
             ((check-mail) => (lambda (e) ; can be (and (eq? something 0) (check-mail)) =>
@@ -514,6 +535,12 @@
                         (mail sender (get dictionary 'renderer #f))
                         (this dictionary))
 
+                     ; renderer
+                     ((set-expose-handler expose-handler)
+                        (if expose-handler
+                           (expose-handler (ref STATE 1) (ref STATE 2) (ref STATE 3) (ref STATE 4)))
+                        (this (put dictionary 'expose-handler expose-handler)))
+
                      (else
                         (print-to stderr "Unknown opengl server command " msg)
                         (this dictionary))))))
@@ -525,9 +552,17 @@
                      (native:process-events context (lambda (event)
                         (tuple-case event
                            ((keyboard key)
-                              ((get dictionary 'keyboard-handler (lambda (x) #f)) key))
+                              ((get dictionary 'keyboard-handler (lambda (key) #f)) key))
                            ((mouse button x y)
-                              ((get dictionary 'mouse-handler (lambda (x) #f)) button x y))
+                              ((get dictionary 'mouse-handler (lambda (x y) #f)) button x y))
+                           ((expose x y width height)
+                              (set-ref! STATE 1 x) ; save current window dimensions
+                              (set-ref! STATE 2 y)
+                              (set-ref! STATE 3 width)
+                              (set-ref! STATE 4 height)
+
+                              (let ((expose-handler (get dictionary 'expose-handler #f)))
+                                 (if expose-handler (expose-handler x y width height))))
                            (else
                               (print "unknown event: " event)))))))
                ; проделаем все действия
@@ -631,10 +666,10 @@
                   #x8010    1 ; GLX_DRAWABLE_TYPE GLX_WINDOW_BIT
                   #x22 #x8002 ; GLX_X_VISUAL_TYPE GLX_TRUE_COLOR
                   #x8011    1 ; GLX_RENDER_TYPE GLX_RGBA_BIT
-                  8  (get CONFIG 'red 5)    ; GLX_RED_SIZE
-                  9  (get CONFIG 'green 5)  ; GLX_GREEN_SIZE
-                  10  (get CONFIG 'blue 5)  ; GLX_BLUE_SIZE
-                  12  (get CONFIG 'depth 24); GLX_DEPTH_SIZE
+                  8  (get config 'red 5)    ; GLX_RED_SIZE
+                  9  (get config 'green 6)  ; GLX_GREEN_SIZE
+                  10 (get config 'blue 5)  ; GLX_BLUE_SIZE
+                  12 (get config 'depth 24); GLX_DEPTH_SIZE
                   5         1 ; GLX_DOUBLEBUFFER
                   0))
 
@@ -686,5 +721,7 @@
 (define vkZ 52) (define vkX 53) (define vkC 54) (define vkV 55) (define vkB 56) (define vkN 57) (define vkM 58)
 (define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
 
+(define (gl:set-expose-handler handler)
+   (mail 'opengl (tuple 'set-expose-handler handler)))
 
 ))
