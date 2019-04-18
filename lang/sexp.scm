@@ -380,7 +380,7 @@
 
       (define (get-tuple-of parser) ; #[ ... ]
          (let-parses (
-               (skip (get-imm #\#))
+               ;(skip (get-imm #\#))
                (skip (get-imm #\[))
                (things
                   (get-kleene* parser))
