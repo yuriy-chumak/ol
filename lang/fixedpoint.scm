@@ -226,7 +226,7 @@
                    (fn (carry-bindings fn env)))
                   (tuple 'values-apply op fn)))
             (else
-               (runtime-error "carry-bindings: strage expression: " exp))))
+               (runtime-error "carry-bindings: strange expression: " exp))))
 
       ;;; ((name (lambda (formals) body) deps) ...) env 
       ;;; -> ((lambda (formals+deps) body') ...)
