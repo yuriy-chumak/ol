@@ -9,27 +9,19 @@
 (import (lib math))
 
 ; load the model
-(import (lang sexp))
+(import (owl parse))
 (import (file wavefront obj))
 (import (file wavefront mtl))
 
 (define (syntax-fail pos info lst)
    (list 'fail info '()))
 
-
 (define obj-filename "obj/Palm_Tree.obj")
-(define object
-(let*((file (fopen obj-filename 0))
-      (stream (fd->exp-stream file "" wavefront-obj-parser syntax-fail)))
-   (fclose file)
-   (car stream)))
-
+(define object (parse wavefront-obj-parser (file->list obj-filename) obj-filename #true #empty))
+   
 (define mtl-filename (string-append "obj/" (get object 'mtllib "")))
-(define materials
-(let*((file (fopen mtl-filename 0))
-      (stream (fd->exp-stream file "" wavefront-mtl-parser syntax-fail)))
-   (fclose file)
-   (car stream)))
+(define materials (parse wavefront-mtl-parser (file->list mtl-filename) mtl-filename #t #empty))
+
 (define materials
    (fold (lambda (o material)
             (cons (getf material 'name) (cons material o)))
