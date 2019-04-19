@@ -3125,7 +3125,7 @@ loop:;
 		case SYSCALL_READ: {
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
-			int size = svtoi (b); // в байтах
+			int size = number(b); // в байтах
 			if (size < 0)
 				size = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
 
@@ -3493,7 +3493,7 @@ loop:;
 
 			int socket = port(a);
 			int filefd = port(b);
-			int size = svtoi (c);
+			int size = number(c);
 
 			off_t offset = 0;
 			ssize_t wrote= 0;
