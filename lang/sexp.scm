@@ -378,7 +378,7 @@
                   (cons '_sharp_vector fields) ; <- quasiquote macro expects to see this in vectors
                   (list->vector fields)))))
 
-      (define (get-tuple-of parser) ; #[ ... ]
+      (define (get-tuple-of parser) ; [ ... ]
          (let-parses (
                ;(skip (get-imm #\#))
                (skip (get-imm #\[))

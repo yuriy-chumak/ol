@@ -79,7 +79,7 @@
 
                ((tuple? obj)
                  ;(ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
-                  (ilist #\# #\[
+                  (ilist #\[
                      (render (ref obj 1)
                         (fold
                            (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
