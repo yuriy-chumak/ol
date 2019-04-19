@@ -2193,6 +2193,7 @@ mainloop:;
 	#		define SYSCALL_CLOSE 3
 	#		define SYSCALL_STAT 4 // same for fstat and lstat
 	#		define SYSCALL_LSEEK 8
+	#		define SYSCALL_MMAP 9
 	#		define SYSCALL_FSYNC 74
 	#		define SYSCALL_UNLINK 87
 	// 5, 6 - free
@@ -3348,6 +3349,44 @@ loop:;
 			result = itoun(offset);
 			break;
 		}
+
+		/*! \subsection mmap
+		 * \brief 9: (mmap address length offset) -> bytevector
+		 *
+		 * Reposition read/write file offset
+		 *
+		 * \param address (type-vptr)
+		 * \param length (integer)
+		 * \param offset (integer)
+		 *
+		 * \return
+		 */
+		// TODO: disable when in safe mode
+#if OLVM_FFI
+		case SYSCALL_MMAP: {
+			if (!is_vptr(a))
+				break;
+			unsigned char* address = (unsigned char*) car(a);
+			size_t length = number(b); // в байтах
+			size_t offset = c == IFALSE ? 0 : number(c);
+
+			int words = ((length + W - 1) / W) + 1; // в словах
+			if (words > (heap->end - fp)) {
+				ptrdiff_t dp;
+				dp = ip - (unsigned char*)this;
+
+				heap->fp = fp; ol->this = this;
+				ol->gc(ol, words);
+				fp = heap->fp; this = ol->this;
+
+				ip = (unsigned char*)this + dp;
+			}
+
+			result = new_bytevector(TBYTEVECTOR, length);
+			memcpy(&car(result), address+offset, length);
+			break;
+		}
+#endif
 
 		case SYSCALL_FSYNC: {
 			if (!is_port(a))

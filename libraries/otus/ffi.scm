@@ -332,29 +332,6 @@
    (else
       (runtime-error "ffi: unknown platform endianness" *uname*)))
 
-; -----------------------------
-; OS dependent functions
-(cond-expand
-   ((or Linux Android Emscripten)
-      (begin
-         (setq memcpy ((load-dynamic-library #f) fft-void "OL_memcpy" fft-void* fft-void* fft-unsigned-int))
-         (define (vptr->vector vptr sizeof)
-            (let ((vector (make-bytevector sizeof)))
-               (memcpy vector vptr sizeof)
-               vector))
-      ))
-   (Windows
-      (begin
-         (setq MoveMemory ((load-dynamic-library "kernel32.dll") fft-void "RtlMoveMemory" fft-void* fft-void* fft-unsigned-int))
-         (define (vptr->vector vptr sizeof)
-            (let ((vector (make-bytevector sizeof)))
-               (MoveMemory vector vptr sizeof)
-               vector))
-      ))
-
-   (else
-      (runtime-error "ffi: unknown platform OS" *uname*)))
-
 ;; (cond-expand
 ;;    (little-endian
 ;;       (begin
@@ -375,6 +352,9 @@
             (iota (size void*) 0)
             (iota (size void*) offset))
          void*))
+
+   (define (vptr->vector vptr sizeof)
+      (syscall 9 vptr sizeof 0))
 
 
 ; TODO: change this
