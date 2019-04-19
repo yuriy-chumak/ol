@@ -197,7 +197,7 @@
       (define output-buffer-size 4096)
 
       (define (open-input-file path) (fopen path #o000)) ; O_RDONLY
-      (define (open-output-file path) (fopen path #o102)) ; O_CREAT|O_RDWR
+      (define (open-output-file path) (fopen path #o1102)) ; O_CREAT|O_TRUNC|O_RDWR
 
       ;;; Reading
 
