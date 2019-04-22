@@ -57,7 +57,7 @@
 
 ; apply-gravity callback
 (define ApplyGravity (vm:pin (cons
-   (list type-vptr fft-float type-int+)
+   (list type-vptr fft-float fft-int)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -4.8 0 0))
 ))))
@@ -271,14 +271,20 @@
    (glEnd)
 
 ;  (glMaterialfv GL_FRONT GL_DIFFUSE '(1 0 0 1))
-   (let ((matrix '(0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1)))
+   (let ((matrix (list (inexact 0) (inexact 0) (inexact 0) (inexact 0)
+                       (inexact 0) (inexact 0) (inexact 0) (inexact 0)
+                       (inexact 0) (inexact 0) (inexact 0) (inexact 0)
+                       (inexact 0) (inexact 0) (inexact 0) (inexact 0))))
       (for-each (lambda (cube)
          (NewtonBodyGetMatrix cube matrix)
          (glPushMatrix)
          (glMultMatrixf matrix)
          (glCube)
          (glPopMatrix)) cubes))
-   (let ((matrix '(0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1  0.1 0.1 0.1 0.1)))
+   (let ((matrix (list (inexact 0) (inexact 0) (inexact 0) (inexact 0)
+                       (inexact 0) (inexact 0) (inexact 0) (inexact 0)
+                       (inexact 0) (inexact 0) (inexact 0) (inexact 0)
+                       (inexact 0) (inexact 0) (inexact 0) (inexact 0))))
       (for-each (lambda (sphere)
          (NewtonBodyGetMatrix sphere matrix)
          (glPushMatrix)
