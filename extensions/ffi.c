@@ -84,7 +84,7 @@
 // (Small embedded systems using special floating-point formats may be another
 // matter however.)
 word d2ol(struct ol_t* ol, double v);        // implemented in olvm.c
-double ol2d(word arg); float ol2f(word arg); // implemented in olvm.c
+double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 
 // C preprocessor trick, some kind of "map":
 // http://jhnet.co.uk/articles/cpp_magic
@@ -1091,12 +1091,12 @@ word* OL_ffi(OL* self, word* arguments)
 		// с плавающей запятой:
 		case TFLOAT:
 			#if __linux__ && __amd64__
-				*(float*)&ad[d++] = ol2f(arg); --i;
+				*(float*)&ad[d++] = OL2F(arg); --i;
 				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
-				*(float*)&af[f++] = ol2f(arg); --i;
+				*(float*)&af[f++] = OL2F(arg); --i;
 			#else
-				*(float*)&args[i] = ol2f(arg);
+				*(float*)&args[i] = OL2F(arg);
 			# ifdef __EMSCRIPTEN__
 				fmask |= 1 << i;
 			# endif
@@ -1119,7 +1119,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 					word l = arg;
 					while (c--)
-						*f++ = ol2f(car(l)), l = cdr(l);
+						*f++ = OL2F(car(l)), l = cdr(l);
 					break;
 				}
 				case TTUPLE: // let's support not only lists as float*
@@ -1130,7 +1130,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 					word* l = &car(arg);
 					while (c--)
-						*f++ = ol2f(*l++);
+						*f++ = OL2F(*l++);
 					break;
 				}
 			}
@@ -1141,12 +1141,12 @@ word* OL_ffi(OL* self, word* arguments)
 		case TDOUBLE:
 		tdouble:
 			#if __linux__ && __amd64__
-				*(double*)&ad[d++] = ol2d(arg); --i;
+				*(double*)&ad[d++] = OL2D(arg); --i;
 				floatsmask++;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
-				*(double*)&af[f++] = ol2d(arg); --i; f++;
+				*(double*)&af[f++] = OL2D(arg); --i; f++;
 			#else
-				*(double*)&args[i] = ol2d(arg);
+				*(double*)&args[i] = OL2D(arg);
 			# if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__ // UINT64_MAX > SIZE_MAX // sizeof(double) > sizeof(float) //__LP64__
 				++i; 	// for 32-bits: double fills two words
 			# endif
@@ -1167,7 +1167,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 			word l = arg;
 			while (c--)
-				*p++ = ol2d(car(l)), l = cdr(l);
+				*p++ = OL2D(car(l)), l = cdr(l);
 			break;
 		}
 
@@ -1605,20 +1605,33 @@ word* OL_ffi(OL* self, word* arguments)
 					float value = *f++;
 					word num = car(l);
 					switch (reference_type(num)) {
-						case TRATIONAL: {
-							// максимальная читабельность (todo: change like fto..)
-							long n = value * 10000;
-							long d = 10000;
-							car(num) = itosv(n);
-							cdr(num) = itosv(d);
-							// максимальная точность (fixme: пока не работает как надо)
-							//car(num) = itosv(value * VMAX);
-							//cdr(num) = I(VMAX);
-							break;
-						}
+						// case TRATIONAL: {
+						// 	// максимальная читабельность (todo: change like fto..)
+						// 	long n = value * 10000;
+						// 	long d = 10000;
+						// 	car(num) = itosv(n);
+						// 	cdr(num) = itosv(d);
+						// 	// максимальная точность (fixme: пока не работает как надо)
+						// 	//car(num) = itosv(value * VMAX);
+						// 	//cdr(num) = I(VMAX);
+						// 	break;
+						// }
+						// case TRATIONAL: {
+						// 	self->heap.fp = fp;
+						// 	word v = D2OL(self, value);
+						// 	fp = self->heap.fp;
+
+						// 	if (is_value (v))
+						// 		car(l) = v;
+						// 	else {
+						// 		assert (is_value(car(v)) && is_value(cdr(v)));
+						// 		car(num) = car(v);
+						// 		cdr(num) = cdr(v);
+						// 	}
+						// 	break;
+						// }
 						case TINEXACT: {
-							double* d = (double*)&car(num);
-							*(double*)&car(num) = value;
+							*(inexact_t*)&car(num) = value;
 							break;
 						}
 						default:
@@ -1987,7 +2000,7 @@ static
 __attribute__((used))
 long long callback(OL* ol, int id, int_t* argi
 #if __amd64__
-		, double* argf, int_t* rest //win64
+		, inexact_t* argf, int_t* rest //win64
 #endif
 		)
 {

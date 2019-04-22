@@ -249,6 +249,14 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 #ifndef OLVM_INEXACTS
 #define OLVM_INEXACTS 1
 #endif
+
+#ifndef OLVM_INEXACT_TYPE
+#define inexact_t double
+#else
+#define inexact_t OLVM_INEXACT_TYPE
+#endif
+
+
 #ifndef OLVM_BUILTIN_FMATH // builtin olvm math functions (vm:fp1)
 #define OLVM_BUILTIN_FMATH 0
 #endif
@@ -1238,9 +1246,9 @@ word data = (word) a;\
 
 #ifdef OLVM_INEXACTS
 #define new_inexact(a) ({\
-double d = (double) a;\
-	word* me = new_bytevector (TINEXACT, sizeof(d));\
-	*(double*)&me[1] = d;\
+inexact_t f = (inexact_t) a;\
+	word* me = new_bytevector (TINEXACT, sizeof(f));\
+	*(inexact_t*)&me[1] = f;\
 	/*return*/me;\
 })
 #endif
@@ -1654,8 +1662,12 @@ struct ol_t
 	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
 
 
-// internal functions:
+// =================================================================
+// machine floating point support, internal functions
 #if OLVM_INEXACTS
+
+#define ol2f(num) __builtin_choose_expr( __builtin_types_compatible_p (inexact_t, double), OL2D(num), OL2F(num) )
+
 // todo: add disabling ol2d (for machines without doubles), or better reusing as ol2f
 static
 double ol2d_convert(word p) {
@@ -1669,9 +1681,9 @@ double ol2d_convert(word p) {
 	return v;
 }
 
-double ol2d(word arg) {
+double OL2D(word arg) {
 	if (is_value(arg)) {
-		assert (value_type(arg) == TFIXP || value_type(arg) == TFIXN); // shorter: value_type(arg) == TFIXP
+		assert (value_type(arg) == TFIXP || value_type(arg) == TFIXN);
 		return svtoi(arg);
 	}
 	assert (is_reference(arg));
@@ -1681,8 +1693,8 @@ double ol2d(word arg) {
 	case TINTN:
 		return -ol2d_convert(arg);
 	case TRATIONAL:
-		return ol2d(car(arg)) / ol2d(cdr(arg));
-	case TBYTEVECTOR:
+		return OL2D(car(arg)) / OL2D(cdr(arg));
+	case TBYTEVECTOR: // is it required?
 		switch (blob_size(arg)) {
 			case sizeof(float):
 				return *(float*)&car(arg);
@@ -1692,9 +1704,9 @@ double ol2d(word arg) {
 		assert(0);
 		return 0.;
 	case TCOMPLEX: // only real part of complex number
-		return ol2d(car(arg));
+		return OL2D(car(arg));
 	case TINEXACT:
-		return *(double*)&car(arg);
+		return *(inexact_t*)&car(arg);
 	default:
 		assert(0);
 		return 0.;
@@ -1712,7 +1724,7 @@ float ol2f_convert(word p) {
 	}
 	return v;
 }
-float ol2f(word arg) {
+float OL2F(word arg) {
 	if (is_value(arg)) {
 		assert (value_type(arg) == TFIXP || value_type(arg) == TFIXN); // shorter: value_type(arg) == TFIXP
 		return svtoi(arg);
@@ -1724,11 +1736,20 @@ float ol2f(word arg) {
 	case TINTN:
 		return -ol2f_convert(arg);
 	case TRATIONAL:
-		return ol2f(car(arg)) / ol2f(cdr(arg));
+		return OL2F(car(arg)) / OL2F(cdr(arg));
+	case TBYTEVECTOR: // is it required?
+		switch (blob_size(arg)) {
+			case sizeof(float):
+				return *(float*)&car(arg);
+			case sizeof(double):
+				return *(double*)&car(arg);
+		}
+		assert(0);
+		return 0.;
 	case TCOMPLEX: // use only real part of complex number
-		return ol2f(car(arg));
+		return OL2F(car(arg));
 	case TINEXACT:
-		return *(double*)&car(arg); // inexact numbers is doubles! not floats.
+		return *(inexact_t*)&car(arg);
 	default:
 		assert(0);
 		return 0.;
@@ -1853,7 +1874,7 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 static
 long long callback(OL* ol, int id, int_t* argi
 	#if __amd64__
-		, double* argf, int_t* rest
+		, inexact_t* argf, int_t* rest
 	#endif
 	);
 #endif
@@ -2682,14 +2703,13 @@ loop:;
 		#if OLVM_INEXACTS
 		case TINEXACT:
 			// exact->inexact
-			A2 = (word) new_bytevector(TINEXACT, sizeof(double));
-			*(double*)&car(A2) = ol2d(T);
+			A2 = (word) new_bytevector(TINEXACT, sizeof(inexact_t));
+			*(inexact_t*)&car(A2) = ol2f(T);
 			break;
 		case TRATIONAL:
-			// во избежание переполнений ограничим точность конверсии чисел
-			// inexact->integer
+			// inexact->exact
 			if (is_reference(T) && reference_type(T) == TINEXACT) {
-				double v = *(double*)&car(T);
+				inexact_t v = *(inexact_t*)&car(T);
 
 				ol->heap.fp = fp;
 				A2 = d2ol(ol, v);
@@ -4285,16 +4305,16 @@ loop:;
 	// FPU extensions
 	case FP1: { // with 1 argument
 	#if OLVM_INEXACTS && OLVM_BUILTIN_FMATH
-		word fn = value(A0);
-		double a = ol2d(A1);
+		word fn = value (A0);
+		inexact_t a = ol2f(A1);
 
-		A2 = (word) new_bytevector(TINEXACT, sizeof(double));
+		A2 = (word) new_bytevector(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xFE: // fsin
-			*(double*)&car(A2) = __builtin_sin(a);
+			*(inexact_t*)&car(A2) = __builtin_sin(a);
 			break;
 		case 0xFF: // fcos
-			*(double*)&car(A2) = __builtin_cos(a);
+			*(inexact_t*)&car(A2) = __builtin_cos(a);
 			break;
 		// f2 - tan, f3 - atan, fa - sqrt,
 		default:
@@ -4308,26 +4328,26 @@ loop:;
 	}
 	case FP2: { // with 2 arguments
 	#if OLVM_INEXACTS
-		word fn = value(A0);
-		double a = ol2d(A1);
-		double b = ol2d(A2);
+		word fn = value (A0);
+		inexact_t a = ol2f(A1);
+		inexact_t b = ol2f(A2);
 
-		A3 = (word) new_bytevector(TINEXACT, sizeof(double));
+		A3 = (word) new_bytevector(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xD9: // fless?
 			A3 = (a < b) ? ITRUE : IFALSE;
 			break;
 		case 0xC1: // fadd
-			*(double*)&car(A3) = a + b;
+			*(inexact_t*)&car(A3) = a + b;
 			break;
 		case 0xE9: // fsub
-			*(double*)&car(A3) = a - b;
+			*(inexact_t*)&car(A3) = a - b;
 			break;
 		case 0xC9: // fmul
-			*(double*)&car(A3) = a * b;
+			*(inexact_t*)&car(A3) = a * b;
 			break;
 		case 0xF9: // fdiv
-			*(double*)&car(A3) = a / b;
+			*(inexact_t*)&car(A3) = a / b;
 			break;
 		default:
 			A3 = IFALSE;
