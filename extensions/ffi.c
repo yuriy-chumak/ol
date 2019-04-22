@@ -1370,7 +1370,7 @@ word* OL_ffi(OL* self, word* arguments)
 //			args[i] = (word)arg;
 //			break;
 		case TPORT: {
-			if (arg == itosv(-1)) {
+			if (arg == itosv(-1)) { // ?
 				args[i] = -1;
 				break;
 			}
@@ -1783,7 +1783,7 @@ word* OL_ffi(OL* self, word* arguments)
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
 		case TFLOAT:
 		case TDOUBLE: {
-			double value =
+			inexact_t value =
 				(returntype == TFLOAT)
 					? *(float* )&got
 					: *(double*)&got;
@@ -1849,12 +1849,12 @@ void OL_memcpy(void* dst, const void* src, size_t size)
 
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
 PUBLIC
-word* OL_mkcb(OL* self, word* arguments)
+word OL_mkcb(OL* self, word* arguments)
 {
 	word* A = (word*)car(arguments);
 
 	unless (is_value(A))
-		return (word*) IFALSE;
+		return IFALSE;
 
 	int pin = untoi(A);
 
@@ -1876,13 +1876,17 @@ word* OL_mkcb(OL* self, word* arguments)
 		HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
 				0, sizeof(bytecode), NULL);
 		if (!mh)
-			E("Can't create memory mapped object");
+			return IFALSE;
 		ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS,
 				0, 0, sizeof(bytecode));
 		CloseHandle(mh);
+		if (!ptr)
+			return IFALSE;
 	#else
 		ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
-				MAP_PRIVATE, -1, 0);
+				MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+		if (ptr == (char*) -1)
+			return IFALSE;
 	#endif
 
 	memcpy(ptr, &bytecode, sizeof(bytecode));
@@ -1926,10 +1930,12 @@ word* OL_mkcb(OL* self, word* arguments)
 	HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
 			0, sizeof(bytecode), NULL);
 	if (!mh)
-		E("Can't create memory mapped object");
+		return IFALSE;
 	ptr = MapViewOfFile(mh, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE,
 			0, 0, sizeof(bytecode));
 	CloseHandle(mh);
+	if (!ptr)
+		return IFALSE;
 
 	memcpy(ptr, &bytecode, sizeof(bytecode));
 	*(long long*)&ptr[56] = pin;
@@ -1972,6 +1978,8 @@ word* OL_mkcb(OL* self, word* arguments)
 			"\xC3";                 // ret
 	ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
 			MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	if (ptr == (char*) -1)
+		return IFALSE;
 
 	memcpy(ptr, &bytecode, sizeof(bytecode));
 	*(long long*)&ptr[78] = pin;
@@ -1984,7 +1992,7 @@ word* OL_mkcb(OL* self, word* arguments)
 	word*
 	fp = heap->fp;
 
-	word* result = new_callable(ptr);
+	word result = (word) new_callable(ptr);
 
 	heap->fp = fp;
 	return result;
@@ -2046,46 +2054,69 @@ long long callback(OL* ol, int id, int_t* argi
 #endif*/
 //	int f = 0; // linux
 	while (types != INULL) {
-		switch (car(types)) {
-		case I(TVPTR): {
-			void*
+		// шаблон транслятора аргументов C -> OL
 			#if __amd64__
 				#if _WIN64
-				value = i <= 4
-				        ? *(void**) &argi[i]
-				        : *(void**) &rest[i-4];
+				#define c2ol_value(type) \
+				type value = i <= 4 \
+				        ? *(type*) &argi[i] \
+				        : *(type*) &rest[i-4];
 				#else
-				value = i <= 6
-						? *(void**) &argi[i]
-						: *(void**) &rest[i-6]; // ???
-				#endif
+				#define c2ol_value(type) \
+				type value = i <= 6 \
+						? *(type*) &argi[i] \
+						: *(type*) &rest[i-6]; \
 				i++;
+				#endif
 			#else
-				value =   *(void**) &argi[i++];
+				#define c2ol_value(type) \
+				type value = *(type*) &argi[i++];
 			#endif
+
+		switch (car(types)) {
+		case I(TVPTR): {
+			c2ol_value(void*);
 			R[a] = (word) new_vptr(value);
 			break;
 		}
-		case I(TINTN): // deprecated
-		case I(TINTP): {
-			int_t
-			#if __amd64__
-				#if _WIN64
-				value = i <= 4
-				        ? *(int_t*) &argi[i]
-				        : *(int_t*) &rest[i-4];
-				#else
-				value = i <= 6
-						? *(int_t*) &argi[i]
-						: *(int_t*) &rest[i-6]; // ???
-				#endif
-				i++;
-			#else
-				value =   *(int_t*) &argi[i++];
-			#endif
+		case I(TUINT8): {
+			c2ol_value(unsigned char);
 			R[a] = I(value);
+			break; }
+		case I(TUINT16): {
+			c2ol_value(unsigned short);
+			R[a] = I(value);
+			break; }
+		case I(TUINT32): {
+			c2ol_value(unsigned int);
+			R[a] = (word) make_number(value);
 			break;
 		}
+		case I(TUINT64): {
+			c2ol_value(unsigned long long);
+			R[a] = (word) make_number(value);
+			break;
+		}
+
+		case I(TINT8): {
+			c2ol_value(signed char);
+			R[a] = (word) make_number(value);
+			break; }
+		case I(TINT16): {
+			c2ol_value(signed short);
+			R[a] = (word) make_number(value);
+			break; }
+		case I(TINT32): {
+			c2ol_value(signed int);
+			R[a] = (word) make_number(value);
+			break;
+		}
+		case I(TINT64): {
+			c2ol_value(signed long long);
+			R[a] = (word) make_number(value);
+			break;
+		}
+
 		case I(TFLOAT): {
 			float
 			#if __amd64__

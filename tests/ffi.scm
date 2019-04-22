@@ -146,15 +146,16 @@
 ; ---------------------------------------------------------------
 ; callbacks
 (define cb1 (vm:pin (cons
-   (list fft-int fft-int)
+   (list fft-int)
    (lambda (i)
       (for-each display (list "[" i "]"))
       (* i i)))))
 
 (define callback_call_i ((load-dynamic-library #f) fft-void "callback_call_i" type-callable))
 
-;(try "callback_call_i 1" callback_call_i (make-callback cb1))
-;(callback_call_i (make-callback cb1))
+(let ((callback (make-callback cb1)))
+   (if callback
+      (callback_call_i callback)))
 
 ; ============
 (print "done.")

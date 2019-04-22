@@ -442,11 +442,13 @@ int fft_64pointers(int length, long long* longs)
 
 // callbacks
 PUBLIC
-void callback_call_i(int (*callback) (int))
+int callback_call_i(int (*callback) (int))
 {
-	printf("callback_call_i(1): %d\n", callback(1));
-	printf("callback_call_i(-1): %d\n", callback(-1));
-	printf("callback_call_i(0): %d\n", callback(0));
-	printf("callback_call_i(999999): %d\n", callback(999999));
-	printf("callback_call_i(-999999): %d\n", callback(-999999));
+	int ints[] = { 1, -1, 0, 999999, -999999 };
+	for (int i = 0; i < sizeof(ints) / sizeof(ints[0]); i++)
+	{
+		printf("callback_call_i(%d): ", ints[i]);
+		callback(ints[i]); printf("\n");
+	}
+	return 0;
 }
