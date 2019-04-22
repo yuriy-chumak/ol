@@ -1834,12 +1834,6 @@ word OL_sizeof(OL* self, word* arguments)
 	}
 }
 
-PUBLIC
-void OL_memcpy(void* dst, const void* src, size_t size)
-{
-	memcpy(dst, src, size);
-}
-
 #endif//OLVM_FFI
 
 
