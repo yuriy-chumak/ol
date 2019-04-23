@@ -1935,12 +1935,14 @@ word OL_mkcb(OL* self, word* arguments)
 	*(long long*)&ptr[56] = pin;
 	*(long long*)&ptr[66] = (long long)self;
 	*(long long*)&ptr[82] = (long long)&callback;
-	#else
 
+	#else // System V (linux, unix, macos, android, ...)
 	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+	// rdi: ol, rsi: id, rdx: argi, rcx: argf, r8: rest
+	// not used: r9
+
 	static char bytecode[] =
 			"\x90" // nop
-			"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
 			"\x55"                  // push rbp
 			"\x48\x89\xE5"          // mov rbp, rsp
 			"\x41\x51"              // push r9
@@ -1950,6 +1952,7 @@ word OL_mkcb(OL* self, word* arguments)
 			"\x56"                  // push rsi
 			"\x57"                  // push rdi
 			"\x48\x89\xE2"          // mov rdx, rsp         // argi
+			"\x4C\x8D\x44\x24\x40"  // lea r8, [rsp+64]     // rest
 			// 21
 			"\x48\x83\xEC\x40"      // sub rsp, 8*8
 			"\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
@@ -2049,23 +2052,24 @@ long long callback(OL* ol, int id, int_t* argi
 //	int f = 0; // linux
 	while (types != INULL) {
 		// шаблон транслятора аргументов C -> OL
-			#if __amd64__
-				#if _WIN64
-				#define c2ol_value(type) \
-				type value = i <= 4 \
-				        ? *(type*) &argi[i] \
-				        : *(type*) &rest[i-4];
-				#else
-				#define c2ol_value(type) \
-				type value = i <= 6 \
-						? *(type*) &argi[i] \
-						: *(type*) &rest[i-6]; \
-				i++;
-				#endif
+		#if __amd64__
+			#if _WIN64
+			# define c2ol_value(type) \
+			type value = i < 5 \
+					? *(type*) &argi[i] \
+					: *(type*) &rest[i-5];
 			#else
-				#define c2ol_value(type) \
-				type value = *(type*) &argi[i++];
+			# define c2ol_value(type) \
+			type value = i < 6 \
+					? *(type*) &argi[i] \
+					: *(type*) &rest[i-6]; \
+			i++;
 			#endif
+		#else
+			# define c2ol_value(type) \
+			type value = *(type*) &argi[i++];
+		#endif
+
 
 		switch (car(types)) {
 		case I(TVPTR): {

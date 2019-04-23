@@ -145,17 +145,54 @@
 
 ; ---------------------------------------------------------------
 ; callbacks
-(define cb1 (vm:pin (cons
-   (list fft-int)
-   (lambda (i)
-      (for-each display (list "[" i "]"))
-      (* i i)))))
+(define (test-callback name types)
+   (define cb (vm:pin (cons
+      types
+      (lambda args
+         (print "callback: [ " args " ]")
+         (apply * args)))))
+   (define callback_call ((load-dynamic-library #f) fft-void name type-callable))
 
-(define callback_call_i ((load-dynamic-library #f) fft-void "callback_call_i" type-callable))
+   (let ((callback (make-callback cb)))
+      (if callback
+         (callback_call callback)))
+   (vm:unpin cb))
 
-(let ((callback (make-callback cb1)))
-   (if callback
-      (callback_call_i callback)))
+
+(test-callback "callback_call_i" (list fft-int))
+(test-callback "callback_call_ii" (list fft-int fft-int))
+(test-callback "callback_call_iii" (list fft-int fft-int fft-int))
+(test-callback "callback_call_iiii" (list fft-int fft-int fft-int fft-int))
+(test-callback "callback_call_iiiii" (list fft-int fft-int fft-int fft-int fft-int))
+(test-callback "callback_call_iiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int))
+(test-callback "callback_call_iiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+(test-callback "callback_call_iiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+
+; --------
+
+;; (define cb1 (vm:pin (cons
+;;    (list fft-int)
+;;    (lambda (i)
+;;       (for-each display (list "[" i "]"))
+;;       (* i i)))))
+
+;; (define callback_call_i ((load-dynamic-library #f) fft-void "callback_call_i" type-callable))
+
+;; (let ((callback (make-callback cb1)))
+;;    (if callback
+;;       (callback_call_i callback)))
+
+
+;; (define cb-ii (vm:pin (cons
+;;    (list fft-int fft-int)
+;;    (lambda (i j)
+;;       (for-each display (list "[" i ", " j "]"))
+;;       (* i j)))))
+;; (define callback_call_ii ((load-dynamic-library #f) fft-void "callback_call_ii" type-callable))
+
+;; (let ((callback (make-callback cb-ii)))
+;;    (if callback
+;;       (callback_call_ii callback)))
 
 ; ============
 (print "done.")

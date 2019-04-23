@@ -442,13 +442,81 @@ int fft_64pointers(int length, long long* longs)
 
 // callbacks
 PUBLIC
-int callback_call_i(int (*callback) (int))
+void callback_call_i(int (*callback) (int))
 {
-	int ints[] = { 1, -1, 0, 999999, -999999 };
-	for (int i = 0; i < sizeof(ints) / sizeof(ints[0]); i++)
-	{
-		printf("callback_call_i(%d): ", ints[i]);
-		callback(ints[i]); printf("\n");
-	}
-	return 0;
+	callback(0);
+	callback(1);
+	callback(-1);
+	callback(999999);
+	callback(-999999);
+}
+
+PUBLIC
+void callback_call_ii(int (*callback) (int, int))
+{
+	callback(0, 0);
+	callback(1, -1);
+	callback(-1, 1);
+	callback(999999, -999999);
+	callback(-999999, 999999);
+}
+
+PUBLIC
+void callback_call_iii(int (*callback) (int, int, int))
+{
+	callback(0, 0, 0);
+	callback(1, -1, 2);
+	callback(-1, 1, -2);
+	callback(999999, -999999, 7777777);
+	callback(-999999, 999999, -7777777);
+}
+
+PUBLIC
+void callback_call_iiii(int (*callback) (int, int, int, int))
+{
+	callback(0, 0, 0, 0);
+	callback(1, -1, 2, -2);
+	callback(-1, 1, -2, 2);
+	callback(999999, -999999, 7777777, -7777777);
+	callback(-999999, 999999, -7777777, 7777777);
+}
+
+PUBLIC
+void callback_call_iiiii(int (*callback) (int, int, int, int, int))
+{
+	callback(0, 0, 0, 0, 0);
+	callback(1, -1, 2, -2, 3);
+	callback(-1, 1, -2, 2, -3);
+	callback(999999, -999999, 7777777, -7777777, 11111111);
+	callback(-999999, 999999, -7777777, 7777777, -11111111);
+}
+
+PUBLIC
+void callback_call_iiiiii(int (*callback) (int, int, int, int, int, int))
+{
+	callback(0, 0, 0, 0, 0, 0);
+	callback(1, -1, 2, -2, 3, -3);
+	callback(-1, 1, -2, 2, -3, 3);
+	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111);
+	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111);
+}
+
+PUBLIC
+void callback_call_iiiiiii(int (*callback) (int, int, int, int, int, int, int))
+{
+	callback(0, 0, 0, 0, 0, 0, 0);
+	callback(1, -1, 2, -2, 3, -3, 4);
+	callback(-1, 1, -2, 2, -3, 3, -4);
+	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444);
+	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444);
+}
+
+PUBLIC
+void callback_call_iiiiiiii(int (*callback) (int, int, int, int, int, int, int, int))
+{
+	callback(0, 0, 0, 0, 0, 0, 0, 0);
+	callback(1, -1, 2, -2, 3, -3, 4, -4);
+	callback(-1, 1, -2, 2, -3, 3, -4, 4);
+	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444, -444444444);
+	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444);
 }
