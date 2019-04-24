@@ -28,6 +28,9 @@
 //#define __EMSCRIPTEN_major__ 1
 //#define __EMSCRIPTEN_minor__ 37
 
+#ifndef OLVM_FFI_TUPLES
+#define OLVM_FFI_TUPLES 1
+#endif
 
 #define TVOID         (48)
 //efine TSTRING       (3)
@@ -1616,6 +1619,29 @@ word* OL_ffi(OL* self, word* arguments)
 						// 	//cdr(num) = I(VMAX);
 						// 	break;
 						// }
+						case TINEXACT: {
+							*(inexact_t*)&car(num) = value;
+							break;
+						}
+						default:
+							assert (0 && "Invalid return variables.");
+							break;
+					}
+					l = cdr(l);
+				}
+				break;
+			}
+			case TDOUBLE + FFT_REF: {
+				// todo: перепроверить!
+				// вот тут попробуем заполнить переменные назад
+				int c = llen(arg);
+				double* f = (double*)args[i];
+
+				word l = arg;
+				while (c--) {
+					double value = *f++;
+					word num = car(l);
+					switch (reference_type(num)) {
 						// case TRATIONAL: {
 						// 	self->heap.fp = fp;
 						// 	word v = D2OL(self, value);

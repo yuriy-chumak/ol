@@ -153,8 +153,8 @@
                      (cons code (lambda ()
                         (loop (band (+ i 1) #x7FFF) hold))))
                   ((eq? code 256) ; end of block
-                     (print-to stderr "hold: " (ref hold 1) " " (ref hold 2) " > " (ref hold 3))
-                     (print-to stderr "BFINAL: " BFINAL)
+                     ;(print-to stderr "hold: " (ref hold 1) " " (ref hold 2) " > " (ref hold 3))
+                     ;(print-to stderr "BFINAL: " BFINAL)
                      (if (eq? BFINAL 1)
                         (begin
                            (print-to stderr "END-OF-STREAM")

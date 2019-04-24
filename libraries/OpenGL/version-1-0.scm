@@ -421,7 +421,7 @@
    glTexImage2D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) +
    glTexImage1D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels) +
 
-   ;WINGDIAPI void APIENTRY glTexParameterf (GLenum target, GLenum pname, GLfloat param); +
+   glTexParameterf ; void (GLenum target, GLenum pname, GLfloat param) +
    ;WINGDIAPI void APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params); +
    glTexParameteri ; void (GLenum target, GLenum pname, GLint param) +
    ;WINGDIAPI void APIENTRY glTexParameteriv (GLenum target, GLenum pname, const GLint *params); +
@@ -2908,6 +2908,7 @@
 ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
    (define glTexImage1D (GL GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum fft-any))
    (define glTexImage2D (GL GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum fft-any))
+   (define glTexParameterf (GL GLvoid "glTexParameterf" GLenum GLenum GLfloat))
    (define glTexParameteri (GL GLvoid "glTexParameteri" GLenum GLenum GLint))
 
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
