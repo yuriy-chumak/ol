@@ -1,5 +1,5 @@
-; custom random library with custom seed
-; for testing purposes (gives same sequence between different runs)
+; custom random library with predefined seed
+; for testing purposes (gives same sequences between different runs)
 (define-library (otus random!)
 (import
    (otus lisp))

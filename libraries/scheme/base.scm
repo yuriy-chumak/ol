@@ -280,10 +280,10 @@
 
       ; 6.4  Pairs and lists
 
-      ; procedure:  (assq obj alist) * moved to (scheme base)
-      ; procedure:  (assv obj alist) * moved to (scheme base)
-      ; procedure:  (assoc obj alist) * moved to (scheme base)
-      ; procedure:  (assoc obj alist compare) * moved to (scheme base)
+      ; procedure:  (assq obj alist)
+      ; procedure:  (assv obj alist)
+      ; procedure:  (assoc obj alist)
+      ; procedure:  (assoc obj alist compare)
 
       ; These procedures find the first pair in alist whose car field
       ; is obj , and returns that pair. If no pair in alist has obj
