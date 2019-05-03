@@ -1,9 +1,18 @@
 #!/usr/bin/ol
 
+(define all (iota 999 2))
+
 (print
-   (let loop ((left #null) (right (cdr (iota 1000 1))))
+   (let main ((left '()) (right all))
       (if (null? right)
          (reverse left)
-         (loop
-            (cons (car right) left)
-            (filter (lambda (x) (not (eq? (mod x (car right)) 0))) (cdr right))))))
+         (unless (car right)
+            (main left (cdr right))
+            (let loop ((l '()) (r right) (n 0) (every (car right)))
+               (if (null? r)
+                  (let ((l (reverse l)))
+                     (main (cons (car l) left) (cdr l)))
+                  (if (eq? n every)
+                     (loop (cons #false l) (cdr r) 1 every)
+                     (loop (cons (car r) l) (cdr r) (+ n 1) every)))))))
+)
