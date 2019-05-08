@@ -403,8 +403,8 @@
                      (get-tuple-of (get-sexp))
                      (get-quoted (get-sexp))
                      (get-byte-if eof?)
-                     get-quoted-char))
-               (skip maybe-whitespace))
+                     get-quoted-char)))
+               ;; (skip maybe-whitespace))
             val))
 
       (define (ok? x) (eq? (ref x 1) 'ok))
