@@ -1188,6 +1188,7 @@ word* OL_ffi(OL* self, word* arguments)
 			else
 			switch (reference_type(arg)) {
 			case TVPTR: // value of vptr
+			case TCALLABLE: // same as ^
 				args[i] = car(arg);
 				break;
 			case TBVEC: // address of bytevector data (no copying to stack)

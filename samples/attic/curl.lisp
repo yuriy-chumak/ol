@@ -1,19 +1,18 @@
 #!/usr/bin/ol
 
 (import (lib curl))
+(import (otus ffi))
 
-(define callback (syscall 85 (cons
-   (list type-string type-int+ type-int+ type-vptr)
+(define callback (vm:pin (cons
+   (list type-string fft-int fft-int type-vptr)
    (lambda (ptr nsize nmemb stream)
-      (print ptr)
-)) #f #f))
-
-
+      (print ptr))
+)))
 
 
 (define curl (curl_easy_init))
 (curl_easy_setopt curl CURLOPT_URL (c-string "https://dirty.ru/api/users/1/votes/"))
-(curl_easy_setopt curl CURLOPT_WRITEFUNCTION callback)
+(curl_easy_setopt curl CURLOPT_WRITEFUNCTION (make-callback callback))
 
 (curl_easy_perform curl)
 (curl_easy_cleanup curl)
