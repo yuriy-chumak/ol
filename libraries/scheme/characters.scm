@@ -28,8 +28,8 @@
 
    ; procedure:  (char<=? char1 char2)
    (define (char<=? a b)
-      (or (eq? a b)
-          (less? a b)))
+      (or (less? a b)
+          (eq? a b)))
 
    ; procedure:  (char>=? char1 char2)
    (define (char>=? a b)
