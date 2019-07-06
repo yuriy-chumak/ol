@@ -5,10 +5,10 @@
       caaar caadr cadar caddr ; moved from (scheme cxr)
       cdaar cdadr cddar cdddr ; moved from (scheme cxr)
 
-      ; i/o from r6rs
-      current-input-port
-      current-output-port
-      current-error-port
+      ;; ; i/o from r6rs
+      ;; current-input-port
+      ;; current-output-port
+      ;; current-error-port
 
       ; 6.4.  Pairs and lists
       assq assv assoc
@@ -258,7 +258,7 @@
    |#
    (import
       (scheme core) (src vm)
-      (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (required coroutines)
+      ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (required coroutines)
       (owl io) (owl math))
 
    (begin
@@ -274,9 +274,9 @@
       (define (cdddr x) (cdr (cdr (cdr x))))
 
 
-      (define current-input-port (make-parameter stdin))
-      (define current-output-port (make-parameter stdout))
-      (define current-error-port (make-parameter stderr))
+      ;; (define current-input-port (make-parameter stdin))
+      ;; (define current-output-port (make-parameter stdout))
+      ;; (define current-error-port (make-parameter stderr))
 
       ; 6.4  Pairs and lists
 
