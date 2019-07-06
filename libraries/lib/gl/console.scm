@@ -190,9 +190,6 @@
                ; список - цвет
                ((list? text)
                   (set-color text))
-               ((number? text)
-                  ; TODO: вывести на экран число
-                  #false)
 
                ((symbol? text) #t) ; игнорировать, символы обратавывает другая функция
                ((function? text) #t) ; аналогично

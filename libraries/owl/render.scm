@@ -154,12 +154,12 @@
                         (pair #\" (k sh))))) ;"
 
                ((pair? obj)
-                  (cons 40
+                  (cons #\(
                      (let loop ((sh sh) (obj obj))
                         (cond
                            ((null? obj)
                               ;; run of the mill list end
-                              (pair 41 (k sh)))
+                              (pair #\) (k sh)))
                            ;((getf sh obj) =>
                            ;   (λ (id)
                            ;      (ilist #\. #\space #\#
@@ -234,7 +234,6 @@
 
                ((port? obj)   (render obj (λ () (k sh))))
                ((eof? obj)    (render obj (λ () (k sh))))
-               ((eq? obj #empty)    (render obj (λ () (k sh))))
 
                (else
                   (append (string->list "#<WTF>") (delay (k sh))))))

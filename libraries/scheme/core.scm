@@ -7,12 +7,14 @@
       Core Otus-Lisp Scheme library.")
 
    (import
-      (src vm) ;; Codes and primitives of the Otus Lisp Virtual Machine that
-               ;;  do not need to be exported by libraries.
+      (src vm) ;; Otus Lisp Virtual Machine сodes and primitives
+               ;; that do not need to be exported by libraries.
                ;
                ; object creation/modification:
                ;   vm:new vm:make vm:makeb vm:cast
-               ;   cons car cdr ref type size set-ref set-ref! eq? less?
+               ;   cons set-ref set-ref!
+               ; other object manipulations
+               ;   car cdr ref type size  eq? less?
                ; basic math primitives:
                ;   integer:
                ;     vm:add vm:sub vm:mul vm:div vm:shr vm:shl
@@ -26,9 +28,9 @@
                ;   clock, syscall
                ; vm info:
                ;   vm:version vm:maxvalue vm:valuewidth vm:features
-               ; associative arrays support:
+               ; associative arrays (fixed functions) support:
                ;   ff:red ff:black ff:toggle ff:red? ff:right?
-               ; execution flow:
+               ; execution flow manipulation:
                ;   ff-apply tuple-apply
                ;
                ; exported functions:
@@ -76,6 +78,22 @@
                (ifeq (equal? ((lambda (x) x) expression) (quote expectation)) #true
                   #true
                   (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
+
+
+      ; Signaling errors in macro transformers (4.3.3)
+      ;
+      (define-syntax syntax-error
+         (syntax-rules (runtime-error)
+            ((syntax-error . staff)
+               (runtime-error "syntax error: " (quote staff)))))
+
+      ; * ol specific
+      (setq error runtime-error) ; [yc] is it required?
+
+      ; * ol some warnings
+      (setq error:please-import-langintern (lambda ()
+         (runtime-error "Please, import (lang intern) to get the function.")))
+
    )
 
    ; =================================================================
@@ -117,48 +135,6 @@
       ; Scheme has latent ..................
       ; ......
 
-      ; 1.2  Syntax
-      ;
-      ; Scheme, like most dialects of Lisp, employs .....
-      ; ......
-
-      ; 1.3  Notation and terminology
-      ;
-      ; 1.3.1  Primitive, library, and optional features
-      ;
-      ; It is required that every implementation of Scheme support
-      ; all features that are not marked as being optional. ......
-      ; ...
-
-      ; 1.3.2  Error situations and unspecified behavior
-      ;
-      ; When speaking of an error situation, this report .......
-      ; ....
-
-      ; 4.3.3. Signaling errors in macro transformers
-      ;
-      (define-syntax syntax-error
-         (syntax-rules (runtime-error)
-            ((syntax-error . staff)
-               (runtime-error "syntax error: " (quote staff)))))
-
-      ; * ol specific
-      (setq error runtime-error) ; [yc] is it required?
-
-      ; * ol some warnings
-      (setq error:please-import-langintern (lambda ()
-         (runtime-error "Please, import (lang intern) to get the function.")))
-
-      ; 1.3.3  Entry format
-      ;
-      ; Chapters 4 and 6 are organized into entries. Each ....
-      ; ........
-
-      ; 1.3.4  Evaluation examples
-      ;
-      ; The symbol "==>" used in program examples should be
-      ; read "evaluates to." ...
-      ; ....
 
       ; 1.3.5  Naming conventions
       ;
@@ -172,7 +148,7 @@
       ; By convention, the value returned by a mutation
       ; procedure is unspecified.
       ;
-      ; By convention, "->"" appears within the names of procedures
+      ; By convention, "->" appears within the names of procedures
       ; that take an object of one type and return an analogous
       ; object of another type. For example, list->vector
       ; takes a list and returns a vector whose elements are the
@@ -190,6 +166,7 @@
       ; 2.1  Identifiers
       ;
       ; Most identifiers allowed by other .......
+      
       ; ....
       ;
       ; Here are some examples of identifiers:
