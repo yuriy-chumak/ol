@@ -277,14 +277,16 @@
       ; syntax:  if <test> <consequent>
       (define-syntax if
          (syntax-rules (not eq? null? empty? zero?)
-            ((if val       then)      (if val then #false))
-            ((if (not val) then else) (if val else then))
-            ((if (eq? a b) then else) (ifeq a b then else))
-            ((if (null? t) then else) (if (eq? t #null) then else))  ; boot image size and compilation speed optimization
-            ((if (a . b)   then else) (letq (x) ((a . b)) (if x then else)))
-            ((if #true     then else)  then)
-            ((if #false    then else)  else)
-            ((if t         then else) (ifeq t #false else then))))
+            ((if it then) (if it then #f))
+
+            ((if val  then else otherwise) (if val then otherwise))
+            ((if (not val) then otherwise) (if val otherwise then))
+            ((if (eq? a b) then otherwise) (ifeq a b then otherwise))
+            ((if (null? t) then otherwise) (if (eq? t #null) then otherwise))  ; boot image size and compilation speed optimization
+            ((if (a . b)   then otherwise) (letq (x) ((a . b)) (if x then otherwise)))
+            ((if #true     then otherwise)  then)
+            ((if #false    then otherwise)  otherwise)
+            ((if val       then otherwise) (ifeq val #false otherwise then))))
 
       (assert (if (less? 2 3) 'yes 'no)               ===>  yes)
       (assert (if (less? 3 2) 'yes 'no)               ===>  no)
