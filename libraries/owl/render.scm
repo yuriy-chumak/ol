@@ -228,9 +228,23 @@
                   (cons #\# (ser sh (ff->list obj) k)))
 
                ((tuple? obj)
-                  (ilist #\# #\[
-                     (ser sh (tuple->list obj)
-                        (λ (sh) (pair #\] (k sh))))))
+                  ;; (ilist #\# #\[
+                  ;;    (ser sh (tuple->list obj)
+                  ;;       (λ (sh) (pair #\] (k sh))))))
+
+                  (cons #\[
+                     (let loop ((sh sh) (n 1))
+                        (cond
+                           ((less? (size obj) n)
+                              (pair #\] (k sh)))
+                           (else
+                              ;; render car, then cdr
+                              (ser sh (ref obj n)
+                                 (λ (sh)
+                                    (delay
+                                       (if (eq? n (size obj))
+                                          (loop sh (+ n 1))
+                                          (cons #\space (loop sh (+ n 1))))))))))))
 
                ((port? obj)   (render obj (λ () (k sh))))
                ((eof? obj)    (render obj (λ () (k sh))))
