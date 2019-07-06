@@ -735,6 +735,24 @@ object_t
 	} u;
 };
 
+// let's apply some critical VM structure limitations
+//__attribute__((used))
+void _internal_vm_structure_rules() {
+	// data strcture sizes
+	static_assert(sizeof(struct value_t) == sizeof(word), "Size of value_t structure should be equal to size of virtual machine word");
+	static_assert(sizeof(struct reference_t) == sizeof(word), "Size of reference_t structure should be equal to size of virtual machine word");
+	static_assert(sizeof(struct header_t) == sizeof(word), "Size of header_t structure should be equal to size of virtual machine word");
+	static_assert(sizeof(struct object_t) == sizeof(word), "Size of object_t structure should be equal to size of virtual machine word");
+
+	// value_t and global constants correspondence
+	//static_assert(((struct value_t) { payload: 42 }) == (42 << IPOS), "IPOS constant is not correspondent to value_t structure");
+
+	// header_t and global constants correspondence (TODO)
+	//header()
+
+}
+
+
 // ------------------------------------------------------
 // PUBLIC API: (please, check out the olvm.h)
 
