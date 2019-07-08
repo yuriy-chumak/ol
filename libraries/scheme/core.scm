@@ -365,6 +365,8 @@
             ; http://srfi.schemers.org/srfi-87/srfi-87.html
             ((case thing (else => func))
                (func thing))
+            ((case thing (else is name . body)) ; * ol specific
+               ((lambda (name) . body) thing))
             ((case thing (else . body))
                ((lambda () . body)))   ; means (begin . body)
             ((case thing ((a . b) . body) . clauses)
