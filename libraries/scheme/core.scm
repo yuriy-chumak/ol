@@ -343,7 +343,7 @@
 
       ; library syntax:  (case <key> <clause1> <clause2> ...)
       (define-syntax case
-         (syntax-rules (else list eqv? eq? and memv => vm:make type-vector-leaf is)
+         (syntax-rules (else list eqv? eq? and memv => vm:new type-vector-leaf is)
             ; precalculate case argument, if needed
             ((case (op . args) . clauses)
                ((lambda (fresh) ; let ((fresh (op.args)))
@@ -372,7 +372,7 @@
                ((lambda () . body)))   ; means (begin . body)
             ; * ol specific
             ; trying to integrate tuple-case:
-            ((case thing ((vm:make type-vector-leaf (list cp . args)) . body) . clauses)
+            ((case thing ((vm:new type-vector-leaf cp . args) . body) . clauses)
                (if (and
                      (size thing) ; thing is object?
                      (eq? (ref thing 1) cp)) ; compare (todo: move (ref thing 1) to common clause)
