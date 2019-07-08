@@ -343,7 +343,8 @@
 
       ; library syntax:  (case <key> <clause1> <clause2> ...)
       (define-syntax case
-         (syntax-rules (else eqv? memv =>)
+         (syntax-rules (else list eqv? eq? and memv => vm:make type-vector-leaf is)
+            ; precalculate case argument, if needed
             ((case (op . args) . clauses)
                ((lambda (fresh) ; let ((fresh (op.args)))
                   (case fresh . clauses)) (op . args)))
@@ -369,6 +370,18 @@
                ((lambda (name) . body) thing))
             ((case thing (else . body))
                ((lambda () . body)))   ; means (begin . body)
+            ; * ol specific
+            ; trying to integrate tuple-case:
+            ((case thing ((vm:make type-vector-leaf (list cp . args)) . body) . clauses)
+               (if (and
+                     (size thing) ; thing is object?
+                     (eq? (ref thing 1) cp)) ; compare (todo: move (ref thing 1) to common clause)
+                  (tuple-apply thing
+                     (lambda (| | . args)
+                        . body))
+                  (case thing . clauses)))
+
+            ; http://srfi.schemers.org/srfi-87/srfi-93.html ?
             ((case thing ((a . b) . body) . clauses)
                (if (memv thing (quote (a . b)))
                   ((lambda () . body)) ; means (begin . body)
