@@ -378,15 +378,23 @@
                   (cons '_sharp_vector fields) ; <- quasiquote macro expects to see this in vectors
                   (list->vector fields)))))
 
-      (define (get-tuple-of parser) ; [ ... ]
+      (define (get-simple-tuple-of parser) ; [ ... ]
          (let-parses (
-               ;(skip (get-imm #\#))
+               (skip (get-imm #\{))
+               (things
+                  (get-kleene* parser))
+               (skip maybe-whitespace)
+               (skip (get-imm #\})))
+            (cons 'tuple things)))
+
+      (define (get-simple-vector-of parser) ; simple vector (not a "smart")
+         (let-parses (
                (skip (get-imm #\[))
                (things
                   (get-kleene* parser))
                (skip maybe-whitespace)
                (skip (get-imm #\])))
-            (cons 'tuple things)))
+            (list 'vm:make 'type-vector-leaf (cons 'list things))))
 
       (define (get-sexp)
          (let-parses (
@@ -400,7 +408,8 @@
                      get-funny-word
                      (get-list-of (get-sexp))
                      (get-vector-of (get-sexp))
-                     (get-tuple-of (get-sexp))
+                     (get-simple-tuple-of (get-sexp))
+                     (get-simple-vector-of (get-sexp))
                      (get-quoted (get-sexp))
                      (get-byte-if eof?)
                      get-quoted-char)))
