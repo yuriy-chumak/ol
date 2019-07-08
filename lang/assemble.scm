@@ -62,12 +62,12 @@
                   (res (compare-code k bytecode)))
                (cond
                   ((eq? res is-equal)
-                     (tuple l bytecode value r))
+                     [l bytecode value r])
                   ((eq? res is-less)
-                     (tuple (insert-code l bytecode value) k v r))
+                     [(insert-code l bytecode value) k v r])
                   (else
-                     (tuple l k v (insert-code r bytecode value)))))
-            (tuple #false bytecode value #false)))
+                     [l k v (insert-code r bytecode value)])))
+            [#false bytecode value #false]))
 
       (define (lookup-code codes bytecode)
          (if codes
@@ -308,7 +308,7 @@
       (define (assemble-code obj tail)
          (case obj
             (['code arity insts]
-               (assemble-code (tuple 'code-var #true arity insts) tail))
+               (assemble-code ['code-var #true arity insts] tail))
             (['code-var fixed? arity insts]
                (let* ((insts (allocate-registers insts)))
                   (if (not insts)

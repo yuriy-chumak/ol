@@ -72,7 +72,7 @@
                ((function? obj)
                   (render "#<function>" tl))
                   ;; anonimas
-                  ;(let ((symp (interact 'intern (tuple 'get-name obj))))
+                  ;(let ((symp (interact 'intern ['get-name obj])))
                   ;   (if symp
                   ;      (ilist #\# #\< (render symp (cons #\> tl)))
                   ;      (render "#<function>" tl))))

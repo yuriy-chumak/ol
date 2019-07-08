@@ -243,12 +243,10 @@
                   ;; rule = (pattern gensyms template)
                   (let ((dictionary (try-pattern (car rule) literals form)))
                      (if dictionary
-                        (lets
-                           ((free dictionary
-                              (add-fresh-bindings (cadr rule) free dictionary))
-                            (new (rewrite dictionary (caddr rule))))
-                           (tuple new free))
-                        #false)))
+                        (let*((free dictionary
+                                 (add-fresh-bindings (cadr rule) free dictionary))
+                              (new (rewrite dictionary (caddr rule))))
+                           [new free]))))
                rules)))
 
       ; add fresh symbol list -> ((pattern fresh template) ...)

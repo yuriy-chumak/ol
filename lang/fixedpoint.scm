@@ -164,7 +164,7 @@
                      (begin
                         ;(print " making a wrapper for " name)
                         ;(print "   - with deps " deps)
-                        ['lambda (reverse (cdr (reverse deps))) (tuple 'call exp (map mkvar deps))])
+                        ['lambda (reverse (cdr (reverse deps))) ['call exp (map mkvar deps)]])
                      exp))
                (else
                   (runtime-error "carry-simple-recursion: what is this node type: " exp))))
@@ -205,7 +205,7 @@
                    (b (carry-bindings b env))
                    (then (carry-bindings then env))
                    (else (carry-bindings else env)))
-                  (tuple 'ifeq a b then else)))
+                  ['ifeq a b then else]))
             (['var sym]
                (case (lookup env sym)
                   (['recursive formals deps]
@@ -218,13 +218,13 @@
                   (else exp)))
             (['value val] exp)
             (['values vals]
-               (tuple 'values
-                  (map (lambda (exp) (carry-bindings exp env)) vals)))
+               ['values
+                  (map (lambda (exp) (carry-bindings exp env)) vals)])
             (['values-apply op fn]
                (let
                   ((op (carry-bindings op env))
                    (fn (carry-bindings fn env)))
-                  (tuple 'values-apply op fn)))
+                  ['values-apply op fn]))
             (else
                (runtime-error "carry-bindings: strange expression: " exp))))
 
@@ -282,8 +282,8 @@
                               (let ((formals (ref (value-of node) 2)))
                                  (env-put-raw env  
                                     (name-of node) 
-                                    (tuple 'recursive formals 
-                                       (list (name-of node))))))
+                                    ['recursive formals 
+                                       (list (name-of node))])))
                            env nodes)))
                      ; bind all names to extended functions (think (let ((fakt (lambda (fakt x fakt) ...) ...))))
                      (make-bindings
@@ -335,7 +335,7 @@
                               (let ((formals (ref (value-of node) 2)))
                                  (env-put-raw env 
                                     (name-of node) 
-                                    (tuple 'recursive formals partition))))
+                                    ['recursive formals partition])))
                            env nodes)))
                      (make-bindings
                         (map first nodes)
@@ -380,9 +380,9 @@
          (case exp
             (['var value] exp)
             (['call rator rands]
-               (tuple 'call
+               ['call
                   (unletrec rator env)
-                  (unletrec-list rands)))
+                  (unletrec-list rands)])
             (['lambda formals body]
                (mklambda formals
                   (unletrec body (env-bind env formals))))
@@ -397,35 +397,35 @@
                   (generate-bindings
                      (dependency-closure (zip
                         (lambda (name value)
-                           (tuple name value
+                           [name value
                               (intersect names
-                                 (free-vars value env))))
+                                 (free-vars value env))])
                         names values))
                   body env)))
 
             (['value val] exp)
             (['values vals]
-               (tuple 'values
-                  (unletrec-list vals)))
+               ['values
+                  (unletrec-list vals)])
             (['values-apply op fn]
-               (tuple 'values-apply (unletrec op env) (unletrec fn env)))
+               ['values-apply (unletrec op env) (unletrec fn env)])
             (['ifeq a b then else]
                (let
                   ((a (unletrec a env))
                    (b (unletrec b env))
                    (then (unletrec then env))
                    (else (unletrec else env)))
-                  (tuple 'ifeq a b then else)))
+                  ['ifeq a b then else]))
             (['either func else]
-               (tuple 'either
+               ['either
                   (unletrec func env)
-                  (unletrec else env)))
+                  (unletrec else env)])
             (else
                (runtime-error "Funny AST node in unletrec: " exp))))
 
       ;; exp env -> #(ok exp' env)
       (define (fix-points exp env)
          (let ((result (unletrec exp env)))
-            (tuple 'ok result env)))
+            ['ok result env]))
 
    ))

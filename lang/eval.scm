@@ -59,8 +59,8 @@
    (begin
 
       (define (ok? x) (eq? (ref x 1) 'ok))
-      (define (ok exp env) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
+      (define (ok exp env) ['ok exp env])
+      (define (fail reason) ['fail reason])
       (define (isatty? fd) (syscall 16 fd 19 #f))
       (define (interactive? env) (env-get env '*interactive* #false))
 
@@ -383,8 +383,8 @@
 
       (define (syntax-error? x) (and (pair? x) (eq? syntax-error-mark (car x))))
 
-      (define (repl-ok env value) (tuple 'ok value env))
-      (define (repl-fail env reason) (tuple 'error reason env))
+      (define (repl-ok env value) ['ok value env])
+      (define (repl-fail env reason) ['error reason env])
 
       ;; just be quiet
       (define repl-load-prompt
@@ -461,7 +461,7 @@
             ((forget-all-but)
                (lets ((op in (uncons in #false)))
                   (if (and (list? op) (all symbol? op))
-                     (let ((nan (tuple 'defined (tuple 'value 'undefined))))
+                     (let ((nan ['defined ['value 'undefined]]))
                         (repl
                            (env-keep env
                               (λ (name)
@@ -524,7 +524,7 @@
                   (repl env in)))
             ((quit)
                ; this goes to repl-trampoline
-               (tuple 'ok 'quitter env))
+               ['ok 'quitter env])
             (else
                (print "unknown repl op: " op)
                ;(prompt env (repl-message #f))
@@ -954,8 +954,8 @@
                   (else
                      (evaluator exp env))))
             (['fail reason]
-               (tuple 'fail
-                  (list "Macro expansion failed: " reason)))))
+               ['fail
+                  (list "Macro expansion failed: " reason)])))
 
 
       ; !
@@ -996,14 +996,14 @@
          (let ((fd (open-input-file path)))
             (if fd
                (repl-port env fd)
-               (tuple 'error "cannot open file" env))))
+               ['error "cannot open file" env])))
 
       (define (eval-string env str)
          (let ((exps (parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
             ;; list of sexps
             (if exps
                (repl env exps evaluate)
-               (tuple 'error "not parseable" env))))
+               ['error "not parseable" env])))
 
       ;; run the repl on a fresh input stream, report errors and catch exit
       (define (repl-trampoline env in)

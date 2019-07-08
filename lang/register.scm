@@ -72,7 +72,7 @@
       (define (rtl-rename code op target fail)
          (case code
             (['ret a]
-               (tuple 'ret (op a)))
+               ['ret (op a)])
             (['move a b more]
                (cond
                   ((eq? b target)
@@ -87,51 +87,51 @@
                      (let ((a (op a)))
                         (if (eq? a b)
                            (rtl-rename more op target fail)
-                           (tuple 'move a b (rtl-rename more op target fail)))))))
+                           ['move a b (rtl-rename more op target fail)])))))
             (['prim opcode args to more]
                (if (fix+? to)
                   (if (bad? to target op)
                      (fail)
-                     (tuple 'prim opcode
+                     ['prim opcode
                         (map op args)
-                        to (rtl-rename more op target fail)))
+                        to (rtl-rename more op target fail)])
                   (if (bad? to target op)
                      (fail)
-                     (tuple 'prim opcode (map op args) to (rtl-rename more op target fail)))))
+                     ['prim opcode (map op args) to (rtl-rename more op target fail)])))
             (['clos-proc lp off env to more]
                (if (bad? to target op)
                   (fail)
-                  (tuple 'clos-proc (op lp) off (map op env) to (rtl-rename more op target fail))))
+                  ['clos-proc (op lp) off (map op env) to (rtl-rename more op target fail)]))
             (['clos-code lp off env to more]
                (if (bad? to target op)
                   (fail)
-                  (tuple 'clos-code (op lp) off (map op env) to (rtl-rename more op target fail))))
+                  ['clos-code (op lp) off (map op env) to (rtl-rename more op target fail)]))
             (['ld val to cont]
                (if (bad? to target op)
                   (fail)
-                  (tuple 'ld val to (rtl-rename cont op target fail))))
+                  ['ld val to (rtl-rename cont op target fail)]))
             (['refi from offset to more]
                (if (bad? to target op)
                   (fail)
-                  (tuple 'refi (op from) offset to (rtl-rename more op target fail))))
+                  ['refi (op from) offset to (rtl-rename more op target fail)]))
             (['goto fn nargs]
-               (tuple 'goto (op fn) nargs))
+               ['goto (op fn) nargs])
             ;((goto-code fn nargs)
-            ;   (tuple 'goto-code (op fn) nargs))
+            ;   ['goto-code (op fn) nargs])
             ;((goto-proc fn nargs)
-            ;   (tuple 'goto-proc (op fn) nargs))
+            ;   ['goto-proc (op fn) nargs])
             ;((goto-clos fn nargs)
-            ;   (tuple 'goto-clos (op fn) nargs))
+            ;   ['goto-clos (op fn) nargs])
             (['jeq a b then else]
-               (tuple 'jeq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)))
+               ['jeq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (['jn a then else] ; todo: merge next four cases into one
-               (tuple 'jn (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
+               ['jn (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (['jz a then else]
-               (tuple 'jz (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
+               ['jz (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (['je a then else]
-               (tuple 'je (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
+               ['je (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (['jf a then else]
-               (tuple 'jf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
+               ['jf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (else
                (runtime-error "rtl-rename: what is this: " code))))
 
@@ -164,9 +164,9 @@
              (uses (reg-touch uses a)))
             (case op
                ((jeq)
-                  (values (tuple op a b then else) (reg-touch uses b)))
+                  (values [op a b then else] (reg-touch uses b)))
                (else
-                  (values (tuple op a then else) uses)))))
+                  (values [op a then else] uses)))))
 
       (define (rtl-retard-closure rtl-retard code)
          (lets
@@ -174,12 +174,12 @@
              (more uses (rtl-retard more))
              (good (use-list uses to))
              (uses (del uses to))
-             (pass (λ () (values (tuple clos-type lpos offset env to more) (fold reg-touch uses (cons lpos env))))))
+             (pass (λ () (values [clos-type lpos offset env to more] (fold reg-touch uses (cons lpos env))))))
             (retarget-first more to good uses
                (λ (to-new more-new)
                   (if (eq? to to-new)
                      (pass)
-                     (rtl-retard (tuple clos-type lpos offset env to-new more-new)))))))
+                     (rtl-retard [clos-type lpos offset env to-new more-new]))))))
 
       ; retarget register saves to registers where they are moved
       ; where possible (register retargeting level 1)
@@ -208,16 +208,16 @@
                          (targets (use-list uses a)))
                         (if (has? targets b)
                            ; moved to a useful target
-                           (values (tuple 'move a b more) uses)
+                           (values ['move a b more] uses)
                            ; leave a wish that the value at a could already be in b
-                           (values (tuple 'move a b more) (put uses a (cons b targets))))))))
+                           (values ['move a b more] (put uses a (cons b targets))))))))
 
             (['prim op args to more]
                (lets
                   ((more uses (rtl-retard more))
                    (pass
                      (λ () (values
-                        (tuple 'prim op args to more)
+                        ['prim op args to more]
                         (fold reg-touch (del uses to) args)))))
                   (cond
                      ((fix+? to)
@@ -228,7 +228,7 @@
                                  (if (eq? to to-new)
                                     (pass)
                                     (rtl-retard
-                                       (tuple 'prim op args to-new more-new)))))))
+                                       ['prim op args to-new more-new]))))))
                      ;; fixme: no register retargeting for multiple-return-value primops
                      (else
                         '(call/cc
@@ -242,9 +242,9 @@
                                                 pass
                                                 (ret
                                                    (rtl-retard
-                                                      (tuple 'prim op args
+                                                      ['prim op args
                                                          (map (lambda (to) (if (eq? to ato) ato-new to)) to)
-                                                         more-new))))))))
+                                                         more-new])))))))
                                  pass to)))
                         (pass)))))
 
@@ -253,12 +253,12 @@
                   ((cont uses (rtl-retard cont))
                    (good (use-list uses to))
                    (good (if (> to highest-register) (append good (lrange 0 1 highest-register)) good))
-                   (pass (λ () (values (tuple 'ld val to cont) (del uses to)))))
+                   (pass (λ () (values ['ld val to cont] (del uses to)))))
                   (retarget-first cont to good uses
                      (λ (to-new cont-new)
                         (if (eq? to to-new)
                            (pass)
-                           (rtl-retard (tuple 'ld val to-new cont-new)))))))
+                           (rtl-retard ['ld val to-new cont-new]))))))
 
             (['clos-proc lpos offset env to more]
                (rtl-retard-closure rtl-retard code))
@@ -273,14 +273,14 @@
                    (good (use-list uses to))
                    (uses (del uses to))
                    (pass
-                     (λ () (values (tuple 'refi from offset to more)
+                     (λ () (values ['refi from offset to more]
                         (reg-touch uses from)))))
                   (retarget-first more to good uses
                      (λ (to-new more-new)
                         (if (eq? to to-new)
                            (pass)
                            (rtl-retard
-                              (tuple 'refi from offset to-new more-new)))))))
+                              ['refi from offset to-new more-new]))))))
             (['goto op nargs]
                (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             ;((goto-code op nargs)

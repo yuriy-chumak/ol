@@ -43,8 +43,8 @@
             (eq? val #false)
             (and (fix+? val) (>= val -127) (< val 127))))
 
-      (define (ok exp env) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
+      (define (ok exp env) ['ok exp env])
+      (define (fail reason) ['fail reason])
 
       ; regs = (node ...), biggest id first
       ; node = #(var <sym> id)
@@ -63,12 +63,12 @@
 
       (define (load-small-value regs val cont)
          (let ((reg (next-free-register regs)))
-            (tuple 'ld val reg
+            ['ld val reg
                (cont
-                  (cons (tuple 'val val reg) regs)
-                  reg))))
+                  (cons ['val val reg] regs)
+                  reg)]))
 
-      ; get index of thing at (future) tuple
+      ; get index of thing at (future) vector
       ; lst = (l0 l1 ... ln) -> #(header <code/proc> l0 ... ln)
       (define (index-of thing lst pos)
          (cond
@@ -97,7 +97,7 @@
                   (else
                      (find-any (cdr regs) sym type subtype))))))
 
-      ;; find which register has the literals-tuple
+      ;; find which register has the literals-vector
       (define (find-literals env)
          (if (null? env)
             (runtime-error "No literals found: " env)
@@ -128,8 +128,8 @@
                   (runtime-error "rtl-value: cannot make a load for a " val))
                ((fix+? (cdr position))
                   (let ((this (next-free-register regs)))
-                     (tuple 'refi (car position) (cdr position) this
-                        (cont (cons (tuple 'val val this) regs) this))))
+                     ['refi (car position) (cdr position) this
+                        (cont (cons ['val val this] regs) this)]))
                (else
                   (runtime-error "tried to use old chain load in " val)))))
 
@@ -142,8 +142,8 @@
                   (runtime-error "rtl-variable: cannot find the variable " sym))
                ((fix+? (cdr position))
                   (let ((this (next-free-register regs)))
-                     (tuple 'refi (car position) (cdr position) this
-                        (cont (cons (tuple 'var sym this) regs) this))))
+                     ['refi (car position) (cdr position) this
+                        (cont (cons ['var sym this] regs) this)]))
                (else
                   (runtime-error "no chain load: " position)))))
 
@@ -153,37 +153,37 @@
             (cond
                ((null? env)
                   ;; no need to close, just refer the executable procedure
-                  (tuple 'refi (find-literals regs) lit-offset this
+                  ['refi (find-literals regs) lit-offset this
                      (cont
-                        (cons (tuple 'val (list 'a-closure) this) regs)
-                        this)))
+                        (cons ['val (list 'a-closure) this] regs)
+                        this)])
                ((null? lit)
                   ;; the function will be of the form
                   ;; #(closure-header <code> e0 ... en)
-                  (tuple 'clos-code (find-literals regs) lit-offset env this
+                  ['clos-code (find-literals regs) lit-offset env this
                      (cont
-                        (cons (tuple 'val (list 'a-closure) this) regs)
-                        this)))
+                        (cons ['val (list 'a-closure) this] regs)
+                        this)])
                (else
                   ;; the function will be of the form
                   ;; #(clos-header #(proc-header <code> l0 .. ln) e0 .. em)
-                  (tuple 'clos-proc (find-literals regs) lit-offset env this
+                  ['clos-proc (find-literals regs) lit-offset env this
                      (cont
-                        (cons (tuple 'val (list 'a-closure) this) regs)
-                        this))))))
+                        (cons ['val (list 'a-closure) this] regs)
+                        this)]))))
 
       (define (env->loadable env)
          (map
             (λ (x)
                (if (symbol? x)
-                  (tuple 'var x)
+                  ['var x]
                   (runtime-error "Cannot yet load this env node: " env)))
             env))
 
       (define (create-alias regs name position)
          (let ((this (car regs)))
             (if (eq? (ref this 3) position)
-               (cons (tuple 'var name position) regs)
+               (cons ['var name position] regs)
                (cons this
                   (create-alias (cdr regs) name position)))))
 
@@ -226,10 +226,10 @@
       (define (rtl-bind regs formals)
          (let loop ((regs regs) (formals formals) (taken null))
             (if (null? formals)
-               (tuple (reverse taken) regs)
+               [(reverse taken) regs]
                (let ((this (next-free-register regs)))
                   (loop
-                     (cons (tuple 'var (car formals) this) regs)
+                     (cons ['var (car formals) this] regs)
                      (cdr formals)
                      (cons this taken))))))
 
@@ -249,17 +249,17 @@
                      ;; a run-of-the-mill a0 .. an → rval -primop
                      ((and (eq? (length formals) 1) (not (special-bind-primop? op)))
                         (let ((this (next-free-register regs)))
-                           (tuple 'prim op args this
+                           ['prim op args this
                               (cont
                                  (cons
-                                    (tuple 'var (car formals) this)
-                                    regs)))))
+                                    ['var (car formals) this]
+                                    regs))]))
                      (else
                         ; bind or ff-apply, or arithmetic
                         (tuple-apply (rtl-bind regs formals)
                            (λ (selected regs)
-                              (tuple 'prim op args selected
-                                 (cont regs))))))))))
+                              ['prim op args selected
+                                 (cont regs)]))))))))
 
 
       (define (rtl-make-moves sequence tail)
@@ -267,7 +267,7 @@
             (λ (move rest)
                (if (eq? (car move) (cdr move))
                   rest
-                  (tuple 'move (car move) (cdr move) rest)))
+                  ['move (car move) (cdr move) rest]))
             tail sequence))
 
       (define (rtl-moves-ok? moves)
@@ -354,24 +354,24 @@
                ;; cont is usually at 3, and usually there is
                ;; 1 return value -> special instruction
                ((and (eq? rator a0) (eq? nargs 1))
-                  (tuple 'ret (car rands)))
+                  ['ret (car rands)])
                ;;; rator is itself in rands, and does not need rescuing
                ((has? rands rator)
                   (rtl-make-jump rands free
                      (if inst
-                        (tuple inst (index-of rator rands a0) nargs)
-                        (tuple 'goto
+                        [inst (index-of rator rands a0) nargs]
+                        ['goto
                            (index-of rator rands a0)
-                           nargs))))
+                           nargs])))
                ;;; rator is above rands, again no need to rescue
                ((> rator (+ 2 nargs))
                   (rtl-make-jump rands free
                      (if inst
-                        (tuple inst rator nargs)
-                        (tuple 'goto rator (length rands)))))
+                        [inst rator nargs]
+                        ['goto rator (length rands)])))
                (else
-                  (tuple 'move rator (car free)
-                     (rtl-jump (car free) rands (cdr free) inst))))))
+                  ['move rator (car free)
+                     (rtl-jump (car free) rands (cdr free) inst)]))))
 
 ;      ;; value-to-be-called → #(<functype> <arity>) | #false = don't know, just call and see what happens at runtime
 ;      (define (fn-type obj)
@@ -382,14 +382,14 @@
 ;         ;      ((eq? type-bytecode t) ;; raw bytecode
 ;         ;         (let ((op (ref obj 0)))
 ;         ;            (if (eq? op 17)
-;         ;               (tuple 'code (ref obj 1))
+;         ;               ['code (ref obj 1)]
 ;         ;               #false)))
 ;         ;      ((eq? t type-proc)
-;         ;         (tuple 'proc (ref (ref obj 1) 0)))
+;         ;         ['proc (ref (ref obj 1) 0)])
 ;         ;      ((eq? t type-clos)
-;         ;         (tuple 'clos (ref (ref (ref obj 1) 1) 0)))
+;         ;         ['clos (ref (ref (ref obj 1) 1) 0)])
 ;         ;      (else
-;         ;         (tuple 'bad-fn 0))))
+;         ;         ['bad-fn 0])))
 ;         #false)
 ;
 ;      (define bad-arity "Bad arity: ")
@@ -464,28 +464,28 @@
                            (rtl-simple regs b (λ (regs bp)
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
-                                 (tuple 'jf bp then else)))))
+                                 ['jf bp then else]))))
                         ((empty-value? a) ; jump-if-empty
                            (rtl-simple regs b (λ (regs bp)
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
-                                 (tuple 'je bp then else)))))
+                                 ['je bp then else]))))
                         ((null-value? a) ; jump-if-null
                            (rtl-simple regs b (λ (regs bp)
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
-                                 (tuple 'jn bp then else)))))
+                                 ['jn bp then else]))))
                         ((zero-value? a) ; jump-if-false
                            (rtl-simple regs b (λ (regs bp)
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
-                                 (tuple 'jz bp then else)))))
+                                 ['jz bp then else]))))
                         (else
                            (rtl-simple regs a (λ (regs ap)
                               (rtl-simple regs b (λ (regs bp)
                                  (let ((then (rtl-any regs then))
                                        (else (rtl-any regs else)))
-                                    (tuple 'jeq ap bp then else)))))))))))
+                                    ['jeq ap bp then else]))))))))))
             (['call rator rands]
                ;; compile as primop call, bind if rator is lambda or a generic call
                (let ((op (and (eq? (ref rator 1) 'value) (primitive? (ref rator 2)))))
@@ -517,7 +517,7 @@
       (define (formals->regs formals pos)
          (if (null? formals)
             null
-            (cons (tuple 'var (car formals) pos)
+            (cons ['var (car formals) pos]
                (formals->regs (cdr formals) (+ pos 1)))))
 
       ; r0 = mcp, r1 = clos, r2 = lit, r3 aka a0 = arg0, r4 = arg1, ...
@@ -527,11 +527,11 @@
             (reverse (formals->regs formals a0))
             (if (null? clos)
                (list
-                  (tuple 'env null 2)        ; <- really just empty
-                  (tuple 'lit literals 1))   ; <- may be empty
+                  ['env null 2]        ; <- really just empty
+                  ['lit literals 1])   ; <- may be empty
                (list
-                  (tuple 'lit literals 2)    ; <- may be empty
-                  (tuple 'env clos 1)))))
+                  ['lit literals 2]    ; <- may be empty
+                  ['env clos 1]))))
 
       ;;; closure -> executable procedure (closed from elsewhere if not independent)
 
@@ -555,16 +555,16 @@
                (lets
                   ((exec
                      (assemble-code
-                        (tuple 'code-var fixed?
+                        ['code-var fixed?
                            (length formals)
-                           (rtl-any (entry-regs clos literals formals) body))
+                           (rtl-any (entry-regs clos literals formals) body)]
                         tail)))
                   (if (null? literals)
                      exec ; #<bytecode>
                      (list->proc (cons exec literals)))))
             (['lambda formals body] ;; to be deprecated
                (rtl-plain-lambda rtl
-                  (tuple 'lambda-var #true formals body)
+                  ['lambda-var #true formals body]
                   clos literals tail))
             (else
                (runtime-error "rtl-plain-lambda: bad node " exp))))
@@ -586,7 +586,7 @@
                (rtl-plain-lambda rtl exp clos literals null))
             (['lambda formals body] ;; soon to be deprecated
                (rtl-either rtl
-                  (tuple 'lambda-var #true formals body)
+                  ['lambda-var #true formals body]
                   clos literals))
             (['either func else]
                (rtl-plain-lambda rtl func clos literals
@@ -603,11 +603,11 @@
          (case node
             (['closure formals body clos literals]
                (rtl-plain-lambda rtl-procedure
-                  (tuple 'lambda-var #true formals body)
+                  ['lambda-var #true formals body]
                   clos (rtl-literals rtl-procedure literals) null))
             (['closure-var fixed? formals body clos literals]
                (rtl-plain-lambda rtl-procedure
-                  (tuple 'lambda-var fixed? formals body)
+                  ['lambda-var fixed? formals body]
                   clos (rtl-literals rtl-procedure literals) null))
             (['closure-case body clos literals]
                (lets

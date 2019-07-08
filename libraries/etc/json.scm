@@ -382,7 +382,7 @@
 	(define (json-rpc-connection host port) 
 		(let ((fd (connect host port)))
 			(if fd
-				(fork-named (tuple 'json-rpc host port 'at fd)
+				(fork-named ['json-rpc host port 'at fd]
 					(λ () (initialize-json-rpc-thread fd)))
 				(begin
 					(print "json-rpc: connection failed to " (cons host port))

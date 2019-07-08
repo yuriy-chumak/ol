@@ -40,17 +40,17 @@
       (define *special-forms*
          (list->ff
             (list
-               (cons 'quote  (tuple 'special 'quote))
-               (cons 'values (tuple 'special 'values))
-               (cons 'lambda (tuple 'special 'lambda))
+               (cons 'quote  ['special 'quote])
+               (cons 'values ['special 'values])
+               (cons 'lambda ['special 'lambda])
 
-               (cons 'setq   (tuple 'special 'setq))
-               (cons 'letq   (tuple 'special 'letq))
+               (cons 'setq   ['special 'setq])
+               (cons 'letq   ['special 'letq])
 
-               (cons 'ifeq   (tuple 'special 'ifeq))
-               (cons 'either (tuple 'special 'either))
+               (cons 'ifeq   ['special 'ifeq])
+               (cons 'either ['special 'either])
 
-               (cons 'values-apply  (tuple 'special 'values-apply))
+               (cons 'values-apply  ['special 'values-apply])
             )))
 
       (define empty-env #empty) ;; will change with ff impl
@@ -70,7 +70,7 @@
       (define thread-quantum 10000)
 
       (define lookup ;; <- to be replaced with env-get
-         (let ((undefined (tuple 'undefined)))
+         (let ((undefined ['undefined]))
             (λ (env key)
                (get env key undefined))))
 
@@ -88,12 +88,11 @@
 
       (define (env-set env key val)
          (put env key
-            (tuple 'defined
-               (tuple 'value val))))
+            ['defined ['value val]]))
 
       (define (env-set-macro env key transformer)
          (put env key
-            (tuple 'macro transformer)))
+            ['macro transformer]))
 
       (define-syntax invoke
          (syntax-rules ()
@@ -107,7 +106,7 @@
 
       ;; mark an argument list (possibly improper list of symbols) as bound
       (define env-bind
-         (let ((bound (tuple 'bound)))
+         (let ((bound ['bound]))
             (λ (env keys)
                (let loop ((env env) (keys keys))
                   (cond
@@ -128,8 +127,8 @@
       ; (((lambda (name ..) exp) value)), but the compiler currently
       ; handles values occurring in the sexp itself a bit more efficiently
 
-      (define (ok env exp) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
+      (define (ok env exp) ['ok exp env])
+      (define (fail reason) ['fail reason])
 
       (define (value-exp val)
          ; represent the literal value val safely as an s-exp

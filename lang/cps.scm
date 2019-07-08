@@ -18,8 +18,8 @@
    (begin
       ;; fixme: information about cps-special primops could be stored elsewhere
 
-      (define (ok exp env) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
+      (define (ok exp env) ['ok exp env])
+      (define (fail reason) ['fail reason])
 
       (define (fresh free)
          (values free (gensym free)))
@@ -92,8 +92,8 @@
       (define (enlist-tail args)
          (foldr
             (λ (x tl) 
-               (mkcall (tuple 'value cons) (list x tl)))
-            (tuple 'value null)
+               (mkcall ['value cons] (list x tl)))
+            ['value null]
             args))
 
       ;; (f0 .. fn) (a0 ... am) → #false | (a0 ... an-1 (cons an (cons ... (cons am null))))
@@ -121,12 +121,12 @@
                (cond
                   (fixed? ;; downgrade to a regular lambda
                      (cps-call cps
-                        (tuple 'lambda formals body)
+                        ['lambda formals body]
                         rands env cont free))
                   ((enlist-improper-args formals rands) => ;; downgrade to a regular lambda converting arguments
                      (λ (rands)
                         (cps-call cps 
-                           (tuple 'lambda formals body)
+                           ['lambda formals body]
                            rands env cont free)))
                   (else
                      (runtime-error "Bad head lambda arguments:" (list 'args formals 'rands rands)))))
@@ -181,7 +181,7 @@
                   ((then free (cps then env cont free))
                    (else free (cps else env cont free)))
                   (values
-                     (tuple 'ifeq a b then else)
+                     ['ifeq a b then else]
                      free)))))
 
       (define (cps-values-apply cps exp semi-cont env cont free)
@@ -195,7 +195,7 @@
             (['lambda-var fixed? formals  body]
                (lets ((body-cps free (cps body env cont free)))
                   (cps exp env 
-                     (tuple 'lambda-var fixed? formals body-cps)
+                     ['lambda-var fixed? formals body-cps]
                      free)))
             (else
                (runtime-error "values-apply: receiver is not a lambda. " semi-cont))))
@@ -208,7 +208,7 @@
                (lets 
                   ((fn free (cps-either cps fn env cont free))
                    (else free (cps-either cps else env cont free)))
-                  (values (tuple 'either fn else) free)))
+                  (values ['either fn else] free)))
             (['lambda formals body]
                (cps-just-lambda cps formals #true body env free))
             (['lambda-var fixed? formals body]

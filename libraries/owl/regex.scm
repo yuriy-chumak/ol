@@ -400,7 +400,7 @@
       ;; rex ll → #false | #(ls buff ms), for replacing
       (define (rex-match-prefix rex ll)
          (rex ll null blank-ranges
-            (λ (ls buff ms) (tuple ls buff ms))))
+            (λ (ls buff ms) [ls buff ms])))
 
       ;; rex str → bool (if matches anywhere)
       (define (rex-match-anywhere? rex ll)

@@ -820,7 +820,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
-#define TTUPLE                       (2)
+#define TVECTOR                      (2)
 #define TSTRING                      (3)
 #define TSYMBOL                      (4)
 #define TSTRINGWIDE                  (5)
@@ -840,7 +840,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define TBYTEVECTOR                 (19)
 #define TSTRINGDISPATCH             (21)
 
-#define TVECTOR                     (11)
+#define TVECTORLEAF                 (11)
 #define TVECTORDISPATCH             (15) // type-vector-dispatch
 
 #define TTHREAD                     (31) // type-thread-state
@@ -886,7 +886,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == header(TCOMPLEX,  3))
 
 #define is_string(ob)               (is_reference(ob) &&   reference_type (ob) == TSTRING)
-#define is_tuple(ob)                (is_reference(ob) &&   reference_type (ob) == TTUPLE)
+#define is_vector(ob)               (is_reference(ob) &&   reference_type (ob) == TVECTOR)
 
 #define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TVPTR,     2))
 #define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TCALLABLE, 2))
@@ -1107,44 +1107,44 @@ word*p = NEW_OBJECT (type, 2);\
 #define NEW_LIST(_1, _2, _3, _4, _5, _6, NAME, ...) NAME
 #define new_list(...) NEW_LIST(__VA_ARGS__, new_list6, new_list5, new_list4, new_list3, new_list2, NOTHING, NOTHING)(__VA_ARGS__)
 
-// -= new_tuple =---------------------------------------
+// -= new_vector =---------------------------------------
 
 // кортеж:
-#define new_tuple1(a1) ({\
+#define new_vector1(a1) ({\
 	word data1 = (word) (a1);\
 	/* точка следования */ \
-word*p = new (TTUPLE, 1);\
+word*p = new (TVECTOR, 1);\
 	p[1] = data1;\
 	/*return*/ p;\
 })
-#define new_tuple2(a1,a2) ({\
+#define new_vector2(a1,a2) ({\
 	word data1 = (word) (a1);\
 	word data2 = (word) (a2);\
 	/* точка следования */ \
-word*p = new (TTUPLE, 2);\
+word*p = new (TVECTOR, 2);\
 	p[1] = data1;\
 	p[2] = data2;\
 	/*return*/ p;\
 })
-#define new_tuple3(a1,a2,a3) ({\
+#define new_vector3(a1,a2,a3) ({\
 	word data1 = (word) (a1);\
 	word data2 = (word) (a2);\
 	word data3 = (word) (a3);\
 	/* точка следования */ \
-word*p = new (TTUPLE, 3);\
+word*p = new (TVECTOR, 3);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
 	/*return*/ p;\
 })
-#define new_tuple5(a1,a2,a3,a4,a5) ({\
+#define new_vector5(a1,a2,a3,a4,a5) ({\
 	word data1 = (word) (a1);\
 	word data2 = (word) (a2);\
 	word data3 = (word) (a3);\
 	word data4 = (word) (a4);\
 	word data5 = (word) (a5);\
 	/* точка следования */ \
-word*p = new (TTUPLE, 5);\
+word*p = new (TVECTOR, 5);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -1152,7 +1152,7 @@ word*p = new (TTUPLE, 5);\
 	p[5] = data5;\
 	/*return*/ p;\
 })
-#define new_tuple9(a1,a2,a3,a4,a5,a6,a7,a8,a9) ({\
+#define new_vector9(a1,a2,a3,a4,a5,a6,a7,a8,a9) ({\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	word data3 = (word) a3;\
@@ -1163,7 +1163,7 @@ word*p = new (TTUPLE, 5);\
 	word data8 = (word) a8;\
 	word data9 = (word) a9;\
 	/* точка следования */ \
-word*p = new (TTUPLE, 9);\
+word*p = new (TVECTOR, 9);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -1175,7 +1175,7 @@ word*p = new (TTUPLE, 9);\
 	p[9] = data9;\
 	/*return*/ p;\
 })
-#define new_tuple13(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13) ({\
+#define new_vector13(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13) ({\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\
 	word data3 = (word) a3;\
@@ -1190,7 +1190,7 @@ word*p = new (TTUPLE, 9);\
 	word data12 = (word) a12;\
 	word data13 = (word) a13;\
 	/* точка следования */ \
-word*p = new (TTUPLE, 13);\
+word*p = new (TVECTOR, 13);\
 	p[1] = data1;\
 	p[2] = data2;\
 	p[3] = data3;\
@@ -1208,9 +1208,9 @@ word*p = new (TTUPLE, 13);\
 })
 
 #define NEW_TUPLE(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME
-#define new_tuple(...) NEW_TUPLE(__VA_ARGS__, new_tuple13, new_tuple12, new_tuple11,\
-			new_tuple10, new_tuple9, new_tuple8, new_tuple7, new_tuple6, new_tuple5,\
-			new_tuple4, new_tuple3, new_tuple2, new_tuple1, NOTHING)(__VA_ARGS__)
+#define new_vector(...) NEW_TUPLE(__VA_ARGS__, new_vector13, new_vector12, new_vector11,\
+			new_vector10, new_vector9, new_vector8, new_vector7, new_vector6, new_vector5,\
+			new_vector4, new_vector3, new_vector2, new_vector1, NOTHING)(__VA_ARGS__)
 
 
 // -= остальные аллокаторы =----------------------------
@@ -1436,7 +1436,7 @@ word gc(heap_t *heap, int query, word regs)
 	word *fp;
 	fp = heap->fp;
 	{
-		*fp = header(TTUPLE, 2); // этого можно не делать
+		*fp = header(TVECTOR, 2); // этого можно не делать
 		word *root = &fp[1];
 	//	word *root = fp + 1; // same
 
@@ -1807,7 +1807,7 @@ word d2ol(struct ol_t* ol, double v) {
 			modf(v, &v); // отбросим все после запятой
 
 			size_t len = (p - fp);
-			p = new(TTUPLE, len) + len; // temp, will be destroyed during next gc()
+			p = new(TVECTOR, len) + len; // temp, will be destroyed during next gc()
 
 			if (len == 1)
 				b = *p--;
@@ -3308,7 +3308,7 @@ loop:;
 		}
 
 		/*! \subsection stat
-		 * \brief (syscall **4** port/path . .) -> (tuple ...) | #false
+		 * \brief (syscall **4** port/path . .) -> (vector ...) | #false
 		 *
 		 * Returns information about a file or port.
 		 *
@@ -3341,7 +3341,7 @@ loop:;
 			else
 				break;
 
-			result = new_tuple(
+			result = new_vector(
 					itoun(st.st_dev),    // устройство
 					itoun(st.st_ino),    // inode
 					itoun(st.st_mode),   // режим доступа
@@ -3842,7 +3842,7 @@ loop:;
 			break;
 		}
 
-		// (EXECVE program-or-function env (tuple port port port))
+		// (EXECVE program-or-function env (vector port port port))
 		// http://linux.die.net/man/3/execve
 		case 59: {
 	#if HAS_DLOPEN
@@ -4033,7 +4033,7 @@ loop:;
 			if (uname(&name))
 				break;
 
-			result = new_tuple(
+			result = new_vector(
 			#ifdef __ANDROID__
 				new_string("Android"),
 			#else
@@ -4053,7 +4053,7 @@ loop:;
 			struct rlimit r;
 			// arguments currently ignored. used RUSAGE_SELF
 			if (getrlimit(value(a), &r) == 0)
-				result = new_tuple(
+				result = new_vector(
 						itoun(r.rlim_cur),
 						itoun(r.rlim_max));
 			break;
@@ -4063,7 +4063,7 @@ loop:;
 
 		#if SYSCALL_GETRUSAGE
 		// GETRUSAGE (getrusage)
-		// @returns: (tuple utime stime)
+		// @returns: (vector utime stime)
 		//           utime: total amount of time spent executing in user mode, expressed in a timeval structure (seconds plus microseconds)
 		//           stime: total amount of time spent executing in kernel mode, expressed in a timeval structure (seconds plus microseconds)
 		case SYSCALL_GETRUSAGE: {
@@ -4102,7 +4102,7 @@ loop:;
 			struct rusage u;
 			// arguments currently ignored. used RUSAGE_SELF
 			if (getrusage(RUSAGE_SELF, &u) == 0)
-				result = new_tuple(
+				result = new_vector(
 						new_pair (itoun(u.ru_utime.tv_sec), itoun(u.ru_utime.tv_usec)),
 						new_pair (itoun(u.ru_stime.tv_sec), itoun(u.ru_stime.tv_usec))
 				);
@@ -4116,11 +4116,11 @@ loop:;
 		case SYSCALL_SYSINFO: {
 			struct sysinfo info;
 			if (sysinfo(&info) == 0)
-				result = new_tuple(
+				result = new_vector(
 						itoun(info.uptime),
-						new_tuple(itoun(info.loads[0]),
-								  itoun(info.loads[1]),
-								  itoun(info.loads[2])),
+						new_vector(itoun(info.loads[0]),
+								   itoun(info.loads[1]),
+								   itoun(info.loads[2])),
 						itoun(info.totalram),
 						itoun(info.freeram),
 						itoun(info.sharedram),
@@ -4197,7 +4197,7 @@ loop:;
 			int g = heap->genstart - heap->begin;
 			int f = fp - heap->begin;
 			int t = heap->end - heap->begin;
-			result = new_tuple(I(g), I(f), I(t));
+			result = new_vector(I(g), I(f), I(t));
 			break;
 		}
 
@@ -4816,7 +4816,7 @@ OL_new(unsigned char* bootstrap)
 	handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты
-	word *ptrs = new(TTUPLE, nobjs, 0);
+	word *ptrs = new(TVECTOR, nobjs, 0);
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
 
 	if (fp == 0)

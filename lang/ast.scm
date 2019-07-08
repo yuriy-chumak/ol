@@ -19,33 +19,33 @@
       (lang env))
 
    (begin
-      (define (ok exp env) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
+      (define (ok exp env) ['ok exp env])
+      (define (fail reason) ['fail reason])
 
       (define (call? thing) (eq? (ref thing 1) 'call))
       (define (var? thing) (eq? (ref thing 1) 'var))
       (define (value-of node) (ref node 2))
 
       (define (mkval val)
-         (tuple 'value val))
+         ['value val])
 
       (define (mklambda formals body)
-         (tuple 'lambda formals body))
+         ['lambda formals body])
 
       ;; formals is a list as usual, but last one will be bound to an arg list
       ;; having an extra var? field because the fixed one could be merged to this later
       (define (mkvarlambda formals body)
-         (tuple 'lambda-var #false formals body))
+         ['lambda-var #false formals body])
 
       (define (mkcall rator rands)
-         (tuple 'call rator rands))
+         ['call rator rands])
 
       ;;;; cps adds a cont + system
       (define (mkprim op args)
-         (tuple 'prim op args))
+         ['prim op args])
 
       (define (mkvar sym)
-         (tuple 'var sym))
+         ['var sym])
 
       ;; formals-sexp → (sym ..)|#false fixed-arity?
       (define (check-formals lst)
@@ -116,11 +116,11 @@
                                  (fixed-formals-ok? formals)
                                  (eq? (length formals) (length values)))
                               (let ((env (env-bind env formals)))
-                                 (tuple 'letq formals
+                                 ['letq formals
                                     (map
                                        (lambda (x) (translate x env fail))
                                        values)
-                                    (translate body env fail)))
+                                    (translate body env fail)])
                               (fail (list "Bad letq: " exp))))
                         (fail (list "Bad letq: " exp))))
                   ((ifeq) ;;; (ifeq a b then else)
@@ -129,26 +129,26 @@
                               (b (third exp))
                               (then (fourth exp))
                               (else (fifth exp)))
-                           (tuple 'ifeq
+                           ['ifeq
                               (translate a env fail)
                               (translate b env fail)
                               (translate then env fail)
-                              (translate else env fail)))
+                              (translate else env fail)])
                         (fail (list "Bad ifeq " exp))))
                   ((either) ; (either (lambda-ok) (lambda-else))
                      (if (eq? (length exp) 3)
-                        (tuple 'either
+                        ['either
                            (translate (second exp) env fail)
-                           (translate (third exp) env fail))
+                           (translate (third exp) env fail)]
                         (fail (list "Bad either node: " exp))))
 
                   ((values)
-                     (tuple 'values
-                        (map (lambda (arg) (translate arg env fail)) (cdr exp))))
+                     ['values
+                        (map (lambda (arg) (translate arg env fail)) (cdr exp))])
                   ((values-apply)
-                     (tuple 'values-apply
+                     ['values-apply
                         (translate (lref exp 1) env fail)
-                        (translate (lref exp 2) env fail)))
+                        (translate (lref exp 2) env fail)])
                   ;; FIXME pattern
                   (else
                      (fail
@@ -221,14 +221,14 @@
 ;                  (if (env-get env '*interactive* #false) (begin
 ;                     (display "sexp->ast result: ")
 ;                     (print translated)))
-;                  (tuple 'ok
+;                  ['ok
 ;                     translated
-;                     env)))))
+;                     env]))))
          (call/cc
             (lambda (drop)
-               (tuple 'ok
+               ['ok
                   (translate exp env (lambda (reason) (drop (fail reason))))
-                  env))))
+                  env])))
 
 
 ))

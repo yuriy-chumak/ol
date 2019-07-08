@@ -70,14 +70,14 @@
 				(print* (list " at " ams "ms vs " bms "ms, " 
 					" first is " score "% better (average " (score-of a-total b-total) "%)"))
 				(if (equal? av bv)
-					(tuple n-tests a-total b-total)
+					[n-tests a-total b-total]
 					(error "results differ" (list val 'gives av 'and bv))))))
 	
 	(define (compare cases a b)
 		(lfold
 			(lambda (total val)
 				(try a b (car val) (cdr val) total))
-			(tuple 0 0 0) cases))
+			[0 0 0] cases))
 
 	(define (test cases a b)
 		(print "Testing ops:")
@@ -93,11 +93,11 @@
 								(list "  " (div (* (max ams bms) 100) (max 1 (min ams bms))) "% diff in total " ams "ms/" bms "ms, here "
 									elapsed-a "ms/" elapsed-b "ms"))
 							(if (equal? this-a this-b)
-								(tuple (+ ams elapsed-a) (+ bms elapsed-b))
+								[(+ ams elapsed-a) (+ bms elapsed-b)]
 								(begin
 									(print "results differ for " case)
 									(ret (list 'a this-a 'b this-b))))))
-					(tuple 0 0) cases))))
+					[0 0] cases))))
 
 	;; examples for quick checks speed/correctness tests (with test)
 	;

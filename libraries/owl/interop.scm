@@ -135,7 +135,7 @@
       (define (fork thunk)
          ; the tuple is fresh and therefore a proper although rather
          ; nondescriptive thread name
-         (fork-named (tuple 'anonimas) thunk))
+         (fork-named ['anonimas] thunk))
 
 
       ; Message passing (aka mailing) is asynchronous, and at least

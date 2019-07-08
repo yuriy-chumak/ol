@@ -123,7 +123,7 @@
 ;             (goal (- goal 2)))
 ;            ;(print* (list "data " data ", goal " goal))
 ;            (cons (list "length " n)
-;               (tuple n (lambda (p) (vec-ref data p)) goal))))
+;               [n (lambda (p) (vec-ref data p)) goal])))
 ;      (lnums 0))
 ;   (lambda (node) (lets ((n op val node) (a b (bisect-range op val 0 n))) (cons a b)))
 ;   (lambda (node) (lets ((n op val node) (a b (bisect-range-unsorted op val 0 n))) (cons a b)))

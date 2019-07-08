@@ -98,7 +98,7 @@
          (cond
             ((null? args)
                (if (mandatory-args-given? dict rules)
-                  (tuple (fill-defaults dict rules) (reverse others))
+                  [(fill-defaults dict rules) (reverse others)]
                   #false))
             ((dashy? (car args))
                (cond

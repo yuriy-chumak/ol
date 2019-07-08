@@ -18,7 +18,7 @@
       (values-apply (vm:shl n x) (lambda (overflow n) n)))
 
    (define (read-impl port)
-      (define server (tuple 'read))
+      (define server ['read])
       (fork-server server (lambda ()
          (let this ((cache #(0 0 0 0 0)) (pos 0))
             (let*((envelope (wait-mail))

@@ -137,7 +137,7 @@
       ((share-bindings this . rest)
          (cons
             (cons 'this
-               (tuple 'defined (mkval this)))
+               ['defined (mkval this)])
             (share-bindings . rest)))))
 
 (define (share-modules mods)
@@ -245,7 +245,7 @@
          ;; now we're running in the new repl
          (start-thread-controller
             (list ;1 thread
-               (tuple 'init
+               ['init
                   (λ ()
                      ;; get basic io running
                      (io:init)
@@ -323,7 +323,7 @@
                                        ))))
                               (if sandbox?
                                  (sandbox 1)) ;(sandbox megs) - check is memory enough
-                              (repl-trampoline env file))))))))
+                              (repl-trampoline env file))))))])
             )))) ; no threads state
 
 

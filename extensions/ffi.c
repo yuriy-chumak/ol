@@ -1033,7 +1033,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT8 + FFT_PTR:
 		case TUINT8 + FFT_PTR:
 		tint8ptr: {
-			// todo: add tuples pushing
+			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
@@ -1054,7 +1054,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT16 + FFT_PTR:
 		case TUINT16 + FFT_PTR:
 		tint16ptr: {
-			// todo: add tuples pushing
+			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
@@ -1075,7 +1075,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT32 + FFT_PTR:
 		case TUINT32 + FFT_PTR:
 		tint32ptr: {
-			// todo: add tuples pushing
+			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
@@ -1125,8 +1125,8 @@ word* OL_ffi(OL* self, word* arguments)
 						*f++ = OL2F(car(l)), l = cdr(l);
 					break;
 				}
-				case TTUPLE: // let's support not only lists as float*
-				case TVECTOR: {
+				case TVECTOR: // let's support not only lists as float*
+				case TVECTORLEAF: { // todo: bytevector?
 					int c = header_size(*(word*)arg) - 1;
 					float* f = (float*) __builtin_alloca(c * sizeof(float));
 					args[i] = (word)f;

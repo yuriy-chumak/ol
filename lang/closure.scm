@@ -20,8 +20,8 @@
       (only (owl io) print))
 
    (begin
-      (define (ok exp env) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
+      (define (ok exp env) ['ok exp env])
+      (define (fail reason) ['fail reason])
 
       (define (small-value? val)
          (or
@@ -89,8 +89,8 @@
                    (clos (diff bused formals)))
                   (values
                      (if close?
-                        (tuple 'closure formals body clos)
-                        (tuple 'lambda formals body))
+                        ['closure formals body clos]
+                        ['lambda formals body])
                      (union used clos))))
             (['lambda-var fixed? formals body]
                (lets
@@ -99,8 +99,8 @@
                    (clos (diff bused formals)))
                   (values
                      (if close?
-                        (tuple 'closure-var fixed? formals body clos)
-                        (tuple 'lambda-var fixed? formals body))
+                        ['closure-var fixed? formals body clos]
+                        ['lambda-var fixed? formals body])
                      (union used clos))))
             (['ifeq a b then else]
                (lets
@@ -109,7 +109,7 @@
                    (then used (closurize then used #true))
                    (else used (closurize else used #true)))
                   (values
-                     (tuple 'ifeq a b then else)
+                     ['ifeq a b then else]
                      used)))
             (['either func else]
                ;; fixme: operator position handling of resulting unclosurized case-lambdas is missing
@@ -119,7 +119,7 @@
                      ((func this-used (closurize func null #false)) ;; no used, don't close
                       (else this-used (closurize else this-used #false))) ;; same used, dont' close rest 
                      (values
-                        (tuple 'closure-case (tuple 'either func else) this-used)  ;; used the ones in here
+                        ['closure-case ['either func else] this-used]  ;; used the ones in here
                         (union used this-used)))                   ;; needed others and the ones in closure
                   ;; operator position case-lambda, which can (but isn't yet) be dispatche at compile 
                   ;; time, or a subsequent case-lambda node (above case requests no closurization) 
@@ -128,7 +128,7 @@
                      ((func used (closurize func used #false)) ;; don't closurize codes
                       (else used (closurize else used #false))) ;; ditto for the rest of the tail
                      (values 
-                        (tuple 'either func else)
+                        ['either func else]
                         used))))
             (else
                (runtime-error "closurize: unknown exp type: " exp))))
@@ -169,10 +169,10 @@
                (literalize-call literalize rator rands used))
             (['lambda formals body]
                (lets ((body used (literalize body used)))
-                  (values (tuple 'lambda formals body) used)))
+                  (values ['lambda formals body] used)))
             (['lambda-var fixed? formals body]
                (lets ((body used (literalize body used)))
-                  (values (tuple 'lambda-var fixed? formals body) used)))
+                  (values ['lambda-var fixed? formals body] used)))
             (['closure formals body clos]
                ;; note, the same closure exp (as in eq?) is stored to both literals 
                ;; and code. the one in code will be used to make instructions 
@@ -180,11 +180,11 @@
                ;; part to close against.
                (lets
                   ((body bused (literalize body null))
-                   (closure-exp (tuple 'closure formals body clos bused))
+                   (closure-exp ['closure formals body clos bused])
                    (used (append used (list (cons closure-tag closure-exp)))))
                   (values
                      ;;; literals will be #(header <code> l0 ... ln)
-                     (tuple 'make-closure (+ 1 (length used)) clos bused)
+                     ['make-closure (+ 1 (length used)) clos bused]
                      ;; also literals are passed, since the closure type 
                      ;; and calling protocol are different depending on 
                      ;; whether there are literals
@@ -192,15 +192,15 @@
             (['closure-var fixed? formals body clos] ;; clone branch, merge later
                (lets
                   ((body bused (literalize body null))
-                   (closure-exp (tuple 'closure-var fixed? formals body clos bused))
+                   (closure-exp ['closure-var fixed? formals body clos bused])
                    (used (append used (list (cons closure-tag closure-exp)))))
-                  (values (tuple 'make-closure (+ 1 (length used)) clos bused) used)))
+                  (values ['make-closure (+ 1 (length used)) clos bused] used)))
             (['closure-case body clos] ;; clone branch, merge later
                (lets
                   ((body bused (literalize body null))
-                   (closure-exp (tuple 'closure-case body clos bused))
+                   (closure-exp ['closure-case body clos bused])
                    (used (append used (list (cons closure-tag closure-exp)))))
-                  (values (tuple 'make-closure (+ 1 (length used)) clos bused) used)))
+                  (values ['make-closure (+ 1 (length used)) clos bused] used)))
             (['ifeq a b then else]
                (lets
                   ((a used (literalize a used))
@@ -208,13 +208,13 @@
                    (then used (literalize then used))
                    (else used (literalize else used)))
                   (values
-                     (tuple 'ifeq a b then else)
+                     ['ifeq a b then else]
                      used)))
             (['either func else]
                (lets
                   ((func used (literalize func used))
                    (else used (literalize else used)))
-                  (values (tuple 'either func else) used)))
+                  (values ['either func else] used)))
             (else
                (runtime-error "literalize: unknown exp type: " exp))))
 

@@ -108,7 +108,7 @@
                   (else
                      (set-ref node 3
                         (put-symbol (ref node 3) sym)))))
-            (tuple #false sym #false)))
+            [#false sym #false]))
 
       ;; note, only leaf strings for now
       (define (string->interned-symbol root str)

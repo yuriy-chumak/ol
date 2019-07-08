@@ -105,7 +105,7 @@
             (* (get-word "?>" #true))
             (* skip-whitespaces)
             (body (get-tag)))
-         (tuple 'xml (list->ff attributes) body)))
+         ['xml (list->ff attributes) body]))
 
    (define (xml-parse-file filename)
       (let ((file (open-input-file filename)))

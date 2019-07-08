@@ -19,8 +19,8 @@
       (owl ff))
 
    (begin
-      (define (ok exp env) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
+      (define (ok exp env) ['ok exp env])
+      (define (fail reason) ['fail reason])
 
       (define (gensyms free n)
          (if (eq? n 0)
@@ -64,17 +64,17 @@
                            (λ (env node)
                               (put env (car node) (cdr node))))
                         free)))
-                  (values (tuple 'lambda-var fixed? new-formals body) free)))
+                  (values ['lambda-var fixed? new-formals body] free)))
             (['value val]
                (values exp free))
             (['values vals]
                (lets ((vals free (alpha-list alpha vals env free)))
-                  (values (tuple 'values vals) free)))
+                  (values ['values vals] free)))
             (['values-apply from to]
                (lets
                   ((from free (alpha from env free))
                    (to free   (alpha to   env free)))
-                  (values (tuple 'values-apply from to) free)))
+                  (values ['values-apply from to] free)))
             (['ifeq a b then else]
                (lets
                   ((a free (alpha a env free))
@@ -82,13 +82,13 @@
                    (then free (alpha then env free))
                    (else free (alpha else env free)))
                   (values
-                     (tuple 'ifeq a b then else)
+                     ['ifeq a b then else]
                      free)))
             (['either then else]
                (lets
                   ((then free (alpha then env free))
                    (else free (alpha else env free)))
-                  (values (tuple 'either then else) free)))
+                  (values ['either then else] free)))
             (else
                (runtime-error "alpha: unknown AST node: " exp))))
 
