@@ -50,16 +50,16 @@
                 (rator (car call))
                 (rands (cdr call)))
                (values (mkcall rator rands) free))
-            (tuple-case (car args)
-               ((lambda formals body)
+            (case (car args)
+               (['lambda formals body]
                   (lets ((lexp free (cps-just-lambda cps formals #true body env free)))
                      (cps-args cps (cdr args) (cons lexp call) env free)))
-               ((lambda-var fixed? formals body)
+               (['lambda-var fixed? formals body]
                   (lets ((lexp free (cps-just-lambda cps formals fixed? body env free)))
                      (cps-args cps (cdr args) (cons lexp call) env free)))
-               ((value foo)
+               (['value foo]
                   (cps-args cps (cdr args) (cons (car args) call) env free))
-               ((var foo)
+               (['var foo]
                   (cps-args cps (cdr args) (cons (car args) call) env free))
                (else
                   (lets
@@ -77,8 +77,8 @@
       ;; fixme: check - assuming tuple exp is already cps'd
       (define (cps-bind cps rator rands env cont free)
          (if (eq? (length rands) 2)
-            (tuple-case (cadr rands)
-               ((lambda formals body)
+            (case (cadr rands)
+               (['lambda formals body]
                   (lets ((body free (cps body env cont free)))
                      (cps-args cps (list (car rands))
                         (list (mklambda formals body) rator)
@@ -107,8 +107,8 @@
             (else #false)))
 
       (define (cps-call cps rator rands env cont free)
-         (tuple-case rator
-            ((lambda formals body)
+         (case rator
+            (['lambda formals body]
                (lets
                   ((body free (cps body env cont free)))
                   (if (null? formals)
@@ -117,7 +117,7 @@
                      (cps-args cps rands
                         (list (mklambda formals body))
                         env free))))
-            ((lambda-var fixed? formals body)
+            (['lambda-var fixed? formals body]
                (cond
                   (fixed? ;; downgrade to a regular lambda
                      (cps-call cps
@@ -130,7 +130,7 @@
                            rands env cont free)))
                   (else
                      (runtime-error "Bad head lambda arguments:" (list 'args formals 'rands rands)))))
-            ((call rator2 rands2)
+            (['call rator2 rands2]
                (lets
                   ((this free (fresh free))
                    (call-exp free 
@@ -138,13 +138,13 @@
                   (cps rator env
                      (mklambda (list this) call-exp)
                      free)))
-            ((ifeq a b then else)
+            (['ifeq a b then else]
                (lets ((this free (fresh free)))
                   (cps
                      (mkcall (mklambda (list this) (mkcall (mkvar this) rands))
                         (list rator))
                      env cont free)))
-            ((value val)
+            (['value val]
                (let ((pop (primop-of val)))
                   (if (special-bind-primop? pop)
                      (cps-bind cps rator rands env cont free)
@@ -185,14 +185,14 @@
                      free)))))
 
       (define (cps-values-apply cps exp semi-cont env cont free)
-         (tuple-case semi-cont
-            ((lambda formals body)
+         (case semi-cont
+            (['lambda formals body]
                (lets ((body-cps free (cps body env cont free)))
                   (cps exp env 
                      (mklambda formals body-cps)
                      free)))
             ;; FIXME: this ends up as operator, but doesn't go through the call operator variable lambda conversion and thus confuses rtl-* which assume all operator lambdas are already taken care of by CPS
-            ((lambda-var fixed? formals  body)
+            (['lambda-var fixed? formals  body]
                (lets ((body-cps free (cps body env cont free)))
                   (cps exp env 
                      (tuple 'lambda-var fixed? formals body-cps)
@@ -203,46 +203,46 @@
       ;; translate a chain of lambdas as if they were at operator position
       ;; note! also cars are handled as the same jump, which is silly
       (define (cps-either cps node env cont free)
-         (tuple-case node
-            ((either fn else)
+         (case node
+            (['either fn else]
                (lets 
                   ((fn free (cps-either cps fn env cont free))
                    (else free (cps-either cps else env cont free)))
                   (values (tuple 'either fn else) free)))
-            ((lambda formals body)
+            (['lambda formals body]
                (cps-just-lambda cps formals #true body env free))
-            ((lambda-var fixed? formals body)
+            (['lambda-var fixed? formals body]
                (cps-just-lambda cps formals fixed? body env free))
             (else
                (runtime-error "either: " (list node "argument should be function")))))
 
       (define (cps-exp exp env cont free)
-         (tuple-case exp
-            ((value val)
+         (case exp
+            (['value val]
                (cps-literal exp env cont free))
-            ((var sym)
+            (['var sym]
                (cps-literal exp env cont free))
-            ((lambda formals body)
+            (['lambda formals body]
                (cps-lambda cps-exp formals #true body env cont free))
-            ((lambda-var fixed? formals body)
+            (['lambda-var fixed? formals body]
                (cps-lambda cps-exp formals fixed? body env cont free))
-            ((call rator rands)
+            (['call rator rands]
                (cps-call cps-exp rator rands env cont free))
-            ((values vals)
+            (['values vals]
               (cps-values cps-exp vals env cont free))
-            ((values-apply exp target)
+            (['values-apply exp target]
               (cps-values-apply cps-exp exp target env cont free))
-            ((ifeq a b then else)
+            (['ifeq a b then else]
                (cps-ifeq cps-exp a b then else env cont free))
-            ((either fn else)
+            (['either fn else]
                (lets ((res free (cps-either cps-exp exp env cont free)))
                   (values (mkcall cont (list res)) free)))
             (else
                (runtime-error "CPS does not do " exp))))
 
       (define (val-eq? node val)
-         (tuple-case node
-            ((value this)
+         (case node
+            (['value this]
                (eq? this val))
             (else #false)))
 

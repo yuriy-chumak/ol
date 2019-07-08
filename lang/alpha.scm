@@ -37,15 +37,15 @@
                (values (cons this tail) free))))
 
       (define (alpha exp env free)
-         (tuple-case exp
-            ((var sym)
+         (case exp
+            (['var sym]
                (values (mkvar (getf env sym)) free))
-            ((call rator rands)
+            (['call rator rands]
                (lets
                   ((rator free (alpha rator env free))
                    (rands free (alpha-list alpha rands env free)))
                   (values (mkcall rator rands) free)))
-            ((lambda formals body)
+            (['lambda formals body]
                (lets
                   ((new-formals free (gensyms free (length formals)))
                    (body free
@@ -55,7 +55,7 @@
                               (put env (car node) (cdr node))))
                         free)))
                   (values (mklambda new-formals body) free)))
-            ((lambda-var fixed? formals body) ;; <- mostly clone branch to be merged later
+            (['lambda-var fixed? formals body] ;; <- mostly clone branch to be merged later
                (lets
                   ((new-formals free (gensyms free (length formals)))
                    (body free
@@ -65,17 +65,17 @@
                               (put env (car node) (cdr node))))
                         free)))
                   (values (tuple 'lambda-var fixed? new-formals body) free)))
-            ((value val)
+            (['value val]
                (values exp free))
-            ((values vals)
+            (['values vals]
                (lets ((vals free (alpha-list alpha vals env free)))
                   (values (tuple 'values vals) free)))
-            ((values-apply from to)
+            (['values-apply from to]
                (lets
                   ((from free (alpha from env free))
                    (to free   (alpha to   env free)))
                   (values (tuple 'values-apply from to) free)))
-            ((ifeq a b then else)
+            (['ifeq a b then else]
                (lets
                   ((a free (alpha a env free))
                    (b free (alpha b env free))
@@ -84,7 +84,7 @@
                   (values
                      (tuple 'ifeq a b then else)
                      free)))
-            ((either then else)
+            (['either then else]
                (lets
                   ((then free (alpha then env free))
                    (else free (alpha else env free)))

@@ -208,16 +208,6 @@
                         (foldr render (delay (k sh)) (list "#<" name ">"))
                         (render "#<function>" (delay (k sh))))))
 
-
-               ;; not sure yet what the syntax for these should be
-               ;((tuple? obj)
-               ;   (ilist 40 84 117 112 108 101 32
-               ;      (render (ref obj 1)
-               ;         (fold
-               ;            (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
-               ;            (cons 41 tl)
-               ;            (lrange (size obj) -1 1)))))
-
                ((rlist? obj) ;; fixme: rlist not parsed yet
                   (ilist #\# #\r (ser sh (rlist->list obj) k)))
 

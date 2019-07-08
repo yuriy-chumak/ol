@@ -409,7 +409,7 @@
                   ;; rewind the track, spin the record and take it back
                   (step-parallel (tuple cont done null)))
                (lets ((state todo todo))
-                  (if (eq? (type state) type-tuple)
+                  (if (tuple? state)
                      (lets ((fini state (step-parallel state)))
                         (if (eq? fini null)
                            ;; crashed, propagate
@@ -444,7 +444,7 @@
             (lets
                ((this todo todo)
                 (id st this))
-               (if (eq? (type st) type-tuple)
+               (if (tuple? st)
                   ;; parallel or node, hunt next slice to run and proceed
                   (lets ((fini stp (step-parallel st)))
                      (cond

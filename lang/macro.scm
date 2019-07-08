@@ -20,8 +20,8 @@
    (begin
       ;;; Misc
 
-      (define (ok exp env) (tuple 'ok exp env))
-      (define (fail reason) (tuple 'fail reason))
+      (define (ok exp env) ['ok exp env])
+      (define (fail reason) ['fail reason])
 
       (define symbols-of
 
@@ -292,8 +292,8 @@
             ((list? exp)
                (cond
                   ((symbol? (car exp))
-                     (tuple-case (lookup env (car exp))
-                        ((special thing)
+                     (case (lookup env (car exp))
+                        (['special thing]
                            (case thing
                               ((quote) (values exp free))
 
@@ -347,12 +347,12 @@
                               (else
                                  (abort
                                     (list "expand: unknown special form: " exp)))))
-                        ((bound)          (expand-list exp env free))
-                        ((defined value)  (expand-list exp env free))
-                        ((undefined)
+                        (['bound]          (expand-list exp env free))
+                        (['defined value]  (expand-list exp env free))
+                        (['undefined]
                            ;; can be a literal
                            (values exp free))
-                        ((macro transformer)
+                        (['macro transformer]
                            (let ((result (transformer exp free)))
                               (if result
                                  (expand (ref result 1) env (ref result 2) abort)
@@ -363,10 +363,10 @@
                   (else
                      (expand-list exp env free))))
             ((symbol? exp)
-               (tuple-case (lookup env exp)
-                  ((macro transformer)
+               (case (lookup env exp)
+                  (['macro transformer]
                      (abort (list "Macro being used as a value: " exp)))
-                  ((undefined)
+                  (['undefined]
                      ;; this can still be a literal used by a macro
                      (values exp free))
                   (else

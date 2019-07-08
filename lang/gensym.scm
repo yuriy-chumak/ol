@@ -51,30 +51,30 @@
             (else max)))
 
       (define (max-ast-id exp max)
-         (tuple-case exp
-            ((var sym)
+         (case exp
+            (['var sym]
                (max-gensym-id sym max))
-            ((lambda formals body)
+            (['lambda formals body]
                (max-ast-id body
                   (max-gensym-id formals max)))
-            ((lambda-var fixed? formals body)
+            (['lambda-var fixed? formals body]
                (max-ast-id body
                   (max-gensym-id formals max)))
-            ((call rator rands)
+            (['call rator rands]
                (max-ast-id rator
                   (fold
                      (lambda (max exp) (max-ast-id exp max))
                      max rands)))
-            ((value val) max)
-            ((values vals)
+            (['value val] max)
+            (['values vals]
                (fold (lambda (max exp) (max-ast-id exp max)) max vals))
-            ((values-apply op fn)
+            (['values-apply op fn]
                (max-ast-id op
                   (max-ast-id fn max)))
-            ((ifeq a b then else)
+            (['ifeq a b then else]
                (max-ast-id a (max-ast-id b
                   (max-ast-id then (max-ast-id else max)))))
-            ((either fn else)
+            (['either fn else]
                (max-ast-id fn
                   (max-ast-id else max)))
             (else

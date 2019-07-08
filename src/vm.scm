@@ -33,7 +33,7 @@
 
       ; types
       TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
-      TPAIR TSYMBOL TTUPLE
+      TPAIR TSYMBOL TTUPLE TVECTOR
       TSTRING TSTRINGWIDE
       TBYTECODE TPROCEDURE TCLOSURE
       TVPTR TCALLABLE)
@@ -52,6 +52,7 @@
 
       (setq TPAIR              1) ; reference
       (setq TTUPLE             2) ; reference
+      (setq TVECTOR            2) ; reference
       (setq TSTRING            3) ; reference, raw -> 35 (#b100000 + 3)?
       (setq TSYMBOL            4) ; reference
       (setq TSTRINGWIDE        5) ; reference, raw

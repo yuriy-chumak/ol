@@ -69,8 +69,8 @@
             (and formals fixed?)))
 
       (define (translate-direct-call exp env fail translate)
-         (tuple-case (lookup env (car exp))
-            ((special thing)
+         (case (lookup env (car exp))
+            (['special thing]
                (case thing
                   ((quote)
                      (if (eq? (length exp) 2)
@@ -155,7 +155,7 @@
                         (list
                            "Unknown special operator in ast conversion: "
                            exp)))))
-            ((bound)
+            (['bound]
                (mkcall (mkvar (car exp))
                   (map
                      (lambda (x) (translate x env fail))
@@ -164,7 +164,7 @@
             ;((undefined)
             ;  (fail (list "i do not know this function" exp)))
             ; left here to handle primops temporarily
-            ((defined value)
+            (['defined value]
                (mkcall value
                   (map (lambda (x) (translate x env fail)) (cdr exp))))
             (else
@@ -190,16 +190,16 @@
                            (translate x env fail))
                         (cdr exp)))))
             ((symbol? exp)
-               (tuple-case (lookup env exp)
-                  ((bound)
+               (case (lookup env exp)
+                  (['bound]
                      (mkvar exp))
                   ;; should be already handled in apply-env
-                  ((defined value)
+                  (['defined value]
                      value)
-                  ((special thing)
+                  (['special thing]
                      (fail
                         (list "a special thing being used as an argument: " exp)))
-                  ((undefined)
+                  (['undefined]
                      (fail (list "what are '" exp "'?")))
                   (else
                      (fail

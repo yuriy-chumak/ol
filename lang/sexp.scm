@@ -394,7 +394,7 @@
                   (get-kleene* parser))
                (skip maybe-whitespace)
                (skip (get-imm #\])))
-            (cons 'vm:new (cons 'type-vector-leaf things))))
+            (cons 'vm:new (cons 'type-vector things))))
 
       (define (get-sexp)
          (let-parses (

@@ -81,7 +81,7 @@
 
 ;(wglMakeCurrent (tuple "a" "b" "c"))
 
-(define GLchar** type-tuple)
+(define GLchar** type-vector)
 (define GLint* type-vptr)
 (define GLsizei* type-vptr)
 (define GLchar* type-string)

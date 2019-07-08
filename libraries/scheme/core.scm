@@ -343,7 +343,7 @@
 
       ; library syntax:  (case <key> <clause1> <clause2> ...)
       (define-syntax case
-         (syntax-rules (else list eqv? eq? and memv => vm:new type-vector-leaf is)
+         (syntax-rules (else list eqv? eq? and memv => vm:new type-vector is)
             ; precalculate case argument, if needed
             ((case (op . args) . clauses)
                ((lambda (fresh) ; let ((fresh (op.args)))
@@ -372,10 +372,8 @@
                ((lambda () . body)))   ; means (begin . body)
             ; * ol specific
             ; trying to integrate tuple-case:
-            ((case thing ((vm:new type-vector-leaf cp . args) . body) . clauses)
-               (if (and
-                     (size thing) ; thing is object?
-                     (eq? (ref thing 1) cp)) ; compare (todo: move (ref thing 1) to common clause)
+            ((case thing ((vm:new type-vector cp . args) . body) . clauses)
+               (if (eq? (ref thing 1) cp) ; compare (todo: move (ref thing 1) to common clause)
                   (tuple-apply thing
                      (lambda (| | . args)
                         . body))
@@ -1078,7 +1076,8 @@
       ; This data types related to olvm
       ;     - not a part of r5rs -
       (define type-pair              TPAIR)   ; reference
-      (define type-tuple             TTUPLE)  ; reference
+      (define type-tuple             TTUPLE)  ; reference (todo: remove)
+      (define type-vector            TVECTOR) ; reference
       (define type-string            TSTRING) ; reference, blob / todo: -> 35 (#b100000 + 3)?
       (define type-symbol            TSYMBOL) ; reference
 
@@ -1698,14 +1697,14 @@
        ;; **********
        ;; *OL Tuples
 
-      (define-syntax tuple
+      (define-syntax tuple ; (todo: remove)
          (syntax-rules ()
             ((tuple a . bs) ;; there are no such things as 0-tuples
                (vm:new type-tuple a . bs))))
 
       ; replace this with typed destructuring compare later on
 
-      (define-syntax tuple-case
+      (define-syntax tuple-case ; (todo: remove)
          (syntax-rules (else _ is eq? div)
             ((tuple-case (op . args) . rest)
                (let ((foo (op . args)))
@@ -1716,7 +1715,7 @@
                   (tuple-apply tuple
                      (lambda (ignore . vars) . body))
                   (tuple-case 42 tuple type . others)))
-            ;;; bind to anything
+            ;;; bind to anything (deprecated, temporarly removed)
             ((tuple-case 42 tuple type ((_ . vars) . body) . rest)
                (tuple-apply tuple
                   (lambda (ignore . vars) . body)))
@@ -2018,7 +2017,8 @@
       type-vector-leaf
       type-bytevector
       ;type-ff-black-leaf
-      type-tuple
+      type-tuple ; todo: remove
+      type-vector
       type-symbol
       type-const
       type-rlist-spine

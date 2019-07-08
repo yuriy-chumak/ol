@@ -10,9 +10,6 @@
 ;  + case-lambda nodes separately
 ;     o
 
-; TODO: change case-lambda to lambda-case or
-;       change tuple-case to case-tuple.
-
 (define-library (lang compile)
 
    (export
@@ -104,8 +101,8 @@
       (define (find-literals env)
          (if (null? env)
             (runtime-error "No literals found: " env)
-            (tuple-case (car env)
-               ((lit vals id)
+            (case (car env)
+               (['lit vals id]
                   id)
                (else
                   (find-literals (cdr env))))))
@@ -197,12 +194,12 @@
       (define (rtl-arguments one?)
 
          (define (one regs a cont)
-            (tuple-case a
-               ((value val)
+            (case a
+               (['value val]
                   (rtl-value regs val cont))
-               ((var sym)
+               (['var sym]
                   (rtl-variable regs sym cont))
-               ((make-closure lpos env lit)
+               (['make-closure lpos env lit]
                   (many regs (env->loadable env) null
                      (λ (regs envp)
                         (rtl-close regs lpos envp lit cont))))
@@ -428,8 +425,8 @@
 
       (define (value-pred pred)
          (λ (val)
-            (tuple-case val
-               ((value val)
+            (case val
+               (['value val]
                   (pred val))
                (else #false))))
 
@@ -448,14 +445,15 @@
                (cont a b))))
 
       (define (extract-value node)
-         (tuple-case node
-            ((value val) val)
+         (case node
+            (['value val]
+               val)
             (else #false)))
 
       ;; compile any AST node node to RTL
       (define (rtl-any regs exp)
-         (tuple-case exp
-            ((ifeq a b then else)
+         (case exp
+            (['ifeq a b then else]
                ; тут мы попытаемся поставить b первым аргументом, если b равно 0, #f, #t, #empty
                (simple-first a b
                   ;;; move simple to a, if any
@@ -488,12 +486,12 @@
                                  (let ((then (rtl-any regs then))
                                        (else (rtl-any regs else)))
                                     (tuple 'jeq ap bp then else)))))))))))
-            ((call rator rands)
+            (['call rator rands]
                ;; compile as primop call, bind if rator is lambda or a generic call
                (let ((op (and (eq? (ref rator 1) 'value) (primitive? (ref rator 2)))))
                   (if op
-                     (tuple-case (car rands)
-                        ((lambda formals body)
+                     (case (car rands)
+                        (['lambda formals body]
                            (if (opcode-arity-ok-2? op (length (cdr rands)))
                               (rtl-primitive regs op formals (cdr rands)
                                  (λ (regs) (rtl-any regs body)))
@@ -502,8 +500,8 @@
                                  (list 'op (primop-name op) 'got (length (cdr rands)) 'arguments))))
                         (else
                            (runtime-error "bad primitive args: " rands)))
-                     (tuple-case rator
-                        ((lambda formals body)
+                     (case rator
+                        (['lambda formals body]
                            ;; ((lambda (args) ...) ...) => add new aliases for values
                            (rtl-args regs rands
                               (λ (regs args)
@@ -552,8 +550,8 @@
 
       ;; rtl-procedure now passes the intended new form here - replace it later in the AST node also
       (define (rtl-plain-lambda rtl exp clos literals tail)
-         (tuple-case exp
-            ((lambda-var fixed? formals body)
+         (case exp
+            (['lambda-var fixed? formals body]
                (lets
                   ((exec
                      (assemble-code
@@ -564,7 +562,7 @@
                   (if (null? literals)
                      exec ; #<bytecode>
                      (list->proc (cons exec literals)))))
-            ((lambda formals body) ;; to be deprecated
+            (['lambda formals body] ;; to be deprecated
                (rtl-plain-lambda rtl
                   (tuple 'lambda-var #true formals body)
                   clos literals tail))
@@ -583,14 +581,14 @@
                (runtime-error "bytecode->list: " thing))))
 
       (define (rtl-either rtl exp clos literals)
-         (tuple-case exp
-            ((lambda-var fixed? formals body)
+         (case exp
+            (['lambda-var fixed? formals body]
                (rtl-plain-lambda rtl exp clos literals null))
-            ((lambda formals body) ;; soon to be deprecated
+            (['lambda formals body] ;; soon to be deprecated
                (rtl-either rtl
                   (tuple 'lambda-var #true formals body)
                   clos literals))
-            ((either func else)
+            (['either func else]
                (rtl-plain-lambda rtl func clos literals
                   (bytecode->list
                      (rtl-either rtl else clos literals))))
@@ -602,16 +600,16 @@
       ;;; proc = #(procedure-header <code-ptr> l0 ... ln)
       ; env node → env' owl-func
       (define (rtl-procedure node)
-         (tuple-case node
-            ((closure formals body clos literals)
+         (case node
+            (['closure formals body clos literals]
                (rtl-plain-lambda rtl-procedure
                   (tuple 'lambda-var #true formals body)
                   clos (rtl-literals rtl-procedure literals) null))
-            ((closure-var fixed? formals body clos literals)
+            (['closure-var fixed? formals body clos literals]
                (rtl-plain-lambda rtl-procedure
                   (tuple 'lambda-var fixed? formals body)
                   clos (rtl-literals rtl-procedure literals) null))
-            ((closure-case body clos literals)
+            (['closure-case body clos literals]
                (lets
                   ((lits (rtl-literals rtl-procedure literals))
                    (body (rtl-either rtl-procedure body clos lits)))
@@ -621,8 +619,8 @@
 
       ; exp → exp'
       (define (rtl-exp exp)
-         (tuple-case exp
-            ((closure formals body clos literals)
+         (case exp
+            (['closure formals body clos literals]
                (if (null? clos)
                   (rtl-procedure exp)
                   (runtime-error "rtl-exp: free variables in entry closure: " clos)))

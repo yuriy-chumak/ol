@@ -76,10 +76,10 @@
 
       ;; get a value from env, or return def if not there or not a value
       (define (env-get env key def)
-         (tuple-case (lookup env key)
-            ((defined val)
-               (tuple-case val
-                  ((value v) v)
+         (case (lookup env key)
+            (['defined val]
+               (case val
+                  (['value v] v)
                   (else def)))
             (else def)))
 
@@ -139,15 +139,15 @@
 
       (define (handle-symbol exp env fail)
          ; (print (list 'handle-symbol exp 'being (lookup env exp)))
-         (tuple-case (lookup env exp)
-            ((bound) exp)
-            ((defined defn)
-               (tuple-case defn
-                  ((value val)
+         (case (lookup env exp)
+            (['bound] exp)
+            (['defined defn]
+               (case defn
+                  (['value val]
                      (value-exp val))
                   (else is funny
                      (fail (list "funny defined value: " funny)))))
-            ((undefined)
+            (['undefined]
                (fail
                (let ((error (bytes->string (foldr render '() (list "'" exp "'?")))))
                   (if (has? '(q quit exit stop ret) exp)

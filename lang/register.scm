@@ -70,10 +70,10 @@
       ; try to rename the register and exit via fail if the values are disturbed
 
       (define (rtl-rename code op target fail)
-         (tuple-case code
-            ((ret a)
+         (case code
+            (['ret a]
                (tuple 'ret (op a)))
-            ((move a b more)
+            (['move a b more]
                (cond
                   ((eq? b target)
                      (if (eq? b (op a))
@@ -88,7 +88,7 @@
                         (if (eq? a b)
                            (rtl-rename more op target fail)
                            (tuple 'move a b (rtl-rename more op target fail)))))))
-            ((prim opcode args to more)
+            (['prim opcode args to more]
                (if (fix+? to)
                   (if (bad? to target op)
                      (fail)
@@ -98,23 +98,23 @@
                   (if (bad? to target op)
                      (fail)
                      (tuple 'prim opcode (map op args) to (rtl-rename more op target fail)))))
-            ((clos-proc lp off env to more)
+            (['clos-proc lp off env to more]
                (if (bad? to target op)
                   (fail)
                   (tuple 'clos-proc (op lp) off (map op env) to (rtl-rename more op target fail))))
-            ((clos-code lp off env to more)
+            (['clos-code lp off env to more]
                (if (bad? to target op)
                   (fail)
                   (tuple 'clos-code (op lp) off (map op env) to (rtl-rename more op target fail))))
-            ((ld val to cont)
+            (['ld val to cont]
                (if (bad? to target op)
                   (fail)
                   (tuple 'ld val to (rtl-rename cont op target fail))))
-            ((refi from offset to more)
+            (['refi from offset to more]
                (if (bad? to target op)
                   (fail)
                   (tuple 'refi (op from) offset to (rtl-rename more op target fail))))
-            ((goto fn nargs)
+            (['goto fn nargs]
                (tuple 'goto (op fn) nargs))
             ;((goto-code fn nargs)
             ;   (tuple 'goto-code (op fn) nargs))
@@ -122,15 +122,15 @@
             ;   (tuple 'goto-proc (op fn) nargs))
             ;((goto-clos fn nargs)
             ;   (tuple 'goto-clos (op fn) nargs))
-            ((jeq a b then else)
+            (['jeq a b then else]
                (tuple 'jeq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)))
-            ((jn a then else) ; todo: merge next four cases into one
+            (['jn a then else] ; todo: merge next four cases into one
                (tuple 'jn (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
-            ((jz a then else)
+            (['jz a then else]
                (tuple 'jz (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
-            ((je a then else)
+            (['je a then else]
                (tuple 'je (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
-            ((jf a then else)
+            (['jf a then else]
                (tuple 'jf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)))
             (else
                (runtime-error "rtl-rename: what is this: " code))))
@@ -185,8 +185,8 @@
       ; where possible (register retargeting level 1)
 
       (define (rtl-retard code)
-         (tuple-case code
-            ((ret a)
+         (case code
+            (['ret a]
                ;; needs R3=cont and Ra
                (if (> a highest-register)
                   ;; needs to be relocated lower, so return here a wish to put is somewhere lower
@@ -195,7 +195,7 @@
                   (values code
                      (reg-touch (reg-root empty 3) a))))
 
-            ((move a b more)
+            (['move a b more]
                (cond
                   ((eq? a b)
                      (rtl-retard more)) ; drop useless instruction
@@ -212,7 +212,7 @@
                            ; leave a wish that the value at a could already be in b
                            (values (tuple 'move a b more) (put uses a (cons b targets))))))))
 
-            ((prim op args to more)
+            (['prim op args to more]
                (lets
                   ((more uses (rtl-retard more))
                    (pass
@@ -248,7 +248,7 @@
                                  pass to)))
                         (pass)))))
 
-            ((ld val to cont)
+            (['ld val to cont]
                (lets
                   ((cont uses (rtl-retard cont))
                    (good (use-list uses to))
@@ -260,13 +260,13 @@
                            (pass)
                            (rtl-retard (tuple 'ld val to-new cont-new)))))))
 
-            ((clos-proc lpos offset env to more)
+            (['clos-proc lpos offset env to more]
                (rtl-retard-closure rtl-retard code))
 
-            ((clos-code lpos offset env to more)
+            (['clos-code lpos offset env to more]
                (rtl-retard-closure rtl-retard code))
 
-            ((refi from offset to more)
+            (['refi from offset to more]
                (lets
                   ((more uses (rtl-retard more))
                    (uses (reg-touch uses from))
@@ -281,7 +281,7 @@
                            (pass)
                            (rtl-retard
                               (tuple 'refi from offset to-new more-new)))))))
-            ((goto op nargs)
+            (['goto op nargs]
                (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             ;((goto-code op nargs)
             ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
@@ -289,15 +289,15 @@
             ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             ;((goto-clos op nargs)
             ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
-            ((jeq a b then else)
+            (['jeq a b then else]
                (rtl-retard-jump rtl-retard 'jeq a b     then else))
-            ((jn a then else)
+            (['jn a then else]
                (rtl-retard-jump rtl-retard 'jn a empty  then else)) ; fp
-            ((jf a then else)
+            (['jf a then else]
                (rtl-retard-jump rtl-retard 'jf a empty  then else)) ; fp
-            ((je a then else)
+            (['je a then else]
                (rtl-retard-jump rtl-retard 'je a empty  then else)) ; fp
-            ((jz a then else)
+            (['jz a then else]
                (rtl-retard-jump rtl-retard 'jz a empty  then else)) ; fp
 ;            ((jab a type then else)
 ;               (rtl-retard-jump rtl-retard 'jab a type then else))

@@ -40,25 +40,25 @@
                found exp))
 
          (define (walk exp bound found)
-            (tuple-case exp
-               ((var exp)
+            (case exp
+               (['var exp]
                   (take exp found bound))
-               ((lambda formals body)
+               (['lambda formals body]
                   (walk body (union formals bound) found))
-               ((lambda-var fixed? formals body)
+               (['lambda-var fixed? formals body]
                   (walk body (union formals bound) found))
-               ((ifeq a b then else)
+               (['ifeq a b then else]
                   (walk-list (list a b then else) bound found))
-               ((either fn else)
+               (['either fn else]
                   (walk fn bound
                      (walk else bound found)))
-               ((call rator rands)
+               (['call rator rands]
                   (walk rator bound
                      (walk-list rands bound found)))
-               ((value val) found)
-               ((values vals)
+               (['value val] found)
+               (['values vals]
                   (walk-list vals bound found))
-               ((values-apply op fn)
+               (['values-apply op fn]
                   (walk op bound
                      (walk fn bound found)))
                (else
@@ -78,7 +78,7 @@
       (define (pick-binding deps env)
 
          (define (maybe type vals)
-            (if (null? vals) #false  (tuple type vals)))
+            (if (null? vals) #false  [type vals]))
 
          (or
             ; things which have no dependences
@@ -131,8 +131,8 @@
             values))
 
       (define (var-eq? node sym)
-         (tuple-case node
-            ((var s) (eq? s sym))
+         (case node
+            (['var s] (eq? s sym))
             (else #false)))
 
       ; convert all (name ..) to (name .. name), and make wrappers when name 
@@ -140,31 +140,31 @@
 
       (define (carry-simple-recursion exp name deps)
          (define (walk exp)
-            (tuple-case exp
-               ((call rator rands)
+            (case exp
+               (['call rator rands]
                   (if (var-eq? rator name)
-                     (tuple 'call rator                     ; <- converted call
-                        (append (map walk rands) (list rator)))
-                     (tuple 'call
+                     ['call rator                     ; <- converted call
+                        (append (map walk rands) (list rator))]
+                     ['call
                         (walk rator)
-                        (map walk rands))))
-               ((lambda formals body)
+                        (map walk rands)]))
+               (['lambda formals body]
                   (if (has? formals name)
                      exp
-                     (tuple 'lambda formals (walk body))))
-               ((ifeq a b then else)
-                  (tuple 'ifeq (walk a) (walk b) (walk then) (walk else)))
-               ((values vals) 
-                  (tuple 'values (map walk vals)))
-               ((values-apply op fn)
-                  (tuple 'values-apply (walk op) (walk fn)))
-               ((value val) exp)
-               ((var sym)
+                     ['lambda formals (walk body)]))
+               (['ifeq a b then else]
+                  ['ifeq (walk a) (walk b) (walk then) (walk else)])
+               (['values vals]
+                  ['values (map walk vals)])
+               (['values-apply op fn]
+                  ['values-apply (walk op) (walk fn)])
+               (['value val] exp)
+               (['var sym]
                   (if (eq? sym name)
                      (begin
                         ;(print " making a wrapper for " name)
                         ;(print "   - with deps " deps)
-                        (tuple 'lambda (reverse (cdr (reverse deps))) (tuple 'call exp (map mkvar deps))))
+                        ['lambda (reverse (cdr (reverse deps))) (tuple 'call exp (map mkvar deps))])
                      exp))
                (else
                   (runtime-error "carry-simple-recursion: what is this node type: " exp))))
@@ -172,12 +172,12 @@
 
 
       (define (carry-bindings exp env)
-         (tuple-case exp
-            ((call rator rands)  ;;; have to emulate (call (var sym) rands) for now
-               (tuple-case rator
-                  ((var sym)
-                     (tuple-case (lookup env sym)
-                        ((recursive formals deps)
+         (case exp
+            (['call rator rands]  ;;; have to emulate (call (var sym) rands) for now
+               (case rator
+                  (['var sym]
+                     (case (lookup env sym)
+                        (['recursive formals deps]
                            (unless (eq? (length formals) (length rands))
                               (runtime-error 
                                  "Wrong number of arguments: "
@@ -195,20 +195,20 @@
                   (else
                      (mkcall (carry-bindings rator env)
                         (map (lambda (exp) (carry-bindings exp env)) rands)))))
-            ((lambda formals body)
+            (['lambda formals body]
                (mklambda formals
                   (carry-bindings body
                      (env-bind env formals))))
-            ((ifeq a b then else)
+            (['ifeq a b then else]
                (let
                   ((a (carry-bindings a env))
                    (b (carry-bindings b env))
                    (then (carry-bindings then env))
                    (else (carry-bindings else env)))
                   (tuple 'ifeq a b then else)))
-            ((var sym)
-               (tuple-case (lookup env sym)
-                  ((recursive formals deps)
+            (['var sym]
+               (case (lookup env sym)
+                  (['recursive formals deps]
                      (let 
                         ((lexp 
                            (mklambda formals 
@@ -216,11 +216,11 @@
                         ; (print "carry-bindings: made local closure " lexp)
                         lexp))
                   (else exp)))
-            ((value val) exp)
-            ((values vals)
+            (['value val] exp)
+            (['values vals]
                (tuple 'values
                   (map (lambda (exp) (carry-bindings exp env)) vals)))
-            ((values-apply op fn)
+            (['values-apply op fn]
                (let
                   ((op (carry-bindings op env))
                    (fn (carry-bindings fn env)))
@@ -264,17 +264,17 @@
          (define (first x) (ref x 1))
          (if (null? deps)
             body
-            (tuple-case (pick-binding deps env)
+            (case (pick-binding deps env)
 
                ; no dependecies, so bind with ((lambda (a ...) X) A ...)
-               ((trivial nodes) 
+               (['trivial nodes]
                   (make-bindings (map first nodes) (map second nodes)
                      (generate-bindings
                         (remove-deps (map first nodes) deps)
                         body env)))
 
                ; bind one or more functions which are simply recursive
-               ((simple nodes)
+               (['simple nodes]
                   (let
                      ((env-rec
                         (fold
@@ -316,7 +316,7 @@
                               body nodes)
                            ))))
 
-               ((mutual nodes)
+               (['mutual nodes]
                   ;;; variable order must be preserved across functions
                   (lets
                      ((partition (deps-of (car nodes)))
@@ -377,19 +377,19 @@
          (define (unletrec-list exps)
             (map (lambda (exp) (unletrec exp env)) exps))
 
-         (tuple-case exp
-            ((var value) exp)
-            ((call rator rands)
+         (case exp
+            (['var value] exp)
+            (['call rator rands]
                (tuple 'call
                   (unletrec rator env)
                   (unletrec-list rands)))
-            ((lambda formals body)
+            (['lambda formals body]
                (mklambda formals
                   (unletrec body (env-bind env formals))))
-            ((lambda-var fixed? formals body)
+            (['lambda-var fixed? formals body]
                (mkvarlambda formals
                   (unletrec body (env-bind env formals))))
-            ((letq names values body)
+            (['letq names values body]
                (let*((env (env-bind env names))
                      (handle (lambda (exp) (unletrec exp env)))
                      (values (map handle values))
@@ -403,20 +403,20 @@
                         names values))
                   body env)))
 
-            ((value val) exp)
-            ((values vals)
+            (['value val] exp)
+            (['values vals]
                (tuple 'values
                   (unletrec-list vals)))
-            ((values-apply op fn)
+            (['values-apply op fn]
                (tuple 'values-apply (unletrec op env) (unletrec fn env)))
-            ((ifeq a b then else)
+            (['ifeq a b then else]
                (let
                   ((a (unletrec a env))
                    (b (unletrec b env))
                    (then (unletrec then env))
                    (else (unletrec else env)))
                   (tuple 'ifeq a b then else)))
-            ((either func else)
+            (['either func else]
                (tuple 'either
                   (unletrec func env)
                   (unletrec else env)))

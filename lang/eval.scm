@@ -159,15 +159,15 @@
             (λ ()
                (evaluate exp env)))
          ; grab the result
-         (tuple-case (ref (accept-mail (λ (env) (eq? (ref env 1) task))) 2)
-            ((finished result not used)
+         (case (ref (accept-mail (λ (env) (eq? (ref env 1) task))) 2)
+            (['finished result not used]
                result) ; <- is already ok/fail
-            ((crashed opcode a b)
+            (['crashed opcode a b]
                (fail (verbose-vm-error opcode a b)))
-            ((error cont reason info)
+            (['error cont reason info]
                ; note, these could easily be made resumable by storing cont
                (fail (list reason info)))
-            ((breaked)
+            (['breaked]
                (fail (list "breaked")))
             (else is foo
                (fail (list "Funny result for compiler " foo)))))
@@ -412,10 +412,10 @@
                      ((interactive (env-get env '*interactive* #false))
                       (load-env    (env-set env '*interactive* #false))
                       (outcome (repl load-env exps)))
-                     (tuple-case outcome
-                        ((ok val env)
+                     (case outcome
+                        (['ok val env]
                            (repl (mark-loaded (env-set env '*interactive* interactive) path) in))
-                        ((error reason partial-env)
+                        (['error reason partial-env]
                            ; fixme, check that the fd is closed!
                            (repl-fail env (list "Could not load" path "because" reason))))))
                (repl-fail env
@@ -516,10 +516,10 @@
                (repl env in))
             ((expand)
                (let*((exp in (uncons in #false)))
-                  (tuple-case (macro-expand exp env)
-                     ((ok exp env)
+                  (case (macro-expand exp env)
+                     (['ok exp env]
                         (write exp))
-                     ((fail reason)
+                     (['fail reason]
                         (print "Macro expansion failed: " reason)))
                   (repl env in)))
             ((quit)
@@ -589,14 +589,14 @@
 
       ; todo: implement R5RS "6.5 Eval"
       (define (eval exp env)
-         (tuple-case (macro-expand exp env)
-            ((ok exp env)
-               (tuple-case (evaluate-as exp env (list 'evaluating))
-                  ((ok value env)
+         (case (macro-expand exp env)
+            (['ok exp env]
+               (case (evaluate-as exp env (list 'evaluating))
+                  (['ok value env]
                      value)
-                  ((fail reason)
+                  (['fail reason]
                      #false)))
-            ((fail reason)
+            (['fail reason]
                #false)))
 ;      (define-syntax eval
 ;         (syntax-rules (*toplevel*)
@@ -738,11 +738,11 @@
                         (repl-include env
                            (library-name->path iset) (λ (why) (ret #false)))))))
                (if exps
-                  (tuple-case (repl env (cdr exps)) ; drop begin,
-                     ((ok value env)
+                  (case (repl env (cdr exps)) ; drop begin,
+                     (['ok value env]
                         ;; we now have the library if it was defined in the file
                         (values 'ok env))
-                     ((error reason env)
+                     (['error reason env]
                         ;; no way to distinquish errors in the library from missing library atm
                         (values 'error reason)))
                   (values 'not-found (library-name->path iset))))
@@ -818,11 +818,11 @@
                   repl fail))
             ((headed? 'begin (car exp))
                ;; run basic repl on it
-               (tuple-case (repl env (cdar exp))
-                  ((ok value env)
+               (case (repl env (cdar exp))
+                  (['ok value env]
                      ;; continue on to other defines or export
                      (repl-library (cdr exp) env repl fail))
-                  ((error reason env)
+                  (['error reason env]
                      (fail reason))))
             ((headed? 'export (car exp))
                ;; build the export out of current env
@@ -863,8 +863,8 @@
 
       (define (eval-repl exp env repl evaluator)
          (debug env "Evaling " exp)
-         (tuple-case (macro-expand exp env)
-            ((ok exp env)
+         (case (macro-expand exp env)
+            (['ok exp env]
                (debug env " * expanded to " exp)
                (cond
                   ((import? exp) ;; <- new library import, temporary version
@@ -879,8 +879,8 @@
                                        (cons ";; Imported " (cdr exp)))))
                               envp))))
                   ((definition? exp)
-                     (tuple-case (evaluator (caddr exp) env)
-                        ((ok value env2)
+                     (case (evaluator (caddr exp) env)
+                        (['ok value env2]
                            (lets
                               ((env (env-set env (cadr exp) value))
                                (env (maybe-name-function env (cadr exp) value))
@@ -890,12 +890,12 @@
                                  (repl-message
                                     (bytes->string (render ";; Defined " (render (cadr exp) null))))
                                  (bind-toplevel env))))
-                        ((fail reason)
+                        (['fail reason]
                            (fail
                               (list "Definition of" (cadr exp) "failed because" reason)))))
                   ((multi-definition? exp)
-                     (tuple-case (evaluator (caddr exp) env)
-                        ((ok value env2)
+                     (case (evaluator (caddr exp) env)
+                        (['ok value env2]
                            (let ((names (cadr exp)))
                               (if (and (list? value)
                                     (eq? (length value) (length names)))
@@ -907,7 +907,7 @@
                                        (zip cons names value)))
                                  (fail
                                     (list "Didn't get expected values for definition of " names)))))
-                        ((fail reason)
+                        (['fail reason]
                            (fail
                               (list "Definition of" (cadr exp) "failed because" reason)))))
                   ((export? exp)
@@ -930,8 +930,8 @@
                               (λ (lib-env key) (env-set lib-env key (env-get env key null)))
                               *src-olvm* library-exports))
                          (lib-env (env-set lib-env current-library-key name)))
-                        (tuple-case (repl-library exps lib-env repl fail) ;; anything else must be incuded explicitly
-                           ((ok library lib-env)
+                        (case (repl-library exps lib-env repl fail) ;; anything else must be incuded explicitly
+                           (['ok library lib-env]
                               ;; get new function names and metadata from lib-env (later to be handled differently)
                               (lets
                                  ((names (env-get lib-env name-tag empty))
@@ -948,12 +948,12 @@
                                           (keep  ;; drop the loading tag for this library
                                              (λ (x) (not (equal? (car x) name)))
                                              (env-get lib-env library-key null))))))) ; <- lib-env may also have just loaded dependency libs
-                           ((error reason not-env)
+                           (['error reason not-env]
                               (fail
                                  (list "Library" name "failed to load because" reason))))))
                   (else
                      (evaluator exp env))))
-            ((fail reason)
+            (['fail reason]
                (tuple 'fail
                   (list "Macro expansion failed: " reason)))))
 
@@ -978,11 +978,11 @@
                         ((repl-op? this)
                            (repl-op repl__ (cadr this) in env)) ; todo: add last
                         (else
-                           (tuple-case (eval-repl this env repl__ evaluator)
-                              ((ok result env)
+                           (case (eval-repl this env repl__ evaluator)
+                              (['ok result env]
                                  (prompt env result)
                                  (loop env in result))
-                              ((fail reason)
+                              (['fail reason]
                                  (repl-fail env reason)))))))
                (else
                   (loop env (in) last)))))
@@ -1017,8 +1017,8 @@
 
          (let boing ((env env))
             (let ((env (bind-toplevel env)))
-               (tuple-case (repl-port env in)
-                  ((ok val env)
+               (case (repl-port env in)
+                  (['ok val env]
                      ;; bye-bye
                      (let ((atexit (env-get env '*atexit* #false)))
                         (if (function? atexit)
@@ -1026,7 +1026,7 @@
                      (if (interactive? env)
                         (print "bye-bye :/"))
                      (halt 0))
-                  ((error reason env)
+                  (['error reason env]
                      (let ((hook:fail (env-get env 'hook:fail #f)))
                         (if hook:fail (hook:fail reason (syscall 1002 #f #f #f))))
 

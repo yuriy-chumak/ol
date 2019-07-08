@@ -128,15 +128,15 @@
       ; rtl -> list of bytes
       ;; ast fail-cont → code' | (fail-cont <reason>)
       (define (assemble code fail)
-         (tuple-case code
-            ((ret a)
+         (case code
+            (['ret a]
                (list RET (reg a)))
-            ((move a b more)
+            (['move a b more]
                (let ((tl (assemble more fail)))
                   (if (eq? (car tl) MOVE) ;; [move a b] + [move c d] = [move2 a b c d] to remove a common dispatch
                      (ilist MOVE2 (reg a) (reg b) (cdr tl))
                      (ilist MOVE (reg a) (reg b) tl))))
-            ((prim op args to more)
+            (['prim op args to more]
                (cond
                   ;; fixme: handle mk differently, this was supposed to be a temp hack
                   ((> op #xff)
@@ -177,7 +177,7 @@
                   (else
                      (fail (list "Bad case of primop in assemble: " (primop-name op))))))
             ;; fixme: closures should have just one RTL node instead of separate ones for clos-proc and clos-code
-            ((clos-proc lpos offset env to more)
+            (['clos-proc lpos offset env to more]
                ;; make a 2-level closure
                (if (eq? lpos 1)
                   (cons CLOS1
@@ -195,7 +195,7 @@
                               (append (map reg env)
                                  (cons (reg to)
                                     (assemble more fail)))))))))
-            ((clos-code lpos offset env to more)      ;; make a 1-level closure
+            (['clos-code lpos offset env to more]      ;; make a 1-level closure
                (if (eq? lpos 1)
                   (cons CLOC1
                      (cons (+ 2 (length env))
@@ -212,7 +212,7 @@
                               (append (map reg env)
                                  (cons (reg to)
                                     (assemble more fail)))))))))
-            ((ld val to cont)
+            (['ld val to cont]
                (cond
                   ;; todo: add implicit load values to free bits of the instruction
                   ((eq? val null)
@@ -236,11 +236,11 @@
                            (reg to) code)))
                   (else
                      (fail (list "cannot assemble a load for " val)))))
-            ((refi from offset to more)
+            (['refi from offset to more]
                (ilist
                   REFI (reg from) offset (reg to)
                   (assemble more fail)))
-            ((goto op nargs)
+            (['goto op nargs]
                (list GOTO (reg op) nargs))
             ;((goto-code op n)
             ;   (list GOTO-CODE (reg op) n)) ;; <- arity needed for dispatch
@@ -249,7 +249,7 @@
             ;((goto-clos op n)
             ;   (list GOTO-CLOS (reg op) n))
             ;; todo: all jumps could have parameterized lengths (0 = 1-byte, n>0 = 2-byte, being the max code length)
-            ((jeq a b then else)
+            (['jeq a b then else]
                (lets
                   ((then (assemble then fail))
                    (else (assemble else fail))
@@ -257,7 +257,7 @@
                   (cond
                      ((< len #xffff) (ilist JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
-            ((jz a then else) ; todo: merge next four cases into one
+            (['jz a then else] ; todo: merge next four cases into one
                (lets
                   ((then (assemble then fail))
                    (else (assemble else fail))
@@ -265,7 +265,7 @@
                   (cond
                      ((< len #xffff) (ilist JZ (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
-            ((jn a then else)
+            (['jn a then else]
                (lets
                   ((then (assemble then fail))
                    (else (assemble else fail))
@@ -273,7 +273,7 @@
                   (cond
                      ((< len #xffff) (ilist JN (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
-            ((je a then else)
+            (['je a then else]
                (lets
                   ((then (assemble then fail))
                    (else (assemble else fail))
@@ -281,7 +281,7 @@
                   (cond
                      ((< len #xffff) (ilist JE (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
-            ((jf a then else)
+            (['jf a then else]
                (lets
                   ((then (assemble then fail))
                    (else (assemble else fail))
@@ -306,10 +306,10 @@
       ;; todo: exit via fail cont
       ;; todo: pass tail here or have case-lambda nodes be handled internally with a foldr
       (define (assemble-code obj tail)
-         (tuple-case obj
-            ((code arity insts)
+         (case obj
+            (['code arity insts]
                (assemble-code (tuple 'code-var #true arity insts) tail))
-            ((code-var fixed? arity insts)
+            (['code-var fixed? arity insts]
                (let* ((insts (allocate-registers insts)))
                   (if (not insts)
                      (runtime-error "failed to allocate registers" "")
