@@ -36,7 +36,7 @@
       (owl list-extra)
       (owl unicode)
       (owl io)
-      (owl vector)
+      (otus blobs)
       (owl render)
       (owl interop))
 

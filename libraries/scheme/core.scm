@@ -1512,7 +1512,9 @@
 
 
       ; (r7rs) 6.8  Vectors
-      ; moved to (scheme vector)
+
+      
+      ; moved to (scheme vectors)
 
       ; (r7rs) 6.9  Bytevectors
       ;
@@ -1532,6 +1534,15 @@
       ; procedure: (bytevector byte ...)
       (define (bytevector . bytes)
          (vm:makeb type-bytevector bytes))
+
+      (define (bytevector->list bv)
+         (let ((len (size bv)))
+            (if (eq? len 0)
+               #null
+               (let loop ((pos (|-1| len)) (tail #null))
+                  (if (eq? pos 0)
+                     (cons (ref bv 0) tail)
+                     (loop (|-1| pos) (cons (ref bv pos) tail)))))))
 
       ; tbd.
 
@@ -1858,6 +1869,10 @@
       ; ...
 
 
+      (define-syntax tuple
+         (syntax-rules ()
+            ((tuple . tail)
+               (vm:new type-vector . tail))))
 
 
       ; 6. Standard procedures
@@ -2028,6 +2043,7 @@
       bytevector?
       make-bytevector
       bytevector
+      bytevector->list
 
       ; (r7rs) 6.10.  Control features
       map for-each
@@ -2046,4 +2062,6 @@
       set-memory-limit get-memory-limit
 
       set-car! set-cdr!
+
+      tuple ; TEMP
 ))

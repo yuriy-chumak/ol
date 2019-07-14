@@ -488,18 +488,18 @@
             ((check-mail) => (lambda (e) ; can be (and (eq? something 0) (check-mail)) =>
                (let*((sender msg e))
                   ;(print "envelope: " envelope)
-                  (tuple-case msg
+                  (case msg
                      ; low level interface:
-                     ((set key value)
+                     (['set key value]
                         (this (put dictionary key value)))
-                     ((get key)
+                     (['get key]
                         (mail sender (get dictionary key #false))
                         (this dictionary))
-                     ((debug)
+                     (['debug]
                         (mail sender dictionary)
                         (this dictionary))
 
-                     ((finish)  ; wait for OpenGL window closing (just no answer for interact)
+                     (['finish]  ; wait for OpenGL window closing (just no answer for interact)
                         ;(glFinish)
 
                         (unless (get dictionary 'renderer #f)
@@ -511,33 +511,33 @@
                         (this (put dictionary 'customer sender)))
 
                      ; context
-                     ((set-context context)
+                     (['set-context context]
                         (this (put dictionary 'context context)))
-                     ((get-context)
+                     (['get-context]
                         (mail sender (get dictionary 'context #f))
                         (this dictionary))
 
                      ; set-window-title
-                     ((set-window-title title)
+                     (['set-window-title title]
                         (gl:SetWindowTitle (get dictionary 'context #f) title)
                         (this dictionary))
 
                      ; set-window-size
-                     ((set-window-size width height)
+                     (['set-window-size width height]
                         (gl:SetWindowSize (get dictionary 'context #f) width height)
                         ; сразу выставим вьюпорт в размер окна
                         (glViewport 0 0 width height)
                         (this dictionary))
 
                      ; renderer
-                     ((set-renderer renderer)
+                     (['set-renderer renderer]
                         (this (put dictionary 'renderer renderer)))
-                     ((get-renderer)
+                     (['get-renderer]
                         (mail sender (get dictionary 'renderer #f))
                         (this dictionary))
 
                      ; renderer
-                     ((set-expose-handler expose-handler)
+                     (['set-expose-handler expose-handler]
                         (if expose-handler
                            (expose-handler (ref STATE 1) (ref STATE 2) (ref STATE 3) (ref STATE 4)))
                         (this (put dictionary 'expose-handler expose-handler)))
@@ -551,12 +551,12 @@
                (let ((context (get dictionary 'context #f)))
                   (if context ; todo: добавить обработку кнопок
                      (native:process-events context (lambda (event)
-                        (tuple-case event
-                           ((keyboard key)
+                        (case event
+                           (['keyboard key]
                               ((get dictionary 'keyboard-handler (lambda (key) #f)) key))
-                           ((mouse button x y)
+                           (['mouse button x y]
                               ((get dictionary 'mouse-handler (lambda (x y) #f)) button x y))
-                           ((expose x y width height)
+                           (['expose x y width height]
                               (set-ref! STATE 1 x) ; save current window dimensions
                               (set-ref! STATE 2 y)
                               (set-ref! STATE 3 width)

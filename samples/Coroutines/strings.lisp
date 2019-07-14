@@ -7,10 +7,10 @@
 (let this ((strings #empty))
 (let* ((envelope (wait-mail))
        (sender msg envelope))
-   (tuple-case msg
-      ((set id string)
+   (case msg
+      (['set id string]
          (this (put strings id string)))
-      ((get id)
+      (['get id]
          (mail sender (get strings id #false))
          (this strings))
       (else

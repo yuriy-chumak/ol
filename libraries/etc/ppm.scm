@@ -138,8 +138,7 @@
 						 (get-pixel (make-pixel-reader get-color))
 						 (data (get-pixels bs get-pixel (* width height))))
 						(if data
-							(tuple data width height)
-							#false))))))
+							[data width height]))))))
 
 	(define (parse-ppm bs)
 		(lets ((bs magic (get-bytes bs magic-byte?)))

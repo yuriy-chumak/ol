@@ -5,7 +5,7 @@
 (import
    (scheme core)
    (owl interop) (owl io)
-   (owl vector)
+   (otus blobs)
    (only (lang sexp) get-sexp))
 
 (begin

@@ -57,14 +57,14 @@
       (owl string)
       (owl list-extra)
       (owl ff)
-      (owl vector)
+      (otus blobs)
       (owl render)
       (owl list)
       (owl math)
       (owl fasl)
       (owl tuple)
       (owl lazy)
-      (only (owl vector) merge-chunks vec-leaves))
+      (only (otus blobs) merge-chunks vec-leaves))
 
    (begin
 

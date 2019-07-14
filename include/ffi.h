@@ -60,7 +60,7 @@ struct OL
 #define FBITS                       ((__SIZEOF_LONG__ * 8) - 8) // bits in fixnum
 #define HIGHBIT                     ((unsigned long)1 << FBITS) // high long bit set
 #define FMAX                        (((long)1 << FBITS) - 1) // maximum fixnum (and most negative fixnum)
-#define MAXOBJ                      0xFFFF // max words in tuple including header
+#define MAXOBJ                      0xFFFF // max words in vector including header
 
 
 #define IFALSE                      make_immediate(0, TCONST)

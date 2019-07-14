@@ -141,7 +141,7 @@
                   ;; fixme: handle mk differently, this was supposed to be a temp hack
                   ((> op #xff)
                      (output-code op
-                        (cons (reg (length (cdr args))) ; tuple size
+                        (cons (reg (length (cdr args))) ; vector size
                            (cons (reg (car args)) ; type
                               (append (map reg (cdr args))
                                  (cons (reg to)
@@ -300,7 +300,7 @@
          ; middle case: intern only bytecode larger than x
          ; slowest but memory best case:
          (interact bytecode-server      ; more cpu, less memory
-            (vm:makeb type-bytecode bytes))) ; make blob
+            (vm:makeb type-bytecode bytes)))
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont

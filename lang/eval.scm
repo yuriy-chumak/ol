@@ -40,7 +40,7 @@
       (owl interop)
       (owl time) ;; for testing metadata
       (owl symbol)
-      (owl vector)
+      (otus blobs)
       (owl io)
       (owl math)
       (owl list-extra)

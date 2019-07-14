@@ -1,5 +1,5 @@
 ; (r7rs) 6.8  Vectors
-(define-library (scheme vector)
+(define-library (scheme vectors)
    (export 
       vector?
       make-vector vector

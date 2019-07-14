@@ -15,7 +15,7 @@
       (owl list)
       (owl sort)
       (owl list-extra)
-      (owl vector)
+      (otus blobs)
       (owl string)
       (owl iff)
       (owl lazy))

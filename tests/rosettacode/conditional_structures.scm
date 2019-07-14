@@ -35,13 +35,13 @@
       (print "cond: i don't know")))
 
 ; tuple-case, smart tuple comparer with variables filling
-(tuple-case (tuple 'selector 1 2 3)
-   ((case1 x y)
-      (print "tuple-case: case1 " x ", " y))
-   ((selector x y z)
-      (print "tuple-case: selector " x ", " y ", " z))
+(case (tuple 'selector 1 2 3)
+   (['case1 x y]
+      (print "case: case1 " x ", " y))
+   (['selector x y z]
+      (print "case: selector " x ", " y ", " z))
    (else
-      (print "tuple-case: i don't know")))
+      (print "case: i don't know")))
 
 ; case-lambda, selecting the lambda based on arguments count.
 (define smart (case-lambda

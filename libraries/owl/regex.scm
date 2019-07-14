@@ -39,7 +39,7 @@
       (owl list)
       (owl math)
       (owl string)
-      (owl vector)
+      (otus blobs)
       (owl list-extra)
       (owl iff))
 

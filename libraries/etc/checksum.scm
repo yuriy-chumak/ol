@@ -18,7 +18,7 @@
       (owl math-extra) (owl math-prime)
       (owl list)
       (owl string)
-      (owl vector)
+      (otus blobs)
       (owl lazy))
 
    (begin

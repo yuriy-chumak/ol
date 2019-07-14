@@ -193,8 +193,8 @@ void embed_new(ol_t* embed)
 			"(halt (list (vm:pin"
 			"(let*((this (cons (vm:pin *toplevel*) 0))" // internal function state (env . 0)
 			"      (eval (lambda (exp args)"              // expression processor
-			"               (tuple-case exp"
-			"                  ((ok value env)"
+			"               (case exp"
+			"                  (['ok value env]"
 			"                     (vm:unpin (car this))"     // release old env
 			"                     (set-car! this (vm:pin env))"  // new env
 			"                     (if (null? args)"
@@ -206,13 +206,13 @@ void embed_new(ol_t* embed)
 			"   (lambda (expression) (halt"
 			"      (let*((env (vm:deref (car this)))"
 			"            (exp args (uncons expression #f)))"
-			"      (case (type exp)"
-			"         (type-string type-string-wide"
+			"      (cond"
+			"         ((string? exp)"
 			"            (eval (eval-string env exp) args))"
-			"         (type-fix+"
+			"         ((number? exp)"
 			"            (eval (eval-repl (vm:deref exp) env #f evaluate) args))"
-			"         (type-bytevector"
-			"            (eval (eval-repl (fasl-decode (vector->list exp) #f) (vm:deref (car this)) #f evaluate) args))"
+			"         ((bytevector? exp)"
+			"            (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (car this)) #f evaluate) args))"
 			"         (else"
 			"            (print \"Unprocessible expression type \" (type exp)))))))))))";
 	embed->bs_pos = bs_code;

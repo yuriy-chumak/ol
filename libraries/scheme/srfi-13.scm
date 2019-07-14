@@ -24,7 +24,7 @@
 
 (import
    (scheme core)
-   (owl vector)
+   (otus blobs)
    (owl string)
    (owl math))
 

@@ -5,7 +5,7 @@
     http:run
     http:parse-url)
   (import (scheme base) (scheme srfi-1)
-      (owl parse) (owl vector)
+      (owl parse) (otus blobs)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (lang intern) string->symbol))
 

@@ -1,9 +1,15 @@
-; TODO: make vector indexer started from 0 (both byte-vectors and vectors!)
+(define-library (otus blobs)
+   (version 1.0)
+   (license MIT/LGPL3)
+   (keywords (otus ol blob bytevector vector))
+   (description "
+      Otus-Lisp BLOB support library.")
+
 ;;;
-;;; Vectors
+;;; BLOBs
 ;;;
 ;
-; vectors are one-dimensional data structures indexable by natural numbers,
+; blobs are one-dimensional data structures indexable by natural numbers,
 ; having O(n log_256 n) access and memory use (effectively O(1)). They are
 ; mainly intended to be used for static data requiring efficient (modulo
 ; owl) iteration and random access.
@@ -41,11 +47,9 @@
 ; it is half of owl's fixnum base, so dispatching can be done easily without
 ; shifting, and not too wide to make array mutations too bulky later.
 
-
-(define-library (owl vector)
-
    (export
-      (exports (scheme vector))
+      blob?
+      (exports (scheme vectors))
       vec-len             ; v → n
       vec-ref             ; v x p → v[p] | error
       list->vector
@@ -78,13 +82,20 @@
 
    (import
       (scheme core)
-      (scheme vector)
+      (scheme vectors)
       (owl lazy)
       (owl list)
       (owl list-extra)
       (owl math))
 
    (begin
+      (define (blob? o) ; == raw or a variant of major type 11?
+         (case (type o)
+            (type-vector-leaf #true)
+            (type-vector-dispatch #true)
+            (type-bytevector #true) ; bytevectors is vectors too?
+            (else #false)))
+
       (define ncar car)
       (define ncdr cdr)
 
@@ -349,22 +360,6 @@
                   ;; convert the list of leaf vectors to a tree
                   (merge-chunks chunks len)))))
 
-      ;; a separate function for listifying byte vectors, which may not be valid vectos (can be > leaf node size)
-
-      (define (copy-bvec bv pos tail)
-         (if (eq? pos 0)
-            (cons (ref bv pos) tail)
-            (lets
-               ((byte (ref bv pos))
-                (pos _ (vm:sub pos 1)))
-               (copy-bvec bv pos (cons byte tail)))))
-
-      (define (byte-vector->list bv)
-         (let ((size (size bv)))
-            (if (eq? size 0)
-               null
-               (copy-bvec bv (- size 1) null))))
-
       ;;;
       ;;; Vector iterators
       ;;;
@@ -490,7 +485,7 @@
             ((eq? (type vec) type-bytevector)
                ;; convert raw vectors directly to allow this to be used also for large chunks
                ;; which are often seen near IO code
-               (byte-vector->list vec))
+               (bytevector->list vec))
             (else
                (vec-foldr cons null vec))))
 
@@ -544,20 +539,6 @@
       (define (vec-rev a)
          (list->vector
             (vec-iterr a)))
-
-;      ;; fixme: make-vector does not share the nodes despite most being equal
-;      (define (make-vector n elem)
-;         (list->vector (repeat elem n)))
-
-      ;;;
-      ;;; Vector construction
-      ;;;
-
-;      ;; todo: start adding Vector-style constructors at some point
-;      (define-syntax vector
-;         (syntax-rules ()
-;            ((vector . things)
-;               (list->vector (list . things)))))
 
       (define vector-length vec-len)
       (define vector-ref vec-ref)

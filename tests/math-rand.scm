@@ -242,15 +242,15 @@
 
 (define (run-test rst test)
 	;(mail stdout 42) (flush-port 1)
-	(tuple-case test
-		((unary gen-a name test)
+	(case test
+		(['unary gen-a name test]
 			(values-apply (gen-a rst)
 				(lambda (rst a)
 					;(print (list name a))
 					(if (test a) 
 						#true 
 						(error "Math unreliable: " (list 'test name 'a a 'rst rst))))))
-		((binary gen-a gen-b name test)
+		(['binary gen-a gen-b name test]
 			(let* 
 				(((rst a) (gen-a rst))
 				 ((rst b) (gen-b rst)))
@@ -259,7 +259,7 @@
 					#true 
 					(error "Math unreliable: " 
 						(list 'test name 'a a 'b b 'rst rst)))))
-		((trinary gen-a gen-b gen-c name test)
+		(['trinary gen-a gen-b gen-c name test]
 			(let* 
 				(((rst a) (gen-a rst))
 				 ((rst b) (gen-b rst))
@@ -301,20 +301,20 @@
 			(print " * " a)
 			(for 1 math-tests
 				(lambda (x test-node)
-					(tuple-case test-node
-						((unary ta name test)
+					(case test-node
+						(['unary ta name test]
 							(if (type-ok? ta a)
 								(if (not (test a))
 									(error "Funny test failed: " 
 										(list 'test name 'using a)))))
-						((binary ta tb name test)
+						(['binary ta tb name test]
 							(for 1 nums
 								(lambda (x b)
 									(if (and (type-ok? ta a) (type-ok? tb b))
 										(if (not (test a b))
 											(error "Funny test failed: " 
 												(list 'test name 'using a b)))))))
-						((trinary ta tb tc name test)
+						(['trinary ta tb tc name test]
 							(for 1 nums
 								(lambda (x b)
 									(for 1 nums

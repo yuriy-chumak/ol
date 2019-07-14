@@ -35,7 +35,7 @@
       (owl io)
       (owl interop)
       (owl list)
-      (owl vector))
+      (otus blobs))
 
    (begin
 

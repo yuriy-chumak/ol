@@ -6,7 +6,7 @@ unless: equal
 unless: i don't know
 case: 4
 cond: equal
-tuple-case: selector 1, 2, 3
+case: selector 1, 2, 3
 1, -, -
 1, 2, -
 1, 2, 3

@@ -41,7 +41,7 @@
       (owl lazy)
       (owl list)
       (owl tuple)
-      (owl vector)
+      (otus blobs)
       (owl list-extra)
       (owl rlist)
       (owl io)

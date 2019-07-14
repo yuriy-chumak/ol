@@ -24,7 +24,7 @@
       (owl string)
       (owl list)
       (owl math-extra)
-      (owl vector)
+      (otus blobs)
       (owl list-extra)
       (owl ff)
       (owl lazy)
