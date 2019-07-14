@@ -418,7 +418,7 @@
             ((pair? x) x)
             ((null? x) x)
             ((string? x) (str-iter x))
-            ((vector? x) (vec-iter x))
+            ((blob? x) (vec-iter x))
             (else (runtime-error "how do i iterate " x))))
 
       ;; todo: now that the matchers are constructed here, the terminals /[^]...[$]/ could be handled externally!

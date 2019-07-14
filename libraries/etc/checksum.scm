@@ -150,7 +150,7 @@
             ((pair? x)   (default-checksummer x))
             ((null? x)   (default-checksummer x))
             ((string? x) (default-checksummer (str-iter x)))
-            ((vector? x) (default-checksummer (vec-iter x)))
+            ((blob? x) (default-checksummer (vec-iter x)))
             (else
               (runtime-error "checksum: what is " x))))
 
@@ -173,5 +173,5 @@
                      ((pair? data) data)
                      ((null? data) data)
                      ((string? data) (str-iter data))
-                     ((vector? data) (vec-iter data))
+                     ((blob? data) (vec-iter data))
                      (else (runtime-error "how do i compute a checksum for " data)))))))))

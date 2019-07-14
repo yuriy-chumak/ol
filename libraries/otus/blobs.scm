@@ -49,7 +49,6 @@
 
    (export
       blob?
-      (exports (scheme vectors))
       vec-len             ; v → n
       vec-ref             ; v x p → v[p] | error
       list->vector
@@ -82,7 +81,6 @@
 
    (import
       (scheme core)
-      (scheme vectors)
       (owl lazy)
       (owl list)
       (owl list-extra)

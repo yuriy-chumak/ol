@@ -50,7 +50,7 @@
          (skip (get-imm #\space))
          (z get-number)
          (skip (get-imm #\newline)))
-      (vector x y z)))
+      [x y z]))
 (define get-vn
    (let-parses(
          (skip (get-word "vn " #t))
@@ -60,7 +60,7 @@
          (skip (get-imm #\space))
          (z get-number)
          (skip (get-imm #\newline)))
-      (vector x y z)))
+      [x y z]))
 (define get-v-vt-vn
    (let-parses(
          (a (get-either
@@ -74,7 +74,7 @@
          (c (get-either
                get-number
                (get-epsilon #f))))
-      (vector a b c)))
+      [a b c]))
 
 (define get-f
    (let-parses(
@@ -85,7 +85,7 @@
          (skip (get-imm #\space))
          (c get-v-vt-vn)
          (skip (get-imm #\newline)))
-      (vector a b c)))
+      [a b c]))
 
 (define facegroup-parser
    (let-parses(

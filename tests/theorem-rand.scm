@@ -37,7 +37,7 @@
       ((rlist? x)  (lrange 0 1 (rlen x)))
       ((list? x)   (lrange 0 1 (length x)))
       ((string? x) (lrange 0 1 (string-length x)))
-      ((vector? x) (lrange 0 1 (vec-len x)))
+      ((blob? x) (lrange 0 1 (vec-len x)))
       ((ff? x)     (keys x))
       (else (error "domain: what is " x))))
 
@@ -47,7 +47,7 @@
       ((rlist? x)  (rlist->list x))
       ((list? x)   x)
       ((string? x) (string->list x))
-      ((vector? x) (vector->list x))
+      ((blob? x) (vector->list x))
       ((ff? x)     (ff-fold (λ (out k v) (cons v out)) null x))
       (else (error "range: what is " x))))
 
@@ -532,7 +532,7 @@
       (if fd
          (let ((data (get-block fd 16)))
             (close-port fd)
-            (if (vector? data)
+            (if (blob? data)
                (vec-fold (λ (n d) (+ d (<< n 8))) 0 data)
                (time-ms)))
          (time-ms))))

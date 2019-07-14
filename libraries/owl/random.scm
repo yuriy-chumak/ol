@@ -304,7 +304,7 @@
             ((tuple? obj)
                (lets ((rs n (rand rs (size obj))))
                   (values rs (ref obj (+ n 1)))))
-            ((vector? obj)
+            ((blob? obj)
                (lets ((rs n (rand rs (vec-len obj))))
                   (values rs (vec-ref obj n))))
             (else

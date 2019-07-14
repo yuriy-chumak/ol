@@ -288,13 +288,13 @@
                   (value (cdr kv)))
                ;(print "key: " key)
                ;(print "value: " value)
-               (if (ends-with-vector key) ; encoded as vector?
+               (if (ends-with-vector key) ; encoded as blob?
                   ; slow and naive implementation:
                   (let ((key (string->symbol (substring key 0 (- (string-length key) 6)))))
                      ;(print "KEY: " key)
                      (loop (put args key
                               (list->vector
-                                 (if (vector? (getf args key))
+                                 (if (blob? (getf args key))
                                     (append (vector->list (getf args key)) (list value))
                                     (list value))))
                            u))

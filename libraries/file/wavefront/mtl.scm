@@ -43,7 +43,7 @@
          (skip (get-imm #\space))
          (b get-number)
          (skip (get-imm #\newline)))
-      (vector r g b)))
+      [r g b]))
 
 (define material-parser
    (let-parses(

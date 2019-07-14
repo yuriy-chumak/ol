@@ -102,6 +102,6 @@
          (list->vector
             (suffix-list
                (cond
-                  ((vector? thing) (vector->list thing))
+                  ((blob? thing) (vector->list thing))
                   ((string? thing) (string->list thing))
                   (else thing)))))))

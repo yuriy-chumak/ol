@@ -25,7 +25,7 @@
                (display (floor (/ i n)))
                (if (less? 1 n)
                   (loop (mod i n) (/ n 10))))))
-         ((vector? L)
+         ((blob? L)
             (display "[")
             (let ((len (vec-len L)))
                (let loop ((n 0))

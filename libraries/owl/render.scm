@@ -16,7 +16,7 @@
       (owl lazy)
       (owl math)
       (only (owl fasl) sub-objects)
-      (only (otus blobs) vector? vector->list)
+      (only (otus blobs) blob? vector->list)
       (only (owl math) render-number number?)
       (only (owl string) render-string string? string->list))
 
@@ -66,8 +66,18 @@
                ((bytevector? obj)
                   (ilist #\# #\u #\8 (render (vector->list obj) tl)))
 
-               ((vector? obj)
+               ((blob? obj)
                   (cons #\# (render (vector->list obj) tl)))
+
+               ;; OR ?
+               ((tuple? obj)
+                 ;(ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
+                  (ilist #\@ #\(
+                     (render (ref obj 1)
+                        (fold
+                           (λ (tl pos) (cons #\space (render (ref obj pos) tl)))
+                           (cons #\) tl)
+                           (lrange (size obj) -1 1)))))
 
                ((function? obj)
                   (render "#<function>" tl))
@@ -77,14 +87,6 @@
                   ;      (ilist #\# #\< (render symp (cons #\> tl)))
                   ;      (render "#<function>" tl))))
 
-               ((tuple? obj)
-                 ;(ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
-                  (ilist #\[
-                     (render (ref obj 1)
-                        (fold
-                           (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
-                           (cons #\] tl)
-                           (lrange (size obj) -1 1)))))
 
 ; disabled, because records currently unload
 ;               ((record? obj)
@@ -196,9 +198,24 @@
                ((symbol? obj)
                   (render (symbol->string obj) (delay (k sh))))
 
-               ((vector? obj)
+               ((blob? obj)
                   (cons #\#
                      (ser sh (vector->list obj) k))) ;; <- should convert incrementally!
+
+               ((tuple? obj)
+                  (cons #\[
+                     (let loop ((sh sh) (n 1))
+                        (cond
+                           ((less? (size obj) n)
+                              (pair #\] (k sh)))
+                           (else
+                              ;; render car, then cdr
+                              (ser sh (ref obj n)
+                                 (λ (sh)
+                                    (delay
+                                       (if (eq? n (size obj))
+                                          (loop sh (+ n 1))
+                                          (cons #\space (loop sh (+ n 1))))))))))))
 
                ((function? obj)
                   (let ((name (getf names obj)))
@@ -216,25 +233,6 @@
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
                   (cons #\# (ser sh (ff->list obj) k)))
-
-               ((tuple? obj)
-                  ;; (ilist #\# #\[
-                  ;;    (ser sh (tuple->list obj)
-                  ;;       (λ (sh) (pair #\] (k sh))))))
-
-                  (cons #\[
-                     (let loop ((sh sh) (n 1))
-                        (cond
-                           ((less? (size obj) n)
-                              (pair #\] (k sh)))
-                           (else
-                              ;; render car, then cdr
-                              (ser sh (ref obj n)
-                                 (λ (sh)
-                                    (delay
-                                       (if (eq? n (size obj))
-                                          (loop sh (+ n 1))
-                                          (cons #\space (loop sh (+ n 1))))))))))))
 
                ((port? obj)   (render obj (λ () (k sh))))
                ((eof? obj)    (render obj (λ () (k sh))))
