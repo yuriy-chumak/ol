@@ -819,7 +819,7 @@
       ; can be said about such cases is that the value returned by
       ; eqv? must be a boolean
 
-      (assert (eqv? #() #())              ===> #true)  ; * ol specific, (in r7rs unspecified)
+      (assert (eqv? #() #())                ===> #true)  ; * ol specific, (in r7rs unspecified)
       (assert (eqv? (lambda (x) x)
                     (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? (lambda (x) x)
@@ -827,7 +827,7 @@
       ;assert (eqv? 1.0e0 1.0f0)            ===> unspecified
       (assert (eqv? +nan.0 +nan.0)          ===> #true)  ; * ol specific, (in r7rs unspecified)
 
-      ;(assert (eqv? '(a) '(a))              ===> #false) ; * ol specific, (in r7rs unspecified)
+      ;(assert (eqv? '(a) '(a))             ===> #false) ; * ol specific, (in r7rs unspecified)
       ;assert (eqv? "a" "a")                ===> unspecified
       ;assert (eqv? '(b) (cdr '(a b)))      ===> unspecified
       ;assert (letrec ((f (lambda () (if (eqv? f g) ’both ’f)))
@@ -1181,7 +1181,7 @@
       (assert (pair? '(a . b))                       ===>  #t)
       (assert (pair? '(a b c))                       ===>  #t)
       (assert (pair? '())                            ===>  #f)
-      (assert (pair? '#(a b))                        ===>  #f)
+      (assert (pair? #(a b))                         ===>  #f)
 
       ; procedure:  (cons obj1 obj2)    * builtin
       (define cons cons)

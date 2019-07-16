@@ -154,9 +154,9 @@
       ;  эти операции не надо экспортировать из модуля, они как бы "вшиты" в базовый язык
       (setq *primops* (alist
          ; прямые аллокаторы
-         (primop 'vm:new   'any 1 #(23)) ; make new object, simplest and fastest allocator
-         (primop 'vm:make  'any 1 #(18)) ; make object
-         (primop 'vm:makeb 'any 1 #(19)) ; make blob (binary, raw) object
+         (primop 'vm:new   'any 1 "\x17;") ; 23, make new object, simplest and fastest allocator
+         (primop 'vm:make  'any 1 "\x12;") ; 18, make object
+         (primop 'vm:makeb 'any 1 "\x13;") ; 19, make blob (binary, raw) object
          ; косвенные аллокаторы
          (primop 'vm:cast     2 1 (make-bytecode '(22 4 5 6    24 6)))
          (primop 'set-ref     3 1 (make-bytecode '(45 4 5 6 7  24 7)))

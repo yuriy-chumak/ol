@@ -40,7 +40,7 @@
          (define (render obj tl)
             (cond
                ((null? obj)
-                  (ilist #\( #\) tl))
+                  (ilist #\' #\( #\) tl))
 
                ((number? obj)
                   (render-number obj tl 10))
@@ -69,15 +69,14 @@
                ((blob? obj)
                   (cons #\# (render (vector->list obj) tl)))
 
-               ;; OR ?
-               ((tuple? obj)
-                 ;(ilist #\# #\[ (render (tuple->list obj) (cons #\] tl))))
-                  (ilist #\@ #\(
-                     (render (ref obj 1)
-                        (fold
-                           (λ (tl pos) (cons #\space (render (ref obj pos) tl)))
-                           (cons #\) tl)
-                           (lrange (size obj) -1 1)))))
+               ((vector? obj)
+                  (cons #\# (render (tuple->list obj) tl)))
+                  ;; (ilist #\# #\(
+                  ;;    (render (ref obj 1)
+                  ;;       (fold
+                  ;;          (λ (tl pos) (cons #\space (render (ref obj pos) tl)))
+                  ;;          (cons #\) tl)
+                  ;;          (lrange (size obj) -1 1)))))
 
                ((function? obj)
                   (render "#<function>" tl))
@@ -108,7 +107,7 @@
                ((eq? obj #empty) (ilist #\# #\e #\m #\p #\t #\y tl)) ;; don't print as #()
                ((eq? obj #eof)   (ilist #\# #\e #\o #\f tl))
 
-               ((port? obj) (ilist #\# #\[ #\f #\d #\space (render (vm:cast obj type-fix+) (cons #\] tl))))
+               ((port? obj) (ilist #\# #\< #\f #\d #\space (render (vm:cast obj type-fix+) (cons #\> tl))))
 
                ((eq? (type obj) type-const)
                   (render-number (vm:cast obj type-fix+) tl 16))
@@ -202,20 +201,23 @@
                   (cons #\#
                      (ser sh (vector->list obj) k))) ;; <- should convert incrementally!
 
-               ((tuple? obj)
-                  (cons #\[
+               ((vector? obj)
+                  (cons #\#
+                     (ser sh (tuple->list obj) k))) ;; <- should convert incrementally!
+
+               ((vector? obj)
+                  (cons #\# (cons #\(
                      (let loop ((sh sh) (n 1))
                         (cond
                            ((less? (size obj) n)
-                              (pair #\] (k sh)))
+                              (pair #\) (k sh)))
                            (else
-                              ;; render car, then cdr
-                              (ser sh (ref obj n)
+                              (ser sh (ref obj n) ; render car, then cdr
                                  (λ (sh)
                                     (delay
                                        (if (eq? n (size obj))
                                           (loop sh (+ n 1))
-                                          (cons #\space (loop sh (+ n 1))))))))))))
+                                          (cons #\space (loop sh (+ n 1)))))))))))))
 
                ((function? obj)
                   (let ((name (getf names obj)))
@@ -245,9 +247,8 @@
          (or
             ;; note, all immediates are
             (number? val) (string? val) (boolean? val) (function? val)
-            (port? val)
-            (null? val) (rlist? val)
-            (eq? val #empty)))
+            (port? val) (vector? val) (null? val)
+            (rlist? val) (empty? val)))
 
       ;; could drop val earlier to possibly gc it while rendering
       (define (maybe-quote val lst)

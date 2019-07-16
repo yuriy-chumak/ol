@@ -348,7 +348,7 @@
                         (get-word "empty" #empty)   ; empty association array (system constant)
                         (get-word "eof"   #eof)     ; (vm:cast 4 13))
                         ; сокращения
-                        (get-word "0"     #0)       ; empty vector, unique (vm:makeb type-bytevector #null)
+                        (get-word "0"     #0)       ; empty vector, unique (vm:make type-vector 0)
                         (get-word "t"     #true)
                         (get-word "f"     #false)
                         (get-word "T"     #true)
@@ -369,32 +369,36 @@
             (else sexp)))
 
       (define (get-vector-of parser)
-         (let-parses
-            ((skip (get-imm #\#))
-             (fields (get-list-of parser)))
-            (let ((fields (intern-symbols fields)))
-               (if (first pair? fields #false)
-                  ;; vector may have unquoted stuff, so convert it to a sexp constructing a vector, which the macro handler can deal with
-                  (cons '_sharp_vector fields) ; <- quasiquote macro expects to see this in vectors
-                  (list->vector fields)))))
-
-      (define (get-simple-tuple-of parser) ; [ ... ]
-         (let-parses (
-               (skip (get-imm #\{))
-               (things
-                  (get-kleene* parser))
-               (skip maybe-whitespace)
-               (skip (get-imm #\})))
-            (cons 'tuple things)))
-
-      (define (get-simple-vector-of parser) ; simple vector (not a "smart")
-         (let-parses (
-               (skip (get-imm #\[))
-               (things
-                  (get-kleene* parser))
-               (skip maybe-whitespace)
-               (skip (get-imm #\])))
-            (cons 'vm:new (cons 'type-vector things))))
+         (get-either
+            ; [], not quoting values
+            (let-parses (
+                  (* (get-imm #\[))
+                  (things
+                     (get-kleene* parser))
+                  (* maybe-whitespace)
+                  (* (get-imm #\])))
+               (cons 'vm:new (cons 'type-vector things)))
+            ; #(), quoting all values
+            (let-parses (
+                  (* (get-imm #\#))
+                  (* (get-imm #\())
+                  (things
+                     (get-kleene* parser))
+                  (* maybe-whitespace)
+                  (* (get-imm #\))))
+               (if (null? things)
+                  #0
+                  (list 'quote (vm:make type-vector things))))
+               ;(list 'vm:make 'type-vector (list 'quote things)))
+            ;; (let-parses (
+            ;;    (* (get-imm #\#))
+            ;;    (fields (get-list-of parser)))
+            ;;    (let ((fields (intern-symbols fields)))
+            ;;       (if (first pair? fields #false)
+            ;;          ;; vector may have unquoted stuff, so convert it to a sexp constructing a vector, which the macro handler can deal with
+            ;;          (cons '_sharp_vector fields) ; <- quasiquote macro expects to see this in vectors
+            ;;          (vm:make type-vector fields))))
+         ))
 
       (define (get-sexp)
          (let-parses (
@@ -408,8 +412,6 @@
                      get-funny-word
                      (get-list-of (get-sexp))
                      (get-vector-of (get-sexp))
-                     (get-simple-tuple-of (get-sexp))
-                     (get-simple-vector-of (get-sexp))
                      (get-quoted (get-sexp))
                      (get-byte-if eof?)
                      get-quoted-char)))

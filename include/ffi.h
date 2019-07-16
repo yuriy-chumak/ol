@@ -44,7 +44,7 @@ struct OL
 #define RPOS                        11 // offset of RAW bit in header (IPOS+3)
 
 #define TPAIR                        1
-#define TTUPLE                       2
+#define TVECTOR                      2
 #define TSTRING                      3
 
 #define TPORT                       12
