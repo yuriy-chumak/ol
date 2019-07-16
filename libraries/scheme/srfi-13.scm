@@ -36,7 +36,7 @@
             (next (make-vector m 0)))
          (let loop ((i 1) (j 0))
             (cond
-             ((>= i (- m 1))
+             ((less? m i)
                 next)
              ((eq? (string-ref p i) (string-ref p j))
                 (let ((i (+ i 1))

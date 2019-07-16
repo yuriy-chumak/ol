@@ -75,7 +75,7 @@
       (define-syntax assert
          (syntax-rules (===>)
             ((assert expression ===> expectation)
-               (ifeq (equal? ((lambda (x) x) expression) (quote expectation)) #true
+               (ifeq (equal? ((lambda (x) x) expression) expectation) #true
                   #true
                   (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
 
@@ -288,8 +288,8 @@
             ((if #false    then otherwise)  otherwise)
             ((if val       then otherwise) (ifeq val #false otherwise then))))
 
-      (assert (if (less? 2 3) 'yes 'no)               ===>  yes)
-      (assert (if (less? 3 2) 'yes 'no)               ===>  no)
+      (assert (if (less? 2 3) 'yes 'no)               ===>  'yes)
+      (assert (if (less? 3 2) 'yes 'no)               ===>  'no)
 
       ; syntax:  unless <test> <consequent> <alternate> * ol specific
       ; syntax:  unless <test> <consequent> * ol specific
@@ -298,8 +298,8 @@
             ((unless val then)      (if val #false then))
             ((unless val then else) (if val else then))))
 
-      (assert (unless (less? 2 3) 'yes 'no)               ===>  no)
-      (assert (unless (less? 3 2) 'yes 'no)               ===>  yes)
+      (assert (unless (less? 2 3) 'yes 'no)               ===>  'no)
+      (assert (unless (less? 3 2) 'yes 'no)               ===>  'yes)
 
       ; 4.1.6  Assignments
       ;
@@ -334,12 +334,12 @@
                   (cond . rest)))))
 
       (assert (cond ((less? 2 3) 'greater)
-                    ((less? 3 2) 'less))                  ===>  greater)
+                    ((less? 3 2) 'less))                  ===>  'greater)
       (assert (cond ((less? 3 3) 'greater)
                     ((less? 3 3) 'less)
-                    (else 'equal))                        ===>  equal)
+                    (else 'equal))                        ===>  'equal)
       (assert (cond ((car (cdr '((a 1) (b 2)))) => car)
-                    (else #f))                            ===>  b)
+                    (else #f))                            ===>  'b)
 
       ; library syntax:  (case <key> <clause1> <clause2> ...)
       (define-syntax case
@@ -399,7 +399,7 @@
 
       (assert (and (eq? 2 2) (less? 1 2))                 ===> #true)
       (assert (and (eq? 2 2) (less? 2 1))                 ===> #false)
-      (assert (and 1 2 '(f g) 'c)                         ===> c)
+      (assert (and 1 2 '(f g) 'c)                         ===> 'c)
       (assert (and)                                       ===> #true)
 
       ; library syntax:  (or <test1> ...)
@@ -415,7 +415,7 @@
       (assert (or (eq? 2 2) (less? 1 2))                  ===> #true)
       (assert (or (eq? 2 2) (less? 2 1))                  ===> #true)
       (assert (or #f #f #f)                               ===> #false)
-      (assert (or #f 'c #f)                               ===> c)
+      (assert (or #f 'c #f)                               ===> 'c)
 
       ; 4.2.2  Binding constructs
       ;
@@ -975,22 +975,22 @@
 
 
 
-      (assert (complex? 3+4i)                        ===>  #t)
-      (assert (complex? 3)                           ===>  #t)
-      (assert (complex? 3.4)                         ===>  #t)
-      (assert (real? 3)                              ===>  #t)
-      (assert (real? 3.4)                            ===>  #t)
-      (assert (real? -2.5+0.0i)                      ===>  #t)
-      (assert (real? 1e10)                           ===>  #t)
-      (assert (rational? 6/10)                       ===>  #t)
-      (assert (rational? 6/3)                        ===>  #t)
-      (assert (rational? 3+4i)                       ===>  #f)
-      (assert (integer? 3+0i)                        ===>  #t)
-      (assert (integer? 3+4i)                        ===>  #f)
-      (assert (integer? 3.0)                         ===>  #t)
-      (assert (integer? 3.4)                         ===>  #f)
-      (assert (integer? 8/4)                         ===>  #t)
-      (assert (integer? 8/5)                         ===>  #f)
+      (assert (complex? 3+4i)               ===>  #t)
+      (assert (complex? 3)                  ===>  #t)
+      (assert (complex? 3.4)                ===>  #t)
+      (assert (real? 3)                     ===>  #t)
+      (assert (real? 3.4)                   ===>  #t)
+      (assert (real? -2.5+0.0i)             ===>  #t)
+      (assert (real? 1e10)                  ===>  #t)
+      (assert (rational? 6/10)              ===>  #t)
+      (assert (rational? 6/3)               ===>  #t)
+      (assert (rational? 3+4i)              ===>  #f)
+      (assert (integer? 3+0i)               ===>  #t)
+      (assert (integer? 3+4i)               ===>  #f)
+      (assert (integer? 3.0)                ===>  #t)
+      (assert (integer? 3.4)                ===>  #f)
+      (assert (integer? 8/4)                ===>  #t)
+      (assert (integer? 8/5)                ===>  #f)
 
       ; *** declared in (r5rs math), (r5rs math-extra)
       ; library procedure:  (zero? z)
@@ -999,10 +999,10 @@
          (eq? x 0)
          (equal? x |0.0|))) ; supports inexact numbers
 
-      (assert (zero? 0)                              ===>  #t)
-      (assert (zero? 4)                              ===>  #f)
-      (assert (zero? (vm:fp2 #xE9 7 7))              ===>  #t)
-      (assert (zero? (vm:fp2 #xC1 7 7))              ===>  #f)
+      (assert (zero? 0)                     ===>  #t)
+      (assert (zero? 4)                     ===>  #f)
+      (assert (zero? (vm:fp2 #xE9 7 7))     ===>  #t)
+      (assert (zero? (vm:fp2 #xC1 7 7))     ===>  #f)
 
       ; library procedure:  (positive? x)
       ; library procedure:  (negative? x)
@@ -1128,22 +1128,22 @@
       ;      Note: Programmers accustomed to other dialects of Lisp should be aware that Scheme
       ;            distinguishes both #f and the empty list from the symbol nil.
       ; Boolean constants evaluate to themselves, so they do not need to be quoted in programs.
-      (assert #t                                ===>  #t)
-      (assert #f                                ===>  #f)
-      (assert (quote #f)                        ===>  #f)
+      (assert #t                            ===>  #t)
+      (assert #f                            ===>  #f)
+      (assert (quote #f)                    ===>  #f)
 
 
       ; library procedure:  (not obj)
       (define (not x)
          (if x #false #true))
 
-      (assert (not #t)                          ===>  #f)
-      (assert (not 3)                           ===>  #f)
-      (assert (not '(3 . 0))                    ===>  #f)
-      (assert (not #f)                          ===>  #t)
-      (assert (not '())                         ===>  #f)
-      (assert (not cons)                        ===>  #f)
-      (assert (not 'nil)                        ===>  #f)
+      (assert (not #t)                      ===>  #f)
+      (assert (not 3)                       ===>  #f)
+      (assert (not '(3 . 0))                ===>  #f)
+      (assert (not #f)                      ===>  #t)
+      (assert (not '())                     ===>  #f)
+      (assert (not cons)                    ===>  #f)
+      (assert (not 'nil)                    ===>  #f)
 
 
       ; library procedure:  (boolean? obj)
@@ -1153,9 +1153,9 @@
             ((eq? o #false) #true)
             (else #false)))
 
-      (assert (boolean? #f)                          ===>  #t)
-      (assert (boolean? 0)                           ===>  #f)
-      (assert (boolean? '())                         ===>  #f)
+      (assert (boolean? #f)                 ===>  #t)
+      (assert (boolean? 0)                  ===>  #f)
+      (assert (boolean? '())                ===>  #f)
 
       ; todo: Оставить здесь только самые базово необходимые вещи, все остальное переместить в:
       ;   6.3.2 -> (scheme r5rs lists)
@@ -1178,10 +1178,10 @@
       (define (pair? o)
          (eq? (type o) type-pair))
 
-      (assert (pair? '(a . b))                       ===>  #t)
-      (assert (pair? '(a b c))                       ===>  #t)
-      (assert (pair? '())                            ===>  #f)
-      (assert (pair? #(a b))                         ===>  #f)
+      (assert (pair? '(a . b))              ===>  #t)
+      (assert (pair? '(a b c))              ===>  #t)
+      (assert (pair? '())                   ===>  #f)
+      (assert (pair? #(a b))                ===>  #f)
 
       ; procedure:  (cons obj1 obj2)    * builtin
       (define cons cons)
@@ -1277,9 +1277,9 @@
                n
                (loop (|+1| n) (cdr l)))))
 
-      (assert (length '(a b c))                      ===>  3)
-      (assert (length '(a (b) (c d e)))              ===>  3)
-      (assert (length '())                           ===>  0)
+      (assert (length '(a b c))             ===>  3)
+      (assert (length '(a (b) (c d e)))     ===>  3)
+      (assert (length '())                  ===>  0)
 
       ; procedure:  (append list ...)
       (define append
@@ -1378,20 +1378,20 @@
 
       (assert (case 6
                  ((2 3 5 7) 'prime)
-                 ((1 4 6 8 9) 'composite))     ===> composite)
+                 ((1 4 6 8 9) 'composite))     ===> 'composite)
       (assert (case (car '(c d))
                  ((a e i o u) 'vowel)
                  ((w y) 'semivowel)
-                 (else 'consonant))            ===> consonant)
+                 (else 'consonant))            ===> 'consonant)
 
-      (assert (memq 'a '(a b c))               ===> (a b c))
-      (assert (memq 'b '(a b c))               ===> (b c))
+      (assert (memq 'a '(a b c))               ===> '(a b c))
+      (assert (memq 'b '(a b c))               ===> '(b c))
       (assert (memq 'd '(a b c))               ===> #false)
       (assert (memq '(a) '(b (a) c))           ===> #false)
-      (assert (member '(a) '(b (a) c))         ===> ((a) c))
-      (assert (member "a" '(3 "b" "c") less?)  ===> ("b" "c"))
-      (assert (memq 101 '(100 101 102))        ===> (101 102)) ; * ol specific, (in r7rs unspecified)
-      (assert (memv 101 '(100 101 102))        ===> (101 102))
+      (assert (member '(a) '(b (a) c))         ===> '((a) c))
+      (assert (member "a" '(3 "b" "c") less?)  ===> '("b" "c"))
+      (assert (memq 101 '(100 101 102))        ===> '(101 102)) ; * ol specific, (in r7rs unspecified)
+      (assert (memv 101 '(100 101 102))        ===> '(101 102))
 
       ; procedure:  (assq obj alist)           * moved to (scheme base)
       ; procedure:  (assv obj alist)           * moved to (scheme base)
@@ -1546,6 +1546,7 @@
 
       ; procedure:  (make-vector k)
       ; procedure:  (make-vector k fill)
+      ; procedure:  (make-vector l)     * ol extension, l is list
       ;
       ; Returns a newly allocated vector of k elements. If a second
       ; argument is given, then each element is initialized to fill .
@@ -1569,12 +1570,17 @@
             ((vector . staff)
                (vm:new type-vector . staff))))
 
-;     (assert (vector 'a 'b 'c)                  ===>  #(a b c))
-      
+      (assert (vector 'a 'b 'c)                ===>  #(a b c))
       ; TODO: implement in (scheme vectors)
 
       ; (r7rs) 6.9  Bytevectors
       ;
+      ; Bytevectors represent blocks of binary data. They are
+      ; fixed-length sequences of bytes, where a byte is an exact
+      ; integer in the range from 0 to 255 inclusive. A bytevector
+      ; is typically more space-efficient than a vector containing
+      ; the same values.
+
       ; procedure: (bytevector? obj)
       (define (bytevector? obj)
          (eq? (type obj) type-bytevector))
@@ -1601,13 +1607,10 @@
                      (cons (ref bv 0) tail)
                      (loop (|-1| pos) (cons (ref bv pos) tail)))))))
 
-      ; tbd.
+      (define (list->bytevector l)
+         (make-bytevector l))
 
-      ; Bytevectors represent blocks of binary data. They are
-      ; fixed-length sequences of bytes, where a byte is an exact
-      ; integer in the range from 0 to 255 inclusive. A bytevector
-      ; is typically more space-efficient than a vector containing
-      ; the same values.
+      ; tbd.
 
       ;; *********************
       ;; 6.10.  Control features
@@ -1666,7 +1669,7 @@
                            (cons (apply f (map car args)) (loop (map cdr args))))))
          ((f ) #null)))
 
-         (assert (map cadr '((a b) (d e) (g h)))  ===> (b e h))
+         (assert (map cadr '((a b) (d e) (g h)))  ===> '(b e h))
 
       ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
       (define for-each (lambda (f a)
@@ -2098,7 +2101,9 @@
 
       ; (r7rs) 6.8  Vectors
       vector?
+      make-vector
       vector
+
 
       ; (r7rs) 6.9  Bytevectors
       bytevector?

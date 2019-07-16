@@ -197,7 +197,7 @@
             data
             (append data
                (foldr append null
-                  (map vec->list (reverse rchunks))))))
+                  (map blob->list (reverse rchunks))))))
 
       ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
 

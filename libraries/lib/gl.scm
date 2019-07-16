@@ -171,7 +171,7 @@
                   ;;         10  1 ; GLX_BLUE_SIZE
                   ;;         12  24 ; GLX_DEPTH_SIZE
                   ;;          0))); None
-                  ;; (XVisualInfo (vptr->vector vi 64)) ; sizeof(XVisualInfo) = 64
+                  ;; (XVisualInfo (vptr->bytevector vi 64)) ; sizeof(XVisualInfo) = 64
                   ;; ; *unless (eq? 4 (class (int32->ol XVisualInfo 24))) (halt "TrueColor visual required for this program") ; offsetof(XVisualInfo, class)
                   ;; ;(cx (gl:CreateContext display vi #false 1))
 
@@ -678,7 +678,7 @@
                (define fbc*
                   (glXChooseFBConfig display screen visual_attribs fbcount))
                ;; (print "fbcount: " (unbox fbcount))
-               (define fbc (vptr->vector fbc* (* (size nullptr) (unbox fbcount))))
+               (define fbc (vptr->bytevector fbc* (* (size nullptr) (unbox fbcount))))
                (define bestFbc (extract-void* fbc 0))
                ;; (define vi (glXGetVisualFromFBConfig display bestFbc))
 

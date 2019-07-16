@@ -53,8 +53,8 @@
       vec-ref             ; v x p → v[p] | error
       list->vector
       list->byte-vector   ; (byte ...) -> bvec | #false
-      vector->list
-      vec->list
+      vector->list ; todo: remove
+      blob->list
       vec-iter
       vec-iterr
       vec-fold
@@ -478,16 +478,16 @@
 
       ;; list conversions
 
-      (define (vec->list vec)
+      (define (blob->list vec)
          (cond
-            ((eq? (type vec) type-bytevector)
+            ((bytevector? vec)
                ;; convert raw vectors directly to allow this to be used also for large chunks
                ;; which are often seen near IO code
                (bytevector->list vec))
             (else
                (vec-foldr cons null vec))))
 
-      (define vector->list vec->list)
+      (define vector->list blob->list)
 
       (define (leaf-data leaf)
          (if (eq? (type leaf) type-bytevector)

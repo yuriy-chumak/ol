@@ -40,7 +40,7 @@
          (define (render obj tl)
             (cond
                ((null? obj)
-                  (ilist #\' #\( #\) tl))
+                  (ilist #\( #\) tl))
 
                ((number? obj)
                   (render-number obj tl 10))
@@ -200,10 +200,6 @@
                ((blob? obj)
                   (cons #\#
                      (ser sh (vector->list obj) k))) ;; <- should convert incrementally!
-
-               ((vector? obj)
-                  (cons #\#
-                     (ser sh (tuple->list obj) k))) ;; <- should convert incrementally!
 
                ((vector? obj)
                   (cons #\# (cons #\(

@@ -308,15 +308,15 @@
                ((make-ass* compare) obj list))))
 
       (assert (assoc 'oak
-         '((pine . cones) (oak . acorns) (maple . seeds)))  ===> (oak . acorns))
+         '((pine . cones) (oak . acorns) (maple . seeds)))  ===> '(oak . acorns))
       (assert (assoc 'birch '((pine . cones)))              ===> #false)
 
-      (assert (assq 'a '((a 1) (b 2) (c 3)))                ===> (a 1))
-      (assert (assq 'b '((a 1) (b 2) (c 3)))                ===> (b 2))
+      (assert (assq 'a '((a 1) (b 2) (c 3)))                ===> '(a 1))
+      (assert (assq 'b '((a 1) (b 2) (c 3)))                ===> '(b 2))
       (assert (assq 'd '((a 1) (b 2) (c 3)))                ===> #false)
       (assert (assq '(a) '(((a)) ((b)) ((c))))              ===> #false)
-      (assert (assq 5 '((2 3) (5 7) (11 13)))               ===> (5 7)) ; * ol specific, (but in r7rs unspecified)
-      (assert (assv 5 '((2 3) (5 7) (11 13)))               ===> (5 7))
+      (assert (assq 5 '((2 3) (5 7) (11 13)))               ===> '(5 7)) ; * ol specific, (but in r7rs unspecified)
+      (assert (assv 5 '((2 3) (5 7) (11 13)))               ===> '(5 7))
 
       ;; *********************
       ;; 6.10.  Control features

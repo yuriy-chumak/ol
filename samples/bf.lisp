@@ -11,7 +11,7 @@
 (define (bf program stack-length)
    (let ((program (string-append program "]"))
          (program-counter 0)
-         (stack (make-vector stack-length 0))
+         (stack (make-bytevector stack-length 0))
          (stack-pointer 0))
       (letrec ((skip (lambda (PC SP)
                         (let loop ((pc PC) (sp SP))

@@ -167,7 +167,7 @@
          (define (face->glyph face)
             ; sizeof(FT_FaceRec) = 132
             ; offsetof(FT_FaceRec, glyph) = 84
-            (extract-void* (vptr->vector face 132) 84))
+            (extract-void* (vptr->bytevector face 132) 84))
 
          (define (glyph->bitmap glyph*)
             ; sizeof(FT_GlyphSlotRec) = 160
@@ -180,7 +180,7 @@
             ; offsetof(FT_Bitmap, width) = 4
             ; offsetof(FT_Bitmap, pitch) = 8
             ; offsetof(FT_Bitmap, buffer) = 12
-            (let ((bitmap (list->vector (drop (vector->list (vptr->vector glyph* 160)) 76))))
+            (let ((bitmap (make-bytevector (drop (bytevector->list (vptr->bytevector glyph* 160)) 76))))
                (let ((height (extract-number bitmap 0 4))
                      (width (extract-number bitmap 4 4))
                      (pitch (extract-number bitmap 8 4))
@@ -192,10 +192,10 @@
    (else
       (begin
          (define (face->glyph face)
-            (extract-void* (vptr->vector face 248) 152)) ; 132 and 84 for x86
+            (extract-void* (vptr->bytevector face 248) 152)) ; 132 and 84 for x86
 
          (define (glyph->bitmap glyph*)
-            (let ((bitmap (list->vector (drop (vector->list (vptr->vector glyph* 304)) 152))))
+            (let ((bitmap (make-bytevector (drop (bytevector->list (vptr->bytevector glyph* 304)) 152))))
                (let ((height (extract-number bitmap 0 4)) ; 80 for x86
                      (width (extract-number bitmap 4 4))
                      (pitch (extract-number bitmap 8 4))

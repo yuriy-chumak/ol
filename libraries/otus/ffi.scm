@@ -99,7 +99,7 @@
       box unbox
 
       ; fft data manipulation helpers
-      vptr->vector vptr->string
+      vptr->bytevector vptr->string
       extract-void*
       extract-number
    )
@@ -345,15 +345,15 @@
 
 (begin
 
-   (define (extract-void* vector offset)
+   (define (extract-void* bvec offset)
       (let ((void* (make-vptr)))
          (map (lambda (i j) ; for-each
-               (set-ref! void* i (ref vector j)))
+               (set-ref! void* i (ref bvec j)))
             (iota (size void*) 0)
             (iota (size void*) offset))
          void*))
 
-   (define (vptr->vector vptr sizeof)
+   (define (vptr->bytevector vptr sizeof)
       (syscall 9 vptr sizeof 0))
 
 
@@ -374,10 +374,10 @@
 ;;          0 (reverse (iota (size nullptr) offset)))
 ;;       type-vptr))
 
-(define (extract-number vector offset length)
+(define (extract-number bvec offset length)
    (let ((number
             (fold (lambda (val offs)
-                     (+ (<< val 8) (ref vector offs)))
+                     (+ (<< val 8) (ref bvec offs)))
                0 (reverse (iota length offset))))
          (max (<< 1 (* 8 length))))
       (if (<= number (>> max 1))

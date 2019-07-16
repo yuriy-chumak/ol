@@ -462,7 +462,7 @@
 
       (define (vector->sexps vec fail errmsg)
          ; parse parser data maybe-path maybe-error-msg fail-val
-         (let ((lst (vector->list vec)))
+         (let ((lst (blob->list vec)))
             (parse get-sexps lst #false errmsg fail)))
 
       (define (list->sexps lst fail errmsg)

@@ -1,6 +1,6 @@
-(define Object (tuple
+(define Object [
    '(1 2 3 4)  ; list
-   #(4 3 2 1)  ; bytevector
+   #(4 3 2 1)  ; vector
    "hello"     ; ansi string
    "こんにちは"; unicode string
    (list->ff '(; hash table
@@ -10,7 +10,7 @@
    #false      ; value
    -123        ; short number
    123456789012345678901234567890123456789  ; long number
-))
+])
 
 (print Object)
 (fasl-save Object "/tmp/object.bin")
