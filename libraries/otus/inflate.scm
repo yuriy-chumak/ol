@@ -18,7 +18,7 @@
 ; return n bits from input binary stream
 (define (bits n hold)
    (let loop ((hold hold))
-      (tuple-apply hold (lambda (v i l)
+      (vector-apply hold (lambda (v i l)
          (cond
             ((null? l)
                (print-to stderr "END OF STREAM"))

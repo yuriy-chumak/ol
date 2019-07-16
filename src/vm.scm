@@ -203,13 +203,7 @@
          ; системные вызовы
          (primop 'syscall  4 1 (make-bytecode '(63 4 5 6 7 8  24 8)))
 
-         ; vm-specific constants
-         (primop 'vm:maxvalue   0 1 (make-bytecode '(30 4)))
-         (primop 'vm:valuewidth 0 1 (make-bytecode '(31 4)))
-         (primop 'vm:version    0 1 (make-bytecode '(28 4)))
-         (primop 'vm:features   0 1 (make-bytecode '(29 4)))
-
-         (primop 'tuple-apply  1 #f (make-bytecode '(32 4)))
+         (primop 'vector-apply 1 #f (make-bytecode '(32 4)))
          (primop 'ff-apply     1 #f (make-bytecode '(49 4)))
 
          ; associative array
@@ -218,6 +212,12 @@
          (primop 'ff:toggle 1 1 (make-bytecode '(46  4        5  24 5)))
          (primop 'ff:red?   1 1 (make-bytecode '(41  4        5  24 5)))
          (primop 'ff:right? 1 1 (make-bytecode '(105 4        5  24 5))) ; 105 = 41+(1<<6)
+
+         ; vm-specific constants
+         (primop 'vm:maxvalue   0 1 (make-bytecode '(30 4)))
+         (primop 'vm:valuewidth 0 1 (make-bytecode '(31 4)))
+         (primop 'vm:version    0 1 (make-bytecode '(28 4)))
+         (primop 'vm:features   0 1 (make-bytecode '(29 4)))
 
          ; pinned objects
          (primop 'vm:pin    1 1 (make-bytecode '(35 4 5  24 5)))
@@ -290,7 +290,7 @@
          (opcode 'vm:makeb)))
 
       (setq special-bind-primops (alist
-         (opcode 'tuple-apply)
+         (opcode 'vector-apply)
          (opcode 'ff-apply)))
 
 

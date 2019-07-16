@@ -44,7 +44,7 @@
                         (loop (cdr primops))))))))
 
       ;; from cps
-      (define (special-bind-primop? op) ; tuple-apply and ff-apply
+      (define (special-bind-primop? op) ; vector-apply and ff-apply
          (has? special-bind-primops op))
 
       (define (variable-input-arity? op)
@@ -81,7 +81,7 @@
             (if node node (runtime-error "Unknown primop: " op))))
 
       (define (opcode-arity-ok-2? op n)
-         (tuple-apply (opcode->primop op)
+         (vector-apply (opcode->primop op)
             (λ (name op in out fn)
                (or (eq? in n) (eq? in 'any)))))
 

@@ -31,7 +31,7 @@
                ; associative arrays (fixed functions) support:
                ;   ff:red ff:black ff:toggle ff:red? ff:right?
                ; execution flow manipulation:
-               ;   ff-apply tuple-apply
+               ;   ff-apply vector-apply
                ;
                ; exported functions:
                ;   apply apply/cc arity-error
@@ -374,7 +374,7 @@
             ; trying to integrate tuple-case:
             ((case thing ((vm:new type-vector cp . args) . body) . clauses)
                (if (eq? (ref thing 1) cp) ; compare (todo: move (ref thing 1) to common clause)
-                  (tuple-apply thing
+                  (vector-apply thing
                      (lambda (| | . args)
                         . body))
                   (case thing . clauses)))
@@ -468,11 +468,11 @@
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* ((var ... node) . rest-bindings) exp . rest-exps)
-               (tuple-apply node
+               (vector-apply node
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
             ((let* (((name ...) <= value) . rest) . code)
-               (tuple-apply value
+               (vector-apply value
                   (lambda (name ...)
                      (let* rest . code))))
             ((let* ()) exp)
@@ -2006,7 +2006,7 @@
       ;  cons car cdr ref type size set-ref set-ref! eq? less?
       ;  clock, syscall
       ;  ff:red ff:black ff:toggle ff:red? ff:right?
-      ;  ff-apply tuple-apply
+      ;  ff-apply vector-apply
 
       ; 4.1.5  Conditionals
       if unless cond case and or set!

@@ -25,12 +25,12 @@
             ;;; bind if the first value (literal) matches first of pattern
             ((tuple-case 42 tuple type ((this . vars) . body) . others)
                (if (eq? type (quote this))
-                  (tuple-apply tuple
+                  (vector-apply tuple
                      (lambda (ignore . vars) . body))
                   (tuple-case 42 tuple type . others)))
             ;;; bind to anything (deprecated, temporarly removed)
             ((tuple-case 42 tuple type ((_ . vars) . body) . rest)
-               (tuple-apply tuple
+               (vector-apply tuple
                   (lambda (ignore . vars) . body)))
             ;;; an else case needing the tuple
             ((tuple-case 42 tuple type (else is name . body))

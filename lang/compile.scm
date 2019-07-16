@@ -256,7 +256,7 @@
                                     regs))]))
                      (else
                         ; bind or ff-apply, or arithmetic
-                        (tuple-apply (rtl-bind regs formals)
+                        (vector-apply (rtl-bind regs formals)
                            (λ (selected regs)
                               ['prim op args selected
                                  (cont regs)]))))))))
