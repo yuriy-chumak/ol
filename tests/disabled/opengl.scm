@@ -7,7 +7,7 @@
 ;!
 (define *USE_GLBEGIN* 1)
 
-;  (define isCompiled (list->byte-vector '(0 0 0 0)))
+;  (define isCompiled (list->bytevector '(0 0 0 0)))
 ;  (syscall 1033 isCompiled #false #false)
 (import (owl ffi))
 (import (lib windows))
@@ -16,7 +16,7 @@
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
 (define (make-byte-vector n elem)
-   (list->byte-vector (repeat elem n)))
+   (list->bytevector (repeat elem n)))
 
 (define width 1280)
 (define height 720)
@@ -30,8 +30,8 @@
     null)) ; todo: override as '(INTEGER . 0)
 ; переключение в полноєкранній режим - http://blogs.msdn.com/b/oldnewthing/archive/2010/04/12/9994016.aspx
 ; PIXELFORMATDESCRIPTOR
-(define pfd (list->byte-vector '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
-                                                   00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
+(define pfd (list->bytevector '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
+                                                  00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
 (define hDC (GetDC window))
 (define PixelFormat (ChoosePixelFormat hDC pfd))
 (print "PixelFormat = " PixelFormat)
@@ -210,7 +210,7 @@
 (glClearColor 0 0 1 1)
 
 
-;(define vertexPositions (list->byte-vector '(
+;(define vertexPositions (list->bytevector '(
 ;;        (glVertex2i 2 0)
 ;  00 00 #x00 #x40    0 0 #x00 #x00    0 0 0 0    00 00 #x80 #x3F
 ;;        (glVertex2i 1 2)

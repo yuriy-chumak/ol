@@ -52,7 +52,7 @@
       vec-len             ; v → n
       vec-ref             ; v x p → v[p] | error
       list->vector
-      list->byte-vector   ; (byte ...) -> bvec | #false
+      list->bytevector   ; (byte ...) -> bvec | #false
       vector->list ; todo: remove
       blob->list
       vec-iter
@@ -221,14 +221,14 @@
 
       ; note, a blank vector must use a raw one, since there are no such things as 0-tuples
 
-      (define (list->byte-vector bs)
+      (define (list->bytevector bs)
          (vm:makeb type-bytevector bs))
 
       (define (make-leaf rvals raw?)
          (let ((vals (reverse rvals)))
             (if raw?
                ;; the leaf contains only fixnums 0-255, so make a compact leaf
-               (list->byte-vector vals) ;; make node and reverse
+               (vm:makeb type-bytevector vals) ;; make node and reverse
                ;; the leaf contains other values, so need full 4/8-byte descriptors
                (vm:make type-vector-leaf vals))))
 

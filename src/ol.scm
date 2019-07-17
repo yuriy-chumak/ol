@@ -176,7 +176,7 @@
 ;         (map
 ;            (λ (node)
 ;               ;; make a freshly allocated byte vector at each node
-;               (list->byte-vector bytes))
+;               (list->bytevector bytes))
 ;            (iota 0 1 n-blocks))
 ;         ;; leave it as garbage
 ;         #true)))

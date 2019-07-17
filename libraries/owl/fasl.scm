@@ -238,12 +238,12 @@
          (cond
             ((eq? n chunk-size)
                (cons
-                  (list->byte-vector (reverse buff))
+                  (list->bytevector (reverse buff))
                   (chunk-stream bs 0 null)))
             ((null? bs)
                (if (null? buff)
                   null
-                  (list (list->byte-vector (reverse buff)))))
+                  (list (list->bytevector (reverse buff)))))
             ((pair? bs)
                (lets ((n _ (vm:add n 1)))
                   (chunk-stream (cdr bs) n (cons (car bs) buff))))

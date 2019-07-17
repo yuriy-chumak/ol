@@ -219,7 +219,7 @@
          (try-get-block fd block-size #true))
 
       (define (bvec-append a b)
-         (list->byte-vector
+         (list->bytevector
             (append
                (vector->list a)
                (vector->list b))))
