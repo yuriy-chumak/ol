@@ -5,7 +5,7 @@
    (let ((ch (syscall 0 stdin 0 #f)))
       (if (eq? ch #true) ; async io, read again
          (read)
-         (vector-ref ch 0))))
+         (ref ch 0))))
 
 
 (define (bf program stack-length)
@@ -27,16 +27,16 @@
                                  (pc (+ pc 1)))
                               (case ch
                                  (#\]  (list (- PC 1) sp))
-                                 (#\[  (if (eq? (vector-ref stack sp) 0)
+                                 (#\[  (if (eq? (ref stack sp) 0)
                                           (apply loop (skip pc sp))
                                           (apply loop (step pc sp))))
-                                 (#\+  (set-ref! stack sp (+ (vector-ref stack sp) 1))
+                                 (#\+  (set-ref! stack sp (+ (ref stack sp) 1))
                                        (loop pc sp))
-                                 (#\-  (set-ref! stack sp (- (vector-ref stack sp) 1))
+                                 (#\-  (set-ref! stack sp (- (ref stack sp) 1))
                                        (loop pc sp))
                                  (#\>  (loop pc (+ sp 1)))
                                  (#\<  (loop pc (- sp 1)))
-                                 (#\.  (display (make-string 1 (vector-ref stack sp)))
+                                 (#\.  (display (make-string 1 (ref stack sp)))
                                        (loop pc sp))
                                  (#\,  (set-ref! stack sp (read))
                                        (loop pc sp))

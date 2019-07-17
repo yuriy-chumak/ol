@@ -197,6 +197,10 @@
                ((symbol? obj)
                   (render (symbol->string obj) (delay (k sh))))
 
+               ((bytevector? obj)
+                  (ilist #\# #\u #\8
+                     (ser sh (vector->list obj) k))) ;; <- should convert incrementally!
+
                ((blob? obj)
                   (cons #\#
                      (ser sh (vector->list obj) k))) ;; <- should convert incrementally!
@@ -240,10 +244,9 @@
          ser)
 
       (define (self-quoting? val)
-         (or
-            ;; note, all immediates are
+         (or  ; note, all immediates are
             (number? val) (string? val) (boolean? val) (function? val)
-            (port? val) (vector? val) (null? val)
+            (port? val) (vector? val) (bytevector? val) (null? val)
             (rlist? val) (empty? val)))
 
       ;; could drop val earlier to possibly gc it while rendering

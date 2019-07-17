@@ -305,8 +305,8 @@
                (lets ((rs n (rand rs (size obj))))
                   (values rs (ref obj (+ n 1)))))
             ((blob? obj)
-               (lets ((rs n (rand rs (vec-len obj))))
-                  (values rs (vec-ref obj n))))
+               (lets ((rs n (rand rs (blob-len obj))))
+                  (values rs (blob-ref obj n))))
             (else
                (runtime-error "rand-elem: what be " obj))))
 

@@ -3,7 +3,7 @@
 ; http://community.schemewiki.org/?scheme-faq-standards#implementations
 ;!
 
-;  (define isCompiled (list->bytevector '(0 0 0 0)))
+;  (define isCompiled (bytevector 0 0 0 0))
 ;  (syscall 1033 isCompiled #false #false)
 (import (lib sqlite))
 

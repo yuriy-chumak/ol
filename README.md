@@ -97,14 +97,14 @@ R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 
 * 6.1. Equivalence predicates (EQV?)
-  * (eqv? '#() '#()) is #true, but *unspecified* in Scheme
-  * (eqv? +nan.0 +nan.0) is #true, but *unspecified* in Scheme
+  * (eqv? '#() '#()) is **#true**, but *unspecified* in Scheme
+  * (eqv? +nan.0 +nan.0) is **#true**, but *unspecified* in Scheme
 * 6.2.5. Syntax of numerical constants
-  * NUMBERS WITHOUT PRECISION considered to be exact in Ol, but *inexact* in Scheme. Inexactness can be disabled by compiler features or/and can be unsupported by platform and we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).
+  * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme. Inexactness can be disabled by compiler features or/and can be unsupported by platform and we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).
 * 6.4. Pairs and lists
-  * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully specified in Ol, but *unspecified* in Scheme.
+  * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
 * 4.2.7. Exception handling
-  * No GUARD and RAISE in Ol
+  * **No** *guard* and *raise* in Ol.
 
 
 
@@ -150,14 +150,14 @@ Full Ol with interpreter, that can execute text lisp scripts is about 400KB size
 
 #### Windows way
 
-To build only olvm (virtual machine)
+Building only olvm (virtual machine)
 
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
 > gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
 ```
 
-To build OL
+Building OL
 
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
@@ -168,7 +168,7 @@ To build OL
 
 #### macOS/FreeBSD/OpenBSD/NetBSD/\*BSD way
 
-It require including "c" library instead of dl:
+Required include "c" library instead of "dl":
 
 ```bash
 $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -lc
@@ -194,7 +194,7 @@ Put toolchain/ol.bb bitbake recipe into any place of open webOs
 recipes folder (i.e. ./meta-oe/) and run "make ol" from root
 open webOs folder.
 
-Upload ol executable from BUILD/work/<build-name>/ol/1.0.0-1-r0/build
+Upload ol executable from BUILD/work/<build-name>/ol/<version>/build
 to machine /bin.
 
 Now you cat execute ol under webos command line or other way you

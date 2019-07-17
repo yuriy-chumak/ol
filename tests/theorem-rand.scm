@@ -37,7 +37,7 @@
       ((rlist? x)  (lrange 0 1 (rlen x)))
       ((list? x)   (lrange 0 1 (length x)))
       ((string? x) (lrange 0 1 (string-length x)))
-      ((blob? x) (lrange 0 1 (vec-len x)))
+      ((blob? x)   (lrange 0 1 (blob-len x)))
       ((ff? x)     (keys x))
       (else (error "domain: what is " x))))
 
@@ -47,7 +47,7 @@
       ((rlist? x)  (rlist->list x))
       ((list? x)   x)
       ((string? x) (string->list x))
-      ((blob? x) (vector->list x))
+      ((blob? x) (blob->list x))
       ((ff? x)     (ff-fold (λ (out k v) (cons v out)) null x))
       (else (error "range: what is " x))))
 

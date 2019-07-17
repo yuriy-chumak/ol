@@ -48,7 +48,7 @@
           ((= j 0)
              (loop (+ i 1) j (force (cdr si)) pj))
           (else
-             (loop i (vector-ref next j)  si (skip (str-iter p) (vector-ref next j)) ))))))
+             (loop i (blob-ref next j)  si (skip (str-iter p) (blob-ref next j)) ))))))
 
 (print (kmp "as" "abbsbshdgfhdgasbdgasfh" 0))
 (print (kmp "as" "abbsbshdgfhdgasbdgasfh" 14))

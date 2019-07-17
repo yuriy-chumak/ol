@@ -171,6 +171,7 @@ int main(int argc, char** argv)
 	assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", 47) == 0);
 
 	// wow, it works! But if we want frequently use causar function, let's decode, compile and 'pin' it into olvm memory
+    eval("(import (scheme bytevector))");
 	r = eval("(define (compile bytecode) (vm:pin (fasl-decode (bytevector->list bytecode) #f)))");
 	assert (r != IFALSE);
 	r = eval("compile", new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])));

@@ -459,20 +459,20 @@
          (let this ((dictionary #empty))
             (let*((envelope (wait-mail))
                   (sender msg envelope))
-               (tuple-case msg
+               (case msg
                   ; low level interface:
-                  ((set key value)
+                  (['set key value]
                      (this (put dictionary key value)))
-                  ((get key)
+                  (['get key]
                      (mail sender (get dictionary key #false))
                      (this dictionary))
-                  ((debug)
+                  (['debug]
                      (mail sender dictionary)
                      (this dictionary))
 
-                  ((set-renderer renderer)
+                  (['set-renderer renderer]
                      (this (put dictionary 'renderer renderer)))
-                  ((get-renderer)
+                  (['get-renderer]
                      (mail sender (get dictionary 'renderer #f))
                      (this dictionary))
                )))))))
@@ -604,14 +604,14 @@
 (let this ((dictionary #empty))
    (let*((envelope (wait-mail))
          (sender msg envelope))
-      (tuple-case msg
+      (case msg
          ; low level interaction interface
-         ((set key data)
+         (['set key data]
             (this (put dictionary key data)))
-         ((get key)
+         (['get key]
             (mail sender (getf dictionary key))
             (this dictionary))
-         ((debug) ; *debug interface
+         (['debug] ; *debug interface
             (mail sender dictionary)
             (this dictionary))
          (else

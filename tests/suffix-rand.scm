@@ -5,13 +5,13 @@
 ; note: end = minimum 
 
 (define (lex-less? vec a b)
-   (let ((end (vec-len vec)))
+   (let ((end (blob-len vec)))
       (let loop ((a a) (b b))
          (cond
             ((= a end) #true)
             ((= b end) #false)
             (else
-               (let ((av (vec-ref vec a)) (bv (vec-ref vec b)))
+               (let ((av (blob-ref vec a)) (bv (blob-ref vec b)))
                   (cond
                      ((< av bv) #true)
                      ((= av bv) (loop (+ a 1) (+ b 1)))
@@ -22,7 +22,7 @@
    (list->vector
       (sort 
          (λ (a b) (lex-less? data a b))
-         (lrange 0 1 (vec-len data)))))
+         (lrange 0 1 (blob-len data)))))
 
 (define (try rst maxlen alphafact)
    (lets

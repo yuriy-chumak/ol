@@ -49,10 +49,9 @@
 
    (export
       blob?
-      vec-len             ; v → n
-      vec-ref             ; v x p → v[p] | error
+      blob-len            ; v → n
+      blob-ref            ; v x p → v[p] | error
       list->vector
-      list->bytevector   ; (byte ...) -> bvec | #false
       vector->list ; todo: remove
       blob->list
       vec-iter
@@ -72,8 +71,7 @@
 
       merge-chunks          ; exported for use in lib-io (may be moved later)
       leaf-data vec-leaf-of
-      vector-ref
-      vector-length
+      blob-ref
       vec-leaves
       vec-cat             ;  vec x vec → vec
       vec-rev
@@ -81,6 +79,7 @@
 
    (import
       (scheme core)
+      (scheme bytevector)
       (owl lazy)
       (owl list)
       (owl list-extra)
@@ -165,11 +164,11 @@
             (ncar n)))
 
       ; vec x n -> vec[n] or fail
-      (define (vec-ref v n)
+      (define (blob-ref v n)
          (case (type n)
             (type-fix+
                (cond
-                  ((eq? (type v) type-bytevector)
+                  ((bytevector? v)
                      (ref v n))
                   ((less? n *vec-leaf-size*)
                      (vec-ref-digit v n))
@@ -178,11 +177,11 @@
             (type-int+
                (vec-ref-big v n))
             (else
-               (runtime-error "vec-ref: bad index: " n))))
+               (runtime-error "blob-ref: bad index: " n))))
 
       ;;; searching the leaves containing a pos
 
-      ;; todo: switch vec-ref to use vec-leaf-of for int+ indeces
+      ;; todo: switch blob-ref to use vec-leaf-of for int+ indeces
 
       (define (vec-leaf-big v n)
          (vec-dispatch-2 (vec-seek v (ncdr n)) (ncar n)))
@@ -202,7 +201,7 @@
 
       ;; others
 
-      (define (vec-len vec)
+      (define (blob-len vec)
          (case (type vec)
             (type-bytevector
                (size vec))
@@ -211,7 +210,7 @@
             (type-vector-leaf
                (size vec))
             (else
-               (runtime-error "vec-len: not a vector: " (list vec 'of 'type (type vec))))))
+               (runtime-error "blob-len: not a blob " (list vec 'of 'type (type vec))))))
 
 
 
@@ -220,10 +219,6 @@
       ;;;
 
       ; note, a blank vector must use a raw one, since there are no such things as 0-tuples
-
-      (define (list->bytevector bs)
-         (vm:makeb type-bytevector bs))
-
       (define (make-leaf rvals raw?)
          (let ((vals (reverse rvals)))
             (if raw?
@@ -387,7 +382,7 @@
             (else tl))) ; size field -> number
 
       (define (vec-iter v)
-         (let loop ((end (vec-len v)) (pos 0))
+         (let loop ((end (blob-len v)) (pos 0))
             (let ((this (vec-leaf-of v pos)))
                (iter-leaf-of this
                   (λ () (let ((pos (+ pos *vec-leaf-size*))) (if (< pos end) (loop end pos) null)))))))
@@ -395,7 +390,7 @@
       (define (iter-leaf-range v p n t)
          (if (eq? n 0)
             t
-            (pair (vec-ref v p)
+            (pair (blob-ref v p)
                (iter-leaf-range v (+ p 1) (- n 1) t))))
 
       (define (iter-range-really v p n)
@@ -422,7 +417,7 @@
                         (λ () (iter-range-really v (+ p n-here) n-left))))))))
 
       (define (vec-iter-range v p e)
-         (if (<= e (vec-len v))
+         (if (<= e (blob-len v))
             (cond
                ((< p e)
                   (iter-range-really v p (- e p)))
@@ -461,7 +456,7 @@
 
       (define (vec-iterr v)
          (lets
-            ((end (vec-len v))
+            ((end (blob-len v))
              (last (band end *vec-leaf-max*)))
             (cond
                ((eq? last 0) ; vec is empty or ends to a full leaf
@@ -509,7 +504,7 @@
       ;; fixme: proper vec-range not implemented
       (define (vec-range-naive vec from to) ; O(m log n)
          (list->vector
-            (map (λ (p) (vec-ref vec p)) (lrange from 1 to))))
+            (map (λ (p) (blob-ref vec p)) (lrange from 1 to))))
 
       (define vec-range vec-range-naive)
 
@@ -520,7 +515,7 @@
 
       ;; vec → a stream of leaves
       (define (vec-leaves vec)
-         (let ((end (vec-len vec)))
+         (let ((end (blob-len vec)))
             (let loop ((pos 0))
                (if (< pos end)
                   (let ((data (leaf-data (vec-leaf-of vec pos))))
@@ -537,7 +532,4 @@
       (define (vec-rev a)
          (list->vector
             (vec-iterr a)))
-
-      (define vector-length vec-len)
-      (define vector-ref vec-ref)
 ))

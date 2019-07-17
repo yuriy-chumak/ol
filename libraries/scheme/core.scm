@@ -43,7 +43,7 @@
                ; letq ifeq either values-apply
                ;
 
-      (scheme srfi-16)   ; case-lambda
+      (scheme srfi-16)   ; case-lambda, (r7rs) 4.2.9
       (scheme srfi-87)   ; <= in cases
       (scheme srfi-71))  ; (let* ((a b (values..
 
@@ -547,7 +547,7 @@
       ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
       ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
       (define-syntax quasiquote
-         (syntax-rules (unquote quote unquote-splicing append _work _sharp_vector list->vector)
+         (syntax-rules (unquote quote unquote-splicing append _work)  ; _sharp_vector list->vector
                                                    ;          ^         ^
                                                    ;          '-- mine  '-- added by the parser for #(... (a . b) ...) -> (_sharp_vector ... )
             ((quasiquote _work () (unquote exp)) exp)
@@ -559,9 +559,9 @@
             ((quasiquote _work () ((unquote-splicing exp) . tl))
                (append exp
                   (quasiquote _work () tl)))
-            ((quasiquote _work () (_sharp_vector . es))
-               (list->vector
-                  (quasiquote _work () es)))
+            ;; ((quasiquote _work () (_sharp_vector . es))
+            ;;    (list->vector
+            ;;       (quasiquote _work () es)))
             ((quasiquote _work d (a . b))
                (cons (quasiquote _work d a)
                      (quasiquote _work d b)))
@@ -1511,7 +1511,7 @@
 
 
 
-      ; (r7rs) 6.8  Vectors
+      ;; (r7rs) 6.8  Vectors
 
       ; Vectors are heterogeneous structures whose elements are
       ; indexed by integers. A vector typically occupies less space
@@ -1519,44 +1519,41 @@
       ; to access a randomly chosen element is typically less for the
       ; vector than for the list.
       ;
-      ; The length of a vector is the number of elements that it
-      ; contains. This number is a non-negative integer that is
-      ; fixed when the vector is created. The valid indexes of a
-      ; vector are the exact non-negative integers less than the
-      ; length of the vector. The first element in a vector is indexed
-      ; by zero, and the last element is indexed by one less than
-      ; the length of the vector.
-      ;
-      ; Vectors are written using the notation #(obj . . . ). For
+      ; Vectors are written using the notation #(obj ...). For
       ; example, a vector of length 3 containing the number zero
       ; in element 0, the list (2 2 2 2) in element 1, and the
       ; string "Anna" in element 2 can be written as follows:
       ;
       ;      #(0 (2 2 2 2) "Anna")
       ;
+      ; * ol specific note: Additionally vectors can be written
+      ;   using the notation [obj ...]
+      ;   Отличие нотаций: [] не квотирует элементы. Кроме того
+      ;   в ol к элементам ветора можно обращаться с помощью ref
+      ;   и тогда элементы ветора индексируются с 1, не с 0.
+      ;
       ; Vector constants are self-evaluating, so they do not need
       ; to be quoted in programs.
 
-      ;
       ; procedure:  (vector? obj)
       ; Returns #t if obj is a vector; otherwise returns #f.
 
-      (define (vector? o) ; == raw or a variant of major type 11?
+      (define (vector? o)
          (eq? (type o) type-vector))
 
       ; procedure:  (make-vector k)
       ; procedure:  (make-vector k fill)
-      ; procedure:  (make-vector l)     * ol extension, l is list
+      ; procedure:  (make-vector list)     * ol extension
       ;
       ; Returns a newly allocated vector of k elements. If a second
       ; argument is given, then each element is initialized to fill .
-      ; Otherwise the initial contents of each element is unspeci-
-      ; fied.
+      ; Otherwise the initial contents of each element is #false
+      ; (unspecified in Scheme).
 
       (define make-vector
          (case-lambda
-            ((k)
-               (vm:make type-vector k))
+            ((v)
+               (vm:make type-vector v))
             ((k fill)
                (vm:make type-vector k fill))))
 
@@ -1571,15 +1568,27 @@
                (vm:new type-vector . staff))))
 
       (assert (vector 'a 'b 'c)                ===>  #(a b c))
-      ; TODO: implement in (scheme vectors)
 
-      ; (r7rs) 6.9  Bytevectors
+      ; * extra vector staff implemented in (scheme vector)
+
+
+      ;; (r7rs) 6.9  Bytevectors
       ;
       ; Bytevectors represent blocks of binary data. They are
       ; fixed-length sequences of bytes, where a byte is an exact
       ; integer in the range from 0 to 255 inclusive. A bytevector
       ; is typically more space-efficient than a vector containing
-      ; the same values.
+      ; the same values.      
+      ;
+      ; Bytevectors are written using the notation #u8(byte...).
+      ; For example, a bytevector of length 3 containing the byte
+      ; 0 in element 0, the byte 10 in element 1, and the byte 5 in
+      ; element 2 can be written as follows:
+      ;
+      ;      #u8(0 10 5)
+      ;
+      ; Bytevector constants are self-evaluating, so they do not
+      ; need to be quoted in programs.
 
       ; procedure: (bytevector? obj)
       (define (bytevector? obj)
@@ -1598,76 +1607,70 @@
       (define (bytevector . bytes)
          (vm:makeb type-bytevector bytes))
 
-      (define (bytevector->list bv)
-         (let ((len (size bv)))
-            (if (eq? len 0)
-               #null
-               (let loop ((pos (|-1| len)) (tail #null))
-                  (if (eq? pos 0)
-                     (cons (ref bv 0) tail)
-                     (loop (|-1| pos) (cons (ref bv pos) tail)))))))
+      ; * extra bytevector staff implemented in (scheme bytevector)
 
-      (define (list->bytevector l)
-         (make-bytevector l))
 
-      ; tbd.
-
-      ;; *********************
-      ;; 6.10.  Control features
+      ;; (r7rs) 6.10.  Control features
       ;
-      ; This chapter describes various primitive procedures which control the flow of program
-      ; execution in special ways. The procedure? predicate is also described here.
+      ; This chapter describes various primitive procedures which
+      ; control the flow of program execution in special ways.
+      ; ...
+      ; The procedure? predicate is also described here.
 
       ; *ol* extension
-      (define (ff? o)        ; OL extension
-         (or (eq? o #empty)
-             (eq? 24 (vm:and (type o) #b1111100))))
+      (define (ff? o)
+         (or (eq? (vm:and (type o) #b1111100) 24)
+             (eq? o #empty)))
 
       ; *ol* extension
-      (define (bytecode? o)  ; OL extension
+      (define (bytecode? o)
          (eq? (type o) type-bytecode))
 
       ; *ol* extension
-      (define (function? o)  ; OL extension
+      (define (function? o)
          (case (type o)
             (type-proc #true)
             (type-clos #true)
-            (type-bytecode #true)
-            (else #false)))
+            (type-bytecode #true)))
 
       ; procedure:  (procedure? obj)
+      ;
       (define (procedure? o)
          (or (function? o) (ff? o)))
 
-      (assert (procedure? car)                    ===> #t)
-      (assert (procedure? 'car)                   ===> #f)
-
+      (assert (procedure? car)                  ===> #true)
+      (assert (procedure? 'car)                 ===> #false)
+      (assert (procedure? (lambda (x) (cons x x)))
+                                                ===> #true)
       ; procedure:  (apply proc arg1 ... args)  * builtin
+      ;
       (define apply apply)
 
       ; procedure:  (map proc list1 list2 ...)
-      (define map (lambda (f a)
-         (let loop ((a a))
-            (if (null? a)
-               #null
-               (cons (f (car a)) (loop (cdr a)))))))
-      (define map (case-lambda
-         ((f a)      (map f a))
-         ((f a b)    (let loop ((a a)(b b)) ; map2
-                        (if (null? a)
-                           #null
-                           (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
-         ; possible speedup:
-         ;((f a b c) (let loop ((a a)(b b)(c c))
-         ;              (if (null? a)
-         ;                 #null
-         ;                 (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
-         ((f a b . c) ; mapN
-                     (let loop ((args (cons a (cons b c))))
-                        (if (null? (car args)) ; закончились
-                           #null
-                           (cons (apply f (map car args)) (loop (map cdr args))))))
-         ((f ) #null)))
+      ;
+      (define map
+         (define map (lambda (f a)
+            (let loop ((a a))
+               (if (null? a)
+                  #null
+                  (cons (f (car a)) (loop (cdr a)))))))
+         (case-lambda
+            ((f a)      (map f a))
+            ((f a b)    (let loop ((a a)(b b)) ; map2
+                           (if (null? a)
+                              #null
+                              (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
+            ; possible speedup:
+            ;((f a b c) (let loop ((a a)(b b)(c c))
+            ;              (if (null? a)
+            ;                 #null
+            ;                 (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
+            ((f a b . c) ; mapN
+                        (let loop ((args (cons a (cons b c))))
+                           (if (null? (car args)) ; закончились
+                              #null
+                              (cons (apply f (map car args)) (loop (map cdr args))))))
+            ((f ) #null)))
 
          (assert (map cadr '((a b) (d e) (g h)))  ===> '(b e h))
 
@@ -1710,6 +1713,8 @@
                            ((c . x) (apply/cc k x)))))))
 
       (define call/cc call-with-current-continuation)
+
+      (assert (call/cc procedure?)             ===> #true)
 
       ; procedure:  (values obj ...)          * builtin /special
 
@@ -1964,7 +1969,7 @@
       (define-syntax let*/cc
          (syntax-rules (call/cc)
             ((let*/cc (var) . tail)
-               (syntax-error "let/cc: continuation name cannot be empty"))
+               (syntax-error "let*/cc: continuation name cannot be empty"))
             ((let*/cc var . body)
                (call/cc (λ (var) (let* . body))))))
 
@@ -2109,7 +2114,6 @@
       bytevector?
       make-bytevector
       bytevector
-      bytevector->list
 
       ; (r7rs) 6.10.  Control features
       map for-each
@@ -2130,4 +2134,5 @@
       set-car! set-cdr!
 
       tuple ; TEMP
+      |-1| |+1| ; * ol internal staff
 ))

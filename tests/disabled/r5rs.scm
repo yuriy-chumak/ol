@@ -451,15 +451,13 @@
 
    chapter "6.3.6"
 
-      (vector->list '#(dah dah didah)) 
-                                      ===>  (dah dah didah) 
-      (list->vector '(dididit dah))   ===>  #(dididit dah)
+      (vector->list #(dah dah didah)) ===> '(dah dah didah)
+      (list->vector '(dididit dah))   ===> #(dididit dah)
 
       ;; additions
-
       (make-vector 3 'betelgeuse)     ===> #(betelgeuse betelgeuse betelgeuse)
       (vector? '(foo))                ===> #f
-      (vector 'a 'b 'c)               ===>  #(a b c)
+      (vector 'a 'b 'c)               ===> #(a b c)
 
       (vector-ref '#(1 1 2 3 5 8 13 21) 5)  
                                       ===>  8

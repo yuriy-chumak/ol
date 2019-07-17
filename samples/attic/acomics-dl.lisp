@@ -35,7 +35,7 @@
           ((= j 0)
              (loop (+ i 1) j))
           (else
-             (loop i (vector-ref next j)))))))
+             (loop i (blob-ref next j)))))))
 
 (define (kmp p s start)
    (define (init-kmp p)
@@ -84,7 +84,7 @@
           ((= j 0)
              (loop (+ i 1) j (force (cdr si)) pj))
           (else
-             (loop i (vector-ref next j)  si (skip (str-iter p) (vector-ref next j)) ))))))
+             (loop i (blob-ref next j)  si (skip (str-iter p) (blob-ref next j)) ))))))
 
 
 (import (scheme misc)

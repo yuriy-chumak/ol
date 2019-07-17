@@ -41,7 +41,7 @@
    (setq cursor '(0 . 0)) ; текущее положение курсора
    ;(setq fcolor '(0)) ; текущий цвет, тоже пока не используется
    (setq config:cell-size '(9 . 16)) ; размер знакоместа, пока не используется
-   (setq drawing-area (tuple 0 0 0 0))
+   (setq drawing-area #(0 0 0 0))
 
    ; let's preparte the font
    (define ft (make-FT_Library))
@@ -105,7 +105,7 @@
                      (+ y (- 16 (ref bitmap 3))) ; y
                      (ref bitmap 2) (ref bitmap 4) ; width, height
                      GL_ALPHA GL_UNSIGNED_BYTE (ref bitmap 5)) ; was GL_ALPHA
-                  (cons char (tuple (/ (mod i 32) 32) (/ (div i 32) 32)))))
+                  (cons char [(/ (mod i 32) 32) (/ (div i 32) 32)])))
             symbols
             (iota (length symbols) 0)))))
 
@@ -259,52 +259,52 @@
       (let this ((itself #empty))
          (let*((envelope (wait-mail))
                (sender msg envelope))
-            (tuple-case msg
+            (case msg
                ; low level interaction interface
-               ((set key data)
+               (['set key data]
                   (let ((itself (put itself key data)))
                      (this itself)))
-               ((get key)
+               (['get key]
                   (mail sender (get itself key #false))
                   (this itself))
-               ((debug)
+               (['debug]
                   (mail sender itself)
                   (this itself))
 
-               ((create x y width height)
+               (['create x y width height]
                   (let*((id (get itself 'id 1))
                         (itself (put itself 'id (+ id 1)))
                         (writer #false) ; 5
                         (background #false) ; 6
                         (border #false) ; 7
                         (visible #true) ; 8
-                        (itself (put itself id (tuple x y width height writer background border visible))))
+                        (itself (put itself id [x y width height writer background border visible])))
                      (mail sender id)
                      (this itself)))
-               ((destroy window)
+               (['destroy window]
                   (this (del itself window)))
-               ((set-window-writer id writer)
+               (['set-window-writer id writer]
                   (let*((window (get itself id #false))
                         (itself (unless window itself
                            (put itself id (set-ref window 5 writer)))))
                      (this itself)))
-               ((set-window-background id color)
+               (['set-window-background id color]
                   (let*((window (get itself id #false))
                         (itself (unless window itself
                            (put itself id (set-ref window 6 color)))))
                      (this itself)))
-               ((set-window-border id color)
+               (['set-window-border id color]
                   (let*((window (get itself id #false))
                         (itself (unless window itself
                            (put itself id (set-ref window 7 color)))))
                      (this itself)))
-               ((set-window-visibility id visibility)
+               (['set-window-visibility id visibility]
                   (let*((window (get itself id #false))
                         (itself (unless window itself
                            (put itself id (set-ref window 8 visibility)))))
                      (this itself)))
 
-               ((draw)
+               (['draw]
                   (glEnable GL_BLEND)
                   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
 
@@ -319,7 +319,7 @@
                   (let loop ((ff (ff-iter itself)))
                      (unless (null? ff)
                         (let ((window (cdar ff)))
-                           (if (and (tuple? window) (ref window 8)) (tuple-apply window
+                           (if (and (vector? window) (ref window 8)) (vector-apply window
                               (lambda (x y width height writer background border visible)
                                  (set-ref! drawing-area 1 (ref window 1))
                                  (set-ref! drawing-area 2 (ref window 2))
@@ -373,7 +373,7 @@
                   (mail sender 'ok)
                   (this itself))
 
-               ((make-selection x y)
+               (['make-selection x y]
                   (mail sender (make-selection itself
                      (floor (* x (/ 80 (ref gl:window-dimensions 3))))
                      (floor (* y (/ 25 (ref gl:window-dimensions 4))))))

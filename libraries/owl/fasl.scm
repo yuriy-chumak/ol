@@ -238,12 +238,12 @@
          (cond
             ((eq? n chunk-size)
                (cons
-                  (list->bytevector (reverse buff))
+                  (make-bytevector (reverse buff))
                   (chunk-stream bs 0 null)))
             ((null? bs)
                (if (null? buff)
                   null
-                  (list (list->bytevector (reverse buff)))))
+                  (list (make-bytevector (reverse buff)))))
             ((pair? bs)
                (lets ((n _ (vm:add n 1)))
                   (chunk-stream (cdr bs) n (cons (car bs) buff))))
@@ -340,17 +340,20 @@
                (decoder (ll) got fail))))
 
       (define (decode-or ll err) ; -> ll obj | null (err why)
-         (call/cc ; setjmp2000
-            (λ (ret)
-               (lets ((fail (λ (why) (ret null (err why)))))
-                  (cond
-                     ((null? ll) (fail enodata))
-                     ((pair? ll)
-                        ; a leading 0 is special and means the stream has no allocated objects, just one immediate one
-                        (if (eq? 0 (car ll))
-                           (decode-immediate (cdr ll) fail)
-                           (decoder ll null fail)))
-                     (else (decode-or (ll) err)))))))
+         (let*/cc ret
+               ((fail (λ (why) (ret null (err why)))))
+            (cond
+               ((null? ll) (fail enodata))
+               ((pair? ll)
+                  ; a leading 0 is special and means the stream has no allocated objects, just one immediate one
+                  (if (eq? (car ll) 0)
+                     (decode-immediate (cdr ll) fail)
+                     (decoder ll null fail)))
+               (else
+                  (decode-or (ll) err)))))
+         ;; (call/cc ; setjmp2000
+         ;;    (λ (ret)
+         ;;       (lets ((fail (λ (why) (ret null (err why)))))
 
       ;; decode a full (possibly lazy) list of data, and succeed only if it exactly matches a fasl-encoded object
 

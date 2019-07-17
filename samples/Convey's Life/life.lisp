@@ -44,7 +44,7 @@
    (list->ff (map (lambda (p) (cons (hash (car p) (cdr p)) 1))
       (fold (lambda (st p)
          (let ((n (+ p #x436)))
-         (if (eq? (vector-ref initial n) 0)
+         (if (eq? (blob-ref initial n) 0)
             (cons (cons (mod p 64) (div p 64)) st) st)))
       null
       (iota (- (size initial) #x436)))))))
