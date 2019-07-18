@@ -5,7 +5,7 @@
     http:run
     http:parse-url)
   (import (scheme base) (scheme srfi-1)
-      (owl parse) (otus blobs)
+      (owl parse)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
       (only (lang intern) string->symbol))
 
@@ -288,13 +288,13 @@
                   (value (cdr kv)))
                ;(print "key: " key)
                ;(print "value: " value)
-               (if (ends-with-vector key) ; encoded as blob?
+               (if (ends-with-vector key) ; encoded as vector?
                   ; slow and naive implementation:
                   (let ((key (string->symbol (substring key 0 (- (string-length key) 6)))))
                      ;(print "KEY: " key)
                      (loop (put args key
                               (list->vector
-                                 (if (blob? (getf args key))
+                                 (if (vector? (getf args key))
                                     (append (vector->list (getf args key)) (list value))
                                     (list value))))
                            u))

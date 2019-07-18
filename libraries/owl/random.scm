@@ -557,7 +557,7 @@
 ;   (let loop ((rs (rands->bytes (seed->rands (time-ms)))) (out null) (n 0))
 ;      (cond
 ;         ((eq? n blocksize)
-;            (if (write-byte-vector stdout (list->bytevector (reverse out))) ;; keep order
+;            (if (write-byte-vector stdout (make-bytevector (reverse out))) ;; keep order
 ;               (loop rs null 0)))
 ;         (else
 ;            (lets

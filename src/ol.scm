@@ -36,7 +36,7 @@
 (import (scheme srfi-87)) ;; "=>" clauses in case
 (import (scheme srfi-71)) ;; extended LET-syntax for multiple values
 (import (scheme core))    ;; базовый языковый ...
-(import (scheme base))    ;; ... набор ol
+(import (scheme base))    ;; ... набор Scheme
 
 ;; forget everhything except these and core values (later list also them explicitly)
 ,forget-all-but (*libraries* *codes* *vm-args* stdin stdout stderr set-ticker-value build-start)
@@ -57,9 +57,9 @@
 
 (define *include-dirs* '("." "libraries")) ;; now we can do (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
-(define *ol-version* "2.0") ;; http://semver.org/lang/ru/
+(define *ol-version* "2.1") ;; http://semver.org/lang/ru/
 
-(define *loaded* '())   ;; can be removed soon, was used by old ,load and ,require
+(define *loaded* '())   ;; can be removed soon, used by old ,load and ,require
 
 (import (otus lisp))
 (import (lang intern))
@@ -176,7 +176,7 @@
 ;         (map
 ;            (λ (node)
 ;               ;; make a freshly allocated byte vector at each node
-;               (list->bytevector bytes))
+;               (make-bytevector bytes))
 ;            (iota 0 1 n-blocks))
 ;         ;; leave it as garbage
 ;         #true)))

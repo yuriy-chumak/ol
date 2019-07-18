@@ -7,7 +7,7 @@
 ;!
 (define *USE_GLBEGIN* 1)
 
-;  (define isCompiled (list->bytevector '(0 0 0 0)))
+;  (define isCompiled (make-bytevector '(0 0 0 0)))
 ;  (syscall 1033 isCompiled #false #false)
 (import (owl ffi))
 (import (lib windows))
@@ -15,8 +15,6 @@
 
 ; вспомогательный макрос для собрать в кучку все bor
 (define OR (lambda list (fold bor 0 list)))
-(define (make-byte-vector n elem)
-   (list->bytevector (repeat elem n)))
 
 (define width 1280)
 (define height 720)
@@ -219,7 +217,7 @@
 ;  00 00 #x00 #x00    0 0 #x00 #x00    0 0 0 0    00 00 #x80 #x3F
 ;)))
 
-;(define MSG (make-byte-vector 28 0)) ; sizeof(MSG)=28
+;(define MSG (make-bytevector 28 0)) ; sizeof(MSG)=28
 (define MSG "1234567890123456789012345678") ; sizeof(MSG)=28
 ;(call/cc (lambda (return)
 (let cycle ()   ;MSG
