@@ -33,7 +33,7 @@
                            (mail sender (ref cache msg)))
                         (else
                            ; let's read new byte..
-                           (define char (syscall 0 port 1 #f))
+                           (define char (syscall2 0 port 1))
                            (if (memq char '(#f #t #eof))
                               (mail sender char)
                               (begin

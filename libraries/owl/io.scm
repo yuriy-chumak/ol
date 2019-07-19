@@ -77,7 +77,7 @@
       (define stdout (vm:cast 1 type-port))
       (define stderr (vm:cast 2 type-port))
 
-      (define (sys:read fd maxlen)         (syscall 0 fd maxlen #false))
+      (define (sys:read fd maxlen)         (syscall2 0 fd maxlen))
       (define (sys:write fd buffer length) (syscall 1 fd buffer length))
 
       ; low-level file open/close functions

@@ -82,6 +82,24 @@
                   `(trying to get ,car of a non-pair ,a))
                (CDR
                   `(trying to get ,cdr of a non-pair ,a))
+
+               ; syscall errors:
+               (62000
+                  `(too ,(if (> a b) 'many 'few) arguments given to syscall))
+
+               (62001
+                  `(syscall argument ,a is not a number))
+               (62002
+                  `(syscall argument ,a is not a port))
+
+
+               ;; (62000 ; syscall number is not a number
+               ;;    `(syscall "> " ,a is not a number))
+               ;; ;; 0, read
+               ;; (62001 ; too few/many arguments given to
+               ;;    `(syscall "> " too ,(if (> a b) 'many 'few) arguments given to))
+               ;; (62002 ;
+               ;;    `(syscall "> " ,a is not a port))
                (else
                   `(,(primop-name opcode) reported error ": " ,a " " ,b)))))
          ;   ;((eq? opcode 52)

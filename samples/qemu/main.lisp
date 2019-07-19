@@ -241,7 +241,7 @@
                      (values (car msg) (cdr msg))
                      (values #false msg))))
             ; it's good idea to free the input buffer
-            (syscall 0 (car Out) 1024 #f) ; 1024 would be enought, i think...
+            (syscall2 0 (car Out)) ; 1024 would be enought, i think...
             ; send command (if any) with newline
             (unless (null? command)
                (for-each (lambda (x) (display-to (cdr In) x)) (append command '("\n"))))
@@ -561,7 +561,7 @@
          (locate 1 20) (set-color GREEN) (display "> ") (set-color GREY)
          ; почистим входной буфер
          (let loop ()
-            (let ((in (syscall 0 stdin 1024 #f)))
+            (let ((in (syscall2 0 stdin)))
                (if (or (eq? in #true) (eq? in 1024))
                   (loop))))
 

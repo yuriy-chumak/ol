@@ -202,6 +202,7 @@
          (primop 'clock    0 2 (make-bytecode '(61 4 5))) ; clock, todo: удалить
          ; системные вызовы
          (primop 'syscall  4 1 (make-bytecode '(63 4 5 6 7 8  24 8)))
+         (primop 'syscall2 'any 1 "\x3E;") ; 62, make blob (binary, raw) object
 
          (primop 'vector-apply 1 #f (make-bytecode '(32 4)))
          (primop 'ff-apply     1 #f (make-bytecode '(49 4)))
@@ -287,7 +288,8 @@
       (setq variable-input-arity-primops (alist ; todo: move to other module
          (opcode 'vm:new)
          (opcode 'vm:make)
-         (opcode 'vm:makeb)))
+         (opcode 'vm:makeb)
+         (opcode 'syscall2)))
 
       (setq special-bind-primops (alist
          (opcode 'vector-apply)

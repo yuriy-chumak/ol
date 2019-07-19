@@ -359,6 +359,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -868,6 +869,14 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define IEOF                        make_value(TCONST, 4)
 #define IHALT                       INULL // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
 #define IRETURN                     make_value(TCONST, 6)
+
+#define RFALSE  ((word*)IFALSE)
+#define RTRUE   ((word*)ITRUE)
+#define RNULL   ((word*)INULL)
+#define REMPTY  ((word*)IEMPTY)
+#define REOF    ((word*)IEOF)
+#define RHALT   ((word*)IHALT)
+#define RRETURN ((word*)IRETURN)
 
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
@@ -1671,14 +1680,16 @@ struct ol_t
 		})); \
 	})
 
+// olvm numbers management:
 #define make_number(val) itosn(val)
 
-// todo: should be ol2s (ol -> signed)
+// get unsigned/signed number
+#define numberp(num)  ({ word* n = (word*) (num); is_value(n) ? value(n) : value(car(n)) | value(cadr(n)) << VBITS; })
 #define number(num)  ({\
-	is_value(num) ? value(num)\
-		: value(car(num)) | value(cadr(num)) << VBITS; \
-	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
-
+	word* x = (word*) (num);\
+	is_numberp(x) ?  numberp(x) :\
+	is_numbern(x) ? -numberp(x) :\
+	0; })
 
 // =================================================================
 // machine floating point support, internal functions
@@ -2224,6 +2235,7 @@ mainloop:;
 
 	#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 
+	#	define SYSCALL2 62
 	#	define SYSCALL 63
 			// read, write, open, close must exist
 	#		define SYSCALL_READ 0
@@ -2323,7 +2335,6 @@ loop:;
 	case 37:
 	case 43:
 	case 48:
-	case 62:
 		FAIL(op, new_string("Invalid opcode"), ITRUE);
 		break;
 
@@ -2511,6 +2522,7 @@ loop:;
 	//	проверка размеров тут не нужна, так как в любом случае количество аргументов,
 	//	передаваемых в функцию не превысит предусмотренных пределов
 	case VMNEW: { // new t f1 .. fs r
+		// vm:new is a SPECIAL operation with different arguments order
 		word type = *ip++;
 		word size = *ip++ + 1; // the argument is n-1 to allow making a 255-tuple with 255, and avoid 0 length objects
 		word *p = new (type, size), i = 0; // s fields + header
@@ -2540,7 +2552,7 @@ loop:;
 				size_t len = 0;
 				word list = value;
 				if (is_numberp(value))
-					len = untoi(value);
+					len = number(value);
 				else
 				while (is_pair(list)) {
 					++len;
@@ -3120,6 +3132,97 @@ loop:;
 		ip += 2; break;
 	}
 
+	/*! \section Otus Lisp New Syscalls
+	 * \brief (syscall number ...) -> val|ref
+	 *
+	 * Otus Lisp provides access to the some operation system functions.
+	 *
+	 * \par
+	 */
+	case SYSCALL2: {
+		word argc = *ip++;
+		if (argc == 0)
+			FAIL(62000, I(0), I(1));
+		--argc; // skip syscall number
+		word* r = RFALSE;  // default returned value is #false
+
+		#define CHECK_NUMBER(arg) if (!is_fixp(arg)) FAIL(62001, arg, IFALSE);
+		#define CHECK_PORT(arg)   if (!is_port(arg)) FAIL(62002, arg, IFALSE);
+		#define CHECK_ARGC_EQ(n)  if (argc - n) FAIL(62000, I(argc), I(n)); // === (arg != n)
+		#define CHECK_ARGC(a, b)  if (argc < a) FAIL(62000, I(argc), I(a)) else \
+                                  if (argc > b) FAIL(62000, I(argc), I(b));
+
+		CHECK_NUMBER(A0);
+		word op = value (A0);
+
+		switch (op + sandboxp) {
+			/*! \subsection read
+			* \brief (syscall **0** port count) --> bytevector | #t | #eof
+			*
+			* Attempts to read up to *count* bytes from input port *port*
+			* into the bytevector.
+			*
+			* \param port input port
+			* \param count count, negative value means "all available"
+			*
+			* \return bytevector if success,
+			*         #true if file not ready,
+			*         #eof if file was ended
+			*
+			* http://man7.org/linux/man-pages/man2/read.2.html
+			*/
+			case SYSCALL_READ + SECCOMP:
+			case SYSCALL_READ: { //
+				CHECK_ARGC(1, 2); // port, count
+				CHECK_PORT(A1);
+
+				int portfd = port(A1);
+				int size = argc == 2 ? number(A2) : -1; // в байтах
+				if (size < 0)
+#ifdef FIONREAD
+					if (ioctl(portfd, FIONREAD, &size) == -1)
+#endif
+						size = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
+
+				int words = ((size + W - 1) / W) + 1; // в словах
+				if (words > (heap->end - fp)) {
+					ptrdiff_t dp;
+					dp = ip - (unsigned char*)this;
+
+					heap->fp = fp; ol->this = this;
+					ol->gc(ol, words);
+					fp = heap->fp; this = ol->this;
+
+					ip = (unsigned char*)this + dp;
+				}
+
+				int got;
+				got = ol->read(portfd, (char *) &fp[1], size, ol->userdata);
+				int err = errno;
+
+				if (got > 0) {
+					// todo: обработать когда приняли не все,
+					//	     вызвать gc() и допринять. и т.д. (?)
+					r = new_bytevector (TBVEC, got);
+				}
+				else if (got == 0)
+					r = REOF;
+				else if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
+					r = RTRUE;
+
+				break;
+			}
+			// ...
+
+			default:
+				break;
+		}
+
+		++argc; // restore real arguments count
+		R[ip[argc]] = (word)r; // result
+		ip += argc + 1; break;
+	}
+
 	/*! \section Otus Lisp Syscalls
 	 * \brief (syscall number a b c) -> val|ref
 	 *
@@ -3144,58 +3247,6 @@ loop:;
 
 		switch (op + sandboxp) {
 
-		/*! \subsection read
-		 * \brief (syscall **0** port count .) --> bytevector | #false | #eof
-		 *
-		 * Attempts to read up to *count* bytes from input port *port*
-		 * into the bytevector.
-		 *
-		 * \param port input port
-		 * \param count count, negative value means "all available"
-		 *
-		 * \return bytevector if success,
-		 *         #false if file not ready,
-		 *         #eof if file was ended
-		 *
-		 * http://man7.org/linux/man-pages/man2/read.2.html
-		 */
-		case SYSCALL_READ + SECCOMP:
-		case SYSCALL_READ: {
-			CHECK(is_port(a), a, SYSCALL);
-			int portfd = port(a);
-			int size = number(b); // в байтах
-			if (size < 0)
-				size = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
-
-			int words = ((size + W - 1) / W) + 1; // в словах
-			if (words > (heap->end - fp)) {
-				ptrdiff_t dp;
-				dp = ip - (unsigned char*)this;
-
-				heap->fp = fp; ol->this = this;
-				ol->gc(ol, words);
-				fp = heap->fp; this = ol->this;
-
-				ip = (unsigned char*)this + dp;
-			}
-
-			int got;
-			got = ol->read(portfd, (char *) &fp[1], size, ol->userdata);
-			int err = errno;
-
-			if (got > 0) {
-				// todo: обработать когда приняли не все,
-				//	     вызвать gc() и допринять. и т.д. (?)
-				result = new_bytevector (TBVEC, got);
-			}
-			else if (got == 0)
-				result = (word*)IEOF;
-			else if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
-				result = (word*)ITRUE;
-
-			break;
-		}
-
 		/*! \subsection write
 		 * \brief (syscall **1** port object count) -> number | #false
 		 *
@@ -3215,7 +3266,7 @@ loop:;
 		case SYSCALL_WRITE: {
 			CHECK(is_port(a), a, SYSCALL);
 			int portfd = port(a);
-			int count = svtoi(c);
+			int count = c == IFALSE ? -1 : svtoi(c);
 
 			word *buff = (word *) b;
 			if (!is_blob(buff))
