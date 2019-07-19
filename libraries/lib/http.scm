@@ -164,7 +164,7 @@
 
    (print "on-accept :" id)
    (let*((ss1 ms1 (clock)))
-      (let loop ((stream (port->byte-stream fd)))
+      (let loop ((stream (port->bytestream fd)))
          ;(print "stream: " stream)
          (let* ((request stream (http-parser stream ok fail 0)))
             (if request

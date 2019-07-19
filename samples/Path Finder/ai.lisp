@@ -236,24 +236,24 @@
            (x x) (y y))
 (let* ((envelope (wait-mail))
        (sender msg envelope))
-   (tuple-case msg
-      ((die)
+   (case msg
+      (['die]
          #false)
 
-      ((set-location location)
+      (['set-location location]
 ;         (print "creature: 'set-location " location)
          (this fov (car location) (cdr location)))
       ; создать существо
 
-      ((get-fov)
+      (['get-fov]
          (mail sender fov)
          (this fov x y))
-      ((get-location)
+      (['get-location]
          (mail sender (cons x y))
          (this fov x y))
 
       ; обновить "свою" карту мира (fov) на основе заданной карты (map)
-      ((update-fov map)
+      (['update-fov map]
          (let ((fov ; new fov
          (let ((X (+ x 0.5)) (Y (+ y 0.5))) ; точка, из которой смотрим
          (let for-y ((y 0) (lines fov) (map-lines map))
@@ -279,14 +279,14 @@
          (this fov x y)))
 
       ; двигаться
-      ((move dx dy)
+      (['move dx dy]
          (if (= (at2 (+ x dx) (+ y dy) fov) 0)
             (this fov (+ x dx) (+ y dy))
             (this fov x y)))
 
 
       ; построить путь к клетке (to-x to-y)
-      ((A* to-x to-y)
+      (['A* to-x to-y]
          (let ((xy (cons x y))
 
                (hash (lambda (xy)

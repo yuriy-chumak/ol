@@ -153,7 +153,7 @@
 	(define (read-ppm path)
 		(let ((port (open-input-file path)))
 			(if port
-				(lets ((stuff (parse-ppm (port->byte-stream port))))
+				(lets ((stuff (parse-ppm (port->bytestream port))))
 					(close-port port)
 					stuff)
 				(begin

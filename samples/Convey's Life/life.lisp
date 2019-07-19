@@ -40,7 +40,7 @@
 ;                                 (cons (hash x y) 1))) (iota 1200)))))
 
 (gl:set-userdata
-   (let ((initial (file->vector "initial.bmp")))
+   (let ((initial (file->bytevector "initial.bmp")))
    (list->ff (map (lambda (p) (cons (hash (car p) (cdr p)) 1))
       (fold (lambda (st p)
          (let ((n (+ p #x436)))

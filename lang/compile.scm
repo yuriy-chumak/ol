@@ -238,10 +238,9 @@
          (if (eq? op NEW) ; generalize this later. vm:new is not a safe instruction!
             (if (null? args)
                (runtime-error "rtl-primitive: no type for vm:new" args)
-               (begin
-                  (rtl-primitive regs
-                     (+ (<< op 8) (band (value-of (car args)) #xff))
-                     formals (cdr args) cont)))
+               (rtl-primitive regs
+                  (+ (<< op 8) (band (value-of (car args)) #xff))
+                  formals (cdr args) cont))
             (rtl-args regs args
                (λ (regs args)
                   ;; args = input registers

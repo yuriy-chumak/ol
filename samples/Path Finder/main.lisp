@@ -226,7 +226,7 @@
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
 (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
    16 16
-   0 GL_BGR GL_UNSIGNED_BYTE (file->vector "ground.rgb"))
+   0 GL_BGR GL_UNSIGNED_BYTE (file->bytevector "ground.rgb"))
 (glDisable GL_TEXTURE_2D)
 
 (glEnable GL_TEXTURE_2D)
@@ -235,7 +235,7 @@
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
 (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
    128 128
-   0 GL_BGR GL_UNSIGNED_BYTE (file->vector "tileset.rgb"))
+   0 GL_BGR GL_UNSIGNED_BYTE (file->bytevector "tileset.rgb"))
 
 ;(glEnable GL_BLEND)
 (gl:set-userdata #empty)
@@ -256,7 +256,7 @@
 
    ; сначала пол
    (glBegin GL_QUADS)
-      (glColor3f 0.4 0.4 0.4)
+      (glColor3f 0.8 0.8 0.8)
       (glTexCoord2f 0 0)
       (glVertex2f   0 0)
       (glTexCoord2f 0 HEIGHT)

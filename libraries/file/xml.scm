@@ -110,7 +110,7 @@
    (define (xml-parse-file filename)
       (let ((file (open-input-file filename)))
          (if file
-            (let ((o (parse xml-parser (port->byte-stream file) filename "xml parse error" #false)))
+            (let ((o (parse xml-parser (port->bytestream file) filename "xml parse error" #false)))
                (if o o
                   (close-port file)))))) ; no automatic port closing on error
 

@@ -190,7 +190,7 @@
 
 ;; (define port (fopen "15_0.lanim" 0)) ;stdin)
 ;; (define out (fopen "15_0.i.out" 1))
-;; (define stream (port->byte-stream port))
+;; (define stream (port->bytestream port))
 ;; (let loop ((s (inflate (ldrop stream 10))))
 ;;    (cond
 ;;       ((null? s)
@@ -204,7 +204,7 @@
 
 
 ;; (define port (fopen "hello" 0))
-;; (define stream (port->byte-stream port))
+;; (define stream (port->bytestream port))
 ;; (let loop ((s (inflate (ldrop stream 10))))
 ;;    ;(print "s: " s)
 ;;    ;(set-car! num (+ (car num) 1))
@@ -270,7 +270,7 @@
 
 
 ;; (define port stdin)
-;; (define stream (port->byte-stream port))
+;; (define stream (port->bytestream port))
 ;; (let loop ((s (inflate (ldrop stream 10))))
 ;;    (cond
 ;;       ((null? s)

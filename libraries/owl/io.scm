@@ -5,7 +5,6 @@
 (define-library (owl io)
 
   (export
-      fopen fclose
       sleep                   ;; sleep a thread n rounds
 
       ;; thread-oriented non-blocking io
@@ -20,12 +19,16 @@
       blocks->port            ;; ll fd → ll' n-bytes-written, don't close fd
       closing-blocks->port    ;; ll fd → ll' n-bytes-written, close fd
 
-      fd->vector file->vector            ;; vector io, may be moved elsewhere later
+      fd->bytevector
+      file->bytevector  ;; bytevectors io, may be moved elsewhere later
+      bytevector->file
+
+      file->blob
       file->list              ;; list io, may be moved elsewhere later
-      vector->file
       write-vector            ;; vec port
-      port->byte-stream       ;; fd → (byte ...) | thunk
-      file->byte-stream
+
+      port->bytestream       ;; fd → (byte ...) | thunk
+      file->bytestream
 
       stdin stdout stderr
       display-to        ;; port val → bool
@@ -64,6 +67,7 @@
       (owl fasl)
       (owl tuple)
       (owl lazy)
+      (scheme bytevector)
       (only (otus blobs) merge-chunks vec-leaves))
 
    (begin
@@ -77,13 +81,13 @@
       (define (sys:write fd buffer length) (syscall 1 fd buffer length))
 
       ; low-level file open/close functions
-      (define (fopen path mode)
+      (define (sys:open path mode)
          (cond
             ((c-string path) =>
                (λ (path) (syscall 2 path mode #false)))
             (else #false)))
 
-      (define (fclose fd)
+      (define (sys:close fd)
          (syscall 3 fd #false #false))
 
 
@@ -196,8 +200,8 @@
       ;; how many bytes (max) to add to output buffer before flushing it to the fd
       (define output-buffer-size 4096)
 
-      (define (open-input-file path) (fopen path #o000)) ; O_RDONLY
-      (define (open-output-file path) (fopen path #o1102)) ; O_CREAT|O_TRUNC|O_RDWR
+      (define (open-input-file path) (sys:open path #o0000)) ; O_RDONLY
+      (define (open-output-file path) (sys:open path #o1102)) ; O_CREAT|O_TRUNC|O_RDWR
 
       ;;; Reading
 
@@ -221,8 +225,8 @@
       (define (bvec-append a b)
          (make-bytevector
             (append
-               (vector->list a)
-               (vector->list b))))
+               (bytevector->list a)
+               (bytevector->list b))))
 
       ;; get a block of size block-size, wait more if less is available and not eof
       ;; fd n → eof-seen? eof|#false|bvec
@@ -241,7 +245,7 @@
                               ((not tail) (values #false this)) ;; next read will also fail, return last ok data
                               (else
                                  ;; unnecessarily many conversions if there are many partial
-                                 ;; reads, but block size is tiny in file->vector making this
+                                 ;; reads, but block size is tiny in file->blob making this
                                  ;; irrelevant
                                  (values eof-seen?
                                     (bvec-append this tail)))))))))))
@@ -253,7 +257,7 @@
          42)
 
       (define (close-port fd)
-         (fclose fd))
+         (sys:close fd))
 
 
 
@@ -285,7 +289,7 @@
 
       (define (closing-blocks->port ll fd)
          (lets ((r n (blocks->port ll fd)))
-            (fclose fd)
+            (sys:close fd)
             (values r n)))
 
       ;;;
@@ -338,10 +342,10 @@
       (define (write obj) (write-to stdout obj))
 
       (define (print*-to to lst)
-         (printer (foldr render '(10) lst) 0 null to))
+         (printer (foldr render '(#\newline) lst) 0 null to))
 
       (define (print* lst)
-         (printer (foldr render '(10) lst) 0 null stdout))
+         (print*-to stdout lst))
 
       (define-syntax output
          (syntax-rules ()
@@ -408,25 +412,35 @@
             #true
             (close-port port)))
 
-      (define (fd->vector port) ; path -> vec | #false
+      ; bytevector:
+      (define (fd->bytevector port) ; path -> vec | #false
+         (if port
+            (let ((stat (syscall 4 port #f #f)))
+               (if stat
+                  (sys:read port (ref stat 8))))))
+
+      (define (file->bytevector path) ; path -> vec | #false
+         (let ((port (maybe-open-file path)))
+            (fd->bytevector port)))
+
+      ; BLOB:
+      (define (fd->blob port) ; path -> vec | #false
          (if port
             (let ((data (read-blocks port null)))
                (maybe-close-port port)
                data)))
 
-      (define (file->vector path) ; path -> vec | #false
+      (define (file->blob path) ; path -> vec | #false
          (let ((port (maybe-open-file path)))
-            (fd->vector port)))
+            (fd->blob port)))
 
+      ; list:
       (define (file->list path) ; path -> vec | #false
          (let ((port (maybe-open-file path)))
             (if port
                (let ((data (read-blocks->list port null)))
                   (maybe-close-port port)
-                  data)
-               (begin
-                  ;(print "file->vector: cannot open " path)
-                  #false))))
+                  data))))
 
       ;; write each leaf chunk separately (note, no raw type testing here -> can fail)
       (define (write-vector vec port)
@@ -440,13 +454,12 @@
 
       ;; fixme: no way to poll success yet. last message should be ok-request, which are not there yet.
       ;; fixme: detect case of non-bytevectors, which simply means there is a leaf which is not of type (raw 11)
-      (define (vector->file vec path)
+      (define (bytevector->file vec path)
          (let ((port (open-output-file path)))
             (if port
-               (let ((outcome (write-vector vec port)))
+               (let ((outcome (sys:write port vec #false)))
                   (close-port port)
-                  outcome)
-               #false)))
+                  outcome))))
 
       (define (wait-write fd)
          (interact fd 'wait))
@@ -458,7 +471,7 @@
                (stream-chunk buff next
                   (cons (ref buff pos) tail)))))
 
-      (define (port->byte-stream fd)
+      (define (port->bytestream fd)
          (λ ()
             (let ((buff (get-block fd input-block-size)))
                (cond
@@ -470,10 +483,10 @@
                      null)
                   (else
                      (stream-chunk buff (- (size buff) 1)
-                        (port->byte-stream fd)))))))
+                        (port->bytestream fd)))))))
 
       (define (lines fd)
-         (let loop ((ll (port->byte-stream fd)) (out null))
+         (let loop ((ll (port->bytestream fd)) (out null))
             (cond
                ((pair? ll)
                   (lets ((byte ll ll))
@@ -494,19 +507,19 @@
                (else
                   (loop (ll) out)))))
 
-      (define (file->byte-stream path)
+      (define (file->bytestream path)
          (let ((fd (open-input-file path)))
             (if fd
-               (port->byte-stream fd)
+               (port->bytestream fd)
                #false)))
 
       (define (fasl-save obj path)
-         (vector->file
-            (list->vector (fasl-encode obj))
+         (bytevector->file
+            (list->bytevector (fasl-encode obj))
             path))
 
       (define (fasl-load path fail-val)
-         (let ((bs (file->byte-stream path)))
+         (let ((bs (file->bytestream path)))
             (if bs
                (fasl-decode bs fail-val)
                fail-val)))

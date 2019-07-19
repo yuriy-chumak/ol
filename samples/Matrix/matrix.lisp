@@ -192,7 +192,7 @@
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
    (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
       42 448
-      0 GL_RGB GL_UNSIGNED_BYTE (file->vector "matrix.rgb"))
+      0 GL_RGB GL_UNSIGNED_BYTE (file->bytevector "matrix.rgb"))
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)

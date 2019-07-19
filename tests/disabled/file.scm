@@ -6,6 +6,6 @@
    (close-port port))
 
 (lets
-   ((vec (file->vector "tmp/test")))
+   ((vec (file->bytevector "tmp/test")))
    (print (list->string (vector->list vec))))
 

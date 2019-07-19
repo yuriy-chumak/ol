@@ -58,7 +58,7 @@
    (define exp_lut (tuple 0 132 396 924 1980 4092 8316 16764))
 
    (define (al:decode-fd buffer fd)
-      (snd-parser (port->byte-stream fd)
+      (snd-parser (port->bytestream fd)
          ; ok
          (lambda (in backtrack file pos)
             (print "data offset: " (ref file 1))
