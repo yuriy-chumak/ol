@@ -35,7 +35,7 @@
 #define TVOID         (48)
 //efine TSTRING       (3)
 //efine TSTRINGWIDE   (5)
-//efine TBVEC         (19) // todo: remove this (use fft-vptr or fft-void* is same)
+//efine TBYTEVECTOR   (19) // todo: remove this (use fft-vptr or fft-void* is same)
 
 #define TUNKNOWN      (62) // only for ffi, direct sending argument without processing
 #define TANY          (63) // automatic conversion based on actual argument type
@@ -1191,7 +1191,7 @@ word* OL_ffi(OL* self, word* arguments)
 			case TCALLABLE: // same as ^
 				args[i] = car(arg);
 				break;
-			case TBVEC: // address of bytevector data (no copying to stack)
+			case TBYTEVECTOR: // address of bytevector data (no copying to stack)
 				args[i] = (word) &car(arg);
 				break;
 			case TPAIR: // sending type override
@@ -1242,7 +1242,7 @@ word* OL_ffi(OL* self, word* arguments)
 				case TVPTR:
 					args[i] = car(arg);
 					break;
-				case TBVEC: // can be used instead of vptr
+				case TBYTEVECTOR: // can be used instead of vptr
 					args[i] = (word) &car(arg);
 					break;
 				default:
@@ -1257,7 +1257,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TVPTR + FFT_PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
-			if (reference_type(arg) == TVPTR || reference_type(arg) == TBVEC) // single vptr value or bytevector (todo: add bytevector size check)
+			if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
 				args[i] = (word) &car(arg);
 			else {
 				int c = llen(arg);
@@ -1275,7 +1275,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TSTRING:
 		tstring:
 			switch (reference_type(arg)) {
-			case TBVEC:
+			case TBYTEVECTOR:
 			case TSTRING:
 				args[i] = (word) &car(arg);
 				break;
@@ -1288,7 +1288,7 @@ word* OL_ffi(OL* self, word* arguments)
 			int size = llen(arg) + 1;
 
 			// TODO: check the available memory and gun GC if necessary
-			word* p = new (TBVEC, size-1, 0);
+			word* p = new (TBYTEVECTOR, size-1, 0);
 			args[i] = (word)++p;
 
 			word src = arg;
@@ -1308,7 +1308,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TSTRINGWIDE:
 		tstringwide:
 			switch (reference_type(arg)) {
-			case TBVEC:
+			case TBYTEVECTOR:
 			case TSTRING: {
 				word hdr = deref(arg);
 				int len = (header_size(hdr)-1)*sizeof(word) - header_pads(hdr);
@@ -1358,7 +1358,7 @@ word* OL_ffi(OL* self, word* arguments)
 			case TTUPLE: { // ?
 				// аллоцировать массив и сложить в него указатели на элементы кортежа
 				int size = hdrsize(*(word*)arg);
-				*fp++ = make_raw_header(TBVEC, size, 0);
+				*fp++ = make_raw_header(TBYTEVECTOR, size, 0);
 				args[i] = (word)fp; // ссылка на массив указателей на элементы
 
 				word* src = &car(arg);

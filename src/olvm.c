@@ -785,7 +785,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
 #define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 
-#define RAWBIT                      (1 << RPOS)
+#define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (bitstream bit)
 #define BINARY                      (RAWBIT >> TPOS)
 
 #define make_value(type, value)        (2 | ((word)(value) << IPOS) | ((type) << TPOS))
@@ -800,7 +800,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 // два главных класса аргументов:
 #define is_value(x)                 (((word)(x)) & 2)
 #define is_reference(x)             (! is_value(x))
-#define is_blob(x)                  ((*(word*)(x)) & RAWBIT)
+#define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to bitstream
+#define is_bitstream(x)             ((*(word*)(x)) & RAWBIT)
 
 // makes olvm reference from system pointer (just sanity check)
 //assert ((val && ~(W-1)) == 0);
@@ -817,7 +818,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define reference_type(x)           (value_type (*R(x)))
 
 #define reference_size(x)           ((header_size(*R(x)) - 1))
-#define blob_size(x)                ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
+#define blob_size(x)                ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x))) // todo: rename to bitstream size
+#define bitstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
 
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
@@ -837,7 +839,6 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #	define TRIGHT                     1 // flags for TFF
 #	define TRED                       2
 
-#define TBVEC                       (19)   // must be RAW type
 #define TBYTEVECTOR                 (19)
 #define TSTRINGDISPATCH             (21)
 
@@ -1224,7 +1225,7 @@ word*p = new (TVECTOR, 13);\
 
 // -= остальные аллокаторы =----------------------------
 
-#define new_bytevector(type, length) ({\
+#define new_bitstream(type, length) ({\
 	int size = (length);\
 	int words = (size + W - 1) / W;\
 	int pads = (words * W - size);\
@@ -1233,11 +1234,12 @@ word* p = new (type, words, pads);\
 	/*return*/ p;\
 })
 
+#define new_bytevector(length) new_bitstream(TBYTEVECTOR, length)
 
 #define NEW_STRING2(string, length) ({\
 	char* data = string;\
 	int size = (length);\
-word* p = new_bytevector(TSTRING, length);\
+word* p = new_bitstream(TSTRING, length);\
 	char* ptr = (char*)&p[1];\
 	while (size--)\
 		*ptr++ = *data++;\
@@ -1274,7 +1276,7 @@ word data = (word) a;\
 #ifdef OLVM_INEXACTS
 #define new_inexact(a) ({\
 inexact_t f = (inexact_t) a;\
-	word* me = new_bytevector (TINEXACT, sizeof(f));\
+	word* me = new_bitstream (TINEXACT, sizeof(f));\
 	*(inexact_t*)&me[1] = f;\
 	/*return*/me;\
 })
@@ -1847,7 +1849,7 @@ word d2ol(struct ol_t* ol, double v) {
 			size_t len = (p - fp);
 
 			//word* m = (word*) __builtin_alloca(len * sizeof(word)) + len;
-			new_bytevector(TBVEC, sizeof(word) * len); // dummy,
+			new_bytevector(sizeof(word) * len); // dummy,
 			               // will be destroyed during next gc()
 			word* m = fp;
 			p = (word*)INULL;
@@ -2238,15 +2240,15 @@ mainloop:;
 	#	define SYSCALL2 62
 	#	define SYSCALL 63
 			// read, write, open, close must exist
-	#		define SYSCALL_READ 0
-	#		define SYSCALL_WRITE 1
-	#		define SYSCALL_OPEN 2
-	#		define SYSCALL_CLOSE 3
-	#		define SYSCALL_STAT 4 // same for fstat and lstat
-	#		define SYSCALL_LSEEK 8
-	#		define SYSCALL_MMAP 9
-	#		define SYSCALL_FSYNC 74
-	#		define SYSCALL_UNLINK 87
+	#		define SYSCALL_READ 0    // 
+	#		define SYSCALL_WRITE 1   // 
+	#		define SYSCALL_OPEN 2    // 
+	#		define SYSCALL_CLOSE 3   // 
+	#		define SYSCALL_STAT 4    // same for fstat and lstat
+	#		define SYSCALL_LSEEK 8   // 
+	#		define SYSCALL_MMAP 9    // 
+	#		define SYSCALL_FSYNC 74  // 
+	#		define SYSCALL_UNLINK 87 // 
 	// 5, 6 - free
 	//#		define SYSCALL_POLL 7
 	// 12 - reserved for memory functions
@@ -2638,7 +2640,7 @@ loop:;
 					value = A1; // update value to actual
 				}
 
-				word *ptr = new_bytevector (type, len);
+				word *ptr = new_bitstream(type, len);
 				R[ip[size]] = (word)ptr; // result
 
 				if (is_numberp(value)) {
@@ -2733,8 +2735,7 @@ loop:;
 		#if OLVM_INEXACTS
 		case TINEXACT:
 			// exact->inexact
-			A2 = (word) new_bytevector(TINEXACT, sizeof(inexact_t));
-			*(inexact_t*)&car(A2) = ol2f(T);
+			A2 = (word) new_inexact(ol2f(T));
 			break;
 		case TRATIONAL:
 			// inexact->exact
@@ -3471,7 +3472,7 @@ loop:;
 				ip = (unsigned char*)this + dp;
 			}
 
-			result = new_bytevector(TBYTEVECTOR, length);
+			result = new_bytevector(length);
 			memcpy(&car(result), address+offset, length);
 			break;
 		}
@@ -4060,7 +4061,7 @@ loop:;
 						string (fp),
 						(size_t) (heap->end - fp - 1) * sizeof(word),
 						string (A), timeinfo);
-				result = new_bytevector(TSTRING, len);
+				result = new_bitstream(TSTRING, len);
 			}
 			else
 	#endif
@@ -4377,7 +4378,7 @@ loop:;
 		word fn = value (A0);
 		inexact_t a = ol2f(A1);
 
-		A2 = (word) new_bytevector(TINEXACT, sizeof(inexact_t));
+		A2 = (word) new_bitstream(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xFE: // fsin
 			*(inexact_t*)&car(A2) = __builtin_sin(a);
@@ -4401,7 +4402,7 @@ loop:;
 		inexact_t a = ol2f(A1);
 		inexact_t b = ol2f(A2);
 
-		A3 = (word) new_bytevector(TINEXACT, sizeof(inexact_t));
+		A3 = (word) new_bitstream(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xD9: // fless?
 			A3 = (a < b) ? ITRUE : IFALSE;
@@ -4978,7 +4979,7 @@ OL_run(OL* ol, int argc, char** argv)
 				pos++;
 			int length = pos - (char*)(fp + 1);
 			if (length > 0) // если есть что добавить
-				userdata = (word) new_pair (new_bytevector(TSTRING, length), userdata);
+				userdata = (word) new_pair (new_bitstream(TSTRING, length), userdata);
 		}
 
 		ol->heap.fp = fp;
