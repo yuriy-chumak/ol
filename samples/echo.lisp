@@ -5,8 +5,8 @@
 (define (listen socket) (syscall 50 socket #f #f))
 (define (select socket) (syscall 23 socket #f #f))
 (define (accept socket) (syscall 43 socket #f #f))
-(define (timestamp) (syscall 201 "%c" #f #f))
-(define (sendfile in out size) (syscall 40 in out size))
+(define (timestamp) (syscall2 201 "%c"))
+(define (sendfile in out size) (syscall2 40 in out 0 size))
 
 
 (define (on-accept fd)

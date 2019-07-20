@@ -287,7 +287,7 @@
                                            (getenv "OL_HOME")
                                            "/usr/lib/ol")) ; default posix ol libraries location
                                  (sandbox? (getf options 'sandbox))
-                                 (interactive? (get options 'interactive (syscall 16 file 19 #f))) ; isatty()
+                                 (interactive? (get options 'interactive (syscall2 16 file 19))) ; isatty()
 
                                  (version (cons "OL" *version*))
                                  (env (fold

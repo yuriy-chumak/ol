@@ -133,7 +133,7 @@
                rounds)
             ((single-thread?)
                ;; note: could make this check every n rounds or ms
-               (if (syscall 35 (* us-per-round rounds) #f #f) ;; sleep really for a while
+               (if (syscall2 35 (* us-per-round rounds)) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
                   (set-ticker-value 0))) ; fixme: maybe better to move this up, before syscall?
             (else
@@ -414,7 +414,7 @@
       ; bytevector:
       (define (fd->bytevector port) ; path -> vec | #false
          (if port
-            (let ((stat (syscall 4 port #f #f)))
+            (let ((stat (syscall2 4 port)))
                (if stat
                   (sys:read port (ref stat 8))))))
 

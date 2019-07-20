@@ -32,7 +32,7 @@
 
 
 
-(define (timestamp) (syscall 201 "%c" #f #f))
+(define (timestamp) (syscall2 201 "%c"))
 (define (set-ticker-value n) (syscall 1022 n #false #false))
 
 ; -------------------------------------------

@@ -15,7 +15,7 @@
       (owl math))
 
    (begin
-      ;(define (clock) (syscall 96 #f #f #f)) (syscall 96) in usec, (clock) in ms
+      ;(define (clock) (syscall2 96)) (syscall2 96) in usec, (clock) in ms
 
       (define (elapsed-real-time thunk)
          (display "timing: ")

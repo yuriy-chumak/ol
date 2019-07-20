@@ -2257,6 +2257,7 @@ mainloop:;
 	#		define SYSCALL_MMAP 9    // 
 	#		define SYSCALL_FSYNC 74  // 
 	#		define SYSCALL_UNLINK 87 // 
+	#		define SYSCALL_EXECVE 59 //
 	// 5, 6 - free
 	//#		define SYSCALL_POLL 7
 	// 12 - reserved for memory functions
@@ -2280,7 +2281,7 @@ mainloop:;
 	#		define SYSCALL_GETDENTS 78
 	#		define SYSCALL_CHDIR 80
 
-	#		define SYSCALL_GETTIMEOFDATE 96
+	#		define SYSCALL_GETTIMEOFDAY 96
 
 	#		ifndef SYSCALL_GETRLIMIT
 	#		define SYSCALL_GETRLIMIT 97
@@ -3158,25 +3159,35 @@ loop:;
 		--argc; // skip syscall number
 		word* r = RFALSE;  // by default returning #false
 
+		// ----------------------------------------------------------------------------------
 		// safety checking macro
 		#define CHECK_ARGC_EQ(n)  if (argc - n) FAIL(62000, I(argc), I(n)); // === (arg != n)
 		#define CHECK_ARGC(a, b)  if (argc < a) FAIL(62000, I(argc), I(a))\
                              else if (argc > b) FAIL(62000, I(argc), I(b));
 		// numbers checking
-		#define CHECK_TYPE(arg, type, error) if (!is_##type(arg)) FAIL(I(error), arg, IFALSE)
+		#define CHECK_TYPE(arg, type, error) if (argc >= arg) if (!is_##type(A##arg)) FAIL(I(error), I(arg), A##arg)
 		#define CHECK_TYPE_OR_FALSE(arg, type, error) \
-		                                     if (!is_##type(arg) && !(arg == IFALSE)) FAIL(I(error), arg, IFALSE)
+		                                     if (argc >= arg) if (!is_##type(A##arg) && !(A##arg == IFALSE)) FAIL(I(error), I(arg), A##arg)
+		#define CHECK_TYPE_OR_TYPE2(arg, type, type2, error) \
+		                                     if (argc >= arg) if (!is_##type(A##arg) && !is_##type2(A##arg)) FAIL(I(error), I(arg), A##arg)
 
 		#define CHECK_PORT(arg)      CHECK_TYPE(arg, port, 62001)
 		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)
+		#define CHECK_NUMBERP(arg)   CHECK_TYPE(arg, number, 62008)
 		#define CHECK_REFERENCE(arg) CHECK_TYPE(arg, reference, 62003)
 		#define CHECK_BITSTREAM(arg) CHECK_TYPE(arg, bitstream, 62004)
 		#define CHECK_STRING(arg)    CHECK_TYPE(arg, string, 62005)
+		#define CHECK_VPTR(arg)      CHECK_TYPE(arg, vptr, 62007)
 
-		#define CHECK_NUMBER_OR_FALSE(arg)   CHECK_TYPE_OR_FALSE(arg, number, 62002)
+		#define CHECK_NUMBER_OR_FALSE(arg)  CHECK_TYPE_OR_FALSE(arg, number, 62002)
+		#define CHECK_NUMBERP_OR_FALSE(arg) CHECK_TYPE_OR_FALSE(arg, numberp, 62009)
+		#define CHECK_PORT_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, port, string, 62006)
+		#define CHECK_VPTR_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, vptr, string, 62011)
+		#define CHECK_NUMBER_OR_STRING(arg) CHECK_TYPE_OR_TYPE2(arg, number, string, 62010)
+		// ------------------------------------------------------------------------------
 
 		// continue syscall handler:
-		CHECK_NUMBER(A0);
+		CHECK_NUMBER(0);
 		word op = value (A0);
 
 		switch (op + sandboxp) {
@@ -3198,8 +3209,8 @@ loop:;
 			case SYSCALL_READ + SECCOMP:
 			case SYSCALL_READ: { //
 				CHECK_ARGC(1, 2); // (port ?count)
-				if (argc > 0) CHECK_PORT(A1);
-				if (argc > 1) CHECK_NUMBER_OR_FALSE(A2);
+				CHECK_PORT(1);
+				CHECK_NUMBER_OR_FALSE(2);
 
 				int portfd = port(A1);
 				int count = (argc > 1 && A2 != IFALSE)
@@ -3258,9 +3269,9 @@ loop:;
 			case SYSCALL_WRITE + SECCOMP:
 			case SYSCALL_WRITE: {
 				CHECK_ARGC(2, 3); // (port object ?count)
-				if (argc > 0) CHECK_PORT(A1);
-				if (argc > 1) CHECK_BITSTREAM(A2); // we write only binary objects
-				if (argc > 2) CHECK_NUMBER_OR_FALSE(A3);
+				CHECK_PORT(1);
+				CHECK_BITSTREAM(2); // we write only binary objects
+				CHECK_NUMBER_OR_FALSE(3);
 
 				int portfd = port(A1);
 				int count = (argc > 2 && A3 != IFALSE)
@@ -3300,9 +3311,9 @@ loop:;
 			*/
 			case SYSCALL_OPEN: {
 				CHECK_ARGC(2, 3);
-				if (argc > 0) CHECK_STRING(A1);
-				if (argc > 1) CHECK_NUMBER(A2);
-				if (argc > 2) CHECK_NUMBER_OR_FALSE(A3);
+				CHECK_STRING(1);
+				CHECK_NUMBER(2);
+				CHECK_NUMBER_OR_FALSE(3);
 
 				char* s = string(A1);
 				int flags = number(A2);
@@ -3345,7 +3356,7 @@ loop:;
 			*/
 			case SYSCALL_CLOSE: {
 				CHECK_ARGC_EQ(1);
-				CHECK_PORT(A1);
+				CHECK_PORT(1);
 
 				int portfd = port(A1);
 
@@ -3358,6 +3369,496 @@ loop:;
 						r = (word*)ITRUE;
 				}
 		#endif
+				break;
+			}
+
+			/*! \subsection lseek
+			* \brief 4: (lseek port offset whence) -> offset|#f
+			*
+			* Reposition read/write file offset
+			*
+			* \param port
+			* \param offset
+			* \param whence
+			*
+			* \return resulting offset location as measured in bytes
+			*         from the beginning of the file
+			*
+			* http://man7.org/linux/man-pages/man2/lseek.2.html
+			*/
+			case SYSCALL_LSEEK: { // TODO: add to tests!
+				CHECK_ARGC_EQ(1);
+				CHECK_PORT(1);
+				CHECK_NUMBER(2);
+				CHECK_NUMBER(3);
+
+				off_t offset = lseek(port(A1), number(A2), number(A3));
+				if (offset < 0)
+					break;
+
+				r = itoun(offset);
+				break;
+			}
+
+			/*! \subsection stat
+			* \brief (syscall **4** port/path) -> #(. stats .) | #false
+			*
+			* Returns information about a file or port.
+			*
+			* \param port/path
+			*
+			* \return vector if success,
+			*         #false if error
+			*
+			* http://man7.org/linux/man-pages/man2/stat.2.html
+			*/
+			case SYSCALL_STAT: {
+				CHECK_ARGC_EQ(1);
+				CHECK_PORT_OR_STRING(1);
+
+				struct stat st;
+
+				if (is_port(A1)) {
+					if (fstat(port(A1), &st) < 0)
+						break;
+				}
+				else
+				if (is_string(A1)) {
+					/* temporary removed (up to check for which OSes it's work)
+					if (b == ITRUE) {
+						if (lstat((char*) &car (a), &st) < 0)
+							break;
+					}
+					else {*/
+						if (stat(string(A1), &st) < 0)
+							break;
+					//}
+				}
+				else
+					break;
+
+				r = new_vector(
+						itoun(st.st_dev),    // устройство
+						itoun(st.st_ino),    // inode
+						itoun(st.st_mode),   // режим доступа
+						itoun(st.st_nlink),  // количество жестких ссылок
+						itoun(st.st_uid),    // идентификатор пользователя-владельца
+						itoun(st.st_gid),    // идентификатор группы-владельца
+						itoun(st.st_rdev),   // тип устройства (если это устройство)
+						itoun(st.st_size),   // общий размер в байтах
+						IFALSE, // itoun(st.st_blksize),// размер блока ввода-вывода в файловой системе
+						IFALSE, // itoun(st.st_blocks), // количество выделенных блоков
+						// Since Linux 2.6, the kernel supports nanosecond
+						//   precision for the following timestamp fields.
+						// but we do not support this for a while
+						itoun(st.st_atime),  // время последнего доступа (в секундах)
+						itoun(st.st_mtime),  // время последней модификации (в секундах)
+						itoun(st.st_ctime)   // время последнего изменения (в секундах)
+				);
+				break;
+			}
+
+			// case SYSCALL_FSYNC: {
+			// 	if (!is_port(a))
+			// 		break;
+
+			// 	if (fsync(port (a)) < 0)
+			// 		break;
+
+			// 	result = (word*)ITRUE;
+			// 	break;
+			// }
+
+#if HAS_SENDFILE
+			/*! \subsection sendfile
+			* \brief (syscall **40** outp inp offset count) -> number | #f
+			*
+			* Transfer data between ports
+			*
+			* \param outp    output port
+			* \param inp     input port
+			* \param offset  offset inside input port
+			* \param count   count of bytes to copy
+			*
+			* \return written bytes if success,
+			*         #false if error
+			*
+			* http://man7.org/linux/man-pages/man2/sendfile.2.html
+			*/
+			// todo: enable sendfile to the BSD
+			// todo: add sendfile() for __unix__ (like for _WIN32)
+			case SYSCALL_SENDFILE + SECCOMP:
+			case SYSCALL_SENDFILE: {
+				CHECK_ARGC_EQ(4);
+				CHECK_PORT(1);
+				CHECK_NUMBER(2);
+				CHECK_NUMBER(3);
+				CHECK_NUMBER(4);
+
+				int socket = port(A1);
+				int filefd = port(A2);
+				off_t offset = number(A3);
+				int count = number(A4);
+
+				ssize_t wrote= 0;
+				while (count > 0) {
+					wrote = sendfile(socket, filefd, &offset, count);
+					if (wrote < 0) {
+						if (errno != EAGAIN)
+							break;
+						yield();
+					}
+					else
+					if (wrote == 0)
+						break;
+					else
+						count -= wrote;
+				}
+				if (wrote < 0)
+					break;
+
+				r = (word*) ITRUE;
+				break;
+			}
+#endif
+
+			/*! \subsection unlink
+			* \brief 87: (unlink pathname) -> #t|#f
+			*
+			* Delete a name and possibly the file it refers to
+			*
+			* \param pathname
+			*
+			* \return #true if success,
+			*         #false if error
+			*
+			* http://man7.org/linux/man-pages/man2/unlink.2.html
+			*/
+			case SYSCALL_UNLINK: { //
+				CHECK_ARGC_EQ(1);
+				CHECK_STRING(1);
+
+				if (unlink(string(A1)) == 0)
+					r = (word*) ITRUE;
+				break;
+			}
+
+			// PIPES
+#if SYSCALL_PIPE
+			case SYSCALL_PIPE: {
+				CHECK_ARGC_EQ(0);
+
+				int pipefd[2];
+				if (pipe(pipefd) == 0) {
+					r = new_pair(make_port(pipefd[0]), make_port(pipefd[1]));
+
+					#ifndef _WIN32
+					fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
+					fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
+					#endif
+				}
+
+				break;
+			}
+#endif
+
+			// FOLDERS
+
+			case SYSCALL_CHDIR: {
+				CHECK_ARGC_EQ(1);
+				CHECK_STRING(1);
+
+				char *path = (char*) &car(A1);
+				if (chdir(path) >= 0)
+					r = (word*) ITRUE;
+				break;
+			}
+
+			// UNSAFES
+#if OLVM_FFI
+			/*! \subsection mmap
+			* \brief 9: (mmap address length offset) -> bytevector
+			*
+			* Reposition read/write file offset
+			*
+			* \param address (type-vptr)
+			* \param length (integer)
+			* \param offset (integer)
+			*
+			* \return
+			*/
+			// TODO: disable when in safe mode
+			case SYSCALL_MMAP: {
+				CHECK_ARGC(2,3);
+				CHECK_VPTR(1);
+				CHECK_NUMBER(2);
+				CHECK_NUMBER_OR_FALSE(3);
+
+				unsigned char* address = (unsigned char*) car(A1);
+				size_t length = number(A2); // в байтах
+				size_t offset = (argc > 2 && A3 != IFALSE)
+			 		? number(A3)
+					: 0;
+
+				int words = ((length + W - 1) / W) + 1; // в словах
+				if (words > (heap->end - fp)) {
+					ptrdiff_t dp;
+					dp = ip - (unsigned char*)this;
+
+					heap->fp = fp; ol->this = this;
+					ol->gc(ol, words);
+					fp = heap->fp; this = ol->this;
+
+					ip = (unsigned char*)this + dp;
+				}
+
+				r = new_bytevector(length);
+				memcpy(&car(r), address + offset, length);
+				break;
+			}
+#endif
+
+			/*! \subsection syscall-16
+			* \brief 16: (syscall 16 ...) -> ...|#f
+			*
+			* Syscall 16
+			*
+			* \param
+			*
+			* \return #false if error
+			*
+			*/
+			case SYSCALL_IOCTL + SECCOMP:
+			case SYSCALL_IOCTL: {
+				CHECK_ARGC(2, 255);
+				CHECK_PORT(1);
+				CHECK_NUMBER(2);
+
+				int portfd = port(A1);
+				int ioctl = number(A2);
+
+				switch (ioctl + sandboxp) {
+					case SYSCALL_IOCTL_TIOCGETA: {
+						#ifdef _WIN32
+							if (_isatty(portfd))
+						#else
+							struct termios t;
+							if (tcgetattr(portfd, &t) != -1)
+						#endif
+								r = (word*) ITRUE;
+						break;
+					}
+					case SYSCALL_IOCTL_TIOCGETA + SECCOMP: {
+						if ((portfd == STDIN_FILENO) || (portfd == STDOUT_FILENO) || (portfd == STDERR_FILENO))
+							r = (word*) ITRUE;
+						break;
+					}
+				}
+				break;
+			}
+
+			// INTERPROCESS FUNCTIONS
+
+			case SYSCALL_YIELD: {
+				yield();
+				r = (word*) ITRUE;
+				break;
+			}
+
+			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
+			// TODO: change to "select" call (?)
+			case SYSCALL_SLEEP: { // time in micro(!)seconds
+				CHECK_ARGC_EQ(1);
+				CHECK_NUMBERP(1);
+
+				int_t us = numberp(A1);
+
+				#ifdef __EMSCRIPTEN__
+					int_t ms = us / 1000;
+					emscripten_sleep(ms);
+					r = (word*) ITRUE;
+				#endif
+				#ifdef _WIN32// for Windows
+					int_t ms = us / 1000;
+					Sleep(ms); // in ms
+					r = (word*) ITRUE;
+				#endif
+				#ifdef __unix__ // Linux, *BSD, MacOS, etc.
+					struct timespec ts = { us / 1000000, (us % 1000000) * 1000 };
+					struct timespec rem;
+					if (nanosleep(&ts, &rem) != 0)
+						r = itoun((rem.tv_sec * 1000000 + rem.tv_nsec / 1000));
+				#endif
+				break;
+			}
+
+			// (EXECVE program-or-function env (vector port port port))
+			// http://linux.die.net/man/3/execve
+			case SYSCALL_EXECVE: {
+				CHECK_ARGC_EQ(2);
+				CHECK_VPTR_OR_STRING(1);
+				// todo: check A2 argument
+
+#if HAS_DLOPEN
+				// if a is result of dlsym
+				if (is_vptr(A1)) {
+					// a - function address (port)
+					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
+					word* A = (word*)A1;
+					word* B = (word*)A2;
+		//					word* C = (word*)c;
+
+					assert ((word)B == INULL || is_pair(B));
+		//					assert ((word)C == IFALSE);
+					word* (*function)(OL*, word*) = (word* (*)(OL*, word*)) car(A);  assert (function);
+
+					//int sub = ip - (unsigned char *) &this[1]; // save ip for possible gc call
+
+					ol->heap.fp = fp; ol->this = this;
+					r = function(ol, B);
+					fp = ol->heap.fp; this = ol->this;
+
+					// а вдруг вызвали gc?
+					// ip = (unsigned char *) &this[1] + sub;
+
+					// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
+					// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
+					break;
+				}
+#endif //HAS_DLOPEN
+				// if a is string:
+				if (is_string(A1)) {
+					char* command = string(A1);
+					word b = A2;
+					word c = A3;
+					#ifdef __unix__
+					# ifdef __EMSCRIPTEN__
+						emscripten_run_script(command);
+						result = (void*)ITRUE;
+					# else
+						// todo: add case (cons program environment)
+						int child = fork();
+						if (child == 0) {
+							D("forking %s", command);
+							if (is_pair (c)) {
+								const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
+								for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
+									if (is_port(car(c)))
+										dup2(port(car(c)), in[i]), c = cdr (c);
+							}
+
+							char** args = NULL;
+							if (is_pair(b)) {
+								word p;
+								int l = 1;
+								p = b;
+								while (p != INULL)
+									l++, p = cdr(p);
+								char** arg = args = __builtin_alloca(sizeof(char**) * (l + 1));
+								p = b;
+								while (p != INULL)
+									*arg++ = (char*)&caar(p), p = cdr(p);
+								*arg = 0;
+							}
+
+							exit(execv(command, args));
+							assert (0); // should not be reached
+						}
+						else if (child > 0)
+							r = (word*) itoun(child);
+					# endif
+					#endif
+					#ifdef _WIN32
+						STARTUPINFO si;
+						ZeroMemory( &si, sizeof(STARTUPINFO) );
+						si.cb = sizeof(STARTUPINFO);
+						si.dwFlags |= STARTF_USESTDHANDLES;
+						if (is_pair(c)) {
+							if (is_port(car(c)))
+								si.hStdInput = (HANDLE) port(c);
+							c = cdr(c);
+						}
+						if (is_pair(c)) {
+							if (is_port(car(c)))
+								si.hStdOutput = (HANDLE) port(c);
+							c = cdr(c);
+						}
+						if (is_pair(c)) {
+							if (is_port(car(c)))
+								si.hStdError = (HANDLE) port(c);
+							c = cdr(c);
+						}
+
+						// черновой вариант
+						char* args = string (fp);
+						// todo: add length check!
+						sprintf(args, "\"%s\"", command);
+
+						if (is_pair(b)) {
+							word p = b;
+							while (p != INULL) {
+								strcat(args, " ");
+								strcat(args, string(car(p))); p = cdr(p);
+							}
+						}
+
+						PROCESS_INFORMATION pi;
+						ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+
+						if (CreateProcess(NULL, args, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+							CloseHandle(pi.hThread);
+							CloseHandle(pi.hProcess);
+							result = itoun(pi.dwProcessId);
+						}
+					#endif
+					break;
+				}
+				break;
+			}
+
+			// TIME FUNCTIONS
+			// (gettimeofday)
+			// todo: change (clock) call to this one
+			case SYSCALL_GETTIMEOFDAY: {
+				CHECK_ARGC_EQ(0);
+
+				struct timeval tv;
+				if (gettimeofday(&tv, NULL) == 0)
+					r = new_pair (itoun(tv.tv_sec), itoun(tv.tv_usec));
+				break;
+			}
+
+			/**
+			 * @brief (format seconds #f)
+			 * @arg format return string, else seconds
+			 * @arg if seconds == false, get current seconds
+			 * @see http://man7.org/linux/man-pages/man2/time.2.html
+			 */
+			case SYSCALL_TIME: {
+				CHECK_ARGC(1,2);
+				CHECK_NUMBER_OR_STRING(1);
+				CHECK_NUMBERP_OR_FALSE(2);
+
+				time_t seconds = (argc > 1 && A2 != IFALSE)
+			 		? numberp(A2)
+					: time(0);
+
+#if HAS_STRFTIME // todo: check this code!
+				word* A = (word*) A1;
+				if (is_string(A)) {
+					struct tm * timeinfo = localtime(&seconds);
+					if (! timeinfo)
+						break;
+					// The environment variables TZ and LC_TIME are used!
+					size_t len = strftime(
+							string (fp),
+							(size_t) (heap->end - fp - 1) * sizeof(word),
+							string (A), timeinfo);
+					r = new_bitstream(TSTRING, len);
+				}
+				else
+#endif
+					r = itoun (seconds);
 				break;
 			}
 
@@ -3396,157 +3897,6 @@ loop:;
 
 		switch (op + sandboxp) {
 
-		/*! \subsection stat
-		 * \brief (syscall **4** port/path . .) -> (vector ...) | #false
-		 *
-		 * Returns information about a file or port.
-		 *
-		 * \param port/path
-		 *
-		 * \return tuple if success,
-		 *         #false if error
-		 *
-		 * http://man7.org/linux/man-pages/man2/stat.2.html
-		 */
-		case SYSCALL_STAT: {
-			struct stat st;
-
-			if (is_port(a)) {
-				if (fstat(port (a), &st) < 0)
-					break;
-			}
-			else
-			if (is_string(a)) {
-				/* temporary removed (up to check for which OSes it's work)
-				if (b == ITRUE) {
-					if (lstat((char*) &car (a), &st) < 0)
-						break;
-				}
-				else {*/
-					if (stat(string(a), &st) < 0)
-						break;
-				//}
-			}
-			else
-				break;
-
-			result = new_vector(
-					itoun(st.st_dev),    // устройство
-					itoun(st.st_ino),    // inode
-					itoun(st.st_mode),   // режим доступа
-					itoun(st.st_nlink),  // количество жестких ссылок
-					itoun(st.st_uid),    // идентификатор пользователя-владельца
-					itoun(st.st_gid),    // идентификатор группы-владельца
-					itoun(st.st_rdev),   // тип устройства (если это устройство)
-					itoun(st.st_size),   // общий размер в байтах
-					itoun(0), // itoun(st.st_blksize),// размер блока ввода-вывода в файловой системе
-					itoun(0), // itoun(st.st_blocks), // количество выделенных блоков
-					// Since Linux 2.6, the kernel supports nanosecond
-					//   precision for the following timestamp fields.
-					// but we do not support this for a while
-					itoun(st.st_atime),  // время последнего доступа (в секундах)
-					itoun(st.st_mtime),  // время последней модификации (в секундах)
-					itoun(st.st_ctime)   // время последнего изменения (в секундах)
-			);
-			break;
-		}
-
-		/*! \subsection lseek
-		 * \brief 4: (lseek port offset whence) -> offset|#f
-		 *
-		 * Reposition read/write file offset
-		 *
-		 * \param port
-		 * \param offset
-		 * \param whence
-		 *
-		 * \return resulting offset location as measured in bytes
-		 *         from the beginning of the file
-		 *
-		 * http://man7.org/linux/man-pages/man2/lseek.2.html
-		 */
-		case SYSCALL_LSEEK: {
-			if (!is_port(a))
-				break;
-
-			off_t offset = lseek(port (a), value(b), value(c));
-			if (offset < 0)
-				break;
-
-			result = itoun(offset);
-			break;
-		}
-
-		/*! \subsection mmap
-		 * \brief 9: (mmap address length offset) -> bytevector
-		 *
-		 * Reposition read/write file offset
-		 *
-		 * \param address (type-vptr)
-		 * \param length (integer)
-		 * \param offset (integer)
-		 *
-		 * \return
-		 */
-		// TODO: disable when in safe mode
-#if OLVM_FFI
-		case SYSCALL_MMAP: {
-			if (!is_vptr(a))
-				break;
-			unsigned char* address = (unsigned char*) car(a);
-			size_t length = number(b); // в байтах
-			size_t offset = c == IFALSE ? 0 : number(c);
-
-			int words = ((length + W - 1) / W) + 1; // в словах
-			if (words > (heap->end - fp)) {
-				ptrdiff_t dp;
-				dp = ip - (unsigned char*)this;
-
-				heap->fp = fp; ol->this = this;
-				ol->gc(ol, words);
-				fp = heap->fp; this = ol->this;
-
-				ip = (unsigned char*)this + dp;
-			}
-
-			result = new_bytevector(length);
-			memcpy(&car(result), address+offset, length);
-			break;
-		}
-#endif
-
-		case SYSCALL_FSYNC: {
-			if (!is_port(a))
-				break;
-
-			if (fsync(port (a)) < 0)
-				break;
-
-			result = (word*)ITRUE;
-			break;
-		}
-
-		/*! \subsection unlink
-		 * \brief 87: (unlink pathname) -> #t|#f
-		 *
-		 * Delete a name and possibly the file it refers to
-		 *
-		 * \param pathname
-		 *
-		 * \return #true if success,
-		 *         #false if error
-		 *
-		 * http://man7.org/linux/man-pages/man2/unlink.2.html
-		 */
-		case SYSCALL_UNLINK: { //
-			CHECK(is_string(a), a, SYSCALL);
-			char* s = string (a);
-
-			if (unlink(s) == 0)
-				result = (word*) ITRUE;
-			break;
-		}
-
 		/*! \subsection syscall-12
 		 * \brief 12: (syscall 12 ...) -> ...|#f
 		 *
@@ -3557,154 +3907,47 @@ loop:;
 		 * \return #false if error
 		 *
 		 */
-		case SYSCALL_BRK: // get or set memory limit (in mb)
-			// // b, c is reserved for feature use
-			// result = itoun (ol->max_heap_size);
-			// //if (a == I(0))
-			// //	ol->gc(0);
-			// if (is_numberp(a))
-			// 	ol->max_heap_size = uvtoi (a);
-			break;
+		// case SYSCALL_BRK: // get or set memory limit (in mb)
+		// 	// // b, c is reserved for feature use
+		// 	// result = itoun (ol->max_heap_size);
+		// 	// //if (a == I(0))
+		// 	// //	ol->gc(0);
+		// 	// if (is_numberp(a))
+		// 	// 	ol->max_heap_size = uvtoi (a);
+		// 	break;
 
-		/*! \subsection syscall-16
-		 * \brief 16: (syscall 16 ...) -> ...|#f
-		 *
-		 * Syscall 16
-		 *
-		 * \param
-		 *
-		 * \return #false if error
-		 *
-		 */
-		case SYSCALL_IOCTL + SECCOMP:
-		case SYSCALL_IOCTL: {
-			if (!is_port(a))
-				break;
+		// // directories
+		// case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
+		// 	word* A = (word*)a;
+		// 	DIR *dirp = opendir((char*) &A[1]);
+		// 	if (dirp)
+		// 		result = (word*)make_port(dirp);
+		// 	break;
+		// }
+		// // get directory entry
+		// case SYSCALL_GETDENTS:
+		// case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
+		// 	CHECK(is_port(a), a, SYSCALL);
+		// 	DIR* dirp = (DIR*) port(a);
 
-			int portfd = port(a);
-			int ioctl = value(b);
+		// 	struct dirent *dire = readdir(dirp);
+		// 	if (!dire) {
+		// 		result = (word*)IEOF; // eof at end of dir stream
+		// 		break;
+		// 	}
 
-			switch (ioctl + sandboxp) {
-				case SYSCALL_IOCTL_TIOCGETA: {
-					#ifdef _WIN32
-						if (_isatty(portfd))
-					#else
-						struct termios t;
-						if (tcgetattr(portfd, &t) != -1)
-					#endif
-							result = (word*)ITRUE;
-					break;
-				}
-				case SYSCALL_IOCTL_TIOCGETA + SECCOMP: {
-					if ((portfd == STDIN_FILENO) || (portfd == STDOUT_FILENO) || (portfd == STDERR_FILENO))
-						result = (word*)ITRUE;
-					break;
-				}
-			}
-			break;
-		}
-
-		case SYSCALL_YIELD: {
-			yield();
-			result = (word*) ITRUE;
-			break;
-		}
-
-		#if defined(_WIN32) || defined(__linux__)
-		// todo: enable sendfile to the BSD
-		// todo: add sendfile() for __unix__ (like for _WIN32)
-		case SYSCALL_SENDFILE + SECCOMP:
-		case SYSCALL_SENDFILE: { // (syscall 40 fd file-fd size)
-			if (!is_port(a) || !is_port(b))
-				break;
-
-			int socket = port(a);
-			int filefd = port(b);
-			int size = number(c);
-
-			off_t offset = 0;
-			ssize_t wrote= 0;
-			while (size > 0) {
-				wrote = sendfile(socket, filefd, &offset, size);
-				if (wrote < 0) {
-					if (errno != EAGAIN)
-						break;
-					yield();
-				}
-				else if (wrote == 0)
-					break;
-				else
-					size -= wrote;
-			}
-			if (wrote < 0)
-				break;
-
-			result = (word*)ITRUE;
-			break;
-		}
-		#endif
-
-
-		// directories
-		case 1011: { /* sys-opendir path _ _ -> False | dirobjptr */
-			word* A = (word*)a;
-			DIR *dirp = opendir((char*) &A[1]);
-			if (dirp)
-				result = (word*)make_port(dirp);
-			break;
-		}
-		// get directory entry
-		case SYSCALL_GETDENTS:
-		case 1012: { /* sys-readdir dirp _ _ -> bvec | eof | False */
-			CHECK(is_port(a), a, SYSCALL);
-			DIR* dirp = (DIR*) port(a);
-
-			struct dirent *dire = readdir(dirp);
-			if (!dire) {
-				result = (word*)IEOF; // eof at end of dir stream
-				break;
-			}
-
-			// todo: check the heap overflow!
-			unsigned int len;
-			len = lenn(dire->d_name, VMAX+1);
-			if (len == VMAX+1)
-				break; /* false for errors, like too long file names */
-			result = new_string(dire->d_name, len);
-			break;
-		}
-		case 1020:
-		case SYSCALL_CHDIR: {
-			char *path = ((char *)a) + W;
-			if (chdir(path) >= 0)
-				result = (word*) ITRUE;
-			break;
-		}
-		case 1013: /* sys-closedir dirp _ _ -> ITRUE */
-			closedir((DIR *)car(a));
-			result = (word*)ITRUE;
-			break;
-
-
-		// PIPE
-		#if SYSCALL_PIPE
-		case SYSCALL_PIPE: {
-			int pipefd[2];
-
-			if (pipe(pipefd) == 0) {
-				result = new_pair(make_port(pipefd[0]), make_port(pipefd[1]));
-
-				#ifndef _WIN32
-				fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
-				fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
-				#endif
-			}
-			else
-				result = (word*)IFALSE;
-
-			break;
-		}
-		#endif
+		// 	// todo: check the heap overflow!
+		// 	unsigned int len;
+		// 	len = lenn(dire->d_name, VMAX+1);
+		// 	if (len == VMAX+1)
+		// 		break; /* false for errors, like too long file names */
+		// 	result = new_string(dire->d_name, len);
+		// 	break;
+		// }
+		// case 1013: /* sys-closedir dirp _ _ -> ITRUE */
+		// 	closedir((DIR *)car(a));
+		// 	result = (word*)ITRUE;
+		// 	break;
 
 
 		// ==================================================
@@ -3900,211 +4143,26 @@ loop:;
 		// ==================================================
 
 
-		// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
-		// TODO: change to "select" call (?)
-		case SYSCALL_SLEEP: { // time in micro(!)seconds
-			CHECK(is_numberp(a), a, SYSCALL);
-			int_t us = untoi (a);
+		// // (FORK)
+		// case 57: {
+		// 	//result = (word*) itosv(fork());
+		// 	break;
+		// }
 
-			result = (word*) ITRUE;
 
-			#ifdef __EMSCRIPTEN__
-				int_t ms = us / 1000;
-				emscripten_sleep(ms);
-			#endif
-			#ifdef _WIN32// for Windows
-				int_t ms = us / 1000;
-				Sleep(ms); // in ms
-			#endif
-			#ifdef __unix__ // Linux, *BSD, MacOS, etc.
-				struct timespec ts = { us / 1000000, (us % 1000000) * 1000 };
-				struct timespec rem;
-				if (nanosleep(&ts, &rem) != 0)
-					result = itoun((rem.tv_sec * 1000000 + rem.tv_nsec / 1000));
-			#endif
-			break;
-		}
+		// // wait4
+		// case 61: {
+		// 	#ifdef _WIN32
+		// 	int_t pid = untoi(a);
 
-		// (FORK)
-		case 57: {
-			//result = (word*) itosv(fork());
-			break;
-		}
+		// 	HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+		// 	WaitForSingleObject(processHandle, INFINITE);
+		// 	CloseHandle(processHandle);
 
-		// (EXECVE program-or-function env (vector port port port))
-		// http://linux.die.net/man/3/execve
-		case 59: {
-	#if HAS_DLOPEN
-			// if a is result of dlsym
-			if (is_vptr(a)) {
-				// a - function address (port)
-				// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
-				word* A = (word*)a;
-				word* B = (word*)b;
-	//					word* C = (word*)c;
-
-				assert ((word)B == INULL || is_pair(B));
-	//					assert ((word)C == IFALSE);
-				word* (*function)(OL*, word*) = (word* (*)(OL*, word*)) car(A);  assert (function);
-
-				//int sub = ip - (unsigned char *) &this[1]; // save ip for possible gc call
-
-				ol->heap.fp = fp; ol->this = this;
-				result = function(ol, B);
-				fp = ol->heap.fp; this = ol->this;
-
-				// а вдруг вызвали gc?
-				// ip = (unsigned char *) &this[1] + sub;
-
-				// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
-				// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
-				break;
-			}
-	#endif //HAS_DLOPEN
-			// if a is string:
-			if (is_string(a)) {
-				char* command = string(a);
-				#ifdef __unix__
-				# ifdef __EMSCRIPTEN__
-					emscripten_run_script(command);
-					result = (void*)ITRUE;
-				# else
-					// todo: add case (cons program environment)
-					int child = fork();
-					if (child == 0) {
-						D("forking %s", command);
-						if (is_pair (c)) {
-							const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
-							for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
-								if (is_port(car(c)))
-									dup2(port(car(c)), in[i]), c = cdr (c);
-						}
-
-						char** args = NULL;
-						if (is_pair(b)) {
-							word p;
-							int l = 1;
-							p = b;
-							while (p != INULL)
-								l++, p = cdr(p);
-							char** arg = args = __builtin_alloca(sizeof(char**) * (l + 1));
-							p = b;
-							while (p != INULL)
-								*arg++ = (char*)&caar(p), p = cdr(p);
-							*arg = 0;
-						}
-
-						exit(execv(command, args));
-						assert (0); // should not be reached
-					}
-					else if (child > 0)
-						result = (word*) itoun(child);
-				# endif
-				#endif
-				#ifdef _WIN32
-					STARTUPINFO si;
-					ZeroMemory( &si, sizeof(STARTUPINFO) );
-					si.cb = sizeof(STARTUPINFO);
-					si.dwFlags |= STARTF_USESTDHANDLES;
-					if (is_pair(c)) {
-						if (is_port(car(c)))
-							si.hStdInput = (HANDLE) port(c);
-						c = cdr(c);
-					}
-					if (is_pair(c)) {
-						if (is_port(car(c)))
-							si.hStdOutput = (HANDLE) port(c);
-						c = cdr(c);
-					}
-					if (is_pair(c)) {
-						if (is_port(car(c)))
-							si.hStdError = (HANDLE) port(c);
-						c = cdr(c);
-					}
-
-					// черновой вариант
-					char* args = string (fp);
-					// todo: add length check!
-					sprintf(args, "\"%s\"", command);
-
-					if (is_pair(b)) {
-						word p = b;
-						while (p != INULL) {
-							strcat(args, " ");
-							strcat(args, string(car(p))); p = cdr(p);
-						}
-					}
-
-					PROCESS_INFORMATION pi;
-					ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-
-					if (CreateProcess(NULL, args, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-						CloseHandle(pi.hThread);
-						CloseHandle(pi.hProcess);
-						result = itoun(pi.dwProcessId);
-					}
-				#endif
-				break;
-			}
-			break;
-		}
-
-		// wait4
-		case 61: {
-			#ifdef _WIN32
-			int_t pid = untoi(a);
-
-			HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-			WaitForSingleObject(processHandle, INFINITE);
-			CloseHandle(processHandle);
-
-			result = (word*) ITRUE;
-			#endif
-			break;
-		}
-
-		// (gettimeofday)
-		// todo: change (clock) call to this one
-		case SYSCALL_GETTIMEOFDATE: {
-			struct timeval tv;
-			if (gettimeofday(&tv, NULL) == 0)
-				result = new_pair (itoun(tv.tv_sec), itoun(tv.tv_usec));
-			break;
-		}
-
-		/**
-		 * @brief (time format seconds #f)
-		 * @arg format return string, else seconds
-		 * @arg if seconds == false, get current seconds
-		 * @see http://man7.org/linux/man-pages/man2/time.2.html
-		 */
-		case SYSCALL_TIME: {
-			word* B = (word*) b;
-			time_t seconds;
-			if ((word) B == IFALSE)
-				seconds = time (0);
-			else if (is_numberp(B))
-				seconds = untoi(B);
-			else
-				break;
-	#if HAS_STRFTIME
-			word* A = (word*) a;
-			if (is_string(A)) {
-				struct tm * timeinfo = localtime(&seconds);
-				if (!timeinfo) // error???
-					break;
-				// The environment variables TZ and LC_TIME are used!
-				size_t len = strftime(
-						string (fp),
-						(size_t) (heap->end - fp - 1) * sizeof(word),
-						string (A), timeinfo);
-				result = new_bitstream(TSTRING, len);
-			}
-			else
-	#endif
-				result = itoun (seconds);
-			break;
-		}
+		// 	result = (word*) ITRUE;
+		// 	#endif
+		// 	break;
+		// }
 
 		// EXIT errorcode
 		// http://linux.die.net/man/2/exit
@@ -4227,7 +4285,7 @@ loop:;
 
 		// =- 1000+ -===========================================================================
 		// other internal commands
-		case 1000: {
+		case 1000: { // GC
 			ptrdiff_t dp;
 			dp = ip - (unsigned char*)this;
 
@@ -4248,9 +4306,6 @@ loop:;
 			break;
 		case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
 			result = itoun (ol->max_heap_size);
-			break;
-		case 1008: /* get machine word size (in bytes) */ // todo: переделать на другой номер
-			result = itoun (sizeof (word));
 			break;
 
 		// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
@@ -4275,7 +4330,7 @@ loop:;
 			}
 			break;
 		}
-		case 1017: { // system (char*) // todo: remove this
+		case 1017: { // system (char*) // todo: remove this !!!!!!
 			int r = system(string(a));
 			if (r >= 0)
 				result = itoun(r);

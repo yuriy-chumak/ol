@@ -354,7 +354,7 @@
          void*))
 
    (define (vptr->bytevector vptr sizeof)
-      (syscall 9 vptr sizeof 0))
+      (syscall2 9 vptr sizeof))
 
 
 ; TODO: change this

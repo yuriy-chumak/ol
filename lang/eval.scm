@@ -61,7 +61,7 @@
       (define (ok? x) (eq? (ref x 1) 'ok))
       (define (ok exp env) ['ok exp env])
       (define (fail reason) ['fail reason])
-      (define (isatty? fd) (syscall 16 fd 19 #f))
+      (define (isatty? fd) (syscall2 16 fd 19))
       (define (interactive? env) (env-get env '*interactive* #false))
 
 
@@ -98,6 +98,10 @@
                   `(syscall argument ,a is not a binary sequence))
                (62005
                   `(syscall argument ,a is not a string))
+               (62006
+                  `(syscall argument ,a is not a string or port))
+               (62006
+                  `(syscall argument ,a is not a positive number))
 
 
                ;; (62000 ; syscall number is not a number
@@ -110,7 +114,7 @@
                (else
                   (if (less? opcode 256)
                      `(,(primop-name opcode) reported error ": " ,a " " ,b)
-                     `(,a " " ,b))))))
+                     `(,opcode " .. " ,a " " ,b))))))
          ;   ;((eq? opcode 52)
          ;   ;   `(trying to get car of a non-pair ,a))
          ;   (else

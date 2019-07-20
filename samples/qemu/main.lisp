@@ -222,8 +222,8 @@
 ; ==
 (define (fork name . arguments)
 (fork-server name (lambda ()
-   (define In (syscall 22 #f #f #f)) ; create input/output pipes: '(read-pipe . write-pipe)
-   (define Out (syscall 22 #f #f #f))
+   (define In (syscall2 22)) ; create input/output pipes: '(read-pipe . write-pipe)
+   (define Out (syscall2 22))
    (define Pid
       (syscall 59 (c-string (car arguments)) ; (syscall:fork)
          (map c-string arguments)

@@ -8,13 +8,12 @@
 
 (define-library (owl sys)
    (export
-      dir-fold
-      dir->list
       exec
       chdir
       kill
       uname
       getenv
+
       sighup
       signint
       sigquit
@@ -43,20 +42,20 @@
       ;;; Unsafe operations not to be exported
       ;;;
 
-      ;; string → #false | unsafe-dirptr
-      (define (open-dir path)
-         (let ((cs (c-string path)))
-            (if (and cs (<= (string-length cs) #xffff))
-               (syscall 1011 cs #false #false)
-               #false)))
+      ;; ;; string → #false | unsafe-dirptr
+      ;; (define (open-dir path)
+      ;;    (let ((cs (c-string path)))
+      ;;       (if (and cs (<= (string-length cs) #xffff))
+      ;;          (syscall 1011 cs #false #false)
+      ;;          #false)))
 
-      ;; unsafe-dirfd → #false | eof | bvec
-      (define (read-dir obj)
-         (syscall 78 obj #false #false))
+      ;; ;; unsafe-dirfd → #false | eof | bvec
+      ;; (define (read-dir obj)
+      ;;    (syscall 78 obj #false #false))
 
-      ;; _ → #true
-      (define (close-dir obj)
-         (syscall 1013 obj #false #false))
+      ;; ;; _ → #true
+      ;; (define (close-dir obj)
+      ;;    (syscall 1013 obj #false #false))
 
       ;;;
       ;;; Safe derived operations
@@ -65,25 +64,25 @@
       ;; dir elements are #false or fake strings, which have the type of small raw ASCII
       ;; strings, but may in fact contain anything the OS happens to allow in a file name.
 
-      (define (dir-fold op st path)
-         (let ((dfd (open-dir path)))
-            (if dfd
-               (let loop ((st st))
-                  (let ((val (read-dir dfd)))
-                     (cond
-                        ((eof? val) st)
-                        ((equal? val ".") (loop st))
-                        ((equal? val "..") (loop st))
-                        (else (loop (op st val))))))
-               #false)))
+      ;; (define (dir-fold op st path)
+      ;;    (let ((dfd (open-dir path)))
+      ;;       (if dfd
+      ;;          (let loop ((st st))
+      ;;             (let ((val (read-dir dfd)))
+      ;;                (cond
+      ;;                   ((eof? val) st)
+      ;;                   ((equal? val ".") (loop st))
+      ;;                   ((equal? val "..") (loop st))
+      ;;                   (else (loop (op st val))))))
+      ;;          #false)))
 
-      (define (dir->list path)
-         (dir-fold (λ (seen this) (cons this seen)) null path))
+      ;; (define (dir->list path)
+      ;;    (dir-fold (λ (seen this) (cons this seen)) null path))
 
       (define (chdir path)
          (let ((path (c-string path)))
             (and path
-               (syscall 1020 path #false #false))))
+               (syscall2 80 path))))
 
       ;;;
       ;;; Processes

@@ -129,7 +129,7 @@
 (define folder (substring url 20 (string-length url)))
 (display "Створюю папку ")(display folder)(display ".")
 (syscall 1017 (c-string (string-append "mkdir " folder)) #f #f)
-(syscall 1020 (c-string folder) #f #f)
+(syscall2 80 (c-string folder))
 (print)
 
 (display "Завантажую сторiнки: ")
