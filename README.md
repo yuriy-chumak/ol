@@ -491,3 +491,8 @@ Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
 * http://groups.csail.mit.edu/mac/projects/scheme/
 * http://people.csail.mit.edu/jaffer/Scheme
 * http://r7rs.org
+
+--------------------------------------------------------------
+[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
+[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
+[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
