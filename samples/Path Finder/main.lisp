@@ -321,9 +321,9 @@
                            (to   (ref xyp 2)))
                         (if to
                            (begin
-                              (glColor3f 0 1 0)
+                              (glColor3f 1.0 1.0 1.0)
                               (glVertex2f (+ (car from) 0.5) (+ (cdr from) 0.5))
-                              (glColor3f 1 0 0)
+                              (glColor3f 0.2 0.2 0.2)
                               (glVertex2f (+ (car to) 0.5) (+ (cdr to) 0.5))))))
             #f map)
          (glEnd)
