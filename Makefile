@@ -7,6 +7,7 @@ export OL_HOME=libraries
 all: release
 
 CC ?= gcc
+LD ?= ld
 UNAME ?= $(shell uname -s)
 
 # 'configure' part:
@@ -167,7 +168,7 @@ src/olvm.c: extensions/ffi.c
 	touch src/olvm.c
 
 $(repl.o): repl
-	ld -r -b binary -o $(repl.o) repl
+	$(LD) -r -b binary -o $(repl.o) repl
 
 # please, use emscripten version 1.37.40, because
 # fockin' emscripten team broke all again!

@@ -184,7 +184,7 @@ testing-embed: tests/embed.c src/olvm.c extensions/embed.h repl
 	@echo -n "Testing embed ... "
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
-	@ld -r -b binary -o tmp/repl32 repl -m elf_i386
+	@$(LD) -r -b binary -o tmp/repl32 repl -m elf_i386
 	@echo -n ", debug-32: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl32 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embed32d \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m32
@@ -205,7 +205,7 @@ ifeq ($(HAS_32CDEFS),1)
 	fi
 endif
 ifeq ($(HAS_64CDEFS),1)
-	@ld -r -b binary -o tmp/repl64 repl -m elf_x86_64
+	@$(LD) -r -b binary -o tmp/repl64 repl -m elf_x86_64
 	@echo -n ", debug-64: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl64 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embed64d \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m64
@@ -226,7 +226,7 @@ ifeq ($(HAS_64CDEFS),1)
 	fi
 endif
 else
-	@ld -r -b binary -o tmp/repl repl -m elf_x86_64
+	@$(LD) -r -b binary -o tmp/repl repl -m elf_x86_64
 	@echo -n ", debug: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl64 -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o tmp/embedd \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
