@@ -245,6 +245,14 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 #define HAS_STRFTIME 1
 #endif
 
+#ifndef HAS_SENDFILE
+# if defined(_WIN32) || defined(__linux__)
+#define HAS_SENDFILE 1
+# else
+#define HAS_SENDFILE 0
+# endif
+#endif
+
 // floating point numbers (inexact numbers in terms of lisp) support
 #ifndef OLVM_INEXACTS
 #define OLVM_INEXACTS 1
@@ -400,7 +408,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 #	include "stdlib-ext.h"  // own win32 implementation
 #endif
 
-#if HAS_SOCKETS
+#if HAS_SENDFILE
 #	include <sys/sendfile.h>
 #endif
 
@@ -3010,6 +3018,9 @@ loop:;
 		#endif
 		#if HAS_STRFTIME
 			| 000200000
+		#endif
+		#if HAS_SENDFILE
+			| 000400000
 		#endif
 		);
 		ip += 1; break;
