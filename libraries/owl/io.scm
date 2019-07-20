@@ -78,17 +78,16 @@
       (define stderr (vm:cast 2 type-port))
 
       (define (sys:read fd maxlen)         (syscall2 0 fd maxlen))
-      (define (sys:write fd buffer length) (syscall 1 fd buffer length))
+      (define (sys:write fd buffer length) (syscall2 1 fd buffer length))
 
       ; low-level file open/close functions
       (define (sys:open path mode)
          (cond
             ((c-string path) =>
-               (λ (path) (syscall 2 path mode #false)))
-            (else #false)))
+               (λ (path) (syscall2 2 path mode)))))
 
       (define (sys:close fd)
-         (syscall 3 fd #false #false))
+         (syscall2 3 fd))
 
 
       ;;; -----------------------------------------------------------

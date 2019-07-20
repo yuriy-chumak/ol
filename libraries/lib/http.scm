@@ -179,7 +179,7 @@
                                  (print "ok."))
                               #false))
                   (loop stream)))))
-      (print id (if (syscall 3 fd #f #f) ": socket closed" ": can't close socket"))
+      (print id (if (syscall2 3 fd) ": socket closed" ": can't close socket"))
       (print "on-accept :" id " done.")
       (let*((ss2 ms2 (clock)))
          (print "# " (timestamp) ": request " id " processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))

@@ -83,14 +83,21 @@
                (CDR
                   `(trying to get ,cdr of a non-pair ,a))
 
+               ; ------------------------------------------------------------
                ; syscall errors:
                (62000
                   `(too ,(if (> a b) 'many 'few) arguments given to syscall))
 
                (62001
-                  `(syscall argument ,a is not a number))
-               (62002
                   `(syscall argument ,a is not a port))
+               (62002
+                  `(syscall argument ,a is not a number))
+               (62003
+                  `(syscall argument ,a is not a reference))
+               (62004
+                  `(syscall argument ,a is not a binary sequence))
+               (62005
+                  `(syscall argument ,a is not a string))
 
 
                ;; (62000 ; syscall number is not a number
@@ -101,7 +108,9 @@
                ;; (62002 ;
                ;;    `(syscall "> " ,a is not a port))
                (else
-                  `(,(primop-name opcode) reported error ": " ,a " " ,b)))))
+                  (if (less? opcode 256)
+                     `(,(primop-name opcode) reported error ": " ,a " " ,b)
+                     `(,a " " ,b))))))
          ;   ;((eq? opcode 52)
          ;   ;   `(trying to get car of a non-pair ,a))
          ;   (else

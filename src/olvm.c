@@ -3145,14 +3145,26 @@ loop:;
 		if (argc == 0)
 			FAIL(62000, I(0), I(1));
 		--argc; // skip syscall number
-		word* r = RFALSE;  // default returned value is #false
+		word* r = RFALSE;  // by default returning #false
 
-		#define CHECK_NUMBER(arg) if (!is_fixp(arg)) FAIL(62001, arg, IFALSE);
-		#define CHECK_PORT(arg)   if (!is_port(arg)) FAIL(62002, arg, IFALSE);
+		// safety checking macro
 		#define CHECK_ARGC_EQ(n)  if (argc - n) FAIL(62000, I(argc), I(n)); // === (arg != n)
-		#define CHECK_ARGC(a, b)  if (argc < a) FAIL(62000, I(argc), I(a)) else \
-                                  if (argc > b) FAIL(62000, I(argc), I(b));
+		#define CHECK_ARGC(a, b)  if (argc < a) FAIL(62000, I(argc), I(a))\
+                             else if (argc > b) FAIL(62000, I(argc), I(b));
+		// numbers checking
+		#define CHECK_TYPE(arg, type, error) if (!is_##type(arg)) FAIL(I(error), arg, IFALSE)
+		#define CHECK_TYPE_OR_FALSE(arg, type, error) \
+		                                     if (!is_##type(arg) && !(arg == IFALSE)) FAIL(I(error), arg, IFALSE)
 
+		#define CHECK_PORT(arg)      CHECK_TYPE(arg, port, 62001)
+		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)
+		#define CHECK_REFERENCE(arg) CHECK_TYPE(arg, reference, 62003)
+		#define CHECK_BITSTREAM(arg) CHECK_TYPE(arg, bitstream, 62004)
+		#define CHECK_STRING(arg)    CHECK_TYPE(arg, string, 62005)
+
+		#define CHECK_NUMBER_OR_FALSE(arg)   CHECK_TYPE_OR_FALSE(arg, number, 62002)
+
+		// continue syscall handler:
 		CHECK_NUMBER(A0);
 		word op = value (A0);
 
@@ -3174,18 +3186,21 @@ loop:;
 			*/
 			case SYSCALL_READ + SECCOMP:
 			case SYSCALL_READ: { //
-				CHECK_ARGC(1, 2); // port, count
-				CHECK_PORT(A1);
+				CHECK_ARGC(1, 2); // (port ?count)
+				if (argc > 0) CHECK_PORT(A1);
+				if (argc > 1) CHECK_NUMBER_OR_FALSE(A2);
 
 				int portfd = port(A1);
-				int size = argc == 2 ? number(A2) : -1; // в байтах
-				if (size < 0)
-#ifdef FIONREAD
-					if (ioctl(portfd, FIONREAD, &size) == -1)
-#endif
-						size = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
+				int count = (argc > 1 && A2 != IFALSE)
+									? number(A2) : -1; // в байтах
 
-				int words = ((size + W - 1) / W) + 1; // в словах
+				if (count < 0)
+#ifdef FIONREAD
+					if (ioctl(portfd, FIONREAD, count) == -1)
+#endif
+						count = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
+
+				int words = ((count + W - 1) / W) + 1; // в словах
 				if (words > (heap->end - fp)) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
@@ -3197,22 +3212,144 @@ loop:;
 					ip = (unsigned char*)this + dp;
 				}
 
-				int got;
-				got = ol->read(portfd, (char *) &fp[1], size, ol->userdata);
+				int read;
+				read = ol->read(portfd, (char *) &fp[1], count, ol->userdata);
 				int err = errno;
 
-				if (got > 0) {
+				if (read > 0) {
 					// todo: обработать когда приняли не все,
 					//	     вызвать gc() и допринять. и т.д. (?)
-					r = new_bytevector (TBVEC, got);
+					r = new_bytevector(read);
 				}
-				else if (got == 0)
-					r = REOF;
+				else if (read == 0)
+					r = (word*) IEOF;
 				else if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
-					r = RTRUE;
+					r = (word*) ITRUE;
 
 				break;
 			}
+
+			/*! \subsection write
+			* \brief (syscall **1** port object count) -> number | #false
+			*
+			* Writes up to *count* bytes from the binary *object* to the output port *port*.
+			*
+			* \param port output port
+			* \param object binary object data to write
+			* \param count count bytes to write, negative value means "whole object"
+			*
+			* \return count of written data bytes if success,
+			*         0 if file busy,
+			*         #false if error
+			*
+			* http://man7.org/linux/man-pages/man2/write.2.html
+			*/
+			case SYSCALL_WRITE + SECCOMP:
+			case SYSCALL_WRITE: {
+				CHECK_ARGC(2, 3); // (port object ?count)
+				if (argc > 0) CHECK_PORT(A1);
+				if (argc > 1) CHECK_BITSTREAM(A2); // we write only binary objects
+				if (argc > 2) CHECK_NUMBER_OR_FALSE(A3);
+
+				int portfd = port(A1);
+				int count = (argc > 2 && A3 != IFALSE)
+									? number(A3) : -1; // в байтах
+
+				word *buff = (word *) A2;
+				int length = bitstream_size(buff);
+				if (count > length || count < 0)
+					count = length;
+
+				int wrote;
+				wrote = ol->write(portfd, (char*)&buff[1], count, ol->userdata);
+
+				if (wrote > 0)
+					r = (word*) itoun (wrote);
+				else
+				if (errno == EAGAIN || errno == EWOULDBLOCK)
+					r = (word*) I(0);
+
+				break;
+			}
+
+			/*! \subsection open
+			* \brief (syscall **2** pathname flags mode) -> port | #false
+			*
+			* Opens port to the file specified by *pathname* (and, possibly,
+			*  creates it) using specified *mode* and *flags*.
+			*
+			* \param pathname filename with/without path, c-like string(!)
+			* \param mode open mode (0 for read, #o100 for write, for example)
+			* \param flags additional flags in POSIX sence
+			*
+			* \return port if success,
+			*         #false if error
+			*
+			* http://man7.org/linux/man-pages/man2/open.2.html
+			*/
+			case SYSCALL_OPEN: {
+				CHECK_ARGC(2, 3);
+				if (argc > 0) CHECK_STRING(A1);
+				if (argc > 1) CHECK_NUMBER(A2);
+				if (argc > 2) CHECK_NUMBER_OR_FALSE(A3);
+
+				char* s = string(A1);
+				int flags = number(A2);
+				int mode = (argc > 2 && A3 != IFALSE)
+			 		? number(A3)
+					: S_IRUSR | S_IWUSR;
+
+				int file = ol->open(s, flags, mode, ol);
+				if (file == -1)
+					break;
+
+				// regular file? (id less than VMAX, then we return port as value)
+				if ((unsigned)file <= VMAX) {
+					struct stat sb; // do not open directories
+					if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
+						close(file);
+						break;
+					}
+
+					set_blocking(file, 0); // and set "non-blocking" mode
+					r = (word*) make_port(file);
+				}
+				else // port as reference
+					r = (word*) new_port(file);
+
+				break;
+			}
+
+			/*! \subsection close
+			* \brief (syscall **3** port) -> #true | #false
+			*
+			* Closes a port, so that it no longer refers to any file and may be used.
+			*
+			* \param port valid port
+			*
+			* \return #true if success,
+			*         #false if error
+			*
+			* http://man7.org/linux/man-pages/man2/close.2.html
+			*/
+			case SYSCALL_CLOSE: {
+				CHECK_ARGC_EQ(1);
+				CHECK_PORT(A1);
+
+				int portfd = port(A1);
+
+				if (ol->close(portfd, ol) == 0)
+					r = (word*)ITRUE;
+		#ifdef _WIN32
+				// Win32 socket workaround
+				else if (errno == EBADF) {
+					if (closesocket(portfd) == 0)
+						r = (word*)ITRUE;
+				}
+		#endif
+				break;
+			}
+
 			// ...
 
 			default:
@@ -3247,117 +3384,6 @@ loop:;
 		word* result = (word*)IFALSE;  // default returned value is #false
 
 		switch (op + sandboxp) {
-
-		/*! \subsection write
-		 * \brief (syscall **1** port object count) -> number | #false
-		 *
-		 * Writes up to *count* bytes from the binary *object* to the output port *port*.
-		 *
-		 * \param port output port
-		 * \param object binary object data to write
-		 * \param count count bytes to write, negative value means "whole object"
-		 *
-		 * \return count of written data bytes if success,
-		 *         0 if file busy,
-		 *         #false if error
-		 *
-		 * http://man7.org/linux/man-pages/man2/write.2.html
-		 */
-		case SYSCALL_WRITE + SECCOMP:
-		case SYSCALL_WRITE: {
-			CHECK(is_port(a), a, SYSCALL);
-			int portfd = port(a);
-			int count = c == IFALSE ? -1 : svtoi(c);
-
-			word *buff = (word *) b;
-			if (!is_blob(buff))
-				break;
-			int length = blob_size(buff);
-			if (count > length || count < 0)
-				count = length;
-
-			int wrote;
-			wrote = ol->write(portfd, (char*)&buff[1], count, ol->userdata);
-
-			if (wrote > 0)
-				result = (word*) itoun (wrote);
-			else if (errno == EAGAIN || errno == EWOULDBLOCK)
-				result = (word*) I(0);
-
-			break;
-		}
-
-		/*! \subsection open
-		 * \brief (syscall **2** pathname mode flags) -> port | #false
-		 *
-		 * Opens port to the file specified by *pathname* (and, possibly, creates it) using specified *mode*.
-		 *
-		 * \param pathname filename with/without path, c-like string
-		 * \param mode open mode (0 for read, #o100 for write, for example)
-		 * \param flags additional flags in POSIX sence
-		 *
-		 * \return port if success,
-		 *         #false if error
-		 *
-		 * http://man7.org/linux/man-pages/man2/open.2.html
-		 */
-		case SYSCALL_OPEN: {
-			CHECK(is_string(a), a, SYSCALL);
-			char* s = string (a);
-			int flags = value(b); // 0 - read, 2 - write
-			int mode = c == IFALSE
-				? S_IRUSR | S_IWUSR
-				: value (c);
-
-			int file = ol->open(s, flags, mode, ol);
-			if (file == -1)
-				break;
-
-			// regular file?
-			if ((unsigned)file <= VMAX) {
-				struct stat sb;
-				if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
-					close(file);
-					break;
-				}
-
-				set_blocking(file, 0);
-				result = (word*) make_port(file);
-			}
-			else
-				result = (word*) new_port(file);
-
-			break;
-		}
-
-		/*! \subsection close
-		 * \brief (syscall **3** port . .) -> #true | #false
-		 *
-		 * Closes a port, so that it no longer refers to any file and may be used.
-		 *
-		 * \param port valid port
-		 *
-		 * \return #true if success,
-		 *         #false if error
-		 *
-		 * http://man7.org/linux/man-pages/man2/close.2.html
-		 */
-		case SYSCALL_CLOSE: {
-			CHECK(is_port(a), a, SYSCALL);
-			int portfd = port(a);
-
-			if (ol->close(portfd, ol) == 0)
-				result = (word*)ITRUE;
-	#ifdef _WIN32
-			// Win32 socket workaround
-			else if (errno == EBADF) {
-				if (closesocket(portfd) == 0)
-					result = (word*)ITRUE;
-			}
-	#endif
-
-			break;
-		}
 
 		/*! \subsection stat
 		 * \brief (syscall **4** port/path . .) -> (vector ...) | #false
