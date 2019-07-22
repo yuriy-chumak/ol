@@ -10,7 +10,7 @@
    rand-range!
 
    ; (shuffle! t)
-   ; shuffle a tuple, list (destructive)
+   ; shuffle a vector, list (destructive)
    shuffle!
 
 
@@ -51,9 +51,9 @@
          (+ o lo))
       (runtime-error "rand-range! bad range: " (list lo hi))))
 
-(define (shuffle! o) ; перемешивалка для tuple
+(define (shuffle! o) ; перемешивалка для vector, list, string
    (cond
-      ((tuple? o)
+      ((vector? o)
          (for-each (lambda (i)
                (let ((a (ref o i))
                      (j (+ 1 (rand! i))))

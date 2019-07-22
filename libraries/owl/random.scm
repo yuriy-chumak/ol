@@ -40,7 +40,6 @@
       (owl math)
       (owl lazy)
       (owl list)
-      (owl tuple)
       (otus blobs)
       (owl list-extra)
       (owl rlist)
@@ -136,25 +135,25 @@
             ((eq? (type seed) type-fix+)
                ;; promote to bignum and random state
                (lets ((seed (* (+ seed 1) 11111111111111111111111)))
-                  (tuple #true (rand-walk rand-acc seed null) seed)))
+                  [#true (rand-walk rand-acc seed null) seed]))
             ((eq? (type seed) type-int+)
                ;; promote to random state
-               (tuple #true (rand-walk rand-acc seed null) seed))
+               [#true (rand-walk rand-acc seed null) seed])
             (else
                (lets ((st a b seed))
                   (cond
                      ((= a b)
                         ;; friends meet, we're going to need a bigger track
                         (let ((ap (ncons (if st rand-acc rand-mult)  a)))
-                           (tuple #true (rand-walk rand-acc ap null) ap)))
+                           [#true (rand-walk rand-acc ap null) ap]))
                      (st
                         ;; hare and tortoise
-                        (tuple #false
+                        [#false
                            (rand-walk rand-acc a null)
-                           (rand-walk rand-acc b null)))
+                           (rand-walk rand-acc b null)])
                      (else
                         ;; just hare
-                        (tuple #true (rand-walk rand-acc a null) b)))))))
+                        [#true (rand-walk rand-acc a null) b]))))))
 
       ;;; Mersenne Twister (missing)
 
@@ -301,7 +300,7 @@
             ((pair? obj)
                (lets ((rs n (rand rs (length obj))))
                   (values rs (lref obj n))))
-            ((tuple? obj)
+            ((vector? obj)
                (lets ((rs n (rand rs (size obj))))
                   (values rs (ref obj (+ n 1)))))
             ((blob? obj)

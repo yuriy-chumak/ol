@@ -12,7 +12,7 @@
       (let loop ((bindings #empty))
          (let*((envelope (wait-mail))
                (sender msg envelope))
-            ; only tuples allowed
+            ; only vectors allowed
             (let ((index (ref msg 1)))
                (unless index   ; #false means "add new parameter"
                   (let*((index _ (vm:add (get bindings 0 0) 1))
@@ -34,14 +34,14 @@
       (define (return index)
          (case-lambda
             ((); just return value
-               (interact server (tuple index)))
+               (interact server [index]))
             ((new)
-               (interact server (tuple index new)))))
+               (interact server [index new]))))
       (case-lambda
          ((init)
-            (return (interact server (tuple #f init))))
+            (return (interact server [#false init])))
          ((init converter)
-            (return (interact server (tuple #f (converter init) converter)))))))
+            (return (interact server [#false (converter init) converter]))))))
 
    (define-syntax parameterize
       (syntax-rules ()

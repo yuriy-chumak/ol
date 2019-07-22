@@ -25,7 +25,7 @@
 ;             (vec (list->vector (random-numbers rst n n)))
 ;             (rst end (rand rst n))
 ;             (rest start (rand rst end)))
-;            (tuple vec start end)))
+;            [vec start end]))
 ;      (liter rand-succ (lets ((ss ms (clock))) (+ (* ss 1000) ms))))
 ;   (λ (t) (lets ((v s e t)) (force (vec-iter-range v s e))))
 ;   (λ (t) (lets ((v s e t)) (map (λ (p) (blob-ref v p)) (lrange s 1 e)))))

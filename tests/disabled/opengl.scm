@@ -130,11 +130,11 @@
 
 
 ; пример, как можно передать в функцию массив указателей на строки:
-(glShaderSource vs 2 (tuple (c-string "#version 120 // OpenGL 2.1\n")
-                            (c-string "
+(glShaderSource vs 2 [(c-string "#version 120 // OpenGL 2.1\n")
+                      (c-string "
    void main() {
       gl_Position = gl_Vertex; // - vec4(1.0, 1.0, 0.0, 0.0); // gl_ModelViewMatrix * gl_Vertex
-   }")) null)
+   }")] null)
 (glCompileShader vs)
   (define isCompiled "word")
   (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
@@ -154,7 +154,7 @@
 ;; полезные шейдеры:
 ;;  http://glslsandbox.com/e#19171.3 - цифровое табло
 (define fs (glCreateShader GL_FRAGMENT_SHADER))
-(glShaderSource fs 1 (tuple (c-string (file->string
+(glShaderSource fs 1 [(c-string (file->string
   (case SHADER_NUM
     (2 "raw/geometry.fs")
     (3 "raw/water.fs")
@@ -162,7 +162,7 @@
     (5 "raw/minecraft.fs")
     (6 "raw/moon.fs")
     (0 "raw/black.fs")
-    (1 "raw/itsfullofstars.fs"))))) null)
+    (1 "raw/itsfullofstars.fs"))))] null)
 (glCompileShader fs)
   (define isCompiled "word")
   (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)

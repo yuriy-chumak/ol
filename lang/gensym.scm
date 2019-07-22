@@ -8,7 +8,6 @@
       (owl symbol)
       (owl string)
       (owl list)
-      (owl tuple)
       (owl render)
       (lang intern)
       (owl math))
@@ -83,7 +82,7 @@
 
       (define (gensym exp)
          (lets
-            ((id (+ 1 (if (tuple? exp) (max-ast-id exp 0) (max-gensym-id exp 0))))
+            ((id (+ 1 (if (vector? exp) (max-ast-id exp 0) (max-gensym-id exp 0))))
              (digits (cons 103 (render id null))))
             (string->symbol (runes->string digits))))
 

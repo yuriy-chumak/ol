@@ -42,7 +42,7 @@
                   (* get-rest-of-line))
                row)))
       )
-         (cons (tuple columns rows colors 1) bitmap)))
+         (cons [columns rows colors 1] bitmap)))
 ))
 
 (import (file xpm))

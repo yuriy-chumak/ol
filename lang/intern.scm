@@ -30,7 +30,6 @@
       (owl math)
       (owl io)
       (owl ff)
-      (owl tuple)
       (owl symbol))
 
    (begin

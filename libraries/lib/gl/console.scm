@@ -384,27 +384,27 @@
                   (this itself)))))))
 
    (define (create-window x y width height)
-      (interact 'windows (tuple 'create x y width height)))
+      (interact 'windows ['create x y width height]))
    (define (destroy-window window)
-      (mail 'windows (tuple 'destroy window)))
+      (mail 'windows ['destroy window]))
 
    (define (show-window id)
-      (mail 'windows (tuple 'set-window-visibility id #true)))
+      (mail 'windows ['set-window-visibility id #true]))
    (define (hide-window id)
-      (mail 'windows (tuple 'set-window-visibility id #false)))
+      (mail 'windows ['set-window-visibility id #false]))
 
    (define (set-window-writer id writer)
-      (mail 'windows (tuple 'set-window-writer id writer)))
+      (mail 'windows ['set-window-writer id writer]))
 
    (define (set-window-background id color)
-      (mail 'windows (tuple 'set-window-background id color)))
+      (mail 'windows ['set-window-background id color]))
 
    (define (set-window-border id color)
-      (mail 'windows (tuple 'set-window-border id color)))
+      (mail 'windows ['set-window-border id color]))
 
    (define (render-windows)
-      (interact 'windows (tuple 'draw)))
+      (interact 'windows ['draw]))
 
    (define (windows-make-selection x y)
-      (interact 'windows (tuple 'make-selection x y)))
+      (interact 'windows ['make-selection x y]))
 ))

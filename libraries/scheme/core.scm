@@ -1076,7 +1076,6 @@
       ; This data types related to olvm
       ;     - not a part of r5rs -
       (define type-pair              TPAIR)   ; reference
-      (define type-tuple             TTUPLE)  ; reference (todo: remove)
       (define type-vector            TVECTOR) ; reference
       (define type-string            TSTRING) ; reference, blob / todo: -> 35 (#b100000 + 3)?
       (define type-symbol            TSYMBOL) ; reference
@@ -1973,26 +1972,8 @@
             ((let*/cc var . body)
                (call/cc (λ (var) (let* . body))))))
 
-      ;; used syscalls
-      (define (exec function . args) (syscall 59 function args))
-      (define (yield)                (syscall 24))
-
-      (define (halt n)               (vm:exit n))
-
       ;; stop the vm *immediately* without flushing input or anything else with return value n
-      ;; make thread sleep for a few thread scheduler rounds
-      (define (set-ticker-value n) (syscall 1022 n))
-      (define (wait n) ; is it required?
-         (if (eq? n 0)
-            0
-            (let* ((n _ (vm:sub n 1)))
-               (set-ticker-value 0)
-               (wait n))))
-
-
-      ;; special things exposed by the vm
-      (define (set-memory-limit n) (syscall 1007 n))
-      (define (get-memory-limit)   (syscall 1009))
+      (define (halt n)               (vm:exit n))
 )
 ; ---------------------------
    (export
@@ -2055,7 +2036,6 @@
       type-vector-leaf
       type-bytevector
       ;type-ff-black-leaf
-      type-tuple ; todo: remove
       type-vector
       type-symbol
       type-const
@@ -2125,10 +2105,7 @@
 
       list?
 
-      exec yield
-      halt wait
-      set-ticker-value
-      set-memory-limit get-memory-limit
+      halt
 
       set-car! set-cdr!
 

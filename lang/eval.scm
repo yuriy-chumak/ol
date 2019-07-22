@@ -154,7 +154,7 @@
          (list
                             ;; macres have already been expanded
             apply-env       ;; apply previous definitions
-            sexp->ast       ;; safe sane tupled structure
+            sexp->ast       ;; safe sane vectored structure
             fix-points      ;; make recursion explicit <3
             alpha-convert   ;; assign separate symbols to all bound values
             cps             ;; convert to continuation passing style

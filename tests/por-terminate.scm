@@ -1,3 +1,5 @@
+(import (otus vm))
+
 (define (iter-ret n r)
    (if (= n 0)
       r

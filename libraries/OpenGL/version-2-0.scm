@@ -45,7 +45,7 @@ glDrawArrays
 
 (define GLchar* type-string)
 (define GLchar** (fft* GLchar*))
-;(define GLchar** type-tuple)
+;(define GLchar** type-vector)?
 
 (define GLint* (fft* GLint))
 (define GLsizei* (fft* GLsizei))

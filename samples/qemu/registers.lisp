@@ -16,7 +16,7 @@
                (skip get-whitespaces)
                (flags get-hex)
                (skip get-rest-of-line)) ; todo: check "DPL=" etc.
-      (tuple selector base limit flags)))
+      [selector base limit flags]))
 (define (get-xDT-values name)
    (let-parses((skip (get-word name #t))
                (skip (get-imm #\=))
@@ -25,7 +25,7 @@
                (skip get-whitespaces)
                (limit get-hex)
                (skip get-rest-of-line))
-      (tuple base limit)))
+      [base limit]))
 
 (define gdb-monitor-info-registers-parser
    (let-parses(; qemu/target/i386/helper.c
@@ -88,36 +88,36 @@
          (efl . ,(bytes->number %efl 16))
 
          ; сегментные регистры (селекторы)
-         (es . ,(tuple
+         (es . ,[
                   (bytes->number (ref %es 1) 16) ; selector value
                   (bytes->number (ref %es 2) 16) ; base
                   (bytes->number (ref %es 3) 16) ; limit
-                  (bytes->number (ref %es 4) 16))); flags
-         (cs . ,(tuple
+                  (bytes->number (ref %es 4) 16)]); flags
+         (cs . ,[
                   (bytes->number (ref %cs 1) 16)
                   (bytes->number (ref %cs 2) 16)
                   (bytes->number (ref %cs 3) 16)
-                  (bytes->number (ref %cs 4) 16)))
-         (ss . ,(tuple
+                  (bytes->number (ref %cs 4) 16)])
+         (ss . ,[
                   (bytes->number (ref %ss 1) 16)
                   (bytes->number (ref %ss 2) 16)
                   (bytes->number (ref %ss 3) 16)
-                  (bytes->number (ref %ss 4) 16)))
-         (ds . ,(tuple
+                  (bytes->number (ref %ss 4) 16)])
+         (ds . ,[
                   (bytes->number (ref %ds 1) 16)
                   (bytes->number (ref %ds 2) 16)
                   (bytes->number (ref %ds 3) 16)
-                  (bytes->number (ref %ds 4) 16)))
-         (fs . ,(tuple
+                  (bytes->number (ref %ds 4) 16)])
+         (fs . ,[
                   (bytes->number (ref %fs 1) 16)
                   (bytes->number (ref %fs 2) 16)
                   (bytes->number (ref %fs 3) 16)
-                  (bytes->number (ref %fs 4) 16)))
-         (gs . ,(tuple
+                  (bytes->number (ref %fs 4) 16)])
+         (gs . ,[
                   (bytes->number (ref %gs 1) 16)
                   (bytes->number (ref %gs 2) 16)
                   (bytes->number (ref %gs 3) 16)
-                  (bytes->number (ref %gs 4) 16)))
+                  (bytes->number (ref %gs 4) 16)])
 
          ; дескрипторы таблиц
          (ldt . ,%ldt)
@@ -142,7 +142,7 @@
 
 ; функция, возвращающая текущее значение регистра
 (define (% reg)
-   (interact 'config (tuple 'get reg)))
+   (interact 'config ['get reg]))
 
 ; селектор
 (define (selector-value selector)
@@ -180,21 +180,22 @@
 
       ; запомним значения регистров, чтобы к ним могли обращаться отовсюду (и даже из скриптов)
       (for-each (lambda (i)
-         (mail 'config (tuple 'set (car i) (cdr i))))
-         `((eax . ,eax) (ebx . ,ebx) (ecx . ,ecx) (edx . ,edx)
-           (esp . ,esp) (ebp . ,ebp) (esi . ,esi) (edi . ,edi)
+            (mail 'config ['set (car i) (cdr i)]))
+         `(
+            (eax . ,eax) (ebx . ,ebx) (ecx . ,ecx) (edx . ,edx)
+            (esp . ,esp) (ebp . ,ebp) (esi . ,esi) (edi . ,edi)
 
-           (eip . ,eip) (efl . ,efl)
+            (eip . ,eip) (efl . ,efl)
 
-           (es . ,es) (cs . ,cs) (ss . ,ss) (ds . ,ds)
-           (fs . ,fs) (gs . ,gs)
+            (es . ,es) (cs . ,cs) (ss . ,ss) (ds . ,ds)
+            (fs . ,fs) (gs . ,gs)
          ))
 
       ; ну и для удобства, просто так, заведем их как глобальные
       ; тоже синтаксический сахар
       ; но надо помнить, что в функциях их использовать нельзя
       (for-each (lambda (i)
-         (interact 'evaluator (list 'setq (car i) (cdr i))))
+            (interact 'evaluator (list 'setq (car i) (cdr i))))
          `(
             (%eax . ,eax) (%ebx . ,ebx) (%ecx . ,ecx) (%edx . ,edx)
             (%esp . ,esp) (%ebp . ,ebp) (%esi . ,esi) (%edi . ,edi)

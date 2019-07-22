@@ -309,12 +309,12 @@
          ; отправить назад результат работы алгоритма
          (mail sender
          (if (and (= x to-x) (= y to-y)) ; уже пришли
-            (tuple 0 0 #empty #empty)
+            [0 0 #empty #empty]
          (let step1 ((n 999); количество шагов поиска
                      (c-list-set #empty)
-                     (o-list-set (put #empty (hash xy)  (tuple xy #f  0 0 0))))
+                     (o-list-set (put #empty (hash xy)  [xy #f  0 0 0])))
             (if (eq? o-list-set #empty)
-               (tuple 0 0 #empty #empty) ; некуда идти - постоим
+               [0 0 #empty #empty] ; некуда идти - постоим
 
             ; найдем клетку с минимальной стоимостью:
             (let*((f (ff-fold (lambda (s key value)
@@ -339,12 +339,11 @@
                      (let*((parent (ref (get c-list-set (hash xy) #f) 2)) ; todo: переделать
                            (parent-of-parent (ref (get c-list-set (hash parent) #f) 2)))
                         (if parent-of-parent (rev parent)
-                           (tuple
+                           (vector
                               (- (car xy) (car parent))
                               (- (cdr xy) (cdr parent))
                               c-list-set
-                              o-list-set
-                              ))))
+                              o-list-set))))
 
                   ; 5: Проверяем все соседние клетки.
                   ;  Игнорируем те, которые находятся в закрытом списке или непроходимы
@@ -368,11 +367,11 @@
                                              ; если эта клетка уже в списке
                                              (if got
                                                 (if (< G (ref got 3)) ; но наш путь короче
-                                                   (put n (hash v)  (tuple v xy  G H (+ G H)))
+                                                   (put n (hash v)  [v xy  G H (+ G H)])
                                                    ;else ничего не делаем
                                                    n)
                                                 ; else
-                                                (put n (hash v)  (tuple v xy  G H (+ G H)))))
+                                                (put n (hash v)  [v xy  G H (+ G H)])))
                                           n))
                                        o-list-set (list
                                                       (cons x (- y 1))

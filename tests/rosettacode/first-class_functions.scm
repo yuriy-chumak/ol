@@ -7,7 +7,7 @@
 (define (quad x) (* x x x x))
 (define (quad-root x) (sqrt (sqrt x)))
 
-(define collection (tuple quad quad-root))
+(define collection [quad quad-root])
 
 ; use functions as arguments to other functions
 ; and use functions as return values of other functions

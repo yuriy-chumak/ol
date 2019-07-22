@@ -7,6 +7,7 @@
   (import (scheme base) (scheme srfi-1)
       (owl parse)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
+      (otus vm)
       (only (lang intern) string->symbol))
 
 (begin
@@ -33,7 +34,6 @@
 
 
 (define (timestamp) (syscall 201 "%c"))
-(define (set-ticker-value n) (syscall 1022 n))
 
 ; -------------------------------------------
 ; http parser
@@ -122,7 +122,7 @@
                   (-          (get-imm #\space))
                   (version (get-greedy+ (get-rune-if uri?))) ; HTTP/x.x
                   (-          (get-imm #\return)) (skip (get-imm #\newline))) ; end of request line
-      (tuple
+      (vector
          (runes->string method)
          (runes->string uri)
          (runes->string version))))
@@ -142,7 +142,7 @@
    (let-parses ((request-line get-request-line)
                   (headers-array (get-greedy* get-header-line))
                   (- (get-imm CR)) (- (get-imm LF)))   ; final CRLF
-      (tuple
+      (vector
          request-line (list->ff headers-array))))
 ;)
 
@@ -266,7 +266,8 @@
 (define (http:parse-url url)
 (let*((path u (get-path (string->runes url))))
    (let loop ((args #empty) (u u))
-      (if (null? u) (tuple path args)
+      (if (null? u)
+         [path args]
          (let*((kv u (get-keyvalue u)))
             (loop (put args (string->symbol (car kv)) (cdr kv)) u))))))
 
@@ -282,7 +283,8 @@
 (define (http:parse-url url)
 (let*((path u (get-path (string->runes url))))
    (let loop ((args #empty) (u u))
-      (if (null? u) (tuple path args)
+      (if (null? u)
+         [path args]
          (let*((kv u (get-keyvalue u)))
             (let ((key (car kv))
                   (value (cdr kv)))

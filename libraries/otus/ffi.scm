@@ -114,6 +114,9 @@
 (define (uname) (syscall 63))
 (define *uname* (syscall 63))
 
+(define (exec function . args) (syscall 59 function args))
+
+
 ; The MODE argument to `dlopen' contains one of the following:
 (define RTLD_LAZY         #x1) ; Lazy function call binding.
 (define RTLD_NOW          #x2) ; Immediate function call binding.

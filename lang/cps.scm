@@ -84,8 +84,8 @@
                         (list (mklambda formals body) rator)
                         env free)))
                (else
-                  (runtime-error "bad arguments for tuple bind: " rands)))
-            (runtime-error "bad arguments for tuple bind: " rands)))
+                  (runtime-error "bad arguments for vector bind: " rands)))
+            (runtime-error "bad arguments for vector bind: " rands)))
 
 
       ;; (a0 .. an) → (cons a0 (cons .. (cons an null))), modulo AST

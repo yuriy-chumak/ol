@@ -575,7 +575,7 @@
          (main #true 0))
 
       (else
-         (yield)
+         (syscall 24) ; yield
          (main #f (+ 1 progress)))))
 
 ; прикол в экране загрузки WinXP: пустой цикл.

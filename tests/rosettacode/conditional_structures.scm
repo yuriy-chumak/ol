@@ -34,8 +34,8 @@
    (else
       (print "cond: i don't know")))
 
-; tuple-case, smart tuple comparer with variables filling
-(case (tuple 'selector 1 2 3)
+; case, smart vector comparer with variables filling
+(case (vector 'selector 1 2 3)
    (['case1 x y]
       (print "case: case1 " x ", " y))
    (['selector x y z]

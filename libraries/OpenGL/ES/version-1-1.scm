@@ -1252,13 +1252,13 @@
    (let this ((dictionary #empty))
    (let* ((envelope (wait-mail))
          (sender msg envelope))
-      (tuple-case msg
-         ((debug)
+      (case msg
+         (['debug]
             (mail sender dictionary)
             (this dictionary))
 
          ; drawing
-         ((glBegin mode)
+         (['glBegin mode]
             (let*((dictionary (put dictionary 'mode mode))
                   (dictionary (put dictionary 'vertices #null))
                   (dictionary (put dictionary 'colors #null))
@@ -1268,10 +1268,10 @@
                                  (glGenBuffers 3 vbos)
                                  vbos)))))
                (this dictionary)))
-         ((glColor r g b a)
+         (['glColor r g b a]
             (let ((dictionary (put dictionary 'color (list r g b a))))
                (this dictionary)))
-         ((glVertex x y z)
+         (['glVertex x y z]
             (let*((dictionary (put dictionary 'vertices (append
                                  (get dictionary 'vertices '())
                                  (list x y z))))
@@ -1279,13 +1279,13 @@
                                  (get dictionary 'colors '())
                                  (get dictionary 'color default-color)))))
                (this dictionary)))
-         ((glTexCoord s t)
+         (['glTexCoord s t]
             (let*((dictionary (put dictionary 'texcoords (append
                                  (get dictionary 'texcoords '())
                                  (list s t)))))
                (this dictionary)))
 
-         ((glEnd)
+         (['glEnd]
             (let ((vbos (get dictionary 'vbos '(0 0)))
                   (mode (get dictionary 'mode GL_TRIANGLES))
                   (vertices (get dictionary 'vertices '()))
@@ -1346,18 +1346,18 @@
             (this dictionary)))))))
 
    (define (glBegin mode)
-      (mail 'opengl-compat (tuple 'glBegin mode)))
+      (mail 'opengl-compat ['glBegin mode]))
    (define (glEnd)
-      (interact 'opengl-compat (tuple 'glEnd)))
+      (interact 'opengl-compat ['glEnd]))
 
    (define (glVertex2f x y)
-      (mail 'opengl-compat (tuple 'glVertex x y 0)))
+      (mail 'opengl-compat ['glVertex x y 0]))
 
    (define (glColor3f x y z)
-      (mail 'opengl-compat (tuple 'glColor x y z 1)))
+      (mail 'opengl-compat ['glColor x y z 1]))
 
    (define (glTexCoord2f s t)
-      (mail 'opengl-compat (tuple 'glTexCoord s t)))
+      (mail 'opengl-compat ['glTexCoord s t]))
 
    (define glOrtho glOrthof)
 

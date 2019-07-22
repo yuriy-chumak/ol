@@ -12,10 +12,10 @@
 
    (begin
       (define (tuple? x) 
-         (eq? (type x) type-tuple))
+         (eq? (type x) type-vector))
 
       (define (list->tuple lst)
-         (vm:make type-tuple lst))
+         (vm:make type-vector lst))
 
       (define (read-tuple tuple pos lst)
          (if (= pos 0)

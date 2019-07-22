@@ -24,9 +24,9 @@
 ; where body:
 ;   #('tag #(attributes) '(children))
 ; where child:
-;   tuple if tag or string if value
+;   vector if tag or string if value
 
-; legend: #[] is tuple
+; legend: #[] is vector
 ;         #() is ff (dictionary) with symbols as keys
 
 (begin
@@ -89,7 +89,7 @@
                            (* (get-imm #\>)))
                         body)))
                   (* skip-whitespaces))
-               (tuple
+               (vector
                   (string->symbol (runes->string name))
                   (list->ff attributes)
                   body)))

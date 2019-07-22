@@ -1,5 +1,7 @@
 ; echo server
 
+(import (otus vm))
+
 (define (create-socket) (syscall 41))
 (define (bind socket port) (syscall 49 socket port))
 (define (listen socket) (syscall 50 socket))

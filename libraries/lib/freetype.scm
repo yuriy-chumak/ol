@@ -187,7 +187,7 @@
                      (buffer* (extract-void* bitmap 12))
                      (left (extract-number bitmap 24 4)) ; 100-76
                      (top (extract-number bitmap 28 4))) ; 104-76
-                  (tuple left width top height buffer*))))
+                  [left width top height buffer*])))
       ))
    (else
       (begin
@@ -202,5 +202,5 @@
                      (buffer* (extract-void* bitmap 16))
                      (left (extract-number bitmap 40 4))
                      (top (extract-number bitmap 44 4)))
-                  (tuple left width top height buffer*)))))))
+                  [left width top height buffer*]))))))
 )

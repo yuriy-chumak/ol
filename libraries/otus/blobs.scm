@@ -214,7 +214,7 @@
       ;;; Vector construction
       ;;;
 
-      ; note, a blank vector must use a raw one, since there are no such things as 0-tuples
+      ; note, a blank vector must use a raw one, since there are no such things as 0-tuples (?)
       (define (make-leaf rvals raw?)
          (let ((vals (reverse rvals)))
             (if raw?

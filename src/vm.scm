@@ -1,5 +1,4 @@
 ; possible todos
-; todo: convert tuple to variable arity
 ; todo: convert arity checks 17 -> 25
 ; todo: переделать так, чтобы регистр возврата был самый первый, тогда можно будет обойтись без RET
 ; todo: план по слиянию new-object и new-raw-object, с одновременным

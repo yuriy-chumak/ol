@@ -12,7 +12,6 @@
 
       (owl list-extra)
       (owl math)
-      (owl tuple)
       (owl list)
       (owl symbol)
       (owl io) ; for display

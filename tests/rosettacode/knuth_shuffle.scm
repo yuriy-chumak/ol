@@ -2,9 +2,9 @@
 (define *include-dirs* (cons "tests/rosettacode" *include-dirs*))
 (import (otus random!))
 
-(define items (tuple 1 2 3 4 5 6 7 8 9))
+(define items [1 2 3 4 5 6 7 8 9])
 
-(print "tuple before: " items)
+(print "vector before: " items)
 (define (shuffle tp)
    (let ((items (vm:cast tp (type tp))))
       (for-each (lambda (i)
@@ -14,7 +14,7 @@
                (set-ref! items j a)))
          (reverse (iota (size items) 1)))
       items))
-(print "tuple after: " (shuffle items))
+(print "vector after: " (shuffle items))
 
 (define items (list 1 2 3 4 5 6 7 8 9))
 (print "list before: " items)

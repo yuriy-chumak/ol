@@ -57,7 +57,7 @@
    (define ANSI_BACKGROUND_CYAN    "\x1B;[46m")
    (define ANSI_BACKGROUND_WHITE   "\x1B;[47m")
 
-   (define ANSI_BACKGROUND_COLORS (tuple
+   (define ANSI_BACKGROUND_COLORS [
       ANSI_BACKGROUND_BLACK
       ANSI_BACKGROUND_RED
       ANSI_BACKGROUND_GREEN
@@ -65,9 +65,9 @@
       ANSI_BACKGROUND_BLUE
       ANSI_BACKGROUND_MAGENTA
       ANSI_BACKGROUND_CYAN
-      ANSI_BACKGROUND_WHITE))
+      ANSI_BACKGROUND_WHITE])
 
-   (define ANSI_COLORS (tuple
+   (define ANSI_COLORS [
       ANSI_BLACK
       ANSI_BLUE
       ANSI_GREEN
@@ -83,7 +83,7 @@
       ANSI_LIGHTRED
       ANSI_LIGHTMAGENTA
       ANSI_YELLOW
-      ANSI_WHITE))
+      ANSI_WHITE])
 
    (define BLACK         0)
    (define BLUE          1)

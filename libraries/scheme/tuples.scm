@@ -14,7 +14,7 @@
       (define-syntax tuple
          (syntax-rules ()
             ((tuple a . bs) ;; there are no such things as 0-tuples
-               (vm:new type-tuple a . bs))))
+               (vm:new type-vector a . bs))))
 
       ; replace this with typed destructuring compare later on
       (define-syntax tuple-case

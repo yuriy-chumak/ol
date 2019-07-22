@@ -1,4 +1,5 @@
 (import (owl random))
+(import (otus vm))
 
 (define (small-range? lo hi)
    (< (- hi lo) 100))

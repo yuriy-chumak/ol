@@ -39,7 +39,7 @@
 (import (scheme base))    ;; ... набор Scheme
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*libraries* *codes* *vm-args* stdin stdout stderr set-ticker-value build-start)
+,forget-all-but (*libraries* *codes* *vm-args* stdin stdout stderr build-start) ;set-ticker-value
 
 ;;;
 ;;; Time for a new REPL
@@ -109,7 +109,7 @@
 
 ;; (define error-tag "err")
 ;; (define (error? x)
-;;    (and (tuple? x)
+;;    (and (vector? x)
 ;;       (eq? (ref x 1) error-tag)))
 
 (import (owl time))
@@ -311,7 +311,7 @@
                                                                                        (else
                                                                                           *features*))))
                                                                      (*features* (let ((uname (syscall 63)))
-                                                                                    (if (tuple? uname)
+                                                                                    (if (vector? uname)
                                                                                        (append (list
                                                                                              (string->symbol (ref uname 1))  ; OS
                                                                                              (string->symbol (ref uname 5))) ; Platform

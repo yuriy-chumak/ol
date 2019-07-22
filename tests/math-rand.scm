@@ -141,89 +141,89 @@
 
 (define math-tests
 	(list
-		(tuple 'unary any 'add-double
-			(lambda (x) (= (+ x x) (* x 2))))
-		(tuple 'unary any 'add-double-int
-			(lambda (x) (= (+ x x) (* x 2))))
-		(tuple 'unary any-nz 'div-self-one
-			(lambda (x) (= 1 (/ x x))))
-		(tuple 'unary rat 'succ-greater
-			(lambda (x) (> (+ x 1) x)))	;; FIXME, make rat
-		(tuple 'unary rat 'pred-lesser
-			(lambda (x) (< (- x 1) x)))	;; FIXME, ditto
-		(tuple 'binary any any 'mul-add-1
-			(lambda (a b) (= (* a (+ b 1)) (+ (* a b) a))))
-		(tuple 'binary any any 'add-comm
-			(lambda (a b) (= (+ a b) (+ b a))))
-		(tuple 'binary any any 'mul-comm
-			(lambda (a b) (= (* a b) (* b a))))
-		(tuple 'binary any any 'add-cancel
-			(lambda (a b) (= a (- (+ a b) b))))
-		(tuple 'binary any any-nz 'mul-div-cancel	
-			(lambda (a b) (= a (/ (* a b) b))))
-		(tuple 'binary any any-nz 'div-mul-cancel 
-			(lambda (a b) (= a (* (/ a b) b))))
-		(tuple 'binary any any 'add-trans-one	
-			(lambda (a b) (= (+ a (+ b 1)) (+ (+ a b) 1))))
-		(tuple 'binary any any 'mul-trans-two 
-			(lambda (a b) (= (* a (* b 2)) (* (* a b) 2))))
+		['unary any 'add-double
+			(lambda (x) (= (+ x x) (* x 2)))]
+		['unary any 'add-double-int
+			(lambda (x) (= (+ x x) (* x 2)))]
+		['unary any-nz 'div-self-one
+			(lambda (x) (= 1 (/ x x)))]
+		['unary rat 'succ-greater
+			(lambda (x) (> (+ x 1) x))]	;; FIXME, make rat
+		['unary rat 'pred-lesser
+			(lambda (x) (< (- x 1) x))]	;; FIXME, ditto
+		['binary any any 'mul-add-1
+			(lambda (a b) (= (* a (+ b 1)) (+ (* a b) a)))]
+		['binary any any 'add-comm
+			(lambda (a b) (= (+ a b) (+ b a)))]
+		['binary any any 'mul-comm
+			(lambda (a b) (= (* a b) (* b a)))]
+		['binary any any 'add-cancel
+			(lambda (a b) (= a (- (+ a b) b)))]
+		['binary any any-nz 'mul-div-cancel	
+			(lambda (a b) (= a (/ (* a b) b)))]
+		['binary any any-nz 'div-mul-cancel 
+			(lambda (a b) (= a (* (/ a b) b)))]
+		['binary any any 'add-trans-one	
+			(lambda (a b) (= (+ a (+ b 1)) (+ (+ a b) 1)))]
+		['binary any any 'mul-trans-two 
+			(lambda (a b) (= (* a (* b 2)) (* (* a b) 2)))]
 ; FIXME!
-;		(tuple 'binary any any-nz 'div-twice 
-;			(lambda (a b)	(= (/ (/ a b) b) (/ a (* b b)))))
-		(tuple 'binary int int-nz 'rem-abs-less 
-			(lambda (a b) (< (abs (rem a b)) (abs b))))
-		(tuple 'binary int int-nz 'a=qb+r 	
-			(lambda (a b) (= a (+ (* (div a b) b) (rem a b)))))
-		(tuple 'binary int nat 'shift-cancel 
+;		['binary any any-nz 'div-twice 
+;			(lambda (a b)	(= (/ (/ a b) b) (/ a (* b b))))]
+		['binary int int-nz 'rem-abs-less 
+			(lambda (a b) (< (abs (rem a b)) (abs b)))]
+		['binary int int-nz 'a=qb+r 	
+			(lambda (a b) (= a (+ (* (div a b) b) (rem a b))))]
+		['binary int nat 'shift-cancel 
 			(lambda (a b)
-				(let ((b (band b #x1ff))) (= a (>> (<< a b) b)))))
-		(tuple 'binary int nat 'shift-is-expt
+				(let ((b (band b #x1ff))) (= a (>> (<< a b) b))))]
+		['binary int nat 'shift-is-expt
 			(lambda (a b)
 				(let ((b (band b #xff)))
-					(= (<< a b) (* a (expt 2 b))))))
-		(tuple 'binary int int-nz 'quotrem=quot-rem	
+					(= (<< a b) (* a (expt 2 b)))))]
+		['binary int int-nz 'quotrem=quot-rem	
 			(lambda (a b) 
 				(values-apply (quotrem a b)
 					(lambda (q r)
-						(and (= q (div a b)) (= r (rem a b)))))))
-		(tuple 'binary nat nat 'xor-trans
-			(lambda (a b) (= (bxor (bxor a b)  b) (bxor a (bxor b b)))))
-		(tuple 'binary nat-nz nat-nz 'logarithm
-			(lambda (n a) (lets ((n (max 2 n)) (m (log n a))) (and (>= (expt n m) a) (<= (expt n (max 0 (- m 1))) a)))))
-		(tuple 'binary int int 'gcd-swap 
-			(lambda (a b) (= (gcd a b) (gcd b a))))
-		(tuple 'binary int int 'gcd-sign 
-			(lambda (a b) (= (gcd (- 0 a) b) (gcd a b))))
-		(tuple 'unary int 'gcd-zero 
-			(lambda (a) (= (gcd a 0) (abs a))))
-		(tuple 'binary int int 'gcd-sign 
-			(lambda (a b) (= (gcd a (* a b)) (abs a))))
-		(tuple 'binary nat nat 'bitwise-misc
-			(lambda (a b) (= a (band a (bor a (bxor b b))))))
-		(tuple 'binary int-nz int-nz 'gcd-divides
+						(and (= q (div a b)) (= r (rem a b))))))]
+		['binary nat nat 'xor-trans
+			(lambda (a b) (= (bxor (bxor a b)  b) (bxor a (bxor b b))))]
+		['binary nat-nz nat-nz 'logarithm
+			(lambda (n a) (lets ((n (max 2 n)) (m (log n a))) (and (>= (expt n m) a) (<= (expt n (max 0 (- m 1))) a))))]
+		['binary int int 'gcd-swap 
+			(lambda (a b) (= (gcd a b) (gcd b a)))]
+		['binary int int 'gcd-sign 
+			(lambda (a b) (= (gcd (- 0 a) b) (gcd a b)))]
+		['unary int 'gcd-zero 
+			(lambda (a) (= (gcd a 0) (abs a)))]
+		['binary int int 'gcd-sign 
+			(lambda (a b) (= (gcd a (* a b)) (abs a)))]
+		['binary nat nat 'bitwise-misc
+			(lambda (a b) (= a (band a (bor a (bxor b b)))))]
+		['binary int-nz int-nz 'gcd-divides
 			(lambda (a b)
 				(let ((gab (gcd a b)))
-					(and (ediv a gab) (ediv b gab)))))
-		(tuple 'binary nat nat-nz 'mul-ediv-cancel
-			(lambda (a b) (= a (ediv (* a b) b))))
-		;(tuple 'binary nat nat-nz 'invmod-ok ; fixme, ints
+					(and (ediv a gab) (ediv b gab))))]
+		['binary nat nat-nz 'mul-ediv-cancel
+			(lambda (a b) (= a (ediv (* a b) b)))]
+		;['binary nat nat-nz 'invmod-ok ; fixme, ints
 		;	(lambda (a b)
 		;		(let ((ai (inv-mod a b)))
-		;			(if ai (= (rem (* a ai) b) 1) #true))))
-		(tuple 'unary nat-nz 'isqrt-ok
+		;			(if ai (= (rem (* a ai) b) 1) #true)))]
+		['unary nat-nz 'isqrt-ok
 			(lambda (a)
 				(if (eq? a 1) #true
-					(= a (isqrt (* a a))))))
-		(tuple 'trinary any any any 'add-assoc
+					(= a (isqrt (* a a)))))]
+		['trinary any any any 'add-assoc
 			(lambda (a b c)
-				(= (+ (+ a b) c) (+ a (+ b c)))))
-		(tuple 'trinary any any any 'mul-assoc
+				(= (+ (+ a b) c) (+ a (+ b c))))]
+		['trinary any any any 'mul-assoc
 			(lambda (a b c)
-				(= (* (* a b) c) (* a (* b c)))))
-		(tuple 'trinary any any any 'mul-add
+				(= (* (* a b) c) (* a (* b c))))]
+		['trinary any any any 'mul-add
 			(lambda (a b c)
-				(= (* a (+ b c)) (+ (* a b) (* a c)))))
-		;(tuple 'trinary nat nat nat-nz 'discrete-log ; fixme, ints
+				(= (* a (+ b c)) (+ (* a b) (* a c))))]
+		;['trinary nat nat nat-nz 'discrete-log ; fixme, ints
 		;	(lambda (a b c)
 		;		(let*
 		;			((n (+ 2 (rem c 1000)))
@@ -234,10 +234,10 @@
 		;			(if x
 		;				(if (= y (expt-mod a x n))
 		;					(begin
-		;						(print "dlp ok " (tuple y a x n))
+		;						(print "dlp ok " [y a x n])
 		;						#true)
 		;					#false)
-		;				#true))))
+		;				#true)))]
 ))
 
 (define (run-test rst test)

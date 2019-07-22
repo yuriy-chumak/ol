@@ -53,9 +53,9 @@
             (encoding    get-int32-big-endian)
             (sample-rate get-int32-big-endian)
             (channels    get-int32-big-endian))
-         (tuple data-offset data-size encoding sample-rate channels)))
+         [data-offset data-size encoding sample-rate channels]))
 
-   (define exp_lut (tuple 0 132 396 924 1980 4092 8316 16764))
+   (define exp_lut [0 132 396 924 1980 4092 8316 16764])
 
    (define (al:decode-fd buffer fd)
       (snd-parser (port->bytestream fd)

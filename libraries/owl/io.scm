@@ -65,9 +65,9 @@
       (owl list)
       (owl math)
       (owl fasl)
-      (owl tuple)
       (owl lazy)
       (scheme bytevector)
+      (otus vm)
       (only (otus blobs) merge-chunks vec-leaves))
 
    (begin

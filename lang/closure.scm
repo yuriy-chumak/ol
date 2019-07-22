@@ -13,7 +13,6 @@
       (owl list)
       (lang ast)
       (owl math)
-      (owl tuple)
       (owl list-extra)
       (lang env)
       (lang primop)
@@ -31,7 +30,7 @@
             (eq? val #null)))
 
       (define (value-primop val)
-         (and (tuple? val)
+         (and (vector? val)
             (eq? 'value (ref val 1))
             (primitive? (ref val 2))))
 

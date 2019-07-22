@@ -133,7 +133,7 @@
 
 
       (define (fork thunk)
-         ; the tuple is fresh and therefore a proper although rather
+         ; the vector is fresh and therefore a proper although rather
          ; nondescriptive thread name
          (fork-named ['anonimas] thunk))
 

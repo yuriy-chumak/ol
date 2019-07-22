@@ -216,10 +216,10 @@
                   (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))
                   (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
                   ;(gl:MakeCurrent display #f #f)
-                  (mail 'opengl (tuple 'set-context (tuple display screen window cx))) ; notify opengl server
-                  ;(interact 'opengl (tuple 'get-context)) ; синхронизация (не нужна, вроде)
+                  (mail 'opengl ['set-context [display screen window cx]]) ; notify opengl server
+                  ;(interact 'opengl ['get-context]) ; синхронизация (не нужна, вроде)
 
-                  (tuple display screen window cx))))
+                  [display screen window cx])))
 
          (define (native:enable-context context)
             (let ((display (ref context 1))
