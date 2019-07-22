@@ -533,7 +533,7 @@
          (let ((data (get-block fd 16)))
             (close-port fd)
             (if (blob? data)
-               (vec-fold (λ (n d) (+ d (<< n 8))) 0 data)
+               (blob-fold (λ (n d) (+ d (<< n 8))) 0 data)
                (time-ms)))
          (time-ms))))
 

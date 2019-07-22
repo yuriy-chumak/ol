@@ -7,5 +7,5 @@
 
 (lets
    ((vec (file->bytevector "tmp/test")))
-   (print (list->string (vector->list vec))))
+      (print (list->string (bytevector->list vec))))
 

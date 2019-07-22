@@ -15,8 +15,10 @@
       (owl interop)
       (owl lazy)
       (owl math)
+      (scheme bytevector)
+      (scheme vector)
+      (otus blobs)
       (only (owl fasl) sub-objects)
-      (only (otus blobs) blob? vector->list)
       (only (owl math) render-number number?)
       (only (owl string) render-string string? string->list))
 
@@ -64,10 +66,10 @@
                   (render (symbol->string obj) tl))
 
                ((bytevector? obj)
-                  (ilist #\# #\u #\8 (render (vector->list obj) tl)))
+                  (ilist #\# #\u #\8 (render (bytevector->list obj) tl)))
 
                ((blob? obj)
-                  (cons #\# (render (vector->list obj) tl)))
+                  (cons #\# (render (blob->list obj) tl)))
 
                ((vector? obj)
                   (cons #\# (render (tuple->list obj) tl)))
@@ -199,11 +201,11 @@
 
                ((bytevector? obj)
                   (ilist #\# #\u #\8
-                     (ser sh (vector->list obj) k))) ;; <- should convert incrementally!
+                     (ser sh (bytevector->list obj) k))) ;; <- should convert incrementally!
 
                ((blob? obj)
                   (cons #\#
-                     (ser sh (vector->list obj) k))) ;; <- should convert incrementally!
+                     (ser sh (blob->list obj) k))) ;; <- should convert incrementally!
 
                ((vector? obj)
                   (cons #\# (cons #\(

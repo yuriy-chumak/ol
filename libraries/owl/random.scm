@@ -476,7 +476,7 @@
                   (if (eq? n 0)
                      (close-port port)
                      (lets ((rs bytes (random-bvec rs block)))
-                        (if (write-byte-vector port bytes)
+                        (if (write-bytevector port bytes)
                            (loop rs (- n block))
                            #false))))
                (begin
@@ -556,7 +556,7 @@
 ;   (let loop ((rs (rands->bytes (seed->rands (time-ms)))) (out null) (n 0))
 ;      (cond
 ;         ((eq? n blocksize)
-;            (if (write-byte-vector stdout (make-bytevector (reverse out))) ;; keep order
+;            (if (write-bytevector stdout (make-bytevector (reverse out))) ;; keep order
 ;               (loop rs null 0)))
 ;         (else
 ;            (lets

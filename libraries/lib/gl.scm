@@ -180,7 +180,7 @@
                   ;; (colormap (XCreateColormap display root visual 0)) ; 0 == AllocNone
 
                   ;; ; ...
-                  ;; (XSetWindowAttributes (list->vector (repeat 0 112))) ; sizeof(XSetWindowAttributes)
+                  ;; (XSetWindowAttributes (make-bytevector 112 0)) ; sizeof(XSetWindowAttributes)
                   ;; (_ (vector-set-vptr! XSetWindowAttributes 96 colormap))
                   ;; (_ (vector-set-int!  XSetWindowAttributes 24 0)) ; border_pixel
                   ;; (_ (vector-set-int!  XSetWindowAttributes 72 163844)); event_mask (ExposureMask | ButtonPressMask | StructureNotifyMask)

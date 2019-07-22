@@ -11,11 +11,11 @@
 
    (import
       (scheme core)
+      (scheme vector)
       (owl math)
       (owl list)
       (owl sort)
       (owl list-extra)
-      (otus blobs)
       (owl string)
       (owl iff)
       (owl lazy))
@@ -102,6 +102,6 @@
          (list->vector
             (suffix-list
                (cond
-                  ((blob? thing) (blob->list thing))
+                  ((vector? thing) (vector->list thing))
                   ((string? thing) (string->list thing))
                   (else thing)))))))

@@ -23,9 +23,8 @@
       file->bytevector  ;; bytevectors io, may be moved elsewhere later
       bytevector->file
 
-      file->blob
+      file->blob write-blob
       file->list              ;; list io, may be moved elsewhere later
-      write-vector            ;; vec port
 
       port->bytestream       ;; fd → (byte ...) | thunk
       file->bytestream
@@ -41,7 +40,7 @@
       writer-to         ;; names → (port val → bool + io)
       write-to          ;; port val → bool
       write-bytes       ;; port byte-list   → bool
-      write-byte-vector ;; port byte-vector → bool
+      write-bytevector  ;; port byte-vector → bool
       get-block         ;; fd n → bvec | eof | #false
       try-get-block     ;; fd n block? → bvec | eof | #false=error | #true=block
       lines             ;; fd → null | ll of string, read error is just null, each [\r]\n removed
@@ -68,7 +67,7 @@
       (owl lazy)
       (scheme bytevector)
       (otus vm)
-      (only (otus blobs) merge-chunks vec-leaves))
+      (only (otus blobs) merge-chunks blob-leaves))
 
    (begin
 
@@ -309,11 +308,21 @@
                (lets ((len _ (vm:add len 1)))
                   (printer (cdr lst) len (cons (car lst) out) fd)))))
 
-      (define (write-byte-vector port bvec)
+      (define (write-bytevector port bvec)
          (write-really bvec port))
 
       (define (write-bytes port byte-list)
          (printer byte-list 0 null port))
+
+      ;; write each leaf chunk separately (note, no raw type testing here -> can fail)
+      (define (write-blob vec port)
+         (let loop ((ll (blob-leaves vec)))
+            (cond
+               ((pair? ll)
+                  (write-bytevector port (car ll))
+                  (loop (cdr ll)))
+               ((null? ll) #true)
+               (else (loop (ll))))))
 
       (define (print-to to . stuff)
          (printer (foldr render '(10) stuff) 0 null to))
@@ -440,16 +449,6 @@
                (let ((data (read-blocks->list port null)))
                   (maybe-close-port port)
                   data))))
-
-      ;; write each leaf chunk separately (note, no raw type testing here -> can fail)
-      (define (write-vector vec port)
-         (let loop ((ll (vec-leaves vec)))
-            (cond
-               ((pair? ll)
-                  (write-byte-vector port (car ll))
-                  (loop (cdr ll)))
-               ((null? ll) #true)
-               (else (loop (ll))))))
 
       ;; fixme: no way to poll success yet. last message should be ok-request, which are not there yet.
       ;; fixme: detect case of non-bytevectors, which simply means there is a leaf which is not of type (raw 11)

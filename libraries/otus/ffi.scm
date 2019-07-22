@@ -96,7 +96,7 @@
       make-vptr-array
 
       ; function for boxing and unboxing single values
-      box unbox
+      box unbox exec
 
       ; fft data manipulation helpers
       vptr->bytevector vptr->string

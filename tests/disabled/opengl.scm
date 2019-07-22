@@ -112,7 +112,7 @@
 
 (define (file->string path)
    (bytes->string
-      (vec-iter
+      (blob-iter
          (let ((vec (file->bytevector path)))
             (if vec vec
                (error "Unable to load: " path))))))

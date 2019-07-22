@@ -47,16 +47,17 @@
       blob?
       blob-len            ; v → n
       blob-ref            ; v x p → v[p] | error
-      list->vector
-      vector->list ; todo: remove
       blob->list
-      vec-iter
-      vec-iterr
-      vec-fold
-      vec-foldr
-      vec-range           ; vec x start x end -> vec'
-      vec-iter-range      ; vec x start x end -> ll
-      vec-map             ; (val → val') x vec → vec'
+      blob-iter
+      blob-iterr
+      blob-iter-range      ; vec x start x end -> ll
+      blob-fold
+      blob-foldr
+      blob-range           ; vec x start x end -> vec'
+      blob-map             ; (val → val') x vec → vec'
+
+      list->blob
+      blob->list ; todo: remove
 
       ; these assume a sorted vector (as used by pred) having matches in one continuous range
       ;vec-match-range         ; vec x val-pred -> lo x hi | #false x #false
@@ -67,10 +68,10 @@
 
       merge-chunks          ; exported for use in lib-io (may be moved later)
       leaf-data vec-leaf-of
-      blob-ref
-      vec-leaves
-      vec-cat             ;  vec x vec → vec
-      vec-rev
+      blob-leaves
+
+      ;; vec-cat             ;  vec x vec → vec
+      ;; vec-rev
       *vec-leaf-size*)     ; needed for vector IO
 
    (import
@@ -338,7 +339,7 @@
                   (vm:make type-vector-dispatch (ilist low len subtrees))))))
 
 
-      (define (list->vector l)
+      (define (list->blob l)
          (cond
             ((null? l)
                #0)
@@ -377,7 +378,7 @@
                      (iter-raw-leaf v (- s 1) tl))))
             (else tl))) ; size field -> number
 
-      (define (vec-iter v)
+      (define (blob-iter v)
          (let loop ((end (blob-len v)) (pos 0))
             (let ((this (vec-leaf-of v pos)))
                (iter-leaf-of this
@@ -412,18 +413,18 @@
                      (iter-leaf-range (vec-leaf-of v p) start n-here
                         (λ () (iter-range-really v (+ p n-here) n-left))))))))
 
-      (define (vec-iter-range v p e)
+      (define (blob-iter-range v p e)
          (if (<= e (blob-len v))
             (cond
                ((< p e)
                   (iter-range-really v p (- e p)))
                ((= p e) null)
-               (else (runtime-error "vec-iter-range: bad range " (cons p e))))
-            (runtime-error "vec-iter-range: end outside of vector: " e)))
+               (else (runtime-error "blob-iter-range: bad range " (cons p e))))
+            (runtime-error "blob-iter-range: end outside of vector: " e)))
 
       ;; iterate back to front
 
-      ;; todo: vec-iterr could also chunk whole leaves directly with fixnums like vec-iterr
+      ;; todo: blob-iterr could also chunk whole leaves directly with fixnums like blob-iterr
       (define (iterr-raw-leaf v last tl)
          (if (eq? last 0)
             tl
@@ -444,13 +445,13 @@
             (else
                tl))) ; size field in root is a number → skip
 
-      (define (vec-iterr-loop v p)
+      (define (blob-iterr-loop v p)
          (if (eq? type-fix- (type p))
             null
             (iterr-any-leaf (vec-leaf-of v p)
-               (λ () (vec-iterr-loop v (- p *vec-leaf-size*))))))
+               (λ () (blob-iterr-loop v (- p *vec-leaf-size*))))))
 
-      (define (vec-iterr v)
+      (define (blob-iterr v)
          (lets
             ((end (blob-len v))
              (last (band end *vec-leaf-max*)))
@@ -458,14 +459,14 @@
                ((eq? last 0) ; vec is empty or ends to a full leaf
                   (if (eq? end 0) ; blank vector
                      null
-                     (vec-iterr-loop v (- end 1)))) ; start from previous leaf
+                     (blob-iterr-loop v (- end 1)))) ; start from previous leaf
                (else
-                  (vec-iterr-loop v (- end 1))))))
+                  (blob-iterr-loop v (- end 1))))))
 
       ;; vector folds
 
-      (define (vec-fold  op st vec) (lfold  op st (vec-iter  vec)))
-      (define (vec-foldr op st vec) (lfoldr op st (vec-iterr vec)))
+      (define (blob-fold  op st vec) (lfold  op st (blob-iter  vec)))
+      (define (blob-foldr op st vec) (lfoldr op st (blob-iterr vec)))
 
       ;; list conversions
 
@@ -476,9 +477,7 @@
                ;; which are often seen near IO code
                (bytevector->list vec))
             (else
-               (vec-foldr cons null vec))))
-
-      (define vector->list blob->list)
+               (blob-foldr cons null vec))))
 
       (define (leaf-data leaf)
          (if (eq? (type leaf) type-bytevector)
@@ -489,28 +488,24 @@
       ;;; vector map
       ;;;
 
-      ;; fixme: vec-map <- placeholder
-      (define (vec-map fn vec)
-          (list->vector (lmap fn (vec-iter vec))))
+      ;; fixme: blob-map <- placeholder
+      (define (blob-map fn vec)
+          (list->blob (lmap fn (blob-iter vec))))
 
       ;;;
       ;;; Vector ranges
       ;;;
 
-      ;; fixme: proper vec-range not implemented
-      (define (vec-range-naive vec from to) ; O(m log n)
-         (list->vector
+      ;; fixme: proper blob-range not implemented
+      (define (blob-range-naive vec from to) ; O(m log n)
+         (list->blob
             (map (λ (p) (blob-ref vec p)) (lrange from 1 to))))
 
-      (define vec-range vec-range-naive)
+      (define blob-range blob-range-naive)
 
 
-      ;;;
-      ;;; Vector leaf data stream (mainly useful for IO)
-      ;;;
-
-      ;; vec → a stream of leaves
-      (define (vec-leaves vec)
+      ;; blob → a stream of leaves
+      (define (blob-leaves vec)
          (let ((end (blob-len vec)))
             (let loop ((pos 0))
                (if (< pos end)
@@ -519,13 +514,13 @@
                   null))))
 
       ;; fixme: temporary vector append!
-      (define (vec-cat a b)
-         (list->vector
-            (append
-               (vector->list a)
-               (vector->list b))))
+      ;; (define (blob-cat a b)
+      ;;    (list->blob
+      ;;       (append
+      ;;          (blob->list a)
+      ;;          (blob->list b))))
 
-      (define (vec-rev a)
-         (list->vector
-            (vec-iterr a)))
+      ;; (define (blob-rev a)
+      ;;    (list->blob
+      ;;       (blob-iterr a)))
 ))

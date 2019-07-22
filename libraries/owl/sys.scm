@@ -33,8 +33,7 @@
       (owl math)
       (owl io)
       (owl interop)
-      (owl list)
-      (otus blobs))
+      (owl list))
 
    (begin
 

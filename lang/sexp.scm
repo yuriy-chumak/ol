@@ -7,7 +7,7 @@
       list->number
       ;get-sexps       ;; greedy* get-sexp
       string->sexp
-      vector->sexps
+      ;bytevector->sexps
       list->sexps
 
       ; parser
@@ -24,7 +24,6 @@
       (owl string)
       (owl list)
       (owl math-extra)
-      (otus blobs)
       (owl list-extra)
       (owl ff)
       (owl lazy)
@@ -461,10 +460,10 @@
       ;; fail-val and print error message with further info if errmsg
       ;; is non-false
 
-      (define (vector->sexps vec fail errmsg)
-         ; parse parser data maybe-path maybe-error-msg fail-val
-         (let ((lst (blob->list vec)))
-            (parse get-sexps lst #false errmsg fail)))
+      ;; (define (bytevector->sexps vec fail errmsg)
+      ;;    ; parse parser data maybe-path maybe-error-msg fail-val
+      ;;    (let ((lst (vector->list vec)))
+      ;;       (parse get-sexps lst #false errmsg fail)))
 
       (define (list->sexps lst fail errmsg)
          ; parse parser data maybe-path maybe-error-msg fail-val
