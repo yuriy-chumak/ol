@@ -786,7 +786,7 @@
 ;#define GL_MAX_RENDERBUFFER_SIZE          0x84E8
 ;#define GL_INVALID_FRAMEBUFFER_OPERATION  0x0506
 
-(define uname (syscall 63 #f #f #f))
+(define uname (syscall 63))
 
 (define ES (or
    (load-dynamic-library

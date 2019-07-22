@@ -559,7 +559,7 @@
 
 
 ; https://en.wikipedia.org/wiki/Uname
-(define uname (syscall 63 #f #f #f))
+(define uname (syscall 63))
 (define CL_LIBRARY
    (c-string
    (cond

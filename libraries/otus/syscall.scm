@@ -8,6 +8,6 @@
 
    (begin
 
-      (define (gettimeofday) (syscall2 96))
-      (define (strftime fmt) (syscall2 201 fmt))
+      (define (gettimeofday) (syscall 96))
+      (define (strftime fmt) (syscall 201 fmt))
 ))

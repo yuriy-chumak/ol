@@ -188,7 +188,7 @@
    (if (and n-megs (> n-megs 0))
       (ensure-free-heap-space n-megs))
    (or
-      (syscall 157 #false #false #false)
+      (syscall 157)
       (begin
          (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
          (halt exit-seccomp-failed))))
@@ -287,7 +287,7 @@
                                            (getenv "OL_HOME")
                                            "/usr/lib/ol")) ; default posix ol libraries location
                                  (sandbox? (getf options 'sandbox))
-                                 (interactive? (get options 'interactive (syscall2 16 file 19))) ; isatty()
+                                 (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
 
                                  (version (cons "OL" *version*))
                                  (env (fold
@@ -310,7 +310,7 @@
                                                                                           (cons 'middle-endian *features*))
                                                                                        (else
                                                                                           *features*))))
-                                                                     (*features* (let ((uname (syscall 63 0 0 0)))
+                                                                     (*features* (let ((uname (syscall 63)))
                                                                                     (if (tuple? uname)
                                                                                        (append (list
                                                                                              (string->symbol (ref uname 1))  ; OS

@@ -201,8 +201,7 @@
          ; системный таймер  (deprecated, но остается как пример операции не принимающей параметров м возвращающей values)
          (primop 'clock    0 2 (make-bytecode '(61 4 5))) ; clock, todo: удалить
          ; системные вызовы
-         (primop 'syscall  4 1 (make-bytecode '(63 4 5 6 7 8  24 8)))
-         (primop 'syscall2 'any 1 "\x3E;") ; 62, make blob (binary, raw) object
+         (primop 'syscall  'any 1 "\x3F;") ; 63, system call
 
          (primop 'vector-apply 1 #f (make-bytecode '(32 4)))
          (primop 'ff-apply     1 #f (make-bytecode '(49 4)))
@@ -224,6 +223,8 @@
          (primop 'vm:pin    1 1 (make-bytecode '(35 4 5  24 5)))
          (primop 'vm:unpin  1 1 (make-bytecode '(60 4 5  24 5)))
          (primop 'vm:deref  1 1 (make-bytecode '(25 4 5  24 5)))
+
+         (primop 'vm:exit   1 1 (make-bytecode '(37 4 5  24 5)))
       ))
 
       ; additional
@@ -289,7 +290,7 @@
          (opcode 'vm:new)
          (opcode 'vm:make)
          (opcode 'vm:makeb)
-         (opcode 'syscall2)))
+         (opcode 'syscall)))
 
       (setq special-bind-primops (alist
          (opcode 'vector-apply)

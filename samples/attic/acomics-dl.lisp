@@ -91,7 +91,7 @@
         (otus random!))
 (define (number->string n)
    (list->string (render-number n null 10)))
-(define (system command) (syscall 1017 (c-string command) #f #f))
+(define (system command) (syscall- 1017 (c-string command) #f #f))
 (define (system command) #t)
 
 (define url (cadr *vm-args*))
@@ -128,8 +128,8 @@
 
 (define folder (substring url 20 (string-length url)))
 (display "Створюю папку ")(display folder)(display ".")
-(syscall 1017 (c-string (string-append "mkdir " folder)) #f #f)
-(syscall2 80 (c-string folder))
+(syscall- 1017 (c-string (string-append "mkdir " folder)) #f #f)
+(syscall 80 (c-string folder))
 (print)
 
 (display "Завантажую сторiнки: ")
@@ -153,5 +153,5 @@
    (if (less? chapter chapters)
       (loop (+ chapter 1))))
 
-(syscall 87 (c-string temp) #f #f)
+(syscall- 87 (c-string temp) #f #f)
 (print "done.")

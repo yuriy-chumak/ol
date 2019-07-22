@@ -61,7 +61,7 @@
       (define (ok? x) (eq? (ref x 1) 'ok))
       (define (ok exp env) ['ok exp env])
       (define (fail reason) ['fail reason])
-      (define (isatty? fd) (syscall2 16 fd 19))
+      (define (isatty? fd) (syscall 16 fd 19))
       (define (interactive? env) (env-get env '*interactive* #false))
 
 
@@ -1059,7 +1059,7 @@
                      (halt 0))
                   (['error reason env]
                      (let ((hook:fail (env-get env 'hook:fail #f)))
-                        (if hook:fail (hook:fail reason (syscall 1002 #f #f #f))))
+                        (if hook:fail (hook:fail reason (syscall 1002))))
 
                      (if (list? reason)
                         (print-repl-error (decode-value env reason)))

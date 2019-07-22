@@ -304,7 +304,7 @@
 ;/* 0x305C-0x3FFFF reserved for future use */
 
 ; --------------------------------
-(define uname (syscall 63 #f #f #f))
+(define uname (syscall 63))
 
 (define EGL (or
    (load-dynamic-library

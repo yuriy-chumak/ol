@@ -111,8 +111,8 @@
 (begin
 
 ;; OS detection
-(define (uname) (syscall 63 #f #f #f))
-(define *uname* (syscall 63 #f #f #f))
+(define (uname) (syscall 63))
+(define *uname* (syscall 63))
 
 ; The MODE argument to `dlopen' contains one of the following:
 (define RTLD_LAZY         #x1) ; Lazy function call binding.
@@ -138,20 +138,20 @@
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle (type-port)
 (define dlopen (case-lambda
-   ((name flag) (syscall 174 (if (string? name) (c-string name) name) flag      #f))
-   ((name)      (syscall 174 (if (string? name) (c-string name) name) RTLD_LAZY #f))
-   (()          (syscall 174 #false                                   RTLD_LAZY #f))))
-(define (dlclose module) (syscall 176 module #f #f))
-(define (dlerror)        (syscall 178 #false #f #f))
+   ((name flag) (syscall 174 (if (string? name) (c-string name) name) flag))
+   ((name)      (syscall 174 (if (string? name) (c-string name) name) RTLD_LAZY))
+   (()          (syscall 174 #false                                   RTLD_LAZY))))
+(define (dlclose module) (syscall 176 module))
+(define (dlerror)        (syscall 178))
 
-(define ffi (syscall 177 (dlopen) "OL_ffi" #f))
-(define ffi:sizeof (syscall 177 (dlopen) "OL_sizeof" #f))
+(define ffi (syscall 177 (dlopen) "OL_ffi"))
+(define ffi:sizeof (syscall 177 (dlopen) "OL_sizeof"))
 
 ; функция dlsym связывает название функции с самой функцией и позволяет ее вызывать
 ; внимание! приведение типов к С-like НЕ ПРОИЗВОДИТСЯ!
 ; функция низкоуровневая и предназначена в первую очередь для расширения языка
 (define (dlsym dll name)
-   (let ((function (syscall 177 dll (c-string name) #false)))
+   (let ((function (syscall 177 dll (c-string name))))
       (if function
       (lambda args
          (exec function args #false)))))
@@ -164,7 +164,7 @@
             ;;; todo: отправлять тип функции третим параметром (syscall 177) и в виртуальной машине
             ;;;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ?
             ;;   (let ((function (cons '((bor type 64) . prototype) (syscall 171 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
-            ;;;;;(let ((function (cons (bor type 64) (syscall 177 dll (c-string name) #false)))) ; todo: переделать 64 во что-то поприятнее
+            ;;;;;(let ((function (cons (bor type 64) (syscall 177 dll (c-string name))))) ; todo: переделать 64 во что-то поприятнее
             ;;      (lambda args ;  function       type          ;arguments
             ;;         (syscall 59 (cdr function) (car function) args))))
 
@@ -173,14 +173,14 @@
             ; иначе использовать указанное в arguments; обязательно выводить предупреждение, если количество аргументов не
             ; совпадает (возможно еще во время компиляции)
             (let ((rtti (cons type prototype))
-                  (function (syscall 177 dll (c-string name) #f))) ; todo: избавиться от (c-string)
+                  (function (syscall 177 dll (c-string name)))) ; todo: избавиться от (c-string)
                (if function
                   (lambda args
                      (exec ffi function rtti args))))))))
 
 (define (make-vptr) (vm:cast 0 type-vptr))
 
-(define ffi:mkcb (syscall 177 (dlopen) "OL_mkcb" #f))
+(define ffi:mkcb (syscall 177 (dlopen) "OL_mkcb"))
 (define (make-callback pinned-object)
    (exec ffi:mkcb pinned-object))
 
@@ -354,7 +354,7 @@
          void*))
 
    (define (vptr->bytevector vptr sizeof)
-      (syscall2 9 vptr sizeof))
+      (syscall 9 vptr sizeof))
 
 
 ; TODO: change this

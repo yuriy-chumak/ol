@@ -5,7 +5,7 @@
 (import (otus ffi))
 (import (lib newton))
 
-(define (gettimeofday) (syscall2 96))
+(define (gettimeofday) (syscall 96))
 
 (gl:set-window-title "Newton-dynamics library usage example")
 (import (OpenGL version-1-0))

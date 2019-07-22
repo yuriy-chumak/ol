@@ -1,12 +1,12 @@
-; todo: оформить как отдельный модуль и переименовать
+; todo: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 ; need to check name as string and flag as integer
 ; 
 ;not working yet - (import (owl win32))
 
 (define (dlopen name) (sys-prim 174 (c-string name) 1 #false))
-(define (dlsym  type dll name) ; todo: переименовать в get-proc-address ?
+(define (dlsym  type dll name) ; todo: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ get-proc-address ?
    (let ((rtty (cons type prototype))
-         (function (syscall 177 dll (c-string name) #false)))
+         (function (syscall 177 dll (c-string name))))
       (if function
       (lambda args
          (exec ffi function rtty args)))))
@@ -26,10 +26,10 @@
   IDOK)
     (print "OK")
     (print "CANCEL"))
-; todo: вроде бы все строки и так заканчиваются на '\0' - проверить
+; todo: пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ '\0' - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 ;(define echo "echo server")
 
 
 
-; в момент импорта сделать все нужные привязки
-; export (MessageBox)  и т.д.
+; пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+; export (MessageBox)  пїЅ пїЅ.пїЅ.

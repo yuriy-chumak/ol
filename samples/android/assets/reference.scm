@@ -326,7 +326,7 @@
 ;;                   (constitution . ,(car constitution)) ; Телосложение
 ;;                   (charm . ,(car charm)) ; Обаяние
 ;;                ) "hero.bin")
-;;                (syscall 59 (c-string "/usr/bin/ol") (map c-string '("/usr/bin/ol" "main.lisp")) #false)
+;;                (syscall 59 (c-string "/usr/bin/ol") (map c-string '("/usr/bin/ol" "main.lisp")))
 ;;                (halt 0))))
 ;;       ;; (vkRight
 ;;       ;;    (set-car! selection (+ (car selection) 1)))

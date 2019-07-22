@@ -32,8 +32,8 @@
 
 
 
-(define (timestamp) (syscall2 201 "%c"))
-(define (set-ticker-value n) (syscall 1022 n #false #false))
+(define (timestamp) (syscall 201 "%c"))
+(define (set-ticker-value n) (syscall 1022 n))
 
 ; -------------------------------------------
 ; http parser
@@ -179,7 +179,7 @@
                                  (print "ok."))
                               #false))
                   (loop stream)))))
-      (print id (if (syscall2 3 fd) ": socket closed" ": can't close socket"))
+      (print id (if (syscall 3 fd) ": socket closed" ": can't close socket"))
       (print "on-accept :" id " done.")
       (let*((ss2 ms2 (clock)))
          (print "# " (timestamp) ": request " id " processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
@@ -187,21 +187,21 @@
 
 
 (define (http:run port onRequest)
-(let ((socket (syscall 41 #f #f #f)))
+(let ((socket (syscall 41)))
    ; bind
    (let loop ((port port))
-      (if (not (syscall 49 socket port #f)) ; bind
+      (if (not (syscall 49 socket port)) ; bind
          (loop (+ port 2))
          (print "Server binded to " port)))
    ; listen
-   (if (not (syscall 50 socket #f #f)) ; listen
+   (if (not (syscall 50 socket)) ; listen
       (shutdown (print "Can't listen")))
 
    ; accept
    (let loop ()
-      (if (syscall 23 socket #f #f) ; select
-         (let ((fd (syscall 43 socket #f #f))) ; accept
-            (print "\n# " (timestamp) ": new request from " (syscall 51 fd #f #f))
+      (if (syscall 23 socket) ; select
+         (let ((fd (syscall 43 socket))) ; accept
+            (print "\n# " (timestamp) ": new request from " (syscall 51 fd))
             (fork (on-accept (generate-unique-id) fd onRequest))))
       (set-ticker-value 0)
       (loop))))

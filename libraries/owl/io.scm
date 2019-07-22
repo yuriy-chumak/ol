@@ -77,17 +77,17 @@
       (define stdout (vm:cast 1 type-port))
       (define stderr (vm:cast 2 type-port))
 
-      (define (sys:read fd maxlen)         (syscall2 0 fd maxlen))
-      (define (sys:write fd buffer length) (syscall2 1 fd buffer length))
+      (define (sys:read fd maxlen)         (syscall 0 fd maxlen))
+      (define (sys:write fd buffer length) (syscall 1 fd buffer length))
 
       ; low-level file open/close functions
       (define (sys:open path mode)
          (cond
             ((c-string path) =>
-               (λ (path) (syscall2 2 path mode)))))
+               (λ (path) (syscall 2 path mode)))))
 
       (define (sys:close fd)
-         (syscall2 3 fd))
+         (syscall 3 fd))
 
 
       ;;; -----------------------------------------------------------
@@ -133,7 +133,7 @@
                rounds)
             ((single-thread?)
                ;; note: could make this check every n rounds or ms
-               (if (syscall2 35 (* us-per-round rounds)) ;; sleep really for a while
+               (if (syscall 35 (* us-per-round rounds)) ;; sleep really for a while
                   ;; stop execution if breaked to enter mcp
                   (set-ticker-value 0))) ; fixme: maybe better to move this up, before syscall?
             (else
@@ -414,7 +414,7 @@
       ; bytevector:
       (define (fd->bytevector port) ; path -> vec | #false
          (if port
-            (let ((stat (syscall2 4 port)))
+            (let ((stat (syscall 4 port)))
                (if stat
                   (sys:read port (ref stat 8))))))
 

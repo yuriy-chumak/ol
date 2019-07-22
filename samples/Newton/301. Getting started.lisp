@@ -6,7 +6,7 @@
 (gl:set-window-title "301. Getting started")
 (import (OpenGL version-1-0))
 
-(define (gettimeofday) (syscall 96 #f #f #f))
+(define (gettimeofday) (syscall 96))
 
 (define (CreateBackgroundBody world)
    (let ((points '(

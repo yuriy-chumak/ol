@@ -14,8 +14,8 @@
       key-pressed
       )
 (begin
-   (define uname (syscall 63 #f #f #f))                 ; uname -a
-;   (define TERM (syscall 1016 (c-string "TERM") #f #f)) ; getenv('TERM')
+   (define uname (syscall 63))                 ; uname -a
+;   (define TERM (syscall 1016 (c-string "TERM"))) ; getenv('TERM')
 
    (define win32? (string-ci=? (ref uname 1) "Windows"))
    (define linux? (string-ci=? (ref uname 1) "Linux"))

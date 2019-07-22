@@ -3,8 +3,6 @@
 ; http://community.schemewiki.org/?scheme-faq-standards#implementations
 ;!
 
-;  (define isCompiled (make-bytevector '(0 0 0 0)))
-;  (syscall 1033 isCompiled #false #false)
 (import (lib sqlite))
 
 ; вспомогательный макрос для собрать в кучку все bor

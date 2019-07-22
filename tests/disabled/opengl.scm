@@ -7,8 +7,6 @@
 ;!
 (define *USE_GLBEGIN* 1)
 
-;  (define isCompiled (make-bytevector '(0 0 0 0)))
-;  (syscall 1033 isCompiled #false #false)
 (import (owl ffi))
 (import (lib windows))
 (import (OpenGL version-2-1))

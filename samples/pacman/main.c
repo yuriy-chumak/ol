@@ -165,8 +165,8 @@ void draw(void)
 	gettimeofday(&now, NULL);
 
 	if (now.tv_sec != timestamp.tv_sec) {
-		int total = ol2int(eval("(ref (syscall 1117 #f #f #f) 3)"));
-		int used = ol2int(eval("(ref (syscall 1117 #f #f #f) 1)"));
+		int total = ol2int(eval("(ref (syscall 1117) 3)"));
+		int used = ol2int(eval("(ref (syscall 1117) 1)"));
 		printf("fps: %d, memory used: %d/%d (%d%%)\n", frames, total, used, (used * 100) / total);
 		timestamp = now;
 		frames = 0;

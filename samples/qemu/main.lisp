@@ -10,7 +10,7 @@
 
 ; TEMP. will kill all previously forked qemu and gdb
 ;(syscall 1017 (c-string "killall qemu-system-i386") #f #f)
-(syscall 1017 (c-string "killall gdb") #f #f)
+(syscall 1017 (c-string "killall gdb"))
 
 (define (hide-cursor) (display "\x1B;[?25l")) ; temporary disabled
 (define (show-cursor) (display "\x1B;[?25h")) ; temporary disabled
@@ -222,8 +222,8 @@
 ; ==
 (define (fork name . arguments)
 (fork-server name (lambda ()
-   (define In (syscall2 22)) ; create input/output pipes: '(read-pipe . write-pipe)
-   (define Out (syscall2 22))
+   (define In (syscall 22)) ; create input/output pipes: '(read-pipe . write-pipe)
+   (define Out (syscall 22))
    (define Pid
       (syscall 59 (c-string (car arguments)) ; (syscall:fork)
          (map c-string arguments)
@@ -241,7 +241,7 @@
                      (values (car msg) (cdr msg))
                      (values #false msg))))
             ; it's good idea to free the input buffer
-            (syscall2 0 (car Out)) ; 1024 would be enought, i think...
+            (syscall 0 (car Out)) ; 1024 would be enought, i think...
             ; send command (if any) with newline
             (unless (null? command)
                (for-each (lambda (x) (display-to (cdr In) x)) (append command '("\n"))))
@@ -279,7 +279,7 @@
          (unless (check-mail)
             (begin
                (if (key-pressed #xffbf) ; f2
-                  (syscall 62 (interact 'config (tuple 'get 'gdb)) 2 #f)) ; SIGINT
+                  (syscall 62 (interact 'config (tuple 'get 'gdb)) 2)) ; SIGINT
                (this (sleep 1))))))))
 
 ; ================================================================
@@ -391,7 +391,7 @@
 
    (print "ok.")
    (show-cursor)
-   (syscall 1017 (c-string "stty echo") #f #f) ; enable terminal echo
+   (syscall 1017 (c-string "stty echo")) ; enable terminal echo
    (halt 1))
 
 ; find kernel address
@@ -561,13 +561,13 @@
          (locate 1 20) (set-color GREEN) (display "> ") (set-color GREY)
          ; почистим входной буфер
          (let loop ()
-            (let ((in (syscall2 0 stdin)))
+            (let ((in (syscall 0 stdin)))
                (if (or (eq? in #true) (eq? in 1024))
                   (loop))))
 
          (locate 3 20)
          (show-cursor)
-         (syscall 1017 (c-string "stty echo") #f #f)
+         (syscall 1017 (c-string "stty echo"))
 
          (let ((command (read)))
             (print "eval: "

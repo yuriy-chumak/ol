@@ -8,11 +8,11 @@
 
 (define-library (owl sys)
    (export
-      exec
       chdir
       kill
       uname
       getenv
+      system
 
       sighup
       signint
@@ -82,7 +82,7 @@
       (define (chdir path)
          (let ((path (c-string path)))
             (and path
-               (syscall2 80 path))))
+               (syscall 80 path))))
 
       ;;;
       ;;; Processes
@@ -91,12 +91,12 @@
       ;; path (arg0 ...), arg0 customarily being path
       ;; returns only if exec fails
 
-      (define (exec path args)
+      (define (system path args)
          (let*
             ((path (c-string path))
              (args (map c-string args)))
             (if (and path (all (λ (x) x) args))
-               (syscall 1017 path args #false)
+               (syscall 1017 path args)
                (cons path args))))
 
       (define sighup   1)      ; hangup from controlling terminal or proces
@@ -113,11 +113,11 @@
 
       ;; pid signal → success?
       (define (kill pid signal)
-         (syscall 1021 pid signal #false))
+         (syscall 62 pid signal))
 
 
       (define (uname)
-         (syscall 63 #f #f #f))
+         (syscall 63))
       ;;;
       ;;; Environment variables
       ;;;
@@ -125,5 +125,6 @@
       ;; str → bvec | F
       (define (getenv str)
          (let ((str (c-string str)))
-            (syscall 1016 str #false #false)))
+            (if str
+               (syscall 1016 str))))
 ))

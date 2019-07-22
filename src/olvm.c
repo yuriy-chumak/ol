@@ -2194,6 +2194,7 @@ mainloop:;
 	#	define RET   24
 	#	define RUN   50
 	#	define ARITY_ERROR 17
+	#	define VMEXIT 37
 
 	#	define SYS   27
 
@@ -2245,7 +2246,6 @@ mainloop:;
 
 	#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 
-	#	define SYSCALL2 62
 	#	define SYSCALL 63
 			// read, write, open, close must exist
 	#		define SYSCALL_READ 0    // 
@@ -2280,6 +2280,7 @@ mainloop:;
 	#		define SYSCALL_EXIT 60
 	#		define SYSCALL_GETDENTS 78
 	#		define SYSCALL_CHDIR 80
+	#		define SYSCALL_MKDIR 83
 
 	#		define SYSCALL_GETTIMEOFDAY 96
 
@@ -2343,9 +2344,9 @@ loop:;
 		}
 		goto apply; // ???
 	// unused numbers:
-	case 37:
 	case 43:
 	case 48:
+	case 62:
 		FAIL(op, new_string("Invalid opcode"), ITRUE);
 		break;
 
@@ -3152,12 +3153,14 @@ loop:;
 	 *
 	 * \par
 	 */
-	case SYSCALL2: {
+	// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
+	// https://filippo.io/linux-syscall-table/
+	case SYSCALL: {
 		word argc = *ip++;
 		if (argc == 0)
 			FAIL(62000, I(0), I(1));
 		--argc; // skip syscall number
-		word* r = RFALSE;  // by default returning #false
+		word* r = (word*) IFALSE;  // by default returning #false
 
 		// ----------------------------------------------------------------------------------
 		// safety checking macro
@@ -3191,6 +3194,9 @@ loop:;
 		word op = value (A0);
 
 		switch (op + sandboxp) {
+
+			// I/O FUNCTIONS
+
 			/*! \subsection read
 			* \brief (syscall **0** port count) --> bytevector | #t | #eof
 			*
@@ -3362,13 +3368,13 @@ loop:;
 
 				if (ol->close(portfd, ol) == 0)
 					r = (word*)ITRUE;
-		#ifdef _WIN32
+#ifdef _WIN32
 				// Win32 socket workaround
 				else if (errno == EBADF) {
 					if (closesocket(portfd) == 0)
 						r = (word*)ITRUE;
 				}
-		#endif
+#endif
 				break;
 			}
 
@@ -3386,6 +3392,7 @@ loop:;
 			*
 			* http://man7.org/linux/man-pages/man2/lseek.2.html
 			*/
+			case SYSCALL_LSEEK + SECCOMP:
 			case SYSCALL_LSEEK: { // TODO: add to tests!
 				CHECK_ARGC_EQ(1);
 				CHECK_PORT(1);
@@ -3573,8 +3580,23 @@ loop:;
 					r = (word*) ITRUE;
 				break;
 			}
+			case SYSCALL_MKDIR: {
+				CHECK_ARGC(1,2);
+				CHECK_STRING(1);
+				CHECK_NUMBER_OR_FALSE(2);
+
+				char *path = (char*) &car(A1);
+				int mode = (argc > 1 && A2 != IFALSE)
+			 		? number(A2)
+					: S_IRUSR | S_IWUSR;
+
+				if (mkdir(path, mode) >= 0)
+					r = (word*) ITRUE;
+				break;
+			}
 
 			// UNSAFES
+
 #if OLVM_FFI
 			/*! \subsection mmap
 			* \brief 9: (mmap address length offset) -> bytevector
@@ -3618,6 +3640,8 @@ loop:;
 			}
 #endif
 
+			// INFO
+
 			/*! \subsection syscall-16
 			* \brief 16: (syscall 16 ...) -> ...|#f
 			*
@@ -3660,8 +3684,9 @@ loop:;
 			// INTERPROCESS FUNCTIONS
 
 			case SYSCALL_YIELD: {
+				CHECK_ARGC_EQ(1);
 				yield();
-				r = (word*) ITRUE;
+				r = (word*)ITRUE;
 				break;
 			}
 
@@ -3816,7 +3841,73 @@ loop:;
 				break;
 			}
 
+#if HAS_DLOPEN
+			// -=( dlopen )=-------------------------------------------------
+			case SYSCALL_DLOPEN: { // (dlopen filename mode #false)
+				word a = A1;
+				word b = A2;
+
+				word *filename = (word*)a;
+				int mode = (int) value(b);
+
+				// android 2.2 segfaults on dlopen(NULL, ...)
+				// http://code.google.com/p/android/issues/detail?id=5049
+				void* module;
+				if ((word) filename == IFALSE) {
+					module = dlopen(OLVM_LIBRARY_SO_NAME, mode); // If filename is NULL, then the returned handle is for the main program.
+				}
+				else if (is_string(filename)) {
+					module = dlopen(string(filename), mode);
+				}
+				else
+					break; // invalid filename, return #false
+
+				if (module)
+					r = new_vptr(module);
+				break;
+			}
+
+			case SYSCALL_DLCLOSE: {
+				// CHECK(is_vptr(a), a, SYSCALL);
+				word a = A1;
+				void* module = (void*)car (a);
+
+				if (dlclose(module) == 0)
+					r = (word*) ITRUE;
+				break;
+			}
+
+			case SYSCALL_DLSYM: { // (dlsym module function #false)
+				// CHECK(is_vptr(a), a, SYSCALL);
+				word a = A1;
+				word b = A2;
+
+				void* module = (void*)car (a);
+
+				word* symbol = (word*) b;
+				// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
+				if (!(is_value(symbol) || reference_type (symbol) == TSTRING))
+					break;
+
+				word function = (word)dlsym(module, is_value(symbol)
+						? (char*) value((word)symbol)
+						: (char*) &symbol[1]);
+				if (function)
+					r = new_vptr(function);
+				else
+					D("dlsym failed: %s", dlerror());
+				break;
+			}
+			case SYSCALL_DLERROR: { // (dlerror)
+				char* error = (char*)dlerror();
+				if (error)
+					r = new_string(error);
+				break;
+			}
+		#endif// HAS_DLOPEN
+
 			// TIME FUNCTIONS
+
 			// (gettimeofday)
 			// todo: change (clock) call to this one
 			case SYSCALL_GETTIMEOFDAY: {
@@ -3862,7 +3953,439 @@ loop:;
 				break;
 			}
 
+			// SOCKETS
+		// http://www.kegel.com/c10k.html
+#if HAS_SOCKETS
+			// todo: add getsockname() and getpeername() syscalls
+
+			// SOCKET
+			case 41: { // socket (todo: options: STREAM or DGRAM)
+				// http://beej.us/net2/html/syscalls.html
+				// right way: use PF_INET in socket call
+		#ifdef _WIN32
+				int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+				unsigned long v = 1;
+				ioctlsocket(sock, FIONBIO, &v); // set blocking mode
+		#else
+				int sock = socket(PF_INET, SOCK_STREAM, 0);
+		#endif
+				if (sock != -1)
+					r = (word*)make_port (sock);
+				break;
+			}
+
+			// CONNECT
+			case 42: { // (connect sockfd host port)
+				word a = A1, b = A2, c = A3;
+
+				// CHECK(is_port(a), a, SYSCALL);
+				int sockfd = port (a);
+				char* host = string (b); // todo: check for string type
+				int port = value (c);
+
+				struct sockaddr_in addr;
+				addr.sin_family = AF_INET;
+				addr.sin_addr.s_addr = inet_addr(host);
+				addr.sin_port = htons(port);
+
+				if (addr.sin_addr.s_addr == INADDR_NONE) {
+					struct hostent *he = gethostbyname(host);
+					if (he != NULL)
+						memcpy(&addr.sin_addr, he->h_addr_list[0], sizeof(addr.sin_addr));
+				}
+
+		//				ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
+		//				addr.sin_addr.s_addr = htonl(ipfull);
+				if (connect(sockfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) >= 0)
+					r = (word*)ITRUE;
+		//				set_blocking(sock, 0);
+				break;
+			}
+
+			// SHUTDOWN
+			// http://linux.die.net/man/2/shutdown
+			case 48: { // (shutdown socket #f #f)
+				word a = A1, b = A2, c = A3;
+				// CHECK(is_port(a), a, SYSCALL);
+
+				int socket = port(a);
+
+				// On error, -1 is returned
+				if (shutdown(socket, 2) == 0) // both
+					r = (word*)ITRUE;
+
+				break;
+			}
+
+			// BIND
+			// http://linux.die.net/man/2/bind
+			case 49: { //  (socket, port, #false) // todo: c for options
+				word a = A1, b = A2;
+
+				// CHECK(is_port(a), a, SYSCALL);
+				int sockfd = port(a);
+				int port = value (b);
+
+				// todo: assert on argument types
+				struct sockaddr_in interface;
+				interface.sin_family = AF_INET;
+				interface.sin_port = htons(port);
+				interface.sin_addr.s_addr = INADDR_ANY;
+
+				// On success, zero is returned.
+				if (bind(sockfd, (struct sockaddr *) &interface, sizeof(interface)) == 0)
+					r = (word*)ITRUE;
+				break;
+			}
+
+			// LISTEN (socket)
+			// http://linux.die.net/man/2/listen
+			// listen() marks the socket referred to by sockfd as a passive socket, that is,
+			// as a socket that will be used to accept incoming connection requests using accept(2).
+			case 50: {
+				word a = A1;
+
+				// CHECK(is_port(a), a, SYSCALL);
+				int sockfd = port(a);
+
+				// On success, zero is returned.
+				if (listen(sockfd, 42) == 0) {
+		//					set_blocking(sockfd, 0);
+					r = (word*)ITRUE;
+				}
+
+				break;
+			}
+
+			// ACCEPT
+			// http://linux.die.net/man/2/accept
+			case 43: { // (accept sockfd)
+				word a = A1;
+
+				// CHECK(is_port(a), a, SYSCALL);
+				int sockfd = port(a);
+
+				struct sockaddr_in addr;
+				socklen_t len = sizeof(addr);
+				int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
+				// On error, -1 is returned
+				if (sock < 0)
+					break;
+		#if _WIN32
+				unsigned long mode = 1; // non blocking
+				if (ioctlsocket(sock, FIONBIO, &mode) == 0)
+		#else
+				int flags = fcntl(sock, F_GETFL, 0);
+				if (flags < 0)
+					break;
+				flags = (flags | O_NONBLOCK);
+				if (fcntl(sock, F_SETFL, flags) == 0)
+		#endif
+					r = (word*)make_port (sock);
+				break;
+			}
+
+			// SELECT
+			// http://linux.die.net/man/2/select
+			case 23: { // (select sockfd)
+				word a = A1, b = A2;
+
+				// CHECK(is_port(a), a, SYSCALL);
+				int sockfd = port(a);
+				int timeus = is_numberp(b) ? untoi (b) : 100000;
+				// todo: timeout as "b"
+
+				fd_set fds;
+				FD_ZERO(&fds); FD_SET(sockfd, &fds);
+
+				struct timeval timeout = { timeus / 1000000, timeus % 1000000 }; // µs
+				if (select(sockfd + 1, &fds, NULL, NULL, &timeout) > 0
+						&& FD_ISSET(sockfd, &fds))
+					r = (word*)ITRUE;
+
+				break;
+			}
+
+			// GETPEERNAME
+			// http://linux.die.net/man/2/getpeername
+			case 51: { // (getpeername sockfd)
+				word a = A1;
+
+				// CHECK(is_port(a), a, SYSCALL);
+				int sockfd = port(a);
+
+				// todo: https://svn.code.sf.net/p/plibc/code/trunk/plibc/src/inet_ntop.c
+				struct sockaddr_storage peer;
+				socklen_t len = sizeof(peer);
+
+				// On success, zero is returned.
+				if (getpeername(sockfd, (struct sockaddr *) &peer, &len) != 0)
+					break;
+		#ifdef _WIN32
+				char* ipaddress = inet_ntoa(((struct sockaddr_in *)&peer)->sin_addr);
+				unsigned short port = ntohs(((struct sockaddr_in *)&peer)->sin_port);
+
+				result = new_pair(new_string(ipaddress), I(port));
+
+		#else
+				unsigned short port;
+
+				if (peer.ss_family == AF_INET) {
+					char ipaddress[INET_ADDRSTRLEN];
+
+					struct sockaddr_in *s = (struct sockaddr_in *)&peer;
+					port = ntohs(s->sin_port);
+					inet_ntop(AF_INET, &s->sin_addr, ipaddress, sizeof ipaddress);
+					r = new_pair(new_string(ipaddress), I(port));
+				}
+				/* temporary disable IP_v6, todo: return back
+				else
+				if (peer.ss_family == AF_INET6) {
+					char ipaddress[INET6_ADDRSTRLEN];
+
+					struct sockaddr_in6 *s = (struct sockaddr_in6 *)&peer;
+					port = ntohs(s->sin6_port);
+					inet_ntop(AF_INET6, &s->sin6_addr, ipaddress, sizeof ipaddress);
+					result = new_pair(new_string(ipaddress), I(port));
+				}*/
+				else
+					break;
+		#endif
+
+				break;
+			}
+#endif// HAS_SOCKETS
+
+			// SYSTEM INFO
+
+			// UNAME (uname)
+			// http://linux.die.net/man/2/uname
+			case 63: {
+				CHECK_ARGC_EQ(0);
+
+				struct utsname name;
+				if (uname(&name))
+					break;
+
+				r = new_vector(
+				#ifdef __ANDROID__
+					new_string("Android"),
+				#else
+					({name.sysname ? (word)new_string(name.sysname) : IFALSE;}),
+				#endif
+					new_string(name.nodename),
+					new_string(name.release),
+					new_string(name.version),
+					({name.machine ? (word)new_string(name.machine) : IFALSE;}));
+
+				break;
+			}
+
+			#if SYSCALL_GETRLIMIT
+			// GETRLIMIT (getrlimit)
+			case SYSCALL_GETRLIMIT: {
+				struct rlimit l;
+				// arguments currently ignored. used RUSAGE_SELF
+				if (getrlimit(value(A1), &l) == 0)
+					r = new_vector(
+							itoun(l.rlim_cur),
+							itoun(l.rlim_max));
+				break;
+			}
+			#endif
+
+			#if SYSCALL_GETRUSAGE
+			// GETRUSAGE (getrusage)
+			// @returns: (vector utime stime)
+			//           utime: total amount of time spent executing in user mode, expressed in a timeval structure (seconds plus microseconds)
+			//           stime: total amount of time spent executing in kernel mode, expressed in a timeval structure (seconds plus microseconds)
+			case SYSCALL_GETRUSAGE: {
+				#ifdef _WIN32
+				struct rusage
+				{
+					struct timeval ru_utime;
+					struct timeval ru_stime;
+				};
+
+				#define RUSAGE_SELF 0
+				int getrusage(int who, struct rusage* usage) {
+					FILETIME createTime;
+					FILETIME exitTime;
+					FILETIME kernelTime;
+					FILETIME userTime;
+					if (GetProcessTimes(GetCurrentProcess(), &createTime, &exitTime, &kernelTime, &userTime) != -1) {
+						ULARGE_INTEGER li;
+
+						li.LowPart = userTime.dwLowDateTime;
+						li.HighPart = userTime.dwHighDateTime;
+						usage->ru_utime.tv_sec = li.QuadPart / 10000000;
+						usage->ru_utime.tv_usec = li.QuadPart % 10000000;
+
+						li.LowPart = kernelTime.dwLowDateTime;
+						li.HighPart = kernelTime.dwHighDateTime;
+						usage->ru_stime.tv_sec = li.QuadPart / 10000000;
+						usage->ru_stime.tv_usec = li.QuadPart % 10000000;
+						return 0;
+					}
+					else
+						return -1;
+				}
+				#endif
+
+				struct rusage u;
+				// arguments currently ignored. used RUSAGE_SELF
+				if (getrusage(RUSAGE_SELF, &u) == 0)
+					r = new_vector(
+							new_pair (itoun(u.ru_utime.tv_sec), itoun(u.ru_utime.tv_usec)),
+							new_pair (itoun(u.ru_stime.tv_sec), itoun(u.ru_stime.tv_usec))
+					);
+				break;
+
+			}
+			#endif
+
+			#if SYSCALL_SYSINFO
+			// SYSINFO (sysinfo)
+			case SYSCALL_SYSINFO: {
+				struct sysinfo info;
+				if (sysinfo(&info) == 0)
+					r = new_vector(
+							itoun(info.uptime),
+							new_vector(itoun(info.loads[0]),
+									itoun(info.loads[1]),
+									itoun(info.loads[2])),
+							itoun(info.totalram),
+							itoun(info.freeram),
+							itoun(info.sharedram),
+							itoun(info.bufferram),
+							itoun(info.totalswap),
+							itoun(info.freeswap),
+							itoun(info.procs)
+					);
+				break;
+			}
+			#endif
+
+			// genenv
+			case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
+				word *name = (word *)A1;
+				if (is_string(name)) {
+					char* env = getenv(string(name));
+					if (env)
+						r = new_string(env, lenn(env, VMAX));
+				}
+				break;
+			}
+			// system
+			case 1017: { // system (char*) // todo: remove this !!!!!!
+				int q = system(string(A1));
+				if (q >= 0)
+					r = itoun(q);
+				break;
+			}
+			// kill
+			case SYSCALL_KILL: {
+		#ifndef _WIN32
+				if (kill(value (A1), value (A2)) >= 0)
+					r = (word*) ITRUE;
+		#endif
+				break;
+			}
+
+
 			// ...
+			case 1000: { // GC
+				CHECK_ARGC_EQ(0);
+
+				ptrdiff_t dp;
+				dp = ip - (unsigned char*)this;
+
+				heap->fp = fp; ol->this = this;
+				ol->gc(ol, 0); // full gc
+				fp = heap->fp; this = ol->this;
+
+				ip = (unsigned char*)this + dp;
+				break;
+			}
+			case 1002: // return userdata
+				CHECK_ARGC_EQ(0);
+				r = new_vptr(ol->userdata);
+				break;
+
+			case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
+				r = itoun (ol->max_heap_size);
+				ol->max_heap_size = value(A1);
+				break;
+			case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
+				r = itoun (ol->max_heap_size);
+				break;
+
+			case 1022: // set ticker
+				r = itoun (ticker);
+				ticker = value(A1);
+				break;
+	//		case 1014: { /* set-ticks n _ _ -> old */
+	//			result = itoun (ol->slice);
+	//			ol->slice  = uvtoi (a);
+	//			break;
+	//		}
+			case 1117: { // get memory stats -> #[generation fp total]
+				int g = heap->genstart - heap->begin;
+				int f = fp - heap->begin;
+				int t = heap->end - heap->begin;
+				r = new_vector(I(g), I(f), I(t));
+				break;
+			}
+
+#ifdef __EMSCRIPTEN__
+			case 1201: {
+				CHECK(is_number(a), a, SYSCALL);
+				CHECK(is_string(b), b, SYSCALL);
+				char* string = string(b);
+
+				switch (value(a)) {
+				case TSTRING: {
+					char* v = emscripten_run_script_string(string);
+					if (v)
+						result = new_string(v);
+					break;
+				}
+				case TINTP: {
+					int v = emscripten_run_script_int(string);
+					result = (word*)itosv(v);
+					break;
+				}
+				default:
+					emscripten_run_script(string);
+					result = (word*) ITRUE;
+				}
+				break;
+			}
+#endif
+
+			// SANDBOX/UNSAFES
+
+			// https://www.mindcollapse.com/blog/processes-isolation.html
+			// http://outflux.net/teach-seccomp/
+			#if HAS_SANDBOX && SYSCALL_PRCTL
+			case SYSCALL_PRCTL:
+				//seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
+				/*struct sock_filter filter[] = {
+					// http://outflux.net/teach-seccomp/
+				};*/
+				if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT, 0, 0, 0) != -1) { /* true if no problem going seccomp */
+					sandboxp = SECCOMP;
+					r = (word*) ITRUE;
+				}
+				break;
+			#endif
+
+			#if HAS_UNSAFES
+			case SYSCALL_ARCHPRCTL:
+				unsafesp = 0;
+				r = (word*) ITRUE;
+				break;
+			#endif
 
 			default:
 				break;
@@ -3883,19 +4406,19 @@ loop:;
 	// этот case должен остаться тут - как последний из кейсов
 	// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
 	// https://filippo.io/linux-syscall-table/
-	case SYSCALL: {
-		// main link: http://man7.org/linux/man-pages/man2/syscall.2.html
-		//            http://man7.org/linux/man-pages/dir_section_2.html
-		// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
-		//                     http://www.x86-64.org/documentation/abi.pdf
-		CHECK(is_fixp(A0), A0, SYSCALL);
-		word op = value (A0);
+	// case SYSCALL: {
+	// 	// main link: http://man7.org/linux/man-pages/man2/syscall.2.html
+	// 	//            http://man7.org/linux/man-pages/dir_section_2.html
+	// 	// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
+	// 	//                     http://www.x86-64.org/documentation/abi.pdf
+	// 	CHECK(is_fixp(A0), A0, SYSCALL);
+	// 	word op = value (A0);
 
-		word a = A1, b = A2, c = A3;
-		word *r = &A4;
-		word* result = (word*)IFALSE;  // default returned value is #false
+	// 	word a = A1, b = A2, c = A3;
+	// 	word *r = &A4;
+	// 	word* result = (word*)IFALSE;  // default returned value is #false
 
-		switch (op + sandboxp) {
+	// 	switch (op + sandboxp) {
 
 		/*! \subsection syscall-12
 		 * \brief 12: (syscall 12 ...) -> ...|#f
@@ -3950,198 +4473,6 @@ loop:;
 		// 	break;
 
 
-		// ==================================================
-		//  network part:
-		//
-		// http://www.kegel.com/c10k.html
-	#if HAS_SOCKETS
-		// todo: add getsockname() and getpeername() syscalls
-
-		// SOCKET
-		case 41: { // socket (todo: options: STREAM or DGRAM)
-			// http://beej.us/net2/html/syscalls.html
-			// right way: use PF_INET in socket call
-	#ifdef _WIN32
-			int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-			unsigned long v = 1;
-			ioctlsocket(sock, FIONBIO, &v); // set blocking mode
-	#else
-			int sock = socket(PF_INET, SOCK_STREAM, 0);
-	#endif
-			if (sock != -1)
-				result = (word*)make_port (sock);
-			break;
-		}
-
-		// CONNECT
-		case 42: { // (connect sockfd host port)
-			CHECK(is_port(a), a, SYSCALL);
-			int sockfd = port (a);
-			char* host = string (b); // todo: check for string type
-			int port = value (c);
-
-			struct sockaddr_in addr;
-			addr.sin_family = AF_INET;
-			addr.sin_addr.s_addr = inet_addr(host);
-			addr.sin_port = htons(port);
-
-			if (addr.sin_addr.s_addr == INADDR_NONE) {
-				struct hostent *he = gethostbyname(host);
-				if (he != NULL)
-					memcpy(&addr.sin_addr, he->h_addr_list[0], sizeof(addr.sin_addr));
-			}
-
-	//				ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
-	//				addr.sin_addr.s_addr = htonl(ipfull);
-			if (connect(sockfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) >= 0)
-				result = (word*)ITRUE;
-	//				set_blocking(sock, 0);
-			break;
-		}
-
-		// SHUTDOWN
-		// http://linux.die.net/man/2/shutdown
-		case 48: { // (shutdown socket #f #f)
-			CHECK(is_port(a), a, SYSCALL);
-			int socket = port(a);
-
-			// On error, -1 is returned
-			if (shutdown(socket, 2) == 0) // both
-				result = (word*)ITRUE;
-
-			break;
-		}
-
-		// BIND
-		// http://linux.die.net/man/2/bind
-		case 49: { //  (socket, port, #false) // todo: c for options
-			CHECK(is_port(a), a, SYSCALL);
-			int sockfd = port(a);
-			int port = value (b);
-
-			// todo: assert on argument types
-			struct sockaddr_in interface;
-			interface.sin_family = AF_INET;
-			interface.sin_port = htons(port);
-			interface.sin_addr.s_addr = INADDR_ANY;
-
-			// On success, zero is returned.
-			if (bind(sockfd, (struct sockaddr *) &interface, sizeof(interface)) == 0)
-				result = (word*)ITRUE;
-			break;
-		}
-
-		// LISTEN (socket)
-		// http://linux.die.net/man/2/listen
-		// listen() marks the socket referred to by sockfd as a passive socket, that is,
-		// as a socket that will be used to accept incoming connection requests using accept(2).
-		case 50: {
-			CHECK(is_port(a), a, SYSCALL);
-			int sockfd = port(a);
-
-			// On success, zero is returned.
-			if (listen(sockfd, 42) == 0) {
-	//					set_blocking(sockfd, 0);
-				result = (word*)ITRUE;
-			}
-
-			break;
-		}
-
-		// ACCEPT
-		// http://linux.die.net/man/2/accept
-		case 43: { // (accept sockfd)
-			CHECK(is_port(a), a, SYSCALL);
-			int sockfd = port(a);
-
-			struct sockaddr_in addr;
-			socklen_t len = sizeof(addr);
-			int sock = accept(sockfd, (struct sockaddr *)&addr, &len);
-			// On error, -1 is returned
-			if (sock < 0)
-				break;
-	#if _WIN32
-			unsigned long mode = 1; // non blocking
-			if (ioctlsocket(sock, FIONBIO, &mode) == 0)
-	#else
-			int flags = fcntl(sock, F_GETFL, 0);
-			if (flags < 0)
-				break;
-			flags = (flags | O_NONBLOCK);
-			if (fcntl(sock, F_SETFL, flags) == 0)
-	#endif
-				result = (word*)make_port (sock);
-			break;
-		}
-
-		// SELECT
-		// http://linux.die.net/man/2/select
-		case 23: { // (select sockfd)
-			CHECK(is_port(a), a, SYSCALL);
-			int sockfd = port(a);
-			int timeus = is_numberp(b) ? untoi (b) : 100000;
-			// todo: timeout as "b"
-
-			fd_set fds;
-			FD_ZERO(&fds); FD_SET(sockfd, &fds);
-
-			struct timeval timeout = { timeus / 1000000, timeus % 1000000 }; // µs
-			if (select(sockfd + 1, &fds, NULL, NULL, &timeout) > 0
-					&& FD_ISSET(sockfd, &fds))
-				result = (word*)ITRUE;
-
-			break;
-		}
-
-		// GETPEERNAME
-		// http://linux.die.net/man/2/getpeername
-		case 51: { // (getpeername sockfd)
-			CHECK(is_port(a), a, SYSCALL);
-			int sockfd = port(a);
-
-			// todo: https://svn.code.sf.net/p/plibc/code/trunk/plibc/src/inet_ntop.c
-			struct sockaddr_storage peer;
-			socklen_t len = sizeof(peer);
-
-			// On success, zero is returned.
-			if (getpeername(sockfd, (struct sockaddr *) &peer, &len) != 0)
-				break;
-	#ifdef _WIN32
-			char* ipaddress = inet_ntoa(((struct sockaddr_in *)&peer)->sin_addr);
-			unsigned short port = ntohs(((struct sockaddr_in *)&peer)->sin_port);
-
-			result = new_pair(new_string(ipaddress), I(port));
-
-	#else
-			unsigned short port;
-
-			if (peer.ss_family == AF_INET) {
-				char ipaddress[INET_ADDRSTRLEN];
-
-				struct sockaddr_in *s = (struct sockaddr_in *)&peer;
-				port = ntohs(s->sin_port);
-				inet_ntop(AF_INET, &s->sin_addr, ipaddress, sizeof ipaddress);
-				result = new_pair(new_string(ipaddress), I(port));
-			}
-			/* temporary disable IP_v6, todo: return back
-			else
-			if (peer.ss_family == AF_INET6) {
-				char ipaddress[INET6_ADDRSTRLEN];
-
-				struct sockaddr_in6 *s = (struct sockaddr_in6 *)&peer;
-				port = ntohs(s->sin6_port);
-				inet_ntop(AF_INET6, &s->sin6_addr, ipaddress, sizeof ipaddress);
-				result = new_pair(new_string(ipaddress), I(port));
-			}*/
-			else
-				break;
-	#endif
-
-			break;
-		}
-	#endif// HAS_SOCKETS
-		// ==================================================
-
 
 		// // (FORK)
 		// case 57: {
@@ -4164,305 +4495,19 @@ loop:;
 		// 	break;
 		// }
 
-		// EXIT errorcode
-		// http://linux.die.net/man/2/exit
-		// exit - cause normal process termination, function does not return.
-		case 60: {
-			this = (word *) R[3];
-			R[3] = a;
-			goto done;
-		}
-
-		// UNAME (uname)
-		// http://linux.die.net/man/2/uname
-		case 63: {
-			struct utsname name;
-			if (uname(&name))
-				break;
-
-			result = new_vector(
-			#ifdef __ANDROID__
-				new_string("Android"),
-			#else
-				({name.sysname ? (word)new_string(name.sysname) : IFALSE;}),
-			#endif
-				new_string(name.nodename),
-				new_string(name.release),
-				new_string(name.version),
-				({name.machine ? (word)new_string(name.machine) : IFALSE;}));
-
-			break;
-		}
-
-		#if SYSCALL_GETRLIMIT
-		// GETRLIMIT (getrlimit)
-		case SYSCALL_GETRLIMIT: {
-			struct rlimit r;
-			// arguments currently ignored. used RUSAGE_SELF
-			if (getrlimit(value(a), &r) == 0)
-				result = new_vector(
-						itoun(r.rlim_cur),
-						itoun(r.rlim_max));
-			break;
-
-		}
-		#endif
-
-		#if SYSCALL_GETRUSAGE
-		// GETRUSAGE (getrusage)
-		// @returns: (vector utime stime)
-		//           utime: total amount of time spent executing in user mode, expressed in a timeval structure (seconds plus microseconds)
-		//           stime: total amount of time spent executing in kernel mode, expressed in a timeval structure (seconds plus microseconds)
-		case SYSCALL_GETRUSAGE: {
-			#ifdef _WIN32
-			struct rusage
-			{
-				struct timeval ru_utime;
-				struct timeval ru_stime;
-			};
-
-			#define RUSAGE_SELF 0
-			int getrusage(int who, struct rusage* usage) {
-				FILETIME createTime;
-				FILETIME exitTime;
-				FILETIME kernelTime;
-				FILETIME userTime;
-				if (GetProcessTimes(GetCurrentProcess(), &createTime, &exitTime, &kernelTime, &userTime) != -1) {
-					ULARGE_INTEGER li;
-
-					li.LowPart = userTime.dwLowDateTime;
-					li.HighPart = userTime.dwHighDateTime;
-					usage->ru_utime.tv_sec = li.QuadPart / 10000000;
-					usage->ru_utime.tv_usec = li.QuadPart % 10000000;
-
-					li.LowPart = kernelTime.dwLowDateTime;
-					li.HighPart = kernelTime.dwHighDateTime;
-					usage->ru_stime.tv_sec = li.QuadPart / 10000000;
-					usage->ru_stime.tv_usec = li.QuadPart % 10000000;
-					return 0;
-				}
-				else
-					return -1;
-			}
-			#endif
-
-			struct rusage u;
-			// arguments currently ignored. used RUSAGE_SELF
-			if (getrusage(RUSAGE_SELF, &u) == 0)
-				result = new_vector(
-						new_pair (itoun(u.ru_utime.tv_sec), itoun(u.ru_utime.tv_usec)),
-						new_pair (itoun(u.ru_stime.tv_sec), itoun(u.ru_stime.tv_usec))
-				);
-			break;
-
-		}
-		#endif
-
-		#if SYSCALL_SYSINFO
-		// SYSINFO (sysinfo)
-		case SYSCALL_SYSINFO: {
-			struct sysinfo info;
-			if (sysinfo(&info) == 0)
-				result = new_vector(
-						itoun(info.uptime),
-						new_vector(itoun(info.loads[0]),
-								   itoun(info.loads[1]),
-								   itoun(info.loads[2])),
-						itoun(info.totalram),
-						itoun(info.freeram),
-						itoun(info.sharedram),
-						itoun(info.bufferram),
-						itoun(info.totalswap),
-						itoun(info.freeswap),
-						itoun(info.procs)
-				);
-			break;
-		}
-		#endif
-
 		// todo: add syscall 100 (times)
-
-
-		// =- 1000+ -===========================================================================
-		// other internal commands
-		case 1000: { // GC
-			ptrdiff_t dp;
-			dp = ip - (unsigned char*)this;
-
-			heap->fp = fp; ol->this = this;
-			ol->gc(ol, 0); // full gc
-			fp = heap->fp; this = ol->this;
-
-			ip = (unsigned char*)this + dp;
-			break;
-		}
-		case 1002: // return userdata
-			result = new_vptr(ol->userdata);
-			break;
-
-		case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
-			result = itoun (ol->max_heap_size);
-			ol->max_heap_size = value (a);
-			break;
-		case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
-			result = itoun (ol->max_heap_size);
-			break;
-
 		// todo: сюда надо перенести все prim_sys операции, что зависят от глобальных переменных
 		//  остальное можно спокойно оформлять отдельными функциями
 
-		case 1022: // set ticker
-			result = itoun (ticker);
-			ticker = value (a);
-			break;
 	//		case 1014: { /* set-ticks n _ _ -> old */
 	//			result = itoun (ol->slice);
 	//			ol->slice  = uvtoi (a);
 	//			break;
 	//		}
 
-		case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
-			word *name = (word *)a;
-			if (is_string(name)) {
-				char* env = getenv(string(name));
-				if (env)
-					result = new_string(env, lenn(env, VMAX));
-			}
-			break;
-		}
-		case 1017: { // system (char*) // todo: remove this !!!!!!
-			int r = system(string(a));
-			if (r >= 0)
-				result = itoun(r);
-			break;
-		}
-
-		case 1117: { // get memory stats -> #[generation fp total]
-			int g = heap->genstart - heap->begin;
-			int f = fp - heap->begin;
-			int t = heap->end - heap->begin;
-			result = new_vector(I(g), I(f), I(t));
-			break;
-		}
-
-	#if HAS_DLOPEN
-		// -=( dlopen )=-------------------------------------------------
-		case SYSCALL_DLOPEN: { // (dlopen filename mode #false)
-			word *filename = (word*)a;
-			int mode = (int) value(b);
-
-			// android 2.2 segfaults on dlopen(NULL, ...)
-			// http://code.google.com/p/android/issues/detail?id=5049
-			void* module;
-			if ((word) filename == IFALSE) {
-				module = dlopen(OLVM_LIBRARY_SO_NAME, mode); // If filename is NULL, then the returned handle is for the main program.
-			}
-			else if (is_string(filename)) {
-				module = dlopen(string(filename), mode);
-			}
-			else
-				break; // invalid filename, return #false
-
-			if (module)
-				result = new_vptr(module);
-			break;
-		}
-
-		case SYSCALL_DLCLOSE: {
-			CHECK(is_vptr(a), a, SYSCALL);
-			void* module = (void*)car (a);
-
-			if (dlclose(module) == 0)
-				result = (word*) ITRUE;
-			break;
-		}
-
-		case SYSCALL_DLSYM: { // (dlsym module function #false)
-			CHECK(is_vptr(a), a, SYSCALL);
-			void* module = (void*)car (a);
-
-			word* symbol = (word*) b;
-			// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
-			if (!(is_value(symbol) || reference_type (symbol) == TSTRING))
-				break;
-
-			word function = (word)dlsym(module, is_value(symbol)
-					? (char*) value((word)symbol)
-					: (char*) &symbol[1]);
-			if (function)
-				result = new_vptr(function);
-			else
-				D("dlsym failed: %s", dlerror());
-			break;
-		}
-		case SYSCALL_DLERROR: { // (dlerror)
-			char* error = (char*)dlerror();
-			if (error)
-				result = new_string(error);
-			break;
-		}
-	#endif// HAS_DLOPEN
-
-		// https://www.mindcollapse.com/blog/processes-isolation.html
-		// http://outflux.net/teach-seccomp/
-		#if HAS_SANDBOX && SYSCALL_PRCTL
-		case SYSCALL_PRCTL:
-			//seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
-			/*struct sock_filter filter[] = {
-				// http://outflux.net/teach-seccomp/
-			};*/
-			if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT, 0, 0, 0) != -1) { /* true if no problem going seccomp */
-				sandboxp = SECCOMP;
-				result = (word*)ITRUE;
-			}
-			break;
-		#endif
-
-		#if HAS_UNSAFES
-		case SYSCALL_ARCHPRCTL:
-			unsafesp = 0;
-			result = (word*)ITRUE;
-			break;
-		#endif
-
-
-		case SYSCALL_KILL:
-	#ifndef _WIN32
-			if (kill(value (a), value (b)) >= 0)
-				result = (word*) ITRUE;
-	#endif
-			break;
-
-		case 1201:
-#ifdef __EMSCRIPTEN__
-			CHECK(is_number(a), a, SYSCALL);
-			CHECK(is_string(b), b, SYSCALL);
-			char* string = string(b);
-
-			switch (value(a)) {
-			case TSTRING: {
-				char* v = emscripten_run_script_string(string);
-				if (v)
-					result = new_string(v);
-				break;
-			}
-			case TINTP: {
-				int v = emscripten_run_script_int(string);
-				result = (word*)itosv(v);
-				break;
-			}
-			default:
-				emscripten_run_script(string);
-				result = (word*) ITRUE;
-			}
-#endif
-			break;
-
-		}// case
-
-		*r = (word) result;
-		ip += 5; break;
-	}
+	// 	*r = (word) result;
+	// 	ip += 5; break;
+	// }
 
 	// FPU extensions
 	case FP1: { // with 1 argument
@@ -4560,6 +4605,12 @@ loop:;
 		else
 			A1 = IFALSE;
 		ip += 2; break;
+	}
+
+	case VMEXIT: {
+		this = (word *) R[3];
+		R[3] = A0;
+		goto done;
 	}
 
 	default:

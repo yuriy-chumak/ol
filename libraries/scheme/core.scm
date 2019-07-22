@@ -1974,14 +1974,14 @@
                (call/cc (λ (var) (let* . body))))))
 
       ;; used syscalls
-      (define (exec function . args) (syscall 59 function args #f))
-      (define (yield)                (syscall2 24))
+      (define (exec function . args) (syscall 59 function args))
+      (define (yield)                (syscall 24))
 
-      (define (halt n)               (syscall 60 n n n))
+      (define (halt n)               (vm:exit n))
 
       ;; stop the vm *immediately* without flushing input or anything else with return value n
       ;; make thread sleep for a few thread scheduler rounds
-      (define (set-ticker-value n) (syscall 1022 n #false #false))
+      (define (set-ticker-value n) (syscall 1022 n))
       (define (wait n) ; is it required?
          (if (eq? n 0)
             0
@@ -1991,9 +1991,8 @@
 
 
       ;; special things exposed by the vm
-      (define (set-memory-limit n) (syscall 12 n #f #f))
-      ; (define (get-word-size)      (syscall 1008 #false #false #false)) removed, please use ffi
-      (define (get-memory-limit)   (syscall 12 #f #f #f))
+      (define (set-memory-limit n) (syscall 1007 n))
+      (define (get-memory-limit)   (syscall 1009))
 )
 ; ---------------------------
    (export

@@ -94,7 +94,7 @@
    (define ALvoid*   type-vptr)
 
    ; https://en.wikipedia.org/wiki/Uname
-   (define uname (syscall 63 #f #f #f))
+   (define uname (syscall 63))
 
    (define AL_LIBRARY (c-string
       (let ((os (ref uname 1)))

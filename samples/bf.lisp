@@ -2,7 +2,7 @@
 
 ; read char from stdin
 (define (read)
-   (let ((ch (syscall2 0 stdin 0))) ; 0 means "is it has any symbols to read"
+   (let ((ch (syscall 0 stdin 0))) ; 0 means "is it has any symbols to read"
       (if (eq? ch #true) ; async io, read again
          (read)
          (ref ch 0))))
