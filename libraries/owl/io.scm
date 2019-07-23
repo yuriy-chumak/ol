@@ -204,7 +204,7 @@
       ;;; Reading
 
       (define input-block-size
-         *vec-leaf-size*) ;; changing from 256 breaks vector leaf things
+         *blob-leaf-size*) ;; changing from 256 breaks vector leaf things
 
       (define (try-get-block fd block-size block?)
          (let ((res (sys:read fd block-size)))

@@ -3,7 +3,7 @@
    (license MIT/LGPL3)
    (keywords (otus ol blob bytevector vector))
    (description "
-      Otus-Lisp BLOB support library.")
+      Otus-Lisp BLOB support library")
 
    ; blobs are one-dimensional data structures indexable by natural numbers,
    ; having O(n log_256 n) access and memory use (effectively O(1)). They are
@@ -67,12 +67,12 @@
       ;vec-render         ; v x tail → tail'
 
       merge-chunks          ; exported for use in lib-io (may be moved later)
-      leaf-data vec-leaf-of
+      leaf-data
       blob-leaves
 
       ;; vec-cat             ;  vec x vec → vec
       ;; vec-rev
-      *vec-leaf-size*)     ; needed for vector IO
+      *blob-leaf-size*)     ; needed for vector IO
 
    (import
       (scheme core)
@@ -94,11 +94,11 @@
       (define ncdr cdr)
 
       ;; number of bits each vector tree node dispatches from index
-      ; (define *vec-bits* (>> *fixnum-bits* 1))
-      (define *vec-bits* 16) ;; legacy
+      ; (define *blob-bits* (>> *fixnum-bits* 1))
+      (define *blob-bits* 16) ;; legacy
 
-      (define *vec-leaf-size* (<< 1 *vec-bits*))
-      (define *vec-leaf-max* (- *vec-leaf-size* 1))
+      (define *blob-leaf-size* (<< 1 *blob-bits*))
+      (define *blob-leaf-max* (- *blob-leaf-size* 1))
 
       ;;;
       ;;; Vector search
@@ -108,7 +108,7 @@
       (define (vec-dispatch-1 v n)
          (case (type v)
             (type-vector-dispatch ; vector dispatch node with #[Leaf D0 ... D255]
-               (lets ((n _ (vm:add (vm:and n *vec-leaf-max*) 2))) ;; jump over header and leaf
+               (lets ((n _ (vm:add (vm:and n *blob-leaf-max*) 2))) ;; jump over header and leaf
                   (ref v n)))
             (else
                (runtime-error "Bad vector node in dispatch-1: type " (type v)))))
@@ -118,7 +118,7 @@
          (case (type v)
             (type-vector-dispatch
                (lets
-                  ((p _ (vm:shr d *vec-bits*))
+                  ((p _ (vm:shr d *blob-bits*))
                    (p _ (vm:add p 2)))
                   (ref v p)))
             (type-vector-leaf
@@ -132,7 +132,7 @@
       (define (vec-seek v ds)
          (lets ((d ds ds))
             (if (null? ds)
-               (if (less? d *vec-leaf-size*) ; just one byte at top digit?
+               (if (less? d *blob-leaf-size*) ; just one byte at top digit?
                   (vec-dispatch-1 v d)
                   (vec-dispatch-1 (vec-dispatch-2 v d) d))
                (vec-dispatch-1 (vec-seek v ds) d))))
@@ -141,13 +141,13 @@
       (define (vec-ref-digit v n)
          (case (type v)
             (type-bytevector
-               (ref v (vm:and n *vec-leaf-max*)))
+               (ref v (vm:and n *blob-leaf-max*)))
             (type-vector-dispatch
                 (vec-ref-digit (ref v 1) n)) ; read the leaf of the node
             (type-vector-leaf
-                (if (eq? n *vec-leaf-max*)
-                   (ref v *vec-leaf-size*)
-                   (lets ((n _ (vm:add (vm:and n *vec-leaf-max*) 1)))
+                (if (eq? n *blob-leaf-max*)
+                   (ref v *blob-leaf-size*)
+                   (lets ((n _ (vm:add (vm:and n *blob-leaf-max*) 1)))
                      (ref v n))))
             (else
                (runtime-error "bad vector node in vec-ref-digit: type " (type v)))))
@@ -167,10 +167,10 @@
                (cond
                   ((bytevector? v)
                      (ref v n))
-                  ((less? n *vec-leaf-size*)
+                  ((less? n *blob-leaf-size*)
                      (vec-ref-digit v n))
                   (else
-                     (vec-ref-digit (vec-dispatch-2 v n) (vm:and n *vec-leaf-max*)))))
+                     (vec-ref-digit (vec-dispatch-2 v n) (vm:and n *blob-leaf-max*)))))
             (type-int+
                (vec-ref-big v n))
             (else
@@ -178,22 +178,22 @@
 
       ;;; searching the leaves containing a pos
 
-      ;; todo: switch blob-ref to use vec-leaf-of for int+ indeces
+      ;; todo: switch blob-ref to use blob-leaf-of for int+ indeces
 
       (define (vec-leaf-big v n)
          (vec-dispatch-2 (vec-seek v (ncdr n)) (ncar n)))
 
-      (define (vec-leaf-of v n)
+      (define (blob-leaf-of v n)
          (case (type n)
             (type-fix+
                (cond
                   ((eq? (type v) type-bytevector) v)
-                  ((less? n *vec-leaf-size*) v)
+                  ((less? n *blob-leaf-size*) v)
                   (else (vec-dispatch-2 v n))))
             (type-int+
                (vec-leaf-big v n))
             (else
-               (runtime-error "vec-leaf-of: bad index: " n))))
+               (runtime-error "blob-leaf-of: bad index: " n))))
 
 
       ;; others
@@ -232,7 +232,7 @@
       ;; list -> list of leaf nodes
       (define (chunk-list lst out leaves n raw? len)
          (cond
-            ((eq? n *vec-leaf-size*) ; flush out to leaves
+            ((eq? n *blob-leaf-size*) ; flush out to leaves
                (let ((leaf (make-leaf out raw?)))
                   (chunk-list lst null (cons (make-leaf out raw?) leaves) 0 #true (+ len n))))
             ((null? lst) ; partial (last) leaf
@@ -261,7 +261,7 @@
                (cons (car l)
                   (merge-each (cdr l) s)))
             (else
-               (lets ((these s (grab s *vec-leaf-size*)))
+               (lets ((these s (grab s *blob-leaf-size*)))
                   (cons
                      (vm:make type-vector-dispatch (cons (car l) these))
                      (merge-each (cdr l) s))))))
@@ -296,7 +296,7 @@
          (lets ((here below (cut-at lst width null)))
             (if (null? below)
                (list here)
-               (cons here (levels below (* width *vec-leaf-size*)))))) ; everything below the first level branches 256-ways
+               (cons here (levels below (* width *blob-leaf-size*)))))) ; everything below the first level branches 256-ways
 
       (define (merge-levels lst)
          (foldr
@@ -313,12 +313,12 @@
                      ;((number? (car this)) ;; skip size field at roo
                      ;   (cons (car this) (loop below (cdr this))))
                      (else
-                        (lets ((here below (cut-at below *vec-leaf-size* null)))
+                        (lets ((here below (cut-at below *blob-leaf-size* null)))
                            ;; attach up to 256 subtrees to this leaf
                            (cons
                               (vm:make type-vector-dispatch (cons (car this) here))
                               (loop below (cdr this))))))))
-            null (levels lst *vec-leaf-max*)))
+            null (levels lst *blob-leaf-max*)))
 
       ; handle root here, since it is special in having 255 subtrees only (0-slot is empty and has size)
       (define (merge-chunks ll len)
@@ -380,9 +380,9 @@
 
       (define (blob-iter v)
          (let loop ((end (blob-len v)) (pos 0))
-            (let ((this (vec-leaf-of v pos)))
+            (let ((this (blob-leaf-of v pos)))
                (iter-leaf-of this
-                  (λ () (let ((pos (+ pos *vec-leaf-size*))) (if (< pos end) (loop end pos) null)))))))
+                  (λ () (let ((pos (+ pos *blob-leaf-size*))) (if (< pos end) (loop end pos) null)))))))
 
       (define (iter-leaf-range v p n t)
          (if (eq? n 0)
@@ -391,26 +391,26 @@
                (iter-leaf-range v (+ p 1) (- n 1) t))))
 
       (define (iter-range-really v p n)
-         (let ((start (band p *vec-leaf-max*)))
+         (let ((start (band p *blob-leaf-max*)))
             (cond
                ((eq? start 0)
                   ;; read leaf from beginning
-                  (if (> n *vec-leaf-max*)
+                  (if (> n *blob-leaf-max*)
                      ;; iter a full leaf (usual suspect)
-                     (iter-leaf-of (vec-leaf-of v p)
-                        (λ () (iter-range-really v (+ p *vec-leaf-size*) (- n *vec-leaf-size*))))
+                     (iter-leaf-of (blob-leaf-of v p)
+                        (λ () (iter-range-really v (+ p *blob-leaf-size*) (- n *blob-leaf-size*))))
                      ;; last leaf reached, iter prefix and stop
-                     (iter-leaf-range (vec-leaf-of v p) 0 n null)))
+                     (iter-leaf-range (blob-leaf-of v p) 0 n null)))
                ((eq? n 0) null)
-               ((less? n (- *vec-leaf-size* start))
+               ((less? n (- *blob-leaf-size* start))
                   ;; the whole range is in a part of this leaf
-                  (iter-leaf-range (vec-leaf-of v p) start n null))
+                  (iter-leaf-range (blob-leaf-of v p) start n null))
                (else
                   ;; this is the first leaf. iter a suffix of it.
                   (lets
-                     ((n-here (- *vec-leaf-size* start))
+                     ((n-here (- *blob-leaf-size* start))
                       (n-left (- n n-here)))
-                     (iter-leaf-range (vec-leaf-of v p) start n-here
+                     (iter-leaf-range (blob-leaf-of v p) start n-here
                         (λ () (iter-range-really v (+ p n-here) n-left))))))))
 
       (define (blob-iter-range v p e)
@@ -448,13 +448,13 @@
       (define (blob-iterr-loop v p)
          (if (eq? type-fix- (type p))
             null
-            (iterr-any-leaf (vec-leaf-of v p)
-               (λ () (blob-iterr-loop v (- p *vec-leaf-size*))))))
+            (iterr-any-leaf (blob-leaf-of v p)
+               (λ () (blob-iterr-loop v (- p *blob-leaf-size*))))))
 
       (define (blob-iterr v)
          (lets
             ((end (blob-len v))
-             (last (band end *vec-leaf-max*)))
+             (last (band end *blob-leaf-max*)))
             (cond
                ((eq? last 0) ; vec is empty or ends to a full leaf
                   (if (eq? end 0) ; blank vector
@@ -509,8 +509,8 @@
          (let ((end (blob-len vec)))
             (let loop ((pos 0))
                (if (< pos end)
-                  (let ((data (leaf-data (vec-leaf-of vec pos))))
-                     (pair data (loop (+ pos *vec-leaf-size*))))
+                  (let ((data (leaf-data (blob-leaf-of vec pos))))
+                     (pair data (loop (+ pos *blob-leaf-size*))))
                   null))))
 
       ;; fixme: temporary vector append!
