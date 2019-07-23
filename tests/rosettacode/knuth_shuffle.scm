@@ -26,3 +26,6 @@
 
 (print "list after: " (list-shuffle items))
 
+(define items "Down, down, down. Would the fall NEVER come to an end!")
+(print "string before: " items)
+(print "string after: " (runes->string (list-shuffle (string->runes items))))
