@@ -56,7 +56,7 @@
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
-#define __OLVM_VERSION__ "2.0"
+#define __OLVM_VERSION__ "2.1 rc1"
 #endif
 #ifndef lint
 __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
@@ -4244,8 +4244,8 @@ loop:;
 			}
 			#endif
 
-			#if SYSCALL_SYSINFO
 			// SYSINFO (sysinfo)
+			#if SYSCALL_SYSINFO
 			case SYSCALL_SYSINFO: {
 				struct sysinfo info;
 				if (sysinfo(&info) == 0)
@@ -4283,14 +4283,14 @@ loop:;
 					r = itoun(q);
 				break;
 			}
-			// kill
-			case SYSCALL_KILL: {
-		#ifndef _WIN32
-				if (kill(value (A1), value (A2)) >= 0)
-					r = (word*) ITRUE;
-		#endif
-				break;
-			}
+// 			// kill
+// 			case SYSCALL_KILL: {
+// #ifndef _WIN32
+// 				if (kill(value (A1), value (A2)) >= 0)
+// 					r = (word*) ITRUE;
+// #endif
+// 				break;
+// 			}
 
 
 			// ...
@@ -4367,7 +4367,7 @@ loop:;
 
 			// https://www.mindcollapse.com/blog/processes-isolation.html
 			// http://outflux.net/teach-seccomp/
-			#if HAS_SANDBOX && SYSCALL_PRCTL
+#if HAS_SANDBOX && SYSCALL_PRCTL
 			case SYSCALL_PRCTL:
 				//seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
 				/*struct sock_filter filter[] = {
@@ -4378,14 +4378,14 @@ loop:;
 					r = (word*) ITRUE;
 				}
 				break;
-			#endif
+#endif
 
-			#if HAS_UNSAFES
+#if HAS_UNSAFES
 			case SYSCALL_ARCHPRCTL:
 				unsafesp = 0;
 				r = (word*) ITRUE;
 				break;
-			#endif
+#endif
 
 			default:
 				break;
