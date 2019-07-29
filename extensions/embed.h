@@ -191,7 +191,7 @@ void embed_new(ol_t* embed)
 			"(import (lang eval)"
 			"        (owl fasl))"
 			"(import (scheme bytevector))"
-			"(vm:exit (list (vm:pin"
+			"(halt (list (vm:pin"
 			"(let*((this (cons (vm:pin *toplevel*) 0))" // internal function state (env . 0)
 			"      (eval (lambda (exp args)"              // expression processor
 			"               (case exp"

@@ -7,71 +7,72 @@
       Core Otus-Lisp Scheme library.")
 
    (import
-      (src vm) ;; Otus Lisp Virtual Machine сodes and primitives
-               ;; that do not need to be exported by libraries.
-               ;
-               ; object creation/modification:
-               ;   vm:new vm:make vm:makeb vm:cast
-               ;   cons set-ref set-ref!
-               ; other object manipulations
-               ;   car cdr ref type size  eq? less?
-               ; basic math primitives:
-               ;   integer:
-               ;     vm:add vm:sub vm:mul vm:div vm:shr vm:shl
-               ;   floating-point (if built with OLVM_INEXACTS)
-               ;     vm:fp1 (xFE: fsin, xFF: fcos),
-               ;     vm:fp2 (xD9: <, xC1: +, xE9: -, xC9: *, xF9: /)
-               ;   binary:
-               ;     vm:and vm:or vm:xor
-               ; special:
-               ;   vm:pin, vm:unpin, vm:deref
-               ;   clock, syscall
-               ; vm info:
-               ;   vm:version vm:maxvalue vm:valuewidth vm:features
-               ; associative arrays (fixed functions) support:
-               ;   ff:red ff:black ff:toggle ff:red? ff:right?
-               ; execution flow manipulation:
-               ;   ff-apply vector-apply
-               ;
-               ; exported functions:
-               ;   apply apply/cc arity-error
-               ;   call-with-current-continuation
-               ;
-               ;; special forms: (declared in lang/env.scm)
-               ;
-               ; quote values lambda setq
-               ; letq ifeq either values-apply
-               ;
+      (src vm)           ; olvm сodes and primitives,
+      ; that do not need to be exported by libraries:
+      ;
+      ; object creation/modification:
+      ;   vm:new vm:make vm:makeb vm:cast
+      ;   cons set-ref set-ref!
+      ; other object manipulations:
+      ;   car cdr ref type size eq? less?
+      ; elementary math primitives:
+      ;   integer:
+      ;     vm:add vm:sub vm:mul vm:div vm:shr vm:shl
+      ;   binary:
+      ;     vm:and vm:or vm:xor
+      ; floating-point math (OLVM_INEXACTS required):
+      ;   vm:fp1 (xFE: fsin, xFF: fcos),
+      ;   vm:fp2 (xD9: <, xC1: +, xE9: -, xC9: *, xF9: /)
+      ; special:
+      ;   vm:pin, vm:unpin, vm:deref
+      ;   clock, syscall
+      ; info:
+      ;   vm:version vm:maxvalue vm:valuewidth vm:features
+      ; associative arrays (fixed functions) support:
+      ;   ff:red ff:black ff:toggle ff:red? ff:right?
+      ; execution flow manipulation:
+      ;   ff-apply vector-apply
+      ;
+      ; olvm exported functions:
+      ;   apply apply/cc arity-error
+      ;   call-with-current-continuation
+
+      ; special forms declared in lang/env.scm:
+      ;
+      ; quote values lambda setq
+      ; letq ifeq either values-apply
 
       (scheme srfi-16)   ; case-lambda, (r7rs) 4.2.9
       (scheme srfi-87)   ; <= in cases
       (scheme srfi-71))  ; (let* ((a b (values..
 
    ; -----------------------------------------------------------------
-   ; internal Ol staff
+   ; internal ol staff
    (begin
       ; fast internal functions (-1 obj) and (+1 obj),
       ;  limitation - obj is atomic numbers,
-      ;  note: todo: add theoretically impossible case:
+      ;  todo: add theoretically impossible case:
       ;       (if carry (runtime-error "Too long list to fit in fixnum"))
 
-      (setq |-1| (lambda (n) ; * internal
+      (setq |-1| (lambda (n)         ; * internal
          (values-apply (vm:sub n 1) (lambda (n carry) n))))
-      (setq |+1| (lambda (n) ; * internal
+      (setq |+1| (lambda (n)         ; * internal
          (values-apply (vm:add n 1) (lambda (n carry) n))))
-      (setq |0.0| (vm:fp2 #xC9 42 0)) ; * internal
+      (setq |0.0| (vm:fp2 #xC9 1 0)) ; * internal
 
       ; * ol specific: (runtime-error reason info)
       (setq runtime-error (lambda (reason info)
          (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
 
       ; * temporary, allows basic assert implementation
+      ;   not persistent, updated to real implementation in 6.1
       (setq equal? (lambda (a b)
          (ifeq a b #true #false)))
 
       ; * internal automation testing staff
       ; note: please be careful!
-      ;       this is simplified 'assert' that uses 'eq?' before real 'equal?' be implemented in chapter 6
+      ;       this is simplified 'assert' that uses 'eq?' before real 'equal?' be
+      ;       implemented in chapter 6.1
       (define-syntax assert
          (syntax-rules (===>)
             ((assert expression ===> expectation)
@@ -90,10 +91,16 @@
       ; * ol specific
       (setq error runtime-error) ; [yc] is it required?
 
-      ; * ol some warnings
-      (setq error:please-import-langintern (lambda ()
-         (runtime-error "Please, import (lang intern) to get the function.")))
+      ; * internal staff
+      (setq core-profile-error (lambda (function module)
+         (runtime-error "Core profile error:"
+            (cons "Function" (cons function (cons "require to import" (cons module (cons "module." #null))))))))
 
+      (define-syntax declare-external
+         (syntax-rules (quote)
+            ((declare-external function module)
+               (setq function (lambda args
+                  (core-profile-error (quote function) module))))))
    )
 
    ; =================================================================
@@ -305,7 +312,7 @@
       ;
       ; syntax: set! <variable> <expression>  * not supported
       (setq set! (lambda (variable expression)
-         (runtime-error "No set! is allowed." "(sometimes you can use set-ref!, check the docs.)")))
+         (runtime-error "No set! is allowed." "(sometimes you can use set-ref!, check the docs)")))
 
       ; 4.2  Derived expression types
       ;
@@ -669,7 +676,9 @@
       ;;; Chapter 6
       ;;; Standard procedures
       ;
-      ; This chapter describes Scheme's built-in procedures. The initial (or ``top level'') Scheme
+      ; This chapter describes Scheme's built-in procedures.
+      ; 
+      ; The initial (or ``top level'') Scheme
       ; environment starts out with a number of variables bound to locations containing useful values,
       ; most of which are primitive procedures that manipulate data. For example, the variable abs is
       ; bound to (a location initially containing) a procedure of one argument that computes the
@@ -876,21 +885,17 @@
       ; Numerical computation has traditionally been .......
       ; .........
 
-      ; This data types related to olvm
-      ;     - not a part of r7rs -
-      ; todo: move to (src vm) ?
-      (define type-fix+             TFIX+)
-      (define type-fix-             TFIX-)
-      (define type-int+             TINT+)
-      (define type-int-             TINT-)
-      (define type-rational         TRATIONAL)
-      (define type-complex          TCOMPLEX)
-      (define type-inexact          TINEXACT)
-
       ; 6.2.1  Numerical types
       ;
       ; Mathematically, numbers may be arranged ........
       ; ..............
+      (define type-fix+             TFIX+)     ; * ol specific, atomic positive integer number
+      (define type-fix-             TFIX-)     ; * ol specific, atomic negative integer number
+      (define type-int+             TINT+)     ; * ol specific, complex positive integer number
+      (define type-int-             TINT-)     ; * ol specific, complex negative integer number
+      (define type-rational         TRATIONAL)
+      (define type-complex          TCOMPLEX)
+      (define type-inexact          TINEXACT)
 
       ; 6.2.2  Exactness
       ;
@@ -1427,12 +1432,10 @@
                   (and (equal? (car os) (car o)) (loop (cdr o)))))))
 
       ; procedure:  (symbol->string symbol)
-      (define (symbol->string . args)
-         (error:please-import-langintern)) ; * (lang eval)
+      (declare-external symbol->string '(lang eval))  ; * (lang eval)
 
       ; procedure:  (string->symbol string)
-      (define (string->symbol . args)
-         (error:please-import-langintern)) ; * (lang eval)
+      (declare-external string->symbol '(lang eval))  ; * (lang eval)
 
       ; 6.3.4  Characters   * moved to (r5rs characters)
       ; Characters are objects that represent printed characters such as letters and digits.
