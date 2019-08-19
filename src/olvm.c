@@ -3759,7 +3759,7 @@ loop:;
 					#ifdef __unix__
 					# ifdef __EMSCRIPTEN__
 						emscripten_run_script(command);
-						result = (void*)ITRUE;
+						r = (word*) ITRUE;
 					# else
 						// todo: add case (cons program environment)
 						int child = fork();
@@ -4171,12 +4171,12 @@ loop:;
 				#ifdef __ANDROID__
 					new_string("Android"),
 				#else
-					({name.sysname ? (word)new_string(name.sysname) : IFALSE;}),
+					({*name.sysname ? (word)new_string(name.sysname) : IFALSE;}),
 				#endif
 					new_string(name.nodename),
 					new_string(name.release),
 					new_string(name.version),
-					({name.machine ? (word)new_string(name.machine) : IFALSE;}));
+					({*name.machine ? (word)new_string(name.machine) : IFALSE;}));
 
 				break;
 			}
@@ -4339,25 +4339,26 @@ loop:;
 
 #ifdef __EMSCRIPTEN__
 			case 1201: {
-				CHECK(is_number(a), a, SYSCALL);
-				CHECK(is_string(b), b, SYSCALL);
-				char* string = string(b);
+				CHECK_ARGC_EQ(2);
+				//CHECK(is_number(a), a, SYSCALL);
+				//CHECK(is_string(b), b, SYSCALL);
+				char* string = string(A2);
 
-				switch (value(a)) {
+				switch (value(A1)) {
 				case TSTRING: {
 					char* v = emscripten_run_script_string(string);
 					if (v)
-						result = new_string(v);
+						r = new_string(v);
 					break;
 				}
 				case TINTP: {
 					int v = emscripten_run_script_int(string);
-					result = (word*)itosv(v);
+					r = (word*)itosv(v);
 					break;
 				}
 				default:
 					emscripten_run_script(string);
-					result = (word*) ITRUE;
+					r = (word*) ITRUE;
 				}
 				break;
 			}

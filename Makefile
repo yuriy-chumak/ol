@@ -179,7 +179,7 @@ olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
 	   -o olvm.js \
 	   -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 \
 	   -s MAIN_MODULE=1 \
-	   -s BINARYEN_METHOD='asmjs' \
+	   -s WASM=0 \
 	   -s EXPORTED_FUNCTIONS="['_main']" \
 	   --memory-init-file 0
 
