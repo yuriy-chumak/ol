@@ -28,14 +28,14 @@
 //#define __EMSCRIPTEN_major__ 1
 //#define __EMSCRIPTEN_minor__ 37
 
-#ifndef OLVM_FFI_TUPLES
-#define OLVM_FFI_TUPLES 1
+#ifndef OLVM_FFI_VECTORS
+#define OLVM_FFI_VECTORS 1
 #endif
 
 #define TVOID         (48)
 //efine TSTRING       (3)
 //efine TSTRINGWIDE   (5)
-//efine TBYTEVECTOR   (19) // todo: remove this (use fft-vptr or fft-void* is same)
+//efine TBYTEVECTOR   (19)
 
 #define TUNKNOWN      (62) // only for ffi, direct sending argument without processing
 #define TANY          (63) // automatic conversion based on actual argument type
@@ -62,8 +62,16 @@
 #define TMASK     0x00FFF
 
 #define TCDECL    0x01000
+//efine TSYSCALL    // OS/2, not supported/required
+//efine TOPTLINK    // VisualAge, not supported/required
+//efine TPASCAL     // Pascal, not supported/required
 #define TSTDCALL  0x02000
 #define TFASTCALL 0x03000
+//efine TVECTORCALL // VS2013, not supported/required
+//efine TDELPHI     // Delphi, not supported/required
+//efine TWATCOM     // Watcom, not supported/required
+//efine TSAFECALL   // Delphi/F-Pascal, not supported
+//efine TTHISCALL   // c++, use in toplevel code
 
 #define FFT_PTR   0x10000
 #define FFT_REF   0x20000
@@ -201,7 +209,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"movq  %rsp, %rbp",
 
 	"pushq %r9",
-	"andl  $-16, %esp", // выровняем стек по 16-байтовой границе
+	"andl  $-16, %esp", // выравняем стек по 16-байтовой границе
 
 	// get count of arguments
 	"xor   %rax, %rax",
@@ -212,7 +220,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 	"subq  $4, %rax",
 	"jbe   4f",
 
-	// довыровняем стек, так как:
+	// довыравняем стек, так как:
 	//  The stack pointer must be aligned to 16 bytes in any region of code
 	//  that isn’t part of an epilog or prolog, except within leaf functions.
 	"movq  %rax, %rdx",
@@ -444,7 +452,7 @@ __ASM__(
 	// "sub sp, sp, r3", // если да, то на слово его и опустим
 	// finally, sending regular (integer) arguments
 	"cmp r1, #4",  // if (i > 4)
-	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
+	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corresponded "ldrsh" instruction based on r3 value
 
 	// "add r5, r0, r1, asl #2",
 	"lsl r5, r1, #2",
@@ -1854,8 +1862,6 @@ word OL_sizeof(OL* self, word* arguments)
 		// general types:
 		case 20: return I(sizeof(void*));
 
-		// fft types:
-		case TINT8: case TUINT8:
 		default:
 			return IFALSE;
 	}
