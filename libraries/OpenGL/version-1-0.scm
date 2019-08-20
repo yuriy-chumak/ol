@@ -1793,26 +1793,8 @@
    (define linux? (string-ci=? OS "Linux"))
    (define apple? (string-ci=? OS "Darwin"))
 
-   (define GL_LIBRARY (load-dynamic-library
-      (cond
-         (win32? "opengl32.dll")
-         (linux? "libGL.so.1")
-         ;"HP-UX"
-         ;"SunOS"
-         ;"Darwin"
-         ;"FreeBSD"
-         ;"CYGWIN_NT-5.2-WOW64"
-         ;"MINGW32_NT-5.2"
-         ;...
-         (else
-            (runtime-error "Unsupported platform" OS)))))
-
+   (define GL_LIBRARY GL_LIBRARY)
    (define GL GL_LIBRARY)
-
-   (define WGL GL)
-   (define GLX (if linux? (load-dynamic-library "libGL.so.1")))
-  ;(define GDI (if win32? (load-dynamic-library "gdi32.dll")))
-  ;(define EGL ...) :TODO
 
    ; -------------------------------------------------------------------------
    ; constants
