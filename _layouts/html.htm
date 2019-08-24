@@ -23,13 +23,11 @@
    <script src="javascripts/jquery-2.1.1.min.js"></script>
    <link  href="stylesheets/jquery.terminal.css" rel="stylesheet"/>
    <script src="javascripts/jquery.terminal-0.8.8.min.js"></script>
-   <script src="javascripts/jquery-tools-flashembed.js"></script>
    <script src="javascripts/jquery.mousewheel.min.js"></script>
    <script src="javascripts/jquery.history-1.8.2.min.js"></script>
-   <script src="javascripts/jsocket-1.0.0.min.js"></script>
 
    <script src="javascripts/rainbow-1.1.9.min.js"></script>
-   <script src="javascripts/language/scheme.js"></script>
+   <script src="javascripts/language/ol.js"></script>
    <link  href="stylesheets/language/themes/github.css" rel="stylesheet">
 
    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
@@ -117,6 +115,12 @@ header .popup {
          <div id="terminal" class="terminal">
             <noscript><b>Looks like you have disabled scripts for this page. Please enable it to continue working with.</b></noscript>
          </div>
+<!--
+         <div id="scene">
+            <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+         </div>
+-->
+
          <div id="about-terminal" class="overlay">
             <div class="popup">
                <h2>About Terminal</h2>
@@ -125,6 +129,7 @@ header .popup {
                <p><small style="float: right">Copyright (c) 2015-2018 Yuriy Chumak</small></p>
             </div>
          </div>
+<!--
          <script>
             var about = document.getElementById('about-terminal');
 
@@ -134,6 +139,7 @@ header .popup {
                }
             }
          </script>
+-->
          </div>
          <small style="float: right;">(c)&nbsp;</small>
 
