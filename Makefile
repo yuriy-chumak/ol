@@ -170,16 +170,17 @@ src/olvm.c: extensions/ffi.c
 $(repl.o): repl
 	$(LD) -r -b binary -o $(repl.o) repl
 
-# please, use emscripten version 1.37.40, because
-# fockin' emscripten team broke all again!
+# emscripten version 1.37.40+
 olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
-	emcc src/olvm.c -Os -m32 \
+	EMCC_FORCE_STDLIBS=1 emcc src/olvm.c -Os -m32 \
 	   -D NAKED_VM=1 -D HAS_DLOPEN=1 \
 	   -D OLVM_BUILTIN_FMATH=1 \
 	   -o olvm.js \
 	   -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 \
-	   -s MAIN_MODULE=1 \
+	   -s LEGACY_VM_SUPPORT=1 -s LEGACY_GL_EMULATION=1 \
 	   -s WASM=0 \
+	   -s MAIN_MODULE=1 -s LINKABLE=1 -s EXPORT_ALL=1 \
+	   -s TRACE_WEBGL_CALLS=1 -s GL_DEBUG=1 \
 	   -s EXPORTED_FUNCTIONS="['_main']" \
 	   --memory-init-file 0
 

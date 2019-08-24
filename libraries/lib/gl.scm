@@ -337,7 +337,7 @@
          (EGL version-1-1))
       (begin
          (define (native:create-context title)
-            (print "Checking WebGL support...")
+            ;(print "Checking WebGL support...")
             (let ((major (make-32bit-array 1))
                   (minor (make-32bit-array 1))
                   (numConfigs (make-32bit-array 1))
@@ -373,13 +373,14 @@
 
             ; gl2es part
             (define gl4es (dlopen))
+            (define LIBGL_BEGINEND #xA10D)  (glHint LIBGL_BEGINEND 0)
             (define initialize_gl4es (dlsym gl4es "initialize_gl4es"))
             (exec ffi initialize_gl4es (cons fft-int #null) #null)
 
             (print-to stderr "OpenGL version: " (glGetString GL_VERSION))
             (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))
             (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
-            (print-to stderr "OpenGL extensions: " (glGetString GL_EXTENSIONS))
+            ;; (print-to stderr "OpenGL extensions: " (glGetString GL_EXTENSIONS))
 
             ;; (define width '(1184))
             ;; (define height '(672))
