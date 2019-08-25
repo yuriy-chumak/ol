@@ -549,7 +549,7 @@ void E(char* format, ...)
 void yield()
 {
 #ifdef __EMSCRIPTEN__
-	emscripten_sleep(1);
+	// emscripten_sleep(1);
 #else
 # if defined(__linux__) ||\
      defined(__FreeBSD__) ||\
@@ -2101,11 +2101,11 @@ apply:;
 
 #			ifdef __EMSCRIPTEN__
 			{
-				static int cntr = 100; // magic number for counter
-				if (cntr-- == 0) {
-					emscripten_sleep(1);
-					cntr = 100;
-				}
+			//	static int cntr = 100; // magic number for counter
+			//	if (cntr-- == 0) {
+			//		emscripten_sleep(1);
+			//		cntr = 100;
+			//	}
 			}
 #			endif
 
@@ -3699,8 +3699,8 @@ loop:;
 				int_t us = numberp(A1);
 
 				#ifdef __EMSCRIPTEN__
-					int_t ms = us / 1000;
-					emscripten_sleep(ms);
+					//int_t ms = us / 1000;
+					//emscripten_sleep(ms);
 					r = (word*) ITRUE;
 				#endif
 				#ifdef _WIN32// for Windows
@@ -4569,7 +4569,7 @@ loop:;
 
 	case VMPIN: {  // (vm:pin object) /pin object/ => pin id
 		word object = A0;
-		// TCALLABLE
+
 		int id;
 		// TODO: увеличить heap->CR если маловато колбеков!
 		for (id = 4; id < CR; id++) {
@@ -5103,12 +5103,14 @@ override(idle)
 word
 OL_run(OL* ol, int argc, char** argv)
 {
+#ifndef __EMSCRIPTEN__
 	int r = setjmp(ol->heap.fail);
 	if (r != 0) {
 		// TODO: restore old values
 		// TODO: if IFALSE - it's error
 		return ol->R[3]; // returned value
 	}
+#endif
 
 	// подготовим аргументы:
 	word userdata = ol->R[4];
@@ -5147,17 +5149,24 @@ OL_run(OL* ol, int argc, char** argv)
 	ol->this = this;
 	ol->arity = acc;
 
+#ifndef __EMSCRIPTEN__
 	longjmp(ol->heap.fail,
 		(int)runtime(ol));
+#else
+	runtime(ol);
+	return ol->R[3];
+#endif
 }
 
 word
 OL_continue(OL* ol, int argc, void** argv)
 {
+#ifndef __EMSCRIPTEN__
 	int r = setjmp(ol->heap.fail);
 	if (r != 0) {
 		return ol->R[3];
 	}
+#endif
 
 	// точка входа в программу
 	word* this = argv[0];
@@ -5183,8 +5192,13 @@ OL_continue(OL* ol, int argc, void** argv)
 	ol->this = this;
 	ol->arity = acc;
 
+#ifndef __EMSCRIPTEN__
 	longjmp(ol->heap.fail,
 		(int)runtime(ol));
+#else
+	runtime(ol);
+	return ol->R[3];
+#endif
 }
 
 word OL_deref(struct ol_t* ol, word ref)

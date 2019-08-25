@@ -172,17 +172,24 @@ $(repl.o): repl
 
 # emscripten version 1.37.40+
 olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
-	EMCC_FORCE_STDLIBS=1 emcc src/olvm.c -Os -m32 \
-	   -D NAKED_VM=1 -D HAS_DLOPEN=1 \
-	   -D OLVM_BUILTIN_FMATH=1 \
+	emcc src/olvm.c -Os \
+	   -DNAKED_VM=1 -DEMBED_VM=1 -DHAS_DLOPEN=1 \
 	   -o olvm.js \
-	   -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 \
-	   -s LEGACY_VM_SUPPORT=1 -s LEGACY_GL_EMULATION=1 \
-	   -s WASM=0 \
-	   -s MAIN_MODULE=1 -s LINKABLE=1 -s EXPORT_ALL=1 \
-	   -s TRACE_WEBGL_CALLS=1 -s GL_DEBUG=1 \
-	   -s EXPORTED_FUNCTIONS="['_main']" \
+	   -s WASM=0 -s SIDE_MODULE=1 \
+	   -s NO_EXIT_RUNTIME=1 \
 	   --memory-init-file 0
+
+tmp/platform.c:
+	echo "#include <GL/gl.h>"      > tmp/platform.c
+	echo "int main() { return 0;}" >>tmp/platform.c
+tmp/platform.js: tmp/platform.c
+	EMCC_FORCE_STDLIBS=1 \
+	emcc tmp/platform.c -Os \
+	  -o tmp/platform.js \
+	  -s WASM=0 \
+	  -s MAIN_MODULE=1 -s LINKABLE=1 -s EXPORT_ALL=1 \
+	  -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
+	  --memory-init-file 0
 
 # compiling the Ol language
 recompile: boot.fasl
