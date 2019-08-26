@@ -523,8 +523,12 @@ void E(char* format, ...)
 				write(fd, "-", 1);
 				d = -d;
 			}
-			for (int i = 30; d && i; --i, d /= 10)
-				write(fd, "0123456789" + (d % 10), 1);
+			int q = 1;
+			for (int i = d; i != 0; i /= 10)
+				q *= 10;
+			q /= 10;
+			for (int i = q; i != 0; i /= 10)
+				write(fd, "0123456789" + (d / i) % 10, 1);
 			break;
 		}
 		default:
@@ -3168,11 +3172,11 @@ loop:;
 		#define CHECK_ARGC(a, b)  if (argc < a) FAIL(62000, I(argc), I(a))\
                              else if (argc > b) FAIL(62000, I(argc), I(b));
 		// numbers checking
-		#define CHECK_TYPE(arg, type, error) if (argc >= arg) if (!is_##type(A##arg)) FAIL(I(error), I(arg), A##arg)
+		#define CHECK_TYPE(arg, type, error) if (argc >= arg) if (!is_##type(A##arg)) FAIL(error, I(arg), A##arg)
 		#define CHECK_TYPE_OR_FALSE(arg, type, error) \
-		                                     if (argc >= arg) if (!is_##type(A##arg) && !(A##arg == IFALSE)) FAIL(I(error), I(arg), A##arg)
+		                                     if (argc >= arg) if (!is_##type(A##arg) && !(A##arg == IFALSE)) FAIL(error, I(arg), A##arg)
 		#define CHECK_TYPE_OR_TYPE2(arg, type, type2, error) \
-		                                     if (argc >= arg) if (!is_##type(A##arg) && !is_##type2(A##arg)) FAIL(I(error), I(arg), A##arg)
+		                                     if (argc >= arg) if (!is_##type(A##arg) && !is_##type2(A##arg)) FAIL(error, I(arg), A##arg)
 
 		#define CHECK_PORT(arg)      CHECK_TYPE(arg, port, 62001)
 		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)
