@@ -65,7 +65,8 @@ You can immediately try Otus Lisp in the provided terminal on the left of this p
 
 
 ### Development status <a name="news"></a>
-* 2018
+* 2019
+  * version of builtin terminal ol updated to 2.1-2222
   * a lot of changes, full list can be obtained [on github](https://github.com/yuriy-chumak/ol/commits/master).
 
 * [News archive](?en/news)
