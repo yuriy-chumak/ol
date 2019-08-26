@@ -1038,14 +1038,6 @@
 
       ;; run the repl on a fresh input stream, report errors and catch exit
       (define (repl-trampoline env in)
-         (if (interactive? env)
-            ; ohai:
-            (print "Welcome to Otus Lisp " (cdr (env-get env '*version* '(#t . "\b"))) ","
-               (if (env-get env '*sandbox* #false)
-                  " you feel restricted;" "")
-               "\n"
-               "type ',help' to help, ',quit' to end session."))
-
          (let boing ((env env))
             (let ((env (bind-toplevel env)))
                (case (repl-port env in)

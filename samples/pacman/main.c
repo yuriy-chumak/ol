@@ -243,11 +243,12 @@ void keys(int key, int x, int y) {
 	glutPostRedisplay();
 }
 
+extern unsigned char _binary_______repl_start[];
 
 //Main program
 int main(int argc, char **argv)
 {
-	embed_new(&ol); // ol creation
+	embed_new(&ol, _binary_______repl_start, 0); // ol creation
 	eval("print", "do some logs: ", 42);
 
 #if 1 // eclipse

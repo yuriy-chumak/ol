@@ -241,7 +241,6 @@
    (let*((initial-names *owl-names*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
-         ;(print "//vm-args: " vm-args)
          ;; now we're running in the new repl
          (start-thread-controller
             (list ;1 thread
@@ -254,82 +253,118 @@
                      (fork-intern-interner symbols)
                      (fork-bytecode-interner codes)
 
-                     (fork-server 'repl (lambda ()
-                        ;; set a signal handler which stop evaluation instead of owl
-                        ;; if a repl eval thread is running
-                        (set-signal-action repl-signal-handler)
+                     (let*((file (if (null? vm-args)
+                                    stdin
+                                    (if (string-eq? (car vm-args) "-")
+                                       stdin
+                                       (open-input-file (car vm-args)))))
+                           (options
+                              (let loop ((options #empty) (args (if (null? vm-args) null (cdr vm-args))))
+                                 (cond
+                                    ((null? args)
+                                       options)
+                                    ((string-eq? (car args) "--sandbox")
+                                       (loop (put options 'sandbox #t) (cdr args)))
+                                    ((string-eq? (car args) "--interactive")
+                                       (loop (put options 'interactive #t) (cdr args)))
+                                    ((string-eq? (car args) "--no-interactive")
+                                       (loop (put options 'interactive #f) (cdr args)))
+                                    ((string-eq? (car args) "--embed")
+                                       (loop (put options 'embed #t) (cdr args)))
+                                    ((string-eq? (car args) "--home") ; TBD
+                                       (if (null? (cdr args))
+                                          (runtime-error "no heap size in command line" args))
+                                       (loop (put options 'home (cadr args)) (cddr args)))
+                                    (else
+                                       (loop options (cdr args))))))
+                           (home (or (getf options 'home)
+                                       (getenv "OL_HOME")
+                                       "/usr/lib/ol")) ; default posix ol libraries location
+                           (sandbox? (getf options 'sandbox))
+                           (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
+                           (embed? (getf options 'embed))
 
-                        ;; repl
-                        (shutdown
-                           (let*((file (if (null? vm-args)
-                                          stdin
-                                          (if (string-eq? (car vm-args) "-")
-                                             stdin
-                                             (open-input-file (car vm-args)))))
-                                 (options
-                                    (let loop ((options #empty) (args (if (null? vm-args) null (cdr vm-args))))
-                                       (cond
-                                          ((null? args)
-                                             options)
-                                          ((string-eq? (car args) "--sandbox")
-                                             (loop (put options 'sandbox #t) (cdr args)))
-                                          ((string-eq? (car args) "--interactive")
-                                             (loop (put options 'interactive #t) (cdr args)))
-                                          ((string-eq? (car args) "--no-interactive")
-                                             (loop (put options 'interactive #f) (cdr args)))
-                                          ((string-eq? (car args) "--home") ; TBD
-                                             (if (null? (cdr args))
-                                                (runtime-error "no heap size in command line" args))
-                                             (loop (put options 'home (cadr args)) (cddr args)))
-                                          (else
-                                             (loop options (cdr args))))))
-                                 (home (or (getf options 'home)
-                                           (getenv "OL_HOME")
-                                           "/usr/lib/ol")) ; default posix ol libraries location
-                                 (sandbox? (getf options 'sandbox))
-                                 (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
+                           (version (cons "OL" *version*))
+                           (env (fold
+                                    (λ (env defn)
+                                       (env-set env (car defn) (cdr defn)))
+                                    initial-environment
+                                    (list
+                                       (cons '*owl-names*   initial-names)
+                                       (cons '*include-dirs* (list "." home))
+                                       (cons '*interactive* interactive?)
+                                       (cons '*vm-args* vm-args)
+                                       (cons '*version* version)
+                                       (cons '*features* (let*((*features* (let ((one (vm:cast 1 type-vptr)))
+                                                                              (cond
+                                                                                 ((eq? (ref one 0) 1)
+                                                                                    (cons 'little-endian *features*))
+                                                                                 ((eq? (ref one (- (size one) 1)) 1)
+                                                                                    (cons 'big-endian *features*))
+                                                                                 ((eq? (ref one 1) 1)
+                                                                                    (cons 'middle-endian *features*))
+                                                                                 (else
+                                                                                    *features*))))
+                                                               (*features* (let ((uname (syscall 63)))
+                                                                              (if (vector? uname)
+                                                                                 (append (list
+                                                                                       (string->symbol (ref uname 1))  ; OS
+                                                                                       (string->symbol (ref uname 5))) ; Platform
+                                                                                    *features*)
+                                                                                 *features*))))
+                                                            *features*))
+                                       ;(cons '*scheme* 'r5rs)
+                                       (cons '*sandbox* sandbox?)
+                                 ))))
+                           (if sandbox?
+                              (sandbox 1)) ;(sandbox megs) - check is memory enough
 
-                                 (version (cons "OL" *version*))
-                                 (env (fold
-                                          (λ (env defn)
-                                             (env-set env (car defn) (cdr defn)))
-                                          initial-environment
-                                          (list
-                                             (cons '*owl-names*   initial-names)
-                                             (cons '*include-dirs* (list "." home))
-                                             (cons '*interactive* interactive?)
-                                             (cons '*vm-args* vm-args)
-                                             (cons '*version* version)
-                                             (cons '*features* (let*((*features* (let ((one (vm:cast 1 type-vptr)))
-                                                                                    (cond
-                                                                                       ((eq? (ref one 0) 1)
-                                                                                          (cons 'little-endian *features*))
-                                                                                       ((eq? (ref one (- (size one) 1)) 1)
-                                                                                          (cons 'big-endian *features*))
-                                                                                       ((eq? (ref one 1) 1)
-                                                                                          (cons 'middle-endian *features*))
-                                                                                       (else
-                                                                                          *features*))))
-                                                                     (*features* (let ((uname (syscall 63)))
-                                                                                    (if (vector? uname)
-                                                                                       (append (list
-                                                                                             (string->symbol (ref uname 1))  ; OS
-                                                                                             (string->symbol (ref uname 5))) ; Platform
-                                                                                          *features*)
-                                                                                       *features*))))
-                                                                  *features*))
-                                            ;(cons '*scheme* 'r5rs)
-                                             (cons '*sandbox* sandbox?)
-                                       ))))
-                              (if sandbox?
-                                 (sandbox 1)) ;(sandbox megs) - check is memory enough
-                              (repl-trampoline env file))))))])
-            )))) ; no threads state
+                           ; ohai:
+                           (if interactive?
+                              (print "Welcome to Otus Lisp " (cdr version)
+                                 (if sandbox? ", you feel restricted" "")
+                                 "\n"
+                                 (unless embed?
+                                    "type ',help' to help, ',quit' to end session." "")))
 
 
+                           (unless embed?
+                              ; regular repl:
+                              (fork-server 'repl (lambda ()
+                                 ;; set a signal handler which stop evaluation instead of owl
+                                 ;; if a repl eval thread is running
+                                 (set-signal-action repl-signal-handler)
 
-;(define symbols (symbols-of make-main-entry))
-;(define codes   (codes-of   make-main-entry))
+                                 ;; repl
+                                 (shutdown
+                                       (repl-trampoline env file))))
+                              ; embed:
+                              (let*((this (cons (vm:pin env) 0))
+                                    (eval (lambda (exp args)
+                                             (case exp
+                                                (['ok value env]
+                                                   (vm:unpin (car this))
+                                                   (set-car! this (vm:pin env))
+                                                   (if (null? args)
+                                                      value
+                                                      (apply value args)))
+                                                (else is error
+                                                   (print-to stderr "error: " (ref error 2))
+                                                   #false))))
+                                    (evaluate (lambda (expression)
+                                             (halt
+                                                (let*((env (vm:deref (car this)))
+                                                      (exp args (uncons expression #f)))
+                                                   (case (type exp)
+                                                      (type-string
+                                                         (eval (eval-string env exp) args))
+                                                      (type-string-wide
+                                                         (eval (eval-string env exp) args))
+                                                      (type-fix+
+                                                         (eval (eval-repl (vm:deref exp) env #f evaluate) args))
+                                                      (type-bytevector
+                                                         (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (car this)) #f evaluate) args))))))))
+                                 (halt (vm:pin evaluate))))))])))))
 
 ;;;
 ;;; Dump the new repl
