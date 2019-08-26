@@ -171,7 +171,22 @@ $(repl.o): repl
 	$(LD) -r -b binary -o $(repl.o) repl
 
 # emscripten version 1.37.40+
-olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
+repl.js: repl
+	xxd --include repl >tmp/repl.c
+	emcc tmp/repl.c -Os \
+	   -o repl.js -Drepl=binary_repl_start \
+	   -s WASM=0 -s SIDE_MODULE=1 \
+	   -s NO_EXIT_RUNTIME=1 \
+	   --memory-init-file 0
+
+oljs.js: extensions/embed.c
+	emcc extensions/embed.c -Os \
+	   -o oljs.js -Iinclude \
+	   -s WASM=0 -s SIDE_MODULE=1 \
+	   -s NO_EXIT_RUNTIME=1 \
+	   --memory-init-file 0
+
+olvm.js: src/olvm.c include/olvm.h extensions/ffi.c repl.js oljs.js
 	emcc src/olvm.c -Os \
 	   -DNAKED_VM=1 -DEMBED_VM=1 -DHAS_DLOPEN=1 \
 	   -o olvm.js \
@@ -179,13 +194,13 @@ olvm.js: src/olvm.c include/olvm.h extensions/ffi.c
 	   -s NO_EXIT_RUNTIME=1 \
 	   --memory-init-file 0
 
-tmp/platform.c:
-	echo "#include <GL/gl.h>"      > tmp/platform.c
-	echo "int main() { return 0;}" >>tmp/platform.c
-tmp/platform.js: tmp/platform.c
+tmp/emscripten.c:
+	echo "#include <GL/gl.h>"      > tmp/emscripten.c
+	echo "int main() { return 0;}" >>tmp/emscripten.c
+emscripten.js: tmp/emscripten.c
 	EMCC_FORCE_STDLIBS=1 \
-	emcc tmp/platform.c -Os \
-	  -o tmp/platform.js \
+	emcc tmp/emscripten.c -Os \
+	  -o emscripten.js \
 	  -s WASM=0 \
 	  -s MAIN_MODULE=1 -s LINKABLE=1 -s EXPORT_ALL=1 \
 	  -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
