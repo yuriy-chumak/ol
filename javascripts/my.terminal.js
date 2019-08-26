@@ -1,60 +1,8 @@
-// show/hide terminal
-/*$(document).keydown(function(e) {
-   if (e.keyCode === 27) {
-      switchTerminal(e);
-   }
-});*/
-
 // emscripten undocumented function:
 function abortStackOverflow() {}
 
-function showTerminal()
-{
-   console.log("showTerminal")
-   savedFocus = document.activeElement;
-//   $("#canvas").hide();
-   terminal.resume();
-
-   if (document.activeElement != undefined)
-      document.activeElement.blur();
-}
-
-function hideTerminal()
-{
-   console.log("hideTerminal")
-   terminal.pause();
-
-   // resize the canvas to terminal
-/*   $("#canvas").css({
-      'height': $("#terminal").outerHeight(),
-      'width':  $("#terminal").outerWidth()
-   });
-   $("#canvas").show();*/
-
-   if (savedFocus != undefined) {
-      savedFocus.focus();
-      savedFocus=undefined;
-   }
-}
-
-function switchTerminal(e)
-{
-   //$("#canvas").is(":visible")) {
-   if (savedFocus == undefined) {
-      showTerminal();
-   }
-   else {
-      hideTerminal();
-   }
-
-   if (e != undefined)
-      e.preventDefault();
-}
-
 function doit(text)
 {
-   showTerminal();
-
    terminal.focus();
 //   console.log("text:", text);
    if (text.indexOf("\n") == 0)
@@ -67,12 +15,16 @@ var stdInput = ""; //unescape(encodeURIComponent(",load \"init.lisp\"")); // loa
 
 var terminal;
 $('#terminal').terminal(function(command, terminal) {
-   stdInput += unescape(encodeURIComponent(command));
+    //stdInput += unescape(encodeURIComponent(command));
 
-   // let's clear prompt up to got response
-   terminal.set_prompt('');
+    // todo: check parenthesis
+    terminal.set_prompt('');
+    ol_eval(unescape(encodeURIComponent(command)));
+    terminal.set_prompt('> ');
+
+    // let's clear prompt up to got response
 }, {
-   prompt: ' ',
+   prompt: 'Please wait, loading library files...',
    name: 'repl',
    greetings: '',
    enabled: false,
@@ -94,11 +46,10 @@ $('#terminal').mousewheel(function(event) {
 });
 
 var Module = {
-//   arguments: ['/repl', 'test.lisp', '--interactive'],
-//   arguments: ['/repl', '-', '--interactive'],
-   arguments: ['-', '--interactive'],
-   //dynamicLibraries: ['gl2es.js'],
-   //TOTAL_MEMORY: 67108864,
+//   arguments: ['#', '-', '--embed'],
+//   arguments: ['platform', '-'],
+   dynamicLibraries: ['olvm.js', 'repl.js', 'oljs.js'],
+   TOTAL_MEMORY: 67108864,
 
    preRun: function() {
       console.log("preRun");
@@ -132,10 +83,15 @@ var Module = {
       //var GLctx; GL.init()
    },
    postRun: function() {
-      terminal.focus();
-      terminal.exec("\n"); // start loading process.
-      //terminal.exec("(import (lib opengl))");
+      ol_init = Module.cwrap('ol_init', 'number', []);
+      ol_eval = Module.cwrap('ol_eval', 'number', ['string']);
+
+      ol_init();
+
       terminal.resume();
+      terminal.set_prompt('> ');
+
+      //terminal.exec("(import (lib gl))");
    },
 
    print: function(text) {
@@ -147,18 +103,18 @@ var Module = {
          terminal.clear();
       }
 
-      // reaction on "(print)" - show canvas
+/*      // reaction on "(print)" - show canvas
       if (text=="> ") {
          console.log("sssssss")
 //         terminal.ready = true;
 //         hideTerminal();
-      }
+      }*/
 
       // let's process OL's prompt:
-      terminal.set_prompt('> ');
-      terminal.position(1);
+/*    terminal.position(1);
       while (text.indexOf("> ") == 0)
-         text = text.substring(2);
+         text = text.substring(2);//*/
+      terminal.set_prompt('> ');
       terminal.resume();
 
 
@@ -170,8 +126,8 @@ var Module = {
       //if (text == "type ',help' to help, ',quit' to end session.")
       //   terminal.exec("(import (lib gl)) (import (OpenGL version-1-0))");
          //terminal.exec("(import (lib opengl))");
-      if (text == "bye-bye :/")
-         terminal.pause();
+      //if (text == "bye-bye :/")
+      //   terminal.pause();
    },
    printErr: function(text) {
       console.log("error: ", text);
@@ -217,7 +173,7 @@ var Module = {
       // Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
    }
 };
-Module.setStatus('Downloading...');
+//Module.setStatus('Downloading OL Virtual Machine');
 window.onerror = function(event) {
    // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
    Module.setStatus('onerror: Exception thrown, see JavaScript console', event);
@@ -270,15 +226,17 @@ var Downloaded = 0;
          if (++Downloaded == Libraries.length) {*/
             // load olvm
             var script = document.createElement('script');
-            script.src = "olvm.js";
-         
+            script.src = "javascripts/emscripten-1.37.35.js";
+
             script.addEventListener('load', function(me) {
-               //terminal.echo("REPL loaded, starting ol...")
+                terminal.set_prompt('');
+                terminal.echo("Booting Virtual Machine...")
             }, false);
             script.addEventListener('error', function(event) {
-               terminal.echo("Can't find olvm. Build it first and try again.")
+                terminal.set_prompt('');
+                terminal.echo("Can't find olvm. Build it first and try again.")
             }, false);
-         
+
             document.body.appendChild(script);
 /*         }
       }
