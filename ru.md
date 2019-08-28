@@ -36,6 +36,17 @@ Ol реализован как расширенное подмножество S
 - [x] Minoca [OS](https://www.minocacorp.com/product/).
 - [x] [LattePanda](https://www.lattepanda.com/)
 
+### Протестированные веб-браузеры (asm.js версия Ol)
+- [x] Iceweasel 38.6.0 / Debian 6.0
+- [x] Epiphany 3.4.2 / Debian 6.0
+- [x] Chrome (37, 48, etc.) / Debian 6.0
+- [x] Luakit 1.8.0 / Ubuntu 9.10
+- [x] Opera 58.0.3135.65 / Windows 2008 R2
+- [x] SeaMonkey 2.33 / Debian 6.0
+- [x] Firefox (28, 36, 44, etc. ) / Debian 6.0
+- [x] Chrome (39, 44, 51, 71, etc.) / Windows 2008 R2
+- [x] Iceape 2.7.12 / Debian 6.0
+
 
 ### О проекте
 Otus Lisp досупен под двумя лицензиями:
