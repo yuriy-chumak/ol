@@ -19,7 +19,7 @@ categories: en
 
 
 * 38: (**vm:add** a b) - сложение a и b. возвращает пару чисел (values сумма переполнение)
-<pre><code id="add" data-language="scheme">
+<pre><code id="add" data-language="ol">
 (let* ((a carry (vm:add 4 3))) (print "a: " a ", carry: " carry))
 ; ==> a: 7, carry: #false
 
@@ -28,7 +28,7 @@ categories: en
 </code><button class="doit" onclick="doit(add.textContent)">отправить в терминал</button></pre>
 
 * 40: (**vm:sub** a b) - вычитание b из a. возвращает пару чисел (values разница обратное-переполнение)
-<pre><code id="sub" data-language="scheme">
+<pre><code id="sub" data-language="ol">
 (let* ((a carry (vm:sub 4 3))) (print "a: " a ", carry: " carry))
 ; ==> a: 1, carry: #false
 
@@ -38,7 +38,7 @@ categories: en
 </code><button class="doit" onclick="doit(sub.textContent)">отправить в терминал</button></pre>
 
 * 39: (**vm:mul** a b) - умножение a на b. возвращает число двойного размера разбитое на пару чисел (values младшая-часть-результата старшая-часть-результата)
-<pre><code id="mul" data-language="scheme">
+<pre><code id="mul" data-language="ol">
 (let* ((lo hi (vm:mul 4 3))) (print "lo: " lo ", hi: " hi))
 ; ==> lo: 12, hi: 0
 
@@ -52,7 +52,7 @@ categories: en
 </code><button class="doit" onclick="doit(mul.textContent)">отправить в терминал</button></pre>
 
 * 26: (**vm:div** ah al b) - деление a на b, где ah - старшая часть числа a, al - младшая. возвращает тройку чисел (values старшая-часть-частного младшая-часть-частного остаток)
-<pre><code id="div" data-language="scheme">
+<pre><code id="div" data-language="ol">
 (let* ((lo hi rem (vm:div 0 7 3))) (print "lo: " lo ", hi: " hi ", rem: " rem))
 ; ==> lo: 0, hi: 2, rem: 1
 (let* ((lo hi rem (vm:div 2 16777213 3))) (print "lo: " lo ", hi: " hi ", rem: " rem))
@@ -61,7 +61,7 @@ categories: en
 </code><button class="doit" onclick="doit(div.textContent)">отправить в терминал</button></pre>
 
 * 58: (**vm:shr** a n) - битовый (логический) сдвиг вправо, "потерянные" биты циклически отправляются во вторую переменную
-<pre><code id="shr" data-language="scheme">
+<pre><code id="shr" data-language="ol">
 (let* ((lo hi (vm:shr 7 1))) (print "lo: " lo ", hi: " hi))
 ; ==> ...                                   fir 64-bit machines
 ; ==> lo: 3, hi: 8388608                    for 32-bit machines
@@ -71,19 +71,19 @@ categories: en
 </code><button class="doit" onclick="doit(shr.textContent)">отправить в терминал</button></pre>
 
 * 59: (vm:shl a n) - битовый (логический) сдвиг влево.
-<pre><code id="shl" data-language="scheme">
+<pre><code id="shl" data-language="ol">
 </code><button class="doit" onclick="doit(shl.textContent)">отправить в терминал</button></pre>
 
 * 55: (vm:and a b) - операция дизъюнкции (И).
-<pre><code id="and" data-language="scheme">
+<pre><code id="and" data-language="ol">
 </code><button class="doit" onclick="doit(and.textContent)">отправить в терминал</button></pre>
 
 * 56: (vm:or a b) - операция конъюнкции (ИЛИ).
-<pre><code id="or" data-language="scheme">
+<pre><code id="or" data-language="ol">
 </code><button class="doit" onclick="doit(or.textContent)">отправить в терминал</button></pre>
 
 * 57: (vm:xor a b) - операция строгой дизъюнкции (исключающее ИЛИ).
-<pre><code id="xor" data-language="scheme">
+<pre><code id="xor" data-language="ol">
 </code><button class="doit" onclick="doit(xor.textContent)">отправить в терминал</button></pre>
 
    В заключение хочется отметить, что не стоит без особой надобности использовать эти операции. Для выполнения математических и логических операций существует модуль (lang math), который экспортирует функции +, -, =, *, /, div, mod, \<<, <, <=, =, >=, >, \>>, band, bor, bxor, div, rem, mod, min, max, gcd и другие.

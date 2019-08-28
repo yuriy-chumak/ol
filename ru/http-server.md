@@ -10,7 +10,7 @@ categories: ru
 
    Otus Lisp позволяет быстро прототипировать типичные задачи. Например, можно создать простой http сервер всего парой строк:
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (import (lib http))
 
 (http:run 8080 (lambda (fd request headers send close)
@@ -34,7 +34,7 @@ categories: ru
 
    Создадим функцию sendfile, которая проверяет наличие файла, отправляя при его отсутствии код 404.
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (import (lib http))
 
 ; send file to output stream

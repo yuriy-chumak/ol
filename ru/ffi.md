@@ -17,17 +17,17 @@ categories: ru
    Для примера давайте рассмотрим Windows функцию MessageBox (FFI механизм, понятно, специфичен для каждой ОС).
 
    1) подключим библиотеку otus/ffi
-   <pre><code data-language="scheme">
+   <pre><code data-language="ol">
    (import (otus ffi))
    </code></pre>
 
    2) так как эта функция находится в системной библиотеке user32.dll, попытаемся загрузить ее
-   <pre><code data-language="scheme">
+   <pre><code data-language="ol">
    (define user32 (load-dynamic-library "user32"))
    </code></pre>
 
    3) теперь мы можем получить адрес нужной нам функции в библиотеке
-   <pre><code data-language="scheme">
+   <pre><code data-language="ol">
    (define MessageBox (user32 ffi-int "MessageBoxA"
               type-vptr
               type-string
@@ -48,7 +48,7 @@ categories: ru
    Нам надо похоже описать функцию в аргументах вызова dlsym: fft-int мы используем, когда аргумент - число (предпочтительный вариант для всех числовых параметров); type-string - строка; type-vptr - указатель на данные). Название функции "MessageBoxA", так как есть два варианта этой функции в Windows, обычный и юникодный.
 
    Для красоты объявим еще несколько переменных
-   <pre><code data-language="scheme">
+   <pre><code data-language="ol">
    (define IDOK 1)
    (define IDCANCEL 2)
 
@@ -58,7 +58,7 @@ categories: ru
    </code></pre>
 
    И теперь можем использовать всплывающее окно с сообщением в нашей программе
-   <pre><code data-language="scheme">
+   <pre><code data-language="ol">
    (if (eq? (MessageBox NULL "Please, press OK for test pass!"
                (c-string "PInvoke sample use")
                (+ MB_OKCANCEL MB_ICONASTERISK)) IDOK)

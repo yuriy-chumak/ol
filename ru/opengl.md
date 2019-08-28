@@ -30,14 +30,14 @@ categories: ru
    Для линукса и юникса есть несколько оконных систем ([X11](https://en.wikipedia.org/wiki/X_Window_System), [Wayland](https://en.wikipedia.org/wiki/Wayland_(display_server_protocol)), [Mir](https://en.wikipedia.org/wiki/Mir_(software))), для примера мы будем использовать, наверное, самую распространенную - X11.
 
    Биндинги для Linux X11 сложены в библиотеку lib/x11, подключим ее:
-<pre><code data-language="scheme">(import (lib x11))
+<pre><code data-language="ol">(import (lib x11))
 </code></pre>
 
    Для начала надо выбрать дисплей, с которым мы хотим работать (в примере это будет доступный по-умолчанию дисплей) и рабочий стол, на котором мы будем размещать наше окно (в Linux можно размещать на одном дисплее разные рабочие пространства).
 
    После чего создаем простое окно, размещаем его на экране и сообщаем системе, что оно будет себя отрисовывать.
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (define display (XOpenDisplay 0))
 (define screen (XDefaultScreen display))
 
@@ -56,12 +56,12 @@ categories: ru
 ##### <a name="window-win32"></a>Windows
 
    Биндинги для Windows API сложены в библиотеку lib/winapi, подключим ее:
-<pre><code data-language="scheme">(import (lib winapi))
+<pre><code data-language="ol">(import (lib winapi))
 </code></pre>
 
    В отличие от Linux, нам не надо выбирать дисплей и рабочий стол, Windows все сделает вместо нас - мы можем сразу приступить к созданию простого окна.
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (define width 320)
 (define height 240)
 
@@ -90,7 +90,7 @@ categories: ru
 
    Это довольно простая операция. Первым шагом создаем структуру с нужными параметрами, вторым создаем контекст.
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (define vi (glXChooseVisual display screen
    (raw type-vector-raw '(
       4 0 0 0 ; GLX_RGBA
@@ -110,7 +110,7 @@ categories: ru
 
    Структура с параметрами называется [PIXELFORMATDESCRIPTOR structure](https://msdn.microsoft.com/en-us/library/windows/desktop/dd368826.aspx), и именно там можно посмотреть как она кодируется. Напомню только что BYTE в Windows занимает 1 байт, WORD 2 байта и DWORD 4 соответственно. Размер структуры - #x28 байт.
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (define pfd (raw type-vector-raw '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
                                                00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
 (define hDC (GetDC window))
@@ -134,7 +134,7 @@ categories: ru
 
    Функция XPending сообщит нам, есть ли в очереди окна ожидающие на обработку сообщения. XNextEvent сложит это сообщение в XEvent переменную. glXMakeCurrent активирует контекст OpenGL позволяя нам рисовать (в данном случае очистить окно с помощью заданного по умолчанию цвета).
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (let ((XEvent (raw type-vector-raw (repeat 0 192))))
 (let loop ()
    (let process-events ()
@@ -155,7 +155,7 @@ categories: ru
 
    В отличие от Linux кода мы не можем проигнорировать полученные с помощью PeekMessage оконные сообщения. Их в обязательном порядке надо обработать с помощью TranslateMessage и отправить возможным клиентам через DispatchMessage. А в остальном код идентичен.
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (let ((MSG (raw type-vector-raw (repeat 0 28))))
 (let loop ()
    (let process-events ()
@@ -184,7 +184,7 @@ categories: ru
 
    Таким образом, платформонезависимый код, который выполняет всю вышеперечисленную работу (создает окно и очищает его цветом "по умолчанию"), а также начальную инициализацию OpenGL параметров (цвет, используемый для очистки окна) будет выглядеть так:
 
-<pre><code data-language="scheme">(import (lib opengl))
+<pre><code data-language="ol">(import (lib opengl))
 (gl:run "1. Creating an OpenGL Window"
 
 ; init
@@ -204,7 +204,7 @@ categories: ru
 
    Самый простой способ вывода геометрии в OpenGL - вывод поверхности в виде треугольников с помощью glBegin и glEnd. Вот как у нас будет выглядеть вывод одного плоского треугольника в окно:
 
-<pre><code data-language="scheme">(import (lib opengl))
+<pre><code data-language="ol">(import (lib opengl))
 (gl:run "2. Drawing simple triangle"
 
 ; init
@@ -252,7 +252,7 @@ categories: ru
 
    И в качестве заготовки для тех, кто хочет использовать современные возможности OpenGL, такие как шейдеры, пример, который рисует на экране процедурно сгенерированные "Deep Sky" объекты (глубокий космос).
 
-<pre><code data-language="scheme">(import (lib opengl))
+<pre><code data-language="ol">(import (lib opengl))
 (import (OpenGL version-2-0))
 
 (define width 640)

@@ -9,7 +9,7 @@ categories: en
    This web server listens 8080 port, and for any correct request (GET, POST, etc.) returns "200 OK" and web page with echoed headers from this request.
 
 <pre><button class="doit" onclick="function(){return false}">This sample will not work in terminal</button>
-<code data-language="scheme">#!/bin/ol
+<code data-language="ol">#!/bin/ol
 
 (import (lib http))
 
@@ -32,7 +32,7 @@ categories: en
    Simple hash function that used, for example, by WebSocket auth algorithm. Examples of usage at the end of source.
 
 <pre><button class="doit" onclick="doit(sha1.textContent)">send to the terminal</button>
-<code data-language="scheme" id="sha1">; https://en.wikipedia.org/wiki/SHA-1
+<code data-language="ol" id="sha1">; https://en.wikipedia.org/wiki/SHA-1
 
 ; band - binary AND operation
 ; bor - binary OR operation
@@ -238,7 +238,7 @@ And I must seek for mine. ==> 0860bc39e3ae96947eeace44f3788f31ec43af1e
    This code demonstrates learning process and working results for neural network that can detect numbers from bitmaps.
 
 <pre><button class="doit" onclick="doit(neural.textContent)">send to the terminal</button>
-<code data-language="scheme" id="neural">
+<code data-language="ol" id="neural">
 ; this is main learning configuration parameter,
 ;  higher is better, but slower
 (define THRESHOLD 30)

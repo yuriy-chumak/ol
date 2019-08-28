@@ -8,7 +8,7 @@ categories: ru
    Otus Lisp можно встроить в свой проект. Для этого надо подключить к проекту olvm.c файл и выставить дефайн EMBEDDED_VM в единичку.
 
    Вот пример использования:
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 // embedded example
 #include "olvm_xtra.h"
 

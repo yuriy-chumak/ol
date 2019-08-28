@@ -14,7 +14,7 @@ categories: ru
    Для начала, нам нужна пара простых функций рисования и скелет, который выводит карту в окно.
 
    Зададим лабиринт двумерным списком (матрицей) и сразу выставим размерные параметры:
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 ; схема лабиринта
 (define scheme '(
    (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)
@@ -29,7 +29,7 @@ categories: ru
    (1 0 1 0 0 0 0 0 0 0 1 0 1 0 0 1)
    (1 0 1 0 0 0 0 0 0 0 0 0 1 0 0 1)
    (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)))
-   
+
 (define WIDTH (length (car scheme)))
 (define HEIGHT (length scheme))
 </code></pre>
@@ -59,7 +59,7 @@ categories: ru
 
    Создадим функцию new-creature, которая запускает новую сопрограмму и объявляет несколько сообщений, с помощью которых мы сможем управлять данным конкретным ИИ.
 
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (define (new-creature x y)
 (let* ((id (generate-unique-id))
        (creature (fork-server id (lambda ()
@@ -118,7 +118,7 @@ categories: ru
    Теперь создадим окно и нарисуем в нем все, что нам надо: карту, которую "видел" созданный нами персонаж, его текущее положение и каждую секунду будем его сдвигать к нужной нам точке "выхода".
 
    Эта функция будет побольше, чуть позже я ее объясню:
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (define Context (gl:Create "Pathfinder sample"))
 
 (gl:run
@@ -199,7 +199,7 @@ categories: ru
  * (A* to-x to-y) - самый интересный алгоритм, возвращает '(dx.dy), куда надо сдвинуться созданию, чтобы попытаться приблизиться к точке '(to-x.to-y), используя алгоритм поиска пути A* по неполной карте (той, которую видело и помнит создание).
 
 Вот этот A* алгоритм, как самый интересный, я и приведу в следующем блоке:
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (let ((xy (cons x y))
 
       (hash (lambda (xy)
@@ -288,7 +288,7 @@ categories: ru
 
 
    Для начала нам нужна реализация алгоритма Брезенхейма в наших условиях:
-<pre><code data-language="scheme">
+<pre><code data-language="ol">
 (define (horizontal-bresenham x1 y1  x2 y2  dk)
 (let* ((x (+ 1 (floor x1)))
        (y (+ y1 (* (- x x1) dk))))
