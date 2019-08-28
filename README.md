@@ -207,13 +207,16 @@ would like.
 
 You can check some [sample](https://github.com/yuriy-chumak/ol/tree/master/samples) lisp programs. For example:
 
-* "Pacman", sample that demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman\
+* "Pacman", sample that demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
+
 !["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
 
-* "Digital rain", sample that demonstrates native library direct usage ([OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix\
+* "Digital rain", sample that demonstrates native library direct usage ([OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix
+
 !["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
 
-* "Newton dynamics", sample that demonstrates native library usage ([newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks ("C" to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton\
+* "Newton dynamics", sample that demonstrates native library usage ([newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks ("C" to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton
+
 !["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
 
 
