@@ -15,14 +15,15 @@ var stdInput = ""; //unescape(encodeURIComponent(",load \"init.lisp\"")); // loa
 
 var terminal;
 $('#terminal').terminal(function(command, terminal) {
-    //stdInput += unescape(encodeURIComponent(command));
+   var text = unescape(encodeURIComponent(command));
+   ga('send', 'event', 'Console', 'eval', text, {
+      nonInteraction: true
+    });
 
-    // todo: check parenthesis
-    terminal.set_prompt('');
-    ol_eval(unescape(encodeURIComponent(command)));
-    terminal.set_prompt('> ');
-
-    // let's clear prompt up to got response
+   // todo: check parenthesis
+   terminal.set_prompt('');
+   ol_eval(text);
+   terminal.set_prompt('> ');
 }, {
    prompt: 'Please wait, loading library files...',
    name: 'repl',
@@ -74,13 +75,6 @@ var Module = {
             FS.createPath("/", i.path, true, true);
          FS.createDataFile(i.path + "/", i.name, i.data, true, false);
       });
-      // cleanup?
-      //Libraries = [];
-
-
-      //loadDynamicLibrary("library_gl.js");
-      //loadDynamicLibrary("library_xlib.js");
-      //var GLctx; GL.init()
    },
    postRun: function() {
       ol_init = Module.cwrap('ol_init', 'number', []);
@@ -90,13 +84,10 @@ var Module = {
 
       terminal.resume();
       terminal.set_prompt('> ');
-
-      //terminal.exec("(import (lib gl))");
    },
 
    print: function(text) {
       if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-//      console.log("[" + text + "]")
 
       if (terminal.ready == false) {
          terminal.ready = true;
@@ -116,11 +107,12 @@ var Module = {
          text = text.substring(2);//*/
       terminal.set_prompt('> ');
       terminal.resume();
-
-
-//      if (text == "'delivered") // just filter the output log
-//         return;
       terminal.echo(text);
+
+      ga('send', 'event', 'Console', 'stdout', text, {
+         nonInteraction: true
+       });
+
 
       // well, we got greeting. let's import (lib opengl)
       //if (text == "type ',help' to help, ',quit' to end session.")
@@ -132,6 +124,11 @@ var Module = {
    printErr: function(text) {
       console.log("error: ", text);
       terminal.error(text);
+
+      ga('send', 'exception', {
+         'exDescription': text,
+         'exFatal': false
+       });
 
       showTerminal();
    },
