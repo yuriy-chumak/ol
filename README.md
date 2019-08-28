@@ -19,7 +19,9 @@ Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 It implements an extended subset of R<sup>7</sup>RS Scheme including, but not limited to, some of the SRFIs.
 It's tiny (~42kb), embeddable and cross-platform; provides a portable, high-level way to call code written in other languages.
 
-You can use Ol in GNU/Linux, Windows, Unixes (macOS, Solaris, kinds of BSD), Android, webOS, Minoca and lot of any other operation systems based on various hardware architectures (x86/x86_64, arm, aarch64, ppc, mips, etc).
+You can use Ol in GNU/Linux, Windows, Unixes (macOS, Solaris, kinds of BSD), Android, webOS, Minoca and lot of other operation systems based on various hardware architectures (x86/x86_64, arm, aarch64, ppc, mips, etc).
+
+Additionally Ol ported to the Web and tested under Chrome, Firefox, Opera, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape.
 
 
 LICENSE
@@ -39,7 +41,7 @@ SUPPORT
 
 Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby), additionally [Freenode](https://webchat.freenode.net) channel *#otus-lisp* is available.
 
-Leave your propositions, Ol bugs and issues at [the issues](https://github.com/yuriy-chumak/ol/issues) page. If your architecture is not supported, leave a ticket too.
+Post your propositions, Ol bugs and issues at [the issues](https://github.com/yuriy-chumak/ol/issues) page. If your architecture is not supported, post a ticket too.
 
 
 LEARNING
@@ -199,6 +201,20 @@ to machine /bin.
 
 Now you cat execute ol under webos command line or other way you
 would like.
+
+
+### SAMPLES
+
+You can check some [sample](https://github.com/yuriy-chumak/ol/tree/master/samples) lisp programs. For example:
+
+* "Pacman", sample that demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman\
+!["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
+
+* "Digital rain", sample that demonstrates native library direct usage ([OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix\
+!["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
+
+* "Newton dynamics", sample that demonstrates native library usage ([newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks ("C" to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton\
+!["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
 
 
 ### CASTOMIZATION WAY
