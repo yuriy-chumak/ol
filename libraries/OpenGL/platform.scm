@@ -29,6 +29,7 @@
       GL_RENDERER
       GL_VERSION
       GL_EXTENSIONS
+   glHint
    glViewport
 
    ; WGL/GLX/CGL/EGL/... universal functions
@@ -41,7 +42,7 @@
 
    ; internal variables
    GL ;GLX EGL WGL GDI
-   GL_LIBRARY ; deprecated
+   GL_LIBRARY
 
    (exports (otus lisp))
    (exports (otus ffi)))
@@ -94,6 +95,28 @@
                (lambda (context)
                   (SwapBuffers (ref context 1)))))
 
+   ))
+   ; -=( WebGL )=-----------
+   (Emscripten
+      (begin
+         (setq gl4es (dlopen))
+
+         ;; gl4es hack: add "gl4es_" prefix to all opengl functions
+         (define (GL_LIBRARY type name . prototype)
+            (let ((rtti (cons type prototype))
+                  (function (dlsym gl4es (string-append "gl4es_" name))))
+               (if function
+                  (lambda args
+                     (exec ffi function rtti args)))))
+
+
+         (setq GLX GL_LIBRARY)
+         (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string))
+         
+         ; unsupported
+         (define (gl:CreateContext . args) #false)
+         (define (gl:MakeCurrent . args) #false)
+         (define (gl:SwapBuffers . args) #false)
    ))
    ; -=( Unknown )=--
    ;"HP-UX"
@@ -155,18 +178,19 @@
    (define GL_VERSION    #x1F02)
    (define GL_EXTENSIONS #x1F03)
    (define glGetString (GL type-string "glGetString" fft-unsigned-int))
+   (define glHint (GL fft-void "glHint" GLenum GLenum))
    (define glViewport (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
-; -------------------------------------------------------------------------
-; WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
-; GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
+   ; -------------------------------------------------------------------------
+   ; WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
+   ; GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
 
-(define (gl:GetProcAddress type name . prototype)
-   (let ((rtty (cons type prototype))
-         (function (GetProcAddress (c-string name))))
-      (if function
-         (lambda args
-            (exec ffi function rtty args)))))
+   (define (gl:GetProcAddress type name . prototype)
+      (let ((rtty (cons type prototype))
+            (function (GetProcAddress (c-string name))))
+         (if function
+            (lambda args
+               (exec ffi function rtty args)))))
 )
 
 ; ----------------------------------
@@ -187,7 +211,7 @@
                      (()
                         (glXQueryExtensionsString display screen)))
                   (lambda args #false))))))
-   (Windows
+   (else
       (begin
          (define glXQueryExtensionsString (lambda args #false)))))
 (begin
