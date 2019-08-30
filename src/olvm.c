@@ -2598,7 +2598,7 @@ loop:;
 					*ptr = header(type, ++fp - ptr);
 				}
 				else
-				if (is_pair(value) && list == INULL) { // proper list?
+				if ((is_pair(value) && list == INULL) || (value == INULL)) { // proper list?
 					while (value != INULL) {
 						*++fp = car (value);
 						value = cdr (value);
