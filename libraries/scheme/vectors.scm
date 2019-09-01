@@ -1,7 +1,7 @@
-(define-library (scheme vector) ; srfi-133
+(define-library (scheme vectors) ; srfi-133
    (version 1.0)
    (license MIT/LGPL3)
-   (keywords (otus ol vector))
+   (keywords (otus ol vector scheme))
    (description "
       Otus-Lisp vectors support library.")
 
@@ -70,7 +70,7 @@
    (define (vector-ref vec k)
       (ref vec (|+1| k)))
 
-   (assert (vector-ref #(1 1 2 3 5 8 13 21) 5) ===>  8)
+   (assert (vector-ref #(1 2 3 4 5 8 13 21) 5) ===>  8)
 
    ; procedure:  (vector-set! vector k obj)
    ;

@@ -11,7 +11,7 @@
 
    (import
       (scheme core)
-      (scheme vector)
+      (scheme vectors)
       (owl math)
       (owl list)
       (owl sort)

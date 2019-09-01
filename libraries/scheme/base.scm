@@ -1,7 +1,7 @@
 (define-library (scheme base)
 (export
    (exports (scheme core))
-   (exports (scheme vector))
+   (exports (scheme vectors))
    (exports (scheme bytevector))
 
       caaar caadr cadar caddr ; moved from (scheme cxr)

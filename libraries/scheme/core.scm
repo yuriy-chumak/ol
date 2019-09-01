@@ -1571,7 +1571,7 @@
 
       (assert (vector 'a 'b 'c)                ===>  #(a b c))
 
-      ; * extra vector staff implemented in (scheme vector)
+      ; * extra vector staff implemented in (scheme vectors)
 
 
       ;; (r7rs) 6.9  Bytevectors
