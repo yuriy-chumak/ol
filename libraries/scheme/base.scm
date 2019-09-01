@@ -260,7 +260,7 @@
    |#
    (import
       (scheme core) (src vm)
-      (scheme vector)
+      (scheme vectors)
       (scheme bytevector)
       ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (required coroutines)
       (owl io) (owl math))
