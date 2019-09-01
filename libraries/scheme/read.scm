@@ -20,7 +20,7 @@
    (define (read-impl port)
       (define server ['read])
       (fork-server server (lambda ()
-         (let this ((cache #(0 0 0 0 0)) (pos 0))
+         (let this ((cache (make-bytevector 14)) (pos 0))
             (let*((envelope (wait-mail))
                   (sender msg envelope))
                (if msg ; #false to stop the thread, else - number of character
