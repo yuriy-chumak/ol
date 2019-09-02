@@ -368,26 +368,34 @@
             (else sexp)))
 
       (define (get-vector-of parser)
-         (get-either
-            ; [], not quoting values
-            (let-parses (
-                  (* (get-imm #\[))
-                  (things
-                     (get-kleene* parser))
-                  (* maybe-whitespace)
-                  (* (get-imm #\])))
-               (if (null? things)
-                  (list 'quote (vm:make type-vector things))
-                  (cons 'vm:new (cons 'type-vector things))))
-            ; #(), quoting all values
-            (let-parses (
-                  (* (get-imm #\#))
-                  (* (get-imm #\())
-                  (things
-                     (get-kleene* parser))
-                  (* maybe-whitespace)
-                  (* (get-imm #\))))
-               (list 'quote (vm:make type-vector things)))
+         (let-parses (
+               (qv (get-either
+                  ; [], not quoting values
+                  (let-parses (
+                        (q (get-either (get-imm #\') (get-epsilon #false)))
+                        (* (get-imm #\[))
+                        (things
+                           (get-kleene* parser))
+                        (* maybe-whitespace)
+                        (* (get-imm #\])))
+                     (cons q things))
+                     ;; (if (null? things)
+                     ;;    (list 'quote (vm:make type-vector things))
+                     ;;    (cons 'vm:new (cons 'type-vector things))))
+                  ; #(), quoting all values
+                  (let-parses (
+                        (* (get-imm #\#))
+                        (* (get-imm #\())
+                        (things
+                           (get-kleene* parser))
+                        (* maybe-whitespace)
+                        (* (get-imm #\))))
+                     (cons #true things)))))
+            (let*((q v qv))
+               (if (or q (null? v))
+                  (list 'quote (vm:make type-vector v))
+                  (cons 'vm:new (cons 'type-vector v))))))
+                     ;; (list 'quote (vm:make type-vector things)))
                ;(list 'vm:make 'type-vector (list 'quote things)))
             ;; (let-parses (
             ;;    (* (get-imm #\#))
@@ -397,7 +405,6 @@
             ;;          ;; vector may have unquoted stuff, so convert it to a sexp constructing a vector, which the macro handler can deal with
             ;;          (cons '_sharp_vector fields) ; <- quasiquote macro expects to see this in vectors
             ;;          (vm:make type-vector fields))))
-         ))
 
       (define (get-sexp)
          (let-parses (
