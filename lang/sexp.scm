@@ -377,7 +377,9 @@
                      (get-kleene* parser))
                   (* maybe-whitespace)
                   (* (get-imm #\])))
-               (cons 'vm:new (cons 'type-vector things)))
+               (if (null? things)
+                  #0
+                  (cons 'vm:new (cons 'type-vector things))))
             ; #(), quoting all values
             (let-parses (
                   (* (get-imm #\#))

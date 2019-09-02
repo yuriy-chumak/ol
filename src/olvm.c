@@ -1995,7 +1995,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 
 #define FAIL(opcode, a, b) \
 	{ \
-		D("SOURCE: %s:%d", __FILE__, __LINE__); /* TEMP */\
+		D("FAIL AT %s:%d (%s) -> %d/%d/%d", __FILE__, __LINE__, __FUNCTION__, opcode, a, b); \
 		R[4] = I (opcode);\
 		R[5] = (word) (a);\
 		R[6] = (word) (b);\
