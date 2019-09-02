@@ -253,14 +253,14 @@ endif
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
 	@echo -n ", debug-32: "
-	@if $(vm)d32 repl <$^ | diff - $^.ok >/dev/null; then\
+	@if ([ -f $^.in ] && $(vm)d32 repl $^ <$^.in || $(vm)d32 repl $^) | diff - $^.ok >/dev/null; then\
 	   echo -n "ok" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
 	fi
 	@echo -n ", release-32: "
-	@if $(vm)r32 repl <$^ | diff - $^.ok >/dev/null; then\
+	@if ([ -f $^.in ] && $(vm)r32 repl $^ <$^.in || $(vm)r32 repl $^) | diff - $^.ok >/dev/null; then\
 	   echo -n "ok" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
@@ -269,14 +269,14 @@ ifeq ($(HAS_32CDEFS),1)
 endif
 ifeq ($(HAS_64CDEFS),1)
 	@echo -n ", debug-64: "
-	@if $(vm)d64 repl <$^ | diff - $^.ok >/dev/null; then\
+	@if ([ -f $^.in ] && $(vm)d64 repl $^ <$^.in || $(vm)d64 repl $^) | diff - $^.ok >/dev/null; then\
 	   echo -n "ok" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
 	fi
 	@echo -n ", release-64: "
-	@if $(vm)r64 repl <$^ | diff - $^.ok >/dev/null; then\
+	@if ([ -f $^.in ] && $(vm)r64 repl $^ <$^.in || $(vm)r64 repl $^) | diff - $^.ok >/dev/null; then\
 	   echo -n "ok" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
@@ -285,14 +285,14 @@ ifeq ($(HAS_64CDEFS),1)
 endif
 else
 	@echo -n ", debug: "
-	@if $(vm)d repl <$^ | diff - $^.ok >/dev/null; then\
+	@if ([ -f $^.in ] && $(vm)d repl $^ <$^.in || $(vm)d repl $^) | diff - $^.ok >/dev/null; then\
 	   echo -n "ok" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
 	fi
 	@echo -n ", release: "
-	@if $(vm)r repl <$^ | diff - $^.ok >/dev/null; then\
+	@if ([ -f $^.in ] && $(vm)r repl $^ <$^.in || $(vm)r repl $^) | diff - $^.ok >/dev/null; then\
 	   echo -n "ok" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
