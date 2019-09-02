@@ -395,16 +395,20 @@
                (if (or q (null? v))
                   (list q (vm:make type-vector v))
                   (cons 'vm:new (cons 'type-vector v))))))
-                     ;; (list 'quote (vm:make type-vector things)))
-               ;(list 'vm:make 'type-vector (list 'quote things)))
-            ;; (let-parses (
-            ;;    (* (get-imm #\#))
-            ;;    (fields (get-list-of parser)))
-            ;;    (let ((fields (intern-symbols fields)))
-            ;;       (if (first pair? fields #false)
-            ;;          ;; vector may have unquoted stuff, so convert it to a sexp constructing a vector, which the macro handler can deal with
-            ;;          (cons '_sharp_vector fields) ; <- quasiquote macro expects to see this in vectors
-            ;;          (vm:make type-vector fields))))
+
+      (define (get-ff-of parser)
+         (let-parses (
+               (q (get-either
+                     (get-word "'" 'quote)
+                     (get-word "`" 'quasiquote)))
+               (* (get-imm #\{))
+               (things
+                  (get-kleene* parser))
+               (* maybe-whitespace)
+               (* (get-imm #\})))
+            (if (null? things)
+               #empty
+               (list 'list->ff (list q things)))))
 
       (define (get-sexp)
          (let-parses (
@@ -418,6 +422,7 @@
                      get-funny-word
                      (get-list-of (get-sexp))
                      (get-vector-of (get-sexp))
+                     (get-ff-of (get-sexp))
                      (get-quoted (get-sexp))
                      (get-byte-if eof?)
                      get-quoted-char)))
