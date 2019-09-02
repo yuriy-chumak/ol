@@ -1,7 +1,12 @@
 (define-library (lib json)
    (export
-      print-json-with)
-   (import (otus lisp))
+      print-json-with
+      json-parser)
+   (import
+      (otus lisp)
+      (lang intern)
+      (lang sexp)
+      (owl parse))
 
 (begin
 
@@ -55,5 +60,75 @@
                      (display ","))
                   (loop (cdr L)))))
             (display "}")))))
+
+(define get-a-whitespace (get-byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
+(define maybe-whitespaces (get-kleene* get-a-whitespace))
+
+(define get-string (get-either
+   (let-parses (
+         (begin (get-imm #\'))
+         (runes (get-kleene* (get-rune-if (lambda (rune) (not (eq? rune #\'))))))
+         (end (get-imm #\')))
+      (runes->string runes))
+   (let-parses (
+         (begin (get-imm #\"))
+         (runes (get-kleene* (get-rune-if (lambda (rune) (not (eq? rune #\"))))))
+         (end (get-imm #\")))
+      (runes->string runes))))
+
+(define get-number
+   (let-parses (
+         (value (get-kleene+ (get-rune-if (lambda (rune) (<= #\0 rune #\9))))))
+      (list->number value 10)))
+
+(define (get-object)
+   (let-parses (
+         (/ maybe-whitespaces)
+         (value (get-any-of
+            get-string
+            (get-word "true" #true)
+            (get-word "false" #false)
+            get-number
+            ; objects:
+            (let-parses (
+                  (/ (get-imm #\{))
+                  (kv (get-kleene*
+                     (let-parses (
+                           (/ maybe-whitespaces)
+                           (key get-string)
+                           (/ maybe-whitespaces)
+                           (/ (get-imm #\:))
+                           (value (get-object))
+                           (/ maybe-whitespaces)
+                           (/ (get-kleene* (get-byte-if (lambda (x) (eq? x #\,))))))
+                        (cons key value))))
+                  (/ maybe-whitespaces)
+                  (/ (get-imm #\})))
+               (fold (lambda (ff kv)
+                        (put ff (string->symbol (car kv)) (cdr kv)))
+                  #empty kv))
+            ; vectors
+            (let-parses (
+                  (/ (get-imm #\[))
+                  (value (get-kleene*
+                     (let-parses (
+                           (value (get-object))
+                           (/ maybe-whitespaces)
+                           (/ (get-kleene* (get-byte-if (lambda (x) (eq? x #\,))))))
+                        value)))
+                  (/ maybe-whitespaces)
+                  (/ (get-imm #\])))
+               (list->vector value)))))
+      value))
+
+(define json-parser (get-object))
+
+; few parsing examples:
+   (assert (car (try-parse json-parser (str-iter "{}") #t))
+      ===> #empty)
+   (assert (car (try-parse json-parser (str-iter "[]") #t))
+      ===> [])
+   (assert (car (try-parse json-parser (str-iter "{'something':[12,23,34],'new':true}") #t))
+      ===> (list->ff `((something . ,[12 23 34]) (new . #true))))
 
 ))
