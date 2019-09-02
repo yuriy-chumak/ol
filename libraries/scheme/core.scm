@@ -828,7 +828,7 @@
       ; can be said about such cases is that the value returned by
       ; eqv? must be a boolean
 
-      (assert (eqv? #() #())                ===> #true)  ; * ol specific, (in r7rs unspecified)
+      ;assert (eqv? #() #())                ===> #false)  ; * ol specific, (in r7rs unspecified)
       (assert (eqv? (lambda (x) x)
                     (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? (lambda (x) x)

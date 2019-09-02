@@ -348,7 +348,6 @@
                         (get-word "empty" #empty)   ; empty association array (system constant)
                         (get-word "eof"   #eof)     ; (vm:cast 4 13))
                         ; сокращения
-                        (get-word "0"     #0)       ; empty vector, unique (vm:make type-vector 0)
                         (get-word "t"     #true)
                         (get-word "f"     #false)
                         (get-word "T"     #true)
@@ -378,7 +377,7 @@
                   (* maybe-whitespace)
                   (* (get-imm #\])))
                (if (null? things)
-                  #0
+                  (list 'quote (vm:make type-vector things))
                   (cons 'vm:new (cons 'type-vector things))))
             ; #(), quoting all values
             (let-parses (
@@ -388,9 +387,7 @@
                      (get-kleene* parser))
                   (* maybe-whitespace)
                   (* (get-imm #\))))
-               (if (null? things)
-                  #0
-                  (list 'quote (vm:make type-vector things))))
+               (list 'quote (vm:make type-vector things)))
                ;(list 'vm:make 'type-vector (list 'quote things)))
             ;; (let-parses (
             ;;    (* (get-imm #\#))

@@ -325,7 +325,7 @@
          (cond
             ((null? ll)
                ;; no leaves, no data
-               #0)
+               [])
             ((null? (cdr ll))
                ;; just one leaf, so it is also the vector
                (car ll))
@@ -342,7 +342,7 @@
       (define (list->blob l)
          (cond
             ((null? l)
-               #0)
+               [])
             (else
                ;; leaves are chunked specially, so do that in a separate pass. also
                ;; compute length to avoid possibly forcing a computation twice.
