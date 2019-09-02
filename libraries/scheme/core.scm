@@ -554,9 +554,9 @@
       ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
       ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
       (define-syntax quasiquote
-         (syntax-rules (unquote quote unquote-splicing append _work)  ; _sharp_vector list->vector
-                                                   ;          ^         ^
-                                                   ;          '-- mine  '-- added by the parser for #(... (a . b) ...) -> (_sharp_vector ... )
+         (syntax-rules (unquote unquote-splicing _work append vm:new type-vector)
+                                                ;^            ^
+                                                ;'-- mine     '-- added by the parser for `[...]
             ((quasiquote _work () (unquote exp)) exp)
             ((quasiquote _work (a . b) (unquote exp))
                (list 'unquote (quasiquote _work b exp)))
@@ -566,9 +566,9 @@
             ((quasiquote _work () ((unquote-splicing exp) . tl))
                (append exp
                   (quasiquote _work () tl)))
-            ;; ((quasiquote _work () (_sharp_vector . es))
-            ;;    (list->vector
-            ;;       (quasiquote _work () es)))
+            ((quasiquote _work () (vm:new type-vector . es))
+               (list->vector
+                  (quasiquote _work () es)))
             ((quasiquote _work d (a . b))
                (cons (quasiquote _work d a)
                      (quasiquote _work d b)))

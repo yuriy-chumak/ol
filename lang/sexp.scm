@@ -372,16 +372,16 @@
                (qv (get-either
                   ; [], not quoting values
                   (let-parses (
-                        (q (get-either (get-imm #\') (get-epsilon #false)))
+                        (q (get-any-of
+                              (get-word "'" 'quote)
+                              (get-word "`" 'quasiquote)
+                              (get-epsilon #false)))
                         (* (get-imm #\[))
                         (things
                            (get-kleene* parser))
                         (* maybe-whitespace)
                         (* (get-imm #\])))
                      (cons q things))
-                     ;; (if (null? things)
-                     ;;    (list 'quote (vm:make type-vector things))
-                     ;;    (cons 'vm:new (cons 'type-vector things))))
                   ; #(), quoting all values
                   (let-parses (
                         (* (get-imm #\#))
@@ -390,10 +390,10 @@
                            (get-kleene* parser))
                         (* maybe-whitespace)
                         (* (get-imm #\))))
-                     (cons #true things)))))
+                     (cons 'quote things)))))
             (let*((q v qv))
                (if (or q (null? v))
-                  (list 'quote (vm:make type-vector v))
+                  (list q (vm:make type-vector v))
                   (cons 'vm:new (cons 'type-vector v))))))
                      ;; (list 'quote (vm:make type-vector things)))
                ;(list 'vm:make 'type-vector (list 'quote things)))
