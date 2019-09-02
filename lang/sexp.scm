@@ -393,7 +393,7 @@
                      (cons 'quote things)))))
             (let*((q v qv))
                (if (or q (null? v))
-                  (list q (vm:make type-vector v))
+                  (list (or q 'quote) (vm:make type-vector v))
                   (cons 'vm:new (cons 'type-vector v))))))
 
       (define (get-ff-of parser)
