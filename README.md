@@ -1,18 +1,20 @@
 ```
-                  Small,
-       `___`         Embeddable
-       (o,o)            and
-       \)  )          Purely
-     ---"-"---      Functional!
+                  small,
+       `___`          embeddable
+       (O,O)              and
+       \)  )           purely
+     ---"-"---      functional!
   O t u s L i s p
 
+ /Based on Aki Helin's Owl-Lisp/
 ```
 
-[![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 [![Travis-CI project page](https://travis-ci.org/yuriy-chumak/ol.svg)](https://travis-ci.org/yuriy-chumak/ol)
+[![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
-Otus Lisp, Version 2.0
-======================
+
+Otus Lisp, Version 2.1 (rc1)
+============================
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
@@ -31,7 +33,7 @@ Otus Lisp is available under 2 licenses:
 [MIT License](LICENSE) and
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
 
-Copyright (c) 2014 Aki Helin
+Copyright (c) 2011-2014 Aki Helin
 
 Copyright (c) 2014-2019 Yuriy Chumak
 
@@ -49,7 +51,7 @@ LEARNING
 
 You can find Ol samples at:
 * [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
-* [Samples](https://github.com/yuriy-chumak/ol/tree/master/samples) ans [Tests](https://github.com/yuriy-chumak/ol/tree/master/tests) repository folders.
+* [Samples](https://github.com/yuriy-chumak/ol/tree/master/samples) and [Tests](https://github.com/yuriy-chumak/ol/tree/master/tests) repository folders.
 
 
 DOWNLOAD / INSTALLATION
@@ -59,10 +61,10 @@ You can use basic Ol functionality without any installation -
 just copy the `ol` (`ol.exe` for Windows) binary to any user
 accessible path. Basic functionality includes a rich set of
 functions: lists, ffs (builtin associative arrays), i/o, lazies,
-strings, symbols, vectors, math, regex, tuples, etc.
+strings, symbols, vectors, math, regex, etc.
 
-Extended functionality (i.e. OpenGL support) requires full Ol package installation.
-Additionally, you can copy desired [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory.
+Extended functionality (i.e. OpenGL support) requires a full installation of Ol package.
+Additionally, you can manually copy desired [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory.
 
 Next platforms installation packages can be found at
 [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol):
@@ -80,7 +82,6 @@ Next platforms installation packages can be found at
   openSUSE Tumbleweed (x86, amd64),
 * Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64)
 
-
 Next platforms installation packages can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page:
 
 * Windows (x86, amd64)
@@ -90,24 +91,23 @@ Next platforms installation packages can be found at the [Releases](https://gith
 BUILD REQUIREMENTS
 ------------------
 
-You should have GCC >3.2 or CLANG >3.5 or TCC installed.
-For Windows you should have MinGW (with GCC).
-If you want to compile asm.js binary (is not required by regular build) you should have Emscripten v.1.37.40.
+You should have GCC 3.2+ or CLANG 3.5+ or TCC installed.
+For Windows you should have MinGW (with GCC) installed.
+
+If you want to compile asm.js binary (is not required by regular build, but only for Web) you should have Emscripten 1.37.40+.
 
 
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 
 * 6.1. Equivalence predicates (EQV?)
-  * (eqv? '#() '#()) is **#true**, but *unspecified* in Scheme
   * (eqv? +nan.0 +nan.0) is **#true**, but *unspecified* in Scheme
 * 6.2.5. Syntax of numerical constants
-  * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme. Inexactness can be disabled by compiler features or/and can be unsupported by platform and we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).
+  * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme (inexactness can be disabled by compiler features or/and can be unsupported by platform, so we should expect the same behavior of the program independently of inexactness support. unless we use inexact numbers, sure).
 * 6.4. Pairs and lists
   * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
 * 4.2.7. Exception handling
   * **No** *guard* and *raise* in Ol.
-
 
 
 BUILD
@@ -118,79 +118,73 @@ BUILD
 ```bash
 $ make; make install
 ```
-> gmake for unix clients
+> use *gmake* for unix clients
 
 
-### INTERESTING WAY
+### REGULAR WAY
 
-#### Linux way
+#### GNU/Linux:
 
-To build only olvm (ol virtual machine)
+##### Build only olvm (ol virtual machine):
 
 ```bash
 $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -ldl
 ```
 
-To build full OL
+##### Build ol (with integrated REPL):
 
 ```bash
 $ ld -r -b binary -o tmp/repl.o repl
 $ gcc src/olvm.c tmp/repl.o  -std=c99 -O2  -o ol -ldl
 ```
 
-To build asm.js binary
+##### Build Web binaries (in asm.js form):
 
 ```bash
 $ source {your-emsdk-path}/emsdk_env.sh
 $ make olvm.js
 ```
+This should create olvm.js, repl.js and oljs.js - all these files are reired to run ol under Web. Where repl.js is REPL binary implementation, olvm.js is ol virtual machine implementation and oljs.js is just a bridge between ol and js.
 
-Olvm can execute only precompiled Ol scripts (see BINARY SCRIPTS
-section) and is very small (about 35KB).
-Full Ol with interpreter, that can execute text lisp scripts is about 400KB size.
+Additionally you should provide compiled emscripten platform as separate file. You can do this using `$ make emscripten.js`.
 
+Example of using ol as an embedded web application you can check on the official [project page](https://yuriy-chumak.github.io/ol/) (or source branch on [Github](https://github.com/yuriy-chumak/ol/tree/gh-pages)).
 
-#### Windows way
+#### Windows:
 
-Building only olvm (virtual machine)
-
+##### Build only olvm (ol virtual machine):
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
 > gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
 ```
-
-Building OL
-
+##### Build ol (with integrated REPL):
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
 > ld -r -b binary -o tmp/repl.o repl
 > gcc.exe src\olvm.c tmp\repl.o -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
 ```
 
+#### macOS/\*BSDs:
 
-#### macOS/FreeBSD/OpenBSD/NetBSD/\*BSD way
+You should include "c" library instead of "dl":
 
-Required include "c" library instead of "dl":
-
+##### Build only olvm (ol virtual machine):
 ```bash
 $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -lc
-
+```
+##### Build ol (with integrated REPL):
+```bash
 $ ld -r -b binary -o tmp/repl.o repl
 $ gcc src/olvm.c tmp/repl.o  -std=c99 -O2  -o ol -lc
 ```
 
-
-#### Android way
+#### Android:
 
 ```bash
 $ ndk-build
 ```
 
-#### MacOS/iOS way
-
-tbd.
-
-#### Open webOS way
+#### Open webOS:
 
 Put toolchain/ol.bb bitbake recipe into any place of open webOs
 recipes folder (i.e. ./meta-oe/) and run "make ol" from root
@@ -203,26 +197,29 @@ Now you cat execute ol under webos command line or other way you
 would like.
 
 
-### SAMPLES
+SAMPLES
+-------
 
 You can check some [sample](https://github.com/yuriy-chumak/ol/tree/master/samples) lisp programs. For example:
 
-* "Pacman", sample that demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
+* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
 
 !["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
 
-* "Digital rain", sample that demonstrates native library direct usage ([OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix
+* "Digital rain" sample demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix
 
 !["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
 
-* "Newton dynamics", sample that demonstrates native library usage ([newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks ("C" to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton
+* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks ("C" to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton.
+You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.
 
 !["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
 
 
-### CASTOMIZATION WAY
+CASTOMIZATION
+-------------
 
-If you want to disable/enable some olvm features you can use -Dxxx or -Dxxx=y gcc syntax. This is a list of customizations:
+If you want to enable/disable some olvm features you can use -Dxxx or -Dxxx=y gcc syntax. This is a list of currently accessible customizations:
 
 |Variable      |Value           |Meaning |
 |--------------|----------------|--------|
@@ -235,66 +232,42 @@ If you want to disable/enable some olvm features you can use -Dxxx or -Dxxx=y gc
 |CAR_CHECK     | 1\|0, default 1|Enables car arguments check|
 |CDR_CHECK     | 1\|0, default 1|Enables cdr arguments check|
 
-|Variable      |Value           |Meaning |
-|--------------|----------------|--------|
-|HAS_DLOPEN    | 1\|0, default 1|Enables dlopen/dlsym functions support|
-|HAS_SOCKETS   | 1\|0, default 1|Enables socket functions support|
-|HAS_UNSAFES   | 1\|0, default 1|Enables "unsafe" functions|
-|HAS_SANDBOX   | 1\|0, default 1|Enables internal sandbox support (depends on OS kernel)|
-|HAS_STRFTIME  | 1\|0, default 1|Enables strftime function support|
+This variables have no default values and are automatically set by the Makefile (like `configure` script). You can override those values, sure:
 
-You can disable next olvm features by setting valiable to 0 (-Dxxx=0)
+|Variable      |Value |Meaning |
+|--------------|------|--------|
+|HAS_SOCKETS   | 1\|0 |Enables sockets support (bind, listen, socket, etc.)
+|HAS_DLOPEN    | 1\|0 |Enables dlopen/dlsym functions support| TS   | 1\   |Enables socket functions support|
+|HAS_UNSAFES   | 1\|0 |Enables "unsafe" functions|
+|HAS_SANDBOX   | 1\|0 |Enables internal sandbox support (depends on OS kernel)|
+|HAS_STRFTIME  | 1\|0 |Enables strftime function support|
 
-|Variable|Meaning|
-|--------|-------|
-|SYSCALL_SYSINFO | sysinfo() function|
-|SYSCALL_PIPE    | pipe() function|
-|SYSCALL_GETRLIMIT| getrlimit() function|
-|SYSCALL_GETRUSAGE| getrusage() function|
+Please note that external libraries (like opengl, sqlite, etc.)
+support require HAS_DLOPEN and OLVM_FFI enabled.
+
+Additionally you can disable the following olvm features by setting the variables to 0 (-Dxxx=0):
+
+|Variable         |Meaning |
+|-----------------|--------|
+|SYSCALL_SYSINFO  | sysinfo() function usage|
+|SYSCALL_PIPE     | pipe() function usage|
+|SYSCALL_GETRLIMIT| getrlimit() function usage|
+|SYSCALL_GETRUSAGE| getrusage() function usage|
 
 
-### LANGUAGE CHANGING
+CHANGING THE LANGUAGE
+---------------------
 
-You can change Ol language (yes, you can) by editing sources in
-lang/ and owl/ subfolders. Additionally you can change virtual machine
-by editing src/vm.scm and src/olvm.c source files.
+You can change the whole Ol language (yes, you can) by editing sources in lang/ and libraries/ subfolders.
+Additionally you can change virtual machine by editing src/vm.scm and src/olvm.c source files.
 
-To build Ol language (not Ol virtual machine)
+To build Ol language (not Ol virtual machine) named REPL:
 
 ```bash
 $ make recompile
 ```
 
-This will create new (in successful way) REPL binary that contains ol
-interpreter code.
-
-Few words about OL can be found in documentation on the project page.
-
-
-ADDITIONAL OL VM FEATURES
--------------------------
-
-To disable sockets support (linux and windows) you can please add
--DHAS_SOCKETS=0 to gcc command line or set appropriate define in
-src/olvm.h to 0. You can remove -lws2_32 for Windows from command
-line additionally.
-
-To disable dlopen/dlsym (LoadLibrary/GetProcAddress for windows)
-support you can add -DHAS_DLOPEN=0 to gcc command line or set
-appropriate define in src/olvm.h to 1. You can remove -ldl for
-Linux from command line additionally.
-
-Please note that external libraries (like opengl, sqlite, etc.)
-support require HAS_DLOPEN enabled.
-
-To disable ffi (Foreign Function Interface) support you can add
--DOLVM_FFI=0 to gcc command line or set appropriate define in
-src/olvm.h to 0.
-
-Please note that external libraries (like opengl, sqlite, etc.)
-support require OLVM_FFI enabled.
-
-For embedding OL into your project check the EMBEDDING OL section.
+This will create new (in successful way) REPL binary (`./repl`) that contains compiled ol code.
 
 
 RUNNING
@@ -306,25 +279,36 @@ There are few ways to execute ol
 
 ```scheme
 $ ol
-Welcome to Otus Lisp 1.2,
+Welcome to Otus Lisp 2.1,
 type ',help' to help, ',quit' to end session.
-> (+ 1 2 3)                      # now you in REPL and can play with in
+; now you in REPL and can play with in
+> (+ 1 2 3)
 6
-> ,quit                          # this ends interactive session
+; or let's make some factorial calculations?
+> (let factorial ((n 17))
+   (if (= n 0)
+      1
+      (* n (factorial (- n 1)))))
+355687428096000
+; this ends interactive session
+> ,quit
 bye bye :/
 ```
 
 #### Unattended mode
 
+GNU/Linux, Unixes, *BSDs, ...
 ```bash
 $ ol scriptname.ol                # text script
 $ ol scriptname.bl                # binary (compiled) script
 $ echo '(print (+ 1 2 3))' | ol
 ```
 
-For Windows
+For Windows:
 
 ```cmd
+> ol scriptname.ol
+> ol scriptname.bl
 > echo (print (+ 1 2 3)) | ol
 ```
 
@@ -342,10 +326,9 @@ using this code:
 (fasl-save main "out.bl")
 ```
 
-, where "out.bl" is your output file name.
-This code will create binary script, that can be executed directly by ol or vm.
+, where "out.bl" is your binary output file name.
+This code creates binary script that can be executed directly by ol or vm:
 
-Now you can execute this code by OL or just Olvm:
 ```bash
 $ ./vm out.bl
 hello !
@@ -354,20 +337,32 @@ $ ./ol out.bl
 hello !
 ```
 
+
 FILES
 -----
 
-* repl  - the compiled OL binary interpreter/compiler
-* src/olvm.c  - the OL vm source code (in C)
-* include/olvm.h  - the OL virtual machine header (not required by compiler)
+* repl  - the compiled ol binary interpreter+compiler
+* src/olvm.c  - the ol virtual machine source code (in C)
+* include/olvm.h  - the ol virtual machine header (not required by compiler, just for use as embed)
 * extensions/ffi.c include/ffi.h  - FFI implementation
-* lang/*.scm  - OL repl and compiler source codes (in Lisp)
-* library/**.scm - various OL libraries (in Lisp)
-* tests/**.scm - some automation tests (in Lisp)
+* lang/*.scm  - ol repl and compiler source codes (in Lisp)
+* libraries/**.scm - various OL libraries (in Lisp):
+  * libraries/scheme/core.scm - r7rs core implementation
+  * libraries/owl/*.scm - legacy basic libraries
+  * libraries/lib/*.scm - some external native libraries mappings
+  * etc.
+* tests/** - some basic automation tests (in Lisp and C)
+* tests/rosettacode/*.scm - additional automation tests (in Lisp)
 
 
-TRICKS
-------
+SOME NOTES
+----------
+
+Register interpreter in the linux: start you script with
+
+```
+#!/usr/bin/ol
+```
 
 Register interpreter in the ms windows:
 
@@ -377,22 +372,6 @@ ftype OLisp.File=ol "%1" %*
 assoc .bl=OLisp.Binary.File
 ftype OLisp.Binary.File=ol "%1" %*
 ```
-
-Register interpreter in the linux: start you script with
-
-```
-#!/usr/bin/ol
-```
-
-
-USAGE
------
-
-Ol (Otus Lisp) can be used either interactively, or to interpret code
-from files, or compile programs to fasl-images. The difference between
-an ol program and a plain script is that the program should just have
-a function of one argument as the last value, which will be called with
-the command line argument list when the program is executed.
 
 
 EMBEDDING OL
@@ -510,7 +489,7 @@ Or check the source codes - libraries/scheme/core.scm
 
 
 RELATED
---------------------------------------------------------------
+----------------------------------------------------------------------
 
 Copyright (c) 2014 Aki Helin,
 Copyright (c) 2014 - 2019 Yuriy Chumak
@@ -521,7 +500,7 @@ Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
 * http://people.csail.mit.edu/jaffer/Scheme
 * http://r7rs.org
 
---------------------------------------------------------------
+----------------------------------------------------------------------
 [![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
 [![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
 [![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
