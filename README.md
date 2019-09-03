@@ -399,7 +399,7 @@ EMBEDDING OL
 ------------
 
 Ol can be embed in your project. It supports direct calls of external
-C functions for 32- and 64-bit platforms with full callables support.
+C functions for 32- and 64-bit platforms with full callables (callbacks) support.
 
 Please check the next code as a sample:
 
@@ -407,10 +407,11 @@ Please check the next code as a sample:
 // embedded olvm usage example
 #include "embed.h"
 
-// embed.h header provides few simplified macroses and functions
+// embed.h header provides few simplified macros and functions
 // to easy work with ol virtual machine.
 // For example, make_integer(x) converts C integers into internal
-// olvm format. Other cases please check in embed.h header.
+// olvm format. Other cases please check in embed.h header or
+// tests/embed.c test file.
 
 // olvm embed instance
 ol_t ol;
@@ -419,27 +420,38 @@ int main(int argc, char** argv)
 {
     // result of ol functions call
     uintptr_t r;
+
     // create new embedded olvm instance
     embed_new(&ol);
 
     // our embed extension can work in different manners:
-    // 1. if eval got only one string parameter it returns the value of parameter,
+    // 1) if eval got only one string parameter it returns the value of parameter,
     //    this can be used to evaluate variables, constants or any expressions
     //    from the string (i.e. you can read whole lisp file info string and send
     //    it to execute by olvm)
     // Note: if you want to call expression, but you have no arguments,
     //    just use parenthesis, like "(print)" instead of "print"
     //
-    // 2. if eval got one string parameter and more than 0 arguments it makes
+    // 2) if eval got one string parameter and more than 0 arguments it makes
     //    'apply' to them - (apply arg0 args),
     //    it can be used as quick way to evaluate function by name with parameters.
     //
-    // 3. if eval got one numerical parameter and maybe more than 0 arguments,
+    // 3) if eval got one numerical parameter and maybe more than 0 arguments,
     //    this case means case 2, but with function referenced not by name but by
     //    'pin' id. So function must be pinned object.
+    //    it provides way to speedup the execution (removes string parsing and
+    //    compiling by ol)
     //
-    // 4. at last if eval received bytevector it tries to decode it as fasl object
-    //    and evaluate like 2 or 3.
+    // 4) at last if eval receives bytevector it tries to decode it as fasl object
+    //    and evaluate in 2) or 3) manner.
+
+    // tests/embed.c provides some additional staff to further simplification of ol
+    // virtual machine communication. I mean function "eval" that automatically
+    // converts function arguments to ol representation.
+
+    ... include portion of tests/embed.c from "--cut-->" to "<--cut--" lines ...
+
+    // So, let's try all this cases:
 
     // new function declaration:
     r = eval("(define (f x) (if (eq? x 0) 1 (* x (f (- x 1)))))");
@@ -462,27 +474,25 @@ int main(int argc, char** argv)
                      4, 4, 5, 3, 6, 36, 4, 4, 1, 2, 2, 8, 1, 1, 2, 9, 3, 5, 2, 3, 6, 3, 9, 3, 14, 1, 5, 2, 8, 3, 17, 1,
                      17, 4, 1, 7, 6, 2, 2, 16, 25, 11, 3, 0, 20, 36, 4, 6, 1, 1, 2, 7, 6, 5, 3, 3, 4, 5, 3, 9, 6, 4, 2,
                      7, 2, 17, 1, 17, 3, 1, 10, 2, 0};
-    // and we have a message
-    char message[] = {68, 111, 108, 102, 104, 35, 100, 113, 103, 35, 69, 114, 101, 35, 122, 100, 113, 119, 35, 119, 114,
-                      35, 105, 111, 108, 115, 35, 100, 35, 102, 114, 108, 113, 35, 101, 124, 35, 119, 104, 111, 104, 115,
-                      107, 114, 113, 104, 49};
+    // and we have an encoded message
+    char message[] = "Dolfh#dqg#Ere#zdqw#wr#iols#d#frlq#e|#whohskrqh1";
 
-    r = embed_eval(&ol, new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])),
-                        new_bytevector(&ol, message, sizeof(message)/sizeof(message[0])),
+    // let's decode it manually without simplification syntax:
+    r = embed_eval(&ol, new_bytevector(&ol, causar, sizeof(causar)),
+                        new_bytevector(&ol, message, sizeof(message)),
                         make_integer(3), 0);
     assert (is_bytevector(r));
-    assert (bytevector_length(r) == 47);
-    assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", 47) == 0);
+    assert (bytevector_length(r) == sizeof(message));
+    assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", sizeof(message)-1) == 0); // it's ok
 
     // finally, please check extensions/embed/sample.c code for more embed examples
-
     return 0;
 }
 ```
 
 Just compile with -DEMBEDDED_VM and link with repl binary.
 
-Another complex sample can be found in samples/pacman/ folder.
+Another sample can be found in samples/pacman/ folder.
 
 
 EMBEDDED OL IN DETAIL

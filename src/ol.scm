@@ -241,6 +241,10 @@
    (let*((initial-names *owl-names*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
+         (if (and
+               (less? 1 (length vm-args))
+               (string-eq? (cadr vm-args) "--version"))
+            (halt (print *version*)))
          ;; now we're running in the new repl
          (start-thread-controller
             (list ;1 thread

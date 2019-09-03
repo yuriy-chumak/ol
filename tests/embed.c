@@ -67,6 +67,7 @@ int main(int argc, char** argv)
 	// regular C variables to olvm instances.
 	// Please, don't affraid
 
+// --cut-->
 // C preprocessor trick, some kind of "map":
 // https://github.com/swansontec/map-macro
 ///*
@@ -113,6 +114,7 @@ int main(int argc, char** argv)
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
 	IFALSE))))))
 #define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
+// <--cut--
 
 	// * ok, how about functions? let's sum three numbers
 	r = eval("+", 1, 2, 103);
