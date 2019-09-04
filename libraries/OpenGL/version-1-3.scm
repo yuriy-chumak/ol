@@ -5,6 +5,8 @@
 
    GL_VERSION_1_3
 
+   (exports (OpenGL ARB transpose_matrix))
+
  ; ARB_multitexture
 glActiveTextureARB
 ;glClientActiveTextureARB( texture )
@@ -86,7 +88,8 @@ glActiveTextureARB
 ; ============================================================================
 ; == implementation ==========================================================
 (import (scheme core)
-   (OpenGL version-1-2))
+   (OpenGL version-1-2)
+   (OpenGL ARB transpose_matrix))
 
 (begin
    (define GL_VERSION_1_3 1)
