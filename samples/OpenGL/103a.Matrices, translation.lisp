@@ -18,7 +18,8 @@
    (define delta (* 0.5 (sin (/ (+ (* 1000 (- (car now) (car started))) (- (cdr now) (cdr started))) 500))))
 
    (glLoadIdentity)
-   (glTranslatef delta 0)
+   (glTranslatef delta 0 0)
+   ;(glMultTransposeMatrixf `(1 0 0 ,delta  0 1 0 0  0 0 1 0  0 0 0 1))
 
    (glColor3f 0.2 0.5 0.2)
    (glBegin GL_TRIANGLES)
