@@ -1888,16 +1888,6 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 
 #define TICKS                       10000 // # of function calls in a thread quantum
 
-// todo: check this! I'm not sure about new (proctype, size)
-#define OCLOSE(proctype)            { \
-	word size = *ip++, tmp; word *T = new (proctype, size-1); \
-	tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
-	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-#define CLOSE1(proctype)            { \
-	word size = *ip++, tmp; word *T = new (proctype, size-1); \
-	tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
-	while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-
 #define A0                          R[ip[0]]
 #define A1                          R[ip[1]]
 #define A2                          R[ip[2]]
@@ -2522,6 +2512,16 @@ loop:;
 
 		ip += 3; break;
 	}
+
+	// todo: check this! I'm not sure about new (proctype, size)
+	#define OCLOSE(proctype)            { \
+		word size = *ip++, tmp; word *T = new (proctype, size-1); \
+		tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
+		while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
+	#define CLOSE1(proctype)            { \
+		word size = *ip++, tmp; word *T = new (proctype, size-1); \
+		tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
+		while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 
 	case 3: OCLOSE(TCLOS); break; //continue; (2%)
 	case 4: OCLOSE(TPROC); break; //continue; (1%)
