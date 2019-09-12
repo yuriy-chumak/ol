@@ -415,7 +415,9 @@
       (define (list->ff lst)
          (fold
             (λ (ff node)
-               (put ff (car node ) (cdr node)))
+               (if (pair? node)
+                  (put ff (car node) (cdr node))
+                  (runtime-error "not a pair in ff constructor:" node)))
             #empty
             lst))
 
