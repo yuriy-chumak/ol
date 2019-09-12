@@ -102,7 +102,7 @@
                   (ilist #\# #\r (render (rlist->list obj) tl)))
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (cons #\# (render (ff->list obj) tl)))
+                  (ilist #\# #\f #\f (render (ff->list obj) tl)))
 
                ((eq? obj #true)  (ilist #\# #\t #\r #\u #\e tl))
                ((eq? obj #false) (ilist #\# #\f #\a #\l #\s #\e tl))
@@ -221,13 +221,10 @@
                                           (loop sh (+ n 1))
                                           (cons #\space (loop sh (+ n 1)))))))))))))
 
+               ;; render name is one is known, just function otherwise
+               ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
                ((function? obj)
-                  (let ((name (getf names obj)))
-                     ;; render name is one is known, just function otherwise
-                     ;; note - could print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) in the future
-                     (if name
-                        (foldr render (delay (k sh)) (list "#<" name ">"))
-                        (render "#<function>" (delay (k sh))))))
+                  (foldr render (delay (k sh)) (list "#<" (get names obj "function") ">")))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
                   (ilist #\# #\r (ser sh (rlist->list obj) k)))
@@ -236,7 +233,7 @@
                   (ilist #\# #\e #\m #\p #\t #\y (delay (k sh))))
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (cons #\# (ser sh (ff->list obj) k)))
+                  (ilist #\# #\f #\f (ser sh (ff->list obj) k)))
 
                ((port? obj)   (render obj (λ () (k sh))))
                ((eof? obj)    (render obj (λ () (k sh))))

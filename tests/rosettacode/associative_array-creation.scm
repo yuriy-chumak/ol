@@ -1,4 +1,4 @@
-; http://www.rosettacode.org/wiki/Associative_array/Creation
+; http://www.rosettacode.org/wiki/Associative_array/Creation#Ol
 
 ;;; empty associative array
 #empty
