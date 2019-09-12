@@ -400,17 +400,25 @@
 
       (define (get-ff-of parser)
          (let-parses (
-               (q (get-either
+               (q (get-any-of
                      (get-word "'" 'quote)
-                     (get-word "`" 'quasiquote)))
-               (* (get-imm #\{))
+                     (get-word "`" 'quasiquote)
+                     (get-epsilon #false)))
+               (? (get-imm #\{))
                (things
                   (get-kleene* parser))
-               (* maybe-whitespace)
-               (* (get-imm #\})))
+               (? maybe-whitespace)
+               (? (get-imm #\})))
             (if (null? things)
                #empty
-               (list 'list->ff (list q things)))))
+               (list 'list->ff (if q
+                  (list q things)
+                  (cons 'list
+                     (map (lambda (kv)
+                           (if (pair? kv)
+                              (list 'cons (car kv) (cdr kv))
+                              kv))
+                        things)))))))
 
       (define (get-sexp)
          (let-parses (
