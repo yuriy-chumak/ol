@@ -2,9 +2,13 @@ export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
 
-.PHONY: all debug release slim config recompile install uninstall clean check android
+.PHONY: all debug release slim config recompile install uninstall clean android
+.PHONY: describe
 
 all: release
+describe: all
+	./vm --version
+	./ol --version
 
 CC ?= gcc
 LD ?= ld
@@ -33,7 +37,8 @@ CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s)
 
 CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
-          $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)
+          $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)\
+#		  -DOLVM_BUILTIN_FMATH=1 -lm
 
 ifeq ($(UNAME),Linux)
 L := $(if HAS_DLOPEN, -ldl)

@@ -244,7 +244,9 @@
          (if (and
                (less? 0 (length vm-args))
                (string-eq? (car vm-args) "--version"))
-            (halt (print "ol (Otus Lisp) " *version*)))
+            (begin
+               (print "ol (Otus Lisp) " *version*)
+               (halt 0)))
          ;; now we're running in the new repl
          (start-thread-controller
             (list ;1 thread

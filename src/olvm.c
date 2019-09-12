@@ -4832,7 +4832,7 @@ int main(int argc, char** argv)
 	//  если первый аргумент "--version" - выведем нашу версию
 #ifdef NAKED_VM
 	if (argc > 1 && strcmp(argv[1], "--version") == 0) {
-		E("olvm (Otus Lisp Virtual Machine) %s\n", __OLVM_VERSION__);
+		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
 		return 0;
 	}
 #endif
