@@ -1,3 +1,4 @@
+; https://rosettacode.org/wiki/Object_serialization#Ol
 (define Object [
    '(1 2 3 4)  ; list
    #(4 3 2 1)  ; vector
