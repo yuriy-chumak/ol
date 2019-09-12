@@ -345,7 +345,7 @@
                         (get-word "false" #false)
                         (get-word "true"  #true)
                         (get-word "null"  #null)    ; empty list (system constant)
-                        (get-word "empty" #empty)   ; empty association array (system constant)
+                        (get-word "empty" #empty)   ; empty ff (system constant)
                         (get-word "eof"   #eof)     ; (vm:cast 4 13))
                         ; сокращения
                         (get-word "t"     #true)
@@ -370,7 +370,16 @@
       (define (get-vector-of parser)
          (let-parses (
                (qv (get-either
-                  ; [], not quoting values
+                  ; #(), quoting all values, scheme syntax
+                  (let-parses (
+                        (* (get-imm #\#))
+                        (* (get-imm #\())
+                        (things
+                           (get-kleene* parser))
+                        (* maybe-whitespace)
+                        (* (get-imm #\))))
+                     (cons 'quote things))
+                  ; [], not quoting values (except used ' or `), ol syntax
                   (let-parses (
                         (q (get-any-of
                               (get-word "'" 'quote)
@@ -381,19 +390,10 @@
                            (get-kleene* parser))
                         (* maybe-whitespace)
                         (* (get-imm #\])))
-                     (cons q things))
-                  ; #(), quoting all values
-                  (let-parses (
-                        (* (get-imm #\#))
-                        (* (get-imm #\())
-                        (things
-                           (get-kleene* parser))
-                        (* maybe-whitespace)
-                        (* (get-imm #\))))
-                     (cons 'quote things)))))
+                     (cons q things)))))
             (let*((q v qv))
                (if (null? v)
-                  #()
+                  (list 'make-vector #null) ; no empty vectors in parser allowed (todo: fix it somewere else)
                   (if q
                      (list 'make-vector (list q v))
                      (cons 'vector v))))))
