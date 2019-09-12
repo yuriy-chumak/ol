@@ -350,7 +350,7 @@
 
       ; library syntax:  (case <key> <clause1> <clause2> ...)
       (define-syntax case
-         (syntax-rules (else list eqv? eq? and memv => vm:new type-vector is)
+         (syntax-rules (else list eqv? eq? and memv => vector is)
             ; precalculate case argument, if needed
             ((case (op . args) . clauses)
                ((lambda (fresh) ; let ((fresh (op.args)))
@@ -378,8 +378,8 @@
             ((case thing (else . body))
                ((lambda () . body)))   ; means (begin . body)
             ; * ol specific
-            ; trying to integrate tuple-case:
-            ((case thing ((vm:new type-vector cp . args) . body) . clauses)
+            ; case receives a vectors:
+            ((case thing ((vector cp . args) . body) . clauses)
                (if (eq? (ref thing 1) cp) ; compare (todo: move (ref thing 1) to common clause)
                   (vector-apply thing
                      (lambda (| | . args)
@@ -554,9 +554,9 @@
       ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
       ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
       (define-syntax quasiquote
-         (syntax-rules (unquote unquote-splicing _work append vm:new type-vector)
-                                                ;^            ^
-                                                ;'-- mine     '-- added by the parser for `[...]
+         (syntax-rules (unquote unquote-splicing _work append);; vm:new type-vector make-vector)
+                                                ;^            ;; ^
+                                                ;'-- mine     ;; '-- added by the parser for `[...]
             ((quasiquote _work () (unquote exp)) exp)
             ((quasiquote _work (a . b) (unquote exp))
                (list 'unquote (quasiquote _work b exp)))
@@ -566,9 +566,9 @@
             ((quasiquote _work () ((unquote-splicing exp) . tl))
                (append exp
                   (quasiquote _work () tl)))
-            ((quasiquote _work () (vm:new type-vector . es))
-               (list->vector
-                  (quasiquote _work () es)))
+            ;; ((quasiquote _work () (make-vector . es))
+            ;;    (make-vector
+            ;;       (quasiquote _work () es)))
             ((quasiquote _work d (a . b))
                (cons (quasiquote _work d a)
                      (quasiquote _work d b)))
@@ -1936,7 +1936,7 @@
       ; ...
 
 
-      (define-syntax tuple
+      (define-syntax tuple ; * deprecated
          (syntax-rules ()
             ((tuple . tail)
                (vm:new type-vector . tail))))
