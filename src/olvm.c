@@ -4829,6 +4829,14 @@ int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
 
+	//  если первый аргумент "--version" - выведем нашу версию
+#ifdef NAKED_VM
+	if (argc > 1 && strcmp(argv[1], "--version") == 0) {
+		E("olvm (Otus Lisp Virtual Machine) %s\n", __OLVM_VERSION__);
+		return 0;
+	}
+#endif
+
 	// обработка аргументов:
 	//	первый из них (если есть) - название исполняемого скрипта
 	//	                            или "-", если это будет stdin

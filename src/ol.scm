@@ -91,9 +91,9 @@
    (let loop ((args *vm-args*))
       (if (null? args)
          *ol-version*
-         (if (string-eq? (car args) "--version")
+         (if (string-eq? (car args) "--force-version")
             (if (null? (cdr args))
-               (runtime-error "no version in command line" args)
+               (runtime-error "version number expected" args)
                (cadr args))
             (loop (cdr args))))))
 
@@ -242,9 +242,9 @@
       ; main: / entry point of the compiled image
       (λ (vm-args)
          (if (and
-               (less? 1 (length vm-args))
-               (string-eq? (cadr vm-args) "--version"))
-            (halt (print *version*)))
+               (less? 0 (length vm-args))
+               (string-eq? (car vm-args) "--version"))
+            (halt (print "ol (Otus Lisp) " *version*)))
          ;; now we're running in the new repl
          (start-thread-controller
             (list ;1 thread

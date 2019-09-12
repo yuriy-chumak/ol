@@ -210,8 +210,8 @@ emscripten.js: tmp/emscripten.c
 recompile: boot.fasl
 boot.fasl: CFLAGS += $(CFLAGS_RELEASE) # will rebuild in release, for speed
 boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
-	@vm repl src/ol.scm --version "`git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`"
-	@if diff boot.fasl repl>/dev/null ;then\
+	@vm repl src/ol.scm --force-version "`git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`"
+	@if diff boot.fasl repl>/dev/null;then\
 	   echo '\033[1;32m  `___`  \033[0m' ;\
 	   echo '\033[1;32m  (o,o)  \033[0m' ;\
 	   echo '\033[1;32m  \)  )  \033[0m' ;\
