@@ -62,7 +62,7 @@
             (reverse (iota (size o) 1)))
          o)
       ((list? o)
-         (tuple->list (shuffle! (list->tuple o))))
+         (vector->list (shuffle! (make-vector o))))
       ((string? o)
          (runes->string (shuffle! (string->runes o))))))
 

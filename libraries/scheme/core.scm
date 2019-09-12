@@ -554,9 +554,9 @@
       ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
       ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
       (define-syntax quasiquote
-         (syntax-rules (unquote unquote-splicing _work append);; vm:new type-vector make-vector)
-                                                ;^            ;; ^
-                                                ;'-- mine     ;; '-- added by the parser for `[...]
+         (syntax-rules (unquote unquote-splicing _work append)
+                                                ;^
+                                                ;'-- mine
             ((quasiquote _work () (unquote exp)) exp)
             ((quasiquote _work (a . b) (unquote exp))
                (list 'unquote (quasiquote _work b exp)))
@@ -566,9 +566,6 @@
             ((quasiquote _work () ((unquote-splicing exp) . tl))
                (append exp
                   (quasiquote _work () tl)))
-            ;; ((quasiquote _work () (make-vector . es))
-            ;;    (make-vector
-            ;;       (quasiquote _work () es)))
             ((quasiquote _work d (a . b))
                (cons (quasiquote _work d a)
                      (quasiquote _work d b)))
@@ -1185,7 +1182,7 @@
       (assert (pair? '(a . b))              ===>  #t)
       (assert (pair? '(a b c))              ===>  #t)
       (assert (pair? '())                   ===>  #f)
-      (assert (pair? #(a b))                ===>  #f)
+      ;assert (pair? #(a b))                ===>  #f) ; vectors will be defined later
 
       ; procedure:  (cons obj1 obj2)    * builtin
       (define cons cons)
