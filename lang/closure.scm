@@ -65,7 +65,7 @@
                               (cons dummy-cont (cdr rands))
                               used)))
                      (else
-                        (runtime-error "Bad primitive continuation: " (car rands)))))
+                        (runtime-error "Bad primitive continuation:" (car rands)))))
                (lets
                   ((rator used (closurize rator used #false))
                    (rands used (closurize-list closurize rands used)))
