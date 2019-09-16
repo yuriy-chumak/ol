@@ -4,7 +4,7 @@
    (license MIT/LGPL3)
    (keywords (scheme core ol))
    (description "
-      Core Otus-Lisp Scheme library.")
+      Otus-Lisp scheme core library.")
 
    (import
       (src vm)           ; olvm сodes and primitives,
@@ -725,7 +725,7 @@
                  (eq? typea TRATIONAL)
                  (eq? typea TCOMPLEX))
             (and
-               (eq? (type a) (type b))
+               (eq? typea (type b))
                (eqv? (car a) (car b))
                (eqv? (cdr a) (cdr b)))
       ;  * obj 1 and obj 2 are both inexact numbers such that they
@@ -737,7 +737,7 @@
       ;    value.
          (if (eq? typea TINEXACT)
             (and
-               (eq? (type a) (type b))
+               (eq? typea (type b))
                (let loop ((n (|-1| (size a))))
                   (if (eq? (ref a n) (ref b n))
                      (if (eq? n 0)
@@ -907,7 +907,7 @@
       ; Implementations of Scheme are not required to .........
       ; ...............
 
-      ; 6.2.4  Syntax of numerical constants
+      ; (r7rs) 6.2.5  Syntax of numerical constants
       ;
       ; The syntax of the written representations ........
       ; ...
@@ -930,21 +930,40 @@
             (type-int+ #true)
             (type-int- #true)))
 
+      (assert (integer? 3+0i)               ===>  #t) ; imag part is 0
+      (assert (integer? 3+4i)               ===>  #f) ; imag part is not a 0
+      (assert (integer? 3.0)                ===>  #t)
+      (assert (integer? 3.4)                ===>  #f)
+      (assert (integer? 8/4)                ===>  #t)
+      (assert (integer? 8/5)                ===>  #f)
+
       ; procedure:  (rational? obj)
       (define (rational? a)
       (or
          (integer? a)
          (eq? (type a) type-rational)))
 
+      (assert (rational? -inf.0)            ===>  #f)
+      (assert (rational? 6/10)              ===>  #t)
+      (assert (rational? 6/3)               ===>  #t)
+      (assert (rational? 3+4i)              ===>  #f)
+
       ; procedure:  (real? obj)
+      ;  * if z is a complex number, then (real? z) is true if and
+      ;    only if (zero? (imag-part z)) is true.
       (define (real? a)
       (or
          (rational? a)
-         (eq? (type a) type-inexact)
-      ;  (and (eq? (type a) type-complex) (zero? (cdr a)) ; not required, cause math lib casts such complex numbers to real
-         (equal? a +inf.0)
-         (equal? a -inf.0)
-         (equal? a +nan.0)))
+         (eq? (type a) type-inexact)))
+         ; next line not required, cause math lib casts such complex numbers to real
+         ;  (and (eq? (type a) type-complex) (eq? (cdr a) 0))
+
+      (assert (real? 3)                     ===>  #t)
+      (assert (real? 3.4)                   ===>  #t)
+      (assert (real? 1e10)                  ===>  #t)
+      (assert (real? -2.5+0i)               ===>  #t)
+      (assert (real? +inf.0)                ===>  #t)
+      (assert (real? +nan.0)                ===>  #t)
 
       ; procedure:  (complex? obj)
       (define (complex? a)
@@ -952,49 +971,50 @@
          (real? a)
          (eq? (type a) type-complex)))
 
+      (assert (complex? 3+4i)               ===>  #t)
+      (assert (complex? 3)                  ===>  #t)
+      (assert (complex? 3.4)                ===>  #t)
+
       ; Note: In many implementations the complex? procedure will
       ; be the same as number?, but unusual implementations may rep-
       ; resent some irrational numbers exactly or may extend the num-
       ; ber system to support some kind of non-complex numbers.
       ;
       ; procedure:  (number? obj)
-      (define (number? a)
-         (complex? a))
+      (define number? complex?)
 
+      ; A Scheme number is exact if it was written as an exact
+      ; constant or was derived from exact numbers using only
+      ; exact operations. A number is inexact if it was written
+      ; as an inexact constant, if it was derived using inexact
+      ; ingredients, or if it was derived using inexact operations.
+      ; Thus inexactness is a contagious property of a number.
+      ;                            * note from 6.2.2. exactness
+
+      ; In particular, an exact complex number has an exact real
+      ; part and an exact imaginary part; all other complex numbers
+      ; are inexact complex numbers.
 
       ; procedure:  (exact? z)
-      (define (exact? a)
-         (rational? a))
+      (define (exact? z)
+         (or (rational? z)
+            (and
+               (eq? (type z) type-complex)
+               (rational? (car z))
+               (rational? (cdr z)))))
 
       ; procedure:  (inexact? z)
-      (define (inexact? a)
-         (and (complex? a)
-            (eq? (rational? a) #f))) ; not rational
+      (define (inexact? z)
+         (unless (exact? z) #true))
 
       ; procedure:  (exact-integer? z)
-      (define (exact-integer? z)
-         (integer? z))
+      (define exact-integer? integer?)
 
+      ; finite?
+      ; infinite?
+      ; nan?
+      ; zero?
 
-
-      (assert (complex? 3+4i)               ===>  #t)
-      (assert (complex? 3)                  ===>  #t)
-      (assert (complex? 3.4)                ===>  #t)
-      (assert (real? 3)                     ===>  #t)
-      (assert (real? 3.4)                   ===>  #t)
-      (assert (real? -2.5+0.0i)             ===>  #t)
-      (assert (real? 1e10)                  ===>  #t)
-      (assert (rational? 6/10)              ===>  #t)
-      (assert (rational? 6/3)               ===>  #t)
-      (assert (rational? 3+4i)              ===>  #f)
-      (assert (integer? 3+0i)               ===>  #t)
-      (assert (integer? 3+4i)               ===>  #f)
-      (assert (integer? 3.0)                ===>  #t)
-      (assert (integer? 3.4)                ===>  #f)
-      (assert (integer? 8/4)                ===>  #t)
-      (assert (integer? 8/5)                ===>  #f)
-
-      ; *** declared in (r5rs math), (r5rs math-extra)
       ; library procedure:  (zero? z)
       (define (zero? x)
       (or
@@ -1051,12 +1071,17 @@
       ; procedure: expt z1 z2
       ; procedure: make-rectangular x1 x2
       ; procedure: make-polar x3 x4
-      ; procedure: real-part z
-      ; procedure: imag-part z
+
+      ; procedure:  (real-part z)
+      (define real-part car)
+
+      ; procedure:  (imag-part z)
+      (define imag-part cdr)
+
       ; procedure: magnitude z
       ; procedure: angle z
 
-      ; procedure: exact->inexact z
+      ; procedure:  (inexact z)
       (define (inexact n) (vm:cast n type-inexact))
 
       ; procedure: inexact->exact z
