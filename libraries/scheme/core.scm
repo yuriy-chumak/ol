@@ -1058,11 +1058,9 @@
 
       ; procedure: exact->inexact z
       (define (inexact n) (vm:cast n type-inexact))
-      (define exact->inexact inexact) ; r5rs
 
       ; procedure: inexact->exact z
       (define (exact n) (vm:cast n type-rational))
-      (define inexact->exact exact)   ; r5rs
 
       ; 6.2.7  Numerical input and output
       ; * included in (scheme numerical-io)
@@ -2018,7 +2016,7 @@
       type-inexact
 
       integer? rational? complex? real? number? exact? inexact?
-      inexact exact exact->inexact inexact->exact
+      inexact exact
 
       ; 6.3 (other data types)
       type-bytecode
