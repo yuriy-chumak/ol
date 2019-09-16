@@ -103,7 +103,11 @@ R<sup>7</sup>RS DIFFERENCES
 * 6.1. Equivalence predicates (EQV?)
   * (eqv? +nan.0 +nan.0) is **#true**, but *unspecified* in Scheme
 * 6.2.5. Syntax of numerical constants
-  * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme (inexactness can be disabled by compiler features or/and can be unsupported by platform, so we should expect the same behavior of the program independently of inexactness support. unless we use inexact numbers, sure).
+  * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
+    - *explanation: inexactness can be disabled by compiler features or/and can be unsupported by platform, so we should expect the same behavior of the program independently of inexactness support. unless we use inexact numbers, sure.*
+* 6.2.6. Numerical operations
+  * (integer? x) for inexact numbers always returns **#false** in Ol, but *#true* in Scheme when (= x (round x)).
+    - *explanation: inexactness is an inexactness, we can loose the fractional part and may not notice this. so let's be a little paranoid.*
 * 6.4. Pairs and lists
   * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
 * 4.2.7. Exception handling
