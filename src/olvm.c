@@ -3930,7 +3930,7 @@ loop:;
 			 * @see http://man7.org/linux/man-pages/man2/time.2.html
 			 */
 			case SYSCALL_TIME: {
-				CHECK_ARGC(1,2);
+				CHECK_ARGC(0,2);
 				CHECK_NUMBER_OR_STRING(1);
 				CHECK_NUMBERP_OR_FALSE(2);
 
