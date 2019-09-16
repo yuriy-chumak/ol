@@ -8,7 +8,7 @@ export OL_HOME=libraries
 all: release
 describe: all
 	./vm --version
-	./ol --version
+	./vm repl --version
 
 CC ?= gcc
 LD ?= ld
