@@ -36,6 +36,11 @@
          (skip (get-word "g " #t))
          (name get-rest-of-line))
       name))
+(define get-o
+   (let-parses(
+         (skip (get-word "o " #t))
+         (name get-rest-of-line))
+      name))
 (define get-s
    (let-parses(
          (skip (get-word "s " #t))
@@ -101,13 +106,13 @@
    (let-parses(
          (comments (get-greedy* get-comment))
          (mtllib get-mtllib)
-         (g get-g)
+         (name (get-either get-g get-o))
          (v (get-greedy+ get-v))
          (vn (get-greedy+ get-vn))
          (facegroups (get-greedy+ facegroup-parser)))
       (list->ff `(
          (mtllib . ,(bytes->string mtllib))
-         ;(g . ,(bytes->string g))
+         (name . ,(bytes->string name))
          (v . ,v)
          (vn . ,vn)
          (facegroups . ,facegroups)
