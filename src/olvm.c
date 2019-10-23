@@ -367,7 +367,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef _WIN32
 #include <sys/ioctl.h>
+#endif
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -3227,7 +3229,7 @@ loop:;
 									? number(A2) : -1; // в байтах
 
 				if (count < 0)
-#ifdef FIONREAD
+#if defined(FIONREAD) && !defined(_WIN32)
 					if (ioctl(portfd, FIONREAD, count) == -1)
 #endif
 						count = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
@@ -3594,7 +3596,11 @@ loop:;
 			 		? number(A2)
 					: S_IRUSR | S_IWUSR;
 
+#ifdef _WIN32
+				if (mkdir(path) >= 0)
+#else
 				if (mkdir(path, mode) >= 0)
+#endif
 					r = (word*) ITRUE;
 				break;
 			}
@@ -3837,7 +3843,7 @@ loop:;
 						if (CreateProcess(NULL, args, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 							CloseHandle(pi.hThread);
 							CloseHandle(pi.hProcess);
-							result = itoun(pi.dwProcessId);
+							r = itoun(pi.dwProcessId);
 						}
 					#endif
 					break;
@@ -4129,7 +4135,7 @@ loop:;
 				char* ipaddress = inet_ntoa(((struct sockaddr_in *)&peer)->sin_addr);
 				unsigned short port = ntohs(((struct sockaddr_in *)&peer)->sin_port);
 
-				result = new_pair(new_string(ipaddress), I(port));
+				r = new_pair(new_string(ipaddress), I(port));
 
 		#else
 				unsigned short port;
