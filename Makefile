@@ -65,6 +65,10 @@ ifeq ($(UNAME),MINGW32_NT-6.1)
 L := -lws2_32
 endif
 
+ifeq ($(shell uname -o),Android)
+L := -lm
+endif
+
 # Mac OS X                    Darwin
 # Cygwin 32-bit (Win-XP)      CYGWIN_NT-5.1
 # Cygwin 32-bit (Win-7 32-bit)CYGWIN_NT-6.1

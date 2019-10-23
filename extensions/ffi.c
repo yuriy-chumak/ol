@@ -763,6 +763,12 @@ ret_t asmjs_call(word args[], int fmask, void* function, int type) {
 		default: fprintf(stderr, "Unsupported parameters count for ffi function: %d", i);\
 			return 0;\
 		};
+# if __aarch64__
+typedef long long ret_t;
+ret_t aarch64_call(word args[], int i, void* function, int type) {
+	CALL();
+}
+# endif
 
 #endif
 
@@ -1447,11 +1453,7 @@ word* OL_ffi(OL* self, word* arguments)
 	        function, returntype & 0x3F); //(?)
 # endif
 #elif __aarch64__
-	typedef long long ret_t;
-	inline ret_t call(word args[], int i, void* function, int type) {
-		CALL();
-	}
-	got = call(args, i, function, returntype & 0x3F);
+	got = aarch64_call(args, i, function, returntype & 0x3F);
 #elif __mips__
 	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
 	typedef long long ret_t;
