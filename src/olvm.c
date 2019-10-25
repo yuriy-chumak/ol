@@ -86,7 +86,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 
 // additional gcc staff
 // http://www.pixelbeat.org/programming/gcc/static_assert.html
-#if GCC_VERSION < 40300
+// https://gcc.gnu.org/wiki/C11Status
+#if GCC_VERSION < 40600
 #	define static_assert(condition, comment) \
 			do { switch(0) { case 0: case condition: ; } } while (0)
 #else
