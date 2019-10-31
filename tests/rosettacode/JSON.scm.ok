@@ -1,0 +1,2 @@
+#ff((something . #(12 23 34)) (new . #true))
+{'something':[12,23,34],'new':true}{'a':[1,2,3],'b':{'1':2,'3':4},'c':true}

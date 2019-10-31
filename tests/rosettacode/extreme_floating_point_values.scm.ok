@@ -1,0 +1,4 @@
+infinity: +inf.0
+minus infinity: -inf.0
+not-a-number: +nan.0
+is this is not a number? #true
