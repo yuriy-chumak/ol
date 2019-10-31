@@ -50,16 +50,29 @@
                         (display ","))
                      (loop (+ n 1))))))
             (display "]"))
-         ((list? L)
+         ;; ((list? L)
+         ;;    (display "{")
+         ;;    (let loop ((L L))
+         ;;       (unless (null? L) (begin
+         ;;          (for-each display `("\"" ,(caar L) "\":"))
+         ;;          (jsonify (cdar L))
+         ;;          (if (not (null? (cdr L)))
+         ;;             (display ","))
+         ;;          (loop (cdr L)))))
+         ;;    (display "}"))
+         ((ff? L)
             (display "{")
-            (let loop ((L L))
-               (unless (null? L) (begin
-                  (for-each display `("\"" ,(caar L) "\":"))
-                  (jsonify (cdar L))
-                  (if (not (null? (cdr L)))
-                     (display ","))
-                  (loop (cdr L)))))
-            (display "}")))))
+            (let loop ((L (ff-iter L)) (comma #f))
+               (cond
+                  ((pair? L)
+                     (if comma (display ","))
+                     (for-each display `("'" ,(caar L) "':"))
+                     (jsonify (cdar L))
+                     (loop (cdr L) #t))
+                  ((function? L)
+                     (loop (L) #t))))
+            (display "}"))
+         )))
 
 (define get-a-whitespace (get-byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
 (define maybe-whitespaces (get-kleene* get-a-whitespace))
@@ -71,9 +84,9 @@
          (end (get-imm #\')))
       (runes->string runes))
    (let-parses (
-         (begin (get-imm #\"))
-         (runes (get-kleene* (get-rune-if (lambda (rune) (not (eq? rune #\"))))))
-         (end (get-imm #\")))
+         (begin (get-imm #\")) ;"
+         (runes (get-kleene* (get-rune-if (lambda (rune) (not (eq? rune #\")))))) ;"
+         (end (get-imm #\"))) ;"
       (runes->string runes))))
 
 (define get-number
