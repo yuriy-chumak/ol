@@ -5,8 +5,8 @@ unless: i don't know
 unless: equal
 unless: i don't know
 case: 4
-cond: equal
 case: selector 1, 2, 3
+cond: equal
 1, -, -
 1, 2, -
 1, 2, 3

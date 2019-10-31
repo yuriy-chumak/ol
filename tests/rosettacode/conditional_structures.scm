@@ -25,6 +25,15 @@
    (else
       (print "case: i don't know")))
 
+; additionally, case can select vectors with variables filling
+(case (vector 'selector 1 2 3)
+   (['case1 x y]
+      (print "case: case1 " x ", " y))
+   (['selector x y z]
+      (print "case: selector " x ", " y ", " z))
+   (else
+      (print "case: i don't know")))
+
 ; cond, the sequnce of comparators.
 (cond
    ((= (* 2 2) 4)
@@ -33,15 +42,6 @@
       (print "cond: not equal"))
    (else
       (print "cond: i don't know")))
-
-; case, smart vector comparer with variables filling
-(case (vector 'selector 1 2 3)
-   (['case1 x y]
-      (print "case: case1 " x ", " y))
-   (['selector x y z]
-      (print "case: selector " x ", " y ", " z))
-   (else
-      (print "case: i don't know")))
 
 ; case-lambda, selecting the lambda based on arguments count.
 (define smart (case-lambda
