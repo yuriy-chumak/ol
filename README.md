@@ -277,6 +277,18 @@ This will create new (in successful way) REPL binary (`./repl`) that contains co
 RUNNING
 -------
 
+Ol command line is:
+$ ol [[vm-options] [filename]] [arguments]]
+
+* if no filename given all options is ol options, not an olvm
+* if no filename given ol will use stdin as source
+* if you want to use stdin as source but must provide a filename, use "-"
+* if you want to break vm-options scanning and provide filename like option (i.e. '--version'), use "--" as 'end-of-option' flag
+
+Current olvm command line options available:
+* '--version': print olvm version and, if no filename given, exit
+
+
 There are few ways to execute ol
 
 #### Interactive mode

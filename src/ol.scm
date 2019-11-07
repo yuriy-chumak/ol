@@ -241,22 +241,25 @@
    (let*((initial-names *owl-names*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
+         ;; temporary '--version' solution
          (if (and
                (less? 0 (length vm-args))
                (string-eq? (car vm-args) "--version"))
             (begin
                (print "ol (Otus Lisp) " *version*)
                (halt 0)))
+
          ;; now we're running in the new repl
          (start-thread-controller
             (list ;1 thread
                ['init
                   (λ ()
-                     ;; get basic io running
+                     ;; get i/o running
                      (io:init)
 
-                     ;; repl needs symbol etc interning, which is handled by this thread
+                     ;; repl needs symbols interning, which is handled by this thread
                      (fork-intern-interner symbols)
+                     ;; and bytecode duplication avoider, is handled by this thread
                      (fork-bytecode-interner codes)
 
                      (let*((file (if (null? vm-args)

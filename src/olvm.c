@@ -4836,23 +4836,93 @@ int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
 
-	//  если первый аргумент "--version" - выведем нашу версию
+	// ./vm - все, что до имени файла - опции виртуальной машины
+	//		- "--" означает конец опций и следующий аргумент - однозначно имя бинарного файла
+	//      - все, что после имени бинарного файла - опции бинарного файла
+	//      - если где-то встретилась опция "--version", вывести версию
+	//      - если имени файла вообще нет и не было опции --version, выходим с сообщением ошибки; иначе просто выходим
+	// ./ol - все то же самое, кроме:
+	//      - если имени файла не было, использовать stdin и все опции считать опциями repl
+	char* file = 0;
+	// два прохода разбора строки
+	for (int pass = 1; pass <= 2; pass++) {
+		char** v = argv; int c = argc;
+		while (c > 1) {
+			v++; c--;
+			if (strcmp(v[0], "--") == 0) { // "--" means end of options, the next is definitely file
+				++v; --c;
+				file = c > 0 ? *v : 0;
+				break;
+			}
+			if (strcmp(v[0], "--version") == 0) {
+				if (pass == 2) { // второй проход, это опция виртуальной машины
+					E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
+					// E("Copyright (c) 2019 Yuriy Chumak");
+					// E("License (L)GPLv3+: GNU (L)GPL version 3 or later <http://gnu.org/licenses/>");
+					// E("License MIT: <https://en.wikipedia.org/wiki/MIT_License>");
+					// E("This is free software: you are free to change and redistribute it.");
+					// E("There is NO WARRANTY, to the extent permitted by law.");
+					if (file == 0)
+						return 0; // no error
+				}
+				continue;
+			}
+			else
+			if (strncmp(v[0], "--opt=", 6) == 0) { // dummy option
+				if (pass == 2) { // second pass, this is virtual machine option
+					E("olvm: option set to '%s'", &v[0][6]);
+				}
+				continue;
+			}
+			else
+			if (strncmp(v[0], "--", 2) == 0) {
 #ifdef NAKED_VM
-	if (argc > 1 && strcmp(argv[1], "--version") == 0) {
-		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
-		return 0;
-	}
+				if (pass == 2) { // second pass, this is virtual machine option
+					E("olvm: unknown vm option '%s'", v[0]);
+					return EILSEQ;
+				}
 #endif
+				continue;
+			}
+			else {
+				if (pass == 1) // BTW, "-" means stdin
+					file = *v;
+				break;
+			}
+		}
 
-	// обработка аргументов:
-	//	первый из них (если есть) - название исполняемого скрипта
-	//	                            или "-", если это будет stdin
-	//  остальные - командная строка
-	if (argc > 1 && strcmp(argv[1], "-") != 0) {
+		if (pass == 2) {
+			if (file == 0) { // входной файл не указан
+#ifdef NAKED_VM
+				goto no_binary_script;
+#endif
+			}
+			else {
+				argc = c; argv = v;
+			}
+		}
+	}
+
+	if (file == 0) { // входной файл вовсе не указан
+#ifdef NAKED_VM
+		goto invalid_binary_script;
+#else
+		argc--; argv++;
+#endif
+	}
+	else
+	if (strcmp(file, "-") == 0) { // stdin
+#ifdef NAKED_VM
+		goto invalid_binary_script; // некому проинтерпретировать скрипт
+#else
+		// do nothing
+#endif
+	}
+	else {
 		// todo: use mmap()
 		struct stat st;
 
-		if (stat(argv[1], &st))
+		if (stat(file, &st))
 			goto can_not_stat_file;		// не найден файл или он пустой
 #ifdef NAKED_VM
 		if (st.st_size == 0)
@@ -4860,7 +4930,7 @@ int main(int argc, char** argv)
 #endif
 
 		char bom;
-		int bin = open(argv[1], O_RDONLY | O_BINARY, (S_IRUSR | S_IWUSR));
+		int bin = open(file, O_RDONLY | O_BINARY, (S_IRUSR | S_IWUSR));
 		if (!bin)
 			goto can_not_open_file;				// не смогли файл открыть
 
@@ -4882,7 +4952,7 @@ int main(int argc, char** argv)
 #ifdef NAKED_VM
 			goto invalid_binary_script;
 #else
-			close(bin); // todo: сместить аргументы на 1 вперед
+			close(bin);
 #endif
 		}
 		else {
@@ -4901,14 +4971,9 @@ int main(int argc, char** argv)
 			close(bin);
 
 			bootstrap = ptr;
+			argc--; argv++; // бинарный файл заменяет repl, скорректируем строку аргументов
 		}
 	}
-#ifdef NAKED_VM
-	else
-		goto invalid_binary_script; // некому проинтерпретировать скрипт
-
-	argc--; argv++;
-#endif
 
 	set_signal_handler();
 
@@ -4959,9 +5024,14 @@ int main(int argc, char** argv)
 	goto fail;
 
 #	ifdef NAKED_VM
+	no_binary_script:
+	message = "No binary script provided";
+	errno = ENOENT;
+	goto fail;
+
 	invalid_binary_script:
-	errno = EILSEQ;
 	message = "Invalid binary script";
+	errno = EILSEQ;
 	goto fail;
 #	endif
 
@@ -5137,7 +5207,7 @@ OL_run(OL* ol, int argc, char** argv)
 		word* fp = ol->heap.fp;
 
 		argv += argc - 1;
-		for (ptrdiff_t i = argc; i > 1; i--, argv--) {
+		for (ptrdiff_t i = argc; i > 0; i--, argv--) {
 			char *pos = (char*)(fp + 1);
 			char *v = *argv;
 			while ((*pos = *v++) != 0)

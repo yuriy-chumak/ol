@@ -228,7 +228,7 @@ void embed_new(ol_t* embed, unsigned char* bootstrap, int interactive)
 	OL_userdata(embed->vm, embed);
 
 	word r; // execution result
-	char* args[] = { "web", "-", "--embed", interactive ? "--interactive" : "--no-interactive" }; // ol execution arguments
+	char* args[] = { "-", "--embed", interactive ? "--interactive" : "--no-interactive" }; // ol execution arguments
 	r = OL_run(embed->vm, sizeof(args) / sizeof(*args), args);
 	// well, we have our "smart" script prepared,
 	//  now save both eval and env variables
