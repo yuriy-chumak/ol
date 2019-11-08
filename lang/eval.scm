@@ -279,7 +279,6 @@
 
       (define library-key '*libraries*)     ;; list of loaded libraries
       (define features-key '*features*)     ;; list of implementation feature symbols
-      (define includes-key '*include-dirs*) ;; paths where to try to load includes from
 
       (define definition?
          (let ((pat (list 'setq symbol? ?)))
@@ -428,31 +427,24 @@
 
       ;; todo: should keep a list of documents *loading* and use that to detect circular loads (and to indent the load msgs)
       (define (repl-load repl path in env)
-         (lets
-            ((exps ;; find the file to read
-               (or
-                  (file->exp-stream path "" sexp-parser syntax-fail)
-                  (file->exp-stream
-                     (string-append (env-get env '*owl* "NA") path)
-                     "" sexp-parser syntax-fail))))
+         (let*((paths (map (lambda (dir) (fold string-append dir `("/" ,path))) (env-get env '*include-dirs* '("."))))
+               (exps ;; find the file to read
+                  (let loop ((paths paths))
+                     (unless (null? paths)
+                        (or (file->exp-stream (car paths) "" sexp-parser syntax-fail)
+                            (loop (cdr paths)))))))
             (if exps
-               (begin
-                  ;(if (env-get env '*interactive* #false)
-                  ;   (print " + " path))
-                  (lets
-                     ((interactive (env-get env '*interactive* #false))
-                      (load-env    (env-set env '*interactive* #false))
-                      (outcome (repl load-env exps)))
-                     (case outcome
-                        (['ok val env]
-                           (repl (mark-loaded (env-set env '*interactive* interactive) path) in))
-                        (['error reason partial-env]
-                           ; fixme, check that the fd is closed!
-                           (repl-fail env (list "Could not load" path "because" reason))))))
+               (let*((interactive (env-get env '*interactive* #false))
+                     (load-env    (env-set env '*interactive* #false))
+                     (outcome (repl load-env exps)))
+                  (case outcome
+                     (['ok val env]
+                        (repl (mark-loaded (env-set env '*interactive* interactive) path) in))
+                     (['error reason partial-env]
+                        ; fixme, check that the fd is closed!
+                        (repl-fail env (list "Could not load" path "because" reason)))))
                (repl-fail env
-                  (list "Could not find any of"
-                     (list path (string-append (env-get env '*owl* "") path))
-                     "for loading.")))))
+                  (list "Could not find any of" paths "for loading.")))))
 
       ;; regex-fn | string | symbol → regex-fn | #false
       (define (thing->rex thing)
@@ -742,7 +734,7 @@
          (lets
             ((paths (map
                        (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path)))))
-                       (env-get env includes-key null)))
+                       (env-get env '*include-dirs* null)))
 ;             (_ (print "paths: " paths))
              (datas (lmap (lambda (file) (library-file->list env file)) paths))
              (data (first (λ (x) x) datas #false)))
@@ -751,7 +743,7 @@
                   (if exps ;; all of the file parsed to a list of sexps
                      (cons 'begin exps)
                      (fail (list "Failed to parse contents of " path))))
-               (fail (list "Couldn't find " path "from any of" (env-get env includes-key null))))))
+               (fail (list "Couldn't find " path "from any of" (env-get env '*include-dirs* null))))))
 
       ;; nonempty list of symbols or integers
       (define (valid-library-name? x)
@@ -875,7 +867,7 @@
       (define library-exports
          (list
             library-key     ;; loaded libraries
-            includes-key    ;; where to load libraries from
+            '*include-dirs* ;; where to try to load includes/libraries from
             features-key
             '*vm-args*))    ;; implementation features
 
