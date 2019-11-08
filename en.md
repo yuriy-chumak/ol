@@ -113,6 +113,33 @@ which is another way of
 >
 </code></pre>
 
+   And a bit more complex example: how about Pi? I mean the calculation of the first 200 digits of Pi?
+   Please be patient - on slower PCs this may take some time.
+<pre><code id="samplePi" data-language="ol">(define (pi total-digits)
+   (let loop ((q 1) (r 0) (t 1) (k 1) (n 3) (l 3) (digits total-digits))
+      (unless (eq? digits 0)
+         (if (< (- (+ (* 4 q) r) t) (* n t))
+            (begin
+               (display n) (if (eq? digits total-digits) (display "."))
+               (loop (* q  10)
+                     (* 10 (- r (* n t)))
+                     t
+                     k
+                     (- (div (* 10 (+ (* 3 q) r)) t) (* 10 n))
+                     l
+                     (- digits 1)))
+            (begin
+               (loop (* q k)
+                     (* (+ (* 2 q) r) l)
+                     (* t l)
+                     (+ k 1)
+                     (div (+ (* q (* 7 k)) 2 (* r l)) (* t l))
+                     (+ l 2)
+                     digits)))))
+    (print))
+
+(pi 200)</code><button class="doit" onclick="doit(samplePi.textContent)">send to the terminal</button></pre>
+
 
 ### p.s.
 
