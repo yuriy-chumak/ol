@@ -586,7 +586,7 @@
                            ; рендерера нет, значит оновим буфер
                            (gl:SwapBuffers (get dictionary 'context #f))
                            ; рендерер есть, но режим интерактивный? тогда вернем управление юзеру
-                           (if (or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
+                           (if *interactive* ;(or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
                               (mail sender 'ok)))
                         (this (put dictionary 'customer sender)))
 

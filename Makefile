@@ -188,7 +188,7 @@ repl.js: repl
 	   -s NO_EXIT_RUNTIME=1 \
 	   --memory-init-file 0
 
-oljs.js: extensions/embed.c
+oljs.js: extensions/embed.c extensions/embed.h
 	emcc extensions/embed.c -Os \
 	   -o oljs.js -Iinclude \
 	   -s WASM=0 -s SIDE_MODULE=1 \

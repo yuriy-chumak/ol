@@ -4836,86 +4836,35 @@ int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
 
-	// ./vm - все, что до имени файла - опции виртуальной машины
-	//		- "--" означает конец опций и следующий аргумент - однозначно имя бинарного файла
-	//      - все, что после имени бинарного файла - опции бинарного файла
-	//      - если где-то встретилась опция "--version", вывести версию
-	//      - если имени файла вообще нет и не было опции --version, выходим с сообщением ошибки; иначе просто выходим
-	// ./ol - все то же самое, кроме:
-	//      - если имени файла не было, использовать stdin и все опции считать опциями repl
-	char* file = 0;
-	// два прохода разбора строки
-	for (int pass = 1; pass <= 2; pass++) {
-		char** v = argv; int c = argc;
-		while (c > 1) {
-			v++; c--;
-			if (strcmp(v[0], "--") == 0) { // "--" means end of options, the next is definitely file
-				++v; --c;
-				file = c > 0 ? *v : 0;
-				break;
-			}
-			if (strcmp(v[0], "--version") == 0) {
-				if (pass == 2) { // второй проход, это опция виртуальной машины
-					E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
-					// E("Copyright (c) 2019 Yuriy Chumak");
-					// E("License (L)GPLv3+: GNU (L)GPL version 3 or later <http://gnu.org/licenses/>");
-					// E("License MIT: <https://en.wikipedia.org/wiki/MIT_License>");
-					// E("This is free software: you are free to change and redistribute it.");
-					// E("There is NO WARRANTY, to the extent permitted by law.");
-					if (file == 0)
-						return 0; // no error
-				}
-				continue;
-			}
-			else
-			if (strncmp(v[0], "--opt=", 6) == 0) { // dummy option
-				if (pass == 2) { // second pass, this is virtual machine option
-					E("olvm: option set to '%s'", &v[0][6]);
-				}
-				continue;
-			}
-			else
-			if (strncmp(v[0], "--", 2) == 0) {
+	//  vm special key: if command line is "--version" then print a version
 #ifdef NAKED_VM
-				if (pass == 2) { // second pass, this is virtual machine option
-					E("olvm: unknown vm option '%s'", v[0]);
-					return EILSEQ;
-				}
+	if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
+		return 0;
+	}
+	if (argc == 2 && strcmp(argv[1], "--version") == 0) {
+		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
+		// E("Copyright (c) 2019 Yuriy Chumak");
+		// E("License (L)GPLv3+: GNU (L)GPL version 3 or later <http://gnu.org/licenses/>");
+		// E("License MIT: <https://en.wikipedia.org/wiki/MIT_License>");
+		// E("This is free software: you are free to change and redistribute it.");
+		// E("There is NO WARRANTY, to the extent permitted by law.");
+		return 0;
+	}
 #endif
-				continue;
-			}
-			else {
-				if (pass == 1) // BTW, "-" means stdin
-					file = *v;
-				break;
-			}
-		}
 
-		if (pass == 2) {
-			if (file == 0) { // входной файл не указан
-#ifdef NAKED_VM
-				goto no_binary_script;
-#endif
-			}
-			else {
-				argc = c; argv = v;
-			}
-		}
+	// ./ol - если первая команда - не имя файла, то использовать repl
+	char* file = 0;
+	if ((argc > 1) && (strncmp(argv[1], "-", 1) != 0)) {
+		file = argv[1];
+		argv++, argc--;
 	}
 
-	if (file == 0) { // входной файл вовсе не указан
+	if (file == 0) { // входной файл не указан
 #ifdef NAKED_VM
 		goto invalid_binary_script;
 #else
 		argc--; argv++;
-#endif
-	}
-	else
-	if (strcmp(file, "-") == 0) { // stdin
-#ifdef NAKED_VM
-		goto invalid_binary_script; // некому проинтерпретировать скрипт
-#else
-		// do nothing
 #endif
 	}
 	else {

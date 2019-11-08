@@ -241,13 +241,6 @@
    (let*((initial-names *owl-names*))
       ; main: / entry point of the compiled image
       (λ (vm-args)
-         ;; temporary '--version' solution
-         (if (and
-               (less? 0 (length vm-args))
-               (string-eq? (car vm-args) "--version"))
-            (begin
-               (print "ol (Otus Lisp) " *version*)
-               (halt 0)))
 
          ;; now we're running in the new repl
          (start-thread-controller
@@ -262,36 +255,64 @@
                      ;; and bytecode duplication avoider, is handled by this thread
                      (fork-bytecode-interner codes)
 
-                     (let*((file (if (null? vm-args)
-                                    stdin
-                                    (if (string-eq? (car vm-args) "-")
-                                       stdin
-                                       (open-input-file (car vm-args)))))
-                           (options
-                              (let loop ((options #empty) (args (if (null? vm-args) null (cdr vm-args))))
+                     (define (starts-with? string prefix)
+                        (and (<= (string-length prefix) (string-length string))
+                             (string-eq? prefix (substring string 0 (string-length prefix)))))
+
+                     ;(print "vm-args: " vm-args)
+
+                     (let*((options vm-args
+                              (let loop ((options #empty) (args vm-args))
                                  (cond
                                     ((null? args)
-                                       options)
+                                       (values options #null))
                                     ((string-eq? (car args) "--sandbox")
                                        (loop (put options 'sandbox #t) (cdr args)))
                                     ((string-eq? (car args) "--interactive")
                                        (loop (put options 'interactive #t) (cdr args)))
                                     ((string-eq? (car args) "--no-interactive")
                                        (loop (put options 'interactive #f) (cdr args)))
+                                    ((string-eq? (car args) "--version")
+                                       (print "ol (Otus Lisp) " *version*)
+                                       (loop (put options 'version #t) (cdr args)))
+                                    ;; special case - use embed REPL version
                                     ((string-eq? (car args) "--embed")
                                        (loop (put options 'embed #t) (cdr args)))
-                                    ((string-eq? (car args) "--home") ; TBD
-                                       (if (null? (cdr args))
-                                          (runtime-error "no heap size in command line" args))
-                                       (loop (put options 'home (cadr args)) (cddr args)))
+                                    ;; home
+                                    ((string-eq? (car args) "--home")
+                                       (print "use --home=<path>")
+                                       (halt 1))
+                                    ((starts-with? (car args) "--home=")
+                                       (loop (put options 'home
+                                                (substring (car args) 7 (string-length (car args))))
+                                             (cdr args)))
+                                    ;; 
+                                    ((starts-with? (car args) "--force-version") ; just skip, already processed at the begin of file
+                                       (loop options (cddr args)))      ; because forced version must be reflected in *features* etc.
+                                       
+                                    ((starts-with? (car args) "--")
+                                       (print "unknown command line option '" (car args) "'")
+                                       (halt 0))
                                     (else
-                                       (loop options (cdr args))))))
-                           (home (or (getf options 'home)
-                                       (getenv "OL_HOME")
-                                       "/usr/lib/ol")) ; default posix ol libraries location
+                                       (let ((file (car args)))
+                                          (values (put options 'file
+                                                         (unless (string-eq? file "-")
+                                                            (let ((port (open-input-file file)))
+                                                               (unless port (begin
+                                                                  (print "error: can't open/read file '" file "'")
+                                                                  (halt 3)))
+                                                               port)))
+                                                  (cdr args)))))))
+                           (file (or (getf options 'file)
+                                     stdin))
+
                            (sandbox? (getf options 'sandbox))
                            (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
                            (embed? (getf options 'embed))
+
+                           (home (or (getf options 'home)
+                                     (getenv "OL_HOME")
+                                     "/usr/lib/ol")) ; default posix ol libraries location
 
                            (version (cons "OL" *version*))
                            (env (fold
@@ -307,24 +328,23 @@
                                        (cons '*features* (let*((*features* (let ((one (vm:cast 1 type-vptr)))
                                                                               (cond
                                                                                  ((eq? (ref one 0) 1)
-                                                                                    (cons 'little-endian *features*))
+                                                                                    (append *features* '(little-endian)))
                                                                                  ((eq? (ref one (- (size one) 1)) 1)
-                                                                                    (cons 'big-endian *features*))
+                                                                                    (append *features* '(big-endian)))
                                                                                  ((eq? (ref one 1) 1)
-                                                                                    (cons 'middle-endian *features*))
+                                                                                    (append *features* '(middle-endian)))
                                                                                  (else
                                                                                     *features*))))
                                                                (*features* (let ((uname (syscall 63)))
                                                                               (if (vector? uname)
-                                                                                 (append (list
-                                                                                       (string->symbol (ref uname 1))  ; OS
-                                                                                       (string->symbol (ref uname 5))) ; Platform
-                                                                                    *features*)
+                                                                                 (append *features* `(
+                                                                                       ,(string->symbol (ref uname 1))  ; OS
+                                                                                       ,(string->symbol (ref uname 5)))) ; Platform
                                                                                  *features*))))
                                                             *features*))
                                        ;(cons '*scheme* 'r5rs)
-                                       (cons '*sandbox* sandbox?)
-                                 ))))
+                                       (cons '*sandbox* sandbox?)))))
+                           ; go:
                            (if sandbox?
                               (sandbox 1)) ;(sandbox megs) - check is memory enough
 
