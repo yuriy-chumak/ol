@@ -128,7 +128,7 @@
    (Linux
       (begin
 
-         (setq libX11 (load-dynamic-library "libX11.so.6"))
+         (setq libX11 (load-dynamic-library "libX11.so"))
          (setq libGLX GL_LIBRARY)
 
          (setq XOpenDisplay  (libX11 type-vptr "XOpenDisplay" type-string))
@@ -584,10 +584,10 @@
 
                         (unless (get dictionary 'renderer #f)
                            ; рендерера нет, значит оновим буфер
-                           (gl:SwapBuffers (get dictionary 'context #f))
+                           (gl:SwapBuffers (get dictionary 'context #f)))
                            ; рендерер есть, но режим интерактивный? тогда вернем управление юзеру
-                           (if *interactive* ;(or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
-                              (mail sender 'ok)))
+                           ;(if *interactive* ;(or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
+                           ;   (mail sender 'ok)))
                         (this (put dictionary 'customer sender)))
 
                      ; context
