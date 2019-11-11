@@ -274,7 +274,7 @@
                                        (loop (put options 'interactive #f) (cdr args)))
                                     ((string-eq? (car args) "--version")
                                        (print "ol (Otus Lisp) " *version*)
-                                       (halt 1))
+                                       (halt 0))
                                     ;; special case - use embed REPL version
                                     ((string-eq? (car args) "--embed")
                                        (loop (put options 'embed #t) (cdr args)))
