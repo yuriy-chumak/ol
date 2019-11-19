@@ -3,8 +3,8 @@
 ::       latest sdk is bullshit and doesn't works
 
 set PATH~=%PATH%
-set MINGW32=C:\MinGW\i686-7.3.0-posix-dwarf-rt_v5-rev0\mingw32\bin\
-set MINGW64=C:\MinGW\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin\
+set MINGW32=C:\Program Files (x86)\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32\bin\
+set MINGW64=C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 set CC=gcc
 
 echo -=( building %1 )=-------------------------------------------------------------------
@@ -14,9 +14,10 @@ IF "%1"=="vm32" GOTO VM32
 IF "%1"=="ol" GOTO OL
 IF "%1"=="ol32" GOTO OL32
 IF "%1"=="ol64" GOTO OL64
-IF "%1"=="repl" GOTO REPL
+IF "%1"=="recompile" GOTO RECOMPILE
 IF "%1"=="repl32" GOTO REPL32
 IF "%1"=="repl64" GOTO REPL64
+IF "%1"=="repl" GOTO REPL
 IF "%1"=="boot" GOTO BOOT
 IF "%1"=="slim" GOTO SLIM
 IF "%1"=="js" GOTO JS
@@ -160,11 +161,11 @@ set PATH=%MINGW64%;%PATH%
 set PATH=%PATH~%
 GOTO:EOF
 
-:REPL
-set VERSION=2.0
+:RECOMPILE
+set VERSION=2.1
 set PATH=%MINGW64%;%PATH%
 ::for /f "delims=" %%a in ('git describe') do @set VERSION=%%a
-vm repl - --version %VERSION% < src/ol.scm
+vm repl --force-version %VERSION% < src/ol.scm
 FOR %%I IN (repl) DO FOR %%J IN (boot.fasl) DO echo ":: %%~zI -> %%~zJ"
 fc /b repl boot.fasl > nul
 if errorlevel 1 goto again
@@ -173,7 +174,13 @@ set PATH=%PATH~%
 GOTO:EOF
 :again
 copy boot.fasl repl
-GOTO :REPL
+GOTO :RECOMPILE
+
+:REPL
+set PATH=%MINGW64%;%PATH%
+ld -r -b binary -o tmp/repl.o repl
+set PATH=%PATH~%
+GOTO:EOF
 
 :SLIM
 echo.   *** Making slim:
