@@ -52,6 +52,7 @@ endif #Linux
 
 ifeq ($(UNAME),FreeBSD)
 L := $(if HAS_DLOPEN, -lc) -lm
+LD := ld.bfd
 endif
 ifeq ($(UNAME),NetBSD)
 L := $(if HAS_DLOPEN, -lc) -lm
