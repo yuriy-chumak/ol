@@ -1,38 +1,32 @@
-/*
- *                  `___`           `___`
- *                  (o,o)           (O,O)
- *                  \)  )  L I S P  (  /(
- * =================="="============="="========================
- */
-
 /**
  *         Simple purely functional Lisp, mostly.
  *
- *   Version 2.0
- *
- *  Copyright(c) 2014 - 2019 Yuriy Chumak
- *
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *   Version 2.1
+ *                                                 `___`
+ *  Copyright(c) 2014 - 2019 Yuriy Chumak          (O,O)
+ *                                                 (  /(
+ * - - - - - - - - - - - - - - - - - - - - - - - - -"-"- - - - - -
  * ### LICENSE
- * This program is free software;  you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of
- * the License, or (at your option) any later version.
+ *  This program is free software;  you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License as
+ *  published by the Free Software Foundation; either version 3 of
+ *  the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *
- * ## Install
+ * ## Download
  * Precompiled binaries for various platforms and architectures can
  * be found at [project page](http://yuriy-chumak.github.io/ol) and
- * OpenSUSE [build service](https://bit.ly/2RUjjtS).
+ *    OpenSUSE [build service](https://bit.ly/2RUjjtS).
  *
- * ## Manual build
+ * ## Build
  *   make; make install
+ *   * gmake for *BSD
  *
- * ## Project page:
+ * ## Project Page:
  *   http://yuriy-chumak.github.io/ol/
  *
  * ### The parent project - Owl Lisp:
@@ -70,7 +64,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
 #ifndef __GNUC__
-#	warning "This code is mainly prepared for compilation by Gnu C compiler"
+#	warning "This code is prepared mainly for compilation by Gnu C compiler"
 #else
 #	define GCC_VERSION (__GNUC__ * 10000 \
 	                  + __GNUC_MINOR__ * 100 \
@@ -2718,7 +2712,6 @@ loop:;
 		if (is_value(T))
 			A1 = IFALSE;
 		else {
-			word hdr = *T;
 			if (is_blob(T))
 				A1 = I(blob_size(T));
 			else
@@ -3597,13 +3590,13 @@ loop:;
 				CHECK_NUMBER_OR_FALSE(2);
 
 				char *path = (char*) &car(A1);
+#ifdef _WIN32
+				if (mkdir(path) >= 0)
+#else
 				int mode = (argc > 1 && A2 != IFALSE)
 			 		? number(A2)
 					: S_IRUSR | S_IWUSR;
 
-#ifdef _WIN32
-				if (mkdir(path) >= 0)
-#else
 				if (mkdir(path, mode) >= 0)
 #endif
 					r = (word*) ITRUE;
@@ -4019,8 +4012,8 @@ loop:;
 
 			// SHUTDOWN
 			// http://linux.die.net/man/2/shutdown
-			case 48: { // (shutdown socket #f #f)
-				word a = A1, b = A2, c = A3;
+			case 48: { // (shutdown socket)
+				word a = A1; //, b = A2, c = A3;
 				// CHECK(is_port(a), a, SYSCALL);
 
 				int socket = port(a);
@@ -4977,10 +4970,10 @@ int main(int argc, char** argv)
 	goto fail;
 
 #	ifdef NAKED_VM
-	no_binary_script:
-	message = "No binary script provided";
-	errno = ENOENT;
-	goto fail;
+	// no_binary_script:
+	// message = "No binary script provided";
+	// errno = ENOENT;
+	// goto fail;
 
 	invalid_binary_script:
 	message = "Invalid binary script";
@@ -5255,7 +5248,10 @@ word OL_deref(struct ol_t* ol, word ref)
 
 // Foreign Function Interface code
 #if OLVM_FFI || OLVM_CALLABLES
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunused-label"
 #	include "../extensions/ffi.c"
+# pragma GCC diagnostic pop
 #endif
 
 // ---------------------------------------
