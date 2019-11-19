@@ -713,7 +713,9 @@ value_t
 	unsigned i    : 1;    // for values always 1
 	unsigned type : 6;    // value type
 
-	word  payload : 8 * sizeof(word) - (1+1+6);
+	// disabled due to gcc issue: 
+	//   gcc reserves all bits for field without respect for actual bit count
+	// word  payload : 8 * sizeof(word) - (1+1+6);
 };
 #define IPOS      8  // === offsetof (struct direct, payload)
 
@@ -735,7 +737,9 @@ header_t
 	unsigned rawness : 1;
 	unsigned         : 4; // unused
 
-	word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
+	// disabled due to gcc issue: 
+	//   gcc reserves all bits for field without respect for actual bit count
+	// word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
 };
 #define TPOS      2  // === offsetof (struct header, type)
 #define PPOS      8  // === offsetof (struct header, padding)
