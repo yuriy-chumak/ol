@@ -10,11 +10,7 @@ describe: all
 	./vm --version
 	./vm repl --version
 
-CC ?= gcc
-LD ?= ld
-UNAME ?= $(shell uname -s)
-
-# 'configure' part:
+## 'configure' part:
 # check the library and/or function
 exists = $(shell echo "\
 	   \#include $2\n\
@@ -39,6 +35,9 @@ CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
           $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)\
 #		  -DOLVM_BUILTIN_FMATH=1 -lm
+
+## 'os dependent' part
+UNAME ?= $(shell uname -s)
 
 ifeq ($(UNAME),Linux)
 L := $(if HAS_DLOPEN, -ldl)
@@ -119,6 +118,10 @@ endif
 # IBM i with QSH              OS400
 # HP-UX                       HP-UX
 
+CC ?= gcc
+LD ?= ld
+
+## 'clean/install' part
 # http://www.gnu.org/prep/standards/html_node/DESTDIR.html
 # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap03.html#tag_03_266
 # "Multiple successive slashes are considered to be the same as one slash."
@@ -148,6 +151,7 @@ uninstall:
 	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
 
+## actual 'building' part
 debug: CFLAGS += $(CFLAGS_DEBUG)
 debug: vm repl ol
 
@@ -157,7 +161,7 @@ release: vm repl ol
 slim: CFLAGS += -DOLVM_FFI=0
 slim: release
 
-NDK_ROOT?=/opt/android/ndk
+NDK_ROOT ?= /opt/android/ndk
 android: jni/*.c
 	$(NDK_ROOT)/ndk-build
 
