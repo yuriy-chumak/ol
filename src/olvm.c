@@ -3326,12 +3326,15 @@ loop:;
 				CHECK_NUMBER_OR_FALSE(3);
 
 				char* s = string(A1);
-				int flags = number(A2);
+				int f = number(A2);
+				int flg = (f & 01000 ? O_CREAT : 0)
+						| (f & 00100 ? O_TRUNC : 0)
+						| (f & 00002 ? O_RDWR  : 0);
 				int mode = (argc > 2 && A3 != IFALSE)
 			 		? number(A3)
 					: S_IRUSR | S_IWUSR;
 
-				int file = ol->open(s, flags, mode, ol);
+				int file = ol->open(s, flg, mode, ol);
 				if (file == -1)
 					break;
 
