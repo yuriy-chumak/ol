@@ -1,14 +1,15 @@
-; 
+; https://www.rosettacode.org/wiki/Enumerations#Ol
+
 (define *interactive* #true)
 (define fruits '{
-   (apple . 0)
-   (banana . 1)
-   (cherry . 2)})
+   apple  0
+   banana 1
+   cherry 2})
 ; or
 (define fruits {
-   ('apple . 0)
-   ('banana . 1)
-   ('cherry . 2)})
+   'apple  0
+   'banana 1
+   'cherry 2})
 
 ; getting enumeration value:
 (get fruits 'apple -1) ; ==> 0

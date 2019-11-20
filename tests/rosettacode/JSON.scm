@@ -7,4 +7,7 @@
 (print o)
 
 (print-json-with display o)
-(print-json-with display {('a . [1 2 3]) ('b . {(1 . 2) (3 .4)}) ('c . #true)})
+(print-json-with display {
+   'a  [1 2 3]
+   'b  {1 2  3 4}
+   'c  #true})

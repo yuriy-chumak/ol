@@ -14,10 +14,10 @@
    (2 . 200)
    (7 . 777))))
 ;;; or in short form (available from Ol version 2.1)
-(define my-map '{
-   (1 . 100)
-   (2 . 200)
-   (7 . 777)})
+(define my-map {
+   1 100
+   2 200
+   7 777})
 
 ;;; add new key-value pair to the existing associative array
 (define my-new-map (put my-map 'the-key 'the-value))

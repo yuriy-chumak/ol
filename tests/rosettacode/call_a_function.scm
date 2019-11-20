@@ -1,3 +1,5 @@
+; https://www.rosettacode.org/wiki/call_a_function#Ol
+
 ; note: sign "==>" indicates expected output
 
 ;;; Calling a function that requires no arguments
@@ -64,13 +66,13 @@
 ; ==> a: 3
 ; ==> b: 13
 ; or nicer (and shorter) form available from ol version 2.1
-(named-args-function '{(a . 3)})
+(named-args-function '{a 3})
 ; ==> a: 3
 ; ==> b: 13
-(named-args-function '{(b . 7)})
+(named-args-function '{b 7})
 ; ==> a: 8
 ; ==> b: 7
-(named-args-function '{(a . 3) (b . 7)})
+(named-args-function '{a 3  b 7})
 ; ==> a: 3
 ; ==> b: 7
 
