@@ -1,10 +1,10 @@
 ```
                   small,
-       `___`          embeddable
-       (O,O)              and
-       \)  )           purely
-     ---"-"---      functional!
-  O t u s L i s p
+        `___`         embeddable
+        (O,O)             and
+        \)  )          purely
+      ---"-"---     functional!
+   O t u s L i s p
 
  /Based on Aki Helin's Owl-Lisp/
 ```
@@ -18,7 +18,7 @@ Otus Lisp, Version 2.1 (rc1)
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
-It implements an extended subset of R<sup>7</sup>RS Scheme including, but not limited to, some of the SRFIs.
+It implements an extended subset of R<sup>7</sup>RS Scheme includes, but is not limited to, some of the SRFIs.
 It's tiny (~42kb), embeddable and cross-platform; provides a portable, high-level way to call code written in other languages.
 
 You can use Ol in GNU/Linux, Windows, Unixes (macOS, Solaris, kinds of BSD), Android, webOS, Minoca and lot of other operation systems based on various hardware architectures (x86/x86_64, arm, aarch64, ppc, mips, etc).
@@ -43,7 +43,7 @@ SUPPORT
 
 Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby), additionally [Freenode](https://webchat.freenode.net) channel *#otus-lisp* is available.
 
-Post your propositions, Ol bugs and issues at [the issues](https://github.com/yuriy-chumak/ol/issues) page. If your architecture is not supported, post a ticket too.
+Post bugs and issues at [the issues](https://github.com/yuriy-chumak/ol/issues) page. If your architecture is not supported, post an issue too.
 
 
 LEARNING
