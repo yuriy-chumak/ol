@@ -3831,10 +3831,10 @@ loop:;
 						sprintf(args, "\"%s\"", command);
 
 						if (is_pair(b)) {
-							word p = b;
-							while (p != INULL) {
+							word i = b;
+							while (i != INULL) {
 								strcat(args, " ");
-								strcat(args, string(car(p))); p = cdr(p);
+								strcat(args, string(car(i))); i = cdr(i);
 							}
 						}
 
