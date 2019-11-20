@@ -38,7 +38,7 @@
    '(() (())))
 
 (define ff-digit-to-value
-   (list->ff
+   (pairs->ff
       (foldr append null
          (list
             ; туда
@@ -47,7 +47,7 @@
             (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
             ))))
 (define ff-value-to-digit
-   (list->ff
+   (pairs->ff
       (foldr append null
          (list
             (map (lambda (d i) (cons d i)) (iota 10 0) (iota 10 #\0))  ;; 0-9

@@ -94,7 +94,7 @@
       ; зададим размер символов
       (FT_Set_Pixel_Sizes face 0 (cdr config:cell-size))
 
-      (list->ff
+      (pairs->ff
          (map (lambda (char i)
                (FT_Load_Char face char FT_LOAD_RENDER)
                (let ((x (+ (* 10 (mod i 32)) 1)) ; 113

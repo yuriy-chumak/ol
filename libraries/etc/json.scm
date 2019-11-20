@@ -90,7 +90,7 @@
 
 	; fixme, share from below
 	(define string-specials
-		(list->ff
+		(pairs->ff
 			(map (λ (x) (cons (cdr x) (car x)))
 				'((34 .  34) ; "
 				  (92 .  92) ; \
@@ -103,7 +103,7 @@
 				  ))))
 
 	(define hex-val
-		(list->ff
+		(pairs->ff
 			(append (zip cons (lrange 48 1 58) (lrange 0 1 10)) ; 0-9
 				(append 
 					(zip cons (lrange 97 1 103) (lrange 10 1 16))	; a-f
@@ -237,7 +237,7 @@
 				(cons 93 tail) lst)))
 
 	(define string-special-chars 
-		(list->ff
+		(pairs->ff
 			'((34 .  34) ; "
 			  (92 .  92) ; \
 			  (47 .  47) ; /

@@ -38,17 +38,17 @@
       ;; only special forms supported by the compiler, no primops etc
       ;; fixme: should use distinct identifiers like #:foo for these, since these can unintentionally clash with formals
       (define *special-forms* {
-         ('quote  . ['special 'quote])
-         ('values . ['special 'values])
-         ('lambda . ['special 'lambda])
+         'quote  ['special 'quote]
+         'values ['special 'values]
+         'lambda ['special 'lambda]
 
-         ('setq   . ['special 'setq])
-         ('letq   . ['special 'letq])
+         'setq   ['special 'setq]
+         'letq   ['special 'letq]
 
-         ('ifeq   . ['special 'ifeq])
-         ('either . ['special 'either])
+         'ifeq   ['special 'ifeq]
+         'either ['special 'either]
 
-         ('values-apply . ['special 'values-apply])})
+         'values-apply ['special 'values-apply]})
 
       (define empty-env #empty) ;; will change with ff impl
 

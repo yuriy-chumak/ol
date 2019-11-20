@@ -9,7 +9,7 @@
 (define empty-map #empty)
 
 ;;; creating associative array with values
-(define my-map (list->ff '(
+(define my-map (pairs->ff '(
    (1 . 100)
    (2 . 200)
    (7 . 777))))

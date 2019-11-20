@@ -60,7 +60,7 @@
 (named-args-function #empty)
 ; ==> a: 8
 ; ==> b: 13
-(named-args-function (list->ff '((a . 3))))
+(named-args-function (pairs->ff '((a . 3))))
 ; ==> a: 3
 ; ==> b: 13
 ; or nicer (and shorter) form available from ol version 2.1

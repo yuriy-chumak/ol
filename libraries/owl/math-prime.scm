@@ -35,7 +35,7 @@
       ; n < 341,550,071,728,321, a = 2, 3, 5, 7, 11, 13, and 17.
 
       (define first-primes
-         (list->ff 
+         (pairs->ff
             (map (λ (x) (cons x x))
                '(2 3 5 7 11 13 17))))
 

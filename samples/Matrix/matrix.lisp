@@ -18,7 +18,7 @@
 ;(define DEFAULT-GLOWRATE 10)
 
 ; defaults
-(define config (list->ff (list
+(define config (pairs->ff (list
    (cons 'density  20)
    (cons 'glowrate 10))))
 
@@ -70,17 +70,17 @@
 (define glows  (create-matrix WIDTH HEIGHT))
 (define spinners (create-matrix WIDTH HEIGHT))
 
-(define cells (list->ff (list
+(define cells (pairs->ff (list
 ;   (cons 'glyph     (create-matrix WIDTH HEIGHT))
 ;   (cons 'glow      (create-matrix WIDTH HEIGHT))
    (cons 'spinner   (create-matrix WIDTH HEIGHT))))) ; 1/0
 
-(define feeders (list->ff (list
+(define feeders (pairs->ff (list
    (cons 'y         (create-vector WIDTH)))))
 (define remainings (create-vector WIDTH))
 (define throttles (create-vector WIDTH))
 
-(define spinners (list->ff (list
+(define spinners (pairs->ff (list
    (cons 'x (create-vector 101))
    (cons 'y (create-vector 101)))))
 

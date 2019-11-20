@@ -91,7 +91,7 @@
                   (* skip-whitespaces))
                (vector
                   (string->symbol (runes->string name))
-                  (list->ff attributes)
+                  (pairs->ff attributes)
                   body)))
          (let-parses (
                (body (get-kleene* (get-rune-if (lambda (x) (not (eq? x #\<)))))))
@@ -105,7 +105,7 @@
             (* (get-word "?>" #true))
             (* skip-whitespaces)
             (body (get-tag)))
-         ['xml (list->ff attributes) body]))
+         ['xml (pairs->ff attributes) body]))
 
    (define (xml-parse-file filename)
       (let ((file (open-input-file filename)))

@@ -85,7 +85,7 @@
 ;(define (separator-char?))
 
 (define digit-values
-   (list->ff
+   (pairs->ff
       (foldr append null
          (list
             (map (lambda (d) (cons d (- d 48))) (lrange 48 1 58))  ;; 0-9
@@ -94,7 +94,7 @@
             ))))
 
 (define hex-table
-   (list->ff (fold append '() (list
+   (pairs->ff (fold append '() (list
       (zip cons (iota 10 #\0) (iota 10 0))     ; 0-9
       (zip cons (iota  6 #\a) (iota 6 10))     ; a-f
       (zip cons (iota  6 #\A) (iota 6 10)))))) ; A-F
@@ -143,7 +143,7 @@
                   (headers-array (get-greedy* get-header-line))
                   (- (get-imm CR)) (- (get-imm LF)))   ; final CRLF
       (vector
-         request-line (list->ff headers-array))))
+         request-line (pairs->ff headers-array))))
 ;)
 
 ; ----

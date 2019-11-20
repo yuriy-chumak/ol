@@ -73,7 +73,7 @@
                ; XMM00 .. XMM07
 
                )
-      (list->ff `(
+      (pairs->ff `(
          ; регистры общего назначения
          (eax . ,(bytes->number %eax 16))
          (ebx . ,(bytes->number %ebx 16))
@@ -223,7 +223,7 @@
          ")"
          (value->string (ref value 4) "??????")))); flags, 24-bit
 
-(define layout (list->ff `(
+(define layout (pairs->ff `(
    (eax . (60 1 ,display-reg))
    (ecx . (60 2 ,display-reg))
    (edx . (60 3 ,display-reg))

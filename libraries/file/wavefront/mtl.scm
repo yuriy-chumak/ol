@@ -57,7 +57,7 @@
          (ni (get-1-number "Ni "))
          (d (get-1-number "d "))
          (illum (get-1-number "illum ")))
-      (list->ff `(
+      (pairs->ff `(
          (name . ,(bytes->string newmtl))
          (ns . ,ns)
          (ka . ,ka)

@@ -36,12 +36,12 @@
    (glOrtho 0 WIDTH 0 HEIGHT 0 1)
 
 ;   (list
-;   (list->ff (map (lambda (i) (let ((x (rand2! WIDTH)) (y (rand2! HEIGHT)))
+;   (pairs->ff (map (lambda (i) (let ((x (rand2! WIDTH)) (y (rand2! HEIGHT)))
 ;                                 (cons (hash x y) 1))) (iota 1200)))))
 
 (gl:set-userdata
    (let ((initial (file->bytevector "initial.bmp")))
-   (list->ff (map (lambda (p) (cons (hash (car p) (cdr p)) 1))
+   (pairs->ff (map (lambda (p) (cons (hash (car p) (cdr p)) 1))
       (fold (lambda (st p)
          (let ((n (+ p #x436)))
          (if (eq? (blob-ref initial n) 0)

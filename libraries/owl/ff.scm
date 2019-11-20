@@ -26,6 +26,7 @@
       ff-iter     ; ff -> ((key . value) ...) stream (in order)
       ff-singleton? ; ff → bool (has just one key?)
       list->ff ff->list
+      pairs->ff
       ff->sexp
       ff-ok?
       empty
@@ -412,7 +413,7 @@
                   (black (ff-map l op) k (op k v) (ff-map r op))))))
 
       ;; could benchmark if sort + grow from bottom is faster
-      (define (list->ff lst)
+      (define (pairs->ff lst)
          (fold
             (λ (ff node)
                (if (pair? node)
@@ -420,13 +421,18 @@
                   (runtime-error "not a pair in ff constructor:" node)))
             #empty
             lst))
+      (define (list->ff args)
+         (let loop ((ff #empty) (args args))
+            (if (null? args)
+               ff
+               (loop (put ff (car args) (cadr args)) (cddr args)))))
 
-      (define (ff->list ff)
+      (define (ff->pairs ff)
          (ff-foldr
             (λ (lst k v)
                (cons (cons k v) lst))
             null ff))
-
+      (define ff->list ff->pairs)
 
       ;;;
       ;;; Deletion

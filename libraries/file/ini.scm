@@ -51,7 +51,7 @@
             (* skip-whitespaces))
          (cons
             (string->symbol (bytes->string name))
-            (list->ff pairs))))
+            (pairs->ff pairs))))
 
    (define ini-parser
       (let-parses (

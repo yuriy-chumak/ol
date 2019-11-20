@@ -74,7 +74,7 @@
 ;            (between? #\A x #\F)
 ;            (between? #\a x #\f)))
 
-      (define digit-values (list->ff
+      (define digit-values (pairs->ff
          (foldr append null
             (list
                (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
@@ -82,7 +82,7 @@
                (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
                ))))
 
-      (define bases (list->ff '(
+      (define bases (pairs->ff '(
          (#\b . 2)
          (#\o . 8)
          (#\d .10)
@@ -266,7 +266,7 @@
                (append things tail))))
 
       (define quoted-values
-         (list->ff
+         (pairs->ff
             '((#\a . #x0007)
               (#\b . #x0008)
               (#\t . #x0009)
@@ -304,7 +304,7 @@
             (runes->string chars)))
 
       (define quotations
-         (list->ff '((#\' . quote) (#\, . unquote) (#\` . quasiquote) (splice . unquote-splicing))))
+         (pairs->ff '((#\' . quote) (#\, . unquote) (#\` . quasiquote) (splice . unquote-splicing))))
 
       (define (get-quoted parser)
          (let-parses
@@ -411,14 +411,10 @@
                (? (get-imm #\})))
             (if (null? things)
                #empty
-               (list 'list->ff (if q
-                  (list q things)
-                  (cons 'list
-                     (map (lambda (kv)
-                           (if (pair? kv)
-                              (list 'cons (car kv) (cdr kv))
-                              kv))
-                        things)))))))
+               (list 'list->ff
+                  (if q
+                     (list q things)
+                     (cons 'list things))))))
 
       (define (get-sexp)
          (let-parses (

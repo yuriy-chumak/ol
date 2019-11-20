@@ -3,7 +3,7 @@
 (define-library (lib gl config)
 (export config) (import (otus lisp))
 (begin
-   (define config (list->ff '(
+   (define config (pairs->ff '(
       (width . 1280)
       (height . 720))))))
 ; end of preconfiguration

@@ -67,7 +67,7 @@
    (define WIDTH  (get config 'width  854))
    (define HEIGHT (get config 'height 480))
 
-;; (define CONFIG (list->ff '( ; todo: move to config
+;; (define CONFIG (pairs->ff '( ; todo: move to config
 ;;    (red   .  8)
 ;;    (green .  8)
 ;;    (blue  .  8)
@@ -561,7 +561,7 @@
          ; =============================================
          ; automation
          (fork-server 'opengl (lambda ()
-         (let this ((dictionary (list->ff `(
+         (let this ((dictionary (pairs->ff `(
                (expose-handler . ,glViewport)))))
          (cond
             ; блок обработки сообщений

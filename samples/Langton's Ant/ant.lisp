@@ -29,7 +29,7 @@
 
 ; generate random field
 (gl:set-userdata
-   (list->ff (map (lambda (i) (let ((x (rand! WIDTH)) (y (rand! HEIGHT)))
+   (pairs->ff (map (lambda (i) (let ((x (rand! WIDTH)) (y (rand! HEIGHT)))
                                  (cons (hash x y) #t))) (iota 1000))))
 
 (define ant (cons

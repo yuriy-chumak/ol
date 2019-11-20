@@ -19,7 +19,7 @@
 (define-library (lib gl config)
 (export config) (import (otus lisp))
 (begin
-   (define config (list->ff `(
+   (define config (pairs->ff `(
       ; размеры окна в знакоместах:
       ; напомню, что мы используем фиксированный шрифт размера 9*16
       (width . ,(* 80 9))

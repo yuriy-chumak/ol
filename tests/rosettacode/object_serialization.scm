@@ -4,7 +4,7 @@
    #(4 3 2 1)  ; vector
    "hello"     ; ansi string
    "こんにちは"; unicode string
-   (list->ff '(; associative array
+   (pairs->ff '(; associative array
       (1 . 123456)
       (2 . second)
       (3 . "-th-")))

@@ -190,7 +190,7 @@
             (λ (lst)
                (if (and (>= (length lst) 3) (symbol? (car lst)))
                   (cl-rule
-                     (list->ff (zip cons '(id short long) lst))
+                     (pairs->ff (zip cons '(id short long) lst))
                      (cdddr lst))
                   (runtime-error "cl-rules: funny option: " lst)))
             lst))
