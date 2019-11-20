@@ -22,6 +22,7 @@ IF "%1"=="boot" GOTO BOOT
 IF "%1"=="slim" GOTO SLIM
 IF "%1"=="js" GOTO JS
 IF "%1"=="wasm" GOTO WASM
+IF "%1"=="debug" GOTO DEBUG
 IF "%1"=="release" GOTO RELEASE
 IF "%1"=="tests" GOTO TESTS
 IF "%1"=="/help"  GOTO HELP
@@ -214,9 +215,18 @@ call emcc tmp/slim.c src/olvm.c -o olvm.html -s ASYNCIFY=1 -s WASM=1 -O1 --memor
 GOTO:EOF
 
 
+:DEBUG
+set PATH=%MINGW64%;%PATH%
+%CC% -std=c99 -O0 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -Iwin32 -o "vm.exe" -lws2_32 -g2
+%CC% -std=c99 -O0 -s -Wall -fmessage-length=0 tmp/repl.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -g2
+set PATH=%PATH~%
+GOTO:EOF
+
 :RELEASE
-%CC% -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -Iwin32 -o "vm.exe" -lws2_32 -g0 -DNDEBUG -Wl,-subsystem,windows
-%CC% -std=c99 -O2 -s -Wall -fmessage-length=0 tmp/repl.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -g0 -DNDEBUG -Wl,-subsystem,windows
+set PATH=%MINGW64%;%PATH%
+%CC% -std=c99 -O2 -s -Wall -fmessage-length=0 -DNAKED_VM src/olvm.c -Iwin32 -o "vm.exe" -lws2_32 -g0 -DNDEBUG
+%CC% -std=c99 -O2 -s -Wall -fmessage-length=0 tmp/repl.o src/olvm.c -Iwin32 -o "ol.exe" -lws2_32 -g0 -DNDEBUG
+set PATH=%PATH~%
 GOTO:EOF
 
 
