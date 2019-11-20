@@ -9,6 +9,7 @@ all: release
 describe: all
 	./vm --version
 	./vm repl --version
+	echo "(print (syscall 63))"|./vm repl
 
 ## 'configure' part:
 # check the library and/or function
