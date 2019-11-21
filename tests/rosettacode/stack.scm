@@ -1,4 +1,4 @@
-; ...
+; https://www.rosettacode.org/wiki/Stack#Ol
 
 (define stack #null)
 (print "stack is: " stack)
