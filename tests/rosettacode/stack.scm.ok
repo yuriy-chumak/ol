@@ -1,0 +1,44 @@
+stack is: ()
+is stack empty: #true
+* pushing 1
+stack is: (1)
+is stack empty: #false
+* pushing 2
+stack is: (2 1)
+is stack empty: #false
+* pushing 3
+stack is: (3 2 1)
+is stack empty: #false
+* poping
+value: 3
+stack: (2 1)
+is stack empty: #false
+* poping
+value: 2
+stack: (1)
+is stack empty: #false
+* poping
+value: 1
+stack: ()
+is stack empty: #true
+* poping
+value: #false
+stack: ()
+is stack empty: #true
+pushing 1
+pushing 2
+pushing 3
+pushing 4
+pushing 5
+is stack empty: #false
+popping value, got 5
+is stack empty: #false
+popping value, got 4
+is stack empty: #false
+popping value, got 3
+is stack empty: #false
+popping value, got 2
+is stack empty: #false
+popping value, got 1
+is stack empty: #true
+done.
