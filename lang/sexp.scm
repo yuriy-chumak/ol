@@ -82,11 +82,12 @@
                (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
                ))))
 
-      (define bases (pairs->ff '(
-         (#\b . 2)
-         (#\o . 8)
-         (#\d .10)
-         (#\x .16))))
+      (define bases {
+         #\b   2
+         #\o   8
+         #\d  10
+         #\x  16
+      })
 
       (define (digit-char? base)
          (if (eq? base 10)
@@ -265,17 +266,17 @@
                things
                (append things tail))))
 
-      (define quoted-values
-         (pairs->ff
-            '((#\a . #x0007)
-              (#\b . #x0008)
-              (#\t . #x0009)
-              (#\n . #x000a)
-              (#\r . #x000d)
-              (#\e . #x001B)
-              (#\0 . #x0000)
-              (#\" . #x0022) ;"
-              (#\\ . #x005c))))
+      (define quoted-values {
+         #\a  #x0007
+         #\b  #x0008
+         #\t  #x0009
+         #\n  #x000a
+         #\r  #x000d
+         #\e  #x001B
+         #\0  #x0000
+         #\"  #x0022 ;"
+         #\\  #x005c
+      })
 
       (define get-quoted-string-char
          (let-parses
@@ -303,8 +304,12 @@
              (skip (get-imm #\"))) ;"
             (runes->string chars)))
 
-      (define quotations
-         (pairs->ff '((#\' . quote) (#\, . unquote) (#\` . quasiquote) (splice . unquote-splicing))))
+      (define quotations {
+         #\'  'quote
+         #\,  'unquote
+         #\`  'quasiquote
+         'splice 'unquote-splicing
+      })
 
       (define (get-quoted parser)
          (let-parses
