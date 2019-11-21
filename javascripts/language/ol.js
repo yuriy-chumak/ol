@@ -40,7 +40,7 @@ Rainbow.extend('ol', [
         'matches': {
             1: 'keyword'
         },
-        'pattern': /\(\s*(fx:[\+\-\*\/<]|begin|define\-syntax|if|syscall|lambda|quasiquote|quote|set!|syntax\-rules|case|else|or|let|let\*|let\-syntax|letrec|letrec\-syntax)(?=[\]()\s#])/g
+        'pattern': /\(\s*(fx:[\+\-\*\/<]|begin|define\-syntax|if|unless|syscall|lambda|quasiquote|quote|set!|syntax\-rules|case|else|or|let|let\*|let\-syntax|letrec|letrec\-syntax)(?=[\]()\s#])/g
     },
     {
         'matches': {
