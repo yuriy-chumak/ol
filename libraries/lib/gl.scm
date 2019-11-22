@@ -128,7 +128,8 @@
    (Linux
       (begin
 
-         (setq libX11 (load-dynamic-library "libX11.so"))
+         (setq libX11 (or (load-dynamic-library "libX11.so")
+                          (load-dynamic-library "libX11.so.6")))
          (setq libGLX GL_LIBRARY)
 
          (setq XOpenDisplay  (libX11 type-vptr "XOpenDisplay" type-string))

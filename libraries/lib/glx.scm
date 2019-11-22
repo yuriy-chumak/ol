@@ -198,6 +198,7 @@
    (setq Display* fft-void*)
    (setq X11 (or
       (load-dynamic-library "libX11.so")
+      (load-dynamic-library "libX11.so.6")
       (lambda args #false)))
    (setq XOpenDisplay (if X11 (X11 Display* "XOpenDisplay" type-string)))
 

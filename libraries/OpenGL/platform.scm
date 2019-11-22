@@ -198,7 +198,8 @@
 (cond-expand
    (Linux
       (begin
-         (setq X11 (load-dynamic-library "libX11.so"))
+         (setq X11 (or (load-dynamic-library "libX11.so")
+                       (load-dynamic-library "libX11.so.6")))
          (setq XOpenDisplay   (X11 type-vptr "XOpenDisplay" type-string))
          (setq XDefaultScreen (X11 fft-int "XDefaultScreen" type-vptr))
          (define glXQueryExtensionsString
