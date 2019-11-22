@@ -3505,7 +3505,7 @@ loop:;
 			case SYSCALL_SENDFILE: {
 				CHECK_ARGC_EQ(4);
 				CHECK_PORT(1);
-				CHECK_NUMBER(2);
+				CHECK_PORT(2);
 				CHECK_NUMBER(3);
 				CHECK_NUMBER(4);
 
