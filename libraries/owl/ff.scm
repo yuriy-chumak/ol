@@ -285,7 +285,7 @@
                               (get (ref ff 3) key def)
                               def))))))))
 
-      ; true if shanged
+      ; true if changed
       (define (put! ff key value)
          (unless (eq? ff #empty)
             (let ((this-k (ref ff 1)))

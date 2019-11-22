@@ -142,6 +142,7 @@
    (assert (car (try-parse json-parser (str-iter "[]") #t))
       ===> [])
    (assert (car (try-parse json-parser (str-iter "{'something':[12,23,34],'new':true}") #t))
-      ===> (pairs->ff `((something . ,[12 23 34]) (new . #true))))
+      ===> { 'something [12 23 34]
+             'new  #true })
 
 ))

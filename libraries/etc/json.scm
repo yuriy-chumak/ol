@@ -236,17 +236,16 @@
 							(cons 44 tail))))
 				(cons 93 tail) lst)))
 
-	(define string-special-chars 
-		(pairs->ff
-			'((34 .  34) ; "
-			  (92 .  92) ; \
-			  (47 .  47) ; /
-			  ( 8 .  98) ; [b]ackspace
-			  (12 . 102) ; [f]ormfeed
-			  (10 . 110) ; [n]ewline
-			  (13 . 114) ; carriage [r]eturn
-			  ( 9 . 116) ; horizontal [t]ab
-			  )))
+	(define string-special-chars {
+		34   34 ; "
+		92   92 ; \
+		47   47 ; /
+		 8   98 ; [b]ackspace
+		12  102 ; [f]ormfeed
+		10  110 ; [n]ewline
+		13  114 ; carriage [r]eturn
+		 9  116 ; horizontal [t]ab
+	})
 
 	(define (hex-digit n)
 		(if (< n 10)

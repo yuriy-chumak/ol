@@ -103,19 +103,19 @@
 
 ; main
 (define wavefront-obj-parser
-   (let-parses(
+   (let-parses (
          (comments (get-greedy* get-comment))
          (mtllib get-mtllib)
          (name (get-either get-g get-o))
          (v (get-greedy+ get-v))
          (vn (get-greedy+ get-vn))
          (facegroups (get-greedy+ facegroup-parser)))
-      (pairs->ff `(
-         (mtllib . ,(bytes->string mtllib))
-         (name . ,(bytes->string name))
-         (v . ,v)
-         (vn . ,vn)
-         (facegroups . ,facegroups)
-      ))))
+      (pairs->ff {
+         'mtllib  (bytes->string mtllib)
+         'name  (bytes->string name)
+         'v  v
+         'vn  vn
+         'facegroups facegroups})
+      ))
 
 ))

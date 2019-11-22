@@ -562,13 +562,12 @@
          ; =============================================
          ; automation
          (fork-server 'opengl (lambda ()
-         (let this ((dictionary (pairs->ff `(
-               (expose-handler . ,glViewport)))))
+         (let this ((dictionary {
+               'expose-handler glViewport}))
          (cond
             ; блок обработки сообщений
             ((check-mail) => (lambda (e) ; can be (and (eq? something 0) (check-mail)) =>
                (let*((sender msg e))
-                  ;(print "envelope: " envelope)
                   (case msg
                      ; low level interface:
                      (['set key value]
