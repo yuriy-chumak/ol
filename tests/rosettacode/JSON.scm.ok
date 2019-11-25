@@ -1,2 +1,2 @@
-#ff((something . #(12 23 34)) (new . #true))
-{'something':[12,23,34],'new':true}{'a':[1,2,3],'b':{'1':2,'3':4},'c':true}
+#ff((name . John) (|full name| . John Smith) (age . 42) (married . #false) (address . #ff((street . 21 2nd Street) (city . New York))) (|additional staff| . #(#ff((type . numbers) (numbers . #(1 2 3 4))) #ff((type . phone) (number . 222 222-2222)))))
+{"name":"John","|full name|":"John Smith","age":42,"married":false,"address":{"street":"21 2nd Street","city":"New York"},"|additional staff|":[{"type":"numbers","numbers":[1,2,3,4]},{"type":"phone","number":"222 222-2222"}]}{"name":"John","|full name|":"John Smith","age":42,"married":false,"address":{"street":"21 2nd Street","city":"New York"},"|additional staff|":[{"type":"numbers","numbers":[1,2,3,4]},{"type":"phone","number":"222 222-2222"}]}
