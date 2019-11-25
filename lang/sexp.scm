@@ -341,7 +341,7 @@
             codepoint))
 
       ;; most of these are to go via type definitions later
-      (define get-funny-word
+      (define get-special-word
          (get-any-of
             (get-word "..." '...)
             (let-parses (
@@ -430,7 +430,7 @@
                      get-sexp-regex     ;; must be before symbols, which also may start with /
                      get-symbol
                      get-string
-                     get-funny-word
+                     get-special-word
                      (get-list-of (get-sexp))
                      (get-vector-of (get-sexp))
                      (get-ff-of (get-sexp))
