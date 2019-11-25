@@ -121,7 +121,7 @@ Otus Lisp распространяется в виде двух исполняе
 ### [Обучалка](?ru/tutorial)
 
 Например, попробуйте этот пример:
-<pre><code id="fold1" data-language="ol">(fold * 1 (iota 99 1 1))</code><button class="doit" onclick="doit(fold1.textContent)">отправить в терминал</button></pre>
+<pre><code id="fold1" data-language="ol">(fold * 1 (iota 100 1 1))</code><button class="doit" onclick="doit(fold1.textContent)">отправить в терминал</button></pre>
 
 Нажав "отправить в терминал" или введя пример вручную вы должны получить красивое длинное число - результат вычисления факториала 99.
 

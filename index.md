@@ -88,8 +88,8 @@ You can immediately try Otus Lisp in the provided terminal on the left of this p
 ### Learn
 
    You can immediately try Otus Lisp (ol) in the provided terminal on the left of this page. For example, type
-<pre><code id="sample1" data-language="ol">(+ 1 2 3 4 5 6 7)</code><button class="doit" onclick="doit(sample1.textContent)">send to the terminal</button></pre>
-   After pressing "Enter" button you will receive *28*.
+<pre><code id="sample1" data-language="ol">(+ 1 2 3 4 5 6)</code><button class="doit" onclick="doit(sample1.textContent)">send to the terminal</button></pre>
+   After pressing "Enter" button you will receive *21*.
 
    Or you can try more interesting example
 <pre><code id="sample2" data-language="ol">(fold * 1 (iota 99 1 1))</code><button class="doit" onclick="doit(sample2.textContent)">send to the terminal</button></pre>
