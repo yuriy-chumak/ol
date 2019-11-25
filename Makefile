@@ -8,7 +8,7 @@ export OL_HOME=libraries
 all: release
 describe: all
 	./vm --version
-	./vm repl --version
+	./ol --version
 	echo "(print (syscall 63))"|./vm repl
 
 ## 'configure' part:
