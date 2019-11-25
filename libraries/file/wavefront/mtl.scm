@@ -57,7 +57,7 @@
          (ni (get-1-number "Ni "))
          (d (get-1-number "d "))
          (illum (get-1-number "illum ")))
-      (pairs->ff {
+      {
          'name   (bytes->string newmtl)
          'ns     ns
          'ka     ka
@@ -66,7 +66,7 @@
          'ni     ni
          'd      d
          'illum  illum
-      })))
+      }))
 
 ; main
 (define wavefront-mtl-parser
