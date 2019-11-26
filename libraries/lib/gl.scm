@@ -481,11 +481,11 @@
                         ((and (eq? message 273) ; WM_COMMAND
                               (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
                                     (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam, IDCANCEL
-                           24) ; EXIT
-                        ((and (eq? message 256) ; WM_KEYDOWN
-                              (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
-                                    (<< (ref MSG (+ 1 (* w 2))) 8)) #x51)) ; Q key
-                           24) ;
+                           (handler ['quit])) ; EXIT
+                        ;; ((and (eq? message 256) ; WM_KEYDOWN
+                        ;;       (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
+                        ;;               (<< (ref MSG (+ 1 (* w 2))) 8)) #x51)) ; Q key
+                        ;;    (handler ['keyboard Q]))
                         (else
                            (TranslateMessage MSG)
                            (DispatchMessage MSG)
@@ -632,6 +632,7 @@
                   (if context ; todo: добавить обработку кнопок
                      (native:process-events context (lambda (event)
                         (case event
+                           (['quit] (halt 0))
                            (['keyboard key]
                               ((get dictionary 'keyboard-handler (lambda (key) #f)) key))
                            (['mouse button x y]
