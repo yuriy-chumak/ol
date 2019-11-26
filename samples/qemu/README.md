@@ -42,7 +42,7 @@ F6 - step over
 FUNCTIONS
 ---------
 
-You can use any lisp functions and privitives from embedded
+You can use any lisp functions and primitives from embedded
 command line (press [enter] to start), for example you can
 type "(define x 123)" or "$ecx" or
 "(define (f x) (if (eq? x 0) 1 (* x (f (- x 1)))))" with "(f 100)".
