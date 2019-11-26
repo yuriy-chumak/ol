@@ -1,4 +1,7 @@
 (define-library (lib gl)
+   (version 1.0)
+   (license MIT/LGPL3)
+   (description "otus-lisp gl library")
 (import
    (otus lisp) (otus ffi)
    (lib gl config))
@@ -244,13 +247,13 @@
                      (XNextEvent display XEvent)
                      (case (int32->ol XEvent 0)
                         (2 ; KeyPress
-                           (handler (tuple 'keyboard (int32->ol XEvent (if x32? 52 84))))) ; offsetof(XKeyEvent, keycode)
+                           (handler ['keyboard (int32->ol XEvent (if x32? 52 84))])) ; offsetof(XKeyEvent, keycode)
                         (3 #f) ; KeyRelease
                         (4 ; ButtonPress
                            (let ((x (int32->ol XEvent (if x32? 32 64)))
                                  (y (int32->ol XEvent (if x32? 36 68)))
                                  (button (int32->ol XEvent (if x32? 52 84))))
-                              (handler (tuple 'mouse button x y))))
+                              (handler ['mouse button x y])))
                         (5 #f) ; ButtonRelease
                         (12; Expose
                            (let ((x (int32->ol XEvent (if x32? 20 40)))
@@ -258,7 +261,7 @@
                                  (w (int32->ol XEvent (if x32? 28 48)))
                                  (h (int32->ol XEvent (if x32? 32 52))))
                               ;(print "x: " x ", y: " y ", width: " w ", height: " h)
-                              (handler (tuple 'expose x y w h))))
+                              (handler ['expose x y w h])))
                         (else ;
                            (print "Unknown window event: " (int32->ol XEvent 0))))
                      (loop XEvent))))))
@@ -448,11 +451,11 @@
                   (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))
                   (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
                ;(gl:MakeCurrent #f #f)
-                  (mail 'opengl (tuple 'set-context (tuple hDC hRC window)))
-                  (interact 'opengl (tuple 'get-context)) ; синхронизация
+                  (mail 'opengl ['set-context (tuple hDC hRC window)])
+                  (interact 'opengl ['get-context]) ; синхронизация
 
                   (ShowWindow window 5)
-                  (tuple hDC hRC window))))
+                  [hDC hRC window])))
 
          (define (native:enable-context context)
             (let ((dc   (ref context 1))
@@ -527,7 +530,7 @@
 
 
 (define (gl:hide-cursor)
-   (gl:HideCursor (interact 'opengl (tuple 'get 'context))))
+   (gl:HideCursor (interact 'opengl ['get 'context])))
 
 )
 
@@ -705,21 +708,21 @@
 
 ; -----------------------------
 (define (gl:set-userdata userdata)
-   (mail 'opengl-userdata (tuple 'set 'userdata userdata)))
+   (mail 'opengl-userdata ['set 'userdata userdata]))
 (define (gl:get-userdata)
-   (interact 'opengl-userdata (tuple 'get 'userdata)))
+   (interact 'opengl-userdata ['get 'userdata]))
 
 (define (gl:set-renderer renderer)
-   (mail 'opengl (tuple 'set-renderer renderer)))
+   (mail 'opengl ['set-renderer renderer]))
 
 (define (gl:set-window-title title)
-   (mail 'opengl (tuple 'set-window-title title)))
+   (mail 'opengl ['set-window-title title]))
 
 (define (gl:set-window-size width height)
-   (mail 'opengl (tuple 'set-window-size width height)))
+   (mail 'opengl ['set-window-size width height]))
 
 (define (gl:finish)
-   (interact 'opengl (tuple 'finish)))
+   (interact 'opengl ['finish]))
 
 (define *atexit* gl:finish))
 
@@ -735,7 +738,7 @@
       (import (OpenGL GLX ARB create_context))
       (begin
          (define (gl:set-context-version major minor)
-            (let*((context (interact 'opengl (tuple 'get-context))) ;#(display screen window cx)
+            (let*((context (interact 'opengl ['get-context])) ;#(display screen window cx)
                   (display screen window cx context)
                   ; this functions requires GLX 1.3+
                   (glXChooseFBConfig (GL_LIBRARY fft-void* "glXChooseFBConfig" fft-void* fft-int fft-int* fft-int&)))
@@ -768,12 +771,12 @@
                   GLX_CONTEXT_MINOR_VERSION_ARB  minor
                   0))
                (define new_cx (glXCreateContextAttribsARB display bestFbc NULL 1 contextAttribs))
-               (define new_context (tuple display screen window new_cx))
+               (define new_context [display screen window new_cx])
 
                ; disable and destroy old context
                (native:disable-context context) ; todo: destroy
                ; set new context
-               (mail 'opengl (tuple 'set-context new_context))
+               (mail 'opengl ['set-context new_context])
                (native:enable-context new_context)
                #true))))
    (Windows
@@ -791,10 +794,10 @@
 
 
 (define (gl:set-mouse-handler handler)
-   (mail 'opengl (tuple 'set 'mouse-handler handler)))
+   (mail 'opengl ['set 'mouse-handler handler]))
 
 (define (gl:set-keyboard-handler handler)
-   (mail 'opengl (tuple 'set 'keyboard-handler handler)))
+   (mail 'opengl ['set 'keyboard-handler handler]))
 (define vkEnter 36) (define vkEsc 9)
 (define vkAlt 64) (define vkShift 62)
 (define vkUp 111) (define vkDown 116) (define vkLeft 113) (define vkRight 114)
@@ -804,6 +807,6 @@
 (define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
 
 (define (gl:set-expose-handler handler)
-   (mail 'opengl (tuple 'set-expose-handler handler)))
+   (mail 'opengl ['set-expose-handler handler]))
 
 ))
