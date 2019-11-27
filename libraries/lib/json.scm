@@ -116,13 +116,14 @@
 
 (define json-parser (get-object))
 
-; few parsing examples:
+; sanity check:
    (assert (car (try-parse json-parser (str-iter "{}") #t))
       ===> #empty)
    (assert (car (try-parse json-parser (str-iter "[]") #t))
       ===> [])
-   (assert (car (try-parse json-parser (str-iter "{'something':[12,23,34],'new':true}") #t))
+   (assert (car (try-parse json-parser (str-iter "{'something':[12,23,34],'old':{},'new':true}") #t))
       ===> { 'something [12 23 34]
-             'new  #true })
+             'old #empty
+             'new #true })
 
 ))
