@@ -2065,14 +2065,15 @@ apply:;
 		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
 			word *cont = (word *) R[3];
+            word key = R[4];
 			switch (acc) {
 			case 2:
-				R[3] = get(this, R[4],    0, heap->fail);
+				R[3] = get(this, key,    0, heap->fail); // 0 is NULL
 				if (!R[3])
-					FAIL(260, this, R[4]);
+					FAIL(260, this, key);
 				break;
 			case 3:
-				R[3] = get(this, R[4], R[5], heap->fail);
+				R[3] = get(this, key, R[5], heap->fail);
 				break;
 			default:
 				FAIL(259, this, INULL);
@@ -4633,7 +4634,7 @@ loop:;
 error:; // R4-R6 set, and call mcp (if any)
 	this = (word *) R[0];
 	R[0] = IFALSE;
-	R[3] = I(3); // vm thrown error
+	R[3] = I(3); // vm thrown error, check the "threading.scm"
 	if (is_reference(this)) {
 		acc = 4;
 		goto apply;

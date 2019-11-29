@@ -71,7 +71,7 @@
             (print* msg)))
 
       (define (verbose-vm-error opcode a b)
-         (cons "error: "
+         (cons "error:"
             (case opcode
                (ARITY-ERROR  ;; arity error, could be variable
                               ; this is either a call, in which case it has an implicit continuation,
@@ -83,6 +83,11 @@
                   `(trying to get ,car of a non-pair ,a))
                (CDR
                   `(trying to get ,cdr of a non-pair ,a))
+
+               (259 ; ()
+                  `("can't directly call an" ,a))
+               (260 ; ()
+                  `("key" ,b "not found in" ,a))
 
                ; ------------------------------------------------------------
                ; syscall errors:
