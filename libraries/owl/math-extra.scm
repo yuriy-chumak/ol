@@ -33,6 +33,8 @@
       (define ncar car)
       (define ncdr cdr)
 
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
       ;;;
       ;;; SQUARE ROOTS (stub)
       ;;;

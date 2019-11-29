@@ -3,6 +3,7 @@
 ;;;
 (import (owl random)
         (scheme misc))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 ; lset could be on toplevel
 

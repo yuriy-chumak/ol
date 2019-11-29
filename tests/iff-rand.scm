@@ -2,6 +2,7 @@
 
 (import (owl iff))
 (import (owl random))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (define max-bits 1024)
 (define max-nums 100)

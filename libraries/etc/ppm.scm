@@ -6,6 +6,7 @@
 	(export
 		read-ppm 			; path → #(rgb888-pixel-list width height) | #false
 		)
+   (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 	; drop anything up to and including the next newine (if any)
 	(define (pop-comment bs)

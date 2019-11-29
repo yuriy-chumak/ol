@@ -70,6 +70,7 @@
       (only (otus blobs) merge-chunks blob-leaves))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       ;; standard io ports
       (define stdin  (vm:cast 0 type-port))

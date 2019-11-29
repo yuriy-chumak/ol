@@ -39,6 +39,7 @@
       ; TODO: подумать о табличке символов как ff с хеш-ключами
 
       (define empty-symbol-tree #false)
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       ; #false = s1 is less, 0 = equal, 1 = s1 is more
       (define (walk s1 s2)

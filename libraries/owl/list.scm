@@ -23,6 +23,8 @@
    (begin
       (define o (λ (f g) (λ (x) (f (g x))))) ; wtf???
 
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
       ;; constants are always inlined, so you pay just one byte of source for readability
       (define null #null)
 

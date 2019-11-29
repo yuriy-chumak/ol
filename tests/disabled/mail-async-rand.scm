@@ -1,5 +1,6 @@
 ;; send and receive mails asynchronously between threads and check that the order is correct
 (import (owl random))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 ; n mails to send between each thread pair (to both directions)
 (define mails 300)

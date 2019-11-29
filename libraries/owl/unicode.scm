@@ -29,6 +29,8 @@
       (owl math))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
       ;; UTF-8
       ; overall idea: each unicode code point is represented as a leading byte
       ; possibly followed by extra bytes. a leading byte in ASCII range 0-127

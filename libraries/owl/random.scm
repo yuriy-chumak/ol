@@ -53,6 +53,8 @@
       (define ncdr cdr)
       (define (ncons a b) (vm:new type-int+ a b))
 
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
       ;;;
       ;;; Pseudorandom data generators
       ;;;

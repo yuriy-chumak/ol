@@ -16,6 +16,7 @@
 
    (begin
       ;(define (clock) (syscall 96)) (syscall 96) in usec, (clock) in ms
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define (elapsed-real-time thunk)
          (display "timing: ")

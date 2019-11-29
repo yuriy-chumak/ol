@@ -39,6 +39,7 @@
       (owl list))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       ; low 2 bits of ff type (as opposed to high 3 previously) have special meaning
       (define redness   #b10)

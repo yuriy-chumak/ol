@@ -1,5 +1,6 @@
 ;;; check that the default sort is stable
 (import (owl random))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (define rst (seed->rands (time-ms)))
 

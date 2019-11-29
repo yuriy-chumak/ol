@@ -1,4 +1,5 @@
 ;; check file io, assuming run via makefile
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (lets
    ((port (open-output-file "tmp/test")))

@@ -66,6 +66,8 @@
    (begin
       (define o (λ (f g) (λ (x) (f (g x)))))
 
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
       (define (string-length str)
          (case (type str)
             (type-string          (size str))

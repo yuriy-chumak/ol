@@ -8,6 +8,7 @@
 
 (import-old lib-random)
 
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 (define (rand-nbits rst n)
 	(lets
 		((max (<< 1 (- n 1)))

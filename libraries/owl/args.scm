@@ -27,6 +27,7 @@
       ;; cl-rules is a ff of
       ;;   'short -> -x
       ;;   'long  -> --xylitol
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       ;; str (rule-ff ..) → #false | rule-ff
       (define (select-rule string rules)

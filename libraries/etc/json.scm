@@ -20,6 +20,7 @@
 	(import (lang parse))
 	(import-old lib-unicode encode-point)
 
+   (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 	;;;
 	;;; Decoding
 	;;;

@@ -1,4 +1,5 @@
 ;; test a few uses of ellipsis
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (define-syntax xzip
    (syntax-rules ()

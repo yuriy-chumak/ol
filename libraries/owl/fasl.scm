@@ -73,6 +73,7 @@
       (owl rlist))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define enodata #false) ;; reason to fail if out of data (progressive readers want this)
 

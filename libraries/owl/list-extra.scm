@@ -16,6 +16,7 @@
 
    (begin
       (define lref list-ref)
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define (lset lst pos val)
          (cond

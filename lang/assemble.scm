@@ -28,6 +28,8 @@
       (define is-equal #true)
       (define is-greater '())
 
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
       (define (compare-bytes a b pos end)
          (if (eq? pos end)
             is-equal

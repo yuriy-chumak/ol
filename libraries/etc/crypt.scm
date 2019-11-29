@@ -37,6 +37,7 @@
 	;; create a toy key-pair and try it out
 
 	(export sign public-key private-key)
+   (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 	(define seed 11111111111111111)
 

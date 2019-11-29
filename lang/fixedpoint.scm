@@ -15,6 +15,7 @@
       (lang env))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       ; return the least score by pred 
       (define (least pred lst)

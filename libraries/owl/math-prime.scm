@@ -22,6 +22,7 @@
       (owl ff))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
       ;;;
       ;;; PRIMES AND FACTORING
       ;;;

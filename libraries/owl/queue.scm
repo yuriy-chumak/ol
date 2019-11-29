@@ -31,6 +31,7 @@
       (owl list-extra))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
       ; cl = (hd . rtl)
       ;
       ;     ((a b c d) . ())

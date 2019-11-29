@@ -23,6 +23,8 @@
 (define (rand unused max)
    (values unused (rand! max)))
 
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
 ;; Params
 
 (define elem-ip 20) ;; inverse probability of stopping element addition for linear random data structures

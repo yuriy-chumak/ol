@@ -1,5 +1,6 @@
 (import (owl random))
 ;; a generic finite function (red-black key-value-tree) insertion/deletion test
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (define (lput lst k v)
    (if (null? lst)

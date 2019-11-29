@@ -1,5 +1,6 @@
 (import (owl random))
 (define seed (* (time-ms) (expt (time-ms) 4)))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 ; (print seed)
 

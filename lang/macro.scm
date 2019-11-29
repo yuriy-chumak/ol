@@ -22,6 +22,7 @@
 
       (define (ok exp env) ['ok exp env])
       (define (fail reason) ['fail reason])
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define symbols-of
 

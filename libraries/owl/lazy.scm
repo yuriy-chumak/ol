@@ -27,6 +27,7 @@
       (owl list-extra))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       ;; possibly delay construction of tail
       (define-syntax pair

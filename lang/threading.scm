@@ -31,6 +31,7 @@
       (owl io))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define (bad-interop id a b c todo done state)
          (system-println "mcp: got bad interop")

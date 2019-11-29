@@ -1,3 +1,5 @@
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
 (import (etc bisect))
 (define (divide a b) (- (bisect (lambda (q) (> (* q b) a)) 0 a) 1))
 

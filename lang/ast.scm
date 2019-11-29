@@ -20,6 +20,7 @@
    (begin
       (define (ok exp env) ['ok exp env])
       (define (fail reason) ['fail reason])
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define (call? thing) (eq? (ref thing 1) 'call))
       (define (var? thing) (eq? (ref thing 1) 'var))

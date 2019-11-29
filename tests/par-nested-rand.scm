@@ -1,5 +1,6 @@
 (import (owl random))
 (import (otus vm))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (define (small-range? lo hi)
    (< (- hi lo) 100))

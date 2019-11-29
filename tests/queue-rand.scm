@@ -1,5 +1,6 @@
 (import (owl queue))
 (import (owl random))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 ; test by mirroring random operations with lists and (append lst (list a)) for snoc
 

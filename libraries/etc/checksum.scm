@@ -22,6 +22,7 @@
       (owl lazy))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       ;;; Adler32 checksum - simple and fast to calculate
 

@@ -30,6 +30,7 @@
       )
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define lp #\()
       (define rp #\))

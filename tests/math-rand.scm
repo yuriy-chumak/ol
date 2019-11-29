@@ -1,6 +1,7 @@
 ;;;
 ;;; Math library unit tests
 ;;;
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 ;; todo: factor this to smaller tests
 

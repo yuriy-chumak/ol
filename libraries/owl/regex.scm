@@ -44,6 +44,7 @@
       (owl iff))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       ;;;
       ;;; Matching functions

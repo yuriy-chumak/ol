@@ -83,6 +83,8 @@
       (owl math))
 
    (begin
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
       (define (blob? o) ; == raw or a variant of major type 11?
          (case (type o)
             (type-vector-leaf #true)

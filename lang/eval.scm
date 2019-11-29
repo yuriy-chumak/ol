@@ -64,6 +64,7 @@
       (define (isatty? fd) (syscall 16 fd 19))
       (define (interactive? env) (env-get env '*interactive* #false))
 
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define (debug env . msg)
          (if (env-get env '*debug* #false)

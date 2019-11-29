@@ -487,9 +487,7 @@
                ((lambda () exp . rest)))))
 
       ; lets === let*, TEMP!
-      (define-syntax lets
-         (syntax-rules ()
-            ((lets . stuff) (let* . stuff))))
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff))))
 
       ; 4.2.3  Sequencing
       ;

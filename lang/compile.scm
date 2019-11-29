@@ -34,6 +34,7 @@
    (begin
 
       (define try-n-perms 1000)   ;; how many load permutations to try before evicting more registers
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define (small-value? val)
          (or

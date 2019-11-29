@@ -1,4 +1,5 @@
 (import (owl random))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (let loop ((rst (seed->rands (time-ms))) (n 0))
    (if (= n 10)

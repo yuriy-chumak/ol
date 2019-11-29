@@ -1,6 +1,7 @@
 ;; test a suffix array
 (import (etc suffix))
 (import (owl random))
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 ; note: end = minimum 
 

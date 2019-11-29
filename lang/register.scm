@@ -27,6 +27,8 @@
       (define n-registers 256)
       (define highest-register (- n-registers 1)) ;; atm lower than NR in ovm.c
 
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
       ; reg-touch U r -> mark as live -> make sure it has a value
       ; (must be in some register)
 

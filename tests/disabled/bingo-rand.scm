@@ -4,6 +4,7 @@
 ; - when some thread has gotten all numbers 0..n, it sends message to a 'fini thread
 ; - fini prints the content of the first message and mails 'halt to all 0..n
 ; - each thread starts dropping messages when 'fini has sent 'halt to them
+(define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (define seed (* (time-ms) (time-ms)))
 

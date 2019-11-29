@@ -19,6 +19,7 @@
 		)
 
 	;(import-old lib-lazy)
+   (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 	(define (elapsed-ms thunk) ; -> ms + value
 		(lets

@@ -53,6 +53,8 @@
       (define ncdr cdr)
       (define (ncons a b) (vm:new type-int+ a b))
 
+      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
+
 ;      ;; check how many fixnum bits the vm supports with vm:shl
 ;      ;; idea is to allow the vm to be compiled with different ranges, initially fixed to 24
 ;      (define *max-fixnum*
