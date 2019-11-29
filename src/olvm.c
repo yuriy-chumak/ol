@@ -63,9 +63,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 // 2) gcov -b olvm.c
 
 // http://beefchunk.com/documentation/lang/c/pre-defined-c/precomp.html
-#ifndef __GNUC__
-#	warning "This code is prepared mainly for compilation by Gnu C compiler"
-#else
+#ifdef __GNUC__
 #	define GCC_VERSION (__GNUC__ * 10000 \
 	                  + __GNUC_MINOR__ * 100 \
 	                  + __GNUC_PATCHLEVEL__)

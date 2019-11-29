@@ -48,6 +48,9 @@
    (Android
       (begin
          (setq freetype (load-dynamic-library #false)))) ; "libfreetype.so"
+   (Windows
+      (begin
+         (setq freetype (load-dynamic-library "freetype6.dll")))) ; "libfreetype.so"
    (else
       (begin
          (setq freetype (load-dynamic-library "libfreetype.so.6")))))
