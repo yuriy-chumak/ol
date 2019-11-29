@@ -59,7 +59,7 @@
       (define primop-arities
          (fold
             (λ (ff node)
-               (lets ((name op in out wrapper node))
+               (let* ((name op in out wrapper node))
                   (put ff op (cons in out))))
             empty *primops*))
 

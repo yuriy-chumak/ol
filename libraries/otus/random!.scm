@@ -47,7 +47,7 @@
 
 (define (rand-range! lo hi)
    (if (< lo hi)
-      (lets ((o (rand! (- hi lo))))
+      (let* ((o (rand! (- hi lo))))
          (+ o lo))
       (runtime-error "rand-range! bad range: " (list lo hi))))
 

@@ -5,9 +5,8 @@
 
 ;; function to be forked to run as the echo thread
 (define (echoer)
-   (lets
-      ((envelope (wait-mail))
-       (from msg envelope)) ; 
+   (let*((envelope (wait-mail))
+         (from msg envelope))
       (mail from msg)
       (echoer)))
 
@@ -18,5 +17,3 @@
       ((not (eq? n (interact echo n))) (print "error"))
       ((= n 100) (print n))
       (else (loop (+ n 1)))))
-      
-

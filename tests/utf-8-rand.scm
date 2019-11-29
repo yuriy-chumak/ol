@@ -9,9 +9,8 @@
 (let loop ((rst (seed->rands seed)) (n 100))
 	(if (= n 0)
 		(print "ok")
-		(lets
-			((rst len (rand rst 100))
-			 (rst cps (random-numbers rst (+ last-code-point 1) len)))
+		(let*((rst len (rand rst 100))
+		      (rst cps (random-numbers rst (+ last-code-point 1) len)))
 			;; could also use ((o utf8-decode utf8-encode) data), but using strings
 			;; to also touch that code
 			;(print " => " (list->string cps))

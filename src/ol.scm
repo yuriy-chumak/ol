@@ -445,11 +445,11 @@
          (let loop ((seen seen) (lst (tuple->list obj)) (here empty))
             (if (null? lst)
                (values (put seen obj here) here)
-               (lets ((seen this (code-refs seen (car lst))))
+               (let* ((seen this (code-refs seen (car lst))))
                   (loop seen (cdr lst)
                      (ff-union this here +))))))))
 (define (codes-of ob)
-   (lets ((refs this (code-refs empty ob)))
+   (let* ((refs this (code-refs empty ob)))
       (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 
 
