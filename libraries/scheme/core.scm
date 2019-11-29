@@ -486,14 +486,19 @@
             ((let* () exp . rest)
                ((lambda () exp . rest)))))
 
-      ; lets === let*, TEMP!
-      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff))))
+      (define-syntax let*-values
+         (syntax-rules ()
+            ((let*-values (((var ...) gen) . rest) . body)
+               (values-apply gen
+                  (lambda (var ...) (let*-values rest . body))))
+            ((let*-values () . rest)
+               ((lambda () . rest)))))
 
       ; 4.2.3  Sequencing
       ;
       ; library syntax:  (begin <expression1> <expression2> ...)
       (define-syntax begin
-         (syntax-rules (define letrec define-values let*-values letrec) ; todo: rename define-values to define*
+         (syntax-rules (define letrec define-values let*-values letrec)
             ((begin exp) exp)
             ((begin (define . a) (define . b) ... . rest)
                (begin 42 () (define . a) (define . b) ... . rest))
@@ -638,15 +643,6 @@
                (setq (val ...)
                   (let* ((val ... (begin . body)))
                      (list val ...))))))
-
-      ; EXTENSION, maybe r7rs!
-      (define-syntax let*-values
-         (syntax-rules ()
-            ((let*-values (((var ...) gen) . rest) . body)
-               (values-apply gen
-                  (lambda (var ...) (let*-values rest . body))))
-            ((let*-values () . rest)
-               (begin . rest))))
 
       ; 5.2.1  Top level definitions
       ;
@@ -2010,7 +2006,7 @@
       ; 4.1.5  Conditionals
       if unless cond case and or set!
       ; 4.2.2  Binding constructs
-      letrec let let*            lets ; lets - ol specific, let*-values - r7rs
+      letrec let let* let*-values
       ; 4.2.3  Sequencing
       begin ; do
       ; 4.2.5  Delayed evaluation
