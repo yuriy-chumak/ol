@@ -84,10 +84,10 @@
                (53 ; (cdr not-a-pair)
                   `(trying to get ,cdr of a non-pair ,a))
 
-               (259 ; ()
-                  `("can't directly call an" ,a))
-               (260 ; ()
-                  `("key" ,b "not found in" ,a))
+               (259 ; (ff)
+                  `(,a is not a procedure))
+               (260 ; (ff not-existent-key)
+                  `(key ,b not found in ,a))
 
                ; ------------------------------------------------------------
                ; syscall errors:
