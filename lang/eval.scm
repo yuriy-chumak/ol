@@ -78,10 +78,10 @@
                               ; or a return from a function which doesn't have it. it's usually a call,
                               ; so -1 to not count continuation. there is no way to differentiate the
                               ; two, since there are no calls and returns, just jumps.
-                  `(function ,a did not want ,(- b 1) arguments))
-               (CAR
+                  `(function ,a did not accept ,(- b 1) arguments))
+               (52 ; (car not-a-pair)
                   `(trying to get ,car of a non-pair ,a))
-               (CDR
+               (53 ; (cdr not-a-pair)
                   `(trying to get ,cdr of a non-pair ,a))
 
                (259 ; ()

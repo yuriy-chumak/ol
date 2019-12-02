@@ -28,7 +28,7 @@
       LD LDE LDN LDT LDF
       MOVE REFI MOVE2
 
-      CAR CDR NEW    ; used by (lang compile), (lang eval)
+      NEW    ; used by (lang compile)
 
       ; types
       TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
