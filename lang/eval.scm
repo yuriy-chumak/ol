@@ -173,8 +173,7 @@
                             ;;           + convert-calls - lots of args -> enlist tail, convert lambdas accordingly
                             ;;           + register value analysis? (car&cdr after known type -> _ref, etc)
                             ;;           + allocate-registers - infinite -> fixed register set
-            execute         ;; call the resulting code
-            ))
+            execute))       ;; call the resulting code
 
       (define (evaluate exp env)
          (call/cc
@@ -282,9 +281,6 @@
       ;; toplevel variable to which loaded libraries are added
 
       (define (? x) #true)
-
-      (define library-key '*libraries*)     ;; list of loaded libraries
-      (define features-key '*features*)     ;; list of implementation feature symbols
 
       (define definition?
          (let ((pat (list 'setq symbol? ?)))
@@ -541,7 +537,7 @@
                (repl env in))
             ((libraries libs l)
                (prompt env
-                  (map car (env-get env library-key null)))
+                  (map car (env-get env '*libraries* null)))
                (repl env in))
             ((expand)
                (let*((exp in (uncons in #false)))
@@ -561,7 +557,7 @@
 
       ;; → (name ...) | #false
       (define (exported-names env lib-name)
-         (let ((libp (assoc lib-name (env-get env library-key null))))
+         (let ((libp (assoc lib-name (env-get env '*libraries* null))))
             (if libp
                (env-fold (λ (out name value) (cons name out)) null (cdr libp))
                #false)))
@@ -783,7 +779,7 @@
       (define (library-import env exps fail repl)
          (fold
             (λ (env iset)
-               (lets ((status lib (call/cc (λ (ret) (import-set->library iset (env-get env library-key null) ret)))))
+               (lets ((status lib (call/cc (λ (ret) (import-set->library iset (env-get env '*libraries* null) ret)))))
                   (cond
                      ((eq? status 'needed)
                         (lets ((status env (try-autoload env repl lib)))
@@ -829,8 +825,8 @@
             ((pair? (car bs))
                (if (match-feature
                         (caar bs)
-                        (env-get env features-key null)
-                        (env-get env library-key null)
+                        (env-get env '*features* null) ; list of implementation feature symbols
+                        (env-get env '*libraries* null); list of loaded libraries
                         fail)
                   (cdar bs)
                   (choose-branch (cdr bs) env fail)))
@@ -872,9 +868,9 @@
       ;; variables which are added to *src-olvm* when evaluating libraries
       (define library-exports
          (list
-            library-key     ;; loaded libraries
+            '*libraries*     ;; loaded libraries
             '*include-dirs* ;; where to try to load includes/libraries from
-            features-key
+            '*features*
             '*vm-args*))    ;; implementation features
 
       ;; update *owl-names* (used by renderer of repl prompt) if the defined value is a function
@@ -948,9 +944,9 @@
                      (let*/cc ret
                         ((exps (map cadr (cdr exp))) ;; drop the quotes
                          (name exps (uncons exps #false))
-                         (libs (env-get env library-key null))
+                         (libs (env-get env '*libraries* null))
                          ;; mark the current library as being loaded for circular dependency detection
-                         (env (env-set env library-key (cons (cons name 'loading) libs)))
+                         (env (env-set env '*libraries* (cons (cons name 'loading) libs)))
                          (fail
                            (λ (reason)
                               (ret (fail (list "Library" name "failed:" reason)))))
@@ -972,11 +968,11 @@
                                        (list->string
                                           (foldr render null
                                              (list ";; Library " name " added" ))))
-                                    (env-set env library-key
+                                    (env-set env '*libraries*
                                        (cons (cons name library)
                                           (keep  ;; drop the loading tag for this library
                                              (λ (x) (not (equal? (car x) name)))
-                                             (env-get lib-env library-key null))))))) ; <- lib-env may also have just loaded dependency libs
+                                             (env-get lib-env '*libraries* null))))))) ; <- lib-env may also have just loaded dependency libs
                            (['error reason not-env]
                               (fail
                                  (list "Library" name "failed to load because" reason))))))
