@@ -24,6 +24,7 @@ extern unsigned char _binary_repl_start[]; // otus lisp binary (please, build an
 // ------------------------------------------------------------------------
 // olvm:
 ol_t ol;
+
 // just code simplification, some kind of magic to not manually write 'new_string' and 'make_integer':
 // we automatically call new_string or make_integer dependly on argument type
 // but in general case you should do this manually. or not.
@@ -79,6 +80,8 @@ ol_t ol;
 
 static jobject java_asset_manager = NULL;
 static AAssetManager* asset_manager = NULL;
+static AAsset** fds; // file descriptors
+static int fds_size;
 
 int assets_open(const char *filename, int flags, int mode, void* userdata)
 {
@@ -91,26 +94,66 @@ int assets_open(const char *filename, int flags, int mode, void* userdata)
 		AAsset* asset = AAssetManager_open(asset_manager, filename, 0);
 		//LOGI("open0: %s(%x)", filename, asset);
 		if (asset) {
-			file = asset;
+            int i = 3; // 0, 1, 2 - reserved
+            for (; i < fds_size; i++) {
+                if (fds[i] == 0) {
+                    fds[i] = asset;
+                    file = -i;
+                    break;
+                }
+            }
+            // no available descriptors?
+            if (i == fds_size) {
+                int fds_size_new = fds_size * 5 / 8; // 1.6, ~1.618
+                AAsset** fds_new = realloc(fds, fds_size_new);
+                if (fds_new) {
+                    fds = fds_new;
+                    fds_size = fds_size_new;
+
+                    fds[i] = asset;
+                    file = -i;
+                }
+            }
 		}
 	}
+    // -1 means error
 	return file;
 }
+
 int assets_close(int fd, void* userdata)
 {
-	int done = close(fd);
-	if (done != -1)
-		return done;
- 	AAsset_close((AAsset*)fd);
-	return 0;
+	if (fd < 0) { // assets
+		fd = -fd;
+		if (fd < fds_size) {
+			AAsset* aa = fds[fd];
+			if (aa != 0) {
+				AAsset_close(aa);
+				fds[fd] = 0;
+				return 0;
+			}
+		}
+		// error:
+		return -1;
+	}
+	else
+	return close(fd);
 }
 
 ssize_t assets_read(int fd, void *buf, size_t count, void* userdata)
 {
-	int done = read(fd, buf, count);
-	if (done != -1)
-		return done;
-	return AAsset_read((AAsset*)fd, buf, count);
+	if (fd < 0) { // assets
+		fd = -fd;
+		if (fd < fds_size) {
+			AAsset* aa = fds[fd];
+			if (aa != 0) {
+				return AAsset_read(aa, buf, count);
+			}
+		}
+		// error:
+		return -1;
+	}
+	else
+	return read(fd, buf, count);
 }
 
 // redirect stdout/stderr to logcat
@@ -127,27 +170,32 @@ ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
 	return write(fd, buf, count);
 }
 
-#include <ft2build.h>
-#include <freetype/freetype.h>
+// hmmmmm, is it required?
+// #include <ft2build.h>
+// #include <freetype/freetype.h>
 // ---------------------------------------
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv* jenv, jobject class)
 {
-	LOGI("sizeof(FT_FaceRec): %d", sizeof(FT_FaceRec));
-	LOGI("offsetof(FT_FaceRec, glyph): %d", offsetof(FT_FaceRec, glyph));
+	// LOGI("sizeof(FT_FaceRec): %d", sizeof(FT_FaceRec));
+	// LOGI("offsetof(FT_FaceRec, glyph): %d", offsetof(FT_FaceRec, glyph));
 
-	LOGI("sizeof(FT_GlyphSlotRec): %d", sizeof(FT_GlyphSlotRec));
-	LOGI("offsetof(FT_GlyphSlotRec, bitmap): %d", offsetof(FT_GlyphSlotRec, bitmap));
-	LOGI("offsetof(FT_GlyphSlotRec, bitmap_left): %d", offsetof(FT_GlyphSlotRec, bitmap_left));
-	LOGI("offsetof(FT_GlyphSlotRec, bitmap_top): %d", offsetof(FT_GlyphSlotRec, bitmap_top));
-	LOGI("sizeof(FT_Bitmap): %d", sizeof(FT_Bitmap));
-	LOGI("offsetof(FT_Bitmap, rows): %d", offsetof(FT_Bitmap, rows));
-	LOGI("offsetof(FT_Bitmap, width): %d", offsetof(FT_Bitmap, width));
-	LOGI("offsetof(FT_Bitmap, pitch): %d", offsetof(FT_Bitmap, pitch));
-	LOGI("offsetof(FT_Bitmap, buffer): %d", offsetof(FT_Bitmap, buffer));
+	// LOGI("sizeof(FT_GlyphSlotRec): %d", sizeof(FT_GlyphSlotRec));
+	// LOGI("offsetof(FT_GlyphSlotRec, bitmap): %d", offsetof(FT_GlyphSlotRec, bitmap));
+	// LOGI("offsetof(FT_GlyphSlotRec, bitmap_left): %d", offsetof(FT_GlyphSlotRec, bitmap_left));
+	// LOGI("offsetof(FT_GlyphSlotRec, bitmap_top): %d", offsetof(FT_GlyphSlotRec, bitmap_top));
+	// LOGI("sizeof(FT_Bitmap): %d", sizeof(FT_Bitmap));
+	// LOGI("offsetof(FT_Bitmap, rows): %d", offsetof(FT_Bitmap, rows));
+	// LOGI("offsetof(FT_Bitmap, width): %d", offsetof(FT_Bitmap, width));
+	// LOGI("offsetof(FT_Bitmap, pitch): %d", offsetof(FT_Bitmap, pitch));
+	// LOGI("offsetof(FT_Bitmap, buffer): %d", offsetof(FT_Bitmap, buffer));
+
+    // init:
+    fds_size = 16;
+    fds = (AAsset**) malloc(sizeof(*fds) * fds_size);
 
 	// let's start our application
-	embed_new(&ol); // ol creation
+	embed_new(&ol, _binary_repl_start, 0); // non-interactive ol creation
 
 	OL_set_open(ol.vm, assets_open);
 	OL_set_close(ol.vm, assets_close);
