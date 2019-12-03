@@ -767,16 +767,16 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (bitstream bit)
 #define BINARY                      (RAWBIT >> TPOS)
 
-#define make_value(type, value)        (2 | ((word)(value) << IPOS) | ((type) << TPOS))
+#define make_value(type, value)     (2 | ((word)(value) << IPOS) | ((type) << TPOS))
 
-#define header3(type, size, padding)   (2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
+// header making macro
+#define header3(type, size, padding)(2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
 #define header2(type, size)            header3(type, size, 0)
-
 #define HEADER_MACRO(_1, _2, _3, NAME, ...) NAME
-#define header(...) HEADER_MACRO(__VA_ARGS__, header3, header2, NOTHING, NOTHING)(__VA_ARGS__)
+#define make_header(...)            HEADER_MACRO(__VA_ARGS__, header3, header2, NOTHING, NOTHING)(__VA_ARGS__)
 
 
-// два главных класса аргументов:
+// два главных класса:
 #define is_value(x)                 (((word)(x)) & 2)
 #define is_reference(x)             (! is_value(x))
 #define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to bitstream
@@ -868,17 +868,17 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define is_fixp(ob)                 (is_value(ob)     && value_type (ob) == TFIXP)
 #define is_fixn(ob)                 (is_value(ob)     && value_type (ob) == TFIXN)
 #define is_fix(ob)                  (is_fixp(ob) || is_fixn(ob))
-#define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(TPAIR,     3))
-#define is_npairp(ob)               (is_reference(ob) && (*(word*) (ob)) == header(TINTP,     3))
-#define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == header(TINTN,     3))
-#define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == header(TRATIONAL, 3))
-#define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == header(TCOMPLEX,  3))
+#define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TPAIR,     3))
+#define is_npairp(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTP,     3))
+#define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
+#define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
+#define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
 
 #define is_string(ob)               (is_reference(ob) &&   reference_type (ob) == TSTRING)
 #define is_vector(ob)               (is_reference(ob) &&   reference_type (ob) == TVECTOR)
 
-#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TVPTR,     2))
-#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == header(BINARY|TCALLABLE, 2))
+#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TVPTR,     2))
+#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TCALLABLE, 2))
 
 #define is_numberp(ob)              (is_fixp(ob) || is_npairp(ob))
 #define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
@@ -1004,7 +1004,7 @@ typedef struct heap_t
 // temporarily make_header use real object size, not with payload (todo: change this)
 #define NEW_OBJECT(type, size) ({\
 word*p = NEW (size);\
-	*p = header(type, size+1, 0);\
+	*p = make_header(type, size+1, 0);\
 	/*return*/ p;\
 })
 
@@ -1014,7 +1014,7 @@ word*p = NEW (size);\
 // todo: same as new_object
 #define NEW_BLOB(type, size, pads) ({\
 word*p = NEW (size);\
-	*p = header(BINARY|type, size+1, pads);\
+	*p = make_header(BINARY|type, size+1, pads);\
 	/*return*/ p;\
 })
 
@@ -1426,7 +1426,7 @@ word gc(heap_t *heap, int query, word regs)
 	word *fp;
 	fp = heap->fp;
 	{
-		*fp = header(TVECTOR, 2); // этого можно не делать
+		*fp = make_header(TVECTOR, 2); // этого можно не делать
 		word *root = &fp[1];
 	//	word *root = fp + 1; // same
 
@@ -1921,6 +1921,7 @@ static int OL__gc(OL* ol, int ws) // ws - required size in words
 	return 1;
 }
 
+// ff's get implementation
 static
 word get(word *ff, word key, word def, jmp_buf fail)
 {
@@ -1931,34 +1932,32 @@ word get(word *ff, word key, word def, jmp_buf fail)
 		hdr = ff[0];
 		switch (header_size(hdr)) {
 		case 5: ff = (word *) ((key < this) ? ff[3] : ff[4]);
-			break;
+			continue;
 		case 3: return def;
 		case 4:
 			if (key < this)
 				ff = (word *) ((hdr & (1 << TPOS)) ? IEMPTY : ff[3]);
 			else
 				ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
-			break;
+			continue;
 		default:
 			E("assert! header_size(ff) == %d", (int)header_size(hdr));
 			longjmp(fail, IFALSE); // todo: return error code
-			assert (0); // should not be reached
-			//ff = (word *) ((key < this) ? ff[3] : ff[4]);
 		}
 	}
 	return def;
 }
 
-
-#define FAIL(opcode, a, b) \
-	{ \
-		D("FAIL AT %s:%d (%s) -> %d/%d/%d", __FILE__, __LINE__, __FUNCTION__, opcode, a, b); \
-		R[4] = I (opcode);\
-		R[5] = (word) (a);\
-		R[6] = (word) (b);\
-		goto error; \
-	}
+// 
+#define FAIL(opcode, a, b) { \
+	D("FAIL AT %s:%d (%s) -> %d/%d/%d", __FILE__, __LINE__, __FUNCTION__, opcode, a, b); \
+	R[4] = I (opcode);\
+	R[5] = (word) (a);\
+	R[6] = (word) (b);\
+	goto error; \
+}
 #define CHECK(exp,val,errorcode)    if (!(exp)) FAIL(errorcode, val, ITRUE);
+
 
 static //__attribute__((aligned(8)))
 word runtime(OL* ol)
@@ -2563,7 +2562,7 @@ loop:;
 				if (is_numberp(value)) { // no list, just
 					for (int i = 0; i < len; i++)
 						*++fp = el;
-					*ptr = header(type, ++fp - ptr);
+					*ptr = make_header(type, ++fp - ptr);
 				}
 				else
 				if ((is_pair(value) && list == INULL) || (value == INULL)) { // proper list?
@@ -2571,7 +2570,7 @@ loop:;
 						*++fp = car (value);
 						value = cdr (value);
 					}
-					*ptr = header(type, ++fp - ptr);
+					*ptr = make_header(type, ++fp - ptr);
 				}
 				else
 					R[ip[size]] = IFALSE;
@@ -4668,25 +4667,6 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
 	unsigned char* hp = bootstrap;
 
-/*	word (^get_nat_x)() = ^()
-	{
-		word nat = 0;
-		char i;
-
-		#ifndef OVERFLOW_KILLS
-		#define OVERFLOW_KILLS(n) exit(n)
-		#endif
-		do {
-			long long underflow = nat; // can be removed for release
-			nat <<= 7;
-			if (nat >> 7 != underflow) // can be removed for release
-				OVERFLOW_KILLS(9);     // can be removed for release
-			i = *hp++;
-			nat = nat + (i & 127);
-		} while (i & 128); // (1 << 7)
-		return nat;
-	};*/
-
 	// function entry:
 	for (ptrdiff_t me = 0; me < nobjs; me++) {
 		ptrs[me] = (word) fp;
@@ -4695,7 +4675,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		case 1: {
 			int type = *hp++;
 			int size = get_nat(&hp);
-			*fp++ = header(type, size+1); // +1 to include header in size
+			*fp++ = make_header(type, size + 1); // +1 to include header in size
 			while (size--)
 				decode_field(&hp, ptrs, me, &fp);
 			break;
