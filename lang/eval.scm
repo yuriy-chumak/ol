@@ -71,7 +71,7 @@
             (print* msg)))
 
       (define (verbose-vm-error opcode a b)
-         (cons "error:"
+         (list "error" opcode "->"
             (case opcode
                (ARITY-ERROR  ;; arity error, could be variable
                               ; this is either a call, in which case it has an implicit continuation,
@@ -84,6 +84,8 @@
                (53 ; (cdr not-a-pair)
                   `(trying to get ,cdr of a non-pair ,a))
 
+               ((261 258) ; (not-an-executable-object)
+                  `(illegal invocation of ,a))
                (259 ; (ff)
                   `(,a is not a procedure))
                (260 ; (ff not-existent-key)
