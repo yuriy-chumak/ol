@@ -441,31 +441,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 
 
 // ========================================
-// -=( features )=-------------------------
-
-// tip: HAS_xxx and OLVM_xxx should be checked using "#if"
-
-#if HAS_DLOPEN
-#	define FEATURE_DLOPEN_BIT   0b00000001
-#endif
-#if HAS_SOCKETS
-#	define FEATURE_SOCKETS_BIT  0b00000010
-#endif
-
-#ifdef HAS_UNSAFES
-#endif
-#ifdef HAS_SANDBOX
-#endif
-
-#if OLVM_FFI
-#endif
-#if OLVM_CALLABLES
-#endif
-#if OLVM_INEXACTS
-#endif
-
-
-// ========================================
 // -=( logger )=---------------------------
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
@@ -633,10 +608,19 @@ typedef int		(fstat_t)(int fd, struct stat *st);
 typedef void    (idle_t) (void* userdata);
 
 // iternal wrappers for open/close/read and write functions:
-static int     os_open (const char *filename, int flags, int mode, void* userdata);
-static int     os_close(int fd, void* userdata);
-static ssize_t os_read (int fd, void *buf, size_t size, void* userdata);
-static ssize_t os_write(int fd, void *buf, size_t size, void* userdata);
+// (just skip userdata)
+static int os_open (const char *filename, int flags, int mode, void* userdata) {
+	return open(filename, flags, mode);
+}
+static int os_close(int fd, void* userdata) {
+	return close(fd);
+}
+static ssize_t os_read(int fd, void *buf, size_t size, void* userdata) {
+	return read(fd, buf, size);
+}
+static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
+	return write(fd, buf, size);
+}
 // todo: os_stat
 
 
@@ -5232,36 +5216,11 @@ word OL_deref(struct ol_t* ol, word ref)
 		return IFALSE;
 }
 
-// Foreign Function Interface code
+// -------------------------------
+// Foreign Function Interface code:
 #if OLVM_FFI || OLVM_CALLABLES
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wunused-label"
 #	include "../extensions/ffi.c"
 # pragma GCC diagnostic pop
 #endif
-
-// ---------------------------------------
-// read/write/open/close
-
-static
-int os_open (const char *filename, int flags, int mode, void* userdata)
-{
-	return open(filename, flags, mode);
-}
-static
-int os_close(int fd, void* userdata)
-{
-	return close(fd);
-}
-
-static
-ssize_t os_read(int fd, void *buf, size_t size, void* userdata)
-{
-	return read(fd, buf, size);
-}
-
-static
-ssize_t os_write(int fd, void *buf, size_t size, void* userdata)
-{
-	return write(fd, buf, size);
-}
