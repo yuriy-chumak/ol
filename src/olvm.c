@@ -31,8 +31,7 @@
  *
  * ### The parent project - Owl Lisp:
  *   https://gitlab.com/owl-lisp/owl (actual) \n
- *   https://github.com/owl-lisp/owl (interesting for historic reason) \n
- *   https://code.google.com/p/owl-lisp (same as above)
+ *   https://code.google.com/p/owl-lisp (historical)
  *
  * ## Related links:
  *   http://people.csail.mit.edu/jaffer/Scheme            \n
@@ -131,7 +130,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 #endif
 
 // https://msdn.microsoft.com/en-us/library/b0084kay.aspx
-// WIN32: Defined for applications for Win32 and Win64. Always defined.
+// WIN32: Defined for Win32 and Win64 applications, always defined.
 #ifdef _WIN32
 #	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
 #	define SYSCALL_GETRLIMIT 0
@@ -212,7 +211,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 // http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
 
 // DEFAULTS. please don't change! use -D{OPTION}={0|1} command line instead
-//           or use -DHAS_CONFIG=1 and change your local copy of the olvm.h
+//           or use -DHAS_CONFIG=1 and change your local config copy
 #ifndef HAS_SOCKETS
 #define HAS_SOCKETS 1 // system sockets support
 #endif
@@ -410,18 +409,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
-
-// avoiding "undefined reference to `max'/`min' on some systems"
-#if OLVM_INEXACTS
-#	ifndef min
-#	define min(a,b)  (((a) < (b)) ? (a) : (b))
-#	endif
-
-#	ifndef max
-#	define max(a,b)  (((a) > (b)) ? (a) : (b))
-#	endif
-#endif
-
 
 // FFI support:
 #ifndef OLVM_FFI
