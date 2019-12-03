@@ -1560,11 +1560,11 @@ word* OL_ffi(OL* self, word* arguments)
 						else {
 							assert (is_npairp(ptr) || is_npairn(ptr));
 							if (value < 0) {
-								*ptr = header(value < 0 ? TINTN : TINTP, 3);
+								*ptr = make_header(value < 0 ? TINTN : TINTP, 3);
 								value = -value;
 							}
 							else
-								*ptr = header(TINTP, 3);
+								*ptr = make_header(TINTP, 3);
 							*(word*)&car(ptr) = I(value & VMAX);
 							*(word*)&cadr(ptr) = I(value >> VBITS);
 						}
@@ -1594,7 +1594,7 @@ word* OL_ffi(OL* self, word* arguments)
 							E("got too large number to store");
 						else {
 							assert (is_npairp(ptr) || is_npairn(ptr));
-							*ptr = header(TINTP, 3);
+							*ptr = make_header(TINTP, 3);
 							*(word*)&car(ptr) = I(value & VMAX);
 							*(word*)&cadr(ptr) = I(value >> VBITS);
 						}
