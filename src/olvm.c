@@ -80,7 +80,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
 // https://gcc.gnu.org/wiki/C11Status
 #if GCC_VERSION < 40600
 #	define static_assert(condition, comment) \
-			do { switch(0) { case 0: case condition: ; } } while (0)
+		typedef char static_assertion_##__LINE__[(!!(condition))*2-1];
 #else
 #	ifndef static_assert
 #	define static_assert _Static_assert
@@ -639,17 +639,21 @@ static ssize_t os_read (int fd, void *buf, size_t size, void* userdata);
 static ssize_t os_write(int fd, void *buf, size_t size, void* userdata);
 // todo: os_stat
 
+
 // ----------
+// -----------------------------------------------------------------------------
+// ------------------------------
 // -=( OL )=--------------------------------------------------------------------
 // --
-//
-// виртуальная машина:
-typedef struct ol_t OL;
 
 // unsigned int that is capable of storing a pointer
 // основной data type, зависит от разрядности машины
 //   базируется на C99 стандарте, <stdint.h>
 typedef uintptr_t word;
+
+//
+// виртуальная машина:
+typedef struct ol_t OL;
 
 // descriptor format
 // заголовок объекта, то, что лежит у него в ob[0] (*ob):
@@ -658,7 +662,7 @@ typedef uintptr_t word;
 //              |    ||  |      '-----> object type
 //              |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
 //              |    |'---------------> rawness bit (raw objects have no descriptors(pointers) in them)
-//              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc
+//              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc, etc.
 //              '---------------------> object size in words
 //
 // а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект:
@@ -683,73 +687,66 @@ typedef uintptr_t word;
 //	(идея: просто останавливаться на таких объектах, как на generation линии?)
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
-// values and references:
+#define IPOS      8  // === bits offset of (struct value_t, payload)
 
+#define TPOS      2  // === bits offset of (struct header_t, type) and (struct value_t, type)
+#define PPOS      8  // === bits offset of (struct header_t, padding)
+#define RPOS     11  // === bits offset of (struct header_t, rawness)
+#define SPOS     16  // === bits offset of (struct header_t, size)
+
+// ---==( value_t )==---
 struct __attribute__ ((aligned(sizeof(word)), packed))
 value_t
 {
 	unsigned mark : 1;    // mark bit (can be 1 only during gc)
-	unsigned i    : 1;    // for values always 1
+	unsigned i    : 1;    // always 1
 	unsigned type : 6;    // value type
 
-	// disabled due to gcc issue: 
-	//   gcc reserves all bits for field without respect for actual bit count
-	// word  payload : 8 * sizeof(word) - (1+1+6);
+	unsigned char payload[sizeof(word) - 1];
 };
-#define IPOS      8  // === offsetof (struct direct, payload)
 
+// some critical vm limitations:
+static_assert(sizeof(struct value_t) == sizeof(word), "Size of value_t structure should be equal to size of virtual machine word");
+
+
+// ---==( reference_t )==---
 struct __attribute__ ((aligned(sizeof(word)), packed))
 reference_t
 {
-	uintptr_t ptr;
+	union {
+		struct {
+			unsigned mark : 1;    // mark bit (can be 1 only during gc)
+			unsigned i    : 1;    // always 0
+		};
+		uintptr_t ptr; // btw, normally lower two bits is always 0
+	};
 };
 
-// objects structure:
-struct __attribute__ ((aligned(sizeof(word)), packed))
-header_t
-{
-	unsigned mark : 1;    // mark bit (can be 1 only during gc)
-	unsigned i    : 1;    // for headers always 1 ()
-	unsigned type : 6;    // object type
+// some critical vm limitations:
+static_assert(sizeof(struct reference_t) == sizeof(word), "Size of reference_t structure should be equal to size of virtual machine word");
 
-	unsigned padding : 3; // number of padding (unused) bytes at end of object
-	unsigned rawness : 1;
-	unsigned         : 4; // unused
 
-	// disabled due to gcc issue: 
-	//   gcc reserves all bits for field without respect for actual bit count
-	// word     size : 8 * sizeof(word) - (1+1+6+3+1+4);
-};
-#define TPOS      2  // === offsetof (struct header, type)
-#define PPOS      8  // === offsetof (struct header, padding)
-#define RPOS     11  // === offsetof (struct header, rawness)
-#define SPOS     16  // === offsetof (struct header, size)
-
+// ---==( object_t )==---
 struct __attribute__ ((aligned(sizeof(word)), packed))
 object_t
 {
 	union {
-		struct header_t header;
+		struct {
+			unsigned mark : 1;    // mark bit (can be 1 only during gc)
+			unsigned i    : 1;    // for objects always 1
+			unsigned type : 6;    // object type
+
+			unsigned padding : 3; // number of padding (unused) bytes at the end of object
+			unsigned rawness : 1; // 1 for bitstream, 0 for vectors
+			unsigned user    : 4; // unused, can be used by user
+			unsigned char size[sizeof(word) - 2];
+		};
 		word ref[1];
-	} u;
+	};
 };
 
-// let's apply some critical VM structure limitations
-//__attribute__((used))
-void _internal_vm_structure_rules() {
-	// data strcture sizes
-	static_assert(sizeof(struct value_t) == sizeof(word), "Size of value_t structure should be equal to size of virtual machine word");
-	static_assert(sizeof(struct reference_t) == sizeof(word), "Size of reference_t structure should be equal to size of virtual machine word");
-	static_assert(sizeof(struct header_t) == sizeof(word), "Size of header_t structure should be equal to size of virtual machine word");
-	static_assert(sizeof(struct object_t) == sizeof(word), "Size of object_t structure should be equal to size of virtual machine word");
-
-	// value_t and global constants correspondence
-	//static_assert(((struct value_t) { payload: 42 }) == (42 << IPOS), "IPOS constant is not correspondent to value_t structure");
-
-	// header_t and global constants correspondence (TODO)
-	//header()
-
-}
+// some critical vm limitations:
+static_assert(sizeof(struct object_t) == sizeof(word), "Minimal size of object_t structure should be equal to size of virtual machine word");
 
 
 // ------------------------------------------------------
