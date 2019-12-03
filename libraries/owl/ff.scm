@@ -261,31 +261,30 @@
 
       ;; bytecoded get
       (define (get ff key def)
-         (ff key def))
-         ;; (if (eq? ff #empty)
-         ;;    def
-         ;;    (let ((this-k (ref ff 1)))
-         ;;       (cond
-         ;;          ((eq? this-k key)
-         ;;             (ref ff 2))
-         ;;          ((less? key this-k)
-         ;;             ;; go left if possible
-         ;;             (case (size ff)
-         ;;                (4 (get (ref ff 3) key def))
-         ;;                (2 def)
-         ;;                (else
-         ;;                   (if (right? ff)
-         ;;                      def
-         ;;                      (get (ref ff 3) key def)))))
-         ;;          (else
-         ;;             ;; go right if possible
-         ;;             (case (size ff)
-         ;;                (4 (get (ref ff 4) key def))
-         ;;                (2 def)
-         ;;                (else
-         ;;                   (if (right? ff)
-         ;;                      (get (ref ff 3) key def)
-         ;;                      def))))))))
+         (if (eq? ff #empty)
+            def
+            (let ((this-k (ref ff 1)))
+               (cond
+                  ((eq? this-k key)
+                     (ref ff 2))
+                  ((less? key this-k)
+                     ;; go left if possible
+                     (case (size ff)
+                        (4 (get (ref ff 3) key def))
+                        (2 def)
+                        (else
+                           (if (right? ff)
+                              def
+                              (get (ref ff 3) key def)))))
+                  (else
+                     ;; go right if possible
+                     (case (size ff)
+                        (4 (get (ref ff 4) key def))
+                        (2 def)
+                        (else
+                           (if (right? ff)
+                              (get (ref ff 3) key def)
+                              def))))))))
 
       ; true if changed
       (define (put! ff key value)
