@@ -810,7 +810,7 @@ long from_rational(word arg) {
 	#endif
 	long a = 0;
 	if (is_value(pa))
-		a = svtoi(pa);
+		a = fix(pa);
 	else {
 		switch (reference_type(pa)) {
 		case TINTP:
@@ -827,7 +827,7 @@ long from_rational(word arg) {
 	#endif
 	long b = 1;
 	if (is_value(pb))
-		b = svtoi(pb);
+		b = fix(pb);
 	else {
 		switch (reference_type(pb)) {
 		case TINTP:
@@ -844,8 +844,8 @@ long from_rational(word arg) {
 
 static
 int to_int(word arg) {
-	if (is_value(arg))
-		return svtoi(arg);
+	if (is_fix(arg))
+		return fix(arg);
 
 	switch (reference_type(arg)) {
 	case TINTP:
@@ -866,8 +866,8 @@ int to_int(word arg) {
 /*
 static
 long to_long(word arg) {
-	if (is_value(arg))
-		return svtoi(arg);
+	if (is_fix(arg))
+		return fix(arg);
 
 	switch (reference_type(arg)) {
 	case TINTP:
@@ -993,8 +993,8 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT64: case TUINT64:
 #endif
 		tint:
-			if (is_value(arg))
-				args[i] = svtoi(arg);
+			if (is_fix(arg))
+				args[i] = fix(arg);
 			else
 			switch (reference_type(arg)) {
 			case TINTP:
@@ -1017,8 +1017,8 @@ word* OL_ffi(OL* self, word* arguments)
 
 #if UINTPTR_MAX == 0xffffffff // 32-bit machines
 			case TINT64: case TUINT64: // long long
-				if (is_value(arg))
-					*(long long*)&args[i] = svtoi(arg);
+				if (is_fix(arg))
+					*(long long*)&args[i] = fix(arg);
 				else
 				switch (reference_type(arg)) {
 				case TINTP: // source type

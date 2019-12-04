@@ -1200,6 +1200,35 @@ word*p = new (TVECTOR, 13);\
 			new_vector4, new_vector3, new_vector2, new_vector1, NOTHING)(__VA_ARGS__)
 
 
+
+// -= числа =------------------------
+// todo: потом переделать в трюк
+// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
+// алгоритмические трюки:
+// (-1)^t*x === (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
+
+// i - machine integer
+// ui - unsigned, si - signed
+// v - value number (internal, that fits in one register), type-fix
+//  or small numbers,
+//  or short numbers
+// uv, sv - unsigned/signed respectively.
+// Z - mножество целых чисел.
+
+// работа с numeric value типами
+
+// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
+#define fix(v) \
+	({  word x1 = (word)(v);    \
+		assert(is_fix(x1));     \
+		int_t y1 = (x1 >> IPOS);\
+		is_fixn(x1) ? -y1 : y1; \
+	})//(x1 & 0x80) ? -y1 : y1;
+#define make_fix(v) \
+	(word)({ int_t x2 = (int_t)(v);  make_value(x2, (x2 < 0) ? TFIXN : TFIXP); })
+#define make_fixp(v) I(v)
+
+
 // -= остальные аллокаторы =----------------------------
 
 #define new_bitstream(type, length) ({\
@@ -1598,20 +1627,6 @@ struct ol_t
 #define UVTOI_CHECK(v)  assert (is_value(v) && value_type(v) == TFIXP);
 #endif
 
-// todo: sv2i
-// todo: add overflow checking...
-#ifndef SVTOI_CHECK
-#define SVTOI_CHECK(v) assert (is_value(v) && ((value_type(v) & 0x1F) == TFIXP)); // makes TFIXP from TFIXP and TFIXN
-#endif
-// todo: rename to sv2i (signed value TO integer)
-#define svtoi(v) \
-	({  word x = (word)(v);           \
-		SVTOI_CHECK(x);               \
-		int_t y = (x >> IPOS);        \
-		value_type(x) == TFIXN ? -y : y; \
-	})
-//		(x & 0x80) ? -y : y;
-
 // todo: i2sv
 #define itosv(i)  (word)({ int_t x4 = (int_t)(i);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2; })
 // todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
@@ -1683,10 +1698,9 @@ double ol2d_convert(word p) {
 }
 
 double OL2D(word arg) {
-	if (is_value(arg)) {
-		assert (value_type(arg) == TFIXP || value_type(arg) == TFIXN);
-		return svtoi(arg);
-	}
+	if (is_fix(arg))
+		return fix(arg);
+
 	assert (is_reference(arg));
 	switch (reference_type(arg)) {
 	case TINTP:
@@ -1726,10 +1740,9 @@ float ol2f_convert(word p) {
 	return v;
 }
 float OL2F(word arg) {
-	if (is_value(arg)) {
-		assert (value_type(arg) == TFIXP || value_type(arg) == TFIXN); // shorter: value_type(arg) == TFIXP
-		return svtoi(arg);
-	}
+	if (is_fix(arg))
+		return fix(arg);
+
 	assert (is_reference(arg));
 	switch (reference_type(arg)) {
 	case TINTP:
@@ -2807,7 +2820,7 @@ loop:;
 				size = size * sizeof(word) - header_pads(hdr);
 				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // will add [0..255] numbers
-					((unsigned char*)&car(newobj))[pos] = svtoi(A2) & 0xFF;
+					((unsigned char*)&car(newobj))[pos] = fix(A2) & 0xFF;
 			}
 			else {
 				++size;
@@ -2836,7 +2849,7 @@ loop:;
 				size = size * sizeof(word) - header_pads(hdr);
 				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // will add [0..255] numbers
-					((unsigned char*)&car(p))[pos] = svtoi(A2) & 0xFF;
+					((unsigned char*)&car(p))[pos] = fix(A2) & 0xFF;
 			}
 			else {
 				++size;
