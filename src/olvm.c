@@ -939,7 +939,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 
 #if UINTPTR_MAX == 0xffffffffffffffff
 #	define MATH_64BIT 1
-#	define MATH_32BIT 1
+#	define MATH_32BIT 0
 #elif UINTPTR_MAX == 0xffffffff
 #	define MATH_64BIT 1
 #	define MATH_32BIT 0
