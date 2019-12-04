@@ -771,26 +771,25 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 
 // header making macro
 #define header3(type, size, padding)(2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
-#define header2(type, size)            header3(type, size, 0)
+#define header2(type, size)         header3(type, size, 0)
 #define HEADER_MACRO(_1, _2, _3, NAME, ...) NAME
 #define make_header(...)            HEADER_MACRO(__VA_ARGS__, header3, header2, NOTHING, NOTHING)(__VA_ARGS__)
 
 
 // два главных класса:
-#define is_value(x)                 (((word)(x)) & 2)
-#define is_reference(x)             (! is_value(x))
+#define is_value(x)                 (( (word) (x)) & 2)
+#define is_reference(x)             (!is_value(x))
 #define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to bitstream
 #define is_bitstream(x)             ((*(word*)(x)) & RAWBIT)
 
-// makes olvm reference from system pointer (just sanity check)
-//assert ((val && ~(W-1)) == 0);
+// makes olvm reference from system pointer (and just do sanity check in DEBUG)
 #define R(v) ({\
 		word reference = (word)(v);\
 		assert (!(reference & (W-1)) && "olvm references must be aligned to word boundary");\
 		(word*) reference; })
 
 // всякая всячина:
-#define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size
+#define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
 #define header_pads(x)              (unsigned char) ((((word)(x)) >> IPOS) & 7) // header_t(x).padding
 
 #define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
@@ -861,7 +860,6 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
-//#define is_const(ob)                (is_value(ob)     && thetype (ob) == TCONST)
 #define is_port(ob)                 (\
 									(is_value(ob)     && value_type (ob) == TPORT) || \
 									(is_reference(ob) && reference_type (ob) == TPORT))
@@ -874,8 +872,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
 #define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
 
-#define is_string(ob)               (is_reference(ob) &&   reference_type (ob) == TSTRING)
-#define is_vector(ob)               (is_reference(ob) &&   reference_type (ob) == TVECTOR)
+#define is_string(ob)               (is_reference(ob) && reference_type (ob) == TSTRING)
+#define is_vector(ob)               (is_reference(ob) && reference_type (ob) == TVECTOR)
 
 #define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TVPTR,     2))
 #define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TCALLABLE, 2))
@@ -886,7 +884,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 
 // makes positive olvm integer value from int
 #define I(val) \
-		(make_value(0, val))  // === (value << IPOS) | 2
+		(make_value(TFIXP, val))  // === (value << IPOS) | 2
 
 // взять значение аргумента:
 #define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
@@ -939,18 +937,21 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 // Other models are rare. For example, ILP64 or 8/8/8: int, long and pointer — 64 bits)
 //  only in some older 64-bit Unix-systems (Unicos for Cray, etc.)
 
-
 #if UINTPTR_MAX == 0xffffffffffffffff
-#define MATH_64BIT 1
+#	define MATH_64BIT 1
+#	define MATH_32BIT 1
+#elif UINTPTR_MAX == 0xffffffff
+#	define MATH_64BIT 1
+#	define MATH_32BIT 0
 #else
-#define MATH_64BIT 0
+#	error Unsupported math bit-count
 #endif
 
 // http://www.delorie.com/gnu/docs/gcc/gccint_53.html
 #if MATH_64BIT
 typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
 typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
-#else
+#elif MATH_32BIT
 typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
 typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 #endif
@@ -992,26 +993,24 @@ typedef struct heap_t
 
 // -= new =--------------------------------------------
 // выделить блок памяти, unsafe
-// size is payload size, not a size of whole object
-// so really we allocating (size+1) words
-#define NEW(size) ({\
-	word* addr = fp;\
+// size is a payload size, not a size of whole object
+// so in fact we'r allocating (size+1) words
+#define NEW(size) ({ \
+	word* addr = fp; \
 	fp += (size) + 1;\
-	/*return*/ addr;\
+	/*return*/ addr; \
 })
 
 // аллоцировать новый объект (указанного типа)
-// temporarily make_header use real object size, not with payload (todo: change this)
 #define NEW_OBJECT(type, size) ({\
 word*p = NEW (size);\
 	*p = make_header(type, size+1, 0);\
 	/*return*/ p;\
 })
 
-// аллоцировать новый "сырой" объект (указанного типа),
+// аллоцировать новый "бинарный" объект (указанного типа),
 //  данные объекта не проверяются сборщиком мусора и не
-//  должны содержать другие объекты!
-// todo: same as new_object
+//  могут содержать другие объекты!
 #define NEW_BLOB(type, size, pads) ({\
 word*p = NEW (size);\
 	*p = make_header(BINARY|type, size+1, pads);\
@@ -1098,7 +1097,6 @@ word*p = NEW_OBJECT (type, 2);\
 
 // -= new_vector =---------------------------------------
 
-// кортеж:
 #define new_vector1(a1) ({\
 	word data1 = (word) (a1);\
 	/* точка следования */ \
@@ -1705,7 +1703,7 @@ double OL2D(word arg) {
 	case TRATIONAL:
 		return OL2D(car(arg)) / OL2D(cdr(arg));
 	case TBYTEVECTOR: // is it required?
-		switch (blob_size(arg)) {
+		switch (bitstream_size(arg)) {
 			case sizeof(float):
 				return *(float*)&car(arg);
 			case sizeof(double):
@@ -1767,7 +1765,6 @@ float OL2F(word arg) {
 }
 
 // TODO: add memory checking
-// TODO: добавить сокращение до правильной дроби!
 word d2ol(struct ol_t* ol, double v) {
 	// check for non representable numbers:
 	if (v == INFINITY || v == -INFINITY || v == NAN)
@@ -5020,7 +5017,7 @@ OL_new(unsigned char* bootstrap)
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	word* R = handle->R; // регистры виртуальной машины:
 	for (ptrdiff_t i = 0; i < NR+CR; i++)
-		R[i] = IFALSE; // was: INULL, why??
+		R[i] = IFALSE;
 	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
 	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
 	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
