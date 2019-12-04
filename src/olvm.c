@@ -1409,19 +1409,14 @@ word *sweep(word* end, heap_t* heap)
 static
 word gc(heap_t *heap, int query, word regs)
 {
+	word *fp;
 	if (query == 0) // сделать полную сборку?
 		heap->genstart = heap->begin; // start full generation
 
-	//if (heap->genstart == heap->begin)
-	//	fprintf(stderr, "+");
-	//else
-	//	fprintf(stderr, ".");
 	#if DEBUG_GC
 	fprintf(stderr, "(%6lld)", sizeof(word) * (heap->end - heap->fp));
 	#endif
 
-	// gc:
-	word *fp;
 	fp = heap->fp;
 	{
 		*fp = make_header(TVECTOR, 2); // этого можно не делать
@@ -1477,12 +1472,10 @@ word gc(heap_t *heap, int query, word regs)
 		if (nused > (hsize / 2)) {
 			if (nused < hsize)
 				nused = hsize;
-			//fprintf(stderr, ">");
 			regs += resize_heap(heap, nused + nused / 3) * W;
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
 		else if (nused < (hsize / 3)) {
-			//fprintf(stderr, "<");
 			regs += resize_heap(heap, hsize - hsize / 9) * W;
 		}
 		heap->genstart = (word*)regs; // always start new generation
@@ -1491,7 +1484,7 @@ word gc(heap_t *heap, int query, word regs)
 	//  иначе, у нас слишком часто будет вызываться сборщик
 	// TODO: посчитать математически, на каком именно числе
 	//  стоит остановиться, чтобы ни слишком часто не проводить молодую сборку,
-	//  ни слишком часто старую. мне, по тестам кажется, что 20% это вполне ок.
+	//  ни слишком часто старую. мне по тестам кажется, что 20% это вполне ок.
 	else if ((nfree - query) < hsize / 5) {
 		heap->genstart = heap->begin; // force start full generation
 		return gc(heap, query, regs);
@@ -1877,7 +1870,7 @@ long long callback(OL* ol, int id, int_t* argi
 #endif
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
-static int OL__gc(OL* ol, int ws) // ws - required size in words
+static int OL_gc(OL* ol, int ws) // ws - required size in words
 {
 	word *fp = ol->heap.fp; // memory allocation pointer
 
@@ -5023,16 +5016,17 @@ OL_new(unsigned char* bootstrap)
 	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
 
 
-	handle->gc = OL__gc;
-//	handle->exit = exit;
-
 	handle->open = os_open;
 	handle->close = os_close;
 	handle->read = os_read;
 	handle->write = os_write;
 
+	handle->gc = OL_gc;
+//	handle->exit = exit;
+
 	heap->fp = fp;
 	return handle;
+
 fail:
 	OL_free(handle);
 	return 0;
