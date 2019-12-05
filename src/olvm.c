@@ -941,8 +941,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #	define MATH_64BIT 1
 #	define MATH_32BIT 0
 #elif UINTPTR_MAX == 0xffffffff
-#	define MATH_64BIT 1
-#	define MATH_32BIT 0
+#	define MATH_64BIT 0
+#	define MATH_32BIT 1
 #else
 #	error Unsupported math bit-count
 #endif
@@ -3700,13 +3700,11 @@ loop:;
 			// (EXECVE program-or-function env (vector port port port))
 			// http://linux.die.net/man/3/execve
 			case SYSCALL_EXECVE: {
-				CHECK_ARGC_EQ(2);
 				CHECK_VPTR_OR_STRING(1);
-				// todo: check A2 argument
-
 #if HAS_DLOPEN
 				// if a is result of dlsym
 				if (is_vptr(A1)) {
+					CHECK_ARGC_EQ(2);
 					// a - function address (port)
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 					word* A = (word*)A1;
@@ -3733,6 +3731,8 @@ loop:;
 #endif //HAS_DLOPEN
 				// if a is string:
 				if (is_string(A1)) {
+					CHECK_ARGC_EQ(3);
+
 					char* command = string(A1);
 					word b = A2;
 					word c = A3;
@@ -4941,7 +4941,7 @@ int main(int argc, char** argv)
 
 fail:;
 	int e = errno;
-	E("%s (errno: %d)", message, errno);
+	E("%s (errno: %d, %s)", message, errno, strerror(errno));
 	return e;
 }
 #endif
