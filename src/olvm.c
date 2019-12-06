@@ -1225,9 +1225,9 @@ word*p = new (TVECTOR, 13);\
 		is_fixn(x1) ? -y1 : y1; \
 	})//(x1 & 0x80) ? -y1 : y1;
 #define make_fix(v) \
-	(word)({ int_t x2 = (int_t)(v);  make_value(x2, (x2 < 0) ? TFIXN : TFIXP); })
+	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2/*make_value(-x4, TFIXN) : make_value(x4, TFIXP)*/; })
 #define make_fixp(v) I(v)
-
+// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 
 // -= остальные аллокаторы =----------------------------
 
@@ -1627,10 +1627,6 @@ struct ol_t
 #define UVTOI_CHECK(v)  assert (is_value(v) && value_type(v) == TFIXP);
 #endif
 
-// todo: i2sv
-#define itosv(i)  (word)({ int_t x4 = (int_t)(i);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2; })
-// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
-
 // арифметика целых (возможно больших)
 // прошу внимания!
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
@@ -1657,12 +1653,12 @@ struct ol_t
 	})
 #define itosn(val)  ({\
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)itosv(val),\
+		(word*)make_fix(val),\
 		(word*)({ \
 			intptr_t x5 = (intptr_t)(val); \
 			intptr_t x6 = x5 < 0 ? -x5 : x5; \
 			x6 <= VMAX ? \
-					(word)itosv(x5): \
+					(word)make_fix(x5): \
 					(word)new_list(x5 < 0 ? TINTN : TINTP, I(x6 & VMAX), I(x6 >> VBITS)); \
 		})); \
 	})
@@ -4333,7 +4329,7 @@ loop:;
 				}
 				case TINTP: {
 					int v = emscripten_run_script_int(string);
-					r = (word*)itosv(v);
+					r = (word*)make_fix(v);
 					break;
 				}
 				default:
@@ -4457,7 +4453,7 @@ loop:;
 
 		// // (FORK)
 		// case 57: {
-		// 	//result = (word*) itosv(fork());
+		// 	//result = (word*) make_fix(fork());
 		// 	break;
 		// }
 

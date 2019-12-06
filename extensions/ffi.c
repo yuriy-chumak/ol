@@ -1388,7 +1388,7 @@ word* OL_ffi(OL* self, word* arguments)
 //			args[i] = (word)arg;
 //			break;
 		case TPORT: {
-			if (arg == itosv(-1)) { // ?
+			if (arg == make_fix(-1)) { // ?
 				args[i] = -1;
 				break;
 			}
@@ -1522,7 +1522,7 @@ word* OL_ffi(OL* self, word* arguments)
 					short value = *f++;
 					word* ptr = &car(l);
 
-					*ptr = itosv(value);
+					*ptr = make_fix(value);
 					l = cdr(l);
 				}
 				break;
@@ -1571,8 +1571,7 @@ word* OL_ffi(OL* self, word* arguments)
 					}
 					else
 				#endif
-						*ptr = itosv(value);
-
+					*ptr = make_fix(value);
 					l = cdr(l);
 				}
 				break;
@@ -1623,10 +1622,10 @@ word* OL_ffi(OL* self, word* arguments)
 						// 	// максимальная читабельность (todo: change like fto..)
 						// 	long n = value * 10000;
 						// 	long d = 10000;
-						// 	car(num) = itosv(n);
-						// 	cdr(num) = itosv(d);
+						// 	car(num) = make_fix(n);
+						// 	cdr(num) = make_fix(d);
 						// 	// максимальная точность (fixme: пока не работает как надо)
-						// 	//car(num) = itosv(value * VMAX);
+						// 	//car(num) = make_fix(value * VMAX);
 						// 	//cdr(num) = I(VMAX);
 						// 	break;
 						// }
@@ -1707,7 +1706,7 @@ word* OL_ffi(OL* self, word* arguments)
 	switch (returntype) {
 		// TFIXP - deprecated
 		case TFIXP: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) itosv (got);
+			result = (word*) make_fix(got);
 			break;
 
 		case TINT8:
