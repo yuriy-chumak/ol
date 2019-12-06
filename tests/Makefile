@@ -79,12 +79,13 @@ test-ffi:
 	   -fsigned-char # for ffi tests we should use char as signed by default
 	   @echo -n "Testing $(ffi)$(affix)$(bits) ... "
 	   @if $(ffi)$(affix)$(bits) repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
-	      echo "Ok.";\
+	      echo "\033[1;32mOk\033[0m.";\
 	   else \
-	      echo "failed." ;\
+	      echo "\033[1;32mfailed\033[0m." ;\
 	      touch $(FAILED);\
 	   fi
 ffi=tmp/ffi
+
 
 test-ffi-debug: CFLAGS += $(CFLAGS_DEBUG)
 test-ffi-debug: affix=d
@@ -210,7 +211,7 @@ ifeq ($(HAS_64CDEFS),1)
 	@$(CC) tests/embed.c src/olvm.c tmp/repl64 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed64d \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m64
 	@if tmp/embed64d >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
@@ -219,7 +220,7 @@ ifeq ($(HAS_64CDEFS),1)
 	@$(CC) tests/embed.c src/olvm.c tmp/repl64 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed64r \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m64
 	@if tmp/embed64r >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
@@ -231,7 +232,7 @@ else
 	@$(CC) tests/embed.c src/olvm.c tmp/repl64 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embedd \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
 	@if tmp/embedd >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
@@ -240,7 +241,7 @@ else
 	@$(CC) tests/embed.c src/olvm.c tmp/repl64 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embedr \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_RELEASE)
 	@if tmp/embedr >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
@@ -254,14 +255,14 @@ ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main deve
 ifeq ($(HAS_32CDEFS),1)
 	@echo -n ", debug-32: "
 	@if ([ -f $^.in ] && $(vm)d32 repl $^ <$^.in || $(vm)d32 repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
 	fi
 	@echo -n ", release-32: "
 	@if ([ -f $^.in ] && $(vm)r32 repl $^ <$^.in || $(vm)r32 repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
@@ -270,14 +271,14 @@ endif
 ifeq ($(HAS_64CDEFS),1)
 	@echo -n ", debug-64: "
 	@if ([ -f $^.in ] && $(vm)d64 repl $^ <$^.in || $(vm)d64 repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
 	fi
 	@echo -n ", release-64: "
 	@if ([ -f $^.in ] && $(vm)r64 repl $^ <$^.in || $(vm)r64 repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
@@ -286,14 +287,14 @@ endif
 else
 	@echo -n ", debug: "
 	@if ([ -f $^.in ] && $(vm)d repl $^ <$^.in || $(vm)d repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
 	fi
 	@echo -n ", release: "
 	@if ([ -f $^.in ] && $(vm)r repl $^ <$^.in || $(vm)r repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n "ok" ;\
+	   echo -n "\033[1;32mok\033[0m" ;\
 	else \
 	   echo -n "\033[0;31mfailed\033[0m" ;\
 	   touch $(FAILED) ;\
@@ -346,6 +347,6 @@ endif
 	   $(MAKE) -s -B $$F.ok ;\
 	done
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
-	@echo "passed!"
+	@echo "\033[1;32mpassed!\033[0m"
 
 endif
