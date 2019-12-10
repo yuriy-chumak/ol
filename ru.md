@@ -32,7 +32,7 @@ Ol реализован как расширенное подмножество S
 - [x] GNU/Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
 - [x] Windows: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.
 - [x] Unix: OpenBSD, FreeBSD, NetBSD.
-- [x] Android: all versions up to Nougat (должны поддерживать все, включая последнюю)
+- [x] Android: all versions up to Nougat (должны поддерживаться все, включая последнюю)
 - [x] webOS: 2.0.
 - [x] Odroid: [C1+](https://www.hardkernel.com/main/products/prdt_info.php?g_code=G143703355573).
 - [x] Minoca [OS](https://www.minocacorp.com/product/).
