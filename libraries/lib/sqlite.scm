@@ -244,27 +244,26 @@
    (otus lisp)
    (otus ffi))
 
+(cond-expand
+   (Linux
+      (begin
+         (define sqlite (load-dynamic-library "libsqlite3.so"))))
+   (Android
+      (begin
+         (define sqlite (load-dynamic-library "libsqlite.so"))))
+   (Windows
+      (begin
+         (define sqlite (load-dynamic-library "sqlite3.dll"))))
+   (else
+      (begin
+         (runtime-error "sqlite3: unknown platform" (uname)))))
+
 (begin
-
-(define uname (uname))
-
-(define win32? (string-ci=? (ref uname 1) "Windows"))
-(define linux? (string-ci=? (ref uname 1) "Linux"))
 
 (define (make-void*) (vm:cast 0 type-vptr))
 
-(define sqlite (load-dynamic-library (cond
-   (win32? "sqlite3")
-   (linux? "libsqlite3.so")
-   (else
-      (runtime-error "sqlite3: unknown platform" uname)))))
-
 (if (not sqlite)
-   (runtime-error "Can't load sqlite3 library." (cond
-      (win32?
-         "Download dll from http://www.sqlite.org/download.html")
-      (linux?
-         "Use, for example, sudo apt-get install libsqlite3-dev"))))
+   (runtime-error "Not found sqlite3 library. Please download and install one." #null))
 
 
 ; TEMP:
@@ -467,7 +466,7 @@
 ; при инвалидном запросе бросает runtime исключение
 ; select multiple values
 (define (sqlite:query database query . args)
-   (print "SQLITE: \e[0;35m" query "\e[0;0m: (" (length args) ")> " args)
+   ;(print "SQLITE: \e[0;35m" query "\e[0;0m: (" (length args) ")> " args)
    (let ((statement (make-sqlite3_stmt)))
       (unless (eq? 0 (sqlite3_prepare_v2 database (c-string query) -1 statement #f))
          (runtime-error "error query preparation:" (list
