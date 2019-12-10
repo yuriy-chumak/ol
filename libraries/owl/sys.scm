@@ -90,13 +90,9 @@
       ;; path (arg0 ...), arg0 customarily being path
       ;; returns only if exec fails
 
-      (define (system path args)
-         (let*
-            ((path (c-string path))
-             (args (map c-string args)))
-            (if (and path (all (λ (x) x) args))
-               (syscall 1017 path args)
-               (cons path args))))
+      (define (system command . args)
+         (syscall 1017 (c-string
+            (fold (lambda (f s) (string-append f (string-append " " s))) "" (cons command args)))))
 
       (define sighup   1)      ; hangup from controlling terminal or proces
       (define signint  2)      ; interrupt (keyboard)

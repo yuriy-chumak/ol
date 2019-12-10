@@ -4256,7 +4256,7 @@ loop:;
 			case 1017: { // system (char*) // todo: remove this !!!!!!
 				int q = system(string(A1));
 				if (q >= 0)
-					r = itoun(q);
+					r = make_number(q);
 				break;
 			}
 // 			// kill
