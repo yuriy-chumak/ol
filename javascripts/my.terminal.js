@@ -110,8 +110,7 @@ var Module = {
       terminal.echo(text);
 
       ga('send', 'event', 'Console', 'stdout', text, {
-         nonInteraction: true
-       });
+         nonInteraction: true});
 
 
       // well, we got greeting. let's import (lib opengl)
@@ -125,11 +124,8 @@ var Module = {
       console.log("error: ", text);
       terminal.error(text);
 
-      ga('send', 'exception', {
-         'exDescription': text,
-         'exFatal': false
-       });
-
+      ga('send', 'event', 'Console', 'stderr', text, {
+         nonInteraction: true});
       showTerminal();
    },
 /*   canvas: (function() {
