@@ -20,51 +20,6 @@ jni/../obj/local/$(TARGET_ARCH_ABI)/repl.o: $(TOOLCHAIN_PREFIX)objcopy jni/../ob
 jni/../obj/local/$(TARGET_ARCH_ABI)/repl.c: jni/../obj/local/$(TARGET_ARCH_ABI)/repl.o
 	@echo // This empty file required by the stupid Android build system >$@
 
-
-# # -----------------------------------------------------------------------
-# # default FreeType build for Android ------------------------------------
-# #
-include $(CLEAR_VARS)
-LOCAL_MODULE := libfreetype
-
-# compile in ARM mode, since the glyph loader/renderer is a hotspot
-# when loading complex pages in the browser
-#
-# LOCAL_ARM_MODE := arm
-
-LOCAL_SRC_FILES:= \
-	src/base/ftbbox.c \
-	src/base/ftbitmap.c \
-	src/base/ftglyph.c \
-	src/base/ftstroke.c \
-	src/base/ftxf86.c \
-	src/base/ftbase.c \
-	src/base/ftsystem.c \
-	src/base/ftinit.c \
-	src/base/ftgasp.c \
-	src/raster/raster.c \
-	src/sfnt/sfnt.c \
-	src/smooth/smooth.c \
-	src/autofit/autofit.c \
-	src/truetype/truetype.c \
-	src/cff/cff.c \
-	src/psnames/psnames.c \
-	src/pshinter/pshinter.c
-
-LOCAL_C_INCLUDES += \
-	$(LOCAL_PATH)/builds \
-	$(LOCAL_PATH)/include
-
-LOCAL_CFLAGS += -W -Wall
-LOCAL_CFLAGS += -fPIC -DPIC
-LOCAL_CFLAGS += "-DDARWIN_NO_CARBON"
-LOCAL_CFLAGS += "-DFT2_BUILD_LIBRARY"
-
-LOCAL_CFLAGS += -O2
-
-include $(BUILD_SHARED_LIBRARY)
-
-
 # OL -----------------------------------------------------------------------------
 #
 include $(CLEAR_VARS)
@@ -81,8 +36,7 @@ LOCAL_LDLIBS    += -llog -landroid
 
 LOCAL_CFLAGS    += -Ijni/include
 
-include $(BUILD_SHARED_LIBRARY)
-#include $(BUILD_EXECUTABLE)
+include $(BUILD_EXECUTABLE)
 
 # NOTES:
 #
