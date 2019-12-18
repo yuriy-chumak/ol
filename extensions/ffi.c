@@ -1711,17 +1711,17 @@ word* OL_ffi(OL* self, word* arguments)
 
 		case TINT8:
 			// little-endian:
-			result = (word*) itosn (*(char*)&got);  // TODO: change to __INT8_TYPE__
+			result = (word*) make_number (*(char*)&got);  // TODO: change to __INT8_TYPE__
 			break;
 		case TINT16:
-			result = (word*) itosn (*(short*)&got); // TODO: change to __INT16_TYPE__
+			result = (word*) make_number (*(short*)&got); // TODO: change to __INT16_TYPE__
 			break;
 		case TINT32:
-			result = (word*) itosn (*(int*)&got);   // TODO: change to __INT32_TYPE__
+			result = (word*) make_number (*(int*)&got);   // TODO: change to __INT32_TYPE__
 			break;
 		case TINT64: {
 #if UINTPTR_MAX == 0xffffffffffffffff
-			result = (word*) itosn (*(long long*)&got); // TODO: change to __INT64_TYPE__
+			result = (word*) make_number (*(long long*)&got); // TODO: change to __INT64_TYPE__
 #else
 #	ifndef __EMSCRIPTEN__
 			word* new_npair(int type, long long value) {
