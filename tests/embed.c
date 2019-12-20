@@ -32,14 +32,14 @@ int main(int argc, char** argv)
 	//
 	// 3. if eval got one numerical parameter and maybe more than 0 arguments
 	//    this case means case 2, but with function referenced not by name but by
-	//    'pin' id. So function must be pinned object.
+	//    'pinned' id. So function must be pinned object.
 	//
 	// 4. and at last if eval received bytevector it tries to decode it as fasl
 	//    object and evaluate like 2 or 3.
 
-	// few words about 3 and 4 will be above with samples.
+	// few words about 3 and 4 will be later with samples.
 
-	// Note: if you want to call expression, but you have not arguments, just use
+	// Note: if you want to call expression, but you have no arguments, just use
 	//       parenthesis, like "(print)" instead of "print"
 
 
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 
 	// * ok, how about functions? let's sum three numbers
 	r = embed_eval(&ol, new_string(&ol, "+"), make_integer(1), make_integer(2), make_integer(103), 0);
-	assert (r == make_integer(106));
+	assert (r == make_integer(106)); // 1 + 2 + 103
 
 	// * maybe custom function?
 	r = embed_eval(&ol, new_string(&ol, "(define (f x) (if (eq? x 0) 1 (* x (f (- x 1)))))"), 0);
@@ -103,8 +103,8 @@ int main(int argc, char** argv)
 //*/  end of C preprocessor trick
 
 // just code simplification (magic):
-// we automatically will call new_string and make_integer depends on argument
-// but in general case you should manually do this. or not.
+// we automatically call new_string or make_integer depends on argument
+//   but in general case you should manually do this. or not.
 #define _Q(x) \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),   new_string(&ol, (char*)(uintptr_t)x), \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),    new_string(&ol, (char*)(uintptr_t)x), \
@@ -118,14 +118,14 @@ int main(int argc, char** argv)
 
 	// * ok, how about functions? let's sum three numbers
 	r = eval("+", 1, 2, 103);
-	assert (r == make_integer(106));
+	assert (r == make_integer(106)); // 1 + 2 + 103
 
-	// * maybe custom function?
+	// * maybe custom function (factorial)?
 	r = eval("(define (f x) (if (eq? x 0) 1 (* x (f (- x 1)))))");
 	assert (r != IFALSE);
 
 	r = eval("f", 7);
-	assert (r == make_integer(5040));
+	assert (r == make_integer(5040)); // 7!
 
 	// Much better, huh?
 
@@ -134,15 +134,15 @@ int main(int argc, char** argv)
 	r = eval("(vm:pin f)");
 	assert (is_value(r));
 
-	// very simple, yes? Please, don't forget to delete this function when you will no need it enymore
+	// very simple, yes? Please, don't forget to delete this function when you will no need it anymore
 	uintptr_t f = r;
 	r = eval(f, 4);
-	assert (r = make_integer(24));
+	assert (r = make_integer(24)); // 4!
 	r = eval(f, 7);
-	assert (r = make_integer(5040));
+	assert (r = make_integer(5040)); // 7!
 
-	// r = eval("vm:unpin", f); // free
-	// assert (r == ITRUE);
+	r = eval("vm:unpin", f); // free
+	assert (r == ITRUE);
 
 
 	// Ok. What about precompiled core? For example ..... some naive cryptography?
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
 	assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", 47) == 0);
 
 	// wow, it works! But if we want frequently use causar function, let's decode, compile and 'pin' it into olvm memory
-    eval("(import (scheme bytevector))");
+	    eval("(import (scheme bytevector))");
 	r = eval("(define (compile bytecode) (vm:pin (fasl-decode (bytevector->list bytecode) #f)))");
 	assert (r != IFALSE);
 	r = eval("compile", new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])));
