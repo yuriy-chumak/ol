@@ -1351,8 +1351,8 @@ word* OL_ffi(OL* self, word* arguments)
 				*p = 0;
 
 				args[i] = (word) unicode;
-			}
 				break;
+			}
 			default:
 				E("invalid parameter values (requested string)");
 			}
