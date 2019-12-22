@@ -50,7 +50,7 @@
                (pairs (sort (lambda (a b) (< (car a) (car b))) ; отсортированный и
                   (filter (lambda (a) (not (eq? (car a) 0)))   ; отфильтрованный массив
                      (map (lambda (a b) (cons a b))            ; ( длина кода хаффмана . кодируемое ею значение )
-                        (vector->list lengths) (iota (size lengths))))))
+                        (bytevector->list lengths) (iota (size lengths))))))
                (code 0) (len 0))
       (if (null? pairs)
          codes ; вернем коды
