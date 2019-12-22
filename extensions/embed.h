@@ -49,7 +49,7 @@ typedef struct ol_t
 #define is_reference(x) (!is_value(x))
 
 //! returns the type of provided ol value
-#define valuetype(x) ({ uintptr_t p = (uintptr_t)(x);\
+#define vtype(x) ({ uintptr_t p = (uintptr_t)(x);\
 		assert (is_value(p) && "argument should be value");\
 		(unsigned char)((( (uintptr_t )(p)) >> 2) & 0x3F); })
 
@@ -61,7 +61,7 @@ typedef struct ol_t
 //! returns not 0 if argument is a small number (type-fix+ or type-fix-)
 #define is_small(x) ({ uintptr_t s = (uintptr_t)(x);\
 		is_value(s) ?\
-			valuetype(s) == 0 || valuetype(s) == 32\
+			vtype(s) == 0 || vtype(s) == 32\
 		: 0; })
 
 //! returns not 0 if argument is a number (type-int+ or type-num-)
