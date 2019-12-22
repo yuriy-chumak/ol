@@ -22,10 +22,11 @@
 (define VBO (unbox VBO))
 
 (glBindBuffer GL_ARRAY_BUFFER VBO)
+(define fft-float* (fft* fft-float))
 
-(define Vertices '(1 0 0) '(1 1 0) '(0 1 0))
-(glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length Vertices)) (cons (fft* fft-float) Vertices) GL_STATIC_DRAW)
-(glEnableVertexAttribArray 0)
+(define Vertices '((0 0 0) (0.1 0 0)  (0.1 0.1 0)  (0 0.1 0)))
+(glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) 3 (length Vertices)) (cons fft-float* (apply append Vertices)) GL_STATIC_DRAW) ; 3 for x,y,z
+   (glEnableVertexAttribArray 0)
 
 
 ; draw loop
@@ -33,5 +34,5 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glBindBuffer GL_ARRAY_BUFFER VBO)
-   (glVertexAttribPointer 0 3 GL_FLOAT GL_FALSE 0 nullptr)
-   (glDrawArrays GL_POINTS 0 3)))
+   (glVertexAttribPointer 0 3 GL_FLOAT GL_FALSE 0 nullptr) ; 3 for x,y,z
+   (glDrawArrays GL_POINTS 0 4))) ; totally 4 points

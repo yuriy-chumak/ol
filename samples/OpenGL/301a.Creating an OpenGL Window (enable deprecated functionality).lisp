@@ -7,8 +7,9 @@
    (import (otus lisp))
    (export config)
    (begin
-      (define config (put #empty 'GL_VERSION_1_2_DEPRECATED #true))
-))
+      (define config {
+         'GL_VERSION_1_2_DEPRECATED #true
+      })))
 
 (gl:set-context-version 3 2) ; use OpenGL version 3.0
 (import (OpenGL version-3-2))
@@ -23,7 +24,7 @@
 
 ; init
 (glShadeModel GL_SMOOTH)
-(glClearColor 0.11 0.11 0.11 1)
+(glClearColor 0.3 0.3 0.3 1)
 
 (print "enabled deprecated 1.2:")
 (print "   GL_VERSION_1_2_DEPRECATED: " GL_VERSION_1_2_DEPRECATED)
