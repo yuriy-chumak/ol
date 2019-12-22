@@ -115,10 +115,10 @@ glDrawArrays
 
       (if (eq? (unbox isCompiled) 0)
          (let*((maxLength (box 0))
-               (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
+               (_ (glGetShaderiv fs GL_INFO_LOG_LENGTH maxLength))
                (maxLengthValue (unbox maxLength))
                (errorLog (make-string maxLengthValue 0))
-               (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
+               (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
             (runtime-error errorLog fs))))
 
    (glAttachShader po fs)
