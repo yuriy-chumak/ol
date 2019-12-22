@@ -329,16 +329,20 @@
    (exports (OpenGL version-2-1)))
 
 (import (scheme core)
-   (OpenGL version-2-1)
-   (OpenGL GLX ARB create_context)
-   (OpenGL WGL ARB create_context))
+   (OpenGL version-2-1))
+
+; os independent context creation function:
+(cond-expand
+   (Windows
+      (import (OpenGL WGL ARB create_context))
+      (begin
+         (define gl:CreateContextAttribs wglCreateContextAttribsARB)))
+   (else
+      (import (OpenGL GLX ARB create_context))
+      (begin
+         (define gl:CreateContextAttribs glXCreateContextAttribsARB))))
 
 (begin
-   ; os independent context creation function:
-   (define gl:CreateContextAttribs (cond
-      (glXCreateContextAttribsARB glXCreateContextAttribsARB)
-      (wglCreateContextAttribsARB wglCreateContextAttribsARB)))
-
    (define GL_VERSION_3_0 1)
 
    (define GL_COMPARE_REF_TO_TEXTURE         #x884E) ; GL_COMPARE_R_TO_TEXTURE_ARB (GL_ARB_shadow)
