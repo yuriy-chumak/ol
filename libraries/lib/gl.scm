@@ -31,6 +31,7 @@
    gl:finish ; if renderer exists - wait for window close, else just glFinish
 
    gl:window-dimensions
+   gl:get-window-width gl:get-window-height
 
    gl:hide-cursor
    *atexit*)
@@ -85,6 +86,11 @@
 ;                                  and 72057594037927935 for x64 build.
    (define gl:window-dimensions [0 0 WIDTH HEIGHT]); x y width height
    (define STATE gl:window-dimensions) ;[0 0 WIDTH HEIGHT]) ; current window state
+
+   (define (gl:get-window-width)
+      (ref STATE 3))
+   (define (gl:get-window-height)
+      (ref STATE 4))
 )
 
 ; ===================================================
