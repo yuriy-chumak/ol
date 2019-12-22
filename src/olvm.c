@@ -2735,7 +2735,7 @@ loop:;
 			}
 			else
 			{
-				// make a clone of more desired type
+				// make a object clone with defined new type
 				word* ob = (word*)T;
 				word hdr = *ob++;
 				int size = header_size(hdr)-1; // (-1) for header
@@ -3002,8 +3002,8 @@ loop:;
 		A0 = I(VBITS);
 		ip += 1; break;
 
-	// bind tuple to registers
-	case TUPLEAPPLY: { /* bind <tuple > <n> <r0> .. <rn> */
+	// bind vector to registers
+	case TUPLEAPPLY: { /* bind <vector > <n> <r0> .. <rn> */
 		word *tuple = (word *) R[*ip++];
 		//CHECK(is_reference(tuple), tuple, BIND);
 
