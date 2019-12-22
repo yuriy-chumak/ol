@@ -446,7 +446,7 @@
       ; library syntax:  (letrec* ...) - r7rs
       ;(define-syntax letrec*
       ;   (syntax-rules ()
-      ;      ((letrec () . body)
+      ;      ((letrec* () . body)
       ;         (begin . body))
       ;      ((letrec* ((var val) . rest) . body)
       ;         (letrec ((var val))
