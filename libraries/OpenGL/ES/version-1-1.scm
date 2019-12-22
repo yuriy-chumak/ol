@@ -663,9 +663,6 @@
       glVertexPointer ; void (GLint size, GLenum type, GLsizei stride, const void *pointer);
       glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height);
 
-      ; TODO: rename or move to appropriate place
-      ;gl:CreateProgram
-
       glBegin glEnd
       glVertex2f glColor3f
       glTexCoord2f
@@ -1193,55 +1190,8 @@
    (define glViewport (GLES GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
    ; ========================================================================
-   ; additional OpenGL simulation layer
-
-;; (define (gl:CreateProgram vstext fstext)
-;; (let ((po (glCreateProgram))
-;;       (vs (glCreateShader GL_VERTEX_SHADER))
-;;       (fs (glCreateShader GL_FRAGMENT_SHADER)))
-;;    (if (= po 0)
-;;       (runtime-error "Can't create shader program." #f))
-
-;;    ; пример, как можно передать в функцию массив указателей на строки:
-;;    ; vertex shader:
-;;    ; http://steps3d.narod.ru/tutorials/lighting-tutorial.html
-;;    (glShaderSource vs 1 (list (c-string vstext)) #false)
-;;    (glCompileShader vs)
-;;    (let ((isCompiled (box 0)))
-;;       (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
-
-;;       (if (eq? (unbox isCompiled) 0)
-;;          (let*((maxLength (box 0))
-;;                (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
-;;                (maxLengthValue (unbox maxLength))
-;;                (errorLog (make-string maxLengthValue 0))
-;;                (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
-;;             (runtime-error errorLog vs))))
-;;    (glAttachShader po vs)
-
-;;    ; fragment shader:
-;;    (glShaderSource fs 1 (list (c-string fstext)) #false)
-;;    (glCompileShader fs)
-;;    (let ((isCompiled '(0)))
-;;       (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
-
-;;       (if (eq? (unbox isCompiled) 0)
-;;          (let*((maxLength (box 0))
-;;                (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
-;;                (maxLengthValue (unbox maxLength))
-;;                (errorLog (make-string maxLengthValue 0))
-;;                (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
-;;             (runtime-error errorLog fs))))
-
-;;    (glAttachShader po fs)
-
-;;    (glLinkProgram po)
-;;    (glDetachShader po fs)
-;;    (glDetachShader po vs)
-
-;;    po)) ; return program
-
    ; additional glBegin/glEnd compatibility functions
+
    (define fft-float* (fft* fft-float))
 
    (fork-server 'opengl-compat (lambda ()
