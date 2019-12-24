@@ -1,5 +1,5 @@
 #!/usr/bin/ol
-(import (lib gl))
+(import (lib gl3))
 (gl:set-window-title "1. Creating an OpenGL 3.0 Window")
 
 (gl:set-context-version 3 0) ; use OpenGL version 3.0

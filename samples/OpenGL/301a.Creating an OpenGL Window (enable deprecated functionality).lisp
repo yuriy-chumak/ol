@@ -1,5 +1,5 @@
 #!/usr/bin/ol
-(import (lib gl))
+(import (lib gl3))
 (gl:set-window-title "1. Creating an OpenGL 3.0 Window")
 
 ; change OpenGL config
@@ -11,7 +11,7 @@
          'GL_VERSION_1_2_DEPRECATED #true
       })))
 
-(gl:set-context-version 3 2) ; use OpenGL version 3.0
+(gl:set-context-version 3 2) ; use OpenGL version 3.2
 (import (OpenGL version-3-2))
 
 ; let's check context version
