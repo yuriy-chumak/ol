@@ -33,6 +33,8 @@
    gl:get-window-width gl:get-window-height
 
    gl:hide-cursor
+
+   native:enable-context native:disable-context
    *atexit*)
 
 (begin
