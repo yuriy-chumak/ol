@@ -11,11 +11,19 @@
 
       SOIL_FLAG_INVERT_Y
    )
-(begin
+(cond-expand
+   (Windows
+      (begin
+         (define libsoil (or (load-dynamic-library "soil.dll")
+                             (runtime-error "Can't load libsoil"
+                                      "try to download soil.dll")))))
+   (else
+      (begin
+         (define libsoil (or (load-dynamic-library "libSOIL.so.1")
+                             (runtime-error "Can't load libsoil"
+                                      "try to 'apt install libsoil1', for example"))))))
 
-   (define libsoil (or (load-dynamic-library "libSOIL.so.1")
-                       (runtime-error "Can't load libsoil"
-                                      "try to apt install libsoil1, for example")))
+(begin
 
    (define SOIL_LOAD_AUTO 0)
    (define SOIL_LOAD_L    1)
