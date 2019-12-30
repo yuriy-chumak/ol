@@ -4,7 +4,8 @@
    (description "otus-lisp gl library")
 (import
    (otus lisp) (otus ffi)
-   (lib gl config))
+   (lib gl config)
+   (lib keyboard))
 
 (cond-expand
    (Android
@@ -21,12 +22,7 @@
    gl:set-renderer
    gl:set-mouse-handler
    gl:set-keyboard-handler
-      vkEnter vkEsc vkUp vkDown vkLeft vkRight
-      vkQ vkW vkE vkR vkT vkY vkU vkI vkO vkP
-      vkA vkS vkD vkF vkG vkH vkJ vkK vkL
-      vkZ vkX vkC vkV vkB vkN vkM
-      vkStar vkPlus vkMinus vkEqual
-   gl:set-expose-handler
+   gl:set-expose-handler ;todo: rename to reshape-handler
    gl:finish ; if renderer exists - wait for window close, else just glFinish
 
    gl:window-dimensions
@@ -744,13 +740,6 @@
 
 (define (gl:set-keyboard-handler handler)
    (mail 'opengl ['set 'keyboard-handler handler]))
-(define vkEnter 36) (define vkEsc 9)
-(define vkAlt 64) (define vkShift 62)
-(define vkUp 111) (define vkDown 116) (define vkLeft 113) (define vkRight 114)
-(define vkQ 24) (define vkW 25) (define vkE 26) (define vkR 27) (define vkT 28) (define vkY 29) (define vkU 30) (define vkI 31) (define vkO 32) (define vkP 33)
-(define vkA 38) (define vkS 39) (define vkD 40) (define vkF 41) (define vkG 42) (define vkH 43) (define vkJ 44)(define vkK 45) (define vkL 46)
-(define vkZ 52) (define vkX 53) (define vkC 54) (define vkV 55) (define vkB 56) (define vkN 57) (define vkM 58)
-(define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
 
 (define (gl:set-expose-handler handler)
    (mail 'opengl ['set-expose-handler handler]))
