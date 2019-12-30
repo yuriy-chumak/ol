@@ -515,12 +515,20 @@
                (MoveWindow window (list-ref rect 0) (list-ref rect 1) width height 0)))
 
          ; ---
+         (setq ShowCursor (user32 fft-int "ShowCursor" fft-int))
          (define (gl:HideCursor context)
-            #false)
+            (ShowCursor 0))
 
          ; ---
+         (setq GetCursorPos (user32 fft-int "GetCursorPos" fft-int&))
+         (setq ScreenToClient (user32 fft-int "ScreenToClient" type-vptr fft-int&))
+
          (define (gl:GetMousePos context)
-            #false)
+            (let ((window (ref context 3))
+                  (pos '(0 0)))
+               (GetCursorPos pos)
+               (ScreenToClient window pos)
+               (cons (lref pos 0) (lref pos 1))))
 
       ))
 
