@@ -3,7 +3,7 @@
  *
  *   Version 2.1
  *                                                 `___`
- *  Copyright(c) 2014 - 2019 Yuriy Chumak          (O,O)
+ *  Copyright(c) 2014 - 2020 Yuriy Chumak          (O,O)
  *                                                 (  /(
  * - - - - - - - - - - - - - - - - - - - - - - - - -"-"- - - - - -
  * ### LICENSE
@@ -49,10 +49,10 @@
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
-#define __OLVM_VERSION__ "2.1 rc1"
+#define __OLVM_VERSION__ "2.1"
 #endif
 #ifndef lint
-__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2019 Yuriy Chumak";
+__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #endif//lint
 
 #define unless(...) if (! (__VA_ARGS__))
@@ -4790,7 +4790,7 @@ int main(int argc, char** argv)
 	}
 	if (argc == 2 && strcmp(argv[1], "--version") == 0) {
 		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
-		// E("Copyright (c) 2019 Yuriy Chumak");
+		// E("Copyright (c) 2020 Yuriy Chumak");
 		// E("License (L)GPLv3+: GNU (L)GPL version 3 or later <http://gnu.org/licenses/>");
 		// E("License MIT: <https://en.wikipedia.org/wiki/MIT_License>");
 		// E("This is free software: you are free to change and redistribute it.");
