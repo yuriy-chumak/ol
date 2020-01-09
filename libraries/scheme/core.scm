@@ -313,6 +313,15 @@
       (setq set! (lambda (variable expression)
          (runtime-error "No set! is allowed." "(sometimes you can use set-ref!, check the docs)")))
 
+      ; 4.1.7. Inclusion
+      ;
+      ; syntax: (include hstring1i hstring2i ...)  * not supported
+      (setq include (lambda args
+         (runtime-error "No include is allowed." "(use ,load instead)")))
+      ; syntax: (include-ci hstring1i hstring2i ...)  * not supported
+      (setq include-ci (lambda args
+         (runtime-error "No include-ci is allowed." "(use ,load instead)")))
+
       ; 4.2  Derived expression types
       ;
       ; The constructs in this section are hygienic, as discussed
@@ -2025,7 +2034,11 @@
       ;  ff-apply vector-apply
 
       ; 4.1.5  Conditionals
-      if unless cond case and or set!
+      if unless cond case and or
+      ; 4.1.6  Assignments
+      set!
+      ; 4.1.7  Inclusion
+      include include-ci
       ; 4.2.2  Binding constructs
       letrec let let* let*-values
       ; 4.2.3  Sequencing
