@@ -58,7 +58,7 @@
          (values-apply (vm:sub n 1) (lambda (n carry) n))))
       (setq |+1| (lambda (n)         ; * internal
          (values-apply (vm:add n 1) (lambda (n carry) n))))
-      (setq |0.0| (vm:fp2 #xC9 1 0)) ; * internal
+      (setq |0.| (vm:fp2 #xC9 1 0)) ; * internal
 
       ; * ol specific: (runtime-error reason info)
       (setq runtime-error (lambda (reason info)
@@ -119,8 +119,8 @@
       ; restrictions on how they are composed, suffice to form a practical
       ; and efficient programming language that is flexible enough to support
       ; most of the major programming paradigms in use today.
-      ;
-      ;
+
+
       ;                      DESCRIPTION OF THE LANGUAGE
       ;
       ;;; ---------------------------------------------------------------
@@ -139,27 +139,54 @@
       ; ciate types with variables and expressions as well as with
       ; values.
       ;
-      ; Scheme has latent ..................
-      ; ......
+      ; All objects created in the course of a Scheme computation,
+      ; including procedures and continuations, have unlimited extent.
+      ; No Scheme object is ever destroyed. The reason that
+      ; implementations of Scheme do not (usually!) run out of
+      ; storage is that they are permitted to reclaim the storage
+      ; occupied by an object if they can prove that the object
+      ; cannot possibly matter to any future computation.
+      ;
+      ; Scheme procedures are objects in their own right. Procedures
+      ; can be created dynamically, stored in data structures,
+      ; returned as results of procedures, and so on.
+      ;
+      ; Arguments to Scheme procedures are always passed by
+      ; value, which means that the actual argument expressions
+      ; are evaluated before the procedure gains control, regardless
+      ; of whether the procedure needs the result of the evaluation.
 
+      ; 1.2  Syntax
+
+      ; 1.3  Notation and terminology
+      ; 1.3.1  Base and optional features
+      ; 1.3.2  Error situations and unspecified behavior
+      ; 1.3.3  Entry format
+      ; 1.3.4  Evaluation examples
 
       ; 1.3.5  Naming conventions
       ;
-      ; By convention, the names of procedures that always return
-      ; a boolean value usually end in “?”. Such procedures are
-      ; called predicates.
+      ; By convention, ? is the final character of the names of
+      ; procedures that always return a boolean value. Such pro-
+      ; cedures are called predicates. Predicates are generally
+      ; understood to be side-effect free, except that they may
+      ; raise an exception when passed the wrong type of argument.
       ;
-      ; By convention, the names of procedures that store values
-      ; into previously allocated locations (see section 3.4) usually
-      ; end in "!". Such procedures are called mutation procedures.
-      ; By convention, the value returned by a mutation
-      ; procedure is unspecified.
+      ; Similarly, ! is the final character of the names of proce-
+      ; dures that store values into previously allocated locations
+      ; (see section 3.4). Such procedures are called mutation pro-
+      ; cedures. The value returned by a mutation procedure is
+      ; unspecified.
       ;
-      ; By convention, "->" appears within the names of procedures
-      ; that take an object of one type and return an analogous
-      ; object of another type. For example, list->vector
+      ; By convention, “->” appears within the names of proce-
+      ; dures that take an object of one type and return an anal-
+      ; ogous object of another type. For example, list->vector
       ; takes a list and returns a vector whose elements are the
       ; same as those of the list.
+      ;
+      ; A command is a procedure that does not return useful val-
+      ; ues to its continuation.
+      ; A thunk is a procedure that does not accept arguments.
 
 
       ;;; ---------------------------------------------------------------
@@ -169,41 +196,32 @@
       ; This section gives an informal account of some of the lexical
       ; conventions used in writing Scheme programs. For a formal
       ; syntax of Scheme, see section 7.1.
-      ;
+
       ; 2.1  Identifiers
-      ;
-      ; Most identifiers allowed by other .......
-      
-      ; ....
-      ;
-      ; Here are some examples of identifiers:
-      ;
-      ; lambda        q
-      ; list->vector  soup
-      ; +             V17a
-      ; <=?           a34kTMNs
-      ; the-word-recursion-has-many-meanings
       ;
       ; All implementations of Scheme must support the following
       ; extended identifier characters:
       ;
       ; ! $ % & * + - . / : < = > ? @ ^ _ ~
-      ;
-      ; Alternatively, an identifier can be represented by a se-
-      ; quence of zero or more characters enclosed within vertical
-      ; lines (|), analogous to string literals.
-      ;
-      ; ...................................
-
+      
       ; 2.2  Whitespace and comments
       ;
-      ; Whitespace characters are spaces and newlines. .........
-      ; ..........
+      ; Whitespace characters include the space, tab, and new-
+      ; line characters. (Implementations may provide additional
+      ; whitespace characters such as page break.)
+      ;
+      ; The lexical syntax includes several comment forms. Com-
+      ; ments are treated exactly like whitespace.
+      ;
+      ; A semicolon (;) indicates the start of a line comment. The
+      ; comment continues to the end of the line on which the
+      ; semicolon appears.
+      ;
+      ; Block comments are indicated with properly nested #| and
+      ; |# pairs.
 
       ; 2.3  Other notations
-      ;
-      ; For a description of ........
-      ; ..........
+      ; 2.4  Datum labels
 
 
       ;;; ---------------------------------------------------------------
@@ -211,27 +229,10 @@
       ;;; Basic concepts
 
       ; 3.1  Variables, syntactic keywords, and regions
-      ;
-      ; An identifier may name a type of syntax, or ...
-      ; ..
-
       ; 3.2  Disjointness of types
-      ;
-      ; No object satisfies more than one ...
-      ; ..
-
       ; 3.3  External representations
-      ;
-      ; An important concept in Scheme (and Lisp) is that ...
-      ; ..
-
       ; 3.4  Storage model
-      ; Variables and objects such as pairs, vectors, and ...
-      ; .........
-
       ; 3.5  Proper tail recursion
-      ; Implementations of Scheme are required to be ...
-      ; ...............
 
 
       ;;; ---------------------------------------------------------------
@@ -250,7 +251,7 @@
 
       ; 4.1.1  Variable references
       ;
-      ; syntax:  <variable>
+      ; syntax:  <variable>                   * builtin
       ;
       ; An expression consisting of a variable (section 3.1) is a
       ; variable reference. The value of the variable reference is
@@ -259,7 +260,7 @@
 
       ; 4.1.2  Literal expressions
       ;
-      ; syntax:  quote <datum>                * builtin
+      ; syntax:  (quote <datum>)              * builtin
       ; syntax:  '<datum>                     * builtin
       ; syntax:  <constant>                   * builtin
 
@@ -275,13 +276,11 @@
          (syntax-rules ()
             ((λ . x) (lambda . x))))
 
-      ;(assert ((lambda x x) 3 4 5 6)                  ===>  (3 4 5 6))
-      ;(assert ((lambda (x y . z) z) 3 4 5 6)          ===>  (5 6))
-
       ; 4.1.5  Conditionals
       ;
-      ; syntax:  if <test> <consequent> <alternate>
-      ; syntax:  if <test> <consequent>
+      ; syntax:  (if <test> <consequent> <alternate>)
+      ; syntax:  (if <test> <consequent>)
+      ; auxiliary syntax: else            * ol specific
       (define-syntax if
          (syntax-rules (not eq? null? empty? zero?)
             ((if it then) (if it then #f))
@@ -289,7 +288,7 @@
             ((if val  then else otherwise) (if val then otherwise))
             ((if (not val) then otherwise) (if val otherwise then))
             ((if (eq? a b) then otherwise) (ifeq a b then otherwise))
-            ((if (null? t) then otherwise) (if (eq? t #null) then otherwise))  ; boot image size and compilation speed optimization
+            ((if (null? t) then otherwise) (ifeq t #null then otherwise))  ; boot image size and compilation speed optimization
             ((if (a . b)   then otherwise) (letq (x) ((a . b)) (if x then otherwise)))
             ((if #true     then otherwise)  then)
             ((if #false    then otherwise)  otherwise)
@@ -310,21 +309,23 @@
 
       ; 4.1.6  Assignments
       ;
-      ; syntax: set! <variable> <expression>  * not supported
+      ; syntax: (set! <variable> <expression>)  * not supported
       (setq set! (lambda (variable expression)
          (runtime-error "No set! is allowed." "(sometimes you can use set-ref!, check the docs)")))
 
       ; 4.2  Derived expression types
       ;
       ; The constructs in this section are hygienic, as discussed
-      ; in section 4.3. For reference purposes, section 7.3 gives
+      ; in section 4.3.  For reference purposes, section 7.3 gives
       ; macro definitions that will convert most of the constructs
       ; described in this section into the primitive constructs de-
       ; scribed in the previous section.
 
       ; 4.2.1  Conditionals
       ;
-      ; library syntax:  (cond <clause1> <clause2> ...)
+      ; syntax: (cond <clause1> <clause2> ...)
+      ; auxiliary syntax: else
+      ; auxiliary syntax: =>
       (define-syntax cond
          (syntax-rules (else =>)
             ((cond) #false)
@@ -346,9 +347,15 @@
                     ((less? 3 3) 'less)
                     (else 'equal))                        ===>  'equal)
       (assert (cond ((car (cdr '((a 1) (b 2)))) => car)
-                    (else #f))                            ===>  'b)
+                    (else #false))                        ===>  'b)
 
-      ; library syntax:  (case <key> <clause1> <clause2> ...)
+      ; syntax:  (case <key> <clause1> <clause2> ...)
+      ; auxiliary syntax: else            * ol specific
+      ; auxiliary syntax: []              * ol specific
+      ; auxiliary syntax: ()              * ol specific
+      ; auxiliary syntax: =>              * ol specific
+      ; auxiliary syntax: else =>         * ol specific
+      ; auxiliary syntax: else is         * ol specific
       (define-syntax case
          (syntax-rules (else list eqv? eq? and memv => vector is)
             ; precalculate case argument, if needed
@@ -391,12 +398,27 @@
                (if (memv thing (quote (a . b)))
                   ((lambda () . body)) ; means (begin . body)
                   (case thing . clauses)))
-            ((case thing (atom . then) . clauses) ;; added for (case (type foo) (type-foo thenfoo) (type-bar thenbar) ...)
+            ; (case (type foo) (type-foo thenfoo) (type-bar thenbar) ...)
+            ((case thing (atom . then) . clauses)
                (if (eq? thing atom)
                   ((lambda () . then)) ; means (begin . body)
                   (case thing . clauses)))))
 
-      ; library syntax:  (and <test1> ...)
+      (assert (case 7
+                 (1 'one) (7 'seven))          ===>  'seven)
+      (assert (case 'x
+                 (1 'one) (7 'seven))          ===>  #false)
+      (assert (case 'x
+                 (1 'one) (7 'seven)
+                 (else 'nothing))              ===>  'nothing)
+      (assert (case 'y
+                 (1 'one) (7 'seven)
+                 (else => (lambda (x) x)))     ===>  'y)
+      (assert (case 'z
+                 (1 'one) (7 'seven)
+                 (else is x x))                ===>  'z)
+
+      ; syntax:  (and <test1> ...)
       (define-syntax and
          (syntax-rules ()
             ((and) #true)
@@ -409,7 +431,7 @@
       (assert (and 1 2 '(f g) 'c)                         ===> 'c)
       (assert (and)                                       ===> #true)
 
-      ; library syntax:  (or <test1> ...)
+      ; syntax:  (or <test1> ...)
       (define-syntax or
          (syntax-rules ()
             ((or) #false)
@@ -853,22 +875,21 @@
             (if (and sa
                      (eq? (type a) (type b))
                      (eq? (size b) sa))
-               (if (eq? 0 sa)
-                  #true
-               ; (> sa 0)
-               (if (ref a 0) ; ==(blob? a), 0 in ref works only for blobs
-                  ; comparing blobs
-                  (let loop ((n (|-1| sa)))
-                     (if (eq? (ref a n) (ref b n))
+               (or
+                  (eq? 0 sa)
+                  (if (ref a 0) ; ==(bytestream? a), 0 in ref works only for bytestreams
+                     ; comparing bytestreams
+                     (let loop ((n (|-1| sa)))
+                        (if (eq? (ref a n) (ref b n))
+                           (if (eq? n 0)
+                              #true
+                              (loop (|-1| n)))))
+                     ; recursive comparing objects
+                     (let loop ((n sa))
                         (if (eq? n 0)
                            #true
-                           (loop (|-1| n)))))
-                  ; recursive comparing objects
-                  (let loop ((n sa))
-                     (if (eq? n 0)
-                        #true
-                        (if (equal? (ref a n) (ref b n))
-                           (loop (|-1| n)))))))))))
+                           (if (equal? (ref a n) (ref b n))
+                              (loop (|-1| n)))))))))))
 
 
       ; 6.2  Numbers
@@ -1013,7 +1034,7 @@
       (define (zero? x)
       (or
          (eq? x 0)
-         (equal? x |0.0|))) ; supports inexact numbers
+         (equal? x |0.|))) ; inexact numbers support
 
       (assert (zero? 0)                     ===>  #t)
       (assert (zero? 4)                     ===>  #f)
