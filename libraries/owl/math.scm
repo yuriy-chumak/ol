@@ -195,8 +195,8 @@
 
       (define (= b a)
          (case (type a)
-            (type-fix+ (unless (eq? (type b) type-inexact) (eq? a b) (equal? (inexact a) b)))
-            (type-fix- (unless (eq? (type b) type-inexact) (eq? a b) (equal? (inexact a) b)))
+            (type-fix+ (if (eq? (type b) type-inexact) (equal? (inexact a) b) (eq? a b)))
+            (type-fix- (if (eq? (type b) type-inexact) (equal? (inexact a) b) (eq? a b)))
             (type-int+
                (case (type b)
                   (type-int+ (big-digits-equal? a b))

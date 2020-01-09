@@ -99,7 +99,13 @@ If you want to compile asm.js binary (is not required by regular build, but only
 
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
-
+* 2.1. Identifiers
+  * |\t\t| and |\x9;\x9;| are **different** in Ol, but *the same* in Scheme.
+  * Ol is definitely **case sensitive**, but *configurable thru #!fold-case and #!no-fold-case* in Scheme
+* 4.1.6. Assignments
+  * **No set!** in Ol because Ol is purely functional language.
+* 4.1.7. Inclusion
+  * **No include and include-ci** in Ol. Use ",load" instead.
 * 6.1. Equivalence predicates (EQV?)
   * (eqv? +nan.0 +nan.0) is **#true**, but *unspecified* in Scheme
 * 6.2.5. Syntax of numerical constants

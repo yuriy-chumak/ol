@@ -367,7 +367,7 @@
             ((function? l)
                (fold string-append "#<" (list (function->name env l) ">")))
             ((list? l)
-               (map (lambda (r) (unless (function? r) r (decode-value env r))) l))
+               (map (lambda (r) (if (not (function? r)) r (decode-value env r))) l))
             (else l)))
 
       ;; render the value if isatty?, and print as such (or not at all) if it is a repl-message

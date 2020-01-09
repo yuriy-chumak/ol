@@ -282,30 +282,23 @@
       ; syntax:  (if <test> <consequent>)
       ; auxiliary syntax: else            * ol specific
       (define-syntax if
-         (syntax-rules (not eq? null? empty? zero?)
-            ((if it then) (if it then #f))
+         (syntax-rules (not eq? null? empty?)
+            ((if val then) (if val then #f))
 
-            ((if val  then else otherwise) (if val then otherwise))
-            ((if (not val) then otherwise) (if val otherwise then))
-            ((if (eq? a b) then otherwise) (ifeq a b then otherwise))
-            ((if (null? t) then otherwise) (ifeq t #null then otherwise))  ; boot image size and compilation speed optimization
-            ((if (a . b)   then otherwise) (letq (x) ((a . b)) (if x then otherwise)))
             ((if #true     then otherwise)  then)
             ((if #false    then otherwise)  otherwise)
+            ; expended if then else syntax:
+            ((if val  then else otherwise) (if val then otherwise))
+            ; speedup, code size optimizations:
+            ((if (not val) then otherwise) (if val otherwise then))
+            ((if (eq? a b) then otherwise) (ifeq a b then otherwise))
+            ((if (null? t) then otherwise) (ifeq t #null then otherwise))
+
+            ((if (a . b)   then otherwise) (letq (x) ((a . b)) (if x then otherwise)))
             ((if val       then otherwise) (ifeq val #false otherwise then))))
 
       (assert (if (less? 2 3) 'yes 'no)               ===>  'yes)
       (assert (if (less? 3 2) 'yes 'no)               ===>  'no)
-
-      ; syntax:  unless <test> <consequent> <alternate> * ol specific
-      ; syntax:  unless <test> <consequent> * ol specific
-      (define-syntax unless
-         (syntax-rules ()
-            ((unless val then)      (if val #false then))
-            ((unless val then else) (if val else then))))
-
-      (assert (unless (less? 2 3) 'yes 'no)               ===>  'no)
-      (assert (unless (less? 3 2) 'yes 'no)               ===>  'yes)
 
       ; 4.1.6  Assignments
       ;
@@ -330,7 +323,92 @@
       ; described in this section into the primitive constructs de-
       ; scribed in the previous section.
 
-      ; 4.2.1  Conditionals
+      ; 4.2.1  Binding constructs and sequencing
+      ;
+      ; The three binding constructs let, let*, and letrec give
+      ; Scheme a block structure, like Algol 60. The syntax of the
+      ; three constructs is identical, but they differ in the regions
+      ; they establish for their variable bindings. In a let ex-
+      ; pression, the initial values are computed before any of the
+      ; variables become bound; in a let* expression, the bind-
+      ; ings and evaluations are performed sequentially; while in a
+      ; letrec expression, all the bindings are in effect while their
+      ; initial values are being computed, thus allowing mutually
+      ; recursive definitions.
+
+      ; syntax:  (letrec <bindings> <body>)
+      (define-syntax letrec
+         (syntax-rules ()
+            ((letrec ((?var ?val) ...) ?body) (letq (?var ...) (?val ...) ?body))
+            ((letrec vars body ...) (letrec vars (begin body ...)))))
+
+      ; syntax:  (let <bindings> <body>)
+      ;          (let keyword <bindings> <body>) named let, from 4.2.4 Iteration
+      (define-syntax let
+         (syntax-rules ()
+            ((let ((var val) ...) exp . rest)
+               ((lambda (var ...) exp . rest) val ...))
+            ((let keyword ((var init) ...) exp . rest)
+               (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
+
+      ; syntax:  (begin <expression1> <expression2> ...)
+      (define-syntax begin
+         (syntax-rules (define letrec)
+            ((begin exp) exp)
+            ((begin (define . a) (define . b) ... . rest)
+               (begin 42 () (define . a) (define . b) ... . rest))
+            ;; ((begin (define-values (val ...) . body) . rest)
+            ;;    (let*-values (((val ...) (begin . body))) . rest))
+            ((begin 42 done (define ((op . args1) . args2) . body) . rest)
+               (begin 42 done (define (op . args1) (lambda args2 . body)) . rest))
+            ((begin 42 done (define (var . args) . body) . rest)
+               (begin 42 done (define var (lambda args . body)) . rest))
+            ((begin 42 done (define var exp1 exp2 . expn) . rest)
+               (begin 42 done (define var (begin exp1 exp2 . expn)) . rest))
+            ((begin 42 done (define var val) . rest)
+               (begin 42 ((var val) . done) . rest))
+            ((begin 42 done . exps)
+               (begin 43 done () exps))
+            ((begin 43 (a . b) c exps)
+               (begin 43 b (a . c) exps))
+            ((begin 43 () bindings exps)
+               (letrec bindings (begin . exps)))
+            ((begin first . rest)
+               ((lambda (free) (begin . rest))  first))))
+
+      ; library syntax:  (let* <bindings> <body>)
+      (define-syntax let*
+         (syntax-rules (<=)
+            ((let* (((var ...) gen) . rest) . body)
+               (values-apply gen (lambda (var ...) (let* rest . body))))
+            ((let* ((var val) . rest-bindings) exp . rest-exps)
+               ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
+            ; http://srfi.schemers.org/srfi-71/srfi-71.html
+            ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
+               (values-apply (op . args)
+                  (lambda (var ...)
+                     (let* rest-bindings exp . rest-exps))))
+            ((let* ((var ... node) . rest-bindings) exp . rest-exps)
+               (vector-apply node
+                  (lambda (var ...)
+                     (let* rest-bindings exp . rest-exps))))
+            ((let* (((name ...) <= value) . rest) . code)
+               (vector-apply value
+                  (lambda (name ...)
+                     (let* rest . code))))
+            ((let* ()) exp)
+            ((let* () exp . rest)
+               (begin exp . rest))))
+
+      (define-syntax let*-values
+         (syntax-rules ()
+            ((let*-values (((var ...) gen) . rest) . body)
+               (values-apply gen
+                  (lambda (var ...) (let*-values rest . body))))
+            ((let*-values () . rest)
+               ((lambda () . rest)))))
+
+      ; 4.2.2  Conditionals
       ;
       ; syntax: (cond <clause1> <clause2> ...)
       ; auxiliary syntax: else
@@ -339,7 +417,7 @@
          (syntax-rules (else =>)
             ((cond) #false)
             ((cond (else exp . rest))
-               ((lambda () exp . rest)))        ; (begin ...)
+               (begin exp . rest))
             ((cond (clause => exp) . rest)
                ((lambda (fresh)
                   (if fresh
@@ -347,7 +425,7 @@
                      (cond . rest)))  clause))
             ((cond (clause exp . rest-exps) . rest)
                (if clause
-                  ((lambda () exp . rest-exps)) ; (begin ...)
+                  (begin exp . rest-exps)
                   (cond . rest)))))
 
       (assert (cond ((less? 2 3) 'greater)
@@ -384,7 +462,7 @@
                   (case thing . clauses)))
             ((case thing ((a) . body) . clauses)
                (if (eqv? thing (quote a))
-                  ((lambda () . body)) ; means (begin . body)
+                  (begin . body)
                   (case thing . clauses)))
             ; http://srfi.schemers.org/srfi-87/srfi-87.html
             ((case thing (else => func))
@@ -392,7 +470,7 @@
             ((case thing (else is name . body)) ; * ol specific
                ((lambda (name) . body) thing))
             ((case thing (else . body))
-               ((lambda () . body)))   ; means (begin . body)
+               (begin . body))
             ; * ol specific
             ; case receives a vectors:
             ((case thing ((vector cp . args) . body) . clauses)
@@ -405,12 +483,12 @@
             ; http://srfi.schemers.org/srfi-87/srfi-93.html ?
             ((case thing ((a . b) . body) . clauses)
                (if (memv thing (quote (a . b)))
-                  ((lambda () . body)) ; means (begin . body)
+                  (begin . body)
                   (case thing . clauses)))
             ; (case (type foo) (type-foo thenfoo) (type-bar thenbar) ...)
             ((case thing (atom . then) . clauses)
                (if (eq? thing atom)
-                  ((lambda () . then)) ; means (begin . body)
+                  (begin . then)
                   (case thing . clauses)))))
 
       (assert (case 7
@@ -455,102 +533,33 @@
       (assert (or #f #f #f)                               ===> #false)
       (assert (or #f 'c #f)                               ===> 'c)
 
-      ; 4.2.2  Binding constructs
-      ;
-      ; The three binding constructs let, let*, and letrec give
-      ; Scheme a block structure, like Algol 60. The syntax of the
-      ; three constructs is identical, but they differ in the regions
-      ; they establish for their variable bindings. In a let ex-
-      ; pression, the initial values are computed before any of the
-      ; variables become bound; in a let* expression, the bind-
-      ; ings and evaluations are performed sequentially; while in a
-      ; letrec expression, all the bindings are in effect while their
-      ; initial values are being computed, thus allowing mutually
-      ; recursive definitions.
-
-      ; library syntax:  (letrec <bindings> <body>)
-      (define-syntax letrec
+      ; syntax:  when <test> <expression1> <expression2> ...
+      (define-syntax when
          (syntax-rules ()
-            ((letrec ((?var ?val) ...) ?body) (letq (?var ...) (?val ...) ?body))
-            ((letrec vars body ...) (letrec vars (begin body ...)))))
+            ((when val) #false)
+            ((when val . then) (if val (begin . then)))))
 
-      ; library syntax:  (letrec* ...) - r7rs
-      ;(define-syntax letrec*
-      ;   (syntax-rules ()
-      ;      ((letrec* () . body)
-      ;         (begin . body))
-      ;      ((letrec* ((var val) . rest) . body)
-      ;         (letrec ((var val))
-      ;            (letrec* rest . body)))))
+      (assert (when (less? 2 3) 'yes 'no)               ===>  'no)
+      (assert (when (less? 3 2) 'yes 'no)               ===>  #false)
 
-      ; library syntax:  (let <bindings> <body>)
-      ;                  (let keyword <bindings> <body>) named let, from 4.2.4 Iteration
-      (define-syntax let
+      ;; ; syntax:  unless2 <test> <expression1> <expression2> ...
+      (define-syntax unless2
+         (syntax-rules (not)
+            ((unless2 val) #false)
+            ((unless2 val . then) (if (not val) (begin . then)))))
+
+      (assert (unless2 (less? 2 3) 'yes 'no)               ===>  #false)
+      (assert (unless2 (less? 3 2) 'yes 'no)               ===>  'no)
+
+      ; syntax:  unless <test> <consequent> <alternate> * ol specific
+      ; syntax:  unless <test> <consequent> * ol specific
+      (define-syntax unless
          (syntax-rules ()
-            ((let ((var val) ...) exp . rest)
-               ((lambda (var ...) exp . rest) val ...))
-               ;why not (letq (var ...) (val ...) exp . rest)) ???
-            ((let keyword ((var init) ...) exp . rest)
-               (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
+            ((unless val then)      (if val #false then))
+            ((unless val then else) (if val else then))))
 
-      ; library syntax:  (let* <bindings> <body>)
-      (define-syntax let*
-         (syntax-rules (<=)
-            ((let* (((var ...) gen) . rest) . body)
-               (values-apply gen (lambda (var ...) (let* rest . body))))
-            ((let* ((var val) . rest-bindings) exp . rest-exps)
-               ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
-            ; http://srfi.schemers.org/srfi-71/srfi-71.html
-            ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
-               (values-apply (op . args)
-                  (lambda (var ...)
-                     (let* rest-bindings exp . rest-exps))))
-            ((let* ((var ... node) . rest-bindings) exp . rest-exps)
-               (vector-apply node
-                  (lambda (var ...)
-                     (let* rest-bindings exp . rest-exps))))
-            ((let* (((name ...) <= value) . rest) . code)
-               (vector-apply value
-                  (lambda (name ...)
-                     (let* rest . code))))
-            ((let* ()) exp)
-            ((let* () exp . rest)
-               ((lambda () exp . rest)))))
-
-      (define-syntax let*-values
-         (syntax-rules ()
-            ((let*-values (((var ...) gen) . rest) . body)
-               (values-apply gen
-                  (lambda (var ...) (let*-values rest . body))))
-            ((let*-values () . rest)
-               ((lambda () . rest)))))
-
-      ; 4.2.3  Sequencing
-      ;
-      ; library syntax:  (begin <expression1> <expression2> ...)
-      (define-syntax begin
-         (syntax-rules (define letrec define-values let*-values letrec)
-            ((begin exp) exp)
-            ((begin (define . a) (define . b) ... . rest)
-               (begin 42 () (define . a) (define . b) ... . rest))
-            ((begin (define-values (val ...) . body) . rest)
-               (let*-values (((val ...) (begin . body))) . rest))
-            ((begin 42 done (define ((op . args1) . args2) . body) . rest)
-               (begin 42 done (define (op . args1) (lambda args2 . body)) . rest))
-            ((begin 42 done (define (var . args) . body) . rest)
-               (begin 42 done (define var (lambda args . body)) . rest))
-            ((begin 42 done (define var exp1 exp2 . expn) . rest)
-               (begin 42 done (define var (begin exp1 exp2 . expn)) . rest))
-            ((begin 42 done (define var val) . rest)
-               (begin 42 ((var val) . done) . rest))
-            ((begin 42 done . exps)
-               (begin 43 done () exps))
-            ((begin 43 (a . b) c exps)
-               (begin 43 b (a . c) exps))
-            ((begin 43 () bindings exps)
-               (letrec bindings (begin . exps)))
-            ((begin first . rest)
-               ((lambda (free) (begin . rest))  first))))
+      (assert (unless (less? 2 3) 'yes 'no)               ===>  'no)
+      (assert (unless (less? 3 2) 'yes 'no)               ===>  'yes)
 
       ; 4.2.4  Iteration       * moved to (scheme r5rs iteration)
 
@@ -1410,9 +1419,9 @@
          (letrec ((f (lambda (obj list)
                         (unless (null? list)
                            (if (pair? list)
-                              (unless (comparer obj (car list))
-                                 (f obj (cdr list))
-                                 list)))))) ; found
+                              (if (comparer obj (car list))
+                                 list
+                                 (f obj (cdr list)))))))) ; found
             f))
 
       (define memq (make-mem* eq?))
@@ -1723,21 +1732,18 @@
       ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
       (define for-each (case-lambda
          ((f a)      (let loop ((a a))
-                        (unless (null? a)
-                           (begin
-                              (f (car a))
-                              (loop (cdr a))))))
+                        (unless2 (null? a)
+                           (f (car a))
+                           (loop (cdr a)))))
          ((f a b)    (let loop ((a a) (b b)) ; map2
-                        (unless (null? a)
-                           (begin
-                              (f a b)
-                              (loop (cdr a) (cdr b))))))
+                        (unless2 (null? a)
+                           (f a b)
+                           (loop (cdr a) (cdr b)))))
          ((f a b . c) ; mapN
                      (let loop ((a (cons a (cons b c))))
-                        (unless (null? (car a)) ; закончились
-                           (begin
-                              (apply f (map car a))
-                              (loop (map cdr a))))))
+                        (unless2 (null? (car a)) ; закончились
+                           (apply f (map car a))
+                           (loop (map cdr a)))))
          ((f) #f)))
 
       ; procedure:  (force promise)
@@ -2034,15 +2040,19 @@
       ;  ff-apply vector-apply
 
       ; 4.1.5  Conditionals
-      if unless cond case and or
+      if
       ; 4.1.6  Assignments
       set!
       ; 4.1.7  Inclusion
       include include-ci
-      ; 4.2.2  Binding constructs
-      letrec let let* let*-values
-      ; 4.2.3  Sequencing
-      begin ; do
+
+      ; 4.2.1  Binding constructs and Sequencing
+      letrec let begin let* let*-values 
+
+      ; 4.2.2  Conditionals
+      cond case and or
+      when unless unless2
+
       ; 4.2.5  Delayed evaluation
       delay force
       ; 4.2.8. Quasiquotation

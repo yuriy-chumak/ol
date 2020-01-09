@@ -285,22 +285,22 @@
                   (this (del itself window)))
                (['set-window-writer id writer]
                   (let*((window (get itself id #false))
-                        (itself (unless window itself
+                        (itself (if (not window) itself
                            (put itself id (set-ref window 5 writer)))))
                      (this itself)))
                (['set-window-background id color]
                   (let*((window (get itself id #false))
-                        (itself (unless window itself
+                        (itself (if (not window) itself
                            (put itself id (set-ref window 6 color)))))
                      (this itself)))
                (['set-window-border id color]
                   (let*((window (get itself id #false))
-                        (itself (unless window itself
+                        (itself (if (not window) itself
                            (put itself id (set-ref window 7 color)))))
                      (this itself)))
                (['set-window-visibility id visibility]
                   (let*((window (get itself id #false))
-                        (itself (unless window itself
+                        (itself (if (not window) itself
                            (put itself id (set-ref window 8 visibility)))))
                      (this itself)))
 
