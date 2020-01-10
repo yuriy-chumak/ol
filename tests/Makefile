@@ -7,7 +7,7 @@ else
 FAILED := $(shell mktemp -u)
 
 ok:="\033[1;32mok\033[0m"
-failed:="\033[1;33mfailed\033[0m"
+failed:="\033[1;31mfailed\033[0m"
 
 # GNU/Linux (base development system) specific defines:
 ifeq ($(UNAME),Linux)
