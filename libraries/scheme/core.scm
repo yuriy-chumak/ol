@@ -828,7 +828,7 @@
       ; can be said about such cases is that the value returned by
       ; eqv? must be a boolean
 
-      ;assert (eqv? #() #())                ===> #false)  ; * ol specific, (in r7rs unspecified)
+      ;assert (eqv? #() #())                ===> #false) ; * ol specific, (in r7rs unspecified)
       (assert (eqv? (lambda (x) x)
                     (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? (lambda (x) x)
@@ -844,7 +844,7 @@
       ;          (eqv? f g))                ===> unspecified
 
 
-      ; (r7rs) procedure:  (equal? obj1 obj2)
+      ; procedure:  (equal? obj1 obj2)
       ;
       ; The equal? procedure, when applied to pairs, vectors,
       ; strings and bytevectors, recursively compares them, return-
@@ -880,49 +880,32 @@
 
 
       ; 6.2  Numbers
-      ;
-      ; Numerical computation has traditionally been .......
-      ; .........
 
       ; 6.2.1  Numerical types
       ;
-      ; Mathematically, numbers may be arranged ........
-      ; ..............
-      (define type-fix+             TFIX+)     ; * ol specific, atomic positive integer number
-      (define type-fix-             TFIX-)     ; * ol specific, atomic negative integer number
-      (define type-int+             TINT+)     ; * ol specific, complex positive integer number
-      (define type-int-             TINT-)     ; * ol specific, complex negative integer number
+      ; Mathematically, numbers are arranged into a tower of sub-
+      ; types in which each level is a subset of the level above it:
+      ;
+      ; number
+      ; complex number
+      ; real number
+      ; rational number
+      ; integer
+
+      (define type-fix+             TFIX+)     ; * ol specific, short positive integer number
+      (define type-fix-             TFIX-)     ; * ol specific, short negative integer number
+      (define type-int+             TINT+)     ; * ol specific, long positive integer number
+      (define type-int-             TINT-)     ; * ol specific, long negative integer number
       (define type-rational         TRATIONAL)
       (define type-complex          TCOMPLEX)
       (define type-inexact          TINEXACT)
 
       ; 6.2.2  Exactness
-      ;
-      ; Scheme numbers are either exact or inexact. .......
-      ; ......
-      ;
-      ; note: implementation of inexact numbers in Otus Lisp are not finished
-      ;       and in progress
-
       ; 6.2.3  Implementation restrictions
-      ;
-      ; Implementations of Scheme are not required to .........
-      ; ...............
+      ; 6.2.4  Implementation extensions
+      ; 6.2.5  Syntax of numerical constants
 
-      ; (r7rs) 6.2.5  Syntax of numerical constants
-      ;
-      ; The syntax of the written representations ........
-      ; ...
-
-      ; (r7rs) 6.2.6  Numerical operations
-      ;
-      ; These numerical type predicates can be applied to any kind
-      ; of argument, including non-numbers. They return #t if the
-      ; object is of the named type, and otherwise they return #f.
-      ; In general, if a type predicate is true of a number then
-      ; all higher type predicates are also true of that number.
-      ; Consequently, if a type predicate is false of a number, then
-      ; all lower type predicates are also false of that number.
+      ; 6.2.6  Numerical operations
 
       ; procedure:  (integer? obj)
       (define (integer? a)
@@ -999,11 +982,11 @@
 
       ; procedure:  (exact? z)
       (define (exact? z)
-         (or (rational? z)
-            (and
-               (eq? (type z) type-complex)
-               (rational? (car z))
-               (rational? (cdr z)))))
+      (or (rational? z)
+          (and
+            (eq? (type z) type-complex)
+            (rational? (car z))
+            (rational? (cdr z)))))
 
       ; procedure:  (inexact? z)
       (define (inexact? z)
@@ -1012,12 +995,17 @@
       ; procedure:  (exact-integer? z)
       (define exact-integer? integer?)
 
-      ; finite?
-      ; infinite?
-      ; nan?
-      ; zero?
+      ; library procedure:  (finite? z)  * implemented in (scheme inexact)
+      ; library procedure:  (infinite? z)  * implemented in (scheme inexact)
+      ; library procedure:  (nan? z)  * implemented in (scheme inexact)
 
-      ; library procedure:  (zero? z)
+      ; procedure:  (= z1 z2 z3 ...)  * implemented in (owl math)
+      ; procedure:  (< x1 x2 x3 ...)  * implemented in (owl math)
+      ; procedure:  (> x1 x2 x3 ...)  * implemented in (owl math)
+      ; procedure:  (<= x1 x2 x3 ...) * implemented in (owl math)
+      ; procedure:  (>= x1 x2 x3 ...) * implemented in (owl math)
+
+      ; procedure:  (zero? z)
       (define (zero? x)
       (or
          (eq? x 0)
@@ -1028,80 +1016,74 @@
       (assert (zero? (vm:fp2 #xE9 7 7))     ===>  #t)
       (assert (zero? (vm:fp2 #xC1 7 7))     ===>  #f)
 
-      ; library procedure:  (positive? x)
-      ; library procedure:  (negative? x)
-      ; library procedure:  (odd? n)
-      ; library procedure:  (even? n)
-      ; library procedure:  (max x1 x2 ...)
-      ; library procedure:  (min x1 x2 ...)
-      ; procedure:  (= z1 z2 z3 ...)
-      ; procedure:  (< x1 x2 x3 ...)
-      ; procedure:  (> x1 x2 x3 ...)
-      ; procedure:  (<= x1 x2 x3 ...)
-      ; procedure:  (>= x1 x2 x3 ...)
+      ; procedure:  (positive? x)  * implemented in (owl math)
+      ; procedure:  (negative? x)  * implemented in (owl math)
+      ; procedure:  (odd? n)
+      ; procedure:  (even? n)
+      ; procedure:  (max x1 x2 ...)
+      ; procedure:  (min x1 x2 ...)
       ; procedure:  (+ z1 ...)
       ; procedure:  (* z1 ...)
-      ; procedure:  (- z1 z2)
       ; procedure:  (- z)
-      ; optional procedure:  (- z1 z2 ...)
-      ; procedure:  (/ z1 z2)
+      ; procedure:  (- z1 z2 ...)
       ; procedure:  (/ z)
-      ; optional procedure:  (/ z1 z2 ...)
-      ; library procedure: (abs x)
-      ; procedure: quotient (n1 n2)
-      ; procedure: remainder n1 n2
-      ; procedure: modulo n1 n2
-      ; library procedure: gcd n1 ...
-      ; library procedure: lcm n1 ...
-      ; procedure: numerator q
-      ; procedure: denominator q
-      ; procedure: floor x
-      ; procedure: ceiling x
-      ; procedure: truncate x
-      ; procedure: round x
-      ; library procedure: rationalize x y
-      ; procedure: exp z
-      ; procedure: log z
-      ; procedure: sin z
-      ; procedure: cos z
-      ; procedure: tan z
-      ; procedure: asin z
-      ; procedure: acos z
-      ; procedure: atan z
-      ; procedure: atan y x
-      ; procedure: sqrt z
-      ; procedure: expt z1 z2
-      ; procedure: make-rectangular x1 x2
-      ; procedure: make-polar x3 x4
-
-      ; procedure:  (real-part z)
-      (define real-part car)
-
-      ; procedure:  (imag-part z)
-      (define imag-part cdr)
-
-      ; procedure: magnitude z
-      ; procedure: angle z
+      ; procedure:  (/ z1 z2 ...)
+      ; procedure:  (abs x)
+      ; floor/, floor-quotient, floor-remainder
+      ; truncate/, truncate-quotient, truncate-remainder
+      ; procedure:  (quotient n1 n2)
+      ; procedure:  (remainder n1 n2)
+      ; procedure:  (modulo n1 n2)
+      ; procedure:  (gcd n1 ...)
+      ; procedure:  (lcm n1 ...)
+      ; procedure:  (numerator q)
+      ; procedure:  (denominator q)
+      ; procedure:  (floor x)
+      ; procedure:  (ceiling x)
+      ; procedure:  (truncate x)
+      ; procedure:  (round x)
+      ; procedure:  (rationalize x y)
+      
+      ; procedure:  (exp z)      * implemented in (scheme inexact)
+      ; procedure:  (log z)      * implemented in (scheme inexact)
+      ; procedure:  (log z1 z2)  * implemented in (scheme inexact)
+      ; procedure:  (sin z)      * implemented in (scheme inexact)
+      ; procedure:  (cos z)      * implemented in (scheme inexact)
+      ; procedure:  (tan z)      * implemented in (scheme inexact)
+      ; procedure:  (asin z)     * implemented in (scheme inexact)
+      ; procedure:  (acos z)     * implemented in (scheme inexact)
+      ; procedure:  (atan z)     * implemented in (scheme inexact)
+      ; procedure:  (atan y x)   * implemented in (scheme inexact)
+      ; procedure:  (square z)
+      ; procedure:  (sqrt z)     * implemented in (scheme inexact)
+      ; procedure:  (exact-integer-sqrt k)
+      ; procedure:  (make-rectangular x1 x2)  * implemented in (scheme complex)
+      ; procedure:  (make-polar x1 x2)        * implemented in (scheme complex)
+      ; procedure:  (real-part z)             * implemented in (scheme complex)
+      ; procedure:  (imag-part z)             * implemented in (scheme complex)
+      ; procedure:  (magnitude z)             * implemented in (scheme complex)
+      ; procedure:  (angle z)                 * implemented in (scheme complex)
 
       ; procedure:  (inexact z)
       (define (inexact n) (vm:cast n type-inexact))
 
-      ; procedure: inexact->exact z
+      ; procedure:  (exact z)
       (define (exact n) (vm:cast n type-rational))
 
+
       ; 6.2.7  Numerical input and output
-      ; * included in (scheme numerical-io)
+      ; procedure:  (number->string z)
+      ; procedure:  (number->string z radix)
+      (declare-external number->string '(lang eval))
 
+      ; procedure:  (string->number z)
+      ; procedure:  (string->number z radix)
+      (declare-external string->number '(scheme misc))
 
-      ; 6.3  Other data types
+      ; 6.2.8  Other data types
       ;
-      ; This section describes operations on some of Scheme's non-
-      ; numeric data types: booleans, pairs, lists, symbols, char-
-      ; acters, strings and vectors.
-      ;
-      ; -------------------------------
-      ; This data types related to olvm
-      ;     - not a part of r5rs -
+      ; This data types related to olvm, not a part of r7rs
+
       (define type-pair              TPAIR)   ; reference
       (define type-vector            TVECTOR) ; reference
       (define type-string            TSTRING) ; reference, blob / todo: -> 35 (#b100000 + 3)?
@@ -1146,7 +1128,7 @@
       (define type-thread-state     31) ; reference
       (define type-vptr             49) ; reference,  blob
 
-      ; 6.3.1  Booleans
+      ; 6.3  Booleans
       ;
       ; Of all the standard Scheme values, only #f counts as false in conditional expressions.
       ; Except for #f, all standard Scheme values, including #t, pairs, the empty list, symbols,
@@ -1159,7 +1141,7 @@
       (assert (quote #f)                    ===>  #f)
 
 
-      ; library procedure:  (not obj)
+      ; procedure:  (not obj)
       (define (not x)
          (if x #false #true))
 
@@ -2032,59 +2014,41 @@
       ; 5.5  Record-type definitions
       define-record-type
 
-      ; ----------------------------
-      list length append reverse
-      ilist
-      call-with-values define-library
-
-      ; 4.1
-
-      ; 6.2 (numbers)
-      type-fix+
-      type-fix-
-      type-int+
-      type-int-
-      type-rational
-      type-complex
-      type-inexact
-
-      integer? rational? complex? real? number? exact? inexact?
+      ; 6.1  Equivalence predicates
+      eq? eqv? equal?
+      ; 6.2.1  Numerical types
+      type-fix+ type-fix- type-int+ type-int-
+      type-rational type-complex type-inexact
+      ; 6.2.6  Numerical operations
+      integer? rational? real? complex? number?
+      exact? inexact? exact-integer?
+      zero?
       inexact exact
-
-      ; 6.3 (other data types)
+      ; 6.2.7  Numerical input and output
+      number->string string->number
+      ; 6.2.8  Other data types
       type-bytecode
-      type-proc
-      type-clos
+      type-proc type-clos
       type-pair
-      type-vector-dispatch
-      type-vector-leaf
+      type-vector-dispatch type-vector-leaf
       type-bytevector
       ;type-ff-black-leaf
       type-vector
       type-symbol
       type-const
-      type-rlist-spine
-      type-rlist-node
+      type-rlist-spine type-rlist-node
       type-port
-      type-string
-      type-string-wide
-      type-string-dispatch
+      type-string type-string-wide type-string-dispatch
       type-thread-state
       type-vptr
 
       ;; sketching types
-      type-ff               ;; k v, k v l, k v l r, black node with children in order
-      type-ff-r             ;; k v r, black node, only right black child
-      type-ff-red           ;; k v, k v l, k v l r, red node with (black) children in order
-      type-ff-red-r         ;; k v r, red node, only right (black) child
+      type-ff type-ff-r type-ff-red type-ff-red-r
 
-      ;; k v, l k v r       -- type-ff
-      ;; k v r, k v l r+    -- type-ff-right
-      ;; k v l, k v l+ r    -- type-ff-leftc
-
-
-      ; (r7rs) 6.1  Equivalence predicates
-      eq? eqv? equal?
+      ; ----------------------------
+      list length append reverse
+      ilist
+      call-with-values define-library
 
       ; 6.3
       not boolean? symbol? port? procedure? eof?
@@ -2103,7 +2067,6 @@
       symbol? symbol=? symbol->string string->symbol
 
       value? reference?
-      zero?
 
       list-ref
 
