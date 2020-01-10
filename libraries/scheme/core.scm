@@ -556,17 +556,17 @@
 
       ; 4.2.5  Delayed evaluation
       ;
-      ; library syntax:  delay <expression>
+      ; syntax:  delay <expression>
       (define-syntax delay
          (syntax-rules ()
             ((delay (op . args))
                (lambda () (op . args)))
             ((delay value) value)))
 
-      ; library syntax:  delay-force <expression>
+      ; syntax:  delay-force <expression>
       ; todo.
 
-      ; library syntax:  force <expression>
+      ; syntax:  force <expression>
       (setq force (lambda (thunk) (thunk)))
 
       ; (promise? obj )
@@ -612,18 +612,9 @@
       ; * declared in (scheme srfi-16)
 
       ; 4.3  Macros
-      ;
-      ; Scheme programs can define and use .......
-      ; ......
-
       ; 4.3.1  Binding constructs for syntactic keywords
-      ;
-      ; syntax: (let-syntax ...
-      ; syntax: (letrec-syntax ...
-
       ; 4.3.2  Pattern language
-      ;
-      ; (syntax-rules
+      ; 4.3.3  Signaling errors in macro transformers
 
 
       ;;; ---------------------------------------------------------------
@@ -631,16 +622,11 @@
       ;;; Program structure
 
       ; 5.1  Programs
-      ; A Scheme program consists of a sequence ........
-      ; ........
-
-      ; 5.2  Definitions
-      ;
-      ; Definitions are valid in some, but not all, contexts .......
-      ; ...........
+      ; 5.2  Import declarations
+      ; 5.3  Variable definitions
 
       (define-syntax define
-         (syntax-rules (lambda) ;λ
+         (syntax-rules (lambda)
             ((define ((name . args) . more) . body)
                (define (name . args) (lambda more . body)))
             ((define (name . args) . body)
@@ -652,11 +638,6 @@
             ((define name a b . c)
                (define name (begin a b . c)))))
 
-;      ;; not defining directly because letq doesn't yet do variable arity
-;      ;(define list ((lambda (x) x) (lambda x x)))
-;
-;      ;; fixme, should use a print-limited variant for debugging
-;
        ; EXTENSION, unused!
 ;      (define-syntax define*
 ;         (syntax-rules (print list)
@@ -667,7 +648,10 @@
 ;            ((define* name (lambda (arg ...) . body))
 ;               (define* (name arg ...) . body))))
 
-      ; * ol specific
+      ; 5.3.1  Top level definitions
+      ; 5.3.2  Internal definitions
+      ; 5.3.3  Multiple-value definitions
+
       (define-syntax define-values
          (syntax-rules (list)
             ((define-values (val ...) . body)
@@ -675,24 +659,19 @@
                   (let* ((val ... (begin . body)))
                      (list val ...))))))
 
-      ; 5.2.1  Top level definitions
-      ;
-      ; At the top level of a program ........
-      ; ......
+      ; 5.5  Record-type definitions
+      ; syntax:  (define-record-type <name> <constructor> <pred> <field> ...)  * not supported
+      (setq define-record-type (lambda (name constructor pred . fields)
+         (runtime-error "No define-record-type is implemented." #null)))
 
-      ; 5.2.2  Internal definitions
-      ;
-      ; Definitions may occur at the beginning .......
-      ; ...........
+      ; 5.6  Libraries
+      ; 5.6.1  Library Syntax
+      ; * declared and implemented in (lang repl)
 
+      ; 5.6.2. Library example
+      ; todo: library example assert
 
-      ; 5.3  Syntax definitions
-      ;
-      ; Syntax definitions are valid only at the top .......
-      ; ......
-      ;
-      ; (define-syntax <keyword> <transformer spec>)
-
+      ; 5.7  The REPL
 
       ;;; ---------------------------------------------------------------
       ;;; Chapter 6
@@ -707,7 +686,6 @@
       ; absolute value of a number, and the variable + is bound to a procedure that computes sums.
       ; Built-in procedures that can easily be written in terms of other built-in procedures are
       ; identified as ``library procedures''.
-      ;
 
       ; 6.1  Equivalence predicates
       ;
@@ -719,10 +697,10 @@
       ; or most discriminating, equal? is the coarsest, and eqv?
       ; is slightly less discriminating than eq?.
 
-      ; (r7rs) procedure:  (eq? obj1 obj2)   * builtin
+      ; procedure:  (eq? obj1 obj2)   * builtin
       (define eq? eq?)
 
-      ; (r7rs) procedure:  (eqv? obj1 obj2)
+      ; procedure:  (eqv? obj1 obj2)
       ;
       ; The eqv? procedure defines a useful equivalence relation on
       ; objects. Briefly, it returns #t if obj 1 and obj 2 are normally
@@ -2014,7 +1992,6 @@
 )
 ; ---------------------------
    (export
-      λ ; ol extension
       syntax-error runtime-error
       assert error
 
@@ -2030,32 +2007,35 @@
       ;  ff:red ff:black ff:toggle ff:red? ff:right?
       ;  ff-apply vector-apply
 
+      ; 4.1.4  Procedures
+      λ
       ; 4.1.5  Conditionals
       if
       ; 4.1.6  Assignments
       set!
       ; 4.1.7  Inclusion
       include include-ci
-
       ; 4.2.1  Binding constructs and Sequencing
       letrec let begin let* let*-values 
-
       ; 4.2.2  Conditionals
       cond case and or
       when unless
       ; 4.2.5  Delayed evaluation
       delay force
-      ; 4.2.8. Quasiquotation
+      ; 4.2.8  Quasiquotation
       quasiquote
-      ; 4.2.9. Case-lambda
+      ; 4.2.9  Case-lambda
       (exports (scheme srfi-16))
-
-      ; ---------------------------------------------------------
+      ; 5.3  Variable definitions
       define ;define*
+      define-values
+      ; 5.5  Record-type definitions
+      define-record-type
+
+      ; ----------------------------
       list length append reverse
       ilist
       call-with-values define-library
-      define-values ; ol specific
 
       ; 4.1
 
