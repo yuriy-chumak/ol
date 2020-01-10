@@ -34,11 +34,11 @@
             (display "[")
             (let ((len (size L)))
                (let loop ((n 1))
-                  (unless (less? len n) (begin
+                  (unless (less? len n)
                      (jsonify (ref L n))
                      (if (less? n len)
                         (display ","))
-                     (loop (+ n 1))))))
+                     (loop (+ n 1)))))
             (display "]"))
          ((ff? L)
             (display "{")

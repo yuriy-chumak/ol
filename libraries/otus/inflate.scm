@@ -23,7 +23,7 @@
             ((null? l)
                (print-to stderr "END OF STREAM"))
             ((pair? l)
-               (unless (less? i n)
+               (if (not (less? i n))
                   (values (band v (- (<< 1 n) 1)) (vector (>> v n) (- i n) l))
                   ; если же не хватает бит, втянем из потока
                   (loop (vector

@@ -8,11 +8,9 @@
 (if (= (* 2 2) 4) (print "if-then-else: equal") (print "if-then-else: non equal"))
 (if (= (* 2 2) 6) (print "if-then-else: non equal") (print "if-then-else: i don't know"))
 
-; unless, the opposite for 'if'.
-(unless (= (* 2 2) 4) (print "unless: non equal"))
-(unless (= (* 2 2) 6) (print "unless: i don't know"))
-(unless (= (* 2 2) 4) (print "unless: non equal") (print "unless: equal"))
-(unless (= (* 2 2) 6) (print "unless: i don't know") (print "unless: non equal"))
+; when and unless, the simplification of if
+(when (= (* 2 2) 4) (print "when: equal"))
+(unless (= (* 2 2) 6) (print "unless: not equal"))
 
 ; case, the sequence of comparing values.
 (case (* 2 2)

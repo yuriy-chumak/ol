@@ -11,8 +11,7 @@
 ; detailed case for 80 times
 (let loop ((fnc function) (n 80))
    (unless (zero? n)
-      (begin
-         (fnc)
-         (loop fnc (- n 1)))))
+      (fnc)
+      (loop fnc (- n 1))))
 (print) ; print newline
 ; ==> ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

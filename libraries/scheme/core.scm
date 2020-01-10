@@ -542,24 +542,14 @@
       (assert (when (less? 2 3) 'yes 'no)               ===>  'no)
       (assert (when (less? 3 2) 'yes 'no)               ===>  #false)
 
-      ;; ; syntax:  unless2 <test> <expression1> <expression2> ...
-      (define-syntax unless2
-         (syntax-rules (not)
-            ((unless2 val) #false)
-            ((unless2 val . then) (if (not val) (begin . then)))))
-
-      (assert (unless2 (less? 2 3) 'yes 'no)               ===>  #false)
-      (assert (unless2 (less? 3 2) 'yes 'no)               ===>  'no)
-
-      ; syntax:  unless <test> <consequent> <alternate> * ol specific
-      ; syntax:  unless <test> <consequent> * ol specific
+      ; syntax:  unless <test> <expression1> <expression2> ...
       (define-syntax unless
-         (syntax-rules ()
-            ((unless val then)      (if val #false then))
-            ((unless val then else) (if val else then))))
+         (syntax-rules (not)
+            ((unless val) #false)
+            ((unless val . then) (if (not val) (begin . then)))))
 
-      (assert (unless (less? 2 3) 'yes 'no)               ===>  'no)
-      (assert (unless (less? 3 2) 'yes 'no)               ===>  'yes)
+      (assert (unless (less? 2 3) 'yes 'no)               ===>  #false)
+      (assert (unless (less? 3 2) 'yes 'no)               ===>  'no)
 
       ; 4.2.4  Iteration       * moved to (scheme r5rs iteration)
 
@@ -1732,19 +1722,19 @@
       ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
       (define for-each (case-lambda
          ((f a)      (let loop ((a a))
-                        (unless2 (null? a)
+                        (unless (null? a)
                            (f (car a))
                            (loop (cdr a)))))
-         ((f a b)    (let loop ((a a) (b b)) ; map2
-                        (unless2 (null? a)
+         ((f a b)    (let loop ((a a) (b b))
+                        (unless (null? a)
                            (f a b)
                            (loop (cdr a) (cdr b)))))
-         ((f a b . c) ; mapN
+         ((f a b . c)
                      (let loop ((a (cons a (cons b c))))
-                        (unless2 (null? (car a)) ; закончились
+                        (unless (null? (car a)) ; закончились
                            (apply f (map car a))
                            (loop (map cdr a)))))
-         ((f) #f)))
+         ((f) #false)))
 
       ; procedure:  (force promise)
       ; procedure:  (call-with-current-continuation proc)
@@ -2051,8 +2041,7 @@
 
       ; 4.2.2  Conditionals
       cond case and or
-      when unless unless2
-
+      when unless
       ; 4.2.5  Delayed evaluation
       delay force
       ; 4.2.8. Quasiquotation

@@ -2,7 +2,7 @@
 (define (quibble . args)
    (display "{")
    (let loop ((args args))
-      (unless (null? args) (begin
+      (unless (null? args)
          (display (car args))
          (cond
             ((= 1 (length args)) #t)
@@ -10,7 +10,7 @@
                (display " and "))
             (else
                (display ", ")))
-         (loop (cdr args)))))
+         (loop (cdr args))))
    (print "}"))
 
 (quibble)

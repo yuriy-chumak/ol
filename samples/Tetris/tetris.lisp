@@ -172,92 +172,91 @@
    (let ((ss (gl:get-userdata))
          (s2 (ticks)))
       (unless (or (eq? ss s2) (car програв))
-         (begin
-            ; 0. удалить текущую фигуру из стакана
-            (забрати-цеглинку-з-склянки)
+         ; 0. удалить текущую фигуру из стакана
+         (забрати-цеглинку-з-склянки)
 
-            ; todo: проверить есть ли заполненные полоски в стакане, и если есть - удалить
-            ; проверить, можно ли фигурку сдвинуть туда, куда хочет юзер
-            (if (zero? (mod s2 3)) ; 3 раза в секунду или пробел
-            (let ((left (key-pressed #xff51))
-                  (right (key-pressed #xff53))
-                  (up (key-pressed #xff52)))
-               (let ((shift
-                        (cond
-                           (left -1)
-                           (right 1)
-                           (else #f)))
-                     (x (car (ref цеглинка 2)))
-                     (y (cdr (ref цеглинка 2))))
-                  ; проверяем сдвиг
-                  (if shift
-                     (if
-                        (let ((схема (план-цеглинки (ref цеглинка 1) (ref цеглинка 3))))
-                           (fold (lambda (q xy)
-                              (and q
-                                 (let ((x (+ x (car xy) shift))
-                                       (y (+ y (cdr xy))))
+         ; todo: проверить есть ли заполненные полоски в стакане, и если есть - удалить
+         ; проверить, можно ли фигурку сдвинуть туда, куда хочет юзер
+         (if (zero? (mod s2 3)) ; 3 раза в секунду или пробел
+         (let ((left (key-pressed #xff51))
+               (right (key-pressed #xff53))
+               (up (key-pressed #xff52)))
+            (let ((shift
+                     (cond
+                        (left -1)
+                        (right 1)
+                        (else #f)))
+                  (x (car (ref цеглинка 2)))
+                  (y (cdr (ref цеглинка 2))))
+               ; проверяем сдвиг
+               (if shift
+                  (if
+                     (let ((схема (план-цеглинки (ref цеглинка 1) (ref цеглинка 3))))
+                        (fold (lambda (q xy)
+                           (and q
+                              (let ((x (+ x (car xy) shift))
+                                    (y (+ y (cdr xy))))
 ;                                    (print x ", " y)
-                                    (and (>= x 0) (< x 10) (eq? (зчитати x y) #false)))))
-                              #true схема))
-                        (set-car! (ref цеглинка 2) (+ x shift))))
-                  ; проверка поворота фигуры
-                  (if up
-                     (if
-                        (let ((схема (план-цеглинки (ref цеглинка 1) (mod (+ (ref цеглинка 3) 3) 4))))
-                           (fold (lambda (q xy)
-                               (and q
-                                 (let ((x (+ x (car xy)))
-                                       (y (+ y (cdr xy))))
-                                    (and (>= x 0) (< x 10) (>= y 0) (eq? (зчитати x y) #false)))))
-                              #true схема))
-                        (let ((rotation (mod (+ (ref цеглинка 3) 3) 4)))
-                           (print "rotation: " rotation)
-                           (set-ref! цеглинка 3 rotation)))))))
+                                 (and (>= x 0) (< x 10) (eq? (зчитати x y) #false)))))
+                           #true схема))
+                     (set-car! (ref цеглинка 2) (+ x shift))))
+               ; проверка поворота фигуры
+               (if up
+                  (if
+                     (let ((схема (план-цеглинки (ref цеглинка 1) (mod (+ (ref цеглинка 3) 3) 4))))
+                        (fold (lambda (q xy)
+                              (and q
+                              (let ((x (+ x (car xy)))
+                                    (y (+ y (cdr xy))))
+                                 (and (>= x 0) (< x 10) (>= y 0) (eq? (зчитати x y) #false)))))
+                           #true схема))
+                     (let ((rotation (mod (+ (ref цеглинка 3) 3) 4)))
+                        (print "rotation: " rotation)
+                        (set-ref! цеглинка 3 rotation)))))))
 
-            ; 2. проверить, можно ли опустить текущую фигуру вниз, да - опустить
-            (if (or (zero? (mod s2 5)) (key-pressed #x0020)) ; 2 раза в секунду или пробел
-            (let ((x (car (ref цеглинка 2)))
-                  (y (cdr (ref цеглинка 2))))
-            (if
-               (let ((схема (план-цеглинки (ref цеглинка 1) (ref цеглинка 3))))
-                  (fold (lambda (q xy)
-                     (and q
-                        (let ((x (+ x (car xy)))
-                              (y (+ y (cdr xy))))
-                           (and (> y 0) (eq? (зчитати x (- y 1)) #false))))) ; y>0 и внизу пусто
-                     #true схема))
-               ; then впадемо вниз на 1
-               (set-cdr! (ref цеглинка 2) (- y 1))
-               ; else створимо нову цеглинку
-               (begin
-                  ; спочатку треба повернути цю
-                  (покласти-цеглинку-в-склянку)
-                  ; i от тепер можна познищувати заповненi полоски!
+         ; 2. проверить, можно ли опустить текущую фигуру вниз, да - опустить
+         (if (or (zero? (mod s2 5)) (key-pressed #x0020)) ; 2 раза в секунду или пробел
+         (let ((x (car (ref цеглинка 2)))
+               (y (cdr (ref цеглинка 2))))
+         (if
+            (let ((схема (план-цеглинки (ref цеглинка 1) (ref цеглинка 3))))
+               (fold (lambda (q xy)
+                  (and q
+                     (let ((x (+ x (car xy)))
+                           (y (+ y (cdr xy))))
+                        (and (> y 0) (eq? (зчитати x (- y 1)) #false))))) ; y>0 и внизу пусто
+                  #true схема))
+            ; then впадемо вниз на 1
+            (set-cdr! (ref цеглинка 2) (- y 1))
+            ; else створимо нову цеглинку
+            (begin
+               ; спочатку треба повернути цю
+               (покласти-цеглинку-в-склянку)
+               ; i от тепер можна познищувати заповненi полоски!
 
-                  (let ((нова-склянка
-                           (let loop ((l #null) (f (vector->list склянка)))
-                              (if (null? f) l
-                                 (if (has? (vector->list (car f)) #f)
-                                    (loop (cons (car f) l) (cdr f))
-                                    (loop l (cdr f)))))))
-                     (unless (eq? (length нова-склянка) 20)
-                        ; ну что ж, есть строчки на удаление
-                        (let ((нова-склянка (list->vector (append (reverse нова-склянка) (repeat (list->vector (repeat #false 10)) (- 20 (length нова-склянка)))))))
-                           (for-each (lambda (y)
-                                 (for-each (lambda (x)
-                                       (set-ref! (ref склянка y) x (ref (ref нова-склянка y) x)))
-                                    (iota 10 1)))
-                              (iota 20 1)))))
+               (let ((нова-склянка
+                        (let loop ((l #null) (f (vector->list склянка)))
+                           (if (null? f) l
+                              (if (has? (vector->list (car f)) #f)
+                                 (loop (cons (car f) l) (cdr f))
+                                 (loop l (cdr f)))))))
+                  (unless (eq? (length нова-склянка) 20)
+                     ; ну что ж, есть строчки на удаление
+                     (let ((нова-склянка (list->vector (append (reverse нова-склянка) (repeat (list->vector (repeat #false 10)) (- 20 (length нова-склянка)))))))
+                        (for-each (lambda (y)
+                              (for-each (lambda (x)
+                                    (set-ref! (ref склянка y) x (ref (ref нова-склянка y) x)))
+                                 (iota 10 1)))
+                           (iota 20 1)))))
 
-                  (створити-нову-цеглинку!)))))
-               
-            ; для каждой 
+               (створити-нову-цеглинку!)))))
+            
+         ; для каждой 
 
-            ; 3. а если нет - добавить новую (если нельзя добавить - конец игры)
-            (let ((x (car (ref цеглинка 2)))
-                  (y (cdr (ref цеглинка 2))))
-            (unless
+         ; 3. а если нет - добавить новую (если нельзя добавить - конец игры)
+         (let ((x (car (ref цеглинка 2)))
+               (y (cdr (ref цеглинка 2))))
+         (unless
                (let ((схема (план-цеглинки (ref цеглинка 1) (ref цеглинка 3))))
                   (fold (lambda (q xy)
                            (and q
@@ -265,9 +264,8 @@
                                     (y (+ y (cdr xy))))
                                  (eq? (зчитати x y) #false))))
                      #true схема))
-               (set-car! програв #true)))
-            (покласти-цеглинку-в-склянку)
-         ))
+            (set-car! програв #true)))
+         (покласти-цеглинку-в-склянку))
    (намалювати-склянку)
    (if (car програв)
       (begin

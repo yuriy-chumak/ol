@@ -298,9 +298,9 @@
                                           (values (put options 'file
                                                          (unless (string-eq? file "-")
                                                             (let ((port (open-input-file file)))
-                                                               (unless port (begin
+                                                               (unless port
                                                                   (print "error: can't open/read file '" file "'")
-                                                                  (halt 3)))
+                                                                  (halt 3))
                                                                port)))
                                                   (cdr args)))))))
                            (file (or (getf options 'file)
@@ -353,21 +353,9 @@
                               (print "Welcome to Otus Lisp " (cdr version)
                                  (if sandbox? ", you feel restricted" "")
                                  "\n"
-                                 (unless embed?
-                                    "type ',help' to help, ',quit' to end session." "")))
+                                 (if embed? "" "type ',help' to help, ',quit' to end session.")))
 
-
-                           (unless embed?
-                              ; regular repl:
-                              (fork-server 'repl (lambda ()
-                                 ;; set a signal handler which stop evaluation instead of owl
-                                 ;; if a repl eval thread is running
-                                 (set-signal-action repl-signal-handler)
-
-                                 ;; repl
-                                 (shutdown
-                                       (repl-trampoline env file))))
-                              ; embed:
+                           (if embed?
                               (let*((this (cons (vm:pin env) 0))
                                     (eval (lambda (exp args)
                                              (case exp
@@ -393,7 +381,17 @@
                                                          (eval (eval-repl (vm:deref exp) env #f evaluate) args))
                                                       (type-bytevector
                                                          (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (car this)) #f evaluate) args))))))))
-                                 (halt (vm:pin evaluate))))))])))))
+                                 (halt (vm:pin evaluate)))
+                           else
+                              ; regular repl:
+                              (fork-server 'repl (lambda ()
+                                 ;; set a signal handler which stop evaluation instead of owl
+                                 ;; if a repl eval thread is running
+                                 (set-signal-action repl-signal-handler)
+
+                                 ;; repl
+                                 (shutdown
+                                       (repl-trampoline env file)))))))])))))
 
 ;;;
 ;;; Dump the new repl

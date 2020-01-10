@@ -112,7 +112,7 @@
          (print "here I am!")
          (cons to path))
    (let ((move (A* level me to)))
-      (unless move
+      (if (not move)
          (begin
             (print "no way, sorry :(")
             #false)

@@ -76,7 +76,6 @@
 (let loop ()
    (print "is stack empty: " (empty))
    (unless (empty)
-      (begin
-         (print "popping value, got " (pop))
-         (loop))))
+      (print "popping value, got " (pop))
+      (loop)))
 (print "done.")

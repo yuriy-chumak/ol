@@ -277,10 +277,9 @@
    (fork-server 'gdb-breaker (lambda ()
       (let this ((unused #f))
          (unless (check-mail)
-            (begin
-               (if (key-pressed #xffbf) ; f2
-                  (syscall 62 (interact 'config (tuple 'get 'gdb)) 2)) ; SIGINT
-               (this (sleep 1))))))))
+            (if (key-pressed #xffbf) ; f2
+               (syscall 62 (interact 'config (tuple 'get 'gdb)) 2)) ; SIGINT
+            (this (sleep 1)))))))
 
 ; ================================================================
 ; = main ==================

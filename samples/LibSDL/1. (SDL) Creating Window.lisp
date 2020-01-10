@@ -11,9 +11,8 @@
       (halt 1)))
 
 (unless (eq? (IMG_Init IMG_INIT_PNG) IMG_INIT_PNG)
-   (begin
-      (print "Unable to init SDL png image support: " (SDL_GetError))
-      (halt 1)))
+   (print "Unable to init SDL png image support: " (SDL_GetError))
+   (halt 1))
 
 (define window (SDL_CreateWindow "Create SDL2 Window sample"
    SDL_WINDOWPOS_UNDEFINED SDL_WINDOWPOS_UNDEFINED

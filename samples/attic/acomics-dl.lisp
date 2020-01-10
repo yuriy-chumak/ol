@@ -107,7 +107,7 @@
       (system command-line)))
 (define (get-number string from)
    (let ((to (let loop ((i from))
-                (unless (<= #\0 (string-ref string i) #\9) i (loop (+ i 1))))))
+                (if (not (<= #\0 (string-ref string i)) #\9) i (loop (+ i 1))))))
       (string->number (substring string from to) 10)))
 
 ; 1. Количество глав
@@ -145,7 +145,7 @@
    (define page-url-end (kmp "\"" page-html page-url-start))
    (define image-url (substring page-html page-url-start page-url-end))
    (display
-      (unless (zero? (string-length image-url))
+      (if (not (zero? (string-length image-url)))
          (if (zero? (system (fold string-append "" (list "echo -c -q \"https://acomics.ru" image-url "\""))))
             "+" "-")
          "-"))

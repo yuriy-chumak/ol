@@ -6,7 +6,7 @@
    (let main ((left '()) (right all))
       (if (null? right)
          (reverse left)
-         (unless (car right)
+         (if (not (car right))
             (main left (cdr right))
             (let loop ((l '()) (r right) (n 0) (every (car right)))
                (if (null? r)

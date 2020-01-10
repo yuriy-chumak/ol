@@ -10,9 +10,8 @@
 ;(import (OpenGL ARB multitexture))
 
 (unless (and ARB_depth_texture ARB_shadow)
-   (begin
-      (print "ARB_depth_texture and ARB_shadow extensions required.")
-      (halt 1)))
+   (print "ARB_depth_texture and ARB_shadow extensions required.")
+   (halt 1))
 
 (import (lib math))
 (define (make-mat4x4) (map (lambda (_) (inexact 0)) (iota 16)))
@@ -148,7 +147,7 @@
 )
 
 (define (skip l n) ; util
-   (unless (zero? n)
+   (if (not (zero? n))
       (skip (cdr l) (- n 1))
       l))
 

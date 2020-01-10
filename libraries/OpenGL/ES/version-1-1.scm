@@ -1254,12 +1254,12 @@
                (glColorPointer 4 GL_FLOAT 0 #f)
                (glEnableClientState GL_COLOR_ARRAY)
 
-               (unless (null? texcoords) (begin
+               (unless (null? texcoords)
                   (glBindBuffer GL_ARRAY_BUFFER (lref vbos 2))
                   (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length texcoords)) (cons fft-float* texcoords) GL_STATIC_DRAW)
                   (glTexCoordPointer 2 GL_FLOAT 0 #f)
                   (glEnableClientState GL_TEXTURE_COORD_ARRAY)
-               ))
+               )
 
                (glDrawArrays mode 0 (/ (length vertices) 3))
 

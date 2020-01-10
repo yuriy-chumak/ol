@@ -14,7 +14,7 @@
                (sender msg envelope))
             ; only vectors allowed
             (let ((index (ref msg 1)))
-               (unless index   ; #false means "add new parameter"
+               (if (not index)   ; #false means "add new parameter"
                   (let*((index _ (vm:add (get bindings 0 0) 1))
                         (bindings (put bindings 0 index)))
                      (mail sender index)

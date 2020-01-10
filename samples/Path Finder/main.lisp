@@ -1,4 +1,7 @@
 #!/usr/bin/ol
+
+(define show-path #f)
+
 ;;;; Алгоритм ориентирования и поиска пути в сложном лабиринте
 (import
    (owl ff) (otus random!)
@@ -310,7 +313,7 @@
 
       ; один из списков
 ;      (print (ref step 3))
-      (if #t
+      (if show-path
       ;(if (not (and (eq? (ref step 1) 0) (eq? (ref step 2) 0)))
       (let ((map (ref step 3)))
          ; draw 'open list
