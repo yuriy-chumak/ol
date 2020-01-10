@@ -103,21 +103,28 @@ R<sup>7</sup>RS DIFFERENCES
   * |\t\t| and |\x9;\x9;| are **different** in Ol, but *the same* in Scheme.
   * Ol is definitely **case sensitive**, but *configurable thru #!fold-case and #!no-fold-case* in Scheme
 * 4.1.6. Assignments
-  * **No set!** in Ol because Ol is purely functional language.
+  * **No** SET! in Ol because Ol is purely functional language.
 * 4.1.7. Inclusion
-  * **No include and include-ci** in Ol. Use ",load" instead.
+  * **No** INCLUDE and INCLUDE-CI in Ol. Use ",load" instead.
+* 4.2.1. Conditionals
+  * The result of the 'when' expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
+  * The result of the 'unless' expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
+* 4.2.5. Delayed evaluation
+  * **No** DELAY-FORCE, PROMISE? and MAKE-PROMISE in Ol. But DELAY and FORCE exists, sure.
+* 4.2.7. Exception handling
+  * **No** GUARD and RAISE in Ol.
+* 5.5. Record-type definitions
+  * **No** DEFINE-RECORD-TYPE in Ol.
 * 6.1. Equivalence predicates (EQV?)
-  * (eqv? +nan.0 +nan.0) is **#true**, but *unspecified* in Scheme
+  * (eqv? +nan.0 +nan.0) is **#true**, but *unspecified* in Scheme. The same for +inf.0 and -inf.0.
 * 6.2.5. Syntax of numerical constants
   * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
-    - *explanation: inexactness can be disabled by compiler features or/and can be unsupported by platform, so we should expect the same behavior of the program independently of inexactness support. unless we use inexact numbers, sure.*
+    - *explanation: inexactness can be disabled by compiler features or/and unsupported by platform. but we we should expect the same behavior of the program independently of inexactness support. in case we not use inexact numbers, sure.*
 * 6.2.6. Numerical operations
-  * (integer? x) for inexact numbers always returns **#false** in Ol, but *#true* in Scheme when (= x (round x)).
+  * INTEGER? for inexact numbers always returns **#false** in Ol, but can be *#true* in Scheme when (= number (round number)).
     - *explanation: inexactness is an inexactness, we can loose the fractional part and may not notice this. so let's be a little paranoid.*
 * 6.4. Pairs and lists
   * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
-* 4.2.7. Exception handling
-  * **No** *guard* and *raise* in Ol.
 
 
 BUILD
