@@ -338,14 +338,14 @@
 
       ; syntax:  (letrec <bindings> <body>)
       (define-syntax letrec
-         (syntax-rules ()
+         (syntax-rules (begin)
             ((letrec ((?var ?val) ...) ?body) (letq (?var ...) (?val ...) ?body))
             ((letrec vars body ...) (letrec vars (begin body ...)))))
 
       ; syntax:  (let <bindings> <body>)
-      ;          (let keyword <bindings> <body>) named let, from 4.2.4 Iteration
+      ;          (let keyword <bindings> <body>) named let, see "4.2.4 Iteration"
       (define-syntax let
-         (syntax-rules ()
+         (syntax-rules (letrec)
             ((let ((var val) ...) exp . rest)
                ((lambda (var ...) exp . rest) val ...))
             ((let keyword ((var init) ...) exp . rest)
@@ -354,6 +354,7 @@
       ; syntax:  (begin <expression1> <expression2> ...)
       (define-syntax begin
          (syntax-rules (define letrec)
+            ((begin) #false) ; empty 
             ((begin exp) exp)
             ((begin (define . a) (define . b) ... . rest)
                (begin 42 () (define . a) (define . b) ... . rest))
