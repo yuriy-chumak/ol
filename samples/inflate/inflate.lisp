@@ -11,14 +11,14 @@
                (print-to stderr "END OF STREAM"))
             ((pair? l)
                (if (not (less? i n))
-                  (values (band v (- (<< 1 n) 1)) (tuple (>> v n) (- i n) l))
+                  (values (band v (- (<< 1 n) 1)) [(>> v n) (- i n) l])
                   ; если же не хватает бит, втянем из потока
-                  (loop (tuple
+                  (loop [
                      (bor v (<< (car l) i))
                      (+ i 8)
-                     (cdr l)))))
+                     (cdr l)])))
             (else
-               (loop (tuple v i (l)))))))))
+               (loop [v i (l)])))))))
 
 ; code - huffman table (from make-huffman-table), hold - binary stream
 ; декодер входного потока по таблице хафмана
@@ -185,7 +185,7 @@
 
    ; вернем поток с декодированным первым байтом
    (force
-      (make-block-decoder 0 (tuple 0 0 l))))
+      (make-block-decoder 0 [0 0 l])))
 
 
 ;; (define port (fopen "15_0.lanim" 0)) ;stdin)

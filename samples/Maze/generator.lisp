@@ -41,11 +41,11 @@
          (h (randint min_room_height max_room_height))
          (x (randint room_margin (- width w room_margin)))
          (y (randint room_margin (- height h room_margin))))
-      (tuple
+      [
          (- x (modulo x 2) -1)
          (- y (modulo y 2) -1)
          (- w (modulo w 2) -1)
-         (- h (modulo h 2) -1))))
+         (- h (modulo h 2) -1)]))
 
 ; пустой уровень (заполненный скальными породами)
 (define level (map
@@ -84,7 +84,7 @@
 ;   (if (and (<= 0 x) (<= 0 y))
 ;      (not (eq? (ref (lref level y) x) #\space))))
 ;                         left      top       right     bottom
-(define neighbors (tuple '(-2 . 0) '(0 . -2) '(+2 . 0) '(0 . +2)))
+(define neighbors ['(-2 . 0) '(0 . -2) '(+2 . 0) '(0 . +2)])
 
 ; источники коридоров:
 (define origins (apply append

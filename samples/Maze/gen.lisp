@@ -35,7 +35,7 @@
       (make-bytevector WIDTH #\#))
    (iota HEIGHT)))
 
-(define neighbors (tuple '(-1 . 0) '(0 . -1) '(+1 . 0) '(0 . +1)))
+(define neighbors ['(-1 . 0) '(0 . -1) '(+1 . 0) '(0 . +1)])
 
 (let loop ((x (floor (/ WIDTH 2))) (y (floor (/ HEIGHT 2))) (n (floor (* FILLING WIDTH HEIGHT))))
    (set-ref! (lref level y) x #\ )

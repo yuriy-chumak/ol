@@ -17,8 +17,8 @@
          (print-to stderr "Unknown command " msg)
          (this strings)))))))
 
-(define (strings:get id) (interact 'strings (tuple 'get id)))
-(define (strings:change id new-string) (mail 'strings (tuple 'set id new-string)))
+(define (strings:get id) (interact 'strings ['get id]))
+(define (strings:change id new-string) (mail 'strings ['set id new-string]))
 
 
 ; strings keys

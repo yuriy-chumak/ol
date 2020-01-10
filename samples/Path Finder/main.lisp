@@ -287,16 +287,16 @@
    (let*((new-time _ (clock))
          (step (if #t ;(> new-time old-time)
                   (begin
-                    (mail me (tuple 'update-fov scheme))
-                    (interact me (tuple 'A* x y)))
-                  (tuple 0 0 #empty #empty))))
+                    (mail me ['update-fov scheme])
+                    (interact me ['A* x y]))
+                  [0 0 #empty #empty])))
 
       ; попросим монстра осмотреться
 
 
       ; нарисуем карту, которую "помнит" создание
       (if #t
-      (let ((map (interact me (tuple 'get-fov))))
+      (let ((map (interact me ['get-fov])))
          (glEnable GL_TEXTURE_2D)
          (glBegin GL_QUADS)
          (for-each (lambda (i)
@@ -337,7 +337,7 @@
       (glEnable GL_TEXTURE_2D)
       (glColor3f 1 1 1)
       (glBegin GL_QUADS)
-      (let ((xy (interact me (tuple 'get-location))))
+      (let ((xy (interact me ['get-location])))
          (if (and (= (car xy) x) (= (cdr xy) y))
             (quadT x y 7/8 1/8)
             (begin
@@ -347,7 +347,7 @@
 
 
       ; все, теперь можем двигаться туда,  куда хотели:
-      (mail me (tuple 'move (ref step 1) (ref step 2)))
+      (mail me ['move (ref step 1) (ref step 2)])
 
    ; вернем модифицированные параметры
       (gl:set-userdata (put
