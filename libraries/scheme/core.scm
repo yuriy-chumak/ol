@@ -1140,7 +1140,6 @@
       (assert #f                            ===>  #f)
       (assert (quote #f)                    ===>  #f)
 
-
       ; procedure:  (not obj)
       (define (not x)
          (if x #false #true))
@@ -1153,8 +1152,7 @@
       (assert (not cons)                    ===>  #f)
       (assert (not 'nil)                    ===>  #f)
 
-
-      ; library procedure:  (boolean? obj)
+      ; procedure:  (boolean? obj)
       (define (boolean? o)
          (cond
             ((eq? o #true) #true)
@@ -1165,14 +1163,14 @@
       (assert (boolean? 0)                  ===>  #f)
       (assert (boolean? '())                ===>  #f)
 
-      ; todo: Оставить здесь только самые базово необходимые вещи, все остальное переместить в:
-      ;   6.3.2 -> (scheme r5rs lists)
-      ;   6.3.3 -> (scheme r5rs symbols)
-      ;   6.3.4 -> (scheme r5rs characters)
-      ;   6.3.5 -> (scheme r5rs strings)
-      ;   6.3.6 -> (scheme r5rs vectors)
+      ;; ; todo: Оставить здесь только самые базово необходимые вещи, все остальное переместить в:
+      ;; ;   6.3.2 -> (scheme r5rs lists)
+      ;; ;   6.3.3 -> (scheme r5rs symbols)
+      ;; ;   6.3.4 -> (scheme r5rs characters)
+      ;; ;   6.3.5 -> (scheme r5rs strings)
+      ;; ;   6.3.6 -> (scheme r5rs vectors)
 
-      ; (r7rs) 6.4  Pairs and lists
+      ; 6.4  Pairs and lists
       ;
       ; A pair (sometimes called a dotted pair) is a record structure
       ; with two fields called the car and cdr fields (for historical
@@ -1226,11 +1224,13 @@
       ; procedure:  (cddr pair)
       (define (cddr pair) (cdr (cdr pair)))
 
-      ; cxr library procedure:  (caaaar pair)  <- (scheme cxr)
-      ; cxr library procedure:  (caaadr pair)  <- (scheme cxr)
+      ; procedure:  (caaar pair)  <- (scheme base)
       ; ...
-      ; cxr library procedure:  (cdddar pair) <- (scheme cxr)
-      ; cxr library procedure:  (cddddr pair) <- (scheme cxr)
+      ; procedure:  (cdddr pair)  <- (scheme base)
+
+      ; procedure:  (caaaar pair) <- (scheme cxr)
+      ; ...
+      ; procedure:  (cddddr pair) <- (scheme cxr)
 
       ; procedure:  (null? obj)
       (define (null? x)
@@ -1262,7 +1262,6 @@
             ((k fill)
                (make k fill)))))
 
-
       ; procedure:  (list obj ...)
       (define-syntax list
          (syntax-rules ()
@@ -1270,12 +1269,12 @@
             ((list a . b)
                (cons a (list . b)))))
 
-      ; very interesting question:
+      ; question:
       ;  why macro, not a function?
       ; answer:
-      ;  the function unwraps to LD/LD/LD/LD/LD/MOV2/MOV2/MOV2/GOTO/JAFX sequnce,
-      ;  but macro unwraps to LD/CONS/LD/CONS/LD/CONS. So, we have a goot speedup in case of
-      ;  list as macro.
+      ;  the function unwraps to LD/LD/LD/LD/LD/MOV2/MOV2/MOV2/GOTO/JAFX 
+      ;  sequnce, but macro unwraps to LD/CONS/LD/CONS/LD/CONS.
+      ;  So, we have a good speedup yeah?
 
       ; procedure:  (length list)
       ;  olvm notes: always returning fixnum, so can be checked by eq?, not only =
@@ -1340,7 +1339,7 @@
       ; k or fewer elements.
       (define (list-ref list k)
          (cond
-            ((null? list) #false) ; temporary instead of (syntax-error "lref: out of list" pos))
+            ((null? list) #false)    ; temporary instead of (syntax-error "lref: out of list" pos))
             ((eq? k 0) (car list))   ; use internal vm math, not math library
             (else (list-ref (cdr list) (|-1| k)))))
 
@@ -1420,8 +1419,6 @@
 
       ; 6.5  Symbols
       ;
-      ; Symbols are objects whose usefulness rests on the fact ...
-      ; .......
 
       ; procedure:  (symbol? obj)
       (define (symbol? o)
@@ -1436,12 +1433,12 @@
                   (and (equal? (car os) (car o)) (loop (cdr o)))))))
 
       ; procedure:  (symbol->string symbol)
-      (declare-external symbol->string '(lang eval))  ; * (lang eval)
+      (declare-external symbol->string '(lang intern))  ; * (lang eval)
 
       ; procedure:  (string->symbol string)
-      (declare-external string->symbol '(lang eval))  ; * (lang eval)
+      (declare-external string->symbol '(lang intern))  ; * (lang eval)
 
-      ; 6.3.4  Characters   * moved to (r5rs characters)
+      ; 6.3.4  Characters   * moved to (scheme characters)
       ; Characters are objects that represent printed characters such as letters and digits.
       ; Characters are written using the notation #\<character> or #\<character name>.
       ;
@@ -1451,23 +1448,25 @@
       ; procedure:  (char>? char1 char2)
       ; procedure:  (char<=? char1 char2)
       ; procedure:  (char>=? char1 char2)
-      ; library procedure:  (char-ci=? char1 char2)
-      ; library procedure:  (char-ci<? char1 char2)
-      ; library procedure:  (char-ci>? char1 char2)
-      ; library procedure:  (char-ci<=? char1 char2)
-      ; library procedure:  (char-ci>=? char1 char2)
-      ; library procedure:  (char-alphabetic? char)
-      ; library procedure:  (char-numeric? char)
-      ; library procedure:  (char-whitespace? char)
-      ; library procedure:  (char-upper-case? letter)
-      ; library procedure:  (char-lower-case? letter)
+      ; procedure:  (char-ci=? char1 char2)
+      ; procedure:  (char-ci<? char1 char2)
+      ; procedure:  (char-ci>? char1 char2)
+      ; procedure:  (char-ci<=? char1 char2)
+      ; procedure:  (char-ci>=? char1 char2)
+      ; procedure:  (char-alphabetic? char)
+      ; procedure:  (char-numeric? char)
+      ; procedure:  (char-whitespace? char)
+      ; procedure:  (char-upper-case? letter)
+      ; procedure:  (char-lower-case? letter)
+      ; procedure:  (digit-value char)
       ; procedure:  (char->integer char)
       ; procedure:  (integer->char n)
-      ; library procedure:  (char-upcase char)
-      ; library procedure:  (char-downcase char)
+      ; procedure:  (char-upcase char)
+      ; procedure:  (char-downcase char)
+      ; procedure:  (char-foldcase char)
 
 
-      ; 6.3.5. Strings
+      ; 6.3.5. Strings  * moved to (owl strings)
       ; Strings are sequences of characters. Strings are written as sequences of characters enclosed
       ; within doublequotes (`"'). A doublequote can be written inside a string only by escaping it
       ; with a backslash (\), as in "The word \"recursion\" has many meanings."
@@ -1485,7 +1484,7 @@
 ;         ()
 ;         (list->string (repeat char n)))
 
-      ; library procedure:  (string char ...)
+      ; procedure:  (string char ...)
       ; procedure:  (string-length string)
 ;      (define (string-length str)
 ;         (case (type str)
@@ -1498,26 +1497,26 @@
 
       ; procedure:  (string-ref string k)
       ; procedure:  (string-set! string k char)
-      ; library procedure:  (string=? string1 string2)
-      ; library procedure:  (string-ci=? string1 string2)
-      ; library procedure:  (string<? string1 string2)
-      ; library procedure:  (string>? string1 string2)
-      ; library procedure:  (string<=? string1 string2)
-      ; library procedure:  (string>=? string1 string2)
-      ; library procedure:  (string-ci<? string1 string2)
-      ; library procedure:  (string-ci>? string1 string2)
-      ; library procedure:  (string-ci<=? string1 string2)
-      ; library procedure:  (string-ci>=? string1 string2)
-      ; library procedure:  (substring string start end)
-      ; library procedure:  (string-append string ...)
-      ; library procedure:  (string->list string)
-      ; library procedure:  (list->string list)
-      ; library procedure:  (string-copy string)
-      ; library procedure:  (string-fill! string char)
+      ; procedure:  (string=? string1 string2)
+      ; procedure:  (string-ci=? string1 string2)
+      ; procedure:  (string<? string1 string2)
+      ; procedure:  (string>? string1 string2)
+      ; procedure:  (string<=? string1 string2)
+      ; procedure:  (string>=? string1 string2)
+      ; procedure:  (string-ci<? string1 string2)
+      ; procedure:  (string-ci>? string1 string2)
+      ; procedure:  (string-ci<=? string1 string2)
+      ; procedure:  (string-ci>=? string1 string2)
+      ; procedure:  (substring string start end)
+      ; procedure:  (string-append string ...)
+      ; procedure:  (string->list string)
+      ; procedure:  (list->string list)
+      ; procedure:  (string-copy string)
+      ; procedure:  (string-fill! string char)
 
 
 
-      ;; (r7rs) 6.8  Vectors
+      ;; 6.8  Vectors
 
       ; Vectors are heterogeneous structures whose elements are
       ; indexed by integers. A vector typically occupies less space
@@ -1576,9 +1575,32 @@
       (assert (vector 'a 'b 'c)                ===>  #(a b c))
 
       ; * extra vector staff implemented in (scheme vectors)
+      ; procedure:  (vector-length vector)
+      ; procedure:  (vector-ref vector k)
+      ; procedure:  (vector-set! vector k obj)
+      ; procedure:  (vector->list vector)
+      ; procedure:  (vector->list vector start)
+      ; procedure:  (vector->list vector start end)
+      ; procedure:  (list->vector list)
+      ; procedure:  (vector->string vector)
+      ; procedure:  (vector->string vector start)
+      ; procedure:  (vector->string vector start end)
+      ; procedure:  (string->vector string)
+      ; procedure:  (string->vector string start)
+      ; procedure:  (string->vector string start end)
+      ; procedure:  (vector-copy vector)
+      ; procedure:  (vector-copy vector start)
+      ; procedure:  (vector-copy vector start end)
+      ; procedure:  (vector-copy! to at from)
+      ; procedure:  (vector-copy! to at from start)
+      ; procedure:  (vector-copy! to at from start end)
+      ; procedure:  (vector-append vector ...)
+      ; procedure:  (vector-fill! vector fill)
+      ; procedure:  (vector-fill! vector fill start)
+      ; procedure:  (vector-fill! vector fill start end)
 
 
-      ;; (r7rs) 6.9  Bytevectors
+      ;; 6.9  Bytevectors
       ;
       ; Bytevectors represent blocks of binary data. They are
       ; fixed-length sequences of bytes, where a byte is an exact
@@ -1614,9 +1636,24 @@
          (vm:makeb type-bytevector bytes))
 
       ; * extra bytevector staff implemented in (scheme bytevector)
+      ; procedure: (bytevector-length bytevector)
+      ; procedure: (bytevector-u8-ref bytevector k)
+      ; procedure: (bytevector-u8-set! bytevector k byte)
+      ; procedure: (bytevector-copy bytevector)
+      ; procedure: (bytevector-copy bytevector start)
+      ; procedure: (bytevector-copy bytevector start end)
+      ; procedure: (bytevector-copy! to at from)
+      ; procedure: (bytevector-copy! to at from start)
+      ; procedure: (bytevector-copy! to at from start end)
+      ; procedure: (bytevector-append bytevector ...)
+      ; procedure: (utf8->string bytevector)
+      ; procedure: (utf8->string bytevector start)
+      ; procedure: (utf8->string bytevector start end)
+      ; procedure: (string->utf8 string)
+      ; procedure: (string->utf8 string start)
+      ; procedure: (string->utf8 string start end)
 
-
-      ;; (r7rs) 6.10.  Control features
+      ; 6.10  Control features
       ;
       ; This chapter describes various primitive procedures which
       ; control the flow of program execution in special ways.
@@ -1679,6 +1716,9 @@
             ((f ) #null)))
 
          (assert (map cadr '((a b) (d e) (g h)))  ===> '(b e h))
+      
+      ; procedure:  (string-map proc string1 string2 ...) ; todo
+      ; procedure:  (vector-map proc vector1 vector2 ...) ; todo
 
       ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
       (define for-each (case-lambda
@@ -1697,7 +1737,9 @@
                            (loop (map cdr a)))))
          ((f) #false)))
 
-      ; procedure:  (force promise)
+      ; procedure:  (string-for-each proc string1 string2 ...) ; todo
+      ; procedure:  (vector-for-each proc vector1 vector2 ...) ; todo
+
       ; procedure:  (call-with-current-continuation proc)
       (define call-with-current-continuation
          ('_sans_cps (lambda (k f)
@@ -1722,8 +1764,16 @@
             ((call-with-values thunk (lambda (arg ...) body))
                (values-apply (thunk) (lambda (arg ...) body)))))
 
-      ; procedure:  (dynamic-wind before thunk after)
+      ; procedure:  (values obj ...)  * ol builtin
+
+      ; procedure:  (call-with-values producer consumer) ; todo
+
+      ; procedure:  (dynamic-wind before thunk after) ; todo
       ;
+
+      ; -- i'm here ----------------------
+
+
 
       ;; 6.5  Eval
       ; ...
@@ -1930,10 +1980,10 @@
       ; ...
 
 
-      (define-syntax tuple ; * deprecated
-         (syntax-rules ()
-            ((tuple . tail)
-               (vm:new type-vector . tail))))
+      ;; (define-syntax tuple ; * deprecated
+      ;;    (syntax-rules ()
+      ;;       ((tuple . tail)
+      ;;          (vm:new type-vector . tail))))
 
 
       ; 6. Standard procedures
@@ -2041,19 +2091,10 @@
       type-string type-string-wide type-string-dispatch
       type-thread-state
       type-vptr
-
-      ;; sketching types
       type-ff type-ff-r type-ff-red type-ff-red-r
-
-      ; ----------------------------
-      list length append reverse
-      ilist
-      call-with-values define-library
-
-      ; 6.3
-      not boolean? symbol? port? procedure? eof?
-
-      ; (r7rs) 6.4. Pairs and lists
+      ; 6.3  Booleans
+      not boolean?
+      ; 6.4. Pairs and lists
       pair? cons car cdr
       set-car! set-cdr!
       caar cadr cdar cddr
@@ -2062,40 +2103,38 @@
       append reverse list-tail list-ref list-set!
       memq memv member
       list-copy
-
-      ; (r7rs) 6.5. Symbols
+      ; 6.5. Symbols
       symbol? symbol=? symbol->string string->symbol
-
-      value? reference?
-
-      list-ref
-
-      ; (r7rs) 6.8  Vectors
+      ; 6.8  Vectors
       vector?
       make-vector
       vector
-
-
-      ; (r7rs) 6.9  Bytevectors
+      ; 6.9  Bytevectors
       bytevector?
       make-bytevector
       bytevector
+      ; 6.10  Control features
+      ff? bytecode? function?
+      procedure? apply
+      map ;string-map vector-map
+      for-each ;string-for-each vector-for-each
+      call-with-current-continuation call/cc
+      call-with-values
+      
+      ; ----------------------------
+      list length append reverse
+      ilist
+       define-library
 
-      ; (r7rs) 6.10.  Control features
-      map for-each
+      port?  eof?
+      value? reference?
 
       ; 6.14
       features
 
       ; ol extension:
-      bytecode? function? ff?
-
-      list?
-
       halt
 
-      set-car! set-cdr!
-
-      tuple ; TEMP
+      ;; tuple ; TEMP
       |-1| |+1| ; * ol internal staff
 ))
