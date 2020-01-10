@@ -682,9 +682,9 @@ typedef struct ol_t OL;
 struct __attribute__ ((aligned(sizeof(word)), packed))
 value_t
 {
-	unsigned mark : 1;    // mark bit (can be 1 only during gc)
-	unsigned i    : 1;    // always 1
-	unsigned type : 6;    // value type
+	unsigned char mark : 1;    // mark bit (can be 1 only during gc)
+	unsigned char i    : 1;    // always 1
+	unsigned char type : 6;    // value type
 
 	unsigned char payload[sizeof(word) - 1];
 };
@@ -716,13 +716,14 @@ object_t
 {
 	union {
 		struct {
-			unsigned mark : 1;    // mark bit (can be 1 only during gc)
-			unsigned i    : 1;    // for objects always 1
-			unsigned type : 6;    // object type
+			unsigned char mark : 1;    // mark bit (can be 1 only during gc)
+			unsigned char i    : 1;    // for objects always 1
+			unsigned char type : 6;    // object type
 
-			unsigned padding : 3; // number of padding (unused) bytes at the end of object
-			unsigned rawness : 1; // 1 for bitstream, 0 for vectors
-			unsigned user    : 4; // unused, can be used by user
+			unsigned char padding : 3; // number of padding (unused) bytes at the end of object
+			unsigned char rawness : 1; // 1 for bitstream, 0 for vectors
+			unsigned char user    : 4; // unused, can be used by user
+
 			unsigned char size[sizeof(word) - 2];
 		};
 		word ref[1];
