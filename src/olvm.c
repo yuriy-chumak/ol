@@ -387,10 +387,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #	endif
 #endif
 
-#ifdef __unix__
-#	include <sys/mman.h>
-#endif
-
 #ifdef _WIN32
 #	include <conio.h>
 #	include <malloc.h>

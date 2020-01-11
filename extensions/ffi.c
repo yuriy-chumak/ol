@@ -24,6 +24,10 @@
 
 #if OLVM_FFI
 
+#ifdef __unix__
+#	include <sys/mman.h>
+#endif
+
 // todo: check emscripten versions:
 //#define __EMSCRIPTEN_major__ 1
 //#define __EMSCRIPTEN_minor__ 37
