@@ -20,7 +20,7 @@
 (define HEIGHT 29) ; should be odd
 (define FILLING 0.4)
 
-(define (shuffle! o) ; перемешивалка tuple
+(define (shuffle! o) ; перемешивалка векторов
    (for-each (lambda (i)
          (let ((a (ref o i))
                (j (+ 1 (rand! i))))

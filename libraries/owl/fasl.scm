@@ -56,7 +56,6 @@
       fasl-decode          ; (byte ...) -> obj, input can be lazy
       decode-or            ; (byte ...) fail → object | (fail reason)
       encode               ; obj -> (byte ... 0), n-alloc-objs (mainly for bootstrapping)
-      tuple->list          ; TEMPORARILY HERE
       objects-below        ; obj -> (obj ...), all allocated objects below obj
       decode-stream        ; ll failval → (ob ...) | (ob .. failval)
       sub-objects          ; obj wanted? -> ((obj . n-occurrences) ...)
@@ -64,6 +63,7 @@
 
    (import
       (scheme core)
+      (scheme vectors)
 
       (otus blobs)
       (owl math)
@@ -76,15 +76,6 @@
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define enodata #false) ;; reason to fail if out of data (progressive readers want this)
-
-      (define (read-tuple tuple pos lst)
-         (if (= pos 0)
-            lst
-            (read-tuple tuple (- pos 1)
-               (cons (ref tuple pos) lst))))
-
-      (define (tuple->list tuple)
-         (read-tuple tuple (size tuple) null))
 
       ;;;
       ;;; Encoder
@@ -124,7 +115,7 @@
                   (let ((seen (put seen obj 1)))
                      (if (ref obj 0) ; ==(blob? obj), 0 in ref works only for blobs
                         seen
-                        (fold clos seen (tuple->list obj)))))))
+                        (fold clos seen (vector->list obj)))))))
          (clos empty root))
 
       ;; don't return ff, type of which is changing atm
@@ -191,7 +182,7 @@
                      ;  t fits in 6 bits -> (+ (<< t 2) 3) (ditto)
                      (ilist 1 t
                         (send-number s
-                           (render-fields out (tuple->list val) pos clos))))))))
+                           (render-fields out (vector->list val) pos clos))))))))
 
       (define fasl-finale (list 0)) ; stream end marker
 

@@ -454,7 +454,7 @@
                   (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))
                   (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
                ;(gl:MakeCurrent #f #f)
-                  (mail 'opengl ['set-context (tuple hDC hRC window)])
+                  (mail 'opengl ['set-context [hDC hRC window]])
                   (interact 'opengl ['get-context]) ; синхронизация
 
                   (ShowWindow window 5)

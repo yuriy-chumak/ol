@@ -73,7 +73,7 @@
                   (cons #\# (render (blob->list obj) tl)))
 
                ((vector? obj)
-                  (cons #\# (render (tuple->list obj) tl)))
+                  (cons #\# (render (vector->list obj) tl)))
                   ;; (ilist #\# #\(
                   ;;    (render (ref obj 1)
                   ;;       (fold

@@ -423,7 +423,7 @@
          (else
             (fold walk
                (put trail node #true)
-               (tuple->list node)))))
+               (vector->list node)))))
    (define trail
       (walk (put empty tag null) node))
 
@@ -440,7 +440,7 @@
       ((get seen obj #false) =>
          (λ (here) (values seen here)))
       (else
-         (let loop ((seen seen) (lst (tuple->list obj)) (here empty))
+         (let loop ((seen seen) (lst (vector->list obj)) (here empty))
             (if (null? lst)
                (values (put seen obj here) here)
                (let* ((seen this (code-refs seen (car lst))))

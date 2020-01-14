@@ -35,13 +35,13 @@
 (define (create-scalar value)
    (cons value null))
 (define (create-vector size)
-   (list->tuple (repeat 0 size)))
+   (list->vector (repeat 0 size)))
 (define (create-matrix size-x size-y)
-   (list->tuple
+   (list->vector
    (let loop ((n size-y) (out null))
       (if (eq? n 0)
          out
-         (loop (- n 1) (cons (list->tuple (repeat 0 size-x)) out))))))
+         (loop (- n 1) (cons (list->vector (repeat 0 size-x)) out))))))
 
 (define (get-value scalar)
    (car scalar))

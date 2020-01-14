@@ -25,7 +25,7 @@
 ;; (define random_connections 1)
 ;; (define random_spurs 3)
 
-(define (shuffle! o) ; перемешивалка tuple
+(define (shuffle! o) ; перемешивалка векторов
    (for-each (lambda (i)
          (let ((a (ref o i))
                (j (+ 1 (rand! i))))
@@ -130,7 +130,7 @@
                      (set-ref! (lref level (+ y (/ (cdr neighbor) 2))) (+ x (/ (car neighbor) 2)) #\space) ; пробъем стену
                      (loop (+ x (car neighbor)) (+ y (cdr neighbor)))
                      )))
-            (tuple->list (shuffle! neighbors)))
+            (vector->list (shuffle! neighbors)))
          ; дополнительный шаг - заложим проход, если это тупик
          (case (+ (if (wall? (+ x 1) y) #b0001 0) ; right
                   (if (wall? x (+ y 1)) #b0010 0) ; bottom

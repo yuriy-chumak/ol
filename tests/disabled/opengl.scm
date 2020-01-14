@@ -75,8 +75,6 @@
 ; в момент импорта сделать все нужные привязки
 ; export (MessageBox)  и т.д.
 
-;(wglMakeCurrent (tuple "a" "b" "c"))
-
 (define GLchar** type-vector)
 (define GLint* type-vptr)
 (define GLsizei* type-vptr)

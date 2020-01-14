@@ -25,8 +25,7 @@
       (exports (owl time))
       (exports (owl regex))
       (exports (owl math-extra))
-      (exports (owl math))
-      (exports (owl tuple)))
+      (exports (owl math)))
 
    (import
       (scheme core)
@@ -39,7 +38,6 @@
       (owl list)
       (owl rlist)
       (owl list-extra)
-      (owl tuple)
       (owl ff)
       (owl io)
       (owl time)

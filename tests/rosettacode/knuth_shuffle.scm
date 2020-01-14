@@ -21,8 +21,8 @@
 (define (list-shuffle tp)
    (map (lambda (i)
          (list-ref tp i))
-      (tuple->list
-         (shuffle (list->tuple (iota (length tp)))))))
+      (vector->list
+         (shuffle (list->vector (iota (length tp)))))))
 
 (print "list after: " (list-shuffle items))
 
