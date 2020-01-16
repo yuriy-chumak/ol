@@ -125,7 +125,8 @@ R<sup>7</sup>RS DIFFERENCES
     - *explanation: inexactness is an inexactness, we can loose the fractional part and may not notice this. so let's be a little paranoid.*
 * 6.4. Pairs and lists
   * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
-
+* 6.11. Exceptions
+  * **No** exceptions handling in Ol. Yet.
 
 BUILD
 -----
