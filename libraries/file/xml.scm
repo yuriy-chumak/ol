@@ -2,6 +2,7 @@
 (import
    (otus lisp)
    (only (lang intern) string->symbol)
+   (only (scheme misc) string->number)
    (owl parse))
 
 (export
@@ -17,6 +18,17 @@
    xml-get-subtag
 
    xml-print
+
+   xml-get-int-attribute
+
+   ; let's try new xml interface:
+   xml:root
+
+   xml:attributes
+   xml:name
+   xml:value
+
+   xml:attribute
 )
 
 ; parsed xml is:
@@ -134,6 +146,19 @@
       (let ((subtags (xml-get-subtags root name)))
          (unless (null? subtags)
             (car subtags))))
+
+
+   (define (xml-get-int-attribute root name default-value)
+      (let ((value (xml-get-attribute root name #false)))
+         (if value (string->number value 10) default-value)))
+
+   (define xml:root xml-get-root-element)
+
+   (define xml:attributes xml-get-attributes)
+   (define xml:name xml-get-name)
+   (define xml:value xml-get-value)
+
+   (define xml:attribute xml-get-attribute)
 
    ; printing the xml:
    (define (xml-print xml)
