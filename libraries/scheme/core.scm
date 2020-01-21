@@ -1728,7 +1728,7 @@
                            (loop (cdr a)))))
          ((f a b)    (let loop ((a a) (b b))
                         (unless (null? a)
-                           (f a b)
+                           (f (car a) (car b))
                            (loop (cdr a) (cdr b)))))
          ((f a b . c)
                      (let loop ((a (cons a (cons b c))))
