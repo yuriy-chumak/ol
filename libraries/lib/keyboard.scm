@@ -62,14 +62,14 @@
                   (band (<< 1 (band code #b111))
                         (ref keys (>> code 3)))))))
 
-         ; /usr/include/linux/input-event-codes.h
+         ; /usr/include/X11/keysymdef.h
          (define KEY_ENTER #xff52) (define KEY_ESC #xff1b)
          (define KEY_LEFTCTRL #xffe3) (define KEY_LEFTALT #xffe9) (define KEY_LEFTSHIFT #xffe1)
          (define KEY_UP #xff52) (define KEY_DOWN #xff54) (define KEY_LEFT #xff51) (define KEY_RIGHT #xff53)
 
-         (define KEY_1 #x02) (define KEY_2 #x03) (define KEY_3 #x04) (define KEY_4 #x05) (define KEY_5 #x06)
-         (define KEY_6 #x07) (define KEY_7 #x08) (define KEY_8 #x09) (define KEY_9 #x0A) (define KEY_0 #x0B)
-         (define KEY_MINUS #x0C) (define KEY_EQUAL #x0D) (define KEY_BACKSPACE #x0E) (define KEY_TAB #x0F)
+         (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35)
+         (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
+         (define KEY_MINUS #x2D) (define KEY_EQUAL #x2E) (define KEY_BACKSPACE #xff08) (define KEY_TAB #xff09)
 
          ;; (define vkQ 24) (define vkW 25) (define vkE 26) (define vkR 27) (define vkT 28) (define vkY 29) (define vkU 30) (define vkI 31) (define vkO 32) (define vkP 33)
          ;; (define vkA 38) (define vkS 39) (define vkD 40) (define vkF 41) (define vkG 42) (define vkH 43) (define vkJ 44)(define vkK 45) (define vkL 46)
