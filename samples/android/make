@@ -59,7 +59,7 @@ javac -classpath $_ANDROID_CP \
    -sourcepath 'src:gen' \
    -d 'bin' -target 1.7 -source 1.7 \
    `find . -name "*.java"` \
-   -bootclasspath `locate -r '/rt.jar$'|sed -n 1p` || exit 1
+   -bootclasspath /usr/lib/jvm/java-8-openjdk-amd64/jre/libjar
 printf "\e[0m"
 
 $_DX --dex --output=classes.dex bin
@@ -91,15 +91,15 @@ $_AAPT add ${_APK_BASENAME}.apk.unaligned `find lib/ -type f`
 ## create a release version with your keys
 ## jarsigner -keystore /path/to/your/release/keystore -storepass 'yourkeystorepassword' ${_APK_BASENAME}.apk.unaligned yourkeystorename
 
+jarsigner -keystore ./debug.keystore -sigalg SHA1withRSA -digestalg SHA1 -storepass android ./${_APK_BASENAME}.apk.unaligned androiddebugkey
 $_ZIPALIGN -f 4 ${_APK_BASENAME}.apk.unaligned ${_APK_BASENAME}-debug.apk
-jarsigner -keystore ./debug.keystore -sigalg SHA1withRSA -digestalg SHA1 -storepass android ${_APK_BASENAME}-debug.apk androiddebugkey
 
 #
 #rm -rf $_INTERMEDIATE
 #
-$_ADB get-state 1>/dev/null 2>&1 && $_ADB install -r ${_APK_BASENAME}-debug.apk || printf '\e[31mNo Android device attach\e[30m\n'
+#$_ADB get-state 1>/dev/null 2>&1 && $_ADB install -r ${_APK_BASENAME}-debug.apk || printf '\e[31mNo Android device attach\e[30m\n'
 
-. up
+#. up
 #$_ADB push assets /sdcard
 #$_ADB shell monkey -p name.yuriy_chumak.ol -c android.intent.category.LAUNCHER 1
 #adb install -r wnd-debug.apk

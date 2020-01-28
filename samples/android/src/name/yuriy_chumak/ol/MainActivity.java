@@ -37,8 +37,8 @@ public class MainActivity extends Activity
 		glView = new GLSurfaceView(this);
         glView.setEGLContextClientVersion(1);
         glView.setRenderer(this);
-        glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-        //glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        //glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
 		setContentView(glView);
 
@@ -49,7 +49,7 @@ public class MainActivity extends Activity
 					final float y = event.getY();
                     MainActivity.this.runOnUiThread(new Runnable() {
                         public void run() {
-				            eval("(let ((mouse-handler (interact 'opengl (tuple 'get 'mouse-handler)))) (if mouse-handler (mouse-handler 1 " + x + " " + y + ")))");
+                            onMouseTouch(x, y);
                             glView.requestRender();
                         }
                     });
@@ -61,11 +61,16 @@ public class MainActivity extends Activity
 
 	// GLSurfaceView.Renderer
     public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-        load("reference.scm");
+        load("main.lisp");
     }
 
     public void onDrawFrame(GL10 unused) {
-        eval("(let ((renderer (interact 'opengl (tuple 'get 'renderer)))) (if renderer (renderer #false)))");
+        eval("(let ((renderer (interact 'opengl ['get 'renderer]))) (if renderer (renderer #false)))");
+    }
+    public void onMouseTouch(float x, float y)
+    {
+        //eval("print", "onMouseTouch(", x, " ", y, ")");
+        //eval("(let ((mouse-handler (interact 'opengl ['get 'mouse-handler]))) (if mouse-handler (mouse-handler 1 " + x + " " + y + ")))");
     }
 
     public void onSurfaceChanged(GL10 unused, int width, int height) {
@@ -75,7 +80,7 @@ public class MainActivity extends Activity
 
     public static native void nativeSetAssetManager(AssetManager am);
 	public static native void nativeNew();
-	public static native void nativeDelete();
+	// public static native void nativeDelete();
 
 	public static native Object eval(Object... array);
     public static void load(String filename) {
@@ -84,7 +89,7 @@ public class MainActivity extends Activity
 
 	static {
 		// System.loadLibrary("z");
-		System.loadLibrary("freetype");
+		// System.loadLibrary("freetype");
 		System.loadLibrary("ol");
 	}
 }

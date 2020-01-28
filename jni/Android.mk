@@ -36,7 +36,8 @@ LOCAL_LDLIBS    += -llog -landroid
 
 LOCAL_CFLAGS    += -Ijni/include
 
-include $(BUILD_EXECUTABLE)
+#include $(BUILD_EXECUTABLE)
+include $(BUILD_SHARED_LIBRARY)
 
 # NOTES:
 #

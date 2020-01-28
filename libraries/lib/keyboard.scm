@@ -43,6 +43,20 @@
          ;; (define vkZ 52) (define vkX 53) (define vkC 54) (define vkV 55) (define vkB 56) (define vkN 57) (define vkM 58)
          ;; (define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
          )) 
+   (Android
+      (begin
+         (define (key-pressed? key)
+            #f)
+
+         ; todo: change this to actual
+         (define KEY_ENTER #x0D) (define KEY_ESC #x1B)
+         (define KEY_LEFTCTRL #x11) (define KEY_LEFTALT #x12) (define KEY_LEFTSHIFT #x10)
+         (define KEY_UP #x26) (define KEY_DOWN #x28) (define KEY_LEFT #x25) (define KEY_RIGHT #x27)
+
+         (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35)
+         (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
+         (define KEY_MINUS #xBD) (define KEY_EQUAL #xBB) (define KEY_BACKSPACE #x08) (define KEY_TAB #x09)
+         )) 
    (else
       (begin
          ; https://wiki.archlinux.org/index.php/Keyboard_input

@@ -3305,7 +3305,7 @@ loop:;
 					break;
 
 				// regular file? (id less than VMAX, then we return port as value)
-				if ((unsigned)file <= VMAX) {
+				if (file >= 0 && file <= VMAX) {
 					struct stat sb; // do not open directories
 					if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
 						close(file);

@@ -365,7 +365,7 @@ GOTO:EOF
 :: ====================================================================================
 
 :ANDROID
-set PATH=%PATH%;C:\android-ndk-r10e\;C:\android-sdk-windows\platform-tools\
+set PATH=%PATH%;C:\Android\android-ndk-r10e;C:\Android\android-sdk\platform-tools
 call ndk-build
 ::call adb push libs/armeabi/ol /data/local/tmp/ol
 ::call adb shell chmod 755 /data/local/tmp/ol
