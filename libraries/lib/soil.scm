@@ -4,6 +4,7 @@
    (export
       SOIL_last_result
       SOIL_load_OGL_texture
+      SOIL_load_OGL_texture_from_memory
       
       SOIL_LOAD_AUTO
       SOIL_LOAD_RGBA
@@ -17,6 +18,11 @@
          (define libsoil (or (load-dynamic-library "soil.dll")
                              (runtime-error "Can't load libsoil"
                                       "try to download soil.dll")))))
+   (Android
+      (begin
+         (define libsoil (or (load-dynamic-library "libSOIL.so")
+                             (runtime-error "Can't load libsoil"
+                                      "try to rebuild apk")))))
    (else
       (begin
          (define libsoil (or (load-dynamic-library "libSOIL.so.1")
@@ -57,6 +63,7 @@
    (define SOIL_last_result (libsoil type-string "SOIL_last_result"))
    
    (define SOIL_load_OGL_texture (libsoil fft-unsigned-int "SOIL_load_OGL_texture" type-string fft-int fft-unsigned-int fft-unsigned-int))
+   (define SOIL_load_OGL_texture_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_texture_from_memory" type-bytevector fft-int fft-int fft-unsigned-int fft-unsigned-int))
    (define SOIL_load_OGL_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_cubemap" type-string type-string type-string type-string type-string type-string fft-int fft-unsigned-int fft-unsigned-int))
    (define SOIL_load_OGL_single_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_single_cubemap" type-string type-string fft-int fft-unsigned-int fft-unsigned-int))
    
