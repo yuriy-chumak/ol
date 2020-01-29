@@ -36,16 +36,13 @@
 (import (otus ffi))
 (import (lib soil))
 
-(glOrtho 0 1 1 0 0 1)
-(glEnable GL_TEXTURE_2D)
-
-; *include-dirs*
+;(glOrtho -2 2 -2 2 -2 2)
 
 ; поищем наш файл в папках
 (define id
    (let ((file (file->bytevector "splash.png")))
-      (print "file size: " (size file))
       (SOIL_load_OGL_texture_from_memory file (size file) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)))
+(glEnable GL_TEXTURE_2D)
 (glBindTexture GL_TEXTURE_2D id)
 (glBegin GL_TRIANGLES)
    ; рисуем на весь экран квадратик с текстурой
