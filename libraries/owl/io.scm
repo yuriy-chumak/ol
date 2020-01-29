@@ -8,8 +8,10 @@
       sleep                   ;; sleep a thread n rounds
 
       ;; thread-oriented non-blocking io
-      open-output-file        ;; path → fd | #false
       open-input-file         ;; path → fd | #false
+      open-binary-input-file   
+      open-output-file        ;; path → fd | #false
+      open-binary-output-file
       port?                   ;; _ → bool
       flush-port              ;; fd → _
       close-port              ;; fd → _
@@ -200,7 +202,12 @@
       (define output-buffer-size 4096)
 
       (define (open-input-file path) (sys:open path #o0000)) ; O_RDONLY
+      (define (open-binary-input-file path)
+                                   (sys:open path #o100000)); O_RDONLY|O_BINARY
+
       (define (open-output-file path) (sys:open path #o1102)) ; O_CREAT|O_TRUNC|O_RDWR
+      (define (open-binary-output-file path)
+                                    (sys:open path #o101102)) ; O_CREAT|O_TRUNC|O_RDWR+O_BINARY
 
       ;;; Reading
 
@@ -415,6 +422,10 @@
          (if (equal? path "-")
             stdin
             (open-input-file path)))
+      (define (maybe-open-binary-file path)
+         (if (equal? path "-")
+            stdin
+            (open-binary-input-file path)))
 
       (define (maybe-close-port port)
          (if (eq? port stdin)
@@ -429,8 +440,10 @@
                   (sys:read port (ref stat 8))))))
 
       (define (file->bytevector path) ; path -> vec | #false
-         (let ((port (maybe-open-file path)))
-            (fd->bytevector port)))
+         (let*((port (maybe-open-binary-file path))
+               (file (fd->bytevector port)))
+            (maybe-close-port port)
+            file))
 
       ; BLOB:
       (define (fd->blob port) ; path -> vec | #false
