@@ -448,13 +448,13 @@
       ; BLOB:
       (define (fd->blob port) ; path -> vec | #false
          (if port
-            (let ((data (read-blocks port null)))
-               (maybe-close-port port)
-               data)))
+            (read-blocks port null)))
 
       (define (file->blob path) ; path -> vec | #false
-         (let ((port (maybe-open-file path)))
-            (fd->blob port)))
+         (let*((port (maybe-open-file path))
+               (blob (fd->blob port)))
+            (maybe-close-port port)
+            blob))
 
       ; list:
       (define (file->list path) ; path -> vec | #false
