@@ -116,6 +116,7 @@
          (define (native:disable-context context)
             #false)
          (define (native:process-events context handler)
+            ; todo: process 'expose event
             #false)
 
          (define (gl:SetWindowTitle context title)

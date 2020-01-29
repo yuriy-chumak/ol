@@ -1206,6 +1206,11 @@
          (['debug]
             (mail sender dictionary)
             (this dictionary))
+         
+         ; math
+         (['glOrtho l r b t n f]
+            (let*((dictionary (put dictionary 'ortho [l r b t n f])))
+               (this dictionary)))
 
          ; drawing
          (['glBegin mode]
@@ -1222,9 +1227,12 @@
             (let ((dictionary (put dictionary 'color (list r g b a))))
                (this dictionary)))
          (['glVertex x y z]
-            (let*((dictionary (put dictionary 'vertices (append
+            (let*((ortho (get dictionary 'ortho [0 1 0 1 0 1]))
+                  (dictionary (put dictionary 'vertices (append
                                  (get dictionary 'vertices '())
-                                 (list x y z))))
+                                 (list (- (* x 2) 1)
+                                       (- (* y 2) 1)
+                                       z))))
                   (dictionary (put dictionary 'colors (append
                                  (get dictionary 'colors '())
                                  (get dictionary 'color default-color)))))
@@ -1238,9 +1246,9 @@
          (['glEnd]
             (let ((vbos (get dictionary 'vbos '(0 0)))
                   (mode (get dictionary 'mode GL_TRIANGLES))
-                  (vertices (get dictionary 'vertices '()))
+                  (vertices (get dictionary 'vertices #null))
                   (texcoords (get dictionary 'texcoords #f))
-                  (colors (get dictionary 'colors '())))
+                  (colors (get dictionary 'colors #null)))
 
 ;;                   ;(vPosition (glGetAttribLocation (get dictionary 'program 0) "vPosition"))
 ;;                   ;(vColor    (glGetAttribLocation (get dictionary 'program 0) "vColor")))
@@ -1249,10 +1257,12 @@
                (glVertexPointer 3 GL_FLOAT 0 #f)
                (glEnableClientState GL_VERTEX_ARRAY)
 
-               (glBindBuffer GL_ARRAY_BUFFER (lref vbos 1))
-               (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length colors)) (cons fft-float* colors) GL_STATIC_DRAW)
-               (glColorPointer 4 GL_FLOAT 0 #f)
-               (glEnableClientState GL_COLOR_ARRAY)
+               (unless (null? colors)
+                  (glBindBuffer GL_ARRAY_BUFFER (lref vbos 1))
+                  (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) (length colors)) (cons fft-float* colors) GL_STATIC_DRAW)
+                  (glColorPointer 4 GL_FLOAT 0 #f)
+                  (glEnableClientState GL_COLOR_ARRAY)
+               )
 
                (unless (null? texcoords)
                   (glBindBuffer GL_ARRAY_BUFFER (lref vbos 2))
@@ -1263,10 +1273,9 @@
 
                (glDrawArrays mode 0 (/ (length vertices) 3))
 
-               (unless (null? texcoords)
-                  (glDisableClientState GL_TEXTURE_COORD_ARRAY)) ; optional
-               (glDisableClientState GL_COLOR_ARRAY) ; mandatory
-               (glDisableClientState GL_VERTEX_ARRAY) ; mandatory
+               (glDisableClientState GL_TEXTURE_COORD_ARRAY)
+               (glDisableClientState GL_COLOR_ARRAY)
+               (glDisableClientState GL_VERTEX_ARRAY)
 
 
 
@@ -1309,6 +1318,7 @@
    (define (glTexCoord2f s t)
       (mail 'opengl-compat ['glTexCoord s t]))
 
-   (define glOrtho glOrthof)
+   (define (glOrtho l r b t n f)
+      (mail 'opengl-compat ['glOrtho l r b t n f]))
 
 ))
