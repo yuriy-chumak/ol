@@ -53,3 +53,15 @@ include $(BUILD_SHARED_LIBRARY)
 # mips64
 # I have not found the way to set the repl.o [nan2008] private flag. So still
 # got an error "linking -mnan=legacy module with previous -mnan=2008 modules"
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := SOIL
+
+LOCAL_SRC_FILES += SOIL/src/image_DXT.c SOIL/src/image_helper.c SOIL/src/SOIL.c SOIL/src/stb_image_aug.c
+LOCAL_CFLAGS    += -std=c99 -O2 -fdiagnostics-color=auto -DANDROID
+LOCAL_LDFLAGS   := -Xlinker --export-dynamic
+
+LOCAL_LDLIBS    += -llog -landroid -lGLESv2 -lEGL
+LOCAL_CFLAGS    += -ISOIL/src
+
+include $(BUILD_SHARED_LIBRARY)

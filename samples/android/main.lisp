@@ -1,49 +1,95 @@
 #!/usr/bin/ol
 
-; -----------------------------------------------------------------
-; зададим конфигурацию графического окна
+; ----------------------------------
+; зададим размеры графического окна
 (define-library (lib gl config)
 (export config) (import (otus lisp))
 (begin
-   (define config (pairs->ff `(
-      ; размеры окна в знакоместах:
+   (define config {
       ; напомню, что мы используем фиксированный шрифт размера 9*16
-      (width . ,(* 80 9))
-      (height . ,(* 16 25)))))))
+      'width  (* 1  9 80)      ; 80 знакомест в ширину
+      'height (* 1 16 25)      ; 25 знакомест в высоту
+      'scale  32               ; шкала увеличения
+   })))
+(import (lib gl config))
 
+; ----------------------------------
+; .. и тут же его (окно) создадим
 (import (lib gl))
-(import (otus random!))
+(gl:set-window-title "The House of the Rising Sun")
 
-; Cross-OS trick (use different opengl's for different OSes):
-(define-library (lib gl common)
+; -----------------------------------------------
+; а теперь нарисуем сплеш и можем спокойно грузить уровень
+
+; android trick (use opengl es for mobile devices):
+(define-library (OpenGL)
    (import (scheme core))
-   (export version)
    (cond-expand
       (Android
          (import (OpenGL ES version-1-1))
          (export (exports (OpenGL ES version-1-1))))
       (else
          (import (OpenGL version-1-1))
-         (export (exports (OpenGL version-1-1)))))
-   (begin (define version "1.0")))
-(import (lib gl common))
+         (export (exports (OpenGL version-1-1))))))
+(import (OpenGL))
 
-; рендерер:
+(import (otus ffi))
+(import (lib soil))
+
+(glOrtho 0 1 1 0 0 1)
+(glEnable GL_TEXTURE_2D)
+
+; *include-dirs*
+
+; поищем наш файл в папках
+(define id
+   (let ((file (file->bytevector "splash.png")))
+      (print "file size: " (size file))
+      (SOIL_load_OGL_texture_from_memory file (size file) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)))
+(glBindTexture GL_TEXTURE_2D id)
+(glBegin GL_TRIANGLES)
+   ; рисуем на весь экран квадратик с текстурой
+   (for-each (lambda (xy)
+         (glTexCoord2f (car xy) (cdr xy))
+         (glVertex2f (car xy) (cdr xy)))
+      '((0 . 0) (1 . 0) (1 . 1)
+        (0 . 0) (1 . 1) (0 . 1)))
+(glEnd)
+;(glDisable GL_TEXTURE_2D)
+(gl:SwapBuffers (interact 'opengl ['get 'context])) ; todo: make a function
+;(glDeleteTextures 1 (list id)) ; и спокойно удалим сплеш текстуру
+
+(print "ok.")
+; ----------------------------------------------------------
+; включим для windows VSYNC,
+; для linux он включен по умолчанию 
+;
+(define-library (---)
+(export enable-vsync)
+(import (scheme core))
+(cond-expand
+   (Windows
+      (import (OpenGL WGL EXT swap_control))
+      (begin
+         (define (enable-vsync)
+            (if WGL_EXT_swap_control
+               (wglSwapIntervalEXT 1))))) ; enable vsync
+   (else
+      (begin
+         (define (enable-vsync) #false)))))
+(import (---))
+(enable-vsync)
+
 (gl:set-renderer (lambda (mouse)
-   (glClearColor 0.2 0.2 0.2 1)
+   (glClearColor 0.4 0.0 0.0 1)
    (glClear GL_COLOR_BUFFER_BIT)
 
-   (glClear GL_COLOR_BUFFER_BIT)
-
-   (glColor3f 0.2 0.5 0.2)
+   (glBindTexture GL_TEXTURE_2D id)
    (glBegin GL_TRIANGLES)
-      (glColor3f 1 0 0)
-      (glVertex2f -0.6 -0.6)
-
-      (glColor3f 0 1 0)
-      (glVertex2f +0.6 -0.6)
-
-      (glColor3f 0 0 1)
-      (glVertex2f -0.0 +0.7)
+      (for-each (lambda (xy)
+            (glTexCoord2f (car xy) (cdr xy))
+            (glVertex2f (car xy) (cdr xy)))
+         '((0 . 0) (1 . 0) (1 . 1)
+           (0 . 0) (1 . 1) (0 . 1)))
    (glEnd)
 ))

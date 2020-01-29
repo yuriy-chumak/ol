@@ -551,7 +551,8 @@
       (begin
          (fork-server 'opengl (lambda ()
             (print "starting 'opengl coroutine")
-         (let this ((dictionary #empty))
+         (let this ((dictionary {
+               'expose-handler glViewport}))
             (let*((envelope (wait-mail))
                   (sender msg envelope))
                (case msg
@@ -570,6 +571,14 @@
                   (['get-renderer]
                      (mail sender (get dictionary 'renderer #f))
                      (this dictionary))
+                  (['set-context context] ; ignore
+                     (this dictionary))
+                  (['get-context]
+                     (mail sender (get dictionary 'context #f))
+                     (this dictionary))
+                  (else
+                        (print-to stderr "Unknown opengl server command " msg)
+                        (this dictionary))
                )))))))
    (else
       (begin
