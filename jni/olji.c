@@ -21,6 +21,7 @@ extern unsigned char _binary_repl_start[]; // otus lisp binary (please, build an
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ol", __VA_ARGS__)
 
+#define OL_HOME "/sdcard/ol"
 // ------------------------------------------------------------------------
 // olvm:
 ol_t ol;
@@ -86,36 +87,53 @@ int assets_open(const char *filename, int flags, int mode, void* userdata)
 {
     int file = open(filename, flags, mode);
     LOGI("open file: %s(%d)", filename, file);
-    if (file == -1) {
-        if (strlen(filename) > 2 && filename[0] == '.' && filename[1] == '/')
-            filename += 2;
-                AAsset* asset = AAssetManager_open(asset_manager, filename, 0);
-                LOGI("open asset: %s(%p)", filename, asset);
-                if (asset) {
-                    int i = 3; // 0, 1, 2 - reserved
-                    for (; i < fds_size; i++) {
-                if (fds[i] == 0) {
-                    fds[i] = asset;
-                    file = -i;
-                    break;
-                }
-            }
-            // no available descriptors?
-            if (i == fds_size) {
-                int fds_size_new = fds_size * 5 / 8; // 1.6, ~1.618
-                AAsset** fds_new = realloc(fds, fds_size_new);
-                if (fds_new) {
-                    fds = fds_new;
-                    fds_size = fds_size_new;
+    if (file != -1)
+        return file;
 
-                    fds[i] = asset;
-                    file = -i;
-                }
+    // no file, try open /sdcard/ol/file
+
+    // "./" workaround:
+    if (strncmp(filename, "./", 2) == 0)
+        filename += 2;
+
+    // new filename:
+    static char* sdcardol = OL_HOME;
+    char* filename2 = (char*) __builtin_alloca(strlen(filename) + strlen(sdcardol) + 2);
+    snprintf(filename2, strlen(filename) + strlen(sdcardol) + 2, "%s/%s", sdcardol, filename);
+
+    file = open(filename2, flags, mode);
+    LOGI("open file: %s(%d)", filename2, file);
+    if (file != -1)
+        return file;
+
+    // at least try to read assets
+    if (strlen(filename) > 2 && filename[0] == '.' && filename[1] == '/')
+        filename += 2;
+            AAsset* asset = AAssetManager_open(asset_manager, filename, 0);
+            LOGI("open asset: %s(%p)", filename, asset);
+            if (asset) {
+                int i = 3; // 0, 1, 2 - reserved
+                for (; i < fds_size; i++) {
+            if (fds[i] == 0) {
+                fds[i] = asset;
+                file = -i;
+                break;
+            }
+        }
+        // no available descriptors?
+        if (i == fds_size) {
+            int fds_size_new = fds_size * 5 / 8; // 1.6, ~1.618
+            AAsset** fds_new = realloc(fds, fds_size_new);
+            if (fds_new) {
+                fds = fds_new;
+                fds_size = fds_size_new;
+
+                fds[i] = asset;
+                file = -i;
             }
         }
     }
-    // -1 means error
-    LOGD("assets_open < %d", file);
+
     return file;
 }
 
@@ -199,7 +217,7 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv*
     ol.vm = OL_new(_binary_repl_start);
     OL_userdata(ol.vm, &ol);
 
-    char* args[] = { "--embed", "--no-interactive", "--home=/mnt/sdcard/ol" }; // ol execution arguments
+    char* args[] = { "--embed", "--no-interactive" }; //, "--home=/mnt/sdcard/ol" }; // ol execution arguments
     word r = OL_run(ol.vm, sizeof(args) / sizeof(*args), args);
 
     // well, we have our "smart" script prepared,
