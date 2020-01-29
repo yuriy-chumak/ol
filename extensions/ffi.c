@@ -1285,11 +1285,24 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 		}
 
-		// todo: change to is_rawdata
+		case TBYTEVECTOR:
+//		case TBYTEVECTOR + FFT_PTR:
+//		case TBYTEVECTOR + FFT_REF:
+		tbytevector:
+			switch (reference_type(arg)) {
+			case TBYTEVECTOR:
+				args[i] = (word) &car(arg);
+				break;
+			default:
+				E("invalid parameter values (requested bytevector)");
+			}
+			break;
+
+		// todo: change to automaticly converting to 0-ending string
 		case TSTRING:
 		tstring:
 			switch (reference_type(arg)) {
-			case TBYTEVECTOR:
+			case TBYTEVECTOR: // deprecated
 			case TSTRING:
 				args[i] = (word) &car(arg);
 				break;
