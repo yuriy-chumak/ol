@@ -2259,7 +2259,6 @@ mainloop:;
 	#		define SYSCALL_PRCTL 157
 	#		endif
 	#		define SYSCALL_ARCHPRCTL 158
-	#		define SYSCALL_KILL 62
 	#		define SYSCALL_TIME 201
 
 	#		define SYSCALL_DLOPEN 174
@@ -4243,7 +4242,7 @@ loop:;
 			}
 			#endif
 
-			// genenv
+			// getenv
 			case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
 				word *name = (word *)A1;
 				if (is_string(name)) {
@@ -4260,15 +4259,6 @@ loop:;
 					r = make_number(q);
 				break;
 			}
-// 			// kill
-// 			case SYSCALL_KILL: {
-// #ifndef _WIN32
-// 				if (kill(value (A1), value (A2)) >= 0)
-// 					r = (word*) ITRUE;
-// #endif
-// 				break;
-// 			}
-
 
 			// ...
 			case 1000: { // GC
