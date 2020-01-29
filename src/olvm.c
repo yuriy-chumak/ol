@@ -3156,6 +3156,7 @@ loop:;
 		#define CHECK_PORT_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, port, string, 62006)
 		#define CHECK_VPTR_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, vptr, string, 62011)
 		#define CHECK_NUMBER_OR_STRING(arg) CHECK_TYPE_OR_TYPE2(arg, number, string, 62010)
+		#define CHECK_TRUE_OR_FALSE(arg)    if (argc >= arg) if (A##arg != ITRUE && A##arg != IFALSE) FAIL(62020, I(arg), A##arg)
 		// ------------------------------------------------------------------------------
 
 		// continue syscall handler:
@@ -3167,7 +3168,8 @@ loop:;
 			// I/O FUNCTIONS
 
 			/*! \subsection read
-			* \brief (syscall **0** port count) --> bytevector | #t | #eof
+			* \brief (syscall **0** port) --> bytevector | #t | #eof
+            *        (syscall **0** port count) --> bytevector | #t | #eof
 			*
 			* Attempts to read up to *count* bytes from input port *port*
 			* into the bytevector.
@@ -3212,12 +3214,10 @@ loop:;
 				int read;
 				read = ol->read(portfd, (char *) &fp[1], count, ol->userdata);
 				int err = errno;
+                //fprintf(stderr, "read/%d: %d\n", err, read);
 
-				if (read > 0) {
-					// todo: обработать когда приняли не все,
-					//	     вызвать gc() и допринять. и т.д. (?)
+				if (read > 0)
 					r = new_bytevector(read);
-				}
 				else if (read == 0)
 					r = (word*) IEOF;
 				else if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
@@ -3270,13 +3270,14 @@ loop:;
 			}
 
 			/*! \subsection open
-			* \brief (syscall **2** pathname flags mode) -> port | #false
+			* \brief (syscall **2** pathname mode blocking flags) -> port | #false
 			*
-			* Opens port to the file specified by *pathname* (and, possibly,
-			*  creates it) using specified *mode* and *flags*.
+			* Open port to the file specified by *pathname* (and, possibly,
+			*  create) using specified *mode* and *flags*.
 			*
 			* \param pathname filename with/without path, c-like string(!)
 			* \param mode open mode (0 for read, #o100 for write, for example)
+            * \param blocking blocking mode (default 0, non-blocking)
 			* \param flags additional flags in POSIX sence
 			*
 			* \return port if success,
@@ -3285,18 +3286,21 @@ loop:;
 			* http://man7.org/linux/man-pages/man2/open.2.html
 			*/
 			case SYSCALL_OPEN: {
-				CHECK_ARGC(2, 3);
-				CHECK_STRING(1);
-				CHECK_NUMBER(2);
-				CHECK_NUMBER_OR_FALSE(3);
+				CHECK_ARGC(2, 4);
+				CHECK_STRING(1); // name
+				CHECK_NUMBER(2); // mode
+				CHECK_TRUE_OR_FALSE(3);   // blocking
+				CHECK_NUMBER_OR_FALSE(4); // flags
 
 				char* s = string(A1);
 				int f = number(A2);
 				int flg = (f & 01000 ? O_CREAT : 0)
 						| (f & 00100 ? O_TRUNC : 0)
-						| (f & 00002 ? O_RDWR  : 0);
-				int mode = (argc > 2 && A3 != IFALSE)
-			 		? number(A3)
+						| (f & 00002 ? O_RDWR  : 0)
+                        | (f & 0100000 ? O_BINARY : 0);
+				int blocking = (argc > 2 && A3 == ITRUE) ? 1 : 0;
+				int mode =     (argc > 3 && A4 != IFALSE)
+			 		? number(A4)
 					: S_IRUSR | S_IWUSR;
 
 				int file = ol->open(s, flg, mode, ol);
@@ -3311,7 +3315,8 @@ loop:;
 						break;
 					}
 
-					set_blocking(file, 0); // and set "non-blocking" mode
+                    if (!blocking)
+					    set_blocking(file, 0); // and set "non-blocking" mode
 					r = (word*) make_port(file);
 				}
 				else // port as reference
