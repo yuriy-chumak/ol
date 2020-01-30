@@ -1,0 +1,16 @@
+name: build ol
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Build with CI build script
+      run: 'make describe tests rosettacode'
