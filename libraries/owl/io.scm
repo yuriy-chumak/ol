@@ -488,7 +488,7 @@
             (let ((buff (get-block fd input-block-size)))
                (cond
                   ((eof? buff)
-                     (close-port fd)
+                     (maybe-close-port fd)
                      null)
                   ((not buff)
                      ;(print "bytes-stream-port: no buffer received?")
@@ -520,10 +520,9 @@
                   (loop (ll) out)))))
 
       (define (file->bytestream path)
-         (let ((fd (open-input-file path)))
-            (if fd
-               (port->bytestream fd)
-               #false)))
+         (let ((port (maybe-open-file path)))
+            (if port
+               (port->bytestream port))))
 
       (define (fasl-save obj path)
          (bytevector->file

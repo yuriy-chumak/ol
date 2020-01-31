@@ -111,7 +111,7 @@
                (op (car lst))
                (lfor-each op (cdr lst)))
             ((not (null? lst))
-               (lfold op (force lst)))))
+               (lfor-each op (force lst)))))
 
 
       ;;; numbers (integers)
