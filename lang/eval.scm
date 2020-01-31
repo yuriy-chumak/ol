@@ -734,14 +734,17 @@
 
       ;; try to find and parse contents of <path> and wrap to (begin ...) or call fail
       (define (repl-include env path fail)
-;        (print "repl-include path: " path)
-         (lets
-            ((paths (map
-                       (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path)))))
-                       (env-get env '*include-dirs* null)))
+         (let*((paths (map
+                        (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path)))))
+                        (env-get env '*include-dirs* null)))
 ;             (_ (print "paths: " paths))
-             (datas (lmap (lambda (file) (library-file->list env file)) paths))
-             (data (first (λ (x) x) datas #false)))
+               (data (let loop ((paths paths))
+                        (unless (null? paths)
+                           (or (library-file->list env (car paths))
+                               (loop (cdr paths)))))))
+
+            ;;  (datas (lmap (lambda (file) (library-file->list env file)) paths))
+            ;;  (data (first (λ (x) x) datas #false)))
             (if data
                (let ((exps (list->sexps data "library fail" path)))
                   (if exps ;; all of the file parsed to a list of sexps
