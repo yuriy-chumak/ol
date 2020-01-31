@@ -287,19 +287,19 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* j
     }
     if (is_number(r)) { // type-fix+, type-fix-, type-int+, type-int-
         jmethodID valueOf = (*jenv)->GetStaticMethodID(jenv, Integer, "valueOf", "(I)Ljava/lang/Integer;");
-        return (*jenv)->CallStaticObjectMethod(jenv, Integer, valueOf, ol2int(r));
+        return (*jenv)->CallStaticObjectMethod(jenv, Integer, valueOf, (void*)ol2int(r));
     }
     if (is_string(r)) {
         size_t len = string_length(r);
-        char* value = string_value(r);
+        const char* value = string_value(r);
         jchar* chars = __builtin_alloca((len + 1) * sizeof(jchar));
         if (reftype(r) == 3) { // type-string
             for (int i = 0; i < len; i++)
-                chars[i] = value[i];
+                chars[i] = (jchar) value[i];
         }
         if (reftype(r) == 5) { // type-string-wide
             for (int i = 0; i < len; i++)
-                chars[i] = ol2int(((uintptr_t*)value)[i]);
+                chars[i] = (jchar) ol2int(((uintptr_t*)value)[i]);
         }
         chars[len] = 0;
         return (*jenv)->NewString(jenv, chars, len);

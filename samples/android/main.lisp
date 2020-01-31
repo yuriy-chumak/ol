@@ -13,30 +13,19 @@
    })))
 (import (lib gl config))
 
-; ----------------------------------
+; --------------------------------
 ; .. и тут же его (окно) создадим
 (import (lib gl))
 (gl:set-window-title "The House of the Rising Sun")
 
-; -----------------------------------------------
+; -------------------------------------------------
 ; а теперь нарисуем сплеш и можем спокойно грузить уровень
-
-; android trick (use opengl es for mobile devices):
-(define-library (OpenGL)
-   (import (scheme core))
-   (cond-expand
-      (Android
-         (import (OpenGL ES version-1-1))
-         (export (exports (OpenGL ES version-1-1))))
-      (else
-         (import (OpenGL version-1-1))
-         (export (exports (OpenGL version-1-1))))))
-(import (OpenGL))
-
 (import (otus ffi))
 (import (lib soil))
 
-;(glOrtho -2 2 -2 2 -2 2)
+(import (OpenGL version-1-1))
+
+(glOrtho 0 1 1 0 0 1)
 
 ; поищем наш файл в папках
 (define id

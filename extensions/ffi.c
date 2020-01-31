@@ -412,7 +412,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 // с плавающей точкой float
 "3:", // double
 	"pushl %eax",
-	"fstp (%esp)",
+	"fstpl (%esp)",
 	"popl  %eax",
 	"jmp   9b",
 // с плавающей точкой double
@@ -884,6 +884,43 @@ long to_long(word arg) {
 
 	return 0;
 }*/
+
+#	ifndef __EMSCRIPTEN__
+// stupid clang does not support builtin in functions function,
+// so we need to do this stupid workaround
+static __inline__
+word* new_npair(word**fpp, int type, long long value) {
+    word* fp = *fpp;
+    long long a = value >> VBITS;
+    word* b = (a > VMAX) ? new_npair(&fp, TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
+    word* p = new_pair(type, I(value & VMAX), b);
+    *fpp = fp;
+    return p;
+}
+static __inline__
+word* ll2ol(word**fpp, long long val) {
+    long long x5 = val;
+    long long x6 = x5 < 0 ? -x5 : x5;
+    int type = x5 < 0 ? TINTN : TINTP;
+    return (x6 > VMAX) ? new_npair(fpp, type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
+};
+
+static __inline__
+word* new_unpair(word**fpp, int type, unsigned long long value) {
+    word* fp = *fpp;
+    unsigned long long a = value >> VBITS;
+    word* b = (a > VMAX) ? new_unpair(&fp, TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
+    word* p = new_pair(type, I(value & VMAX), b);
+    *fpp = fp;
+    return p;
+}
+static __inline__
+word* ul2ol(word**fpp, long long val) {
+    unsigned long long x = val;
+    return (x > VMAX) ? new_unpair(fpp, TINTP, x) : (word*)make_value(x < 0 ? TFIXN : TFIXP, x);
+};
+
+#	endif
 
 // Главная функция механизма ffi:
 PUBLIC
@@ -1737,20 +1774,7 @@ word* OL_ffi(OL* self, word* arguments)
 			result = (word*) make_number (*(long long*)&got); // TODO: change to __INT64_TYPE__
 #else
 #	ifndef __EMSCRIPTEN__
-			word* new_npair(int type, long long value) {
-				long long a = value >> VBITS;
-				word* b = (a > VMAX) ? new_npair(TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
-				word* p = new_pair(type, I(value & VMAX), b);
-				return p;
-			}
-			word* ll2ol(long long val) {
-				long long x5 = val;
-				long long x6 = x5 < 0 ? -x5 : x5;
-				int type = x5 < 0 ? TINTN : TINTP;
-				return (x6 > VMAX) ? new_npair(type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
-			};
-
-			result = (word*) ll2ol (*(long long*)&got);
+			result = (word*) ll2ol (&fp, *(long long*)&got);
 #	endif
 #endif
 			break;
@@ -1770,18 +1794,7 @@ word* OL_ffi(OL* self, word* arguments)
 			result = (word*) itoun (*(unsigned long long*)&got); // TODO: change to __UINT32_TYPE__
 #else
 #	ifndef __EMSCRIPTEN__
-			word* new_unpair(int type, unsigned long long value) {
-				unsigned long long a = value >> VBITS;
-				word* b = (a > VMAX) ? new_unpair(TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
-				word* p = new_pair(type, I(value & VMAX), b);
-				return p;
-			}
-			word* ul2ol(long long val) {
-				unsigned long long x5 = val;
-				return (x5 > VMAX) ? new_unpair(TINTP, x5) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x5);
-			};
-
-			result = (word*) ul2ol (*(unsigned long long*)&got);
+			result = (word*) ul2ol (&fp, *(unsigned long long*)&got);
 #	endif
 #endif
 			break;

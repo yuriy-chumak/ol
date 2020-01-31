@@ -38,7 +38,7 @@ typedef struct ol_t
 
 
 //#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshift-count-overflow"
+//#pragma GCC diagnostic ignored "-Wshift-count-overflow"
 
 // ====================================================================
 
@@ -116,7 +116,7 @@ typedef struct ol_t
 #define ol2int(x) ({ uintptr_t u = (uintptr_t)(x);\
 		assert (is_number(u) && "argument should be a number");\
 		is_small(u) ? ol2small(u)\
-			: ol2small(car(u)) | ol2small(cadr(u)) << ((sizeof (uintptr_t) * 8) - 8)/*FBITS*/;})
+			: (uintptr_t)ol2small(car(u)) | (uintptr_t)ol2small(cadr(u)) << ((sizeof (uintptr_t) * 8) - 8)/*FBITS*/;})
 
 //#pragma GCC diagnostic pop
 

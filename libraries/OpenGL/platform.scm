@@ -118,6 +118,25 @@
          (define (gl:MakeCurrent . args) #false)
          (define (gl:SwapBuffers . args) #false)
    ))
+
+   (Android
+      (begin
+         (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
+
+         ;(setq GLX GL_LIBRARY)
+         (setq GetProcAddress #f) ;(GLX type-vptr "glXGetProcAddress" type-string))
+
+         ; нужные функции платформ для создания/уничтожения контекста
+         ;(setq Display* type-vptr)
+         ;(setq XVisualInfo* type-vptr)
+         ;glXChooseVisual      ChoosePixelFormat
+         ;glXCopyContext       wglCopyContext
+         (define gl:CreateContext #f) ;(GLX type-vptr "glXCreateContext" Display* XVisualInfo* fft-void* fft-int))
+         (define gl:MakeCurrent #f) ;(GLX fft-int "glXMakeCurrent" fft-void* fft-void* fft-void*))
+
+         (define gl:SwapBuffers #f) ;
+   ))
+
    ; -=( Unknown )=--
    ;"HP-UX"
    ;"SunOS"

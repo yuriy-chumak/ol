@@ -1,0 +1,9 @@
+[submodule "jni/SOIL"]
+	path = jni/SOIL
+	url = https://github.com/kbranigan/Simple-OpenGL-Image-Library.git
+[submodule "jni/gl4es"]
+	path = jni/gl4es
+	url = https://github.com/ptitSeb/gl4es.git
+[submodule "jni/freetype2"]
+	path = jni/freetype2
+	url = https://github.com/cdave1/freetype2-android

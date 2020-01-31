@@ -89,8 +89,10 @@ public class MainActivity extends Activity
 
 	static {
  		// System.loadLibrary("z");
-		// System.loadLibrary("freetype");
-		System.loadLibrary("ol");
         System.loadLibrary("SOIL");
+		System.loadLibrary("freetype");
+        System.loadLibrary("gl4es");
+
+		System.loadLibrary("ol");
 	}
 }

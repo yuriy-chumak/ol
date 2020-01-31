@@ -162,9 +162,11 @@ release: vm repl ol
 slim: CFLAGS += -DOLVM_FFI=0
 slim: release
 
-NDK_ROOT ?= /opt/android/ndk
-android: jni/*.c
+NDK_ROOT ?=/opt/android/ndk
+android: jni/*.c jni/repl.c
 	$(NDK_ROOT)/ndk-build
+jni/repl.c: repl vm
+	echo '(display "unsigned char _binary_repl_start[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
 
 # ol
 vm: src/olvm.c include/olvm.h
