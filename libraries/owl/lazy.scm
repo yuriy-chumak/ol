@@ -13,6 +13,7 @@
       lzip ltake llast llen
       lcar lcdr ledit
       ldrop llref
+      lfor-each
       pair tail uncons
       force-ll                ; ll -> list
       subsets permutations    ; usual applications
@@ -103,6 +104,15 @@
                   (lunfold op st end?)))))
 
       (define (ltail) null)
+
+      (define (lfor-each op lst)
+         (cond
+            ((pair? lst)
+               (op (car lst))
+               (lfor-each op (cdr lst)))
+            ((not (null? lst))
+               (lfold op (force lst)))))
+
 
       ;;; numbers (integers)
 
