@@ -445,7 +445,8 @@ long long arm32_call(word argv[], long i,
 					//  {
 					// 	 return 133;
 					//  }
-__ASM__(
+__ASM__("arm32_call:_arm32_call:",
+//	"BKPT",
 	"push {r4, r5, lr}",
 
 	"mov r4, sp", // save sp
@@ -515,6 +516,7 @@ long long arm32_call(word argv[], float af[],
                      long i, long f,
                      void* function, long type);
 __ASM__("arm32_call:_arm32_call:",
+	//"BKPT",
 	// r0: argv, r1: af, r2: ad, r3: i, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
 	// r5: temporary
@@ -928,6 +930,7 @@ word* ul2ol(word**fpp, long long val) {
 
 // Главная функция механизма ffi:
 PUBLIC
+__attribute__((used))
 word* OL_ffi(OL* self, word* arguments)
 {
 	// get memory pointer

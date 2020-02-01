@@ -45,10 +45,94 @@ x2x(i, "%u", unsigned int)
 x2x(I, "%d", signed int)
 x2x(l, "%lu", unsigned long)
 x2x(L, "%ld", signed long)
+#ifndef __ARM_EABI__
 x2x(q, "%llu", unsigned long long)
 x2x(Q, "%lld", signed long long)
+#endif
 x2x(f, "%f", float)
 x2x(d, "%f", double)
+
+#ifdef __ARM_EABI__
+static inline unsigned long ABS(signed long long x)
+{
+	signed long y = (signed long) x;
+	return y < 0 ? -y : y;
+}
+
+signed long long Q2Q(signed long long x) {
+	signed long long y = x;
+
+	char text[32];
+	text[31] = 0;
+	char*p = &text[30];
+	char sign = x < 0;
+	if (x < 0) x = -x;
+
+	do {
+		*p-- = (x % 10) + '0'; x /= 10;
+	}
+	while (x > 0);
+
+	if (sign)
+		*p = '-';
+	else
+		p++;
+
+	printf(" [%s =>", p);
+
+	x = y;
+
+	p = &text[30];
+	sign = x < 0;
+	if (x < 0) x = -x;
+
+	do {
+		*p-- = (x % 10) + '0'; x /= 10;
+	}
+	while (x > 0);
+
+	if (sign)
+		*p = '-';
+	else
+		p++;
+
+	printf(" %s] ", p);
+
+	fflush(stdout);
+	return y;
+}
+
+unsigned long long q2q(unsigned long long x) {
+	unsigned long long y = x;
+
+	char text[32];
+	text[31] = 0;
+	char*p = &text[30];
+
+	do {
+		*p-- = (x % 10) + '0'; x /= 10;
+	}
+	while (x > 0);
+	p++;
+
+	printf(" [%s =>", p);
+
+	x = y;
+	p = &text[30];
+
+	do {
+		*p-- = (x % 10) + '0'; x /= 10;
+	}
+	while (x > 0);
+	p++;
+
+	printf(" %s] ", p);
+
+	fflush(stdout);
+	return y;
+}
+
+#endif//__ARM_EABI__
 
 #define xxxxxxxxxxxxxxxx2x(index, P, type) PUBLIC type \
 index##index##index##index##index##index##index##index##index##index##index##index##index##index##index##index##2##index \
