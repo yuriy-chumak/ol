@@ -445,16 +445,14 @@ long long arm32_call(word argv[], long i,
 					//  {
 					// 	 return 133;
 					//  }
-__ASM__("arm32_call:_arm32_call:",
+__ASM__(
 //	"BKPT",
-	"push {r4, r5, lr}",
+	// !!! stack must be 8-bytes aligned, so let's push even arguments count
+	"push {r4, r5, r6, lr}",
 
 	"mov r4, sp", // save sp
 
 	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
-	// "sub r3, sp, r2, asl #2",// try to predict stack alighnment (к текущему стеку прибавим количество аргументов * размер слова)
-	// "and r3, r1, #4", // попадает ли стек на границу слова?
-	// "sub sp, sp, r3", // если да, то на слово его и опустим
 	// finally, sending regular (integer) arguments
 	"cmp r1, #4",  // if (i > 4)
 	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corresponded "ldrsh" instruction based on r3 value
@@ -463,6 +461,14 @@ __ASM__("arm32_call:_arm32_call:",
 	"lsl r5, r1, #2",
 	"add r5, r0, r5",
 	"sub r5, r5, #4",
+
+	// stack alignment // временное решение
+	"and r3, r1, #3",         // попадет ли новый стек на границу двойного слова?
+	"mov r6, #4",
+	"sub r3, r6, r3",
+	"and r3, r3, #7",
+	"sub sp, sp, r3, asl #2",
+
 ".Lextraregs:", // push argv[i]
 	"ldr r3, [r5]",
 	//"rev16 r3, r3",
@@ -499,7 +505,7 @@ __ASM__("arm32_call:_arm32_call:",
 	"mov sp, r4", // restore sp
 
 	// all values: int, long, float and double returning in r0+r1
-	"pop {r4, r5, pc}");
+	"pop {r4, r5, r6, pc}");
 //	"bx lr");
 }
 
@@ -515,7 +521,7 @@ unsigned
 long long arm32_call(word argv[], float af[],
                      long i, long f,
                      void* function, long type);
-__ASM__("arm32_call:_arm32_call:",
+__ASM__(
 	//"BKPT",
 	// r0: argv, r1: af, r2: ad, r3: i, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
@@ -1809,7 +1815,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 
 		case TPORT:
-			result = (word*) make_port ((long)got);
+			result = (word*) make_port ((long)got); // todo: make port like in SYSCALL_OPEN
 			break;
 		case TVOID:
 			result = (word*) ITRUE;
