@@ -177,6 +177,10 @@ ssize_t assets_read(int fd, void *buf, size_t count, void* userdata)
 // redirect stdout/stderr to logcat
 ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
 {
+    if (fd == 0) { // stdin means "debug"
+        LOGD("%.*s", (int)count, (char*)buf);
+        return count;
+    }
     if (fd == 1) { // stdout
         LOGI("%.*s", (int)count, (char*)buf);
         return count;
@@ -195,7 +199,7 @@ ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv* jenv, jobject class)
 {
-    LOGD("> nativeNew");
+	setenv("LIBGL_NOBANNER", "0", 1);
     // LOGI("sizeof(FT_FaceRec): %d", sizeof(FT_FaceRec));
     // LOGI("offsetof(FT_FaceRec, glyph): %d", offsetof(FT_FaceRec, glyph));
 
@@ -244,7 +248,6 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeDelete(JNIE
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetAssetManager(JNIEnv* jenv, jobject jobj, jobject assetManager)
 {
-    LOGD("> nativeSetAssetManager");
     java_asset_manager = (*jenv)->NewGlobalRef(jenv, assetManager);
     asset_manager = AAssetManager_fromJava(jenv, java_asset_manager);
 }

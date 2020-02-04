@@ -119,23 +119,24 @@
          (define (gl:SwapBuffers . args) #false)
    ))
 
-   (Android
+   ; it means that we trying to use OpenGL under undroid
+   ; and at this moment OpenGL context already created and activated through OpenGL ES (in lib gl)
+   (Android ; through gl4es
+      (import (OpenGL ES platform))
       (begin
-         (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
+         (define GL_LIBRARY GLES)
+         ;; (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
+         ;(define GL_LIBRARY EGL)
 
-         ;(setq GLX GL_LIBRARY)
-         (setq GetProcAddress #f) ;(GLX type-vptr "glXGetProcAddress" type-string))
+         ;; (define initialize_gl4es (GL_LIBRARY fft-void "initialize_gl4es"))
+         ;; (initialize_gl4es)
 
-         ; нужные функции платформ для создания/уничтожения контекста
-         ;(setq Display* type-vptr)
-         ;(setq XVisualInfo* type-vptr)
-         ;glXChooseVisual      ChoosePixelFormat
-         ;glXCopyContext       wglCopyContext
-         (define gl:CreateContext #f) ;(GLX type-vptr "glXCreateContext" Display* XVisualInfo* fft-void* fft-int))
-         (define gl:MakeCurrent #f) ;(GLX fft-int "glXMakeCurrent" fft-void* fft-void* fft-void*))
-
-         (define gl:SwapBuffers #f) ;
-   ))
+         (define (gl:CreateContext . args)
+            (print-to stdout "No CreateContext under Android required.")
+            #false)
+         (define GetProcAddress (EGL type-vptr "eglGetProcAddress" type-string))
+         (print "GetProcAddress: " GetProcAddress)
+         ))
 
    ; -=( Unknown )=--
    ;"HP-UX"

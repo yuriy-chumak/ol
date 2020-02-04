@@ -1740,30 +1740,30 @@
    ; --- end of OpenGL 1.0 specification ------------------------------------
    ; ------------------------------------------------------------------------
 
-   ; == GLU ===
-      GLU_VERSION_1_0
-      GLU_VERSION_1_1
+;;    ; == GLU ===
+;;       GLU_VERSION_1_0
+;;       GLU_VERSION_1_1
 
-   gluErrorString
-   gluOrtho2D
-   gluPerspective
-   gluLookAt
+;;    gluErrorString
+;;    gluOrtho2D
+;;    gluPerspective
+;;    gluLookAt
 
-   gluNewQuadric gluDeleteQuadric gluQuadricDrawStyle
-      GLU_FILL GLU_LINE GLU_SILHOUETTE GLU_POINT
-   gluQuadricOrientation
-      GLU_OUTSIDE GLU_INSIDE
+;;    gluNewQuadric gluDeleteQuadric gluQuadricDrawStyle
+;;       GLU_FILL GLU_LINE GLU_SILHOUETTE GLU_POINT
+;;    gluQuadricOrientation
+;;       GLU_OUTSIDE GLU_INSIDE
 
-   gluSphere
-   gluCylinder
+;;    gluSphere
+;;    gluCylinder
 
-;   gluNewTess gluBeginPolygon gluTessVertex
+;; ;   gluNewTess gluBeginPolygon gluTessVertex
 
-   gluNewNurbsRenderer gluNurbsSurface gluBeginSurface gluEndSurface
-   gluNurbsProperty
-      GLU_OUTLINE_POLYGON GLU_OUTLINE_PATCH
+;;    gluNewNurbsRenderer gluNurbsSurface gluBeginSurface gluEndSurface
+;;    gluNurbsProperty
+;;       GLU_OUTLINE_POLYGON GLU_OUTLINE_PATCH
 
-   GLU_U_STEP GLU_V_STEP GLU_DISPLAY_MODE
+;;    GLU_U_STEP GLU_V_STEP GLU_DISPLAY_MODE
 
    ; пока бесхозные, todo: сложить на место
    GL_MAP1_VERTEX_3 GL_MAP2_VERTEX_3
@@ -2924,64 +2924,64 @@
 
    (define glViewport  (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
-; GLU
-(define GLU_VERSION_1_0 1)
-(define GLU_VERSION_1_1 1)
+;; ; GLU
+;; (define GLU_VERSION_1_0 1)
+;; (define GLU_VERSION_1_1 1)
 
-(define GLU_LIBRARY
-   (cond
-      (win32? "glu32.dll")
-      (linux? "libGLU.so.1")
-      ;"HP-UX"
-      ;"SunOS"
-      ;"Darwin"
-      ;"FreeBSD"
-      ;"CYGWIN_NT-5.2-WOW64"
-      ;"MINGW32_NT-5.2"
-      ;...
-      (else  (runtime-error "Unknown platform" OS))))
-(define GLU (or
-   (load-dynamic-library GLU_LIBRARY)
-   (runtime-error "Can't find glu library" GLU_LIBRARY)))
+;; (define GLU_LIBRARY
+;;    (cond
+;;       (win32? "glu32.dll")
+;;       (linux? "libGLU.so.1")
+;;       ;"HP-UX"
+;;       ;"SunOS"
+;;       ;"Darwin"
+;;       ;"FreeBSD"
+;;       ;"CYGWIN_NT-5.2-WOW64"
+;;       ;"MINGW32_NT-5.2"
+;;       ;...
+;;       (else  (runtime-error "Unknown platform" OS))))
+;; (define GLU (or
+;;    (load-dynamic-library GLU_LIBRARY)
+;;    (runtime-error "Can't find glu library" GLU_LIBRARY)))
 
-(define GLUquadric* type-vptr)
+;; (define GLUquadric* type-vptr)
 
-   (define gluErrorString (GLU GLubyte* "gluErrorString" GLenum))
-   (define gluOrtho2D     (GLU GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
-   (define gluPerspective (GLU GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
-   (define gluLookAt      (GLU GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
+;;    (define gluErrorString (GLU GLubyte* "gluErrorString" GLenum))
+;;    (define gluOrtho2D     (GLU GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
+;;    (define gluPerspective (GLU GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
+;;    (define gluLookAt      (GLU GLvoid   "gluLookAt"      GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble GLdouble))
 
-   (define gluNewQuadric    (GLU GLUquadric* "gluNewQuadric"))
-   (define gluDeleteQuadric (GLU GLvoid "gluDeleteQuadric" GLUquadric*))
-   (define gluQuadricDrawStyle (GLU GLvoid "gluQuadricDrawStyle" GLUquadric* GLenum))
-      (define GLU_POINT               100010)
-      (define GLU_LINE                100011)
-      (define GLU_FILL                100012)
-      (define GLU_SILHOUETTE          100013)
-   (define gluQuadricOrientation (GLU GLvoid "gluQuadricOrientation" GLUquadric* GLenum))
-      (define GLU_OUTSIDE             100020)
-      (define GLU_INSIDE              100021)
+;;    (define gluNewQuadric    (GLU GLUquadric* "gluNewQuadric"))
+;;    (define gluDeleteQuadric (GLU GLvoid "gluDeleteQuadric" GLUquadric*))
+;;    (define gluQuadricDrawStyle (GLU GLvoid "gluQuadricDrawStyle" GLUquadric* GLenum))
+;;       (define GLU_POINT               100010)
+;;       (define GLU_LINE                100011)
+;;       (define GLU_FILL                100012)
+;;       (define GLU_SILHOUETTE          100013)
+;;    (define gluQuadricOrientation (GLU GLvoid "gluQuadricOrientation" GLUquadric* GLenum))
+;;       (define GLU_OUTSIDE             100020)
+;;       (define GLU_INSIDE              100021)
 
-   (define gluSphere (GLU GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
-   (define gluCylinder (GLU GLvoid "gluCylinder" GLUquadric* GLdouble GLdouble GLdouble GLint GLint))
+;;    (define gluSphere (GLU GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
+;;    (define gluCylinder (GLU GLvoid "gluCylinder" GLUquadric* GLdouble GLdouble GLdouble GLint GLint))
 
-(define GLUnurbs* type-vptr)
-   (define gluNewNurbsRenderer (GLU GLUnurbs* "gluNewNurbsRenderer"))
-   (define gluBeginSurface (GLU GLvoid "gluBeginSurface" GLUnurbs*))
-   (define gluNurbsSurface (GLU GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
-   (define gluEndSurface   (GLU GLvoid "gluEndSurface" GLUnurbs*))
-   (define gluNurbsProperty(GLU GLvoid "gluNurbsProperty" GLUnurbs* GLenum GLfloat))
-      ;/*     GLU_FILL                100012
-      (define GLU_OUTLINE_POLYGON     100240)
-      (define GLU_OUTLINE_PATCH       100241)
+;; (define GLUnurbs* type-vptr)
+;;    (define gluNewNurbsRenderer (GLU GLUnurbs* "gluNewNurbsRenderer"))
+;;    (define gluBeginSurface (GLU GLvoid "gluBeginSurface" GLUnurbs*))
+;;    (define gluNurbsSurface (GLU GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
+;;    (define gluEndSurface   (GLU GLvoid "gluEndSurface" GLUnurbs*))
+;;    (define gluNurbsProperty(GLU GLvoid "gluNurbsProperty" GLUnurbs* GLenum GLfloat))
+;;       ;/*     GLU_FILL                100012
+;;       (define GLU_OUTLINE_POLYGON     100240)
+;;       (define GLU_OUTLINE_PATCH       100241)
 
-(define GLU_AUTO_LOAD_MATRIX    100200)
-(define GLU_CULLING             100201)
-(define GLU_SAMPLING_TOLERANCE  100203)
-(define GLU_DISPLAY_MODE        100204)
-(define GLU_PARAMETRIC_TOLERANCE        100202)
-(define GLU_SAMPLING_METHOD             100205)
-(define GLU_U_STEP                      100206)
-(define GLU_V_STEP                      100207)
+;; (define GLU_AUTO_LOAD_MATRIX    100200)
+;; (define GLU_CULLING             100201)
+;; (define GLU_SAMPLING_TOLERANCE  100203)
+;; (define GLU_DISPLAY_MODE        100204)
+;; (define GLU_PARAMETRIC_TOLERANCE        100202)
+;; (define GLU_SAMPLING_METHOD             100205)
+;; (define GLU_U_STEP                      100206)
+;; (define GLU_V_STEP                      100207)
 
 ))

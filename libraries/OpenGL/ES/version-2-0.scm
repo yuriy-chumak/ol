@@ -3,6 +3,9 @@
    (export
       GL_ES_VERSION_2_0
 
+      GLES
+      (exports (OpenGL ES platform))
+
       GL_DEPTH_BUFFER_BIT
       GL_STENCIL_BUFFER_BIT
       GL_COLOR_BUFFER_BIT
@@ -451,7 +454,9 @@
 )
 
    (import
-      (scheme core) (otus ffi))
+      (scheme core) (otus ffi)
+      (OpenGL ES platform)
+      (owl string) (owl interop))
 
 (begin
    (define GL_ES_VERSION_2_0 1)
@@ -785,18 +790,26 @@
 ;#define GL_RENDERBUFFER_BINDING           0x8CA7
 ;#define GL_MAX_RENDERBUFFER_SIZE          0x84E8
 ;#define GL_INVALID_FRAMEBUFFER_OPERATION  0x0506
+)
 
-(define uname (syscall 63))
+(cond-expand
+   (Android
+      (begin
+         (define GLES (or
+            (load-dynamic-library "libGLESv2.so")
+            (runtime-error "No GLESv2 library found." #f)))))
+   (Emscripten
+      (begin
+         (define GLES (load-dynamic-library #f))))
+   (Linux
+      (begin
+         (define GLES (or
+            (load-dynamic-library "libEGL.so")
+            (runtime-error "No GLES library found." #f)))))
+   (else
+      (begin (runtime-error "1Unsupported platform:" *uname*))))
 
-(define ES (or
-   (load-dynamic-library
-      (cond
-         ((string-ci=? (ref uname 1) "windows")  "libGLESv2.dll")
-         ((string-ci=? (ref uname 1) "linux")    "libEGL.so") ; GLESv2 for v2
-         ((string-ci=? (ref uname 1) "emscripten") #f)  ; self for Emscripten
-         (else
-            (runtime-error "Unknown platform" uname))))
-   (runtime-error "Can't load EGL library")))
+(begin
 
 (define GLchar* type-string)
 (define GLchar** (fft* GLchar*))
@@ -805,9 +818,9 @@
 (define GLsizei* (fft* GLsizei))
 
 ;GL_APICALL void GL_APIENTRY glActiveTexture (GLenum texture);
-(define glAttachShader (ES GLvoid "glAttachShader" GLuint GLuint))
+(define glAttachShader (GLES GLvoid "glAttachShader" GLuint GLuint))
 ;GL_APICALL void GL_APIENTRY glBindAttribLocation (GLuint program, GLuint index, const GLchar *name);
-(define glBindBuffer (ES GLvoid "glBindBuffer" GLenum GLuint))
+(define glBindBuffer (GLES GLvoid "glBindBuffer" GLenum GLuint))
 ;GL_APICALL void GL_APIENTRY glBindFramebuffer (GLenum target, GLuint framebuffer);
 ;GL_APICALL void GL_APIENTRY glBindRenderbuffer (GLenum target, GLuint renderbuffer);
 ;GL_APICALL void GL_APIENTRY glBindTexture (GLenum target, GLuint texture);
@@ -816,23 +829,23 @@
 ;GL_APICALL void GL_APIENTRY glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha);
 ;GL_APICALL void GL_APIENTRY glBlendFunc (GLenum sfactor, GLenum dfactor);
 ;GL_APICALL void GL_APIENTRY glBlendFuncSeparate (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
-(define glBufferData (ES GLvoid "glBufferData" GLenum GLsizeiptr GLfloat* GLenum)) ; NOTE: const GLvoid * changed to GLfloat*
+(define glBufferData (GLES GLvoid "glBufferData" GLenum GLsizeiptr GLfloat* GLenum)) ; NOTE: const GLvoid * changed to GLfloat*
 ;GL_APICALL void GL_APIENTRY glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const void *data);
 ;GL_APICALL GLenum GL_APIENTRY glCheckFramebufferStatus (GLenum target);
-(define glClear (ES GLvoid "glClear" GLbitfield))
-(define glClearColor (ES GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
+(define glClear (GLES GLvoid "glClear" GLbitfield))
+(define glClearColor (GLES GLvoid "glClearColor" GLfloat GLfloat GLfloat GLfloat))
 ;GL_APICALL void GL_APIENTRY glClearDepthf (GLfloat d);
 ;GL_APICALL void GL_APIENTRY glClearStencil (GLint s);
 ;GL_APICALL void GL_APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-(define glCompileShader (ES GLvoid "glCompileShader" GLuint))
+(define glCompileShader (GLES GLvoid "glCompileShader" GLuint))
 ;GL_APICALL void GL_APIENTRY glCompressedTexImage2D (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
 ;GL_APICALL void GL_APIENTRY glCompressedTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data);
-;GL_APICALL void GL_APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
+(define glCopyTexImage2D (GLES GLvoid "glCopyTexImage2D" GLenum  GLint GLenum GLint GLint GLsizei GLsizei GLint))
 ;GL_APICALL void GL_APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-(define glCreateProgram (ES GLuint "glCreateProgram"))
-(define glCreateShader (ES GLuint "glCreateShader" GLenum))
+(define glCreateProgram (GLES GLuint "glCreateProgram"))
+(define glCreateShader (GLES GLuint "glCreateShader" GLenum))
 ;GL_APICALL void GL_APIENTRY glCullFace (GLenum mode);
-(define glDeleteBuffers (ES GLvoid "glDeleteBuffers" GLsizei GLuint*))
+(define glDeleteBuffers (GLES GLvoid "glDeleteBuffers" GLsizei GLuint*))
 ;GL_APICALL void GL_APIENTRY glDeleteFramebuffers (GLsizei n, const GLuint *framebuffers);
 ;GL_APICALL void GL_APIENTRY glDeleteProgram (GLuint program);
 ;GL_APICALL void GL_APIENTRY glDeleteRenderbuffers (GLsizei n, const GLuint *renderbuffers);
@@ -841,19 +854,19 @@
 ;GL_APICALL void GL_APIENTRY glDepthFunc (GLenum func);
 ;GL_APICALL void GL_APIENTRY glDepthMask (GLboolean flag);
 ;GL_APICALL void GL_APIENTRY glDepthRangef (GLfloat n, GLfloat f);
-(define glDetachShader (ES GLvoid "glDetachShader" GLuint GLuint))
+(define glDetachShader (GLES GLvoid "glDetachShader" GLuint GLuint))
 ;GL_APICALL void GL_APIENTRY glDisable (GLenum cap);
 ;GL_APICALL void GL_APIENTRY glDisableVertexAttribArray (GLuint index);
-(define glDrawArrays (ES GLvoid "glDrawArrays" GLenum GLint GLsizei))
+(define glDrawArrays (GLES GLvoid "glDrawArrays" GLenum GLint GLsizei))
 ;GL_APICALL void GL_APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indices);
 ;GL_APICALL void GL_APIENTRY glEnable (GLenum cap);
-(define glEnableVertexAttribArray (ES GLvoid "glEnableVertexAttribArray" GLuint))
+(define glEnableVertexAttribArray (GLES GLvoid "glEnableVertexAttribArray" GLuint))
 ;GL_APICALL void GL_APIENTRY glFinish (void);
 ;GL_APICALL void GL_APIENTRY glFlush (void);
 ;GL_APICALL void GL_APIENTRY glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 ;GL_APICALL void GL_APIENTRY glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 ;GL_APICALL void GL_APIENTRY glFrontFace (GLenum mode);
-(define glGenBuffers (ES GLvoid "glGenBuffers" GLsizei GLuint&))
+(define glGenBuffers (GLES GLvoid "glGenBuffers" GLsizei GLuint&))
 ;GL_APICALL void GL_APIENTRY glGenerateMipmap (GLenum target);
 ;GL_APICALL void GL_APIENTRY glGenFramebuffers (GLsizei n, GLuint *framebuffers);
 ;GL_APICALL void GL_APIENTRY glGenRenderbuffers (GLsizei n, GLuint *renderbuffers);
@@ -861,7 +874,7 @@
 ;GL_APICALL void GL_APIENTRY glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name);
 ;GL_APICALL void GL_APIENTRY glGetActiveUniform (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name);
 ;GL_APICALL void GL_APIENTRY glGetAttachedShaders (GLuint program, GLsizei maxCount, GLsizei *count, GLuint *shaders);
-(define glGetAttribLocation (ES GLint "glGetAttribLocation" GLuint GLchar*))
+(define glGetAttribLocation (GLES GLint "glGetAttribLocation" GLuint GLchar*))
 ;GL_APICALL void GL_APIENTRY glGetBooleanv (GLenum pname, GLboolean *data);
 ;GL_APICALL void GL_APIENTRY glGetBufferParameteriv (GLenum target, GLenum pname, GLint *params);
 ;GL_APICALL GLenum GL_APIENTRY glGetError (void);
@@ -871,8 +884,8 @@
 ;GL_APICALL void GL_APIENTRY glGetProgramiv (GLuint program, GLenum pname, GLint *params);
 ;GL_APICALL void GL_APIENTRY glGetProgramInfoLog (GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog);
 ;GL_APICALL void GL_APIENTRY glGetRenderbufferParameteriv (GLenum target, GLenum pname, GLint *params);
-(define glGetShaderiv (ES GLvoid "glGetShaderiv" GLuint GLenum GLint&))
-(define glGetShaderInfoLog (ES GLvoid "glGetShaderInfoLog" GLuint GLsizei GLsizei* GLchar*))
+(define glGetShaderiv (GLES GLvoid "glGetShaderiv" GLuint GLenum GLint&))
+(define glGetShaderInfoLog (GLES GLvoid "glGetShaderInfoLog" GLuint GLsizei GLsizei* GLchar*))
 ;GL_APICALL void GL_APIENTRY glGetShaderPrecisionFormat (GLenum shadertype, GLenum precisiontype, GLint *range, GLint *precision);
 ;GL_APICALL void GL_APIENTRY glGetShaderSource (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source);
 ;GL_APICALL const GLubyte *GL_APIENTRY glGetString (GLenum name);
@@ -880,7 +893,7 @@
 ;GL_APICALL void GL_APIENTRY glGetTexParameteriv (GLenum target, GLenum pname, GLint *params);
 ;GL_APICALL void GL_APIENTRY glGetUniformfv (GLuint program, GLint location, GLfloat *params);
 ;GL_APICALL void GL_APIENTRY glGetUniformiv (GLuint program, GLint location, GLint *params);
-(define glGetUniformLocation (ES GLint "glGetUniformLocation" GLuint type-string))
+(define glGetUniformLocation (GLES GLint "glGetUniformLocation" GLuint type-string))
 ;GL_APICALL void GL_APIENTRY glGetVertexAttribfv (GLuint index, GLenum pname, GLfloat *params);
 ;GL_APICALL void GL_APIENTRY glGetVertexAttribiv (GLuint index, GLenum pname, GLint *params);
 ;GL_APICALL void GL_APIENTRY glGetVertexAttribPointerv (GLuint index, GLenum pname, void **pointer);
@@ -893,7 +906,7 @@
 ;GL_APICALL GLboolean GL_APIENTRY glIsShader (GLuint shader);
 ;GL_APICALL GLboolean GL_APIENTRY glIsTexture (GLuint texture);
 ;GL_APICALL void GL_APIENTRY glLineWidth (GLfloat width);
-(define glLinkProgram (ES GLvoid "glLinkProgram" GLuint))
+(define glLinkProgram (GLES GLvoid "glLinkProgram" GLuint))
 ;GL_APICALL void GL_APIENTRY glPixelStorei (GLenum pname, GLint param);
 ;GL_APICALL void GL_APIENTRY glPolygonOffset (GLfloat factor, GLfloat units);
 ;GL_APICALL void GL_APIENTRY glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels);
@@ -903,7 +916,7 @@
 ;GL_APICALL void GL_APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height);
 ;GL_APICALL void GL_APIENTRY glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length);
 ;GL_APICALL void GL_APIENTRY glShaderSource (GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length);
-(define glShaderSource    (ES GLvoid "glShaderSource" GLuint GLsizei GLchar** GLint*))
+(define glShaderSource    (GLES GLvoid "glShaderSource" GLuint GLsizei GLchar** GLint*))
 
 ;GL_APICALL void GL_APIENTRY glStencilFunc (GLenum func, GLint ref, GLuint mask);
 ;GL_APICALL void GL_APIENTRY glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask);
@@ -935,8 +948,8 @@
 ;GL_APICALL void GL_APIENTRY glUniform4iv (GLint location, GLsizei count, const GLint *value);
 ;GL_APICALL void GL_APIENTRY glUniformMatrix2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 ;GL_APICALL void GL_APIENTRY glUniformMatrix3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-(define glUniformMatrix4fv (ES GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLfloat*))
-(define glUseProgram (ES GLvoid "glUseProgram" GLuint))
+(define glUniformMatrix4fv (GLES GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLfloat*))
+(define glUseProgram (GLES GLvoid "glUseProgram" GLuint))
 ;GL_APICALL void GL_APIENTRY glValidateProgram (GLuint program);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib1f (GLuint index, GLfloat x);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib1fv (GLuint index, const GLfloat *v);
@@ -946,7 +959,7 @@
 ;GL_APICALL void GL_APIENTRY glVertexAttrib3fv (GLuint index, const GLfloat *v);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib4f (GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
 ;GL_APICALL void GL_APIENTRY glVertexAttrib4fv (GLuint index, const GLfloat *v);
-(define glVertexAttribPointer (ES GLvoid "glVertexAttribPointer" GLuint GLint GLenum GLboolean GLsizei GLfloat*)) ; TEMP: GLvoid* changed to GLfloat*
+(define glVertexAttribPointer (GLES GLvoid "glVertexAttribPointer" GLuint GLint GLenum GLboolean GLsizei GLfloat*)) ; TEMP: GLvoid* changed to GLfloat*
 ;GL_APICALL void GL_APIENTRY glViewport (GLint x, GLint y, GLsizei width, GLsizei height);
 
 ))

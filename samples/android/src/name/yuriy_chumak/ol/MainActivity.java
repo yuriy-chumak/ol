@@ -37,8 +37,7 @@ public class MainActivity extends Activity
 		glView = new GLSurfaceView(this);
         glView.setEGLContextClientVersion(1);
         glView.setRenderer(this);
-        //glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-        glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY); // RENDERMODE_WHEN_DIRTY
 
 		setContentView(glView);
 
@@ -69,7 +68,7 @@ public class MainActivity extends Activity
     }
     public void onMouseTouch(float x, float y)
     {
-        //eval("print", "onMouseTouch(", x, " ", y, ")");
+        eval("print", "onMouseTouch(", x, " ", y, ")");
         //eval("(let ((mouse-handler (interact 'opengl ['get 'mouse-handler]))) (if mouse-handler (mouse-handler 1 " + x + " " + y + ")))");
     }
 
@@ -88,11 +87,9 @@ public class MainActivity extends Activity
     }
 
 	static {
- 		// System.loadLibrary("z");
+        //System.loadLibrary("gl4es");
         System.loadLibrary("SOIL");
-		System.loadLibrary("freetype");
-        System.loadLibrary("gl4es");
-
+		//System.loadLibrary("freetype2");
 		System.loadLibrary("ol");
 	}
 }

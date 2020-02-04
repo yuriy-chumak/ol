@@ -28,6 +28,17 @@
 #	include <sys/mman.h>
 #endif
 
+#if defined(ANDROID) || defined(__ANDROID__)
+#	include <android/log.h>
+#	define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ol", __VA_ARGS__)
+#	define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
+#	define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "ol", __VA_ARGS__)
+#else
+#	define LOGE(...)
+#	define LOGI(...)
+#	define LOGD(...)
+#endif
+
 // todo: check emscripten versions:
 //#define __EMSCRIPTEN_major__ 1
 //#define __EMSCRIPTEN_minor__ 37
@@ -442,14 +453,10 @@ unsigned
 long long arm32_call(word argv[], long i,
                      void* function)
 {
-					//  {
-					// 	 return 133;
-					//  }
 __ASM__(
 //	"BKPT",
 	// !!! stack must be 8-bytes aligned, so let's push even arguments count
 	"push {r4, r5, r6, lr}",
-
 	"mov r4, sp", // save sp
 
 	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
@@ -462,12 +469,9 @@ __ASM__(
 	"add r5, r0, r5",
 	"sub r5, r5, #4",
 
-	// stack alignment // временное решение
-	"and r3, r1, #3",         // попадет ли новый стек на границу двойного слова?
-	"mov r6, #4",
-	"sub r3, r6, r3",
-	"and r3, r3, #7",
-	"sub sp, sp, r3, asl #2",
+	// stack alignment
+	"and r3, r1, #1",         // попадет ли новый стек на границу двойного слова?
+	"sub sp, sp, r3, asl #2", // если да, то скорректируем стек на 4 байта вниз.
 
 ".Lextraregs:", // push argv[i]
 	"ldr r3, [r5]",

@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 ANDROID_SDK_ROOT=/opt/android/sdk
+export PATH=$PATH:/opt/android/sdk/platform-tools
+
 # A Simple Script to build a simple APK without ant/gradle
 # Copyright 2016 Wanghong Lin
 # Copyright 2018 Yuriy Chumak
@@ -31,6 +33,8 @@ ANDROID_SDK_ROOT=/opt/android/sdk
    printf "\e[31mInvalid ANDROID_SDK_ROOT ---> $ANDROID_SDK_ROOT\e[30m\n"
    exit 1
 }
+
+make -C ../.. android
 
 # use the latest build tool version
 # and the oldest platform version for compatibility

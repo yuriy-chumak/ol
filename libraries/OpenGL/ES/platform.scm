@@ -41,7 +41,7 @@
    gl:QueryExtension
 
    ; internal variables
-   GL
+   GL GLES
    GL_LIBRARY ; deprecated
 
    (exports (otus lisp))
@@ -92,11 +92,12 @@
 
 (cond-expand
    ; -=( Linux )=--------------------------------------
-   ((or Linux Android)
+   (Linux
       (begin
-         (define GL (or
+         (define GLES (or
             (load-dynamic-library "libGLESv1_CM.so")
             (runtime-error "No OpenGL ES v1 installed:" "Maybe install libgles1-mesa package?")))
+         (define GL GLES)
 
          (setq EGL (load-dynamic-library "libEGL.so"))
          (setq EGLBoolean fft-int)
@@ -115,19 +116,21 @@
 
          (define (gl:SwapBuffers context)
             (eglSwapBuffers (ref context 1) (ref context 2)))
+   ))
+   ; we don't create own opengl context under android
+   (Android
+      (begin
+         (define GLES (or
+            (load-dynamic-library "libGLESv1_CM.so")
+            (runtime-error "No OpenGL ES v1 installed:" "Maybe install libgles1-mesa package?")))
+         (define GL GLES)
 
-         ; GL
-         (setq GLint fft-int)
-         (setq GLsizei fft-int)
-         (setq GLvoid fft-void)
-         (setq GLenum fft-unsigned-int)
+         (setq EGL (load-dynamic-library "libEGL.so"))
+         (define (gl:MakeCurrent context)
+            #false)
 
-         (define glGetString (GL type-string "glGetString" GLenum))
-            (define GL_VENDOR     #x1F00)
-            (define GL_RENDERER   #x1F01)
-            (define GL_VERSION    #x1F02)
-            (define GL_EXTENSIONS #x1F03)
-         (define glViewport (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+         (define (gl:SwapBuffers context)
+            #false)
    ))
 
    (else
@@ -135,7 +138,23 @@
          (runtime-error "Unsupported platform: " *uname*))))
 
 (begin
-   (define GL_LIBRARY GL)
+   (define GL_LIBRARY GLES)
+
+   ; GL
+   (define glGetString (GLES type-string "glGetString" GLenum))
+      (define GL_VENDOR     #x1F00)
+      (define GL_RENDERER   #x1F01)
+      (define GL_VERSION    #x1F02)
+      (define GL_EXTENSIONS #x1F03)
+   (define glViewport (GLES GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+
+   ;; (define (gl:GetProcAddress type name . prototype)
+   ;;    (let ((rtty (cons type prototype))
+   ;;          (function (GetProcAddress (c-string name))))
+   ;;       (if function
+   ;;          (lambda args
+   ;;             (exec ffi function rtty args)))))
+
 
    (import (owl regex))
    (setq split (string->regex "c/ /"))

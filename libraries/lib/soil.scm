@@ -1,5 +1,5 @@
 (define-library (lib soil)
-   (import (scheme core)
+   (import (otus lisp)
            (otus ffi))
    (export
       SOIL_last_result
@@ -30,26 +30,25 @@
                                       "try to 'apt install libsoil1', for example"))))))
 
 (begin
-
-   (define SOIL_LOAD_AUTO 0)
-   (define SOIL_LOAD_L    1)
-   (define SOIL_LOAD_LA   2)
-   (define SOIL_LOAD_RGB  3)
-   (define SOIL_LOAD_RGBA 4)
+	; The format of images that may be loaded (force_channels)
+   (define SOIL_LOAD_AUTO 0) ; leaves the image in whatever format it was found
+   (define SOIL_LOAD_L    1) ; forces the image to load as Luminous (greyscale)
+   (define SOIL_LOAD_LA   2) ; forces the image to load as Luminous with Alpha
+   (define SOIL_LOAD_RGB  3) ; forces the image to load as Red Green Blue
+   (define SOIL_LOAD_RGBA 4) ; forces the image to load as Red Green Blue Alpha
    
    (define SOIL_CREATE_NEW_ID 0)
-   
-   ;SOIL_FLAG_POWER_OF_TWO = 1,
-   ;SOIL_FLAG_MIPMAPS = 2,
-   ;SOIL_FLAG_TEXTURE_REPEATS = 4,
-   ;SOIL_FLAG_MULTIPLY_ALPHA = 8,
+   (define SOIL_FLAG_POWER_OF_TWO 1)
+   (define SOIL_FLAG_MIPMAPS 2)
+   (define SOIL_FLAG_TEXTURE_REPEATS 4)
+   (define SOIL_FLAG_MULTIPLY_ALPHA 8)
    (define SOIL_FLAG_INVERT_Y 16)
-   ;SOIL_FLAG_COMPRESS_TO_DXT = 32,
-   ;SOIL_FLAG_DDS_LOAD_DIRECT = 64,
-   ;SOIL_FLAG_NTSC_SAFE_RGB = 128,
-   ;SOIL_FLAG_CoCg_Y = 256,
-   ;SOIL_FLAG_TEXTURE_RECTANGLE = 512
-   
+   (define SOIL_FLAG_COMPRESS_TO_DXT 32)
+   (define SOIL_FLAG_DDS_LOAD_DIRECT 64)
+   (define SOIL_FLAG_NTSC_SAFE_RGB 128)
+   (define SOIL_FLAG_CoCg_Y 256)
+   (define SOIL_FLAG_TEXTURE_RECTANGLE 51)
+
    ;SOIL_SAVE_TYPE_TGA = 0,
    ;SOIL_SAVE_TYPE_BMP = 1,
    ;SOIL_SAVE_TYPE_DDS = 2

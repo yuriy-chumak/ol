@@ -95,21 +95,25 @@
    ; -=( Android )=------------------------------------------
    (Android
       (begin
+         ; no context creation, we use already created context
          (define (native:create-context title)
-            (print-to stderr "OpenGL ES version: " (glGetString GL_VERSION))
-            (print-to stderr "OpenGL ES vendor: " (glGetString GL_VENDOR))
-            (print-to stderr "OpenGL ES renderer: " (glGetString GL_RENDERER))
-            (print-to stderr "OpenGL ES extensions: " (glGetString GL_EXTENSIONS))
+            #false)
 
-            (define width '(1184))
-            (define height '(672))
-            ;; (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
-            ;; (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
+         ; android printing to the stdin means "DEBUG" logcat message
+         (print-to stdin "OpenGL ES version: " (glGetString GL_VERSION))
+         (print-to stdin "OpenGL ES vendor: " (glGetString GL_VENDOR))
+         (print-to stdin "OpenGL ES renderer: " (glGetString GL_RENDERER))
+         (print-to stdin "OpenGL ES extensions: " (glGetString GL_EXTENSIONS))
 
-            (set-ref! gl:window-dimensions 3 (car width))
-            (set-ref! gl:window-dimensions 4 (car height))
+         (define width '(1184))
+         (define height '(672))
+         ;; (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
+         ;; (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
 
-            (glViewport 0 0 (car width) (car height)))
+         (set-ref! gl:window-dimensions 3 (car width))
+         (set-ref! gl:window-dimensions 4 (car height))
+
+;            (glViewport 0 0 (car width) (car height)))
 
          (define (native:enable-context context)
             #false)
@@ -127,8 +131,6 @@
             #false)
          (define (gl:GetMousePos context)
             #false)
-
-         ;(set-ref! )
    ))
 
    ; -=( Linux )=------------------------------------------
@@ -578,8 +580,8 @@
                      (mail sender (get dictionary 'context #f))
                      (this dictionary))
                   (else
-                        (print-to stderr "Unknown opengl server command " msg)
-                        (this dictionary))
+                     (print-to stderr "Unknown opengl server command " msg)
+                     (this dictionary))
                )))))))
    (else
       (begin

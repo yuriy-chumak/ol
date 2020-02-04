@@ -75,12 +75,22 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #	endif
 #endif
 
+// #ifndef __has_feature
+// #   define __has_feature(x) 0
+// #endif
+
 // additional gcc staff
 // http://www.pixelbeat.org/programming/gcc/static_assert.html
 // https://gcc.gnu.org/wiki/C11Status
+// #define XSTR(x) STR(x)
+// #define STR(x) #x
+// #pragma message "The value of GCC_VERSION: " XSTR(GCC_VERSION)
 #if GCC_VERSION < 40600
+#	define CONCATENATE_DETAIL(x, y) x##y
+#	define CONCATENATE(x, y) CONCATENATE_DETAIL(x, y)
+#	define MAKE_UNIQUE(x) CONCATENATE(x, __COUNTER__)
 #	define static_assert(condition, comment) \
-		typedef char static_assertion_##__LINE__[(!!(condition))*2-1];
+		typedef char MAKE_UNIQUE(static_assertion_)[2*(!!(condition)) - 1];
 #else
 #	ifndef static_assert
 #	define static_assert _Static_assert
@@ -404,6 +414,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#endif
+
+#if defined(__ANDROID__) || defined(ANDROID)
+#include <android/log.h>
 #endif
 
 // FFI support:
