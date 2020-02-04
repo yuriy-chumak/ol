@@ -1,4 +1,4 @@
-; OpenGL 4.0 (2010)
+; OpenGL 4.0 (11 Mar 2010)
 
 (define-library (OpenGL version-4-0)
 (export

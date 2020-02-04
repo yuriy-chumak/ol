@@ -1,4 +1,4 @@
-; OpenGL 1.3 (2001)
+; OpenGL 1.3 (14 Aug 2001)
 
 (define-library (OpenGL version-1-3)
 (export
@@ -107,7 +107,9 @@ glActiveTextureARB
 (begin
    (define GL_VERSION_1_3 1)
 
-   (define glActiveTextureARB (gl:GetProcAddress GLvoid "glActiveTextureARB" GLenum))
+   (setq GL gl:GetProcAddress)
+
+   (define glActiveTextureARB (GL GLvoid "glActiveTextureARB" GLenum))
 
    (define GL_TEXTURE0_ARB                   #x84C0)
    (define GL_TEXTURE1_ARB                   #x84C1)
@@ -123,6 +125,5 @@ glActiveTextureARB
    (define GL_TEXTURE_CUBE_MAP_NEGATIVE_Z #x851A)
    (define GL_PROXY_TEXTURE_CUBE_MAP #x851B)
    (define GL_MAX_CUBE_MAP_TEXTURE_SIZE #x851C)
-
 
 ))

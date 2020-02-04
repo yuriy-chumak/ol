@@ -1,4 +1,4 @@
-; OpenGL 2.1 (2006)
+; OpenGL 2.1 (2 Jul 2006)
 
 (define-library (OpenGL version-2-1)
 (export

@@ -1,4 +1,4 @@
-; OpenGL 2.0 (2004)
+; OpenGL 2.0 (7 Sep 2004)
 
 (define-library (OpenGL version-2-0)
 (export

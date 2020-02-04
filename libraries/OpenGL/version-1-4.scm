@@ -1,4 +1,4 @@
-; OpenGL 1.4 (2002)
+; OpenGL 1.4 (24 Jul 2002)
 
 (define-library (OpenGL version-1-4)
 (export

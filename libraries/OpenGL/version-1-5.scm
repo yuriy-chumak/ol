@@ -1,4 +1,4 @@
-; OpenGL 1.5 (2003)
+; OpenGL 1.5 (29 Jul 2003)
 
 (define-library (OpenGL version-1-5)
 (export

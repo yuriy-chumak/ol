@@ -1,6 +1,6 @@
-; OpenGL 1.1 (1997)
-; в комментриях указаны расширения, которые были интегрированы в этот выпуск
-; ==========================================================================
+; OpenGL 1.1 (4 Mar 1997)
+; в комментариях указаны расширения, которые были интегрированы в этот выпуск
+; ===========================================================================
 (define-library (OpenGL version-1-1)
 (export
 
@@ -39,6 +39,26 @@
 
    GL_CLIENT_ATTRIB_STACK_DEPTH
    GL_MAX_CLIENT_ATTRIB_STACK_DEPTH
+
+
+ ; EXT_vertex_array
+   glArrayElement  ; void (GLint i)
+
+   glVertexPointer ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+   glNormalPointer ; void (GLenum type, GLsizei stride, const GLvoid *pointer)
+   glColorPointer  ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+   glIndexPointer  ; void (GLenum type, GLsizei stride, const GLvoid *pointer)
+   glTexCoordPointer ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+      GL_VERTEX_ARRAY
+      GL_NORMAL_ARRAY
+      GL_COLOR_ARRAY
+      GL_INDEX_ARRAY
+      GL_TEXTURE_COORD_ARRAY
+      GL_EDGE_FLAG_ARRAY
+
+   glEdgeFlagPointer ; void (GLsizei stride, const GLvoid *pointer)
+   ; GetPointerv
+
 
 
  ; EXT_polygon_offset
@@ -128,26 +148,9 @@
    GL_TEXTURE_BINDING_2D ; renamed from TEXTURE_2D_BINDING_EXT by 1.1
 ;  TEXTURE_3D_BINDING ; excluded by 1.1
 
- ; EXT_vertex_array
-   ; ArrayElement
-   glVertexPointer ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
-   glNormalPointer ; void (GLenum type, GLsizei stride, const GLvoid *pointer)
-   glColorPointer ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
-   glIndexPointer ; void (GLenum type, GLsizei stride, const GLvoid *pointer)
-   glTexCoordPointer ; void (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
-   glEdgeFlagPointer ; void (GLsizei stride, const GLvoid *pointer)
-   ; GetPointerv
-
    ; DrawArrays
    ; introduced by 1.1
    glDrawElements ; void (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
-
-   GL_VERTEX_ARRAY
-   GL_NORMAL_ARRAY
-   GL_COLOR_ARRAY
-   GL_INDEX_ARRAY
-   GL_TEXTURE_COORD_ARRAY
-   GL_EDGE_FLAG_ARRAY
 
    GL_VERTEX_ARRAY_SIZE
    GL_VERTEX_ARRAY_TYPE
@@ -311,19 +314,11 @@
    (define GL_TEXTURE_BINDING_2D #x8069)
 
  ; EXT_vertex_array
-   ;WINGDIAPI void APIENTRY glArrayElement (GLint i);
-
-   (define glVertexPointer (GL GLvoid "glVertexPointer" GLint GLenum GLsizei fft-any))
-   (define glNormalPointer (GL GLvoid "glNormalPointer" GLenum GLsizei fft-any))
-   (define glColorPointer (GL GLvoid "glColorPointer" GLint GLenum GLsizei fft-any))
-   (define glIndexPointer (GL GLvoid "glIndexPointer" GLenum GLsizei fft-any))
-   (define glTexCoordPointer (GL GLvoid "glTexCoordPointer" GLint GLenum GLsizei fft-any))
-   (define glEdgeFlagPointer (GL GLvoid "glEdgeFlagPointer" GLsizei fft-any))
-
-   ;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
-
-   ;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
-   (define glDrawElements (GL GLvoid "glDrawElements" GLenum GLsizei GLenum fft-any))
+   ; except that static array data
+   ; are not supported (because they complicated the interface, and were not
+   ; being used), and the pre-dened congurations are added (both to reduce
+   ; subroutine count even further, and to allow for ecient transfer of array
+   ; data)
 
    (define GL_VERTEX_ARRAY                   #x8074)
    (define GL_NORMAL_ARRAY                   #x8075)
@@ -331,6 +326,21 @@
    (define GL_INDEX_ARRAY                    #x8077)
    (define GL_TEXTURE_COORD_ARRAY            #x8078)
    (define GL_EDGE_FLAG_ARRAY                #x8079)
+
+   (define glArrayElement (GL GLvoid "glArrayElement" GLint))
+
+   (define glVertexPointer (GL GLvoid "glVertexPointer" GLint GLenum GLsizei fft-any))
+   (define glNormalPointer (GL GLvoid "glNormalPointer" GLenum GLsizei fft-any))
+   (define glColorPointer  (GL GLvoid "glColorPointer" GLint GLenum GLsizei fft-any))
+   (define glIndexPointer  (GL GLvoid "glIndexPointer" GLenum GLsizei fft-any))
+   (define glTexCoordPointer (GL GLvoid "glTexCoordPointer" GLint GLenum GLsizei fft-any))
+
+   (define glEdgeFlagPointer (GL GLvoid "glEdgeFlagPointer" GLsizei fft-any))
+
+   ;WINGDIAPI void APIENTRY glGetPointerv (GLenum pname, GLvoid* *params);
+
+   ;WINGDIAPI void APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count);
+   (define glDrawElements (GL GLvoid "glDrawElements" GLenum GLsizei GLenum fft-any))
 
    (define GL_VERTEX_ARRAY_SIZE              #x807A)
    (define GL_VERTEX_ARRAY_TYPE              #x807B)
@@ -354,6 +364,6 @@
    (define GL_TEXTURE_COORD_ARRAY_POINTER    #x8092)
    (define GL_EDGE_FLAG_ARRAY_POINTER        #x8093)
 
- ; EXT_blend_login_op
+ ; EXT_blend_logic_op
    ; none
 ))

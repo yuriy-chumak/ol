@@ -8,6 +8,9 @@
 ; Version
 ;     $Date: 1995/10/03 05:39:58 $ $Revision: 1.16 $  FINAL
 ;
+;Number
+;    30
+;
 ; Overview
 ;     This extension adds the ability to specify multiple geometric primitives
 ;     with very few subroutine calls.  Instead of calling an OpenGL procedure
@@ -21,6 +24,7 @@
 ;
 ;     This extension also supports the rendering of individual array elements,
 ;     each specified as an index into the enabled arrays.
+;
 (define-library (OpenGL EXT vertex_array)
 
 ; --------------------------------------------------------------------------
@@ -33,15 +37,15 @@
 
 ; --------------------------------------------------------------------------
 ; New Procedures and Functions
-   ;ArrayElementEXT
-   ;DrawArraysEXT
-   ;VertexPointerEXT
-   ;NormalPointerEXT
-   ;ColorPointerEXT
-   ;IndexPointerEXT
-   ;TexCoordPointerEXT
-   ;EdgeFlagPointerEXT
-   ;GetPointervEXT
+   glArrayElementEXT
+   glDrawArraysEXT
+   glVertexPointerEXT
+   glNormalPointerEXT
+   glColorPointerEXT
+   glIndexPointerEXT
+   glTexCoordPointerEXT
+   glEdgeFlagPointerEXT
+   glGetPointervEXT
 
 ; --------------------------------------------------------------------------
 ; New Tokens
@@ -97,5 +101,15 @@
 ; --------------------------------------------------------------------------
 (begin
    (define EXT_vertex_array (gl:QueryExtension "GL_EXT_vertex_array"))
+
+   (define glArrayElementEXT (GL GLvoid "glArrayElementEXT" GLint))
+   (define glDrawArraysEXT (GL GLvoid "glDrawArraysEXT" GLenum GLint GLsizei))
+   (define glVertexPointerEXT (GL GLvoid "glVertexPointerEXT" GLint GLenum GLsizei GLsizei fft-any))
+   (define glNormalPointerEXT (GL GLvoid "glNormalPointerEXT" GLenum GLsizei GLsizei fft-any))
+   (define glColorPointerEXT (GL GLvoid "glColorPointerEXT" GLint GLenum GLsizei GLsizei fft-any))
+   (define glIndexPointerEXT (GL GLvoid "glIndexPointerEXT" GLenum GLsizei GLsizei fft-any))
+   (define glTexCoordPointerEXT (GL GLvoid "glTexCoordPointerEXT" GLint GLenum GLsizei GLsizei fft-any))
+   (define glEdgeFlagPointerEXT (GL GLvoid "glEdgeFlagPointerEXT" GLsizei GLsizei GLboolean*))
+   (define glGetPointervEXT (GL GLvoid "glGetPointervEXT" GLenum (fft& type-vptr)))
 
 ))

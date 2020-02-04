@@ -1,4 +1,4 @@
-; OpenGL 3.1 (2009)
+; OpenGL 3.1 (24 Mar 2009)
 
 (define-library (OpenGL version-3-1)
 (export

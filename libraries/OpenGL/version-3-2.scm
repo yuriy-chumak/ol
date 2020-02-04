@@ -1,4 +1,4 @@
-; OpenGL 3.2 (2009)
+; OpenGL 3.2 (3 Aug 2009)
 
 ; this version introduced "deprecation" model,
 ; so i think we should copy all defines here

@@ -1,4 +1,4 @@
-; OpenGL 4.3 (2012)
+; OpenGL 4.3 (6 Aug 2012)
 
 (define-library (OpenGL version-4-3)
 (export

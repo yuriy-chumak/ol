@@ -1,4 +1,4 @@
-; OpenGL 3.0 (2008)
+; OpenGL 3.0 (11 Aug 2008)
 
 ; this version provides new functionality over old
 ; so, OpenGL 1.0, 1.1, ..., 2.1 still available
