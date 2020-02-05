@@ -40,8 +40,14 @@
    gl:SwapBuffers
    gl:QueryExtension
 
+   ; todo: change to this functions
+   ;; get-proc-address
+   ;; make-context-current
+   ;; create-context
+   ;; swap-gl-buffers
+   ;; query-gl-extension
+
    ; internal variables
-   GL ;GLX EGL WGL GDI
    GL_LIBRARY
 
    (exports (otus lisp))
@@ -125,9 +131,8 @@
       (import (OpenGL ES platform))
       (begin
          (define GL_LIBRARY GLES)
-         ;; (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
-         ;(define GL_LIBRARY EGL)
 
+         ;; (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
          ;; (define initialize_gl4es (GL_LIBRARY fft-void "initialize_gl4es"))
          ;; (initialize_gl4es)
 

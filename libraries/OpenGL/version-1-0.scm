@@ -1772,11 +1772,8 @@
    GL_RGB GL_UNSIGNED_BYTE GL_RGBA
    GL_STENCIL_INDEX
 
-   ; internal variables
-   GL_LIBRARY
-
-   (exports (OpenGL platform))
-   (exports (otus ffi)))
+   ; platform staff
+   (exports (OpenGL platform)))
 
 ; ============================================================================
 ; == implementation ==========================================================
