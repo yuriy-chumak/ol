@@ -579,6 +579,9 @@ void yield()
 #	else
 	// Unsupported platform
 #	endif
+
+#	include <sys/socket.h>
+#	include <netinet/in.h>
 #endif
 
 //#ifdef __ANDROID__
