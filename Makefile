@@ -12,7 +12,7 @@ describe: all
 	echo "(print (syscall 63))"|./vm repl
 
 # repl source
-repl := tmp/repl.o
+repl := tmp/repl.c
 
 ## 'configure' part:
 # check the library and/or function
@@ -84,7 +84,7 @@ endif
 ifeq ($(UNAME),Darwin)
   CFLAGS += -DSYSCALL_SYSINFO=0
 
-  repl := tmp/repl.c
+#  repl := tmp/repl.c
 endif
 
 # Mac OS X                    Darwin
@@ -199,11 +199,11 @@ src/olvm.c: extensions/ffi.c
 	touch src/olvm.c
 
 $(repl): repl
-ifeq ($(UNAME),Darwin)
+#ifeq ($(UNAME),Darwin)
 	echo '(display "unsigned char _binary_repl_start[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> $(repl)
-else
-	$(LD) -r -b binary -o $(repl) repl
-endif
+#else
+#	$(LD) -r -b binary -o $(repl) repl
+#endif
 
 # emscripten version 1.37.40+
 repl.js: repl
