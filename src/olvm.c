@@ -149,6 +149,22 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 // images for qemu:  https://4pda.ru/forum/index.php?showtopic=318284
 #endif
 
+#ifdef __APPLE__
+#	include "TargetConditionals.h"
+#	if TARGET_IPHONE_SIMULATOR
+	// iOS Simulator
+#	elif TARGET_OS_IPHONE
+	// iOS device
+#	elif TARGET_OS_MAC
+	// Other kinds of Mac OS
+#	else
+	// Unsupported platform
+#	endif
+
+	// Defining _DARWIN_C_SOURCE causes library and kernel calls to
+	// conform to the SUSv3 standards
+#	define _DARWIN_C_SOURCE
+#endif
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
@@ -569,16 +585,11 @@ void yield()
 #endif
 
 #ifdef __APPLE__
-#	include "TargetConditionals.h"
-#	if TARGET_IPHONE_SIMULATOR
-	// iOS Simulator
-#	elif TARGET_OS_IPHONE
-	// iOS device
-#	elif TARGET_OS_MAC
-	// Other kinds of Mac OS
-#	else
-	// Unsupported platform
-#	endif
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+
+#	include <arpa/inet.h> // for inet_addr()
+#	include <netdb.h>     // for gethostbyname()
 #endif
 
 //#ifdef __ANDROID__

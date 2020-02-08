@@ -8,6 +8,10 @@
 #	define PUBLIC __declspec(dllexport)
 #endif
 
+#ifdef __APPLE__
+#	define PUBLIC __attribute__ ((__visibility__("default"))) __attribute__((used))
+#endif
+
 #if 1
 #	define LOG(...)
 #else

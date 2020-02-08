@@ -24,7 +24,7 @@
 
 #if OLVM_FFI
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
 #	include <sys/mman.h>
 #endif
 
@@ -97,6 +97,8 @@
 #elif defined(__EMSCRIPTEN__)
 #	define PUBLIC EMSCRIPTEN_KEEPALIVE
 #elif defined(__unix__)
+#	define PUBLIC __attribute__ ((__visibility__("default")))
+#elif defined(__APPLE__)
 #	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
@@ -976,7 +978,7 @@ word* OL_ffi(OL* self, word* arguments)
 	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
 #endif
 
-#if __linux__ && __amd64__ // LP64
+#if __amd64__ && (__linux__ || __APPLE__)// LP64
 	// для x64 отдельный массив чисел с плавающей запятой
 	double ad[18];
 	int d = 0;     // количество аргументов для ad
@@ -1006,7 +1008,7 @@ word* OL_ffi(OL* self, word* arguments)
 			arg = ((word*)p[1])[2];
 		}*/
 
-#if __linux__ && __amd64__  // LP64
+#if __amd64__ && (__linux__ || __APPLE__) // LP64
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
@@ -1018,14 +1020,14 @@ word* OL_ffi(OL* self, word* arguments)
 			case TINT64: case TUINT64:
 				args[++i] = 0; 	// for 32-bits: double fills two words
 #endif
-#if __amd64__ && __linux__
+#if __amd64__ && (__linux__ || __APPLE__)
 			case TFLOAT:
 				*(float*)&ad[d++] = 0;
 				floatsmask|=1; --i;
 				break;
 #endif
 			case TDOUBLE:
-				#if __amd64__ && __linux__
+				#if __amd64__ && (__linux__ || __APPLE__)
 					ad[d++] = 0;
 					floatsmask++; --i;
 				#endif
@@ -1161,7 +1163,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 		// с плавающей запятой:
 		case TFLOAT:
-			#if __linux__ && __amd64__
+			#if __amd64__ && (__linux__ || __APPLE__)
 				*(float*)&ad[d++] = OL2F(arg); --i;
 				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
@@ -1211,7 +1213,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 		case TDOUBLE:
 		tdouble:
-			#if __linux__ && __amd64__
+			#if __amd64__ && (__linux__ || __APPLE__)
 				*(double*)&ad[d++] = OL2D(arg); --i;
 				floatsmask++;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
@@ -1501,9 +1503,9 @@ word* OL_ffi(OL* self, word* arguments)
 //	if (floatsmask == 15)
 //		__asm__("int $3");
 
-#if  __linux__ && __amd64__
+#if  __amd64__ && (__linux__ || __APPLE__)
 	got = x64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
-#elif __linux__ && __i386__
+#elif __i386__ && (__linux__ || __APPLE__)
 	got = x86_call(args, i, function, returntype & 0x3F);
 #elif _WIN64
 	got = x64_call(args, i, function, returntype & 0x3F);
@@ -2116,7 +2118,7 @@ long long callback(OL* ol, int id, int_t* argi
 	fp = ol->heap.fp;
 
 	int i = 0;
-#if __amd64__ && __linux__
+#if __amd64__ && (__linux__ || __APPLE__)
 	int j = 0;
 #endif
 /*#if __amd64__  // !!!

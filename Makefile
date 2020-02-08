@@ -11,6 +11,9 @@ describe: all
 	./ol --version
 	echo "(print (syscall 63))"|./vm repl
 
+# repl source
+repl := tmp/repl.o
+
 ## 'configure' part:
 # check the library and/or function
 exists = $(shell echo "\
@@ -21,7 +24,6 @@ exists = $(shell echo "\
 	      return $3();\
 	      return 0;\
 	   }" | $(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
-repl.o := tmp/repl.o
 
 # default platform features
 HAS_DLOPEN  ?= $(call exists,,<stdlib.h>, dlopen, -ldl)
@@ -49,33 +51,40 @@ CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
 UNAME ?= $(shell uname -s)
 
 ifeq ($(UNAME),Linux)
-L := $(if HAS_DLOPEN, -ldl)
+  L := $(if HAS_DLOPEN, -ldl) \
+       -Xlinker --export-dynamic
 
 #Debian i586 fix
 ifeq ($(CC),gcc)
-CFLAGS += -I/usr/include/$(shell gcc -print-multiarch)
+  CFLAGS += -I/usr/include/$(shell gcc -print-multiarch)
 endif
-#
+
 endif #Linux
 
 ifeq ($(UNAME),FreeBSD)
-L := $(if HAS_DLOPEN, -lc) -lm
-LD := ld.bfd
+  L := $(if HAS_DLOPEN, -lc) -lm \
+       -Xlinker --export-dynamic
+
+  LD := ld.bfd
 endif
 ifeq ($(UNAME),NetBSD)
-L := $(if HAS_DLOPEN, -lc) -lm
+  L := $(if HAS_DLOPEN, -lc) -lm \
+       -Xlinker --export-dynamic
 endif
 ifeq ($(UNAME),OpenBSD)
-L := $(if HAS_DLOPEN, -lc) -ftrampolines
+  L := $(if HAS_DLOPEN, -lc) -ftrampolines \
+       -Xlinker --export-dynamic
 endif
 
 # Windows+MinGW
 ifeq ($(UNAME),MINGW32_NT-6.1)
-L := -lws2_32
+  L := -lws2_32
 endif
 
 ifeq ($(UNAME),Darwin)
   CFLAGS += -DSYSCALL_SYSINFO=0
+
+  repl := tmp/repl.c
 endif
 
 # Mac OS X                    Darwin
@@ -139,7 +148,6 @@ PREFIX ?= /usr
 
 clean:
 	rm -f boot.fasl
-	rm -f $(repl.o)
 	rm -f ./vm ./ol
 	rm -r tmp/*
 
@@ -178,22 +186,24 @@ jni/repl.c: repl vm
 
 # ol
 vm: src/olvm.c include/olvm.h
-	$(CC) src/olvm.c -DNAKED_VM -o $@ \
-	   -Xlinker --export-dynamic $(L) \
-	   $(CFLAGS)
+	$(CC) src/olvm.c -DNAKED_VM -o $@\
+	   $(CFLAGS) $(L)
 	@echo Ok.
 
-ol: src/olvm.c include/olvm.h $(repl.o)
-	$(CC) src/olvm.c $(repl.o) -o $@ \
-	   -Xlinker --export-dynamic $(L)\
-	   $(CFLAGS)
+ol: src/olvm.c include/olvm.h $(repl)
+	$(CC) src/olvm.c $(repl) -o $@ \
+	   $(CFLAGS) $(L)
 	@echo Ok.
 
 src/olvm.c: extensions/ffi.c
 	touch src/olvm.c
 
-$(repl.o): repl
-	$(LD) -r -b binary -o $(repl.o) repl
+$(repl): repl
+ifeq ($(UNAME),Darwin)
+	echo '(display "unsigned char _binary_repl_start[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> $(repl)
+else
+	$(LD) -r -b binary -o $(repl) repl
+endif
 
 # emscripten version 1.37.40+
 repl.js: repl
@@ -329,7 +339,7 @@ arm: src/olvm.c include/olvm.h
 
 #-mcpu=cortex-m3
 #	   -mfpu=vfp \
- #-mthumb -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m3-ldrd \
+# -mthumb -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m3-ldrd \
 
 # additional targets (like packaging, tests, etc.)
 MAKEFILE_MAIN=1

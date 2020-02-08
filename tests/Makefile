@@ -16,13 +16,13 @@ HAS_64CDEFS   ?= $(call exists,-m64,<sys/cdefs.h>,exit)
 endif
 
 ifeq ($(HAS_64CDEFS),1)
-vm64 = echo -n "64 " && ./vm64 repl <$$F | diff - $$F.ok
+vm64 = printf "64 " && ./vm64 repl <$$F | diff - $$F.ok
 else
 vm64 = true
 endif
 
 ifeq ($(HAS_32CDEFS),1)
-vm32 = echo -n "32 " && ./vm32 repl <$$F | diff - $$F.ok
+vm32 = printf "32 " && ./vm32 repl <$$F | diff - $$F.ok
 else
 vm32 = true
 endif
@@ -30,12 +30,12 @@ endif
 
 vm32: src/olvm.c include/olvm.h
 	$(CC) src/olvm.c -DNAKED_VM -o $@ \
-	   -Xlinker --export-dynamic $(L) -m32 -DOLVM_FFI=0 \
+	   $(L) -m32 -DOLVM_FFI=0 \
 	   $(CFLAGS)
 	@echo Ok.
 vm64: src/olvm.c include/olvm.h
 	$(CC) src/olvm.c -DNAKED_VM -o $@ \
-	   -Xlinker --export-dynamic $(L) -m64 -DOLVM_FFI=0 \
+	   $(L) -m64 -DOLVM_FFI=0 \
 	   $(CFLAGS)
 	@echo Ok.
 
@@ -44,9 +44,9 @@ test32: $(wildcard tests/*.scm)
 	@rm -f $(FAILED)
 	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
 	@./vm32d
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi32 $(L) -m32
 	@for F in $^ ;do \
-	   echo -n "Testing $$F ... " ;\
+	   printf "Testing $$F ... " ;\
 	   if OL_HOME=`pwd`/libraries ./ffi32 repl $$F >/dev/null; then\
 	      echo "Ok." ;\
 	   else \
@@ -61,9 +61,9 @@ test64: $(wildcard tests/*.scm)
 	@rm -f $(FAILED)
 	@$(CC) $(CFLAGS) src/olvm.c tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m64
 	@./vm64d
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m64 -Xlinker --export-dynamic
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o ffi64 $(L) -m64
 	@for F in $^ ;do \
-	   echo -n "Testing $$F ... " ;\
+	   printf "Testing $$F ... " ;\
 	   if OL_HOME=`pwd`/libraries ./ffi64 repl $$F >/dev/null; then\
 	      echo "Ok." ;\
 	   else \
@@ -78,9 +78,9 @@ test: test64
 
 # -=( ffi )=----------------------------------------
 test-ffi:
-	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o $(ffi)$(affix)$(bits) $(L) -Xlinker --export-dynamic \
+	@$(CC) $(CFLAGS) src/olvm.c tests/ffi.c -Iinclude -DNAKED_VM -DOLVM_FFI=1 -o $(ffi)$(affix)$(bits) $(L) \
 	   -fsigned-char # for ffi tests we should use char as signed by default
-	   @echo -n "Testing $(ffi)$(affix)$(bits) ... "
+	   @printf "Testing $(ffi)$(affix)$(bits) ... "
 	   @if $(ffi)$(affix)$(bits) repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
 	      echo $(ok);\
 	   else \
@@ -144,9 +144,9 @@ test-vmi-release-64: test-vmi-release
 endif
 
 vm-debug:
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DOLVM_FFI=1 -o $(vm)d$(bits) $(L) $(CFLAGS_DEBUG) -Xlinker --export-dynamic
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DOLVM_FFI=1 -o $(vm)d$(bits) $(L) $(CFLAGS_DEBUG)
 vm-release:
-	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DOLVM_FFI=1 -o $(vm)r$(bits) $(L) $(CFLAGS_RELEASE) -Xlinker --export-dynamic
+	$(CC) $(CFLAGS) src/olvm.c -DNAKED_VM -DOLVM_FFI=1 -o $(vm)r$(bits) $(L) $(CFLAGS_RELEASE)
 vm=tmp/vm
 
 # special case, maximal testings under main development platform
@@ -167,7 +167,7 @@ endif
 
 testing-binaries:
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
-	@echo -n "Building test binaries (debug and release, 32-bit and 64-bit versions both)... "
+	@printf "Building test binaries (debug and release, 32-bit and 64-bit versions both)... "
 ifeq ($(HAS_32CDEFS),1)
 	@$(MAKE) -s vm-debug-32
 	@$(MAKE) -s vm-release-32
@@ -178,128 +178,125 @@ ifeq ($(HAS_64CDEFS),1)
 endif
 	@echo "built."
 else
-	@echo -n "Building test binaries (debug and release versions both)... "
+	@printf "Building test binaries (debug and release versions both)... "
 	@$(MAKE) -s vm-debug
 	@$(MAKE) -s vm-release
 	@echo "Built."
 endif
 
-testing-embed: tests/embed.c src/olvm.c extensions/embed.h repl
-	@echo -n "Testing embed ... "
+testing-embed: tests/embed.c src/olvm.c extensions/embed.h $(repl)
+	@printf "Testing embed ... "
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
-	@$(LD) -r -b binary -o tmp/repl32 repl -m elf_i386
-	@echo -n ", debug-32: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl32 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed32d \
-	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m32
+	@printf ", debug-32: "
+	@$(CC) tests/embed.c src/olvm.c $(repl) $(CFLAGS) $(L) -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed32d \
+	      -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m32
 	@if tmp/embed32d >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
-	@echo -n ", release-32: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl32 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed32r \
-	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m32
+	@printf ", release-32: "
+	@$(CC) tests/embed.c src/olvm.c $(repl) $(CFLAGS) $(L) -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed32r \
+	      -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m32
 	@if tmp/embed32r >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
 ifeq ($(HAS_64CDEFS),1)
-	@$(LD) -r -b binary -o tmp/repl64 repl -m elf_x86_64
-	@echo -n ", debug-64: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl64 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed64d \
-	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m64
+	@printf ", debug-64: "
+	@$(CC) tests/embed.c src/olvm.c $(repl) $(CFLAGS) $(L) -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed64d \
+	      -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m64
 	@if tmp/embed64d >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
-	@echo -n ", release-64: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl64 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed64r \
-	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m64
+	@printf ", release-64: "
+	@$(CC) tests/embed.c src/olvm.c $(repl) $(CFLAGS) $(L) -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embed64r \
+	      -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m64
 	@if tmp/embed64r >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
 else
-	@$(LD) -r -b binary -o tmp/repl repl -m elf_x86_64
-	@echo -n ", debug: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl64 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embedd \
-	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
+	@printf ", debug: "
+	@$(CC) tests/embed.c src/olvm.c $(repl) $(CFLAGS) $(L) -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embedd \
+	      -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
 	@if tmp/embedd >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
-	@echo -n ", release: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl64 $(CFLAGS) -ldl -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embedr \
-	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_RELEASE)
+	@printf ", release: "
+	@$(CC) tests/embed.c src/olvm.c $(repl) $(CFLAGS) $(L) -DEMBEDDED_VM -DOLVM_FFI=1 -o tmp/embedr \
+	      -Iextensions -Iinclude -lm $(CFLAGS_RELEASE)
 	@if tmp/embedr >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
 	@echo "."
 
 %.scm.ok: %.scm
-	@echo -n "Testing $^ ..."
+	@printf "Testing $^ ..."
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
-	@echo -n ", debug-32: "
+	@printf ", debug-32: "
 	@if ([ -f $^.in ] && $(vm)d32 repl $^ <$^.in || $(vm)d32 repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
-	@echo -n ", release-32: "
+	@printf ", release-32: "
 	@if ([ -f $^.in ] && $(vm)r32 repl $^ <$^.in || $(vm)r32 repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
 ifeq ($(HAS_64CDEFS),1)
-	@echo -n ", debug-64: "
+	@printf ", debug-64: "
 	@if ([ -f $^.in ] && $(vm)d64 repl $^ <$^.in || $(vm)d64 repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
-	@echo -n ", release-64: "
+	@printf ", release-64: "
 	@if ([ -f $^.in ] && $(vm)r64 repl $^ <$^.in || $(vm)r64 repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
 else
-	@echo -n ", debug: "
+	@printf ", debug: "
 	@if ([ -f $^.in ] && $(vm)d repl $^ <$^.in || $(vm)d repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
-	@echo -n ", release: "
+	@printf ", release: "
 	@if ([ -f $^.in ] && $(vm)r repl $^ <$^.in || $(vm)r repl $^) | diff - $^.ok >/dev/null; then\
-	   echo -n $(ok) ;\
+	   printf $(ok) ;\
 	else \
-	   echo -n $(failed) ;\
+	   printf $(failed) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
