@@ -553,7 +553,6 @@
    ((or Android Emscripten)
       (begin
          (fork-server 'opengl (lambda ()
-            (print "starting 'opengl coroutine")
          (let this ((dictionary {
                'expose-handler glViewport}))
             (let*((envelope (wait-mail))

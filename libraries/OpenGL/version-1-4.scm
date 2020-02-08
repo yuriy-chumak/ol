@@ -114,6 +114,7 @@
 (begin
    (define GL_VERSION_1_4 1)
 
+   (setq GL GL_LIBRARY)
    (define glWindowPos2iv (GL GLvoid "glWindowPos2iv" (fft* GLint)))
 
    (define GL_DEPTH_COMPONENT24              #x81A6)
