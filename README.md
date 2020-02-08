@@ -94,6 +94,7 @@ BUILD REQUIREMENTS
 
 You should have GCC 3.2+ or CLANG 3.5+ or TCC installed.
 For Windows you should have MinGW (with GCC) installed.
+For macOS you should have xcode-tools installed.
 
 If you want to compile asm.js binary (is not required by regular build, but only for Web) you should have Emscripten 1.37.40+.
 
@@ -183,7 +184,7 @@ Example of using ol as an embedded web application you can check on the official
 > gcc.exe src\olvm.c tmp\repl.o -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
 ```
 
-#### macOS/\*BSDs:
+#### \*BSDs:
 
 You should include "c" library instead of "dl":
 
@@ -328,7 +329,7 @@ bye bye :/
 
 #### Unattended mode
 
-GNU/Linux, Unixes, *BSDs, ...
+GNU/Linux, Unixes, *BSDs, macOS, ...
 ```bash
 $ ol scriptname.ol                # text script
 $ ol scriptname.bl                # binary (compiled) script
