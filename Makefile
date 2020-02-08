@@ -74,6 +74,10 @@ ifeq ($(UNAME),MINGW32_NT-6.1)
 L := -lws2_32
 endif
 
+ifeq ($(UNAME),Darwin)
+  CFLAGS += -DSYSCALL_SYSINFO=0
+endif
+
 # Mac OS X                    Darwin
 # Cygwin 32-bit (Win-XP)      CYGWIN_NT-5.1
 # Cygwin 32-bit (Win-7 32-bit)CYGWIN_NT-6.1
