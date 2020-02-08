@@ -32,6 +32,14 @@ CFLAGS += -std=c99 -fno-exceptions
 CFLAGS_DEBUG   := -O0 -g2
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s)
 
+#  clang is not a primary compiler and clang have no ability to remove
+#  only one warning instance. I don't want to add SEVEN lines of code
+#  to disable only ONE warning that in fact is not a warning but fully
+#  planned behavior. so disable all same warnings to the release build.
+ifeq ($(CC),clang)
+   CFLAGS_RELEASE += -Wno-tautological-constant-out-of-range-compare
+endif
+
 CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
           $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)\
