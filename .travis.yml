@@ -1,13 +1,20 @@
 language: c
-compiler: gcc
+compiler:
+  - gcc
+  - clang
+os:
+  - linux
+  - osx
+
 
 script: make describe tests rosettacode
 
 addons:
   apt:
     packages:
-        - gcc-multilib
-        - linux-libc-dev:i386
+      - gcc-multilib
+      - linux-libc-dev:i386
+
 
 sudo: false
 git:
