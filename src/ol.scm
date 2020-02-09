@@ -318,7 +318,7 @@
                                               ((string-eq? (ref uname 1) "Darwin")
                                                  "/usr/local/lib/ol")
                                               (else
-                                                 "/usr/bin/ol"))
+                                                 "/usr/lib/ol"))
                                            "/usr/lib/ol"))))
 
                            (version (cons "OL" *version*))
