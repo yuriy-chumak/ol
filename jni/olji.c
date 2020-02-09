@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 // #include <zip.h>
-extern unsigned char _binary_repl_start[]; // otus lisp binary (please, build and link repl.o)
+extern unsigned char repl[]; // otus lisp binary (please, build and link repl.o)
 
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "ol", __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
@@ -218,7 +218,7 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv*
     fds = (AAsset**) malloc(sizeof(*fds) * fds_size);
 
     // let's start our application
-    ol.vm = OL_new(_binary_repl_start);
+    ol.vm = OL_new(repl);
     OL_userdata(ol.vm, &ol);
 
     char* args[] = { "--embed", "--no-interactive" }; //, "--home=/mnt/sdcard/ol" }; // ol execution arguments

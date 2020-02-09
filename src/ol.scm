@@ -312,7 +312,14 @@
 
                            (home (or (getf options 'home)
                                      (getenv "OL_HOME")
-                                     "/usr/lib/ol")) ; default posix ol libraries location
+                                     (let ((uname (syscall 63)))
+                                        (if (vector? uname)
+                                           (cond
+                                              ((string-eq? (ref uname 1) "Darwin")
+                                                 "/usr/local/lib/ol")
+                                              (else
+                                                 "/usr/bin/ol"))
+                                           "/usr/lib/ol"))))
 
                            (version (cons "OL" *version*))
                            (env (fold

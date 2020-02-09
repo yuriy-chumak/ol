@@ -32,7 +32,7 @@ HAS_SOCKETS ?= $(call exists,,<stdlib.h>, socket)
 
 CFLAGS += -std=c99 -fno-exceptions
 CFLAGS_DEBUG   := -O0 -g2
-CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG -s)
+CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 
 #  clang is not a primary compiler and clang have no ability to remove
 #  only one warning instance. I don't want to add SEVEN lines of code
@@ -82,9 +82,8 @@ ifeq ($(UNAME),MINGW32_NT-6.1)
 endif
 
 ifeq ($(UNAME),Darwin)
-  CFLAGS += -DSYSCALL_SYSINFO=0
-
-#  repl := tmp/repl.c
+  CFLAGS += -DSYSCALL_SYSINFO=0 -Wno-tautological-constant-out-of-range-compare
+  PREFIX ?= /usr/local
 endif
 
 # Mac OS X                    Darwin
@@ -155,14 +154,15 @@ install: ol repl
 	# install Ol executable to $(DESTDIR)$(PREFIX)/bin:
 	@echo Installing main binary...
 	install -d $(DESTDIR)$(PREFIX)/bin
-	install -m755 ol $(DESTDIR)$(PREFIX)/bin/ol
+	install ol $(DESTDIR)$(PREFIX)/bin/ol
 	# install Ol binary REPL to $(DESTDIR)$(PREFIX)/lib/ol:
 	@echo Installing REPL...
 	install -d $(DESTDIR)$(PREFIX)/lib/ol
-	install -m644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
+	install -m 644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
 	# and libraries to $(DESTDIR)$(PREFIX)/lib/ol:
 	@echo Installing basic libraries...
-	find libraries -type f -exec bash -c 'install -Dm644 "$$0" "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
+	find libraries -type d -exec bash -c 'install -d "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
+	find libraries -type f -exec bash -c 'install -m 644 "$$0" "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
 
 uninstall:
 	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
@@ -182,7 +182,7 @@ NDK_ROOT ?=/opt/android/ndk
 android: jni/*.c jni/repl.c
 	$(NDK_ROOT)/ndk-build
 jni/repl.c: repl vm
-	echo '(display "unsigned char _binary_repl_start[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
+	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
 
 # ol
 vm: src/olvm.c include/olvm.h
@@ -198,12 +198,8 @@ ol: src/olvm.c include/olvm.h $(repl)
 src/olvm.c: extensions/ffi.c
 	touch src/olvm.c
 
-$(repl): repl
-#ifeq ($(UNAME),Darwin)
-	echo '(display "unsigned char _binary_repl_start[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> $(repl)
-#else
-#	$(LD) -r -b binary -o $(repl) repl
-#endif
+tmp/repl.c: repl
+	xxd --include repl >tmp/repl.c
 
 # emscripten version 1.37.40+
 repl.js: repl

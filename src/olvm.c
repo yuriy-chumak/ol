@@ -4782,14 +4782,8 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 //
 
 #ifndef NAKED_VM
-	// Bug in MinGW-32
-#	if defined(_WIN32) && !defined(_WIN64)
-#		define language binary_repl_start
-#	else
-#		define language _binary_repl_start
-#	endif
-
-	extern unsigned char language[];
+	extern unsigned char repl[];
+#	define language repl
 #else
 #	define language NULL
 #endif

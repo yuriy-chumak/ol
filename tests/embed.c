@@ -10,7 +10,7 @@
 
 // olvm:
 ol_t ol;
-extern unsigned char _binary_repl_start[];
+extern unsigned char repl[];
 
 // Well, let's embed ol into our project and do some staff
 int main(int argc, char** argv)
@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	intptr_t r; // result of ol functions, will use frequently
 
 	// 1. create new olvm
-	embed_new(&ol, _binary_repl_start, 0);
+	embed_new(&ol, repl, 0);
 
 	// our embed extension can work in different manners:
 	// 1. if eval got only one string parameter it returns the value of parameter
