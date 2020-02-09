@@ -7,7 +7,7 @@
    GL_VERSION_1_2
    GL_VERSION_1_2_1
 
- ; removed by 1.1 (introduced back by 1.2)
+ ; introduced back by 1.2 (removed by 1.1)
    ;glTexSubImage3D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels)
    ;glCopyTexSubImage3D ; void (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 
@@ -74,6 +74,8 @@
    GL_LIGHT_MODEL_COLOR_CONTROL ; GL_VERSION_1_2_DEPRECATED
    GL_SINGLE_COLOR              ; GL_VERSION_1_2_DEPRECATED
    GL_SEPARATE_SPECULAR_COLOR   ; GL_VERSION_1_2_DEPRECATED
+
+   GLU_VERSION_1_3
 
    (exports (OpenGL version-1-1)))
 
@@ -155,5 +157,9 @@
    (define GL_SEPARATE_SPECULAR_COLOR   #x81FA)
 
  ; ARB_multitexture (todo: check is it included in 1.2.1 or 1.3)
+
+; ==========================================================================
+; GLU
+   (define GLU_VERSION_1_3 1)
 
 ))

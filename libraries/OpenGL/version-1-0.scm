@@ -6,7 +6,7 @@
 
    GL_VERSION_1_0
 
-   GL_TRUE GL_FALSE           ; 1, 0
+   GL_TRUE GL_FALSE           ;= 1, 0
 
    ;; 2.5 GL Errors
 
@@ -1740,37 +1740,39 @@
    ; --- end of OpenGL 1.0 specification ------------------------------------
    ; ------------------------------------------------------------------------
 
-;;    ; == GLU ===
-;;       GLU_VERSION_1_0
-;;       GLU_VERSION_1_1
+   ; openGL Utility
+   GLU_LIBRARY
 
-;;    gluErrorString
-;;    gluOrtho2D
-;;    gluPerspective
-;;    gluLookAt
+   GLU_VERSION_1_0
+   GLU_VERSION_1_1
 
-;;    gluNewQuadric gluDeleteQuadric gluQuadricDrawStyle
-;;       GLU_FILL GLU_LINE GLU_SILHOUETTE GLU_POINT
-;;    gluQuadricOrientation
-;;       GLU_OUTSIDE GLU_INSIDE
+   gluErrorString
+   gluOrtho2D
+   gluPerspective
+   gluLookAt
 
-;;    gluSphere
-;;    gluCylinder
+   gluNewQuadric gluDeleteQuadric gluQuadricDrawStyle
+      GLU_FILL GLU_LINE GLU_SILHOUETTE GLU_POINT
+   gluQuadricOrientation
+      GLU_OUTSIDE GLU_INSIDE
 
-;; ;   gluNewTess gluBeginPolygon gluTessVertex
+   gluSphere
+   gluCylinder
 
-;;    gluNewNurbsRenderer gluNurbsSurface gluBeginSurface gluEndSurface
-;;    gluNurbsProperty
-;;       GLU_OUTLINE_POLYGON GLU_OUTLINE_PATCH
+;   gluNewTess gluBeginPolygon gluTessVertex
 
-;;    GLU_U_STEP GLU_V_STEP GLU_DISPLAY_MODE
+   gluNewNurbsRenderer gluNurbsSurface gluBeginSurface gluEndSurface
+   gluNurbsProperty
+      GLU_OUTLINE_POLYGON GLU_OUTLINE_PATCH
 
-;;    ; пока бесхозные, todo: сложить на место
-;;    GL_MAP1_VERTEX_3 GL_MAP2_VERTEX_3
-;;    GL_LINE GL_FILL GL_POINT
-;;    GL_DEPTH_COMPONENT
-;;    GL_RGB GL_UNSIGNED_BYTE GL_RGBA
-;;    GL_STENCIL_INDEX
+   GLU_U_STEP GLU_V_STEP GLU_DISPLAY_MODE
+
+   ; пока бесхозные, todo: сложить на место
+   GL_MAP1_VERTEX_3 GL_MAP2_VERTEX_3
+   GL_LINE GL_FILL GL_POINT
+   GL_DEPTH_COMPONENT
+   GL_RGB GL_UNSIGNED_BYTE GL_RGBA
+   GL_STENCIL_INDEX
 
    ; platform staff
    (exports (OpenGL platform)))
@@ -2926,10 +2928,10 @@
 (cond-expand
    (Linux
       (begin
-         (define GLU (load-dynamic-library "libGLU.so.1"))))
+         (define GLU_LIBRARY (load-dynamic-library "libGLU.so.1"))))
    (Windows
       (begin
-         (define GLU (load-dynamic-library "glu32.dll"))))
+         (define GLU_LIBRARY (load-dynamic-library "glu32.dll"))))
 ;;       ;"HP-UX"
 ;;       ;"SunOS"
 ;;       ;"Darwin"
@@ -2938,6 +2940,7 @@
 ;;       ;"MINGW32_NT-5.2"
 ;;    (runtime-error "Can't find glu library" GLU_LIBRARY)))
 )
+
 (begin
 
    (define GLU_VERSION_1_0 1)
@@ -2945,6 +2948,7 @@
 
    (define GLUquadric* type-vptr)
 
+   (setq GLU GLU_LIBRARY)
    (define gluErrorString (GLU GLubyte* "gluErrorString" GLenum))
    (define gluOrtho2D     (GLU GLvoid   "gluOrtho2D"     GLdouble GLdouble GLdouble GLdouble))
    (define gluPerspective (GLU GLvoid   "gluPerspective" GLdouble GLdouble GLdouble GLdouble))
@@ -2964,13 +2968,15 @@
    (define gluSphere (GLU GLvoid "gluSphere" GLUquadric* GLdouble GLint GLint))
    (define gluCylinder (GLU GLvoid "gluCylinder" GLUquadric* GLdouble GLdouble GLdouble GLint GLint))
 
-(define GLUnurbs* type-vptr)
+
+   (define GLUnurbs* type-vptr)
+
    (define gluNewNurbsRenderer (GLU GLUnurbs* "gluNewNurbsRenderer"))
    (define gluBeginSurface (GLU GLvoid "gluBeginSurface" GLUnurbs*))
    (define gluNurbsSurface (GLU GLvoid "gluNurbsSurface" GLUnurbs* GLint GLfloat* GLint GLfloat* GLint GLint GLfloat* GLint GLint GLenum))
    (define gluEndSurface   (GLU GLvoid "gluEndSurface" GLUnurbs*))
    (define gluNurbsProperty(GLU GLvoid "gluNurbsProperty" GLUnurbs* GLenum GLfloat))
-      ;/*     GLU_FILL                100012
+      ;       GLU_FILL                100012
       (define GLU_OUTLINE_POLYGON     100240)
       (define GLU_OUTLINE_PATCH       100241)
 
