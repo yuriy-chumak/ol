@@ -415,7 +415,7 @@
                   (black (ff-map l op) k (op k v) (ff-map r op))))))
 
       ;; could benchmark if sort + grow from bottom is faster
-      (define (pairs->ff lst)
+      (define (alist->ff lst)
          (fold
             (λ (ff node)
                (if (pair? node)
@@ -424,14 +424,14 @@
             #empty
             lst))
 
-      (define (ff->pairs ff)
+      (define (ff->alist ff)
          (ff-foldr
             (λ (lst k v)
                (cons (cons k v) lst))
             null ff))
 
-      (define alist->ff pairs->ff)
-      (define ff->alist ff->pairs)
+      (define pairs->ff alist->ff)
+      (define ff->pairs ff->alist)
 
       (define (list->ff args)
          (let loop ((ff #empty) (args args))
