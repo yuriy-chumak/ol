@@ -1,4 +1,4 @@
-; OpenGL 1.0 (1991-1993)
+; OpenGL 1.0 (1 Jul 1994)
 
 ; OpenGL base profile implementation
 (define-library (OpenGL version-1-0)
@@ -9,7 +9,6 @@
    GL_TRUE GL_FALSE           ;= 1, 0
 
    ;; 2.5 GL Errors
-
    glGetError ; GLenum GetError () +
       GL_NO_ERROR
       GL_INVALID_ENUM
@@ -20,7 +19,6 @@
       GL_OUT_OF_MEMORY
 
    ;; 2.6 Begin/End Paradigm
-
    glBegin ; void (GLenum mode) +
       GL_POINTS ; mode
       GL_LINES
@@ -1033,7 +1031,6 @@
    ; GL_INT
    ; GL_UNSIGNED_INT
    ; GL_FLOAT
-   ; GL_DOUBLE
 
    ; CullFaceMode
    ; GL_FRONT
@@ -1051,7 +1048,6 @@
    GL_2_BYTES
    GL_3_BYTES
    GL_4_BYTES
-   GL_DOUBLE
 
    ; DepthFunction
    ; GL_NEVER
@@ -1435,7 +1431,6 @@
    ; GL_SHORT
    ; GL_INT
    ; GL_FLOAT
-   ; GL_DOUBLE
 
    ; LightModelParameter
    ; GL_LIGHT_MODEL_AMBIENT
@@ -1551,7 +1546,6 @@
    ; GL_SHORT
    ; GL_INT
    ; GL_FLOAT
-   ; GL_DOUBLE
 
    ; PixelCopyType
    GL_COLOR
@@ -1680,12 +1674,6 @@
    GL_T
    GL_R
    GL_Q
-
-   ; TexCoordPointerType
-   ; GL_SHORT
-   ; GL_INT
-   ; GL_FLOAT
-   ; GL_DOUBLE
 
    ; TextureEnvMode
    GL_MODULATE
@@ -1907,7 +1895,6 @@
    ; GL_INT
    ; GL_UNSIGNED_INT
    ; GL_FLOAT
-   ; GL_DOUBLE
 
    ; CullFaceMode
    ; GL_FRONT
@@ -1925,7 +1912,6 @@
    (define GL_2_BYTES             #x1407)
    (define GL_3_BYTES             #x1408)
    (define GL_4_BYTES             #x1409)
-   (define GL_DOUBLE              #x140A)
 
    ; DepthFunction
    ; GL_NEVER
@@ -2309,7 +2295,6 @@
    ; GL_SHORT
    ; GL_INT
    ; GL_FLOAT
-   ; GL_DOUBLE
 
    ; LightModelParameter
    ; GL_LIGHT_MODEL_AMBIENT
@@ -2425,7 +2410,6 @@
    ; GL_SHORT
    ; GL_INT
    ; GL_FLOAT
-   ; GL_DOUBLE
 
    ; PixelCopyType
    (define GL_COLOR #x1800)
@@ -2554,12 +2538,6 @@
    (define GL_T #x2001)
    (define GL_R #x2002)
    (define GL_Q #x2003)
-
-   ; TexCoordPointerType
-   ; GL_SHORT
-   ; GL_INT
-   ; GL_FLOAT
-   ; GL_DOUBLE
 
    ; TextureEnvMode
    (define GL_MODULATE #x2100)

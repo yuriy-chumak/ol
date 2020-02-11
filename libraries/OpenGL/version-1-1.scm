@@ -240,7 +240,7 @@
 
 
  ; C.1 EXT_vertex_array
-   (define GL_DOUBLE				   #x140A)
+   (define GL_DOUBLE				               #x140A)
 
    (define GL_VERTEX_ARRAY                   #x8074)
    (define GL_NORMAL_ARRAY                   #x8075)
