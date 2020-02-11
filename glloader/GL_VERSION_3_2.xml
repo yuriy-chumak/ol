@@ -1,0 +1,111 @@
+<?xml version='1.0'?>
+
+<gl_extension name="GL_VERSION_3_2">
+	<tokens>
+		<token name="GL_CONTEXT_CORE_PROFILE_BIT" value="0x00000001"/>
+		<token name="GL_CONTEXT_COMPATIBILITY_PROFILE_BIT" value="0x00000002"/>
+		<token name="GL_LINES_ADJACENCY" value="0x000A"/>
+		<token name="GL_LINE_STRIP_ADJACENCY" value="0x000B"/>
+		<token name="GL_TRIANGLES_ADJACENCY" value="0x000C"/>
+		<token name="GL_TRIANGLE_STRIP_ADJACENCY" value="0x000D"/>
+		<token name="GL_PROGRAM_POINT_SIZE" value="0x8642"/>
+		<token name="GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS" value="0x8C29"/>
+		<token name="GL_FRAMEBUFFER_ATTACHMENT_LAYERED" value="0x8DA7"/>
+		<token name="GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS" value="0x8DA8"/>
+		<token name="GL_GEOMETRY_SHADER" value="0x8DD9"/>
+		<token name="GL_GEOMETRY_VERTICES_OUT" value="0x8916"/>
+		<token name="GL_GEOMETRY_INPUT_TYPE" value="0x8917"/>
+		<token name="GL_GEOMETRY_OUTPUT_TYPE" value="0x8918"/>
+		<token name="GL_MAX_GEOMETRY_UNIFORM_COMPONENTS" value="0x8DDF"/>
+		<token name="GL_MAX_GEOMETRY_OUTPUT_VERTICES" value="0x8DE0"/>
+		<token name="GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS" value="0x8DE1"/>
+		<token name="GL_MAX_VERTEX_OUTPUT_COMPONENTS" value="0x9122"/>
+		<token name="GL_MAX_GEOMETRY_INPUT_COMPONENTS" value="0x9123"/>
+		<token name="GL_MAX_GEOMETRY_OUTPUT_COMPONENTS" value="0x9124"/>
+		<token name="GL_MAX_FRAGMENT_INPUT_COMPONENTS" value="0x9125"/>
+		<token name="GL_CONTEXT_PROFILE_MASK" value="0x9126"/>
+		<token name="GL_MAX_VARYING_COMPONENTS" value="0x8B4B"/>
+		<token name="GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER" value="0x8CD4"/>
+		<token name="GL_DEPTH_CLAMP" value="0x864F"/>
+		<token name="GL_QUADS_FOLLOW_PROVOKING_VERTEX_CONVENTION" value="0x8E4C"/>
+		<token name="GL_FIRST_VERTEX_CONVENTION" value="0x8E4D"/>
+		<token name="GL_LAST_VERTEX_CONVENTION" value="0x8E4E"/>
+		<token name="GL_PROVOKING_VERTEX" value="0x8E4F"/>
+		<token name="GL_TEXTURE_CUBE_MAP_SEAMLESS" value="0x884F"/>
+		<token name="GL_MAX_SERVER_WAIT_TIMEOUT" value="0x9111"/>
+		<token name="GL_OBJECT_TYPE" value="0x9112"/>
+		<token name="GL_SYNC_CONDITION" value="0x9113"/>
+		<token name="GL_SYNC_STATUS" value="0x9114"/>
+		<token name="GL_SYNC_FLAGS" value="0x9115"/>
+		<token name="GL_SYNC_FENCE" value="0x9116"/>
+		<token name="GL_SYNC_GPU_COMMANDS_COMPLETE" value="0x9117"/>
+		<token name="GL_UNSIGNALED" value="0x9118"/>
+		<token name="GL_SIGNALED" value="0x9119"/>
+		<token name="GL_ALREADY_SIGNALED" value="0x911A"/>
+		<token name="GL_TIMEOUT_EXPIRED" value="0x911B"/>
+		<token name="GL_CONDITION_SATISFIED" value="0x911C"/>
+		<token name="GL_WAIT_FAILED" value="0x911D"/>
+		<token name="GL_TIMEOUT_IGNORED" value="0xFFFFFFFFFFFFFFFFull"/>
+		<token name="GL_SYNC_FLUSH_COMMANDS_BIT" value="0x00000001"/>
+		<token name="GL_SAMPLE_POSITION" value="0x8E50"/>
+		<token name="GL_SAMPLE_MASK" value="0x8E51"/>
+		<token name="GL_SAMPLE_MASK_VALUE" value="0x8E52"/>
+		<token name="GL_MAX_SAMPLE_MASK_WORDS" value="0x8E59"/>
+		<token name="GL_TEXTURE_2D_MULTISAMPLE" value="0x9100"/>
+		<token name="GL_PROXY_TEXTURE_2D_MULTISAMPLE" value="0x9101"/>
+		<token name="GL_TEXTURE_2D_MULTISAMPLE_ARRAY" value="0x9102"/>
+		<token name="GL_PROXY_TEXTURE_2D_MULTISAMPLE_ARRAY" value="0x9103"/>
+		<token name="GL_TEXTURE_BINDING_2D_MULTISAMPLE" value="0x9104"/>
+		<token name="GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY" value="0x9105"/>
+		<token name="GL_TEXTURE_SAMPLES" value="0x9106"/>
+		<token name="GL_TEXTURE_FIXED_SAMPLE_LOCATIONS" value="0x9107"/>
+		<token name="GL_SAMPLER_2D_MULTISAMPLE" value="0x9108"/>
+		<token name="GL_INT_SAMPLER_2D_MULTISAMPLE" value="0x9109"/>
+		<token name="GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE" value="0x910A"/>
+		<token name="GL_SAMPLER_2D_MULTISAMPLE_ARRAY" value="0x910B"/>
+		<token name="GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY" value="0x910C"/>
+		<token name="GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY" value="0x910D"/>
+		<token name="GL_MAX_COLOR_TEXTURE_SAMPLES" value="0x910E"/>
+		<token name="GL_MAX_DEPTH_TEXTURE_SAMPLES" value="0x910F"/>
+		<token name="GL_MAX_INTEGER_SAMPLES" value="0x9110"/>
+	</tokens>
+
+	<functions>
+		<function name="glGetInteger64i_v" return="void">
+			<params>
+				<param type="GLenum" name="target"/>
+				<param type="GLuint" name="index"/>
+				<param type="GLint64*" name="data"/>
+			</params>
+		</function>
+		<function name="glGetBufferParameteri64v" return="void">
+			<params>
+				<param type="GLenum" name="target"/>
+				<param type="GLenum" name="pname"/>
+				<param type="GLint64*" name="params"/>
+			</params>
+		</function>
+		<function name="glFramebufferTexture" return="void">
+			<params>
+				<param type="GLenum" name="target"/>
+				<param type="GLenum" name="attachment"/>
+				<param type="GLuint" name="texture"/>
+				<param type="GLint" name="level"/>
+			</params>
+			<mappings>
+				<mapping from="GL_ARB_geometry_shader4" name="glFramebufferTextureARB"/>
+				<mapping from="GL_EXT_geometry_shader4" name="glFramebufferTextureEXT"/>
+			</mappings>
+		</function>
+	</functions>
+
+	<additionals>
+		<ext name="GL_ARB_draw_elements_base_vertex"/>
+		<ext name="GL_ARB_fragment_coord_conventions"/>
+		<ext name="GL_ARB_provoking_vertex"/>
+		<ext name="GL_ARB_seamless_cube_map"/>
+		<ext name="GL_ARB_sync"/>
+		<ext name="GL_ARB_texture_multisample"/>
+		<ext name="GL_ARB_vertex_array_bgra"/>
+	</additionals>
+</gl_extension>
