@@ -167,7 +167,16 @@ endif
 
 testing-binaries:
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
+ifeq ($(HAS_32CDEFS)$(HAS_64CDEFS),11)
 	@printf "Building test binaries (debug and release, 32-bit and 64-bit versions both)... "
+endif
+ifeq ($(HAS_32CDEFS)$(HAS_64CDEFS),10)
+	@printf "Building test binaries (debug and release, 32-bit versions)... "
+endif
+ifeq ($(HAS_32CDEFS)$(HAS_64CDEFS),01)
+	@printf "Building test binaries (debug and release, 64-bit versions)... "
+endif
+
 ifeq ($(HAS_32CDEFS),1)
 	@$(MAKE) -s vm-debug-32
 	@$(MAKE) -s vm-release-32
