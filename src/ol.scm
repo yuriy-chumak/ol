@@ -143,7 +143,7 @@
 (define (share-modules mods)
    (for null mods
       (λ (envl mod)
-         (append (ff->list mod) envl))))
+         (append (ff->alist mod) envl))))
 
 ;(import (owl random))
 

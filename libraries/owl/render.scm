@@ -103,7 +103,7 @@
                   (ilist #\# #\r (render (rlist->list obj) tl)))
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (ilist #\# #\f #\f (render (ff->list obj) tl)))
+                  (ilist #\# #\f #\f (render (ff->alist obj) tl)))
 
                ((eq? obj #true)  (ilist #\# #\t #\r #\u #\e tl))
                ((eq? obj #false) (ilist #\# #\f #\a #\l #\s #\e tl))
@@ -234,7 +234,7 @@
                   (ilist #\# #\e #\m #\p #\t #\y (delay (k sh))))
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (ilist #\# #\f #\f (ser sh (ff->list obj) k)))
+                  (ilist #\# #\f #\f (ser sh (ff->alist obj) k)))
 
                ((port? obj)   (render obj (λ () (k sh))))
                ((eof? obj)    (render obj (λ () (k sh))))

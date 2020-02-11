@@ -26,7 +26,7 @@
             (else lst)))))
 
 (define (check-equal? ff lst alpha)
-   (if (equal? (ff->list ff) lst)
+   (if (equal? (ff->alist ff) lst)
       #true
       (begin
          (print (list 'badness 'alpha alpha 'ff ff 'lst lst))

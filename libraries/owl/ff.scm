@@ -26,7 +26,8 @@
       ff-iter     ; ff -> ((key . value) ...) stream (in order)
       ff-singleton? ; ff → bool (has just one key?)
       list->ff ff->list
-      pairs->ff
+      pairs->ff ff->pairs ; deprecated
+      alist->ff ff->alist
       ff->sexp
       ff-ok?
       empty
@@ -422,18 +423,27 @@
                   (runtime-error "not a pair in ff constructor:" node)))
             #empty
             lst))
-      (define (list->ff args)
-         (let loop ((ff #empty) (args args))
-            (if (null? args)
-               ff
-               (loop (put ff (car args) (cadr args)) (cddr args)))))
 
       (define (ff->pairs ff)
          (ff-foldr
             (λ (lst k v)
                (cons (cons k v) lst))
             null ff))
-      (define ff->list ff->pairs)
+
+      (define alist->ff pairs->ff)
+      (define ff->alist ff->pairs)
+
+      (define (list->ff args)
+         (let loop ((ff #empty) (args args))
+            (if (null? args)
+               ff
+               (loop (put ff (car args) (cadr args)) (cddr args)))))
+
+      (define (ff->list ff)
+         (ff-foldr
+            (λ (lst k v)
+               (cons k (cons v lst)))
+            null ff))
 
       ;;;
       ;;; Deletion
@@ -598,7 +608,7 @@
 ;    (rs keys (random-permutation rs (lrange 0 1 10)))
 ;    (pairs (map (λ (x) (cons x (+ x 100))) keys))
 ;    (ff (list->ff pairs))
-;    (_ (print (ff->list ff)))
+;    (_ (print (ff->alist ff)))
 ;    (rs keys (random-permutation rs keys))
 ;    (ff (fold (λ (ff x) (put ff x (+ x 200))) ff keys))
 ;    (rs keys (random-permutation rs keys)))

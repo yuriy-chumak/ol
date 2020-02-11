@@ -23,7 +23,7 @@
 		 (blank-inorder (fold (lambda (ff n) (del ff n)) ff keys))
 		 (blank-reverse (fold (lambda (ff n) (del ff n)) ff (reverse keys))))
 		(cond
-			((not (equal? (map car (ff->list ff)) keys))
+			((not (equal? (map car (ff->alist ff)) keys))
 				(error "bad ff for keys " perm-1))
 			((not (empty? blank-fifo)) (error "delete fifo tail " perm-1))
 			((not (empty? blank-lifo)) (error "delete lifo tail " perm-1))

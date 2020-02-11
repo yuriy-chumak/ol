@@ -3,7 +3,7 @@
 (define phrase "this is an example for huffman encoding")
 
 ; prepare initial probabilities table
-(define table (ff->list
+(define table (ff->alist
    (fold (lambda (ff x)
             (put ff x (+ (ff x 0) 1)))
       {}

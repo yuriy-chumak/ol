@@ -1,7 +1,7 @@
 ; http://rosettacode.org/wiki/Sorting_algorithms/Tree_sort_on_a_linked_list#Ol
 
 (define (tree-sort l)
-   (map car (ff->list
+   (map car (ff->alist
       (fold (lambda (ff p)
                (put ff p #t))
          #empty l))))

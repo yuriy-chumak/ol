@@ -668,6 +668,7 @@
       (define (pairs? exp)
          (and (list? exp)
             (all (λ (x) (and (list? x) (eq? (length x) 2))) exp)))
+      (define alist? pairs?)
 
       ;; → 'ok env | 'needed name | 'circular name, non-ok exists via fail
       (define (import-set->library iset libs fail)

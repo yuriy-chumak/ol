@@ -120,7 +120,7 @@
 
       ;; don't return ff, type of which is changing atm
       (define (sub-objects root pred)
-         (ff->list
+         (ff->alist
             (partial-object-closure root pred)))
 
       (define (object-closure obj)
