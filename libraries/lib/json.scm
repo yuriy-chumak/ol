@@ -69,10 +69,27 @@
          (end (get-imm #\"))) ;"
       (runes->string runes))))
 
-(define get-number
+(define get-natural
    (let-parses (
          (value (get-kleene+ (get-rune-if (lambda (rune) (<= #\0 rune #\9))))))
       (list->number value 10)))
+
+(define get-number
+   (let-parses (
+         (signer (get-any-of
+               (get-word "+" (lambda (x) x))
+               (get-word "-" (lambda (x) (- x)))
+               (get-epsilon  (lambda (x) x))))
+         (int get-natural)
+         (frac (get-either
+                     (let-parses (
+                           (skip (get-imm #\.))
+                           (digits (get-greedy* (get-rune-if (lambda (rune) (<= #\0 rune #\9))))))
+                        (/ (list->number digits 10) (expt 10 (length digits))))
+                     (get-epsilon 0))))
+                ;(pow get-exponent))
+            ;(sign (* (+ num tail) pow))))
+      (signer (+ int frac))))
 
 (define (get-object)
    (let-parses (
