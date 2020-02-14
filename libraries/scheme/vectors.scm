@@ -39,6 +39,8 @@
       ;vector-copy!
       vector-append
       ;vector-fill!
+
+      vector-for-each
    )
 
    (import
@@ -130,5 +132,13 @@
    ; procedure:  (vector-fill! vector fill)
    ; procedure:  (vector-fill! vector fill start)
    ; procedure:  (vector-fill! vector fill start end)
+
+   ; additional
+   ; 6.10  Control features
+   (define vector-for-each (case-lambda
+      ((f a)      (for-each f (vector->list a)))
+      ((f a b)    (for-each f (vector->list a) (vector->list b)))
+      ((f a b . c)(apply for-each f (map vector->list (cons a (cons b c)))))
+      ((f) #false)))
 
 ))
