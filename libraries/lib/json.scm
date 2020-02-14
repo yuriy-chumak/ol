@@ -6,7 +6,8 @@
       (otus lisp)
       (lang intern)
       (lang sexp)
-      (owl parse))
+      (owl parse)
+      (file parser))
 
 (begin
 
@@ -60,17 +61,48 @@
 (define get-a-whitespace (get-byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
 (define maybe-whitespaces (get-kleene* get-a-whitespace))
 
+; https://www.ietf.org/rfc/rfc4627.txt
+(define quoted-values {
+   #\"  #\" ;22
+   #\\  #\\ ;5c
+   #\/  #\/ ;2f
+   #\b  #x0008
+   #\f  #x000c
+   #\n  #x000a
+   #\r  #x000d
+   #\t  #x0009
+})
+
+(define get-quoted-string-char
+   (let-parses (
+         (skip (get-imm #\\))
+         (char (get-either
+                  (let-parses (
+                        (char (get-byte-if (lambda (byte) (getf quoted-values byte)))))
+                     (getf quoted-values char))
+                  (let-parses (
+                        (skip (get-imm #\u))
+                        (hexes (get-n-times 4 get-rune)))
+                     (list->number hexes 16)))))
+      char))
+
 (define get-string (get-either
    (let-parses (
-         (begin (get-imm #\'))
-         (runes (get-kleene* (get-rune-if (lambda (rune) (not (eq? rune #\'))))))
-         (end (get-imm #\')))
-      (runes->string runes))
+         (skip (get-imm #\"))
+         (chars (get-kleene*
+                  (get-either
+                     get-quoted-string-char
+                     (get-rune-if (lambda (x) (not (has? (list #\" #\\) x)))))))
+         (skip (get-imm #\")))
+      (runes->string chars))
    (let-parses (
-         (begin (get-imm #\")) ;"
-         (runes (get-kleene* (get-rune-if (lambda (rune) (not (eq? rune #\")))))) ;"
-         (end (get-imm #\"))) ;"
-      (runes->string runes))))
+         (skip (get-imm #\'))
+         (chars (get-kleene*
+                  (get-either
+                     get-quoted-string-char
+                     (get-rune-if (lambda (x) (not (has? (list #\' #\\) x)))))))
+         (skip (get-imm #\')))
+      (runes->string chars))))
 
 (define get-natural
    (let-parses (

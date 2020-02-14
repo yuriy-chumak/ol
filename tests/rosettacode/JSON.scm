@@ -8,6 +8,7 @@
     'name': 'John',
     'full name': 'John Smith',
     'age': 42,
+    'weight': 156.18,
     'married': false,
     'address': {
       'street': '21 2nd Street',
@@ -16,7 +17,7 @@
     'additional staff': [
       {
         'type': 'numbers',
-        'numbers': [ 1, 2, 3, 4 ]
+        'numbers': [ 1, -2, 0.75, -4.567 ]
       },
       {
         'type': 'phone',
@@ -31,6 +32,7 @@
   'name "John"
   '|full name| "John Smith"
   'age 42
+  'weight 156.18
   'married #false
   'address {
     'street "21 2nd Street"
@@ -39,7 +41,7 @@
   '|additional staff| [
     {
       'type "numbers"
-      'numbers [ 1 2 3 4 ]
+      'numbers [ 1 -2 0.75 -4.567 ]
     }
     {
       'type "phone"
