@@ -11,7 +11,7 @@
 
 [![Travis-CI project page](https://travis-ci.org/yuriy-chumak/ol.svg)](https://travis-ci.org/yuriy-chumak/ol)
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
-![](https://github.com/yuriy-chumak/ol/workflows/build%20ol/badge.svg)
+[![Github build ol status](https://github.com/yuriy-chumak/ol/workflows/build%20ol/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
 
 
 Otus Lisp, Version 2.1 (rc1)
