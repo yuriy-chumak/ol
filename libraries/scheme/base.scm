@@ -4,260 +4,258 @@
    (exports (scheme vectors))
    (exports (scheme bytevector))
 
-      caaar caadr cadar caddr ; moved from (scheme cxr)
-      cdaar cdadr cddar cdddr ; moved from (scheme cxr)
+   caaar caadr cadar caddr ; moved from (scheme cxr)
+   cdaar cdadr cddar cdddr ; moved from (scheme cxr)
 
-      ;; ; i/o from r6rs
+   ;; ; i/o from r6rs
+   ;; current-input-port
+   ;; current-output-port
+   ;; current-error-port
+
+   ; 6.4.  Pairs and lists
+   assq assv assoc
+
+   ; 6.13.2.  Input
+   eof-object eof-object?
+
+      ;; *
+      ;; +
+      ;; -
+      ;; ...
+      ;; /
+      ;; <
+      ;; <=
+      ;; =
+      ;; =>
+      ;; >
+      ;; >=
+      ;; abs
+      ;; and
+      ;; append
+      ;; apply
+      ;; assoc
+      ;; assq
+      ;; assv
+      ;; begin
+      ;; binary-port?
+      ;; boolean=?
+      ;; boolean?
+      ;; bytevector
+      ;; bytevector-append
+      ;; bytevector-copy
+      ;; bytevector-copy!
+      ;; bytevector-length
+      ;; bytevector-u8-ref
+      ;; bytevector-u8-set!
+      ;; bytevector?
+      ;; caar
+      ;; cadr
+      ;; call-with-current-continuation
+      ;; call-with-port
+      ;; call-with-values
+      ;; call/cc
+      ;; car
+      ;; case
+      ;; cdar
+      ;; cddr
+      ;; cdr
+      ;; ceiling
+      ;; char->integer
+      ;; char-ready?
+      ;; char<=?
+      ;; char<?
+      ;; char=?
+      ;; char>=?
+      ;; char>?
+      ;; char?
+      ;; close-input-port
+      ;; close-output-port
+      ;; close-port
+      ;; complex?
+      ;; cond
+      ;; cond-expand
+      ;; cons
+      ;; current-error-port
       ;; current-input-port
       ;; current-output-port
-      ;; current-error-port
-
-      ; 6.4.  Pairs and lists
-      assq assv assoc
-
-      ; 6.13.2.  Input
-      eof-object eof-object?
-   )
-
-   #| todo: this library should export these keywords:
-      *
-      +
-      -
-      ...
-      /
-      <
-      <=
-      =
-      =>
-      >
-      >=
-      abs
-      and
-      append
-      apply
-      assoc
-      assq
-      assv
-      begin
-      binary-port?
-      boolean=?
-      boolean?
-      bytevector
-      bytevector-append
-      bytevector-copy
-      bytevector-copy!
-      bytevector-length
-      bytevector-u8-ref
-      bytevector-u8-set!
-      bytevector?
-      caar
-      cadr
-      call-with-current-continuation
-      call-with-port
-      call-with-values
-      call/cc
-      car
-      case
-      cdar
-      cddr
-      cdr
-      ceiling
-      char->integer
-      char-ready?
-      char<=?
-      char<?
-      char=?
-      char>=?
-      char>?
-      char?
-      close-input-port
-      close-output-port
-      close-port
-      complex?
-      cond
-      cond-expand
-      cons
-      current-error-port
-      current-input-port
-      current-output-port
-      define
-      define-record-type
-      define-syntax
-      define-values
-      denominator
-      do
-      dynamic-wind
-      else
-      + eof-object?
-      equal?
-      error
-      error-object-message
-      even?
-      exact-integer-sqrt
-      exact?
-      features
-      floor
-      floor-remainder
-      flush-output-port
-      gcd
-      get-output-string
-      if
-      include-ci
-      inexact?
-      input-port?
-      integer?
-      lcm
-      let
-      let*-values
-      let-values
-      letrec*
-      list
-      list->vector
-      list-ref
-      list-tail
-      make-bytevector
-      make-parameter
-      make-vector
-      max
-      memq
-      min
-      negative?
-      not
-      number->string
-      numerator
-      open-input-bytevector
-      open-output-bytevector
-      or
-      output-port?
-      parameterize
-      peek-u8
-      positive?
-      quasiquote
-      quotient
-      raise-continuable
-      rationalize
-      read-bytevector!
-      read-error?
-      read-string
-      real?
-      reverse
-      set!
-      set-cdr!
-      string
-      string->number
-      string->utf8
-      string-append
-      + eof-object
-      eq?
-      eqv?
-      error-object-irritants
-      error-object?
-      exact
-      exact-integer?
-      expt
-      file-error?
-      floor-quotient
-      floor/
-      for-each
-      get-output-bytevector
-      guard
+      ;; define
+      ;; define-record-type
+      ;; define-syntax
+      ;; define-values
+      ;; denominator
+      ;; do
+      ;; dynamic-wind
+      ;; else
+   eof-object     ; 6.13.2  Input
+   eof-object?    ; 6.13.2  Input
+      ;; eq?
+      ;; equal?
+      ;; eqv?
+      ;; error
+      ;; error-object-irritants
+      ;; error-object-message
+      ;; error-object?
+      ;; even?
+      ;; exact
+      ;; exact-integer-sqrt
+      ;; exact-integer?
+      ;; exact?
+      ;; expt
+      ;; features
+      ;; file-error?
+      ;; floor
+      ;; floor-quotient
+      ;; floor-remainder
+      ;; floor/
+      ;; flush-output-port
+      ;; for-each
+      ;; gcd
+      ;; get-output-bytevector
+      ;; get-output-string
+      ;; guard
+      ;; if
       include
-      inexact
-      input-port-open?
-      integer->char
-      lambda
-      length
-      let*
-      let-syntax
-      letrec
-      letrec-syntax
-      list->string
-      list-copy
-      list-set!
-      list?
-      make-list
-      make-string
-      map
-      member
-      memv
-      modulo
-      newline
-      null?
-      number?
-      odd?
-      open-input-string
-      open-output-string
-      output-port-open?
-      pair?
-      peek-char
-      port?
-      procedure?
-      quote
-      raise
-      rational?
-      read-bytevector
-      read-char
-      read-line
-      read-u8
-      remainder
-      round
-      set-car!
-      square
-      string->list
-      string->symbol
-      string->vector
-      string-copy
-      string-copy!
-      string-for-each
-      string-map
-      string-set!
-      string<?
-      string>=?
-      string?
-      symbol->string
-      symbol?
-      syntax-rules
-      truncate
-      truncate-remainder
-      u8-ready?
-      unquote
-      utf8->string
-      vector
-      vector->string
-      vector-copy
-      vector-fill!
-      vector-length
-      vector-ref
-      vector?
-      with-exception-handler
-      write-char
-      write-u8
-      string-fill!
-      string-length
-      string-ref
-      string<=?
-      string=?
-      string>?
-      substring
-      symbol=?
-      syntax-error
-      textual-port?
-      truncate-quotient
-      truncate/
-      unless
-      unquote-splicing
-      values
-      vector->list
-      vector-append
-      vector-copy!
-      vector-for-each
-      vector-map
-      vector-set!
-      when
-      write-bytevector
-      write-string
-      zero?
-   |#
+      include-ci
+      ;; inexact
+      ;; inexact?
+      ;; input-port-open?
+      ;; input-port?
+      ;; integer->char
+      ;; integer?
+      ;; lambda
+      ;; lcm
+      ;; length
+      ;; let
+      ;; let*
+      ;; let*-values
+      ;; let-syntax
+      ;; let-values
+      ;; letrec
+      ;; letrec*
+      ;; letrec-syntax
+      ;; list
+      ;; list->string
+      ;; list->vector
+      ;; list-copy
+      ;; list-ref
+      ;; list-set!
+      ;; list-tail
+      ;; list?
+      ;; make-bytevector
+      ;; make-list
+      ;; make-parameter
+      ;; make-string
+      ;; make-vector
+      ;; map
+      ;; max
+      ;; member
+      ;; memq
+      ;; memv
+      ;; min
+      ;; modulo
+      ;; negative?
+      ;; newline
+      ;; not
+      ;; null?
+      ;; number->string
+      ;; number?
+      ;; numerator
+      ;; odd?
+      ;; open-input-bytevector
+      ;; open-input-string
+      ;; open-output-bytevector
+      ;; open-output-string
+      ;; or
+      ;; output-port-open?
+      ;; output-port?
+      ;; pair?
+      ;; parameterize
+      ;; peek-char
+      ;; peek-u8
+      ;; port?
+      ;; positive?
+      ;; procedure?
+      ;; quasiquote
+      ;; quote
+      ;; quotient
+      ;; raise
+      ;; raise-continuable
+      ;; rational?
+      ;; rationalize
+      ;; read-bytevector
+      ;; read-bytevector!
+      ;; read-char
+      ;; read-error?
+      ;; read-line
+      ;; read-string
+      ;; read-u8
+      ;; real?
+      ;; remainder
+      ;; reverse
+      ;; round
+      set!
+      ;; set-car!
+      ;; set-cdr!
+      ;; square
+      ;; string
+      ;; string->list
+      ;; string->number
+      ;; string->symbol
+      ;; string->utf8
+      ;; string->vector
+      ;; string-append
+      ;; string-copy
+      ;; string-copy!
+      ;; string-fill!
+      ;; string-for-each
+      ;; string-length
+      ;; string-map
+      ;; string-ref
+      ;; string-set!
+      ;; string<=?
+      ;; string<?
+      ;; string=?
+      ;; string>=?
+      ;; string>?
+      ;; string?
+      ;; substring
+      ;; symbol->string
+      ;; symbol=?
+      ;; symbol?
+      ;; syntax-error
+      ;; syntax-rules
+      ;; textual-port?
+      ;; truncate
+      ;; truncate-quotient
+      ;; truncate-remainder
+      ;; truncate/
+      ;; u8-ready?
+      ;; unless
+      ;; unquote
+      ;; unquote-splicing
+      ;; utf8->string
+      ;; values
+      ;; vector
+      ;; vector->list
+      ;; vector->string
+      ;; vector-append
+      ;; vector-copy
+      ;; vector-copy!
+      ;; vector-fill!
+      ;; vector-for-each
+      ;; vector-length
+      ;; vector-map
+      ;; vector-ref
+      ;; vector-set!
+      ;; vector?
+      ;; when
+      ;; with-exception-handler
+      ;; write-bytevector
+      ;; write-char
+      ;; write-string
+      ;; write-u8
+      ;; zero?
+)
    (import
       (scheme core) (src vm)
       (scheme vectors)

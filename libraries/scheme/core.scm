@@ -3,8 +3,8 @@
    (version 2.0)
    (license MIT/LGPL3)
    (keywords (scheme core ol))
-   (description "
-      Otus-Lisp scheme core library.")
+   (description
+      "Otus-Lisp scheme core library.")
 
    (import
       (src vm)           ; olvm сodes and primitives,
