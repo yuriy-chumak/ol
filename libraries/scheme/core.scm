@@ -438,6 +438,9 @@
 
       ; 5.3  Variable definitions
 
+      ; syntax:  (define <variable> <expression>)
+      ; syntax:  (define (<variable> <formals>) <body>)
+      ; syntax:  (define (<variable> . <formal>) <body>)
       (define-syntax define
          (syntax-rules (lambda)
             ((define ((name . args) . more) . body)
@@ -450,6 +453,15 @@
                (setq name val))
             ((define name a b . c)
                (define name (begin a b . c)))))
+
+      ; 5.3.3  Multiple-value definitions
+
+      (define-syntax define-values
+         (syntax-rules (list)
+            ((define-values (val ...) . body)
+               (setq (val ...)
+                  (let* ((val ... (begin . body)))
+                     (list val ...))))))
 
        ; EXTENSION, unused!
 ;      (define-syntax define*
@@ -843,14 +855,6 @@
 
       ; 5.3.1  Top level definitions
       ; 5.3.2  Internal definitions
-      ; 5.3.3  Multiple-value definitions
-
-      (define-syntax define-values
-         (syntax-rules (list)
-            ((define-values (val ...) . body)
-               (setq (val ...)
-                  (let* ((val ... (begin . body)))
-                     (list val ...))))))
 
       ; 5.5  Record-type definitions
       ; syntax:  (define-record-type <name> <constructor> <pred> <field> ...)  * not supported
@@ -2045,12 +2049,19 @@
       λ
       ; 4.1.5  Conditionals
       if
+      ; 4.2.2  Conditionals
+      and or
       ; 4.1.6  Assignments
       set!
       ; 4.2.1  Binding constructs and Sequencing
       letrec let begin let* let*-values 
+      ; 5.3  Variable definitions
+      define ;define*
+      define-values
+      ; 6.1  Equivalence predicates
+      eq? eqv? equal?
       ; 4.2.2  Conditionals
-      cond case and or
+      cond case
       when unless
       ; 4.2.5  Delayed evaluation
       delay force
@@ -2058,14 +2069,9 @@
       quasiquote
       ; 4.2.9  Case-lambda
       (exports (scheme srfi-16))
-      ; 5.3  Variable definitions
-      define ;define*
-      define-values
       ; 5.5  Record-type definitions
       define-record-type
 
-      ; 6.1  Equivalence predicates
-      eq? eqv? equal?
       ; 6.2.1  Numerical types
       type-fix+ type-fix- type-int+ type-int-
       type-rational type-complex type-inexact
