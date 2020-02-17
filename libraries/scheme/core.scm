@@ -42,7 +42,7 @@
       ; quote values lambda setq
       ; letq ifeq either values-apply
 
-      (scheme srfi-16)   ; case-lambda, (r7rs) 4.2.9
+      (scheme case-lambda)  ; 4.2.9, srfi-16
       (scheme srfi-87)   ; <= in cases
       (scheme srfi-71))  ; (let* ((a b (values..
 
@@ -2068,7 +2068,7 @@
       ; 4.2.8  Quasiquotation
       quasiquote
       ; 4.2.9  Case-lambda
-      (exports (scheme srfi-16))
+      (exports (scheme case-lambda))
       ; 5.5  Record-type definitions
       define-record-type
 
