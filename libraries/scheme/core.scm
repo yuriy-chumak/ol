@@ -2141,6 +2141,5 @@
       ; ol extension:
       halt
 
-      ;; tuple ; TEMP
       |-1| |+1| ; * ol internal staff
 ))
