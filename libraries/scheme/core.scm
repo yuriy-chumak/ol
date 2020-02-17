@@ -64,21 +64,21 @@
       (setq runtime-error (lambda (reason info)
          (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
 
-      ; * temporary, allows basic assert implementation
-      ;   not persistent, updated to real implementation in 6.1
-      (setq equal? (lambda (a b)
-         (ifeq a b #true #false)))
-
       ; * internal automation testing staff
       ; note: please be careful!
       ;       this is simplified 'assert' that uses 'eq?' before real 'equal?' be
-      ;       implemented in chapter 6.1
+      ;       defined to real implementation in 6.1
       (define-syntax assert
-         (syntax-rules (===>)
+         (syntax-rules (===> equal?)
             ((assert expression ===> expectation)
                (ifeq (equal? ((lambda (x) x) expression) expectation) #true
                   #true
                   (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
+      ; * 'equal?' stub
+      ; note: allows basic assert implementation before real 'equal?' be
+      ;       defined to real implementation in 6.1
+      (setq equal? (lambda (a b)
+         (ifeq a b #true #false)))
 
 
       ; Signaling errors in macro transformers (4.3.3)
@@ -300,6 +300,36 @@
       (assert (if (less? 2 3) 'yes 'no)               ===>  'yes)
       (assert (if (less? 3 2) 'yes 'no)               ===>  'no)
 
+      ; 4.2.2  Conditionals
+
+      ; syntax:  (and <test1> ...)
+      (define-syntax and
+         (syntax-rules ()
+            ((and) #true)
+            ((and a) a)
+            ((and a . b)
+               (if a (and . b) #false))))
+
+      (assert (and (eq? 2 2) (less? 1 2))                 ===> #true)
+      (assert (and (eq? 2 2) (less? 2 1))                 ===> #false)
+      (assert (and 1 2 '(f g) 'c)                         ===> 'c)
+      (assert (and)                                       ===> #true)
+
+      ; syntax:  (or <test1> ...)
+      (define-syntax or
+         (syntax-rules ()
+            ((or) #false)
+            ((or (a . b) . c) ; additional optimization
+               ((lambda (x) (or x . c))  (a . b)))
+            ((or a) a)
+            ((or a . b)
+               (if a a (or . b)))))
+
+      (assert (or (eq? 2 2) (less? 1 2))                  ===> #true)
+      (assert (or (eq? 2 2) (less? 2 1))                  ===> #true)
+      (assert (or #f #f #f)                               ===> #false)
+      (assert (or #f 'c #f)                               ===> 'c)
+
       ; 4.1.6  Assignments
       ;
       ; syntax: (set! <variable> <expression>)  * not supported
@@ -409,220 +439,7 @@
             ((let*-values () . rest)
                ((lambda () . rest)))))
 
-      ; 4.2.2  Conditionals
-      ;
-      ; syntax: (cond <clause1> <clause2> ...)
-      ; auxiliary syntax: else
-      ; auxiliary syntax: =>
-      (define-syntax cond
-         (syntax-rules (else =>)
-            ((cond) #false)
-            ((cond (else exp . rest))
-               (begin exp . rest))
-            ((cond (clause => exp) . rest)
-               ((lambda (fresh)
-                  (if fresh
-                     (exp fresh)
-                     (cond . rest)))  clause))
-            ((cond (clause exp . rest-exps) . rest)
-               (if clause
-                  (begin exp . rest-exps)
-                  (cond . rest)))))
 
-      (assert (cond ((less? 2 3) 'greater)
-                    ((less? 3 2) 'less))                  ===>  'greater)
-      (assert (cond ((less? 3 3) 'greater)
-                    ((less? 3 3) 'less)
-                    (else 'equal))                        ===>  'equal)
-      (assert (cond ((car (cdr '((a 1) (b 2)))) => car)
-                    (else #false))                        ===>  'b)
-
-      ; syntax:  (case <key> <clause1> <clause2> ...)
-      ; auxiliary syntax: else            * ol specific
-      ; auxiliary syntax: []              * ol specific
-      ; auxiliary syntax: ()              * ol specific
-      ; auxiliary syntax: =>              * ol specific
-      ; auxiliary syntax: else =>         * ol specific
-      ; auxiliary syntax: else is         * ol specific
-      (define-syntax case
-         (syntax-rules (else list eqv? eq? and memv => vector is)
-            ; precalculate case argument, if needed
-            ((case (op . args) . clauses)
-               ((lambda (fresh) ; let ((fresh (op.args)))
-                  (case fresh . clauses)) (op . args)))
-            ((case thing) #false)
-            ; http://srfi.schemers.org/srfi-87/srfi-87.html
-            ((case thing ((a) => exp) . clauses)
-               (if (eqv? thing (quote a))
-                  (exp thing)
-                  (case thing . clauses)))
-            ; http://srfi.schemers.org/srfi-87/srfi-87.html
-            ((case thing ((a ...) => exp) . clauses)
-               (if (memv thing (quote (a ...)))
-                  (exp thing)
-                  (case thing . clauses)))
-            ((case thing ((a) . body) . clauses)
-               (if (eqv? thing (quote a))
-                  (begin . body)
-                  (case thing . clauses)))
-            ; http://srfi.schemers.org/srfi-87/srfi-87.html
-            ((case thing (else => func))
-               (func thing))
-            ((case thing (else is name . body)) ; * ol specific
-               ((lambda (name) . body) thing))
-            ((case thing (else . body))
-               (begin . body))
-            ; * ol specific
-            ; case receives a vectors:
-            ((case thing ((vector cp . args) . body) . clauses)
-               (if (eq? (ref thing 1) cp) ; compare (todo: move (ref thing 1) to common clause)
-                  (vector-apply thing
-                     (lambda (| | . args)
-                        . body))
-                  (case thing . clauses)))
-
-            ; http://srfi.schemers.org/srfi-87/srfi-93.html ?
-            ((case thing ((a . b) . body) . clauses)
-               (if (memv thing (quote (a . b)))
-                  (begin . body)
-                  (case thing . clauses)))
-            ; (case (type foo) (type-foo thenfoo) (type-bar thenbar) ...)
-            ((case thing (atom . then) . clauses)
-               (if (eq? thing atom)
-                  (begin . then)
-                  (case thing . clauses)))))
-
-      (assert (case 7
-                 (1 'one) (7 'seven))          ===>  'seven)
-      (assert (case 'x
-                 (1 'one) (7 'seven))          ===>  #false)
-      (assert (case 'x
-                 (1 'one) (7 'seven)
-                 (else 'nothing))              ===>  'nothing)
-      (assert (case 'y
-                 (1 'one) (7 'seven)
-                 (else => (lambda (x) x)))     ===>  'y)
-      (assert (case 'z
-                 (1 'one) (7 'seven)
-                 (else is x x))                ===>  'z)
-
-      ; syntax:  (and <test1> ...)
-      (define-syntax and
-         (syntax-rules ()
-            ((and) #true)
-            ((and a) a)
-            ((and a . b)
-               (if a (and . b) #false))))
-
-      (assert (and (eq? 2 2) (less? 1 2))                 ===> #true)
-      (assert (and (eq? 2 2) (less? 2 1))                 ===> #false)
-      (assert (and 1 2 '(f g) 'c)                         ===> 'c)
-      (assert (and)                                       ===> #true)
-
-      ; syntax:  (or <test1> ...)
-      (define-syntax or
-         (syntax-rules ()
-            ((or) #false)
-            ((or (a . b) . c) ; additional optimization
-               ((lambda (x) (or x . c))  (a . b)))
-            ((or a) a)
-            ((or a . b)
-               (if a a (or . b)))))
-
-      (assert (or (eq? 2 2) (less? 1 2))                  ===> #true)
-      (assert (or (eq? 2 2) (less? 2 1))                  ===> #true)
-      (assert (or #f #f #f)                               ===> #false)
-      (assert (or #f 'c #f)                               ===> 'c)
-
-      ; syntax:  when <test> <expression1> <expression2> ...
-      (define-syntax when
-         (syntax-rules ()
-            ((when val) #false)
-            ((when val . then) (if val (begin . then)))))
-
-      (assert (when (less? 2 3) 'yes 'no)               ===>  'no)
-      (assert (when (less? 3 2) 'yes 'no)               ===>  #false)
-
-      ; syntax:  unless <test> <expression1> <expression2> ...
-      (define-syntax unless
-         (syntax-rules (not)
-            ((unless val) #false)
-            ((unless val . then) (if (not val) (begin . then)))))
-
-      (assert (unless (less? 2 3) 'yes 'no)               ===>  #false)
-      (assert (unless (less? 3 2) 'yes 'no)               ===>  'no)
-
-      ; 4.2.4  Iteration       * moved to (scheme r5rs iteration)
-
-      ; 4.2.5  Delayed evaluation
-      ;
-      ; syntax:  delay <expression>
-      (define-syntax delay
-         (syntax-rules ()
-            ((delay (op . args))
-               (lambda () (op . args)))
-            ((delay value) value)))
-
-      ; syntax:  delay-force <expression>
-      ; todo.
-
-      ; syntax:  force <expression>
-      (setq force (lambda (thunk) (thunk)))
-
-      ; (promise? obj )
-      ; todo.
-
-      ; (make-promise obj )
-      ; todo.
-
-
-      ; 4.2.6. Dynamic bindings
-      ; * declared in (scheme dynamic-bindings)
-
-      ; 4.2.7. Exception handling
-      ; todo: * declared in (scheme exceptions)
-      ; todo: guard, raise
-
-      ; 4.2.8. Quasiquotation
-      ;
-      ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
-      ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
-      (define-syntax quasiquote
-         (syntax-rules (unquote unquote-splicing _work append)
-                                                ;^
-                                                ;'-- mine
-            ((quasiquote _work () (unquote exp)) exp)
-            ((quasiquote _work (a . b) (unquote exp))
-               (list 'unquote (quasiquote _work b exp)))
-            ((quasiquote _work d (quasiquote . e))
-               (list 'quasiquote
-                  (quasiquote _work (() . d) . e)))
-            ((quasiquote _work () ((unquote-splicing exp) . tl))
-               (append exp
-                  (quasiquote _work () tl)))
-            ((quasiquote _work d (a . b))
-               (cons (quasiquote _work d a)
-                     (quasiquote _work d b)))
-            ((quasiquote _work d atom)
-               (quote atom))
-            ((quasiquote . stuff)
-               (quasiquote _work () . stuff))))
-
-      ; 4.2.9. Case-lambda
-      ; * declared in (scheme srfi-16)
-
-      ; 4.3  Macros
-      ; 4.3.1  Binding constructs for syntactic keywords
-      ; 4.3.2  Pattern language
-      ; 4.3.3  Signaling errors in macro transformers
-
-
-      ;;; ---------------------------------------------------------------
-      ;;; Chapter 5
-      ;;; Program structure
-
-      ; 5.1  Programs
-      ; 5.2  Import declarations
       ; 5.3  Variable definitions
 
       (define-syntax define
@@ -648,45 +465,7 @@
 ;            ((define* name (lambda (arg ...) . body))
 ;               (define* (name arg ...) . body))))
 
-      ; 5.3.1  Top level definitions
-      ; 5.3.2  Internal definitions
-      ; 5.3.3  Multiple-value definitions
-
-      (define-syntax define-values
-         (syntax-rules (list)
-            ((define-values (val ...) . body)
-               (setq (val ...)
-                  (let* ((val ... (begin . body)))
-                     (list val ...))))))
-
-      ; 5.5  Record-type definitions
-      ; syntax:  (define-record-type <name> <constructor> <pred> <field> ...)  * not supported
-      (setq define-record-type (lambda (name constructor pred . fields)
-         (runtime-error "No define-record-type is implemented." #null)))
-
-      ; 5.6  Libraries
-      ; 5.6.1  Library Syntax
-      ; * declared and implemented in (lang repl)
-
-      ; 5.6.2. Library example
-      ; todo: library example assert
-
-      ; 5.7  The REPL
-
-      ;;; ---------------------------------------------------------------
-      ;;; Chapter 6
-      ;;; Standard procedures
-      ;
-      ; This chapter describes Scheme's built-in procedures.
-      ; 
-      ; The initial (or ``top level'') Scheme
-      ; environment starts out with a number of variables bound to locations containing useful values,
-      ; most of which are primitive procedures that manipulate data. For example, the variable abs is
-      ; bound to (a location initially containing) a procedure of one argument that computes the
-      ; absolute value of a number, and the variable + is bound to a procedure that computes sums.
-      ; Built-in procedures that can easily be written in terms of other built-in procedures are
-      ; identified as ``library procedures''.
-
+      ; -------------------------------------------------------------
       ; 6.1  Equivalence predicates
       ;
       ; A predicate is a procedure that always returns a boolean
@@ -699,6 +478,40 @@
 
       ; procedure:  (eq? obj1 obj2)   * builtin
       (define eq? eq?)
+
+      ; procedure:  (equal? obj1 obj2)
+      ;
+      ; The equal? procedure, when applied to pairs, vectors,
+      ; strings and bytevectors, recursively compares them, return-
+      ; ing #t when the unfoldings of its arguments into (possibly
+      ; infinite) trees are equal (in the sense of equal?) as ordered
+      ; trees, and #f otherwise. It returns the same as eqv? when
+      ; applied to booleans, symbols, numbers, characters, ports,
+      ; procedures, and the empty list. If two objects are eqv?,
+      ; they must be equal? as well. In all other cases, equal?
+      ; may return either #t or #f.
+      (define (equal? a b)
+         (if (eq? a b)
+            #true
+         (let ((sa (size a)))
+            (if (and sa
+                     (eq? (type a) (type b))
+                     (eq? (size b) sa))
+               (or
+                  (eq? 0 sa)
+                  (if (ref a 0) ; ==(bytestream? a), 0 in ref works only for bytestreams
+                     ; comparing bytestreams
+                     (let loop ((n (|-1| sa)))
+                        (if (eq? (ref a n) (ref b n))
+                           (if (eq? n 0)
+                              #true
+                              (loop (|-1| n)))))
+                     ; recursive comparing objects
+                     (let loop ((n sa))
+                        (if (eq? n 0)
+                           #true
+                           (if (equal? (ref a n) (ref b n))
+                              (loop (|-1| n)))))))))))
 
       ; procedure:  (eqv? obj1 obj2)
       ;
@@ -844,39 +657,232 @@
       ;          (eqv? f g))                ===> unspecified
 
 
-      ; procedure:  (equal? obj1 obj2)
+      ; 4.2.2  Conditionals
       ;
-      ; The equal? procedure, when applied to pairs, vectors,
-      ; strings and bytevectors, recursively compares them, return-
-      ; ing #t when the unfoldings of its arguments into (possibly
-      ; infinite) trees are equal (in the sense of equal?) as ordered
-      ; trees, and #f otherwise. It returns the same as eqv? when
-      ; applied to booleans, symbols, numbers, characters, ports,
-      ; procedures, and the empty list. If two objects are eqv?,
-      ; they must be equal? as well. In all other cases, equal?
-      ; may return either #t or #f.
-      (define (equal? a b)
-         (if (eq? a b)
-            #true
-         (let ((sa (size a)))
-            (if (and sa
-                     (eq? (type a) (type b))
-                     (eq? (size b) sa))
-               (or
-                  (eq? 0 sa)
-                  (if (ref a 0) ; ==(bytestream? a), 0 in ref works only for bytestreams
-                     ; comparing bytestreams
-                     (let loop ((n (|-1| sa)))
-                        (if (eq? (ref a n) (ref b n))
-                           (if (eq? n 0)
-                              #true
-                              (loop (|-1| n)))))
-                     ; recursive comparing objects
-                     (let loop ((n sa))
-                        (if (eq? n 0)
-                           #true
-                           (if (equal? (ref a n) (ref b n))
-                              (loop (|-1| n)))))))))))
+      ; syntax: (cond <clause1> <clause2> ...)
+      ; auxiliary syntax: else
+      ; auxiliary syntax: =>
+      (define-syntax cond
+         (syntax-rules (else =>)
+            ((cond) #false)
+            ((cond (else exp . rest))
+               (begin exp . rest))
+            ((cond (clause => exp) . rest)
+               ((lambda (fresh)
+                  (if fresh
+                     (exp fresh)
+                     (cond . rest)))  clause))
+            ((cond (clause exp . rest-exps) . rest)
+               (if clause
+                  (begin exp . rest-exps)
+                  (cond . rest)))))
+
+      (assert (cond ((less? 2 3) 'greater)
+                    ((less? 3 2) 'less))                  ===>  'greater)
+      (assert (cond ((less? 3 3) 'greater)
+                    ((less? 3 3) 'less)
+                    (else 'equal))                        ===>  'equal)
+      (assert (cond ((car (cdr '((a 1) (b 2)))) => car)
+                    (else #false))                        ===>  'b)
+
+      ; syntax:  (case <key> <clause1> <clause2> ...)
+      ; auxiliary syntax: else            * ol specific
+      ; auxiliary syntax: []              * ol specific
+      ; auxiliary syntax: ()              * ol specific
+      ; auxiliary syntax: =>              * ol specific
+      ; auxiliary syntax: else =>         * ol specific
+      ; auxiliary syntax: else is         * ol specific
+      (define-syntax case
+         (syntax-rules (else list eqv? eq? and memv => vector is)
+            ; precalculate case argument, if needed
+            ((case (op . args) . clauses)
+               ((lambda (fresh) ; let ((fresh (op.args)))
+                  (case fresh . clauses)) (op . args)))
+            ((case thing) #false)
+            ; http://srfi.schemers.org/srfi-87/srfi-87.html
+            ((case thing ((a) => exp) . clauses)
+               (if (eqv? thing (quote a))
+                  (exp thing)
+                  (case thing . clauses)))
+            ; http://srfi.schemers.org/srfi-87/srfi-87.html
+            ((case thing ((a ...) => exp) . clauses)
+               (if (memv thing (quote (a ...)))
+                  (exp thing)
+                  (case thing . clauses)))
+            ((case thing ((a) . body) . clauses)
+               (if (eqv? thing (quote a))
+                  (begin . body)
+                  (case thing . clauses)))
+            ; http://srfi.schemers.org/srfi-87/srfi-87.html
+            ((case thing (else => func))
+               (func thing))
+            ((case thing (else is name . body)) ; * ol specific
+               ((lambda (name) . body) thing))
+            ((case thing (else . body))
+               (begin . body))
+            ; * ol specific
+            ; case receives a vectors:
+            ((case thing ((vector cp . args) . body) . clauses)
+               (if (eq? (ref thing 1) cp) ; compare (todo: move (ref thing 1) to common clause)
+                  (vector-apply thing
+                     (lambda (| | . args)
+                        . body))
+                  (case thing . clauses)))
+
+            ; http://srfi.schemers.org/srfi-87/srfi-93.html ?
+            ((case thing ((a . b) . body) . clauses)
+               (if (memv thing (quote (a . b)))
+                  (begin . body)
+                  (case thing . clauses)))
+            ; (case (type foo) (type-foo thenfoo) (type-bar thenbar) ...)
+            ((case thing (atom . then) . clauses)
+               (if (eq? thing atom)
+                  (begin . then)
+                  (case thing . clauses)))))
+
+      (assert (case 7
+                 (1 'one) (7 'seven))          ===>  'seven)
+      (assert (case 'x
+                 (1 'one) (7 'seven))          ===>  #false)
+      (assert (case 'x
+                 (1 'one) (7 'seven)
+                 (else 'nothing))              ===>  'nothing)
+      (assert (case 'y
+                 (1 'one) (7 'seven)
+                 (else => (lambda (x) x)))     ===>  'y)
+      (assert (case 'z
+                 (1 'one) (7 'seven)
+                 (else is x x))                ===>  'z)
+
+      ; syntax:  when <test> <expression1> <expression2> ...
+      (define-syntax when
+         (syntax-rules ()
+            ((when val) #false)
+            ((when val . then) (if val (begin . then)))))
+
+      (assert (when (less? 2 3) 'yes 'no)               ===>  'no)
+      (assert (when (less? 3 2) 'yes 'no)               ===>  #false)
+
+      ; syntax:  unless <test> <expression1> <expression2> ...
+      (define-syntax unless
+         (syntax-rules (not)
+            ((unless val) #false)
+            ((unless val . then) (if (not val) (begin . then)))))
+
+      (assert (unless (less? 2 3) 'yes 'no)               ===>  #false)
+      (assert (unless (less? 3 2) 'yes 'no)               ===>  'no)
+
+      ; 4.2.4  Iteration       * moved to (scheme r5rs iteration)
+
+      ; 4.2.5  Delayed evaluation
+      ;
+      ; syntax:  delay <expression>
+      (define-syntax delay
+         (syntax-rules ()
+            ((delay (op . args))
+               (lambda () (op . args)))
+            ((delay value) value)))
+
+      ; syntax:  delay-force <expression>
+      ; todo.
+
+      ; syntax:  force <expression>
+      (setq force (lambda (thunk) (thunk)))
+
+      ; (promise? obj )
+      ; todo.
+
+      ; (make-promise obj )
+      ; todo.
+
+
+      ; 4.2.6. Dynamic bindings
+      ; * declared in (scheme dynamic-bindings)
+
+      ; 4.2.7. Exception handling
+      ; todo: * declared in (scheme exceptions)
+      ; todo: guard, raise
+
+      ; 4.2.8. Quasiquotation
+      ;
+      ; `(a ,(+ 1 2) ,(map abs '(4 -5 6)) b) ===> (a 3 (4 5 6) b)
+      ; `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b) ===> (a 3 4 5 6 b)
+      (define-syntax quasiquote
+         (syntax-rules (unquote unquote-splicing _work append)
+                                                ;^
+                                                ;'-- mine
+            ((quasiquote _work () (unquote exp)) exp)
+            ((quasiquote _work (a . b) (unquote exp))
+               (list 'unquote (quasiquote _work b exp)))
+            ((quasiquote _work d (quasiquote . e))
+               (list 'quasiquote
+                  (quasiquote _work (() . d) . e)))
+            ((quasiquote _work () ((unquote-splicing exp) . tl))
+               (append exp
+                  (quasiquote _work () tl)))
+            ((quasiquote _work d (a . b))
+               (cons (quasiquote _work d a)
+                     (quasiquote _work d b)))
+            ((quasiquote _work d atom)
+               (quote atom))
+            ((quasiquote . stuff)
+               (quasiquote _work () . stuff))))
+
+      ; 4.2.9. Case-lambda
+      ; * declared in (scheme srfi-16)
+
+      ; 4.3  Macros
+      ; 4.3.1  Binding constructs for syntactic keywords
+      ; 4.3.2  Pattern language
+      ; 4.3.3  Signaling errors in macro transformers
+
+
+      ;;; ---------------------------------------------------------------
+      ;;; Chapter 5
+      ;;; Program structure
+
+      ; 5.1  Programs
+      ; 5.2  Import declarations
+      ; 5.3  Variable definitions
+
+      ; 5.3.1  Top level definitions
+      ; 5.3.2  Internal definitions
+      ; 5.3.3  Multiple-value definitions
+
+      (define-syntax define-values
+         (syntax-rules (list)
+            ((define-values (val ...) . body)
+               (setq (val ...)
+                  (let* ((val ... (begin . body)))
+                     (list val ...))))))
+
+      ; 5.5  Record-type definitions
+      ; syntax:  (define-record-type <name> <constructor> <pred> <field> ...)  * not supported
+      (setq define-record-type (lambda (name constructor pred . fields)
+         (runtime-error "No define-record-type is implemented." #null)))
+
+      ; 5.6  Libraries
+      ; 5.6.1  Library Syntax
+      ; * declared and implemented in (lang repl)
+
+      ; 5.6.2. Library example
+      ; todo: library example assert
+
+      ; 5.7  The REPL
+
+      ;;; ---------------------------------------------------------------
+      ;;; Chapter 6
+      ;;; Standard procedures
+      ;
+      ; This chapter describes Scheme's built-in procedures.
+      ; 
+      ; The initial (or ``top level'') Scheme
+      ; environment starts out with a number of variables bound to locations containing useful values,
+      ; most of which are primitive procedures that manipulate data. For example, the variable abs is
+      ; bound to (a location initially containing) a procedure of one argument that computes the
+      ; absolute value of a number, and the variable + is bound to a procedure that computes sums.
+      ; Built-in procedures that can easily be written in terms of other built-in procedures are
+      ; identified as ``library procedures''.
 
 
       ; 6.2  Numbers
@@ -1737,8 +1743,8 @@
                            (loop (map cdr a)))))
          ((f) #false)))
 
-      ; procedure:  (string-for-each proc string1 string2 ...) ; todo
-      ; procedure:  (vector-for-each proc vector1 vector2 ...) ; todo
+      ; procedure:  (string-for-each proc string1 string2 ...)  * (scheme strings)
+      ; procedure:  (vector-for-each proc vector1 vector2 ...)  * (scheme vectors)
 
       ; procedure:  (call-with-current-continuation proc)
       (define call-with-current-continuation
