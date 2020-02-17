@@ -338,12 +338,8 @@
 
       ; 4.1.7. Inclusion
       ;
-      ; syntax: (include hstring1i hstring2i ...)  * not supported
-      (setq include (lambda args
-         (runtime-error "No include is allowed." "(use ,load instead)")))
-      ; syntax: (include-ci hstring1i hstring2i ...)  * not supported
-      (setq include-ci (lambda args
-         (runtime-error "No include-ci is allowed." "(use ,load instead)")))
+      ; syntax: (include hstring1i hstring2i ...)  * not supported, (scheme base)
+      ; syntax: (include-ci hstring1i hstring2i ...)  * not supported, (scheme base)
 
       ; 4.2  Derived expression types
       ;
@@ -2051,8 +2047,6 @@
       if
       ; 4.1.6  Assignments
       set!
-      ; 4.1.7  Inclusion
-      include include-ci
       ; 4.2.1  Binding constructs and Sequencing
       letrec let begin let* let*-values 
       ; 4.2.2  Conditionals

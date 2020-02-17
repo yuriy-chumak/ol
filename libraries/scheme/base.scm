@@ -267,6 +267,17 @@
 
    (begin
 
+      ; 4.1.7. Inclusion
+      ;
+      ; syntax: (include hstring1i hstring2i ...)  * not supported
+      (setq include (lambda args
+         (runtime-error "No include is allowed." "(use ,load instead)")))
+      ; syntax: (include-ci hstring1i hstring2i ...)  * not supported
+      (setq include-ci (lambda args
+         (runtime-error "No include-ci is allowed." "(use ,load instead)")))
+
+      ; 6.4  Pairs and lists
+      ; ...
       ; due to frequent use, moved from (scheme cxr) to (scheme base)
       (define (caaar x) (car (car (car x))))
       (define (caadr x) (car (car (cdr x))))
