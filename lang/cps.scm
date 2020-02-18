@@ -203,19 +203,19 @@
 
       ;; translate a chain of lambdas as if they were at operator position
       ;; note! also cars are handled as the same jump, which is silly
-      (define (cps-either cps node env cont free)
+      (define (cps-brae cps node env cont free)
          (case node
-            (['either fn else]
+            (['brae fn else]
                (lets 
-                  ((fn free (cps-either cps fn env cont free))
-                   (else free (cps-either cps else env cont free)))
-                  (values ['either fn else] free)))
+                  ((fn free (cps-brae cps fn env cont free))
+                   (else free (cps-brae cps else env cont free)))
+                  (values ['brae fn else] free)))
             (['lambda formals body]
                (cps-just-lambda cps formals #true body env free))
             (['lambda-var fixed? formals body]
                (cps-just-lambda cps formals fixed? body env free))
             (else
-               (runtime-error "either: " (list node "argument should be function")))))
+               (runtime-error "brae: " (list node "argument should be function")))))
 
       (define (cps-exp exp env cont free)
          (case exp
@@ -235,8 +235,8 @@
               (cps-values-apply cps-exp exp target env cont free))
             (['ifeq a b then else]
                (cps-ifeq cps-exp a b then else env cont free))
-            (['either fn else]
-               (lets ((res free (cps-either cps-exp exp env cont free)))
+            (['brae fn else]
+               (lets ((res free (cps-brae cps-exp exp env cont free)))
                   (values (mkcall cont (list res)) free)))
             (else
                (runtime-error "CPS does not do " exp))))

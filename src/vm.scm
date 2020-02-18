@@ -146,7 +146,7 @@
 
       ; -----------------------------------------------------------------------
       ; we already have (out of the box):    У нас изначально есть (из коробки):
-      ;  quote lambda values either           quote lambda values either
+      ;  quote lambda values brae             quote lambda values brae
       ;  setq let-eval ifeq values-apply      setq let-eval ifeq values-apply
 
       ; Список примитивных операций виртуальной машины:
@@ -304,10 +304,10 @@
                         (f k (lambda (c . x) (apply/cc k x))))))
                         ; accelerated version:
                         ;(f k
-                        ;   (either (lambda (c a) (k a))
-                        ;   (either (lambda (c a b) (k a b))
-                        ;   (either (lambda (c . x) (apply/cc k x))
-                        ;           (lambda () (arity-error)))))))))
+                        ;   (brae (lambda (c a) (k a))
+                        ;   (brae (lambda (c a b) (k a b))
+                        ;   (brae (lambda (c . x) (apply/cc k x))
+                        ;         (lambda () (arity-error)))))))))
 
       (setq ARITY-ERROR (opcode 'arity-error))
 

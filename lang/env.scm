@@ -46,7 +46,7 @@
          'let-eval ['special 'let-eval]
 
          'ifeq   ['special 'ifeq]
-         'either ['special 'either]
+         'brae   ['special 'brae]
 
          'values-apply ['special 'values-apply]})
 
@@ -186,7 +186,7 @@
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
                            (fail (list "funny let-eval " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((values values-apply either ifeq)
+                     ((values values-apply ifeq brae)
                         (cons (car exp) (map walk (cdr exp))))
                      (else
                         (map walk exp))))

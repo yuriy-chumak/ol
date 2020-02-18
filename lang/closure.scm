@@ -111,7 +111,7 @@
                   (values
                      ['ifeq a b then else]
                      used)))
-            (['either func else]
+            (['brae func else]
                ;; fixme: operator position handling of resulting unclosurized case-lambdas is missing
                (if close? 
                   ;; a normal value requiring a closure, and first node only 
@@ -119,7 +119,7 @@
                      ((func this-used (closurize func null #false)) ;; no used, don't close
                       (else this-used (closurize else this-used #false))) ;; same used, dont' close rest 
                      (values
-                        ['closure-case ['either func else] this-used]  ;; used the ones in here
+                        ['closure-case ['brae func else] this-used]  ;; used the ones in here
                         (union used this-used)))                   ;; needed others and the ones in closure
                   ;; operator position case-lambda, which can (but isn't yet) be dispatche at compile 
                   ;; time, or a subsequent case-lambda node (above case requests no closurization) 
@@ -128,7 +128,7 @@
                      ((func used (closurize func used #false)) ;; don't closurize codes
                       (else used (closurize else used #false))) ;; ditto for the rest of the tail
                      (values 
-                        ['either func else]
+                        ['brae func else]
                         used))))
             (else
                (runtime-error "closurize: unknown exp type: " exp))))
@@ -210,11 +210,11 @@
                   (values
                      ['ifeq a b then else]
                      used)))
-            (['either func else]
+            (['brae func else]
                (lets
                   ((func used (literalize func used))
                    (else used (literalize else used)))
-                  (values ['either func else] used)))
+                  (values ['brae func else] used)))
             (else
                (runtime-error "literalize: unknown exp type: " exp))))
 

@@ -580,20 +580,20 @@
             (else
                (runtime-error "bytecode->list: " thing))))
 
-      (define (rtl-either rtl exp clos literals)
+      (define (rtl-brae rtl exp clos literals)
          (case exp
             (['lambda-var fixed? formals body]
                (rtl-plain-lambda rtl exp clos literals null))
             (['lambda formals body] ;; soon to be deprecated
-               (rtl-either rtl
+               (rtl-brae rtl
                   ['lambda-var #true formals body]
                   clos literals))
-            (['either func else]
+            (['brae func else]
                (rtl-plain-lambda rtl func clos literals
                   (bytecode->list
-                     (rtl-either rtl else clos literals))))
+                     (rtl-brae rtl else clos literals))))
             (else
-               (runtime-error "rtl-either: bad node " exp))))
+               (runtime-error "rtl-brae: bad node " exp))))
 
       ;; todo: separate closure nodes from lambdas now that the arity may vary
       ;; todo: control flow analysis time - if we can see what the arguments are here, the info could be used to make most continuation returns direct via known call opcodes, which could remove an important branch prediction killer
@@ -612,7 +612,7 @@
             (['closure-case body clos literals]
                (lets
                   ((lits (rtl-literals rtl-procedure literals))
-                   (body (rtl-either rtl-procedure body clos lits)))
+                   (body (rtl-brae rtl-procedure body clos lits)))
                   body))
             (else
                (runtime-error "rtl-procedure: bad input: " node))))

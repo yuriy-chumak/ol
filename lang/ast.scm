@@ -135,12 +135,12 @@
                               (translate then env fail)
                               (translate else env fail)])
                         (fail (list "Bad ifeq " exp))))
-                  ((either) ; (either (lambda-ok) (lambda-else))
+                  ((brae) ; (brae (lambda-ok) (lambda-else))
                      (if (eq? (length exp) 3)
-                        ['either
+                        ['brae
                            (translate (second exp) env fail)
                            (translate (third exp) env fail)]
-                        (fail (list "Bad either node: " exp))))
+                        (fail (list "Bad brae: " exp))))
 
                   ((values)
                      ['values

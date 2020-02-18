@@ -129,7 +129,7 @@
 ; ==> -1
 
 ;;; Distinguishing built-in functions and user-defined functions
-; ol has no builtin functions but only eight builtin forms: quote, values, lambda, setq, let-eval, ifeq, either, values-apply.
+; ol has no builtin functions but only eight builtin forms: quote, values, lambda, setq, let-eval, ifeq, brae, values-apply.
 ; all other functions is "user-defined", and some of them defined in base library, for example (scheme core) defines if, or, and, zero?, length, append...
 
 ;;; Distinguishing subroutines and functions

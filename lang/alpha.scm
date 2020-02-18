@@ -85,11 +85,11 @@
                   (values
                      ['ifeq a b then else]
                      free)))
-            (['either then else]
+            (['brae then else]
                (lets
                   ((then free (alpha then env free))
                    (else free (alpha else env free)))
-                  (values ['either then else] free)))
+                  (values ['brae then else] free)))
             (else
                (runtime-error "alpha: unknown AST node: " exp))))
 

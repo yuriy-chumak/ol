@@ -40,7 +40,7 @@
       ; special forms declared in lang/env.scm:
       ;
       ; quote values lambda setq
-      ; let-eval ifeq either values-apply
+      ; let-eval ifeq brae values-apply
 
       (scheme case-lambda)  ; 4.2.9, srfi-16
       (scheme srfi-87)   ; <= in cases
@@ -2038,7 +2038,7 @@
 
       ; not required to be exported:
       ;  quote values lambda setq
-      ;  let-eval ifeq either values-apply
+      ;  let-eval ifeq brae values-apply
       ;  cons car cdr ref type size set-ref set-ref! eq? less?
       ;  clock, syscall
       ;  ff:red ff:black ff:toggle ff:red? ff:right?

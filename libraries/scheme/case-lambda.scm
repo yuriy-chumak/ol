@@ -17,6 +17,6 @@
          ((case-lambda (formals . body))
             (lambda formals . body))
          ((case-lambda (formals . body) . rest)
-            (either (lambda formals . body)
-               (case-lambda . rest)))))
+            (brae (lambda formals . body)
+                  (case-lambda . rest)))))
 ))
