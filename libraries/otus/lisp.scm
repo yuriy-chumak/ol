@@ -25,7 +25,12 @@
       (exports (owl time))
       (exports (owl regex))
       (exports (owl math-extra))
-      (exports (owl math)))
+      (exports (owl math))
+      
+      ; ol functions
+      for-each
+      
+      )
 
    (import
       (scheme core)
@@ -52,4 +57,35 @@
       (owl render)
       (owl interop)
       (owl math))
-)
+
+(begin
+   
+   ; internal function
+   (define (->list x)
+      (cond
+         ((string? x)
+            (string->list x))
+         ((vector? x)
+            (vector->list x))
+         (else
+            x)))
+
+   ; ol for-each accepts vectors, lists and strings as function arguments in one manner
+   ; * experimental feature
+   (define for-each (case-lambda
+      ((f a)      (let loop ((a (->list a)))
+                     (unless (null? a)
+                        (f (car a))
+                        (loop (cdr a)))))
+      ((f a b)    (let loop ((a (->list a))
+                             (b (->list b)))
+                     (unless (null? a)
+                        (f (car a) (car b))
+                        (loop (cdr a) (cdr b)))))
+      ((f a b . c)
+                  (let loop ((a (map ->list (cons a (cons b c)))))
+                     (unless (null? (car a))
+                        (apply f (map car a))
+                        (loop (map cdr a)))))
+      ((f) #false)))
+))
