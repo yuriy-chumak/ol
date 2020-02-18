@@ -189,9 +189,9 @@
          (primop 'vm:shr   2 2 (make-bytecode '(58 4 5     6 7)))  ; vm:shr
          (primop 'vm:shl   2 2 (make-bytecode '(59 4 5     6 7)))  ; vm:shl
          ; бинарная арифметика
-         (primop 'vm:and   2 1 (make-bytecode '(55 4 5 6      24 6))) ; vm:and
-         (primop 'vm:or    2 1 (make-bytecode '(56 4 5 6      24 6))) ; vm:or
-         (primop 'vm:xor   2 1 (make-bytecode '(57 4 5 6      24 6))) ; vm:xor
+         (primop 'vm:and   2 1 (make-bytecode '(55 4 5 6      24 6))) ; vm:and ; 
+         (primop 'vm:ior   2 1 (make-bytecode '(56 4 5 6      24 6))) ; vm:ior ; inclusive OR
+         (primop 'vm:xor   2 1 (make-bytecode '(57 4 5 6      24 6))) ; vm:xor ; exclusive OR
 
          ; инструкции поддержки арифметики с плавающей точкой (inexact math)
          (primop 'vm:fp1   2 1 (make-bytecode '(33 4 5 6      24 6))) ; vm:fp1

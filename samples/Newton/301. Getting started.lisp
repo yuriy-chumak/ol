@@ -104,7 +104,7 @@
       (NewtonUpdate world (if (> ms 0.01) 0.01 ms)))
 
    ; и нарисуем его
-   (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+   (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    ; платформа
    (glColor3f 0.8 0.8 0.8)

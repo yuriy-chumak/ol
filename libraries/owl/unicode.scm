@@ -99,7 +99,7 @@
 
       ; grab low 6 bits of a number
       (define (ext n)
-         (vm:or extension
+         (vm:ior extension
             (band n #b111111)))
 
       (define (encode-point point tl)

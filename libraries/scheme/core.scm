@@ -19,7 +19,7 @@
       ;   integer:
       ;     vm:add vm:sub vm:mul vm:div vm:shr vm:shl
       ;   binary:
-      ;     vm:and vm:or vm:xor
+      ;     vm:and vm:ior vm:xor
       ; floating-point math (OLVM_INEXACTS required):
       ;   vm:fp1 (xFE: fsin, xFF: fcos),
       ;   vm:fp2 (xD9: <, xC1: +, xE9: -, xC9: *, xF9: /)

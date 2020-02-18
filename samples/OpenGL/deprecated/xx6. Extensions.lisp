@@ -30,7 +30,7 @@
 
 ; draw
 (lambda (x   dx y   dy  sphere)
-   (glClear (vm:or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+   (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)

@@ -61,7 +61,7 @@
 ;         (let loop ((f 0))
 ;            (lets
 ;               ((o f (vm:shl f 1)) ;; repeat (f<<1)|1 until overflow
-;                (f (vm:or f 1)))
+;                (f (vm:ior f 1)))
 ;               (if (eq? o 0)
 ;                  (loop f)
 ;                  f))))
@@ -539,7 +539,7 @@
       ;;; BITWISE OPERATIONS
       ;;;
 
-      ; vm:and, vm:or, vm:shl, vm:shr
+      ; vm:and, vm:ior, vm:shl, vm:shr
       ; vm:and, fxor -> result
       ; vm:shl -> hi + lo
       ; vm:shr -> hi + lo
@@ -554,7 +554,7 @@
             (let ((next (ncar rest)))
                (lets ((hi lo (vm:shr next n)))
                   (lets
-                     ((this (vm:or this lo))
+                     ((this (vm:ior this lo))
                       (tail (shift-right-walk hi (ncdr rest) n #false)))
                      (cond
                         (tail (ncons this tail))
@@ -615,7 +615,7 @@
                #null
                (ncons last #null))
             (lets ((hi lo (vm:shl (ncar num) n)))
-               (ncons (vm:or last lo)
+               (ncons (vm:ior last lo)
                   (shift-left (ncdr num) n hi)))))
 
       ; << quarantees n is a fixnum
@@ -693,7 +693,7 @@
             ((eq? b #null) a)
             (else
                (lets
-                  ((this (vm:or (ncar a) (ncar b)))
+                  ((this (vm:ior (ncar a) (ncar b)))
                    (tail (big-bor (ncdr a) (ncdr b))))
                   (ncons this tail)))))
 
@@ -747,16 +747,16 @@
          (case (type a)
             (type-fix+
                (case (type b)
-                  (type-fix+ (vm:or a b))
+                  (type-fix+ (vm:ior a b))
                   (type-int+
-                     (ncons (vm:or a (ncar b))
+                     (ncons (vm:ior a (ncar b))
                         (ncdr b)))
                   (else
                      (big-bad-args 'bor a b))))
             (type-int+
                (case (type b)
                   (type-fix+
-                     (ncons (vm:or b (ncar a))
+                     (ncons (vm:ior b (ncar a))
                         (ncdr a)))
                   (type-int+
                      (big-bor a b))
@@ -1331,7 +1331,7 @@
                      (divex bit bp a b out))))
             (else ; shift + substract = amortized O(2b) + O(log a)
                (divex bit bp (subi a (<< b bp))
-                  b (ncons (vm:or bit (ncar out)) (ncdr out))))))
+                  b (ncons (vm:ior bit (ncar out)) (ncdr out))))))
 
       (define divex-start (ncons 0 #null))
 

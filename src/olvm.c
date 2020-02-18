@@ -2304,7 +2304,7 @@ mainloop:;
 	#	define MULTIPLICATION 39
 	#	define SUBTRACTION    40
 	#	define BINARY_AND     55
-	#	define BINARY_OR      56
+	#	define BINARY_IOR     56
 	#	define BINARY_XOR     57
 	#	define SHIFT_RIGHT    58
 	#	define SHIFT_LEFT     59
@@ -2937,7 +2937,7 @@ loop:;
 	case BINARY_AND: // vm:and a b r, prechecked
 		A2 = (A0 & A1);
 		ip += 3; break;
-	case BINARY_OR:  // vm:or a b r, prechecked
+	case BINARY_IOR: // vm:ior a b r, prechecked
 		A2 = (A0 | A1);
 		ip += 3; break;
 	case BINARY_XOR: // vm:xor a b r, prechecked

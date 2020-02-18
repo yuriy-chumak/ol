@@ -189,15 +189,15 @@
 ; Calling Conventions
 ; default call is __stdcall for windows and __cdecl for linux (for x32)
 ; you can directly provide required calling convention:
-(define (__cdecl    arg) (vm:or arg #x1000))
-(define (__stdcall  arg) (vm:or arg #x2000))
-(define (__fastcall arg) (vm:or arg #x3000))
+(define (__cdecl    arg) (vm:ior arg #x1000))
+(define (__stdcall  arg) (vm:ior arg #x2000))
+(define (__fastcall arg) (vm:ior arg #x3000))
 
 ; type convertors
 (define (fft* type)
-   (vm:or type #x10000))
+   (vm:ior type #x10000))
 (define (fft& type)
-   (vm:or type #x20000))
+   (vm:ior type #x20000))
 
 ; ? для результата, что превышает x00FFFFFF надо использовать type-handle
 ; ? 44 - is socket but will be free
