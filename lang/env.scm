@@ -43,7 +43,7 @@
          'lambda ['special 'lambda]
 
          'setq   ['special 'setq]
-         'letq   ['special 'letq]
+         'let-eval ['special 'let-eval]
 
          'ifeq   ['special 'ifeq]
          'either ['special 'either]
@@ -178,14 +178,14 @@
                               ((walker (env-bind env (cadr exp)) fail)
                                  (caddr exp)))
                            (fail (list "funny lambda " exp))))
-                     ((letq)
+                     ((let-eval)
                         (if (and (eq? (length exp) 4) (formals-cool? exp))
                            (let ((walk (walker (env-bind env (cadr exp)) fail)))
-                              (list 'letq
+                              (list 'let-eval
                                  (cadr exp)
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
-                           (fail (list "funny letq " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
+                           (fail (list "funny let-eval " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
                      ((values values-apply either ifeq)
                         (cons (car exp) (map walk (cdr exp))))
                      (else

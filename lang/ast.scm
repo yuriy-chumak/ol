@@ -104,7 +104,7 @@
                                        (cons 'begin body)) env fail)))
                            (else
                               (fail (list "Bad lambda: " exp))))))
-                  ((letq) ;;; (letq formals definitions body)
+                  ((let-eval) ;;; (let-eval formals definitions body)
                      (if (eq? (length exp) 4)
                         (let
                            ((formals (lref exp 1))
@@ -116,13 +116,13 @@
                                  (fixed-formals-ok? formals)
                                  (eq? (length formals) (length values)))
                               (let ((env (env-bind env formals)))
-                                 ['letq formals
+                                 ['let-eval formals
                                     (map
                                        (lambda (x) (translate x env fail))
                                        values)
                                     (translate body env fail)])
-                              (fail (list "Bad letq: " exp))))
-                        (fail (list "Bad letq: " exp))))
+                              (fail (list "Bad let-eval: " exp))))
+                        (fail (list "Bad let-eval: " exp))))
                   ((ifeq) ;;; (ifeq a b then else)
                      (if (eq? (length exp) 5)
                         (let ((a (second exp))

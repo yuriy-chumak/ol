@@ -390,7 +390,7 @@
             (['lambda-var fixed? formals body]
                (mkvarlambda formals
                   (unletrec body (env-bind env formals))))
-            (['letq names values body]
+            (['let-eval names values body]
                (let*((env (env-bind env names))
                      (handle (lambda (exp) (unletrec exp env)))
                      (values (map handle values))

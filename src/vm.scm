@@ -147,7 +147,7 @@
       ; -----------------------------------------------------------------------
       ; we already have (out of the box):    У нас изначально есть (из коробки):
       ;  quote lambda values either           quote lambda values either
-      ;  setq letq ifeq values-apply          setq letq ifeq values-apply
+      ;  setq let-eval ifeq values-apply      setq let-eval ifeq values-apply
 
       ; Список примитивных операций виртуальной машины:
       ;  эти операции не надо экспортировать из модуля, они как бы "вшиты" в базовый язык
@@ -157,11 +157,10 @@
          (primop 'vm:make  'any 1 "\x12;") ; 18, make object
          (primop 'vm:makeb 'any 1 "\x13;") ; 19, make blob (binary, raw) object
          ; косвенные аллокаторы
-         (primop 'vm:cast     2 1 (make-bytecode '(22 4 5 6    24 6)))
-         (primop 'set-ref     3 1 (make-bytecode '(45 4 5 6 7  24 7)))
-
+         (primop 'vm:cast   2 1 (make-bytecode '(22 4 5 6    24 6)))
+         (primop 'set-ref   3 1 (make-bytecode '(45 4 5 6 7  24 7)))
          ; ну и мутатор сюда же добавим
-         (primop 'set-ref!    3 1 (make-bytecode '(10 4 5 6 7  24 7)))
+         (primop 'set-ref!  3 1 (make-bytecode '(10 4 5 6 7  24 7)))
 
          ; описатели
          (primop 'type   1 1 type) ; (make-bytecode '(15 4 5    24 5))  ;; get type bits
@@ -200,7 +199,7 @@
          ; системный таймер  (deprecated, но остается как пример операции не принимающей параметров м возвращающей values)
          (primop 'clock    0 2 (make-bytecode '(61 4 5))) ; clock, todo: удалить
          ; системные вызовы
-         (primop 'syscall  'any 1 "\x3F;") ; 63, system call
+         (primop 'syscall 'any 1 "\x3F;") ; 63, system call
 
          (primop 'vector-apply 1 #f (make-bytecode '(32 4)))
          (primop 'ff-apply     1 #f (make-bytecode '(49 4)))
@@ -240,9 +239,12 @@
       ; -----------------------------------
       ; internal, get primop opcode by name
       (setq opcode (lambda (op) ; * internal
-         (letq (do) ((lambda (l)
-                        (ifeq l #null #false
-                           (ifeq (ref (car l) 1) op (ref (car l) 2) (do (cdr l))))))
+         (let-eval (do) ((lambda (l)
+                           (ifeq l #null
+                              #false
+                              (ifeq (ref (car l) 1) op
+                                 (ref (car l) 2)
+                                 (do (cdr l))))))
             (do *primops*))))
 
       ; notes:

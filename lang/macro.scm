@@ -316,7 +316,7 @@
                                     (values
                                        (list 'setq (cadr exp) value)
                                        free)))
-                              ((letq)
+                              ((let-eval)
                                  (let*((formals (second exp))    ; lref 1
                                        (definitions (third exp)) ; lref 2
                                        (body (fourth exp))       ; lref 3
@@ -326,7 +326,7 @@
                                        (body free
                                           (expand body env free abort)))
                                     (values
-                                       (list 'letq formals definitions body)
+                                       (list 'let-eval formals definitions body)
                                        free)))
                               ((ifeq)
                                  (expand-list exp env free))

@@ -40,7 +40,7 @@
       ; special forms declared in lang/env.scm:
       ;
       ; quote values lambda setq
-      ; letq ifeq either values-apply
+      ; let-eval ifeq either values-apply
 
       (scheme case-lambda)  ; 4.2.9, srfi-16
       (scheme srfi-87)   ; <= in cases
@@ -294,7 +294,7 @@
             ((if (eq? a b) then otherwise) (ifeq a b then otherwise))
             ((if (null? t) then otherwise) (ifeq t #null then otherwise))
 
-            ((if (a . b)   then otherwise) (letq (x) ((a . b)) (if x then otherwise)))
+            ((if (a . b)   then otherwise) (let-eval (x) ((a . b)) (if x then otherwise)))
             ((if val       then otherwise) (ifeq val #false otherwise then))))
 
       (assert (if (less? 2 3) 'yes 'no)               ===>  'yes)
@@ -365,7 +365,7 @@
       ; syntax:  (letrec <bindings> <body>)
       (define-syntax letrec
          (syntax-rules (begin)
-            ((letrec ((?var ?val) ...) ?body) (letq (?var ...) (?val ...) ?body))
+            ((letrec ((?var ?val) ...) ?body) (let-eval (?var ...) (?val ...) ?body))
             ((letrec vars body ...) (letrec vars (begin body ...)))))
 
       ; syntax:  (let <bindings> <body>)
@@ -446,9 +446,9 @@
             ((define ((name . args) . more) . body)
                (define (name . args) (lambda more . body)))
             ((define (name . args) . body)
-               (setq name (letq (name) ((lambda args . body)) name)))
+               (setq name (let-eval (name) ((lambda args . body)) name)))
             ((define name (lambda (var ...) . body))
-               (setq name (letq (name) ((lambda (var ...) . body)) name)))
+               (setq name (let-eval (name) ((lambda (var ...) . body)) name)))
             ((define name val)
                (setq name val))
             ((define name a b . c)
@@ -1557,7 +1557,7 @@
       ; procedure:  (make-vector list)     * ol extension
       ;
       ; Returns a newly allocated vector of k elements. If a second
-      ; argument is given, then each element is initialized to fill .
+      ; argument is given, then each element is initialized to fill.
       ; Otherwise the initial contents of each element is #false
       ; (unspecified in Scheme).
 
@@ -1568,7 +1568,7 @@
             ((k fill)
                (vm:make type-vector k fill))))
 
-      ; procedure:  (vector obj . . . )
+      ; procedure:  (vector obj ...)
       ;
       ; Returns a newly allocated vector whose elements contain
       ; the given arguments. It is analogous to list.
@@ -1580,30 +1580,29 @@
 
       (assert (vector 'a 'b 'c)                ===>  #(a b c))
 
-      ; * extra vector staff implemented in (scheme vectors)
-      ; procedure:  (vector-length vector)
-      ; procedure:  (vector-ref vector k)
-      ; procedure:  (vector-set! vector k obj)
-      ; procedure:  (vector->list vector)
-      ; procedure:  (vector->list vector start)
-      ; procedure:  (vector->list vector start end)
-      ; procedure:  (list->vector list)
-      ; procedure:  (vector->string vector)
-      ; procedure:  (vector->string vector start)
-      ; procedure:  (vector->string vector start end)
-      ; procedure:  (string->vector string)
-      ; procedure:  (string->vector string start)
-      ; procedure:  (string->vector string start end)
-      ; procedure:  (vector-copy vector)
-      ; procedure:  (vector-copy vector start)
-      ; procedure:  (vector-copy vector start end)
-      ; procedure:  (vector-copy! to at from)
-      ; procedure:  (vector-copy! to at from start)
-      ; procedure:  (vector-copy! to at from start end)
-      ; procedure:  (vector-append vector ...)
-      ; procedure:  (vector-fill! vector fill)
-      ; procedure:  (vector-fill! vector fill start)
-      ; procedure:  (vector-fill! vector fill start end)
+      ; procedure:  (vector-length vector)                * (scheme vectors)
+      ; procedure:  (vector-ref vector k)                 * (scheme vectors)
+      ; procedure:  (vector-set! vector k obj)            * (scheme vectors)
+      ; procedure:  (vector->list vector)                 * (scheme vectors)
+      ; procedure:  (vector->list vector start)           * (scheme vectors)
+      ; procedure:  (vector->list vector start end)       * (scheme vectors)
+      ; procedure:  (list->vector list)                   * (scheme vectors)
+      ; procedure:  (vector->string vector)               * (scheme vectors)
+      ; procedure:  (vector->string vector start)         * (scheme vectors)
+      ; procedure:  (vector->string vector start end)     * (scheme vectors)
+      ; procedure:  (string->vector string)               * (scheme vectors)
+      ; procedure:  (string->vector string start)         * (scheme vectors)
+      ; procedure:  (string->vector string start end)     * (scheme vectors)
+      ; procedure:  (vector-copy vector)                  * (scheme vectors)
+      ; procedure:  (vector-copy vector start)            * (scheme vectors)
+      ; procedure:  (vector-copy vector start end)        * (scheme vectors)
+      ; procedure:  (vector-copy! to at from)             * (scheme vectors)
+      ; procedure:  (vector-copy! to at from start)       * (scheme vectors)
+      ; procedure:  (vector-copy! to at from start end)   * (scheme vectors)
+      ; procedure:  (vector-append vector ...)            * (scheme vectors)
+      ; procedure:  (vector-fill! vector fill)            * (scheme vectors)
+      ; procedure:  (vector-fill! vector fill start)      * (scheme vectors)
+      ; procedure:  (vector-fill! vector fill start end)  * (scheme vectors)
 
 
       ;; 6.9  Bytevectors
@@ -1723,8 +1722,8 @@
 
          (assert (map cadr '((a b) (d e) (g h)))  ===> '(b e h))
       
-      ; procedure:  (string-map proc string1 string2 ...) ; todo
-      ; procedure:  (vector-map proc vector1 vector2 ...) ; todo
+      ; procedure:  (string-map proc string1 string2 ...)  * (scheme strings)
+      ; procedure:  (vector-map proc vector1 vector2 ...)  * (scheme vectors)
 
       ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
       (define for-each (case-lambda
@@ -1976,9 +1975,9 @@
 ;               (define op
 ;                  (letrec ((op (lambda args body))) op)))
 ;            ((define name (lambda (var ...) . body))
-;               (setq name (letq (name) ((lambda (var ...) . body)) name)))
+;               (setq name (let-eval (name) ((lambda (var ...) . body)) name)))
 ;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
-;               (setq name (letq (name) ((lambda (var ...) . body)) name)))
+;               (setq name (let-eval (name) ((lambda (var ...) . body)) name)))
 ;            ((define op val)
 ;               (setq op val))))
 
@@ -2039,7 +2038,7 @@
 
       ; not required to be exported:
       ;  quote values lambda setq
-      ;  letq ifeq either values-apply
+      ;  let-eval ifeq either values-apply
       ;  cons car cdr ref type size set-ref set-ref! eq? less?
       ;  clock, syscall
       ;  ff:red ff:black ff:toggle ff:red? ff:right?
