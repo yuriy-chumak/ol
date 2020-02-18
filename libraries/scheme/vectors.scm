@@ -138,7 +138,7 @@
    (define vector-for-each (case-lambda
       ((f a)      (for-each f (vector->list a)))
       ((f a b)    (for-each f (vector->list a) (vector->list b)))
-      ((f a b . c)(apply for-each f (map vector->list (cons a (cons b c)))))
+      ((f a b . c)(apply for-each (cons f (map vector->list (cons a (cons b c))))))
       ((f) #false)))
 
 ))
