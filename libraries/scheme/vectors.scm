@@ -41,10 +41,12 @@
       ;vector-fill!
 
       vector-for-each
+      vector-map
    )
 
    (import
       (scheme core)
+      (scheme srfi-1)
       (owl list)
       (owl string))
 
@@ -139,6 +141,36 @@
       ((f a)      (for-each f (vector->list a)))
       ((f a b)    (for-each f (vector->list a) (vector->list b)))
       ((f a b . c)(apply for-each (cons f (map vector->list (cons a (cons b c))))))
+      ((f) #false)))
+
+   (define vector-map (case-lambda
+      ((f a)
+         (define len (size a))
+         (define out (make-vector len))
+         (for-each
+            (lambda (n a) (set-ref! out n (f a)))
+            (iota len 1)
+            (vector->list a))
+         out)
+      ((f a b)
+         (define len (size a))
+         (define out (make-vector len))
+         (for-each
+            (lambda (n a b) (set-ref! out n (f a b)))
+            (iota len 1)
+            (vector->list a)
+            (vector->list b))
+         out)
+      ((f a b . c)
+         (define len (size a))
+         (define out (make-vector len))
+         (apply for-each
+            (cons
+               (lambda (n . c) (set-ref! out n (apply f c)))
+               (cons
+                  (iota len 1)
+                  (map vector->list (cons a (cons b c))))))
+         out)
       ((f) #false)))
 
 ))
