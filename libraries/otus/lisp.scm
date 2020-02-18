@@ -27,6 +27,13 @@
       (exports (owl math-extra))
       (exports (owl math))
       
+      ; lang functions
+      number->string
+      string->number
+
+      symbol->string
+      string->symbol
+
       ; ol functions
       for-each
       
@@ -56,7 +63,12 @@
       (owl regex)
       (owl render)
       (owl interop)
-      (owl math))
+      (owl math)
+
+      (only (lang intern) symbol->string string->symbol)
+      (only (lang eval) number->string)
+      (only (scheme misc) string->number)
+   )
 
 (begin
    
