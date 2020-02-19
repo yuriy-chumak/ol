@@ -4,19 +4,13 @@
    (export gensym)
 
    (import
-      (scheme core)
-      (owl symbol)
+      (scheme base)
       (owl string)
       (owl list)
       (owl render)
-      (lang intern)
       (owl math))
 
    (begin
-      ; now in lib-intern
-      ;(define (string->symbol str) (interact 'intern str))
-      ;(define (symbol->string x) (ref x 1))
-
       ; return the gensym id of exp (number) or #false
 
       (define (count-gensym-id str pos end n)

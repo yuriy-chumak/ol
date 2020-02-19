@@ -15,8 +15,7 @@
       (exports (owl ff))
       (exports (owl io))
       (exports (owl lazy))
-      (exports (owl string))
-      (exports (owl symbol))
+      (exports (owl string))     ; deprecated, included in (scheme base)
       (exports (owl sort))
       (exports (otus blobs))
       (exports (owl render))
@@ -24,15 +23,12 @@
       (exports (owl fasl))
       (exports (owl time))
       (exports (owl regex))
-      (exports (owl math-extra))
-      (exports (owl math))
+      (exports (owl math-extra)) ; deprecated, included in (scheme base)
+      (exports (owl math))       ; deprecated, included in (scheme base)
       
       ; lang functions
       number->string
       string->number
-
-      symbol->string
-      string->symbol
 
       ; ol functions
       for-each
@@ -56,7 +52,6 @@
       (owl lazy)
       (owl math-extra)
       (owl string)
-      (owl symbol)
       (owl sort)
       (owl fasl)
       (otus blobs)
@@ -65,7 +60,6 @@
       (owl interop)
       (owl math)
 
-      (only (lang intern) symbol->string string->symbol)
       (only (lang eval) number->string)
       (only (scheme misc) string->number)
    )

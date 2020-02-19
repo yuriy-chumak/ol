@@ -39,7 +39,6 @@
       (lang env)
       (owl interop)
       (owl time) ;; for testing metadata
-      (owl symbol)
       (otus blobs)
       (owl io)
       (owl math)

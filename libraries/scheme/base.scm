@@ -202,10 +202,10 @@
    string
    string->list
       ;; string->number
-      ;; string->symbol
+   string->symbol
       ;; string->utf8
-      ;; string->vector
-      ;; string-append
+   string->vector
+   string-append
       ;; string-copy
       ;; string-copy!
       ;; string-fill!

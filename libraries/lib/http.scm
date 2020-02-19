@@ -7,8 +7,7 @@
   (import (scheme base) (scheme srfi-1)
       (owl parse)
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
-      (otus vm)
-      (only (lang intern) string->symbol))
+      (otus vm))
 
 (begin
    (define (upper-case? x) (<= #\A x #\Z))

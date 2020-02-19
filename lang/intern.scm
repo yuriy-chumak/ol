@@ -11,14 +11,7 @@
 ; e.g. (eq? 'sym1 'sym1) => #true
 (define-library (lang intern)
    (export
-      string->symbol
-      symbol->string
-      ;initialize-interner
       string->uninterned-symbol
-      ;string->interned-symbol       ;; tree string → tree' symbol
-      ;put-symbol                    ;; tree sym → tree'
-      ;empty-symbol-tree
-      ;defined?
 
       fork-intern-interner)
 
@@ -29,8 +22,7 @@
       (owl list)
       (owl math)
       (owl io)
-      (owl ff)
-      (owl symbol))
+      (owl ff))
 
    (begin
       ; hack warning, could use normal = and < here, but
@@ -71,12 +63,6 @@
 
       (define (string->uninterned-symbol str)
          (vm:new type-symbol str))
-
-      (define (symbol->string ob)
-         (ref ob 1))
-
-      (define (string->symbol str)
-         (interact 'intern str))
 
       ; lookup node str sym -> node' sym'
       (define (maybe-lookup-symbol node str)

@@ -1,6 +1,5 @@
 (define-library (file ini)
 (import (otus lisp)
-      (only (lang intern) string->symbol)
       (owl parse))
 (export
    ini-parse-file)

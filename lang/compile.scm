@@ -19,7 +19,6 @@
       (scheme core)
       (owl math)
       (owl list)
-      (owl symbol)
       (owl list-extra)
       (lang ast)
       (lang env)

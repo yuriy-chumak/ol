@@ -1436,11 +1436,8 @@
                   #true
                   (and (equal? (car os) (car o)) (loop (cdr o)))))))
 
-      ; procedure:  (symbol->string symbol)
-      (declare-external symbol->string '(lang intern))  ; * (lang eval)
-
-      ; procedure:  (string->symbol string)
-      (declare-external string->symbol '(lang intern))  ; * (lang eval)
+      ; procedure:  (symbol->string symbol)  * (owl string)
+      ; procedure:  (string->symbol string)  * (owl string)
 
       ; 6.3.4  Characters   * moved to (scheme characters)
       ; Characters are objects that represent printed characters such as letters and digits.
@@ -2107,7 +2104,7 @@
       memq memv member
       list-copy
       ; 6.5. Symbols
-      symbol? symbol=? symbol->string string->symbol
+      symbol? symbol=? ;symbol->string string->symbol
       ; 6.8  Vectors
       vector?
       make-vector

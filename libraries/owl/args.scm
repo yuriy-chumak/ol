@@ -12,7 +12,6 @@
 
    (import
       (scheme base)
-      (owl symbol)
       (owl list-extra)
       (owl lazy)
       (owl math)

@@ -30,7 +30,7 @@
       (owl io) ; testing
       (owl unicode)
       (only (owl interop) interact)
-      (only (lang intern) string->symbol string->uninterned-symbol)
+      (only (lang intern) string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 
    (begin

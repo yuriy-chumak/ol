@@ -1,7 +1,6 @@
 (define-library (file xml)
 (import
    (otus lisp)
-   (only (lang intern) string->symbol)
    (only (scheme misc) string->number)
    (owl parse))
 

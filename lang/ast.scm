@@ -13,7 +13,6 @@
       (owl list-extra)
       (owl math)
       (owl list)
-      (owl symbol)
       (owl io) ; for display
       (lang env))
 

@@ -14,7 +14,6 @@
       (owl io)
       (owl sort)
       (lang gensym)
-      (owl symbol)
       (lang env))
 
    (begin

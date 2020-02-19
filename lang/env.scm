@@ -23,7 +23,6 @@
       (lang primop)
       (owl ff)
       (owl list)
-      (owl symbol)
       (owl string)
       (owl render)
       (owl list-extra)

@@ -13,6 +13,9 @@
       list->string       ; aka runes->string
       string->list       ; aka string->runes
 
+      symbol->string     ; moved from (lang intern)
+      string->symbol     ; moved from (lang intern)
+
       string-length
       string-eq?
       string-append
@@ -60,6 +63,7 @@
    (import (owl list-extra))
    (import (owl lazy))
    (import (owl math))
+   (import (only (owl interop) interact)) ; used by string->symbol
 
    (include "owl/unicode-char-folds.scm")
 
@@ -176,6 +180,11 @@
       (define (string->runes str)    (str-foldr cons null str))
       (define (render-quoted-string str tl)
          (str-foldr encode-quoted-point tl str))
+
+      (define (symbol->string ob)
+         (ref ob 1))
+      (define (string->symbol str)
+         (interact 'intern str)) ; do not works without (lang intern)
 
 
       ;; making strings (temp)

@@ -4,7 +4,6 @@
       json-parser)
    (import
       (otus lisp)
-      (lang intern)
       (lang sexp)
       (owl parse)
       (file parser))

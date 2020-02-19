@@ -64,7 +64,7 @@
                                  (ilist #\space #\. #\space (render obj tl))))))))
 
                ((symbol? obj)
-                  (render (symbol->string obj) tl))
+                  (render-symbol obj tl))
 
                ((bytevector? obj)
                   (ilist #\# #\u #\8 (render (bytevector->list obj) tl)))
@@ -198,7 +198,7 @@
                      (delay (k sh))))
 
                ((symbol? obj)
-                  (render (symbol->string obj) (delay (k sh))))
+                  (render-symbol obj (delay (k sh))))
 
                ((bytevector? obj)
                   (ilist #\# #\u #\8
