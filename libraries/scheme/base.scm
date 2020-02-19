@@ -56,14 +56,14 @@
    cddr
    cdr
    ceiling
-      ;; char->integer
+   char->integer
       ;; char-ready?
-      ;; char<=?
-      ;; char<?
-      ;; char=?
-      ;; char>=?
-      ;; char>?
-      ;; char?
+   char<=?
+   char<?
+   char=?
+   char>=?
+   char>?
+   char?
       ;; close-input-port
       ;; close-output-port
    close-port
@@ -116,7 +116,7 @@
    inexact?
       ;; input-port-open?
       ;; input-port?
-      ;; integer->char
+   integer->char
    integer?
    lambda
    lcm
@@ -330,12 +330,6 @@
       (define (cdddr x) (cdr (cdr (cdr x))))
 
 
-      ;; (define current-input-port (make-parameter stdin))
-      ;; (define current-output-port (make-parameter stdout))
-      ;; (define current-error-port (make-parameter stderr))
-
-      ; 6.4  Pairs and lists
-
       ; procedure:  (assq obj alist)
       ; procedure:  (assv obj alist)
       ; procedure:  (assoc obj alist)
@@ -386,6 +380,47 @@
       (define (list-copy obj)
          (map (lambda (o) (vm:cast o (type o))) obj))
 
+      ;; 6.6.  Characters
+
+      ; procedure:  (char? obj)
+      (define (char? o) (eq? (type o) type-fix+))
+
+      ; * internal staff
+      (define (compare cmp a b)
+         (let loop ((a a) (b b))
+            (or (null? b)
+                (and (cmp a (car b))
+                     (loop (car b) (cdr b))))))
+
+      ; procedure:  (char=? char1 char2)
+      (define (char=? a . b)
+         (compare eq? a b))
+
+      ; procedure:  (char<? char1 char2)
+      (define (char<? a . b)
+         (compare less? a b))
+
+      ; procedure:  (char>? char1 char2)
+      (define (great? a b)
+         (not (less? a b)))
+      (define (char>? a b)
+         (compare great? a b))
+
+      ; procedure:  (char<=? char1 char2)
+      (define (less-eq? a b)
+         (or (less? a b) (eq? a b)))
+      (define (char<=? a b)
+         (compare less-eq? a b))
+
+      ; procedure:  (char>=? char1 char2)
+      (define (great-eq? a b)
+         (or (great? a b) (eq? a b)))
+      (define (char>=? a b)
+         (compare great-eq? a b))
+
+      (define (char->integer x) x)
+      (define (integer->char x) x)
+
       ;; *********************
       ;; 6.10.  Control features
       ;
@@ -403,5 +438,9 @@
       ; read
       (define (eof-object) #eof)
       (define (eof-object? o) (eq? o #eof))
+
+      ;; (define current-input-port (make-parameter stdin))
+      ;; (define current-output-port (make-parameter stdout))
+      ;; (define current-error-port (make-parameter stderr))
 
 ))

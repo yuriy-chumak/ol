@@ -130,9 +130,14 @@ R<sup>7</sup>RS DIFFERENCES
     - *explanation: Inexactness is an inexactness - we may lose the fractional part and not notice it. So let's be a little paranoid.*
 * 6.4. Pairs and lists
   * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
+* 6.6. Characters
+  * CHARACTERS in Ol is a **small numbers**, but a *characters* in Scheme.
+    - *explanation: This is for historical reason. Ol supports two types of numbers - 'small' numbers and 'long' numbers. 'Small' numbers are used as 'glyphs' (or 'runes' in other word) inside strings for better Unicode support. An additional 'character' type with requirements to use the char->integer and integer->char functions every time is too boring and slow. Thanks.*
+    - *note: Ol supports full Unicode 12.1.0 (2019 May 7) character set.*
+    - *note: If you want to print a character in the form of a letter (or a digit, etc.), use a function 'string', i.e. instead of (print #\λ) use (print (string #\λ)), otherwise you will get a number 955.*
 * 6.9. Bytevectors
   * NEGATIVE indices of a bytevector is **valid** in Ol, but *invalid* in Scheme.
-    - *explanation: Negative indices of a bytevector can be used to access to the n-th element from the end of a vector. I mean "-1" is the last vector element, "-2" - before the last element, "-N" - N-th element from the end of a bytevector.*
+    - *note: Negative indices of a bytevector can be used to access to the n-th element from the end of a vector. I mean "-1" is the last vector element, "-2" - before the last element, "-N" - N-th element from the end of a bytevector.*
 * 6.11. Exceptions
   * **No** exceptions handling in Ol.
     - *note: Yet.*

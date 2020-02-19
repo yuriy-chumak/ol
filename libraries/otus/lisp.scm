@@ -5,7 +5,6 @@
       (exports (scheme srfi-1))  ; * List Library
 ;      (exports (r5rs srfi-87)) ; * => in case clauses ; builtin (scheme core)
 ;      (exports (scheme r5rs iteration)) ; 4.2.4 Iteration (do)
-      (exports (scheme characters))
       (exports (scheme base))
       (exports (scheme read))
 
@@ -38,7 +37,6 @@
       (scheme core)
       (scheme srfi-1)
       (scheme srfi-87)
-      (scheme characters)
       (scheme base)
       (scheme read)
 
