@@ -1416,7 +1416,7 @@
       ; procedure:  (symbol->string symbol)  * (owl string)
       ; procedure:  (string->symbol string)  * (owl string)
 
-      ; 6.3.4  Characters   * (scheme base), (scheme char)
+      ; 6.6  Characters   * (scheme base), (scheme char)
       ; Characters are objects that represent printed characters such as letters and digits.
       ; Characters are written using the notation #\<character> or #\<character name>.
       ;

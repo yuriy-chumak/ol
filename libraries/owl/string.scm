@@ -49,13 +49,10 @@
       string-ci>?        ; str str → bool
       string-ci<=?       ; str str → bool
       string-ci>=?       ; str str → bool
-      unicode-fold-char  ; char tail → (char' ... tail)
-      make-string        ; n char → str
-      char=?             ; cp cp → bool (temp)
-      char-ci=?          ; cp cp → bool (temp)
-      )
+      make-string)        ; n char → str
 
    (import (scheme core))
+   (import (scheme char))
 
    (import (owl iff))
    (import (owl unicode))
@@ -386,21 +383,12 @@
                (cond
                   ((not a) (if b 1 2))
                   ((not b) 3)
-                  ((< a b) 1) ;; todo: less? and eq? after they are interned
-                  ((= a b) (loop la lb))
+                  ((less? a b) 1) ;; todo: less? and eq? after they are interned
+                  ((eq? a b) (loop la lb))
                   (else 3)))))
 
-      ;; iff of codepoint → codepoint | (codepoint ...), the first being equal to (codepoint)
-      (define char-fold-iff
-         (fold
-            (λ (iff node)
-               (if (= (length node) 2)
-                  (iput iff (car node) (cadr node))
-                  (iput iff (car node) (cdr node))))
-            #empty char-folds))
-
       (define (unicode-fold-char codepoint tail)
-         (let ((mapping (iget char-fold-iff codepoint codepoint)))
+         (let ((mapping (char-upcase codepoint)))
             (if (pair? mapping) ;; mapped to a list
                (append mapping tail)
                (cons mapping tail)))) ;; self or changed
@@ -414,20 +402,13 @@
          (lets
             ((cp ll (uncons ll #false)))
             (if cp
-               (let ((cp (iget char-fold-iff cp cp)))
+               (let ((cp (char-upcase cp)))
                   (if (pair? cp)
                      (append cp (upcase ll))
                      (pair cp (upcase ll))))
                null)))
 
-      (define char=? eq?)
-
       ; fixme: incomplete, added because needed for ascii range elsewhere
-      (define (char-ci=? a b)
-         (or (eq? a b)
-            (eq?
-               (iget char-fold-iff a a)
-               (iget char-fold-iff b b))))
 
       (define (string? o)
          (case (type o)

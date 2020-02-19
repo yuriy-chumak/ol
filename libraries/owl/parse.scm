@@ -28,6 +28,7 @@
 
    (import
       (scheme base)
+      (scheme char)
 
       (owl lazy)
       (owl math)

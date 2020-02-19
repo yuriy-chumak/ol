@@ -24,6 +24,8 @@
       (exports (owl regex))
       (exports (owl math-extra)) ; deprecated, included in (scheme base)
       (exports (owl math))       ; deprecated, included in (scheme base)
+
+      (exports (scheme bytevector))
       
       ; misc functions
       string->number
@@ -56,6 +58,8 @@
       (owl render)
       (owl interop)
       (owl math)
+
+      (scheme bytevector)
 
       (only (scheme misc) string->number)
    )

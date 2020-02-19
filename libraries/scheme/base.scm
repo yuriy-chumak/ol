@@ -2,7 +2,6 @@
 (export
    (exports (scheme core))
    (exports (scheme vectors))
-   (exports (scheme bytevector))
 
    caaar caadr cadar caddr ; moved from (scheme cxr)
    cdaar cdadr cddar cdddr ; moved from (scheme cxr)
@@ -392,30 +391,30 @@
                 (and (cmp a (car b))
                      (loop (car b) (cdr b))))))
 
-      ; procedure:  (char=? char1 char2)
+      ; procedure:  (char=? char1 char2 ...)
       (define (char=? a . b)
          (compare eq? a b))
 
-      ; procedure:  (char<? char1 char2)
+      ; procedure:  (char<? char1 char2 ...)
       (define (char<? a . b)
          (compare less? a b))
 
-      ; procedure:  (char>? char1 char2)
+      ; procedure:  (char>? char1 char2 ...)
       (define (great? a b)
-         (not (less? a b)))
-      (define (char>? a b)
+         (less? b a))
+      (define (char>? a . b)
          (compare great? a b))
 
-      ; procedure:  (char<=? char1 char2)
+      ; procedure:  (char<=? char1 char2 ...)
       (define (less-eq? a b)
          (or (less? a b) (eq? a b)))
-      (define (char<=? a b)
+      (define (char<=? a . b)
          (compare less-eq? a b))
 
-      ; procedure:  (char>=? char1 char2)
+      ; procedure:  (char>=? char1 char2 ...)
       (define (great-eq? a b)
          (or (great? a b) (eq? a b)))
-      (define (char>=? a b)
+      (define (char>=? a . b)
          (compare great-eq? a b))
 
       (define (char->integer x) x)
