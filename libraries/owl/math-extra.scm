@@ -88,6 +88,8 @@
          (let ((sq (isqrt n)))
             (values sq (sub n (mul sq sq)))))
 
+      (assert (let*((x y (exact-integer-sqrt 17))) (list x y))  ===> '(4 1))
+
       (define (good-enough? guess1 guess0 precision)
          (< (abs (- guess1 guess0)) (abs (* guess0 precision))))
       (define (better-guess guess x) (/ (+ guess (/ x guess)) 2))
