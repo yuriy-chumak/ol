@@ -142,9 +142,6 @@
       (set-car! cursor x)
       (set-cdr! cursor y))
 
-   (define (number->string n)
-      (list->string (render-number n null 10)))
-
    ; internal function
    (define (write . text)
       (for-each (lambda (text)

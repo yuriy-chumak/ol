@@ -95,12 +95,6 @@
       (setq core-profile-error (lambda (function module)
          (runtime-error "Core profile error:"
             (cons "Function" (cons function (cons "require to import" (cons module (cons "module." #null))))))))
-
-      (define-syntax declare-external
-         (syntax-rules (quote)
-            ((declare-external function module)
-               (setq function (lambda args
-                  (core-profile-error (quote function) module))))))
    )
 
    ; =================================================================
@@ -271,7 +265,6 @@
       ; 4.1.4  Procedures
       ;
       ; syntax:  (lambda <formals> <body>)    * builtin
-
       (define-syntax λ                  ; * ol specific
          (syntax-rules ()
             ((λ . x) (lambda . x))))
@@ -1075,13 +1068,11 @@
 
 
       ; 6.2.7  Numerical input and output
-      ; procedure:  (number->string z)
-      ; procedure:  (number->string z radix)
-      (declare-external number->string '(lang eval))
+      ; procedure:  (number->string z)        * (scheme base)
+      ; procedure:  (number->string z radix)  * (scheme base)
 
-      ; procedure:  (string->number z)
-      ; procedure:  (string->number z radix)
-      (declare-external string->number '(scheme misc))
+      ; procedure:  (string->number z)        * (scheme misc)
+      ; procedure:  (string->number z radix)  * (scheme misc)
 
       ; 6.2.8  Other data types
       ;
@@ -1989,8 +1980,6 @@
       exact? inexact? exact-integer?
       zero?
       inexact exact
-      ; 6.2.7  Numerical input and output
-      number->string string->number
       ; 6.2.8  Other data types
       type-bytecode
       type-proc type-clos

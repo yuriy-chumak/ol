@@ -89,8 +89,6 @@
 
 (import (scheme misc)
         (otus random!))
-(define (number->string n)
-   (list->string (render-number n null 10)))
 (define (system command) (syscall- 1017 (c-string command) #f #f))
 (define (system command) #t)
 

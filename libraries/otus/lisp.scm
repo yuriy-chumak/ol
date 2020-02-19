@@ -26,8 +26,7 @@
       (exports (owl math-extra)) ; deprecated, included in (scheme base)
       (exports (owl math))       ; deprecated, included in (scheme base)
       
-      ; lang functions
-      number->string
+      ; misc functions
       string->number
 
       ; extended ol functions
@@ -60,7 +59,6 @@
       (owl interop)
       (owl math)
 
-      (only (lang eval) number->string)
       (only (scheme misc) string->number)
    )
 

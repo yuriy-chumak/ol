@@ -4,9 +4,6 @@
         (otus ffi)
         (scheme misc))
 
-(define (number->string n)
-   (list->string (render-number n null 10)))
-
 (define tcl (Tcl_CreateInterp))
 (Tcl_Init tcl)
 

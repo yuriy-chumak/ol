@@ -159,7 +159,7 @@
       ;; newline
    not
    null?
-      ;; number->string
+   number->string
    number?
    numerator
    odd?
@@ -201,7 +201,7 @@
       ;; square
    string
    string->list
-      ;; string->number
+   string->number  ; (scheme misc)
    string->symbol
       ;; string->utf8
    string->vector
@@ -267,6 +267,16 @@
       (owl string))
 
    (begin
+      ; * internal staff
+      (setq base-profile-error (lambda (function module)
+         (runtime-error "Base profile error:"
+            (cons "Function" (cons function (cons "require to import" (cons module (cons "module." #null))))))))
+
+      (define-syntax declare-external
+         (syntax-rules (quote)
+            ((declare-external function module)
+               (setq function (lambda args
+                  (base-profile-error (quote function) module))))))
 
       ; 4.1.7. Inclusion
       ;
@@ -281,6 +291,26 @@
       ; syntax:  (define-record-type <name> <constructor> <pred> <field> ...)  * not supported
       (setq define-record-type (lambda (name constructor pred . fields)
          (runtime-error "No define-record-type is implemented." #null)))
+
+      ; 6.2.7.  Numerical input and output
+
+      ; procedure:  (number->string z)        * (scheme base)
+      ; procedure:  (number->string z radix)  * (scheme base)
+      (define number->string (case-lambda
+         ((n)  (list->string (render-number n '() 10)))
+         ((n radix)
+               (list->string (render-number n '() radix)))))
+
+      (assert (number->string 0)            ===> "0")
+      (assert (number->string 1.2)          ===> "6/5")
+      (assert (number->string 1.2 4)        ===> "12/11")
+      (assert (number->string -77)          ===> "-77")
+      (assert (number->string 7-4i)         ===> "7-4i")
+      (assert (number->string +inf.0)       ===> "+inf.0")
+
+      ; procedure:  (string->number z)        * (scheme misc)
+      ; procedure:  (string->number z radix)  * (scheme misc)
+      (declare-external string->number '(scheme misc))
 
       ; 6.4  Pairs and lists
       ; ...
@@ -356,4 +386,5 @@
       ; read
       (define (eof-object) #eof)
       (define (eof-object? o) (eq? o #eof))
+
 ))
