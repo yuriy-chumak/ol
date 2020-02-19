@@ -84,7 +84,7 @@
    define-record-type
 ;  define-syntax  * builtin (lang eval)
    define-values
-      ;; denominator
+   denominator
       ;; do
       ;; dynamic-wind
       ;; else ;?
@@ -102,7 +102,7 @@
       ;; exact-integer-sqrt
    exact-integer?
    exact?
-      ;; expt
+   expt
       ;; features
       ;; file-error?
    floor
@@ -137,32 +137,32 @@
       ;; letrec-syntax
    list
       ;; list->string
-      ;; list->vector
+   list->vector
       ;; list-copy
-      ;; list-ref
-      ;; list-set!
+   list-ref
+   list-set!
       ;; list-tail
-      ;; list?
+   list?
    make-bytevector
       ;; make-list
       ;; make-parameter
       ;; make-string
    make-vector
    map
-      ;; max
+   max
    member
    memq
    memv
-      ;; min
-      ;; modulo
-      ;; negative?
+   min
+   modulo
+   negative?
       ;; newline
    not
    null?
       ;; number->string
    number?
-      ;; numerator
-      ;; odd?
+   numerator
+   odd?
       ;; open-input-bytevector
       ;; open-input-string
       ;; open-output-bytevector
@@ -175,11 +175,11 @@
       ;; peek-char
       ;; peek-u8
    port?
-      ;; positive?
-      ;; procedure?
+   positive?
+   procedure?
    quasiquote
    quote
-      ;; quotient
+   quotient
       ;; raise
       ;; raise-continuable
    rational?
@@ -192,15 +192,15 @@
       ;; read-string
       ;; read-u8
    real?
-      ;; remainder
+   remainder
    reverse
-      ;; round
+   round
    set!
    set-car!
    set-cdr!
       ;; square
-      ;; string
-      ;; string->list
+   string
+   string->list
       ;; string->number
       ;; string->symbol
       ;; string->utf8
@@ -210,20 +210,20 @@
       ;; string-copy!
       ;; string-fill!
       ;; string-for-each
-      ;; string-length
+   string-length
       ;; string-map
-      ;; string-ref
+   string-ref
       ;; string-set!
-      ;; string<=?
-      ;; string<?
-      ;; string=?
-      ;; string>=?
-      ;; string>?
-      ;; string?
-      ;; substring
-      ;; symbol->string
-      ;; symbol=?
-      ;; symbol?
+   string<=?
+   string<?
+   string=?
+   string>=?
+   string>?
+   string?
+   substring
+   symbol->string
+   symbol=?
+   symbol?
       ;; syntax-error
       ;; syntax-rules
       ;; textual-port?
@@ -263,7 +263,8 @@
       (scheme vectors)
       (scheme bytevector)
       ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (required coroutines)
-      (owl io) (owl math) (owl math-extra))
+      (owl io) (owl math) (owl math-extra)
+      (owl string))
 
    (begin
 
