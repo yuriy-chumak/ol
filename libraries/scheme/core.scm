@@ -485,7 +485,6 @@
       ; is slightly less discriminating than eq?.
 
       ; procedure:  (eq? obj1 obj2)   * builtin
-      (define eq? eq?)
 
       ; procedure:  (equal? obj1 obj2)
       ;
@@ -1194,13 +1193,10 @@
       ;assert (pair? #(a b))                ===>  #f) ; vectors will be defined later
 
       ; procedure:  (cons obj1 obj2)    * builtin
-      (define cons cons)
 
       ; procedure:  (car pair)          * builtin
-      (define car car)
 
       ; procedure:  (cdr pair)          * builtin
-      (define cdr cdr)
 
       ; procedure:  (set-car! pair obj)
       ;
@@ -1688,8 +1684,6 @@
       (assert (call-with-current-continuation procedure?)
                                                 ===> #true)
       ; procedure:  (apply proc arg1 ... args)  * builtin
-      ;
-      (define apply apply)
 
       ; procedure:  (map proc list1 list2 ...)
       ;
@@ -1719,8 +1713,8 @@
 
          (assert (map cadr '((a b) (d e) (g h)))  ===> '(b e h))
       
-      ; procedure:  (string-map proc string1 string2 ...)  * (scheme strings)
-      ; procedure:  (vector-map proc vector1 vector2 ...)  * (scheme vectors)
+      ; procedure:  (string-map proc string1 string2 ...)  * (scheme string)
+      ; procedure:  (vector-map proc vector1 vector2 ...)  * (scheme vector)
 
       ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
       (define for-each (case-lambda
@@ -1739,8 +1733,8 @@
                            (loop (map cdr a)))))
          ((f) #false)))
 
-      ; procedure:  (string-for-each proc string1 string2 ...)  * (scheme strings)
-      ; procedure:  (vector-for-each proc vector1 vector2 ...)  * (scheme vectors)
+      ; procedure:  (string-for-each proc string1 string2 ...)  * (scheme string)
+      ; procedure:  (vector-for-each proc vector1 vector2 ...)  * (scheme vector)
 
       ; procedure:  (call-with-current-continuation proc)
       (define call-with-current-continuation
@@ -1905,25 +1899,6 @@
       ;(define-syntax import  (syntax-rules (_import)  ((import  thing ...) (_import  (quote thing) ...))))
       ;(define-syntax include (syntax-rules (_include) ((include thing ...) (_include (quote thing) ...))))
 
-
-;      (define o (λ (f g) (λ (x) (f (g x)))))
-;
-;      (define i (λ (x) x))
-;
-;      (define self i)
-;
-;      (define (i x) x)
-;      (define (k x y) x)
-
-
-      ;; these are core data structure type tags which are fixed and some also relied on by the vm
-
-      ;; ALLOCATED
-
-
-      ;;           allocated/pointers     allocated/rawdata    immediate
-      ;; (size  x)         n                       n               #false
-
       (define (value? obj) (eq? (size obj) #false))
       (define (reference? obj) (not (value? obj)))
 
@@ -1956,64 +1931,6 @@
          (eq? (type o) type-port))
 
 
-
-
-      ; 4. Expressions
-      ; 4.1 Primitive expression types
-      ; 4.1.1 Variable references
-
-      ; 4.1.1  Variable references
-;      (define-syntax define
-;         (syntax-rules (lambda λ)
-;            ((define op a b . c)
-;               (define op (begin a b . c)))
-;            ((define ((op . args) . more) . body)
-;               (define (op . args) (lambda more . body)))
-;            ((define (op . args) body)
-;               (define op
-;                  (letrec ((op (lambda args body))) op)))
-;            ((define name (lambda (var ...) . body))
-;               (setq name (let-eval (name) ((lambda (var ...) . body)) name)))
-;            ((define name (λ (var ...) . body)) ; fasten for (λ) process
-;               (setq name (let-eval (name) ((lambda (var ...) . body)) name)))
-;            ((define op val)
-;               (setq op val))))
-
-      ; 4.1.2 Literal expressions
-      ; ...
-
-
-      ;; (define-syntax tuple ; * deprecated
-      ;;    (syntax-rules ()
-      ;;       ((tuple . tail)
-      ;;          (vm:new type-vector . tail))))
-
-
-      ; 6. Standard procedures
-
-
-      ;; (complex? obj ) procedure
-      ;; (real? obj ) procedure
-      ;; (rational? obj ) procedure
-      ;; (integer? obj ) procedure
-
-
-      ; 6.3. Other data types
-      ; 6.3.1. Booleans
-      ;; (not obj) library procedure
-
-
-      ;(assert #t (procedure? car))
-      ;(assert #f (procedure? 'car))
-      ;(assert #t (procedure? (lambda (x) x)))
-
-
-      ;; essential procedure: apply proc args
-
-      ;; ...
-
-      ;; procedure: call-with-current-continuation proc
-
       ; non standard, owl extension
       (define-syntax let*/cc
          (syntax-rules (call/cc)
@@ -2043,11 +1960,9 @@
       ;  ff-apply vector-apply
 
       ; 4.1.4  Procedures
-      λ
-      ; 4.1.5  Conditionals
-      if
-      ; 4.2.2  Conditionals
-      and or
+      λ ; same as 'lambda'
+      ; 4.1.5, 4.2.2  Conditionals
+      if and or
       ; 4.1.6  Assignments
       set!
       ; 4.2.1  Binding constructs and Sequencing
@@ -2056,7 +1971,7 @@
       define ;define*
       define-values
       ; 6.1  Equivalence predicates
-      eqv? equal?  ;eq? (* builtin)
+      eqv? equal?  ;eq?  * builtin
       ; 4.2.2  Conditionals
       cond case
       when unless
@@ -2065,8 +1980,7 @@
       ; 4.2.8  Quasiquotation
       quasiquote
       ; 4.2.9  Case-lambda
-      (exports (scheme case-lambda))
-
+      case-lambda ;  * (scheme case-lambda)
       ; 6.2.1  Numerical types
       type-fix+ type-fix- type-int+ type-int-
       type-rational type-complex type-inexact
@@ -2096,7 +2010,7 @@
       ; 6.3  Booleans
       not boolean?
       ; 6.4. Pairs and lists
-      pair? ; cons car cdr (* builtin)
+      pair? ;cons car cdr  * builtin
       set-car! set-cdr!
       caar cadr cdar cddr
       null? list?
@@ -2105,7 +2019,7 @@
       memq memv member
       list-copy
       ; 6.5. Symbols
-      symbol? symbol=? ;symbol->string string->symbol
+      symbol? symbol=? ;symbol->string string->symbol  * (owl string)
       ; 6.8  Vectors
       vector?
       make-vector
@@ -2117,8 +2031,8 @@
       ; 6.10  Control features
       ff? bytecode? function?
       procedure? apply
-      map ;string-map vector-map
-      for-each ;string-for-each vector-for-each
+      map      ;string-map vector-map            * (owl string) (scheme vector)
+      for-each ;string-for-each vector-for-each  * (owl string) (scheme vector)
       call-with-current-continuation call/cc
       call-with-values
       

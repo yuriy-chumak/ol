@@ -30,8 +30,8 @@
       number->string
       string->number
 
-      ; ol functions
-      for-each
+      ; extended ol functions
+      for-each ; universal for lists, vectors and strings
       
       )
 
@@ -73,6 +73,8 @@
             (string->list x))
          ((vector? x)
             (vector->list x))
+         ((bytevector? x)
+            (bytevector->list x))
          (else
             x)))
 

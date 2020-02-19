@@ -1,3 +1,4 @@
+INVALID, SHOULD BE UPDATED
 ; July 23, 2003
 ; based on https://www.khronos.org/registry/egl/
 (define-library (EGL version-1-1)
