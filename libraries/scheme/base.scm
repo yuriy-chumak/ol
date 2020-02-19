@@ -138,7 +138,7 @@
    list
       ;; list->string
    list->vector
-      ;; list-copy
+   list-copy
    list-ref
    list-set!
       ;; list-tail
@@ -379,6 +379,18 @@
       (assert (assq '(a) '(((a)) ((b)) ((c))))              ===> #false)
       (assert (assq 5 '((2 3) (5 7) (11 13)))               ===> '(5 7)) ; * ol specific, (but in r7rs unspecified)
       (assert (assv 5 '((2 3) (5 7) (11 13)))               ===> '(5 7))
+
+      ; procedure:  (list-copy obj)
+      ;
+      ; Returns a newly allocated copy of the given obj if it is a
+      ; list. Only the pairs themselves are copied; the cars of the
+      ; result are the same (in the sense of eqv?) as the cars of list.
+      ; If obj is an improper list, so is the result, and the final cdrs
+      ; are the same in the sense of eqv?. An obj which is not a
+      ; list is returned unchanged. It is an error if obj is a circular
+      ; list.
+      (define (list-copy obj)
+         (map (lambda (o) (vm:cast o (type o))) obj))
 
       ;; *********************
       ;; 6.10.  Control features
