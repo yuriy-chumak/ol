@@ -1741,10 +1741,6 @@
             ((call-with-values thunk (lambda (arg ...) body))
                (values-apply (thunk) (lambda (arg ...) body)))))
 
-      ; procedure:  (values obj ...)  * ol builtin
-
-      ; procedure:  (call-with-values producer consumer) ; todo
-
       ; procedure:  (dynamic-wind before thunk after) ; todo
       ;
 
