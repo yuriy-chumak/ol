@@ -18,17 +18,17 @@
    ; 6.13.2.  Input
    eof-object eof-object?
 
-   ; -----------------------------
+   ; -----------------------------------------
    ; r7rs small (scheme base) list
    *
    +
    -
-      ;; ...
+;  ...            * reserved for use by Scheme
    /
    <
    <=
    =
-      ;; =>
+;  =>             * reserved for use by Scheme
    >
    >=
    abs
@@ -75,7 +75,7 @@
    close-port
    complex?
    cond
-;  cond-expand  * builtin, (lang eval)
+;  cond-expand    * builtin, (lang eval)
    cons
       ;; current-error-port
       ;; current-input-port
@@ -87,7 +87,7 @@
    denominator
       ;; do
       ;; dynamic-wind
-      ;; else ;?
+;  else           * reserved for use by Scheme
    eof-object     ; 6.13.2  Input
    eof-object?    ; 6.13.2  Input
    eq?
