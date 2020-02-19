@@ -40,7 +40,7 @@
    assv
    begin
       ;; binary-port?
-      ;; boolean=?
+   boolean=?
    boolean?
    bytevector
    bytevector-append
@@ -312,7 +312,18 @@
       ; procedure:  (string->number z radix)  * (scheme misc)
       (declare-external string->number '(scheme misc))
 
-      ; 6.4  Pairs and lists
+      ; 6.3.  Booleans
+      ; procedure: (boolean=? boolean1 boolean2 boolean3 ...)
+      (define boolean=? (case-lambda
+         ((a . b)
+            (let loop ((b b))
+               (if (null? b)
+                  #true
+                  (if (eq? (car b) a)
+                     (loop (cdr b))))))
+         (() #true)))
+
+      ; 6.4.  Pairs and lists
       ; ...
       ; due to frequent use, moved from (scheme cxr) to (scheme base)
       (define (caaar x) (car (car (car x))))
