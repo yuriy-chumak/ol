@@ -342,21 +342,21 @@
       ; assq procedure uses eq? to compare obj with the car fields
       ; of the pairs in alist, while assv uses eqv? and assoc uses
       ; compare if given and equal? otherwise.
-      (define (make-ass* comparer) ; helper
-         (letrec ((f (lambda (obj list)
-                        (unless (null? list)
-                           (if (comparer (caar list) obj)
-                              (car list)
-                              (f obj (cdr list)))))))
+      (define (make-ass* comparer) ; *internal staff
+         (letrec ((f (lambda (obj alist)
+                        (unless (null? alist)
+                           (if (comparer (caar alist) obj)
+                              (car alist)
+                              (f obj (cdr alist)))))))
             f))
       (define assq (make-ass* eq?))
       (define assv (make-ass* eqv?))
       (define assoc
          (case-lambda
-            ((obj list)
-               ((make-ass* equal?) obj list))
-            ((obj list compare)
-               ((make-ass* compare) obj list))))
+            ((obj alist)
+               ((make-ass* equal?) obj alist))
+            ((obj alist compare)
+               ((make-ass* compare) obj alist))))
 
       (assert (assoc 'oak
          '((pine . cones) (oak . acorns) (maple . seeds)))  ===> '(oak . acorns))
