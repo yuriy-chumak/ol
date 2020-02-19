@@ -858,8 +858,6 @@
 
       ; 5.5  Record-type definitions
       ; syntax:  (define-record-type <name> <constructor> <pred> <field> ...)  * not supported
-      (setq define-record-type (lambda (name constructor pred . fields)
-         (runtime-error "No define-record-type is implemented." #null)))
 
       ; 5.6  Libraries
       ; 5.6.1  Library Syntax
@@ -998,7 +996,7 @@
       (define (inexact? z)
          (unless (exact? z) #true))
 
-      ; procedure:  (exact-integer? z)
+      ; procedure:  (exact-integer? z)  * todo: (scheme base)
       (define exact-integer? integer?)
 
       ; library procedure:  (finite? z)  * implemented in (scheme inexact)
@@ -2032,7 +2030,7 @@
       syntax-error runtime-error
       assert error
 
-      apply ;apply/cc
+      ;apply (builtin) ;apply/cc
       call-with-current-continuation
       call/cc let*/cc
 
@@ -2058,7 +2056,7 @@
       define ;define*
       define-values
       ; 6.1  Equivalence predicates
-      eq? eqv? equal?
+      eqv? equal?  ;eq? (* builtin)
       ; 4.2.2  Conditionals
       cond case
       when unless
@@ -2068,8 +2066,6 @@
       quasiquote
       ; 4.2.9  Case-lambda
       (exports (scheme case-lambda))
-      ; 5.5  Record-type definitions
-      define-record-type
 
       ; 6.2.1  Numerical types
       type-fix+ type-fix- type-int+ type-int-
@@ -2100,7 +2096,7 @@
       ; 6.3  Booleans
       not boolean?
       ; 6.4. Pairs and lists
-      pair? cons car cdr
+      pair? ; cons car cdr (* builtin)
       set-car! set-cdr!
       caar cadr cdar cddr
       null? list?
@@ -2129,7 +2125,7 @@
       ; ----------------------------
       list length append reverse
       ilist
-       define-library
+      define-library
 
       port?  eof?
       value? reference?
