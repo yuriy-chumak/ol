@@ -32,7 +32,7 @@
 
       ; types
       TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
-      TPAIR TSYMBOL TTUPLE TVECTOR
+      TPAIR TSYMBOL TTUPLE TVECTOR TBYTEVECTOR
       TSTRING TSTRINGWIDE
       TBYTECODE TPROCEDURE TCLOSURE
       TVPTR TCALLABLE)
@@ -74,7 +74,7 @@
       (setq TPROCEDURE        17) ; reference, pure function
       (setq TCLOSURE          18) ; reference, function with closures
 
-      (setq TBYTEVECTOR       19) ; reference, bytevector
+      (setq TBYTEVECTOR       19) ; reference, raw
       ; 20
       (setq type-string-dispatch 21) ; reference
       ; 23

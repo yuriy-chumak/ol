@@ -130,6 +130,9 @@ R<sup>7</sup>RS DIFFERENCES
     - *explanation: Inexactness is an inexactness - we may lose the fractional part and not notice it. So let's be a little paranoid.*
 * 6.4. Pairs and lists
   * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
+* 6.9. Bytevectors
+  * NEGATIVE indices of a bytevector is **valid** in Ol, but *invalid* in Scheme.
+    - *explanation: Negative indices of a bytevector can be used to access to the n-th element from the end of a vector. I mean "-1" is the last vector element, "-2" - before the last element, "-N" - N-th element from the end of a bytevector.*
 * 6.11. Exceptions
   * **No** exceptions handling in Ol.
     - *note: Yet.*

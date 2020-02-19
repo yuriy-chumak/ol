@@ -1111,7 +1111,7 @@
       (define type-bytecode         TBYTECODE)  ; reference, blob bytecode
       (define type-proc             TPROCEDURE) ; reference, pure function
       (define type-clos             TCLOSURE)   ; reference, function with closure(s)
-      (define type-bytevector       19) ; reference, blob
+      (define type-bytevector       TBYTEVECTOR); reference, blob
 
       ; 20
       (define type-string-dispatch  21) ; reference
@@ -1636,22 +1636,22 @@
          (vm:makeb type-bytevector bytes))
 
       ; * extra bytevector staff implemented in (scheme bytevector)
-      ; procedure: (bytevector-length bytevector)
-      ; procedure: (bytevector-u8-ref bytevector k)
-      ; procedure: (bytevector-u8-set! bytevector k byte)
-      ; procedure: (bytevector-copy bytevector)
-      ; procedure: (bytevector-copy bytevector start)
-      ; procedure: (bytevector-copy bytevector start end)
-      ; procedure: (bytevector-copy! to at from)
-      ; procedure: (bytevector-copy! to at from start)
-      ; procedure: (bytevector-copy! to at from start end)
-      ; procedure: (bytevector-append bytevector ...)
-      ; procedure: (utf8->string bytevector)
-      ; procedure: (utf8->string bytevector start)
-      ; procedure: (utf8->string bytevector start end)
-      ; procedure: (string->utf8 string)
-      ; procedure: (string->utf8 string start)
-      ; procedure: (string->utf8 string start end)
+      ; procedure: (bytevector-length bytevector)           * (scheme bytevector)
+      ; procedure: (bytevector-u8-ref bytevector k)         * (scheme bytevector)
+      ; procedure: (bytevector-u8-set! bytevector k byte)   * (scheme bytevector)
+      ; procedure: (bytevector-copy bytevector)             * (scheme bytevector)
+      ; procedure: (bytevector-copy bytevector start)       * (scheme bytevector)
+      ; procedure: (bytevector-copy bytevector start end)   * (scheme bytevector)
+      ; procedure: (bytevector-copy! to at from)            * (scheme bytevector)
+      ; procedure: (bytevector-copy! to at from start)      * (scheme bytevector)
+      ; procedure: (bytevector-copy! to at from start end)  * (scheme bytevector)
+      ; procedure: (bytevector-append bytevector ...)       * (scheme bytevector)
+      ; procedure: (utf8->string bytevector)                * (scheme bytevector)
+      ; procedure: (utf8->string bytevector start)          * (scheme bytevector)
+      ; procedure: (utf8->string bytevector start end)      * (scheme bytevector)
+      ; procedure: (string->utf8 string)                    * (scheme bytevector)
+      ; procedure: (string->utf8 string start)              * (scheme bytevector)
+      ; procedure: (string->utf8 string start end)          * (scheme bytevector)
 
       ; 6.10  Control features
       ;
@@ -1859,6 +1859,7 @@
       ; 4.2.6  Quasiquotation
 
 
+      ; deprecated, todo: change to list
       (define-syntax ilist
          (syntax-rules ()
             ((ilist a) a)
@@ -2109,7 +2110,7 @@
       vector?
       make-vector
       vector
-      ; 6.9  Bytevectors
+      ; 6.9  Bytevectors   * (scheme bytevector)
       bytevector?
       make-bytevector
       bytevector
@@ -2123,7 +2124,7 @@
       
       ; ----------------------------
       list length append reverse
-      ilist
+      ilist ; deprecated
       define-library
 
       port?  eof?

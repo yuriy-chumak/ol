@@ -43,12 +43,12 @@
       ;; boolean=?
    boolean?
    bytevector
-      ;; bytevector-append
-      ;; bytevector-copy
-      ;; bytevector-copy!
+   bytevector-append
+   bytevector-copy
+   bytevector-copy!
    bytevector-length
    bytevector-u8-ref
-      ;; bytevector-u8-set!
+   bytevector-u8-set!
    bytevector?
    caar
    cadr
