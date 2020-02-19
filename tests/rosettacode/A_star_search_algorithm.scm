@@ -7,21 +7,10 @@
    (define (hash xy) ; internal hash
       (+ (<< (car xy) 16) (cdr xy)))
 
-   ; naive test for "is the cell is empty?"
+   ; "is the cell is empty?"
    (define (floor? x y)
-      (let by-y ((y y) (map level))
-         (cond
-            ((< y 0) #true)
-            ((null? map) #true)
-            ((= y 0)
-               (let by-x ((x x) (map (car map)))
-                  (if (< x 0) #true
-                  (if (null? map) #true
-                  (if (= x 0)
-                     (not (eq? (car map) 1))
-                  (by-x (- x 1) (cdr map)))))))
-            (else
-               (by-y (- y 1) (cdr map))))))
+      (let ((line (list-ref level y)))
+         (if line (not (eq? (list-ref line x) 1)))))
 
    (unless (equal? from to) ; search not finished yet
       (let step1 ((n 999) ; maximal count of search steps
