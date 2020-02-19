@@ -1996,7 +1996,6 @@
       make-list list length
       append reverse list-tail list-ref list-set!
       memq memv member
-      list-copy
       ; 6.5. Symbols
       symbol? symbol=? ;symbol->string string->symbol  * (owl string)
       ; 6.8  Vectors

@@ -12,12 +12,6 @@
    ;; current-output-port
    ;; current-error-port
 
-   ; 6.4.  Pairs and lists
-   assq assv assoc
-
-   ; 6.13.2.  Input
-   eof-object eof-object?
-
    ; -----------------------------------------
    ; r7rs small (scheme base) list
    *
@@ -88,8 +82,8 @@
       ;; do
       ;; dynamic-wind
 ;  else           * reserved for use by Scheme
-   eof-object     ; 6.13.2  Input
-   eof-object?    ; 6.13.2  Input
+   eof-object
+   eof-object?
    eq?
    equal?
    eqv?
@@ -99,7 +93,7 @@
       ;; error-object?
    even?
    exact
-      ;; exact-integer-sqrt
+   exact-integer-sqrt
    exact-integer?
    exact?
    expt
@@ -136,17 +130,17 @@
       ;; letrec*
       ;; letrec-syntax
    list
-      ;; list->string
+   list->string
    list->vector
    list-copy
    list-ref
    list-set!
-      ;; list-tail
+   list-tail
    list?
    make-bytevector
-      ;; make-list
+   make-list
       ;; make-parameter
-      ;; make-string
+   make-string
    make-vector
    map
    max
@@ -203,7 +197,7 @@
    string->list
    string->number  ; (scheme misc)
    string->symbol
-      ;; string->utf8
+   string->utf8
    string->vector
    string-append
       ;; string-copy
@@ -232,10 +226,10 @@
       ;; truncate-remainder
       ;; truncate/
       ;; u8-ready?
-      ;; unless
-      ;; unquote
-      ;; unquote-splicing
-      ;; utf8->string
+   unless
+;  unquote           * reserved for use by Scheme, used in (lang sexp)
+;  unquote-splicing  * reserved for use by Scheme, used in (lang sexp)
+   utf8->string
    values
    vector
    vector->list
