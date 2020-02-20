@@ -2,11 +2,17 @@
 (define-library (otus lisp)
 
    (export
-      (exports (scheme srfi-1))  ; * List Library
-;      (exports (r5rs srfi-87)) ; * => in case clauses ; builtin (scheme core)
-;      (exports (scheme r5rs iteration)) ; 4.2.4 Iteration (do)
       (exports (scheme base))
+      
+      ; all Ol functions, not only (scheme base) profile:
+      (exports (scheme srfi-1))  ; * List Library
+;      (exports (scheme r5rs iteration)) ; 4.2.4 Iteration (do)
+      
+      (exports (scheme vector))
+      (exports (scheme bytevector))
+
       (exports (scheme read))
+      (exports (scheme misc)) ; string->number
 
       (exports (owl list))
       (exports (owl rlist))
@@ -14,7 +20,7 @@
       (exports (owl ff))
       (exports (owl io))
       (exports (owl lazy))
-      (exports (owl string))     ; deprecated, included in (scheme base)
+      (exports (owl string))
       (exports (owl sort))
       (exports (otus blobs))
       (exports (owl render))
@@ -22,13 +28,8 @@
       (exports (owl fasl))
       (exports (owl time))
       (exports (owl regex))
-      (exports (owl math-extra)) ; deprecated, included in (scheme base)
-      (exports (owl math))       ; deprecated, included in (scheme base)
-
-      (exports (scheme bytevector))
-      
-      ; misc functions
-      string->number
+      (exports (owl math-extra))
+      (exports (owl math))
 
       ; extended ol functions
       for-each ; universal for lists, vectors and strings
@@ -59,9 +60,9 @@
       (owl interop)
       (owl math)
 
+      (scheme vector)
       (scheme bytevector)
-
-      (only (scheme misc) string->number)
+      (scheme misc)
    )
 
 (begin
