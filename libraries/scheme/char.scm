@@ -14,11 +14,11 @@
    ;;    char-upper-case?
    ;;    char-whitespace?
    ;;    digit-value
-   ;;    string-ci<=?
-   ;;    string-ci<?
-   ;;    string-ci=?
-   ;;    string-ci>=?
-   ;;    string-ci>?
+   ;;    string-ci<=?  * (owl string)
+   ;;    string-ci<?   * (owl string)
+   ;;    string-ci=?   * (owl string)
+   ;;    string-ci>=?  * (owl string)
+   ;;    string-ci>?   * (owl string)
    ;;    string-downcase
    ;;    string-foldcase
    ;;    string-upcase
@@ -59,10 +59,11 @@
 
       (assert (char-ci=? #\a)           ===> #true)
       (assert (char-ci=? #\a #\A)       ===> #true)
-      (assert (char-ci=? #\A #\A #\A)   ===> #true)
+      (assert (char-ci=? #\A #\A #\a)   ===> #true)
       (assert (char-ci=? #\a #\b)       ===> #false)
+      (assert (char-ci=? #\Σ #\σ)       ===> #true) ; greek 'sigma'
       (assert (char-ci=? #\я #\Я)       ===> #true) ; cyrillic 'ja'
-      (assert (char-ci=? #\ä #\Ä)       ===> #true) ; baltic 'ae'
+      (assert (char-ci=? #\ä #\Ä)       ===> #true) ; baltic 'aeae'
 
 
       ; procedure:  (char-ci<? char1 char2 ...)
@@ -75,10 +76,12 @@
 
       (assert (char-ci<? #\a)           ===> #true)
       (assert (char-ci<? #\a #\B)       ===> #true)
+      (assert (char-ci<? #\b #\A)       ===> #false)
       (assert (char-ci<? #\A #\b #\C)   ===> #true)
+      (assert (char-ci<? #\A #\c #\b)   ===> #false)
       (assert (char-ci<? #\a #\a)       ===> #false)
-      (assert (char-ci<? #\а #\Я)       ===> #true) ; cyrillic 'ja'
-      (assert (char-ci<? #\ä #\Ö)       ===> #true) ; baltic 'ae'
+      (assert (char-ci<? #\у #\Я)       ===> #true) ; cyrillic
+      (assert (char-ci<? #\ä #\Ö)       ===> #true) ; baltic
 
       ; procedure:  (char-ci>? char1 char2 ...)
       (define (>? a b)

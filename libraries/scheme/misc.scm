@@ -1,10 +1,7 @@
 (define-library (scheme misc)
    (export
       string->integer
-      string->number
-
-      ;fix:fixnum?
-      )
+      string->number)
 
    (import
       (scheme core)
