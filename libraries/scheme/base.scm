@@ -39,8 +39,8 @@
    bytevector-copy
    bytevector-copy!
    bytevector-length
-   bytevector-u8-ref
-   bytevector-u8-set!
+   bytevector-u8-ref  ; [yc] why not bytevector-ref like vector-ref?
+   bytevector-u8-set! ; [yc] why not bytevector-set! like vector-set!?
    bytevector?
    caar
    cadr
@@ -231,16 +231,16 @@
    values
    vector
    vector->list
-      ;; vector->string
-      ;; vector-append
-      ;; vector-copy
-      ;; vector-copy!
-      ;; vector-fill!
-      ;; vector-for-each
-      ;; vector-length
-      ;; vector-map
-      ;; vector-ref
-      ;; vector-set!
+   vector->string
+   vector-append
+   vector-copy
+   vector-copy!
+   vector-fill!
+   vector-for-each
+   vector-length
+   vector-map
+   vector-ref
+   vector-set!
    vector?
    when
       ;; with-exception-handler

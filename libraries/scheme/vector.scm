@@ -1,5 +1,5 @@
 (define-library (scheme vector) ; srfi-133
-   (version 1.0)
+   (version 1.1)
    (license MIT/LGPL3)
    (keywords (otus ol vector scheme))
    (description "
@@ -19,7 +19,8 @@
    ;      #(0 (2 2 2 2) "Anna")
    ;
    ; Additionally vectors can be written using the notation
-   ; [obj ...]     * ol specific
+   ; [obj ...], '[obj ...] and `[,obj ...]    * ol specific
+   ; 
 
    (export
       vector?     ; * (scheme core)
@@ -35,10 +36,10 @@
       vector->string
       string->vector
 
-      ;vector-copy
-      ;vector-copy!
+      vector-copy
+      vector-copy!
       vector-append
-      ;vector-fill!
+      vector-fill!
 
       vector-for-each
       vector-map
@@ -48,7 +49,8 @@
       (scheme core)
       (scheme srfi-1)
       (owl list)
-      (owl string))
+      (owl string)
+      (owl math))
 
 (begin
    ; The *length* of a vector is the number of elements that it
@@ -58,6 +60,34 @@
    ; length of the vector. The first element in a vector is indexed
    ; by zero, and the last element is indexed by one less than
    ; the length of the vector.
+
+   ; internal helpers
+   (define (make vec start end)
+      ; makes a list from vector part
+      (let loop ((pos end) (tail #null))
+         (if (less? pos start)
+            tail
+            (loop (|-1| pos) (cons (ref vec pos) tail)))))
+
+   (define (copy! to at from start end)
+      ; note: ref and set-ref for vectors starts from 1 not 0
+      (let loop ((start (|+1| start)) (p (|+1| at)))
+         (when (or (less? start end) (eq? start end)) ; <=
+            (set-ref! to p (ref from start))
+            (loop (|+1| start) (|+1| p))))
+      to)
+   (define (copy from start end)
+      (define out (make-vector (- end start)))
+      (copy! out 0 from start end))
+
+   (define (fill! to what start end)
+      ; note: ref and set-ref for vectors starts from 1 not 0
+      (let loop ((p (|+1| start)))
+         (when (or (less? p end) (eq? p end))
+            (set-ref! to p what)
+            (loop (|+1| p))))
+      to)
+
 
    ; procedure:  (vector-length vector)
    ;
@@ -74,7 +104,9 @@
    (define (vector-ref vec k)
       (ref vec (|+1| k)))
 
-   (assert (vector-ref #(1 2 3 4 5 8 13 21) 5) ===>  8)
+   (assert (vector-ref #(1 2 3 4 5 8 13 21) 0)  ===>  1)
+   (assert (vector-ref #(1 2 3 4 5 8 13 21) 5)  ===>  8)
+   (assert (vector-ref #(1 2 3 4 5 8 13 21) 9)  ===>  #false)
 
    ; procedure:  (vector-set! vector k obj)
    ;
@@ -83,48 +115,84 @@
    (define (vector-set! vec k obj)
       (set-ref! vec (|+1| k) obj))
 
+   (assert (vector-set! #(1 2 3) 1 7) ===>  #(1 7 3))
+   (assert (vector-set! #(1 2 3) 8 7) ===>  #(1 2 3))
+
    ; procedure:  (vector->list vector)
    ; procedure:  (vector->list vector start)
    ; procedure:  (vector->list vector start end)
 
    (define vector->list
-      (define (make vec start end)
-         (let loop ((pos (|-1| end)) (tail #null))
-            (if (less? pos start)
-               tail
-               (loop (|-1| pos) (cons (ref vec pos) tail)))))
-
       (case-lambda
-         ((vec)
-            (make vec 1 (|+1| (size vec))))
-         ((vec start)
-            (make vec start (|+1| (size vec))))
-         ((vec start end)
-            (make vec start end))))
+         ((vec)           (make vec            1 (size vec)))
+         ((vec start)     (make vec (|+1| start) (size vec)))
+         ((vec start end) (make vec (|+1| start) end))))
+
+   (assert (vector->list #(1 2 3 4 5))     ===> '(1 2 3 4 5))
+   (assert (vector->list #(1 2 3 4 5) 1)   ===> '(2 3 4 5))
+   (assert (vector->list #(1 2 3 4 5) 2 5) ===> '(3 4 5))
+   (assert (vector->list #(1 2 3 4 5) 2 7) ===> '(3 4 5 #f #f))
 
    ; procedure:  (list->vector list)
 
    (define list->vector make-vector)
 
+   (assert (list->vector '())              ===> #())
+   (assert (list->vector '(1 2 3 4 #t))    ===> #(1 2 3 4 #t))
+
    ; procedure:  (vector->string vector)
    ; procedure:  (vector->string vector start)
    ; procedure:  (vector->string vector start end)
 
-   (define vector->string runes->string)
+   (define vector->string (case-lambda 
+      ((vec)           (runes->string (vector->list vec)))
+      ((vec start)     (runes->string (vector->list vec start)))
+      ((vec start end) (runes->string (vector->list vec start end)))))
+
+   (assert (vector->string #(#\a #\b #\c #\d #\e))        ===>  "abcde")
+   (assert (vector->string #(#\a #\b #\c #\d #\e) 2)      ===>  "cde")
+   (assert (vector->string #(#\a #\b #\c #\d #\e) 2 5)    ===>  "cde")
+   (assert (vector->string #(#\a #\b #\c #\d #\e) 2 8)    ===>  #false)
 
    ; procedure:  (string->vector string)
    ; procedure:  (string->vector string start)
    ; procedure:  (string->vector string start end)
 
-   (define string->vector string->runes)
+   (define string->vector (case-lambda
+      ((str)           (list->vector (string->runes str)))
+      ((str start)     (list->vector (string->runes (substring str start (string-length str)))))
+      ((str start end) (list->vector (string->runes (substring str start end))))))
+
+   (assert (string->vector "abcde")       ===> #(#\a #\b #\c #\d #\e))
+   (assert (string->vector "abcde" 2)     ===> #(#\c #\d #\e))
+   (assert (string->vector "abcde" 2 5)   ===> #(#\c #\d #\e))
+
 
    ; procedure:  (vector-copy vector)
    ; procedure:  (vector-copy vector start)
    ; procedure:  (vector-copy vector start end)
+   (define vector-copy (case-lambda
+      ((vec)           (vm:cast vec (type vec)))
+      ((vec start)     (list->vector (vector->list vec start)))
+      ((vec start end) (list->vector (vector->list vec start end)))))
+
+   (assert (vector-copy #(1 2 3 4 5))                       ===> #(1 2 3 4 5))
+   (assert (eq? #(1 2 3 4 5) (vector-copy #(1 2 3 4 5)))    ===> #false)
+   (assert (equal? #(1 2 3 4 5) (vector-copy #(1 2 3 4 5))) ===> #true)
+   (assert (vector-copy #(1 2 3 4 5) 0)                     ===> #(1 2 3 4 5))
+   (assert (vector-copy #(1 2 3 4 5) 3)                     ===> #(4 5))
+   (assert (vector-copy #(1 2 3 4 5) 5)                     ===> #())
+   (assert (vector-copy #(1 2 3 4 5) 3 3)                   ===> #())
+   (assert (vector-copy #(1 2 3 4 5) 3 5)                   ===> #(4 5))
+   (assert (vector-copy #(1 2 3 4 5) 5 3)                   ===> #())
 
    ; procedure:  (vector-copy! to at from)
    ; procedure:  (vector-copy! to at from start)
    ; procedure:  (vector-copy! to at from start end)
+   (define vector-copy! (case-lambda
+      ((to at from start end) (copy! to at from start end))
+      ((to at from start)     (copy! to at from start (size from)))
+      ((to at from)           (copy! to at from     0 (size from)))))
 
    ; procedure:  (vector-append vector ...)
    (define (vector-append vector . tail)
@@ -134,6 +202,10 @@
    ; procedure:  (vector-fill! vector fill)
    ; procedure:  (vector-fill! vector fill start)
    ; procedure:  (vector-fill! vector fill start end)
+   (define vector-fill! (case-lambda
+      ((vec fill)           (fill! vec fill     0 (size vec)))
+      ((vec fill start)     (fill! vec fill start (size vec)))
+      ((vec fill start end) (fill! vec fill start end))))
 
    ; additional
    ; 6.10  Control features

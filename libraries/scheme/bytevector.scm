@@ -5,8 +5,6 @@
    (description "
       Otus-Lisp bytevectors support library.")
 
-   ; 6.9  Bytevectors
-   ;
    ; Bytevectors represent blocks of binary data. They are
    ; fixed-length sequences of bytes, where a byte is an exact
    ; integer in the range from 0 to 255 inclusive. A bytevector
@@ -92,7 +90,7 @@
    ; internal helpers
    (define (copy! to at from start end)  ; * internal helper
       (let loop ((start start) (p at))
-         (when (< start end)
+         (when (less? start end)
             (set-ref! to p (ref from start))
             (loop (|+1| start) (|+1| p))))
       to)
