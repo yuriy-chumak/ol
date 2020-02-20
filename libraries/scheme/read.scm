@@ -5,7 +5,7 @@
 (import
    (scheme core)
    (owl interop) (owl io)
-   (scheme vectors)
+   (scheme vector)
    (only (lang sexp) get-sexp))
 
 (begin

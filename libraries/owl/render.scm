@@ -16,7 +16,7 @@
       (owl lazy)
       (owl math)
       (scheme bytevector)
-      (scheme vectors)
+      (scheme vector)
       (otus blobs)
       (only (owl fasl) sub-objects)
       (only (owl math) render-number number?)

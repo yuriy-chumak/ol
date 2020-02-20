@@ -1,4 +1,4 @@
-(define-library (scheme vectors) ; srfi-133
+(define-library (scheme vector) ; srfi-133
    (version 1.0)
    (license MIT/LGPL3)
    (keywords (otus ol vector scheme))

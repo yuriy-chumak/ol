@@ -1,7 +1,6 @@
 (define-library (scheme base)
 (export
    (exports (scheme core))
-   (exports (scheme vectors))
 
    caaar caadr cadar caddr ; moved from (scheme cxr)
    cdaar cdadr cddar cdddr ; moved from (scheme cxr)
@@ -253,7 +252,7 @@
 )
    (import
       (scheme core) (src vm)
-      (scheme vectors)
+      (scheme vector)
       (scheme bytevector)
       ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (required coroutines)
       (owl io) (owl math) (owl math-extra)

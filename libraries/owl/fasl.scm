@@ -63,7 +63,7 @@
 
    (import
       (scheme core)
-      (scheme vectors)
+      (scheme vector)
 
       (otus blobs)
       (owl math)
