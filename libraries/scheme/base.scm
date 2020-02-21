@@ -148,7 +148,7 @@
    min
    modulo
    negative?
-      ;; newline
+   newline
    not
    null?
    number->string
@@ -244,10 +244,10 @@
    vector?
    when
       ;; with-exception-handler
-      ;; write-bytevector
-      ;; write-char
-      ;; write-string
-      ;; write-u8
+   write-bytevector
+   write-char
+   write-string
+   write-u8
    zero?
 )
    (import
@@ -440,5 +440,33 @@
       ;; (define current-input-port (make-parameter stdin))
       ;; (define current-output-port (make-parameter stdout))
       ;; (define current-error-port (make-parameter stderr))
+
+      (define write-u8 (case-lambda
+         ((u8)      (syscall 1 stdout (bytevector u8) 1))
+         ((u8 port) (syscall 1   port (bytevector u8) 1))))
+
+      (define write-char write-u8)
+
+      (define write-bytevector (case-lambda
+         ((bv)                 (syscall 1 stdout bv (size bv)))
+         ((bv port)            (syscall 1   port bv (size bv)))
+         ((bv port start)      (syscall 1   port (bytevector-copy bv start)     (- (size bv) start)))
+         ((bv port start end)  (syscall 1   port (bytevector-copy bv start end) (- end start -1)))))
+
+      (define write-string (case-lambda
+         ((ss)                 (write-bytevector (string->utf8 ss)))
+         ((ss port)            (write-bytevector (string->utf8 ss) port))
+         ((ss port start)      (write-bytevector (string->utf8 ss) port start))
+         ((ss port start end)  (write-bytevector (string->utf8 ss) port start end))))
+
+      ;; ;; strings
+      ;; (define string-copy (case-lambda
+      ;;    ((str) (runes->string (string->runes str)))
+      ;;    ((str start) (runes->string (drop (string->runes str) start)))
+      ;;    ((str start end) (runes->string (take (drop (string->runes str) start) (- end start))))))
+
+      (define newline (case-lambda
+         (() (print))
+         ((port) (print-to port))))
 
 ))

@@ -35,7 +35,6 @@
       str-map            ; op str → str'
       str-rev
       string             ; (string char ...) → str
-      string-copy        ; id
       substring          ; str start end → str'
       string-ref         ; str pos → char | error
       string?
@@ -358,8 +357,6 @@
             (str-iterr str)))
 
       (define (i x) x)
-
-      (define string-copy i)
 
       ;; going as per R5RS
       (define (substring str start end)

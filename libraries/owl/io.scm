@@ -30,6 +30,7 @@
 
       port->bytestream       ;; fd → (byte ...) | thunk
       file->bytestream
+      write-bytestream
 
       stdin stdout stderr
       display-to        ;; port val → bool
@@ -42,7 +43,6 @@
       writer-to         ;; names → (port val → bool + io)
       write-to          ;; port val → bool
       write-bytes       ;; port byte-list   → bool
-      write-bytevector  ;; port byte-vector → bool
       get-block         ;; fd n → bvec | eof | #false
       try-get-block     ;; fd n block? → bvec | eof | #false=error | #true=block
       lines             ;; fd → null | ll of string, read error is just null, each [\r]\n removed
@@ -316,7 +316,7 @@
                (lets ((len _ (vm:add len 1)))
                   (printer (cdr lst) len (cons (car lst) out) fd)))))
 
-      (define (write-bytevector port bvec)
+      (define (write-bytestream port bvec)
          (write-really bvec port))
 
       (define (write-bytes port byte-list)
@@ -327,7 +327,7 @@
          (let loop ((ll (blob-leaves vec)))
             (cond
                ((pair? ll)
-                  (write-bytevector port (car ll))
+                  (write-bytestream port (car ll))
                   (loop (cdr ll)))
                ((null? ll) #true)
                (else (loop (ll))))))

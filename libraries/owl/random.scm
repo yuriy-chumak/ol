@@ -478,7 +478,7 @@
                   (if (eq? n 0)
                      (close-port port)
                      (lets ((rs bytes (random-bvec rs block)))
-                        (if (write-bytevector port bytes)
+                        (if (write-bytestream port bytes)
                            (loop rs (- n block))
                            #false))))
                (begin
