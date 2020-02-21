@@ -36,9 +36,8 @@
       print-to          ;; port val → bool
       display
       print
-      write
+      write             ; (obj), (obj port)
       writer-to         ;; names → (port val → bool + io)
-      write-to          ;; port val → bool
       write-bytes       ;; port byte-list   → bool
       get-block         ;; fd n → bvec | eof | #false
       try-get-block     ;; fd n block? → bvec | eof | #false=error | #true=block
@@ -313,6 +312,13 @@
                (lets ((len _ (vm:add len 1)))
                   (printer (cdr lst) len (cons (car lst) out) fd)))))
 
+      (define (writer-to names)
+         (let ((serialize (make-serializer names)))
+            (λ (to obj)
+               (printer (serialize obj '()) 0 null to))))
+
+
+
       (define (write-bytestream port bvec)
          (write-really bvec port))
 
@@ -329,30 +335,30 @@
       ;;          ((null? ll) #true)
       ;;          (else (loop (ll))))))
 
-      (define (print-to to . stuff)
-         (printer (foldr render '(10) stuff) 0 null to))
-
-      (define (writer-to names)
-         (let ((serialize (make-serializer names)))
-            (λ (to obj)
-               (printer (serialize obj '()) 0 null to))))
-
-      (define write-to
-         (writer-to
-            (put #empty map "map")))
-
       (define (display-to to obj)
          (printer (render obj '()) 0 null to))
 
-      (define (display x)
-         (display-to stdout x))
+      (define display (case-lambda
+         ((obj) (display-to stdout obj))
+         ((obj port) (display-to port obj))))
+
+      (define write-to
+         (writer-to {})) ; we can add a map with lot of simple functions, like "map" or "fold"...
+            ;; (put #empty map "map")))
+
+      (define write (case-lambda
+         ((obj) (write-to stdout obj))
+         ((obj port) (write-to port obj))))
+
+
+      (define (print-to to . stuff)
+         (printer (foldr render '(10) stuff) 0 null to))
 
       (define print
          (case-lambda
             ((obj) (print-to stdout obj))
-            (xs (printer (foldr render '(#\newline) xs) 0 null stdout))))
+            (args (printer (foldr render '(#\newline) args) 0 null stdout))))
 
-      (define (write obj) (write-to stdout obj))
 
       ;; fixme: system-X do not belong here
       (define (system-print str)

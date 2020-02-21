@@ -9,11 +9,11 @@
       (scheme core)
       (only (owl io) display write))
 
-   (begin
+(begin
 
-(define (write-shared . args)
-   (runtime-error "Not implemented: " 'write-shared))
-(define (write-simple . args)
-   (runtime-error "Not implemented: " 'write-simple))
+   ; note: we do not support shared labels for now
+   (define write-shared write)
+
+   (define write-simple write)
 
 ))
