@@ -742,7 +742,7 @@ object_t
 			unsigned char type : 6;    // object type
 
 			unsigned char padding : 3; // number of padding (unused) bytes at the end of object
-			unsigned char rawness : 1; // 1 for bitstream, 0 for vectors
+			unsigned char rawness : 1; // 1 for binstream, 0 for vectors
 			unsigned char user    : 4; // unused, can be used by user
 
 			unsigned char size[sizeof(word) - 2];
@@ -786,7 +786,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
 #define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 
-#define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (bitstream bit)
+#define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (binstream bit)
 #define BINARY                      (RAWBIT >> TPOS)
 
 #define make_value(type, value)     (2 | ((word)(value) << IPOS) | ((type) << TPOS))
@@ -801,8 +801,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 // два главных класса:
 #define is_value(x)                 (( (word) (x)) & 2)
 #define is_reference(x)             (!is_value(x))
-#define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to bitstream
-#define is_bitstream(x)             ((*(word*)(x)) & RAWBIT)
+#define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to binstream
+#define is_binstream(x)             ((*(word*)(x)) & RAWBIT)
 
 // makes olvm reference from system pointer (and just do sanity check in DEBUG)
 #define R(v) ({\
@@ -818,8 +818,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define reference_type(x)           (value_type (*R(x)))
 
 #define reference_size(x)           ((header_size(*R(x)) - 1))
-#define blob_size(x)                ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x))) // todo: rename to bitstream size
-#define bitstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
+#define blob_size(x)                ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x))) // todo: rename to binstream size
+#define binstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
 
 // todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
@@ -1253,7 +1253,7 @@ word*p = new (TVECTOR, 13);\
 
 // -= остальные аллокаторы =----------------------------
 
-#define new_bitstream(type, length) ({\
+#define new_binstream(type, length) ({\
 	int size = (length);\
 	int words = (size + W - 1) / W;\
 	int pads = (words * W - size);\
@@ -1262,12 +1262,12 @@ word* p = new (type, words, pads);\
 	/*return*/ p;\
 })
 
-#define new_bytevector(length) new_bitstream(TBYTEVECTOR, length)
+#define new_bytevector(length) new_binstream(TBYTEVECTOR, length)
 
 #define NEW_STRING2(string, length) ({\
 	char* data = string;\
 	int size = (length);\
-word* p = new_bitstream(TSTRING, length);\
+word* p = new_binstream(TSTRING, length);\
 	char* ptr = (char*)&p[1];\
 	while (size--)\
 		*ptr++ = *data++;\
@@ -1304,7 +1304,7 @@ word data = (word) a;\
 #ifdef OLVM_INEXACTS
 #define new_inexact(a) ({\
 inexact_t f = (inexact_t) a;\
-	word* me = new_bitstream (TINEXACT, sizeof(f));\
+	word* me = new_binstream (TINEXACT, sizeof(f));\
 	*(inexact_t*)&me[1] = f;\
 	/*return*/me;\
 })
@@ -1728,7 +1728,7 @@ double OL2D(word arg) {
 	case TRATIONAL:
 		return OL2D(car(arg)) / OL2D(cdr(arg));
 	case TBYTEVECTOR: // is it required?
-		switch (bitstream_size(arg)) {
+		switch (binstream_size(arg)) {
 			case sizeof(float):
 				return *(float*)&car(arg);
 			case sizeof(double):
@@ -2641,7 +2641,7 @@ loop:;
 					value = A1; // update value to actual
 				}
 
-				word *ptr = new_bitstream(type, len);
+				word *ptr = new_binstream(type, len);
 				R[ip[size]] = (word)ptr; // result
 
 				if (is_numberp(value)) {
@@ -3168,7 +3168,7 @@ loop:;
 		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)
 		#define CHECK_NUMBERP(arg)   CHECK_TYPE(arg, number, 62008)
 		#define CHECK_REFERENCE(arg) CHECK_TYPE(arg, reference, 62003)
-		#define CHECK_BITSTREAM(arg) CHECK_TYPE(arg, bitstream, 62004)
+		#define CHECK_BINSTREAM(arg) CHECK_TYPE(arg, binstream, 62004)
 		#define CHECK_STRING(arg)    CHECK_TYPE(arg, string, 62005)
 		#define CHECK_VPTR(arg)      CHECK_TYPE(arg, vptr, 62007)
 
@@ -3266,7 +3266,7 @@ loop:;
 			case SYSCALL_WRITE: {
 				CHECK_ARGC(2, 3); // (port object ?count)
 				CHECK_PORT(1);
-				CHECK_BITSTREAM(2); // we write only binary objects
+				CHECK_BINSTREAM(2); // we write only binary objects
 				CHECK_NUMBER_OR_FALSE(3);
 
 				int portfd = port(A1);
@@ -3274,7 +3274,7 @@ loop:;
 									? number(A3) : -1; // в байтах
 
 				word *buff = (word *) A2;
-				int length = bitstream_size(buff);
+				int length = binstream_size(buff);
 				if (count > length || count < 0)
 					count = length;
 
@@ -3947,7 +3947,7 @@ loop:;
 							string (fp),
 							(size_t) (heap->end - fp - 1) * sizeof(word),
 							string (A), timeinfo);
-					r = new_bitstream(TSTRING, len);
+					r = new_binstream(TSTRING, len);
 				}
 				else
 #endif
@@ -4509,7 +4509,7 @@ loop:;
 		word fn = value (A0);
 		inexact_t a = ol2f(A1);
 
-		A2 = (word) new_bitstream(TINEXACT, sizeof(inexact_t));
+		A2 = (word) new_binstream(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xFE: // fsin
 			*(inexact_t*)&car(A2) = __builtin_sin(a);
@@ -4533,7 +4533,7 @@ loop:;
 		inexact_t a = ol2f(A1);
 		inexact_t b = ol2f(A2);
 
-		A3 = (word) new_bitstream(TINEXACT, sizeof(inexact_t));
+		A3 = (word) new_binstream(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xD9: // fless?
 			A3 = (a < b) ? ITRUE : IFALSE;
@@ -5121,7 +5121,7 @@ OL_run(OL* ol, int argc, char** argv)
 				pos++;
 			int length = pos - (char*)(fp + 1);
 			if (length > 0) // если есть что добавить
-				userdata = (word) new_pair (new_bitstream(TSTRING, length), userdata);
+				userdata = (word) new_pair (new_binstream(TSTRING, length), userdata);
 		}
 
 		ol->heap.fp = fp;
