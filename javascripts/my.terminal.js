@@ -12,6 +12,7 @@ function doit(text)
 
 // TERMINAL:
 var stdInput = ""; //unescape(encodeURIComponent(",load \"init.lisp\"")); // loading the script with initial code
+var errorLen = 0;
 
 var terminal;
 $('#terminal').terminal(function(command, terminal) {
@@ -121,10 +122,11 @@ var Module = {
       //   terminal.pause();
    },
    printErr: function(text) {
-      console.log("error: ", text);
-      terminal.error(text);
+      error = (text || "").substring(errorLen);
+      terminal.error(error);
+      errorLen = (text || "").length;
 
-      ga('send', 'event', 'Console', 'stderr', text, {
+      ga('send', 'event', 'Console', 'stderr', error, {
          nonInteraction: true});
       showTerminal();
    },
