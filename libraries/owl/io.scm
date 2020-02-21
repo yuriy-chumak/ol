@@ -14,7 +14,6 @@
       open-binary-output-file
       flush-port              ;; fd → _
       close-port              ;; fd → _
-      wait-write              ;; fd → ? (no failure handling yet)
 
       ;; stream-oriented blocking (for the writing thread) io
 ;      blocks->port            ;; ll fd → ll' n-bytes-written, don't close fd
@@ -467,9 +466,6 @@
                (let ((data (read-blocks->list port null)))
                   (maybe-close-port port)
                   data))))
-
-      (define (wait-write fd)
-         (interact fd 'wait))
 
       (define (stream-chunk buff pos tail)
          (if (eq? pos 0)
