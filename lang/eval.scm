@@ -67,7 +67,7 @@
 
       (define (debug env . msg)
          (if (env-get env '*debug* #false)
-            (print* msg)))
+            (apply print msg)))
 
       (define (verbose-vm-error opcode a b)
          (list "error" opcode "->"
@@ -400,7 +400,7 @@
       (define (find-line data error-pos)
          ;(print " - find-line")
          (let loop ((data data) (pos 0))
-            ;(print* (list "data " data " pos " pos  " error-pos " error-pos))
+            ;(print "data " data " pos " pos  " error-pos " error-pos)
             (lets ((next datap (next-newline-distance data)))
                (cond
                   ((<= error-pos next)

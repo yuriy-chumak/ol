@@ -38,9 +38,9 @@
 			 (run (try-pairs op nums))
 			 (elapsed (- (ms) start))
 			 (runs (* n n)))
-			;(print* (list elapsed " ms for bits " bits " and len " n))
+			;(print elapsed " ms for bits " bits " and len " n)
 			(if (and (> elapsed 1000) (> runs 10))
-				(print* (list " * " bits " => " (div runs elapsed) " runs/ms and " (div elapsed runs) "ms/run, " (div (* runs (* bits 2)) elapsed) " bits/ms"))
+				(print " * " bits " => " (div runs elapsed) " runs/ms and " (div elapsed runs) "ms/run, " (div (* runs (* bits 2)) elapsed) " bits/ms")
 				(loop (* n 2))))))
 
 ;(let loop ((bits 16)) (test + bits) (loop (+ bits 1)))

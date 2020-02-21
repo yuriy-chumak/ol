@@ -68,8 +68,9 @@
 				 (a-total (+ a-total ams))
 				 (b-total (+ b-total bms))
 				 (score (score-of ams bms)))
-				(print* (list " at " ams "ms vs " bms "ms, " 
-					" first is " score "% better (average " (score-of a-total b-total) "%)"))
+				(print
+					" at " ams "ms vs " bms "ms, " 
+					" first is " score "% better (average " (score-of a-total b-total) "%)")
 				(if (equal? av bv)
 					[n-tests a-total b-total]
 					(error "results differ" (list val 'gives av 'and bv))))))
@@ -90,9 +91,9 @@
 							((ams bms stats)
 							 (elapsed-a this-a (elapsed-ms (λ () (a case))))
 							 (elapsed-b this-b (elapsed-ms (λ () (b case)))))
-							(print* 
-								(list "  " (div (* (max ams bms) 100) (max 1 (min ams bms))) "% diff in total " ams "ms/" bms "ms, here "
-									elapsed-a "ms/" elapsed-b "ms"))
+							(print 
+									"  " (div (* (max ams bms) 100) (max 1 (min ams bms))) "% diff in total " ams "ms/" bms "ms, here "
+									elapsed-a "ms/" elapsed-b "ms")
 							(if (equal? this-a this-b)
 								[(+ ams elapsed-a) (+ bms elapsed-b)]
 								(begin

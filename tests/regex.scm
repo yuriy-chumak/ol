@@ -14,13 +14,13 @@
             (let ((res (rex input)))
                (cond
                   ((equal? res should?)
-                     (print* (list " | '" regex "' + '" input "' = '" should? "'"))
+                     (print " | '" regex "' + '" input "' = '" should? "'")
                      #true)
                   (else
-                     (print* (list " +---> '" regex "' + '" input "' = '" res "' instead of '" should? "'(FAAAAAAAAAAAIL)"))
+                     (print " +---> '" regex "' + '" input "' = '" res "' instead of '" should? "'(FAAAAAAAAAAAIL)")
                      #false)))))
       (else
-         (print* (list " - ERROR: failed to even compile '" regex "'"))
+         (print " - ERROR: failed to even compile '" regex "'")
          #false)))
 
 ;; note that slashes must be quoted in strings. no need to do that in embedded regexps.

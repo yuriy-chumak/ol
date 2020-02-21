@@ -75,7 +75,7 @@
             (if (null? subs)
                (begin
                   ;; no threads were waiting for something that is being removed, so tell stderr about it
-                  ;(print*-to stderr "VM: thread " id " exited due to " msg)
+                  ;(print-to stderr "VM: thread " id " exited due to " msg)
                   (tc todo done (del state id)))
                (deliver-messages todo done
                   (del (fupd state link-tag (del (get state link-tag empty) id)) id)

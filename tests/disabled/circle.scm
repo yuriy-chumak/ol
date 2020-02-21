@@ -8,7 +8,7 @@
 			(mail to (ref (wait-mail) 2))
 			(loop))))
 
-(print* (list "Starting " n " threads."))
+(print "Starting " n " threads.")
 
 ;; first one is special	
 (fork-server 1
@@ -16,7 +16,7 @@
 		(let ((msg (ref (wait-mail) 2)))
 			(mail 2 "pass this around")
 			(let ((result (wait-mail)))
-				(print* (list "Thread 1: " (ref result 1) " sent me \"" (ref result 2)"\""))))))
+				(print "Thread 1: " (ref result 1) " sent me \"" (ref result 2)"\"")))))
 
 ;; 2-(n-1) just forward to the next
 (let loop ((id (- n 1)) (next n))

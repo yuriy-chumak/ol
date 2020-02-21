@@ -43,7 +43,7 @@
                    (elapsed
                      (- (+ ems (* es 1000))
                         (+ sms (* ss 1000)))))
-                  (print*-to stderr (list comment ": " elapsed "ms"))
+                  (print-to stderr comment ": " elapsed "ms")
                   res))))
 
       ;; note: just passing unix time without adding the extra seconds

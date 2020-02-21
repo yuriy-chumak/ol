@@ -45,7 +45,7 @@
 						(lets 
 							((rst p (rand rst len))
 							 (rst v (rand rst 10000)))
-							;(print* (list "L[" p "] = " v))
+							;(print "L[" p "] = " v)
 							(list-test rst (rset rl p v) (lset l p v) len steps))))
 				((11) ; map increment
 					(list-test rst

@@ -474,7 +474,7 @@
              (megs (* 1024 500))) ; ~1GB is enough for dieharder and smallcrush, 500 might be enough for crush?
             (if port
                (let loop ((rs rs) (n (* megs (* 1024 1024))))
-                  (print* (list path ": left " n " bytes"))
+                  (print path ": left " n " bytes")
                   (if (eq? n 0)
                      (close-port port)
                      (lets ((rs bytes (random-bvec rs block)))

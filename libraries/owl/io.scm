@@ -36,8 +36,6 @@
       print-to          ;; port val → bool
       display
       print
-      print*
-      print*-to         ;; port val → bool
       write
       writer-to         ;; names → (port val → bool + io)
       write-to          ;; port val → bool
@@ -355,17 +353,6 @@
             (xs (printer (foldr render '(#\newline) xs) 0 null stdout))))
 
       (define (write obj) (write-to stdout obj))
-
-      (define (print*-to to lst)
-         (printer (foldr render '(#\newline) lst) 0 null to))
-
-      (define (print* lst)
-         (print*-to stdout lst))
-
-      (define-syntax output
-         (syntax-rules ()
-            ((output . stuff)
-               (print* (list stuff)))))
 
       ;; fixme: system-X do not belong here
       (define (system-print str)
