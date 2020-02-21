@@ -12,20 +12,19 @@
       open-binary-input-file   
       open-output-file        ;; path → fd | #false
       open-binary-output-file
-      port?                   ;; _ → bool
       flush-port              ;; fd → _
       close-port              ;; fd → _
       wait-write              ;; fd → ? (no failure handling yet)
 
       ;; stream-oriented blocking (for the writing thread) io
-      blocks->port            ;; ll fd → ll' n-bytes-written, don't close fd
-      closing-blocks->port    ;; ll fd → ll' n-bytes-written, close fd
+;      blocks->port            ;; ll fd → ll' n-bytes-written, don't close fd
+;      closing-blocks->port    ;; ll fd → ll' n-bytes-written, close fd
 
       fd->bytevector
       file->bytevector  ;; bytevectors io, may be moved elsewhere later
       bytevector->file
 
-      file->blob write-blob
+      ;; file->blob write-blob
       file->list              ;; list io, may be moved elsewhere later
 
       port->bytestream       ;; fd → (byte ...) | thunk
@@ -323,14 +322,14 @@
          (printer byte-list 0 null port))
 
       ;; write each leaf chunk separately (note, no raw type testing here -> can fail)
-      (define (write-blob vec port)
-         (let loop ((ll (blob-leaves vec)))
-            (cond
-               ((pair? ll)
-                  (write-bytestream port (car ll))
-                  (loop (cdr ll)))
-               ((null? ll) #true)
-               (else (loop (ll))))))
+      ;; (define (write-blob vec port)
+      ;;    (let loop ((ll (blob-leaves vec)))
+      ;;       (cond
+      ;;          ((pair? ll)
+      ;;             (write-bytestream port (car ll))
+      ;;             (loop (cdr ll)))
+      ;;          ((null? ll) #true)
+      ;;          (else (loop (ll))))))
 
       (define (print-to to . stuff)
          (printer (foldr render '(10) stuff) 0 null to))
@@ -437,6 +436,8 @@
          (if port
             (let ((stat (syscall 4 port)))
                (if stat
+                  ; todo: add handling of not full file reading
+                  ; (sleep and read again and bytevector-append then)
                   (sys:read port (ref stat 8))))))
 
       (define (file->bytevector path) ; path -> vec | #false
@@ -444,25 +445,6 @@
                (file (fd->bytevector port)))
             (maybe-close-port port)
             file))
-
-      ; BLOB:
-      (define (fd->blob port) ; path -> vec | #false
-         (if port
-            (read-blocks port null)))
-
-      (define (file->blob path) ; path -> vec | #false
-         (let*((port (maybe-open-file path))
-               (blob (fd->blob port)))
-            (maybe-close-port port)
-            blob))
-
-      ; list:
-      (define (file->list path) ; path -> vec | #false
-         (let ((port (maybe-open-file path)))
-            (if port
-               (let ((data (read-blocks->list port null)))
-                  (maybe-close-port port)
-                  data))))
 
       ;; fixme: no way to poll success yet. last message should be ok-request, which are not there yet.
       ;; fixme: detect case of non-bytevectors, which simply means there is a leaf which is not of type (raw 11)
@@ -472,6 +454,26 @@
                (let ((outcome (sys:write port vec #false)))
                   (close-port port)
                   outcome))))
+
+
+      ; BLOB:
+      ;; (define (fd->blob port) ; path -> vec | #false
+      ;;    (if port
+      ;;       (read-blocks port null)))
+
+      ;; (define (file->blob path) ; path -> vec | #false
+      ;;    (let*((port (maybe-open-file path))
+      ;;          (blob (fd->blob port)))
+      ;;       (maybe-close-port port)
+      ;;       blob))
+
+      ; list:
+      (define (file->list path) ; path -> vec | #false
+         (let ((port (maybe-open-file path)))
+            (if port
+               (let ((data (read-blocks->list port null)))
+                  (maybe-close-port port)
+                  data))))
 
       (define (wait-write fd)
          (interact fd 'wait))
