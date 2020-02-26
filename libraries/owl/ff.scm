@@ -406,13 +406,13 @@
 
       ;; note: ff-map will switch argument order in the generic equivalent
       ;; fixme, also much faster if types are used directly
-      (define (ff-map ff op)
+      (define (ff-map op ff)
          (if (eq? ff #empty)
             #empty
             (with-ff (ff l k v r)
                (if (red? ff)
-                  (red   (ff-map l op) k (op k v) (ff-map r op))
-                  (black (ff-map l op) k (op k v) (ff-map r op))))))
+                  (red   (ff-map op l) k (op k v) (ff-map op r))
+                  (black (ff-map op l) k (op k v) (ff-map op r))))))
 
       ;; could benchmark if sort + grow from bottom is faster
       (define (alist->ff lst)
