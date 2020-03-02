@@ -1,6 +1,6 @@
 ; http://rosettacode.org/wiki/JSON#Ol
 
-(import (lib json))
+(import (file json))
 (import (owl parse))
 
 (define o (parse json-parser (str-iter "
