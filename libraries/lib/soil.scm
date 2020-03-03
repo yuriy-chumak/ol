@@ -5,9 +5,16 @@
       SOIL_last_result
       SOIL_load_OGL_texture
       SOIL_load_OGL_texture_from_memory
+
+      SOIL_load_image
+      SOIL_free_image_data
       
       SOIL_LOAD_AUTO
+      SOIL_LOAD_L
+      SOIL_LOAD_LA
+      SOIL_LOAD_RGB
       SOIL_LOAD_RGBA
+
       SOIL_CREATE_NEW_ID
 
       SOIL_FLAG_INVERT_Y
@@ -64,6 +71,13 @@
    (define SOIL_load_OGL_texture (libsoil fft-unsigned-int "SOIL_load_OGL_texture" type-string fft-int fft-unsigned-int fft-unsigned-int))
    (define SOIL_load_OGL_texture_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_texture_from_memory" type-bytevector fft-int fft-int fft-unsigned-int fft-unsigned-int))
    (define SOIL_load_OGL_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_cubemap" type-string type-string type-string type-string type-string type-string fft-int fft-unsigned-int fft-unsigned-int))
+   ;SOIL_load_OGL_cubemap_from_memory
    (define SOIL_load_OGL_single_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_single_cubemap" type-string type-string fft-int fft-unsigned-int fft-unsigned-int))
+   ;SOIL_load_OGL_single_cubemap_from_memory
+   ;SOIL_load_OGL_HDR_texture
+
+   (define SOIL_load_image (libsoil type-vptr "SOIL_load_image" type-string fft-int& fft-int& fft-int& fft-int))
+   ;SOIL_load_image_from_memory
+   (define SOIL_free_image_data (libsoil fft-void "SOIL_free_image_data" type-vptr))
    
 ))

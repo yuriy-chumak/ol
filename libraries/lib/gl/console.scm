@@ -1,9 +1,7 @@
 (define-library (lib gl console)
    (import (otus lisp)
       (lib gl)
-;      (lib soil)
-      ;; (OpenGL ARB clear_texture)
-      (lib freetype))
+      (lib soil))
 
    (cond-expand
       (Android
@@ -14,15 +12,15 @@
             (define glClearTexImage #false)))
       (else
          (import
-            (OpenGL version-1-4)
-            (OpenGL ARB clear_texture))
+            (OpenGL version-1-4))
+            ;(OpenGL ARB clear_texture))
          (begin
             (setq FONT "fonts/Anonymous Pro.ttf"))))
 
    (export
       move-to ; x y, передвинуть курсор в координаты x,y внутри текущего окна
 
-      set-color ; '(R G B), установить екущий цвет в терминах RGB палитры
+      set-color ; '(R G B), установить текущий цвет в терминах RGB палитры
       BLACK BLUE GREEN CYAN RED MAGENTA BROWN GRAY YELLOW WHITE
       LIGHTGRAY LIGHTBLUE LIGHTGREEN LIGHTCYAN LIGHTRED LIGHTMAGENTA
 
@@ -40,29 +38,13 @@
 (begin
    (setq cursor '(0 . 0)) ; текущее положение курсора
    ;(setq fcolor '(0)) ; текущий цвет, тоже пока не используется
-   (setq config:cell-size '(9 . 16)) ; размер знакоместа, пока не используется
    (setq drawing-area #(0 0 0 0))
 
-   ; let's preparte the font
-   (define ft (make-FT_Library))
-   (setq error (FT_Init_FreeType ft))
-   (unless (eq? error 0)
-      (runtime-error "Can't access freetype library" error))
-
-   ; load font
-   (define face (make-FT_Face))
-   (setq error (FT_New_Face ft (c-string FONT) 0 face))
-   (unless (eq? error 0)
-      (runtime-error "Can't load Anonymous Pro font" error))
-
-   ; slot for character bitmaps
-   (define slot (face->glyph face))
-
    ; скомпилируем текстурный атлас
-   (define atlas '(0))
+   (define atlas (box 0))
    (glGenTextures 1 atlas)
-   (glBindTexture GL_TEXTURE_2D (car atlas))
-   (glPixelStorei GL_UNPACK_ALIGNMENT 1)
+   (glBindTexture GL_TEXTURE_2D (unbox atlas))
+   ;; (glPixelStorei GL_UNPACK_ALIGNMENT 1)
    ;; (glPixelStorei GL_PACK_ALIGNMENT 1)
 
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
@@ -70,48 +52,55 @@
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
 
-   ; создадим текстуру
-   (glTexImage2D GL_TEXTURE_2D 0 GL_ALPHA 320 512 0 GL_ALPHA GL_UNSIGNED_BYTE #f)
-
-   ; здесь мы модифицируем поведение glTexSubImage2D так, что бы точки шрифта всегда были засвечены
-   ;(glPixelTransferf GL_RED_BIAS 1)
-   ;(glPixelTransferf GL_GREEN_BIAS 1)
-   ;(glPixelTransferf GL_BLUE_BIAS 1)
-   ; почистим нашу текстуру, так как может попасть мусор
-   (if glClearTexImage
-      (glClearTexImage (car atlas) 0 GL_ALPHA GL_UNSIGNED_BYTE (bytevector 0)))
-
    ; задаем символы, которые будут в нашем атласе
-   ; словарь буква -> текстура
+   ; https://evanw.github.io/font-texture-generator/
+   ; 0123456789
+   ; ABCDEFGHIJKLMNOPQRSTUVWXYZ
+   ; abcdefghijklmnopqrstuvwxyz
+   ; АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
+   ; абвгдежзийклмнопрстуфхцчшщъыьэюя
+   ; !?@#$%^&_=\|([{}])`"';:+-/*<>~.,
+
+   ; словарь буква -> глиф на текстуре
+   (import (file json))
+   (import (owl parse))
+   (define font (read-json-file "fonts/Anonymous Pro.json"))
+   (define font (put font 'characters
+      (ff-fold (lambda (ff key value)
+                  (put ff (string-ref (symbol->string key) 0) value))
+         #empty
+         (get font 'characters #empty))))
+
+   (define width (box 0))
+   (define height (box 0))
+   (define channels (box 0))
+   (define image (SOIL_load_image (font 'file) width height channels SOIL_LOAD_RGBA))
+   (print "image: " image)
+   (print "width: " width)
+   (print "height: " height)
+   (print "channels: " channels)
+
+   (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA (unbox width) (unbox height) 0 GL_RGBA GL_UNSIGNED_BYTE image)
+
+   ; font precompilation:
    (define charset
-   (let ((symbols (fold append #null (list
-            (iota (- 127 #\space) #\space) ; весь английский алфавит
-            (string->runes "АБВГҐДЕЁЄЖЗИІЇЙКЛМНОПРСТУЎФХЦЧШЩЪЫЬЭЮЯ")
-            (string->runes "абвгґдеёєжзиіїйклмнопрстуўфхцчшщъыьэюя")
-            ))))
-      ; пускай знакоместо будет 16 в высоту (что дает нам 32 строки) и 9(10) в ширину (32 колонки) - итого, 1024 символов; 1 лишняя точка для того, чтобы символы не накладывались
+      (ff-map (lambda (key glyph) [
+            ; texture coordinates
+            (inexact (/    (glyph 'x)                  (font 'width)))
+            (inexact (/    (glyph 'y)                  (font 'height)))
+            (inexact (/ (+ (glyph 'x) (glyph 'width) ) (font 'width)))
+            (inexact (/ (+ (glyph 'y) (glyph 'height)) (font 'height)))
+            
+            ; glyph coordinates
+            (glyph 'originX)
+            (glyph 'originY)
+            (- (glyph 'originX) (glyph 'width))
+            (- (glyph 'originY) (glyph 'height))
+            ])
+         (font 'characters)))
 
-      ; зададим размер символов
-      (FT_Set_Pixel_Sizes face 0 (cdr config:cell-size))
-
-      (pairs->ff
-         (map (lambda (char i)
-               (FT_Load_Char face char FT_LOAD_RENDER)
-               (let ((x (+ (* 10 (mod i 32)) 1)) ; 113
-                     (y (+ (* 16 (div i 32)) -3))
-                     (bitmap (glyph->bitmap slot)))
-                  (glTexSubImage2D GL_TEXTURE_2D 0
-                     (+ x (ref bitmap 1)) ; x
-                     (+ y (- 16 (ref bitmap 3))) ; y
-                     (ref bitmap 2) (ref bitmap 4) ; width, height
-                     GL_ALPHA GL_UNSIGNED_BYTE (ref bitmap 5)) ; was GL_ALPHA
-                  (cons char [(/ (mod i 32) 32) (/ (div i 32) 32)])))
-            symbols
-            (iota (length symbols) 0)))))
-
-   ;(glPixelTransferf GL_RED_BIAS 0)
-   ;(glPixelTransferf GL_GREEN_BIAS 0)
-   ;(glPixelTransferf GL_BLUE_BIAS 0)
+   (define font-size (font 'size 16))
+   (define font-width (floor (* font-size 9/16)))
    ; atlas creation finished
 
    ; -----------------------------
@@ -138,46 +127,52 @@
    (define LIGHTRED (list f q q))
    (define LIGHTMAGENTA (list f q f))
 
+   ; установить новую позицию курсора в окне
    (define (move-to x y)
       (set-car! cursor x)
       (set-cdr! cursor y))
 
    ; internal function
    (define (write . text)
+      (define (echo text)
+         (let do ((x (+ (ref drawing-area 1) (car cursor)))
+                  (y (+ (ref drawing-area 2) (cdr cursor)))
+                  (text (string->runes text)))
+            (if (null? text)
+               (move-to (- x (ref drawing-area 1)) (- y (ref drawing-area 2))) ; закончили печатать, переместим курсор
+               ; иначе отрендерим символ
+               (let ((char (car text)))
+                  (case char
+                     (#\space
+                        (do (+ x 1) y (cdr text)))
+                     (#\newline
+                        (do (ref drawing-area 1) (+ y 1) (cdr text)))
+                     (else
+                        (let ((tc (charset char #false))
+                              (x (+ (* x font-width) 0))
+                              (y (+ (* y font-size) font-size)))
+                           (if tc (vector-apply tc
+                              (lambda (l t r b  dx dy xw yh)
+                                 (let*((lx (- x dx))
+                                       (ty (- y dy))
+                                       (rx (- x xw))
+                                       (by (- y yh)))
+                                    (glTexCoord2f l t)
+                                    (glVertex2f lx ty)
+                                    (glTexCoord2f r t)
+                                    (glVertex2f rx ty)
+                                    (glTexCoord2f r b)
+                                    (glVertex2f rx by)
+
+                                    (glTexCoord2f l t)
+                                    (glVertex2f lx ty)
+                                    (glTexCoord2f r b)
+                                    (glVertex2f rx by)
+                                    (glTexCoord2f l b)
+                                    (glVertex2f lx by))))))
+                        (do (+ x 1) y (cdr text))))))))
+
       (for-each (lambda (text)
-            (define (echo text)
-               (let do ((x (+ (ref drawing-area 1) (car cursor)))
-                        (y (+ (ref drawing-area 2) (cdr cursor)))
-                        (text (string->runes text)))
-                  (if (null? text)
-                     (move-to (- x (ref drawing-area 1)) (- y (ref drawing-area 2))) ; закончили печатать, переместим курсор
-                     ; иначе отрендерим символ
-                     (let ((char (car text)))
-                        (case char
-                           (#\space
-                              (do (+ x 1) y (cdr text)))
-                           (#\newline
-                              (do (ref drawing-area 1) (+ y 1) (cdr text)))
-                           (else
-                              (let ((uv (getf charset char)))
-                                 (if uv
-                                    (let ((u (ref uv 1))
-                                          (v (ref uv 2)))
-                                       (glTexCoord2f u (+ v 1/32))
-                                       (glVertex2f x (+ y 1))
-                                       (glTexCoord2f (+ u 9/320) (+ v 1/32))
-                                       (glVertex2f (+ x 1) (+ y 1))
-                                       (glTexCoord2f (+ u 9/320) v)
-                                       (glVertex2f (+ x 1) y)
-
-                                       (glTexCoord2f u (+ v 1/32))
-                                       (glVertex2f x (+ y 1))
-                                       (glTexCoord2f (+ u 9/320) v)
-                                       (glVertex2f (+ x 1) y)
-                                       (glTexCoord2f u v)
-                                       (glVertex2f x y))))
-                              (do (+ x 1) y (cdr text))))))))
-
             (cond
                ; строка - текст
                ((string? text)
@@ -203,30 +198,36 @@
    ; возвращает привязанный к знакоместу символ.
    ; привязки смотреть в описании функции write
    (define (make-selection windows X Y)
+      (define selection (list #f))
       (call/cc (lambda (return)
+         (define (test text)
+            (let do ((x (+ (ref drawing-area 1) (car cursor)))
+                     (y (+ (ref drawing-area 2) (cdr cursor)))
+                     (text (string->runes text)))
+               (if (null? text)
+                  (move-to (- x (ref drawing-area 1)) (- y (ref drawing-area 2))) ; закончили печатать, переместим курсор
+                  ; иначе отрендерим символ
+                  (let ((char (car text)))
+                     (case char
+                        (#\space
+                           (when (and (eq? x X) (eq? y Y)) ; если мы в позиции мыши
+                              (return (car selection)))
+                           (do (+ x 1) y (cdr text)))
+                        (#\newline
+                           (do (ref drawing-area 1) (+ y 1) (cdr text)))
+                        (else
+                           (when (and (eq? x X) (eq? y Y)) ; если мы в позиции мыши
+                              (return (car selection)))
+                           (do (+ x 1) y (cdr text))))))))
+
          (let ((write (lambda text
-                  (define selection (list #f))
+                  (set-car! selection #false)
                   (for-each (lambda (text)
                         (cond
                            ((string? text)
-                              (let do ((x (+ (ref drawing-area 1) (car cursor)))
-                                       (y (+ (ref drawing-area 2) (cdr cursor)))
-                                       (text (string->runes text)))
-                                 (if (null? text)
-                                    (move-to (- x (ref drawing-area 1)) (- y (ref drawing-area 2))) ; закончили печатать, переместим курсор
-                                    ; иначе отрендерим символ
-                                    (let ((char (car text)))
-                                       (case char
-                                          (#\space
-                                             (if (and (eq? x X) (eq? y Y)) ; если мы в позиции мыши
-                                                (return (car selection)))
-                                             (do (+ x 1) y (cdr text)))
-                                          (#\newline
-                                             (do (ref drawing-area 1) (+ y 1) (cdr text)))
-                                          (else
-                                             (if (and (eq? x X) (eq? y Y)) ; если мы в позиции мыши
-                                                (return (car selection)))
-                                             (do (+ x 1) y (cdr text))))))))
+                              (test text))
+                           ((number? text)
+                              (test (number->string text)))
                            ((symbol? text)
                               (set-car! selection text))
                            ((function? text)
@@ -240,14 +241,12 @@
                (unless (null? ff)
                   (let*((window (cdar ff))
                         (writer (if window (ref window 5))))
-                     (if writer
-                        (let ((vp '(0 0 0 0)))
-                           (set-ref! drawing-area 1 (ref window 1))
-                           (set-ref! drawing-area 2 (ref window 2))
-                           ; а тут проведем тест на попадание мышки в выводимое знакоместо
-                           (move-to 0 0)
-                           (writer write)
-                     ))
+                     (when writer
+                        (set-ref! drawing-area 1 (ref window 1))
+                        (set-ref! drawing-area 2 (ref window 2))
+                        ; а тут проведем тест на попадание мышки в выводимое знакоместо
+                        (move-to 0 0)
+                        (writer write))
                      (loop (force (cdr ff))))))))))
 
 
@@ -258,9 +257,8 @@
                (sender msg envelope))
             (case msg
                ; low level interaction interface
-               (['set key data]
-                  (let ((itself (put itself key data)))
-                     (this itself)))
+               (['set key value]
+                  (this        (put itself key value)))
                (['get key]
                   (mail sender (get itself key #false))
                   (this itself))
@@ -307,7 +305,8 @@
 
                   (glPushMatrix)
                   (glLoadIdentity)
-                  (glOrtho 0 80 25 0 0 1)
+                  (glOrtho 0 (* 80 font-width) (* 25 font-size) 0 0 1) ; размер нашей консольки
+                  ; todo: высчитывать ее динамически
 
                   (glEnable GL_TEXTURE_2D)
                   (glBindTexture GL_TEXTURE_2D (car atlas))
@@ -372,8 +371,8 @@
 
                (['make-selection x y]
                   (mail sender (make-selection itself
-                     (floor (* x (/ 80 (ref gl:window-dimensions 3))))
-                     (floor (* y (/ 25 (ref gl:window-dimensions 4))))))
+                     (floor (/ (* x 80) (ref gl:window-dimensions 3)))
+                     (floor (/ (* y 25) (ref gl:window-dimensions 4)))))
                   (this itself))
 
                (else
