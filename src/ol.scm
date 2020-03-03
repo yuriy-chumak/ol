@@ -52,12 +52,11 @@
    srfi-16 ; case-lambda
    srfi-87 ; <= in cases
    srfi-71 ; extended LET-syntax for multiple values
-   otus-lisp
-   owl-lisp)) ; backward compatibility
+   otus-lisp))
 
 (define *include-dirs* '("." "libraries")) ;; now we can do (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
-(define *ol-version* "2.1 rc1") ;; http://semver.org/lang/ru/
+(define *ol-version* "2.1") ;; http://semver.org/lang/ru/
 
 (define *loaded* '())   ;; can be removed soon, used by old ,load and ,require
 
