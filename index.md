@@ -19,13 +19,13 @@ Release **2.1** available to [download](https://github.com/yuriy-chumak/ol/relea
 ### Already tested platforms
 - [x] x86: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7.
 - [x] x86_64: core 2 quad, core i3, core i5, core i7.
-- [x] aarch64: cortex-a53, cortex-a57.
+- [x] aarch64: cortex-a53, cortex-a57, cortex-a75/a55.
 - [x] arm: armv5tejl, armv7l, arm920t, snapdragon 801.
   - nearly planned, but not yet tested: arm926t, arm1136, cortex-a7, cortex-a9, cortex-a15, cortex-m3, cortex-m4.
 - [x] powerpc: Mac G4
 - [x] mips32: algor (P-5064)
 - [x] mips64
-- fully supported, but not yet tested: m68k, microblaze, or1k, ppc, ppc64, sh4, spark, spark64, ztensa.
+- fully supported, but not yet tested: m68k, microblaze, or1k, ppc64, sh4, spark, spark64, ztensa.
 
 ### Tested operation systems/devices
 - [x] GNU/Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
