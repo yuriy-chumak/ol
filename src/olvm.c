@@ -4322,7 +4322,7 @@ loop:;
 	//			ol->slice  = uvtoi (a);
 	//			break;
 	//		}
-			case 1117: { // get memory stats -> #[generation fp total]
+			case 1117: { // get memory stats -> #[old-generation-size allocated-size heap-size], all in words
 				int g = heap->genstart - heap->begin;
 				int f = fp - heap->begin;
 				int t = heap->end - heap->begin;
