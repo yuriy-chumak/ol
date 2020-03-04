@@ -54,7 +54,7 @@
    srfi-71 ; extended LET-syntax for multiple values
    otus-lisp))
 
-(define *include-dirs* '("." "libraries")) ;; now we can do (import <libname>) and have them be autoloaded to current repl
+(define *path* '("." "libraries")) ;; now we can do (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
 (define *ol-version* "2.1") ;; http://semver.org/lang/ru/
 
@@ -205,7 +205,7 @@
 (define shared-misc
    (share-bindings
       *features*
-      *include-dirs*
+      *path*
       *libraries*))      ;; all currently loaded libraries
 
 (print "Code loaded at " (- (time-ms) build-start) " ms.")
@@ -298,7 +298,7 @@
                                                          (unless (string-eq? file "-")
                                                             (let ((port (open-input-file file)))
                                                                (unless port
-                                                                  (print "error: can't open/read file '" file "'")
+                                                                  (print "error: can't open file '" file "'")
                                                                   (halt 3))
                                                                port)))
                                                   (cdr args)))))))
@@ -327,7 +327,7 @@
                                     initial-environment
                                     (list
                                        (cons '*owl-names*   initial-names)
-                                       (cons '*include-dirs* (list "." home))
+                                       (cons '*path* (list "." home))
                                        (cons '*interactive* interactive?)
                                        (cons '*vm-args* vm-args)
                                        (cons '*version* version)

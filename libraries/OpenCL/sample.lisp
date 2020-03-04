@@ -2,7 +2,7 @@
 ; for intel gpu: apt-get install beignet
 ; http://www.freedesktop.org/wiki/Software/Beignet/
 ; https://01.org/beignet
-(define *include-dirs* (cons ".." *include-dirs*))
+(define *path* (cons ".." *path*))
 (import (OpenCL version-1-0))
 
 (define (new-size_t) (make-bytevector (size nullptr)))

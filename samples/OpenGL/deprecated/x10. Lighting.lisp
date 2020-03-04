@@ -1,5 +1,5 @@
 #!/usr/bin/ol
-(define *include-dirs* (cons "../.." *include-dirs*))
+(define *path* (cons "../.." *path*))
 (import (lib opengl))
 
 ;(teapot)

@@ -1,4 +1,4 @@
-(define *include-dirs* (cons ".." *include-dirs*))
+(define *path* (cons ".." *path*))
 (define-library (lib sdl2)
  (import
   (otus lisp) (otus ffi))

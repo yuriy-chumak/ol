@@ -138,7 +138,7 @@
 
 ;; file include
 
-(define *include-dirs*  ;; try to include from the tests directory only
+(define *path*  ;; try to include from the tests directory only
    (list "tests"))
 
 (define-library (include test)

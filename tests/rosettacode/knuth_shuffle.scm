@@ -1,5 +1,5 @@
 ; http://www.rosettacode.org/wiki/Knuth_shuffle
-(define *include-dirs* (cons "tests/rosettacode" *include-dirs*))
+(define *path* (cons "tests/rosettacode" *path*))
 (import (otus random!))
 
 (define items [1 2 3 4 5 6 7 8 9])

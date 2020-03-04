@@ -430,7 +430,7 @@
 
       ;; todo: should keep a list of documents *loading* and use that to detect circular loads (and to indent the load msgs)
       (define (repl-load repl path in env)
-         (let*((paths (map (lambda (dir) (fold string-append dir `("/" ,path))) (env-get env '*include-dirs* '("."))))
+         (let*((paths (map (lambda (dir) (fold string-append dir `("/" ,path))) (env-get env '*path* '("."))))
                (exps ;; find the file to read
                   (let loop ((paths paths))
                      (unless (null? paths)
@@ -736,7 +736,7 @@
       (define (repl-include env path fail)
          (let*((paths (map
                         (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path)))))
-                        (env-get env '*include-dirs* null)))
+                        (env-get env '*path* null)))
 ;             (_ (print "paths: " paths))
                (data (let loop ((paths paths))
                         (unless (null? paths)
@@ -750,7 +750,7 @@
                   (if exps ;; all of the file parsed to a list of sexps
                      (cons 'begin exps)
                      (fail (list "Failed to parse contents of " path))))
-               (fail (list "Couldn't find " path "from any of" (env-get env '*include-dirs* null))))))
+               (fail (list "Couldn't find " path "from any of" (env-get env '*path* null))))))
 
       ;; nonempty list of symbols or integers
       (define (valid-library-name? x)
@@ -873,10 +873,9 @@
       ;; variables which are added to *src-olvm* when evaluating libraries
       (define library-exports
          (list
-            '*libraries*     ;; loaded libraries
-            '*include-dirs* ;; where to try to load includes/libraries from
-            '*features*
-            '*vm-args*))    ;; implementation features
+            '*libraries*   ;; loaded libraries
+            '*path*        ;; where to try to load includes/libraries from
+            '*features*))  ;; implementation features
 
       ;; update *owl-names* (used by renderer of repl prompt) if the defined value is a function
       (define (maybe-name-function env name value)
