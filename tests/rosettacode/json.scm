@@ -1,9 +1,7 @@
 ; http://rosettacode.org/wiki/JSON#Ol
-
 (import (file json))
-(import (owl parse))
 
-(define o (parse json-parser (str-iter "
+(define o (read-json-string "
   {
     'name': 'John',
     'full name': 'John Smith',
@@ -24,7 +22,7 @@
         'number': '222 222-2222'
       }
     ]
-  }") #f #f #f))
+  }"))
 (print o)
 
 (print-json-with display o)
