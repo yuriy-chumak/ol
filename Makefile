@@ -262,6 +262,10 @@ libraries/owl/unicode-char-folds.scm:
 	   tr "[A-F]" "[a-f]" >> libraries/owl/unicode-char-folds.scm
 	echo '))' >>libraries/owl/unicode-char-folds.scm
 
+# compiling infix math notation
+libraries/owl/math/infix.scm: make-math-infix.scm vm
+	./vm repl make-math-infix.scm >$@
+
 
 
 #embed sample
