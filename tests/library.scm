@@ -113,7 +113,7 @@
          (begin
             (unbound-thingy)
             (define (test x) coasts)))
-      (owl-lisp
+      (otus-lisp
          (begin
             (define (test x) "ok")))
       (else
