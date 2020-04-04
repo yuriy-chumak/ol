@@ -256,8 +256,8 @@
             ; if no extensions - use empty string:
             ""))))
       (if (member extension extensions)
-         (begin (print " ok.") #true)
-         (begin (print " not found.") #false))))
+         (begin (print-to stderr " ok.") #true)
+         (begin (print-to stderr " not found.") #false))))
 
 
    ;; (let ((string (append '(#\space) (string->bytes extensions) '(#\space)))
