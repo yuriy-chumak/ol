@@ -39,7 +39,7 @@
 (import (scheme base))    ;; ... набор Scheme
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*libraries* *codes* *vm-args* stdin stdout stderr build-start) ;set-ticker-value
+,forget-all-but (*libraries* *codes* *vm-args* *version* stdin stdout stderr build-start) ;set-ticker-value
 
 ;;;
 ;;; Time for a new REPL
@@ -86,18 +86,7 @@
 (import (lang compile))
 
 
-(define *version*
-   (let loop ((args *vm-args*))
-      (if (null? args)
-         *ol-version*
-         (if (string-eq? (car args) "--force-version")
-            (if (null? (cdr args))
-               (runtime-error "version number expected" args)
-               (cadr args))
-            (loop (cdr args))))))
-
 (define *features* (append *features* `(
-   ,(string->symbol (string-append "ol-" *version*))
    exact-closed
    ratios
    exact-complex
@@ -258,22 +247,28 @@
                         (and (<= (string-length prefix) (string-length string))
                              (string-eq? prefix (substring string 0 (string-length prefix)))))
 
-                     ;(print "vm-args: " vm-args)
+                     ;; (print "vm-args: " vm-args)
 
                      (let*((options vm-args
                               (let loop ((options #empty) (args vm-args))
                                  (cond
                                     ((null? args)
                                        (values options #null))
+                                    ;; version manipulation
+                                    ((string-eq? (car args) "--version")
+                                       (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
+                                       (halt 0))
+                                    ((starts-with? (car args) "--version=")
+                                       (loop (put options 'version
+                                                (substring (car args) 10 (string-length (car args))))
+                                             (cdr args)))
+                                    ;; additional options
                                     ((string-eq? (car args) "--sandbox")
                                        (loop (put options 'sandbox #t) (cdr args)))
                                     ((string-eq? (car args) "--interactive")
                                        (loop (put options 'interactive #t) (cdr args)))
                                     ((string-eq? (car args) "--no-interactive")
                                        (loop (put options 'interactive #f) (cdr args)))
-                                    ((string-eq? (car args) "--version")
-                                       (print "ol (Otus Lisp) " *version*)
-                                       (halt 0))
                                     ;; special case - use embed REPL version
                                     ((string-eq? (car args) "--embed")
                                        (loop (put options 'embed #t) (cdr args)))
@@ -285,9 +280,6 @@
                                        (loop (put options 'home
                                                 (substring (car args) 7 (string-length (car args))))
                                              (cdr args)))
-                                    ;; 
-                                    ((starts-with? (car args) "--force-version") ; just skip, already processed at the begin of file
-                                       (loop options (cddr args)))      ; because forced version must be reflected in *features* etc.
                                        
                                     ((starts-with? (car args) "--")
                                        (print "unknown command line option '" (car args) "'")
@@ -320,18 +312,21 @@
                                                  "/usr/lib/ol"))
                                            "/usr/lib/ol"))))
 
-                           (version (cons "OL" *version*))
+                           (version (cons "OL" (get options 'version (cdr *version*))))
                            (env (fold
                                     (λ (env defn)
                                        (env-set env (car defn) (cdr defn)))
                                     initial-environment
                                     (list
-                                       (cons '*owl-names*   initial-names)
+                                       (cons '*owl-names* initial-names)
                                        (cons '*path* (list "." home))
                                        (cons '*interactive* interactive?)
                                        (cons '*vm-args* vm-args)
                                        (cons '*version* version)
-                                       (cons '*features* (let*((*features* (let ((one (vm:cast 1 type-vptr)))
+                                       (cons '*features* (let*((*features* (cons
+                                                                              (string->symbol (string-append "ol-" (cdr version)))
+                                                                              *features*))
+                                                               (*features* (let ((one (vm:cast 1 type-vptr)))
                                                                               (cond
                                                                                  ((eq? (ref one 0) 1)
                                                                                     (append *features* '(little-endian)))
@@ -343,12 +338,12 @@
                                                                                     *features*))))
                                                                (*features* (let ((uname (syscall 63)))
                                                                               (if (vector? uname)
-                                                                                 (append *features* `(
-                                                                                       ,(string->symbol (ref uname 1))  ; OS
-                                                                                       ,(string->symbol (ref uname 5)))) ; Platform
+                                                                                 (append *features* (list
+                                                                                       (string->symbol (ref uname 1))  ; OS
+                                                                                       (string->symbol (ref uname 5)))) ; Platform
                                                                                  *features*))))
                                                             *features*))
-                                       ;(cons '*scheme* 'r5rs)
+                                       ;(cons '*scheme* 'r7rs)
                                        (cons '*sandbox* sandbox?)))))
                            ; go:
                            (if sandbox?
@@ -397,7 +392,7 @@
 
                                  ;; repl
                                  (shutdown
-                                       (repl-trampoline env file)))))))])))))
+                                    (repl-trampoline env file)))))))])))))
 
 ;;;
 ;;; Dump the new repl
