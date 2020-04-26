@@ -33,8 +33,8 @@
 
    glEnd ; void () +
 
-   ;WINGDIAPI void APIENTRY glEdgeFlag (GLboolean flag); +
-   ;WINGDIAPI void APIENTRY glEdgeFlagv (const GLboolean *flag); +
+   glEdgeFlag ; void (GLboolean flag)
+   glEdgeFlagv ; void (const GLboolean *flag);
 
    ;; 2.7 Vertex Specification
 
@@ -2957,6 +2957,8 @@
       ;       GLU_FILL                100012
       (define GLU_OUTLINE_POLYGON     100240)
       (define GLU_OUTLINE_PATCH       100241)
+
+   (define gluBuild2DMipmaps (GLU GLint "gluBuild2DMipmaps" GLenum GLint GLsizei GLsizei GLenum GLenum GLvoid*))
 
 (define GLU_AUTO_LOAD_MATRIX    100200)
 (define GLU_CULLING             100201)
