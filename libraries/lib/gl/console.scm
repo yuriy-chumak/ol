@@ -33,6 +33,9 @@
       render-windows ; глобальная функция отрисовки всех окон
       windows-make-selection ; вернуть привязанную к знакоместу метаинформацию
    )
+
+   (import
+      (OpenGL SGIS generate_mipmap))
    ; ...
 
 (begin
@@ -51,6 +54,7 @@
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+   (glTexParameteri GL_TEXTURE_2D GL_GENERATE_MIPMAP_SGIS GL_TRUE)
 
    ; задаем символы, которые будут в нашем атласе
    ; https://evanw.github.io/font-texture-generator/
@@ -149,8 +153,8 @@
                         (do (ref drawing-area 1) (+ y 1) (cdr text)))
                      (else
                         (let ((tc (charset char #false))
-                              (x (+ (* x font-width) 0))
-                              (y (+ (* y font-size) font-size)))
+                              (x (+ (* x font-width) 2))
+                              (y (+ (* y font-size) font-size -12)))
                            (if tc (vector-apply tc
                               (lambda (l t r b  dx dy xw yh)
                                  (let*((lx (- x dx))
@@ -352,10 +356,10 @@
                                     (glDisable GL_TEXTURE_2D)
                                     (apply glColor3f border)
                                     (glBegin GL_LINE_LOOP)
-                                    (glVertex2f x y)
-                                    (glVertex2f (+ x width 1/9) y)
-                                    (glVertex2f (+ x width 1/9) (+ y height 1/16))
-                                    (glVertex2f x (+ y height 1/16))
+                                    (glVertex2f (*    x        font-width) (*    y         font-size))
+                                    (glVertex2f (* (+ x width) font-width) (*    y         font-size))
+                                    (glVertex2f (* (+ x width) font-width) (* (+ y height) font-size))
+                                    (glVertex2f (*    x        font-width) (* (+ y height) font-size))
                                     (glEnd)
                                     (glEnable GL_TEXTURE_2D)))
 

@@ -83,7 +83,7 @@
 
          (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35)
          (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
-         (define KEY_MINUS #x2D) (define KEY_EQUAL #x2E) (define KEY_BACKSPACE #xff08) (define KEY_TAB #xff09)
+         (define KEY_MINUS #x2D) (define KEY_EQUAL #x2B) (define KEY_BACKSPACE #xff08) (define KEY_TAB #xff09)
 
          ;; (define vkQ 24) (define vkW 25) (define vkE 26) (define vkR 27) (define vkT 28) (define vkY 29) (define vkU 30) (define vkI 31) (define vkO 32) (define vkP 33)
          ;; (define vkA 38) (define vkS 39) (define vkD 40) (define vkF 41) (define vkG 42) (define vkH 43) (define vkJ 44)(define vkK 45) (define vkL 46)
