@@ -103,7 +103,7 @@
       (define (get-imm n)
          (let-parses (
                (a get-byte)
-               (verify (eq? a n) '(expected n)))
+               (verify (eq? a n) `(expected ,n)))
             a))
 
       (define (get-word str val)
