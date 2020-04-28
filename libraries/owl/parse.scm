@@ -6,6 +6,7 @@
 
    (export
       let-parses ; parser constructor
+      let-parse* ; same as let-parses
 
       get-byte   ; elementary parsers
       get-byte-if
@@ -47,24 +48,29 @@
       ;      -> (ok ll' fail' val pos)
       ;      -> (fail fail-pos fail-msg')
 
-      (define-syntax let-parses
+      (define-syntax let-parse*
          (syntax-rules (verify eval)
-            ((let-parses 42 sc ft lst pos ((val (eval term)) . r) body)
+            ((let-parse* 42 sc ft lst pos ((val (eval term)) . r) body)
                (let ((val term))
-                  (let-parses 42 sc ft lst pos r body)))
-            ((let-parses 42 sc ft lst pos ((val parser) . r) body)
+                  (let-parse* 42 sc ft lst pos r body)))
+            ((let-parse* 42 sc ft lst pos ((val parser) . r) body)
                (parser lst
                   (λ (lst ft val pos)
-                     (let-parses 42 sc ft lst pos r body))
+                     (let-parse* 42 sc ft lst pos r body))
                   ft pos))
-            ((let-parses 42 sc ft lst pos () body) (sc lst ft body pos))
-            ((let-parses 42 sc ft lst pos ((verify term msg) . r) body)
+            ((let-parse* 42 sc ft lst pos () body) (sc lst ft body pos))
+            ((let-parse* 42 sc ft lst pos ((verify term msg) . r) body)
                (if term
-                  (let-parses 42 sc ft lst pos r body)
-                  (ft pos msg)))
-            ((let-parses ((a . b) ...) body)
+                  (let-parse* 42 sc ft lst pos r body)
+                  (ft pos msg))) ; bug: not showing error message
+            ((let-parse* ((a . b) ...) body)
                (λ (ll ok fail pos)
-                  (let-parses 42 ok fail ll pos ((a . b) ...) body)))))
+                  (let-parse* 42 ok fail ll pos ((a . b) ...) body)))))
+
+      (define-syntax let-parses
+         (syntax-rules ()
+            ((let-parses . body)
+               (let-parse* . body))))
 
       ; read nothing, succeed with val
       (define (get-epsilon val)
@@ -192,34 +198,34 @@
 
       ; #b10xxxxxx
       (define get-extension-byte
-         (let-parses
-            ((b get-byte)
-             (verify (eq? #b10000000 (vm:and b #b11000000)) "Bad extension byte"))
+         (let-parse* (
+               (b get-byte)
+               (verify (eq? (vm:and b #b11000000) #b10000000) "Bad extension byte"))
             b))
 
-      ;; fixme: could also support the longer proposed ones
       ;; fixme: get-rune == get-utf-8
       (define get-rune
          (get-any-of
             (get-byte-if (λ (x) (less? x 128)))
-            (let-parses
-               ((a (get-between 127 224))
-                (verify (not (eq? a #b11000000)) "blank leading 2-byte char") ;; would be non-minimal
-                (b get-extension-byte))
+            (let-parse* (
+                  (a (get-between 127 224))
+                  ; note: two byte sequence #b11000000 10xxxxxx is invalid
+                  (verify (not (eq? a #b11000000)) "invalid utf-8 stream")
+                  (b get-extension-byte))
                (two-byte-point a b))
-            (let-parses
-               ((a (get-between 223 240))
-                (verify (not (eq? a #b11100000)) "blank leading 3-byte char") ;; would be non-minimal
-                (b get-extension-byte) (c get-extension-byte))
+            (let-parse* (
+                  (a (get-between 223 240))
+                  ; note: three byte sequence #b11100000 10xxxxxx 10xxxxxx is valid!
+                  (b get-extension-byte) (c get-extension-byte))
                (three-byte-point a b c))
-            (let-parses
-               ((a (get-between 239 280))
-                (verify (not (eq? a #b11110000)) "blank leading 4-byte char") ;; would be non-minimal
-                (b get-extension-byte) (c get-extension-byte) (d get-extension-byte))
+            (let-parse* (
+                  (a (get-between 239 280))
+                  ; note: four byte sequence #b11110000 10xxxxxx 10xxxxxx 10xxxxxx is valid!
+                  (b get-extension-byte) (c get-extension-byte) (d get-extension-byte))
                (four-byte-point a b c d))))
 
       (define (get-rune-if pred)
-         (let-parses (
+         (let-parse* (
                (rune get-rune)
                (verify (pred rune) "invalid rune"))
             rune))
