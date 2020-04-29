@@ -225,6 +225,18 @@ olvm.js: src/olvm.c include/olvm.h extensions/ffi.c repl.js oljs.js
 	   -s NO_EXIT_RUNTIME=1 \
 	   --memory-init-file 0
 
+olvm.wasm: src/olvm.c include/olvm.h
+	emcc src/olvm.c extensions/embed.c tmp/repl.c -Os \
+	   -o olvm.html -Iinclude \
+	   -DEMBEDDED_VM=1 -DHAS_DLOPEN=0 \
+	   -Dbinary_repl_start=repl \
+	   -s ASSERTIONS=0 \
+	   -s ALLOW_MEMORY_GROWTH=1 \
+	   -s FORCE_FILESYSTEM=1 \
+	   -s WASM=1 \
+	   -s "EXTRA_EXPORTED_RUNTIME_METHODS=['cwrap']"\
+	   -s "EXPORTED_FUNCTIONS=['_ol_init','_ol_eval']"
+
 tmp/emscripten.c:
 	echo "#include <GL/gl.h>"      > tmp/emscripten.c
 	echo "int main() { return 0;}" >>tmp/emscripten.c
