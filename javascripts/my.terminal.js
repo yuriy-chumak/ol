@@ -50,8 +50,8 @@ $('#terminal').mousewheel(function(event) {
 var Module = {
 //   arguments: ['#', '-', '--embed'],
 //   arguments: ['platform', '-'],
-   dynamicLibraries: ['olvm.js', 'repl.js', 'oljs.js'],
-   TOTAL_MEMORY: 67108864,
+   dynamicLibraries: [], //, 'olvm.js', 'repl.wasm', 'oljs.wasm'],
+   INITIAL_MEMORY: 67108864,
 
    preRun: function() {
       console.log("preRun");
@@ -85,6 +85,7 @@ var Module = {
 
       terminal.resume();
       terminal.set_prompt('> ');
+      terminal.focus();
    },
 
    print: function(text) {
@@ -221,7 +222,7 @@ var Downloaded = 0;
          if (++Downloaded == Libraries.length) {*/
             // load olvm
             var script = document.createElement('script');
-            script.src = "javascripts/emscripten-1.37.35.js";
+            script.src = "olvm.js"; //javascripts/emscripten-1.37.35.js";
 
             script.addEventListener('load', function(me) {
                 terminal.set_prompt('');
