@@ -4,11 +4,27 @@ function abortStackOverflow() {}
 function doit(text)
 {
    terminal.focus();
-//   console.log("text:", text);
    if (text.indexOf("\n") == 0)
       text = text.substring(1);
    terminal.exec(text);
 }
+
+// WASM:
+function wasmSupported() {
+   try {
+      if (typeof WebAssembly === "object"
+       && typeof WebAssembly.instantiate === "function") {
+         const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+         if (module instanceof WebAssembly.Module)
+            return new WebAssembly.Instance(module) instanceof WebAssembly.Instance;
+      }
+   } catch (e){}
+   return false;
+};
+ga('send', 'event', 'WASM', 'supported', ""+wasmSupported(), {
+   nonInteraction: true
+});
+
 
 // TERMINAL:
 var stdInput = ""; //unescape(encodeURIComponent(",load \"init.lisp\"")); // loading the script with initial code
@@ -17,7 +33,7 @@ var errorLen = 0;
 var terminal;
 $('#terminal').terminal(function(command, terminal) {
    var text = unescape(encodeURIComponent(command));
-   ga('send', 'event', 'Console', 'eval', text, {
+   ga('send', 'event', 'Console', 'eval', ""+text, {
       nonInteraction: true
     });
 
@@ -96,24 +112,13 @@ var Module = {
          terminal.clear();
       }
 
-/*      // reaction on "(print)" - show canvas
-      if (text=="> ") {
-         console.log("sssssss")
-//         terminal.ready = true;
-//         hideTerminal();
-      }*/
-
       // let's process OL's prompt:
-/*    terminal.position(1);
-      while (text.indexOf("> ") == 0)
-         text = text.substring(2);//*/
       terminal.set_prompt('> ');
       terminal.resume();
       terminal.echo(text);
 
       ga('send', 'event', 'Console', 'stdout', text, {
          nonInteraction: true});
-
 
       // well, we got greeting. let's import (lib opengl)
       //if (text == "type ',help' to help, ',quit' to end session.")
