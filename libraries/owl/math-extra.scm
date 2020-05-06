@@ -46,7 +46,7 @@
       (define (nbits n f)
          (cond
             ((eq? n 0) f)
-            ((eq? (type n) type-fix+)
+            ((eq? (type n) type-enum+)
                (lets ((hi lo (vm:shr n 1)))
                   (nbits hi (nat-succ f))))
             (else
@@ -76,7 +76,7 @@
       ; largest m where m^2 <= n
       (define (isqrt n)
          (cond
-            ((eq? (type n) type-fix-) (sub 0 (isqrt (sub 0 n))))
+            ((eq? (type n) type-enum-) (sub 0 (isqrt (sub 0 n))))
             ((eq? (type n) type-int-) (sub 0 (isqrt (sub 0 n))))
             ((eq? n 0) 0)
             ((eq? n 1) 1)
@@ -98,7 +98,7 @@
       ;; fixme: finish sqrt after adding complex numbers
       (define (sqrt n precision)
          (case (type n)
-            (type-fix+
+            (type-enum+
                (let*((s r (exact-integer-sqrt n))) ; r: remainder
                   (cond
                      ((eq? r 0)
@@ -126,7 +126,7 @@
                               (if (good-enough? t s precision)
                                  t
                                  (loop t))))))))
-            (type-fix- (complex 0 (sqrt (abs n) precision)))
+            (type-enum- (complex 0 (sqrt (abs n) precision)))
             (type-int- (complex 0 (sqrt (abs n) precision)))
             (else
                (runtime-error "sqrt: math too high: " n))))
@@ -159,9 +159,9 @@
             ((eq? b 0) 1)
             ((eq? b 1) a)
             ((eq? b 2) (* a a))
-            ((eq? (type b) type-fix+) (expt-loop a (sub b 1) a))
+            ((eq? (type b) type-enum+) (expt-loop a (sub b 1) a))
             ((eq? (type b) type-int+) (expt-loop a (sub b 1) a))
-            ((eq? (type b) type-fix-) (/ 1 (expt a (negate b))))
+            ((eq? (type b) type-enum-) (/ 1 (expt a (negate b))))
             ((eq? (type b) type-int-) (/ 1 (expt a (negate b))))
             (else (big-bad-args 'expt a b))))
 

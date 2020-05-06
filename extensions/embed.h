@@ -58,13 +58,13 @@ typedef struct ol_t
 		assert (is_reference(p) && "argument should be reference");\
 		(unsigned char)(((*(uintptr_t*)(p)) >> 2) & 0x3F); })
 
-//! returns not 0 if argument is a small number (type-fix+ or type-fix-)
+//! returns not 0 if argument is a small number (type-enum+ or type-enum-)
 #define is_small(x) ({ uintptr_t s = (uintptr_t)(x);\
 		is_value(s) ?\
 			vtype(s) == 0 || vtype(s) == 32\
 		: 0; })
 
-//! returns not 0 if argument is a number (type-int+ or type-num-)
+//! returns not 0 if argument is a number (type-int+ or type-int-)
 #define is_number(x) ({ uintptr_t n = (uintptr_t)(x);\
 		is_small(n) ? 1 \
 		: is_reference(n) ? \

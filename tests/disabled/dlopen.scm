@@ -15,7 +15,7 @@
   (define IDOK 1)
   (define IDCANCEL 2)
 
-(define MessageBox (dlsym type-fix+ user32_dll "MessageBoxA"))
+(define MessageBox (dlsym type-enum+ user32_dll "MessageBoxA"))
   (define MB_OK 0)
   (define MB_OKCANCEL 1)
   (define MB_ICONASTERISK 64)

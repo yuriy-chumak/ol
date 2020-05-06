@@ -288,7 +288,7 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* j
         jfieldID TRUE = (*jenv)->GetStaticFieldID(jenv, Boolean, "TRUE", "Ljava/lang/Boolean;");
             return (*jenv)->GetStaticObjectField(jenv, Boolean, TRUE);
     }
-    if (is_number(r)) { // type-fix+, type-fix-, type-int+, type-int-
+    if (is_number(r)) { // type-enum+, type-enum-, type-int+, type-int-
         jmethodID valueOf = (*jenv)->GetStaticMethodID(jenv, Integer, "valueOf", "(I)Ljava/lang/Integer;");
         return (*jenv)->CallStaticObjectMethod(jenv, Integer, valueOf, (void*)ol2int(r));
     }

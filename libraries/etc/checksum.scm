@@ -51,7 +51,7 @@
       ;; bignum remainder is expensive, and rarely actually needed when numbers (usually 0-256) are below modulus
       (define (add-mod a b m)
          (let ((a (+ a b)))
-            (if (eq? (type a) type-fix+)
+            (if (eq? (type a) type-enum+)
                (rem a m)
                (let loop ((a (+ a b)))
                   (if (< a m) a (loop (- a m)))))))

@@ -284,8 +284,8 @@
 
 	(define (compatible-number? n)
 		(case (type n)
-			(type-fix+ #true)
-			(type-fix- #true)
+			(type-enum+ #true)
+			(type-enum- #true)
 			(type-int+ #true)
 			(type-int- #true)
 			(else #false))) ; namely rationals and later complex

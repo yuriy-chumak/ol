@@ -821,7 +821,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define blob_size(x)                ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x))) // todo: rename to binstream size
 #define binstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
 
-// todo: объединить типы TFIX и TINT, TFIXN и TINTN, так как они различаются битом I
+// todo: объединить типы TENUMP и TINTP, TENUMN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
 #define TVECTOR                      (2)
 #define TSTRING                      (3)
@@ -850,8 +850,8 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 // numbers (value type)
 // A FIXNUM is an exact integer that is small enough to fit in a machine word.
 // todo: rename TFIX to TSHORT or TSMALLINT, TINT to TLARGE or TLARGEINT
-#define TFIXP                        (0)  // type-fix+ // small integer
-#define TFIXN                       (32)  // type-fix-
+#define TENUMP                       (0)  // type-enum+ // small integer
+#define TENUMN                      (32)  // type-enum-
 // numbers (reference type)
 #define TINTP                       (40)  // type-int+ // large integer
 #define TINTN                       (41)  // type-int-
@@ -885,9 +885,9 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define is_port(ob)                 (\
 									(is_value(ob)     && value_type (ob) == TPORT) || \
 									(is_reference(ob) && reference_type (ob) == TPORT))
-#define is_fixp(ob)                 (is_value(ob)     && value_type (ob) == TFIXP)
-#define is_fixn(ob)                 (is_value(ob)     && value_type (ob) == TFIXN)
-#define is_fix(ob)                  (is_fixp(ob) || is_fixn(ob))
+#define is_enump(ob)                (is_value(ob)     && value_type (ob) == TENUMP)
+#define is_enumn(ob)                (is_value(ob)     && value_type (ob) == TENUMN)
+#define is_enum(ob)                 (is_enump(ob) || is_enumn(ob))
 #define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TPAIR,     3))
 #define is_npairp(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTP,     3))
 #define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
@@ -900,13 +900,13 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TVPTR,     2))
 #define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TCALLABLE, 2))
 
-#define is_numberp(ob)              (is_fixp(ob) || is_npairp(ob))
-#define is_numbern(ob)              (is_fixn(ob) || is_npairn(ob))
+#define is_numberp(ob)              (is_enump(ob) || is_npairp(ob))
+#define is_numbern(ob)              (is_enumn(ob) || is_npairn(ob))
 #define is_number(ob)               (is_numberp(ob) || is_numbern(ob))
 
 // makes positive olvm integer value from int
 #define I(val) \
-		(make_value(TFIXP, val))  // === (value << IPOS) | 2
+		(make_value(TENUMP, val))  // === (value << IPOS) | 2
 
 // взять значение аргумента:
 #define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
@@ -1231,7 +1231,7 @@ word*p = new (TVECTOR, 13);\
 
 // i - machine integer
 // ui - unsigned, si - signed
-// v - value number (internal, that fits in one register), type-fix
+// v - value number (internal, that fits in one register), type-enum
 //  or small numbers,
 //  or short numbers
 // uv, sv - unsigned/signed respectively.
@@ -1242,13 +1242,13 @@ word*p = new (TVECTOR, 13);\
 // todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 #define fix(v) \
 	({  word x1 = (word)(v);    \
-		assert(is_fix(x1));     \
+		assert(is_enum(x1));     \
 		int_t y1 = (x1 >> IPOS);\
-		is_fixn(x1) ? -y1 : y1; \
+		is_enumn(x1) ? -y1 : y1; \
 	})//(x1 & 0x80) ? -y1 : y1;
-#define make_fix(v) \
-	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2/*make_value(-x4, TFIXN) : make_value(x4, TFIXP)*/; })
-#define make_fixp(v) I(v)
+#define make_enum(v) \
+	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2/*make_value(-x4, TENUMN) : make_value(x4, TENUMP)*/; })
+#define make_enump(v) I(v)
 // todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 
 // -= остальные аллокаторы =----------------------------
@@ -1638,7 +1638,7 @@ struct ol_t
 
 // i - machine integer
 // ui - unsigned, si - signed
-// v - value number (internal, that fits in one register), type-fix
+// v - value number (internal, that fits in one register), type-enum
 //  or small numbers,
 //  or short numbers
 // uv, sv - unsigned/signed respectively.
@@ -1646,7 +1646,7 @@ struct ol_t
 
 // работа с numeric value типами
 #ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v)  assert (is_value(v) && value_type(v) == TFIXP);
+#define UVTOI_CHECK(v)  assert (is_value(v) && value_type(v) == TENUMP);
 #endif
 
 // арифметика целых (возможно больших)
@@ -1675,12 +1675,12 @@ struct ol_t
 	})
 #define itosn(val)  ({\
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)make_fix(val),\
+		(word*)make_enum(val),\
 		(word*)({ \
 			intptr_t x5 = (intptr_t)(val); \
 			intptr_t x6 = x5 < 0 ? -x5 : x5; \
 			x6 <= VMAX ? \
-					(word)make_fix(x5): \
+					(word)make_enum(x5): \
 					(word)new_list(x5 < 0 ? TINTN : TINTP, I(x6 & VMAX), I(x6 >> VBITS)); \
 		})); \
 	})
@@ -1716,7 +1716,7 @@ double ol2d_convert(word p) {
 }
 
 double OL2D(word arg) {
-	if (is_fix(arg))
+	if (is_enum(arg))
 		return fix(arg);
 
 	assert (is_reference(arg));
@@ -1758,7 +1758,7 @@ float ol2f_convert(word p) {
 	return v;
 }
 float OL2F(word arg) {
-	if (is_fix(arg))
+	if (is_enum(arg))
 		return fix(arg);
 
 	assert (is_reference(arg));
@@ -1838,7 +1838,7 @@ word d2ol(struct ol_t* ol, double v) {
 	if (1) {
 		int negative = v < 0;  v = v < 0 ? -v : v;
 		if (v < (double)HIGHBIT)
-			a = negative ? make_value(TFIXN, v) : make_value(TFIXP, v);
+			a = negative ? make_value(TENUMN, v) : make_value(TENUMP, v);
 		else {
 			word* p = fp;
 			do {
@@ -2795,11 +2795,11 @@ loop:;
 	// objects referenced from 1, blobs from 0
 	case REF: {  // ref t o -> r
 		word *p = (word *) A0;
-		if (is_reference(p) && is_fix(A1)) {
+		if (is_reference(p) && is_enum(A1)) {
 			word hdr = *p;
 			if (is_blob(p)) {
 				word size = blob_size(p);
-				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // blobs are indexed from 0
 					A2 = I(((unsigned char *) p)[pos+W]);
 				else
@@ -2807,7 +2807,7 @@ loop:;
 			}
 			else {
 				word size = header_size(hdr);
-				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos && pos < size) // objects are indexed from 1
 					A2 = p[pos];
 				else
@@ -2824,7 +2824,7 @@ loop:;
 		word *p = (word *)A0;
 		word result = IFALSE;
 
-		if (is_reference(p) && is_fix(A1)) {
+		if (is_reference(p) && is_enum(A1)) {
 			word hdr = *p;
 			word size = header_size (hdr) - 1; // -1 for header
 			word *newobj = new (size);
@@ -2833,15 +2833,15 @@ loop:;
 			result = (word)newobj;
 
 			if (is_blob(p)) {
-				CHECK(is_fixp(A2), A2, 10001)
+				CHECK(is_enump(A2), A2, 10001)
 				size = size * sizeof(word) - header_pads(hdr);
-				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // will add [0..255] numbers
 					((unsigned char*)&car(newobj))[pos] = fix(A2) & 0xFF;
 			}
 			else {
 				++size;
-				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos && pos < size) // objects are indexed from 1
 					newobj[pos] = A2;
 			}
@@ -2857,20 +2857,20 @@ loop:;
 
 		// this code is same as set-ref
 		// todo: merge it into one function
-		if (is_reference(p) && is_fix(A1)) {
+		if (is_reference(p) && is_enum(A1)) {
 			word hdr = *p;
 			word size = header_size (hdr) - 1; // -1 for header
 			result = (word) p;
 			if (is_blob(p)) {
-				CHECK(is_fixp(A2), A2, 10001)
+				CHECK(is_enump(A2), A2, 10001)
 				size = size * sizeof(word) - header_pads(hdr);
-				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // will add [0..255] numbers
 					((unsigned char*)&car(p))[pos] = fix(A2) & 0xFF;
 			}
 			else {
 				++size;
-				word pos = is_fixp (A1) ? (value(A1)) : (size - value(A1));
+				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos && pos < size) // objects are indexed from 1
 					p[pos] = A2;
 			}
@@ -4346,7 +4346,7 @@ loop:;
 				}
 				case TINTP: {
 					int v = emscripten_run_script_int(string);
-					r = (word*)make_fix(v);
+					r = (word*)make_enum(v);
 					break;
 				}
 				default:
@@ -4405,7 +4405,7 @@ loop:;
 	// 	//            http://man7.org/linux/man-pages/dir_section_2.html
 	// 	// linux syscall list: http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
 	// 	//                     http://www.x86-64.org/documentation/abi.pdf
-	// 	CHECK(is_fixp(A0), A0, SYSCALL);
+	// 	CHECK(is_enump(A0), A0, SYSCALL);
 	// 	word op = value (A0);
 
 	// 	word a = A1, b = A2, c = A3;
@@ -4470,7 +4470,7 @@ loop:;
 
 		// // (FORK)
 		// case 57: {
-		// 	//result = (word*) make_fix(fork());
+		// 	//result = (word*) make_enum(fork());
 		// 	break;
 		// }
 
@@ -5199,7 +5199,7 @@ OL_continue(OL* ol, int argc, void** argv)
 
 word OL_deref(struct ol_t* ol, word ref)
 {
-	assert (is_fixp(ref));
+	assert (is_enump(ref));
 	int id = value(ref);
 	if (id > 3 && id < CR)
 		return ol->R[NR + id];

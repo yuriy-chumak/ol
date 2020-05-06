@@ -888,8 +888,8 @@
       ; rational number
       ; integer
 
-      (define type-fix+             TFIX+)     ; * ol specific, short positive integer number
-      (define type-fix-             TFIX-)     ; * ol specific, short negative integer number
+      (define type-enum+            TENUM+)     ; * ol specific, short positive integer number
+      (define type-enum-            TENUM-)     ; * ol specific, short negative integer number
       (define type-int+             TINT+)     ; * ol specific, long positive integer number
       (define type-int-             TINT-)     ; * ol specific, long negative integer number
       (define type-rational         TRATIONAL)
@@ -906,8 +906,8 @@
       ; procedure:  (integer? obj)
       (define (integer? a)
          (case (type a)
-            (type-fix+ #true)
-            (type-fix- #true)
+            (type-enum+ #true)
+            (type-enum- #true)
             (type-int+ #true)
             (type-int- #true)))
 
@@ -1960,7 +1960,7 @@
       ; 4.2.9  Case-lambda
       case-lambda ;  * (scheme case-lambda)
       ; 6.2.1  Numerical types
-      type-fix+ type-fix- type-int+ type-int-
+      type-enum+ type-enum- type-int+ type-int-
       type-rational type-complex type-inexact
       ; 6.2.6  Numerical operations
       integer? rational? real? complex? number?

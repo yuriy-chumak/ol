@@ -862,7 +862,7 @@ long from_rational(word arg) {
 
 static
 int to_int(word arg) {
-	if (is_fix(arg))
+	if (is_enum(arg))
 		return fix(arg);
 
 	switch (reference_type(arg)) {
@@ -884,7 +884,7 @@ int to_int(word arg) {
 /*
 static
 long to_long(word arg) {
-	if (is_fix(arg))
+	if (is_enum(arg))
 		return fix(arg);
 
 	switch (reference_type(arg)) {
@@ -920,7 +920,7 @@ word* ll2ol(word**fpp, long long val) {
     long long x5 = val;
     long long x6 = x5 < 0 ? -x5 : x5;
     int type = x5 < 0 ? TINTN : TINTP;
-    return (x6 > VMAX) ? new_npair(fpp, type, x6) : (word*)make_value(x5 < 0 ? TFIXN : TFIXP, x6);
+    return (x6 > VMAX) ? new_npair(fpp, type, x6) : (word*)make_value(x5 < 0 ? TENUMN : TENUMP, x6);
 };
 
 static __inline__
@@ -935,7 +935,7 @@ word* new_unpair(word**fpp, int type, unsigned long long value) {
 static __inline__
 word* ul2ol(word**fpp, long long val) {
     unsigned long long x = val;
-    return (x > VMAX) ? new_unpair(fpp, TINTP, x) : (word*)make_value(x < 0 ? TFIXN : TFIXP, x);
+    return (x > VMAX) ? new_unpair(fpp, TINTP, x) : (word*)make_value(x < 0 ? TENUMN : TENUMP, x);
 };
 
 #	endif
@@ -1049,7 +1049,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT64: case TUINT64:
 #endif
 		tint:
-			if (is_fix(arg))
+			if (is_enum(arg))
 				args[i] = fix(arg);
 			else
 			switch (reference_type(arg)) {
@@ -1073,7 +1073,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 #if UINTPTR_MAX == 0xffffffff // 32-bit machines
 			case TINT64: case TUINT64: // long long
-				if (is_fix(arg))
+				if (is_enum(arg))
 					*(long long*)&args[i] = fix(arg);
 				else
 				switch (reference_type(arg)) {
@@ -1265,7 +1265,7 @@ word* OL_ffi(OL* self, word* arguments)
 				args[i] = (word) &car(arg);
 				break;
 			case TPAIR: // sending type override
-				if (is_fixp(car(arg))) // should be positive fix number
+				if (is_enump(car(arg))) // should be positive fix number
 				switch (value(car(arg))) {
 					// (cons fft-int8 '(...))
 					case TINT8 + FFT_PTR:
@@ -1457,7 +1457,7 @@ word* OL_ffi(OL* self, word* arguments)
 //			args[i] = (word)arg;
 //			break;
 		case TPORT: {
-			if (arg == make_fix(-1)) { // ?
+			if (arg == make_enum(-1)) { // ?
 				args[i] = -1;
 				break;
 			}
@@ -1591,7 +1591,7 @@ word* OL_ffi(OL* self, word* arguments)
 					short value = *f++;
 					word* ptr = &car(l);
 
-					*ptr = make_fix(value);
+					*ptr = make_enum(value);
 					l = cdr(l);
 				}
 				break;
@@ -1640,7 +1640,7 @@ word* OL_ffi(OL* self, word* arguments)
 					}
 					else
 				#endif
-					*ptr = make_fix(value);
+					*ptr = make_enum(value);
 					l = cdr(l);
 				}
 				break;
@@ -1691,10 +1691,10 @@ word* OL_ffi(OL* self, word* arguments)
 						// 	// максимальная читабельность (todo: change like fto..)
 						// 	long n = value * 10000;
 						// 	long d = 10000;
-						// 	car(num) = make_fix(n);
-						// 	cdr(num) = make_fix(d);
+						// 	car(num) = make_enum(n);
+						// 	cdr(num) = make_enum(d);
 						// 	// максимальная точность (fixme: пока не работает как надо)
-						// 	//car(num) = make_fix(value * VMAX);
+						// 	//car(num) = make_enum(value * VMAX);
 						// 	//cdr(num) = I(VMAX);
 						// 	break;
 						// }
@@ -1773,9 +1773,9 @@ word* OL_ffi(OL* self, word* arguments)
 	word* result = (word*)IFALSE;
 	returntype &= 0x3F;
 	switch (returntype) {
-		// TFIXP - deprecated
-		case TFIXP: // type-fix+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) make_fix(got);
+		// TENUMP - deprecated
+		case TENUMP: // type-enum+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
+			result = (word*) make_enum(got);
 			break;
 
 		case TINT8:

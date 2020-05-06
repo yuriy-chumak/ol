@@ -109,7 +109,7 @@
                            (loop codes)))))))))
 
       (define (reg a)
-         (if (eq? (type a) type-fix+)
+         (if (eq? (type a) type-enum+)
             (if (< a n-registers)
                a
                (runtime-error "register too high: " a))

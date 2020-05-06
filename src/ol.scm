@@ -378,7 +378,7 @@
                                                          (eval (eval-string env exp) args))
                                                       (type-string-wide
                                                          (eval (eval-string env exp) args))
-                                                      (type-fix+
+                                                      (type-enum+
                                                          (eval (eval-repl (vm:deref exp) env #f evaluate) args))
                                                       (type-bytevector
                                                          (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (car this)) #f evaluate) args))))))))

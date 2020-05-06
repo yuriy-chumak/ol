@@ -56,7 +56,7 @@
 (define GLbitfield type-int+);typedef unsigned int GLbitfield;
 ;typedef double GLdouble;
 (define GLuint  type-int+)  ;typedef unsigned int GLuint;
-(define GLboolean type-fix+);typedef unsigned char GLboolean;
+(define GLboolean type-enum+);typedef unsigned char GLboolean;
 (define GLubyte type-int+)  ;typedef unsigned char GLubyte;
 (define GLubyte* type-string)
 (define GLclampf fft-float)

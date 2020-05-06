@@ -398,9 +398,9 @@
 
 (define sqlite3_data_count (sqlite fft-int "sqlite3_data_count" sqlite3_stmt*))
 
-;(define sqlite3_column_blob ; (dlsym % type-string "sqlite3_column_blob" sqlite3_stmt* type-fix+))
-;(define sqlite3_column_bytes ;(dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-fix+))
-;(define sqlite3_column_bytes16 ; (dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-fix+))
+;(define sqlite3_column_blob ; (dlsym % type-string "sqlite3_column_blob" sqlite3_stmt* type-enum+))
+;(define sqlite3_column_bytes ;(dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
+;(define sqlite3_column_bytes16 ; (dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
 (define sqlite3_column_double (sqlite fft-double "sqlite3_column_double" sqlite3_stmt* fft-int))
 (define sqlite3_column_int (sqlite fft-int "sqlite3_column_int" sqlite3_stmt* fft-int))
 (define sqlite3_column_int64 (sqlite sqlite3_int64 "sqlite3_column_int" sqlite3_stmt* fft-int))
@@ -422,7 +422,7 @@
 (define sqlite3_result_int (sqlite fft-void "sqlite3_result_int" sqlite3_context* fft-int))
 ;
 ;
-;(define sqlite3_column_type  (dlsym % type-fix+   "sqlite3_column_type" sqlite3_stmt* type-fix+))
+;(define sqlite3_column_type  (dlsym % type-enum+   "sqlite3_column_type" sqlite3_stmt* type-enum+))
 
 
 ; internal fast function

@@ -31,7 +31,7 @@
       NEW    ; used by (lang compile)
 
       ; types
-      TFIX+ TFIX- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
+      TENUM+ TENUM- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
       TPAIR TSYMBOL TTUPLE TVECTOR TBYTEVECTOR
       TSTRING TSTRINGWIDE
       TBYTECODE TPROCEDURE TCLOSURE
@@ -41,8 +41,8 @@
       ; -----------------------------------------------------------------------
       ; Virtual Machine Types List       Список типов данных виртуальной машины
 
-      (setq TFIX+              0) ; value
-      (setq TFIX-             32) ; value
+      (setq TENUM+             0) ; value
+      (setq TENUM-            32) ; value
       (setq TINT+             40) ; reference
       (setq TINT-             41) ; reference
       (setq TRATIONAL         42) ; reference

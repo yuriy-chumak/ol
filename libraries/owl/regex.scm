@@ -82,7 +82,7 @@
                      #false))
                (else
                   (accept (ls) buff ms cont))))
-         (if (eq? (type cp) type-fix+)
+         (if (eq? (type cp) type-enum+)
             accept
             (runtime-error "match string cannot yet contain a " cp)))
 
@@ -140,7 +140,7 @@
             (λ (ret)
                (for empty cs
                   (λ (ff n)
-                     (if (eq? (type n) type-fix+)
+                     (if (eq? (type n) type-enum+)
                         (put ff n #true)
                         (ret #false))))))) ;; code point outside of fixnum range
 

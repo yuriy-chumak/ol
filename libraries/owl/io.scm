@@ -117,7 +117,7 @@
 
       (define (add-sleeper ls envelope)
          (let*((from n envelope))
-            (if (eq? (type n) type-fix+)
+            (if (eq? (type n) type-enum+)
                (find-bed ls from n)
                (find-bed ls from 10))))   ;; silent fix
 
