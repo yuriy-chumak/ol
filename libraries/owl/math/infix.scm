@@ -16,10 +16,10 @@
                (MATH: a .x))
 
             ;; functions
-            ((MATH: f (a (unquote .x)))
-               (f a (MATH: .x)))
             ((MATH: f (.x))
                (f (MATH: .x)))
+            ((MATH: f (a (unquote .x)))
+               (f (MATH: a) (MATH: .x)))
 
 
       ;; a + b
