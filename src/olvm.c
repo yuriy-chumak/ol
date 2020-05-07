@@ -3944,7 +3944,7 @@ loop:;
 						break;
 					// The environment variables TZ and LC_TIME are used!
 					size_t len = strftime(
-							string (fp),
+							(char*) &fp[1],
 							(size_t) (heap->end - fp - 1) * sizeof(word),
 							string (A), timeinfo);
 					r = new_binstream(TSTRING, len);
