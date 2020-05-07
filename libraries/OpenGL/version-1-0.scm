@@ -422,7 +422,7 @@
    glTexParameterf ; void (GLenum target, GLenum pname, GLfloat param) +
    ;WINGDIAPI void APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params); +
    glTexParameteri ; void (GLenum target, GLenum pname, GLint param) +
-   ;WINGDIAPI void APIENTRY glTexParameteriv (GLenum target, GLenum pname, const GLint *params); +
+   glTexParameteriv ; void (GLenum target, GLenum pname, const GLint *params); +
       #|GL_TEXTURE_MAG_FILTER GL_TEXTURE_MIN_FILTER
       GL_TEXTURE_WRAP_S
       GL_TEXTURE_WRAP_T
@@ -2868,6 +2868,8 @@
    (define glTexImage2D (GL GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum fft-any))
    (define glTexParameterf (GL GLvoid "glTexParameterf" GLenum GLenum GLfloat))
    (define glTexParameteri (GL GLvoid "glTexParameteri" GLenum GLenum GLint))
+   (define glTexParameteriv (GL GLvoid "glTexParameteriv" GLenum GLenum GLint*))
+
 
 ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
    (define glTranslatef (GL GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
