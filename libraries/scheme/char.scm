@@ -81,6 +81,9 @@
       (assert (char-ci<? #\A #\c #\b)   ===> #false)
       (assert (char-ci<? #\a #\a)       ===> #false)
       (assert (char-ci<? #\у #\Я)       ===> #true) ; cyrillic
+      (assert (char-ci<? #\У #\я)       ===> #true)
+      (assert (char-ci<? #\Я #\у)       ===> #false)
+      (assert (char-ci<? #\я #\У)       ===> #false)
       (assert (char-ci<? #\ä #\Ö)       ===> #true) ; baltic
 
       ; procedure:  (char-ci>? char1 char2 ...)
