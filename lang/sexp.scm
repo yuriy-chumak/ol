@@ -178,10 +178,17 @@
                      (get-epsilon n))))
             m))
 
+      (define get-real
+         (get-any-of
+               (get-word "+inf.0" +inf.0)
+               (get-word "-inf.0" -inf.0)
+               (get-word "+nan.0" +nan.0)
+               get-rational)) ;; typically this is it
+
       (define get-imaginary-part
          (let-parses
                ((sign get-signer)
-                (imag (get-either get-rational (get-epsilon 1))) ; we also want 0+i
+                (imag (get-either get-real (get-epsilon 1))) ; we also want 0+i
                 (skip (get-imm #\i)))
             (sign imag)))
 
@@ -192,16 +199,12 @@
       ;(setq |+nan.0| (vm:fp2 #xF9 0 0)) ; 0 / 0 = NaN
 
       (define get-number
-         (get-any-of
-            (get-word "+inf.0" +inf.0)
-            (get-word "-inf.0" -inf.0)
-            (get-word "+nan.0" +nan.0)
-            (let-parses
-                  ((real get-rational) ;; typically this is it
-                   (imag (get-either get-imaginary-part (get-epsilon 0))))
-               (if (eq? imag 0)
-                  real
-                  (complex real imag)))))
+         (let-parses (
+               (real get-real)
+               (imag (get-either get-imaginary-part (get-epsilon 0))))
+            (if (eq? imag 0)
+               real
+               (complex real imag))))
 
 
       (define get-rest-of-line

@@ -445,18 +445,19 @@
             (type-enum+
                (if (eq? num 0)
                   0
-                  (vm:cast num type-enum-)))   ;; a  -> -a
-            (type-enum- (vm:cast num type-enum+))   ;; -a ->  a
+                  (vm:cast num type-enum-)))      ;; a  -> -a
+            (type-enum- (vm:cast num type-enum+)) ;; -a ->  a
             (type-int+                ;;  A -> -A
                (vm:new type-int- (ncar num) (ncdr num)))
             (type-int-             ;; -A -> A
-               (ncons (ncar num) (ncdr num)))
+               (vm:new type-int+ (ncar num) (ncdr num)))
             (type-rational
-               (lets ((a b num))
+               (let* ((a b num))
                   (rational (negate a) b)))
+            (type-inexact
+               (fsub 0 num))
             (else
                (big-bad-args 'negate num #false))))
-
 
 
       ;;;
