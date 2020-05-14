@@ -1,7 +1,7 @@
 #!/usr/bin/ol
 
 ; let's create image buffer
-(import (lib math))
+(import (scheme inexact))
 (define plasma
    (fold append #null
       (map (lambda (y)
@@ -16,8 +16,7 @@
          (iota 256))))
 
 ; render
-(import (lib gl))
-(import (OpenGL version-1-1))
+(import (lib gl1))
 (gl:set-window-size 256 256)
 
 (glBindTexture GL_TEXTURE_2D 0)
@@ -29,7 +28,7 @@
 
 (glEnable GL_TEXTURE_2D)
 
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda (_)
    (glClear GL_COLOR_BUFFER_BIT)
    (glBegin GL_QUADS)
       (glTexCoord2f 0 0)
@@ -40,5 +39,4 @@
       (glVertex2f 1 1)
       (glTexCoord2f 1 0)
       (glVertex2f 1 -1)
-   (glEnd)
-   #null))
+   (glEnd)))
