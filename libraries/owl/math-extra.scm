@@ -301,7 +301,7 @@
                ((l (length data))
                 (bins
                   (if (null? bins)
-                     (min l (+ 1 (log2 l)))
+                     (min l (+ 1 (ilog2 l)))
                      (car bins)))
                 (data (sort < data))
                 (low (car data))

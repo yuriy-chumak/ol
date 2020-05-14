@@ -34,7 +34,7 @@
       floor ceiling ceil abs
       sum product
       numerator denumerator
-      log log2
+      ilog ilog2
       render-number
       denominator numerator
       remainder modulo
@@ -2044,78 +2044,68 @@
 
 
       ;;;
-      ;;; logarithms, here meaning (log n a) = m, being least natural number such that n^m >= a
+      ;;; logarithms, here meaning (ilog n a) = m, being least natural number such that n^m >= a
       ;;;
 
       ;; naive version, multiply successively until >=
-      (define (log-loop n a m i)
+      (define (ilog-loop n a m i)
          (if (< m a)
-            (log-loop n a (mul m n) (add i 1))
+            (ilog-loop n a (mul m n) (add i 1))
             i))
 
       ;; least m such that n^m >= a
-      (define (log-naive n a)
-         (log-loop n a 1 0))
+      (define (ilog-naive n a)
+         (ilog-loop n a 1 0))
 
       ;; same, but double initial steps (could recurse on remaining interval, cache steps etc for further speedup)
-      (define (logd-loop n a m i)
+      (define (ilogd-loop n a m i)
          (if (< m a)
             (let ((mm (mul m m)))
                (if (< mm a)
-                  (logd-loop n a mm (add i i))
-                  (log-loop n a (mul m n) (add i 1))))
+                  (ilogd-loop n a mm (add i i))
+                  (ilog-loop n a (mul m n) (add i 1))))
             i))
 
-      (define (logn n a)
+      (define (ilogn n a)
          (cond
             ((>= 1 a) 0)
             ((< a n) 1)
-            (else (logd-loop n a n 1))))
+            (else (ilogd-loop n a n 1))))
 
-      ;; special case of log2
+      ;; special case of ilog2
 
       ; could do in 8 comparisons with a tree
-      (define (log2-fixnum n)
+      (define (ilog2-fixnum n)
          (let loop ((i 0))
             (if (< (<< 1 i) n)
                (loop (add i 1))
                i)))
 
-      (define (log2-msd n)
+      (define (ilog2-msd n)
          (let loop ((i 0))
             (if (<= (<< 1 i) n)
                (loop (add i 1))
                i)))
 
-      (define (log2-big n digs)
+      (define (ilog2-big n digs)
          (let ((tl (ncdr n)))
             (if (null? tl)
-               (add (log2-msd (ncar n)) (mul digs (vm:valuewidth)))
-               (log2-big tl (add digs 1)))))
+               (add (ilog2-msd (ncar n)) (mul digs (vm:valuewidth)))
+               (ilog2-big tl (add digs 1)))))
 
-      (define (log2 n)
+      (define (ilog2 n)
          (cond
-            ((eq? (type n) type-int+) (log2-big (ncdr n) 1))
+            ((eq? (type n) type-int+) (ilog2-big (ncdr n) 1))
             ((eq? (type n) type-enum+)
-               (if (< n 0) 1 (log2-fixnum n)))
-            (else (logn 2 n))))
+               (if (< n 0) 1 (ilog2-fixnum n)))
+            (else (ilogn 2 n))))
 
-      (define (log n a)
+      (define (ilog n a)
          (cond
-            ((eq? n 2) (log2 a))
-            ((<= n 1) (big-bad-args 'log n a))
-            (else (logn n a))))
+            ((eq? n 2) (ilog2 a))
+            ((<= n 1) (big-bad-args 'ilog n a))
+            (else (ilogn n a))))
 
-      ;(import-old lib-test)
-      ;(test
-      ;   (lmap (λ (i) (lets ((rst n (rand i 10000000000000000000))) n)) (lnums 1))
-      ;   (λ (n) (log-naive 3 n))
-      ;   (λ (n) (log 3 n)))
-      ;(import-old lib-test)
-      ;(test
-      ;   (lmap (λ (i) (lets ((rst n (rand i #x20000))) n)) (lnums 1))
-      ;   (λ (n) (log 2 n))
-      ;   (λ (n) (log2 n)))
 
       ; note: it is safe to use div, which is faster for bignums, because by definition
       ; the product is divisble by the gcd. also, gcd 0 0 is not safe, but since (lcm
@@ -2201,7 +2191,7 @@
                            (let*((int (floor num))
                                  (frac (- num int))
                                  (number (reverse
-                                    (let loop ((i (* frac 10)) (n (subi 10 (log 10 int))) (l #null))
+                                    (let loop ((i (* frac 10)) (n (subi 10 (ilog 10 int))) (l #null))
                                        (cond
                                           ((eq? n 1) l)
                                           ((< i 0.00000001) (if (null? l) '(#\0) l))

@@ -190,7 +190,7 @@
 		['binary nat nat 'xor-trans
 			(lambda (a b) (= (bxor (bxor a b)  b) (bxor a (bxor b b))))]
 		['binary nat-nz nat-nz 'logarithm
-			(lambda (n a) (lets ((n (max 2 n)) (m (log n a))) (and (>= (expt n m) a) (<= (expt n (max 0 (- m 1))) a))))]
+			(lambda (n a) (lets ((n (max 2 n)) (m (ilog n a))) (and (>= (expt n m) a) (<= (expt n (max 0 (- m 1))) a))))]
 		['binary int int 'gcd-swap 
 			(lambda (a b) (= (gcd a b) (gcd b a)))]
 		['binary int int 'gcd-sign 
