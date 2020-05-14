@@ -58,7 +58,6 @@
          (values-apply (vm:sub n 1) (lambda (n carry) n))))
       (setq |+1| (lambda (n)         ; * internal
          (values-apply (vm:add n 1) (lambda (n carry) n))))
-      (setq |0.| (vm:fp2 #xC9 1 0)) ; * internal
 
       ; * ol specific: (runtime-error reason info)
       (setq runtime-error (lambda (reason info)
@@ -936,7 +935,7 @@
       (or
          (rational? a)
          (eq? (type a) type-inexact)))
-         ; next line not required, cause math lib casts such complex numbers to real
+         ; next line is not required, because math lib automatically casts such complex numbers to the real
          ;  (and (eq? (type a) type-complex) (eq? (cdr a) 0))
 
       (assert (real? 3)                     ===>  #t)
@@ -1001,17 +1000,7 @@
       ; procedure:  (<= x1 x2 x3 ...) * implemented in (owl math)
       ; procedure:  (>= x1 x2 x3 ...) * implemented in (owl math)
 
-      ; procedure:  (zero? z)
-      (define (zero? x)
-      (or
-         (eq? x 0)
-         (equal? x |0.|))) ; inexact numbers support
-
-      (assert (zero? 0)                     ===>  #t)
-      (assert (zero? 4)                     ===>  #f)
-      (assert (zero? (vm:fp2 #xE9 7 7))     ===>  #t)
-      (assert (zero? (vm:fp2 #xC1 7 7))     ===>  #f)
-
+      ; procedure:  (zero? z)      * implemented in (owl math)
       ; procedure:  (positive? x)  * implemented in (owl math)
       ; procedure:  (negative? x)  * implemented in (owl math)
       ; procedure:  (odd? n)       * implemented in (owl math)
@@ -1965,7 +1954,6 @@
       ; 6.2.6  Numerical operations
       integer? rational? real? complex? number?
       exact? inexact? exact-integer?
-      zero?
       inexact exact
       ; 6.2.8  Other data types
       type-bytecode

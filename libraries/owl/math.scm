@@ -20,12 +20,14 @@
 (define-library (owl math)
 
    (export
+      = < > <= >=
+      zero? positive? negative? odd? even?
+
       + - * = /
-      << < <= = >= > >>
+      << >>
       band bor bxor
       div ediv rem mod quotrem mod divmod
       add nat-succ sub mul big-bad-args negate
-      even? odd? fix+?
       gcd gcdl lcm
       min max minl maxl
       quotient quot
@@ -34,7 +36,6 @@
       numerator denumerator
       log log2
       render-number
-      negative? positive?
       denominator numerator
       remainder modulo
       truncate round
@@ -89,9 +90,6 @@
 
       (define *first-bignum*
          (ncons 0 *big-one*))
-
-      (define (fix+? x)
-         (eq? (type x) type-enum+))
 
       ;; deprecated primop
       ;(define-syntax fxdivmod
@@ -234,6 +232,19 @@
 
       ; later just, is major type X
 
+      ; procedure:  (zero? z)
+      (setq |0.| (vm:cast 0 type-inexact)) ; * internal
+
+      (define (zero? x)
+      (or
+         (eq? x 0)
+         (equal? x |0.|))) ; inexact numbers support
+
+      (assert (zero? 0)              ===>  #t)
+      (assert (zero? 4)              ===>  #f)
+      (assert (zero? (fsub 7 7))     ===>  #t)
+      (assert (zero? (fadd 7 7))     ===>  #f)
+
       (define (negative? a)
          (case (type a)
             (type-enum+ #false)
@@ -254,7 +265,6 @@
       (define (positive? a)
          (unless (negative? a)
             (not (equal? a +nan.0))))
-
 
 
       ;;;

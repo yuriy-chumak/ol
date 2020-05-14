@@ -27,7 +27,9 @@
          (or
             (eq? val #true)
             (eq? val #false)
-            (and (fix+? val) (< val 127))
+            (and
+               (eq? (type val) type-enum+)
+               (less? val 127))
             (eq? val #null)))
 
       (define (value-primop val)

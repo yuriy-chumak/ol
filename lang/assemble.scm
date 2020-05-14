@@ -155,7 +155,7 @@
                            (append (map reg args)
                               (cons (reg to)
                                  (assemble more fail))))))
-                  ((fix+? to)
+                  ((eq? (type to) type-enum+)
                      (if (opcode-arity-ok? op (length args) 1)
                         (cons op
                            (append (map reg args)
@@ -229,7 +229,7 @@
                   ((eq? val #empty)
                      (ilist LDE (reg to)
                         (assemble cont fail)))
-                  ((fix+? val)
+                  ((eq? (type val) type-enum+)
                      (let ((code (assemble cont fail)))
                         (if (> val 126) ;(or (> val 126) (< val -126)) ; would be a bug
                            (fail (list "ld: big value: " val)))

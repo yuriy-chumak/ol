@@ -35,13 +35,15 @@
       (define try-n-perms 1000)   ;; how many load permutations to try before evicting more registers
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
+      (define (enum+? x) (eq? (type x) type-enum+))
+
       (define (small-value? val)
          (or
             (eq? val #empty)
             (eq? val #null)
             (eq? val #true)
             (eq? val #false)
-            (and (fix+? val) (>= val -127) (< val 127))))
+            (and (enum+? val) (>= val -127) (< val 127))))
 
       (define (ok exp env) ['ok exp env])
       (define (fail reason) ['fail reason])
@@ -118,7 +120,7 @@
       (define (rtl-value regs val cont)
          (let ((position (find-value regs val)))
             (cond
-               ((fix+? position)
+               ((enum+? position)
                   (cont regs position))
                ((small-value? val)
                   (load-small-value regs val
@@ -126,7 +128,7 @@
                         (cont regs pos))))
                ((not position)
                   (runtime-error "rtl-value: cannot make a load for a " val))
-               ((fix+? (cdr position))
+               ((enum+? (cdr position))
                   (let ((this (next-free-register regs)))
                      ['refi (car position) (cdr position) this
                         (cont (cons ['val val this] regs) this)]))
@@ -136,11 +138,11 @@
       (define (rtl-variable regs sym cont)
          (let ((position (find-variable regs sym)))
             (cond
-               ((fix+? position)
+               ((enum+? position)
                   (cont regs position))
                ((not position)
                   (runtime-error "rtl-variable: cannot find the variable " sym))
-               ((fix+? (cdr position))
+               ((enum+? (cdr position))
                   (let ((this (next-free-register regs)))
                      ['refi (car position) (cdr position) this
                         (cont (cons ['var sym this] regs) this)]))

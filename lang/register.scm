@@ -91,15 +91,11 @@
                            (rtl-rename more op target fail)
                            ['move a b (rtl-rename more op target fail)])))))
             (['prim opcode args to more]
-               (if (fix+? to)
-                  (if (bad? to target op)
-                     (fail)
-                     ['prim opcode
-                        (map op args)
-                        to (rtl-rename more op target fail)])
-                  (if (bad? to target op)
-                     (fail)
-                     ['prim opcode (map op args) to (rtl-rename more op target fail)])))
+               (if (bad? to target op) ; same???????
+                  (fail)
+                  ['prim opcode
+                     (map op args)
+                     to (rtl-rename more op target fail)]))
             (['clos-proc lp off env to more]
                (if (bad? to target op)
                   (fail)
@@ -221,34 +217,33 @@
                      (λ () (values
                         ['prim op args to more]
                         (fold reg-touch (del uses to) args)))))
-                  (cond
-                     ((fix+? to)
-                        ; retarget the sole argument if possible
-                        (let ((good (use-list uses to)))
-                           (retarget-first more to good uses
-                              (lambda (to-new more-new)
-                                 (if (eq? to to-new)
-                                    (pass)
-                                    (rtl-retard
-                                       ['prim op args to-new more-new]))))))
+                  (if (eq? (type to) type-enum+)
+                     ; retarget the sole argument if possible
+                     (let ((good (use-list uses to)))
+                        (retarget-first more to good uses
+                           (lambda (to-new more-new)
+                              (if (eq? to to-new)
+                                 (pass)
+                                 (rtl-retard
+                                    ['prim op args to-new more-new])))))
                      ;; fixme: no register retargeting for multiple-return-value primops
-                     (else
-                        '(call/cc
-                           (lambda (ret)
-                              (fold
-                                 (lambda (pass ato)
-                                    (let ((good (use-list uses ato)))
-                                       (retarget-first more ato good uses
-                                          (lambda (ato-new more-new)
-                                             (if (eq? ato ato-new)
-                                                pass
-                                                (ret
-                                                   (rtl-retard
-                                                      ['prim op args
-                                                         (map (lambda (to) (if (eq? to ato) ato-new to)) to)
-                                                         more-new])))))))
-                                 pass to)))
-                        (pass)))))
+                     ;; (else
+                        ;; '(call/cc
+                        ;;    (lambda (ret)
+                        ;;       (fold
+                        ;;          (lambda (pass ato)
+                        ;;             (let ((good (use-list uses ato)))
+                        ;;                (retarget-first more ato good uses
+                        ;;                   (lambda (ato-new more-new)
+                        ;;                      (if (eq? ato ato-new)
+                        ;;                         pass
+                        ;;                         (ret
+                        ;;                            (rtl-retard
+                        ;;                               ['prim op args
+                        ;;                                  (map (lambda (to) (if (eq? to ato) ato-new to)) to)
+                        ;;                                  more-new])))))))
+                        ;;          pass to)))
+                     (pass))))
 
             (['ld val to cont]
                (lets
