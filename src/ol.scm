@@ -312,14 +312,11 @@
 
                            (home (or (getf options 'home)
                                      (getenv "OL_HOME")
-                                     (let ((uname (syscall 63)))
-                                        (if (vector? uname)
-                                           (cond
-                                              ((string-eq? (ref uname 1) "Darwin")
-                                                 "/usr/local/lib/ol")
-                                              (else
-                                                 "/usr/lib/ol"))
-                                           "/usr/lib/ol"))))
+                                     (let ((uname (ref (syscall 63) 1)))
+                                        (when (and (string? uname)
+                                                   (string-eq? uname "Darwin"))
+                                           "/usr/local/lib/ol"))
+                                     "/usr/lib/ol"))
 
                            (version (cons "OL" (get options 'version (cdr *version*))))
                            (env (fold
