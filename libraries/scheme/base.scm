@@ -190,7 +190,7 @@
    set!
    set-car!
    set-cdr!
-      ;; square
+   square
    sqrt ;; * not included in standard (scheme base), but we include due to frequent use
    string
    string->list

@@ -22,6 +22,7 @@
    (export
       = < > <= >=
       zero? positive? negative? odd? even?
+      square
 
       + - * = /
       << >>
@@ -2278,4 +2279,6 @@
       (define max (vararg-fold max #false))
       (define gcd (vararg-fold gcd 0))
       (define lcm (vararg-fold lcm 1))
+
+      (define (square x) (* x x))
 ))

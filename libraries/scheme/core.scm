@@ -1039,7 +1039,7 @@
       ; procedure:  (acos z)     * implemented in (scheme inexact)
       ; procedure:  (atan z)     * implemented in (scheme inexact)
       ; procedure:  (atan y x)   * implemented in (scheme inexact)
-      ; procedure:  (square z)
+      ; procedure:  (square z)     * implemented in (owl math)
       ; procedure:  (sqrt z)     * implemented in (scheme inexact)
       ; procedure:  (exact-integer-sqrt k)    * implemented in (owl math-extra)
       ; procedure:  (make-rectangular x1 x2)  * implemented in (scheme complex)
