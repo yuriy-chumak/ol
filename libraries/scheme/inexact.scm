@@ -97,6 +97,10 @@
             (if (fless? n 0)
                (complex 0 (fsqrt (fsub 0 n)))
                (fsqrt n)))
+         (type-rational
+            (if (< n 0)
+               (complex 0 (fsqrt (fsub 0 n)))
+               (fsqrt n)))
          (else
             (runtime-error "sqrt: math not applicable: " n))))
 
