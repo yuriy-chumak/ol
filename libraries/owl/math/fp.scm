@@ -6,7 +6,10 @@
    (export
       fless?
       fadd fsub fmul fdiv
-      fsqrt fsin fcos)
+      fsqrt fsin fcos ftan
+      fasin facos fatan fatan2
+      flog flog2 fexp fexpt
+   )
 
    (import
       (scheme core))
@@ -27,7 +30,17 @@
 
       ; additional math staff
       (FP1 fsqrt #xFA)
-      (FP1 fsin  #xFE)
-      (FP1 fcos  #xFF)
 
+      (FP1 fsin  #xFE) ; sine
+      (FP1 fasin #x8E) ; arcsize
+      (FP1 fcos  #xFF) ; cosine
+      (FP1 facos #x8F) ; 
+      (FP1 ftan  #xF2)
+      (FP1 fatan #xF3)
+      (FP1 flog  #xF1)
+      (FP1 fexp  #x81)
+
+      (FP2 fatan2 #xF3)
+      (FP2 flog2 #xF1)
+      (FP2 fexpt #x80) ; a ** b
 ))

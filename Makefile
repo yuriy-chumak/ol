@@ -35,6 +35,7 @@ CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 # can be disabled using -DOLVM_NO_BUILTIN_FMATH=1
 ifneq ($(OLVM_BUILTIN_FMATH),0)
    CFLAGS += -lm
+#  CFLAGS += -ffast-math -mfpmath=387
 endif
 
 #  clang is not a primary compiler and clang have no ability to remove

@@ -1,7 +1,10 @@
 (define-library (scheme inexact)
    (export 
       finite? infinite? nan?
-      ; exp log sin cos tan asin acos atan
+
+      exp log
+      sin cos tan
+      asin acos atan
 
       sqrt
    )
@@ -104,7 +107,26 @@
          ((n)
             (:sqrt n 0.0001)))) ; 1/10000
 
-
 ;   (assert (sqrt 9)  ===> (inexact 3.0))
+
+   (define exp fexp)
+   (define log
+      (case-lambda
+         ((n)
+            (flog n))
+         ((n base)
+            (flog n base))))
+
+   (define sin fsin)
+   (define cos fcos)
+   (define tan ftan)
+
+   (define asin fasin)
+   (define acos facos)
+   (define atan (case-lambda
+      ((n)
+         (fatan n))
+      ((y x)
+         (fatan2 y x))))
 
 ))

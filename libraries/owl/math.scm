@@ -7,7 +7,7 @@
 
 ;; todo: factor this to smaller libraries
 
-;; wishlist: sin, cos, tan, arc_, pi, e, log, ... (as iterators)
+;; wishlist: pi, e, ... (as iterators)
 ;; todo: remove the cast instruction (only used here iirc)
 ;; wishlist: complex numbers not implemented yet
 ;; fixme: at least main base bignum functions (+ - * =) should handle the full dispatch

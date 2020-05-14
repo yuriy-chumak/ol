@@ -4520,7 +4520,26 @@ loop:;
 		case 0xFF: // fcos
 			*(inexact_t*)&car(A2) = __builtin_cos(a);
 			break;
-		// f2 - tan, f3 - atan
+		case 0xF2: // ftan
+			*(inexact_t*)&car(A2) = __builtin_tan(a);
+			break;
+		case 0xF3: // fatan
+			*(inexact_t*)&car(A2) = __builtin_atan(a);
+			break;
+		case 0xF1: // flog
+			*(inexact_t*)&car(A2) = __builtin_log(a);
+			break;
+
+		case 0x81: // fexp
+			*(inexact_t*)&car(A2) = __builtin_exp(a);
+			break;
+		case 0x8E: // fasin
+			*(inexact_t*)&car(A2) = __builtin_asin(a);
+			break;
+		case 0x8F: // facos
+			*(inexact_t*)&car(A2) = __builtin_acos(a);
+			break;
+
 		default:
 			A2 = IFALSE;
 			break;
@@ -4553,6 +4572,18 @@ loop:;
 		case 0xF9: // fdiv
 			*(inexact_t*)&car(A3) = a / b;
 			break;
+
+		case 0xF3: // fatan2
+			*(inexact_t*)&car(A3) = __builtin_atan2(a, b);
+			break;
+		case 0xF1: // flog2
+			*(inexact_t*)&car(A3) = __builtin_log(a) / __builtin_log(b);
+			break;
+
+		case 0x80: // fexpt
+			*(inexact_t*)&car(A3) = __builtin_pow(a, b);
+			break;
+
 		default:
 			A3 = IFALSE;
 			break;
