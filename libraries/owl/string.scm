@@ -430,4 +430,9 @@
       (define (make-string n char)
          (list->string (repeat char n)))
 
+      (assert (string-ci=? "abc" "aBc")   ===> #true)
+      (assert (string-ci=? "abc" "cBa")   ===> #false)
+
+
+
 ))
