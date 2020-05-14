@@ -281,21 +281,30 @@
                                                 (substring (car args) 7 (string-length (car args))))
                                              (cdr args)))
                                        
+                                    ((string-eq? (car args) "--")
+                                       (let*((file args (uncons (cdr args) #null)))
+                                          (values
+                                             (put options 'file file)
+                                             args)))
                                     ((starts-with? (car args) "--")
                                        (print "unknown command line option '" (car args) "'")
                                        (halt 0))
+
                                     (else
-                                       (let ((file (car args)))
-                                          (values (put options 'file
-                                                         (unless (string-eq? file "-")
-                                                            (let ((port (open-input-file file)))
-                                                               (unless port
-                                                                  (print "error: can't open file '" file "'")
-                                                                  (halt 3))
-                                                               port)))
-                                                  (cdr args)))))))
-                           (file (or (getf options 'file)
-                                     stdin))
+                                       (values
+                                          (put options 'file (car args))
+                                          (cdr args))))))
+
+                           (file (getf options 'file))
+                           (file (when (string? file)
+                                    (unless (string-eq? file "-")
+                                       (let ((port (open-input-file file)))
+                                          (unless port
+                                             (print "error: can't open file '" file "'")
+                                             (halt 3))
+                                          port))))
+                           (file (or file stdin))
+
 
                            (sandbox? (getf options 'sandbox))
                            (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
