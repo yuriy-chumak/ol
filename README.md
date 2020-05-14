@@ -132,10 +132,10 @@ R<sup>7</sup>RS DIFFERENCES
   * SQRT is **included** in base library profile while *not included* in Scheme
     - *explanation: due to frequent use.*
 * 6.4. Pairs and lists
-  * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
+  * MEMQ and ASSQ behavior with 'short' numbers (aka 'enumerations') as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
 * 6.6. Characters
-  * CHARACTERS in Ol is a **small numbers**, but a *characters* in Scheme.
-    - *explanation: This is for historical reason. Ol supports two types of numbers - 'small' numbers and 'long' numbers. 'Small' numbers are used as 'glyphs' (or 'runes' in other word) inside strings for better Unicode support. An additional 'character' type with requirements to use the char->integer and integer->char functions every time is too boring and slow. Thanks.*
+  * CHARACTERS in Ol is a **small numbers** (aka 'enumerations'), but a *characters* in Scheme.
+    - *explanation: This is for a historical reason. Ol supports two types of numbers - 'small' numbers and 'long' numbers. 'Small' numbers are used as 'glyphs' (or 'runes' in other word) inside strings for better Unicode support. An additional 'character' type with requirements to use the char->integer and integer->char functions every time is too boring and slow. Thanks.*
     - *note: Ol supports full Unicode 12.1.0 (2019 May 7) character set.*
     - *note: If you want to print a character in the form of a letter (or a digit, etc.), use a function 'string', i.e. instead of (print #\λ) use (print (string #\λ)), otherwise you will get a number 955.*
 * 6.9. Bytevectors
@@ -171,7 +171,7 @@ $ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -lm -ldl  -o vm
 ```bash
 $ xxd --include repl >tmp/repl.c
 OR
-$ echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
+$ echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl >tmp/repl.c
 THEN
 $ gcc src/olvm.c tmp/repl.c  -std=c99 -O2  -lm -ldl  -o ol
 ```
