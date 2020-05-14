@@ -191,6 +191,7 @@
    set-car!
    set-cdr!
       ;; square
+   sqrt ;; * not included in standard (scheme base), but we include due to frequent use
    string
    string->list
    string->number  ; (scheme misc)
@@ -256,6 +257,7 @@
       (scheme bytevector)
       ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (required coroutines)
       (owl io) (owl math) (owl math-extra)
+      (scheme inexact)
       (owl string))
 
    (begin

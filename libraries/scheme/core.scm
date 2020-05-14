@@ -21,7 +21,7 @@
       ;   binary:
       ;     vm:and vm:ior vm:xor
       ; floating-point math (OLVM_INEXACTS required):
-      ;   vm:fp1 (xFE: fsin, xFF: fcos),
+      ;   vm:fp1 (xFE: fsin, xFF: fcos, xFA: fsqrt),
       ;   vm:fp2 (xD9: <, xC1: +, xE9: -, xC9: *, xF9: /)
       ; special:
       ;   vm:pin, vm:unpin, vm:deref
@@ -888,8 +888,8 @@
       ; rational number
       ; integer
 
-      (define type-enum+            TENUM+)     ; * ol specific, short positive integer number
-      (define type-enum-            TENUM-)     ; * ol specific, short negative integer number
+      (define type-enum+            TENUM+)    ; * ol specific, short positive integer number
+      (define type-enum-            TENUM-)    ; * ol specific, short negative integer number
       (define type-int+             TINT+)     ; * ol specific, long positive integer number
       (define type-int-             TINT-)     ; * ol specific, long negative integer number
       (define type-rational         TRATIONAL)

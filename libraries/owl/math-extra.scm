@@ -9,7 +9,6 @@
    (export
       exact-integer-sqrt ;; n → m r, m^2 + r = n
       isqrt              ;; n → (floor (sqrt n))
-      sqrt               ;; n → m, m^2 = n
       expt expt-mod
       ncr npr
       !
@@ -89,58 +88,6 @@
             (values sq (sub n (mul sq sq)))))
 
       (assert (let*((x y (exact-integer-sqrt 17))) (list x y))  ===> '(4 1))
-
-      (define (good-enough? guess1 guess0 precision)
-         (< (abs (- guess1 guess0)) (abs (* guess0 precision))))
-      (define (better-guess guess x) (/ (+ guess (/ x guess)) 2))
-
-      ;; sqrt n → m such that m^2 = n
-      ;; fixme: finish sqrt after adding complex numbers
-      (define (sqrt n precision)
-         (case (type n)
-            (type-enum+
-               (let*((s r (exact-integer-sqrt n))) ; r: remainder
-                  (cond
-                     ((eq? r 0)
-                        s)
-                     ((eq? precision 0)
-                        (runtime-error "sqrt: no exact solution for " n))
-                     (else
-                        (let loop ((s s))
-                           (let ((t (better-guess s n)))
-                              ;(print "s: " s ", t: t")
-                              (if (good-enough? t s precision)
-                                 t
-                                 (loop t))))))))
-            (type-int+
-               (let*((s r (exact-integer-sqrt n))) ; r: remainder
-                  (cond
-                     ((eq? r 0)
-                        s)
-                     ((eq? precision 0)
-                        (runtime-error "sqrt: no exact solution for " n))
-                     (else
-                        (let loop ((s s))
-                           (let ((t (better-guess s n)))
-                              ;(print "s: " s ", t: t")
-                              (if (good-enough? t s precision)
-                                 t
-                                 (loop t))))))))
-            (type-enum- (complex 0 (sqrt (abs n) precision)))
-            (type-int- (complex 0 (sqrt (abs n) precision)))
-            (else
-               (runtime-error "sqrt: math too high: " n))))
-
-      ; как посчитать корень квадратный:
-      ; 1. попытаться найти целочисленный результат,
-      ; 2. если не вышло, то используя итерационный алгоритм Ньютона с указанной точностью попытаться найти более удовлетворительный
-      (define :sqrt sqrt)
-      (define sqrt
-         (case-lambda
-            ((n accuracy)
-               (:sqrt n accuracy))
-            ((n)
-               (:sqrt n 0.001)))) ; 1/1000
 
       ;;; exponentiation
 

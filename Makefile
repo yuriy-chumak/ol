@@ -11,9 +11,6 @@ describe: all
 	./ol --version
 	echo "(print (syscall 63))"|./vm repl
 
-# repl source
-repl := tmp/repl.c
-
 ## 'configure' part:
 # check the library and/or function
 exists = $(shell echo "\
@@ -34,6 +31,12 @@ CFLAGS += -std=c99 -fno-exceptions
 CFLAGS_DEBUG   := -O0 -g2
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 
+# builtin "sin", "cos", "sqrt", etc. functions support
+# can be disabled using -DOLVM_NO_BUILTIN_FMATH=1
+ifneq ($(OLVM_BUILTIN_FMATH),0)
+   CFLAGS += -lm
+endif
+
 #  clang is not a primary compiler and clang have no ability to remove
 #  only one warning instance. I don't want to add SEVEN lines of code
 #  to disable only ONE warning that in fact is not a warning but fully
@@ -45,7 +48,6 @@ endif
 CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
           $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)\
-#		  -DOLVM_BUILTIN_FMATH=1 -lm
 
 ## 'os dependent' part
 UNAME ?= $(shell uname -s)
@@ -179,7 +181,7 @@ slim: CFLAGS += -DOLVM_FFI=0
 slim: release
 
 NDK_ROOT ?=/opt/android/ndk
-android: jni/*.c jni/repl.c
+android: jni/*.c tmp/repl.c
 	$(NDK_ROOT)/ndk-build
 jni/repl.c: repl vm
 	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
@@ -190,8 +192,8 @@ vm: src/olvm.c include/olvm.h
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
-ol: src/olvm.c include/olvm.h $(repl)
-	$(CC) src/olvm.c $(repl) -o $@ \
+ol: src/olvm.c include/olvm.h tmp/repl.c
+	$(CC) src/olvm.c tmp/repl.c -o $@\
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
@@ -281,9 +283,9 @@ libraries/owl/math/infix.scm: make-math-infix.scm vm
 
 
 
-#embed sample
-embed: tests/embed.c src/olvm.c extensions/embed.h $(repl.o)
-	$(CC) tests/embed.c src/olvm.c $(repl.o) -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
+# embed sample
+embed: tests/embed.c src/olvm.c extensions/embed.h tmp/repl.c
+	$(CC) tests/embed.c src/olvm.c tmp/repl.c -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
 	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
 
 

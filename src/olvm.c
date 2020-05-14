@@ -284,7 +284,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 
 
 #ifndef OLVM_BUILTIN_FMATH // builtin olvm math functions (vm:fp1)
-#define OLVM_BUILTIN_FMATH 0
+#define OLVM_BUILTIN_FMATH 1
 #endif
 
 #ifndef OLVM_LIBRARY_SO_NAME
@@ -4511,13 +4511,16 @@ loop:;
 
 		A2 = (word) new_binstream(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
+		case 0xFA: // fsqrt
+			*(inexact_t*)&car(A2) = __builtin_sqrt(a);
+			break;
 		case 0xFE: // fsin
 			*(inexact_t*)&car(A2) = __builtin_sin(a);
 			break;
 		case 0xFF: // fcos
 			*(inexact_t*)&car(A2) = __builtin_cos(a);
 			break;
-		// f2 - tan, f3 - atan, fa - sqrt,
+		// f2 - tan, f3 - atan
 		default:
 			A2 = IFALSE;
 			break;

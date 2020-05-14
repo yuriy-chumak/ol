@@ -14,8 +14,8 @@
 [![Github build ol status](https://github.com/yuriy-chumak/ol/workflows/build%20ol/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
 
 
-Otus Lisp, Version 2.1 (rc1)
-============================
+Otus Lisp, Version 2.1
+======================
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
@@ -128,6 +128,8 @@ R<sup>7</sup>RS DIFFERENCES
 * 6.2.6. Numerical operations
   * INTEGER? for inexact numbers always returns **#false** in Ol, but can be *#true* in Scheme when (= number (round number)).
     - *explanation: Inexactness is an inexactness - we may lose the fractional part and not notice it. So let's be a little paranoid.*
+  * SQRT is **included** in base library profile while *not included* in Scheme
+    - *explanation: due to frequent use.*
 * 6.4. Pairs and lists
   * MEMQ and ASSQ behavior with 'short' numbers as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
 * 6.6. Characters
@@ -160,7 +162,7 @@ $ make; make install
 ##### Build only olvm (ol virtual machine):
 
 ```bash
-$ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -ldl
+$ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -lm -ldl  -o vm
 ```
 
 ##### Build ol (with integrated REPL):
@@ -170,19 +172,17 @@ $ xxd --include repl >tmp/repl.c
 OR
 $ echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
 THEN
-$ gcc src/olvm.c tmp/repl.c  -std=c99 -O2  -o ol -ldl
+$ gcc src/olvm.c tmp/repl.c  -std=c99 -O2  -lm -ldl  -o ol
 ```
 
-##### Build Web binaries (in asm.js form):
+##### Build Web Binaries (in wasm form):
 
 ```bash
 $ source {your-emsdk-path}/emsdk_env.sh
-$ make olvm.js
+$ make olvm.wasm
 ```
-This should create olvm.js, repl.js and oljs.js - all these files are reired to run ol under Web. Where repl.js is REPL binary implementation, olvm.js is ol virtual machine implementation and oljs.js is just a bridge between ol and js.
 
-Additionally you should provide compiled emscripten platform as separate file. You can do this using `$ make emscripten.js`.
-
+This should create olvm.wasm - web assembly ol representation.
 Example of using ol as an embedded web application you can check on the official [project page](https://yuriy-chumak.github.io/ol/) (or source branch on [Github](https://github.com/yuriy-chumak/ol/tree/gh-pages)).
 
 #### Windows:
@@ -190,13 +190,13 @@ Example of using ol as an embedded web application you can check on the official
 ##### Build only olvm (ol virtual machine):
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
-> gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
+> gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -lws2_32  -o ol
 ```
 ##### Build ol (with integrated REPL):
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
 > ld -r -b binary -o tmp/repl.o repl
-> gcc.exe src\olvm.c tmp\repl.o -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -o ol -lws2_32
+> gcc.exe src\olvm.c tmp\repl.o -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -lws2_32  -o ol
 ```
 
 #### \*BSDs:
@@ -205,12 +205,12 @@ You should include "c" library instead of "dl":
 
 ##### Build only olvm (ol virtual machine):
 ```bash
-$ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -o vm -lc
+$ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -lc -lm  -o vm
 ```
 ##### Build ol (with integrated REPL):
 ```bash
 $ ld -r -b binary -o tmp/repl.o repl
-$ gcc src/olvm.c tmp/repl.o  -std=c99 -O2  -o ol -lc
+$ gcc src/olvm.c tmp/repl.o  -std=c99 -O2  -lc -lm  -o ol
 ```
 
 #### Android:

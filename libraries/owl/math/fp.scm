@@ -4,16 +4,30 @@
 
 (define-library (owl math fp)
    (export
-      fless? fadd fsub fmul fdiv) ; 44 38 40 39 26
+      fless?
+      fadd fsub fmul fdiv
+      fsqrt fsin fcos)
 
    (import
       (scheme core))
 
    (begin
-      (define (fless? a b)(vm:fp2 #xD9 a b))
+      (define-syntax FP1 (syntax-rules () ((FP1 name value)
+         (define (name z) (vm:fp1 value z)))))
+      (define-syntax FP2 (syntax-rules () ((FP2 name value)
+         (define (name a b) (vm:fp2 value a b)))))
 
-      (define (fadd a b)  (vm:fp2 #xC1 a b))
-      (define (fsub a b)  (vm:fp2 #xE9 a b))
-      (define (fmul a b)  (vm:fp2 #xC9 a b))
-      (define (fdiv a b)  (vm:fp2 #xF9 a b))
+      (FP2 fless? #xD9)
+
+      ; basic fpu math
+      (FP2 fadd #xC1)
+      (FP2 fsub #xE9)
+      (FP2 fmul #xC9)
+      (FP2 fdiv #xF9)
+
+      ; additional math staff
+      (FP1 fsqrt #xFA)
+      (FP1 fsin  #xFE)
+      (FP1 fcos  #xFF)
+
 ))
