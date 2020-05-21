@@ -36,7 +36,7 @@ Otus Lisp is available under 2 licenses:
 
 Copyright (c) 2011-2014 Aki Helin
 
-Copyright (c) 2014-2019 Yuriy Chumak
+Copyright (c) 2014-2020 Yuriy Chumak
 
 
 SUPPORT
@@ -238,7 +238,8 @@ would like.
 SAMPLES
 -------
 
-You can check some [sample](https://github.com/yuriy-chumak/ol/tree/master/samples) lisp programs. For example:
+You can check some [sample](https://github.com/yuriy-chumak/ol/tree/master/samples) lisp programs.
+For example:
 
 * "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
 
