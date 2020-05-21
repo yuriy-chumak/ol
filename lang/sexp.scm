@@ -360,7 +360,10 @@
                         (get-word "f"     #false)
                         (get-word "T"     #true)
                         (get-word "F"     #false)
+                        (get-word "n"     #null)
+                        (get-word "N"     #null)
                         (get-word "e"     #empty)
+                        (get-word "E"     #empty)
                         (let-parses (
                               (bang (get-imm #\!)) ; sha-bang
                               (line get-rest-of-line))
