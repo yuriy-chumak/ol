@@ -434,12 +434,12 @@
                      get-symbol
                      get-string
                      get-special-word
+                     get-quoted-char
                      (get-list-of (get-sexp))
                      (get-vector-of (get-sexp))
                      (get-ff-of (get-sexp))
                      (get-quoted (get-sexp))
-                     (get-byte-if eof?)
-                     get-quoted-char)))
+                     (get-byte-if eof?))))
                ;; (skip maybe-whitespace))
             val))
 
