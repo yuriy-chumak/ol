@@ -21,20 +21,18 @@
    (begin
       (define (ok exp env) ['ok exp env])
       (define (fail reason) ['fail reason])
-      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define (gensyms free n)
          (if (eq? n 0)
             (values null free)
-            (lets ((gens next (gensyms (gensym free) (- n 1))))
+            (let*((gens next (gensyms (gensym free) (- n 1))))
                (values (cons free gens) next))))
 
       (define (alpha-list alpha exps env free)
          (if (null? exps) 
             (values null free)
-            (lets
-               ((this free (alpha (car exps) env free))
-                (tail free (alpha-list alpha (cdr exps) env free)))
+            (let*((this free (alpha (car exps) env free))
+                  (tail free (alpha-list alpha (cdr exps) env free)))
                (values (cons this tail) free))))
 
       (define (alpha exp env free)
@@ -42,60 +40,50 @@
             (['var sym]
                (values (mkvar (getf env sym)) free))
             (['call rator rands]
-               (lets
-                  ((rator free (alpha rator env free))
-                   (rands free (alpha-list alpha rands env free)))
+               (let*((rator free (alpha rator env free))
+                     (rands free (alpha-list alpha rands env free)))
                   (values (mkcall rator rands) free)))
             (['lambda formals body]
-               (lets
-                  ((new-formals free (gensyms free (length formals)))
-                   (body free
-                     (alpha body
-                        (for env (zip cons formals new-formals)
-                           (λ (env node)
-                              (put env (car node) (cdr node))))
-                        free)))
+               (let*((new-formals free (gensyms free (length formals)))
+                     (body free (alpha body
+                                 (fold (λ (env old new)
+                                          (put env old new))
+                                    env formals new-formals)
+                                 free)))
                   (values (mklambda new-formals body) free)))
             (['lambda-var fixed? formals body] ;; <- mostly clone branch to be merged later
-               (lets
-                  ((new-formals free (gensyms free (length formals)))
-                   (body free
-                     (alpha body
-                        (for env (zip cons formals new-formals)
-                           (λ (env node)
-                              (put env (car node) (cdr node))))
-                        free)))
+               (let*((new-formals free (gensyms free (length formals)))
+                     (body free (alpha body
+                                 (fold (λ (env old new)
+                                          (put env old new))
+                                    env formals new-formals)
+                                 free)))
                   (values ['lambda-var fixed? new-formals body] free)))
             (['value val]
                (values exp free))
             (['values vals]
-               (lets ((vals free (alpha-list alpha vals env free)))
+               (let*((vals free (alpha-list alpha vals env free)))
                   (values ['values vals] free)))
             (['values-apply from to]
-               (lets
-                  ((from free (alpha from env free))
-                   (to free   (alpha to   env free)))
+               (let*((from free (alpha from env free))
+                     (to free   (alpha to   env free)))
                   (values ['values-apply from to] free)))
             (['ifeq a b then else]
-               (lets
-                  ((a free (alpha a env free))
-                   (b free (alpha b env free))
-                   (then free (alpha then env free))
-                   (else free (alpha else env free)))
+               (let*((a free (alpha a env free))
+                     (b free (alpha b env free))
+                     (then free (alpha then env free))
+                     (else free (alpha else env free)))
                   (values
                      ['ifeq a b then else]
                      free)))
             (['brae then else]
-               (lets
-                  ((then free (alpha then env free))
-                   (else free (alpha else env free)))
+               (let*((then free (alpha then env free))
+                     (else free (alpha else env free)))
                   (values ['brae then else] free)))
             (else
                (runtime-error "alpha: unknown AST node: " exp))))
 
       (define (alpha-convert exp env)
-         (lets 
-            ((exp free 
-               (alpha exp empty (gensym exp))))
+         (let*((exp free (alpha exp empty (gensym exp))))
             (ok exp env)))
 ))
