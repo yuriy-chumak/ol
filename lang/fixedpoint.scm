@@ -19,13 +19,13 @@
 
       ; return the least score by pred 
       (define (least pred lst)
-         (if (null? lst)
-            #false   
+         (unless (null? lst)
             (cdr
-               (for (cons (pred (car lst)) (car lst)) (cdr lst)
-                  (λ (lead x)
-                     (let ((this (pred x)))
-                        (if (< this (car lead)) (cons this x) lead)))))))
+               (fold (λ (lead x)
+                        (let ((this (pred x)))
+                           (if (< this (car lead)) (cons this x) lead)))
+                  (cons (pred (car lst)) (car lst))
+                  (cdr lst)))))
 
       (define (free-vars exp env)
 
@@ -162,10 +162,7 @@
                (['value val] exp)
                (['var sym]
                   (if (eq? sym name)
-                     (begin
-                        ;(print " making a wrapper for " name)
-                        ;(print "   - with deps " deps)
-                        ['lambda (reverse (cdr (reverse deps))) ['call exp (map mkvar deps)]])
+                     ['lambda (reverse (cdr (reverse deps))) ['call exp (map mkvar deps)]]
                      exp))
                (else
                   (runtime-error "carry-simple-recursion: what is this node type: " exp))))
@@ -236,22 +233,20 @@
          ; convert the lambda and carry bindings in the body
          (map
             (lambda (node)
-               (lets
-                  ((lexp (value-of node))
-                   (formals (ref lexp 2))
-                   (body (ref lexp 3)))
+               (let*((lexp (value-of node))
+                     (formals (ref lexp 2))
+                     (body (ref lexp 3)))
                   (mklambda
                      (append formals (deps-of node))
                      (carry-bindings body env))))
             nodes))
 
       (define (make-wrapper node)
-         (lets
-            ((name (name-of node))
-             (lexp (value-of node))
-             (deps (deps-of node))
-             (formals (ref lexp 2))
-             (body (ref lexp 3)))
+         (let*((name (name-of node))
+               (lexp (value-of node))
+               (deps (deps-of node))
+               (formals (ref lexp 2))
+               (body (ref lexp 3)))
             (mklambda formals
                (mkcall
                   (mkvar name)
