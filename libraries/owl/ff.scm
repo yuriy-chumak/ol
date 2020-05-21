@@ -17,6 +17,8 @@
       put put!    ; O(log2 n), ff x key value -> ff'
       del         ; O(log2 n), ff x key -> ff'
       keys        ; O(n), ff → (key ...)
+      make-ff     ; like make-vector, generates a ff from a flat list
+
       ff-update   ; O(log2 n), ff x key x value -> ff' | fail if key not in ff
       fupd        ; alias for ff-update
                   ;    - no rebalancing, just walk to leaf and update value
@@ -444,6 +446,8 @@
             (λ (lst k v)
                (cons k (cons v lst)))
             null ff))
+
+      (define make-ff list->ff)
 
       ;;;
       ;;; Deletion

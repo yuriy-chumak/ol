@@ -401,7 +401,7 @@
                      (cons q things)))))
             (let*((q v qv))
                (if (null? v)
-                  (list 'make-vector #null) ; no empty vectors in parser allowed (todo: fix it somewere else)
+                  (list 'make-vector #null) ; parsed expression must contain only lists!
                   (if q
                      (list 'make-vector (list q v))
                      (cons 'vector v))))))
@@ -418,8 +418,8 @@
                (? maybe-whitespace)
                (? (get-imm #\})))
             (if (null? things)
-               #empty
-               (list 'list->ff
+               (list 'make-ff #null) ; parsed expression must contain only lists!
+               (list 'make-ff
                   (if q
                      (list q things)
                      (cons 'list things))))))
