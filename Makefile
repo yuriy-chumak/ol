@@ -14,13 +14,11 @@ describe: all
 ## 'configure' part:
 # check the library and/or function
 exists = $(shell echo "\
-	   \#include $2\n\
-	   char $3();\
-	   \
-	   int main() {\
-	      return $3();\
-	      return 0;\
-	   }" | $(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
+	char $3();\
+	\
+	int main() {\
+	   return $3();\
+	}" |$(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
 
 # default platform features
 HAS_DLOPEN  ?= $(call exists,,<stdlib.h>, dlopen, -ldl)
