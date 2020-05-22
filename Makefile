@@ -202,7 +202,8 @@ src/olvm.c: extensions/ffi.c
 	touch src/olvm.c
 
 tmp/repl.c: repl
-	xxd --include repl >tmp/repl.c
+	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
+#	xxd --include repl >tmp/repl.c
 
 # # emscripten version 1.37.40+
 # repl.js: repl
