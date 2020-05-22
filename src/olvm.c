@@ -4549,6 +4549,7 @@ loop:;
 	#endif
 		ip += 3; break;
 	}
+
 	case FP2: { // with 2 arguments
 	#if OLVM_INEXACTS
 		word fn = value (A0);
@@ -4572,7 +4573,7 @@ loop:;
 		case 0xF9: // fdiv
 			*(inexact_t*)&car(A3) = a / b;
 			break;
-
+	#if OLVM_BUILTIN_FMATH
 		case 0xF3: // fatan2
 			*(inexact_t*)&car(A3) = __builtin_atan2(a, b);
 			break;
@@ -4583,7 +4584,7 @@ loop:;
 		case 0x80: // fexpt
 			*(inexact_t*)&car(A3) = __builtin_pow(a, b);
 			break;
-
+	#endif
 		default:
 			A3 = IFALSE;
 			break;
