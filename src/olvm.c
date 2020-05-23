@@ -199,7 +199,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 // http://sourceforge.net/p/predef/wiki/OperatingSystems/
 //    Linux-i386                                                                  +
 //    Linux-x86_64 (amd64)                                                        +
-//    Linux-powerpc
+//    Linux-powerpc                                                               +
 //    Linux-sparc
 //    Linux-ARM                                                                   +
 //    Win32-i386 (2000/XP, WinNT or later)                                        +
@@ -209,8 +209,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 //    FreeBSD-x86_64                                                              +
 //    NetBSD-i386                                                                 +
 //    NetBSD-x86_64                                                               +
-//    Mac OS X/Darwin for PowerPC (32 and 64 bit)
-//    Mac OS X/Darwin for Intel (32 and 64 bit)
+//    Mac OS X/Darwin for PowerPC (32 and 64 bit)                                 +
+//    Mac OS X/Darwin for Intel (32 and 64 bit)                                   +
 //    iOS (ARM and AArch64/ARM64) and iPhoneSimulator (32 and 64 bit)
 //    OS/2-i386 (OS/2 Warp v3.0, 4.0, WarpServer for e-Business and eComStation)
 //    Haiku-i386
