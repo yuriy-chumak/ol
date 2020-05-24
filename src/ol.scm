@@ -87,11 +87,18 @@
 
 
 (define *features* (append *features* `(
-   exact-closed
-   ratios
-   exact-complex
-   full-unicode
-   immutable)))
+   ; math:
+   exact-closed   ; The algebraic operations +, -, *, and expt where the
+                  ; second argument is a non-negative integer produce exact
+                  ; values given exact inputs.
+   exact-complex  ; Exact complex numbers are provided.
+   ieee-float     ; Inexact numbers are IEEE 754 binary floating point values.
+   ratios         ; / with exact arguments produces an exact result when
+                  ; the divisor is nonzero.
+
+   full-unicode   ; All Unicode characters present in Unicode version 6.0
+                  ; are supported as Scheme characters.
+   immutable)))   ; todo: ?
 
 
 
