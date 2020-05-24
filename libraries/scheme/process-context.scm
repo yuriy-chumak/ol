@@ -11,8 +11,10 @@
       (scheme core))
 
    (begin
-      (define (command-line)
-         *vm-args*)
+      (define-syntax command-line
+         (syntax-rules (*vm-args*)
+            ((command-line)
+               *vm-args*)))
 
       (define exit (case-lambda
          ((code)
