@@ -103,7 +103,7 @@ R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 * 2.1. Identifiers
   * |\t\t| and |\x9;\x9;| are **different** in Ol, but *the same* in Scheme.
-  * Ol is definitely **case sensitive**, but *configurable thru #!fold-case and #!no-fold-case* in Scheme
+  * Ol is definitely **case sensitive**, but Sheme is *configurable thru #!fold-case and #!no-fold-case*.
 * 4.1.6. Assignments
   * **No** SET! in Ol.
     - *note: Ol is purely functional language.*
