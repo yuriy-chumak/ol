@@ -111,8 +111,8 @@ R<sup>7</sup>RS DIFFERENCES
   * **No** INCLUDE and INCLUDE-CI in Ol.
     - *note: Use ",load" instead.*
 * 4.2.1. Conditionals
-  * Result of the 'when' expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
-  * Result of the 'unless' expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
+  * Result of the 'WHEN' expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
+  * Result of the 'UNLESS' expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
 * 4.2.5. Delayed evaluation
   * **No** DELAY-FORCE, PROMISE? and MAKE-PROMISE in Ol.
     - *note: But DELAY and FORCE exists, sure.*
@@ -124,11 +124,11 @@ R<sup>7</sup>RS DIFFERENCES
   * (eqv? +nan.0 +nan.0) is **#true** in Ol, but *unspecified* in Scheme. The same for +inf.0 and -inf.0.
 * 6.2.5. Syntax of numerical constants
   * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
-    - *explanation: Inexactness can be disabled (by compiler features or/and unsupported by platform). But we should expect the same behavior of the program independently of inexactness support (in case we not use inexact numbers, sure).*
+    - *explanation: Inexactness can be disabled by compiler features or/and unsupported by platform. But we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).*
 * 6.2.6. Numerical operations
   * Just Note: *complex?* is the same as *number?*, like in Scheme.
   * INTEGER? for inexact numbers always returns **#false** in Ol, but can be *#true* in Scheme when (= number (round number)).
-    - *explanation: Inexactness is an inexactness - we may lose the fractional part and not notice it. So let's be a little paranoid.*
+    - *explanation: Inexactness is an inexactness - we may lose the fractional part and not to be noticed about. So let's be a little paranoid.*
   * SQRT is **included** in base library profile while *not included* in Scheme
     - *explanation: due to frequent use.*
 * 6.4. Pairs and lists

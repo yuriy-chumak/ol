@@ -39,7 +39,7 @@
 (import (scheme base))    ;; ... набор Scheme
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*libraries* *codes* *vm-args* *version* stdin stdout stderr build-start) ;set-ticker-value
+,forget-all-but (*libraries* *primops* *vm-args* *version* stdin stdout stderr build-start) ;set-ticker-value
 
 ;;;
 ;;; Time for a new REPL
@@ -99,7 +99,6 @@
    full-unicode   ; All Unicode characters present in Unicode version 6.0
                   ; are supported as Scheme characters.
    immutable)))   ; todo: ?
-
 
 
 ;; (define error-tag "err")
