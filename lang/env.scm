@@ -5,18 +5,14 @@
       lookup env-bind
       empty-env
       apply-env env-fold
-      ; opcode->wrapper
-      poll-tag name-tag link-tag buffer-tag signal-tag signal-halt thread-quantum meta-tag
-      current-library-key
-      env-set-macro env-del *special-forms*
-      env-get ;; env key default → val | default
-      env-del ;; env key → env'
-      env-set ;; env-set env key val → env'
-      env-keep ;; env (name → name' | #false) → env'
+      env-set-macro env-del
+      env-get     ;; env key default → val | default
+      env-del     ;; env key → env'
+      env-set     ;; env-set env key val → env'
+      env-keep    ;; env (name → name' | #false) → env'
       env-get-raw ;; env key → value      -- temporary
       env-put-raw ;; env key value → env' -- temporary
-      env-keys ;; env → (key ...)
-      )
+      env-keys)   ;; env → (key ...)
 
    (import
       (scheme base)
@@ -34,36 +30,9 @@
    (begin
       ;;; these cannot be in primop since they use lists and ffs
 
-      ;; only special forms supported by the compiler, no primops etc
-      ;; fixme: should use distinct identifiers like #:foo for these, since these can unintentionally clash with formals
-      (define *special-forms* {
-         'quote  ['special 'quote]
-         'values ['special 'values]
-         'lambda ['special 'lambda]
-
-         'setq   ['special 'setq]
-         'let-eval ['special 'let-eval]
-
-         'ifeq   ['special 'ifeq]
-         'brae   ['special 'brae]
-
-         'values-apply ['special 'values-apply]})
-
       (define empty-env #empty) ;; will change with ff impl
 
       (define env-del del)
-      (define poll-tag "mcp/polls")
-      (define buffer-tag "mcp/buffs")
-      (define link-tag "mcp/links")
-      (define signal-tag "mcp/break")
-      (define meta-tag '*owl-metadata*) ; key for object metadata
-      (define name-tag '*owl-names*)    ; key for reverse function/object → name mapping
-      (define current-library-key '*owl-source*) ; toplevel value storing what is being loaded atm
-
-      (define (signal-halt threads state controller)
-         (print-to stderr "stopping on signal")
-         (halt 42)) ;; exit owl with a specific return value
-      (define thread-quantum 10000)
 
       (define lookup ;; <- to be replaced with env-get
          (let ((undefined ['undefined]))

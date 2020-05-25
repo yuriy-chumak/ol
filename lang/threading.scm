@@ -33,6 +33,16 @@
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
+      (define poll-tag "mcp/polls")
+      (define buffer-tag "mcp/buffs")
+      (define link-tag "mcp/links")
+      (define signal-tag "mcp/break")
+
+      (define (signal-halt threads state controller)
+         (print-to stderr "stopping on signal")
+         (halt 42)) ;; exit owl with a specific return value
+      (define thread-quantum 10000)
+
       (define (bad-interop id a b c todo done state)
          (system-println "mcp: got bad interop")
          (values todo done state))

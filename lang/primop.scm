@@ -4,6 +4,7 @@
 (export
       primop-of primitive?
       primop-name ;; primop → symbol | primop
+      *special-forms*
       special-bind-primop? variable-input-arity?
       multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?)
 
@@ -84,5 +85,20 @@
          (vector-apply (opcode->primop op)
             (λ (name op in out fn)
                (or (eq? in n) (eq? in 'any)))))
+
+      ;; only special forms supported by the compiler, no primops etc
+      ;; fixme: should use distinct identifiers like #:foo for these, since these can unintentionally clash with formals
+      (define *special-forms* {
+         'quote  ['special 'quote]
+         'values ['special 'values]
+         'lambda ['special 'lambda]
+
+         'setq   ['special 'setq]
+         'let-eval ['special 'let-eval]
+
+         'ifeq   ['special 'ifeq]
+         'brae   ['special 'brae]
+
+         'values-apply ['special 'values-apply]})
 
 ))

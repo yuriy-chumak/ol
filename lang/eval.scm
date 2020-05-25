@@ -56,6 +56,10 @@
       (only (owl regex) string->regex))
 
    (begin
+      (define meta-tag '*owl-metadata*) ; key for object metadata
+      (define name-tag '*owl-names*)    ; key for reverse function/object → name mapping
+      (define current-library-key '*owl-source*) ; toplevel value storing what is being loaded atm
+
 
       (define (ok? x) (eq? (ref x 1) 'ok))
       (define (ok exp env) ['ok exp env])
@@ -133,7 +137,7 @@
             (λ (env thing)
                (env-set env (ref thing 1) (ref thing 5))) ; add primitives to the end of list
             (env-set-macro
-               *special-forms* ;; from (owl env), env with only special form tags, no primops
+               *special-forms* ;; from (owl primop), env with only special form tags, no primops
                'define-syntax
                (make-transformer
                   '(define-syntax syntax-rules add quote)
