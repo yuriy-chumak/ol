@@ -1,6 +1,7 @@
 (define-library (lib glib-2)
    (export
-      gint gulong gpointer
+      gint guint gulong gpointer
+      gchar*
 
       G_APPLICATION_FLAGS_NONE
 
@@ -8,6 +9,11 @@
       GClosureNotify
       GConnectFlags
       GApplication*
+      GError*
+
+      ;
+      GObject*
+      g_object_unref
 
       G_CALLBACK
 
@@ -23,18 +29,25 @@
 (define G_APPLICATION_FLAGS_NONE 0)
 
 (define gint fft-int)
+(define guint fft-unsigned-int)
 (define gulong fft-unsigned-long)
 (define gpointer fft-void*)
+(define gchar* type-string)
+
 (define GCallback type-callable) ; void (*GCallback)(void)
 (define GClosureNotify type-callable) ; void (*GClosureNotify)(gpointer, GClosure)
 (define GConnectFlags fft-int) ; enum
 (define GApplication* fft-void*)
+(define GError* fft-void*)
 
 (define G_CALLBACK make-callback)
 
 (define GLIB (load-dynamic-library "libglib-2.0.so"))
 (define GOBJECT (load-dynamic-library "libgobject-2.0.so"))
 (define GIO (load-dynamic-library "libgio-2.0.so"))
+
+(define GObject* fft-void*)
+(define g_object_unref (GOBJECT fft-void "g_object_unref" gpointer))
 
 (define g_signal_connect_data (GOBJECT gulong "g_signal_connect_data" gpointer type-string GCallback gpointer GClosureNotify GConnectFlags))
 (define (g_signal_connect instance detailed_signal c_handler data)
