@@ -1,4 +1,4 @@
-(define-library (owl syscall)
+(define-library (otus syscall)
    (export 
       gettimeofday
       strftime)
