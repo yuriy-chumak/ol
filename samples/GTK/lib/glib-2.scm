@@ -3,6 +3,8 @@
       gint guint gulong gpointer
       gchar*
 
+      TRUE FALSE
+
       G_APPLICATION_FLAGS_NONE
 
       GCallback
@@ -10,6 +12,7 @@
       GConnectFlags
       GApplication*
       GError*
+      g_error_free
 
       ;
       GObject*
@@ -25,6 +28,8 @@
       (otus ffi))
 
 (begin
+(define TRUE 1)
+(define FALSE 0)
 
 (define G_APPLICATION_FLAGS_NONE 0)
 
@@ -38,7 +43,6 @@
 (define GClosureNotify type-callable) ; void (*GClosureNotify)(gpointer, GClosure)
 (define GConnectFlags fft-int) ; enum
 (define GApplication* fft-void*)
-(define GError* fft-void*)
 
 (define G_CALLBACK make-callback)
 
@@ -48,6 +52,9 @@
 
 (define GObject* fft-void*)
 (define g_object_unref (GOBJECT fft-void "g_object_unref" gpointer))
+
+(define GError* fft-void*)
+(define g_error_free (GOBJECT fft-void "g_error_free" GError*))
 
 (define g_signal_connect_data (GOBJECT gulong "g_signal_connect_data" gpointer type-string GCallback gpointer GClosureNotify GConnectFlags))
 (define (g_signal_connect instance detailed_signal c_handler data)

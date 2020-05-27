@@ -36,6 +36,14 @@
 
       ; todo: move to (lib gtk label)
       gtk_label_set_text
+
+      ; todo: move to (lib gtk glarea)
+      GtkGLArea*
+      GdkGLContext*
+      gtk_gl_area_queue_render
+      gtk_gl_area_make_current
+      gtk_gl_area_get_error
+      gtk_gl_area_set_required_version
    )
    (import
       (scheme core)
@@ -87,5 +95,13 @@
 ; (lib gtk label)
 (define GtkLabel* fft-void*)
 (define gtk_label_set_text (GTK fft-void "gtk_label_set_text" GtkLabel* type-string))
+
+; (lib gtk glarea)
+(define GtkGLArea* fft-void*)
+(define GdkGLContext* fft-void*)
+(define gtk_gl_area_queue_render (GTK fft-void "gtk_gl_area_queue_render" GtkGLArea*))
+(define gtk_gl_area_make_current (GTK fft-void "gtk_gl_area_make_current" GtkGLArea*))
+(define gtk_gl_area_get_error (GTK GError* "gtk_gl_area_get_error" GtkGLArea*))
+(define gtk_gl_area_set_required_version (GTK GError* "gtk_gl_area_set_required_version" GtkGLArea* gint gint))
 
 ))

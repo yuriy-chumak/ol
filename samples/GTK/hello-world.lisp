@@ -8,7 +8,7 @@
    (list GtkWidget* gpointer)
    (lambda (widget userdata)
       (print "hello")
-      #true
+      TRUE
 ))))
 
 (define activate (vm:pin (cons
