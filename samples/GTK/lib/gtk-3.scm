@@ -44,6 +44,11 @@
       gtk_gl_area_make_current
       gtk_gl_area_get_error
       gtk_gl_area_set_required_version
+
+      ; todo: move to (lib gtk adjustment)
+      GtkAdjustment*
+      gtk_adjustment_get_value
+      gtk_adjustment_set_value
    )
    (import
       (scheme core)
@@ -104,4 +109,8 @@
 (define gtk_gl_area_get_error (GTK GError* "gtk_gl_area_get_error" GtkGLArea*))
 (define gtk_gl_area_set_required_version (GTK GError* "gtk_gl_area_set_required_version" GtkGLArea* gint gint))
 
+; (lib gtk adjustment)
+(define GtkAdjustment* fft-void*)
+(define gtk_adjustment_get_value (GTK gdouble "gtk_adjustment_get_value" GtkAdjustment*))
+(define gtk_adjustment_set_value (GTK fft-void "gtk_adjustment_set_value" GtkAdjustment* gdouble))
 ))

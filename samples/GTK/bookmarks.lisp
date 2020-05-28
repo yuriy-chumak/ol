@@ -21,7 +21,7 @@
    (list GtkWidget* gpointer)
    (lambda (widget userdata)
       (gtk_label_set_text userdata (c-string (strftime (c-string "%F %x:%S"))))
-      #true
+      TRUE
 ))))
 
 ; main:

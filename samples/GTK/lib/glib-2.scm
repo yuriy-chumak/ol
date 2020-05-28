@@ -1,6 +1,7 @@
 (define-library (lib glib-2)
    (export
       gint guint gulong gpointer
+      gdouble
       gchar*
 
       TRUE FALSE
@@ -37,6 +38,7 @@
 (define guint fft-unsigned-int)
 (define gulong fft-unsigned-long)
 (define gpointer fft-void*)
+(define gdouble fft-double)
 (define gchar* type-string)
 
 (define GCallback type-callable) ; void (*GCallback)(void)
