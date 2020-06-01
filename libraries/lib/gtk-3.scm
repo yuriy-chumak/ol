@@ -49,11 +49,19 @@
       GtkAdjustment*
       gtk_adjustment_get_value
       gtk_adjustment_set_value
+
+      ; todo: move to (lib gtk context)
+      GtkStyleContext*
+      gtk_widget_get_style_context
+      gtk_widget_get_allocated_width
+      gtk_widget_get_allocated_height
+      gtk_render_background
    )
    (import
       (scheme core)
       (otus ffi)
-      (lib glib-2))
+      (lib glib-2)
+      (lib cairo))
 
 (begin
 
@@ -113,4 +121,12 @@
 (define GtkAdjustment* fft-void*)
 (define gtk_adjustment_get_value (GTK gdouble "gtk_adjustment_get_value" GtkAdjustment*))
 (define gtk_adjustment_set_value (GTK fft-void "gtk_adjustment_set_value" GtkAdjustment* gdouble))
+
+; (lib gtk context)
+(define GtkStyleContext* fft-void*)
+(define gtk_widget_get_style_context (GTK GtkStyleContext* "gtk_widget_get_style_context" GtkWidget*))
+(define gtk_widget_get_allocated_width (GTK fft-int "gtk_widget_get_allocated_width" GtkWidget*))
+(define gtk_widget_get_allocated_height (GTK fft-int "gtk_widget_get_allocated_height" GtkWidget*))
+(define gtk_render_background (GTK fft-void "gtk_render_background" GtkStyleContext* cairo_t* gdouble gdouble gdouble gdouble))
+
 ))

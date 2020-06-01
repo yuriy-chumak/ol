@@ -2,6 +2,7 @@
 
 (import (otus ffi)
    (lib glib-2)
+   (lib gdk-3)
    (lib gtk-3))
 (import (otus random!))
 (import (OpenGL version-3-2))
@@ -88,6 +89,16 @@
       TRUE
 ))))
 (g_signal_connect glarea (c-string "resize") (G_CALLBACK resize) NULL)
+
+
+(define x (box 0))
+(define idle (vm:pin (cons
+   (list gpointer)
+   (lambda (userdata)
+      (print "idle: " (unbox x))
+      (set-car! x (|+1| (unbox x)))
+      TRUE))))
+(gdk_threads_add_idle (G_CALLBACK idle) nullptr)
 
 
 ; show window and run
