@@ -183,8 +183,9 @@
                'new #true })
 
    (define (read-json port)
-      (define json (try-parse json-parser (force (port->bytestream port)) #f))
-      (if json (car json)))
+      (when port
+         (define json (try-parse json-parser (force (port->bytestream port)) #f))
+         (if json (car json))))
 
    (define read-json (case-lambda
       (() (read-json stdin))
@@ -200,7 +201,7 @@
       (if json (car json)))
 
    (define (write-json json port)
-      (print-json-with (lambda (what) (display-to port)) json))
+      (print-json-with (lambda (what) (display-to port what)) json))
    (define write-json (case-lambda
       ((json) (write-json json stdout))
       ((json port) (write-json json port))))
