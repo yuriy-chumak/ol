@@ -1,0 +1,30 @@
+ -- and -- 
+let's evaluate '(a as #true) and (b as #true)':
+   (a) => #true
+   (b) => #true
+   result is #true
+let's evaluate '(a as #true) and (b as #false)':
+   (a) => #true
+   (b) => #false
+   result is #false
+let's evaluate '(a as #false) and (b as #true)':
+   (a) => #false
+   result is #false
+let's evaluate '(a as #false) and (b as #false)':
+   (a) => #false
+   result is #false
+ -- or -- 
+let's evaluate '(a as #true) or (b as #true)':
+   (a) => #true
+   result is #true
+let's evaluate '(a as #true) or (b as #false)':
+   (a) => #true
+   result is #true
+let's evaluate '(a as #false) or (b as #true)':
+   (a) => #false
+   (b) => #true
+   result is #true
+let's evaluate '(a as #false) or (b as #false)':
+   (a) => #false
+   (b) => #false
+   result is #false
