@@ -1,6 +1,6 @@
 ; https://rosettacode.org/wiki/Base64_decode_data#Ol
 
-(define base64-codes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+")
+(define base64-codes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
 (define kernel (alist->ff (map cons (string->bytes base64-codes) (iota (string-length base64-codes)))))
 
 ; returns n bits from input binary stream
