@@ -25,7 +25,6 @@ ga('send', 'event', 'WASM', 'supported', ""+wasmSupported(), {
    nonInteraction: true
 });
 
-
 // TERMINAL:
 var stdInput = ""; //unescape(encodeURIComponent(",load \"init.lisp\"")); // loading the script with initial code
 var errorLen = 0;
@@ -134,7 +133,6 @@ var Module = {
 
       ga('send', 'event', 'Console', 'stderr', error, {
          nonInteraction: true});
-      showTerminal();
    },
 /*   canvas: (function() {
       var canvas = document.getElementById('canvas');
