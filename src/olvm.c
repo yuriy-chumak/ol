@@ -4845,8 +4845,16 @@ int main(int argc, char** argv)
 	}
 #endif
 
-	// ./ol - если первая команда - не имя файла, то использовать repl
 	char* file = 0;
+  if ((argc > 1) && (strcmp(argv[1], "--") == 0)) {
+    argc--; argv++;
+    if (argc > 1) {
+      file = argv[1];
+      argc--; argv++;
+    }
+  }
+  else
+	// ./ol - если первая команда - не имя файла, то использовать repl
 	if ((argc > 1) && (strncmp(argv[1], "-", 1) != 0)) {
 		file = argv[1];
 		argv++, argc--;
