@@ -1,6 +1,6 @@
 #!/usr/bin/ol
 (import (lib gl))
-(gl:set-window-title "2. Drawing simple triangle")
+(gl:set-window-title "5. Terminal")
 (import (lib gl console))
 
 (import (OpenGL version-1-0))
@@ -21,7 +21,8 @@
 ))
 
 
-(define main (create-window 1 1 80 24))
+(define main (create-window 1 1 78 23))
+(set-window-border main WHITE)
 (set-window-writer main (lambda (print)
    (define F LIGHTGRAY)
    (define G GRAY)

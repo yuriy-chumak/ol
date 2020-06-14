@@ -1,6 +1,6 @@
 #!/usr/bin/ol
 (import (lib gl3))
-(gl:set-window-title "1. Creating an OpenGL 3.0 Window")
+(gl:set-window-title "2. Drawing a Point")
 
 (gl:set-context-version 3 0) ; use OpenGL version 3.0
 (import (OpenGL version-3-0))

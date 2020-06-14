@@ -1,6 +1,6 @@
 #!/usr/bin/ol
 (import (lib gl))
-(gl:set-window-title "3. VBO")
+(gl:set-window-title "4. IBO")
 
 (import (OpenGL version-2-1))
 

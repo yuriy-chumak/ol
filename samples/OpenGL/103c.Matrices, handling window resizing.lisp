@@ -1,12 +1,16 @@
 #!/usr/bin/ol
 (import (lib gl) (lib math))
-(gl:set-window-title "3. Matrices, scaling")
+(gl:set-window-title "3. Matrices, handling window resizing")
 
 (import (OpenGL version-1-0))
 
 ; init
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
+
+(gl:set-expose-handler (lambda (x y width height)
+   (print "new dimensions: " x " " y " " width " " height)
+   (glViewport x y width height)))
 
 (define started (let*((ss ms (clock))) (cons ss ms)))
 
@@ -18,7 +22,7 @@
    (define delta (* 0.5 (sin (/ (+ (* 1000 (- (car now) (car started))) (- (cdr now) (cdr started))) 500))))
 
    (glLoadIdentity)
-   (glScalef 1 delta 1)
+   (glTranslatef delta 0 0)
 
    (glColor3f 0.2 0.5 0.2)
    (glBegin GL_TRIANGLES)
