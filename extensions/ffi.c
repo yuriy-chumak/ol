@@ -455,8 +455,7 @@ unsigned
 long long arm32_call(word argv[], long i,
                      void* function)
 {
-__ASM__(
-//	"BKPT",
+__ASM__("arm32_call:_arm32_call:", //	"BKPT",
 	// !!! stack must be 8-bytes aligned, so let's push even arguments count
 	"push {r4, r5, r6, lr}",
 	"mov r4, sp", // save sp
@@ -527,8 +526,7 @@ unsigned
 long long arm32_call(word argv[], float af[],
                      long i, long f,
                      void* function, long type);
-__ASM__(
-	//"BKPT",
+__ASM__("arm32_call:_arm32_call:", // "BKPT",
 	// r0: argv, r1: af, r2: ad, r3: i, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
 	// r5: temporary
