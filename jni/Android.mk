@@ -9,22 +9,36 @@ LOCAL_PATH := $(call my-dir)
 # the first time. Make will convert repl into repl.c and after this you can do
 # anything: ndk-build or make android again for your choice.
 
+# -- libOL ------------------------------------------------------------------------
+include $(CLEAR_VARS)
+LOCAL_MODULE   := shared-library
+LOCAL_MODULE_FILENAME := libol
+
+LOCAL_SRC_FILES := ../src/olvm.c
+LOCAL_SRC_FILES += oljni.c ../tmp/repl.c
+LOCAL_CFLAGS   += -std=c99 -O3 -g0 -Iinclude -DNAKED_VM -DEMBEDDED_VM -fsigned-char
+LOCAL_LDFLAGS  := -Xlinker --export-dynamic
+
+LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"libol.so"'
+LOCAL_LDLIBS   += -llog -landroid
+
+#LOCAL_C_INCLUDES := jni/include
+#LOCAL_CFLAGS   += -Ijni/include
+
+include $(BUILD_SHARED_LIBRARY)
+
 # -- OL ---------------------------------------------------------------------------
 include $(CLEAR_VARS)
 LOCAL_MODULE   := ol
 
 LOCAL_SRC_FILES := ../src/olvm.c
-LOCAL_SRC_FILES += olji.c repl.c
-LOCAL_C_INCLUDES := jni/include
-LOCAL_CFLAGS   += -std=c99 -O0 -g3 -Iinclude -DNAKED_VM -DEMBEDDED_VM -fsigned-char
+LOCAL_SRC_FILES += ../tmp/repl.c
+
+LOCAL_CFLAGS   += -std=c99 -O3 -g0 -Iinclude -fsigned-char
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
-LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"lib$(LOCAL_MODULE).so"'
 LOCAL_LDLIBS   += -llog -landroid
-
-LOCAL_CFLAGS   += -Ijni/include
-
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_EXECUTABLE)
 
 # # ------------------------------------
 # # test binary

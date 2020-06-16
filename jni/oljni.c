@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 // #include <zip.h>
-extern unsigned char repl[]; // otus lisp binary (please, build and link repl.o)
+extern unsigned char repl[]; // otus lisp binary
 
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "ol", __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
@@ -199,30 +199,20 @@ ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv* jenv, jobject class)
 {
+	// setenv("LIBGL_NOBANNER", "0", 1);
+	// init:
+	fds_size = 16;
+	fds = (AAsset**) malloc(sizeof(*fds) * fds_size);
+
+	// gl4es init
 	setenv("LIBGL_NOBANNER", "0", 1);
-    // LOGI("sizeof(FT_FaceRec): %d", sizeof(FT_FaceRec));
-    // LOGI("offsetof(FT_FaceRec, glyph): %d", offsetof(FT_FaceRec, glyph));
 
-    // LOGI("sizeof(FT_GlyphSlotRec): %d", sizeof(FT_GlyphSlotRec));
-    // LOGI("offsetof(FT_GlyphSlotRec, bitmap): %d", offsetof(FT_GlyphSlotRec, bitmap));
-    // LOGI("offsetof(FT_GlyphSlotRec, bitmap_left): %d", offsetof(FT_GlyphSlotRec, bitmap_left));
-    // LOGI("offsetof(FT_GlyphSlotRec, bitmap_top): %d", offsetof(FT_GlyphSlotRec, bitmap_top));
-    // LOGI("sizeof(FT_Bitmap): %d", sizeof(FT_Bitmap));
-    // LOGI("offsetof(FT_Bitmap, rows): %d", offsetof(FT_Bitmap, rows));
-    // LOGI("offsetof(FT_Bitmap, width): %d", offsetof(FT_Bitmap, width));
-    // LOGI("offsetof(FT_Bitmap, pitch): %d", offsetof(FT_Bitmap, pitch));
-    // LOGI("offsetof(FT_Bitmap, buffer): %d", offsetof(FT_Bitmap, buffer));
+	// let's start our application
+	ol.vm = OL_new(repl);
+	OL_userdata(ol.vm, &ol);
 
-    // init:
-    fds_size = 16;
-    fds = (AAsset**) malloc(sizeof(*fds) * fds_size);
-
-    // let's start our application
-    ol.vm = OL_new(repl);
-    OL_userdata(ol.vm, &ol);
-
-    char* args[] = { "--embed", "--no-interactive" }; //, "--home=/mnt/sdcard/ol" }; // ol execution arguments
-    word r = OL_run(ol.vm, sizeof(args) / sizeof(*args), args);
+	char* args[] = { "--embed", "--no-interactive" }; //, "--home=/sdcard/ol" }; // ol execution arguments
+	word r = OL_run(ol.vm, sizeof(args) / sizeof(*args), args);
 
     // well, we have our "smart" script prepared,
     //  now save both eval and env variables

@@ -400,7 +400,11 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #include <sys/utsname.h> // we have own win32 implementation
 #if HAS_DLOPEN
 #	include <dlfcn.h>    // we have own win32 implementation
+# ifdef __ANDROID__
+	static char* MODULE_FILENAME = 0;
+# endif
 #endif
+
 #if !defined(SYSCALL_SYSINFO) || (defined(SYSCALL_SYSINFO) && SYSCALL_SYSINFO != 0)
 #	include <sys/sysinfo.h> // we have own win32 implementation
 #endif
@@ -432,7 +436,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #include <emscripten.h>
 #endif
 
-#if defined(__ANDROID__) || defined(ANDROID)
+#ifdef __ANDROID__
 #include <android/log.h>
 #endif
 
@@ -3845,7 +3849,7 @@ loop:;
 
 #if HAS_DLOPEN
 			// -=( dlopen )=-------------------------------------------------
-			case SYSCALL_DLOPEN: { // (dlopen filename mode #false)
+			case SYSCALL_DLOPEN: { // (dlopen filename mode)
 				word a = A1;
 				word b = A2;
 
@@ -3856,7 +3860,13 @@ loop:;
 				// http://code.google.com/p/android/issues/detail?id=5049
 				void* module;
 				if ((word) filename == IFALSE) {
-					module = dlopen(OLVM_LIBRARY_SO_NAME, mode); // If filename is NULL, then the returned handle is for the main program.
+					module = dlopen(
+				# ifdef __ANDROID__
+						MODULE_FILENAME
+				# else						
+						OLVM_LIBRARY_SO_NAME
+				# endif
+						, mode); // If filename is NULL, then the returned handle is for the main program.
 				}
 				else if (is_string(filename)) {
 					module = dlopen(string(filename), mode);
@@ -3884,8 +3894,10 @@ loop:;
 				word a = A1;
 				word b = A2;
 
-				void* module = (void*)car (a);
+				if (!is_reference(a))
+					break;
 
+				void* module = (void*) car(a);
 				word* symbol = (word*) b;
 				// http://www.symantec.com/connect/articles/dynamic-linking-linux-and-windows-part-one
 				if (!(is_value(symbol) || reference_type (symbol) == TSTRING))
@@ -4827,6 +4839,10 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
+
+#ifdef __ANDROID__
+	MODULE_FILENAME = argv[0];
+#endif
 
 	//  vm special key: if command line is "--version" then print a version
 #ifdef NAKED_VM

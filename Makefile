@@ -182,8 +182,8 @@ slim: release
 NDK_ROOT ?=/opt/android/ndk
 android: jni/*.c tmp/repl.c
 	$(NDK_ROOT)/ndk-build
-jni/repl.c: repl vm
-	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
+#jni/repl.c: repl vm
+#	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
 
 # ol
 vm: src/olvm.c include/olvm.h

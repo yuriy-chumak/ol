@@ -28,7 +28,7 @@
 #	include <sys/mman.h>
 #endif
 
-#if defined(ANDROID) || defined(__ANDROID__)
+#ifdef __ANDROID__
 #	include <android/log.h>
 #	define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ol", __VA_ARGS__)
 #	define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
@@ -455,7 +455,11 @@ unsigned
 long long arm32_call(word argv[], long i,
                      void* function)
 {
-__ASM__("arm32_call:_arm32_call:", //	"BKPT",
+__ASM__(
+#ifndef __ANDROID__
+	"arm32_call:_arm32_call:",
+#endif
+	// "BKPT",
 	// !!! stack must be 8-bytes aligned, so let's push even arguments count
 	"push {r4, r5, r6, lr}",
 	"mov r4, sp", // save sp
@@ -526,7 +530,11 @@ unsigned
 long long arm32_call(word argv[], float af[],
                      long i, long f,
                      void* function, long type);
-__ASM__("arm32_call:_arm32_call:", // "BKPT",
+__ASM__(
+#ifndef __ANDROID__
+	"arm32_call:_arm32_call:",
+#endif
+	// "BKPT",
 	// r0: argv, r1: af, r2: ad, r3: i, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
 	// r5: temporary
