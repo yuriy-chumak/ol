@@ -179,34 +179,17 @@
                   (else
                      (fail (list "Bad case of primop in assemble: " (primop-name op))))))
             ;; fixme: closures should have just one RTL node instead of separate ones for clos-proc and clos-code
-            (['clos-proc lpos offset env to more]
+            (['cons-close closure? lpos offset env to more]
                ;; make a 2-level closure
                (if (eq? lpos 1)
-                  (cons CLOS1
+                  (cons (if closure? CLOS1 CLOC1)
                      (cons (+ 2 (length env))
                         ;; size of object (hdr code e0 ... en)
                         (cons offset
                            (append (map reg env)
                               (cons (reg to)
                                  (assemble more fail))))))
-                  (cons CLOS0
-                     (cons (+ 2 (length env))
-                        ;; size of object (hdr code e0 ... en)
-                        (cons (reg lpos)
-                           (cons offset
-                              (append (map reg env)
-                                 (cons (reg to)
-                                    (assemble more fail)))))))))
-            (['clos-code lpos offset env to more]      ;; make a 1-level closure
-               (if (eq? lpos 1)
-                  (cons CLOC1
-                     (cons (+ 2 (length env))
-                        ;; size of object (hdr code e0 ... en)
-                        (cons offset
-                           (append (map reg env)
-                              (cons (reg to)
-                                 (assemble more fail))))))
-                  (cons CLOC0
+                  (cons (if closure? CLOS0 CLOC0)
                      (cons (+ 2 (length env))
                         ;; size of object (hdr code e0 ... en)
                         (cons (reg lpos)

@@ -96,14 +96,10 @@
                   ['prim opcode
                      (map op args)
                      to (rtl-rename more op target fail)]))
-            (['clos-proc lp off env to more]
+            (['cons-close clos? lp off env to more]
                (if (bad? to target op)
                   (fail)
-                  ['clos-proc (op lp) off (map op env) to (rtl-rename more op target fail)]))
-            (['clos-code lp off env to more]
-               (if (bad? to target op)
-                  (fail)
-                  ['clos-code (op lp) off (map op env) to (rtl-rename more op target fail)]))
+                  ['cons-close clos? (op lp) off (map op env) to (rtl-rename more op target fail)]))
             (['ld val to cont]
                (if (bad? to target op)
                   (fail)
@@ -168,16 +164,16 @@
 
       (define (rtl-retard-closure rtl-retard code)
          (lets
-            ((clos-type lpos offset env to more code)
+            ((_ clos-type lpos offset env to more code)
              (more uses (rtl-retard more))
              (good (use-list uses to))
              (uses (del uses to))
-             (pass (λ () (values [clos-type lpos offset env to more] (fold reg-touch uses (cons lpos env))))))
+             (pass (λ () (values ['cons-close clos-type lpos offset env to more] (fold reg-touch uses (cons lpos env))))))
             (retarget-first more to good uses
                (λ (to-new more-new)
                   (if (eq? to to-new)
                      (pass)
-                     (rtl-retard [clos-type lpos offset env to-new more-new]))))))
+                     (rtl-retard ['cons-close clos-type lpos offset env to-new more-new]))))))
 
       ; retarget register saves to registers where they are moved
       ; where possible (register retargeting level 1)
@@ -257,10 +253,7 @@
                            (pass)
                            (rtl-retard ['ld val to-new cont-new]))))))
 
-            (['clos-proc lpos offset env to more]
-               (rtl-retard-closure rtl-retard code))
-
-            (['clos-code lpos offset env to more]
+            (['cons-close clos? lpos offset env to more]
                (rtl-retard-closure rtl-retard code))
 
             (['refi from offset to more]
