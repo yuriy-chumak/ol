@@ -229,6 +229,9 @@ var Downloaded = 0;
 
             script.addEventListener('load', function(me) {
                 terminal.set_prompt('');
+                if (!wasmSupported())
+                    return;
+
                 terminal.echo("Booting Virtual Machine...")
             }, false);
             script.addEventListener('error', function(event) {
