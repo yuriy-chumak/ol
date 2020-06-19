@@ -3156,7 +3156,7 @@ loop:;
 
 		#define CHECK_PORT(arg)      CHECK_TYPE(arg, port, 62001)
 		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)
-		#define CHECK_NUMBERP(arg)   CHECK_TYPE(arg, number, 62008)
+		#define CHECK_NUMBERP(arg)   CHECK_TYPE(arg, numberp, 62008)
 		#define CHECK_REFERENCE(arg) CHECK_TYPE(arg, reference, 62003)
 		#define CHECK_BINSTREAM(arg) CHECK_TYPE(arg, binstream, 62004)
 		#define CHECK_STRING(arg)    CHECK_TYPE(arg, string, 62005)
