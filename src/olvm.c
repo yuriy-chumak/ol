@@ -1244,11 +1244,11 @@ word*p = new (TVECTOR, 13);\
 // работа с numeric value типами
 
 // todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
-#define fix(v) \
+#define enum(v) \
 	({  word x1 = (word)(v);    \
 		assert(is_enum(x1));     \
 		int_t y1 = (x1 >> IPOS);\
-		is_enumn(x1) ? -y1 : y1; \
+		value_type (x1) == TENUMN ? -y1 : y1; \
 	})//(x1 & 0x80) ? -y1 : y1;
 #define make_enum(v) \
 	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2/*make_value(-x4, TENUMN) : make_value(x4, TENUMP)*/; })
@@ -1332,7 +1332,7 @@ word* chase(word* pos) {
 }
 
 // cells - новый размер кучи (в словах)
-static __inline__
+static
 ptrdiff_t resize_heap(heap_t *heap, int cells)
 {
 	if (sandboxp) /* realloc is not allowed within seccomp */
@@ -1356,7 +1356,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		while (pos < end) {
 			word hdr = *pos;
 			int sz = header_size(hdr);
-			if (is_blob(pos))
+			if (is_binstream(pos))
 				pos += sz; // no pointers in raw objects
 			else {
 				pos++, sz--;
@@ -1574,20 +1574,8 @@ unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in
 	while (p < max && *pos++) p++;
 	return p;
 }
-static __inline__
-unsigned int lenn16(short *pos, size_t max) { // added here, strnlen was missing in win32 compile
-	unsigned int p = 0;
-	while (p < max && *pos++) p++;
-	return p;
-}
-unsigned int llen(word list)
-{
-	unsigned int p = 0;
-	while (list != INULL)
-		list = cdr(list), p++;
-	return p;
-}
 
+static
 void set_signal_handler()
 {
 #ifndef _WIN32
@@ -1638,7 +1626,7 @@ struct ol_t
 // ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
 // алгоритмические трюки:
 // x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
-// signed fix to int
+// signed enum to int
 
 // i - machine integer
 // ui - unsigned, si - signed
@@ -1721,7 +1709,7 @@ double ol2d_convert(word p) {
 
 double OL2D(word arg) {
 	if (is_enum(arg))
-		return fix(arg);
+		return enum(arg);
 
 	assert (is_reference(arg));
 	switch (reference_type(arg)) {
@@ -1763,7 +1751,7 @@ float ol2f_convert(word p) {
 }
 float OL2F(word arg) {
 	if (is_enum(arg))
-		return fix(arg);
+		return enum(arg);
 
 	assert (is_reference(arg));
 	switch (reference_type(arg)) {
@@ -2671,7 +2659,6 @@ loop:;
 				}
 				else
 					R[ip[size]] = IFALSE;
-
 				break;
 			}
 			default:
@@ -2689,7 +2676,6 @@ loop:;
 
 	case TYPE: { // type o -> r
 		word T = A0;
-		// todo: how about RAWNESS?
 		A1 = I(is_reference(T) ? reference_type(T) : value_type(T));
 		ip += 2; break;
 	}
@@ -2702,8 +2688,8 @@ loop:;
 		if (is_value(T))
 			A1 = IFALSE;
 		else {
-			if (is_blob(T))
-				A1 = I(blob_size(T));
+			if (is_binstream(T))
+				A1 = I(binstream_size(T));
 			else
 				A1 = I(header_size(*(word*)T) - 1);
 		}
@@ -2801,8 +2787,8 @@ loop:;
 		word *p = (word *) A0;
 		if (is_reference(p) && is_enum(A1)) {
 			word hdr = *p;
-			if (is_blob(p)) {
-				word size = blob_size(p);
+			if (is_binstream(p)) {
+				word size = binstream_size(p);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // blobs are indexed from 0
 					A2 = I(((unsigned char *) p)[pos+W]);
@@ -2836,12 +2822,12 @@ loop:;
 				newobj[i] = p[i];
 			result = (word)newobj;
 
-			if (is_blob(p)) {
-				CHECK(is_enump(A2), A2, 10001)
+			if (is_binstream(p)) {
+				CHECK(is_enump(A2), A2, 10001) // ?
 				size = size * sizeof(word) - header_pads(hdr);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // will add [0..255] numbers
-					((unsigned char*)&car(newobj))[pos] = fix(A2) & 0xFF;
+					((unsigned char*)&car(newobj))[pos] = enum(A2) & 0xFF;
 			}
 			else {
 				++size;
@@ -2870,7 +2856,7 @@ loop:;
 				size = size * sizeof(word) - header_pads(hdr);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // will add [0..255] numbers
-					((unsigned char*)&car(p))[pos] = fix(A2) & 0xFF;
+					((unsigned char*)&car(p))[pos] = enum(A2) & 0xFF;
 			}
 			else {
 				++size;
@@ -2923,7 +2909,7 @@ loop:;
 		A2 = I(r & VMAX);
 		A3 = I(r>>VBITS); //  & VMAX)
 		ip += 4; break; }
-	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as fix-es
+	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as enums
 		big_t a = (big_t) value(A1) | (((big_t) value(A0)) << VBITS);
 		big_t b = (big_t) value(A2);
 
@@ -4789,7 +4775,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	int allocated = 0;
 	while (*hp != 0) {
 		switch (*hp++) {
-		case 1: { // fix
+		case 1: { // value
 			hp++; ++allocated;
 			int size = decode_word(&hp);
 			while (size--) {
@@ -4801,8 +4787,8 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 			}
 			break;
 		}
-		case 2: { // pointer
-			hp++;// ++allocated;
+		case 2: { // reference
+			hp++;
 			int size = decode_word(&hp);
 			hp += size;
 

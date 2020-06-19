@@ -114,6 +114,22 @@
 word d2ol(struct ol_t* ol, double v);        // implemented in olvm.c
 double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 
+static
+unsigned int llen(word list) 
+{
+	unsigned int p = 0;
+	while (list != INULL)
+		list = cdr(list), p++;
+	return p;
+}
+static
+unsigned int lenn16(short *pos, size_t max) { // added here, strnlen was missing in win32 compile
+	unsigned int p = 0;
+	while (p < max && *pos++) p++;
+	return p;
+}
+
+
 // C preprocessor trick, some kind of "map":
 // http://jhnet.co.uk/articles/cpp_magic
 // http://stackoverflow.com/questions/319328/writing-a-while-loop-in-the-c-preprocessor
@@ -834,7 +850,7 @@ long from_rational(word arg) {
 	#endif
 	long a = 0;
 	if (is_value(pa))
-		a = fix(pa);
+		a = enum(pa);
 	else {
 		switch (reference_type(pa)) {
 		case TINTP:
@@ -851,7 +867,7 @@ long from_rational(word arg) {
 	#endif
 	long b = 1;
 	if (is_value(pb))
-		b = fix(pb);
+		b = enum(pb);
 	else {
 		switch (reference_type(pb)) {
 		case TINTP:
@@ -869,7 +885,7 @@ long from_rational(word arg) {
 static
 int to_int(word arg) {
 	if (is_enum(arg))
-		return fix(arg);
+		return enum(arg);
 
 	switch (reference_type(arg)) {
 	case TINTP:
@@ -891,7 +907,7 @@ int to_int(word arg) {
 static
 long to_long(word arg) {
 	if (is_enum(arg))
-		return fix(arg);
+		return enum(arg);
 
 	switch (reference_type(arg)) {
 	case TINTP:
@@ -1056,7 +1072,7 @@ word* OL_ffi(OL* self, word* arguments)
 #endif
 		tint:
 			if (is_enum(arg))
-				args[i] = fix(arg);
+				args[i] = enum(arg);
 			else
 			switch (reference_type(arg)) {
 			case TINTP:
@@ -1080,7 +1096,7 @@ word* OL_ffi(OL* self, word* arguments)
 #if UINTPTR_MAX == 0xffffffff // 32-bit machines
 			case TINT64: case TUINT64: // long long
 				if (is_enum(arg))
-					*(long long*)&args[i] = fix(arg);
+					*(long long*)&args[i] = enum(arg);
 				else
 				switch (reference_type(arg)) {
 				case TINTP: // source type
@@ -1271,7 +1287,7 @@ word* OL_ffi(OL* self, word* arguments)
 				args[i] = (word) &car(arg);
 				break;
 			case TPAIR: // sending type override
-				if (is_enump(car(arg))) // should be positive fix number
+				if (is_enump(car(arg))) // should be positive enum number
 				switch (value(car(arg))) {
 					// (cons fft-int8 '(...))
 					case TINT8 + FFT_PTR:
