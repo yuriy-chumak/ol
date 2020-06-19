@@ -929,10 +929,10 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 // набор макросов - проверок для команд
 // car, cdr:
 #ifndef CAR_CHECK
-#	define CAR_CHECK(arg) is_pair(T) || is_npairp(T) || is_npairn(T) || is_rational(T) || is_complex(T)
+#	define CAR_CHECK(arg) is_pair(arg) || is_npairp(arg) || is_npairn(arg) || is_rational(arg) || is_complex(arg)
 #endif
 #ifndef CDR_CHECK
-#	define CDR_CHECK(arg) is_pair(T) || is_npairp(T) || is_npairn(T) || is_rational(T) || is_complex(T)
+#	define CDR_CHECK(arg) is_pair(arg) || is_npairp(arg) || is_npairn(arg) || is_rational(arg) || is_complex(arg)
 #endif
 
 
