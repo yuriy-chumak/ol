@@ -445,7 +445,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 // с плавающей точкой float
 "3:", // float
 	"pushl %eax",
-	"fstp  (%esp)",
+	"fstps (%esp)",
 	"popl  %eax",
 	"jmp   9b",
 // с плавающей точкой double
