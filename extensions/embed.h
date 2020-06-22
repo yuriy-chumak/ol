@@ -153,9 +153,11 @@ typedef struct ol_t
  *
  * \param val C integer value
  */
-#define make_integer(val) (word) ({\
+#define make_enum(val) (word) ({\
 		int v = (int)(val); \
 		(v < 0) ? (-v << 8) | 0x82 : (v << 8) | 2; })
+
+#define make_integer(val) make_enum(val)
 
 /* \brief allocate new olvm buffer
  *
@@ -212,6 +214,11 @@ static word new_bytevector(ol_t* ol, char* data, int size)
 	return new_buffer(ol, 19, data, size);
 }
 
+word d2ol(struct ol_t* ol, double v); // extern, olvm.c
+static word new_rational(ol_t* ol, double data)
+{
+	return d2ol(ol->vm, data);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // main functions

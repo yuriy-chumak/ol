@@ -247,8 +247,10 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* j
     jint argc = (*jenv)->GetArrayLength(jenv, args);
 //    LOGI("argumets count: %d", argc);
 
-    jclass Integer = (*jenv)->FindClass(jenv, "java/lang/Integer");
     jclass String = (*jenv)->FindClass(jenv, "java/lang/String");
+    jclass Integer = (*jenv)->FindClass(jenv, "java/lang/Integer");
+	jclass Float = (*jenv)->FindClass(jenv, "java/lang/Float");
+	jclass Double = (*jenv)->FindClass(jenv, "java/lang/Double");
 
     uintptr_t* values = __builtin_alloca((argc+1) * sizeof(uintptr_t));
     values[0] = OL_deref(ol.vm, ol.eval);
@@ -257,6 +259,11 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* j
         // if((*env)->ExceptionOccurred(env)) {
         //     break;
         // }
+        if ((*jenv)->IsInstanceOf(jenv, arg, String)) {
+            char* value = (char*) (*jenv)->GetStringUTFChars(jenv, arg, 0);
+            values[i+1] = new_string(&ol, value); // no release "value" required?
+        }
+        else
         if ((*jenv)->IsInstanceOf(jenv, arg, Integer)) {
             jmethodID intValue = (*jenv)->GetMethodID(jenv, Integer, "intValue", "()I");
             jint value = (*jenv)->CallIntMethod(jenv, arg, intValue);
@@ -264,9 +271,18 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* j
             values[i+1] = make_integer(value);
         }
         else
-        if ((*jenv)->IsInstanceOf(jenv, arg, String)) {
-            char* value = (char*) (*jenv)->GetStringUTFChars(jenv, arg, 0);
-            values[i+1] = new_string(&ol, value); // no release "value" required?
+        if ((*jenv)->IsInstanceOf(jenv, arg, Float)) {
+            jmethodID floatValue = (*jenv)->GetMethodID(jenv, Float, "floatValue", "()F");
+            jint value = (*jenv)->CallFloatMethod(jenv, arg, floatValue);
+
+            values[i+1] = new_rational(&ol, value);
+        }
+        else
+        if ((*jenv)->IsInstanceOf(jenv, arg, Double)) {
+            jmethodID doubleValue = (*jenv)->GetMethodID(jenv, Double, "doubleValue", "()D");
+            jint value = (*jenv)->CallDoubleMethod(jenv, arg, doubleValue);
+
+            values[i+1] = new_rational(&ol, value);
         }
         else
             values[i+1] = IFALSE;

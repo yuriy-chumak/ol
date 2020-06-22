@@ -40,13 +40,13 @@ make -C ../.. android
 # and the oldest platform version for compatibility
 _BUILD_TOOLS_VERSION=$(ls $ANDROID_SDK_ROOT/build-tools | sort -n |tail -1)
 _PLATORM=$(ls $ANDROID_SDK_ROOT/platforms | sort -nr |tail -1)
-_APK_BASENAME=wnd
+APK_BASENAME=wnd
 _ANDROID_CP=$ANDROID_SDK_ROOT/platforms/$_PLATORM/android.jar
 _AAPT=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/aapt
 _DX=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/dx
 _ZIPALIGN=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/zipalign
-_ADB=adb #$ANDROID_SDK_ROOT/platform-tools/adb
-_INTERMEDIATE="bin gen lib ${_APK_BASENAME}.apk.unaligned"
+_ADB=$ANDROID_SDK_ROOT/platform-tools/adb
+_INTERMEDIATE="bin gen lib ${APK_BASENAME}.apk.unaligned"
 
 printf "\e[32mBuild with configuration: \n"
 printf "\tbuild tools version: $_BUILD_TOOLS_VERSION \n"
@@ -64,20 +64,24 @@ javac -classpath $_ANDROID_CP \
    -d 'bin' -target 1.7 -source 1.7 \
    `find . -name "*.java"` \
    -bootclasspath /usr/lib/jvm/java-8-openjdk-amd64/jre/libjar
+RESULT=$?
 printf "\e[0m"
+if [ $RESULT -ne 0 ]; then
+    exit 1
+fi
 
 $_DX --dex --output=classes.dex bin
 
 test -e "classes.dex" || exit 1
 
-rm -f ${_APK_BASENAME}.apk.unaligned
-rm -f ${_APK_BASENAME}-debug.apk
+rm -f ${APK_BASENAME}.apk.unaligned
+rm -f ${APK_BASENAME}-debug.apk
 
-$_AAPT package -f -M AndroidManifest.xml -S res -I $_ANDROID_CP -F ${_APK_BASENAME}.apk.unaligned
+$_AAPT package -f -M AndroidManifest.xml -S res -I $_ANDROID_CP -F ${APK_BASENAME}.apk.unaligned
 
-$_AAPT add ${_APK_BASENAME}.apk.unaligned classes.dex
-$_AAPT add ${_APK_BASENAME}.apk.unaligned `find assets/ -type f \( ! -name "* *" \)`
-$_AAPT add ${_APK_BASENAME}.apk.unaligned `find lib/ -type f`
+$_AAPT add ${APK_BASENAME}.apk.unaligned classes.dex
+$_AAPT add ${APK_BASENAME}.apk.unaligned `find assets/ -type f \( ! -name "* *" \)`
+$_AAPT add ${APK_BASENAME}.apk.unaligned `find lib/ -type f`
 
 # creating debug keystore:
 # ? keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000
@@ -90,18 +94,18 @@ $_AAPT add ${_APK_BASENAME}.apk.unaligned `find lib/ -type f`
 #    State or Province: Unknown
 #    Country code: US
 
-#jarsigner -keystore ~/.android/debug.keystore -storepass 'android' ${_APK_BASENAME}.apk.unaligned androiddebugkey
+#jarsigner -keystore ~/.android/debug.keystore -storepass 'android' ${APK_BASENAME}.apk.unaligned androiddebugkey
 
 ## create a release version with your keys
-## jarsigner -keystore /path/to/your/release/keystore -storepass 'yourkeystorepassword' ${_APK_BASENAME}.apk.unaligned yourkeystorename
+## jarsigner -keystore /path/to/your/release/keystore -storepass 'yourkeystorepassword' ${APK_BASENAME}.apk.unaligned yourkeystorename
 
-jarsigner -keystore ./debug.keystore -sigalg SHA1withRSA -digestalg SHA1 -storepass android ./${_APK_BASENAME}.apk.unaligned androiddebugkey
-$_ZIPALIGN -f 4 ${_APK_BASENAME}.apk.unaligned ${_APK_BASENAME}-debug.apk
+jarsigner -keystore ./debug.keystore -sigalg SHA1withRSA -digestalg SHA1 -storepass android ./${APK_BASENAME}.apk.unaligned androiddebugkey
+$_ZIPALIGN -f 4 ${APK_BASENAME}.apk.unaligned ${APK_BASENAME}-debug.apk
 
 #
 #rm -rf $_INTERMEDIATE
 #
-#$_ADB get-state 1>/dev/null 2>&1 && $_ADB install -r ${_APK_BASENAME}-debug.apk || printf '\e[31mNo Android device attach\e[30m\n'
+#$_ADB get-state 1>/dev/null 2>&1 && $_ADB install -r ${APK_BASENAME}-debug.apk || printf '\e[31mNo Android device attach\e[30m\n'
 
 #. up
 #$_ADB push assets /sdcard

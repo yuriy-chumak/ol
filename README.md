@@ -157,7 +157,6 @@ $ make; make install
 ```
 > use *gmake* for unix clients
 
-
 ### REGULAR WAY
 
 #### GNU/Linux:

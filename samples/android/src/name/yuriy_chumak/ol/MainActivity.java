@@ -24,15 +24,18 @@ public class MainActivity extends Activity
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+        requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+
 		super.onCreate(savedInstanceState);
-		// setContentView(R.layout.main);
+		setContentView(R.layout.main);
+
+        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        Log.i(TAG, "onCreate");
 
         nativeNew();
         AssetManager assetManager = getApplication().getAssets();
         nativeSetAssetManager(assetManager);
-
-        requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 		glView = new GLSurfaceView(this);
         glView.setEGLContextClientVersion(1);
@@ -60,21 +63,29 @@ public class MainActivity extends Activity
 
 	// GLSurfaceView.Renderer
     public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-        load("main.lisp");
+        Log.i(TAG, "onSurfaceCreated()");
+        //load("main.lisp");
     }
 
     public void onDrawFrame(GL10 unused) {
-        eval("(let ((renderer (interact 'opengl ['get 'renderer]))) (if renderer (renderer #false)))");
+        Log.i(TAG, "onDrawFrame()");
+        //eval("(let ((renderer (interact 'opengl ['get 'renderer]))) (if renderer (renderer #false)))");
     }
     public void onMouseTouch(float x, float y)
     {
-        eval("print", "onMouseTouch(", x, " ", y, ")");
+        Log.i(TAG, "onMouseTouch(" + x + "," + y + ")");
+
+        eval("(define (p x) (print (inexact x)))");
+        eval("p", x);
+        eval("p", y);
         //eval("(let ((mouse-handler (interact 'opengl ['get 'mouse-handler]))) (if mouse-handler (mouse-handler 1 " + x + " " + y + ")))");
     }
 
     public void onSurfaceChanged(GL10 unused, int width, int height) {
+        Log.i(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
+
         GLES20.glViewport(0, 0, width, height); // temp
-        eval("print", "todo: call viewport with ", width, " ", height);
+        //eval("print", "todo: call /expose event/ with ", width, " ", height);
     }
 
     public static native void nativeSetAssetManager(AssetManager am);
@@ -83,12 +94,13 @@ public class MainActivity extends Activity
 
 	public static native Object eval(Object... array);
     public static void load(String filename) {
-        eval(",load " + "\"" + filename + "\"");
+        Log.i(TAG, "load(" + filename + ")");
+        // eval(",load " + "\"" + filename + "\"");
     }
 
 	static {
         //System.loadLibrary("gl4es");
-        System.loadLibrary("SOIL");
+        // System.loadLibrary("SOIL");
 		//System.loadLibrary("freetype2");
 		System.loadLibrary("ol");
 	}
