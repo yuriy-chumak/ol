@@ -1,12 +1,14 @@
-/**
- *         Simple purely functional Lisp, mostly.
- *
- *   Version 2.1
- *                                                 `___`
- *  Copyright(c) 2014 - 2020 Yuriy Chumak          (O,O)
- *                                                 (  /(
- * - - - - - - - - - - - - - - - - - - - - - - - - -"-"- - - - - -
- * ### LICENSE
+/*!# Otus Lisp
+ <pre>
+ *         Simple purely functional Lisp!
+ *                                               `___`
+ *  Copyright(c) 2014 - 2020 Yuriy Chumak        (O,O)
+ *                                               (  /(
+ *                                           - ---"-"--- -
+ *      Version 2.1.1
+ </pre>
+ * - - -
+ * #### LICENSE
  *  This program is free software;  you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as
  *  published by the Free Software Foundation; either version 3 of
@@ -15,36 +17,34 @@
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *
- * ## Download
+ * #### Download
  * Precompiled binaries for various platforms and architectures can
  * be found at [project page](http://yuriy-chumak.github.io/ol) and
  *    OpenSUSE [build service](https://bit.ly/2RUjjtS).
  *
- * ## Build
+ * #### Build
  *   make; make install
- *   * gmake for *BSD
  *
- * ## Project Page:
+ * #### Project Page:
  *   http://yuriy-chumak.github.io/ol/
  *
- * ### The parent project - Owl Lisp:
- *   https://gitlab.com/owl-lisp/owl (actual) \n
+ * ##### The parent project - Owl Lisp:
+ *   https://gitlab.com/owl-lisp/owl (actual)             </br>
  *   https://code.google.com/p/owl-lisp (historical)
  *
- * ## Related links:
- *   http://people.csail.mit.edu/jaffer/Scheme            \n
- *   http://srfi.schemers.org/                            \n
- *   http://groups.csail.mit.edu/mac/projects/scheme/     \n
- *   http://www.s48.org/                                  \n
- *   http://www.call-cc.org/                              \n
- *   http://www.scheme.com/tspl4/                         \n
+ * #### Related links:
+ *   http://people.csail.mit.edu/jaffer/Scheme            </br>
+ *   http://srfi.schemers.org/                            </br>
+ *   http://groups.csail.mit.edu/mac/projects/scheme/     </br>
+ *   http://www.s48.org/                                  </br>
+ *   http://www.call-cc.org/                              </br>
+ *   http://www.scheme.com/tspl4/                         </br>
  */
 
-/**
- * \mainpage Otus Lisp
- * \file
+/*!- - -
+ * ## Otus Lisp Virtual Machine
+ * ### Source file: src/olvm.c
  */
 
 #define __OLVM_NAME__ "OL"
@@ -2302,9 +2302,27 @@ mainloop:;
 	#	define SHIFT_LEFT     59
 
 	// ENTRY LOOP POINT
-	int op;//operation to execute:
+	int op; //operation to execute
 loop:;
+	/*! #### OLVM Codes
+	 * TODO: check this
+	 * |   #  | o0        | o1        | o2     | o3   | o4       | o5     | o6     | o7    |
+	 * |:-----|:---------:|:---------:|:------:|:----:|:--------:|:------:|:------:|:-----:|
+	 * |**0o**| JIT       |    REFI   |  GOTO  |OCL-C |OCL-P     | MOV2   |CL1-C   |CL1-P  |
+	 * |**1o**| JEQ       |    MOVE   |set-ref!|      |          | LDI    | LD     | type  |
+	 * |**2o**| JP        |ARITY-ERROR|        |      | apply    |        | cast   | NEW   |
+	 * |**3o**| RET       |    JAF    | DIV    | SYS  |endianness|wordsize|fxmax   |xmbits |
+	 * |**4o**|tuple-apply|           |        |unreel| size     |FFRIGHTQ| ADD    | MUL   |
+	 * |**5o**| SUB       | FFREDQ    |MKBLACK |MKRED | less?    |set-ref |FFTOGGLE| ref   |
+	 * |**6o**| raw?      | ff-apply  | RUN    | cons | car      |cdr     | EQ     | AND   |
+	 * |**7o**| LOR       |    XOR    | SHR    | SHL  | RAW      |clock   |version |syscall|
+	 */
 	switch ((op = *ip++) & 0x3F) {
+	/*! ##### JIT
+	 * Reserved for feature use.
+	 * 
+	 * Throws 262 error code.
+	 */
 	case 0:
 		op = (ip[0] << 8) | ip[1]; // big endian
 		// super_dispatch: run user instructions
@@ -2316,23 +2334,33 @@ loop:;
 			FAIL(262, I(op), ITRUE);
 		}
 		goto apply; // ???
-	// unused numbers:
+
+	/*! ##### 43, 48, 62: Unused numbers
+	 * Reserved for feature use.
+	 * 
+	 * Throws "Invalid opcode" error.
+	 */
 	case 43:
 	case 48:
 	case 62:
 		FAIL(op, new_string("Invalid opcode"), ITRUE);
 		break;
 
+	/*! ##### GOTO
+	 */
 	case GOTO: // (10%)
 		this = (word *)A0;
 		acc = ip[1];
 		goto apply;
 
-	// nop - No OPeartion
+	/*! ##### NOP
+	 * No OPeration
+	 */
 	case NOP:
 		break;
 
-	// apply
+	/*! ##### apply
+	 */
 	// todo:? include apply-tuple, apply-values? and apply-ff to the APPLY
 	case APPLY: { // (0%)
 		int reg, arity;
@@ -2373,6 +2401,8 @@ loop:;
 		goto apply;
 	}
 
+	/*! ##### RET
+	 */
 	case RET: // (3%) return value
 		this = (word *) R[3];
 		R[3] = A0;
@@ -2380,6 +2410,8 @@ loop:;
 
 		goto apply;
 
+	/*! ##### SYS
+	 */
 	// return to continuation?
 	case SYS: // (1%) sys continuation op arg1 arg2
 		this = (word *) R[0];
@@ -2392,6 +2424,8 @@ loop:;
 
 		goto apply;
 
+	/*! ##### RUN
+	 */
 	case RUN: { // (1%) run thunk quantum
 	// the type of quantum is ignored, for now.
 	// todo: add quantum type checking
@@ -2419,7 +2453,9 @@ loop:;
 
 		goto apply;
 	}
-	// ошибка арности
+	/*! ##### ARITY_ERROR
+	 * Arity Error
+	 */
 	case ARITY_ERROR: // (0%)
 		// TODO: добавить в .scm вывод ошибки четности
 		FAIL(ARITY_ERROR, this, I(acc));
@@ -2429,24 +2465,44 @@ loop:;
 	/************************************************************************************/
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
+
+	/*! ##### LDI r (LDE, LDN, LDT, LDF)
+	 * - LDE Store `#empty` into register `r`
+	 * - LDN Store `#null` into register `r`
+	 * - LDT Store `#true` into register `r`
+	 * - LDF Store `#false` into register `r`
+	 */
 	case LDI: {  // (1%) 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
 		static
 		const word I[] = { IEMPTY, INULL, ITRUE, IFALSE };
 		A0 = I[op>>6];
 		ip += 1; break;
 	}
+	/*! ##### LD b r
+	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
+	 */
 	case LD: // (5%)
 		A1 = I(ip[0]); // R[ip[1]]
 		ip += 2; break;
 
 
-	case REFI: { // (24%) 1,  -> refi a, p, t:   Rt = Ra[p], p unsigned
+	/*! ##### REFI a p t
+	 * Rt = Ra[p], p is unsinged
+	 */
+	case REFI: { // (24%)
 		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
 		ip += 3; break;
 	}
-	case MOVE: // (3%) move a, t:      Rt = Ra
+	/*! ##### MOVE a t
+	 * Rt = Ra
+	 */
+	case MOVE: // (3%)
 		A1 = A0;
 		ip += 2; break;
+	/*! ##### MOV2 a1 t1 a2 t2
+	 * Rt1 = Ra1,
+	 * Rt2 = Ra2
+	 */
 	case MOV2: // (6%) mov2 from1 to1 from2 to2
 		A1 = A0;
 		A3 = A2;
@@ -3126,12 +3182,11 @@ loop:;
 		ip += 2; break;
 	}
 
-	/*! \section Otus Lisp New Syscalls
-	 * \brief (syscall number ...) -> val|ref
+	/*! #### OLVM Syscalls
+	 * `(syscall number ...) -> val|ref`
 	 *
 	 * Otus Lisp provides access to the some operation system functions.
 	 *
-	 * \par
 	 */
 	// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)
 	// https://filippo.io/linux-syscall-table/
@@ -3178,19 +3233,20 @@ loop:;
 
 			// I/O FUNCTIONS
 
-			/*! \subsection read
-			* \brief (syscall **0** port) --> bytevector | #t | #eof
-            *        (syscall **0** port count) --> bytevector | #t | #eof
+			/*! ##### read
+			* * `(syscall 0 port) --> bytevector | #t | #eof`
+            * * `(syscall 0 port count) --> bytevector | #t | #eof`
 			*
 			* Attempts to read up to *count* bytes from input port *port*
 			* into the bytevector.
 			*
-			* \param port input port
-			* \param count count, negative value means "all available"
+			* - *port*: input port
+			* - *count*: count, negative value means "all available"
 			*
-			* \return bytevector if success,
-			*         #true if file not ready,
-			*         #eof if file was ended
+			* Return:
+			* - *bytevector* if success,
+			* - *#true* if file not ready,
+			* - *#eof* if file was ended
 			*
 			* http://man7.org/linux/man-pages/man2/read.2.html
 			*/

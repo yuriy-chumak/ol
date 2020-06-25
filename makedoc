@@ -1,0 +1,17 @@
+#! /bin/sed -f
+
+# using ':' for regex delimiter, as we are matching a lot of
+# literal '/' in the following expressions
+
+# remove leading comment spaces
+s:^\s*::g
+
+# detect '/*! ... \n ... */'
+\:/\*!:,\:\*/: {
+    s:.*/\*! \?::    # /*!
+    s:.*\*/ \?::     #  */
+    s:^\* \?::       #  *
+    p;d
+}
+
+d

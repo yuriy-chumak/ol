@@ -1,5 +1,5 @@
-/**
- * FFI - Foreign Function Interface
+/*!
+ * ## FFI - Foreign Function Interface
  *
  * A ForeignFunctionInterface (FFI) is an interface that allows calling code written
  * in one programming language, from another that is neither a superset nor a subset.
@@ -7,11 +7,11 @@
  * Тут у нас реализация ffi механизма. Примеры в lib/opengl.scm, lib/sqlite.scm, etc
  *
  * FFI is Fatal Familial Insomnia too.
- *  Please, don't try to understand this code at night...
+ *  Hmmm...
  */
 
-/**
- * \file
+/*!
+ * ### Source file: extensions/ffi.c
  */
 
 // Libc and Unicode: http://www.tldp.org/HOWTO/Unicode-HOWTO-6.html

@@ -20,6 +20,10 @@ exists = $(shell echo "\
 	   return $3();\
 	}" |$(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
 
+doc/olvm.md: src/olvm.c extensions/ffi.c
+	cat src/olvm.c extensions/ffi.c| ./makedoc >doc/olvm.md
+
+
 # default platform features
 HAS_DLOPEN  ?= $(call exists,,<stdlib.h>, dlopen, -ldl)
 HAS_SECCOMP ?= $(call exists,,<linux/seccomp.h>, prctl)
