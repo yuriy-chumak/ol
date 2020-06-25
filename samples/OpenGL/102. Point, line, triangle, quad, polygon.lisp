@@ -17,7 +17,7 @@
    (glOrtho -1 1 -1 1 -1 1)
 
    (glLineWidth 2.0)
-   (glColor3f #xFE/255 #x9A/255 #x76/255)
+   (glColor3f #xF2/255 #xE2/255 #x05/255)
    (glBegin GL_LINES)
       (glVertex2f -1 0)
       (glVertex2f  1 0)
@@ -32,7 +32,7 @@
    (glPushMatrix)
    (glTranslatef -1 -1 0)
    (glPointSize 8)
-   (glColor3f #xFF/255 #xD7/255 #x00/255)
+   (glColor3f #xF2/255 #x5C/255 #x05/255)
    (glEnable GL_POINT_SMOOTH)
    (glBegin GL_POINTS)
       (glVertex2f 0 0)
@@ -41,7 +41,7 @@
 
    (glPushMatrix)
    (glTranslatef  1 -1 0)
-   (glColor3f #x32/255 #xCD/255 #x32/255)
+   (glColor3f #xF2/255 #xCB/255 #x05/255)
    (glBegin GL_TRIANGLES)
       (glVertex2f -0.6 -0.9)
       (glVertex2f  0.6 -0.9)
@@ -51,7 +51,7 @@
 
    (glPushMatrix)
    (glTranslatef  1  1 0)
-   (glColor3f #x01/255 #x69/255 #x36/255)
+   (glColor3f #x04/255 #xD9/255 #x76/255)
    (glBegin GL_QUADS)
       (glVertex2f -0.45 -0.80)
       (glVertex2f  0.45 -0.80)
@@ -62,7 +62,7 @@
 
    (glPushMatrix)
    (glTranslatef -1  1 0)
-   (glColor3f #x00/255 #x80/255 #x80/255)
+   (glColor3f #xAF/255 #x4B/255 #xF2/255)
    (glBegin GL_POLYGON)
       (let ((n 7))
          (for-each (lambda (i)

@@ -79,10 +79,10 @@
    (define height (box 0))
    (define channels (box 0))
    (define image (SOIL_load_image (font 'file) width height channels SOIL_LOAD_RGBA))
-   (print "image: " image)
-   (print "width: " width)
-   (print "height: " height)
-   (print "channels: " channels)
+   ;; (print "image: " image)
+   ;; (print "width: " width)
+   ;; (print "height: " height)
+   ;; (print "channels: " channels)
 
    (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA (unbox width) (unbox height) 0 GL_RGBA GL_UNSIGNED_BYTE image)
 

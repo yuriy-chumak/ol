@@ -38,107 +38,107 @@
 
    ;; 2.7 Vertex Specification
 
-   glVertex2d ; void (GLdouble x, GLdouble y) +
-   glVertex2dv; void (const GLdouble *v) +
-   glVertex2f ; void (GLfloat x, GLfloat y) +
-   glVertex2fv; void (const GLfloat *v) +
-   glVertex2i ; void (GLint x, GLint y) +
-   glVertex2iv; void (const GLint *v); +
-   glVertex2s ; void (GLshort x, GLshort y); +
-   glVertex2sv; void (const GLshort *v); +
-   glVertex3d ; void (GLdouble x, GLdouble y, GLdouble z) +
-   glVertex3dv; void (const GLdouble *v); +
-   glVertex3f ; void (GLfloat x, GLfloat y, GLfloat z) +
-   glVertex3fv; void (const GLfloat *v) +
-   glVertex3i ; void (GLint x, GLint y, GLint z) +
-   glVertex3iv; void (const GLint *v); +
-   glVertex3s ; void (GLshort x, GLshort y, GLshort z); +
-   glVertex3sv; void (const GLshort *v); +
-   glVertex4d ; void (GLdouble x, GLdouble y, GLdouble z, GLdouble w); +
-   glVertex4dv; void (const GLdouble *v); +
-   glVertex4f ; void (GLfloat x, GLfloat y, GLfloat z, GLfloat w); +
-   glVertex4fv; void (const GLfloat *v); +
-   glVertex4i ; void (GLint x, GLint y, GLint z, GLint w); +
-   glVertex4iv; void (const GLint *v); +
-   glVertex4s ; void (GLshort x, GLshort y, GLshort z, GLshort w); +
-   glVertex4sv; void (const GLshort *v); +
+   glVertex2d  ; void (GLdouble x, GLdouble y) +
+   glVertex2dv ; void (const GLdouble *v) +
+   glVertex2f  ; void (GLfloat x, GLfloat y) +
+   glVertex2fv ; void (const GLfloat *v) +
+   glVertex2i  ; void (GLint x, GLint y) +
+   glVertex2iv ; void (const GLint *v); +
+   glVertex2s  ; void (GLshort x, GLshort y); +
+   glVertex2sv ; void (const GLshort *v); +
+   glVertex3d  ; void (GLdouble x, GLdouble y, GLdouble z) +
+   glVertex3dv ; void (const GLdouble *v); +
+   glVertex3f  ; void (GLfloat x, GLfloat y, GLfloat z) +
+   glVertex3fv ; void (const GLfloat *v) +
+   glVertex3i  ; void (GLint x, GLint y, GLint z) +
+   glVertex3iv ; void (const GLint *v); +
+   glVertex3s  ; void (GLshort x, GLshort y, GLshort z); +
+   glVertex3sv ; void (const GLshort *v); +
+   glVertex4d  ; void (GLdouble x, GLdouble y, GLdouble z, GLdouble w); +
+   glVertex4dv ; void (const GLdouble *v); +
+   glVertex4f  ; void (GLfloat x, GLfloat y, GLfloat z, GLfloat w); +
+   glVertex4fv ; void (const GLfloat *v); +
+   glVertex4i  ; void (GLint x, GLint y, GLint z, GLint w); +
+   glVertex4iv ; void (const GLint *v); +
+   glVertex4s  ; void (GLshort x, GLshort y, GLshort z, GLshort w); +
+   glVertex4sv ; void (const GLshort *v); +
 
-   ;WINGDIAPI void APIENTRY glTexCoord1d (GLdouble s); +
-   ;WINGDIAPI void APIENTRY glTexCoord1dv (const GLdouble *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord1f (GLfloat s); +
-   ;WINGDIAPI void APIENTRY glTexCoord1fv (const GLfloat *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord1i (GLint s); +
-   ;WINGDIAPI void APIENTRY glTexCoord1iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord1s (GLshort s); +
-   ;WINGDIAPI void APIENTRY glTexCoord1sv (const GLshort *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord2d (GLdouble s, GLdouble t); +
-   ;WINGDIAPI void APIENTRY glTexCoord2dv (const GLdouble *v); +
-   glTexCoord2f ; void (GLfloat GLfloat) +
-   ;WINGDIAPI void APIENTRY glTexCoord2fv (const GLfloat *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord2i (GLint s, GLint t); +
-   ;WINGDIAPI void APIENTRY glTexCoord2iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord2s (GLshort s, GLshort t); +
-   ;WINGDIAPI void APIENTRY glTexCoord2sv (const GLshort *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord3d (GLdouble s, GLdouble t, GLdouble r); +
-   ;WINGDIAPI void APIENTRY glTexCoord3dv (const GLdouble *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord3f (GLfloat s, GLfloat t, GLfloat r); +
-   ;WINGDIAPI void APIENTRY glTexCoord3fv (const GLfloat *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord3i (GLint s, GLint t, GLint r); +
-   ;WINGDIAPI void APIENTRY glTexCoord3iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord3s (GLshort s, GLshort t, GLshort r); +
-   ;WINGDIAPI void APIENTRY glTexCoord3sv (const GLshort *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord4d (GLdouble s, GLdouble t, GLdouble r, GLdouble q); +
-   ;WINGDIAPI void APIENTRY glTexCoord4dv (const GLdouble *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord4f (GLfloat s, GLfloat t, GLfloat r, GLfloat q); +
-   ;WINGDIAPI void APIENTRY glTexCoord4fv (const GLfloat *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord4i (GLint s, GLint t, GLint r, GLint q); +
-   ;WINGDIAPI void APIENTRY glTexCoord4iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glTexCoord4s (GLshort s, GLshort t, GLshort r, GLshort q); +
-   ;WINGDIAPI void APIENTRY glTexCoord4sv (const GLshort *v); +
+   glTexCoord1d  ; void (GLdouble s); +
+   glTexCoord1dv ; void (const GLdouble *v); +
+   glTexCoord1f  ; void (GLfloat s); +
+   glTexCoord1fv ; void (const GLfloat *v); +
+   glTexCoord1i  ; void (GLint s); +
+   glTexCoord1iv ; void (const GLint *v); +
+   glTexCoord1s  ; void (GLshort s); +
+   glTexCoord1sv ; void (const GLshort *v); +
+   glTexCoord2d  ; void (GLdouble s, GLdouble t); +
+   glTexCoord2dv ; void (const GLdouble *v); +
+   glTexCoord2f  ; void (GLfloat GLfloat) +
+   glTexCoord2fv ; void (const GLfloat *v); +
+   glTexCoord2i  ; void (GLint s, GLint t); +
+   glTexCoord2iv ; void (const GLint *v); +
+   glTexCoord2s  ; void (GLshort s, GLshort t); +
+   glTexCoord2sv ; void (const GLshort *v); +
+   glTexCoord3d  ; void (GLdouble s, GLdouble t, GLdouble r); +
+   glTexCoord3dv ; void (const GLdouble *v); +
+   glTexCoord3f  ; void (GLfloat s, GLfloat t, GLfloat r); +
+   glTexCoord3fv ; void (const GLfloat *v); +
+   glTexCoord3i  ; void (GLint s, GLint t, GLint r); +
+   glTexCoord3iv ; void (const GLint *v); +
+   glTexCoord3s  ; void (GLshort s, GLshort t, GLshort r); +
+   glTexCoord3sv ; void (const GLshort *v); +
+   glTexCoord4d  ; void (GLdouble s, GLdouble t, GLdouble r, GLdouble q); +
+   glTexCoord4dv ; void (const GLdouble *v); +
+   glTexCoord4f  ; void (GLfloat s, GLfloat t, GLfloat r, GLfloat q); +
+   glTexCoord4fv ; void (const GLfloat *v); +
+   glTexCoord4i  ; void (GLint s, GLint t, GLint r, GLint q); +
+   glTexCoord4iv ; void (const GLint *v); +
+   glTexCoord4s  ; void (GLshort s, GLshort t, GLshort r, GLshort q); +
+   glTexCoord4sv ; void (const GLshort *v); +
 
-   ;WINGDIAPI void APIENTRY glNormal3b (GLbyte nx, GLbyte ny, GLbyte nz); +
-   ;WINGDIAPI void APIENTRY glNormal3bv (const GLbyte *v); +
-   ;WINGDIAPI void APIENTRY glNormal3d (GLdouble nx, GLdouble ny, GLdouble nz); +
-   ;WINGDIAPI void APIENTRY glNormal3dv (const GLdouble *v); +
-   glNormal3f ; void (GLfloat nx, GLfloat ny, GLfloat nz) +
-   glNormal3fv; void (const GLfloat *v); +
-   ;WINGDIAPI void APIENTRY glNormal3i (GLint nx, GLint ny, GLint nz); +
-   ;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz); +
-   ;WINGDIAPI void APIENTRY glNormal3sv (const GLshort *v); +
+   glNormal3b  ; void (GLbyte nx, GLbyte ny, GLbyte nz); +
+   glNormal3bv ; void (const GLbyte *v); +
+   glNormal3d  ; void (GLdouble nx, GLdouble ny, GLdouble nz); +
+   glNormal3dv ; void (const GLdouble *v); +
+   glNormal3f  ; void (GLfloat nx, GLfloat ny, GLfloat nz) +
+   glNormal3fv ; void (const GLfloat *v); +
+   glNormal3i  ; void (GLint nx, GLint ny, GLint nz); +
+   glNormal3iv ; void (const GLint *v); +
+   glNormal3s  ; void (GLshort nx, GLshort ny, GLshort nz); +
+   glNormal3sv ; void (const GLshort *v); +
 
-   glColor3b    ; void (GLbyte red, GLbyte green, GLbyte blue) +
-   ;WINGDIAPI void APIENTRY glColor3bv (const GLbyte *v); +
-   ;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue); +
-   ;WINGDIAPI void APIENTRY glColor3dv (const GLdouble *v); +
-   glColor3f  ; void (GLfloat red, GLfloat green, GLfloat blue) +
-   glColor3fv ; void (const GLfloat *v) +
-   glColor3i  ; void (GLint red, GLint green, GLint blue) +
-   ;WINGDIAPI void APIENTRY glColor3iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glColor3s (GLshort red, GLshort green, GLshort blue); +
-   ;WINGDIAPI void APIENTRY glColor3sv (const GLshort *v); +
-   glColor3ub ; void (GLubyte red, GLubyte green, GLubyte blue) +
-   ;WINGDIAPI void APIENTRY glColor3ubv (const GLubyte *v); +
-   ;WINGDIAPI void APIENTRY glColor3ui (GLuint red, GLuint green, GLuint blue); +
-   ;WINGDIAPI void APIENTRY glColor3uiv (const GLuint *v); +
-   ;WINGDIAPI void APIENTRY glColor3us (GLushort red, GLushort green, GLushort blue); +
-   ;WINGDIAPI void APIENTRY glColor3usv (const GLushort *v); +
-   ;WINGDIAPI void APIENTRY glColor4b (GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha); +
-   ;WINGDIAPI void APIENTRY glColor4bv (const GLbyte *v); +
-   ;WINGDIAPI void APIENTRY glColor4d (GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha); +
-   ;WINGDIAPI void APIENTRY glColor4dv (const GLdouble *v); +
-   glColor4f ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) +
-   ;WINGDIAPI void APIENTRY glColor4fv (const GLfloat *v); +
-   ;WINGDIAPI void APIENTRY glColor4i (GLint red, GLint green, GLint blue, GLint alpha); +
-   ;WINGDIAPI void APIENTRY glColor4iv (const GLint *v); +
-   ;WINGDIAPI void APIENTRY glColor4s (GLshort red, GLshort green, GLshort blue, GLshort alpha); +
-   ;WINGDIAPI void APIENTRY glColor4sv (const GLshort *v); +
-   ;WINGDIAPI void APIENTRY glColor4ub (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha); +
-   ;WINGDIAPI void APIENTRY glColor4ubv (const GLubyte *v); +
-   ;WINGDIAPI void APIENTRY glColor4ui (GLuint red, GLuint green, GLuint blue, GLuint alpha); +
-   ;WINGDIAPI void APIENTRY glColor4uiv (const GLuint *v); +
-   ;WINGDIAPI void APIENTRY glColor4us (GLushort red, GLushort green, GLushort blue, GLushort alpha); +
-   ;WINGDIAPI void APIENTRY glColor4usv (const GLushort *v); +
+   glColor3b   ; void (GLbyte red, GLbyte green, GLbyte blue) +
+   glColor3bv  ; void (const GLbyte *v); +
+   glColor3d   ; void (GLdouble red, GLdouble green, GLdouble blue); +
+   glColor3dv  ; void (const GLdouble *v); +
+   glColor3f   ; void (GLfloat red, GLfloat green, GLfloat blue) +
+   glColor3fv  ; void (const GLfloat *v) +
+   glColor3i   ; void (GLint red, GLint green, GLint blue) +
+   glColor3iv  ; void (const GLint *v); +
+   glColor3s   ; void (GLshort red, GLshort green, GLshort blue); +
+   glColor3sv  ; void (const GLshort *v); +
+   glColor3ub  ; void (GLubyte red, GLubyte green, GLubyte blue) +
+   glColor3ubv ; void (const GLubyte *v); +
+   glColor3ui  ; void (GLuint red, GLuint green, GLuint blue); +
+   glColor3uiv ; void (const GLuint *v); +
+   glColor3us  ; void (GLushort red, GLushort green, GLushort blue); +
+   glColor3usv ; void (const GLushort *v); +
+   glColor4b   ; void (GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha); +
+   glColor4bv  ; void (const GLbyte *v); +
+   glColor4d   ; void (GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha); +
+   glColor4dv  ; void (const GLdouble *v); +
+   glColor4f   ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) +
+   glColor4fv  ; void (const GLfloat *v); +
+   glColor4i   ; void (GLint red, GLint green, GLint blue, GLint alpha); +
+   glColor4iv  ; void (const GLint *v); +
+   glColor4s   ; void (GLshort red, GLshort green, GLshort blue, GLshort alpha); +
+   glColor4sv  ; void (const GLshort *v); +
+   glColor4ub  ; void (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha); +
+   glColor4ubv ; void (const GLubyte *v); +
+   glColor4ui  ; void (GLuint red, GLuint green, GLuint blue, GLuint alpha); +
+   glColor4uiv ; void (const GLuint *v); +
+   glColor4us  ; void (GLushort red, GLushort green, GLushort blue, GLushort alpha); +
+   glColor4usv ; void (const GLushort *v); +
 
    ;WINGDIAPI void APIENTRY glIndexd (GLdouble c); +
    ;WINGDIAPI void APIENTRY glIndexdv (const GLdouble *c); +
@@ -2607,38 +2607,37 @@
    (define glClipPlane   (GL GLvoid "glClipPlane"  GLenum GLdouble*))
    ; glColor:
    (define glColor3b     (GL GLvoid "glColor3b"    GLbyte GLbyte GLbyte))
-;WINGDIAPI void APIENTRY glColor3bv (const GLbyte *v);
-;WINGDIAPI void APIENTRY glColor3d (GLdouble red, GLdouble green, GLdouble blue);
-;WINGDIAPI void APIENTRY glColor3dv (const GLdouble *v);
+   (define glColor3bv    (GL GLvoid "glColor3bv"   GLbyte*))
+   (define glColor3d     (GL GLvoid "glColor3d"    GLdouble GLdouble GLdouble))
+   (define glColor3dv    (GL GLvoid "glColor3dv"   GLdouble*))
    (define glColor3f     (GL GLvoid "glColor3f"    GLfloat GLfloat GLfloat))
    (define glColor3fv    (GL GLvoid "glColor3fv"   GLfloat*))
    (define glColor3i     (GL GLvoid "glColor3i"    GLint GLint GLint))
-;WINGDIAPI void APIENTRY glColor3iv (const GLint *v);
-;WINGDIAPI void APIENTRY glColor3s (GLshort red, GLshort green, GLshort blue);
-;WINGDIAPI void APIENTRY glColor3sv (const GLshort *v);
+   (define glColor3iv    (GL GLvoid "glColor3iv"   GLint*))
+   (define glColor3s     (GL GLvoid "glColor3s"    GLshort GLshort GLshort))
+   (define glColor3sv    (GL GLvoid "glColor3sv"   GLshort*))
    (define glColor3ub    (GL GLvoid "glColor3ub"   GLubyte GLubyte GLubyte))
-;WINGDIAPI void APIENTRY glColor3ubv (const GLubyte *v);
-;WINGDIAPI void APIENTRY glColor3ui (GLuint red, GLuint green, GLuint blue);
-;WINGDIAPI void APIENTRY glColor3uiv (const GLuint *v);
-;WINGDIAPI void APIENTRY glColor3us (GLushort red, GLushort green, GLushort blue);
-;WINGDIAPI void APIENTRY glColor3usv (const GLushort *v);
-;WINGDIAPI void APIENTRY glColor4b (GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha);
-;WINGDIAPI void APIENTRY glColor4bv (const GLbyte *v);
-;WINGDIAPI void APIENTRY glColor4d (GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha);
-;WINGDIAPI void APIENTRY glColor4dv (const GLdouble *v);
+   (define glColor3ubv   (GL GLvoid "glColor3ubv"  GLubyte*))
+   (define glColor3ui    (GL GLvoid "glColor3ui"   GLuint GLuint GLuint))
+   (define glColor3uiv   (GL GLvoid "glColor3uiv"  GLuint*))
+   (define glColor3us    (GL GLvoid "glColor3us"   GLushort GLushort GLushort))
+   (define glColor3usv   (GL GLvoid "glColor3usv"  GLushort*))
+   (define glColor4b     (GL GLvoid "glColor4b"    GLbyte GLbyte GLbyte GLbyte))
+   (define glColor4bv    (GL GLvoid "glColor4bv"   GLbyte*))
+   (define glColor4d     (GL GLvoid "glColor4d"    GLdouble GLdouble GLdouble GLdouble))
+   (define glColor4dv    (GL GLvoid "glColor4dv"   GLdouble*))
    (define glColor4f     (GL GLvoid "glColor4f"    GLfloat GLfloat GLfloat GLfloat))
-;WINGDIAPI void APIENTRY glColor4f (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-;WINGDIAPI void APIENTRY glColor4fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glColor4i (GLint red, GLint green, GLint blue, GLint alpha);
-;WINGDIAPI void APIENTRY glColor4iv (const GLint *v);
-;WINGDIAPI void APIENTRY glColor4s (GLshort red, GLshort green, GLshort blue, GLshort alpha);
-;WINGDIAPI void APIENTRY glColor4sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glColor4ub (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha);
-;WINGDIAPI void APIENTRY glColor4ubv (const GLubyte *v);
-;WINGDIAPI void APIENTRY glColor4ui (GLuint red, GLuint green, GLuint blue, GLuint alpha);
-;WINGDIAPI void APIENTRY glColor4uiv (const GLuint *v);
-;WINGDIAPI void APIENTRY glColor4us (GLushort red, GLushort green, GLushort blue, GLushort alpha);
-;WINGDIAPI void APIENTRY glColor4usv (const GLushort *v);
+   (define glColor4fv    (GL GLvoid "glColor4fv"   GLfloat*))
+   (define glColor4i     (GL GLvoid "glColor4i"    GLint GLint GLint GLint))
+   (define glColor4iv    (GL GLvoid "glColor4iv"   GLint*))
+   (define glColor4s     (GL GLvoid "glColor4s"    GLshort GLshort GLshort GLshort))
+   (define glColor4sv    (GL GLvoid "glColor4sv"   GLshort*))
+   (define glColor4ub    (GL GLvoid "glColor4ub"   GLubyte GLubyte GLubyte GLubyte))
+   (define glColor4ubv   (GL GLvoid "glColor4ubv"  GLubyte*))
+   (define glColor4ui    (GL GLvoid "glColor4ui"   GLuint GLuint GLuint GLuint))
+   (define glColor4uiv   (GL GLvoid "glColor4uiv"  GLuint*))
+   (define glColor4us    (GL GLvoid "glColor4us"   GLushort GLushort GLushort GLushort))
+   (define glColor4usv   (GL GLvoid "glColor4usv"  GLushort*))
 
    (define glColorMask   (GL GLvoid "glColorMask"  GLboolean GLboolean GLboolean GLboolean))
    (define glColorMaterial (GL GLvoid "glColorMaterial" GLenum GLenum))
@@ -2744,17 +2743,16 @@
    (define glMultMatrixd (GL GLvoid "glMultMatrixd" GLdouble*))
    (define glMultMatrixf (GL GLvoid "glMultMatrixf" GLfloat*))
    (define glNewList (GL GLvoid "glNewList" GLuint GLenum))
-;WINGDIAPI void APIENTRY glNormal3b (GLbyte nx, GLbyte ny, GLbyte nz);
-;WINGDIAPI void APIENTRY glNormal3bv (const GLbyte *v);
-;WINGDIAPI void APIENTRY glNormal3d (GLdouble nx, GLdouble ny, GLdouble nz);
-;WINGDIAPI void APIENTRY glNormal3dv (const GLdouble *v);
+   (define glNormal3b (GL GLvoid "glNormal3b" GLbyte GLbyte GLbyte))
+   (define glNormal3bv (GL GLvoid "glNormal3bv" GLbyte*))
+   (define glNormal3d (GL GLvoid "glNormal3d" GLdouble GLdouble GLdouble))
+   (define glNormal3dv (GL GLvoid "glNormal3dv" GLdouble*))
    (define glNormal3f  (GL GLvoid "glNormal3f"  GLfloat GLfloat GLfloat))
    (define glNormal3fv (GL GLvoid "glNormal3fv" GLfloat*))
-;WINGDIAPI void APIENTRY glNormal3i (GLint nx, GLint ny, GLint nz);
-;WINGDIAPI void APIENTRY glNormal3iv (const GLint *v);
-;WINGDIAPI void APIENTRY glNormal3s (GLshort nx, GLshort ny, GLshort nz);
-;WINGDIAPI void APIENTRY glNormal3sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glOrtho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
+   (define glNormal3i (GL GLvoid "glNormal3i" GLint GLint GLint))
+   (define glNormal3iv (GL GLvoid "glNormal3iv" GLint*))
+   (define glNormal3s (GL GLvoid "glNormal3s" GLshort GLshort GLshort))
+   (define glNormal3sv (GL GLvoid "glNormal3sv" GLshort*))
    (define glOrtho (GL GLvoid "glOrtho" GLdouble GLdouble  GLdouble GLdouble  GLdouble GLdouble))
 ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token);
    (define glPixelMapfv (GL GLvoid "glPixelMapfv" GLenum GLsizei GLfloat*))
@@ -2770,7 +2768,6 @@
    (define glPixelStorei (GL GLvoid "glPixelStorei" GLenum GLint))
 
    (define glPopAttrib (GL GLvoid "glPopAttrib"))
-;WINGDIAPI void APIENTRY glPopMatrix (void);
    (define glPopMatrix  (GL GLvoid "glPopMatrix"))
 ;WINGDIAPI void APIENTRY glPopName (void);
    (define glPushAttrib (GL GLvoid "glPushAttrib" GLbitfield))
@@ -2822,38 +2819,38 @@
    (define glStencilFunc (GL GLvoid "glStencilFunc" GLenum GLint GLuint))
    (define glStencilMask (GL GLvoid "glStencilMask" GLuint))
    (define glStencilOp (GL GLvoid "glStencilOp" GLenum GLenum GLenum))
-;WINGDIAPI void APIENTRY glTexCoord1d (GLdouble s);
-;WINGDIAPI void APIENTRY glTexCoord1dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glTexCoord1f (GLfloat s);
-;WINGDIAPI void APIENTRY glTexCoord1fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glTexCoord1i (GLint s);
-;WINGDIAPI void APIENTRY glTexCoord1iv (const GLint *v);
-;WINGDIAPI void APIENTRY glTexCoord1s (GLshort s);
-;WINGDIAPI void APIENTRY glTexCoord1sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glTexCoord2d (GLdouble s, GLdouble t);
-;WINGDIAPI void APIENTRY glTexCoord2dv (const GLdouble *v);
-  (define glTexCoord2f (GL GLvoid "glTexCoord2f" GLfloat GLfloat))
-;WINGDIAPI void APIENTRY glTexCoord2fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glTexCoord2i (GLint s, GLint t);
-;WINGDIAPI void APIENTRY glTexCoord2iv (const GLint *v);
-;WINGDIAPI void APIENTRY glTexCoord2s (GLshort s, GLshort t);
-;WINGDIAPI void APIENTRY glTexCoord2sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glTexCoord3d (GLdouble s, GLdouble t, GLdouble r);
-;WINGDIAPI void APIENTRY glTexCoord3dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glTexCoord3f (GLfloat s, GLfloat t, GLfloat r);
-;WINGDIAPI void APIENTRY glTexCoord3fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glTexCoord3i (GLint s, GLint t, GLint r);
-;WINGDIAPI void APIENTRY glTexCoord3iv (const GLint *v);
-;WINGDIAPI void APIENTRY glTexCoord3s (GLshort s, GLshort t, GLshort r);
-;WINGDIAPI void APIENTRY glTexCoord3sv (const GLshort *v);
-;WINGDIAPI void APIENTRY glTexCoord4d (GLdouble s, GLdouble t, GLdouble r, GLdouble q);
-;WINGDIAPI void APIENTRY glTexCoord4dv (const GLdouble *v);
-;WINGDIAPI void APIENTRY glTexCoord4f (GLfloat s, GLfloat t, GLfloat r, GLfloat q);
-;WINGDIAPI void APIENTRY glTexCoord4fv (const GLfloat *v);
-;WINGDIAPI void APIENTRY glTexCoord4i (GLint s, GLint t, GLint r, GLint q);
-;WINGDIAPI void APIENTRY glTexCoord4iv (const GLint *v);
-;WINGDIAPI void APIENTRY glTexCoord4s (GLshort s, GLshort t, GLshort r, GLshort q);
-;WINGDIAPI void APIENTRY glTexCoord4sv (const GLshort *v);
+   (define glTexCoord1d (GL GLvoid "glTexCoord1d" GLdouble))
+   (define glTexCoord1dv (GL GLvoid "glTexCoord1dv" GLdouble*))
+   (define glTexCoord1f (GL GLvoid "glTexCoord1f" GLfloat))
+   (define glTexCoord1fv (GL GLvoid "glTexCoord1fv" GLfloat*))
+   (define glTexCoord1i (GL GLvoid "glTexCoord1i" GLint))
+   (define glTexCoord1iv (GL GLvoid "glTexCoord1iv" GLint*))
+   (define glTexCoord1s (GL GLvoid "glTexCoord1s" GLshort))
+   (define glTexCoord1sv (GL GLvoid "glTexCoord1sv" GLshort*))
+   (define glTexCoord2d (GL GLvoid "glTexCoord2d" GLdouble GLdouble))
+   (define glTexCoord2dv (GL GLvoid "glTexCoord2dv" GLdouble*))
+   (define glTexCoord2f (GL GLvoid "glTexCoord2f" GLfloat GLfloat))
+   (define glTexCoord2fv (GL GLvoid "glTexCoord2fv" GLfloat*))
+   (define glTexCoord2i (GL GLvoid "glTexCoord2i" GLint GLint))
+   (define glTexCoord2iv (GL GLvoid "glTexCoord2iv" GLint*))
+   (define glTexCoord2s (GL GLvoid "glTexCoord2s" GLshort GLshort))
+   (define glTexCoord2sv (GL GLvoid "glTexCoord2sv" GLshort*))
+   (define glTexCoord3d (GL GLvoid "glTexCoord3d" GLdouble GLdouble GLdouble))
+   (define glTexCoord3dv (GL GLvoid "glTexCoord3dv" GLdouble*))
+   (define glTexCoord3f (GL GLvoid "glTexCoord3f" GLfloat GLfloat GLfloat))
+   (define glTexCoord3fv (GL GLvoid "glTexCoord3fv" GLfloat*))
+   (define glTexCoord3i (GL GLvoid "glTexCoord3i" GLint GLint GLint))
+   (define glTexCoord3iv (GL GLvoid "glTexCoord3iv" GLint*))
+   (define glTexCoord3s (GL GLvoid "glTexCoord3s" GLshort GLshort GLshort))
+   (define glTexCoord3sv (GL GLvoid "glTexCoord3sv" GLshort*))
+   (define glTexCoord4d (GL GLvoid "glTexCoord4d" GLdouble GLdouble GLdouble GLdouble))
+   (define glTexCoord4dv (GL GLvoid "glTexCoord4dv" GLdouble*))
+   (define glTexCoord4f (GL GLvoid "glTexCoord4f" GLfloat GLfloat GLfloat GLfloat))
+   (define glTexCoord4fv (GL GLvoid "glTexCoord4fv" GLfloat*))
+   (define glTexCoord4i (GL GLvoid "glTexCoord4i" GLint GLint GLint GLint))
+   (define glTexCoord4iv (GL GLvoid "glTexCoord4iv" GLint*))
+   (define glTexCoord4s (GL GLvoid "glTexCoord4s" GLshort GLshort GLshort GLshort))
+   (define glTexCoord4sv (GL GLvoid "glTexCoord4sv" GLshort*))
 ;WINGDIAPI void APIENTRY glTexEnvf (GLenum target, GLenum pname, GLfloat param);
 ;WINGDIAPI void APIENTRY glTexEnvfv (GLenum target, GLenum pname, const GLfloat *params);
    (define glTexEnvi (GL GLvoid "glTexEnvi" GLenum GLenum GLint))

@@ -14,7 +14,6 @@
 (import (OpenGL version-1-0))
 
 ; init
-(glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
 ; draw loop

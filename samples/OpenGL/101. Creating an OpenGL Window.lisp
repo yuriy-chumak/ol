@@ -2,14 +2,13 @@
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 
-; we will use OpenGL version 1.0
+; use OpenGL version 1.0
 (import (OpenGL version-1-0))
 
-; init
-(glShadeModel GL_SMOOTH)
+; just init
 (glClearColor 0.3 0.3 0.3 1)
 
-; draw loop
+; rendering loop
 (gl:set-renderer (lambda (mouse)
    (glClear GL_COLOR_BUFFER_BIT)))
 

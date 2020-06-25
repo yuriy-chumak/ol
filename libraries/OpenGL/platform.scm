@@ -8,7 +8,7 @@
    GLenum                     ; unsigned 32-bit
    GLboolean GLboolean*       ; unsigned byte (GL_TRUE or GL_FALSE)
    GLbitfield                 ; unsigned 32-bit
-   GLbyte                     ;   signed  8-bit
+   GLbyte   GLbyte*           ;   signed  8-bit
    GLshort  GLshort*          ;   signed 16-bit
    GLint    GLint*   GLint&   ;   signed 32-bit
    GLsizei                    ;   signed 32-bit
@@ -184,6 +184,7 @@
 
    ; pointers
    (define GLboolean* (fft* GLboolean))
+   (define GLbyte*    (fft* GLbyte))
    (define GLshort*   (fft* GLshort))
    (define GLushort*  (fft* GLushort))
    (define GLint*     (fft* GLint))

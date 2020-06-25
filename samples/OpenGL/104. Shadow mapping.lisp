@@ -2,7 +2,6 @@
 
 (import (lib gl))
 (gl:set-window-title "4. Shadow mapping")
-;(gl:set-window-size 854 480)
 
 (import (OpenGL version-1-3))
 (import (OpenGL ARB depth_texture))
