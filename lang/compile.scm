@@ -385,7 +385,7 @@
 ;         ;            (if (eq? op 17)
 ;         ;               ['code (ref obj 1)]
 ;         ;               #false)))
-;         ;      ((eq? t type-proc)
+;         ;      ((eq? t type-procedure)
 ;         ;         ['proc (ref (ref obj 1) 0)])
 ;         ;      ((eq? t type-closure)
 ;         ;         ['clos (ref (ref (ref obj 1) 1) 0)])
@@ -546,8 +546,8 @@
          ;;; convert all uncompiled closures to procedures
          (map (λ (lit) (rtl-literal rtl-procedure lit)) lits))
 
-      (define (list->proc lst)
-         (vm:make type-proc lst))
+      (define (list->procedure lst)
+         (vm:make type-procedure lst))
 
       ;; rtl-procedure now passes the intended new form here - replace it later in the AST node also
       (define (rtl-plain-lambda rtl exp clos literals tail)
@@ -562,7 +562,7 @@
                         tail)))
                   (if (null? literals)
                      exec ; #<bytecode>
-                     (list->proc (cons exec literals)))))
+                     (list->procedure (cons exec literals)))))
             (['lambda formals body] ;; to be deprecated
                (rtl-plain-lambda rtl
                   ['lambda-var #true formals body]

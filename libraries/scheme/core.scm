@@ -1088,7 +1088,7 @@
       (define type-vector-dispatch  15) ; reference
 
       (define type-bytecode         TBYTECODE)  ; reference, blob bytecode
-      (define type-proc             TPROCEDURE) ; reference, pure function
+      (define type-procedure        TPROCEDURE) ; reference, pure function
       (define type-closure          TCLOSURE)   ; reference, function with closure(s)
       (define type-bytevector       TBYTEVECTOR); reference, blob
 
@@ -1639,7 +1639,7 @@
       ; *ol* extension
       (define (function? o)
          (case (type o)
-            (type-proc #true)
+            (type-procedure #true)
             (type-closure #true)
             (type-bytecode #true)))
 
@@ -1957,7 +1957,7 @@
       inexact exact
       ; 6.2.8  Other data types
       type-bytecode
-      type-proc type-closure
+      type-procedure type-closure
       type-pair
       type-vector-dispatch type-vector-leaf
       type-bytevector
