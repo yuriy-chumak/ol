@@ -103,7 +103,6 @@
 #endif
 
 
-
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 // However, on modern standard computers (i.e., implementing IEEE 754), one may
 // in practice safely assume that the endianness is the same for floating-point
@@ -128,6 +127,8 @@ unsigned int lenn16(short *pos, size_t max) { // added here, strnlen was missing
 	while (p < max && *pos++) p++;
 	return p;
 }
+
+#define list_length(x) llen(x)
 
 
 // C preprocessor trick, some kind of "map":
@@ -967,10 +968,7 @@ PUBLIC
 __attribute__((used))
 word* OL_ffi(OL* self, word* arguments)
 {
-	// get memory pointer
 	heap_t* heap = &self->heap;
-	word*
-	fp = heap->fp;
 
 	// a - function address
 	// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
@@ -982,19 +980,13 @@ word* OL_ffi(OL* self, word* arguments)
 	assert (is_vptr(A));
 	assert ((word)B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
 	assert ((word)C == INULL || (is_reference(B) && reference_type(C) == TPAIR));
-	// C[1] = return-type
-	// C[2] = argument-types
 
 	// todo: может выделять в общей куче,а не стеке? (кстати, да!)
 	void *function = (void*)car(A);  assert (function);
 	int returntype = value(car(B));
 
-	word args[32]; // 16 double аргументов максимум
-	int i = 0;     // актуальное количество аргументов
-
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
-
 
 #ifdef __EMSCRIPTEN__
 	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
@@ -1013,8 +1005,68 @@ word* OL_ffi(OL* self, word* arguments)
 	// nothing special for Windows (both x32 and x64)
 #endif
 
-	word* p = (word*)C;   // сами аргументы
+	// 1. do memory precalculations and count number of arguments
+	int words = 0;
+	int i = 0;     // актуальное количество аргументов
+
+	word* p = (word*)C;   // ol arguments
 	word* t = (word*)cdr (B); // rtty
+
+	while ((word)p != INULL) { // пока есть аргументы
+		int type = value(car(t)); // destination type
+		word arg = (word)car(p);
+
+//		again:
+		if (is_pair(arg))
+		if (type & (FFT_REF|FFT_PTR)) {
+			int len =
+				reference_type(arg) == TPAIR ? list_length(arg) :
+				reference_type(arg) == TVECTOR ? object_size(arg) :
+				0;
+			int atype = type &!(FFT_REF|FFT_PTR);
+			words += ((len *
+				atype == TINT8||TUINT8 ? sizeof(char) :
+				atype == TINT16||TUINT16 ? sizeof(short) :
+				atype == TINT32||TUINT32 ? sizeof(int) :
+				atype == TINT64||TUINT64 ? sizeof(long long) :
+				atype == TFLOAT ? sizeof(float) :
+				atype == TDOUBLE ? sizeof(double) :
+				atype == TVPTR && !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) ? sizeof(void*) :
+				0) + W - 1) / W + 1;
+		}
+		else switch (type) {
+			case TANY:
+				D("TODO: TANY processing");
+				break;
+			case TSTRINGWIDE:
+				D("TODO: TSTRINGWIDE processing");
+				break;
+		}
+		#if UINT64_MAX > UINTPTR_MAX // 32-bit machines
+		else { // !is_pair(arg)
+			if (type == TINT64 || type == TUINT64 || type == TDOUBLE)
+				i++;
+		}
+		#endif
+
+		i++;
+		p = (word*)cdr(p); // (cdr p)
+		t = (word*)cdr(t); // (cdr t)
+	}
+	
+	assert ((word)t == INULL); // arguments count is right
+	// ensure that all arguments will fit in heap
+	if (words > (heap->end - heap->fp)) {
+		self->gc(self, words);
+	}
+
+	word* fp = heap->fp;
+	word* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(word)); // minimum - 16 words for arguments
+	i = 0;
+
+	// 2. prepare arguments to push
+	p = (word*)C;   // ol arguments
+	t = (word*)cdr (B); // rtty
 	int has_wb = 0; // has write-back in arguments (speedup)
 
 	while ((word)p != INULL) { // пока есть аргументы
@@ -1030,35 +1082,27 @@ word* OL_ffi(OL* self, word* arguments)
 			arg = ((word*)p[1])[2];
 		}*/
 
+		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
 #if __amd64__ && (__linux__ || __APPLE__) // LP64
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
-		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
-		if (arg == IFALSE) { // #false is universal "0" value
-		// is not working for floats and doubles!
-/*			switch (type) {
-#if UINT64_MAX > SIZE_MAX
-			case TINT64: case TUINT64:
-				args[++i] = 0; 	// for 32-bits: double fills two words
+		if (arg == IFALSE) // #false is universal "0" value
+		switch (type) {
+#if UINT64_MAX > UINTPTR_MAX
+		case TINT64:
+		case TUINT64:
+		case TDOUBLE:
+			args[++i] = 0; 	// for 32-bits: double and longlong fills two words
+			break;
 #endif
 #if __amd64__ && (__linux__ || __APPLE__)
-			case TFLOAT:
-				*(float*)&ad[d++] = 0;
-				floatsmask|=1; --i;
-				break;
+		case TFLOAT:
+		case TDOUBLE:
+			ad[d++] = 0;
+			floatsmask|=1; --i;
+			break;
 #endif
-			case TDOUBLE:
-				#if __amd64__ && (__linux__ || __APPLE__)
-					ad[d++] = 0;
-					floatsmask++; --i;
-				#endif
-				#if UINT64_MAX > SIZE_MAX
-					++i; 	// for 32-bits: double fills two words
-				#endif
-				break;
-
-			}*/
 		}
 		else
 		switch (type) {
@@ -1130,7 +1174,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 
 			int c = llen(arg);
-			char* p = (char*) __builtin_alloca(c * sizeof(char)); // todo: new_raw_vector() ?
+			char* p = (char*) &new_bytevector(c * sizeof(char))[1];
 			args[i] = (word)p;
 
 			word l = arg;
@@ -1151,7 +1195,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 
 			int c = llen(arg);
-			short* p = (short*) __builtin_alloca(c * sizeof(short)); // todo: new_raw_vector() ?
+			short* p = (short*) &new_bytevector(c * sizeof(short))[1];
 			args[i] = (word)p;
 
 			word l = arg;
@@ -1172,7 +1216,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 
 			int c = llen(arg);
-			int* p = (int*) __builtin_alloca(c * sizeof(int)); // todo: new_raw_vector() ?
+			int* p = (int*) &new_bytevector(c * sizeof(int))[1];
 			args[i] = (word)p;
 
 			word l = arg;
@@ -1181,7 +1225,26 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 		}
 
-		// todo: case TINT64 + FFT_PTR:
+		case TINT64 + FFT_REF:
+		case TUINT64 + FFT_REF:
+			has_wb = 1;
+			//no break
+		case TINT64 + FFT_PTR:
+		case TUINT64 + FFT_PTR:
+		tint64ptr: {
+			// todo: add vectors pushing
+			if (arg == INULL) // empty array will be sent as nullptr
+				break;
+
+			int c = llen(arg);
+			long long* p = (long long*) &new_bytevector(c * sizeof(long long))[1];
+			args[i] = (word)p;
+
+			word l = arg;
+			while (c--)
+				*p++ = to_int(car(l)), l = cdr(l); // todo: to_longlong
+			break;
+		}
 
 		// с плавающей запятой:
 		case TFLOAT:
@@ -1209,23 +1272,23 @@ word* OL_ffi(OL* self, word* arguments)
 			switch (reference_type(arg)) {
 				case TPAIR: {
 					int c = llen(arg);
-					float* f = (float*) __builtin_alloca(c * sizeof(float));
-					args[i] = (word)f;
+					float* p = (float*) &new_bytevector(c * sizeof(float))[1];
+					args[i] = (word)p;
 
 					word l = arg;
 					while (c--)
-						*f++ = OL2F(car(l)), l = cdr(l);
+						*p++ = OL2F(car(l)), l = cdr(l);
 					break;
 				}
 				case TVECTOR: // let's support not only lists as float*
 				case TVECTORLEAF: { // todo: bytevector?
 					int c = header_size(*(word*)arg) - 1;
-					float* f = (float*) __builtin_alloca(c * sizeof(float));
-					args[i] = (word)f;
+					float* p = (float*) &new_bytevector(c * sizeof(float))[1];
+					args[i] = (word)p;
 
 					word* l = &car(arg);
 					while (c--)
-						*f++ = OL2F(*l++);
+						*p++ = OL2F(*l++);
 					break;
 				}
 			}
@@ -1237,7 +1300,7 @@ word* OL_ffi(OL* self, word* arguments)
 		tdouble:
 			#if __amd64__ && (__linux__ || __APPLE__)
 				*(double*)&ad[d++] = OL2D(arg); --i;
-				floatsmask++;
+				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
 				*(double*)&af[f++] = OL2D(arg); --i; f++;
 			#else
@@ -1257,7 +1320,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 
 			int c = llen(arg);
-			double* p = (double*) __builtin_alloca(c * sizeof(double)); // todo: use new()
+			double* p = (double*) &new_bytevector(c * sizeof(double))[1];
 			args[i] = (word)p;
 
 			word l = arg;
@@ -1353,7 +1416,7 @@ word* OL_ffi(OL* self, word* arguments)
 				args[i] = (word) &car(arg);
 			else {
 				int c = llen(arg);
-				void** p = (void**) __builtin_alloca(c * sizeof(void*)); // todo: use new()
+				void** p = (void**) __builtin_alloca(c * sizeof(void*));
 				args[i] = (word)p;
 
 				word l = arg;
@@ -1507,9 +1570,9 @@ word* OL_ffi(OL* self, word* arguments)
 			E("can't recognize %d type", type);
 		}
 
+		i++;
 		p = (word*)cdr(p); // (cdr p)
 		t = (word*)cdr(t); // (cdr t)
-		i++;
 	}
 #ifdef __EMSCRIPTEN__
 	fmask |= 1 << i;
@@ -1518,8 +1581,8 @@ word* OL_ffi(OL* self, word* arguments)
 
 	unsigned long long got = 0; // результат вызова функции (64 бита для возможного double)
 
-	self->R[128 + 1] = (word)B;
-	self->R[128 + 2] = (word)C;
+	self->R[NR + 1] = (word)B;
+	self->R[NR + 2] = (word)C;
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
 
 //	if (floatsmask == 15)
@@ -1582,8 +1645,8 @@ word* OL_ffi(OL* self, word* arguments)
 
 	// где гарантия, что C и B не поменялись?
 	fp = heap->fp;
-	B = (word*)self->R[128 + 1];
-	C = (word*)self->R[128 + 2];
+	B = (word*)self->R[NR + 1];
+	C = (word*)self->R[NR + 2];
 
 	if (has_wb) {
 		// еще раз пробежимся по аргументам, может какие надо будет вернуть взад

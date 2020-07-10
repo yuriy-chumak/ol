@@ -816,6 +816,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 
 // всякая всячина:
 #define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
+#define object_size(x)              (((word)(x)) >> SPOS)
 #define header_pads(x)              (unsigned char) ((((word)(x)) >> IPOS) & 7) // header_t(x).padding
 
 #define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
@@ -1388,7 +1389,7 @@ void mark(word *pos, word *end, heap_t* heap)
 //	assert(pos is NOT flagged)
 	while (pos != end) {
 		word val = pos[0]; // pos header
-		if (is_reference(val) && val >= ((word) heap->genstart)) { // genstart - начало молодой генерации
+		if (is_reference(val) && val >= ((word) heap->genstart)) { // genstart - начало молодого поколения
 			if (is_flagged(val)) {
 				pos = chase((word*) val);
 				pos--;

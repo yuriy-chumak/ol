@@ -143,6 +143,29 @@
                                                fft-float fft-double))
    (try "12 arguments" summ 0 1 2 3 4 5 6 7 8 9 1234.56789 123456.789)
 
+
+; ----------------------------------------------------------------
+(print "too much arguments:")
+(let ((function (this fft-unsigned-long-long "qqqqqqqqqqqqqqqq2q"
+      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long)))
+   (try "too much arguments" function
+      1 2 3 4
+      5 6 7 8
+      1 2 3 4
+      5 6 7 8
+      1 2 3 4
+      5 6 7 8
+      1 2 3 4
+      5 6 7 8))
+
+
 ; ---------------------------------------------------------------
 ; callbacks
 (define (test-callback name types)
