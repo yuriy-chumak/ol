@@ -2510,12 +2510,21 @@ loop:;
 	// todo: add MOV3?
 
 	// условные переходы
+	/*! ##### JEQ a b o
+	 * Jump to ip+o if a == b, o is a two-byte binary value
+	 */
 	case JEQ: // (5%) jeq a b o, extended jump
 		if (A0 == A1) // 30% for "yes"
 			ip += (ip[3] << 8) + ip[2]; // little-endian
 		ip += 4; break;
 
-	case JP: { // (10%) JZ, JN, JT, JF a hi lo
+	/*! ##### JP a o (JZ, JN, JT, JF)
+	 * - JZ, jump if a == 0
+	 * - JN, jump if a == #null
+	 * - JE, jump if a == #empty
+	 * - JF, jump if a == #false
+	 */
+	case JP: { // (10%) JZ, JN, JE, JF a hi lo
 		static
 		const word I[] = { I(0), INULL, IEMPTY, IFALSE };
 		if (A0 == I[op>>6]) // 49% for "yes"
