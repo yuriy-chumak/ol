@@ -387,7 +387,7 @@
 ;         ;               #false)))
 ;         ;      ((eq? t type-proc)
 ;         ;         ['proc (ref (ref obj 1) 0)])
-;         ;      ((eq? t type-clos)
+;         ;      ((eq? t type-closure)
 ;         ;         ['clos (ref (ref (ref obj 1) 1) 0)])
 ;         ;      (else
 ;         ;         ['bad-fn 0])))

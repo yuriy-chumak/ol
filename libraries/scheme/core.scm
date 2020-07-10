@@ -1089,7 +1089,7 @@
 
       (define type-bytecode         TBYTECODE)  ; reference, blob bytecode
       (define type-proc             TPROCEDURE) ; reference, pure function
-      (define type-clos             TCLOSURE)   ; reference, function with closure(s)
+      (define type-closure          TCLOSURE)   ; reference, function with closure(s)
       (define type-bytevector       TBYTEVECTOR); reference, blob
 
       ; 20
@@ -1640,7 +1640,7 @@
       (define (function? o)
          (case (type o)
             (type-proc #true)
-            (type-clos #true)
+            (type-closure #true)
             (type-bytecode #true)))
 
       ; procedure:  (procedure? obj)
@@ -1957,7 +1957,7 @@
       inexact exact
       ; 6.2.8  Other data types
       type-bytecode
-      type-proc type-clos
+      type-proc type-closure
       type-pair
       type-vector-dispatch type-vector-leaf
       type-bytevector
