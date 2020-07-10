@@ -39,10 +39,6 @@
 #	define LOGD(...)
 #endif
 
-// todo: check emscripten versions:
-//#define __EMSCRIPTEN_major__ 1
-//#define __EMSCRIPTEN_minor__ 37
-
 #ifndef OLVM_FFI_VECTORS
 #define OLVM_FFI_VECTORS 1
 #endif
@@ -91,6 +87,18 @@
 #define FFT_PTR   0x10000
 #define FFT_REF   0x20000
 
+// sizeof(intmax_t):
+//	arm, armv7a, armv8a, arm64: 8
+//	avr: 8
+//	risc-v 32, risc-v 64: 8
+//	wasm: 8
+//	x86, x86_64 (incl msvc): 8
+//	kvx: 8
+//	mips, mips64: 8
+//	msp430: 8
+//	ppc, ppc64, ppc64le: 8
+//	raspbian, arduino: 8
+
 
 #if defined(_WIN32)
 #	define PUBLIC __declspec(dllexport)
@@ -116,16 +124,16 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 static
 unsigned int llen(word list) 
 {
-	unsigned int p = 0;
+	unsigned int i = 0;
 	while (list != INULL)
-		list = cdr(list), p++;
-	return p;
+		list = cdr(list), i++;
+	return i;
 }
 static
 unsigned int lenn16(short *pos, size_t max) { // added here, strnlen was missing in win32 compile
-	unsigned int p = 0;
-	while (p < max && *pos++) p++;
-	return p;
+	unsigned int i = 0;
+	while (i < max && *pos++) i++;
+	return i;
 }
 
 #define list_length(x) llen(x)
@@ -236,7 +244,7 @@ unsigned int lenn16(short *pos, size_t max) { // added here, strnlen was missing
 // edx - argc
 // r8  - function
 // r9d - type
-long long x64_call(word argv[], long argc, void* function, long type);
+intmax_t x64_call(int_t argv[], long argc, void* function, long type);
 
 __ASM__("x64_call:_x64_call:",  // "int $3",
 	"pushq %rbp",
@@ -301,7 +309,7 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 // r8:  mask
 // r9: function
 // 16(rbp): type
-long long x64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
+intmax_t x64_call(int_t argv[], double ad[], long i, long d, long mask, void* function, long type);
 
 __ASM__("x64_call:_x64_call:", // "int $3",
 	"pushq %rbp",
@@ -415,7 +423,7 @@ __ASM__("x64_call:_x64_call:", // "int $3",
 //
 // В нашем случае мы так или иначе восстанавливаем указатель стека, так что
 // функция x86_call у нас будет универсальная cdecl/stdcall
-long long x86_call(word argv[], long i, void* function, long type);
+intmax_t x86_call(int_t argv[], long i, void* function, long type);
 
 __ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
@@ -468,8 +476,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 // gcc-arm-linux-gnueabi: -mfloat-abi=softfp options (and -mfloat-abi=soft ?)
 
 __attribute__((naked))
-unsigned
-long long arm32_call(word argv[], long i,
+uintmax_t arm32_call(int_t argv[], long i,
                      void* function)
 {
 __ASM__(
@@ -543,8 +550,7 @@ __ASM__(
 //
 
 __attribute__((naked))
-unsigned
-long long arm32_call(word argv[], float af[],
+uintmax_t arm32_call(int_t argv[], float af[],
                      long i, long f,
                      void* function, long type);
 __ASM__(
@@ -658,9 +664,9 @@ __ASM__(
 # endif
 #elif __EMSCRIPTEN__
 
-typedef long long ret_t;
+typedef intmax_t ret_t;
 static
-ret_t asmjs_call(word args[], int fmask, void* function, int type) {
+ret_t asmjs_call(int_t args[], int fmask, void* function, int type) {
 //	printf("asmjs_call(%p, %d, %p, %d)\n", args, fmask, function, type);
 
 	switch (fmask) {
@@ -669,62 +675,62 @@ ret_t asmjs_call(word args[], int fmask, void* function, int type) {
 					 function) ();
 
 	case 0b10:
-		return (ret_t)(word)((word (*)  (word))
+		return (ret_t)(word)((word (*)  (int_t))
 					 function) (args[ 0]);
 
 	case 0b100:
-		return (ret_t)(word)((word (*)  (word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t))
 		             function) (args[ 0], args[ 1]);
 	case 0b1000:
-		return (ret_t)(word)((word (*)  (word, word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t))
 		             function) (args[ 0], args[ 1], args[ 2]);
 	case 0b10000:
-		return (ret_t)(word)((word (*)  (word, word, word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t))
 		             function) (args[ 0], args[ 1], args[ 2], args[ 3]);
 	case 0b11111:
 //		printf("%f/%f/%f/%f\n", *(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
 		return (ret_t)(word)((word (*)  (float, float, float, float))
 		             function) (*(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
 	case 0b100000:
-		return (ret_t)(word)((word (*)  (word, word, word, word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t))
 		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
 		                        args[ 4]);
 	case 0b1000000:
-		return (ret_t)(word)((word (*)  (word, word, word, word, word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t))
 		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
 		                        args[ 4], args[ 5]);
 	case 0b10000000:
-		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
-	                                  word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+	                                  int_t))
 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
 	                            args[ 4], args[ 5], args[ 6]);
 	case 0b100000000:
-		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
-	                                  word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+	                                  int_t, int_t))
 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
 	                            args[ 4], args[ 5], args[ 6], args[ 7]);
 	case 0b1000000000:
-		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
-	                                  word, word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+	                                  int_t, int_t, int_t))
 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
 	                            args[ 4], args[ 5], args[ 6], args[ 7],
 	                            args[ 8]);
 	// 10:
 	case 0b10000000000:
-		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
-	                                  word, word, word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+	                                  int_t, int_t, int_t, int_t))
 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
 	                            args[ 4], args[ 5], args[ 6], args[ 7],
 	                            args[ 8], args[ 9]);
 	case 0b100000000000:
-		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
-	                                  word, word, word, word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+	                                  int_t, int_t, int_t, int_t, int_t))
 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
 	                            args[ 4], args[ 5], args[ 6], args[ 7],
 	                            args[ 8], args[ 9], args[10]);
 	case 0b1000000000000:
-		return (ret_t)(word)((word (*)  (word, word, word, word, word, word,
-	                                  word, word, word, word, word, word))
+		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+	                                  int_t, int_t, int_t, int_t, int_t, int_t))
 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
 	                            args[ 4], args[ 5], args[ 6], args[ 7],
 	                            args[ 8], args[ 9], args[10], args[11]);
@@ -805,8 +811,8 @@ ret_t asmjs_call(word args[], int fmask, void* function, int type) {
 			return 0;\
 		};
 # if __aarch64__
-typedef long long ret_t;
-ret_t aarch64_call(word args[], int i, void* function, int type) {
+typedef intmax_t ret_t;
+ret_t aarch64_call(int_t args[], int i, void* function, int type) {
 	CALL();
 }
 # endif
@@ -816,7 +822,7 @@ ret_t aarch64_call(word args[], int i, void* function, int type) {
 
 // ol->c convertors
 static
-word from_uint(word arg) {
+int_t from_uint(word arg) {
 	assert (is_reference(arg));
 	// так как в стек мы все равно большое число сложить не сможем,
 	// то возьмем только то, что влазит (первые два члена)
@@ -825,12 +831,12 @@ word from_uint(word arg) {
 
 #if UINTPTR_MAX != 0xffffffffffffffff // 32-bit platform math
 static
-long long from_ulong(word arg) {
+intmax_t from_ulong(word arg) {
 	assert (is_reference(arg));
-	long long v = car(arg) >> 8;
+	intmax_t v = car(arg) >> 8;
 	int shift = VBITS;
 	while (cdr(arg) != INULL) {
-		v |= ((long long)(car(cdr(arg)) >> 8) << shift);
+		v |= ((intmax_t)(car(cdr(arg)) >> 8) << shift);
 		shift += VBITS;
 		arg = cdr(arg);
 	}
@@ -930,34 +936,34 @@ long to_long(word arg) {
 // stupid clang does not support builtin in functions function,
 // so we need to do this stupid workaround
 static __inline__
-word* new_npair(word**fpp, int type, long long value) {
+word* new_npair(word**fpp, int type, intmax_t value) {
     word* fp = *fpp;
-    long long a = value >> VBITS;
+    intmax_t a = value >> VBITS;
     word* b = (a > VMAX) ? new_npair(&fp, TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
     word* p = new_pair(type, I(value & VMAX), b);
     *fpp = fp;
     return p;
 }
 static __inline__
-word* ll2ol(word**fpp, long long val) {
-    long long x5 = val;
-    long long x6 = x5 < 0 ? -x5 : x5;
+word* ll2ol(word**fpp, intmax_t val) {
+    intmax_t x5 = val;
+    intmax_t x6 = x5 < 0 ? -x5 : x5;
     int type = x5 < 0 ? TINTN : TINTP;
     return (x6 > VMAX) ? new_npair(fpp, type, x6) : (word*)make_value(x5 < 0 ? TENUMN : TENUMP, x6);
 };
 
 static __inline__
-word* new_unpair(word**fpp, int type, unsigned long long value) {
+word* new_unpair(word**fpp, int type, uintmax_t value) {
     word* fp = *fpp;
-    unsigned long long a = value >> VBITS;
+    uintmax_t a = value >> VBITS;
     word* b = (a > VMAX) ? new_unpair(&fp, TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
     word* p = new_pair(type, I(value & VMAX), b);
     *fpp = fp;
     return p;
 }
 static __inline__
-word* ul2ol(word**fpp, long long val) {
-    unsigned long long x = val;
+word* ul2ol(word**fpp, intmax_t val) {
+    uintmax_t x = val;
     return (x > VMAX) ? new_unpair(fpp, TINTP, x) : (word*)make_value(x < 0 ? TENUMN : TENUMP, x);
 };
 
@@ -1025,10 +1031,10 @@ word* OL_ffi(OL* self, word* arguments)
 				0;
 			int atype = type &!(FFT_REF|FFT_PTR);
 			words += ((len *
-				atype == TINT8||TUINT8 ? sizeof(char) :
-				atype == TINT16||TUINT16 ? sizeof(short) :
-				atype == TINT32||TUINT32 ? sizeof(int) :
-				atype == TINT64||TUINT64 ? sizeof(long long) :
+				atype == TINT8 || atype == TUINT8 ? sizeof(int8_t) :
+				atype == TINT16 || atype == TUINT16 ? sizeof(int16_t) :
+				atype == TINT32 || atype == TUINT32 ? sizeof(int32_t) :
+				atype == TINT64 || atype == TUINT64 ? sizeof(int64_t) :
 				atype == TFLOAT ? sizeof(float) :
 				atype == TDOUBLE ? sizeof(double) :
 				atype == TVPTR && !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) ? sizeof(void*) :
@@ -1042,7 +1048,7 @@ word* OL_ffi(OL* self, word* arguments)
 				D("TODO: TSTRINGWIDE processing");
 				break;
 		}
-		#if UINT64_MAX > UINTPTR_MAX // 32-bit machines
+		#if SIZE_MAX == 0xffffffff // 32-bit machines
 		else { // !is_pair(arg)
 			if (type == TINT64 || type == TUINT64 || type == TDOUBLE)
 				i++;
@@ -1061,7 +1067,7 @@ word* OL_ffi(OL* self, word* arguments)
 	}
 
 	word* fp = heap->fp;
-	word* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(word)); // minimum - 16 words for arguments
+	int_t* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(int_t)); // minimum - 16 system words for arguments
 	i = 0;
 
 	// 2. prepare arguments to push
@@ -1126,7 +1132,7 @@ word* OL_ffi(OL* self, word* arguments)
 				args[i] = -from_uint(arg);
 				break;
 			case TRATIONAL: //?
-				*(long long*)&args[i] = from_rational(arg);
+				*(int64_t*)&args[i] = from_rational(arg);
 #if __SIZEOF_LONG_LONG__ > __SIZEOF_PTRDIFF_T__ // sizeof(long long) > sizeof(word) //__LP64__
 				i++;
 #endif
@@ -1138,24 +1144,24 @@ word* OL_ffi(OL* self, word* arguments)
 			break;
 
 #if UINTPTR_MAX == 0xffffffff // 32-bit machines
-			case TINT64: case TUINT64: // long long
+			case TINT64: case TUINT64:
 				if (is_enum(arg))
-					*(long long*)&args[i] = enum(arg);
+					*(int64_t*)&args[i] = enum(arg);
 				else
 				switch (reference_type(arg)) {
 				case TINTP: // source type
-					*(long long*)&args[i] = +from_ulong(arg);
+					*(int64_t*)&args[i] = +from_ulong(arg);
 					break;
 				case TINTN:
-					*(long long*)&args[i] = -from_ulong(arg);
+					*(int64_t*)&args[i] = -from_ulong(arg);
 					break;
 				case TRATIONAL:
-					*(long long*)&args[i] = from_rational(arg);
+					*(int64_t*)&args[i] = from_rational(arg);
 					break;
 				default:
 					E("can't cast %d to int64", type);
 				}
-				#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
+				#if UINT64_MAX > UINTPTR_MAX // sizeof(uint64_t) > sizeof(word) //__LP64__
 					i++; // for 32-bits: long long values fills two words
 				#endif
 			break;
@@ -1237,7 +1243,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 
 			int c = llen(arg);
-			long long* p = (long long*) &new_bytevector(c * sizeof(long long))[1];
+			int64_t* p = (int64_t*) &new_bytevector(c * sizeof(int64_t))[1];
 			args[i] = (word)p;
 
 			word l = arg;
@@ -2167,7 +2173,7 @@ word OL_mkcb(OL* self, word* arguments)
 
 static
 __attribute__((used))
-long long callback(OL* ol, int id, int_t* argi
+int64_t callback(OL* ol, int id, int_t* argi
 #if __amd64__
 		, inexact_t* argf, int_t* rest //win64
 #endif

@@ -376,7 +376,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 
 #include <errno.h>
 #include <stdio.h>
-#include <inttypes.h>
+//#include <inttypes.h> // not exist under RISC-V (and not required, actually)
 #include <fcntl.h>
 #ifndef _WIN32
 #include <termios.h>
@@ -659,6 +659,13 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 // основной data type, зависит от разрядности машины
 //   базируется на C99 стандарте, <stdint.h>
 typedef uintptr_t word;
+//	arm, armv7-a, armv8-a: 4; arm64: 8
+//	risc-v 32: 4;         risc-v 64: 8
+//	wasm: 4
+//	x86: 4;                  x86-64: 8
+//	mips: 4;                 mips64: 8
+//	ppc: 4;          ppc64, ppc64le: 8
+//	raspbian: 4
 
 //
 // виртуальная машина:
@@ -964,10 +971,10 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 // Other models are rare. For example, ILP64 or 8/8/8: int, long and pointer — 64 bits)
 //  only in some older 64-bit Unix-systems (Unicos for Cray, etc.)
 
-#if UINTPTR_MAX == 0xffffffffffffffff
+#if SIZE_MAX == 0xffffffffffffffff
 #	define MATH_64BIT 1
 #	define MATH_32BIT 0
-#elif UINTPTR_MAX == 0xffffffff
+#elif SIZE_MAX == 0xffffffff
 #	define MATH_64BIT 0
 #	define MATH_32BIT 1
 #else
@@ -1886,7 +1893,7 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 // ret is ret address to the caller function
 #if OLVM_CALLABLES
 static
-long long callback(OL* ol, int id, int_t* argi
+int64_t callback(OL* ol, int id, int_t* argi
 	#if __amd64__
 		, inexact_t* argf, int_t* rest
 	#endif
