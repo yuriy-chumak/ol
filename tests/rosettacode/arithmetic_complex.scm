@@ -1,3 +1,5 @@
+; http://www.rosettacode.org/wiki/Arithmetic/Complex
+
 (define A 0+1i) ; manually entered numbers
 (define B 1+0i)
 
