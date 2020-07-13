@@ -830,7 +830,6 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define reference_type(x)           (value_type (*R(x)))
 
 #define reference_size(x)           ((header_size(*R(x)) - 1))
-#define blob_size(x)                ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x))) // todo: rename to binstream size
 #define binstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
 
 // todo: объединить типы TENUMP и TINTP, TENUMN и TINTN, так как они различаются битом I
@@ -1770,7 +1769,7 @@ float OL2F(word arg) {
 	case TRATIONAL:
 		return OL2F(car(arg)) / OL2F(cdr(arg));
 	case TBYTEVECTOR: // is it required?
-		switch (blob_size(arg)) {
+		switch (binstream_size(arg)) {
 			case sizeof(float):
 				return *(float*)&car(arg);
 			case sizeof(double):
