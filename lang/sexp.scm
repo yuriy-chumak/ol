@@ -402,12 +402,12 @@
                         (* maybe-whitespace)
                         (* (get-imm #\])))
                      (cons q things)))))
-            (let*((q v qv))
-               (if (null? v)
-                  (list 'make-vector #null) ; parsed expression must contain only lists!
+            (let*((q things qv))
+               (if (null? things) ; only lists can be in parsed expression
+                  (list 'make-vector #null)
                   (if q
-                     (list 'make-vector (list q v))
-                     (cons 'vector v))))))
+                     (list 'make-vector (list q things))
+                     (list 'make-vector (cons 'list things)))))))
 
       (define (get-ff-of parser)
          (let-parses (
@@ -420,12 +420,11 @@
                   (get-kleene* parser))
                (? maybe-whitespace)
                (? (get-imm #\})))
-            (if (null? things)
-               (list 'make-ff #null) ; parsed expression must contain only lists!
-               (list 'make-ff
-                  (if q
-                     (list q things)
-                     (cons 'list things))))))
+            (if (null? things) ; only lists can be in parsed expression
+               (list 'make-ff #null)
+               (if q
+                  (list 'make-ff (list q things))
+                  (list 'make-ff (cons 'list things))))))
 
       (define (get-sexp)
          (let-parses (

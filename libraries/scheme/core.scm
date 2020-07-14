@@ -692,7 +692,7 @@
       ; auxiliary syntax: else =>         * ol specific
       ; auxiliary syntax: else is         * ol specific
       (define-syntax case
-         (syntax-rules (else list eqv? eq? and memv => vector is)
+         (syntax-rules (else list eqv? eq? and memv => make-vector is)
             ; precalculate case argument, if needed
             ((case (op . args) . clauses)
                ((lambda (fresh) ; let ((fresh (op.args)))
@@ -721,7 +721,7 @@
                (begin . body))
             ; * ol specific
             ; case receives a vectors:
-            ((case thing ((vector cp . args) . body) . clauses)
+            ((case thing ((make-vector (list cp . args)) . body) . clauses)
                (if (eq? (ref thing 1) cp) ; compare (todo: move (ref thing 1) to common clause)
                   (vector-apply thing
                      (lambda (| | . args)
