@@ -1582,14 +1582,26 @@ unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in
 	return p;
 }
 
+#ifdef _WIN32
+static
+void set_signal_handler() { }
+#else
+
+static
+void sigint_handler(int sig)
+{
+	set_blocking(STDOUT_FILENO, 1);
+	set_blocking(STDERR_FILENO, 1);
+	exit(1);
+}
+
 static
 void set_signal_handler()
 {
-#ifndef _WIN32
-//	signal(SIGINT, signal_handler);
+	signal(SIGINT, sigint_handler);
 	signal(SIGPIPE, SIG_IGN);	// do not break on sigpipe
-#endif
 }
+#endif//_WIN32
 
 /***********************************************************************************
  * OL
