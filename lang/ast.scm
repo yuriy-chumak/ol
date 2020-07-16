@@ -166,13 +166,13 @@
             (['defined value]
                (mkcall value
                   (map (lambda (x) (translate x env fail)) (cdr exp))))
-            (else
+            (else is err
                ; could be useful for (eval (list + 1 2) env)
                ; so just warn for now
                (fail
                   (list
                      "Unknown value type in ast conversion: "
-                     (list 'name (car exp) 'value  (lookup env (car exp)))))
+                     (list 'name (car exp) 'value err)))
                ;(mkval exp)
                )))
 
@@ -200,10 +200,10 @@
                         (list "a special thing being used as an argument: " exp)))
                   (['undefined]
                      (fail (list "what are '" exp "'?")))
-                  (else
+                  (else is err
                      (fail
                         (list "Strange value in ast conversion: "
-                           (lookup env exp))))))
+                           err)))))
             (else (mkval exp))))
 
       ; -> #(ok exp' env) | #(fail reason)
