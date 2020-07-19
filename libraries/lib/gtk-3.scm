@@ -17,13 +17,17 @@
       gtk_widget_show_all
       gtk_widget_show_all
 
+
+      GtkContainer*
       gtk_container_add
+      gtk_container_foreach
 
       ; todo: move next to (lib gtk bbox)
       gtk_button_box_new
       GTK_ORIENTATION_HORIZONTAL
       GTK_ORIENTATION_VERTICAL
       gtk_button_new_with_label
+      gtk_button_get_label
 
       ; todo: move to the (lib gtk container)
       GtkBuilder*
@@ -56,6 +60,17 @@
       gtk_widget_get_allocated_width
       gtk_widget_get_allocated_height
       gtk_render_background
+
+      ; todo: move to (lib gtk textbuffer)
+      ; https://developer.gnome.org/gtk3/stable/GtkTextBuffer.html
+      GtkTextBuffer*
+      gtk_text_buffer_insert_at_cursor
+
+      ; 
+      ;GtkTextView*
+
+
+
    )
    (import
       (scheme core)
@@ -69,7 +84,8 @@
 (define GtkApplication* type-vptr)
 (define GApplicationFlags fft-int)
 (define GtkWindow* type-vptr)
-(define GtkCointainer* type-vptr)
+(define GtkContainer* type-vptr)
+(define GtkCallback type-callable)
 
 (define GTK (load-dynamic-library "libgtk-3.so"))
 
@@ -85,7 +101,9 @@
 
 (define gtk_widget_show_all (GTK fft-void "gtk_widget_show_all" GtkWidget*))
 
-(define gtk_container_add (GTK fft-void "gtk_container_add" GtkCointainer* GtkWidget*))
+(define gtk_container_add (GTK fft-void "gtk_container_add" GtkContainer* GtkWidget*))
+(define gtk_container_foreach (GTK fft-void "gtk_container_foreach" GtkContainer* GtkCallback gpointer))
+
 
 ; (lib gtk builder)
 (define GtkBuilder* type-vptr)
@@ -94,16 +112,18 @@
 (define gtk_builder_add_from_file (GTK guint "gtk_builder_add_from_file" GtkBuilder* gchar* (fft& GError*)))
 (define gtk_builder_get_object (GTK GObject* "gtk_builder_get_object" GtkBuilder* type-string))
 
-(define GtkBuilderConnectFunc type-callable) ; void (*GtkBuilderConnectFunc)(GtkBuilder *builder, GObject *object, const gchar *signal_name, const gchar *handler_name, GObject *connect_object, GConnectFlags flags, gpointer user_data)
+(define GtkBuilderConnectFunc GtkCallback) ; void (*GtkBuilderConnectFunc)(GtkBuilder *builder, GObject *object, const gchar *signal_name, const gchar *handler_name, GObject *connect_object, GConnectFlags flags, gpointer user_data)
 (define gtk_builder_connect_signals (GTK fft-void "gtk_builder_connect_signals" GtkBuilder* GtkBuilderConnectFunc gpointer))
 
 ; (lib gtk bbox)
+(define GtkButton* type-vptr)
 (define GtkOrientation fft-int) ; enum
 (define GTK_ORIENTATION_HORIZONTAL 0)
 (define GTK_ORIENTATION_VERTICAL 1)
 
 (define gtk_button_box_new (GTK GtkWidget* "gtk_button_box_new" GtkOrientation))
 (define gtk_button_new_with_label (GTK GtkWidget* "gtk_button_new_with_label" type-string))
+(define gtk_button_get_label (GTK type-string "gtk_button_get_label" GtkButton*))
 
 ; (lib gtk label)
 (define GtkLabel* fft-void*)
@@ -128,5 +148,10 @@
 (define gtk_widget_get_allocated_width (GTK fft-int "gtk_widget_get_allocated_width" GtkWidget*))
 (define gtk_widget_get_allocated_height (GTK fft-int "gtk_widget_get_allocated_height" GtkWidget*))
 (define gtk_render_background (GTK fft-void "gtk_render_background" GtkStyleContext* cairo_t* gdouble gdouble gdouble gdouble))
+
+; (lib gtp textbuffer)
+(define GtkTextBuffer* fft-void*)
+(define gtk_text_buffer_insert_at_cursor (GTK fft-void "gtk_text_buffer_insert_at_cursor" GtkTextBuffer* type-string gint))
+
 
 ))
