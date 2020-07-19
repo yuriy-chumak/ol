@@ -1,0 +1,1320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.22.2 -->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <object class="GtkTextBuffer" id="textbuffer"/>
+  <object class="GtkApplicationWindow" id="window">
+    <property name="can_focus">False</property>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkTextView" id="text">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="buffer">textbuffer</property>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkGrid" id="alphabet">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="row_homogeneous">True</property>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">z</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="p">
+                    <property name="label" translatable="yes">p</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="t">
+                    <property name="label" translatable="yes">t</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">c</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ċ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">č</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">k</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">6</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ķ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">7</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">q</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">8</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">j</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">9</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ŗ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">10</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">m</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">11</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">n</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">12</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ņ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">13</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">f</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">14</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ż</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="pʼ">
+                    <property name="label" translatable="yes">pʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">tʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">cʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ċʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">čʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">kʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">6</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ķʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">7</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">qʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">8</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ǰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">9</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ŗ́</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">10</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ḿ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">11</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ń</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">12</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ņ́</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">13</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">v</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">14</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ž</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">pʰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">tʰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">cʰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ċʰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">čʰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">kʰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">6</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ķʰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">7</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">qʰ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">8</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">h</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">9</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ŗ̀</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">10</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">m̀</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">11</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ǹ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">12</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ņ̀̀</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">13</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">w</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">14</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">z</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">b</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ţ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ç</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">с̧ʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">s</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">š</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">6</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ş</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">7</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">q̌</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">8</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ḩ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">9</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">r</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">10</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">l</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">11</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">Í</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">12</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">Ì</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">13</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">y</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">14</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ƶ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">d</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ḑ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">x</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">xʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">x̧</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">x̧ʼ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">6</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">g</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">7</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ġ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">8</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ğ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">9</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ř</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">10</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ļ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">11</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ł</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">12</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ł́</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">13</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">y̌</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">14</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <object class="GtkGrid" id="numpad">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="row_homogeneous">True</property>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">a</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">i</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">o</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">e</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">u</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ÿ</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ä</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ï</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ö</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ë</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ü</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ø</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">â</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">î</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ô</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ê</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">û</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">¯</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">à</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ì</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ò</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">è</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ù</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">’</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">á</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">í</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ó</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">é</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">ú</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">4</property>
+                    <property name="top_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
