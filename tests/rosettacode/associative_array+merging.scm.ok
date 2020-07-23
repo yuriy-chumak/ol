@@ -1,0 +1,3 @@
+a1: #ff((name . Rocket Skates) (price . 51/4) (color . yellow))
+a2: #ff((price . 61/4) (color . red) (year . 1974))
+merged a1 a2: #ff((name . Rocket Skates) (price . 61/4) (color . red) (year . 1974))
