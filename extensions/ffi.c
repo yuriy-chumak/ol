@@ -87,7 +87,7 @@
 #define FFT_PTR   0x10000
 #define FFT_REF   0x20000
 
-// sizeof(intmax_t):
+// sizeof(intmax_t): // same as long long
 //	arm, armv7a, armv8a, arm64: 8
 //	avr: 8
 //	risc-v 32, risc-v 64: 8
@@ -137,6 +137,7 @@ unsigned int lenn16(short *pos, size_t max) { // added here, strnlen was missing
 }
 
 #define list_length(x) llen(x)
+#define vector_length(x) reference_size(x)
 
 
 // C preprocessor trick, some kind of "map":
@@ -969,6 +970,22 @@ word* ul2ol(word**fpp, intmax_t val) {
 
 #	endif
 
+// note: invalid codepoint will be encoded as "?", so len is 1
+#define codepoint_len(x) ({ int cp = x; \
+	cp < 0x80 ? 1 : \
+	cp < 0x0800 ? 2 : \
+	cp < 0x10000 ? 3 : \
+	cp < 0x110000 ? 4 : 1; })
+
+static __inline__
+int utf8_len(word widestr)
+{
+	int len = 0;
+	for (int i = 1; i <= reference_size(widestr); i++)
+		len += codepoint_len(value(ref(widestr, i)));
+	return len;
+}
+
 // Главная функция механизма ffi:
 PUBLIC
 __attribute__((used))
@@ -989,7 +1006,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 	// todo: может выделять в общей куче,а не стеке? (кстати, да!)
 	void *function = (void*)car(A);  assert (function);
-	int returntype = value(car(B));
+	int returntype = value (car(B));
 
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
@@ -1018,7 +1035,7 @@ word* OL_ffi(OL* self, word* arguments)
 	word* p = (word*)C;   // ol arguments
 	word* t = (word*)cdr (B); // rtty
 
-	while ((word)p != INULL) { // пока есть аргументы
+	while ((word)p != INULL && (word)t != INULL) { // пока есть аргументы
 		int type = value(car(t)); // destination type
 		word arg = (word)car(p);
 
@@ -1027,7 +1044,7 @@ word* OL_ffi(OL* self, word* arguments)
 		if (type & (FFT_REF|FFT_PTR)) {
 			int len =
 				reference_type(arg) == TPAIR ? list_length(arg) :
-				reference_type(arg) == TVECTOR ? object_size(arg) :
+				reference_type(arg) == TVECTOR ? vector_length(arg) :
 				0;
 			int atype = type &!(FFT_REF|FFT_PTR);
 			words += ((len *
@@ -1045,33 +1062,39 @@ word* OL_ffi(OL* self, word* arguments)
 				D("TODO: TANY processing");
 				break;
 			case TSTRING:
-				if (is_string(arg)) // TSTRING
+				if (is_string(arg)) { // TSTRING
+//					printf ("TSTRING > TSTRING (%d)\n", reference_size(arg) + 1);
 					words += reference_size(arg) + 1;
+				}
 				break;
-			case TSTRINGWIDE:
-				D("TODO: TSTRINGWIDE processing");
+			case TSTRINGWIDE: {
+				words += (utf8_len(arg) + W - 1) / W + 1;
 				break;
+			}
 		}
-		#if SIZE_MAX == 0xffffffff // 32-bit machines
+#if UINT64_MAX > UINTPTR_MAX // 32-bit machines
 		else { // !is_pair(arg)
 			if (type == TINT64 || type == TUINT64 || type == TDOUBLE)
 				i++;
 		}
-		#endif
+#endif
 
 		i++;
 		p = (word*)cdr(p); // (cdr p)
 		t = (word*)cdr(t); // (cdr t)
 	}
-	
-	assert ((word)t == INULL); // arguments count is right
+	if ((word)t != INULL || (word)p != INULL) {
+		E("Arguments count mismatch", 0);
+		return (word*)IFALSE;
+	}
+
 	// ensure that all arguments will fit in heap
 	if (words > (heap->end - heap->fp)) {
 		self->gc(self, words);
 	}
 
 	word* fp = heap->fp;
-	int_t* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(int_t)); // minimum - 16 system words for arguments
+	int_t* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(int_t)); // minimum - 16 words for arguments
 	i = 0;
 
 	// 2. prepare arguments to push
@@ -1121,7 +1144,7 @@ word* OL_ffi(OL* self, word* arguments)
 		case TINT8:  case TUINT8:
 		case TINT16: case TUINT16:
 		case TINT32: case TUINT32:
-#if UINTPTR_MAX == 0xffffffffffffffff // 64-bit machines
+#if UINT64_MAX == UINTPTR_MAX // 64-bit machines
 		case TINT64: case TUINT64:
 #endif
 		tint:
@@ -1137,7 +1160,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			case TRATIONAL: //?
 				*(int64_t*)&args[i] = from_rational(arg);
-#if __SIZEOF_LONG_LONG__ > __SIZEOF_PTRDIFF_T__ // sizeof(long long) > sizeof(word) //__LP64__
+#if UINT64_MAX != UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
 				i++;
 #endif
 				break;
@@ -1147,7 +1170,7 @@ word* OL_ffi(OL* self, word* arguments)
 			}
 			break;
 
-#if UINTPTR_MAX == 0xffffffff // 32-bit machines
+#if UINT64_MAX != UINTPTR_MAX // 32-bit machines
 			case TINT64: case TUINT64:
 				if (is_enum(arg))
 					*(int64_t*)&args[i] = enum(arg);
@@ -1462,7 +1485,40 @@ word* OL_ffi(OL* self, word* arguments)
 				args[i] = (word)zerostr;
 				break;
 			}
-			// todo: TSTRINGWIDE
+			case TSTRINGWIDE: {
+				// utf-8 encoding
+				char* ptr = (char*) (args[i] = (int_t) &fp[1]);
+				for (int i = 1; i <= reference_size(arg); i++) {
+					int cp = value(ref(arg, i));
+					if (cp < 0x80)
+						*ptr++ = cp;
+					else
+					if (cp < 0x0800) {
+						*ptr++ = 0xC0 | (cp >> 6);
+						*ptr++ = 0x80 | (cp & 0x3F);
+					}
+					else
+					if (cp < 0x10000) {
+						*ptr++ = 0xE0 | (cp >> 12);
+						*ptr++ = 0x80 | ((cp >> 6) & 0x3F);
+						*ptr++ = 0x80 | (cp & 0x3F);
+					}
+					else
+					if (cp < 0x110000) {
+						*ptr++ = 0xF0 | (cp >> 18);
+						*ptr++ = 0x80 | ((cp >> 12) & 0x3F);
+						*ptr++ = 0x80 | ((cp >> 6) & 0x3F);
+						*ptr++ = 0x80 | (cp & 0x3F);
+					}
+					else {
+						// printf("invalid codepoint");
+						*ptr++ = 0x7F;
+					}
+				}
+				*ptr++ = 0;
+				new_bytevector(ptr - (char*)&fp[1]);
+				break;
+			}
 			default:
 				E("invalid parameter values (requested string)");
 			}

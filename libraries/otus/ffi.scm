@@ -164,7 +164,7 @@
          (lambda (type name . prototype)
             ;;; todo: отправлять тип функции третим параметром (syscall 177) и в виртуальной машине
             ;;;   возвращать структуру с (byte-vector адрес-функции адрес-вызыватора-с-соответвующей-конвенцией) ?
-            ;;   (let ((function (cons '((bor type 64) . prototype) (syscall 171 dll (c-string name) #false)))) ; todo: избавиться от (c-string)
+            ;;   (let ((function (cons '((bor type 64) . prototype) (syscall 171 dll (c-string name) #false))))
             ;;;;;(let ((function (cons (bor type 64) (dlsym dll (c-string name))))) ; todo: переделать 64 во что-то поприятнее
             ;;      (lambda args ;  function       type          ;arguments
             ;;         (syscall 59 (cdr function) (car function) args))))
