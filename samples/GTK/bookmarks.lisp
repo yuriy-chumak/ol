@@ -11,7 +11,7 @@
 (define config (or
    (read-json-file "config.json")
    { ;default config:
-      'timestamp (strftime (c-string "%F %x:%S"))
+      'timestamp (strftime "%F %x:%S\0")
    }))
 
 (print config)
@@ -20,7 +20,7 @@
 (define print_hello (vm:pin (cons
    (list GtkWidget* gpointer)
    (lambda (widget userdata)
-      (gtk_label_set_text userdata (c-string (strftime (c-string "%F %x:%S"))))
+      (gtk_label_set_text userdata (strftime "%F %x:%S\0"))
       TRUE
 ))))
 
@@ -28,20 +28,20 @@
 (gtk_init (box 0) #f)
 
 ; create window from file
-(define builder (gtk_builder_new_from_file (c-string "bookmarks.glade")))
+(define builder (gtk_builder_new_from_file "bookmarks.glade"))
 (gtk_builder_connect_signals builder #f NULL)
 
-(define window (gtk_builder_get_object builder (c-string "window")))
+(define window (gtk_builder_get_object builder "window"))
 (gtk_widget_show_all window)
 
 
 
-(define something (gtk_builder_get_object builder (c-string "something")))
+(define something (gtk_builder_get_object builder "something"))
 (print "something: " something)
 
-(define label (gtk_builder_get_object builder (c-string "label1")))
+(define label (gtk_builder_get_object builder "label1"))
 
-(g_signal_connect something (c-string "clicked") (G_CALLBACK print_hello) label)
+(g_signal_connect something "clicked" (G_CALLBACK print_hello) label)
 
 
 (g_object_unref builder)

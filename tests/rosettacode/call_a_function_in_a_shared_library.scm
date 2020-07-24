@@ -4,14 +4,12 @@
 
 (define self (load-dynamic-library #f))
 (define strdup (or
-   (let ((function (self type-string "strdup" type-string)))
-      (if function (lambda (str) (function (c-string str)))))
+   (self type-string "strdup" type-string)
    (lambda (str)
       (list->string (string->list str)))))
 
 (define strduX (or
-   (let ((function (self type-string "strduX" type-string)))
-      (if function (lambda (str) (function (c-string str)))))
+   (self type-string "strduX" type-string)
    (lambda (str)
       (list->string (string->list str)))))
 

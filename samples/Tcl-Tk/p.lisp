@@ -21,24 +21,24 @@
                (result
                   (fold string-append "" (list "{" (number->string (inexact meters)) "}"))))
             (print "result: " result)
-            (Tcl_SetResult tcl (c-string result) #f)))
+            (Tcl_SetResult tcl result #f)))
       TCL_OK
 ))))
 (define calculateCallback (make-callback calculate))
 
 ; and send it to the tcl
-(define cmd (Tcl_CreateCommand tcl (c-string "calculate") calculateCallback #f #f))
+(define cmd (Tcl_CreateCommand tcl "calculate" calculateCallback #f #f))
 
 
 
-;(Tcl_Eval tcl (c-string "calculate 123"))
+;(Tcl_Eval tcl "calculate 123")
 ;
 ;
 ; run
 ;(Tk_Init tcl)
-;(Tcl_Eval tcl (c-string "
+;(Tcl_Eval tcl "
 ;   grid [ttk::button .b -text \"---\"]
-;"))
-(Tcl_EvalFile tcl (c-string "p.tcl"))
+;")
+(Tcl_EvalFile tcl "p.tcl")
 (Tk_MainLoop)
-(Tcl_DeleteCommand tcl (c-string "calculate"))
+(Tcl_DeleteCommand tcl "calculate")

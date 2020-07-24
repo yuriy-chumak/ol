@@ -96,7 +96,7 @@
 (print "clCreateContext: error = " error ", context:" context)
 
 (define (cl:CreateProgramWithSource context source-code)
-   (clCreateProgramWithSource context 1 (list (c-string source-code)) null error))
+   (clCreateProgramWithSource context 1 (list source-code) null error))
 
 (define program (cl:CreateProgramWithSource context "__kernel
    void simple_demo(__global int *src, __global int *dst, int factor)

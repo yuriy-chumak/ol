@@ -1044,6 +1044,10 @@ word* OL_ffi(OL* self, word* arguments)
 			case TANY:
 				D("TODO: TANY processing");
 				break;
+			case TSTRING:
+				if (is_string(arg)) // TSTRING
+					words += reference_size(arg) + 1;
+				break;
 			case TSTRINGWIDE:
 				D("TODO: TSTRINGWIDE processing");
 				break;
@@ -1438,6 +1442,7 @@ word* OL_ffi(OL* self, word* arguments)
 		tbytevector:
 			switch (reference_type(arg)) {
 			case TBYTEVECTOR:
+			case TSTRING: // ansi strings marshaling to bytevector data "as is" without conversion
 				args[i] = (word) &car(arg);
 				break;
 			default:
@@ -1449,10 +1454,14 @@ word* OL_ffi(OL* self, word* arguments)
 		case TSTRING:
 		tstring:
 			switch (reference_type(arg)) {
-			case TBYTEVECTOR: // deprecated
-			case TSTRING:
-				args[i] = (word) &car(arg);
+			case TSTRING: {
+				// todo: add check to not copy the zero-ended string
+				int size = binstream_size(arg);
+				char* zerostr = (char*) &car(new (TBYTEVECTOR, size + 1, 0));
+				memcpy(zerostr, &car(arg), size); zerostr[size] = 0;
+				args[i] = (word)zerostr;
 				break;
+			}
 			// todo: TSTRINGWIDE
 			default:
 				E("invalid parameter values (requested string)");

@@ -11,17 +11,17 @@
 (gtk_init (box 0) #f)
 
 ; create window from file
-(define builder (gtk_builder_new_from_file (c-string "opengl.glade")))
+(define builder (gtk_builder_new_from_file "opengl.glade"))
 (gtk_builder_connect_signals builder #f NULL)
 
-(define window (gtk_builder_get_object builder (c-string "window")))
+(define window (gtk_builder_get_object builder "window"))
 
-(define glarea (gtk_builder_get_object builder (c-string "glarea")))
-(define R (gtk_builder_get_object builder (c-string "R")))
-(define G (gtk_builder_get_object builder (c-string "G")))
-(define B (gtk_builder_get_object builder (c-string "B")))
+(define glarea (gtk_builder_get_object builder "glarea"))
+(define R (gtk_builder_get_object builder "R"))
+(define G (gtk_builder_get_object builder "G"))
+(define B (gtk_builder_get_object builder "B"))
 
-(define randomizer (gtk_builder_get_object builder (c-string "randomizer")))
+(define randomizer (gtk_builder_get_object builder "randomizer"))
 
 (g_object_unref builder)
 
@@ -39,7 +39,7 @@
       (randomize!)
       TRUE))))
 
-(g_signal_connect randomizer (c-string "clicked") (G_CALLBACK randomize) NULL)
+(g_signal_connect randomizer "clicked" (G_CALLBACK randomize) NULL)
 
 ; close button processor:
 (define quit (vm:pin (cons
@@ -48,7 +48,7 @@
       (print "Close button pressed. Going out.")
       (gtk_main_quit)
 ))))
-(g_signal_connect window (c-string "destroy") (G_CALLBACK quit) NULL)
+(g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
 
 ; renderer
 (define render (vm:pin (cons
@@ -62,7 +62,7 @@
       (gtk_gl_area_queue_render widget)
       TRUE
 ))))
-(g_signal_connect glarea (c-string "render") (G_CALLBACK render) NULL)
+(g_signal_connect glarea "render" (G_CALLBACK render) NULL)
 
 ; initializer
 (define realize (vm:pin (cons
@@ -79,7 +79,7 @@
          (glClearColor (/ (rand! 255) 255) (/ (rand! 255) 255) (/ (rand! 255) 255) 0))
       TRUE
 ))))
-(g_signal_connect glarea (c-string "realize") (G_CALLBACK realize) NULL)
+(g_signal_connect glarea "realize" (G_CALLBACK realize) NULL)
 
 
 (define resize (vm:pin (cons
@@ -88,7 +88,7 @@
       (print "info: resized to the " width " x " height)
       TRUE
 ))))
-(g_signal_connect glarea (c-string "resize") (G_CALLBACK resize) NULL)
+(g_signal_connect glarea "resize" (G_CALLBACK resize) NULL)
 
 
 (define x (box 0))

@@ -5,4 +5,4 @@
 (define self (load-dynamic-library #f))
 (define strdup (self type-string "strdup" type-string))
 
-(print (strdup (c-string "Hello World!")))
+(print (strdup "Hello World!"))

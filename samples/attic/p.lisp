@@ -27,21 +27,21 @@
    (list type-vptr type-vptr type-int+ (list type-string type-string))
    (lambda (userdata tcl argc argv)
       (let ((argv (reverse argv)))
-         (Tcl_SetResult tcl (c-string (fold string-append "" (list "(" (cadr argv) ")"))) #f))
+         (Tcl_SetResult tcl (fold string-append "" (list "(" (cadr argv) ")")) #f))
       TCL_OK
 )) #f #f))
 
 (define cmd (Tcl_CreateCommand tcl "calculate" calculate #f #f))
 ;
-;(Tcl_Eval tcl (c-string "add \"1\" \"2\""))
+;(Tcl_Eval tcl "add \"1\" \"2\"")
 ;
 ;
 ; run
 ;(Tk_Init tcl)
-;(Tcl_Eval tcl (c-string "
+;(Tcl_Eval tcl "
 ;   grid [ttk::button .b -text \"---\"]
-;"))
-(Tcl_EvalFile tcl (c-string "p.tcl"))
+;")
+(Tcl_EvalFile tcl "p.tcl")
 
 (Tk_MainLoop)
 ,quit

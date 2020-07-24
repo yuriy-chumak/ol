@@ -59,7 +59,7 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glUseProgram po)
-   (glUniform2f (glGetUniformLocation po (c-string "resolution"))
+   (glUniform2f (glGetUniformLocation po "resolution")
       (gl:get-window-width) (gl:get-window-height))
 
    (glBindBuffer GL_ARRAY_BUFFER VBO)

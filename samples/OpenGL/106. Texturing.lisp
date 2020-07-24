@@ -13,7 +13,7 @@
 
 (glEnable GL_TEXTURE_2D)
 (define id
-   (SOIL_load_OGL_texture (c-string "media/background.png") SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0))
+   (SOIL_load_OGL_texture "media/background.png" SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0))
 
 ; draw
 (gl:set-renderer (lambda (mouse)

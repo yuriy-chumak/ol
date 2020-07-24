@@ -93,7 +93,7 @@ glDrawArrays
    ; пример, как можно передать в функцию массив указателей на строки:
    ; vertex shader:
    ; http://steps3d.narod.ru/tutorials/lighting-tutorial.html
-   (glShaderSource vs 1 (list (c-string vstext)) #false)
+   (glShaderSource vs 1 (list vstext) #false)
    (glCompileShader vs)
    (let ((isCompiled (box 0)))
       (glGetShaderiv vs GL_COMPILE_STATUS isCompiled)
@@ -108,7 +108,7 @@ glDrawArrays
    (glAttachShader po vs)
 
    ; fragment shader:
-   (glShaderSource fs 1 (list (c-string fstext)) #false)
+   (glShaderSource fs 1 (list fstext) #false)
    (glCompileShader fs)
    (let ((isCompiled '(0)))
       (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)

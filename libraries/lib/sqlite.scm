@@ -468,7 +468,7 @@
 (define (sqlite:query database query . args)
    ;(print "SQLITE: \e[0;35m" query "\e[0;0m: (" (length args) ")> " args)
    (let ((statement (make-sqlite3_stmt)))
-      (unless (eq? 0 (sqlite3_prepare_v2 database (c-string query) -1 statement #f))
+      (unless (eq? 0 (sqlite3_prepare_v2 database query -1 statement #f))
          (runtime-error "error query preparation:" (list
             query (sqlite3_errmsg database))))
       ; apply arguments:

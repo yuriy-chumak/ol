@@ -37,7 +37,7 @@
 (gl:set-renderer (lambda (mouse)
    (glClear GL_COLOR_BUFFER_BIT)
 
-   (glUniform2f (glGetUniformLocation po (c-string "resolution"))
+   (glUniform2f (glGetUniformLocation po "resolution")
       (gl:get-window-width) (gl:get-window-height))
 
    (glBindBuffer GL_ARRAY_BUFFER VBO)

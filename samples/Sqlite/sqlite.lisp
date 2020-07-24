@@ -10,7 +10,7 @@
 
 ; todo: move this test into separate script (tests/sqlite3.scm)
 (define database (make-sqlite3))
-(print "open: "  (sqlite3_open (c-string ":memory:") database))
+(print "open: "  (sqlite3_open ":memory:" database))
 
 ; todo: add sqlite3-fold function:
 ;(define (with-sql-query string processor)
@@ -24,7 +24,7 @@
 (sqlite:query database "INSERT INTO test VALUES (7)")
 
 (let ((db (make-sqlite3)))
-   (sqlite3_open (c-string "db.sqlite") db)
+   (sqlite3_open "db.sqlite" db)
    (sqlite:query db "CREATE TABLE IF NOT EXISTS T (id INTEGER PRIMARY KEY, text STRING)")
    (sqlite:query db "INSERT INTO T (text) VALUES (?)" "one")
    (sqlite:query db "INSERT INTO T (text) VALUES (?)" "two")

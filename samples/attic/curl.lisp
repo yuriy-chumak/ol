@@ -11,7 +11,7 @@
 
 
 (define curl (curl_easy_init))
-(curl_easy_setopt curl CURLOPT_URL (c-string "https://dirty.ru/api/users/1/votes/"))
+(curl_easy_setopt curl CURLOPT_URL "https://dirty.ru/api/users/1/votes/")
 (curl_easy_setopt curl CURLOPT_WRITEFUNCTION (make-callback callback))
 
 (curl_easy_perform curl)

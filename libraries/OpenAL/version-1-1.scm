@@ -96,7 +96,7 @@
    ; https://en.wikipedia.org/wiki/Uname
    (define uname (syscall 63))
 
-   (define AL_LIBRARY (c-string
+   (define AL_LIBRARY
       (let ((os (ref uname 1)))
       (cond
          ((string-ci=? os "Windows") "openal32")
@@ -109,7 +109,7 @@
          ;"MINGW32_NT-5.2"
          ;...
          (else
-            (runtime-error "Unknown platform" uname))))))
+            (runtime-error "Unknown platform" uname)))))
 
    (define openal (or
       (load-dynamic-library AL_LIBRARY)

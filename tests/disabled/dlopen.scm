@@ -21,7 +21,7 @@
   (define MB_ICONASTERISK 64)
 
 (if (=
-  (MessageBox 0 (c-string "Please, press OK for test pass!") (c-string "dlopen test")
+  (MessageBox 0 "Please, press OK for test pass!" "dlopen test"
     (bor MB_OKCANCEL MB_ICONASTERISK))
   IDOK)
     (print "OK")

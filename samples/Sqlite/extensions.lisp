@@ -7,7 +7,7 @@
 (define sqlite3_context* type-vptr)
 
 (define database (make-sqlite3))
-(sqlite3_open (c-string ":memory:") database)
+(sqlite3_open ":memory:" database)
 
 ; create extension function
 (define calculate (vm:pin (cons
@@ -24,7 +24,7 @@
             (sqlite3_result_int context r)))))))
 (define calculate-callback (make-callback calculate))
 
-(sqlite3_create_function_v2 database (c-string "compress") 1 SQLITE_UTF8 #f calculate-callback #f #f #f)
+(sqlite3_create_function_v2 database "compress" 1 SQLITE_UTF8 #f calculate-callback #f #f #f)
 
 
 ; sample table

@@ -31,7 +31,7 @@
       (gtk_widget_show_all window)
 ))))
 
-(define app (gtk_application_new (c-string "org.gtk.example") G_APPLICATION_FLAGS_NONE))
-(g_signal_connect app (c-string "activate") (G_CALLBACK activate) NULL)
+(define app (gtk_application_new "org.gtk.example" G_APPLICATION_FLAGS_NONE))
+(g_signal_connect app "activate" (G_CALLBACK activate) NULL)
 
 (g_application_run app 0 #false)

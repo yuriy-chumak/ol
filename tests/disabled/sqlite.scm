@@ -10,15 +10,15 @@
 
 ; todo: move this test into separate script (tests/sqlite3.scm)
 (define database (make-sqlite3))
-(print "open: "     (sqlite3_open (c-string ":memory:") database))
+(print "open: "     (sqlite3_open ":memory:" database))
 (print "close: "    (sqlite3-close database))
-(print "open: "     (sqlite3_open (c-string "x.sqlite") database))
+(print "open: "     (sqlite3_open "x.sqlite" database))
 
 
 
 (define (execute query . args)
    (let ((statement (make-sqlite3-stmt)))
-      (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
+      (if (less? 0 (sqlite3-prepare-v2 database query -1 statement null))
          (runtime-error "error query preparation" query))
       (let loop ((n 1) (args args))
          (if (not (null? args))
@@ -40,14 +40,14 @@
 
 (define (select query)
    (let ((statement (make-sqlite3-stmt)))
-      (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
+      (if (less? 0 (sqlite3-prepare-v2 database query -1 statement null))
          (print "error query [" query "] preparation"))
       (sqlite3-step statement)
       statement))
 
 (define (sqlite:for-each query handler)
    (let ((statement (make-sqlite3-stmt)))
-      (if (less? 0 (sqlite3-prepare-v2 database (c-string query) -1 statement null))
+      (if (less? 0 (sqlite3-prepare-v2 database query -1 statement null))
          (runtime-error "error query preparation" query))
       (let loop ((x null))
          (if (= (sqlite3-step statement) SQLITE_ROW)
@@ -70,7 +70,7 @@
 
 
 (let ((db (make-sqlite3)))
-   (sqlite3_open (c-string "db.sqlite") db)
+   (sqlite3_open "db.sqlite" db)
    (sqlite:exec db "CREATE TABLE IF NOT EXISTS T (id INTEGER PRIMARY KEY, text STRING)")
    (sqlite:exec db "INSERT INTO T (text) VALUES (?)" "one")
    (sqlite:exec db "INSERT INTO T (text) VALUES (?)" "two")
@@ -81,7 +81,7 @@
 
 (print "exec: " (sqlite:exec database "INSERT INTO test VALUES (?)" 11))
 
-;(print "prepare: "  (sqlite3_prepare_v2 database (c-string "CREATE TABLE test ( id INTEGER )") -1 statement null))
+;(print "prepare: "  (sqlite3_prepare_v2 database "CREATE TABLE test ( id INTEGER )" -1 statement null))
 ;(print "step: " (sqlite3_step statement))
 
 ;(print "1: " (sqlite3_column_count statement))

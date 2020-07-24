@@ -284,11 +284,11 @@
                   (cx      (ref context 4)))
                (case (type title)
                   (type-string
-                     (XStoreName display window (c-string title)))
+                     (XStoreName display window title))
                   (type-string-wide (let ((title (string->bytes title)))
                      (XChangeProperty display window
-                        (XInternAtom display (c-string "_NET_WM_NAME") 0)
-                        (XInternAtom display (c-string "UTF8_STRING") 0)
+                        (XInternAtom display "_NET_WM_NAME" 0)
+                        (XInternAtom display "UTF8_STRING" 0)
                         8 0 ;PropModeReplace
                         title (length title)))))))
 
@@ -316,7 +316,7 @@
                   ; sizeof XColor is 12 for x64 and 9 for x86
                   (black (make-bytevector 12))
                   (dummy (make-bytevector 12))
-                  ;(? (XAllocNamedColor (ref context 1) cmap (c-string "black") black dummy))
+                  ;(? (XAllocNamedColor (ref context 1) cmap "black" black dummy))
                   (bm_no (XCreateBitmapFromData (ref context 1) (ref context 3) black 8 8))
                   (cursor (XCreatePixmapCursor (ref context 1) bm_no bm_no black black 0 0)))
                (XDefineCursor (ref context 1) (ref context 3) cursor)
@@ -439,7 +439,7 @@
 
          (define (native:create-context title)
             (let*((window (CreateWindowEx
-                     #x00040100 (c-string "#32770") (c-string title) ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
+                     #x00040100 "#32770" title ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
                      #x06cf0000 ; WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
                      0 0 WIDTH HEIGHT ; x y width height
                      #false ; no parent window
@@ -505,7 +505,7 @@
 
          (define (gl:SetWindowTitle context title)
             (let ((window (ref context 3)))
-               (SetWindowText window (c-string title))))
+               (SetWindowText window title)))
 
          ; ---
          (setq GetWindowRect (user32 fft-int "MoveWindow" fft-void* (fft& fft-int)))

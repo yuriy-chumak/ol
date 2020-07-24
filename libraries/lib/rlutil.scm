@@ -207,7 +207,7 @@
       (lambda (title)
          (case (type title)
             (type-string
-               (SetConsoleTitleA (c-string title)))
+               (SetConsoleTitleA title))
             (type-string-wide
                (SetConsoleTitleW title))))))
    (linux?

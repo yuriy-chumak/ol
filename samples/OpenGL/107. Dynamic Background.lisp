@@ -18,13 +18,13 @@
 
 (define root "resources/Glitch parallex BG sampler/GA9NRNJSB792OG4 Akaki Cape-shows depth/")
 (define background (list
-   (SOIL_load_OGL_texture (c-string (string-append root "Gradient (z -6).png")) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
-   (SOIL_load_OGL_texture (c-string (string-append root "mtn (z -4).png")) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
-   (SOIL_load_OGL_texture (c-string (string-append root "sky (z -3).png")) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
-   (SOIL_load_OGL_texture (c-string (string-append root "bg_2 (z -2).png")) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
-   (SOIL_load_OGL_texture (c-string (string-append root "bg_1 (z -1).png")) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
-   (SOIL_load_OGL_texture (c-string (string-append root "middleground (z 0).png")) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
-   (SOIL_load_OGL_texture (c-string (string-append root "middleplus (z 1).png")) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+   (SOIL_load_OGL_texture (string-append root "Gradient (z -6).png") SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+   (SOIL_load_OGL_texture (string-append root "mtn (z -4).png") SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+   (SOIL_load_OGL_texture (string-append root "sky (z -3).png") SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+   (SOIL_load_OGL_texture (string-append root "bg_2 (z -2).png") SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+   (SOIL_load_OGL_texture (string-append root "bg_1 (z -1).png") SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+   (SOIL_load_OGL_texture (string-append root "middleground (z 0).png") SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+   (SOIL_load_OGL_texture (string-append root "middleplus (z 1).png") SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
 ))
 
 (define scale 2618/571) ; magic "average aspect ratio" number

@@ -100,8 +100,8 @@
 ; draw
 (gl:set-renderer
 (lambda (ss ms)
-   (let ((time (glGetUniformLocation po (c-string "time")))
-         (resolution (glGetUniformLocation po (c-string "resolution"))))
+   (let ((time (glGetUniformLocation po "time"))
+         (resolution (glGetUniformLocation po "resolution")))
 
    (glClear GL_COLOR_BUFFER_BIT)
    (glMatrixMode GL_MODELVIEW)

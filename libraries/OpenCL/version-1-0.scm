@@ -561,7 +561,6 @@
 ; https://en.wikipedia.org/wiki/Uname
 (define uname (syscall 63))
 (define CL_LIBRARY
-   (c-string
    (cond
       ((string-ci=? (ref uname 1) "Windows")  "opencl")
       ((string-ci=? (ref uname 1) "Linux")    "libOpenCL.so")
@@ -573,7 +572,7 @@
       ;"MINGW32_NT-5.2"
       ;...
       (else
-         (runtime-error "Unknown platform")))))
+         (runtime-error "Unknown platform"))))
 
 (define CL (load-dynamic-library CL_LIBRARY))
 (if (not CL)

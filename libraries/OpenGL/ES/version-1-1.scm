@@ -1281,9 +1281,9 @@
 
 ;;                ;; ;(glUseProgram (get dictionary 'program 0))
 ;;                ;; ; matrices
-;;                ;; ;; (glUniformMatrix4fv (glGetUniformLocation (get dictionary 'program 0) (c-string "uModelViewMatrix"))
+;;                ;; ;; (glUniformMatrix4fv (glGetUniformLocation (get dictionary 'program 0) "uModelViewMatrix")
 ;;                ;; ;;    1 GL_FALSE (apply append (get dictionary GL_MODELVIEW_MATRIX identity-matrix)))
-;;                ;; ;; (glUniformMatrix4fv (glGetUniformLocation (get dictionary 'program 0) (c-string "uProjectionMatrix"))
+;;                ;; ;; (glUniformMatrix4fv (glGetUniformLocation (get dictionary 'program 0) "uProjectionMatrix")
 ;;                ;; ;;    1 GL_FALSE (apply append (get dictionary GL_PROJECTION_MATRIX identity-matrix)))
 ;;                ;; ; vertices
 ;;                ;; (glBindBuffer GL_ARRAY_BUFFER (list-ref vbos 0))

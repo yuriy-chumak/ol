@@ -18,26 +18,26 @@
 (gtk_init (box 0) #f)
 
 ; create window from file
-(define builder (gtk_builder_new_from_file (c-string "ithkuil.glade")))
+(define builder (gtk_builder_new_from_file "ithkuil.glade"))
 (gtk_builder_connect_signals builder #f NULL)
 
-(define window (gtk_builder_get_object builder (c-string "window")))
+(define window (gtk_builder_get_object builder "window"))
 (gtk_widget_show_all window)
 
-(define textbuffer (gtk_builder_get_object builder (c-string "textbuffer")))
+(define textbuffer (gtk_builder_get_object builder "textbuffer"))
 
 (define hello-callback (G_CALLBACK print_hello))
 (define set-clicked-signal (vm:pin (cons
    (list GtkWidget* gpointer)
    (lambda (widget userdata)
-      (g_signal_connect widget (c-string "clicked") hello-callback userdata)
+      (g_signal_connect widget "clicked" hello-callback userdata)
       TRUE
 ))))
 (define callback (G_CALLBACK set-clicked-signal))
-(define textbuffer (gtk_builder_get_object builder (c-string "textbuffer")))
+(define textbuffer (gtk_builder_get_object builder "textbuffer"))
 
 (for-each (lambda (name)
-      (define container (gtk_builder_get_object builder (c-string name)))
+      (define container (gtk_builder_get_object builder name))
       (gtk_container_foreach container callback textbuffer))
    '("alphabet" "numpad"))
 

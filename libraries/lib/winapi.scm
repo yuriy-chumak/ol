@@ -185,7 +185,7 @@
   (define wglDeleteContext  (opengl32 BOOL  "wglDeleteContext" HGLRC))
   (define wglGetProcAddress (opengl32 PROC  "wglGetProcAddress" LPCSTR))
 ;  (define (wgl-proc-address type name)
-;    (let ((function (cons type (wglGetProcAddress (c-string name)))))
+;    (let ((function (cons type (wglGetProcAddress name))))
 ;      (lambda args
 ;        (syscall 32 (cdr function) (car function) args))))
 
