@@ -3978,8 +3978,10 @@ loop:;
 						: (char*) &symbol[1]);
 				if (function)
 					r = new_vptr(function);
+#ifdef OLVM_DLSYM_DEBUG
 				else
 					D("dlsym failed: %s", dlerror());
+#endif
 				break;
 			}
 			case SYSCALL_DLERROR: { // (dlerror)
