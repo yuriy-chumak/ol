@@ -1,14 +1,14 @@
 ; http://www.rosettacode.org/wiki/CRC-32#Ol
 
 (define (crc32 str)
-   (vm:xor #xFFFFFFFF
+   (bxor #xFFFFFFFF
       (fold (lambda (crc char)
                (let loop ((n 8) (crc crc) (bits char))
                   (if (eq? n 0)
                      crc
-                     (let*((flag (vm:and (vm:xor bits crc) 1))
+                     (let*((flag (band (bxor bits crc) 1))
                            (crc (>> crc 1))
-                           (crc (if (eq? flag 0) crc (vm:xor crc #xEDB88320)))
+                           (crc (if (eq? flag 0) crc (bxor crc #xEDB88320)))
                            (bits (>> bits 1)))
                         (loop (- n 1) crc bits)))))
          #xFFFFFFFF

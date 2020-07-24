@@ -1,4 +1,4 @@
-; http://www.rosettacode.org/wiki/Call_a_foreign-language_function#Ol
+; http://www.rosettacode.org/wiki/Call_a_function_in_a_shared_library#Ol
 
 (import (otus ffi))
 
