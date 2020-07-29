@@ -48,6 +48,38 @@
       ("Q2Q" . ,fft-signed-long-long)))
 
 
+; - simple type->type mirroring functions ------------------------
+(print "basic simple (fft* type)>type test:")
+(define (try* tag function . numbers)
+   (for-each display (list "   " tag " " numbers ":"))
+   (print (apply function (map (lambda (x) (list x)) numbers))))
+
+(for-each (lambda (x)
+      (let*((name type (uncons x #f))
+            (function (this type name (fft* type))))
+         (try* name function 1)
+         (try* name function 9)
+         (try* name function 0)))
+   `( ("rc2c" . ,fft-unsigned-char)
+      ("rs2s" . ,fft-unsigned-short)
+      ("ri2i" . ,fft-unsigned-int)
+      ("rl2l" . ,fft-unsigned-long)
+      ("rq2q" . ,fft-unsigned-long-long)))
+
+(for-each (lambda (x)
+      (let*((name type (uncons x #f))
+            (function (this type name (fft* type))))
+         (try* name function 1)
+         (try* name function 9)
+         (try* name function 0)
+         (try* name function -9)
+         (try* name function -1)))
+   `( ("rC2C" . ,fft-signed-char)
+      ("rS2S" . ,fft-signed-short)
+      ("rI2I" . ,fft-signed-int)
+      ("rL2L" . ,fft-signed-long)
+      ("rQ2Q" . ,fft-signed-long-long)))
+
 ; ----------------------------------------------------------------
 (print "type limits checking:")
 

@@ -1040,46 +1040,51 @@ word* OL_ffi(OL* self, word* arguments)
 		word arg = (word)car(p);
 
 //		again:
-		if (is_pair(arg))
-		if (type & (FFT_REF|FFT_PTR)) {
-			int len =
-				reference_type(arg) == TPAIR ? list_length(arg) :
-				reference_type(arg) == TVECTOR ? vector_length(arg) :
-				0;
-			int atype = type &!(FFT_REF|FFT_PTR);
-			words += ((len *
-				atype == TINT8 || atype == TUINT8 ? sizeof(int8_t) :
-				atype == TINT16 || atype == TUINT16 ? sizeof(int16_t) :
-				atype == TINT32 || atype == TUINT32 ? sizeof(int32_t) :
-				atype == TINT64 || atype == TUINT64 ? sizeof(int64_t) :
-				atype == TFLOAT ? sizeof(float) :
-				atype == TDOUBLE ? sizeof(double) :
-				atype == TVPTR && !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) ? sizeof(void*) :
-				0) + W - 1) / W + 1;
-		}
-		else switch (type) {
-			case TANY:
-				D("TODO: TANY processing");
-				break;
-			case TSTRING:
-				if (is_string(arg)) { // TSTRING
-//					printf ("TSTRING > TSTRING (%d)\n", reference_size(arg) + 1);
-					words += reference_size(arg) + 1;
-				}
-				break;
-			case TSTRINGWIDE: {
-				words += (utf8_len(arg) + W - 1) / W + 1;
-				break;
+		if (is_reference(arg)) {
+
+			if (type & (FFT_REF|FFT_PTR)) {
+				int len = 
+					reference_type(arg) == TPAIR ? list_length(arg) :
+					reference_type(arg) == TVECTOR ? vector_length(arg) :
+					0;
+				int atype = type &~(FFT_REF|FFT_PTR);
+				words += ((len *
+					atype == TINT8 || atype == TUINT8 ? sizeof(int8_t) :
+					atype == TINT16 || atype == TUINT16 ? sizeof(int16_t) :
+					atype == TINT32 || atype == TUINT32 ? sizeof(int32_t) :
+					atype == TINT64 || atype == TUINT64 ? sizeof(int64_t) :
+					atype == TFLOAT ? sizeof(float) :
+					atype == TDOUBLE ? sizeof(double) :
+					atype == TVPTR && !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) ? sizeof(void*) :
+					0) + W - 1) / W + 1;
+			}
+			else
+			switch (type) {
+				case TANY:
+					D("TODO: TANY processing");
+					break;
+				case TSTRING:
+					switch (reference_type (arg)) {
+						case TSTRING:
+							words += reference_size(arg) + 1;
+							break;
+						case TSTRINGWIDE:
+							words += (utf8_len(arg) + W - 1) / W + 1;
+							break;
+					}
+					break;
+				case TSTRINGWIDE:
+						if (reference_type (arg) == TSTRINGWIDE)
+							words += 2 * reference_size(arg) + 1;
+					break;
 			}
 		}
-#if UINT64_MAX > UINTPTR_MAX // 32-bit machines
-		else { // !is_pair(arg)
-			if (type == TINT64 || type == TUINT64 || type == TDOUBLE)
-				i++;
-		}
-#endif
 
 		i++;
+#if UINT64_MAX > UINTPTR_MAX // 32-bit machines
+		if (type == TINT64 || type == TUINT64 || type == TDOUBLE)
+			i++;
+#endif
 		p = (word*)cdr(p); // (cdr p)
 		t = (word*)cdr(t); // (cdr t)
 	}
@@ -1206,7 +1211,7 @@ word* OL_ffi(OL* self, word* arguments)
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 
-			int c = llen(arg);
+			int c = llen(arg); // todo: remove this precounting
 			char* p = (char*) &new_bytevector(c * sizeof(char))[1];
 			args[i] = (word)p;
 
@@ -1736,11 +1741,42 @@ word* OL_ffi(OL* self, word* arguments)
 			//if (arg != IFALSE) - излишен
 			switch (type) {
 
-			// simplest case - all shorts are fits as value
+			// simplest cases - all shorts are fits as value
+			case TINT8 + FFT_REF: {
+				// вот тут попробуем заполнить переменные назад
+				int c = llen(arg);
+				signed char* f = (signed char*)args[i];
+
+				word l = arg;
+				while (c--) {
+					signed char value = *f++;
+					word* ptr = &car(l);
+
+					*ptr = make_enum(value);
+					l = cdr(l);
+				}
+				break;
+			}
+			case TUINT8 + FFT_REF: {
+				// вот тут попробуем заполнить переменные назад
+				int c = llen(arg);
+				unsigned char* f = (unsigned char*)args[i];
+
+				word l = arg;
+				while (c--) {
+					unsigned char value = *f++;
+					word* ptr = &car(l);
+
+					*ptr = I(value);
+					l = cdr(l);
+				}
+				break;
+			}
+
 			case TINT16 + FFT_REF: {
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
-				short* f = (short*)args[i];
+				signed short* f = (signed short*)args[i];
 
 				word l = arg;
 				while (c--) {
@@ -1809,7 +1845,7 @@ word* OL_ffi(OL* self, word* arguments)
 
 				word l = arg;
 				while (c--) {
-					int value = *f++;
+					unsigned int value = *f++;
 					word* ptr = &car(l);
 
 				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
@@ -1825,7 +1861,7 @@ word* OL_ffi(OL* self, word* arguments)
 					}
 					else
 				#endif
-						*ptr = I(value);
+					*ptr = I(value);
 
 					l = cdr(l);
 				}

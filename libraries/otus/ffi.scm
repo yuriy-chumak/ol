@@ -232,7 +232,7 @@
 ; platform dependent defaults
 (define fft-char fft-int8)               (assert (exec ffi:sizeof 1) ===> 1) ; sizeof(char) == 1
 (define fft-signed-char fft-int8)
-(define fft-unsigned-char fft-int8)
+(define fft-unsigned-char fft-uint8)
 
 (define fft-short fft-int16)             (assert (exec ffi:sizeof 2) ===> 2) ; sizeof(short) == 2
 (define fft-signed-short fft-int16)
