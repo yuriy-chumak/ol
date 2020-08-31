@@ -32,7 +32,7 @@
 
       ; types
       TENUM+ TENUM- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
-      TPAIR TSYMBOL TTUPLE TVECTOR TBYTEVECTOR
+      TPAIR TSYMBOL TVECTOR TBYTEVECTOR
       TSTRING TSTRINGWIDE
       TBYTECODE TPROCEDURE TCLOSURE
       TVPTR TCALLABLE)
@@ -50,7 +50,6 @@
       (setq TINEXACT          44) ; reference, IEEE 754 64-bit binary
 
       (setq TPAIR              1) ; reference
-      (setq TTUPLE             2) ; reference
       (setq TVECTOR            2) ; reference
       (setq TSTRING            3) ; reference, raw -> 35 (#b100000 + 3)?
       (setq TSYMBOL            4) ; reference
@@ -139,7 +138,7 @@
 
       ; internal helpers
       (setq primop (lambda (name in out code)
-         (vm:new TTUPLE name (ref code 0) in out code))) ; * makes primop record
+         (vm:new TVECTOR name (ref code 0) in out code))) ; * makes primop record
       (setq make-bytecode (lambda (bytecode)
          (vm:makeb TBYTECODE bytecode))) ; * makes bytecode from list
       (setq alist (lambda args args))
