@@ -1707,15 +1707,7 @@
       ; procedure:  (string-for-each proc string1 string2 ...)  * (scheme string)
       ; procedure:  (vector-for-each proc vector1 vector2 ...)  * (scheme vector)
 
-      ; procedure:  (call-with-current-continuation proc)
-      (define call-with-current-continuation
-         ('_sans_cps (lambda (k f)
-                        ;(f k (lambda (c . x) (apply/cc k x))))))
-                        ; speeduped version:
-                        (f k (case-lambda
-                           ((c a) (k a))
-                           ((c a b) (k a b))
-                           ((c . x) (apply/cc k x)))))))
+      ; procedure:  (call-with-current-continuation proc)  * (src vm)
 
       (define call/cc call-with-current-continuation)
 
