@@ -8,8 +8,6 @@
 ;  3. изменить нумерацию типов
 ;  4. удалить параметр rawness
 ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
-; todo: change TFIX to TSHORT, TINT to TLONG
-;  or to TINTEGER, TBIGNUM
 
 (define-library (src vm)
    (export
@@ -153,8 +151,8 @@
       (setq *primops* (alist
          ; прямые аллокаторы
          (primop 'vm:new   'any 1 "\x17;") ; 23, make new object, simplest and fastest allocator
-         (primop 'vm:make  'any 1 "\x12;") ; 18, make object
-         (primop 'vm:makeb 'any 1 "\x13;") ; 19, make blob (binary, raw) object
+         (primop 'vm:make  'any 1 "\x12;") ; 18, make object, slower but smarter allocator
+         (primop 'vm:makeb 'any 1 "\x13;") ; 19, make binary (raw) object = (bytestream)
          ; косвенные аллокаторы
          (primop 'vm:cast   2 1 (make-bytecode '(22 4 5 6    24 6)))
          (primop 'set-ref   3 1 (make-bytecode '(45 4 5 6 7  24 7)))
