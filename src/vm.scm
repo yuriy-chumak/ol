@@ -61,13 +61,13 @@
       ;(setq type-rlist-spine  10) ; reference, used by rlist (not retested)
       (setq type-vector-leaf  11) ; reference
 
-      (setq TPORT             12) ; value
+      (setq TPORT             12) ; value or reference
       (setq TCONST            13) ; value
 
       ;(setq type-rlist-node   14) ; reference, used by rlist (not retested)
       (setq type-vector-dispatch 15) ; reference
 
-      (setq TBYTECODE         16) ; reference, raw bytecode
+      (setq TBYTECODE         16) ; reference, a bytecode
       (setq TPROCEDURE        17) ; reference, pure function
       (setq TCLOSURE          18) ; reference, function with closures
 
@@ -139,7 +139,7 @@
          (vm:new TVECTOR name (ref code 0) in out code))) ; * makes primop record
       (setq make-bytecode (lambda (bytecode)
          (vm:makeb TBYTECODE bytecode))) ; * makes bytecode from list
-      (setq alist (lambda args args))
+      (setq list (lambda args args))
 
       ; -----------------------------------------------------------------------
       ; we already have (out of the box):    У нас изначально есть (из коробки):
@@ -148,11 +148,11 @@
 
       ; Список примитивных операций виртуальной машины:
       ;  эти операции не надо экспортировать из модуля, они как бы "вшиты" в базовый язык
-      (setq *primops* (alist
+      (setq *primops* (list
          ; прямые аллокаторы
-         (primop 'vm:new   'any 1 "\x17;") ; 23, make new object, simplest and fastest allocator
-         (primop 'vm:make  'any 1 "\x12;") ; 18, make object, slower but smarter allocator
-         (primop 'vm:makeb 'any 1 "\x13;") ; 19, make binary (raw) object = (bytestream)
+         (primop 'vm:new   'any 1 "\x17;") ;; 23, make new object, simplest and fastest allocator
+         (primop 'vm:make  'any 1 "\x12;") ;; 18, make object, slower but smarter allocator
+         (primop 'vm:makeb 'any 1 "\x13;") ;; 19, make binary (raw) object = (bytestream)
          ; косвенные аллокаторы
          (primop 'vm:cast   2 1 (make-bytecode '(22 4 5 6    24 6)))
          (primop 'set-ref   3 1 (make-bytecode '(45 4 5 6 7  24 7)))
@@ -177,26 +177,26 @@
 
          ; базовая арифметика
          ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
-         (primop 'vm:add   2 2 (make-bytecode '(38 4 5     6 7)))  ; vm:add
-         (primop 'vm:mul   2 2 (make-bytecode '(39 4 5     6 7)))  ; vm:mul
-         (primop 'vm:sub   2 2 (make-bytecode '(40 4 5     6 7)))  ; vm:sub
-         (primop 'vm:div   3 3 (make-bytecode '(26 4 5 6   7 8 9))); vm:div
+         (primop 'vm:add   2 2 (make-bytecode '(38 4 5     6 7)))
+         (primop 'vm:mul   2 2 (make-bytecode '(39 4 5     6 7)))
+         (primop 'vm:sub   2 2 (make-bytecode '(40 4 5     6 7)))
+         (primop 'vm:div   3 3 (make-bytecode '(26 4 5 6   7 8 9)))
          ; сдвиги
-         (primop 'vm:shr   2 2 (make-bytecode '(58 4 5     6 7)))  ; vm:shr
-         (primop 'vm:shl   2 2 (make-bytecode '(59 4 5     6 7)))  ; vm:shl
+         (primop 'vm:shr   2 2 (make-bytecode '(58 4 5     6 7)))
+         (primop 'vm:shl   2 2 (make-bytecode '(59 4 5     6 7)))
          ; бинарная арифметика
-         (primop 'vm:and   2 1 (make-bytecode '(55 4 5 6      24 6))) ; vm:and ; 
-         (primop 'vm:ior   2 1 (make-bytecode '(56 4 5 6      24 6))) ; vm:ior ; inclusive OR
-         (primop 'vm:xor   2 1 (make-bytecode '(57 4 5 6      24 6))) ; vm:xor ; exclusive OR
+         (primop 'vm:and   2 1 (make-bytecode '(55 4 5 6      24 6))) ;; 
+         (primop 'vm:ior   2 1 (make-bytecode '(56 4 5 6      24 6))) ;; inclusive OR
+         (primop 'vm:xor   2 1 (make-bytecode '(57 4 5 6      24 6))) ;; exclusive OR
 
          ; инструкции поддержки арифметики с плавающей точкой (inexact math)
-         (primop 'vm:fp1   2 1 (make-bytecode '(33 4 5 6      24 6))) ; vm:fp1
-         (primop 'vm:fp2   3 1 (make-bytecode '(34 4 5 6 7    24 7))) ; vm:fp2
+         (primop 'vm:fp1   2 1 (make-bytecode '(33 4 5 6      24 6)))
+         (primop 'vm:fp2   3 1 (make-bytecode '(34 4 5 6 7    24 7)))
 
          ; системный таймер  (deprecated, но остается как пример операции не принимающей параметров м возвращающей values)
          (primop 'clock    0 2 (make-bytecode '(61 4 5))) ; clock, todo: удалить
          ; системные вызовы
-         (primop 'syscall 'any 1 "\x3F;") ; 63, system call
+         (primop 'syscall 'any 1 "\x3F;") ;; 63, system call
 
          (primop 'vector-apply 1 #f (make-bytecode '(32 4)))
          (primop 'ff-apply     1 #f (make-bytecode '(49 4)))
@@ -219,6 +219,7 @@
          (primop 'vm:unpin  1 1 (make-bytecode '(60 4 5  24 5)))
          (primop 'vm:deref  1 1 (make-bytecode '(25 4 5  24 5)))
 
+         ; stop
          (primop 'vm:exit   1 1 (make-bytecode '(37 4 5  24 5)))
       ))
 
@@ -272,7 +273,7 @@
 
       ;; fixme: handle multiple return value primops sanely (now a list)
       ; для этих команд НЕ вставляется аргументом длина списка команд
-      (setq multiple-return-variable-primops (alist
+      (setq multiple-return-variable-primops (list
          (opcode 'ff-apply)
          (opcode 'vm:add)
          (opcode 'vm:mul)
@@ -284,13 +285,13 @@
 
       ; todo: check this and opcode-arity-ok-2? - maybe should merge this entities?
       ; todo: dynamically generate based on *primops*
-      (setq variable-input-arity-primops (alist ; todo: move to other module
+      (setq variable-input-arity-primops (list ; todo: move to other module
          (opcode 'vm:new)
          (opcode 'vm:make)
          (opcode 'vm:makeb)
          (opcode 'syscall)))
 
-      (setq special-bind-primops (alist
+      (setq special-bind-primops (list
          (opcode 'vector-apply)
          (opcode 'ff-apply)))
 
