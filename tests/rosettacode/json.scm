@@ -15,7 +15,7 @@
     'additional staff': [
       {
         'type': 'numbers',
-        'numbers': [ 1, -2, 0.75, -4.567 ]
+        'numbers': [ 1, -2, 0.75, -4.567, \"not-a-number\" ]
       },
       {
         'type': 'phone',
@@ -39,7 +39,7 @@
   '|additional staff| [
     {
       'type "numbers"
-      'numbers [ 1 -2 0.75 -4.567 ]
+      'numbers [ 1 -2 0.75 -4.567 "not-a-number" ]
     }
     {
       'type "phone"

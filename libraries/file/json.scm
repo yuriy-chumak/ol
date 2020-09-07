@@ -18,8 +18,6 @@
    (define (print-json-with display object)
       (let jsonify ((L object))
          (cond
-            ((symbol? L)
-               (for-each display `("\"" ,L "\"")))
             ((string? L)
                (for-each display `("\"" ,L "\"")))
             ((boolean? L)
@@ -54,7 +52,7 @@
                   (cond
                      ((pair? L)
                         (if comma (display ","))
-                        (for-each display `("\"" ,(caar L) "\":"))
+                        (for-each display `("\"" ,(symbol->string (caar L)) "\":"))
                         (jsonify (cdar L))
                         (loop (cdr L) #t))
                      ((function? L)
@@ -63,7 +61,7 @@
             )))
 
    (define get-a-whitespace (get-byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
-   (define maybe-whitespaces (get-kleene* get-a-whitespace))
+   (define maybe-whitespaces (get-greedy* get-a-whitespace))
 
    ; https://www.ietf.org/rfc/rfc4627.txt
    (define quoted-values {
@@ -137,6 +135,7 @@
                get-string
                (get-word "true" #true)
                (get-word "false" #false)
+               (get-word "null" #null)
                get-number
                ; objects:
                (let-parses (
