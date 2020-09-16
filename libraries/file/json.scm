@@ -1,11 +1,16 @@
 (define-library (file json)
+   ; todo: add function toi encode json into stream
    (export
       print-json-with
       json-parser
       
       read-json
       read-json-file
-      read-json-string
+
+      read-json-port   ; same as read-json
+      read-json-string ; same as read-json
+      read-json-stream ; same as read-json
+
       write-json
       write-json-file)
    (import
@@ -181,23 +186,31 @@
                'old #empty
                'new #true })
 
-   (define (read-json port)
-      (when port
-         (define json (try-parse json-parser (force (port->bytestream port)) #f))
+   (define (read-json-stream stream)
+      (when stream
+         (define json (try-parse json-parser stream #f))
          (if json (car json))))
 
+   (define (read-json-port port)
+      (when port
+         (read-json-stream (force (port->bytestream port)))))
+
+   (define (read-json-string str)
+      (when str
+         (read-json-stream (str-iter str))))
+
    (define read-json (case-lambda
-      (() (read-json stdin))
-      ((port) (read-json port))))
+      (() (read-json-port stdin))
+      ((source) (cond
+         ((port? source) (read-json-port source))
+         ((string? source) (read-json-string source))
+         ((pair? source) (read-json-stream source))))))
 
    (define (read-json-file filename)
       (read-json (if (equal? filename "-")
                      stdin
                      (open-input-file filename)))) ; note: no need to close port
 
-   (define (read-json-string str)
-      (define json (try-parse json-parser (str-iter str) #f))
-      (if json (car json)))
 
    (define (write-json json port)
       (print-json-with (lambda (what) (display-to port what)) json))
