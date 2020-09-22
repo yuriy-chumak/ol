@@ -172,9 +172,12 @@
                                     (Headers-Line (ref request 2)))
                                  (print id ": Request-Line: \e[0;34m" Request-Line "\e[0;0m")
                                  (print id ": Headers-Line: " Headers-Line)
-                                 (if (null? Request-Line)
-                                    (close (send "HTTP/1.0 400 Bad Request\r\n\r\n400"))
-                                    (onRequest fd Request-Line Headers-Line send close))
+                                 (cond
+                                    ((null? Request-Line)
+                                       (close (send "HTTP/1.0 400 Bad Request\r\n\r\n400")))
+                                    (else
+                                       (define Body stream)
+                                       (onRequest fd Request-Line Headers-Line Body close)))
                                  (print "ok."))
                               #false))
                   (loop stream)))))
