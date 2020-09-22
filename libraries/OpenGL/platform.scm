@@ -1,8 +1,11 @@
-; Platform independent OpenGL Library part
 (define-library (OpenGL platform)
+   (version 1.1)
+   (license MIT/LGPL3)
+   (description
+      "Platform-specific types and definitions for OpenGL")
+
 (export
 
-   ; todo: move types (except required) to version files
    ; GL types
    ; https://www.opengl.org/wiki/OpenGL_Type
    GLenum                     ; unsigned 32-bit
@@ -32,7 +35,7 @@
    glHint
    glViewport
 
-   ; WGL/GLX/CGL/EGL/... universal functions
+   ; WGL/GLX/CGL/EGL/... platform functions
    gl:GetProcAddress
 
    gl:CreateContext ; context creation
@@ -50,7 +53,6 @@
    ; internal variables
    GL_LIBRARY
 
-   (exports (otus lisp))
    (exports (otus ffi)))
 
 ; ============================================================================
@@ -90,14 +92,13 @@
 
          (setq WGL GL_LIBRARY)
          (setq GDI (load-dynamic-library "gdi32.dll"))
-
          (setq GetProcAddress (WGL type-vptr "wglGetProcAddress" type-string))
 
          (define gl:CreateContext (WGL type-vptr "wglCreateContext" fft-void*))
          (define gl:MakeCurrent (WGL fft-int "wglMakeCurrent" fft-void* fft-void*))
 
          (define gl:SwapBuffers
-            (let ((SwapBuffers (GDI fft-int "SwapBuffers"    fft-void*)))
+            (let ((SwapBuffers (GDI fft-int "SwapBuffers" fft-void*)))
                (lambda (context)
                   (SwapBuffers (ref context 1)))))
 
@@ -124,7 +125,7 @@
          (define (gl:MakeCurrent . args) #false)
          (define (gl:SwapBuffers . args) #false)
    ))
-
+   ; -=( Android )=-----------
    ; it means that we trying to use OpenGL under undroid
    ; and at this moment OpenGL context already created and activated through OpenGL ES (in lib gl)
    (Android ; through gl4es
@@ -141,7 +142,7 @@
             #false)
          (define GetProcAddress (EGL type-vptr "eglGetProcAddress" type-string))
          (print "GetProcAddress: " GetProcAddress)
-         ))
+   ))
 
    ; -=( Unknown )=--
    ;"HP-UX"
@@ -232,7 +233,8 @@
             (let*((glXQueryExtensionsString (GLX type-string "glXQueryExtensionsString" type-vptr fft-int))
                   (display (XOpenDisplay #false))
                   (screen  (XDefaultScreen display)))
-               (if glXQueryExtensionsString (case-lambda
+               (if glXQueryExtensionsString
+                  (case-lambda
                      ((display screen)
                         (glXQueryExtensionsString display screen))
                      (()
@@ -241,6 +243,8 @@
    (else
       (begin
          (define glXQueryExtensionsString (lambda args #false)))))
+
+; common part
 (begin
 (import (owl regex))
 (setq split (string->regex "c/ /"))

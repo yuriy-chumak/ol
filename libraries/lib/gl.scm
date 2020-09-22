@@ -267,7 +267,7 @@
                                  ;(y (int32->ol XEvent (if x32? ? ?)))
                                  (w (int32->ol XEvent (if x32? 36 56)))
                                  (h (int32->ol XEvent (if x32? 40 60))))
-                              (handler ['resize w h])))
+                              (handler ['resize w h]))) ; todo: add x y, change to 'configure
                         (else ;
                            (print "Unknown window event: " (int32->ol XEvent 0))))
                      (loop XEvent))))))

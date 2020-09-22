@@ -331,7 +331,7 @@
       ))
 
    (else
-      (runtime-error "ffi: unknown platform endianness" *uname*)))
+      (runtime-error "ffi: unsupported platform endianness" *uname*)))
 
 ;; (cond-expand
 ;;    (little-endian
