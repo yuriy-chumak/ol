@@ -50,5 +50,5 @@
             (function (GetProcAddress name)))
          (if function
          (lambda args
-            (exec ffi function rtty args)))))
+            (execve ffi function rtty args)))))
 ))

@@ -385,7 +385,7 @@
             (define gl4es (dlopen))
             (define LIBGL_BEGINEND #xA10D)  (glHint LIBGL_BEGINEND 0)
             (define initialize_gl4es (dlsym gl4es "initialize_gl4es"))
-            (exec ffi initialize_gl4es (cons fft-int #null) #null)
+            (execve ffi initialize_gl4es (cons fft-int #null) #null)
 
             (print-to stderr "OpenGL version: " (glGetString GL_VERSION))
             (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))

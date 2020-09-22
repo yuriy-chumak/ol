@@ -9,7 +9,7 @@
          (function (syscall 177 dll (c-string name))))
       (if function
       (lambda args
-         (exec ffi function rtty args)))))
+         (execve ffi function rtty args)))))
 
 (define user32_dll (dlopen "user32" 0))
   (define IDOK 1)

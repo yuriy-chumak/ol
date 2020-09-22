@@ -96,7 +96,7 @@
       make-vptr-array
 
       ; function for boxing and unboxing single values
-      box unbox exec
+      box unbox execve
 
       ; fft data manipulation helpers
       vptr->bytevector vptr->string
@@ -114,7 +114,7 @@
 (define (uname) (syscall 63))
 (define *uname* (syscall 63))
 
-(define (exec function . args) (syscall 59 function args))
+(define (execve function . args) (syscall 59 function args))
 
 
 ; The MODE argument to `dlopen' contains one of the following:
@@ -177,13 +177,13 @@
                   (function (dlsym dll name)))
                (if function
                   (lambda args
-                     (exec ffi function rtti args))))))))
+                     (execve ffi function rtti args))))))))
 
 (define (make-vptr) (vm:cast 0 type-vptr))
 
 (define ffi:mkcb (dlsym (dlopen) "OL_mkcb"))
 (define (make-callback pinned-object)
-   (exec ffi:mkcb pinned-object))
+   (execve ffi:mkcb pinned-object))
 
 
 ; Calling Conventions
@@ -230,19 +230,19 @@
 (define fft-uint64 58) (define fft-uint64* (fft* fft-uint64)) (define fft-uint64& (fft& fft-uint64))
 
 ; platform dependent defaults
-(define fft-char fft-int8)               (assert (exec ffi:sizeof 1) ===> 1) ; sizeof(char) == 1
+(define fft-char fft-int8)               (assert (execve ffi:sizeof 1) ===> 1) ; sizeof(char) == 1
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-uint8)
 
-(define fft-short fft-int16)             (assert (exec ffi:sizeof 2) ===> 2) ; sizeof(short) == 2
+(define fft-short fft-int16)             (assert (execve ffi:sizeof 2) ===> 2) ; sizeof(short) == 2
 (define fft-signed-short fft-int16)
 (define fft-unsigned-short fft-uint16)
 
-(define fft-int fft-int32)               (assert (exec ffi:sizeof 3) ===> 4) ; sizeof(int) == 4
+(define fft-int fft-int32)               (assert (execve ffi:sizeof 3) ===> 4) ; sizeof(int) == 4
 (define fft-signed-int fft-int32)
 (define fft-unsigned-int fft-uint32)
 
-(define fft-long-long fft-int64)         (assert (exec ffi:sizeof 4) ===> 8) ; sizeof(long long) == 8
+(define fft-long-long fft-int64)         (assert (execve ffi:sizeof 4) ===> 8) ; sizeof(long long) == 8
 (define fft-signed-long-long fft-int64)
 (define fft-unsigned-long-long fft-uint64)
 
@@ -250,7 +250,7 @@
 ; size of long depends on OS and machine word size:
 ; ia32/amd64: https://software.intel.com/en-us/articles/size-of-long-integer-type-on-different-architecture-and-os
 ; arm32/64: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/ch08s02.html
-(define fft-long (if (eq? (exec ffi:sizeof 9) 4) fft-int32 fft-int64))
+(define fft-long (if (eq? (execve ffi:sizeof 9) 4) fft-int32 fft-int64))
 (define fft-signed-long fft-long)
 (define fft-unsigned-long (+ fft-long 5))
 
