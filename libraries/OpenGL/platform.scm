@@ -246,37 +246,22 @@
 
 ; common part
 (begin
-(import (owl regex))
-(setq split (string->regex "c/ /"))
-(define (gl:QueryExtension extension)
-   (for-each (λ (s) (display-to stderr s)) (list "Checking " extension " support...")) ; debug info
-   (let ((extensions (split (or
-            (cond
-               ; GLX, Linux
-               ((and (> (size extension) 3) (string-eq? (substring extension 0 4) "GLX_"))
-                  (glXQueryExtensionsString))
-               ; all others
-               (else
-                  (glGetString GL_EXTENSIONS)))
-            ; if no extensions - use empty string:
-            ""))))
-      (if (member extension extensions)
-         (begin (print-to stderr " ok.") #true)
-         (begin (print-to stderr " not found.") #false))))
+   (define display-to (lambda (fd . args)
+      (for-each (λ (s) (display-to fd s)) args)))
 
-
-   ;; (let ((string (append '(#\space) (string->bytes extensions) '(#\space)))
-   ;;       (substr (append '(#\space) (string->bytes extension) '(#\space))))
-   ;; (if ; fasl manual findstr implementation
-   ;;    (let iter ((string string))
-   ;;       (or
-   ;;          (let loop ((one string) (two substr))
-   ;;             (if (null? two)
-   ;;                #true
-   ;;                (if (not (null? one))
-   ;;                   (if (eq? (car one) (car two))
-   ;;                      (loop (cdr one) (cdr two))))))
-   ;;          (if (not (null? string))
-   ;;             (iter (cdr string)))))
-
+   (define (gl:QueryExtension extension)
+      (display-to stderr "Checking " extension " support...") ; debug info
+      (let ((extensions (c/ / (or ; split by space character
+               (cond
+                  ; GLX, Linux
+                  ((and (> (size extension) 3) (string-eq? (substring extension 0 4) "GLX_"))
+                     (glXQueryExtensionsString))
+                  ; all others
+                  (else
+                     (glGetString GL_EXTENSIONS)))
+               ; if no extensions - use empty string:
+               ""))))
+         (if (member extension extensions)
+            (begin (print-to stderr " ok.") #true)
+            (begin (print-to stderr " not found.") #false))))
 ))
