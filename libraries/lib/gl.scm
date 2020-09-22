@@ -22,7 +22,7 @@
    gl:set-renderer
    gl:set-mouse-handler
    gl:set-keyboard-handler
-   gl:set-expose-handler ;todo: rename to reshape-handler
+   gl:set-resize-handler ;todo: rename to reshape-handler
    gl:finish ; if renderer exists - wait for window close, else just glFinish
 
    gl:window-dimensions
@@ -120,7 +120,7 @@
          (define (native:disable-context context)
             #false)
          (define (native:process-events context handler)
-            ; todo: process 'expose event
+            ; todo: process 'resize event
             #false)
 
          (define (gl:SetWindowTitle context title)
@@ -209,15 +209,15 @@
                   (vi (glXChooseVisual display screen
                         (list
                            4 ; GLX_RGBA
-                           8  (get config 'red 5) ; GLX_RED_SIZE
-                           9  (get config 'green 6) ; GLX_GREEN_SIZE
-                          10  (get config 'blue 5) ; GLX_BLUE_SIZE
+                           8  (get config 'red #xFFFFFFFF) ; GLX_RED_SIZE = GLX_DONT_CARE
+                           9  (get config 'green #xFFFFFFFF) ; GLX_GREEN_SIZE = GLX_DONT_CARE
+                          10  (get config 'blue #xFFFFFFFF) ; GLX_BLUE_SIZE = GLX_DONT_CARE
                           12  (get config 'depth 24) ; GLX_DEPTH_SIZE
                            5 ; GLX_DOUBLEBUFFER
                            0)))); None
 
                ; common code
-               (XSelectInput display window 32773) ; ExposureMask | KeyPressMask | ButtonPressMask
+               (XSelectInput display window #b100000000000000101) ; StructureNotifyMask | KeyPressMask | ButtonPressMask
                (XStoreName display window title)
                (XMapWindow display window)
                (let ((cx (gl:CreateContext display vi #false 1)))
@@ -261,13 +261,13 @@
                                  (button (int32->ol XEvent (if x32? 52 84))))
                               (handler ['mouse button x y])))
                         (5 #f) ; ButtonRelease
-                        (12; Expose
-                           (let ((x (int32->ol XEvent (if x32? 20 40)))
-                                 (y (int32->ol XEvent (if x32? 24 44)))
-                                 (w (int32->ol XEvent (if x32? 28 48)))
-                                 (h (int32->ol XEvent (if x32? 32 52))))
-                              ;(print "x: " x ", y: " y ", width: " w ", height: " h)
-                              (handler ['expose x y w h])))
+                        (22 ; ConfigureNotify
+                           ;(print "ConfigureNotify: " XEvent)
+                           (let (;(x (int32->ol XEvent (if x32? ? ?)))
+                                 ;(y (int32->ol XEvent (if x32? ? ?)))
+                                 (w (int32->ol XEvent (if x32? 36 56)))
+                                 (h (int32->ol XEvent (if x32? 40 60))))
+                              (handler ['resize w h])))
                         (else ;
                            (print "Unknown window event: " (int32->ol XEvent 0))))
                      (loop XEvent))))))
@@ -554,7 +554,7 @@
       (begin
          (fork-server 'opengl (lambda ()
          (let this ((dictionary {
-               'expose-handler glViewport}))
+               'resize-handler (lambda (w h) (glViewport 0 0 w h))}))
             (let*((envelope (wait-mail))
                   (sender msg envelope))
                (case msg
@@ -588,7 +588,7 @@
          ; automation
          (fork-server 'opengl (lambda ()
          (let this ((dictionary {
-               'expose-handler glViewport}))
+               'resize-handler (lambda (w h) (glViewport 0 0 w h))}))
          (cond
             ; блок обработки сообщений
             ((check-mail) => (lambda (e) ; can be (and (eq? something 0) (check-mail)) =>
@@ -642,10 +642,10 @@
                         (this dictionary))
 
                      ; renderer
-                     (['set-expose-handler expose-handler]
-                        (if expose-handler
-                           (expose-handler (ref STATE 1) (ref STATE 2) (ref STATE 3) (ref STATE 4)))
-                        (this (put dictionary 'expose-handler expose-handler)))
+                     (['set-resize-handler resize-handler]
+                        (if resize-handler
+                           (resize-handler (ref STATE 3) (ref STATE 4)))
+                        (this (put dictionary 'resize-handler resize-handler)))
 
                      (else
                         (print-to stderr "Unknown opengl server command " msg)
@@ -662,14 +662,14 @@
                               ((get dictionary 'keyboard-handler (lambda (key) #f)) key))
                            (['mouse button x y]
                               ((get dictionary 'mouse-handler (lambda (x y) #f)) button x y))
-                           (['expose x y width height]
-                              (set-ref! STATE 1 x) ; save current window dimensions
-                              (set-ref! STATE 2 y)
+                           (['resize width height]
+                              (set-ref! STATE 1 0) ; save current window dimensions
+                              (set-ref! STATE 2 0)
                               (set-ref! STATE 3 width)
                               (set-ref! STATE 4 height)
 
-                              (let ((expose-handler (get dictionary 'expose-handler #f)))
-                                 (if expose-handler (expose-handler x y width height))))
+                              (let ((resize-handler (get dictionary 'resize-handler #f)))
+                                 (if resize-handler (resize-handler width height))))
                            (else
                               (print "unknown event: " event)))))))
                ; проделаем все действия
@@ -760,7 +760,7 @@
 (define (gl:set-keyboard-handler handler)
    (mail 'opengl ['set 'keyboard-handler handler]))
 
-(define (gl:set-expose-handler handler)
-   (mail 'opengl ['set-expose-handler handler]))
+(define (gl:set-resize-handler handler)
+   (mail 'opengl ['set-resize-handler handler]))
 
 ))

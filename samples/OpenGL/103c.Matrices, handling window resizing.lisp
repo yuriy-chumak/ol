@@ -8,9 +8,9 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
-(gl:set-expose-handler (lambda (x y width height)
-   (print "new dimensions: " x " " y " " width " " height)
-   (glViewport x y width height)))
+(gl:set-resize-handler (lambda (width height)
+   (print "new dimensions: " width " " height)
+   (glViewport 0 0 width height)))
 
 (define started (let*((ss ms (clock))) (cons ss ms)))
 

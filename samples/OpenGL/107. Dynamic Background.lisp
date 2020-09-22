@@ -28,11 +28,11 @@
 ))
 
 (define scale 2618/571) ; magic "average aspect ratio" number
-(define window (list 0 0))
-(gl:set-expose-handler (lambda (x y width height)
+(define window [0 0])
+(gl:set-resize-handler (lambda (width height)
    (set-ref! window 1 width)
    (set-ref! window 2 height)
-   (glViewport x y width height)))
+   (glViewport 0 0 width height)))
 
 (define left (box 0)) ; left border position
 (define speed 240) ; magic "slowdown" number

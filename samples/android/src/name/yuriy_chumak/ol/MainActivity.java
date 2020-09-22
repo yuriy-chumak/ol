@@ -85,7 +85,7 @@ public class MainActivity extends Activity
         Log.i(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
 
         GLES20.glViewport(0, 0, width, height); // temp
-        //eval("print", "todo: call /expose event/ with ", width, " ", height);
+        //eval("print", "todo: call /resize event/ with ", width, " ", height);
     }
 
     public static native void nativeSetAssetManager(AssetManager am);
