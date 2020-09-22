@@ -28,8 +28,6 @@
       (define is-equal #true)
       (define is-greater '())
 
-      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
-
       (define (compare-bytes a b pos end)
          (if (eq? pos end)
             is-equal
@@ -235,42 +233,37 @@
             ;   (list GOTO-CLOS (reg op) n))
             ;; todo: all jumps could have parameterized lengths (0 = 1-byte, n>0 = 2-byte, being the max code length)
             (['jeq a b then else]
-               (lets
-                  ((then (assemble then fail))
-                   (else (assemble else fail))
-                   (len (length else)))
+               (let*((then (assemble then fail))
+                     (else (assemble else fail))
+                     (len (length else)))
                   (cond
                      ((< len #xffff) (ilist JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (['jz a then else] ; todo: merge next four cases into one
-               (lets
-                  ((then (assemble then fail))
-                   (else (assemble else fail))
-                   (len (length else)))
+               (let*((then (assemble then fail))
+                     (else (assemble else fail))
+                     (len (length else)))
                   (cond
                      ((< len #xffff) (ilist JZ (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (['jn a then else]
-               (lets
-                  ((then (assemble then fail))
-                   (else (assemble else fail))
-                   (len (length else)))
+               (let*((then (assemble then fail))
+                     (else (assemble else fail))
+                     (len (length else)))
                   (cond
                      ((< len #xffff) (ilist JN (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (['je a then else]
-               (lets
-                  ((then (assemble then fail))
-                   (else (assemble else fail))
-                   (len (length else)))
+               (let*((then (assemble then fail))
+                     (else (assemble else fail))
+                     (len (length else)))
                   (cond
                      ((< len #xffff) (ilist JE (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (['jf a then else]
-               (lets
-                  ((then (assemble then fail))
-                   (else (assemble else fail))
-                   (len (length else)))
+               (let*((then (assemble then fail))
+                     (else (assemble else fail))
+                     (len (length else)))
                   (cond
                      ((< len #xffff) (ilist JF (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
@@ -298,10 +291,9 @@
                (let* ((insts (allocate-registers insts)))
                   (if (not insts)
                      (runtime-error "failed to allocate registers" "")
-                     (let*/cc ret
-                        ((fail (λ (why) (runtime-error "Error in bytecode assembly: " why) #false))
-                         (bytes (assemble insts fail))
-                         (len (length bytes)))
+                     (let*/cc ret  ((fail (λ (why) (runtime-error "Error in bytecode assembly: " why) #false))
+                                    (bytes (assemble insts fail))
+                                    (len (length bytes)))
                         (if (> len #xffff)
                            (runtime-error "too much bytecode: " len))
                         (bytes->bytecode
