@@ -2254,7 +2254,7 @@ mainloop:;
 	// 5, 6 - free
 	//#		define SYSCALL_POLL 7
 	// 12 - reserved for memory functions
-	#		define SYSCALL_BRK 12
+	// #		define SYSCALL_BRK 12
 	// 14 - todo: set signal handling
 
 	#		ifndef SYSCALL_IOCTL
