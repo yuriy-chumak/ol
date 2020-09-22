@@ -39,6 +39,7 @@ glDrawArrays
    (exports (OpenGL version-1-5)))
 
    (import (scheme core)
+      (owl string)
       (OpenGL version-1-5))
 (begin
    (define GL_VERSION_2_0 1)
@@ -87,7 +88,7 @@ glDrawArrays
 (let ((po (glCreateProgram))
       (vs (glCreateShader GL_VERTEX_SHADER))
       (fs (glCreateShader GL_FRAGMENT_SHADER)))
-   (if (= po 0)
+   (if (eq? po 0)
       (runtime-error "Can't create shader program." #f))
 
    ; пример, как можно передать в функцию массив указателей на строки:
