@@ -20,6 +20,15 @@ exists = $(shell echo "\
 	   return $3();\
 	}" |$(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
 
+offsetof = $(shell OFFSETOF=`mktemp /tmp/offsetof.XXXXXXXXX`; \
+	trap "{ rm -f $$OFFSETOF; }" EXIT; \
+	echo "\
+	void main() {\
+	   printf(\"%d\", offsetof(XConfigureEvent,width));\
+	}" |$(CC) -xc - \
+	          -include X11/Xlib.h -include stdio.h $3\
+	          -o $$OFFSETOF 2>stderr && $$OFFSETOF)
+
 doc/olvm.md: src/olvm.c extensions/ffi.c
 	cat src/olvm.c extensions/ffi.c| ./makedoc >doc/olvm.md
 
@@ -286,6 +295,19 @@ libraries/owl/math/infix.scm: make-math-infix.scm vm
 	./vm repl make-math-infix.scm >$@
 
 
+# computing native x11 variables
+ifeq ($(UNAME),Linux)
+oneliner = $(shell echo "'|$1.$2| (if x86? $(call offsetof,$1,$2,-m32) $(call offsetof,$1,$2,-m64))")
+libraries/lib/x11/config.scm:
+	@echo "(define-library (lib x11 config)\n\
+	(export config)\n\
+	(import (scheme core))\n\
+	(begin\n\
+	   (setq x86? (eq? (size (vm:cast 0 type-vptr)) 4))\n\
+	   (define config {\n\
+	   })\n\
+	))">$@
+endif
 
 # embed sample
 embed: tests/embed.c src/olvm.c extensions/embed.h tmp/repl.c
