@@ -47,7 +47,7 @@
                   (glXChooseFBConfig display screen visual_attribs fbcount))
                ;; (print "fbcount: " (unbox fbcount))
                (define fbc (vptr->bytevector fbc* (* (size nullptr) (unbox fbcount))))
-               (define bestFbc (extract-void* fbc 0))
+               (define bestFbc (bytevector->void* fbc 0))
                ;; (define vi (glXGetVisualFromFBConfig display bestFbc))
 
                (define contextAttribs (list

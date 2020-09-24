@@ -183,7 +183,7 @@
                   ;;         12  24 ; GLX_DEPTH_SIZE
                   ;;          0))); None
                   ;; (XVisualInfo (vptr->bytevector vi 64)) ; sizeof(XVisualInfo) = 64
-                  ;; ; *unless (eq? 4 (class (int32->ol XVisualInfo 24))) (halt "TrueColor visual required for this program") ; offsetof(XVisualInfo, class)
+                  ;; ; *unless (eq? 4 (class (bytevector->int32 XVisualInfo 24))) (halt "TrueColor visual required for this program") ; offsetof(XVisualInfo, class)
                   ;; ;(cx (gl:CreateContext display vi #false 1))
 
                   ;; (visual (vector->vptr XVisualInfo 0)) ;
@@ -253,14 +253,14 @@
                   (begin
                      (XNextEvent display XEvent)
                      ; https://tronche.com/gui/x/xlib/events/types.html
-                     (case (int32->ol XEvent 0)
+                     (case (bytevector->int32 XEvent 0)
                         (2 ; KeyPress
-                           (handler ['keyboard (int32->ol XEvent (config '|XKeyEvent.keycode|))]))
+                           (handler ['keyboard (bytevector->int32 XEvent (config '|XKeyEvent.keycode|))]))
                         (3 #f) ; KeyRelease
                         (4 ; ButtonPress
-                           (let ((x (int32->ol XEvent (config '|XButtonEvent.x|)))
-                                 (y (int32->ol XEvent (config '|XButtonEvent.y|)))
-                                 (button (int32->ol XEvent (config '|XButtonEvent.button|))))
+                           (let ((x (bytevector->int32 XEvent (config '|XButtonEvent.x|)))
+                                 (y (bytevector->int32 XEvent (config '|XButtonEvent.y|)))
+                                 (button (bytevector->int32 XEvent (config '|XButtonEvent.button|))))
                               (handler ['mouse button x y])))
                         (5 #f) ; ButtonRelease
                         (17 #f); DestroyNotify
@@ -268,13 +268,13 @@
                         (21 #f) ; ReparentNotify
                         (22 ; ConfigureNotify
                            ;(print "ConfigureNotify: " XEvent)
-                           (let (;(x (int32->ol XEvent (if x32? ? ?)))
-                                 ;(y (int32->ol XEvent (if x32? ? ?)))
-                                 (w (int32->ol XEvent (config '|XConfigureEvent.width|)))
-                                 (h (int32->ol XEvent (config '|XConfigureEvent.height|))))
+                           (let (;(x (bytevector->int32 XEvent (if x32? ? ?)))
+                                 ;(y (bytevector->int32 XEvent (if x32? ? ?)))
+                                 (w (bytevector->int32 XEvent (config '|XConfigureEvent.width|)))
+                                 (h (bytevector->int32 XEvent (config '|XConfigureEvent.height|))))
                               (handler ['resize w h]))) ; todo: add x y, change to 'configure
                         (else ;
-                           (print "Unknown window event: " (int32->ol XEvent 0))))
+                           (print "Unknown window event: " (bytevector->int32 XEvent 0))))
                      (loop XEvent))))))
 
          ; ---

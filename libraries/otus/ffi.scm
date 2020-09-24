@@ -56,8 +56,6 @@
       fft* ; make c-like pointer from type
       fft& ; make c-like reference from type
 
-      int32->ol   ; fft-void* -> int32 number ; temp
-
       ; platforem independent types
       fft-int8  fft-int8*  fft-int8&
       fft-int16 fft-int16* fft-int16& ; signed 16-bit value
@@ -92,9 +90,12 @@
       box unbox execve
 
       ; fft data manipulation helpers
-      vptr->bytevector vptr->string
-      extract-void*
-      extract-number
+      vptr->bytevector ;vptr->string
+      bytevector->void*
+      bytevector->int32
+      bytevector->int64
+
+      bytevector->integer
    )
 
    (import
@@ -310,38 +311,38 @@
 (cond-expand
    (little-endian
       (begin
-         (define (int32->ol vector offset)
-            (+     (ref vector    offset   )
-               (<< (ref vector (+ offset 1))  8)
-               (<< (ref vector (+ offset 2)) 16)
-               (<< (ref vector (+ offset 3)) 24)))
-         (define (int64->ol vector offset)
-            (+     (ref vector    offset   )
-               (<< (ref vector (+ offset 1))  8)
-               (<< (ref vector (+ offset 2)) 16)
-               (<< (ref vector (+ offset 3)) 24)
-               (<< (ref vector (+ offset 4)) 32)
-               (<< (ref vector (+ offset 5)) 40)
-               (<< (ref vector (+ offset 6)) 48)
-               (<< (ref vector (+ offset 7)) 56)))
+         (define (bytevector->int32 bvec offset)
+            (+     (ref bvec    offset   )
+               (<< (ref bvec (+ offset 1))  8)
+               (<< (ref bvec (+ offset 2)) 16)
+               (<< (ref bvec (+ offset 3)) 24)))
+         (define (bytevector->int64 bvec offset)
+            (+     (ref bvec    offset   )
+               (<< (ref bvec (+ offset 1))  8)
+               (<< (ref bvec (+ offset 2)) 16)
+               (<< (ref bvec (+ offset 3)) 24)
+               (<< (ref bvec (+ offset 4)) 32)
+               (<< (ref bvec (+ offset 5)) 40)
+               (<< (ref bvec (+ offset 6)) 48)
+               (<< (ref bvec (+ offset 7)) 56)))
       ))
 
    (big-endian
       (begin
-         (define (int32->ol vector offset)
-            (+     (ref vector (+ offset 3))
-               (<< (ref vector (+ offset 2))  8)
-               (<< (ref vector (+ offset 1)) 16)
-               (<< (ref vector    offset   ) 24)))
-         (define (int64->ol vector offset)
-            (+     (ref vector (+ offset 7))
-               (<< (ref vector (+ offset 6))  8)
-               (<< (ref vector (+ offset 5)) 16)
-               (<< (ref vector (+ offset 4)) 24)
-               (<< (ref vector (+ offset 3)) 32)
-               (<< (ref vector (+ offset 2)) 40)
-               (<< (ref vector (+ offset 1)) 48)
-               (<< (ref vector    offset   ) 56)))
+         (define (bytevector->int32 bvec offset)
+            (+     (ref bvec (+ offset 3))
+               (<< (ref bvec (+ offset 2))  8)
+               (<< (ref bvec (+ offset 1)) 16)
+               (<< (ref bvec    offset   ) 24)))
+         (define (bytevector->int64 bvec offset)
+            (+     (ref bvec (+ offset 7))
+               (<< (ref bvec (+ offset 6))  8)
+               (<< (ref bvec (+ offset 5)) 16)
+               (<< (ref bvec (+ offset 4)) 24)
+               (<< (ref bvec (+ offset 3)) 32)
+               (<< (ref bvec (+ offset 2)) 40)
+               (<< (ref bvec (+ offset 1)) 48)
+               (<< (ref bvec    offset   ) 56)))
       ))
 
    (else
@@ -360,7 +361,7 @@
 
 (begin
 
-   (define (extract-void* bvec offset)
+   (define (bytevector->void* bvec offset)
       (let ((void* (make-vptr)))
          (map (lambda (i j) ; for-each
                (set-ref! void* i (ref bvec j)))
@@ -372,43 +373,26 @@
       (syscall 9 vptr sizeof))
 
 
-; TODO: change this
+   (define (bytevector->integer bvec offset length)
+      (let ((number
+               (fold (lambda (val offs)
+                        (+ (<< val 8) (ref bvec offs)))
+                  0 (reverse (iota length offset))))
+            (max (<< 1 (* 8 length))))
+         (if (<= number (>> max 1))
+            number
+            (- number max))))
 
-;; (define (extract-void* vector offset)
-;;    ;; TODO:
-;;    ;; (let ((void* (make-vptr)))
-;;    ;;    (map (lambda (i j) ; for-each
-;;    ;;          (print (ref vector j)))
-;;    ;;          ;(set-ref! void* i (ref vector j)))
-;;    ;;       (iota (size void*) 0)
-;;    ;;       (iota (size void*) offset))
-;;    ;;    void*))
-;;    (vm:cast
-;;       (fold (lambda (val offs)
-;;                (+ (<< val 8) (ref vector offs)))
-;;          0 (reverse (iota (size nullptr) offset)))
-;;       type-vptr))
+   ;; (setq wordsize (size nullptr))
 
-(define (extract-number bvec offset length)
-   (let ((number
-            (fold (lambda (val offs)
-                     (+ (<< val 8) (ref bvec offs)))
-               0 (reverse (iota length offset))))
-         (max (<< 1 (* 8 length))))
-      (if (<= number (>> max 1))
-         number
-         (- number max))))
-
-(setq wordsize (size nullptr))
-
-(define (vptr->string vptr)
-   (fold string-append "#x"
-      (map (lambda (i)
-            (let ((hex "0123456789abcdef"))
-               (list->string (list
-                  (ref hex (>> (ref vptr i) 4))
-                  (ref hex (band (ref vptr i) 15))))))
-         (reverse (iota wordsize))))) ; todo: use (vm:endiannes)
+   ;; (define (vptr->string vptr)
+   ;;    (fold string-append "#x"
+   ;;       (map (lambda (i)
+   ;;             (let ((hex "0123456789abcdef"))
+   ;;                (list->string (list
+   ;;                   (ref hex (>> (ref vptr i) 4))
+   ;;                   (ref hex (band (ref vptr i) 15))))))
+   ;;          (reverse (iota wordsize))))) ; todo: use (vm:endiannes)
 
 
 
