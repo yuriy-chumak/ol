@@ -21,7 +21,7 @@
       load-dynamic-library
 
 
-      ffi sizeof uname *uname*
+      ffi #|sizeof|# uname *uname*
 
       make-vptr
       make-callback
@@ -260,24 +260,24 @@
 (define fft-int* (fft* fft-int))
 (define fft-int& (fft& fft-int))
 
-; -- sizeof ---------------------------
-(define (sizeof fft)
-   (cond
-      ((value? fft)
-         (case fft ; todo: rework
-            (fft-int8  1)
-            (fft-uint8  1)
-            (fft-int16 2)
-            (fft-uint16 2)
-            (fft-int32 4)
-            (fft-uint32 4)
-            (fft-int64 8)
-            (fft-uint64 8)
-            (fft-float 4)
-            (fft-double 8)
-            (fft-void* (size nullptr))))
-      ((list? fft)
-         (fold (lambda (f el) (+ f (sizeof el))) 0 type))))
+;; ; -- sizeof ---------------------------
+;; (define (sizeof fft)
+;;    (cond
+;;       ((value? fft)
+;;          (case fft ; todo: rework
+;;             (fft-int8  1)
+;;             (fft-uint8  1)
+;;             (fft-int16 2)
+;;             (fft-uint16 2)
+;;             (fft-int32 4)
+;;             (fft-uint32 4)
+;;             (fft-int64 8)
+;;             (fft-uint64 8)
+;;             (fft-float 4)
+;;             (fft-double 8)
+;;             (fft-void* (size nullptr))))
+;;       ((list? fft)
+;;          (fold (lambda (f el) (+ f (sizeof el))) 0 type))))
 
 ; -- utils ----------------------------
 
