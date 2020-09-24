@@ -40,9 +40,6 @@
       ; olvm callable type
       type-callable
 
-      fft-float
-      fft-double
-
       fft-void fft-void* fft-void**
 
       fft-unknown
@@ -78,17 +75,13 @@
 
       fft-int*  fft-int&
 
-      ; special "variable length on different platforms" type 'long'
-      ; windows, ia32: 4 bytes
-      ; windows, ia64: 4 bytes
-      ; linux, ia32:   4 bytes
-      ; linux, ia64:   8 bytes
-      ; macosx, ia32:  4 bytes
-      ; macosx, ia64:  8 bytes
       fft-long  fft-signed-long  fft-unsigned-long
       fft-long-long fft-signed-long-long fft-unsigned-long-long
 
       fft-enum
+
+      fft-float
+      fft-double
 
       ; fft data constructors
       make-32bit-array
@@ -294,23 +287,23 @@
 
 ; -- utils ----------------------------
 
-   ; boxing/unboxing
-   (define (box value)
-      (list value))
-   (define (unbox list)
-      (car list))
+; boxing/unboxing
+(define (box value)
+   (list value))
+(define (unbox list)
+   (car list))
 
-   ; makers
-   (define (make-32bit-array len)
-      (map (lambda (_) 16777216) (repeat #f len)))
+; makers
+(define (make-32bit-array len)
+   (map (lambda (_) 16777216) (repeat #f len)))
 
-   (define (make-64bit-array len)
-      (map (lambda (_) 72057594037927936) (repeat #f len)))
+(define (make-64bit-array len)
+   (map (lambda (_) 72057594037927936) (repeat #f len)))
 
-   (define (make-vptr-array len)
-      (map (lambda (_) (make-vptr)) (repeat #f len)))
+(define (make-vptr-array len)
+   (map (lambda (_) (make-vptr)) (repeat #f len)))
 
-)
+);begin
 
 ; ---------------------------------
 ; endianness dependent functions
@@ -340,7 +333,15 @@
                (<< (ref vector (+ offset 2))  8)
                (<< (ref vector (+ offset 1)) 16)
                (<< (ref vector    offset   ) 24)))
-         ; tbd.
+         (define (int64->ol vector offset)
+            (+     (ref vector (+ offset 7))
+               (<< (ref vector (+ offset 6))  8)
+               (<< (ref vector (+ offset 5)) 16)
+               (<< (ref vector (+ offset 4)) 24)
+               (<< (ref vector (+ offset 3)) 32)
+               (<< (ref vector (+ offset 2)) 40)
+               (<< (ref vector (+ offset 1)) 48)
+               (<< (ref vector    offset   ) 56)))
       ))
 
    (else
