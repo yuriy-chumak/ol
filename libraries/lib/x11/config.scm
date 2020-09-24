@@ -3,5 +3,14 @@
 (import (scheme core) (owl ff))
 (begin
    (setq x86? (eq? (size (vm:cast 0 type-vptr)) 4))
-   (define config {})
+   (define config {
+      '|sizeof XEvent| (if x86? 96 192)
+      '|XKeyEvent.keycode| (if x86? 52 84)
+      '|XButtonEvent.x| (if x86? 32 64)
+      '|XButtonEvent.y| (if x86? 36 68)
+      '|XButtonEvent.button| (if x86? 52 84)
+      '|XConfigureEvent.width| (if x86? 32 56)
+      '|XConfigureEvent.height| (if x86? 36 60)
+      '|XConfigureEvent.width| (if x86? 32 56)
+   })
 ))
