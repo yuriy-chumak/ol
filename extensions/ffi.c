@@ -1165,7 +1165,7 @@ word* OL_ffi(OL* self, word* arguments)
 				break;
 			case TRATIONAL: //?
 				*(int64_t*)&args[i] = from_rational(arg);
-#if UINT64_MAX != UINTPTR_MAX // sizeof(long long) > sizeof(word) //__LP64__
+#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word)
 				i++;
 #endif
 				break;
@@ -1175,7 +1175,7 @@ word* OL_ffi(OL* self, word* arguments)
 			}
 			break;
 
-#if UINT64_MAX != UINTPTR_MAX // 32-bit machines
+#if UINT64_MAX > UINTPTR_MAX // 32-bit machines
 			case TINT64: case TUINT64:
 				if (is_enum(arg))
 					*(int64_t*)&args[i] = enum(arg);
@@ -1193,7 +1193,7 @@ word* OL_ffi(OL* self, word* arguments)
 				default:
 					E("can't cast %d to int64", type);
 				}
-				#if UINT64_MAX > UINTPTR_MAX // sizeof(uint64_t) > sizeof(word) //__LP64__
+				#if UINT64_MAX > UINTPTR_MAX
 					i++; // for 32-bits: long long values fills two words
 				#endif
 			break;
@@ -2076,8 +2076,13 @@ word* OL_ffi(OL* self, word* arguments)
 	return result;
 }
 
-/** This function returns size of variable:
- * 1 - char, 2 - short, 3 - int, 4 - long long, ... , 9 - long
+/** This function returns size of basic types:
+ * 1 - char (signed, unsigned)
+ * 2 - short (signed, unsigned)
+ * 3 - int (signed, unsigned)
+ * 4 - long (signed, unsigned)
+ * ...
+ * 9 - long
  * 10 - float, 11 - double
  * 20 - void*
  */
@@ -2090,13 +2095,13 @@ word OL_sizeof(OL* self, word* arguments)
 		case 1: return I(sizeof(char));
 		case 2: return I(sizeof(short));
 		case 3: return I(sizeof(int));
-		case 4: return I(sizeof(long long));
-
-		case 9: return I(sizeof(long));
+		case 4: return I(sizeof(long));
+		case 5: return I(sizeof(long long));
 
 		// floating point types
 		case 10: return I(sizeof(float));
 		case 11: return I(sizeof(double));
+
 		// general types:
 		case 20: return I(sizeof(void*));
 

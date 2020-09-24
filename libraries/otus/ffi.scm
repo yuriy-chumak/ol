@@ -155,7 +155,6 @@
 
 ; olvm ffi exported functions
 (define ffi (dlsym (dlopen) "OL_ffi"))
-(define ffi:sizeof (dlsym (dlopen) "OL_sizeof"))
 
 ; smart "dlopen/dlsym"
 (define (load-dynamic-library name)
@@ -229,30 +228,44 @@
 (define fft-uint32 57) (define fft-uint32* (fft* fft-uint32)) (define fft-uint32& (fft& fft-uint32))
 (define fft-uint64 58) (define fft-uint64* (fft* fft-uint64)) (define fft-uint64& (fft& fft-uint64))
 
-; platform dependent defaults
-(define fft-char fft-int8)               (assert (execve ffi:sizeof 1) ===> 1) ; sizeof(char) == 1
+; --=( platform dependent defaults )=----
+(define ffi:sizeof (dlsym (dlopen) "OL_sizeof"))
+   (setq |char| 1)
+   (setq |short| 2)
+   (setq |int| 3)
+   (setq |long| 4)
+   (setq |long long| 5)
+
+(define fft-char fft-int8)               (assert (execve ffi:sizeof |char|) ===> 1)
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-uint8)
 
-(define fft-short fft-int16)             (assert (execve ffi:sizeof 2) ===> 2) ; sizeof(short) == 2
+(define fft-short fft-int16)             (assert (execve ffi:sizeof |short|) ===> 2)
 (define fft-signed-short fft-int16)
 (define fft-unsigned-short fft-uint16)
 
-(define fft-int fft-int32)               (assert (execve ffi:sizeof 3) ===> 4) ; sizeof(int) == 4
+(define fft-int fft-int32)               (assert (execve ffi:sizeof |int|) ===> 4)
 (define fft-signed-int fft-int32)
 (define fft-unsigned-int fft-uint32)
-
-(define fft-long-long fft-int64)         (assert (execve ffi:sizeof 4) ===> 8) ; sizeof(long long) == 8
-(define fft-signed-long-long fft-int64)
-(define fft-unsigned-long-long fft-uint64)
-
 
 ; size of long depends on OS and machine word size:
 ; ia32/amd64: https://software.intel.com/en-us/articles/size-of-long-integer-type-on-different-architecture-and-os
 ; arm32/64: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/ch08s02.html
-(define fft-long (if (eq? (execve ffi:sizeof 9) 4) fft-int32 fft-int64))
+; all, ia32: 4 bytes
+; windows, ia64: 4 bytes
+; linux, ia64:   8 bytes
+; macosx, ia64:  8 bytes
+
+(define fft-long (case (execve ffi:sizeof |long|)
+   (4 fft-int32)
+   (8 fft-int64)
+   (else (runtime-error "assertion error: unsupported native 'long' type size"))))
 (define fft-signed-long fft-long)
 (define fft-unsigned-long (+ fft-long 5))
+
+(define fft-long-long fft-int64)         (assert (execve ffi:sizeof |long long|) ===> 8)
+(define fft-signed-long-long fft-int64)
+(define fft-unsigned-long-long fft-uint64)
 
 (define fft-enum fft-int)
 
