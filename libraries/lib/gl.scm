@@ -135,6 +135,7 @@
 
    ; -=( Linux )=------------------------------------------
    (Linux
+      (import (lib x11 config))
       (begin
 
          (setq libX11 (or (load-dynamic-library "libX11.so")
@@ -247,26 +248,30 @@
 
          (define (native:process-events context handler)
             (let ((display (ref context 1)))
-            (let loop ((XEvent (make-bytevector (if x32? 96 192)))) ; 96 for x32
+            (let loop ((XEvent (make-bytevector (config '|sizeof XEvent|)))) ; 96 for x32
                (if (> (XPending display) 0)
                   (begin
                      (XNextEvent display XEvent)
+                     ; https://tronche.com/gui/x/xlib/events/types.html
                      (case (int32->ol XEvent 0)
                         (2 ; KeyPress
-                           (handler ['keyboard (int32->ol XEvent (if x32? 52 84))])) ; offsetof(XKeyEvent, keycode)
+                           (handler ['keyboard (int32->ol XEvent (config '|XKeyEvent.keycode|))]))
                         (3 #f) ; KeyRelease
                         (4 ; ButtonPress
-                           (let ((x (int32->ol XEvent (if x32? 32 64)))
-                                 (y (int32->ol XEvent (if x32? 36 68)))
-                                 (button (int32->ol XEvent (if x32? 52 84))))
+                           (let ((x (int32->ol XEvent (config '|XButtonEvent.x|)))
+                                 (y (int32->ol XEvent (config '|XButtonEvent.y|)))
+                                 (button (int32->ol XEvent (config '|XButtonEvent.button|))))
                               (handler ['mouse button x y])))
                         (5 #f) ; ButtonRelease
+                        (17 #f); DestroyNotify
+                        (19 #f) ; MapNotify
+                        (21 #f) ; ReparentNotify
                         (22 ; ConfigureNotify
                            ;(print "ConfigureNotify: " XEvent)
                            (let (;(x (int32->ol XEvent (if x32? ? ?)))
                                  ;(y (int32->ol XEvent (if x32? ? ?)))
-                                 (w (int32->ol XEvent (if x32? 36 56)))
-                                 (h (int32->ol XEvent (if x32? 40 60))))
+                                 (w (int32->ol XEvent (config '|XConfigureEvent.width|)))
+                                 (h (int32->ol XEvent (config '|XConfigureEvent.height|))))
                               (handler ['resize w h]))) ; todo: add x y, change to 'configure
                         (else ;
                            (print "Unknown window event: " (int32->ol XEvent 0))))
