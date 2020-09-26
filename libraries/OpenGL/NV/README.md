@@ -1,1 +1,1 @@
-Extension from NVIDIA Corporation
+NVIDIA Corporation.

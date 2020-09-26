@@ -1,1 +1,1 @@
-Architecture Review Board approved extension
+OpenGL® ARB approved extensions.

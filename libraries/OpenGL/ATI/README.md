@@ -1,1 +1,1 @@
-Extension from ATI Technologies, Inc. (AMD)
+ATI Technologies, Inc.
