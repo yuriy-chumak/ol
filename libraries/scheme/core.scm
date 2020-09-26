@@ -786,7 +786,9 @@
       ; todo.
 
       ; syntax:  force <expression>
-      (setq force (lambda (thunk) (thunk)))
+      (define-syntax force
+         (syntax-rules ()
+            ((force promise) (promise))))
 
       ; (promise? obj )
       ; todo.
@@ -1885,7 +1887,8 @@
       ;
       ; These predicates define the types boolean, pair, symbol, number, char (or character), string, vector, port, and procedure. The empty list is a special object of its own type; it satisfies none of the above predicates.
       ;
-      ; Although there is a separate boolean type, any Scheme value can be used as a boolean value for the purpose of a conditional test. As explained in section 6.3.1, all values count as true in such a test except for #f. This report uses the word ``true'' to refer to any Scheme value except #f, and the word ``false'' to refer to #f.
+      ; Although there is a separate boolean type, any Scheme value can be used as a boolean value for the purpose of a conditional test. As explained in section 6.3.1, all values count as true in such a test except for #false.
+
       (define (port? o)
          (eq? (type o) type-port))
 
