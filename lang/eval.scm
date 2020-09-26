@@ -243,7 +243,7 @@
       ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
 
       ; interactive parser (with prompt)
-      (define (fd->exp-stream fd prompt parse fail)
+      (define (fd->exp-stream fd prompt parser fail)
          (let loop ((old-data #null) (block? #true) (finished? #false) (display-prompt #true)) ; old-data not successfullt parseable (apart from epsilon)
             (let*((rchunks end?
                      (if finished?
@@ -255,7 +255,7 @@
 
                (if (null? data)
                   (if end? null (loop data #true #false #false))
-                  (parse data
+                  (parser data
                      (λ (data-tail backtrack val pos) ; ok
                         (pair val
                            (if (and finished? (null? data-tail))
