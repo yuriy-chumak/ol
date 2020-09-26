@@ -654,7 +654,7 @@
 
       (define get-number
          (let-parses
-            ((digits (get-kleene+ get-digit)))
+            ((digits (get-greedy+ get-digit)))
             (fold (λ (n d) (+ (* n 10) d)) 0 digits)))
 
       ;; \<suff> → code-point (not acceptor as in get-quoted-char)
@@ -745,7 +745,7 @@
          (let-parses
             ((open (get-imm 91))
              (comp? get-maybe-caret)
-             (charss (get-kleene+ char-class-elem)) ;; todo: [] might also be useful
+             (charss (get-greedy+ char-class-elem)) ;; todo: [] might also be useful
              (close (get-imm 93)))
             (make-char-class comp?
                (foldr append null charss))))
@@ -855,7 +855,7 @@
       (define (get-regex)
          (let-parses
             ((hd (get-catn get-regex))
-             (tl (get-kleene* (let-parses ((skip (get-imm 124)) (rex (get-catn get-regex))) rex))))
+             (tl (get-greedy* (let-parses ((skip (get-imm 124)) (rex (get-catn get-regex))) rex))))
             (fold rex-or hd tl)))
 
       (define get-matcher-regex
@@ -908,20 +908,20 @@
 
       (define get-maybe-g
          (get-either
-            (get-imm 103)
+            (get-imm #\g)
             (get-epsilon #false)))
 
       ;; for testing, s/<regex>/<str>/[g]
       (define get-replace-regex
-         (let-parses
-            ((skip (get-imm 115))  ;; opening s
-             (skip (get-imm 47))  ;; opening /
-             (start? (get-either (get-imm 94) (get-epsilon #false))) ;; maybe get leading ^ (special)
-             (rex (get-regex))
-             (skip (get-imm 47))  ;; delimiting /
-             (rep (get-kleene* get-replace-char))
-             (skip (get-imm 47)) ;; closing /
-             (all? get-maybe-g)) ;; fixme: add other search/replace match than g
+         (let-parses (
+               (skip (get-imm #\s))  ;; opening s
+               (skip (get-imm #\/))  ;; opening /
+               (start? (get-either (get-imm #\^) (get-epsilon #false))) ;; maybe get leading ^ (special)
+               (rex (get-regex))
+               (skip (get-imm #\/))  ;; delimiting /
+               (rep (get-greedy* get-replace-char))
+               (skip (get-imm #\/)) ;; closing /
+               (all? get-maybe-g)) ;; fixme: add other search/replace match than g
             (make-replacer rex rep all? start?)))
 
       (define get-sexp-regex

@@ -96,7 +96,7 @@
    (define get-string (get-either
       (let-parses (
             (skip (get-imm #\"))
-            (chars (get-kleene*
+            (chars (get-greedy*
                      (get-either
                         get-quoted-string-char
                         (get-rune-if (lambda (x) (not (has? (list #\" #\\) x)))))))
@@ -104,7 +104,7 @@
          (runes->string chars))
       (let-parses (
             (skip (get-imm #\'))
-            (chars (get-kleene*
+            (chars (get-greedy*
                      (get-either
                         get-quoted-string-char
                         (get-rune-if (lambda (x) (not (has? (list #\' #\\) x)))))))
@@ -113,7 +113,7 @@
 
    (define get-natural
       (let-parses (
-            (value (get-kleene+ (get-rune-if (lambda (rune) (<= #\0 rune #\9))))))
+            (value (get-greedy+ (get-rune-if (lambda (rune) (<= #\0 rune #\9))))))
          (list->number value 10)))
 
    (define get-number
@@ -145,7 +145,7 @@
                ; objects:
                (let-parses (
                      (/ (get-imm #\{))
-                     (kv (get-kleene*
+                     (kv (get-greedy*
                         (let-parses (
                               (/ maybe-whitespaces)
                               (key get-string)
@@ -153,7 +153,7 @@
                               (/ (get-imm #\:))
                               (value (get-object))
                               (/ maybe-whitespaces)
-                              (/ (get-kleene* (get-byte-if (lambda (x) (eq? x #\,))))))
+                              (/ (get-greedy* (get-byte-if (lambda (x) (eq? x #\,))))))
                            (cons key value))))
                      (/ maybe-whitespaces)
                      (/ (get-imm #\})))
@@ -163,11 +163,11 @@
                ; vectors
                (let-parses (
                      (/ (get-imm #\[))
-                     (value (get-kleene*
+                     (value (get-greedy*
                         (let-parses (
                               (value (get-object))
                               (/ maybe-whitespaces)
-                              (/ (get-kleene* (get-byte-if (lambda (x) (eq? x #\,))))))
+                              (/ (get-greedy* (get-byte-if (lambda (x) (eq? x #\,))))))
                            value)))
                      (/ maybe-whitespaces)
                      (/ (get-imm #\])))

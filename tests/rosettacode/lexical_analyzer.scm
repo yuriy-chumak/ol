@@ -68,12 +68,12 @@
 (define get-identifier
    (let-parses (
          (lead (get-byte-if              (lambda (x) (or (<= #\a x #\z) (<= #\A x #\Z) (= x #\_)))))
-         (tail (get-kleene* (get-byte-if (lambda (x) (or (<= #\a x #\z) (<= #\A x #\Z) (= x #\_) (<= #\0 x #\9)))))))
+         (tail (get-greedy* (get-byte-if (lambda (x) (or (<= #\a x #\z) (<= #\A x #\Z) (= x #\_) (<= #\0 x #\9)))))))
       (cons 'identifier (bytes->string (cons lead tail)))))
 
 (define get-integer
    (let-parses (
-         (main (get-kleene+ (get-byte-if (lambda (x) (<= #\0 x #\9))))) )
+         (main (get-greedy+ (get-byte-if (lambda (x) (<= #\0 x #\9))))) )
       (cons 'integer (string->integer (bytes->string main)))))
 
 (define get-character
@@ -89,7 +89,7 @@
 (define get-string
    (let-parses (
          (_ (get-imm #\"))
-         (data (get-kleene* (get-any-of
+         (data (get-greedy* (get-any-of
             (get-word "\\n" #\newline)
             (get-word "\\\\" #\\)
             (get-byte-if (lambda (x) (not (or (eq? x #\") (eq? x #\newline))))))))
@@ -112,7 +112,7 @@
 
 (define token-parser
    (let-parses (
-         (tokens (get-kleene+ get-token))
+         (tokens (get-greedy+ get-token))
          (_ (get-greedy* get-whitespace)))
       tokens))
 
@@ -159,7 +159,7 @@ print(phoenix_number, \"\\\\n\");
 /* Div     */  /        /* Integer */  42
 /* Mod     */  %        /* String  */  \"String literal\"
 /* Add     */  +        /* Ident   */  variable_name
-/* character literal */  '\\\n'
+/* character literal */  '\\n'
 /* character literal */  '\\\\'
 /* character literal */  ' '
 ")

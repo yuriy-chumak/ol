@@ -247,14 +247,14 @@
                 (skip (get-block-comment)))
                'comment)))
 
-      (define maybe-whitespace (get-kleene* get-a-whitespace))
+      (define maybe-whitespace (get-greedy* get-a-whitespace))
       (define whitespace (get-greedy+ get-a-whitespace))
 
       (define (get-list-of parser)
          (let-parses
             ((lp (get-imm #\())
              (things
-               (get-kleene* parser))
+               (get-greedy* parser))
              (skip maybe-whitespace)
              (tail
                (get-either
@@ -300,7 +300,7 @@
          (let-parses
             ((skip (get-imm #\")) ;"
              (chars
-               (get-kleene*
+               (get-greedy*
                   (get-either
                      get-quoted-string-char
                      (get-rune-if (lambda (x) (not (has? '(#\" #\\) x))))))) ;"
@@ -386,7 +386,7 @@
                         (* (get-imm #\#))
                         (* (get-imm #\())
                         (things
-                           (get-kleene* parser))
+                           (get-greedy* parser))
                         (* maybe-whitespace)
                         (* (get-imm #\))))
                      (cons 'quote things))
@@ -398,7 +398,7 @@
                               (get-epsilon #false)))
                         (* (get-imm #\[))
                         (things
-                           (get-kleene* parser))
+                           (get-greedy* parser))
                         (* maybe-whitespace)
                         (* (get-imm #\])))
                      (cons q things)))))
@@ -417,7 +417,7 @@
                      (get-epsilon #false)))
                (? (get-imm #\{))
                (things
-                  (get-kleene* parser))
+                  (get-greedy* parser))
                (? maybe-whitespace)
                (? (get-imm #\})))
             (if (null? things) ; only lists can be in parsed expression

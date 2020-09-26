@@ -105,7 +105,7 @@
                   (pairs->ff attributes)
                   body)))
          (let-parses (
-               (body (get-kleene* (get-rune-if (lambda (x) (not (eq? x #\<)))))))
+               (body (get-greedy* (get-rune-if (lambda (x) (not (eq? x #\<)))))))
             (if body (runes->string body)))))
 
    (define xml-parser

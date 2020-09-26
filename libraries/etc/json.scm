@@ -153,7 +153,7 @@
 		(let-parses
 			((skip (get-imm lp))
 			 (commad-vals 	
-			 	(get-kleene* 	 ;fixme, could not be greedy here?
+			 	(get-greedy* 	 ;fixme, could not be greedy here?
 					(let-parses
 						((skip maybe-whitespace)
 						 (thing get-elem)

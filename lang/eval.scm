@@ -1032,7 +1032,7 @@
                ['error "cannot open file" env])))
 
       (define (eval-string env str)
-         (let ((exps (parse (get-kleene+ sexp-parser) (str-iter str) #false syntax-fail #false)))
+         (let ((exps (parse (get-greedy+ sexp-parser) (str-iter str) #false syntax-fail #false)))
             ;; list of sexps
             (if exps
                (repl env exps evaluate)

@@ -48,6 +48,10 @@ End_of_input
 (string . String literal)
 (operator . Op_add)
 (identifier . variable_name)
+(character . 10)
+(character . 92)
+(character . 32)
+End_of_input
 
 (keyword . Keyword_print)
 (symbol . LeftParen)

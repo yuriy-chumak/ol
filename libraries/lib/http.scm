@@ -112,7 +112,7 @@
          ((skip (get-imm #\;))
             (skip get-rest-of-line))
          'comment)))
-(define maybe-whitespace (get-kleene* get-a-whitespace))
+(define maybe-whitespace (get-greedy* get-a-whitespace))
 
 (define get-request-line
    (let-parses ((method  (get-greedy+ (get-rune-if A-Z?))) ; GET/POST/etc.

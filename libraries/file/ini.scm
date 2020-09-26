@@ -9,12 +9,12 @@
       (has? '(#\tab #\space #\newline #\return) x))
 
    (define skip-whitespaces
-      (get-kleene* (get-rune-if whitespace?)))
+      (get-greedy* (get-rune-if whitespace?)))
 
    (define get-rest-of-line
       (let-parses
-         ((chars (get-kleene* (get-byte-if (lambda (x) (not (has? '( #\newline #\return) x))))))
-         (skip  (get-kleene+ (get-byte-if (lambda (x) (has? '( #\newline #\return) x))))))
+         ((chars (get-greedy* (get-byte-if (lambda (x) (not (has? '( #\newline #\return) x))))))
+         (skip  (get-greedy+ (get-byte-if (lambda (x) (has? '( #\newline #\return) x))))))
          chars))
 
    (define (between? lo x hi) ; fast version of (<= lo x hi)), where x is rune
@@ -31,7 +31,7 @@
 
    (define get-keyvalue
       (let-parses (
-            (key (get-kleene+ (get-rune-if character?)))
+            (key (get-greedy+ (get-rune-if character?)))
             (* (get-imm #\=))
             (value get-rest-of-line)
             (* skip-whitespaces))
@@ -43,10 +43,10 @@
    (define get-section
       (let-parses (
             (* (get-imm #\[))
-            (name (get-kleene+ (get-rune-if character?)))
+            (name (get-greedy+ (get-rune-if character?)))
             (* (get-imm #\]))
             (* skip-whitespaces)
-            (pairs (get-kleene* get-keyvalue))
+            (pairs (get-greedy* get-keyvalue))
             (* skip-whitespaces))
          (cons
             (string->symbol (bytes->string name))
