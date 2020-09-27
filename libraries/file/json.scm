@@ -15,9 +15,8 @@
       write-json-file)
    (import
       (otus lisp)
-      (lang sexp)
-      (owl parse)
-      (file parser))
+      (owl parse2) ; (file parser)
+      (lang sexp))
 (begin
 
    (define (print-json-with display object)
@@ -65,116 +64,117 @@
                (display "}"))
             )))
 
-   (define get-a-whitespace (get-byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
-   (define maybe-whitespaces (get-greedy* get-a-whitespace))
+   (define whitespace (byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
+   (define maybe-whitespaces (greedy* whitespace))
 
    ; https://www.ietf.org/rfc/rfc4627.txt
    (define quoted-values {
       #\"  #\" ;22
       #\\  #\\ ;5c
       #\/  #\/ ;2f
-      #\b  #x0008
-      #\f  #x000c
-      #\n  #x000a
-      #\r  #x000d
-      #\t  #x0009
+      #\b  #x8
+      #\f  #xc
+      #\n  #xa
+      #\r  #xd
+      #\t  #x9
    })
 
    (define get-quoted-string-char
-      (let-parses (
-            (skip (get-imm #\\))
-            (char (get-either
-                     (let-parses (
-                           (char (get-byte-if (lambda (byte) (getf quoted-values byte)))))
-                        (getf quoted-values char))
-                     (let-parses (
-                           (skip (get-imm #\u))
-                           (hexes (get-n-times 4 get-rune)))
+      (let-parse* (
+            (skip (imm #\\))
+            (char (either
+                     (let-parse* (
+                           (char (byte-if (lambda (byte) (quoted-values byte)))))
+                        (quoted-values char))
+                     (let-parse* (
+                           (skip (imm #\u))
+                           (hexes (epsilon '(1 2 3 4)))) ; TODO: (get-n-times 4 get-rune)))
                         (list->number hexes 16)))))
          char))
 
-   (define get-string (get-either
-      (let-parses (
-            (skip (get-imm #\"))
-            (chars (get-greedy*
-                     (get-either
-                        get-quoted-string-char
-                        (get-rune-if (lambda (x) (not (has? (list #\" #\\) x)))))))
-            (skip (get-imm #\")))
-         (runes->string chars))
-      (let-parses (
-            (skip (get-imm #\'))
-            (chars (get-greedy*
-                     (get-either
-                        get-quoted-string-char
-                        (get-rune-if (lambda (x) (not (has? (list #\' #\\) x)))))))
-            (skip (get-imm #\')))
-         (runes->string chars))))
+   (define string
+      (either
+         (let-parse* (
+               (skip (imm #\"))
+               (chars (greedy*
+                        (either
+                           get-quoted-string-char
+                           (rune-if (lambda (x) (not (has? '(#\" #\\) x)))))))
+               (skip (imm #\")))
+            (runes->string chars))
+         (let-parse* (
+               (skip (imm #\'))
+               (chars (greedy*
+                        (either
+                           get-quoted-string-char
+                           (rune-if (lambda (x) (not (has? '(#\' #\\) x)))))))
+               (skip (imm #\')))
+            (runes->string chars))))
 
-   (define get-natural
-      (let-parses (
-            (value (get-greedy+ (get-rune-if (lambda (rune) (<= #\0 rune #\9))))))
+   (define natural
+      (let-parse* (
+            (value (greedy+ (rune-if (lambda (rune) (<= #\0 rune #\9))))))
          (list->number value 10)))
 
-   (define get-number
-      (let-parses (
-            (signer (get-any-of
-                  (get-word "+" (lambda (x) x))
-                  (get-word "-" (lambda (x) (- x)))
-                  (get-epsilon  (lambda (x) x))))
-            (int get-natural)
-            (frac (get-either
-                        (let-parses (
-                              (skip (get-imm #\.))
-                              (digits (get-greedy* (get-rune-if (lambda (rune) (<= #\0 rune #\9))))))
+   (define number
+      (let-parse* (
+            (signer (any-of
+                  (word "+" (lambda (x) x))
+                  (word "-" (lambda (x) (- x)))
+                  (epsilon  (lambda (x) x))))
+            (int natural)
+            (frac (either
+                        (let-parse* (
+                              (skip (imm #\.))
+                              (digits (greedy* (rune-if (lambda (rune) (<= #\0 rune #\9))))))
                            (/ (list->number digits 10) (expt 10 (length digits))))
-                        (get-epsilon 0))))
+                        (epsilon 0))))
                   ;(pow get-exponent))
                ;(sign (* (+ num tail) pow))))
          (signer (+ int frac))))
 
-   (define (get-object)
-      (let-parses (
-            (/ maybe-whitespaces)
-            (value (get-any-of
-               get-string
-               (get-word "true" #true)
-               (get-word "false" #false)
-               (get-word "null" #null)
-               get-number
+   (define (object)
+      (let-parse* (
+            (/ maybe-whitespaces) ; skip leading whitespaces
+            (value (any-of
+               string
+               (word "true" #true)
+               (word "false" #false)
+               (word "null" #null)
+               number
                ; objects:
-               (let-parses (
-                     (/ (get-imm #\{))
-                     (kv (get-greedy*
-                        (let-parses (
+               (let-parse* (
+                     (/ (imm #\{))
+                     (kv (greedy*
+                        (let-parse* (
                               (/ maybe-whitespaces)
-                              (key get-string)
+                              (key string)
                               (/ maybe-whitespaces)
-                              (/ (get-imm #\:))
-                              (value (get-object))
+                              (/ (imm #\:))
+                              (value (object))
                               (/ maybe-whitespaces)
-                              (/ (get-greedy* (get-byte-if (lambda (x) (eq? x #\,))))))
+                              (/ (greedy* (byte-if (lambda (x) (eq? x #\,))))))
                            (cons key value))))
                      (/ maybe-whitespaces)
-                     (/ (get-imm #\})))
+                     (/ (imm #\})))
                   (fold (lambda (ff kv)
                            (put ff (string->symbol (car kv)) (cdr kv)))
                      #empty kv))
                ; vectors
-               (let-parses (
-                     (/ (get-imm #\[))
-                     (value (get-greedy*
-                        (let-parses (
-                              (value (get-object))
+               (let-parse* (
+                     (/ (imm #\[))
+                     (value (greedy*
+                        (let-parse* (
+                              (value (object))
                               (/ maybe-whitespaces)
-                              (/ (get-greedy* (get-byte-if (lambda (x) (eq? x #\,))))))
+                              (/ (greedy* (byte-if (lambda (x) (eq? x #\,))))))
                            value)))
                      (/ maybe-whitespaces)
-                     (/ (get-imm #\])))
+                     (/ (imm #\])))
                   (list->vector value)))))
          value))
 
-   (define json-parser (get-object))
+   (define json-parser (object))
 
    ; sanity check:
    (assert (car (try-parse json-parser (str-iter "{}") #t))
