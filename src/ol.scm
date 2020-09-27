@@ -70,7 +70,7 @@
 (define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
 (define max-object-size #xffff)  ; todo: change as dependent of word size
 
-(import (owl parse))
+;(import (owl parse))
 
 (import (lang gensym))
 (import (lang env))

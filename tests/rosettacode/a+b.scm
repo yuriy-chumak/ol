@@ -1,3 +1,5 @@
+(import (scheme read))
+
 ; simplest
 (print (+ (read) (read)))
  

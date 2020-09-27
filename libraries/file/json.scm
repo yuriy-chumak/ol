@@ -15,7 +15,7 @@
       write-json-file)
    (import
       (otus lisp)
-      (owl parse2) ; (file parser)
+      (owl parse)
       (lang sexp))
 (begin
 
@@ -88,8 +88,11 @@
                         (quoted-values char))
                      (let-parse* (
                            (skip (imm #\u))
-                           (hexes (epsilon '(1 2 3 4)))) ; TODO: (get-n-times 4 get-rune)))
-                        (list->number hexes 16)))))
+                           (h1 get-rune)
+                           (h2 get-rune)
+                           (h3 get-rune)
+                           (h4 get-rune))
+                        (list->number (list h1 h2 h3 h4) 16)))))
          char))
 
    (define string

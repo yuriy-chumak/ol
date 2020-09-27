@@ -6,7 +6,7 @@
    (scheme core)
    (owl interop) (owl io)
    (scheme vector)
-   (only (lang sexp) get-sexp))
+   (only (lang sexp) sexp))
 
 (begin
 ; --------------------------
@@ -55,15 +55,13 @@
                (else
                   (cons in (non-buffered-input-stream-n (+ n 1)))))))
 
-      ((get-sexp)
-            (non-buffered-input-stream-n 0)
-            (λ (data fail val pos) ; ok
-               (mail server #false)
-               val)
-            (λ (pos reason) ; fail
-               (mail server #false)
-               reason)
-            0))
+      ((sexp)
+         #null
+         (non-buffered-input-stream-n 0)
+         0
+         (λ (left data-tail pos val) ; ok
+            (mail server #false)
+            val)))
 
    ; public function
    (define read (case-lambda

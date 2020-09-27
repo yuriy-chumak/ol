@@ -11,7 +11,7 @@
       (exports (scheme vector))
       (exports (scheme bytevector))
 
-      (exports (scheme read))
+      ;(exports (scheme read))
       (exports (scheme misc)) ; string->number
 
       (exports (owl list))
@@ -41,7 +41,7 @@
       (scheme srfi-1)
       (scheme srfi-87)
       (scheme base)
-      (scheme read)
+      ;(scheme read)
 
       (owl list)
       (owl rlist)

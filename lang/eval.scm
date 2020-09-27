@@ -46,7 +46,7 @@
       (owl render)
       (owl string)
       (lang sexp)
-      (owl parse)
+      (only (owl parse) parse) ; needed by eval-string
       (owl string)
       (scheme misc)
       (owl lazy)
@@ -255,23 +255,31 @@
 
                (if (null? data)
                   (if end? null (loop data #true #false #false))
-                  (parser data
-                     (λ (data-tail backtrack val pos) ; ok
+                  (parser #null data 0
+                     ;; (λ (data-tail backtrack val pos) ; ok
+                     (λ (left data-tail pos val) ; ok
                         (pair val
                            (if (and finished? (null? data-tail))
                               null
-                              (loop data-tail (null? data-tail) end? (null? data-tail)))))
-                     (λ (pos info) ; fail
-                        (cond
-                           (end?
-                              ; parse failed and out of data -> must be a parse error, like unterminated string
-                              (list (fail pos info data)))
-                           ((= pos (length data))
-                              ; parse error at eof and not all read -> get more data
-                              (loop data #true end? #false))
-                           (else
-                              (list (fail pos info data)))))
-                     0)))))
+                              (loop data-tail (null? data-tail) end? (null? data-tail))))))
+                  ;; (parser data
+                  ;;    (λ (data-tail backtrack val pos) ; ok
+                  ;;       (pair val
+                  ;;          (if (and finished? (null? data-tail))
+                  ;;             null
+                  ;;             (loop data-tail (null? data-tail) end? (null? data-tail)))))
+                  ;;    (λ (pos info) ; fail
+                  ;;       (cond
+                  ;;          (end?
+                  ;;             ; parse failed and out of data -> must be a parse error, like unterminated string
+                  ;;             (list (fail pos info data)))
+                  ;;          ((= pos (length data))
+                  ;;             ; parse error at eof and not all read -> get more data
+                  ;;             (loop data #true end? #false))
+                  ;;          (else
+                  ;;             (list (fail pos info data)))))
+                  ;;    0)
+                     ))))
 
    ; (parser ll ok fail pos)
    ;      -> (ok ll' fail' val pos)
@@ -1032,7 +1040,7 @@
                ['error "cannot open file" env])))
 
       (define (eval-string env str)
-         (let ((exps (parse (get-greedy+ sexp-parser) (str-iter str) #false syntax-fail #false)))
+         (let ((exps (parse get-sexps (str-iter str) #false syntax-fail #false)))
             ;; list of sexps
             (if exps
                (repl env exps evaluate)

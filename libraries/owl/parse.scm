@@ -1,294 +1,498 @@
-;;;
-;;; owl cfg parsing combinators and macros
-;;;
-
 (define-library (owl parse)
-
    (export
-      let-parses ; parser constructor
-      let-parse* ; same as let-parses
+      let-parse*
+      backtrack
 
-      get-byte   ; elementary parsers
-      get-byte-if
+      epsilon ;ε
+
+      either ;either!
+      maybe
+      any-of ;any-of!
+
+      greedy*
+      greedy+
+
+      byte
+      byte-if
+      byte-between
+
+      imm ; todo: rename
+      word
+
+      rune
+      rune-if
+
+      ;; star
+      ;; plus
+      ;; parse-head
+      parse                ;; parser data fail-val → result | fail-val (if no full match)
+      try-parse
+      ;; first-match          ;; parser data fail-val → result data'
+
+      ;; byte-stream->exp-stream
+      ;; fd->exp-stream
+      ;; file->exp-stream
+      ;; silent-syntax-fail
+      ;; resuming-syntax-fail ;; error-msg → _
+
+      ;; backward compatibility
+      let-parses
       get-epsilon ;ε
-      get-rune
-      get-rune-if
-      get-imm
-      get-word
-      get-word-ci       ; placeholder
-      get-one-of
-      get-either
-      get-any-of
+
+      get-either ;either!
+      get-maybe
+      get-any-of ;any-of!
+
       get-greedy*
       get-greedy+
 
-      parse try-parse)         ; full stream and partial stream parsers. x ll x path|#false x errmsg|#false x fail-val
+      get-byte
+      get-byte-if
+      get-byte-between
+
+      get-imm ; todo: rename
+      get-word
+
+      get-rune
+      get-rune-if
+
+      )
 
    (import
       (scheme base)
-      (scheme char)
-
-      (owl lazy)
-      (owl math)
-      (owl list)
-      (owl string)
-      (owl list-extra)
       (owl unicode)
-      (owl io)
-      (owl render)
-      (owl interop))
+   )
 
    (begin
 
-      ; parser format:
-      ; (parser ll ok fail pos)
-      ;      -> (ok ll' fail' val pos)
-      ;      -> (fail fail-pos fail-msg')
+      ;; Why = #(pos message <rest>)
+      ;;
+      ;; (parser l r p ok) ; left, right, position, ok
+      ;;   → (ok l' r' p' val) | (backtrack l r p why)
+      ;   ... → l|#f r p' result|error
 
       (define-syntax let-parse*
-         (syntax-rules (verify eval)
-            ((let-parse* 42 sc ft lst pos ((val (eval term)) . r) body) ; sc-ok, ft-fail
+         (syntax-rules (verify eval backtrack)
+            ((let-parse* 42 l r p ok ((val (eval term)) . rest) body)
                (let ((val term))
-                  (let-parse* 42 sc ft lst pos r body)))
-            ((let-parse* 42 ok fail stream pos ((val parser) . r) body)
-               (parser stream
-                  (λ (stream fail val pos) ; next ok
-                     (let-parse* 42 ok fail stream pos r body))
-                  fail pos))
-            ((let-parse* 42 sc ft lst pos () body) (sc lst ft body pos))
-            ((let-parse* 42 sc fail lst pos ((verify term msg) . r) body)
+                  (let-parse* 42 l r p ok rest body)))
+            ((let-parse* 42 l r p ok ((val parser) . rest) body)
+               (parser l r p
+                  (λ (l r p val)
+                     (let-parse* 42 l r p ok rest body))))
+            ((let-parse* 42 l r p ok () body)
+               (ok l r p body))
+            ((let-parse* 42 l r p ok ((verify term msg) . rest) body)
                (if term
-                  (let-parse* 42 sc fail lst pos r body)
-                  (fail pos msg))) ; bug: not showing error message
+                  (let-parse* 42 l r p ok rest body)
+                  (backtrack l r p msg)))
             ((let-parse* ((a . b) ...) body)
-               (λ (ll ok fail pos)
-                  (let-parse* 42 ok fail ll pos ((a . b) ...) body)))))
+               (λ (l r p ok)
+                  (let-parse* 42 l r p ok ((a . b) ...) body)))
+            ((let-parse* ((a . b) ...) first . rest)
+               (let-parse* ((a . b) ...) (begin first . rest)))))
 
-      (define-syntax let-parses
+
+      ;; bactrtrack function : l r fp why
+      (define (backtrack l r p why)
+         (if (null? l)
+            (values #f r p why) ;; final outcome if error
+            (let ((hd (car l)))
+               (if (char? hd)
+                  (backtrack (cdr l) (cons hd r) p why)
+                  (hd (cdr l) r p why)))))
+
+      (define eof-error "end of input")
+      (define wrong-char "syntax error")
+
+      (define (epsilon val)
+         (λ (l r p ok)
+            (ok l r p val)))
+
+      (define ε epsilon)
+
+      (define (either a b)
+         (λ (l r p ok)
+            (a (cons (λ (l r fp why) (b l r p ok)) l) r p ok)))
+
+      ;; (define (either! a b)
+      ;;    (λ (l r p ok)
+      ;;       (a
+      ;;          (cons
+      ;;             (λ (l r fp why)
+      ;;                (if (= fp p) ;; nothing matched
+      ;;                   (b l r p ok)
+      ;;                   (backtrack l r fp why)))
+      ;;             l)
+      ;;          r p ok)))
+
+      (define (maybe x val)
+         (either x
+            (epsilon val)))
+
+      (define-syntax any-of
          (syntax-rules ()
-            ((let-parses . body)
-               (let-parse* . body))))
+            ((any-of a) a)
+            ((any-of a b) (either a b))
+            ((any-of a b . c) (either a (any-of b . c)))))
 
+      ;; (define-syntax one-of!
+      ;;    (syntax-rules ()
+      ;;       ((one-of! a) a)
+      ;;       ((one-of! a b) (either! a b))
+      ;;       ((one-of! a b . c) (either! a (one-of! b . c)))))
 
-      (define (get-either a b)
-         (λ (lst ok fail pos)
-            (a lst ok
-               (λ (fa fai)
-                  (b lst ok (λ (fb fbi) (if (< fa fb) (fail fb fbi) (fail fa fai))) pos))
-               pos)))
-
-      (define-syntax get-any-of
-         (syntax-rules ()
-            ((get-any-of a) a)
-            ((get-any-of a b) (get-either a b))
-            ((get-any-of a . bs)
-               (get-either a (get-any-of . bs)))))
-
-
-      ; read nothing, succeed with val
-      (define (get-epsilon val)
-         (λ (ll ok fail pos)
-            (ok ll fail val pos)))
-
-
-      (define (get-greedy* parser)
-         (get-either
-            (let-parse* (
-                  (head parser)
-                  (tail (get-greedy* parser)))
-               (cons head tail))
-            (get-epsilon #null)))
-
-      (define (get-greedy+ what)
-         (let-parse* (
-               (head what)
-               (tail (get-greedy* what)))
-            (cons head tail)))
-
-
-      ; read a byte
-      (define (get-byte stream ok fail pos)
+      ; greedy...
+      (define (drop l x)
          (cond
-            ((null? stream)
-               (fail pos "end of input"))
-            ((pair? stream)
-               (ok (cdr stream) fail (car stream) (+ pos 1)))
+            ((eq? (car l) x)
+               (cdr l))
+            ((char? (car l))
+               (cons (car l) (drop (cdr l) x)))
             (else
-               (get-byte (force stream) ok fail pos))))
+               (drop (cdr l) x))))
+
+      (define (greedy-star-vals a vals)
+         (λ (l r p ok)
+            (let ((bt (λ (l r fp why) (ok l r p (reverse vals)))))
+               (a
+                  (cons bt l)
+                  r
+                  p
+                  (λ (l r p val)
+                     ((greedy-star-vals a (cons val vals))
+                        (drop l bt) r p ok))))))
+
+      (define (greedy* v)
+         (greedy-star-vals v #null))
 
 
-      ; read a predefined value
-      (define (get-imm value)
+      (define (greedy+ a)
          (let-parse* (
-               (byte get-byte)
-               (verify (eq? byte value) `(expected ,value)))
-            value))
+               (first a)
+               (rest (greedy* a)))
+            (cons first rest)))
 
+      ;; (define star! greedy-star)
+      ;; (define plus! greedy-plus)
 
-      ; read a byte by predicate
-      (define (get-byte-if pred)
+      ; actual readings
+
+      (define (byte l r p ok)
+         (cond
+            ((null? r) (backtrack l r p eof-error))
+            ((pair? r) (ok (cons (car r) l) (cdr r) (+ p 1) (car r)))
+            (else      (byte l (r) p ok))))
+
+      (define (byte-if pred)
+         ; question: why not a simple version?
          (let-parse* (
-               (byte get-byte)
-               (verify (pred byte) `(bad byte ,byte)))
-            byte))
+               (b byte)
+               (verify (pred b) `(bad byte ,b)))
+            b))
+         ;; (λ (l r p ok)
+         ;;    (cond
+         ;;       ((null? r)
+         ;;          (backtrack l r p eof-error))
+         ;;       ((pair? r)
+         ;;          (let* ((x xt r))
+         ;;             (if (pred x)
+         ;;                (ok (cons x l) xt (+ p 1) x)
+         ;;                (backtrack l r p wrong-char))))
+         ;;       (else
+         ;;          ((byte-if pred) l (r) p ok)))))
 
-      (define (get-one-of bytes)
-         (get-byte-if (λ (x) (has? bytes x))))
-
-      (define (get-between below above)
-         (get-byte-if
+      (define (byte-between below above)
+         (byte-if
             (λ (x)
                (and (less? below x) (less? x above)))))
 
+      ;; (define (peek-byte pred)
+      ;;    (λ (l r p ok)
+      ;;       (cond
+      ;;          ((null? r)
+      ;;             (backtrack l r p eof-error))
+      ;;          ((pair? r)
+      ;;             (if (pred (car r))
+      ;;                (ok l r p (car r))
+      ;;                (backtrack l r p wrong-char)))
+      ;;          (else
+      ;;             ((peek-byte pred) l (r) p ok)))))
 
-      (define (get-word str val)
-         (define bytes (string->runes str))
-         (λ (lst ok fail pos)
-            (let loop ((bytes bytes) (lst lst) (fail fail) (pos pos))
-               (if (null? bytes)
-                  (ok lst fail val pos)
-                  (get-byte lst
-                     (λ (lst fail byte pos)
-                        (if (eq? byte (car bytes))
-                           (loop (cdr bytes) lst fail pos)
-                           (fail pos `(expected "'" ,(runes->string bytes) "'"))))
-                     fail pos)))))
+      (define (imm x)
+         ; todo: test which version is faster?
+         (let-parse* (
+               (b byte)
+               (verify (eq? b x) `(expected ,x)))
+            x))
+         ;; (λ (l r p ok)
+         ;;    (cond
+         ;;       ((null? r)
+         ;;          (backtrack l r p eof-error))
+         ;;       ((pair? r)
+         ;;          (if (eq? (car r) x)
+         ;;             (ok (cons x l) (cdr r) (+ p 1) x)
+         ;;             (backtrack l r p `(expected byte ,x))))
+         ;;       (else
+         ;;          ((imm x) l (r) p ok)))))
 
-      (define (get-word-ci str val)
-         (define bytes (string->runes str))
-         (λ (lst ok fail pos)
-            (let loop ((bytes bytes) (lst lst) (fail fail) (pos pos))
-               (if (null? bytes)
-                  (ok lst fail val pos)
-                  (get-byte lst
-                     (λ (lst fail byte pos)
-                        (if (char-ci=? byte (car bytes))
-                           (loop (cdr bytes) lst fail pos)
-                           (fail pos `(expected "'" ,(runes->string bytes) "'"))))
-                     fail pos)))))
 
+      ;; (define (seq a b)
+      ;;    (λ (l r p ok)
+      ;;       (a l r p
+      ;;          (λ (l r p av)
+      ;;             (b l r p
+      ;;                (λ (l r p bv)
+      ;;                   (ok l r p (cons av bv))))))))
+
+      ;; (define (star-vals a vals)
+      ;;    (λ (l r p ok)
+      ;;       (a
+      ;;          (cons
+      ;;             (λ (l r fp why)
+      ;;                 (ok l r p (reverse vals)))
+      ;;             l)
+      ;;          r
+      ;;          p
+      ;;          (λ (l r p val)
+      ;;             ((star-vals a (cons val vals)) l r p ok)))))
+
+      ;; (define (C f y) (λ (x) (f x y)))
+
+      ;; (define star
+      ;;    (lambda (x)
+      ;;       (star-vals x #null))
+
+      ;; (define (plus parser)
+      ;;    (parses
+      ;;       ((a parser)
+      ;;        (as (star parser)))
+      ;;       (cons a as)))
+
+      (define (word s val)
+         ; question: why not a limple version?
+         ; todo: remake
+         (let ((bytes (string->bytes s)))
+            (λ (l r p ok)
+               (let loop ((l l) (r r) (p p) (left bytes))
+                  (cond
+                     ((null? left)
+                        (ok l r p val))
+                     ((null? r)
+                        (backtrack l r p eof-error))
+                     ((pair? r)
+                        (if (eq? (car r) (car left))
+                           (loop (cons (car r) l) (cdr r) (+ p 1) (cdr left))
+                           (backtrack l r p `(expected ,(car left)))))
+                     (else
+                        (loop l (r) p left)))))))
+
+      ; todo: word-ci
 
       ; #b10xxxxxx
-      (define get-extension-byte
+      (define extension-byte
          (let-parse* (
-               (b get-byte)
+               (b byte)
                (verify (eq? (vm:and b #b11000000) #b10000000) "Bad extension byte"))
             b))
 
       ; get an utf-8 character
-      (define get-rune
-         (get-any-of
-            (get-byte-if (λ (x) (less? x 128)))
+      (define rune
+         (any-of
+            (byte-if (λ (x) (less? x 128)))
             (let-parse* (
-                  (a (get-between 127 224))
+                  (a (byte-between 127 224))
                   ; note: two byte sequence #b11000000 10xxxxxx is invalid
                   (verify (not (eq? a #b11000000)) "invalid utf-8 stream")
-                  (b get-extension-byte))
+                  (b extension-byte))
                (two-byte-point a b))
             (let-parse* (
-                  (a (get-between 223 240))
+                  (a (byte-between 223 240))
                   ; note: three byte sequence #b11100000 10xxxxxx 10xxxxxx is valid!
-                  (b get-extension-byte) (c get-extension-byte))
+                  (b extension-byte) (c extension-byte))
                (three-byte-point a b c))
             (let-parse* (
-                  (a (get-between 239 280))
+                  (a (byte-between 239 280))
                   ; note: four byte sequence #b11110000 10xxxxxx 10xxxxxx 10xxxxxx is valid!
-                  (b get-extension-byte) (c get-extension-byte) (d get-extension-byte))
+                  (b extension-byte) (c extension-byte) (d extension-byte))
                (four-byte-point a b c d))))
 
-      (define (get-rune-if pred)
+      (define (rune-if pred)
          (let-parse* (
-               (rune get-rune)
+               (rune rune)
                (verify (pred rune) `(bad rune ,rune)))
             rune))
 
 
-      ;;;
-      ;;; Port data streaming and parsing
-      ;;;
+      (define (parser-succ l r p v)
+         (values l r p v))
 
-      ; this is fairly distinct from the rest of lib-parse, because it mainly deals with
-      ; IO operation sequencing.
 
-      ; notice that this difficulty comes from owl not havign side-effects on data structures
-      ; even in the VM level, ruling out lazy lists and and manually mutated streams, which
-      ; are usually used in functional parsers.
-
-      ;; (define (stdio-port? port)
-      ;;    (let ((stdioports (list stdin stdout stderr)))
-      ;;       (has? stdioports port)))
-
-      (define (print-syntax-error reason bytes posn)
-         (print-to stderr reason)
-         (write-bytes stderr '(#\space #\space #\space)) ; indent by 3 spaces
-         (write-bytes stderr (cons #\' (append (force-ll bytes) '(#\' #\newline))))
-         (write-bytes stderr (repeat #\space (+ posn 4))) ; move to right position
-         (write-bytes stderr '(#\^ #\newline)))
-
-      ; find the row where the error occurs
-      ; keep the row number stored so it can be shown in output
-      (define (print-row-syntax-error path reason bytes err-posn)
-         (let row-loop ((row 1) (bytes bytes) (pos 0) (rthis null))
-            (cond
-               ((null? bytes)
-                  (for-each (λ (x) (display-to stderr x)) (list path ":" row " "))
-                  (print-syntax-error reason (reverse rthis) (- pos err-posn)))
-               ((not (pair? bytes)) ; force
-                  (row-loop row (bytes) pos rthis))
-               ((= (car bytes) 10)
-                  (if (> err-posn pos)
-                     (row-loop (+ row 1) (cdr bytes) (+ pos 1) null)
-                     (begin
-                        (for-each display (list path ":" row " "))
-                        (print-syntax-error reason (reverse rthis) (- (length rthis) (+ 1 (- pos err-posn)))))))
-               (else
-                  (row-loop row (cdr bytes) (+ pos 1) (cons (car bytes) rthis))))))
-
-      (define (has-newline? ll)
+      ; todo: move to (owl lazy)
+      (define (lpair? ll)
          (cond
             ((null? ll) #false)
-            ((not (pair? ll)) (has-newline? (force ll)))
-            ((eq? (car ll) 10) #true)
-            (else (has-newline? (cdr ll)))))
-
-      ; can be unforced
-      (define (null-ll? ll)
-         (cond
-            ((null? ll) #true)
-            ((pair? ll) #false)
-            (else (null-ll? (force ll)))))
+            ((pair? ll) ll)
+            (else (lpair? (ll)))))
 
 
-      ; try to parse all of data with given parser, or return fail-val
-      ; printing a nice error message if maybe-error-msg is given
-      (define (parse parser data maybe-path maybe-error-msg fail-val)
-         (parser data
-            (λ (data fail val pos)
-               (if (null-ll? data)
-                  ; all successfully parsed
-                  val
-                  ; something unparsed. backtrack.
-                  (fail pos "out of data")))
-            (λ (pos reason)
-               ; print error if maybe-error-msg is given
-               (if maybe-error-msg
-                  (if (or maybe-path (has-newline? data))
-                     (print-row-syntax-error
-                        (or maybe-path "input")
-                        (if (eq? maybe-error-msg #true) reason maybe-error-msg) data pos)
-                     (print-syntax-error (if (eq? maybe-error-msg #true) reason maybe-error-msg) data (- pos 1)))) ; is the one from preceding newlines?
-               fail-val)
-            0))
 
-      ; returns pair (parsed-value . rest-of-stream) or #false if error
+      ;; (define (parse-head parser ll def)
+      ;;    (let* ((l r p val (parser #n ll 0 parser-succ)))
+      ;;       (if l (cons val r) def)))
+
+      ;; ;; computes rest of parser stream
+      ;; (define (silent-syntax-fail val)
+      ;;    (λ (cont ll msg) val))
+
+      ;; (define (fast-forward ll)
+      ;;    (if (pair? ll)
+      ;;       (fast-forward (cdr ll))
+      ;;       ll))
+
+      ;; (define (whitespace? ll)
+      ;;    (cond
+      ;;       ((null? ll) #t)
+      ;;       ((not (pair? ll)) #f)
+      ;;       ((memq (car ll) '(#\newline #\space #\return #\tab))
+      ;;          (whitespace? (cdr ll)))
+      ;;       (else #f)))
+
+      ;; (define (resuming-syntax-fail error-reporter)
+      ;;    (λ (cont ll msg)
+      ;;       ;; this is a bit of a hack
+      ;;       ;; allow common whitespace at end of input, because parsers typically define structure
+      ;;       ;; only up to last byte byte needed for recognition in order to avoid blocking
+      ;;       (let ((rest (fast-forward ll)))
+      ;;          (if (and (null? rest) (whitespace? ll))
+      ;;             (cont #n)
+      ;;             (begin
+      ;;                (error-reporter msg)
+      ;;                (cont rest))))))
+
+      ;; (define (stopping-syntax-fail error-reporter)
+      ;;    (λ (cont ll msg)
+      ;;       (let ((rest (fast-forward ll)))
+      ;;          (if (and (null? rest) (whitespace? ll))
+      ;;             (cont #n)
+      ;;             (begin
+      ;;                (error-reporter msg)
+      ;;                (cont rest))))))
+
+      ;; ;; ll parser (ll r val → ?) → ll
+      ;; (define (byte-stream->exp-stream ll parser fail)
+      ;;    (λ ()
+      ;;       (let* ((lp r p val (parser #n ll 0 parser-succ)))
+      ;;          (cond
+      ;;             (lp ;; something parsed successfully
+      ;;                (pair val (byte-stream->exp-stream r parser fail)))
+      ;;             ((null? r) ;; end of input
+      ;;                ;; typically there is whitespace, so this does not happen
+      ;;                #n)
+      ;;             ((function? fail)
+      ;;                (fail
+      ;;                   (λ (ll) (byte-stream->exp-stream ll parser fail))
+      ;;                    r val))
+      ;;             (else
+      ;;                #n)))))
+
+      ;; (define (fd->exp-stream fd parser fail)
+      ;;    (byte-stream->exp-stream (port->byte-stream fd) parser fail))
+
+      ;; (define (file->exp-stream path parser fail)
+      ;;    ;(print "file->exp-stream: trying to open " path)
+      ;;    (let ((fd (open-input-file path)))
+      ;;       ;(print "file->exp-stream: got fd " fd)
+      ;;       (if fd
+      ;;          (fd->exp-stream fd parser fail)
+      ;;          #false)))
+
+      ;; ;; this api is kind of ugly, simplify
+      ;; ;; this is badly named when prefixed as usual. parse?
       (define (try-parse parser data show-error)
-         (parser data
-            (λ (data fail val pos)
-               (cons val data))
-            (λ (pos reason)
-               ; print error if maybe-error-msg is given
-               (if show-error
-                  (print-syntax-error reason data (- pos 1)))
-               #false)
-            0))
+         (let loop ((try (λ () (parser #null data 0 parser-succ))))
+            (let* ((l r p val (try)))
+               (cond
+                  ((not l)
+                     ;; (if fail-fn
+                     ;;    (loop (λ () (fail-fn 0 #n)))
+                     ;;    #false))
+                     #false) ; todo: print an error
+                  ((lpair? r) =>
+                     (cons val r))
+                     ;; (λ (r)
+                     ;;    (loop (λ () (backtrack l r p "trailing garbage")))))
+                  (else
+                     ;; full match
+                     (list val)))))) ; '(val . #null)
+
+      (define (parse parser data unused-path errmsg fail-val) ; todo: use path
+         (let loop ((try (λ () (parser #null data 0 parser-succ))))
+            (let* ((l r p val (try)))
+                (cond
+                  ((not l)
+                     fail-val)
+                  ((lpair? r) =>
+                     (λ (r)
+                        ;; trailing garbage
+                        fail-val))
+                  (else
+                     ;; full match
+                     val)))))
+
+      ;; (define (first-match parser data fail-val)
+      ;;    (let loop ((try (λ () (parser #n data 0 parser-succ))))
+      ;;       (let* ((l r p val (try)))
+      ;;           (cond
+      ;;             ((not l)
+      ;;                (values fail-val r p))
+      ;;             (else
+      ;;                (values val r p))))))
+
+
+      (define get-epsilon epsilon)
+
+      (define get-either either)
+      (define get-maybe maybe)
+      (define-syntax get-any-of
+         (syntax-rules ()
+            ((get-any-of a) a)
+            ((get-any-of a b) (either a b))
+            ((get-any-of a b . c) (either a (get-any-of b . c)))))
+
+      (define get-greedy* greedy*)
+      (define get-greedy+ greedy+)
+
+      (define get-byte byte)
+      (define get-byte-if byte-if)
+      (define get-byte-between byte-between)
+
+      (define get-imm imm); todo: rename
+      (define get-word word)
+
+      (define get-rune rune)
+      (define get-rune-if rune-if)
+
+      (define-syntax let-parses
+         (syntax-rules (verify eval backtrack)
+            ((let-parses 42 l r p ok ((val (eval term)) . rest) body)
+               (let ((val term))
+                  (let-parses 42 l r p ok rest body)))
+            ((let-parses 42 l r p ok ((val parser) . rest) body)
+               (parser l r p
+                  (λ (l r p val)
+                     (let-parses 42 l r p ok rest body))))
+            ((let-parses 42 l r p ok () body)
+               (ok l r p body))
+            ((let-parses 42 l r p ok ((verify term msg) . rest) body)
+               (if term
+                  (let-parses 42 l r p ok rest body)
+                  (backtrack l r p msg)))
+            ((let-parses ((a . b) ...) body)
+               (λ (l r p ok)
+                  (let-parses 42 l r p ok ((a . b) ...) body)))
+            ((let-parses ((a . b) ...) first . rest)
+               (let-parses ((a . b) ...) (begin first . rest)))))
+
 ))
+

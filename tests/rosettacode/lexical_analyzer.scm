@@ -120,7 +120,7 @@
 (define (translate source)
    (let ((stream (try-parse token-parser (str-iter source) #t)))
       (for-each print (car stream))
-      (if (null? (force (cdr stream)))
+      (if (null? (cdr stream))
          (print 'End_of_input))))
 
 
