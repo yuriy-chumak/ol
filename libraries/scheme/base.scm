@@ -198,6 +198,7 @@
    string->symbol
    string->utf8
    string->vector
+   string->bytes   ; *ol
    string-append
       ;; string-copy
       ;; string-copy!
