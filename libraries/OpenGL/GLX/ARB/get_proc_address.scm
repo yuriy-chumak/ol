@@ -12,7 +12,9 @@
 ; --------------------------------------------------------------------------
 ; Dependencies
 ;     None
-(import (OpenGL platform))
+(import
+   (scheme core)
+   (OpenGL platform))
 
 ; --------------------------------------------------------------------------
 (export GLX_ARB_get_proc_address
