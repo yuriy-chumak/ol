@@ -29,7 +29,7 @@
       (let ((event (make-SDL_Event)))
          (let event-loop ()
             (unless (eq? (SDL_PollEvent event) 0)
-               (let ((type (int32->ol event 0)))
+               (let ((type (bytevector->int32 event 0)))
                   (case type
                      (SDL_QUIT (break))
                      (else

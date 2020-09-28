@@ -25,7 +25,9 @@
 (glClearColor 0.11 0.11 0.11 1)
 (glOrtho 0 WIDTH 0 HEIGHT 0 1)
 
-(glPointSize (/ 854 WIDTH))
+(gl:set-resize-handler (lambda (width height)
+   (glViewport 0 0 width height)
+   (glPointSize (/ width WIDTH))))
 
 ; generate random field
 (gl:set-userdata

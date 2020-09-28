@@ -31,9 +31,13 @@
 (gl:set-window-title "Convey's The game of Life")
 (import (OpenGL version-1-0))
 
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0.11 0.11 0.11 1)
-   (glOrtho 0 WIDTH 0 HEIGHT 0 1)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0.11 0.11 0.11 1)
+(glOrtho 0 WIDTH 0 HEIGHT 0 1)
+
+(gl:set-resize-handler (lambda (width height)
+   (glViewport 0 0 width height)
+   (glPointSize (/ width WIDTH))))
 
 ;   (list
 ;   (pairs->ff (map (lambda (i) (let ((x (rand2! WIDTH)) (y (rand2! HEIGHT)))
@@ -54,7 +58,6 @@
 (let ((generation (gl:get-userdata)))
    (glClear GL_COLOR_BUFFER_BIT)
 
-   (glPointSize (/ 854 WIDTH))
    (glColor3f 0.2 0.5 0.2)
    (glBegin GL_POINTS)
       (ff-fold (lambda (st key value)
