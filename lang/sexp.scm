@@ -11,8 +11,8 @@
       list->sexps
 
       ; parser
-      ;number
-      ;symbol
+      number get-number
+      ;; get-symbol
 
       get-sexps  ; temp
       )
@@ -496,4 +496,7 @@
       (define (list->sexps lst fail errmsg)
          ; parse parser data maybe-path maybe-error-msg fail-val
          (parse get-sexps lst #false errmsg fail))
+
+      ; backward compatibility
+      (define get-number number)
 ))

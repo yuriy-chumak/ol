@@ -31,44 +31,18 @@
             (<< a2 16)
             (<< a3 24))))
 
-   ;; (define (times n parser)
-   ;;    (lambda (l r pos ok)
-   ;;       (let loop ((n n) (val '()) (left l) (right r) (position pos))
-   ;;          (print "loop: " n " " val " " left " " right " " position)
-   ;;          (if (eq? n 0)
-   ;;             (begin
-   ;;                (print "DONE")
-   ;;                (ok left right position val)
-   ;;             )
-   ;;             (cond
-   ;;                ((null? r)
-   ;;                   (backtrack left right position "end of file"))
-   ;;                ((pair? r)
-   ;;                   (parser left right position
-   ;;                      (lambda (ll rr p v)
-   ;;                         (print "ok")
-   ;;                         (loop (- n 1) (cons v val) (cons (car rr) ll) (cdr rr) (+ p 1))))
-   ;;                   (backtrack l r pos "required more steps"))
-   ;;                (else
-   ;;                   (print "else")
-   ;;                   (loop n val left (right) position)))))))
-
-      ;; (lambda (lst ok fail pos)
-      ;;    (let loop ((ll lst) (rvals #null) (pos pos) (n n))
-      ;;       (if (eq? n 0)
-      ;;          (ok ll fail (reverse rvals) pos)
-      ;;          (cond
-      ;;             ((null? ll) (fail pos "end of input")) ; will always be the largest value
-      ;;             ((pair? ll)
-      ;;                (parser ll
-      ;;                   ;ok
-      ;;                   (lambda (ll fail output pos)
-      ;;                      (loop ll (cons output rvals) pos (- n 1)))
-      ;;                   ;fail
-      ;;                   fail
-      ;;                   pos))
-      ;;             (else
-      ;;                (loop (ll) rvals pos n)))))))
+(define (times n parser)
+   (lambda (l r p ok)
+      (let loop ((l l) (r r) (p p) (n n) (v #null))
+         (cond
+            ((null? r) (backtrack l r p "end-of-file"))
+            ((pair? r)
+               (let* ((l r p val (parser l r p (lambda (l r p v) (values l r p v)))))
+                  (if (eq? n 1)
+                     (ok l r p (reverse (cons val v)))
+                     (loop l r p (- n 1) (cons val v)))))
+            (else
+               (loop l (r) p n v))))))
 
    (define string
       (let-parse* (
