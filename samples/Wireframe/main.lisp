@@ -2,17 +2,18 @@
 
 (define-library (file xpm)
    (export
-      xpm3-parser)
+      xpm3-parser
+      (exports (file parser)))
    (import
       (otus lisp)
       (file parser)
       (lang sexp))
 (begin
    (define get-rest-of-line ; internal
-      (let-parses
-         ((chars (get-greedy* (get-byte-if (lambda (x) (not (eq? x 10))))))
-            (skip (get-imm 10))) ;; <- note that this won't match if line ends to eof
-         chars))
+      (let-parse* (
+            (/ (greedy* (byte-if (lambda (x) (not (eq? x #\newline))))))
+            (/ (get-imm #\newline))) ;; <- note that this won't match if line ends to eof
+         #true))
 
    (define xpm3-parser
       (let-parses (
@@ -31,39 +32,35 @@
             (* (get-greedy+ (get-imm #\space)))
             (* get-rest-of-line)
 
-            (* (get-n-times colors get-rest-of-line))
+            (* (times colors get-rest-of-line))
             (* get-rest-of-line) ; /* pixels */
 
-            ;(bitmap (get-n-times columns get-byte))
-
-            (bitmap (get-n-times rows (let-parses (
+            (bitmap (times rows (let-parses (
                   (* (get-imm #\"))
-                  (row (get-n-times columns get-byte))
+                  (row (times columns get-byte))
                   (* get-rest-of-line))
                row)))
-      )
-         (cons [columns rows colors 1] bitmap)))
+            (/ get-rest-of-line))
+         {
+            'columns columns
+            'rows    rows
+            'colors  colors
+            'bitmap  bitmap
+         }))
+         ;; (cons [columns rows colors 1] bitmap)))
 ))
 
 (import (file xpm))
 
-(define (syntax-fail pos info lst)
-   (print-to stderr "parser fail: " info)
-   (print-to stderr ">>> " pos); "-" (runes->string lst) " <<<")
-   '(() (())))
-
 ; --------------------------
 ; skeletal-animation library
 (define filename "sample.xpm")
-(define xpm3 (xpm3-parser (file->list "sample.xpm")
-   (lambda (data fail value pos) value)
-   (lambda (pos reason) reason)
-   0))
+(define xpm3 (parse xpm3-parser (file->bytestream "sample.xpm") #f #f #f))
 
 (define MAX 65536)  ; should be power of two
 ; size of game board (should be less than MAX)
-(define WIDTH 170)
-(define HEIGHT 96)
+(define WIDTH (xpm3 'columns))
+(define HEIGHT (xpm3 'rows))
 
 ; helper function
 (define (hash x y)
@@ -79,7 +76,10 @@
 (glClearColor 0.11 0.11 0.11 1)
 (glOrtho 0 WIDTH 0 HEIGHT 0 1)
 
-(glPointSize (/ 854 WIDTH))
+(gl:set-resize-handler (lambda (width height)
+   (glViewport 0 0 width height)
+   (glPointSize (/ height HEIGHT))))
+
 
 ; generate random field
 (gl:set-userdata
@@ -87,7 +87,7 @@
          (fold (lambda (ff v x)
                   (if (eq? v #\space) ff (put ff (hash x y) v)))
             ff v (iota (length v))))
-   #empty (reverse (cdr xpm3)) (iota (length (cdr xpm3)))))
+   #empty (reverse (xpm3 'bitmap)) (iota (length (xpm3 'bitmap)))))
 
 ; main game loop
 (gl:set-renderer (lambda (mouse)
