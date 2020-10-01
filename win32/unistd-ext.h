@@ -116,4 +116,12 @@ int fsync(int fd)
 	return 0;
 }
 
+// --------------------------------------------------------
+// -=( fork )=---------------------------------------------
+// sample implementation can be found at
+// https://github.com/jonclayden/multicore/blob/master/src/forknt.c
+// originally from: "Windows NT/2000 native API reference" ISBN 1-57870-199-6.
+
+// TBD.
+
 #endif

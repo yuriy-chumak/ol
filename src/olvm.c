@@ -603,17 +603,6 @@ void yield()
 #endif
 
 // --------------------------------------------------------
-// -=( fork )=---------------------------------------------
-// sample implementation can be found at
-// https://github.com/jonclayden/multicore/blob/master/src/forknt.c
-// originally from: "Windows NT/2000 native API reference" ISBN 1-57870-199-6.
-#if _WIN32
-
-// TBD.
-
-#endif
-
-// --------------------------------------------------------
 // -=( i/o )=----------------------------------------------
 // os independent i/o implementations
 // notes: 64-bit versions of Windows use 32-bit handles for
@@ -661,14 +650,14 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 typedef uintptr_t word;
 //	arm, armv7-a, armv8-a: 4; arm64: 8
 //	risc-v 32: 4;         risc-v 64: 8
-//	wasm: 4
-//	x86: 4;                  x86-64: 8
-//	mips: 4;                 mips64: 8
-//	ppc: 4;          ppc64, ppc64le: 8
-//	raspbian: 4
+//	wasm:      4
+//	x86:       4;            x86-64: 8
+//	mips:      4;            mips64: 8
+//	ppc:       4;    ppc64, ppc64le: 8
+//	raspbian:  4
 
 //
-// виртуальная машина:
+// virtual machine:
 typedef struct ol_t OL;
 
 // descriptor format
@@ -767,7 +756,7 @@ static_assert(sizeof(struct object_t) == sizeof(word), "Minimal size of object_t
 
 
 // ------------------------------------------------------
-// PUBLIC API: (please, check out the olvm.h)
+// PUBLIC API: (please, check olvm.h)
 
 OL*  OL_new (unsigned char* bootstrap);
 void OL_free(struct ol_t* ol);
