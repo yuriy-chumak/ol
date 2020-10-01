@@ -1,6 +1,7 @@
 (define-library (lib gl3)
 (import
-   (scheme core)
+   (scheme base)
+   (owl math) (owl interop)
    (lib gl config)
    (lib gl) (OpenGL version-3-0))
 (export
@@ -35,10 +36,10 @@
                   #x8010    1 ; GLX_DRAWABLE_TYPE GLX_WINDOW_BIT
                   #x22 #x8002 ; GLX_X_VISUAL_TYPE GLX_TRUE_COLOR
                   #x8011    1 ; GLX_RENDER_TYPE GLX_RGBA_BIT
-                  8  (get config 'red 5)    ; GLX_RED_SIZE
-                  9  (get config 'green 6)  ; GLX_GREEN_SIZE
-                  10 (get config 'blue 5)  ; GLX_BLUE_SIZE
-                  12 (get config 'depth 24); GLX_DEPTH_SIZE
+                  8  (config 'red 5)    ; GLX_RED_SIZE
+                  9  (config 'green 6)  ; GLX_GREEN_SIZE
+                  10 (config 'blue 5)  ; GLX_BLUE_SIZE
+                  12 (config 'depth 24); GLX_DEPTH_SIZE
                   5         1 ; GLX_DOUBLEBUFFER
                   0))
 
