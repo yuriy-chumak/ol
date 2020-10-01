@@ -1058,7 +1058,7 @@
                            (atexit)))
                      (if (interactive? env)
                         (print "bye-bye :/"))
-                     (halt 0))
+                     (halt val))
                   (['error reason env]
                      (let ((hook:fail (env-get env 'hook:fail #f)))
                         (if hook:fail (hook:fail reason (syscall 1002))))

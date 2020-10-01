@@ -473,9 +473,9 @@
    (if (not port)
       (begin
          (print "Could not open " path " for writing")
-         #false)
+         -1) ; error
       (begin ;; just save the fasl dump
          (write-bytes port bytes)
          (close-port port)
          (print "Output written at " (- (time-ms) build-start) " ms.")
-         #true)))
+         0))) ; ok

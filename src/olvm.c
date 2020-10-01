@@ -899,6 +899,7 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #define is_enump(ob)                (is_value(ob)     && value_type (ob) == TENUMP)
 #define is_enumn(ob)                (is_value(ob)     && value_type (ob) == TENUMN)
 #define is_enum(ob)                 (is_enump(ob) || is_enumn(ob))
+#define is_const(ob)                (is_value(ob)     && value_type (ob) == TCONST)
 #define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TPAIR,     3))
 #define is_npairp(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTP,     3))
 #define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
@@ -5031,6 +5032,11 @@ int main(int argc, char** argv)
 	word r = 0;
 	if (olvm) {
 		r = OL_run(olvm, argc, argv);
+        if (is_number(r))
+            r = number(r);
+        else
+        if (is_const(r))
+            r = value(r);
 		OL_free(olvm);
 	}
 
@@ -5038,8 +5044,6 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	if (is_number(r))
-		return number(r);
 	return (int) r;
 
 // FAILS:
