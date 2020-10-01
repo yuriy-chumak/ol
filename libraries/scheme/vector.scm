@@ -67,14 +67,14 @@
       (let loop ((pos end) (tail #null))
          (if (less? pos start)
             tail
-            (loop (|-1| pos) (cons (ref vec pos) tail)))))
+            (loop (-- pos) (cons (ref vec pos) tail)))))
 
    (define (copy! to at from start end)
       ; note: ref and set-ref for vectors starts from 1 not 0
-      (let loop ((start (|+1| start)) (p (|+1| at)))
+      (let loop ((start (++ start)) (p (++ at)))
          (when (or (less? start end) (eq? start end)) ; <=
             (set-ref! to p (ref from start))
-            (loop (|+1| start) (|+1| p))))
+            (loop (++ start) (++ p))))
       to)
    (define (copy from start end)
       (define out (make-vector (- end start)))
@@ -82,10 +82,10 @@
 
    (define (fill! to what start end)
       ; note: ref and set-ref for vectors starts from 1 not 0
-      (let loop ((p (|+1| start)))
+      (let loop ((p (++ start)))
          (when (or (less? p end) (eq? p end))
             (set-ref! to p what)
-            (loop (|+1| p))))
+            (loop (++ p))))
       to)
 
 
@@ -102,7 +102,7 @@
    ; k of vector
 
    (define (vector-ref vec k)
-      (ref vec (|+1| k)))
+      (ref vec (++ k)))
 
    (assert (vector-ref #(1 2 3 4 5 8 13 21) 0)  ===>  1)
    (assert (vector-ref #(1 2 3 4 5 8 13 21) 5)  ===>  8)
@@ -113,7 +113,7 @@
    ; The vector-set! procedure stores *obj* in element *k* of *vector*.
    
    (define (vector-set! vec k obj)
-      (set-ref! vec (|+1| k) obj))
+      (set-ref! vec (++ k) obj))
 
    (assert (vector-set! #(1 2 3) 1 7) ===>  #(1 7 3))
    (assert (vector-set! #(1 2 3) 8 7) ===>  #(1 2 3))
@@ -125,8 +125,8 @@
    (define vector->list
       (case-lambda
          ((vec)           (make vec            1 (size vec)))
-         ((vec start)     (make vec (|+1| start) (size vec)))
-         ((vec start end) (make vec (|+1| start) end))))
+         ((vec start)     (make vec (++ start) (size vec)))
+         ((vec start end) (make vec (++ start) end))))
 
    (assert (vector->list #(1 2 3 4 5))     ===> '(1 2 3 4 5))
    (assert (vector->list #(1 2 3 4 5) 1)   ===> '(2 3 4 5))

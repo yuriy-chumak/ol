@@ -60,10 +60,10 @@
       (let ((len (size bv)))
          (if (eq? len 0)
             #null
-            (let loop ((pos (|-1| len)) (tail #null))
+            (let loop ((pos (-- len)) (tail #null))
                (if (eq? pos 0)
                   (cons (ref bv 0) tail)
-                  (loop (|-1| pos) (cons (ref bv pos) tail)))))))
+                  (loop (-- pos) (cons (ref bv pos) tail)))))))
 
    ; * ol specific:
    (define (list->bytevector l)
@@ -92,7 +92,7 @@
       (let loop ((start start) (p at))
          (when (less? start end)
             (set-ref! to p (ref from start))
-            (loop (|+1| start) (|+1| p))))
+            (loop (++ start) (++ p))))
       to)
    (define (copy from start end)  ; * internal helper
       (define out (make-bytevector (- end start)))

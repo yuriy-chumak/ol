@@ -54,9 +54,9 @@
       ;  todo: add theoretically impossible case:
       ;       (if carry (runtime-error "Too long list to fit in fixnum"))
 
-      (setq |-1| (lambda (n)         ; * internal
+      (setq -- (lambda (n)         ; * internal
          (values-apply (vm:sub n 1) (lambda (n carry) n))))
-      (setq |+1| (lambda (n)         ; * internal
+      (setq ++ (lambda (n)         ; * internal
          (values-apply (vm:add n 1) (lambda (n carry) n))))
 
       ; * ol specific: (runtime-error reason info)
@@ -500,17 +500,17 @@
                   (eq? 0 sa)
                   (if (ref a 0) ; ==(bytestream? a), 0 in ref works only for bytestreams
                      ; comparing bytestreams
-                     (let loop ((n (|-1| sa)))
+                     (let loop ((n (-- sa)))
                         (if (eq? (ref a n) (ref b n))
                            (if (eq? n 0)
                               #true
-                              (loop (|-1| n)))))
+                              (loop (-- n)))))
                      ; recursive comparing objects
                      (let loop ((n sa))
                         (if (eq? n 0)
                            #true
                            (if (equal? (ref a n) (ref b n))
-                              (loop (|-1| n)))))))))))
+                              (loop (-- n)))))))))))
 
       ; procedure:  (eqv? obj1 obj2)
       ;
@@ -553,11 +553,11 @@
          (if (eq? typea TINEXACT)
             (and
                (eq? typea (type b))
-               (let loop ((n (|-1| (size a))))
+               (let loop ((n (-- (size a))))
                   (if (eq? (ref a n) (ref b n))
                      (if (eq? n 0)
                         #true
-                        (loop (|-1| n)))))))))))
+                        (loop (-- n)))))))))))
 
       (assert (eqv? 'a 'a)                  ===> #true) ; symbols
       (assert (eqv? '() '())                ===> #true) ; empty lists
@@ -1237,7 +1237,7 @@
                         (let loop ((n n) (out '()))
                            (if (eq? n 0)
                               out
-                              (loop (|-1| n) (cons fill out)))))))
+                              (loop (-- n) (cons fill out)))))))
          (case-lambda
             ((k)
                (make k #false))
@@ -1264,7 +1264,7 @@
          (let loop ((n 0) (l l))
             (if (null? l)
                n
-               (loop (|+1| n) (cdr l)))))
+               (loop (++ n) (cdr l)))))
 
       (assert (length '(a b c))             ===>  3)
       (assert (length '(a (b) (c d e)))     ===>  3)
@@ -1313,7 +1313,7 @@
       (define (list-tail list k)
          (if (eq? k 0)
             list
-            (list-tail (cdr list) (|-1| k))))
+            (list-tail (cdr list) (-- k))))
 
       ; procedure:  (list-ref list k)
       ;
@@ -1323,7 +1323,7 @@
          (cond
             ((null? list) #false)    ; temporary instead of (syntax-error "lref: out of list" pos))
             ((eq? k 0) (car list))   ; use internal vm math, not math library
-            (else (list-ref (cdr list) (|-1| k)))))
+            (else (list-ref (cdr list) (-- k)))))
 
       ; procedure:  (list-set! list k obj)
       ;
@@ -2008,5 +2008,5 @@
       ; ol extension:
       halt
 
-      |-1| |+1| ; * ol internal staff
+      -- ++ ; * ol internal staff
 ))

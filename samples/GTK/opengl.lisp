@@ -96,7 +96,7 @@
    (list gpointer)
    (lambda (userdata)
       (print "idle: " (unbox x))
-      (set-car! x (|+1| (unbox x)))
+      (set-car! x (++ (unbox x)))
       TRUE))))
 (gdk_threads_add_idle (G_CALLBACK idle) nullptr)
 
