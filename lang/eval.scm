@@ -1053,15 +1053,17 @@
                (case (repl-port env in)
                   (['ok val env]
                      ;; bye-bye
-                     (let ((atexit (env-get env '*atexit* #false)))
-                        (if (function? atexit)
-                           (atexit)))
+                     (let ((hook:exit (env-get env 'hook:exit #false)))
+                        (if (function? hook:exit)
+                           (hook:exit val)))
+
                      (if (interactive? env)
                         (print "bye-bye :/"))
                      (halt val))
                   (['error reason env]
-                     (let ((hook:fail (env-get env 'hook:fail #f)))
-                        (if hook:fail (hook:fail reason (syscall 1002))))
+                     (let ((hook:fail (env-get env 'hook:fail #false)))
+                        (if (function? hook:fail)
+                           (hook:fail reason (syscall 1002))))
 
                      (if (list? reason)
                         (print-repl-error (decode-value env reason)))
