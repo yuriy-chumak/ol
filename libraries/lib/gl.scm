@@ -31,7 +31,7 @@
    gl:hide-cursor
 
    native:enable-context native:disable-context
-   *atexit*)
+   hook:exit)
 
 (begin
    (setq x32? (eq? (size nullptr) 4))
@@ -751,7 +751,7 @@
 (define (gl:finish)
    (interact 'opengl ['finish]))
 
-(define *atexit* gl:finish)
+(define hook:exit (lambda args (gl:finish)))
 
 ; -----------------------------
 ;; (define gl:Color (case-lambda
