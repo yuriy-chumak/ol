@@ -39,7 +39,8 @@ glDrawArrays
    (exports (OpenGL version-1-5)))
 
    (import (scheme core)
-      (owl string)
+      (owl string) (owl io)
+      (scheme bytevector)
       (OpenGL version-1-5))
 (begin
    (define GL_VERSION_2_0 1)
@@ -67,7 +68,7 @@ glDrawArrays
     (define GL_LINK_STATUS     #x8B82)
     (define GL_VALIDATE_STATUS #x8B83)
     (define GL_INFO_LOG_LENGTH #x8B84)
-  (define glGetShaderInfoLog (gl:GetProcAddress GLvoid "glGetShaderInfoLog" GLuint GLsizei GLsizei* GLchar*))
+  (define glGetShaderInfoLog (gl:GetProcAddress GLvoid "glGetShaderInfoLog" GLuint GLsizei GLsizei* type-bytevector))
   (define glGetUniformLocation (gl:GetProcAddress GLint "glGetUniformLocation" GLuint GLchar*))
     (define glUniform1i     (gl:GetProcAddress GLvoid "glUniform1i" GLint GLint))
     (define glUniform1f     (gl:GetProcAddress GLvoid "glUniform1f" GLint GLfloat))
@@ -103,24 +104,24 @@ glDrawArrays
          (let*((maxLength (box 0))
                (_ (glGetShaderiv vs GL_INFO_LOG_LENGTH maxLength))
                (maxLengthValue (unbox maxLength))
-               (errorLog (make-string maxLengthValue 0))
+               (errorLog (make-bytevector maxLengthValue 0))
                (_ (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)))
-            (runtime-error errorLog vs))))
+            (runtime-error (utf8->string errorLog) vs))))
    (glAttachShader po vs)
 
    ; fragment shader:
    (glShaderSource fs 1 (list fstext) #false)
    (glCompileShader fs)
-   (let ((isCompiled '(0)))
+   (let ((isCompiled (box 0)))
       (glGetShaderiv fs GL_COMPILE_STATUS isCompiled)
 
       (if (eq? (unbox isCompiled) 0)
          (let*((maxLength (box 0))
                (_ (glGetShaderiv fs GL_INFO_LOG_LENGTH maxLength))
                (maxLengthValue (unbox maxLength))
-               (errorLog (make-string maxLengthValue 0))
+               (errorLog (make-bytevector maxLengthValue 0))
                (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
-            (runtime-error errorLog fs))))
+            (runtime-error (utf8->string errorLog) fs))))
 
    (glAttachShader po fs)
 
