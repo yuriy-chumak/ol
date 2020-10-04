@@ -418,7 +418,7 @@
                      ;;    (loop (λ () (fail-fn 0 #n)))
                      ;;    #false))
                      #false) ; todo: print an error
-                  ((lpair? r) =>
+                  ((lpair? r)
                      (cons val r))
                      ;; (λ (r)
                      ;;    (loop (λ () (backtrack l r p "trailing garbage")))))
