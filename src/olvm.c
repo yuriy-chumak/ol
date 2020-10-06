@@ -3681,13 +3681,9 @@ loop:;
 				CHECK_NUMBER(2);
 				CHECK_NUMBER_OR_FALSE(3);
 
-				unsigned char* address = (unsigned char*) car(A1);
-				size_t length = number(A2); // в байтах
-				size_t offset = (argc > 2 && A3 != IFALSE)
-					? number(A3)
-					: 0;
+				size_t length = number(A2); // in bytes
 
-				int words = ((length + W - 1) / W) + 1; // в словах
+				int words = ((length + W - 1) / W) + 1; // in words
 				if (words > (heap->end - fp)) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
@@ -3698,6 +3694,10 @@ loop:;
 
 					ip = (unsigned char*)this + dp;
 				}
+				char* address = (char*) car(A1);
+				size_t offset = (argc > 2 && A3 != IFALSE)
+					? number(A3)
+					: 0;
 
 				r = new_bytevector(length);
 				memcpy(&car(r), address + offset, length);
@@ -3800,17 +3800,20 @@ loop:;
 		//					assert ((word)C == IFALSE);
 					word* (*function)(OL*, word*) = (word* (*)(OL*, word*)) car(A);  assert (function);
 
-					//int sub = ip - (unsigned char *) &this[1]; // save ip for possible gc call
+					// remember, called functions can do GC
 
-					ol->heap.fp = fp; ol->this = this;
+					ptrdiff_t dp;
+					dp = ip - (unsigned char*)this;
+
+					heap->fp = fp; ol->this = this;
 					r = function(ol, B);
-					fp = ol->heap.fp; this = ol->this;
+					fp = heap->fp; this = ol->this;
 
-					// а вдруг вызвали gc?
-					// ip = (unsigned char *) &this[1] + sub;
+	                ip = (unsigned char*)this + dp;
 
 					// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
-					// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip  // later: а вот и нет!
+					// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
+                    // later note: nope, please do not goto apply
 					break;
 				}
 #endif //HAS_DLOPEN

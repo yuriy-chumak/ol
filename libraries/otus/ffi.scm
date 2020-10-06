@@ -362,6 +362,9 @@
 
 (begin
 
+   (define (bytevector->float bvec offset)
+      (vm:cast (bytevector-copy bvec offset (+ offset 4)) type-inexact))
+
    (define (bytevector->void* bvec offset)
       (let ((void* (make-vptr)))
          (map (lambda (i j) ; for-each
