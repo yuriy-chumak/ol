@@ -5021,11 +5021,16 @@ int main(int argc, char** argv)
 	word r = 0;
 	if (olvm) {
 		r = OL_run(olvm, argc, argv);
+        // convert result to appropriate system value
         if (is_number(r))
             r = number(r);
         else
-        if (is_const(r))
-            r = value(r);
+        if (r == ITRUE)
+            r = 0;
+        else
+        if (r == IFALSE)
+            r = -1;
+
 		OL_free(olvm);
 	}
 
