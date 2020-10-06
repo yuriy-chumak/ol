@@ -114,7 +114,7 @@
                   (function (dlsym gl4es (string-append "gl4es_" name))))
                (if function
                   (lambda args
-                     (execve ffi function rtti args)))))
+                     (ffi function rtti args)))))
 
 
          (setq GLX GL_LIBRARY)
@@ -217,7 +217,7 @@
             (function (GetProcAddress name)))
          (if function
             (lambda args
-               (execve ffi function rtty args)))))
+               (ffi function rtty args)))))
 )
 
 ; ----------------------------------

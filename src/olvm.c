@@ -3854,55 +3854,11 @@ loop:;
 			// (EXECVE program-or-function env (vector port port port))
 			// http://linux.die.net/man/3/execve
 			case SYSCALL_EXECVE: {
-				CHECK_VPTR_OR_STRING(1);
-#if HAS_DLOPEN
-                // if (is_dlsym(A1))
-                //     A1 = car(A1);
-				// if a is result of dlsym
-				if (is_vptr(A1)) {
-					CHECK_ARGC_EQ(2);
-					// a - function address (port)
-					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
-					word* A = (word*)A1;
-					word* B = (word*)A2;
-					unsigned char v = ip[3];
+				CHECK_ARGC_EQ(3);
+				CHECK_STRING(1);
 
-		//					word* C = (word*)c;
-
-					assert ((word)B == INULL || is_pair(B));
-		//					assert ((word)C == IFALSE);
-					word (*function)(struct ol_t*, word*) = (word (*)(struct ol_t*, word*)) car(A);  assert (function);
-
-					// remember, called functions can do GC
-
-					// ptrdiff_t dp;
-					// dp = ip - (unsigned char*)this;
-
-					// во время работы execve может быть вызван колбек, который поменяет ip
-					// так что восстанавливать его не будем, а сразу перейдем на apply?
-
-					heap->fp = fp; ol->this = this;
-					r = (word*)function(ol, B);
-					fp = heap->fp; this = ol->this;
-
-					R[v] = (word)r;
-	                // ip = (unsigned char*)this + dp;
-
-					// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
-					// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
-                    // later note: nope, please do not goto apply
-					argc++;
-					// ip += argc + 4;
-					R[ip[argc]] = (word)r; // result
-					ip += argc + 1;
-					goto loop;
-					break;
-				}
-#endif //HAS_DLOPEN
 				// if a is string:
 				if (is_string(A1)) {
-					CHECK_ARGC_EQ(3);
-
 					char* command = string(A1);
 					word b = A2;
 					word c = A3;

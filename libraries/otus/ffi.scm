@@ -87,7 +87,7 @@
       make-vptr-array
 
       ; function for boxing and unboxing single values
-      box unbox execve
+      box unbox; execve
 
       ; fft data manipulation helpers
       vptr->bytevector ;vptr->string
@@ -109,7 +109,7 @@
 (define (uname) (syscall 63))
 (define *uname* (syscall 63))
 
-(define (execve function . args) (syscall 59 function args))
+;; (define (execve function . args) (apply function args)) ; syscall disabled
 
 
 ; The MODE argument to `dlopen' contains one of the following:
@@ -231,15 +231,15 @@
    (setq |long| 4)
    (setq |long long| 5)
 
-(define fft-char fft-int8)               (assert (execve ffi:sizeof |char|) ===> 1)
+(define fft-char fft-int8)               (assert (ffi:sizeof |char|) ===> 1)
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-uint8)
 
-(define fft-short fft-int16)             (assert (execve ffi:sizeof |short|) ===> 2)
+(define fft-short fft-int16)             (assert (ffi:sizeof |short|) ===> 2)
 (define fft-signed-short fft-int16)
 (define fft-unsigned-short fft-uint16)
 
-(define fft-int fft-int32)               (assert (execve ffi:sizeof |int|) ===> 4)
+(define fft-int fft-int32)               (assert (ffi:sizeof |int|) ===> 4)
 (define fft-signed-int fft-int32)
 (define fft-unsigned-int fft-uint32)
 
@@ -251,14 +251,14 @@
 ; linux, ia64:   8 bytes
 ; macosx, ia64:  8 bytes
 
-(define fft-long (case (execve ffi:sizeof |long|)
+(define fft-long (case (ffi:sizeof |long|)
    (4 fft-int32)
    (8 fft-int64)
    (else (runtime-error "assertion error: unsupported native 'long' type size"))))
 (define fft-signed-long fft-long)
 (define fft-unsigned-long (+ fft-long 5))
 
-(define fft-long-long fft-int64)         (assert (execve ffi:sizeof |long long|) ===> 8)
+(define fft-long-long fft-int64)         (assert (ffi:sizeof |long long|) ===> 8)
 (define fft-signed-long-long fft-int64)
 (define fft-unsigned-long-long fft-uint64)
 
