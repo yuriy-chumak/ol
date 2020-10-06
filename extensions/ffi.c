@@ -10,6 +10,11 @@
  *  Hmmm...
  */
 
+// let's simplify our life - enable ffi by default
+// #ifndef OLVM_FFI
+// #define OLVM_FFI 1
+// #endif
+
 /*!
  * ### Source file: extensions/ffi.c
  */
@@ -23,6 +28,27 @@
 // http://autocad.xarch.at/lisp/ffis.html
 
 #if OLVM_FFI
+
+// defaults:
+#ifndef OLVM_CALLABLES
+#define OLVM_CALLABLES 1
+#endif
+
+// use virtual machine declaration from olvm source code
+#define USE_OLVM_DECLARATION
+struct heap_t;
+#define ol_t heap_t
+
+#include "olvm.c"
+
+#define unless(...) if (! (__VA_ARGS__))
+
+typedef struct ol_t OL;
+
+
+#include <string.h>
+#include <stdio.h> // temp
+
 
 #if defined(__unix__) || defined(__APPLE__)
 #	include <sys/mman.h>
@@ -129,8 +155,16 @@ unsigned int llen(word list)
 		list = cdr(list), i++;
 	return i;
 }
+
 static
-unsigned int lenn16(short *pos, size_t max) { // added here, strnlen was missing in win32 compile
+unsigned int lenn(char *pos, size_t max) {
+	unsigned int p = 0;
+	while (p < max && *pos++) p++;
+	return p;
+}
+
+static
+unsigned int lenn16(short *pos, size_t max) {
 	unsigned int i = 0;
 	while (i < max && *pos++) i++;
 	return i;
@@ -995,10 +1029,8 @@ word* ul2ol(word**fpp, intmax_t val) {
 // Главная функция механизма ffi:
 PUBLIC
 __attribute__((used))
-word* OL_ffi(OL* self, word* arguments)
+word* OL_ffi(OL* this, word* arguments)
 {
-	heap_t* heap = &self->heap;
-
 	// a - function address
 	// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 	// c - '(return-type . argument-types-list)
@@ -1120,19 +1152,19 @@ word* OL_ffi(OL* self, word* arguments)
 	}
 
 	// ensure that all arguments will fit in heap
-	if (words > (heap->end - heap->fp)) {
-        size_t a = OL_pin(self, A);
-        size_t b = OL_pin(self, B);
-        size_t c = OL_pin(self, C);
+	if (words > (this->end - this->fp)) {
+        size_t a = OL_pin(this, A);
+        size_t b = OL_pin(this, B);
+        size_t c = OL_pin(this, C);
 
-		self->gc(self, words);
+		this->gc(this, words);
 
-        A = OL_unpin(self, a);
-        B = OL_unpin(self, b);
-        C = OL_unpin(self, c);
+        A = OL_unpin(this, a);
+        B = OL_unpin(this, b);
+        C = OL_unpin(this, c);
 	}
 
-	word* fp = heap->fp;
+	word* fp = this->fp;
 	int_t* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(int_t)); // minimum - 16 words for arguments
 	i = 0;
 
@@ -1801,9 +1833,9 @@ word* OL_ffi(OL* self, word* arguments)
 
 	unsigned long long got = 0; // результат вызова функции (64 бита для возможного double)
 
-	self->R[NR + 1] = (word)B;
-	self->R[NR + 2] = (word)C;
-	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
+	size_t pB = OL_pin(this, B);
+	size_t pC = OL_pin(this, C);
+	this->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
 
 //	if (floatsmask == 15)
 //		__asm__("int $3");
@@ -1864,9 +1896,9 @@ word* OL_ffi(OL* self, word* arguments)
 #endif
 
 	// где гарантия, что C и B не поменялись?
-	fp = heap->fp;
-	B = self->R[NR + 1];
-	C = self->R[NR + 2];
+	fp = this->fp;
+	B = OL_unpin(this, pB);
+	C = OL_unpin(this, pC);
 
 	if (has_wb) {
 		// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
@@ -2208,15 +2240,15 @@ word* OL_ffi(OL* self, word* arguments)
 #if OLVM_INEXACTS
 			result = new_inexact(value);
 #else
-			heap->fp = fp;
+			this->fp = fp;
 			result = (word*) d2ol(self, value);
-			fp = heap->fp;
+			fp = this->fp;
 #endif
 			break;
 		}
 	}
 
-	heap->fp = fp;
+	this->fp = fp;
 	return result;
 }
 
@@ -2266,6 +2298,17 @@ word OL_sizeof(OL* self, word* arguments)
 #ifndef _DEFAULT_SOURCE
 #	error "Required -std=gnu11 (we use anonymous mmap)"
 #endif
+
+// todo: добавить возможность вызова колбека как сопрограммы (так и назвать - сопрограмма)
+//       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
+//       все остальные свои сопрограммы.
+// ret is ret address to the caller function
+static
+int64_t callback(OL* ol, size_t id, int_t* argi
+	#if __amd64__
+		, inexact_t* argf, int_t* rest
+	#endif
+	);
 
 
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
@@ -2412,13 +2455,10 @@ word OL_mkcb(OL* self, word* arguments)
 	#endif
 #endif
 
-	heap_t* heap = &self->heap;
 	word*
-	fp = heap->fp;
-
+	fp = self->fp;
 	word result = (word) new_callable(ptr);
-
-	heap->fp = fp;
+	self->fp = fp;
 	return result;
 }
 
@@ -2430,40 +2470,31 @@ word OL_mkcb(OL* self, word* arguments)
 
 static
 __attribute__((used))
-int64_t callback(OL* ol, int id, int_t* argi
+int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 #if __amd64__
 		, inexact_t* argf, int_t* rest //win64
 #endif
 		)
 {
-//	__asm("int $3");
-	word* R = ol->R;
-
-	ol->this = (word) cdr (ol->R[NR + id]); // lambda для обратного вызова
-//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, так как без потоков работаем
-//	ol->bank = 0;
-	assert (is_reference(ol->this));
-	assert (reference_type(ol->this) != TTHREAD);
-
-	// надо сохранить значения, иначе их уничтожит GC
-	// todo: складывать их в память! и восстанавливать оттуда же
-//	R[NR + 0] = R[0]; // не надо, mcp
-//	R[NR + 1] = R[1]; // не надо
-//	R[NR + 2] = R[2]; // не надо
-	R[NR + 3] = R[3]; // continuation/result
-
-	// вызовем колбек:
-//	R[0] = IFALSE;  // не надо, продолжаем использовать mcp
-	R[3] = IRETURN; // команда выхода из колбека
-	ol->arity = 1;
-
-	word types = car(ol->R[NR + id]);
-
-	int a = 4;
-//	R[a] = IFALSE;
-
 	word* fp;
-	fp = ol->heap.fp;
+//	__asm("int $3");
+
+	word cb = OL_deref(ol, id);
+	word types = car(cb);
+	word function = cdr(cb);
+
+	// let's count of arguments
+	word args = types;
+	size_t a = 0;
+	while (args != INULL) {
+		a++;
+		args = cdr(args);
+	}
+
+	word R[a]; // сложим все в стек, потом заполним оттуда список
+	size_t count = a;
+
+	fp = ol->fp;
 
 	int i = 0;
 #if __amd64__ && (__linux__ || __APPLE__)
@@ -2478,6 +2509,7 @@ int64_t callback(OL* ol, int id, int_t* argi
 #endif*/
 //	int f = 0; // linux
 	while (types != INULL) {
+		--a;
 		// шаблон транслятора аргументов C -> OL
 		#if __amd64__
 			#if _WIN64
@@ -2559,9 +2591,9 @@ int64_t callback(OL* ol, int id, int_t* argi
 			#else
 				value =   *(float*) &argi[i++];
 			#endif
-			ol->heap.fp = fp;
+			ol->fp = fp;
 			R[a] = d2ol(ol, value);
-			fp = ol->heap.fp;
+			fp = ol->fp;
 			break;
 		}
 		case I(TDOUBLE): {
@@ -2581,9 +2613,9 @@ int64_t callback(OL* ol, int id, int_t* argi
 			#else
 				value =   *(double*) &argi[i++]; i++;
 			#endif
-			ol->heap.fp = fp;
+			ol->fp = fp;
 			R[a] = d2ol(ol, value);
-			fp = ol->heap.fp;
+			fp = ol->fp;
 			break;
 		}
 		case I(TSTRING): {
@@ -2651,22 +2683,18 @@ int64_t callback(OL* ol, int id, int_t* argi
 			E("unknown argument type");
 			break; }
 		}
-		a++;
-		ol->arity++;
 		types = cdr(types);
 	}
+	assert (a == 0);
 
-	ol->heap.fp = fp;
+	// let's put all arguments into list
+	args = INULL;
+	for (size_t i = 0; i < count; i++)
+		args = (word) new_pair(R[i], args);
 
-	runtime(ol);
-	word r = R[3]; // callback result
-	// возврат из колбека,
-	// R, NR могли измениться
-	R = ol->R;
-	R[3] = R[NR + 3];
-//	R[2] = R[NR + 2]; // не надо
-//	R[1] = R[NR + 1]; // не надо
-//	R[0] = R[NR + 0]; // не надо, продолжаем использовать MCP
+	ol->fp = fp; // well, done
+
+	word r = OL_apply(ol, function, args);
 
 	if (is_value (r))
 		return value(r);

@@ -1,5 +1,3 @@
-#pragma once
-
 /*
  * ffi.h
  *
@@ -7,14 +5,15 @@
  *  Copyright (c) 2015-2020
  *      Author: uri
  */
+#pragma once
 
-#include <stdint.h>
-#include <setjmp.h>
+#define USE_OLVM_DECLARATION
+#include "olvm.c"
 
-// unsigned int that is capable of storing a pointer
-// основной тип даных, зависит от разрядности машины
-// based on C99 standard, <stdint.h>
-typedef uintptr_t word;
+#if 0
+
+// #include <stdint.h>
+// #include <setjmp.h>
 
 // память машины, управляемая сборщиком мусора
 typedef struct heap_t
@@ -143,3 +142,5 @@ word*p = NEW_OBJECT (_type, 2);\
 
 #define reference_size(x)           ((header_size(*R(x)) - 1))
 #define binstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
+
+#endif

@@ -5,7 +5,7 @@
  *  Copyright(c) 2014 - 2020 Yuriy Chumak        (O,O)
  *                                               (  /(
  *                                           - ---"-"--- -
- *      Version 2.1.1
+ *      Version 2.1.2
  </pre>
  * - - -
  * #### LICENSE
@@ -41,11 +41,732 @@
  *   http://www.call-cc.org/                              </br>
  *   http://www.scheme.com/tspl4/                         </br>
  */
+#ifndef __OLVM_C__
+#define __OLVM_C__
 
 /*!- - -
  * ## Otus Lisp Virtual Machine
  * ### Source file: src/olvm.c
  */
+
+#include <stdint.h>
+#include <assert.h>
+#include <stdlib.h>
+
+// unsigned int that is capable of storing a pointer
+// основной data type, зависит от разрядности машины
+//   базируется на C99 стандарте, <stdint.h>
+typedef uintptr_t word;
+
+//	arm, armv7-a, armv8-a: 4; arm64: 8
+//	risc-v 32: 4;         risc-v 64: 8
+//	wasm:      4
+//	x86:       4;            x86-64: 8
+//	mips:      4;            mips64: 8
+//	ppc:       4;    ppc64, ppc64le: 8
+//	raspbian:  4
+
+//
+// virtual machine:
+struct ol_t;
+
+// ------------------------------------------------------
+// PUBLIC API:
+
+struct ol_t*
+     OL_new (unsigned char* bootstrap);
+void OL_free(struct ol_t* ol);
+word OL_run (struct ol_t* ol, int argc, char** argv);
+word OL_continue(struct ol_t* ol, int argc, void** argv);
+
+// "pinned" objects supporting functions
+size_t OL_pin(struct ol_t* ol, word ref);
+word OL_deref(struct ol_t* ol, size_t p);
+word OL_unpin(struct ol_t* ol, size_t p);
+word OL_apply(struct ol_t* ol, word function, word args);
+
+void*
+OL_userdata (struct ol_t* ol, void* userdata);
+void*
+OL_allocate (struct ol_t* ol, unsigned words);
+
+
+// descriptor format
+// заголовок объекта, то, что лежит у него в ob[0] (*ob):
+//  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1 (почему?, а для GC!)
+//   '----------| '--||'-| '----|
+//              |    ||  |      '-----> object type
+//              |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
+//              |    |'---------------> rawness bit (raw objects have no descriptors(pointers) in them)
+//              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc, etc.
+//              '---------------------> object size in words
+//
+// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект:
+//                       .------------> payload if immediate
+//                       |      .-----> type tag if immediate
+//                       |      |.----> immediateness
+//   .-------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
+//  [... pppppppp pppppppp tttttti0]
+//   '----------------------------|
+//                                '-----> word aligned pointer if not immediate (4- or 8-byte)
+//      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
+//       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
+//
+//
+//; note - there are 6 type bits, but one is currently wasted in old header position
+//; to the right of them, so all types must be <32 until they can be slid to right
+//; position.
+
+// todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
+//	и ptr на функцию, что делает финализацию.
+// todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
+//	(идея: просто останавливаться на таких объектах, как на generation линии?)
+// http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
+
+#define IPOS      8  // === bits offset of (struct value_t, payload)
+
+#define TPOS      2  // === bits offset of (struct header_t, type) and (struct value_t, type)
+#define PPOS      8  // === bits offset of (struct header_t, padding)
+#define RPOS     11  // === bits offset of (struct header_t, rawness)
+#define SPOS     16  // === bits offset of (struct header_t, size)
+
+// ---==( value_t )==---
+struct __attribute__ ((aligned(sizeof(word)), packed))
+value_t
+{
+	unsigned char mark : 1;    // mark bit (can be 1 only during gc)
+	unsigned char i    : 1;    // always 1
+	unsigned char type : 6;    // value type
+
+	unsigned char payload[sizeof(word) - 1];
+};
+
+// some critical vm limitations:
+//static_assert(sizeof(struct value_t) == sizeof(word), "Size of value_t structure should be equal to size of virtual machine word");
+
+
+// ---==( reference_t )==---
+struct __attribute__ ((aligned(sizeof(word)), packed))
+reference_t
+{
+	union {
+		struct {
+			unsigned mark : 1;    // mark bit (can be 1 only during gc)
+			unsigned i    : 1;    // always 0
+		};
+		uintptr_t ptr; // btw, normally lower two bits is always 0
+	};
+};
+
+// some critical vm limitations:
+//static_assert(sizeof(struct reference_t) == sizeof(word), "Size of reference_t structure should be equal to size of virtual machine word");
+
+
+// ---==( object_t )==---
+struct __attribute__ ((aligned(sizeof(word)), packed))
+object_t
+{
+	union {
+		struct {
+			unsigned char mark : 1;    // mark bit (can be 1 only during gc)
+			unsigned char i    : 1;    // for objects always 1
+			unsigned char type : 6;    // object type
+
+			unsigned char padding : 3; // number of padding (unused) bytes at the end of object
+			unsigned char rawness : 1; // 1 for binstream, 0 for vectors
+			unsigned char user    : 4; // unused, can be used by user
+
+			unsigned char size[sizeof(word) - 2];
+		};
+		word ref[1];
+	};
+};
+
+// some critical vm limitations:
+//static_assert(sizeof(struct object_t) == sizeof(word), "Minimal size of object_t structure should be equal to size of virtual machine word");
+
+// ------------------------------------------------------
+// floating point numbers (inexact numbers in terms of lisp) support
+#ifndef OLVM_INEXACTS
+#define OLVM_INEXACTS 1
+#endif
+
+#ifndef OLVM_INEXACT_TYPE
+#define inexact_t double
+#else
+#define inexact_t OLVM_INEXACT_TYPE
+#endif
+
+// http://www.delorie.com/gnu/docs/gcc/gccint_53.html
+#if SIZE_MAX == 0xffffffffffffffff
+	typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
+	typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
+#elif SIZE_MAX == 0xffffffff
+	typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
+	typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
+#else
+#	error Unsupported math bit-count
+#endif
+
+// ------------------------------------------------------
+
+#define VBITS                       ((sizeof (word) * 8) - 8) // bits in value (short, or 'enum' number)
+#define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
+#define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
+
+#define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (binstream bit)
+#define BINARY                      (RAWBIT >> TPOS)
+
+#define make_value(type, value)     (2 | ((word)(value) << IPOS) | ((type) << TPOS))
+
+// header making macro
+#define _header3(type, size, padding)(2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
+#define _header2(type, size)        _header3(type, size, 0)
+#define HEADER_MACRO(_1, _2, _3, NAME, ...) NAME
+#define make_header(...)            HEADER_MACRO(__VA_ARGS__, _header3, _header2, NOTHING, NOTHING)(__VA_ARGS__)
+
+
+// два главных класса:
+#define is_value(x)                 (( (word) (x)) & 2)
+#define is_reference(x)             (!is_value(x))
+//#define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to binstream
+#define is_binstream(x)             ((*(word*)(x)) & RAWBIT)
+
+#define W                           (sizeof (word)) // todo: change to WSIZE
+
+// makes olvm reference from system pointer (and just do sanity check in DEBUG)
+#define R(v) ({\
+		word reference = (word)(v);\
+		assert (!(reference & (W-1)) && "olvm references must be aligned to word boundary");\
+		(word*) reference; })
+
+// всякая всячина:
+#define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
+#define object_size(x)              (((word)(x)) >> SPOS)
+#define header_pads(x)              (unsigned char) ((((word)(x)) >> IPOS) & 7) // header_t(x).padding
+
+#define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
+#define reference_type(x)           (value_type (*R(x)))
+
+#define reference_size(x)           ((header_size(*R(x)) - 1))
+#define binstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
+
+// todo: объединить типы TENUMP и TINTP, TENUMN и TINTN, так как они различаются битом I
+#define TPAIR                        (1)
+#define TVECTOR                      (2)
+#define TSTRING                      (3)
+#define TSYMBOL                      (4)
+#define TSTRINGWIDE                  (5)
+
+#define TPORT                       (12)
+#define TCONST                      (13)
+
+#define TBYTECODE                   (16) // must be RAW type
+#define TPROC                       (17)
+#define TCLOS                       (18)
+
+#define TFF                         (24) // // 26,27 same
+#	define TRIGHT                     1 // flags for TFF
+#	define TRED                       2
+
+#define TBYTEVECTOR                 (19)
+#define TSTRINGDISPATCH             (21)
+
+#define TVECTORLEAF                 (11)
+#define TVECTORDISPATCH             (15) // type-vector-dispatch
+
+#define TTHREAD                     (31) // type-thread-state
+
+// numbers (value type)
+// A FIXNUM is an exact integer that is small enough to fit in a machine word.
+// todo: rename TFIX to TSHORT or TSMALLINT, TINT to TLARGE or TLARGEINT
+#define TENUMP                       (0)  // type-enum+ // small integer
+#define TENUMN                      (32)  // type-enum-
+// numbers (reference type)
+#define TINTP                       (40)  // type-int+ // large integer
+#define TINTN                       (41)  // type-int-
+#define TRATIONAL                   (42)
+#define TCOMPLEX                    (43)
+#define TINEXACT                    (44)  // IEEE-754
+
+#define TVPTR                       (49) // void*, only RAW
+#define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
+#define TDLSYM                      (62) // type-dlsym, temp name
+
+// constants:
+#define IFALSE                      make_value(TCONST, 0)
+#define ITRUE                       make_value(TCONST, 1)
+#define INULL                       make_value(TCONST, 2)
+#define IEMPTY                      make_value(TCONST, 3) // empty ff
+#define IEOF                        make_value(TCONST, 4)
+#define IHALT                       INULL // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
+#define IRETURN                     make_value(TCONST, 6)
+
+#define RFALSE  ((word*)IFALSE)
+#define RTRUE   ((word*)ITRUE)
+#define RNULL   ((word*)INULL)
+#define REMPTY  ((word*)IEMPTY)
+#define REOF    ((word*)IEOF)
+#define RHALT   ((word*)IHALT)
+#define RRETURN ((word*)IRETURN)
+
+//#define likely(x)                   __builtin_expect((x), 1)
+//#define unlikely(x)                 __builtin_expect((x), 0)
+
+#define is_port(ob)                 (\
+									(is_value(ob)     && value_type (ob) == TPORT) || \
+									(is_reference(ob) && reference_type (ob) == TPORT))
+#define is_enump(ob)                (is_value(ob)     && value_type (ob) == TENUMP)
+#define is_enumn(ob)                (is_value(ob)     && value_type (ob) == TENUMN)
+#define is_enum(ob)                 (is_enump(ob) || is_enumn(ob))
+#define is_const(ob)                (is_value(ob)     && value_type (ob) == TCONST)
+#define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TPAIR,     3))
+#define is_npairp(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTP,     3))
+#define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
+#define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
+#define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
+
+#define is_string(ob)               (is_reference(ob) && reference_type (ob) == TSTRING)
+#define is_vector(ob)               (is_reference(ob) && reference_type (ob) == TVECTOR)
+
+#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TVPTR,     2))
+#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TCALLABLE, 2))
+#define is_dlsym(ob)                (is_reference(ob) && (*(word*) (ob)) == make_header(       TDLSYM,    3))
+
+#define is_numberp(ob)              (is_enump(ob) || is_npairp(ob))
+#define is_numbern(ob)              (is_enumn(ob) || is_npairn(ob))
+#define is_number(ob)               (is_numberp(ob) || is_numbern(ob))
+
+// makes positive olvm integer value from int
+#define I(val) \
+		(make_value(TENUMP, val))  // === (value << IPOS) | 2
+
+// взять значение аргумента:
+#define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
+#define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
+
+#define ref(ob, n)                  ((R(ob))[n])
+#define car(ob)                     ref(ob, 1)
+#define cdr(ob)                     ref(ob, 2)
+
+#define caar(o)                     car(car(o))
+#define cadr(o)                     car(cdr(o))
+#define cdar(o)                     cdr(car(o))
+#define cddr(o)                     cdr(cdr(o))
+
+
+// ------- service functions ------------------
+void E(char* format, ...);
+#ifdef NDEBUG
+#	define D(...)
+#else
+#	define D(...) E(__VA_ARGS__)
+#endif
+
+// --------- memory ---------------------------
+// -----------------------------------------------------//--------------------
+// -=( GC )=------------------------------------------------------------------
+
+/*** Garbage Collector,
+ * based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982)
+ **/
+// "на почитать" по теме GC:
+// shamil.free.fr/comp/ocaml/html/book011.html
+
+// память машины, управляемая сборщиком мусора
+typedef struct heap_t
+{
+	//  begin <= genstart <= end
+	word *begin;     // begin of heap
+	word *end;       // end of heap
+	word *genstart;  // young generation begin pointer
+	// new (size) == *(size*)fp; fp+=size
+	word *fp;        // allocation pointer
+
+	// вызвать GC если в памяти мало места (в словах)
+	// для безусловного вызова передать 0
+	// возвращает 1, если была проведена сборка
+	int (*gc)(struct ol_t* ol, int ws);
+} heap_t;
+
+
+// -= new =--------------------------------------------
+// выделить блок памяти, unsafe
+// size is a payload size, not a size of whole object
+// so in fact we'r allocating (size+1) words
+#define NEW(size) ({ \
+	word* addr = fp; \
+	fp += (size) + 1;\
+	/*return*/ addr; \
+})
+
+// аллоцировать новый объект (указанного типа)
+#define NEW_OBJECT(type, size) ({\
+word*p = NEW (size);\
+	*p = make_header(type, size+1, 0);\
+	/*return*/ p;\
+})
+
+// аллоцировать новый "бинарный" объект (указанного типа),
+//  данные объекта не проверяются сборщиком мусора и не
+//  могут содержать другие объекты!
+#define NEW_BLOB(type, size, pads) ({\
+word*p = NEW (size);\
+	*p = make_header(BINARY|type, size+1, pads);\
+	/*return*/ p;\
+})
+
+// new(size) - allocate memory, without type;
+//             size is payload size, not whole object with header size
+//             so, we can't create real 0-sized invalid objects
+// new(type, size) - allocate object, with type
+// new(type, size, pads) - allocate BLOB, with type, size in words and pads
+#define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_BLOB, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
+
+
+// -= ports =-------------------------------------------
+// создает порт, НЕ аллоцирует память
+
+// it's safe under linux (posix uses int as io handles)
+// it's safe under Windows (handles is 24-bit width):
+//	https://msdn.microsoft.com/en-us/library/ms724485(VS.85).aspx
+//	Kernel object handles are process specific. That is, a process must
+//	either create the object or open an existing object to obtain a kernel
+//	object handle. The per-process limit on kernel handles is 2^24.
+#define make_port(a) ({ word p = (word)a; assert (((word)p << IPOS) >> IPOS == (word)p); make_value(TPORT, p); })
+#define port(o)      ({ word p = (word)o; is_value(p) ? value(p) : car(p); })
+
+#define new_port(a1) ({\
+	word data1 = (word) (a1);\
+	/* точка следования */ \
+word*p = new (TPORT, 1, 0);\
+	p[1] = data1;\
+	/*return*/ p;\
+})
+
+
+// -= new_pair =----------------------------------------
+
+// a1 и a2 надо предвычислить перед тем, как выделим память,
+// так как они в свою очередь могут быть аллоцируемыми объектами.
+#define NEW_TYPED_PAIR(type, a1, a2) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	/* точка следования */ \
+word*p = NEW_OBJECT (type, 2);\
+	p[1] = data1;\
+	p[2] = data2;\
+	/*return*/ p;\
+})
+
+#define NEW_PAIR(a1, a2) NEW_TYPED_PAIR(TPAIR, a1, a2)
+
+#define NEW_PAIR_MACRO(_1, _2, _3, NAME, ...) NAME
+#define new_pair(...) NEW_PAIR_MACRO(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
+
+
+// -= new_list =----------------------------------------
+
+// аллокаторы списоков (ставить в качестве типа частей TPAIR! так как часть списка - список)
+#define new_list2(type, a1) \
+	new_pair (type, a1, INULL)
+#define new_list3(type, a1, a2) \
+	new_pair (type,\
+		a1, new_pair (TPAIR,\
+			a2, INULL))
+#define new_list4(type, a1, a2, a3) \
+	new_pair (type,\
+		a1, new_pair (TPAIR,\
+			a2, new_pair (TPAIR,\
+				a3, INULL)))
+#define new_list5(type, a1, a2, a3, a4) \
+	new_pair (type,\
+		a1, new_pair (TPAIR,\
+			a2, new_pair (TPAIR,\
+				a3, new_pair (TPAIR,\
+					a4, INULL))))
+#define new_list6(type, a1, a2, a3, a4, a5) \
+	new_pair (type,\
+		a1, new_pair (TPAIR,\
+			a2, new_pair (TPAIR,\
+				a3, new_pair (TPAIR,\
+					a4, new_pair (TPAIR,\
+						a5, INULL)))))
+
+#define NEW_LIST(_1, _2, _3, _4, _5, _6, NAME, ...) NAME
+#define new_list(...) NEW_LIST(__VA_ARGS__, new_list6, new_list5, new_list4, new_list3, new_list2, NOTHING, NOTHING)(__VA_ARGS__)
+
+
+// -= vector =---------------------------------------
+
+#define new_vector1(a1) ({\
+	word data1 = (word) (a1);\
+	/* точка следования */ \
+word*p = new (TVECTOR, 1);\
+	p[1] = data1;\
+	/*return*/ p;\
+})
+#define new_vector2(a1,a2) ({\
+	word data1 = (word) (a1);\
+	word data2 = (word) (a2);\
+	/* точка следования */ \
+word*p = new (TVECTOR, 2);\
+	p[1] = data1;\
+	p[2] = data2;\
+	/*return*/ p;\
+})
+#define new_vector3(a1,a2,a3) ({\
+	word data1 = (word) (a1);\
+	word data2 = (word) (a2);\
+	word data3 = (word) (a3);\
+	/* точка следования */ \
+word*p = new (TVECTOR, 3);\
+	p[1] = data1;\
+	p[2] = data2;\
+	p[3] = data3;\
+	/*return*/ p;\
+})
+#define new_vector5(a1,a2,a3,a4,a5) ({\
+	word data1 = (word) (a1);\
+	word data2 = (word) (a2);\
+	word data3 = (word) (a3);\
+	word data4 = (word) (a4);\
+	word data5 = (word) (a5);\
+	/* точка следования */ \
+word*p = new (TVECTOR, 5);\
+	p[1] = data1;\
+	p[2] = data2;\
+	p[3] = data3;\
+	p[4] = data4;\
+	p[5] = data5;\
+	/*return*/ p;\
+})
+#define new_vector9(a1,a2,a3,a4,a5,a6,a7,a8,a9) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	word data3 = (word) a3;\
+	word data4 = (word) a4;\
+	word data5 = (word) a5;\
+	word data6 = (word) a6;\
+	word data7 = (word) a7;\
+	word data8 = (word) a8;\
+	word data9 = (word) a9;\
+	/* точка следования */ \
+word*p = new (TVECTOR, 9);\
+	p[1] = data1;\
+	p[2] = data2;\
+	p[3] = data3;\
+	p[4] = data4;\
+	p[5] = data5;\
+	p[6] = data6;\
+	p[7] = data7;\
+	p[8] = data8;\
+	p[9] = data9;\
+	/*return*/ p;\
+})
+#define new_vector13(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13) ({\
+	word data1 = (word) a1;\
+	word data2 = (word) a2;\
+	word data3 = (word) a3;\
+	word data4 = (word) a4;\
+	word data5 = (word) a5;\
+	word data6 = (word) a6;\
+	word data7 = (word) a7;\
+	word data8 = (word) a8;\
+	word data9 = (word) a9;\
+	word data10 = (word) a10;\
+	word data11 = (word) a11;\
+	word data12 = (word) a12;\
+	word data13 = (word) a13;\
+	/* точка следования */ \
+word*p = new (TVECTOR, 13);\
+	p[1] = data1;\
+	p[2] = data2;\
+	p[3] = data3;\
+	p[4] = data4;\
+	p[5] = data5;\
+	p[6] = data6;\
+	p[7] = data7;\
+	p[8] = data8;\
+	p[9] = data9;\
+	p[10] = data10;\
+	p[11] = data11;\
+	p[12] = data12;\
+	p[13] = data13;\
+	/*return*/ p;\
+})
+
+#define NEW_TUPLE(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME
+#define new_vector(...) NEW_TUPLE(__VA_ARGS__, new_vector13, new_vector12, new_vector11,\
+			new_vector10, new_vector9, new_vector8, new_vector7, new_vector6, new_vector5,\
+			new_vector4, new_vector3, new_vector2, new_vector1, NOTHING)(__VA_ARGS__)
+
+
+// -= числа =------------------------
+// todo: потом переделать в трюк
+// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
+// алгоритмические трюки:
+// (-1)^t*x === (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
+
+// i - machine integer
+// ui - unsigned, si - signed
+// v - value number (internal, that fits in one register), type-enum
+//  or small numbers,
+//  or short numbers
+// uv, sv - unsigned/signed respectively.
+// Z - mножество целых чисел.
+
+// работа с numeric value типами
+
+// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
+#define enum(v) \
+	({  word x1 = (word)(v);    \
+		assert(is_enum(x1));     \
+		int_t y1 = (x1 >> IPOS);\
+		value_type (x1) == TENUMN ? -y1 : y1; \
+	})//(x1 & 0x80) ? -y1 : y1;
+#define make_enum(v) \
+	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2/*make_value(-x4, TENUMN) : make_value(x4, TENUMP)*/; })
+#define make_enump(v) I(v)
+// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
+
+// MATH
+// todo: потом переделать в трюк
+// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
+// алгоритмические трюки:
+// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
+// signed enum to int
+
+// i - machine integer
+// ui - unsigned, si - signed
+// v - value number (internal, that fits in one register), type-enum
+//  or small numbers,
+//  or short numbers
+// uv, sv - unsigned/signed respectively.
+// Z - mножество целых чисел.
+
+// работа с numeric value типами
+#ifndef UVTOI_CHECK
+#define UVTOI_CHECK(v)  assert (is_value(v) && value_type(v) == TENUMP);
+#endif
+
+// арифметика целых (возможно больших)
+// прошу внимания!
+//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
+// todo: rename to sn2i (signed number /value or long number/ TO integer)
+#define untoi(num)  ({\
+	is_value(num) ? value(num)\
+		: value(car(num)) | value(cadr(num)) << VBITS; \
+	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
+
+// something wrong: looks like __builtin_choose_expr doesn't work as expected!
+#ifndef __GNUC__
+#define __builtin_choose_expr(const_exp, exp1, exp2) (const_exp) ? (exp1) : (exp2)
+#endif
+
+#define itoun(val)  ({\
+	__builtin_choose_expr(sizeof(val) < sizeof(word), \
+		(word*)I(val),\
+		(word*)({ \
+			uintptr_t x5 = (uintptr_t)(val); \
+			x5 <= VMAX ? \
+					(word)I(x5): \
+					(word)new_list(TINTP, I(x5 & VMAX), I(x5 >> VBITS)); \
+		})); \
+	})
+#define itosn(val)  ({\
+	__builtin_choose_expr(sizeof(val) < sizeof(word), \
+		(word*)make_enum(val),\
+		(word*)({ \
+			intptr_t x5 = (intptr_t)(val); \
+			intptr_t x6 = x5 < 0 ? -x5 : x5; \
+			x6 <= VMAX ? \
+					(word)make_enum(x5): \
+					(word)new_list(x5 < 0 ? TINTN : TINTP, I(x6 & VMAX), I(x6 >> VBITS)); \
+		})); \
+	})
+
+// olvm numbers management:
+#define make_number(val) itosn(val)
+
+// get unsigned/signed number
+#define numberp(num)  ({ word* n = (word*) (num); is_value(n) ? value(n) : value(car(n)) | value(cadr(n)) << VBITS; })
+#define number(num)  ({\
+	word* x = (word*) (num);\
+	is_numberp(x) ?  numberp(x) :\
+	is_numbern(x) ? -numberp(x) :\
+	0; })
+
+// -= остальные аллокаторы =----------------------------
+
+#define new_binstream(type, length) ({\
+	int size = (length);\
+	int words = (size + W - 1) / W;\
+	int pads = (words * W - size);\
+	\
+word* p = new (type, words, pads);\
+	/*return*/ p;\
+})
+
+#define new_bytevector(length) new_binstream(TBYTEVECTOR, length)
+
+#define NEW_STRING2(string, length) ({\
+	char* data = string;\
+	int size = (length);\
+word* p = new_binstream(TSTRING, length);\
+	char* ptr = (char*)&p[1];\
+	while (size--)\
+		*ptr++ = *data++;\
+	/* *ptr = '\0'; <- bug! or use length+1 */ \
+	/*return*/ p;\
+})
+
+#define NEW_STRING(string) ({\
+	char* str = string;\
+	int strln = strlen(str);\
+	NEW_STRING2(str, strln);\
+})
+
+#define NEW_STRING_MACRO(_1, _2, NAME, ...) NAME
+#define new_string(...) NEW_STRING_MACRO(__VA_ARGS__, NEW_STRING2, NEW_STRING, NOTHING)(__VA_ARGS__)
+
+#define string(o)   ({ word p = (word)o; assert (is_string(p)); (char*) ((word*)p + 1); })
+
+
+#define new_vptr(a) ({\
+word data = (word) a;\
+	word* me = new (TVPTR, 1, 0);\
+	me[1] = data;\
+	/*return*/me;\
+})
+
+#define new_callable(a) ({\
+word data = (word) a;\
+	word* me = new (TCALLABLE, 1, 0);\
+	me[1] = data;\
+	/*return*/me;\
+})
+
+#define new_dlsym(a, b) ({\
+	new_pair (TDLSYM, new_vptr(a), b);\
+})
+
+#ifdef OLVM_INEXACTS
+#define new_inexact(a) ({\
+inexact_t f = (inexact_t) a;\
+	word* me = new_binstream (TINEXACT, sizeof(f));\
+	*(inexact_t*)&me[1] = f;\
+	/*return*/me;\
+})
+#endif
+
+
+
+
+/****************************************************************/
+
+#ifndef USE_OLVM_DECLARATION
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
@@ -271,17 +992,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 # endif
 #endif
 
-// floating point numbers (inexact numbers in terms of lisp) support
-#ifndef OLVM_INEXACTS
-#define OLVM_INEXACTS 1
-#endif
-
-#ifndef OLVM_INEXACT_TYPE
-#define inexact_t double
-#else
-#define inexact_t OLVM_INEXACT_TYPE
-#endif
-
 
 #ifndef OLVM_BUILTIN_FMATH // builtin olvm math functions (vm:fp1)
 #define OLVM_BUILTIN_FMATH 1
@@ -312,7 +1022,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #endif
 
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
-#include <stdint.h>
 
 #ifdef __linux__
 #include <features.h>
@@ -474,7 +1183,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #pragma GCC diagnostic ignored "-Wstring-plus-int"
 #endif
 
-static
 void E(char* format, ...)
 {
 	va_list args;
@@ -524,12 +1232,6 @@ void E(char* format, ...)
 	}
 }
 #pragma GCC diagnostic pop
-
-#ifdef NDEBUG
-#	define D(...)
-#else
-#	define D(...) E(__VA_ARGS__)
-#endif
 
 // --------------------------------------------------
 // -=( yield )=------------------------
@@ -639,286 +1341,14 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 // ------------------------------
 // -=( OL )=--------------------------------------------------------------------
 // --
+// TODO: !!!!! move this definitions to the top of file !!!!!!
 
-// unsigned int that is capable of storing a pointer
-// основной data type, зависит от разрядности машины
-//   базируется на C99 стандарте, <stdint.h>
-typedef uintptr_t word;
-//	arm, armv7-a, armv8-a: 4; arm64: 8
-//	risc-v 32: 4;         risc-v 64: 8
-//	wasm:      4
-//	x86:       4;            x86-64: 8
-//	mips:      4;            mips64: 8
-//	ppc:       4;    ppc64, ppc64le: 8
-//	raspbian:  4
-
-//
-// virtual machine:
-typedef struct ol_t OL;
-
-// descriptor format
-// заголовок объекта, то, что лежит у него в ob[0] (*ob):
-//  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1 (почему?, а для GC!)
-//   '----------| '--||'-| '----|
-//              |    ||  |      '-----> object type
-//              |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
-//              |    |'---------------> rawness bit (raw objects have no descriptors(pointers) in them)
-//              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc, etc.
-//              '---------------------> object size in words
-//
-// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект:
-//                       .------------> payload if immediate
-//                       |      .-----> type tag if immediate
-//                       |      |.----> immediateness
-//   .-------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
-//  [... pppppppp pppppppp tttttti0]
-//   '----------------------------|
-//                                '-----> word aligned pointer if not immediate (4- or 8-byte)
-//      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
-//       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
-//
-//
-//; note - there are 6 type bits, but one is currently wasted in old header position
-//; to the right of them, so all types must be <32 until they can be slid to right
-//; position.
-
-// todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
-//	и ptr на функцию, что делает финализацию.
-// todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
-//	(идея: просто останавливаться на таких объектах, как на generation линии?)
-// http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
-
-#define IPOS      8  // === bits offset of (struct value_t, payload)
-
-#define TPOS      2  // === bits offset of (struct header_t, type) and (struct value_t, type)
-#define PPOS      8  // === bits offset of (struct header_t, padding)
-#define RPOS     11  // === bits offset of (struct header_t, rawness)
-#define SPOS     16  // === bits offset of (struct header_t, size)
-
-// ---==( value_t )==---
-struct __attribute__ ((aligned(sizeof(word)), packed))
-value_t
-{
-	unsigned char mark : 1;    // mark bit (can be 1 only during gc)
-	unsigned char i    : 1;    // always 1
-	unsigned char type : 6;    // value type
-
-	unsigned char payload[sizeof(word) - 1];
-};
-
-// some critical vm limitations:
-static_assert(sizeof(struct value_t) == sizeof(word), "Size of value_t structure should be equal to size of virtual machine word");
+// internal declarations
 
 
-// ---==( reference_t )==---
-struct __attribute__ ((aligned(sizeof(word)), packed))
-reference_t
-{
-	union {
-		struct {
-			unsigned mark : 1;    // mark bit (can be 1 only during gc)
-			unsigned i    : 1;    // always 0
-		};
-		uintptr_t ptr; // btw, normally lower two bits is always 0
-	};
-};
-
-// some critical vm limitations:
-static_assert(sizeof(struct reference_t) == sizeof(word), "Size of reference_t structure should be equal to size of virtual machine word");
-
-
-// ---==( object_t )==---
-struct __attribute__ ((aligned(sizeof(word)), packed))
-object_t
-{
-	union {
-		struct {
-			unsigned char mark : 1;    // mark bit (can be 1 only during gc)
-			unsigned char i    : 1;    // for objects always 1
-			unsigned char type : 6;    // object type
-
-			unsigned char padding : 3; // number of padding (unused) bytes at the end of object
-			unsigned char rawness : 1; // 1 for binstream, 0 for vectors
-			unsigned char user    : 4; // unused, can be used by user
-
-			unsigned char size[sizeof(word) - 2];
-		};
-		word ref[1];
-	};
-};
-
-// some critical vm limitations:
-static_assert(sizeof(struct object_t) == sizeof(word), "Minimal size of object_t structure should be equal to size of virtual machine word");
 
 
 // ------------------------------------------------------
-// PUBLIC API: (please, check olvm.h)
-
-OL*  OL_new (unsigned char* bootstrap);
-void OL_free(struct ol_t* ol);
-word OL_run (struct ol_t* ol, int argc, char** argv);
-word OL_continue(struct ol_t* ol, int argc, void** argv);
-
-// "pinned" objects supporting functions
-size_t OL_pin(struct ol_t* ol, word ref);
-word OL_deref(struct ol_t* ol, size_t p);
-word OL_unpin(struct ol_t* ol, size_t p);
-
-void*
-OL_userdata (struct ol_t* ol, void* userdata);
-void*
-OL_allocate (struct ol_t* ol, unsigned words);
-
-
-read_t*  OL_set_read (struct ol_t* ol, read_t  read);
-write_t* OL_set_write(struct ol_t* ol, write_t write);
-open_t*  OL_set_open (struct ol_t* ol, open_t  open);
-close_t* OL_set_close(struct ol_t* ol, close_t close);
-
-idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
-
-// ------------------------------------------------------
-#define W                           (sizeof (word)) // todo: change to WSIZE
-
-#define VBITS                       ((sizeof (word) * 8) - 8) // bits in value (short, or 'atomic' number)
-#define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
-#define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
-
-#define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (binstream bit)
-#define BINARY                      (RAWBIT >> TPOS)
-
-#define make_value(type, value)     (2 | ((word)(value) << IPOS) | ((type) << TPOS))
-
-// header making macro
-#define header3(type, size, padding)(2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
-#define header2(type, size)         header3(type, size, 0)
-#define HEADER_MACRO(_1, _2, _3, NAME, ...) NAME
-#define make_header(...)            HEADER_MACRO(__VA_ARGS__, header3, header2, NOTHING, NOTHING)(__VA_ARGS__)
-
-
-// два главных класса:
-#define is_value(x)                 (( (word) (x)) & 2)
-#define is_reference(x)             (!is_value(x))
-#define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to binstream
-#define is_binstream(x)             ((*(word*)(x)) & RAWBIT)
-
-// makes olvm reference from system pointer (and just do sanity check in DEBUG)
-#define R(v) ({\
-		word reference = (word)(v);\
-		assert (!(reference & (W-1)) && "olvm references must be aligned to word boundary");\
-		(word*) reference; })
-
-// всякая всячина:
-#define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
-#define object_size(x)              (((word)(x)) >> SPOS)
-#define header_pads(x)              (unsigned char) ((((word)(x)) >> IPOS) & 7) // header_t(x).padding
-
-#define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
-#define reference_type(x)           (value_type (*R(x)))
-
-#define reference_size(x)           ((header_size(*R(x)) - 1))
-#define binstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
-
-// todo: объединить типы TENUMP и TINTP, TENUMN и TINTN, так как они различаются битом I
-#define TPAIR                        (1)
-#define TVECTOR                      (2)
-#define TSTRING                      (3)
-#define TSYMBOL                      (4)
-#define TSTRINGWIDE                  (5)
-
-#define TPORT                       (12)
-#define TCONST                      (13)
-
-#define TBYTECODE                   (16) // must be RAW type
-#define TPROC                       (17)
-#define TCLOS                       (18)
-
-#define TFF                         (24) // // 26,27 same
-#	define TRIGHT                     1 // flags for TFF
-#	define TRED                       2
-
-#define TBYTEVECTOR                 (19)
-#define TSTRINGDISPATCH             (21)
-
-#define TVECTORLEAF                 (11)
-#define TVECTORDISPATCH             (15) // type-vector-dispatch
-
-#define TTHREAD                     (31) // type-thread-state
-
-// numbers (value type)
-// A FIXNUM is an exact integer that is small enough to fit in a machine word.
-// todo: rename TFIX to TSHORT or TSMALLINT, TINT to TLARGE or TLARGEINT
-#define TENUMP                       (0)  // type-enum+ // small integer
-#define TENUMN                      (32)  // type-enum-
-// numbers (reference type)
-#define TINTP                       (40)  // type-int+ // large integer
-#define TINTN                       (41)  // type-int-
-#define TRATIONAL                   (42)
-#define TCOMPLEX                    (43)
-#define TINEXACT                    (44)  // IEEE-754
-
-#define TVPTR                       (49) // void*, only RAW
-#define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
-
-// constants:
-#define IFALSE                      make_value(TCONST, 0)
-#define ITRUE                       make_value(TCONST, 1)
-#define INULL                       make_value(TCONST, 2)
-#define IEMPTY                      make_value(TCONST, 3) // empty ff
-#define IEOF                        make_value(TCONST, 4)
-#define IHALT                       INULL // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
-#define IRETURN                     make_value(TCONST, 6)
-
-#define RFALSE  ((word*)IFALSE)
-#define RTRUE   ((word*)ITRUE)
-#define RNULL   ((word*)INULL)
-#define REMPTY  ((word*)IEMPTY)
-#define REOF    ((word*)IEOF)
-#define RHALT   ((word*)IHALT)
-#define RRETURN ((word*)IRETURN)
-
-//#define likely(x)                   __builtin_expect((x), 1)
-//#define unlikely(x)                 __builtin_expect((x), 0)
-
-#define is_port(ob)                 (\
-									(is_value(ob)     && value_type (ob) == TPORT) || \
-									(is_reference(ob) && reference_type (ob) == TPORT))
-#define is_enump(ob)                (is_value(ob)     && value_type (ob) == TENUMP)
-#define is_enumn(ob)                (is_value(ob)     && value_type (ob) == TENUMN)
-#define is_enum(ob)                 (is_enump(ob) || is_enumn(ob))
-#define is_const(ob)                (is_value(ob)     && value_type (ob) == TCONST)
-#define is_pair(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TPAIR,     3))
-#define is_npairp(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTP,     3))
-#define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
-#define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
-#define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
-
-#define is_string(ob)               (is_reference(ob) && reference_type (ob) == TSTRING)
-#define is_vector(ob)               (is_reference(ob) && reference_type (ob) == TVECTOR)
-
-#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TVPTR,     2))
-#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TCALLABLE, 2))
-
-#define is_numberp(ob)              (is_enump(ob) || is_npairp(ob))
-#define is_numbern(ob)              (is_enumn(ob) || is_npairn(ob))
-#define is_number(ob)               (is_numberp(ob) || is_numbern(ob))
-
-// makes positive olvm integer value from int
-#define I(val) \
-		(make_value(TENUMP, val))  // === (value << IPOS) | 2
-
-// взять значение аргумента:
-#define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
-#define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
-
-#define ref(ob, n)                  ((R(ob))[n])
-#define car(ob)                     ref(ob, 1)
-#define cdr(ob)                     ref(ob, 2)
-
-#define caar(o)                     car(car(o))
-#define cadr(o)                     car(cdr(o))
-#define cdar(o)                     cdr(car(o))
-#define cddr(o)                     cdr(cdr(o))
 
 
 // набор макросов - проверок для команд
@@ -968,16 +1398,6 @@ idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
 #	error Unsupported math bit-count
 #endif
 
-// http://www.delorie.com/gnu/docs/gcc/gccint_53.html
-#if MATH_64BIT
-typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
-typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
-#elif MATH_32BIT
-typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
-typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
-#endif
-
-
 
 // http://outflux.net/teach-seccomp/
 // http://mirrors.neusoft.edu.cn/rpi-kernel/samples/seccomp/bpf-direct.c
@@ -989,325 +1409,11 @@ static int unsafesp = 1;
 
 //static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
 
-// -----------------------------------------------------//--------------------
-// -=( GC )=------------------------------------------------------------------
-
-/*** Garbage Collector,
- * based on "Efficient Garbage Compaction Algorithm" by Johannes Martin (1982)
- **/
-// "на почитать" по теме GC:
-// shamil.free.fr/comp/ocaml/html/book011.html
-
-// память машины, управляемая сборщиком мусора
-typedef struct heap_t
-{
-	//  begin <= genstart <= end
-	word *begin;     // begin of heap memory block
-	word *end;       // end of heap
-	word *genstart;  // new generation begin pointer
-	// new (size) === *(size*)fp++
-	word *fp;        // allocation pointer
-
-	jmp_buf fail;
-} heap_t;
-
-
-// -= new =--------------------------------------------
-// выделить блок памяти, unsafe
-// size is a payload size, not a size of whole object
-// so in fact we'r allocating (size+1) words
-#define NEW(size) ({ \
-	word* addr = fp; \
-	fp += (size) + 1;\
-	/*return*/ addr; \
-})
-
-// аллоцировать новый объект (указанного типа)
-#define NEW_OBJECT(type, size) ({\
-word*p = NEW (size);\
-	*p = make_header(type, size+1, 0);\
-	/*return*/ p;\
-})
-
-// аллоцировать новый "бинарный" объект (указанного типа),
-//  данные объекта не проверяются сборщиком мусора и не
-//  могут содержать другие объекты!
-#define NEW_BLOB(type, size, pads) ({\
-word*p = NEW (size);\
-	*p = make_header(BINARY|type, size+1, pads);\
-	/*return*/ p;\
-})
-
-// new(size) - allocate memory, without type;
-//             size is payload size, not whole object with header size
-//             so, we can't create real 0-sized invalid objects
-// new(type, size) - allocate object, with type
-// new(type, size, pads) - allocate BLOB, with type, size in words and pads
-#define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new(...) NEW_MACRO(__VA_ARGS__, NEW_BLOB, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
-
-// -= ports =-------------------------------------------
-// создает порт, НЕ аллоцирует память
-
-// it's safe under linux (posix uses int as io handles)
-// it's safe under Windows (handles is 24-bit width):
-//	https://msdn.microsoft.com/en-us/library/ms724485(VS.85).aspx
-//	Kernel object handles are process specific. That is, a process must
-//	either create the object or open an existing object to obtain a kernel
-//	object handle. The per-process limit on kernel handles is 2^24.
-#define make_port(a) ({ word p = (word)a; assert (((word)p << IPOS) >> IPOS == (word)p); make_value(TPORT, p); })
-#define port(o)      ({ word p = (word)o; is_value(p) ? value(p) : car(p); })
-
-#define new_port(a1) ({\
-	word data1 = (word) (a1);\
-	/* точка следования */ \
-word*p = new (TPORT, 1, 0);\
-	p[1] = data1;\
-	/*return*/ p;\
-})
-
-// -= new_pair =----------------------------------------
-
-// a1 и a2 надо предвычислить перед тем, как выделим память,
-// так как они в свою очередь могут быть аллоцируемыми объектами.
-#define NEW_TYPED_PAIR(type, a1, a2) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	/* точка следования */ \
-word*p = NEW_OBJECT (type, 2);\
-	p[1] = data1;\
-	p[2] = data2;\
-	/*return*/ p;\
-})
-
-#define NEW_PAIR(a1, a2) NEW_TYPED_PAIR(TPAIR, a1, a2)
-
-#define NEW_PAIR_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new_pair(...) NEW_PAIR_MACRO(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
-
-// -= new_list =----------------------------------------
-
-// аллокаторы списоков (ставить в качестве типа частей TPAIR! так как часть списка - список)
-#define new_list2(type, a1) \
-	new_pair (type, a1, INULL)
-#define new_list3(type, a1, a2) \
-	new_pair (type,\
-		a1, new_pair (TPAIR,\
-			a2, INULL))
-#define new_list4(type, a1, a2, a3) \
-	new_pair (type,\
-		a1, new_pair (TPAIR,\
-			a2, new_pair (TPAIR,\
-				a3, INULL)))
-#define new_list5(type, a1, a2, a3, a4) \
-	new_pair (type,\
-		a1, new_pair (TPAIR,\
-			a2, new_pair (TPAIR,\
-				a3, new_pair (TPAIR,\
-					a4, INULL))))
-#define new_list6(type, a1, a2, a3, a4, a5) \
-	new_pair (type,\
-		a1, new_pair (TPAIR,\
-			a2, new_pair (TPAIR,\
-				a3, new_pair (TPAIR,\
-					a4, new_pair (TPAIR,\
-						a5, INULL)))))
-
-#define NEW_LIST(_1, _2, _3, _4, _5, _6, NAME, ...) NAME
-#define new_list(...) NEW_LIST(__VA_ARGS__, new_list6, new_list5, new_list4, new_list3, new_list2, NOTHING, NOTHING)(__VA_ARGS__)
-
-// -= new_vector =---------------------------------------
-
-#define new_vector1(a1) ({\
-	word data1 = (word) (a1);\
-	/* точка следования */ \
-word*p = new (TVECTOR, 1);\
-	p[1] = data1;\
-	/*return*/ p;\
-})
-#define new_vector2(a1,a2) ({\
-	word data1 = (word) (a1);\
-	word data2 = (word) (a2);\
-	/* точка следования */ \
-word*p = new (TVECTOR, 2);\
-	p[1] = data1;\
-	p[2] = data2;\
-	/*return*/ p;\
-})
-#define new_vector3(a1,a2,a3) ({\
-	word data1 = (word) (a1);\
-	word data2 = (word) (a2);\
-	word data3 = (word) (a3);\
-	/* точка следования */ \
-word*p = new (TVECTOR, 3);\
-	p[1] = data1;\
-	p[2] = data2;\
-	p[3] = data3;\
-	/*return*/ p;\
-})
-#define new_vector5(a1,a2,a3,a4,a5) ({\
-	word data1 = (word) (a1);\
-	word data2 = (word) (a2);\
-	word data3 = (word) (a3);\
-	word data4 = (word) (a4);\
-	word data5 = (word) (a5);\
-	/* точка следования */ \
-word*p = new (TVECTOR, 5);\
-	p[1] = data1;\
-	p[2] = data2;\
-	p[3] = data3;\
-	p[4] = data4;\
-	p[5] = data5;\
-	/*return*/ p;\
-})
-#define new_vector9(a1,a2,a3,a4,a5,a6,a7,a8,a9) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	word data3 = (word) a3;\
-	word data4 = (word) a4;\
-	word data5 = (word) a5;\
-	word data6 = (word) a6;\
-	word data7 = (word) a7;\
-	word data8 = (word) a8;\
-	word data9 = (word) a9;\
-	/* точка следования */ \
-word*p = new (TVECTOR, 9);\
-	p[1] = data1;\
-	p[2] = data2;\
-	p[3] = data3;\
-	p[4] = data4;\
-	p[5] = data5;\
-	p[6] = data6;\
-	p[7] = data7;\
-	p[8] = data8;\
-	p[9] = data9;\
-	/*return*/ p;\
-})
-#define new_vector13(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	word data3 = (word) a3;\
-	word data4 = (word) a4;\
-	word data5 = (word) a5;\
-	word data6 = (word) a6;\
-	word data7 = (word) a7;\
-	word data8 = (word) a8;\
-	word data9 = (word) a9;\
-	word data10 = (word) a10;\
-	word data11 = (word) a11;\
-	word data12 = (word) a12;\
-	word data13 = (word) a13;\
-	/* точка следования */ \
-word*p = new (TVECTOR, 13);\
-	p[1] = data1;\
-	p[2] = data2;\
-	p[3] = data3;\
-	p[4] = data4;\
-	p[5] = data5;\
-	p[6] = data6;\
-	p[7] = data7;\
-	p[8] = data8;\
-	p[9] = data9;\
-	p[10] = data10;\
-	p[11] = data11;\
-	p[12] = data12;\
-	p[13] = data13;\
-	/*return*/ p;\
-})
-
-#define NEW_TUPLE(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME
-#define new_vector(...) NEW_TUPLE(__VA_ARGS__, new_vector13, new_vector12, new_vector11,\
-			new_vector10, new_vector9, new_vector8, new_vector7, new_vector6, new_vector5,\
-			new_vector4, new_vector3, new_vector2, new_vector1, NOTHING)(__VA_ARGS__)
 
 
 
-// -= числа =------------------------
-// todo: потом переделать в трюк
-// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
-// алгоритмические трюки:
-// (-1)^t*x === (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
-
-// i - machine integer
-// ui - unsigned, si - signed
-// v - value number (internal, that fits in one register), type-enum
-//  or small numbers,
-//  or short numbers
-// uv, sv - unsigned/signed respectively.
-// Z - mножество целых чисел.
-
-// работа с numeric value типами
-
-// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
-#define enum(v) \
-	({  word x1 = (word)(v);    \
-		assert(is_enum(x1));     \
-		int_t y1 = (x1 >> IPOS);\
-		value_type (x1) == TENUMN ? -y1 : y1; \
-	})//(x1 & 0x80) ? -y1 : y1;
-#define make_enum(v) \
-	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2/*make_value(-x4, TENUMN) : make_value(x4, TENUMP)*/; })
-#define make_enump(v) I(v)
-// todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
-
-// -= остальные аллокаторы =----------------------------
-
-#define new_binstream(type, length) ({\
-	int size = (length);\
-	int words = (size + W - 1) / W;\
-	int pads = (words * W - size);\
-	\
-word* p = new (type, words, pads);\
-	/*return*/ p;\
-})
-
-#define new_bytevector(length) new_binstream(TBYTEVECTOR, length)
-
-#define NEW_STRING2(string, length) ({\
-	char* data = string;\
-	int size = (length);\
-word* p = new_binstream(TSTRING, length);\
-	char* ptr = (char*)&p[1];\
-	while (size--)\
-		*ptr++ = *data++;\
-	/* *ptr = '\0'; <- bug! or use length+1 */ \
-	/*return*/ p;\
-})
-
-#define NEW_STRING(string) ({\
-	char* str = string;\
-	int strln = strlen(str);\
-	NEW_STRING2(str, strln);\
-})
-
-#define NEW_STRING_MACRO(_1, _2, NAME, ...) NAME
-#define new_string(...) NEW_STRING_MACRO(__VA_ARGS__, NEW_STRING2, NEW_STRING, NOTHING)(__VA_ARGS__)
-
-#define string(o)   ({ word p = (word)o; assert (is_string(p)); (char*) ((word*)p + 1); })
 
 
-#define new_vptr(a) ({\
-word data = (word) a;\
-	word* me = new (TVPTR, 1, 0);\
-	me[1] = data;\
-	/*return*/me;\
-})
-
-#define new_callable(a) ({\
-word data = (word) a;\
-	word* me = new (TCALLABLE, 1, 0);\
-	me[1] = data;\
-	/*return*/me;\
-})
-
-#ifdef OLVM_INEXACTS
-#define new_inexact(a) ({\
-inexact_t f = (inexact_t) a;\
-	word* me = new_binstream (TINEXACT, sizeof(f));\
-	*(inexact_t*)&me[1] = f;\
-	/*return*/me;\
-})
-#endif
 
 // -= gc implementation =-----------
 #define is_flagged(x) (((word)(x)) & 1)  // mark for GC
@@ -1335,6 +1441,10 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 
 	word *old = heap->begin;
 	heap->begin = realloc(heap->begin, (cells + GCPAD(NR)) * sizeof(word));
+    if (heap->begin == NULL) {
+        D("heap reallocation failed! %ld->%ld", heap->end - old, (long)(cells + GCPAD(NR)));
+        exit(1); // todo: manage memory issues
+    }
 	heap->end = heap->begin + cells;
 
 	if (heap->begin == old) // whee, no heap slide \o/
@@ -1366,7 +1476,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		return delta;
 	} else {
 		E("Heap adjustment failed");
-		longjmp(heap->fail, IFALSE);
+		// longjmp(heap->fail, IFALSE); todo: manage memory issues
 	}
 	return 0;
 }
@@ -1596,13 +1706,10 @@ void set_signal_handler()
  */
 struct ol_t
 {
-	struct heap_t heap; // MUST be first(!)
+	struct heap_t heap; // MUST be first (!)
 	word max_heap_size; // max heap size in MiB
 
-	// вызвать GC если в памяти мало места (в словах)
-	// для безусловного вызова передать 0
-	// возвращает 1, если была проведена сборка
-	int (*gc)(OL* ol, int ws);
+	jmp_buf fail;	 // аварийный выход из любого места olvm
 //	void (*exit)(int errorId);	// deprecated
 
 	void* userdata; // user data
@@ -1627,73 +1734,6 @@ struct ol_t
 };
 
 // -=( ol ffi )--------------------------------------
-
-// MATH
-// todo: потом переделать в трюк
-// ! трюк, в общем, не нужен. gcc вполне неплохо сам оптимизирует код (на x64, например, использует cmov)
-// алгоритмические трюки:
-// x = (x xor t) - t, где t - y >>(s) 31 (все 1, или все 0)
-// signed enum to int
-
-// i - machine integer
-// ui - unsigned, si - signed
-// v - value number (internal, that fits in one register), type-enum
-//  or small numbers,
-//  or short numbers
-// uv, sv - unsigned/signed respectively.
-// Z - mножество целых чисел.
-
-// работа с numeric value типами
-#ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v)  assert (is_value(v) && value_type(v) == TENUMP);
-#endif
-
-// арифметика целых (возможно больших)
-// прошу внимания!
-//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-// todo: rename to sn2i (signed number /value or long number/ TO integer)
-#define untoi(num)  ({\
-	is_value(num) ? value(num)\
-		: value(car(num)) | value(cadr(num)) << VBITS; \
-	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
-
-// something wrong: looks like __builtin_choose_expr doesn't work as expected!
-#ifndef __GNUC__
-#define __builtin_choose_expr(const_exp, exp1, exp2) (const_exp) ? (exp1) : (exp2)
-#endif
-
-#define itoun(val)  ({\
-	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)I(val),\
-		(word*)({ \
-			uintptr_t x5 = (uintptr_t)(val); \
-			x5 <= VMAX ? \
-					(word)I(x5): \
-					(word)new_list(TINTP, I(x5 & VMAX), I(x5 >> VBITS)); \
-		})); \
-	})
-#define itosn(val)  ({\
-	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)make_enum(val),\
-		(word*)({ \
-			intptr_t x5 = (intptr_t)(val); \
-			intptr_t x6 = x5 < 0 ? -x5 : x5; \
-			x6 <= VMAX ? \
-					(word)make_enum(x5): \
-					(word)new_list(x5 < 0 ? TINTN : TINTP, I(x6 & VMAX), I(x6 >> VBITS)); \
-		})); \
-	})
-
-// olvm numbers management:
-#define make_number(val) itosn(val)
-
-// get unsigned/signed number
-#define numberp(num)  ({ word* n = (word*) (num); is_value(n) ? value(n) : value(car(n)) | value(cadr(n)) << VBITS; })
-#define number(num)  ({\
-	word* x = (word*) (num);\
-	is_numberp(x) ?  numberp(x) :\
-	is_numbern(x) ? -numberp(x) :\
-	0; })
 
 // =================================================================
 // machine floating point support, internal functions
@@ -1870,7 +1910,7 @@ word d2ol(struct ol_t* ol, double v) {
 
 
 static //__attribute__((aligned(8)))
-word runtime(OL* ol);  // главный цикл виртуальной машины
+word runtime(struct ol_t* ol);  // главный цикл виртуальной машины
 // требует полностью валидную структуру ol_t
 
 #define TICKS                       10000 // # of function calls in a thread quantum
@@ -1886,21 +1926,8 @@ word runtime(OL* ol);  // главный цикл виртуальной маш�
 #define R2                          (word*)R[2]
 #define R3                          (word*)R[3]
 
-// todo: добавить возможность вызова колбека как сопрограммы (так и назвать - сопрограмма)
-//       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
-//       все остальные свои сопрограммы.
-// ret is ret address to the caller function
-#if OLVM_CALLABLES
-static
-int64_t callback(OL* ol, int id, int_t* argi
-	#if __amd64__
-		, inexact_t* argf, int_t* rest
-	#endif
-	);
-#endif
-
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
-static int OL_gc(OL* ol, int ws) // ws - required size in words
+static int OL_gc(struct ol_t* ol, int ws) // ws - required size in words
 {
 	word *fp = ol->heap.fp; // memory allocation pointer
 
@@ -1981,7 +2008,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 
 
 static //__attribute__((aligned(8)))
-word runtime(OL* ol)
+word runtime(struct ol_t* ol)
 {
 	heap_t* heap = &ol->heap; // global vm heap
 
@@ -2014,7 +2041,53 @@ apply:;
 		goto apply;
 	}
 
-	if ((word)this == IHALT) {
+#if HAS_DLOPEN // unsafe must be enabled
+	if (is_vptr(this) > 0) { // todo: change to special type
+		word* args = (word*)INULL;
+		for (int i = acc; i > 1; i--)
+			args = new_pair(R[i+2], args);
+
+		word (*function)(struct ol_t*, word*) = (word (*)(struct ol_t*, word*)) car(this);  assert (function);
+		size_t cont = OL_pin(ol, R[3]);
+
+		heap->fp = fp;
+		R[3] = function(ol, args);
+		this = OL_unpin(ol, cont);
+		fp = heap->fp;
+
+		acc = 1;
+		goto apply;
+	}
+#endif
+
+// 		word (*function)(OL*, word*) = (word (*)(OL*, word*)) car(A);  assert (function);
+
+// 		// remember, called functions can do GC
+
+// 		// ptrdiff_t dp;
+// 		// dp = ip - (unsigned char*)this;
+
+// 		// во время работы execve может быть вызван колбек, который поменяет ip
+// 		// так что восстанавливать его не будем, а сразу перейдем на apply?
+
+// 		heap->fp = fp; ol->this = this;
+// 		R[v] = r = function(ol, B);
+// 		fp = heap->fp; this = ol->this;
+
+// 		// ip = (unsigned char*)this + dp;
+
+// 		// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
+// 		// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
+// 		// later note: nope, please do not goto apply
+// 		argc++;
+// 		// ip += argc + 4;
+// 		R[ip[argc]] = (word)r; // result
+// 		ip += argc + 1;
+
+    // todo: добавить автоматическую обработку нового(!) типа, который создается через (dlsym)
+    // и вынести сюда вместо сискола 'execve'
+
+	if (this == IHALT) {
 		// a thread or mcp is calling the final continuation
 		this = R[0];
 		if (!is_reference(this))
@@ -2056,12 +2129,12 @@ apply:;
             word key = R[4];
 			switch (acc) {
 			case 2:
-				R[3] = get((word*)this, key,    0, heap->fail); // 0 is NULL
+				R[3] = get((word*)this, key,    0, ol->fail); // 0 is NULL
 				if (!R[3])
 					FAIL(260, this, key);
 				break;
 			case 3:
-				R[3] = get((word*)this, key, R[5], heap->fail);
+				R[3] = get((word*)this, key, R[5], ol->fail);
 				break;
 			default:
 				FAIL(259, this, INULL);
@@ -2139,7 +2212,7 @@ apply:;
 		//	мы их складываем в память во временный объект.
 		if (fp >= heap->end - MEMPAD) { // TODO: переделать
 			heap->fp = fp; ol->this = this;
-			ol->gc(ol, 1);
+			heap->gc(ol, 1);
 			fp = heap->fp; this = ol->this;
 
 			// temporary removed:
@@ -2631,7 +2704,7 @@ loop:;
 					dp = ip - (unsigned char*)this;
 
 					heap->fp = fp; ol->this = this;
-					ol->gc(ol, len);
+					heap->gc(ol, len);
 					fp = heap->fp; this = ol->this;
 
 					ip = (unsigned char*)this + dp;
@@ -2696,7 +2769,7 @@ loop:;
 					dp = ip - (unsigned char*)this;
 
 					heap->fp = fp; ol->this = this;
-					ol->gc(ol, len);
+					heap->gc(ol, len);
 					fp = heap->fp; this = ol->this;
 
 					ip = (unsigned char*)this + dp;
@@ -2921,7 +2994,7 @@ loop:;
 			word hdr = *p;
 			word size = header_size (hdr) - 1; // -1 for header
 			result = (word) p;
-			if (is_blob(p)) {
+			if (is_binstream(p)) {
 				CHECK(is_enump(A2), A2, 10001)
 				size = size * sizeof(word) - header_pads(hdr);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
@@ -3272,7 +3345,7 @@ loop:;
 
 				int portfd = port(A1);
 				int count = (argc > 1 && A2 != IFALSE)
-									? number(A2) : -1; // в байтах
+									? number(A2) : -1; // in bytes
 
 				if (count < 0)
 #if defined(FIONREAD) && !defined(_WIN32)
@@ -3280,13 +3353,13 @@ loop:;
 #endif
 						count = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
 
-				int words = ((count + W - 1) / W) + 1; // в словах
+				int words = ((count + W - 1) / W) + 1; // in words
 				if (words > (heap->end - fp)) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
 					heap->fp = fp; ol->this = this;
-					ol->gc(ol, words);
+					heap->gc(ol, words);
 					fp = heap->fp; this = ol->this;
 
 					ip = (unsigned char*)this + dp;
@@ -3685,7 +3758,7 @@ loop:;
 					dp = ip - (unsigned char*)this;
 
 					heap->fp = fp; ol->this = this;
-					ol->gc(ol, words);
+					heap->gc(ol, words);
 					fp = heap->fp; this = ol->this;
 
 					ip = (unsigned char*)this + dp;
@@ -3783,6 +3856,8 @@ loop:;
 			case SYSCALL_EXECVE: {
 				CHECK_VPTR_OR_STRING(1);
 #if HAS_DLOPEN
+                // if (is_dlsym(A1))
+                //     A1 = car(A1);
 				// if a is result of dlsym
 				if (is_vptr(A1)) {
 					CHECK_ARGC_EQ(2);
@@ -3790,26 +3865,37 @@ loop:;
 					// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 					word* A = (word*)A1;
 					word* B = (word*)A2;
+					unsigned char v = ip[3];
+
 		//					word* C = (word*)c;
 
 					assert ((word)B == INULL || is_pair(B));
 		//					assert ((word)C == IFALSE);
-					word* (*function)(OL*, word*) = (word* (*)(OL*, word*)) car(A);  assert (function);
+					word (*function)(struct ol_t*, word*) = (word (*)(struct ol_t*, word*)) car(A);  assert (function);
 
 					// remember, called functions can do GC
 
-					ptrdiff_t dp;
-					dp = ip - (unsigned char*)this;
+					// ptrdiff_t dp;
+					// dp = ip - (unsigned char*)this;
+
+					// во время работы execve может быть вызван колбек, который поменяет ip
+					// так что восстанавливать его не будем, а сразу перейдем на apply?
 
 					heap->fp = fp; ol->this = this;
-					r = function(ol, B);
+					r = (word*)function(ol, B);
 					fp = heap->fp; this = ol->this;
 
-	                ip = (unsigned char*)this + dp;
+					R[v] = (word)r;
+	                // ip = (unsigned char*)this + dp;
 
 					// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
 					// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
                     // later note: nope, please do not goto apply
+					argc++;
+					// ip += argc + 4;
+					R[ip[argc]] = (word)r; // result
+					ip += argc + 1;
+					goto loop;
 					break;
 				}
 #endif //HAS_DLOPEN
@@ -3961,11 +4047,14 @@ loop:;
 				if (!(is_value(symbol) || reference_type (symbol) == TSTRING))
 					break;
 
-				word function = (word)dlsym(module, is_value(symbol)
+				char* name = is_value(symbol)
 						? (char*) value((word)symbol)
-						: (char*) &symbol[1]);
+						: (char*) &symbol[1];
+
+				word function = (word)dlsym(module, name);
 				if (function)
-					r = new_vptr(function);
+                    r = new_vptr(function);
+					// r = new_dlsym(function, symbol);
 #ifdef OLVM_DLSYM_DEBUG
 				else
 					D("dlsym failed: %s", dlerror());
@@ -4366,7 +4455,7 @@ loop:;
 				dp = ip - (unsigned char*)this;
 
 				heap->fp = fp; ol->this = this;
-				ol->gc(ol, 0); // full gc
+				heap->gc(ol, 0); // full gc
 				fp = heap->fp; this = ol->this;
 
 				ip = (unsigned char*)this + dp;
@@ -4872,6 +4961,8 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // -=( virtual machine functions )=--------------------------------
 //
 
+typedef struct ol_t OL;
+
 #ifndef NAKED_VM
 	extern unsigned char repl[];
 #	define language repl
@@ -4906,14 +4997,14 @@ int main(int argc, char** argv)
 #endif
 
 	char* file = 0;
-  if ((argc > 1) && (strcmp(argv[1], "--") == 0)) {
-    argc--; argv++;
-    if (argc > 1) {
-      file = argv[1];
-      argc--; argv++;
-    }
-  }
-  else
+	if ((argc > 1) && (strcmp(argv[1], "--") == 0)) {
+		argc--; argv++;
+		if (argc > 1) {
+			file = argv[1];
+			argc--; argv++;
+		}
+	}
+	else
 	// ./ol - если первая команда - не имя файла, то использовать repl
 	if ((argc > 1) && (strncmp(argv[1], "-", 1) != 0)) {
 		file = argv[1];
@@ -5064,7 +5155,7 @@ fail:;
 }
 #endif
 
-OL*
+struct ol_t*
 OL_new(unsigned char* bootstrap)
 {
 	// если отсутствует исполнимый образ
@@ -5114,6 +5205,7 @@ OL_new(unsigned char* bootstrap)
 	// ok
 	heap->end = heap->begin + required_memory_size;
 	heap->genstart = heap->begin;
+	heap->gc = OL_gc;
 
 	handle->max_heap_size = max_heap_size;
 
@@ -5152,7 +5244,6 @@ OL_new(unsigned char* bootstrap)
 	handle->read = os_read;
 	handle->write = os_write;
 
-	handle->gc = OL_gc;
 //	handle->exit = exit;
 
 	heap->fp = fp;
@@ -5190,6 +5281,13 @@ void* OL_allocate(OL* ol, unsigned words)
 }
 
 
+read_t*  OL_set_read (struct ol_t* ol, read_t  read);
+write_t* OL_set_write(struct ol_t* ol, write_t write);
+open_t*  OL_set_open (struct ol_t* ol, open_t  open);
+close_t* OL_set_close(struct ol_t* ol, close_t close);
+
+idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
+
 // i/o polymorphism
 #define override(name) \
 name##_t* OL_set_##name(struct ol_t* ol, name##_t name) {\
@@ -5211,7 +5309,7 @@ word
 OL_run(OL* ol, int argc, char** argv)
 {
 #ifndef __EMSCRIPTEN__
-	int r = setjmp(ol->heap.fail);
+	int r = setjmp(ol->fail);
 	if (r != 0) {
 		// TODO: restore old values
 		// TODO: if IFALSE - it's error
@@ -5257,7 +5355,7 @@ OL_run(OL* ol, int argc, char** argv)
 	ol->arity = acc;
 
 #ifndef __EMSCRIPTEN__
-	longjmp(ol->heap.fail,
+	longjmp(ol->fail,
 		(int)runtime(ol));
 #else
 	runtime(ol);
@@ -5269,7 +5367,7 @@ word
 OL_continue(OL* ol, int argc, void** argv)
 {
 #ifndef __EMSCRIPTEN__
-	int r = setjmp(ol->heap.fail);
+	int r = setjmp(ol->fail);
 	if (r != 0) {
 		return ol->R[3];
 	}
@@ -5300,7 +5398,7 @@ OL_continue(OL* ol, int argc, void** argv)
 	ol->arity = acc;
 
 #ifndef __EMSCRIPTEN__
-	longjmp(ol->heap.fail,
+	longjmp(ol->fail,
 		(int)runtime(ol));
 #else
 	runtime(ol);
@@ -5346,11 +5444,50 @@ word OL_unpin(struct ol_t* ol, size_t p)
     return re;
 }
 
-// -------------------------------
-// Foreign Function Interface code:
-#if OLVM_FFI || OLVM_CALLABLES
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wunused-label"
-#	include "../extensions/ffi.c"
-# pragma GCC diagnostic pop
+word OL_apply(struct ol_t* ol, word object, word args)
+{
+	ol->this = object; // lambda для обратного вызова
+//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, так как без потоков работаем
+//	ol->bank = 0;
+	// assert (is_reference(ol->this));
+	// assert (reference_type(ol->this) != TTHREAD);
+
+	// надо сохранить значения, иначе их уничтожит GC
+	// todo: складывать их в память! и восстанавливать оттуда же
+	word* R = ol->R;
+
+//	R[NR + 0] = R[0]; // не надо, mcp
+//	R[NR + 1] = R[1]; // не надо
+//	R[NR + 2] = R[2]; // не надо
+	R[NR + 3] = R[3]; // continuation/result
+
+	// вызовем колбек:
+//	R[0] = IFALSE;  // не надо, продолжаем использовать mcp
+	R[3] = IRETURN; // команда выхода из колбека
+	ol->arity = 1;
+
+	size_t a = 4;
+	while (args != INULL) {
+		R[a] = car(args);
+		args = cdr(args);
+
+		a++;
+		ol->arity++;
+	}
+
+	runtime(ol);
+
+	word r = R[3]; // callback result
+	// возврат из колбека,
+	// R, NR могли измениться
+	R[3] = R[NR + 3];
+//	R[2] = R[NR + 2]; // не надо
+//	R[1] = R[NR + 1]; // не надо
+//	R[0] = R[NR + 0]; // не надо, продолжаем использовать MCP
+
+	return r;
+}
+
+
 #endif
+#endif//__OLVM_C__

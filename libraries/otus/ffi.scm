@@ -171,13 +171,13 @@
                   (function (dlsym dll name)))
                (if function
                   (lambda args
-                     (execve ffi function rtti args))))))))
+                     (ffi function rtti args))))))))
 
 (define (make-vptr) (vm:cast 0 type-vptr))
 
 (define ffi:mkcb (dlsym (dlopen) "OL_mkcb"))
 (define (make-callback pinned-object)
-   (execve ffi:mkcb pinned-object))
+   (ffi:mkcb pinned-object))
 
 
 ; Calling Conventions

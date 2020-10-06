@@ -210,11 +210,13 @@ android: jni/*.c tmp/repl.c
 # ol
 vm: src/olvm.c include/olvm.h
 	$(CC) src/olvm.c -DNAKED_VM -o $@\
+	   -DOLVM_FFI=1 -Isrc extensions/ffi.c\
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
 ol: src/olvm.c include/olvm.h tmp/repl.c
 	$(CC) src/olvm.c tmp/repl.c -o $@\
+	   -DOLVM_FFI=1 -Isrc extensions/ffi.c\
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
