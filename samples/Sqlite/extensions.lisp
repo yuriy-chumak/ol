@@ -11,7 +11,7 @@
 
 ; create extension function
 (define calculate (vm:pin (cons
-   (list sqlite3_context* type-int+ (list type-vptr))
+   (list sqlite3_context* fft-int (list type-vptr))
    (lambda (context argc argv)
       (print "argc: " argc)
       (print "argv: " argv)
