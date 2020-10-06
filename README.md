@@ -102,41 +102,44 @@ If you want to compile asm.js binary (is not required by regular build, but only
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 * 2.1. Identifiers
-  * |\t\t| and |\x9;\x9;| are **different** in Ol, but *the same* in Scheme.
+  * `|\t\t|` and `|\x9;\x9;|` are **different** in Ol, but *the same* in Scheme.
   * Ol is definitely **case sensitive**, but Sheme is *configurable thru #!fold-case and #!no-fold-case*.
+* 4.1.5. Conditionals
+  * Ol provides **extended *if*** in form `(if <cond> <then> else <else>)`, while Schmeme is *not*.
 * 4.1.6. Assignments
-  * **No** SET! in Ol.
+  * **No** `set!` in Ol.
     - *note: Ol is purely functional language.*
 * 4.1.7. Inclusion
-  * **No** INCLUDE and INCLUDE-CI in Ol.
+  * **No** `include` and `include-ci` in Ol.
     - *note: Use ",load" instead.*
 * 4.2.1. Conditionals
-  * Result of the 'WHEN' expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
-  * Result of the 'UNLESS' expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
+  * Result of the `when` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
+  * Result of the `unless` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
 * 4.2.5. Delayed evaluation
-  * **No** DELAY-FORCE, PROMISE? and MAKE-PROMISE in Ol.
+  * **No** `delay-force`, `promise?` and `make-promise` in Ol.
     - *note: But DELAY and FORCE exists, sure.*
 * 4.2.7. Exception handling
-  * **No** GUARD and RAISE in Ol.
+  * **No** `guard` and `raise` in Ol.
 * 5.5. Record-type definitions
-  * **No** DEFINE-RECORD-TYPE in Ol.
-* 6.1. Equivalence predicates (EQV?)
-  * (eqv? +nan.0 +nan.0) is **#true** in Ol, but *unspecified* in Scheme. The same for +inf.0 and -inf.0.
+  * **No** `define-record-type` in Ol.
+* 6.1. Equivalence predicate `eqv?`
+  * `(eqv? +nan.0 +nan.0)` is **#true** in Ol, but *unspecified* in Scheme. The same for `+inf.0` and `-inf.0`.
 * 6.2.5. Syntax of numerical constants
   * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
     - *explanation: Inexactness can be disabled by compiler features or/and unsupported by platform. But we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).*
 * 6.2.6. Numerical operations
-  * Just Note: *complex?* is the same as *number?*, like in Scheme.
-  * INTEGER? for inexact numbers always returns **#false** in Ol, but can be *#true* in Scheme when (= number (round number)).
+  * Just Note: `complex?` is the same as `number?`, like in Scheme.
+  * `integer?` for inexact numbers always returns **#false** in Ol, but can be *#true* in Scheme when (= number (round number)).
     - *explanation: Inexactness is an inexactness - we may lose the fractional part and not to be noticed about. So let's be a little paranoid.*
-  * SQRT is **included** in base library profile while *not included* in Scheme
+  * `sqrt` is **included** in base library profile while *not included* in Scheme
     - *explanation: due to frequent use.*
 * 6.4. Pairs and lists
-  * MEMQ and ASSQ behavior with 'short' numbers (aka 'enumerations') as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
+  * `memq` and `assq` behavior with 'short' numbers (aka 'enumerations') as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
+    - *note: those numbers processed by memq and assq as usual elements.*
 * 6.6. Characters
   * CHARACTERS in Ol is a **small numbers** (aka 'enumerations'), but a *characters* in Scheme.
     - *explanation: This is for a historical reason. Ol supports two types of numbers - 'small' numbers and 'long' numbers. 'Small' numbers are used as 'glyphs' (or 'runes' in other word) inside strings for better Unicode support. An additional 'character' type with requirements to use the char->integer and integer->char functions every time is too boring and slow. Thanks.*
-    - *note: Ol supports full Unicode 12.1.0 (2019 May 7) character set.*
+    - *note: Ol supports full Unicode 12.1.0 (2020 Jun 13) character set.*
     - *note: If you want to print a character in the form of a letter (or a digit, etc.), use a function 'string', i.e. instead of (print #\λ) use (print (string #\λ)), otherwise you will get a number 955.*
 * 6.9. Bytevectors
   * NEGATIVE indices of a bytevector is **valid** in Ol, but *invalid* in Scheme.
@@ -145,7 +148,7 @@ R<sup>7</sup>RS DIFFERENCES
   * **No** exceptions handling in Ol.
     - *note: Yet.*
 * Ol has builtin **regular expressions** while Scheme *not*.
-  * *note: you can use m/<pattern>/, s/<expression>/<new-expression>/ (with optional 'g' suffix) and c/<pattern>/ as functions to match, change and split the string.*
+  * *note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` (with optional 'g' suffix) and `c/<pattern>/` as functions to match, change and split the string.*
 
 BUILD
 -----

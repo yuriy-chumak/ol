@@ -234,7 +234,7 @@ void keys(int key, int x, int y) {
 		return;
 	}
 
-	word p = eval(get_level, mainx+dx, mainy+dy);      assert(is_small(p));
+	word p = eval(get_level, mainx+dx, mainy+dy);      assert(is_enum(p));
 	if (ol2small(p) == 1) {
 		mainx += dx;
 		mainy += dy;
