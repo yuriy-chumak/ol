@@ -1601,7 +1601,7 @@ void set_signal_handler()
 struct ol_t
 {
 	struct heap_t heap; // MUST be first(!)
-	word max_heap_size; // max heap size in MB
+	word max_heap_size; // max heap size in MiB
 
 	// вызвать GC если в памяти мало места (в словах)
 	// для безусловного вызова передать 0
@@ -2010,7 +2010,7 @@ word runtime(OL* ol)
 	// runtime entry
 apply:;
 
-	if ((word)this == IEMPTY && acc > 1) { /* ff application: (False key def) -> def */
+	if (this == REMPTY && acc > 1) { /* ff application: (#empty key def) -> def */
 		this = (word *) R[3];              /* call cont */
 		R[3] = (acc > 2) ? R[5] : IFALSE;  /* default arg or false if none */
 		acc = 1;
@@ -3299,7 +3299,6 @@ loop:;
 				int read;
 				read = ol->read(portfd, (char *) &fp[1], count, ol->userdata);
 				int err = errno;
-                //fprintf(stderr, "read/%d: %d\n", err, read);
 
 				if (read > 0)
 					r = new_bytevector(read);
@@ -3685,7 +3684,7 @@ loop:;
 				unsigned char* address = (unsigned char*) car(A1);
 				size_t length = number(A2); // в байтах
 				size_t offset = (argc > 2 && A3 != IFALSE)
-			 		? number(A3)
+					? number(A3)
 					: 0;
 
 				int words = ((length + W - 1) / W) + 1; // в словах
@@ -3811,7 +3810,7 @@ loop:;
 					// ip = (unsigned char *) &this[1] + sub;
 
 					// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
-					// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
+					// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip  // later: а вот и нет!
 					break;
 				}
 #endif //HAS_DLOPEN

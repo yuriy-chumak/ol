@@ -32,11 +32,9 @@ typedef struct heap_t
 struct OL
 {
 	struct heap_t heap; // must be first member
-	word max_heap_size; // max heap size in MB
+	word max_heap_size; // max heap size in MiB
 
-	// вызвать GC если в памяти мало места в КБ
-	// для безусловного вызова передать -1
-	void (*gc)(int kb);
+	int (*gc)(struct OL* ol, int ws);
 };
 
 // константы виртуальной машины и парочка макросов

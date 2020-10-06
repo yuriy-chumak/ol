@@ -666,7 +666,7 @@
                            (['keyboard key]
                               ((get dictionary 'keyboard-handler (lambda (key) #f)) key))
                            (['mouse button x y]
-                              ((get dictionary 'mouse-handler (lambda (x y) #f)) button x y))
+                              ((get dictionary 'mouse-handler (lambda (b x y) #f)) button x y))
                            (['resize width height]
                               (set-ref! STATE 1 0) ; save current window dimensions
                               (set-ref! STATE 2 0)
