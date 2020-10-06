@@ -2296,7 +2296,9 @@ word OL_sizeof(OL* self, word* arguments)
 // http://man7.org/tlpi/code/faq.html#use_default_source
 //  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
 #ifndef _DEFAULT_SOURCE
+# ifndef __APPLE__
 #	error "Required -std=gnu11 (we use anonymous mmap)"
+# endif
 #endif
 
 // todo: добавить возможность вызова колбека как сопрограммы (так и назвать - сопрограмма)
