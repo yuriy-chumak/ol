@@ -311,10 +311,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #	endif
 #endif
 
-// http://man7.org/tlpi/code/faq.html#use_default_source
-//  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
-#define _DEFAULT_SOURCE
-
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #include <stdint.h>
 

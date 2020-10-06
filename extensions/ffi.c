@@ -2261,6 +2261,13 @@ word OL_sizeof(OL* self, word* arguments)
 // --
 #if OLVM_CALLABLES
 
+// http://man7.org/tlpi/code/faq.html#use_default_source
+//  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
+#ifndef _DEFAULT_SOURCE
+#	error "Required -std=gnu11 (we use anonymous mmap)"
+#endif
+
+
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
 PUBLIC
 word OL_mkcb(OL* self, word* arguments)
