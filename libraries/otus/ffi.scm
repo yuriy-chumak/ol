@@ -96,6 +96,7 @@
       bytevector->int64
 
       bytevector->integer
+      bytevector->float
    )
 
    (import
