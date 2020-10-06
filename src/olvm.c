@@ -763,8 +763,10 @@ void OL_free(struct ol_t* ol);
 word OL_run (struct ol_t* ol, int argc, char** argv);
 word OL_continue(struct ol_t* ol, int argc, void** argv);
 
-// embed supporting function
-word OL_deref(struct ol_t* ol, word ref);
+// "pinned" objects supporting functions
+size_t OL_pin(struct ol_t* ol, word ref);
+word OL_deref(struct ol_t* ol, size_t p);
+word OL_unpin(struct ol_t* ol, size_t p);
 
 void*
 OL_userdata (struct ol_t* ol, void* userdata);
@@ -1917,6 +1919,7 @@ static int OL_gc(OL* ol, int ws) // ws - required size in words
 	// попробуем освободить ненужные регистры?
 	for (int i = ol->arity + 3; i < NR; i++)
 		R[i] = IFALSE;
+    // расширения должны использовать область pinned объектов
 	// fprintf(stderr, "%d", ol->arity);
 
 	// если нам не хватило магических 1024, то у нас проблема
@@ -4669,16 +4672,8 @@ loop:;
 	case VMPIN: {  // (vm:pin object) /pin object/ => pin id
 		word object = A0;
 
-		int id;
-		// TODO: увеличить heap->CR если маловато колбеков!
-		for (id = 4; id < CR; id++) {
-			if (R[NR+id] == IFALSE) {
-				R[NR+id] = object;
-				break;
-			}
-		}
-
-		A1 = I(id);
+		int id = OL_pin(ol, object);
+        A1 = (id > 3) ? I(id) : IFALSE;
 		ip += 2; break;
 	}
 	case VMUNPIN: { // vm:unpin => old pin value
@@ -4686,24 +4681,16 @@ loop:;
 		CHECK (is_value(pin), pin, VMUNPIN);
 
 		int id = value(pin);
-		if (id > 3 && id < CR) {
-			A1 = ITRUE;
-			R[NR+id] = IFALSE;
-		}
-		else
-			A1 = IFALSE;
+        A1 = OL_unpin(ol, id);
 		ip += 2; break;
 	}
 
 	case VMDEREF: {// vm:deref /get pinned object value/
 		word pin = A0;
-		CHECK (is_value(pin), pin, VMUNPIN);
+		CHECK (is_value(pin), pin, VMDEREF);
 
 		int id = value(pin);
-		if (id > 3 && id < CR)
-			A1 = R[NR+id];
-		else
-			A1 = IFALSE;
+        A1 = OL_deref(ol, id);
 		ip += 2; break;
 	}
 
@@ -5323,14 +5310,42 @@ OL_continue(OL* ol, int argc, void** argv)
 #endif
 }
 
-word OL_deref(struct ol_t* ol, word ref)
+// [0..3] - errors
+// 0 means "no space left"
+// 1 means "no pinnable object"
+size_t OL_pin(struct ol_t* ol, word ref)
 {
-	assert (is_enump(ref));
-	int id = value(ref);
+    if (ref == IFALSE)
+        return 1; // #false is not a pinnable object
+    // TODO: увеличить heap->CR если маловато колбеков!
+    for (int id = 4; id < CR; id++) {
+        if (ol->R[NR+id] == IFALSE) {
+            ol->R[NR+id] = ref;
+            return id;
+        }
+    }
+    return 0; // no space left
+}
+
+word OL_deref(struct ol_t* ol, size_t p)
+{
+	size_t id = p;
 	if (id > 3 && id < CR)
 		return ol->R[NR + id];
 	else
 		return IFALSE;
+}
+
+word OL_unpin(struct ol_t* ol, size_t p)
+{
+    word re = IFALSE;
+    size_t id = p;
+    if (id > 3 && id < CR) {
+        re = ol->R[NR+id];
+        ol->R[NR+id] = IFALSE;
+    }
+
+    return re;
 }
 
 // -------------------------------

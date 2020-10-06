@@ -1002,13 +1002,13 @@ word* OL_ffi(OL* self, word* arguments)
 	// a - function address
 	// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
 	// c - '(return-type . argument-types-list)
-	word* A = (word*)car(arguments); arguments = (word*)cdr(arguments); // function
-	word* B = (word*)car(arguments); arguments = (word*)cdr(arguments); // rtty
-	word* C = (word*)car(arguments); arguments = (word*)cdr(arguments); // args
+	word A = (word)car(arguments); arguments = (word*)cdr(arguments); // function
+	word B = (word)car(arguments); arguments = (word*)cdr(arguments); // rtty
+	word C = (word)car(arguments); arguments = (word*)cdr(arguments); // args
 
 	assert (is_vptr(A));
-	assert ((word)B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
-	assert ((word)C == INULL || (is_reference(B) && reference_type(C) == TPAIR));
+	assert (B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
+	assert (C == INULL || (is_reference(C) && reference_type(C) == TPAIR));
 
 	// todo: может выделять в общей куче,а не стеке? (кстати, да!)
 	void *function = (void*)car(A);  assert (function);
@@ -1121,7 +1121,15 @@ word* OL_ffi(OL* self, word* arguments)
 
 	// ensure that all arguments will fit in heap
 	if (words > (heap->end - heap->fp)) {
+        size_t a = OL_pin(self, A);
+        size_t b = OL_pin(self, B);
+        size_t c = OL_pin(self, C);
+
 		self->gc(self, words);
+
+        A = OL_unpin(self, a);
+        B = OL_unpin(self, b);
+        C = OL_unpin(self, c);
 	}
 
 	word* fp = heap->fp;
@@ -1857,8 +1865,8 @@ word* OL_ffi(OL* self, word* arguments)
 
 	// где гарантия, что C и B не поменялись?
 	fp = heap->fp;
-	B = (word*)self->R[NR + 1];
-	C = (word*)self->R[NR + 2];
+	B = self->R[NR + 1];
+	C = self->R[NR + 2];
 
 	if (has_wb) {
 		// еще раз пробежимся по аргументам, может какие надо будет вернуть взад

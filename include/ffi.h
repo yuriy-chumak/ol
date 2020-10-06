@@ -9,6 +9,7 @@
  */
 
 #include <stdint.h>
+#include <setjmp.h>
 
 // unsigned int that is capable of storing a pointer
 // основной тип даных, зависит от разрядности машины
@@ -21,10 +22,11 @@ typedef struct heap_t
 	//  begin <= genstart <= end
 	word *begin;     // begin of heap memory block
 	word *end;       // end of heap
-
 	word *genstart;  // new generation begin pointer
 
 	word *fp;        // allocation pointer
+
+	jmp_buf fail;
 } heap_t;
 
 struct OL

@@ -142,7 +142,7 @@ int main(int argc, char** argv)
 	assert (r = make_integer(5040)); // 7!
 
 	r = eval("vm:unpin", f); // free
-	assert (r == ITRUE);
+    assert (r != IFALSE);
 
 
 	// Ok. What about precompiled core? For example ..... some naive cryptography?

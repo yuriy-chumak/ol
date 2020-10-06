@@ -216,8 +216,8 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv*
 
     // well, we have our "smart" script prepared,
     //  now save both eval and env variables
-    assert (is_small(r));
-    ol.eval = r;
+    assert (is_small(r)); // todo: change to is_enump
+    ol.eval = value(r);
 
     OL_set_open(ol.vm, assets_open);
     OL_set_close(ol.vm, assets_close);
