@@ -2439,7 +2439,7 @@ int64_t callback(OL* ol, int id, int_t* argi
 //	__asm("int $3");
 	word* R = ol->R;
 
-	ol->this = (word*)cdr (ol->R[NR + id]); // lambda для обратного вызова
+	ol->this = (word) cdr (ol->R[NR + id]); // lambda для обратного вызова
 //	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, так как без потоков работаем
 //	ol->bank = 0;
 	assert (is_reference(ol->this));

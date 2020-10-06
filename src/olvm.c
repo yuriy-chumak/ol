@@ -1622,7 +1622,7 @@ struct ol_t
 	word R[NR + CR];   // регистры виртуальной машины
 
 	// текущий контекст с арностью
-	word *this;
+	word this;
 	long arity;
 };
 
@@ -1928,12 +1928,12 @@ static int OL_gc(OL* ol, int ws) // ws - required size in words
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = new (TVECTOR, N + 1); // N for regs, 1 for this
 	while (++p <= N) regs[p] = R[p-1];
-	regs[p] = (word) ol->this;
+	regs[p] = ol->this;
 	// выполним сборку мусора
 	ol->heap.fp = fp;
 	regs = (word*)gc(&ol->heap, ws, (word)regs); // GC занимает 0-1 ms
 	// и восстановим все регистры, уже подкорректированные сборщиком
-	ol->this = (word *) regs[p];
+	ol->this = regs[p];
 	while (--p >= 1) R[p-1] = regs[p];
 
 	// закончили, почистим за собой:
@@ -1993,7 +1993,7 @@ word runtime(OL* ol)
 	int ticker = TICKS; // any initial value ok
 	int bank = 0; // ticks deposited at interop
 
-	word*this = ol->this; // context
+	word this = ol->this; // context
 	long acc = ol->arity; // arity
 
 #	ifndef _WIN32
@@ -2006,8 +2006,8 @@ word runtime(OL* ol)
 	// runtime entry
 apply:;
 
-	if (this == REMPTY && acc > 1) { /* ff application: (#empty key def) -> def */
-		this = (word *) R[3];              /* call cont */
+	if (this == IEMPTY && acc > 1) { /* ff application: (#empty key def) -> def */
+		this = R[3];                 /* call cont */
 		R[3] = (acc > 2) ? R[5] : IFALSE;  /* default arg or false if none */
 		acc = 1;
 
@@ -2016,7 +2016,7 @@ apply:;
 
 	if ((word)this == IHALT) {
 		// a thread or mcp is calling the final continuation
-		this = (word *) R[0];
+		this = R[0];
 		if (!is_reference(this))
 			goto done; // expected exit
 
@@ -2033,7 +2033,7 @@ apply:;
 		goto apply;
 	}
 
-	if ((word)this == IRETURN) {
+	if (this == IRETURN) {
 		// в R[3] находится код возврата
 		goto done;       // колбек закончен! надо просто выйти наверх
 	}
@@ -2042,26 +2042,26 @@ apply:;
 	if (is_reference(this)) { // если это аллоцированный объект
 		word type = reference_type (this);
 		if (type == TPROC) { //hdr == header(TPROC, 0)) { // proc (58% for "yes")
-			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
+			R[1] = this; this = ref(this, 1); // ob = car(ob)
 		}
 		else
 		if (type == TCLOS) { //hdr == header(TCLOS, 0)) { // clos (66% for "yes")
-			R[1] = (word) this; this = (word *) this[1]; // ob = car(ob)
-			R[2] = (word) this; this = (word *) this[1]; // ob = car(ob)
+			R[1] = this; this = ref(this, 1); // ob = car(ob)
+			R[2] = this; this = ref(this, 1); // ob = car(ob)
 		}
 		else
 		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
-			word *cont = (word *) R[3];
+			word cont = R[3];
             word key = R[4];
 			switch (acc) {
 			case 2:
-				R[3] = get(this, key,    0, heap->fail); // 0 is NULL
+				R[3] = get((word*)this, key,    0, heap->fail); // 0 is NULL
 				if (!R[3])
 					FAIL(260, this, key);
 				break;
 			case 3:
-				R[3] = get(this, key, R[5], heap->fail);
+				R[3] = get((word*)this, key, R[5], heap->fail);
 				break;
 			default:
 				FAIL(259, this, INULL);
@@ -2102,9 +2102,9 @@ apply:;
 				for (ptrdiff_t pos = 1; pos < acc-1; pos++)
 					thread[pos] = R[pos];
 
-				R[acc] = (word)this;
-				thread[acc-1] = (word) this;
-				this = (word*) R[0]; // mcp
+				R[acc] = this;
+				thread[acc-1] = this;
+				this = R[0]; // mcp
 
 				R[0] = IFALSE; // remove mcp cont
 				// R3 marks the interop to perform
@@ -2148,7 +2148,7 @@ apply:;
 			//	breaked |= 8; // will be passed over to mcp at thread switch
 		}
 
-		ip = (unsigned char *) &this[1];
+		ip = (unsigned char *) &ref(this, 1);
 		goto mainloop; // let's execute
 	}
 	else
@@ -2354,7 +2354,7 @@ loop:;
 	/*! ##### GOTO
 	 */
 	case GOTO: // (10%)
-		this = (word *)A0;
+		this = A0;
 		acc = ip[1];
 		goto apply;
 
@@ -2372,13 +2372,13 @@ loop:;
 		if (op == APPLY) { // normal apply: cont=r3, fn=r4, a0=r5,
 			reg = 4; // include cont
 			arity = 1;
-			this = (word *) R[reg];
+			this = R[reg];
 			acc -= 3; // ignore cont, function and stop before last one (the list)
 		}
 		else { // apply-cont (_sans_cps apply): func=r3, a0=r4,
 			reg = 3; // include cont
 			arity = 0;
-			this = (word *) R[reg];
+			this = R[reg];
 			acc -= 2; // ignore function and stop before last one (the list)
 		}
 
@@ -2409,7 +2409,7 @@ loop:;
 	/*! ##### RET
 	 */
 	case RET: // (3%) return value
-		this = (word *) R[3];
+		this = R[3];
 		R[3] = A0;
 		acc = 1;
 
@@ -2419,7 +2419,7 @@ loop:;
 	 */
 	// return to continuation?
 	case SYS: // (1%) sys continuation op arg1 arg2
-		this = (word *) R[0];
+		this = R[0];
 		R[0] = IFALSE; // let's call mcp
 		R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
 		acc = 4;
@@ -2436,19 +2436,19 @@ loop:;
 	// todo: add quantum type checking
 	//			if (ip[0] != 4 || ip[1] != 5)
 	//				STDERR("run R[%d], R[%d]", ip[0], ip[1]);
-		this = (word *) A0;
+		this = A0;
 		R[0] = R[3];
 		ticker = bank ? bank : value (A1);
 		bank = 0;
 		CHECK(is_reference(this), this, RUN);
 
-		word hdr = *this;
+		word hdr = ref(this, 0);
 		if (value_type (hdr) == TTHREAD) {
 			int pos = header_size(hdr) - 1;
-			word code = this[pos];
+			word code = ref(this, pos);
 			acc = pos - 3;
 			while (--pos)
-				R[pos] = this[pos];
+				R[pos] = ref(this, pos);
 			ip = ((unsigned char *) code) + W;
 			break;  // no apply, continue
 		}
@@ -4693,7 +4693,7 @@ loop:;
 	}
 
 	case VMEXIT: {
-		this = (word *) R[3];
+		this = R[3];
 		R[3] = A0;
 		goto done;
 	}
@@ -4706,7 +4706,7 @@ loop:;
 
 
 error:; // R4-R6 set, and call mcp (if any)
-	this = (word *) R[0];
+	this = R[0];
 	R[0] = IFALSE;
 	R[3] = I(3); // vm thrown error, check the "threading.scm"
 	if (is_reference(this)) {
@@ -5248,7 +5248,7 @@ OL_run(OL* ol, int argc, char** argv)
 
 	// точка входа в программу - последняя лямбда загруженного образа (λ (args))
 	// thinkme: может стоит искать и загружать какой-нибудь main() ?
-	word* this = (word*) ptrs[nobjs];
+	word this = ptrs[nobjs];
 
 	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
 
@@ -5276,7 +5276,7 @@ OL_continue(OL* ol, int argc, void** argv)
 #endif
 
 	// точка входа в программу
-	word* this = argv[0];
+	word this = (word)argv[0];
 	unsigned short acc = 2;
 
 	// подготовим аргументы:
@@ -5292,8 +5292,8 @@ OL_continue(OL* ol, int argc, void** argv)
 
 		ol->heap.fp = fp;
 	}
-	ol->R[3] = (word) ol->this; // continuation (?)
-	ol->R[4] = (word) userdata;
+	ol->R[3] = ol->this; // continuation (?)
+	ol->R[4] = userdata;
 
 	// теперь все готово для запуска главного цикла виртуальной машины
 	ol->this = this;
