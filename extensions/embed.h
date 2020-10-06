@@ -240,7 +240,7 @@ void embed_new(ol_t* embed, unsigned char* bootstrap, int interactive)
 	// well, we have our "smart" script prepared,
 	//  now save both eval and env variables
 	assert (is_small(r));
-	embed->eval = r;
+	embed->eval = ol2small(r);
 }
 
 /* \brief evaluate ol expression
@@ -265,24 +265,24 @@ void embed_new(ol_t* embed, unsigned char* bootstrap, int interactive)
  *
  * \param ol embed ol instance
  */
-word embed_eval(ol_t* ol, ...)
+word embed_eval(ol_t* embed, ...)
 {
 	va_list vl;
-	va_start(vl, ol);
+	va_start(vl, embed);
 	int count = 0;
 	while (va_arg(vl, void*) != 0)
 		count++;
 	va_end(vl);
 
-	va_start(vl, ol);
+	va_start(vl, embed);
 	uintptr_t* args = __builtin_alloca((count+1) * sizeof(uintptr_t)); // just one for sanity zero
 
-	args[0] = OL_deref(ol->vm, ol->eval); // deref right now, cause GC possibly moved the object
+	args[0] = OL_deref(embed->vm, embed->eval); // deref right now, cause GC possibly moved the object
 	int i = 0;
 	while ((args[++i] = (uintptr_t)va_arg(vl, void*)) != 0) ;
 	va_end(vl);
 
-	word r = OL_continue(ol->vm, i, (void**)args);
+	word r = OL_continue(embed->vm, i, (void**)args);
 	return r;
 }
 
