@@ -2,31 +2,50 @@
 (import (lib gl))
 (import (otus random!))
 
-(define WIDTH 170) ;was: 128
-(define HEIGHT 96) ;96
+; read initial population
+(import (owl parse))
+(import (file xpm))
+
+(define population (parse xpm-parser (file->bytestream
+   (or
+      (and (pair? *vm-args*) (car *vm-args*))
+      "initial.xpm"))
+   #f #f #f))
+
+; the size of world
+(define WIDTH  (* 2 (population 'width)))
+(define HEIGHT (* 2 (population 'height)))
+
+; the color palette in rgb ([0..1][0..1][0..1])
+(define colors (vector-map (lambda (color) (map (lambda (v) (inexact (/ v 255))) color))
+   '[(255 0 0) (255 90 0) (255 154 0) (255 206 0) (255 232 8)
+   (255 232  18) (255 232  38) (255 232  58) (255 232  78) (255 232  98) (255 232 118) (255 232 138) (255 232 158)
+   (255 232 178) (255 232 198) (255 232 218) (255 232 238) (255 232 258)
+   ]))
+
+(define (color age)
+   (ref colors (min age (size colors))))
+
+
 
 (define (hash x y)
    (let ((x (mod (+ x WIDTH) WIDTH))
          (y (mod (+ y HEIGHT) HEIGHT)))
    (+ (* y 65536) x)))
-;(define (hash x y)
-;   (+ (* y 64) x))
 
-(define (alive gen x y)
-   (let ((n
-      (+ (get gen (hash (- x 1) (- y 1)) 0)
-         (get gen (hash    x    (- y 1)) 0)
-         (get gen (hash (+ x 1) (- y 1)) 0)
-         (get gen (hash (- x 1)    y   ) 0)
-         ;get gen (hash    x       y   ) 0)
-         (get gen (hash (+ x 1)    y   ) 0)
-         (get gen (hash (- x 1) (+ y 1)) 0)
-         (get gen (hash    x    (+ y 1)) 0)
-         (get gen (hash (+ x 1) (+ y 1)) 0))))
+(define (alive gen key)
+   (let ((x (mod key 65536))
+         (y (div key 65536)))
+   (let ((n (fold
+               (lambda (st dx dy)
+                  (+ st (if (gen (hash (+ x dx) (+ y dy)) #f) 1 0)))
+               0
+               '(-1  0 +1   -1  +1   -1  0 +1)
+               '(-1 -1 -1    0   0   +1 +1 +1))))
       (if (eq? n 2)
-         (get gen (hash x y) #f)
+         (gen (hash x y) #f)
       (if (eq? n 3)
-         #true))))
+         #true)))))
 
 (gl:set-window-title "Convey's The game of Life")
 (import (OpenGL version-1-0))
@@ -39,19 +58,18 @@
    (glViewport 0 0 width height)
    (glPointSize (/ width WIDTH))))
 
-;   (list
-;   (pairs->ff (map (lambda (i) (let ((x (rand2! WIDTH)) (y (rand2! HEIGHT)))
-;                                 (cons (hash x y) 1))) (iota 1200)))))
 
 (gl:set-userdata
-   (let ((initial (file->bytevector "initial.bmp")))
-   (pairs->ff (map (lambda (p) (cons (hash (car p) (cdr p)) 1))
-      (fold (lambda (st p)
-         (let ((n (+ p #x436)))
-         (if (eq? (blob-ref initial n) 0)
-            (cons (cons (mod p 64) (div p 64)) st) st)))
-      null
-      (iota (- (size initial) #x436)))))))
+   (let ((initial population))
+      (fold (lambda (ff row y)
+               (fold (lambda (ff col x)
+                        (if (eq? col #\space)
+                           ff
+                           (put ff (hash x y) 1)))
+                  ff row (iota (initial 'width) (/ (- WIDTH (initial 'width)) 2))))
+         #empty
+         (initial 'bitmap)
+         (iota (initial 'height) (/ (- HEIGHT (initial 'height)) 2)))))
 
 
 (gl:set-renderer (lambda (mouse)
@@ -61,6 +79,7 @@
    (glColor3f 0.2 0.5 0.2)
    (glBegin GL_POINTS)
       (ff-fold (lambda (st key value)
+         (apply glColor3f (color value))
          (glVertex2f (mod key 65536)
                      (div key 65536))
       ) #f generation)
@@ -72,23 +91,24 @@
       0
       generation))
 
+   ;; speedup:
+   ;; 1. select all possible points
+   (define new-generation
+      (ff-union
+      (ff-fold
+         (lambda (st key value)
+            (let ((x (mod key 65536))
+                  (y (div key 65536)))
+               (fold
+                  (lambda (st dx dy) (put st (hash (+ x dx) (+ y dy)) 0))
+                  st
+                  '(-1  0 +1  -1 +1  -1  0 +1)
+                  '(-1 -1 -1   0  0  +1 +1 +1))))
+         {} generation) generation (lambda (a b) b))) ; save the current point age
 
    (gl:set-userdata
       (ff-fold (lambda (st key value)
-         (let ((x (mod key 65536))
-               (y (div key 65536)))
-            (fold (lambda (st key)
-                     (let ((x (car key))
-                           (y (cdr key)))
-                        (if (alive generation x y) (put st (hash x y) 1) st)))
-               (if (alive generation x y) (put st (hash x y) 1) st) ; the cell
-               (list (cons (- x 1) (- y 1)) ; possible cell neighbors
-                     (cons    x    (- y 1))
-                     (cons (+ x 1) (- y 1))
-                     (cons (- x 1)    y   )
-                     ;cons    x       y   )
-                     (cons (+ x 1)    y   )
-                     (cons (- x 1) (+ y 1))
-                     (cons    x    (+ y 1))
-                     (cons (+ x 1) (+ y 1))))))
-         #empty generation)))))
+            (if (alive generation key)
+               (put st key (+ value 1))
+               st))
+         #empty new-generation)))))
