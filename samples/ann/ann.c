@@ -61,7 +61,7 @@ static
 word* create_new_matrix_(OL* this, size_t m, size_t n, size_t nw, ...)
 {
     word* fp;
-    size_t vsize = m * n * sizeof(float);
+    size_t vsize = m * n * sizeof(fp_t);
 
     size_t words = (vsize + (W-1)) / W;
     if (words > (this->end - this->fp)) {
@@ -82,8 +82,8 @@ word* create_new_matrix_(OL* this, size_t m, size_t n, size_t nw, ...)
     }
 
     fp = this->fp;
-    word* matrix = new_vector3(I(m), I(n),
-        new_bytevector(vsize));
+	word* floats = new_bytevector(vsize);
+    word* matrix = new_vector(I(m), I(n), floats);
     this->fp = fp;
     return matrix;
 }
@@ -149,7 +149,7 @@ word* OL_at(OL* this, word* arguments)
     word* object = new_binstream(TINEXACT, sizeof(inexact_t));
     this->fp = fp;
 
-    fp_t* floats = (fp_t*) (ref(A, 3) + 1);
+    fp_t* floats = (fp_t*) (ref(A, 3) + W);
     fp_t v = floats[i*n + j];
     *(inexact_t*)(object + 1) = v;
 
@@ -169,7 +169,7 @@ word* OL_mrandomE(OL* this, word* arguments)
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t);
 
     // random();
-    fp_t* floats = (float*) (ref(A, 3) + 1);
+    fp_t* floats = (float*) (ref(A, 3) + W);
     for (int i = 0; i < size; i++)
         *floats++ = (2.0 * (fp_t)rand() / (fp_t)RAND_MAX) - 1.0;
 
@@ -205,7 +205,7 @@ word* OL_mwrite(OL* this, word* arguments)
     fwrite(&n, sizeof(n), 1, file);
 
     // матрица
-    float* f = (float*)(ref(M, 3) + 1);
+    float* f = (float*)(ref(M, 3) + W);
 
     fwrite(f, sizeof(float), m*n, file);
 
@@ -249,7 +249,7 @@ word* OL_mread(OL* this, word* arguments)
     // матрица
     word* matrix = create_new_matrix(this, m, n);
 
-    read = fread((float*)(ref(matrix, 3) + 1), sizeof(float), m*n, file);
+    read = fread((float*)(ref(matrix, 3) + W), sizeof(float), m*n, file);
 
     fclose(file);
     return matrix;
@@ -274,7 +274,7 @@ word* OL_bv2f(OL* this, word* arguments)
     size_t n = binstream_size(A);
     word* matrix = create_new_matrix(this, 1, n, &A);
 
-    fp_t* f = (fp_t*) (ref(matrix, 3) + 1);
+    fp_t* f = (fp_t*) (ref(matrix, 3) + W);
     unsigned char* a = (unsigned char*) (A + 1);
     for (size_t j = 0; j < n; j++)
         *f++ = (fp_t)*a++ / ds;
@@ -302,7 +302,7 @@ word* OL_l2f(OL* this, word* arguments)
     }
     word* matrix = create_new_matrix(this, 1, n, &A);
 
-    float* f = (float*)(ref(matrix, 3) + 1);
+    float* f = (float*)(ref(matrix, 3) + W);
     p = (word) A;
     while (p != INULL) {
         long num = number(car(p));
@@ -321,7 +321,7 @@ word* OL_f2l(OL* this, word* arguments)
 
     size_t m = value(ref(A, 1));
     size_t n = value(ref(A, 2));
-    float* floats = (float*)(ref(A, 3) + 1);
+    float* floats = (float*)(ref(A, 3) + W);
 
     word *fp = this->fp;
     word *p = (word*)INULL;
@@ -351,8 +351,8 @@ word* OL_sigmoid(OL* this, word* arguments)
 
     word* B = create_new_matrix(this, m, n, &A);
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t);
     for (size_t i = 0; i < size; i++) { // todo: use real 
@@ -374,8 +374,8 @@ word* OL_sigmoidE(OL* this, word* arguments)
 
     word* B = A; // we do not create new matrix, just change existing
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t);
     for (size_t i = 0; i < size; i++) { // todo: use real 
@@ -397,8 +397,8 @@ word* OL_sigmoidD(OL* this, word* arguments)
 
     word* B = create_new_matrix(this, m, n, &A);
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t);
     for (size_t i = 0; i < size; i++) { // todo: use real 
@@ -421,8 +421,8 @@ word* OL_sigmoidDE(OL* this, word* arguments)
 
     word* B = A; // we do not create new matrix, just change existing
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t);
     for (size_t i = 0; i < size; i++) { // todo: use real 
@@ -445,8 +445,8 @@ word* OL_abs(OL* this, word* arguments)
 
     word* B = create_new_matrix(this, m, n, &A);
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t);
     for (size_t i = 0; i < size; i++) { // todo: use real 
@@ -470,7 +470,7 @@ word* OL_mean(OL* this, word* arguments)
     size_t m = value(ref(A, 1));
     size_t n = value(ref(A, 2));
 
-    float* a = (float*) (ref(A, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t);
     inexact_t S = 0;
@@ -505,9 +505,9 @@ word* OL_dot(OL* this, word* arguments)
 
     word* C = create_new_matrix(this, m, q, &A, &B);
 
-    fp_t* a = (fp_t*) (ref(A, 3) + 1);
-    fp_t* b = (fp_t*) (ref(B, 3) + 1);
-    fp_t* c = (fp_t*) (ref(C, 3) + 1);
+    fp_t* a = (fp_t*) (ref(A, 3) + W);
+    fp_t* b = (fp_t*) (ref(B, 3) + W);
+    fp_t* c = (fp_t*) (ref(C, 3) + W);
 
     for (size_t i = 0; i < m; i++) {
         for (size_t j = 0; j < q; j++) {
@@ -543,9 +543,9 @@ word* OL_sub(OL* this, word* arguments)
 
     word* C = create_new_matrix(this, m, n, &A, &B);
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
-    float* c = (float*) (ref(C, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
+    float* c = (float*) (ref(C, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t); // todo: assert for matrix B size
     for (size_t i = 0; i < size; i++)
@@ -572,9 +572,9 @@ word* OL_add(OL* this, word* arguments)
 
     word* C = create_new_matrix(this, m, n, &A, &B);
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
-    float* c = (float*) (ref(C, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
+    float* c = (float*) (ref(C, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t); // todo: assert for matrix B size
     for (size_t i = 0; i < size; i++)
@@ -601,9 +601,9 @@ word* OL_mul(OL* this, word* arguments)
 
     word* C = create_new_matrix(this, m, n, &A, &B);
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
-    float* c = (float*) (ref(C, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
+    float* c = (float*) (ref(C, 3) + W);
 
     size_t size = binstream_size(ref(A, 3)) / sizeof(fp_t); // todo: assert for matrix B size
     for (size_t i = 0; i < size; i++)
@@ -624,8 +624,8 @@ word* OL_T(OL* this, word* arguments) // transpose
 
     word* B = create_new_matrix(this, n, m, &A);
 
-    float* a = (float*) (ref(A, 3) + 1);
-    float* b = (float*) (ref(B, 3) + 1);
+    float* a = (float*) (ref(A, 3) + W);
+    float* b = (float*) (ref(B, 3) + W);
 
     for (size_t i = 0; i < m; i++)
         for (size_t j = 0; j < n; j++)
