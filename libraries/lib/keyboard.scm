@@ -63,7 +63,7 @@
          (setq x11 (or (load-dynamic-library "libX11.so")
                        (load-dynamic-library "libX11.so.6")))
          (setq XOpenDisplay (x11 fft-void* "XOpenDisplay" type-string))
-         (setq XQueryKeymap (x11 fft-void "XQueryKeymap" type-vptr type-string)) ; todo: change to type-bytevector
+         (setq XQueryKeymap (x11 fft-void "XQueryKeymap" type-vptr type-vptr)) ; todo: change to (fft* fft-char))
          (setq XKeysymToKeycode (x11 fft-int "XKeysymToKeycode" type-vptr fft-int))
 
          (setq display (XOpenDisplay #f))
