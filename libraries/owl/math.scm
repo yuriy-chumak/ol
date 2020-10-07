@@ -2186,7 +2186,7 @@
                            (let ((number (ilist #\B #\I #\G #\. tl)))
                               (if sign (cons #\- number) number)))
                         ((< num 0.00000001)
-                           (let ((number (ilist #\. #\S #\M #\A #\L #\L tl)))
+                           (let ((number (ilist #\. #\0 #\0 #\0 #\0 #\0 #\0 #\0 #\0 #\0 tl)))
                               (if sign (cons #\- number) number)))
                         (else
                            (let*((int (floor num))
