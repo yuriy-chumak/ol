@@ -42,7 +42,7 @@
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
 
-   ;; glProgramParameteriEXT ;(uint program, enum pname, int value);
+   glProgramParameteri ;(uint program, enum pname, int value);
    ;; glFramebufferTextureEXT ;(enum target, enum attachment, uint texture, int level);
    ;; glFramebufferTextureLayerEXT ;(enum target, enum attachment, uint texture, int level, int layer);
    ;; glFramebufferTextureFaceEXT ;(enum target, enum attachment, uint texture, int level, enum face);
@@ -106,7 +106,8 @@
    (define EXT_geometry_shader4 (gl:QueryExtension "GL_EXT_geometry_shader4"))
 
    (setq GL GL_LIBRARY)
-   ;;  void ProgramParameteriEXT(uint program, enum pname, int value);
+   
+   (define glProgramParameteri (GL fft-void "glProgramParameteri" GLuint GLenum GLint))
    ;;  void FramebufferTextureEXT(enum target, enum attachment, 
    ;;                             uint texture, int level);
    ;;  void FramebufferTextureLayerEXT(enum target, enum attachment, 

@@ -168,7 +168,7 @@
             (number-of-images uint32)
             (number-of-rows uint32)
             (number-of-columns uint32)
-            ;; (number-of-images (get-epsilon 16))
+            (number-of-images (get-epsilon 16))
             (images (times number-of-images (times (* number-of-rows number-of-columns) byte))))
          {
             'magic magic
@@ -181,12 +181,12 @@
 (import (file mnist))
 
 ;; read the data
-(define labels-file (try-parse gzip-parser (file->bytestream (string-append mnist-root "train-labels-idx1-ubyte.gz")) #f))
+(define labels-file (try-parse gzip-parser (file->bytestream (string-append mnist-root "t10k-labels-idx1-ubyte.gz")) #f))
 
 (define labels (try-parse train-labels-parser ((car labels-file) 'stream) #f))
 (define labels (car labels))
 
-(define images-file (try-parse gzip-parser (file->bytestream (string-append mnist-root "train-images-idx3-ubyte.gz")) #f))
+(define images-file (try-parse gzip-parser (file->bytestream (string-append mnist-root "t10k-images-idx3-ubyte.gz")) #f))
 
 (define images (try-parse train-images-parser ((car images-file) 'stream) #f))
 (define images (car images))
@@ -294,16 +294,6 @@
    )
 ))
 
-(gl:set-mouse-handler (lambda (button x y)
-   (when (eq? button 1)
-      (define l0-l1 (*l0-l1*))
-      (when l0-l1
-         (display "Dumping current network state to disk ...")
-         (mwrite (car l0-l1) "syn0")
-         (mwrite (cdr l0-l1) "syn1")
-         (print "ok, syn0 and syn1 dumped."))
-)))
-
 ; наша сеть будет иметь входной слой на rows*columns элементов
 ; внутренний слой на 128 элоементов
 ; и выходной на 10
@@ -311,18 +301,8 @@
 (import (otus random!))
 
 ; source is 1x784
-(define syn0/ (or ; первый слой нейросети
-      (mread "syn0")
-      (mrandom!
-         (mnew (* (images 'number-of-rows) (images 'number-of-columns)) 128)))) ; матрица [784,128]
-; TODO: читать исходную картинку как [m*n], и добавить отдельный преобразующий слой без математики, который будет создавать
-; новую матрицу [1 m*n тот-же-вектор-флоатов] (без копирования)
-; это относится к топологии нейросети, а не к ее состоянию
-
-(define syn1/ (or ; второй слой нейросети
-      (mread "syn1")
-      (mrandom!
-         (mnew (ref syn0/ 2) 10))))
+(define syn0/ (mread "syn0")) ; первый слой нейросети
+(define syn1/ (mread "syn1")) ; второй слой нейросети
 
 (print "параметры нашей нейросети:")
 (print "syn0: [" (ref syn0/ 1) "x" (ref syn0/ 2) "]") ; 
@@ -330,7 +310,7 @@
 
 ; обучение сети
 (fork-server 'ann (lambda ()
-   (print "запуcкаю обучение сети")
+   (print "запуcкаю проверку обученности сети")
    (let this ((n 0) (syn0/ syn0/) (syn1/ syn1/))
       (define i (rand! images-count)) ; assert count of images
       (if #false ;(zero? n)
@@ -366,7 +346,7 @@
                         (mmean (mabs e1/))
                         "     used memory: " (inexact (/ (* 8 (ref (syscall 1117) 3)) 1024 1024)) " MiB")))
 
-               (syn1/ (add syn1/ (dot (T l1/) d2/)))
-               (syn0/ (add syn0/ (dot (T l0/) d1/)))
+               ;; (syn1/ (add syn1/ (dot (T l1/) d2/)))
+               ;; (syn0/ (add syn0/ (dot (T l0/) d1/)))
             )
             (this (++ n) syn0/ syn1/))))))
