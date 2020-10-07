@@ -309,9 +309,9 @@
                (d1/ (mul e1/ (sigmoid/ l1/)))
 
                (m1 (mmean (mabs e2/)))
-               (_ (if (zero? (mod n 1000))
+               (_ (when (zero? (mod n 1000))
                      (print "current mean error: "
-                        m1 "/" (vm:cast m1 type-bytevector)
+                        (mmean (mabs e2/))
                         " - "
                         (mmean (mabs e1/))
                         "     used memory: " (inexact (/ (* 8 (ref (syscall 1117) 3)) 1024 1024)) " MiB")))
