@@ -1843,15 +1843,15 @@ word d2ol(struct ol_t* ol, double v) {
 		word m = 1;
 		for (int t = 0; t < 1024; t++) { // ограничим точность снизу
 			double i, f = modf(v, &i);
+			if (m & ~VMAX) {
+				*++p = I(0);
+				m >>= VBITS;
+			}
 			if (f == 0) {
 				*++p = I(m);
 				break;
 			}
 			v *= 2;
-			if (m & ~VMAX) {
-				*++p = I(0);
-				m >>= VBITS;
-			}
 			m *= 2;
 		}
 		// если все-таки что-то после запятой было, то
