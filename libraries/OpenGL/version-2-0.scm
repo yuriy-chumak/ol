@@ -19,11 +19,13 @@ glDetachShader
 glLinkProgram
 glUseProgram
 glGetShaderiv
+glGetProgramiv
 GL_COMPILE_STATUS
 GL_LINK_STATUS
 GL_VALIDATE_STATUS
 GL_INFO_LOG_LENGTH
 glGetShaderInfoLog
+glGetProgramInfoLog
 glGetUniformLocation
 glUniform1i
 glUniform1f
@@ -68,7 +70,9 @@ glDrawArrays
     (define GL_LINK_STATUS     #x8B82)
     (define GL_VALIDATE_STATUS #x8B83)
     (define GL_INFO_LOG_LENGTH #x8B84)
+   (define glGetProgramiv     (gl:GetProcAddress GLvoid "glGetProgramiv" GLuint GLenum GLint&))
   (define glGetShaderInfoLog (gl:GetProcAddress GLvoid "glGetShaderInfoLog" GLuint GLsizei GLsizei* type-bytevector))
+  (define glGetProgramInfoLog (gl:GetProcAddress GLvoid "glGetProgramInfoLog" GLuint GLsizei GLsizei* type-bytevector))
   (define glGetUniformLocation (gl:GetProcAddress GLint "glGetUniformLocation" GLuint GLchar*))
     (define glUniform1i     (gl:GetProcAddress GLvoid "glUniform1i" GLint GLint))
     (define glUniform1f     (gl:GetProcAddress GLvoid "glUniform1f" GLint GLfloat))
@@ -122,10 +126,19 @@ glDrawArrays
                (errorLog (make-bytevector maxLengthValue 0))
                (_ (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)))
             (runtime-error (utf8->string errorLog) fs))))
-
    (glAttachShader po fs)
 
    (glLinkProgram po)
+   (let ((isLinked (box 0)))
+      (glGetProgramiv po GL_LINK_STATUS isLinked)
+      (if (eq? (unbox isLinked) 0)
+         (let*((maxLength (box 0))
+               (_ (glGetProgramiv po GL_INFO_LOG_LENGTH maxLength))
+               (maxLengthValue (unbox maxLength))
+               (errorLog (make-bytevector maxLengthValue 0))
+               (_ (glGetProgramInfoLog po maxLengthValue maxLength errorLog)))
+            (runtime-error (utf8->string errorLog) po))))
+
    (glDetachShader po fs)
    (glDetachShader po vs)
 
