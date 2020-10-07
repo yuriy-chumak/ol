@@ -157,7 +157,7 @@
                      ;(print-to stderr "BFINAL: " BFINAL)
                      (if (eq? BFINAL 1)
                         (begin
-                           (print-to stderr "END-OF-STREAM")
+                           ;(print-to stderr "END-OF-STREAM")
                            (ref hold 3)) ;#null
                         (make-block-decoder i hold)))
 
