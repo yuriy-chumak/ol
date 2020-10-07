@@ -57,8 +57,11 @@
 )
 
 (import (lib gl2))
+(gl:set-window-title "Sample ANN (mnist database)")
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.8 0.8 0.8 1)
+
+(print "Please wait while loading a training database")
 
 ; --= mnist data =----------
 (import (file gzip))
