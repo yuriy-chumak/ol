@@ -346,8 +346,8 @@ object_t
 #define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
 
 #define ref(ob, n)                  ((R(ob))[n])
-#define car(ob)                     ref(ob, 1)
-#define cdr(ob)                     ref(ob, 2)
+#define car(ob)                     (ref(ob, 1))
+#define cdr(ob)                     (ref(ob, 2))
 
 #define caar(o)                     car(car(o))
 #define cadr(o)                     car(cdr(o))
@@ -1361,7 +1361,7 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 #endif
 
 
-#define CR                          16 // available callables
+#define CR                          128 // available callables
 #define NR                          256 // see n-registers in register.scm
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
@@ -1829,11 +1829,12 @@ float OL2F(word arg) {
 
 // TODO: add memory checking
 word d2ol(struct ol_t* ol, double v) {
+	word* fp;
 	// check for non representable numbers:
 	if (v == INFINITY || v == -INFINITY || v == NAN)
 		return IFALSE;
 
-	word* fp = ol->heap.fp;
+	fp = ol->heap.fp;
 
 	word a, b = INULL;
 	double i;
@@ -2876,7 +2877,7 @@ loop:;
 				inexact_t v = *(inexact_t*)&car(T);
 
 				ol->heap.fp = fp;
-				A2 = d2ol(ol, v);
+				A2 = d2ol(ol, v); // no GC expected
 				fp = ol->heap.fp;
 				break;
 			}
