@@ -616,7 +616,7 @@
 
       (define (bind-toplevel env)
          (env-set env '*toplevel*
-            (env-del env '*toplevel)))
+            (env-del env '*toplevel*)))
 
       ;; list starting with val?
       (define (headed? val exp)
