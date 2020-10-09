@@ -5051,18 +5051,12 @@ int main(int argc, char** argv)
 		free(bootstrap);
 
 	// so, let's rock?
-	word r = 0;
+	int v = 0;
 	if (olvm) {
-		r = OL_run(olvm, argc, argv);
+		word r = OL_run(olvm, argc, argv);
         // convert result to appropriate system value
         if (is_number(r))
-            r = number(r);
-        else
-        if (r == ITRUE)
-            r = 0;
-        else
-        if (r == IFALSE)
-            r = -1;
+            v = number(r);
 
 		OL_free(olvm);
 	}
@@ -5071,7 +5065,7 @@ int main(int argc, char** argv)
 	WSACleanup();
 #endif
 
-	return (int) r;
+	return (int) v;
 
 // FAILS:
 	char* message;

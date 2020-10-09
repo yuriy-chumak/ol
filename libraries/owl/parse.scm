@@ -396,17 +396,6 @@
       ;;             (else
       ;;                #n)))))
 
-      ;; (define (fd->exp-stream fd parser fail)
-      ;;    (byte-stream->exp-stream (port->byte-stream fd) parser fail))
-
-      ;; (define (file->exp-stream path parser fail)
-      ;;    ;(print "file->exp-stream: trying to open " path)
-      ;;    (let ((fd (open-input-file path)))
-      ;;       ;(print "file->exp-stream: got fd " fd)
-      ;;       (if fd
-      ;;          (fd->exp-stream fd parser fail)
-      ;;          #false)))
-
       ;; ;; this api is kind of ugly, simplify
       ;; ;; this is badly named when prefixed as usual. parse?
       (define (try-parse parser data show-error)

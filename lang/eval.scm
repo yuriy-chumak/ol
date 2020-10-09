@@ -1019,7 +1019,7 @@
 
                      (if (interactive? env)
                         (print "bye-bye :/"))
-                     (halt val))
+                     val) ; returning value
                   (['error reason env]
                      (let ((hook:fail (env-get env 'hook:fail #false)))
                         (if (function? hook:fail)
