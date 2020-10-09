@@ -132,7 +132,7 @@
          ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
 
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
-      (define *src-olvm*
+      (define *src-olvm* ; TODO: rename to *special-forms*
          (fold
             (λ (env thing)
                (env-set env (ref thing 1) (ref thing 5))) ; add primitives to the end of list
@@ -242,54 +242,9 @@
 
       ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
 
-      ; interactive parser (with prompt)
-      (define (fd->exp-stream fd prompt parser fail)
-         (let loop ((old-data #null) (block? #true) (finished? #false) (display-prompt #true)) ; old-data not successfullt parseable (apart from epsilon)
-            (let*((rchunks end?
-                     (if finished?
-                        (values null #true)
-                        (maybe-get-input null fd (or (null? old-data) block?))))
-                  (data (if (null? rchunks) old-data (push-chunks old-data rchunks))))
-
-               (if (and display-prompt prompt) (display prompt))
-
-               (if (null? data)
-                  (if end? null (loop data #true #false #false))
-                  (parser #null data 0
-                     ;; (λ (data-tail backtrack val pos) ; ok
-                     (λ (left data-tail pos val) ; ok
-                        (pair val
-                           (if (and finished? (null? data-tail))
-                              null
-                              (loop data-tail (null? data-tail) end? (null? data-tail))))))
-                  ;; (parser data
-                  ;;    (λ (data-tail backtrack val pos) ; ok
-                  ;;       (pair val
-                  ;;          (if (and finished? (null? data-tail))
-                  ;;             null
-                  ;;             (loop data-tail (null? data-tail) end? (null? data-tail)))))
-                  ;;    (λ (pos info) ; fail
-                  ;;       (cond
-                  ;;          (end?
-                  ;;             ; parse failed and out of data -> must be a parse error, like unterminated string
-                  ;;             (list (fail pos info data)))
-                  ;;          ((= pos (length data))
-                  ;;             ; parse error at eof and not all read -> get more data
-                  ;;             (loop data #true end? #false))
-                  ;;          (else
-                  ;;             (list (fail pos info data)))))
-                  ;;    0)
-                     ))))
-
    ; (parser ll ok fail pos)
    ;      -> (ok ll' fail' val pos)
    ;      -> (fail fail-pos fail-msg')
-
-      (define (file->exp-stream path prompt parser fail)
-         (let ((fd (open-input-file path)))
-            (if fd
-               (fd->exp-stream fd #false parser fail))))
-
 
       ;; toplevel variable to which loaded libraries are added
 
@@ -389,12 +344,11 @@
                (begin
                   (if (cdr val)
                      (print (decode-value env (cdr val)))))
-                  ;(display "> "))
                (begin
                   (maybe-show-metadata env val)
                   ((writer-to (env-get env name-tag empty))
                      stdout (decode-value env val))
-                  (display "\n"))))) ;>
+                  (display "\n")))))
 
 
       (define syntax-error-mark (list 'syntax-error))
@@ -422,6 +376,9 @@
                   (else
                      (loop datap next))))))
 
+      (define (silent-syntax-fail val)
+         (λ (cont ll msg) val))
+
       (define (syntax-fail pos info lst)
          (list syntax-error-mark info
             (list ">>> " (find-line lst pos) " <<<")))
@@ -446,7 +403,8 @@
                (exps ;; find the file to read
                   (let loop ((paths paths))
                      (unless (null? paths)
-                        (or (file->exp-stream (car paths) "" sexp-parser syntax-fail)
+                        ;; (print "loading..." (car paths))
+                        (or (file->exp-stream (car paths) sexp-parser (silent-syntax-fail (list #false)))
                             (loop (cdr paths)))))))
             (if exps
                (let*((interactive (env-get env '*interactive* #false))
@@ -1005,7 +963,9 @@
       (define (repl env in evaluator)
          (define repl__ (lambda (env in)
                            (repl env in evaluator)))
-         (let loop ((env env) (in in) (last #false)) ; last - последний результат
+         (let loop ((env env) (in in) (last #false) (prefix "> ")) ; last - последний результат
+            (if (and prefix (interactive? env))
+               (display prefix))
             (cond
                ((null? in)
                   (repl-ok env last))
@@ -1022,25 +982,25 @@
                            (case (eval-repl this env repl__ evaluator)
                               (['ok result env]
                                  (prompt env result)
-                                 (loop env in result))
+                                 (loop env in result "> "))
                               (['fail reason]
                                  (repl-fail env reason)))))))
                (else
-                  (loop env (in) last)))))
+                  (loop env (in) last #false)))))
 
       (define (repl-port env fd)
          (repl env
-            (fd->exp-stream fd (if (and (eq? fd stdin) (interactive? env)) "> ") sexp-parser syntax-fail)
+            (fd->exp-stream fd sexp-parser (silent-syntax-fail (list #false)))
             repl-evaluate))
 
       (define (repl-file env path)
          (let ((fd (open-input-file path)))
             (if fd
                (repl-port env fd)
-               ['error "cannot open file" env])))
+               ['error "can't open file" env])))
 
       (define (eval-string env str)
-         (let ((exps (parse get-sexps (str-iter str) #false syntax-fail #false)))
+         (let ((exps (parse get-padded-sexps (str-iter str) #false syntax-fail #false))) ; todo: change syntax-fail
             ;; list of sexps
             (if exps
                (repl env exps evaluate)
@@ -1049,7 +1009,7 @@
       ;; run the repl on a fresh input stream, report errors and catch exit
       (define (repl-trampoline env in)
          (let boing ((env env))
-            (let ((env (bind-toplevel env)))
+            ;(let ((env (bind-toplevel env)))
                (case (repl-port env in)
                   (['ok val env]
                      ;; bye-bye
@@ -1075,5 +1035,5 @@
                   ; is this cannot be reached?
                   (else is foo
                      (print "Repl is rambling: " foo) ; what is this?
-                     (boing env))))))
+                     (boing env)))));)
 ))

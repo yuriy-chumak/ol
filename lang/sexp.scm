@@ -14,8 +14,11 @@
       number get-number
       ;; get-symbol
 
-      get-sexps  ; temp
-      )
+      get-sexps
+      get-padded-sexps
+
+      fd->exp-stream
+      file->exp-stream)
 
    (import
       (scheme base)
@@ -443,7 +446,6 @@
                      (ff-of (sexp))
                      (quoted (sexp))
                      (byte-if eof?))))
-               ;; (skip maybe-whitespace))
             val))
 
       (define (ok? x) (eq? (ref x 1) 'ok))
@@ -452,12 +454,18 @@
 
       (define sexp-parser
          (let-parse* (
-               (s-exp (sexp))
-               (foo maybe-whitespace))
+               (s-exp (sexp)))
             (intern-symbols s-exp)))
 
       (define get-sexps
          (greedy* sexp-parser))
+
+      (define get-padded-sexps
+         (let-parse*(
+               (data get-sexps)
+               (skip maybe-whitespace))
+            data))
+
 
       ;; ;; fixme: new error message info ignored, and this is used for loading causing the associated issue
       ;; (define (read-exps-from data done fail)
@@ -495,8 +503,37 @@
 
       (define (list->sexps lst fail errmsg)
          ; parse parser data maybe-path maybe-error-msg fail-val
-         (parse get-sexps lst #false errmsg fail))
+         (parse get-padded-sexps lst #false errmsg fail))
 
       ; backward compatibility
       (define get-number number)
+
+      ; few sexp stream functions
+      (define (parser-succ l r p v)
+         (values l r p v))
+
+      (define (bytestream->exp-stream ll parser fail)
+         (λ () ; we want to do a first loop in (repl) to show the prompt
+            (let*((lp r p val (parser #null ll 0 parser-succ)))
+               (cond
+                  (lp ;; something parsed successfully
+                     (pair val (bytestream->exp-stream r parser fail)))
+                  ((null? r) ;; end of input
+                     ;; typically there is whitespace, so this does not happen
+                     #null)
+                  ((function? fail)
+                     (fail
+                        (λ (ll) (bytestream->exp-stream ll parser fail))
+                           r val))
+                  (else
+                     #null)))))
+
+      (define (fd->exp-stream fd parser fail) ; todo: remove prompt
+         (bytestream->exp-stream (port->bytestream fd) parser fail))
+
+      (define (file->exp-stream path parser fail)
+         (let ((fd (open-input-file path)))
+            (if fd
+               (fd->exp-stream fd parser fail))))
+
 ))

@@ -247,7 +247,7 @@
                (for-each (lambda (x) (display-to (cdr In) x)) (append command '("\n"))))
             ; process answer, if requested
             (mail sender (if parser
-                  (car (fd->exp-stream (car Out) "" (car msg) syntax-fail)) #f))))
+                  (car (fd->exp-stream (car Out) (car msg) syntax-fail)) #f))))
       (loop)))))
 
 ; qemu instance
