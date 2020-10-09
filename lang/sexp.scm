@@ -210,11 +210,19 @@
                r
                (complex r im))))
 
-      (define rest-of-line
-         (let-parse*
-            ((chars (greedy* (byte-if (lambda (x) (not (eq? x 10))))))
-             (skip (imm 10))) ;; <- note that this won't match if line ends to eof
-            chars))
+      ; line up to #\newline (with #\newline) or to the end-of-file
+      (define (rest-of-line l r p ok) ; always do "ok"
+         (let loop ((l l) (r r) (p p) (v #null))
+            (cond
+               ((null? r)
+                  (ok l r p v))
+               ((pair? r)
+                  (if (eq? (car r) #\newline)
+                     (ok (cons (car r) l) (cdr r) (+ p 1) (reverse (cons (car r) v)))
+                     (loop (cons (car r) l) (cdr r) (+ p 1) (cons (car r) v))))
+               (else
+                  (loop l (r) p v)))))
+
 
       ;; #!<string>\n parses to '(hashbang <string>)
       (define hashbang
