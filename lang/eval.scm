@@ -520,7 +520,7 @@
                   (repl env in)))
             ((quit)
                ; this goes to repl-trampoline
-               ['ok 'quitter env])
+               ['ok #true env])
             (else
                (print "unknown repl op: " op)
                ;(prompt env (repl-message #f))
