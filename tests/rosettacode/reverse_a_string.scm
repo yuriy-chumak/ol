@@ -3,4 +3,4 @@
 (define (rev s)
    (runes->string (reverse (string->runes s))))
 
-(print (rev "as⃝df̅"))
+(print (rev "Hello, λ!"))
