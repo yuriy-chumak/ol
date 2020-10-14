@@ -1,60 +1,7 @@
 #!/usr/bin/ol
 
 (import (otus ffi))
-(define this (dlopen "libann.so"))
-(unless this
-   (print "libann.so not found")
-   (halt 1))
-
-(define mnist-root (or (and
-                           (pair? *vm-args*)
-                           (car *vm-args*))
-                     "/media/uri/1TB/mnist/"))
-
-
-(define mnew     (dlsym this "OL_mnew")) ; create MxN matrix
-(define mrandom! (dlsym this "OL_mrandomE")) ; set matrix elements randomly to [-1..+1]
-(define mwrite   (dlsym this "OL_mwrite")) ; write matrix to the file
-(define mread    (dlsym this "OL_mread")) ; read matrix from the file
-(define bv2f     (dlsym this "OL_bv2f"))
-(define l2f      (dlsym this "OL_l2f"))
-(define f2l      (dlsym this "OL_f2l"))
-(define mdot     (dlsym this "OL_dot"))
-(define msigmoid   (dlsym this "OL_sigmoid"))  ; важно: https://uk.wikipedia.org/wiki/Передавальна_функція_штучного_нейрона
-(define msigmoid!  (dlsym this "OL_sigmoidE"))
-(define msigmoid/  (dlsym this "OL_sigmoidD"))
-(define msigmoid/! (dlsym this "OL_sigmoidDE"))
-
-(define msub     (dlsym this "OL_sub"))
-(define madd     (dlsym this "OL_add"))
-(define mmul     (dlsym this "OL_mul"))
-(define mT       (dlsym this "OL_T"))
-(define mAt      (dlsym this "OL_at"))
-(define mabs     (dlsym this "OL_abs"))
-(define mmean    (dlsym this "OL_mean"))
-
-(define bytevector->matrix bv2f)
-(define list->matrix l2f)
-
-(define (T A)     (mT A))
-(define (dot A B) (mdot A B))
-(define (add A B) (madd A B))
-(define (mul A B) (mmul A B))
-(define (sub A B) (msub A B))
-(define (sigmoid! A) (msigmoid! A))
-(define (sigmoid/ A) (msigmoid/ A))
-(define (sigmoid/! A) (msigmoid/! A))
-(define (at A i j) (mAt A i j))
-
-(define (print-matrix M)
-   (for-each (lambda (i)
-         (for-each (lambda (j)
-               (display (mAt M i j))
-               (display " "))
-            (iota (ref M 2) 1))
-         (print))
-      (iota (ref M 1) 1))
-)
+(import (otus ann))
 
 (import (lib gl2))
 (import (OpenGL EXT geometry_shader4))
@@ -123,7 +70,6 @@
 (glDetachShader po vs)
 
 
-
 (print "Please wait while loading a training database")
 
 ; --= mnist data =----------
@@ -180,6 +126,10 @@
 ))
 (import (file mnist))
 
+(define mnist-root (or
+   (and (not (null? *vm-args*)) (car *vm-args*))
+   "/media/uri/1TB/mnist/"))
+
 ;; read the data
 (define labels-file (try-parse gzip-parser (file->bytestream (string-append mnist-root "train-labels-idx1-ubyte.gz")) #f))
 
@@ -218,7 +168,7 @@
             (define i (mod p m))
             (define j (div p m))
 
-            (define cell (mAt digit 1 p))
+            (define cell (at digit 1 p))
             (glColor3f cell cell cell)
             (glVertex2f i j))
          (iota (* m n) 1))
@@ -265,7 +215,7 @@
       (define l1 (cdr l0-l1))
 
       (glLoadIdentity)
-      (glOrtho (- (ref l0 1)) (ref l0 1) (* 6 (ref l0 2)) (* 6 (- (ref l0 2))) -1 1)
+      (glOrtho (- (ref l0 1)) (ref l0 1) (* 2 (ref l0 2)) (* 2 (- (ref l0 2))) -1 1)
 
       (glBegin GL_POINTS)
       (for-each (lambda (i)
@@ -299,8 +249,8 @@
       (define l0-l1 (*l0-l1*))
       (when l0-l1
          (display "Dumping current network state to disk ...")
-         (mwrite (car l0-l1) "syn0")
-         (mwrite (cdr l0-l1) "syn1")
+         (write-matrix (car l0-l1) "syn0")
+         (write-matrix (cdr l0-l1) "syn1")
          (print "ok, syn0 and syn1 dumped."))
 )))
 
@@ -312,17 +262,17 @@
 
 ; source is 1x784
 (define syn0/ (or ; первый слой нейросети
-      (mread "syn0")
-      (mrandom!
-         (mnew (* (images 'number-of-rows) (images 'number-of-columns)) 128)))) ; матрица [784,128]
+      (read-matrix "syn0")
+      (randomize-matrix!
+         (make-matrix (* (images 'number-of-rows) (images 'number-of-columns)) 128)))) ; матрица [784,128]
 ; TODO: читать исходную картинку как [m*n], и добавить отдельный преобразующий слой без математики, который будет создавать
 ; новую матрицу [1 m*n тот-же-вектор-флоатов] (без копирования)
 ; это относится к топологии нейросети, а не к ее состоянию
 
 (define syn1/ (or ; второй слой нейросети
-      (mread "syn1")
-      (mrandom!
-         (mnew (ref syn0/ 2) 10))))
+      (read-matrix "syn1")
+      (randomize-matrix!
+         (make-matrix (ref syn0/ 2) 10))))
 
 (print "параметры нашей нейросети:")
 (print "syn0: [" (ref syn0/ 1) "x" (ref syn0/ 2) "]") ; 
@@ -350,7 +300,7 @@
                (l0/ X/) ; итак, "нулевой" слой - это входные данные
                (l1/ (sigmoid! (dot l0/ syn0/))) ; первый слой
                (l2/ (sigmoid! (dot l1/ syn1/))) ; второй слой, и по совместитульству - результат
-               (_ (*state* [X/ label l2/]))
+               (_ (*state* [X/ label l2/])) ; передадим состояние для отображения на экране
 
                (e2/ (sub Y/ l2/))
                (d2/ (mul e2/ (sigmoid/ l2/)))
@@ -358,12 +308,12 @@
                (e1/ (dot d2/ (T syn1/))) ; почему? и как делать дальше?
                (d1/ (mul e1/ (sigmoid/ l1/)))
 
-               (m1 (mmean (mabs e2/)))
+               (m1 (mean (mabs e2/)))
                (_ (when (zero? (mod n 1000))
                      (print "current mean error: "
-                        (mmean (mabs e2/))
+                        (mean (mabs e2/))
                         " - "
-                        (mmean (mabs e1/))
+                        (mean (mabs e1/))
                         "     used memory: " (inexact (/ (* 8 (ref (syscall 1117) 3)) 1024 1024)) " MiB")))
 
                (syn1/ (add syn1/ (dot (T l1/) d2/)))
