@@ -7,6 +7,7 @@
       SOIL_load_OGL_texture_from_memory
 
       SOIL_load_image
+      SOIL_load_image_from_memory
       SOIL_free_image_data
       
       SOIL_LOAD_AUTO
@@ -66,6 +67,9 @@
    ;SOIL_HDR_RGBdivA = 1,
    ;SOIL_HDR_RGBdivA2 = 2
 
+   (define int fft-int)
+   (define int& fft-int&)
+
    (define SOIL_last_result (libsoil type-string "SOIL_last_result"))
    
    (define SOIL_load_OGL_texture (libsoil fft-unsigned-int "SOIL_load_OGL_texture" type-string fft-int fft-unsigned-int fft-unsigned-int))
@@ -76,8 +80,8 @@
    ;SOIL_load_OGL_single_cubemap_from_memory
    ;SOIL_load_OGL_HDR_texture
 
-   (define SOIL_load_image (libsoil type-vptr "SOIL_load_image" type-string fft-int& fft-int& fft-int& fft-int))
-   ;SOIL_load_image_from_memory
+   (define SOIL_load_image (libsoil type-vptr "SOIL_load_image" type-string int& int& int& int))
+   (define SOIL_load_image_from_memory (libsoil type-vptr "SOIL_load_image_from_memory" type-bytevector int int& int& int& int))
    (define SOIL_free_image_data (libsoil fft-void "SOIL_free_image_data" type-vptr))
    
 ))

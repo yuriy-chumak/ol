@@ -47,23 +47,15 @@
    (define atlas (box 0))
    (glGenTextures 1 atlas)
    (glBindTexture GL_TEXTURE_2D (unbox atlas))
-   ;; (glPixelStorei GL_UNPACK_ALIGNMENT 1)
-   ;; (glPixelStorei GL_PACK_ALIGNMENT 1)
 
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR_MIPMAP_LINEAR)
+   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR_MIPMAP_LINEAR)
    (glTexParameteri GL_TEXTURE_2D GL_GENERATE_MIPMAP_SGIS GL_TRUE)
 
    ; задаем символы, которые будут в нашем атласе
-   ; https://evanw.github.io/font-texture-generator/
-   ; 0123456789
-   ; ABCDEFGHIJKLMNOPQRSTUVWXYZ
-   ; abcdefghijklmnopqrstuvwxyz
-   ; АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
-   ; абвгдежзийклмнопрстуфхцчшщъыьэюя
-   ; !?@#$%^&_=\|([{}])`"';:+-/*<>~.,
+   ; please read samples/OpenGL/fonts/README.md
 
    ; словарь буква -> глиф на текстуре
    (import (file json))
@@ -78,13 +70,10 @@
    (define width (box 0))
    (define height (box 0))
    (define channels (box 0))
-   (define image (SOIL_load_image (font 'file) width height channels SOIL_LOAD_RGBA))
-   ;; (print "image: " image)
-   ;; (print "width: " width)
-   ;; (print "height: " height)
-   ;; (print "channels: " channels)
-
-   (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA (unbox width) (unbox height) 0 GL_RGBA GL_UNSIGNED_BYTE image)
+   (let ((file (file->bytevector (font 'file))))
+      (define image (SOIL_load_image_from_memory file (size file) width height channels SOIL_LOAD_AUTO)) ;SOIL_LOAD_RGBA
+      (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA (unbox width) (unbox height) 0 GL_RGBA GL_UNSIGNED_BYTE image)
+      (SOIL_free_image_data image))
 
    ; font precompilation:
    (define charset
