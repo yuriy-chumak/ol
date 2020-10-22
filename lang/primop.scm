@@ -57,7 +57,7 @@
       ;; primops = (#(name opcode in-args|#f out-args|#f wrapper-fn|#f) ...)
 
       ;; ff of opcode → (in|#f out|#f), #f if variable
-      (define primop-arities
+      (define primop-arities ; internal
          (fold
             (λ (ff node)
                (let* ((name op in out wrapper node))

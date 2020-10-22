@@ -61,7 +61,7 @@
 
       ; * ol specific: (runtime-error reason info)
       (setq runtime-error (lambda (reason info)
-         (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info)))))
+         (call-with-current-continuation (lambda (resume) (vm:sys resume 5 reason info))))) ; (mcp 5 reason info)
 
       ; * internal automation testing staff
       ; note: please be careful!
