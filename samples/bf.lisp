@@ -44,10 +44,10 @@
          (step 0 0))))
 
 ; use command line:
-(if (less? (length *vm-args*) 2) (begin
+(if (zero? (length *vm-args*)) (begin
       (print "usage: bf.lisp \"bf-program\"")
       (halt 1)))
-(setq program (list-ref *vm-args* 1))
+(setq program (list-ref *vm-args* 0))
 
 ; or use bf* self interpreter (short version)
 ;(setq program "
