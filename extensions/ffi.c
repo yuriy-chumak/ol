@@ -190,7 +190,7 @@ int utf8_len(word widestr)
 #define vector_length(x) reference_size(x)
 #define string_length(x) ({\
     word t = reference_type(x);\
-    t == TSTRING ? binstream_size(x) :\
+    t == TSTRING ? rawstream_size(x) :\
     t == TSTRINGWIDE ? utf8_len(x) :\
     t == TSTRINGDISPATCH ? number(ref(x, 1)) :\
     0; })
@@ -1092,7 +1092,7 @@ word* OL_ffi(OL* this, word* arguments)
                     int l = 0;
                     for (int i = 0; i < cnt; i++) {
                         word str = car(arg);
-                        l += reference_type(str) == TSTRING ? binstream_size(str) + 1 + W :
+                        l += reference_type(str) == TSTRING ? rawstream_size(str) + 1 + W :
                              reference_type(str) == TSTRINGWIDE ? utf8_len(str) + 1  + W :
                              reference_type(str) == TSTRINGDISPATCH ? number(ref(str, 1)) + 1 + W :
                              0;
@@ -1550,7 +1550,7 @@ word* OL_ffi(OL* this, word* arguments)
 			switch (reference_type(arg)) {
 			case TSTRING: {
 				// todo: add check to not copy the zero-ended string
-				int size = binstream_size(arg);
+				int size = rawstream_size(arg);
 				char* zerostr = (char*) &car(new_bytevector (size));
 				memcpy(zerostr, &car(arg), size); zerostr[size] = 0;
 				args[i] = (word)zerostr;
@@ -1610,7 +1610,7 @@ word* OL_ffi(OL* this, word* arguments)
                 switch (reference_type(str)) {
                 case TSTRING: {
                     // todo: add check to not copy the zero-ended string
-                    int length = binstream_size(str);
+                    int length = rawstream_size(str);
                     char* zerostr = (char*) &car(new_bytevector (length+1));
                     memcpy(zerostr, &car(str), length); zerostr[length] = 0;
                     *p++ = (word)zerostr;
@@ -1663,7 +1663,7 @@ word* OL_ffi(OL* this, word* arguments)
                         switch (reference_type(substr)) {
                         case TSTRING: {
                             // todo: add check to not copy the zero-ended string
-                            int length = binstream_size(substr);
+                            int length = rawstream_size(substr);
                             memcpy(zerostr, &car(substr), length);
                             zerostr += length;
                             break;

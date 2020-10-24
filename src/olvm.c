@@ -173,7 +173,7 @@ object_t
 			unsigned char type : 6;    // object type
 
 			unsigned char padding : 3; // number of padding (unused) bytes at the end of object
-			unsigned char rawness : 1; // 1 for binstream, 0 for vectors
+			unsigned char rawness : 1; // 1 for rawstream, 0 for vectors
 			unsigned char user    : 4; // unused, can be used by user
 
 			unsigned char size[sizeof(word) - 2];
@@ -214,7 +214,7 @@ object_t
 #define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
 #define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 
-#define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (binstream bit)
+#define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (rawstream bit)
 #define BINARY                      (RAWBIT >> TPOS)
 
 #define make_value(type, value)     (2 | ((word)(value) << IPOS) | ((type) << TPOS))
@@ -229,8 +229,8 @@ object_t
 // два главных класса:
 #define is_value(x)                 (( (word) (x)) & 2)
 #define is_reference(x)             (!is_value(x))
-//#define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to binstream
-#define is_binstream(x)             ((*(word*)(x)) & RAWBIT)
+//#define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to rawstream
+#define is_rawstream(x)             ((*(word*)(x)) & RAWBIT)
 
 #define W                           (sizeof (word)) // todo: change to WSIZE
 
@@ -249,7 +249,7 @@ object_t
 #define reference_type(x)           (value_type (*R(x)))
 
 #define reference_size(x)           ((header_size(*R(x)) - 1))
-#define binstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
+#define rawstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
 
 // todo: объединить типы TENUMP и TINTP, TENUMN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
@@ -700,7 +700,7 @@ word*p = new (TVECTOR, 13);\
 
 // -= остальные аллокаторы =----------------------------
 
-#define new_binstream(type, length) ({\
+#define new_rawstream(type, length) ({\
 	int size = (length);\
 	int words = (size + W - 1) / W;\
 	int pads = (words * W - size);\
@@ -709,12 +709,12 @@ word* p = new (type, words, pads);\
 	/*return*/ p;\
 })
 
-#define new_bytevector(length) new_binstream(TBYTEVECTOR, length)
+#define new_bytevector(length) new_rawstream(TBYTEVECTOR, length)
 
 #define NEW_STRING2(string, length) ({\
 	char* data = string;\
 	int size = (length);\
-word* p = new_binstream(TSTRING, length);\
+word* p = new_rawstream(TSTRING, length);\
 	char* ptr = (char*)&p[1];\
 	while (size--)\
 		*ptr++ = *data++;\
@@ -755,7 +755,7 @@ word data = (word) a;\
 #ifdef OLVM_INEXACTS
 #define new_inexact(a) ({\
 inexact_t f = (inexact_t) a;\
-	word* me = new_binstream (TINEXACT, sizeof(f));\
+	word* me = new_rawstream (TINEXACT, sizeof(f));\
 	*(inexact_t*)&me[1] = f;\
 	/*return*/me;\
 })
@@ -1461,7 +1461,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		while (pos < end) {
 			word hdr = *pos;
 			int sz = header_size(hdr);
-			if (is_binstream(pos))
+			if (is_rawstream(pos))
 				pos += sz; // no pointers in raw objects
 			else {
 				pos++, sz--;
@@ -1767,7 +1767,7 @@ double OL2D(word arg) {
 	case TRATIONAL:
 		return OL2D(car(arg)) / OL2D(cdr(arg));
 	case TBYTEVECTOR: // is it required?
-		switch (binstream_size(arg)) {
+		switch (rawstream_size(arg)) {
 			case sizeof(float):
 				return *(float*)&car(arg);
 			case sizeof(double):
@@ -1809,7 +1809,7 @@ float OL2F(word arg) {
 	case TRATIONAL:
 		return OL2F(car(arg)) / OL2F(cdr(arg));
 	case TBYTEVECTOR: // is it required?
-		switch (binstream_size(arg)) {
+		switch (rawstream_size(arg)) {
 			case sizeof(float):
 				return *(float*)&car(arg);
 			case sizeof(double):
@@ -2748,7 +2748,7 @@ loop:;
 					value = A1; // update value to actual
 				}
 
-				word *ptr = new_binstream(type, len);
+				word *ptr = new_rawstream(type, len);
 				R[ip[size]] = (word)ptr; // result
 
 				if (is_numberp(value)) {
@@ -2803,8 +2803,8 @@ loop:;
 		if (is_value(T))
 			A1 = IFALSE;
 		else {
-			if (is_binstream(T))
-				A1 = I(binstream_size(T));
+			if (is_rawstream(T))
+				A1 = I(rawstream_size(T));
 			else
 				A1 = I(header_size(*(word*)T) - 1);
 		}
@@ -2902,8 +2902,8 @@ loop:;
 		word *p = (word *) A0;
 		if (is_reference(p) && is_enum(A1)) {
 			word hdr = *p;
-			if (is_binstream(p)) {
-				word size = binstream_size(p);
+			if (is_rawstream(p)) {
+				word size = rawstream_size(p);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // blobs are indexed from 0
 					A2 = I(((unsigned char *) p)[pos+W]);
@@ -2937,7 +2937,7 @@ loop:;
 				newobj[i] = p[i];
 			result = (word)newobj;
 
-			if (is_binstream(p)) {
+			if (is_rawstream(p)) {
 				CHECK(is_enump(A2), A2, 10001) // ?
 				size = size * sizeof(word) - header_pads(hdr);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
@@ -2966,7 +2966,7 @@ loop:;
 			word hdr = *p;
 			word size = header_size (hdr) - 1; // -1 for header
 			result = (word) p;
-			if (is_binstream(p)) {
+			if (is_rawstream(p)) {
 				CHECK(is_enump(A2), A2, 10001)
 				size = size * sizeof(word) - header_pads(hdr);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
@@ -3272,7 +3272,7 @@ loop:;
 		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)
 		#define CHECK_NUMBERP(arg)   CHECK_TYPE(arg, numberp, 62008)
 		#define CHECK_REFERENCE(arg) CHECK_TYPE(arg, reference, 62003)
-		#define CHECK_BINSTREAM(arg) CHECK_TYPE(arg, binstream, 62004)
+		#define CHECK_RAWSTREAM(arg) CHECK_TYPE(arg, rawstream, 62004)
 		#define CHECK_STRING(arg)    CHECK_TYPE(arg, string, 62005)
 		#define CHECK_VPTR(arg)      CHECK_TYPE(arg, vptr, 62007)
 
@@ -3370,7 +3370,7 @@ loop:;
 			case SYSCALL_WRITE: {
 				CHECK_ARGC(2, 3); // (port object ?count)
 				CHECK_PORT(1);
-				CHECK_BINSTREAM(2); // we write only binary objects
+				CHECK_RAWSTREAM(2); // we write only binary objects
 				CHECK_NUMBER_OR_FALSE(3);
 
 				int portfd = port(A1);
@@ -3378,7 +3378,7 @@ loop:;
 									? number(A3) : -1; // в байтах
 
 				word *buff = (word *) A2;
-				int length = binstream_size(buff);
+				int length = rawstream_size(buff);
 				if (count > length || count < 0)
 					count = length;
 
@@ -4036,7 +4036,7 @@ loop:;
 							(char*) &fp[1],
 							(size_t) (heap->end - fp - 1) * sizeof(word),
 							string (A), timeinfo);
-					r = new_binstream(TSTRING, len);
+					r = new_rawstream(TSTRING, len);
 				}
 				else
 #endif
@@ -4598,7 +4598,7 @@ loop:;
 		word fn = value (A0);
 		inexact_t a = ol2f(A1);
 
-		A2 = (word) new_binstream(TINEXACT, sizeof(inexact_t));
+		A2 = (word) new_rawstream(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xFA: // fsqrt
 			*(inexact_t*)&car(A2) = __builtin_sqrt(a);
@@ -4645,7 +4645,7 @@ loop:;
 		inexact_t a = ol2f(A1);
 		inexact_t b = ol2f(A2);
 
-		A3 = (word) new_binstream(TINEXACT, sizeof(inexact_t));
+		A3 = (word) new_rawstream(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xD9: // fless?
 			A3 = (a < b) ? ITRUE : IFALSE;
@@ -5252,7 +5252,7 @@ OL_run(OL* ol, int argc, char** argv)
 				pos++;
 			int length = pos - (char*)(fp + 1);
 			if (length > 0) // если есть что добавить
-				userdata = (word) new_pair (new_binstream(TSTRING, length), userdata);
+				userdata = (word) new_pair (new_rawstream(TSTRING, length), userdata);
 		}
 
 		ol->heap.fp = fp;
