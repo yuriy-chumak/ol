@@ -1725,6 +1725,8 @@ struct ol_t
 	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
 	word R[NR + CR];   // регистры виртуальной машины
+	// pinned objects support
+	size_t ffpin; // first free pin
 
 	// текущий контекст с арностью
 	word this;
@@ -1937,6 +1939,7 @@ static int OL_gc(struct ol_t* ol, int ws) // ws - required size in words
 	// попробуем освободить ненужные регистры?
 	for (int i = ol->arity + 3; i < NR; i++)
 		R[i] = IFALSE;
+	ol->ffpin = 4; // init first free pin
     // расширения должны использовать область pinned объектов
 	// fprintf(stderr, "%d", ol->arity);
 
@@ -5333,9 +5336,10 @@ size_t OL_pin(struct ol_t* ol, word ref)
     if (ref == IFALSE)
         return 1; // #false is not a pinnable object
     // TODO: увеличить heap->CR если маловато колбеков!
-    for (int id = 4; id < CR; id++) {
+    for (int id = ol->ffpin; id < CR; id++) {
         if (ol->R[NR+id] == IFALSE) {
             ol->R[NR+id] = ref;
+			ol->ffpin = id + 1;
             return id;
         }
     }
@@ -5358,6 +5362,9 @@ word OL_unpin(struct ol_t* ol, size_t p)
     if (id > 3 && id < CR) {
         re = ol->R[NR+id];
         ol->R[NR+id] = IFALSE;
+
+		if (ol->ffpin > id)
+			ol->ffpin = id;
     }
 
     return re;
