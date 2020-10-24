@@ -22,8 +22,6 @@
       (lang register))
 
    (begin
-      (define bytecode-server 'bytecode-server)
-
       (define is-less #false)
       (define is-equal #true)
       (define is-greater '())
@@ -89,22 +87,27 @@
                (values (insert-code codes bytecode #false) bytecode)))) ; value removed for feature use
 
       ; start internal assembly interner
+      (define bytecode-server ['bytecode-server]) ; make server name unique
+
       (define (fork-bytecode-interner bytecodes)
-         (let ((codes (fold (λ (codes pair) (insert-code codes (car pair) (cdr pair))) #false bytecodes)))
+         (let ((codes (fold
+                        (λ (codes pair)
+                           (insert-code codes (car pair) (cdr pair)))
+                        #false bytecodes)))
             (fork-server bytecode-server (lambda ()
                (let loop ((codes codes))
                   (let*((envelope (wait-mail))
-                        (sender msg envelope))
-                     (cond
-                        ((bytecode? msg)
-                           ;(debug "interner: interning bytecode")
-                           (let*((codes code (intern-code codes msg)))
-                              (mail sender code)
-                              (loop codes)))
-                        ; todo: simplify this
-                        (else
-                           (mail sender #false)
-                           (loop codes)))))))))
+                        (sender msg envelope)
+                        ; assert (string? msg)
+                        (codes code (intern-code codes msg)))
+                     (mail sender code)
+                     (loop codes)))))))
+
+      ;; make bytecode and intern it
+      (define (bytes->bytecode bytes)
+         (interact bytecode-server
+            (vm:makeb type-bytecode bytes)))
+
 
       (define (reg a)
          (if (eq? (type a) type-enum+)
@@ -270,15 +273,6 @@
             (else
                ;(print "assemble: what is " code)
                (fail (list "Unknown opcode " code)))))
-
-      ;; make bytecode and intern it (to improve sharing, not mandatory)
-      (define (bytes->bytecode bytes)
-         ; fastest:
-         ; (vm:makeb type-bytecode bytes)) ; more memory, less cpu
-         ; middle case: intern only bytecode larger than x
-         ; slowest but memory best case:
-         (interact bytecode-server      ; more cpu, less memory
-            (vm:makeb type-bytecode bytes)))
 
       ; code rtl object -> executable code
       ;; todo: exit via fail cont

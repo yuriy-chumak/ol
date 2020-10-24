@@ -241,7 +241,7 @@
                      (io:init)
 
                      ;; repl needs symbols interning, which is handled by this thread
-                     (fork-intern-interner symbols)
+                     (fork-symbol-interner symbols)
                      ;; and bytecode duplication avoider, is handled by this thread
                      (fork-bytecode-interner codes)
 

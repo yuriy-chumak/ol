@@ -13,7 +13,7 @@
    (export
       string->uninterned-symbol
 
-      fork-intern-interner)
+      fork-symbol-interner)
 
    (import
       (scheme core)
@@ -116,20 +116,15 @@
          42)
 
       ; call before
-      (define (fork-intern-interner symbols)
+      (define (fork-symbol-interner symbols)
          (let ((codes (fold put-symbol empty-symbol-tree symbols)))
             (fork-server 'intern (lambda ()
                (let loop ((codes codes))
                   (let*((envelope (wait-mail))
-                        (sender msg envelope))
-                     (cond
-                        ((string? msg)
-                           (let*((codes symbol (string->interned-symbol codes msg)))
-                              (mail sender symbol)
-                              (loop codes)))
-                        (else
-                           (mail sender #false)
-                           (loop codes)))))))))
+                        (sender msg envelope)  ; assert (string? msg)
+                        (codes symbol (string->interned-symbol codes msg)))
+                     (mail sender symbol)
+                     (loop codes)))))))
 
       ; fixme: invalid
       ;(define-syntax defined?
