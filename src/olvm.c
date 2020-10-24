@@ -236,9 +236,9 @@ object_t
 
 // makes olvm reference from system pointer (and just do sanity check in DEBUG)
 #define R(v) ({\
-		word reference = (word)(v);\
-		assert (!(reference & (W-1)) && "olvm references must be aligned to word boundary");\
-		(word*) reference; })
+		word _reference = (word)(v);\
+		assert (!(_reference & (W-1)) && "olvm references must be aligned to word boundary");\
+		(word*) _reference; })
 
 // всякая всячина:
 #define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
@@ -1573,10 +1573,6 @@ word gc(heap_t *heap, int query, word regs)
 	if (query == 0) // сделать полную сборку?
 		heap->genstart = heap->begin; // start full generation
 
-	#if DEBUG_GC
-	fprintf(stderr, "(%6lld)", sizeof(word) * (heap->end - heap->fp));
-	#endif
-
 	fp = heap->fp;
 	{
 		*fp = make_header(TVECTOR, 2); // этого можно не делать
@@ -2034,85 +2030,6 @@ word runtime(struct ol_t* ol)
 	// runtime entry
 apply:;
 
-	if (this == IEMPTY && acc > 1) { /* ff application: (#empty key def) -> def */
-		this = R[3];                 /* call cont */
-		R[3] = (acc > 2) ? R[5] : IFALSE;  /* default arg or false if none */
-		acc = 1;
-
-		goto apply;
-	}
-
-#if HAS_DLOPEN // unsafe must be enabled
-	if (is_vptr(this) > 0) { // todo: change to special type
-		word* args = (word*)INULL;
-		for (int i = acc; i > 1; i--)
-			args = new_pair(R[i+2], args);
-
-		word (*function)(struct ol_t*, word*) = (word (*)(struct ol_t*, word*)) car(this);  assert (function);
-		size_t cont = OL_pin(ol, R[3]);
-
-		heap->fp = fp;
-		R[3] = function(ol, args);
-		this = OL_unpin(ol, cont);
-		fp = heap->fp;
-
-		acc = 1;
-		goto apply;
-	}
-#endif
-
-// 		word (*function)(OL*, word*) = (word (*)(OL*, word*)) car(A);  assert (function);
-
-// 		// remember, called functions can do GC
-
-// 		// ptrdiff_t dp;
-// 		// dp = ip - (unsigned char*)this;
-
-// 		// во время работы execve может быть вызван колбек, который поменяет ip
-// 		// так что восстанавливать его не будем, а сразу перейдем на apply?
-
-// 		heap->fp = fp; ol->this = this;
-// 		R[v] = r = function(ol, B);
-// 		fp = heap->fp; this = ol->this;
-
-// 		// ip = (unsigned char*)this + dp;
-
-// 		// todo: проверить, но похоже что этот вызов всегда сопровождается вызовом RET
-// 		// а значит мы можем тут делать goto apply, и не заботиться о сохранности ip
-// 		// later note: nope, please do not goto apply
-// 		argc++;
-// 		// ip += argc + 4;
-// 		R[ip[argc]] = (word)r; // result
-// 		ip += argc + 1;
-
-    // todo: добавить автоматическую обработку нового(!) типа, который создается через (dlsym)
-    // и вынести сюда вместо сискола 'execve'
-
-	if (this == IHALT) {
-		// a thread or mcp is calling the final continuation
-		this = R[0];
-		if (!is_reference(this))
-			goto done; // expected exit
-
-		R[0] = IFALSE; // set mcp yes?
-		R[4] = R[3];
-		R[3] = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
-		R[5] = IFALSE;
-		R[6] = IFALSE;
-//		breaked = 0;
-		ticker = TICKS;// ?
-		bank = 0;
-		acc = 4;
-
-		goto apply;
-	}
-
-	if (this == IRETURN) {
-		// в R[3] находится код возврата
-		goto done;       // колбек закончен! надо просто выйти наверх
-	}
-
-	// ...
 	if (is_reference(this)) { // если это аллоцированный объект
 		word type = reference_type (this);
 		if (type == TPROC) { //hdr == header(TPROC, 0)) { // proc (58% for "yes")
@@ -2146,6 +2063,26 @@ apply:;
 			goto apply;
 		}
 		else
+#if HAS_DLOPEN // unsafe must be enabled
+		// running ffi function
+		if (type == TVPTR) { // todo: change to special type
+			word* args = (word*)INULL;
+			for (int i = acc; i > 1; i--)
+				args = new_pair(R[i+2], args);
+
+			word (*function)(struct ol_t*, word*) = (word (*)(struct ol_t*, word*)) car(this);  assert (function);
+			size_t cont = OL_pin(ol, R[3]);
+
+			heap->fp = fp;
+			R[3] = function(ol, args);
+			this = OL_unpin(ol, cont);
+			fp = heap->fp;
+
+			acc = 1;
+			goto apply;
+		}
+		else
+#endif
 		if (type != TBYTECODE)
 			FAIL(258, this, INULL);
 
@@ -2225,8 +2162,41 @@ apply:;
 		ip = (unsigned char *) &ref(this, 1);
 		goto mainloop; // let's execute
 	}
-	else
-		FAIL(261, this, INULL); // not callable
+
+	// running ff's ?
+	if (this == IEMPTY && acc > 1) { /* ff application: (#empty key def) -> def */
+		this = R[3];                 /* call cont */
+		R[3] = (acc > 2) ? R[5] : IFALSE;  /* default arg or false if none */
+		acc = 1;
+
+		goto apply;
+	}
+	// done ?
+	if (this == IHALT) {
+		// a thread or mcp is calling the final continuation
+		this = R[0];
+		if (!is_reference(this))
+			goto done; // expected exit
+
+		R[0] = IFALSE; // set mcp yes?
+		R[4] = R[3];
+		R[3] = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
+		R[5] = IFALSE;
+		R[6] = IFALSE;
+//		breaked = 0;
+		ticker = TICKS;// ?
+		bank = 0;
+		acc = 4;
+
+		goto apply;
+	}
+
+	if (this == IRETURN) {
+		// в R[3] находится код возврата
+		goto done;       // колбек закончен! надо просто выйти наверх
+	}
+	
+	FAIL(261, this, INULL); // not callable
 
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
@@ -2491,7 +2461,7 @@ loop:;
 
 	/*! ##### SYS
 	 */
-	// return to continuation?
+	// do mcp operation with continuation
 	case SYS: // (1%) sys continuation op arg1 arg2
 		this = R[0];
 		R[0] = IFALSE; // let's call mcp
