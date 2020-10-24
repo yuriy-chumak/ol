@@ -51,9 +51,6 @@
    (begin
       ; fast internal functions (-1 obj) and (+1 obj),
       ;  limitation - obj is atomic numbers,
-      ;  todo: add theoretically impossible case:
-      ;       (if carry (runtime-error "Too long list to fit in fixnum"))
-
       (setq -- (lambda (n)         ; * internal
          (values-apply (vm:sub n 1) (lambda (n carry) n))))
       (setq ++ (lambda (n)         ; * internal
@@ -94,6 +91,14 @@
       (setq core-profile-error (lambda (function module)
          (runtime-error "Core profile error:"
             (cons "Function" (cons function (cons "require to import" (cons module (cons "module." #null))))))))
+
+
+      (setq make-vector ; #() and []
+         (case-lambda
+            ((v)
+               (vm:make TVECTOR v))
+            ((k fill)
+               (vm:make TVECTOR k fill))))
    )
 
    ; =================================================================
@@ -640,7 +645,7 @@
       ; can be said about such cases is that the value returned by
       ; eqv? must be a boolean
 
-      ;assert (eqv? #() #())                ===> #false) ; * ol specific, (in r7rs unspecified)
+      (assert (eqv? #() #())                ===> #false) ; * ol specific, (in r7rs unspecified)
       (assert (eqv? (lambda (x) x)
                     (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? (lambda (x) x)
@@ -667,10 +672,10 @@
             ((cond (else exp . rest))
                (begin exp . rest))
             ((cond (clause => exp) . rest)
-               ((lambda (fresh)
+               (let ((fresh clause))
                   (if fresh
                      (exp fresh)
-                     (cond . rest)))  clause))
+                     (cond . rest))))
             ((cond (clause exp . rest-exps) . rest)
                (if clause
                   (begin exp . rest-exps)
@@ -695,8 +700,8 @@
          (syntax-rules (else list eqv? eq? and memv => make-vector is)
             ; precalculate case argument, if needed
             ((case (op . args) . clauses)
-               ((lambda (fresh) ; let ((fresh (op.args)))
-                  (case fresh . clauses)) (op . args)))
+               (let ((fresh (op . args)))
+                  (case fresh . clauses)))
             ((case thing) #false)
             ; http://srfi.schemers.org/srfi-87/srfi-87.html
             ((case thing ((a) => exp) . clauses)
@@ -722,7 +727,7 @@
             ; * ol specific
             ; case receives a vectors:
             ((case thing ((make-vector (list cp . args)) . body) . clauses)
-               (if (eq? (ref thing 1) cp) ; compare (todo: move (ref thing 1) to common clause)
+               (if (eq? cp (ref thing 1))
                   (vector-apply thing
                      (lambda (| | . args)
                         . body))
@@ -1524,13 +1529,7 @@
       ; argument is given, then each element is initialized to fill.
       ; Otherwise the initial contents of each element is #false
       ; (unspecified in Scheme).
-
-      (define make-vector
-         (case-lambda
-            ((v)
-               (vm:make type-vector v))
-            ((k fill)
-               (vm:make type-vector k fill))))
+      (define make-vector make-vector)
 
       ; procedure:  (vector obj ...)
       ;
