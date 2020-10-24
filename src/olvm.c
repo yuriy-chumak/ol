@@ -1483,13 +1483,18 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 
 /* input desired allocation size and (the only) pointer to root object
    return a pointer to the same object after heap compaction, possible heap size change and relocation */
+#if DEBUG_GC
+big_t marked;
+#endif
 
 // todo: ввести третий generation
 // просматривает список справа налево
 static
 void mark(word *pos, word *end, heap_t* heap)
 {
-//	marked = 0;
+#if DEBUG_GC
+	marked = 0;
+#endif
 //	assert(pos is NOT flagged)
 	while (pos != end) {
 		word val = ref(pos, 0); // pos header
@@ -1498,7 +1503,9 @@ void mark(word *pos, word *end, heap_t* heap)
 				pos = chase((word*) val);
 			else {
 				word hdr =*((word*) val);
-//				marked++;
+#if DEBUG_GC
+				marked++;
+#endif
 
 				word* ptr = (word*)val;
 				*pos = *ptr;
@@ -1586,17 +1593,19 @@ word gc(heap_t *heap, int query, word regs)
 
 		// todo: add diagnostic callback "if (heap->oncb) heap->oncb(heap, deltatime)"
 		#if DEBUG_GC
+		if (heap->genstart == heap->begin) {
 			gctime += (1000 * clock()) / CLOCKS_PER_SEC;
 			struct tm tm = *localtime(&(time_t){time(NULL)});
 			char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
 			fprintf(stderr,
-					"%s, GC done in %d ms (use: %7d from %8d bytes - %2d%%): (%6d).\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
-					buff/*asctime(&tm)*/, gctime,
+					"%s, GC done in %d ms (use: %ld from %ld bytes - %ld%%): (%6d) / %lld objects.\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+					buff/*asctime(&tm)*/, (int)gctime,
 					((regs - (word)heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
 					((regs - (word)heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)),
-					((word) heap->end - regs)
+					(unsigned)((word) heap->end - regs), (long long int)marked
 				);
 		//				-1, -1, -1, -1);
+		}
 		#endif
 	}
 	heap->fp = fp;
