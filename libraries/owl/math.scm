@@ -1397,7 +1397,7 @@
                (else (vm:cast q type-int-)))))
 
       ; todo, drop this and use just quotrem
-      (define (div a b)
+      (define (quotient a b)
          (if (eq? b 0)
             (big-bad-args 'div a b)
             (case (type a)
@@ -1436,7 +1436,7 @@
             ((fx% a b)
                (lets ((q1 q2 r (vm:div 0 a b))) r))))
 
-      (define (rem a b)
+      (define (remainder a b)
          (case (type a)
             (type-enum+
                (case (type b)
@@ -1472,8 +1472,8 @@
                   (else (big-bad-args 'rem a b))))
             (else (big-bad-args 'rem a b))))
 
-      (define remainder rem)
-      (define quotient div)
+      (define rem remainder)
+      (define div quotient)
 
       ; fixme, only true when the signs are the same, but left here as a placeholder
 
@@ -2216,26 +2216,23 @@
       ;; FIXME: these need short circuiting
 
       ;; + → add
-      (define +
-         (case-lambda
-            ((a b) (add a b))
-            (xs (fold add 0 xs))))
-
-      ;; - → sub
-      (define -
-         (case-lambda
-            ((a b) (sub a b))
-            ((a) (sub 0 a))
-            ((a b . xs)
-               (sub a (add b (fold add 0 xs))))))
+      (define + (case-lambda
+         ((a b) (add a b))
+         ((a . xs) (fold add a xs))
+         (() 0)))
 
       ;; * → mul
-      (define *
-         (case-lambda
-            ((a b) (mul a b))
-            ((a b . xs) (mul a (mul b (fold mul 1 xs))))
-            ((a) a)
-            (() 1)))
+      (define * (case-lambda
+         ((a b) (mul a b))
+         ((a . xs) (fold mul a xs))
+         (() 1)))
+
+      ;; - → sub
+      (define - (case-lambda
+         ((a) (negate a))
+         ((a b) (sub a b))
+         ((a . xs)
+            (fold sub a xs))))
 
       (define bin-div /)
 
