@@ -395,25 +395,25 @@ typedef struct heap_t
 // size is a payload size, not a size of whole object
 // so in fact we'r allocating (size+1) words
 #define NEW(size) ({ \
-	word* addr = fp; \
+	word* _addr = fp;\
 	fp += (size) + 1;\
-	/*return*/ addr; \
+	/*return*/ _addr;\
 })
 
 // аллоцировать новый объект (указанного типа)
 #define NEW_OBJECT(type, size) ({\
-word*p = NEW (size);\
-	*p = make_header(type, size+1, 0);\
-	/*return*/ p;\
+word*_o = NEW (size);\
+	*_o = make_header(type, (size)+1, 0);\
+	/*return*/ _o;\
 })
 
 // аллоцировать новый "бинарный" объект (указанного типа),
 //  данные объекта не проверяются сборщиком мусора и не
 //  могут содержать другие объекты!
 #define NEW_BLOB(type, size, pads) ({\
-word*p = NEW (size);\
-	*p = make_header(BINARY|type, size+1, pads);\
-	/*return*/ p;\
+word*_b = NEW (size);\
+	*_b = make_header(BINARY|type, (size)+1, pads);\
+	/*return*/ _b;\
 })
 
 // new(size) - allocate memory, without type;
@@ -434,15 +434,15 @@ word*p = NEW (size);\
 //	Kernel object handles are process specific. That is, a process must
 //	either create the object or open an existing object to obtain a kernel
 //	object handle. The per-process limit on kernel handles is 2^24.
-#define make_port(a) ({ word p = (word)a; assert (((word)p << IPOS) >> IPOS == (word)p); make_value(TPORT, p); })
-#define port(o)      ({ word p = (word)o; is_value(p) ? value(p) : car(p); })
+#define make_port(a) ({ word _p = (word)a; assert (((word)_p << IPOS) >> IPOS == (word)_p); make_value(TPORT, _p); })
+#define port(o)      ({ word _p = (word)o; is_value(_p) ? value(_p) : car(_p); })
 
-#define new_port(a1) ({\
-	word data1 = (word) (a1);\
-	/* точка следования */ \
-word*p = new (TPORT, 1, 0);\
-	p[1] = data1;\
-	/*return*/ p;\
+#define new_port(arg1) ({ \
+	word _arg1 = (word) (arg1);\
+	/* точка следования */\
+word*_port = new (TPORT, 1, 0);\
+	_port[1] = _arg1;\
+	/*return*/ _port;\
 })
 
 
@@ -621,10 +621,10 @@ word*p = new (TVECTOR, 13);\
 
 // todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 #define enum(v) \
-	({  word x1 = (word)(v);    \
-		assert(is_enum(x1));     \
-		int_t y1 = (x1 >> IPOS);\
-		value_type (x1) == TENUMN ? -y1 : y1; \
+	({  word _x1 = (word)(v);    \
+		assert(is_enum(_x1));     \
+		int_t y1 = (_x1 >> IPOS);\
+		value_type (_x1) == TENUMN ? -y1 : y1; \
 	})//(x1 & 0x80) ? -y1 : y1;
 #define make_enum(v) \
 	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2/*make_value(-x4, TENUMN) : make_value(x4, TENUMP)*/; })
