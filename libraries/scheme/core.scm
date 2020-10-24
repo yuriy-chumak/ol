@@ -648,17 +648,17 @@
       (assert (eqv? #() #())                ===> #false) ; * ol specific, (in r7rs unspecified)
       (assert (eqv? (lambda (x) x)
                     (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
-      ;assert (eqv? (lambda (x) x)
-      ;             (lambda (y) y))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
+      (assert (eqv? (lambda (x) x)
+                    (lambda (y) y))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       ;assert (eqv? 1.0e0 1.0f0)            ===> unspecified
       (assert (eqv? +nan.0 +nan.0)          ===> #true)  ; * ol specific, (in r7rs unspecified)
 
-      ;(assert (eqv? '(a) '(a))             ===> #false) ; * ol specific, (in r7rs unspecified)
-      ;assert (eqv? "a" "a")                ===> unspecified
-      ;assert (eqv? '(b) (cdr '(a b)))      ===> unspecified
-      ;assert (letrec ((f (lambda () (if (eqv? f g) ’both ’f)))
-      ;                (g (lambda () (if (eqv? f g) ’both ’g))))
-      ;          (eqv? f g))                ===> unspecified
+      (assert (eqv? '(a) '(a))              ===> #false) ; * ol specific, (in r7rs unspecified)
+      (assert (eqv? "a" "a")                ===> #false) ; * ol specific, (in r7rs unspecified)
+      (assert (eqv? '(b) (cdr '(a b)))      ===> #false) ; * ol specific, (in r7rs unspecified)
+      (assert (letrec ((f (lambda () (if (eqv? f g) 'both 'f)))
+                       (g (lambda () (if (eqv? f g) 'both 'g))))
+                 (eqv? f g))                ===> #false) ; * ol specific, (in r7rs unspecified)
 
 
       ; 4.2.2  Conditionals
