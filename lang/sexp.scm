@@ -46,7 +46,7 @@
             (or (less? x hi) (eq? x hi))))
 
       (define special-initial-chars (string->runes "!$%&*+-/:<=>?^_~")) ; dot(.) reserved for numbers and pairs, sorry.
-      (define special-subseqent-chars (string->runes "@'")) ; we can use ' as part of symbols (but not an initial)
+      (define special-subseqent-chars (string->runes "@'")) ; we can use ' as part of symols (but not an initial)
 
       (define (symbol-lead-char? n)
          (or

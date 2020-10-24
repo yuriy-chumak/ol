@@ -583,7 +583,6 @@
 
       ;; a simple eval
 
-      ; todo: implement R5RS "6.5 Eval"
       (define (eval exp env)
          (case (macro-expand exp env)
             (['ok exp env]
