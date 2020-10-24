@@ -1492,30 +1492,23 @@ void mark(word *pos, word *end, heap_t* heap)
 //	marked = 0;
 //	assert(pos is NOT flagged)
 	while (pos != end) {
-		word val = pos[0]; // pos header
-		if (is_reference(val) && val >= ((word) heap->genstart)) { // genstart - начало молодого поколения
-			if (is_flagged(val)) {
+		word val = ref(pos, 0); // pos header
+		if (is_reference(val) && val >= (word)heap->genstart) { // genstart - начало молодого поколения
+			if (is_flagged(val))
 				pos = chase((word*) val);
-				pos--;
-			}
 			else {
-				word hdr = *(word *) val;
-//				//if (is_value(hdr))
-//					*(word *) val |= 1; // flag this ? (таки надо, иначе часть объектов не распознается как pinned!)
+				word hdr =*((word*) val);
 //				marked++;
 
 				word* ptr = (word*)val;
 				*pos = *ptr;
 				*ptr = ((word)pos | 1);
 
-				if (hdr & (RAWBIT|1))
-					pos--;
-				else
-					pos = ((word *) val) + (header_size(hdr)-1);
+				unless (hdr & (RAWBIT|1))
+					pos = ((word *) val) + header_size(hdr);
 			}
 		}
-		else
-			pos--;
+		--pos;
 	}
 }
 
@@ -1918,10 +1911,6 @@ word runtime(struct ol_t* ol);  // главный цикл виртуально�
 #define A3                          R[ip[3]]
 #define A4                          R[ip[4]]
 #define A5                          R[ip[5]]
-#define R0                          (word*)R[0]
-#define R1                          (word*)R[1]
-#define R2                          (word*)R[2]
-#define R3                          (word*)R[3]
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
 static int OL_gc(struct ol_t* ol, int ws) // ws - required size in words
@@ -2033,12 +2022,12 @@ apply:;
 	if (is_reference(this)) { // если это аллоцированный объект
 		word type = reference_type (this);
 		if (type == TPROC) { //hdr == header(TPROC, 0)) { // proc (58% for "yes")
-			R[1] = this; this = ref(this, 1); // ob = car(ob)
+			R[1] = this; this = car(this); // ob = car(ob)
 		}
 		else
 		if (type == TCLOS) { //hdr == header(TCLOS, 0)) { // clos (66% for "yes")
-			R[1] = this; this = ref(this, 1); // ob = car(ob)
-			R[2] = this; this = ref(this, 1); // ob = car(ob)
+			R[1] = this; this = car(this); // ob = car(ob)
+			R[2] = this; this = car(this); // ob = car(ob)
 		}
 		else
 		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
