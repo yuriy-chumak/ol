@@ -6,7 +6,7 @@ export PATH=$PATH:/opt/android/sdk/platform-tools
 adb uninstall name.yuriy_chumak.ol
 
 adb shell rm -rf /sdcard/ol/*
-adb push main.lisp /sdcard/ol
+adb push main.lisp /sdcard/ol/
 
 adb push ../../libraries/lib /sdcard/ol/lib
 adb push ../../libraries/OpenGL /sdcard/ol/OpenGL

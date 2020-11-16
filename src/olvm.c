@@ -3933,7 +3933,7 @@ loop:;
 				void* module;
 				if ((word) filename == IFALSE) {
 					module = dlopen(
-				# ifdef __ANDROID__
+				# if defined(__ANDROID__) && !defined(EMBEDDED_VM)
 						MODULE_FILENAME
 				# else						
 						OLVM_LIBRARY_SO_NAME

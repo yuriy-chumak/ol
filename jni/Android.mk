@@ -15,8 +15,9 @@ LOCAL_MODULE   := shared-library
 LOCAL_MODULE_FILENAME := libol
 
 LOCAL_SRC_FILES := ../src/olvm.c
+LOCAL_SRC_FILES += ../extensions/ffi.c
 LOCAL_SRC_FILES += oljni.c ../tmp/repl.c
-LOCAL_CFLAGS   += -std=c99 -O3 -g0 -Iinclude -DNAKED_VM -DEMBEDDED_VM -fsigned-char
+LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O3 -g0 -Iinclude -DNAKED_VM -DEMBEDDED_VM -fsigned-char -Ijni/../src -DOLVM_FFI=1
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
 LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"libol.so"'
@@ -34,7 +35,7 @@ LOCAL_MODULE   := ol
 LOCAL_SRC_FILES := ../src/olvm.c
 LOCAL_SRC_FILES += ../tmp/repl.c
 
-LOCAL_CFLAGS   += -std=c99 -O3 -g0 -Iinclude -fsigned-char
+LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O3 -g0 -Iinclude -fsigned-char
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
 LOCAL_LDLIBS   += -llog -landroid

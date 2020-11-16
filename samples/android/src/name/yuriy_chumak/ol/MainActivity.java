@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 
 import android.content.Context;
-import android.content.res.AssetManager;
 
 import android.opengl.GLSurfaceView;
 import javax.microedition.khronos.opengles.GL10;
@@ -17,30 +16,28 @@ import javax.microedition.khronos.egl.EGLConfig;
 import android.opengl.GLES20;
 
 public class MainActivity extends Activity
-    implements GLSurfaceView.Renderer
+	implements GLSurfaceView.Renderer
 {
 	private static String TAG = "ol";
 	private GLSurfaceView glView;
 
+	private Olvm ol;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-        requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+		requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 
-        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        Log.i(TAG, "onCreate");
-
-        nativeNew();
-        AssetManager assetManager = getApplication().getAssets();
-        nativeSetAssetManager(assetManager);
+		ol = new Olvm(getApplication().getAssets());
 
 		glView = new GLSurfaceView(this);
-        glView.setEGLContextClientVersion(1);
-        glView.setRenderer(this);
-        glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY); // RENDERMODE_WHEN_DIRTY
+		glView.setEGLContextClientVersion(1);
+		glView.setRenderer(this);
+		glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY); // RENDERMODE_WHEN_DIRTY, RENDERMODE_CONTINUOUSLY
 
 		setContentView(glView);
 
@@ -49,12 +46,12 @@ public class MainActivity extends Activity
 				if(event.getAction() == MotionEvent.ACTION_DOWN) {
 					final float x = event.getX();
 					final float y = event.getY();
-                    MainActivity.this.runOnUiThread(new Runnable() {
-                        public void run() {
-                            onMouseTouch(x, y);
-                            glView.requestRender();
-                        }
-                    });
+					MainActivity.this.runOnUiThread(new Runnable() {
+						public void run() {
+							onMouseTouch(x, y);
+							glView.requestRender();
+						}
+					});
 				}
 				return true;
 			}
@@ -62,46 +59,29 @@ public class MainActivity extends Activity
 	}
 
 	// GLSurfaceView.Renderer
-    public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-        Log.i(TAG, "onSurfaceCreated()");
-        //load("main.lisp");
-    }
+	public void onSurfaceCreated(GL10 unused, EGLConfig config) {
+		Log.i(TAG, "onSurfaceCreated()");
+		Olvm.load("main.lisp");
+	}
 
-    public void onDrawFrame(GL10 unused) {
-        Log.i(TAG, "onDrawFrame()");
-        //eval("(let ((renderer (interact 'opengl ['get 'renderer]))) (if renderer (renderer #false)))");
-    }
-    public void onMouseTouch(float x, float y)
-    {
-        Log.i(TAG, "onMouseTouch(" + x + "," + y + ")");
+	public void onDrawFrame(GL10 unused) {
+		// Log.i(TAG, "onDrawFrame()");
+		Olvm.eval("(let ((renderer (interact 'opengl ['get 'renderer]))) (if renderer (renderer #false)))");
+	}
+	public void onMouseTouch(float x, float y)
+	{
+		Log.i(TAG, "onMouseTouch(" + x + "," + y + ")");
 
-        eval("(define (p x) (print (inexact x)))");
-        eval("p", x);
-        eval("p", y);
-        //eval("(let ((mouse-handler (interact 'opengl ['get 'mouse-handler]))) (if mouse-handler (mouse-handler 1 " + x + " " + y + ")))");
-    }
+		// eval("(define (p x) (print (inexact x)))");
+		// eval("p", x);
+		// eval("p", y);
+		//eval("(let ((mouse-handler (interact 'opengl ['get 'mouse-handler]))) (if mouse-handler (mouse-handler 1 " + x + " " + y + ")))");
+	}
 
-    public void onSurfaceChanged(GL10 unused, int width, int height) {
-        Log.i(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
+	public void onSurfaceChanged(GL10 unused, int width, int height) {
+		Log.i(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
 
-        GLES20.glViewport(0, 0, width, height); // temp
-        //eval("print", "todo: call /resize event/ with ", width, " ", height);
-    }
-
-    public static native void nativeSetAssetManager(AssetManager am);
-	public static native void nativeNew();
-	// public static native void nativeDelete();
-
-	public static native Object eval(Object... array);
-    public static void load(String filename) {
-        Log.i(TAG, "load(" + filename + ")");
-        // eval(",load " + "\"" + filename + "\"");
-    }
-
-	static {
-        //System.loadLibrary("gl4es");
-        // System.loadLibrary("SOIL");
-		//System.loadLibrary("freetype2");
-		System.loadLibrary("ol");
+		GLES20.glViewport(0, 0, width, height); // temp
+		//eval("print", "todo: call /resize event/ with ", width, " ", height);
 	}
 }

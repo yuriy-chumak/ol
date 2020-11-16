@@ -23,7 +23,7 @@ extern unsigned char repl[]; // otus lisp binary
 
 #define OL_HOME "/sdcard/ol"
 // ------------------------------------------------------------------------
-// olvm:
+// olvm: todo: make dynamic
 ol_t ol;
 
 // just code simplification, some kind of magic to not manually write 'new_string' and 'make_integer':
@@ -64,15 +64,15 @@ ol_t ol;
 //*/    end of C preprocessor trick
 
 #define _Q(x) \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),     new_string(&ol, (char*)(uintptr_t)x),             \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),        new_string(&ol, (char*)(uintptr_t)x),             \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed char),        make_integer((signed)(uintptr_t)x),     \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned char),    make_integer((unsigned)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed short),     make_integer((signed)(uintptr_t)x),     \
+    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),         new_string(&ol, (char*)(uintptr_t)x), \
+    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),          new_string(&ol, (char*)(uintptr_t)x), \
+    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed char),    make_integer((signed)(uintptr_t)x), \
+    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned char),  make_integer((unsigned)(uintptr_t)x), \
+    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed short),   make_integer((signed)(uintptr_t)x), \
     __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned short), make_integer((unsigned)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed int),         make_integer((signed)(uintptr_t)x),     \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned int),     make_integer((unsigned)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),         make_integer((long)(uintptr_t)x),                     \
+    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed int),     make_integer((signed)(uintptr_t)x), \
+    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned int),   make_integer((unsigned)(uintptr_t)x), \
+    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),           make_integer((long)(uintptr_t)x), \
     __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, IFALSE))))))))))
 
 #define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
@@ -197,7 +197,7 @@ ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
 // #include <freetype/freetype.h>
 // ---------------------------------------
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv* jenv, jobject class)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeNew(JNIEnv* jenv, jobject class)
 {
 	// setenv("LIBGL_NOBANNER", "0", 1);
 	// init:
@@ -217,7 +217,7 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv*
     // well, we have our "smart" script prepared,
     //  now save both eval and env variables
     assert (is_enum(r)); // todo: change to is_enump
-    ol.eval = value(r);
+    ol.eval = r >> 8;
 
     OL_set_open(ol.vm, assets_open);
     OL_set_close(ol.vm, assets_close);
@@ -227,7 +227,7 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeNew(JNIEnv*
     return;
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeDelete(JNIEnv* jenv, jobject class)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeDelete(JNIEnv* jenv, jobject class)
 {
     // embed_delete(&ol);
     if (java_asset_manager) {
@@ -236,13 +236,13 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeDelete(JNIE
     }
 }
 
-JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_MainActivity_nativeSetAssetManager(JNIEnv* jenv, jobject jobj, jobject assetManager)
+JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeSetAssetManager(JNIEnv* jenv, jobject jobj, jobject assetManager)
 {
     java_asset_manager = (*jenv)->NewGlobalRef(jenv, assetManager);
     asset_manager = AAssetManager_fromJava(jenv, java_asset_manager);
 }
 
-JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* jenv, jobject jobj, jarray args)
+JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_Olvm_eval(JNIEnv* jenv, jobject jobj, jarray args)
 {
     jint argc = (*jenv)->GetArrayLength(jenv, args);
 //    LOGI("argumets count: %d", argc);
@@ -298,6 +298,7 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_MainActivity_eval(JNIEnv* j
         jmethodID valueOf = (*jenv)->GetStaticMethodID(jenv, Integer, "valueOf", "(I)Ljava/lang/Integer;");
         return (*jenv)->CallStaticObjectMethod(jenv, Integer, valueOf, (void*)ol2int(r));
     }
+	else
     if (is_string(r)) {
         size_t len = string_length(r);
         const char* value = string_value(r);
