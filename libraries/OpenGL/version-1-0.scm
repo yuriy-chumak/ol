@@ -2909,6 +2909,9 @@
    (Windows
       (begin
          (define GLU_LIBRARY (load-dynamic-library "glu32.dll"))))
+   (Android
+      (begin
+         (define GLU_LIBRARY (load-dynamic-library "libGLU.so"))))
 ;;       ;"HP-UX"
 ;;       ;"SunOS"
 ;;       ;"Darwin"

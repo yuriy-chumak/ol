@@ -127,21 +127,21 @@
    ))
    ; -=( Android )=-----------
    ; it means that we trying to use OpenGL under undroid
-   ; and at this moment OpenGL context already created and activated through OpenGL ES (in lib gl)
+   ; and at this moment OpenGL context already created and activated through gl4es
    (Android ; through gl4es
-      (import (OpenGL ES platform))
       (begin
-         (define GL_LIBRARY GLES)
+			(define GL4ES (load-dynamic-library "libgl4es.so"))
+			(define GL_LIBRARY GL4ES)
 
-         ;; (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
-         ;; (define initialize_gl4es (GL_LIBRARY fft-void "initialize_gl4es"))
-         ;; (initialize_gl4es)
+         (setq GLX GL_LIBRARY)
+         (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string))
 
          (define (gl:CreateContext . args)
-            (print-to stdout "No CreateContext under Android required.")
-            #false)
-         (define GetProcAddress (EGL type-vptr "eglGetProcAddress" type-string))
-         (print "GetProcAddress: " GetProcAddress)
+				(print-to stderr "No CreateContext under Android is required."))
+         (define (gl:MakeCurrent . args)
+				(print-to stderr "No MakeCurrent under Android is required."))
+         (define (gl:SwapBuffers . args)
+				(print-to stderr "No SwapBuffers under Android is required."))
    ))
 
    ; -=( Unknown )=--
@@ -165,7 +165,7 @@
    (define GLvoid*  fft-void*)
 
    (define GLenum     fft-unsigned-int)
-   (define GLboolean  fft-unsigned-char)
+   (define GLboolean  fft-unsigned-char) ;?
    (define GLbitfield fft-unsigned-int)
 
    (define GLbyte   fft-signed-char)

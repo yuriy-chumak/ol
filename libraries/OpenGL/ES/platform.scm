@@ -69,7 +69,7 @@
    ; GL ES types
    (define GLchar      fft-char)
    (define GLenum      fft-unsigned-int)
-   (define GLboolean   fft-unsigned-int)
+   (define GLboolean   fft-unsigned-int) ;?
    (define GLbitfield  fft-unsigned-int)
    (define GLbyte      khronos_int8_t)
    (define GLshort     fft-short)

@@ -9,7 +9,7 @@
 
 (cond-expand
    (Android
-      (import (OpenGL ES platform)))
+      (import (OpenGL platform))) ; via gl4es
    ((or Linux Windows Emscripten)
       (import (OpenGL platform)))
    (else
@@ -100,12 +100,12 @@
             #false)
 
          ; android printing to the stdin means "DEBUG" logcat message
-         (print-to stdin "OpenGL ES version: " (glGetString GL_VERSION))
-         (print-to stdin "OpenGL ES vendor: " (glGetString GL_VENDOR))
-         (print-to stdin "OpenGL ES renderer: " (glGetString GL_RENDERER))
-         (print-to stdin "OpenGL ES extensions: " (glGetString GL_EXTENSIONS))
+         (print-to stdin "OpenGL version: " (glGetString GL_VERSION))
+         (print-to stdin "OpenGL vendor: " (glGetString GL_VENDOR))
+         (print-to stdin "OpenGL renderer: " (glGetString GL_RENDERER))
+         (print-to stdin "OpenGL extensions: " (glGetString GL_EXTENSIONS))
 
-         (define width '(1184))
+         (define width '(1184)) ; todo: query display
          (define height '(672))
          ;; (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
          ;; (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
