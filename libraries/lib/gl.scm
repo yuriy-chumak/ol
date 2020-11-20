@@ -95,6 +95,10 @@
    ; -=( Android )=------------------------------------------
    (Android
       (begin
+
+         (setq EGL (load-dynamic-library "libEGL.so"))
+			(setq gl4es (load-dynamic-library "libgl4es.so"))
+
          ; no context creation, we use already created context
          (define (native:create-context title)
             #false)

@@ -130,11 +130,9 @@
    ; and at this moment OpenGL context already created and activated through gl4es
    (Android ; through gl4es
       (begin
-			(define GL4ES (load-dynamic-library "libgl4es.so"))
-			(define GL_LIBRARY GL4ES)
+			(define EGL (load-dynamic-library "libEGL.so"))
 
-         (setq GLX GL_LIBRARY)
-         (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string))
+         (setq GetProcAddress (EGL type-vptr "eglGetProcAddress" type-string))
 
          (define (gl:CreateContext . args)
 				(print-to stderr "No CreateContext under Android is required."))
@@ -142,6 +140,9 @@
 				(print-to stderr "No MakeCurrent under Android is required."))
          (define (gl:SwapBuffers . args)
 				(print-to stderr "No SwapBuffers under Android is required."))
+
+         (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
+
    ))
 
    ; -=( Unknown )=--
@@ -204,20 +205,21 @@
    (define GL_RENDERER   #x1F01)
    (define GL_VERSION    #x1F02)
    (define GL_EXTENSIONS #x1F03)
-   (define glGetString (GL type-string "glGetString" fft-unsigned-int))
-   (define glHint (GL fft-void "glHint" GLenum GLenum))
-   (define glViewport (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
    ; -------------------------------------------------------------------------
    ; WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
    ; GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
 
    (define (gl:GetProcAddress type name . prototype)
-      (let ((rtty (cons type prototype))
-            (function (GetProcAddress name)))
+      (let ((rtti (cons type prototype))
+            (function (GetProcAddress (c-string name))))
          (if function
             (lambda args
-               (ffi function rtty args)))))
+               (ffi function rtti args)))))
+
+   (define glGetString (gl:GetProcAddress type-string "glGetString" fft-unsigned-int))
+   (define glHint (gl:GetProcAddress fft-void "glHint" GLenum GLenum))
+   (define glViewport (gl:GetProcAddress GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 )
 
 ; ----------------------------------

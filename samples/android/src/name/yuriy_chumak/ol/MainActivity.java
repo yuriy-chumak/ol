@@ -21,21 +21,19 @@ public class MainActivity extends Activity
 	private static String TAG = "ol";
 	private GLSurfaceView glView;
 
-	private Olvm ol;
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		Log.i(TAG, "onCreate()");
+
 		requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
-
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
-
+		// setContentView(R.layout.main);
 		getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-		ol = new Olvm(getApplication().getAssets());
+		Olvm.nativeSetAssetManager(getApplication().getAssets());
 
 		glView = new GLSurfaceView(this);
-		glView.setEGLContextClientVersion(1);
+		glView.setEGLContextClientVersion(2);
 		glView.setRenderer(this);
 		glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY); // RENDERMODE_WHEN_DIRTY, RENDERMODE_CONTINUOUSLY
 
@@ -65,7 +63,7 @@ public class MainActivity extends Activity
 	}
 
 	public void onDrawFrame(GL10 unused) {
-		// Log.i(TAG, "onDrawFrame()");
+		Log.i(TAG, "onDrawFrame()");
 		Olvm.eval("(let ((renderer (interact 'opengl ['get 'renderer]))) (if renderer (renderer #false)))");
 	}
 	public void onMouseTouch(float x, float y)
@@ -81,7 +79,7 @@ public class MainActivity extends Activity
 	public void onSurfaceChanged(GL10 unused, int width, int height) {
 		Log.i(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
 
-		GLES20.glViewport(0, 0, width, height); // temp
-		//eval("print", "todo: call /resize event/ with ", width, " ", height);
+	// 	GLES20.glViewport(0, 0, width, height); // temp
+	// 	//eval("print", "todo: call /resize event/ with ", width, " ", height);
 	}
 }

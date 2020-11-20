@@ -199,13 +199,12 @@ ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeNew(JNIEnv* jenv, jobject class)
 {
-	// setenv("LIBGL_NOBANNER", "0", 1);
 	// init:
 	fds_size = 16;
 	fds = (AAsset**) malloc(sizeof(*fds) * fds_size);
 
 	// gl4es init
-	setenv("LIBGL_NOBANNER", "0", 1);
+	// setenv("LIBGL_NOBANNER", "0", 1);
 
 	// let's start our application
 	ol.vm = OL_new(repl);
