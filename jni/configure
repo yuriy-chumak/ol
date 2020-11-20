@@ -1,0 +1,9 @@
+#!/bin/bash
+
+checkout() {
+    [ ! -d "gl4es/src" ] && git clone https://github.com/yuriy-chumak/$1 $1
+}
+
+checkout gl4es
+checkout GLU
+checkout SOIL
