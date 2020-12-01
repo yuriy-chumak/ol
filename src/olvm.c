@@ -229,8 +229,7 @@ object_t
 // два главных класса:
 #define is_value(x)                 (( (word) (x)) & 2)
 #define is_reference(x)             (!is_value(x))
-//#define is_blob(x)                  ((*(word*)(x)) & RAWBIT) // todo: rename to rawstream
-#define is_rawstream(x)             ((*(word*)(x)) & RAWBIT)
+#define is_rawstream(x)             ((struct object_t*)(x))->rawness // ((*(word*)(x)) & RAWBIT)
 
 #define W                           (sizeof (word)) // todo: change to WSIZE
 
