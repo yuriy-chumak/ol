@@ -62,6 +62,7 @@
          'ns     ns
          'ka     ka
          'kd     kd
+         'ks     ks
          'ke     ke
          'ni     ni
          'd      d
