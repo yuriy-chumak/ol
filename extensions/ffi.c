@@ -301,9 +301,9 @@ int utf8_len(word widestr)
 // edx - argc
 // r8  - function
 // r9d - type
-intmax_t x64_call(int_t argv[], long argc, void* function, long type);
+intmax_t win64_call(int_t argv[], long argc, void* function, long type);
 
-__ASM__("x64_call:_x64_call:",  // "int $3",
+__ASM__("win64_call:_win64_call:",  // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
@@ -366,9 +366,9 @@ __ASM__("x64_call:_x64_call:",  // "int $3",
 // r8:  mask
 // r9: function
 // 16(rbp): type
-intmax_t x64_call(int_t argv[], double ad[], long i, long d, long mask, void* function, long type);
+intmax_t nix64_call(int_t argv[], double ad[], long i, long d, long mask, void* function, long type);
 
-__ASM__("x64_call:_x64_call:", // "int $3",
+__ASM__("nix64_call:_nix64_call:", // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
@@ -523,7 +523,83 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"popl  %edx",
 	"jmp   9b");
 
-#elif __ARM_EABI__
+
+#elif __aarch64__
+
+// current limitation: no more than 8 integer and 8 floating point values
+__attribute__((naked))
+uintmax_t arm64_call(int_t argv[], double ad[],
+                     long i, long d,
+                     void* function, long type)
+// x0: argv
+// x1: ad
+// x2: i
+// x3: d
+// x4: function
+// x5: type
+{
+__ASM__(//"brk #0",
+	"stp  x29, x30, [sp, -16]!",
+	"mov  x29, sp",
+
+	"mov  x9, x4",
+
+	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
+	"cmp x3, #0",  // (count of fp values)
+	"beq .Lno_more_floats",
+	"ldr d0, [x1]",
+	"ldr d1, [x1, #8]",
+	"ldr d2, [x1, #16]",
+	"ldr d3, [x1, #24]",
+
+	"cmp x3, #4",
+	"beq .Lno_more_floats",
+	"ldr d4, [x1, #32]",
+	"ldr d5, [x1, #40]",
+	"ldr d6, [x1, #48]",
+	"ldr d7, [x1, #56]",
+
+	// "cmp r3, #8",
+	// "ble .Lnofloats",
+	// "vldr.32 s8, [r1, #32]",
+	// "vldr.32 s9, [r1, #36]",
+	// "vldr.32 s10, [r1, #40]",
+	// "vldr.32 s11, [r1, #44]",
+	// "vldr.32 s12, [r1, #48]",
+	// "vldr.32 s13, [r1, #52]",
+	// "vldr.32 s14, [r1, #56]",
+	// "vldr.32 s15, [r1, #60]",
+
+	// аналогично сделаем с целочисленными аргументами
+".Lno_more_floats:",
+	"cmp x2, #0",
+	"beq .Lno_integers",
+
+	"cmp x2, #4",
+	"ble .Lno_more_integers",
+
+	"ldr x4, [x0, #32]",
+	"ldr x5, [x0, #40]",
+	"ldr x6, [x0, #48]",
+	"ldr x7, [x0, #56]",
+
+	// ...
+
+".Lno_more_integers:",
+	"ldr x3, [x0, #24]",
+	"ldr x2, [x0, #16]",
+	"ldr x1, [x0, #8]",
+	"ldr x0, [x0]",
+
+".Lno_integers:",
+	"blr x9", // SP mod 16 = 0.  The stack must be quad-word aligned.
+
+	// ...
+	"ldp  x29, x30, [sp], 16",
+	"ret");
+}
+
+#elif __arm__
 // http://ru.osdev.wikia.com/wiki/Категория:Архитектура_ARM
 // https://msdn.microsoft.com/ru-ru/library/dn736986.aspx - Обзор соглашений ABI ARM (Windows)
 // Procedure Call Standard for the ARM®  Architecture
@@ -609,13 +685,13 @@ __ASM__(
 __attribute__((naked))
 uintmax_t arm32_call(int_t argv[], float af[],
                      long i, long f,
-                     void* function, long type);
+                     void* function, long type)
 __ASM__(
 #ifndef __ANDROID__
 	"arm32_call:_arm32_call:",
 #endif
 	// "BKPT",
-	// r0: argv, r1: af, r2: ad, r3: i, f: [sp, #12], g: [sp, #16]
+	// r0: argv, r1: af, r2: i, r3: ad, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
 	// r5: temporary
 	"stmfd   sp!, {r4, r5, lr}",
@@ -723,7 +799,8 @@ __ASM__(
 
 typedef intmax_t ret_t;
 static
-ret_t asmjs_call(int_t args[], int fmask, void* function, int type) {
+ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
+{
 //	printf("asmjs_call(%p, %d, %p, %d)\n", args, fmask, function, type);
 
 	switch (fmask) {
@@ -867,13 +944,6 @@ ret_t asmjs_call(int_t args[], int fmask, void* function, int type) {
 		default: fprintf(stderr, "Unsupported parameters count for ffi function: %d", i);\
 			return 0;\
 		};
-# if __aarch64__
-typedef intmax_t ret_t;
-ret_t aarch64_call(int_t args[], int i, void* function, int type) {
-	CALL();
-}
-# endif
-
 #endif
 
 
@@ -1026,25 +1096,25 @@ word* ul2ol(word**fpp, intmax_t val) {
 
 #	endif
 
+/////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
 PUBLIC
 __attribute__((used))
 word* OL_ffi(OL* this, word* arguments)
 {
 	// a - function address
-	// b - arguments (may be pair with req type in car and arg in cdr - not yet done)
+	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
 	// c - '(return-type . argument-types-list)
-	word A = (word)car(arguments); arguments = (word*)cdr(arguments); // function
-	word B = (word)car(arguments); arguments = (word*)cdr(arguments); // rtty
-	word C = (word)car(arguments); arguments = (word*)cdr(arguments); // args
+	word A = car(arguments); arguments = (word*)cdr(arguments); // function
+	word B = car(arguments); arguments = (word*)cdr(arguments); // rtty
+	word C = car(arguments); arguments = (word*)cdr(arguments); // args
 
 	assert (is_vptr(A));
 	assert (B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
 	assert (C == INULL || (is_reference(C) && reference_type(C) == TPAIR));
 
-	// todo: может выделять в общей куче,а не стеке? (кстати, да!)
 	void *function = (void*)car(A);  assert (function);
-	int returntype = value (car(B));
+	int returntype = value(car(B));
 
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
@@ -1053,11 +1123,11 @@ word* OL_ffi(OL* this, word* arguments)
 	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
 #endif
 
-#if __amd64__ && (__linux__ || __APPLE__)// LP64
-	// для x64 отдельный массив чисел с плавающей запятой
+#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__ // LP64
+	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[18];
 	int d = 0;     // количество аргументов для ad
-	long floatsmask = 0; // маска для флоатов // deprecated:, старший единичный бит - признак конца
+	long floatsmask = 0; // маска для аргументов с плавающей запятой
 #elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив
@@ -1187,7 +1257,7 @@ word* OL_ffi(OL* this, word* arguments)
 		}*/
 
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
-#if __amd64__ && (__linux__ || __APPLE__) // LP64
+#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__ // LP64
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
@@ -1200,7 +1270,7 @@ word* OL_ffi(OL* this, word* arguments)
 			args[++i] = 0; 	// for 32-bits: double and longlong fills two words
 			break;
 #endif
-#if __amd64__ && (__linux__ || __APPLE__)
+#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__
 		case TFLOAT:
 		case TDOUBLE:
 			ad[d++] = 0;
@@ -1352,7 +1422,7 @@ word* OL_ffi(OL* this, word* arguments)
 
 		// с плавающей запятой:
 		case TFLOAT:
-			#if __amd64__ && (__linux__ || __APPLE__)
+			#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__
 				*(float*)&ad[d++] = OL2F(arg); --i;
 				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
@@ -1402,7 +1472,7 @@ word* OL_ffi(OL* this, word* arguments)
 
 		case TDOUBLE:
 		tdouble:
-			#if __amd64__ && (__linux__ || __APPLE__)
+			#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__
 				*(double*)&ad[d++] = OL2D(arg); --i;
 				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
@@ -1840,26 +1910,33 @@ word* OL_ffi(OL* this, word* arguments)
 //	if (floatsmask == 15)
 //		__asm__("int $3");
 
-#if  __amd64__ && (__linux__ || __APPLE__)
-	got = x64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
-#elif __i386__ && (__linux__ || __APPLE__)
-	got = x86_call(args, i, function, returntype & 0x3F);
-#elif _WIN64
-	got = x64_call(args, i, function, returntype & 0x3F);
-#elif _WIN32
-	// cdecl and stdcall in our case are same, so...
-	got = x86_call(args, i, function, returntype & 0x3F);
-#elif __ARM_EABI__
+#if  __amd64__
+#	if (__linux__ || __APPLE__)
+		got = nix64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
+#	elif _WIN64
+		got = win64_call(args, i, function, returntype & 0x3F);
+#	else
+#		error "Unsupported platform"
+#	endif
+#elif __i386__
+#	if (__linux__ || __APPLE__)
+		got = x86_call(args, i, function, returntype & 0x3F);
+#	elif _WIN32
+		// cdecl and stdcall in our case are same, so...
+		got = x86_call(args, i, function, returntype & 0x3F);
+#		error "Unsupported platform"
+#	endif
+#elif __aarch64__
+	got = arm64_call(args, ad, i, d, function, returntype & 0x3F);
+#elif __arm__
 	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
-# ifndef __ARM_PCS_VFP
-	got = arm32_call(args, i, function);
-# else // (?)
-	got = arm32_call(args, NULL,
+#	ifndef __ARM_PCS_VFP
+		got = arm32_call(args, i, function);
+#	else // (?)
+		got = arm32_call(args, NULL,
 	        i, 0,
 	        function, returntype & 0x3F); //(?)
-# endif
-#elif __aarch64__
-	got = aarch64_call(args, i, function, returntype & 0x3F);
+#	endif
 #elif __mips__
 	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
 	typedef long long ret_t;
@@ -1870,6 +1947,11 @@ word* OL_ffi(OL* this, word* arguments)
 #elif __EMSCRIPTEN__
 	got = asmjs_call(args, fmask, function, returntype & 0x3F);
 #else // ALL other
+	typedef long long ret_t;
+	inline ret_t call(word args[], int i, void* function, int type) {
+		CALL();
+	}
+	got = call(args, i, function, returntype & 0x3F);
 /*	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
 		CALL(__cdecl);
 	}
@@ -2295,11 +2377,11 @@ word OL_sizeof(OL* self, word* arguments)
 
 // http://man7.org/tlpi/code/faq.html#use_default_source
 //  glibc version 6+ uses __GLIBC__/__GLIBC_MINOR__
-#ifndef _DEFAULT_SOURCE
-# ifndef __APPLE__
-#	error "Required -std=gnu11 (we use anonymous mmap)"
-# endif
-#endif
+// #ifndef _DEFAULT_SOURCE
+// # ifndef __APPLE__
+// #	error "Required -std=gnu11 (we use anonymous mmap)"
+// # endif
+// #endif
 
 // todo: добавить возможность вызова колбека как сопрограммы (так и назвать - сопрограмма)
 //       который будет запускать отдельный поток и в контексте колбека ВМ сможет выполнять
