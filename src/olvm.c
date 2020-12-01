@@ -198,10 +198,10 @@ object_t
 #endif
 
 // http://www.delorie.com/gnu/docs/gcc/gccint_53.html
-#if SIZE_MAX == 0xffffffffffffffff
+#if SIZE_MAX == 0xffffffffffffffffU
 	typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
 	typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
-#elif SIZE_MAX == 0xffffffff
+#elif SIZE_MAX == 0xffffffffU
 	typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
 	typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 #else

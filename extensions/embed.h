@@ -59,14 +59,14 @@ typedef struct ol_t
 		(unsigned char)(((*(uintptr_t*)(p)) >> 2) & 0x3F); })
 
 //! returns not 0 if argument is a small number (type-enum+ or type-enum-)
-#define is_small(x) ({ uintptr_t s = (uintptr_t)(x);\
+#define is_enum(x) ({ uintptr_t s = (uintptr_t)(x);\
 		is_value(s) ?\
 			vtype(s) == 0 || vtype(s) == 32\
 		: 0; })
 
 //! returns not 0 if argument is a number (type-int+ or type-int-)
 #define is_number(x) ({ uintptr_t n = (uintptr_t)(x);\
-		is_small(n) ? 1 \
+		is_enum(n) ? 1 \
 		: is_reference(n) ? \
 			reftype(n) == 40 || reftype(n) == 41\
 			: 0; })
@@ -108,14 +108,14 @@ typedef struct ol_t
 
 //! converts ol small number into C signed integer
 #define ol2small(x) ({ uintptr_t m = (uintptr_t)(x);\
-		assert (is_small(m) && "argument should be a small number");\
+		assert (is_enum(m) && "argument should be a small number");\
 		int v = m >> 8;\
 		(m & 0x80) ? -v : v;})
 
 //! converts OL number into C signed integer
 #define ol2int(x) ({ uintptr_t u = (uintptr_t)(x);\
 		assert (is_number(u) && "argument should be a number");\
-		is_small(u) ? ol2small(u)\
+		is_enum(u) ? ol2small(u)\
 			: (uintptr_t)ol2small(car(u)) | (uintptr_t)ol2small(cadr(u)) << ((sizeof (uintptr_t) * 8) - 8)/*FBITS*/;})
 
 //#pragma GCC diagnostic pop
@@ -239,7 +239,7 @@ void embed_new(ol_t* embed, unsigned char* bootstrap, int interactive)
 	r = OL_run(embed->vm, sizeof(args) / sizeof(*args), args);
 	// well, we have our "smart" script prepared,
 	//  now save both eval and env variables
-	assert (is_small(r));
+	assert (is_enum(r));
 	embed->eval = ol2small(r);
 }
 
