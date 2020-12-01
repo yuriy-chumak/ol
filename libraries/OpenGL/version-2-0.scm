@@ -31,6 +31,7 @@ glUniform1i
 glUniform1f
 glUniform2f
 glUniform3f
+glUniform4f
 glUniform1fv
 glUniformMatrix4fv
 glEnableVertexAttribArray
@@ -78,6 +79,7 @@ glDrawArrays
     (define glUniform1f     (gl:GetProcAddress GLvoid "glUniform1f" GLint GLfloat))
     (define glUniform2f     (gl:GetProcAddress GLvoid "glUniform2f" GLint GLfloat GLfloat))
     (define glUniform3f     (gl:GetProcAddress GLvoid "glUniform3f" GLint GLfloat GLfloat GLfloat))
+    (define glUniform4f     (gl:GetProcAddress GLvoid "glUniform4f" GLint GLfloat GLfloat GLfloat GLfloat))
     (define glUniform1fv    (gl:GetProcAddress GLvoid "glUniform1fv" GLint GLsizei GLvoid*)) ; TEMP from GLfloat*
     (define glUniformMatrix4fv (gl:GetProcAddress GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLvoid*)) ; TEMPORARY RENAMED FROM GLfloat*
   (define glEnableVertexAttribArray (gl:GetProcAddress GLvoid "glEnableVertexAttribArray" GLuint))
