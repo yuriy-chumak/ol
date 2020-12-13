@@ -150,41 +150,39 @@
 ;  (1 for count > 0, 100 for count = 0)
 (define (on-accept id fd onRequest)
 (lambda ()
-   (define (ok data fail val pos)
-      ;(print-to stderr "request: " val)
-      ;(print-to stderr "data: " data)
-      (values val data))
-   (define (fail pos reason)
-      (print-to stderr "http parser fail: \e[0;31m" reason "\e[0;0m")
-      (values #false #null))
+   (define (ok l r p v)
+      (values l r p v))
    (define (send . args)
       (for-each (lambda (arg)
          (display-to fd arg)) args) #t)
 
-   (print "on-accept :" id)
+   (print-to stderr "on-accept :" id)
    (let*((ss1 ms1 (clock)))
       (let loop ((stream (port->bytestream fd)))
-         ;(print "stream: " stream)
-         (let* ((request stream (http-parser stream ok fail 0)))
+         (let* ((request stream
+                  (let* ((l r p val (http-parser #null stream 0 ok)))
+                     (if (not l)
+                        (values #false r)
+                        (values val r)))))
             (if request
                (unless (call/cc (lambda (close)
                               (let ((Request-Line (ref request 1))
                                     (Headers-Line (ref request 2)))
-                                 (print id ": Request-Line: \e[0;34m" Request-Line "\e[0;0m")
-                                 (print id ": Headers-Line: " Headers-Line)
+                                 (print-to stderr id ": Request-Line: \e[0;34m" Request-Line "\e[0;0m")
+                                 (print-to stderr id ": Headers-Line: " Headers-Line)
                                  (cond
                                     ((null? Request-Line)
                                        (close (send "HTTP/1.0 400 Bad Request\r\n\r\n400")))
                                     (else
                                        (define Body stream)
                                        (onRequest fd Request-Line Headers-Line Body close)))
-                                 (print "ok."))
+                                 (print-to stderr "ok."))
                               #false))
                   (loop stream)))))
-      (print id (if (syscall 3 fd) ": socket closed" ": can't close socket"))
-      (print "on-accept :" id " done.")
+      (print-to stderr id (if (syscall 3 fd) ": socket closed" ": can't close socket"))
+      (print-to stderr "on-accept :" id " done.")
       (let*((ss2 ms2 (clock)))
-         (print "# " (timestamp) ": request " id " processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
+         (print-to stderr "# " (timestamp) ": request " id " processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
 ))
 
 
@@ -194,16 +192,16 @@
    (let loop ((port port))
       (if (not (syscall 49 socket port)) ; bind
          (loop (+ port 2))
-         (print "Server binded to " port)))
+         (print-to stderr "Server binded to " port)))
    ; listen
    (if (not (syscall 50 socket)) ; listen
-      (shutdown (print "Can't listen")))
+      (shutdown (print-to stderr "Can't listen")))
 
    ; accept
    (let loop ()
       (if (syscall 23 socket) ; select
          (let ((fd (syscall 43 socket))) ; accept
-            (print "\n# " (timestamp) ": new request from " (syscall 51 fd))
+            (print-to stderr "\n# " (timestamp) ": new request from " (syscall 51 fd))
             (fork (on-accept (generate-unique-id) fd onRequest))))
       (set-ticker-value 0)
       (loop))))
