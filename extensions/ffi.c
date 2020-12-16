@@ -1123,7 +1123,7 @@ word* OL_ffi(OL* this, word* arguments)
 	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
 #endif
 
-#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__ // LP64
+#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[18];
 	int d = 0;     // количество аргументов для ad
@@ -1156,7 +1156,7 @@ word* OL_ffi(OL* this, word* arguments)
                     0;
                 int listq = reference_type(arg) == TPAIR;
 				int atype = type &~(FFT_REF|FFT_PTR); // c data type
-                
+
                 int len = // in bytes
                 atype == TSTRING ? ({
                     int l = 0;
@@ -1166,7 +1166,7 @@ word* OL_ffi(OL* this, word* arguments)
                              reference_type(str) == TSTRINGWIDE ? utf8_len(str) + 1  + W :
                              reference_type(str) == TSTRINGDISPATCH ? number(ref(str, 1)) + 1 + W :
                              0;
-                        arg = listq ? cdr(arg) : arg++;
+                        arg = listq ? cdr(arg) : arg+1;
                     }
                     l + cnt*W; // size for array + size of all strings
                 }) : cnt;
@@ -1257,7 +1257,7 @@ word* OL_ffi(OL* this, word* arguments)
 		}*/
 
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
-#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__ // LP64
+#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
@@ -1270,7 +1270,7 @@ word* OL_ffi(OL* this, word* arguments)
 			args[++i] = 0; 	// for 32-bits: double and longlong fills two words
 			break;
 #endif
-#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__
+#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
 		case TFLOAT:
 		case TDOUBLE:
 			ad[d++] = 0;
@@ -1422,7 +1422,7 @@ word* OL_ffi(OL* this, word* arguments)
 
 		// с плавающей запятой:
 		case TFLOAT:
-			#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__
+			#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
 				*(float*)&ad[d++] = OL2F(arg); --i;
 				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
@@ -1472,7 +1472,7 @@ word* OL_ffi(OL* this, word* arguments)
 
 		case TDOUBLE:
 		tdouble:
-			#if (__amd64__ && (__linux__ || __APPLE__)) || __aarch64__
+			#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
 				*(double*)&ad[d++] = OL2D(arg); --i;
 				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
@@ -1911,7 +1911,7 @@ word* OL_ffi(OL* this, word* arguments)
 //		__asm__("int $3");
 
 #if  __amd64__
-#	if (__linux__ || __APPLE__)
+#	if (__unix__ || __APPLE__)
 		got = nix64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
 #	elif _WIN64
 		got = win64_call(args, i, function, returntype & 0x3F);
@@ -1919,7 +1919,7 @@ word* OL_ffi(OL* this, word* arguments)
 #		error "Unsupported platform"
 #	endif
 #elif __i386__
-#	if (__linux__ || __APPLE__)
+#	if (__unix__ || __APPLE__)
 		got = x86_call(args, i, function, returntype & 0x3F);
 #	elif _WIN32
 		// cdecl and stdcall in our case are same, so...
@@ -2527,7 +2527,7 @@ word OL_mkcb(OL* self, word* arguments)
 			"\xFF\xD0"              // call rax
 			"\xC9"                  // leave
 			"\xC3";                 // ret
-	ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
+	ptr = mmap(0, sizeof(bytecode), PROT_WRITE,
 			MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	if (ptr == (char*) -1)
 		return IFALSE;
@@ -2536,6 +2536,10 @@ word OL_mkcb(OL* self, word* arguments)
 	*(long long*)&ptr[78] = pin;
 	*(long long*)&ptr[88] = (long long)self;
 	*(long long*)&ptr[98] = (long long)&callback;
+	
+	int res = mprotect(ptr, sizeof(bytecode), PROT_EXEC);
+	if (res == -1)
+		return IFALSE;
 	#endif
 #endif
 
@@ -2581,7 +2585,7 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 	fp = ol->fp;
 
 	int i = 0;
-#if __amd64__ && (__linux__ || __APPLE__)
+#if __amd64__ && (__unix__ || __APPLE__)
 	int j = 0;
 #endif
 /*#if __amd64__  // !!!
