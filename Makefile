@@ -95,7 +95,7 @@ ifeq ($(UNAME),NetBSD)
        -Xlinker --export-dynamic
 endif
 ifeq ($(UNAME),OpenBSD)
-  L := $(if HAS_DLOPEN, -lc) -ftrampolines \
+  L := $(if HAS_DLOPEN, -lc) \
        -Xlinker --export-dynamic
 endif
 

@@ -805,16 +805,16 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 // #define XSTR(x) STR(x)
 // #define STR(x) #x
 // #pragma message "The value of GCC_VERSION: " XSTR(GCC_VERSION)
-#if GCC_VERSION < 40600
+#ifndef static_assert
+# if GCC_VERSION < 40600
 #	define CONCATENATE_DETAIL(x, y) x##y
 #	define CONCATENATE(x, y) CONCATENATE_DETAIL(x, y)
 #	define MAKE_UNIQUE(x) CONCATENATE(x, __COUNTER__)
 #	define static_assert(condition, comment) \
 		typedef char MAKE_UNIQUE(static_assertion_)[2*(!!(condition)) - 1];
-#else
-#	ifndef static_assert
+# else
 #	define static_assert _Static_assert
-#	endif
+# endif
 #endif
 
 #if GCC_VERSION < 40500
@@ -1026,7 +1026,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #include <features.h>
 #endif
 
-#ifdef __linux__
+#ifdef __unix__
 # if !defined ( __EMSCRIPTEN__ ) && HAS_CDEFS
 #	include <sys/cdefs.h>
 # endif
@@ -3432,7 +3432,7 @@ loop:;
 					break;
 
 				// regular file? (id less than VMAX, then we return port as value)
-				if (file >= 0 && file <= VMAX) {
+				if ((unsigned long)file <= VMAX) {
 					struct stat sb; // do not open directories
 					if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
 						close(file);
