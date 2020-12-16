@@ -2,7 +2,10 @@
 
 (import (lib http))
 ; simplest example:
-(http:run 8080 (lambda (fd request headers send close)
+(http:run 8080 (lambda (fd request headers body close)
+   (define (send . args)
+      (for-each (lambda (arg)
+         (display-to fd arg)) args))
    (print ":: " (syscall 51 fd))
    (send "HTTP/1.0 200 OK\n"
          "Connection: close\n"
