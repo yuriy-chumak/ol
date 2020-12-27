@@ -212,7 +212,7 @@
 
    (define (gl:GetProcAddress type name . prototype)
       (let ((rtti (cons type prototype))
-            (function (GetProcAddress (c-string name))))
+            (function (GetProcAddress name)))
          (if function
             (lambda args
                (ffi function rtti args)))))
