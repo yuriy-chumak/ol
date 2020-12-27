@@ -711,13 +711,12 @@ word* p = new (type, _words, _pads);\
 #define new_bytevector(length) new_rawstream(TBYTEVECTOR, length)
 
 #define NEW_STRING2(string, length) ({\
-	char* _data = string;\
-	int _size = (length);\
-word* p = new_rawstream(TSTRING, length);\
+	char* _str = string;\
+	int _strln = length;\
+word* p = new_rawstream(TSTRING, _strln);\
 	char* ptr = (char*)&p[1];\
-	while (_size--)\
-		*ptr++ = *_data++;\
-	/* *ptr = '\0'; <- bug! or use length+1 */ \
+	while (_strln--)\
+		*ptr++ = *_str++;\
 	/*return*/ p;\
 })
 
@@ -734,17 +733,17 @@ word* p = new_rawstream(TSTRING, length);\
 
 
 #define new_vptr(a) ({\
-word data = (word) a;\
-	word* me = new (TVPTR, 1, 0);\
-	me[1] = data;\
-	/*return*/me;\
+word _data = (word) a;\
+	word* _me = new (TVPTR, 1, 0);\
+	_me[1] = _data;\
+	/*return*/ _me;\
 })
 
 #define new_callable(a) ({\
-word data = (word) a;\
-	word* me = new (TCALLABLE, 1, 0);\
-	me[1] = data;\
-	/*return*/me;\
+word _data = (word) a;\
+	word* _me = new (TCALLABLE, 1, 0);\
+	_me[1] = _data;\
+	/*return*/ _me;\
 })
 
 #define new_dlsym(a, b) ({\
