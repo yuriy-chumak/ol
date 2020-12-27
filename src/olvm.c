@@ -700,23 +700,23 @@ word*p = new (TVECTOR, 13);\
 // -= остальные аллокаторы =----------------------------
 
 #define new_rawstream(type, length) ({\
-	int size = (length);\
-	int words = (size + W - 1) / W;\
-	int pads = (words * W - size);\
+	int _size = (length);\
+	int _words = (_size + W - 1) / W;\
+	int _pads = (_words * W - _size);\
 	\
-word* p = new (type, words, pads);\
+word* p = new (type, _words, _pads);\
 	/*return*/ p;\
 })
 
 #define new_bytevector(length) new_rawstream(TBYTEVECTOR, length)
 
 #define NEW_STRING2(string, length) ({\
-	char* data = string;\
-	int size = (length);\
+	char* _data = string;\
+	int _size = (length);\
 word* p = new_rawstream(TSTRING, length);\
 	char* ptr = (char*)&p[1];\
-	while (size--)\
-		*ptr++ = *data++;\
+	while (_size--)\
+		*ptr++ = *_data++;\
 	/* *ptr = '\0'; <- bug! or use length+1 */ \
 	/*return*/ p;\
 })
