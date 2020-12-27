@@ -167,7 +167,7 @@ $ make; make install
 ##### Build only olvm (ol virtual machine):
 
 ```bash
-$ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -lm -ldl  -o vm
+$ gcc src/olvm.c -DNAKED_VM  -std=gnu99 -O2  -lm -ldl  -o vm
 ```
 
 ##### Build ol (with integrated REPL):
@@ -177,7 +177,7 @@ $ xxd --include repl >tmp/repl.c
 OR
 $ echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl >tmp/repl.c
 THEN
-$ gcc src/olvm.c tmp/repl.c  -std=c99 -O2  -lm -ldl  -o ol
+$ gcc src/olvm.c tmp/repl.c  -std=gnu99 -O2  -lm -ldl  -o ol
 ```
 
 ##### Build Web Binaries (in wasm form):
@@ -195,13 +195,13 @@ Example of using ol as an embedded web application you can check on the official
 ##### Build only olvm (ol virtual machine):
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
-> gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -lws2_32  -o ol
+> gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
 ```
 ##### Build ol (with integrated REPL):
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
 > ld -r -b binary -o tmp/repl.o repl
-> gcc.exe src\olvm.c tmp\repl.o -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=c99 -O2  -lws2_32  -o ol
+> gcc.exe src\olvm.c tmp\repl.o -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
 ```
 
 #### \*BSDs:
@@ -210,12 +210,12 @@ You should include "c" library instead of "dl":
 
 ##### Build only olvm (ol virtual machine):
 ```bash
-$ gcc src/olvm.c -DNAKED_VM  -std=c99 -O2  -lc -lm  -o vm
+$ gcc src/olvm.c -DNAKED_VM  -std=gnu99 -O2  -lc -lm  -o vm
 ```
 ##### Build ol (with integrated REPL):
 ```bash
 $ ld -r -b binary -o tmp/repl.o repl
-$ gcc src/olvm.c tmp/repl.o  -std=c99 -O2  -lc -lm  -o ol
+$ gcc src/olvm.c tmp/repl.o  -std=gnu99 -O2  -lc -lm  -o ol
 ```
 
 #### Android:

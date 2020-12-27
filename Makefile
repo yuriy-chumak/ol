@@ -47,7 +47,7 @@ HAS_DLOPEN  ?= $(call exists,,<stdlib.h>, dlopen, -ldl)
 HAS_SECCOMP ?= $(call exists,,<linux/seccomp.h>, prctl)
 HAS_SOCKETS ?= $(call exists,,<stdlib.h>, socket)
 
-CFLAGS += -std=c99 -fno-exceptions -std=gnu11
+CFLAGS += -std=gnu99 -fno-exceptions
 CFLAGS_DEBUG   := -O0 -g2
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 
