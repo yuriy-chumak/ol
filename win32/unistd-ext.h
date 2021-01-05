@@ -35,10 +35,15 @@ static
 ssize_t readEx(int fd, void *buf, size_t size)
 {
 	int got;
+#ifdef _WIN64
+	int chunk_size = size;
+#else
+	int chunk_size = 24 * 1024;
+#endif
 
 	// regular reading
 	if (!_isatty(fd) || _kbhit()) { // we don't get hit by kb in pipe
-		got = read(fd, (char *) buf, size);
+		got = read(fd, (char *) buf, min(chunk_size, size));
 	} else {
 		errno = EAGAIN;
 		return -1;

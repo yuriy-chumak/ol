@@ -2019,12 +2019,10 @@ word runtime(struct ol_t* ol)
 	word this = ol->this; // context
 	long acc = ol->arity; // arity
 
-#	ifndef _WIN32
 //	setvbuf(stderr, (void*)0, _IONBF, 0);
 //	setvbuf(stdout, (void*)0, _IONBF, 0);
 	set_blocking(STDOUT_FILENO, 0);
 	set_blocking(STDERR_FILENO, 0);
-#	endif
 
 	// runtime entry
 apply:;
@@ -3321,10 +3319,10 @@ loop:;
 #if defined(FIONREAD) && !defined(_WIN32)
 					if (ioctl(portfd, FIONREAD, count) == -1)
 #endif
-						count = (heap->end - fp) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
+						count = ((heap->end - fp) - MEMPAD - 1) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
 
 				int words = ((count + W - 1) / W) + 1; // in words
-				if (words > (heap->end - fp)) {
+				if (fp + words > heap->end - MEMPAD) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
@@ -4737,10 +4735,8 @@ done:;
 
 	ol->heap.fp = fp;
 
-#	ifndef _WIN32
-		set_blocking(STDOUT_FILENO, 1);
-		set_blocking(STDERR_FILENO, 1);
-#	endif
+	set_blocking(STDOUT_FILENO, 1);
+	set_blocking(STDERR_FILENO, 1);
 	return 1; // ok
 } // end of runtime
 
