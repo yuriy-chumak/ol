@@ -173,7 +173,11 @@ int uname(struct utsname* out) {
 
 
 	strncpy(out->release, "", sizeof(out->release)); // oi.dwMajorVersion, oi.dwMinorVersion, oi.dwBuildNumber
-	strncpy(out->machine, "", sizeof(out->machine));
+#ifdef _WIN64
+	strncpy(out->machine, "x86_64", sizeof(out->machine));
+#else
+	strncpy(out->machine, "i686", sizeof(out->machine));
+#endif
 	return 0;
 };
 
