@@ -35,35 +35,10 @@
 
 (begin
    (setq x32? (eq? (size nullptr) 4))
-;;    (setq OS (ref (uname) 1))
 
-;;    (setq win32? (string-ci=? OS "Windows"))
-;;    (setq linux? (string-ci=? OS "Linux"))
-;;    (setq x32? (eq? (size nullptr) 4))
 
-;; ; check the platform
-;; (or win32? linux?
-;;    (runtime-error "Unsupported platform" OS))
-
-; -- some debug staff -----
-;; (define (vector->vptr vec offset)
-;;    (let ((vptr (vm:cast 0 type-vptr)))
-;;       (for-each (lambda (i)
-;;             (set-ref! vptr i (ref vec (+ i offset))))
-;;          (iota (size nullptr)))
-;;       vptr))
-;; (define (vector-set-int! vec offset int)
-;;    (for-each (lambda (i)
-;;          (set-ref! vec (+ offset i) (band #xFF (>> int (* i 8)))))
-;;       (iota (size nullptr)))
-;;    vec)
-;; (define (vector-set-vptr! vec offset vptr)
-;;    (for-each (lambda (i)
-;;          (set-ref! vec (+ offset i) (ref vptr i)))
-;;       (iota (size nullptr)))
-;;    vec)
-
-; --
+   ; WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
+   ; GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
 
    (define WIDTH  (get config 'width  854))
    (define HEIGHT (get config 'height 480))

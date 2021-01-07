@@ -41,7 +41,7 @@
    gl:CreateContext ; context creation
    gl:MakeCurrent
    gl:SwapBuffers
-   gl:QueryExtension
+   gl:QueryExtension ; ol specific
 
    ; todo: change to this functions
    ;; get-proc-address
@@ -49,6 +49,13 @@
    ;; create-context
    ;; swap-gl-buffers
    ;; query-gl-extension
+   ; or to this
+   ;; GetProcAddress
+   ;; CreateContext
+   ;; MakeCurrent
+   ;; SwapBuffers
+   ;; QueryExtension
+
 
    ; internal variables
    GL_LIBRARY
@@ -130,8 +137,9 @@
    ; and at this moment OpenGL context already created and activated through gl4es
    (Android ; through gl4es
       (begin
-			(define EGL (load-dynamic-library "libEGL.so"))
+         (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
 
+			(setq EGL (load-dynamic-library "libEGL.so"))
          (setq GetProcAddress (EGL type-vptr "eglGetProcAddress" type-string))
 
          (define (gl:CreateContext . args)
@@ -140,8 +148,6 @@
 				(print-to stderr "No MakeCurrent under Android is required."))
          (define (gl:SwapBuffers . args)
 				(print-to stderr "No SwapBuffers under Android is required."))
-
-         (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
 
    ))
 
@@ -206,9 +212,10 @@
    (define GL_VERSION    #x1F02)
    (define GL_EXTENSIONS #x1F03)
 
-   ; -------------------------------------------------------------------------
-   ; WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
-   ; GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
+   ; Some basic functions
+   (define glGetString (GL type-string "glGetString" fft-unsigned-int))
+   (define glHint (GL fft-void "glHint" GLenum GLenum))
+   (define glViewport (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 
    (define (gl:GetProcAddress type name . prototype)
       (let ((rtti (cons type prototype))
@@ -216,10 +223,6 @@
          (if function
             (lambda args
                (ffi function rtti args)))))
-
-   (define glGetString (gl:GetProcAddress type-string "glGetString" fft-unsigned-int))
-   (define glHint (gl:GetProcAddress fft-void "glHint" GLenum GLenum))
-   (define glViewport (gl:GetProcAddress GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 )
 
 ; ----------------------------------
