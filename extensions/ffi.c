@@ -54,6 +54,12 @@ typedef struct ol_t OL;
 #	include <sys/mman.h>
 #endif
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
+
 #ifdef __ANDROID__
 #	include <android/log.h>
 #	define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ol", __VA_ARGS__)
@@ -136,6 +142,18 @@ typedef struct ol_t OL;
 #	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
+#ifdef _WIN32
+	// Windows uses UTF-16LE encoding internally as the memory storage
+	// format for Unicode strings, it considers this to be the natural
+	// encoding of Unicode text. In the Windows world, there are ANSI
+	// strings (the system codepage on the current machine, subject to
+	// total unportability) and there are Unicode strings (stored
+	// internally as UTF-16LE).
+	// We just use UTF-16LE subset for now.
+	typedef WCHAR widechar;
+#else
+	typedef wchar_t widechar;
+#endif
 
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 // However, on modern standard computers (i.e., implementing IEEE 754), one may
@@ -177,7 +195,7 @@ unsigned int lenn16(short *pos, size_t max) {
 	cp < 0x10000 ? 3 : \
 	cp < 0x110000 ? 4 : 1; })
 
-static __inline__
+static __inline__ // length of wide string in utf-8 encoded bytes
 int utf8_len(word widestr)
 {
 	int len = 0;
@@ -1157,14 +1175,28 @@ word* OL_ffi(OL* this, word* arguments)
                 int listq = reference_type(arg) == TPAIR;
 				int atype = type &~(FFT_REF|FFT_PTR); // c data type
 
-                int len = // in bytes
+				// TODO: add new define "FAST_STRING_CALC" (or "PRECISE_STRING_CALC") and do (len*4) insterad of utf8_len()
+				int len = // in bytes
                 atype == TSTRING ? ({
                     int l = 0;
                     for (int i = 0; i < cnt; i++) {
                         word str = car(arg);
-                        l += reference_type(str) == TSTRING ? rawstream_size(str) + 1 + W :
-                             reference_type(str) == TSTRINGWIDE ? utf8_len(str) + 1  + W :
-                             reference_type(str) == TSTRINGDISPATCH ? number(ref(str, 1)) + 1 + W :
+                        l += reference_type(str) == TSTRING ? rawstream_size(str) :
+                             reference_type(str) == TSTRINGWIDE ? utf8_len(str) :
+                             reference_type(str) == TSTRINGDISPATCH ? number(ref(str, 1)) : // todo: decode all as utf8_len and use FAST_STRING_CALC macro
+                             0;
+						l += 1 + W;
+                        arg = listq ? cdr(arg) : arg+1;
+                    }
+                    l + cnt*W; // size for array + size of all strings
+                }) :
+                atype == TSTRINGWIDE ? ({
+                    int l = 0;
+                    for (int i = 0; i < cnt; i++) {
+                        word str = car(arg);
+                        l += reference_type(str) == TSTRING ? rawstream_size(str) :
+                             reference_type(str) == TSTRINGWIDE ? reference_size(str) :
+                             reference_type(str) == TSTRINGDISPATCH ? number(ref(str, 1)) :
                              0;
                         arg = listq ? cdr(arg) : arg+1;
                     }
@@ -1172,14 +1204,15 @@ word* OL_ffi(OL* this, word* arguments)
                 }) : cnt;
 
 				words += ((len *
-					atype == TINT8 || atype == TUINT8 ? sizeof(int8_t) :
+					atype == TINT8 || atype == TUINT8   ? sizeof(int8_t) :
 					atype == TINT16 || atype == TUINT16 ? sizeof(int16_t) :
 					atype == TINT32 || atype == TUINT32 ? sizeof(int32_t) :
 					atype == TINT64 || atype == TUINT64 ? sizeof(int64_t) :
-					atype == TFLOAT ? sizeof(float) :
-					atype == TDOUBLE ? sizeof(double) :
-					atype == TVPTR && !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) ? sizeof(void*) :
-                    atype == TSTRING ? sizeof(char) :
+					atype == TFLOAT                     ? sizeof(float) :
+					atype == TDOUBLE                    ? sizeof(double) :
+					atype == TVPTR                      ? sizeof(void*) : // removed "&& !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) " just for speedup
+                    atype == TSTRING                    ? sizeof(char) :
+					atype == TSTRINGWIDE                ? sizeof(widechar) :
 					0) + W - 1) / W + 1;
 			}
 			else
@@ -1190,20 +1223,28 @@ word* OL_ffi(OL* this, word* arguments)
 				case TSTRING:
 					switch (reference_type (arg)) {
 						case TSTRING:
-							words += reference_size(arg) + 1;
+							words += (reference_size(arg) + W - 1) / W + 1;
 							break;
 						case TSTRINGWIDE:
 							words += (utf8_len(arg) + W - 1) / W + 1;
 							break;
                         case TSTRINGDISPATCH:
-                            words += (number(ref(arg, 1)) + W - 1) / W + 1;
+                            words += (number(ref(arg, 1)) + W - 1) / W + 1; // todo: process whole string as utf8_len and use FAST_STRING_CALC macro
                             break;
 					}
 					break;
 				case TSTRINGWIDE:
-                    // todo: calculate string and stringdispatch
-						if (reference_type (arg) == TSTRINGWIDE)
-							words += 2 * reference_size(arg) + 1;
+					switch (reference_type (arg)) {
+						case TSTRING:
+							words += (sizeof(widechar)*reference_size(arg) + W - 1) / W + 1;
+							break;
+						case TSTRINGWIDE:
+							words += (sizeof(widechar)*reference_size(arg) + W - 1) / W + 1;
+							break;
+                        case TSTRINGDISPATCH:
+                            words += (sizeof(widechar)*number(ref(arg, 1)) + W - 1) / W + 1;
+                            break;
+					}
 					break;
 			}
 		}
@@ -1556,9 +1597,8 @@ word* OL_ffi(OL* this, word* arguments)
 					E("No type conversion selected");
 				break;
 			case TSTRING:
+			case TSTRINGWIDE:
 				goto tstring;
-			// case TSTRINGWIDE:
-			// 	goto tstringwide;
 			}
 			break;
 		}
@@ -1620,9 +1660,10 @@ word* OL_ffi(OL* this, word* arguments)
 			switch (reference_type(arg)) {
 			case TSTRING: {
 				// todo: add check to not copy the zero-ended string
+				// note: no heap size cgecking required (done before)
 				int size = rawstream_size(arg);
-				char* zerostr = (char*) &car(new_bytevector (size));
-				memcpy(zerostr, &car(arg), size); zerostr[size] = 0;
+				char* zerostr = (char*)&car(new_bytevector (size+1));
+				memcpy(zerostr, &car(arg), size);  zerostr[size] = 0;
 				args[i] = (word)zerostr;
 				break;
 			}
@@ -1787,43 +1828,31 @@ word* OL_ffi(OL* this, word* arguments)
 			break;
 		}
 
-		// todo: do fix for windows!
-		//    Windows uses UTF-16LE encoding internally as the memory storage
-		//    format for Unicode strings, it considers this to be the natural
-		//    encoding of Unicode text. In the Windows world, there are ANSI
-		//    strings (the system codepage on the current machine, subject to
-		//    total unportability) and there are Unicode strings (stored
-		//    internally as UTF-16LE).
-//		#ifdef _WIN32
 		case TSTRINGWIDE:
 		tstringwide:
 			switch (reference_type(arg)) {
 			case TBYTEVECTOR:
 			case TSTRING: {
-				word hdr = deref(arg);
-				int len = (header_size(hdr)-1)*sizeof(word) - header_pads(hdr);
-				short* unicode = (short*) __builtin_alloca(len * sizeof(short));
+				int len = rawstream_size(arg);
+				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
 
-				short* p = unicode;
+				widechar* p = unicode;
 				char* s = (char*)&car(arg);
-				for (int i = 1; i < len; i++)
-					*p++ = (short)(*s++);
+				for (int i = 0; i < len; i++)
+					*p++ = (widechar)(*s++);
 				*p = 0;
 
 				args[i] = (word) unicode;
 				break;
 			}
 			case TSTRINGWIDE: {
-				int len = header_size(deref(arg));
-				short* unicode = (short*) __builtin_alloca(len * sizeof(short));
-				// todo: use new()
-				// check the available memory in the heap
-				// use builtin unlucky for calling the gc if no more memory
+				int len = reference_size(arg); // for '\0'
+				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
 
-				short* p = unicode;
-				word* s = &car(arg);
-				for (int i = 1; i < len; i++)
-					*p++ = (short)value(*s++);
+				widechar* p = unicode;
+				word* s = (word*)&car(arg);
+				for (int i = 0; i < len; i++)
+					*p++ = (widechar)value(*s++);
 				*p = 0;
 
 				args[i] = (word) unicode;
@@ -1833,7 +1862,6 @@ word* OL_ffi(OL* this, word* arguments)
 				E("invalid parameter values (requested string)");
 			}
 			break;
-//		#endif
 
 		case TCALLABLE: { // todo: maybe better to merge type-callable and type-vptr ?
 			if (is_callable(arg))
@@ -1924,6 +1952,7 @@ word* OL_ffi(OL* this, word* arguments)
 #	elif _WIN32
 		// cdecl and stdcall in our case are same, so...
 		got = x86_call(args, i, function, returntype & 0x3F);
+#	else
 #		error "Unsupported platform"
 #	endif
 #elif __aarch64__
@@ -2282,32 +2311,72 @@ word* OL_ffi(OL* this, word* arguments)
 				result = new_vptr (got);
 			break;
 
-		case TSTRING:
-			if (got) {
-				int l = lenn((char*)(word)got, VMAX+1);
-				/* TODO: enable again!
-				if (fp + (l/sizeof(word)) > heap->end) {
-					self->gc(self, l/sizeof(word));
-					heap = &self->heap;
-					fp = heap->fp;
-				}*/
-				result = new_string ((char*)(word)got, l);
+		case TSTRING: // assume that input string is a valid utf-8
+			if ((word)got) {
+				// check for string length and utf-8 encoded characters
+				int ch, utf8q = 0;
+				size_t len = 0;
+				char* p = (char*)(word)got;
+				while (ch = *p++) {
+					len++;
+					unless ((ch & 0b10000000) == 0b00000000) {
+						utf8q++;
+						p += ((ch & 0b11100000) == 0b11000000) ? 1 :
+						     ((ch & 0b11110000) == 0b11100000) ? 2 :
+						     ((ch & 0b11111000) == 0b11110000) ? 3 : 1; // todo: process error, show E("not a utf-8") and return #false
+					}
+				}
+
+				// memory check
+				int words = (len * (utf8q ? sizeof(word) : sizeof(char)) + (W - 1)) / W;
+				if (fp + words > this->end) {
+					this->fp = fp;
+					this->gc(this, words);
+					fp = this->fp;
+				}
+
+				// ansi
+				unless (utf8q) { // likely
+					result = new_rawstream(TSTRING, len);
+					char* str = (char*) &car(result);
+					memcpy(str, (char*)(word)got, len);
+				}
+				// utf8 (maximal size of utf-8 encoded character is 21 bit that smaller than 24 for enum for 32-bit platforms)
+				// https://www.vertex42.com/ExcelTips/unicode-symbols.html
+				else {
+					word* str = result = new (TSTRINGWIDE, len);
+					unsigned char* p = (unsigned char*)(word)got;
+					while (ch = *p) {
+						if ((ch & 0b10000000) == 0b00000000) // only ansi
+							*++str = I((word)(*p++));
+						else if ((ch & 0b11100000) == 0b11000000)
+							*++str = I(((word)(*p++) & 0x1F) <<  6 | (word)(*p++ & 0x3F));
+						else if ((ch & 0b11110000) == 0b11100000)
+							*++str = I(((word)(*p++) & 0x0F) << 12 | (word)(*p++ & 0x3F) <<  6 | (word)(*p++ & 0x3F));
+						else if ((ch & 0b11111000) == 0b11110000)
+							*++str = I(((word)(*p++) & 0x07) << 18 | (word)(*p++ & 0x3F) << 12 | (word)(*p++ & 0x3F) << 6 | (word)(*p++ & 0x3F));
+						else // invalid character (todo: add surrogates)
+							*++str = I((word)(*p++));
+					}
+				}
 			}
 			break;
 		case TSTRINGWIDE:
-			if (got) {
-				int l = lenn16((short*)(word)got, VMAX+1);
-				/* TODO: enable again!
-				if (fp + (l/sizeof(word)) > heap->end) {
-					self->gc(self, l/sizeof(word));
-					heap = &self->heap;
-					fp = heap->fp;
-				}*/
-				word* p = result = new (TSTRINGWIDE, l);
-				unsigned short* s = (unsigned short*)(word)got;
-				while (l--) {
-					*++p = I(*s++);
+			if ((word)got) {
+				widechar* p = (widechar*) (word)got;
+				size_t words = 0;
+				while (i++ <= VMAX && *p++) words++;
+
+				if (fp + words > this->end) {
+					this->fp = fp;
+					this->gc(this, words);
+					fp = this->fp;
 				}
+
+				word* str = result = new (TSTRINGWIDE, words);
+				p = (widechar*) (word)got;
+				while (*p)
+					*++str = I(*p++);
 			}
 			break;
 

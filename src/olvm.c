@@ -771,7 +771,7 @@ inexact_t f = (inexact_t) a;\
 #define __OLVM_VERSION__ "2.1"
 #endif
 #ifndef lint
-__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
+__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 #endif//lint
 
 #define unless(...) if (! (__VA_ARGS__))
@@ -790,7 +790,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2020 Yuriy Chumak";
 #	endif
 
 #	if __STDC_VERSION__ < 199901L
-#		error "Required c99 enabled (-std=c99)"
+#		error "Required gnu99 enabled (-std=gnu99)"
 #	endif
 #endif
 
@@ -2062,7 +2062,7 @@ apply:;
 		else
 #if HAS_DLOPEN // unsafe must be enabled
 		// running ffi function
-		if (type == TVPTR) { // todo: change to special type
+		if (type == TVPTR) { // todo: change to special type or/and add a second word - function name (== [ptr function-name])
 			word* args = (word*)INULL;
 			for (int i = acc; i > 1; i--)
 				args = new_pair(R[i+2], args);

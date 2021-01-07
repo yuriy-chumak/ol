@@ -1,5 +1,11 @@
 #include <stdio.h>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
+
 #ifdef __unix__
 #	define PUBLIC __attribute__ ((__visibility__("default"))) __attribute__((used))
 #endif
@@ -643,4 +649,171 @@ void callback_call_iiiiiiii(int (*callback) (int, int, int, int, int, int, int, 
 	callback(-1, 1, -2, 2, -3, 3, -4, 4);
 	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444, -444444444);
 	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444);
+}
+
+// wchar
+#ifdef _WIN32
+	typedef WCHAR widechar;
+#else
+	#include <wchar.h>
+	typedef wchar_t widechar;
+#endif
+#include <string.h>
+#include <stdlib.h>
+
+// -----------------------------------------------------------------------------------
+// This is part of libutf-8 with minimal changes, Copyright (c) 1999 G. Adam Stanislav
+// I need a thirdparty check for my code, so will use this proofed in time c portion
+#define	INVALID	0x80000000
+
+#define	get(c)	c = *strptr++; \
+	if (chars) (*chars)++; \
+	if ((c) == 0) return (unsigned int)EOF
+
+unsigned int sgetu8(unsigned char *strptr, int *chars) {
+	unsigned int c;
+	int i, iterations;
+	unsigned char ch;
+
+	if (chars) *chars = 0;
+
+	if (strptr == NULL)
+		return (unsigned int)EOF;
+
+	get(c);
+
+	if ((c & 0xFE) == 0xFC) {
+		c &= 0x01;
+		iterations = 5;
+	}
+	else if ((c & 0xFC) == 0xF8) {
+		c &= 0x03;
+		iterations = 4;
+	}
+	else if ((c & 0xF8) == 0xF0) {
+		c &= 0x07;
+		iterations = 3;
+	}
+	else if ((c & 0xF0) == 0xE0) {
+		c &= 0x0F;
+		iterations = 2;
+	}
+	else if ((c & 0xE0) == 0xC0) {
+		c &= 0x1F;
+		iterations = 1;
+	}
+	else if ((c & 0x80) == 0x80)
+		return INVALID;
+	else return c;
+
+	for (i = 0; i < iterations; i++) {
+		get(ch);
+		if ((ch & 0xC0) != 0x80)
+			return INVALID;
+		c <<= 6;
+		c |= ch & 0x3F;
+	}
+
+	return c;
+}
+
+#define	bits(c)	(0x80 | ((c) & 0x3F))
+#define	put(c)	*strptr++ = (c);
+#define	putbits(c)	put(bits(c))
+#define	finish()	*strptr = '\0'
+
+char * sputu8(unsigned int c, char *strptr) {
+	if (strptr != NULL) {
+		if (c < 0x80) {
+			put(c);
+			finish();
+		}
+		else if (c < 0x800) {
+			put(0xC0 | (c >>  6));
+			putbits(c);
+			finish();
+		}
+		else if (c < 0x10000) {
+			put(0xE0 | (c >> 12));
+			putbits(c >>  6);
+			putbits(c);
+			finish();
+		}
+		else if (c < 0x200000) {
+			put(0xF0 | (c >> 18));
+			putbits(c >> 12);
+			putbits(c >>  6);
+			putbits(c);
+			finish();
+		}
+		else if (c < 0x400000) {
+			put(0xF8 | (c >> 24));
+			putbits(c >> 18);
+			putbits(c >> 12);
+			putbits(c >>  6);
+			putbits(c);
+			finish();
+		}
+		else if (c < 0x80000000) {
+			put(0xFC | (c >> 30));
+			putbits(c >> 24);
+			putbits(c >> 18);
+			putbits(c >> 12);
+			putbits(c >>  6);
+			putbits(c);
+			finish();
+		}
+		else {	/* Not a valid Unicode "character" */
+			finish();
+		}
+	}
+
+	return strptr;
+}
+// end of part of libutf-8
+// -----------------------
+
+PUBLIC
+char* reverse_string(char* str)
+{
+	// strdup+reverse
+	int len = strlen(str);
+	int* u32 = (int*)malloc((len+1)* sizeof(int));
+	
+	int rlen = 0;
+	while (*str) {
+		int x = 0;
+		u32[rlen++] = sgetu8(str, &x);
+		str += x;
+	}
+
+	char* out = (char*)malloc((len+1)* sizeof(char));
+	char* tmp = out;
+	for (int i = 0; i < rlen; i++)
+		tmp = sputu8(u32[rlen - i - 1], tmp);
+
+	out[len] = 0;
+
+	free(u32);
+	// memory leak - this is by design, do not fix
+	return out;
+}
+
+PUBLIC
+widechar* reverse_string_wide(widechar* str)
+{
+	// wcsdup+reverse
+	int len = wcslen(str);
+	widechar* out = (widechar*)malloc((len+1) * sizeof(widechar));
+	for (int i = 0; i < len; i++)
+		out[i] = str[len - i - 1];
+	out[len] = 0;
+
+	// wprintf output very dependent on host configuration, so can break the tests
+	// uncomment only for some visual testing
+	// wprintf(L"[%ls]", str);
+	// fflush(stdout);
+
+	// memory leak - this is by design, do not fix
+	return out;
 }
