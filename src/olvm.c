@@ -68,27 +68,24 @@ typedef uintptr_t word;
 
 //
 // virtual machine:
-struct ol_t;
+typedef struct ol_t ol_t;
 
 // ------------------------------------------------------
 // PUBLIC API:
 
-struct ol_t*
-     OL_new (unsigned char* bootstrap);
-void OL_free(struct ol_t* ol);
-word OL_run (struct ol_t* ol, int argc, char** argv);
-word OL_continue(struct ol_t* ol, int argc, void** argv);
+ol_t*OL_new (unsigned char* bootstrap);
+void OL_free(ol_t* ol);
+word OL_run (ol_t* ol, int argc, char** argv);
+word OL_continue(ol_t* ol, int argc, void** argv);
 
 // "pinned" objects supporting functions
-size_t OL_pin(struct ol_t* ol, word ref);
-word OL_deref(struct ol_t* ol, size_t p);
-word OL_unpin(struct ol_t* ol, size_t p);
-word OL_apply(struct ol_t* ol, word function, word args);
+size_t OL_pin(ol_t* ol, word ref);
+word OL_deref(ol_t* ol, size_t p);
+word OL_unpin(ol_t* ol, size_t p);
+word OL_apply(ol_t* ol, word function, word args);
 
-void*
-OL_userdata (struct ol_t* ol, void* userdata);
-void*
-OL_allocate (struct ol_t* ol, unsigned words);
+void*OL_userdata (ol_t* ol, void* userdata);
+void*OL_allocate (ol_t* ol, unsigned words);
 
 
 // descriptor format
@@ -1702,12 +1699,10 @@ void set_signal_handler()
  */
 struct ol_t
 {
-	struct heap_t heap; // MUST be first (!)
-	word max_heap_size; // max heap size in MiB
+	heap_t heap; // MUST be first (!)
+	// word max_heap_size; // max heap size in MiB
 
 	jmp_buf fail;	 // аварийный выход из любого места olvm
-//	void (*exit)(int errorId);	// deprecated
-
 	void* userdata; // user data
 
 	// i/o polymorphism
@@ -3282,7 +3277,7 @@ loop:;
 
 		// continue syscall handler:
 		CHECK_NUMBER(0);
-		word op = value (A0);
+		size_t op = value (A0);
 
 		switch (op + sandboxp) {
 
@@ -4390,13 +4385,13 @@ loop:;
 				r = new_vptr(ol->userdata);
 				break;
 
-			case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
-				r = itoun (ol->max_heap_size);
-				ol->max_heap_size = value(A1);
-				break;
-			case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
-				r = itoun (ol->max_heap_size);
-				break;
+			// case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
+			// 	r = itoun (ol->max_heap_size);
+			// 	ol->max_heap_size = value(A1);
+			// 	break;
+			// case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
+			// 	r = itoun (ol->max_heap_size);
+			// 	break;
 
 			case 1022: // set ticker
 				r = itoun (ticker);
@@ -4910,7 +4905,7 @@ int main(int argc, char** argv)
 	if (argc == 2 && strcmp(argv[1], "--version") == 0) {
 		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
 		// E("Copyright (c) 2020 Yuriy Chumak");
-		// E("License (L)GPLv3+: GNU (L)GPL version 3 or later <http://gnu.org/licenses/>");
+		// E("License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>");
 		// E("License MIT: <https://en.wikipedia.org/wiki/MIT_License>");
 		// E("This is free software: you are free to change and redistribute it.");
 		// E("There is NO WARRANTY, to the extent permitted by law.");
@@ -5105,9 +5100,9 @@ OL_new(unsigned char* bootstrap)
 	word *fp;
 	heap_t* heap = &handle->heap;
 
-	// выделим память машине:
-	int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
-	//int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
+	// // выделим память машине:
+	// int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
+	// //int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
 
 	// в соответствии со стратегией сборки 50*1.3-33*0.9, и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
@@ -5123,7 +5118,7 @@ OL_new(unsigned char* bootstrap)
 	heap->genstart = heap->begin;
 	heap->gc = OL_gc;
 
-	handle->max_heap_size = max_heap_size;
+	// handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты
 	word *ptrs = new(TVECTOR, nobjs, 0);
