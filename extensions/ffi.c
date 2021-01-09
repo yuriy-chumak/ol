@@ -10,11 +10,6 @@
  *  Hmmm...
  */
 
-// let's simplify our life - enable ffi by default
-// #ifndef OLVM_FFI
-// #define OLVM_FFI 1
-// #endif
-
 /*!
  * ### Source file: extensions/ffi.c
  */

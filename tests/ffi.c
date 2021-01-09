@@ -176,14 +176,44 @@ vvvvvvvvvvvvvvvv2v(d, "%f", double)
 PUBLIC
 double cCsSiIlLqQfd2d(unsigned char c, signed char C,
                       unsigned short s, signed short S,
-				      unsigned int i, signed int I,
-				      unsigned long l, signed long L,
-				      unsigned long long q, signed long long Q,
-				      float f, double d)
+                      unsigned int i, signed int I,
+                      unsigned long l, signed long L,
+                      unsigned long long q, signed long long Q,
+                      float f, double d)
 {
 	double y = c+C+s+S+i+I+l+L+q+Q+f+d;
 	printf(" [%u, %d, %u, %d, %u, %d, %lu, %ld, %llu, %lld, %f, %f => %f] ",
 			   c,  C,  s,  S,  i,  I,  l,   L,   q,    Q,    f,  d,    y);
+	fflush(stdout);
+	return y;
+}
+
+PUBLIC
+double cCfdsSfdiIfdlLfdqQfdfd2d(unsigned char c, signed char C,
+                                float fc, double dc,
+                                unsigned short s, signed short S,
+                                float fs, double ds,
+                                unsigned int i, signed int I,
+                                float fi, double di,
+                                unsigned long l, signed long L,
+                                float fl, double dl,
+                                unsigned long long q, signed long long Q,
+                                float fq, double dq,
+                                float f, double d)
+{
+	double y = c+C+fc+dc+
+	           s+S+fs+ds+
+	           i+I+fi+di+
+	           l+L+fl+dl+
+	           q+Q+fq+dq+
+	           f+d;
+	printf("%s", " [");
+	printf("%u, %d, %f, %f, ", c, C, fc, dc);
+	printf("%u, %d, %f, %f, ", s, S, fs, ds);
+	printf("%u, %d, %f, %f, ", i, I, fi, di);
+	printf("%lu, %ld, %f, %f, ", l, L, fl, dl);
+	printf("%llu, %lld, %f, %f, ", q, Q, fq, dq);
+	printf("%f, %f => %f] ", f, d, y);
 	fflush(stdout);
 	return y;
 }
