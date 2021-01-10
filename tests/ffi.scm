@@ -1,17 +1,5 @@
 (import (otus ffi))
 
-; testing constants for 16-bit:
-(define INT16_MAX 32767)
-(define -INT16_MAX -32767)
-(define INT32_MAX 2147483647)
-(define -INT32_MAX -2147483647)
-(define INT64_MAX 9223372036854775807)
-(define -INT64_MAX -9223372036854775807)
-
-(define UINT16_MAX 65535)
-(define UINT32_MAX 4294967295)
-(define UINT64_MAX 18446744073709551615)
-
 (define (try tag function . numbers)
    (for-each display (list "   " tag " " numbers ":"))
    (print (apply function numbers)))
@@ -89,30 +77,50 @@
 ; ----------------------------------------------------------------
 (print "type limits checking:")
 
-(define mirror (this fft-short "S2S" fft-short))
-   (try "short" mirror INT16_MAX)
-   (try "short" mirror -INT16_MAX)
-   ;(try "incorrect call for fft_16i" fft_16i UINT16_MAX)
-   ;(try "incorrect call for fft_16i" fft_16i (- UINT16_MAX))
-(define mirror (this fft-unsigned-short "s2s" fft-unsigned-short))
-   (try "unsigned short" mirror INT16_MAX)
-   (try "unsigned short" mirror UINT16_MAX)
+(define INT8_MIN -128)
+(define INT8_MAX +127)
 
-(define mirror (this fft-int "I2I" fft-int))
-   (try "int" mirror INT32_MAX)
-   (try "int" mirror -INT32_MAX)
-(define mirror (this fft-unsigned-int "i2i" fft-unsigned-int))
-   (try "unsigned int" mirror INT32_MAX)
-   (try "unsigned int" mirror UINT32_MAX)
+(define INT16_MIN -32768)
+(define INT16_MAX +32767)
 
-(define mirror (this fft-long-long "Q2Q" fft-long-long))
-   (try "long long" mirror INT64_MAX)
-   (try "long long" mirror -INT64_MAX)
-(define mirror (this fft-unsigned-long-long "q2q" fft-unsigned-long-long))
-   (try "unsigned long long" mirror INT64_MAX)
-   (try "unsigned long long" mirror UINT64_MAX)
+(define INT32_MIN -2147483648)
+(define INT32_MAX  2147483647)
 
+(define INT64_MIN -9223372036854775808)
+(define INT64_MAX +9223372036854775807)
 
+(define UINT8_MAX  255)
+(define UINT16_MAX 65535)
+(define UINT32_MAX 4294967295)
+(define UINT64_MAX 18446744073709551615)
+
+(for-each (lambda (v) (vector-apply v (lambda (type-name type-value name min max)
+      (define mirror (this type-value name type-value)) ; char is signed
+      (try type-name mirror min)
+      (try type-name mirror max))))
+   (list
+      ["char"                  fft-char "C2C" INT8_MIN INT8_MAX]
+      ["invalid char"          fft-char "C2C" 0 UINT8_MAX]
+      ["unsinged char"         fft-unsigned-char "c2c" INT8_MAX UINT8_MAX]
+      ["invalid unsinged char" fft-unsigned-char "c2c" INT8_MIN -1]
+
+      ["short"                  fft-short "S2S" INT16_MIN INT16_MAX]
+      ["invalid short"          fft-short "S2S" 0 UINT16_MAX]
+      ["unsinged short"         fft-unsigned-short "s2s" INT16_MAX UINT16_MAX]
+      ["invalid unsinged short" fft-unsigned-short "s2s" INT16_MIN -1]
+
+      ["int"                  fft-int "I2I" INT32_MIN INT32_MAX]
+      ["invalid int"          fft-int "I2I" 0 UINT32_MAX]
+      ["unsinged int"         fft-unsigned-int "i2i" INT32_MAX UINT32_MAX]
+      ["invalid unsinged int" fft-unsigned-int "i2i" INT32_MIN -1]
+
+      ;; todo: fix this
+      ["long long"                  fft-long-long "L2L" INT64_MIN INT64_MAX]
+      ["invalid long long"          fft-long-long "L2L" 0 UINT64_MAX]
+      ["unsinged long long"         fft-unsigned-long-long "l2l" INT64_MAX UINT64_MAX]
+      ["invalid unsinged long long" fft-unsigned-long-long "l2l" INT64_MIN -1]
+   ))
+,quit
 ; ----------------------------------------------------------------
 (print "floating points type>type test:")
 
@@ -184,10 +192,10 @@
                                                   fft-float fft-float fft-float fft-float))
    (try "16 floats" summ 1.1 2.2 3.3 4.4 5.5 6.6 7.7 8.8 9.9 10.10 11.11 12.12 13.13 14.14 15.15 16.16)
    (try "16 floats" summ 16.16 15.15 14.14 13.13 12.12 11.11 10.10 9.9 8.8 7.7 6.6 5.5 4.4 3.3 2.2 1.1)
-   ;; (try "16 floats" summ (inexact 1.1) (inexact 2.2) (inexact 3.3) (inexact 4.4)
-   ;;                       (inexact 5.5) (inexact 6.6) (inexact 7.7) (inexact 8.8)
-   ;;                       (inexact 9.9) (inexact 10.10) (inexact 11.11) (inexact 12.12)
-   ;;                       (inexact 13.13) (inexact 14.14) (inexact 15.15) (inexact 16.16))
+   (try "16 floats" summ (inexact 1.1) (inexact 2.2) (inexact 3.3) (inexact 4.4)
+                         (inexact 5.5) (inexact 6.6) (inexact 7.7) (inexact 8.8)
+                         (inexact 9.9) (inexact 10.10) (inexact 11.11) (inexact 12.12)
+                         (inexact 13.13) (inexact 14.14) (inexact 15.15) (inexact 16.16))
 
 ; ----------------------------------------------------------------
 (print "12 mixed type variables test:")
@@ -231,51 +239,51 @@
    ;;                                  21.21 22.22)
 
 ; ----------------------------------------------------------------
-(print "too much arguments:") ; 16 arguments for only 8 required
-(let ((function (this fft-unsigned-long-long "qqqqqqqqqqqqqqqq2q"
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long)))
-   (try "too much arguments" function
-      1 2 3 4
-      5 6 7 8
-      1 2 3 4
-      5 6 7 8
-      1 2 3 4
-      5 6 7 8
-      1 2 3 4
-      5 6 7 8))
+;; (print "too much arguments:") ; 16 arguments for only 8 required
+;; (let ((function (this fft-unsigned-long-long "qqqqqqqqqqqqqqqq2q"
+;;       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+;;       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+;;       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+;;       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+;;       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+;;       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+;;       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
+;;       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long)))
+;;    (try "too much arguments" function
+;;       1 2 3 4
+;;       5 6 7 8
+;;       1 2 3 4
+;;       5 6 7 8
+;;       1 2 3 4
+;;       5 6 7 8
+;;       1 2 3 4
+;;       5 6 7 8))
 
 
 ; ---------------------------------------------------------------
 ; callbacks
-(define (test-callback name types)
-   (define cb (vm:pin (cons
-      types
-      (lambda args
-         (print "callback: [ " args " ]")
-         (apply * args)))))
-   (define callback_call ((load-dynamic-library #f) fft-void name type-callable))
+;; (define (test-callback name types)
+;;    (define cb (vm:pin (cons
+;;       types
+;;       (lambda args
+;;          (print "callback: [ " args " ]")
+;;          (apply * args)))))
+;;    (define callback_call ((load-dynamic-library #f) fft-void name type-callable))
 
-   (let ((callback (make-callback cb)))
-      (if callback
-         (callback_call callback)))
-   (vm:unpin cb))
+;;    (let ((callback (make-callback cb)))
+;;       (if callback
+;;          (callback_call callback)))
+;;    (vm:unpin cb))
 
 
-(test-callback "callback_call_i" (list fft-int))
-(test-callback "callback_call_ii" (list fft-int fft-int))
-(test-callback "callback_call_iii" (list fft-int fft-int fft-int))
-(test-callback "callback_call_iiii" (list fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiii" (list fft-int fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_i" (list fft-int))
+;; (test-callback "callback_call_ii" (list fft-int fft-int))
+;; (test-callback "callback_call_iii" (list fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiii" (list fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiii" (list fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
 
 ; ------------------------------------
 ; wide characters

@@ -675,11 +675,13 @@ word*p = new (TVECTOR, 13);\
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
 		(word*)make_enum(val),\
 		(word*)({ \
-			intptr_t x5 = (intptr_t)(val); \
-			intptr_t x6 = x5 < 0 ? -x5 : x5; \
-			x6 <= VMAX ? \
-					(word)make_enum(x5): \
-					(word)new_list(x5 < 0 ? TINTN : TINTP, I(x6 & VMAX), I(x6 >> VBITS)); \
+			typeof(val) _v = (val); \
+			word _x = _v < 0 ? (word)(-_v) : (word)_v; \
+			_x <= VMAX ? \
+					(word)make_value(_v < 0 ? TENUMN : TENUMP, _x): \
+					(word)new_list(_v < 0 ? TINTN : TINTP, \
+							make_enump(_x & VMAX), \
+							make_enump(_x >> VBITS)); \
 		})); \
 	})
 

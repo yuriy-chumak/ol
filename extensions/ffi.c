@@ -315,7 +315,6 @@ int utf8_len(word widestr)
 // r8  - function
 // r9d - type
 intmax_t win64_call(int_t argv[], long argc, void* function, long type);
-
 __ASM__("win64_call:_win64_call:",  // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
@@ -380,8 +379,7 @@ __ASM__("win64_call:_win64_call:",  // "int $3",
 // r9: function
 // 16(rbp): type
 intmax_t nix64_call(int_t argv[], double ad[], long i, long d, long mask, void* function, long type);
-
-__ASM__("nix64_call:_nix64_call:", // "int $3",
+__ASM__("nix64_call:_nix64_call:", //"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
@@ -399,10 +397,10 @@ __ASM__("nix64_call:_nix64_call:", // "int $3",
 	"movsd 40(%rsi), %xmm5",
 	"movsd 48(%rsi), %xmm6",
 	"movsd 56(%rsi), %xmm7",
-//	"cmpq  $9,%rcx", // temp
+//	"cmpq  $9,%rcx", // temp for debug purposes
 //	"jne   2f",      // temp
 //	"int   $3",      // temp
-	// 2. проверим на "стековые" аргументы
+	// 2. проверим на "стековые" аргументы (todo: сделать быструю проверку как у arm64)
 "2:",
 	"xorq  %rax, %rax",
 	"subq  $8, %rcx",
@@ -494,7 +492,6 @@ __ASM__("nix64_call:_nix64_call:", // "int $3",
 // В нашем случае мы так или иначе восстанавливаем указатель стека, так что
 // функция x86_call у нас будет универсальная cdecl/stdcall
 intmax_t x86_call(int_t argv[], long i, void* function, long type);
-
 __ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
 	"movl  %esp, %ebp",
@@ -540,77 +537,125 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 #elif __aarch64__
 
 // current limitation: no more than 8 integer and 8 floating point values
-__attribute__((naked))
-uintmax_t arm64_call(int_t argv[], double ad[],
-                     long i, long d,
-                     void* function, long type)
+// calling convention: IHI0055B_aapcs64.pdf
+// r0-r7 arguments, integer
+// v0-v7 arguments, floating
+// r9-r15: scratch registers
+// v16-v31: scratch registers
+// stack is 16-byte aligned at all times
+intmax_t arm64_call(int_t argv[], double ad[],
+                    long i, long d, long mask,
+                    void* function, long type);
 // x0: argv
 // x1: ad
 // x2: i
 // x3: d
-// x4: function
-// x5: type
-{
-__ASM__(//"brk #0",
+// x4: mask <function>
+// x5: function <type>
+// x6: type
+__ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"stp  x29, x30, [sp, -16]!",
 	"mov  x29, sp",
 
-	"mov  x9, x4",
+	"mov x9, x5",
+	"mov x8, #8",
 
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
-	"cmp x3, #0",  // (count of fp values)
-	"beq .Lno_more_floats",
+	"cbz x3, .Lno_more_floats",  // is x3 == 0 goto no_more_floats
 	"ldr d0, [x1]",
 	"ldr d1, [x1, #8]",
 	"ldr d2, [x1, #16]",
 	"ldr d3, [x1, #24]",
 
-	"cmp x3, #4",
-	"beq .Lno_more_floats",
+	"cmp x3, #4", // question: is this a speedup or better just copy regs without jump?
+	"ble .Lno_more_floats",
 	"ldr d4, [x1, #32]",
 	"ldr d5, [x1, #40]",
 	"ldr d6, [x1, #48]",
 	"ldr d7, [x1, #56]",
 
-	// "cmp r3, #8",
-	// "ble .Lnofloats",
-	// "vldr.32 s8, [r1, #32]",
-	// "vldr.32 s9, [r1, #36]",
-	// "vldr.32 s10, [r1, #40]",
-	// "vldr.32 s11, [r1, #44]",
-	// "vldr.32 s12, [r1, #48]",
-	// "vldr.32 s13, [r1, #52]",
-	// "vldr.32 s14, [r1, #56]",
-	// "vldr.32 s15, [r1, #60]",
-
-	// аналогично сделаем с целочисленными аргументами
 ".Lno_more_floats:",
-	"cmp x2, #0",
-	"beq .Lno_integers",
+	"cmp x2, x8",
+	"bge .Ltest",
+	"cmp x3, x8",
+	"bge .Ltest",
+	"b .Lgo",
 
+".Ltest:"
+	// теперь посчитаем сколько нам нужно закидывать в стек
+	"sub x12, x2, #8",
+	"cmp x12, #0",
+	"bgt .L_a",
+	"mov x12, #0", ".L_a:",
+
+	"sub x13, x3, #8",
+	"cmp x13, #0",
+	"bgt .L_b",
+	"mov x13, #0", ".L_b:",
+
+	"add x15, x12, x13", // total x15 - count of arguments to be pushed to stack
+	// "cmp x15, #0", // эта проверка не нужна - мы уже проверили выше на две восьмерки
+	// "ble .Lgo",
+
+	// выравняем стек
+	"orr x10, x15, #1",
+	"madd x10, x10, x8, x8", // вообще-то не обязательно добавлять 16, если добавить нечего...
+	"sub sp, sp, x10", // x10 больше не нужен
+	"mul x15, x15, x8",
+	"add x15, x15, x29", // x29 is an sp
+	"sub x15, x15, x10",
+	// "add sp, sp, x15",
+
+	// спокойно передвинем массивы в конец
+	"madd x10, x2, x8, x0",
+	"sub x10, x10, x8", // x0 = x0 + x2*8 (- 8) -8 не используем, так как он
+	"madd x11, x3, x8, x1",
+	"sub x11, x11, x8", // x1 = x1 + x3*8 (- 8)
+
+".Lpush:",
+	"orr x5, x12, x13", // больше нечего пушить
+	"cbz x5, .Lgo",
+//	"tbz x4, #1, .Lint", }
+	"tst x4, #1",
+	"lsr x4, x4, #1", // давай посмотрим - инт или флоат
+	"beq .Lint", // == bc set
+".Lfloat:",
+	"cbz x13, .Lpush",
+	"ldr x5, [x11], #-8",
+	"sub x13, x13, #1",
+	"str x5, [x15, -8]!",
+	"b .Lpush",
+".Lint:",
+	"cbz x12, .Lpush",
+	"ldr x5, [x10], #-8",
+	"sub x12, x12, #1",
+	"str x5, [x15, -8]!",
+	"b .Lpush",
+
+// done. go
+".Lgo:"
+	// assert (x15 == sp)
+	// а теперь целочисленные аргументы
+	"cbz x2, .Lcall",
 	"cmp x2, #4",
-	"ble .Lno_more_integers",
-
-	"ldr x4, [x0, #32]",
-	"ldr x5, [x0, #40]",
-	"ldr x6, [x0, #48]",
+	"ble .Lless2",
 	"ldr x7, [x0, #56]",
-
-	// ...
-
-".Lno_more_integers:",
-	"ldr x3, [x0, #24]",
+	"ldr x6, [x0, #48]",
+	"ldr x5, [x0, #40]",
+	"ldr x4, [x0, #32]",
+".Lless2:",
 	"ldr x2, [x0, #16]",
+	"ldr x3, [x0, #24]",
 	"ldr x1, [x0, #8]",
 	"ldr x0, [x0]",
 
-".Lno_integers:",
+".Lcall:",
 	"blr x9", // SP mod 16 = 0.  The stack must be quad-word aligned.
 
-	// ...
+	"mov sp, x29",
 	"ldp  x29, x30, [sp], 16",
 	"ret");
-}
+
 
 #elif __arm__
 // http://ru.osdev.wikia.com/wiki/Категория:Архитектура_ARM
@@ -621,14 +666,9 @@ __ASM__(//"brk #0",
 # ifndef __ARM_PCS_VFP
 // gcc-arm-linux-gnueabi: -mfloat-abi=softfp options (and -mfloat-abi=soft ?)
 
-__attribute__((naked))
 uintmax_t arm32_call(int_t argv[], long i,
-                     void* function)
-{
-__ASM__(
-#ifndef __ANDROID__
-	"arm32_call:_arm32_call:",
-#endif
+                     void* function);
+__ASM__("arm32_call:_arm32_call:",
 	// "BKPT",
 	// !!! stack must be 8-bytes aligned, so let's push even arguments count
 	"push {r4, r5, r6, lr}",
@@ -686,7 +726,6 @@ __ASM__(
 	// all values: int, long, float and double returning in r0+r1
 	"pop {r4, r5, r6, pc}");
 //	"bx lr");
-}
 
 # else
 // gcc-arm-linux-gnueabihf: -mfloat-abi=hard and -D__ARM_PCS_VFP options
@@ -694,11 +733,9 @@ __ASM__(
 // __ARM_PCS_VFP, __ARM_PCS
 // __ARM_ARCH_7A__
 //
-
-__attribute__((naked))
 uintmax_t arm32_call(int_t argv[], float af[],
                      long i, long f,
-                     void* function, long type)
+                     void* function, long type);
 __ASM__(
 #ifndef __ANDROID__
 	"arm32_call:_arm32_call:",
@@ -805,7 +842,7 @@ __ASM__(
 
 ".Lret:",
 	// all values: int, long, float and double returns in r0+r1
-	"ldmfd   sp!, {r4, r5, pc}",
+	"ldmfd   sp!, {r4, r5, pc}"
 );
 # endif
 #elif __EMSCRIPTEN__
@@ -1140,7 +1177,7 @@ word* OL_ffi(OL* this, word* arguments)
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[18];
 	int d = 0;     // количество аргументов для ad
-	long floatsmask = 0; // маска для аргументов с плавающей запятой
+	long floatsmask = 0; // маска для аргументов с плавающей запятой (63 maximum?)
 #elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив
@@ -1951,7 +1988,7 @@ word* OL_ffi(OL* this, word* arguments)
 #		error "Unsupported platform"
 #	endif
 #elif __aarch64__
-	got = arm64_call(args, ad, i, d, function, returntype & 0x3F);
+	got = arm64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
 #elif __arm__
 	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
 #	ifndef __ARM_PCS_VFP
