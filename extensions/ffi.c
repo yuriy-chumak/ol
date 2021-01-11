@@ -2291,42 +2291,30 @@ word* OL_ffi(OL* this, word* arguments)
 
 		case TINT8:
 			// little-endian:
-			result = (word*) make_number (*(char*)&got);  // TODO: change to __INT8_TYPE__
+			result = (word*) new_number (*(char*)&got);  // TODO: change to __INT8_TYPE__
 			break;
 		case TINT16:
-			result = (word*) make_number (*(short*)&got); // TODO: change to __INT16_TYPE__
+			result = (word*) new_number (*(short*)&got); // TODO: change to __INT16_TYPE__
 			break;
 		case TINT32:
-			result = (word*) make_number (*(int*)&got);   // TODO: change to __INT32_TYPE__
+			result = (word*) new_number (*(int*)&got);   // TODO: change to __INT32_TYPE__
 			break;
 		case TINT64: {
-#if UINTPTR_MAX == 0xffffffffffffffff
-			result = (word*) make_number (*(long long*)&got); // TODO: change to __INT64_TYPE__
-#else
-#	ifndef __EMSCRIPTEN__
-			result = (word*) ll2ol (&fp, *(long long*)&got);
-#	endif
-#endif
+			result = (word*) new_number (*(long long*)&got); // TODO: change to __INT64_TYPE__
 			break;
 		}
 
 		case TUINT8:
-			result = (word*) itoun (*(unsigned char*)&got); // TODO: change to __UINT8_TYPE__
+			result = (word*) new_number (*(unsigned char*)&got); // TODO: change to __UINT8_TYPE__
 			break;
 		case TUINT16:
-			result = (word*) itoun (*(unsigned short*)&got);// TODO: change to __UINT16_TYPE__
+			result = (word*) new_number (*(unsigned short*)&got);// TODO: change to __UINT16_TYPE__
 			break;
 		case TUINT32:
-			result = (word*) itoun (*(unsigned int*)&got);  // TODO: change to __UINT32_TYPE__
+			result = (word*) new_number (*(unsigned int*)&got);  // TODO: change to __UINT32_TYPE__
 			break;
 		case TUINT64: {
-#if UINTPTR_MAX == 0xffffffffffffffff
-			result = (word*) itoun (*(unsigned long long*)&got); // TODO: change to __UINT32_TYPE__
-#else
-#	ifndef __EMSCRIPTEN__
-			result = (word*) ul2ol (&fp, *(unsigned long long*)&got);
-#	endif
-#endif
+			result = (word*) new_number (*(unsigned long long*)&got); // TODO: change to __UINT32_TYPE__
 			break;
 		}
 
@@ -2735,31 +2723,31 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 			break; }
 		case I(TUINT32): {
 			c2ol_value(unsigned int);
-			R[a] = (word) make_number(value);
+			R[a] = (word) new_number(value);
 			break;
 		}
 		case I(TUINT64): {
 			c2ol_value(unsigned long long);
-			R[a] = (word) make_number(value);
+			R[a] = (word) new_number(value);
 			break;
 		}
 
 		case I(TINT8): {
 			c2ol_value(signed char);
-			R[a] = (word) make_number(value);
+			R[a] = (word) new_number(value);
 			break; }
 		case I(TINT16): {
 			c2ol_value(signed short);
-			R[a] = (word) make_number(value);
+			R[a] = (word) new_number(value);
 			break; }
 		case I(TINT32): {
 			c2ol_value(signed int);
-			R[a] = (word) make_number(value);
+			R[a] = (word) new_number(value);
 			break;
 		}
 		case I(TINT64): {
 			c2ol_value(signed long long);
-			R[a] = (word) make_number(value);
+			R[a] = (word) new_number(value);
 			break;
 		}
 

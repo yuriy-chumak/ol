@@ -650,7 +650,7 @@ word*p = new (TVECTOR, 13);\
 // арифметика целых (возможно больших)
 // прошу внимания!
 //  в числовой паре надо сначала положить старшую часть, и только потом младшую!
-// todo: rename to sn2i (signed number /value or long number/ TO integer)
+// todo: rename to un2i (signed number /value or long number/ TO integer)
 #define untoi(num)  ({\
 	is_value(num) ? value(num)\
 		: value(car(num)) | value(cadr(num)) << VBITS; \
@@ -661,35 +661,108 @@ word*p = new (TVECTOR, 13);\
 #define __builtin_choose_expr(const_exp, exp1, exp2) (const_exp) ? (exp1) : (exp2)
 #endif
 
-#define itoun(val)  ({\
+// olvm numbers management:
+// if value size less than word size then we no need to alloc memory in heap
+// if value size equal to word size then we need only two words in memory in worst case
+// if value size greater to word size then we need only three words in memory in worst case
+
+#define new_unumber(val)  ({ \
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)I(val),\
+		(word*)make_enump(val), \
+	__builtin_choose_expr(sizeof(val) > sizeof(word), \
 		(word*)({ \
-			uintptr_t x5 = (uintptr_t)(val); \
-			x5 <= VMAX ? \
-					(word)I(x5): \
-					(word)new_list(TINTP, I(x5 & VMAX), I(x5 >> VBITS)); \
-		})); \
-	})
-#define itosn(val)  ({\
+			big_t _x = (val); \
+			(_x < (big_t)HIGHBIT) ? \
+					(word)make_enump(_x): \
+			(_x < (big_t)HIGHBIT*(big_t)HIGHBIT) ? \
+					(word)new_list(TINTP, \
+							make_enump(_x & VMAX), \
+							make_enump(_x >> VBITS)): \
+					(word)new_list(TINTP, \
+							make_enump(_x & VMAX), \
+							make_enump((_x >> VBITS) & VMAX), \
+							make_enump((_x >> VBITS) >> VBITS)); \
+		}), \
+	/* else: sizeof(val) == sizeof(word) */ \
+		(word*)({ \
+			word _x = (word)(val); \
+			(_x < HIGHBIT) ? \
+					(word)make_enump(_x): \
+					(word)new_list(TINTP, \
+							make_enump(_x & VMAX), \
+							make_enump(_x >> VBITS)); \
+		})\
+	));})
+
+#define new_snumber(val)  ({ \
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
-		(word*)make_enum(val),\
+		(word*)make_enum(val), \
+	__builtin_choose_expr(sizeof(val) > sizeof(word), \
 		(word*)({ \
 			typeof(val) _v = (val); \
-			word _x = _v < 0 ? (word)(-_v) : (word)_v; \
-			_x <= VMAX ? \
+			big_t _x = _v < 0 ? (big_t)(-_v) : (big_t)_v; \
+			(_x < (big_t)HIGHBIT) ? \
+					(word)make_value(_v < 0 ? TENUMN : TENUMP, (word)_x): \
+			(_x < (big_t)HIGHBIT*(big_t)HIGHBIT) ? \
+					(word)new_list(_v < 0 ? TINTN : TINTP, \
+							make_enump(_x & VMAX), \
+							make_enump(_x >> VBITS)): \
+					(word)new_list(_v < 0 ? TINTN : TINTP, \
+							make_enump(_x & VMAX), \
+							make_enump((_x >> VBITS) & VMAX), \
+							make_enump((_x >> VBITS) >> VBITS)); \
+		}), \
+	/* else: sizeof(val) == sizeof(word) */ \
+		(word*)({ \
+			typeof(val) _v = (val); \
+			word _x = (_v < 0) ? (word)(-_v) : (word)_v; \
+			(_x < HIGHBIT) ? \
 					(word)make_value(_v < 0 ? TENUMN : TENUMP, _x): \
 					(word)new_list(_v < 0 ? TINTN : TINTP, \
 							make_enump(_x & VMAX), \
 							make_enump(_x >> VBITS)); \
-		})); \
-	})
+		})\
+	));})
 
-// olvm numbers management:
-#define make_number(val) itosn(val)
+#ifndef __CHAR_UNSIGNED__
+#define CHAR_SIGNED 1
+#define CHAR_UNSIGNED 0
+#else
+#define CHAR_SIGNED 0
+#define CHAR_UNSIGNED 1
+#endif
+
+#define new_number(val) ({\
+	(__builtin_types_compatible_p (typeof(val), int8_t) ||\
+	 __builtin_types_compatible_p (typeof(val), int16_t) ||\
+	 __builtin_types_compatible_p (typeof(val), int32_t) ||\
+	 __builtin_types_compatible_p (typeof(val), int64_t) ||\
+	 __builtin_types_compatible_p (typeof(val), signed) ||\
+	 (__builtin_types_compatible_p (typeof(val), char) && CHAR_SIGNED) ||\
+	 __builtin_types_compatible_p (typeof(val), signed char) ||\
+	 __builtin_types_compatible_p (typeof(val), signed short) ||\
+	 __builtin_types_compatible_p (typeof(val), signed int) ||\
+	 __builtin_types_compatible_p (typeof(val), signed long) ||\
+	 __builtin_types_compatible_p (typeof(val), signed long long)) ?\
+		new_snumber(val):\
+	(__builtin_types_compatible_p (typeof(val), int8_t) ||\
+	 __builtin_types_compatible_p (typeof(val), int16_t) ||\
+	 __builtin_types_compatible_p (typeof(val), int32_t) ||\
+	 __builtin_types_compatible_p (typeof(val), int64_t) ||\
+	 __builtin_types_compatible_p (typeof(val), unsigned) ||\
+	 (__builtin_types_compatible_p (typeof(val), char) && CHAR_UNSIGNED) ||\
+	 __builtin_types_compatible_p (typeof(val), unsigned char) ||\
+	 __builtin_types_compatible_p (typeof(val), unsigned short) ||\
+	 __builtin_types_compatible_p (typeof(val), unsigned int) ||\
+	 __builtin_types_compatible_p (typeof(val), unsigned long) ||\
+	 __builtin_types_compatible_p (typeof(val), unsigned long long)) ?\
+		new_unumber(val):\
+	({ assert(0); (word*)IFALSE;});\
+})
 
 // get unsigned/signed number
-#define numberp(num)  ({ word* n = (word*) (num); is_value(n) ? value(n) : value(car(n)) | value(cadr(n)) << VBITS; })
+#define unumber(num)  ({ word* n = (word*) (num); is_value(n) ? value(n) : value(car(n)) | value(cadr(n)) << VBITS; })
+#define numberp(num)  unumber(num) // deprecated
 #define number(num)  ({\
 	word* x = (word*) (num);\
 	is_numberp(x) ?  numberp(x) :\
@@ -3229,8 +3302,8 @@ loop:;
 		struct timeval tp;
 		gettimeofday(&tp, NULL);
 
-		A0 = (word) itoun (tp.tv_sec);
-		A1 = (word) itoun (tp.tv_usec / 1000);
+		A0 = (word) new_number (tp.tv_sec);
+		A1 = (word) new_number (tp.tv_usec / 1000);
 		ip += 2; break;
 	}
 
@@ -3379,7 +3452,7 @@ loop:;
 				wrote = ol->write(portfd, (char*)&buff[1], count, ol->userdata);
 
 				if (wrote > 0)
-					r = (word*) itoun (wrote);
+					r = (word*) new_number (wrote);
 				else
 				if (errno == EAGAIN || errno == EWOULDBLOCK)
 					r = (word*) I(0);
@@ -3498,7 +3571,7 @@ loop:;
 				if (offset < 0)
 					break;
 
-				r = itoun(offset);
+				r = new_number(offset);
 				break;
 			}
 
@@ -3540,22 +3613,22 @@ loop:;
 					break;
 
 				r = new_vector(
-						itoun(st.st_dev),    // устройство
-						itoun(st.st_ino),    // inode
-						itoun(st.st_mode),   // режим доступа
-						itoun(st.st_nlink),  // количество жестких ссылок
-						itoun(st.st_uid),    // идентификатор пользователя-владельца
-						itoun(st.st_gid),    // идентификатор группы-владельца
-						itoun(st.st_rdev),   // тип устройства (если это устройство)
-						itoun(st.st_size),   // общий размер в байтах
-						IFALSE, // itoun(st.st_blksize),// размер блока ввода-вывода в файловой системе
-						IFALSE, // itoun(st.st_blocks), // количество выделенных блоков
+						new_number(st.st_dev),    // устройство
+						new_number(st.st_ino),    // inode
+						new_number(st.st_mode),   // режим доступа
+						new_number(st.st_nlink),  // количество жестких ссылок
+						new_number(st.st_uid),    // идентификатор пользователя-владельца
+						new_number(st.st_gid),    // идентификатор группы-владельца
+						new_number(st.st_rdev),   // тип устройства (если это устройство)
+						new_number(st.st_size),   // общий размер в байтах
+						IFALSE, // new_number(st.st_blksize),// размер блока ввода-вывода в файловой системе
+						IFALSE, // new_number(st.st_blocks), // количество выделенных блоков
 						// Since Linux 2.6, the kernel supports nanosecond
 						//   precision for the following timestamp fields.
 						// but we do not support this for a while
-						itoun(st.st_atime),  // время последнего доступа (в секундах)
-						itoun(st.st_mtime),  // время последней модификации (в секундах)
-						itoun(st.st_ctime)   // время последнего изменения (в секундах)
+						new_number(st.st_atime),  // время последнего доступа (в секундах)
+						new_number(st.st_mtime),  // время последней модификации (в секундах)
+						new_number(st.st_ctime)   // время последнего изменения (в секундах)
 				);
 				break;
 			}
@@ -3811,7 +3884,7 @@ loop:;
 					struct timespec ts = { us / 1000000, (us % 1000000) * 1000 };
 					struct timespec rem;
 					if (nanosleep(&ts, &rem) != 0)
-						r = itoun((rem.tv_sec * 1000000 + rem.tv_nsec / 1000));
+						r = new_number((rem.tv_sec * 1000000 + rem.tv_nsec / 1000));
 				#endif
 				break;
 			}
@@ -3861,7 +3934,7 @@ loop:;
 							assert (0); // should not be reached
 						}
 						else if (child > 0)
-							r = (word*) itoun(child);
+							r = (word*) new_number(child);
 					# endif
 					#endif
 					#ifdef _WIN32
@@ -3904,7 +3977,7 @@ loop:;
 						if (CreateProcess(NULL, args, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 							CloseHandle(pi.hThread);
 							CloseHandle(pi.hProcess);
-							r = itoun(pi.dwProcessId);
+							r = new_number(pi.dwProcessId);
 						}
 					#endif
 					break;
@@ -3999,7 +4072,7 @@ loop:;
 
 				struct timeval tv;
 				if (gettimeofday(&tv, NULL) == 0)
-					r = new_pair (itoun(tv.tv_sec), itoun(tv.tv_usec));
+					r = new_pair (new_number(tv.tv_sec), new_number(tv.tv_usec));
 				break;
 			}
 
@@ -4033,7 +4106,7 @@ loop:;
 				}
 				else
 #endif
-					r = itoun (seconds);
+					r = new_number (seconds);
 				break;
 			}
 
@@ -4272,8 +4345,8 @@ loop:;
 				// arguments currently ignored. used RUSAGE_SELF
 				if (getrlimit(value(A1), &l) == 0)
 					r = new_vector(
-							itoun(l.rlim_cur),
-							itoun(l.rlim_max));
+							new_number(l.rlim_cur),
+							new_number(l.rlim_max));
 				break;
 			}
 			#endif
