@@ -22,6 +22,10 @@
 // Design Issues for Foreign Function Interfaces
 // http://autocad.xarch.at/lisp/ffis.html
 
+// TODO: add OL_cast function that converts void* into strings or something etc.
+// TODO: remove any kind of mallocs
+// TODO: utf-8 notes https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+
 #if OLVM_FFI
 
 // defaults:
@@ -393,6 +397,8 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 	"movsd  8(%rsi), %xmm1",
 	"movsd 16(%rsi), %xmm2",
 	"movsd 24(%rsi), %xmm3",
+	// "cmpq  $4, %rcx", // speedup (todo: need to proof)
+	// "jb    2f",
 	"movsd 32(%rsi), %xmm4",
 	"movsd 40(%rsi), %xmm5",
 	"movsd 48(%rsi), %xmm6",
@@ -491,6 +497,7 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 //
 // В нашем случае мы так или иначе восстанавливаем указатель стека, так что
 // функция x86_call у нас будет универсальная cdecl/stdcall
+// 
 intmax_t x86_call(int_t argv[], long i, void* function, long type);
 __ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
@@ -1378,6 +1385,7 @@ word* OL_ffi(OL* this, word* arguments)
 				i++;
 #endif
 				break;
+// todo: cast TFLOAT and TDOUBLE
 			default:
 				E("can't cast %d to int", type);
 				args[i] = 0; // todo: error

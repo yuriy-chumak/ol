@@ -4393,8 +4393,8 @@ loop:;
 				// arguments currently ignored. used RUSAGE_SELF
 				if (getrusage(RUSAGE_SELF, &u) == 0)
 					r = new_vector(
-							new_pair (itoun(u.ru_utime.tv_sec), itoun(u.ru_utime.tv_usec)),
-							new_pair (itoun(u.ru_stime.tv_sec), itoun(u.ru_stime.tv_usec))
+							new_pair (new_number(u.ru_utime.tv_sec), new_number(u.ru_utime.tv_usec)),
+							new_pair (new_number(u.ru_stime.tv_sec), new_number(u.ru_stime.tv_usec))
 					);
 				break;
 
@@ -4407,17 +4407,17 @@ loop:;
 				struct sysinfo info;
 				if (sysinfo(&info) == 0)
 					r = new_vector(
-							itoun(info.uptime),
-							new_vector(itoun(info.loads[0]),
-									itoun(info.loads[1]),
-									itoun(info.loads[2])),
-							itoun(info.totalram),
-							itoun(info.freeram),
-							itoun(info.sharedram),
-							itoun(info.bufferram),
-							itoun(info.totalswap),
-							itoun(info.freeswap),
-							itoun(info.procs)
+							new_number(info.uptime),
+							new_vector(new_number(info.loads[0]),
+									new_number(info.loads[1]),
+									new_number(info.loads[2])),
+							new_number(info.totalram),
+							new_number(info.freeram),
+							new_number(info.sharedram),
+							new_number(info.bufferram),
+							new_number(info.totalswap),
+							new_number(info.freeswap),
+							new_number(info.procs)
 					);
 				break;
 			}
@@ -4437,7 +4437,7 @@ loop:;
 			case 1017: { // system (char*) // todo: remove this !!!!!!
 				int q = system(string(A1));
 				if (q >= 0)
-					r = make_number(q);
+					r = new_number(q);
 				break;
 			}
 
@@ -4461,19 +4461,19 @@ loop:;
 				break;
 
 			// case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
-			// 	r = itoun (ol->max_heap_size);
+			// 	r = new_number (ol->max_heap_size);
 			// 	ol->max_heap_size = value(A1);
 			// 	break;
 			// case 1009: // get memory limit (in mb) / // todo: переделать на другой номер
-			// 	r = itoun (ol->max_heap_size);
+			// 	r = new_number (ol->max_heap_size);
 			// 	break;
 
 			case 1022: // set ticker
-				r = itoun (ticker);
+				r = new_number(ticker);
 				ticker = value(A1);
 				break;
 	//		case 1014: { /* set-ticks n _ _ -> old */
-	//			result = itoun (ol->slice);
+	//			result = new_number (ol->slice);
 	//			ol->slice  = uvtoi (a);
 	//			break;
 	//		}
@@ -4581,7 +4581,7 @@ loop:;
 		 */
 		// case SYSCALL_BRK: // get or set memory limit (in mb)
 		// 	// // b, c is reserved for feature use
-		// 	// result = itoun (ol->max_heap_size);
+		// 	// result = new_number (ol->max_heap_size);
 		// 	// //if (a == I(0))
 		// 	// //	ol->gc(0);
 		// 	// if (is_numberp(a))
@@ -4649,7 +4649,7 @@ loop:;
 		//  остальное можно спокойно оформлять отдельными функциями
 
 	//		case 1014: { /* set-ticks n _ _ -> old */
-	//			result = itoun (ol->slice);
+	//			result = new_number (ol->slice);
 	//			ol->slice  = uvtoi (a);
 	//			break;
 	//		}
