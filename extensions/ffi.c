@@ -2511,13 +2511,13 @@ word OL_mkcb(OL* self, word* arguments)
 			"\x8D\x44\x24\x04" // lea eax, [esp+4]
 			"\x50"     // push eax
 			// 6
-			"\x68----" // push $0
-			"\x68----" // push ol
-			"\xB8----" // mov eax, ...
+			"\x68-id-" // push $0
+			"\x68-ol-" // push ol
+			"\xB8-cb-" // mov eax, ...
 			"\xFF\xD0" // call eax
 			"\x83\xC4\x0C" // add esp, 3*4
 			"\xC3"; // ret
-	#ifdef _WIN32
+# ifdef _WIN32
 		HANDLE mh = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE,
 				0, sizeof(bytecode), NULL);
 		if (!mh)
@@ -2527,20 +2527,20 @@ word OL_mkcb(OL* self, word* arguments)
 		CloseHandle(mh);
 		if (!ptr)
 			return IFALSE;
-	#else
+# else
 		ptr = mmap(0, sizeof(bytecode), PROT_READ | PROT_WRITE | PROT_EXEC,
 				MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 		if (ptr == (char*) -1)
 			return IFALSE;
-	#endif
+# endif
 
 	memcpy(ptr, &bytecode, sizeof(bytecode));
-	*(long*)&ptr[ 7] = pin;
-	*(long*)&ptr[12] = (long)self;
-	*(long*)&ptr[17] = (long)&callback;
+	*(int32_t*)&ptr[7] = pin;
+	*(uint32_t*)&ptr[12] = (uint32_t)self;
+	*(uint32_t*)&ptr[17] = (uint32_t)&callback;
 #elif __amd64__
 	// Windows x64
-	#ifdef _WIN32
+# ifdef _WIN32
 	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
 	static char bytecode[] =
 			"\x90" // nop
@@ -2560,14 +2560,14 @@ word OL_mkcb(OL* self, word* arguments)
 			"\x67\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
 			"\x49\x89\xE1"          // mov r9, esp         // argf
 			// 54
-			"\x48\xBA--------"      // mov rdx, 0          // id
-			"\x48\xB9--------"      // mov rcx, 0          // ol
+			"\x48\xBA---id---"      // mov rdx, 0          // id
+			"\x48\xB9---ol---"      // mov rcx, 0          // ol
 			// 74
 			"\x50"	                // push rax // dummy
 			"\x50"                  // push rax            // rest
 			"\x48\x83\xEC\x20"      // sub rsp, 32         // free space
 			// 80
-			"\x48\xB8--------"      // mov rax, callback
+			"\x48\xB8--call--"      // mov rax, callback
 			"\xFF\xD0"              // call rax
 			"\xC9"                  // leave
 			"\xC3";                 // ret
@@ -2583,11 +2583,11 @@ word OL_mkcb(OL* self, word* arguments)
 		return IFALSE;
 
 	memcpy(ptr, &bytecode, sizeof(bytecode));
-	*(long long*)&ptr[56] = pin;
-	*(long long*)&ptr[66] = (long long)self;
-	*(long long*)&ptr[82] = (long long)&callback;
+	*(int64_t*)&ptr[56] = pin; // todo: change to uint64_t
+	*(uint64_t*)&ptr[66] = (uint64_t)self;
+	*(uint64_t*)&ptr[82] = (uint64_t)callback;
 
-	#else // System V (linux, unix, macos, android, ...)
+# else // System V (linux, unix, macos, android, ...)
 	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
 	// rdi: ol, rsi: id, rdx: argi, rcx: argf, r8: rest
 	// not used: r9
@@ -2616,11 +2616,11 @@ word OL_mkcb(OL* self, word* arguments)
 			"\xF2\x0F\x11\x7C\x24\x38"    // movsd [esp+56], xmm7
 			"\x48\x89\xE1"          // mov rcx, rsp         // argf
 			// 76
-			"\x48\xBE--------"      // mov rsi, 0          // id
+			"\x48\xBE---id---"      // mov rsi, 0          // id
 			// 86
-			"\x48\xBF--------"      // mov rdi, 0          // ol
+			"\x48\xBF---ol---"      // mov rdi, 0          // ol
 			// 96
-			"\x48\xB8--------"      // mov rax, callback
+			"\x48\xB8--call--"      // mov rax, callback
 			"\xFF\xD0"              // call rax
 			"\xC9"                  // leave
 			"\xC3";                 // ret
@@ -2630,9 +2630,9 @@ word OL_mkcb(OL* self, word* arguments)
 		return IFALSE;
 
 	memcpy(ptr, &bytecode, sizeof(bytecode));
-	*(long long*)&ptr[78] = pin;
-	*(long long*)&ptr[88] = (long long)self;
-	*(long long*)&ptr[98] = (long long)&callback;
+	*(int64_t*)&ptr[78] = pin;
+	*(uint64_t*)&ptr[88] = (uint64_t)self;
+	*(uint64_t*)&ptr[98] = (uint64_t)&callback;
 	
 	int res = mprotect(ptr, sizeof(bytecode), PROT_EXEC);
 	if (res == -1)
