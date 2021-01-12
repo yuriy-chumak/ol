@@ -355,6 +355,47 @@ void callback_call_iiiiiiii(int (*callback) (int, int, int, int, int, int, int, 
 	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444);
 }
 
+PUBLIC
+void callback_call_iiiiiiiii(int (*callback) (int, int, int, int, int, int, int, int, int))
+{
+	callback(0, 0, 0, 0, 0, 0, 0, 0, 0);
+	callback(1, -1, 2, -2, 3, -3, 4, -4, 5);
+	callback(-1, 1, -2, 2, -3, 3, -4, 4, -5);
+	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444, -444444444, 33333);
+	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444, -33333);
+}
+
+PUBLIC
+void callback_call_iiiiiiiiii(int (*callback) (int, int, int, int, int, int, int, int, int, int))
+{
+	callback(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	callback(1, -1, 2, -2, 3, -3, 4, -4, 5, -6);
+	callback(-1, 1, -2, 2, -3, 3, -4, 4, -5, 6);
+	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444, -444444444, 33333, 22);
+	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444, -33333, -22);
+}
+
+PUBLIC
+void callback_call_f(float (*callback) (float))
+{
+	callback(0.0f);
+	callback(1.1f);
+	callback(-1.1f);
+	callback(999999.999999f);
+	callback(-999999.999999f);
+}
+
+PUBLIC
+void callback_call_ifif(float (*callback) (int, float, int, float))
+{
+	callback(0, 0.0f, 0, 0);
+	callback(1, 1.1f, -2, -2.2f);
+	callback(-1, -1.1f, 2, 2.2f);
+	callback(999999, -999999.999999f, 111111, -111111.111111);
+	callback(-999999, 999999.999999f, -111111, 111111.111111);
+}
+
+
 // wchar
 #ifdef _WIN32
 	typedef WCHAR widechar;

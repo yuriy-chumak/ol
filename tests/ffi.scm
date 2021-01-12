@@ -285,6 +285,11 @@
 (test-callback "callback_call_iiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int))
 (test-callback "callback_call_iiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
 (test-callback "callback_call_iiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+(test-callback "callback_call_iiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+(test-callback "callback_call_iiiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+
+(test-callback "callback_call_f" (list fft-int))
+(test-callback "callback_call_ifif" (list fft-int fft-float fft-int fft-float))
 
 ; ------------------------------------
 ; wide characters

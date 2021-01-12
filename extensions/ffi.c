@@ -2486,7 +2486,7 @@ word OL_sizeof(OL* self, word* arguments)
 // ret is ret address to the caller function
 static
 int64_t callback(OL* ol, size_t id, int_t* argi
-	#if __amd64__
+	#if __amd64__ || __aarch64__
 		, inexact_t* argf, int_t* rest
 	#endif
 	);
@@ -2637,7 +2637,63 @@ word OL_mkcb(OL* self, word* arguments)
 	int res = mprotect(ptr, sizeof(bytecode), PROT_EXEC);
 	if (res == -1)
 		return IFALSE;
-	#endif
+# endif
+#elif __aarch64__
+
+	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest);
+	static char bytecode[] =
+		"\xee\x03\x00\x91" //mov  x14, sp
+		"\xfd\x7b\xbf\xa9" //stp  x29, x30, [sp,#-16]!
+		"\xfd\x03\x00\x91" //mov  x29, sp
+		"\xe6\x1f\xbf\xa9" //stp  x6, x7, [sp,#-16]!
+		"\xe4\x17\xbf\xa9" //stp  x4, x5, [sp,#-16]!
+		"\xe2\x0f\xbf\xa9" //stp  x2, x3, [sp,#-16]!
+		"\xe0\x07\xbf\xa9" //stp  x0, x1, [sp,#-16]!
+		"\xe2\x03\x00\x91" //mov  x2, sp              // argi
+		"\xff\x03\x01\xd1" //sub  sp, sp, #0x40
+		"\xe0\x07\x00\x6d" //stp  d0, d1, [sp]
+		"\xe2\x0f\x01\x6d" //stp  d2, d3, [sp,#16]
+		"\xe4\x17\x02\x6d" //stp  d4, d5, [sp,#32]
+		"\xe6\x1f\x03\x6d" //stp  d6, d7, [sp,#48]
+		"\xe3\x03\x00\x91" //mov  x3, sp              // argf
+		"\xe4\x03\x0e\xaa" //mov  x4, x14             // rest
+/*15*/	"\x00\x00\x80\xd2" //mov  x0, #0x0000
+		"\x00\x00\xa0\xf2" //movk x0, #0x0000, lsl #16
+		"\x00\x00\xc0\xf2" //movk x0, #0x0000, lsl #32
+		"\x00\x00\xe0\xf2" //movk x0, #0x0000, lsl #48  // ol
+/*19*/	"\x01\x00\x00\xd2" //mov  x1, #0x0000           // id
+/*20*/	"\x09\x00\x80\xd2" //mov  x0, #0x0000
+		"\x09\x00\xa0\xf2" //movk x0, #0x0000, lsl #16
+		"\x09\x00\xc0\xf2" //movk x0, #0x0000, lsl #32
+		"\x09\x00\xe0\xf2" //movk x0, #0x0000, lsl #48  // ol
+		"\x20\x01\x3f\xd6" //blr  x9
+		"\xbf\x03\x00\x91" //mov  sp, x29
+		"\xfd\x7b\xc1\xa8" //ldp  x29, x30, [sp],#16
+		"\xc0\x03\x5f\xd6";//ret
+	ptr = mmap(0, sizeof(bytecode), PROT_WRITE,
+			MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	if (ptr == (char*) -1)
+		return IFALSE;
+
+	memcpy(ptr, &bytecode, sizeof(bytecode));
+	// self
+	((uint32_t*)ptr)[15] = 0xD2800000 | ((((word)self      ) & 0xFFFF) << 5); // movz x0, #....
+	((uint32_t*)ptr)[16] = 0xF2A00000 | ((((word)self >> 16) & 0xFFFF) << 5); // movk x0, #...., lsl #16
+	((uint32_t*)ptr)[17] = 0xF2C00000 | ((((word)self >> 32) & 0xFFFF) << 5); // movk x0, #...., lsl #32
+	((uint32_t*)ptr)[18] = 0xF2E00000 | ((((word)self >> 48) & 0xFFFF) << 5); // movk x0, #...., lsl #48
+	// id
+	assert (pin < 0x10000);
+	((uint32_t*)ptr)[19] = 0xD2800001 | ((((word)pin) & 0xFFFF) << 5); // mov x1, pin
+	// callback
+	((uint32_t*)ptr)[20] = 0xD2800009 | ((((word)callback      ) & 0xFFFF) << 5); // movz x0, #....
+	((uint32_t*)ptr)[21] = 0xF2A00009 | ((((word)callback >> 16) & 0xFFFF) << 5); // movk x0, #...., lsl #16
+	((uint32_t*)ptr)[22] = 0xF2C00009 | ((((word)callback >> 32) & 0xFFFF) << 5); // movk x0, #...., lsl #32
+	((uint32_t*)ptr)[23] = 0xF2E00009 | ((((word)callback >> 48) & 0xFFFF) << 5); // movk x0, #...., lsl #48
+
+	int res = mprotect(ptr, sizeof(bytecode), PROT_EXEC);
+	if (res == -1)
+		return IFALSE;
+
 #endif
 
 	word*
@@ -2656,7 +2712,7 @@ word OL_mkcb(OL* self, word* arguments)
 static
 __attribute__((used))
 int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
-#if __amd64__
+#if __amd64__ || __aarch64__
 		, inexact_t* argf, int_t* rest //win64
 #endif
 		)
@@ -2682,7 +2738,7 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 	fp = ol->fp;
 
 	int i = 0;
-#if __amd64__ && (__unix__ || __APPLE__)
+#if (__amd64__ || __aarch64__) && (__unix__ || __APPLE__)
 	int j = 0;
 #endif
 /*#if __amd64__  // !!!
@@ -2709,6 +2765,12 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 					: *(type*) &rest[i-6]; \
 			i++;
 			#endif
+		#elif __aarch64__
+			# define c2ol_value(type) \
+			type value = i < 8 \
+					? *(type*) &argi[i] \
+					: *(type*) &rest[i-8]; \
+			i++;
 		#else
 			# define c2ol_value(type) \
 			type value = *(type*) &argi[i++];
@@ -2761,16 +2823,16 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 
 		case I(TFLOAT): {
 			float
-			#if __amd64__
+			#if __amd64__ || __aarch64__
 				#if _WIN64
 				value = i <= 4
 				        ? *(float*) &argf[i]
 				        : *(float*) &rest[i-6];
 				i++;
 				#else
-				value = j <= 8
+				value = j < 8
 						? *(float*) &argf[j]
-						: *(float*) &rest[j-8]; // ???
+						: *(float*) &rest[j-8];
 				j++;
 				#endif
 			#else
@@ -2783,16 +2845,16 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 		}
 		case I(TDOUBLE): {
 			double
-			#if __amd64__
+			#if __amd64__ || __aarch64__
 				#if _WIN64
 				value = i <= 4
 				        ? *(double*) &argf[i]
 				        : *(double*) &rest[i-4];
 				i++;
 				#else
-				value = i <= 8
+				value = i < 8
 						? *(double*) &argf[j]
-						: *(double*) &rest[j-8]; // ???
+						: *(double*) &rest[j-8];
 				j++;
 				#endif
 			#else
@@ -2809,12 +2871,18 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 				#if _WIN64
 				value = i <= 4
 				        ? *(void**) &argi[i]
-				        : *(void**) &rest[i-4];
+				        : *(void**) &rest[i-4]; //?
+				i++;
 				#else
 				value = i <= 6
 						? *(void**) &argi[i]
 						: *(void**) &rest[i-6]; // ???
+				i++;
 				#endif
+			#elif __aarch64__
+				value = i < 8
+						? *(void**) &argi[i]
+						: *(void**) &rest[i-8];
 				i++;
 			#else
 				value =   *(void**) &argi[i++];
@@ -2833,11 +2901,17 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 				value = i <= 4
 				        ? *(void**) &argi[i]
 				        : *(void**) &rest[i-4];
+				i++;
 				#else
 				value = i <= 6
 						? *(void**) &argi[i]
 						: *(void**) &rest[i-6]; // ???
+				i++;
 				#endif
+			#elif __aarch64__
+				value = i < 8
+						? *(void**) &argi[i]
+						: *(void**) &rest[i-8];
 				i++;
 			#else
 				value =   *(void**) &argi[i++];
