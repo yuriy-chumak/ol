@@ -198,9 +198,11 @@ object_t
 #if SIZE_MAX == 0xffffffffffffffffU
 	typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
 	typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
+	#define INT_T_MIN INT64_MIN
 #elif SIZE_MAX == 0xffffffffU
 	typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
 	typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
+	#define INT_T_MIN INT32_MIN
 #else
 #	error Unsupported math bit-count
 #endif
@@ -694,6 +696,11 @@ word*p = new (TVECTOR, 13);\
 		})\
 	));})
 
+// special case (_v != INT_T_MIN): val == minimal applicable integer for selected word width (INT_T_MIN macro)
+// -2147483648 for 32-bit and -9223372036854775808 for 64-bit
+// in this case -val cenverts into "0" by machine math and we got invalid value
+// so we need to compare val with INT_T_MIN and use a longer converter
+// I hope this will not do slower code
 #define new_snumber(val)  ({ \
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
 		(word*)make_enum(val), \
@@ -701,9 +708,9 @@ word*p = new (TVECTOR, 13);\
 		(word*)({ \
 			typeof(val) _v = (val); \
 			big_t _x = _v < 0 ? (big_t)(-_v) : (big_t)_v; \
-			(_x < (big_t)HIGHBIT) ? \
+			(_x < (big_t)HIGHBIT) && (_v != INT_T_MIN) ? \
 					(word)make_value(_v < 0 ? TENUMN : TENUMP, (word)_x): \
-			(_x < (big_t)HIGHBIT*(big_t)HIGHBIT) ? \
+			(_x < (big_t)HIGHBIT*(big_t)HIGHBIT) && (_v != INT_T_MIN) ? \
 					(word)new_list(_v < 0 ? TINTN : TINTP, \
 							make_enump(_x & VMAX), \
 							make_enump(_x >> VBITS)): \
@@ -716,7 +723,7 @@ word*p = new (TVECTOR, 13);\
 		(word*)({ \
 			typeof(val) _v = (val); \
 			word _x = (_v < 0) ? (word)(-_v) : (word)_v; \
-			(_x < HIGHBIT) ? \
+			(_x < (word)HIGHBIT) && (_v != INT_T_MIN) ? \
 					(word)make_value(_v < 0 ? TENUMN : TENUMP, _x): \
 					(word)new_list(_v < 0 ? TINTN : TINTP, \
 							make_enump(_x & VMAX), \
