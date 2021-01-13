@@ -381,8 +381,18 @@ void callback_call_f(float (*callback) (float))
 	callback(0.0f);
 	callback(1.1f);
 	callback(-1.1f);
-	callback(999999.999999f);
-	callback(-999999.999999f);
+	callback(129.984375f);
+	callback(-129.984375f);
+}
+
+PUBLIC
+void callback_call_d(double (*callback) (double))
+{
+	callback(0.0);
+	callback(1.1);
+	callback(-1.1);
+	callback(129.984375);
+	callback(-129.984375);
 }
 
 PUBLIC
@@ -391,8 +401,18 @@ void callback_call_ifif(float (*callback) (int, float, int, float))
 	callback(0, 0.0f, 0, 0);
 	callback(1, 1.1f, -2, -2.2f);
 	callback(-1, -1.1f, 2, 2.2f);
-	callback(999999, -999999.999999f, 111111, -111111.111111);
-	callback(-999999, 999999.999999f, -111111, 111111.111111);
+	callback(999999, -129.984375f, 111111, -16.201171875);
+	callback(-999999, 129.984375, -111111, 16.201171875);
+}
+
+PUBLIC
+void callback_call_ifid(double (*callback) (int, float, int, double))
+{
+	callback(0, 0.0f, 0, 0);
+	callback(1, 1.1f, -2, -2.2f);
+	callback(-1, -1.1f, 2, 2.2f);
+	callback(999999, -129.984375f, 111111, -16.201171875);
+	callback(-999999, 129.984375, -111111, 16.201171875);
 }
 
 
