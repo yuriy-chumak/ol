@@ -673,9 +673,11 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 # ifndef __ARM_PCS_VFP
 // gcc-arm-linux-gnueabi: -mfloat-abi=softfp options (and -mfloat-abi=soft ?)
 
+__attribute((__naked__)) // do not remove, arm32 require this form of function!
 uintmax_t arm32_call(int_t argv[], long i,
-                     void* function);
-__ASM__("arm32_call:_arm32_call:",
+                     void* function)
+{
+__ASM__(//"arm32_call:_arm32_call:",
 	// "BKPT",
 	// !!! stack must be 8-bytes aligned, so let's push even arguments count
 	"push {r4, r5, r6, lr}",
@@ -733,6 +735,7 @@ __ASM__("arm32_call:_arm32_call:",
 	// all values: int, long, float and double returning in r0+r1
 	"pop {r4, r5, r6, pc}");
 //	"bx lr");
+}
 
 # else
 // gcc-arm-linux-gnueabihf: -mfloat-abi=hard and -D__ARM_PCS_VFP options
@@ -740,13 +743,11 @@ __ASM__("arm32_call:_arm32_call:",
 // __ARM_PCS_VFP, __ARM_PCS
 // __ARM_ARCH_7A__
 //
+__attribute((__naked__)) // do not remove, arm32 require this form of function!
 uintmax_t arm32_call(int_t argv[], float af[],
                      long i, long f,
-                     void* function, long type);
-__ASM__(
-#ifndef __ANDROID__
-	"arm32_call:_arm32_call:",
-#endif
+                     void* function, long type) {
+__ASM__(// "arm32_call:_arm32_call:",
 	// "BKPT",
 	// r0: argv, r1: af, r2: i, r3: ad, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
@@ -849,8 +850,8 @@ __ASM__(
 
 ".Lret:",
 	// all values: int, long, float and double returns in r0+r1
-	"ldmfd   sp!, {r4, r5, pc}"
-);
+	"ldmfd   sp!, {r4, r5, pc}");
+}
 # endif
 #elif __EMSCRIPTEN__
 
