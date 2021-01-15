@@ -5,14 +5,14 @@
    (lib gtk-3))
 
 (define print_hello (vm:pin (cons
-   (list GtkWidget* gpointer)
+   (list fft-int GtkWidget* gpointer)
    (lambda (widget userdata)
       (print "hello")
       TRUE
 ))))
 
 (define activate (vm:pin (cons
-   (list GtkApplication* gpointer)
+   (list fft-int GtkApplication* gpointer)
    (lambda (app userdata)
       (define window (gtk_application_window_new app))
       (print "window: " window)

@@ -2725,6 +2725,11 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 	word types = car(cb);
 	word function = cdr(cb);
 
+	word returntype = car(types); // returning type of lambda
+	assert (is_enum(returntype));
+
+	types = cdr(types);           // argument types
+
 	// let's count of arguments
 	word args = types;
 	size_t a = 0;
@@ -2956,21 +2961,65 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 
 	word r = OL_apply(ol, function, args);
 
-	if (is_value (r))
-		return value(r);
-	else
-	switch (reference_type (r)) {
-		case TVPTR:
-			return r;
-		// return type override
-		case TPAIR: ;
-			// if expected float or double result,
-			// do the __ASM__ with loading the result into fpu/xmm register
-			//switch (value_type (car(r))) {
-			//	case TFLOAT:
-			//	case TDOUBLE:
-			//}
+	switch (enum(returntype)) {
+		case TINT8: case TUINT8:
+		case TINT16: case TUINT16:
+		case TINT32: case TUINT32:
+		case TINT64: case TUINT64:
+			return number(r);
+		case TFLOAT: {
+#if __amd64__
+			__asm__("push %%rax" :: "a" (OL2F(r)));
+			__ASM__(
+				"flds (%rsp)",
+				"addq $8, %rsp");
+#elif __i386__ // x86
+			__asm__("push %%eax" :: "a" (OL2F(r)));
+			__ASM__(
+				"flds (%esp)",
+				"addl $4, %esp");
+#elif __aarch64__
+			__asm__("fmov d0, %[reg]" :: [reg]"r" (OL2F(r)));
+#elif __arm__
+# ifndef __ARM_PCS_VFP
+			__asm__("BKPT");
+			__asm__("mov r0, %[reg]" :: [reg]"r" (OL2F(r))); // todo: I'm not sure
+# else 
+			__asm__("fmov s0, %[reg]" :: [reg]"r" (OL2F(r))); // todo: I'm not sure
+# endif
+#endif
+			return 0; // actually we return st(0)
+		}
+		case TVOID:
+			return 0;
+		default:
+			E("uknown return lambda type"); assert (0);
+			return 0;
 	}
+
+	// if (is_enum (r))
+	// 	return enum(r);
+	// else
+	// switch (reference_type (r)) {
+	// 	case TVPTR:
+	// 		return r;
+	// 	case TINTP:
+	// 		return unumber(r);
+	// 	case TINTN:
+	// 		return -unumber(r);
+	// 	// return type override
+	// 	case TFLOAT: {
+	// 		float f[2] = { *(float*)&car(r), 0 };
+	// 		return *(int64_t*)f;
+	// 	}
+	// 	case TPAIR: ; // TODO
+	// 		// if expected float or double result,
+	// 		// TODO: do the __ASM__ with loading the result into fpu/xmm register
+	// 		//switch (value_type (car(r))) {
+	// 		//	case TFLOAT:
+	// 		//	case TDOUBLE:
+	// 		//}
+	// }
 	// default:
 	return 0;
 }

@@ -57,7 +57,7 @@
 
 ; apply-gravity callback
 (define ApplyGravity (vm:pin (cons
-   (list type-vptr fft-float fft-int)
+   (list fft-int type-vptr fft-float fft-int)
    (lambda (body timestep threadIndex)
       (NewtonBodySetForce body '(0 -9.8 0 0))
 ))))

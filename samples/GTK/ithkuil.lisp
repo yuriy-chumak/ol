@@ -5,7 +5,7 @@
    (lib gtk-3))
 
 (define print_hello (vm:pin (cons
-   (list GtkWidget* gpointer)
+   (list fft-int GtkWidget* gpointer)
    (lambda (widget userdata)
       ;(print "clicked " (bytes->string (string->list (gtk_button_get_label widget)))) ; utf-8 conversion
 
@@ -28,7 +28,7 @@
 
 (define hello-callback (G_CALLBACK print_hello))
 (define set-clicked-signal (vm:pin (cons
-   (list GtkWidget* gpointer)
+   (list fft-int GtkWidget* gpointer)
    (lambda (widget userdata)
       (g_signal_connect widget "clicked" hello-callback userdata)
       TRUE
@@ -45,7 +45,7 @@
 
 ; close button processor:
 (define quit (vm:pin (cons
-   (list GtkWidget* gpointer)
+   (list fft-int GtkWidget* gpointer)
    (lambda (widget userdata)
       (print "Close button pressed. Going out.")
       (gtk_main_quit)))))

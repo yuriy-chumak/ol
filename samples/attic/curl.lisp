@@ -4,7 +4,7 @@
 (import (otus ffi))
 
 (define callback (vm:pin (cons
-   (list type-string fft-int fft-int type-vptr)
+   (list fft-void type-string fft-int fft-int type-vptr)
    (lambda (ptr nsize nmemb stream)
       (print ptr))
 )))

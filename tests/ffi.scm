@@ -252,7 +252,7 @@
    (define cb (vm:pin (cons
       types
       (lambda args
-         (print "callback: [ " args " ]")
+         (for-each display (list "callback: [ " args " ]"))
          (apply * args)))))
    (define callback_call ((load-dynamic-library #f) fft-void name type-callable))
 
@@ -262,21 +262,21 @@
    (vm:unpin cb))
 
 
-(test-callback "callback_call_i" (list fft-int))
-(test-callback "callback_call_ii" (list fft-int fft-int))
-(test-callback "callback_call_iii" (list fft-int fft-int fft-int))
-(test-callback "callback_call_iiii" (list fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiii" (list fft-int fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-(test-callback "callback_call_iiiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_i" (list fft-int fft-int))
+;; (test-callback "callback_call_ii" (list fft-int fft-int fft-int))
+;; (test-callback "callback_call_iii" (list fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiii" (list fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; (test-callback "callback_call_iiiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
 
-(test-callback "callback_call_f" (list fft-float))
-(test-callback "callback_call_ifif" (list fft-int fft-float fft-int fft-float))
-(test-callback "callback_call_d" (list fft-double))
-(test-callback "callback_call_ifid" (list fft-int fft-float fft-int fft-double))
+(test-callback "callback_call_f" (list fft-float fft-float))
+(test-callback "callback_call_ifif" (list fft-float fft-int fft-float fft-int fft-float))
+;; (test-callback "callback_call_d" (list fft-double fft-double))
+;; (test-callback "callback_call_ifid" (list fft-double fft-int fft-float fft-int fft-double))
 
 ; ------------------------------------
 ; wide characters

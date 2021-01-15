@@ -18,7 +18,7 @@
 
 
 (define print_hello (vm:pin (cons
-   (list GtkWidget* gpointer)
+   (list fft-int GtkWidget* gpointer)
    (lambda (widget userdata)
       (gtk_label_set_text userdata (strftime "%F %x:%S\0"))
       TRUE
@@ -48,7 +48,7 @@
 
 ; close button processor:
 (define quit (vm:pin (cons
-   (list GtkWidget* gpointer)
+   (list fft-int GtkWidget* gpointer)
    (lambda (widget userdata)
       (print "Close button pressed. Going out.")
       (gtk_main_quit)))))

@@ -34,7 +34,7 @@
 
 ; randomizer button processor
 (define randomize (vm:pin (cons
-   (list GtkWidget* gpointer)
+   (list fft-int GtkWidget* gpointer)
    (lambda (widget userdata)
       (randomize!)
       TRUE))))
@@ -43,7 +43,7 @@
 
 ; close button processor:
 (define quit (vm:pin (cons
-   (list GtkWidget* gpointer)
+   (list fft-int GtkWidget* gpointer)
    (lambda (widget userdata)
       (print "Close button pressed. Going out.")
       (gtk_main_quit)
@@ -52,7 +52,7 @@
 
 ; renderer
 (define render (vm:pin (cons
-   (list GtkGLArea* GdkGLContext* gpointer)
+   (list fft-int GtkGLArea* GdkGLContext* gpointer)
    (lambda (widget context userdata)
       (glClearColor
          (gtk_adjustment_get_value R)
@@ -66,7 +66,7 @@
 
 ; initializer
 (define realize (vm:pin (cons
-   (list GtkGLArea* gpointer)
+   (list fft-int GtkGLArea* gpointer)
    (lambda (widget userdata)
       (gtk_gl_area_make_current widget)
       (define error (gtk_gl_area_get_error widget))
@@ -83,7 +83,7 @@
 
 
 (define resize (vm:pin (cons
-   (list GtkGLArea* gint gint gpointer)
+   (list fft-int GtkGLArea* gint gint gpointer)
    (lambda (widget width height userdata)
       (print "info: resized to the " width " x " height)
       TRUE
@@ -93,7 +93,7 @@
 
 (define x (box 0))
 (define idle (vm:pin (cons
-   (list gpointer)
+   (list fft-int gpointer)
    (lambda (userdata)
       (print "idle: " (unbox x))
       (set-car! x (++ (unbox x)))

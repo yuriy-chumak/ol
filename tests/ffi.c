@@ -278,141 +278,61 @@ int main() {
 PUBLIC
 void callback_call_i(int (*callback) (int))
 {
-	callback(0);
-	callback(1);
-	callback(-1);
-	callback(999999);
-	callback(-999999);
-}
-
-PUBLIC
-void callback_call_ii(int (*callback) (int, int))
-{
-	callback(0, 0);
-	callback(1, -1);
-	callback(-1, 1);
-	callback(999999, -999999);
-	callback(-999999, 999999);
-}
-
-PUBLIC
-void callback_call_iii(int (*callback) (int, int, int))
-{
-	callback(0, 0, 0);
-	callback(1, -1, 2);
-	callback(-1, 1, -2);
-	callback(999999, -999999, 7777777);
-	callback(-999999, 999999, -7777777);
-}
-
-PUBLIC
-void callback_call_iiii(int (*callback) (int, int, int, int))
-{
-	callback(0, 0, 0, 0);
-	callback(1, -1, 2, -2);
-	callback(-1, 1, -2, 2);
-	callback(999999, -999999, 7777777, -7777777);
-	callback(-999999, 999999, -7777777, 7777777);
-}
-
-PUBLIC
-void callback_call_iiiii(int (*callback) (int, int, int, int, int))
-{
-	callback(0, 0, 0, 0, 0);
-	callback(1, -1, 2, -2, 3);
-	callback(-1, 1, -2, 2, -3);
-	callback(999999, -999999, 7777777, -7777777, 11111111);
-	callback(-999999, 999999, -7777777, 7777777, -11111111);
-}
-
-PUBLIC
-void callback_call_iiiiii(int (*callback) (int, int, int, int, int, int))
-{
-	callback(0, 0, 0, 0, 0, 0);
-	callback(1, -1, 2, -2, 3, -3);
-	callback(-1, 1, -2, 2, -3, 3);
-	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111);
-	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111);
-}
-
-PUBLIC
-void callback_call_iiiiiii(int (*callback) (int, int, int, int, int, int, int))
-{
-	callback(0, 0, 0, 0, 0, 0, 0);
-	callback(1, -1, 2, -2, 3, -3, 4);
-	callback(-1, 1, -2, 2, -3, 3, -4);
-	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444);
-	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444);
-}
-
-PUBLIC
-void callback_call_iiiiiiii(int (*callback) (int, int, int, int, int, int, int, int))
-{
-	callback(0, 0, 0, 0, 0, 0, 0, 0);
-	callback(1, -1, 2, -2, 3, -3, 4, -4);
-	callback(-1, 1, -2, 2, -3, 3, -4, 4);
-	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444, -444444444);
-	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444);
-}
-
-PUBLIC
-void callback_call_iiiiiiiii(int (*callback) (int, int, int, int, int, int, int, int, int))
-{
-	callback(0, 0, 0, 0, 0, 0, 0, 0, 0);
-	callback(1, -1, 2, -2, 3, -3, 4, -4, 5);
-	callback(-1, 1, -2, 2, -3, 3, -4, 4, -5);
-	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444, -444444444, 33333);
-	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444, -33333);
+	printf(" = %d\n", callback(0)); fflush(stdout);
+	printf(" = %d\n", callback(1)); fflush(stdout);
+	printf(" = %d\n", callback(-1)); fflush(stdout);
+	printf(" = %d\n", callback(2147483647)); fflush(stdout);
+	printf(" = %d\n", callback(-2147483648)); fflush(stdout);
 }
 
 PUBLIC
 void callback_call_iiiiiiiiii(int (*callback) (int, int, int, int, int, int, int, int, int, int))
 {
-	callback(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-	callback(1, -1, 2, -2, 3, -3, 4, -4, 5, -6);
-	callback(-1, 1, -2, 2, -3, 3, -4, 4, -5, 6);
-	callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444, -444444444, 33333, 22);
-	callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444, -33333, -22);
+	printf(" = %d\n", callback(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)); fflush(stdout);
+	printf(" = %d\n", callback(1, -1, 2, -2, 3, -3, 4, -4, 5, -6)); fflush(stdout);
+	printf(" = %d\n", callback(-1, 1, -2, 2, -3, 3, -4, 4, -5, 6)); fflush(stdout);
+	printf(" = %d\n", callback(999999, -999999, 7777777, -7777777, 11111111, -11111111, 444444444, -444444444, 33333, 22)); fflush(stdout);
+	printf(" = %d\n", callback(-999999, 999999, -7777777, 7777777, -11111111, 11111111, -444444444, 444444444, -33333, -22)); fflush(stdout);
 }
 
 PUBLIC
 void callback_call_f(float (*callback) (float))
 {
-	callback(0.0f);
-	callback(1.1f);
-	callback(-1.1f);
-	callback(129.984375f);
-	callback(-129.984375f);
+	printf(" = %f\n", callback(0.0f)); fflush(stdout);
+	printf(" = %f\n", callback(1.1f)); fflush(stdout);
+	printf(" = %f\n", callback(-1.1f)); fflush(stdout);
+	printf(" = %f\n", callback(129.984375f)); fflush(stdout);
+	printf(" = %f\n", callback(-129.984375f)); fflush(stdout);
 }
 
 PUBLIC
 void callback_call_d(double (*callback) (double))
 {
-	callback(0.0);
-	callback(1.1);
-	callback(-1.1);
-	callback(129.984375);
-	callback(-129.984375);
+	printf(" = %f\n", callback(0.0)); fflush(stdout);
+	printf(" = %f\n", callback(1.1)); fflush(stdout);
+	printf(" = %f\n", callback(-1.1)); fflush(stdout);
+	printf(" = %f\n", callback(129.984375)); fflush(stdout);
+	printf(" = %f\n", callback(-129.984375)); fflush(stdout);
 }
 
 PUBLIC
 void callback_call_ifif(float (*callback) (int, float, int, float))
 {
-	callback(0, 0.0f, 0, 0);
-	callback(1, 1.1f, -2, -2.2f);
-	callback(-1, -1.1f, 2, 2.2f);
-	callback(999999, -129.984375f, 111111, -16.201171875);
-	callback(-999999, 129.984375, -111111, 16.201171875);
+	printf(" = %f\n", callback(0, 0.0f, 0, 0)); fflush(stdout);
+	printf(" = %f\n", callback(1, 1.1f, -2, -2.2f)); fflush(stdout);
+	printf(" = %f\n", callback(-1, -1.1f, 2, 2.2f)); fflush(stdout);
+	printf(" = %f\n", callback(999999, -129.984375f, 111111, -16.201171875)); fflush(stdout);
+	printf(" = %f\n", callback(-999999, 129.984375, -111111, 16.201171875)); fflush(stdout);
 }
 
 PUBLIC
 void callback_call_ifid(double (*callback) (int, float, int, double))
 {
-	callback(0, 0.0f, 0, 0);
-	callback(1, 1.1f, -2, -2.2f);
-	callback(-1, -1.1f, 2, 2.2f);
-	callback(999999, -129.984375f, 111111, -16.201171875);
-	callback(-999999, 129.984375, -111111, 16.201171875);
+	printf(" = %f\n", callback(0, 0.0f, 0, 0)); fflush(stdout);
+	printf(" = %f\n", callback(1, 1.1f, -2, -2.2f)); fflush(stdout);
+	printf(" = %f\n", callback(-1, -1.1f, 2, 2.2f)); fflush(stdout);
+	printf(" = %f\n", callback(999999, -129.984375f, 111111, -16.201171875)); fflush(stdout);
+	printf(" = %f\n", callback(-999999, 129.984375, -111111, 16.201171875)); fflush(stdout);
 }
 
 
