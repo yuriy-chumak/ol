@@ -183,6 +183,10 @@ object_t
 //static_assert(sizeof(struct object_t) == sizeof(word), "Minimal size of object_t structure should be equal to size of virtual machine word");
 
 // ------------------------------------------------------
+#ifndef OLVM_ANSI_INT_LIMITS
+#define OLVM_ANSI_INT_LIMITS 0
+#endif
+
 // floating point numbers (inexact numbers in terms of lisp) support
 #ifndef OLVM_INEXACTS
 #define OLVM_INEXACTS 1
@@ -696,11 +700,18 @@ word*p = new (TVECTOR, 13);\
 		})\
 	));})
 
-// special case (_v != INT_T_MIN): val == minimal applicable integer for selected word width (INT_T_MIN macro)
-// -2147483648 for 32-bit and -9223372036854775808 for 64-bit
+// special case (_v == INT_T_MIN) if no OLVM_ANSI_INT_LIMITS:
+//   val == minimal applicable integer for selected word width (INT_T_MIN value)
+//   that is equal to -2147483648 for 32-bit and -9223372036854775808 for 64-bit
 // in this case -val cenverts into "0" by machine math and we got invalid value
-// so we need to compare val with INT_T_MIN and use a longer converter
-// I hope this will not do slower code
+//   so we need to compare val with INT_T_MIN and use a longer converter
+
+#if OLVM_ANSI_INT_LIMITS
+# define NOT_A_MIN_INT(i) (1)
+#else
+# define NOT_A_MIN_INT(i) (i != INT_T_MIN)
+#endif
+
 #define new_snumber(val)  ({ \
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
 		(word*)make_enum(val), \
@@ -708,9 +719,9 @@ word*p = new (TVECTOR, 13);\
 		(word*)({ \
 			typeof(val) _v = (val); \
 			big_t _x = _v < 0 ? (big_t)(-_v) : (big_t)_v; \
-			(_x < (big_t)HIGHBIT) && (_v != INT_T_MIN) ? \
+			(_x < (big_t)HIGHBIT) && NOT_A_MIN_INT(_v) ? \
 					(word)make_value(_v < 0 ? TENUMN : TENUMP, (word)_x): \
-			(_x < (big_t)HIGHBIT*(big_t)HIGHBIT) && (_v != INT_T_MIN) ? \
+			(_x < (big_t)HIGHBIT*(big_t)HIGHBIT) && NOT_A_MIN_INT(_v) ? \
 					(word)new_list(_v < 0 ? TINTN : TINTP, \
 							make_enump(_x & VMAX), \
 							make_enump(_x >> VBITS)): \
@@ -723,7 +734,7 @@ word*p = new (TVECTOR, 13);\
 		(word*)({ \
 			typeof(val) _v = (val); \
 			word _x = (_v < 0) ? (word)(-_v) : (word)_v; \
-			(_x < (word)HIGHBIT) && (_v != INT_T_MIN) ? \
+			(_x < (word)HIGHBIT) && NOT_A_MIN_INT(_v) ? \
 					(word)make_value(_v < 0 ? TENUMN : TENUMP, _x): \
 					(word)new_list(_v < 0 ? TINTN : TINTP, \
 							make_enump(_x & VMAX), \
