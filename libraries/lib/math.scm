@@ -4,7 +4,8 @@
       (otus ffi) (owl math))
    (export
       exp log sin cos tan
-      asin acos atan sqrt)
+      asin acos atan sqrt
+      atan2)
 
 (cond-expand
    (Linux (begin
@@ -26,6 +27,7 @@
    (define asin (libm fft-double "asin" fft-double))
    (define acos (libm fft-double "acos" fft-double))
    (define atan (libm fft-double "atan" fft-double))
+   (define atan2 (libm fft-double "atan2" fft-double fft-double))
    ; procedure: atan y x
    (define _sqrt (libm fft-double "sqrt" fft-double))
    (define (sqrt x)
