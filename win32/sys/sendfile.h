@@ -1,6 +1,7 @@
 #pragma once
-# ifdef _WIN32
+#ifdef _WIN32
 
+#if HAS_SOCKETS
 size_t
 sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 {
@@ -43,4 +44,6 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 	}
 	return totSent;
 }
-# endif
+#endif
+
+#endif//_WIN32

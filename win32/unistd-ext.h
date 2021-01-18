@@ -51,7 +51,7 @@ ssize_t readEx(int fd, void *buf, size_t size)
 
 	if (got == -1) {
 		switch (errno) {
-#ifdef HAS_SOCKETS
+#if HAS_SOCKETS
 		case EBADF: // have we tried to read from socket?
 			got = recv(fd, (char *) buf, size, 0);
 			if (got < 0 && WSAGetLastError() == WSAEWOULDBLOCK)
@@ -90,10 +90,13 @@ ssize_t writeEx(int fd, void *buf, size_t size)
 	// regular writing (files and pipes)
 	wrote = write(fd, buf, size);
 
+#if HAS_SOCKETS
 	// sockets workaround
 	if (wrote == -1 && errno == EBADF) {
 		wrote = send(fd, buf, size, 0);
 	}
+#endif
+
 	return wrote;
 }
 #define write writeEx

@@ -1074,7 +1074,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 
 #ifndef HAS_SENDFILE
 # if defined(_WIN32) || defined(__linux__)
-#define HAS_SENDFILE 1
+#define HAS_SENDFILE HAS_SOCKETS
 # else
 #define HAS_SENDFILE 0
 # endif
@@ -3555,11 +3555,13 @@ loop:;
 				if (ol->close(portfd, ol) == 0)
 					r = (word*)ITRUE;
 #ifdef _WIN32
+#	if HAS_SOCKETS
 				// Win32 socket workaround
 				else if (errno == EBADF) {
 					if (closesocket(portfd) == 0)
 						r = (word*)ITRUE;
 				}
+#	endif
 #endif
 				break;
 			}

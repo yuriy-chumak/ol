@@ -2763,7 +2763,8 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 			# define c2ol_value(type) \
 			type value = i < 5 \
 					? *(type*) &argi[i] \
-					: *(type*) &rest[i-5];
+					: *(type*) &rest[i-5];\
+			i++;
 			#else
 			# define c2ol_value(type) \
 			type value = i < 6 \
@@ -2831,9 +2832,9 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 			float
 			#if __amd64__ || __aarch64__
 				#if _WIN64
-				value = i <= 4
+				value = i < 4
 				        ? *(float*) &argf[i]
-				        : *(float*) &rest[i-6];
+				        : *(float*) &rest[i-4];
 				i++;
 				#else
 				value = j < 8

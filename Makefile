@@ -275,6 +275,24 @@ olvm.wasm: src/olvm.c include/olvm.h
 # 	  -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
 # 	  --memory-init-file 0
 
+# You can debug ol using "winedbg --gdb ol.exe"
+# require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
+ol32.exe: CC=i686-w64-mingw32-gcc
+ol32.exe: ol.exe
+
+ol64.exe: CC=x86_64-w64-mingw32-gcc
+ol64.exe: ol.exe
+
+ol.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
+ol.exe: MINGWCFLAGS += -DHAS_DLOPEN=1
+ol.exe: MINGWCFLAGS += -DHAS_SOCKES=1
+ol.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
+ol.exe: src/olvm.c include/olvm.h tmp/repl.c
+	$(CC) src/olvm.c tmp/repl.c -o $@\
+	   -DOLVM_FFI=1 -Iwin32 -Isrc extensions/ffi.c\
+	   $(MINGWCFLAGS) -lws2_32
+	@echo Ok.
+
 # compiling the Ol language
 recompile: boot.fasl
 boot.fasl: CFLAGS += $(CFLAGS_RELEASE) # will rebuild in release, for speed
