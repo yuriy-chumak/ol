@@ -347,12 +347,6 @@ libraries/lib/x11/config.scm:
 	))" >$@
 endif
 
-# embed sample
-embed: tests/embed.c src/olvm.c extensions/embed.h tmp/repl.c
-	$(CC) tests/embed.c src/olvm.c tmp/repl.c -std=c99 -ldl -DEMBEDDED_VM -DHAS_DLOPEN=1 -DOLVM_FFI=1 -o embed \
-	-Xlinker --export-dynamic -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
-
-
 # --------------------------------------------------------------------
 # | ARM Core | Command Line Options                       | multilib |
 # |----------|--------------------------------------------|----------|
