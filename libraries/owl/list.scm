@@ -11,7 +11,6 @@
       all some
       smap unfold
       take-while                ;; pred, lst -> as, bs
-      fold2
       first
       halve
 
@@ -68,12 +67,6 @@
             null
             (lets ((this st (op st)))
                (cons this (unfold op st end?)))))
-
-      (define (fold2 op s1 s2 lst)
-         (if (null? lst)
-            (values s1 s2)
-            (lets ((s1 s2 (op s1 s2 (car lst))))
-               (fold2 op s1 s2 (cdr lst)))))
 
       (define (foldr op st lst)
          (if (null? lst)

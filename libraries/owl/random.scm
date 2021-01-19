@@ -55,6 +55,12 @@
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
+      (define (fold2 op s1 s2 lst)
+         (if (null? lst)
+            (values s1 s2)
+            (lets ((s1 s2 (op s1 s2 (car lst))))
+               (fold2 op s1 s2 (cdr lst)))))
+
       ;;;
       ;;; Pseudorandom data generators
       ;;;
