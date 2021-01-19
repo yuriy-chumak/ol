@@ -63,7 +63,16 @@
 
    (include "owl/unicode-char-folds.scm")
 
+   ; ------------------------------------
    (begin
+      (define (string? o)
+         (case (type o)
+            (type-string #true)
+            (type-string-wide #true)
+            (type-string-dispatch #true)
+            (else #false)))
+
+
       (define o (λ (f g) (λ (x) (f (g x)))))
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -177,10 +186,12 @@
       (define (render-quoted-string str tl)
          (str-foldr encode-quoted-point tl str))
 
-      (define (symbol->string ob)
-         (ref ob 1))
+      (define (symbol->string str)
+         (if (symbol? str)
+            (ref str 1)))
       (define (string->symbol str)
-         (interact 'intern str)) ; do not works without (lang intern)
+         (if (string? str)
+            (interact 'intern str))) ; do not works without (lang intern)
 
 
       ;; making strings (temp)
@@ -406,14 +417,6 @@
                null)))
 
       ; fixme: incomplete, added because needed for ascii range elsewhere
-
-      (define (string? o)
-         (case (type o)
-            (type-string #true)
-            (type-string-wide #true)
-            (type-string-dispatch #true)
-            (else #false)))
-
       (define string=? string-eq?)
       (define (string-ci=? a b) (eq? 2 (str-compare upcase a b)))
 

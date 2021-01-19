@@ -12,6 +12,7 @@
 
       ; parser
       number get-number
+      whitespace
       ;; get-symbol
 
       get-sexps
@@ -244,10 +245,39 @@
                 (skip (block-comment)))
                skip)))
 
+      ;; ; List of Unicode Characters of Category "Space Separator" (Zs, Space_Separator)
+      ;; ; note: no zero-width spaces will use (U+180E, U+200B, U+FEFF)
+      ;; (define (putt ff key) (put ff key #true))
+      ;; (setq spaces (fold putt {} '(
+      ;;    #\space ; Space, SP
+      ;;    #x000A0 ; No-Break Space
+      ;;    #x01680 ; Ogham Space Mark
+      ;;    #x02000 ; En Quad
+      ;;    #x02001 ; Em Quad
+      ;;    #x02002 ; En Space
+      ;;    #x02003 ; Em Space
+      ;;    #x02004 ; Three-Per-Em Space
+      ;;    #x02005 ; Four-Per-Em Space
+      ;;    #x02006 ; Six-Per-Em Space
+      ;;    #x02007 ; Figure Space
+      ;;    #x02008 ; Puctuation Space
+      ;;    #x02009 ; Thin Space
+      ;;    #x0200A ; Hair Space
+      ;;    #x0202F ; Narrow No-Break Space (NNBSP)
+      ;;    #x0205F ; Mediaum Mathematical Space (MMSP)
+      ;;    #x03000 ; Ideographic Space, used by oriental languages
+      ;; )))
+      ;; (setq whitespaces (fold putt spaces
+      ;;    '(#\tab #\newline #\return)))
+
       (define whitespace
+         (byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
+         ;; (byte-if (lambda (x) (getf whitespaces x))))
+
+      (define whitespace-or-comment
          (any-of
             ;get-hashbang   ;; actually probably better to make it a symbol as above
-            (byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x)))
+            whitespace
             (let-parse*
                ((skip (imm #\;))
                 (skip rest-of-line))
@@ -258,8 +288,7 @@
                 (skip (block-comment)))
                'comment)))
 
-      (define maybe-whitespace (greedy* whitespace))
-      ;; (define whitespaces (greedy+ whitespace))
+      (define maybe-whitespace (greedy* whitespace-or-comment))
 
       (define (list-of parser)
          (let-parse*
