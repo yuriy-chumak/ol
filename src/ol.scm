@@ -353,7 +353,7 @@
                                        (cons '*sandbox* sandbox?)))))
                            ; go:
                            (if sandbox?
-                              (sandbox 1)) ;(sandbox megs) - check is memory enough
+                              (sandbox 1)) ;todo: (sandbox megs) - check is memory enough
 
                            ; ohai:
                            (if interactive?
