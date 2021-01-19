@@ -17,3 +17,15 @@ jobs:
 
     - name: Build with CI build script
       run: 'make describe tests rosettacode'
+
+  win-build:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install MinGW toolchain
+      run: sudo apt-get install gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev
+
+    - name: Build with CI build script
+      run: 'make ol64.exe'
