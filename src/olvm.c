@@ -2,10 +2,10 @@
  <pre>
  *         Simple purely functional Lisp!
  *                                               `___`
- *  Copyright(c) 2014 - 2020 Yuriy Chumak        (O,O)
+ *  Copyright(c) 2014 - 2021 Yuriy Chumak        (O,O)
  *                                               (  /(
  *                                           - ---"-"--- -
- *      Version 2.1.2
+ *      Version 2.2
  </pre>
  * - - -
  * #### LICENSE
@@ -858,7 +858,7 @@ inexact_t f = (inexact_t) a;\
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
-#define __OLVM_VERSION__ "2.1"
+#define __OLVM_VERSION__ "2.2"
 #endif
 #ifndef lint
 __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
@@ -4999,7 +4999,7 @@ int main(int argc, char** argv)
 	}
 	if (argc == 2 && strcmp(argv[1], "--version") == 0) {
 		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
-		// E("Copyright (c) 2020 Yuriy Chumak");
+		// E("Copyright (c) 2021 Yuriy Chumak");
 		// E("License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>");
 		// E("License MIT: <https://en.wikipedia.org/wiki/MIT_License>");
 		// E("This is free software: you are free to change and redistribute it.");

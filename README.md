@@ -14,7 +14,7 @@
 [![Github build ol status](https://github.com/yuriy-chumak/ol/workflows/build%20ol/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
 
 
-Otus Lisp, Version 2.1
+Otus Lisp, Version 2.2
 ======================
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
@@ -36,7 +36,7 @@ Otus Lisp is available under 2 licenses:
 
 Copyright (c) 2011-2014 Aki Helin
 
-Copyright (c) 2014-2020 Yuriy Chumak
+Copyright (c) 2014-2021 Yuriy Chumak
 
 
 SUPPORT
@@ -332,7 +332,7 @@ There are few ways to execute ol
 
 ```scheme
 $ ol
-Welcome to Otus Lisp 2.1,
+Welcome to Otus Lisp 2.2,
 type ',help' to help, ',quit' to end session.
 ; now you in REPL and can play with in
 > (+ 1 2 3)

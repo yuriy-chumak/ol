@@ -3,7 +3,7 @@
 ;;;
 
 #| Copyright(c) 2012 Aki Helin
- | Copyright(c) 2014 - 2020 Yuriy Chumak
+ | Copyright(c) 2014 - 2021 Yuriy Chumak
  |
  | This program is free software;  you can redistribute it and/or
  | modify it under the terms of the GNU General Public License as
@@ -56,8 +56,6 @@
 
 (define *path* '("." "libraries")) ;; now we can do (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
-(define *ol-version* "2.1") ;; http://semver.org/lang/ru/
-
 (define *loaded* '())   ;; can be removed soon, used by old ,load and ,require
 
 (import (otus lisp))
@@ -345,7 +343,7 @@
                                                                                  (else
                                                                                     *features*))))
                                                                (*features* (let ((uname (syscall 63)))
-                                                                              (if (vector? uname)
+                                                                              (if uname
                                                                                  (append *features* (list
                                                                                        (string->symbol (ref uname 1))  ; OS
                                                                                        (string->symbol (ref uname 5)))) ; Platform
