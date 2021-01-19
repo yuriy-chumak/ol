@@ -27,7 +27,7 @@
       + - * = /
       << >>
       band bor bxor
-      div ediv rem mod quotrem mod divmod
+      div ediv rem mod quotrem divmod
       add nat-succ sub mul big-bad-args negate
       gcd gcdl lcm
       min max minl maxl
@@ -1444,21 +1444,21 @@
                   (type-enum- (fx% a b))
                   (type-int+ a)
                   (type-int- a)
-                  (else (big-bad-args 'mod a b))))
+                  (else (big-bad-args 'remainder a b))))
             (type-enum-
                (case (type b)
                   (type-enum+ (negate (fx% a b)))
                   (type-enum- (negate (fx% a b)))
                   (type-int+ a)
                   (type-int- a)
-                  (else (big-bad-args 'mod a b))))
+                  (else (big-bad-args 'remainder a b))))
             (type-int+
                (case (type b)
                   (type-enum+ (values-apply (qr-big-small a b) (lambda (q r) r)))
                   (type-enum- (values-apply (qr-big-small a b) (lambda (q r) r)))
                   (type-int+ (nat-rem a b))
                   (type-int- (nat-rem a (negate b)))
-                  (else (big-bad-args 'mod a b))))
+                  (else (big-bad-args 'remainder a b))))
             (type-int-
                (case (type b)
                   (type-enum+
@@ -1469,16 +1469,11 @@
                         (lambda (q r) (negate r))))
                   (type-int+ (negate (nat-rem (negate a) b)))
                   (type-int- (negate (nat-rem (negate a) (negate b))))
-                  (else (big-bad-args 'rem a b))))
-            (else (big-bad-args 'rem a b))))
+                  (else (big-bad-args 'remainder a b))))
+            (else (big-bad-args 'remainder a b))))
 
       (define rem remainder)
       (define div quotient)
-
-      ; fixme, only true when the signs are the same, but left here as a placeholder
-
-      ;(print "math.scm: fix mod")
-      (define mod rem)
 
       ; required when (quotrem a b) -> q,r and b != 0
       ;   a = q*b + r
@@ -2117,7 +2112,7 @@
             a
             (div (abs (mul a b)) (gcd a b))))
 
-      (define (mod a b)
+      (define (modulo a b)
          (if (negative? a)
             (if (negative? b)
                (remainder a b)
@@ -2132,7 +2127,7 @@
                      (add b r)))
                (remainder a b))))
 
-      (define modulo mod)
+      (define mod modulo)
 
 
       ;;;
