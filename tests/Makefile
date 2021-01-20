@@ -4,7 +4,7 @@ ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
 else
 
-FAILED := $(shell mktemp -u)
+FAILED := $(shell mktemp /tmp/failed.XXXXXXXXX -u)
 
 ok:="\033[1;32mok\033[0m"
 failed:="\033[1;31mfailed\033[0m"
@@ -269,58 +269,29 @@ else
 endif
 	@echo "."
 
+
+define testok
+	@if ([ -f $1 ]); then\
+		printf ", $2: ";\
+		if ([ -f $^.in ] && $1 repl $^ <$^.in || $1 repl $^) | diff - $^.ok >/dev/null; then\
+			printf $(ok) ;\
+		else \
+			printf $(failed);\
+			touch $(FAILED);\
+		fi;\
+	fi
+endef
+
 %.scm.ok: %.scm
 	@printf "Testing $^ ..."
-ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
-ifeq ($(HAS_32CDEFS),1)
-	@printf ", debug-32: "
-	@if ([ -f $^.in ] && $(vm)d32 repl $^ <$^.in || $(vm)d32 repl $^) | diff - $^.ok >/dev/null; then\
-	   printf $(ok) ;\
-	else \
-	   printf $(failed) ;\
-	   touch $(FAILED) ;\
-	fi
-	@printf ", release-32: "
-	@if ([ -f $^.in ] && $(vm)r32 repl $^ <$^.in || $(vm)r32 repl $^) | diff - $^.ok >/dev/null; then\
-	   printf $(ok) ;\
-	else \
-	   printf $(failed) ;\
-	   touch $(FAILED) ;\
-	fi
-endif
-ifeq ($(HAS_64CDEFS),1)
-	@printf ", debug-64: "
-	@if ([ -f $^.in ] && $(vm)d64 repl $^ <$^.in || $(vm)d64 repl $^) | diff - $^.ok >/dev/null; then\
-	   printf $(ok) ;\
-	else \
-	   printf $(failed) ;\
-	   touch $(FAILED) ;\
-	fi
-	@printf ", release-64: "
-	@if ([ -f $^.in ] && $(vm)r64 repl $^ <$^.in || $(vm)r64 repl $^) | diff - $^.ok >/dev/null; then\
-	   printf $(ok) ;\
-	else \
-	   printf $(failed) ;\
-	   touch $(FAILED) ;\
-	fi
-endif
-else
-	@printf ", debug: "
-	@if ([ -f $^.in ] && $(vm)d repl $^ <$^.in || $(vm)d repl $^) | diff - $^.ok >/dev/null; then\
-	   printf $(ok) ;\
-	else \
-	   printf $(failed) ;\
-	   touch $(FAILED) ;\
-	fi
-	@printf ", release: "
-	@if ([ -f $^.in ] && $(vm)r repl $^ <$^.in || $(vm)r repl $^) | diff - $^.ok >/dev/null; then\
-	   printf $(ok) ;\
-	else \
-	   printf $(failed) ;\
-	   touch $(FAILED) ;\
-	fi
-endif
-	@echo "."
+	$(call testok,$(vm)d,debug)
+	$(call testok,$(vm)d32,debug-32)
+	$(call testok,$(vm)d64,debug-64)
+	$(call testok,$(vm)r,release)
+	$(call testok,$(vm)r32,release-32)
+	$(call testok,$(vm)r64,release-64)
+	@printf ".\n"
+# 	# if exist ol32.exe and ol64.exe then do windows tests
 
 
 # -=( tests )=-------------------------------------
