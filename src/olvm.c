@@ -783,8 +783,8 @@ word*p = new (TVECTOR, 13);\
 #define numberp(num)  unumber(num) // deprecated
 #define number(num)  ({\
 	word* x = (word*) (num);\
-	is_numberp(x) ?  numberp(x) :\
-	is_numbern(x) ? -numberp(x) :\
+	is_numberp(x) ?  unumber(x) :\
+	is_numbern(x) ? -unumber(x) :\
 	0; })
 
 // -= остальные аллокаторы =----------------------------
@@ -974,6 +974,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 	// conform to the SUSv3 standards
 #	define _DARWIN_C_SOURCE
 #endif
+
+// ---------------------------------------------------------
 // максимальные атомарные числа для элементарной математики:
 //	для 32-bit: 16777215 (24 бита, 0xFFFFFF)
 //  для 64-bit: 72057594037927935 (56 бит, 0xFFFFFFFFFFFFFF)
@@ -5457,7 +5459,7 @@ word OL_unpin(struct ol_t* ol, size_t p)
 word OL_apply(struct ol_t* ol, word object, word args)
 {
 	ol->this = object; // lambda для обратного вызова
-//	ol->ticker = ol->bank ? ol->bank : 999; // зачем это? а не надо, так как без потоков работаем
+//	ol->ticker = ol->bank ? ol->bank : 999;
 //	ol->bank = 0;
 	// assert (is_reference(ol->this));
 	// assert (reference_type(ol->this) != TTHREAD);

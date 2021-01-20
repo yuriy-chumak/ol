@@ -2295,7 +2295,7 @@ word* OL_ffi(OL* this, word* arguments)
 	switch (returntype) {
 		// TENUMP - deprecated
 		case TENUMP: // type-enum+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) make_enum(got);
+			result = (word*) make_enum (got);
 			break;
 
 		case TINT8:
