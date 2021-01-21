@@ -6,6 +6,10 @@ else
 
 FAILED := $(shell mktemp /tmp/failed.XXXXXXXXX -u)
 
+MINGW32Q := $(shell which i686-w64-mingw32-gcc >/dev/null && echo 1)
+MINGW64Q := $(shell which x86_64-w64-mingw32-gcc >/dev/null && echo 1)
+WINEQ    := $(shell which wine >/dev/null && echo 1)
+
 ok:="\033[1;32mok\033[0m"
 failed:="\033[1;31mfailed\033[0m"
 
@@ -38,6 +42,35 @@ vm64: src/olvm.c include/olvm.h
 	   $(L) -m64 -DOLVM_FFI=0 \
 	   $(CFLAGS)
 	@echo Ok.
+
+# -------------
+# win
+define winbuild
+	$(CC) src/olvm.c -DNAKED_VM -o $1 \
+	   -DOLVM_FFI=1 -Iwin32 -Isrc extensions/ffi.c\
+	   -std=gnu99 -fno-exceptions -lws2_32\
+	   -DHAS_DLOPEN=1 -DHAS_SOCKES=1 $2
+	@echo Ok.
+endef
+
+ifeq ($(MINGW32Q),1)
+tmp/ol32d.exe: CC=i686-w64-mingw32-gcc
+tmp/ol32d.exe: src/olvm.c
+	$(call winbuild,$@,$(CFLAGS_DEBUG))
+tmp/ol32r.exe: CC=i686-w64-mingw32-gcc
+tmp/ol32r.exe: src/olvm.c
+	$(call winbuild,$@,$(CFLAGS_RELEASE))
+endif
+ifeq ($(MINGW64Q),1)
+tmp/ol64d.exe: CC=x86_64-w64-mingw32-gcc
+tmp/ol64d.exe: src/olvm.c
+	$(call winbuild,$@,$(CFLAGS_DEBUG))
+tmp/ol64r.exe: CC=x86_64-w64-mingw32-gcc
+tmp/ol64r.exe: src/olvm.c
+	$(call winbuild,$@,$(CFLAGS_RELEASE))
+endif
+
+
 
 test32: $(wildcard tests/*.scm)
 	@echo "-- test32 ----------"
@@ -171,24 +204,31 @@ vm-release-64: vm-release
 endif
 
 testing-binaries:
+	@echo "Building test binaries:"
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
-ifeq ($(HAS_32CDEFS)$(HAS_64CDEFS),11)
-	@printf "Building test binaries (debug and release, 32-bit and 64-bit versions both)... "
-endif
-ifeq ($(HAS_32CDEFS)$(HAS_64CDEFS),10)
-	@printf "Building test binaries (debug and release, 32-bit versions)... "
-endif
-ifeq ($(HAS_32CDEFS)$(HAS_64CDEFS),01)
-	@printf "Building test binaries (debug and release, 64-bit versions)... "
-endif
-
 ifeq ($(HAS_32CDEFS),1)
+	@printf "    linux 32-bit debug and release versions... "
 	@$(MAKE) -s vm-debug-32
 	@$(MAKE) -s vm-release-32
+	@echo $(ok)
 endif
 ifeq ($(HAS_64CDEFS),1)
+	@printf "    linux 64-bit debug and release versions... "
 	@$(MAKE) -s vm-debug-64
 	@$(MAKE) -s vm-release-64
+	@echo $(ok)
+endif
+ifeq ($(MINGW32Q),1)
+	@printf "    mingw 32-bit debug and release versions... "
+	@$(MAKE) -s tmp/ol32d.exe
+	@$(MAKE) -s tmp/ol32r.exe
+	@echo $(ok)
+endif
+ifeq ($(MINGW64Q),1)
+	@printf "    mingw 64-bit debug and release versions... "
+	@$(MAKE) -s tmp/ol64d.exe
+	@$(MAKE) -s tmp/ol64r.exe
+	@echo $(ok)
 endif
 	@echo "built."
 else
@@ -273,7 +313,7 @@ endif
 define testok
 	@if ([ -f $1 ]); then\
 		printf ", $2: ";\
-		if ([ -f $^.in ] && $1 repl $^ <$^.in || $1 repl $^) | diff - $^.ok >/dev/null; then\
+		if ([ -f $^.in ] && $3 $1 repl --home=libraries $^ <$^.in || $3 $1 repl --home=libraries $^) | diff --strip-trailing-cr - $^.ok >/dev/null; then\
 			printf $(ok) ;\
 		else \
 			printf $(failed);\
@@ -290,9 +330,13 @@ endef
 	$(call testok,$(vm)r,release)
 	$(call testok,$(vm)r32,release-32)
 	$(call testok,$(vm)r64,release-64)
+ifeq ($(WINEQ),1)
+	$(call testok,tmp/ol32d.exe,win-debug-32,wine)
+	$(call testok,tmp/ol32r.exe,win-release-32,wine)
+	$(call testok,tmp/ol64d.exe,win-debug-64,wine)
+	$(call testok,tmp/ol64r.exe,win-release-64,wine)
+endif
 	@printf ".\n"
-# 	# if exist ol32.exe and ol64.exe then do windows tests
-
 
 # -=( tests )=-------------------------------------
 tests: testing-binaries
