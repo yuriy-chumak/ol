@@ -399,21 +399,9 @@
       ;; ;; this api is kind of ugly, simplify
       ;; ;; this is badly named when prefixed as usual. parse?
       (define (try-parse parser data show-error)
-         (let loop ((try (λ () (parser #null data 0 parser-succ))))
-            (let* ((l r p val (try)))
-               (cond
-                  ((not l)
-                     ;; (if fail-fn
-                     ;;    (loop (λ () (fail-fn 0 #n)))
-                     ;;    #false))
-                     #false) ; todo: print an error
-                  ((lpair? r)
-                     (cons val r))
-                     ;; (λ (r)
-                     ;;    (loop (λ () (backtrack l r p "trailing garbage")))))
-                  (else
-                     ;; full match
-                     (list val)))))) ; '(val . #null)
+         (let* ((l r p val (parser #null data 0 parser-succ)))
+            (unless (not l)
+               (cons val r)))) ; '(val . #null) in case of full match
 
       (define (parse parser data unused-path errmsg fail-val) ; todo: use path
          (let loop ((try (λ () (parser #null data 0 parser-succ))))
