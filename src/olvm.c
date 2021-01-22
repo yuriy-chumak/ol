@@ -1455,7 +1455,8 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 #define NR                          256 // see n-registers in register.scm
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
-#define MEMPAD                     (1024) // резервируемое место для работы apply в памяти
+#define MEMPAD                     (1024) // space after end of heap to guarantee apply
+
 // 1024 - некое магическое число, подразумевающее количество
 // памяти, используемой между вызовами apply. мои тесты пока показывают максимальное число 32
 
@@ -1530,12 +1531,12 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		return 0;
 
 	word *old = heap->begin;
-	heap->begin = realloc(heap->begin, (cells + GCPAD(NR)) * sizeof(word));
+	heap->begin = realloc(heap->begin, (cells + GCPAD(NR) + MEMPAD) * sizeof(word));
     if (heap->begin == NULL) {
         D("heap reallocation failed! %ld->%ld", heap->end - old, (long)(cells + GCPAD(NR)));
-        exit(1); // todo: manage memory issues
+        exit(1); // todo: manage memory issues by longjmp
     }
-	heap->end = heap->begin + cells;
+	heap->end = heap->begin + cells; // so, heap->end is not actual heap end, we have a "safe" bytes after
 
 	if (heap->begin == old) // whee, no heap slide \o/
 		return 0;
@@ -1655,13 +1656,15 @@ word *sweep(word* end, heap_t* heap)
 }
 
 //__attribute__ ((aligned(sizeof(word))))
-// query: запрос на выделение query слов
+// heap: heap
+// query: sure to be able to alloc query words
+// regs: registers
 static
 word gc(heap_t *heap, int query, word regs)
 {
 	word *fp;
-	if (query == 0) // сделать полную сборку?
-		heap->genstart = heap->begin; // start full generation
+	if (query == 0) // do the full gc?
+		heap->genstart = heap->begin; // reset generations
 
 	fp = heap->fp;
 	{
@@ -1694,20 +1697,18 @@ word gc(heap_t *heap, int query, word regs)
 					((regs - (word)heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)),
 					(unsigned)((word) heap->end - regs), (long long int)marked
 				);
-		//				-1, -1, -1, -1);
 		}
 		#endif
 	}
 	heap->fp = fp;
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
-	query += MEMPAD; // гарантия места для apply
 
 	ptrdiff_t hsize = heap->end - heap->begin; // вся куча в словах
 	ptrdiff_t nfree = heap->end - (word*)regs; // свободно в словах
 	ptrdiff_t nused = hsize - nfree;           // использовано слов
 
-	nused += query; // увеличим на запрошенное количество
+	nused += query; // сколько у нас должно скоро стать занятого места
 	if (heap->genstart == heap->begin) {
 		// напоминаю, сюда мы попадаем только после полной(!) сборки
 
@@ -1715,8 +1716,8 @@ word gc(heap_t *heap, int query, word regs)
 		//  https://blog.mozilla.org/nnethercote/2014/11/04/please-grow-your-buffers-exponentially/
 		//  ! https://habrahabr.ru/post/242279/
 
-		// выделим на "старое" поколение не менее 50% кучи, при этом кучу будем увеличивать на 33%
-		// !!! множитель регулярного увеличения кучи должен быть меньше золотого сечения: 1.618
+		// выделим на "старое" поколение не более 50% кучи, при этом кучу будем увеличивать на 33%
+		// note!: множитель регулярного увеличения кучи должен быть меньше золотого сечения: 1.618
 		if (nused > (hsize / 2)) {
 			if (nused < hsize)
 				nused = hsize;
@@ -2017,8 +2018,7 @@ static int OL_gc(struct ol_t* ol, int ws) // ws - required size in words
 	word *fp = ol->heap.fp; // memory allocation pointer
 
 	// если места еще хватит, не будем ничего делать
-	// TODO: переделать на другую проверку
-	if ((ws != 0) && ((fp + ws) < (ol->heap.end - MEMPAD))) // TODO: (-MEMPAD) - спорно!
+	if ((ws != 0) && ((fp + ws) < ol->heap.end))
 		return 0;
 
 	word* R = ol->R;
@@ -2235,7 +2235,7 @@ apply:;
 		// если места в буфере не хватает, то мы вызываем GC,
 		//	а чтобы автоматически подкорректировались регистры,
 		//	мы их складываем в память во временный объект.
-		if (fp >= heap->end - MEMPAD) { // TODO: переделать
+		if (fp >= heap->end) {
 			heap->fp = fp; ol->this = this;
 			heap->gc(ol, 1);
 			fp = heap->fp; this = ol->this;
@@ -2757,7 +2757,7 @@ loop:;
 
 				// эта проверка необходима, так как действительно можно
 				//	выйти за пределы кучи (репродюсится стабильно)
-				if (fp + len > heap->end - MEMPAD) {
+				if (fp + len > heap->end) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
@@ -2822,7 +2822,7 @@ loop:;
 
 				// эта проверка необходима, так как действительно можно
 				//	выйти за пределы кучи (репродюсится стабильно)
-				if (fp + len / sizeof(word) > heap->end - MEMPAD) {
+				if (fp + len / sizeof(word) > heap->end) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
@@ -3409,10 +3409,10 @@ loop:;
 #if defined(FIONREAD) && !defined(_WIN32)
 					if (ioctl(portfd, FIONREAD, count) == -1)
 #endif
-						count = ((heap->end - fp) - MEMPAD - 1) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
+						count = ((heap->end - fp) - 1) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
 
 				int words = ((count + W - 1) / W) + 1; // in words
-				if (fp + words > heap->end - MEMPAD) {
+				if (fp + words > heap->end) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
@@ -5203,9 +5203,9 @@ OL_new(unsigned char* bootstrap)
 
 	// в соответствии со стратегией сборки 50*1.3-33*0.9, и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
-	int required_memory_size = words*2 + MEMPAD;
+	int required_memory_size = words*2;
 
-	fp = heap->begin = (word*) malloc((required_memory_size + GCPAD(NR)) * sizeof(word)); // at least one argument string always fits
+	fp = heap->begin = (word*) malloc((required_memory_size + GCPAD(NR) + MEMPAD) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
 		E("Failed to allocate %d bytes in memory for vm", required_memory_size * sizeof(word));
 		goto fail;
