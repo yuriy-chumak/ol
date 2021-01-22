@@ -1154,6 +1154,94 @@ word* ul2ol(word**fpp, intmax_t val) {
 
 #	endif
 
+static
+char* chars2ol(char* ptr, word string)
+{
+	assert (is_string(string));
+	int size = rawstream_size(string);
+	memcpy(ptr, &car(string), size);
+
+	return ptr + size;
+}
+
+static
+char* wchars2utf8(char* ptr, word widestring)
+{
+	//assert (is_stringwide(widestring))
+
+	// utf-8 encoding
+	// we don't know actual length of encoded string
+	for (int i = 1; i <= reference_size(widestring); i++) {
+		int cp = value(ref(widestring, i));
+		if (cp < 0x80)
+			*ptr++ = cp;
+		else
+		if (cp < 0x0800) {
+			*ptr++ = 0xC0 | (cp >> 6);
+			*ptr++ = 0x80 | (cp & 0x3F);
+		}
+		else
+		if (cp < 0x10000) {
+			*ptr++ = 0xE0 | (cp >> 12);
+			*ptr++ = 0x80 | ((cp >> 6) & 0x3F);
+			*ptr++ = 0x80 | (cp & 0x3F);
+		}
+		else
+		if (cp < 0x110000) {
+			*ptr++ = 0xF0 | (cp >> 18);
+			*ptr++ = 0x80 | ((cp >> 12) & 0x3F);
+			*ptr++ = 0x80 | ((cp >> 6) & 0x3F);
+			*ptr++ = 0x80 | (cp & 0x3F);
+		}
+		else {
+			E("ffi error: invalid codepoint %x found.\n", cp);
+			*ptr++ = 0x7F;
+		}
+	}
+	return ptr;
+}
+
+static
+char* stringleaf2ol(char* ptr, word stringleaf)
+{
+	// assert (is_stringleaf(stringleaf));
+	int parts = reference_size(stringleaf) - 1;
+	for (int i = 0; i < parts; i++) {
+		word substr = ref(stringleaf, i + 2);
+		switch (reference_type(substr)) {
+		case TSTRING:
+			ptr = chars2ol(ptr, substr);
+			break;
+		case TSTRINGWIDE:
+			ptr = wchars2utf8(ptr, substr);
+			break;
+		case TSTRINGDISPATCH:
+			ptr = stringleaf2ol(ptr, substr);
+			break;
+		default:
+			E("ffi error: invalid stringdispatch element type %d.\n", reference_type(substr));
+			break;
+		}
+	}
+	return ptr;
+}
+
+static __inline__
+size_t string2ol(char* ptr, word string, char* (cpy)(char*,word))
+{
+	char* end = cpy(ptr, string);
+	*end++ = 0;
+	return end - ptr;
+}
+
+static
+char* not_a_string(char* ptr, word string)
+{
+	E("invalid parameter value (requested string)");
+	return ptr;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
 PUBLIC
@@ -1697,55 +1785,19 @@ word* OL_ffi(OL* this, word* arguments)
 
 		// todo: change to automaticly converting to 0-ending string
 		case TSTRING:
-		tstring:
-			switch (reference_type(arg)) {
-			case TSTRING: {
-				// todo: add check to not copy the zero-ended string
-				// note: no heap size cgecking required (done before)
-				int size = rawstream_size(arg);
-				char* zerostr = (char*)&car(new_bytevector (size+1));
-				memcpy(zerostr, &car(arg), size);  zerostr[size] = 0;
-				args[i] = (word)zerostr;
-				break;
-			}
-			case TSTRINGWIDE: {
-				// utf-8 encoding
-				char* ptr = (char*) (args[i] = (int_t) &fp[1]);
-				for (int i = 1; i <= reference_size(arg); i++) {
-					int cp = value(ref(arg, i));
-					if (cp < 0x80)
-						*ptr++ = cp;
-					else
-					if (cp < 0x0800) {
-						*ptr++ = 0xC0 | (cp >> 6);
-						*ptr++ = 0x80 | (cp & 0x3F);
-					}
-					else
-					if (cp < 0x10000) {
-						*ptr++ = 0xE0 | (cp >> 12);
-						*ptr++ = 0x80 | ((cp >> 6) & 0x3F);
-						*ptr++ = 0x80 | (cp & 0x3F);
-					}
-					else
-					if (cp < 0x110000) {
-						*ptr++ = 0xF0 | (cp >> 18);
-						*ptr++ = 0x80 | ((cp >> 12) & 0x3F);
-						*ptr++ = 0x80 | ((cp >> 6) & 0x3F);
-						*ptr++ = 0x80 | (cp & 0x3F);
-					}
-					else {
-						// printf("invalid codepoint");
-						*ptr++ = 0x7F;
-					}
-				}
-				*ptr++ = 0;
-				new_bytevector(ptr - (char*)&fp[1]);
-				break;
-			}
-			default:
-				E("invalid parameter values (requested string)");
-			}
+		tstring: {
+			// todo: add check to not copy the zero-ended string
+			// note: no heap size checking required (done before)
+			int stype = reference_type(arg);
+			char* ptr = (char*)(args[i] = (int_t) &fp[1]);
+			new_bytevector(string2ol(ptr, arg,
+				stype == TSTRING ? chars2ol :
+				stype == TSTRINGWIDE ? wchars2utf8 :
+				stype == TSTRINGDISPATCH ? stringleaf2ol :
+				not_a_string));
+
 			break;
+		}
 		case TSTRING + FFT_PTR: {
 			int size = llen(arg);
 
@@ -1758,112 +1810,15 @@ word* OL_ffi(OL* this, word* arguments)
 			word src = arg;
 			while (--size) {
                 word str = car(src);
-                // todo: move to function, use universal function to push objects
-                switch (reference_type(str)) {
-                case TSTRING: {
-                    // todo: add check to not copy the zero-ended string
-                    int length = rawstream_size(str);
-                    char* zerostr = (char*) &car(new_bytevector (length+1));
-                    memcpy(zerostr, &car(str), length); zerostr[length] = 0;
-                    *p++ = (word)zerostr;
-                    break;
-                }
-                case TSTRINGWIDE: {
-                    // utf-8 encoding
-                    char* ptr = (char*) (*p++ = (int_t) &fp[1]);
-                    for (int i = 1; i <= reference_size(arg); i++) {
-                        int cp = value(ref(arg, i));
-                        if (cp < 0x80)
-                            *ptr++ = cp;
-                        else
-                        if (cp < 0x0800) {
-                            *ptr++ = 0xC0 | (cp >> 6);
-                            *ptr++ = 0x80 | (cp & 0x3F);
-                        }
-                        else
-                        if (cp < 0x10000) {
-                            *ptr++ = 0xE0 | (cp >> 12);
-                            *ptr++ = 0x80 | ((cp >> 6) & 0x3F);
-                            *ptr++ = 0x80 | (cp & 0x3F);
-                        }
-                        else
-                        if (cp < 0x110000) {
-                            *ptr++ = 0xF0 | (cp >> 18);
-                            *ptr++ = 0x80 | ((cp >> 12) & 0x3F);
-                            *ptr++ = 0x80 | ((cp >> 6) & 0x3F);
-                            *ptr++ = 0x80 | (cp & 0x3F);
-                        }
-                        else {
-                            // printf("invalid codepoint");
-                            *ptr++ = 0x7F;
-                        }
-                    }
-                    *ptr++ = 0;
-                    new_bytevector(ptr - (char*)&fp[1]);
-                    break;
-                }
-                case TSTRINGDISPATCH: {
-                    int length = number(ref(str, 1)); // for last-one zero
-                    int parts = reference_size(str) - 1;
 
-                    char* zerostr = (char*) &car(new_bytevector (length+1)); // one more for the trailing '\0'
-                    *p++ = (word)zerostr;
+				int stype = reference_type(str);
+				char* ptr = (char*)(*p++ = (word) &fp[1]);
+				new_bytevector(string2ol(ptr, str,
+					stype == TSTRING ? chars2ol :
+					stype == TSTRINGWIDE ? wchars2utf8 :
+					stype == TSTRINGDISPATCH ? stringleaf2ol :
+					not_a_string));
 
-                    for (int i = 0; i < parts; i++) {
-                        word substr = ref(str, i + 2);
-
-                        switch (reference_type(substr)) {
-                        case TSTRING: {
-                            // todo: add check to not copy the zero-ended string
-                            int length = rawstream_size(substr);
-                            memcpy(zerostr, &car(substr), length);
-                            zerostr += length;
-                            break;
-                        }
-                        case TSTRINGWIDE: {
-                            // utf-8 encoding
-                            char* ptr = zerostr;
-                            for (int i = 1; i <= reference_size(arg); i++) {
-                                int cp = value(ref(arg, i));
-                                if (cp < 0x80)
-                                    *ptr++ = cp;
-                                else
-                                if (cp < 0x0800) {
-                                    *ptr++ = 0xC0 | (cp >> 6);
-                                    *ptr++ = 0x80 | (cp & 0x3F);
-                                }
-                                else
-                                if (cp < 0x10000) {
-                                    *ptr++ = 0xE0 | (cp >> 12);
-                                    *ptr++ = 0x80 | ((cp >> 6) & 0x3F);
-                                    *ptr++ = 0x80 | (cp & 0x3F);
-                                }
-                                else
-                                if (cp < 0x110000) {
-                                    *ptr++ = 0xF0 | (cp >> 18);
-                                    *ptr++ = 0x80 | ((cp >> 12) & 0x3F);
-                                    *ptr++ = 0x80 | ((cp >> 6) & 0x3F);
-                                    *ptr++ = 0x80 | (cp & 0x3F);
-                                }
-                                else {
-                                    // printf("invalid codepoint");
-                                    *ptr++ = 0x7F;
-                                }
-                            }
-                            zerostr = ptr;
-                            break;
-                        }
-                        default:
-                            E("invalid parameter values (requested string*), %d", reference_type(substr));
-                        }
-                    }
-                    *zerostr = '\0'; // trailing zero
-                    break;
-                }
-                default:
-                    *p++ = 0;
-                    E("invalid parameter values (requested string*), %d", reference_type(str));
-                }
                 src = cdr(src);
             }
 			break;
