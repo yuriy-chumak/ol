@@ -103,7 +103,7 @@
       (define (str-iter-any str tl)
          (case (type str)
             (type-string
-               (let ((len (string-length str)))
+               (let ((len (size str)))
                   (if (eq? len 0)
                      tl
                      (str-iter-leaf str tl 0 len))))
