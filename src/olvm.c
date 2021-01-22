@@ -4361,11 +4361,36 @@ loop:;
 			}
 
 			#if SYSCALL_GETRLIMIT
-			// GETRLIMIT (getrlimit)
+			/*! ##### getrlimit
+			* * `(syscall 97 resource) --> bytevector | #false`
+			*
+			* Attempts to get resource limits into the bytevector.
+			*
+			* - *resource*: resource
+			*   * 0, CPU time in sec
+			*   * 1, Maximum filesize
+			*   * 2, max data size
+			*   * 9, address space limit
+			*
+			* Return:
+			* - *[soft limit, hard limit]* if success,
+			* - *#false* if error
+			*
+			* https://man7.org/linux/man-pages/man2/prlimit.2.html
+			*/
 			case SYSCALL_GETRLIMIT: {
+				CHECK_ARGC_EQ(1);
+				CHECK_NUMBERP(1);
+
 				struct rlimit l;
+				int resource = value(A1);
 				// arguments currently ignored. used RUSAGE_SELF
-				if (getrlimit(value(A1), &l) == 0)
+				if (getrlimit(
+						resource == 0 ? RLIMIT_CPU : // limit, in seconds, on the amount of CPU time that the process can consume
+						resource == 1 ? RLIMIT_FSIZE : // maximum size in bytes of files that the process may create
+						resource == 2 ? RLIMIT_DATA : // maximum size of the process's data segment (initialized data, uninitialized data, and heap)
+						resource == 9 ? RLIMIT_AS : // maximum size of the process's virtual memory
+						-1, &l) == 0)
 					r = new_vector(
 							new_number(l.rlim_cur),
 							new_number(l.rlim_max));
