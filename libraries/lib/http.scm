@@ -115,25 +115,30 @@
 (define maybe-whitespace (get-greedy* get-a-whitespace))
 
 (define get-request-line
-   (let-parses ((method  (get-greedy+ (get-rune-if A-Z?))) ; GET/POST/etc.
-                  (-          (get-imm #\space))
-                  (uri     (get-greedy+ (get-rune-if uri?))) ; URI
-                  (-          (get-imm #\space))
-                  (version (get-greedy+ (get-rune-if uri?))) ; HTTP/x.x
-                  (-          (get-imm #\return)) (skip (get-imm #\newline))) ; end of request line
+   (let-parse* (
+         (method  (get-greedy+ (get-rune-if A-Z?))) ; GET/POST/etc.
+         (-          (get-imm #\space))
+         (uri     (get-greedy+ (get-rune-if uri?))) ; URI
+         (-          (get-imm #\space))
+         (version (get-greedy+ (get-rune-if uri?))) ; HTTP/x.x
+         (-          (get-imm #\return)) (skip (get-imm #\newline))) ; end of request line
       (vector
          (runes->string method)
          (runes->string uri)
          (runes->string version))))
 
 (define get-header-line
-   (let-parses ((name  (get-greedy+ (get-rune-if token-char?)))
-                  (-        (get-imm #\:))
-                  (-        (get-rune-if space-char?)) ; todo: should be LWS
-                  (value (get-greedy+ (get-rune-if (lambda (x) (not (eq? x CR)))))) ; until CRLF
-                  (- (get-imm CR)) (- (get-imm LF)))   ; CRLF
+   (let-parse* (
+         (name  (get-greedy+ (get-rune-if token-char?)))
+         (-     (imm #\:))
+         (-     (get-rune-if space-char?)) ; todo: should be LWS
+         (value (get-greedy+ (get-rune-if (lambda (x) (not (eq? x CR)))))) ; until CRLF
+         (- (imm CR)) (- (imm LF)))   ; CRLF
       (cons
-         (string->symbol (runes->string name))
+         (string->symbol (runes->string
+            (map (lambda (char)
+                  (if (upper-case? char) (+ char 32) char))
+               name)))
          (runes->string value))))
 
 
