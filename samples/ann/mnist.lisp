@@ -128,7 +128,7 @@
 
 (define mnist-root (or
    (and (not (null? *vm-args*)) (car *vm-args*))
-   "/media/uri/1TB/mnist/"))
+   "/media/uri/1TB/DATA/mnist/"))
 
 ;; read the data
 (define labels-file (try-parse gzip-parser (file->bytestream (string-append mnist-root "train-labels-idx1-ubyte.gz")) #f))
@@ -257,66 +257,42 @@
 ; наша сеть будет иметь входной слой на rows*columns элементов
 ; внутренний слой на 128 элоементов
 ; и выходной на 10
-;; (import (otus ann))
 (import (otus random!))
 
-; source is 1x784
-(define syn0/ (or ; первый слой нейросети
-      (read-matrix "syn0")
-      (randomize-matrix!
-         (make-matrix (* (images 'number-of-rows) (images 'number-of-columns)) 128)))) ; матрица [784,128]
-; TODO: читать исходную картинку как [m*n], и добавить отдельный преобразующий слой без математики, который будет создавать
-; новую матрицу [1 m*n тот-же-вектор-флоатов] (без копирования)
-; это относится к топологии нейросети, а не к ее состоянию
+;; ; TODO: читать исходную картинку как [m*n], и добавить отдельный преобразующий слой без математики, который будет создавать
+;; ; новую матрицу [1 m*n тот-же-вектор-флоатов] (без копирования)
+;; ; это относится к топологии нейросети, а не к ее состоянию
 
-(define syn1/ (or ; второй слой нейросети
-      (read-matrix "syn1")
-      (randomize-matrix!
-         (make-matrix (ref syn0/ 2) 10))))
-
-(print "параметры нашей нейросети:")
-(print "syn0: [" (ref syn0/ 1) "x" (ref syn0/ 2) "]") ; 
-(print "syn1: [" (ref syn1/ 1) "x" (ref syn1/ 2) "]") ; 
+; попробуем создать новую сеть через новый api
+(define ann (make-ann
+   (make-dense-layer 10 σ ; второй промежуточный слой
+   (make-dense-layer 99 σ ; первый промежуточный слой ; 128
+   (make-input-layer (* 28 28))))))
 
 ; обучение сети
 (fork-server 'ann (lambda ()
    (print "запуcкаю обучение сети")
-   (let this ((n 0) (syn0/ syn0/) (syn1/ syn1/))
-      (define i (rand! images-count)) ; assert count of images
-      (if #false ;(zero? n)
-         (list syn0/ syn1/)
-         (let*((_ (*l0-l1* (cons syn0/ syn1/))) ; сохраним текущее состояние нейросети
-               (image (lref (images 'images) i))
-               (label (lref (labels 'labels) i))
+   (let this ((n 0))
+      (let*((i (rand! images-count))
+            (image (lref (images 'images) i))
+            (label (lref (labels 'labels) i))
 
-               (X/ (list->matrix image 255)) ; сразу нормализуем картинку в диапазон [0..1]
-               (Y/ (list->matrix   ; а ожидаемый результат - в набор ответов (0,1,2,3,.. 9)
-                     (map (lambda (p) (if (eq? p label) 1 0))
-                        (iota 10))))
+            (X (list->matrix image 255)) ; сразу нормализуем картинку в диапазон [0..1]
+            (Y (list->matrix   ; а ожидаемый результат - в набор ответов (0,1,2,3,.. 9)
+                  (map (lambda (p) (if (eq? p label) 1 0))
+                     (iota 10))))
 
-               ; отправим это все рисоваться
+            (eva (evaluate ann X))   ; процесс вычисления нейросети
+            (_ (backpropagate! eva (sub Y (caar eva)))) ; а теперь ее обучим
 
-               ; временные матрицы - в процессе работы нейросети:
-               (l0/ X/) ; итак, "нулевой" слой - это входные данные
-               (l1/ (sigmoid! (dot l0/ syn0/))) ; первый слой
-               (l2/ (sigmoid! (dot l1/ syn1/))) ; второй слой, и по совместитульству - результат
-               (_ (*state* [X/ label l2/])) ; передадим состояние для отображения на экране
+            ;; (_ (when (zero? (mod n 1000))
+            ;;       (print
+            ;;          "     used memory: " (inexact (/ (* 8 (ref (syscall 1117) 3)) 1024 1024)) " MiB")))
 
-               (e2/ (sub Y/ l2/))
-               (d2/ (mul e2/ (sigmoid/ l2/)))
-
-               (e1/ (dot d2/ (T syn1/))) ; почему? и как делать дальше?
-               (d1/ (mul e1/ (sigmoid/ l1/)))
-
-               (m1 (mean (mabs e2/)))
-               (_ (when (zero? (mod n 1000))
-                     (print "current mean error: "
-                        (mean (mabs e2/))
-                        " - "
-                        (mean (mabs e1/))
-                        "     used memory: " (inexact (/ (* 8 (ref (syscall 1117) 3)) 1024 1024)) " MiB")))
-
-               (syn1/ (add syn1/ (dot (T l1/) d2/)))
-               (syn0/ (add syn0/ (dot (T l0/) d1/)))
-            )
-            (this (++ n) syn0/ syn1/))))))
+ 
+            ; передадим наше состояние для отображения на экране
+            (_ (*l0-l1* (cons
+                  (get-layer ann 1)
+                  (get-layer ann 2))))
+            (_ (*state* [X label (caar eva)])))
+         (this (++ n))))))
