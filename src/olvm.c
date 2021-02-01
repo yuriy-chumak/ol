@@ -706,6 +706,11 @@ word*p = new (TVECTOR, 13);\
 // in this case -val cenverts into "0" by machine math and we got invalid value
 //   so we need to compare val with INT_T_MIN and use a longer converter
 
+// Yes, clang, I know. This is not an error. I don't want to make a code
+// completely unreadable to satisfy your paranoia.
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#pragma clang diagnostic ignored "-Wparentheses"
+
 #if OLVM_ANSI_INT_LIMITS
 # define NOT_A_MIN_INT(i) (1)
 #else
