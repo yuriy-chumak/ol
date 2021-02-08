@@ -1981,12 +1981,16 @@
             (else (runtime-error "bad math: " (list 'abs n)))))
 
       (define (floor n)
-         (if (eq? (type n) type-rational)
-            (lets ((a b n))
-               (if (negative? a)
-                  (negate (nat-succ (div (abs a) b)))
-                  (div a b)))
-            n))
+         (case (type n)
+            (type-rational
+               (let* ((a b n))
+                  (if (negative? a)
+                     (negate (nat-succ (div (abs a) b)))
+                     (div a b))))
+            (type-inexact
+               (ffloor n))
+            (else
+               n)))
 
       (define (ceiling n)
          (if (eq? (type n) type-rational)

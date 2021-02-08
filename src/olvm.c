@@ -4747,6 +4747,10 @@ loop:;
 			*(inexact_t*)&car(A2) = __builtin_acos(a);
 			break;
 
+		case 0xFC: // ffloor
+			*(inexact_t*)&car(A2) = __builtin_floor(a);
+			break;
+
 		default:
 			A2 = IFALSE;
 			break;

@@ -9,6 +9,7 @@
       fsqrt fsin fcos ftan
       fasin facos fatan fatan2
       flog flog2 fexp fexpt
+      ffloor
    )
 
    (import
@@ -30,6 +31,7 @@
 
       ; additional math staff
       (FP1 fsqrt #xFA)
+      (FP1 ffloor #xFC)
 
       (FP1 fsin  #xFE) ; sine
       (FP1 fasin #x8E) ; arcsize
