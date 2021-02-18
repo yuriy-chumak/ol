@@ -2,7 +2,7 @@
 ;;; https://github.com/yuriy-chumak/ol
 ;;; http://www.sqlite.org
 
-;;; Copyright (c) 2014, 2016, 2017, 2018 Yuriy Chumak
+;;; Copyright (c) 2014-2021 Yuriy Chumak
 ;;; All rights reserved.
 ;;;
 ;;; --------------------------------------------------------------
@@ -242,6 +242,7 @@
 ; ============================================================================
 (import
    (otus lisp)
+   (scheme char)
    (otus ffi))
 
 (cond-expand
@@ -434,7 +435,7 @@
             #false)
          ((null? b)
             #true)
-         ((not (eq? (car a) (car b)))
+         ((not (char-ci=? (car a) (car b)))
             #false)
          (else
             (loop (force (cdr a)) (force (cdr b)))))))
@@ -444,22 +445,21 @@
 ; internal function:
 (define (get-result-as-row statement)
    (let ((n (sqlite3_column_count statement)))
-      ;(print "n: " n)
+      ;; (print "n: " n)
       (if (less? 0 n)
          (let subloop ((i (- n 1)) (args '()))
-            ;(print "args: " args)
-            ;(print "sqlite3_column_type statement i: " (sqlite3_column_type statement i))
-            ;(print "i: " i)
-            ;(print "?: " (< i 0))
+            ;; (print "args: " args)
+            ;; (print "sqlite3_column_type statement i: " (sqlite3_column_type statement i))
+            ;; (print "i: " i)
+            ;; (print "?: " (< i 0))
             (if (< i 0) args
                (subloop (- i 1) (cons
                   (case (sqlite3_column_type statement i)
-                     (SQLITE_NULL    #false)
+                     (SQLITE_NULL    #false) ; should be #false or #null?
                      (SQLITE_INTEGER (sqlite3_column_int statement i))
                      (SQLITE_FLOAT   (sqlite3_column_double statement i))
-                                     ;old /potentially more compatible/ case:
-                                     ;   (bytes->string (string->runes (sqlite3_column_text statement i)))
-                     (SQLITE_TEXT    (sqlite3_column_text16 statement i))
+                     (SQLITE_TEXT    (sqlite3_column_text statement i))
+                     ; (SQLITE_BLOB    (sqlite3_column_text statement i))
                      (else (runtime-error "Unsupported column type " i)))
                   args)))))))
 
@@ -481,10 +481,8 @@
                         (sqlite3_bind_int64  statement n arg))
                      ((rational? arg)
                         (sqlite3_bind_double statement n arg))
-                     ((eq? (type arg) type-string)
-                        (sqlite3_bind_text   statement n arg (size arg) #f))
-                     ((eq? (type arg) type-string-wide)
-                        (sqlite3_bind_text16 statement n arg (* (size arg) 2) #f))
+                     ((string? arg)
+                        (sqlite3_bind_text   statement n arg -1 #f))
                      ((null? arg)
                         (sqlite3_bind_null   statement n))
                      (else
