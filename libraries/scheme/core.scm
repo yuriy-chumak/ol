@@ -279,20 +279,22 @@
       ; syntax:  (if <test> <consequent>)
       ; auxiliary syntax: else            * ol specific
       (define-syntax if
-         (syntax-rules (not eq? null? empty?)
-            ((if val then) (if val then #f))
+         (syntax-rules (not eq? null? empty? then else)
+            ((if val ok) (if val ok #f))
 
-            ((if #true     then otherwise)  then)
-            ((if #false    then otherwise)  otherwise)
+            ((if #true     ok otherwise)  ok)
+            ((if #false    ok otherwise)  otherwise)
             ; expended if then else syntax:
-            ((if val  then else otherwise) (if val then otherwise))
+            ((if val then ok               ) (if val ok))
+            ((if val      ok else otherwise) (if val ok otherwise))
+            ((if val then ok else otherwise) (if val ok otherwise))
             ; speedup, code size optimizations:
-            ((if (not val) then otherwise) (if val otherwise then))
-            ((if (eq? a b) then otherwise) (ifeq a b then otherwise))
-            ((if (null? t) then otherwise) (ifeq t #null then otherwise))
+            ((if (not val) ok otherwise) (if val otherwise ok))
+            ((if (eq? a b) ok otherwise) (ifeq a b ok otherwise))
+            ((if (null? t) ok otherwise) (ifeq t #null ok otherwise))
 
-            ((if (a . b)   then otherwise) (let-eval (x) ((a . b)) (if x then otherwise)))
-            ((if val       then otherwise) (ifeq val #false otherwise then))))
+            ((if (a . b)   ok otherwise) (let-eval (x) ((a . b)) (if x ok otherwise)))
+            ((if val       ok otherwise) (ifeq val #false otherwise ok))))
 
       (assert (if (less? 2 3) 'yes 'no)               ===>  'yes)
       (assert (if (less? 3 2) 'yes 'no)               ===>  'no)
