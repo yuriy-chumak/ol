@@ -7,8 +7,8 @@
          (vector-map :+ a b)
          (error "error:" "not applicable (+ vector non-vector)"))
       (if (vector? b)
-         (error "error:" "not applicable (+ non-vector vector)"))
-         (:+ a b)))
+         (error "error:" "not applicable (+ non-vector vector)")
+         (:+ a b))))
 
 (define :- -)
 (define (- a b)
@@ -17,8 +17,8 @@
          (vector-map :- a b)
          (error "error:" "not applicable (+ vector non-vector)"))
       (if (vector? b)
-         (error "error:" "not applicable (+ non-vector vector)"))
-         (:- a b)))
+         (error "error:" "not applicable (+ non-vector vector)")
+         (:- a b))))
 
 (define :* *)
 (define (* a b)
@@ -27,8 +27,8 @@
          (vector-map (lambda (x) (:* x b)) a)
          (error "error:" "not applicable (* vector vector)"))
       (if (vector? b)
-         (error "error:" "not applicable (* scalar vector)"))
-         (:* a b)))
+         (error "error:" "not applicable (* scalar vector)")
+         (:* a b))))
 
 (define :/ /)
 (define (/ a b)
@@ -37,8 +37,8 @@
          (vector-map (lambda (x) (:/ x b)) a)
          (error "error:" "not applicable (/ vector vector)"))
       (if (vector? b)
-         (error "error:" "not applicable (/ scalar vector)"))
-         (:/ a b)))
+         (error "error:" "not applicable (/ scalar vector)")
+         (:/ a b))))
 
 (define x [1 2 3 4 5])
 (define y [7 8 5 4 2])
