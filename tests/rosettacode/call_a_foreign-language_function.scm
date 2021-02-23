@@ -2,7 +2,7 @@
 
 (import (otus ffi))
 
-(define self (load-dynamic-library #f))
-(define strdup (self type-string "strdup" type-string))
+(define self (load-dynamic-library (if (has? *features* 'Windows) "shlwapi.dll" #f)))
+(define strdup (self type-string (if (has? *features* 'Windows) "StrDupA" "strdup") type-string))
 
 (print (strdup "Hello World!"))
