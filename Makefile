@@ -14,6 +14,7 @@ describe: all
 ## 'configure' part:
 # check the library and/or function
 exists = $(shell echo "\
+	\#include $2\\n\
 	char $3();\
 	\
 	int main() {\
@@ -42,6 +43,11 @@ doc/olvm.md: src/olvm.c extensions/ffi.c
 	cat src/olvm.c extensions/ffi.c| ./makedoc >doc/olvm.md
 
 
+# check required libs
+# ifneq ($(call exists,,<unistd.h>),1)
+#    $(error Looks like you have no gcc-multilib, please install.)
+# endif
+
 # default platform features
 HAS_DLOPEN  ?= $(call exists,,<stdlib.h>, dlopen, -ldl)
 HAS_SECCOMP ?= $(call exists,,<linux/seccomp.h>, prctl)
@@ -68,7 +74,7 @@ endif
 
 CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
-          $(if $(HAS_SECCOMP),, -DHAS_SANDBOX=0)\
+          $(if $(HAS_SECCOMP), -DHAS_SANDBOX=1, -DHAS_SANDBOX=0)\
 
 ## 'os dependent' part
 UNAME ?= $(shell uname -s)
@@ -226,6 +232,10 @@ src/olvm.c: extensions/ffi.c
 tmp/repl.c: repl
 #	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
 	xxd --include repl >tmp/repl.c
+#	@od -An -vtx1 repl| tr -d '\n'| sed \
+#	   -e 's/^ /0x/' -e 's/ /,0x/g' \
+#	   -e 's/^/unsigned char repl[] = {/' \
+#	   -e 's/$$/};/'> $@
 
 # # emscripten version 1.37.40+
 # repl.js: repl
