@@ -441,7 +441,7 @@
       ;; fixme: no way to poll success yet. last message should be ok-request, which are not there yet.
       ;; fixme: detect case of non-bytevectors, which simply means there is a leaf which is not of type (raw 11)
       (define (bytevector->file vec path)
-         (let ((port (open-output-file path)))
+         (let ((port (open-binary-output-file path)))
             (if port
                (let ((outcome (sys:write port vec #false)))
                   (close-port port)
@@ -461,7 +461,7 @@
 
       ; list:
       (define (file->list path) ; path -> vec | #false
-         (let ((port (maybe-open-file path)))
+         (let ((port (maybe-open-binary-file path)))
             (if port
                (let ((data (read-blocks->list port null)))
                   (maybe-close-port port)
@@ -511,7 +511,7 @@
                   (loop (ll) out)))))
 
       (define (file->bytestream path)
-         (let ((port (maybe-open-file path)))
+         (let ((port (maybe-open-binary-file path)))
             (if port
                (port->bytestream port))))
 
