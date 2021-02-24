@@ -1055,15 +1055,15 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 // DEFAULTS. please don't change! use -D{OPTION}={0|1} command line instead
 //           or use -DHAS_CONFIG=1 and change your local config copy
 #ifndef HAS_SOCKETS
-#define HAS_SOCKETS 1 // system sockets support
+#define HAS_SOCKETS 1 // assume system sockets support
 #endif
 
 #ifndef HAS_DLOPEN
-#define HAS_DLOPEN 1  // dlopen/dlsym support
+#define HAS_DLOPEN 1  // assume dlopen/dlsym support
 #endif
 
 #ifndef HAS_SANDBOX
-#define HAS_SANDBOX 1 // allows sandboxing
+#define HAS_SANDBOX 0 // allows sandboxing
 #endif
 
 #ifndef HAS_UNSAFES
@@ -5132,9 +5132,6 @@ int main(int argc, char** argv)
 		E("WSAStartup failed with error: %d", sock_init);
 		return 1;
 	}
-#	ifndef NDEBUG
-	AllocConsole();
-#	endif
 #endif
 
 	OL* olvm = OL_new(bootstrap);
