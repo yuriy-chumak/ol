@@ -35,15 +35,9 @@
 
 // use virtual machine declaration from olvm source code
 #define USE_OLVM_DECLARATION
-struct heap_t;
-#define ol_t heap_t
-
 #include "olvm.c"
 
 #define unless(...) if (! (__VA_ARGS__))
-
-typedef struct ol_t OL;
-
 
 #include <string.h>
 #include <stdio.h> // temp
@@ -1246,7 +1240,7 @@ char* not_a_string(char* ptr, word string)
 // Главная функция механизма ffi:
 PUBLIC
 __attribute__((used))
-word* OL_ffi(OL* this, word* arguments)
+word* OL_ffi(ol_t* this, word* arguments)
 {
 	// a - function address
 	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
@@ -1391,19 +1385,20 @@ word* OL_ffi(OL* this, word* arguments)
 	}
 
 	// ensure that all arguments will fit in heap
-	if (words > (this->end - this->fp)) {
+	heap_t* heap = (heap_t*)this;
+	if (words > (heap->end - heap->fp)) {
         size_t a = OL_pin(this, A);
         size_t b = OL_pin(this, B);
         size_t c = OL_pin(this, C);
 
-		this->gc(this, words);
+		heap->gc(this, words);
 
         A = OL_unpin(this, a);
         B = OL_unpin(this, b);
         C = OL_unpin(this, c);
 	}
 
-	word* fp = this->fp;
+	word* fp = heap->fp;
 	int_t* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(int_t)); // minimum - 16 words for arguments
 	i = 0;
 
@@ -1929,7 +1924,7 @@ word* OL_ffi(OL* this, word* arguments)
 
 	size_t pB = OL_pin(this, B);
 	size_t pC = OL_pin(this, C);
-	this->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
+	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
 
 //	if (floatsmask == 15)
 //		__asm__("int $3");
@@ -2003,7 +1998,7 @@ word* OL_ffi(OL* this, word* arguments)
 #endif
 
 	// где гарантия, что C и B не поменялись?
-	fp = this->fp;
+	fp = heap->fp;
 	B = OL_unpin(this, pB);
 	C = OL_unpin(this, pC);
 
@@ -2313,10 +2308,10 @@ word* OL_ffi(OL* this, word* arguments)
 
 				// memory check
 				int words = (len * (utf8q ? sizeof(word) : sizeof(char)) + (W - 1)) / W;
-				if (fp + words > this->end) {
-					this->fp = fp;
-					this->gc(this, words);
-					fp = this->fp;
+				if (fp + words > heap->end) {
+					heap->fp = fp;
+					heap->gc(this, words);
+					fp = heap->fp;
 				}
 
 				// ansi
@@ -2351,10 +2346,10 @@ word* OL_ffi(OL* this, word* arguments)
 				size_t words = 0;
 				while (i++ <= VMAX && *p++) words++;
 
-				if (fp + words > this->end) {
-					this->fp = fp;
-					this->gc(this, words);
-					fp = this->fp;
+				if (fp + words > heap->end) {
+					heap->fp = fp;
+					heap->gc(this, words);
+					fp = heap->fp;
 				}
 
 				word* str = result = new (TSTRINGWIDE, words);
@@ -2383,7 +2378,7 @@ word* OL_ffi(OL* this, word* arguments)
 		}
 	}
 
-	this->fp = fp;
+	heap->fp = fp;
 	return result;
 }
 
@@ -2398,7 +2393,7 @@ word* OL_ffi(OL* this, word* arguments)
  * 20 - void*
  */
 PUBLIC
-word OL_sizeof(OL* self, word* arguments)
+word OL_sizeof(ol_t* self, word* arguments)
 {
 	word* A = (word*)car(arguments); // type
 	switch (value(A)) {
@@ -2441,7 +2436,7 @@ word OL_sizeof(OL* self, word* arguments)
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
 static
-int64_t callback(OL* ol, size_t id, int_t* argi
+int64_t callback(ol_t* ol, size_t id, int_t* argi
 	#if __amd64__ || __aarch64__
 		, inexact_t* argf, int_t* rest
 	#endif
@@ -2450,12 +2445,13 @@ int64_t callback(OL* ol, size_t id, int_t* argi
 
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
 PUBLIC
-word OL_mkcb(OL* self, word* arguments)
+word OL_mkcb(ol_t* self, word* arguments)
 {
 	word* A = (word*)car(arguments);
-
 	unless (is_value(A))
 		return IFALSE;
+
+	word* fp;
 
 	int pin = untoi(A);
 
@@ -2497,7 +2493,7 @@ word OL_mkcb(OL* self, word* arguments)
 #elif __amd64__
 	// Windows x64
 # ifdef _WIN32
-	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+	//long long callback(ol_t* ol, int id, long long* argi, double* argf, long long* rest)
 	static char bytecode[] =
 			"\x90" // nop
 			"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
@@ -2544,7 +2540,7 @@ word OL_mkcb(OL* self, word* arguments)
 	*(uint64_t*)&ptr[82] = (uint64_t)callback;
 
 # else // System V (linux, unix, macos, android, ...)
-	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest)
+	//long long callback(ol_t* ol, int id, long long* argi, double* argf, long long* rest)
 	// rdi: ol, rsi: id, rdx: argi, rcx: argf, r8: rest
 	// not used: r9
 
@@ -2596,7 +2592,7 @@ word OL_mkcb(OL* self, word* arguments)
 # endif
 #elif __aarch64__
 
-	//long long callback(OL* ol, int id, long long* argi, double* argf, long long* rest);
+	//long long callback(ol_t* ol, int id, long long* argi, double* argf, long long* rest);
 	static char bytecode[] =
 		"\xee\x03\x00\x91" //mov  x14, sp
 		"\xfd\x7b\xbf\xa9" //stp  x29, x30, [sp,#-16]!
@@ -2652,22 +2648,22 @@ word OL_mkcb(OL* self, word* arguments)
 
 #endif
 
-	word*
-	fp = self->fp;
+	heap_t* heap = (heap_t*)self;
+	fp = heap->fp;
 	word result = (word) new_callable(ptr);
-	self->fp = fp;
+	heap->fp = fp;
 	return result;
 }
 
 
-//long long callback(OL* ol, int id, word* args) // win32
-//long long callback(OL* ol, int id, long long* argi, double* argf, long long* others) // linux
+//long long callback(ol_t* ol, int id, word* args) // win32
+//long long callback(ol_t* ol, int id, long long* argi, double* argf, long long* others) // linux
 // notes:
 //	http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
 
 static
 __attribute__((used))
-int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
+int64_t callback(ol_t* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 #if __amd64__ || __aarch64__
 		, inexact_t* argf, int_t* rest //win64
 #endif
@@ -2696,7 +2692,8 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 	word R[a]; // сложим все в стек, потом заполним оттуда список
 	size_t count = a;
 
-	fp = ol->fp;
+	heap_t* heap = (heap_t*)ol;
+	fp = heap->fp;
 
 	int i = 0;
 #if (__amd64__ || __aarch64__) && (__unix__ || __APPLE__)
@@ -2800,9 +2797,9 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 			#else
 				value =   *(float*) &argi[i++];
 			#endif
-			ol->fp = fp;
+			heap->fp = fp;
 			R[a] = d2ol(ol, value);
-			fp = ol->fp;
+			fp = heap->fp;
 			break;
 		}
 		case I(TDOUBLE): {
@@ -2822,9 +2819,9 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 			#else
 				value =   *(double*) &argi[i++]; i++;
 			#endif
-			ol->fp = fp;
+			heap->fp = fp;
 			R[a] = d2ol(ol, value);
-			fp = ol->fp;
+			fp = heap->fp;
 			break;
 		}
 		case I(TSTRING): {
@@ -2913,7 +2910,7 @@ int64_t callback(OL* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 	for (size_t i = 0; i < count; i++)
 		args = (word) new_pair(R[i], args);
 
-	ol->fp = fp; // well, done
+	heap->fp = fp; // well, done
 
 	word r = OL_apply(ol, function, args);
 

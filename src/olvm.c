@@ -376,7 +376,7 @@ void E(char* format, ...);
 // shamil.free.fr/comp/ocaml/html/book011.html
 
 // память машины, управляемая сборщиком мусора
-typedef struct heap_t
+struct heap_t
 {
 	//  begin <= genstart <= end
 	word *begin;     // begin of heap
@@ -389,7 +389,8 @@ typedef struct heap_t
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
 	int (*gc)(struct ol_t* ol, int ws);
-} heap_t;
+};
+typedef struct heap_t heap_t;
 
 
 // -= new =--------------------------------------------
