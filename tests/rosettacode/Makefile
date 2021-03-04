@@ -16,7 +16,7 @@ rosettacode: testing-binaries
 rosettacode: $(wildcard tests/rosettacode/*.scm)
 	@echo "*** rosettacode.org Ol samples"
 	@for F in $(filter-out $(excluded),$(filter %.scm,$^)) ;do \
-	   [ -f $$F.ok ] && $(MAKE) -s -B $$F.ok ;\
+	   [ -e $$F.ok ] && $(MAKE) -s -B $$F.ok ;\
 	done
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
 	@echo "passed!"
