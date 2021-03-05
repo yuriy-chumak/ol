@@ -4,19 +4,13 @@ ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
 else
 
-# this tests are legal but can't be used in batch mode
-excluded=\
-  tests/rosettacode/opengl.scm \
-  tests/rosettacode/chat_server.scm \
-  tests/rosettacode/draw_a_pixel.scm \
-  tests/rosettacode/draw_a_sphere.scm \
-  tests/rosettacode/echo_server.scm
+# tests without ^.ok file are legal but can't be used in batch mode
 
 rosettacode: testing-binaries
 rosettacode: $(wildcard tests/rosettacode/*.scm)
 	@echo "*** rosettacode.org Ol samples"
-	@for F in $(filter-out $(excluded),$(filter %.scm,$^)) ;do \
-	   [ -e $$F.ok ] && $(MAKE) -s -B $$F.ok ;\
+	@for F in $(filter %.scm,$^) ;do \
+	   if [ -e $$F.ok ] ;then $(MAKE) -s -B $$F.ok ;fi ;\
 	done
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
 	@echo "passed!"
