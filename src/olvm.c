@@ -1865,15 +1865,6 @@ double OL2D(word arg) {
 		return -ol2d_convert(arg);
 	case TRATIONAL:
 		return OL2D(car(arg)) / OL2D(cdr(arg));
-	case TBYTEVECTOR: // is it required?
-		switch (rawstream_size(arg)) {
-			case sizeof(float):
-				return *(float*)&car(arg);
-			case sizeof(double):
-				return *(double*)&car(arg);
-		}
-		assert(0);
-		return 0.;
 	case TCOMPLEX: // only real part of complex number
 		return OL2D(car(arg));
 	case TINEXACT:
@@ -1907,15 +1898,6 @@ float OL2F(word arg) {
 		return -ol2f_convert(arg);
 	case TRATIONAL:
 		return OL2F(car(arg)) / OL2F(cdr(arg));
-	case TBYTEVECTOR: // is it required?
-		switch (rawstream_size(arg)) {
-			case sizeof(float):
-				return *(float*)&car(arg);
-			case sizeof(double):
-				return *(double*)&car(arg);
-		}
-		assert(0);
-		return 0.;
 	case TCOMPLEX: // use only real part of complex number
 		return OL2F(car(arg));
 	case TINEXACT:
