@@ -23,7 +23,7 @@
 //#define OLVM_EMBED_PREFIX embed_
 //#endif
 
-#include <olvm.h>
+//#include <olvm.h>
 
 // basic ol data type ('all is the words')
 typedef uintptr_t word;
@@ -39,6 +39,20 @@ typedef struct ol_t
 
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wshift-count-overflow"
+
+ol_t*OL_new (unsigned char* bootstrap);
+void OL_free(ol_t* ol);
+word OL_run (ol_t* ol, int argc, char** argv);
+word OL_continue(ol_t* ol, int argc, void** argv);
+
+// "pinned" objects supporting functions
+size_t OL_pin(ol_t* ol, word ref);
+word OL_deref(ol_t* ol, size_t p);
+word OL_unpin(ol_t* ol, size_t p);
+word OL_apply(ol_t* ol, word function, word args);
+
+void*OL_userdata (ol_t* ol, void* userdata);
+void*OL_allocate (ol_t* ol, unsigned words);
 
 // ====================================================================
 
@@ -220,6 +234,10 @@ static word new_rational(ol_t* ol, double data)
 	return d2ol(ol->vm, data);
 }
 
+static word new_vptr(ol_t* ol, void* ptr)
+{
+	return new_buffer(ol, 49, (char*)&ptr, sizeof(ptr));
+}
 ///////////////////////////////////////////////////////////////////////////////
 // main functions
 
