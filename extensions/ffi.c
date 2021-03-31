@@ -124,6 +124,8 @@
 //	ppc, ppc64, ppc64le: 8
 //	raspbian, arduino: 8
 
+// maximal applicable return type of called functions
+typedef big_t ret_t;
 
 #if defined(_WIN32)
 #	define PUBLIC __declspec(dllexport)
@@ -312,7 +314,7 @@ int utf8_len(word widestr)
 // edx - argc
 // r8  - function
 // r9d - type
-intmax_t win64_call(int_t argv[], long argc, void* function, long type);
+ret_t win64_call(int_t argv[], long argc, void* function, long type);
 __ASM__("win64_call:_win64_call:",  // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
@@ -376,7 +378,7 @@ __ASM__("win64_call:_win64_call:",  // "int $3",
 // r8:  mask
 // r9: function
 // 16(rbp): type
-intmax_t nix64_call(int_t argv[], double ad[], long i, long d, long mask, void* function, long type);
+ret_t nix64_call(int_t argv[], double ad[], long i, long d, long mask, void* function, long type);
 __ASM__("nix64_call:_nix64_call:", //"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
@@ -492,7 +494,7 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 // В нашем случае мы так или иначе восстанавливаем указатель стека, так что
 // функция x86_call у нас будет универсальная cdecl/stdcall
 // 
-intmax_t x86_call(int_t argv[], long i, void* function, long type);
+ret_t x86_call(int_t argv[], long i, void* function, long type);
 __ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
 	"movl  %esp, %ebp",
@@ -544,7 +546,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 // r9-r15: scratch registers
 // v16-v31: scratch registers
 // stack is 16-byte aligned at all times
-intmax_t arm64_call(int_t argv[], double ad[],
+ret_t arm64_call(int_t argv[], double ad[],
                     long i, long d, long mask,
                     void* function, long type);
 // x0: argv
@@ -668,8 +670,7 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 // gcc-arm-linux-gnueabi: -mfloat-abi=softfp options (and -mfloat-abi=soft ?)
 
 __attribute((__naked__)) // do not remove, arm32 require this form of function!
-uintmax_t arm32_call(int_t argv[], long i,
-                     void* function)
+ret_t arm32_call(int_t argv[], long i, void* function)
 {
 __ASM__(//"arm32_call:_arm32_call:",
 	// "BKPT",
@@ -738,9 +739,9 @@ __ASM__(//"arm32_call:_arm32_call:",
 // __ARM_ARCH_7A__
 //
 __attribute((__naked__)) // do not remove, arm32 require this form of function!
-uintmax_t arm32_call(int_t argv[], float af[],
-                     long i, long f,
-                     void* function, long type) {
+ret_t arm32_call(int_t argv[], float af[],
+                 long i, long f,
+                 void* function, long type) {
 __ASM__(// "arm32_call:_arm32_call:",
 	// "BKPT",
 	// r0: argv, r1: af, r2: i, r3: ad, f: [sp, #12], g: [sp, #16]
@@ -849,8 +850,6 @@ __ASM__(// "arm32_call:_arm32_call:",
 # endif
 #elif __EMSCRIPTEN__
 
-typedef intmax_t ret_t;
-static
 ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
 {
 //	printf("asmjs_call(%p, %d, %p, %d)\n", args, fmask, function, type);
@@ -1254,7 +1253,6 @@ word* OL_ffi(ol_t* this, word* arguments)
 	assert (C == INULL || (is_reference(C) && reference_type(C) == TPAIR));
 
 	void *function = (void*)car(A);  assert (function);
-	int returntype = value(car(B));
 
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
@@ -1383,6 +1381,11 @@ word* OL_ffi(ol_t* this, word* arguments)
 		E("Arguments count mismatch", 0);
 		return (word*)IFALSE;
 	}
+	// special case of returning a structure:
+	if (is_pair(car(B))) {
+		if (value(caar(B)) == TBYTEVECTOR)
+			words += (number(cdar(B)) + W-1) / W + 1;
+	}
 
 	// ensure that all arguments will fit in heap
 	heap_t* heap = (heap_t*)this;
@@ -1406,6 +1409,17 @@ word* OL_ffi(ol_t* this, word* arguments)
 	p = (word*)C;   // ol arguments
 	t = (word*)cdr (B); // rtty
 	int has_wb = 0; // has write-back in arguments (speedup)
+
+	// process a case with structure as function return
+	if (is_pair(car(B)) &&
+		value(caar(B)) == TBYTEVECTOR &&
+		value(cdar(B)) > sizeof(ret_t))
+	{
+		int len = number(cdar(B));
+		word* result = new_bytevector(len);
+		args[i++] = (word) &car(result);
+	}
+
 
 	while ((word)p != INULL) { // пока есть аргументы
 		assert (reference_type(p) == TPAIR); // assert(list)
@@ -1920,14 +1934,15 @@ word* OL_ffi(ol_t* this, word* arguments)
 #endif
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	unsigned long long got = 0; // результат вызова функции (64 бита для возможного double)
-
 	size_t pB = OL_pin(this, B);
 	size_t pC = OL_pin(this, C);
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
 
 //	if (floatsmask == 15)
 //		__asm__("int $3");
+
+	ret_t got = 0; // результат вызова функции
+	int returntype = is_value(car(B)) ? value(car(B)) : TVOID;
 
 #if  __amd64__
 #	if (__unix__ || __APPLE__)
@@ -1959,7 +1974,6 @@ word* OL_ffi(ol_t* this, word* arguments)
 #	endif
 #elif __mips__
 	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
-	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
@@ -1967,7 +1981,6 @@ word* OL_ffi(ol_t* this, word* arguments)
 #elif __EMSCRIPTEN__
 	got = asmjs_call(args, fmask, function, returntype & 0x3F);
 #else // ALL other
-	typedef long long ret_t;
 	inline ret_t call(word args[], int i, void* function, int type) {
 		CALL();
 	}
@@ -2241,6 +2254,7 @@ word* OL_ffi(ol_t* this, word* arguments)
 	}
 
 	word* result = (word*)IFALSE;
+
 	returntype &= 0x3F;
 	switch (returntype) {
 		// TENUMP - deprecated
@@ -2283,6 +2297,17 @@ word* OL_ffi(ol_t* this, word* arguments)
 			break;
 		case TVOID:
 			result = (word*) ITRUE;
+			// special case: returning a structure
+			if (is_pair(car(B)) && value(caar(B)) == TBYTEVECTOR) {
+				size_t len = value(cdar(B));
+				if (len > sizeof(ret_t)) // returning a big structure
+					result = ((word*)(word)got) - 1;
+				else { // returning a small structure
+					result = new_bytevector(len);
+					__builtin_memcpy(&car(result), &got, len);
+				}
+			}
+
 			break;
 
 		case TVPTR:

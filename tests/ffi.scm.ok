@@ -80,6 +80,11 @@ basic simple (fft* type)>type test:
    rQ2Q (0): [0 => 0] 0
    rQ2Q (-125): [-125 => -125] -125
    rQ2Q (-1): [-1 => -1] -1
+returning a structure test:
+   iiv2struct12 (1 2 123): = { 1, 2, 123 }
+#u8(1 0 0 0 2 0 0 0 123 0 0 0)
+   iiv2struct20 (1 2 123): = { 1, 2, 123 }
+#u8(1 0 0 0 2 0 0 0 123 0 0 0 0 0 0 0 0 0 0 0)
 type limits checking:
    char (-128): [-128 => -128] -128
    char (127): [127 => 127] 127
