@@ -41,8 +41,9 @@
  *   http://www.call-cc.org/                              </br>
  *   http://www.scheme.com/tspl4/                         </br>
  */
-#ifndef __OLVM_C__
-#define __OLVM_C__
+
+#ifndef __OLVM_H__
+#define __OLVM_H__
 
 /*!- - -
  * ## Otus Lisp Virtual Machine
@@ -859,8 +860,11 @@ inexact_t f = (inexact_t) a;\
 
 
 /****************************************************************/
-
+#endif//__OLVM_H__
 #ifndef USE_OLVM_DECLARATION
+#ifndef __OLVM_C__
+#define __OLVM_C__
+/****************************************************************/
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
@@ -5533,5 +5537,5 @@ word OL_apply(struct ol_t* ol, word object, word args)
 }
 
 
-#endif
 #endif//__OLVM_C__
+#endif//USE_OLVM_DECLARATION

@@ -5,3 +5,5 @@ tmp/
 #=======
 obj/
 libs/
+#======
+include/olvm.h

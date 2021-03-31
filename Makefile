@@ -214,13 +214,13 @@ android: jni/*.c tmp/repl.c
 #	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
 
 # ol
-vm: src/olvm.c include/olvm.h
+vm: src/olvm.c
 	$(CC) src/olvm.c -DNAKED_VM -o $@\
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c\
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
-ol: src/olvm.c include/olvm.h tmp/repl.c
+ol: src/olvm.c tmp/repl.c
 	$(CC) src/olvm.c tmp/repl.c -o $@\
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c\
 	   $(CFLAGS) $(L)
@@ -236,6 +236,9 @@ tmp/repl.c: repl
 #	   -e 's/^ /0x/' -e 's/ /,0x/g' \
 #	   -e 's/^/unsigned char repl[] = {/' \
 #	   -e 's/$$/};/'> $@
+
+include/olvm.h: src/olvm.c
+	@sed -n '/USE_OLVM_DECLARATION/q;p' $^ >$@
 
 # # emscripten version 1.37.40+
 # repl.js: repl
@@ -297,7 +300,7 @@ ol.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
 ol.exe: MINGWCFLAGS += -DHAS_DLOPEN=1
 ol.exe: MINGWCFLAGS += -DHAS_SOCKES=1
 ol.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
-ol.exe: src/olvm.c include/olvm.h tmp/repl.c
+ol.exe: src/olvm.c tmp/repl.c
 	$(CC) src/olvm.c tmp/repl.c -o $@\
 	   -DOLVM_FFI=1 -Iwin32 -Isrc extensions/ffi.c\
 	   $(MINGWCFLAGS) -lws2_32
@@ -413,7 +416,7 @@ endif
 # |          |                                            | /fpu     |
 # --------------------------------------------------------------------
 
-arm: src/olvm.c include/olvm.h
+arm: src/olvm.c
 	arm-linux-gnueabihf-gcc-5 src/olvm.c -DNAKED_VM -o $@ \
 	   -Xlinker --export-dynamic $(L) \
 	   -march=armv7-a -mfpu=neon-vfpv4 \
