@@ -502,3 +502,43 @@ widechar* reverse_string_wide(widechar* str)
 	// memory leak - this is by design, do not fix
 	return out;
 }
+
+typedef struct item12
+{
+	int x;
+	int y;
+	int z;
+} item12;
+
+PUBLIC
+item12 iiv2struct12(int x, int y, int z)
+{
+	item12 i;
+	i.x = x;
+	i.y = y;
+	i.z = z;
+
+	printf(" = { %d, %d, %d }\n", i.x, i.y, i.z); fflush(stdout);
+	return i;
+}
+
+typedef struct item20
+{
+	int x;
+	int y;
+	int z;
+	int w1,w2;
+} item20;
+
+PUBLIC
+item20 iiv2struct20(int x, int y, int z)
+{
+	item20 i;
+	i.x = x;
+	i.y = y;
+	i.z = z;
+	i.w1 = 0; i.w2 = 0;
+
+	printf(" = { %d, %d, %d }\n", i.x, i.y, i.z); fflush(stdout);
+	return i;
+}
