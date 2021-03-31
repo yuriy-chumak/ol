@@ -5,7 +5,7 @@
 
 ; test:
 ; ***************************************************
-(if (less? (SDL_Init SDL_INIT_VIDEO) 0)
+(if (< (SDL_Init SDL_INIT_VIDEO) 0)
    (begin
       (print "Unable to Init SDL: " (SDL_GetError))
       (halt 1)))
