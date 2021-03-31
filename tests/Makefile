@@ -238,7 +238,7 @@ else
 	@echo "Built."
 endif
 
-testing-embed: tests/embed.c src/olvm.c extensions/embed.h tmp/repl.c
+testing-embed: tests/embed.c src/olvm.c include/olvm.h extensions/embed.h tmp/repl.c
 	@printf "Testing embed ... "
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
@@ -339,6 +339,7 @@ endif
 	@printf ".\n"
 
 # -=( tests )=-------------------------------------
+tests: repl include/olvm.h
 tests: testing-binaries
 tests: testing-embed
 tests: $(wildcard tests/*.scm)

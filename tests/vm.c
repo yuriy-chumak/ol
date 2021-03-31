@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 typedef uintptr_t word;
+typedef ol_t OL;
 
 #define BEGIN(x) \
 { \
