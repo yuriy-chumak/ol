@@ -69,7 +69,11 @@
             ((assert expression ===> expectation)
                (ifeq (equal? ((lambda (x) x) expression) expectation) #true
                   #true
-                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))))
+                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))
+            ((assert expression)
+               (ifeq (equal? ((lambda (x) x) expression) #false) #true
+                  (runtime-error "assertion error:" (cons (quote expression) (cons "is not a true" #null)))
+                  #true))))
       ; * 'equal?' stub
       ; note: allows basic assert implementation before real 'equal?' be
       ;       defined to real implementation in 6.1
