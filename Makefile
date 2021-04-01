@@ -237,11 +237,11 @@ tmp/repl.c: repl
 #	   -e 's/^/unsigned char repl[] = {/' \
 #	   -e 's/$$/};/'> $@
 
-include/olvm.h: src/olvm.c
+include/ol/vm.h: src/olvm.c
 	@sed -n '/USE_OLVM_DECLARATION/q;p' $^ >$@
 
 # # emscripten version 1.37.40+
-# repl.js: repl
+# deprecated repl.js: repl
 # 	xxd --include repl >tmp/repl.c
 # 	emcc tmp/repl.c -Os \
 # 	   -o repl.js -Drepl=binary_repl_start \
@@ -249,14 +249,14 @@ include/olvm.h: src/olvm.c
 # 	   -s NO_EXIT_RUNTIME=1 \
 # 	   --memory-init-file 0
 
-# oljs.js: extensions/embed.c extensions/embed.h
+# deprecated oljs.js: extensions/embed.c extensions/embed.h
 # 	emcc extensions/embed.c -Os \
 # 	   -o oljs.js -Iinclude \
 # 	   -s WASM=0 -s SIDE_MODULE=1 \
 # 	   -s NO_EXIT_RUNTIME=1 \
 # 	   --memory-init-file 0
 
-# olvm.js: src/olvm.c include/olvm.h extensions/ffi.c repl.js oljs.js
+# deprecated olvm.js: src/olvm.c include/ol/vm.h extensions/ffi.c repl.js oljs.js
 # 	emcc src/olvm.c -Os \
 # 	   -DNAKED_VM=1 -DEMBED_VM=1 -DHAS_DLOPEN=1 \
 # 	   -o olvm.js \
@@ -264,7 +264,7 @@ include/olvm.h: src/olvm.c
 # 	   -s NO_EXIT_RUNTIME=1 \
 # 	   --memory-init-file 0
 
-olvm.wasm: src/olvm.c include/olvm.h
+olvm.wasm: src/olvm.c include/ol/vm.h
 	emcc src/olvm.c extensions/embed.c tmp/repl.c -Os \
 	   -o olvm.html -Iinclude \
 	   -DEMBEDDED_VM=1 -DHAS_DLOPEN=0 \

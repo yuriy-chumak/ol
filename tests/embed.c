@@ -6,7 +6,8 @@
  *      Author: uri
  */
 
-#include "embed.h"
+#include <ol/ol.h>
+#include <stdio.h>
 
 // olvm:
 ol_t ol;
@@ -18,7 +19,7 @@ int main(int argc, char** argv)
 	intptr_t r; // result of ol functions, will use frequently
 
 	// 1. create new olvm
-	embed_new(&ol, repl, 0);
+	OL_new(&ol, repl);
 
 	// our embed extension can work in different manners:
 	// 1. if eval got only one string parameter it returns the value of parameter
@@ -47,18 +48,18 @@ int main(int argc, char** argv)
 	//   we will check results by assert. it's easy and demonstrates embed macro usages
 
 	// * simple number evaluation (number avaluates to itself)
-	r = embed_eval(&ol, new_string(&ol, "1234567"), 0);
+	r = OL_eval(&ol, new_string(&ol, "1234567"), 0);
 	assert (r == make_integer(1234567));
 
 	// * ok, how about functions? let's sum three numbers
-	r = embed_eval(&ol, new_string(&ol, "+"), make_integer(1), make_integer(2), make_integer(103), 0);
+	r = OL_eval(&ol, new_string(&ol, "+"), make_integer(1), make_integer(2), make_integer(103), 0);
 	assert (r == make_integer(106)); // 1 + 2 + 103
 
 	// * maybe custom function?
-	r = embed_eval(&ol, new_string(&ol, "(define (f x) (if (eq? x 0) 1 (* x (f (- x 1)))))"), 0);
+	r = OL_eval(&ol, new_string(&ol, "(define (f x) (if (eq? x 0) 1 (* x (f (- x 1)))))"), 0);
 	assert (r != IFALSE);
 
-	r = embed_eval(&ol, new_string(&ol, "f"), make_integer(7), 0);
+	r = OL_eval(&ol, new_string(&ol, "f"), make_integer(7), 0);
 	assert (r == make_integer(5040));
 
 	
@@ -113,7 +114,7 @@ int main(int argc, char** argv)
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned), make_integer((int)(uintptr_t)x), \
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
 	IFALSE))))))
-#define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
+#define eval(...) OL_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
 // <--cut--
 
 	// * ok, how about functions? let's sum three numbers
@@ -166,7 +167,7 @@ int main(int argc, char** argv)
 	                  107, 114, 113, 104,  49};
 
 	// let's execute one
-	r = embed_eval(&ol, new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])),
+	r = OL_eval(&ol, new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])),
 						new_bytevector(&ol, message, sizeof(message)/sizeof(message[0])),
 						make_integer(3), 0);
 	assert (is_bytevector(r));

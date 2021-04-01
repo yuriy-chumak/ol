@@ -32,12 +32,12 @@ vm32 = true
 endif
 
 
-vm32: src/olvm.c include/olvm.h
+vm32: src/olvm.c include/ol/vm.h
 	$(CC) src/olvm.c -DNAKED_VM -o $@ \
 	   $(L) -m32 -DOLVM_FFI=0 \
 	   $(CFLAGS)
 	@echo Ok.
-vm64: src/olvm.c include/olvm.h
+vm64: src/olvm.c include/ol/vm.h
 	$(CC) src/olvm.c -DNAKED_VM -o $@ \
 	   $(L) -m64 -DOLVM_FFI=0 \
 	   $(CFLAGS)
@@ -238,7 +238,7 @@ else
 	@echo "Built."
 endif
 
-testing-embed: tests/embed.c src/olvm.c include/olvm.h extensions/embed.h tmp/repl.c
+testing-embed: tests/embed.c src/olvm.c include/ol/ol.h tmp/repl.c
 	@printf "Testing embed ... "
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
@@ -339,7 +339,7 @@ endif
 	@printf ".\n"
 
 # -=( tests )=-------------------------------------
-tests: repl include/olvm.h
+tests: repl include/ol/vm.h
 tests: testing-binaries
 tests: testing-embed
 tests: $(wildcard tests/*.scm)

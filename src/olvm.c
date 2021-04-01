@@ -74,19 +74,19 @@ typedef struct ol_t ol_t;
 // ------------------------------------------------------
 // PUBLIC API:
 
-ol_t*OL_new (unsigned char* bootstrap);
-void OL_free(ol_t* ol);
-word OL_run (ol_t* ol, int argc, char** argv);
-word OL_continue(ol_t* ol, int argc, void** argv);
+ol_t*OLVM_new (unsigned char* bootstrap);
+void OLVM_free(ol_t* ol);
+word OLVM_run (ol_t* ol, int argc, char** argv);
+word OLVM_continue(ol_t* ol, int argc, void** argv);
 
 // "pinned" objects supporting functions
-size_t OL_pin(ol_t* ol, word ref);
-word OL_deref(ol_t* ol, size_t p);
-word OL_unpin(ol_t* ol, size_t p);
-word OL_apply(ol_t* ol, word function, word args);
+size_t OLVM_pin(ol_t* ol, word ref);
+word OLVM_deref(ol_t* ol, size_t p);
+word OLVM_unpin(ol_t* ol, size_t p);
+word OLVM_apply(ol_t* ol, word function, word args);
 
-void*OL_userdata (ol_t* ol, void* userdata);
-void*OL_allocate (ol_t* ol, unsigned words);
+void*OLVM_userdata (ol_t* ol, void* userdata);
+void*OLVM_allocate (ol_t* ol, unsigned words);
 
 
 // descriptor format
@@ -2005,7 +2005,7 @@ word runtime(struct ol_t* ol);  // главный цикл виртуально�
 #define A5                          R[ip[5]]
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
-static int OL_gc(struct ol_t* ol, int ws) // ws - required size in words
+static int OLVM_gc(struct ol_t* ol, int ws) // ws - required size in words
 {
 	word *fp = ol->heap.fp; // memory allocation pointer
 
@@ -2150,11 +2150,11 @@ apply:;
 				args = new_pair(R[i+2], args);
 
 			word (*function)(struct ol_t*, word*) = (word (*)(struct ol_t*, word*)) car(this);  assert (function);
-			size_t cont = OL_pin(ol, R[3]);
+			size_t cont = OLVM_pin(ol, R[3]);
 
 			heap->fp = fp;
 			R[3] = function(ol, args);
-			this = OL_unpin(ol, cont);
+			this = OLVM_unpin(ol, cont);
 			fp = heap->fp;
 
 			acc = 1;
@@ -4797,7 +4797,7 @@ loop:;
 	case VMPIN: {  // (vm:pin object) /pin object/ => pin id
 		word object = A0;
 
-		int id = OL_pin(ol, object);
+		int id = OLVM_pin(ol, object);
         A1 = (id > 3) ? I(id) : IFALSE;
 		ip += 2; break;
 	}
@@ -4806,7 +4806,7 @@ loop:;
 		CHECK (is_value(pin), pin, VMUNPIN);
 
 		int id = value(pin);
-        A1 = OL_unpin(ol, id);
+        A1 = OLVM_unpin(ol, id);
 		ip += 2; break;
 	}
 
@@ -4815,7 +4815,7 @@ loop:;
 		CHECK (is_value(pin), pin, VMDEREF);
 
 		int id = value(pin);
-        A1 = OL_deref(ol, id);
+        A1 = OLVM_deref(ol, id);
 		ip += 2; break;
 	}
 
@@ -5122,19 +5122,19 @@ int main(int argc, char** argv)
 	}
 #endif
 
-	OL* olvm = OL_new(bootstrap);
+	OL* olvm = OLVM_new(bootstrap);
 	if (bootstrap != language) // was previously malloc'ed
 		free(bootstrap);
 
 	// so, let's rock?
 	int v = 0;
 	if (olvm) {
-		word r = OL_run(olvm, argc, argv);
+		word r = OLVM_run(olvm, argc, argv);
         // convert result to appropriate system value
         if (is_number(r))
             v = number(r);
 
-		OL_free(olvm);
+		OLVM_free(olvm);
 	}
 
 #if	HAS_SOCKETS && defined(_WIN32)
@@ -5183,7 +5183,7 @@ fail:;
 #endif
 
 struct ol_t*
-OL_new(unsigned char* bootstrap)
+OLVM_new(unsigned char* bootstrap)
 {
 	// если отсутствует исполнимый образ
 	if (bootstrap == 0) {
@@ -5232,7 +5232,7 @@ OL_new(unsigned char* bootstrap)
 	// ok
 	heap->end = heap->begin + required_memory_size;
 	heap->genstart = heap->begin;
-	heap->gc = OL_gc;
+	heap->gc = OLVM_gc;
 
 	// handle->max_heap_size = max_heap_size;
 
@@ -5277,11 +5277,11 @@ OL_new(unsigned char* bootstrap)
 	return handle;
 
 fail:
-	OL_free(handle);
+	OLVM_free(handle);
 	return 0;
 }
 
-void OL_free(OL* ol)
+void OLVM_free(OL* ol)
 {
 	if (sandboxp)
 		return;
@@ -5290,13 +5290,13 @@ void OL_free(OL* ol)
 	free(ol);
 }
 
-void* OL_userdata(OL* ol, void* userdata)
+void* OLVM_userdata(OL* ol, void* userdata)
 {
 	void* old_userdata = ol->userdata;
 	ol->userdata = userdata;
 	return old_userdata;
 }
-void* OL_allocate(OL* ol, unsigned words)
+void* OLVM_allocate(OL* ol, unsigned words)
 {
 	word* fp;
 
@@ -5308,16 +5308,16 @@ void* OL_allocate(OL* ol, unsigned words)
 }
 
 
-read_t*  OL_set_read (struct ol_t* ol, read_t  read);
-write_t* OL_set_write(struct ol_t* ol, write_t write);
-open_t*  OL_set_open (struct ol_t* ol, open_t  open);
-close_t* OL_set_close(struct ol_t* ol, close_t close);
+read_t*  OLVM_set_read (struct ol_t* ol, read_t  read);
+write_t* OLVM_set_write(struct ol_t* ol, write_t write);
+open_t*  OLVM_set_open (struct ol_t* ol, open_t  open);
+close_t* OLVM_set_close(struct ol_t* ol, close_t close);
 
-idle_t*  OL_set_idle (struct ol_t* ol, idle_t  idle);
+idle_t*  OLVM_set_idle (struct ol_t* ol, idle_t  idle);
 
 // i/o polymorphism
 #define override(name) \
-name##_t* OL_set_##name(struct ol_t* ol, name##_t name) {\
+name##_t* OLVM_set_##name(struct ol_t* ol, name##_t name) {\
 	name##_t *old_##name = ol->name;\
 	ol->name = name;\
 	return old_##name;\
@@ -5333,7 +5333,7 @@ override(idle)
 
 // ===============================================================
 word
-OL_run(OL* ol, int argc, char** argv)
+OLVM_run(OL* ol, int argc, char** argv)
 {
 #ifndef __EMSCRIPTEN__
 	int r = setjmp(ol->fail);
@@ -5391,7 +5391,7 @@ OL_run(OL* ol, int argc, char** argv)
 }
 
 word
-OL_continue(OL* ol, int argc, void** argv)
+OLVM_continue(OL* ol, int argc, void** argv)
 {
 #ifndef __EMSCRIPTEN__
 	int r = setjmp(ol->fail);
@@ -5436,7 +5436,7 @@ OL_continue(OL* ol, int argc, void** argv)
 // [0..3] - errors
 // 0 means "no space left"
 // 1 means "no pinnable object"
-size_t OL_pin(struct ol_t* ol, word ref)
+size_t OLVM_pin(struct ol_t* ol, word ref)
 {
     if (ref == IFALSE)
         return 1; // #false is not a pinnable object
@@ -5451,7 +5451,7 @@ size_t OL_pin(struct ol_t* ol, word ref)
     return 0; // no space left
 }
 
-word OL_deref(struct ol_t* ol, size_t p)
+word OLVM_deref(struct ol_t* ol, size_t p)
 {
 	size_t id = p;
 	if (id > 3 && id < CR)
@@ -5460,7 +5460,7 @@ word OL_deref(struct ol_t* ol, size_t p)
 		return IFALSE;
 }
 
-word OL_unpin(struct ol_t* ol, size_t p)
+word OLVM_unpin(struct ol_t* ol, size_t p)
 {
     word re = IFALSE;
     size_t id = p;
@@ -5475,7 +5475,7 @@ word OL_unpin(struct ol_t* ol, size_t p)
     return re;
 }
 
-word OL_apply(struct ol_t* ol, word object, word args)
+word OLVM_apply(struct ol_t* ol, word object, word args)
 {
 	ol->this = object; // lambda для обратного вызова
 //	ol->ticker = ol->bank ? ol->bank : 999;

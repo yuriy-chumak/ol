@@ -207,21 +207,21 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeNew(JNIEnv* jenv, j
 	// setenv("LIBGL_NOBANNER", "0", 1);
 
 	// let's start our application
-	ol.vm = OL_new(repl);
-	OL_userdata(ol.vm, &ol);
+	ol.vm = OLVM_new(repl);
+	OLVM_userdata(ol.vm, &ol);
 
 	char* args[] = { "--embed", "--no-interactive" }; //, "--home=/sdcard/ol" }; // ol execution arguments
-	word r = OL_run(ol.vm, sizeof(args) / sizeof(*args), args);
+	word r = OLVM_run(ol.vm, sizeof(args) / sizeof(*args), args);
 
     // well, we have our "smart" script prepared,
     //  now save both eval and env variables
     assert (is_enum(r)); // todo: change to is_enump
     ol.eval = r >> 8;
 
-    OL_set_open(ol.vm, assets_open);
-    OL_set_close(ol.vm, assets_close);
-    OL_set_read(ol.vm, assets_read);
-    OL_set_write(ol.vm, assets_write); // redirects stdout/atderr to logcat
+    OLVM_set_open(ol.vm, assets_open);
+    OLVM_set_close(ol.vm, assets_close);
+    OLVM_set_read(ol.vm, assets_read);
+    OLVM_set_write(ol.vm, assets_write); // redirects stdout/atderr to logcat
 
     return;
 }
@@ -252,7 +252,7 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_Olvm_eval(JNIEnv* jenv, job
 	jclass Double = (*jenv)->FindClass(jenv, "java/lang/Double");
 
     uintptr_t* values = __builtin_alloca((argc+1) * sizeof(uintptr_t));
-    values[0] = OL_deref(ol.vm, ol.eval);
+    values[0] = OLVM_deref(ol.vm, ol.eval);
     for (int i = 0; i < argc; i++) {
         jobject arg = (*jenv)->GetObjectArrayElement(jenv, args, i);
         // if((*env)->ExceptionOccurred(env)) {
@@ -287,7 +287,7 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_Olvm_eval(JNIEnv* jenv, job
             values[i+1] = IFALSE;
     }
 
-    word r = OL_continue(ol.vm, argc+1, (void**)values);
+    word r = OLVM_continue(ol.vm, argc+1, (void**)values);
     if (r == ITRUE) {
         jclass Boolean = (*jenv)->FindClass(jenv, "java/lang/Boolean");
         jfieldID TRUE = (*jenv)->GetStaticFieldID(jenv, Boolean, "TRUE", "Ljava/lang/Boolean;");

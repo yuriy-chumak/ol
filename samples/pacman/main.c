@@ -6,9 +6,10 @@
  */
 
 #include <GL/glut.h>
-#include <../extensions/embed.h>
 
+#include <ol/ol.h>
 #include <stdio.h>
+
 #include <sys/time.h>
 #include <assert.h>
 
@@ -84,7 +85,7 @@ ol_t ol;
 	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
 	IFALSE))))))))))
 
-#define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
+#define eval(...) OL_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
 
 
 // Drawing functions
@@ -134,7 +135,7 @@ void draw(void)
 	drawBackground();
 
 	glBindTexture(GL_TEXTURE_2D, point);
-	word points = eval("points");                              assert(is_reference(points));
+	uintptr_t points = eval("points");                         assert(is_reference(points));
 	for (int y = 0; y < 31; y++) {
 		uintptr_t line = ref(points, y);
 		for (int x = 0; x < 28; x++) {
@@ -148,7 +149,7 @@ void draw(void)
 
 	glBindTexture(GL_TEXTURE_2D, blinky);
 	{
-		word ps = eval("(get-blinky)");                        assert(is_pair(ps));
+		uintptr_t ps = eval("(get-blinky)");                   assert(is_pair(ps));
 		int x = ol2int(car(ps));
 		int y = ol2int(cdr(ps)) + 3;
 		float emoji = rand() % 4 / 4.0;
@@ -234,7 +235,7 @@ void keys(int key, int x, int y) {
 		return;
 	}
 
-	word p = eval(get_level, mainx+dx, mainy+dy);      assert(is_enum(p));
+	uintptr_t p = eval(get_level, mainx+dx, mainy+dy); assert(is_enum(p));
 	if (ol2small(p) == 1) {
 		mainx += dx;
 		mainy += dy;
@@ -248,12 +249,8 @@ extern unsigned char _binary_______repl_start[];
 //Main program
 int main(int argc, char **argv)
 {
-	embed_new(&ol, _binary_______repl_start, 0); // ol creation
+	OL_new(&ol, _binary_______repl_start); // ol creation
 	eval("print", "do some logs: ", 42);
-
-#if 1 // eclipse
-	chdir("samples/pacman");
-#endif
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE);
@@ -275,6 +272,6 @@ int main(int argc, char **argv)
 	// let's go
 	glutMainLoop();
 
-	//embed_delete(olvm);
+	OL_delete(&ol);
 	return 0;
 }

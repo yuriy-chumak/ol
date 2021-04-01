@@ -1,21 +1,20 @@
-#include <olvm.h>
+#include <ol/vm.h>
 
 #include <stdio.h>
 #include <unistd.h>
 typedef uintptr_t word;
-typedef ol_t OL;
 
 #define BEGIN(x) \
 { \
 	printf("Testing " x " instruction... ");
 #define END() \
-	OL_free(olvm); \
+	OLVM_free(olvm); \
 }
 
 #define EVAL(...) \
 	unsigned char bootstrap[] = __VA_ARGS__; \
-	OL* olvm = OL_new(bootstrap); \
-	word output = (word) OL_run(olvm, 0, 0);
+	ol_t* olvm = OLVM_new(bootstrap); \
+	word output = (word) OLVM_run(olvm, 0, 0);
 
 #define ASSERT(...) \
 	if (__VA_ARGS__) { \

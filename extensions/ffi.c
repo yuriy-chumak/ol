@@ -1239,7 +1239,7 @@ char* not_a_string(char* ptr, word string)
 // Главная функция механизма ffi:
 PUBLIC
 __attribute__((used))
-word* OL_ffi(ol_t* this, word* arguments)
+word* OLVM_ffi(ol_t* this, word* arguments)
 {
 	// a - function address
 	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
@@ -1390,15 +1390,15 @@ word* OL_ffi(ol_t* this, word* arguments)
 	// ensure that all arguments will fit in heap
 	heap_t* heap = (heap_t*)this;
 	if (words > (heap->end - heap->fp)) {
-        size_t a = OL_pin(this, A);
-        size_t b = OL_pin(this, B);
-        size_t c = OL_pin(this, C);
+        size_t a = OLVM_pin(this, A);
+        size_t b = OLVM_pin(this, B);
+        size_t c = OLVM_pin(this, C);
 
 		heap->gc(this, words);
 
-        A = OL_unpin(this, a);
-        B = OL_unpin(this, b);
-        C = OL_unpin(this, c);
+        A = OLVM_unpin(this, a);
+        B = OLVM_unpin(this, b);
+        C = OLVM_unpin(this, c);
 	}
 
 	word* fp = heap->fp;
@@ -1635,7 +1635,7 @@ word* OL_ffi(ol_t* this, word* arguments)
 				}
 				case TVECTOR: // let's support not only lists as float*
 				case TVECTORLEAF: { // todo: bytevector?
-					int c = header_size(*(word*)arg) - 1;
+					int c = reference_size(arg);
 					float* p = (float*) &new_bytevector(c * sizeof(float))[1];
 					args[i] = (word)p;
 
@@ -1934,8 +1934,8 @@ word* OL_ffi(ol_t* this, word* arguments)
 #endif
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	size_t pB = OL_pin(this, B);
-	size_t pC = OL_pin(this, C);
+	size_t pB = OLVM_pin(this, B);
+	size_t pC = OLVM_pin(this, C);
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
 
 //	if (floatsmask == 15)
@@ -2012,8 +2012,8 @@ word* OL_ffi(ol_t* this, word* arguments)
 
 	// где гарантия, что C и B не поменялись?
 	fp = heap->fp;
-	B = OL_unpin(this, pB);
-	C = OL_unpin(this, pC);
+	B = OLVM_unpin(this, pB);
+	C = OLVM_unpin(this, pC);
 
 	if (has_wb) {
 		// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
@@ -2418,7 +2418,7 @@ word* OL_ffi(ol_t* this, word* arguments)
  * 20 - void*
  */
 PUBLIC
-word OL_sizeof(ol_t* self, word* arguments)
+word OLVM_sizeof(ol_t* self, word* arguments)
 {
 	word* A = (word*)car(arguments); // type
 	switch (value(A)) {
@@ -2470,7 +2470,7 @@ int64_t callback(ol_t* ol, size_t id, int_t* argi
 
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
 PUBLIC
-word OL_mkcb(ol_t* self, word* arguments)
+word OLVM_mkcb(ol_t* self, word* arguments)
 {
 	word* A = (word*)car(arguments);
 	unless (is_value(A))
@@ -2697,7 +2697,7 @@ int64_t callback(ol_t* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 	word* fp;
 //	__asm("int $3");
 
-	word cb = OL_deref(ol, id);
+	word cb = OLVM_deref(ol, id);
 	word types = car(cb);
 	word function = cdr(cb);
 
@@ -2937,7 +2937,7 @@ int64_t callback(ol_t* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 
 	heap->fp = fp; // well, done
 
-	word r = OL_apply(ol, function, args);
+	word r = OLVM_apply(ol, function, args);
 
 	switch (enum(returntype)) {
 		case TINT8: case TUINT8:

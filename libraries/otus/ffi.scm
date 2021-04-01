@@ -149,7 +149,7 @@
    (syscall 177 dll (c-string name)))
 
 ; olvm ffi exported functions
-(define ffi (dlsym (dlopen) "OL_ffi"))
+(define ffi (dlsym (dlopen) "OLVM_ffi"))
 
 ; smart "dlopen/dlsym"
 (define (load-dynamic-library name)
@@ -175,7 +175,7 @@
 
 (define (make-vptr) (vm:cast 0 type-vptr))
 
-(define ffi:mkcb (dlsym (dlopen) "OL_mkcb"))
+(define ffi:mkcb (dlsym (dlopen) "OLVM_mkcb"))
 (define (make-callback pinned-object)
    (ffi:mkcb pinned-object))
 
@@ -224,7 +224,7 @@
 (define fft-uint64 58) (define fft-uint64* (fft* fft-uint64)) (define fft-uint64& (fft& fft-uint64))
 
 ; --=( platform dependent defaults )=----
-(define ffi:sizeof (dlsym (dlopen) "OL_sizeof"))
+(define ffi:sizeof (dlsym (dlopen) "OLVM_sizeof"))
    (setq |char| 1)
    (setq |short| 2)
    (setq |int| 3)
