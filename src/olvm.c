@@ -2890,6 +2890,7 @@ loop:;
 	}
 
 	// todo: переделать!
+	// todo: опасные вещи вроде int->port и int->void* спрятать под SAFE блок
 	case VMCAST: { // cast obj type -> result
 		if (!is_value(A1))
 			FAIL(VMCAST, this, A1);
@@ -2938,7 +2939,7 @@ loop:;
 				A2 = make_value(type, val);
 			}
 			else
-			{
+			{	// make this code safe
 				// make a object clone with defined new type
 				word* ob = (word*)T;
 				word hdr = *ob++;
@@ -4525,7 +4526,7 @@ loop:;
 			}
 
 #ifdef __EMSCRIPTEN__
-			case 1201: {
+			case 1201: { // TODO: merge with system (1017)
 				CHECK_ARGC_EQ(2);
 				//CHECK(is_number(a), a, SYSCALL);
 				//CHECK(is_string(b), b, SYSCALL);

@@ -81,6 +81,8 @@
 
       ;; codes bcode → codes(') bcode(')
       (define (intern-code codes bytecode)
+         ; todo: if more than N lookups for same code,
+         ;       jit it.
          (let ((res (lookup-code codes bytecode)))
             (if res
                (values codes res)

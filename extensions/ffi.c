@@ -1007,7 +1007,7 @@ int_t from_uint(word arg) {
 	return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << VBITS);
 }
 
-#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit platform math
+#if UINTPTR_MAX == 0xffffffff // 32-bit platform math
 static
 intmax_t from_ulong(word arg) {
 	assert (is_reference(arg));
@@ -1023,14 +1023,14 @@ intmax_t from_ulong(word arg) {
 #endif
 
 static
-#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines (__SIZEOF_PTRDIFF_T__ == 4)
+#if UINTPTR_MAX == 0xffffffff // 32-bit machines (__SIZEOF_PTRDIFF_T__ == 4)
 long
 #endif
 long from_rational(word arg) {
 	word* pa = (word*)car(arg);
 	word* pb = (word*)cdr(arg);
 
-	#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines
+	#if UINTPTR_MAX == 0xffffffff // 32-bit machines
 	long
 	#endif
 	long a = 0;
@@ -1047,7 +1047,7 @@ long from_rational(word arg) {
 		}
 	}
 
-	#if UINTPTR_MAX != 0xffffffffffffffff // 32-bit machines
+	#if UINTPTR_MAX == 0xffffffff // 32-bit machines
 	long
 	#endif
 	long b = 1;
@@ -1491,27 +1491,27 @@ word* OL_ffi(ol_t* this, word* arguments)
 			break;
 
 #if UINT64_MAX > UINTPTR_MAX // 32-bit machines
-			case TINT64: case TUINT64:
-				if (is_enum(arg))
-					*(int64_t*)&args[i] = enum(arg);
-				else
-				switch (reference_type(arg)) {
-				case TINTP: // source type
-					*(int64_t*)&args[i] = +from_ulong(arg);
-					break;
-				case TINTN:
-					*(int64_t*)&args[i] = -from_ulong(arg);
-					break;
-				case TRATIONAL:
-					*(int64_t*)&args[i] = from_rational(arg);
-					break;
-				default:
-					E("can't cast %d to int64", type);
-				}
-				#if UINT64_MAX > UINTPTR_MAX
-					i++; // for 32-bits: long long values fills two words
-				#endif
-			break;
+		case TINT64: case TUINT64:
+			if (is_enum(arg))
+				*(int64_t*)&args[i] = enum(arg);
+			else
+			switch (reference_type(arg)) {
+			case TINTP: // source type
+				*(int64_t*)&args[i] = +from_ulong(arg);
+				break;
+			case TINTN:
+				*(int64_t*)&args[i] = -from_ulong(arg);
+				break;
+			case TRATIONAL:
+				*(int64_t*)&args[i] = from_rational(arg);
+				break;
+			default:
+				E("can't cast %d to int64", type);
+			}
+			#if UINT64_MAX > UINTPTR_MAX
+				i++; // for 32-bits: long long values fills two words
+			#endif
+		break;
 #endif
 
 		//
