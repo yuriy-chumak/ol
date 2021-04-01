@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (lib opengl))
 (gl:set-window-title "5. Quadrics")
 

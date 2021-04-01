@@ -1,3 +1,3 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 (print "Hello, world!")

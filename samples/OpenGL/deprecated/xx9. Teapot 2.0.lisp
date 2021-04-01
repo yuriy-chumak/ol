@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (lib opengl))
 
 (define Context (gl:Create "8. Teapot 2.0"))

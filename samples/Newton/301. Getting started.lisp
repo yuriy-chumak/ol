@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 ;(import (otus ffi))
 (import (lib newton))
 (import (lib gl) (otus ffi))

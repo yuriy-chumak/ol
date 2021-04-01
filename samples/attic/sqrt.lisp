@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 ; http://www.codeproject.com/Articles/69941/Best-Square-Root-Method-Algorithm-Function-Precisi
 (define (sqrt m)

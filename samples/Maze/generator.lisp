@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (otus random!))
 (define (randint a b) (+ a (rand! (- b a -1)))) ; a <= x <= b
 

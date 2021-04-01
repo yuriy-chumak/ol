@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (lib gl) (lib math))
 (gl:set-window-title "3. Matrices, scaling")
 

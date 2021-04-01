@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 (import (EGL version-1-1)
    (lib x11) (owl io)

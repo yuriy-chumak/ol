@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 ; please check https://srfi.schemers.org/srfi-13/srfi-13.html
 (define (kmp p s start)

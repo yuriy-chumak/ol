@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 (define *vm-args* (list "#" "https://acomics.ru/~forgottenG" 0))
 

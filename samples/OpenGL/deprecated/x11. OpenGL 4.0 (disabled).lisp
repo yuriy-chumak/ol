@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 ;http://wili.cc/blog/ogl3-glx.html
 (import (lib opengl))
 (define Context (gl:Create "9. OpenGL 4.0"))

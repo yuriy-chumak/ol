@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (lib gl))
 (gl:set-window-title "5. Terminal")
 (import (lib gl console))

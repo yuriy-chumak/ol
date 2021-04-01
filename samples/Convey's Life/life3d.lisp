@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (lib gl))
 (import (otus random!))
 (import (scheme inexact))

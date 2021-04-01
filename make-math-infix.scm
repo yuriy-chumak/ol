@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 (print "; infix notation implementation
 ; please do not mix math ops with arguments,

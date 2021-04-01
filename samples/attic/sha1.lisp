@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 ;(define *debug* #t)
 
 ; https://www.packetizer.com/security/sha1/

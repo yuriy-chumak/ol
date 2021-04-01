@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 ; http://www.scheme.com/tspl4/ - The Scheme Programming Language (Fourth Edition)
 ; http://community.schemewiki.org/?scheme-faq-standards#implementations
 ;!

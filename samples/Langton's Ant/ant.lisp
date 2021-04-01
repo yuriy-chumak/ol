@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (otus random!))
 
 (define MAX 65536)  ; should be power of two

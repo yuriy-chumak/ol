@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window (dynamically change screen size)")
 (gl:set-window-size 1280 720)

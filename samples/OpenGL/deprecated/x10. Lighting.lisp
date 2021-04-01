@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (define *path* (cons "../.." *path*))
 (import (lib opengl))
 

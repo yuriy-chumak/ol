@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (lib gl3))
 (gl:set-window-title "4. Shaders")
 

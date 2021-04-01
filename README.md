@@ -414,7 +414,7 @@ SOME NOTES
 Register interpreter in the linux: start you script with
 
 ```
-#!/usr/bin/ol
+#!/usr/bin/env ol
 ```
 
 Register interpreter in the ms windows:

@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 (define (flip doors every)
    (map (lambda (door num)

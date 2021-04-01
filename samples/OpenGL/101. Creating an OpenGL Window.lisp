@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 

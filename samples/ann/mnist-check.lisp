@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 (import (otus ffi))
 (define this (dlopen "libann.so"))

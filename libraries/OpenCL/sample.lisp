@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 ; for intel gpu: apt-get install beignet
 ; http://www.freedesktop.org/wiki/Software/Beignet/
 ; https://01.org/beignet

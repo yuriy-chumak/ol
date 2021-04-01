@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 ; https://www.nayuki.io/page/unspecified-edge-cases-in-the-deflate-standard
 

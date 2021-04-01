@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 (import (lib gl))
 (import (OpenGL version-1-0))

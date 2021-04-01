@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 ; Let's preconfigure our (lib gl)
 (define-library (lib gl config)
 (export config) (import (otus lisp))

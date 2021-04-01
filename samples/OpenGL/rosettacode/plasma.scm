@@ -1,4 +1,4 @@
-#!/usr/bin/ol
+#!/usr/bin/env ol
 
 ; let's create image buffer
 (import (scheme inexact))
