@@ -16,11 +16,12 @@
 // texturing
 GLuint loadTexture(const char* filename, int *width, int *height);
 
-GLuint background, point, pacman;
+GLuint background, point, pacman, gameover, winner;
 GLuint blinky;
 
 // pacman position
 unsigned mainx = 1, mainy = 1;
+unsigned finita = 0, youwin = 0;
 
 // timers
 struct timeval timestamp = {0, 0}; // for fps
@@ -136,13 +137,19 @@ void draw(void)
 
 	glBindTexture(GL_TEXTURE_2D, point);
 	uintptr_t points = eval("points");                         assert(is_reference(points));
+	int points_left = 0;
 	for (int y = 0; y < 31; y++) {
 		uintptr_t line = ref(points, y);
 		for (int x = 0; x < 28; x++) {
-			if (ol2int(ref(line, x)) == 1)
+			if (ol2int(ref(line, x)) == 1) {
+				points_left++;
 				drawPoint(x, y);
+			}
 		}
 	}
+	if (!points_left)
+		youwin = 1;
+
 
 	glBindTexture(GL_TEXTURE_2D, pacman);
 	drawPacman(mainx, mainy);
@@ -154,10 +161,10 @@ void draw(void)
 		int y = ol2int(cdr(ps)) + 3;
 		float emoji = rand() % 4 / 4.0;
 		glBegin(GL_QUADS);
-		glTexCoord2d(1, emoji + 0.25); glVertex2f(x, y);
-		glTexCoord2d(1, emoji);        glVertex2f(x, y+1);
-		glTexCoord2d(0, emoji);        glVertex2f(x+1, y+1);
-		glTexCoord2d(0, emoji + 0.25); glVertex2f(x+1, y);
+		glTexCoord2d(0, emoji + 0.25); glVertex2f(x, y);
+		glTexCoord2d(0, emoji);        glVertex2f(x, y+1);
+		glTexCoord2d(1, emoji);        glVertex2f(x+1, y+1);
+		glTexCoord2d(1, emoji + 0.25); glVertex2f(x+1, y);
 		glEnd();
 	}
 
@@ -171,6 +178,22 @@ void draw(void)
 		printf("fps: %d, memory used: %d/%d (%d%%)\n", frames, total, used, (used * 100) / total);
 		timestamp = now;
 		frames = 0;
+	}
+
+	if (youwin) {
+		glBindTexture(GL_TEXTURE_2D, winner);
+	}
+	else
+	if (finita) {
+		glBindTexture(GL_TEXTURE_2D, gameover);
+	}
+	if (youwin || finita) {
+		glBegin(GL_QUADS);
+		glTexCoord2d(0, 1); glVertex2f( 6,  9);
+		glTexCoord2d(0, 0); glVertex2f( 6, 27);
+		glTexCoord2d(1, 0); glVertex2f(22, 27);
+		glTexCoord2d(1, 1); glVertex2f(22,  9);
+		glEnd();
 	}
 
 	// Done
@@ -189,6 +212,8 @@ void init(void)
 	point =      loadTexture("resources/point.png", 0, 0);
 	pacman =     loadTexture("resources/pacman.png", 0, 0);
 	blinky =     loadTexture("resources/blinky.png", 0, 0);
+	gameover =   loadTexture("resources/gameover.png", 0, 0);
+	winner =     loadTexture("resources/winner.png", 0, 0);
 
 	// initial vm communication
 	eval("(import (main))");
@@ -210,7 +235,15 @@ void idle() {
 	int usec = now.tv_usec - blinkytimestamp.tv_usec;
 	if (usec + sec * 1000000 > 1000000/3) { // 3 times per second
 		blinkytimestamp = now;
-		eval("blinky-move", mainx, mainy);                    //check_error();
+		if (!finita && !youwin)
+			eval("blinky-move", mainx, mainy);                    //check_error();
+	}
+
+	uintptr_t ps = eval("(get-blinky)");                   assert(is_pair(ps));
+	int x = ol2int(car(ps));
+	int y = ol2int(cdr(ps));
+	if (x == mainx && y == mainy) {
+		finita = 1;
 	}
 
 	glutPostRedisplay();   // Post a re-paint request to activate display()
@@ -235,11 +268,13 @@ void keys(int key, int x, int y) {
 		return;
 	}
 
-	uintptr_t p = eval(get_level, mainx+dx, mainy+dy); assert(is_enum(p));
-	if (ol2small(p) == 1) {
-		mainx += dx;
-		mainy += dy;
-		eval(eat_the_point, mainx, mainy);
+	if (!finita && !youwin) {
+		uintptr_t p = eval(get_level, mainx+dx, mainy+dy); assert(is_enum(p));
+		if (ol2small(p) == 1) {
+			mainx += dx;
+			mainy += dy;
+			eval(eat_the_point, mainx, mainy);
+		}
 	}
 	glutPostRedisplay();
 }
