@@ -111,7 +111,6 @@
 
 ;; (define (execve function . args) (apply function args)) ; syscall disabled
 
-
 ; The MODE argument to `dlopen' contains one of the following:
 (define RTLD_LAZY         #x1) ; Lazy function call binding.
 (define RTLD_NOW          #x2) ; Immediate function call binding.
@@ -131,7 +130,6 @@
 
 ; Do not delete object when closed.
 (define RTLD_NODELETE  #x1000)
-
 
 ; функция dlopen ищет динамическую библиотеку *name* (если она не загружена - загружает)
 ;  и возвращает ее уникальный handle (type-port)
@@ -231,17 +229,17 @@
    (setq |long| 4)
    (setq |long long| 5)
 
-(define fft-char fft-int8)               (assert (ffi:sizeof |char|) ===> 1)
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-uint8)
+(define fft-char fft-int8)                  (assert (ffi:sizeof |char|) ===> 1)
 
-(define fft-short fft-int16)             (assert (ffi:sizeof |short|) ===> 2)
 (define fft-signed-short fft-int16)
 (define fft-unsigned-short fft-uint16)
+(define fft-short fft-signed-short)         (assert (ffi:sizeof |short|) ===> 2)
 
-(define fft-int fft-int32)               (assert (ffi:sizeof |int|) ===> 4)
 (define fft-signed-int fft-int32)
 (define fft-unsigned-int fft-uint32)
+(define fft-int fft-signed-int)             (assert (ffi:sizeof |int|) ===> 4)
 
 ; size of long depends on OS and machine word size:
 ; ia32/amd64: https://software.intel.com/en-us/articles/size-of-long-integer-type-on-different-architecture-and-os
@@ -251,16 +249,16 @@
 ; linux, ia64:   8 bytes
 ; macosx, ia64:  8 bytes
 
-(define fft-long (case (ffi:sizeof |long|)
+(define fft-signed-long (case (ffi:sizeof |long|)
    (4 fft-int32)
    (8 fft-int64)
    (else (runtime-error "assertion error: unsupported native 'long' type size"))))
-(define fft-signed-long fft-long)
-(define fft-unsigned-long (+ fft-long 5))
+(define fft-unsigned-long (+ fft-signed-long 5))
+(define fft-long fft-signed-long)
 
-(define fft-long-long fft-int64)         (assert (ffi:sizeof |long long|) ===> 8)
 (define fft-signed-long-long fft-int64)
 (define fft-unsigned-long-long fft-uint64)
+(define fft-long-long fft-signed-long-long) (assert (ffi:sizeof |long long|) ===> 8)
 
 (define fft-enum fft-int)
 
@@ -325,8 +323,7 @@
                (<< (ref bvec (+ offset 4)) 32)
                (<< (ref bvec (+ offset 5)) 40)
                (<< (ref bvec (+ offset 6)) 48)
-               (<< (ref bvec (+ offset 7)) 56)))
-      ))
+               (<< (ref bvec (+ offset 7)) 56))) ))
 
    (big-endian
       (begin
@@ -343,8 +340,7 @@
                (<< (ref bvec (+ offset 3)) 32)
                (<< (ref bvec (+ offset 2)) 40)
                (<< (ref bvec (+ offset 1)) 48)
-               (<< (ref bvec    offset   ) 56)))
-      ))
+               (<< (ref bvec    offset   ) 56))) ))
 
    (else
       (runtime-error "ffi: unsupported platform endianness" *uname*)))
